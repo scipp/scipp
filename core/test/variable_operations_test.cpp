@@ -144,8 +144,8 @@ TEST(Variable, operator_plus_eigen_type) {
   const auto var = makeVariable<Eigen::Vector3d>(
       {Dim::X, 2},
       {Eigen::Vector3d{1.0, 2.0, 3.0}, Eigen::Vector3d{0.1, 0.2, 0.3}});
-  const auto expected =
-      makeVariable<Eigen::Vector3d>({}, {Eigen::Vector3d{1.1, 2.2, 3.3}});
+  const auto expected = makeVariable<Eigen::Vector3d>(
+      Dimensions{}, {Eigen::Vector3d{1.1, 2.2, 3.3}});
 
   const auto result = var.slice({Dim::X, 0}) + var.slice({Dim::X, 1});
 
@@ -491,15 +491,9 @@ TEST(Variable, sum) {
   EXPECT_EQ(sum(var, Dim::Y), expectedY);
 }
 
-TEST(Variable, mean) {
-  auto var =
-      makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}}, {1.0, 2.0, 3.0, 4.0});
-  auto meanX = mean(var, Dim::X);
-  ASSERT_EQ(meanX.dims(), (Dimensions{Dim::Y, 2}));
-  EXPECT_TRUE(equals(meanX.values<double>(), {1.5, 3.5}));
-  auto meanY = mean(var, Dim::Y);
-  ASSERT_EQ(meanY.dims(), (Dimensions{Dim::X, 2}));
-  EXPECT_TRUE(equals(meanY.values<double>(), {2.0, 3.0}));
+TEST(VariableConstProxy, sum) {
+  const auto var = makeVariable<float>({Dim::X, 4}, {1.0, 2.0, 3.0, 4.0});
+  EXPECT_EQ(sum(var.slice({Dim::X, 0, 2}), Dim::X), makeVariable<float>(3));
 }
 
 TEST(Variable, abs) {

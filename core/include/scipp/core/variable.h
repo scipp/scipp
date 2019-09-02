@@ -54,7 +54,8 @@ public:
 
   virtual DType dtype(bool sparse = false) const noexcept = 0;
   virtual VariableConceptHandle clone() const = 0;
-  virtual VariableConceptHandle clone(const Dimensions &dims) const = 0;
+  virtual VariableConceptHandle
+  makeDefaultFromParent(const Dimensions &dims) const = 0;
   virtual VariableConceptHandle makeView() const = 0;
   virtual VariableConceptHandle makeView() = 0;
   virtual VariableConceptHandle makeView(const Dim dim,
@@ -155,6 +156,9 @@ public:
   virtual VariableView<T> variancesReshaped(const Dimensions &dims) = 0;
 
   virtual std::unique_ptr<VariableConceptT> copyT() const = 0;
+
+  VariableConceptHandle
+  makeDefaultFromParent(const Dimensions &dims) const override;
 
   VariableConceptHandle makeView() const override;
 
@@ -783,7 +787,7 @@ SCIPP_CORE_EXPORT Variable concatenate(const Variable &a1, const Variable &a2,
                                        const Dim dim);
 SCIPP_CORE_EXPORT Variable dot(const Variable &a, const Variable &b);
 SCIPP_CORE_EXPORT Variable filter(const Variable &var, const Variable &filter);
-SCIPP_CORE_EXPORT Variable mean(const Variable &var, const Dim dim);
+SCIPP_CORE_EXPORT Variable mean(const VariableConstProxy &var, const Dim dim);
 SCIPP_CORE_EXPORT Variable norm(const Variable &var);
 SCIPP_CORE_EXPORT Variable permute(const Variable &var, const Dim dim,
                                    const std::vector<scipp::index> &indices);
@@ -792,7 +796,8 @@ SCIPP_CORE_EXPORT Variable rebin(const VariableConstProxy &var, const Dim dim,
                                  const VariableConstProxy &newCoord);
 SCIPP_CORE_EXPORT Variable reverse(Variable var, const Dim dim);
 SCIPP_CORE_EXPORT Variable sqrt(const Variable &var);
-SCIPP_CORE_EXPORT Variable sum(const Variable &var, const Dim dim);
+
+SCIPP_CORE_EXPORT Variable sum(const VariableConstProxy &var, const Dim dim);
 
 // Trigonometrics
 SCIPP_CORE_EXPORT Variable sin(const Variable &var);

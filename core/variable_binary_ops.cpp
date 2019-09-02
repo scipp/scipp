@@ -18,10 +18,18 @@ template <class T1, class T2> T1 &plus_equals(T1 &variable, const T2 &other) {
   return variable;
 }
 
-using arithmetic_type_pairs =
-    std::tuple<std::pair<double, double>, std::pair<float, float>,
-               std::pair<int64_t, int64_t>, std::pair<double, float>,
-               std::pair<float, double>>;
+template <class... Ts> struct pair_product {
+  template <class T> struct pair_with {
+    using type = decltype(std::tuple_cat(std::tuple<std::pair<T, Ts>>{}...));
+  };
+  using type = decltype(std::tuple_cat(typename pair_with<Ts>::type{}...));
+};
+
+template <class... Ts>
+using pair_product_t = typename pair_product<Ts...>::type;
+
+using arithmetic_type_pairs = pair_product_t<float, double, int32_t, int64_t>;
+
 using arithmetic_and_matrix_type_pairs = decltype(
     std::tuple_cat(std::declval<arithmetic_type_pairs>(),
                    std::tuple<std::pair<Eigen::Vector3d, Eigen::Vector3d>>()));

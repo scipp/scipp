@@ -863,6 +863,13 @@ auto apply_with_broadcast(const Op &op, const DataConstProxy &a, const B &b) {
   return res;
 }
 
+[[nodiscard]] bool containsSparse(const DatasetConstProxy &ds) noexcept {
+  for (const auto &item : ds)
+    if (item.second.dims().sparse())
+      return true;
+  return false;
+}
+
 Dataset &Dataset::operator+=(const DataConstProxy &other) {
   return apply_with_delay(operator_detail::plus_equals{}, *this, other);
 }
@@ -1201,6 +1208,45 @@ Dataset histogram(const Dataset &dataset, const Dim &dim) {
 Dataset merge(const DatasetConstProxy &a, const DatasetConstProxy &b) {
   return Dataset(union_(a, b), union_(a.coords(), b.coords()),
                  union_(a.labels(), b.labels()), union_(a.attrs(), b.attrs()));
+}
+
+template <class DS, class Func>
+Dataset apply_through_dimension(const DS &ds, const Dim dimension, Func func) {
+  if (containsSparse(ds))
+    throw std::logic_error("Can't sum Dataset with sparse data");
+  if (!ds.dimensions().count(dimension))
+    throw std::logic_error("Can't sum Dataset on non existing dimension.");
+  Dataset res;
+  for (auto && [ name, attr ] : ds.attrs())
+    res.setAttr(std::string(name), attr);
+  for (auto && [ dim, coord ] : ds.coords()) {
+    if (dimension != dim)
+      res.setCoord(dim, coord);
+  }
+  for (auto && [ name, label ] : ds.labels()) {
+    if (label.dims().inner() != dimension)
+      res.setLabels(std::string(name), label);
+  }
+  // Currently not supporting sum/mean of dataset if one or more items do not
+  // depend on the input dimension. The definition is ambiguous (return
+  // unchanged, vs. compute sum of broadcast) so it is better to avoid this for
+  // now.
+  for (auto && [ name, item ] : ds) {
+    res.setData(std::string(name), func(item.data(), dimension));
+  }
+  return res;
+}
+
+Dataset sum(const DatasetConstProxy &ds, const Dim dimension) {
+  return apply_through_dimension(
+      ds, dimension,
+      [](const VariableConstProxy &v, const Dim dim) { return sum(v, dim); });
+}
+
+Dataset mean(const DatasetConstProxy &ds, const Dim dimension) {
+  return apply_through_dimension(
+      ds, dimension,
+      [](const VariableConstProxy &v, const Dim dim) { return mean(v, dim); });
 }
 
 DataArray rebin(const DataConstProxy &a, const Dim dim,

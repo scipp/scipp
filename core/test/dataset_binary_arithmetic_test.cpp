@@ -259,52 +259,6 @@ TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_DatasetProxy_coord_mismatch) {
                except::CoordMismatchError);
 }
 
-Dataset make_simple_sparse(std::initializer_list<double> values,
-                           std::string key = "sparse") {
-  Dataset ds;
-  auto var = makeVariable<double>({Dim::X, Dimensions::Sparse});
-  var.sparseValues<double>()[0] = values;
-  ds.setData(key, var);
-  return ds;
-}
-
-Dataset make_sparse_with_coords_and_labels(
-    std::initializer_list<double> values,
-    std::initializer_list<double> coords_and_labels,
-    std::string key = "sparse") {
-  Dataset ds;
-
-  {
-    auto var = makeVariable<double>({Dim::X, Dimensions::Sparse});
-    var.sparseValues<double>()[0] = values;
-    ds.setData(key, var);
-  }
-
-  {
-    auto var = makeVariable<double>({Dim::X, Dimensions::Sparse});
-    var.sparseValues<double>()[0] = coords_and_labels;
-    ds.setSparseCoord(key, var);
-  }
-
-  {
-    auto var = makeVariable<double>({Dim::X, Dimensions::Sparse});
-    var.sparseValues<double>()[0] = coords_and_labels;
-    ds.setSparseLabels(key, "l", var);
-  }
-
-  return ds;
-}
-
-Dataset make_sparse_2d(std::initializer_list<double> values,
-                       std::string key = "sparse") {
-  Dataset ds;
-  auto var = makeVariable<double>({Dim::X, Dim::Y}, {2, Dimensions::Sparse});
-  var.sparseValues<double>()[0] = values;
-  var.sparseValues<double>()[1] = values;
-  ds.setData(key, var);
-  return ds;
-}
-
 TYPED_TEST(DatasetBinaryEqualsOpTest, coord_only_sparse_fails) {
   auto var = makeVariable<double>({Dim::X, Dim::Y}, {2, Dimensions::Sparse});
   Dataset d;

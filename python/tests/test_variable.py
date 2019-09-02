@@ -497,3 +497,10 @@ def test_set_variance_convert_dtype():
 
     assert var.variances is not None
     assert var == expected
+
+
+def test_sum_mean():
+    var = sp.Variable([Dim.X], values=np.ones(5).astype(np.int64))
+    assert sp.sum(var, Dim.X) == sp.Variable(5)
+    var = sp.Variable([Dim.X], values=np.arange(6).astype(np.int64))
+    assert sp.mean(var, Dim.X) == sp.Variable(2.5)

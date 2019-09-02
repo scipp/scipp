@@ -57,6 +57,10 @@ constexpr DType dtype<sparse_container<int32_t>> = DType::SparseInt32;
 template <> constexpr DType dtype<Dataset> = DType::Dataset;
 template <> constexpr DType dtype<Eigen::Vector3d> = DType::EigenVector3d;
 
+bool isInt(DType tp);
+bool isFloatingPoint(DType tp);
+bool isBool(DType tp);
+
 } // namespace scipp::core
 
 #endif // DTYPE_H

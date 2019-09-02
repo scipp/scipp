@@ -48,6 +48,19 @@ auto optionalVariancesView(T &concept, Args &&... args) {
              : std::nullopt;
 }
 
+template <class T> class DataModel;
+
+template <class T>
+VariableConceptHandle
+VariableConceptT<T>::makeDefaultFromParent(const Dimensions &dims) const {
+  using TT = Vector<std::decay_t<T>>;
+  if (hasVariances())
+    return std::make_unique<DataModel<TT>>(dims, TT(dims.volume()),
+                                           TT(dims.volume()));
+  else
+    return std::make_unique<DataModel<TT>>(dims, TT(dims.volume()));
+}
+
 template <class T> VariableConceptHandle VariableConceptT<T>::makeView() const {
   auto &dims = this->dims();
   return std::make_unique<ViewModel<decltype(valuesView(dims))>>(
@@ -344,14 +357,6 @@ public:
     return std::make_unique<DataModel<T>>(this->dims(), m_values, m_variances);
   }
 
-  VariableConceptHandle clone(const Dimensions &dims) const override {
-    if (hasVariances())
-      return std::make_unique<DataModel<T>>(dims, T(dims.volume()),
-                                            T(dims.volume()));
-    else
-      return std::make_unique<DataModel<T>>(dims, T(dims.volume()));
-  }
-
   bool isContiguous() const override { return true; }
   bool isView() const override { return false; }
   bool isConstView() const override { return false; }
@@ -561,10 +566,6 @@ public:
 
   VariableConceptHandle clone() const override {
     return std::make_unique<ViewModel<T>>(this->dims(), m_values, m_variances);
-  }
-
-  VariableConceptHandle clone(const Dimensions &) const override {
-    throw std::runtime_error("Cannot resize view.");
   }
 
   bool isContiguous() const override {

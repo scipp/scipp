@@ -9,7 +9,9 @@
 #include "scipp/core/apply.h"
 #include "scipp/core/counts.h"
 #include "scipp/core/dataset.h"
+#include "scipp/core/dtype.h"
 #include "scipp/core/except.h"
+#include "scipp/core/tag_util.h"
 #include "scipp/core/transform.h"
 #include "scipp/core/variable.h"
 #include "scipp/core/variable.tcc"
@@ -33,10 +35,12 @@ Variable::Variable(const VariableConstProxy &slice)
 }
 
 Variable::Variable(const Variable &parent, const Dimensions &dims)
-    : m_unit(parent.unit()), m_object(parent.m_object->clone(dims)) {}
+    : m_unit(parent.unit()),
+      m_object(parent.m_object->makeDefaultFromParent(dims)) {}
 
 Variable::Variable(const VariableConstProxy &parent, const Dimensions &dims)
-    : m_unit(parent.unit()), m_object(parent.data().clone(dims)) {}
+    : m_unit(parent.unit()),
+      m_object(parent.data().makeDefaultFromParent(dims)) {}
 
 Variable::Variable(const Variable &parent, VariableConceptHandle data)
     : m_unit(parent.unit()), m_object(std::move(data)) {}
@@ -47,7 +51,7 @@ void Variable::setDims(const Dimensions &dimensions) {
       data().m_dimensions = dimensions;
     return;
   }
-  m_object = m_object->clone(dimensions);
+  m_object = m_object->makeDefaultFromParent(dimensions);
 }
 INSTANTIATE_VARIABLE(std::string)
 INSTANTIATE_VARIABLE(double)
@@ -306,19 +310,39 @@ Variable filter(const Variable &var, const Variable &filter) {
   return out;
 }
 
-Variable sum(const Variable &var, const Dim dim) {
+Variable sum(const VariableConstProxy &var, const Dim dim) {
+  expect::notSparse(var);
   auto dims = var.dims();
   dims.erase(dim);
   Variable summed(var, dims);
-  accumulate_in_place<pair_self_t<double, float, int64_t, Eigen::Vector3d>>(
+  accumulate_in_place<
+      pair_self_t<double, float, int64_t, int32_t, Eigen::Vector3d>>(
       summed, var, [](auto &&a, auto &&b) { a += b; });
   return summed;
 }
 
-Variable mean(const Variable &var, const Dim dim) {
+struct multiply_variance {
+  template <class T>
+  scipp::core::detail::ValueAndVariance<T>
+  operator()(const scipp::core::detail::ValueAndVariance<T> &vv) const {
+    return {vv.value, vv.variance * multiplier};
+  }
+  double multiplier;
+};
+
+Variable mean(const VariableConstProxy &var, const Dim dim) {
+  // In principle we *could* support mean/sum over sparse dimension.
+  expect::notSparse(var);
   auto summed = sum(var, dim);
   double scale = 1.0 / static_cast<double>(var.dims()[dim]);
-  return summed * makeVariable<double>(scale);
+  if (isInt(var.dtype()))
+    summed = summed * makeVariable<double>(scale);
+  else
+    summed *= makeVariable<double>(scale);
+  if (summed.hasVariances())
+    transform_in_place<double, float>(
+        summed, overloaded{multiply_variance{scale}, [](const auto &) {}});
+  return summed;
 }
 
 Variable abs(const Variable &var) {

@@ -22,6 +22,7 @@ set(SRC_FILES
     data_array.cpp
     dataset.cpp
     dimensions.cpp
+    dtype.cpp
     except.cpp
     rebin.cpp
     slice.cpp

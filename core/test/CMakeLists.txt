@@ -16,6 +16,7 @@ add_executable(${TARGET_NAME}
                dimensions_test.cpp
                except_test.cpp
                histogram_test.cpp
+               mean_test.cpp
                merge_test.cpp
                rebin_test.cpp
                slice_test.cpp
