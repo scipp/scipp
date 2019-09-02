@@ -302,9 +302,9 @@ void init_variable(py::module &m) {
         py::call_guard<py::gil_scoped_release>());
   m.def("mean", py::overload_cast<const VariableConstProxy &, const Dim>(&mean),
         py::call_guard<py::gil_scoped_release>(), R"(
-        Element-wise mean over the specified dimension.
+        Element-wise mean over the specified dimension, if variances are present, the new variance is computated as standard-deviation of the mean.
 
-        :raises: If the dtype cannot be summed, e.g., if it is a string
+        :raises: If the dimension does not exist, or the dtype cannot be summed, e.g., if it is a string
         :seealso: :py:class:`scipp.sum`
         :return: New variable containing the mean.
         :rtype: Variable)");
@@ -328,11 +328,12 @@ void init_variable(py::module &m) {
         :raises: If the dtype has no square-root, e.g., if it is a string
         :return: Copy of the input with values replaced by the square-root.
         :rtype: Variable)");
+
   m.def("sum", py::overload_cast<const VariableConstProxy &, const Dim>(&sum),
         py::call_guard<py::gil_scoped_release>(), R"(
         Element-wise sum over the specified dimension.
 
-        :raises: If the dtype cannot be summed, e.g., if it is a string
+        :raises: If the dimension does not exist, or if the dtype cannot be summed, e.g., if it is a string
         :seealso: :py:class:`scipp.mean`
         :return: New variable containing the sum.
         :rtype: Variable)");

@@ -238,27 +238,24 @@ void init_dataset(py::module &m) {
         :return: A new dataset that contains the union of all data items, coords, labels, and attributes.
         :rtype: Dataset)");
 
-  m.def("sum",
-        [](const DatasetConstProxy &self, const Dim &dim) {
-          return sum(self, dim);
-        },
+  m.def("sum", py::overload_cast<const DatasetConstProxy &, const Dim>(&sum),
         py::call_guard<py::gil_scoped_release>(), R"(
-        Sum all variables through given dimension.
+        Element-wise sum over the specified dimension.
 
-        :raises: If given dim is sparse dim or not existing one, sum is not valid for type.
-        :return: A new dataset that cotains the sums through given dimension.
+        :raises: If the dimension does not exist, or if the dtype cannot be summed, e.g., if it is a string
+        :seealso: :py:class:`scipp.mean`
+        :return: New dataset containing the sum for each data item.
         :rtype: Dataset)");
 
-  m.def("mean",
-        [](const DatasetConstProxy &self, const Dim &dim) {
-          return mean(self, dim);
-        },
+  m.def("mean", py::overload_cast<const DatasetConstProxy &, const Dim>(&mean),
         py::call_guard<py::gil_scoped_release>(), R"(
-        Calculate mean for all variables through given dimension.
+        Element-wise mean over the specified dimension, if variances are present, the new variance is computated as standard-deviation of the mean.
 
-        :raises: If given dim is sparse dim or not existing one, sum is not valid for type.
-        :return: A new dataset that cotains the mean values through given dimension.
+        :raises: If the dimension does not exist, or if the dtype cannot be summed, e.g., if it is a string
+        :seealso: :py:class:`scipp.mean`
+        :return: New dataset containing the mean for each data item.
         :rtype: Dataset)");
+
   m.def("rebin",
         py::overload_cast<const DataConstProxy &, const Dim,
                           const VariableConstProxy &>(&rebin),
