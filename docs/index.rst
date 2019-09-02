@@ -26,6 +26,7 @@ Documentation
    getting-started/overview
    getting-started/faq
    getting-started/installation
+   getting-started/quick-start
 
 .. toctree::
    :caption: User Guide
@@ -33,7 +34,7 @@ Documentation
 
    user-guide/data-structures
    user-guide/slicing
-   user-guide/operations
+   user-guide/computation
    user-guide/sparse-data
    user-guide/units
    user-guide/dtype

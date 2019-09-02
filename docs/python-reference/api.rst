@@ -35,6 +35,7 @@ General
    merge
    norm
    rebin
+   reshape
    sqrt
    sum
 

@@ -10,10 +10,12 @@ DataArray::DataArray(const DataConstProxy &proxy) {
   m_holder.setData(proxy.name(), proxy);
 }
 
-DataArray::DataArray(Variable data, std::map<Dim, Variable> coords,
+DataArray::DataArray(std::optional<Variable> data,
+                     std::map<Dim, Variable> coords,
                      std::map<std::string, Variable> labels,
                      std::map<std::string, Variable> attrs) {
-  m_holder.setData("", std::move(data));
+  if (data)
+    m_holder.setData("", std::move(*data));
   for (auto & [ dim, c ] : coords)
     if (c.dims().sparse())
       m_holder.setSparseCoord("", std::move(c));
@@ -29,6 +31,51 @@ DataArray::DataArray(Variable data, std::map<Dim, Variable> coords,
 }
 
 DataArray::operator DataConstProxy() const { return get(); }
+DataArray::operator DataProxy() { return get(); }
+
+DataArray &DataArray::operator+=(const DataConstProxy &other) {
+  expect::coordsAndLabelsAreSuperset(*this, other);
+  data() += other.data();
+  return *this;
+}
+
+DataArray &DataArray::operator-=(const DataConstProxy &other) {
+  expect::coordsAndLabelsAreSuperset(*this, other);
+  data() -= other.data();
+  return *this;
+}
+
+DataArray &DataArray::operator*=(const DataConstProxy &other) {
+  expect::coordsAndLabelsAreSuperset(*this, other);
+  data() *= other.data();
+  return *this;
+}
+
+DataArray &DataArray::operator/=(const DataConstProxy &other) {
+  expect::coordsAndLabelsAreSuperset(*this, other);
+  data() /= other.data();
+  return *this;
+}
+
+DataArray &DataArray::operator+=(const Variable &other) {
+  data() += other;
+  return *this;
+}
+
+DataArray &DataArray::operator-=(const Variable &other) {
+  data() -= other;
+  return *this;
+}
+
+DataArray &DataArray::operator*=(const Variable &other) {
+  data() *= other;
+  return *this;
+}
+
+DataArray &DataArray::operator/=(const Variable &other) {
+  data() /= other;
+  return *this;
+}
 
 DataArray operator+(const DataConstProxy &a, const DataConstProxy &b) {
   return DataArray(a.data() + b.data(), union_(a.coords(), b.coords()),
