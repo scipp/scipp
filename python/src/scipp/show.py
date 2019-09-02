@@ -108,9 +108,9 @@ class VariableDrawer():
         if self._variable.variances is not None:
             extra_item_count += 1
         if is_data_array(self._variable):
-            if self._variable.sparse:
+            if self._variable.sparse_dim is not None:
                 for name, label in self._variable.labels:
-                    if label.sparse:
+                    if label.sparse_dim is not None:
                         extra_item_count += 1
                 sparse_dim = self._variable.sparse_dim
                 for dim, coord in self._variable.coords:
@@ -227,9 +227,9 @@ class VariableDrawer():
         if self._variable.values is not None:
             items.append(('values', self._variable.values, color))
         if is_data_array(self._variable):
-            if self._variable.sparse:
+            if self._variable.sparse_dim is not None:
                 for name, label in self._variable.labels:
-                    if label.sparse:
+                    if label.sparse_dim is not None:
                         items.append((name, label.values, _colors['labels']))
                 sparse_dim = self._variable.sparse_dim
                 for dim, coord in self._variable.coords:
@@ -343,7 +343,7 @@ class DatasetDrawer():
                     area_xy.append(item)
 
         for dim, coord in dataset.coords:
-            if coord.sparse:
+            if coord.sparse_dim is not None:
                 continue
             item = (dim, coord, _colors['coord'])
             if dim == dims[-1]:
@@ -354,7 +354,7 @@ class DatasetDrawer():
                 area_z.append(item)
 
         for name, labels in dataset.labels:
-            if labels.sparse:
+            if labels.sparse_dim is not None:
                 continue
             dim = labels.dims[-1]
             item = (name, labels, _colors['labels'])
@@ -366,7 +366,7 @@ class DatasetDrawer():
                 area_z.append(item)
 
         for name, attr in dataset.attrs:
-            if attr.sparse:
+            if attr.sparse_dim is not None:
                 continue
             dim = attr.dims[-1]
             item = (name, attr, _colors['attr'])
