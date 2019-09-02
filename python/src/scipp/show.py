@@ -2,8 +2,6 @@
 # Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
 
-from IPython.core.display import display, HTML
-
 import numpy as np
 import scipp as sc
 
@@ -436,6 +434,7 @@ def show(container):
     """
     Produce a graphical representation of a variable or dataset.
     """
+    from IPython.core.display import display, HTML
     if isinstance(container, sc.Variable) or isinstance(
             container, sc.VariableProxy):
         draw = VariableDrawer(container)
