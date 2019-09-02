@@ -7,7 +7,6 @@
 
 #include <Eigen/Dense>
 #include <boost/container/small_vector.hpp>
-#include <typeinfo>
 
 #include "scipp/core/bool.h"
 
