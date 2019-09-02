@@ -44,7 +44,7 @@ class Config:
 config = Config()
 
 
-def plot(input_data, collapse=None, backend=None, **kwargs):
+def plot(input_data, collapse=None, backend=None, color=None, **kwargs):
     """
     Wrapper function to plot any kind of dataset
     """
@@ -60,7 +60,7 @@ def plot(input_data, collapse=None, backend=None, **kwargs):
     # TODO: 0D data is currently ignored -> find a nice way of
     # displaying it?
     tp = type(input_data)
-    if tp is sp.DataProxy:
+    if tp is sp.DataProxy or tp is sp.DataArray:
         ds = sp.Dataset()
         ds[input_data.name] = input_data
         input_data = ds
@@ -88,12 +88,15 @@ def plot(input_data, collapse=None, backend=None, **kwargs):
     color_count = 0
     for key, val in tobeplotted.items():
         if val[0] == 1:
-            color = []
-            for l in val[1].keys():
-                color.append(dispatch_to_backend(get_color=True,
-                                                 backend=backend,
-                                                 index=color_count))
-                color_count += 1
+            if color is None:
+                color = []
+                for l in val[1].keys():
+                    color.append(dispatch_to_backend(get_color=True,
+                                                     backend=backend,
+                                                     index=color_count))
+                    color_count += 1
+            elif not isinstance(color, list):
+                color = [color]
             name = None
         else:
             color = None

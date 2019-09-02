@@ -472,7 +472,7 @@ TEST(Variable, rebin) {
   var.setUnit(units::counts);
   const auto oldEdge = makeVariable<double>({Dim::X, 3}, {1.0, 2.0, 3.0});
   const auto newEdge = makeVariable<double>({Dim::X, 2}, {1.0, 3.0});
-  auto rebinned = rebin(var, oldEdge, newEdge);
+  auto rebinned = rebin(var, Dim::X, oldEdge, newEdge);
   ASSERT_EQ(rebinned.dims().shape().size(), 1);
   ASSERT_EQ(rebinned.dims().volume(), 1);
   ASSERT_EQ(rebinned.values<double>().size(), 1);

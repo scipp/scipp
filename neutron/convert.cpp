@@ -8,6 +8,7 @@
 
 #include "scipp/core/counts.h"
 #include "scipp/core/dataset.h"
+#include "scipp/neutron/beamline.h"
 #include "scipp/neutron/convert.h"
 
 using namespace scipp::core;
@@ -33,12 +34,8 @@ const auto tofToDSpacingPhysicalConstants =
 
 Dataset tofToDSpacing(Dataset &&d) {
   // 1. Compute conversion factor
-  // TODO Is this a good way to store component information?
-  const auto &compPos =
-      d.labels()["component_info"].values<Dataset>()[0]["position"].data();
-  // TODO Need a better mechanism to identify source and sample.
-  const auto &sourcePos = compPos.slice({Dim::Row, 0});
-  const auto &samplePos = compPos.slice({Dim::Row, 1});
+  const auto &sourcePos = source_position(d);
+  const auto &samplePos = sample_position(d);
 
   auto beam = samplePos - sourcePos;
   const auto l1 = norm(beam);

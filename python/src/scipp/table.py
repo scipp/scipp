@@ -5,7 +5,6 @@
 
 import scipp as sc
 from .tools import axis_label
-from IPython.display import display, HTML
 
 
 def value_to_string(val, precision=3):
@@ -94,6 +93,7 @@ def table_from_dataset(dataset, coord_dim=None, is_hist=False, headers=True):
 
 
 def table(dataset):
+    from IPython.display import display, HTML
 
     title = "<h3>{}</h3>".format(
         str(type(dataset)).replace("<class 'scipp._scipp.",

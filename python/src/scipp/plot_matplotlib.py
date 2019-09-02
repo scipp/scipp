@@ -112,6 +112,8 @@ def plot_2d(input_data, name=None, axes=None, contours=False, cb=None,
 
     if input_data.variances is not None and show_variances:
         fig, ax = plt.subplots(1, 2, sharex=True, sharey=True)
+        fig_size = fig.get_size_inches()
+        fig.set_size_inches(fig_size[0]*2, fig_size[1])
         # Append parameters to data dictionary
         data["variances"] = {"cbmin": "min_var", "cbmax": "max_var",
                              "name": "variances"}

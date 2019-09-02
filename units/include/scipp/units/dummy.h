@@ -14,16 +14,25 @@ inline
 #endif
     namespace dummy {
 
-using supported_units = decltype(detail::make_unit(
-    std::make_tuple(m), std::make_tuple(dimensionless, dimensionless / m, s,
-                                        dimensionless / s, m / s)));
-
-using counts_unit = decltype(dimensionless);
-using Unit = Unit_impl<supported_units, counts_unit>;
+class SCIPP_UNITS_EXPORT Unit : public Unit_impl<Unit> {
+public:
+  using Unit_impl<Unit>::Unit_impl;
+};
 
 SCIPP_UNITS_DECLARE_DIMENSIONS(X, Y, Z)
 
 } // namespace dummy
+
+template <> struct supported_units<dummy::Unit> {
+  using type = decltype(detail::make_unit(
+      std::make_tuple(m),
+      std::make_tuple(dimensionless, rad, deg, dimensionless / m, s,
+                      dimensionless / s, m / s)));
+};
+template <> struct counts_unit<dummy::Unit> {
+  using type = decltype(dimensionless);
+};
+
 } // namespace scipp::units
 
 #endif // SCIPP_UNITS_DUMMY_H

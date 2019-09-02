@@ -23,7 +23,9 @@ set(SRC_FILES
     dataset.cpp
     dimensions.cpp
     except.cpp
+    rebin.cpp
     slice.cpp
+    trigonometry.cpp
     variable.cpp
     variable_binary_ops.cpp
     view_index.cpp)

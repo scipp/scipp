@@ -350,6 +350,23 @@ def test_dataset_histogram():
         h["s1"].values, np.array([[1.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0]]))
 
 
+def test_histogram_and_setitem():
+    var = sc.Variable(dims=[Dim.X, Dim.Tof], shape=[2, sc.Dimensions.Sparse])
+    var[Dim.X, 0].values = np.arange(3)
+    var[Dim.X, 0].values.append(42)
+    var[Dim.X, 0].values.extend(np.ones(3))
+    var[Dim.X, 1].values = np.ones(6)
+    ds = sc.Dataset()
+    ds["s"] = sc.DataArray(coords={Dim.Tof: var})
+    assert Dim.Tof not in ds.coords
+    assert Dim.Tof in ds["s"].coords
+    edges = sc.Variable([sc.Dim.Tof], values=np.arange(5.0), unit=sc.units.us)
+    ds["h"] = sc.histogram(ds["s"], edges)
+    assert np.array_equal(
+        ds["h"].values, np.array([[1.0, 4.0, 1.0, 0.0], [0.0, 6.0, 0.0, 0.0]]))
+    assert Dim.Tof in ds.coords
+
+
 def test_dataset_merge():
     a = sc.Dataset({'d1': sc.Variable([Dim.X], values=np.array([1, 2, 3]))})
     b = sc.Dataset({'d2': sc.Variable([Dim.X], values=np.array([4, 5, 6]))})
@@ -442,6 +459,19 @@ def test_binary_with_broadcast():
     d2 = d - d[Dim.X, 0]
     d -= d[Dim.X, 0]
     assert d == d2
+
+
+def test_binary_of_item_with_variable():
+    d = sc.Dataset(
+        {'data': sc.Variable([Dim.X], values=np.arange(10.0))},
+        coords={Dim.X: sc.Variable([Dim.X], values=np.arange(10.0))})
+    copy = d.copy()
+
+    d['data'] += 2.0 * sc.units.dimensionless
+    d['data'] *= 2.0 * sc.units.m
+    d['data'] -= 4.0 * sc.units.m
+    d['data'] /= 2.0 * sc.units.m
+    assert d == copy
 
 
 def test_add_sum_of_columns():

@@ -174,6 +174,7 @@ void SCIPP_CORE_EXPORT validSlice(
 void SCIPP_CORE_EXPORT coordsAndLabelsAreSuperset(const DataConstProxy &a,
                                                   const DataConstProxy &b);
 void SCIPP_CORE_EXPORT notSparse(const Dimensions &dims);
+template <class T> void notSparse(const T &object) { notSparse(object.dims()); }
 void SCIPP_CORE_EXPORT validDim(const Dim dim);
 void SCIPP_CORE_EXPORT validExtent(const scipp::index size);
 

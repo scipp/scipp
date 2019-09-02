@@ -16,3 +16,4 @@ dependencies:
   - scipp
   - matplotlib
   - plotly
+  - ipywidgets

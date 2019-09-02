@@ -14,7 +14,7 @@ namespace py = pybind11;
 void init_units_neutron(py::module &m) {
   bind_enum(m, "Dim", Dim::Invalid, 4);
 
-  py::class_<units::Unit>(m, "Unit")
+  py::class_<units::Unit>(m, "Unit", "A physical unit.")
       .def(py::init())
       .def("__repr__",
            [](const units::Unit &u) -> std::string { return u.name(); })
@@ -66,4 +66,6 @@ void init_units_neutron(py::module &m) {
   units.attr("angstrom") = units::Unit(units::angstrom);
   units.attr("meV") = units::Unit(units::meV);
   units.attr("us") = units::Unit(units::us);
+  units.attr("rad") = units::Unit(units::rad);
+  units.attr("deg") = units::Unit(units::deg);
 }

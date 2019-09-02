@@ -3,8 +3,7 @@
 set(TARGET_NAME "scipp-neutron")
 set(INC_FILES include/scipp/neutron/convert.h)
 
-set(SRC_FILES convert.cpp
-  )
+set(SRC_FILES beamline.cpp convert.cpp)
 
 set(LINK_TYPE "STATIC")
 if(DYNAMIC_LIB)
@@ -27,5 +26,5 @@ set_target_properties(${TARGET_NAME} PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 add_subdirectory(test)
 
 if(DYNAMIC_LIB)
-    install(TARGETS ${TARGET_NAME} DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
+  install(TARGETS ${TARGET_NAME} DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
 endif(DYNAMIC_LIB)

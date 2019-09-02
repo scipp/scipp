@@ -20,6 +20,9 @@ Free functions
 
 See also :ref:`scipp-neutron` for functions specific to handling neutron-scattering data.
 
+General
+~~~~~~~
+
 .. autosummary::
    :toctree: ../generated
 
@@ -32,8 +35,22 @@ See also :ref:`scipp-neutron` for functions specific to handling neutron-scatter
    merge
    norm
    rebin
+   reshape
    sqrt
    sum
+
+Trigonometric
+~~~~~~~~~~~~~
+
+.. autosummary::
+   :toctree: ../generated
+
+   sin
+   cos
+   tan
+   asin
+   acos
+   atan
 
 Data types
 ==========
