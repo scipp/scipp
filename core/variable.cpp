@@ -324,32 +324,22 @@ struct multiply_variance {
   template <class T>
   scipp::core::detail::ValueAndVariance<T>
   operator()(const scipp::core::detail::ValueAndVariance<T> &vv) const {
-    auto res{vv};
-    res.variance *= multiplier;
-    return res;
+    return {vv.value, vv.variance * multiplier};
   }
   double multiplier;
 };
 
-template <class T1> struct MakeVariableFromValue {
-  template <class T2> struct MakeVariable {
-    static Variable apply(T1 value) { return makeVariable<T2>(value); }
-  };
-};
-
 Variable mean(const VariableConstProxy &var, const Dim dim) {
   auto summed = sum(var, dim);
-  auto tp = var.dtype();
   double scale = 1.0 / static_cast<double>(var.dims()[dim]);
-  auto res = (isInt(tp) || isBool(tp))
-                 ? summed * makeVariable<double>(scale)
-                 : summed * CallDType<double, float>::apply<
-                                MakeVariableFromValue<double>::MakeVariable>(
-                                tp, scale);
-  if (res.hasVariances())
+  if (isInt(var.dtype()))
+    summed = summed * makeVariable<double>(scale);
+  else
+    summed *= makeVariable<double>(scale);
+  if (summed.hasVariances())
     transform_in_place<double, float>(
-        res, overloaded{multiply_variance{scale}, [](const auto &) {}});
-  return res;
+        summed, overloaded{multiply_variance{scale}, [](const auto &) {}});
+  return summed;
 }
 
 Variable abs(const Variable &var) {

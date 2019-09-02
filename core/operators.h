@@ -42,7 +42,8 @@ struct times_equals {
   }
   using types = decltype(
       std::tuple_cat(pair_self_t<double, float, int64_t>{},
-                     pair_custom_t<std::pair<Eigen::Vector3d, double>>{}));
+                     pair_custom_t<std::pair<float, double>,
+                                   std::pair<Eigen::Vector3d, double>>{}));
 };
 struct divide_equals {
   template <class A, class B>
