@@ -1227,11 +1227,12 @@ Dataset apply_through_dimension(const DS &ds, const Dim dimension, Func func) {
     if (label.dims().inner() != dimension)
       res.setLabels(std::string(name), label);
   }
+  // Currently not supporting sum/mean of dataset if one or more items do not
+  // depend on the input dimension. The definition is ambiguous (return
+  // unchanged, vs. compute sum of broadcast) so it is better to avoid this for
+  // now.
   for (auto && [ name, item ] : ds) {
-    if (!item.data().dims().contains(dimension))
-      res.setData(name, item.data());
-    else
-      res.setData(std::string(name), func(item.data(), dimension));
+    res.setData(std::string(name), func(item.data(), dimension));
   }
   return res;
 }

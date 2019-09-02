@@ -5,7 +5,7 @@
 
 #include "test_macros.h"
 
-#include "scipp/core/dimensions.h"
+#include "scipp/core/dataset.h"
 #include "scipp/core/except.h"
 #include "scipp/core/variable.h"
 
@@ -63,4 +63,13 @@ TEST(MeanTest, variances_as_standard_deviation_of_the_mean) {
                                           {0.5 * 2.0, 0.5 * 3.0});
   EXPECT_EQ(mean(var, Dim::X), meanX);
   EXPECT_EQ(mean(var, Dim::Y), meanY);
+}
+
+TEST(MeanTest, dataset_mean_fails) {
+  Dataset d;
+  d.setData("a", makeVariable<double>({Dim::X, 2}));
+  d.setData("b", makeVariable<double>(1.0));
+  // "b" does not depend on X, so this fails. This could change in the future if
+  // we find a clear definition of the functions behavior in this case.
+  EXPECT_THROW(mean(d, Dim::X), except::DimensionError);
 }
