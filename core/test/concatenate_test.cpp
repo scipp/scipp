@@ -111,18 +111,3 @@ TEST(ConcatenateTest, non_dependant_data_is_stacked) {
   EXPECT_EQ(d["data_1"].data(), makeVariable<int>({{Dim::Y, 2}, {Dim::X, 3}},
                                                   {11, 12, 13, 14, 15, 16}));
 }
-
-TEST(ConcatenateTest, non_dependant_data_is_broadcasted) {
-  Dataset a;
-  a.setCoord(Dim::X, makeVariable<int>({Dim::X, 3}, {1, 2, 3}));
-  a.setData("data_1", makeVariable<int>(1));
-
-  Dataset b;
-  b.setCoord(Dim::X, makeVariable<int>({Dim::X, 2}, {4, 5}));
-  b.setData("data_1", makeVariable<int>(2));
-
-  const auto d = concatenate(a, b, Dim::X);
-
-  EXPECT_EQ(d["data_1"].data(),
-            makeVariable<int>({{Dim::X, 5}}, {1, 1, 1, 2, 2}));
-}

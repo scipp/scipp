@@ -521,13 +521,6 @@ AttrsConstProxy DataConstProxy::attrs() const noexcept {
       makeProxyItems<std::string>(dims(), m_dataset->m_attrs), slices());
 }
 
-/// Determine if this data is a histogram along a given depenant dimension
-bool DataConstProxy::isHistogram(const Dim dim) const {
-  const auto axisSize = m_dataset->coords()[dim].dims()[dim];
-  const auto dataSize = m_data->second.data->dims()[dim];
-  return axisSize - 1 == dataSize;
-}
-
 /// Return a proxy to all coordinates of the data proxy.
 ///
 /// If the data has a sparse dimension the returned proxy will not contain any
@@ -1228,61 +1221,48 @@ Variable join_edges(const VariableConstProxy &a, const VariableConstProxy &b,
   return concatenate(a.slice({dim, 0, a.dims()[dim] - 1}), b, dim);
 }
 
+/// Return the dimension for given coord or labels.
+///
+/// For coords, this is the same as the key, for labels we adopt the convention
+/// that labels are "labelling" their inner dimension.
+template <class T, class Key>
+Dim dim_of_coord_or_labels(const T &dict, const Key &key) {
+  if constexpr (std::is_same_v<Key, Dim>)
+    return key;
+  else
+    return dict[key].dims().inner();
+}
+
+namespace {
+template <class T1, class T2>
+auto concat(const T1 &a, const T2 &b, const Dim dim, const Dimensions &dimsA,
+            const Dimensions &dimsB) {
+  std::map<typename T1::key_type, typename T1::mapped_type> out;
+  for (const auto & [ key, item ] : a) {
+    if (dim_of_coord_or_labels(a, key) == dim) {
+      if ((item.dims()[dim] == dimsA[dim]) !=
+          (b[key].dims()[dim] == dimsB[dim]))
+        throw except::BinEdgeError(
+            "Either both or neither of the inputs must be bin edges.");
+      if (item.dims()[dim] == dimsA[dim])
+        out.emplace(key, concatenate(item, b[key], dim));
+      else
+        out.emplace(key, join_edges(item, b[key], dim));
+    } else {
+      out.emplace(key, same(item, b[key]));
+    }
+  }
+  return out;
+}
+} // namespace
+
 DataArray concatenate(const DataConstProxy &a, const DataConstProxy &b,
                       const Dim dim) {
   if (a == b)
     return DataArray{a};
-
-  if (a.isHistogram(dim) != b.isHistogram(dim))
-    throw except::BinEdgeError(
-        "Either both or neither of the inputs must be histograms.");
-
-  std::map<Dim, Variable> coords;
-  for (const auto & [ key, item ] : a.coords()) {
-    if (key == dim) {
-      if (a.isHistogram(dim)) {
-        coords.emplace(key, join_edges(item, b.coords()[key], dim));
-      } else {
-        coords.emplace(key, concatenate(item, b.coords()[key], dim));
-      }
-    } else {
-      coords.emplace(key, same(item, b.coords()[key]));
-    }
-  }
-
-  std::map<std::string, Variable> labels;
-  for (const auto & [ key, item ] : a.labels()) {
-    if (item.dims().inner() == dim) {
-      if (a.isHistogram(dim)) {
-        labels.emplace(key, join_edges(item, b.labels()[key], dim));
-      } else {
-        labels.emplace(key, concatenate(item, b.labels()[key], dim));
-      }
-    } else {
-      labels.emplace(key, same(item, b.labels()[key]));
-    }
-  }
-
-  return DataArray(concatenate(a.data(), b.data(), dim), std::move(coords),
-                   std::move(labels));
-#if 0
-        if (a.dimensions().find(dim) != a.dimensions().end()) {
-          /* Dataset contains concatenation dimension but variable does not */
-          /* Broadcast before concatenation */
-          auto broadcastDimensionsForA = a.dims();
-          broadcastDimensionsForA.add(dim, a.dimensions()[dim]);
-
-          auto broadcastDimensionsForB = b.dims();
-          if (b.dimensions().find(dim) != b.dimensions().end() &&
-              !b[name].dims().contains(dim)) {
-            broadcastDimensionsForB.add(dim, b.dimensions()[dim]);
-          }
-
-          result.setData(
-              name,
-              concatenate(broadcast(a.data(), broadcastDimensionsForA),
-                          broadcast(b.data(), broadcastDimensionsForB), dim));
-#endif
+  return DataArray(concatenate(a.data(), b.data(), dim),
+                   concat(a.coords(), b.coords(), dim, a.dims(), b.dims()),
+                   concat(a.labels(), b.labels(), dim, a.dims(), b.dims()));
 }
 
 Dataset concatenate(const DatasetConstProxy &a, const DatasetConstProxy &b,
