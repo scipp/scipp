@@ -1218,26 +1218,30 @@ Dataset merge(const DatasetConstProxy &a, const DatasetConstProxy &b) {
                  union_(a.labels(), b.labels()), union_(a.attrs(), b.attrs()));
 }
 
+/// Concatenate a and b, assuming that a and b contain bin edges.
+///
+/// Checks that the last edges in `a` match the first edges in `b`. The
+/// Concatenates the input edges, removing duplicate bin edges.
+Variable join_edges(const VariableConstProxy &a, const VariableConstProxy &b,
+                    const Dim dim) {
+  expect::equals(a.slice({dim, a.dims()[dim] - 1}), b.slice({dim, 0}));
+  return concatenate(a.slice({dim, 0, a.dims()[dim] - 1}), b, dim);
+}
+
 DataArray concatenate(const DataConstProxy &a, const DataConstProxy &b,
                       const Dim dim) {
   if (a == b)
     return DataArray{a};
 
+  if (a.isHistogram(dim) != b.isHistogram(dim))
+    throw except::BinEdgeError(
+        "Either both or neither of the inputs must be histograms.");
+
   std::map<Dim, Variable> coords;
   for (const auto & [ key, item ] : a.coords()) {
     if (key == dim) {
       if (a.isHistogram(dim)) {
-        if (!b.isHistogram(dim))
-          throw std::runtime_error(
-              "Expected items to both be histograms or neither be histograms");
-
-        // Check that the last edges of `a` match the first edges of `b`.
-        expect::equals(item.slice({dim, a.dims()[dim]}),
-                       b.coords()[dim].slice({dim, 0}));
-
-        // Concatenate the bin-edge coordinate, removing duplicate bin edges.
-        coords.emplace(key, concatenate(item.slice({dim, 0, a.dims()[dim]}),
-                                        b.coords()[key], dim));
+        coords.emplace(key, join_edges(item, b.coords()[key], dim));
       } else {
         coords.emplace(key, concatenate(item, b.coords()[key], dim));
       }
@@ -1248,10 +1252,15 @@ DataArray concatenate(const DataConstProxy &a, const DataConstProxy &b,
 
   std::map<std::string, Variable> labels;
   for (const auto & [ key, item ] : a.labels()) {
-    if (item.dims().inner() == dim)
-      labels.emplace(key, concatenate(item, b.labels()[key], dim));
-    else
+    if (item.dims().inner() == dim) {
+      if (a.isHistogram(dim)) {
+        labels.emplace(key, join_edges(item, b.labels()[key], dim));
+      } else {
+        labels.emplace(key, concatenate(item, b.labels()[key], dim));
+      }
+    } else {
       labels.emplace(key, same(item, b.labels()[key]));
+    }
   }
 
   return DataArray(concatenate(a.data(), b.data(), dim), std::move(coords),
