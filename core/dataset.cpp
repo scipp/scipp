@@ -1218,58 +1218,52 @@ Dataset merge(const DatasetConstProxy &a, const DatasetConstProxy &b) {
                  union_(a.labels(), b.labels()), union_(a.attrs(), b.attrs()));
 }
 
-Dataset concatenate(const DatasetConstProxy &a, const DatasetConstProxy &b,
-                    const Dim dim) {
-  Dataset result;
+DataArray concatenate(const DataConstProxy &a, const DataConstProxy &b,
+                      const Dim dim) {
+  if (a == b)
+    return DataArray{a};
 
-  for (const auto & [ name, item ] : a) {
-    /* Skip data items that are not common to both datasets */
-    if (!b.contains(name))
-      continue;
+  std::map<Dim, Variable> coords;
+  for (const auto & [ key, item ] : a.coords()) {
+    if (key == dim) {
+      if (a.isHistogram(dim)) {
+        if (!b.isHistogram(dim))
+          throw std::runtime_error(
+              "Expected items to both be histograms or neither be histograms");
 
-    /* Check if both data items depend on the concatenation dimension */
-    if (item.dims().contains(dim) && b[name].dims().contains(dim)) {
-      /* Determine if the data items are both histograms */
-      const bool isHistogram = item.isHistogram(dim);
-      if (isHistogram != b[name].isHistogram(dim)) {
-        throw std::runtime_error(
-            "Expected items to both be histograms or neither be histograms");
-      }
+        // Check that the last edges of `a` match the first edges of `b`.
+        expect::equals(item.slice({dim, a.dims()[dim]}),
+                       b.coords()[dim].slice({dim, 0}));
 
-      if (isHistogram) {
-        const auto axisA = a.coords()[dim];
-        const auto axisB = b.coords()[dim];
-
-        /* Check that the edge of the last bin of the first data item match the
-         * edge of the first bin of the second data item */
-        expect::equals(axisA.slice({dim, axisA.dims()[dim] - 1}),
-                       axisB.slice({dim, 0}));
-
-        /* Concatenate the binned coordinate, removing the duplicated bin edge
-         */
-        result.setCoord(
-            dim, concatenate(axisA,
-                             axisB.slice({dim, 1, b.coords()[dim].dims()[dim]}),
-                             dim));
+        // Concatenate the bin-edge coordinate, removing duplicate bin edges.
+        coords.emplace(key, concatenate(item.slice({dim, 0, a.dims()[dim]}),
+                                        b.coords()[key], dim));
       } else {
-        result.setCoord(dim,
-                        concatenate(a.coords()[dim], b.coords()[dim], dim));
+        coords.emplace(key, concatenate(item, b.coords()[key], dim));
       }
-
-      result.setData(std::string(name),
-                     concatenate(item.data(), b[name].data(), dim));
     } else {
-      if (item == b[name]) {
-        /* Simply copy the data if it is identical in both datasets */
-        result.setData(name, item);
-      } else {
+      coords.emplace(key, same(item, b.coords()[key]));
+    }
+  }
+
+  std::map<std::string, Variable> labels;
+  for (const auto & [ key, item ] : a.labels()) {
+    if (item.dims().inner() == dim)
+      labels.emplace(key, concatenate(item, b.labels()[key], dim));
+    else
+      labels.emplace(key, same(item, b.labels()[key]));
+  }
+
+  return DataArray(concatenate(a.data(), b.data(), dim), std::move(coords),
+                   std::move(labels));
+#if 0
         if (a.dimensions().find(dim) != a.dimensions().end()) {
           /* Dataset contains concatenation dimension but variable does not */
           /* Broadcast before concatenation */
-          auto broadcastDimensionsForA = item.dims();
+          auto broadcastDimensionsForA = a.dims();
           broadcastDimensionsForA.add(dim, a.dimensions()[dim]);
 
-          auto broadcastDimensionsForB = b[name].dims();
+          auto broadcastDimensionsForB = b.dims();
           if (b.dimensions().find(dim) != b.dimensions().end() &&
               !b[name].dims().contains(dim)) {
             broadcastDimensionsForB.add(dim, b.dimensions()[dim]);
@@ -1277,18 +1271,17 @@ Dataset concatenate(const DatasetConstProxy &a, const DatasetConstProxy &b,
 
           result.setData(
               name,
-              concatenate(broadcast(item.data(), broadcastDimensionsForA),
-                          broadcast(b[name].data(), broadcastDimensionsForB),
-                          dim));
-        } else {
-          /* Dataset does not contain concatenation dimension, insert a new
-           * dimension by concatenating variables */
-          result.setData(name, concatenate(item.data(), b[name].data(), dim));
-        }
-      }
-    }
-  }
+              concatenate(broadcast(a.data(), broadcastDimensionsForA),
+                          broadcast(b.data(), broadcastDimensionsForB), dim));
+#endif
+}
 
+Dataset concatenate(const DatasetConstProxy &a, const DatasetConstProxy &b,
+                    const Dim dim) {
+  Dataset result;
+  for (const auto & [ name, item ] : a)
+    if (b.contains(name))
+      result.setData(name, concatenate(item, b[name], dim));
   return result;
 }
 
@@ -1365,6 +1358,13 @@ Dataset rebin(const DatasetConstProxy &d, const Dim dim,
   for (const auto & [ name, data ] : d)
     rebinned.setData(name, rebin(data, dim, coord));
   return rebinned;
+}
+
+/// Return one of the inputs if they are the same, throw otherwise.
+VariableConstProxy same(const VariableConstProxy &a,
+                        const VariableConstProxy &b) {
+  expect::equals(a, b);
+  return a;
 }
 
 INSTANTIATE_VARIABLE(Dataset)

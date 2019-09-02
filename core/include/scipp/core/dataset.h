@@ -984,14 +984,19 @@ SCIPP_CORE_EXPORT Dataset sum(const DatasetConstProxy &ds, const Dim dimension);
 SCIPP_CORE_EXPORT Dataset mean(const DatasetConstProxy &ds,
                                const Dim dimension);
 
+SCIPP_CORE_EXPORT DataArray concatenate(const DataConstProxy &a,
+                                        const DataConstProxy &b, const Dim dim);
+SCIPP_CORE_EXPORT Dataset concatenate(const DatasetConstProxy &a,
+                                      const DatasetConstProxy &b,
+                                      const Dim dim);
+
 SCIPP_CORE_EXPORT DataArray rebin(const DataConstProxy &a, const Dim dim,
                                   const VariableConstProxy &coord);
 SCIPP_CORE_EXPORT Dataset rebin(const DatasetConstProxy &d, const Dim dim,
                                 const VariableConstProxy &coord);
 
-SCIPP_CORE_EXPORT Dataset concatenate(const DatasetConstProxy &a,
-                                      const DatasetConstProxy &b,
-                                      const Dim dim);
+SCIPP_CORE_EXPORT VariableConstProxy same(const VariableConstProxy &a,
+                                          const VariableConstProxy &b);
 
 } // namespace scipp::core
 
