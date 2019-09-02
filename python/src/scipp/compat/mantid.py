@@ -76,7 +76,7 @@ def ConvertWorkspace2DToDataset(ws):
                                 "component_info": comp_info})
 
 
-def ConvertEventWorkspaceToDataset(ws, load_pulse_times):
+def ConvertEventWorkspaceToDataset(ws, load_pulse_times, EventType):
 
     allowed_units = {"TOF": [sc.Dim.Tof, sc.units.us]}
     xunit = ws.getAxis(0).getUnit().unitID()
@@ -99,23 +99,28 @@ def ConvertEventWorkspaceToDataset(ws, load_pulse_times):
     if load_pulse_times:
         labs = sc.Variable([sc.Dim.Position, dim],
                            shape=[nHist, sc.Dimensions.Sparse])
-    weights = sc.Variable([sc.Dim.Position, dim],
-                          shape=[nHist, sc.Dimensions.Sparse])
-    contains_weighted_events = False
+
+    # Check for weighted events
+    evtp = ws.getSpectrum(0).getEventType()
+    contains_weighted_events = ((evtp == EventType.WEIGHTED) or
+                                (evtp == EventType.WEIGHTED_NOTIME))
+    if contains_weighted_events:
+        weights = sc.Variable([sc.Dim.Position, dim],
+                              shape=[nHist, sc.Dimensions.Sparse])
+
     for i in range(nHist):
-        coords[sc.Dim.Position, i].values = ws.getSpectrum(i).getTofs()
+        sp = ws.getSpectrum(i)
+        coords[sc.Dim.Position, i].values = sp.getTofs()
         if load_pulse_times:
             # Pulse times have a Mantid-specific format so the conversion is
             # very slow.
             # TODO: Find a more efficient way to do this.
-            pt = ws.getSpectrum(i).getPulseTimes()
+            pt = sp.getPulseTimes()
             labs[sc.Dim.Position, i].values = np.asarray([p.total_nanoseconds()
                                                           for p in pt])
-        w = ws.getSpectrum(i).getWeights()
-        weights[sc.Dim.Position, i].values = w
-        if not contains_weighted_events and (len(w) > 0):
-            if np.amax(w) > 1.0:
-                contains_weighted_events = True
+        if contains_weighted_events:
+            weights[sc.Dim.Position, i].values = sp.getWeights()
+            weights[sc.Dim.Position, i].variances = sp.getWeightErrors()
 
     coords_labs_data = {"coords": {dim: coords, sc.Dim.Position: pos},
                         "labels": {"spectrum_number": num,
@@ -134,6 +139,7 @@ def load(filename="", load_pulse_times=True, instrument_filename=None,
     specific code from the scipp interface.
     """
     import mantid.simpleapi as mantid
+    from mantid.api import EventType
     ws = mantid.LoadEventNexus(filename, **kwargs)
     if instrument_filename is not None:
         mantid.LoadInstrument(ws, FileName=instrument_filename,
@@ -141,5 +147,5 @@ def load(filename="", load_pulse_times=True, instrument_filename=None,
     if ws.id() == 'Workspace2D':
         return ConvertWorkspace2DToDataset(ws)
     if ws.id() == 'EventWorkspace':
-        return ConvertEventWorkspaceToDataset(ws, load_pulse_times)
+        return ConvertEventWorkspaceToDataset(ws, load_pulse_times, EventType)
     raise RuntimeError('Unsupported workspace type')
