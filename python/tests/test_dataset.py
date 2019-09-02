@@ -323,7 +323,7 @@ def test_sum_mean():
         {
             'a': sc.Variable([Dim.X, Dim.Y], values=np.arange(6).reshape(2,
                                                                          3)),
-            'b': sc.Variable(1.0)
+            'b': sc.Variable([Dim.Y], values=np.arange(3))
         },
         coords={
             Dim.X: sc.Variable([Dim.X], values=np.arange(2)),
@@ -337,13 +337,14 @@ def test_sum_mean():
     d_ref = sc.Dataset(
         {
             'a': sc.Variable([Dim.X], values=np.array([3, 12])),
-            'b': sc.Variable(1.0)
+            'b': sc.Variable(3)
         },
         coords={Dim.X: sc.Variable([Dim.X], values=np.arange(2))},
         labels={"l2": sc.Variable([Dim.X], values=np.arange(2))})
 
     assert sc.sum(d, Dim.Y) == d_ref
     assert (sc.mean(d, Dim.Y)["a"].values == [1.0, 4.0]).all()
+    assert sc.mean(d, Dim.Y)["b"].value == 1.0
 
 
 def test_variable_histogram():
