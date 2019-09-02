@@ -56,11 +56,11 @@ TEST(MeanTest, dtype_int_gives_double_mean) {
 TEST(MeanTest, variances_as_standard_deviation_of_the_mean) {
   const auto var =
       makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}}, units::m,
-                           {1.0, 2.0, 3.0, 4.0}, {1.0, 2.0, 3.0, 4.0});
+                           {1.0, 2.0, 3.0, 4.0}, {5.0, 6.0, 7.0, 8.0});
   const auto meanX = makeVariable<double>({Dim::Y, 2}, units::m, {1.5, 3.5},
-                                          {0.5 * 1.5, 0.5 * 3.5});
+                                          {0.5 * 5.5, 0.5 * 7.5});
   const auto meanY = makeVariable<double>({Dim::X, 2}, units::m, {2.0, 3.0},
-                                          {0.5 * 2.0, 0.5 * 3.0});
+                                          {0.5 * 6.0, 0.5 * 7.0});
   EXPECT_EQ(mean(var, Dim::X), meanX);
   EXPECT_EQ(mean(var, Dim::Y), meanY);
 }
