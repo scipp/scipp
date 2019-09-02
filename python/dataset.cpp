@@ -100,7 +100,8 @@ void init_dataset(py::module &m) {
   bind_mutable_proxy<LabelsProxy, LabelsConstProxy>(m, "Labels");
   bind_mutable_proxy<AttrsProxy, AttrsConstProxy>(m, "Attrs");
 
-  py::class_<DataArray> dataArray(m, "DataArray");
+  py::class_<DataArray> dataArray(m, "DataArray", R"(
+    Named variable with associated coords, labels, and attributes.)");
   dataArray.def(py::init<const DataConstProxy &>());
   dataArray.def(
       py::init<const std::optional<Variable> &, const std::map<Dim, Variable> &,
@@ -112,7 +113,9 @@ void init_dataset(py::module &m) {
   py::class_<DataConstProxy>(m, "DataConstProxy")
       .def(py::init<const DataArray &>());
 
-  py::class_<DataProxy, DataConstProxy> dataProxy(m, "DataProxy");
+  py::class_<DataProxy, DataConstProxy> dataProxy(m, "DataProxy", R"(
+        Proxy for DataArray, representing a sliced view onto a DataArray, or an item of a Dataset;
+        Mostly equivalent to DataArray, see there for details.)");
   dataProxy.def(py::init<DataArray &>());
   dataProxy.def_property(
       "data",
@@ -130,10 +133,15 @@ void init_dataset(py::module &m) {
 
   py::class_<DatasetConstProxy>(m, "DatasetConstProxy")
       .def(py::init<const Dataset &>());
-  py::class_<DatasetProxy, DatasetConstProxy> datasetProxy(m, "DatasetProxy");
+  py::class_<DatasetProxy, DatasetConstProxy> datasetProxy(m, "DatasetProxy",
+                                                           R"(
+        Proxy for Dataset, representing a sliced view onto a Dataset;
+        Mostly equivalent to Dataset, see there for details.)");
   datasetProxy.def(py::init<Dataset &>());
 
-  py::class_<Dataset> dataset(m, "Dataset");
+  py::class_<Dataset> dataset(m, "Dataset", R"(
+    Dict of data arrays with aligned dimensions.)");
+
   dataset.def(py::init<const std::map<std::string, DataConstProxy> &>())
       .def(py::init<const DataConstProxy &>())
       .def(py::init([](const std::map<std::string, VariableConstProxy> &data,

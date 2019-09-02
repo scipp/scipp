@@ -21,6 +21,7 @@ def make_variables():
 def test_create_default():
     var = sp.Variable()
     assert var.dims == []
+    assert var.sparse_dim is None
     assert var.dtype == sp.dtype.double
     assert var.unit == sp.units.dimensionless
     assert var.value == 0.0
@@ -58,7 +59,7 @@ def test_create_with_shape_and_variances():
 def test_create_sparse():
     var = sp.Variable([sp.Dim.X, sp.Dim.Y], [4, sp.Dimensions.Sparse])
     assert var.dtype == sp.dtype.double
-    assert var.sparse
+    assert var.sparse_dim == sp.Dim.Y
     assert len(var.values) == 4
     for vals in var.values:
         assert len(vals) == 0
