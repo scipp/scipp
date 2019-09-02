@@ -14,6 +14,7 @@ RUN jupyter labextension install @jupyterlab/plotly-extension@0.18.1
 # Install Scipp and dependencies
 RUN conda install --yes \
       -c scipp/label/dev \
+      ipython \
       matplotlib \
       plotly \
       scipp
