@@ -311,6 +311,7 @@ Variable filter(const Variable &var, const Variable &filter) {
 }
 
 Variable sum(const VariableConstProxy &var, const Dim dim) {
+  expect::notSparse(var);
   auto dims = var.dims();
   dims.erase(dim);
   Variable summed(var, dims);
@@ -330,6 +331,8 @@ struct multiply_variance {
 };
 
 Variable mean(const VariableConstProxy &var, const Dim dim) {
+  // In principle we *could* support mean/sum over sparse dimension.
+  expect::notSparse(var);
   auto summed = sum(var, dim);
   double scale = 1.0 / static_cast<double>(var.dims()[dim]);
   if (isInt(var.dtype()))
