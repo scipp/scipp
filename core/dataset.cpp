@@ -8,6 +8,7 @@
 #include "scipp/core/dataset.h"
 #include "scipp/core/except.h"
 #include "scipp/core/transform.h"
+#include "scipp/core/variable.tcc"
 
 namespace scipp::core {
 
@@ -1365,5 +1366,8 @@ Dataset rebin(const DatasetConstProxy &d, const Dim dim,
     rebinned.setData(name, rebin(data, dim, coord));
   return rebinned;
 }
+
+INSTANTIATE_VARIABLE(Dataset)
+INSTANTIATE_VARIABLE(sparse_container<Dataset>)
 
 } // namespace scipp::core

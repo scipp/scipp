@@ -8,7 +8,6 @@
 #include "operators.h"
 #include "scipp/core/apply.h"
 #include "scipp/core/counts.h"
-#include "scipp/core/dataset.h"
 #include "scipp/core/dtype.h"
 #include "scipp/core/except.h"
 #include "scipp/core/tag_util.h"
@@ -62,7 +61,6 @@ INSTANTIATE_VARIABLE(bool)
 #if defined(_WIN32) || defined(__clang__) && defined(__APPLE__)
 INSTANTIATE_VARIABLE(scipp::index)
 #endif
-INSTANTIATE_VARIABLE(Dataset)
 INSTANTIATE_VARIABLE(Eigen::Vector3d)
 INSTANTIATE_VARIABLE(sparse_container<double>)
 INSTANTIATE_VARIABLE(sparse_container<float>)
@@ -73,7 +71,6 @@ INSTANTIATE_VARIABLE(sparse_container<int32_t>)
 // variable.
 INSTANTIATE_VARIABLE(sparse_container<std::string>)
 INSTANTIATE_VARIABLE(sparse_container<Bool>)
-INSTANTIATE_VARIABLE(sparse_container<Dataset>)
 INSTANTIATE_VARIABLE(sparse_container<Eigen::Vector3d>)
 
 INSTANTIATE_SET_VARIANCES(double)
