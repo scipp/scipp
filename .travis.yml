@@ -15,25 +15,30 @@ jobs:
       # Check clang format and flake8 in the first stage
     - stage: "Code formatting"
       name: "Clang-format"
+      if: NOT type = cron
       before_install: .travis/before_install.sh
       script: .travis/check_clang_format.sh
     - name: "Flake8"
+      if: NOT type = cron
       before_install: .travis/before_install.sh
       script: .travis/check_flake8.sh
       # Then start parallel build of gcc and clang in the Test stage
     - stage: "Unit tests"
       compiler: gcc
       name: "gcc"
+      if: NOT type = cron
       before_install: .travis/before_install.sh
       install: .travis/install_linux_toolchain.sh
       script: .travis/run_tests.sh
     - compiler: clang
       name: "clang"
+      if: NOT type = cron
       before_install: .travis/before_install.sh
       install: .travis/install_linux_toolchain.sh
       script: .travis/run_tests.sh
     - os: osx
       name: "apple clang"
+      if: NOT type = cron
       osx_image: xcode10.2
       before_install: brew install ccache
       env:
@@ -41,7 +46,7 @@ jobs:
       script: .travis/run_tests.sh
     - stage: "Deploy"
       name: "conda linux"
-      if: branch = master AND NOT type = pull_request
+      if: NOT type = cron AND branch = master AND NOT type = pull_request
       git:
         depth: false
       env:
@@ -54,7 +59,7 @@ jobs:
     - os: osx
       osx_image: xcode10.2
       name: "conda osx"
-      if: branch = master AND NOT type = pull_request
+      if: NOT type = cron AND branch = master AND NOT type = pull_request
       git:
         depth: false
       env:
@@ -65,3 +70,12 @@ jobs:
       install:
         - .travis/install_conda.sh "Miniconda3-latest-MacOSX-x86_64.sh"
       script: .travis/conda_build_and_deploy.sh
+    - name: "conda linux python3.6"
+      if: type = cron AND branch = master
+      git:
+        depth: false
+      env:
+        - PATH="$HOME/miniconda/bin:$PATH"
+      install: .travis/install_conda.sh "Miniconda3-latest-Linux-x86_64.sh"
+      script:
+        - .travis/conda_build_and_deploy.sh --python 3.6
