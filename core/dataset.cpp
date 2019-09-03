@@ -1295,6 +1295,14 @@ DataArray apply_and_drop_dim(const DataConstProxy &a, Func func, const Dim dim,
                    std::move(coords), std::move(labels), std::move(attrs));
 }
 
+template <class Func, class... Args>
+Dataset apply_to_items(const DatasetConstProxy &d, Func func, Args &&... args) {
+  Dataset result;
+  for (const auto & [ name, data ] : d)
+    result.setData(name, func(data, std::forward<Args>(args)...));
+  return result;
+}
+
 DataArray sum(const DataConstProxy &a, const Dim dim) {
   return apply_and_drop_dim(a, [](auto &&... _) { return sum(_...); }, dim);
 }
@@ -1304,10 +1312,7 @@ Dataset sum(const DatasetConstProxy &d, const Dim dim) {
   // depend on the input dimension. The definition is ambiguous (return
   // unchanged, vs. compute sum of broadcast) so it is better to avoid this for
   // now.
-  Dataset result;
-  for (const auto & [ name, data ] : d)
-    result.setData(name, sum(data, dim));
-  return result;
+  return apply_to_items(d, [](auto &&... _) { return sum(_...); }, dim);
 }
 
 DataArray mean(const DataConstProxy &a, const Dim dim) {
@@ -1315,10 +1320,7 @@ DataArray mean(const DataConstProxy &a, const Dim dim) {
 }
 
 Dataset mean(const DatasetConstProxy &d, const Dim dim) {
-  Dataset result;
-  for (const auto & [ name, data ] : d)
-    result.setData(name, mean(data, dim));
-  return result;
+  return apply_to_items(d, [](auto &&... _) { return mean(_...); }, dim);
 }
 
 DataArray rebin(const DataConstProxy &a, const Dim dim,
@@ -1331,10 +1333,8 @@ DataArray rebin(const DataConstProxy &a, const Dim dim,
 
 Dataset rebin(const DatasetConstProxy &d, const Dim dim,
               const VariableConstProxy &coord) {
-  Dataset rebinned;
-  for (const auto & [ name, data ] : d)
-    rebinned.setData(name, rebin(data, dim, coord));
-  return rebinned;
+  return apply_to_items(d, [](auto &&... _) { return rebin(_...); }, dim,
+                        coord);
 }
 
 /// Return one of the inputs if they are the same, throw otherwise.
