@@ -3,7 +3,7 @@
 [![Documentation Status](https://readthedocs.org/projects/scipp/badge/?version=latest)](https://scipp.readthedocs.io/en/latest/?badge=latest)
 [![Anaconda-Server Badge](https://anaconda.org/scipp/scipp/badges/installer/conda.svg)](https://conda.anaconda.org/scipp/label/dev)
 [![Docker Cloud Build Status](https://img.shields.io/docker/cloud/build/scipp/scipp-jupyter-demo)](https://hub.docker.com/r/scipp/scipp-jupyter-demo)
-[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/scipp/scipp/master)
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/scipp/scipp/master?filepath=docs%2Fgetting-started%2Fquick-start.ipynb)
 
 # Scipp
 
