@@ -38,7 +38,7 @@ auto makeProxyItems(const Dimensions &dims, T1 &coords, T2 *sparse = nullptr) {
     // but they will be sliced out. Maybe a better implementation would be to
     // slice the coords first? That would also eliminate a potential loophole
     // for multi-dimensional coordinates.
-    auto contained = [&dims](const auto item2) {
+    auto contained = [&dims](const auto &item2) {
       const auto &coordDims = item2.second.dims();
       if constexpr (std::is_same_v<Key, Dim>)
         return coordDims.empty() || dims.contains(item2.first);
