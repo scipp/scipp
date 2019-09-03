@@ -1273,9 +1273,9 @@ Dataset concatenate(const DatasetConstProxy &a, const DatasetConstProxy &b,
   return result;
 }
 
-template <class Func>
-DataArray apply_through_dimension(const DataConstProxy &a, const Dim dim,
-                                  Func func) {
+template <class Func, class... Args>
+DataArray apply_and_drop_dim(const DataConstProxy &a, Func func, const Dim dim,
+                             Args &&... args) {
   std::map<Dim, Variable> coords;
   for (auto && [ d, coord ] : a.coords())
     if (d != dim)
@@ -1291,21 +1291,19 @@ DataArray apply_through_dimension(const DataConstProxy &a, const Dim dim,
     if (attr.dims().inner() != dim)
       attrs.emplace(name, attr);
 
+  return DataArray(func(a.data(), dim, std::forward<Args>(args)...),
+                   std::move(coords), std::move(labels), std::move(attrs));
+}
+
+DataArray sum(const DataConstProxy &a, const Dim dim) {
+  return apply_and_drop_dim(a, [](auto &&... _) { return sum(_...); }, dim);
+}
+
+Dataset sum(const DatasetConstProxy &d, const Dim dim) {
   // Currently not supporting sum/mean of dataset if one or more items do not
   // depend on the input dimension. The definition is ambiguous (return
   // unchanged, vs. compute sum of broadcast) so it is better to avoid this for
   // now.
-  return DataArray(func(a.data(), dim), std::move(coords), std::move(labels),
-                   std::move(attrs));
-}
-
-DataArray sum(const DataConstProxy &a, const Dim dim) {
-  return apply_through_dimension(
-      a, dim,
-      [](const VariableConstProxy &v, const Dim dim_) { return sum(v, dim_); });
-}
-
-Dataset sum(const DatasetConstProxy &d, const Dim dim) {
   Dataset result;
   for (const auto & [ name, data ] : d)
     result.setData(name, sum(data, dim));
@@ -1313,9 +1311,7 @@ Dataset sum(const DatasetConstProxy &d, const Dim dim) {
 }
 
 DataArray mean(const DataConstProxy &a, const Dim dim) {
-  return apply_through_dimension(a, dim,
-                                 [](const VariableConstProxy &v,
-                                    const Dim dim_) { return mean(v, dim_); });
+  return apply_and_drop_dim(a, [](auto &&... _) { return mean(_...); }, dim);
 }
 
 Dataset mean(const DatasetConstProxy &d, const Dim dim) {
@@ -1327,30 +1323,10 @@ Dataset mean(const DatasetConstProxy &d, const Dim dim) {
 
 DataArray rebin(const DataConstProxy &a, const Dim dim,
                 const VariableConstProxy &coord) {
-  std::map<Dim, Variable> coords;
-  // Replace rebinned coord.
-  for (const auto & [ key, item ] : a.coords())
-    if (key == dim)
-      coords.emplace(key, coord);
-    else
-      coords.emplace(key, item);
-
-  std::map<std::string, Variable> labels;
-  // Drop labels for rebinned dimension.
-  for (const auto & [ key, item ] : a.labels())
-    if (item.dims().inner() != dim)
-      labels.emplace(key, item);
-
-  std::map<std::string, Variable> attrs;
-  // Drop attrs for rebinned dimension.
-  for (const auto & [ key, item ] : a.attrs())
-    if (item.dims().inner() != dim)
-      attrs.emplace(key, item);
-
-  auto rebinned = rebin(a.data(), dim, a.coords()[dim], coord);
-
-  return {std::move(rebinned), std::move(coords), std::move(labels),
-          std::move(attrs)};
+  auto rebinned = apply_and_drop_dim(
+      a, [](auto &&... _) { return rebin(_...); }, dim, a.coords()[dim], coord);
+  rebinned.setCoord(dim, coord);
+  return rebinned;
 }
 
 Dataset rebin(const DatasetConstProxy &d, const Dim dim,

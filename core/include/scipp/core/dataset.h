@@ -871,6 +871,15 @@ public:
   DataArray &operator*=(const Variable &other);
   DataArray &operator/=(const Variable &other);
 
+  // TODO need to define some details regarding handling of dense coords in case
+  // the array is sparse, not exposing this to Python for now.
+  void setCoord(const Dim dim, Variable coord) {
+    m_holder.setCoord(dim, std::move(coord));
+  }
+  void setCoord(const Dim dim, const VariableConstProxy &coord) {
+    setCoord(dim, Variable(coord));
+  }
+
 private:
   DataConstProxy get() const noexcept { return m_holder.begin()->second; }
   DataProxy get() noexcept { return m_holder.begin()->second; }
