@@ -978,9 +978,12 @@ SCIPP_CORE_EXPORT Dataset merge(const DatasetConstProxy &a,
                                 const DatasetConstProxy &b);
 
 [[nodiscard]] bool containsSparse(const DatasetConstProxy &ds) noexcept;
-SCIPP_CORE_EXPORT Dataset sum(const DatasetConstProxy &ds, const Dim dimension);
-SCIPP_CORE_EXPORT Dataset mean(const DatasetConstProxy &ds,
-                               const Dim dimension);
+
+SCIPP_CORE_EXPORT DataArray sum(const DataConstProxy &a, const Dim dim);
+SCIPP_CORE_EXPORT Dataset sum(const DatasetConstProxy &d, const Dim dim);
+
+SCIPP_CORE_EXPORT DataArray mean(const DataConstProxy &a, const Dim dim);
+SCIPP_CORE_EXPORT Dataset mean(const DatasetConstProxy &d, const Dim dim);
 
 SCIPP_CORE_EXPORT DataArray concatenate(const DataConstProxy &a,
                                         const DataConstProxy &b, const Dim dim);

@@ -1273,43 +1273,56 @@ Dataset concatenate(const DatasetConstProxy &a, const DatasetConstProxy &b,
   return result;
 }
 
-template <class DS, class Func>
-Dataset apply_through_dimension(const DS &ds, const Dim dimension, Func func) {
-  if (containsSparse(ds))
-    throw std::logic_error("Can't sum Dataset with sparse data");
-  if (!ds.dimensions().count(dimension))
-    throw std::logic_error("Can't sum Dataset on non existing dimension.");
-  Dataset res;
-  for (auto && [ name, attr ] : ds.attrs())
-    res.setAttr(std::string(name), attr);
-  for (auto && [ dim, coord ] : ds.coords()) {
-    if (dimension != dim)
-      res.setCoord(dim, coord);
-  }
-  for (auto && [ name, label ] : ds.labels()) {
-    if (label.dims().inner() != dimension)
-      res.setLabels(std::string(name), label);
-  }
+template <class Func>
+DataArray apply_through_dimension(const DataConstProxy &a, const Dim dim,
+                                  Func func) {
+  std::map<Dim, Variable> coords;
+  for (auto && [ d, coord ] : a.coords())
+    if (d != dim)
+      coords.emplace(d, coord);
+
+  std::map<std::string, Variable> labels;
+  for (auto && [ name, label ] : a.labels())
+    if (label.dims().inner() != dim)
+      labels.emplace(name, label);
+
+  std::map<std::string, Variable> attrs;
+  for (auto && [ name, attr ] : a.attrs())
+    if (attr.dims().inner() != dim)
+      attrs.emplace(name, attr);
+
   // Currently not supporting sum/mean of dataset if one or more items do not
   // depend on the input dimension. The definition is ambiguous (return
   // unchanged, vs. compute sum of broadcast) so it is better to avoid this for
   // now.
-  for (auto && [ name, item ] : ds) {
-    res.setData(std::string(name), func(item.data(), dimension));
-  }
-  return res;
+  return DataArray(func(a.data(), dim), std::move(coords), std::move(labels),
+                   std::move(attrs));
 }
 
-Dataset sum(const DatasetConstProxy &ds, const Dim dimension) {
+DataArray sum(const DataConstProxy &a, const Dim dim) {
   return apply_through_dimension(
-      ds, dimension,
-      [](const VariableConstProxy &v, const Dim dim) { return sum(v, dim); });
+      a, dim,
+      [](const VariableConstProxy &v, const Dim dim_) { return sum(v, dim_); });
 }
 
-Dataset mean(const DatasetConstProxy &ds, const Dim dimension) {
-  return apply_through_dimension(
-      ds, dimension,
-      [](const VariableConstProxy &v, const Dim dim) { return mean(v, dim); });
+Dataset sum(const DatasetConstProxy &d, const Dim dim) {
+  Dataset result;
+  for (const auto & [ name, data ] : d)
+    result.setData(name, sum(data, dim));
+  return result;
+}
+
+DataArray mean(const DataConstProxy &a, const Dim dim) {
+  return apply_through_dimension(a, dim,
+                                 [](const VariableConstProxy &v,
+                                    const Dim dim_) { return mean(v, dim_); });
+}
+
+Dataset mean(const DatasetConstProxy &d, const Dim dim) {
+  Dataset result;
+  for (const auto & [ name, data ] : d)
+    result.setData(name, mean(data, dim));
+  return result;
 }
 
 DataArray rebin(const DataConstProxy &a, const Dim dim,

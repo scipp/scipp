@@ -272,6 +272,15 @@ void init_dataset(py::module &m) {
         :return: A new dataset that contains the union of all data items, coords, labels, and attributes.
         :rtype: Dataset)");
 
+  m.def("sum", py::overload_cast<const DataConstProxy &, const Dim>(&sum),
+        py::call_guard<py::gil_scoped_release>(), R"(
+        Element-wise sum over the specified dimension.
+
+        :raises: If the dimension does not exist, or if the dtype cannot be summed, e.g., if it is a string
+        :seealso: :py:class:`scipp.mean`
+        :return: New data array containing the sum.
+        :rtype: DataArray)");
+
   m.def("sum", py::overload_cast<const DatasetConstProxy &, const Dim>(&sum),
         py::call_guard<py::gil_scoped_release>(), R"(
         Element-wise sum over the specified dimension.
@@ -280,6 +289,17 @@ void init_dataset(py::module &m) {
         :seealso: :py:class:`scipp.mean`
         :return: New dataset containing the sum for each data item.
         :rtype: Dataset)");
+
+  m.def("mean", py::overload_cast<const DataConstProxy &, const Dim>(&mean),
+        py::call_guard<py::gil_scoped_release>(), R"(
+        Element-wise mean over the specified dimension, if variances are present, the new variance is computated as standard-deviation of the mean.
+
+        See the documentation for the mean of a Variable for details in the computation of the ouput variance.
+
+        :raises: If the dimension does not exist, or if the dtype cannot be summed, e.g., if it is a string
+        :seealso: :py:class:`scipp.mean`
+        :return: New data array containing the mean for each data item.
+        :rtype: DataArray)");
 
   m.def("mean", py::overload_cast<const DatasetConstProxy &, const Dim>(&mean),
         py::call_guard<py::gil_scoped_release>(), R"(
