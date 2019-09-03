@@ -8,10 +8,8 @@
 #include "operators.h"
 #include "scipp/core/apply.h"
 #include "scipp/core/counts.h"
-#include "scipp/core/dataset.h"
 #include "scipp/core/dtype.h"
 #include "scipp/core/except.h"
-#include "scipp/core/tag_util.h"
 #include "scipp/core/transform.h"
 #include "scipp/core/variable.h"
 #include "scipp/core/variable.tcc"
@@ -62,7 +60,6 @@ INSTANTIATE_VARIABLE(bool)
 #if defined(_WIN32) || defined(__clang__) && defined(__APPLE__)
 INSTANTIATE_VARIABLE(scipp::index)
 #endif
-INSTANTIATE_VARIABLE(Dataset)
 INSTANTIATE_VARIABLE(Eigen::Vector3d)
 INSTANTIATE_VARIABLE(sparse_container<double>)
 INSTANTIATE_VARIABLE(sparse_container<float>)
@@ -73,7 +70,6 @@ INSTANTIATE_VARIABLE(sparse_container<int32_t>)
 // variable.
 INSTANTIATE_VARIABLE(sparse_container<std::string>)
 INSTANTIATE_VARIABLE(sparse_container<Bool>)
-INSTANTIATE_VARIABLE(sparse_container<Dataset>)
 INSTANTIATE_VARIABLE(sparse_container<Eigen::Vector3d>)
 
 INSTANTIATE_SET_VARIANCES(double)
@@ -203,7 +199,8 @@ std::vector<Variable> split(const Variable &var, const Dim dim,
   return vars;
 }
 
-Variable concatenate(const Variable &a1, const Variable &a2, const Dim dim) {
+Variable concatenate(const VariableConstProxy &a1, const VariableConstProxy &a2,
+                     const Dim dim) {
   if (a1.dtype() != a2.dtype())
     throw std::runtime_error(
         "Cannot concatenate Variables: Data types do not match.");
@@ -256,7 +253,7 @@ Variable concatenate(const Variable &a1, const Variable &a2, const Dim dim) {
     throw std::runtime_error(
         "Cannot concatenate Variables: Dimensions do not match.");
 
-  auto out(a1);
+  Variable out(a1);
   auto dims(dims1);
   scipp::index extent1 = 1;
   scipp::index extent2 = 1;
@@ -370,9 +367,9 @@ Variable dot(const Variable &a, const Variable &b) {
                  }});
 }
 
-Variable broadcast(Variable var, const Dimensions &dims) {
+Variable broadcast(const VariableConstProxy &var, const Dimensions &dims) {
   if (var.dims().contains(dims))
-    return var;
+    return Variable{var};
   auto newDims = var.dims();
   const auto labels = dims.labels();
   for (auto it = labels.end(); it != labels.begin();) {

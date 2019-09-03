@@ -296,8 +296,8 @@ void init_variable(py::module &m) {
         :return: New variable with scalar elements based on the two inputs.
         :rtype: Variable)");
   m.def("concatenate",
-        py::overload_cast<const Variable &, const Variable &, const Dim>(
-            &concatenate),
+        py::overload_cast<const VariableConstProxy &,
+                          const VariableConstProxy &, const Dim>(&concatenate),
         py::call_guard<py::gil_scoped_release>(), R"(
         Concatenate input variables along the given dimension.
 

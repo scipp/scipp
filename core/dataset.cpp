@@ -8,6 +8,7 @@
 #include "scipp/core/dataset.h"
 #include "scipp/core/except.h"
 #include "scipp/core/transform.h"
+#include "scipp/core/variable.tcc"
 
 namespace scipp::core {
 
@@ -1210,6 +1211,68 @@ Dataset merge(const DatasetConstProxy &a, const DatasetConstProxy &b) {
                  union_(a.labels(), b.labels()), union_(a.attrs(), b.attrs()));
 }
 
+/// Concatenate a and b, assuming that a and b contain bin edges.
+///
+/// Checks that the last edges in `a` match the first edges in `b`. The
+/// Concatenates the input edges, removing duplicate bin edges.
+Variable join_edges(const VariableConstProxy &a, const VariableConstProxy &b,
+                    const Dim dim) {
+  expect::equals(a.slice({dim, a.dims()[dim] - 1}), b.slice({dim, 0}));
+  return concatenate(a.slice({dim, 0, a.dims()[dim] - 1}), b, dim);
+}
+
+/// Return the dimension for given coord or labels.
+///
+/// For coords, this is the same as the key, for labels we adopt the convention
+/// that labels are "labelling" their inner dimension.
+template <class T, class Key>
+Dim dim_of_coord_or_labels(const T &dict, const Key &key) {
+  if constexpr (std::is_same_v<Key, Dim>)
+    return key;
+  else
+    return dict[key].dims().inner();
+}
+
+namespace {
+template <class T1, class T2>
+auto concat(const T1 &a, const T2 &b, const Dim dim, const Dimensions &dimsA,
+            const Dimensions &dimsB) {
+  std::map<typename T1::key_type, typename T1::mapped_type> out;
+  for (const auto & [ key, a_ ] : a) {
+    if (dim_of_coord_or_labels(a, key) == dim) {
+      if ((a_.dims()[dim] == dimsA[dim]) != (b[key].dims()[dim] == dimsB[dim]))
+        throw except::BinEdgeError(
+            "Either both or neither of the inputs must be bin edges.");
+      if (a_.dims()[dim] == dimsA[dim])
+        out.emplace(key, concatenate(a_, b[key], dim));
+      else
+        out.emplace(key, join_edges(a_, b[key], dim));
+    } else {
+      out.emplace(key, same(a_, b[key]));
+    }
+  }
+  return out;
+}
+} // namespace
+
+DataArray concatenate(const DataConstProxy &a, const DataConstProxy &b,
+                      const Dim dim) {
+  if (a == b)
+    return DataArray{a};
+  return DataArray(concatenate(a.data(), b.data(), dim),
+                   concat(a.coords(), b.coords(), dim, a.dims(), b.dims()),
+                   concat(a.labels(), b.labels(), dim, a.dims(), b.dims()));
+}
+
+Dataset concatenate(const DatasetConstProxy &a, const DatasetConstProxy &b,
+                    const Dim dim) {
+  Dataset result;
+  for (const auto & [ name, item ] : a)
+    if (b.contains(name))
+      result.setData(name, concatenate(item, b[name], dim));
+  return result;
+}
+
 template <class DS, class Func>
 Dataset apply_through_dimension(const DS &ds, const Dim dimension, Func func) {
   if (containsSparse(ds))
@@ -1284,5 +1347,15 @@ Dataset rebin(const DatasetConstProxy &d, const Dim dim,
     rebinned.setData(name, rebin(data, dim, coord));
   return rebinned;
 }
+
+/// Return one of the inputs if they are the same, throw otherwise.
+VariableConstProxy same(const VariableConstProxy &a,
+                        const VariableConstProxy &b) {
+  expect::equals(a, b);
+  return a;
+}
+
+INSTANTIATE_VARIABLE(Dataset)
+INSTANTIATE_VARIABLE(sparse_container<Dataset>)
 
 } // namespace scipp::core

@@ -207,6 +207,32 @@ void init_dataset(py::module &m) {
   bind_binary<DatasetProxy>(dataProxy);
   bind_binary<DataProxy>(dataProxy);
 
+  m.def("concatenate",
+        py::overload_cast<const DataConstProxy &, const DataConstProxy &,
+                          const Dim>(&concatenate),
+        py::call_guard<py::gil_scoped_release>(), R"(
+        Concatenate input data array along the given dimension.
+
+        Concatenates the data, coords, and labels of the data array.
+        Coords and labels for any but the given dimension are required to match and are copied to the output without changes.
+
+        :raises: If the dtype or unit does not match, or if the dimensions and shapes are incompatible.
+        :return: New data array containing all data, coords, and labels of the input arrays.
+        :rtype: DataArray)");
+
+  m.def("concatenate",
+        py::overload_cast<const DatasetConstProxy &, const DatasetConstProxy &,
+                          const Dim>(&concatenate),
+        py::call_guard<py::gil_scoped_release>(), R"(
+        Concatenate input datasets along the given dimension.
+
+        Concatenate all cooresponding items in the input datasets.
+        The output contains only items that are present in both inputs.
+
+        :raises: If the dtype or unit does not match, or if the dimensions and shapes are incompatible.
+        :return: New dataset.
+        :rtype: Dataset)");
+
   m.def("histogram",
         [](const DataConstProxy &ds, const Variable &bins) {
           return core::histogram(ds, bins);
