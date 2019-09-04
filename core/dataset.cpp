@@ -1154,6 +1154,9 @@ DataArray histogram(const DataConstProxy &sparse,
     throw std::logic_error("Only the simple case histograms may be constructed "
                            "for now: 2 dims including sparse.");
   auto dim = binEdges.dims().inner();
+  if (binEdges.unit() != sparse.coords()[dim].unit())
+    throw std::logic_error(
+        "Bin edges must have same unit as the sparse input coordinate.");
   if (binEdges.dtype() != dtype<double> ||
       sparse.coords()[dim].dtype() != DType::Double)
     throw std::logic_error("Histogram is only available for double type.");
