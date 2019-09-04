@@ -210,10 +210,10 @@ public:
   DataProxy operator-=(const DataConstProxy &other) const;
   DataProxy operator*=(const DataConstProxy &other) const;
   DataProxy operator/=(const DataConstProxy &other) const;
-  DataProxy operator+=(const Variable &other) const;
-  DataProxy operator-=(const Variable &other) const;
-  DataProxy operator*=(const Variable &other) const;
-  DataProxy operator/=(const Variable &other) const;
+  DataProxy operator+=(const VariableConstProxy &other) const;
+  DataProxy operator-=(const VariableConstProxy &other) const;
+  DataProxy operator*=(const VariableConstProxy &other) const;
+  DataProxy operator/=(const VariableConstProxy &other) const;
 
 private:
   Dataset *m_mutableDataset;
@@ -814,9 +814,29 @@ private:
 class SCIPP_CORE_EXPORT DataArray {
 public:
   explicit DataArray(const DataConstProxy &proxy);
-  DataArray(std::optional<Variable> data, std::map<Dim, Variable> coords = {},
-            std::map<std::string, Variable> labels = {},
-            std::map<std::string, Variable> attrs = {});
+  template <class CoordMap = std::map<Dim, Variable>,
+            class LabelsMap = std::map<std::string, Variable>,
+            class AttrMap = std::map<std::string, Variable>>
+  DataArray(std::optional<Variable> data, CoordMap coords = {},
+            LabelsMap labels = {}, AttrMap attrs = {}) {
+    if (data)
+      m_holder.setData("", std::move(*data));
+    for (auto && [ dim, c ] : coords)
+      if (c.dims().sparse())
+        m_holder.setSparseCoord("", std::move(c));
+      else
+        m_holder.setCoord(dim, std::move(c));
+    for (auto && [ name, l ] : labels)
+      if (l.dims().sparse())
+        m_holder.setSparseLabels("", std::string(name), std::move(l));
+      else
+        m_holder.setLabels(std::string(name), std::move(l));
+    for (auto && [ name, a ] : attrs)
+      m_holder.setAttr(std::string(name), std::move(a));
+    if (m_holder.size() != 1)
+      throw std::runtime_error(
+          "DataArray must have either data or a sparse coordinate.");
+  }
 
   operator DataConstProxy() const;
   operator DataProxy();
@@ -866,10 +886,10 @@ public:
   DataArray &operator-=(const DataConstProxy &other);
   DataArray &operator*=(const DataConstProxy &other);
   DataArray &operator/=(const DataConstProxy &other);
-  DataArray &operator+=(const Variable &other);
-  DataArray &operator-=(const Variable &other);
-  DataArray &operator*=(const Variable &other);
-  DataArray &operator/=(const Variable &other);
+  DataArray &operator+=(const VariableConstProxy &other);
+  DataArray &operator-=(const VariableConstProxy &other);
+  DataArray &operator*=(const VariableConstProxy &other);
+  DataArray &operator/=(const VariableConstProxy &other);
 
   // TODO need to define some details regarding handling of dense coords in case
   // the array is sparse, not exposing this to Python for now.
@@ -907,6 +927,24 @@ SCIPP_CORE_EXPORT DataArray operator-(const DataConstProxy &a,
 SCIPP_CORE_EXPORT DataArray operator*(const DataConstProxy &a,
                                       const DataConstProxy &b);
 SCIPP_CORE_EXPORT DataArray operator/(const DataConstProxy &a,
+                                      const DataConstProxy &b);
+
+SCIPP_CORE_EXPORT DataArray operator+(const DataConstProxy &a,
+                                      const VariableConstProxy &b);
+SCIPP_CORE_EXPORT DataArray operator-(const DataConstProxy &a,
+                                      const VariableConstProxy &b);
+SCIPP_CORE_EXPORT DataArray operator*(const DataConstProxy &a,
+                                      const VariableConstProxy &b);
+SCIPP_CORE_EXPORT DataArray operator/(const DataConstProxy &a,
+                                      const VariableConstProxy &b);
+
+SCIPP_CORE_EXPORT DataArray operator+(const VariableConstProxy &a,
+                                      const DataConstProxy &b);
+SCIPP_CORE_EXPORT DataArray operator-(const VariableConstProxy &a,
+                                      const DataConstProxy &b);
+SCIPP_CORE_EXPORT DataArray operator*(const VariableConstProxy &a,
+                                      const DataConstProxy &b);
+SCIPP_CORE_EXPORT DataArray operator/(const VariableConstProxy &a,
                                       const DataConstProxy &b);
 
 SCIPP_CORE_EXPORT Dataset operator+(const Dataset &lhs, const Dataset &rhs);

@@ -606,22 +606,22 @@ DataProxy DataProxy::operator/=(const DataConstProxy &other) const {
   return *this;
 }
 
-DataProxy DataProxy::operator+=(const Variable &other) const {
+DataProxy DataProxy::operator+=(const VariableConstProxy &other) const {
   data() += other;
   return *this;
 }
 
-DataProxy DataProxy::operator-=(const Variable &other) const {
+DataProxy DataProxy::operator-=(const VariableConstProxy &other) const {
   data() -= other;
   return *this;
 }
 
-DataProxy DataProxy::operator*=(const Variable &other) const {
+DataProxy DataProxy::operator*=(const VariableConstProxy &other) const {
   data() *= other;
   return *this;
 }
 
-DataProxy DataProxy::operator/=(const Variable &other) const {
+DataProxy DataProxy::operator/=(const VariableConstProxy &other) const {
   data() /= other;
   return *this;
 }

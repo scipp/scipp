@@ -99,7 +99,7 @@ void bind_data_array_properties(py::class_<T, Ignored...> &c) {
   bind_coord_properties(c);
   bind_comparison<DataConstProxy>(c);
   bind_in_place_binary<DataProxy>(c);
-  bind_in_place_binary<Variable>(c);
+  bind_in_place_binary<VariableConstProxy>(c);
   bind_data_properties(c);
 }
 
@@ -206,6 +206,7 @@ void init_dataset(py::module &m) {
   bind_binary<Dataset>(dataProxy);
   bind_binary<DatasetProxy>(dataProxy);
   bind_binary<DataProxy>(dataProxy);
+  bind_binary<VariableConstProxy>(dataProxy);
 
   m.def("concatenate",
         py::overload_cast<const DataConstProxy &, const DataConstProxy &,
