@@ -28,6 +28,9 @@ DataArray::DataArray(std::optional<Variable> data,
       m_holder.setLabels(name, std::move(l));
   for (auto & [ name, a ] : attrs)
     m_holder.setAttr(name, std::move(a));
+  if (m_holder.size() != 1)
+    throw std::runtime_error(
+        "DataArray must have either data or a sparse coordinate.");
 }
 
 DataArray::operator DataConstProxy() const { return get(); }
