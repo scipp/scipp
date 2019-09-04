@@ -54,9 +54,9 @@ auto makeProxyItems(const Dimensions &dims, T1 &coords, T2 *sparse = nullptr) {
   if (sparse) {
     if constexpr (std::is_same_v<T2, const Variable> ||
                   std::is_same_v<T2, Variable>) {
-      items.emplace(sparseDim, makeProxyItem(&*sparse));
+      items.emplace(sparseDim, makeProxyItem(sparse));
     } else if constexpr (!std::is_same_v<T2, void>) {
-      for (const auto &item : *sparse)
+      for (auto &item : *sparse)
         items.emplace(item.first, makeProxyItem(&item.second));
     }
   }
