@@ -180,12 +180,11 @@ void Dimensions::addInner(const Dim label, const scipp::index size) {
 }
 
 /// Return the innermost dimension. Throws if *this is empty.
-Dim Dimensions::inner() const {
+Dim Dimensions::inner() const noexcept {
   if (sparse())
     return sparseDim();
   if (m_ndim == 0)
-    throw except::DimensionError(
-        "Expected Dimensions with at least 1 dimension.");
+    return Dim::Invalid;
   return m_dims[m_ndim - 1];
 }
 

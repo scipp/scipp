@@ -102,7 +102,7 @@ public:
 
   scipp::index operator[](const Dim dim) const;
 
-  Dim inner() const;
+  Dim inner() const noexcept;
 
   /// Return true if `dim` is one of the labels in *this.
   constexpr bool contains(const Dim dim) const noexcept {
