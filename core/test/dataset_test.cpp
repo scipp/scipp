@@ -321,5 +321,5 @@ TEST(DatasetTest, sum_and_mean) {
             makeVariable<float>(1.5, 6.75));
 
   EXPECT_THROW(core::sum(make_sparse_2d({1, 2, 3, 4}, {0, 0}), Dim::X),
-               std::logic_error);
+               except::DimensionError);
 }

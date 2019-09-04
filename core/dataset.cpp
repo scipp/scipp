@@ -1273,79 +1273,68 @@ Dataset concatenate(const DatasetConstProxy &a, const DatasetConstProxy &b,
   return result;
 }
 
-template <class DS, class Func>
-Dataset apply_through_dimension(const DS &ds, const Dim dimension, Func func) {
-  if (containsSparse(ds))
-    throw std::logic_error("Can't sum Dataset with sparse data");
-  if (!ds.dimensions().count(dimension))
-    throw std::logic_error("Can't sum Dataset on non existing dimension.");
-  Dataset res;
-  for (auto && [ name, attr ] : ds.attrs())
-    res.setAttr(std::string(name), attr);
-  for (auto && [ dim, coord ] : ds.coords()) {
-    if (dimension != dim)
-      res.setCoord(dim, coord);
-  }
-  for (auto && [ name, label ] : ds.labels()) {
-    if (label.dims().inner() != dimension)
-      res.setLabels(std::string(name), label);
-  }
+template <class Func, class... Args>
+DataArray apply_and_drop_dim(const DataConstProxy &a, Func func, const Dim dim,
+                             Args &&... args) {
+  std::map<Dim, Variable> coords;
+  for (auto && [ d, coord ] : a.coords())
+    if (d != dim)
+      coords.emplace(d, coord);
+
+  std::map<std::string, Variable> labels;
+  for (auto && [ name, label ] : a.labels())
+    if (label.dims().inner() != dim)
+      labels.emplace(name, label);
+
+  std::map<std::string, Variable> attrs;
+  for (auto && [ name, attr ] : a.attrs())
+    if (attr.dims().inner() != dim)
+      attrs.emplace(name, attr);
+
+  return DataArray(func(a.data(), dim, std::forward<Args>(args)...),
+                   std::move(coords), std::move(labels), std::move(attrs));
+}
+
+template <class Func, class... Args>
+Dataset apply_to_items(const DatasetConstProxy &d, Func func, Args &&... args) {
+  Dataset result;
+  for (const auto & [ name, data ] : d)
+    result.setData(name, func(data, std::forward<Args>(args)...));
+  return result;
+}
+
+DataArray sum(const DataConstProxy &a, const Dim dim) {
+  return apply_and_drop_dim(a, [](auto &&... _) { return sum(_...); }, dim);
+}
+
+Dataset sum(const DatasetConstProxy &d, const Dim dim) {
   // Currently not supporting sum/mean of dataset if one or more items do not
   // depend on the input dimension. The definition is ambiguous (return
   // unchanged, vs. compute sum of broadcast) so it is better to avoid this for
   // now.
-  for (auto && [ name, item ] : ds) {
-    res.setData(std::string(name), func(item.data(), dimension));
-  }
-  return res;
+  return apply_to_items(d, [](auto &&... _) { return sum(_...); }, dim);
 }
 
-Dataset sum(const DatasetConstProxy &ds, const Dim dimension) {
-  return apply_through_dimension(
-      ds, dimension,
-      [](const VariableConstProxy &v, const Dim dim) { return sum(v, dim); });
+DataArray mean(const DataConstProxy &a, const Dim dim) {
+  return apply_and_drop_dim(a, [](auto &&... _) { return mean(_...); }, dim);
 }
 
-Dataset mean(const DatasetConstProxy &ds, const Dim dimension) {
-  return apply_through_dimension(
-      ds, dimension,
-      [](const VariableConstProxy &v, const Dim dim) { return mean(v, dim); });
+Dataset mean(const DatasetConstProxy &d, const Dim dim) {
+  return apply_to_items(d, [](auto &&... _) { return mean(_...); }, dim);
 }
 
 DataArray rebin(const DataConstProxy &a, const Dim dim,
                 const VariableConstProxy &coord) {
-  std::map<Dim, Variable> coords;
-  // Replace rebinned coord.
-  for (const auto & [ key, item ] : a.coords())
-    if (key == dim)
-      coords.emplace(key, coord);
-    else
-      coords.emplace(key, item);
-
-  std::map<std::string, Variable> labels;
-  // Drop labels for rebinned dimension.
-  for (const auto & [ key, item ] : a.labels())
-    if (item.dims().inner() != dim)
-      labels.emplace(key, item);
-
-  std::map<std::string, Variable> attrs;
-  // Drop attrs for rebinned dimension.
-  for (const auto & [ key, item ] : a.attrs())
-    if (item.dims().inner() != dim)
-      attrs.emplace(key, item);
-
-  auto rebinned = rebin(a.data(), dim, a.coords()[dim], coord);
-
-  return {std::move(rebinned), std::move(coords), std::move(labels),
-          std::move(attrs)};
+  auto rebinned = apply_and_drop_dim(
+      a, [](auto &&... _) { return rebin(_...); }, dim, a.coords()[dim], coord);
+  rebinned.setCoord(dim, coord);
+  return rebinned;
 }
 
 Dataset rebin(const DatasetConstProxy &d, const Dim dim,
               const VariableConstProxy &coord) {
-  Dataset rebinned;
-  for (const auto & [ name, data ] : d)
-    rebinned.setData(name, rebin(data, dim, coord));
-  return rebinned;
+  return apply_to_items(d, [](auto &&... _) { return rebin(_...); }, dim,
+                        coord);
 }
 
 /// Return one of the inputs if they are the same, throw otherwise.

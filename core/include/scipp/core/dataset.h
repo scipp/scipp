@@ -598,7 +598,7 @@ public:
     return slice(slice1, slice2).slice(slice3);
   }
 
-  void set(const typename Base::key_type key, Variable var) {
+  void set(const typename Base::key_type key, const VariableConstProxy &var) {
     if (!m_parent || !Base::m_slices.empty())
       throw std::runtime_error(
           "Cannot add coord/labels/attr field to a slice.");
@@ -871,6 +871,15 @@ public:
   DataArray &operator*=(const Variable &other);
   DataArray &operator/=(const Variable &other);
 
+  // TODO need to define some details regarding handling of dense coords in case
+  // the array is sparse, not exposing this to Python for now.
+  void setCoord(const Dim dim, Variable coord) {
+    m_holder.setCoord(dim, std::move(coord));
+  }
+  void setCoord(const Dim dim, const VariableConstProxy &coord) {
+    setCoord(dim, Variable(coord));
+  }
+
 private:
   DataConstProxy get() const noexcept { return m_holder.begin()->second; }
   DataProxy get() noexcept { return m_holder.begin()->second; }
@@ -978,9 +987,12 @@ SCIPP_CORE_EXPORT Dataset merge(const DatasetConstProxy &a,
                                 const DatasetConstProxy &b);
 
 [[nodiscard]] bool containsSparse(const DatasetConstProxy &ds) noexcept;
-SCIPP_CORE_EXPORT Dataset sum(const DatasetConstProxy &ds, const Dim dimension);
-SCIPP_CORE_EXPORT Dataset mean(const DatasetConstProxy &ds,
-                               const Dim dimension);
+
+SCIPP_CORE_EXPORT DataArray sum(const DataConstProxy &a, const Dim dim);
+SCIPP_CORE_EXPORT Dataset sum(const DatasetConstProxy &d, const Dim dim);
+
+SCIPP_CORE_EXPORT DataArray mean(const DataConstProxy &a, const Dim dim);
+SCIPP_CORE_EXPORT Dataset mean(const DatasetConstProxy &d, const Dim dim);
 
 SCIPP_CORE_EXPORT DataArray concatenate(const DataConstProxy &a,
                                         const DataConstProxy &b, const Dim dim);
