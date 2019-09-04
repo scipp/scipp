@@ -135,12 +135,12 @@ def plot_image(input_data, name=None, axes=None, contours=False, cb=None,
     if figsize is None:
         figsize = [config.width, config.height]
 
-    coords = input_data.coords
-
     # Get coordinates axes and dimensions
     coords = input_data.coords
+    labels = input_data.labels
     xcoord, ycoord, xe, ye, xc, yc, xlabs, ylabs, zlabs = \
-        process_dimensions(input_data=input_data, coords=coords, axes=axes)
+        process_dimensions(input_data=input_data, coords=coords,
+                labels=labels, axes=axes)
 
     if contours:
         plot_type = 'contour'
@@ -154,8 +154,8 @@ def plot_image(input_data, name=None, axes=None, contours=False, cb=None,
     title = axis_label(var=input_data, name=name, log=cbar["log"])
 
     layout = dict(
-        xaxis=dict(title=axis_label(xcoord)),
-        yaxis=dict(title=axis_label(ycoord)),
+        xaxis=dict(title=xcoord),
+        yaxis=dict(title=ycoord),
         height=figsize[1],
         width=figsize[0]
     )
@@ -489,8 +489,10 @@ def plot_waterfall(input_data, dim=None, name=None, axes=None, filename=None,
 
     # Get coordinates axes and dimensions
     coords = input_data.coords
+    labels = input_data.labels
     xcoord, ycoord, xe, ye, xc, yc, xlabs, ylabs, zlabs = \
-        process_dimensions(input_data=input_data, coords=coords, axes=axes)
+        process_dimensions(input_data=input_data, coords=coords,
+                labels=labels, axes=axes)
 
     data = []
     z = input_data.values
@@ -530,9 +532,9 @@ def plot_waterfall(input_data, dim=None, name=None, axes=None, filename=None,
     layout = dict(
         scene=dict(
             xaxis=dict(
-                title=axis_label(xcoord)),
+                title=xcoord),
             yaxis=dict(
-                title=axis_label(ycoord)),
+                title=ycoord),
             zaxis=dict(
                 title=axis_label(var=input_data,
                                  name=name)),

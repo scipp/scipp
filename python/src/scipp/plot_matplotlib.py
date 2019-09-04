@@ -101,8 +101,10 @@ def plot_2d(input_data, name=None, axes=None, contours=False, cb=None,
 
     # Get coordinates axes and dimensions
     coords = input_data.coords
+    labels = input_data.labels
     xcoord, ycoord, xe, ye, xc, yc, xlabs, ylabs, zlabs = \
-        process_dimensions(input_data=input_data, coords=coords, axes=axes)
+        process_dimensions(input_data=input_data, coords=coords,
+                labels=labels, axes=axes)
 
     # Parse colorbar
     cbar = parse_colorbar(config.cb, cb)
@@ -123,8 +125,8 @@ def plot_2d(input_data, name=None, axes=None, contours=False, cb=None,
 
     for i, (key, val) in enumerate(sorted(data.items())):
 
-        ax[i].set_xlabel(axis_label(xcoord))
-        ax[i].set_ylabel(axis_label(ycoord))
+        ax[i].set_xlabel(xcoord)
+        ax[i].set_ylabel(ycoord)
 
         z = getattr(input_data, key)
         # Check if dimensions of arrays agree, if not, plot the transpose

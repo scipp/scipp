@@ -52,7 +52,7 @@ def parse_colorbar(default, cb, plotly=False):
     return cbar
 
 
-def process_dimensions(input_data, coords, axes):
+def process_dimensions(input_data, coords, labels, axes):
     """
     Make x and y arrays from dimensions and check for bins edges
     """
@@ -64,9 +64,18 @@ def process_dimensions(input_data, coords, axes):
     else:
         axes = axes[-2:]
 
-    # Get coordinate arrays
-    xcoord = coords[axes[-1]]
-    ycoord = coords[axes[-2]]
+    def get_coord_array(coords, axis):
+        name = None
+        if isinstance(axis, sp.Dim):
+            var = coords[axis]
+        elif isinstance(axis, str):
+            var = labels[axis]
+            name = axis
+        else:
+            var = axis
+        return axis_label(var, name=name), var
+    xcoord_name, xcoord = get_coord_array(coords, axes[-1])
+    ycoord_name, ycoord = get_coord_array(coords, axes[-2])
     x = xcoord.values
     y = ycoord.values
 
@@ -108,4 +117,4 @@ def process_dimensions(input_data, coords, axes):
     else:
         raise RuntimeError("Dimensions of y Coord ({}) and Value ({}) do not "
                            "match.".format(ny[0], nz[iy]))
-    return xcoord, ycoord, xe, ye, xc, yc, xlabs, ylabs, zlabs
+    return xcoord_name, ycoord_name, xe, ye, xc, yc, xlabs, ylabs, zlabs
