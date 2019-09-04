@@ -614,7 +614,9 @@ public:
       if constexpr (std::is_same_v<Base, AttrsConstProxy>)
         throw std::runtime_error("Attributes cannot be sparse.");
     } else {
-      if (m_name)
+      // TODO Would like to add coords for DataArray, as a temporary hack we
+      // allow adding dense coords of the parent size is 1.
+      if (m_name && m_parent->size() != 1)
         throw std::runtime_error(
             "Dense coord/labels/attr must be added to "
             "coords of dataset, not coords of dataset items.");
