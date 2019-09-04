@@ -902,6 +902,13 @@ public:
     setCoord(dim, Variable(coord));
   }
 
+  template <class... Ts> auto slice(const Ts... slices) const {
+    return get().slice(slices...);
+  }
+  template <class... Ts> auto slice(const Ts... slices) {
+    return get().slice(slices...);
+  }
+
 private:
   DataConstProxy get() const noexcept { return m_holder.begin()->second; }
   DataProxy get() noexcept { return m_holder.begin()->second; }

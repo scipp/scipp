@@ -98,9 +98,10 @@ void bind_data_array_properties(py::class_<T, Ignored...> &c) {
                  });
   bind_coord_properties(c);
   bind_comparison<DataConstProxy>(c);
+  bind_data_properties(c);
+  bind_slice_methods(c);
   bind_in_place_binary<DataProxy>(c);
   bind_in_place_binary<VariableConstProxy>(c);
-  bind_data_properties(c);
   bind_binary<Dataset>(c);
   bind_binary<DatasetProxy>(c);
   bind_binary<DataProxy>(c);
@@ -187,7 +188,6 @@ void init_dataset(py::module &m) {
 
   bind_slice_methods(dataset);
   bind_slice_methods(datasetProxy);
-  bind_slice_methods(dataProxy);
 
   bind_comparison<Dataset>(dataset);
   bind_comparison<DatasetProxy>(dataset);
