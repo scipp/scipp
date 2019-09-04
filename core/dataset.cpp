@@ -1179,8 +1179,11 @@ DataArray histogram(const DataConstProxy &sparse,
 
   std::map<Dim, Variable> coords;
   coords.emplace(dim, binEdges);
-  return {std::move(result), std::move(coords),
-          std::map<std::string, Variable>()};
+  for (const auto & [ k, v ] : sparse.coords())
+    coords.emplace(k, Variable(v));
+
+  return {std::move(result), std::move(coords), proxy_to_map(sparse.labels()),
+          proxy_to_map(sparse.attrs()), sparse.name()};
 }
 
 DataArray histogram(const DataConstProxy &sparse, const Variable &binEdges) {
@@ -1292,7 +1295,8 @@ DataArray apply_and_drop_dim(const DataConstProxy &a, Func func, const Dim dim,
       attrs.emplace(name, attr);
 
   return DataArray(func(a.data(), dim, std::forward<Args>(args)...),
-                   std::move(coords), std::move(labels), std::move(attrs));
+                   std::move(coords), std::move(labels), std::move(attrs),
+                   a.name());
 }
 
 template <class Func, class... Args>

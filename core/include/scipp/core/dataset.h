@@ -643,6 +643,13 @@ template <class T1, class T2> auto union_(const T1 &a, const T2 &b) {
   return out;
 }
 
+template <class T> auto proxy_to_map(const T &a) {
+  std::map<typename T::key_type, typename T::mapped_type> out;
+  for (const auto & [ key, item ] : a)
+    out.emplace(key, item);
+  return out;
+}
+
 /// Const proxy for Dataset, implementing slicing and item selection.
 class SCIPP_CORE_EXPORT DatasetConstProxy {
   explicit DatasetConstProxy() : m_dataset(nullptr) {}
@@ -816,7 +823,8 @@ public:
   explicit DataArray(const DataConstProxy &proxy);
   DataArray(std::optional<Variable> data, std::map<Dim, Variable> coords = {},
             std::map<std::string, Variable> labels = {},
-            std::map<std::string, Variable> attrs = {});
+            std::map<std::string, Variable> attrs = {},
+            const std::string &name = "");
 
   operator DataConstProxy() const;
   operator DataProxy();

@@ -13,21 +13,22 @@ DataArray::DataArray(const DataConstProxy &proxy) {
 DataArray::DataArray(std::optional<Variable> data,
                      std::map<Dim, Variable> coords,
                      std::map<std::string, Variable> labels,
-                     std::map<std::string, Variable> attrs) {
+                     std::map<std::string, Variable> attrs,
+                     const std::string &name) {
   if (data)
-    m_holder.setData("", std::move(*data));
+    m_holder.setData(name, std::move(*data));
   for (auto & [ dim, c ] : coords)
     if (c.dims().sparse())
-      m_holder.setSparseCoord("", std::move(c));
+      m_holder.setSparseCoord(name, std::move(c));
     else
       m_holder.setCoord(dim, std::move(c));
-  for (auto & [ name, l ] : labels)
+  for (auto & [ label_name, l ] : labels)
     if (l.dims().sparse())
-      m_holder.setSparseLabels("", name, std::move(l));
+      m_holder.setSparseLabels(name, label_name, std::move(l));
     else
-      m_holder.setLabels(name, std::move(l));
-  for (auto & [ name, a ] : attrs)
-    m_holder.setAttr(name, std::move(a));
+      m_holder.setLabels(label_name, std::move(l));
+  for (auto & [ attr_name, a ] : attrs)
+    m_holder.setAttr(attr_name, std::move(a));
 }
 
 DataArray::operator DataConstProxy() const { return get(); }

@@ -15,7 +15,7 @@ protected:
       {{Dim::Y, 2}, {Dim::X, 4}}, units::counts, {1, 2, 3, 4, 5, 6, 7, 8});
   Variable x = makeVariable<double>({Dim::X, 5}, {1, 2, 3, 4, 5});
   Variable y = makeVariable<double>({Dim::Y, 3}, {1, 2, 3});
-  DataArray array{counts, {{Dim::X, x}, {Dim::Y, y}}, {}};
+  DataArray array{counts, {{Dim::X, x}, {Dim::Y, y}}, {}, {}, "data"};
   DataArray array_with_variances{
       makeVariable<double>({{Dim::Y, 2}, {Dim::X, 4}}, units::counts,
                            {1, 2, 3, 4, 5, 6, 7, 8},
@@ -23,6 +23,11 @@ protected:
       {{Dim::X, x}, {Dim::Y, y}},
       {}};
 };
+
+TEST_F(RebinTest, result_name) {
+  auto edges = makeVariable<double>({Dim::X, 3}, {1, 3, 5});
+  ASSERT_EQ(rebin(array, Dim::X, edges).name(), "data");
+}
 
 TEST_F(RebinTest, inner_data_array) {
   auto edges = makeVariable<double>({Dim::X, 3}, {1, 3, 5});

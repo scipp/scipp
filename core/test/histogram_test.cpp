@@ -48,7 +48,7 @@ auto make_single_sparse() {
 DataArray make_expected(const Variable &var, const Variable &edges) {
   auto dim = var.dims().inner();
   std::map<Dim, Variable> coords = {{dim, edges}};
-  auto expected = DataArray(var, coords, std::map<std::string, Variable>());
+  auto expected = DataArray(var, coords);
   return expected;
 }
 
