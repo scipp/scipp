@@ -7,10 +7,13 @@ def get_pos(pos):
 
 
 def convert_instrument(ws):
-    compInfo = sc.Dataset(
-        {'position': sc.Variable(dims=[sc.Dim.Row], shape=(2,),
-                                 dtype=sc.dtype.vector_3_double,
-                                 unit=sc.units.m)})
+    compInfo = sc.Dataset({
+        'position':
+        sc.Variable(dims=[sc.Dim.Row],
+                    shape=(2, ),
+                    dtype=sc.dtype.vector_3_double,
+                    unit=sc.units.m)
+    })
     # Current assumption: 0 is source, 1 is sample
     sourcePos = ws.componentInfo().sourcePosition()
     samplePos = ws.componentInfo().samplePosition()
@@ -41,8 +44,10 @@ def ConvertWorkspace2DToDataset(ws):
     pos, num = initPosSpectrumNo(nHist, ws)
 
     # TODO More cases?
-    allowed_units = {"DeltaE": [sc.Dim.EnergyTransfer, sc.units.meV],
-                     "TOF": [sc.Dim.Tof, sc.units.us]}
+    allowed_units = {
+        "DeltaE": [sc.Dim.EnergyTransfer, sc.units.meV],
+        "TOF": [sc.Dim.Tof, sc.units.us]
+    }
     xunit = ws.getAxis(0).getUnit().unitID()
     if xunit not in allowed_units.keys():
         raise RuntimeError("X-axis unit not currently supported for "
@@ -63,17 +68,26 @@ def ConvertWorkspace2DToDataset(ws):
             coords[sc.Dim.Position, i].values = ws.readX(i)
 
     # TODO Use unit information in workspace, if available.
-    var = sc.Variable([sc.Dim.Position, dim],
-                      shape=(ws.getNumberHistograms(), len(ws.readY(0))),
-                      unit=sc.units.counts)
+    array = sc.DataArray(data=sc.Variable([sc.Dim.Position, dim],
+                                          shape=(ws.getNumberHistograms(),
+                                                 len(ws.readY(0))),
+                                          unit=sc.units.counts,
+                                          variances=True),
+                         coords={
+                             dim: coords,
+                             sc.Dim.Position: pos
+                         },
+                         labels={
+                             "spectrum_number": num,
+                             "component_info": comp_info
+                         })
 
+    data = array.data
     for i in range(ws.getNumberHistograms()):
-        var[sc.Dim.Position, i].values = ws.readY(i)
-        var[sc.Dim.Position, i].variances = np.power(ws.readE(i), 2)
+        data[sc.Dim.Position, i].values = ws.readY(i)
+        data[sc.Dim.Position, i].variances = np.power(ws.readE(i), 2)
 
-    return sc.DataArray(data=var, coords={dim: coords, sc.Dim.Position: pos},
-                        labels={"spectrum_number": num,
-                                "component_info": comp_info})
+    return array
 
 
 def ConvertEventWorkspaceToDataset(ws, load_pulse_times, EventType):
@@ -102,8 +116,8 @@ def ConvertEventWorkspaceToDataset(ws, load_pulse_times, EventType):
 
     # Check for weighted events
     evtp = ws.getSpectrum(0).getEventType()
-    contains_weighted_events = ((evtp == EventType.WEIGHTED) or
-                                (evtp == EventType.WEIGHTED_NOTIME))
+    contains_weighted_events = ((evtp == EventType.WEIGHTED)
+                                or (evtp == EventType.WEIGHTED_NOTIME))
     if contains_weighted_events:
         weights = sc.Variable([sc.Dim.Position, dim],
                               shape=[nHist, sc.Dimensions.Sparse])
@@ -116,15 +130,22 @@ def ConvertEventWorkspaceToDataset(ws, load_pulse_times, EventType):
             # very slow.
             # TODO: Find a more efficient way to do this.
             pt = sp.getPulseTimes()
-            labs[sc.Dim.Position, i].values = np.asarray([p.total_nanoseconds()
-                                                          for p in pt])
+            labs[sc.Dim.Position,
+                 i].values = np.asarray([p.total_nanoseconds() for p in pt])
         if contains_weighted_events:
             weights[sc.Dim.Position, i].values = sp.getWeights()
             weights[sc.Dim.Position, i].variances = sp.getWeightErrors()
 
-    coords_labs_data = {"coords": {dim: coords, sc.Dim.Position: pos},
-                        "labels": {"spectrum_number": num,
-                                   "component_info": comp_info}}
+    coords_labs_data = {
+        "coords": {
+            dim: coords,
+            sc.Dim.Position: pos
+        },
+        "labels": {
+            "spectrum_number": num,
+            "component_info": comp_info
+        }
+    }
     if load_pulse_times:
         coords_labs_data["labels"]["pulse_times"] = labs
     if contains_weighted_events:
@@ -132,7 +153,9 @@ def ConvertEventWorkspaceToDataset(ws, load_pulse_times, EventType):
     return sc.DataArray(**coords_labs_data)
 
 
-def load(filename="", load_pulse_times=True, instrument_filename=None,
+def load(filename="",
+         load_pulse_times=True,
+         instrument_filename=None,
          **kwargs):
     """
     Wrapper function to provide a load method for a Nexus file, hiding mantid
@@ -140,9 +163,10 @@ def load(filename="", load_pulse_times=True, instrument_filename=None,
     """
     import mantid.simpleapi as mantid
     from mantid.api import EventType
-    ws = mantid.LoadEventNexus(filename, **kwargs)
+    ws = mantid.Load(filename, **kwargs)
     if instrument_filename is not None:
-        mantid.LoadInstrument(ws, FileName=instrument_filename,
+        mantid.LoadInstrument(ws,
+                              FileName=instrument_filename,
                               RewriteSpectraMap=True)
     if ws.id() == 'Workspace2D':
         return ConvertWorkspace2DToDataset(ws)

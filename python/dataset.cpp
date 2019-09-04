@@ -88,7 +88,7 @@ void bind_data_array_properties(py::class_<T, Ignored...> &c) {
         "Return a (deep) copy.");
   c.def_property("data",
                  py::cpp_function(
-                     [](const T &self) {
+                     [](T &self) {
                        return self.hasData() ? py::cast(self.data())
                                              : py::none();
                      },

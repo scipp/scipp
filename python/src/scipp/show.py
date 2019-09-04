@@ -93,7 +93,7 @@ class VariableDrawer():
         for vals in data:
             extent = max(extent, len(vals))
         max_extent = _cubes_in_full_width/2/self._sparse_box_scale
-        self._x_stride = ceil(extent/max_extent)
+        self._x_stride = max(1, ceil(extent/max_extent))
         return min(extent, max_extent)
 
     def size(self):
