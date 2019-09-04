@@ -86,6 +86,16 @@ void bind_data_array_properties(py::class_<T, Ignored...> &c) {
   c.def("__repr__", [](const T &self) { return to_string(self); });
   c.def("copy", [](const T &self) { return DataArray(self); },
         "Return a (deep) copy.");
+  c.def_property("data",
+                 py::cpp_function(
+                     [](const T &self) {
+                       return self.hasData() ? py::cast(self.data())
+                                             : py::none();
+                     },
+                     py::return_value_policy::move, py::keep_alive<0, 1>()),
+                 [](T &self, const VariableConstProxy &data) {
+                   self.data().assign(data);
+                 });
   bind_coord_properties(c);
   bind_comparison<DataConstProxy>(c);
   bind_in_place_binary<DataProxy>(c);
@@ -117,16 +127,6 @@ void init_dataset(py::module &m) {
         Proxy for DataArray, representing a sliced view onto a DataArray, or an item of a Dataset;
         Mostly equivalent to DataArray, see there for details.)");
   dataProxy.def(py::init<DataArray &>());
-  dataProxy.def_property(
-      "data",
-      py::cpp_function(
-          [](const DataProxy &self) {
-            return self.hasData() ? py::cast(self.data()) : py::none();
-          },
-          py::return_value_policy::move, py::keep_alive<0, 1>()),
-      [](const DataProxy &self, const VariableConstProxy &data) {
-        self.data().assign(data);
-      });
 
   bind_data_array_properties(dataArray);
   bind_data_array_properties(dataProxy);
