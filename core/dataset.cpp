@@ -1227,10 +1227,14 @@ Variable join_edges(const VariableConstProxy &a, const VariableConstProxy &b,
 /// that labels are "labelling" their inner dimension.
 template <class T, class Key>
 Dim dim_of_coord_or_labels(const T &dict, const Key &key) {
-  if constexpr (std::is_same_v<Key, Dim>)
+  if constexpr (std::is_same_v<Key, Dim>) {
     return key;
-  else
-    return dict[key].dims().inner();
+  } else {
+    if (dict[key].dims().ndims() == 0)
+      return Dim::Invalid;
+    else
+      return dict[key].dims().inner();
+  }
 }
 
 namespace {
