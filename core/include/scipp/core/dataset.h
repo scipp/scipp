@@ -210,10 +210,10 @@ public:
   DataProxy operator-=(const DataConstProxy &other) const;
   DataProxy operator*=(const DataConstProxy &other) const;
   DataProxy operator/=(const DataConstProxy &other) const;
-  DataProxy operator+=(const Variable &other) const;
-  DataProxy operator-=(const Variable &other) const;
-  DataProxy operator*=(const Variable &other) const;
-  DataProxy operator/=(const Variable &other) const;
+  DataProxy operator+=(const VariableConstProxy &other) const;
+  DataProxy operator-=(const VariableConstProxy &other) const;
+  DataProxy operator*=(const VariableConstProxy &other) const;
+  DataProxy operator/=(const VariableConstProxy &other) const;
 
 private:
   Dataset *m_mutableDataset;
@@ -614,7 +614,9 @@ public:
       if constexpr (std::is_same_v<Base, AttrsConstProxy>)
         throw std::runtime_error("Attributes cannot be sparse.");
     } else {
-      if (m_name)
+      // TODO Would like to add coords for DataArray, as a temporary hack we
+      // allow adding dense coords of the parent size is 1.
+      if (m_name && m_parent->size() != 1)
         throw std::runtime_error(
             "Dense coord/labels/attr must be added to "
             "coords of dataset, not coords of dataset items.");
@@ -813,26 +815,48 @@ private:
 /// Data array, a variable with coordinates, labels, and attributes.
 class SCIPP_CORE_EXPORT DataArray {
 public:
+  DataArray() = default;
   explicit DataArray(const DataConstProxy &proxy);
-  DataArray(std::optional<Variable> data, std::map<Dim, Variable> coords = {},
-            std::map<std::string, Variable> labels = {},
-            std::map<std::string, Variable> attrs = {});
+  template <class CoordMap = std::map<Dim, Variable>,
+            class LabelsMap = std::map<std::string, Variable>,
+            class AttrMap = std::map<std::string, Variable>>
+  DataArray(std::optional<Variable> data, CoordMap coords = {},
+            LabelsMap labels = {}, AttrMap attrs = {}) {
+    if (data)
+      m_holder.setData("", std::move(*data));
+    for (auto && [ dim, c ] : coords)
+      if (c.dims().sparse())
+        m_holder.setSparseCoord("", std::move(c));
+      else
+        m_holder.setCoord(dim, std::move(c));
+    for (auto && [ name, l ] : labels)
+      if (l.dims().sparse())
+        m_holder.setSparseLabels("", std::string(name), std::move(l));
+      else
+        m_holder.setLabels(std::string(name), std::move(l));
+    for (auto && [ name, a ] : attrs)
+      m_holder.setAttr(std::string(name), std::move(a));
+    if (m_holder.size() != 1)
+      throw std::runtime_error(
+          "DataArray must have either data or a sparse coordinate.");
+  }
 
+  explicit operator bool() const noexcept { return !m_holder.empty(); }
   operator DataConstProxy() const;
   operator DataProxy();
 
-  const std::string &name() const noexcept { return m_holder.begin()->first; }
+  const std::string &name() const { return m_holder.begin()->first; }
 
-  CoordsConstProxy coords() const noexcept { return get().coords(); }
-  CoordsProxy coords() noexcept { return get().coords(); }
+  CoordsConstProxy coords() const { return get().coords(); }
+  CoordsProxy coords() { return get().coords(); }
 
-  LabelsConstProxy labels() const noexcept { return get().labels(); }
-  LabelsProxy labels() noexcept { return get().labels(); }
+  LabelsConstProxy labels() const { return get().labels(); }
+  LabelsProxy labels() { return get().labels(); }
 
-  AttrsConstProxy attrs() const noexcept { return get().attrs(); }
-  AttrsProxy attrs() noexcept { return get().attrs(); }
+  AttrsConstProxy attrs() const { return get().attrs(); }
+  AttrsProxy attrs() { return get().attrs(); }
 
-  Dimensions dims() const noexcept { return get().dims(); }
+  Dimensions dims() const { return get().dims(); }
   DType dtype() const { return get().dtype(); }
   units::Unit unit() const { return get().unit(); }
 
@@ -843,9 +867,9 @@ public:
   }
 
   /// Return true if the data array contains data values.
-  bool hasData() const noexcept { return get().hasData(); }
+  bool hasData() const { return get().hasData(); }
   /// Return true if the data array contains data variances.
-  bool hasVariances() const noexcept { return get().hasVariances(); }
+  bool hasVariances() const { return get().hasVariances(); }
 
   /// Return untyped const proxy for data (values and optional variances).
   VariableConstProxy data() const { return get().data(); }
@@ -866,10 +890,10 @@ public:
   DataArray &operator-=(const DataConstProxy &other);
   DataArray &operator*=(const DataConstProxy &other);
   DataArray &operator/=(const DataConstProxy &other);
-  DataArray &operator+=(const Variable &other);
-  DataArray &operator-=(const Variable &other);
-  DataArray &operator*=(const Variable &other);
-  DataArray &operator/=(const Variable &other);
+  DataArray &operator+=(const VariableConstProxy &other);
+  DataArray &operator-=(const VariableConstProxy &other);
+  DataArray &operator*=(const VariableConstProxy &other);
+  DataArray &operator/=(const VariableConstProxy &other);
 
   // TODO need to define some details regarding handling of dense coords in case
   // the array is sparse, not exposing this to Python for now.
@@ -880,9 +904,16 @@ public:
     setCoord(dim, Variable(coord));
   }
 
+  template <class... Ts> auto slice(const Ts... slices) const {
+    return get().slice(slices...);
+  }
+  template <class... Ts> auto slice(const Ts... slices) {
+    return get().slice(slices...);
+  }
+
 private:
-  DataConstProxy get() const noexcept { return m_holder.begin()->second; }
-  DataProxy get() noexcept { return m_holder.begin()->second; }
+  DataConstProxy get() const;
+  DataProxy get();
 
   Dataset m_holder;
 };
@@ -907,6 +938,24 @@ SCIPP_CORE_EXPORT DataArray operator-(const DataConstProxy &a,
 SCIPP_CORE_EXPORT DataArray operator*(const DataConstProxy &a,
                                       const DataConstProxy &b);
 SCIPP_CORE_EXPORT DataArray operator/(const DataConstProxy &a,
+                                      const DataConstProxy &b);
+
+SCIPP_CORE_EXPORT DataArray operator+(const DataConstProxy &a,
+                                      const VariableConstProxy &b);
+SCIPP_CORE_EXPORT DataArray operator-(const DataConstProxy &a,
+                                      const VariableConstProxy &b);
+SCIPP_CORE_EXPORT DataArray operator*(const DataConstProxy &a,
+                                      const VariableConstProxy &b);
+SCIPP_CORE_EXPORT DataArray operator/(const DataConstProxy &a,
+                                      const VariableConstProxy &b);
+
+SCIPP_CORE_EXPORT DataArray operator+(const VariableConstProxy &a,
+                                      const DataConstProxy &b);
+SCIPP_CORE_EXPORT DataArray operator-(const VariableConstProxy &a,
+                                      const DataConstProxy &b);
+SCIPP_CORE_EXPORT DataArray operator*(const VariableConstProxy &a,
+                                      const DataConstProxy &b);
+SCIPP_CORE_EXPORT DataArray operator/(const VariableConstProxy &a,
                                       const DataConstProxy &b);
 
 SCIPP_CORE_EXPORT Dataset operator+(const Dataset &lhs, const Dataset &rhs);

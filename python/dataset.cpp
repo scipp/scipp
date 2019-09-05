@@ -86,11 +86,26 @@ void bind_data_array_properties(py::class_<T, Ignored...> &c) {
   c.def("__repr__", [](const T &self) { return to_string(self); });
   c.def("copy", [](const T &self) { return DataArray(self); },
         "Return a (deep) copy.");
+  c.def_property("data",
+                 py::cpp_function(
+                     [](T &self) {
+                       return self.hasData() ? py::cast(self.data())
+                                             : py::none();
+                     },
+                     py::return_value_policy::move, py::keep_alive<0, 1>()),
+                 [](T &self, const VariableConstProxy &data) {
+                   self.data().assign(data);
+                 });
   bind_coord_properties(c);
   bind_comparison<DataConstProxy>(c);
-  bind_in_place_binary<DataProxy>(c);
-  bind_in_place_binary<Variable>(c);
   bind_data_properties(c);
+  bind_slice_methods(c);
+  bind_in_place_binary<DataProxy>(c);
+  bind_in_place_binary<VariableConstProxy>(c);
+  bind_binary<Dataset>(c);
+  bind_binary<DatasetProxy>(c);
+  bind_binary<DataProxy>(c);
+  bind_binary<VariableConstProxy>(c);
 }
 
 void init_dataset(py::module &m) {
@@ -117,16 +132,6 @@ void init_dataset(py::module &m) {
         Proxy for DataArray, representing a sliced view onto a DataArray, or an item of a Dataset;
         Mostly equivalent to DataArray, see there for details.)");
   dataProxy.def(py::init<DataArray &>());
-  dataProxy.def_property(
-      "data",
-      py::cpp_function(
-          [](const DataProxy &self) {
-            return self.hasData() ? py::cast(self.data()) : py::none();
-          },
-          py::return_value_policy::move, py::keep_alive<0, 1>()),
-      [](const DataProxy &self, const VariableConstProxy &data) {
-        self.data().assign(data);
-      });
 
   bind_data_array_properties(dataArray);
   bind_data_array_properties(dataProxy);
@@ -183,7 +188,6 @@ void init_dataset(py::module &m) {
 
   bind_slice_methods(dataset);
   bind_slice_methods(datasetProxy);
-  bind_slice_methods(dataProxy);
 
   bind_comparison<Dataset>(dataset);
   bind_comparison<DatasetProxy>(dataset);
@@ -203,9 +207,6 @@ void init_dataset(py::module &m) {
   bind_binary<Dataset>(datasetProxy);
   bind_binary<DatasetProxy>(datasetProxy);
   bind_binary<DataProxy>(datasetProxy);
-  bind_binary<Dataset>(dataProxy);
-  bind_binary<DatasetProxy>(dataProxy);
-  bind_binary<DataProxy>(dataProxy);
 
   m.def("concatenate",
         py::overload_cast<const DataConstProxy &, const DataConstProxy &,

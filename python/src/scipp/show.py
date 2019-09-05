@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
+from math import ceil
 
 import numpy as np
 import scipp as sc
@@ -41,6 +42,7 @@ class VariableDrawer():
         # special extent value indicating sparse dimension
         self._sparse_flag = -1
         self._sparse_box_scale = 0.3
+        self._x_stride = 1
 
     def _draw_box(self, origin_x, origin_y, color, xlen=1):
         return " ".join([
@@ -90,7 +92,9 @@ class VariableDrawer():
             data = self._variable.values
         for vals in data:
             extent = max(extent, len(vals))
-        return extent
+        max_extent = _cubes_in_full_width / 2 / self._sparse_box_scale
+        self._x_stride = max(1, ceil(extent / max_extent))
+        return min(extent, max_extent)
 
     def size(self):
         """Return the size (width and height) of the rendered output"""
@@ -133,6 +137,8 @@ class VariableDrawer():
 
         if len(shape) <= 3:
             lz, ly, lx = self._extents()
+            if lx == self._sparse_flag:
+                self._sparse_extent()  # dummy call to init stride
             for z in range(lz):
                 for y in reversed(range(ly)):
                     true_lx = lx
@@ -140,7 +146,7 @@ class VariableDrawer():
                     sparse = False
                     if lx == self._sparse_flag:
                         # TODO This works only for 2D and no transpose
-                        true_lx = len(data[ly - y - 1])
+                        true_lx = ceil(len(data[ly - y - 1]) / self._x_stride)
                         if true_lx == 0:
                             true_lx = 1
                             x_scale *= 0
@@ -346,9 +352,11 @@ class DatasetDrawer():
             if coord.sparse_dim is not None:
                 continue
             item = (dim, coord, _colors['coord'])
-            if dim == dims[-1]:
+            if len(coord.dims) == 0:
+                area_0d.append(item)
+            elif coord.dims[-1] == dims[-1]:
                 area_x.append(item)
-            elif dim == dims[-2]:
+            elif coord.dims[-1] == dims[-2]:
                 area_y.append(item)
             else:
                 area_z.append(item)
@@ -356,11 +364,12 @@ class DatasetDrawer():
         for name, labels in dataset.labels:
             if labels.sparse_dim is not None:
                 continue
-            dim = labels.dims[-1]
             item = (name, labels, _colors['labels'])
-            if dim == dims[-1]:
+            if len(labels.dims) == 0:
+                area_0d.append(item)
+            elif labels.dims[-1] == dims[-1]:
                 area_x.append(item)
-            elif dim == dims[-2]:
+            elif labels.dims[-1] == dims[-2]:
                 area_y.append(item)
             else:
                 area_z.append(item)
@@ -368,11 +377,12 @@ class DatasetDrawer():
         for name, attr in dataset.attrs:
             if attr.sparse_dim is not None:
                 continue
-            dim = attr.dims[-1]
             item = (name, attr, _colors['attr'])
-            if dim == dims[-1]:
+            if len(attr.dims) == 0:
+                area_0d.append(item)
+            elif attr.dims[-1] == dims[-1]:
                 area_x.append(item)
-            elif dim == dims[-2]:
+            elif attr.dims[-1] == dims[-2]:
                 area_y.append(item)
             else:
                 area_z.append(item)

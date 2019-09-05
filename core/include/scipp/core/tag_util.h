@@ -47,7 +47,8 @@ auto apply(const DType dtype, Args &&... args) {
   return callDType<Callable>(
       std::tuple<double, float, int64_t, int32_t, std::string, bool,
                  sparse_container<double>, sparse_container<float>,
-                 sparse_container<int64_t>, Dataset, Eigen::Vector3d>{},
+                 sparse_container<int64_t>, DataArray, Dataset,
+                 Eigen::Vector3d>{},
       dtype, std::forward<Args>(args)...);
 }
 

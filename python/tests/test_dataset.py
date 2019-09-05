@@ -85,8 +85,6 @@ def test_coord_setitem():
     d = sc.Dataset({'a': var}, coords={Dim.X: var})
     with pytest.raises(RuntimeError):
         d[Dim.X, 2:3].coords[Dim.Y] = sc.Variable(1.0)
-    with pytest.raises(RuntimeError):
-        d['a'].coords[Dim.Y] = sc.Variable(1.0)
     d.coords[Dim.Y] = sc.Variable(1.0)
     assert len(d) == 1
     assert len(d.coords) == 2
@@ -139,8 +137,6 @@ def test_labels_setitem():
     d = sc.Dataset({'a': var}, coords={Dim.X: var})
     with pytest.raises(RuntimeError):
         d[Dim.X, 2:3].labels['label'] = sc.Variable(1.0)
-    with pytest.raises(RuntimeError):
-        d['a'].labels['label'] = sc.Variable(1.0)
     d.labels['label'] = sc.Variable(1.0)
     assert len(d) == 1
     assert len(d.labels) == 1
@@ -170,8 +166,6 @@ def test_attrs_setitem():
     d = sc.Dataset({'a': var}, coords={Dim.X: var})
     with pytest.raises(RuntimeError):
         d[Dim.X, 2:3].attrs['attr'] = sc.Variable(1.0)
-    with pytest.raises(RuntimeError):
-        d['a'].attrs['attr'] = sc.Variable(1.0)
     d.attrs['attr'] = sc.Variable(1.0)
     assert len(d) == 1
     assert len(d.attrs) == 1
@@ -380,7 +374,9 @@ def test_dataset_histogram():
 
 
 def test_histogram_and_setitem():
-    var = sc.Variable(dims=[Dim.X, Dim.Tof], shape=[2, sc.Dimensions.Sparse])
+    var = sc.Variable(dims=[Dim.X, Dim.Tof],
+                      shape=[2, sc.Dimensions.Sparse],
+                      unit=sc.units.us)
     var[Dim.X, 0].values = np.arange(3)
     var[Dim.X, 0].values.append(42)
     var[Dim.X, 0].values.extend(np.ones(3))
@@ -407,12 +403,10 @@ def test_dataset_merge():
 def test_dataset_concatenate():
     a = sc.Dataset(
         {'data': sc.Variable([Dim.X], values=np.array([11, 12]))},
-        coords={Dim.X: sc.Variable([Dim.X], values=np.array([1, 2]))}
-    )
+        coords={Dim.X: sc.Variable([Dim.X], values=np.array([1, 2]))})
     b = sc.Dataset(
         {'data': sc.Variable([Dim.X], values=np.array([13, 14]))},
-        coords={Dim.X: sc.Variable([Dim.X], values=np.array([3, 4]))}
-    )
+        coords={Dim.X: sc.Variable([Dim.X], values=np.array([3, 4]))})
 
     c = sc.concatenate(a, b, Dim.X)
 

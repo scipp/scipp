@@ -54,9 +54,9 @@ auto makeProxyItems(const Dimensions &dims, T1 &coords, T2 *sparse = nullptr) {
   if (sparse) {
     if constexpr (std::is_same_v<T2, const Variable> ||
                   std::is_same_v<T2, Variable>) {
-      items.emplace(sparseDim, makeProxyItem(&*sparse));
+      items.emplace(sparseDim, makeProxyItem(sparse));
     } else if constexpr (!std::is_same_v<T2, void>) {
-      for (const auto &item : *sparse)
+      for (auto &item : *sparse)
         items.emplace(item.first, makeProxyItem(&item.second));
     }
   }
@@ -606,22 +606,22 @@ DataProxy DataProxy::operator/=(const DataConstProxy &other) const {
   return *this;
 }
 
-DataProxy DataProxy::operator+=(const Variable &other) const {
+DataProxy DataProxy::operator+=(const VariableConstProxy &other) const {
   data() += other;
   return *this;
 }
 
-DataProxy DataProxy::operator-=(const Variable &other) const {
+DataProxy DataProxy::operator-=(const VariableConstProxy &other) const {
   data() -= other;
   return *this;
 }
 
-DataProxy DataProxy::operator*=(const Variable &other) const {
+DataProxy DataProxy::operator*=(const VariableConstProxy &other) const {
   data() *= other;
   return *this;
 }
 
-DataProxy DataProxy::operator/=(const Variable &other) const {
+DataProxy DataProxy::operator/=(const VariableConstProxy &other) const {
   data() /= other;
   return *this;
 }
@@ -1154,6 +1154,9 @@ DataArray histogram(const DataConstProxy &sparse,
     throw std::logic_error("Only the simple case histograms may be constructed "
                            "for now: 2 dims including sparse.");
   auto dim = binEdges.dims().inner();
+  if (binEdges.unit() != sparse.coords()[dim].unit())
+    throw std::logic_error(
+        "Bin edges must have same unit as the sparse input coordinate.");
   if (binEdges.dtype() != dtype<double> ||
       sparse.coords()[dim].dtype() != DType::Double)
     throw std::logic_error("Histogram is only available for double type.");
@@ -1257,7 +1260,7 @@ auto concat(const T1 &a, const T2 &b, const Dim dim, const Dimensions &dimsA,
 
 DataArray concatenate(const DataConstProxy &a, const DataConstProxy &b,
                       const Dim dim) {
-  if (a == b)
+  if (!a.dims().contains(dim) && a == b)
     return DataArray{a};
   return DataArray(concatenate(a.data(), b.data(), dim),
                    concat(a.coords(), b.coords(), dim, a.dims(), b.dims()),
@@ -1346,5 +1349,7 @@ VariableConstProxy same(const VariableConstProxy &a,
 
 INSTANTIATE_VARIABLE(Dataset)
 INSTANTIATE_VARIABLE(sparse_container<Dataset>)
+INSTANTIATE_VARIABLE(DataArray)
+INSTANTIATE_VARIABLE(sparse_container<DataArray>)
 
 } // namespace scipp::core

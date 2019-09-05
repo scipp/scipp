@@ -34,6 +34,8 @@ std::string to_string(const DType dtype) {
     return "string";
   case DType::Bool:
     return "bool";
+  case DType::DataArray:
+    return "DataArray";
   case DType::Dataset:
     return "Dataset";
   case DType::Float:
@@ -50,6 +52,8 @@ std::string to_string(const DType dtype) {
     return "sparse_double";
   case DType::SparseInt64:
     return "sparse_int64";
+  case DType::SparseInt32:
+    return "sparse_int32";
   case DType::EigenVector3d:
     return "vector_3_double";
   case DType::Unknown:
