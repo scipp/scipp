@@ -170,28 +170,25 @@ template <class... Ts> class as_VariableViewImpl {
               typename std::remove_reference_t<decltype(proxy_)>::value_type;
           if constexpr (std::is_trivial_v<T>) {
             auto &data = obj.cast<const py::array_t<T>>();
-            if (dims.shape().size() != data.ndim())
+            bool except = (dims.shape().size() != data.ndim());
+            for (int i = 0; i < dims.shape().size(); ++i)
+              except |= (dims.shape()[i] != data.shape()[i]);
+            if (except)
               throw except::DimensionError("The shape of the provided data "
                                            "does not match the existing "
                                            "object.");
-            for (int i = 0; i < dims.shape().size(); ++i)
-              if (dims.shape()[i] != data.shape()[i])
-                throw except::DimensionError(
-                    "The shape of the provided data does not "
-                    "match the existing object.");
             copy_flattened<T>(data, proxy_);
           } else if constexpr (is_sparse_v<T>) {
-            auto &data_t =
-                obj.cast<const py::array_t<typename T::value_type>>();
+            auto &data = obj.cast<const py::array_t<typename T::value_type>>();
             // Sparse data can be set from an array only for a single item.
             if (dims.shape().size() != 0)
               throw except::DimensionError(
                   "Sparse data cannot be set from a single "
                   "array, unless the sparse dimension is the "
                   "only dimension.");
-            if (data_t.ndim() != 1)
+            if (data.ndim() != 1)
               throw except::DimensionError("Expected 1-D data.");
-            auto r = data_t.unchecked();
+            auto r = data.unchecked();
             proxy_[0].clear();
             for (ssize_t i = 0; i < r.shape(0); ++i)
               proxy_[0].emplace_back(r(i));
