@@ -169,6 +169,13 @@ def test_0D_scalar_access():
     assert var.values == 1.2
 
 
+def test_0D_scalar_string():
+    var = sp.Variable(value='a')
+    assert var.value == 'a'
+    var.value = 'b'
+    assert var == sp.Variable(value='b')
+
+
 def test_1D_scalar_access_fail():
     var = sp.Variable([Dim.X], (1, ))
     with pytest.raises(RuntimeError):
@@ -183,6 +190,37 @@ def test_1D_access():
     assert var.values.shape == (2, )
     var.values[1] = 1.2
     assert var.values[1] == 1.2
+
+
+def test_1D_set_from_list():
+    var = sp.Variable([Dim.X], (2, ))
+    var.values = [1.0, 2.0]
+    assert var == sp.Variable([Dim.X], values=[1.0, 2.0])
+
+
+def test_1D_string():
+    var = sp.Variable([Dim.X], values=['a', 'b'])
+    assert len(var.values) == 2
+    assert var.values[0] == 'a'
+    assert var.values[1] == 'b'
+    var.values = ['c', 'd']
+    assert var == sp.Variable([Dim.X], values=['c', 'd'])
+
+
+def test_1D_converting():
+    var = sp.Variable([Dim.X], values=[1, 2])
+    var.values = [3.3, 4.6]
+    # floats get truncated
+    assert var == sp.Variable([Dim.X], values=[3, 4])
+
+
+def test_1D_dataset():
+    var = sp.Variable([Dim.X], shape=(2, ), dtype=sp.dtype.Dataset)
+    d1 = sp.Dataset({'a': 1.5 * sp.units.m})
+    d2 = sp.Dataset({'a': 2.5 * sp.units.m})
+    var.values = [d1, d2]
+    assert var.values[0] == d1
+    assert var.values[1] == d2
 
 
 def test_1D_access_bad_shape_fail():

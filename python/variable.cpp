@@ -172,6 +172,7 @@ void init_variable(py::module &m) {
   bind_init_0D<int32_t>(variable);
   bind_init_0D<double>(variable);
   bind_init_0D<float>(variable);
+  bind_init_0D<std::string>(variable);
   bind_init_0D<Eigen::Vector3d>(variable);
   bind_init_1D<std::string>(variable);
   bind_init_1D<Eigen::Vector3d>(variable);
