@@ -5,7 +5,7 @@
 import numpy as np
 from collections import namedtuple
 from .tools import edges_to_centers, axis_label, parse_colorbar, \
-                   process_dimensions
+                   process_dimensions, get_coord_array
 
 # Plotly imports
 from IPython.display import display
@@ -592,8 +592,9 @@ class SliceViewer:
 
         # Get the dimensions of the image to be displayed
         self.coords = self.input_data.coords
-        self.xcoord = self.coords[axes[-1]]
-        self.ycoord = self.coords[axes[-2]]
+        self.labels = self.input_data.labels
+        _, self.xcoord = get_coord_array(self.coords, self.labels, axes[-1])
+        _, self.ycoord = get_coord_array(self.coords, self.labels, axes[-2])
         self.xlabs = self.xcoord.dims
         self.ylabs = self.ycoord.dims
 
