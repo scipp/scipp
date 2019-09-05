@@ -10,7 +10,8 @@ namespace scipp::core {
 
 namespace counts {
 
-auto getBinWidths(const Dataset &d, const std::vector<Dim> &dims) {
+std::vector<Variable> getBinWidths(const Dataset &d,
+                                   const std::vector<Dim> &dims) {
   std::vector<Variable> binWidths;
   for (const auto dim : dims) {
     const auto &coord = d.coords()[dim];
