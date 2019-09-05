@@ -1260,7 +1260,7 @@ auto concat(const T1 &a, const T2 &b, const Dim dim, const Dimensions &dimsA,
 
 DataArray concatenate(const DataConstProxy &a, const DataConstProxy &b,
                       const Dim dim) {
-  if (a == b)
+  if (!a.dims().contains(dim) && a == b)
     return DataArray{a};
   return DataArray(concatenate(a.data(), b.data(), dim),
                    concat(a.coords(), b.coords(), dim, a.dims(), b.dims()),
