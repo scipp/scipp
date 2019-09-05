@@ -403,12 +403,10 @@ def test_dataset_merge():
 def test_dataset_concatenate():
     a = sc.Dataset(
         {'data': sc.Variable([Dim.X], values=np.array([11, 12]))},
-        coords={Dim.X: sc.Variable([Dim.X], values=np.array([1, 2]))}
-    )
+        coords={Dim.X: sc.Variable([Dim.X], values=np.array([1, 2]))})
     b = sc.Dataset(
         {'data': sc.Variable([Dim.X], values=np.array([13, 14]))},
-        coords={Dim.X: sc.Variable([Dim.X], values=np.array([3, 4]))}
-    )
+        coords={Dim.X: sc.Variable([Dim.X], values=np.array([3, 4]))})
 
     c = sc.concatenate(a, b, Dim.X)
 

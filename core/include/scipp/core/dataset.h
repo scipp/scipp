@@ -815,6 +815,7 @@ private:
 /// Data array, a variable with coordinates, labels, and attributes.
 class SCIPP_CORE_EXPORT DataArray {
 public:
+  DataArray() = default;
   explicit DataArray(const DataConstProxy &proxy);
   template <class CoordMap = std::map<Dim, Variable>,
             class LabelsMap = std::map<std::string, Variable>,
@@ -840,21 +841,22 @@ public:
           "DataArray must have either data or a sparse coordinate.");
   }
 
+  explicit operator bool() const noexcept { return !m_holder.empty(); }
   operator DataConstProxy() const;
   operator DataProxy();
 
-  const std::string &name() const noexcept { return m_holder.begin()->first; }
+  const std::string &name() const { return m_holder.begin()->first; }
 
-  CoordsConstProxy coords() const noexcept { return get().coords(); }
-  CoordsProxy coords() noexcept { return get().coords(); }
+  CoordsConstProxy coords() const { return get().coords(); }
+  CoordsProxy coords() { return get().coords(); }
 
-  LabelsConstProxy labels() const noexcept { return get().labels(); }
-  LabelsProxy labels() noexcept { return get().labels(); }
+  LabelsConstProxy labels() const { return get().labels(); }
+  LabelsProxy labels() { return get().labels(); }
 
-  AttrsConstProxy attrs() const noexcept { return get().attrs(); }
-  AttrsProxy attrs() noexcept { return get().attrs(); }
+  AttrsConstProxy attrs() const { return get().attrs(); }
+  AttrsProxy attrs() { return get().attrs(); }
 
-  Dimensions dims() const noexcept { return get().dims(); }
+  Dimensions dims() const { return get().dims(); }
   DType dtype() const { return get().dtype(); }
   units::Unit unit() const { return get().unit(); }
 
@@ -865,9 +867,9 @@ public:
   }
 
   /// Return true if the data array contains data values.
-  bool hasData() const noexcept { return get().hasData(); }
+  bool hasData() const { return get().hasData(); }
   /// Return true if the data array contains data variances.
-  bool hasVariances() const noexcept { return get().hasVariances(); }
+  bool hasVariances() const { return get().hasVariances(); }
 
   /// Return untyped const proxy for data (values and optional variances).
   VariableConstProxy data() const { return get().data(); }
@@ -910,8 +912,8 @@ public:
   }
 
 private:
-  DataConstProxy get() const noexcept { return m_holder.begin()->second; }
-  DataProxy get() noexcept { return m_holder.begin()->second; }
+  DataConstProxy get() const;
+  DataProxy get();
 
   Dataset m_holder;
 };

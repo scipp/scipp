@@ -13,6 +13,21 @@ DataArray::DataArray(const DataConstProxy &proxy) {
 DataArray::operator DataConstProxy() const { return get(); }
 DataArray::operator DataProxy() { return get(); }
 
+void requireValid(const DataArray &a) {
+  if (!a)
+    throw std::runtime_error("Invalid DataArray.");
+}
+
+DataConstProxy DataArray::get() const {
+  requireValid(*this);
+  return m_holder.begin()->second;
+}
+
+DataProxy DataArray::get() {
+  requireValid(*this);
+  return m_holder.begin()->second;
+}
+
 DataArray &DataArray::operator+=(const DataConstProxy &other) {
   expect::coordsAndLabelsAreSuperset(*this, other);
   data() += other.data();

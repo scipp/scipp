@@ -172,6 +172,8 @@ template <class... Ts> class as_VariableViewImpl {
       return {Getter::template get<sparse_container<float>>(proxy)};
     case dtype<sparse_container<int64_t>>:
       return {Getter::template get<sparse_container<int64_t>>(proxy)};
+    case dtype<DataArray>:
+      return {Getter::template get<DataArray>(proxy)};
     case dtype<Dataset>:
       return {Getter::template get<Dataset>(proxy)};
     case dtype<Eigen::Vector3d>:
@@ -326,7 +328,8 @@ public:
 using as_VariableView =
     as_VariableViewImpl<double, float, int64_t, int32_t, bool, std::string,
                         sparse_container<double>, sparse_container<float>,
-                        sparse_container<int64_t>, Dataset, Eigen::Vector3d>;
+                        sparse_container<int64_t>, DataArray, Dataset,
+                        Eigen::Vector3d>;
 
 template <class T, class... Ignored>
 void bind_data_properties(pybind11::class_<T, Ignored...> &c) {

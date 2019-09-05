@@ -1349,5 +1349,7 @@ VariableConstProxy same(const VariableConstProxy &a,
 
 INSTANTIATE_VARIABLE(Dataset)
 INSTANTIATE_VARIABLE(sparse_container<Dataset>)
+INSTANTIATE_VARIABLE(DataArray)
+INSTANTIATE_VARIABLE(sparse_container<DataArray>)
 
 } // namespace scipp::core
