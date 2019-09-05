@@ -48,6 +48,8 @@ template <class T> std::string element_to_string(const T &item) {
             to_string(item[2]) + "), "};
   else if constexpr (is_sparse_v<T>)
     return array_to_string(item) + ", ";
+  else if constexpr (std::is_same_v<T, DataArray>)
+    return {"DataArray, "};
   else if constexpr (std::is_same_v<T, Dataset>)
     return {"Dataset, "};
   else
