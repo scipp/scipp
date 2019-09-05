@@ -104,7 +104,7 @@ def plot_2d(input_data, name=None, axes=None, contours=False, cb=None,
     labels = input_data.labels
     xcoord, ycoord, xe, ye, xc, yc, xlabs, ylabs, zlabs = \
         process_dimensions(input_data=input_data, coords=coords,
-                labels=labels, axes=axes)
+                           labels=labels, axes=axes)
 
     # Parse colorbar
     cbar = parse_colorbar(config.cb, cb)

@@ -140,7 +140,7 @@ def plot_image(input_data, name=None, axes=None, contours=False, cb=None,
     labels = input_data.labels
     xcoord, ycoord, xe, ye, xc, yc, xlabs, ylabs, zlabs = \
         process_dimensions(input_data=input_data, coords=coords,
-                labels=labels, axes=axes)
+                           labels=labels, axes=axes)
 
     if contours:
         plot_type = 'contour'
@@ -492,7 +492,7 @@ def plot_waterfall(input_data, dim=None, name=None, axes=None, filename=None,
     labels = input_data.labels
     xcoord, ycoord, xe, ye, xc, yc, xlabs, ylabs, zlabs = \
         process_dimensions(input_data=input_data, coords=coords,
-                labels=labels, axes=axes)
+                           labels=labels, axes=axes)
 
     data = []
     z = input_data.values

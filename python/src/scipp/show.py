@@ -92,8 +92,8 @@ class VariableDrawer():
             data = self._variable.values
         for vals in data:
             extent = max(extent, len(vals))
-        max_extent = _cubes_in_full_width/2/self._sparse_box_scale
-        self._x_stride = max(1, ceil(extent/max_extent))
+        max_extent = _cubes_in_full_width / 2 / self._sparse_box_scale
+        self._x_stride = max(1, ceil(extent / max_extent))
         return min(extent, max_extent)
 
     def size(self):
@@ -138,7 +138,7 @@ class VariableDrawer():
         if len(shape) <= 3:
             lz, ly, lx = self._extents()
             if lx == self._sparse_flag:
-                self._sparse_extent() # dummy call to init stride
+                self._sparse_extent()  # dummy call to init stride
             for z in range(lz):
                 for y in reversed(range(ly)):
                     true_lx = lx
