@@ -112,7 +112,7 @@ auto format_variable(const Key &key, const Var &variable,
   std::stringstream s;
   const std::string colSep("  ");
   s << tab << std::left << std::setw(24) << to_string(key);
-  s << colSep << std::setw(8) << to_string(variable.dtype());
+  s << colSep << std::setw(9) << to_string(variable.dtype());
   s << colSep << std::setw(15) << '[' + variable.unit().name() + ']';
   s << colSep << make_dims_labels(variable, datasetDims);
   s << colSep
@@ -232,7 +232,7 @@ template <class T> Dimensions dimensions(const T &dataset) {
 }
 
 std::string to_string(const DataArray &data) {
-  return to_string(DataConstProxy(data));
+  return do_to_string(data, "<scipp.DataArray>", data.dims());
 }
 
 std::string to_string(const DataConstProxy &data) {
