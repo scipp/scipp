@@ -6,6 +6,7 @@
 #define TEST_MACROS_H
 
 #include <algorithm>
+#include <cmath>
 #include <initializer_list>
 
 #define EXPECT_THROW_MSG(TRY_BLOCK, EXCEPTION_TYPE, MESSAGE)                   \
@@ -37,8 +38,17 @@ template <class T1, class T2>
 bool equals(const T1 &a, const std::initializer_list<T2> &b) {
   return std::equal(a.begin(), a.end(), b.begin(), b.end());
 }
+
 template <class T1, class T2> bool equals(const T1 &a, const T2 &b) {
   return std::equal(a.begin(), a.end(), b.begin(), b.end());
+}
+
+template <class T1, class T2, typename Tol>
+bool equals(const T1 &a, const T2 &b, const Tol tolerance) {
+  return std::equal(a.begin(), a.end(), b.begin(), b.end(),
+                    [tolerance](const auto &aa, const auto &bb) {
+                      return std::abs(aa - bb) < tolerance;
+                    });
 }
 
 /* Helper macros to avoid warnings when testing [[nodiscard]] qualified
