@@ -14,10 +14,14 @@ RUN jupyter labextension install @jupyterlab/plotly-extension@0.18.1
 # Install Scipp and dependencies
 RUN conda install --yes \
       -c scipp/label/dev \
+      -c mantid \
       ipython \
       matplotlib \
       plotly \
-      scipp
+      scipp \
+      ipywidgets \
+      mantid-framework \
+      python=3.6
 
 # Add the tutorials and user guide notebooks
 ADD 'python/demo/' "/home/$NB_USER/demo"
