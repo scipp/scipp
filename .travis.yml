@@ -53,7 +53,7 @@ jobs:
         - PATH="$HOME/miniconda/bin:$PATH"
       install: .travis/install_conda.sh "Miniconda3-latest-Linux-x86_64.sh"
       script:
-        - .travis/conda_build_and_deploy.sh
+        - .travis/conda_build_and_deploy.sh --label 'dev'
         - .travis/trigger_docker_build.sh
         - .travis/trigger_readthedocs_build.sh
     - os: osx
@@ -69,7 +69,7 @@ jobs:
         - OSX_VERSION=10.14
       install:
         - .travis/install_conda.sh "Miniconda3-latest-MacOSX-x86_64.sh"
-      script: .travis/conda_build_and_deploy.sh
+      script: .travis/conda_build_and_deploy.sh --label 'dev'
     - name: "conda linux python3.6"
       if: type = cron AND branch = master
       git:
@@ -78,4 +78,4 @@ jobs:
         - PATH="$HOME/miniconda/bin:$PATH"
       install: .travis/install_conda.sh "Miniconda3-latest-Linux-x86_64.sh"
       script:
-        - .travis/conda_build_and_deploy.sh --python 3.6
+        - .travis/conda_build_and_deploy.sh --label 'dev' --python 3.6
