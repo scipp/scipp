@@ -91,6 +91,7 @@ jobs:
       install: .travis/install_conda.sh "Miniconda3-latest-Linux-x86_64.sh"
       script:
         - .travis/conda_build_and_deploy.sh
+        - .travis/conda_build_and_deploy.sh --python 3.6
     - os: osx
       osx_image: xcode10.2
       name: "release conda osx"
@@ -107,14 +108,3 @@ jobs:
       install:
         - .travis/install_conda.sh "Miniconda3-latest-MacOSX-x86_64.sh"
       script: .travis/conda_build_and_deploy.sh
-    - name: "release conda linux python3.6"
-      if: type = cron AND branch = master
-      on:
-        tags: true
-      git:
-        depth: false
-      env:
-        - PATH="$HOME/miniconda/bin:$PATH"
-      install: .travis/install_conda.sh "Miniconda3-latest-Linux-x86_64.sh"
-      script:
-        - .travis/conda_build_and_deploy.sh --python 3.6
