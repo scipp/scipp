@@ -112,7 +112,7 @@ auto format_variable(const Key &key, const Var &variable,
   std::stringstream s;
   const std::string colSep("  ");
   s << tab << std::left << std::setw(24) << to_string(key);
-  s << colSep << std::setw(8) << to_string(variable.dtype());
+  s << colSep << std::setw(9) << to_string(variable.dtype());
   s << colSep << std::setw(15) << '[' + variable.unit().name() + ']';
   s << colSep << make_dims_labels(variable, datasetDims);
   s << colSep
@@ -162,35 +162,41 @@ std::string to_string(const VariableConstProxy &variable) {
   return format_variable("<scipp.VariableProxy>", variable);
 }
 
-std::string to_string(const DataArray &data) {
-  return to_string(DataConstProxy(data));
-}
-
-std::string to_string(const DataConstProxy &data) {
-  return format_data_proxy("<scipp.DataProxy>", data);
-}
-
 template <class D>
 std::string do_to_string(const D &dataset, const std::string &id,
                          const Dimensions &dims) {
   std::stringstream s;
   s << id + '\n';
   s << "Dimensions: " << to_string(dims) << '\n';
-  s << "Coordinates:\n";
+
+  if (!dataset.coords().empty())
+    s << "Coordinates:\n";
   for (const auto & [ dim, var ] : dataset.coords())
     s << format_variable(dim, var, dims);
-  s << "Labels:\n";
+
+  if (!dataset.labels().empty())
+    s << "Labels:\n";
   for (const auto & [ name, var ] : dataset.labels())
     s << format_variable(name, var, dims);
-  s << "Data:\n";
-  std::set<std::string> sorted_items;
-  for (const auto &item : dataset)
-    sorted_items.insert(item.first);
-  for (const auto &name : sorted_items)
-    s << format_data_proxy(name, dataset[name], dims);
-  s << "Attributes:\n";
+
+  if (!dataset.attrs().empty())
+    s << "Attributes:\n";
   for (const auto & [ name, var ] : dataset.attrs())
     s << format_variable(name, var, dims);
+
+  if constexpr (std::is_same_v<D, DataArray> ||
+                std::is_same_v<D, DataConstProxy>) {
+    s << format_data_proxy("", dataset);
+  } else {
+    if (!dataset.empty())
+      s << "Data:\n";
+    std::set<std::string> sorted_items;
+    for (const auto &item : dataset)
+      sorted_items.insert(item.first);
+    for (const auto &name : sorted_items)
+      s << format_data_proxy(name, dataset[name], dims);
+  }
+
   s << '\n';
   return s.str();
 }
@@ -224,6 +230,14 @@ template <class T> Dimensions dimensions(const T &dataset) {
   if (sparse != Dim::Invalid && !datasetDims.contains(sparse))
     datasetDims.addInner(sparse, Dimensions::Sparse);
   return datasetDims;
+}
+
+std::string to_string(const DataArray &data) {
+  return do_to_string(data, "<scipp.DataArray>", data.dims());
+}
+
+std::string to_string(const DataConstProxy &data) {
+  return do_to_string(data, "<scipp.DataProxy>", data.dims());
 }
 
 std::string to_string(const Dataset &dataset) {

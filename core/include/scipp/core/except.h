@@ -48,6 +48,8 @@ template <class T> std::string element_to_string(const T &item) {
             to_string(item[2]) + "), "};
   else if constexpr (is_sparse_v<T>)
     return array_to_string(item) + ", ";
+  else if constexpr (std::is_same_v<T, DataArray>)
+    return {"DataArray, "};
   else if constexpr (std::is_same_v<T, Dataset>)
     return {"Dataset, "};
   else
@@ -60,9 +62,9 @@ template <class T> std::string array_to_string(const T &arr) {
     return std::string("[]");
   std::string s = "[";
   for (scipp::index i = 0; i < scipp::size(arr); ++i) {
-    if (i == 4 && size > 8) {
+    if (i == 2 && size > 4) {
       s += "..., ";
-      i = size - 4;
+      i = size - 2;
     }
     s += element_to_string(arr[i]);
   }
