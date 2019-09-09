@@ -17,9 +17,14 @@ To add scipp to an existing conda environment:
 
 .. code-block:: sh
 
+   $ conda install -c scipp scipp
+
+For a more up-to-date version the `scipp/label/dev` channel can be used instead:
+
+.. code-block:: sh
+
    $ conda install -c scipp/label/dev scipp
 
-We are currently recommending the `scipp/label/dev` channel instead of just `scipp` since the latter is not useful until we have had our first proper release.
 Note that these packages from `Anaconda Cloud <https://conda.anaconda.org/scipp>`_ are currently only available for Linux and macOS.
 
 After installation the module ``scipp`` can be imported in Python.
@@ -37,7 +42,6 @@ A docker container is available.
 
 A number of Jupyter demo notebooks can be found in the ``demo/`` folder.
 These notebooks provide an introduction and basic usage turorial.
-Note that the demo notebooks are being rewritten and may not work as expected until the 0.1 release.
 
 Getting Started with Docker
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
