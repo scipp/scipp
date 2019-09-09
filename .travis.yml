@@ -60,7 +60,7 @@ jobs:
       name: "release conda linux"
       if: NOT type = cron AND branch = master AND NOT type = pull_request
       on:
-        tag: true
+        tags: true
       git:
         depth: false
       env:
