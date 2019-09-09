@@ -56,6 +56,18 @@ jobs:
         - .travis/conda_build_and_deploy.sh --label 'dev'
         - .travis/trigger_docker_build.sh
         - .travis/trigger_readthedocs_build.sh
+    - stage: "Release"
+      name: "release conda linux"
+      if: NOT type = cron AND branch = master AND NOT type = pull_request
+      on:
+        tag: true
+      git:
+        depth: false
+      env:
+        - PATH="$HOME/miniconda/bin:$PATH"
+      install: .travis/install_conda.sh "Miniconda3-latest-Linux-x86_64.sh"
+      script:
+        - .travis/conda_build_and_deploy.sh
     - os: osx
       osx_image: xcode10.2
       name: "conda osx"
