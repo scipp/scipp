@@ -70,3 +70,9 @@ Documentation
    :maxdepth: 2
 
    additional-modules/scipp-neutron
+
+.. toctree::
+   :caption: About
+   :maxdepth: 2
+
+   about/release-notes
