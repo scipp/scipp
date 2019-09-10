@@ -23,6 +23,9 @@ RUN conda install --yes \
       mantid-framework \
       python=3.6
 
+# Avoid weird tornado AttributeError
+RUN pip install --upgrade nbconvert
+
 # Add the tutorials and user guide notebooks
 ADD 'python/demo/' "/home/$NB_USER/demo"
 ADD 'docs/tutorials/' "/home/$NB_USER/tutorials"
