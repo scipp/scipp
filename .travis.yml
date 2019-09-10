@@ -57,7 +57,8 @@ jobs:
         - .travis/conda_build_and_deploy.sh --label 'dev'
         - .travis/trigger_docker_build.sh
         - .travis/trigger_readthedocs_build.sh
-    - os: osx
+    - stage: "Deploy"
+      os: osx
       osx_image: xcode10.2
       name: "conda osx"
       if: NOT type = cron AND branch = master AND NOT type = pull_request
@@ -71,7 +72,8 @@ jobs:
       install:
         - .travis/install_conda.sh "Miniconda3-latest-MacOSX-x86_64.sh"
       script: .travis/conda_build_and_deploy.sh --label 'dev'
-    - name: "conda linux python3.6"
+    - stage: "Deploy"
+      name: "conda linux python3.6"
       if: type = cron AND branch = master
       git:
         depth: false
@@ -80,7 +82,8 @@ jobs:
       install: .travis/install_conda.sh "Miniconda3-latest-Linux-x86_64.sh"
       script:
         - .travis/conda_build_and_deploy.sh --label 'dev' --python 3.6
-    - name: "release conda linux"
+    - stage: "Deploy"
+      name: "release conda linux"
       if: NOT type = cron AND NOT type = pull_request AND tag =~ /^v\d+(\.\d+)*/
       git:
         depth: false
@@ -90,7 +93,8 @@ jobs:
       script:
         - .travis/conda_build_and_deploy.sh
         - .travis/conda_build_and_deploy.sh --python 3.6
-    - os: osx
+    - stage: "Deploy"
+      os: osx
       osx_image: xcode10.2
       name: "release conda osx"
       if: NOT type = cron AND NOT type = pull_request AND tag =~ /^v\d+(\.\d+)*/
