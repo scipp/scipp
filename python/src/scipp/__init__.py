@@ -7,3 +7,7 @@ from ._scipp import __version__
 from .show import show
 from .table import table
 from .plot import plot, config as plot_config
+from .compat.mantid import load as __load
+
+# from ._scipp import neutron as neutron
+setattr(neutron, "load", __load)

@@ -35,8 +35,8 @@ def load(filename="",
                               FileName=instrument_filename,
                               RewriteSpectraMap=True)
     if ws.id() == 'Workspace2D':
-        return mc.ConvertWorkspace2DToDataset(ws)
+        return mc.convert_Workspace2D_to_dataset(ws)
     if ws.id() == 'EventWorkspace':
-        return mc.ConvertEventWorkspaceToDataset(ws, load_pulse_times,
-                                                 EventType)
+        return mc.convert_EventWorkspace_to_dataset(ws, load_pulse_times,
+                                                    EventType)
     raise RuntimeError('Unsupported workspace type')
