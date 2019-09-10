@@ -5,6 +5,7 @@ cache: ccache
 branches:
   only:
     - master
+    - /^v\d+(\.\d+)*/
 
 env:
   global:
@@ -82,8 +83,6 @@ jobs:
     - stage: "Release"
       name: "release conda linux"
       if: NOT type = cron AND branch = master AND NOT type = pull_request AND tag =~ /^v\d+(\.\d+)*/
-      on:
-        tags: true
       git:
         depth: false
       env:
@@ -96,8 +95,6 @@ jobs:
       osx_image: xcode10.2
       name: "release conda osx"
       if: NOT type = cron AND branch = master AND NOT type = pull_request AND tag =~ /^v\d+(\.\d+)*/
-      on:
-        tags: true
       git:
         depth: false
       env:
