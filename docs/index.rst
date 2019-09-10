@@ -47,6 +47,7 @@ Documentation
 
    tutorials/introduction
    tutorials/multi-d-datasets
+   tutorials/neutron-data
 
 .. toctree::
    :caption: Python Reference
