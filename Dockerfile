@@ -23,18 +23,17 @@ RUN conda install --yes \
       mantid-framework \
       python=3.6
 
-# Add datafiles needed for demo
-ARG PG3_4844_HASH=d5ae38871d0a09a28ae01f85d969de1e
-ARG PG3_4866_HASH=3d543bc6a646e622b3f4542bc3435e7e
-
-RUN mkdir -p /home/$NB_USER/demo && \
-    curl http://198.74.56.37/ftp/external-data/MD5/$PG3_4844_HASH --output -p /home/$NB_USER/demo/PG3_4844_event.nxs && \
-    curl http://198.74.56.37/ftp/external-data/MD5/$PG3_4866_HASH --output -p /home/$NB_USER/demo/PG3_4866_event.nxs
-
 # Add the tutorials and user guide notebooks
 ADD 'python/demo/' "/home/$NB_USER/demo"
 ADD 'docs/tutorials/' "/home/$NB_USER/tutorials"
 ADD 'docs/user-guide/' "/home/$NB_USER/user-guide"
+
+# Add datafiles needed for neutron tutorial
+ARG PG3_4844_HASH=d5ae38871d0a09a28ae01f85d969de1e
+ARG PG3_4866_HASH=3d543bc6a646e622b3f4542bc3435e7e
+RUN curl http://198.74.56.37/ftp/external-data/MD5/$PG3_4844_HASH --output /home/$NB_USER/tutorials/PG3_4844_event.nxs && \
+    curl http://198.74.56.37/ftp/external-data/MD5/$PG3_4866_HASH --output /home/$NB_USER/tutorials/PG3_4866_event.nxs
+
 USER root
 RUN chown -R "$NB_USER" \
       "/home/$NB_USER/demo" \
