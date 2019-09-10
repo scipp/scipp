@@ -31,7 +31,6 @@ USER root
 RUN chown -R "$NB_USER" \
       "/home/$NB_USER/demo" \
       "/home/$NB_USER/tutorials" \
-      "/home/$NB_USER/work" \
       "/home/$NB_USER/user-guide"
 USER $NB_USER
 
