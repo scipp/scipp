@@ -58,18 +58,18 @@ Documentation
    python-reference/api
 
 .. toctree::
+   :caption: Additional Modules
+   :maxdepth: 2
+
+   additional-modules/scipp-neutron
+
+.. toctree::
    :caption: C++ Reference
    :maxdepth: 2
 
    cpp-reference/api
    cpp-reference/customizing
    cpp-reference/transform
-
-.. toctree::
-   :caption: Additional Modules
-   :maxdepth: 2
-
-   additional-modules/scipp-neutron
 
 .. toctree::
    :caption: About
