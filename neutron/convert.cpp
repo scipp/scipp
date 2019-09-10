@@ -145,6 +145,36 @@ Dataset tofToEnergy(Dataset &&d) {
   return std::move(d);
 }
 
+Dataset energyToTof(Dataset &&d) {
+  // 1. Compute conversion factor
+  const auto conversionFactor = tofToEnergyConversionFactor(d);
+
+  // 2. Record energy bin widths
+  const auto oldBinWidths = counts::getBinWidths(d, {Dim::Energy});
+
+  // 3. Transform coordinate
+  d.setCoord(Dim::Energy,
+             sqrt((1.0 / conversionFactor) / d.coords()[Dim::Energy]));
+
+  // 4. Record ToF bin widths
+  const auto newBinWidths = counts::getBinWidths(d, {Dim::Energy});
+
+  // 5. Transform variables
+  for (const auto & [ name, data ] : d) {
+    static_cast<void>(name);
+    if (data.coords()[Dim::Energy].dims().sparse()) {
+      data.coords()[Dim::Energy].assign(
+          sqrt((1.0 / conversionFactor) / data.coords()[Dim::Energy]));
+    } else if (data.unit().isCountDensity()) {
+      counts::fromDensity(data, oldBinWidths);
+      counts::toDensity(data, newBinWidths);
+    }
+  }
+
+  d.rename(Dim::Energy, Dim::Tof);
+  return std::move(d);
+}
+
 /*
 Dataset tofToDeltaE(const Dataset &d) {
   // There are two cases, direct inelastic and indirect inelastic. We can
@@ -224,6 +254,8 @@ Dataset convert(Dataset d, const Dim from, const Dim to) {
     return dSpacingToTof(std::move(d));
   if ((from == Dim::Tof) && (to == Dim::Energy))
     return tofToEnergy(std::move(d));
+  if ((from == Dim::Energy) && (to == Dim::Tof))
+    return energyToTof(std::move(d));
   /*
   if ((from == Dim::Tof) && (to == Dim::DeltaE))
    return tofToDeltaE(d);

@@ -287,6 +287,39 @@ TEST(Convert, Tof_to_Energy_Elastic) {
   ASSERT_EQ(energy.labels()["component_info"], tof.labels()["component_info"]);
 }
 
+TEST(Convert, Energy_to_Tof_Elastic) {
+  /* Assuming the Tof_to_Energy_Elastic test is correct and passing we can test
+   * the inverse conversion by simply comparing a round trip conversion with
+   * the original data. */
+
+  const Dataset tof_original = makeTofDataForUnitConversion();
+  const auto energy = convert(tof_original, Dim::Tof, Dim::Energy);
+  const auto tof = convert(energy, Dim::Energy, Dim::Tof);
+
+  /* Test coordinates */
+  /* Broadcasting is needed as conversion introduces the dependance on
+   * Dim::Position */
+  {
+    const auto expected = broadcast(tof_original.coords()[Dim::Tof],
+                                    tof.coords()[Dim::Tof].dims());
+    EXPECT_TRUE(equals(tof.coords()[Dim::Tof].values<double>(),
+                       expected.values<double>(), 1e-12));
+  }
+
+  /* Test sparse/event data */
+  ASSERT_TRUE(tof.contains("events"));
+  const auto events = tof["events"].coords()[Dim::Tof].sparseValues<double>();
+  const auto events_original =
+      tof_original["events"].coords()[Dim::Tof].sparseValues<double>();
+  EXPECT_TRUE(equals(events[0], events_original[0], 1e-15));
+  EXPECT_TRUE(equals(events[1], events_original[1], 1e-15));
+
+  /* Test count density data */
+  ASSERT_TRUE(tof.contains("density"));
+  EXPECT_TRUE(equals(tof["density"].values<double>(),
+                     tof_original["density"].values<double>(), 1e-12));
+}
+
 /*
 TEST(Dataset, convert) {
   Dataset tof = makeTofDataForUnitConversion();
