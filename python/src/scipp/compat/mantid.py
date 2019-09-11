@@ -1,3 +1,8 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
+# @author Simon Heybrock, Neil Vaytet
+
+
 import scipp as sc
 import numpy as np
 
@@ -22,7 +27,7 @@ def convert_instrument(ws):
     return sc.Variable(value=compInfo)
 
 
-def initPosSpectrumNo(nHist, ws):
+def init_pos_spectrum_no(nHist, ws):
 
     pos = np.zeros([nHist, 3])
     num = np.zeros([nHist], dtype=np.int32)
@@ -37,11 +42,11 @@ def initPosSpectrumNo(nHist, ws):
     return pos, num
 
 
-def ConvertWorkspace2DToDataset(ws):
+def convert_Workspace2D_to_dataset(ws):
     cb = ws.isCommonBins()
     nHist = ws.getNumberHistograms()
     comp_info = convert_instrument(ws)
-    pos, num = initPosSpectrumNo(nHist, ws)
+    pos, num = init_pos_spectrum_no(nHist, ws)
 
     # TODO More cases?
     allowed_units = {
@@ -90,7 +95,7 @@ def ConvertWorkspace2DToDataset(ws):
     return array
 
 
-def ConvertEventWorkspaceToDataset(ws, load_pulse_times, EventType):
+def convert_EventWorkspace_to_dataset(ws, load_pulse_times, EventType):
 
     allowed_units = {"TOF": [sc.Dim.Tof, sc.units.us]}
     xunit = ws.getAxis(0).getUnit().unitID()
@@ -104,7 +109,7 @@ def ConvertEventWorkspaceToDataset(ws, load_pulse_times, EventType):
 
     nHist = ws.getNumberHistograms()
     comp_info = convert_instrument(ws)
-    pos, num = initPosSpectrumNo(nHist, ws)
+    pos, num = init_pos_spectrum_no(nHist, ws)
 
     # TODO Use unit information in workspace, if available.
     coords = sc.Variable([sc.Dim.Position, dim],
@@ -159,17 +164,40 @@ def load(filename="",
          **kwargs):
     """
     Wrapper function to provide a load method for a Nexus file, hiding mantid
-    specific code from the scipp interface.
+    specific code from the scipp interface. All other keyword arguments not
+    specified in the parameters below are passed on to the mantid.Load
+    function.
+
+    Example of use:
+      from scipp.neutron import load
+      d = sc.Dataset()
+      d["sample"] = load(filename='PG3_4844_event.nxs', BankName='bank184',
+                         load_pulse_times=True)
+    See also the neutron-data tutorial.
+
+    :param str filename: The name of the Nexus/HDF file to be loaded.
+    :param bool load_pulse_times: Read the pulse times if True.
+    :param str instrument_filename: If specified, over-write the instrument
+                                    definition in the final Dataset with the
+                                    geometry contained in the file.
+    :raises: If the Mantid workspace type returned by the Mantid loader is not
+             either EventWorkspace or Workspace2D.
+    :return: A Dataset containing the neutron event/histogram data and the
+             instrument geometry.
+    :rtype: Dataset
     """
+
     import mantid.simpleapi as mantid
     from mantid.api import EventType
+
     ws = mantid.Load(filename, **kwargs)
     if instrument_filename is not None:
         mantid.LoadInstrument(ws,
                               FileName=instrument_filename,
                               RewriteSpectraMap=True)
     if ws.id() == 'Workspace2D':
-        return ConvertWorkspace2DToDataset(ws)
+        return convert_Workspace2D_to_dataset(ws)
     if ws.id() == 'EventWorkspace':
-        return ConvertEventWorkspaceToDataset(ws, load_pulse_times, EventType)
+        return convert_EventWorkspace_to_dataset(ws, load_pulse_times,
+                                                 EventType)
     raise RuntimeError('Unsupported workspace type')

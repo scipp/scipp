@@ -5,8 +5,5 @@
 
 # flake8: noqa
 
-from ._scipp.core import *
-from ._scipp import __version__
-from .show import show
-from .table import table
-from .plot import plot, config as plot_config
+from .._scipp.neutron import *
+from ..compat.mantid import load

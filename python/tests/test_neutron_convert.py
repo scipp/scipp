@@ -4,6 +4,7 @@
 # @author Simon Heybrock
 import scipp as sc
 from scipp import Dim
+import scipp.neutron as sn
 import numpy as np
 
 
@@ -46,7 +47,7 @@ def make_dataset_with_beamline():
 def test_neutron_convert():
     d = make_dataset_with_beamline()
 
-    dspacing = sc.neutron.convert(d, Dim.Tof, Dim.DSpacing)
+    dspacing = sn.convert(d, Dim.Tof, Dim.DSpacing)
     # Detailed testing done on the C++ side
     assert dspacing.coords[Dim.DSpacing].unit == sc.units.angstrom
 
@@ -54,15 +55,15 @@ def test_neutron_convert():
 def test_neutron_beamline():
     d = make_dataset_with_beamline()
 
-    assert sc.neutron.source_position(d) == sc.Variable(value=[0, 0, -10],
-                                                        unit=sc.units.m)
-    assert sc.neutron.sample_position(d) == sc.Variable(value=[0, 0, 0],
-                                                        unit=sc.units.m)
-    assert sc.neutron.l1(d) == 10.0 * sc.units.m
-    assert sc.neutron.l2(d) == sc.Variable(dims=[Dim.Position],
-                                           values=np.ones(4),
-                                           unit=sc.units.m)
-    two_theta = sc.neutron.two_theta(d)
+    assert sn.source_position(d) == sc.Variable(value=[0, 0, -10],
+                                                unit=sc.units.m)
+    assert sn.sample_position(d) == sc.Variable(value=[0, 0, 0],
+                                                unit=sc.units.m)
+    assert sn.l1(d) == 10.0 * sc.units.m
+    assert sn.l2(d) == sc.Variable(dims=[Dim.Position],
+                                   values=np.ones(4),
+                                   unit=sc.units.m)
+    two_theta = sn.two_theta(d)
     assert two_theta.unit == sc.units.rad
     assert two_theta.dims == [Dim.Position]
-    assert sc.neutron.scattering_angle(d) == 0.5 * two_theta
+    assert sn.scattering_angle(d) == 0.5 * two_theta
