@@ -6,4 +6,5 @@ sudo apt-get update -qq
 pyenv global system 3.7
 sudo apt install clang-format-5.0
 sudo apt install python3-pip
+sudo apt install ninja-build
 python3 -m pip install flake8
