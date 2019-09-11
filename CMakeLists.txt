@@ -111,3 +111,11 @@ add_subdirectory(core)
 add_subdirectory(neutron)
 add_subdirectory(python)
 add_subdirectory(test)
+# Custom target for building everyting. all excludes tests by default
+add_custom_target(all-tests
+                   DEPENDS 
+		     all
+		     scipp-common-test
+                     scipp-core-test
+		     scipp-unit-test
+	             scipp-neutron-test)
