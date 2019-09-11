@@ -11,4 +11,4 @@ conda config \
   --set changeps1 no
 
 # Install build and deploy dependencies
-conda install conda-build anaconda
+conda install -c conda-forge conda-build anaconda
