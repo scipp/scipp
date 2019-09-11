@@ -114,8 +114,9 @@ add_subdirectory(test)
 # Custom target for building everyting. all excludes tests by default
 add_custom_target(all-tests
                    DEPENDS 
-		     ALL 
 		     scipp-common-test
 		     scipp-core-test
 		     scipp-unit-test
 	             scipp-neutron-test)
+add_custom_target(all-targets ALL DEPENDS all-tests)
+	 
