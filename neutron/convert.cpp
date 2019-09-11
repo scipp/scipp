@@ -174,6 +174,38 @@ Dataset energyToTof(Dataset &&d) {
   return std::move(d);
 }
 
+auto tofToWavelengthConversionFactor(const Dataset &d) {
+  const auto &samplePos = sample_position(d);
+  const auto l1 = neutron::l1(d);
+  const auto specPos = d.coords()[Dim::Position];
+
+  const auto l = norm(specPos - samplePos) + l1;
+
+  /* \lambda [A] = (h [Js] * tof [s]) / (m(n) [kg] * L [m]) */
+  return ((1.0 * boost::units::si::constants::codata::h) * tof_to_s) /
+         (l * (1.0 * boost::units::si::constants::codata::m_n));
+}
+
+Dataset tofToWavelength(Dataset &&d) {
+  // 1. Compute conversion factor
+  const auto conversionFactor = tofToWavelengthConversionFactor(d);
+
+  /* TODO */
+
+  d.rename(Dim::Tof, Dim::Wavelength);
+  return std::move(d);
+}
+
+Dataset wavelengthToTof(Dataset &&d) {
+  // 1. Compute conversion factor
+  const auto conversionFactor = tofToWavelengthConversionFactor(d);
+
+  /* TODO */
+
+  d.rename(Dim::Wavelength, Dim::Tof);
+  return std::move(d);
+}
+
 /*
 Dataset tofToDeltaE(const Dataset &d) {
   // There are two cases, direct inelastic and indirect inelastic. We can
@@ -255,6 +287,10 @@ Dataset convert(Dataset d, const Dim from, const Dim to) {
     return tofToEnergy(std::move(d));
   if ((from == Dim::Energy) && (to == Dim::Tof))
     return energyToTof(std::move(d));
+  if ((from == Dim::Tof) && (to == Dim::Wavelength))
+    return tofToWavelength(std::move(d));
+  if ((from == Dim::Wavelength) && (to == Dim::Tof))
+    return wavelengthToTof(std::move(d));
   /*
   if ((from == Dim::Tof) && (to == Dim::DeltaE))
    return tofToDeltaE(d);
