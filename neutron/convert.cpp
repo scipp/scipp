@@ -33,8 +33,7 @@ const auto tofToDSpacingPhysicalConstants =
     2.0 * boost::units::si::constants::codata::m_n * m_to_angstrom /
     (boost::units::si::constants::codata::h * tof_to_s);
 
-Dataset tofToDSpacing(Dataset &&d) {
-  // 1. Compute conversion factor
+auto computeTofToDSpacingConversionFactor(const Dataset &d) {
   const auto &sourcePos = source_position(d);
   const auto &samplePos = sample_position(d);
 
@@ -50,6 +49,13 @@ Dataset tofToDSpacing(Dataset &&d) {
 
   conversionFactor *= tofToDSpacingPhysicalConstants;
   conversionFactor *= sqrt(0.5 * (1.0 - dot(beam, scattered)));
+
+  return conversionFactor;
+}
+
+Dataset tofToDSpacing(Dataset &&d) {
+  // 1. Compute conversion factor
+  const auto conversionFactor = computeTofToDSpacingConversionFactor(d);
 
   // 2. Transform coordinate
   // Cannot use /= since often a broadcast into Dim::Position is required.
@@ -67,6 +73,29 @@ Dataset tofToDSpacing(Dataset &&d) {
   }
 
   d.rename(Dim::Tof, Dim::DSpacing);
+  return std::move(d);
+}
+
+Dataset dSpacingToTof(Dataset &&d) {
+  // 1. Compute conversion factor
+  const auto conversionFactor = computeTofToDSpacingConversionFactor(d);
+
+  // 2. Transform coordinate
+  // Cannot use *= since often a broadcast into Dim::Position is required.
+  d.setCoord(Dim::DSpacing, d.coords()[Dim::DSpacing] * conversionFactor);
+
+  // 3. Transform variables
+  for (const auto & [ name, data ] : d) {
+    static_cast<void>(name);
+    if (data.coords()[Dim::DSpacing].dims().sparse()) {
+      data.coords()[Dim::DSpacing] *= conversionFactor;
+    } else if (data.unit().isCountDensity()) {
+      // DSpacing to Tof is just a scale factor, so density transform is simple:
+      data /= conversionFactor;
+    }
+  }
+
+  d.rename(Dim::DSpacing, Dim::Tof);
   return std::move(d);
 }
 
@@ -216,6 +245,8 @@ Dataset tofToDeltaE(const Dataset &d) {
 Dataset convert(Dataset d, const Dim from, const Dim to) {
   if ((from == Dim::Tof) && (to == Dim::DSpacing))
     return tofToDSpacing(std::move(d));
+  if ((from == Dim::DSpacing) && (to == Dim::Tof))
+    return dSpacingToTof(std::move(d));
   /*
   if ((from == Dim::Tof) && (to == Dim::Energy))
    return nofToEnergy(d);

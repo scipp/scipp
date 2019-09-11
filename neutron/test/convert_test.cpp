@@ -144,6 +144,34 @@ TEST(Convert, Tof_to_DSpacing) {
             tof.labels()["component_info"]);
 }
 
+TEST(Convert, DSpacing_to_Tof) {
+  /* Assuming the Tof_to_DSpacing test is correct and passing we can test the
+   * inverse conversion by simply comparing a round trip conversion with the
+   * original data. */
+
+  const Dataset tof_original = makeTofDataForUnitConversion();
+  const auto dspacing = convert(tof_original, Dim::Tof, Dim::DSpacing);
+  const auto tof = convert(dspacing, Dim::DSpacing, Dim::Tof);
+
+  /* Test coordinates */
+  /* Broadcasting is needed as conversion introduces the dependance on
+   * Dim::Position */
+  EXPECT_EQ(tof.coords()[Dim::Tof], broadcast(tof_original.coords()[Dim::Tof],
+                                              tof.coords()[Dim::Tof].dims()));
+
+  /* Test sparse/event data */
+  ASSERT_TRUE(tof.contains("events"));
+  const auto events = tof["events"].coords()[Dim::Tof].sparseValues<double>();
+  const auto events_original =
+      tof_original["events"].coords()[Dim::Tof].sparseValues<double>();
+  EXPECT_TRUE(equals(events[0], events_original[0], 1e-15));
+  EXPECT_TRUE(equals(events[1], events_original[1], 1e-12));
+
+  /* Test count density data */
+  ASSERT_TRUE(tof.contains("density"));
+  EXPECT_EQ(tof["density"].data(), tof_original["density"].data());
+}
+
 /*
 TEST(Dataset, convert) {
   Dataset tof = makeTofDataForUnitConversion();
