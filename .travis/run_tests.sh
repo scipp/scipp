@@ -4,7 +4,7 @@
 mkdir -p build
 mkdir -p install
 cd build
-cmake -DPYTHON_EXECUTABLE=${PYTHON_EXECUTABLE} -DCMAKE_INSTALL_PREFIX=../install .. || exit 1
+cmake -DPYTHON_EXECUTABLE=${PYTHON_EXECUTABLE} $@ -DCMAKE_INSTALL_PREFIX=../install .. || exit 1
 make -j2 install || exit 1
 
 # Units tests

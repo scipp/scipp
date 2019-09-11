@@ -44,7 +44,7 @@ jobs:
       before_install: brew install ccache
       env:
         - PYTHON_EXECUTABLE="/usr/local/bin/python3"
-      script: .travis/run_tests.sh
+      script: .travis/run_tests.sh -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=OFF
     - stage: "Deploy"
       name: "conda linux"
       if: NOT type = cron AND branch = master AND NOT type = pull_request
