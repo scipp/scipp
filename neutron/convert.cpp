@@ -8,6 +8,7 @@
 
 #include "scipp/core/counts.h"
 #include "scipp/core/dataset.h"
+#include "scipp/core/transform.h"
 #include "scipp/neutron/beamline.h"
 #include "scipp/neutron/convert.h"
 
@@ -17,18 +18,17 @@ namespace scipp::neutron {
 
 const auto tof_to_s =
     boost::units::quantity<boost::units::si::time>(1.0 * units::us) / units::us;
-// const auto J_to_meV =
-//    units::meV /
-//    boost::units::quantity<boost::units::si::energy>(1.0 * units::meV); //
-//    unused
+const auto J_to_meV =
+    units::meV /
+    boost::units::quantity<boost::units::si::energy>(1.0 * units::meV);
 const auto m_to_angstrom =
     boost::units::quantity<boost::units::si::length>(1.0 * units::angstrom) /
     units::angstrom;
 // In tof-to-energy conversions we *divide* by time-of-flight (squared), so the
 // tof_to_s factor is in the denominator.
-// const auto tofToEnergyPhysicalConstants =
-//    0.5 * boost::units::si::constants::codata::m_n * J_to_meV /
-//    (tof_to_s * tof_to_s); // unused
+const auto tofToEnergyPhysicalConstants =
+    0.5 * boost::units::si::constants::codata::m_n * J_to_meV /
+    (tof_to_s * tof_to_s);
 const auto tofToDSpacingPhysicalConstants =
     2.0 * boost::units::si::constants::codata::m_n * m_to_angstrom /
     (boost::units::si::constants::codata::h * tof_to_s);
@@ -99,22 +99,10 @@ Dataset dSpacingToTof(Dataset &&d) {
   return std::move(d);
 }
 
-/*
-Dataset tofToEnergy(const Dataset &d) {
-  // TODO Could in principle also support inelastic. Note that the conversion in
-  // Mantid is wrong since it handles inelastic data as if it were elastic.
-  if (d.contains(Coord::Ei) || d.contains(Coord::Ef))
-    throw std::runtime_error("Dataset contains Coord::Ei or Coord::Ef. "
-                             "However, conversion to Dim::Energy is currently "
-                             "only supported for elastic scattering.");
-
-  // 1. Compute conversion factor
-  const auto &compPos = d.get(Coord::ComponentInfo)[0](Coord::Position);
-  // TODO Need a better mechanism to identify source and sample.
-  const auto &sourcePos = compPos(Dim::Component, 0);
-  const auto &samplePos = compPos(Dim::Component, 1);
-  const auto l1 = norm(sourcePos - samplePos);
-  const auto specPos = getSpecPos(d);
+auto tofToEnergyConversionFactor(const Dataset &d) {
+  const auto &samplePos = sample_position(d);
+  const auto l1 = neutron::l1(d);
+  const auto specPos = d.coords()[Dim::Position];
 
   // l_total = l1 + l2
   auto conversionFactor(norm(specPos - samplePos) + l1);
@@ -123,54 +111,70 @@ Dataset tofToEnergy(const Dataset &d) {
 
   conversionFactor *= tofToEnergyPhysicalConstants;
 
-  // 2. Transform coordinate
-  Dataset converted;
-  const auto &coord = d(Coord::Tof);
-  auto coordDims = coord.dimensions();
-  coordDims.relabel(coordDims.index(Dim::Tof), Dim::Energy);
-  // The reshape is to remap the dimension label, should probably be done
-  // differently. Binary op order is to get desired dimension broadcast.
-  Variable inv = 1.0 / (coord * coord).reshape(coordDims);
-  converted.insert(Coord::Energy, std::move(inv) * conversionFactor);
+  return conversionFactor;
+}
 
-  // 3. Transform variables
-  for (const auto & [ name, tag, var ] : d) {
-    auto varDims = var.dimensions();
-    if (varDims.contains(Dim::Tof))
-      varDims.relabel(varDims.index(Dim::Tof), Dim::Energy);
-    if (tag == Coord::Tof) {
-      // Done already.
-    } else if (tag == Data::Events) {
-      throw std::runtime_error(
-          "TODO Converting units of event data not implemented yet.");
-    } else {
-      // Changing Dim::Tof to Dim::Energy.
-      if (counts::isDensity(var)) {
-        // The way of handling density data here looks less than optimal. We
-        // either need to encapsulate this better or require manual conversion
-        // from density before applying unit converions.
-        const auto size = coord.dimensions()[Dim::Tof];
-        const auto oldBinWidth =
-            coord(Dim::Tof, 1, size) - coord(Dim::Tof, 0, size - 1);
-        const auto &newCoord = converted(Coord::Energy);
-        const auto newBinWidth =
-            newCoord(Dim::Energy, 1, size) - newCoord(Dim::Energy, 0, size - 1);
+Dataset tofToEnergy(Dataset &&d) {
+  // 1. Compute conversion factor
+  const auto conversionFactor = tofToEnergyConversionFactor(d);
 
-        converted.insert(tag, name, var);
-        counts::fromDensity(converted(tag, name), {oldBinWidth});
-        converted.insert(
-            tag, name,
-            std::get<Variable>(converted.erase(tag, name)).reshape(varDims));
-        counts::toDensity(converted(tag, name), {newBinWidth});
-      } else {
-        converted.insert(tag, name, var.reshape(varDims));
-      }
+  // 2. Record ToF bin widths
+  const auto oldBinWidths = counts::getBinWidths(d, {Dim::Tof});
+
+  // 3. Transform coordinate
+  d.setCoord(Dim::Tof, (1.0 / (d.coords()[Dim::Tof] * d.coords()[Dim::Tof])) *
+                           conversionFactor);
+
+  // 4. Record energy bin widths
+  const auto newBinWidths = counts::getBinWidths(d, {Dim::Tof});
+
+  // 5. Transform variables
+  for (const auto & [ name, data ] : d) {
+    static_cast<void>(name);
+    if (data.coords()[Dim::Tof].dims().sparse()) {
+      data.coords()[Dim::Tof].assign(
+          (1.0 / (data.coords()[Dim::Tof] * data.coords()[Dim::Tof])) *
+          conversionFactor);
+    } else if (data.unit().isCountDensity()) {
+      counts::fromDensity(data, oldBinWidths);
+      counts::toDensity(data, newBinWidths);
     }
   }
 
-  return converted;
+  d.rename(Dim::Tof, Dim::Energy);
+  return std::move(d);
 }
 
+Dataset energyToTof(Dataset &&d) {
+  // 1. Compute conversion factor
+  const auto conversionFactor = tofToEnergyConversionFactor(d);
+
+  // 2. Record energy bin widths
+  const auto oldBinWidths = counts::getBinWidths(d, {Dim::Energy});
+
+  // 3. Transform coordinate
+  d.setCoord(Dim::Energy, sqrt(conversionFactor / d.coords()[Dim::Energy]));
+
+  // 4. Record ToF bin widths
+  const auto newBinWidths = counts::getBinWidths(d, {Dim::Energy});
+
+  // 5. Transform variables
+  for (const auto & [ name, data ] : d) {
+    static_cast<void>(name);
+    if (data.coords()[Dim::Energy].dims().sparse()) {
+      data.coords()[Dim::Energy].assign(
+          sqrt(conversionFactor / data.coords()[Dim::Energy]));
+    } else if (data.unit().isCountDensity()) {
+      counts::fromDensity(data, oldBinWidths);
+      counts::toDensity(data, newBinWidths);
+    }
+  }
+
+  d.rename(Dim::Energy, Dim::Tof);
+  return std::move(d);
+}
+
+/*
 Dataset tofToDeltaE(const Dataset &d) {
   // There are two cases, direct inelastic and indirect inelastic. We can
   // distinguish them by the content of d.
@@ -247,9 +251,11 @@ Dataset convert(Dataset d, const Dim from, const Dim to) {
     return tofToDSpacing(std::move(d));
   if ((from == Dim::DSpacing) && (to == Dim::Tof))
     return dSpacingToTof(std::move(d));
-  /*
   if ((from == Dim::Tof) && (to == Dim::Energy))
-   return nofToEnergy(d);
+    return tofToEnergy(std::move(d));
+  if ((from == Dim::Energy) && (to == Dim::Tof))
+    return energyToTof(std::move(d));
+  /*
   if ((from == Dim::Tof) && (to == Dim::DeltaE))
    return tofToDeltaE(d);
    */

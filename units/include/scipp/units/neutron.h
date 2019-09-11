@@ -157,7 +157,8 @@ template <> struct supported_units<neutron::Unit> {
           angstrom, meV, us, dimensionless / us, dimensionless / s, counts / us,
           counts / angstrom, counts / meV, m *m *m, meV *us *us / (m * m),
           meV *us *us *dimensionless, kg *m / s, m / s, c, c *m, meV / c,
-          dimensionless / c, K, us / angstrom, us / (m * angstrom))));
+          dimensionless / c, K, us / angstrom, us / (m * angstrom), us *us,
+          dimensionless / (us * us), dimensionless / meV)));
 };
 template <> struct counts_unit<neutron::Unit> {
   using type = decltype(counts);
