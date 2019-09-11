@@ -156,3 +156,48 @@ def convert_EventWorkspace_to_dataset(ws, load_pulse_times, EventType):
     if contains_weighted_events:
         coords_labs_data["data"] = weights
     return sc.DataArray(**coords_labs_data)
+
+
+def load(filename="",
+         load_pulse_times=True,
+         instrument_filename=None,
+         **kwargs):
+    """
+    Wrapper function to provide a load method for a Nexus file, hiding mantid
+    specific code from the scipp interface. All other keyword arguments not
+    specified in the parameters below are passed on to the mantid.Load
+    function.
+
+    Example of use:
+      from scipp.neutron import load
+      d = sc.Dataset()
+      d["sample"] = load(filename='PG3_4844_event.nxs', BankName='bank184',
+                         load_pulse_times=True)
+    See also the neutron-data tutorial.
+
+    :param str filename: The name of the Nexus/HDF file to be loaded.
+    :param bool load_pulse_times: Read the pulse times if True.
+    :param str instrument_filename: If specified, over-write the instrument
+                                    definition in the final Dataset with the
+                                    geometry contained in the file.
+    :raises: If the Mantid workspace type returned by the Mantid loader is not
+             either EventWorkspace or Workspace2D.
+    :return: A Dataset containing the neutron event/histogram data and the
+             instrument geometry.
+    :rtype: Dataset
+    """
+
+    import mantid.simpleapi as mantid
+    from mantid.api import EventType
+
+    ws = mantid.Load(filename, **kwargs)
+    if instrument_filename is not None:
+        mantid.LoadInstrument(ws,
+                              FileName=instrument_filename,
+                              RewriteSpectraMap=True)
+    if ws.id() == 'Workspace2D':
+        return convert_Workspace2D_to_dataset(ws)
+    if ws.id() == 'EventWorkspace':
+        return convert_EventWorkspace_to_dataset(ws, load_pulse_times,
+                                                 EventType)
+    raise RuntimeError('Unsupported workspace type')

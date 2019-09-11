@@ -15,19 +15,23 @@ void init_units_neutron(py::module &);
 void init_variable(py::module &);
 void init_variable_view(py::module &);
 
+void init_core(py::module &m) {
+  auto core = m.def_submodule("core");
+  init_units_neutron(core);
+  init_dataset(core);
+  init_dimensions(core);
+  init_dtype(core);
+  init_sparse_container(core);
+  init_variable(core);
+  init_variable_view(core);
+}
+
 PYBIND11_MODULE(_scipp, m) {
 #ifdef SCIPP_VERSION
   m.attr("__version__") = py::str(SCIPP_VERSION);
 #else
   m.attr("__version__") = py::str("unknown version");
 #endif
-
-  init_units_neutron(m);
-  init_dataset(m);
-  init_dimensions(m);
-  init_dtype(m);
+  init_core(m);
   init_neutron(m);
-  init_sparse_container(m);
-  init_variable(m);
-  init_variable_view(m);
 }
