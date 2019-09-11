@@ -30,3 +30,11 @@ Beamline geometry
    l2
    scattering_angle
    two_theta
+
+Loading Nexus files
+~~~~~~~~~~~~~~~~~~~
+
+.. autosummary::
+   :toctree: ../generated
+
+   load
