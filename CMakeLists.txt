@@ -116,7 +116,7 @@ add_custom_target(all-tests
                    DEPENDS 
 		     scipp-common-test
 		     scipp-core-test
-		     scipp-unit-test
+		     scipp-units-test
 	             scipp-neutron-test)
 add_custom_target(all-targets ALL DEPENDS all-tests)
 	 
