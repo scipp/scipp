@@ -2,6 +2,9 @@
 # Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Simon Heybrock
+
+# flake8: noqa
+
 from ._scipp.core import *
 from ._scipp import __version__
 from .show import show

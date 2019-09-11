@@ -3,5 +3,7 @@
 # @file
 # @author Simon Heybrock
 
+# flake8: noqa
+
 from .._scipp.neutron import *
 from ..compat.mantid import load

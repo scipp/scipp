@@ -12,7 +12,7 @@ else
 fi
 
 # Check formatting (exclude the examples directory)
-DIRTY=$(find python -type f -name '*.py' -not -path "python/examples/*" -not -path "python/src/scipp/__init__.py" | xargs ${FLAKE8_EXE})
+DIRTY=$(find python -type f -name '*.py' | xargs ${FLAKE8_EXE})
 
 if [ -z "${DIRTY}" ]; then
   echo "Flake8 [ OK ]"
