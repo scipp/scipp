@@ -12,6 +12,7 @@ requirements:
     - gxx_linux-64 7.3.* [linux64]
     - git
     - python {{ python }}
+    - ninja
   run:
     - numpy {{ numpy }}
     - python {{ python }}
