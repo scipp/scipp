@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 set(TARGET_NAME "scipp-core-test")
-add_executable(${TARGET_NAME}
+add_executable(${TARGET_NAME} EXCLUDE_FROM_ALL
                bool_test.cpp
                concatenate_test.cpp
                coords_proxy_test.cpp

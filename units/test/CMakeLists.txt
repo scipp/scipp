@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 set(TARGET_NAME "scipp-units-test")
-add_executable(${TARGET_NAME} dimension_test.cpp unit_test.cpp)
+add_executable(${TARGET_NAME} EXCLUDE_FROM_ALL dimension_test.cpp unit_test.cpp)
 target_link_libraries(${TARGET_NAME}
                       LINK_PRIVATE
                       scipp-units
