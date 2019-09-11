@@ -41,7 +41,7 @@ jobs:
       name: "apple clang"
       if: NOT type = cron
       osx_image: xcode10.2
-      before_install: brew install ccache
+      before_install: brew install ccache ninja
       env:
         - PYTHON_EXECUTABLE="/usr/local/bin/python3"
       script: .travis/run_tests.sh -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=OFF
