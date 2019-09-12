@@ -13,8 +13,10 @@ If your use case requires one or several of the items on the following list, usi
 
 Currently scipp is moving from its prototype phase into a more consolidated set of libraries.
 
-Scipp consists of generic core libraries (current **scipp-units** and **scipp-core**), and more specific libraries (such as **scipp-neutron** for neutron-scattering data).
-
+Generic functionality of scipp is provided in the core module **scipp**.
+Physical units, which are also considered core functionality, are part of the **scipp.units** module.
+In addition, more specific functionality is made available in other modules.
+Currently the only example for this is **scipp.neutron** for handling data from neutron-scattering experiments.
 
 Documentation
 =============
@@ -56,6 +58,12 @@ Documentation
    python-reference/api
 
 .. toctree::
+   :caption: Additional Modules
+   :maxdepth: 2
+
+   additional-modules/scipp-neutron
+
+.. toctree::
    :caption: C++ Reference
    :maxdepth: 2
 
@@ -64,7 +72,7 @@ Documentation
    cpp-reference/transform
 
 .. toctree::
-   :caption: Additional Modules
+   :caption: About
    :maxdepth: 2
 
-   additional-modules/scipp-neutron
+   about/release-notes
