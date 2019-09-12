@@ -20,5 +20,5 @@ if [ $rc -ne 0 ]; then
 fi
 
 # Build, install and move scipp Python library to site packages location
-ninja install && \
+ninja install -v && \
   mv "$CONDA_PREFIX/scipp" "$CONDA_PREFIX"/lib/python*/
