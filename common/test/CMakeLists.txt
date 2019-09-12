@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 set(TARGET_NAME "scipp-common-test")
+set(TEST_TARGETS "${TEST_TARGETS} ${TARGET_NAME}" CACHE INTERNAL "")
 add_executable(${TARGET_NAME} EXCLUDE_FROM_ALL index_test.cpp)
 target_link_libraries(${TARGET_NAME}
                       LINK_PRIVATE
