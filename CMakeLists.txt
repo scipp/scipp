@@ -118,5 +118,3 @@ add_custom_target(all-tests
 		     scipp-core-test
 		     scipp-units-test
 	             scipp-neutron-test)
-add_custom_target(all-targets ALL DEPENDS all-tests)
-	 

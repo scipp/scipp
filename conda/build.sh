@@ -5,6 +5,7 @@ mkdir -p 'build' && cd 'build'
 
 # Perform CMake configuration
 cmake \
+  -G"Ninja" \
   -DPYTHON_EXECUTABLE="$CONDA_PREFIX/bin/python" \
   -DCMAKE_INSTALL_PREFIX="$CONDA_PREFIX" \
   -DCMAKE_OSX_DEPLOYMENT_TARGET=$OSX_VERSION \
@@ -18,6 +19,11 @@ if [ $rc -ne 0 ]; then
   exit $rc
 fi
 
+# build targets in sequence to prevent timeout travis_wait might be better solution
+ninja clean
+ninja scipp-core -v
+ninja scipp-neutron -v
+ninja _scipp -v
 # Build, install and move scipp Python library to site packages location
-cmake --build . --target install && \
+ninja install -v && \
   mv "$CONDA_PREFIX/scipp" "$CONDA_PREFIX"/lib/python*/
