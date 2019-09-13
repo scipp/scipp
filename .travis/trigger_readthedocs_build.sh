@@ -1,4 +1,6 @@
-#!/bin/sh
+#!/bin/bash
+
+set -x
 
 # READTHEDOCS_TOKEN can be obtained from configuring a generic webhook.
 # See https://docs.readthedocs.io/en/stable/webhooks.html#using-the-generic-api-integration

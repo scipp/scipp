@@ -1,4 +1,6 @@
-#!/bin/sh
+#!/bin/bash
+
+set -xe
 
 # C++17
 sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test

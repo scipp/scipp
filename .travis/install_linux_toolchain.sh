@@ -1,4 +1,6 @@
-#!/bin/sh
+#!/bin/bash
+
+set -xe
 
 # C++17
 sudo apt-get install -qq g++-7

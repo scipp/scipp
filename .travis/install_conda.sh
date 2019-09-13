@@ -1,4 +1,6 @@
-#!/bin/sh
+#!/bin/bash
+
+set -xe
 
 # Download Miniconda installer
 wget "https://repo.continuum.io/miniconda/$1" -O 'miniconda.sh'
