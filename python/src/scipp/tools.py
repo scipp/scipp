@@ -11,14 +11,14 @@ def edges_to_centers(x):
     """
     Convert coordinate edges to centers, and return also the widths
     """
-    return 0.5 * (x[1:] + x[:-1]), np.ediff1d(x)
+    return 0.5 * (x[1:] + x[:-1])#, np.ediff1d(x)
 
 
 def centers_to_edges(x):
     """
     Convert coordinate centers to edges
     """
-    e = edges_to_centers(x)[0]
+    e = edges_to_centers(x)#[0]
     return np.concatenate([[2.0 * x[0] - e[0]], e, [2.0 * x[-1] - e[-1]]])
 
 
@@ -106,7 +106,7 @@ def process_dimensions(input_data, coords, labels, axes):
         xc = x
     elif nx[0] == nz[ix] + 1:
         xe = x
-        xc = edges_to_centers(x)[0]
+        xc = edges_to_centers(x)#[0]
     else:
         raise RuntimeError("Dimensions of x Coord ({}) and Value ({}) do not "
                            "match.".format(nx[0], nz[ix]))
@@ -115,7 +115,7 @@ def process_dimensions(input_data, coords, labels, axes):
         yc = y
     elif ny[0] == nz[iy] + 1:
         ye = y
-        yc = edges_to_centers(y)[0]
+        yc = edges_to_centers(y)#[0]
     else:
         raise RuntimeError("Dimensions of y Coord ({}) and Value ({}) do not "
                            "match.".format(ny[0], nz[iy]))

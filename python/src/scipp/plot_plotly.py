@@ -12,14 +12,14 @@ from IPython.display import display
 from plotly.io import write_image
 from plotly.colors import DEFAULT_PLOTLY_COLORS
 from ipywidgets import VBox, HBox, IntSlider, Label
-from plotly.graph_objs import FigureWidget, Layout
-from plotly.offline import plot as plotlyplot
+import plotly.graph_objs as go
+# from plotly.offline import plot as plotlyplot
 
 # =============================================================================
 
 
-def plot_plotly(input_data, ndim=0, name=None, config=None, waterfall=None,
-                collapse=None, **kwargs):
+def plot_plotly(input_data, ndim=0, name=None, config=None,
+                collapse=None, projection="2d", **kwargs):
     """
     Function to automatically dispatch the input dataset to the appropriate
     plotting function depending on its dimensions
@@ -27,14 +27,16 @@ def plot_plotly(input_data, ndim=0, name=None, config=None, waterfall=None,
 
     if ndim == 1:
         plot_1d(input_data, config=config, **kwargs)
-    elif ndim == 2:
-        if waterfall is not None:
-            plot_waterfall(input_data, name=name, dim=waterfall, config=config,
-                           **kwargs)
-        else:
-            plot_image(input_data, name=name, config=config, **kwargs)
+    elif projection.lower() == "2d":
+        # if waterfall is not None:
+        #     plot_waterfall(input_data, name=name, dim=waterfall, config=config,
+        #                    **kwargs)
+        # else:
+        plot_2d(input_data, name=name, config=config, **kwargs)
+    elif projection.lower() == "3d":
+        plot_3d(input_data, name=name, config=config, **kwargs)
     else:
-        plot_sliceviewer(input_data, name=name, config=config, **kwargs)
+        raise RuntimeError("Wrong projection type.")
     return
 
 # =============================================================================
@@ -69,30 +71,49 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, axes=None,
         ny = y.shape[0]
         histogram = False
         if nx == ny + 1:
-            x, w = edges_to_centers(x)
+            # trace2 = dict(x=x, y=y, type='scattergl', line={"shape": 'hv'}, showlegend=False)
+            # x, w = edges_to_centers(x)
             histogram = True
 
         # Define trace
-        trace = dict(x=x, y=y, name=ylab)
+        trace = dict(x=x, y=y, name=ylab, type='scattergl')
         if histogram:
-            trace["type"] = 'bar'
-            trace["marker"] = dict(opacity=0.6, line=dict(width=0))
-            trace["width"] = w
-        else:
-            trace["type"] = 'scatter'
+            trace["line"] = {"shape": 'hv'}
+            trace["y"] = np.concatenate((trace["y"], [0.0]))
+            
+            # trace["type"] = 'bar'
+            # trace["marker"] = dict(opacity=0.6, line=dict(width=0))
+            # trace["width"] = w
+            trace["fill"] = 'tozeroy'
+        # else:
+        #     trace["type"] = 'scattergl'
         if color is not None:
-            if "marker" not in trace.keys():
-                trace["marker"] = dict()
-            trace["marker"]["color"] = color[color_count]
-            color_count += 1
+            # if "marker" not in trace.keys():
+                # trace["marker"] = dict()
+            trace["marker"] = {"color": color[color_count]}
         # Include variance if present
         if var.variances is not None:
-            trace["error_y"] = dict(
-                type='data',
-                array=np.sqrt(var.variances),
-                visible=True)
+            err_dict = dict(
+                    type='data',
+                    array=np.sqrt(var.variances),
+                    visible=True,
+                    color=color[color_count])
+            if histogram:
+                trace2 = dict(x=edges_to_centers(x), y=y, showlegend=False,
+                    type='scattergl',
+                mode='markers', error_y=err_dict, marker={"color": color[color_count]})
+                data.append(trace2)
+            else:
+                trace["error_y"] = err_dict
 
         data.append(trace)
+        # if histogram:
+        #     # # trace2 = dict(x=x, y=y, name=ylab)
+        #     # trace2["type"] = 'scattergl'
+        #     # line={"shape": 'hv'}
+        #     # trace["width"] = w
+        #     data.append(trace2)
+        color_count += 1
 
     layout = dict(
         xaxis=dict(title=xlab),
@@ -108,7 +129,7 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, axes=None,
     if logy or logxy:
         layout["yaxis"]["type"] = "log"
 
-    fig = FigureWidget(data=data, layout=layout)
+    fig = go.Figure(data=data, layout=layout)
     if filename is not None:
         write_image(fig=fig, file=filename)
     else:
@@ -422,8 +443,8 @@ class ImageViewer:
         # (and probably elongated) pixels add very little data and will not
         # show in the view area but allow plotly to recover the full axes
         # limits if we double-click on the plot
-        xc_loc = edges_to_centers(out.xe_loc)[0]
-        yc_loc = edges_to_centers(out.ye_loc)[0]
+        xc_loc = edges_to_centers(out.xe_loc)
+        yc_loc = edges_to_centers(out.ye_loc)
         if out.xmin > 0:
             out.xe_loc = np.concatenate([self.xe[0:1], out.xe_loc])
             xc_loc = np.concatenate([self.xc[0:1], xc_loc])
@@ -481,73 +502,73 @@ class ImageViewer:
 # =============================================================================
 
 
-def plot_waterfall(input_data, dim=None, name=None, axes=None, filename=None,
-                   config=None, **kwargs):
-    """
-    Make a 3D waterfall plot
-    """
+# def plot_waterfall(input_data, dim=None, name=None, axes=None, filename=None,
+#                    config=None, **kwargs):
+#     """
+#     Make a 3D waterfall plot
+#     """
 
-    # Get coordinates axes and dimensions
-    coords = input_data.coords
-    labels = input_data.labels
-    xcoord, ycoord, xe, ye, xc, yc, xlabs, ylabs, zlabs = \
-        process_dimensions(input_data=input_data, coords=coords,
-                           labels=labels, axes=axes)
+#     # Get coordinates axes and dimensions
+#     coords = input_data.coords
+#     labels = input_data.labels
+#     xcoord, ycoord, xe, ye, xc, yc, xlabs, ylabs, zlabs = \
+#         process_dimensions(input_data=input_data, coords=coords,
+#                            labels=labels, axes=axes)
 
-    data = []
-    z = input_data.values
+#     data = []
+#     z = input_data.values
 
-    if (zlabs[0] == xlabs[0]) and (zlabs[1] == ylabs[0]):
-        z = z.T
-        zlabs = [ylabs[0], xlabs[0]]
+#     if (zlabs[0] == xlabs[0]) and (zlabs[1] == ylabs[0]):
+#         z = z.T
+#         zlabs = [ylabs[0], xlabs[0]]
 
-    pdict = dict(type='scatter3d', mode='lines', line=dict(width=5))
-    adict = dict(z=1)
+#     pdict = dict(type='scatter3d', mode='lines', line=dict(width=5))
+#     adict = dict(z=1)
 
-    if dim is None:
-        dim = zlabs[0]
+#     if dim is None:
+#         dim = zlabs[0]
 
-    if dim == zlabs[0]:
-        for i in range(len(yc)):
-            idict = pdict.copy()
-            idict["x"] = xc
-            idict["y"] = [yc[i]] * len(xc)
-            idict["z"] = z[i, :]
-            data.append(idict)
-            adict["x"] = 3
-            adict["y"] = 1
-    elif dim == zlabs[1]:
-        for i in range(len(xc)):
-            idict = pdict.copy()
-            idict["x"] = [xc[i]] * len(yc)
-            idict["y"] = yc
-            idict["z"] = z[:, i]
-            data.append(idict)
-            adict["x"] = 1
-            adict["y"] = 3
-    else:
-        raise RuntimeError("Something went wrong in plot_waterfall. The "
-                           "waterfall dimension is not recognised.")
+#     if dim == zlabs[0]:
+#         for i in range(len(yc)):
+#             idict = pdict.copy()
+#             idict["x"] = xc
+#             idict["y"] = [yc[i]] * len(xc)
+#             idict["z"] = z[i, :]
+#             data.append(idict)
+#             adict["x"] = 3
+#             adict["y"] = 1
+#     elif dim == zlabs[1]:
+#         for i in range(len(xc)):
+#             idict = pdict.copy()
+#             idict["x"] = [xc[i]] * len(yc)
+#             idict["y"] = yc
+#             idict["z"] = z[:, i]
+#             data.append(idict)
+#             adict["x"] = 1
+#             adict["y"] = 3
+#     else:
+#         raise RuntimeError("Something went wrong in plot_waterfall. The "
+#                            "waterfall dimension is not recognised.")
 
-    layout = dict(
-        scene=dict(
-            xaxis=dict(
-                title=xcoord),
-            yaxis=dict(
-                title=ycoord),
-            zaxis=dict(
-                title=axis_label(var=input_data,
-                                 name=name)),
-            aspectmode='manual',
-            aspectratio=adict),
-        showlegend=False,
-        height=config.height)
-    fig = FigureWidget(data=data, layout=layout)
-    if filename is not None:
-        write_image(fig=fig, file=filename)
-    else:
-        display(fig)
-    return
+#     layout = dict(
+#         scene=dict(
+#             xaxis=dict(
+#                 title=xcoord),
+#             yaxis=dict(
+#                 title=ycoord),
+#             zaxis=dict(
+#                 title=axis_label(var=input_data,
+#                                  name=name)),
+#             aspectmode='manual',
+#             aspectratio=adict),
+#         showlegend=False,
+#         height=config.height)
+#     fig = FigureWidget(data=data, layout=layout)
+#     if filename is not None:
+#         write_image(fig=fig, file=filename)
+#     else:
+#         display(fig)
+#     return
 
 # =============================================================================
 
