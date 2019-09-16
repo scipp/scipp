@@ -12,6 +12,7 @@ RUN rm -r "/home/$NB_USER/work"
 RUN jupyter labextension install @jupyterlab/plotly-extension@0.18.1
 
 # Install Scipp and dependencies
+RUN conda install --yes setuptools
 RUN conda install --yes \
       -c conda-forge \
       -c scipp/label/dev \
