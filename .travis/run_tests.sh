@@ -7,30 +7,17 @@ mkdir -p build
 mkdir -p install
 cd build
 
-SANITIZER_FLAGS=""
-
 if [[ "$TRAVIS_COMPILER" == "clang" ]]
 then
-    SANITIZE_SHARED="\"-fsanitize=address -shared-libasan\""
-    SANITIZER_FLAGS=${SANITIZER_FLAGS}" -DCMAKE_CXX_FLAGS="${SANITIZE_SHARED}
+    SANITIZER_FLAGS=${SANITIZER_FLAGS}'-DCMAKE_CXX_FLAGS="''-fsanitize=address"'
 fi
-
-echo ""
-echo ""
-echo ""
-echo ""
-echo $SANITIZER_FLAGS
-echo ""
-echo ""
-echo ""
-echo ""
 
 cmake -DPYTHON_EXECUTABLE=${PYTHON_EXECUTABLE} $@ -DCMAKE_INSTALL_PREFIX=../install ${SANITIZER_FLAGS} ..
 make -j2 install all-tests
 
 if [[ "$TRAVIS_COMPILER" == "clang" ]]
 then
-    export LD_PRELOAD=$(find / -name libclang_rt.asan-x86_64.so)
+#    export LD_PRELOAD=$(find / -name libclang_rt.asan-x86_64.so)
     export ASAN_OPTIONS=detect_odr_violation=0
 fi
 
