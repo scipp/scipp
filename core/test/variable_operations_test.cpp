@@ -944,4 +944,5 @@ TEST(VariableTest, divide_with_variance) {
   EXPECT_DOUBLE_EQ(q.values<double>()[1], expected.values<double>()[1]);
   EXPECT_DOUBLE_EQ(q.variances<double>()[0], expected.variances<double>()[0]);
   EXPECT_DOUBLE_EQ(q.variances<double>()[1], expected.variances<double>()[1]);
+  auto ppp = new Variable;
 }
