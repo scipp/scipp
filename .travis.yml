@@ -33,6 +33,7 @@ jobs:
       script: .travis/run_tests.sh
     - compiler: clang
       name: "clang"
+      env: SANITIZERS=true
       if: NOT type = cron
       before_install: .travis/before_install.sh
       install: .travis/install_linux_toolchain.sh
