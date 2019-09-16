@@ -16,6 +16,7 @@ RUN conda install --yes setuptools
 RUN conda install --yes \
       -c conda-forge \
       -c scipp/label/dev \
+      -c mantid \
       -c mantid/label/nightly \
       ipython \
       matplotlib \
