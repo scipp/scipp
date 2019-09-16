@@ -777,6 +777,11 @@ template <class T>
 Variable operator/(Variable a, const boost::units::quantity<T> &quantity) {
   return std::move(a /= quantity);
 }
+template <class T>
+Variable operator/(const boost::units::quantity<T> &quantity, Variable a) {
+  return makeVariable<double>({}, units::Unit(T{}), {quantity.value()}) /
+         std::move(a);
+}
 
 SCIPP_CORE_EXPORT std::vector<Variable>
 split(const Variable &var, const Dim dim,

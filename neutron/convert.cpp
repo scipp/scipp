@@ -175,15 +175,10 @@ Dataset energyToTof(Dataset &&d) {
 }
 
 auto tofToWavelengthConversionFactor(const Dataset &d) {
-  const auto &samplePos = sample_position(d);
-  const auto l1 = neutron::l1(d);
-  const auto specPos = d.coords()[Dim::Position];
-
-  const auto l = norm(specPos - samplePos) + l1;
-
-  /* \lambda [A] = (h [Js] * tof [s]) / (m(n) [kg] * L [m]) */
-  return ((1.0 * boost::units::si::constants::codata::h) * tof_to_s) /
-         (l * (1.0 * boost::units::si::constants::codata::m_n));
+  const auto l = l1(d) + l2(d);
+  return (m_to_angstrom * boost::units::si::constants::codata::m_n /
+          (tof_to_s * boost::units::si::constants::codata::h)) /
+         std::move(l);
 }
 
 Dataset tofToWavelength(Dataset &&d) {
