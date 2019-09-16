@@ -7,7 +7,7 @@ mkdir -p build
 mkdir -p install
 cd build
 cmake_command="-DPYTHON_EXECUTABLE=${PYTHON_EXECUTABLE} $@ -DCMAKE_INSTALL_PREFIX=../install"
-if [ "$CXX_FOR_BUILD" == "clang" ]
+if [ "$TRAVIS_COMPILER" == "clang" ]
 then
   cmake_command=$cmake_command" -DCMAKE_CXX_FLAGS=\"-fsanitize=address\""
 fi
