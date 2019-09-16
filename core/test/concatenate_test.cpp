@@ -111,3 +111,29 @@ TEST(ConcatenateTest, non_dependant_data_is_stacked) {
   EXPECT_EQ(d["data_1"].data(), makeVariable<int>({{Dim::Y, 2}, {Dim::X, 3}},
                                                   {11, 12, 13, 14, 15, 16}));
 }
+
+TEST(ConcatenateTest, concat_2d_coord) {
+  Dataset a;
+  a.setCoord(Dim::X, makeVariable<double>({Dim::X, 3}, {1, 2, 3}));
+  a.setData("data_1", makeVariable<double>({Dim::X, 3}, {11, 12, 13}));
+  a.setLabels("label_1", makeVariable<int>({Dim::X, 3}, {21, 22, 23}));
+
+  Dataset b(a);
+  b.coords()[Dim::X] += 3;
+  b["data_1"].data() += 1;
+
+  Dataset expected;
+  expected.setCoord(Dim::X,
+                    makeVariable<double>({{Dim::Y, 4}, {Dim::X, 3}},
+                                         {1, 2, 3, 4, 5, 6, 4, 5, 6, 1, 2, 3}));
+  expected.setData("data_1", makeVariable<double>({{Dim::Y, 4}, {Dim::X, 3}},
+                                                  {11, 12, 13, 12, 13, 14, 12,
+                                                   13, 14, 11, 12, 13}));
+  expected.setLabels("label_1", makeVariable<int>({Dim::X, 3}, {21, 22, 23}));
+
+  const auto ab = concatenate(a, b, Dim::Y);
+  const auto ba = concatenate(b, a, Dim::Y);
+  const auto abba = concatenate(ab, ba, Dim::Y);
+
+  EXPECT_EQ(abba, expected);
+}
