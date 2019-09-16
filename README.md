@@ -23,7 +23,7 @@ XCode 10.2 or greater provides a `clang++` implementation with sufficient langua
 You will need to be using [LLVM Clang](https://releases.llvm.org/download.html) version 7 or greater. 
 
 #### GCC
-You will need version 7 of GCC as a minimum
+You will need version 7 of GCC as a minimum.
 
 ### Getting the code, building, and installing
 
