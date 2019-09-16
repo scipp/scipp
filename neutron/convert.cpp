@@ -29,9 +29,6 @@ const auto m_to_angstrom =
 const auto tofToEnergyPhysicalConstants =
     0.5 * boost::units::si::constants::codata::m_n * J_to_meV /
     (tof_to_s * tof_to_s);
-const auto tofToDSpacingPhysicalConstants =
-    2.0 * boost::units::si::constants::codata::m_n * m_to_angstrom /
-    (boost::units::si::constants::codata::h * tof_to_s);
 
 auto tofToDSpacingConversionFactor(const Dataset &d) {
   const auto &sourcePos = source_position(d);
@@ -47,7 +44,9 @@ auto tofToDSpacingConversionFactor(const Dataset &d) {
   // l_total = l1 + l2
   auto conversionFactor(l1 + l2);
 
-  conversionFactor *= tofToDSpacingPhysicalConstants;
+  conversionFactor *= 2.0 * boost::units::si::constants::codata::m_n *
+                      m_to_angstrom /
+                      (boost::units::si::constants::codata::h * tof_to_s);
   conversionFactor *= sqrt(0.5 * (1.0 - dot(beam, scattered)));
 
   return 1.0 / conversionFactor;
