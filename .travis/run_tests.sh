@@ -6,12 +6,8 @@ set -xe
 mkdir -p build
 mkdir -p install
 cd build
-cmake_command="-DPYTHON_EXECUTABLE=${PYTHON_EXECUTABLE} $@ -DCMAKE_INSTALL_PREFIX=../install"
-if [ "$TRAVIS_COMPILER" == "clang" ]
-then
-  cmake_command=$cmake_command" -DCMAKE_CXX_FLAGS=\"-fsanitize=address\""
-fi
 
+cmake -DPYTHON_EXECUTABLE=${PYTHON_EXECUTABLE} $@ -DCMAKE_INSTALL_PREFIX=../install ..
 cmake "$cmake_command" ..
 make -j2 install all-tests
 
