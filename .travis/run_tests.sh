@@ -19,7 +19,7 @@ make -j2 install all-tests
 
 if [[ "$TRAVIS_COMPILER" == "clang" ]]
 then
-#    export LD_PRELOAD=$(find / -name libclang_rt.asan-x86_64.so)
+    export LD_PRELOAD=$(find / -name libclang_rt.asan-x86_64.so)
     export ASAN_OPTIONS=detect_odr_violation=0
 fi
 
