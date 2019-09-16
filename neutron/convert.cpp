@@ -22,8 +22,8 @@ const auto J_to_meV =
     units::meV /
     boost::units::quantity<boost::units::si::energy>(1.0 * units::meV);
 const auto m_to_angstrom =
-    boost::units::quantity<boost::units::si::length>(1.0 * units::angstrom) /
-    units::angstrom;
+    units::angstrom /
+    boost::units::quantity<boost::units::si::length>(1.0 * units::angstrom);
 // In tof-to-energy conversions we *divide* by time-of-flight (squared), so the
 // tof_to_s factor is in the denominator.
 const auto tofToEnergyPhysicalConstants =
@@ -64,9 +64,9 @@ auto tofToDSpacing(const Dataset &d) {
   // l_total = l1 + l2
   auto conversionFactor(l1 + l2);
 
-  conversionFactor *= 2.0 * boost::units::si::constants::codata::m_n *
-                      m_to_angstrom /
-                      (boost::units::si::constants::codata::h * tof_to_s);
+  conversionFactor *= 2.0 * boost::units::si::constants::codata::m_n /
+                      boost::units::si::constants::codata::h /
+                      (m_to_angstrom * tof_to_s);
   conversionFactor *= sqrt(0.5 * (1.0 - dot(beam, scattered)));
 
   return 1.0 / conversionFactor;
@@ -74,8 +74,8 @@ auto tofToDSpacing(const Dataset &d) {
 
 static auto tofToWavelength(const Dataset &d) {
   const auto l = l1(d) + l2(d);
-  return (m_to_angstrom * boost::units::si::constants::codata::m_n /
-          (tof_to_s * boost::units::si::constants::codata::h)) /
+  return (tof_to_s * m_to_angstrom * boost::units::si::constants::codata::h /
+          boost::units::si::constants::codata::m_n) /
          std::move(l);
 }
 
