@@ -30,7 +30,27 @@ const auto tofToEnergyPhysicalConstants =
     0.5 * boost::units::si::constants::codata::m_n * J_to_meV /
     (tof_to_s * tof_to_s);
 
-auto tofToDSpacingConversionFactor(const Dataset &d) {
+static Dataset convert_with_factor(Dataset &&d, const Dim from, const Dim to,
+                                   const Variable &factor) {
+  // 1. Transform coordinate
+  // Cannot use *= since often a broadcast into Dim::Position is required.
+  d.setCoord(from, d.coords()[from] * factor);
+
+  // 2. Transform variables
+  for (const auto & [ name, data ] : d) {
+    static_cast<void>(name);
+    if (data.coords()[from].dims().sparse()) {
+      data.coords()[from] *= factor;
+    } else if (data.unit().isCountDensity()) {
+      // Conversion is just a scale factor, so density transform is simple:
+      data /= factor;
+    }
+  }
+  d.rename(from, to);
+  return std::move(d);
+}
+
+auto tofToDSpacing(const Dataset &d) {
   const auto &sourcePos = source_position(d);
   const auto &samplePos = sample_position(d);
 
@@ -52,35 +72,11 @@ auto tofToDSpacingConversionFactor(const Dataset &d) {
   return 1.0 / conversionFactor;
 }
 
-static void convert_with_factor(Dataset &d, const Dim from, const Dim to,
-                                const Variable &factor) {
-  // 1. Transform coordinate
-  // Cannot use *= since often a broadcast into Dim::Position is required.
-  d.setCoord(from, d.coords()[from] * factor);
-
-  // 2. Transform variables
-  for (const auto & [ name, data ] : d) {
-    static_cast<void>(name);
-    if (data.coords()[from].dims().sparse()) {
-      data.coords()[from] *= factor;
-    } else if (data.unit().isCountDensity()) {
-      // Conversion is just a scale factor, so density transform is simple:
-      data /= factor;
-    }
-  }
-  d.rename(from, to);
-}
-
-Dataset tofToDSpacing(Dataset &&d) {
-  const auto factor = tofToDSpacingConversionFactor(d);
-  convert_with_factor(d, Dim::Tof, Dim::DSpacing, factor);
-  return std::move(d);
-}
-
-Dataset dSpacingToTof(Dataset &&d) {
-  const auto factor = 1.0 / tofToDSpacingConversionFactor(d);
-  convert_with_factor(d, Dim::DSpacing, Dim::Tof, factor);
-  return std::move(d);
+static auto tofToWavelength(const Dataset &d) {
+  const auto l = l1(d) + l2(d);
+  return (m_to_angstrom * boost::units::si::constants::codata::m_n /
+          (tof_to_s * boost::units::si::constants::codata::h)) /
+         std::move(l);
 }
 
 auto tofToEnergyConversionFactor(const Dataset &d) {
@@ -158,25 +154,6 @@ Dataset energyToTof(Dataset &&d) {
   return std::move(d);
 }
 
-auto tofToWavelengthConversionFactor(const Dataset &d) {
-  const auto l = l1(d) + l2(d);
-  return (m_to_angstrom * boost::units::si::constants::codata::m_n /
-          (tof_to_s * boost::units::si::constants::codata::h)) /
-         std::move(l);
-}
-
-Dataset tofToWavelength(Dataset &&d) {
-  const auto factor = tofToWavelengthConversionFactor(d);
-  convert_with_factor(d, Dim::Tof, Dim::Wavelength, factor);
-  return std::move(d);
-}
-
-Dataset wavelengthToTof(Dataset &&d) {
-  const auto factor = 1.0 / tofToWavelengthConversionFactor(d);
-  convert_with_factor(d, Dim::Wavelength, Dim::Tof, factor);
-  return std::move(d);
-}
-
 /*
 Dataset tofToDeltaE(const Dataset &d) {
   // There are two cases, direct inelastic and indirect inelastic. We can
@@ -251,17 +228,20 @@ Dataset tofToDeltaE(const Dataset &d) {
 
 Dataset convert(Dataset d, const Dim from, const Dim to) {
   if ((from == Dim::Tof) && (to == Dim::DSpacing))
-    return tofToDSpacing(std::move(d));
+    return convert_with_factor(std::move(d), from, to, tofToDSpacing(d));
   if ((from == Dim::DSpacing) && (to == Dim::Tof))
-    return dSpacingToTof(std::move(d));
+    return convert_with_factor(std::move(d), from, to, 1.0 / tofToDSpacing(d));
+
+  if ((from == Dim::Tof) && (to == Dim::Wavelength))
+    return convert_with_factor(std::move(d), from, to, tofToWavelength(d));
+  if ((from == Dim::Wavelength) && (to == Dim::Tof))
+    return convert_with_factor(std::move(d), from, to,
+                               1.0 / tofToWavelength(d));
+
   if ((from == Dim::Tof) && (to == Dim::Energy))
     return tofToEnergy(std::move(d));
   if ((from == Dim::Energy) && (to == Dim::Tof))
     return energyToTof(std::move(d));
-  if ((from == Dim::Tof) && (to == Dim::Wavelength))
-    return tofToWavelength(std::move(d));
-  if ((from == Dim::Wavelength) && (to == Dim::Tof))
-    return wavelengthToTof(std::move(d));
   /*
   if ((from == Dim::Tof) && (to == Dim::DeltaE))
    return tofToDeltaE(d);
