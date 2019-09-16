@@ -8,7 +8,6 @@ mkdir -p install
 cd build
 
 cmake -DPYTHON_EXECUTABLE=${PYTHON_EXECUTABLE} $@ -DCMAKE_INSTALL_PREFIX=../install ..
-cmake "$cmake_command" ..
 make -j2 install all-tests
 
 # Units tests
