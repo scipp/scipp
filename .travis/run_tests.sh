@@ -12,10 +12,10 @@ SANITIZER_FLAGS=""
 if [[ "$TRAVIS_COMPILER" == "clang" ]]
 then
     SANITIZER_FLAGS=${SANITIZER_FLAGS}' -DCMAKE_CXX_FLAGS="-fsanitize=address"'
+    export LD_PRELOAD=$(find / -name libclang_rt.asan-x86_64.so)
 fi
 
-echo "\n\n\n\${PYTHON_EXECUTABLE} $@ -DCMAKE_INSTALL_PREFIX=../install $SANITIZER_FLAGS .. \n\n\n"
-cmake -DPYTHON_EXECUTABLE=${PYTHON_EXECUTABLE} $@ -DCMAKE_INSTALL_PREFIX=../install $SANITIZER_FLAGS ..
+cmake -DPYTHON_EXECUTABLE=${PYTHON_EXECUTABLE} $@ -DCMAKE_INSTALL_PREFIX=../install ${SANITIZER_FLAGS} ..
 make -j2 install all-tests
 
 # Units tests
