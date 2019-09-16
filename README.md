@@ -35,8 +35,9 @@ mkdir -p build
 mkdir -p install
 cd build
 cmake -DPYTHON_EXECUTABLE=/usr/bin/python3 -DCMAKE_INSTALL_PREFIX=../install ..
-make -j4 install
+make -j4 all-tests install
 ```
+Note that the `all` and `install` targets do NOT include the tests. Those must be build separately via `all-tests`.
 
 To use the `scipp` Python module:
 
