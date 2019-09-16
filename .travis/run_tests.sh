@@ -7,13 +7,14 @@ mkdir -p build
 mkdir -p install
 cd build
 
+SANITIZER_FLAGS=""
+
 if [ "$TRAVIS_COMPILER" == "clang"]
 then
-    cmake -DPYTHON_EXECUTABLE=${PYTHON_EXECUTABLE} $@ -DCMAKE_INSTALL_PREFIX=../install -DCMAKE_CXX_FLAGS="-fsanitize=address" ..
-else
-    cmake -DPYTHON_EXECUTABLE=${PYTHON_EXECUTABLE} $@ -DCMAKE_INSTALL_PREFIX=../install ..
+    SANITIZER_FLAGS=$SANITIZER_FLAGS' -DCMAKE_CXX_FLAGS="-fsanitize=address"'
 fi
 
+cmake -DPYTHON_EXECUTABLE=${PYTHON_EXECUTABLE} $@ -DCMAKE_INSTALL_PREFIX=../install $SANITIZER_FLAGS ..
 make -j2 install all-tests
 
 # Units tests
