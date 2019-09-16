@@ -33,7 +33,7 @@ const auto tofToDSpacingPhysicalConstants =
     2.0 * boost::units::si::constants::codata::m_n * m_to_angstrom /
     (boost::units::si::constants::codata::h * tof_to_s);
 
-auto computeTofToDSpacingConversionFactor(const Dataset &d) {
+auto tofToDSpacingConversionFactor(const Dataset &d) {
   const auto &sourcePos = source_position(d);
   const auto &samplePos = sample_position(d);
 
@@ -50,52 +50,37 @@ auto computeTofToDSpacingConversionFactor(const Dataset &d) {
   conversionFactor *= tofToDSpacingPhysicalConstants;
   conversionFactor *= sqrt(0.5 * (1.0 - dot(beam, scattered)));
 
-  return conversionFactor;
+  return 1.0 / conversionFactor;
+}
+
+static void convert_with_factor(Dataset &d, const Dim from, const Dim to,
+                                const Variable &factor) {
+  // 1. Transform coordinate
+  // Cannot use *= since often a broadcast into Dim::Position is required.
+  d.setCoord(from, d.coords()[from] * factor);
+
+  // 2. Transform variables
+  for (const auto & [ name, data ] : d) {
+    static_cast<void>(name);
+    if (data.coords()[from].dims().sparse()) {
+      data.coords()[from] *= factor;
+    } else if (data.unit().isCountDensity()) {
+      // Conversion is just a scale factor, so density transform is simple:
+      data /= factor;
+    }
+  }
+  d.rename(from, to);
 }
 
 Dataset tofToDSpacing(Dataset &&d) {
-  // 1. Compute conversion factor
-  const auto conversionFactor = computeTofToDSpacingConversionFactor(d);
-
-  // 2. Transform coordinate
-  // Cannot use /= since often a broadcast into Dim::Position is required.
-  d.setCoord(Dim::Tof, d.coords()[Dim::Tof] / conversionFactor);
-
-  // 3. Transform variables
-  for (const auto & [ name, data ] : d) {
-    static_cast<void>(name);
-    if (data.coords()[Dim::Tof].dims().sparse()) {
-      data.coords()[Dim::Tof] /= conversionFactor;
-    } else if (data.unit().isCountDensity()) {
-      // Tof to DSpacing is just a scale factor, so density transform is simple:
-      data *= conversionFactor;
-    }
-  }
-
-  d.rename(Dim::Tof, Dim::DSpacing);
+  const auto factor = tofToDSpacingConversionFactor(d);
+  convert_with_factor(d, Dim::Tof, Dim::DSpacing, factor);
   return std::move(d);
 }
 
 Dataset dSpacingToTof(Dataset &&d) {
-  // 1. Compute conversion factor
-  const auto conversionFactor = computeTofToDSpacingConversionFactor(d);
-
-  // 2. Transform coordinate
-  // Cannot use *= since often a broadcast into Dim::Position is required.
-  d.setCoord(Dim::DSpacing, d.coords()[Dim::DSpacing] * conversionFactor);
-
-  // 3. Transform variables
-  for (const auto & [ name, data ] : d) {
-    static_cast<void>(name);
-    if (data.coords()[Dim::DSpacing].dims().sparse()) {
-      data.coords()[Dim::DSpacing] *= conversionFactor;
-    } else if (data.unit().isCountDensity()) {
-      // DSpacing to Tof is just a scale factor, so density transform is simple:
-      data /= conversionFactor;
-    }
-  }
-
-  d.rename(Dim::DSpacing, Dim::Tof);
+  const auto factor = 1.0 / tofToDSpacingConversionFactor(d);
+  convert_with_factor(d, Dim::DSpacing, Dim::Tof, factor);
   return std::move(d);
 }
 
@@ -182,22 +167,14 @@ auto tofToWavelengthConversionFactor(const Dataset &d) {
 }
 
 Dataset tofToWavelength(Dataset &&d) {
-  // 1. Compute conversion factor
-  const auto conversionFactor = tofToWavelengthConversionFactor(d);
-
-  /* TODO */
-
-  d.rename(Dim::Tof, Dim::Wavelength);
+  const auto factor = tofToWavelengthConversionFactor(d);
+  convert_with_factor(d, Dim::Tof, Dim::Wavelength, factor);
   return std::move(d);
 }
 
 Dataset wavelengthToTof(Dataset &&d) {
-  // 1. Compute conversion factor
-  const auto conversionFactor = tofToWavelengthConversionFactor(d);
-
-  /* TODO */
-
-  d.rename(Dim::Wavelength, Dim::Tof);
+  const auto factor = 1.0 / tofToWavelengthConversionFactor(d);
+  convert_with_factor(d, Dim::Wavelength, Dim::Tof, factor);
   return std::move(d);
 }
 
