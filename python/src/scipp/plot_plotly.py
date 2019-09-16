@@ -850,9 +850,9 @@ def plot_3d(input_data, axes=None, contours=False, cb=None,
             display(fig)
         return
     else:
-        data=[go.Surface(x=np.zeros_like(y3), y=y3, z=z3, opacity=0.9),
-              go.Surface(x=x2, y=np.zeros_like(x2), z=z2, opacity=0.9),
-              go.Surface(x=x1, y=y1, z=np.zeros_like(x1), opacity=0.9)]
+        data=[go.Surface(x=np.zeros_like(y3), y=y3, z=z3),
+              go.Surface(x=x2, y=np.zeros_like(x2), z=z2),
+              go.Surface(x=x1, y=y1, z=np.zeros_like(x1))]
         # Create a SliceViewer object
         sv = Slicer3d(data=data, layout=layout,
                          input_data=input_data, axes=axes,
@@ -944,7 +944,7 @@ class Slicer3d:
         # # Call update_slice once to make the initial image
         # # if len(self.slider) > 0:
         self.update_slice3dx(0)
-        # self.update_slice3dy(0)
+        self.update_slice3dy(0)
         # self.update_slice3dz(0)
         self.vbox = VBox(self.vbox)
         self.vbox.layout.align_items = 'center'
@@ -1017,13 +1017,13 @@ class Slicer3d:
                 z = np.log10(z)
         if (self.cb["min"] is not None) + (self.cb["max"] is not None) == 1:
             if self.cb["min"] is not None:
-                self.fig.data[0].zmin = self.cb["min"]
+                self.fig.data[1].zmin = self.cb["min"]
             else:
-                self.fig.data[0].zmin = np.amin(z[np.where(np.isfinite(z))])
+                self.fig.data[1].zmin = np.amin(z[np.where(np.isfinite(z))])
             if self.cb["max"] is not None:
-                self.fig.data[0].zmax = self.cb["max"]
+                self.fig.data[1].zmax = self.cb["max"]
             else:
-                self.fig.data[0].zmax = np.amax(z[np.where(np.isfinite(z))])
+                self.fig.data[1].zmax = np.amax(z[np.where(np.isfinite(z))])
         self.fig.data[1].y = self.slider_x[idim][self.slider[idim].value] * np.ones_like(self.fig.data[1].y)
         self.fig.data[1].surfacecolor = z
         return
@@ -1054,13 +1054,13 @@ class Slicer3d:
                 z = np.log10(z)
         if (self.cb["min"] is not None) + (self.cb["max"] is not None) == 1:
             if self.cb["min"] is not None:
-                self.fig.data[0].zmin = self.cb["min"]
+                self.fig.data[2].zmin = self.cb["min"]
             else:
-                self.fig.data[0].zmin = np.amin(z[np.where(np.isfinite(z))])
+                self.fig.data[2].zmin = np.amin(z[np.where(np.isfinite(z))])
             if self.cb["max"] is not None:
-                self.fig.data[0].zmax = self.cb["max"]
+                self.fig.data[2].zmax = self.cb["max"]
             else:
-                self.fig.data[0].zmax = np.amax(z[np.where(np.isfinite(z))])
+                self.fig.data[2].zmax = np.amax(z[np.where(np.isfinite(z))])
         self.fig.data[2].z = self.slider_x[idim][self.slider[idim].value] * np.ones_like(self.fig.data[2].z)
         self.fig.data[2].surfacecolor = z
         return
