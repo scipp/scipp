@@ -17,6 +17,8 @@ At this point we support compile-time customization of:
 
 Some of these are adaptable more readily than others, which require more in-depth changes.
 
+Source code for scipp is hosted in a github repository `here <https://github.com/scipp/scipp>`_.
+
 Units systems and dimension labels
 ----------------------------------
 

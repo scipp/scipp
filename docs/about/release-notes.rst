@@ -1,7 +1,7 @@
 .. _release-notes:
 
 Release Notes
-============
+=============
 
 v0.1 (September 2019)
 ---------------------
