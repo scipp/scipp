@@ -172,7 +172,8 @@ def load(filename="",
 
       from scipp.neutron import load
       d = sc.Dataset()
-      d["sample"] = load(filename='PG3_4844_event.nxs', BankName='bank184', load_pulse_times=True)
+      d["sample"] = load(filename='PG3_4844_event.nxs', \
+                         BankName='bank184', load_pulse_times=True)
 
     See also the neutron-data tutorial.
 
