@@ -312,7 +312,16 @@ void init_variable(py::module &m) {
         :rtype: Variable)");
   m.def("filter",
         py::overload_cast<const Variable &, const Variable &>(&filter),
-        py::call_guard<py::gil_scoped_release>());
+        py::call_guard<py::gil_scoped_release>(), R"(
+        Selects elements for a Variable using a filter (mask).
+
+        The filter variable must be 1D and of bool type.
+        A true value in the filter means the corresponding element in the input is selected and will be copied to the output.
+        A false value in the filter discards the corresponding element in the input.
+
+        :raises: If the filter variable is not 1 dimensional.
+        :return: New variable containing the data selected by the filter
+        :rtype: Variable)");
   m.def("mean", py::overload_cast<const VariableConstProxy &, const Dim>(&mean),
         py::call_guard<py::gil_scoped_release>(), R"(
         Element-wise mean over the specified dimension, if variances are present, the new variance is computated as standard-deviation of the mean.

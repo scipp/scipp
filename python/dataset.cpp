@@ -82,20 +82,19 @@ void bind_dataset_proxy_methods(py::class_<T, Ignored...> &c) {
 
 template <class T, class... Ignored>
 void bind_data_array_properties(py::class_<T, Ignored...> &c) {
-  c.def_property_readonly("name", &T::name);
+  c.def_property_readonly("name", &T::name, R"(The name of the held data.)");
   c.def("__repr__", [](const T &self) { return to_string(self); });
   c.def("copy", [](const T &self) { return DataArray(self); },
         "Return a (deep) copy.");
-  c.def_property("data",
-                 py::cpp_function(
-                     [](T &self) {
-                       return self.hasData() ? py::cast(self.data())
-                                             : py::none();
-                     },
-                     py::return_value_policy::move, py::keep_alive<0, 1>()),
-                 [](T &self, const VariableConstProxy &data) {
-                   self.data().assign(data);
-                 });
+  c.def_property(
+      "data",
+      py::cpp_function(
+          [](T &self) {
+            return self.hasData() ? py::cast(self.data()) : py::none();
+          },
+          py::return_value_policy::move, py::keep_alive<0, 1>()),
+      [](T &self, const VariableConstProxy &data) { self.data().assign(data); },
+      R"(Underlying data item.)");
   bind_coord_properties(c);
   bind_comparison<DataConstProxy>(c);
   bind_data_properties(c);
@@ -178,7 +177,9 @@ void init_dataset(py::module &m) {
            [](Dataset &self, const std::string &name, const DataArray &data) {
              self.setData(name, data);
            })
-      .def("clear", &Dataset::clear);
+      .def(
+          "clear", &Dataset::clear,
+          R"(Removes all data (preserving coordinates, attributes and labels).)");
 
   bind_dataset_proxy_methods(dataset);
   bind_dataset_proxy_methods(datasetProxy);
