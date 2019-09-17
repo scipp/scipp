@@ -946,11 +946,16 @@ TEST(VariableTest, divide_with_variance) {
   EXPECT_DOUBLE_EQ(q.variances<double>()[1], expected.variances<double>()[1]);
 }
 
+int dummy_func(int argc) {
+  int *array = new int[100];
+  delete[] array;
+  return array[argc]; // BOOM
+}
+
 TEST(ASAN, asan_fail_test) {
   // leak here
   auto ppp = new Variable;
 
   *ppp *= 5;
-  int a[5] = {1, 2, 3, 4, 5};
-  int p = a[6];
+  int a = dummy_func(4);
 }
