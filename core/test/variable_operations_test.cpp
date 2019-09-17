@@ -946,16 +946,19 @@ TEST(VariableTest, divide_with_variance) {
   EXPECT_DOUBLE_EQ(q.variances<double>()[1], expected.variances<double>()[1]);
 }
 
-int dummy_func(int argc) {
-  int *array = new int[100];
-  delete[] array;
-  return array[argc]; // BOOM
+int dummy_func() {
+  int a[8] = {0};
+  int b[8] = {0};
+  b[1] = 1;
+  for (int i = 0, x = 0, y = 0; i <= 8; ++i) // uh oh
+  {
+    // This loop looks like it only reads / writes inside b
+    b[i] += x + y;
+    y = x;
+    x = b[i];
+  }
+  // a has been altered, b[8] is actually a[0]
+  return a[0];
 }
 
-TEST(ASAN, asan_fail_test) {
-  // leak here
-  auto ppp = new Variable;
-
-  *ppp *= 5;
-  int a = dummy_func(4);
-}
+TEST(ASAN, asan_fail_test) { int a = dummy_func(); }
