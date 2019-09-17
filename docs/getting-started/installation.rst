@@ -35,6 +35,21 @@ After installation the module ``scipp`` can be imported in Python.
 
 To update or remove ``scipp`` use `conda update <https://docs.conda.io/projects/conda/en/latest/commands/update.html>`_ and `conda remove <https://docs.conda.io/projects/conda/en/latest/commands/remove.html>`_.
 
+If you wish to use Scipp with Mantid you may use the following command to create an environment containing both Scipp and Mantid framework.
+Note that Conda packages for Mantid are only available on Linux.
+
+.. code-block:: sh
+
+  $ conda create \
+      -n env_with_scipp_and_mantid \
+      -c conda-forge \
+      -c mantid/label/nightly \
+      -c mantid \
+      -c scipp/label/dev \
+      scipp \
+      mantid-framework \
+      python=3.6
+
 Docker
 ------
 
@@ -42,7 +57,7 @@ A docker container is available.
 
 .. code-block:: sh
 
-   docker pull scipp/scipp-jupyter-demo
+   $ docker pull scipp/scipp-jupyter-demo
 
 A number of Jupyter demo notebooks can be found in the ``demo/`` folder.
 These notebooks provide an introduction and basic usage turorial.
