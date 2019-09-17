@@ -1035,8 +1035,6 @@ SCIPP_CORE_EXPORT Dataset histogram(const Dataset &dataset, const Dim &dim);
 SCIPP_CORE_EXPORT Dataset merge(const DatasetConstProxy &a,
                                 const DatasetConstProxy &b);
 
-[[nodiscard]] bool containsSparse(const DatasetConstProxy &ds) noexcept;
-
 SCIPP_CORE_EXPORT DataArray sum(const DataConstProxy &a, const Dim dim);
 SCIPP_CORE_EXPORT Dataset sum(const DatasetConstProxy &d, const Dim dim);
 

@@ -21,6 +21,7 @@ set(SRC_FILES
     counts.cpp
     data_array.cpp
     dataset.cpp
+    dataset_binary_arithmetic.cpp
     dimensions.cpp
     dtype.cpp
     except.cpp
