@@ -9,10 +9,11 @@ from .tools import edges_to_centers, axis_label, parse_colorbar, \
 
 # Plotly imports
 from IPython.display import display
-from plotly.io import write_image
+from plotly.io import write_html, write_image
 from plotly.colors import DEFAULT_PLOTLY_COLORS
 from ipywidgets import VBox, HBox, IntSlider, Label
 import plotly.graph_objs as go
+from plotly.subplots import make_subplots
 # from plotly.offline import plot as plotlyplot
 
 # =============================================================================
@@ -131,7 +132,10 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, axes=None,
 
     fig = go.Figure(data=data, layout=layout)
     if filename is not None:
-        write_image(fig=fig, file=filename)
+        if filename.endswith(".html"):
+            write_html(fig=fig, file=filename, auto_open=False)
+        else:
+            write_image(fig=fig, file=filename)
     else:
         display(fig)
     return
@@ -618,8 +622,8 @@ def plot_2d(input_data, axes=None, contours=False, cb=None,
         width=figsize[0]
     )
     if input_data.variances is not None and show_variances:
-        layout["width"] *= 0.5
-        layout["height"] = 0.8 * layout["width"]
+        # layout["width"] *= 0.5
+        layout["height"] = 0.7 * layout["height"]
 
     data = [dict(
             x=xe,
@@ -630,13 +634,17 @@ def plot_2d(input_data, axes=None, contours=False, cb=None,
             colorbar=dict(
                 title=title,
                 titleside='right',
+                lenmode='fraction',
+                len=1.05,
+                thicknessmode='fraction',
+                thickness=0.03
             )
         )]
 
     # Create a SliceViewer object
     sv = Slicer2d(data=data, layout=layout,
                      input_data=input_data, axes=axes,
-                     value_name=name, cb=cbar)
+                     value_name=name, cb=cbar, show_variances=show_variances)
 
     if filename is not None:
         write_image(fig=sv.fig, file=filename)
@@ -650,10 +658,12 @@ def plot_2d(input_data, axes=None, contours=False, cb=None,
 class Slicer2d:
 
     def __init__(self, data, layout, input_data, axes,
-                 value_name, cb):
+                 value_name, cb, show_variances):
 
-        # Make a copy of the input data - Needed?
         self.input_data = input_data
+        self.show_variances = show_variances
+        self.value_name = value_name
+        self.cb = cb
 
         # Get the dimensions of the image to be displayed
         self.coords = self.input_data.coords
@@ -679,15 +689,60 @@ class Slicer2d:
         self.nslices = len(self.slider_dims)
 
         # Initialise Figure and VBox objects
-        self.fig = go.FigureWidget(data=data, layout=layout)
+        self.fig = None
+        # data = {"values": None, "variances": None}
+        params = {"values": {"cbmin": "min", "cbmax": "max"},
+                  "variances": None}
+        if (self.input_data.variances is not None) and self.show_variances:
+            params["variances"] = {"cbmin": "min_var", "cbmax": "max_var"}
+            self.fig = go.FigureWidget(make_subplots(rows=1, cols=2, horizontal_spacing=0.16))
+            data[0]["colorbar"]["x"] = 0.42
+            data[0]["colorbar"]["thickness"] = 0.02
+            self.fig.add_trace(data[0], row=1, col=1)
+            data[0]["colorbar"]["title"] = "variances"
+            data[0]["colorbar"]["x"] = 1.0
+            self.fig.add_trace(data[0], row=1, col=2)
+            # self.fig["variances"] = go.FigureWidget(data=data, layout=layout)
+            # self.vbox.append(self.fig["variances"])
+            # self.vbox = [HBox(self.vbox)]
+            for i in range(2):
+                self.fig.update_xaxes(title_text=layout["xaxis"]["title"], row=1, col=i+1)
+                self.fig.update_yaxes(title_text=layout["yaxis"]["title"], row=1, col=i+1)
+            self.fig.update_layout(height=layout["height"], width=layout["width"])
+        else:
+            self.fig = go.FigureWidget(data=data, layout=layout)
+            # if (self.cb["min"] is not None) + (self.cb["max"] is not None) == 1:
+            # vals = self.input_data.values
+            # if self.cb["min"] is not None:
+            #     self.fig.data[0].zmin = self.cb["min"]
+            # else:
+            #     self.fig.data[0].zmin = np.amin(vals[np.where(np.isfinite(vals))])
+            # if self.cb["max"] is not None:
+            #     self.fig.data[0].zmax = self.cb["max"]
+            # else:
+            #     self.fig.data[0].zmax = np.amax(vals[np.where(np.isfinite(vals))])
+
+        # zlabs = vslice.dims
+        for i, (key, val) in enumerate(sorted(params.items())):
+            if val is not None:
+                arr = getattr(self.input_data, key)
+                # vals = self.input_data.values
+                if self.cb[val["cbmin"]] is not None:
+                    self.fig.data[i].zmin = self.cb[val["cbmin"]]
+                else:
+                    self.fig.data[i].zmin = np.amin(arr[np.where(np.isfinite(arr))])
+                if self.cb[val["cbmax"]] is not None:
+                    self.fig.data[i].zmax = self.cb[val["cbmax"]]
+                else:
+                    self.fig.data[i].zmax = np.amax(arr[np.where(np.isfinite(arr))])
+
+
         self.vbox = [self.fig]
+
 
         # Initialise slider and label containers
         self.lab = []
         self.slider = []
-        # Collect the remaining arguments
-        self.value_name = value_name
-        self.cb = cb
         # Default starting index for slider
         indx = 0
 
@@ -713,7 +768,7 @@ class Slicer2d:
 
         # Call update_slice once to make the initial image
         # if len(self.slider) > 0:
-        self.update_slice2d(0)
+        self.update_slice2d({"new": 0})
         self.vbox = VBox(self.vbox)
         self.vbox.layout.align_items = 'center'
 
@@ -729,29 +784,61 @@ class Slicer2d:
         # Then slice additional dimensions if needed
         for idim in range(self.nslices):
             self.lab[idim].value = str(
-                self.slider_x[idim][self.slider[idim].value])
-            vslice = vslice[self.slider_dims[idim], self.slider[idim].value]
+                self.slider_x[idim][change["new"]])
+            vslice = vslice[self.slider_dims[idim], change["new"]]
 
-        z = vslice.values
-
+        vals = vslice.values
         # Check if dimensions of arrays agree, if not, plot the transpose
         zlabs = vslice.dims
         if (zlabs[0] == self.xlabs[0]) and (zlabs[1] == self.ylabs[0]):
-            z = z.T
+            vals = vals.T
         # Apply colorbar parameters
         if self.cb["log"]:
             with np.errstate(invalid="ignore", divide="ignore"):
-                z = np.log10(z)
-        if (self.cb["min"] is not None) + (self.cb["max"] is not None) == 1:
-            if self.cb["min"] is not None:
-                self.fig.data[0].zmin = self.cb["min"]
-            else:
-                self.fig.data[0].zmin = np.amin(z[np.where(np.isfinite(z))])
-            if self.cb["max"] is not None:
-                self.fig.data[0].zmax = self.cb["max"]
-            else:
-                self.fig.data[0].zmax = np.amax(z[np.where(np.isfinite(z))])
-        self.fig.data[0].z = z
+                vals = np.log10(vals)
+        self.fig.data[0].z = vals
+
+        if (self.input_data.variances is not None) and self.show_variances:
+            vals = vslice.variances
+            # Check if dimensions of arrays agree, if not, plot the transpose
+            # zlabs = vslice.dims
+            if (zlabs[0] == self.xlabs[0]) and (zlabs[1] == self.ylabs[0]):
+                vals = vals.T
+            # Apply colorbar parameters
+            if self.cb["log"]:
+                with np.errstate(invalid="ignore", divide="ignore"):
+                    vals = np.log10(vals)
+            self.fig.data[1].z = vals
+
+
+        # data = {"values": None, "variances": None}
+        # params = {"values": {"cbmin": "min", "cbmax": "max"},
+        #           "variances": None}
+        # if (self.input_data.variances is not None) and self.show_variances:
+        #     params["variances"] = {"cbmin": "min_var", "cbmax": "max_var"}
+        # zlabs = vslice.dims
+        # for i, (key, val) in enumerate(sorted(params.items())):
+        #     if val is not None:
+        #         arr = getattr(vslice, key)
+        #         # Check if dimensions of arrays agree, if not, transpose
+        #         if (zlabs[0] == self.xlabs[0]) and (zlabs[1] == self.ylabs[0]):
+        #             arr = arr.T
+        #         # if key == "variances":
+        #         #     arr = np.sqrt(arr)
+        #         # Apply colorbar parameters
+        #         if self.cb["log"]:
+        #             with np.errstate(invalid="ignore", divide="ignore"):
+        #                 arr = np.log10(arr)
+        #         if self.cb[val["cbmin"]] is not None:
+        #             self.fig.data[i].zmin = self.cb[val["cbmin"]]
+        #         else:
+        #             self.fig.data[i].zmin = np.amin(arr[np.where(np.isfinite(arr))])
+        #         if self.cb[val["cbmax"]] is not None:
+        #             self.fig.data[i].zmax = self.cb[val["cbmax"]]
+        #         else:
+        #             self.fig.data[i].zmax = np.amax(arr[np.where(np.isfinite(arr))])
+        #         self.fig.data[i].z = arr
+
         return
 
 
