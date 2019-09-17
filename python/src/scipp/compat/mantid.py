@@ -177,6 +177,9 @@ def load(filename="",
 
     See also the neutron-data tutorial.
 
+    Note that this function requires mantid to be installed and available in
+    the same Python environment as scipp.
+
     :param str filename: The name of the Nexus/HDF file to be loaded.
     :param bool load_pulse_times: Read the pulse times if True.
     :param str instrument_filename: If specified, over-write the instrument
@@ -189,8 +192,15 @@ def load(filename="",
     :rtype: Dataset
     """
 
-    import mantid.simpleapi as mantid
-    from mantid.api import EventType
+    try:
+        import mantid.simpleapi as mantid
+        from mantid.api import EventType
+    except ImportError as e:
+        raise ImportError(
+            "Mantid Python API was not found, please install Mantid framework "
+            "as detailed in the installation instructions (https://scipp."
+            "readthedocs.io/en/latest/getting-started/installation.html)"
+        ) from e
 
     ws = mantid.Load(filename, **kwargs)
     if instrument_filename is not None:
