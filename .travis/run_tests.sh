@@ -17,7 +17,7 @@ fi
 make -j2 install all-tests
 
 # Units tests
-./units/test/scipp-units-test
+./units/test/scipp-units-test 2>&1
 
 # Core tests
 ./core/test/scipp-core-test
