@@ -20,10 +20,10 @@ make -j2 install all-tests
 ./units/test/scipp-units-test 2>&1
 
 # Core tests
-./core/test/scipp-core-test
+./core/test/scipp-core-test 2>&1
 
 # Neutron tests
-./neutron/test/scipp-neutron-test
+./neutron/test/scipp-neutron-test 2>&1
 
 # Python tests
 python3 -m pip install -r ../python/requirements.txt
