@@ -947,8 +947,9 @@ TEST(VariableTest, divide_with_variance) {
 }
 
 TEST(ASAN, asan_fail_test) {
-  //leak here
+  // leak here
   auto ppp = new Variable;
+
   *ppp *= 5;
   int a[5] = {1, 2, 3, 4, 5};
   int p = a[6];
