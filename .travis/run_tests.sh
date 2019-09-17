@@ -20,16 +20,19 @@ make -j2 install all-tests
 ./units/test/scipp-units-test > log.txt 2> err.txt
 echo "Units test"
 cat err.txt
+cat log.txt
 
 # Core tests
 ./core/test/scipp-core-test > log.txt 2> err.txt
 echo "Core test"
 cat err.txt
+cat log.txt
 
 # Neutron tests
 ./neutron/test/scipp-neutron-test > log.txt 2> err.txt
 echo "Neutron test"
 cat err.txt
+cat log.txt
 
 # Python tests
 python3 -m pip install -r ../python/requirements.txt
