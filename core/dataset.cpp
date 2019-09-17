@@ -758,46 +758,6 @@ std::unordered_map<Dim, scipp::index> Dataset::dimensions() const {
   return all;
 }
 
-std::ostream &operator<<(std::ostream &os, const DataConstProxy &data) {
-  return os << to_string(data);
-}
-
-std::ostream &operator<<(std::ostream &os, const DataProxy &data) {
-  return os << DataConstProxy(data);
-}
-
-std::ostream &operator<<(std::ostream &os, const DataArray &data) {
-  return os << DataConstProxy(data);
-}
-
-std::ostream &operator<<(std::ostream &os, const DatasetConstProxy &dataset) {
-  return os << to_string(dataset);
-}
-
-std::ostream &operator<<(std::ostream &os, const DatasetProxy &dataset) {
-  return os << DatasetConstProxy(dataset);
-}
-
-std::ostream &operator<<(std::ostream &os, const Dataset &dataset) {
-  return os << DatasetConstProxy(dataset);
-}
-
-std::ostream &operator<<(std::ostream &os, const VariableConstProxy &variable) {
-  return os << to_string(variable);
-}
-
-std::ostream &operator<<(std::ostream &os, const VariableProxy &variable) {
-  return os << VariableConstProxy(variable);
-}
-
-std::ostream &operator<<(std::ostream &os, const Variable &variable) {
-  return os << VariableConstProxy(variable);
-}
-
-std::ostream &operator<<(std::ostream &os, const Dim dim) {
-  return os << to_string(dim);
-}
-
 // For now this implementation is only for the simplest case of 2 dims (inner
 // stands for sparse)
 DataArray histogram(const DataConstProxy &sparse,

@@ -27,6 +27,7 @@ set(SRC_FILES
     except.cpp
     rebin.cpp
     slice.cpp
+    string.cpp
     trigonometry.cpp
     variable.cpp
     variable_binary_ops.cpp

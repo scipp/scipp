@@ -2,7 +2,7 @@
 // Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#include "scipp/core/except.h"
+#include "scipp/core/string.h"
 
 #include "bind_enum.h"
 #include "pybind11.h"

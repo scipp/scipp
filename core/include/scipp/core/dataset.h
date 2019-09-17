@@ -918,19 +918,6 @@ private:
   Dataset m_holder;
 };
 
-SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
-                                           const DataConstProxy &data);
-SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
-                                           const DataProxy &data);
-SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
-                                           const DataArray &data);
-SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
-                                           const DatasetConstProxy &dataset);
-SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
-                                           const DatasetProxy &dataset);
-SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
-                                           const Dataset &dataset);
-
 SCIPP_CORE_EXPORT DataArray operator+(const DataConstProxy &a,
                                       const DataConstProxy &b);
 SCIPP_CORE_EXPORT DataArray operator-(const DataConstProxy &a,
