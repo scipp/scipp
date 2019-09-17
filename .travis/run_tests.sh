@@ -17,13 +17,19 @@ fi
 make -j2 install all-tests
 
 # Units tests
-./units/test/scipp-units-test 2>&1
+./units/test/scipp-units-test > log.txt 2> err.txt
+echo "Units test"
+cat err.txt
 
 # Core tests
-./core/test/scipp-core-test 2>&1
+./core/test/scipp-core-test > log.txt 2> err.txt
+echo "Core test"
+cat err.txt
 
 # Neutron tests
-./neutron/test/scipp-neutron-test 2>&1
+./neutron/test/scipp-neutron-test > log.txt 2> err.txt
+echo "Neutron test"
+cat err.txt
 
 # Python tests
 python3 -m pip install -r ../python/requirements.txt
