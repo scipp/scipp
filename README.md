@@ -35,7 +35,7 @@ git submodule update
 mkdir -p build
 mkdir -p install
 cd build
-cmake -DPYTHON_EXECUTABLE=/usr/bin/python3.5 -DCMAKE_INSTALL_PREFIX=../install ..
+cmake -DPYTHON_EXECUTABLE=/usr/bin/python3 -DCMAKE_INSTALL_PREFIX=../install ..
 make -j4 all-tests install
 ```
 Note that the `all` and `install` targets do NOT include the tests. Those must be built separately via `all-tests`. 
