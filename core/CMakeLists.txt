@@ -22,6 +22,7 @@ set(SRC_FILES
     data_array.cpp
     dataset.cpp
     dataset_binary_arithmetic.cpp
+    dataset_operations.cpp
     dimensions.cpp
     dtype.cpp
     except.cpp
@@ -31,6 +32,7 @@ set(SRC_FILES
     trigonometry.cpp
     variable.cpp
     variable_binary_ops.cpp
+    variable_instantiate_dataset.cpp
     view_index.cpp)
 
 set(LINK_TYPE "STATIC")
