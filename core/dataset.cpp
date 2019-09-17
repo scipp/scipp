@@ -1251,7 +1251,12 @@ auto concat(const T1 &a, const T2 &b, const Dim dim, const Dimensions &dimsA,
       else
         out.emplace(key, join_edges(a_, b[key], dim));
     } else {
-      out.emplace(key, same(a_, b[key]));
+      // 1D coord is kept only if both inputs have matching 1D coords.
+      if (a_.dims().contains(dim) || b[key].dims().contains(dim) ||
+          a_ != b[key])
+        out.emplace(key, concatenate(a_, b[key], dim));
+      else
+        out.emplace(key, same(a_, b[key]));
     }
   }
   return out;
