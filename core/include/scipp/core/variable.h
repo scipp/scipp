@@ -5,6 +5,7 @@
 #ifndef VARIABLE_H
 #define VARIABLE_H
 
+#include <string>
 #include <type_traits>
 #include <variant>
 
@@ -16,6 +17,7 @@
 #include "scipp/core/dimensions.h"
 #include "scipp/core/dtype.h"
 #include "scipp/core/slice.h"
+#include "scipp/core/string.h"
 #include "scipp/core/variable_view.h"
 #include "scipp/core/vector.h"
 #include "scipp/units/unit.h"
@@ -813,17 +815,6 @@ SCIPP_CORE_EXPORT Variable tan(const Variable &var);
 SCIPP_CORE_EXPORT Variable asin(const Variable &var);
 SCIPP_CORE_EXPORT Variable acos(const Variable &var);
 SCIPP_CORE_EXPORT Variable atan(const Variable &var);
-
-template <class T>
-VariableView<const T> getView(const Variable &var, const Dimensions &dims);
-
-SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
-                                           const VariableConstProxy &variable);
-SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
-                                           const VariableProxy &variable);
-SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
-                                           const Variable &variable);
-SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os, const Dim dim);
 
 } // namespace scipp::core
 

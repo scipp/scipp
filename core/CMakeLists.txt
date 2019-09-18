@@ -21,14 +21,20 @@ set(SRC_FILES
     counts.cpp
     data_array.cpp
     dataset.cpp
+    dataset_binary_arithmetic.cpp
+    dataset_operations.cpp
     dimensions.cpp
     dtype.cpp
     except.cpp
     rebin.cpp
     slice.cpp
+    string.cpp
     trigonometry.cpp
     variable.cpp
-    variable_binary_ops.cpp
+    variable_binary_arithmetic.cpp
+    variable_instantiate_basic.cpp
+    variable_instantiate_dataset.cpp
+    variable_operations.cpp
     view_index.cpp)
 
 set(LINK_TYPE "STATIC")
