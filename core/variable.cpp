@@ -318,27 +318,15 @@ Variable sum(const VariableConstProxy &var, const Dim dim) {
   return summed;
 }
 
-struct multiply_variance {
-  template <class T>
-  scipp::core::detail::ValueAndVariance<T>
-  operator()(const scipp::core::detail::ValueAndVariance<T> &vv) const {
-    return {vv.value, vv.variance * multiplier};
-  }
-  double multiplier;
-};
-
 Variable mean(const VariableConstProxy &var, const Dim dim) {
   // In principle we *could* support mean/sum over sparse dimension.
   expect::notSparse(var);
   auto summed = sum(var, dim);
-  double scale = 1.0 / static_cast<double>(var.dims()[dim]);
+  auto scale = makeVariable<double>(1.0 / static_cast<double>(var.dims()[dim]));
   if (isInt(var.dtype()))
-    summed = summed * makeVariable<double>(scale);
+    summed = summed * scale;
   else
-    summed *= makeVariable<double>(scale);
-  if (summed.hasVariances())
-    transform_in_place<double, float>(
-        summed, overloaded{multiply_variance{scale}, [](const auto &) {}});
+    summed *= scale;
   return summed;
 }
 
