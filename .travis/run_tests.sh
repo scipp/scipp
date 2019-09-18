@@ -9,7 +9,7 @@ cd build
 
 if [[ "$TRAVIS_COMPILER" == "clang" ]]
 then
-    cmake -DPYTHON_EXECUTABLE=${PYTHON_EXECUTABLE} $@ -DCMAKE_INSTALL_PREFIX=../install -DCMAKE_CXX_FLAGS="-fsanitize=address" ..
+    cmake -DPYTHON_EXECUTABLE=${PYTHON_EXECUTABLE} $@ -DCMAKE_INSTALL_PREFIX=../install -DCMAKE_CXX_FLAGS="-fsanitize=undefined" ..
 else
     cmake -DPYTHON_EXECUTABLE=${PYTHON_EXECUTABLE} $@ -DCMAKE_INSTALL_PREFIX=../install ..
 fi
