@@ -322,11 +322,11 @@ Variable mean(const VariableConstProxy &var, const Dim dim) {
   // In principle we *could* support mean/sum over sparse dimension.
   expect::notSparse(var);
   auto summed = sum(var, dim);
-  double scale = 1.0 / static_cast<double>(var.dims()[dim]);
+  auto scale = makeVariable<double>(1.0 / static_cast<double>(var.dims()[dim]));
   if (isInt(var.dtype()))
-    summed = summed * makeVariable<double>(scale);
+    summed = summed * scale;
   else
-    summed *= makeVariable<double>(scale);
+    summed *= scale;
   return summed;
 }
 
