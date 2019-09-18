@@ -790,25 +790,38 @@ class Slicer2d:
         vals = vslice.values
         # Check if dimensions of arrays agree, if not, plot the transpose
         zlabs = vslice.dims
-        if (zlabs[0] == self.xlabs[0]) and (zlabs[1] == self.ylabs[0]):
-            vals = vals.T
-        # Apply colorbar parameters
-        if self.cb["log"]:
-            with np.errstate(invalid="ignore", divide="ignore"):
-                vals = np.log10(vals)
-        self.fig.data[0].z = vals
+        transp = (zlabs[0] == self.xlabs[0]) and (zlabs[1] == self.ylabs[0])
+        self.update_z2d(vslice.values, transp, self.cb["log"], 0)
+
+
+        #     vals = vals.T
+        # # Apply colorbar parameters
+        # if self.cb["log"]:
+        #     with np.errstate(invalid="ignore", divide="ignore"):
+        #         vals = np.log10(vals)
+        # self.fig.data[0].z = vals
 
         if (self.input_data.variances is not None) and self.show_variances:
-            vals = vslice.variances
-            # Check if dimensions of arrays agree, if not, plot the transpose
-            # zlabs = vslice.dims
-            if (zlabs[0] == self.xlabs[0]) and (zlabs[1] == self.ylabs[0]):
-                vals = vals.T
-            # Apply colorbar parameters
-            if self.cb["log"]:
-                with np.errstate(invalid="ignore", divide="ignore"):
-                    vals = np.log10(vals)
-            self.fig.data[1].z = vals
+            self.update_z2d(vslice.variances, transp, self.cb["log"], 1)
+            # vals = vslice.variances
+            # # Check if dimensions of arrays agree, if not, plot the transpose
+            # # zlabs = vslice.dims
+            # if (zlabs[0] == self.xlabs[0]) and (zlabs[1] == self.ylabs[0]):
+            #     vals = vals.T
+            # # Apply colorbar parameters
+            # if self.cb["log"]:
+            #     with np.errstate(invalid="ignore", divide="ignore"):
+            #         vals = np.log10(vals)
+            # self.fig.data[1].z = vals
+
+    def update_z2d(self, values, transp, log, indx):
+        if transp:
+            values = values.T
+        # Apply colorbar parameters
+        if log:
+            with np.errstate(invalid="ignore", divide="ignore"):
+                values = np.log10(values)
+        self.fig.data[indx].z = values
 
 
         # data = {"values": None, "variances": None}
