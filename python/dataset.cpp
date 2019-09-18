@@ -247,7 +247,7 @@ void init_dataset(py::module &m) {
           return core::histogram(ds, bins);
         },
         py::call_guard<py::gil_scoped_release>(),
-        "Returns a new Variabble with values in bins for sparse dims");
+        "Returns a new Variable with values in bins for sparse dims");
 
   m.def("histogram",
         [](const Dataset &ds, const VariableConstProxy &bins) {
