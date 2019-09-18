@@ -5,6 +5,7 @@
 #ifndef VARIABLE_H
 #define VARIABLE_H
 
+#include <string>
 #include <type_traits>
 #include <variant>
 
