@@ -916,10 +916,12 @@ def plot_3d(input_data, axes=None, contours=False, cb=None,
     layout = dict(
         xaxis=dict(title=axis_label(xcoord)),
         yaxis=dict(title=axis_label(ycoord)),
-        zaxis=dict(title=axis_label(zcoord)),
+        # zaxis=dict(title=axis_label(zcoord)),
         height=figsize[1],
         width=figsize[0]
     )
+    if ndim > 2:
+        layout["zaxis"] = dict(title=axis_label(zcoord))
     if input_data.variances is not None and show_variances:
         layout["width"] *= 0.5
         layout["height"] = 0.8 * layout["width"]
@@ -937,22 +939,31 @@ def plot_3d(input_data, axes=None, contours=False, cb=None,
     #     )]
     # print(np.shape(xc))
     # print(np.sin(xc))
-    x1, y1 = np.meshgrid(xc, yc)
-    x2, z2 = np.meshgrid(xc, zc)
-    y3, z3 = np.meshgrid(yc, zc)
+    
     
     if ndim == 2:
-        data=[go.Surface(x=xc, y=yc, z=input_data.values, opacity=0.9)]
+        data=[go.Surface(x=xc, y=yc, z=input_data.values, opacity=0.9, colorscale=cbar["name"])]
         fig = go.Figure(data=data, layout=layout)
         if filename is not None:
             write_image(fig=fig, file=filename)
         else:
             display(fig)
-        return
+        # return
     else:
-        data=[go.Surface(x=np.zeros_like(y3), y=y3, z=z3),
-              go.Surface(x=x2, y=np.zeros_like(x2), z=z2),
-              go.Surface(x=x1, y=y1, z=np.zeros_like(x1))]
+        x1, y1 = np.meshgrid(xc, yc)
+        x2, z2 = np.meshgrid(xc, zc)
+        y3, z3 = np.meshgrid(yc, zc)
+        if cbar["min"] is not None:
+            zmin = cbar["min"]
+        else:
+            zmin = np.amin(input_data.values[np.where(np.isfinite(input_data.values))])
+        if cbar["max"] is not None:
+            zmax = cbar["max"]
+        else:
+            zmax = np.amax(input_data.values[np.where(np.isfinite(input_data.values))])
+        data=[go.Surface(x=np.zeros_like(y3), y=y3, z=z3, cmin=zmin, cmax=zmax),
+              go.Surface(x=x2, y=np.zeros_like(x2), z=z2, cmin=zmin, cmax=zmax, showscale=False),
+              go.Surface(x=x1, y=y1, z=np.zeros_like(x1), cmin=zmin, cmax=zmax, showscale=False)]
         # Create a SliceViewer object
         sv = Slicer3d(data=data, layout=layout,
                          input_data=input_data, axes=axes,
@@ -961,15 +972,67 @@ def plot_3d(input_data, axes=None, contours=False, cb=None,
             write_image(fig=sv.fig, file=filename)
         else:
             display(sv.vbox)
+
+    return
+
+
+
+
+
+
+
+class Update3d:
+
+    def __init__(self, parent, idim, dim):
+        self.parent = parent
+        self.idim = idim
+        self.dim = dim
+        self.moving_coord = ["x", "y", "z"]
         return
 
+        # Define function to update slices
+    def update_slice(self, change):
+        print(change)
+        # # The dimensions to be sliced have been saved in slider_dims
+        # # Slice with first element to avoid modifying underlying dataset
+        # self.lab[0].value = str(self.slider_x[0][self.slider[0].value])
+        # vslice = self.input_data[self.slider_dims[0], self.slider[0].value]
+        vslice = self.parent.input_data
+        # Then slice additional dimensions if needed
+        # for idim in range(self.nslices):
+        # idim = 0
+        self.parent.lab[self.idim].value = str(
+            self.parent.slider_x[self.idim][change["new"]])
+        vslice = vslice[self.parent.slider_dims[self.idim], change["new"]]
 
+        z = vslice.values
+        # print(z)
 
+        # Check if dimensions of arrays agree, if not, plot the transpose
+        zlabs = vslice.dims
+        # if (zlabs[0] == self.xlabs[0]) and (zlabs[1] == self.ylabs[0]):
+        #     z = z.T
+        # Apply colorbar parameters
+        if self.parent.cb["log"]:
+            with np.errstate(invalid="ignore", divide="ignore"):
+                z = np.log10(z)
+        # if (self.parent.cb["min"] is not None) + (self.parent.cb["max"] is not None) == 1:
+        #     if self.parent.cb["min"] is not None:
+        #         self.parent.fig.data[0].zmin = self.parent.cb["min"]
+        #     else:
+        #         self.parent.fig.data[0].zmin = np.amin(z[np.where(np.isfinite(z))])
+        #     if self.parent.cb["max"] is not None:
+        #         self.parent.fig.data[0].zmax = self.parent.cb["max"]
+        #     else:
+        #         self.parent.fig.data[0].zmax = np.amax(z[np.where(np.isfinite(z))])
+        # data = self.parent.fig.data[self.idim]
+        # coord = getattr(data, self.moving_coord[self.idim])
+        # coord = self.parent.slider_x[self.idim][change["new"]] * np.ones_like(coord)
 
-
-
-
-
+        setattr(self.parent.fig.data[self.idim], self.moving_coord[self.idim], self.parent.slider_x[self.idim][change["new"]] * np.ones_like(getattr(self.parent.fig.data[self.idim], self.moving_coord[self.idim])))
+        # print(self.slider_x[idim][self.slider[idim].value] * np.ones_like(self.fig.data[0].x))
+        self.parent.fig.data[self.idim].surfacecolor = z
+        return
 
 
 
@@ -1022,12 +1085,15 @@ class Slicer3d:
         indx = 0
 
         # Now begin loop to construct sliders
+        self.updates = []
         for i in range(len(self.slider_nx)):
+            print(self.slider_dims[i], self.slider_nx[i])
+            initval = self.slider_nx[i]//2
             # Add a label widget to display the value of the z coordinate
             self.lab.append(Label(value=str(self.slider_x[i][indx])))
             # Add an IntSlider to slide along the z dimension of the array
             self.slider.append(IntSlider(
-                value=self.slider_nx[i]//2,
+                value=initval,
                 min=0,
                 max=self.slider_nx[i] - 1,
                 step=1,
@@ -1036,134 +1102,137 @@ class Slicer3d:
                 readout=False
             ))
             # Add an observer to the slider
-            self.slider[i].observe(self.update_slice3dz, names="value")
+            self.updates.append(Update3d(self, i, self.slider_dims[i]))
+            self.slider[i].observe(self.updates[-1].update_slice, names="value")
             # Add coordinate name and unit
             title = Label(value=axis_label(self.coords[self.slider_dims[i]]))
             self.vbox.append(HBox([title, self.slider[i], self.lab[i]]))
+            self.updates[-1].update_slice({"new": initval})
 
         # # Call update_slice once to make the initial image
         # # if len(self.slider) > 0:
-        self.update_slice3dx(0)
-        self.update_slice3dy(0)
+        # self.update_slice3d({"new": 0})
+        # self.update_slice3dy(0)
         # self.update_slice3dz(0)
         self.vbox = VBox(self.vbox)
         self.vbox.layout.align_items = 'center'
 
         return
 
-    # Define function to update slices
-    def update_slice3dx(self, change):
-        # # The dimensions to be sliced have been saved in slider_dims
-        # # Slice with first element to avoid modifying underlying dataset
-        # self.lab[0].value = str(self.slider_x[0][self.slider[0].value])
-        # vslice = self.input_data[self.slider_dims[0], self.slider[0].value]
-        vslice = self.input_data
-        # Then slice additional dimensions if needed
-        # for idim in range(self.nslices):
-        idim = 0
-        self.lab[idim].value = str(
-            self.slider_x[idim][self.slider[idim].value])
-        vslice = vslice[self.slider_dims[idim], self.slider[idim].value]
+    # # Define function to update slices
+    # def update_slice3d(self, change):
+    #     print(change)
+    #     # # The dimensions to be sliced have been saved in slider_dims
+    #     # # Slice with first element to avoid modifying underlying dataset
+    #     # self.lab[0].value = str(self.slider_x[0][self.slider[0].value])
+    #     # vslice = self.input_data[self.slider_dims[0], self.slider[0].value]
+    #     vslice = self.input_data
+    #     # Then slice additional dimensions if needed
+    #     # for idim in range(self.nslices):
+    #     idim = 0
+    #     self.lab[idim].value = str(
+    #         self.slider_x[idim][self.slider[idim].value])
+    #     vslice = vslice[self.slider_dims[idim], self.slider[idim].value]
 
-        z = vslice.values
-        print(z)
+    #     z = vslice.values
+    #     # print(z)
 
-        # Check if dimensions of arrays agree, if not, plot the transpose
-        zlabs = vslice.dims
-        # if (zlabs[0] == self.xlabs[0]) and (zlabs[1] == self.ylabs[0]):
-        #     z = z.T
-        # Apply colorbar parameters
-        if self.cb["log"]:
-            with np.errstate(invalid="ignore", divide="ignore"):
-                z = np.log10(z)
-        if (self.cb["min"] is not None) + (self.cb["max"] is not None) == 1:
-            if self.cb["min"] is not None:
-                self.fig.data[0].zmin = self.cb["min"]
-            else:
-                self.fig.data[0].zmin = np.amin(z[np.where(np.isfinite(z))])
-            if self.cb["max"] is not None:
-                self.fig.data[0].zmax = self.cb["max"]
-            else:
-                self.fig.data[0].zmax = np.amax(z[np.where(np.isfinite(z))])
-        self.fig.data[0].x = self.slider_x[idim][self.slider[idim].value] * np.ones_like(self.fig.data[0].x)
-        print(self.slider_x[idim][self.slider[idim].value] * np.ones_like(self.fig.data[0].x))
-        self.fig.data[0].surfacecolor = z
-        return
+    #     # Check if dimensions of arrays agree, if not, plot the transpose
+    #     zlabs = vslice.dims
+    #     # if (zlabs[0] == self.xlabs[0]) and (zlabs[1] == self.ylabs[0]):
+    #     #     z = z.T
+    #     # Apply colorbar parameters
+    #     if self.cb["log"]:
+    #         with np.errstate(invalid="ignore", divide="ignore"):
+    #             z = np.log10(z)
+    #     if (self.cb["min"] is not None) + (self.cb["max"] is not None) == 1:
+    #         if self.cb["min"] is not None:
+    #             self.fig.data[0].zmin = self.cb["min"]
+    #         else:
+    #             self.fig.data[0].zmin = np.amin(z[np.where(np.isfinite(z))])
+    #         if self.cb["max"] is not None:
+    #             self.fig.data[0].zmax = self.cb["max"]
+    #         else:
+    #             self.fig.data[0].zmax = np.amax(z[np.where(np.isfinite(z))])
+    #     self.fig.data[0].x = self.slider_x[idim][self.slider[idim].value] * np.ones_like(self.fig.data[0].x)
+    #     # print(self.slider_x[idim][self.slider[idim].value] * np.ones_like(self.fig.data[0].x))
+    #     self.fig.data[0].surfacecolor = z
+    #     return
 
 
-    # Define function to update slices
-    def update_slice3dy(self, change):
-        # # The dimensions to be sliced have been saved in slider_dims
-        # # Slice with first element to avoid modifying underlying dataset
-        # self.lab[0].value = str(self.slider_x[0][self.slider[0].value])
-        # vslice = self.input_data[self.slider_dims[0], self.slider[0].value]
-        vslice = self.input_data
-        # Then slice additional dimensions if needed
-        idim = 1
-        # for idim in range(self.nslices):
-        self.lab[idim].value = str(
-            self.slider_x[idim][self.slider[idim].value])
-        vslice = vslice[self.slider_dims[idim], self.slider[idim].value]
+    # # Define function to update slices
+    # def update_slice3dy(self, change):
+    #     # # The dimensions to be sliced have been saved in slider_dims
+    #     # # Slice with first element to avoid modifying underlying dataset
+    #     # self.lab[0].value = str(self.slider_x[0][self.slider[0].value])
+    #     # vslice = self.input_data[self.slider_dims[0], self.slider[0].value]
+    #     vslice = self.input_data
+    #     # Then slice additional dimensions if needed
+    #     idim = 1
+    #     # for idim in range(self.nslices):
+    #     self.lab[idim].value = str(
+    #         self.slider_x[idim][self.slider[idim].value])
+    #     vslice = vslice[self.slider_dims[idim], self.slider[idim].value]
 
-        z = vslice.values
+    #     z = vslice.values
 
-        # Check if dimensions of arrays agree, if not, plot the transpose
-        zlabs = vslice.dims
-        # if (zlabs[0] == self.xlabs[0]) and (zlabs[1] == self.ylabs[0]):
-        #     z = z.T
-        # Apply colorbar parameters
-        if self.cb["log"]:
-            with np.errstate(invalid="ignore", divide="ignore"):
-                z = np.log10(z)
-        if (self.cb["min"] is not None) + (self.cb["max"] is not None) == 1:
-            if self.cb["min"] is not None:
-                self.fig.data[1].zmin = self.cb["min"]
-            else:
-                self.fig.data[1].zmin = np.amin(z[np.where(np.isfinite(z))])
-            if self.cb["max"] is not None:
-                self.fig.data[1].zmax = self.cb["max"]
-            else:
-                self.fig.data[1].zmax = np.amax(z[np.where(np.isfinite(z))])
-        self.fig.data[1].y = self.slider_x[idim][self.slider[idim].value] * np.ones_like(self.fig.data[1].y)
-        self.fig.data[1].surfacecolor = z
-        return
+    #     # Check if dimensions of arrays agree, if not, plot the transpose
+    #     zlabs = vslice.dims
+    #     # if (zlabs[0] == self.xlabs[0]) and (zlabs[1] == self.ylabs[0]):
+    #     #     z = z.T
+    #     # Apply colorbar parameters
+    #     if self.cb["log"]:
+    #         with np.errstate(invalid="ignore", divide="ignore"):
+    #             z = np.log10(z)
+    #     if (self.cb["min"] is not None) + (self.cb["max"] is not None) == 1:
+    #         if self.cb["min"] is not None:
+    #             self.fig.data[1].zmin = self.cb["min"]
+    #         else:
+    #             self.fig.data[1].zmin = np.amin(z[np.where(np.isfinite(z))])
+    #         if self.cb["max"] is not None:
+    #             self.fig.data[1].zmax = self.cb["max"]
+    #         else:
+    #             self.fig.data[1].zmax = np.amax(z[np.where(np.isfinite(z))])
+    #     self.fig.data[1].y = self.slider_x[idim][self.slider[idim].value] * np.ones_like(self.fig.data[1].y)
+    #     self.fig.data[1].surfacecolor = z
+    #     return
 
-    # Define function to update slices
-    def update_slice3dz(self, change):
-        # # The dimensions to be sliced have been saved in slider_dims
-        # # Slice with first element to avoid modifying underlying dataset
-        # self.lab[0].value = str(self.slider_x[0][self.slider[0].value])
-        # vslice = self.input_data[self.slider_dims[0], self.slider[0].value]
-        vslice = self.input_data
-        # Then slice additional dimensions if needed
-        idim = 2
-        # for idim in range(self.nslices):
-        self.lab[idim].value = str(
-            self.slider_x[idim][self.slider[idim].value])
-        vslice = vslice[self.slider_dims[idim], self.slider[idim].value]
+    # # Define function to update slices
+    # def update_slice3dz(self, change):
+    #     # # The dimensions to be sliced have been saved in slider_dims
+    #     # # Slice with first element to avoid modifying underlying dataset
+    #     # self.lab[0].value = str(self.slider_x[0][self.slider[0].value])
+    #     # vslice = self.input_data[self.slider_dims[0], self.slider[0].value]
+    #     vslice = self.input_data
+    #     # Then slice additional dimensions if needed
+    #     idim = 2
+    #     # for idim in range(self.nslices):
+    #     self.lab[idim].value = str(
+    #         self.slider_x[idim][self.slider[idim].value])
+    #     vslice = vslice[self.slider_dims[idim], self.slider[idim].value]
 
-        z = vslice.values
+    #     z = vslice.values
 
-        # Check if dimensions of arrays agree, if not, plot the transpose
-        zlabs = vslice.dims
-        # if (zlabs[0] == self.xlabs[0]) and (zlabs[1] == self.ylabs[0]):
-        #     z = z.T
-        # Apply colorbar parameters
-        if self.cb["log"]:
-            with np.errstate(invalid="ignore", divide="ignore"):
-                z = np.log10(z)
-        if (self.cb["min"] is not None) + (self.cb["max"] is not None) == 1:
-            if self.cb["min"] is not None:
-                self.fig.data[2].zmin = self.cb["min"]
-            else:
-                self.fig.data[2].zmin = np.amin(z[np.where(np.isfinite(z))])
-            if self.cb["max"] is not None:
-                self.fig.data[2].zmax = self.cb["max"]
-            else:
-                self.fig.data[2].zmax = np.amax(z[np.where(np.isfinite(z))])
-        self.fig.data[2].z = self.slider_x[idim][self.slider[idim].value] * np.ones_like(self.fig.data[2].z)
-        self.fig.data[2].surfacecolor = z
-        return
+    #     # Check if dimensions of arrays agree, if not, plot the transpose
+    #     zlabs = vslice.dims
+    #     # if (zlabs[0] == self.xlabs[0]) and (zlabs[1] == self.ylabs[0]):
+    #     #     z = z.T
+    #     # Apply colorbar parameters
+    #     if self.cb["log"]:
+    #         with np.errstate(invalid="ignore", divide="ignore"):
+    #             z = np.log10(z)
+    #     if (self.cb["min"] is not None) + (self.cb["max"] is not None) == 1:
+    #         if self.cb["min"] is not None:
+    #             self.fig.data[2].zmin = self.cb["min"]
+    #         else:
+    #             self.fig.data[2].zmin = np.amin(z[np.where(np.isfinite(z))])
+    #         if self.cb["max"] is not None:
+    #             self.fig.data[2].zmax = self.cb["max"]
+    #         else:
+    #             self.fig.data[2].zmax = np.amax(z[np.where(np.isfinite(z))])
+    #     self.fig.data[2].z = self.slider_x[idim][self.slider[idim].value] * np.ones_like(self.fig.data[2].z)
+    #     self.fig.data[2].surfacecolor = z
+    #     return
 
 
 
