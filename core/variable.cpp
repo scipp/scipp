@@ -2,10 +2,10 @@
 // Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
+#include "scipp/core/variable.h"
 #include "scipp/core/counts.h"
 #include "scipp/core/dtype.h"
 #include "scipp/core/except.h"
-#include "scipp/core/variable.h"
 
 namespace scipp::core {
 
