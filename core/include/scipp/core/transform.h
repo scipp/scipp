@@ -426,6 +426,13 @@ static constexpr auto type_pairs(Op) noexcept {
     return std::tuple_cat(TypePairs{}...);
 }
 
+template <class Op, class... Args>
+static constexpr void call_in_place(Op &&op, Args &&... args) noexcept {
+  static_assert(
+      std::is_same_v<decltype(op(std::forward<Args>(args)...)), void>);
+  op(std::forward<Args>(args)...);
+}
+
 /// Helper class wrapping functions for in-place transform.
 ///
 /// The dry_run template argument can be used to disable any actual modification
@@ -467,16 +474,10 @@ template <bool dry_run> struct in_place {
       // terminates with the second level.
       if constexpr (is_sparse_v<decltype(vals[0])>) {
         ValuesAndVariances _{vals[i], vars[i]};
-        static_assert(
-            std::is_same_v<
-                decltype(op(_, value_and_maybe_variance(other, i)...)), void>);
-        op(_, value_and_maybe_variance(other, i)...);
+        call_in_place(op, _, value_and_maybe_variance(other, i)...);
       } else {
         ValueAndVariance _{vals[i], vars[i]};
-        static_assert(
-            std::is_same_v<
-                decltype(op(_, value_and_maybe_variance(other, i)...)), void>);
-        op(_, value_and_maybe_variance(other, i)...);
+        call_in_place(op, _, value_and_maybe_variance(other, i)...);
         vals[i] = _.value;
         vars[i] = _.variance;
       }
@@ -497,10 +498,8 @@ template <bool dry_run> struct in_place {
       return;
     // WARNING: Do not parallelize this loop in all cases! The output may have a
     // dimension with stride zero so parallelization must be done with care.
-    for (scipp::index i = 0; i < scipp::size(vals); ++i) {
-      static_assert(std::is_same_v<decltype(op(vals[i], other[i]...)), void>);
-      op(vals[i], other[i]...);
-    }
+    for (scipp::index i = 0; i < scipp::size(vals); ++i)
+      call_in_place(op, vals[i], other[i]...);
   }
 
   /// Helper for in-place transform implementation, performing branching between
