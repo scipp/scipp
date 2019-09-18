@@ -363,10 +363,4 @@ Variable reverse(Variable var, const Dim dim) {
   return var;
 }
 
-template <>
-VariableView<const double> getView<double>(const Variable &var,
-                                           const Dimensions &dims) {
-  return requireT<const VariableConceptT<double>>(var.data()).valuesView(dims);
-}
-
 } // namespace scipp::core

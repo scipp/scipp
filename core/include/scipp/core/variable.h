@@ -815,9 +815,6 @@ SCIPP_CORE_EXPORT Variable asin(const Variable &var);
 SCIPP_CORE_EXPORT Variable acos(const Variable &var);
 SCIPP_CORE_EXPORT Variable atan(const Variable &var);
 
-template <class T>
-VariableView<const T> getView(const Variable &var, const Dimensions &dims);
-
 } // namespace scipp::core
 
 #endif // VARIABLE_H

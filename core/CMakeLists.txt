@@ -31,7 +31,7 @@ set(SRC_FILES
     string.cpp
     trigonometry.cpp
     variable.cpp
-    variable_binary_ops.cpp
+    variable_binary_arithmetic.cpp
     variable_instantiate_basic.cpp
     variable_instantiate_dataset.cpp
     view_index.cpp)
