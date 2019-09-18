@@ -14,7 +14,7 @@ For a more detailed explanation we refer to the `documentation of Dataset <../us
 Scipp labels dimensions and their associated coordinates using pre-defined dimension labels such as ``Dim.X``, ``Dim.Temperature``, or ``Dim.Wavelength``.
 
 Operations with datasets "align" data items based on their names, dimension labels, and coordinate values.
-Missing dimensions in the operands are automatically broadcast.
+Missing dimensions in the operands are automatically `broadcast <https://docs.scipy.org/doc/numpy/user/basics.broadcasting.html>`_.
 If names or coordinates do not match, operations fail.
 In general scipp does not support automatic re-alignment of data.
 
