@@ -96,7 +96,8 @@ inline constexpr bool has_variances_v = has_variances<T>::value;
 /// Helper for the transform implementation to unify iteration of data with and
 /// without variances as well as sparse are dense container.
 template <class T>
-constexpr auto value_and_maybe_variance(const T &range, const scipp::index i) {
+static constexpr auto value_and_maybe_variance(const T &range,
+                                               const scipp::index i) {
   if constexpr (has_variances_v<T>) {
     if constexpr (is_sparse_v<decltype(range.values[0])>)
       return ValuesAndVariances{range.values[i], range.variances[i]};
@@ -127,12 +128,12 @@ struct is_sparse<ValuesAndVariances<const sparse_container<T>>>
 template <class T> inline constexpr bool is_sparse_v = is_sparse<T>::value;
 } // namespace transform_detail
 
-template <class T> auto check_and_get_size(const T &a) {
+template <class T> static auto check_and_get_size(const T &a) {
   return scipp::size(a);
 }
 
 template <class T1, class T2>
-auto check_and_get_size(const T1 &a, const T2 &b) {
+static auto check_and_get_size(const T1 &a, const T2 &b) {
   if constexpr (transform_detail::is_sparse_v<T1>) {
     if constexpr (transform_detail::is_sparse_v<T2>)
       expect::sizeMatches(a, b);
@@ -145,8 +146,8 @@ auto check_and_get_size(const T1 &a, const T2 &b) {
 struct SparseFlag {};
 
 template <class Op, class Out, class... Ts>
-void transform_elements_with_variance(Op op, ValuesAndVariances<Out> out,
-                                      Ts &&... other) {
+static void transform_elements_with_variance(Op op, ValuesAndVariances<Out> out,
+                                             Ts &&... other) {
   auto & [ ovals, ovars ] = out;
   for (scipp::index i = 0; i < scipp::size(ovals); ++i) {
     if constexpr (is_sparse_v<decltype(ovals[0])>) {
@@ -162,7 +163,7 @@ void transform_elements_with_variance(Op op, ValuesAndVariances<Out> out,
 }
 
 template <class Op, class Out, class T, class... Ts>
-void transform_elements(Op op, Out &out, T &&vals, Ts &&... other) {
+static void transform_elements(Op op, Out &out, T &&vals, Ts &&... other) {
   for (scipp::index i = 0; i < scipp::size(out); ++i)
     out[i] = op(vals[i], other[i]...);
 }
@@ -195,7 +196,7 @@ template <class T> struct broadcast {
 };
 template <class T> broadcast(T)->broadcast<T>;
 
-template <class T> decltype(auto) maybe_broadcast(T &&value) {
+template <class T> static decltype(auto) maybe_broadcast(T &&value) {
   if constexpr (transform_detail::is_sparse_v<std::decay_t<T>>)
     return std::forward<T>(value);
   else
@@ -206,7 +207,7 @@ template <class T>
 struct is_eigen_expression
     : std::is_base_of<Eigen::MatrixBase<std::decay_t<T>>, std::decay_t<T>> {};
 
-template <class T> constexpr auto maybe_eval(T &&_) {
+template <class T> static constexpr auto maybe_eval(T &&_) {
   if constexpr (is_eigen_expression<T>::value)
     return _.eval();
   else
@@ -235,7 +236,7 @@ template <class Op> struct TransformSparse {
 /// Helper for transform implementation, performing branching between output
 /// with and without variances.
 template <class T1, class Out, class Op>
-void do_transform(const T1 &a, Out &out, Op op) {
+static void do_transform(const T1 &a, Out &out, Op op) {
   auto a_val = a.values();
   auto out_val = out.values();
   if (a.hasVariances()) {
@@ -254,7 +255,7 @@ void do_transform(const T1 &a, Out &out, Op op) {
 /// with and without variances as well as handling other operands with and
 /// without variances.
 template <class T1, class T2, class Out, class Op>
-void do_transform(const T1 &a, const T2 &b, Out &out, Op op) {
+static void do_transform(const T1 &a, const T2 &b, Out &out, Op op) {
   auto a_val = a.values();
   auto b_val = b.values();
   auto out_val = out.values();
