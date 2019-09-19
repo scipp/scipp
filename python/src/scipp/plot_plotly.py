@@ -616,8 +616,8 @@ def plot_2d(input_data, axes=None, contours=False, cb=None,
         figsize = [config.width, config.height]
 
     layout = dict(
-        xaxis=dict(title=xcoord),
-        yaxis=dict(title=ycoord),
+        # xaxis=dict(title=xcoord),
+        # yaxis=dict(title=ycoord),
         height=figsize[1],
         width=figsize[0]
     )
@@ -625,9 +625,9 @@ def plot_2d(input_data, axes=None, contours=False, cb=None,
         # layout["width"] *= 0.5
         layout["height"] = 0.7 * layout["height"]
 
-    data = [dict(
-            x=xe,
-            y=ye,
+    data = dict(
+            x=[0.0],
+            y=[0.0],
             z=[0.0],
             type=plot_type,
             colorscale=cbar["name"],
@@ -639,7 +639,7 @@ def plot_2d(input_data, axes=None, contours=False, cb=None,
                 thicknessmode='fraction',
                 thickness=0.03
             )
-        )]
+        )
 
     # Create a SliceViewer object
     sv = Slicer2d(data=data, layout=layout,
@@ -693,57 +693,8 @@ class Slicer2d:
             # self.buttons[key]
         self.nslices = len(self.slider_dims)
 
-        # Initialise Figure and VBox objects
-        self.fig = None
-        # data = {"values": None, "variances": None}
-        params = {"values": {"cbmin": "min", "cbmax": "max"},
-                  "variances": None}
-        if (self.input_data.variances is not None) and self.show_variances:
-            params["variances"] = {"cbmin": "min_var", "cbmax": "max_var"}
-            self.fig = go.FigureWidget(make_subplots(rows=1, cols=2, horizontal_spacing=0.16))
-            data[0]["colorbar"]["x"] = 0.42
-            data[0]["colorbar"]["thickness"] = 0.02
-            self.fig.add_trace(data[0], row=1, col=1)
-            data[0]["colorbar"]["title"] = "variances"
-            data[0]["colorbar"]["x"] = 1.0
-            self.fig.add_trace(data[0], row=1, col=2)
-            # self.fig["variances"] = go.FigureWidget(data=data, layout=layout)
-            # self.vbox.append(self.fig["variances"])
-            # self.vbox = [HBox(self.vbox)]
-            for i in range(2):
-                self.fig.update_xaxes(title_text=layout["xaxis"]["title"], row=1, col=i+1)
-                self.fig.update_yaxes(title_text=layout["yaxis"]["title"], row=1, col=i+1)
-            self.fig.update_layout(height=layout["height"], width=layout["width"])
-        else:
-            self.fig = go.FigureWidget(data=data, layout=layout)
-            # if (self.cb["min"] is not None) + (self.cb["max"] is not None) == 1:
-            # vals = self.input_data.values
-            # if self.cb["min"] is not None:
-            #     self.fig.data[0].zmin = self.cb["min"]
-            # else:
-            #     self.fig.data[0].zmin = np.amin(vals[np.where(np.isfinite(vals))])
-            # if self.cb["max"] is not None:
-            #     self.fig.data[0].zmax = self.cb["max"]
-            # else:
-            #     self.fig.data[0].zmax = np.amax(vals[np.where(np.isfinite(vals))])
 
-        # zlabs = vslice.dims
-        for i, (key, val) in enumerate(sorted(params.items())):
-            if val is not None:
-                arr = getattr(self.input_data, key)
-                # vals = self.input_data.values
-                if self.cb[val["cbmin"]] is not None:
-                    self.fig.data[i].zmin = self.cb[val["cbmin"]]
-                else:
-                    self.fig.data[i].zmin = np.amin(arr[np.where(np.isfinite(arr))])
-                if self.cb[val["cbmax"]] is not None:
-                    self.fig.data[i].zmax = self.cb[val["cbmax"]]
-                else:
-                    self.fig.data[i].zmax = np.amax(arr[np.where(np.isfinite(arr))])
-
-
-        self.vbox = [self.fig]
-
+        self.vbox = []
 
         # Initialise slider and label containers
         self.lab = dict()
@@ -776,6 +727,7 @@ class Slicer2d:
                 button_style='')
             # print(dir(self.buttons[key]))
             setattr(self.buttons[key], "dim_str", key)
+            setattr(self.buttons[key], "dim", dim)
             setattr(self.buttons[key], "old_value", self.buttons[key].value)
             setattr(self.slider[key], "dim_str", key)
             setattr(self.slider[key], "dim", dim)
@@ -787,6 +739,117 @@ class Slicer2d:
             # Add coordinate name and unit
             # title = Label(value=axis_label(self.coords[self.slider_dims[i]]))
             self.vbox.append(widgets.HBox([self.slider[key], self.lab[key], self.buttons[key]]))
+
+
+
+        # Go through the buttons and select the right coordinates for the axes
+        for key, button in self.buttons.items():
+            if self.slider[key].disabled:
+                data[button.value.lower()] = self.coords[button.dim].values
+                layout["{}axis".format(button.value.lower())] = dict(title=axis_label(self.coords[button.dim]))
+
+        print(data)
+        print(layout)
+
+
+
+
+
+        # Initialise Figure and VBox objects
+        self.fig = None
+        # data = {"values": None, "variances": None}
+        params = {"values": {"cbmin": "min", "cbmax": "max"},
+                  "variances": None}
+        if (self.input_data.variances is not None) and self.show_variances:
+            params["variances"] = {"cbmin": "min_var", "cbmax": "max_var"}
+            self.fig = go.FigureWidget(make_subplots(rows=1, cols=2, horizontal_spacing=0.16))
+            data["colorbar"]["x"] = 0.42
+            data["colorbar"]["thickness"] = 0.02
+            self.fig.add_trace(data, row=1, col=1)
+            data["colorbar"]["title"] = "variances"
+            data["colorbar"]["x"] = 1.0
+            self.fig.add_trace(data, row=1, col=2)
+            # self.fig["variances"] = go.FigureWidget(data=data, layout=layout)
+            # self.vbox.append(self.fig["variances"])
+            # self.vbox = [HBox(self.vbox)]
+            for i in range(2):
+                self.fig.update_xaxes(title_text=layout["xaxis"]["title"], row=1, col=i+1)
+                self.fig.update_yaxes(title_text=layout["yaxis"]["title"], row=1, col=i+1)
+            self.fig.update_layout(height=layout["height"], width=layout["width"])
+        else:
+            self.fig = go.FigureWidget(data=[data], layout=layout)
+            # if (self.cb["min"] is not None) + (self.cb["max"] is not None) == 1:
+            # vals = self.input_data.values
+            # if self.cb["min"] is not None:
+            #     self.fig.data[0].zmin = self.cb["min"]
+            # else:
+            #     self.fig.data[0].zmin = np.amin(vals[np.where(np.isfinite(vals))])
+            # if self.cb["max"] is not None:
+            #     self.fig.data[0].zmax = self.cb["max"]
+            # else:
+            #     self.fig.data[0].zmax = np.amax(vals[np.where(np.isfinite(vals))])
+
+        # zlabs = vslice.dims
+        for i, (key, val) in enumerate(sorted(params.items())):
+            if val is not None:
+                arr = getattr(self.input_data, key)
+                # vals = self.input_data.values
+                if self.cb[val["cbmin"]] is not None:
+                    self.fig.data[i].zmin = self.cb[val["cbmin"]]
+                else:
+                    self.fig.data[i].zmin = np.amin(arr[np.where(np.isfinite(arr))])
+                if self.cb[val["cbmax"]] is not None:
+                    self.fig.data[i].zmax = self.cb[val["cbmax"]]
+                else:
+                    self.fig.data[i].zmax = np.amax(arr[np.where(np.isfinite(arr))])
+
+
+        self.vbox = [self.fig] + self.vbox
+
+
+        # # Initialise slider and label containers
+        # self.lab = dict()
+        # self.slider = dict()
+        # self.buttons = dict()
+        # # Default starting index for slider
+        # indx = 0
+
+        # # Now begin loop to construct sliders
+        # button_values = [None] * (self.ndim - 2) + ['X'] + ['Y']
+        # # print(button_values)
+        # for i, dim in enumerate(self.slider_dims):
+        #     key = str(dim)
+        #     # Add a label widget to display the value of the z coordinate
+        #     self.lab[key] = widgets.Label(value=str(self.slider_x[key][indx]))
+        #     # Add an IntSlider to slide along the z dimension of the array
+        #     self.slider[key] = widgets.IntSlider(
+        #         value=indx,
+        #         min=0,
+        #         max=self.slider_nx[key] - 1,
+        #         step=1,
+        #         description=key,
+        #         continuous_update=True,
+        #         readout=False, disabled=(i>=self.ndim-2)
+        #     )
+        #     self.buttons[key] = widgets.ToggleButtons(
+        #         options=['X', 'Y'], description='',
+        #         value=button_values[i],
+        #         disabled=False,
+        #         button_style='')
+        #     # print(dir(self.buttons[key]))
+        #     setattr(self.buttons[key], "dim_str", key)
+        #     setattr(self.buttons[key], "dim", dim)
+        #     setattr(self.buttons[key], "old_value", self.buttons[key].value)
+        #     setattr(self.slider[key], "dim_str", key)
+        #     setattr(self.slider[key], "dim", dim)
+        #     # self.buttons[key].observe(self.update_buttons, 'value')
+        #     self.buttons[key].on_msg(self.update_buttons)
+            
+        #     # Add an observer to the slider
+        #     self.slider[key].observe(self.update_slice2d, names="value")
+        #     # Add coordinate name and unit
+        #     # title = Label(value=axis_label(self.coords[self.slider_dims[i]]))
+        #     self.vbox.append(widgets.HBox([self.slider[key], self.lab[key], self.buttons[key]]))
 
         # Call update_slice once to make the initial image
         # if len(self.slider) > 0:
@@ -826,6 +889,8 @@ class Slicer2d:
                     self.slider[key].disabled = False
         # print("end")
         owner.old_value = owner.value
+        self.update_axes(owner)
+        self.update_slice2d(None)
 
         return
 
@@ -844,6 +909,23 @@ class Slicer2d:
 
     #     return
 
+    def update_axes(self, owner):
+        # vslice = self.input_data
+        # Then slice additional dimensions if needed
+        # for dim in self.slider_dims:
+
+        setattr(self.fig.data[0], owner.value.lower(), self.coords[owner.dim].values)
+        print(owner.value.lower(), "is now", self.coords[owner.dim].values)
+
+        # for key, val in self.slider.items():
+        #     if val.disabled:
+        #         # print("slicing along", val.dim)
+        #         # self.lab[key].value = str(
+        #             # self.slider_x[key][val.value])
+        #         # vslice = vslice[val.dim, val.value]
+
+        return
+
     # Define function to update slices
     def update_slice2d(self, change):
         # # The dimensions to be sliced have been saved in slider_dims
@@ -857,8 +939,10 @@ class Slicer2d:
             if not val.disabled:
                 print("slicing along", val.dim)
                 self.lab[key].value = str(
-                    self.slider_x[key][change["new"]])
-                vslice = vslice[val.dim, change["new"]]
+                    self.slider_x[key][val.value])
+                vslice = vslice[val.dim, val.value]
+            # else:
+
 
         # vals = vslice.values
         # Check if dimensions of arrays agree, if not, plot the transpose
