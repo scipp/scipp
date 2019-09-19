@@ -24,6 +24,7 @@ add_executable(${TARGET_NAME} EXCLUDE_FROM_ALL
                rebin_test.cpp
                slice_test.cpp
                sort_test.cpp
+               standard_variable_unary_test.cpp
                transform_test.cpp
                value_and_variance_test.cpp
                variable_custom_type_test.cpp

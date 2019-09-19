@@ -149,6 +149,8 @@ template <class T> struct VariancesToString {
 template <class Key, class Var>
 auto format_variable(const Key &key, const Var &variable,
                      const Dimensions &datasetDims = Dimensions()) {
+  if (!variable)
+    return std::string("(invalid variable)");
   std::stringstream s;
   const std::string colSep("  ");
   s << tab << std::left << std::setw(24) << to_string(key);

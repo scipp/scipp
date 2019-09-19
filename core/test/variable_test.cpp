@@ -18,6 +18,13 @@ TEST(Variable, construct_default) {
   ASSERT_FALSE(var);
 }
 
+TEST(Variable, copy_construct_default) {
+  Variable var;
+  ASSERT_NO_THROW(Variable{var});
+  auto copy(var);
+  ASSERT_FALSE(copy);
+}
+
 TEST(Variable, construct) {
   ASSERT_NO_THROW(makeVariable<double>({Dim::X, 2}));
   ASSERT_NO_THROW(makeVariable<double>({Dim::X, 2}, 2));
