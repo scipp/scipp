@@ -9,11 +9,16 @@
 namespace scipp::core {
 
 template <class Op>
-void dry_run_op(const DataProxy &a, const DataConstProxy &b, Op op) {
-  expect::coordsAndLabelsAreSuperset(a, b);
+void dry_run_op(const DataProxy &a, const VariableConstProxy &b, Op op) {
   // This dry run relies on the knowledge that the implementation of operations
   // for variable simply calls transform_in_place and nothing else.
-  dry_run::transform_in_place(a.data(), b.data(), op);
+  dry_run::transform_in_place(a.data(), b, op);
+}
+
+template <class Op>
+void dry_run_op(const DataProxy &a, const DataConstProxy &b, Op op) {
+  expect::coordsAndLabelsAreSuperset(a, b);
+  dry_run_op(a, b.data(), op);
 }
 
 DataProxy DataProxy::operator+=(const DataConstProxy &other) const {
@@ -83,6 +88,19 @@ auto &apply(const Op &op, A &a, const B &b) {
   return a;
 }
 
+template <typename T> bool are_same(const T &a, const T &b) { return &a == &b; }
+
+template <class A, class B>
+bool have_common_underlying(const A &a, const B &b) {
+  return are_same(a.underlying(), b.underlying());
+}
+
+template <>
+bool have_common_underlying<DataProxy, VariableConstProxy>(
+    const DataProxy &a, const VariableConstProxy &b) {
+  return are_same(*a.underlying().data, b.underlying());
+}
+
 template <class Op, class A, class B>
 decltype(auto) apply_with_delay(const Op &op, A &&a, const B &b) {
   for (const auto &item : a)
@@ -95,7 +113,7 @@ decltype(auto) apply_with_delay(const Op &op, A &&a, const B &b) {
   // for detail::DatasetData instead of DataProxy.
   for (const auto & [ name, item ] : a) {
     static_cast<void>(name);
-    if (&item.underlying() == &b.underlying())
+    if (have_common_underlying(item, b))
       delayed = item;
     else
       op(item, b);
@@ -143,6 +161,22 @@ Dataset &Dataset::operator*=(const DataConstProxy &other) {
 }
 
 Dataset &Dataset::operator/=(const DataConstProxy &other) {
+  return apply_with_delay(operator_detail::divide_equals{}, *this, other);
+}
+
+Dataset &Dataset::operator+=(const VariableConstProxy &other) {
+  return apply_with_delay(operator_detail::plus_equals{}, *this, other);
+}
+
+Dataset &Dataset::operator-=(const VariableConstProxy &other) {
+  return apply_with_delay(operator_detail::minus_equals{}, *this, other);
+}
+
+Dataset &Dataset::operator*=(const VariableConstProxy &other) {
+  return apply_with_delay(operator_detail::times_equals{}, *this, other);
+}
+
+Dataset &Dataset::operator/=(const VariableConstProxy &other) {
   return apply_with_delay(operator_detail::divide_equals{}, *this, other);
 }
 

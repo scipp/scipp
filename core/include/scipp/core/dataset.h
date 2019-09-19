@@ -389,6 +389,10 @@ public:
   Dataset &operator-=(const DataConstProxy &other);
   Dataset &operator*=(const DataConstProxy &other);
   Dataset &operator/=(const DataConstProxy &other);
+  Dataset &operator+=(const VariableConstProxy &other);
+  Dataset &operator-=(const VariableConstProxy &other);
+  Dataset &operator*=(const VariableConstProxy &other);
+  Dataset &operator/=(const VariableConstProxy &other);
   Dataset &operator+=(const DatasetConstProxy &other);
   Dataset &operator-=(const DatasetConstProxy &other);
   Dataset &operator*=(const DatasetConstProxy &other);

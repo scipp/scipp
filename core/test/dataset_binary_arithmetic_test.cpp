@@ -142,20 +142,34 @@ TYPED_TEST(DatasetBinaryEqualsOpTest, return_value) {
   auto a = datasetFactory.make();
   auto b = datasetFactory.make();
 
+  ASSERT_TRUE(
+      (std::is_same_v<decltype(TestFixture::op(a, b["data_scalar"].data())),
+                      Dataset &>));
+  {
+    const auto &result = TestFixture::op(a, b["data_scalar"].data());
+    ASSERT_EQ(&result, &a);
+  }
+
   ASSERT_TRUE((std::is_same_v<decltype(TestFixture::op(a, b["data_scalar"])),
                               Dataset &>));
-  const auto &result1 = TestFixture::op(a, b["data_scalar"]);
-  ASSERT_EQ(&result1, &a);
+  {
+    const auto &result = TestFixture::op(a, b["data_scalar"]);
+    ASSERT_EQ(&result, &a);
+  }
 
   ASSERT_TRUE((std::is_same_v<decltype(TestFixture::op(a, b)), Dataset &>));
-  const auto &result2 = TestFixture::op(a, b);
-  ASSERT_EQ(&result2, &a);
+  {
+    const auto &result = TestFixture::op(a, b);
+    ASSERT_EQ(&result, &a);
+  }
 
   ASSERT_TRUE(
       (std::is_same_v<decltype(TestFixture::op(a, b.slice({Dim::Z, 3}))),
                       Dataset &>));
-  const auto &result3 = TestFixture::op(a, b.slice({Dim::Z, 3}));
-  ASSERT_EQ(&result3, &a);
+  {
+    const auto &result = TestFixture::op(a, b.slice({Dim::Z, 3}));
+    ASSERT_EQ(&result, &a);
+  }
 }
 
 TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_DataProxy_self_overlap) {
@@ -166,6 +180,18 @@ TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_DataProxy_self_overlap) {
   ASSERT_NO_THROW(TestFixture::op(dataset, dataset["data_scalar"]));
   for (const auto[name, item] : dataset) {
     EXPECT_EQ(item, TestFixture::op(reference[name], original["data_scalar"]));
+  }
+}
+
+TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_Variable_self_overlap) {
+  auto dataset = datasetFactory.make();
+  auto original(dataset);
+  auto reference(dataset);
+
+  ASSERT_NO_THROW(TestFixture::op(dataset, dataset["data_scalar"].data()));
+  for (const auto[name, item] : dataset) {
+    EXPECT_EQ(item,
+              TestFixture::op(reference[name], original["data_scalar"].data()));
   }
 }
 
