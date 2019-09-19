@@ -778,6 +778,7 @@ class Slicer2d:
             setattr(self.buttons[key], "dim_str", key)
             setattr(self.buttons[key], "old_value", self.buttons[key].value)
             setattr(self.slider[key], "dim_str", key)
+            setattr(self.slider[key], "dim", dim)
             # self.buttons[key].observe(self.update_buttons, 'value')
             self.buttons[key].on_msg(self.update_buttons)
             
@@ -851,10 +852,13 @@ class Slicer2d:
         # vslice = self.input_data[self.slider_dims[0], self.slider[0].value]
         vslice = self.input_data
         # Then slice additional dimensions if needed
-        for idim in range(self.nslices):
-            self.lab[idim].value = str(
-                self.slider_x[idim][change["new"]])
-            vslice = vslice[self.slider_dims[idim], change["new"]]
+        # for dim in self.slider_dims:
+        for key, val in self.slider.items():
+            if not val.disabled:
+                print("slicing along", val.dim)
+                self.lab[key].value = str(
+                    self.slider_x[key][change["new"]])
+                vslice = vslice[val.dim, change["new"]]
 
         # vals = vslice.values
         # Check if dimensions of arrays agree, if not, plot the transpose
