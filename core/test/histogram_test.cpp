@@ -39,23 +39,23 @@ TEST(HistogramTest, fail_edges_not_sorted) {
 
 auto make_single_sparse() {
   Dataset sparse;
-  sparse.setSparseCoord("",
+  sparse.setSparseCoord("sparse",
                         makeVariable<double>({Dim::X}, {Dimensions::Sparse}));
-  sparse[""].coords()[Dim::X].sparseValues<double>()[0] = {0, 1, 1, 2, 3};
+  sparse["sparse"].coords()[Dim::X].sparseValues<double>()[0] = {0, 1, 1, 2, 3};
   return sparse;
 }
 
 DataArray make_expected(const Variable &var, const Variable &edges) {
   auto dim = var.dims().inner();
   std::map<Dim, Variable> coords = {{dim, edges}};
-  auto expected = DataArray(var, coords, std::map<std::string, Variable>());
+  auto expected = DataArray(var, coords, {}, {}, "sparse");
   return expected;
 }
 
 TEST(HistogramTest, below) {
   const auto sparse = make_single_sparse();
   auto edges = makeVariable<double>({Dim::X, 3}, {-2.0, -1.0, 0.0});
-  auto hist = core::histogram(sparse[""], edges);
+  auto hist = core::histogram(sparse["sparse"], edges);
   std::map<Dim, Variable> coords = {{Dim::X, edges}};
   auto expected = make_expected(
       makeVariable<double>({Dim::X, 2}, units::counts, {0, 0}, {0, 0}), edges);
@@ -65,7 +65,7 @@ TEST(HistogramTest, below) {
 TEST(HistogramTest, between) {
   const auto sparse = make_single_sparse();
   auto edges = makeVariable<double>({Dim::X, 3}, {1.5, 1.6, 1.7});
-  auto hist = core::histogram(sparse[""], edges);
+  auto hist = core::histogram(sparse["sparse"], edges);
   auto expected = make_expected(
       makeVariable<double>({Dim::X, 2}, units::counts, {0, 0}, {0, 0}), edges);
   EXPECT_EQ(hist, expected);
@@ -74,7 +74,7 @@ TEST(HistogramTest, between) {
 TEST(HistogramTest, above) {
   const auto sparse = make_single_sparse();
   auto edges = makeVariable<double>({Dim::X, 3}, {3.5, 4.5, 5.5});
-  auto hist = core::histogram(sparse[""], edges);
+  auto hist = core::histogram(sparse["sparse"], edges);
   auto expected = make_expected(
       makeVariable<double>({Dim::X, 2}, units::counts, {0, 0}, {0, 0}), edges);
   EXPECT_EQ(hist, expected);

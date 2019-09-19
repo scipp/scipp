@@ -28,10 +28,12 @@ DataArray apply_and_drop_dim_impl(const DataConstProxy &a, Func func,
 
   if constexpr (ApplyToData)
     return DataArray(func(a.data(), dim, std::forward<Args>(args)...),
-                     std::move(coords), std::move(labels), std::move(attrs));
+                     std::move(coords), std::move(labels), std::move(attrs),
+                     a.name());
   else
     return DataArray(func(a, dim, std::forward<Args>(args)...),
-                     std::move(coords), std::move(labels), std::move(attrs));
+                     std::move(coords), std::move(labels), std::move(attrs),
+                     a.name());
 }
 
 template <class Func, class... Args>

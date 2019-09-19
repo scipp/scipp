@@ -821,21 +821,22 @@ public:
             class LabelsMap = std::map<std::string, Variable>,
             class AttrMap = std::map<std::string, Variable>>
   DataArray(std::optional<Variable> data, CoordMap coords = {},
-            LabelsMap labels = {}, AttrMap attrs = {}) {
+            LabelsMap labels = {}, AttrMap attrs = {},
+            const std::string &name = "") {
     if (data)
-      m_holder.setData("", std::move(*data));
+      m_holder.setData(name, std::move(*data));
     for (auto && [ dim, c ] : coords)
       if (c.dims().sparse())
-        m_holder.setSparseCoord("", std::move(c));
+        m_holder.setSparseCoord(name, std::move(c));
       else
         m_holder.setCoord(dim, std::move(c));
-    for (auto && [ name, l ] : labels)
+    for (auto && [ label_name, l ] : labels)
       if (l.dims().sparse())
-        m_holder.setSparseLabels("", std::string(name), std::move(l));
+        m_holder.setSparseLabels(name, std::string(label_name), std::move(l));
       else
-        m_holder.setLabels(std::string(name), std::move(l));
-    for (auto && [ name, a ] : attrs)
-      m_holder.setAttr(std::string(name), std::move(a));
+        m_holder.setLabels(std::string(label_name), std::move(l));
+    for (auto && [ attr_name, a ] : attrs)
+      m_holder.setAttr(std::string(attr_name), std::move(a));
     if (m_holder.size() != 1)
       throw std::runtime_error(
           "DataArray must have either data or a sparse coordinate.");
