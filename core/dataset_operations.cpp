@@ -8,6 +8,56 @@
 
 namespace scipp::core {
 
+template <bool ApplyToData, class Func, class... Args>
+DataArray apply_and_drop_dim_impl(const DataConstProxy &a, Func func,
+                                  const Dim dim, Args &&... args) {
+  std::map<Dim, Variable> coords;
+  for (auto && [ d, coord ] : a.coords())
+    if (d != dim)
+      coords.emplace(d, coord);
+
+  std::map<std::string, Variable> labels;
+  for (auto && [ name, label ] : a.labels())
+    if (label.dims().inner() != dim)
+      labels.emplace(name, label);
+
+  std::map<std::string, Variable> attrs;
+  for (auto && [ name, attr ] : a.attrs())
+    if (attr.dims().inner() != dim)
+      attrs.emplace(name, attr);
+
+  if constexpr (ApplyToData)
+    return DataArray(func(a.data(), dim, std::forward<Args>(args)...),
+                     std::move(coords), std::move(labels), std::move(attrs),
+                     a.name());
+  else
+    return DataArray(func(a, dim, std::forward<Args>(args)...),
+                     std::move(coords), std::move(labels), std::move(attrs),
+                     a.name());
+}
+
+template <class Func, class... Args>
+DataArray apply_to_data_and_drop_dim(const DataConstProxy &a, Func func,
+                                     const Dim dim, Args &&... args) {
+  return apply_and_drop_dim_impl<true>(a, func, dim,
+                                       std::forward<Args>(args)...);
+}
+
+template <class Func, class... Args>
+DataArray apply_and_drop_dim(const DataConstProxy &a, Func func, const Dim dim,
+                             Args &&... args) {
+  return apply_and_drop_dim_impl<false>(a, func, dim,
+                                        std::forward<Args>(args)...);
+}
+
+template <class Func, class... Args>
+Dataset apply_to_items(const DatasetConstProxy &d, Func func, Args &&... args) {
+  Dataset result;
+  for (const auto & [ name, data ] : d)
+    result.setData(name, func(data, std::forward<Args>(args)...));
+  return result;
+}
+
 // For now this implementation is only for the simplest case of 2 dims (inner
 // stands for sparse)
 DataArray histogram(const DataConstProxy &sparse,
@@ -25,30 +75,37 @@ DataArray histogram(const DataConstProxy &sparse,
   if (binEdges.dtype() != dtype<double> ||
       sparse.coords()[dim].dtype() != DType::Double)
     throw std::logic_error("Histogram is only available for double type.");
-  auto coord = sparse.coords()[dim];
-  auto edgesSpan = binEdges.values<double>();
-  if (!std::is_sorted(edgesSpan.begin(), edgesSpan.end()))
-    throw std::logic_error("Bin edges should be sorted to make the histogram.");
-  auto resDims{sparse.dims()};
-  auto len = binEdges.dims()[dim] - 1;
-  resDims.resize(resDims.index(dim), len);
-  Variable result = makeVariableWithVariances<double>(resDims, units::counts);
-  for (scipp::index i = 0; i < sparse.dims().volume(); ++i) {
-    const auto &coord_i = coord.sparseValues<double>()[i];
-    auto curRes = result.values<double>().begin() + i * len;
-    for (const auto &c : coord_i) {
-      auto it = std::upper_bound(edgesSpan.begin(), edgesSpan.end(), c);
-      if (it != edgesSpan.end() && it != edgesSpan.begin())
-        ++(*(curRes + (--it - edgesSpan.begin())));
-    }
-  }
-  std::copy(result.values<double>().begin(), result.values<double>().end(),
-            result.variances<double>().begin());
 
-  std::map<Dim, Variable> coords;
-  coords.emplace(dim, binEdges);
-  return {std::move(result), std::move(coords),
-          std::map<std::string, Variable>()};
+  auto result = apply_and_drop_dim(
+      sparse,
+      [](const DataConstProxy &_sparse, const Dim _dim,
+         const VariableConstProxy &_binEdges) {
+        auto coord = _sparse.coords()[_dim];
+        auto edgesSpan = _binEdges.values<double>();
+        if (!std::is_sorted(edgesSpan.begin(), edgesSpan.end()))
+          throw std::logic_error(
+              "Bin edges should be sorted to make the histogram.");
+        auto resDims{_sparse.dims()};
+        auto len = _binEdges.dims()[_dim] - 1;
+        resDims.resize(resDims.index(_dim), len);
+        Variable res =
+            makeVariableWithVariances<double>(resDims, units::counts);
+        for (scipp::index i = 0; i < _sparse.dims().volume(); ++i) {
+          const auto &coord_i = coord.sparseValues<double>()[i];
+          auto curRes = res.values<double>().begin() + i * len;
+          for (const auto &c : coord_i) {
+            auto it = std::upper_bound(edgesSpan.begin(), edgesSpan.end(), c);
+            if (it != edgesSpan.end() && it != edgesSpan.begin())
+              ++(*(curRes + (--it - edgesSpan.begin())));
+          }
+        }
+        std::copy(res.values<double>().begin(), res.values<double>().end(),
+                  res.variances<double>().begin());
+        return res;
+      },
+      dim, binEdges);
+  result.setCoord(dim, binEdges);
+  return result;
 }
 
 DataArray histogram(const DataConstProxy &sparse, const Variable &binEdges) {
@@ -146,38 +203,9 @@ Dataset concatenate(const DatasetConstProxy &a, const DatasetConstProxy &b,
   return result;
 }
 
-template <class Func, class... Args>
-DataArray apply_and_drop_dim(const DataConstProxy &a, Func func, const Dim dim,
-                             Args &&... args) {
-  std::map<Dim, Variable> coords;
-  for (auto && [ d, coord ] : a.coords())
-    if (d != dim)
-      coords.emplace(d, coord);
-
-  std::map<std::string, Variable> labels;
-  for (auto && [ name, label ] : a.labels())
-    if (label.dims().inner() != dim)
-      labels.emplace(name, label);
-
-  std::map<std::string, Variable> attrs;
-  for (auto && [ name, attr ] : a.attrs())
-    if (attr.dims().inner() != dim)
-      attrs.emplace(name, attr);
-
-  return DataArray(func(a.data(), dim, std::forward<Args>(args)...),
-                   std::move(coords), std::move(labels), std::move(attrs));
-}
-
-template <class Func, class... Args>
-Dataset apply_to_items(const DatasetConstProxy &d, Func func, Args &&... args) {
-  Dataset result;
-  for (const auto & [ name, data ] : d)
-    result.setData(name, func(data, std::forward<Args>(args)...));
-  return result;
-}
-
 DataArray sum(const DataConstProxy &a, const Dim dim) {
-  return apply_and_drop_dim(a, [](auto &&... _) { return sum(_...); }, dim);
+  return apply_to_data_and_drop_dim(a, [](auto &&... _) { return sum(_...); },
+                                    dim);
 }
 
 Dataset sum(const DatasetConstProxy &d, const Dim dim) {
@@ -189,7 +217,8 @@ Dataset sum(const DatasetConstProxy &d, const Dim dim) {
 }
 
 DataArray mean(const DataConstProxy &a, const Dim dim) {
-  return apply_and_drop_dim(a, [](auto &&... _) { return mean(_...); }, dim);
+  return apply_to_data_and_drop_dim(a, [](auto &&... _) { return mean(_...); },
+                                    dim);
 }
 
 Dataset mean(const DatasetConstProxy &d, const Dim dim) {
@@ -198,7 +227,7 @@ Dataset mean(const DatasetConstProxy &d, const Dim dim) {
 
 DataArray rebin(const DataConstProxy &a, const Dim dim,
                 const VariableConstProxy &coord) {
-  auto rebinned = apply_and_drop_dim(
+  auto rebinned = apply_to_data_and_drop_dim(
       a, [](auto &&... _) { return rebin(_...); }, dim, a.coords()[dim], coord);
   rebinned.setCoord(dim, coord);
   return rebinned;
