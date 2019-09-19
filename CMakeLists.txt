@@ -35,7 +35,10 @@ include(GoogleBenchmark)
 include(GenerateExportHeader)
 
 if("${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}" VERSION_LESS "3.5")
-  message(FATAL_ERROR "Python v3 interpreter must be greater than or equal to 3.5. Found ${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}")
+  message(
+    FATAL_ERROR
+      "Python v3 interpreter must be greater than or equal to 3.5. Found ${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}"
+    )
 endif()
 
 find_package(Boost 1.67 REQUIRED)
@@ -47,14 +50,14 @@ option(DYNAMIC_LIB "Build shared libraries" OFF)
 
 include(CheckIPOSupported)
 check_ipo_supported(RESULT result OUTPUT output)
-if (result)
-  if (NOT CMAKE_INTERPROCEDURAL_OPTIMIZATION)
+if(result)
+  if(NOT CMAKE_INTERPROCEDURAL_OPTIMIZATION)
     set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
-  endif (NOT CMAKE_INTERPROCEDURAL_OPTIMIZATION)
-else ()
+  endif(NOT CMAKE_INTERPROCEDURAL_OPTIMIZATION)
+else()
   set(CMAKE_INTERPROCEDURAL_OPTIMIZATION FALSE)
   message(WARNING "IPO is not supported: ${output}")
-endif (result)
+endif(result)
 
 # See https://github.com/pybind/pybind11/issues/1604
 set(INTERPROCEDURAL_OPTIMIZATION_TESTS FALSE)
@@ -65,7 +68,8 @@ if(${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
   else()
     # For some reason clang6 on ubuntu18 can't link parts
     # with different INTERPROCEDURAL_OPTIMIZATION flag.
-    set(INTERPROCEDURAL_OPTIMIZATION_TESTS ${CMAKE_INTERPROCEDURAL_OPTIMIZATION})
+    set(INTERPROCEDURAL_OPTIMIZATION_TESTS
+        ${CMAKE_INTERPROCEDURAL_OPTIMIZATION})
   endif()
 else()
   set(CMAKE_CXX_VISIBILITY_PRESET hidden)
@@ -74,16 +78,18 @@ else()
 endif()
 
 # Get version from git-describe
-execute_process(
-  COMMAND git describe --tag
-  WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-  RESULT_VARIABLE HAVE_GIT_VERSION_INFO
-  OUTPUT_VARIABLE GIT_VERSION_INFO
-  OUTPUT_STRIP_TRAILING_WHITESPACE
-)
+execute_process(COMMAND git describe --tag
+                WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+                RESULT_VARIABLE HAVE_GIT_VERSION_INFO
+                OUTPUT_VARIABLE GIT_VERSION_INFO
+                OUTPUT_STRIP_TRAILING_WHITESPACE)
 if(${HAVE_GIT_VERSION_INFO} EQUAL 0)
-  message("Got version from Git: ${GIT_VERSION_INFO}")
-  add_definitions(-DSCIPP_VERSION="${GIT_VERSION_INFO}")
+  string(REPLACE v
+                 ""
+                 SCIPP_VERSION
+                 ${GIT_VERSION_INFO})
+  message("Got version from Git: ${SCIPP_VERSION}")
+  add_definitions(-DSCIPP_VERSION="${SCIPP_VERSION}")
 endif()
 
 add_compile_options(-Wall
