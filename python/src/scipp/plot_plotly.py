@@ -776,6 +776,7 @@ class Slicer2d:
                 button_style='')
             # print(dir(self.buttons[key]))
             setattr(self.buttons[key], "dim_str", key)
+            setattr(self.buttons[key], "old_value", self.buttons[key].value)
             setattr(self.slider[key], "dim_str", key)
             # self.buttons[key].observe(self.update_buttons, 'value')
             self.buttons[key].on_msg(self.update_buttons)
@@ -795,10 +796,12 @@ class Slicer2d:
         return
 
     def update_buttons(self, owner, event, dummy):
+        # print(owner, event, dummy)
+        # print(dir(owner))
         # print(arg1, arg2, arg3)
         # print(change["owner"].dim)
-        print("start")
-        print(owner)
+        # print("start")
+        # print(owner)
         toggle_slider = False
         switch_button = False
         if not self.slider[owner.dim_str].disabled:
@@ -812,11 +815,16 @@ class Slicer2d:
             # print(key, change["owner"].dim, 
             # print(key, change["owner"].dim_str, button.value, change["new"])
             if (button.value == owner.value) and (key != owner.dim_str):
-                print("changing")
-                button.value = None
+                # print("changing")
+                if self.slider[key].disabled:
+                    button.value = owner.old_value
+                else:
+                    button.value = None
+                button.old_value = button.value
                 if toggle_slider:
                     self.slider[key].disabled = False
-        print("end")
+        # print("end")
+        owner.old_value = owner.value
 
         return
 
