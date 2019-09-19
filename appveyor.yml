@@ -1,0 +1,31 @@
+version: {build}
+os: Visual Studio 2017
+branches:
+  only:
+  - test # TODO
+
+environment:
+  matrix:
+  - ARCH: amd64
+  - ARCH: x86
+  
+configuration:
+- Release
+
+install:
+- set PATH=%PATH%;c:\Program Files (x86)\Microsoft Visual Studio 15.0\Common7\IDE\
+- cd ..
+- git clone https://github.com/scipp/scipp.git scipp
+- cd scipp
+- git submodule init
+- git submodule update
+- cd ..
+- mkdir build
+- cd build%
+
+build_script:
+- cmake -G "Visual Studio 15 2017" ../scipp
+- cmake --build .
+
+test_script:
+- ctest -C Debug -VV
