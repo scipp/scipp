@@ -300,36 +300,16 @@ template <class T> as_view(T &data, const Dimensions &dims)->as_view<T>;
 
 template <class Op> struct Transform {
   Op op;
-  template <class T> Variable operator()(T &&handle) const {
-    const auto &dims = handle->dims();
-    using Out = decltype(maybe_eval(op(handle->values()[0])));
+  template <class... Ts> Variable operator()(Ts &&... handles) const {
+    const auto dims = merge(handles->dims()...);
+    using Out = decltype(maybe_eval(op(handles->values()[0]...)));
     // TODO For optimal performance we should just make container without
     // element init here.
-    Variable out = handle->hasVariances()
+    Variable out = (handles->hasVariances() || ...)
                        ? makeVariableWithVariances<element_type_t<Out>>(dims)
                        : makeVariable<element_type_t<Out>>(dims);
     auto &outT = static_cast<VariableConceptT<Out> &>(out.data());
-    do_transform(as_view{*handle, dims}, outT, op);
-    return out;
-  }
-
-  template <class A, class B>
-  Variable operator()(A &&a_handle, B &&b_handle) const {
-    const auto &a = *a_handle;
-    const auto &b = *b_handle;
-    const auto &dimsA = a.dims();
-    const auto &dimsB = b.dims();
-    const auto &dims = merge(dimsA, dimsB);
-
-    using Out = decltype(maybe_eval(op(a.values()[0], b.values()[0])));
-    // TODO For optimal performance we should just make container without
-    // element init here.
-    Variable out = a.hasVariances() || b.hasVariances()
-                       ? makeVariableWithVariances<element_type_t<Out>>(dims)
-                       : makeVariable<element_type_t<Out>>(dims);
-    auto &outT = static_cast<VariableConceptT<Out> &>(out.data());
-
-    do_transform(as_view{a, dims}, as_view{b, dims}, outT, op);
+    do_transform(as_view{*handles, dims}..., outT, op);
     return out;
   }
 };

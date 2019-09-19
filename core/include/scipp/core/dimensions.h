@@ -154,7 +154,16 @@ private:
                            Dim::Invalid};
 };
 
+SCIPP_CORE_EXPORT constexpr Dimensions merge(const Dimensions &a) noexcept {
+  return a;
+}
 SCIPP_CORE_EXPORT Dimensions merge(const Dimensions &a, const Dimensions &b);
+
+template <class... Ts>
+Dimensions merge(const Dimensions &a, const Dimensions &b,
+                 const Ts &... other) {
+  return merge(merge(a, b), other...);
+}
 
 } // namespace scipp::core
 
