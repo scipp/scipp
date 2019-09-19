@@ -34,8 +34,11 @@ def init_pos_spectrum_no(nHist, ws):
 
     spec_info = ws.spectrumInfo()
     for i in range(nHist):
-        p = spec_info.position(i)
-        pos[i, :] = [p.X(), p.Y(), p.Z()]
+        if spec_info.hasDetectors(i):
+            p = spec_info.position(i)
+            pos[i, :] = [p.X(), p.Y(), p.Z()]
+        else:
+            pos[i, :] = [np.nan, np.nan, np.nan]
         num[i] = ws.getSpectrum(i).getSpectrumNo()
     pos = sc.Variable([sc.Dim.Position], values=pos, unit=sc.units.m)
     num = sc.Variable([sc.Dim.Position], values=num)
