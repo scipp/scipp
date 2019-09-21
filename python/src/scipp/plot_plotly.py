@@ -742,14 +742,14 @@ class Slicer2d:
 
 
 
-        # Go through the buttons and select the right coordinates for the axes
-        for key, button in self.buttons.items():
-            if self.slider[key].disabled:
-                data[button.value.lower()] = self.coords[button.dim].values
-                layout["{}axis".format(button.value.lower())] = dict(title=axis_label(self.coords[button.dim]))
+        # # Go through the buttons and select the right coordinates for the axes
+        # for key, button in self.buttons.items():
+        #     if self.slider[key].disabled:
+        #         data[button.value.lower()] = self.coords[button.dim].values
+        #         layout["{}axis".format(button.value.lower())] = dict(title=axis_label(self.coords[button.dim]))
 
-        print(data)
-        print(layout)
+        # print(data)
+        # print(layout)
 
 
 
@@ -803,7 +803,8 @@ class Slicer2d:
                 else:
                     self.fig.data[i].zmax = np.amax(arr[np.where(np.isfinite(arr))])
 
-
+        self.update_axes()
+        self.update_slice2d(None)
         self.vbox = [self.fig] + self.vbox
 
 
@@ -889,7 +890,7 @@ class Slicer2d:
                     self.slider[key].disabled = False
         # print("end")
         owner.old_value = owner.value
-        self.update_axes(owner)
+        self.update_axes()
         self.update_slice2d(None)
 
         return
@@ -909,13 +910,26 @@ class Slicer2d:
 
     #     return
 
-    def update_axes(self, owner):
+    def update_axes(self):
         # vslice = self.input_data
         # Then slice additional dimensions if needed
         # for dim in self.slider_dims:
 
-        setattr(self.fig.data[0], owner.value.lower(), self.coords[owner.dim].values)
-        print(owner.value.lower(), "is now", self.coords[owner.dim].values)
+        # Go through the buttons and select the right coordinates for the axes
+        for key, button in self.buttons.items():
+            if self.slider[key].disabled:
+                self.fig.data[0][button.value.lower()] = self.coords[button.dim].values
+                self.fig.update_layout({"{}axis".format(button.value.lower()) : {"title": axis_label(self.coords[button.dim])}})
+
+        #         layout["{}axis".format(button.value.lower())] = dict(title=axis_label(self.coords[button.dim]))
+
+
+        # setattr(self.fig.data[0], owner.value.lower(), self.coords[owner.dim].values)
+        # print(owner.value.lower(), "is now", self.coords[owner.dim].values)
+        # self.fig.update_layout({"{}axis".format(owner.value.lower()) : {"title": axis_label(self.coords[owner.dim])}})
+        # #     scene = dict(
+        # #             xaxis_title=layout["xaxis"]["title"],
+        # # layout["{}axis".format(button.value.lower())] = dict(title=axis_label(self.coords[button.dim]))
 
         # for key, val in self.slider.items():
         #     if val.disabled:
@@ -935,19 +949,21 @@ class Slicer2d:
         vslice = self.input_data
         # Then slice additional dimensions if needed
         # for dim in self.slider_dims:
+        button_dims = [None, None]
         for key, val in self.slider.items():
             if not val.disabled:
                 print("slicing along", val.dim)
                 self.lab[key].value = str(
                     self.slider_x[key][val.value])
                 vslice = vslice[val.dim, val.value]
-            # else:
+            else:
+                button_dims[self.buttons[key].value.lower() == "y"] = val.dim
 
 
         # vals = vslice.values
         # Check if dimensions of arrays agree, if not, plot the transpose
-        zlabs = vslice.dims
-        transp = (zlabs[0] == self.xlabs[0]) and (zlabs[1] == self.ylabs[0])
+        slice_dims = vslice.dims
+        transp = slice_dims == button_dims
         self.update_z2d(vslice.values, transp, self.cb["log"], 0)
 
 
