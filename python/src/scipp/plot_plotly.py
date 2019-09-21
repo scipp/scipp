@@ -588,12 +588,12 @@ def plot_2d(input_data, axes=None, contours=False, cb=None,
     if axes is None:
         axes = input_data.dims
 
-    # Get coordinates axes and dimensions
-    coords = input_data.coords
-    labels = input_data.labels
-    xcoord, ycoord, xe, ye, xc, yc, xlabs, ylabs, zlabs = \
-        process_dimensions(input_data=input_data, coords=coords,
-                           labels=labels, axes=axes)
+    # # Get coordinates axes and dimensions
+    # coords = input_data.coords
+    # labels = input_data.labels
+    # xcoord, ycoord, xe, ye, xc, yc, xlabs, ylabs, zlabs = \
+    #     process_dimensions(input_data=input_data, coords=coords,
+    #                        labels=labels, axes=axes)
 
     if contours:
         plot_type = 'contour'
@@ -661,20 +661,21 @@ class Slicer2d:
                  value_name, cb, show_variances):
 
         self.input_data = input_data
-        self.show_variances = show_variances
+        self.show_variances = ((self.input_data.variances is not None) and
+                               show_variances)
         self.value_name = value_name
         self.cb = cb
 
-        # Get the dimensions of the image to be displayed
+        # # Get the dimensions of the image to be displayed
         self.coords = self.input_data.coords
-        self.labels = self.input_data.labels
-        _, self.xcoord = get_coord_array(self.coords, self.labels, axes[-1])
-        _, self.ycoord = get_coord_array(self.coords, self.labels, axes[-2])
-        self.xlabs = self.xcoord.dims
-        self.ylabs = self.ycoord.dims
+        # self.labels = self.input_data.labels
+        # _, self.xcoord = get_coord_array(self.coords, self.labels, axes[-1])
+        # _, self.ycoord = get_coord_array(self.coords, self.labels, axes[-2])
+        # self.xlabs = self.xcoord.dims
+        # self.ylabs = self.ycoord.dims
 
-        self.labels = self.input_data.dims
-        self.shapes = dict(zip(self.labels, self.input_data.shape))
+        # self.labels = self.input_data.dims
+        self.shapes = dict(zip(self.input_data.dims, self.input_data.shape))
 
         # Size of the slider coordinate arrays
         self.slider_nx = dict()
@@ -760,7 +761,7 @@ class Slicer2d:
         # data = {"values": None, "variances": None}
         params = {"values": {"cbmin": "min", "cbmax": "max"},
                   "variances": None}
-        if (self.input_data.variances is not None) and self.show_variances:
+        if self.show_variances:
             params["variances"] = {"cbmin": "min_var", "cbmax": "max_var"}
             self.fig = go.FigureWidget(make_subplots(rows=1, cols=2, horizontal_spacing=0.16))
             data["colorbar"]["x"] = 0.42
@@ -772,9 +773,9 @@ class Slicer2d:
             # self.fig["variances"] = go.FigureWidget(data=data, layout=layout)
             # self.vbox.append(self.fig["variances"])
             # self.vbox = [HBox(self.vbox)]
-            for i in range(2):
-                self.fig.update_xaxes(title_text=layout["xaxis"]["title"], row=1, col=i+1)
-                self.fig.update_yaxes(title_text=layout["yaxis"]["title"], row=1, col=i+1)
+            # for i in range(2):
+            #     self.fig.update_xaxes(title_text=layout["xaxis"]["title"], row=1, col=i+1)
+            #     self.fig.update_yaxes(title_text=layout["yaxis"]["title"], row=1, col=i+1)
             self.fig.update_layout(height=layout["height"], width=layout["width"])
         else:
             self.fig = go.FigureWidget(data=[data], layout=layout)
@@ -919,7 +920,17 @@ class Slicer2d:
         for key, button in self.buttons.items():
             if self.slider[key].disabled:
                 self.fig.data[0][button.value.lower()] = self.coords[button.dim].values
-                self.fig.update_layout({"{}axis".format(button.value.lower()) : {"title": axis_label(self.coords[button.dim])}})
+
+                if self.show_variances:
+                    func = getattr(self.fig, 'update_{}axes'.format(button.value.lower()))
+                    # func('sample arg')
+                    for i in range(2):
+                        func(title_text=axis_label(self.coords[button.dim]), row=1, col=i+1)
+                        # self.fig.update_xaxes(title_text=layout["xaxis"]["title"], row=1, col=i+1)
+                        # self.fig.update_yaxes(title_text=layout["yaxis"]["title"], row=1, col=i+1)
+                else:
+                    self.fig.update_layout({"{}axis".format(button.value.lower()) : {"title": axis_label(self.coords[button.dim])}})
+
 
         #         layout["{}axis".format(button.value.lower())] = dict(title=axis_label(self.coords[button.dim]))
 
@@ -952,7 +963,7 @@ class Slicer2d:
         button_dims = [None, None]
         for key, val in self.slider.items():
             if not val.disabled:
-                print("slicing along", val.dim)
+                # print("slicing along", val.dim)
                 self.lab[key].value = str(
                     self.slider_x[key][val.value])
                 vslice = vslice[val.dim, val.value]
