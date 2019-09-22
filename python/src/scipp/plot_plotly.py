@@ -631,6 +631,7 @@ class Slicer3d:
     def update_axes(self):
         # Go through the buttons and select the right coordinates for the axes
         titles = dict()
+        buttons_dims = {"x": None, "y": None, "z": None}
         for key, button in self.buttons.items():
             # if self.slider[key].disabled:
             if button.value is not None:
@@ -642,6 +643,7 @@ class Slicer3d:
                 # # else:
                 # #     self.fig.update_layout({"{}axis".format(button.value.lower()) : {"title": axis_label(self.coords[button.dim])}})
                 titles[button.value.lower()] = axis_label(self.coords[button.dim])
+                buttons_dims[button.value.lower()] = button.dim_str
 
         # if self.show_variances:
         # else:
@@ -649,6 +651,28 @@ class Slicer3d:
                     xaxis_title=titles["x"],
                     yaxis_title=titles["y"],
                     zaxis_title=titles["z"]))
+
+
+        y_x, z_x = np.meshgrid(self.slider_x[buttons_dims["y"]], self.slider_x[buttons_dims["z"]])
+        setattr(self.fig.data[0], "x", np.ones_like(y_x) * self.slider[buttons_dims["x"]].value)
+        setattr(self.fig.data[0], "y", y_x)
+        setattr(self.fig.data[0], "z", z_x)
+
+        x_y, z_y = np.meshgrid(self.slider_x[buttons_dims["x"]], self.slider_x[buttons_dims["z"]])
+        setattr(self.fig.data[1], "x", x_y)
+        setattr(self.fig.data[1], "y", np.ones_like(x_y) * self.slider[buttons_dims["y"]].value)
+        setattr(self.fig.data[1], "z", z_y)
+
+        x_z, y_z = np.meshgrid(self.slider_x[buttons_dims["x"]], self.slider_x[buttons_dims["y"]])
+        setattr(self.fig.data[2], "x", x_z)
+        setattr(self.fig.data[2], "y", y_z)
+        setattr(self.fig.data[2], "z", np.ones_like(x_z) * self.slider[buttons_dims["z"]].value)
+
+        # self.slider_x[idim][change["new"]] * np.ones_like(getattr(self.parent.fig.data[self.idim], self.moving_coord[self.idim])))
+
+        # self.fig.data[0].x = self.slider_x[idim][self.slider[idim].value] * np.ones_like(self.fig.data[0].x)
+        # # print(self.slider_x[idim][self.slider[idim].value] * np.ones_like(self.fig.data[0].x))
+        # self.fig.data[0].surfacecolor = z
 
         return
 
