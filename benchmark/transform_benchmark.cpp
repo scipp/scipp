@@ -4,6 +4,8 @@
 /// @author Simon Heybrock
 #include <benchmark/benchmark.h>
 
+#include <random>
+
 #include "scipp/core/transform.h"
 #include "scipp/core/variable.h"
 
@@ -12,29 +14,36 @@ using namespace scipp::core;
 
 using Types = std::tuple<std::pair<double, double>>;
 
-template <class Func> void run(benchmark::State &state, Func func) {
+template <class Func>
+void run(benchmark::State &state, Func func, bool variances = false) {
   const auto nx = 100;
   const auto ny = state.range(0);
   const auto n = nx * ny;
-  auto a = makeVariable<double>({{Dim::Y, ny}, {Dim::X, nx}});
+  const Dimensions dims{{Dim::Y, ny}, {Dim::X, nx}};
+  auto a = variances ? makeVariableWithVariances<double>(dims)
+                     : makeVariable<double>(dims);
   auto b = a;
   static constexpr auto op{[](auto &a_, const auto &b_) { a_ *= b_; }};
 
   func(state, a, b, op);
 
-  state.SetItemsProcessed(state.iterations() * n);
-  state.SetBytesProcessed(state.iterations() * n * 3 * sizeof(double));
-  state.counters["size"] =
-      benchmark::Counter(n * 2 * sizeof(double), benchmark::Counter::kDefaults,
-                         benchmark::Counter::OneK::kIs1024);
+  const scipp::index variance_factor = variances ? 2 : 1;
+  state.SetItemsProcessed(state.iterations() * n * variance_factor);
+  state.SetBytesProcessed(state.iterations() * n * variance_factor * 3 *
+                          sizeof(double));
+  state.counters["size"] = benchmark::Counter(
+      n * variance_factor * 2 * sizeof(double), benchmark::Counter::kDefaults,
+      benchmark::Counter::OneK::kIs1024);
 }
 
 static void BM_transform_in_place(benchmark::State &state) {
-  run(state, [](auto &state_, auto &&... args) {
-    for (auto _ : state_) {
-      transform_in_place<Types>(args...);
-    }
-  });
+  run(state,
+      [](auto &state_, auto &&... args) {
+        for (auto _ : state_) {
+          transform_in_place<Types>(args...);
+        }
+      },
+      state.range(1));
 }
 
 static void BM_transform_in_place_proxy(benchmark::State &state) {
@@ -59,8 +68,55 @@ static void BM_transform_in_place_slice(benchmark::State &state) {
   });
 }
 
-BENCHMARK(BM_transform_in_place)->RangeMultiplier(2)->Range(1, 2 << 18);
-BENCHMARK(BM_transform_in_place_proxy)->RangeMultiplier(2)->Range(1, 2 << 18);
-BENCHMARK(BM_transform_in_place_slice)->RangeMultiplier(2)->Range(1, 2 << 18);
+// {false, true} -> variances
+BENCHMARK(BM_transform_in_place)
+    ->RangeMultiplier(2)
+    ->Ranges({{1, 2 << 18}, {false, true}});
+BENCHMARK(BM_transform_in_place_proxy)
+    ->RangeMultiplier(2)
+    ->Ranges({{1, 2 << 18}, {false, true}});
+BENCHMARK(BM_transform_in_place_slice)
+    ->RangeMultiplier(2)
+    ->Ranges({{1, 2 << 18}, {false, true}});
+
+// Arguments are:
+// range(0) -> ny
+// range(1) -> average nx (uniform distribution of sparse extents)
+// range(2) -> variances false/true (true not initialized yet)
+static void BM_transform_in_place_sparse(benchmark::State &state) {
+  const auto ny = state.range(0);
+  const auto nx = state.range(1);
+  const auto n = nx * ny;
+  const Dimensions dims{{Dim::Y, ny}, {Dim::X, Dimensions::Sparse}};
+  bool variances = state.range(2);
+  auto a = variances ? makeVariableWithVariances<double>(dims)
+                     : makeVariable<double>(dims);
+
+  std::random_device rd;
+  std::mt19937 mt(rd());
+  std::uniform_int_distribution<scipp::index> dist(0, 2 * nx);
+  for (auto &elems : a.sparseValues<double>())
+    elems.resize(dist(mt));
+
+  // sparse * dense typically occurs in unit conversion
+  auto b = makeVariable<double>({Dim::Y, ny});
+  static constexpr auto op{[](auto &a_, const auto &b_) { a_ *= b_; }};
+
+  for (auto _ : state) {
+    transform_in_place<Types>(a, b, op);
+  }
+
+  const scipp::index variance_factor = variances ? 2 : 1;
+  state.SetItemsProcessed(state.iterations() * n * variance_factor);
+  state.SetBytesProcessed(state.iterations() * n * variance_factor * 3 *
+                          sizeof(double));
+  state.counters["size"] = benchmark::Counter(
+      n * variance_factor * 2 * sizeof(double), benchmark::Counter::kDefaults,
+      benchmark::Counter::OneK::kIs1024);
+}
+
+BENCHMARK(BM_transform_in_place_sparse)
+    ->RangeMultiplier(2)
+    ->Ranges({{1, 2 << 18}, {8, 2 << 8}, {false, false}});
 
 BENCHMARK_MAIN();
