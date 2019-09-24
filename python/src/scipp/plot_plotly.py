@@ -468,6 +468,7 @@ class Slicer3d:
                                show_variances)
         self.value_name = value_name
         self.cb = cb
+        self.cube = None
 
         # Get the dimensions of the image to be displayed
         self.coords = self.input_data.coords
@@ -496,12 +497,13 @@ class Slicer3d:
         self.slider = dict()
         self.buttons = dict()
         # Default starting index for slider
-        indx = 0
+        # indx = 0
 
         # Now begin loop to construct sliders
         button_values = [None] * (self.ndim - 3) + ['Z'] + ['Y'] + ['X']
         for i, dim in enumerate(self.slider_dims):
             key = str(dim)
+            indx = (self.slider_nx[key] - 1) // 2
             # Add a label widget to display the value of the z coordinate
             self.lab[key] = widgets.Label(value=str(self.slider_x[key][indx]))
             # Add an IntSlider to slide along the z dimension of the array
@@ -550,7 +552,7 @@ class Slicer3d:
                     val["cmax"] = self.cb[val["cbmax"]]
                 else:
                     val["cmax"] = np.amax(arr[np.where(np.isfinite(arr))])
-        print(params)
+        # print(params)
 
 
 
@@ -597,7 +599,7 @@ class Slicer3d:
 
         # Call update_slice once to make the initial image
         self.update_axes()
-        self.update_slice3d(None)
+        # self.update_slice3d(None)
         self.vbox = [self.fig] + self.vbox
         self.vbox = widgets.VBox(self.vbox)
         self.vbox.layout.align_items = 'center'
@@ -624,7 +626,7 @@ class Slicer3d:
                 #     self.slider[key].disabled = False
         owner.old_value = owner.value
         self.update_axes()
-        self.update_slice3d(None)
+        # self.update_slice3d(None)
 
         return
 
@@ -654,19 +656,29 @@ class Slicer3d:
 
 
         y_x, z_x = np.meshgrid(self.slider_x[buttons_dims["y"]], self.slider_x[buttons_dims["z"]])
-        setattr(self.fig.data[0], "x", np.ones_like(y_x) * self.slider[buttons_dims["x"]].value)
-        setattr(self.fig.data[0], "y", y_x)
-        setattr(self.fig.data[0], "z", z_x)
+        # print(y_x)
+        # print(z_x)
+        self.fig.data[0].x = np.ones_like(y_x) * self.slider[buttons_dims["x"]].value
+        self.fig.data[0].y = y_x
+        self.fig.data[0].z = z_x
 
         x_y, z_y = np.meshgrid(self.slider_x[buttons_dims["x"]], self.slider_x[buttons_dims["z"]])
-        setattr(self.fig.data[1], "x", x_y)
-        setattr(self.fig.data[1], "y", np.ones_like(x_y) * self.slider[buttons_dims["y"]].value)
-        setattr(self.fig.data[1], "z", z_y)
+        self.fig.data[1].x = x_y
+        self.fig.data[1].y = np.ones_like(x_y) * self.slider[buttons_dims["y"]].value
+        self.fig.data[1].z = z_y
 
         x_z, y_z = np.meshgrid(self.slider_x[buttons_dims["x"]], self.slider_x[buttons_dims["y"]])
-        setattr(self.fig.data[2], "x", x_z)
-        setattr(self.fig.data[2], "y", y_z)
-        setattr(self.fig.data[2], "z", np.ones_like(x_z) * self.slider[buttons_dims["z"]].value)
+
+        # print(self.slider_x[buttons_dims["x"]])
+        # print(buttons_dims["x"])
+
+        # setattr(self.fig.data[0], "x", x_z)
+        # setattr(self.fig.data[0], "y", y_z)
+        # setattr(self.fig.data[0], "z", np.ones_like(x_z) * self.slider[buttons_dims["z"]].value)
+        self.fig.data[2].x = x_z
+        self.fig.data[2].y = y_z
+        self.fig.data[2].z = np.ones_like(x_z) * self.slider[buttons_dims["z"]].value
+
 
         # self.slider_x[idim][change["new"]] * np.ones_like(getattr(self.parent.fig.data[self.idim], self.moving_coord[self.idim])))
 
@@ -674,457 +686,115 @@ class Slicer3d:
         # # print(self.slider_x[idim][self.slider[idim].value] * np.ones_like(self.fig.data[0].x))
         # self.fig.data[0].surfacecolor = z
 
+        self.update_cube()
+
         return
 
-    # Define function to update slices
-    def update_slice3d(self, change):
+    def update_cube(self):
         # The dimensions to be sliced have been saved in slider_dims
-        vslice = self.input_data
+        self.cube = self.input_data
         # Slice along dimensions with active sliders
-        button_dims = [None, None]
+        # button_dims = [None, None]
         for key, val in self.slider.items():
-            if not val.disabled:
+            if self.buttons[key].value is None:
                 self.lab[key].value = str(
                     self.slider_x[key][val.value])
-                vslice = vslice[val.dim, val.value]
-            else:
-                button_dims[self.buttons[key].value.lower() == "y"] = val.dim
-
-        # Check if dimensions of arrays agree, if not, plot the transpose
-        slice_dims = vslice.dims
-        transp = (slice_dims == button_dims)
-        self.update_z3d(vslice.values, transp, self.cb["log"], 0)
-        if self.show_variances:
-            self.update_z3d(vslice.variances, transp, self.cb["log"], 1)
-        return
-
-    def update_z3d(self, values, transp, log, indx):
-        if transp:
-            values = values.T
-        if log:
-            with np.errstate(invalid="ignore", divide="ignore"):
-                values = np.log10(values)
-        self.fig.data[indx].z = values
-        return
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-def plot_3d_old(input_data, axes=None, contours=False, cb=None,
-                     filename=None, name=None, config=None, figsize=[800, 800],
-                     show_variances=False, ndim=0, **kwargs):
-    """
-    Plot a 2D slice through a 3D dataset with a slider to adjust the position
-    of the slice in the third dimension.
-    """
-
-    if axes is None:
-        axes = input_data.dims
-
-    # # Get coordinates axes and dimensions
-    coords = input_data.coords
-    dims = input_data.dims
-    shape = input_data.shape
-    # print(shape[0])
-    # print(dims)
-    # print(shape)
-    # return
-    # # labels = input_data.labels
-    # # xcoord, ycoord, xe, ye, xc, yc, xlabs, ylabs, zlabs = \
-    # #     process_dimensions(input_data=input_data, coords=coords,
-    # #                        labels=labels, axes=axes)
-
-    xcoord = coords[dims[-1]]
-    xc = xcoord.values
-    ycoord = coords[dims[-2]]
-    yc = ycoord.values
-    if ndim > 2:
-        zcoord = coords[dims[-3]]
-        zc = zcoord.values
-
-
-
-    if contours:
-        plot_type = 'contour'
-    else:
-        plot_type = 'heatmap'
-
-    # Parse colorbar
-    cbar = parse_colorbar(config.cb, cb, plotly=True)
-
-    # Make title
-    title = axis_label(var=input_data, name=name, log=cbar["log"])
-
-    # # Use the machinery in plot_image to make the layout
-    # data, layout, xlabs, ylabs, cbar = plot_image(input_data, axes=axes,
-    #                                               contours=contours, cb=cb,
-    #                                               name=name, plot=False,
-    #                                               config=config)
-
-    if figsize is None:
-        figsize = [config.width, config.height]
-
-    layout = dict(
-        xaxis=dict(title=axis_label(xcoord)),
-        yaxis=dict(title=axis_label(ycoord)),
-        # zaxis=dict(title=axis_label(zcoord)),
-        height=figsize[1],
-        width=figsize[0]
-    )
-    if ndim > 2:
-        layout["zaxis"] = dict(title=axis_label(zcoord))
-    if input_data.variances is not None and show_variances:
-        layout["width"] *= 0.5
-        layout["height"] = 0.8 * layout["width"]
-
-    # data = [dict(
-    #         x=xe,
-    #         y=ye,
-    #         z=[0.0],
-    #         type=plot_type,
-    #         colorscale=cbar["name"],
-    #         colorbar=dict(
-    #             title=title,
-    #             titleside='right',
-    #         )
-    #     )]
-    # print(np.shape(xc))
-    # print(np.sin(xc))
-    
-    
-    if ndim == 2:
-        data=[go.Surface(x=xc, y=yc, z=input_data.values, opacity=0.9, colorscale=cbar["name"])]
-        fig = go.Figure(data=data, layout=layout)
-        if filename is not None:
-            write_image(fig=fig, file=filename)
-        else:
-            display(fig)
-        # return
-    else:
-        x1, y1 = np.meshgrid(xc, yc)
-        x2, z2 = np.meshgrid(xc, zc)
-        y3, z3 = np.meshgrid(yc, zc)
-        if cbar["min"] is not None:
-            zmin = cbar["min"]
-        else:
-            zmin = np.amin(input_data.values[np.where(np.isfinite(input_data.values))])
-        if cbar["max"] is not None:
-            zmax = cbar["max"]
-        else:
-            zmax = np.amax(input_data.values[np.where(np.isfinite(input_data.values))])
-        data=[go.Surface(x=np.zeros_like(y3), y=y3, z=z3, cmin=zmin, cmax=zmax),
-              go.Surface(x=x2, y=np.zeros_like(x2), z=z2, cmin=zmin, cmax=zmax, showscale=False),
-              go.Surface(x=x1, y=y1, z=np.zeros_like(x1), cmin=zmin, cmax=zmax, showscale=False)]
-        # Create a SliceViewer object
-        sv = Slicer3d(data=data, layout=layout,
-                         input_data=input_data, axes=axes,
-                         value_name=name, cb=cbar)
-        if filename is not None:
-            write_image(fig=sv.fig, file=filename)
-        else:
-            display(sv.vbox)
-
-    return
-
-
-
-
-
-
-
-# class Update3d:
-
-#     def __init__(self, parent, idim, dim):
-#         self.parent = parent
-#         self.idim = idim
-#         self.dim = dim
-#         self.moving_coord = ["z", "y", "x"]
-#         return
-
-#         # Define function to update slices
-#     def update_slice(self, change):
-#         print(change)
-#         # # The dimensions to be sliced have been saved in slider_dims
-#         # # Slice with first element to avoid modifying underlying dataset
-#         # self.lab[0].value = str(self.slider_x[0][self.slider[0].value])
-#         # vslice = self.input_data[self.slider_dims[0], self.slider[0].value]
-#         vslice = self.parent.input_data
-#         # Then slice additional dimensions if needed
-#         # for idim in range(self.nslices):
-#         # idim = 0
-#         self.parent.lab[self.idim].value = str(
-#             self.parent.slider_x[self.idim][change["new"]])
-#         vslice = vslice[self.parent.slider_dims[self.idim], change["new"]]
-
-#         z = vslice.values
-#         # print(z)
-
-#         # Check if dimensions of arrays agree, if not, plot the transpose
-#         zlabs = vslice.dims
-#         # if (zlabs[0] == self.xlabs[0]) and (zlabs[1] == self.ylabs[0]):
-#         #     z = z.T
-#         # Apply colorbar parameters
-#         if self.parent.cb["log"]:
-#             with np.errstate(invalid="ignore", divide="ignore"):
-#                 z = np.log10(z)
-#         # if (self.parent.cb["min"] is not None) + (self.parent.cb["max"] is not None) == 1:
-#         #     if self.parent.cb["min"] is not None:
-#         #         self.parent.fig.data[0].zmin = self.parent.cb["min"]
-#         #     else:
-#         #         self.parent.fig.data[0].zmin = np.amin(z[np.where(np.isfinite(z))])
-#         #     if self.parent.cb["max"] is not None:
-#         #         self.parent.fig.data[0].zmax = self.parent.cb["max"]
-#         #     else:
-#         #         self.parent.fig.data[0].zmax = np.amax(z[np.where(np.isfinite(z))])
-#         # data = self.parent.fig.data[self.idim]
-#         # coord = getattr(data, self.moving_coord[self.idim])
-#         # coord = self.parent.slider_x[self.idim][change["new"]] * np.ones_like(coord)
-
-#         setattr(self.parent.fig.data[self.idim], self.moving_coord[self.idim], self.parent.slider_x[self.idim][change["new"]] * np.ones_like(getattr(self.parent.fig.data[self.idim], self.moving_coord[self.idim])))
-#         # print(self.slider_x[idim][self.slider[idim].value] * np.ones_like(self.fig.data[0].x))
-#         self.parent.fig.data[self.idim].surfacecolor = z
-#         return
-
-
-
-class Slicer3d_old:
-
-    def __init__(self, data, layout, input_data, axes,
-                 value_name, cb):
-
-        # Make a copy of the input data - Needed?
-        self.input_data = input_data
-
-        # Get the dimensions of the image to be displayed
-        self.coords = self.input_data.coords
-        self.labels = self.input_data.labels
-        _, self.xcoord = get_coord_array(self.coords, self.labels, axes[-1])
-        _, self.ycoord = get_coord_array(self.coords, self.labels, axes[-2])
-        self.xlabs = self.xcoord.dims
-        self.ylabs = self.ycoord.dims
-
-        self.labels = self.input_data.dims
-        self.shapes = dict(zip(self.labels, self.input_data.shape))
-
-        # Size of the slider coordinate arrays
-        self.slider_nx = []
-        # Save dimensions tags for sliders, e.g. Dim.X
-        self.slider_dims = []
-        # Store coordinates of dimensions that will be in sliders
-        self.slider_x = []
-        self.dim_keys = dict()
-        self.moving_coord = ["z", "y", "x"]
-        self.buttons = []
-        for idim, ax in enumerate(axes):
-            self.slider_dims.append(ax)
-            self.slider_nx.append(self.shapes[ax])
-            self.slider_x.append(self.coords[ax].values)
-            self.dim_keys[str(ax)] = [ax, idim]
-        self.nslices = len(self.slider_dims)
-
-        # Initialise Figure and VBox objects
-        self.fig = go.FigureWidget(data=data)#, layout=layout)
-        self.fig.update_layout(scene = dict(
-                    xaxis_title=layout["xaxis"]["title"],
-                    yaxis_title=layout["yaxis"]["title"],
-                    zaxis_title=layout["zaxis"]["title"]))
-        self.vbox = [self.fig]
-
-        # Initialise slider and label containers
-        self.lab = []
-        self.slider = []
-        # Collect the remaining arguments
-        self.value_name = value_name
-        self.cb = cb
-        # Default starting index for slider
-        indx = 0
-
-        # Now begin loop to construct sliders
-        self.updates = []
-        for i in range(len(self.slider_nx)):
-            print(self.slider_dims[i], self.slider_nx[i])
-            initval = self.slider_nx[i]//2
-            # Add a label widget to display the value of the z coordinate
-            self.lab.append(Label(value=str(self.slider_x[i][indx])))
-            # Add an IntSlider to slide along the z dimension of the array
-            self.slider.append(IntSlider(
-                value=0,
-                min=0,
-                max=self.slider_nx[i] - 1,
-                step=1,
-                description=str(self.slider_dims[i]),
-                continuous_update=True,
-                readout=False
-            ))
-            # Add an observer to the slider
-            # self.updates.append(Update3d(self, i, self.slider_dims[i]))
-            # self.slider[i].observe(self.updates[-1].update_slice, names="value")
-            self.slider[i].observe(self.update_slice3d, names="value")
-            
-            # Add coordinate name and unit
-            title = Label(value=axis_label(self.coords[self.slider_dims[i]]))
-            self.vbox.append(HBox([title, self.slider[i], self.lab[i]]))
-            # self.updates[-1].update_slice({"new": initval})
-            # self.update_slice3d({"new": initval. "owner":})
-            self.slider[i].value = initval
-
-        # # Call update_slice once to make the initial image
-        # # if len(self.slider) > 0:
-        # self.update_slice3d({"new": 0})
-        # self.update_slice3dy(0)
-        # self.update_slice3dz(0)
-        self.vbox = VBox(self.vbox)
-        self.vbox.layout.align_items = 'center'
+                self.cube = self.cube[val.dim, val.value]
+
+        # The dimensions to be sliced have been saved in slider_dims
+        # vslice = self.input_data
+        # Slice along dimensions with active sliders
+        # button_dims = [None, None]
+        button_dims = dict()
+        vslices = dict()
+        for key, val in self.slider.items():
+            if self.buttons[key].value is not None:
+                loc = self.slider_x[key][val.value]
+                self.lab[key].value = str(loc)
+                vslices[self.buttons[key].value.lower()] = {"slice": self.cube[val.dim, val.value], "loc": loc }
+                button_dims[self.buttons[key].value.lower()] = key
+            # else:
+            #     button_dims[self.buttons[key].value.lower() == "y"] = val.dim
+
+        # Now make 3 slices
+        permutations = {"x": ["y", "z"], "y": ["x", "z"], "z": ["x", "y"]}
+
+        for i, (key, val) in enumerate(sorted(vslices.items())):
+            xx, yy = np.meshgrid(self.slider_x[button_dims[permutations[key][0]]],
+                                 self.slider_x[button_dims[permutations[key][1]]])
+            setattr(self.fig.data[i], key, np.ones_like(xx) * val["loc"])
+            setattr(self.fig.data[i], permutations[key][0], xx)
+            setattr(self.fig.data[i], permutations[key][1], yy)
+            self.fig.data[i].surfacecolor = val["slice"].values
 
         return
 
     # Define function to update slices
     def update_slice3d(self, change):
-        print(change)
-        print(change["owner"].description)
-        dim_str = change["owner"].description
-        # # The dimensions to be sliced have been saved in slider_dims
-        # # Slice with first element to avoid modifying underlying dataset
-        # self.lab[0].value = str(self.slider_x[0][self.slider[0].value])
-        # vslice = self.input_data[self.slider_dims[0], self.slider[0].value]
-        vslice = self.input_data
-        # Then slice additional dimensions if needed
-        # for idim in range(self.nslices):
-        idim = self.dim_keys[dim_str][1]
-        self.lab[idim].value = str(
-            self.slider_x[idim][self.slider[idim].value])
-        vslice = vslice[self.slider_dims[idim], self.slider[idim].value]
+        # print(change)
+        # print(change["owner"].dim)
+        # return
+        # TODO: Possible optimization: save a 3d cube of the data for the
+        # current slices with non-None button values.
+        # If the slider owner has no value, then we need to re-slice everything
+        # but if it does have a value (x, y, z), then we can just slice one
+        # dim in the cube.
+        # This possibly has a large memory overhead, duplicating an entire 3D
+        # data cube.
+        if self.buttons[change["owner"].dim_str].value is None:
+            self.update_cube()
+        else:
+            # Update only one slice
 
-        z = vslice.values
-        # print(z)
+            # # The dimensions to be sliced have been saved in slider_dims
+            # # vslice = self.input_data
+            # # Slice along dimensions with active sliders
+            # # button_dims = [None, None]
+            # button_dims = dict()
+            # vslices = dict()
+            # for key, val in self.slider.items():
+            #     if self.buttons[key].value is not None:
+            key = change["owner"].dim_str
 
-        # Check if dimensions of arrays agree, if not, plot the transpose
-        zlabs = vslice.dims
-        # if (zlabs[0] == self.xlabs[0]) and (zlabs[1] == self.ylabs[0]):
-        #     z = z.T
-        # Apply colorbar parameters
-        if self.cb["log"]:
-            with np.errstate(invalid="ignore", divide="ignore"):
-                z = np.log10(z)
-        # if (self.cb["min"] is not None) + (self.cb["max"] is not None) == 1:
-        #     if self.cb["min"] is not None:
-        #         self.fig.data[0].zmin = self.cb["min"]
-        #     else:
-        #         self.fig.data[0].zmin = np.amin(z[np.where(np.isfinite(z))])
-        #     if self.cb["max"] is not None:
-        #         self.fig.data[0].zmax = self.cb["max"]
-        #     else:
-        #         self.fig.data[0].zmax = np.amax(z[np.where(np.isfinite(z))])
+            loc = self.slider_x[key][change["new"]]
+            self.lab[key].value = str(loc)
+            # vslices[self.buttons[key].value.lower()] = {"slice": self.cube[change["owner"].dim, change["new"]], "dim_str": key}
+            vslice = self.cube[change["owner"].dim, change["new"]]
+            # button_dims[self.buttons[key].value.lower()] = key
+                # else:
+                #     button_dims[self.buttons[key].value.lower() == "y"] = val.dim
 
-        setattr(self.fig.data[idim], self.moving_coord[idim], self.slider_x[idim][change["new"]] * np.ones_like(getattr(self.parent.fig.data[self.idim], self.moving_coord[self.idim])))
+            # Now move slice
+            permutations = {"x": ["y", "z"], "y": ["x", "z"], "z": ["x", "y"]}
+            slice_indices = {"x": 0, "y": 1, "z": 2}
 
-        self.fig.data[0].x = self.slider_x[idim][self.slider[idim].value] * np.ones_like(self.fig.data[0].x)
-        # print(self.slider_x[idim][self.slider[idim].value] * np.ones_like(self.fig.data[0].x))
-        self.fig.data[0].surfacecolor = z
-    #     return
+            # for i, (key, val) in enumerate(sorted(vslices.items())):
+            # xx, yy = np.meshgrid(self.slider_x[button_dims[permutations[key][0]]],
+                                 # self.slider_x[button_dims[permutations[key][1]]])
+            ax_dim = self.buttons[key].value.lower()
+            xy = getattr(self.fig.data[slice_indices[ax_dim]], ax_dim)
+            setattr(self.fig.data[slice_indices[ax_dim]], ax_dim, xy / xy * loc)
+            # setattr(self.fig.data[i], permutations[key][0], xx)
+            # setattr(self.fig.data[i], permutations[key][1], yy)
+            self.fig.data[slice_indices[ax_dim]].surfacecolor = vslice.values
 
 
-    # # Define function to update slices
-    # def update_slice3dy(self, change):
-    #     # # The dimensions to be sliced have been saved in slider_dims
-    #     # # Slice with first element to avoid modifying underlying dataset
-    #     # self.lab[0].value = str(self.slider_x[0][self.slider[0].value])
-    #     # vslice = self.input_data[self.slider_dims[0], self.slider[0].value]
-    #     vslice = self.input_data
-    #     # Then slice additional dimensions if needed
-    #     idim = 1
-    #     # for idim in range(self.nslices):
-    #     self.lab[idim].value = str(
-    #         self.slider_x[idim][self.slider[idim].value])
-    #     vslice = vslice[self.slider_dims[idim], self.slider[idim].value]
+        # # Check if dimensions of arrays agree, if not, plot the transpose
+        # slice_dims = vslice.dims
+        # transp = (slice_dims == button_dims)
+        # self.update_z3d(vslice.values, transp, self.cb["log"], 0)
+        # if self.show_variances:
+        #     self.update_z3d(vslice.variances, transp, self.cb["log"], 1)
+        return
 
-    #     z = vslice.values
-
-    #     # Check if dimensions of arrays agree, if not, plot the transpose
-    #     zlabs = vslice.dims
-    #     # if (zlabs[0] == self.xlabs[0]) and (zlabs[1] == self.ylabs[0]):
-    #     #     z = z.T
-    #     # Apply colorbar parameters
-    #     if self.cb["log"]:
+    # def update_z3d(self, values, transp, log, indx):
+    #     if transp:
+    #         values = values.T
+    #     if log:
     #         with np.errstate(invalid="ignore", divide="ignore"):
-    #             z = np.log10(z)
-    #     if (self.cb["min"] is not None) + (self.cb["max"] is not None) == 1:
-    #         if self.cb["min"] is not None:
-    #             self.fig.data[1].zmin = self.cb["min"]
-    #         else:
-    #             self.fig.data[1].zmin = np.amin(z[np.where(np.isfinite(z))])
-    #         if self.cb["max"] is not None:
-    #             self.fig.data[1].zmax = self.cb["max"]
-    #         else:
-    #             self.fig.data[1].zmax = np.amax(z[np.where(np.isfinite(z))])
-    #     self.fig.data[1].y = self.slider_x[idim][self.slider[idim].value] * np.ones_like(self.fig.data[1].y)
-    #     self.fig.data[1].surfacecolor = z
+    #             values = np.log10(values)
+    #     self.fig.data[indx].z = values
     #     return
-
-    # # Define function to update slices
-    # def update_slice3dz(self, change):
-    #     # # The dimensions to be sliced have been saved in slider_dims
-    #     # # Slice with first element to avoid modifying underlying dataset
-    #     # self.lab[0].value = str(self.slider_x[0][self.slider[0].value])
-    #     # vslice = self.input_data[self.slider_dims[0], self.slider[0].value]
-    #     vslice = self.input_data
-    #     # Then slice additional dimensions if needed
-    #     idim = 2
-    #     # for idim in range(self.nslices):
-    #     self.lab[idim].value = str(
-    #         self.slider_x[idim][self.slider[idim].value])
-    #     vslice = vslice[self.slider_dims[idim], self.slider[idim].value]
-
-    #     z = vslice.values
-
-    #     # Check if dimensions of arrays agree, if not, plot the transpose
-    #     zlabs = vslice.dims
-    #     # if (zlabs[0] == self.xlabs[0]) and (zlabs[1] == self.ylabs[0]):
-    #     #     z = z.T
-    #     # Apply colorbar parameters
-    #     if self.cb["log"]:
-    #         with np.errstate(invalid="ignore", divide="ignore"):
-    #             z = np.log10(z)
-    #     if (self.cb["min"] is not None) + (self.cb["max"] is not None) == 1:
-    #         if self.cb["min"] is not None:
-    #             self.fig.data[2].zmin = self.cb["min"]
-    #         else:
-    #             self.fig.data[2].zmin = np.amin(z[np.where(np.isfinite(z))])
-    #         if self.cb["max"] is not None:
-    #             self.fig.data[2].zmax = self.cb["max"]
-    #         else:
-    #             self.fig.data[2].zmax = np.amax(z[np.where(np.isfinite(z))])
-    #     self.fig.data[2].z = self.slider_x[idim][self.slider[idim].value] * np.ones_like(self.fig.data[2].z)
-    #     self.fig.data[2].surfacecolor = z
-    #     return
-
-
-
-
-
 
 
 def get_plotly_color(index=0):
