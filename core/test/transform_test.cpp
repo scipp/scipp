@@ -5,11 +5,12 @@
 
 #include "test_macros.h"
 
-#include "../operators.h"
 #include "make_sparse.h"
 #include "scipp/core/dimensions.h"
 #include "scipp/core/transform.h"
 #include "scipp/core/variable.h"
+
+#include "../operators.h"
 
 using namespace scipp;
 using namespace scipp::core;

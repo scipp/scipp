@@ -12,6 +12,38 @@
 using namespace scipp;
 using namespace scipp::core;
 
+template <typename T>
+class VariableScalarOperatorTest : public ::testing::Test {
+public:
+  Variable variable{makeVariable<T>({Dim::X, 1}, {10})};
+  const T scalar{2};
+
+  T value() const { return this->variable.template values<T>()[0]; }
+};
+
+using ScalarTypes = ::testing::Types<double, float, int64_t, int32_t>;
+TYPED_TEST_SUITE(VariableScalarOperatorTest, ScalarTypes);
+
+TYPED_TEST(VariableScalarOperatorTest, plus_equals) {
+  this->variable += this->scalar;
+  EXPECT_EQ(this->value(), 12);
+}
+
+TYPED_TEST(VariableScalarOperatorTest, minus_equals) {
+  this->variable -= this->scalar;
+  EXPECT_EQ(this->value(), 8);
+}
+
+TYPED_TEST(VariableScalarOperatorTest, times_equals) {
+  this->variable *= this->scalar;
+  EXPECT_EQ(this->value(), 20);
+}
+
+TYPED_TEST(VariableScalarOperatorTest, divide_equals) {
+  this->variable /= this->scalar;
+  EXPECT_EQ(this->value(), 5);
+}
+
 TEST(Variable, operator_unary_minus) {
   const auto a = makeVariable<double>({Dim::X, 2}, units::m, {1.1, 2.2});
   const auto expected =
@@ -898,17 +930,17 @@ TEST(VariableProxy, scalar_operations) {
   auto var = makeVariable<double>({{Dim::Y, 2}, {Dim::X, 3}},
                                   {11, 12, 13, 21, 22, 23});
 
-  var.slice({Dim::X, 0}) += 1;
+  var.slice({Dim::X, 0}) += 1.0;
   EXPECT_TRUE(equals(var.values<double>(), {12, 12, 13, 22, 22, 23}));
-  var.slice({Dim::Y, 1}) += 1;
+  var.slice({Dim::Y, 1}) += 1.0;
   EXPECT_TRUE(equals(var.values<double>(), {12, 12, 13, 23, 23, 24}));
-  var.slice({Dim::X, 1, 3}) += 1;
+  var.slice({Dim::X, 1, 3}) += 1.0;
   EXPECT_TRUE(equals(var.values<double>(), {12, 13, 14, 23, 24, 25}));
-  var.slice({Dim::X, 1}) -= 1;
+  var.slice({Dim::X, 1}) -= 1.0;
   EXPECT_TRUE(equals(var.values<double>(), {12, 12, 14, 23, 23, 25}));
-  var.slice({Dim::X, 2}) *= 0;
+  var.slice({Dim::X, 2}) *= 0.0;
   EXPECT_TRUE(equals(var.values<double>(), {12, 12, 0, 23, 23, 0}));
-  var.slice({Dim::Y, 0}) /= 2;
+  var.slice({Dim::Y, 0}) /= 2.0;
   EXPECT_TRUE(equals(var.values<double>(), {6, 6, 0, 23, 23, 0}));
 }
 

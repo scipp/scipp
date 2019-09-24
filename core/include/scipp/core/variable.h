@@ -243,6 +243,11 @@ private:
 class VariableConstProxy;
 class VariableProxy;
 
+template <class T> constexpr bool is_variable_or_proxy() {
+  return std::is_same_v<T, Variable> || std::is_same_v<T, VariableConstProxy> ||
+         std::is_same_v<T, VariableProxy>;
+}
+
 namespace detail {
 template <class T> struct default_init {
   static T value() { return T(); }
@@ -256,6 +261,8 @@ struct default_init<Eigen::Matrix<T, Rows, Cols>> {
   }
 };
 } // namespace detail
+
+template <class T> Variable makeVariable(T value);
 
 /// Variable is a type-erased handle to any data structure representing a
 /// multi-dimensional array. It has a name, a unit, and a set of named
@@ -339,23 +346,39 @@ public:
   bool operator!=(const Variable &other) const;
   bool operator!=(const VariableConstProxy &other) const;
   Variable operator-() const;
+
   Variable &operator+=(const Variable &other) &;
   Variable &operator+=(const VariableConstProxy &other) &;
-  Variable &operator+=(const double value) &;
+  template <typename T, typename = std::enable_if_t<!is_variable_or_proxy<T>()>>
+  Variable &operator+=(const T v) & {
+    return *this += makeVariable<underlying_type_t<T>>(v);
+  }
+
   Variable &operator-=(const Variable &other) &;
   Variable &operator-=(const VariableConstProxy &other) &;
-  Variable &operator-=(const double value) &;
+  template <typename T, typename = std::enable_if_t<!is_variable_or_proxy<T>()>>
+  Variable &operator-=(const T v) & {
+    return *this -= makeVariable<underlying_type_t<T>>(v);
+  }
+
   Variable &operator*=(const Variable &other) &;
   Variable &operator*=(const VariableConstProxy &other) &;
-  Variable &operator*=(const double value) &;
+  template <typename T, typename = std::enable_if_t<!is_variable_or_proxy<T>()>>
+  Variable &operator*=(const T v) & {
+    return *this *= makeVariable<underlying_type_t<T>>(v);
+  }
   template <class T>
   Variable &operator*=(const boost::units::quantity<T> &quantity) & {
     setUnit(unit() * units::Unit(T{}));
     return *this *= quantity.value();
   }
+
   Variable &operator/=(const Variable &other) &;
   Variable &operator/=(const VariableConstProxy &other) &;
-  Variable &operator/=(const double value) &;
+  template <typename T, typename = std::enable_if_t<!is_variable_or_proxy<T>()>>
+  Variable &operator/=(const T v) & {
+    return *this /= makeVariable<underlying_type_t<T>>(v);
+  }
   template <class T>
   Variable &operator/=(const boost::units::quantity<T> &quantity) & {
     setUnit(unit() / units::Unit(T{}));
@@ -704,18 +727,34 @@ public:
   // returning `a += b` but I am not sure how Pybind11 handles object lifetimes
   // (would this suffer from the same issue?).
   template <class T> VariableProxy assign(const T &other) const;
+
   VariableProxy operator+=(const Variable &other) const;
   VariableProxy operator+=(const VariableConstProxy &other) const;
-  VariableProxy operator+=(const double value) const;
+  template <typename T, typename = std::enable_if_t<!is_variable_or_proxy<T>()>>
+  VariableProxy operator+=(const T v) const {
+    return *this += makeVariable<T>(v);
+  }
+
   VariableProxy operator-=(const Variable &other) const;
   VariableProxy operator-=(const VariableConstProxy &other) const;
-  VariableProxy operator-=(const double value) const;
+  template <typename T, typename = std::enable_if_t<!is_variable_or_proxy<T>()>>
+  VariableProxy operator-=(const T v) const {
+    return *this -= makeVariable<underlying_type_t<T>>(v);
+  }
+
   VariableProxy operator*=(const Variable &other) const;
   VariableProxy operator*=(const VariableConstProxy &other) const;
-  VariableProxy operator*=(const double value) const;
+  template <typename T, typename = std::enable_if_t<!is_variable_or_proxy<T>()>>
+  VariableProxy operator*=(const T v) const {
+    return *this *= makeVariable<underlying_type_t<T>>(v);
+  }
+
   VariableProxy operator/=(const Variable &other) const;
   VariableProxy operator/=(const VariableConstProxy &other) const;
-  VariableProxy operator/=(const double value) const;
+  template <typename T, typename = std::enable_if_t<!is_variable_or_proxy<T>()>>
+  VariableProxy operator/=(const T v) const {
+    return *this /= makeVariable<underlying_type_t<T>>(v);
+  }
 
   template <class T> void setVariances(Vector<T> &&v) const;
 
