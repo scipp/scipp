@@ -568,6 +568,26 @@ TYPED_TEST(DatasetBinaryOpTest, dataset_lhs_dataset_rhs) {
   EXPECT_EQ(res.labels(), dataset_a.labels());
 }
 
+TYPED_TEST(DatasetBinaryOpTest, dataset_lhs_variableconstproxy_rhs) {
+  const auto[dataset_a, dataset_b] = generateBinaryOpTestCase();
+
+  const auto res = TestFixture::op(dataset_a, dataset_b["data_a"].data());
+
+  const auto reference =
+      TestFixture::op(dataset_a["data_a"].data(), dataset_b["data_a"].data());
+  EXPECT_EQ(reference, res["data_a"].data());
+}
+
+TYPED_TEST(DatasetBinaryOpTest, variableconstproxy_lhs_dataset_rhs) {
+  const auto[dataset_a, dataset_b] = generateBinaryOpTestCase();
+
+  const auto res = TestFixture::op(dataset_a["data_a"].data(), dataset_b);
+
+  const auto reference =
+      TestFixture::op(dataset_a["data_a"].data(), dataset_b["data_a"].data());
+  EXPECT_EQ(reference, res["data_a"].data());
+}
+
 TYPED_TEST(DatasetBinaryOpTest, broadcast) {
   const auto x = makeVariable<double>({Dim::X, 3}, {1, 2, 3});
   const auto y = makeVariable<double>({Dim::Y, 2}, {1, 2});
