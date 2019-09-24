@@ -25,6 +25,12 @@ DatasetFactory3D::DatasetFactory3D(const scipp::index lx_,
 
   base.setAttr("attr_scalar", makeVariable<double>(rand(1).front()));
   base.setAttr("attr_x", makeVariable<double>({Dim::X, lx}, rand(lx)));
+
+  auto masks{std::vector<bool>(lx)};
+  for (int i = 0; i < lx; ++i) {
+    masks[i] = i % 2 ? true : false;
+  }
+  base.setMasks("mask", makeVariable<bool>({Dim::X, lx}, std::move(masks)));
 }
 
 Dataset DatasetFactory3D::make() {

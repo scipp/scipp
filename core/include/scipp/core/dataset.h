@@ -366,6 +366,9 @@ public:
   void setData(const std::string &name, const VariableConstProxy &data) {
     setData(name, Variable(data));
   }
+  void setMasks(const std::string &name, const VariableConstProxy &mask){
+    setMasks(name, Variable(mask));
+  }
   void setSparseCoord(const std::string &name,
                       const VariableConstProxy &coord) {
     setSparseCoord(name, Variable(coord));
@@ -832,24 +835,33 @@ public:
   explicit DataArray(const DataConstProxy &proxy);
   template <class CoordMap = std::map<Dim, Variable>,
             class LabelsMap = std::map<std::string, Variable>,
-            class AttrMap = std::map<std::string, Variable>>
+            class AttrMap = std::map<std::string, Variable>,
+            class MasksMap = std::map<std::string, Variable>>
   DataArray(std::optional<Variable> data, CoordMap coords = {},
-            LabelsMap labels = {}, AttrMap attrs = {},
+            LabelsMap labels = {}, AttrMap attrs = {}, MasksMap masks = {},
             const std::string &name = "") {
     if (data)
       m_holder.setData(name, std::move(*data));
-    for (auto &&[dim, c] : coords)
+    for (auto &&[dim, c] : coords) {
       if (c.dims().sparse())
         m_holder.setSparseCoord(name, std::move(c));
       else
         m_holder.setCoord(dim, std::move(c));
-    for (auto &&[label_name, l] : labels)
+    }
+    for (auto &&[label_name, l] : labels) {
       if (l.dims().sparse())
         m_holder.setSparseLabels(name, std::string(label_name), std::move(l));
       else
         m_holder.setLabels(std::string(label_name), std::move(l));
-    for (auto &&[attr_name, a] : attrs)
+    }
+    for (auto &&[attr_name, a] : attrs) {
       m_holder.setAttr(std::string(attr_name), std::move(a));
+    }
+
+    for (auto &&[attr_name, m] : masks) {
+      m_holder.setMasks(std::string(attr_name), std::move(m));
+    }
+
     if (m_holder.size() != 1)
       throw std::runtime_error(
           "DataArray must have either data or a sparse coordinate.");

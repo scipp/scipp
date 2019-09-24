@@ -318,6 +318,10 @@ void Dataset::setData(const std::string &name, const DataConstProxy &data) {
       setAttr(std::string(nm), attr);
   }
 
+  for (const auto &[nm, mask] : data.masks()) {
+    setMasks(std::string(nm), mask);
+  }
+
   if (data.hasData())
     setData(name, data.data());
 }

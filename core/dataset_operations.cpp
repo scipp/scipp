@@ -12,28 +12,38 @@ template <bool ApplyToData, class Func, class... Args>
 DataArray apply_and_drop_dim_impl(const DataConstProxy &a, Func func,
                                   const Dim dim, Args &&... args) {
   std::map<Dim, Variable> coords;
-  for (auto && [ d, coord ] : a.coords())
-    if (d != dim)
+  for (auto &&[d, coord] : a.coords()) {
+    if (d != dim) {
       coords.emplace(d, coord);
+    }
+  }
 
   std::map<std::string, Variable> labels;
-  for (auto && [ name, label ] : a.labels())
+  for (auto &&[name, label] : a.labels()) {
     if (label.dims().inner() != dim)
       labels.emplace(name, label);
+  }
 
   std::map<std::string, Variable> attrs;
-  for (auto && [ name, attr ] : a.attrs())
+  for (auto &&[name, attr] : a.attrs()) {
     if (attr.dims().inner() != dim)
       attrs.emplace(name, attr);
+  }
+
+  std::map<std::string, Variable> masks;
+  for (auto &&[name, mask] : a.masks()) {
+    if (mask.dims().inner() != dim)
+      masks.emplace(name, mask);
+  }
 
   if constexpr (ApplyToData)
     return DataArray(func(a.data(), dim, std::forward<Args>(args)...),
                      std::move(coords), std::move(labels), std::move(attrs),
-                     a.name());
+                     std::move(masks), a.name());
   else
     return DataArray(func(a, dim, std::forward<Args>(args)...),
                      std::move(coords), std::move(labels), std::move(attrs),
-                     a.name());
+                     std::move(masks), a.name());
 }
 
 template <class Func, class... Args>
@@ -53,7 +63,7 @@ DataArray apply_and_drop_dim(const DataConstProxy &a, Func func, const Dim dim,
 template <class Func, class... Args>
 Dataset apply_to_items(const DatasetConstProxy &d, Func func, Args &&... args) {
   Dataset result;
-  for (const auto & [ name, data ] : d)
+  for (const auto &[name, data] : d)
     result.setData(name, func(data, std::forward<Args>(args)...));
   return result;
 }
@@ -115,7 +125,7 @@ DataArray histogram(const DataConstProxy &sparse, const Variable &binEdges) {
 Dataset histogram(const Dataset &dataset, const VariableConstProxy &bins) {
   auto out(Dataset(DatasetConstProxy::makeProxyWithEmptyIndexes(dataset)));
   out.setCoord(bins.dims().inner(), bins);
-  for (const auto & [ name, item ] : dataset) {
+  for (const auto &[name, item] : dataset) {
     if (item.dims().sparse())
       out.setData(std::string(name), histogram(item, bins));
   }
@@ -163,7 +173,7 @@ template <class T1, class T2>
 auto concat(const T1 &a, const T2 &b, const Dim dim, const Dimensions &dimsA,
             const Dimensions &dimsB) {
   std::map<typename T1::key_type, typename T1::mapped_type> out;
-  for (const auto & [ key, a_ ] : a) {
+  for (const auto &[key, a_] : a) {
     if (dim_of_coord_or_labels(a, key) == dim) {
       if ((a_.dims()[dim] == dimsA[dim]) != (b[key].dims()[dim] == dimsB[dim]))
         throw except::BinEdgeError(
@@ -191,13 +201,14 @@ DataArray concatenate(const DataConstProxy &a, const DataConstProxy &b,
     return DataArray{a};
   return DataArray(concatenate(a.data(), b.data(), dim),
                    concat(a.coords(), b.coords(), dim, a.dims(), b.dims()),
-                   concat(a.labels(), b.labels(), dim, a.dims(), b.dims()));
+                   concat(a.labels(), b.labels(), dim, a.dims(), b.dims()), {},
+                   concat(a.masks(), b.masks(), dim, a.dims(), b.dims()));
 }
 
 Dataset concatenate(const DatasetConstProxy &a, const DatasetConstProxy &b,
                     const Dim dim) {
   Dataset result;
-  for (const auto & [ name, item ] : a)
+  for (const auto &[name, item] : a)
     if (b.contains(name))
       result.setData(name, concatenate(item, b[name], dim));
   return result;
