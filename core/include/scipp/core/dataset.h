@@ -803,6 +803,10 @@ public:
   DatasetProxy operator-=(const DataConstProxy &other) const;
   DatasetProxy operator*=(const DataConstProxy &other) const;
   DatasetProxy operator/=(const DataConstProxy &other) const;
+  DatasetProxy operator+=(const VariableConstProxy &other) const;
+  DatasetProxy operator-=(const VariableConstProxy &other) const;
+  DatasetProxy operator*=(const VariableConstProxy &other) const;
+  DatasetProxy operator/=(const VariableConstProxy &other) const;
   DatasetProxy operator+=(const DatasetConstProxy &other) const;
   DatasetProxy operator-=(const DatasetConstProxy &other) const;
   DatasetProxy operator*=(const DatasetConstProxy &other) const;

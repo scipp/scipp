@@ -228,6 +228,22 @@ DatasetProxy DatasetProxy::operator/=(const DataConstProxy &other) const {
   return apply_with_delay(operator_detail::divide_equals{}, *this, other);
 }
 
+DatasetProxy DatasetProxy::operator+=(const VariableConstProxy &other) const {
+  return apply_with_delay(operator_detail::plus_equals{}, *this, other);
+}
+
+DatasetProxy DatasetProxy::operator-=(const VariableConstProxy &other) const {
+  return apply_with_delay(operator_detail::minus_equals{}, *this, other);
+}
+
+DatasetProxy DatasetProxy::operator*=(const VariableConstProxy &other) const {
+  return apply_with_delay(operator_detail::times_equals{}, *this, other);
+}
+
+DatasetProxy DatasetProxy::operator/=(const VariableConstProxy &other) const {
+  return apply_with_delay(operator_detail::divide_equals{}, *this, other);
+}
+
 DatasetProxy DatasetProxy::operator+=(const DatasetConstProxy &other) const {
   return apply(operator_detail::plus_equals{}, *this, other);
 }

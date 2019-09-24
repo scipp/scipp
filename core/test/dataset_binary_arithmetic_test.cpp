@@ -343,22 +343,37 @@ TYPED_TEST(DatasetProxyBinaryEqualsOpTest, return_value) {
   ASSERT_TRUE(
       (std::is_same_v<decltype(TestFixture::op(proxy, b["data_scalar"])),
                       DatasetProxy>));
-  const auto &result1 = TestFixture::op(proxy, b["data_scalar"]);
-  EXPECT_EQ(&result1["data_scalar"].template values<double>()[0],
-            &a["data_scalar"].template values<double>()[0]);
+  {
+    const auto &result = TestFixture::op(proxy, b["data_scalar"]);
+    EXPECT_EQ(&result["data_scalar"].template values<double>()[0],
+              &a["data_scalar"].template values<double>()[0]);
+  }
 
   ASSERT_TRUE(
       (std::is_same_v<decltype(TestFixture::op(proxy, b)), DatasetProxy>));
-  const auto &result2 = TestFixture::op(proxy, b);
-  EXPECT_EQ(&result2["data_scalar"].template values<double>()[0],
-            &a["data_scalar"].template values<double>()[0]);
+  {
+    const auto &result = TestFixture::op(proxy, b);
+    EXPECT_EQ(&result["data_scalar"].template values<double>()[0],
+              &a["data_scalar"].template values<double>()[0]);
+  }
 
   ASSERT_TRUE(
       (std::is_same_v<decltype(TestFixture::op(proxy, b.slice({Dim::Z, 3}))),
                       DatasetProxy>));
-  const auto &result3 = TestFixture::op(proxy, b.slice({Dim::Z, 3}));
-  EXPECT_EQ(&result3["data_scalar"].template values<double>()[0],
-            &a["data_scalar"].template values<double>()[0]);
+  {
+    const auto &result = TestFixture::op(proxy, b.slice({Dim::Z, 3}));
+    EXPECT_EQ(&result["data_scalar"].template values<double>()[0],
+              &a["data_scalar"].template values<double>()[0]);
+  }
+
+  ASSERT_TRUE(
+      (std::is_same_v<decltype(TestFixture::op(proxy, b["data_scalar"].data())),
+                      DatasetProxy>));
+  {
+    const auto &result = TestFixture::op(proxy, b["data_scalar"].data());
+    EXPECT_EQ(&result["data_scalar"].template values<double>()[0],
+              &a["data_scalar"].template values<double>()[0]);
+  }
 }
 
 TYPED_TEST(DatasetProxyBinaryEqualsOpTest, rhs_DataProxy_self_overlap) {
