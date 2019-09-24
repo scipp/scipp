@@ -44,6 +44,10 @@ using LabelsProxy = MutableProxy<LabelsConstProxy>;
 using AttrsConstProxy = ConstProxy<ProxyId::Attrs, std::string>;
 /// Proxy for accessing attributes of Dataset and DataProxy.
 using AttrsProxy = MutableProxy<AttrsConstProxy>;
+/// Proxy for accessing masks of const Dataset and DataConstProxy
+using MasksConstProxy = ConstProxy<ProxyId::Coords, std::string>;
+/// Proxy for accessing masks of Dataset and DataProxy
+using MasksProxy = MutableProxy<MasksConstProxy>;
 
 namespace detail {
 /// Helper for holding data items in Dataset.
@@ -63,7 +67,7 @@ auto makeSlice(Var &var,
                const std::vector<std::pair<Slice, scipp::index>> &slices) {
   std::conditional_t<std::is_const_v<Var>, VariableConstProxy, VariableProxy>
       slice(var);
-  for (const auto[params, extent] : slices) {
+  for (const auto [params, extent] : slices) {
     if (slice.dims().contains(params.dim())) {
       const auto new_end = params.end() + slice.dims()[params.dim()] - extent;
       const auto pointSlice = (new_end == -1);
@@ -95,6 +99,7 @@ public:
   CoordsConstProxy coords() const noexcept;
   LabelsConstProxy labels() const noexcept;
   AttrsConstProxy attrs() const noexcept;
+  MasksConstProxy masks() const noexcept;
 
   /// Return true if the proxy contains data values.
   bool hasData() const noexcept { return m_data->second.data.has_value(); }
@@ -164,6 +169,7 @@ public:
   CoordsProxy coords() const noexcept;
   LabelsProxy labels() const noexcept;
   AttrsProxy attrs() const noexcept;
+  MasksProxy masks() const noexcept;
 
   void setUnit(const units::Unit unit) const;
 
@@ -260,13 +266,13 @@ public:
 
   template <class DataMap, class CoordMap, class LabelsMap, class AttrMap>
   Dataset(DataMap data, CoordMap coords, LabelsMap labels, AttrMap attrs) {
-    for (auto && [ dim, coord ] : coords)
+    for (auto &&[dim, coord] : coords)
       setCoord(dim, std::move(coord));
-    for (auto && [ name, labs ] : labels)
+    for (auto &&[name, labs] : labels)
       setLabels(std::string(name), std::move(labs));
-    for (auto && [ name, attr ] : attrs)
+    for (auto &&[name, attr] : attrs)
       setAttr(std::string(name), std::move(attr));
-    for (auto && [ name, item ] : data)
+    for (auto &&[name, item] : data)
       setData(std::string(name), std::move(item));
   }
 
@@ -289,6 +295,9 @@ public:
 
   AttrsConstProxy attrs() const noexcept;
   AttrsProxy attrs() noexcept;
+
+  MasksConstProxy masks() const noexcept;
+  MasksProxy masks() noexcept;
 
   bool contains(const std::string &name) const noexcept;
 
@@ -337,6 +346,7 @@ public:
   void setCoord(const Dim dim, Variable coord);
   void setLabels(const std::string &labelName, Variable labels);
   void setAttr(const std::string &attrName, Variable attr);
+  void setMasks(const std::string &labelName, Variable masks);
   void setData(const std::string &name, Variable data);
   void setData(const std::string &name, const DataConstProxy &data);
   void setSparseCoord(const std::string &name, Variable coord);
@@ -413,6 +423,7 @@ private:
   std::unordered_map<Dim, Variable> m_coords;
   std::unordered_map<std::string, Variable> m_labels;
   std::unordered_map<std::string, Variable> m_attrs;
+  std::unordered_map<std::string, Variable> m_masks;
   detail::dataset_item_map m_data;
 };
 
@@ -516,7 +527,7 @@ public:
   bool operator==(const ConstProxy &other) const {
     if (size() != other.size())
       return false;
-    for (const auto & [ name, data ] : *this) {
+    for (const auto &[name, data] : *this) {
       try {
         if (data != other[name])
           return false;
@@ -634,9 +645,9 @@ public:
 template <class T1, class T2> auto union_(const T1 &a, const T2 &b) {
   std::map<typename T1::key_type, typename T1::mapped_type> out;
 
-  for (const auto & [ key, item ] : a)
+  for (const auto &[key, item] : a)
     out.emplace(key, item);
-  for (const auto & [ key, item ] : b) {
+  for (const auto &[key, item] : b) {
     if (const auto it = a.find(key); it != a.end())
       expect::equals(item, it->second);
     else
@@ -670,6 +681,7 @@ public:
   CoordsConstProxy coords() const noexcept;
   LabelsConstProxy labels() const noexcept;
   AttrsConstProxy attrs() const noexcept;
+  MasksConstProxy masks() const noexcept;
 
   bool contains(const std::string &name) const noexcept;
 
@@ -761,6 +773,7 @@ public:
   CoordsProxy coords() const noexcept;
   LabelsProxy labels() const noexcept;
   AttrsProxy attrs() const noexcept;
+  MasksProxy masks() const noexcept;
 
   DataProxy operator[](const std::string &name) const;
 
@@ -825,17 +838,17 @@ public:
             const std::string &name = "") {
     if (data)
       m_holder.setData(name, std::move(*data));
-    for (auto && [ dim, c ] : coords)
+    for (auto &&[dim, c] : coords)
       if (c.dims().sparse())
         m_holder.setSparseCoord(name, std::move(c));
       else
         m_holder.setCoord(dim, std::move(c));
-    for (auto && [ label_name, l ] : labels)
+    for (auto &&[label_name, l] : labels)
       if (l.dims().sparse())
         m_holder.setSparseLabels(name, std::string(label_name), std::move(l));
       else
         m_holder.setLabels(std::string(label_name), std::move(l));
-    for (auto && [ attr_name, a ] : attrs)
+    for (auto &&[attr_name, a] : attrs)
       m_holder.setAttr(std::string(attr_name), std::move(a));
     if (m_holder.size() != 1)
       throw std::runtime_error(
@@ -856,6 +869,9 @@ public:
 
   AttrsConstProxy attrs() const { return get().attrs(); }
   AttrsProxy attrs() { return get().attrs(); }
+
+  MasksConstProxy masks() const { return get().masks(); }
+  MasksProxy masks() { return get().masks(); }
 
   Dimensions dims() const { return get().dims(); }
   DType dtype() const { return get().dtype(); }
