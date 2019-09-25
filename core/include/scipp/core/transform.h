@@ -203,6 +203,11 @@ template <class T> static decltype(auto) maybe_broadcast(T &&value) {
     return broadcast{value};
 }
 
+template <class T> struct is_broadcast : std::false_type {};
+template <class T> struct is_broadcast<broadcast<T>> : std::true_type {};
+template <class T>
+inline constexpr bool is_broadcast_v = is_broadcast<T>::value;
+
 template <class T>
 struct is_eigen_expression
     : std::is_base_of<Eigen::MatrixBase<std::decay_t<T>>, std::decay_t<T>> {};
@@ -407,11 +412,80 @@ static constexpr auto type_pairs(Op) noexcept {
     return std::tuple_cat(TypePairs{}...);
 }
 
+namespace detail {
+template <class F, class Tuple, std::size_t... I>
+constexpr decltype(auto) apply_impl(F &&f, Tuple &&t,
+                                    std::index_sequence<I...>) {
+  return std::invoke(std::forward<F>(f),
+                     std::get<I>(std::forward<Tuple>(t))...);
+}
+} // namespace detail
+
+template <class F, class Tuple>
+constexpr decltype(auto) apply(F &&f, Tuple &&t) {
+  return detail::apply_impl(
+      std::forward<F>(f), std::forward<Tuple>(t),
+      std::make_index_sequence<
+          std::tuple_size_v<std::remove_reference_t<Tuple>>>{});
+}
+
 template <class Op, class... Args>
 static constexpr void call_in_place(Op &&op, Args &&... args) noexcept {
   static_assert(
       std::is_same_v<decltype(op(std::forward<Args>(args)...)), void>);
   op(std::forward<Args>(args)...);
+}
+
+namespace iter_detail {
+template <class Range> static auto begin_or_value(Range &&r) noexcept {
+  if constexpr (detail::is_broadcast_v<std::decay_t<Range>>)
+    return r;
+  else
+    return r.begin();
+}
+template <class Range> static auto end_or_value(Range &&r) noexcept {
+  if constexpr (detail::is_broadcast_v<std::decay_t<Range>>)
+    return nullptr;
+  else
+    return r.end();
+}
+template <class Range> static void maybe_increment(Range &&r) noexcept {
+  if constexpr (!detail::is_broadcast_v<std::decay_t<Range>>)
+    ++r;
+}
+template <class Range> static auto &maybe_dereference(Range &&r) noexcept {
+  if constexpr (detail::is_broadcast_v<std::decay_t<Range>>)
+    return r.value;
+  else
+    return *r;
+}
+
+template <class... Ranges> static auto begin(Ranges &&... r) noexcept {
+  return std::tuple{begin_or_value(r)...};
+}
+template <class... Ranges> static auto end(Ranges &&... r) noexcept {
+  return std::tuple{end_or_value(r)...};
+}
+static auto do_increment = [](auto &&... r) noexcept {
+  (maybe_increment(r), ...);
+};
+template <class Tuple> static void increment(Tuple &&t) noexcept {
+  std::apply(do_increment, t);
+}
+static auto do_dereference = [](auto &&... r) noexcept {
+  return std::tuple<decltype(maybe_dereference(r)) &...>{
+      maybe_dereference(r)...};
+};
+template <class Tuple> static auto dereference(Tuple &&t) noexcept {
+  return std::apply(do_dereference, t);
+}
+} // namespace iter_detail
+
+template <class Op, class Args>
+static constexpr void call_in_place2(Op &&op, Args &&args) noexcept {
+  static_assert(
+      std::is_same_v<decltype(std::apply(op, std::forward<Args>(args))), void>);
+  std::apply(op, std::forward<Args>(args));
 }
 
 /// Helper class wrapping functions for in-place transform.
@@ -479,8 +553,12 @@ template <bool dry_run> struct in_place {
       return;
     // WARNING: Do not parallelize this loop in all cases! The output may have a
     // dimension with stride zero so parallelization must be done with care.
-    for (scipp::index i = 0; i < scipp::size(vals); ++i)
-      call_in_place(op, vals[i], other[i]...);
+    for (auto its = iter_detail::begin(vals, other...),
+              end = iter_detail::end(vals, other...);
+         std::get<0>(its) != std::get<0>(end); iter_detail::increment(its))
+      call_in_place2(op, iter_detail::dereference(its));
+    // for (scipp::index i = 0; i < scipp::size(vals); ++i)
+    //  call_in_place(op, vals[i], other[i]...);
   }
 
   /// Helper for in-place transform implementation, performing branching between
