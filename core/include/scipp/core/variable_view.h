@@ -99,7 +99,7 @@ public:
     friend class boost::iterator_core_access;
 
     bool equal(const iterator &other) const { return m_index == other.m_index; }
-    void increment() { m_index.increment(); }
+    constexpr void increment() noexcept { m_index.increment(); }
     auto &dereference() const { return m_variable[m_index.get()]; }
     void decrement() { m_index.setIndex(m_index.index() - 1); }
     void advance(int64_t delta) {

@@ -15,9 +15,7 @@ public:
   ViewIndex(const Dimensions &targetDimensions,
             const Dimensions &dataDimensions);
 
-  void increment() {
-    m_index += m_delta[0];
-    ++m_coord[0];
+  constexpr void increment_outer() noexcept {
     scipp::index d = 0;
     while ((m_coord[d] == m_extent[d]) && (d < NDIM_MAX - 1)) {
       m_index += m_delta[d + 1];
@@ -25,6 +23,12 @@ public:
       m_coord[d] = 0;
       ++d;
     }
+  }
+  constexpr void increment() noexcept {
+    m_index += m_delta[0];
+    ++m_coord[0];
+    if (m_coord[0] == m_extent[0])
+      increment_outer();
     ++m_fullIndex;
   }
 
