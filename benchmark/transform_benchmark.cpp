@@ -47,25 +47,29 @@ static void BM_transform_in_place(benchmark::State &state) {
 }
 
 static void BM_transform_in_place_proxy(benchmark::State &state) {
-  run(state, [](auto &state_, auto &a, auto &b, auto &op) {
-    VariableProxy a_proxy(a);
-    VariableConstProxy b_proxy(b);
-    for (auto _ : state_) {
-      transform_in_place<Types>(a_proxy, b_proxy, op);
-    }
-  });
+  run(state,
+      [](auto &state_, auto &a, auto &b, auto &op) {
+        VariableProxy a_proxy(a);
+        VariableConstProxy b_proxy(b);
+        for (auto _ : state_) {
+          transform_in_place<Types>(a_proxy, b_proxy, op);
+        }
+      },
+      state.range(1));
 }
 
 static void BM_transform_in_place_slice(benchmark::State &state) {
-  run(state, [](auto &state_, auto &a, auto &b, auto &op) {
-    // Strictly speaking our counters are off by 1% since we exclude 1 out of
-    // 100 X elements here.
-    auto a_slice = a.slice({Dim::X, 0, 99});
-    auto b_slice = b.slice({Dim::X, 1, 100});
-    for (auto _ : state_) {
-      transform_in_place<Types>(a_slice, b_slice, op);
-    }
-  });
+  run(state,
+      [](auto &state_, auto &a, auto &b, auto &op) {
+        // Strictly speaking our counters are off by 1% since we exclude 1 out
+        // of 100 X elements here.
+        auto a_slice = a.slice({Dim::X, 0, 99});
+        auto b_slice = b.slice({Dim::X, 1, 100});
+        for (auto _ : state_) {
+          transform_in_place<Types>(a_slice, b_slice, op);
+        }
+      },
+      state.range(1));
 }
 
 // {false, true} -> variances
