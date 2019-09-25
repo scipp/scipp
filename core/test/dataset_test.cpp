@@ -253,7 +253,7 @@ TEST(DatasetTest, set_dense_data_with_sparse_coord) {
 
 TEST(DatasetTest, construct_from_proxy) {
   DatasetFactory3D factory;
-  const auto dataset = factory.make();
+  const auto dataset = factory.makeMasked();
   const DatasetConstProxy proxy(dataset);
   Dataset from_proxy(proxy);
   ASSERT_EQ(from_proxy, dataset);
@@ -261,7 +261,7 @@ TEST(DatasetTest, construct_from_proxy) {
 
 TEST(DatasetTest, construct_from_slice) {
   DatasetFactory3D factory;
-  const auto dataset = factory.make();
+  const auto dataset = factory.makeMasked();
   const auto slice = dataset.slice({Dim::X, 1});
   Dataset from_slice(slice);
   ASSERT_EQ(from_slice, dataset.slice({Dim::X, 1}));
@@ -269,7 +269,7 @@ TEST(DatasetTest, construct_from_slice) {
 
 TEST(DatasetTest, slice_temporary) {
   DatasetFactory3D factory;
-  auto dataset = factory.make().slice({Dim::X, 1});
+  auto dataset = factory.makeMasked().slice({Dim::X, 1});
   ASSERT_TRUE((std::is_same_v<decltype(dataset), Dataset>));
 }
 
