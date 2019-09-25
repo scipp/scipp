@@ -127,6 +127,22 @@ constexpr auto operator/(const T1 a, const ValueAndVariance<T2> b) noexcept {
                                            (b.value * b.value) /
                                            (b.value * b.value)};
 }
+template <class T1, class T2>
+constexpr auto operator<(const ValueAndVariance<T1> a, const T2 b) noexcept {
+  return ValueAndVariance{a.value < b, a.variance};
+}
+template <class T1, class T2>
+constexpr auto operator>(const ValueAndVariance<T1> a, const T2 b) noexcept {
+  return ValueAndVariance{a.value > b, a.variance};
+}
+template <class T1, class T2>
+constexpr auto operator>=(const ValueAndVariance<T1> a, const T2 b) noexcept {
+  return ValueAndVariance{a.value >= b, a.variance};
+}
+template <class T1, class T2>
+constexpr auto operator<=(const ValueAndVariance<T1> a, const T2 b) noexcept {
+  return ValueAndVariance{a.value <= b, a.variance};
+}
 
 /// Deduction guide for class ValueAndVariances. Using decltype to deal with
 /// potential mixed-type val and var arguments arising in binary operations

@@ -3,6 +3,7 @@
 set(TARGET_NAME "scipp-core")
 set(INC_FILES
     include/scipp/core/aligned_allocator.h
+    include/scipp/core/comparison.h
     include/scipp/core/dataset.h
     include/scipp/core/dataset_index.h
     include/scipp/core/dimensions.h
@@ -19,6 +20,7 @@ set(INC_FILES
 
 set(SRC_FILES
     counts.cpp
+    comparison.cpp
     data_array.cpp
     dataset.cpp
     dataset_binary_arithmetic.cpp

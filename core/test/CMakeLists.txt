@@ -7,6 +7,7 @@ add_executable(${TARGET_NAME} EXCLUDE_FROM_ALL
                concatenate_test.cpp
                coords_proxy_test.cpp
                counts_test.cpp
+               comparison_test.cpp
                data_array_comparison_test.cpp
                data_array_test.cpp
                data_proxy_test.cpp
