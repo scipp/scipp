@@ -655,42 +655,42 @@ class Slicer3d:
                     zaxis_title=titles["z"]))
 
 
-        y_x, z_x = np.meshgrid(self.slider_x[buttons_dims["y"]], self.slider_x[buttons_dims["z"]])
-        # print(y_x)
-        # print(z_x)
-        self.fig.data[0].x = np.ones_like(y_x) * self.slider[buttons_dims["x"]].value
-        self.fig.data[0].y = y_x
-        self.fig.data[0].z = z_x
+        # y_x, z_x = np.meshgrid(self.slider_x[buttons_dims["y"]], self.slider_x[buttons_dims["z"]])
+        # # print(y_x)
+        # # print(z_x)
+        # self.fig.data[0].x = np.ones_like(y_x) * self.slider[buttons_dims["x"]].value
+        # self.fig.data[0].y = y_x
+        # self.fig.data[0].z = z_x
 
-        x_y, z_y = np.meshgrid(self.slider_x[buttons_dims["x"]], self.slider_x[buttons_dims["z"]])
-        self.fig.data[1].x = x_y
-        self.fig.data[1].y = np.ones_like(x_y) * self.slider[buttons_dims["y"]].value
-        self.fig.data[1].z = z_y
+        # x_y, z_y = np.meshgrid(self.slider_x[buttons_dims["x"]], self.slider_x[buttons_dims["z"]])
+        # self.fig.data[1].x = x_y
+        # self.fig.data[1].y = np.ones_like(x_y) * self.slider[buttons_dims["y"]].value
+        # self.fig.data[1].z = z_y
 
-        x_z, y_z = np.meshgrid(self.slider_x[buttons_dims["x"]], self.slider_x[buttons_dims["y"]])
+        # x_z, y_z = np.meshgrid(self.slider_x[buttons_dims["x"]], self.slider_x[buttons_dims["y"]])
 
-        # print(self.slider_x[buttons_dims["x"]])
-        # print(buttons_dims["x"])
+        # # print(self.slider_x[buttons_dims["x"]])
+        # # print(buttons_dims["x"])
 
-        # setattr(self.fig.data[0], "x", x_z)
-        # setattr(self.fig.data[0], "y", y_z)
-        # setattr(self.fig.data[0], "z", np.ones_like(x_z) * self.slider[buttons_dims["z"]].value)
-        self.fig.data[2].x = x_z
-        self.fig.data[2].y = y_z
-        self.fig.data[2].z = np.ones_like(x_z) * self.slider[buttons_dims["z"]].value
+        # # setattr(self.fig.data[0], "x", x_z)
+        # # setattr(self.fig.data[0], "y", y_z)
+        # # setattr(self.fig.data[0], "z", np.ones_like(x_z) * self.slider[buttons_dims["z"]].value)
+        # self.fig.data[2].x = x_z
+        # self.fig.data[2].y = y_z
+        # self.fig.data[2].z = np.ones_like(x_z) * self.slider[buttons_dims["z"]].value
 
 
-        # self.slider_x[idim][change["new"]] * np.ones_like(getattr(self.parent.fig.data[self.idim], self.moving_coord[self.idim])))
+        # # self.slider_x[idim][change["new"]] * np.ones_like(getattr(self.parent.fig.data[self.idim], self.moving_coord[self.idim])))
 
-        # self.fig.data[0].x = self.slider_x[idim][self.slider[idim].value] * np.ones_like(self.fig.data[0].x)
-        # # print(self.slider_x[idim][self.slider[idim].value] * np.ones_like(self.fig.data[0].x))
-        # self.fig.data[0].surfacecolor = z
+        # # self.fig.data[0].x = self.slider_x[idim][self.slider[idim].value] * np.ones_like(self.fig.data[0].x)
+        # # # print(self.slider_x[idim][self.slider[idim].value] * np.ones_like(self.fig.data[0].x))
+        # # self.fig.data[0].surfacecolor = z
 
         self.update_cube()
 
         return
 
-    def update_cube(self):
+    def update_cube(self, update_coordinates=True):
         # The dimensions to be sliced have been saved in slider_dims
         self.cube = self.input_data
         # Slice along dimensions with active sliders
@@ -720,11 +720,12 @@ class Slicer3d:
         permutations = {"x": ["y", "z"], "y": ["x", "z"], "z": ["x", "y"]}
 
         for i, (key, val) in enumerate(sorted(vslices.items())):
-            xx, yy = np.meshgrid(self.slider_x[button_dims[permutations[key][0]]],
-                                 self.slider_x[button_dims[permutations[key][1]]])
-            setattr(self.fig.data[i], key, np.ones_like(xx) * val["loc"])
-            setattr(self.fig.data[i], permutations[key][0], xx)
-            setattr(self.fig.data[i], permutations[key][1], yy)
+            if update_coordinates:
+                xx, yy = np.meshgrid(self.slider_x[button_dims[permutations[key][0]]],
+                                     self.slider_x[button_dims[permutations[key][1]]])
+                setattr(self.fig.data[i], key, np.ones_like(xx) * val["loc"])
+                setattr(self.fig.data[i], permutations[key][0], xx)
+                setattr(self.fig.data[i], permutations[key][1], yy)
             self.fig.data[i].surfacecolor = val["slice"].values
 
         return
@@ -742,7 +743,7 @@ class Slicer3d:
         # This possibly has a large memory overhead, duplicating an entire 3D
         # data cube.
         if self.buttons[change["owner"].dim_str].value is None:
-            self.update_cube()
+            self.update_cube(update_coordinates=False)
         else:
             # Update only one slice
 
@@ -765,18 +766,30 @@ class Slicer3d:
                 #     button_dims[self.buttons[key].value.lower() == "y"] = val.dim
 
             # Now move slice
-            permutations = {"x": ["y", "z"], "y": ["x", "z"], "z": ["x", "y"]}
+            # permutations = {"x": ["y", "z"], "y": ["x", "z"], "z": ["x", "y"]}
             slice_indices = {"x": 0, "y": 1, "z": 2}
 
             # for i, (key, val) in enumerate(sorted(vslices.items())):
             # xx, yy = np.meshgrid(self.slider_x[button_dims[permutations[key][0]]],
                                  # self.slider_x[button_dims[permutations[key][1]]])
+            print(vslice.dims)
+            print(change["owner"].dim_str)
+
+            # Check if dimensions of arrays agree, if not, plot the transpose
+            # slice_dims = vslice.dims
+            button_values = [ self.buttons[str(dim)].value.lower() for dim in vslice.dims ]
+            # print(vslice.dims)
+            print(button_values)
+            values = vslice.values
+            if ord(button_values[0]) < ord(button_values[1]):
+                values = values.T
+
             ax_dim = self.buttons[key].value.lower()
             xy = getattr(self.fig.data[slice_indices[ax_dim]], ax_dim)
             setattr(self.fig.data[slice_indices[ax_dim]], ax_dim, xy / xy * loc)
             # setattr(self.fig.data[i], permutations[key][0], xx)
             # setattr(self.fig.data[i], permutations[key][1], yy)
-            self.fig.data[slice_indices[ax_dim]].surfacecolor = vslice.values
+            self.fig.data[slice_indices[ax_dim]].surfacecolor = values
 
 
         # # Check if dimensions of arrays agree, if not, plot the transpose
