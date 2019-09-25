@@ -389,6 +389,10 @@ public:
   Dataset &operator-=(const DataConstProxy &other);
   Dataset &operator*=(const DataConstProxy &other);
   Dataset &operator/=(const DataConstProxy &other);
+  Dataset &operator+=(const VariableConstProxy &other);
+  Dataset &operator-=(const VariableConstProxy &other);
+  Dataset &operator*=(const VariableConstProxy &other);
+  Dataset &operator/=(const VariableConstProxy &other);
   Dataset &operator+=(const DatasetConstProxy &other);
   Dataset &operator-=(const DatasetConstProxy &other);
   Dataset &operator*=(const DatasetConstProxy &other);
@@ -799,6 +803,10 @@ public:
   DatasetProxy operator-=(const DataConstProxy &other) const;
   DatasetProxy operator*=(const DataConstProxy &other) const;
   DatasetProxy operator/=(const DataConstProxy &other) const;
+  DatasetProxy operator+=(const VariableConstProxy &other) const;
+  DatasetProxy operator-=(const VariableConstProxy &other) const;
+  DatasetProxy operator*=(const VariableConstProxy &other) const;
+  DatasetProxy operator/=(const VariableConstProxy &other) const;
   DatasetProxy operator+=(const DatasetConstProxy &other) const;
   DatasetProxy operator-=(const DatasetConstProxy &other) const;
   DatasetProxy operator*=(const DatasetConstProxy &other) const;
@@ -961,6 +969,14 @@ SCIPP_CORE_EXPORT Dataset operator+(const DataConstProxy &lhs,
                                     const Dataset &rhs);
 SCIPP_CORE_EXPORT Dataset operator+(const DataConstProxy &lhs,
                                     const DatasetConstProxy &rhs);
+SCIPP_CORE_EXPORT Dataset operator+(const Dataset &lhs,
+                                    const VariableConstProxy &rhs);
+SCIPP_CORE_EXPORT Dataset operator+(const VariableConstProxy &lhs,
+                                    const Dataset &rhs);
+SCIPP_CORE_EXPORT Dataset operator+(const DatasetProxy &lhs,
+                                    const VariableConstProxy &rhs);
+SCIPP_CORE_EXPORT Dataset operator+(const VariableConstProxy &lhs,
+                                    const DatasetProxy &rhs);
 
 SCIPP_CORE_EXPORT Dataset operator-(const Dataset &lhs, const Dataset &rhs);
 SCIPP_CORE_EXPORT Dataset operator-(const Dataset &lhs,
@@ -977,6 +993,14 @@ SCIPP_CORE_EXPORT Dataset operator-(const DataConstProxy &lhs,
                                     const Dataset &rhs);
 SCIPP_CORE_EXPORT Dataset operator-(const DataConstProxy &lhs,
                                     const DatasetConstProxy &rhs);
+SCIPP_CORE_EXPORT Dataset operator-(const Dataset &lhs,
+                                    const VariableConstProxy &rhs);
+SCIPP_CORE_EXPORT Dataset operator-(const VariableConstProxy &lhs,
+                                    const Dataset &rhs);
+SCIPP_CORE_EXPORT Dataset operator-(const DatasetProxy &lhs,
+                                    const VariableConstProxy &rhs);
+SCIPP_CORE_EXPORT Dataset operator-(const VariableConstProxy &lhs,
+                                    const DatasetProxy &rhs);
 
 SCIPP_CORE_EXPORT Dataset operator*(const Dataset &lhs, const Dataset &rhs);
 SCIPP_CORE_EXPORT Dataset operator*(const Dataset &lhs,
@@ -993,6 +1017,14 @@ SCIPP_CORE_EXPORT Dataset operator*(const DataConstProxy &lhs,
                                     const Dataset &rhs);
 SCIPP_CORE_EXPORT Dataset operator*(const DataConstProxy &lhs,
                                     const DatasetConstProxy &rhs);
+SCIPP_CORE_EXPORT Dataset operator*(const Dataset &lhs,
+                                    const VariableConstProxy &rhs);
+SCIPP_CORE_EXPORT Dataset operator*(const VariableConstProxy &lhs,
+                                    const Dataset &rhs);
+SCIPP_CORE_EXPORT Dataset operator*(const DatasetProxy &lhs,
+                                    const VariableConstProxy &rhs);
+SCIPP_CORE_EXPORT Dataset operator*(const VariableConstProxy &lhs,
+                                    const DatasetProxy &rhs);
 
 SCIPP_CORE_EXPORT Dataset operator/(const Dataset &lhs,
                                     const DatasetConstProxy &rhs);
@@ -1009,6 +1041,14 @@ SCIPP_CORE_EXPORT Dataset operator/(const DataConstProxy &lhs,
                                     const Dataset &rhs);
 SCIPP_CORE_EXPORT Dataset operator/(const DataConstProxy &lhs,
                                     const DatasetConstProxy &rhs);
+SCIPP_CORE_EXPORT Dataset operator/(const Dataset &lhs,
+                                    const VariableConstProxy &rhs);
+SCIPP_CORE_EXPORT Dataset operator/(const VariableConstProxy &lhs,
+                                    const Dataset &rhs);
+SCIPP_CORE_EXPORT Dataset operator/(const DatasetProxy &lhs,
+                                    const VariableConstProxy &rhs);
+SCIPP_CORE_EXPORT Dataset operator/(const VariableConstProxy &lhs,
+                                    const DatasetProxy &rhs);
 
 SCIPP_CORE_EXPORT DataArray histogram(const DataConstProxy &sparse,
                                       const Variable &binEdges);

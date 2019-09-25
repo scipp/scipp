@@ -613,6 +613,8 @@ public:
   bool operator!=(const VariableConstProxy &other) const;
   Variable operator-() const;
 
+  auto &underlying() const { return *m_variable; }
+
 protected:
   friend class Variable;
 
