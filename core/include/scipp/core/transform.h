@@ -445,7 +445,7 @@ template <class Range> static auto begin_or_value(Range &&r) noexcept {
 }
 template <class Range> static auto end_or_value(Range &&r) noexcept {
   if constexpr (detail::is_broadcast_v<std::decay_t<Range>>)
-    return nullptr;
+    return r;
   else
     return r.end();
 }
@@ -473,8 +473,7 @@ template <class Tuple> static void increment(Tuple &&t) noexcept {
   std::apply(do_increment, t);
 }
 static auto do_dereference = [](auto &&... r) noexcept {
-  return std::tuple<decltype(maybe_dereference(r)) &...>{
-      maybe_dereference(r)...};
+  return std::forward_as_tuple(maybe_dereference(r)...);
 };
 template <class Tuple> static auto dereference(Tuple &&t) noexcept {
   return std::apply(do_dereference, t);
