@@ -726,7 +726,15 @@ class Slicer3d:
                 setattr(self.fig.data[i], key, np.ones_like(xx) * val["loc"])
                 setattr(self.fig.data[i], permutations[key][0], xx)
                 setattr(self.fig.data[i], permutations[key][1], yy)
-            self.fig.data[i].surfacecolor = val["slice"].values
+
+            # button_values = [ self.buttons[str(dim)].value.lower() for dim in val["slice"].dims ]
+            # # # print(vslice.dims)
+            # # print(button_values)
+            # values = val["slice"].values
+            # if ord(button_values[0]) < ord(button_values[1]):
+            #     values = values.T
+            self.fig.data[i].surfacecolor = self.check_transpose(val["slice"])
+
 
         return
 
@@ -772,24 +780,25 @@ class Slicer3d:
             # for i, (key, val) in enumerate(sorted(vslices.items())):
             # xx, yy = np.meshgrid(self.slider_x[button_dims[permutations[key][0]]],
                                  # self.slider_x[button_dims[permutations[key][1]]])
-            print(vslice.dims)
-            print(change["owner"].dim_str)
-
-            # Check if dimensions of arrays agree, if not, plot the transpose
-            # slice_dims = vslice.dims
-            button_values = [ self.buttons[str(dim)].value.lower() for dim in vslice.dims ]
             # print(vslice.dims)
-            print(button_values)
-            values = vslice.values
-            if ord(button_values[0]) < ord(button_values[1]):
-                values = values.T
+            # print(change["owner"].dim_str)
+
+            # # Check if dimensions of arrays agree, if not, plot the transpose
+            # # slice_dims = vslice.dims
+            # button_values = [ self.buttons[str(dim)].value.lower() for dim in vslice.dims ]
+            # # print(vslice.dims)
+            # print(button_values)
+            # values = vslice.values
+            # if ord(button_values[0]) < ord(button_values[1]):
+            #     values = values.T
+            # values = self.check_transpose(vslice)
 
             ax_dim = self.buttons[key].value.lower()
             xy = getattr(self.fig.data[slice_indices[ax_dim]], ax_dim)
             setattr(self.fig.data[slice_indices[ax_dim]], ax_dim, xy / xy * loc)
             # setattr(self.fig.data[i], permutations[key][0], xx)
             # setattr(self.fig.data[i], permutations[key][1], yy)
-            self.fig.data[slice_indices[ax_dim]].surfacecolor = values
+            self.fig.data[slice_indices[ax_dim]].surfacecolor = self.check_transpose(vslice)
 
 
         # # Check if dimensions of arrays agree, if not, plot the transpose
@@ -799,6 +808,15 @@ class Slicer3d:
         # if self.show_variances:
         #     self.update_z3d(vslice.variances, transp, self.cb["log"], 1)
         return
+
+    def check_transpose(self, vslice):
+        # Check if dimensions of arrays agree, if not, plot the transpose
+        button_values = [ self.buttons[str(dim)].value.lower() for dim in vslice.dims ]
+        values = vslice.values
+        if ord(button_values[0]) < ord(button_values[1]):
+            values = values.T
+        return values
+
 
     # def update_z3d(self, values, transp, log, indx):
     #     if transp:
