@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
+#include <algorithm>
+
 #include "dataset_test_common.h"
 
 Variable makeRandom(const Dimensions &dims) {
@@ -25,12 +27,6 @@ DatasetFactory3D::DatasetFactory3D(const scipp::index lx_,
 
   base.setAttr("attr_scalar", makeVariable<double>(rand(1).front()));
   base.setAttr("attr_x", makeVariable<double>({Dim::X, lx}, rand(lx)));
-
-  auto masks{std::vector<bool>(lx)};
-  for (int i = 0; i < lx; ++i) {
-    masks[i] = i % 2 ? true : false;
-  }
-  base.setMasks("mask", makeVariable<bool>({Dim::X, lx}, std::move(masks)));
 }
 
 Dataset DatasetFactory3D::make() {
@@ -53,6 +49,16 @@ Dataset DatasetFactory3D::make() {
 
   dataset.setData("data_scalar", makeVariable<double>(rand(1).front()));
 
+  return dataset;
+}
+
+Dataset DatasetFactory3D::makeMasked() {
+  Dataset dataset{make()};
+  auto masks{std::vector<bool>(lx)};
+  for (int i = 0; i < lx; ++i) {
+    masks[i] = i % 2 ? true : false;
+  }
+  dataset.setMasks("mask", makeVariable<bool>({Dim::X, lx}, std::move(masks)));
   return dataset;
 }
 

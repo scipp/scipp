@@ -38,6 +38,7 @@ public:
                    const scipp::index lz = 6);
 
   Dataset make();
+  Dataset makeMasked();
 
 private:
   const scipp::index lx;

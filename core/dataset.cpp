@@ -70,7 +70,7 @@ Dataset::Dataset(const std::map<std::string, DataConstProxy> &data) {
 
 /// Removes all data items from the Dataset.
 ///
-/// Coordinates, labels and attributes are not modified.
+/// Coordinates, labels, attributes and masks are not modified.
 /// This operation invalidates any proxy objects creeated from this dataset.
 void Dataset::clear() {
   m_data.clear();

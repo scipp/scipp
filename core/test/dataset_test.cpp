@@ -21,21 +21,21 @@ TEST(DatasetTest, construct_default) { ASSERT_NO_THROW(Dataset d); }
 
 TEST(DatasetTest, clear) {
   DatasetFactory3D factory;
-  auto dataset = factory.make();
+  auto dataset = factory.makeMasked();
 
   ASSERT_FALSE(dataset.empty());
   ASSERT_FALSE(dataset.coords().empty());
   ASSERT_FALSE(dataset.labels().empty());
-  ASSERT_FALSE(dataset.masks().empty());
   ASSERT_FALSE(dataset.attrs().empty());
+  ASSERT_FALSE(dataset.masks().empty());
 
   ASSERT_NO_THROW(dataset.clear());
 
   ASSERT_TRUE(dataset.empty());
   ASSERT_FALSE(dataset.coords().empty());
   ASSERT_FALSE(dataset.labels().empty());
-  ASSERT_FALSE(dataset.masks().empty());
   ASSERT_FALSE(dataset.attrs().empty());
+  ASSERT_FALSE(dataset.masks().empty());
 }
 
 TEST(DatasetTest, erase_single_non_existant) {
