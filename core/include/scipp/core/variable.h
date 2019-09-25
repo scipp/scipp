@@ -789,13 +789,13 @@ Variable operator/(const boost::units::quantity<T> &quantity, Variable a) {
 
 template <typename T>
 std::enable_if_t<std::is_arithmetic_v<T>, Variable>
-operator*(T v, units::Unit unit) {
+operator*(T v, const units::Unit &unit) {
   return makeVariable<underlying_type_t<T>>({}, unit, {v});
 }
 
 template <typename T>
 std::enable_if_t<std::is_arithmetic_v<T>, Variable>
-operator/(T v, units::Unit unit) {
+operator/(T v, const units::Unit &unit) {
   return makeVariable<underlying_type_t<T>>(
       {}, units::Unit(units::dimensionless) / unit, {v});
 }

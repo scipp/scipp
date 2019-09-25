@@ -54,7 +54,47 @@ void init_units_neutron(py::module &m) {
              }
            })
       .def(py::self == py::self)
-      .def(py::self != py::self);
+      .def(py::self != py::self)
+      .def("__rmul__",
+           [](const units::Unit &self, float scalar) -> core::Variable {
+             using namespace scipp::core;
+             return scalar * self;
+           })
+      .def("__rmul__",
+           [](const units::Unit &self, double scalar) -> core::Variable {
+             using namespace scipp::core;
+             return scalar * self;
+           })
+      .def("__rmul__",
+           [](const units::Unit &self, int32_t scalar) -> core::Variable {
+             using namespace scipp::core;
+             return scalar * self;
+           })
+      .def("__rmul__",
+           [](const units::Unit &self, int64_t scalar) -> core::Variable {
+             using namespace scipp::core;
+             return scalar * self;
+           })
+      .def("__rtruediv__",
+           [](const units::Unit &self, float scalar) -> core::Variable {
+             using namespace scipp::core;
+             return scalar / self;
+           })
+      .def("__rtruediv__",
+           [](const units::Unit &self, double scalar) -> core::Variable {
+             using namespace scipp::core;
+             return scalar / self;
+           })
+      .def("__rtruediv__",
+           [](const units::Unit &self, int32_t scalar) -> core::Variable {
+             using namespace scipp::core;
+             return scalar / self;
+           })
+      .def("__rtruediv__",
+           [](const units::Unit &self, int64_t scalar) -> core::Variable {
+             using namespace scipp::core;
+             return scalar / self;
+           });
 
   auto units = m.def_submodule("units");
   units.attr("dimensionless") = units::Unit(units::dimensionless);
