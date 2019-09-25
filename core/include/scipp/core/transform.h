@@ -461,22 +461,23 @@ template <class Range> static auto &maybe_dereference(Range &&r) noexcept {
 }
 
 template <class... Ranges> static auto begin(Ranges &&... r) noexcept {
-  return std::tuple{begin_or_value(r)...};
+  return std::tuple{begin_or_value(std::forward<Ranges>(r))...};
 }
 template <class... Ranges> static auto end(Ranges &&... r) noexcept {
-  return std::tuple{end_or_value(r)...};
+  return std::tuple{end_or_value(std::forward<Ranges>(r))...};
 }
 static auto do_increment = [](auto &&... r) noexcept {
-  (maybe_increment(r), ...);
+  (maybe_increment(std::forward<decltype(r)>(r)), ...);
 };
 template <class Tuple> static void increment(Tuple &&t) noexcept {
-  std::apply(do_increment, t);
+  std::apply(do_increment, std::forward<Tuple>(t));
 }
 static auto do_dereference = [](auto &&... r) noexcept {
-  return std::forward_as_tuple(maybe_dereference(r)...);
+  return std::forward_as_tuple(
+      maybe_dereference(std::forward<decltype(r)>(r))...);
 };
 template <class Tuple> static auto dereference(Tuple &&t) noexcept {
-  return std::apply(do_dereference, t);
+  return std::apply(do_dereference, std::forward<Tuple>(t));
 }
 } // namespace iter_detail
 
