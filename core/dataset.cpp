@@ -59,7 +59,7 @@ auto makeProxyItems(const Dimensions &dims, T1 &coords, T2 *sparse = nullptr) {
 }
 
 Dataset::Dataset(const DatasetConstProxy &proxy)
-    : Dataset(proxy, proxy.coords(), proxy.labels(), proxy.attrs()) {}
+    : Dataset(proxy, proxy.coords(), proxy.labels(), proxy.attrs(), proxy.masks()) {}
 
 Dataset::Dataset(const DataConstProxy &data) { setData(data.name(), data); }
 
@@ -286,7 +286,7 @@ void Dataset::setData(const std::string &name, Variable data) {
 
 /// Set (insert or replace) data item with given name.
 ///
-/// Coordinates, labels, and attributes of the data array are added to the
+/// Coordinates, labels, attributes and masks of the data array are added to the
 /// dataset. Throws if there are existing but mismatching coords, labels, or
 /// attributes. Throws if the provided data brings the dataset into an
 /// inconsistent state (mismatching dtype, unit, or dimensions).

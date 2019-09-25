@@ -143,7 +143,8 @@ Dataset histogram(const Dataset &dataset, const Dim &dim) {
 
 Dataset merge(const DatasetConstProxy &a, const DatasetConstProxy &b) {
   return Dataset(union_(a, b), union_(a.coords(), b.coords()),
-                 union_(a.labels(), b.labels()), union_(a.attrs(), b.attrs()));
+                 union_(a.labels(), b.labels()), union_(a.attrs(), b.attrs()),
+                 mask_union_(a.masks(), b.masks()));
 }
 
 /// Concatenate a and b, assuming that a and b contain bin edges.

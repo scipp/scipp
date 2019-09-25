@@ -264,14 +264,18 @@ public:
   explicit Dataset(const DataConstProxy &data);
   explicit Dataset(const std::map<std::string, DataConstProxy> &data);
 
-  template <class DataMap, class CoordMap, class LabelsMap, class AttrMap>
-  Dataset(DataMap data, CoordMap coords, LabelsMap labels, AttrMap attrs) {
+  template <class DataMap, class CoordMap, class LabelsMap, class AttrMap,
+            class MasksMap>
+  Dataset(DataMap data, CoordMap coords, LabelsMap labels, AttrMap attrs,
+          MasksMap masks) {
     for (auto &&[dim, coord] : coords)
       setCoord(dim, std::move(coord));
     for (auto &&[name, labs] : labels)
       setLabels(std::string(name), std::move(labs));
     for (auto &&[name, attr] : attrs)
       setAttr(std::string(name), std::move(attr));
+    for (auto &&[name, mask] : masks)
+      setMasks(std::string(name), std::move(mask));
     for (auto &&[name, item] : data)
       setData(std::string(name), std::move(item));
   }
@@ -366,7 +370,7 @@ public:
   void setData(const std::string &name, const VariableConstProxy &data) {
     setData(name, Variable(data));
   }
-  void setMasks(const std::string &name, const VariableConstProxy &mask){
+  void setMasks(const std::string &name, const VariableConstProxy &mask) {
     setMasks(name, Variable(mask));
   }
   void setSparseCoord(const std::string &name,
@@ -655,6 +659,24 @@ template <class T1, class T2> auto union_(const T1 &a, const T2 &b) {
       expect::equals(item, it->second);
     else
       out.emplace(key, item);
+  }
+  return out;
+}
+
+template <class T1, class T2> auto mask_union_(const T1 &a, const T2 &b) {
+  std::map<typename T1::key_type, typename T1::mapped_type> out;
+
+  for (const auto &[key, item] : a)
+    out.emplace(key, item);
+
+  for (const auto &[key, item] : b) {
+    // const auto it = a.find(key);
+    out.emplace(key, item);
+    // if (it == a.end()) {
+    //   out.insert_or_assign(key, item);
+    // }
+    // TODO this expect a Variable, but has VariableConstProxy, what do?
+    // out[key] = it != a.end() ? it->second + item : item;
   }
   return out;
 }
