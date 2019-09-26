@@ -114,6 +114,8 @@ static constexpr auto value_and_maybe_variance(const T &range,
     return range[i];
   }
 }
+/// This is a temporary duplication and should eventually fully replace
+/// value_and_maybe_variance.
 template <class T>
 static constexpr decltype(auto)
 value_and_maybe_variance2(T &&range, const scipp::index i) {
@@ -416,7 +418,7 @@ template <class Op, class SparseOp> struct overloaded_sparse : Op, SparseOp {
       // passed BY REFERENCE and NOT BY VALUE. Passing by value leads to
       // construction of expressions of values on the stack, which are then
       // returned from the operator. One way to identify this is using
-      // address-sanitizer, which find a `stack-use-after-scope`.
+      // address-sanitizer, which finds a `stack-use-after-scope`.
       return Op::template operator()<Ts...>(std::forward<Ts>(args)...);
     else
       return Op::template operator()(std::forward<Ts>(args)...);
