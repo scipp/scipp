@@ -192,6 +192,7 @@ using const_element_type_t = const typename element_type<T>::type;
 /// sparse and non-sparse data.
 template <class T> struct broadcast {
   constexpr auto operator[](const scipp::index) const noexcept { return value; }
+  constexpr auto data() const noexcept { return *this; }
   T value;
 };
 template <class T> broadcast(T)->broadcast<T>;
@@ -437,55 +438,58 @@ static constexpr void call_in_place(Op &&op, Args &&... args) noexcept {
 }
 
 namespace iter_detail {
-template <class Range> static auto begin_or_value(Range &&r) noexcept {
-  if constexpr (detail::is_broadcast_v<std::decay_t<Range>>)
-    return r;
-  else
-    return r.begin();
-}
-template <class Range> static auto end_or_value(Range &&r) noexcept {
-  if constexpr (detail::is_broadcast_v<std::decay_t<Range>>)
-    return r;
-  else
-    return r.end();
-}
-template <class Range> static void maybe_increment(Range &&r) noexcept {
-  if constexpr (!detail::is_broadcast_v<std::decay_t<Range>>)
-    ++r;
-}
-template <class Range> static auto &maybe_dereference(Range &&r) noexcept {
-  if constexpr (detail::is_broadcast_v<std::decay_t<Range>>)
-    return r.value;
-  else
-    return *r;
+
+template <class T, size_t... I>
+static constexpr void increment(T &&indices,
+                                std::index_sequence<I...>) noexcept {
+  auto inc = [](auto &&i) {
+    if constexpr (std::is_same_v<std::decay_t<decltype(i)>, ViewIndex>)
+      i.increment();
+    else
+      ++i;
+  };
+  (inc(std::get<I>(indices)), ...);
 }
 
-template <class... Ranges> static auto begin(Ranges &&... r) noexcept {
-  return std::tuple{begin_or_value(std::forward<Ranges>(r))...};
+template <class T> struct is_VariableView : std::false_type {};
+template <class T> struct is_VariableView<VariableView<T>> : std::true_type {};
+template <class T>
+inline constexpr bool is_VariableView_v = is_VariableView<T>::value;
+
+template <class T> static constexpr auto begin_index(T &&iterable) noexcept {
+  if constexpr (is_VariableView_v<std::decay_t<T>>)
+    return iterable.begin_index();
+  else
+    return scipp::index(0);
 }
-template <class... Ranges> static auto end(Ranges &&... r) noexcept {
-  return std::tuple{end_or_value(std::forward<Ranges>(r))...};
+
+template <class T> static constexpr auto end_index(T &&iterable) noexcept {
+  if constexpr (is_VariableView_v<std::decay_t<T>>)
+    return iterable.end_index();
+  else
+    return scipp::size(iterable);
 }
-static auto do_increment = [](auto &&... r) noexcept {
-  (maybe_increment(std::forward<decltype(r)>(r)), ...);
-};
-template <class Tuple> static void increment(Tuple &&t) noexcept {
-  std::apply(do_increment, std::forward<Tuple>(t));
+
+template <class T> static constexpr auto get(const T &index) noexcept {
+  if constexpr (std::is_integral_v<T>)
+    return index;
+  else
+    return index.get();
 }
-static auto do_dereference = [](auto &&... r) noexcept {
-  return std::forward_as_tuple(
-      maybe_dereference(std::forward<decltype(r)>(r))...);
-};
-template <class Tuple> static auto dereference(Tuple &&t) noexcept {
-  return std::apply(do_dereference, std::forward<Tuple>(t));
-}
+
 } // namespace iter_detail
 
-template <class Op, class Args>
-static constexpr void call_in_place2(Op &&op, Args &&args) noexcept {
+template <class Op, class Indices, class... Args, size_t... Is>
+static constexpr void call_in_place3(Op &&op, const Indices &indices,
+                                     std::index_sequence<Is...>,
+                                     Args &&... args) noexcept {
   static_assert(
-      std::is_same_v<decltype(std::apply(op, std::forward<Args>(args))), void>);
-  std::apply(op, std::forward<Args>(args));
+      std::is_same_v<
+          decltype(op(std::forward<Args>(args)
+                          .data()[iter_detail::get(std::get<Is>(indices))]...)),
+          void>);
+  op(std::forward<Args>(args)
+         .data()[iter_detail::get(std::get<Is>(indices))]...);
 }
 
 /// Helper class wrapping functions for in-place transform.
@@ -553,12 +557,13 @@ template <bool dry_run> struct in_place {
       return;
     // WARNING: Do not parallelize this loop in all cases! The output may have a
     // dimension with stride zero so parallelization must be done with care.
-    for (auto its = iter_detail::begin(vals, other...),
-              end = iter_detail::end(vals, other...);
-         std::get<0>(its) != std::get<0>(end); iter_detail::increment(its))
-      call_in_place2(op, iter_detail::dereference(its));
-    // for (scipp::index i = 0; i < scipp::size(vals); ++i)
-    //  call_in_place(op, vals[i], other[i]...);
+    auto indices = std::tuple{iter_detail::begin_index(vals),
+                              iter_detail::begin_index(other)...};
+    const auto end = iter_detail::end_index(vals);
+    for (; std::get<0>(indices) != end; iter_detail::increment(
+             indices, std::make_index_sequence<sizeof...(Ts) + 1>{}))
+      call_in_place3(op, indices, std::make_index_sequence<sizeof...(Ts) + 1>{},
+                     vals, other...);
   }
 
   /// Helper for in-place transform implementation, performing branching between

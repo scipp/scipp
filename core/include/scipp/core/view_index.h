@@ -53,6 +53,9 @@ public:
   bool operator==(const ViewIndex &other) const {
     return m_fullIndex == other.m_fullIndex;
   }
+  bool operator!=(const ViewIndex &other) const {
+    return m_fullIndex != other.m_fullIndex;
+  }
 
 private:
   // NOTE:
