@@ -240,6 +240,8 @@ def convert_TableWorkspace_to_dataset(ws, error_connection=None):
 
     # Types available in TableWorkspace that can not be loaded into scipp
     blacklist_types = []
+    # Types which will fail if they have defined variance
+    blacklist_variance_types = ["str"]
 
     variables = {}
     for i in range(n_columns):
@@ -252,11 +254,20 @@ def convert_TableWorkspace_to_dataset(ws, error_connection=None):
                                                values=ws.column(i))
         elif data_name in error_connection:
             # This data has error availble
-            error_index = error_connection[data_name]
-            variance = np.array(ws.column(error_index))**2
+            error_name = error_connection[data_name]
+            error_index = columnNames.index(error_name)
+            if (columnTypes[error_index] in blacklist_variance_types
+               or columnTypes[i] in blacklist_variance_types):
+                raise RuntimeError(
+                    "Data with variance can not have type string. \n"
+                    + "Data:     " + str(data_name) + "\n"
+                    + "Variance: " + str(error_name) + "\n"
+                    "Supply error_connection using keyword argument.")
+
+            variance = np.array(ws.column(error_name))**2
             variables[data_name] = sc.Variable([sc.Dim.Row],
-                                               values=ws.column(i),
-                                               variance=variance)
+                                               values=np.array(ws.column(i)),
+                                               variances=variance)
         elif data_name not in error_connection.values():
             # This data is not an error for another dataset, and has no error
             variables[data_name] = sc.Variable([sc.Dim.Row],
