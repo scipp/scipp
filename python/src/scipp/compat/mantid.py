@@ -160,10 +160,113 @@ def convert_EventWorkspace_to_dataset(ws, load_pulse_times, EventType):
         coords_labs_data["data"] = weights
     return sc.DataArray(**coords_labs_data)
 
+def convert_TableWorkspace_to_dataset(ws, error_connection=None):
+    """
+    Converts from a Mantid TableWorkspace to a scipp dataset. A TableWorkspace
+    have optional declaration of connection between data and error using the
+    plottype which can be none, X, Y, Z, Xerr, Yerr. This function collects
+    the data and its error into a single scipp variable if there is no ambiguity
+    in what column contains the error for what data column. This means a maximum
+    of one Xerr and one Yerr column. For more advanced TableWorkspaces, the user
+    can specify the connection between data and error manually using the
+    error_connections keyword argument, which overwrites automatic assignment.
+
+    Parameters
+    ----------
+        ws : Mantid TableWorkspace
+            Mantid TableWorkspace to be converted into scipp dataset
+
+    Keyword arguments
+    -----------------
+        error_connection : Dict
+            Dict with data column names as keys to names of their error column
+    """
+
+    # Extract information from workspace
+    n_columns = ws.columnCount()
+    columnNames = ws.getColumnNames() # list of names matching each column
+    columnTypes = ws.columnTypes() # list of types matching each column
+
+    if error_connection is None:
+        # Generate error connection
+        error_connection = {}
+        # Dictionary with data column keys for names of their error columns
+        # Uses the plottype that is built into TableWorkspace
+        plottype_list = []
+        for i in range(n_columns):
+            plottype_list.append(ws.getPlotType(i))
+
+        # Relevant plottype indices
+        X_index = 1
+        Xerr_index = 4
+        Y_index = 2
+        Yerr_index = 5
+
+        if plottype_list.count(Xerr_index) > 1: # More than one Xerr
+            raise RuntimeError(
+                "Multiple Xerr columns in TableWorkspace, error_connection "
+                "need to be specified manually for the scipp "
+                "convert_TableWorkspace_to_dataset function.")
+        elif plottype_list.count(Xerr_index) is 1:
+            error_index = plottype_list.index(Xerr_index)
+            errorName = columNames[error_index]
+            if plottype_list.count(X_index) is 1: # Unique X for Xerr
+                data_index = plottype_list.index(X_index)
+                data_name = columnNames[data_index]
+                error_connection[data_name] = errorName
+            else:
+                raise RuntimeError(
+                    "No unique X data to be matched with Xerr column, "
+                    "error_connection need to be specified manually for the "
+                    "scipp convert_TableWorkspace_to_dataset function.")
+
+        if plottype_list.count(Yerr_index) > 1: # More than one Yerr
+            raise RuntimeError(
+                "Multiple Yerr columns in TableWorkspace, error_connection "
+                "need to be specified manually for the scipp "
+                "convert_TableWorkspace_to_dataset function.")
+        elif plottype_list.count(Yerr_index) is 1:
+            error_index = plottype_list.index(Yerr_index)
+            errorName = columNames[error_index]
+            if plottype_list.count(Y_index) is 1: # Unique Y for Yerr
+                data_index = plottype_list.index(Y_index)
+                data_name = columnNames[data_index]
+                error_connection[data_name] = errorName
+            else:
+                raise RuntimeError(
+                    "No unique Y data to be matched with Yerr column, "
+                    "error_connection need to be specified manually for the "
+                    "scipp convert_TableWorkspace_to_dataset function.")
+
+    # Types available in TableWorkspace that can not be loaded into scipp
+    blacklist_types = []
+
+    variables = {}
+    for i in range(n_columns):
+        if columnTypes[i] in blacklist_types:
+            continue # skips loading data of this type
+
+        data_name = columnNames[i]
+        if error_connection is None:
+            variables[data_name] = sc.Variable([sc.Dim.Row],
+                                               values=ws.column(i))
+        elif data_name in error_connection:
+            # This data has error availble
+            error_index = error_connection[data_name]
+            variables[data_name] = sc.Variable([sc.Dim.Row],
+                                               values=ws.column(i),
+                                               variance=ws.colum(error_index))
+        elif data_name not in error_connection.values():
+            # This data is not an error for another dataset, and has no error
+            variables[data_name] = sc.Variable([sc.Dim.Row],
+                                               values=ws.column(i))
+
+    return sc.Dataset(variables) # Return scipp dataset built from the variables
 
 def load(filename="",
          load_pulse_times=True,
          instrument_filename=None,
+         error_connection=None,
          **kwargs):
     """
     Wrapper function to provide a load method for a Nexus file, hiding mantid
@@ -215,4 +318,6 @@ def load(filename="",
     if ws.id() == 'EventWorkspace':
         return convert_EventWorkspace_to_dataset(ws, load_pulse_times,
                                                  EventType)
+    if ws.id() == 'TableWorkspace':
+        return convert_TableWorkspace_to_dataset(ws, error_connection)
     raise RuntimeError('Unsupported workspace type')
