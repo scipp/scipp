@@ -119,6 +119,24 @@ Variable &Variable::operator/=(const double value) & {
   return divide_equals(*this, makeVariable<double>(value));
 }
 
+template <class T1, class T2> T1 &or_equals(T1 &variable, const T2 &other) {
+  transform_in_place<pair_self_t<bool>>(
+      variable, other,
+      overloaded{[](auto &var_, const auto &other_) { var_ |= other_; },
+                 [](units::Unit &varUnit, const units::Unit &otherUnit) {
+                   expect::unit(varUnit, units::dimensionless);
+                   expect::unit(otherUnit, units::dimensionless);
+                 }});
+  return variable;
+}
+
+Variable &Variable::operator|=(const Variable &other) & {
+  return or_equals(*this, other);
+}
+Variable &Variable::operator|=(const VariableConstProxy &other) & {
+  return or_equals(*this, other);
+}
+
 VariableProxy VariableProxy::operator+=(const Variable &other) const {
   return plus_equals(*this, other);
 }
@@ -157,6 +175,13 @@ VariableProxy VariableProxy::operator/=(const VariableConstProxy &other) const {
 }
 VariableProxy VariableProxy::operator/=(const double value) const {
   return divide_equals(*this, makeVariable<double>(value));
+}
+
+VariableProxy VariableProxy::operator|=(const Variable &other) const {
+  return or_equals(*this, other);
+}
+VariableProxy VariableProxy::operator|=(const VariableConstProxy &other) const {
+  return or_equals(*this, other);
 }
 
 Variable VariableConstProxy::operator-() const {

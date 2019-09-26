@@ -356,6 +356,9 @@ public:
     return *this /= quantity.value();
   }
 
+  Variable &operator|=(const Variable &other) &;
+  Variable &operator|=(const VariableConstProxy &other) &;
+
   const VariableConcept &data() const && = delete;
   const VariableConcept &data() const & { return *m_object; }
   VariableConcept &data() && = delete;
@@ -708,6 +711,8 @@ public:
   VariableProxy operator/=(const Variable &other) const;
   VariableProxy operator/=(const VariableConstProxy &other) const;
   VariableProxy operator/=(const double value) const;
+  VariableProxy operator|=(const Variable &other) const;
+  VariableProxy operator|=(const VariableConstProxy &other) const;
 
   template <class T> void setVariances(Vector<T> &&v) const;
 
