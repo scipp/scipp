@@ -96,8 +96,6 @@ struct has_variances<ValueAndVariance<T>> : std::true_type {};
 template <class T>
 struct has_variances<ValuesAndVariances<T>> : std::true_type {};
 template <class T>
-struct has_variances<ValuesAndVariances<T> &> : std::true_type {};
-template <class T>
 inline constexpr bool has_variances_v = has_variances<T>::value;
 
 /// Helper for the transform implementation to unify iteration of data with and
@@ -206,8 +204,6 @@ struct element_type<ValuesAndVariances<const sparse_container<T>>> {
   using type = T;
 };
 template <class T> using element_type_t = typename element_type<T>::type;
-template <class T>
-using const_element_type_t = const typename element_type<T>::type;
 
 /// Broadcast a constant to arbitrary size. Helper for TransformSparse.
 ///
@@ -453,11 +449,6 @@ static constexpr void increment_impl(T &&indices,
 template <class T> static constexpr void increment(T &indices) noexcept {
   increment_impl(indices, std::make_index_sequence<std::tuple_size_v<T>>{});
 }
-
-template <class T> struct is_VariableView : std::false_type {};
-template <class T> struct is_VariableView<VariableView<T>> : std::true_type {};
-template <class T>
-inline constexpr bool is_VariableView_v = is_VariableView<T>::value;
 
 template <class T> static constexpr auto begin_index(T &&iterable) noexcept {
   if constexpr (is_VariableView_v<std::decay_t<T>>)

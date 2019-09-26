@@ -180,6 +180,11 @@ VariableView<T> makeVariableView(T *variable, const scipp::index offset,
   return VariableView<T>(variable, offset, targetDimensions, dimensions);
 }
 
+template <class T> struct is_VariableView : std::false_type {};
+template <class T> struct is_VariableView<VariableView<T>> : std::true_type {};
+template <class T>
+inline constexpr bool is_VariableView_v = is_VariableView<T>::value;
+
 } // namespace scipp::core
 
 #endif // VARIABLE_VIEW_H
