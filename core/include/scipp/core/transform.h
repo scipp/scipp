@@ -440,8 +440,8 @@ static constexpr void call_in_place(Op &&op, Args &&... args) noexcept {
 namespace iter_detail {
 
 template <class T, size_t... I>
-static constexpr void increment(T &&indices,
-                                std::index_sequence<I...>) noexcept {
+static constexpr void increment_impl(T &&indices,
+                                     std::index_sequence<I...>) noexcept {
   auto inc = [](auto &&i) {
     if constexpr (std::is_same_v<std::decay_t<decltype(i)>, ViewIndex>)
       i.increment();
@@ -449,6 +449,9 @@ static constexpr void increment(T &&indices,
       ++i;
   };
   (inc(std::get<I>(indices)), ...);
+}
+template <class T> static constexpr void increment(T &indices) noexcept {
+  increment_impl(indices, std::make_index_sequence<std::tuple_size_v<T>>{});
 }
 
 template <class T> struct is_VariableView : std::false_type {};
@@ -480,9 +483,9 @@ template <class T> static constexpr auto get(const T &index) noexcept {
 } // namespace iter_detail
 
 template <class Op, class Indices, class... Args, size_t... Is>
-static constexpr void call_in_place3(Op &&op, const Indices &indices,
-                                     std::index_sequence<Is...>,
-                                     Args &&... args) noexcept {
+static constexpr void call_in_place_impl(Op &&op, const Indices &indices,
+                                         std::index_sequence<Is...>,
+                                         Args &&... args) noexcept {
   static_assert(
       std::is_same_v<
           decltype(op(std::forward<Args>(args)
@@ -490,6 +493,13 @@ static constexpr void call_in_place3(Op &&op, const Indices &indices,
           void>);
   op(std::forward<Args>(args)
          .data()[iter_detail::get(std::get<Is>(indices))]...);
+}
+template <class Op, class Indices, class... Args>
+static constexpr void call_in_place3(Op &&op, const Indices &indices,
+                                     Args &&... args) noexcept {
+  call_in_place_impl(std::forward<Op>(op), indices,
+                     std::make_index_sequence<std::tuple_size_v<Indices>>{},
+                     std::forward<Args>(args)...);
 }
 
 /// Helper class wrapping functions for in-place transform.
@@ -560,10 +570,8 @@ template <bool dry_run> struct in_place {
     auto indices = std::tuple{iter_detail::begin_index(vals),
                               iter_detail::begin_index(other)...};
     const auto end = iter_detail::end_index(vals);
-    for (; std::get<0>(indices) != end; iter_detail::increment(
-             indices, std::make_index_sequence<sizeof...(Ts) + 1>{}))
-      call_in_place3(op, indices, std::make_index_sequence<sizeof...(Ts) + 1>{},
-                     vals, other...);
+    for (; std::get<0>(indices) != end; iter_detail::increment(indices))
+      call_in_place3(op, indices, vals, other...);
   }
 
   /// Helper for in-place transform implementation, performing branching between
