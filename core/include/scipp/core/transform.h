@@ -83,6 +83,12 @@ template <class T> struct ValuesAndVariances {
   constexpr auto size() const noexcept { return values.size(); }
 };
 
+template <class T> struct is_ValuesAndVariances : std::false_type {};
+template <class T>
+struct is_ValuesAndVariances<ValuesAndVariances<T>> : std::true_type {};
+template <class T>
+inline constexpr bool is_ValuesAndVariances_v = is_ValuesAndVariances<T>::value;
+
 template <class T> struct has_variances : std::false_type {};
 template <class T>
 struct has_variances<ValueAndVariance<T>> : std::true_type {};
@@ -105,6 +111,20 @@ static constexpr auto value_and_maybe_variance(const T &range,
       return ValueAndVariance{range.values[i], range.variances[i]};
   } else {
     return range[i];
+  }
+}
+template <class T>
+static constexpr decltype(auto)
+value_and_maybe_variance2(T &&range, const scipp::index i) noexcept {
+  if constexpr (has_variances_v<std::decay_t<T>>) {
+    if constexpr (is_sparse_v<decltype(range.values.data()[0])>)
+      return ValuesAndVariances{range.values.data()[i],
+                                range.variances.data()[i]};
+    else
+      return ValueAndVariance{range.values.data()[i],
+                              range.variances.data()[i]};
+  } else {
+    return range.data()[i];
   }
 }
 
@@ -413,30 +433,6 @@ static constexpr auto type_pairs(Op) noexcept {
     return std::tuple_cat(TypePairs{}...);
 }
 
-namespace detail {
-template <class F, class Tuple, std::size_t... I>
-constexpr decltype(auto) apply_impl(F &&f, Tuple &&t,
-                                    std::index_sequence<I...>) {
-  return std::invoke(std::forward<F>(f),
-                     std::get<I>(std::forward<Tuple>(t))...);
-}
-} // namespace detail
-
-template <class F, class Tuple>
-constexpr decltype(auto) apply(F &&f, Tuple &&t) {
-  return detail::apply_impl(
-      std::forward<F>(f), std::forward<Tuple>(t),
-      std::make_index_sequence<
-          std::tuple_size_v<std::remove_reference_t<Tuple>>>{});
-}
-
-template <class Op, class... Args>
-static constexpr void call_in_place(Op &&op, Args &&... args) noexcept {
-  static_assert(
-      std::is_same_v<decltype(op(std::forward<Args>(args)...)), void>);
-  op(std::forward<Args>(args)...);
-}
-
 namespace iter_detail {
 
 template <class T, size_t... I>
@@ -462,6 +458,8 @@ inline constexpr bool is_VariableView_v = is_VariableView<T>::value;
 template <class T> static constexpr auto begin_index(T &&iterable) noexcept {
   if constexpr (is_VariableView_v<std::decay_t<T>>)
     return iterable.begin_index();
+  else if constexpr (detail::is_ValuesAndVariances_v<std::decay_t<T>>)
+    return begin_index(iterable.values);
   else
     return scipp::index(0);
 }
@@ -469,6 +467,8 @@ template <class T> static constexpr auto begin_index(T &&iterable) noexcept {
 template <class T> static constexpr auto end_index(T &&iterable) noexcept {
   if constexpr (is_VariableView_v<std::decay_t<T>>)
     return iterable.end_index();
+  else if constexpr (detail::is_ValuesAndVariances_v<std::decay_t<T>>)
+    return end_index(iterable.values);
   else
     return scipp::size(iterable);
 }
@@ -482,23 +482,23 @@ template <class T> static constexpr auto get(const T &index) noexcept {
 
 } // namespace iter_detail
 
-template <class Op, class Indices, class... Args, size_t... Is>
+template <class Op, class Indices, class Arg, class... Args, size_t... I>
 static constexpr void call_in_place_impl(Op &&op, const Indices &indices,
-                                         std::index_sequence<Is...>,
+                                         std::index_sequence<I...>, Arg &&arg,
                                          Args &&... args) noexcept {
-  static_assert(
-      std::is_same_v<
-          decltype(op(std::forward<Args>(args)
-                          .data()[iter_detail::get(std::get<Is>(indices))]...)),
-          void>);
-  op(std::forward<Args>(args)
-         .data()[iter_detail::get(std::get<Is>(indices))]...);
+  static_assert(std::is_same_v<
+                decltype(op(arg, detail::value_and_maybe_variance2(
+                                     args, iter_detail::get(
+                                               std::get<I + 1>(indices)))...)),
+                void>);
+  op(arg, detail::value_and_maybe_variance2(
+              args, iter_detail::get(std::get<I + 1>(indices)))...);
 }
 template <class Op, class Indices, class... Args>
-static constexpr void call_in_place3(Op &&op, const Indices &indices,
-                                     Args &&... args) noexcept {
+static constexpr void call_in_place(Op &&op, const Indices &indices,
+                                    Args &&... args) noexcept {
   call_in_place_impl(std::forward<Op>(op), indices,
-                     std::make_index_sequence<std::tuple_size_v<Indices>>{},
+                     std::make_index_sequence<std::tuple_size_v<Indices> - 1>{},
                      std::forward<Args>(args)...);
 }
 
@@ -530,7 +530,10 @@ template <bool dry_run> struct in_place {
       return;
     // WARNING: Do not parallelize this loop in all cases! The output may have a
     // dimension with stride zero so parallelization must be done with care.
-    for (scipp::index i = 0; i < scipp::size(vals); ++i) {
+    auto indices = std::tuple{iter_detail::begin_index(vals),
+                              iter_detail::begin_index(other)...};
+    const auto end = iter_detail::end_index(vals);
+    for (; std::get<0>(indices) != end; iter_detail::increment(indices)) {
       // Two cases are distinguished here:
       // 1. In the case of sparse data we create ValuesAndVariances, which hold
       //    references that can be modified.
@@ -541,14 +544,15 @@ template <bool dry_run> struct in_place {
       // to this function for the iteration over each individual
       // sparse_container. This then falls into case 2 and thus the recursion
       // terminates with the second level.
+      const auto i = iter_detail::get(std::get<0>(indices));
       if constexpr (is_sparse_v<decltype(vals[0])>) {
-        ValuesAndVariances _{vals[i], vars[i]};
-        call_in_place(op, _, value_and_maybe_variance(other, i)...);
+        ValuesAndVariances _{vals.data()[i], vars.data()[i]};
+        call_in_place(op, indices, _, other...);
       } else {
-        ValueAndVariance _{vals[i], vars[i]};
-        call_in_place(op, _, value_and_maybe_variance(other, i)...);
-        vals[i] = _.value;
-        vars[i] = _.variance;
+        ValueAndVariance _{vals.data()[i], vars.data()[i]};
+        call_in_place(op, indices, _, other...);
+        vals.data()[i] = _.value;
+        vars.data()[i] = _.variance;
       }
     }
   }
@@ -570,8 +574,10 @@ template <bool dry_run> struct in_place {
     auto indices = std::tuple{iter_detail::begin_index(vals),
                               iter_detail::begin_index(other)...};
     const auto end = iter_detail::end_index(vals);
-    for (; std::get<0>(indices) != end; iter_detail::increment(indices))
-      call_in_place3(op, indices, vals, other...);
+    for (; std::get<0>(indices) != end; iter_detail::increment(indices)) {
+      const auto i = iter_detail::get(std::get<0>(indices));
+      call_in_place(op, indices, vals.data()[i], other...);
+    }
   }
 
   /// Helper for in-place transform implementation, performing branching between

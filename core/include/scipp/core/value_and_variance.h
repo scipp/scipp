@@ -135,6 +135,12 @@ template <class T1, class T2>
 ValueAndVariance(const T1 &val, const T2 &var)
     ->ValueAndVariance<decltype(T1() + T2())>;
 
+template <class T> struct is_ValueAndVariance : std::false_type {};
+template <class T>
+struct is_ValueAndVariance<ValueAndVariance<T>> : std::true_type {};
+template <class T>
+inline constexpr bool is_ValueAndVariance_v = is_ValueAndVariance<T>::value;
+
 } // namespace detail
 
 } // namespace scipp::core
