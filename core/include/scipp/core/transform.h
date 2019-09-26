@@ -436,6 +436,7 @@ static constexpr auto type_pairs(Op) noexcept {
     return std::tuple_cat(TypePairs{}...);
 }
 
+// Helpers for handling a tuple of indices (integers or ViewIndex).
 namespace iter_detail {
 
 template <class T, size_t... I>
@@ -501,6 +502,15 @@ template <class Op, class Indices, class Arg, class... Args>
 static constexpr void call_in_place(Op &&op, const Indices &indices, Arg &&arg,
                                     Args &&... args) {
   const auto i = iter_detail::get(std::get<0>(indices));
+  // Two cases are distinguished here:
+  // 1. In the case of sparse data we create ValuesAndVariances, which hold
+  //    references that can be modified.
+  // 2. For dense data we create ValueAndVariance, which performs an element
+  //    copy, so the result has to be updated after the call to `op`.
+  // Note that in the case of sparse data we actually have a recursive call to
+  // transform_in_place_impl for the iteration over each individual
+  // sparse_container. This then falls into case 2 and thus the recursion
+  // terminates with the second level.
   auto &&arg_ = detail::value_and_maybe_variance2(arg, i);
   call_in_place_impl(std::forward<Op>(op), indices,
                      std::make_index_sequence<std::tuple_size_v<Indices> - 1>{},
@@ -541,18 +551,8 @@ template <bool dry_run> struct in_place {
       return;
     // WARNING: Do not parallelize this loop in all cases! The output may have a
     // dimension with stride zero so parallelization must be done with care.
-    for (; std::get<0>(indices) != end; iter_detail::increment(indices)) {
-      // Two cases are distinguished here:
-      // 1. In the case of sparse data we create ValuesAndVariances, which hold
-      //    references that can be modified.
-      // 2. For dense data we create ValueAndVariance, which performs an element
-      //    copy, so the result has to be updated after the call to `op`.
-      // Note that in the case of sparse data we actually have a recursive call
-      // to this function for the iteration over each individual
-      // sparse_container. This then falls into case 2 and thus the recursion
-      // terminates with the second level.
+    for (; std::get<0>(indices) != end; iter_detail::increment(indices))
       call_in_place(op, indices, arg, other...);
-    }
   }
 
   /// Helper for in-place transform implementation, performing branching between
