@@ -247,15 +247,16 @@ def convert_TableWorkspace_to_dataset(ws, error_connection=None):
             continue # skips loading data of this type
 
         data_name = columnNames[i]
-        if error_connection is None:
+        if len(error_connection) is 0:
             variables[data_name] = sc.Variable([sc.Dim.Row],
                                                values=ws.column(i))
         elif data_name in error_connection:
             # This data has error availble
             error_index = error_connection[data_name]
+            variance = np.array(ws.column(error_index))**2
             variables[data_name] = sc.Variable([sc.Dim.Row],
                                                values=ws.column(i),
-                                               variance=ws.colum(error_index))
+                                               variance=variance)
         elif data_name not in error_connection.values():
             # This data is not an error for another dataset, and has no error
             variables[data_name] = sc.Variable([sc.Dim.Row],
