@@ -11,13 +11,12 @@
 /// 3. `do_transform` is essentially a fancy std::transform. It provides
 ///    automatic handling of data that has variances in addition to values,
 ///    calling a different transform implementation for each case
-///    (transform_in_place_impl or transform_in_place_with_variance_impl).
+///    (variants of transform_in_place_impl).
 /// 4. The function implementing the transform calls the overloaded operator for
 ///    each element. Previously `TransformSparse` has been added to the overload
 ///    set of the operator and this will now correctly treat sparse data.
 ///    Essentially it causes a (single) recursive call to the transform
-///    implementation (transform_in_place_impl or
-///    transform_in_place_with_variance_impl). In this second call the
+///    implementation (transform_in_place_impl). In this second call the
 ///    client-provided overload will match.
 ///
 /// @author Simon Heybrock
@@ -40,6 +39,8 @@ namespace detail {
 /// `clear`, and for descending into the sparse container itself, using a nested
 /// call to an iteration function.
 template <class T> struct ValuesAndVariances {
+  using value_type = typename T::value_type;
+
   ValuesAndVariances(T &val, T &var) : values(val), variances(var) {
     expect::sizeMatches(values, variances);
   }
@@ -115,7 +116,7 @@ static constexpr auto value_and_maybe_variance(const T &range,
 }
 template <class T>
 static constexpr decltype(auto)
-value_and_maybe_variance2(T &&range, const scipp::index i) noexcept {
+value_and_maybe_variance2(T &&range, const scipp::index i) {
   if constexpr (has_variances_v<std::decay_t<T>>) {
     if constexpr (is_sparse_v<decltype(range.values.data()[0])>)
       return ValuesAndVariances{range.values.data()[i],
@@ -485,7 +486,7 @@ template <class T> static constexpr auto get(const T &index) noexcept {
 template <class Op, class Indices, class Arg, class... Args, size_t... I>
 static constexpr void call_in_place_impl(Op &&op, const Indices &indices,
                                          std::index_sequence<I...>, Arg &&arg,
-                                         Args &&... args) noexcept {
+                                         Args &&... args) {
   static_assert(std::is_same_v<
                 decltype(op(arg, detail::value_and_maybe_variance2(
                                      args, iter_detail::get(
@@ -496,7 +497,7 @@ static constexpr void call_in_place_impl(Op &&op, const Indices &indices,
 }
 template <class Op, class Indices, class Arg, class... Args>
 static constexpr void call_in_place(Op &&op, const Indices &indices, Arg &&arg,
-                                    Args &&... args) noexcept {
+                                    Args &&... args) {
   const auto i = iter_detail::get(std::get<0>(indices));
   auto &&arg_ = detail::value_and_maybe_variance2(arg, i);
   call_in_place_impl(std::forward<Op>(op), indices,
@@ -516,36 +517,33 @@ static constexpr void call_in_place(Op &&op, const Indices &indices, Arg &&arg,
 /// exception guarantee.
 template <bool dry_run> struct in_place {
   template <class Op, class T, class... Ts>
-  static void transform_in_place_with_variance_impl(
-      Op op, detail::ValuesAndVariances<T> arg, Ts &&... other) {
+  static void transform_in_place_impl(Op op, T &&arg, Ts &&... other) {
     using namespace detail;
-    auto & [ vals, vars ] = arg;
+    auto indices = std::tuple{iter_detail::begin_index(arg),
+                              iter_detail::begin_index(other)...};
+    const auto end = iter_detail::end_index(arg);
     // For sparse data we can fail for any subitem if the sizes to not match. To
     // avoid partially modifying (and thus corrupting) data in an in-place
     // operation we need to do the checks before any modification happens.
-    if constexpr (is_sparse_v<decltype(vals[0])>) {
-      for (scipp::index i = 0; i < scipp::size(vals); ++i) {
-        ValuesAndVariances _{vals[i], vars[i]};
-        if constexpr (std::is_base_of_v<SparseFlag, Op>)
-          static_cast<void>(
-              check_and_get_size(_, value_and_maybe_variance(other, i)...));
-        else
-          static_cast<void>((value_and_maybe_variance(other, i), ...));
+    if constexpr (is_sparse_v<typename std::decay_t<T>::value_type>) {
+      for (auto i = indices; std::get<0>(i) != end; iter_detail::increment(i)) {
+        call_in_place(
+            [](auto &&... args) {
+              if constexpr (std::is_base_of_v<SparseFlag, Op>)
+                static_cast<void>(check_and_get_size(args...));
+            },
+            i, arg, other...);
       }
     }
     if constexpr (dry_run)
       return;
     // WARNING: Do not parallelize this loop in all cases! The output may have a
     // dimension with stride zero so parallelization must be done with care.
-    auto indices = std::tuple{iter_detail::begin_index(vals),
-                              iter_detail::begin_index(other)...};
-    const auto end = iter_detail::end_index(vals);
     for (; std::get<0>(indices) != end; iter_detail::increment(indices)) {
       // Two cases are distinguished here:
       // 1. In the case of sparse data we create ValuesAndVariances, which hold
       //    references that can be modified.
-      // 2. For dense data we create ValueAndVariance, which performs and
-      // element
+      // 2. For dense data we create ValueAndVariance, which performs an element
       //    copy, so the result has to be updated after the call to `op`.
       // Note that in the case of sparse data we actually have a recursive call
       // to this function for the iteration over each individual
@@ -553,27 +551,6 @@ template <bool dry_run> struct in_place {
       // terminates with the second level.
       call_in_place(op, indices, arg, other...);
     }
-  }
-
-  template <class Op, class T, class... Ts>
-  static void transform_in_place_impl(Op op, T &&vals, Ts &&... other) {
-    using namespace detail;
-    // For sparse data we can fail for any subitem if the sizes to not match. To
-    // avoid partially modifying (and thus corrupting) data in an in-place
-    // operation we need to do the checks before any modification happens.
-    if constexpr (is_sparse_v<decltype(vals[0])> &&
-                  std::is_base_of_v<SparseFlag, Op>)
-      for (scipp::index i = 0; i < scipp::size(vals); ++i)
-        static_cast<void>(check_and_get_size(vals[i], other[i]...));
-    if constexpr (dry_run)
-      return;
-    // WARNING: Do not parallelize this loop in all cases! The output may have a
-    // dimension with stride zero so parallelization must be done with care.
-    auto indices = std::tuple{iter_detail::begin_index(vals),
-                              iter_detail::begin_index(other)...};
-    const auto end = iter_detail::end_index(vals);
-    for (; std::get<0>(indices) != end; iter_detail::increment(indices))
-      call_in_place(op, indices, vals, other...);
   }
 
   /// Helper for in-place transform implementation, performing branching between
@@ -585,8 +562,7 @@ template <bool dry_run> struct in_place {
     if (a.hasVariances()) {
       if constexpr (canHaveVariances<typename T1::value_type>()) {
         auto a_var = a.variances();
-        transform_in_place_with_variance_impl(op,
-                                              ValuesAndVariances{a_val, a_var});
+        transform_in_place_impl(op, ValuesAndVariances{a_val, a_var});
       }
     } else {
       transform_in_place_impl(op, a_val);
@@ -607,12 +583,10 @@ template <bool dry_run> struct in_place {
         auto a_var = a.variances();
         if (b.hasVariances()) {
           auto b_var = b.variances();
-          transform_in_place_with_variance_impl(
-              op, ValuesAndVariances{a_val, a_var},
-              ValuesAndVariances{b_val, b_var});
+          transform_in_place_impl(op, ValuesAndVariances{a_val, a_var},
+                                  ValuesAndVariances{b_val, b_var});
         } else {
-          transform_in_place_with_variance_impl(
-              op, ValuesAndVariances{a_val, a_var}, b_val);
+          transform_in_place_impl(op, ValuesAndVariances{a_val, a_var}, b_val);
         }
       }
     } else if (b.hasVariances()) {
@@ -637,10 +611,7 @@ template <bool dry_run> struct in_place {
     template <class... Ts> constexpr void operator()(Ts &&... args) const {
       using namespace detail;
       static_cast<void>(check_and_get_size(args...));
-      if constexpr ((has_variances_v<Ts> || ...))
-        transform_in_place_with_variance_impl(op, maybe_broadcast(args)...);
-      else
-        transform_in_place_impl(op, maybe_broadcast(args)...);
+      transform_in_place_impl(op, maybe_broadcast(args)...);
     }
   };
 
