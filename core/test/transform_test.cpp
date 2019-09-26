@@ -287,7 +287,7 @@ TEST_F(TransformBinaryTest, in_place_unit_change) {
 
 template <typename T>
 bool approx_same(const Variable &a, const Variable &b, const T &tolerance) {
-  const auto abs_tolerance = abs(tolerance);
+  const auto abs_tolerance = tolearance;
   auto in_tolerance = transform<pair_self_t<double>>(
       a, b,
       scipp::overloaded{[abs_tolerance](const auto &u, const auto &v) {

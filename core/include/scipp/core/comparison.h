@@ -13,7 +13,7 @@ namespace scipp::core {
 
 template <typename T>
 bool approx_same(const Variable &a, const Variable &b, const T &tolerance) {
-  const auto abs_tolerance = abs(tolerance);
+  const auto abs_tolerance = tolerance;
   auto in_tolerance = transform<pair_self_t<double>>(
       a, b,
       scipp::overloaded{[abs_tolerance](const auto &u, const auto &v) {
