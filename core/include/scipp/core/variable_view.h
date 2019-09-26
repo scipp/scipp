@@ -128,10 +128,10 @@ public:
   const T *data() const { return m_variable + m_offset; }
   T *data() { return m_variable + m_offset; }
 
-  constexpr ViewIndex begin_index() const noexcept {
+  ViewIndex begin_index() const noexcept {
     return {m_targetDimensions, m_dimensions};
   }
-  constexpr ViewIndex end_index() const noexcept {
+  ViewIndex end_index() const noexcept {
     ViewIndex i{m_targetDimensions, m_dimensions};
     i.setIndex(size());
     return i;

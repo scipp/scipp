@@ -494,12 +494,19 @@ static constexpr void call_in_place_impl(Op &&op, const Indices &indices,
   op(arg, detail::value_and_maybe_variance2(
               args, iter_detail::get(std::get<I + 1>(indices)))...);
 }
-template <class Op, class Indices, class... Args>
-static constexpr void call_in_place(Op &&op, const Indices &indices,
+template <class Op, class Indices, class Arg, class... Args>
+static constexpr void call_in_place(Op &&op, const Indices &indices, Arg &&arg,
                                     Args &&... args) noexcept {
+  const auto i = iter_detail::get(std::get<0>(indices));
+  auto &&arg_ = detail::value_and_maybe_variance2(arg, i);
   call_in_place_impl(std::forward<Op>(op), indices,
                      std::make_index_sequence<std::tuple_size_v<Indices> - 1>{},
+                     std::forward<decltype(arg_)>(arg_),
                      std::forward<Args>(args)...);
+  if constexpr (detail::is_ValueAndVariance_v<std::decay_t<decltype(arg_)>>) {
+    arg.values.data()[i] = arg_.value;
+    arg.variances.data()[i] = arg_.variance;
+  }
 }
 
 /// Helper class wrapping functions for in-place transform.
@@ -544,16 +551,7 @@ template <bool dry_run> struct in_place {
       // to this function for the iteration over each individual
       // sparse_container. This then falls into case 2 and thus the recursion
       // terminates with the second level.
-      const auto i = iter_detail::get(std::get<0>(indices));
-      if constexpr (is_sparse_v<decltype(vals[0])>) {
-        ValuesAndVariances _{vals.data()[i], vars.data()[i]};
-        call_in_place(op, indices, _, other...);
-      } else {
-        ValueAndVariance _{vals.data()[i], vars.data()[i]};
-        call_in_place(op, indices, _, other...);
-        vals.data()[i] = _.value;
-        vars.data()[i] = _.variance;
-      }
+      call_in_place(op, indices, arg, other...);
     }
   }
 
@@ -574,10 +572,8 @@ template <bool dry_run> struct in_place {
     auto indices = std::tuple{iter_detail::begin_index(vals),
                               iter_detail::begin_index(other)...};
     const auto end = iter_detail::end_index(vals);
-    for (; std::get<0>(indices) != end; iter_detail::increment(indices)) {
-      const auto i = iter_detail::get(std::get<0>(indices));
-      call_in_place(op, indices, vals.data()[i], other...);
-    }
+    for (; std::get<0>(indices) != end; iter_detail::increment(indices))
+      call_in_place(op, indices, vals, other...);
   }
 
   /// Helper for in-place transform implementation, performing branching between

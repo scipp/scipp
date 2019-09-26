@@ -32,7 +32,7 @@ public:
     ++m_fullIndex;
   }
 
-  void setIndex(const scipp::index index) {
+  constexpr void setIndex(const scipp::index index) noexcept {
     m_fullIndex = index;
     if (m_dims == 0)
       return;
@@ -47,13 +47,13 @@ public:
       m_index += m_factors[j] * m_coord[m_offsets[j]];
   }
 
-  scipp::index get() const { return m_index; }
-  scipp::index index() const { return m_fullIndex; }
+  constexpr scipp::index get() const noexcept { return m_index; }
+  constexpr scipp::index index() const noexcept { return m_fullIndex; }
 
-  bool operator==(const ViewIndex &other) const {
+  constexpr bool operator==(const ViewIndex &other) const noexcept {
     return m_fullIndex == other.m_fullIndex;
   }
-  bool operator!=(const ViewIndex &other) const {
+  constexpr bool operator!=(const ViewIndex &other) const noexcept {
     return m_fullIndex != other.m_fullIndex;
   }
 
