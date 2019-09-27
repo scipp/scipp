@@ -9,7 +9,6 @@
 
 #include <scipp/core/dataset.h>
 #include <scipp/core/variable.h>
-#include <scipp/units/unit.h>
 
 namespace scipp::core {
 

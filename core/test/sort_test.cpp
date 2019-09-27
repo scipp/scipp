@@ -33,3 +33,25 @@ TEST(SortTest, variable_2d) {
   EXPECT_EQ(sort(var, keyX), expectedX);
   EXPECT_EQ(sort(var, keyY), expectedY);
 }
+
+TEST(SortTest, dataset_1d) {
+  Dataset d;
+  d.setData("a",
+            makeVariable<int>({Dim::X, 3}, units::m, {1, 2, 3}, {4, 5, 6}));
+  d.setData("b", makeVariable<double>({Dim::X, 3}, units::s, {0.1, 0.2, 0.3}));
+  d.setData("scalar", makeVariable<double>(1.2));
+  d.setCoord(Dim::X, makeVariable<double>({Dim::X, 3}, units::m, {1, 2, 3}));
+
+  Dataset expected;
+  expected.setData(
+      "a", makeVariable<int>({Dim::X, 3}, units::m, {3, 1, 2}, {6, 4, 5}));
+  expected.setData(
+      "b", makeVariable<double>({Dim::X, 3}, units::s, {0.3, 0.1, 0.2}));
+  expected.setData("scalar", makeVariable<double>(1.2));
+  expected.setCoord(Dim::X,
+                    makeVariable<double>({Dim::X, 3}, units::m, {3, 1, 2}));
+
+  const auto key = makeVariable<int>({Dim::X, 3}, {10, 20, -1});
+
+  EXPECT_EQ(sort(d, key), expected);
+}
