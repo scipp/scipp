@@ -18,6 +18,7 @@ add_executable(${TARGET_NAME} EXCLUDE_FROM_ALL
                dimensions_test.cpp
                except_test.cpp
                histogram_test.cpp
+               indexed_slice_view_test.cpp
                mean_test.cpp
                merge_test.cpp
                rebin_test.cpp
