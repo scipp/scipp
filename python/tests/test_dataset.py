@@ -497,6 +497,32 @@ def test_binary_of_item_with_variable():
     assert d == copy
 
 
+def test_in_place_binary_with_scalar():
+    d = sc.Dataset(
+        {'data': sc.Variable([Dim.X], values=[10])},
+        coords={Dim.X: sc.Variable([Dim.X], values=[10])})
+    copy = d.copy()
+
+    d += 2
+    d *= 2
+    d -= 4
+    d /= 2
+    assert d == copy
+
+
+def test_proxy_in_place_binary_with_scalar():
+    d = sc.Dataset(
+        {'data': sc.Variable([Dim.X], values=[10])},
+        coords={Dim.X: sc.Variable([Dim.X], values=[10])})
+    copy = d.copy()
+
+    d['data'] += 2
+    d['data'] *= 2
+    d['data'] -= 4
+    d['data'] /= 2
+    assert d == copy
+
+
 def test_add_sum_of_columns():
     d = sc.Dataset({
         'a': sc.Variable([Dim.X], values=np.arange(10.0)),

@@ -17,3 +17,16 @@ def test_in_place_binary_with_variable():
     a -= 4.0 * sc.units.m
     a /= 2.0 * sc.units.m
     assert a == copy
+
+
+def test_in_place_binary_with_scalar():
+    a = sc.DataArray(
+        data=sc.Variable([Dim.X], values=[10]),
+        coords={Dim.X: sc.Variable([Dim.X], values=[10])})
+    copy = a.copy()
+
+    a += 2
+    a *= 2
+    a -= 4
+    a /= 2
+    assert a == copy
