@@ -11,6 +11,7 @@ set(INC_FILES
     include/scipp/core/tag_util.h
     include/scipp/core/counts.h
     include/scipp/core/slice.h
+    include/scipp/core/sort.h
     include/scipp/core/variable_view.h
     include/scipp/core/variable.h
     include/scipp/core/variable.tcc
@@ -28,6 +29,7 @@ set(SRC_FILES
     except.cpp
     rebin.cpp
     slice.cpp
+    sort.cpp
     string.cpp
     trigonometry.cpp
     variable.cpp

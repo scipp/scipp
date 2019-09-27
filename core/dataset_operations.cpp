@@ -65,7 +65,7 @@ DataArray histogram(const DataConstProxy &sparse,
   if (sparse.hasData())
     throw except::SparseDataError(
         "`histogram` is not implemented for sparse data with values yet.");
-  if (sparse.dims().ndims() > 1)
+  if (sparse.dims().ndim() > 1)
     throw std::logic_error("Only the simple case histograms may be constructed "
                            "for now: 2 dims including sparse.");
   auto dim = binEdges.dims().inner();
@@ -245,5 +245,11 @@ VariableConstProxy same(const VariableConstProxy &a,
   expect::equals(a, b);
   return a;
 }
+
+/// Return a deep copy of a DataArray or of a DataProxy.
+DataArray copy(const DataConstProxy &array) { return DataArray(array); }
+
+/// Return a deep copy of a Dataset or of a DatasetProxy.
+Dataset copy(const DatasetConstProxy &dataset) { return Dataset(dataset); }
 
 } // namespace scipp::core

@@ -816,9 +816,14 @@ public:
   DatasetProxy operator*=(const Dataset &other) const;
   DatasetProxy operator/=(const Dataset &other) const;
 
+  DatasetProxy assign(const DatasetConstProxy &other) const;
+
 private:
   Dataset *m_mutableDataset;
 };
+
+SCIPP_CORE_EXPORT DataArray copy(const DataConstProxy &array);
+SCIPP_CORE_EXPORT Dataset copy(const DatasetConstProxy &dataset);
 
 /// Data array, a variable with coordinates, labels, and attributes.
 class SCIPP_CORE_EXPORT DataArray {
@@ -913,11 +918,33 @@ public:
     setCoord(dim, Variable(coord));
   }
 
-  template <class... Ts> auto slice(const Ts... slices) const {
-    return get().slice(slices...);
+  DataConstProxy slice(const Slice slice1) const & {
+    return get().slice(slice1);
   }
-  template <class... Ts> auto slice(const Ts... slices) {
-    return get().slice(slices...);
+  DataConstProxy slice(const Slice slice1, const Slice slice2) const & {
+    return get().slice(slice1, slice2);
+  }
+  DataConstProxy slice(const Slice slice1, const Slice slice2,
+                       const Slice slice3) const & {
+    return get().slice(slice1, slice2, slice3);
+  }
+  DataProxy slice(const Slice slice1) & { return get().slice(slice1); }
+  DataProxy slice(const Slice slice1, const Slice slice2) & {
+    return get().slice(slice1, slice2);
+  }
+  DataProxy slice(const Slice slice1, const Slice slice2,
+                  const Slice slice3) & {
+    return get().slice(slice1, slice2, slice3);
+  }
+  DataArray slice(const Slice slice1) const && {
+    return copy(get().slice(slice1));
+  }
+  DataArray slice(const Slice slice1, const Slice slice2) const && {
+    return copy(get().slice(slice1, slice2));
+  }
+  DataArray slice(const Slice slice1, const Slice slice2,
+                  const Slice slice3) const && {
+    return copy(get().slice(slice1, slice2, slice3));
   }
 
 private:

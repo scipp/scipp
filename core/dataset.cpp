@@ -569,6 +569,12 @@ DataProxy DataProxy::assign(const VariableConstProxy &other) const {
   return *this;
 }
 
+DatasetProxy DatasetProxy::assign(const DatasetConstProxy &other) const {
+  for (const auto & [ name, data ] : other)
+    operator[](name).assign(data);
+  return *this;
+}
+
 /// Return a const proxy to all coordinates of the dataset slice.
 ///
 /// This proxy includes only "dimension-coordinates". To access

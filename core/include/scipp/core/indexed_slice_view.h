@@ -42,11 +42,29 @@ public:
     return boost::make_transform_iterator(m_index.end(), make_item{this});
   }
 
+  const auto &data() const noexcept { return *m_data; }
+
 private:
   T *m_data;
   Dim m_dim;
   std::vector<scipp::index> m_index;
 };
+
+template <class T> auto copy(const IndexedSliceView<T> &view) {
+  auto out = copy(view.data());
+  scipp::index i = 0;
+  for (const auto &slice : view)
+    out.slice({view.dim(), i++}).assign(slice);
+  return out;
+}
+
+template <class T> auto concatenate(const IndexedSliceView<T> &view) {
+  // TODO Recursive implementation a bit like merge sort for better performance.
+  auto out = copy(view[0]);
+  for (scipp::index i = 1; i < view.size(); ++i)
+    out = concatenate(out, view[i], view.dim());
+  return out;
+}
 
 } // namespace scipp::core
 
