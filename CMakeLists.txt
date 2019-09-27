@@ -73,6 +73,11 @@ else()
   set(CMAKE_VISIBILITY_INLINES_HIDDEN TRUE)
 endif()
 
+# Optimization flags
+if(${CMAKE_CXX_COMPILER_ID} MATCHES "GNU")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --param inline-unit-growth=100")
+endif()
+
 # Get version from git-describe
 execute_process(
   COMMAND git describe --tag
