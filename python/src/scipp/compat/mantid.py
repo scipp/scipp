@@ -163,15 +163,11 @@ def convert_EventWorkspace_to_dataset(ws, load_pulse_times, EventType):
 
 def convert_TableWorkspace_to_dataset(ws, error_connection=None):
     """
-    Converts from a Mantid TableWorkspace to a scipp dataset. A TableWorkspace
-    have optional declaration of connection between data and error using the
-    plottype which can be none, X, Y, Z, Xerr, Yerr. This function collects
-    the data and its error into a single scipp variable if there is no
-    ambiguity in what column contains the error for what data column. This
-    means a maximum of one Xerr and one Yerr column. For more advanced
-    TableWorkspaces, the user can specify the connection between data and error
-    manually using the error_connections keyword argument, which overwrites
-    automatic assignment.
+    Converts from a Mantid TableWorkspace to a scipp dataset. It is possible
+    to assign a column as the error for another column, in which case a
+    the data from the two columns will be represented by a single scipp
+    variable with variance. This is done using the error_connection Keyword
+    argument. The error is transformed to variance in this converter.
 
     Parameters
     ----------
@@ -189,60 +185,9 @@ def convert_TableWorkspace_to_dataset(ws, error_connection=None):
     columnNames = ws.getColumnNames()  # list of names matching each column
     columnTypes = ws.columnTypes()  # list of types matching each column
 
-    if error_connection is None:
-        # Generate error connection
-        error_connection = {}
-        # Dictionary with data column keys for names of their error columns
-        # Uses the plottype that is built into TableWorkspace
-        plottype_list = []
-        for i in range(n_columns):
-            plottype_list.append(ws.getPlotType(i))
-
-        # Relevant plottype indices
-        X_index = 1
-        Xerr_index = 4
-        Y_index = 2
-        Yerr_index = 5
-
-        if plottype_list.count(Xerr_index) > 1:  # More than one Xerr
-            raise RuntimeError(
-                "Multiple Xerr columns in TableWorkspace, error_connection "
-                "need to be specified manually for the scipp "
-                "convert_TableWorkspace_to_dataset function.")
-        elif plottype_list.count(Xerr_index) == 1:
-            error_index = plottype_list.index(Xerr_index)
-            errorName = columnNames[error_index]
-            if plottype_list.count(X_index) == 1:  # Unique X for Xerr
-                data_index = plottype_list.index(X_index)
-                data_name = columnNames[data_index]
-                error_connection[data_name] = errorName
-            else:
-                raise RuntimeError(
-                    "No unique X data to be matched with Xerr column, "
-                    "error_connection need to be specified manually for the "
-                    "scipp convert_TableWorkspace_to_dataset function.")
-
-        if plottype_list.count(Yerr_index) > 1:  # More than one Yerr
-            raise RuntimeError(
-                "Multiple Yerr columns in TableWorkspace, error_connection "
-                "need to be specified manually for the scipp "
-                "convert_TableWorkspace_to_dataset function.")
-        elif plottype_list.count(Yerr_index) == 1:
-            error_index = plottype_list.index(Yerr_index)
-            errorName = columnNames[error_index]
-            if plottype_list.count(Y_index) == 1:  # Unique Y for Yerr
-                data_index = plottype_list.index(Y_index)
-                data_name = columnNames[data_index]
-                error_connection[data_name] = errorName
-            else:
-                raise RuntimeError(
-                    "No unique Y data to be matched with Yerr column, "
-                    "error_connection need to be specified manually for the "
-                    "scipp convert_TableWorkspace_to_dataset function.")
-
     # Types available in TableWorkspace that can not be loaded into scipp
     blacklist_types = []
-    # Types which will fail if they have defined variance
+    # Types for which the transformation from error to variance will fail
     blacklist_variance_types = ["str"]
 
     variables = {}
@@ -251,20 +196,20 @@ def convert_TableWorkspace_to_dataset(ws, error_connection=None):
             continue  # skips loading data of this type
 
         data_name = columnNames[i]
-        if len(error_connection) == 0:
+        if error_connection is None:
             variables[data_name] = sc.Variable([sc.Dim.Row],
                                                values=ws.column(i))
         elif data_name in error_connection:
             # This data has error availble
             error_name = error_connection[data_name]
             error_index = columnNames.index(error_name)
-            if (columnTypes[error_index] in blacklist_variance_types
-               or columnTypes[i] in blacklist_variance_types):
+
+            if columnTypes[error_index] in blacklist_variance_types:
+                # Raise error to avoid numpy square error for strings
                 raise RuntimeError(
-                    "Data with variance can not have type string. \n"
+                    "Variance can not have type string. \n"
                     + "Data:     " + str(data_name) + "\n"
-                    + "Variance: " + str(error_name) + "\n"
-                    "Supply error_connection using keyword argument.")
+                    + "Variance: " + str(error_name) + "\n")
 
             variance = np.array(ws.column(error_name))**2
             variables[data_name] = sc.Variable([sc.Dim.Row],
