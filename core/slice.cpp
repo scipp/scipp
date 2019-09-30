@@ -4,8 +4,8 @@
 /// @author Owen Arnold
 #include <string>
 
-#include "scipp/core/slice.h"
 #include "scipp/core/except.h"
+#include "scipp/core/slice.h"
 
 namespace scipp::core {
 
