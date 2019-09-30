@@ -747,7 +747,8 @@ template <bool dry_run> struct in_place {
 /// identical to the input range, but avoids potentially costly element copies.
 template <class... Ts, class Var, class Op>
 void transform_in_place(Var &&var, Op op) {
-  in_place<false>::transform<Ts...>(std::forward<Var>(var), op);
+  in_place<false>::transform<underlying_type_t<Ts>...>(std::forward<Var>(var),
+                                                       op);
 }
 
 /// Transform the data elements of a variable in-place.
@@ -757,7 +758,8 @@ void transform_in_place(Var &&var, Op op) {
 /// costly element copies.
 template <class... TypePairs, class Var, class Var1, class Op>
 void transform_in_place(Var &&var, const Var1 &other, Op op) {
-  in_place<false>::transform<TypePairs...>(std::forward<Var>(var), other, op);
+  in_place<false>::transform<underlying_type_t<TypePairs>...>(
+      std::forward<Var>(var), other, op);
 }
 
 /// Accumulate data elements of a variable in-place.
@@ -775,18 +777,20 @@ template <class... TypePairs, class Var, class Var1, class Op>
 void accumulate_in_place(Var &&var, const Var1 &other, Op op) {
   expect::contains(other.dims(), var.dims());
   // Wrapped implementation to convert multiple tuples into a parameter pack.
-  in_place<false>::transform(std::tuple_cat(TypePairs{}...),
+  in_place<false>::transform(std::tuple_cat(underlying_type_t<TypePairs>{}...),
                              std::forward<Var>(var), other, op);
 }
 
 namespace dry_run {
 template <class... Ts, class Var, class Op>
 void transform_in_place(Var &&var, Op op) {
-  in_place<true>::transform<Ts...>(std::forward<Var>(var), op);
+  in_place<true>::transform<underlying_type_t<Ts>...>(std::forward<Var>(var),
+                                                      op);
 }
 template <class... TypePairs, class Var, class Var1, class Op>
 void transform_in_place(Var &&var, const Var1 &other, Op op) {
-  in_place<true>::transform<TypePairs...>(std::forward<Var>(var), other, op);
+  in_place<true>::transform<underlying_type_t<TypePairs>...>(
+      std::forward<Var>(var), other, op);
 }
 } // namespace dry_run
 
