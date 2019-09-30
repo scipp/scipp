@@ -7,6 +7,7 @@
 
 #include "scipp/core/dataset.h"
 #include "scipp/core/except.h"
+#include "scipp/core/sort.h"
 #include "scipp/core/tag_util.h"
 #include "scipp/core/variable.h"
 
@@ -343,6 +344,18 @@ void init_variable(py::module &m) {
         :seealso: :py:class:`scipp.abs` for scalar dtype
         :return: New variable with scalar elements computed as the norm values if the input elements.
         :rtype: Variable)");
+
+  m.def(
+      "sort",
+      py::overload_cast<const VariableConstProxy &, const VariableConstProxy &>(
+          &sort),
+      py::arg("data"), py::arg("key"), py::call_guard<py::gil_scoped_release>(),
+      R"(Sort variable along a dimension by a sort key.
+
+      :raises: If the key is invalid, e.g., if it has not exactly one dimension, or if its dtype is not sortable.
+      :return: New sorted variable.
+      :rtype: Variable)");
+
   m.def("split",
         py::overload_cast<const Variable &, const Dim,
                           const std::vector<scipp::index> &>(&split),
