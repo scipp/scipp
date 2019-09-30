@@ -570,7 +570,6 @@ DataProxy DataProxy::assign(const VariableConstProxy &other) const {
 }
 
 DatasetProxy DatasetProxy::assign(const DatasetConstProxy &other) const {
-  // TODO Why is this not throwing?
   for (const auto & [ name, data ] : other)
     operator[](name).assign(data);
   return *this;

@@ -34,11 +34,12 @@ auto makePermutation(const VariableConstProxy &key) {
 }
 
 Variable sort(const VariableConstProxy &var, const VariableConstProxy &key) {
-  return copy(IndexedSliceView{var, key.dims().inner(), makePermutation(key)});
+  return concatenate(
+      IndexedSliceView{var, key.dims().inner(), makePermutation(key)});
 }
 
 DataArray sort(const DataConstProxy &array, const VariableConstProxy &key) {
-  return copy(
+  return concatenate(
       IndexedSliceView{array, key.dims().inner(), makePermutation(key)});
 }
 
@@ -51,7 +52,7 @@ DataArray sort(const DataConstProxy &array, const std::string &key) {
 }
 
 Dataset sort(const DatasetConstProxy &dataset, const VariableConstProxy &key) {
-  return copy(
+  return concatenate(
       IndexedSliceView{dataset, key.dims().inner(), makePermutation(key)});
 }
 

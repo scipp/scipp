@@ -18,7 +18,7 @@ private:
   struct make_item {
     const IndexedSliceView *view;
     auto operator()(const scipp::index index) const {
-      return view->m_data->slice({view->m_dim, index});
+      return view->m_data->slice({view->m_dim, index, index + 1});
     }
   };
 
@@ -30,7 +30,7 @@ public:
   constexpr scipp::index size() const noexcept { return m_index.size(); }
 
   auto operator[](const scipp::index index) const {
-    return m_data->slice({m_dim, m_index[index]});
+    return m_data->slice({m_dim, m_index[index], m_index[index] + 1});
   }
 
   /// Return iterator to the beginning of all slices.
@@ -50,16 +50,9 @@ private:
   std::vector<scipp::index> m_index;
 };
 
-template <class T> auto copy(const IndexedSliceView<T> &view) {
-  auto out = copy(view.data());
-  scipp::index i = 0;
-  for (const auto &slice : view)
-    out.slice({view.dim(), i++}).assign(slice);
-  return out;
-}
-
 template <class T> auto concatenate(const IndexedSliceView<T> &view) {
   // TODO Recursive implementation a bit like merge sort for better performance.
+  // Could also try to find continuous ranges in indices.
   auto out = copy(view[0]);
   for (scipp::index i = 1; i < view.size(); ++i)
     out = concatenate(out, view[i], view.dim());
