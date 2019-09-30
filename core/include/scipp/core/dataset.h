@@ -1186,6 +1186,40 @@ SCIPP_CORE_EXPORT Dataset operator/(const DatasetConstProxy &lhs,
 SCIPP_CORE_EXPORT Dataset operator/(const VariableConstProxy &lhs,
                                     const DatasetConstProxy &rhs);
 
+template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
+Dataset operator+(const T value, const DatasetConstProxy &a) {
+  return makeVariable<T>(value) + a;
+}
+template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
+Dataset operator-(const T value, const DatasetConstProxy &a) {
+  return makeVariable<T>(value) - a;
+}
+template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
+Dataset operator*(const T value, const DatasetConstProxy &a) {
+  return makeVariable<T>(value) * a;
+}
+template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
+Dataset operator/(const T value, const DatasetConstProxy &a) {
+  return makeVariable<T>(value) / a;
+}
+
+template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
+Dataset operator+(const DatasetConstProxy &a, const T value) {
+  return a + makeVariable<T>(value);
+}
+template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
+Dataset operator-(const DatasetConstProxy &a, const T value) {
+  return a - makeVariable<T>(value);
+}
+template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
+Dataset operator*(const DatasetConstProxy &a, const T value) {
+  return a * makeVariable<T>(value);
+}
+template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
+Dataset operator/(const DatasetConstProxy &a, const T value) {
+  return a / makeVariable<T>(value);
+}
+
 SCIPP_CORE_EXPORT DataArray histogram(const DataConstProxy &sparse,
                                       const Variable &binEdges);
 SCIPP_CORE_EXPORT DataArray histogram(const DataConstProxy &sparse,

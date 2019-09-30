@@ -243,9 +243,12 @@ private:
 class VariableConstProxy;
 class VariableProxy;
 
+/* TODO: can this be done better? should the function in dataset.h be moved here? should the binary operations be moved to their own header? */
+class DataProxy;
+
 template <class T> constexpr bool is_variable_or_proxy() {
   return std::is_same_v<T, Variable> || std::is_same_v<T, VariableConstProxy> ||
-         std::is_same_v<T, VariableProxy>;
+         std::is_same_v<T, VariableProxy> || std::is_same_v<T, DataProxy>;
 }
 
 namespace detail {
@@ -799,25 +802,43 @@ SCIPP_CORE_EXPORT Variable operator*(const VariableConstProxy &a,
                                      const VariableConstProxy &b);
 SCIPP_CORE_EXPORT Variable operator/(const VariableConstProxy &a,
                                      const VariableConstProxy &b);
+
 // Note: If the left-hand-side in an addition is a VariableProxy this simply
 // implicitly converts it to a Variable. A copy for the return value is required
 // anyway so this is a convenient way to avoid defining more overloads.
-SCIPP_CORE_EXPORT Variable operator+(const VariableConstProxy &a,
-                                     const double b);
-SCIPP_CORE_EXPORT Variable operator-(const VariableConstProxy &a,
-                                     const double b);
-SCIPP_CORE_EXPORT Variable operator*(const VariableConstProxy &a,
-                                     const double b);
-SCIPP_CORE_EXPORT Variable operator/(const VariableConstProxy &a,
-                                     const double b);
-SCIPP_CORE_EXPORT Variable operator+(const double a,
-                                     const VariableConstProxy &b);
-SCIPP_CORE_EXPORT Variable operator-(const double a,
-                                     const VariableConstProxy &b);
-SCIPP_CORE_EXPORT Variable operator*(const double a,
-                                     const VariableConstProxy &b);
-SCIPP_CORE_EXPORT Variable operator/(const double a,
-                                     const VariableConstProxy &b);
+template <typename T, typename = std::enable_if_t<!is_variable_or_proxy<T>()>>
+Variable operator+(const T value, const VariableConstProxy &a) {
+  return makeVariable<T>(value) + a;
+}
+template <typename T, typename = std::enable_if_t<!is_variable_or_proxy<T>()>>
+Variable operator-(const T value, const VariableConstProxy &a) {
+  return makeVariable<T>(value) - a;
+}
+template <typename T, typename = std::enable_if_t<!is_variable_or_proxy<T>()>>
+Variable operator*(const T value, const VariableConstProxy &a) {
+  return makeVariable<T>(value) * a;
+}
+template <typename T, typename = std::enable_if_t<!is_variable_or_proxy<T>()>>
+Variable operator/(const T value, const VariableConstProxy &a) {
+  return makeVariable<T>(value) / a;
+}
+template <typename T, typename = std::enable_if_t<!is_variable_or_proxy<T>()>>
+Variable operator+(const VariableConstProxy &a, const T value) {
+  return a + makeVariable<T>(value);
+}
+template <typename T, typename = std::enable_if_t<!is_variable_or_proxy<T>()>>
+Variable operator-(const VariableConstProxy &a, const T value) {
+  return a - makeVariable<T>(value);
+}
+template <typename T, typename = std::enable_if_t<!is_variable_or_proxy<T>()>>
+Variable operator*(const VariableConstProxy &a, const T value) {
+  return a * makeVariable<T>(value);
+}
+template <typename T, typename = std::enable_if_t<!is_variable_or_proxy<T>()>>
+Variable operator/(const VariableConstProxy &a, const T value) {
+  return a / makeVariable<T>(value);
+}
+
 template <class T>
 Variable operator*(Variable a, const boost::units::quantity<T> &quantity) {
   return std::move(a *= quantity);
