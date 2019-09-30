@@ -104,6 +104,19 @@ template <class A, class B> void equals(const A &a, const B &b) {
     throw scipp::except::MismatchError(a, b);
 }
 
+template <class A, class Dim, class System, class Enable>
+void equals(const A &a, const boost::units::unit<Dim, System, Enable> &unit) {
+  const auto expectedUnit = units::Unit(unit);
+  if (a != expectedUnit)
+    throw scipp::except::MismatchError(a, expectedUnit);
+}
+template <class A, class Dim, class System, class Enable>
+void equals(const boost::units::unit<Dim, System, Enable> &unit, const A &a) {
+  const auto expectedUnit = units::Unit(unit);
+  if (expectedUnit != a)
+    throw scipp::except::MismatchError(expectedUnit, a);
+}
+
 SCIPP_CORE_EXPORT void dimensionMatches(const Dimensions &dims, const Dim dim,
                                         const scipp::index length);
 

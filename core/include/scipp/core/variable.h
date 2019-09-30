@@ -741,6 +741,7 @@ SCIPP_CORE_EXPORT Variable operator+(const Variable &a, const Variable &b);
 SCIPP_CORE_EXPORT Variable operator-(const Variable &a, const Variable &b);
 SCIPP_CORE_EXPORT Variable operator*(const Variable &a, const Variable &b);
 SCIPP_CORE_EXPORT Variable operator/(const Variable &a, const Variable &b);
+SCIPP_CORE_EXPORT Variable operator|(const Variable &a, const Variable &b);
 SCIPP_CORE_EXPORT Variable operator+(const Variable &a,
                                      const VariableConstProxy &b);
 SCIPP_CORE_EXPORT Variable operator-(const Variable &a,
@@ -749,6 +750,8 @@ SCIPP_CORE_EXPORT Variable operator*(const Variable &a,
                                      const VariableConstProxy &b);
 SCIPP_CORE_EXPORT Variable operator/(const Variable &a,
                                      const VariableConstProxy &b);
+SCIPP_CORE_EXPORT Variable operator|(const Variable &a,
+                                     const VariableConstProxy &b);
 SCIPP_CORE_EXPORT Variable operator+(const VariableConstProxy &a,
                                      const Variable &b);
 SCIPP_CORE_EXPORT Variable operator-(const VariableConstProxy &a,
@@ -757,6 +760,8 @@ SCIPP_CORE_EXPORT Variable operator*(const VariableConstProxy &a,
                                      const Variable &b);
 SCIPP_CORE_EXPORT Variable operator/(const VariableConstProxy &a,
                                      const Variable &b);
+SCIPP_CORE_EXPORT Variable operator|(const VariableConstProxy &a,
+                                     const Variable &b);
 SCIPP_CORE_EXPORT Variable operator+(const VariableConstProxy &a,
                                      const VariableConstProxy &b);
 SCIPP_CORE_EXPORT Variable operator-(const VariableConstProxy &a,
@@ -764,6 +769,8 @@ SCIPP_CORE_EXPORT Variable operator-(const VariableConstProxy &a,
 SCIPP_CORE_EXPORT Variable operator*(const VariableConstProxy &a,
                                      const VariableConstProxy &b);
 SCIPP_CORE_EXPORT Variable operator/(const VariableConstProxy &a,
+                                     const VariableConstProxy &b);
+SCIPP_CORE_EXPORT Variable operator|(const VariableConstProxy &a,
                                      const VariableConstProxy &b);
 // Note: If the left-hand-side in an addition is a VariableProxy this simply
 // implicitly converts it to a Variable. A copy for the return value is required
