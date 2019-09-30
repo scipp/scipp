@@ -33,15 +33,20 @@ struct is_sparse_container<sparse_container<T>> : std::true_type {};
 template <class T> struct underlying_type { using type = T; };
 template <> struct underlying_type<bool> { using type = Bool; };
 template <class T> using underlying_type_t = typename underlying_type<T>::type;
+template <class... A, class... B>
+struct underlying_type<std::tuple<std::pair<A, B>...>> {
+  using type =
+      std::tuple<std::pair<underlying_type_t<A>, underlying_type_t<B>>...>;
+};
 
 class Variable;
 template <class... Known> class VariableConceptHandle_impl;
 // Any item type that is listed here explicitly can be used with the templated
 // `transform`, i.e., we can pass arbitrary functors/lambdas to process data.
 using VariableConceptHandle = VariableConceptHandle_impl<
-    double, float, int64_t, int32_t, Eigen::Vector3d, sparse_container<double>,
-    sparse_container<float>, sparse_container<int64_t>,
-    sparse_container<int32_t>>;
+    double, float, int64_t, int32_t, bool, Eigen::Vector3d,
+    sparse_container<double>, sparse_container<float>,
+    sparse_container<int64_t>, sparse_container<int32_t>>;
 
 /// Abstract base class for any data that can be held by Variable. Also used to
 /// hold views to data by (Const)VariableProxy. This is using so-called
@@ -188,7 +193,7 @@ public:
       : m_object(std::unique_ptr<VariableConcept>(nullptr)) {}
   template <class T> VariableConceptHandle_impl(T object) {
     using value_t = typename T::element_type::value_type;
-    if constexpr ((std::is_same_v<value_t, Known> || ...))
+    if constexpr ((std::is_same_v<value_t, underlying_type_t<Known>> || ...))
       m_object = std::unique_ptr<VariableConceptT<value_t>>(std::move(object));
     else
       m_object = std::unique_ptr<VariableConcept>(std::move(object));
@@ -222,15 +227,16 @@ public:
   auto variant() const noexcept {
     return std::visit(
         [](auto &&arg) {
-          return std::variant<const VariableConcept *,
-                              const VariableConceptT<Known> *...>{arg.get()};
+          return std::variant<
+              const VariableConcept *,
+              const VariableConceptT<underlying_type_t<Known>> *...>{arg.get()};
         },
         m_object);
   }
 
 private:
   std::variant<std::unique_ptr<VariableConcept>,
-               std::unique_ptr<VariableConceptT<Known>>...>
+               std::unique_ptr<VariableConceptT<underlying_type_t<Known>>>...>
       m_object;
 };
 
@@ -615,6 +621,8 @@ public:
   bool operator!=(const Variable &other) const;
   bool operator!=(const VariableConstProxy &other) const;
   Variable operator-() const;
+
+  auto &underlying() const { return *m_variable; }
 
 protected:
   friend class Variable;

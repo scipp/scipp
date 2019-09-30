@@ -198,16 +198,20 @@ void init_dataset(py::module &m) {
   bind_in_place_binary<Dataset>(dataset);
   bind_in_place_binary<DatasetProxy>(dataset);
   bind_in_place_binary<DataProxy>(dataset);
+  bind_in_place_binary<VariableConstProxy>(dataset);
   bind_in_place_binary<Dataset>(datasetProxy);
   bind_in_place_binary<DatasetProxy>(datasetProxy);
+  bind_in_place_binary<VariableConstProxy>(datasetProxy);
   bind_in_place_binary<DataProxy>(datasetProxy);
 
   bind_binary<Dataset>(dataset);
   bind_binary<DatasetProxy>(dataset);
   bind_binary<DataProxy>(dataset);
+  bind_binary<VariableConstProxy>(dataset);
   bind_binary<Dataset>(datasetProxy);
   bind_binary<DatasetProxy>(datasetProxy);
   bind_binary<DataProxy>(datasetProxy);
+  bind_binary<VariableConstProxy>(datasetProxy);
 
   m.def("concatenate",
         py::overload_cast<const DataConstProxy &, const DataConstProxy &,

@@ -161,9 +161,72 @@ def convert_EventWorkspace_to_dataset(ws, load_pulse_times, EventType):
     return sc.DataArray(**coords_labs_data)
 
 
+def convert_TableWorkspace_to_dataset(ws, error_connection=None):
+    """
+    Converts from a Mantid TableWorkspace to a scipp dataset. It is possible
+    to assign a column as the error for another column, in which case a
+    the data from the two columns will be represented by a single scipp
+    variable with variance. This is done using the error_connection Keyword
+    argument. The error is transformed to variance in this converter.
+
+    Parameters
+    ----------
+        ws : Mantid TableWorkspace
+            Mantid TableWorkspace to be converted into scipp dataset
+
+    Keyword arguments
+    -----------------
+        error_connection : Dict
+            Dict with data column names as keys to names of their error column
+    """
+
+    # Extract information from workspace
+    n_columns = ws.columnCount()
+    columnNames = ws.getColumnNames()  # list of names matching each column
+    columnTypes = ws.columnTypes()  # list of types matching each column
+
+    # Types available in TableWorkspace that can not be loaded into scipp
+    blacklist_types = []
+    # Types for which the transformation from error to variance will fail
+    blacklist_variance_types = ["str"]
+
+    variables = {}
+    for i in range(n_columns):
+        if columnTypes[i] in blacklist_types:
+            continue  # skips loading data of this type
+
+        data_name = columnNames[i]
+        if error_connection is None:
+            variables[data_name] = sc.Variable([sc.Dim.Row],
+                                               values=ws.column(i))
+        elif data_name in error_connection:
+            # This data has error availble
+            error_name = error_connection[data_name]
+            error_index = columnNames.index(error_name)
+
+            if columnTypes[error_index] in blacklist_variance_types:
+                # Raise error to avoid numpy square error for strings
+                raise RuntimeError(
+                    "Variance can not have type string. \n"
+                    + "Data:     " + str(data_name) + "\n"
+                    + "Variance: " + str(error_name) + "\n")
+
+            variance = np.array(ws.column(error_name))**2
+            variables[data_name] = sc.Variable([sc.Dim.Row],
+                                               values=np.array(ws.column(i)),
+                                               variances=variance)
+        elif data_name not in error_connection.values():
+            # This data is not an error for another dataset, and has no error
+            variables[data_name] = sc.Variable([sc.Dim.Row],
+                                               values=ws.column(i))
+
+    return sc.Dataset(variables)  # Return scipp dataset with the variables
+
+
 def load(filename="",
          load_pulse_times=True,
          instrument_filename=None,
+         error_connection=None,
          **kwargs):
     """
     Wrapper function to provide a load method for a Nexus file, hiding mantid
@@ -215,4 +278,6 @@ def load(filename="",
     if ws.id() == 'EventWorkspace':
         return convert_EventWorkspace_to_dataset(ws, load_pulse_times,
                                                  EventType)
+    if ws.id() == 'TableWorkspace':
+        return convert_TableWorkspace_to_dataset(ws, error_connection)
     raise RuntimeError('Unsupported workspace type')
