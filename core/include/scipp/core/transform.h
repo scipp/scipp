@@ -747,7 +747,8 @@ template <bool dry_run> struct in_place {
 /// identical to the input range, but avoids potentially costly element copies.
 template <class... Ts, class Var, class Op>
 void transform_in_place(Var &&var, Op op) {
-  in_place<false>::transform<Ts...>(std::forward<Var>(var), op);
+  in_place<false>::transform<underlying_type_t<Ts>...>(std::forward<Var>(var),
+                                                       op);
 }
 
 /// Transform the data elements of a variable in-place.
@@ -757,7 +758,8 @@ void transform_in_place(Var &&var, Op op) {
 /// costly element copies.
 template <class... TypePairs, class Var, class Var1, class Op>
 void transform_in_place(Var &&var, const Var1 &other, Op op) {
-  in_place<false>::transform<TypePairs...>(std::forward<Var>(var), other, op);
+  in_place<false>::transform<underlying_type_t<TypePairs>...>(
+      std::forward<Var>(var), other, op);
 }
 
 /// Accumulate data elements of a variable in-place.
@@ -775,18 +777,20 @@ template <class... TypePairs, class Var, class Var1, class Op>
 void accumulate_in_place(Var &&var, const Var1 &other, Op op) {
   expect::contains(other.dims(), var.dims());
   // Wrapped implementation to convert multiple tuples into a parameter pack.
-  in_place<false>::transform(std::tuple_cat(TypePairs{}...),
+  in_place<false>::transform(std::tuple_cat(underlying_type_t<TypePairs>{}...),
                              std::forward<Var>(var), other, op);
 }
 
 namespace dry_run {
 template <class... Ts, class Var, class Op>
 void transform_in_place(Var &&var, Op op) {
-  in_place<true>::transform<Ts...>(std::forward<Var>(var), op);
+  in_place<true>::transform<underlying_type_t<Ts>...>(std::forward<Var>(var),
+                                                      op);
 }
 template <class... TypePairs, class Var, class Var1, class Op>
 void transform_in_place(Var &&var, const Var1 &other, Op op) {
-  in_place<true>::transform<TypePairs...>(std::forward<Var>(var), other, op);
+  in_place<true>::transform<underlying_type_t<TypePairs>...>(
+      std::forward<Var>(var), other, op);
 }
 } // namespace dry_run
 
@@ -801,11 +805,12 @@ template <class... Ts, class Var, class Op>
   auto unit = op(var.unit());
   Variable result;
   try {
-    if constexpr ((is_sparse_v<Ts> || ...)) {
-      result = scipp::core::visit_impl<Ts...>::apply(Transform{op},
-                                                     var.dataHandle());
+    if constexpr ((is_sparse_v<underlying_type_t<Ts>> || ...)) {
+      result = scipp::core::visit_impl<underlying_type_t<Ts>...>::apply(
+          Transform{op}, var.dataHandle());
     } else {
-      result = scipp::core::visit(augment::insert_sparse(std::tuple<Ts...>{}))
+      result = scipp::core::visit(augment::insert_sparse(
+                                      std::tuple<underlying_type_t<Ts>...>{}))
                    .apply(Transform{detail::overloaded_sparse{
                               op, TransformSparse<Op>{op}}},
                           var.dataHandle());
@@ -852,8 +857,8 @@ template <class... TypePairs, class Var1, class Var2, class Op>
 [[nodiscard]] Variable transform(const Var1 &var1, const Var2 &var2, Op op) {
   auto unit = op(var1.unit(), var2.unit());
   // Wrapped implementation to convert multiple tuples into a parameter pack.
-  auto result =
-      detail::transform(std::tuple_cat(TypePairs{}...), var1, var2, op);
+  auto result = detail::transform(
+      std::tuple_cat(underlying_type_t<TypePairs>{}...), var1, var2, op);
   result.setUnit(unit);
   return result;
 }
