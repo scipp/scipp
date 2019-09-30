@@ -801,11 +801,12 @@ template <class... Ts, class Var, class Op>
   auto unit = op(var.unit());
   Variable result;
   try {
-    if constexpr ((is_sparse_v<Ts> || ...)) {
-      result = scipp::core::visit_impl<Ts...>::apply(Transform{op},
-                                                     var.dataHandle());
+    if constexpr ((is_sparse_v<underlying_type_t<Ts>> || ...)) {
+      result = scipp::core::visit_impl<underlying_type_t<Ts>...>::apply(
+          Transform{op}, var.dataHandle());
     } else {
-      result = scipp::core::visit(augment::insert_sparse(std::tuple<Ts...>{}))
+      result = scipp::core::visit(augment::insert_sparse(
+                                      std::tuple<underlying_type_t<Ts>...>{}))
                    .apply(Transform{detail::overloaded_sparse{
                               op, TransformSparse<Op>{op}}},
                           var.dataHandle());
@@ -852,8 +853,8 @@ template <class... TypePairs, class Var1, class Var2, class Op>
 [[nodiscard]] Variable transform(const Var1 &var1, const Var2 &var2, Op op) {
   auto unit = op(var1.unit(), var2.unit());
   // Wrapped implementation to convert multiple tuples into a parameter pack.
-  auto result =
-      detail::transform(std::tuple_cat(TypePairs{}...), var1, var2, op);
+  auto result = detail::transform(
+      std::tuple_cat(underlying_type_t<TypePairs>{}...), var1, var2, op);
   result.setUnit(unit);
   return result;
 }

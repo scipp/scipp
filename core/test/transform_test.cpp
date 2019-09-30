@@ -127,6 +127,21 @@ TEST(TransformTest, apply_unary_dtype_preserved) {
   EXPECT_TRUE(equals(outF.values<float>(), {-1.1f, -2.2f}));
 }
 
+TEST(TransformTest, dtype_bool) {
+  const auto var = makeVariable<bool>({Dim::X, 2}, {true, false});
+  EXPECT_EQ(
+      transform<bool>(var, overloaded{[](const units::Unit &u) { return u; },
+                                      [](const auto x) { return !x; }}),
+      makeVariable<bool>({Dim::X, 2}, {false, true}));
+  EXPECT_EQ(transform<pair_self_t<bool>>(
+                var, var,
+                overloaded{[](const units::Unit &a, const units::Unit &b) {
+                             return a;
+                           },
+                           [](const auto x, const auto y) { return !x || y; }}),
+            makeVariable<bool>({Dim::X, 2}, {true, true}));
+}
+
 class TransformBinaryTest : public ::testing::Test {
 protected:
   static constexpr auto op_in_place{[](auto &x, const auto &y) { x *= y; }};
