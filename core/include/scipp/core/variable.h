@@ -22,6 +22,14 @@
 #include "scipp/core/vector.h"
 #include "scipp/units/unit.h"
 
+namespace pybind11 {
+class dtype;
+}
+
+namespace scippy {
+scipp::core::DType scipp_dtype(const pybind11::dtype &type);
+}
+
 namespace scipp::core {
 
 template <class T> struct is_sparse_container : std::false_type {};

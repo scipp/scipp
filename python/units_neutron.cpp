@@ -2,6 +2,8 @@
 // Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
+#include "scipp/core/dtype.h"
+#include "scipp/core/tag_util.h"
 #include "scipp/core/variable.h"
 #include "scipp/units/unit.h"
 
@@ -10,6 +12,38 @@
 
 using namespace scipp;
 namespace py = pybind11;
+
+template <class T> struct MultScalarUnit {
+
+  static scipp::core::Variable apply(const py::object &scalar,
+                                     const units::Unit &unit) {
+    using namespace scipp::core;
+    return py::cast<T>(scalar) * unit;
+  }
+};
+
+scipp::core::Variable doMultScalarUnit(const py::object &scalar,
+                                       const py::dtype &type,
+                                       const units::Unit &unit) {
+  return scipp::core::CallDType<double, float, int64_t, int32_t>::apply<
+      MultScalarUnit>(scippy::scipp_dtype(type), scalar, unit);
+}
+
+template <class T> struct DivScalarUnit {
+
+  static scipp::core::Variable apply(const py::object &scalar,
+                                     const units::Unit &unit) {
+    using namespace scipp::core;
+    return py::cast<T>(scalar) / unit;
+  }
+};
+
+scipp::core::Variable doDivScalarUnit(const py::object &scalar,
+                                      const py::dtype &type,
+                                      const units::Unit &unit) {
+  return scipp::core::CallDType<double, float, int64_t, int32_t>::apply<
+      DivScalarUnit>(scippy::scipp_dtype(type), scalar, unit);
+}
 
 void init_units_neutron(py::module &m) {
   bind_enum(m, "Dim", Dim::Invalid, 4);
@@ -25,13 +59,6 @@ void init_units_neutron(py::module &m) {
       .def(py::self - py::self)
       .def(py::self * py::self)
       .def(py::self / py::self)
-      .def("__rmul__",
-           [](const units::Unit &self, double factor) {
-             auto var = core::makeVariable<double>(factor);
-             var.setUnit(self);
-             return var;
-           },
-           "Return a scalar Variable with value and unit.")
       .def("__pow__",
            [](const units::Unit &self, int power) -> units::Unit {
              switch (power) {
@@ -55,45 +82,35 @@ void init_units_neutron(py::module &m) {
            })
       .def(py::self == py::self)
       .def(py::self != py::self)
-      .def("__rmul__",
-           [](const units::Unit &self, float scalar) -> core::Variable {
-             using namespace scipp::core;
-             return scalar * self;
-           })
-      .def("__rmul__",
+      .def("__rmul",
            [](const units::Unit &self, double scalar) -> core::Variable {
              using namespace scipp::core;
              return scalar * self;
            })
-      .def("__rmul__",
-           [](const units::Unit &self, int32_t scalar) -> core::Variable {
-             using namespace scipp::core;
-             return scalar * self;
-           })
-      .def("__rmul__",
+      .def("__rmul",
            [](const units::Unit &self, int64_t scalar) -> core::Variable {
              using namespace scipp::core;
              return scalar * self;
            })
-      .def("__rtruediv__",
-           [](const units::Unit &self, float scalar) -> core::Variable {
-             using namespace scipp::core;
-             return scalar / self;
+      .def("__rmul",
+           [](const units::Unit &self, const py::object &scalar,
+              const py::dtype &dtype) -> core::Variable {
+             return doMultScalarUnit(scalar, dtype, self);
            })
-      .def("__rtruediv__",
+      .def("__rtruediv",
            [](const units::Unit &self, double scalar) -> core::Variable {
              using namespace scipp::core;
              return scalar / self;
            })
-      .def("__rtruediv__",
-           [](const units::Unit &self, int32_t scalar) -> core::Variable {
-             using namespace scipp::core;
-             return scalar / self;
-           })
-      .def("__rtruediv__",
+      .def("__rtruediv",
            [](const units::Unit &self, int64_t scalar) -> core::Variable {
              using namespace scipp::core;
              return scalar / self;
+           })
+      .def("__rtruediv",
+           [](const units::Unit &self, const py::object &scalar,
+              const py::dtype &dtype) -> core::Variable {
+             return doDivScalarUnit(scalar, dtype, self);
            });
 
   auto units = m.def_submodule("units");
