@@ -2,6 +2,7 @@
 // Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
+#include "scipp/core/dataset.h" // clang-7 error "incomplete type 'Dataset' used in type trait expression" without this line
 #include "scipp/core/dtype.h"
 #include "scipp/core/tag_util.h"
 #include "scipp/core/variable.h"
