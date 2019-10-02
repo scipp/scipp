@@ -33,7 +33,8 @@ RUN conda install --yes \
       scipp \
       ipywidgets \
       mantid-framework=4 \
-      python=3.6
+      python=3.6 \
+      && conda clean -afy
 
 # Avoid weird tornado AttributeError
 RUN pip install --upgrade nbconvert
