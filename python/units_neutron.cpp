@@ -9,6 +9,7 @@
 #include "scipp/units/unit.h"
 
 #include "bind_enum.h"
+#include "dtype.h"
 #include "pybind11.h"
 
 using namespace scipp;
@@ -27,7 +28,7 @@ scipp::core::Variable doMultScalarUnit(const py::object &scalar,
                                        const py::dtype &type,
                                        const units::Unit &unit) {
   return scipp::core::CallDType<double, float, int64_t, int32_t>::apply<
-      MultScalarUnit>(scippy::scipp_dtype(type), scalar, unit);
+      MultScalarUnit>(scipp_dtype(type), scalar, unit);
 }
 
 template <class T> struct DivScalarUnit {
@@ -43,7 +44,7 @@ scipp::core::Variable doDivScalarUnit(const py::object &scalar,
                                       const py::dtype &type,
                                       const units::Unit &unit) {
   return scipp::core::CallDType<double, float, int64_t, int32_t>::apply<
-      DivScalarUnit>(scippy::scipp_dtype(type), scalar, unit);
+      DivScalarUnit>(scipp_dtype(type), scalar, unit);
 }
 
 void init_units_neutron(py::module &m) {
