@@ -23,4 +23,6 @@ TEST(GroupbyTest, dataset_1d) {
   const auto &keys = grouped.labels()["label2"].values<double>();
   EXPECT_EQ(keys[0], 1.0);
   EXPECT_EQ(keys[1], 3.0);
+  EXPECT_EQ(grouped.values<Dataset>()[0], d.slice({Dim::X, 0, 2}));
+  EXPECT_EQ(grouped.values<Dataset>()[1], d.slice({Dim::X, 2, 3}));
 }

@@ -23,6 +23,8 @@ template <class T> struct MakeGroups {
     std::map<T, std::vector<scipp::index>> indices;
     for (scipp::index i = 0; i < scipp::size(values); ++i)
       indices[values[i]].push_back(i);
+    // TODO Better just return indices, without copying data into groups.
+    // Alternatively return map to IndexedSliceView?
 
     const Dim dim = key.dims().inner();
     const Dimensions dims{dim, scipp::size(indices)};
