@@ -40,6 +40,43 @@ protected:
   Op op;
 };
 
+std::tuple<Dataset, Dataset> generateBinaryOpTestCase() {
+  constexpr auto lx = 5;
+  constexpr auto ly = 5;
+
+  Random rand;
+
+  const auto coordX = rand(lx);
+  const auto coordY = rand(ly);
+  const auto labelT = makeVariable<double>({Dim::Y, ly}, rand(ly));
+  const auto masks = makeVariable<bool>({Dim::Y, ly}, makeBools(ly));
+
+  Dataset a;
+  {
+    a.setCoord(Dim::X, makeVariable<double>({Dim::X, lx}, coordX));
+    a.setCoord(Dim::Y, makeVariable<double>({Dim::Y, ly}, coordY));
+
+    a.setLabels("t", labelT);
+    a.setMasks("mask", masks);
+
+    a.setData("data_a", makeVariable<double>({Dim::X, lx}, rand(lx)));
+    a.setData("data_b", makeVariable<double>({Dim::Y, ly}, rand(ly)));
+  }
+
+  Dataset b;
+  {
+    b.setCoord(Dim::X, makeVariable<double>({Dim::X, lx}, coordX));
+    b.setCoord(Dim::Y, makeVariable<double>({Dim::Y, ly}, coordY));
+
+    b.setLabels("t", labelT);
+    b.setMasks("mask", masks);
+
+    b.setData("data_a", makeVariable<double>({Dim::Y, ly}, rand(ly)));
+  }
+
+  return std::make_tuple(a, b);
+}
+
 TYPED_TEST_SUITE(DataProxyBinaryEqualsOpTest, BinaryEquals);
 TYPED_TEST_SUITE(DatasetBinaryEqualsOpTest, BinaryEquals);
 TYPED_TEST_SUITE(DatasetProxyBinaryEqualsOpTest, BinaryEquals);
@@ -335,6 +372,21 @@ TYPED_TEST(DatasetBinaryEqualsOpTest,
   ASSERT_THROW(TestFixture::op(a, b), std::runtime_error);
 }
 
+TYPED_TEST(DatasetBinaryEqualsOpTest, masks_propagate) {
+  auto a = datasetFactory.makeMasked();
+  auto b = datasetFactory.make();
+
+  const auto expectedMasks = makeVariable<bool>(
+      {Dim::X, datasetFactory.lx},
+      makeBools<BoolsGeneratorType::TRUE>(datasetFactory.lx));
+
+  b.setMasks("mask", expectedMasks);
+
+  TestFixture::op(a, b);
+
+  EXPECT_EQ(a.masks()["mask"], expectedMasks);
+}
+
 TYPED_TEST(DatasetProxyBinaryEqualsOpTest, return_value) {
   auto a = datasetFactory.make();
   auto b = datasetFactory.make();
@@ -513,40 +565,6 @@ protected:
 
 TYPED_TEST_SUITE(DatasetBinaryOpTest, Binary);
 
-std::tuple<Dataset, Dataset> generateBinaryOpTestCase() {
-  constexpr auto lx = 5;
-  constexpr auto ly = 5;
-
-  Random rand;
-
-  const auto coordX = rand(lx);
-  const auto coordY = rand(ly);
-  const auto labelT = makeVariable<double>({Dim::Y, ly}, rand(ly));
-
-  Dataset a;
-  {
-    a.setCoord(Dim::X, makeVariable<double>({Dim::X, lx}, coordX));
-    a.setCoord(Dim::Y, makeVariable<double>({Dim::Y, ly}, coordY));
-
-    a.setLabels("t", labelT);
-
-    a.setData("data_a", makeVariable<double>({Dim::X, lx}, rand(lx)));
-    a.setData("data_b", makeVariable<double>({Dim::Y, ly}, rand(ly)));
-  }
-
-  Dataset b;
-  {
-    b.setCoord(Dim::X, makeVariable<double>({Dim::X, lx}, coordX));
-    b.setCoord(Dim::Y, makeVariable<double>({Dim::Y, ly}, coordY));
-
-    b.setLabels("t", labelT);
-
-    b.setData("data_a", makeVariable<double>({Dim::Y, ly}, rand(ly)));
-  }
-
-  return std::make_tuple(a, b);
-}
-
 TYPED_TEST(DatasetBinaryOpTest, dataset_lhs_dataset_rhs) {
   const auto[dataset_a, dataset_b] = generateBinaryOpTestCase();
 
@@ -566,6 +584,7 @@ TYPED_TEST(DatasetBinaryOpTest, dataset_lhs_dataset_rhs) {
   /* Expect coordinates and labels to be copied to the result dataset */
   EXPECT_EQ(res.coords(), dataset_a.coords());
   EXPECT_EQ(res.labels(), dataset_a.labels());
+  EXPECT_EQ(res.masks(), dataset_a.masks());
 }
 
 TYPED_TEST(DatasetBinaryOpTest, dataset_lhs_variableconstproxy_rhs) {

@@ -125,7 +125,7 @@ TEST(DatasetTest, setAttr) {
 
 TEST(DatasetTest, setMasks) {
   Dataset d;
-  const auto var = makeVariable<bool>({Dim::X, 3});
+  const auto var = makeVariable<bool>({Dim::X, 3}, {false, true, false});
 
   ASSERT_EQ(d.size(), 0);
   ASSERT_EQ(d.masks().size(), 0);
@@ -133,6 +133,7 @@ TEST(DatasetTest, setMasks) {
   ASSERT_NO_THROW(d.setMasks("a", var));
   ASSERT_EQ(d.size(), 0);
   ASSERT_EQ(d.masks().size(), 1);
+  ASSERT_EQ(d.masks()["a"], var);
 
   ASSERT_NO_THROW(d.setMasks("b", var));
   ASSERT_EQ(d.size(), 0);

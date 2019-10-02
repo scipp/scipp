@@ -27,6 +27,22 @@ public:
   }
 };
 
+enum BoolsGeneratorType { ALTERNATING, FALSE, TRUE };
+
+template <BoolsGeneratorType type = BoolsGeneratorType::ALTERNATING>
+std::vector<bool> makeBools(const scipp::index size) {
+  std::vector<bool> data(size);
+  for (scipp::index i = 0; i < size; ++i)
+    if constexpr (type == BoolsGeneratorType::ALTERNATING) {
+      data[i] = i % 2;
+    } else if constexpr (type == BoolsGeneratorType::FALSE) {
+      data[i] = false;
+    } else {
+      data[i] = true;
+    }
+  return data;
+}
+
 Variable makeRandom(const Dimensions &dims);
 
 /// Factory for creating datasets for testing. For a given instance, `make()`
@@ -40,10 +56,11 @@ public:
   Dataset make();
   Dataset makeMasked();
 
-private:
   const scipp::index lx;
   const scipp::index ly;
   const scipp::index lz;
+
+private:
   Random rand;
   Dataset base;
 };
