@@ -1,14 +1,12 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
-# @author Simon Heybrock, Neil Vaytet
+# @author Mads Bertelsen
 
 import scipp as sc
+import scipp.neutron.exceptions as exceptions
 
 
-def loadCal(Filename="", InstrumentName="",
-            InstrumentFilename="",
-            GroupFilename="",
-            TofMin=None, TofMax=None):
+def load_calibration(filename, mantid_LoadDiffCal_args={}):
     """
     Function that loads calibration files using the Mantid algorithm
     LoadDiffCal. This algorithm produces up to three workspaces, a
@@ -21,22 +19,18 @@ def loadCal(Filename="", InstrumentName="",
     Example of use:
 
       from scipp.neutron.diffraction import load
-      cal = loadCal(Filename='cal_file.cal', InstrumentName='WISH')
+      input = {"InstrumentName": "WISH"}
+      cal = loadCal('cal_file.cal', mantid_LoadDiffCal_args=input')
 
     Note that this function requires mantid to be installed and available in
     the same Python environment as scipp.
 
-    :param str Filename: The name of the cal file to be loaded.
-    :param str InstrumentName: Name of Mantid instrument to use.
-    :param str InstrumentFilename: If specified, over-write the instrument
-                                    definition in the final Dataset with the
-                                    geometry contained in the file.
-    :param str GroupFilename: If specified, over-writes the grouping from
-                               CallFileName.
-    :param float TofMin: Minimum time of flight (default 0)
-    :param float TofMax: Maximum time of flight
-    :raises: If the Mantid workspace type returned by the Mantid loader is not
-             either EventWorkspace or Workspace2D.
+    :param str filename: The name of the cal file to be loaded.
+    :param dict mantid_LoadDiffCal_args : Dictionary with arguments for the
+                                          LoadDiffCal Mantid algorithm.
+                                          Currently InstrumentName is required.
+    :raises: If the InstrumentName given in mantid_LoadDiffCal_args is not
+             valid.
     :return: A Dataset containing the calibration data and grouping.
     :rtype: Dataset
     """
@@ -44,39 +38,41 @@ def loadCal(Filename="", InstrumentName="",
     try:
         import mantid.simpleapi as mantid
     except ImportError as e:
-        raise ImportError(
-            "Mantid Python API was not found, please install Mantid framework "
-            "as detailed in the installation instructions (https://scipp."
-            "readthedocs.io/en/latest/getting-started/installation.html)"
-        ) from e
+        raise exceptions.MantidNotFoundError from e
 
-    output = mantid.LoadDiffCal(Filename=Filename,
-                                InstrumentName=InstrumentName,
-                                WorkspaceName="cal_output",
-                                InstrumentFilename=InstrumentFilename,
-                                GroupFilename="",
-                                TofMin=TofMin, TofMax=TofMax)
+    if "WorkspaceName" not in mantid_LoadDiffCal_args:
+        mantid_LoadDiffCal_args["WorkspaceName"] = "cal_output"
+
+    output = mantid.LoadDiffCal(Filename=filename, **mantid_LoadDiffCal_args)
 
     cal_ws = output.OutputCalWorkspace
     cal_data = sc.compat.mantid.convert_TableWorkspace_to_dataset(cal_ws)
 
     # Modify units of cal_data
     cal_data["difc"].unit = sc.units.us/sc.units.angstrom
-    # Currently unsupported unit on python 3.6
-    # cal_data["difa"].unit = sc.units.us/sc.units.angstrom/sc.units.angstrom
+    cal_data["difa"].unit = sc.units.us/sc.units.angstrom/sc.units.angstrom
     cal_data["tzero"].unit = sc.units.us
 
-    # Mask data not used yet
+    # Mask data not used, but is loaded by LoadDiffCal
     # output.OutputMaskWorkspace)
 
+    # Apply group information to dataset by matching detector id's to group nr
     group_ws = output.OutputGroupingWorkspace
+    group_map = {}  # dict from detectorID to group number
+    for i in range(group_ws.getNumberHistograms()):
+        group_map[group_ws.getDetector(i).getID()] = group_ws.readY(i)[0]
 
     group_list = []
-    for i in range(group_ws.getNumberHistograms()):
-        group_list.append(group_ws.readY(i))
+    detID_list = cal_data["detid"].values
+    for i in range(len(detID_list)):
+        group_list.append(group_map[detID_list[i]])
 
-    group_var = sc.Variable([sc.Dim.Row], values=group_list)
+    cal_data["group"] = sc.Variable([sc.Dim.Row], values=group_list)
 
-    cal_data["group"] = group_var
+    # Delete generated mantid workspaces
+    base_name = mantid_LoadDiffCal_args["WorkspaceName"]
+    mantid.mtd.remove(base_name + "_cal")
+    mantid.mtd.remove(base_name + "_group")
+    mantid.mtd.remove(base_name + "_mask")
 
     return cal_data
