@@ -23,24 +23,28 @@ void dry_run_op(const DataProxy &a, const DataConstProxy &b, Op op) {
 
 DataProxy DataProxy::operator+=(const DataConstProxy &other) const {
   expect::coordsAndLabelsAreSuperset(*this, other);
+  mask_union_(masks(), other.masks());
   data() += other.data();
   return *this;
 }
 
 DataProxy DataProxy::operator-=(const DataConstProxy &other) const {
   expect::coordsAndLabelsAreSuperset(*this, other);
+  mask_union_(masks(), other.masks());
   data() -= other.data();
   return *this;
 }
 
 DataProxy DataProxy::operator*=(const DataConstProxy &other) const {
   expect::coordsAndLabelsAreSuperset(*this, other);
+  mask_union_(masks(), other.masks());
   data() *= other.data();
   return *this;
 }
 
 DataProxy DataProxy::operator/=(const DataConstProxy &other) const {
   expect::coordsAndLabelsAreSuperset(*this, other);
+  mask_union_(masks(), other.masks());
   data() /= other.data();
   return *this;
 }
@@ -81,9 +85,9 @@ constexpr static auto divide = [](const auto &a, const auto &b) {
 
 template <class Op, class A, class B>
 auto &apply(const Op &op, A &a, const B &b) {
-  for (const auto & [ name, item ] : b)
+  for (const auto &[name, item] : b)
     dry_run_op(a[name], item, op);
-  for (const auto & [ name, item ] : b)
+  for (const auto &[name, item] : b)
     op(a[name], item);
   return a;
 }
@@ -111,7 +115,7 @@ decltype(auto) apply_with_delay(const Op &op, A &&a, const B &b) {
   // Note the inefficiency here: We are comparing some or all of the coords and
   // labels for each item. This could be improved by implementing the operations
   // for detail::DatasetData instead of DataProxy.
-  for (const auto & [ name, item ] : a) {
+  for (const auto &[name, item] : a) {
     static_cast<void>(name);
     if (have_common_underlying(item, b))
       delayed = item;
@@ -126,7 +130,7 @@ decltype(auto) apply_with_delay(const Op &op, A &&a, const B &b) {
 template <class Op, class A, class B>
 auto apply_with_broadcast(const Op &op, const A &a, const B &b) {
   Dataset res;
-  for (const auto & [ name, item ] : b)
+  for (const auto &[name, item] : b)
     if (const auto it = a.find(name); it != a.end())
       res.setData(std::string(name), op(it->second, item));
   return res;
@@ -135,7 +139,7 @@ auto apply_with_broadcast(const Op &op, const A &a, const B &b) {
 template <class Op, class A>
 auto apply_with_broadcast(const Op &op, const A &a, const DataConstProxy &b) {
   Dataset res;
-  for (const auto & [ name, item ] : a)
+  for (const auto &[name, item] : a)
     res.setData(std::string(name), op(item, b));
   return res;
 }
@@ -143,7 +147,7 @@ auto apply_with_broadcast(const Op &op, const A &a, const DataConstProxy &b) {
 template <class Op, class B>
 auto apply_with_broadcast(const Op &op, const DataConstProxy &a, const B &b) {
   Dataset res;
-  for (const auto & [ name, item ] : b)
+  for (const auto &[name, item] : b)
     res.setData(std::string(name), op(a, item));
   return res;
 }
@@ -152,7 +156,7 @@ template <class Op, class A>
 auto apply_with_broadcast(const Op &op, const A &a,
                           const VariableConstProxy &b) {
   Dataset res;
-  for (const auto & [ name, item ] : a)
+  for (const auto &[name, item] : a)
     res.setData(std::string(name), op(item, b));
   return res;
 }
@@ -161,7 +165,7 @@ template <class Op, class B>
 auto apply_with_broadcast(const Op &op, const VariableConstProxy &a,
                           const B &b) {
   Dataset res;
-  for (const auto & [ name, item ] : b)
+  for (const auto &[name, item] : b)
     res.setData(std::string(name), op(a, item));
   return res;
 }

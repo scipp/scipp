@@ -7,6 +7,7 @@
 
 #include <functional>
 #include <iosfwd>
+#include <iostream>
 #include <optional>
 #include <string>
 #include <unordered_map>
@@ -168,8 +169,8 @@ public:
 
   CoordsProxy coords() const noexcept;
   LabelsProxy labels() const noexcept;
-  AttrsProxy attrs() const noexcept;
   MasksProxy masks() const noexcept;
+  AttrsProxy attrs() const noexcept;
 
   void setUnit(const units::Unit unit) const;
 
@@ -264,18 +265,18 @@ public:
   explicit Dataset(const DataConstProxy &data);
   explicit Dataset(const std::map<std::string, DataConstProxy> &data);
 
-  template <class DataMap, class CoordMap, class LabelsMap, class AttrMap,
-            class MasksMap>
-  Dataset(DataMap data, CoordMap coords, LabelsMap labels, AttrMap attrs,
-          MasksMap masks) {
+  template <class DataMap, class CoordMap, class LabelsMap, class MasksMap,
+            class AttrMap>
+  Dataset(DataMap data, CoordMap coords, LabelsMap labels, MasksMap masks,
+          AttrMap attrs) {
     for (auto &&[dim, coord] : coords)
       setCoord(dim, std::move(coord));
     for (auto &&[name, labs] : labels)
       setLabels(std::string(name), std::move(labs));
-    for (auto &&[name, attr] : attrs)
-      setAttr(std::string(name), std::move(attr));
     for (auto &&[name, mask] : masks)
       setMasks(std::string(name), std::move(mask));
+    for (auto &&[name, attr] : attrs)
+      setAttr(std::string(name), std::move(attr));
     for (auto &&[name, item] : data)
       setData(std::string(name), std::move(item));
   }
@@ -349,8 +350,8 @@ public:
 
   void setCoord(const Dim dim, Variable coord);
   void setLabels(const std::string &labelName, Variable labels);
-  void setAttr(const std::string &attrName, Variable attr);
   void setMasks(const std::string &labelName, Variable masks);
+  void setAttr(const std::string &attrName, Variable attr);
   void setData(const std::string &name, Variable data);
   void setData(const std::string &name, const DataConstProxy &data);
   void setSparseCoord(const std::string &name, Variable coord);
@@ -364,14 +365,14 @@ public:
                  const VariableConstProxy &labels) {
     setLabels(labelName, Variable(labels));
   }
+  void setMasks(const std::string &name, const VariableConstProxy &mask) {
+    setMasks(name, Variable(mask));
+  }
   void setAttr(const std::string &attrName, const VariableConstProxy &attr) {
     setAttr(attrName, Variable(attr));
   }
   void setData(const std::string &name, const VariableConstProxy &data) {
     setData(name, Variable(data));
-  }
-  void setMasks(const std::string &name, const VariableConstProxy &mask) {
-    setMasks(name, Variable(mask));
   }
   void setSparseCoord(const std::string &name,
                       const VariableConstProxy &coord) {
@@ -638,14 +639,16 @@ public:
     } else {
       // TODO Would like to add coords for DataArray, as a temporary hack we
       // allow adding dense coords of the parent size is 1.
-      if (m_name && m_parent->size() != 1)
-        throw std::runtime_error(
-            "Dense coord/labels/attr must be added to "
-            "coords of dataset, not coords of dataset items.");
+      // if (m_name && m_parent->size() != 1)
+      //   throw std::runtime_error(
+      //       "Dense coord/labels/attr must be added to "
+      //       "coords of dataset, not coords of dataset items.");
       if constexpr (std::is_same_v<Base, CoordsConstProxy>)
         m_parent->setCoord(key, var);
       if constexpr (std::is_same_v<Base, LabelsConstProxy>)
         m_parent->setLabels(key, var);
+      if constexpr (std::is_same_v<Base, MasksConstProxy>)
+        m_parent->setMasks(key, var);
       if constexpr (std::is_same_v<Base, AttrsConstProxy>)
         m_parent->setAttr(key, var);
     }
@@ -663,24 +666,6 @@ template <class T1, class T2> auto union_(const T1 &a, const T2 &b) {
       expect::equals(item, it->second);
     else
       out.emplace(key, item);
-  }
-  return out;
-}
-
-template <class T1, class T2> auto mask_union_(const T1 &a, const T2 &b) {
-  std::map<typename T1::key_type, typename T1::mapped_type> out;
-
-  for (const auto &[key, item] : a)
-    out.emplace(key, item);
-
-  for (const auto &[key, item] : b) {
-    // const auto it = a.find(key);
-    out.emplace(key, item);
-    // if (it == a.end()) {
-    //   out.insert_or_assign(key, item);
-    // }
-    // TODO this expect a Variable, but has VariableConstProxy, what do?
-    // out[key] = it != a.end() ? it->second + item : item;
   }
   return out;
 }
@@ -865,10 +850,10 @@ public:
   explicit DataArray(const DataConstProxy &proxy);
   template <class CoordMap = std::map<Dim, Variable>,
             class LabelsMap = std::map<std::string, Variable>,
-            class AttrMap = std::map<std::string, Variable>,
-            class MasksMap = std::map<std::string, Variable>>
+            class MasksMap = std::map<std::string, Variable>,
+            class AttrMap = std::map<std::string, Variable>>
   DataArray(std::optional<Variable> data, CoordMap coords = {},
-            LabelsMap labels = {}, AttrMap attrs = {}, MasksMap masks = {},
+            LabelsMap labels = {}, MasksMap masks = {}, AttrMap attrs = {},
             const std::string &name = "") {
     if (data)
       m_holder.setData(name, std::move(*data));
@@ -1132,6 +1117,14 @@ SCIPP_CORE_EXPORT Dataset rebin(const DatasetConstProxy &d, const Dim dim,
 
 SCIPP_CORE_EXPORT VariableConstProxy same(const VariableConstProxy &a,
                                           const VariableConstProxy &b);
+
+SCIPP_CORE_EXPORT std::map<typename MasksConstProxy::key_type,
+                           typename MasksConstProxy::mapped_type>
+mask_union_(const MasksConstProxy &currentMasks,
+            const MasksConstProxy &otherMasks);
+
+SCIPP_CORE_EXPORT void mask_union_(MasksProxy &&currentMasks,
+                                   const MasksConstProxy &otherMasks);
 
 } // namespace scipp::core
 

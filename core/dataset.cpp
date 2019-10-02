@@ -59,7 +59,8 @@ auto makeProxyItems(const Dimensions &dims, T1 &coords, T2 *sparse = nullptr) {
 }
 
 Dataset::Dataset(const DatasetConstProxy &proxy)
-    : Dataset(proxy, proxy.coords(), proxy.labels(), proxy.attrs(), proxy.masks()) {}
+    : Dataset(proxy, proxy.coords(), proxy.labels(), proxy.masks(),
+              proxy.attrs()) {}
 
 Dataset::Dataset(const DataConstProxy &data) { setData(data.name(), data); }
 
@@ -235,6 +236,9 @@ void Dataset::rebuildDims() {
   for (const auto &l : m_labels) {
     setDims(l.second.dims());
   }
+  for (const auto &l : m_masks) {
+    setDims(l.second.dims());
+  }
   for (const auto &a : m_attrs) {
     setDims(a.second.dims());
   }
@@ -311,15 +315,16 @@ void Dataset::setData(const std::string &name, const DataConstProxy &data) {
         setLabels(std::string(nm), labs);
     }
   }
+
+  for (const auto &[nm, mask] : data.masks()) {
+    setMasks(std::string(nm), mask);
+  }
+
   for (const auto &[nm, attr] : data.attrs()) {
     if (const auto it = m_attrs.find(std::string(nm)); it != m_attrs.end())
       expect::equals(attr, it->second);
     else
       setAttr(std::string(nm), attr);
-  }
-
-  for (const auto &[nm, mask] : data.masks()) {
-    setMasks(std::string(nm), mask);
   }
 
   if (data.hasData())
@@ -694,9 +699,9 @@ bool operator==(const DataConstProxy &a, const DataConstProxy &b) {
     return false;
   if (a.labels() != b.labels())
     return false;
-  if (a.attrs() != b.attrs())
-    return false;
   if (a.masks() != b.masks())
+    return false;
+  if (a.attrs() != b.attrs())
     return false;
   if (a.hasData() && a.data() != b.data())
     return false;
@@ -714,9 +719,9 @@ template <class A, class B> bool dataset_equals(const A &a, const B &b) {
     return false;
   if (a.labels() != b.labels())
     return false;
-  if (a.attrs() != b.attrs())
-    return false;
   if (a.masks() != b.masks())
+    return false;
+  if (a.attrs() != b.attrs())
     return false;
   for (const auto &[name, data] : a) {
     try {
@@ -794,5 +799,55 @@ std::unordered_map<Dim, scipp::index> Dataset::dimensions() const {
   }
   return all;
 }
+
+std::map<typename MasksConstProxy::key_type,
+         typename MasksConstProxy::mapped_type>
+mask_union_(const MasksConstProxy &currentMasks,
+            const MasksConstProxy &otherMasks) {
+  std::map<typename MasksConstProxy::key_type,
+           typename MasksConstProxy::mapped_type>
+      out;
+
+  for (const auto &[key, item] : currentMasks) {
+    out.emplace(key, item);
+  }
+
+  for (const auto &[key, item] : otherMasks) {
+    const auto it = currentMasks.find(key);
+    if (it != currentMasks.end()) {
+      const auto result = it->second | item;
+      out[key] = result;
+    } else {
+      out.emplace(key, item);
+    }
+  }
+  return out;
+}
+
+void mask_union_(MasksProxy &&currentMasks, const MasksConstProxy &otherMasks) {
+  for (const auto &[key, item] : otherMasks) {
+    const auto it = currentMasks.find(key);
+    if (it != currentMasks.end()) {
+      const auto result = it->second | item;
+      currentMasks.set(key, result);
+    } else {
+      currentMasks.set(key, item);
+    }
+  }
+}
+
+// template <class Op>
+// void mask_union_impl_(const MasksConstProxy &currentMasks,
+//                       const MasksConstProxy &otherMasks, Op op) {
+//   for (const auto & [ key, item ] : otherMasks) {
+//     const auto it = currentMasks.find(key);
+//     if (it != currentMasks.end()) {
+//       const auto result = it->second | item;
+//       op(std::move(result));
+//     } else {
+//       op(item);
+//     }
+//   }
+// }
 
 } // namespace scipp::core

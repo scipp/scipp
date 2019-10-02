@@ -74,54 +74,55 @@ DataArray &DataArray::operator/=(const VariableConstProxy &other) {
 
 DataArray operator+(const DataConstProxy &a, const DataConstProxy &b) {
   return DataArray(a.data() + b.data(), union_(a.coords(), b.coords()),
-                   union_(a.labels(), b.labels()));
+                   union_(a.labels(), b.labels()),
+                   mask_union_(a.masks(), b.masks()));
 }
 
 DataArray operator-(const DataConstProxy &a, const DataConstProxy &b) {
   return {a.data() - b.data(), union_(a.coords(), b.coords()),
-          union_(a.labels(), b.labels())};
+          union_(a.labels(), b.labels()), mask_union_(a.masks(), b.masks())};
 }
 
 DataArray operator*(const DataConstProxy &a, const DataConstProxy &b) {
   return {a.data() * b.data(), union_(a.coords(), b.coords()),
-          union_(a.labels(), b.labels())};
+          union_(a.labels(), b.labels()), mask_union_(a.masks(), b.masks())};
 }
 
 DataArray operator/(const DataConstProxy &a, const DataConstProxy &b) {
   return {a.data() / b.data(), union_(a.coords(), b.coords()),
-          union_(a.labels(), b.labels())};
+          union_(a.labels(), b.labels()), mask_union_(a.masks(), b.masks())};
 }
 
 DataArray operator+(const DataConstProxy &a, const VariableConstProxy &b) {
-  return DataArray(a.data() + b, a.coords(), a.labels(), a.attrs());
+  return DataArray(a.data() + b, a.coords(), a.labels(), a.attrs(), a.masks());
 }
 
 DataArray operator-(const DataConstProxy &a, const VariableConstProxy &b) {
-  return DataArray(a.data() - b, a.coords(), a.labels(), a.attrs());
+  return DataArray(a.data() - b, a.coords(), a.labels(), a.attrs(), a.masks());
 }
 
 DataArray operator*(const DataConstProxy &a, const VariableConstProxy &b) {
-  return DataArray(a.data() * b, a.coords(), a.labels(), a.attrs());
+  return DataArray(a.data() * b, a.coords(), a.labels(), a.attrs(), a.masks());
 }
 
 DataArray operator/(const DataConstProxy &a, const VariableConstProxy &b) {
-  return DataArray(a.data() / b, a.coords(), a.labels(), a.attrs());
+  return DataArray(a.data() / b, a.coords(), a.labels(), a.attrs(), a.masks());
 }
 
 DataArray operator+(const VariableConstProxy &a, const DataConstProxy &b) {
-  return DataArray(a + b.data(), b.coords(), b.labels(), b.attrs());
+  return DataArray(a + b.data(), b.coords(), b.labels(), b.attrs(), b.masks());
 }
 
 DataArray operator-(const VariableConstProxy &a, const DataConstProxy &b) {
-  return DataArray(a - b.data(), b.coords(), b.labels(), b.attrs());
+  return DataArray(a - b.data(), b.coords(), b.labels(), b.attrs(), b.masks());
 }
 
 DataArray operator*(const VariableConstProxy &a, const DataConstProxy &b) {
-  return DataArray(a * b.data(), b.coords(), b.labels(), b.attrs());
+  return DataArray(a * b.data(), b.coords(), b.labels(), b.attrs(), b.masks());
 }
 
 DataArray operator/(const VariableConstProxy &a, const DataConstProxy &b) {
-  return DataArray(a / b.data(), b.coords(), b.labels(), b.attrs());
+  return DataArray(a / b.data(), b.coords(), b.labels(), b.attrs(), b.masks());
 }
 
 } // namespace scipp::core
