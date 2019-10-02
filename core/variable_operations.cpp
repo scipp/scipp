@@ -218,4 +218,7 @@ Variable reverse(Variable var, const Dim dim) {
   return var;
 }
 
+/// Return a deep copy of a Variable or of a VariableProxy.
+Variable copy(const VariableConstProxy &var) { return Variable(var); }
+
 } // namespace scipp::core

@@ -815,6 +815,7 @@ SCIPP_CORE_EXPORT Variable reverse(Variable var, const Dim dim);
 SCIPP_CORE_EXPORT Variable sqrt(const Variable &var);
 
 SCIPP_CORE_EXPORT Variable sum(const VariableConstProxy &var, const Dim dim);
+SCIPP_CORE_EXPORT Variable copy(const VariableConstProxy &var);
 
 // Trigonometrics
 SCIPP_CORE_EXPORT Variable sin(const Variable &var);

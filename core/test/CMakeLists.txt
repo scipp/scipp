@@ -18,10 +18,12 @@ add_executable(${TARGET_NAME} EXCLUDE_FROM_ALL
                dimensions_test.cpp
                except_test.cpp
                histogram_test.cpp
+               indexed_slice_view_test.cpp
                mean_test.cpp
                merge_test.cpp
                rebin_test.cpp
                slice_test.cpp
+               sort_test.cpp
                transform_test.cpp
                value_and_variance_test.cpp
                variable_custom_type_test.cpp
