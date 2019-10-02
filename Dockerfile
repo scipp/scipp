@@ -3,7 +3,8 @@ FROM jupyter/base-notebook
 # Avoid using passwords for jupyter notebook
 USER root
 RUN apt-get update
-RUN apt-get install -y freeglut3-dev libglu1-mesa curl
+RUN apt-get install -y freeglut3-dev libglu1-mesa curl \
+    && apt-get clean
 RUN sed -i "s/jupyter notebook/jupyter notebook --NotebookApp.token='' --NotebookApp.password=''/" /usr/local/bin/start-notebook.sh
 
 USER $NB_USER
