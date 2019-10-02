@@ -570,3 +570,11 @@ def test_make_variable_from_unit_scalar_mult_div():
     assert var == np.float32(0.0) * sp.units.m
     var.unit = sp.units.m**(-1)
     assert var == np.float32(0.0) / sp.units.m
+
+
+def test_rename_dims():
+    values = np.arange(6).reshape(2, 3)
+    xy = sp.Variable(dims=[Dim.X, Dim.Y], values=values)
+    zy = sp.Variable(dims=[Dim.Z, Dim.Y], values=values)
+    xy.rename_dims({Dim.X: Dim.Z})
+    assert xy == zy
