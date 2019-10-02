@@ -11,13 +11,13 @@ USER $NB_USER
 
 # Remove default "work" directory
 RUN rm -r "/home/$NB_USER/work"
-RUN mkdir -p "/home/$NB_USER/tutorials"
+RUN mkdir -p "/home/$NB_USER/data"
 
 # Add datafiles needed for neutron tutorial
 ARG PG3_4844_HASH=d5ae38871d0a09a28ae01f85d969de1e
 ARG PG3_4866_HASH=3d543bc6a646e622b3f4542bc3435e7e
-RUN curl http://198.74.56.37/ftp/external-data/MD5/$PG3_4844_HASH --output /home/$NB_USER/tutorials/PG3_4844_event.nxs && \
-    curl http://198.74.56.37/ftp/external-data/MD5/$PG3_4866_HASH --output /home/$NB_USER/tutorials/PG3_4866_event.nxs
+RUN curl http://198.74.56.37/ftp/external-data/MD5/$PG3_4844_HASH --output /home/$NB_USER/data/PG3_4844_event.nxs && \
+    curl http://198.74.56.37/ftp/external-data/MD5/$PG3_4866_HASH --output /home/$NB_USER/data/PG3_4866_event.nxs
 
 # Enable Plotly JupyterLab extension
 RUN jupyter labextension install @jupyterlab/plotly-extension@0.18.1
@@ -34,8 +34,8 @@ RUN conda install --yes \
       scipp \
       ipywidgets \
       mantid-framework=4 \
-      python=3.6 \
-      && conda clean -afy
+      python=3.6 && \
+      conda clean -afy
 
 # Avoid weird tornado AttributeError
 RUN pip install --upgrade nbconvert
