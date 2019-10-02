@@ -3,8 +3,8 @@ FROM jupyter/base-notebook
 # Avoid using passwords for jupyter notebook
 USER root
 RUN apt-get update
-RUN apt-get install -y freeglut3-dev libglu1-mesa curl \
-    && apt-get clean
+RUN apt-get install -y freeglut3-dev libglu1-mesa && \
+    apt-get clean
 RUN sed -i "s/jupyter notebook/jupyter notebook --NotebookApp.token='' --NotebookApp.password=''/" /usr/local/bin/start-notebook.sh
 
 USER $NB_USER
@@ -16,8 +16,8 @@ RUN mkdir -p "/home/$NB_USER/data"
 # Add datafiles needed for neutron tutorial
 ARG PG3_4844_HASH=d5ae38871d0a09a28ae01f85d969de1e
 ARG PG3_4866_HASH=3d543bc6a646e622b3f4542bc3435e7e
-RUN curl http://198.74.56.37/ftp/external-data/MD5/$PG3_4844_HASH --output /home/$NB_USER/data/PG3_4844_event.nxs && \
-    curl http://198.74.56.37/ftp/external-data/MD5/$PG3_4866_HASH --output /home/$NB_USER/data/PG3_4866_event.nxs
+RUN wget -O /home/$NB_USER/data/PG3_4844_event.nxs http://198.74.56.37/ftp/external-data/MD5/$PG3_4844_HASH && \
+    wget -O /home/$NB_USER/data/PG3_4866_event.nxs http://198.74.56.37/ftp/external-data/MD5/$PG3_4866_HASH
 
 # Enable Plotly JupyterLab extension
 RUN jupyter labextension install @jupyterlab/plotly-extension@0.18.1
