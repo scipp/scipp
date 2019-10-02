@@ -24,9 +24,9 @@ template <class T> struct MultScalarUnit {
   }
 };
 
-scipp::core::Variable doMultScalarUnit(const py::object &scalar,
-                                       const py::dtype &type,
-                                       const units::Unit &unit) {
+scipp::core::Variable doMultScalarUnit(const units::Unit &unit,
+                                       const py::object &scalar,
+                                       const py::dtype &type) {
   return scipp::core::CallDType<double, float, int64_t, int32_t>::apply<
       MultScalarUnit>(scipp_dtype(type), scalar, unit);
 }
@@ -40,9 +40,9 @@ template <class T> struct DivScalarUnit {
   }
 };
 
-scipp::core::Variable doDivScalarUnit(const py::object &scalar,
-                                      const py::dtype &type,
-                                      const units::Unit &unit) {
+scipp::core::Variable doDivScalarUnit(const units::Unit &unit,
+                                      const py::object &scalar,
+                                      const py::dtype &type) {
   return scipp::core::CallDType<double, float, int64_t, int32_t>::apply<
       DivScalarUnit>(scipp_dtype(type), scalar, unit);
 }
@@ -94,11 +94,7 @@ void init_units_neutron(py::module &m) {
              using namespace scipp::core;
              return scalar * self;
            })
-      .def("__rmul",
-           [](const units::Unit &self, const py::object &scalar,
-              const py::dtype &dtype) -> core::Variable {
-             return doMultScalarUnit(scalar, dtype, self);
-           })
+      .def("__rmul", &doMultScalarUnit)
       .def("__rtruediv",
            [](const units::Unit &self, double scalar) -> core::Variable {
              using namespace scipp::core;
@@ -109,11 +105,7 @@ void init_units_neutron(py::module &m) {
              using namespace scipp::core;
              return scalar / self;
            })
-      .def("__rtruediv",
-           [](const units::Unit &self, const py::object &scalar,
-              const py::dtype &dtype) -> core::Variable {
-             return doDivScalarUnit(scalar, dtype, self);
-           });
+      .def("__rtruediv", &doDivScalarUnit);
 
   auto units = m.def_submodule("units");
   units.attr("dimensionless") = units::Unit(units::dimensionless);
