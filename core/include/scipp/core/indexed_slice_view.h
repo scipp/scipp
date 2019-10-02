@@ -13,6 +13,12 @@
 
 namespace scipp::core {
 
+/// Index-based view of slices of a variable, data array, or dataset.
+///
+/// The main purpose is to provide common means of handling a collection of
+/// slices along a specific dimension. Indices allow for reordering or filtering
+/// slices. This class is mainly used for implementing other functionality like
+/// `sort` and is typically not used directly.
 template <class T> class IndexedSliceView {
 private:
   struct make_item {
@@ -23,12 +29,16 @@ private:
   };
 
 public:
+  /// Construct view over given data, slicing along `dim` for all given indices.
   IndexedSliceView(T &data, const Dim dim, std::vector<scipp::index> index)
       : m_data(&data), m_dim(dim), m_index(index) {}
 
+  /// Slicing dimension.
   constexpr Dim dim() const noexcept { return m_dim; }
+  /// Number of slices.
   constexpr scipp::index size() const noexcept { return m_index.size(); }
 
+  /// The slice with given index.
   auto operator[](const scipp::index index) const {
     return m_data->slice({m_dim, m_index[index], m_index[index] + 1});
   }
@@ -42,14 +52,13 @@ public:
     return boost::make_transform_iterator(m_index.end(), make_item{this});
   }
 
-  const auto &data() const noexcept { return *m_data; }
-
 private:
   T *m_data;
   Dim m_dim;
   std::vector<scipp::index> m_index;
 };
 
+/// Concatenate all slices of an IndexedSliceView along the view's dimension.
 template <class T> auto concatenate(const IndexedSliceView<T> &view) {
   // TODO Recursive implementation a bit like merge sort for better performance.
   // Could also try to find continuous ranges in indices.
