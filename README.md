@@ -36,7 +36,7 @@ mkdir -p build
 mkdir -p install
 cd build
 cmake -DPYTHON_EXECUTABLE=/usr/bin/python3 -DCMAKE_INSTALL_PREFIX=../install ..
-make -j4 all-tests install
+make -j4 all install
 ```
 Note that the `all` and `install` targets do NOT include the tests. Those must be built separately via `all-tests`. 
 You should use Python 3.5 or greater.
