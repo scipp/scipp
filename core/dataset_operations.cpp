@@ -202,7 +202,7 @@ DataArray concatenate(const DataConstProxy &a, const DataConstProxy &b,
     return DataArray{a};
   return DataArray(concatenate(a.data(), b.data(), dim),
                    concat(a.coords(), b.coords(), dim, a.dims(), b.dims()),
-                   concat(a.labels(), b.labels(), dim, a.dims(), b.dims()), {},
+                   concat(a.labels(), b.labels(), dim, a.dims(), b.dims()),
                    concat(a.masks(), b.masks(), dim, a.dims(), b.dims()));
 }
 
