@@ -357,6 +357,21 @@ TEST(Variable, operator_divide_scalar_float) {
   EXPECT_EQ(result.unit(), units::dimensionless / units::m);
 }
 
+TEST(Variable, operator_allowed_types) {
+  auto i32 = makeVariable<int32_t>(10);
+  auto i64 = makeVariable<int64_t>(10);
+  auto f = makeVariable<float>(0.5f);
+  auto d = makeVariable<double>(0.5);
+
+  /* Can operate on higher precision from lower precision */
+  EXPECT_NO_THROW(i64 += i32);
+  EXPECT_NO_THROW(d += f);
+
+  /* Can not operate on lower precision from higher precision */
+  EXPECT_ANY_THROW(i32 += i64);
+  EXPECT_ANY_THROW(f += d);
+}
+
 TEST(Variable, concatenate) {
   Dimensions dims(Dim::Tof, 1);
   auto a = makeVariable<double>(dims, {1.0});
