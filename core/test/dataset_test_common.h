@@ -123,4 +123,5 @@ Dataset make_sparse_with_coords_and_labels(
 Dataset make_sparse_2d(std::initializer_list<double> values,
                        std::string key = "sparse");
 
+Dataset make_1d_masked();
 #endif // DATASET_TEST_COMMON_H

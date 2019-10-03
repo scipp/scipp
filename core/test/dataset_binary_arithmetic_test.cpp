@@ -40,6 +40,14 @@ protected:
   Op op;
 };
 
+template <class Op>
+class DatasetMasksSlicingBinaryOpTest
+    : public ::testing::Test,
+      public ::testing::WithParamInterface<Op> {
+protected:
+  Op op;
+};
+
 std::tuple<Dataset, Dataset> generateBinaryOpTestCase() {
   constexpr auto lx = 5;
   constexpr auto ly = 5;
@@ -387,7 +395,7 @@ TYPED_TEST(DatasetBinaryEqualsOpTest, masks_propagate) {
   EXPECT_EQ(a.masks()["mask"], expectedMasks);
 }
 
-TEST(DatasetMasksSlicing, masks_slice) {
+TEST(DatasetMasksSlicing, masks_are_present_in_slice) {
   auto a = datasetFactory.makeMasked();
 
   const auto expectedMasks = makeVariable<bool>(
@@ -396,6 +404,23 @@ TEST(DatasetMasksSlicing, masks_slice) {
   const auto slice = a.slice({Dim::X, 0, 2});
 
   EXPECT_EQ(slice.masks()["mask"], expectedMasks);
+}
+
+TYPED_TEST_SUITE(DatasetMasksSlicingBinaryOpTest, Binary);
+
+TYPED_TEST(DatasetMasksSlicingBinaryOpTest, binary_op_on_sliced_masks) {
+  auto a = make_1d_masked();
+
+  const auto expectedMasks =
+      makeVariable<bool>({Dim::X, 3}, makeBools<BoolsGeneratorType::TRUE>(3));
+
+  // these are conveniently 0 1 0 and 1 0 1
+  const auto slice1 = a.slice({Dim::X, 0, 3});
+  const auto slice2 = a.slice({Dim::X, 3, 6});
+
+  const auto slice3 = TestFixture::op(slice1, slice2);
+
+  EXPECT_EQ(slice3.masks()["masks_x"], expectedMasks);
 }
 
 TYPED_TEST(DatasetProxyBinaryEqualsOpTest, return_value) {

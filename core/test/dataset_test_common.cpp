@@ -105,3 +105,14 @@ Dataset make_sparse_2d(std::initializer_list<double> values, std::string key) {
   ds.setData(key, var);
   return ds;
 }
+
+Dataset make_1d_masked() {
+  Random random;
+
+  Dataset ds;
+  ds.setData("data_x", makeVariable<double>({Dim::X, 10}, random(10)));
+  ds.setMasks("masks_x", makeVariable<bool>(
+                             {Dim::X, 10},
+                             makeBools<BoolsGeneratorType::ALTERNATING>(10)));
+  return ds;
+}
