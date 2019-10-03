@@ -387,6 +387,17 @@ TYPED_TEST(DatasetBinaryEqualsOpTest, masks_propagate) {
   EXPECT_EQ(a.masks()["mask"], expectedMasks);
 }
 
+TEST(DatasetMasksSlicing, masks_slice) {
+  auto a = datasetFactory.makeMasked();
+
+  const auto expectedMasks = makeVariable<bool>(
+      {Dim::X, 2}, makeBools<BoolsGeneratorType::ALTERNATING>(2));
+
+  const auto slice = a.slice({Dim::X, 0, 2});
+
+  EXPECT_EQ(slice.masks()["mask"], expectedMasks);
+}
+
 TYPED_TEST(DatasetProxyBinaryEqualsOpTest, return_value) {
   auto a = datasetFactory.make();
   auto b = datasetFactory.make();
