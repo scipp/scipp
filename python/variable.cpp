@@ -6,6 +6,7 @@
 #include "scipp/units/unit.h"
 
 #include "scipp/core/dataset.h"
+#include "scipp/core/dtype.h"
 #include "scipp/core/except.h"
 #include "scipp/core/sort.h"
 #include "scipp/core/tag_util.h"
@@ -14,6 +15,7 @@
 #include "bind_data_access.h"
 #include "bind_operators.h"
 #include "bind_slice_methods.h"
+#include "dtype.h"
 #include "numpy.h"
 #include "pybind11.h"
 
@@ -57,63 +59,12 @@ template <class T> struct MakeVariableDefaultInit {
   }
 };
 
-namespace scippy {
-scipp::core::DType scipp_dtype(const py::dtype &type) {
-  if (type.is(py::dtype::of<double>()))
-    return scipp::core::dtype<double>;
-  if (type.is(py::dtype::of<float>()))
-    return scipp::core::dtype<float>;
-  // See https://github.com/pybind/pybind11/pull/1329, int64_t not
-  // matching numpy.int64 correctly.
-  if (type.is(py::dtype::of<std::int64_t>()) ||
-      (type.kind() == 'i' && type.itemsize() == 8))
-    return scipp::core::dtype<int64_t>;
-  if (type.is(py::dtype::of<std::int32_t>()))
-    return scipp::core::dtype<int32_t>;
-  if (type.is(py::dtype::of<bool>()))
-    return scipp::core::dtype<bool>;
-  throw std::runtime_error("Unsupported numpy dtype.");
-}
-
-// temporary solution untill https://github.com/pybind/pybind11/issues/1538
-// is not solved
-scipp::core::DType scipp_dtype_fall_back(const py::object &type) {
-  py::object numpy = py::module::import("numpy");
-  py::object maketype = numpy.attr("dtype");
-  py::object new_type = maketype(type);
-  return scipp_dtype(new_type.cast<py::dtype>());
-}
-
-scipp::core::DType scipp_dtype(const py::object &type) {
-  // The manual conversion from py::object is solving a number of problems:
-  // 1. On Travis' clang (7.0.0) we get a weird error (ImportError:
-  //    UnicodeDecodeError: 'utf-8' codec can't decode byte 0xe1 in position 2:
-  //    invalid continuation byte) when using the DType enum as a default value
-  //    for py::arg. Importing the module fails.
-  // 2. We want to support both numpy dtype as well as scipp dtype.
-  // 3. In the implementation below, `type.cast<py::dtype>()` always succeeds,
-  //    yielding a unsupported numpy dtype. Therefore we need to try casting to
-  //    `DType` first, which works for some reason.
-  if (type.is_none())
-    return DType::Unknown;
-  try {
-    return type.cast<DType>();
-  } catch (const py::cast_error &) {
-    try {
-      return scippy::scipp_dtype(type.cast<py::dtype>());
-    } catch (...) {
-      return scipp_dtype_fall_back(type);
-    }
-  }
-}
-} // namespace scippy
-
 Variable doMakeVariable(const std::vector<Dim> &labels, py::array &values,
                         std::optional<py::array> &variances,
                         const units::Unit unit, const py::object &dtype) {
   // Use custom dtype, otherwise dtype of data.
-  const auto dtypeTag = dtype.is_none() ? scippy::scipp_dtype(values.dtype())
-                                        : scippy::scipp_dtype(dtype);
+  const auto dtypeTag =
+      dtype.is_none() ? scipp_dtype(values.dtype()) : scipp_dtype(dtype);
   return CallDType<double, float, int64_t, int32_t, bool>::apply<MakeVariable>(
       dtypeTag, labels, values, variances, unit);
 }
@@ -122,10 +73,11 @@ Variable makeVariableDefaultInit(const std::vector<Dim> &labels,
                                  const std::vector<scipp::index> &shape,
                                  const units::Unit unit, py::object &dtype,
                                  const bool variances) {
-  return CallDType<double, float, int64_t, int32_t, bool, DataArray, Dataset,
-                   Eigen::Vector3d>::
-      apply<MakeVariableDefaultInit>(scippy::scipp_dtype(dtype), labels, shape,
-                                     unit, variances);
+  return CallDType<
+      double, float, int64_t, int32_t, bool, DataArray, Dataset,
+      Eigen::Vector3d>::apply<MakeVariableDefaultInit>(scipp_dtype(dtype),
+                                                       labels, shape, unit,
+                                                       variances);
 }
 
 template <class T> void bind_init_0D(py::class_<Variable> &c) {
