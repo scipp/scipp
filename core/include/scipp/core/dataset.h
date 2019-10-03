@@ -14,9 +14,9 @@
 #include <boost/iterator/transform_iterator.hpp>
 
 #include "scipp/core/except.h"
+#include "scipp/core/proxy_decl.h"
 #include "scipp/core/slice.h"
 #include "scipp/core/variable.h"
-#include "scipp/core/proxy_decl.h"
 
 namespace scipp::core {
 
@@ -24,7 +24,6 @@ class DataArray;
 class Dataset;
 class DatasetConstProxy;
 class DatasetProxy;
-
 
 namespace detail {
 /// Helper for holding data items in Dataset.

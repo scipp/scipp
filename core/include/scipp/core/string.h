@@ -61,8 +61,8 @@ template <class Id, class Data>
 std::string to_string(const ConstProxy<Id, Data> &proxy) {
   std::stringstream ss;
 
-  for (const auto &[key, item] : proxy) {
-    ss << to_string(proxy[key]);
+  for (const auto & [ key, item ] : proxy) {
+    ss << "<scipp.ConstProxy> (" << key << "):\n" << to_string(item);
   }
   return ss.str();
 }
@@ -70,8 +70,8 @@ std::string to_string(const ConstProxy<Id, Data> &proxy) {
 template <class T> std::string to_string(const MutableProxy<T> &mutableProxy) {
   std::stringstream ss;
 
-  for (const auto &[key, item] : mutableProxy) {
-    ss << to_string(mutableProxy[key]);
+  for (const auto & [ key, item ] : mutableProxy) {
+    ss << "<scipp.MutableProxy> (" << key << "):\n" << to_string(item);
   }
   return ss.str();
 }
