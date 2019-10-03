@@ -105,19 +105,3 @@ Dataset make_sparse_2d(std::initializer_list<double> values, std::string key) {
   ds.setData(key, var);
   return ds;
 }
-
-// template <BoolsGeneratorType type>
-// std::vector<bool> makeBools(const scipp::index size) {
-//   std::vector<bool> data(size);
-//   for (scipp::index i = 0; i < size; ++i)
-//     if constexpr (std::is_same<type, BoolsGeneratorType::ALTERNATING>::value)
-//     {
-//       data[i] = i % 2;
-//     } else if constexpr (std::is_same<type,
-//     BoolsGeneratorType::FALSE>::value) {
-//       data[i] = false;
-//     } else {
-//       data[i] = true;
-//     }
-//   return data;
-// }
