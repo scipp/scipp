@@ -95,6 +95,28 @@ template <class T> void bind_init_0D(py::class_<Variable> &c) {
         py::arg("unit") = units::Unit(units::dimensionless));
 }
 
+void bind_init_0D(py::class_<Variable> &c) {
+  c.def(py::init([](py::buffer &b, const std::optional<py::buffer> &v,
+                    const units::Unit &unit, py::object &dtype) {
+          py::buffer_info info = b.request();
+          if (info.ndim == 0) {
+            auto pyMakeVariable0D =
+                py::module::import("scipp").attr("make_variable_0d");
+
+            return v ? py::cast<Variable>(pyMakeVariable0D(
+                           py::array(b), py::array(*v), unit, dtype))
+                     : py::cast<Variable>(pyMakeVariable0D(
+                           py::array(b), std::nullopt, unit, dtype));
+          } else {
+            throw scipp::except::VariableError(
+                "Wrong overload for making 0D variable.");
+          }
+        }),
+        py::arg("value").noconvert(), py::arg("variance") = std::nullopt,
+        py::arg("unit") = units::Unit(units::dimensionless),
+        py::arg("dtype") = py::none());
+}
+
 template <class T> void bind_init_1D(py::class_<Variable> &c) {
   c.def(
       // Using fixed-size-1 array for the labels. This avoids the
@@ -121,10 +143,6 @@ void init_variable(py::module &m) {
     Array of values with dimension labels and a unit, optionally including an array of variances.)");
   bind_init_0D<DataArray>(variable);
   bind_init_0D<Dataset>(variable);
-  bind_init_0D<int64_t>(variable);
-  bind_init_0D<int32_t>(variable);
-  bind_init_0D<double>(variable);
-  bind_init_0D<float>(variable);
   bind_init_0D<std::string>(variable);
   bind_init_0D<Eigen::Vector3d>(variable);
   bind_init_1D<std::string>(variable);
@@ -167,6 +185,11 @@ void init_variable(py::module &m) {
   // TODO: maybe there is a better way to do this?
   bind_init_1D<int32_t>(variable);
   bind_init_1D<double>(variable);
+  // This should be in the certain order
+  bind_init_0D(variable);
+  bind_init_0D<int64_t>(variable);
+  bind_init_0D<double>(variable);
+  //------------------------------------
 
   py::class_<VariableConstProxy>(m, "VariableConstProxy")
       .def(py::init<const Variable &>());
@@ -220,6 +243,12 @@ void init_variable(py::module &m) {
   bind_data_properties(variableProxy);
 
   py::implicitly_convertible<Variable, VariableConstProxy>();
+
+  m.def("make_variable_0d",
+        [](py::array val, std::optional<py::array> &var, const units::Unit unit,
+           const py::object &dtype) {
+          return doMakeVariable({}, val, var, unit, dtype);
+        });
 
   m.def("reshape",
         [](const VariableProxy &self, const std::vector<Dim> &labels,
