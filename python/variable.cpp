@@ -103,10 +103,8 @@ void bind_init_0D(py::class_<Variable> &c) {
             auto pyMakeVariable0D =
                 py::module::import("scipp").attr("make_variable_0d");
 
-            return v ? py::cast<Variable>(pyMakeVariable0D(
-                           py::array(b), py::array(*v), unit, dtype))
-                     : py::cast<Variable>(pyMakeVariable0D(
-                           py::array(b), std::nullopt, unit, dtype));
+            return py::cast<Variable>(
+                pyMakeVariable0D(py::array(b), v, unit, dtype));
           } else {
             throw scipp::except::VariableError(
                 "Wrong overload for making 0D variable.");
