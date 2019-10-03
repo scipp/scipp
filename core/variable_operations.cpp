@@ -4,14 +4,14 @@
 /// @author Simon Heybrock
 #include <cmath>
 
-#include "operators.h"
-
 #include "scipp/core/apply.h"
 #include "scipp/core/counts.h"
 #include "scipp/core/dtype.h"
 #include "scipp/core/except.h"
 #include "scipp/core/transform.h"
 #include "scipp/core/variable.h"
+
+#include "operators.h"
 
 namespace scipp::core {
 

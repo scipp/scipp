@@ -210,6 +210,8 @@ void init_variable(py::module &m) {
   bind_in_place_binary<VariableProxy>(variable);
   bind_in_place_binary<Variable>(variableProxy);
   bind_in_place_binary<VariableProxy>(variableProxy);
+  bind_in_place_binary_scalars(variable);
+  bind_in_place_binary_scalars(variableProxy);
 
   bind_binary<Variable>(variable);
   bind_binary<VariableProxy>(variable);

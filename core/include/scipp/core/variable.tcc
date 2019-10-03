@@ -5,6 +5,7 @@
 
 #include "scipp/core/apply.h"
 #include "scipp/core/dimensions.h"
+#include "scipp/core/transform.h"
 #include "scipp/core/variable.h"
 #include "scipp/core/variable_view.h"
 #include "scipp/core/vector.h"
