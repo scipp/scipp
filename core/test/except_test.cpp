@@ -23,6 +23,30 @@ TEST(StringFormattingTest, to_string_Dataset) {
   EXPECT_EQ(to_string(a), to_string(b));
 }
 
+std::tuple<Dataset, Dataset> makeDatasets() {
+  Dataset a;
+  a.setData("a", makeVariable<int>({Dim::X, 3}, {1, 2, 3}));
+  a.setData("b", makeVariable<int>({Dim::X, 3}, {1, 2, 3}));
+  Dataset b;
+  a.setData("b", makeVariable<int>({Dim::X, 3}, {1, 2, 3}));
+  b.setData("a", makeVariable<int>({Dim::X, 3}, {1, 2, 3}));
+  return std::make_tuple(a, b);
+}
+
+TEST(StringFormattingTest, to_string_MutableProxy) {
+  auto [a, b] = makeDatasets();
+  EXPECT_EQ(to_string(a.coords()), to_string(b.coords()));
+  EXPECT_EQ(to_string(a.labels()), to_string(b.labels()));
+  EXPECT_EQ(to_string(a.attrs()), to_string(b.attrs()));
+}
+
+TEST(StringFormattingTest, to_string_ConstProxy) {
+  const auto [a, b] = makeDatasets();
+  EXPECT_EQ(to_string(a.coords()), to_string(b.coords()));
+  EXPECT_EQ(to_string(a.labels()), to_string(b.labels()));
+  EXPECT_EQ(to_string(a.attrs()), to_string(b.attrs()));
+}
+
 TEST(StringFormattingTest, to_string_sparse_Dataset) {
   Dataset a;
   a.setSparseCoord(

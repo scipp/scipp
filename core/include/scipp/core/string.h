@@ -57,8 +57,17 @@ SCIPP_CORE_EXPORT std::string to_string(const DataConstProxy &data);
 SCIPP_CORE_EXPORT std::string to_string(const Dataset &dataset);
 SCIPP_CORE_EXPORT std::string to_string(const DatasetConstProxy &dataset);
 
-template <class T>
-std::string to_string(const MutableProxy<T> &mutableProxy) {
+template <class Id, class Data>
+std::string to_string(const ConstProxy<Id, Data> &proxy) {
+  std::stringstream ss;
+
+  for (const auto &[key, item] : proxy) {
+    ss << to_string(proxy[key]);
+  }
+  return ss.str();
+}
+
+template <class T> std::string to_string(const MutableProxy<T> &mutableProxy) {
   std::stringstream ss;
 
   for (const auto &[key, item] : mutableProxy) {
