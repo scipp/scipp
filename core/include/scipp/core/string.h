@@ -10,6 +10,7 @@
 #include "scipp-core_export.h"
 #include "scipp/common/index.h"
 #include "scipp/core/dtype.h"
+#include "scipp/core/proxy_decl.h"
 #include "scipp/units/unit.h"
 
 namespace scipp::core {
@@ -55,6 +56,16 @@ SCIPP_CORE_EXPORT std::string to_string(const DataArray &data);
 SCIPP_CORE_EXPORT std::string to_string(const DataConstProxy &data);
 SCIPP_CORE_EXPORT std::string to_string(const Dataset &dataset);
 SCIPP_CORE_EXPORT std::string to_string(const DatasetConstProxy &dataset);
+
+template <class T>
+std::string to_string(const MutableProxy<T> &mutableProxy) {
+  std::stringstream ss;
+
+  for (const auto &[key, item] : mutableProxy) {
+    ss << to_string(mutableProxy[key]);
+  }
+  return ss.str();
+}
 
 template <class T> std::string array_to_string(const T &arr);
 

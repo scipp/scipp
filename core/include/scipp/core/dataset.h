@@ -16,6 +16,7 @@
 #include "scipp/core/except.h"
 #include "scipp/core/slice.h"
 #include "scipp/core/variable.h"
+#include "scipp/core/proxy_decl.h"
 
 namespace scipp::core {
 
@@ -24,26 +25,6 @@ class Dataset;
 class DatasetConstProxy;
 class DatasetProxy;
 
-namespace ProxyId {
-class Attrs;
-class Coords;
-class Labels;
-} // namespace ProxyId
-template <class Id, class Key> class ConstProxy;
-template <class Base> class MutableProxy;
-
-/// Proxy for accessing coordinates of const Dataset and DataConstProxy.
-using CoordsConstProxy = ConstProxy<ProxyId::Coords, Dim>;
-/// Proxy for accessing coordinates of Dataset and DataProxy.
-using CoordsProxy = MutableProxy<CoordsConstProxy>;
-/// Proxy for accessing labels of const Dataset and DataConstProxy.
-using LabelsConstProxy = ConstProxy<ProxyId::Labels, std::string>;
-/// Proxy for accessing labels of Dataset and DataProxy.
-using LabelsProxy = MutableProxy<LabelsConstProxy>;
-/// Proxy for accessing attributes of const Dataset and DataConstProxy.
-using AttrsConstProxy = ConstProxy<ProxyId::Attrs, std::string>;
-/// Proxy for accessing attributes of Dataset and DataProxy.
-using AttrsProxy = MutableProxy<AttrsConstProxy>;
 
 namespace detail {
 /// Helper for holding data items in Dataset.
