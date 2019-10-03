@@ -557,8 +557,7 @@ def make_simple_dataset(dim1=Dim.X, dim2=Dim.Y, seed=None):
             'b': sc.Variable(1.0)
         },
         coords={
-            dim1: sc.Variable([dim1], values=np.arange(2.0),
-                               unit=sc.units.m),
+            dim1: sc.Variable([dim1], values=np.arange(2.0), unit=sc.units.m),
             dim2: sc.Variable([dim2], values=np.arange(3.0), unit=sc.units.m)
         },
         labels={'aux': sc.Variable([dim2], values=np.random.rand(3))})
