@@ -54,6 +54,15 @@ void bind_coord_properties(py::class_<T, Ignored...> &c) {
 
       Labels are very similar to coordinates, except that they are identified
       using custom names instead of dimension labels.)");
+  c.def_property_readonly("masks",
+                          py::cpp_function([](T &self) { return self.masks(); },
+                                           py::return_value_policy::move,
+                                           py::keep_alive<0, 1>()),
+                          R"(
+      Dict of masks.
+
+      Masks are very similar to coordinates, except that they are identified
+      using custom names instead of dimension labels.)");
   c.def_property_readonly("attrs",
                           py::cpp_function([](T &self) { return self.attrs(); },
                                            py::return_value_policy::move,
@@ -112,6 +121,7 @@ void init_dataset(py::module &m) {
 
   bind_mutable_proxy<CoordsProxy, CoordsConstProxy>(m, "Coords");
   bind_mutable_proxy<LabelsProxy, LabelsConstProxy>(m, "Labels");
+  bind_mutable_proxy<MasksProxy, MasksConstProxy>(m, "Masks");
   bind_mutable_proxy<AttrsProxy, AttrsConstProxy>(m, "Attrs");
 
   py::class_<DataArray> dataArray(m, "DataArray", R"(
@@ -151,15 +161,15 @@ void init_dataset(py::module &m) {
       .def(py::init([](const std::map<std::string, VariableConstProxy> &data,
                        const std::map<Dim, VariableConstProxy> &coords,
                        const std::map<std::string, VariableConstProxy> &labels,
-                       const std::map<std::string, VariableConstProxy> &attrs,
-                       const std::map<std::string, VariableConstProxy> &masks) {
-             return Dataset(data, coords, labels, attrs, masks);
+                       const std::map<std::string, VariableConstProxy> &masks,
+                       const std::map<std::string, VariableConstProxy> &attrs) {
+             return Dataset(data, coords, labels, masks, attrs);
            }),
            py::arg("data") = std::map<std::string, VariableConstProxy>{},
            py::arg("coords") = std::map<Dim, VariableConstProxy>{},
            py::arg("labels") = std::map<std::string, VariableConstProxy>{},
-           py::arg("attrs") = std::map<std::string, VariableConstProxy>{},
-           py::arg("masks") = std::map<std::string, VariableConstProxy>{})
+           py::arg("masks") = std::map<std::string, VariableConstProxy>{},
+           py::arg("attrs") = std::map<std::string, VariableConstProxy>{})
       .def(py::init([](const DatasetProxy &other) { return Dataset{other}; }))
       .def("__setitem__",
            [](Dataset &self, const std::string &name,
@@ -170,8 +180,8 @@ void init_dataset(py::module &m) {
       .def("__setitem__",
            [](Dataset &self, const std::tuple<Dim, scipp::index> &index,
               DatasetProxy &other) {
-             auto[dim, i] = index;
-             for (const auto[name, item] : self.slice(Slice(dim, i)))
+             auto [dim, i] = index;
+             for (const auto [name, item] : self.slice(Slice(dim, i)))
                item.assign(other[name]);
            })
       .def("__delitem__", &Dataset::erase)
@@ -181,7 +191,7 @@ void init_dataset(py::module &m) {
            })
       .def(
           "clear", &Dataset::clear,
-          R"(Removes all data (preserving coordinates, attributes and labels).)");
+          R"(Removes all data (preserving coordinates, attributes, labels and masks.).)");
 
   bind_dataset_proxy_methods(dataset);
   bind_dataset_proxy_methods(datasetProxy);
@@ -221,11 +231,11 @@ void init_dataset(py::module &m) {
         py::call_guard<py::gil_scoped_release>(), R"(
         Concatenate input data array along the given dimension.
 
-        Concatenates the data, coords, and labels of the data array.
-        Coords and labels for any but the given dimension are required to match and are copied to the output without changes.
+        Concatenates the data, coords, labels and masks of the data array.
+        Coords, labels and masks for any but the given dimension are required to match and are copied to the output without changes.
 
         :raises: If the dtype or unit does not match, or if the dimensions and shapes are incompatible.
-        :return: New data array containing all data, coords, and labels of the input arrays.
+        :return: New data array containing all data, coords, labels, and masks of the input arrays.
         :rtype: DataArray)");
 
   m.def("concatenate",
@@ -277,7 +287,7 @@ void init_dataset(py::module &m) {
         Union of two datasets.
 
         :raises: If there are conflicting items with different content.
-        :return: A new dataset that contains the union of all data items, coords, labels, and attributes.
+        :return: A new dataset that contains the union of all data items, coords, labels, masks and attributes.
         :rtype: Dataset)");
 
   m.def("sum", py::overload_cast<const DataConstProxy &, const Dim>(&sum),

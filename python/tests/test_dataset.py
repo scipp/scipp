@@ -39,9 +39,7 @@ def test_create_from_data_arrays():
     base = sc.Dataset({
         'a': var1,
         'b': var2
-    },
-                      coords={Dim.X: var1},
-                      labels={'aux': var1})
+    }, coords={Dim.X: var1}, labels={'aux': var1})
     d = sc.Dataset({'a': base['a'], 'b': base['b']})
     assert d == base
     swapped = sc.Dataset({'a': base['b'], 'b': base['a']})
@@ -159,6 +157,24 @@ def test_contains_labels():
     assert "a" not in d.labels
     d.labels["a"] = sc.Variable(1.0)
     assert "a" in d.labels
+
+
+def test_masks_setitem():
+    var = sc.Variable([Dim.X], values=np.arange(4))
+    d = sc.Dataset({'a': var}, coords={Dim.X: var})
+    with pytest.raises(RuntimeError):
+        d[Dim.X, 2:3].labels['mask'] = sc.Variable(True)
+    d.masks['mask'] = sc.Variable([True,False,True])
+    assert len(d) == 1
+    assert len(d.masks) == 1
+    assert d.masks['mask'] == sc.Variable([True,False,True])
+
+
+def test_contains_masks():
+    d = sc.Dataset()
+    assert "a" not in d.masks
+    d.masks["a"] = sc.Variable(True)
+    assert "a" in d.masks
 
 
 def test_attrs_setitem():
