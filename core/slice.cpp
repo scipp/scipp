@@ -1,9 +1,13 @@
-#include "scipp/core/slice.h"
-#include "scipp/core/except.h"
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
+/// @file
+/// @author Owen Arnold
 #include <string>
 
-namespace scipp {
-namespace core {
+#include "scipp/core/except.h"
+#include "scipp/core/slice.h"
+
+namespace scipp::core {
 
 namespace {
 void validate_begin(const scipp::index begin_) {
@@ -48,5 +52,5 @@ bool Slice::operator==(const Slice &other) const {
          m_end == other.m_end;
 }
 bool Slice::operator!=(const Slice &other) const { return !(*this == other); }
-} // namespace core
-} // namespace scipp
+
+} // namespace scipp::core

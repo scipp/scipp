@@ -393,6 +393,17 @@ def test_binary_divide():
     assert np.array_equal(c.values, data / data / data / data)
 
 
+def test_in_place_binary_with_scalar():
+    v = sp.Variable([Dim.X], values=[10])
+    copy = v.copy()
+
+    v += 2
+    v *= 2
+    v -= 4
+    v /= 2
+    assert v == copy
+
+
 def test_binary_equal():
     a, b, a_slice, b_slice, data = make_variables()
     assert a == b
@@ -542,3 +553,20 @@ def test_sum_mean():
     assert sp.sum(var, Dim.X) == sp.Variable(5)
     var = sp.Variable([Dim.X], values=np.arange(6).astype(np.int64))
     assert sp.mean(var, Dim.X) == sp.Variable(2.5)
+
+
+def test_make_variable_from_unit_scalar_mult_div():
+    var = sp.Variable()
+    var.unit = sp.units.m
+    assert var == 0.0 * sp.units.m
+    var.unit = sp.units.m**(-1)
+    assert var == 0.0 / sp.units.m
+
+    # TODO change next string with normal constructor
+    # for 0D Variable the it introduced
+    v = sp.Variable([sp.Dim.X], values=np.array([0]), dtype=np.float32)
+    var = sp.Variable(v[sp.Dim.X, 0])
+    var.unit = sp.units.m
+    assert var == np.float32(0.0) * sp.units.m
+    var.unit = sp.units.m**(-1)
+    assert var == np.float32(0.0) / sp.units.m

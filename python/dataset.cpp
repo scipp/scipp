@@ -6,6 +6,7 @@
 
 #include "scipp/core/dataset.h"
 #include "scipp/core/except.h"
+#include "scipp/core/sort.h"
 
 #include "bind_data_access.h"
 #include "bind_operators.h"
@@ -215,6 +216,10 @@ void init_dataset(py::module &m) {
   bind_in_place_binary<DatasetProxy>(datasetProxy);
   bind_in_place_binary<VariableConstProxy>(datasetProxy);
   bind_in_place_binary<DataProxy>(datasetProxy);
+  bind_in_place_binary_scalars(dataset);
+  bind_in_place_binary_scalars(datasetProxy);
+  bind_in_place_binary_scalars(dataArray);
+  bind_in_place_binary_scalars(dataProxy);
 
   bind_binary<Dataset>(dataset);
   bind_binary<DatasetProxy>(dataset);
@@ -348,6 +353,62 @@ void init_dataset(py::module &m) {
         :raises: If data cannot be rebinned, e.g., if the unit is not counts, or the existing coordinate is not a bin-edge coordinate.
         :return: A new dataset with data rebinned according to the new coordinate.
         :rtype: Dataset)");
+
+  m.def("sort",
+        py::overload_cast<const DataConstProxy &, const VariableConstProxy &>(
+            &sort),
+        py::arg("data"), py::arg("key"),
+        py::call_guard<py::gil_scoped_release>(),
+        R"(Sort data array along a dimension by a sort key.
+
+        :raises: If the key is invalid, e.g., if it has not exactly one dimension, or if its dtype is not sortable.
+        :return: New sorted data array.
+        :rtype: DataArray)");
+  m.def(
+      "sort", py::overload_cast<const DataConstProxy &, const Dim &>(&sort),
+      py::arg("data"), py::arg("key"), py::call_guard<py::gil_scoped_release>(),
+      R"(Sort data array along a dimension by the coordinate values for that dimension.
+
+      :raises: If the key is invalid, e.g., if it has not exactly one dimension, or if its dtype is not sortable.
+      :return: New sorted data array.
+      :rtype: DataArray)");
+  m.def(
+      "sort",
+      py::overload_cast<const DataConstProxy &, const std::string &>(&sort),
+      py::arg("data"), py::arg("key"), py::call_guard<py::gil_scoped_release>(),
+      R"(Sort data array along a dimension by the label values for the given key.
+
+      :raises: If the key is invalid, e.g., if it has not exactly one dimension, or if its dtype is not sortable.
+      :return: New sorted data array.
+      :rtype: DataArray)");
+
+  m.def(
+      "sort",
+      py::overload_cast<const DatasetConstProxy &, const VariableConstProxy &>(
+          &sort),
+      py::arg("data"), py::arg("key"), py::call_guard<py::gil_scoped_release>(),
+      R"(Sort dataset along a dimension by a sort key.
+
+        :raises: If the key is invalid, e.g., if it has not exactly one dimension, or if its dtype is not sortable.
+        :return: New sorted dataset.
+        :rtype: Dataset)");
+  m.def(
+      "sort", py::overload_cast<const DatasetConstProxy &, const Dim &>(&sort),
+      py::arg("data"), py::arg("key"), py::call_guard<py::gil_scoped_release>(),
+      R"(Sort dataset along a dimension by the coordinate values for that dimension.
+
+      :raises: If the key is invalid, e.g., if it has not exactly one dimension, or if its dtype is not sortable.
+      :return: New sorted dataset.
+      :rtype: Dataset)");
+  m.def(
+      "sort",
+      py::overload_cast<const DatasetConstProxy &, const std::string &>(&sort),
+      py::arg("data"), py::arg("key"), py::call_guard<py::gil_scoped_release>(),
+      R"(Sort dataset along a dimension by the label values for the given key.
+
+      :raises: If the key is invalid, e.g., if it has not exactly one dimension, or if its dtype is not sortable.
+      :return: New sorted dataset.
+      :rtype: Dataset)");
 
   py::implicitly_convertible<DataArray, DataConstProxy>();
   py::implicitly_convertible<DataArray, DataProxy>();

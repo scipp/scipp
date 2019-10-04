@@ -215,6 +215,12 @@ TYPED_TEST(DatasetBinaryEqualsOpTest, return_value) {
     const auto &result = TestFixture::op(a, b.slice({Dim::Z, 3}));
     ASSERT_EQ(&result, &a);
   }
+
+  ASSERT_TRUE((std::is_same_v<decltype(TestFixture::op(a, 5.0)), Dataset &>));
+  {
+    const auto &result = TestFixture::op(a, 5.0);
+    ASSERT_EQ(&result, &a);
+  }
 }
 
 TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_DataProxy_self_overlap) {
@@ -448,6 +454,14 @@ TYPED_TEST(DatasetProxyBinaryEqualsOpTest, return_value) {
                       DatasetProxy>));
   {
     const auto &result = TestFixture::op(proxy, b["data_scalar"].data());
+    EXPECT_EQ(&result["data_scalar"].template values<double>()[0],
+              &a["data_scalar"].template values<double>()[0]);
+  }
+
+  ASSERT_TRUE(
+      (std::is_same_v<decltype(TestFixture::op(proxy, 5.0)), DatasetProxy>));
+  {
+    const auto &result = TestFixture::op(proxy, 5.0);
     EXPECT_EQ(&result["data_scalar"].template values<double>()[0],
               &a["data_scalar"].template values<double>()[0]);
   }

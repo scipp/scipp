@@ -11,3 +11,4 @@ from . import neutron
 from .show import show
 from .table import table
 from .plot import plot, config as plot_config
+from .extend_units import *

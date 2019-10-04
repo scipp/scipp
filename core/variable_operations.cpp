@@ -4,14 +4,14 @@
 /// @author Simon Heybrock
 #include <cmath>
 
-#include "operators.h"
-
 #include "scipp/core/apply.h"
 #include "scipp/core/counts.h"
 #include "scipp/core/dtype.h"
 #include "scipp/core/except.h"
 #include "scipp/core/transform.h"
 #include "scipp/core/variable.h"
+
+#include "operators.h"
 
 namespace scipp::core {
 
@@ -217,5 +217,8 @@ Variable reverse(Variable var, const Dim dim) {
     swap(var, dim, i, size - i - 1);
   return var;
 }
+
+/// Return a deep copy of a Variable or of a VariableProxy.
+Variable copy(const VariableConstProxy &var) { return Variable(var); }
 
 } // namespace scipp::core

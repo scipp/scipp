@@ -81,7 +81,7 @@ public:
   }
 
   /// Return number of non-sparse dims
-  constexpr uint16_t ndims() const noexcept { return m_ndim; }
+  constexpr uint16_t ndim() const noexcept { return m_ndim; }
 
   scipp::span<const Dim> labels() const && = delete;
   /// Return the labels of the space defined by *this, including the label of a
