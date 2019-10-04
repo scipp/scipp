@@ -381,29 +381,18 @@ TYPED_TEST(DatasetBinaryEqualsOpTest,
 }
 
 TYPED_TEST(DatasetBinaryEqualsOpTest, masks_propagate) {
-  auto a = datasetFactory.makeMasked();
+  auto a = datasetFactory.make();
   auto b = datasetFactory.make();
 
   const auto expectedMasks = makeVariable<bool>(
       {Dim::X, datasetFactory.lx},
       makeBools<BoolsGeneratorType::TRUE>(datasetFactory.lx));
 
-  b.setMasks("mask", expectedMasks);
+  b.setMasks("masks_x", expectedMasks);
 
   TestFixture::op(a, b);
 
-  EXPECT_EQ(a.masks()["mask"], expectedMasks);
-}
-
-TEST(DatasetMasksSlicing, masks_are_present_in_slice) {
-  auto a = datasetFactory.makeMasked();
-
-  const auto expectedMasks = makeVariable<bool>(
-      {Dim::X, 2}, makeBools<BoolsGeneratorType::ALTERNATING>(2));
-
-  const auto slice = a.slice({Dim::X, 0, 2});
-
-  EXPECT_EQ(slice.masks()["mask"], expectedMasks);
+  EXPECT_EQ(a.masks()["masks_x"], expectedMasks);
 }
 
 TYPED_TEST_SUITE(DatasetMasksSlicingBinaryOpTest, Binary);
@@ -861,18 +850,18 @@ TYPED_TEST(DatasetBinaryOpTest, dataset_lhs_dataproxy_rhs) {
 }
 
 TYPED_TEST(DatasetBinaryOpTest, masks_propagate) {
-  auto a = datasetFactory.makeMasked();
+  auto a = datasetFactory.make();
   auto b = datasetFactory.make();
 
   const auto expectedMasks = makeVariable<bool>(
       {Dim::X, datasetFactory.lx},
       makeBools<BoolsGeneratorType::TRUE>(datasetFactory.lx));
 
-  b.setMasks("mask", expectedMasks);
+  b.setMasks("masks_x", expectedMasks);
 
   const auto res = TestFixture::op(a, b);
 
-  EXPECT_EQ(res.masks()["mask"], expectedMasks);
+  EXPECT_EQ(res.masks()["masks_x"], expectedMasks);
 }
 
 Dataset non_trivial_2d_sparse(std::string_view name) {

@@ -24,6 +24,16 @@ DatasetFactory3D::DatasetFactory3D(const scipp::index lx_,
   base.setLabels("labels_xy", makeVariable<double>({{Dim::X, lx}, {Dim::Y, ly}},
                                                    rand(lx * ly)));
   base.setLabels("labels_z", makeVariable<double>({Dim::Z, lz}, rand(lz)));
+  base.setMasks("masks_x", makeVariable<bool>(
+                              {Dim::X, lx},
+                              makeBools<BoolsGeneratorType::ALTERNATING>(lx)));
+  base.setMasks("masks_xy",
+                makeVariable<bool>(
+                    {{Dim::X, lx}, {Dim::Y, ly}},
+                    makeBools<BoolsGeneratorType::ALTERNATING>(lx * ly)));
+  base.setMasks("masks_z", makeVariable<bool>(
+                              {Dim::Z, lz},
+                              makeBools<BoolsGeneratorType::ALTERNATING>(lz)));
 
   base.setAttr("attr_scalar", makeVariable<double>(rand(1).front()));
   base.setAttr("attr_x", makeVariable<double>({Dim::X, lx}, rand(lx)));
@@ -49,14 +59,6 @@ Dataset DatasetFactory3D::make() {
 
   dataset.setData("data_scalar", makeVariable<double>(rand(1).front()));
 
-  return dataset;
-}
-
-Dataset DatasetFactory3D::makeMasked() {
-  Dataset dataset{make()};
-  dataset.setMasks("mask", makeVariable<bool>(
-                               {Dim::X, lx},
-                               makeBools<BoolsGeneratorType::ALTERNATING>(lx)));
   return dataset;
 }
 

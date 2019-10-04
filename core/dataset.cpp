@@ -828,26 +828,10 @@ void mask_union_(MasksProxy &&currentMasks, const MasksConstProxy &otherMasks) {
   for (const auto &[key, item] : otherMasks) {
     const auto it = currentMasks.find(key);
     if (it != currentMasks.end()) {
-      const auto result = it->second | item;
-      currentMasks.set(key, result);
+      it->second |= item;
     } else {
       currentMasks.set(key, item);
     }
   }
 }
-
-// template <class Op>
-// void mask_union_impl_(const MasksConstProxy &currentMasks,
-//                       const MasksConstProxy &otherMasks, Op op) {
-//   for (const auto & [ key, item ] : otherMasks) {
-//     const auto it = currentMasks.find(key);
-//     if (it != currentMasks.end()) {
-//       const auto result = it->second | item;
-//       op(std::move(result));
-//     } else {
-//       op(item);
-//     }
-//   }
-// }
-
 } // namespace scipp::core
