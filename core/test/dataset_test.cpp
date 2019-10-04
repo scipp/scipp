@@ -144,6 +144,13 @@ TEST(DatasetTest, setMasks) {
   ASSERT_EQ(d.masks().size(), 2);
 }
 
+TEST(DatasetTest, setMasks_invalid_dtype) {
+  Dataset d;
+  const auto var = makeVariable<double>({Dim::X, 3}, {1.0, 1.1, 1.2});
+
+  ASSERT_THROW(d.setMasks("a", var), std::logic_error);
+}
+
 TEST(DatasetTest, setData_with_and_without_variances) {
   Dataset d;
   const auto var = makeVariable<double>({Dim::X, 3});

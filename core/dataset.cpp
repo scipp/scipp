@@ -271,6 +271,11 @@ void Dataset::setAttr(const std::string &attrName, Variable attr) {
 /// Note that the label name has no relation to names of data items.
 void Dataset::setMasks(const std::string &labelName, Variable masks) {
   setDims(masks.dims());
+
+  if (masks.dtype() != DType::Bool) {
+    throw std::logic_error("Masks can only be of boolean type.");
+  }
+
   m_masks.insert_or_assign(labelName, std::move(masks));
 }
 
@@ -610,7 +615,7 @@ DataProxy DataProxy::assign(const VariableConstProxy &other) const {
 }
 
 DatasetProxy DatasetProxy::assign(const DatasetConstProxy &other) const {
-  for (const auto & [ name, data ] : other)
+  for (const auto &[name, data] : other)
     operator[](name).assign(data);
   return *this;
 }
@@ -821,8 +826,7 @@ union_or(const MasksConstProxy &currentMasks,
   for (const auto &[key, item] : otherMasks) {
     const auto it = currentMasks.find(key);
     if (it != currentMasks.end()) {
-      const auto result = it->second | item;
-      out[key] = result;
+      out[key] |= item;
     } else {
       out.emplace(key, item);
     }
