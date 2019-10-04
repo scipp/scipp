@@ -94,35 +94,35 @@ DataArray operator/(const DataConstProxy &a, const DataConstProxy &b) {
 }
 
 DataArray operator+(const DataConstProxy &a, const VariableConstProxy &b) {
-  return DataArray(a.data() + b, a.coords(), a.labels(), a.attrs(), a.masks());
+  return DataArray(a.data() + b, a.coords(), a.labels(), a.masks(), a.attrs());
 }
 
 DataArray operator-(const DataConstProxy &a, const VariableConstProxy &b) {
-  return DataArray(a.data() - b, a.coords(), a.labels(), a.attrs(), a.masks());
+  return DataArray(a.data() - b, a.coords(), a.labels(), a.masks(), a.attrs());
 }
 
 DataArray operator*(const DataConstProxy &a, const VariableConstProxy &b) {
-  return DataArray(a.data() * b, a.coords(), a.labels(), a.attrs(), a.masks());
+  return DataArray(a.data() * b, a.coords(), a.labels(), a.masks(), a.attrs());
 }
 
 DataArray operator/(const DataConstProxy &a, const VariableConstProxy &b) {
-  return DataArray(a.data() / b, a.coords(), a.labels(), a.attrs(), a.masks());
+  return DataArray(a.data() / b, a.coords(), a.labels(), a.masks(), a.attrs());
 }
 
 DataArray operator+(const VariableConstProxy &a, const DataConstProxy &b) {
-  return DataArray(a + b.data(), b.coords(), b.labels(), b.attrs(), b.masks());
+  return DataArray(a + b.data(), b.coords(), b.labels(), b.masks(), b.attrs());
 }
 
 DataArray operator-(const VariableConstProxy &a, const DataConstProxy &b) {
-  return DataArray(a - b.data(), b.coords(), b.labels(), b.attrs(), b.masks());
+  return DataArray(a - b.data(), b.coords(), b.labels(), b.masks(), b.attrs());
 }
 
 DataArray operator*(const VariableConstProxy &a, const DataConstProxy &b) {
-  return DataArray(a * b.data(), b.coords(), b.labels(), b.attrs(), b.masks());
+  return DataArray(a * b.data(), b.coords(), b.labels(), b.masks(), b.attrs());
 }
 
 DataArray operator/(const VariableConstProxy &a, const DataConstProxy &b) {
-  return DataArray(a / b.data(), b.coords(), b.labels(), b.attrs(), b.masks());
+  return DataArray(a / b.data(), b.coords(), b.labels(), b.masks(), b.attrs());
 }
 
 } // namespace scipp::core
