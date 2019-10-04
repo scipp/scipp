@@ -10,11 +10,20 @@
 
 using namespace scipp;
 using namespace scipp::neutron;
+using namespace scipp::neutron::diffraction;
 
 namespace py = pybind11;
 
 void init_neutron(py::module &m) {
   auto neutron = m.def_submodule("neutron");
+  auto diffraction = neutron.def_submodule("diffraction");
+
+  diffraction.def("convert_with_calibration", convert_with_calibration, R"(
+    Calibration of diffraction data using calibration data.
+
+    Inputs a sparse tof variable and a dataset with calibration parameters
+
+    :return: New dataset with converted TOF to d-spacing)");
 
   neutron.def("convert", convert, py::call_guard<py::gil_scoped_release>(),
               R"(
