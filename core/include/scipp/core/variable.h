@@ -243,12 +243,23 @@ private:
 class VariableConstProxy;
 class VariableProxy;
 
-/* TODO: can this be done better? should the function in dataset.h be moved here? should the binary operations be moved to their own header? */
-class DataProxy;
-
 template <class T> constexpr bool is_variable_or_proxy() {
   return std::is_same_v<T, Variable> || std::is_same_v<T, VariableConstProxy> ||
-         std::is_same_v<T, VariableProxy> || std::is_same_v<T, DataProxy>;
+         std::is_same_v<T, VariableProxy>;
+}
+
+class DatasetConstProxy;
+class DatasetProxy;
+class Dataset;
+class DataArray;
+class DataProxy;
+
+template <class T> constexpr bool is_container_or_proxy() {
+  return std::is_same_v<T, Dataset> || std::is_same_v<T, DatasetProxy> ||
+         std::is_same_v<T, DatasetConstProxy> || std::is_same_v<T, Variable> ||
+         std::is_same_v<T, VariableProxy> ||
+         std::is_same_v<T, VariableConstProxy> ||
+         std::is_same_v<T, DataArray> || std::is_same_v<T, DataProxy>;
 }
 
 namespace detail {
@@ -806,35 +817,35 @@ SCIPP_CORE_EXPORT Variable operator/(const VariableConstProxy &a,
 // Note: If the left-hand-side in an addition is a VariableProxy this simply
 // implicitly converts it to a Variable. A copy for the return value is required
 // anyway so this is a convenient way to avoid defining more overloads.
-template <typename T, typename = std::enable_if_t<!is_variable_or_proxy<T>()>>
+template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
 Variable operator+(const T value, const VariableConstProxy &a) {
   return makeVariable<T>(value) + a;
 }
-template <typename T, typename = std::enable_if_t<!is_variable_or_proxy<T>()>>
+template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
 Variable operator-(const T value, const VariableConstProxy &a) {
   return makeVariable<T>(value) - a;
 }
-template <typename T, typename = std::enable_if_t<!is_variable_or_proxy<T>()>>
+template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
 Variable operator*(const T value, const VariableConstProxy &a) {
   return makeVariable<T>(value) * a;
 }
-template <typename T, typename = std::enable_if_t<!is_variable_or_proxy<T>()>>
+template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
 Variable operator/(const T value, const VariableConstProxy &a) {
   return makeVariable<T>(value) / a;
 }
-template <typename T, typename = std::enable_if_t<!is_variable_or_proxy<T>()>>
+template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
 Variable operator+(const VariableConstProxy &a, const T value) {
   return a + makeVariable<T>(value);
 }
-template <typename T, typename = std::enable_if_t<!is_variable_or_proxy<T>()>>
+template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
 Variable operator-(const VariableConstProxy &a, const T value) {
   return a - makeVariable<T>(value);
 }
-template <typename T, typename = std::enable_if_t<!is_variable_or_proxy<T>()>>
+template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
 Variable operator*(const VariableConstProxy &a, const T value) {
   return a * makeVariable<T>(value);
 }
-template <typename T, typename = std::enable_if_t<!is_variable_or_proxy<T>()>>
+template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
 Variable operator/(const VariableConstProxy &a, const T value) {
   return a / makeVariable<T>(value);
 }

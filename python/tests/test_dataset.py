@@ -364,7 +364,7 @@ def test_dataset_histogram():
     var[Dim.X, 1].values = np.ones(6)
     ds = sc.Dataset()
     ds["s"] = sc.DataArray(coords={Dim.Y: var})
-    ds["s1"] = sc.DataArray(coords={Dim.Y: var * 5})
+    ds["s1"] = sc.DataArray(coords={Dim.Y: var * 5.0})
     h = sc.histogram(
         ds, sc.Variable(values=np.arange(5, dtype=np.float64), dims=[Dim.Y]))
     assert np.array_equal(

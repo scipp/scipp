@@ -157,14 +157,6 @@ class DatasetConstProxy;
 class DatasetProxy;
 class Dataset;
 
-template <class T> constexpr bool is_container_or_proxy() {
-  return std::is_same_v<T, Dataset> || std::is_same_v<T, DatasetProxy> ||
-         std::is_same_v<T, DatasetConstProxy> || std::is_same_v<T, Variable> ||
-         std::is_same_v<T, VariableProxy> ||
-         std::is_same_v<T, VariableConstProxy> ||
-         std::is_same_v<T, DataArray> || std::is_same_v<T, DataProxy>;
-}
-
 /// Proxy for a data item and related coordinates of Dataset.
 class SCIPP_CORE_EXPORT DataProxy : public DataConstProxy {
 public:
