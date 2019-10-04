@@ -1253,10 +1253,10 @@ SCIPP_CORE_EXPORT VariableConstProxy same(const VariableConstProxy &a,
 
 SCIPP_CORE_EXPORT std::map<typename MasksConstProxy::key_type,
                            typename MasksConstProxy::mapped_type>
-union_or(const MasksConstProxy &currentMasks,
+union_or_(const MasksConstProxy &currentMasks,
          const MasksConstProxy &otherMasks);
 
-SCIPP_CORE_EXPORT void union_or(MasksProxy &&currentMasks,
+SCIPP_CORE_EXPORT void union_or_(MasksProxy &&currentMasks,
                                 const MasksConstProxy &otherMasks);
 
 } // namespace scipp::core

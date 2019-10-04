@@ -143,7 +143,7 @@ Dataset histogram(const Dataset &dataset, const Dim &dim) {
 
 Dataset merge(const DatasetConstProxy &a, const DatasetConstProxy &b) {
   return Dataset(union_(a, b), union_(a.coords(), b.coords()),
-                 union_(a.labels(), b.labels()), union_or(a.masks(), b.masks()),
+                 union_(a.labels(), b.labels()), union_or_(a.masks(), b.masks()),
                  union_(a.attrs(), b.attrs()));
 }
 
