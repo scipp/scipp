@@ -802,8 +802,8 @@ std::unordered_map<Dim, scipp::index> Dataset::dimensions() const {
 
 std::map<typename MasksConstProxy::key_type,
          typename MasksConstProxy::mapped_type>
-mask_union_(const MasksConstProxy &currentMasks,
-            const MasksConstProxy &otherMasks) {
+union_or(const MasksConstProxy &currentMasks,
+         const MasksConstProxy &otherMasks) {
   std::map<typename MasksConstProxy::key_type,
            typename MasksConstProxy::mapped_type>
       out;
@@ -824,7 +824,7 @@ mask_union_(const MasksConstProxy &currentMasks,
   return out;
 }
 
-void mask_union_(MasksProxy &&currentMasks, const MasksConstProxy &otherMasks) {
+void union_or(MasksProxy &&currentMasks, const MasksConstProxy &otherMasks) {
   for (const auto &[key, item] : otherMasks) {
     const auto it = currentMasks.find(key);
     if (it != currentMasks.end()) {

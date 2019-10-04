@@ -23,28 +23,28 @@ void dry_run_op(const DataProxy &a, const DataConstProxy &b, Op op) {
 
 DataProxy DataProxy::operator+=(const DataConstProxy &other) const {
   expect::coordsAndLabelsAreSuperset(*this, other);
-  mask_union_(masks(), other.masks());
+  union_or(masks(), other.masks());
   data() += other.data();
   return *this;
 }
 
 DataProxy DataProxy::operator-=(const DataConstProxy &other) const {
   expect::coordsAndLabelsAreSuperset(*this, other);
-  mask_union_(masks(), other.masks());
+  union_or(masks(), other.masks());
   data() -= other.data();
   return *this;
 }
 
 DataProxy DataProxy::operator*=(const DataConstProxy &other) const {
   expect::coordsAndLabelsAreSuperset(*this, other);
-  mask_union_(masks(), other.masks());
+  union_or(masks(), other.masks());
   data() *= other.data();
   return *this;
 }
 
 DataProxy DataProxy::operator/=(const DataConstProxy &other) const {
   expect::coordsAndLabelsAreSuperset(*this, other);
-  mask_union_(masks(), other.masks());
+  union_or(masks(), other.masks());
   data() /= other.data();
   return *this;
 }

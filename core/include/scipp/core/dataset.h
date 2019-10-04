@@ -7,7 +7,6 @@
 
 #include <functional>
 #include <iosfwd>
-#include <iostream>
 #include <optional>
 #include <string>
 #include <unordered_map>
@@ -1120,11 +1119,11 @@ SCIPP_CORE_EXPORT VariableConstProxy same(const VariableConstProxy &a,
 
 SCIPP_CORE_EXPORT std::map<typename MasksConstProxy::key_type,
                            typename MasksConstProxy::mapped_type>
-mask_union_(const MasksConstProxy &currentMasks,
-            const MasksConstProxy &otherMasks);
+union_or(const MasksConstProxy &currentMasks,
+         const MasksConstProxy &otherMasks);
 
-SCIPP_CORE_EXPORT void mask_union_(MasksProxy &&currentMasks,
-                                   const MasksConstProxy &otherMasks);
+SCIPP_CORE_EXPORT void union_or(MasksProxy &&currentMasks,
+                                const MasksConstProxy &otherMasks);
 
 } // namespace scipp::core
 

@@ -17,8 +17,7 @@
 
 namespace scipp::units {
 // Helper variables to make the declaration units more succinct.
-using dimensionless_t = boost::units::si::dimensionless;
-static constexpr dimensionless_t dimensionless;
+static constexpr boost::units::si::dimensionless dimensionless;
 static constexpr boost::units::si::length m;
 static constexpr boost::units::si::time s;
 static constexpr boost::units::si::mass kg;

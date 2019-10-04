@@ -75,22 +75,22 @@ DataArray &DataArray::operator/=(const VariableConstProxy &other) {
 DataArray operator+(const DataConstProxy &a, const DataConstProxy &b) {
   return DataArray(a.data() + b.data(), union_(a.coords(), b.coords()),
                    union_(a.labels(), b.labels()),
-                   mask_union_(a.masks(), b.masks()));
+                   union_or(a.masks(), b.masks()));
 }
 
 DataArray operator-(const DataConstProxy &a, const DataConstProxy &b) {
   return {a.data() - b.data(), union_(a.coords(), b.coords()),
-          union_(a.labels(), b.labels()), mask_union_(a.masks(), b.masks())};
+          union_(a.labels(), b.labels()), union_or(a.masks(), b.masks())};
 }
 
 DataArray operator*(const DataConstProxy &a, const DataConstProxy &b) {
   return {a.data() * b.data(), union_(a.coords(), b.coords()),
-          union_(a.labels(), b.labels()), mask_union_(a.masks(), b.masks())};
+          union_(a.labels(), b.labels()), union_or(a.masks(), b.masks())};
 }
 
 DataArray operator/(const DataConstProxy &a, const DataConstProxy &b) {
   return {a.data() / b.data(), union_(a.coords(), b.coords()),
-          union_(a.labels(), b.labels()), mask_union_(a.masks(), b.masks())};
+          union_(a.labels(), b.labels()), union_or(a.masks(), b.masks())};
 }
 
 DataArray operator+(const DataConstProxy &a, const VariableConstProxy &b) {
