@@ -164,10 +164,10 @@ def test_masks_setitem():
     d = sc.Dataset({'a': var}, coords={Dim.X: var})
     with pytest.raises(RuntimeError):
         d[Dim.X, 2:3].labels['mask'] = sc.Variable(True)
-    d.masks['mask'] = sc.Variable([True,False,True])
+    d.masks['mask'] = sc.Variable([True, False, True])
     assert len(d) == 1
     assert len(d.masks) == 1
-    assert d.masks['mask'] == sc.Variable([True,False,True])
+    assert d.masks['mask'] == sc.Variable([True, False, True])
 
 
 def test_contains_masks():
