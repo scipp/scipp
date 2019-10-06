@@ -162,7 +162,7 @@ def plot_2d(input_data, axes=None, contours=False, cb=None,
                 )
 
     sv = Slicer2d(data=data, layout=layout, input_data=input_data, axes=axes,
-                  cb=cbar, show_variances=show_variances)
+                  value_name=title, cb=cbar, show_variances=show_variances)
 
     if filename is not None:
         write_image(fig=sv.fig, file=filename)
@@ -174,13 +174,15 @@ def plot_2d(input_data, axes=None, contours=False, cb=None,
 class Slicer2d:
 
     def __init__(self, data, layout, input_data, axes,
-                 cb, show_variances):
+                 value_name, cb, show_variances, surface3d=False):
 
         self.input_data = input_data
         self.show_variances = ((self.input_data.variances is not None) and
                                show_variances)
         # self.value_name = value_name
         self.cb = cb
+        self.surface3d = surface3d
+        self.value_name = value_name
 
         # Get the dimensions of the image to be displayed
         self.coords = self.input_data.coords
@@ -249,7 +251,12 @@ class Slicer2d:
                   "variances": None}
         if self.show_variances:
             params["variances"] = {"cbmin": "min_var", "cbmax": "max_var"}
-            self.fig = go.FigureWidget(make_subplots(rows=1, cols=2, horizontal_spacing=0.16))
+            if self.surface3d:
+                self.fig = go.FigureWidget(
+                    make_subplots(rows=1, cols=2, horizontal_spacing=0.16,
+                                  specs=[[{"type": "scene"}, {"type": "scene"}]]))
+            else:
+                self.fig = go.FigureWidget(make_subplots(rows=1, cols=2, horizontal_spacing=0.16))
             data["colorbar"]["x"] = 0.42
             data["colorbar"]["thickness"] = 0.02
             self.fig.add_trace(data, row=1, col=1)
@@ -262,17 +269,26 @@ class Slicer2d:
 
         # Set colorbar limits once to keep them constant for slicer
         # TODO: should there be auto scaling as slider value is changed?
+        if self.surface3d:
+            attr_names = ["cmin", "cmax"]
+        else:
+            attr_names = ["zmin", "zmax"]
         for i, (key, val) in enumerate(sorted(params.items())):
             if val is not None:
                 arr = getattr(self.input_data, key)
                 if self.cb[val["cbmin"]] is not None:
-                    self.fig.data[i].zmin = self.cb[val["cbmin"]]
+                    setattr(self.fig.data[i], attr_names[0], self.cb[val["cbmin"]])
                 else:
-                    self.fig.data[i].zmin = np.amin(arr[np.where(np.isfinite(arr))])
+                    setattr(self.fig.data[i], attr_names[0], np.amin(arr[np.where(np.isfinite(arr))]))
                 if self.cb[val["cbmax"]] is not None:
-                    self.fig.data[i].zmax = self.cb[val["cbmax"]]
+                    setattr(self.fig.data[i], attr_names[1], self.cb[val["cbmax"]])
                 else:
-                    self.fig.data[i].zmax = np.amax(arr[np.where(np.isfinite(arr))])
+                    setattr(self.fig.data[i], attr_names[1], np.amax(arr[np.where(np.isfinite(arr))]))
+
+        if self.surface3d:
+            self.fig.layout.scene1.zaxis.title = self.value_name
+            if self.show_variances:
+                self.fig.layout.scene2.zaxis.title = "variances"
 
         # Call update_slice once to make the initial image
         self.update_axes()
@@ -312,11 +328,30 @@ class Slicer2d:
             if self.slider[key].disabled:
                 self.fig.data[0][button.value.lower()] = self.coords[button.dim].values
                 if self.show_variances:
-                    func = getattr(self.fig, 'update_{}axes'.format(button.value.lower()))
-                    for i in range(2):
-                        func(title_text=axis_label(self.coords[button.dim]), row=1, col=i+1)
+                    self.fig.data[1][button.value.lower()] = self.coords[button.dim].values
+                if self.surface3d:
+                    if self.show_variances:
+                        self.fig.layout.scene1["{}axis_title".format(button.value.lower())] = axis_label(self.coords[button.dim])
+                        self.fig.layout.scene2["{}axis_title".format(button.value.lower())] = axis_label(self.coords[button.dim])
+                        # self.fig.layout.scene1 = dict(xaxis_title=titles["x"],
+                        #                               yaxis_title=titles["y"],
+                        #                               zaxis_title = self.value_name)
+                        # self.fig.layout.scene2 = dict(xaxis_title = titles["x"],
+                        #                               yaxis_title = titles["y"],
+                        #                               zaxis_title = self.value_name)
+                    else:
+                        self.fig.layout.scene1["{}axis_title".format(button.value.lower())] = axis_label(self.coords[button.dim])
+                        # self.fig.update_layout(scene = dict(
+                        #             xaxis_title=titles["x"],
+                        #             yaxis_title=titles["y"],
+                        #             zaxis_title=titles["z"]))
                 else:
-                    self.fig.update_layout({"{}axis".format(button.value.lower()) : {"title": axis_label(self.coords[button.dim])}})
+                    if self.show_variances:
+                        func = getattr(self.fig, 'update_{}axes'.format(button.value.lower()))
+                        for i in range(2):
+                            func(title_text=axis_label(self.coords[button.dim]), row=1, col=i+1)
+                    else:
+                        self.fig.update_layout({"{}axis".format(button.value.lower()) : {"title": axis_label(self.coords[button.dim])}})
         return
 
     # Define function to update slices
@@ -412,13 +447,30 @@ def plot_3d(input_data, axes=None, contours=False, cb=None,
     #             )
 
     if ndim == 2:
-        # data=[go.Surface(x=xc, y=yc, z=input_data.values, opacity=0.9, colorscale=cbar["name"])]
-        data=[go.Surface(opacity=0.9, colorscale=cbar["name"])]
-        fig = go.Figure(data=data, layout=layout)
+
+        data = dict(x=[0.0],
+                    y=[0.0],
+                    z=[0.0],
+                    type="surface",
+                    colorscale=cbar["name"],
+                    colorbar=dict(
+                        title=title,
+                        titleside='right',
+                        lenmode='fraction',
+                        len=1.05,
+                        thicknessmode='fraction',
+                        thickness=0.03)
+                    )
+
+        sv = Slicer2d(data=data, layout=layout, input_data=input_data, axes=axes,
+                      value_name=title, cb=cbar, show_variances=show_variances, surface3d=True)
+        # # data=[go.Surface(x=xc, y=yc, z=input_data.values, opacity=0.9, colorscale=cbar["name"])]
+        # data=[go.Surface(opacity=0.9, colorscale=cbar["name"])]
+        # fig = go.Figure(data=data, layout=layout)
         if filename is not None:
-            write_image(fig=fig, file=filename)
+            write_image(fig=sv.fig, file=filename)
         else:
-            display(fig)
+            display(sv.vbox)
         # return
     else:
         # # x1, y1 = np.meshgrid(xc, yc)
@@ -663,7 +715,6 @@ class Slicer3d:
             self.fig.layout.scene2 = dict(xaxis_title = titles["x"],
                                           yaxis_title = titles["y"],
                                           zaxis_title = titles["z"])
-            
             # , dict(
             #             xaxis_title=titles["x"],
             #             yaxis_title=titles["y"],
