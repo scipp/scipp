@@ -162,7 +162,7 @@ def plot_2d(input_data, axes=None, contours=False, cb=None,
                 )
 
     sv = Slicer2d(data=data, layout=layout, input_data=input_data, axes=axes,
-                  value_name=name, cb=cbar, show_variances=show_variances)
+                  cb=cbar, show_variances=show_variances)
 
     if filename is not None:
         write_image(fig=sv.fig, file=filename)
@@ -174,12 +174,12 @@ def plot_2d(input_data, axes=None, contours=False, cb=None,
 class Slicer2d:
 
     def __init__(self, data, layout, input_data, axes,
-                 value_name, cb, show_variances):
+                 cb, show_variances):
 
         self.input_data = input_data
         self.show_variances = ((self.input_data.variances is not None) and
                                show_variances)
-        self.value_name = value_name
+        # self.value_name = value_name
         self.cb = cb
 
         # Get the dimensions of the image to be displayed
@@ -421,27 +421,27 @@ def plot_3d(input_data, axes=None, contours=False, cb=None,
             display(fig)
         # return
     else:
-        # x1, y1 = np.meshgrid(xc, yc)
-        # x2, z2 = np.meshgrid(xc, zc)
-        # y3, z3 = np.meshgrid(yc, zc)
-        if cbar["min"] is not None:
-            zmin = cbar["min"]
-        else:
-            zmin = np.amin(input_data.values[np.where(np.isfinite(input_data.values))])
-        if cbar["max"] is not None:
-            zmax = cbar["max"]
-        else:
-            zmax = np.amax(input_data.values[np.where(np.isfinite(input_data.values))])
-        # data=[go.Surface(x=np.zeros_like(y3), y=y3, z=z3, cmin=zmin, cmax=zmax),
-        #       go.Surface(x=x2, y=np.zeros_like(x2), z=z2, cmin=zmin, cmax=zmax, showscale=False),
-        #       go.Surface(x=x1, y=y1, z=np.zeros_like(x1), cmin=zmin, cmax=zmax, showscale=False)]
-        data=[go.Surface(cmin=zmin, cmax=zmax),
-              go.Surface(cmin=zmin, cmax=zmax, showscale=False),
-              go.Surface(cmin=zmin, cmax=zmax, showscale=False)]
+        # # x1, y1 = np.meshgrid(xc, yc)
+        # # x2, z2 = np.meshgrid(xc, zc)
+        # # y3, z3 = np.meshgrid(yc, zc)
+        # if cbar["min"] is not None:
+        #     zmin = cbar["min"]
+        # else:
+        #     zmin = np.amin(input_data.values[np.where(np.isfinite(input_data.values))])
+        # if cbar["max"] is not None:
+        #     zmax = cbar["max"]
+        # else:
+        #     zmax = np.amax(input_data.values[np.where(np.isfinite(input_data.values))])
+        # # data=[go.Surface(x=np.zeros_like(y3), y=y3, z=z3, cmin=zmin, cmax=zmax),
+        # #       go.Surface(x=x2, y=np.zeros_like(x2), z=z2, cmin=zmin, cmax=zmax, showscale=False),
+        # #       go.Surface(x=x1, y=y1, z=np.zeros_like(x1), cmin=zmin, cmax=zmax, showscale=False)]
+        # data=[go.Surface(cmin=zmin, cmax=zmax),
+        #       go.Surface(cmin=zmin, cmax=zmax, showscale=False),
+        #       go.Surface(cmin=zmin, cmax=zmax, showscale=False)]
         # Create a SliceViewer object
-        sv = Slicer3d(data=data, layout=layout,
+        sv = Slicer3d(layout=layout,
                          input_data=input_data, axes=axes,
-                         value_name=name, cb=cbar, show_variances=show_variances)
+                         value_name=title, cb=cbar, show_variances=show_variances)
         if filename is not None:
             write_image(fig=sv.fig, file=filename)
         else:
@@ -460,13 +460,13 @@ def plot_3d(input_data, axes=None, contours=False, cb=None,
 
 class Slicer3d:
 
-    def __init__(self, data, layout, input_data, axes,
+    def __init__(self, layout, input_data, axes,
                  value_name, cb, show_variances):
 
         self.input_data = input_data
         self.show_variances = ((self.input_data.variances is not None) and
                                show_variances)
-        self.value_name = value_name
+        # self.value_name = value_name
         self.cb = cb
         self.cube = None
 
@@ -564,12 +564,17 @@ class Slicer3d:
 
         if self.show_variances:
             # params["variances"] = {"cbmin": "min_var", "cbmax": "max_var"}
-            self.fig = go.FigureWidget(make_subplots(rows=1, cols=2, horizontal_spacing=0.16))
+            self.fig = go.FigureWidget(make_subplots(rows=1, cols=2,
+                horizontal_spacing=0.16, specs=[[{"type": "scene"}, {"type": "scene"}]]))
+
             # data["colorbar"]["x"] = 0.42
             # data["colorbar"]["thickness"] = 0.02
+            colorbars = [{"x":0.42, "thickness": 10.0, "title": value_name},
+                         {"x":1.0, "thickness": 10.0, "title": "variances"}]
+
             for i, (key, val) in enumerate(sorted(params.items())):
                 for j in range(3):
-                    self.fig.add_trace(go.Surface(cmin=val["cmin"], cmax=val["cmax"], showscale=j<1), row=1, col=i+1)
+                    self.fig.add_trace(go.Surface(cmin=val["cmin"], cmax=val["cmax"], showscale=j<1, colorbar=colorbars[i]), row=1, col=i+1)
             # data["colorbar"]["title"] = "variances"
             # data["colorbar"]["x"] = 1.0
             # self.fig.add_trace(data, row=1, col=2)
@@ -647,12 +652,28 @@ class Slicer3d:
                 titles[button.value.lower()] = axis_label(self.coords[button.dim])
                 buttons_dims[button.value.lower()] = button.dim_str
 
-        # if self.show_variances:
-        # else:
-        self.fig.update_layout(scene = dict(
-                    xaxis_title=titles["x"],
-                    yaxis_title=titles["y"],
-                    zaxis_title=titles["z"]))
+        if self.show_variances:
+            # for i in range(2):
+            #     self.fig.update_xaxes(title_text=titles["x"], row=1, col=i+1)
+            #     self.fig.update_yaxes(title_text=titles["y"], row=1, col=i+1)
+            #     self.fig.update_zaxes(title_text=titles["z"], row=1, col=i+1)
+            self.fig.layout.scene1 = dict(xaxis_title=titles["x"],
+                                          yaxis_title=titles["y"],
+                                          zaxis_title = titles["z"])
+            self.fig.layout.scene2 = dict(xaxis_title = titles["x"],
+                                          yaxis_title = titles["y"],
+                                          zaxis_title = titles["z"])
+            
+            # , dict(
+            #             xaxis_title=titles["x"],
+            #             yaxis_title=titles["y"],
+            #             zaxis_title=titles["z"])])
+
+        else:
+            self.fig.update_layout(scene = dict(
+                        xaxis_title=titles["x"],
+                        yaxis_title=titles["y"],
+                        zaxis_title=titles["z"]))
 
 
         # y_x, z_x = np.meshgrid(self.slider_x[buttons_dims["y"]], self.slider_x[buttons_dims["z"]])
@@ -726,6 +747,11 @@ class Slicer3d:
                 setattr(self.fig.data[i], key, np.ones_like(xx) * val["loc"])
                 setattr(self.fig.data[i], permutations[key][0], xx)
                 setattr(self.fig.data[i], permutations[key][1], yy)
+                if self.show_variances:
+                    setattr(self.fig.data[i+3], key, np.ones_like(xx) * val["loc"])
+                    setattr(self.fig.data[i+3], permutations[key][0], xx)
+                    setattr(self.fig.data[i+3], permutations[key][1], yy)
+
 
             # button_values = [ self.buttons[str(dim)].value.lower() for dim in val["slice"].dims ]
             # # # print(vslice.dims)
@@ -734,6 +760,9 @@ class Slicer3d:
             # if ord(button_values[0]) < ord(button_values[1]):
             #     values = values.T
             self.fig.data[i].surfacecolor = self.check_transpose(val["slice"])
+            if self.show_variances:
+                self.fig.data[i+3].surfacecolor = self.check_transpose(val["slice"], variances=True)
+
 
 
         return
@@ -796,9 +825,13 @@ class Slicer3d:
             ax_dim = self.buttons[key].value.lower()
             xy = getattr(self.fig.data[slice_indices[ax_dim]], ax_dim)
             setattr(self.fig.data[slice_indices[ax_dim]], ax_dim, xy / xy * loc)
+            
             # setattr(self.fig.data[i], permutations[key][0], xx)
             # setattr(self.fig.data[i], permutations[key][1], yy)
             self.fig.data[slice_indices[ax_dim]].surfacecolor = self.check_transpose(vslice)
+            if self.show_variances:
+                setattr(self.fig.data[slice_indices[ax_dim]+3], ax_dim, xy / xy * loc)
+                self.fig.data[slice_indices[ax_dim]+3].surfacecolor = self.check_transpose(vslice, variances=True)
 
 
         # # Check if dimensions of arrays agree, if not, plot the transpose
@@ -809,10 +842,13 @@ class Slicer3d:
         #     self.update_z3d(vslice.variances, transp, self.cb["log"], 1)
         return
 
-    def check_transpose(self, vslice):
+    def check_transpose(self, vslice, variances=False):
         # Check if dimensions of arrays agree, if not, plot the transpose
         button_values = [ self.buttons[str(dim)].value.lower() for dim in vslice.dims ]
-        values = vslice.values
+        if variances:
+            values = vslice.variances
+        else:
+            values = vslice.values
         if ord(button_values[0]) < ord(button_values[1]):
             values = values.T
         return values
