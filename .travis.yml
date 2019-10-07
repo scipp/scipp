@@ -28,22 +28,32 @@ jobs:
       compiler: gcc
       name: "gcc"
       if: NOT type = cron
-      before_install: .travis/before_install.sh
+      env:
+        - PATH="$HOME/miniconda/bin:$PATH"
+      before_install:
+        - .travis/before_install.sh
+        - .travis/install_conda.sh "Miniconda3-latest-Linux-x86_64.sh"
       install: .travis/install_linux_toolchain.sh
       script: .travis/run_tests.sh
     - compiler: clang
       name: "clang"
       if: NOT type = cron
-      before_install: .travis/before_install.sh
+      env:
+        - PATH="$HOME/miniconda/bin:$PATH"
+      before_install:
+        - .travis/before_install.sh
+        - .travis/install_conda.sh "Miniconda3-latest-Linux-x86_64.sh"
       install: .travis/install_linux_toolchain.sh
       script: .travis/run_tests.sh
     - os: osx
       name: "apple clang"
       if: NOT type = cron
-      osx_image: xcode10.2
-      before_install: brew install ccache ninja
       env:
-        - PYTHON_EXECUTABLE="/usr/local/bin/python3"
+        - PATH="$HOME/miniconda/bin:$PATH"
+      osx_image: xcode10.2
+      before_install:
+        - brew install ccache ninja
+        - .travis/install_conda.sh "Miniconda3-latest-MacOSX-x86_64.sh"
       script: .travis/run_tests.sh -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=OFF
     - stage: "Deploy"
       name: "conda linux"
@@ -52,7 +62,9 @@ jobs:
         depth: false
       env:
         - PATH="$HOME/miniconda/bin:$PATH"
-      install: .travis/install_conda.sh "Miniconda3-latest-Linux-x86_64.sh"
+      install:
+        - .travis/install_conda.sh "Miniconda3-latest-Linux-x86_64.sh"
+        - conda install -c conda-forge conda-build anaconda
       script:
         - .travis/conda_build_and_deploy.sh --label 'dev'
         - .travis/trigger_docker_build.sh
@@ -71,6 +83,7 @@ jobs:
         - OSX_VERSION=10.14
       install:
         - .travis/install_conda.sh "Miniconda3-latest-MacOSX-x86_64.sh"
+        - conda install -c conda-forge conda-build anaconda
       script: .travis/conda_build_and_deploy.sh --label 'dev'
     - stage: "Deploy"
       name: "conda linux python3.6"
@@ -79,7 +92,9 @@ jobs:
         depth: false
       env:
         - PATH="$HOME/miniconda/bin:$PATH"
-      install: .travis/install_conda.sh "Miniconda3-latest-Linux-x86_64.sh"
+      install:
+        - .travis/install_conda.sh "Miniconda3-latest-Linux-x86_64.sh"
+        - conda install -c conda-forge conda-build anaconda
       script:
         - .travis/conda_build_and_deploy.sh --label 'dev' --python 3.6
     - stage: "Deploy"
@@ -89,7 +104,9 @@ jobs:
         depth: false
       env:
         - PATH="$HOME/miniconda/bin:$PATH"
-      install: .travis/install_conda.sh "Miniconda3-latest-Linux-x86_64.sh"
+      install:
+        - .travis/install_conda.sh "Miniconda3-latest-Linux-x86_64.sh"
+        - conda install -c conda-forge conda-build anaconda
       script:
         - .travis/conda_build_and_deploy.sh
         - .travis/conda_build_and_deploy.sh --python 3.6
@@ -107,4 +124,5 @@ jobs:
         - OSX_VERSION=10.14
       install:
         - .travis/install_conda.sh "Miniconda3-latest-MacOSX-x86_64.sh"
+        - conda install -c conda-forge conda-build anaconda
       script: .travis/conda_build_and_deploy.sh
