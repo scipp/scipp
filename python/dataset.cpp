@@ -6,11 +6,13 @@
 
 #include "scipp/core/dataset.h"
 #include "scipp/core/except.h"
+#include "scipp/core/sort.h"
 
 #include "bind_data_access.h"
 #include "bind_operators.h"
 #include "bind_slice_methods.h"
 #include "pybind11.h"
+#include "rename.h"
 
 using namespace scipp;
 using namespace scipp::core;
@@ -82,20 +84,19 @@ void bind_dataset_proxy_methods(py::class_<T, Ignored...> &c) {
 
 template <class T, class... Ignored>
 void bind_data_array_properties(py::class_<T, Ignored...> &c) {
-  c.def_property_readonly("name", &T::name);
+  c.def_property_readonly("name", &T::name, R"(The name of the held data.)");
   c.def("__repr__", [](const T &self) { return to_string(self); });
   c.def("copy", [](const T &self) { return DataArray(self); },
         "Return a (deep) copy.");
-  c.def_property("data",
-                 py::cpp_function(
-                     [](T &self) {
-                       return self.hasData() ? py::cast(self.data())
-                                             : py::none();
-                     },
-                     py::return_value_policy::move, py::keep_alive<0, 1>()),
-                 [](T &self, const VariableConstProxy &data) {
-                   self.data().assign(data);
-                 });
+  c.def_property(
+      "data",
+      py::cpp_function(
+          [](T &self) {
+            return self.hasData() ? py::cast(self.data()) : py::none();
+          },
+          py::return_value_policy::move, py::keep_alive<0, 1>()),
+      [](T &self, const VariableConstProxy &data) { self.data().assign(data); },
+      R"(Underlying data item.)");
   bind_coord_properties(c);
   bind_comparison<DataConstProxy>(c);
   bind_data_properties(c);
@@ -178,7 +179,9 @@ void init_dataset(py::module &m) {
            [](Dataset &self, const std::string &name, const DataArray &data) {
              self.setData(name, data);
            })
-      .def("clear", &Dataset::clear);
+      .def(
+          "clear", &Dataset::clear,
+          R"(Removes all data (preserving coordinates, attributes and labels).)");
 
   bind_dataset_proxy_methods(dataset);
   bind_dataset_proxy_methods(datasetProxy);
@@ -197,16 +200,29 @@ void init_dataset(py::module &m) {
   bind_in_place_binary<Dataset>(dataset);
   bind_in_place_binary<DatasetProxy>(dataset);
   bind_in_place_binary<DataProxy>(dataset);
+  bind_in_place_binary<VariableConstProxy>(dataset);
   bind_in_place_binary<Dataset>(datasetProxy);
   bind_in_place_binary<DatasetProxy>(datasetProxy);
+  bind_in_place_binary<VariableConstProxy>(datasetProxy);
   bind_in_place_binary<DataProxy>(datasetProxy);
+  bind_in_place_binary_scalars(dataset);
+  bind_in_place_binary_scalars(datasetProxy);
+  bind_in_place_binary_scalars(dataArray);
+  bind_in_place_binary_scalars(dataProxy);
 
   bind_binary<Dataset>(dataset);
   bind_binary<DatasetProxy>(dataset);
   bind_binary<DataProxy>(dataset);
+  bind_binary<VariableConstProxy>(dataset);
   bind_binary<Dataset>(datasetProxy);
   bind_binary<DatasetProxy>(datasetProxy);
   bind_binary<DataProxy>(datasetProxy);
+  bind_binary<VariableConstProxy>(datasetProxy);
+
+  dataArray.def("rename_dims", &rename_dims<DataArray>, py::arg("dims_dict"),
+                "Rename dimensions.");
+  dataset.def("rename_dims", &rename_dims<Dataset>, py::arg("dims_dict"),
+              "Rename dimensions.");
 
   m.def("concatenate",
         py::overload_cast<const DataConstProxy &, const DataConstProxy &,
@@ -246,7 +262,7 @@ void init_dataset(py::module &m) {
           return core::histogram(ds, bins);
         },
         py::call_guard<py::gil_scoped_release>(),
-        "Returns a new Variabble with values in bins for sparse dims");
+        "Returns a new Variable with values in bins for sparse dims");
 
   m.def("histogram",
         [](const Dataset &ds, const VariableConstProxy &bins) {
@@ -331,6 +347,62 @@ void init_dataset(py::module &m) {
         :raises: If data cannot be rebinned, e.g., if the unit is not counts, or the existing coordinate is not a bin-edge coordinate.
         :return: A new dataset with data rebinned according to the new coordinate.
         :rtype: Dataset)");
+
+  m.def("sort",
+        py::overload_cast<const DataConstProxy &, const VariableConstProxy &>(
+            &sort),
+        py::arg("data"), py::arg("key"),
+        py::call_guard<py::gil_scoped_release>(),
+        R"(Sort data array along a dimension by a sort key.
+
+        :raises: If the key is invalid, e.g., if it has not exactly one dimension, or if its dtype is not sortable.
+        :return: New sorted data array.
+        :rtype: DataArray)");
+  m.def(
+      "sort", py::overload_cast<const DataConstProxy &, const Dim &>(&sort),
+      py::arg("data"), py::arg("key"), py::call_guard<py::gil_scoped_release>(),
+      R"(Sort data array along a dimension by the coordinate values for that dimension.
+
+      :raises: If the key is invalid, e.g., if it has not exactly one dimension, or if its dtype is not sortable.
+      :return: New sorted data array.
+      :rtype: DataArray)");
+  m.def(
+      "sort",
+      py::overload_cast<const DataConstProxy &, const std::string &>(&sort),
+      py::arg("data"), py::arg("key"), py::call_guard<py::gil_scoped_release>(),
+      R"(Sort data array along a dimension by the label values for the given key.
+
+      :raises: If the key is invalid, e.g., if it has not exactly one dimension, or if its dtype is not sortable.
+      :return: New sorted data array.
+      :rtype: DataArray)");
+
+  m.def(
+      "sort",
+      py::overload_cast<const DatasetConstProxy &, const VariableConstProxy &>(
+          &sort),
+      py::arg("data"), py::arg("key"), py::call_guard<py::gil_scoped_release>(),
+      R"(Sort dataset along a dimension by a sort key.
+
+        :raises: If the key is invalid, e.g., if it has not exactly one dimension, or if its dtype is not sortable.
+        :return: New sorted dataset.
+        :rtype: Dataset)");
+  m.def(
+      "sort", py::overload_cast<const DatasetConstProxy &, const Dim &>(&sort),
+      py::arg("data"), py::arg("key"), py::call_guard<py::gil_scoped_release>(),
+      R"(Sort dataset along a dimension by the coordinate values for that dimension.
+
+      :raises: If the key is invalid, e.g., if it has not exactly one dimension, or if its dtype is not sortable.
+      :return: New sorted dataset.
+      :rtype: Dataset)");
+  m.def(
+      "sort",
+      py::overload_cast<const DatasetConstProxy &, const std::string &>(&sort),
+      py::arg("data"), py::arg("key"), py::call_guard<py::gil_scoped_release>(),
+      R"(Sort dataset along a dimension by the label values for the given key.
+
+      :raises: If the key is invalid, e.g., if it has not exactly one dimension, or if its dtype is not sortable.
+      :return: New sorted dataset.
+      :rtype: Dataset)");
 
   py::implicitly_convertible<DataArray, DataConstProxy>();
   py::implicitly_convertible<DataArray, DataProxy>();

@@ -73,6 +73,11 @@ else()
   set(CMAKE_VISIBILITY_INLINES_HIDDEN TRUE)
 endif()
 
+# Optimization flags
+if(${CMAKE_CXX_COMPILER_ID} MATCHES "GNU")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --param inline-unit-growth=100")
+endif()
+
 # Get version from git-describe
 execute_process(
   COMMAND git describe --tag
@@ -104,6 +109,8 @@ add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-Woverloaded-virtual>
 
 enable_testing()
 
+# Custom target for building tests. all excludes tests by default
+add_custom_target(all-tests)
 add_subdirectory(common)
 add_subdirectory(benchmark)
 add_subdirectory(units)
@@ -111,10 +118,3 @@ add_subdirectory(core)
 add_subdirectory(neutron)
 add_subdirectory(python)
 add_subdirectory(test)
-# Custom target for building everyting. all excludes tests by default
-add_custom_target(all-tests
-                   DEPENDS 
-		     scipp-common-test
-		     scipp-core-test
-		     scipp-units-test
-	             scipp-neutron-test)

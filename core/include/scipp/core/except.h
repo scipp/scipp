@@ -27,51 +27,6 @@ class Variable;
 class VariableConstProxy;
 class Slice;
 
-SCIPP_CORE_EXPORT std::string to_string(const DType dtype);
-SCIPP_CORE_EXPORT std::string to_string(const Dimensions &dims);
-SCIPP_CORE_EXPORT std::string to_string(const Slice &slice);
-SCIPP_CORE_EXPORT std::string to_string(const Variable &variable);
-SCIPP_CORE_EXPORT std::string to_string(const VariableConstProxy &variable);
-SCIPP_CORE_EXPORT std::string to_string(const DataArray &data);
-SCIPP_CORE_EXPORT std::string to_string(const DataConstProxy &data);
-SCIPP_CORE_EXPORT std::string to_string(const Dataset &dataset);
-SCIPP_CORE_EXPORT std::string to_string(const DatasetConstProxy &dataset);
-
-template <class T> std::string array_to_string(const T &arr);
-
-template <class T> std::string element_to_string(const T &item) {
-  using std::to_string;
-  if constexpr (std::is_same_v<T, std::string>)
-    return {'"' + item + "\", "};
-  else if constexpr (std::is_same_v<T, Eigen::Vector3d>)
-    return {"(" + to_string(item[0]) + ", " + to_string(item[1]) + ", " +
-            to_string(item[2]) + "), "};
-  else if constexpr (is_sparse_v<T>)
-    return array_to_string(item) + ", ";
-  else if constexpr (std::is_same_v<T, DataArray>)
-    return {"DataArray, "};
-  else if constexpr (std::is_same_v<T, Dataset>)
-    return {"Dataset, "};
-  else
-    return to_string(item) + ", ";
-}
-
-template <class T> std::string array_to_string(const T &arr) {
-  const auto size = scipp::size(arr);
-  if (size == 0)
-    return std::string("[]");
-  std::string s = "[";
-  for (scipp::index i = 0; i < scipp::size(arr); ++i) {
-    if (i == 2 && size > 4) {
-      s += "..., ";
-      i = size - 2;
-    }
-    s += element_to_string(arr[i]);
-  }
-  s.resize(s.size() - 2);
-  s += "]";
-  return s;
-}
 } // namespace scipp::core
 
 namespace scipp::except {
@@ -158,7 +113,9 @@ void sizeMatches(const T &range, const Ts &... other) {
     throw except::SizeError("Expected matching sizes.");
 }
 
-template <class T> void contains(const T &a, const T &b) {
+inline auto to_string(const std::string &s) { return s; }
+
+template <class A, class B> void contains(const A &a, const B &b) {
   if (!a.contains(b))
     throw std::runtime_error("Expected " + to_string(a) + " to contain " +
                              to_string(b) + ".");

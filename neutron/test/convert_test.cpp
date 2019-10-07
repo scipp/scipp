@@ -156,8 +156,10 @@ TEST(Convert, DSpacing_to_Tof) {
   /* Test coordinates */
   /* Broadcasting is needed as conversion introduces the dependance on
    * Dim::Position */
-  EXPECT_EQ(tof.coords()[Dim::Tof], broadcast(tof_original.coords()[Dim::Tof],
-                                              tof.coords()[Dim::Tof].dims()));
+  const auto expected_tofs =
+      broadcast(tof_original.coords()[Dim::Tof], tof.coords()[Dim::Tof].dims());
+  EXPECT_TRUE(equals(tof.coords()[Dim::Tof].values<double>(),
+                     expected_tofs.values<double>(), 1e-12));
 
   /* Test sparse/event data */
   ASSERT_TRUE(tof.contains("events"));
@@ -169,7 +171,117 @@ TEST(Convert, DSpacing_to_Tof) {
 
   /* Test count density data */
   ASSERT_TRUE(tof.contains("density"));
-  EXPECT_EQ(tof["density"].data(), tof_original["density"].data());
+  EXPECT_TRUE(equals(tof["density"].values<double>(),
+                     tof_original["density"].values<double>(), 1e-14));
+}
+
+TEST(Convert, Tof_to_Wavelength) {
+  Dataset tof = makeTofDataForUnitConversion();
+
+  auto wavelength = convert(tof, Dim::Tof, Dim::Wavelength);
+
+  EXPECT_EQ(wavelength["counts"].dims(),
+            Dimensions({{Dim::Position, 2}, {Dim::Wavelength, 3}}));
+
+  ASSERT_THROW(wavelength.coords()[Dim::Tof], std::out_of_range);
+  ASSERT_NO_THROW(wavelength.coords()[Dim::Wavelength]);
+
+  const auto &coord = wavelength.coords()[Dim::Wavelength];
+  // Due to conversion, the coordinate now also depends on Dim::Spectrum.
+  ASSERT_EQ(coord.dims(),
+            Dimensions({{Dim::Position, 2}, {Dim::Wavelength, 4}}));
+  EXPECT_EQ(coord.unit(), units::angstrom);
+
+  const auto values = coord.values<double>();
+  // Rule of thumb (https://www.psi.ch/niag/neutron-physics):
+  // v [m/s] = 3956 / \lambda [ Angstrom ]
+  Variable tof_in_seconds = tof.coords()[Dim::Tof] * 1e-6;
+  const auto tofs = tof_in_seconds.values<double>();
+  // Spectrum 0 is 11 m from source
+  EXPECT_NEAR(values[0], 3956.0 / (11.0 / tofs[0]), values[0] * 1e-3);
+  EXPECT_NEAR(values[1], 3956.0 / (11.0 / tofs[1]), values[1] * 1e-3);
+  EXPECT_NEAR(values[2], 3956.0 / (11.0 / tofs[2]), values[2] * 1e-3);
+  EXPECT_NEAR(values[3], 3956.0 / (11.0 / tofs[3]), values[3] * 1e-3);
+  // Spectrum 1
+  const double L = 10.0 + sqrt(1.0 * 1.0 + 0.1 * 0.1);
+  EXPECT_NEAR(values[4], 3956.0 / (L / tofs[0]), values[4] * 1e-3);
+  EXPECT_NEAR(values[5], 3956.0 / (L / tofs[1]), values[5] * 1e-3);
+  EXPECT_NEAR(values[6], 3956.0 / (L / tofs[2]), values[6] * 1e-3);
+  EXPECT_NEAR(values[7], 3956.0 / (L / tofs[3]), values[7] * 1e-3);
+
+  ASSERT_TRUE(wavelength.contains("counts"));
+  const auto &data = wavelength["counts"];
+  ASSERT_EQ(data.dims(),
+            Dimensions({{Dim::Position, 2}, {Dim::Wavelength, 3}}));
+  EXPECT_TRUE(equals(data.values<double>(), {1, 2, 3, 4, 5, 6}));
+  EXPECT_EQ(data.unit(), units::counts);
+
+  ASSERT_TRUE(wavelength.contains("events"));
+  const auto &events = wavelength["events"];
+  ASSERT_EQ(events.dims(), Dimensions({Dim::Position, Dim::Wavelength},
+                                      {2, Dimensions::Sparse}));
+  const auto &tof0 = tof["events"].coords()[Dim::Tof].sparseValues<double>()[0];
+  const auto &d0 = events.coords()[Dim::Wavelength].sparseValues<double>()[0];
+  ASSERT_EQ(scipp::size(d0), 4);
+  EXPECT_NEAR(d0[0], 3956.0 / (1e6 * 11.0 / tof0[0]), d0[0] * 1e-3);
+  EXPECT_NEAR(d0[1], 3956.0 / (1e6 * 11.0 / tof0[1]), d0[1] * 1e-3);
+  EXPECT_NEAR(d0[2], 3956.0 / (1e6 * 11.0 / tof0[2]), d0[2] * 1e-3);
+  EXPECT_NEAR(d0[3], 3956.0 / (1e6 * 11.0 / tof0[3]), d0[3] * 1e-3);
+  const auto &tof1 = tof["events"].coords()[Dim::Tof].sparseValues<double>()[1];
+  const auto &d1 = events.coords()[Dim::Wavelength].sparseValues<double>()[1];
+  ASSERT_EQ(scipp::size(d1), 3);
+  EXPECT_NEAR(d1[0], 3956.0 / (1e6 * 11.0 / tof1[0]), d1[0] * 1e-3);
+  EXPECT_NEAR(d1[1], 3956.0 / (1e6 * 11.0 / tof1[1]), d1[1] * 1e-3);
+  EXPECT_NEAR(d1[2], 3956.0 / (1e6 * 11.0 / tof1[2]), d1[2] * 1e-3);
+
+  ASSERT_TRUE(wavelength.contains("density"));
+  const auto &density = wavelength["density"];
+  ASSERT_EQ(density.dims(),
+            Dimensions({{Dim::Position, 2}, {Dim::Wavelength, 3}}));
+  EXPECT_EQ(density.unit(), units::counts / units::angstrom);
+  const auto vals = density.values<double>();
+  EXPECT_FALSE(equals(vals, {1, 2, 3, 4, 5, 6}));
+  // Spectrum 0
+  EXPECT_DOUBLE_EQ(vals[0], 1.0 * 1000 / (values[1] - values[0]));
+  EXPECT_DOUBLE_EQ(vals[1], 2.0 * 1100 / (values[2] - values[1]));
+  EXPECT_DOUBLE_EQ(vals[2], 3.0 * 1200 / (values[3] - values[2]));
+  // Spectrum 1
+  EXPECT_DOUBLE_EQ(vals[3], 4.0 * 1000 / (values[5] - values[4]));
+  EXPECT_DOUBLE_EQ(vals[4], 5.0 * 1100 / (values[6] - values[5]));
+  EXPECT_DOUBLE_EQ(vals[5], 6.0 * 1200 / (values[7] - values[6]));
+
+  ASSERT_EQ(wavelength.coords()[Dim::Position], tof.coords()[Dim::Position]);
+  ASSERT_EQ(wavelength.labels()["component_info"],
+            tof.labels()["component_info"]);
+}
+
+TEST(Convert, Wavelength_to_Tof) {
+  // Assuming the Tof_to_Wavelength test is correct and passing we can test the
+  // inverse conversion by simply comparing a round trip conversion with the
+  // original data.
+
+  const Dataset tof_original = makeTofDataForUnitConversion();
+  const auto wavelength = convert(tof_original, Dim::Tof, Dim::Wavelength);
+  const auto tof = convert(wavelength, Dim::Wavelength, Dim::Tof);
+
+  // Test coordinates
+  // Broadcasting is needed as conversion introduces the dependance on
+  // Dim::Position
+  EXPECT_EQ(tof.coords()[Dim::Tof], broadcast(tof_original.coords()[Dim::Tof],
+                                              tof.coords()[Dim::Tof].dims()));
+
+  // Test sparse/event data
+  ASSERT_TRUE(tof.contains("events"));
+  const auto events = tof["events"].coords()[Dim::Tof].sparseValues<double>();
+  const auto events_original =
+      tof_original["events"].coords()[Dim::Tof].sparseValues<double>();
+  EXPECT_TRUE(equals(events[0], events_original[0], 1e-15));
+  EXPECT_TRUE(equals(events[1], events_original[1], 1e-12));
+
+  // Test count density data
+  ASSERT_TRUE(tof.contains("density"));
+  EXPECT_TRUE(equals(tof["density"].values<double>(),
+                     tof_original["density"].values<double>(), 1e-14));
 }
 
 TEST(Convert, Tof_to_Energy_Elastic) {

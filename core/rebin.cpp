@@ -151,7 +151,7 @@ Variable rebin(const VariableConstProxy &var, const Dim dim,
   if (rebinned.dims().inner() == dim) {
     apply_in_place<double, float>(do_rebin, rebinned, var, oldCoord, newCoord);
   } else {
-    if (newCoord.dims().ndims() > 1)
+    if (newCoord.dims().ndim() > 1)
       throw std::runtime_error(
           "Not inner rebin works only for 1d coordinates for now.");
     switch (rebinned.dtype()) {

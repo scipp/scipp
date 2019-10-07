@@ -19,11 +19,6 @@ if [ $rc -ne 0 ]; then
   exit $rc
 fi
 
-# build targets in sequence to prevent timeout travis_wait might be better solution
-ninja clean
-ninja scipp-core -v
-ninja scipp-neutron -v
-ninja _scipp -v
 # Build, install and move scipp Python library to site packages location
 ninja install -v && \
   mv "$CONDA_PREFIX/scipp" "$CONDA_PREFIX"/lib/python*/

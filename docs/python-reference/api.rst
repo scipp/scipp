@@ -36,6 +36,7 @@ General
    norm
    rebin
    reshape
+   sort
    sqrt
    sum
 

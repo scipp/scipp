@@ -6,7 +6,7 @@ Propagation of uncertainties
 If present, scipp propagates uncertainties (errors) as described in `Wikipedia: Propagation of uncertainty <https://en.wikipedia.org/wiki/Propagation_of_uncertainty>`_.
 The implemented mechanism assumes *uncorrelated data*.
 
-An overview for key operation is:
+An overview for key operations is:
 
 .. table::
     :widths: 50 50

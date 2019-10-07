@@ -4,10 +4,11 @@
 /// @author Simon Heybrock
 #include <cmath>
 
-#include "operators.h"
 #include "scipp/core/except.h"
 #include "scipp/core/transform.h"
 #include "scipp/core/variable.h"
+
+#include "operators.h"
 
 namespace scipp::core {
 
@@ -50,12 +51,6 @@ Variable &Variable::operator+=(const Variable &other) & {
 Variable &Variable::operator+=(const VariableConstProxy &other) & {
   return plus_equals(*this, other);
 }
-Variable &Variable::operator+=(const double value) & {
-  // TODO By not setting a unit here this operator is only usable if the
-  // variable is dimensionless. Should we ignore the unit for scalar operations,
-  // i.e., set the same unit as *this.unit()?
-  return plus_equals(*this, makeVariable<double>(value));
-}
 
 template <class T1, class T2> T1 &minus_equals(T1 &variable, const T2 &other) {
   transform_in_place(variable, other, operator_detail::minus_equals{});
@@ -73,9 +68,6 @@ Variable &Variable::operator-=(const Variable &other) & {
 Variable &Variable::operator-=(const VariableConstProxy &other) & {
   return minus_equals(*this, other);
 }
-Variable &Variable::operator-=(const double value) & {
-  return minus_equals(*this, makeVariable<double>(value));
-}
 
 template <class T1, class T2> T1 &times_equals(T1 &variable, const T2 &other) {
   transform_in_place(variable, other, operator_detail::times_equals{});
@@ -91,11 +83,6 @@ Variable &Variable::operator*=(const Variable &other) & {
   return times_equals(*this, other);
 }
 Variable &Variable::operator*=(const VariableConstProxy &other) & {
-  return times_equals(*this, other);
-}
-Variable &Variable::operator*=(const double value) & {
-  auto other = makeVariable<double>(value);
-  other.setUnit(units::dimensionless);
   return times_equals(*this, other);
 }
 
@@ -115,18 +102,12 @@ Variable &Variable::operator/=(const Variable &other) & {
 Variable &Variable::operator/=(const VariableConstProxy &other) & {
   return divide_equals(*this, other);
 }
-Variable &Variable::operator/=(const double value) & {
-  return divide_equals(*this, makeVariable<double>(value));
-}
 
 VariableProxy VariableProxy::operator+=(const Variable &other) const {
   return plus_equals(*this, other);
 }
 VariableProxy VariableProxy::operator+=(const VariableConstProxy &other) const {
   return plus_equals(*this, other);
-}
-VariableProxy VariableProxy::operator+=(const double value) const {
-  return plus_equals(*this, makeVariable<double>(value));
 }
 
 VariableProxy VariableProxy::operator-=(const Variable &other) const {
@@ -135,9 +116,6 @@ VariableProxy VariableProxy::operator-=(const Variable &other) const {
 VariableProxy VariableProxy::operator-=(const VariableConstProxy &other) const {
   return minus_equals(*this, other);
 }
-VariableProxy VariableProxy::operator-=(const double value) const {
-  return minus_equals(*this, makeVariable<double>(value));
-}
 
 VariableProxy VariableProxy::operator*=(const Variable &other) const {
   return times_equals(*this, other);
@@ -145,18 +123,12 @@ VariableProxy VariableProxy::operator*=(const Variable &other) const {
 VariableProxy VariableProxy::operator*=(const VariableConstProxy &other) const {
   return times_equals(*this, other);
 }
-VariableProxy VariableProxy::operator*=(const double value) const {
-  return times_equals(*this, makeVariable<double>(value));
-}
 
 VariableProxy VariableProxy::operator/=(const Variable &other) const {
   return divide_equals(*this, other);
 }
 VariableProxy VariableProxy::operator/=(const VariableConstProxy &other) const {
   return divide_equals(*this, other);
-}
-VariableProxy VariableProxy::operator/=(const double value) const {
-  return divide_equals(*this, makeVariable<double>(value));
 }
 
 Variable VariableConstProxy::operator-() const {

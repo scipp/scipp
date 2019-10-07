@@ -5,7 +5,7 @@ cache: ccache
 branches:
   only:
     - master
-    - /^v\d+(\.\d+)*/
+    - /^\d+(\.\d+)*/
 
 jobs:
   include:
@@ -80,7 +80,7 @@ jobs:
       install:
         - .travis/install_conda.sh "Miniconda3-latest-MacOSX-x86_64.sh"
         - conda install -c conda-forge conda-build anaconda
-      script: .travis/conda_build_and_deploy.sh --label 'dev'
+      script: travis_wait .travis/conda_build_and_deploy.sh --label 'dev'
     - stage: "Deploy"
       name: "conda linux python3.6"
       if: type = cron AND branch = master
@@ -92,10 +92,10 @@ jobs:
         - .travis/install_conda.sh "Miniconda3-latest-Linux-x86_64.sh"
         - conda install -c conda-forge conda-build anaconda
       script:
-        - .travis/conda_build_and_deploy.sh --label 'dev' --python 3.6
+        - travis_wait .travis/conda_build_and_deploy.sh --label 'dev' --python 3.6
     - stage: "Deploy"
       name: "release conda linux"
-      if: NOT type = cron AND NOT type = pull_request AND tag =~ /^v\d+(\.\d+)*/
+      if: NOT type = cron AND NOT type = pull_request AND tag =~ /^\d+(\.\d+)*/
       git:
         depth: false
       env:
@@ -104,13 +104,13 @@ jobs:
         - .travis/install_conda.sh "Miniconda3-latest-Linux-x86_64.sh"
         - conda install -c conda-forge conda-build anaconda
       script:
-        - .travis/conda_build_and_deploy.sh
-        - .travis/conda_build_and_deploy.sh --python 3.6
+        - travis_wait .travis/conda_build_and_deploy.sh
+        - travis_wait .travis/conda_build_and_deploy.sh --python 3.6
     - stage: "Deploy"
       os: osx
       osx_image: xcode10.2
       name: "release conda osx"
-      if: NOT type = cron AND NOT type = pull_request AND tag =~ /^v\d+(\.\d+)*/
+      if: NOT type = cron AND NOT type = pull_request AND tag =~ /^\d+(\.\d+)*/
       git:
         depth: false
       env:
@@ -121,4 +121,4 @@ jobs:
       install:
         - .travis/install_conda.sh "Miniconda3-latest-MacOSX-x86_64.sh"
         - conda install -c conda-forge conda-build anaconda
-      script: .travis/conda_build_and_deploy.sh
+      script: travis_wait .travis/conda_build_and_deploy.sh

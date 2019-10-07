@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 set(TARGET_NAME "scipp-neutron-test")
+add_dependencies(all-tests ${TARGET_NAME})
 add_executable(${TARGET_NAME} EXCLUDE_FROM_ALL
                #EventWorkspace_test.cpp
                #example_instrument_test.cpp

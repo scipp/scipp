@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 set(TARGET_NAME "scipp-core-test")
+add_dependencies(all-tests ${TARGET_NAME})
 add_executable(${TARGET_NAME} EXCLUDE_FROM_ALL
                bool_test.cpp
                concatenate_test.cpp
@@ -17,10 +18,12 @@ add_executable(${TARGET_NAME} EXCLUDE_FROM_ALL
                dimensions_test.cpp
                except_test.cpp
                histogram_test.cpp
+               indexed_slice_view_test.cpp
                mean_test.cpp
                merge_test.cpp
                rebin_test.cpp
                slice_test.cpp
+               sort_test.cpp
                transform_test.cpp
                value_and_variance_test.cpp
                variable_custom_type_test.cpp

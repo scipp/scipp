@@ -763,8 +763,8 @@ TEST(VariableTest, rename) {
 TEST(Variable, access_typed_view) {
   auto var =
       makeVariable<double>({{Dim::Y, 2}, {Dim::X, 3}}, {1, 2, 3, 4, 5, 6});
-  const auto values =
-      getView<double>(var, {{Dim::Y, 2}, {Dim::Z, 4}, {Dim::X, 3}});
+  const auto values = dynamic_cast<const VariableConceptT<double> &>(var.data())
+                          .valuesView({{Dim::Y, 2}, {Dim::Z, 4}, {Dim::X, 3}});
   ASSERT_EQ(values.size(), 24);
 
   for (const auto z : {0, 1, 2, 3}) {
@@ -784,8 +784,8 @@ TEST(Variable, access_typed_view_edges) {
   // is in direction Y:
   auto var =
       makeVariable<double>({{Dim::X, 2}, {Dim::Y, 3}}, {1, 2, 3, 4, 5, 6});
-  const auto values =
-      getView<double>(var, {{Dim::Y, 2}, {Dim::Z, 4}, {Dim::X, 2}});
+  const auto values = dynamic_cast<const VariableConceptT<double> &>(var.data())
+                          .valuesView({{Dim::Y, 2}, {Dim::Z, 4}, {Dim::X, 2}});
   ASSERT_EQ(values.size(), 16);
 
   for (const auto z : {0, 1, 2, 3}) {
@@ -957,4 +957,12 @@ TEST(VariableTest, construct_proxy_dims) {
   auto var = makeVariable<double>({Dim::Y, Dim::X}, {2, 3});
   Variable vv(var.slice({Dim::X, 0, 2}));
   ASSERT_NO_THROW(Variable(var.slice({Dim::X, 0, 2}), Dimensions(Dim::Y, 2)));
+}
+
+TEST(VariableTest, construct_mult_dev_unit) {
+  Variable refDiv = makeVariable<float>(
+      {}, units::Unit(units::dimensionless) / units::Unit(units::m), {1.0f});
+  Variable refMult = makeVariable<int32_t>({}, units::Unit(units::kg), {1});
+  EXPECT_EQ(1.0f / units::Unit(units::m), refDiv);
+  EXPECT_EQ(int32_t(1) * units::Unit(units::kg), refMult);
 }

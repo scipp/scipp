@@ -1,5 +1,8 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
+add_executable(transform_benchmark EXCLUDE_FROM_ALL transform_benchmark.cpp)
+target_link_libraries(transform_benchmark LINK_PRIVATE scipp-core benchmark)
+
 add_executable(variable_benchmark EXCLUDE_FROM_ALL variable_benchmark.cpp)
 target_link_libraries(variable_benchmark LINK_PRIVATE scipp-core benchmark)
 

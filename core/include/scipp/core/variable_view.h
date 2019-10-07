@@ -99,7 +99,7 @@ public:
     friend class boost::iterator_core_access;
 
     bool equal(const iterator &other) const { return m_index == other.m_index; }
-    void increment() { m_index.increment(); }
+    constexpr void increment() noexcept { m_index.increment(); }
     auto &dereference() const { return m_variable[m_index.get()]; }
     void decrement() { m_index.setIndex(m_index.index() - 1); }
     void advance(int64_t delta) {
@@ -127,6 +127,15 @@ public:
 
   const T *data() const { return m_variable + m_offset; }
   T *data() { return m_variable + m_offset; }
+
+  ViewIndex begin_index() const noexcept {
+    return {m_targetDimensions, m_dimensions};
+  }
+  ViewIndex end_index() const noexcept {
+    ViewIndex i{m_targetDimensions, m_dimensions};
+    i.setIndex(size());
+    return i;
+  }
 
   scipp::index size() const { return m_targetDimensions.volume(); }
 
@@ -170,6 +179,11 @@ VariableView<T> makeVariableView(T *variable, const scipp::index offset,
                                  const Dimensions &dimensions) {
   return VariableView<T>(variable, offset, targetDimensions, dimensions);
 }
+
+template <class T> struct is_VariableView : std::false_type {};
+template <class T> struct is_VariableView<VariableView<T>> : std::true_type {};
+template <class T>
+inline constexpr bool is_VariableView_v = is_VariableView<T>::value;
 
 } // namespace scipp::core
 
