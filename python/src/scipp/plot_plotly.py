@@ -538,7 +538,7 @@ class Slicer3d:
                 make_subplots(rows=1, cols=2, horizontal_spacing=0.16,
                               specs=[[{"type": "scene"}, {"type": "scene"}]]))
 
-            colorbars = [{"x": 0.42, "thickness": 10.0, "title": value_name},
+            colorbars = [{"x": -0.1, "thickness": 10.0, "title": value_name},
                          {"x": 1.0, "thickness": 10.0, "title": "variances"}]
 
             for i, (key, val) in enumerate(sorted(params.items())):
