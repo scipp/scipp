@@ -23,6 +23,48 @@ TEST(StringFormattingTest, to_string_Dataset) {
   EXPECT_EQ(to_string(a), to_string(b));
 }
 
+std::tuple<Dataset, Dataset> makeDatasets() {
+  Dataset a;
+  a.setCoord(Dim::X, makeVariable<double>({Dim::X, 3}, {1, 2, 3}));
+  a.setCoord(Dim::Y, makeVariable<double>({Dim::Y, 3}, {1, 2, 3}));
+  a.setCoord(Dim::Z, makeVariable<double>({Dim::Z, 3}, {1, 2, 3}));
+  a.setLabels("label_1", makeVariable<int>({Dim::X, 3}, {21, 22, 23}));
+  a.setLabels("label_2", makeVariable<int>({Dim::Y, 3}, {21, 22, 23}));
+  a.setLabels("label_3", makeVariable<int>({Dim::Z, 3}, {21, 22, 23}));
+  a.setData("a", makeVariable<int>({Dim::X, 3}, {1, 2, 3}));
+  a.setData("b", makeVariable<int>({Dim::Y, 3}, {1, 2, 3}));
+  a.setData("c", makeVariable<int>({Dim::Z, 3}, {1, 2, 3}));
+
+  Dataset b;
+  b.setCoord(Dim::X, makeVariable<double>({Dim::X, 3}, {1, 2, 3}));
+  b.setCoord(Dim::Y, makeVariable<double>({Dim::Y, 3}, {1, 2, 3}));
+  b.setCoord(Dim::Z, makeVariable<double>({Dim::Z, 3}, {1, 2, 3}));
+  b.setLabels("label_1", makeVariable<int>({Dim::X, 3}, {21, 22, 23}));
+  b.setLabels("label_2", makeVariable<int>({Dim::Y, 3}, {21, 22, 23}));
+  b.setLabels("label_3", makeVariable<int>({Dim::Z, 3}, {21, 22, 23}));
+  b.setData("a", makeVariable<int>({Dim::X, 3}, {1, 2, 3}));
+  b.setData("b", makeVariable<int>({Dim::Y, 3}, {1, 2, 3}));
+  b.setData("c", makeVariable<int>({Dim::Z, 3}, {1, 2, 3}));
+
+  return std::make_tuple(a, b);
+}
+
+TEST(StringFormattingTest, to_string_MutableProxy) {
+  auto[a, b] = makeDatasets();
+
+  EXPECT_EQ(to_string(a.coords()), to_string(b.coords()));
+  EXPECT_EQ(to_string(a.labels()), to_string(b.labels()));
+  EXPECT_EQ(to_string(a.attrs()), to_string(b.attrs()));
+}
+
+TEST(StringFormattingTest, to_string_ConstProxy) {
+  const auto[a, b] = makeDatasets();
+
+  EXPECT_EQ(to_string(a.coords()), to_string(b.coords()));
+  EXPECT_EQ(to_string(a.labels()), to_string(b.labels()));
+  EXPECT_EQ(to_string(a.attrs()), to_string(b.attrs()));
+}
+
 TEST(StringFormattingTest, to_string_sparse_Dataset) {
   Dataset a;
   a.setSparseCoord(
