@@ -573,11 +573,11 @@ def test_construct_0d_numpy():
     v = sp.Variable([sp.Dim.X], values=np.array([0]), dtype=np.float32)
     var = sp.Variable(v[sp.Dim.X, 0])
     assert var == sp.Variable(np.float32())
-    
-    
+
+
 def test_rename_dims():
     values = np.arange(6).reshape(2, 3)
     xy = sp.Variable(dims=[Dim.X, Dim.Y], values=values)
     zy = sp.Variable(dims=[Dim.Z, Dim.Y], values=values)
     xy.rename_dims({Dim.X: Dim.Z})
-    assert xy == zy    
+    assert xy == zy
