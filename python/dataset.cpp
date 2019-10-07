@@ -60,10 +60,7 @@ void bind_coord_properties(py::class_<T, Ignored...> &c) {
                                            py::return_value_policy::move,
                                            py::keep_alive<0, 1>()),
                           R"(
-      Dict of masks.
-
-      Masks are very similar to coordinates, except that they are identified
-      using custom names instead of dimension labels.)");
+      Dict of masks.)");
   c.def_property_readonly("attrs",
                           py::cpp_function([](T &self) { return self.attrs(); },
                                            py::return_value_policy::move,

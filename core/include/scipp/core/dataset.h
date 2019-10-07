@@ -383,7 +383,7 @@ public:
 
   void setCoord(const Dim dim, Variable coord);
   void setLabels(const std::string &labelName, Variable labels);
-  void setMasks(const std::string &labelName, Variable masks);
+  void setMasks(const std::string &masksName, Variable masks);
   void setAttr(const std::string &attrName, Variable attr);
   void setData(const std::string &name, Variable data);
   void setData(const std::string &name, const DataConstProxy &data);
@@ -398,8 +398,8 @@ public:
                  const VariableConstProxy &labels) {
     setLabels(labelName, Variable(labels));
   }
-  void setMasks(const std::string &name, const VariableConstProxy &mask) {
-    setMasks(name, Variable(mask));
+  void setMasks(const std::string &masksName, const VariableConstProxy &mask) {
+    setMasks(masksName, Variable(mask));
   }
   void setAttr(const std::string &attrName, const VariableConstProxy &attr) {
     setAttr(attrName, Variable(attr));

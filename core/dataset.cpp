@@ -236,8 +236,8 @@ void Dataset::rebuildDims() {
   for (const auto &l : m_labels) {
     setDims(l.second.dims());
   }
-  for (const auto &l : m_masks) {
-    setDims(l.second.dims());
+  for (const auto &m : m_masks) {
+    setDims(m.second.dims());
   }
   for (const auto &a : m_attrs) {
     setDims(a.second.dims());
@@ -266,17 +266,17 @@ void Dataset::setAttr(const std::string &attrName, Variable attr) {
   m_attrs.insert_or_assign(attrName, std::move(attr));
 }
 
-/// Set (insert or replace) the masks for the given label name.
+/// Set (insert or replace) the masks for the given mask name.
 ///
-/// Note that the label name has no relation to names of data items.
-void Dataset::setMasks(const std::string &labelName, Variable masks) {
+/// Note that the mask name has no relation to names of data items.
+void Dataset::setMasks(const std::string &masksName, Variable masks) {
   setDims(masks.dims());
 
   if (masks.dtype() != DType::Bool) {
     throw std::logic_error("Masks can only be of boolean type.");
   }
 
-  m_masks.insert_or_assign(labelName, std::move(masks));
+  m_masks.insert_or_assign(masksName, std::move(masks));
 }
 
 /// Set (insert or replace) data (values, optional variances) with given name.
