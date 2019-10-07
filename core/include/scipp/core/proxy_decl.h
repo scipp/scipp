@@ -4,6 +4,9 @@
 /// @author Dimitar Tasev
 #ifndef SCIPP_CORE_PROXY_DECL_H
 #define SCIPP_CORE_PROXY_DECL_H
+
+#include "scipp/units/unit.h"
+
 namespace scipp::core {
 
 namespace ProxyId {
