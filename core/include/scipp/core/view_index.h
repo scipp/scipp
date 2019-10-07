@@ -15,9 +15,7 @@ public:
   ViewIndex(const Dimensions &targetDimensions,
             const Dimensions &dataDimensions);
 
-  void increment() {
-    m_index += m_delta[0];
-    ++m_coord[0];
+  constexpr void increment_outer() noexcept {
     scipp::index d = 0;
     while ((m_coord[d] == m_extent[d]) && (d < NDIM_MAX - 1)) {
       m_index += m_delta[d + 1];
@@ -25,10 +23,16 @@ public:
       m_coord[d] = 0;
       ++d;
     }
+  }
+  constexpr void increment() noexcept {
+    m_index += m_delta[0];
+    ++m_coord[0];
+    if (m_coord[0] == m_extent[0])
+      increment_outer();
     ++m_fullIndex;
   }
 
-  void setIndex(const scipp::index index) {
+  constexpr void setIndex(const scipp::index index) noexcept {
     m_fullIndex = index;
     if (m_dims == 0)
       return;
@@ -43,11 +47,14 @@ public:
       m_index += m_factors[j] * m_coord[m_offsets[j]];
   }
 
-  scipp::index get() const { return m_index; }
-  scipp::index index() const { return m_fullIndex; }
+  constexpr scipp::index get() const noexcept { return m_index; }
+  constexpr scipp::index index() const noexcept { return m_fullIndex; }
 
-  bool operator==(const ViewIndex &other) const {
+  constexpr bool operator==(const ViewIndex &other) const noexcept {
     return m_fullIndex == other.m_fullIndex;
+  }
+  constexpr bool operator!=(const ViewIndex &other) const noexcept {
+    return m_fullIndex != other.m_fullIndex;
   }
 
 private:

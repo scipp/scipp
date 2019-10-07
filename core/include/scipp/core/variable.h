@@ -5,6 +5,7 @@
 #ifndef VARIABLE_H
 #define VARIABLE_H
 
+#include <string>
 #include <type_traits>
 #include <variant>
 
@@ -16,6 +17,7 @@
 #include "scipp/core/dimensions.h"
 #include "scipp/core/dtype.h"
 #include "scipp/core/slice.h"
+#include "scipp/core/string.h"
 #include "scipp/core/variable_view.h"
 #include "scipp/core/vector.h"
 #include "scipp/units/unit.h"
@@ -31,15 +33,20 @@ struct is_sparse_container<sparse_container<T>> : std::true_type {};
 template <class T> struct underlying_type { using type = T; };
 template <> struct underlying_type<bool> { using type = Bool; };
 template <class T> using underlying_type_t = typename underlying_type<T>::type;
+template <class... A, class... B>
+struct underlying_type<std::tuple<std::pair<A, B>...>> {
+  using type =
+      std::tuple<std::pair<underlying_type_t<A>, underlying_type_t<B>>...>;
+};
 
 class Variable;
 template <class... Known> class VariableConceptHandle_impl;
 // Any item type that is listed here explicitly can be used with the templated
 // `transform`, i.e., we can pass arbitrary functors/lambdas to process data.
 using VariableConceptHandle = VariableConceptHandle_impl<
-    double, float, int64_t, int32_t, Eigen::Vector3d, sparse_container<double>,
-    sparse_container<float>, sparse_container<int64_t>,
-    sparse_container<int32_t>>;
+    double, float, int64_t, int32_t, bool, Eigen::Vector3d,
+    sparse_container<double>, sparse_container<float>,
+    sparse_container<int64_t>, sparse_container<int32_t>>;
 
 /// Abstract base class for any data that can be held by Variable. Also used to
 /// hold views to data by (Const)VariableProxy. This is using so-called
@@ -186,7 +193,7 @@ public:
       : m_object(std::unique_ptr<VariableConcept>(nullptr)) {}
   template <class T> VariableConceptHandle_impl(T object) {
     using value_t = typename T::element_type::value_type;
-    if constexpr ((std::is_same_v<value_t, Known> || ...))
+    if constexpr ((std::is_same_v<value_t, underlying_type_t<Known>> || ...))
       m_object = std::unique_ptr<VariableConceptT<value_t>>(std::move(object));
     else
       m_object = std::unique_ptr<VariableConcept>(std::move(object));
@@ -220,20 +227,26 @@ public:
   auto variant() const noexcept {
     return std::visit(
         [](auto &&arg) {
-          return std::variant<const VariableConcept *,
-                              const VariableConceptT<Known> *...>{arg.get()};
+          return std::variant<
+              const VariableConcept *,
+              const VariableConceptT<underlying_type_t<Known>> *...>{arg.get()};
         },
         m_object);
   }
 
 private:
   std::variant<std::unique_ptr<VariableConcept>,
-               std::unique_ptr<VariableConceptT<Known>>...>
+               std::unique_ptr<VariableConceptT<underlying_type_t<Known>>>...>
       m_object;
 };
 
 class VariableConstProxy;
 class VariableProxy;
+
+template <class T> constexpr bool is_variable_or_proxy() {
+  return std::is_same_v<T, Variable> || std::is_same_v<T, VariableConstProxy> ||
+         std::is_same_v<T, VariableProxy>;
+}
 
 namespace detail {
 template <class T> struct default_init {
@@ -248,6 +261,8 @@ struct default_init<Eigen::Matrix<T, Rows, Cols>> {
   }
 };
 } // namespace detail
+
+template <class T> Variable makeVariable(T value);
 
 /// Variable is a type-erased handle to any data structure representing a
 /// multi-dimensional array. It has a name, a unit, and a set of named
@@ -331,23 +346,39 @@ public:
   bool operator!=(const Variable &other) const;
   bool operator!=(const VariableConstProxy &other) const;
   Variable operator-() const;
+
   Variable &operator+=(const Variable &other) &;
   Variable &operator+=(const VariableConstProxy &other) &;
-  Variable &operator+=(const double value) &;
+  template <typename T, typename = std::enable_if_t<!is_variable_or_proxy<T>()>>
+  Variable &operator+=(const T v) & {
+    return *this += makeVariable<underlying_type_t<T>>(v);
+  }
+
   Variable &operator-=(const Variable &other) &;
   Variable &operator-=(const VariableConstProxy &other) &;
-  Variable &operator-=(const double value) &;
+  template <typename T, typename = std::enable_if_t<!is_variable_or_proxy<T>()>>
+  Variable &operator-=(const T v) & {
+    return *this -= makeVariable<underlying_type_t<T>>(v);
+  }
+
   Variable &operator*=(const Variable &other) &;
   Variable &operator*=(const VariableConstProxy &other) &;
-  Variable &operator*=(const double value) &;
+  template <typename T, typename = std::enable_if_t<!is_variable_or_proxy<T>()>>
+  Variable &operator*=(const T v) & {
+    return *this *= makeVariable<underlying_type_t<T>>(v);
+  }
   template <class T>
   Variable &operator*=(const boost::units::quantity<T> &quantity) & {
     setUnit(unit() * units::Unit(T{}));
     return *this *= quantity.value();
   }
+
   Variable &operator/=(const Variable &other) &;
   Variable &operator/=(const VariableConstProxy &other) &;
-  Variable &operator/=(const double value) &;
+  template <typename T, typename = std::enable_if_t<!is_variable_or_proxy<T>()>>
+  Variable &operator/=(const T v) & {
+    return *this /= makeVariable<underlying_type_t<T>>(v);
+  }
   template <class T>
   Variable &operator/=(const boost::units::quantity<T> &quantity) & {
     setUnit(unit() / units::Unit(T{}));
@@ -611,6 +642,8 @@ public:
   bool operator!=(const VariableConstProxy &other) const;
   Variable operator-() const;
 
+  auto &underlying() const { return *m_variable; }
+
 protected:
   friend class Variable;
 
@@ -694,18 +727,34 @@ public:
   // returning `a += b` but I am not sure how Pybind11 handles object lifetimes
   // (would this suffer from the same issue?).
   template <class T> VariableProxy assign(const T &other) const;
+
   VariableProxy operator+=(const Variable &other) const;
   VariableProxy operator+=(const VariableConstProxy &other) const;
-  VariableProxy operator+=(const double value) const;
+  template <typename T, typename = std::enable_if_t<!is_variable_or_proxy<T>()>>
+  VariableProxy operator+=(const T v) const {
+    return *this += makeVariable<T>(v);
+  }
+
   VariableProxy operator-=(const Variable &other) const;
   VariableProxy operator-=(const VariableConstProxy &other) const;
-  VariableProxy operator-=(const double value) const;
+  template <typename T, typename = std::enable_if_t<!is_variable_or_proxy<T>()>>
+  VariableProxy operator-=(const T v) const {
+    return *this -= makeVariable<underlying_type_t<T>>(v);
+  }
+
   VariableProxy operator*=(const Variable &other) const;
   VariableProxy operator*=(const VariableConstProxy &other) const;
-  VariableProxy operator*=(const double value) const;
+  template <typename T, typename = std::enable_if_t<!is_variable_or_proxy<T>()>>
+  VariableProxy operator*=(const T v) const {
+    return *this *= makeVariable<underlying_type_t<T>>(v);
+  }
+
   VariableProxy operator/=(const Variable &other) const;
   VariableProxy operator/=(const VariableConstProxy &other) const;
-  VariableProxy operator/=(const double value) const;
+  template <typename T, typename = std::enable_if_t<!is_variable_or_proxy<T>()>>
+  VariableProxy operator/=(const T v) const {
+    return *this /= makeVariable<underlying_type_t<T>>(v);
+  }
 
   template <class T> void setVariances(Vector<T> &&v) const;
 
@@ -777,6 +826,24 @@ template <class T>
 Variable operator/(Variable a, const boost::units::quantity<T> &quantity) {
   return std::move(a /= quantity);
 }
+template <class T>
+Variable operator/(const boost::units::quantity<T> &quantity, Variable a) {
+  return makeVariable<double>({}, units::Unit(T{}), {quantity.value()}) /
+         std::move(a);
+}
+
+template <typename T>
+std::enable_if_t<std::is_arithmetic_v<T>, Variable>
+operator*(T v, const units::Unit &unit) {
+  return makeVariable<underlying_type_t<T>>({}, unit, {v});
+}
+
+template <typename T>
+std::enable_if_t<std::is_arithmetic_v<T>, Variable>
+operator/(T v, const units::Unit &unit) {
+  return makeVariable<underlying_type_t<T>>(
+      {}, units::Unit(units::dimensionless) / unit, {v});
+}
 
 SCIPP_CORE_EXPORT std::vector<Variable>
 split(const Variable &var, const Dim dim,
@@ -800,6 +867,7 @@ SCIPP_CORE_EXPORT Variable reverse(Variable var, const Dim dim);
 SCIPP_CORE_EXPORT Variable sqrt(const Variable &var);
 
 SCIPP_CORE_EXPORT Variable sum(const VariableConstProxy &var, const Dim dim);
+SCIPP_CORE_EXPORT Variable copy(const VariableConstProxy &var);
 
 // Trigonometrics
 SCIPP_CORE_EXPORT Variable sin(const Variable &var);
@@ -808,17 +876,6 @@ SCIPP_CORE_EXPORT Variable tan(const Variable &var);
 SCIPP_CORE_EXPORT Variable asin(const Variable &var);
 SCIPP_CORE_EXPORT Variable acos(const Variable &var);
 SCIPP_CORE_EXPORT Variable atan(const Variable &var);
-
-template <class T>
-VariableView<const T> getView(const Variable &var, const Dimensions &dims);
-
-SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
-                                           const VariableConstProxy &variable);
-SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
-                                           const VariableProxy &variable);
-SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
-                                           const Variable &variable);
-SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os, const Dim dim);
 
 } // namespace scipp::core
 

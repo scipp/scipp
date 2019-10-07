@@ -34,8 +34,11 @@ def init_pos_spectrum_no(nHist, ws):
 
     spec_info = ws.spectrumInfo()
     for i in range(nHist):
-        p = spec_info.position(i)
-        pos[i, :] = [p.X(), p.Y(), p.Z()]
+        if spec_info.hasDetectors(i):
+            p = spec_info.position(i)
+            pos[i, :] = [p.X(), p.Y(), p.Z()]
+        else:
+            pos[i, :] = [np.nan, np.nan, np.nan]
         num[i] = ws.getSpectrum(i).getSpectrumNo()
     pos = sc.Variable([sc.Dim.Position], values=pos, unit=sc.units.m)
     num = sc.Variable([sc.Dim.Position], values=num)
@@ -158,9 +161,72 @@ def convert_EventWorkspace_to_dataset(ws, load_pulse_times, EventType):
     return sc.DataArray(**coords_labs_data)
 
 
+def convert_TableWorkspace_to_dataset(ws, error_connection=None):
+    """
+    Converts from a Mantid TableWorkspace to a scipp dataset. It is possible
+    to assign a column as the error for another column, in which case a
+    the data from the two columns will be represented by a single scipp
+    variable with variance. This is done using the error_connection Keyword
+    argument. The error is transformed to variance in this converter.
+
+    Parameters
+    ----------
+        ws : Mantid TableWorkspace
+            Mantid TableWorkspace to be converted into scipp dataset
+
+    Keyword arguments
+    -----------------
+        error_connection : Dict
+            Dict with data column names as keys to names of their error column
+    """
+
+    # Extract information from workspace
+    n_columns = ws.columnCount()
+    columnNames = ws.getColumnNames()  # list of names matching each column
+    columnTypes = ws.columnTypes()  # list of types matching each column
+
+    # Types available in TableWorkspace that can not be loaded into scipp
+    blacklist_types = []
+    # Types for which the transformation from error to variance will fail
+    blacklist_variance_types = ["str"]
+
+    variables = {}
+    for i in range(n_columns):
+        if columnTypes[i] in blacklist_types:
+            continue  # skips loading data of this type
+
+        data_name = columnNames[i]
+        if error_connection is None:
+            variables[data_name] = sc.Variable([sc.Dim.Row],
+                                               values=ws.column(i))
+        elif data_name in error_connection:
+            # This data has error availble
+            error_name = error_connection[data_name]
+            error_index = columnNames.index(error_name)
+
+            if columnTypes[error_index] in blacklist_variance_types:
+                # Raise error to avoid numpy square error for strings
+                raise RuntimeError(
+                    "Variance can not have type string. \n"
+                    + "Data:     " + str(data_name) + "\n"
+                    + "Variance: " + str(error_name) + "\n")
+
+            variance = np.array(ws.column(error_name))**2
+            variables[data_name] = sc.Variable([sc.Dim.Row],
+                                               values=np.array(ws.column(i)),
+                                               variances=variance)
+        elif data_name not in error_connection.values():
+            # This data is not an error for another dataset, and has no error
+            variables[data_name] = sc.Variable([sc.Dim.Row],
+                                               values=ws.column(i))
+
+    return sc.Dataset(variables)  # Return scipp dataset with the variables
+
+
 def load(filename="",
          load_pulse_times=True,
          instrument_filename=None,
+         error_connection=None,
          **kwargs):
     """
     Wrapper function to provide a load method for a Nexus file, hiding mantid
@@ -169,11 +235,16 @@ def load(filename="",
     function.
 
     Example of use:
+
       from scipp.neutron import load
       d = sc.Dataset()
-      d["sample"] = load(filename='PG3_4844_event.nxs', BankName='bank184',
-                         load_pulse_times=True)
+      d["sample"] = load(filename='PG3_4844_event.nxs', \
+                         BankName='bank184', load_pulse_times=True)
+
     See also the neutron-data tutorial.
+
+    Note that this function requires mantid to be installed and available in
+    the same Python environment as scipp.
 
     :param str filename: The name of the Nexus/HDF file to be loaded.
     :param bool load_pulse_times: Read the pulse times if True.
@@ -187,8 +258,15 @@ def load(filename="",
     :rtype: Dataset
     """
 
-    import mantid.simpleapi as mantid
-    from mantid.api import EventType
+    try:
+        import mantid.simpleapi as mantid
+        from mantid.api import EventType
+    except ImportError as e:
+        raise ImportError(
+            "Mantid Python API was not found, please install Mantid framework "
+            "as detailed in the installation instructions (https://scipp."
+            "readthedocs.io/en/latest/getting-started/installation.html)"
+        ) from e
 
     ws = mantid.Load(filename, **kwargs)
     if instrument_filename is not None:
@@ -200,4 +278,6 @@ def load(filename="",
     if ws.id() == 'EventWorkspace':
         return convert_EventWorkspace_to_dataset(ws, load_pulse_times,
                                                  EventType)
+    if ws.id() == 'TableWorkspace':
+        return convert_TableWorkspace_to_dataset(ws, error_connection)
     raise RuntimeError('Unsupported workspace type')

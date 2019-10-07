@@ -5,11 +5,12 @@
 
 #include "test_macros.h"
 
-#include "../operators.h"
 #include "make_sparse.h"
 #include "scipp/core/dimensions.h"
 #include "scipp/core/transform.h"
 #include "scipp/core/variable.h"
+
+#include "../operators.h"
 
 using namespace scipp;
 using namespace scipp::core;
@@ -125,6 +126,35 @@ TEST(TransformTest, apply_unary_dtype_preserved) {
   auto outF = transform<double, float>(varF, [](const auto x) { return -x; });
   EXPECT_TRUE(equals(outD.values<double>(), {-1.1, -2.2}));
   EXPECT_TRUE(equals(outF.values<float>(), {-1.1f, -2.2f}));
+}
+
+TEST(TransformTest, dtype_bool) {
+  // Special test for bool: Internally Variable uses `Bool` to avoid using the
+  // specialization of std::vector<bool>. This test makes sure that everything
+  // is wrapped correctly with underlying_type_t.
+  auto var = makeVariable<bool>({Dim::X, 2}, {true, false});
+
+  EXPECT_EQ(
+      transform<bool>(var, overloaded{[](const units::Unit &u) { return u; },
+                                      [](const auto x) { return !x; }}),
+      makeVariable<bool>({Dim::X, 2}, {false, true}));
+
+  EXPECT_EQ(transform<pair_self_t<bool>>(
+                var, var,
+                overloaded{
+                    [](const units::Unit &a, const units::Unit &) { return a; },
+                    [](const auto x, const auto y) { return !x || y; }}),
+            makeVariable<bool>({Dim::X, 2}, {true, true}));
+
+  transform_in_place<bool>(
+      var, overloaded{[](units::Unit &) {}, [](auto &x) { x = !x; }});
+  EXPECT_EQ(var, makeVariable<bool>({Dim::X, 2}, {false, true}));
+
+  transform_in_place<pair_self_t<bool>>(
+      var, var,
+      overloaded{[](units::Unit &, const units::Unit &) {},
+                 [](auto &x, const auto &y) { x = !x || y; }});
+  EXPECT_EQ(var, makeVariable<bool>({Dim::X, 2}, {true, true}));
 }
 
 class TransformBinaryTest : public ::testing::Test {
