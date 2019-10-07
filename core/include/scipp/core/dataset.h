@@ -983,6 +983,8 @@ public:
   /// Return typed proxy for data variances.
   template <class T> auto variances() { return get().variances<T>(); }
 
+  void rename(const Dim from, const Dim to) { m_holder.rename(from, to); }
+
   DataArray &operator+=(const DataConstProxy &other);
   DataArray &operator-=(const DataConstProxy &other);
   DataArray &operator*=(const DataConstProxy &other);
