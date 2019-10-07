@@ -27,10 +27,10 @@ DatasetFactory3D::DatasetFactory3D(const scipp::index lx_,
   base.setMask("masks_x", makeVariable<bool>(
                               {Dim::X, lx},
                               makeBools<BoolsGeneratorType::ALTERNATING>(lx)));
-  base.setMask("masks_xy",
-                makeVariable<bool>(
-                    {{Dim::X, lx}, {Dim::Y, ly}},
-                    makeBools<BoolsGeneratorType::ALTERNATING>(lx * ly)));
+  base.setMask(
+      "masks_xy",
+      makeVariable<bool>({{Dim::X, lx}, {Dim::Y, ly}},
+                         makeBools<BoolsGeneratorType::ALTERNATING>(lx * ly)));
   base.setMask("masks_z", makeVariable<bool>(
                               {Dim::Z, lz},
                               makeBools<BoolsGeneratorType::ALTERNATING>(lz)));
@@ -113,8 +113,8 @@ Dataset make_1d_masked() {
 
   Dataset ds;
   ds.setData("data_x", makeVariable<double>({Dim::X, 10}, random(10)));
-  ds.setMask("masks_x", makeVariable<bool>(
-                             {Dim::X, 10},
-                             makeBools<BoolsGeneratorType::ALTERNATING>(10)));
+  ds.setMask("masks_x",
+             makeVariable<bool>(
+                 {Dim::X, 10}, makeBools<BoolsGeneratorType::ALTERNATING>(10)));
   return ds;
 }

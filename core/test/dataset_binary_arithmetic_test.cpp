@@ -99,7 +99,7 @@ TYPED_TEST(DataProxyBinaryEqualsOpTest, other_data_unchanged) {
 
     ASSERT_NO_THROW(TestFixture::op(target, item.second));
 
-    for (const auto &[name, data] : dataset_a) {
+    for (const auto & [ name, data ] : dataset_a) {
       if (name != "data_zyx") {
         EXPECT_EQ(data, original_a[name]);
       }
@@ -229,7 +229,7 @@ TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_DataProxy_self_overlap) {
   auto reference(dataset);
 
   ASSERT_NO_THROW(TestFixture::op(dataset, dataset["data_scalar"]));
-  for (const auto [name, item] : dataset) {
+  for (const auto[name, item] : dataset) {
     EXPECT_EQ(item, TestFixture::op(reference[name], original["data_scalar"]));
   }
 }
@@ -240,7 +240,7 @@ TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_Variable_self_overlap) {
   auto reference(dataset);
 
   ASSERT_NO_THROW(TestFixture::op(dataset, dataset["data_scalar"].data()));
-  for (const auto [name, item] : dataset) {
+  for (const auto[name, item] : dataset) {
     EXPECT_EQ(item,
               TestFixture::op(reference[name], original["data_scalar"].data()));
   }
@@ -253,7 +253,7 @@ TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_DataProxy_self_overlap_slice) {
 
   ASSERT_NO_THROW(
       TestFixture::op(dataset, dataset["values_x"].slice({Dim::X, 1})));
-  for (const auto [name, item] : dataset) {
+  for (const auto[name, item] : dataset) {
     EXPECT_EQ(item, TestFixture::op(reference[name],
                                     original["values_x"].slice({Dim::X, 1})));
   }
@@ -265,7 +265,7 @@ TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_Dataset) {
   auto reference(a);
 
   ASSERT_NO_THROW(TestFixture::op(a, b));
-  for (const auto [name, item] : a) {
+  for (const auto[name, item] : a) {
     EXPECT_EQ(item, TestFixture::op(reference[name], b[name]));
   }
 }
@@ -285,7 +285,7 @@ TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_Dataset_with_missing_items) {
   auto reference(a);
 
   ASSERT_NO_THROW(TestFixture::op(a, b));
-  for (const auto [name, item] : a) {
+  for (const auto[name, item] : a) {
     if (name == "extra") {
       EXPECT_EQ(item, reference[name]);
     } else {
@@ -308,7 +308,7 @@ TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_DatasetProxy_self_overlap) {
   auto reference(dataset);
 
   ASSERT_NO_THROW(TestFixture::op(dataset, slice));
-  for (const auto [name, item] : dataset) {
+  for (const auto[name, item] : dataset) {
     // Items independent of Z are removed when creating `slice`.
     if (item.dims().contains(Dim::Z)) {
       EXPECT_EQ(item, TestFixture::op(reference[name],
@@ -473,14 +473,14 @@ TYPED_TEST(DatasetProxyBinaryEqualsOpTest, rhs_DataProxy_self_overlap) {
   TestFixture::op(reference, dataset["data_scalar"]);
 
   for (scipp::index z = 0; z < dataset.coords()[Dim::Z].dims()[Dim::Z]; ++z) {
-    for (const auto &[name, item] : dataset)
+    for (const auto & [ name, item ] : dataset)
       if (item.dims().contains(Dim::Z)) {
         EXPECT_NE(item, reference[name]);
       }
     ASSERT_NO_THROW(
         TestFixture::op(dataset.slice({Dim::Z, z}), dataset["data_scalar"]));
   }
-  for (const auto &[name, item] : dataset)
+  for (const auto & [ name, item ] : dataset)
     if (item.dims().contains(Dim::Z)) {
       EXPECT_EQ(item, reference[name]);
     }
@@ -492,14 +492,14 @@ TYPED_TEST(DatasetProxyBinaryEqualsOpTest, rhs_DataProxy_self_overlap_slice) {
   TestFixture::op(reference, dataset["values_x"].slice({Dim::X, 1}));
 
   for (scipp::index z = 0; z < dataset.coords()[Dim::Z].dims()[Dim::Z]; ++z) {
-    for (const auto &[name, item] : dataset)
+    for (const auto & [ name, item ] : dataset)
       if (item.dims().contains(Dim::Z)) {
         EXPECT_NE(item, reference[name]);
       }
     ASSERT_NO_THROW(TestFixture::op(dataset.slice({Dim::Z, z}),
                                     dataset["values_x"].slice({Dim::X, 1})));
   }
-  for (const auto &[name, item] : dataset)
+  for (const auto & [ name, item ] : dataset)
     if (item.dims().contains(Dim::Z)) {
       EXPECT_EQ(item, reference[name]);
     }
@@ -520,7 +520,7 @@ TYPED_TEST(DatasetProxyBinaryEqualsOpTest, rhs_Dataset_with_missing_items) {
   auto reference(a);
 
   ASSERT_NO_THROW(TestFixture::op(DatasetProxy(a), b));
-  for (const auto [name, item] : a) {
+  for (const auto[name, item] : a) {
     if (name == "extra") {
       EXPECT_EQ(item, reference[name]);
     } else {
@@ -544,7 +544,7 @@ TYPED_TEST(DatasetProxyBinaryEqualsOpTest, rhs_DatasetProxy_self_overlap) {
 
   ASSERT_NO_THROW(TestFixture::op(dataset.slice({Dim::Z, 0, 3}), slice));
   ASSERT_NO_THROW(TestFixture::op(dataset.slice({Dim::Z, 3, 6}), slice));
-  for (const auto [name, item] : dataset) {
+  for (const auto[name, item] : dataset) {
     // Items independent of Z are removed when creating `slice`.
     if (item.dims().contains(Dim::Z)) {
       EXPECT_EQ(item, TestFixture::op(reference[name],
@@ -566,7 +566,7 @@ TYPED_TEST(DatasetProxyBinaryEqualsOpTest,
   // detect and prevent this.
   ASSERT_NO_THROW(TestFixture::op(dataset.slice({Dim::Z, 3, 6}), slice));
   ASSERT_NO_THROW(TestFixture::op(dataset.slice({Dim::Z, 0, 3}), slice));
-  for (const auto [name, item] : dataset) {
+  for (const auto[name, item] : dataset) {
     // Items independent of Z are removed when creating `slice`.
     if (item.dims().contains(Dim::Z)) {
       EXPECT_NE(item, TestFixture::op(reference[name],
@@ -605,7 +605,7 @@ protected:
 TYPED_TEST_SUITE(DatasetBinaryOpTest, Binary);
 
 TYPED_TEST(DatasetBinaryOpTest, dataset_lhs_dataset_rhs) {
-  const auto [dataset_a, dataset_b] = generateBinaryOpTestCase();
+  const auto[dataset_a, dataset_b] = generateBinaryOpTestCase();
 
   const auto res = TestFixture::op(dataset_a, dataset_b);
 
@@ -627,7 +627,7 @@ TYPED_TEST(DatasetBinaryOpTest, dataset_lhs_dataset_rhs) {
 }
 
 TYPED_TEST(DatasetBinaryOpTest, dataset_lhs_variableconstproxy_rhs) {
-  const auto [dataset_a, dataset_b] = generateBinaryOpTestCase();
+  const auto[dataset_a, dataset_b] = generateBinaryOpTestCase();
 
   const auto res = TestFixture::op(dataset_a, dataset_b["data_a"].data());
 
@@ -637,7 +637,7 @@ TYPED_TEST(DatasetBinaryOpTest, dataset_lhs_variableconstproxy_rhs) {
 }
 
 TYPED_TEST(DatasetBinaryOpTest, variableconstproxy_lhs_dataset_rhs) {
-  const auto [dataset_a, dataset_b] = generateBinaryOpTestCase();
+  const auto[dataset_a, dataset_b] = generateBinaryOpTestCase();
 
   const auto res = TestFixture::op(dataset_a["data_a"].data(), dataset_b);
 
@@ -816,7 +816,7 @@ TYPED_TEST(DatasetBinaryOpTest, dataset_lhs_datasetconstproxy_rhs) {
   DatasetConstProxy dataset_b_proxy(dataset_b);
   const auto res = TestFixture::op(dataset_a, dataset_b_proxy);
 
-  for (const auto &[name, item] : res) {
+  for (const auto & [ name, item ] : res) {
     const auto reference =
         TestFixture::op(dataset_a[name].data(), dataset_b[name].data());
     EXPECT_EQ(reference, item.data());
@@ -843,7 +843,7 @@ TYPED_TEST(DatasetBinaryOpTest, datasetconstproxy_lhs_datasetconstproxy_rhs) {
   DatasetConstProxy dataset_b_proxy(dataset_b);
   const auto res = TestFixture::op(dataset_a_proxy, dataset_b_proxy);
 
-  for (const auto &[name, item] : res) {
+  for (const auto & [ name, item ] : res) {
     const auto reference =
         TestFixture::op(dataset_a[name].data(), dataset_b[name].data());
     EXPECT_EQ(reference, item.data());
@@ -856,7 +856,7 @@ TYPED_TEST(DatasetBinaryOpTest, dataset_lhs_dataproxy_rhs) {
 
   const auto res = TestFixture::op(dataset_a, dataset_b["data_scalar"]);
 
-  for (const auto &[name, item] : res) {
+  for (const auto & [ name, item ] : res) {
     const auto reference = TestFixture::op(dataset_a[name].data(),
                                            dataset_b["data_scalar"].data());
     EXPECT_EQ(reference, item.data());
@@ -963,9 +963,9 @@ TEST(DatasetInPlaceStrongExceptionGuarantee, sparse) {
   // binary operations for Variable are doing the job on their own, but we need
   // to exercise those for Dataset here).
   for (const auto &keys : {std::pair{"a", "b"}, std::pair{"b", "a"}}) {
-    auto &[key1, key2] = keys;
+    auto & [ key1, key2 ] = keys;
     for (const auto &values : {std::pair{good, bad}, std::pair{bad, good}}) {
-      auto &[value1, value2] = values;
+      auto & [ value1, value2 ] = values;
       Dataset d;
       d.setData(key1, value1);
       d.setData(key2, value2);

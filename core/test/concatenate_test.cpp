@@ -56,8 +56,8 @@ TEST(ConcatenateTest, simple_1d_histogram) {
                      makeVariable<int>({Dim::X, 5}, {21, 22, 23, 24, 25}));
   expected.setLabels("labels",
                      makeVariable<int>({Dim::X, 4}, {21, 22, 24, 25}));
-  expected.setMask(
-      "masks", makeVariable<bool>({Dim::X, 4}, {false, true, false, true}));
+  expected.setMask("masks",
+                   makeVariable<bool>({Dim::X, 4}, {false, true, false, true}));
 
   EXPECT_EQ(concatenate(a, b, Dim::X), expected);
 }
@@ -141,7 +141,7 @@ TEST(ConcatenateTest, concat_2d_coord) {
                                                 112, 113, 11, 12, 13}));
   expected.setLabels("label_1", makeVariable<int>({Dim::X, 3}, {21, 22, 23}));
   expected.setMask("mask_1",
-                    makeVariable<bool>({Dim::X, 3}, {false, true, false}));
+                   makeVariable<bool>({Dim::X, 3}, {false, true, false}));
 
   const auto ab = concatenate(a, b, Dim::Y);
   const auto ba = concatenate(b, a, Dim::Y);
