@@ -11,6 +11,3 @@ conda config \
   --set always_yes yes \
   --set changeps1 no
 conda update -q conda
-
-# # Install build and deploy dependencies
-# conda install -c conda-forge conda-build anaconda
