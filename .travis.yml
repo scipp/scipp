@@ -7,6 +7,10 @@ branches:
     - master
     - /^\d+(\.\d+)*/
 
+env:
+  global:
+    - PYTHON_EXECUTABLE="$HOME/miniconda/bin/python3"
+
 jobs:
   include:
       # Check clang format and flake8 in the first stage
