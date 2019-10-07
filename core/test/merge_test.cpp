@@ -149,6 +149,16 @@ TEST(MergeTest, non_matching_sparse_labels) {
   EXPECT_THROW(auto d = merge(a, b), std::runtime_error);
 }
 
+TEST(MergeTest, non_matching_masks) {
+  Dataset a;
+  Dataset b;
+  a.setMask("a",
+            makeVariable<bool>({Dim::X, 5}, {false, true, false, true, false}));
+  b.setMask("a",
+            makeVariable<bool>({Dim::X, 5}, {true, true, true, true, true}));
+  EXPECT_THROW(auto d = merge(a, b), std::runtime_error);
+}
+
 TEST(MergeTest, non_matching_attrs) {
   Dataset a;
   Dataset b;
