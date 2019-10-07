@@ -307,7 +307,7 @@ public:
     for (auto &&[name, labs] : labels)
       setLabels(std::string(name), std::move(labs));
     for (auto &&[name, mask] : masks)
-      setMasks(std::string(name), std::move(mask));
+      setMask(std::string(name), std::move(mask));
     for (auto &&[name, attr] : attrs)
       setAttr(std::string(name), std::move(attr));
     for (auto &&[name, item] : data)
@@ -383,7 +383,7 @@ public:
 
   void setCoord(const Dim dim, Variable coord);
   void setLabels(const std::string &labelName, Variable labels);
-  void setMasks(const std::string &masksName, Variable masks);
+  void setMask(const std::string &masksName, Variable masks);
   void setAttr(const std::string &attrName, Variable attr);
   void setData(const std::string &name, Variable data);
   void setData(const std::string &name, const DataConstProxy &data);
@@ -398,8 +398,8 @@ public:
                  const VariableConstProxy &labels) {
     setLabels(labelName, Variable(labels));
   }
-  void setMasks(const std::string &masksName, const VariableConstProxy &mask) {
-    setMasks(masksName, Variable(mask));
+  void setMask(const std::string &masksName, const VariableConstProxy &mask) {
+    setMask(masksName, Variable(mask));
   }
   void setAttr(const std::string &attrName, const VariableConstProxy &attr) {
     setAttr(attrName, Variable(attr));
@@ -706,7 +706,7 @@ public:
       if constexpr (std::is_same_v<Base, LabelsConstProxy>)
         m_parent->setLabels(key, var);
       if constexpr (std::is_same_v<Base, MasksConstProxy>)
-        m_parent->setMasks(key, var);
+        m_parent->setMask(key, var);
       if constexpr (std::is_same_v<Base, AttrsConstProxy>)
         m_parent->setAttr(key, var);
     }
@@ -961,7 +961,7 @@ public:
     }
 
     for (auto &&[attr_name, m] : masks) {
-      m_holder.setMasks(std::string(attr_name), std::move(m));
+      m_holder.setMask(std::string(attr_name), std::move(m));
     }
 
     if (m_holder.size() != 1)

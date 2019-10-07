@@ -269,7 +269,7 @@ void Dataset::setAttr(const std::string &attrName, Variable attr) {
 /// Set (insert or replace) the masks for the given mask name.
 ///
 /// Note that the mask name has no relation to names of data items.
-void Dataset::setMasks(const std::string &masksName, Variable masks) {
+void Dataset::setMask(const std::string &masksName, Variable masks) {
   setDims(masks.dims());
 
   if (masks.dtype() != DType::Bool) {
@@ -322,7 +322,7 @@ void Dataset::setData(const std::string &name, const DataConstProxy &data) {
   }
 
   for (const auto &[nm, mask] : data.masks()) {
-    setMasks(std::string(nm), mask);
+    setMask(std::string(nm), mask);
   }
 
   for (const auto &[nm, attr] : data.attrs()) {

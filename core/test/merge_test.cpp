@@ -15,7 +15,7 @@ TEST(MergeTest, simple) {
   a.setCoord(Dim::Y, makeVariable<int>({Dim::Y, 3}, {6, 7, 8}));
   a.setData("data_1", makeVariable<int>({Dim::X, 3}, {15, 16, 17}));
   a.setLabels("label_1", makeVariable<int>({Dim::Y, 3}, {9, 8, 7}));
-  a.setMasks("masks_1", makeVariable<bool>({Dim::X, 3}, {false, true, false}));
+  a.setMask("masks_1", makeVariable<bool>({Dim::X, 3}, {false, true, false}));
   a.setAttr("attr_1", makeVariable<int>(42));
   a.setAttr("attr_2", makeVariable<int>(495));
 
@@ -23,7 +23,7 @@ TEST(MergeTest, simple) {
   b.setCoord(Dim::X, makeVariable<int>({Dim::X, 3}, {1, 2, 3}));
   b.setData("data_2", makeVariable<int>({Dim::X, 3}, {11, 12, 13}));
   b.setLabels("label_2", makeVariable<int>({Dim::X, 3}, {9, 8, 9}));
-  b.setMasks("masks_2", makeVariable<bool>({Dim::X, 3}, {false, true, false}));
+  b.setMask("masks_2", makeVariable<bool>({Dim::X, 3}, {false, true, false}));
   b.setAttr("attr_2", makeVariable<int>(495));
 
   const auto d = merge(a, b);

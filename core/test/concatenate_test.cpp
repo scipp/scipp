@@ -13,13 +13,13 @@ TEST(ConcatenateTest, simple_1d) {
   a.setCoord(Dim::X, makeVariable<int>({Dim::X, 3}, {1, 2, 3}));
   a.setData("data_1", makeVariable<int>({Dim::X, 3}, {11, 12, 13}));
   a.setLabels("label_1", makeVariable<int>({Dim::X, 3}, {21, 22, 23}));
-  a.setMasks("mask_1", makeVariable<bool>({Dim::X, 3}, {false, true, false}));
+  a.setMask("mask_1", makeVariable<bool>({Dim::X, 3}, {false, true, false}));
 
   Dataset b;
   b.setCoord(Dim::X, makeVariable<int>({Dim::X, 3}, {4, 5, 6}));
   b.setData("data_1", makeVariable<int>({Dim::X, 3}, {14, 15, 16}));
   b.setLabels("label_1", makeVariable<int>({Dim::X, 3}, {24, 25, 26}));
-  b.setMasks("mask_1", makeVariable<bool>({Dim::X, 3}, {false, true, false}));
+  b.setMask("mask_1", makeVariable<bool>({Dim::X, 3}, {false, true, false}));
 
   const auto d = concatenate(a, b, Dim::X);
 
@@ -40,14 +40,14 @@ TEST(ConcatenateTest, simple_1d_histogram) {
   a.setData("data_1", makeVariable<int>({Dim::X, 2}, {11, 12}));
   a.setLabels("edge_labels", makeVariable<int>({Dim::X, 3}, {21, 22, 23}));
   a.setLabels("labels", makeVariable<int>({Dim::X, 2}, {21, 22}));
-  a.setMasks("masks", makeVariable<bool>({Dim::X, 2}, {false, true}));
+  a.setMask("masks", makeVariable<bool>({Dim::X, 2}, {false, true}));
 
   Dataset b;
   b.setCoord(Dim::X, makeVariable<int>({Dim::X, 3}, {3, 4, 5}));
   b.setData("data_1", makeVariable<int>({Dim::X, 2}, {13, 14}));
   b.setLabels("edge_labels", makeVariable<int>({Dim::X, 3}, {23, 24, 25}));
   b.setLabels("labels", makeVariable<int>({Dim::X, 2}, {24, 25}));
-  b.setMasks("masks", makeVariable<bool>({Dim::X, 2}, {false, true}));
+  b.setMask("masks", makeVariable<bool>({Dim::X, 2}, {false, true}));
 
   Dataset expected;
   expected.setCoord(Dim::X, makeVariable<int>({Dim::X, 5}, {1, 2, 3, 4, 5}));
@@ -56,7 +56,7 @@ TEST(ConcatenateTest, simple_1d_histogram) {
                      makeVariable<int>({Dim::X, 5}, {21, 22, 23, 24, 25}));
   expected.setLabels("labels",
                      makeVariable<int>({Dim::X, 4}, {21, 22, 24, 25}));
-  expected.setMasks(
+  expected.setMask(
       "masks", makeVariable<bool>({Dim::X, 4}, {false, true, false, true}));
 
   EXPECT_EQ(concatenate(a, b, Dim::X), expected);
@@ -126,7 +126,7 @@ TEST(ConcatenateTest, concat_2d_coord) {
   a.setCoord(Dim::X, makeVariable<int>({Dim::X, 3}, {1, 2, 3}));
   a.setData("data_1", makeVariable<int>({Dim::X, 3}, {11, 12, 13}));
   a.setLabels("label_1", makeVariable<int>({Dim::X, 3}, {21, 22, 23}));
-  a.setMasks("mask_1", makeVariable<bool>({Dim::X, 3}, {false, true, false}));
+  a.setMask("mask_1", makeVariable<bool>({Dim::X, 3}, {false, true, false}));
 
   Dataset b(a);
   b.coords()[Dim::X] += 3;
@@ -140,7 +140,7 @@ TEST(ConcatenateTest, concat_2d_coord) {
                                                {11, 12, 13, 111, 112, 113, 111,
                                                 112, 113, 11, 12, 13}));
   expected.setLabels("label_1", makeVariable<int>({Dim::X, 3}, {21, 22, 23}));
-  expected.setMasks("mask_1",
+  expected.setMask("mask_1",
                     makeVariable<bool>({Dim::X, 3}, {false, true, false}));
 
   const auto ab = concatenate(a, b, Dim::Y);

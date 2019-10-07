@@ -41,7 +41,7 @@ protected:
 };
 
 template <class Op>
-class DatasetMasksSlicingBinaryOpTest
+class DatasetMaskSlicingBinaryOpTest
     : public ::testing::Test,
       public ::testing::WithParamInterface<Op> {
 protected:
@@ -65,7 +65,7 @@ std::tuple<Dataset, Dataset> generateBinaryOpTestCase() {
     a.setCoord(Dim::Y, makeVariable<double>({Dim::Y, ly}, coordY));
 
     a.setLabels("t", labelT);
-    a.setMasks("mask", masks);
+    a.setMask("mask", masks);
 
     a.setData("data_a", makeVariable<double>({Dim::X, lx}, rand(lx)));
     a.setData("data_b", makeVariable<double>({Dim::Y, ly}, rand(ly)));
@@ -77,7 +77,7 @@ std::tuple<Dataset, Dataset> generateBinaryOpTestCase() {
     b.setCoord(Dim::Y, makeVariable<double>({Dim::Y, ly}, coordY));
 
     b.setLabels("t", labelT);
-    b.setMasks("mask", masks);
+    b.setMask("mask", masks);
 
     b.setData("data_a", makeVariable<double>({Dim::Y, ly}, rand(ly)));
   }
@@ -394,16 +394,16 @@ TYPED_TEST(DatasetBinaryEqualsOpTest, masks_propagate) {
       {Dim::X, datasetFactory.lx},
       makeBools<BoolsGeneratorType::TRUE>(datasetFactory.lx));
 
-  b.setMasks("masks_x", expectedMasks);
+  b.setMask("masks_x", expectedMasks);
 
   TestFixture::op(a, b);
 
   EXPECT_EQ(a.masks()["masks_x"], expectedMasks);
 }
 
-TYPED_TEST_SUITE(DatasetMasksSlicingBinaryOpTest, Binary);
+TYPED_TEST_SUITE(DatasetMaskSlicingBinaryOpTest, Binary);
 
-TYPED_TEST(DatasetMasksSlicingBinaryOpTest, binary_op_on_sliced_masks) {
+TYPED_TEST(DatasetMaskSlicingBinaryOpTest, binary_op_on_sliced_masks) {
   auto a = make_1d_masked();
 
   const auto expectedMasks =
@@ -871,7 +871,7 @@ TYPED_TEST(DatasetBinaryOpTest, masks_propagate) {
       {Dim::X, datasetFactory.lx},
       makeBools<BoolsGeneratorType::TRUE>(datasetFactory.lx));
 
-  b.setMasks("masks_x", expectedMasks);
+  b.setMask("masks_x", expectedMasks);
 
   const auto res = TestFixture::op(a, b);
 

@@ -24,7 +24,7 @@ protected:
     dataset.setCoord(Dim::Y, makeVariable<double>({Dim::Y, 3}));
 
     dataset.setLabels("labels", makeVariable<int>({Dim::X, 4}));
-    dataset.setMasks("mask", makeVariable<bool>({Dim::X, 4}));
+    dataset.setMask("mask", makeVariable<bool>({Dim::X, 4}));
 
     dataset.setAttr("attr", makeVariable<int>({}));
 

@@ -123,32 +123,32 @@ TEST(DatasetTest, setAttr) {
   ASSERT_EQ(d.attrs().size(), 2);
 }
 
-TEST(DatasetTest, setMasks) {
+TEST(DatasetTest, setMask) {
   Dataset d;
   const auto var = makeVariable<bool>({Dim::X, 3}, {false, true, false});
 
   ASSERT_EQ(d.size(), 0);
   ASSERT_EQ(d.masks().size(), 0);
 
-  ASSERT_NO_THROW(d.setMasks("a", var));
+  ASSERT_NO_THROW(d.setMask("a", var));
   ASSERT_EQ(d.size(), 0);
   ASSERT_EQ(d.masks().size(), 1);
   ASSERT_EQ(d.masks()["a"], var);
 
-  ASSERT_NO_THROW(d.setMasks("b", var));
+  ASSERT_NO_THROW(d.setMask("b", var));
   ASSERT_EQ(d.size(), 0);
   ASSERT_EQ(d.masks().size(), 2);
 
-  ASSERT_NO_THROW(d.setMasks("a", var));
+  ASSERT_NO_THROW(d.setMask("a", var));
   ASSERT_EQ(d.size(), 0);
   ASSERT_EQ(d.masks().size(), 2);
 }
 
-TEST(DatasetTest, setMasks_invalid_dtype) {
+TEST(DatasetTest, setMask_invalid_dtype) {
   Dataset d;
   const auto var = makeVariable<double>({Dim::X, 3}, {1.0, 1.1, 1.2});
 
-  ASSERT_THROW(d.setMasks("a", var), std::logic_error);
+  ASSERT_THROW(d.setMask("a", var), std::logic_error);
 }
 
 TEST(DatasetTest, setData_with_and_without_variances) {

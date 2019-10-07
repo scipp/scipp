@@ -189,8 +189,8 @@ protected:
     d.setLabels("labels_xy",
                 dataset.labels()["labels_xy"].slice({Dim::X, pos}));
     d.setLabels("labels_z", dataset.labels()["labels_z"]);
-    d.setMasks("masks_xy", dataset.masks()["masks_xy"].slice({Dim::X, pos}));
-    d.setMasks("masks_z", dataset.masks()["masks_z"]);
+    d.setMask("masks_xy", dataset.masks()["masks_xy"].slice({Dim::X, pos}));
+    d.setMask("masks_z", dataset.masks()["masks_z"]);
     d.setAttr("attr_scalar", dataset.attrs()["attr_scalar"]);
     d.setData("values_x", dataset["values_x"].data().slice({Dim::X, pos}));
     d.setData("data_x", dataset["data_x"].data().slice({Dim::X, pos}));
@@ -226,10 +226,10 @@ protected:
                 dataset.labels()["labels_xy"].slice({Dim::Y, begin, end}));
     d.setLabels("labels_z", dataset.labels()["labels_z"]);
 
-    d.setMasks("masks_x", dataset.masks()["masks_x"]);
-    d.setMasks("masks_xy",
+    d.setMask("masks_x", dataset.masks()["masks_x"]);
+    d.setMask("masks_xy",
                dataset.masks()["masks_xy"].slice({Dim::Y, begin, end}));
-    d.setMasks("masks_z", dataset.masks()["masks_z"]);
+    d.setMask("masks_z", dataset.masks()["masks_z"]);
 
     d.setAttr("attr_scalar", dataset.attrs()["attr_scalar"]);
     d.setAttr("attr_x", dataset.attrs()["attr_x"]);
@@ -255,9 +255,9 @@ protected:
     d.setLabels("labels_xy", dataset.labels()["labels_xy"]);
     d.setLabels("labels_z",
                 dataset.labels()["labels_z"].slice({Dim::Z, begin, end}));
-    d.setMasks("masks_x", dataset.masks()["masks_x"]);
-    d.setMasks("masks_xy", dataset.masks()["masks_xy"]);
-    d.setMasks("masks_z",
+    d.setMask("masks_x", dataset.masks()["masks_x"]);
+    d.setMask("masks_xy", dataset.masks()["masks_xy"]);
+    d.setMask("masks_z",
                dataset.masks()["masks_z"].slice({Dim::Z, begin, end}));
     d.setAttr("attr_scalar", dataset.attrs()["attr_scalar"]);
     d.setAttr("attr_x", dataset.attrs()["attr_x"]);
@@ -350,8 +350,8 @@ TEST_P(Dataset3DTest_slice_y, slice) {
   reference.setCoord(Dim::Z, dataset.coords()[Dim::Z].slice({Dim::Y, pos}));
   reference.setLabels("labels_x", dataset.labels()["labels_x"]);
   reference.setLabels("labels_z", dataset.labels()["labels_z"]);
-  reference.setMasks("masks_x", dataset.masks()["masks_x"]);
-  reference.setMasks("masks_z", dataset.masks()["masks_z"]);
+  reference.setMask("masks_x", dataset.masks()["masks_x"]);
+  reference.setMask("masks_z", dataset.masks()["masks_z"]);
   reference.setAttr("attr_scalar", dataset.attrs()["attr_scalar"]);
   reference.setAttr("attr_x", dataset.attrs()["attr_x"]);
   reference.setData("data_xy", dataset["data_xy"].data().slice({Dim::Y, pos}));
@@ -371,8 +371,8 @@ TEST_P(Dataset3DTest_slice_z, slice) {
   reference.setCoord(Dim::Y, dataset.coords()[Dim::Y]);
   reference.setLabels("labels_x", dataset.labels()["labels_x"]);
   reference.setLabels("labels_xy", dataset.labels()["labels_xy"]);
-  reference.setMasks("masks_x", dataset.masks()["masks_x"]);
-  reference.setMasks("masks_xy", dataset.masks()["masks_xy"]);
+  reference.setMask("masks_x", dataset.masks()["masks_x"]);
+  reference.setMask("masks_xy", dataset.masks()["masks_xy"]);
   reference.setAttr("attr_scalar", dataset.attrs()["attr_scalar"]);
   reference.setAttr("attr_x", dataset.attrs()["attr_x"]);
   reference.setData("data_zyx",
@@ -397,11 +397,11 @@ TEST_P(Dataset3DTest_slice_range_x, slice) {
   reference.setLabels(
       "labels_xy", dataset.labels()["labels_xy"].slice({Dim::X, begin, end}));
   reference.setLabels("labels_z", dataset.labels()["labels_z"]);
-  reference.setMasks("masks_x",
+  reference.setMask("masks_x",
                      dataset.masks()["masks_x"].slice({Dim::X, begin, end}));
-  reference.setMasks("masks_xy",
+  reference.setMask("masks_xy",
                      dataset.masks()["masks_xy"].slice({Dim::X, begin, end}));
-  reference.setMasks("masks_z", dataset.masks()["masks_z"]);
+  reference.setMask("masks_z", dataset.masks()["masks_z"]);
   reference.setAttr("attr_scalar", dataset.attrs()["attr_scalar"]);
   reference.setAttr("attr_x",
                     dataset.attrs()["attr_x"].slice({Dim::X, begin, end}));
