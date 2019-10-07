@@ -112,9 +112,7 @@ void equals(const A &a, const boost::units::unit<Dim, System, Enable> &unit) {
 }
 template <class A, class Dim, class System, class Enable>
 void equals(const boost::units::unit<Dim, System, Enable> &unit, const A &a) {
-  const auto expectedUnit = units::Unit(unit);
-  if (expectedUnit != a)
-    throw scipp::except::MismatchError(expectedUnit, a);
+  equals(a, unit);
 }
 
 SCIPP_CORE_EXPORT void dimensionMatches(const Dimensions &dims, const Dim dim,
