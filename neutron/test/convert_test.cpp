@@ -12,11 +12,12 @@ using namespace scipp;
 using namespace scipp::core;
 using namespace scipp::neutron;
 
-Dataset makeTofDataForUnitConversion() {
+Dataset makeTofDataForUnitConversion(const bool only_sparse = false) {
   Dataset tof;
 
-  tof.setCoord(Dim::Tof, makeVariable<double>({Dim::Tof, 4}, units::us,
-                                              {4000, 5000, 6100, 7300}));
+  if (!only_sparse)
+    tof.setCoord(Dim::Tof, makeVariable<double>({Dim::Tof, 4}, units::us,
+                                                {4000, 5000, 6100, 7300}));
 
   Dataset components;
   // Source and sample
@@ -142,6 +143,13 @@ TEST(Convert, Tof_to_DSpacing) {
   ASSERT_EQ(dspacing.coords()[Dim::Position], tof.coords()[Dim::Position]);
   ASSERT_EQ(dspacing.labels()["component_info"],
             tof.labels()["component_info"]);
+}
+
+TEST(Convert, Tof_to_DSpacing_no_dense_coord) {
+  const bool only_sparse = true;
+  Dataset tof = makeTofDataForUnitConversion(only_sparse);
+  EXPECT_FALSE(tof.coords().contains(Dim::Tof));
+  EXPECT_NO_THROW(convert(tof, Dim::Tof, Dim::DSpacing));
 }
 
 TEST(Convert, DSpacing_to_Tof) {

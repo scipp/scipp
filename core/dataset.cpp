@@ -436,7 +436,8 @@ void Dataset::rename(const Dim from, const Dim to) {
     map.insert(std::move(node));
   };
   relabel(m_dims);
-  relabel(m_coords);
+  if (coords().contains(from))
+    relabel(m_coords);
   for (auto &item : m_coords)
     item.second.rename(from, to);
   for (auto &item : m_labels)
