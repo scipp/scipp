@@ -12,6 +12,7 @@
 #include "bind_operators.h"
 #include "bind_slice_methods.h"
 #include "pybind11.h"
+#include "rename.h"
 
 using namespace scipp;
 using namespace scipp::core;
@@ -204,6 +205,10 @@ void init_dataset(py::module &m) {
   bind_in_place_binary<DatasetProxy>(datasetProxy);
   bind_in_place_binary<VariableConstProxy>(datasetProxy);
   bind_in_place_binary<DataProxy>(datasetProxy);
+  bind_in_place_binary_scalars(dataset);
+  bind_in_place_binary_scalars(datasetProxy);
+  bind_in_place_binary_scalars(dataArray);
+  bind_in_place_binary_scalars(dataProxy);
 
   bind_binary<Dataset>(dataset);
   bind_binary<DatasetProxy>(dataset);
@@ -213,6 +218,11 @@ void init_dataset(py::module &m) {
   bind_binary<DatasetProxy>(datasetProxy);
   bind_binary<DataProxy>(datasetProxy);
   bind_binary<VariableConstProxy>(datasetProxy);
+
+  dataArray.def("rename_dims", &rename_dims<DataArray>, py::arg("dims_dict"),
+                "Rename dimensions.");
+  dataset.def("rename_dims", &rename_dims<Dataset>, py::arg("dims_dict"),
+              "Rename dimensions.");
 
   m.def("concatenate",
         py::overload_cast<const DataConstProxy &, const DataConstProxy &,

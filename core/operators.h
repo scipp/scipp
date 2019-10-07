@@ -24,7 +24,9 @@ struct plus_equals {
       noexcept(noexcept(a += b)) {
     a += b;
   }
-  using types = pair_self_t<double, float, int64_t, Eigen::Vector3d>;
+  using types = decltype(std::tuple_cat(
+      pair_self_t<double, float, int32_t, int64_t, Eigen::Vector3d>{},
+      pair_custom_t<std::pair<double, float>, std::pair<int64_t, int32_t>>{}));
 };
 struct minus_equals {
   template <class A, class B>
@@ -32,7 +34,9 @@ struct minus_equals {
       noexcept(noexcept(a -= b)) {
     a -= b;
   }
-  using types = pair_self_t<double, float, int64_t, Eigen::Vector3d>;
+  using types = decltype(std::tuple_cat(
+      pair_self_t<double, float, int32_t, int64_t, Eigen::Vector3d>{},
+      pair_custom_t<std::pair<double, float>, std::pair<int64_t, int32_t>>{}));
 };
 struct times_equals {
   template <class A, class B>
@@ -40,10 +44,11 @@ struct times_equals {
       noexcept(noexcept(a *= b)) {
     a *= b;
   }
-  using types = decltype(
-      std::tuple_cat(pair_self_t<double, float, int64_t>{},
-                     pair_custom_t<std::pair<float, double>,
-                                   std::pair<Eigen::Vector3d, double>>{}));
+  using types = decltype(std::tuple_cat(
+      pair_self_t<double, float, int32_t, int64_t>{},
+      pair_custom_t<std::pair<double, float>, std::pair<float, double>,
+                    std::pair<int64_t, int32_t>,
+                    std::pair<Eigen::Vector3d, double>>{}));
 };
 struct divide_equals {
   template <class A, class B>
@@ -51,9 +56,10 @@ struct divide_equals {
       noexcept(noexcept(a /= b)) {
     a /= b;
   }
-  using types = decltype(
-      std::tuple_cat(pair_self_t<double, float, int64_t>{},
-                     pair_custom_t<std::pair<Eigen::Vector3d, double>>{}));
+  using types = decltype(std::tuple_cat(
+      pair_self_t<double, float, int32_t, int64_t>{},
+      pair_custom_t<std::pair<double, float>, std::pair<int64_t, int32_t>,
+                    std::pair<Eigen::Vector3d, double>>{}));
 };
 } // namespace operator_detail
 

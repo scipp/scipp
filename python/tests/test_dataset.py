@@ -497,6 +497,32 @@ def test_binary_of_item_with_variable():
     assert d == copy
 
 
+def test_in_place_binary_with_scalar():
+    d = sc.Dataset(
+        {'data': sc.Variable([Dim.X], values=[10])},
+        coords={Dim.X: sc.Variable([Dim.X], values=[10])})
+    copy = d.copy()
+
+    d += 2
+    d *= 2
+    d -= 4
+    d /= 2
+    assert d == copy
+
+
+def test_proxy_in_place_binary_with_scalar():
+    d = sc.Dataset(
+        {'data': sc.Variable([Dim.X], values=[10])},
+        coords={Dim.X: sc.Variable([Dim.X], values=[10])})
+    copy = d.copy()
+
+    d['data'] += 2
+    d['data'] *= 2
+    d['data'] -= 4
+    d['data'] /= 2
+    assert d == copy
+
+
 def test_add_sum_of_columns():
     d = sc.Dataset({
         'a': sc.Variable([Dim.X], values=np.arange(10.0)),
@@ -522,18 +548,19 @@ def test_name():
     assert array.name == ''
 
 
-def make_simple_dataset():
+def make_simple_dataset(dim1=Dim.X, dim2=Dim.Y, seed=None):
+    if seed is not None:
+        np.random.seed(seed)
     return sc.Dataset(
         {
-            'a': sc.Variable(dims=[Dim.X, Dim.Y], values=np.random.rand(2, 3)),
+            'a': sc.Variable(dims=[dim1, dim2], values=np.random.rand(2, 3)),
             'b': sc.Variable(1.0)
         },
         coords={
-            Dim.X: sc.Variable([Dim.X], values=np.arange(2.0),
-                               unit=sc.units.m),
-            Dim.Y: sc.Variable([Dim.Y], values=np.arange(3.0), unit=sc.units.m)
+            dim1: sc.Variable([dim1], values=np.arange(2.0), unit=sc.units.m),
+            dim2: sc.Variable([dim2], values=np.arange(3.0), unit=sc.units.m)
         },
-        labels={'aux': sc.Variable([Dim.Y], values=np.random.rand(3))})
+        labels={'aux': sc.Variable([dim2], values=np.random.rand(3))})
 
 
 def test_dataset_proxy_set_variance():
@@ -574,6 +601,14 @@ def test_sort():
         },
         labels={'aux': sc.Variable([Dim.X], values=[1.0, 0.0])})
     assert sc.sort(d, d['b'].data) == expected
+
+
+def test_rename_dims():
+    d = make_simple_dataset(Dim.X, Dim.Y, seed=0)
+    d.rename_dims({Dim.Y: Dim.Z})
+    assert d == make_simple_dataset(Dim.X, Dim.Z, seed=0)
+    d.rename_dims(dims_dict={Dim.X: Dim.Y, Dim.Z: Dim.X})
+    assert d == make_simple_dataset(Dim.Y, Dim.X, seed=0)
 
 
 # def test_delitem(self):

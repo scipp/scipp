@@ -18,6 +18,7 @@
 #include "dtype.h"
 #include "numpy.h"
 #include "pybind11.h"
+#include "rename.h"
 
 using namespace scipp;
 using namespace scipp::core;
@@ -156,6 +157,8 @@ void init_variable(py::module &m) {
            py::arg("variances") = std::nullopt,
            py::arg("unit") = units::Unit(units::dimensionless),
            py::arg("dtype") = py::none())
+      .def("rename_dims", &rename_dims<Variable>, py::arg("dims_dict"),
+           "Rename dimensions.")
       .def("copy", [](const Variable &self) { return self; },
            "Return a (deep) copy.")
       .def("__copy__", [](Variable &self) { return Variable(self); })
@@ -231,6 +234,8 @@ void init_variable(py::module &m) {
   bind_in_place_binary<VariableProxy>(variable);
   bind_in_place_binary<Variable>(variableProxy);
   bind_in_place_binary<VariableProxy>(variableProxy);
+  bind_in_place_binary_scalars(variable);
+  bind_in_place_binary_scalars(variableProxy);
 
   bind_binary<Variable>(variable);
   bind_binary<VariableProxy>(variable);
