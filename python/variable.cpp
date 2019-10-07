@@ -100,8 +100,8 @@ void bind_init_0D(py::class_<Variable> &c) {
                     const units::Unit &unit, py::object &dtype) {
           py::buffer_info info = b.request();
           if (info.ndim == 0) {
-            auto pyMakeVariable0D =
-                py::module::import("scipp").attr("make_variable_0d");
+            auto pyMakeVariable0D = py::module::import("scipp._scipp.core")
+                                        .attr("__make_variable_0d");
 
             return py::cast<Variable>(
                 pyMakeVariable0D(py::array(b), v, unit, dtype));
@@ -242,7 +242,7 @@ void init_variable(py::module &m) {
 
   py::implicitly_convertible<Variable, VariableConstProxy>();
 
-  m.def("make_variable_0d",
+  m.def("__make_variable_0d",
         [](py::array val, std::optional<py::array> &var, const units::Unit unit,
            const py::object &dtype) {
           return doMakeVariable({}, val, var, unit, dtype);
