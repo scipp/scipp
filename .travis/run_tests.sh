@@ -19,7 +19,8 @@ make -j2 install all-tests
 ./neutron/test/scipp-neutron-test
 
 # Python tests
-python3 -m pip install -r ../python/requirements.txt
+conda install --file ../python/requirements.txt
+# python3 -m pip install -r ../python/requirements.txt
 export PYTHONPATH=$PYTHONPATH:../install
 cd ../python
 python3 -m pytest
