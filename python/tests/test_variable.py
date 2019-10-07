@@ -393,6 +393,19 @@ def test_binary_divide():
     assert np.array_equal(c.values, data / data / data / data)
 
 
+def test_binary_or():
+    a = sp.Variable(False)
+    b = sp.Variable(True)
+    a |= b
+    assert a == sp.Variable(True)
+
+
+def test_in_place_binary_or():
+    a = sp.Variable(False)
+    b = sp.Variable(True)
+    assert (a | b) == sp.Variable(True)
+
+
 def test_in_place_binary_with_scalar():
     v = sp.Variable([Dim.X], values=[10])
     copy = v.copy()
