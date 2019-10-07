@@ -1,15 +1,11 @@
 language: cpp
-dist: xenial
+dist: bionic
 cache: ccache
 
 branches:
   only:
     - master
     - /^v\d+(\.\d+)*/
-
-env:
-  global:
-    - PYTHON_EXECUTABLE="/usr/bin/python3"
 
 jobs:
   include:
