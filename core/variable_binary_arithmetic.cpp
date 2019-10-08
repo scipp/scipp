@@ -31,9 +31,11 @@ using pair_product_t = typename pair_product<Ts...>::type;
 
 using arithmetic_type_pairs = pair_product_t<float, double, int32_t, int64_t>;
 
-using arithmetic_and_matrix_type_pairs = decltype(
-    std::tuple_cat(std::declval<arithmetic_type_pairs>(),
-                   std::tuple<std::pair<Eigen::Vector3d, Eigen::Vector3d>>()));
+using arithmetic_and_matrix_type_pairs = decltype(std::tuple_cat(
+    std::declval<arithmetic_type_pairs>(),
+    std::tuple<std::pair<Eigen::Vector3d, Eigen::Vector3d>,
+               std::pair<int64_t, int32_t>, std::pair<int32_t, int64_t>,
+               std::pair<double, float>, std::pair<float, double>>()));
 
 template <class T1, class T2> Variable plus(const T1 &a, const T2 &b) {
   return transform<arithmetic_and_matrix_type_pairs>(

@@ -12,11 +12,12 @@ using namespace scipp;
 using namespace scipp::core;
 using namespace scipp::neutron;
 
-Dataset makeTofDataForUnitConversion() {
+Dataset makeTofDataForUnitConversion(const bool dense_coord = true) {
   Dataset tof;
 
-  tof.setCoord(Dim::Tof, makeVariable<double>({Dim::Tof, 4}, units::us,
-                                              {4000, 5000, 6100, 7300}));
+  if (dense_coord)
+    tof.setCoord(Dim::Tof, makeVariable<double>({Dim::Tof, 4}, units::us,
+                                                {4000, 5000, 6100, 7300}));
 
   Dataset components;
   // Source and sample
@@ -41,7 +42,8 @@ Dataset makeTofDataForUnitConversion() {
   auto eventLists = events.sparseValues<double>();
   eventLists[0] = {1000, 3000, 2000, 4000};
   eventLists[1] = {5000, 6000, 3000};
-  tof.setSparseCoord("events", std::move(events));
+  tof.setSparseCoord("events", events);
+  tof.setSparseLabels("events", "aux", events);
 
   tof.setData("density",
               makeVariable<double>({{Dim::Position, 2}, {Dim::Tof, 3}},
@@ -142,6 +144,41 @@ TEST(Convert, Tof_to_DSpacing) {
   ASSERT_EQ(dspacing.coords()[Dim::Position], tof.coords()[Dim::Position]);
   ASSERT_EQ(dspacing.labels()["component_info"],
             tof.labels()["component_info"]);
+}
+
+TEST(Convert, converts_sparse_labels) {
+  // label "conversion" is name change of dim
+  Dataset tof = makeTofDataForUnitConversion();
+  Dataset dspacing = convert(tof, Dim::Tof, Dim::DSpacing);
+  Dimensions expected({Dim::Position, Dim::DSpacing}, {2, Dimensions::Sparse});
+  EXPECT_EQ(dspacing["events"].coords()[Dim::DSpacing].dims(), expected);
+  EXPECT_EQ(dspacing["events"].labels()["aux"].dims(), expected);
+}
+
+TEST(Convert, Tof_to_DSpacing_no_dense_coord) {
+  const bool dense_coord = false;
+  Dataset tof = makeTofDataForUnitConversion(dense_coord);
+  EXPECT_FALSE(tof.coords().contains(Dim::Tof));
+  Dataset dspacing;
+
+  EXPECT_NO_THROW(dspacing = convert(tof, Dim::Tof, Dim::DSpacing));
+  EXPECT_EQ(
+      dspacing["events"].dims(),
+      Dimensions({Dim::Position, Dim::DSpacing}, {2, Dimensions::Sparse}));
+}
+
+TEST(Convert, Tof_to_DSpacing_no_dense_content) {
+  const bool dense_coord = false;
+  Dataset tof = makeTofDataForUnitConversion(dense_coord);
+  EXPECT_FALSE(tof.coords().contains(Dim::Tof));
+  tof.erase("counts");
+  tof.erase("density");
+
+  Dataset dspacing;
+  EXPECT_NO_THROW(dspacing = convert(tof, Dim::Tof, Dim::DSpacing));
+  EXPECT_EQ(
+      dspacing["events"].dims(),
+      Dimensions({Dim::Position, Dim::DSpacing}, {2, Dimensions::Sparse}));
 }
 
 TEST(Convert, DSpacing_to_Tof) {

@@ -339,11 +339,11 @@ Dataset operator+(const VariableConstProxy &lhs, const Dataset &rhs) {
   return apply_with_broadcast(plus, lhs, rhs);
 }
 
-Dataset operator+(const DatasetProxy &lhs, const VariableConstProxy &rhs) {
+Dataset operator+(const DatasetConstProxy &lhs, const VariableConstProxy &rhs) {
   return apply_with_broadcast(plus, lhs, rhs);
 }
 
-Dataset operator+(const VariableConstProxy &lhs, const DatasetProxy &rhs) {
+Dataset operator+(const VariableConstProxy &lhs, const DatasetConstProxy &rhs) {
   return apply_with_broadcast(plus, lhs, rhs);
 }
 
@@ -387,11 +387,11 @@ Dataset operator-(const VariableConstProxy &lhs, const Dataset &rhs) {
   return apply_with_broadcast(minus, lhs, rhs);
 }
 
-Dataset operator-(const DatasetProxy &lhs, const VariableConstProxy &rhs) {
+Dataset operator-(const DatasetConstProxy &lhs, const VariableConstProxy &rhs) {
   return apply_with_broadcast(minus, lhs, rhs);
 }
 
-Dataset operator-(const VariableConstProxy &lhs, const DatasetProxy &rhs) {
+Dataset operator-(const VariableConstProxy &lhs, const DatasetConstProxy &rhs) {
   return apply_with_broadcast(minus, lhs, rhs);
 }
 
@@ -435,11 +435,11 @@ Dataset operator*(const VariableConstProxy &lhs, const Dataset &rhs) {
   return apply_with_broadcast(times, lhs, rhs);
 }
 
-Dataset operator*(const DatasetProxy &lhs, const VariableConstProxy &rhs) {
+Dataset operator*(const DatasetConstProxy &lhs, const VariableConstProxy &rhs) {
   return apply_with_broadcast(times, lhs, rhs);
 }
 
-Dataset operator*(const VariableConstProxy &lhs, const DatasetProxy &rhs) {
+Dataset operator*(const VariableConstProxy &lhs, const DatasetConstProxy &rhs) {
   return apply_with_broadcast(times, lhs, rhs);
 }
 
@@ -483,11 +483,11 @@ Dataset operator/(const VariableConstProxy &lhs, const Dataset &rhs) {
   return apply_with_broadcast(divide, lhs, rhs);
 }
 
-Dataset operator/(const DatasetProxy &lhs, const VariableConstProxy &rhs) {
+Dataset operator/(const DatasetConstProxy &lhs, const VariableConstProxy &rhs) {
   return apply_with_broadcast(divide, lhs, rhs);
 }
 
-Dataset operator/(const VariableConstProxy &lhs, const DatasetProxy &rhs) {
+Dataset operator/(const VariableConstProxy &lhs, const DatasetConstProxy &rhs) {
   return apply_with_broadcast(divide, lhs, rhs);
 }
 

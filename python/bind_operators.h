@@ -49,6 +49,14 @@ void bind_in_place_binary_scalars(pybind11::class_<T, Ignored...> &c) {
   bind_in_place_binary<int64_t>(c);
 }
 
+template <class T, class... Ignored>
+void bind_binary_scalars(pybind11::class_<T, Ignored...> &c) {
+  bind_binary<float>(c);
+  bind_binary<double>(c);
+  bind_binary<int32_t>(c);
+  bind_binary<int64_t>(c);
+}
+
 template <class Other, class T, class... Ignored>
 void bind_or_operators(pybind11::class_<T, Ignored...> &c) {
   c.def("__or__", [](T &a, Other &b) { return a | b; }, py::is_operator(),

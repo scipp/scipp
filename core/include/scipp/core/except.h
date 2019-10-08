@@ -124,7 +124,9 @@ void sizeMatches(const T &range, const Ts &... other) {
     throw except::SizeError("Expected matching sizes.");
 }
 
-template <class T> void contains(const T &a, const T &b) {
+inline auto to_string(const std::string &s) { return s; }
+
+template <class A, class B> void contains(const A &a, const B &b) {
   if (!a.contains(b))
     throw std::runtime_error("Expected " + to_string(a) + " to contain " +
                              to_string(b) + ".");
