@@ -687,7 +687,7 @@ public:
       throw std::runtime_error(
           "Cannot remove coord/labels/attr field from a slice.");
 
-    bool sparse = !m_name; // Does proxy points on sparse data or not
+    bool sparse = m_name; // Does proxy points on sparse data or not
     if (sparse)
       sparse &= (*m_parent)[*m_name].dims().sparse();
 
