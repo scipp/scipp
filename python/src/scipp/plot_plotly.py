@@ -160,7 +160,10 @@ def plot_2d(input_data, axes=None, contours=False, cb=None, filename=None,
                   value_name=title, cb=cbar, show_variances=show_variances)
 
     if filename is not None:
-        write_image(fig=sv.fig, file=filename)
+        if filename.endswith(".html"):
+            write_html(fig=sv.fig, file=filename, auto_open=False)
+        else:
+            write_image(fig=sv.fig, file=filename)
     else:
         display(sv.vbox)
     return
@@ -437,7 +440,10 @@ def plot_3d(input_data, axes=None, contours=False, cb=None, filename=None,
         sv = Slicer3d(layout=layout, input_data=input_data, axes=axes,
                       value_name=title, cb=cbar, show_variances=show_variances)
     if filename is not None:
-        write_image(fig=sv.fig, file=filename)
+        if filename.endswith(".html"):
+            write_html(fig=sv.fig, file=filename, auto_open=False)
+        else:
+            write_image(fig=sv.fig, file=filename)
     else:
         display(sv.vbox)
 

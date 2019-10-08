@@ -275,13 +275,6 @@ def test_plot_2d_image():
     do_test_plot_2d_image()
 
 
-@pytest.mark.skip(reason="This test fails from time to time because objects "
-                  "are running out of scope, so we disable it for now. "
-                  "More specifically, in plot.py L306:\n"
-                  "  if (zlabs[0] == xlabs[0]) and "
-                  "(zlabs[1] == ylabs[0]):\n"
-                  "xlabs and ylabs sometimes contains the same thing, "
-                  "when they should in fact be different")
 def test_plot_2d_image_with_axes():
     do_test_plot_2d_image_with_axes()
 
@@ -291,12 +284,11 @@ def test_plot_2d_image_with_variances():
 
 
 def test_plot_2d_image_with_filename():
-    do_test_plot_2d_image_with_filename("test.html")
+    do_test_plot_2d_image_with_filename("image.html")
 
 
 def test_plot_2d_image_with_variances_with_filename():
-    do_test_plot_2d_image_with_variances_with_filename(["values.html",
-                                                        "errors.html"])
+    do_test_plot_2d_image_with_variances_with_filename("val_and_var.html")
 
 
 def test_plot_collapse():

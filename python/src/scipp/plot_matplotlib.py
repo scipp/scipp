@@ -58,23 +58,22 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, axes=None,
         if x.shape[0] == y.shape[0] + 1:
             xe = x.copy()
             ye = np.concatenate(([0], y))
-            x, w = edges_to_centers(x)
+            x = edges_to_centers(x)
             if var.variances is not None:
                 yerr = np.sqrt(var.variances)
             else:
                 yerr = None
-            ax.bar(x, y, width=w, yerr=yerr, label=ylab, alpha=0.6,
-                   color=color[color_count], ecolor=color[color_count])
+            ax.fill_between(xe, ye, step="pre", alpha=0.6, label=ylab,
+                            color=color[color_count])
             ax.step(xe, ye, color=color[color_count])
             ax.plot([xe[-1], xe[-1]], [ye[-1], 0], color=color[color_count])
         else:
-            # Include variance if present
-            if var.variances is not None:
-                ax.errorbar(x, y, yerr=np.sqrt(var.variances),
-                            label=ylab, color=color[color_count],
-                            ecolor=color[color_count])
-            else:
-                ax.plot(x, y, label=ylab, color=color[color_count])
+            ax.plot(x, y, label=ylab, color=color[color_count])
+        # Include variance if present
+        if var.variances is not None:
+            ax.errorbar(x, y, yerr=np.sqrt(var.variances),
+                        linestyle='None',
+                        ecolor=color[color_count])
         color_count += 1
 
     ax.set_xlabel(xlab)
