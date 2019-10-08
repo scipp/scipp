@@ -1016,8 +1016,7 @@ TEST(DatasetInPlaceStrongExceptionGuarantee, sparse) {
   }
 }
 
-TEST(DatasetMaskContainer,
-     can_contain_any_type_but_only_OR_EQ_bools) {
+TEST(DatasetMaskContainer, can_contain_any_type_but_only_OR_EQ_bools) {
   Dataset a;
   a.setMask("double", makeVariable<double>({Dim::X, 3}, {1.0, 2.0, 3.0}));
   ASSERT_THROW(a.masks()["double"] |= a.masks()["double"], std::runtime_error);
@@ -1033,8 +1032,7 @@ TEST(DatasetMaskContainer,
   ASSERT_NO_THROW(a.masks()["bool"] |= a.masks()["bool"]);
 }
 
-TEST(DatasetMaskContainer,
-     can_contain_any_type_but_only_OR_bools) {
+TEST(DatasetMaskContainer, can_contain_any_type_but_only_OR_bools) {
   Dataset a;
   a.setMask("double", makeVariable<double>({Dim::X, 3}, {1.0, 2.0, 3.0}));
   ASSERT_THROW(a.masks()["double"] | a.masks()["double"], std::runtime_error);
