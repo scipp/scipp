@@ -106,7 +106,12 @@ Variable &Variable::operator/=(const VariableConstProxy &other) & {
 template <class T1, class T2> T1 &or_equals(T1 &variable, const T2 &other) {
   transform_in_place<pair_self_t<bool>>(
       variable, other,
-      overloaded{[](auto &var_, const auto &other_) { var_ |= other_; },
+      overloaded{[](Bool &var_, const Bool &other_) { var_ |= other_; },
+                 [](auto & /*unused*/, const auto & /*unused*/) {
+                   throw std::runtime_error("This operation can only be "
+                                            "performed on containers with "
+                                            "boolean data type.");
+                 },
                  [](units::Unit &varUnit, const units::Unit &otherUnit) {
                    expect::equals(varUnit, units::dimensionless);
                    expect::equals(otherUnit, units::dimensionless);
@@ -118,7 +123,14 @@ template <class T1, class T2> T1 &or_equals(T1 &variable, const T2 &other) {
 template <class T1, class T2> Variable or_op(const T1 &a, const T2 &b) {
   return transform<pair_self_t<bool>>(
       a, b,
-      overloaded{[](auto &a_, const auto &b_) -> bool { return a_ | b_; },
+      overloaded{[](const Bool &var_, const Bool &other_) -> Bool {
+                   return var_ | other_;
+                 },
+                 [](const auto & /*unused*/, const auto & /*unused*/) {
+                   throw std::runtime_error("This operation can only be "
+                                            "performed on containers with "
+                                            "boolean data type.");
+                 },
                  [](const units::Unit &aUnit, const units::Unit &bUnit) {
                    expect::equals(aUnit, units::dimensionless);
                    expect::equals(bUnit, units::dimensionless);

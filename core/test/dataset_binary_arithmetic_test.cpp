@@ -981,3 +981,37 @@ TEST(DatasetInPlaceStrongExceptionGuarantee, sparse) {
     }
   }
 }
+
+TEST(DatasetMaskContainer,
+     can_contain_any_type_but_only_OR_EQ_bools) {
+  Dataset a;
+  a.setMask("double", makeVariable<double>({Dim::X, 3}, {1.0, 2.0, 3.0}));
+  ASSERT_THROW(a.masks()["double"] |= a.masks()["double"], std::runtime_error);
+  a.setMask("float", makeVariable<float>({Dim::X, 3}, {1.0, 2.0, 3.0}));
+  ASSERT_THROW(a.masks()["float"] |= a.masks()["float"], std::runtime_error);
+  a.setMask("int64", makeVariable<int64_t>({Dim::X, 3}, {1, 2, 3}));
+  ASSERT_THROW(a.masks()["int64"] |= a.masks()["int64"], std::runtime_error);
+  a.setMask("int32", makeVariable<int32_t>({Dim::X, 3}, {1, 2, 3}));
+  ASSERT_THROW(a.masks()["int32"] |= a.masks()["int32"], std::runtime_error);
+
+  // success case
+  a.setMask("bool", makeVariable<bool>({Dim::X, 3}, {false, false, false}));
+  ASSERT_NO_THROW(a.masks()["bool"] |= a.masks()["bool"]);
+}
+
+TEST(DatasetMaskContainer,
+     can_contain_any_type_but_only_OR_bools) {
+  Dataset a;
+  a.setMask("double", makeVariable<double>({Dim::X, 3}, {1.0, 2.0, 3.0}));
+  ASSERT_THROW(a.masks()["double"] | a.masks()["double"], std::runtime_error);
+  a.setMask("float", makeVariable<float>({Dim::X, 3}, {1.0, 2.0, 3.0}));
+  ASSERT_THROW(a.masks()["float"] | a.masks()["float"], std::runtime_error);
+  a.setMask("int64", makeVariable<int64_t>({Dim::X, 3}, {1, 2, 3}));
+  ASSERT_THROW(a.masks()["int64"] | a.masks()["int64"], std::runtime_error);
+  a.setMask("int32", makeVariable<int32_t>({Dim::X, 3}, {1, 2, 3}));
+  ASSERT_THROW(a.masks()["int32"] | a.masks()["int32"], std::runtime_error);
+
+  // success case
+  a.setMask("bool", makeVariable<bool>({Dim::X, 3}, {false, false, false}));
+  ASSERT_NO_THROW(a.masks()["bool"] | a.masks()["bool"]);
+}

@@ -272,10 +272,6 @@ void Dataset::setAttr(const std::string &attrName, Variable attr) {
 void Dataset::setMask(const std::string &masksName, Variable masks) {
   setDims(masks.dims());
 
-  if (masks.dtype() != DType::Bool) {
-    throw std::logic_error("Masks can only be of boolean type.");
-  }
-
   m_masks.insert_or_assign(masksName, std::move(masks));
 }
 
