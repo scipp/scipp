@@ -27,6 +27,7 @@ void bind_mutable_proxy(py::module &m, const std::string &name) {
       .def("__getitem__", &T::operator[], py::return_value_policy::move,
            py::keep_alive<0, 1>())
       .def("__setitem__", &T::set)
+      .def("__delitem__", &T::erase)
       .def("__iter__",
            [](T &self) {
              return py::make_iterator(self.begin(), self.end(),
