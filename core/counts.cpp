@@ -49,7 +49,7 @@ Dataset toDensity(Dataset d, const Dim dim) {
 
 Dataset toDensity(Dataset d, const std::vector<Dim> &dims) {
   const auto binWidths = getBinWidths(d, dims);
-  for (const auto & [ name, data ] : d) {
+  for (const auto &[name, data] : d) {
     static_cast<void>(name);
     toDensity(data, binWidths);
   }
@@ -71,7 +71,7 @@ Dataset fromDensity(Dataset d, const Dim dim) {
 
 Dataset fromDensity(Dataset d, const std::vector<Dim> &dims) {
   const auto binWidths = getBinWidths(d, dims);
-  for (const auto & [ name, data ] : d) {
+  for (const auto &[name, data] : d) {
     static_cast<void>(name);
     fromDensity(data, binWidths);
   }

@@ -9,7 +9,7 @@
 
 template <class T>
 void rename_dims(T &self, const std::map<Dim, Dim> &name_dict) {
-  for (const auto & [ from, to ] : name_dict)
+  for (const auto &[from, to] : name_dict)
     self.rename(from, to);
 }
 
