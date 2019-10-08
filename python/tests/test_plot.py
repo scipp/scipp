@@ -173,23 +173,6 @@ def do_test_plot_collapse():
     do_plot(d1, collapse=sp.Dim.Tof)
 
 
-def do_test_plot_waterfall():
-    N = 100
-    M = 5
-    d1 = sp.Dataset()
-    d1.coords[sp.Dim.Tof] = sp.Variable([sp.Dim.Tof],
-                                        values=np.arange(N + 1).astype(
-                                            np.float64),
-                                        unit=sp.units.us)
-    d1.coords[sp.Dim.X] = sp.Variable([sp.Dim.X],
-                                      values=np.arange(M).astype(np.float64),
-                                      unit=sp.units.m)
-    d1["Sample"] = sp.Variable([sp.Dim.X, sp.Dim.Tof],
-                               values=10.0 * np.random.rand(M, N),
-                               variances=np.random.rand(M, N))
-    do_plot(d1, waterfall=sp.Dim.X)
-
-
 def do_test_plot_sliceviewer():
     d1 = sp.Dataset()
     n1 = 20
@@ -205,6 +188,24 @@ def do_test_plot_sliceviewer():
                                values=np.arange(n1 * n2 * n3).reshape(
                                    n3, n2, n1).astype(np.float64))
     do_plot(d1)
+
+
+def do_test_plot_sliceviewer_with_variances():
+    d1 = sp.Dataset()
+    n1 = 20
+    n2 = 30
+    n3 = 40
+    d1.coords[sp.Dim.X] = sp.Variable([sp.Dim.X],
+                                      np.arange(n1).astype(np.float64))
+    d1.coords[sp.Dim.Y] = sp.Variable([sp.Dim.Y],
+                                      np.arange(n2).astype(np.float64))
+    d1.coords[sp.Dim.Z] = sp.Variable([sp.Dim.Z],
+                                      np.arange(n3).astype(np.float64))
+    a = np.arange(n1 * n2 * n3).reshape(n3, n2, n1).astype(np.float64)
+    d1["Sample"] = sp.Variable([sp.Dim.Z, sp.Dim.Y, sp.Dim.X],
+                               values=a,
+                               variances=np.random.rand(n3, n2, n1) * a * 0.1)
+    do_plot(d1, show_variances=True)
 
 
 def do_test_plot_sliceviewer_with_two_sliders():
@@ -244,7 +245,43 @@ def do_test_plot_sliceviewer_with_axes():
     do_plot(d1, axes=[sp.Dim.Y, sp.Dim.X, sp.Dim.Z])
 
 
+def do_test_plot_sliceviewer_with_3d_projection():
+    d1 = sp.Dataset()
+    n1 = 20
+    n2 = 30
+    n3 = 40
+    d1.coords[sp.Dim.X] = sp.Variable([sp.Dim.X],
+                                      np.arange(n1).astype(np.float64))
+    d1.coords[sp.Dim.Y] = sp.Variable([sp.Dim.Y],
+                                      np.arange(n2).astype(np.float64))
+    d1.coords[sp.Dim.Z] = sp.Variable([sp.Dim.Z],
+                                      np.arange(n3).astype(np.float64))
+    d1["Sample"] = sp.Variable([sp.Dim.Z, sp.Dim.Y, sp.Dim.X],
+                               values=np.arange(n1 * n2 * n3).reshape(
+                                   n3, n2, n1).astype(np.float64))
+    do_plot(d1, projection="3d")
+
+
+def do_test_plot_sliceviewer_with_3d_projection_with_variances():
+    d1 = sp.Dataset()
+    n1 = 20
+    n2 = 30
+    n3 = 40
+    d1.coords[sp.Dim.X] = sp.Variable([sp.Dim.X],
+                                      np.arange(n1).astype(np.float64))
+    d1.coords[sp.Dim.Y] = sp.Variable([sp.Dim.Y],
+                                      np.arange(n2).astype(np.float64))
+    d1.coords[sp.Dim.Z] = sp.Variable([sp.Dim.Z],
+                                      np.arange(n3).astype(np.float64))
+    a = np.arange(n1 * n2 * n3).reshape(n3, n2, n1).astype(np.float64)
+    d1["Sample"] = sp.Variable([sp.Dim.Z, sp.Dim.Y, sp.Dim.X],
+                               values=a,
+                               variances=np.random.rand(n3, n2, n1) * a * 0.1)
+    do_plot(d1, projection="3d", show_variances=True)
+
+
 # Using plotly backend =======================================================
+
 
 def test_plot_1d():
     do_test_plot_1d()
@@ -294,12 +331,12 @@ def test_plot_collapse():
     do_test_plot_collapse()
 
 
-def test_plot_waterfall():
-    do_test_plot_waterfall()
-
-
 def test_plot_sliceviewer():
     do_test_plot_sliceviewer()
+
+
+def test_plot_sliceviewer_with_variances():
+    do_test_plot_sliceviewer_with_variances()
 
 
 def test_plot_sliceviewer_with_two_sliders():
@@ -310,7 +347,16 @@ def test_plot_sliceviewer_with_axes():
     do_test_plot_sliceviewer_with_axes()
 
 
+def test_plot_sliceviewer_with_3d_projection():
+    do_test_plot_sliceviewer_with_3d_projection()
+
+
+def test_plot_sliceviewer_with_3d_projection_with_variances():
+    do_test_plot_sliceviewer_with_3d_projection_with_variances()
+
+
 # Using matplotlib backend ====================================================
+
 
 def test_plot_1d_mpl():
     sp.plot_config.backend = "matplotlib"
