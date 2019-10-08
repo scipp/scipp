@@ -42,7 +42,8 @@ Dataset makeTofDataForUnitConversion(const bool dense_coord = true) {
   auto eventLists = events.sparseValues<double>();
   eventLists[0] = {1000, 3000, 2000, 4000};
   eventLists[1] = {5000, 6000, 3000};
-  tof.setSparseCoord("events", std::move(events));
+  tof.setSparseCoord("events", events);
+  tof.setSparseLabels("events", "aux", events);
 
   tof.setData("density",
               makeVariable<double>({{Dim::Position, 2}, {Dim::Tof, 3}},
@@ -143,6 +144,15 @@ TEST(Convert, Tof_to_DSpacing) {
   ASSERT_EQ(dspacing.coords()[Dim::Position], tof.coords()[Dim::Position]);
   ASSERT_EQ(dspacing.labels()["component_info"],
             tof.labels()["component_info"]);
+}
+
+TEST(Convert, converts_sparse_labels) {
+  // label "conversion" is name change of dim
+  Dataset tof = makeTofDataForUnitConversion();
+  Dataset dspacing = convert(tof, Dim::Tof, Dim::DSpacing);
+  Dimensions expected({Dim::Position, Dim::DSpacing}, {2, Dimensions::Sparse});
+  EXPECT_EQ(dspacing["events"].coords()[Dim::DSpacing].dims(), expected);
+  EXPECT_EQ(dspacing["events"].labels()["aux"].dims(), expected);
 }
 
 TEST(Convert, Tof_to_DSpacing_no_dense_coord) {

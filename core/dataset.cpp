@@ -456,7 +456,7 @@ void Dataset::rename(const Dim from, const Dim to) {
       value.data->rename(from, to);
     if (value.coord)
       value.coord->rename(from, to);
-    for (auto labels : value.labels)
+    for (auto &labels : value.labels)
       labels.second.rename(from, to);
   }
 }
