@@ -6,7 +6,6 @@ import scipp as sp
 import numpy as np
 import io
 from contextlib import redirect_stdout
-import pytest
 
 # TODO: For now we are just checking that the plot does not throw any errors.
 # In the future it would be nice to check the output by either comparing

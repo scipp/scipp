@@ -59,10 +59,6 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, axes=None,
             xe = x.copy()
             ye = np.concatenate(([0], y))
             x = edges_to_centers(x)
-            if var.variances is not None:
-                yerr = np.sqrt(var.variances)
-            else:
-                yerr = None
             ax.fill_between(xe, ye, step="pre", alpha=0.6, label=ylab,
                             color=color[color_count])
             ax.step(xe, ye, color=color[color_count])
