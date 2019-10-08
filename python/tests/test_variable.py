@@ -575,6 +575,12 @@ def test_construct_0d_numpy():
     assert var == sp.Variable(np.float32())
 
 
+def test_construct_0d_native_python_types():
+    assert sp.Variable(2).dtype == sp.dtype.int64
+    assert sp.Variable(2.0).dtype == sp.dtype.double
+    assert sp.Variable(True).dtype == sp.dtype.bool
+
+
 def test_rename_dims():
     values = np.arange(6).reshape(2, 3)
     xy = sp.Variable(dims=[Dim.X, Dim.Y], values=values)
