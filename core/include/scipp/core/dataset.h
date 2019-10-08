@@ -640,7 +640,7 @@ public:
     // TODO rebuild *this?!
   }
 
-  void erase(const typename Base::key_type key = typename Base::key_type()) {
+  void erase(const typename Base::key_type key) {
     if (!m_parent || !Base::m_slices.empty())
       throw std::runtime_error(
           "Cannot remove coord/labels/attr field from a slice.");
@@ -657,12 +657,8 @@ public:
       if constexpr (std::is_same_v<Base, AttrsConstProxy>)
         m_parent->eraseAttr(key);
     } else {
-      if constexpr (std::is_same_v<Base, CoordsConstProxy>) {
-        if (key != typename Base::key_type())
-          throw std::logic_error("This function takes 0 arguments. The only "
-                                 "one coordinate exists for sparse data.");
+      if constexpr (std::is_same_v<Base, CoordsConstProxy>)
         m_parent->eraseSparseCoord(*m_name);
-      }
       if constexpr (std::is_same_v<Base, LabelsConstProxy>)
         m_parent->eraseSparseLabels(*m_name, key);
       if constexpr (std::is_same_v<Base, AttrsConstProxy>)
