@@ -2,7 +2,6 @@
 // Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#include <variant>
 
 #include "scipp/core/dataset.h"
 #include "scipp/core/except.h"
