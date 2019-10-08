@@ -618,6 +618,40 @@ TYPED_TEST(DatasetBinaryOpTest, broadcast) {
   EXPECT_EQ(res["data2"].data(), TestFixture::op(x, c + c));
 }
 
+TYPED_TEST(DatasetBinaryOpTest, dataset_lhs_scalar_rhs) {
+  const auto dataset = std::get<0>(generateBinaryOpTestCase());
+  constexpr auto scalar = 4.5;
+
+  const auto res = TestFixture::op(dataset, scalar);
+
+  /* Test that the dataset contains the equivalent of operating on the Variable
+   * directly. */
+  /* Correctness of results is tested via Variable tests. */
+  const auto reference = TestFixture::op(dataset["data_a"].data(), scalar);
+  EXPECT_EQ(reference, res["data_a"].data());
+
+  /* Expect coordinates and labels to be copied to the result dataset */
+  EXPECT_EQ(res.coords(), dataset.coords());
+  EXPECT_EQ(res.labels(), dataset.labels());
+}
+
+TYPED_TEST(DatasetBinaryOpTest, scalar_lhs_dataset_rhs) {
+  const auto dataset = std::get<0>(generateBinaryOpTestCase());
+  constexpr auto scalar = 4.5;
+
+  const auto res = TestFixture::op(scalar, dataset);
+
+  /* Test that the dataset contains the equivalent of operating on the Variable
+   * directly. */
+  /* Correctness of results is tested via Variable tests. */
+  const auto reference = TestFixture::op(scalar, dataset["data_a"].data());
+  EXPECT_EQ(reference, res["data_a"].data());
+
+  /* Expect coordinates and labels to be copied to the result dataset */
+  EXPECT_EQ(res.coords(), dataset.coords());
+  EXPECT_EQ(res.labels(), dataset.labels());
+}
+
 TYPED_TEST(DatasetBinaryOpTest, dataset_sparse_lhs_dataset_sparse_rhs) {
   const auto dataset_a =
       make_sparse_with_coords_and_labels({1.1, 2.2}, {1.0, 2.0});

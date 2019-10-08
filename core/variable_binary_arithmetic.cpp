@@ -31,13 +31,26 @@ using pair_product_t = typename pair_product<Ts...>::type;
 
 using arithmetic_type_pairs = pair_product_t<float, double, int32_t, int64_t>;
 
-using arithmetic_and_matrix_type_pairs = decltype(
-    std::tuple_cat(std::declval<arithmetic_type_pairs>(),
-                   std::tuple<std::pair<Eigen::Vector3d, Eigen::Vector3d>>()));
+using arithmetic_and_matrix_type_pairs = decltype(std::tuple_cat(
+    std::declval<arithmetic_type_pairs>(),
+    std::tuple<std::pair<Eigen::Vector3d, Eigen::Vector3d>,
+               std::pair<int64_t, int32_t>, std::pair<int32_t, int64_t>,
+               std::pair<double, float>, std::pair<float, double>>()));
 
+static constexpr auto plus_ = [](const auto a_, const auto b_) {
+  return a_ + b_;
+};
+static constexpr auto minus_ = [](const auto a_, const auto b_) {
+  return a_ - b_;
+};
+static constexpr auto times_ = [](const auto a_, const auto b_) {
+  return a_ * b_;
+};
+static constexpr auto divide_ = [](const auto a_, const auto b_) {
+  return a_ / b_;
+};
 template <class T1, class T2> Variable plus(const T1 &a, const T2 &b) {
-  return transform<arithmetic_and_matrix_type_pairs>(
-      a, b, [](const auto a_, const auto b_) { return a_ + b_; });
+  return transform<arithmetic_and_matrix_type_pairs>(a, b, plus_);
 }
 
 Variable Variable::operator-() const {
@@ -58,8 +71,7 @@ template <class T1, class T2> T1 &minus_equals(T1 &variable, const T2 &other) {
 }
 
 template <class T1, class T2> Variable minus(const T1 &a, const T2 &b) {
-  return transform<arithmetic_and_matrix_type_pairs>(
-      a, b, [](const auto a_, const auto b_) { return a_ - b_; });
+  return transform<arithmetic_and_matrix_type_pairs>(a, b, minus_);
 }
 
 Variable &Variable::operator-=(const Variable &other) & {
@@ -75,8 +87,7 @@ template <class T1, class T2> T1 &times_equals(T1 &variable, const T2 &other) {
 }
 
 template <class T1, class T2> Variable times(const T1 &a, const T2 &b) {
-  return transform<arithmetic_type_pairs>(
-      a, b, [](const auto a_, const auto b_) { return a_ * b_; });
+  return transform<arithmetic_type_pairs>(a, b, times_);
 }
 
 Variable &Variable::operator*=(const Variable &other) & {
@@ -92,8 +103,7 @@ template <class T1, class T2> T1 &divide_equals(T1 &variable, const T2 &other) {
 }
 
 template <class T1, class T2> Variable divide(const T1 &a, const T2 &b) {
-  return transform<arithmetic_type_pairs>(
-      a, b, [](const auto a_, const auto b_) { return a_ / b_; });
+  return transform<arithmetic_type_pairs>(a, b, divide_);
 }
 
 Variable &Variable::operator/=(const Variable &other) & {

@@ -151,6 +151,8 @@ namespace extents {
 // Internally use negative extent -1 to indicate unknown edge state. The `-1`
 // is required for dimensions with extent 0.
 scipp::index makeUnknownEdgeState(const scipp::index extent) {
+  if (extent == Dimensions::Sparse)
+    return extent;
   return -extent - 1;
 }
 scipp::index shrink(const scipp::index extent) { return extent - 1; }
@@ -176,10 +178,12 @@ void setExtent(std::unordered_map<Dim, scipp::index> &dims, const Dim dim,
   // is required for dimensions with extent 0.
   if (it == dims.end()) {
     dims[dim] = extents::makeUnknownEdgeState(extent);
-  } else {
+  } else if (extent != Dimensions::Sparse) {
     auto &heldExtent = it->second;
     if (extents::isUnknownEdgeState(heldExtent)) {
-      if (extents::isSame(extent, heldExtent)) { // Do nothing
+      if (heldExtent == Dimensions::Sparse) {
+        heldExtent = extents::makeUnknownEdgeState(extent);
+      } else if (extents::isSame(extent, heldExtent)) { // Do nothing
       } else if (extents::oneLarger(extent, heldExtent) && isCoord) {
         heldExtent = extents::shrink(extent);
       } else if (extents::oneSmaller(extent, heldExtent) && !isCoord) {
@@ -209,6 +213,8 @@ void Dataset::setDims(const Dimensions &dims, const Dim coordDim) {
   auto tmp = m_dims;
   for (const auto dim : dims.denseLabels())
     extents::setExtent(tmp, dim, dims[dim], dim == coordDim);
+  if (dims.sparse())
+    extents::setExtent(tmp, dims.sparseDim(), Dimensions::Sparse, false);
   m_dims = tmp;
 }
 
@@ -436,7 +442,8 @@ void Dataset::rename(const Dim from, const Dim to) {
     map.insert(std::move(node));
   };
   relabel(m_dims);
-  relabel(m_coords);
+  if (coords().contains(from))
+    relabel(m_coords);
   for (auto &item : m_coords)
     item.second.rename(from, to);
   for (auto &item : m_labels)
@@ -449,7 +456,7 @@ void Dataset::rename(const Dim from, const Dim to) {
       value.data->rename(from, to);
     if (value.coord)
       value.coord->rename(from, to);
-    for (auto labels : value.labels)
+    for (auto &labels : value.labels)
       labels.second.rename(from, to);
   }
 }

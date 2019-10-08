@@ -351,7 +351,7 @@ TEST(Variable, operator_divide_scalar_double) {
 
 TEST(Variable, operator_divide_scalar_float) {
   const auto a = makeVariable<float>({Dim::X, 2}, units::m, {2.0, 4.0});
-  const auto result = 1.111 / a;
+  const auto result = 1.111f / a;
   EXPECT_EQ(result.values<float>()[0], 1.111f / 2.0f);
   EXPECT_EQ(result.values<float>()[1], 1.111f / 4.0f);
   EXPECT_EQ(result.unit(), units::dimensionless / units::m);
@@ -370,6 +370,10 @@ TEST(Variable, operator_allowed_types) {
   /* Can not operate on lower precision from higher precision */
   EXPECT_ANY_THROW(i32 += i64);
   EXPECT_ANY_THROW(f += d);
+
+  /* Expect promotion to double if one parameter is double */
+  EXPECT_EQ(dtype<double>, (f + d).dtype());
+  EXPECT_EQ(dtype<double>, (d + f).dtype());
 }
 
 TEST(Variable, concatenate) {
@@ -920,24 +924,24 @@ TEST(Variable, reverse) {
 TEST(Variable, non_in_place_scalar_operations) {
   auto var = makeVariable<double>({{Dim::X, 2}}, {1, 2});
 
-  auto sum = var + 1;
+  auto sum = var + 1.0;
   EXPECT_TRUE(equals(sum.values<double>(), {2, 3}));
-  sum = 2 + var;
+  sum = 2.0 + var;
   EXPECT_TRUE(equals(sum.values<double>(), {3, 4}));
 
-  auto diff = var - 1;
+  auto diff = var - 1.0;
   EXPECT_TRUE(equals(diff.values<double>(), {0, 1}));
-  diff = 2 - var;
+  diff = 2.0 - var;
   EXPECT_TRUE(equals(diff.values<double>(), {1, 0}));
 
-  auto prod = var * 2;
+  auto prod = var * 2.0;
   EXPECT_TRUE(equals(prod.values<double>(), {2, 4}));
-  prod = 3 * var;
+  prod = 3.0 * var;
   EXPECT_TRUE(equals(prod.values<double>(), {3, 6}));
 
-  auto ratio = var / 2;
+  auto ratio = var / 2.0;
   EXPECT_TRUE(equals(ratio.values<double>(), {1.0 / 2.0, 1.0}));
-  ratio = 3 / var;
+  ratio = 3.0 / var;
   EXPECT_TRUE(equals(ratio.values<double>(), {3.0, 1.5}));
 }
 
