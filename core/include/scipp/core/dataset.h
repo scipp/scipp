@@ -365,6 +365,12 @@ public:
     setSparseLabels(name, labelName, Variable(labels));
   }
 
+  void eraseCoord(const Dim dim);
+  void eraseLabels(const std::string &labelName);
+  void eraseAttr(const std::string &attrName);
+  void eraseSparseCoord(const std::string &name);
+  void eraseSparseLabels(const std::string &name, const std::string &labelName);
+
   DatasetConstProxy slice(const Slice slice1) const &;
   DatasetConstProxy slice(const Slice slice1, const Slice slice2) const &;
   DatasetConstProxy slice(const Slice slice1, const Slice slice2,
@@ -632,6 +638,32 @@ public:
         m_parent->setAttr(key, var);
     }
     // TODO rebuild *this?!
+  }
+
+  void erase(const typename Base::key_type key) {
+    if (!m_parent || !Base::m_slices.empty())
+      throw std::runtime_error(
+          "Cannot remove coord/labels/attr field from a slice.");
+
+    bool sparse = !m_name; // Does proxy points on sparse data or not
+    if (sparse)
+      sparse &= (*m_parent)[*m_name].dims().sparse();
+
+    if (!sparse) {
+      if constexpr (std::is_same_v<Base, CoordsConstProxy>)
+        m_parent->eraseCoord(key);
+      if constexpr (std::is_same_v<Base, LabelsConstProxy>)
+        m_parent->eraseLabels(key);
+      if constexpr (std::is_same_v<Base, AttrsConstProxy>)
+        m_parent->eraseAttr(key);
+    } else {
+      if constexpr (std::is_same_v<Base, CoordsConstProxy>)
+        m_parent->eraseSparseCoord(*m_name);
+      if constexpr (std::is_same_v<Base, LabelsConstProxy>)
+        m_parent->eraseSparseLabels(*m_name, key);
+      if constexpr (std::is_same_v<Base, AttrsConstProxy>)
+        throw std::runtime_error("Attributes cannot be sparse.");
+    }
   }
 };
 
