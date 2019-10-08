@@ -80,6 +80,24 @@ void bind_dataset_proxy_methods(py::class_<T, Ignored...> &c) {
   c.def("__contains__", &T::contains);
   c.def("copy", [](const T &self) { return Dataset(self); },
         "Return a (deep) copy.");
+  c.def_property_readonly("dims",
+                          [](const T &self) {
+                            std::unordered_map<Dim, scipp::index> dims;
+                            for (const auto dim : self.dimensions()) {
+                              dims[dim.first] = dim.second;
+                            }
+                            return dims;
+                          },
+                          R"(Dict of dimensions.)",
+                          py::return_value_policy::move,
+                          py::keep_alive<0, 1>());
+  // c.def_property_readonly(
+  //     "dims",
+  //     py::cpp_function([](T &self) { return self.dimensions(); },
+  //                      py::return_value_policy::move, py::keep_alive<0,
+  //                      1>()),
+  //     R"(
+  //     Dict of dimensions.)");
 }
 
 template <class T, class... Ignored>

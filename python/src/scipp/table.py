@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 # @file
-# @author Igor Gudich
+# @author Igor Gudich & Neil Vaytet
 
 import scipp as sc
 from .tools import axis_label
@@ -20,12 +20,16 @@ def value_to_string(val, precision=3):
     return text
 
 
-def table_from_dataset(dataset, coord_dim=None, is_hist=False, headers=True):
+def table_from_dataset(dataset, is_hist=False, headers=True):
     # border style
     bstyle = "style='border: 1px solid black;"
     cstyle = [
-        bstyle + "background-color: #ADF3E0;'",
-        bstyle + "background-color: #B9FFEC;'"
+        bstyle + "background-color: #adf3e0;'",
+        bstyle + "background-color: #b9ffec;'"
+    ]
+    lstyle = [
+        bstyle + "background-color: #ecdeff;'",
+        bstyle + "background-color: #d9c0fa;'"
     ]
     bstyle += "'"
 
@@ -36,10 +40,14 @@ def table_from_dataset(dataset, coord_dim=None, is_hist=False, headers=True):
             size = val.shape[0]
         else:
             size = None
+    # Get first key in dict
+    coord_dim = next(iter(dataset.dims))
     # Table headers
     if headers:
         html += "<tr>"
-        if coord_dim is not None:
+        # if coord_dim is not None:
+        if len(dataset.coords) > 0:
+            # coord_dim = next(iter(dataset.dims))
             coord = dataset.coords[coord_dim]
             html += "<th {} colspan='{}'>Coord: {}</th>".format(
                 cstyle[0].replace("style='", "style='text-align: center;"),
@@ -48,6 +56,12 @@ def table_from_dataset(dataset, coord_dim=None, is_hist=False, headers=True):
             html += "<th {} colspan='{}'>{}</th>".format(
                 bstyle.replace("style='", "style='text-align: center;"),
                 1 + (val.variances is not None), axis_label(val, name=key))
+        for key, lab in dataset.labels:
+            print(lab.dims,coord_dim)
+            if lab.dims == coord_dim:
+                html += "<th {}>{}</th>".format(
+                    lstyle[0].replace("style='", "style='text-align: center;"),
+                    key)
         html += "</tr><tr>"
         if coord_dim is not None:
             html += "<th {}>Values</th>".format(cstyle[1])
@@ -57,6 +71,9 @@ def table_from_dataset(dataset, coord_dim=None, is_hist=False, headers=True):
             html += "<th {}>Values</th>".format(bstyle)
             if val.variances is not None:
                 html += "<th {}>Variances</th>".format(bstyle)
+        for key, lab in dataset.labels:
+            if lab.dims == coord_dim:
+                html += "<th {}>Labels</th>".format(lstyle[1])
         html += "</tr>"
     if size is None:
         html += "<tr>"
@@ -87,6 +104,10 @@ def table_from_dataset(dataset, coord_dim=None, is_hist=False, headers=True):
                 if val.variances is not None:
                     html += "<td {}>{}</td>".format(
                         bstyle, value_to_string(val.variances[i]))
+            for key, lab in dataset.labels:
+                if lab.dims == coord_dim:
+                    html += "<td {}>{}</td>".format(lstyle[i % 2],
+                                                    lab.values[i])
             html += "</tr>"
     html += "</table>"
     return html
@@ -108,31 +129,106 @@ def table(dataset):
     is_histogram = {}
     coord_def = None
     headers = True
+    is_empty = {}
 
     tp = type(dataset)
     if (tp is sc.Dataset) or (tp is sc.DatasetProxy):
+        # First add one entry per dimension
+        for dim in dataset.dims:
+            key = str(dim)
+            # Create two separate entries to accomodate for potential bin-edge
+            # coordinates
+            for i, prefix in enumerate(["", "hist:"]):
+                new_key = "{}{}".format(prefix, key)
+                tabledict["1D Variables"][new_key] = sc.Dataset()
+                is_empty[new_key] = True
+                is_histogram[new_key] = i > 0
+        # # Next add only the 1D coordinates
+        # for dim, var in dataset.coords:
+        #     if len(var.dims) == 1:
+        #         # dim = coord.dims[0]
+        #         key = str(dim)
+        #         tabledict["1D Variables"][key].coords[dim] = var
+        #         is_empty[key] = False
+        # Next add the variables
         for name, var in dataset:
             if len(var.dims) == 1:
-                key = str(var.dims[0])
-                if key not in tabledict["1D Variables"].keys():
-                    temp_dict = {"data": {name: dataset[name].data}}
-                    if len(var.coords) > 0:
-                        coord_1d[key] = var.dims[0]
-                        temp_dict["coords"] = {
-                            var.dims[0]: var.coords[var.dims[0]]
-                        }
-                        if len(var.coords[var.dims[0]].values) == \
+                dim = var.dims[0]
+                key = str(dim)
+                if len(var.coords) > 0:
+                    if len(var.coords[dim].values) == \
                            len(var.values) + 1:
-                            is_histogram[key] = True
-                        else:
-                            is_histogram[key] = False
-                    else:
-                        coord_1d[key] = None
-                    tabledict["1D Variables"][key] = sc.Dataset(**temp_dict)
+                        key = "hist:{}".format(key)
+                    tabledict["1D Variables"][key].coords[dim] = var.coords[dim]
+                    # else:
+                    #     new_key = key
+
+                tabledict["1D Variables"][key][name] = var
+                is_empty[key] = False
+
+            #     if key not in tabledict["1D Variables"].keys():
+            #         temp_dict = {"data": {name: dataset[name].data}}
+            #         if len(var.coords) > 0:
+            #             coord_1d[key] = var.dims[0]
+            #             temp_dict["coords"] = {
+            #                 var.dims[0]: var.coords[var.dims[0]]
+            #             }
+            #             if len(var.coords[var.dims[0]].values) == \
+            #                len(var.values) + 1:
+            #                 is_histogram[key] = True
+            #             else:
+            #                 is_histogram[key] = False
+            #         else:
+            #             coord_1d[key] = None
+            #         tabledict["1D Variables"][key] = sc.Dataset(**temp_dict)
+            #     else:
+            #         tabledict["1D Variables"][key][name] = var
+            # else:
+            #     tabledict["0D Variables"][name] = var
+        # print("==================")
+        # print(tabledict["1D Variables"])
+        # print("==================")
+        # Next add only the 1D coordinates
+        for dim, var in dataset.coords:
+            if len(var.dims) == 1:
+                # dim = coord.dims[0]
+                key = str(dim)
+                # print(key)
+                # print(dim not in tabledict["1D Variables"][key].coords)
+                if dim not in tabledict["1D Variables"][key].coords and \
+                    dim not in tabledict["1D Variables"]["hist:{}".format(key)].coords:
+                    tabledict["1D Variables"][key].coords[dim] = var
+                    is_empty[key] = False
+        # Next add the labels
+        for name, lab in dataset.labels:
+            if len(lab.dims) == 1:
+                dim = lab.dims[0]
+                key = str(dim)
+                hist_key = "hist:{}".format(key)
+                if is_empty[key] and (not is_empty[hist_key]):
+                    new_key = hist_key
                 else:
-                    tabledict["1D Variables"][key][name] = var
-            else:
-                tabledict["0D Variables"][name] = var
+                    new_key = key
+                tabledict["1D Variables"][new_key].labels[name] = lab
+                is_empty[new_key] = False
+
+        # Now purge out the empty entries
+        for key, val in is_empty.items():
+            if val:
+                print("deleting entry", key)
+                del(tabledict["1D Variables"][key])
+
+        # for key in tabledict["1D Variables"].keys():
+        #     print(key)
+        #     if is_empty[key]:
+        #         print("deleting entry", key)
+        #         del(tabledict["1D Variables"][key])
+        # print("++++++++++++++++")
+        # print(tabledict["1D Variables"])
+        # print("++++++++++++++++")
+        
+
+
     elif (tp is sc.DataArray) or (tp is sc.DataProxy) or (
             tp is sc.Variable) or (tp is sc.VariableProxy):
         try:
@@ -151,7 +247,7 @@ def table(dataset):
     output = ""
     if len(tabledict["default"]) > 0:
         output += table_from_dataset(tabledict["default"],
-                                     coord_dim=coord_def,
+                                     # coord_dim=coord_def,
                                      headers=headers)
     if len(tabledict["0D Variables"]) > 0:
         output += subtitle + "0D Variables</h6>"
@@ -159,8 +255,12 @@ def table(dataset):
     if len(tabledict["1D Variables"].keys()) > 0:
         output += subtitle + "1D Variables</h6>"
         for key, val in sorted(tabledict["1D Variables"].items()):
+            print("=========")
+            print(key, val)
+            # print(val.dims.keys()[0])
+            # print(next(iter(val.dims)))
             output += table_from_dataset(val,
-                                         coord_dim=coord_1d[key],
+                                         # coord_dim=coord_1d[key],
                                          is_hist=is_histogram[key])
 
     display(HTML(title + output))
