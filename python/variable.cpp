@@ -184,14 +184,6 @@ void init_variable(py::module &m) {
       .def("__copy__", [](VariableProxy &self) { return Variable(self); })
       .def("__deepcopy__",
            [](VariableProxy &self, py::dict) { return Variable(self); })
-      .def(py::self += double(), py::call_guard<py::gil_scoped_release>())
-      .def(py::self -= double(), py::call_guard<py::gil_scoped_release>())
-      .def(py::self *= double(), py::call_guard<py::gil_scoped_release>())
-      .def(py::self /= double(), py::call_guard<py::gil_scoped_release>())
-      .def(py::self + double(), py::call_guard<py::gil_scoped_release>())
-      .def(py::self - double(), py::call_guard<py::gil_scoped_release>())
-      .def(py::self * double(), py::call_guard<py::gil_scoped_release>())
-      .def(py::self / double(), py::call_guard<py::gil_scoped_release>())
       .def("__radd__", [](VariableProxy &a, double &b) { return a + b; },
            py::is_operator())
       .def("__rsub__", [](VariableProxy &a, double &b) { return b - a; },
@@ -220,6 +212,8 @@ void init_variable(py::module &m) {
   bind_binary<VariableProxy>(variable);
   bind_binary<Variable>(variableProxy);
   bind_binary<VariableProxy>(variableProxy);
+  bind_binary_scalars(variable);
+  bind_binary_scalars(variableProxy);
 
   bind_data_properties(variable);
   bind_data_properties(variableProxy);
