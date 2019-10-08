@@ -12,10 +12,10 @@ using namespace scipp;
 using namespace scipp::core;
 using namespace scipp::neutron;
 
-Dataset makeTofDataForUnitConversion(const bool only_sparse = false) {
+Dataset makeTofDataForUnitConversion(const bool dense_coord = true) {
   Dataset tof;
 
-  if (!only_sparse)
+  if (dense_coord)
     tof.setCoord(Dim::Tof, makeVariable<double>({Dim::Tof, 4}, units::us,
                                                 {4000, 5000, 6100, 7300}));
 
@@ -146,10 +146,29 @@ TEST(Convert, Tof_to_DSpacing) {
 }
 
 TEST(Convert, Tof_to_DSpacing_no_dense_coord) {
-  const bool only_sparse = true;
-  Dataset tof = makeTofDataForUnitConversion(only_sparse);
+  const bool dense_coord = false;
+  Dataset tof = makeTofDataForUnitConversion(dense_coord);
   EXPECT_FALSE(tof.coords().contains(Dim::Tof));
-  EXPECT_NO_THROW(convert(tof, Dim::Tof, Dim::DSpacing));
+  Dataset dspacing;
+
+  EXPECT_NO_THROW(dspacing = convert(tof, Dim::Tof, Dim::DSpacing));
+  EXPECT_EQ(
+      dspacing["events"].dims(),
+      Dimensions({Dim::Position, Dim::DSpacing}, {2, Dimensions::Sparse}));
+}
+
+TEST(Convert, Tof_to_DSpacing_no_dense_content) {
+  const bool dense_coord = false;
+  Dataset tof = makeTofDataForUnitConversion(dense_coord);
+  EXPECT_FALSE(tof.coords().contains(Dim::Tof));
+  tof.erase("counts");
+  tof.erase("density");
+
+  Dataset dspacing;
+  EXPECT_NO_THROW(dspacing = convert(tof, Dim::Tof, Dim::DSpacing));
+  EXPECT_EQ(
+      dspacing["events"].dims(),
+      Dimensions({Dim::Position, Dim::DSpacing}, {2, Dimensions::Sparse}));
 }
 
 TEST(Convert, DSpacing_to_Tof) {
