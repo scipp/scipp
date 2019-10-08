@@ -38,11 +38,14 @@ def table_from_dataset(dataset, is_hist=False, headers=True):
     # Declare table
     html = "<table style='border-collapse: collapse;'>"
     dims = dataset.dims
-    size = None
+    coord_dim = size = coord = None
+    # size = None
     if len(dims) > 0:
         # Get first key in dict
         coord_dim = next(iter(dims))
         size = dims[coord_dim]
+        if len(dataset.coords) > 0:
+            coord = dataset.coords[coord_dim]
     # for key, val in dataset:
     #     print("shape", val.shape, len(val.shape))
     #     if len(val.shape) > 0:
@@ -57,7 +60,7 @@ def table_from_dataset(dataset, is_hist=False, headers=True):
         # if coord_dim is not None:
         if len(dataset.coords) > 0:
             # coord_dim = next(iter(dataset.dims))
-            coord = dataset.coords[coord_dim]
+            # coord = dataset.coords[coord_dim]
             html += "<th {} colspan='{}'>Coord: {}</th>".format(
                 cstyle.replace("style='", "style='text-align: center;"),
                 1 + (coord.variances is not None), axis_label(coord))
@@ -106,7 +109,7 @@ def table_from_dataset(dataset, is_hist=False, headers=True):
                     if is_hist:
                         text = '[{}; {}]'.format(
                             text, value_to_string(coord.variances[i + 1]))
-                    html += "< {}td>{}</td>".format(bstyle, text)
+                    html += "<td {}>{}</td>".format(bstyle, text)
             for key, val in dataset:
                 html += "<td {}>{}</td>".format(bstyle,
                                                 value_to_string(val.values[i]))
@@ -190,8 +193,8 @@ def table(dataset):
             #         tabledict["1D Variables"][key] = sc.Dataset(**temp_dict)
             #     else:
             #         tabledict["1D Variables"][key][name] = var
-            # else:
-            #     tabledict["0D Variables"][name] = var
+            elif len(var.dims) == 0:
+                tabledict["0D Variables"][name] = var
         # print("==================")
         # print(tabledict["1D Variables"])
         # print("==================")
@@ -245,6 +248,7 @@ def table(dataset):
 
     elif (tp is sc.DataArray) or (tp is sc.DataProxy) or (
             tp is sc.Variable) or (tp is sc.VariableProxy):
+        print(tp)
         try:
             key = dataset.name
         except AttributeError:
@@ -254,12 +258,13 @@ def table(dataset):
             if len(dataset.coords) > 0:
                 coord_def = dataset.dims[0]
     else:
-        tabledict["default"][""] = sc.Variable([sc.Dim.X], values=dataset)
+        tabledict["default"][""] = sc.Variable([sc.Dim.Row], values=dataset)
         headers = False
 
     subtitle = "<h6 style='font-weight: normal; color: grey'>"
     output = ""
     if len(tabledict["default"]) > 0:
+        print(tabledict["default"])
         output += table_from_dataset(tabledict["default"],
                                      # coord_dim=coord_def,
                                      headers=headers)
