@@ -679,7 +679,7 @@ public:
     return slice(slice1, slice2).slice(slice3);
   }
 
-  void set(const typename Base::key_type key, const VariableConstProxy &var) {
+  void set(const typename Base::key_type key, const VariableConstProxy &var) const {
     if (!m_parent || !Base::m_slices.empty())
       throw std::runtime_error(
           "Cannot add coord/labels/attr field to a slice.");
@@ -1250,7 +1250,7 @@ SCIPP_CORE_EXPORT std::map<typename MasksConstProxy::key_type,
 union_or(const MasksConstProxy &currentMasks,
          const MasksConstProxy &otherMasks);
 
-SCIPP_CORE_EXPORT void union_or(MasksProxy &&currentMasks,
+SCIPP_CORE_EXPORT void union_or(const MasksProxy &currentMasks,
                                 const MasksConstProxy &otherMasks);
 
 } // namespace scipp::core
