@@ -19,7 +19,7 @@ static int check_align(size_t align) {
   return EINVAL;
 }
 
-int posix_memalign(void **ptr, size_t align, size_t size) {
+static int posix_memalign(void **ptr, size_t align, size_t size) {
   if (check_align(align))
     return EINVAL;
 
@@ -74,7 +74,11 @@ public:
     for (auto &pools : m_pools) {
       for (auto &pool : pools.second)
         for (auto &ptr : pool)
+#ifdef _WIN32
+          _aligned_free(ptr);
+#else
           free(ptr);
+#endif
     }
   }
 

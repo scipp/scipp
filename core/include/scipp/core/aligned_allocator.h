@@ -4,35 +4,16 @@
 /// @author Simon Heybrock
 
 // from https://stackoverflow.com/a/12942652/1458281
+
+#ifndef ALIGNED_ALLOCATOR_H
+#define ALIGNED_ALLOCATOR_H
+
 #include <cassert>
 
 #include "scipp/core/memory_pool.h"
 
 namespace scipp::core {
-#ifdef _WIN32
-	//https://stackoverflow.com/questions/33696092/whats-the-correct-replacement-for-posix-memalign-in-windows
-static int check_align(size_t align) {
-  for (size_t i = sizeof(void *); i != 0; i *= 2)
-    if (align == i)
-      return 0;
-  return EINVAL;
-}
 
-int posix_memalign(void **ptr, size_t align, size_t size) {
-  if (check_align(align))
-    return EINVAL;
-
-  int saved_errno = errno;
-  void *p = _aligned_malloc(size, align);
-  if (p == NULL) {
-    errno = saved_errno;
-    return ENOMEM;
-  }
-
-  *ptr = p;
-  return 0;
-}
-#endif
 enum class Alignment : size_t {
   Normal = sizeof(void *),
   SSE = 16,
@@ -45,7 +26,9 @@ void deallocate_aligned_memory(void *ptr) noexcept;
 
 //#define USE_POOL
 
-constexpr bool is_power_of_two(int v) { return v && ((v & (v - 1)) == 0); }
+template <typename T> constexpr bool is_power_of_two(T v) {
+  return v && ((v & (v - 1)) == 0);
+}
 
 inline void *allocate_aligned_memory(size_t align, size_t size) {
   assert(align >= sizeof(void *));
@@ -73,7 +56,11 @@ inline void deallocate_aligned_memory(void *ptr) noexcept {
 #ifdef USE_POOL
   return instance().deallocate(ptr);
 #else
+#ifdef _WIN32
+  return _aligned_free(ptr);
+#else
   return free(ptr);
+#endif
 #endif
 }
 } // namespace detail
@@ -210,3 +197,4 @@ inline bool operator!=(const AlignedAllocator<T, TAlign> &,
 }
 
 } // namespace scipp::core
+#endif // ALIGNED_ALLOCATOR_H

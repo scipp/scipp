@@ -10,8 +10,13 @@
 #include "scipp/core/variable_view.h"
 #include "scipp/core/vector.h"
 #include "scipp/units/unit.h"
+#include <optional>
 
 namespace scipp::core {
+
+#ifdef _WIN32
+#define __PRETTY_FUNCTION__ __FUNCSIG__
+#endif
 
 template <class T, class C> auto &requireT(C &concept) {
   try {
@@ -687,7 +692,7 @@ template <class T> void Variable::setVariances(Vector<T> &&v) {
   };
   try {
     apply_in_place<double, float, int64_t, int32_t>(lmb, *this);
-  } catch (std::bad_variant_access &e) {
+  } catch (std::bad_variant_access &) {
     throw except::TypeError(std::string("Can't set variance for the type: ") +
                             to_string(dtype()));
   }
