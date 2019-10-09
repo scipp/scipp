@@ -13,14 +13,7 @@ message(STATUS "WINDOWS..............")
     INSTALL_COMMAND   "${CMAKE_COMMAND}" -E make_directory ${CMAKE_BINARY_DIR}/googletest/include/gtest
     COMMAND "${CMAKE_COMMAND}" -E make_directory ${CMAKE_BINARY_DIR}/googletest/lib
     COMMAND "${CMAKE_COMMAND}" -E copy_directory ${CMAKE_BINARY_DIR}/googletest-src/googletest/include/gtest ${CMAKE_BINARY_DIR}/googletest/include/gtest
-    COMMAND "${CMAKE_COMMAND}" -E copy ${CMAKE_BINARY_DIR}/googletest-build/lib/Debug/gmock_maind.lib ${CMAKE_BINARY_DIR}/googletest/lib/gmock_main.lib
-    COMMAND "${CMAKE_COMMAND}" -E copy ${CMAKE_BINARY_DIR}/googletest-build/lib/Debug/gmockd.lib ${CMAKE_BINARY_DIR}/googletest/lib/gmock.lib
-    COMMAND "${CMAKE_COMMAND}" -E copy ${CMAKE_BINARY_DIR}/googletest-build/lib/Debug/gtest_maind.lib ${CMAKE_BINARY_DIR}/googletest/lib/gtest_main.lib
-    COMMAND "${CMAKE_COMMAND}" -E copy ${CMAKE_BINARY_DIR}/googletest-build/lib/Debug/gtestd.lib ${CMAKE_BINARY_DIR}/googletest/lib/gtest.lib
-    COMMAND "${CMAKE_COMMAND}" -E copy ${CMAKE_BINARY_DIR}/googletest-build/lib/Debug/gmock_maind.lib ${CMAKE_BINARY_DIR}/googletest/lib/gmock_maind.lib
-    COMMAND "${CMAKE_COMMAND}" -E copy ${CMAKE_BINARY_DIR}/googletest-build/lib/Debug/gmockd.lib ${CMAKE_BINARY_DIR}/googletest/lib/gmockd.lib
-    COMMAND "${CMAKE_COMMAND}" -E copy ${CMAKE_BINARY_DIR}/googletest-build/lib/Debug/gtest_maind.lib ${CMAKE_BINARY_DIR}/googletest/lib/gtest_maind.lib
-    COMMAND "${CMAKE_COMMAND}" -E copy ${CMAKE_BINARY_DIR}/googletest-build/lib/Debug/gtestd.lib ${CMAKE_BINARY_DIR}/googletest/lib/gtestd.lib
+	COMMAND "${CMAKE_COMMAND}" -E copy_directory ${CMAKE_BINARY_DIR}/googletest-build/lib/Debug ${CMAKE_BINARY_DIR}/googletest/lib/
     TEST_COMMAND      ""
 )
 else()
