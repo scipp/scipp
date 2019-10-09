@@ -57,10 +57,10 @@ void validSlice(const std::unordered_map<Dim, scipp::index> &dims,
 
 void coordsAndLabelsAreSuperset(const DataConstProxy &a,
                                 const DataConstProxy &b) {
-  for (const auto & [ dim, coord ] : b.coords())
+  for (const auto &[dim, coord] : b.coords())
     if (a.coords()[dim] != coord)
       throw except::CoordMismatchError("Expected coords to match.");
-  for (const auto & [ name, labels ] : b.labels())
+  for (const auto &[name, labels] : b.labels())
     if (a.labels()[name] != labels)
       throw except::CoordMismatchError("Expected labels to match.");
 }

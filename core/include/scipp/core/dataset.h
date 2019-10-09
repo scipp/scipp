@@ -43,7 +43,7 @@ auto makeSlice(Var &var,
                const std::vector<std::pair<Slice, scipp::index>> &slices) {
   std::conditional_t<std::is_const_v<Var>, VariableConstProxy, VariableProxy>
       slice(var);
-  for (const auto[params, extent] : slices) {
+  for (const auto [params, extent] : slices) {
     if (slice.dims().contains(params.dim())) {
       const auto new_end = params.end() + slice.dims()[params.dim()] - extent;
       const auto pointSlice = (new_end == -1);
@@ -266,13 +266,13 @@ public:
 
   template <class DataMap, class CoordMap, class LabelsMap, class AttrMap>
   Dataset(DataMap data, CoordMap coords, LabelsMap labels, AttrMap attrs) {
-    for (auto && [ dim, coord ] : coords)
+    for (auto &&[dim, coord] : coords)
       setCoord(dim, std::move(coord));
-    for (auto && [ name, labs ] : labels)
+    for (auto &&[name, labs] : labels)
       setLabels(std::string(name), std::move(labs));
-    for (auto && [ name, attr ] : attrs)
+    for (auto &&[name, attr] : attrs)
       setAttr(std::string(name), std::move(attr));
-    for (auto && [ name, item ] : data)
+    for (auto &&[name, item] : data)
       setData(std::string(name), std::move(item));
   }
 
@@ -551,7 +551,7 @@ public:
   bool operator==(const ConstProxy &other) const {
     if (size() != other.size())
       return false;
-    for (const auto & [ name, data ] : *this) {
+    for (const auto &[name, data] : *this) {
       try {
         if (data != other[name])
           return false;
@@ -669,9 +669,9 @@ public:
 template <class T1, class T2> auto union_(const T1 &a, const T2 &b) {
   std::map<typename T1::key_type, typename T1::mapped_type> out;
 
-  for (const auto & [ key, item ] : a)
+  for (const auto &[key, item] : a)
     out.emplace(key, item);
-  for (const auto & [ key, item ] : b) {
+  for (const auto &[key, item] : b) {
     if (const auto it = a.find(key); it != a.end())
       expect::equals(item, it->second);
     else
@@ -893,17 +893,17 @@ public:
             const std::string &name = "") {
     if (data)
       m_holder.setData(name, std::move(*data));
-    for (auto && [ dim, c ] : coords)
+    for (auto &&[dim, c] : coords)
       if (c.dims().sparse())
         m_holder.setSparseCoord(name, std::move(c));
       else
         m_holder.setCoord(dim, std::move(c));
-    for (auto && [ label_name, l ] : labels)
+    for (auto &&[label_name, l] : labels)
       if (l.dims().sparse())
         m_holder.setSparseLabels(name, std::string(label_name), std::move(l));
       else
         m_holder.setLabels(std::string(label_name), std::move(l));
-    for (auto && [ attr_name, a ] : attrs)
+    for (auto &&[attr_name, a] : attrs)
       m_holder.setAttr(std::string(attr_name), std::move(a));
     if (m_holder.size() != 1)
       throw std::runtime_error(
