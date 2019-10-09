@@ -10,6 +10,10 @@
 
 #include "scipp/core/bool.h"
 
+namespace pybind11 {
+class object;
+}
+
 namespace scipp::core {
 
 class DataArray;
@@ -39,8 +43,10 @@ enum class DType {
   DataArray,
   Dataset,
   EigenVector3d,
+  PyObject,
   Unknown
 };
+
 template <class T> constexpr DType dtype = DType::Unknown;
 template <> constexpr DType dtype<double> = DType::Double;
 template <> constexpr DType dtype<float> = DType::Float;
@@ -59,6 +65,7 @@ constexpr DType dtype<sparse_container<int32_t>> = DType::SparseInt32;
 template <> constexpr DType dtype<DataArray> = DType::DataArray;
 template <> constexpr DType dtype<Dataset> = DType::Dataset;
 template <> constexpr DType dtype<Eigen::Vector3d> = DType::EigenVector3d;
+template <> constexpr DType dtype<pybind11::object> = DType::PyObject;
 
 bool isInt(DType tp);
 bool isFloatingPoint(DType tp);

@@ -191,6 +191,7 @@ void init_variable(py::module &m) {
   bind_init_0D<bool>(variable);
   bind_init_0D<int64_t>(variable);
   bind_init_0D<double>(variable);
+  bind_init_0D<py::object>(variable);
   //------------------------------------
 
   py::class_<VariableConstProxy>(m, "VariableConstProxy")
