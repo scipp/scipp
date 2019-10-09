@@ -142,6 +142,9 @@ Dataset histogram(const Dataset &dataset, const Dim &dim) {
 }
 
 Dataset merge(const DatasetConstProxy &a, const DatasetConstProxy &b) {
+  // When merging datasets the contents of the masks are not OR'ed, but
+  // checked if present in both dataset with the same values with `union_`.
+  // If the values are different the merge will fail.
   return Dataset(union_(a, b), union_(a.coords(), b.coords()),
                  union_(a.labels(), b.labels()), union_(a.masks(), b.masks()),
                  union_(a.attrs(), b.attrs()));
