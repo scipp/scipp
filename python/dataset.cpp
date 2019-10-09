@@ -179,8 +179,8 @@ void init_dataset(py::module &m) {
       .def("__setitem__",
            [](Dataset &self, const std::tuple<Dim, scipp::index> &index,
               DatasetProxy &other) {
-             auto[dim, i] = index;
-             for (const auto[name, item] : self.slice(Slice(dim, i)))
+             auto [dim, i] = index;
+             for (const auto [name, item] : self.slice(Slice(dim, i)))
                item.assign(other[name]);
            })
       .def("__delitem__", &Dataset::erase)
