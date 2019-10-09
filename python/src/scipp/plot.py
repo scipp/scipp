@@ -3,7 +3,7 @@
 # @author Neil Vaytet
 
 import numpy as np
-import scipp as sp
+import scipp as sc
 # The need for importing matplotlib.pyplot here is a little strange, but the
 # reason is the following. We want to delay the imports of plot_matplotlib and
 # plot_plotly to inside dispatch_to_backend() in order to hide them from the
@@ -56,12 +56,12 @@ def plot(input_data, collapse=None, backend=None, color=None, **kwargs):
     # tobeplotted is a dict that holds pairs of
     # [number_of_dimensions, DatasetSlice], or
     # [number_of_dimensions, [List of DatasetSlices]] in the case of
-    # 1d sp.Data.
+    # 1d sc.Data.
     # TODO: 0D data is currently ignored -> find a nice way of
     # displaying it?
     tp = type(input_data)
-    if tp is sp.DataProxy or tp is sp.DataArray:
-        ds = sp.Dataset()
+    if tp is sc.DataProxy or tp is sc.DataArray:
+        ds = sc.Dataset()
         ds[input_data.name] = input_data
         input_data = ds
     if tp is not list:
@@ -161,8 +161,8 @@ def plot_collapse(input_data, dim=None, name=None, filename=None, backend=None,
             volume *= size
 
     # Create temporary Dataset
-    ds = sp.Dataset()
-    ds.coords[dim] = sp.Variable([dim], values=coords[dim].values)
+    ds = sc.Dataset()
+    ds.coords[dim] = sc.Variable([dim], values=coords[dim].values)
     # A dictionary to hold the DataProxy objects
     data = dict()
 
@@ -219,7 +219,7 @@ def plot_collapse(input_data, dim=None, name=None, filename=None, backend=None,
         variances = None
         if ds_temp.variances is not None:
             variances = ds_temp.variances
-        ds[key] = sp.Variable([dim], values=ds_temp.values,
+        ds[key] = sc.Variable([dim], values=ds_temp.values,
                               variances=variances)
         data[key] = ds[key]
         color.append(dispatch_to_backend(get_color=True, backend=backend,
