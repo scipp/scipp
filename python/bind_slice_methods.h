@@ -22,7 +22,7 @@ using namespace scipp::core;
 template <class T> auto dim_extent(const T &object, const Dim dim) {
   if constexpr (std::is_same_v<T, Dataset> || std::is_same_v<T, DatasetProxy>) {
     scipp::index extent = -1;
-    for (const auto & [ key, item ] : object) {
+    for (const auto &[key, item] : object) {
       static_cast<void>(key);
       if (item.dims().contains(dim)) {
         if (extent == -1)
@@ -40,7 +40,7 @@ template <class T> auto dim_extent(const T &object, const Dim dim) {
 template <class T>
 auto from_py_slice(const T &source,
                    const std::tuple<Dim, const py::slice> &index) {
-  const auto & [ dim, indices ] = index;
+  const auto &[dim, indices] = index;
   size_t start, stop, step, slicelength;
   const auto size = dim_extent(source, dim);
   if (!indices.compute(size, &start, &stop, &step, &slicelength))
@@ -78,7 +78,7 @@ template <class Proxy> struct SetData {
 // Helpers wrapped in struct to avoid unresolvable overloads.
 template <class T> struct slicer {
   static auto get(T &self, const std::tuple<Dim, scipp::index> &index) {
-    auto[dim, i] = index;
+    auto [dim, i] = index;
     auto sz = dim_extent(self, dim);
     if (i <= -sz || i >= sz) // index is out of range
       throw std::runtime_error("Dimension size is " +

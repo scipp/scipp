@@ -169,7 +169,7 @@ struct SparseFlag {};
 template <class Op, class Out, class... Ts>
 static void transform_elements_with_variance(Op op, ValuesAndVariances<Out> out,
                                              Ts &&... other) {
-  auto & [ ovals, ovars ] = out;
+  auto &[ovals, ovars] = out;
   for (scipp::index i = 0; i < scipp::size(ovals); ++i) {
     if constexpr (is_sparse_v<decltype(ovals[0])>) {
       auto out_i = op(value_and_maybe_variance(other, i)...);
@@ -823,29 +823,29 @@ template <class... Ts, class Var, class Op>
 }
 
 namespace detail {
-template <class... Ts, class Var1, class Var2, class Op>
-Variable transform(std::tuple<Ts...> &&, const Var1 &var1, const Var2 &var2,
-                   Op op) {
-  using namespace detail;
-  try {
-    if constexpr (((is_sparse_v<typename Ts::first_type> ||
-                    is_sparse_v<typename Ts::second_type>) ||
-                   ...)) {
-      return scipp::core::visit_impl<Ts...>::apply(
-          Transform{op}, var1.dataHandle(), var2.dataHandle());
-    } else {
-      return scipp::core::visit(
-                 augment::insert_sparse_pairs(std::tuple<Ts...>{}))
-          .apply(
-              Transform{detail::overloaded_sparse{op, TransformSparse<Op>{op}}},
-              var1.dataHandle(), var2.dataHandle());
+  template <class... Ts, class Var1, class Var2, class Op>
+  Variable transform(std::tuple<Ts...> &&, const Var1 &var1, const Var2 &var2,
+                     Op op) {
+    using namespace detail;
+    try {
+      if constexpr (((is_sparse_v<typename Ts::first_type> ||
+                      is_sparse_v<typename Ts::second_type>) ||
+                     ...)) {
+        return scipp::core::visit_impl<Ts...>::apply(
+            Transform{op}, var1.dataHandle(), var2.dataHandle());
+      } else {
+        return scipp::core::visit(
+                   augment::insert_sparse_pairs(std::tuple<Ts...>{}))
+            .apply(Transform{detail::overloaded_sparse{
+                       op, TransformSparse<Op>{op}}},
+                   var1.dataHandle(), var2.dataHandle());
+      }
+    } catch (const std::bad_variant_access &) {
+      throw except::TypeError("Cannot apply operation to item dtypes " +
+                              to_string(var1.dtype()) + " and " +
+                              to_string(var2.dtype()) + '.');
     }
-  } catch (const std::bad_variant_access &) {
-    throw except::TypeError("Cannot apply operation to item dtypes " +
-                            to_string(var1.dtype()) + " and " +
-                            to_string(var2.dtype()) + '.');
   }
-}
 } // namespace detail
 
 /// Transform the data elements of two variables and return a new Variable.

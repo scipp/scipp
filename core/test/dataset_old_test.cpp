@@ -863,10 +863,9 @@ TEST(Dataset, operator_times_equal_histogram_data) {
   b.insert(Data::Value, "name1", {Dim::X, 1}, {4.0});
   b.insert(Data::Variance, "name1", {Dim::X, 1}, {4.0});
 
-  auto c =
-      a; // Copy a because the failing operation below c *= a lacks atomicity,
-         // leaves assigned units of the variable even though the variance unit
-         // setting failed.
+  auto c = a; // Copy a because the failing operation below c *= a lacks
+              // atomicity, leaves assigned units of the variable even though
+              // the variance unit setting failed.
   // Counts (aka "histogram data") times counts not possible.
   EXPECT_THROW_MSG(
       c *= c, std::runtime_error,
@@ -1402,7 +1401,7 @@ TEST(DatasetSlice, basics) {
   auto check = [](const auto &view, const std::string &name) {
     ASSERT_EQ(view.size(), 4);
     scipp::index count = 0;
-    for (const auto & [ n, t, var ] : view) {
+    for (const auto &[n, t, var] : view) {
       if (t.isData()) {
         EXPECT_EQ(n, name);
         ++count;

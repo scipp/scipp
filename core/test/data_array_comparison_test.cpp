@@ -193,7 +193,7 @@ TEST_F(DataArray_comparison_operators, self) {
 
 TEST_F(DataArray_comparison_operators, copy) {
   auto copy = dataset;
-  for (const auto[name, a] : copy) {
+  for (const auto [name, a] : copy) {
     expect_eq(a, dataset[name]);
   }
 }
@@ -201,21 +201,21 @@ TEST_F(DataArray_comparison_operators, copy) {
 TEST_F(DataArray_comparison_operators, extra_coord) {
   auto extra = dataset;
   extra.setCoord(Dim::Z, makeVariable<double>(0.0));
-  for (const auto[name, a] : extra)
+  for (const auto [name, a] : extra)
     expect_ne(a, dataset[name]);
 }
 
 TEST_F(DataArray_comparison_operators, extra_labels) {
   auto extra = dataset;
   extra.setLabels("extra", makeVariable<double>(0.0));
-  for (const auto[name, a] : extra)
+  for (const auto [name, a] : extra)
     expect_ne(a, dataset[name]);
 }
 
 TEST_F(DataArray_comparison_operators, extra_attr) {
   auto extra = dataset;
   extra.setAttr("extra", makeVariable<double>(0.0));
-  for (const auto[name, a] : extra)
+  for (const auto [name, a] : extra)
     expect_ne(a, dataset[name]);
 }
 
@@ -245,7 +245,7 @@ TEST_F(DataArray_comparison_operators, different_coord_insertion_order) {
   a.setCoord(Dim::Y, dataset.coords()[Dim::Y]);
   b.setCoord(Dim::Y, dataset.coords()[Dim::Y]);
   b.setCoord(Dim::X, dataset.coords()[Dim::X]);
-  for (const auto[name, a_] : a)
+  for (const auto [name, a_] : a)
     expect_ne(a_, b[name]);
 }
 
@@ -256,7 +256,7 @@ TEST_F(DataArray_comparison_operators, different_label_insertion_order) {
   a.setLabels("y", dataset.coords()[Dim::Y]);
   b.setLabels("y", dataset.coords()[Dim::Y]);
   b.setLabels("x", dataset.coords()[Dim::X]);
-  for (const auto[name, a_] : a)
+  for (const auto [name, a_] : a)
     expect_ne(a_, b[name]);
 }
 
@@ -267,7 +267,7 @@ TEST_F(DataArray_comparison_operators, different_attr_insertion_order) {
   a.setAttr("y", dataset.coords()[Dim::Y]);
   b.setAttr("y", dataset.coords()[Dim::Y]);
   b.setAttr("x", dataset.coords()[Dim::X]);
-  for (const auto[name, a_] : a)
+  for (const auto [name, a_] : a)
     expect_ne(a_, b[name]);
 }
 

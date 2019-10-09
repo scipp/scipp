@@ -3,113 +3,113 @@
 # @file
 # @author Neil Vaytet
 import numpy as np
-import scipp as sp
+import scipp as sc
 from scipp import Dim
 
 
 def test_dataset_with_1d_data():
-    d = sp.Dataset()
+    d = sc.Dataset()
     N = 10
-    d.coords[Dim.Tof] = sp.Variable([Dim.Tof],
+    d.coords[Dim.Tof] = sc.Variable([Dim.Tof],
                                     values=np.arange(N).astype(np.float64))
-    d['Counts'] = sp.Variable([Dim.Tof], values=10.0 * np.random.rand(N))
-    sp.table(d)
+    d['Counts'] = sc.Variable([Dim.Tof], values=10.0 * np.random.rand(N))
+    sc.table(d)
 
 
 def test_dataset_with_1d_data_with_bin_edges():
-    d = sp.Dataset()
+    d = sc.Dataset()
     N = 10
-    d.coords[Dim.Row] = sp.Variable([Dim.Row],
+    d.coords[Dim.Row] = sc.Variable([Dim.Row],
                                     values=np.arange(N + 1).astype(np.float64))
-    d['Counts'] = sp.Variable([Dim.Row], values=10.0 * np.random.rand(N))
-    sp.table(d)
+    d['Counts'] = sc.Variable([Dim.Row], values=10.0 * np.random.rand(N))
+    sc.table(d)
 
 
 def test_dataset_with_1d_data_with_variances():
-    d = sp.Dataset()
+    d = sc.Dataset()
     N = 10
-    d.coords[Dim.Tof] = sp.Variable([Dim.Tof],
+    d.coords[Dim.Tof] = sc.Variable([Dim.Tof],
                                     values=np.arange(N).astype(np.float64))
-    d['Counts'] = sp.Variable([Dim.Tof],
+    d['Counts'] = sc.Variable([Dim.Tof],
                               values=10.0 * np.random.rand(N),
                               variances=np.random.rand(N))
-    sp.table(d)
+    sc.table(d)
 
 
 def test_dataset_with_1d_data_with_coord_variances():
-    d = sp.Dataset()
+    d = sc.Dataset()
     N = 10
-    d.coords[Dim.Tof] = sp.Variable([Dim.Tof],
+    d.coords[Dim.Tof] = sc.Variable([Dim.Tof],
                                     values=np.arange(N).astype(np.float64),
                                     variances=0.1 * np.random.rand(N))
-    d['Counts'] = sp.Variable([Dim.Tof],
+    d['Counts'] = sc.Variable([Dim.Tof],
                               values=10.0 * np.random.rand(N),
                               variances=np.random.rand(N))
-    sp.table(d)
+    sc.table(d)
 
 
 def test_dataset_with_1d_data_with_units():
-    d = sp.Dataset()
+    d = sc.Dataset()
     N = 10
-    d.coords[Dim.Tof] = sp.Variable([Dim.Tof],
+    d.coords[Dim.Tof] = sc.Variable([Dim.Tof],
                                     values=np.arange(N).astype(np.float64),
-                                    unit=sp.units.us,
+                                    unit=sc.units.us,
                                     variances=0.1 * np.random.rand(N))
-    d['Sample'] = sp.Variable([Dim.Tof],
+    d['Sample'] = sc.Variable([Dim.Tof],
                               values=10.0 * np.random.rand(N),
-                              unit=sp.units.m,
+                              unit=sc.units.m,
                               variances=np.random.rand(N))
-    sp.table(d)
+    sc.table(d)
 
 
 def test_dataset_with_0d_data():
-    d = sp.Dataset()
-    d['Scalar'] = sp.Variable(1.2)
-    sp.table(d)
+    d = sc.Dataset()
+    d['Scalar'] = sc.Variable(1.2)
+    sc.table(d)
 
 
 def test_dataset_with_everything():
-    d = sp.Dataset()
+    d = sc.Dataset()
     N = 10
-    d.coords[Dim.Tof] = sp.Variable([Dim.Tof],
+    d.coords[Dim.Tof] = sc.Variable([Dim.Tof],
                                     values=np.arange(N).astype(np.float64),
-                                    unit=sp.units.us,
+                                    unit=sc.units.us,
                                     variances=0.1 * np.random.rand(N))
-    d['Counts'] = sp.Variable([Dim.Tof], values=10.0 * np.random.rand(N))
-    d['Sample'] = sp.Variable([Dim.Tof],
+    d['Counts'] = sc.Variable([Dim.Tof], values=10.0 * np.random.rand(N))
+    d['Sample'] = sc.Variable([Dim.Tof],
                               values=10.0 * np.random.rand(N),
-                              unit=sp.units.m,
+                              unit=sc.units.m,
                               variances=np.random.rand(N))
-    d['Scalar'] = sp.Variable(1.2)
-    sp.table(d)
+    d['Scalar'] = sc.Variable(1.2)
+    sc.table(d)
 
 
 def test_variable():
     N = 10
-    v = sp.Variable([Dim.Tof],
+    v = sc.Variable([Dim.Tof],
                     values=np.arange(N).astype(np.float64),
-                    unit=sp.units.us,
+                    unit=sc.units.us,
                     variances=0.1 * np.random.rand(N))
-    sp.table(v)
+    sc.table(v)
 
 
 def test_dataset_with_coords_only():
-    d = sp.Dataset()
+    d = sc.Dataset()
     N = 10
-    d.coords[Dim.Tof] = sp.Variable([Dim.Tof],
+    d.coords[Dim.Tof] = sc.Variable([Dim.Tof],
                                     values=np.arange(N).astype(np.float64),
                                     variances=0.1 * np.random.rand(N))
-    sp.table(d)
+    sc.table(d)
 
 
 def test_dataset_with_labels():
-    d = sp.Dataset()
+    d = sc.Dataset()
     N = 10
-    d.coords[Dim.Tof] = sp.Variable([Dim.Tof],
+    d.coords[Dim.Tof] = sc.Variable([Dim.Tof],
                                     values=np.arange(N).astype(np.float64),
                                     variances=0.1 * np.random.rand(N))
-    d['Counts'] = sp.Variable([Dim.Tof],
+    d['Counts'] = sc.Variable([Dim.Tof],
                               values=10.0 * np.random.rand(N),
                               variances=np.random.rand(N))
-    d.labels["Normalized"] = sp.Variable([Dim.Tof], values=np.arange(N))
-    sp.table(d)
+    d.labels["Normalized"] = sc.Variable([Dim.Tof], values=np.arange(N))
+    sc.table(d)
