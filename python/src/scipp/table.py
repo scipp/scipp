@@ -32,7 +32,7 @@ def table_from_dataset(dataset, is_hist=False, headers=2):
     # Declare table
     html = "<table style='border-collapse: collapse;'>"
     dims = dataset.dims
-    dataset_dim = size = coord = None
+    size = coord = None
     if len(dims) > 0:
         # Dataset should contain only one dim, so get the first in list
         size = dataset.shape[0]

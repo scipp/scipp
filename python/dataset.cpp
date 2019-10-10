@@ -98,8 +98,7 @@ void bind_dataset_proxy_methods(py::class_<T, Ignored...> &c) {
                             }
                             return shape;
                           },
-                          R"(List of shapes.)",
-                          py::return_value_policy::move);
+                          R"(List of shapes.)", py::return_value_policy::move);
 }
 
 template <class T, class... Ignored>
