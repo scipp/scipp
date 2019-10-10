@@ -39,7 +39,7 @@ Variable two_theta(const Dataset &d) {
   auto beam = sample_position(d) - source_position(d);
   const auto l1 = norm(beam);
   beam /= l1;
-  auto scattered = position - sample_position(d);
+  auto scattered = position(d) - sample_position(d);
   const auto l2 = norm(scattered);
   scattered /= l2;
 
