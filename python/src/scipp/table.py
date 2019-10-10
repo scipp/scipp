@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 # @file
-# @author Igor Gudich
+# @author Igor Gudich & Neil Vaytet
 
 import scipp as sc
 from .tools import axis_label
@@ -20,43 +20,76 @@ def value_to_string(val, precision=3):
     return text
 
 
-def table_from_dataset(dataset, coord_dim=None, is_hist=False, headers=True):
-    # border style
+def table_from_dataset(dataset, is_hist=False, headers=2):
+
     bstyle = "style='border: 1px solid black;"
-    cstyle = [
-        bstyle + "background-color: #ADF3E0;'",
-        bstyle + "background-color: #B9FFEC;'"
-    ]
+    cstyle = bstyle + "background-color: #adf3e0;text-align: center;'"
+    lstyle = bstyle + "background-color: #d9c0fa;text-align: center;'"
+    mstyle = bstyle + "text-align: center;'"
     bstyle += "'"
+    estyle = "style='border: 0px solid white;background-color: #ffffff;'"
 
     # Declare table
     html = "<table style='border-collapse: collapse;'>"
-    for key, val in dataset:
-        if len(val.shape) > 0:
-            size = val.shape[0]
-        else:
-            size = None
-    # Table headers
-    if headers:
+    dims = dataset.dims
+    size = coord = None
+    if len(dims) > 0:
+        # Dataset should contain only one dim, so get the first in list
+        size = dataset.shape[0]
+        if len(dataset.coords) > 0:
+            coord = dataset.coords[dims[0]]
+            if is_hist:
+                size += 1
+
+    if headers > 1:
+        colsp_coord = 0
+        if coord is not None:
+            colsp_coord = 1 + (coord.variances is not None)
+        colsp_labs = 0
+        for key, lab in dataset.labels:
+            colsp_labs += 1 + (lab.variances is not None)
+        colsp_data = 0
+        for key, val in dataset:
+            colsp_data += 1 + (val.variances is not None)
         html += "<tr>"
-        if coord_dim is not None:
-            coord = dataset.coords[coord_dim]
-            html += "<th {} colspan='{}'>Coord: {}</th>".format(
-                cstyle[0].replace("style='", "style='text-align: center;"),
-                1 + (coord.variances is not None), axis_label(coord))
+        if colsp_coord > 0:
+            html += "<th {} colspan='{}'>Coordinate</th>".format(cstyle,
+                                                                 colsp_coord)
+        if colsp_labs > 0:
+            html += "<th {} colspan='{}'>Labels</th>".format(lstyle,
+                                                             colsp_labs)
+        if colsp_data > 0:
+            html += "<th {} colspan='{}'>Data</th>".format(mstyle,
+                                                           colsp_data)
+        html += "</tr>"
+
+    if headers > 0:
+        html += "<tr>"
+        if coord is not None:
+            html += "<th {} colspan='{}'>{}</th>".format(
+                mstyle, 1 + (coord.variances is not None),
+                axis_label(coord, replace_dim=False))
+        for key, lab in dataset.labels:
+            html += "<th {} colspan='{}'>{}</th>".format(
+                mstyle, 1 + (lab.variances is not None),
+                axis_label(lab, name=key))
         for key, val in dataset:
             html += "<th {} colspan='{}'>{}</th>".format(
-                bstyle.replace("style='", "style='text-align: center;"),
-                1 + (val.variances is not None), axis_label(val, name=key))
+                mstyle, 1 + (val.variances is not None),
+                axis_label(val, name=key))
         html += "</tr><tr>"
-        if coord_dim is not None:
-            html += "<th {}>Values</th>".format(cstyle[1])
+        if coord is not None:
+            html += "<th {}>Values</th>".format(mstyle)
             if coord.variances is not None:
-                html += "<th {}>Variances</th>".format(cstyle[1])
+                html += "<th {}>Variances</th>".format(mstyle)
+        for key, lab in dataset.labels:
+            html += "<th {}>Values</th>".format(mstyle)
+            if lab.variances is not None:
+                html += "<th {}>Variances</th>".format(mstyle)
         for key, val in dataset:
-            html += "<th {}>Values</th>".format(bstyle)
+            html += "<th {}>Values</th>".format(mstyle)
             if val.variances is not None:
-                html += "<th {}>Variances</th>".format(bstyle)
+                html += "<th {}>Variances</th>".format(mstyle)
         html += "</tr>"
     if size is None:
         html += "<tr>"
@@ -69,100 +102,195 @@ def table_from_dataset(dataset, coord_dim=None, is_hist=False, headers=True):
     else:
         for i in range(size):
             html += '<tr style="font-weight:normal">'
-            if coord_dim is not None:
+            # Add coordinates
+            if coord is not None:
                 text = value_to_string(coord.values[i])
-                if is_hist:
-                    text = '[{}; {}]'.format(
-                        text, value_to_string(coord.values[i + 1]))
-                html += "<td {}>{}</td>".format(cstyle[i % 2], text)
+                html += "<td rowspan='2' {}>{}</td>".format(bstyle, text)
                 if coord.variances is not None:
                     text = value_to_string(coord.variances[i])
-                    if is_hist:
-                        text = '[{}; {}]'.format(
-                            text, value_to_string(coord.variances[i + 1]))
-                    html += "< {}td>{}</td>".format(cstyle[i % 2], text)
+                    html += "<td rowspan='2' {}>{}</td>".format(bstyle, text)
+            # Add labels
+            for key, lab in dataset.labels:
+                header_line_for_bin_edges = False
+                if coord is not None:
+                    if len(lab.values) == len(coord.values) - 1:
+                        header_line_for_bin_edges = True
+                if header_line_for_bin_edges:
+                    if i == 0:
+                        html += "<td {}></td>".format(estyle)
+                        if lab.variances is not None:
+                            html += "<td {}></td>".format(estyle)
+                else:
+                    html += "<td rowspan='2' {}>{}</td>".format(
+                        bstyle, value_to_string(lab.values[i]))
+                    if lab.variances is not None:
+                        html += "<td rowspan='2' {}>{}</td>".format(
+                            bstyle, value_to_string(lab.variances[i]))
+            # Add data fields
             for key, val in dataset:
-                html += "<td {}>{}</td>".format(bstyle,
-                                                value_to_string(val.values[i]))
-                if val.variances is not None:
-                    html += "<td {}>{}</td>".format(
-                        bstyle, value_to_string(val.variances[i]))
+                header_line_for_bin_edges = False
+                if coord is not None:
+                    if len(val.values) == len(coord.values) - 1:
+                        header_line_for_bin_edges = True
+                if header_line_for_bin_edges:
+                    if i == 0:
+                        html += "<td {}></td>".format(estyle)
+                        if val.variances is not None:
+                            html += "<td {}></td>".format(estyle)
+                else:
+                    html += "<td rowspan='2' {}>{}</td>".format(
+                        bstyle, value_to_string(val.values[i]))
+                    if val.variances is not None:
+                        html += "<td rowspan='2' {}>{}</td>".format(
+                            bstyle, value_to_string(val.variances[i]))
+            html += "</tr><tr>"
+            # If there are bin edges, we need to add trailing cells for data
+            # and labels
+            if coord is not None:
+                for key, lab in dataset.labels:
+                    if len(lab.values) == len(coord.values) - 1:
+                        if i == size - 1:
+                            html += "<td {}></td>".format(estyle)
+                            if lab.variances is not None:
+                                html += "<td {}></td>".format(estyle)
+                        else:
+                            html += "<td rowspan='2' {}>{}</td>".format(
+                                bstyle, value_to_string(lab.values[i]))
+                            if lab.variances is not None:
+                                html += "<td rowspan='2' {}>{}</td>".format(
+                                    bstyle, value_to_string(lab.variances[i]))
+                for key, val in dataset:
+                    if len(val.values) == len(coord.values) - 1:
+                        if i == size - 1:
+                            html += "<td {}></td>".format(estyle)
+                            if val.variances is not None:
+                                html += "<td {}></td>".format(estyle)
+                        else:
+                            html += "<td rowspan='2' {}>{}</td>".format(
+                                bstyle, value_to_string(val.values[i]))
+                            if val.variances is not None:
+                                html += "<td rowspan='2' {}>{}</td>".format(
+                                    bstyle, value_to_string(val.variances[i]))
             html += "</tr>"
+
     html += "</table>"
     return html
 
 
 def table(dataset):
-    from IPython.display import display, HTML
 
-    title = "<h3>{}</h3>".format(
-        str(type(dataset)).replace("<class 'scipp._scipp.",
-                                   "").replace("'>", ""))
+    from IPython.display import display, HTML
 
     tabledict = {
         "default": sc.Dataset(),
         "0D Variables": sc.Dataset(),
         "1D Variables": {}
     }
-    coord_1d = {}
     is_histogram = {}
-    coord_def = None
-    headers = True
+    headers = 0
+    is_empty = {}
 
     tp = type(dataset)
+
     if (tp is sc.Dataset) or (tp is sc.DatasetProxy):
+
+        headers = 2
+
+        # First add one entry per dimension
+        for dim in dataset.dims:
+            key = str(dim)
+            tabledict["1D Variables"][key] = sc.Dataset()
+            is_empty[key] = True
+            is_histogram[key] = False
+
+        # Next add the variables
         for name, var in dataset:
             if len(var.dims) == 1:
-                key = str(var.dims[0])
-                if key not in tabledict["1D Variables"].keys():
-                    temp_dict = {"data": {name: dataset[name].data}}
-                    if len(var.coords) > 0:
-                        coord_1d[key] = var.dims[0]
-                        temp_dict["coords"] = {
-                            var.dims[0]: var.coords[var.dims[0]]
-                        }
-                        if len(var.coords[var.dims[0]].values) == \
-                           len(var.values) + 1:
-                            is_histogram[key] = True
-                        else:
-                            is_histogram[key] = False
-                    else:
-                        coord_1d[key] = None
-                    tabledict["1D Variables"][key] = sc.Dataset(**temp_dict)
-                else:
-                    tabledict["1D Variables"][key][name] = var
-            else:
+                dim = var.dims[0]
+                key = str(dim)
+                if len(var.coords) > 0:
+                    if len(var.coords[dim].values) == len(var.values) + 1:
+                        is_histogram[key] = True
+                    tabledict["1D Variables"][key].coords[dim] = \
+                        var.coords[dim]
+                tabledict["1D Variables"][key][name] = var.data
+                is_empty[key] = False
+
+            elif len(var.dims) == 0:
                 tabledict["0D Variables"][name] = var
-    elif (tp is sc.DataArray) or (tp is sc.DataProxy) or (
-            tp is sc.Variable) or (tp is sc.VariableProxy):
-        try:
-            key = dataset.name
-        except AttributeError:
-            key = ""
+
+        # Next add only the 1D coordinates
+        for dim, var in dataset.coords:
+            if len(var.dims) == 1:
+                key = str(dim)
+                if dim not in tabledict["1D Variables"][key].coords:
+                    tabledict["1D Variables"][key].coords[dim] = var
+                    is_empty[key] = False
+
+        # Next add the labels
+        for name, lab in dataset.labels:
+            if len(lab.dims) == 1:
+                dim = lab.dims[0]
+                key = str(dim)
+                if len(dataset.coords) > 0:
+                    if len(dataset.coords[dim].values) == len(lab.values) + 1:
+                        is_histogram[key] = True
+                    tabledict["1D Variables"][key].coords[dim] = \
+                        dataset.coords[dim]
+                tabledict["1D Variables"][key].labels[name] = lab
+                is_empty[key] = False
+
+        # Now purge out the empty entries
+        for key, val in is_empty.items():
+            if val:
+                del(tabledict["1D Variables"][key])
+
+    elif (tp is sc.DataArray) or (tp is sc.DataProxy):
+        headers = 2
+        key = dataset.name
+        tabledict["default"][key] = dataset.data
+        if len(dataset.coords) > 0:
+            dim = dataset.dims[0]
+            tabledict["default"][key].coords[dim] = dataset.coords[dim]
+    elif (tp is sc.Variable) or (tp is sc.VariableProxy):
+        headers = 1
+        key = str(dataset.dims[0])
         tabledict["default"][key] = dataset
-        if (tp is sc.DataProxy) and (len(dataset.dims) > 0):
-            if len(dataset.coords) > 0:
-                coord_def = dataset.dims[0]
     else:
-        tabledict["default"][""] = sc.Variable([sc.Dim.X], values=dataset)
-        headers = False
+        tabledict["default"][""] = sc.Variable([sc.Dim.Row], values=dataset)
+        headers = 0
 
-    subtitle = "<h6 style='font-weight: normal; color: grey'>"
-    output = ""
+    subtitle = "<tr><td style='font-weight:normal;color:grey;"
+    subtitle += "font-style:italic;background-color:#ffffff;"
+    subtitle += "text-align:left;font-size:1.2em;padding: 1px;'>"
+    subtitle += "&nbsp;{}</td></tr>"
+    whitetd = "<tr><td style='background-color:#ffffff;'>"
+    title = str(type(dataset)).replace("<class 'scipp._scipp.core.",
+                                       "").replace("'>", "")
+    output = "<table style='border: 1px solid black;'><tr>"
+    output += "<td style='font-weight:bold;font-size:1.5em;padding:1px;"
+    output += "text-align:center;background-color:#ffffff;'>"
+    output += "{}</td></tr>".format(title)
+
     if len(tabledict["default"]) > 0:
-        output += table_from_dataset(tabledict["default"],
-                                     coord_dim=coord_def,
-                                     headers=headers)
+        output += whitetd
+        output += table_from_dataset(tabledict["default"], headers=headers)
+        output += "</td></tr>"
     if len(tabledict["0D Variables"]) > 0:
-        output += subtitle + "0D Variables</h6>"
-        output += table_from_dataset(tabledict["0D Variables"])
+        output += subtitle.format("0D Variables")
+        output += whitetd
+        output += table_from_dataset(tabledict["0D Variables"],
+                                     headers=headers)
+        output += "</td></tr>"
     if len(tabledict["1D Variables"].keys()) > 0:
-        output += subtitle + "1D Variables</h6>"
+        output += subtitle.format("1D Variables")
+        output += whitetd
         for key, val in sorted(tabledict["1D Variables"].items()):
-            output += table_from_dataset(val,
-                                         coord_dim=coord_1d[key],
-                                         is_hist=is_histogram[key])
+            output += table_from_dataset(val, is_hist=is_histogram[key],
+                                         headers=headers)
+        output += "</td></tr>"
+    output += "</table>"
 
-    display(HTML(title + output))
+    display(HTML(output))
 
     return
