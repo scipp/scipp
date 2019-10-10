@@ -96,6 +96,8 @@ std::string to_string(const DType dtype) {
     return "sparse_int32";
   case DType::EigenVector3d:
     return "vector_3_double";
+  case DType::PyObject:
+    return "PyObject";
   case DType::Unknown:
     return "unknown";
   default:
