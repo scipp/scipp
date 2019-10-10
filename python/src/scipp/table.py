@@ -34,11 +34,10 @@ def table_from_dataset(dataset, is_hist=False, headers=2):
     dims = dataset.dims
     dataset_dim = size = coord = None
     if len(dims) > 0:
-        # Get first key in dict
-        dataset_dim = next(iter(dims))
-        size = dims[dataset_dim]
+        # Dataset should contain only one dim, so get the first in list
+        size = dataset.shape[0]
         if len(dataset.coords) > 0:
-            coord = dataset.coords[dataset_dim]
+            coord = dataset.coords[dims[0]]
             if is_hist:
                 size += 1
 
