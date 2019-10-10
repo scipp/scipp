@@ -40,8 +40,8 @@ def init_pos_spectrum_no(nHist, ws):
         else:
             pos[i, :] = [np.nan, np.nan, np.nan]
         num[i] = ws.getSpectrum(i).getSpectrumNo()
-    pos = sc.Variable([sc.Dim.Position], values=pos, unit=sc.units.m)
-    num = sc.Variable([sc.Dim.Position], values=num)
+    pos = sc.Variable([sc.Dim.Spectrum], values=pos, unit=sc.units.m)
+    num = sc.Variable([sc.Dim.Spectrum], values=num)
     return pos, num
 
 
@@ -66,34 +66,34 @@ def convert_Workspace2D_to_dataset(ws):
         [dim, unit] = allowed_units[xunit]
 
     if cb:
-        coords = sc.Variable([dim], values=ws.readX(0), unit=unit)
+        coord = sc.Variable([dim], values=ws.readX(0), unit=unit)
     else:
-        coords = sc.Variable([sc.Dim.Position, dim],
+        coord = sc.Variable([sc.Dim.Spectrum, dim],
                              shape=(ws.getNumberHistograms(),
                                     len(ws.readX(0))),
                              unit=unit)
         for i in range(ws.getNumberHistograms()):
-            coords[sc.Dim.Position, i].values = ws.readX(i)
+            coord[sc.Dim.Spectrum, i].values = ws.readX(i)
 
     # TODO Use unit information in workspace, if available.
-    array = sc.DataArray(data=sc.Variable([sc.Dim.Position, dim],
+    array = sc.DataArray(data=sc.Variable([sc.Dim.Spectrum, dim],
                                           shape=(ws.getNumberHistograms(),
                                                  len(ws.readY(0))),
                                           unit=sc.units.counts,
                                           variances=True),
                          coords={
-                             dim: coords,
-                             sc.Dim.Position: pos
+                             dim: coord,
+                             sc.Dim.Spectrum: num
                          },
                          labels={
-                             "spectrum_number": num,
+                             "position": pos,
                              "component_info": comp_info
                          })
 
     data = array.data
     for i in range(ws.getNumberHistograms()):
-        data[sc.Dim.Position, i].values = ws.readY(i)
-        data[sc.Dim.Position, i].variances = np.power(ws.readE(i), 2)
+        data[sc.Dim.Spectrum, i].values = ws.readY(i)
+        data[sc.Dim.Spectrum, i].variances = np.power(ws.readE(i), 2)
 
     return array
 
@@ -115,11 +115,11 @@ def convert_EventWorkspace_to_dataset(ws, load_pulse_times, EventType):
     pos, num = init_pos_spectrum_no(nHist, ws)
 
     # TODO Use unit information in workspace, if available.
-    coords = sc.Variable([sc.Dim.Position, dim],
+    coord = sc.Variable([sc.Dim.Spectrum, dim],
                          shape=[nHist, sc.Dimensions.Sparse],
                          unit=unit)
     if load_pulse_times:
-        labs = sc.Variable([sc.Dim.Position, dim],
+        labs = sc.Variable([sc.Dim.Spectrum, dim],
                            shape=[nHist, sc.Dimensions.Sparse])
 
     # Check for weighted events
@@ -127,30 +127,30 @@ def convert_EventWorkspace_to_dataset(ws, load_pulse_times, EventType):
     contains_weighted_events = ((evtp == EventType.WEIGHTED)
                                 or (evtp == EventType.WEIGHTED_NOTIME))
     if contains_weighted_events:
-        weights = sc.Variable([sc.Dim.Position, dim],
+        weights = sc.Variable([sc.Dim.Spectrum, dim],
                               shape=[nHist, sc.Dimensions.Sparse])
 
     for i in range(nHist):
         sp = ws.getSpectrum(i)
-        coords[sc.Dim.Position, i].values = sp.getTofs()
+        coord[sc.Dim.Spectrum, i].values = sp.getTofs()
         if load_pulse_times:
             # Pulse times have a Mantid-specific format so the conversion is
             # very slow.
             # TODO: Find a more efficient way to do this.
             pt = sp.getPulseTimes()
-            labs[sc.Dim.Position,
+            labs[sc.Dim.Spectrum,
                  i].values = np.asarray([p.total_nanoseconds() for p in pt])
         if contains_weighted_events:
-            weights[sc.Dim.Position, i].values = sp.getWeights()
-            weights[sc.Dim.Position, i].variances = sp.getWeightErrors()
+            weights[sc.Dim.Spectrum, i].values = sp.getWeights()
+            weights[sc.Dim.Spectrum, i].variances = sp.getWeightErrors()
 
     coords_labs_data = {
         "coords": {
-            dim: coords,
-            sc.Dim.Position: pos
+            dim: coord,
+            sc.Dim.Spectrum: num
         },
         "labels": {
-            "spectrum_number": num,
+            "position": pos,
             "component_info": comp_info
         }
     }

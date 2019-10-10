@@ -165,13 +165,13 @@ Variable abs(const Variable &var) {
   return transform<double, float>(var, [](const auto x) { return abs(x); });
 }
 
-Variable norm(const Variable &var) {
+Variable norm(const VariableConstProxy &var) {
   return transform<Eigen::Vector3d>(
       var, overloaded{[](const auto &x) { return x.norm(); },
                       [](const units::Unit &x) { return x; }});
 }
 
-Variable sqrt(const Variable &var) {
+Variable sqrt(const VariableConstProxy &var) {
   using std::sqrt;
   return transform<double, float>(var, [](const auto x) { return sqrt(x); });
 }

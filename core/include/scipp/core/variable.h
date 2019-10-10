@@ -889,14 +889,14 @@ SCIPP_CORE_EXPORT Variable concatenate(const VariableConstProxy &a1,
 SCIPP_CORE_EXPORT Variable dot(const Variable &a, const Variable &b);
 SCIPP_CORE_EXPORT Variable filter(const Variable &var, const Variable &filter);
 SCIPP_CORE_EXPORT Variable mean(const VariableConstProxy &var, const Dim dim);
-SCIPP_CORE_EXPORT Variable norm(const Variable &var);
+SCIPP_CORE_EXPORT Variable norm(const VariableConstProxy &var);
 SCIPP_CORE_EXPORT Variable permute(const Variable &var, const Dim dim,
                                    const std::vector<scipp::index> &indices);
 SCIPP_CORE_EXPORT Variable rebin(const VariableConstProxy &var, const Dim dim,
                                  const VariableConstProxy &oldCoord,
                                  const VariableConstProxy &newCoord);
 SCIPP_CORE_EXPORT Variable reverse(Variable var, const Dim dim);
-SCIPP_CORE_EXPORT Variable sqrt(const Variable &var);
+SCIPP_CORE_EXPORT Variable sqrt(const VariableConstProxy &var);
 
 SCIPP_CORE_EXPORT Variable sum(const VariableConstProxy &var, const Dim dim);
 SCIPP_CORE_EXPORT Variable copy(const VariableConstProxy &var);
