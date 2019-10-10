@@ -837,8 +837,8 @@ union_or(const MasksConstProxy &currentMasks,
   return out;
 }
 
-void union_or(const MasksProxy &currentMasks,
-              const MasksConstProxy &otherMasks) {
+void union_or_in_place(const MasksProxy &currentMasks,
+                       const MasksConstProxy &otherMasks) {
   for (const auto &[key, item] : otherMasks) {
     const auto it = currentMasks.find(key);
     if (it != currentMasks.end()) {

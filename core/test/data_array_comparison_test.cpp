@@ -242,7 +242,7 @@ TEST_F(DataArray_comparison_operators, extra_labels) {
 TEST_F(DataArray_comparison_operators, extra_mask) {
   auto extra = dataset;
   extra.setMask("extra", makeVariable<bool>(false));
-  for (const auto[name, a] : extra)
+  for (const auto [name, a] : extra)
     expect_ne(a, dataset[name]);
 }
 

@@ -394,16 +394,16 @@ def test_binary_divide():
 
 
 def test_binary_or():
-    a = sp.Variable(False)
-    b = sp.Variable(True)
+    a = sc.Variable(False)
+    b = sc.Variable(True)
     a |= b
-    assert a == sp.Variable(True)
+    assert a == sc.Variable(True)
 
 
 def test_in_place_binary_or():
-    a = sp.Variable(False)
-    b = sp.Variable(True)
-    assert (a | b) == sp.Variable(True)
+    a = sc.Variable(False)
+    b = sc.Variable(True)
+    assert (a | b) == sc.Variable(True)
 
 
 def test_in_place_binary_with_scalar():

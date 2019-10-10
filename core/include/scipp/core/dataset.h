@@ -1249,13 +1249,19 @@ SCIPP_CORE_EXPORT Dataset rebin(const DatasetConstProxy &d, const Dim dim,
 SCIPP_CORE_EXPORT VariableConstProxy same(const VariableConstProxy &a,
                                           const VariableConstProxy &b);
 
+/// Union the masks of the two proxies.
+/// If any of the masks repeat they are OR'ed.
+/// The result is stored in a new map
 SCIPP_CORE_EXPORT std::map<typename MasksConstProxy::key_type,
                            typename MasksConstProxy::mapped_type>
 union_or(const MasksConstProxy &currentMasks,
          const MasksConstProxy &otherMasks);
 
-SCIPP_CORE_EXPORT void union_or(const MasksProxy &currentMasks,
-                                const MasksConstProxy &otherMasks);
+/// Union the masks of the two proxies.
+/// If any of the masks repeat they are OR'ed.
+/// The result is stored in the first proxy.
+SCIPP_CORE_EXPORT void union_or_in_place(const MasksProxy &currentMasks,
+                                         const MasksConstProxy &otherMasks);
 
 } // namespace scipp::core
 
