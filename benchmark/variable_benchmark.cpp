@@ -6,6 +6,10 @@
 
 #include "scipp/core/variable.h"
 
+#include "../core/test/make_sparse.h"
+
+#include <random>
+
 using namespace scipp::core;
 using namespace scipp;
 
@@ -53,6 +57,23 @@ template <typename T> struct Generate6D {
   }
 };
 
+template <typename T> struct GenerateSparse {
+  Variable operator()(int size) {
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<> dis(0, 100);
+
+    auto a = make_sparse_variable<T>(size);
+
+    /* Generate a random amount of sparse data for each point */
+    auto vals = a.template sparseValues<T>();
+    for (scipp::index i = 0; i < size; ++i)
+      vals[i] = scipp::core::sparse_container<T>(dis(gen), i);
+
+    return a;
+  }
+};
+
 template <class Gen> static void BM_Variable_copy(benchmark::State &state) {
   auto var = Gen()(state.range(0));
   for (auto _ : state) {
@@ -61,6 +82,9 @@ template <class Gen> static void BM_Variable_copy(benchmark::State &state) {
 }
 static void Args_Variable_copy(benchmark::internal::Benchmark *b) {
   b->Arg(10)->Arg(20);
+}
+static void Args_Variable_copy_sparse(benchmark::internal::Benchmark *b) {
+  b->Range(1 << 5, 1 << 12);
 }
 BENCHMARK_TEMPLATE(BM_Variable_copy, Generate1D<float>)
     ->Apply(Args_Variable_copy);
@@ -86,6 +110,10 @@ BENCHMARK_TEMPLATE(BM_Variable_copy, Generate5D<double>)
     ->Apply(Args_Variable_copy);
 BENCHMARK_TEMPLATE(BM_Variable_copy, Generate6D<double>)
     ->Apply(Args_Variable_copy);
+BENCHMARK_TEMPLATE(BM_Variable_copy, GenerateSparse<float>)
+    ->Apply(Args_Variable_copy_sparse);
+BENCHMARK_TEMPLATE(BM_Variable_copy, GenerateSparse<double>)
+    ->Apply(Args_Variable_copy_sparse);
 
 /* static void BM_Variable_trivial_slice(benchmark::State &state) { */
 /*   auto var = makeVariable<double>({{Dim::Z, 10}, {Dim::Y, 20}, {Dim::X,
