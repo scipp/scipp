@@ -58,10 +58,11 @@ Documentation
    python-reference/api
 
 .. toctree::
-   :caption: Additional Modules
+   :caption: Neutron-scattering
    :maxdepth: 2
 
-   additional-modules/scipp-neutron
+   scipp-neutron/overview
+   scipp-neutron/from-mantid-to-scipp
 
 .. toctree::
    :caption: C++ Reference

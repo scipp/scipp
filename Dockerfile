@@ -34,7 +34,8 @@ RUN conda install --yes \
       scipp \
       ipywidgets \
       mantid-framework=4 \
-      python=3.6 && \
+      python=3.6 \
+      numpy=1.15 && \
     conda clean -afy
 
 # Avoid weird tornado AttributeError
