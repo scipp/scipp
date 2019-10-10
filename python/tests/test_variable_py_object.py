@@ -35,7 +35,7 @@ def test_scalar_Variable_py_object_change():
 
 
 def test_scalar_Variable_py_object_shallow_copy():
-    var = sc.Variable(value=[1,2,3])
+    var = sc.Variable(value=[1, 2, 3])
     copy = var.copy()
     copy.value[0] = 666
     assert copy.value == [666, 2, 3]
