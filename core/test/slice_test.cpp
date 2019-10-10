@@ -368,7 +368,7 @@ TEST_P(Dataset3DTest_slice_z, slice) {
 }
 
 TEST_P(Dataset3DTest_slice_range_x, slice) {
-  const auto[begin, end] = GetParam();
+  const auto [begin, end] = GetParam();
   Dataset reference;
   reference.setCoord(Dim::Time, dataset.coords()[Dim::Time]);
   reference.setCoord(Dim::X,
@@ -399,12 +399,12 @@ TEST_P(Dataset3DTest_slice_range_x, slice) {
 }
 
 TEST_P(Dataset3DTest_slice_range_y, slice) {
-  const auto[begin, end] = GetParam();
+  const auto [begin, end] = GetParam();
   EXPECT_EQ(dataset.slice({Dim::Y, begin, end}), reference(begin, end));
 }
 
 TEST_P(Dataset3DTest_slice_range_y, slice_with_edges) {
-  const auto[begin, end] = GetParam();
+  const auto [begin, end] = GetParam();
   auto datasetWithEdges = dataset;
   const auto yEdges = makeRandom({Dim::Y, 6});
   datasetWithEdges.setCoord(Dim::Y, yEdges);
@@ -415,7 +415,7 @@ TEST_P(Dataset3DTest_slice_range_y, slice_with_edges) {
 }
 
 TEST_P(Dataset3DTest_slice_range_y, slice_with_z_edges) {
-  const auto[begin, end] = GetParam();
+  const auto [begin, end] = GetParam();
   auto datasetWithEdges = dataset;
   const auto zEdges = makeRandom({{Dim::X, 4}, {Dim::Y, 5}, {Dim::Z, 7}});
   datasetWithEdges.setCoord(Dim::Z, zEdges);
@@ -425,12 +425,12 @@ TEST_P(Dataset3DTest_slice_range_y, slice_with_z_edges) {
 }
 
 TEST_P(Dataset3DTest_slice_range_z, slice) {
-  const auto[begin, end] = GetParam();
+  const auto [begin, end] = GetParam();
   EXPECT_EQ(dataset.slice({Dim::Z, begin, end}), reference(begin, end));
 }
 
 TEST_P(Dataset3DTest_slice_range_z, slice_with_edges) {
-  const auto[begin, end] = GetParam();
+  const auto [begin, end] = GetParam();
   auto datasetWithEdges = dataset;
   const auto zEdges = makeRandom({{Dim::X, 4}, {Dim::Y, 5}, {Dim::Z, 7}});
   datasetWithEdges.setCoord(Dim::Z, zEdges);
@@ -502,7 +502,7 @@ TYPED_TEST_SUITE(DataProxy3DTest, DataProxyTypes);
 // slicing DataProxy.
 TYPED_TEST(DataProxy3DTest, slice_single) {
   auto &d = TestFixture::dataset();
-  for (const auto[name, item] : d) {
+  for (const auto [name, item] : d) {
     for (const auto dim : {Dim::X, Dim::Y, Dim::Z}) {
       if (item.dims().contains(dim)) {
         EXPECT_ANY_THROW(item.slice({dim, -1}));
@@ -518,7 +518,7 @@ TYPED_TEST(DataProxy3DTest, slice_single) {
 
 TYPED_TEST(DataProxy3DTest, slice_length_0) {
   auto &d = TestFixture::dataset();
-  for (const auto[name, item] : d) {
+  for (const auto [name, item] : d) {
     for (const auto dim : {Dim::X, Dim::Y, Dim::Z}) {
       if (item.dims().contains(dim)) {
         EXPECT_ANY_THROW(item.slice({dim, -1, -1}));
@@ -536,7 +536,7 @@ TYPED_TEST(DataProxy3DTest, slice_length_0) {
 
 TYPED_TEST(DataProxy3DTest, slice_length_1) {
   auto &d = TestFixture::dataset();
-  for (const auto[name, item] : d) {
+  for (const auto [name, item] : d) {
     for (const auto dim : {Dim::X, Dim::Y, Dim::Z}) {
       if (item.dims().contains(dim)) {
         EXPECT_ANY_THROW(item.slice({dim, -1, 0}));
@@ -554,7 +554,7 @@ TYPED_TEST(DataProxy3DTest, slice_length_1) {
 
 TYPED_TEST(DataProxy3DTest, slice) {
   auto &d = TestFixture::dataset();
-  for (const auto[name, item] : d) {
+  for (const auto [name, item] : d) {
     for (const auto dim : {Dim::X, Dim::Y, Dim::Z}) {
       if (item.dims().contains(dim)) {
         EXPECT_ANY_THROW(item.slice({dim, -1, 1}));
@@ -574,7 +574,7 @@ TYPED_TEST(DataProxy3DTest, slice_slice_range) {
   auto &d = TestFixture::dataset();
   const auto slice = d.slice({Dim::X, 2, 4});
   // Slice proxy created from DatasetProxy as opposed to directly from Dataset.
-  for (const auto[name, item] : slice) {
+  for (const auto [name, item] : slice) {
     for (const auto dim : {Dim::X, Dim::Y, Dim::Z}) {
       if (item.dims().contains(dim)) {
         EXPECT_ANY_THROW(item.slice({dim, -1}));
@@ -597,7 +597,7 @@ TYPED_TEST(DataProxy3DTest, slice_single_with_edges) {
   for (const auto &edgeDims : {x, xy, yz, xyz}) {
     typename TestFixture::dataset_type d =
         TestFixture::datasetWithEdges(edgeDims);
-    for (const auto[name, item] : d) {
+    for (const auto [name, item] : d) {
       for (const auto dim : {Dim::X, Dim::Y, Dim::Z}) {
         if (item.dims().contains(dim)) {
           EXPECT_ANY_THROW(item.slice({dim, -1}));
@@ -620,7 +620,7 @@ TYPED_TEST(DataProxy3DTest, slice_length_0_with_edges) {
   for (const auto &edgeDims : {x, xy, yz, xyz}) {
     typename TestFixture::dataset_type d =
         TestFixture::datasetWithEdges(edgeDims);
-    for (const auto[name, item] : d) {
+    for (const auto [name, item] : d) {
       for (const auto dim : {Dim::X, Dim::Y, Dim::Z}) {
         if (item.dims().contains(dim)) {
           EXPECT_ANY_THROW(item.slice({dim, -1, -1}));
@@ -649,7 +649,7 @@ TYPED_TEST(DataProxy3DTest, slice_length_1_with_edges) {
   for (const auto &edgeDims : {x, xy, yz, xyz}) {
     typename TestFixture::dataset_type d =
         TestFixture::datasetWithEdges(edgeDims);
-    for (const auto[name, item] : d) {
+    for (const auto [name, item] : d) {
       for (const auto dim : {Dim::X, Dim::Y, Dim::Z}) {
         if (item.dims().contains(dim)) {
           EXPECT_ANY_THROW(item.slice({dim, -1, 0}));
@@ -678,7 +678,7 @@ TYPED_TEST(DataProxy3DTest, slice_with_edges) {
   for (const auto &edgeDims : {x, xy, yz, xyz}) {
     typename TestFixture::dataset_type d =
         TestFixture::datasetWithEdges(edgeDims);
-    for (const auto[name, item] : d) {
+    for (const auto [name, item] : d) {
       for (const auto dim : {Dim::X, Dim::Y, Dim::Z}) {
         if (item.dims().contains(dim)) {
           EXPECT_ANY_THROW(item.slice({dim, -1, 1}));
