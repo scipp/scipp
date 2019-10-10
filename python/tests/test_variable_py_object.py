@@ -3,7 +3,6 @@
 # @file
 # @author Simon Heybrock
 import scipp as sc
-import numpy as np
 
 
 def test_scalar_Variable_py_object_dict():
