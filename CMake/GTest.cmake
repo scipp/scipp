@@ -18,7 +18,7 @@ if(result)
   message(FATAL_ERROR "Build step for googletest failed: ${result}")
 endif()
 
-add_subdirectory(${CMAKE_BINARY_DIR}/googletest-src ${CMAKE_BINARY_DIR}/googletest-build)
+add_subdirectory(${CMAKE_BINARY_DIR}/googletest-src ${CMAKE_BINARY_DIR}/googletest-build EXCLUDE_FROM_ALL)
 
 # Hide targets from "all" and put them in the UnitTests folder in MSVS
 foreach( target_var gmock gtest gmock_main gtest_main )
