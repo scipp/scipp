@@ -373,7 +373,8 @@ TEST(DatasetTest, erase_coord) {
   ds.setSparseCoord("newCoord", var);
   ds.setData("newCoord", makeVariable<double>({Dim::X}, {Dimensions::Sparse}));
   EXPECT_TRUE(ds["newCoord"].coords().contains(Dim::X));
-  ds["newCoord"].coords().erase();
+  EXPECT_THROW(ds["newCoord"].coords().erase(Dim::Z), except::SparseDataError);
+  ds["newCoord"].coords().erase(Dim::X);
   EXPECT_EQ(ref, ds);
 }
 

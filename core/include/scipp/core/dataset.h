@@ -699,8 +699,14 @@ public:
       if constexpr (std::is_same_v<Base, AttrsConstProxy>)
         m_parent->eraseAttr(key);
     } else {
-      if constexpr (std::is_same_v<Base, CoordsConstProxy>)
+      if constexpr (std::is_same_v<Base, CoordsConstProxy>) {
+        if (Base::m_items.count(key) == 0)
+          throw except::SparseDataError(
+              "No coordinate with dim " + to_string(key) +
+              " found, sparse coordinate is defined for " +
+              to_string(Base::m_items.begin()->first));
         m_parent->eraseSparseCoord(*m_name);
+      }
       if constexpr (std::is_same_v<Base, LabelsConstProxy>)
         m_parent->eraseSparseLabels(*m_name, key);
       if constexpr (std::is_same_v<Base, AttrsConstProxy>)
