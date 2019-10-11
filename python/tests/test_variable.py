@@ -588,6 +588,14 @@ def test_construct_0d_numpy():
     assert var == sc.Variable(np.float32())
 
 
+    v = sp.Variable([sp.Dim.X], values=np.array([0]), dtype=np.float32)
+    var = sp.Variable(v[sp.Dim.X, 0])
+    var.unit = sp.units.m
+    assert var == np.float32(0.0) * sp.units.m
+    var.unit = sp.units.m**(-1)
+    assert var == np.float32(0.0) / sp.units.m
+
+
 def test_construct_0d_native_python_types():
     assert sc.Variable(2).dtype == sc.dtype.int64
     assert sc.Variable(2.0).dtype == sc.dtype.double
