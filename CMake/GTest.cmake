@@ -33,7 +33,6 @@ set( GMOCK_LIBRARIES optimized ${GMOCK_LIB} debug ${GMOCK_LIB_DEBUG} )
 set( GTEST_LIB gtest )
 set( GTEST_LIB_DEBUG gtest )
 set( GTEST_LIBRARIES optimized ${GTEST_LIB} debug ${GTEST_LIB_DEBUG} )
-set( GTest::Main gtest_main )
 
 find_path ( GMOCK_INCLUDE_DIR gmock/gmock.h
 		  PATHS ${CMAKE_BINARY_DIR}/googletest-src/googlemock/include
