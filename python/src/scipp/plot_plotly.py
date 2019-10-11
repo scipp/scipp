@@ -155,8 +155,9 @@ def plot_2d(input_data, axes=None, contours=False, cb=None, filename=None,
         shapes = dict(zip(input_data.dims, input_data.shape))
         for dim in axes[-2:]:
             imsize *= shapes[dim]
-        print(imsize)
         rasterize = imsize > 100000
+
+    plot_type = 'heatmap'
 
     if rasterize:
         layout["xaxis"] = dict(showgrid=False, zeroline=False, autorange=True)
@@ -166,9 +167,7 @@ def plot_2d(input_data, axes=None, contours=False, cb=None, filename=None,
     else:
         if contours:
             plot_type = 'contour'
-        else:
-            plot_type = 'heatmapgl'
-        hoverinfo = 'all'
+        hoverinfo = "x+y+z"
 
     data = dict(x=[0.0, 1.0],
                 y=[0.0, 1.0],
@@ -292,6 +291,11 @@ class Slicer2d:
             self.fig.add_trace(data, row=1, col=2)
             self.fig.update_layout(height=layout["height"],
                                    width=layout["width"])
+            if self.rasterize:
+                self.fig.update_xaxes(row=1, col=1, **layout["xaxis"])
+                self.fig.update_xaxes(row=1, col=2, **layout["xaxis"])
+                self.fig.update_yaxes(row=1, col=1, **layout["yaxis"])
+                self.fig.update_yaxes(row=1, col=2, **layout["yaxis"])
         else:
             self.fig = go.FigureWidget(data=[data], layout=layout)
 
@@ -330,15 +334,22 @@ class Slicer2d:
 
         if self.rasterize:
             # Add background image
-            self.fig.update_layout(
-                images=[go.layout.Image(
+            im_list = [go.layout.Image(
                     xref="x",
                     yref="y",
                     opacity=1.0,
                     layer="below",
                     sizing="stretch",
                     source=None)]
-            )
+            if self.show_variances:
+                im_list.append(go.layout.Image(
+                    xref="x2",
+                    yref="y2",
+                    opacity=1.0,
+                    layer="below",
+                    sizing="stretch",
+                    source=None))
+            self.fig.update_layout(images=im_list)
 
         # Call update_slice once to make the initial image
         self.update_axes()
@@ -440,13 +451,13 @@ class Slicer2d:
             seg_colors = self.scalarMap[indx].to_rgba(values)
             # Image is upside down by default and needs to be flipped
             img = ImageOps.flip(Image.fromarray(np.uint8(seg_colors*255)))
-            self.fig.layout["images"][0]["x"] = self.fig.data[indx]["x"][0]
-            self.fig.layout["images"][0]["sizex"] = \
+            self.fig.layout["images"][indx]["x"] = self.fig.data[indx]["x"][0]
+            self.fig.layout["images"][indx]["sizex"] = \
                 self.fig.data[indx]["x"][-1] - self.fig.data[indx]["x"][0]
-            self.fig.layout["images"][0]["y"] = self.fig.data[indx]["y"][-1]
-            self.fig.layout["images"][0]["sizey"] = \
+            self.fig.layout["images"][indx]["y"] = self.fig.data[indx]["y"][-1]
+            self.fig.layout["images"][indx]["sizey"] = \
                 self.fig.data[indx]["y"][-1] - self.fig.data[indx]["y"][0]
-            self.fig.layout["images"][0]["source"] = img
+            self.fig.layout["images"][indx]["source"] = img
         else:
             self.fig.data[indx].z = values
         return
@@ -601,19 +612,24 @@ class Slicer3d:
                 else:
                     val["cmax"] = np.amax(arr[np.where(np.isfinite(arr))])
 
+        colorbars = [{"x": 1.0, "title": value_name,
+                      "thicknessmode": 'fraction', "thickness": 0.02}]
+
         if self.show_variances:
             self.fig = go.FigureWidget(
                 make_subplots(rows=1, cols=2, horizontal_spacing=0.16,
                               specs=[[{"type": "scene"}, {"type": "scene"}]]))
 
-            colorbars = [{"x": -0.1, "thickness": 10.0, "title": value_name},
-                         {"x": 1.0, "thickness": 10.0, "title": "variances"}]
+            colorbars.append({"x": 1.0, "title": "Variances",
+                              "thicknessmode": 'fraction', "thickness": 0.02})
+            colorbars[0]["x"] = -0.1
 
             for i, (key, val) in enumerate(sorted(params.items())):
                 for j in range(3):
                     self.fig.add_trace(go.Surface(cmin=val["cmin"],
                                                   cmax=val["cmax"],
                                                   showscale=j < 1,
+                                                  colorscale=self.cb["name"],
                                                   colorbar=colorbars[i]),
                                        row=1, col=i+1)
             self.fig.update_layout(height=layout["height"],
@@ -621,6 +637,8 @@ class Slicer3d:
         else:
             data = [go.Surface(cmin=params["values"]["cmin"],
                                cmax=params["values"]["cmax"],
+                               colorscale=self.cb["name"],
+                               colorbar=colorbars[0],
                                showscale=j < 1)
                     for j in range(3)]
             self.fig = go.FigureWidget(data=data, layout=layout)

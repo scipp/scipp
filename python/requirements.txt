@@ -6,3 +6,4 @@ nose
 ipywidgets
 plotly
 pytest
+Pillow
