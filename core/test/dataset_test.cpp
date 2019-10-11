@@ -365,7 +365,6 @@ TEST(DatasetTest, erase_coord) {
   const auto var =
       makeVariable<double>({Dim::X, Dim::Y}, {3, Dimensions::Sparse});
   ds.setSparseCoord("newCoord", var);
-  ds.setData("newCoord", makeVariable<double>({Dim::X}, {Dimensions::Sparse}));
   EXPECT_TRUE(ds["newCoord"].coords().contains(Dim::X));
   ds.eraseSparseCoord("newCoord");
   EXPECT_EQ(ref, ds);
@@ -375,7 +374,7 @@ TEST(DatasetTest, erase_coord) {
   EXPECT_TRUE(ds["newCoord"].coords().contains(Dim::X));
   EXPECT_THROW(ds["newCoord"].coords().erase(Dim::Z), except::SparseDataError);
   ds["newCoord"].coords().erase(Dim::X);
-  EXPECT_EQ(ref, ds);
+  EXPECT_FALSE(ds["newCoord"].coords().contains(Dim::X));
 }
 
 TEST(DatasetTest, erase_labels) {
