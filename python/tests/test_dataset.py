@@ -654,14 +654,15 @@ def test_attrs_delitem():
     assert d != dref
     del d.attrs['attr']
     assert d == dref
-    
-    
+
+
 def test_rename_dims():
     d = make_simple_dataset(Dim.X, Dim.Y, seed=0)
     d.rename_dims({Dim.Y: Dim.Z})
     assert d == make_simple_dataset(Dim.X, Dim.Z, seed=0)
     d.rename_dims(dims_dict={Dim.X: Dim.Y, Dim.Z: Dim.X})
-    assert d == make_simple_dataset(Dim.Y, Dim.X, see
+    assert d == make_simple_dataset(Dim.Y, Dim.X, seed=0)
+
 # def test_delitem(self):
 #    dataset = sc.Dataset()
 #    dataset[sc.Data.Value, "data"] = ([sc.Dim.Z, sc.Dim.Y, sc.Dim.X],
