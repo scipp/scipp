@@ -170,7 +170,7 @@ template <class Gen>
 static void BM_Dataset_iterate_items(benchmark::State &state) {
   const auto d = Gen()(state.range(0));
   for (auto _ : state) {
-    for (const auto & [ name, item ] : d) {
+    for (const auto &[name, item] : d) {
       benchmark::DoNotOptimize(name);
       benchmark::DoNotOptimize(item);
     }
@@ -190,7 +190,7 @@ static void BM_Dataset_iterate_slice_items(benchmark::State &state) {
   const auto d = Gen()(state.range(0));
   const auto s = Slice()(d);
   for (auto _ : state) {
-    for (const auto & [ name, item ] : s) {
+    for (const auto &[name, item] : s) {
       benchmark::DoNotOptimize(name);
       benchmark::DoNotOptimize(item);
     }
@@ -207,5 +207,21 @@ BENCHMARK_TEMPLATE(BM_Dataset_iterate_slice_items,
 BENCHMARK_TEMPLATE(BM_Dataset_iterate_slice_items,
                    GenerateWithDataItems<SHORT_STRING_LENGTH>, SliceZXY)
     ->Range(1 << 2, 1 << 8);
+
+template <class Gen> static void BM_Dataset_copy(benchmark::State &state) {
+  const auto d = Gen()(state.range(0), state.range(1));
+  for (auto _ : state) {
+    Dataset copy(d);
+  }
+}
+static void Args_Dataset_copy(benchmark::internal::Benchmark *b) {
+  b->RangeMultiplier(2)
+      ->Ranges({{1, 16}, {32, 64}})
+      ->Unit(benchmark::kMicrosecond);
+}
+BENCHMARK_TEMPLATE(BM_Dataset_copy, GenerateWithDataItems<SHORT_STRING_LENGTH>)
+    ->Apply(Args_Dataset_copy);
+BENCHMARK_TEMPLATE(BM_Dataset_copy, GenerateWithDataItems<LONG_STRING_LENGTH>)
+    ->Apply(Args_Dataset_copy);
 
 BENCHMARK_MAIN();
