@@ -33,10 +33,11 @@ add_executable(${TARGET_NAME} EXCLUDE_FROM_ALL
                variable_view_test.cpp
                view_index_test.cpp
                )
+include_directories(SYSTEM ${GMOCK_INCLUDE_DIR} ${GTEST_INCLUDE_DIR})
 target_link_libraries(${TARGET_NAME}
                       LINK_PRIVATE
                       scipp-core
-                      GTest::Main
+                      gtest_main
                       scipp_test_helpers
                       ${GTEST_LIBRARIES}
                       ${GMOCK_LIBRARIES})

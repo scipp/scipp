@@ -272,9 +272,9 @@ template <int max> constexpr auto valid_ranges() {
   return pairs;
 }
 
-constexpr auto ranges_x = valid_ranges<4>();
-constexpr auto ranges_y = valid_ranges<5>();
-constexpr auto ranges_z = valid_ranges<6>();
+static auto ranges_x = valid_ranges<4>();
+static auto ranges_y = valid_ranges<5>();
+static auto ranges_z = valid_ranges<6>();
 
 INSTANTIATE_TEST_SUITE_P(AllPositions, Dataset3DTest_slice_x,
                          ::testing::Range(0, 4));

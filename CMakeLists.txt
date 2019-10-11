@@ -2,7 +2,6 @@
 # Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 cmake_minimum_required(VERSION 3.10.2)
 project(scipp)
-
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -27,13 +26,13 @@ set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMake"
 
 find_package(Sanitizers REQUIRED)
 
+include(GTest)
 include(boost)
-find_package(Boost REQUIRED)
 include(Eigen)
 include(pybind11)
-include(GoogleTest)
 include(GoogleBenchmark)
 include(GenerateExportHeader)
+find_package(Boost REQUIRED)
 find_package(Python COMPONENTS Interpreter Development)
 
 if("${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}" VERSION_LESS "3.5")
