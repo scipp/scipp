@@ -4,7 +4,7 @@
 # @author Neil Vaytet
 
 import numpy as np
-import scipp as sp
+import scipp as sc
 
 
 def edges_to_centers(x):
@@ -22,18 +22,20 @@ def centers_to_edges(x):
     return np.concatenate([[2.0 * x[0] - e[0]], e, [2.0 * x[-1] - e[-1]]])
 
 
-def axis_label(var, name=None, log=False):
+def axis_label(var, name=None, log=False, replace_dim=True):
     """
     Make an axis label with "Name [unit]"
     """
     if name is not None:
         label = name
     else:
-        label = str(var.dims[0]).replace("Dim.", "")
+        label = str(var.dims[0])
+        if replace_dim:
+            label = label.replace("Dim.", "")
 
     if log:
         label = "log\u2081\u2080(" + label + ")"
-    if var.unit != sp.units.dimensionless:
+    if var.unit != sc.units.dimensionless:
         label += " [{}]".format(var.unit)
     return label
 
@@ -54,7 +56,7 @@ def parse_colorbar(default, cb, plotly=False):
 
 def get_coord_array(coords, labels, axis):
     name = None
-    if isinstance(axis, sp.Dim):
+    if isinstance(axis, sc.Dim):
         var = coords[axis]
     elif isinstance(axis, str):
         var = labels[axis]

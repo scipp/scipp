@@ -64,7 +64,7 @@ Dataset::Dataset(const DatasetConstProxy &proxy)
 Dataset::Dataset(const DataConstProxy &data) { setData(data.name(), data); }
 
 Dataset::Dataset(const std::map<std::string, DataConstProxy> &data) {
-  for (const auto & [ name, item ] : data)
+  for (const auto &[name, item] : data)
     setData(name, item);
 }
 
@@ -151,6 +151,8 @@ namespace extents {
 // Internally use negative extent -1 to indicate unknown edge state. The `-1`
 // is required for dimensions with extent 0.
 scipp::index makeUnknownEdgeState(const scipp::index extent) {
+  if (extent == Dimensions::Sparse)
+    return extent;
   return -extent - 1;
 }
 scipp::index shrink(const scipp::index extent) { return extent - 1; }
@@ -176,10 +178,12 @@ void setExtent(std::unordered_map<Dim, scipp::index> &dims, const Dim dim,
   // is required for dimensions with extent 0.
   if (it == dims.end()) {
     dims[dim] = extents::makeUnknownEdgeState(extent);
-  } else {
+  } else if (extent != Dimensions::Sparse) {
     auto &heldExtent = it->second;
     if (extents::isUnknownEdgeState(heldExtent)) {
-      if (extents::isSame(extent, heldExtent)) { // Do nothing
+      if (heldExtent == Dimensions::Sparse) {
+        heldExtent = extents::makeUnknownEdgeState(extent);
+      } else if (extents::isSame(extent, heldExtent)) { // Do nothing
       } else if (extents::oneLarger(extent, heldExtent) && isCoord) {
         heldExtent = extents::shrink(extent);
       } else if (extents::oneSmaller(extent, heldExtent) && !isCoord) {
@@ -209,6 +213,8 @@ void Dataset::setDims(const Dimensions &dims, const Dim coordDim) {
   auto tmp = m_dims;
   for (const auto dim : dims.denseLabels())
     extents::setExtent(tmp, dim, dims[dim], dim == coordDim);
+  if (dims.sparse())
+    extents::setExtent(tmp, dims.sparseDim(), Dimensions::Sparse, false);
   m_dims = tmp;
 }
 
@@ -273,7 +279,7 @@ void Dataset::setData(const std::string &name, Variable data) {
 /// attributes. Throws if the provided data brings the dataset into an
 /// inconsistent state (mismatching dtype, unit, or dimensions).
 void Dataset::setData(const std::string &name, const DataConstProxy &data) {
-  for (const auto & [ dim, coord ] : data.coords()) {
+  for (const auto &[dim, coord] : data.coords()) {
     if (coord.dims().sparse()) {
       setSparseCoord(name, coord);
     } else {
@@ -283,7 +289,7 @@ void Dataset::setData(const std::string &name, const DataConstProxy &data) {
         setCoord(dim, coord);
     }
   }
-  for (const auto & [ nm, labs ] : data.labels()) {
+  for (const auto &[nm, labs] : data.labels()) {
     if (labs.dims().sparse()) {
       setSparseLabels(name, std::string(nm), labs);
     } else {
@@ -293,7 +299,7 @@ void Dataset::setData(const std::string &name, const DataConstProxy &data) {
         setLabels(std::string(nm), labs);
     }
   }
-  for (const auto & [ nm, attr ] : data.attrs()) {
+  for (const auto &[nm, attr] : data.attrs()) {
     if (const auto it = m_attrs.find(std::string(nm)); it != m_attrs.end())
       expect::equals(attr, it->second);
     else
@@ -486,7 +492,8 @@ void Dataset::rename(const Dim from, const Dim to) {
     map.insert(std::move(node));
   };
   relabel(m_dims);
-  relabel(m_coords);
+  if (coords().contains(from))
+    relabel(m_coords);
   for (auto &item : m_coords)
     item.second.rename(from, to);
   for (auto &item : m_labels)
@@ -499,7 +506,7 @@ void Dataset::rename(const Dim from, const Dim to) {
       value.data->rename(from, to);
     if (value.coord)
       value.coord->rename(from, to);
-    for (auto labels : value.labels)
+    for (auto &labels : value.labels)
       labels.second.rename(from, to);
   }
 }
@@ -620,7 +627,7 @@ DataProxy DataProxy::assign(const VariableConstProxy &other) const {
 }
 
 DatasetProxy DatasetProxy::assign(const DatasetConstProxy &other) const {
-  for (const auto & [ name, data ] : other)
+  for (const auto &[name, data] : other)
     operator[](name).assign(data);
   return *this;
 }
@@ -723,7 +730,7 @@ template <class A, class B> bool dataset_equals(const A &a, const B &b) {
     return false;
   if (a.attrs() != b.attrs())
     return false;
-  for (const auto & [ name, data ] : a) {
+  for (const auto &[name, data] : a) {
     try {
       if (data != b[std::string(name)])
         return false;
@@ -778,16 +785,15 @@ std::unordered_map<Dim, scipp::index> DatasetConstProxy::dimensions() const {
 
   auto base_dims = m_dataset->dimensions();
   // Note current slices are ordered, but NOT unique
-  for (const auto & [ slice, extents ] : m_slices) {
+  for (const auto &[slice, extents] : m_slices) {
     (void)extents;
     auto it = base_dims.find(slice.dim());
     if (!slice.isRange()) { // For non-range. Erase dimension
       base_dims.erase(it);
     } else {
-      it->second =
-          slice.end() -
-          slice.begin(); // Take extent from slice. This is the effect that
-                         // the successful slice range will have
+      it->second = slice.end() -
+                   slice.begin(); // Take extent from slice. This is the effect
+                                  // that the successful slice range will have
     }
   }
   return base_dims;

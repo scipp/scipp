@@ -2,16 +2,16 @@
 # Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Simon Heybrock
-import scipp as sp
+import scipp as sc
 from scipp import Dim
 import numpy as np
 import operator
 
 
 def test_type():
-    variable_slice = sp.Variable(
+    variable_slice = sc.Variable(
         [Dim.X], np.arange(1, 10, dtype=float))[Dim.X, :]
-    assert type(variable_slice) == sp.VariableProxy
+    assert type(variable_slice) == sc.VariableProxy
 
 
 def apply_test_op(op, a, b, data):
@@ -22,14 +22,14 @@ def apply_test_op(op, a, b, data):
 
 
 def test_binary_operations():
-    _a = sp.Variable([Dim.X], np.arange(1, 10, dtype=float))
-    _b = sp.Variable([Dim.X], np.arange(1, 10, dtype=float))
+    _a = sc.Variable([Dim.X], np.arange(1, 10, dtype=float))
+    _b = sc.Variable([Dim.X], np.arange(1, 10, dtype=float))
     a = _a[Dim.X, :]
     b = _b[Dim.X, :]
 
     data = np.copy(a.values)
     c = a + b
-    assert type(c) == sp.Variable
+    assert type(c) == sc.Variable
     assert np.array_equal(c.values, data + data)
     c = a - b
     assert np.array_equal(c.values, data - data)
@@ -45,7 +45,7 @@ def test_binary_operations():
 
 
 def test_binary_float_operations():
-    _a = sp.Variable([Dim.X], np.arange(1, 10, dtype=float))
+    _a = sc.Variable([Dim.X], np.arange(1, 10, dtype=float))
     a = _a[Dim.X, :]
     data = np.copy(a.values)
     c = a + 2.0
@@ -65,8 +65,8 @@ def test_binary_float_operations():
 
 
 def test_equal_not_equal():
-    _a = sp.Variable([Dim.X], np.arange(1, 10, dtype=float))
-    _b = sp.Variable([Dim.X], np.arange(1, 10, dtype=float))
+    _a = sc.Variable([Dim.X], np.arange(1, 10, dtype=float))
+    _b = sc.Variable([Dim.X], np.arange(1, 10, dtype=float))
     a = _a[Dim.X, :]
     b = _b[Dim.X, :]
     c = a + 2.0
@@ -77,8 +77,8 @@ def test_equal_not_equal():
 
 
 def test_correct_temporaries():
-    v = sp.Variable([Dim.X], values=np.arange(100.0))
-    b = sp.sqrt(v)[Dim.X, 0:10]
+    v = sc.Variable([Dim.X], values=np.arange(100.0))
+    b = sc.sqrt(v)[Dim.X, 0:10]
     assert len(b.values) == 10
     b = b[Dim.X, 2:5]
     assert len(b.values) == 3

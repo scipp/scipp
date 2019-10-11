@@ -34,12 +34,13 @@ static Dataset convert_with_factor(Dataset &&d, const Dim from, const Dim to,
                                    const Variable &factor) {
   // 1. Transform coordinate
   // Cannot use *= since often a broadcast into Dim::Position is required.
-  d.setCoord(from, d.coords()[from] * factor);
+  if (d.coords().contains(from))
+    d.setCoord(from, d.coords()[from] * factor);
 
   // 2. Transform variables
-  for (const auto & [ name, data ] : d) {
+  for (const auto &[name, data] : d) {
     static_cast<void>(name);
-    if (data.coords()[from].dims().sparse()) {
+    if (data.dims().sparse()) {
       data.coords()[from] *= factor;
     } else if (data.unit().isCountDensity()) {
       // Conversion is just a scale factor, so density transform is simple:
@@ -109,7 +110,7 @@ Dataset tofToEnergy(Dataset &&d) {
   const auto newBinWidths = counts::getBinWidths(d, {Dim::Tof});
 
   // 5. Transform variables
-  for (const auto & [ name, data ] : d) {
+  for (const auto &[name, data] : d) {
     static_cast<void>(name);
     if (data.coords()[Dim::Tof].dims().sparse()) {
       data.coords()[Dim::Tof].assign(
@@ -139,7 +140,7 @@ Dataset energyToTof(Dataset &&d) {
   const auto newBinWidths = counts::getBinWidths(d, {Dim::Energy});
 
   // 5. Transform variables
-  for (const auto & [ name, data ] : d) {
+  for (const auto &[name, data] : d) {
     static_cast<void>(name);
     if (data.coords()[Dim::Energy].dims().sparse()) {
       data.coords()[Dim::Energy].assign(

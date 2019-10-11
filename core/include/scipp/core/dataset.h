@@ -14,6 +14,7 @@
 #include <boost/iterator/transform_iterator.hpp>
 
 #include "scipp/core/except.h"
+#include "scipp/core/proxy_decl.h"
 #include "scipp/core/slice.h"
 #include "scipp/core/variable.h"
 
@@ -23,27 +24,6 @@ class DataArray;
 class Dataset;
 class DatasetConstProxy;
 class DatasetProxy;
-
-namespace ProxyId {
-class Attrs;
-class Coords;
-class Labels;
-} // namespace ProxyId
-template <class Id, class Key> class ConstProxy;
-template <class Base> class MutableProxy;
-
-/// Proxy for accessing coordinates of const Dataset and DataConstProxy.
-using CoordsConstProxy = ConstProxy<ProxyId::Coords, Dim>;
-/// Proxy for accessing coordinates of Dataset and DataProxy.
-using CoordsProxy = MutableProxy<CoordsConstProxy>;
-/// Proxy for accessing labels of const Dataset and DataConstProxy.
-using LabelsConstProxy = ConstProxy<ProxyId::Labels, std::string>;
-/// Proxy for accessing labels of Dataset and DataProxy.
-using LabelsProxy = MutableProxy<LabelsConstProxy>;
-/// Proxy for accessing attributes of const Dataset and DataConstProxy.
-using AttrsConstProxy = ConstProxy<ProxyId::Attrs, std::string>;
-/// Proxy for accessing attributes of Dataset and DataProxy.
-using AttrsProxy = MutableProxy<AttrsConstProxy>;
 
 namespace detail {
 /// Helper for holding data items in Dataset.
@@ -63,7 +43,7 @@ auto makeSlice(Var &var,
                const std::vector<std::pair<Slice, scipp::index>> &slices) {
   std::conditional_t<std::is_const_v<Var>, VariableConstProxy, VariableProxy>
       slice(var);
-  for (const auto[params, extent] : slices) {
+  for (const auto [params, extent] : slices) {
     if (slice.dims().contains(params.dim())) {
       const auto new_end = params.end() + slice.dims()[params.dim()] - extent;
       const auto pointSlice = (new_end == -1);
@@ -153,6 +133,10 @@ SCIPP_CORE_EXPORT bool operator==(const DataConstProxy &a,
 SCIPP_CORE_EXPORT bool operator!=(const DataConstProxy &a,
                                   const DataConstProxy &b);
 
+class DatasetConstProxy;
+class DatasetProxy;
+class Dataset;
+
 /// Proxy for a data item and related coordinates of Dataset.
 class SCIPP_CORE_EXPORT DataProxy : public DataConstProxy {
 public:
@@ -206,6 +190,7 @@ public:
   DataProxy assign(const DataConstProxy &other) const;
   DataProxy assign(const Variable &other) const;
   DataProxy assign(const VariableConstProxy &other) const;
+
   DataProxy operator+=(const DataConstProxy &other) const;
   DataProxy operator-=(const DataConstProxy &other) const;
   DataProxy operator*=(const DataConstProxy &other) const;
@@ -214,6 +199,30 @@ public:
   DataProxy operator-=(const VariableConstProxy &other) const;
   DataProxy operator*=(const VariableConstProxy &other) const;
   DataProxy operator/=(const VariableConstProxy &other) const;
+
+  template <typename T,
+            typename = std::enable_if_t<!is_container_or_proxy<T>()>>
+  DataProxy operator+=(const T value) const {
+    return *this += makeVariable<T>(value);
+  }
+
+  template <typename T,
+            typename = std::enable_if_t<!is_container_or_proxy<T>()>>
+  DataProxy operator-=(const T value) const {
+    return *this -= makeVariable<T>(value);
+  }
+
+  template <typename T,
+            typename = std::enable_if_t<!is_container_or_proxy<T>()>>
+  DataProxy operator*=(const T value) const {
+    return *this *= makeVariable<T>(value);
+  }
+
+  template <typename T,
+            typename = std::enable_if_t<!is_container_or_proxy<T>()>>
+  DataProxy operator/=(const T value) const {
+    return *this /= makeVariable<T>(value);
+  }
 
 private:
   Dataset *m_mutableDataset;
@@ -243,9 +252,6 @@ template <class D> struct make_item {
 template <class D> make_item(D *)->make_item<D>;
 } // namespace detail
 
-class DatasetConstProxy;
-class DatasetProxy;
-
 /// Collection of data arrays.
 class SCIPP_CORE_EXPORT Dataset {
 public:
@@ -260,13 +266,13 @@ public:
 
   template <class DataMap, class CoordMap, class LabelsMap, class AttrMap>
   Dataset(DataMap data, CoordMap coords, LabelsMap labels, AttrMap attrs) {
-    for (auto && [ dim, coord ] : coords)
+    for (auto &&[dim, coord] : coords)
       setCoord(dim, std::move(coord));
-    for (auto && [ name, labs ] : labels)
+    for (auto &&[name, labs] : labels)
       setLabels(std::string(name), std::move(labs));
-    for (auto && [ name, attr ] : attrs)
+    for (auto &&[name, attr] : attrs)
       setAttr(std::string(name), std::move(attr));
-    for (auto && [ name, item ] : data)
+    for (auto &&[name, item] : data)
       setData(std::string(name), std::move(item));
   }
 
@@ -407,6 +413,31 @@ public:
   Dataset &operator-=(const Dataset &other);
   Dataset &operator*=(const Dataset &other);
   Dataset &operator/=(const Dataset &other);
+
+  template <typename T,
+            typename = std::enable_if_t<!is_container_or_proxy<T>()>>
+  Dataset &operator+=(const T value) {
+    return *this += makeVariable<T>(value);
+  }
+
+  template <typename T,
+            typename = std::enable_if_t<!is_container_or_proxy<T>()>>
+  Dataset &operator-=(const T value) {
+    return *this -= makeVariable<T>(value);
+  }
+
+  template <typename T,
+            typename = std::enable_if_t<!is_container_or_proxy<T>()>>
+  Dataset &operator*=(const T value) {
+    return *this *= makeVariable<T>(value);
+  }
+
+  template <typename T,
+            typename = std::enable_if_t<!is_container_or_proxy<T>()>>
+  Dataset &operator/=(const T value) {
+    return *this /= makeVariable<T>(value);
+  }
+
   std::unordered_map<Dim, scipp::index> dimensions() const;
 
 private:
@@ -526,7 +557,7 @@ public:
   bool operator==(const ConstProxy &other) const {
     if (size() != other.size())
       return false;
-    for (const auto & [ name, data ] : *this) {
+    for (const auto &[name, data] : *this) {
       try {
         if (data != other[name])
           return false;
@@ -680,9 +711,9 @@ public:
 template <class T1, class T2> auto union_(const T1 &a, const T2 &b) {
   std::map<typename T1::key_type, typename T1::mapped_type> out;
 
-  for (const auto & [ key, item ] : a)
+  for (const auto &[key, item] : a)
     out.emplace(key, item);
-  for (const auto & [ key, item ] : b) {
+  for (const auto &[key, item] : b) {
     if (const auto it = a.find(key); it != a.end())
       expect::equals(item, it->second);
     else
@@ -858,6 +889,30 @@ public:
   DatasetProxy operator*=(const Dataset &other) const;
   DatasetProxy operator/=(const Dataset &other) const;
 
+  template <typename T,
+            typename = std::enable_if_t<!is_container_or_proxy<T>()>>
+  DatasetProxy operator+=(const T value) const {
+    return *this += makeVariable<T>(value);
+  }
+
+  template <typename T,
+            typename = std::enable_if_t<!is_container_or_proxy<T>()>>
+  DatasetProxy operator-=(const T value) const {
+    return *this -= makeVariable<T>(value);
+  }
+
+  template <typename T,
+            typename = std::enable_if_t<!is_container_or_proxy<T>()>>
+  DatasetProxy operator*=(const T value) const {
+    return *this *= makeVariable<T>(value);
+  }
+
+  template <typename T,
+            typename = std::enable_if_t<!is_container_or_proxy<T>()>>
+  DatasetProxy operator/=(const T value) const {
+    return *this /= makeVariable<T>(value);
+  }
+
   DatasetProxy assign(const DatasetConstProxy &other) const;
 
 private:
@@ -880,17 +935,17 @@ public:
             const std::string &name = "") {
     if (data)
       m_holder.setData(name, std::move(*data));
-    for (auto && [ dim, c ] : coords)
+    for (auto &&[dim, c] : coords)
       if (c.dims().sparse())
         m_holder.setSparseCoord(name, std::move(c));
       else
         m_holder.setCoord(dim, std::move(c));
-    for (auto && [ label_name, l ] : labels)
+    for (auto &&[label_name, l] : labels)
       if (l.dims().sparse())
         m_holder.setSparseLabels(name, std::string(label_name), std::move(l));
       else
         m_holder.setLabels(std::string(label_name), std::move(l));
-    for (auto && [ attr_name, a ] : attrs)
+    for (auto &&[attr_name, a] : attrs)
       m_holder.setAttr(std::string(attr_name), std::move(a));
     if (m_holder.size() != 1)
       throw std::runtime_error(
@@ -942,6 +997,8 @@ public:
   /// Return typed proxy for data variances.
   template <class T> auto variances() { return get().variances<T>(); }
 
+  void rename(const Dim from, const Dim to) { m_holder.rename(from, to); }
+
   DataArray &operator+=(const DataConstProxy &other);
   DataArray &operator-=(const DataConstProxy &other);
   DataArray &operator*=(const DataConstProxy &other);
@@ -950,6 +1007,30 @@ public:
   DataArray &operator-=(const VariableConstProxy &other);
   DataArray &operator*=(const VariableConstProxy &other);
   DataArray &operator/=(const VariableConstProxy &other);
+
+  template <typename T,
+            typename = std::enable_if_t<!is_container_or_proxy<T>()>>
+  DataArray &operator+=(const T value) {
+    return *this += makeVariable<T>(value);
+  }
+
+  template <typename T,
+            typename = std::enable_if_t<!is_container_or_proxy<T>()>>
+  DataArray &operator-=(const T value) {
+    return *this -= makeVariable<T>(value);
+  }
+
+  template <typename T,
+            typename = std::enable_if_t<!is_container_or_proxy<T>()>>
+  DataArray &operator*=(const T value) {
+    return *this *= makeVariable<T>(value);
+  }
+
+  template <typename T,
+            typename = std::enable_if_t<!is_container_or_proxy<T>()>>
+  DataArray &operator/=(const T value) {
+    return *this /= makeVariable<T>(value);
+  }
 
   // TODO need to define some details regarding handling of dense coords in case
   // the array is sparse, not exposing this to Python for now.
@@ -1042,10 +1123,10 @@ SCIPP_CORE_EXPORT Dataset operator+(const Dataset &lhs,
                                     const VariableConstProxy &rhs);
 SCIPP_CORE_EXPORT Dataset operator+(const VariableConstProxy &lhs,
                                     const Dataset &rhs);
-SCIPP_CORE_EXPORT Dataset operator+(const DatasetProxy &lhs,
+SCIPP_CORE_EXPORT Dataset operator+(const DatasetConstProxy &lhs,
                                     const VariableConstProxy &rhs);
 SCIPP_CORE_EXPORT Dataset operator+(const VariableConstProxy &lhs,
-                                    const DatasetProxy &rhs);
+                                    const DatasetConstProxy &rhs);
 
 SCIPP_CORE_EXPORT Dataset operator-(const Dataset &lhs, const Dataset &rhs);
 SCIPP_CORE_EXPORT Dataset operator-(const Dataset &lhs,
@@ -1066,10 +1147,10 @@ SCIPP_CORE_EXPORT Dataset operator-(const Dataset &lhs,
                                     const VariableConstProxy &rhs);
 SCIPP_CORE_EXPORT Dataset operator-(const VariableConstProxy &lhs,
                                     const Dataset &rhs);
-SCIPP_CORE_EXPORT Dataset operator-(const DatasetProxy &lhs,
+SCIPP_CORE_EXPORT Dataset operator-(const DatasetConstProxy &lhs,
                                     const VariableConstProxy &rhs);
 SCIPP_CORE_EXPORT Dataset operator-(const VariableConstProxy &lhs,
-                                    const DatasetProxy &rhs);
+                                    const DatasetConstProxy &rhs);
 
 SCIPP_CORE_EXPORT Dataset operator*(const Dataset &lhs, const Dataset &rhs);
 SCIPP_CORE_EXPORT Dataset operator*(const Dataset &lhs,
@@ -1090,10 +1171,10 @@ SCIPP_CORE_EXPORT Dataset operator*(const Dataset &lhs,
                                     const VariableConstProxy &rhs);
 SCIPP_CORE_EXPORT Dataset operator*(const VariableConstProxy &lhs,
                                     const Dataset &rhs);
-SCIPP_CORE_EXPORT Dataset operator*(const DatasetProxy &lhs,
+SCIPP_CORE_EXPORT Dataset operator*(const DatasetConstProxy &lhs,
                                     const VariableConstProxy &rhs);
 SCIPP_CORE_EXPORT Dataset operator*(const VariableConstProxy &lhs,
-                                    const DatasetProxy &rhs);
+                                    const DatasetConstProxy &rhs);
 
 SCIPP_CORE_EXPORT Dataset operator/(const Dataset &lhs,
                                     const DatasetConstProxy &rhs);
@@ -1114,10 +1195,44 @@ SCIPP_CORE_EXPORT Dataset operator/(const Dataset &lhs,
                                     const VariableConstProxy &rhs);
 SCIPP_CORE_EXPORT Dataset operator/(const VariableConstProxy &lhs,
                                     const Dataset &rhs);
-SCIPP_CORE_EXPORT Dataset operator/(const DatasetProxy &lhs,
+SCIPP_CORE_EXPORT Dataset operator/(const DatasetConstProxy &lhs,
                                     const VariableConstProxy &rhs);
 SCIPP_CORE_EXPORT Dataset operator/(const VariableConstProxy &lhs,
-                                    const DatasetProxy &rhs);
+                                    const DatasetConstProxy &rhs);
+
+template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
+Dataset operator+(const T value, const DatasetConstProxy &a) {
+  return makeVariable<T>(value) + a;
+}
+template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
+Dataset operator-(const T value, const DatasetConstProxy &a) {
+  return makeVariable<T>(value) - a;
+}
+template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
+Dataset operator*(const T value, const DatasetConstProxy &a) {
+  return makeVariable<T>(value) * a;
+}
+template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
+Dataset operator/(const T value, const DatasetConstProxy &a) {
+  return makeVariable<T>(value) / a;
+}
+
+template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
+Dataset operator+(const DatasetConstProxy &a, const T value) {
+  return a + makeVariable<T>(value);
+}
+template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
+Dataset operator-(const DatasetConstProxy &a, const T value) {
+  return a - makeVariable<T>(value);
+}
+template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
+Dataset operator*(const DatasetConstProxy &a, const T value) {
+  return a * makeVariable<T>(value);
+}
+template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
+Dataset operator/(const DatasetConstProxy &a, const T value) {
+  return a / makeVariable<T>(value);
+}
 
 SCIPP_CORE_EXPORT DataArray histogram(const DataConstProxy &sparse,
                                       const Variable &binEdges);

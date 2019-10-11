@@ -4,10 +4,11 @@
 /// @author Simon Heybrock
 #include <cmath>
 
-#include "operators.h"
 #include "scipp/core/except.h"
 #include "scipp/core/transform.h"
 #include "scipp/core/variable.h"
+
+#include "operators.h"
 
 namespace scipp::core {
 
@@ -30,13 +31,26 @@ using pair_product_t = typename pair_product<Ts...>::type;
 
 using arithmetic_type_pairs = pair_product_t<float, double, int32_t, int64_t>;
 
-using arithmetic_and_matrix_type_pairs = decltype(
-    std::tuple_cat(std::declval<arithmetic_type_pairs>(),
-                   std::tuple<std::pair<Eigen::Vector3d, Eigen::Vector3d>>()));
+using arithmetic_and_matrix_type_pairs = decltype(std::tuple_cat(
+    std::declval<arithmetic_type_pairs>(),
+    std::tuple<std::pair<Eigen::Vector3d, Eigen::Vector3d>,
+               std::pair<int64_t, int32_t>, std::pair<int32_t, int64_t>,
+               std::pair<double, float>, std::pair<float, double>>()));
 
+static constexpr auto plus_ = [](const auto a_, const auto b_) {
+  return a_ + b_;
+};
+static constexpr auto minus_ = [](const auto a_, const auto b_) {
+  return a_ - b_;
+};
+static constexpr auto times_ = [](const auto a_, const auto b_) {
+  return a_ * b_;
+};
+static constexpr auto divide_ = [](const auto a_, const auto b_) {
+  return a_ / b_;
+};
 template <class T1, class T2> Variable plus(const T1 &a, const T2 &b) {
-  return transform<arithmetic_and_matrix_type_pairs>(
-      a, b, [](const auto a_, const auto b_) { return a_ + b_; });
+  return transform<arithmetic_and_matrix_type_pairs>(a, b, plus_);
 }
 
 Variable Variable::operator-() const {
@@ -50,12 +64,6 @@ Variable &Variable::operator+=(const Variable &other) & {
 Variable &Variable::operator+=(const VariableConstProxy &other) & {
   return plus_equals(*this, other);
 }
-Variable &Variable::operator+=(const double value) & {
-  // TODO By not setting a unit here this operator is only usable if the
-  // variable is dimensionless. Should we ignore the unit for scalar operations,
-  // i.e., set the same unit as *this.unit()?
-  return plus_equals(*this, makeVariable<double>(value));
-}
 
 template <class T1, class T2> T1 &minus_equals(T1 &variable, const T2 &other) {
   transform_in_place(variable, other, operator_detail::minus_equals{});
@@ -63,8 +71,7 @@ template <class T1, class T2> T1 &minus_equals(T1 &variable, const T2 &other) {
 }
 
 template <class T1, class T2> Variable minus(const T1 &a, const T2 &b) {
-  return transform<arithmetic_and_matrix_type_pairs>(
-      a, b, [](const auto a_, const auto b_) { return a_ - b_; });
+  return transform<arithmetic_and_matrix_type_pairs>(a, b, minus_);
 }
 
 Variable &Variable::operator-=(const Variable &other) & {
@@ -73,9 +80,6 @@ Variable &Variable::operator-=(const Variable &other) & {
 Variable &Variable::operator-=(const VariableConstProxy &other) & {
   return minus_equals(*this, other);
 }
-Variable &Variable::operator-=(const double value) & {
-  return minus_equals(*this, makeVariable<double>(value));
-}
 
 template <class T1, class T2> T1 &times_equals(T1 &variable, const T2 &other) {
   transform_in_place(variable, other, operator_detail::times_equals{});
@@ -83,19 +87,13 @@ template <class T1, class T2> T1 &times_equals(T1 &variable, const T2 &other) {
 }
 
 template <class T1, class T2> Variable times(const T1 &a, const T2 &b) {
-  return transform<arithmetic_type_pairs>(
-      a, b, [](const auto a_, const auto b_) { return a_ * b_; });
+  return transform<arithmetic_type_pairs>(a, b, times_);
 }
 
 Variable &Variable::operator*=(const Variable &other) & {
   return times_equals(*this, other);
 }
 Variable &Variable::operator*=(const VariableConstProxy &other) & {
-  return times_equals(*this, other);
-}
-Variable &Variable::operator*=(const double value) & {
-  auto other = makeVariable<double>(value);
-  other.setUnit(units::dimensionless);
   return times_equals(*this, other);
 }
 
@@ -105,8 +103,7 @@ template <class T1, class T2> T1 &divide_equals(T1 &variable, const T2 &other) {
 }
 
 template <class T1, class T2> Variable divide(const T1 &a, const T2 &b) {
-  return transform<arithmetic_type_pairs>(
-      a, b, [](const auto a_, const auto b_) { return a_ / b_; });
+  return transform<arithmetic_type_pairs>(a, b, divide_);
 }
 
 Variable &Variable::operator/=(const Variable &other) & {
@@ -115,18 +112,12 @@ Variable &Variable::operator/=(const Variable &other) & {
 Variable &Variable::operator/=(const VariableConstProxy &other) & {
   return divide_equals(*this, other);
 }
-Variable &Variable::operator/=(const double value) & {
-  return divide_equals(*this, makeVariable<double>(value));
-}
 
 VariableProxy VariableProxy::operator+=(const Variable &other) const {
   return plus_equals(*this, other);
 }
 VariableProxy VariableProxy::operator+=(const VariableConstProxy &other) const {
   return plus_equals(*this, other);
-}
-VariableProxy VariableProxy::operator+=(const double value) const {
-  return plus_equals(*this, makeVariable<double>(value));
 }
 
 VariableProxy VariableProxy::operator-=(const Variable &other) const {
@@ -135,9 +126,6 @@ VariableProxy VariableProxy::operator-=(const Variable &other) const {
 VariableProxy VariableProxy::operator-=(const VariableConstProxy &other) const {
   return minus_equals(*this, other);
 }
-VariableProxy VariableProxy::operator-=(const double value) const {
-  return minus_equals(*this, makeVariable<double>(value));
-}
 
 VariableProxy VariableProxy::operator*=(const Variable &other) const {
   return times_equals(*this, other);
@@ -145,18 +133,12 @@ VariableProxy VariableProxy::operator*=(const Variable &other) const {
 VariableProxy VariableProxy::operator*=(const VariableConstProxy &other) const {
   return times_equals(*this, other);
 }
-VariableProxy VariableProxy::operator*=(const double value) const {
-  return times_equals(*this, makeVariable<double>(value));
-}
 
 VariableProxy VariableProxy::operator/=(const Variable &other) const {
   return divide_equals(*this, other);
 }
 VariableProxy VariableProxy::operator/=(const VariableConstProxy &other) const {
   return divide_equals(*this, other);
-}
-VariableProxy VariableProxy::operator/=(const double value) const {
-  return divide_equals(*this, makeVariable<double>(value));
 }
 
 Variable VariableConstProxy::operator-() const {
