@@ -622,7 +622,7 @@ def test_coords_delitem_sparse():
         del d['a'].coords[Dim.Z]
     del d['a'].coords[Dim.X]
     with pytest.raises(IndexError):
-        d['a']
+        d['a'].coords[Dim.X]
 
 
 def test_labels_delitem():
