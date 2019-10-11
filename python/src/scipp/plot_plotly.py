@@ -268,6 +268,10 @@ class Slicer2d:
             # Add coordinate name and unit
             self.vbox.append(widgets.HBox([self.slider[key], self.lab[key],
                                            self.buttons[key]]))
+        if self.ndim == 2:
+            for key in self.slider.keys():
+                self.slider[key].layout.display = 'none'
+                self.lab[key].value = key
 
         # Initialise Figure and VBox objects
         self.fig = None
