@@ -631,6 +631,58 @@ def test_rename_dims():
     assert d == make_simple_dataset(Dim.Y, Dim.X, seed=0)
 
 
+def test_coord_delitem():
+    var = sc.Variable([Dim.X], values=np.arange(4))
+    d = sc.Dataset({'a': var}, coords={Dim.X: var})
+    dref = d.copy()
+    d.coords[Dim.Y] = sc.Variable(1.0)
+    assert dref != d
+    del d.coords[Dim.Y]
+    assert dref == d
+
+
+def test_coords_delitem_sparse():
+    var = sc.Variable([Dim.X], values=np.arange(4))
+    sparse = sc.Variable([sc.Dim.X], [sc.Dimensions.Sparse])
+    d = sc.Dataset({'a': sparse}, coords={Dim.X: var})
+    d['a'].coords[Dim.X] = sparse
+    with pytest.raises(RuntimeError):
+        del d['a'].coords[Dim.Z]
+    del d['a'].coords[Dim.X]
+    with pytest.raises(IndexError):
+        d['a']
+
+
+def test_labels_delitem():
+    var = sc.Variable([Dim.X], values=np.arange(4))
+    d = sc.Dataset({'a': var}, coords={Dim.X: var})
+    dref = d.copy()
+    d.labels['label'] = sc.Variable(1.0)
+    assert d != dref
+    del d.labels['label']
+    assert d == dref
+
+
+def test_labels_delitem_sparse():
+    var = sc.Variable([Dim.X], values=np.arange(4))
+    sparse = sc.Variable([sc.Dim.X], [sc.Dimensions.Sparse])
+    d = sc.Dataset({'a': sparse}, coords={Dim.X: var})
+    dref = d.copy()
+    d['a'].labels['label'] = sparse
+    assert d != dref
+    del d['a'].labels['label']
+    assert d == dref
+
+
+def test_attrs_delitem():
+    var = sc.Variable([Dim.X], values=np.arange(4))
+    d = sc.Dataset({'a': var}, coords={Dim.X: var})
+    dref = d.copy()
+    d.attrs['attr'] = sc.Variable(1.0)
+    assert d != dref
+    del d.attrs['attr']
+    assert d == dref
+
 # def test_delitem(self):
 #    dataset = sc.Dataset()
 #    dataset[sc.Data.Value, "data"] = ([sc.Dim.Z, sc.Dim.Y, sc.Dim.X],
