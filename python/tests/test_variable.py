@@ -551,8 +551,6 @@ def test_make_variable_from_unit_scalar_mult_div():
     var.unit = sp.units.m**(-1)
     assert var == 0.0 / sp.units.m
 
-    # TODO change next string with normal constructor
-    # for 0D Variable the it introduced
     v = sp.Variable([sp.Dim.X], values=np.array([0]), dtype=np.float32)
     var = sp.Variable(v[sp.Dim.X, 0])
     var.unit = sp.units.m
