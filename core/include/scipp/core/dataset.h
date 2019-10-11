@@ -658,11 +658,15 @@ public:
         m_parent->eraseAttr(key);
     } else {
       if constexpr (std::is_same_v<Base, CoordsConstProxy>) {
-        if (Base::m_items.count(key) == 0)
-          throw except::SparseDataError(
-              "No coordinate with dim " + to_string(key) +
-              " found, sparse coordinate is defined for " +
-              to_string(Base::m_items.begin()->first));
+        if (Base::m_items.count(key) == 0) {
+          std::string suffix =
+              Base::m_items.empty()
+                  ? "no sparse coordinate defined "
+                  : " sparse coordinate is defined for dim " +
+                        to_string(Base::m_items.begin()->first);
+          throw except::SparseDataError("No coordinate with dim " +
+                                        to_string(key) + " found," + suffix);
+        }
         m_parent->eraseSparseCoord(*m_name);
       }
       if constexpr (std::is_same_v<Base, LabelsConstProxy>)

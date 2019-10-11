@@ -379,8 +379,7 @@ void Dataset::eraseSparseCoord(const std::string &name) {
                                          " found.");
 
   auto &data = iter->second;
-  data.data &&data.labels.empty() ? [this, &iter]() { m_data.erase(iter); }()
-                                  : data.coord.reset();
+  !data.data ? [this, &iter]() { m_data.erase(iter); }() : data.coord.reset();
   rebuildDims();
 }
 
