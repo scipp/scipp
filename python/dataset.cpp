@@ -80,6 +80,25 @@ void bind_dataset_proxy_methods(py::class_<T, Ignored...> &c) {
   c.def("__contains__", &T::contains);
   c.def("copy", [](const T &self) { return Dataset(self); },
         "Return a (deep) copy.");
+  c.def_property_readonly("dims",
+                          [](const T &self) {
+                            std::vector<Dim> dims;
+                            for (const auto &dim : self.dimensions()) {
+                              dims.push_back(dim.first);
+                            }
+                            return dims;
+                          },
+                          R"(List of dimensions.)",
+                          py::return_value_policy::move);
+  c.def_property_readonly("shape",
+                          [](const T &self) {
+                            std::vector<scipp::index> shape;
+                            for (const auto &dim : self.dimensions()) {
+                              shape.push_back(dim.second);
+                            }
+                            return shape;
+                          },
+                          R"(List of shapes.)", py::return_value_policy::move);
 }
 
 template <class T, class... Ignored>
