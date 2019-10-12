@@ -42,12 +42,10 @@ inline void *allocate_aligned_memory(size_t align, size_t size) {
   return instance().allocate(size);
 #else
   void *ptr = nullptr;
-#ifdef _WIN32
   int rc = posix_memalign(&ptr, align, size);
   if (rc != 0) {
     return nullptr;
   }
-#endif
   return ptr;
 #endif
 }
