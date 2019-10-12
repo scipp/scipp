@@ -47,8 +47,8 @@ inline void *allocate_aligned_memory(size_t align, size_t size) {
   if (rc != 0) {
     return nullptr;
   }
-  return ptr;
 #endif
+  return ptr;
 #endif
 }
 
