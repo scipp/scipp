@@ -309,7 +309,6 @@ class Slicer2d:
             attr_names = ["cmin", "cmax"]
         else:
             attr_names = ["zmin", "zmax"]
-        # self.norm = {}
         self.scalarMap = [None, None]
         for i, (key, val) in enumerate(sorted(params.items())):
             if val is not None:
@@ -338,21 +337,12 @@ class Slicer2d:
 
         if self.rasterize:
             # Add background image
-            im_list = [go.layout.Image(
-                    xref="x",
-                    yref="y",
-                    opacity=1.0,
-                    layer="below",
-                    sizing="stretch",
-                    source=None)]
+            im_params = {"opacity": 1.0, "layer": "below", "sizing": "stretch",
+                         "source": None}
+            im_list = [go.layout.Image(xref="x", yref="y", **im_params)]
             if self.show_variances:
-                im_list.append(go.layout.Image(
-                    xref="x2",
-                    yref="y2",
-                    opacity=1.0,
-                    layer="below",
-                    sizing="stretch",
-                    source=None))
+                im_list.append(go.layout.Image(xref="x2", yref="y2",
+                                               **im_params))
             self.fig.update_layout(images=im_list)
 
         # Call update_slice once to make the initial image
@@ -388,38 +378,32 @@ class Slicer2d:
         # Go through the buttons and select the right coordinates for the axes
         for key, button in self.buttons.items():
             if self.slider[key].disabled:
-                if self.rasterize:
-                    self.fig.data[0][button.value.lower()] = \
-                        self.coords[button.dim].values[[0, -1]]
-                else:
-                    self.fig.data[0][button.value.lower()] = \
-                        self.coords[button.dim].values
-                if self.show_variances:
+                but_val = button.value.lower()
+                but_dim = button.dim
+                for i in range(1 + self.show_variances):
                     if self.rasterize:
-                        self.fig.data[1][button.value.lower()] = \
-                            self.coords[button.dim].values[[0, -1]]
+                        self.fig.data[i][but_val] = \
+                            self.coords[but_dim].values[[0, -1]]
                     else:
-                        self.fig.data[1][button.value.lower()] = \
-                            self.coords[button.dim].values
+                        self.fig.data[i][but_val] = \
+                            self.coords[but_dim].values
                 if self.surface3d:
                     self.fig.layout.scene1["{}axis_title".format(
-                        button.value.lower())] = axis_label(
-                            self.coords[button.dim])
+                        but_val)] = axis_label(self.coords[but_dim])
                     if self.show_variances:
                         self.fig.layout.scene2["{}axis_title".format(
-                            button.value.lower())] = axis_label(
-                                self.coords[button.dim])
+                            but_val)] = axis_label(self.coords[but_dim])
                 else:
                     if self.show_variances:
                         func = getattr(self.fig, 'update_{}axes'.format(
-                            button.value.lower()))
+                            but_val))
                         for i in range(2):
                             func(title_text=axis_label(
-                                self.coords[button.dim]), row=1, col=i+1)
+                                self.coords[but_dim]), row=1, col=i+1)
                     else:
-                        axis_str = "{}axis".format(button.value.lower())
+                        axis_str = "{}axis".format(but_val)
                         self.fig.layout[axis_str]["title"] = axis_label(
-                            self.coords[button.dim])
+                            self.coords[but_dim])
 
         return
 
@@ -675,17 +659,15 @@ class Slicer3d:
                     self.coords[button.dim])
                 buttons_dims[button.value.lower()] = button.dim_str
 
+        axes_dict = dict(xaxis_title=titles["x"],
+                         yaxis_title=titles["y"],
+                         zaxis_title=titles["z"])
+
         if self.show_variances:
-            self.fig.layout.scene1 = dict(xaxis_title=titles["x"],
-                                          yaxis_title=titles["y"],
-                                          zaxis_title=titles["z"])
-            self.fig.layout.scene2 = dict(xaxis_title=titles["x"],
-                                          yaxis_title=titles["y"],
-                                          zaxis_title=titles["z"])
+            self.fig.layout.scene1 = axes_dict
+            self.fig.layout.scene2 = axes_dict
         else:
-            self.fig.update_layout(scene=dict(xaxis_title=titles["x"],
-                                              yaxis_title=titles["y"],
-                                              zaxis_title=titles["z"]))
+            self.fig.update_layout(scene=axes_dict)
 
         self.update_cube()
 
@@ -720,14 +702,12 @@ class Slicer3d:
                 xx, yy = np.meshgrid(
                     self.slider_x[button_dims[permutations[key][0]]],
                     self.slider_x[button_dims[permutations[key][1]]])
-                setattr(self.fig.data[i], key, np.ones_like(xx) * val["loc"])
-                setattr(self.fig.data[i], permutations[key][0], xx)
-                setattr(self.fig.data[i], permutations[key][1], yy)
-                if self.show_variances:
-                    setattr(self.fig.data[i+3], key,
+                for j in range(1 + self.show_variances):
+                    k = i + 3 * j
+                    setattr(self.fig.data[k], key,
                             np.ones_like(xx) * val["loc"])
-                    setattr(self.fig.data[i+3], permutations[key][0], xx)
-                    setattr(self.fig.data[i+3], permutations[key][1], yy)
+                    setattr(self.fig.data[k], permutations[key][0], xx)
+                    setattr(self.fig.data[k], permutations[key][1], yy)
 
             self.fig.data[i].surfacecolor = self.check_transpose(val["slice"])
             if self.show_variances:
@@ -752,15 +732,11 @@ class Slicer3d:
             slice_indices = {"x": 0, "y": 1, "z": 2}
             ax_dim = self.buttons[key].value.lower()
             xy = getattr(self.fig.data[slice_indices[ax_dim]], ax_dim)
-            setattr(self.fig.data[slice_indices[ax_dim]], ax_dim,
-                    xy / xy * loc)
-            self.fig.data[slice_indices[ax_dim]].surfacecolor = \
-                self.check_transpose(vslice)
-            if self.show_variances:
-                setattr(self.fig.data[slice_indices[ax_dim]+3], ax_dim,
-                        xy / xy * loc)
-                self.fig.data[slice_indices[ax_dim]+3].surfacecolor = \
-                    self.check_transpose(vslice, variances=True)
+            for i in range(1 + self.show_variances):
+                k = slice_indices[ax_dim]+(3*(i>0))
+                setattr(self.fig.data[k], ax_dim, xy / xy * loc)
+                self.fig.data[k].surfacecolor = \
+                    self.check_transpose(vslice, variances=(i > 0))
         return
 
     def check_transpose(self, vslice, variances=False):
