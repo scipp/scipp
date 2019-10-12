@@ -733,7 +733,7 @@ class Slicer3d:
             ax_dim = self.buttons[key].value.lower()
             xy = getattr(self.fig.data[slice_indices[ax_dim]], ax_dim)
             for i in range(1 + self.show_variances):
-                k = slice_indices[ax_dim]+(3*(i>0))
+                k = slice_indices[ax_dim] + (3 * (i > 0))
                 setattr(self.fig.data[k], ax_dim, xy / xy * loc)
                 self.fig.data[k].surfacecolor = \
                     self.check_transpose(vslice, variances=(i > 0))
