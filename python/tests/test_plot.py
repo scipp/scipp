@@ -280,6 +280,16 @@ def do_test_plot_sliceviewer_with_3d_projection_with_variances():
     do_plot(d1, projection="3d", show_variances=True)
 
 
+def do_test_plot_2d_image_rasterized():
+    d1 = make_2d_dataset()
+    do_plot(d1, rasterize=True)
+
+
+def do_test_plot_2d_image_with_variances_rasterized():
+    d1 = make_2d_dataset(variances=True)
+    do_plot(d1, rasterize=True)
+
+
 # Using plotly backend =======================================================
 
 
@@ -353,6 +363,14 @@ def test_plot_sliceviewer_with_3d_projection():
 
 def test_plot_sliceviewer_with_3d_projection_with_variances():
     do_test_plot_sliceviewer_with_3d_projection_with_variances()
+
+
+def test_plot_2d_image_rasterized():
+    do_test_plot_2d_image_rasterized()
+
+
+def test_plot_2d_image_with_variances_rasterized():
+    do_test_plot_2d_image_with_variances_rasterized()
 
 
 # Using matplotlib backend ====================================================
