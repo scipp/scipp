@@ -209,20 +209,26 @@ std::string do_to_string(const D &dataset, const std::string &id,
   s << id + '\n';
   s << "Dimensions: " << to_string(dims) << '\n';
 
-  if (!dataset.coords().empty())
+  if (!dataset.coords().empty()) {
     s << "Coordinates:\n";
-  for (const auto &[dim, var] : dataset.coords())
-    s << format_variable(dim, var, dims);
-
-  if (!dataset.labels().empty())
+    for (const auto &[dim, var] : dataset.coords())
+      s << format_variable(dim, var, dims);
+  }
+  if (!dataset.labels().empty()) {
     s << "Labels:\n";
-  for (const auto &[name, var] : dataset.labels())
-    s << format_variable(name, var, dims);
-
-  if (!dataset.attrs().empty())
+    for (const auto &[name, var] : dataset.labels())
+      s << format_variable(name, var, dims);
+  }
+  if (!dataset.attrs().empty()) {
     s << "Attributes:\n";
-  for (const auto &[name, var] : dataset.attrs())
-    s << format_variable(name, var, dims);
+    for (const auto &[name, var] : dataset.attrs())
+      s << format_variable(name, var, dims);
+  }
+  if (!dataset.masks().empty()) {
+    s << "Masks:\n";
+    for (const auto &[name, var] : dataset.masks())
+      s << format_variable(name, var, dims);
+  }
 
   if constexpr (std::is_same_v<D, DataArray> ||
                 std::is_same_v<D, DataConstProxy>) {

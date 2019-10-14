@@ -399,6 +399,9 @@ public:
     return *this /= quantity.value();
   }
 
+  Variable &operator|=(const Variable &other) &;
+  Variable &operator|=(const VariableConstProxy &other) &;
+
   const VariableConcept &data() const && = delete;
   const VariableConcept &data() const & { return *m_object; }
   VariableConcept &data() && = delete;
@@ -770,6 +773,9 @@ public:
     return *this /= makeVariable<underlying_type_t<T>>(v);
   }
 
+  VariableProxy operator|=(const Variable &other) const;
+  VariableProxy operator|=(const VariableConstProxy &other) const;
+
   template <class T> void setVariances(Vector<T> &&v) const;
 
   void setUnit(const units::Unit &unit) const;
@@ -789,6 +795,7 @@ SCIPP_CORE_EXPORT Variable operator+(const Variable &a, const Variable &b);
 SCIPP_CORE_EXPORT Variable operator-(const Variable &a, const Variable &b);
 SCIPP_CORE_EXPORT Variable operator*(const Variable &a, const Variable &b);
 SCIPP_CORE_EXPORT Variable operator/(const Variable &a, const Variable &b);
+SCIPP_CORE_EXPORT Variable operator|(const Variable &a, const Variable &b);
 SCIPP_CORE_EXPORT Variable operator+(const Variable &a,
                                      const VariableConstProxy &b);
 SCIPP_CORE_EXPORT Variable operator-(const Variable &a,
@@ -797,6 +804,8 @@ SCIPP_CORE_EXPORT Variable operator*(const Variable &a,
                                      const VariableConstProxy &b);
 SCIPP_CORE_EXPORT Variable operator/(const Variable &a,
                                      const VariableConstProxy &b);
+SCIPP_CORE_EXPORT Variable operator|(const Variable &a,
+                                     const VariableConstProxy &b);
 SCIPP_CORE_EXPORT Variable operator+(const VariableConstProxy &a,
                                      const Variable &b);
 SCIPP_CORE_EXPORT Variable operator-(const VariableConstProxy &a,
@@ -805,6 +814,8 @@ SCIPP_CORE_EXPORT Variable operator*(const VariableConstProxy &a,
                                      const Variable &b);
 SCIPP_CORE_EXPORT Variable operator/(const VariableConstProxy &a,
                                      const Variable &b);
+SCIPP_CORE_EXPORT Variable operator|(const VariableConstProxy &a,
+                                     const Variable &b);
 SCIPP_CORE_EXPORT Variable operator+(const VariableConstProxy &a,
                                      const VariableConstProxy &b);
 SCIPP_CORE_EXPORT Variable operator-(const VariableConstProxy &a,
@@ -813,7 +824,8 @@ SCIPP_CORE_EXPORT Variable operator*(const VariableConstProxy &a,
                                      const VariableConstProxy &b);
 SCIPP_CORE_EXPORT Variable operator/(const VariableConstProxy &a,
                                      const VariableConstProxy &b);
-
+SCIPP_CORE_EXPORT Variable operator|(const VariableConstProxy &a,
+                                     const VariableConstProxy &b);
 // Note: If the left-hand-side in an addition is a VariableProxy this simply
 // implicitly converts it to a Variable. A copy for the return value is required
 // anyway so this is a convenient way to avoid defining more overloads.

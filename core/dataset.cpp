@@ -59,7 +59,8 @@ auto makeProxyItems(const Dimensions &dims, T1 &coords, T2 *sparse = nullptr) {
 }
 
 Dataset::Dataset(const DatasetConstProxy &proxy)
-    : Dataset(proxy, proxy.coords(), proxy.labels(), proxy.attrs()) {}
+    : Dataset(proxy, proxy.coords(), proxy.labels(), proxy.masks(),
+              proxy.attrs()) {}
 
 Dataset::Dataset(const DataConstProxy &data) { setData(data.name(), data); }
 
@@ -70,7 +71,7 @@ Dataset::Dataset(const std::map<std::string, DataConstProxy> &data) {
 
 /// Removes all data items from the Dataset.
 ///
-/// Coordinates, labels and attributes are not modified.
+/// Coordinates, labels, attributes and masks are not modified.
 /// This operation invalidates any proxy objects creeated from this dataset.
 void Dataset::clear() {
   m_data.clear();
@@ -111,6 +112,16 @@ AttrsConstProxy Dataset::attrs() const noexcept {
 /// Return a proxy to all attributes of the dataset.
 AttrsProxy Dataset::attrs() noexcept {
   return AttrsProxy(this, nullptr, makeProxyItems<std::string>(m_attrs));
+}
+
+/// Return a const proxy to all masks of the dataset.
+MasksConstProxy Dataset::masks() const noexcept {
+  return MasksConstProxy(makeProxyItems<std::string>(m_masks));
+}
+
+/// Return a proxy to all masks of the dataset.
+MasksProxy Dataset::masks() noexcept {
+  return MasksProxy(this, nullptr, makeProxyItems<std::string>(m_masks));
 }
 
 bool Dataset::contains(const std::string &name) const noexcept {
@@ -231,6 +242,9 @@ void Dataset::rebuildDims() {
   for (const auto &l : m_labels) {
     setDims(l.second.dims());
   }
+  for (const auto &m : m_masks) {
+    setDims(m.second.dims());
+  }
   for (const auto &a : m_attrs) {
     setDims(a.second.dims());
   }
@@ -258,6 +272,15 @@ void Dataset::setAttr(const std::string &attrName, Variable attr) {
   m_attrs.insert_or_assign(attrName, std::move(attr));
 }
 
+/// Set (insert or replace) the masks for the given mask name.
+///
+/// Note that the mask name has no relation to names of data items.
+void Dataset::setMask(const std::string &masksName, Variable masks) {
+  setDims(masks.dims());
+
+  m_masks.insert_or_assign(masksName, std::move(masks));
+}
+
 /// Set (insert or replace) data (values, optional variances) with given name.
 ///
 /// Throws if the provided values bring the dataset into an inconsistent state
@@ -274,7 +297,7 @@ void Dataset::setData(const std::string &name, Variable data) {
 
 /// Set (insert or replace) data item with given name.
 ///
-/// Coordinates, labels, and attributes of the data array are added to the
+/// Coordinates, labels, attributes and masks of the data array are added to the
 /// dataset. Throws if there are existing but mismatching coords, labels, or
 /// attributes. Throws if the provided data brings the dataset into an
 /// inconsistent state (mismatching dtype, unit, or dimensions).
@@ -299,6 +322,11 @@ void Dataset::setData(const std::string &name, const DataConstProxy &data) {
         setLabels(std::string(nm), labs);
     }
   }
+
+  for (const auto &[nm, mask] : data.masks()) {
+    setMask(std::string(nm), mask);
+  }
+
   for (const auto &[nm, attr] : data.attrs()) {
     if (const auto it = m_attrs.find(std::string(nm)); it != m_attrs.end())
       expect::equals(attr, it->second);
@@ -523,6 +551,12 @@ AttrsConstProxy DataConstProxy::attrs() const noexcept {
       makeProxyItems<std::string>(dims(), m_dataset->m_attrs), slices());
 }
 
+/// Return a const proxy to all masks of the data proxy.
+MasksConstProxy DataConstProxy::masks() const noexcept {
+  return MasksConstProxy(
+      makeProxyItems<std::string>(dims(), m_dataset->m_masks), slices());
+}
+
 /// Return a proxy to all coordinates of the data proxy.
 ///
 /// If the data has a sparse dimension the returned proxy will not contain any
@@ -553,6 +587,13 @@ AttrsProxy DataProxy::attrs() const noexcept {
   return AttrsProxy(
       m_mutableDataset, &name(),
       makeProxyItems<std::string>(dims(), m_mutableDataset->m_attrs), slices());
+}
+
+/// Return a proxy to all masks of the data proxy.
+MasksProxy DataProxy::masks() const noexcept {
+  return MasksProxy(
+      m_mutableDataset, &name(),
+      makeProxyItems<std::string>(dims(), m_mutableDataset->m_masks), slices());
 }
 
 DataProxy DataProxy::assign(const DataConstProxy &other) const {
@@ -627,7 +668,19 @@ AttrsProxy DatasetProxy::attrs() const noexcept {
                     makeProxyItems<std::string>(m_mutableDataset->m_attrs),
                     slices());
 }
+/// Return a const proxy to all masks of the dataset slice.
+MasksConstProxy DatasetConstProxy::masks() const noexcept {
+  return MasksConstProxy(makeProxyItems<std::string>(m_dataset->m_masks),
+                         slices());
+}
 
+/// Return a proxy to all masks of the dataset slice.
+MasksProxy DatasetProxy::masks() const noexcept {
+  auto *parent = slices().empty() ? m_mutableDataset : nullptr;
+  return MasksProxy(parent, nullptr,
+                    makeProxyItems<std::string>(m_mutableDataset->m_masks),
+                    slices());
+}
 void DatasetConstProxy::expectValidKey(const std::string &name) const {
   if (std::find(m_indices.begin(), m_indices.end(), name) == m_indices.end())
     throw std::out_of_range("Invalid key `" + std::string(name) +
@@ -660,6 +713,8 @@ bool operator==(const DataConstProxy &a, const DataConstProxy &b) {
     return false;
   if (a.labels() != b.labels())
     return false;
+  if (a.masks() != b.masks())
+    return false;
   if (a.attrs() != b.attrs())
     return false;
   if (a.hasData() && a.data() != b.data())
@@ -677,6 +732,8 @@ template <class A, class B> bool dataset_equals(const A &a, const B &b) {
   if (a.coords() != b.coords())
     return false;
   if (a.labels() != b.labels())
+    return false;
+  if (a.masks() != b.masks())
     return false;
   if (a.attrs() != b.attrs())
     return false;
@@ -757,4 +814,38 @@ std::unordered_map<Dim, scipp::index> Dataset::dimensions() const {
   return all;
 }
 
+std::map<typename MasksConstProxy::key_type,
+         typename MasksConstProxy::mapped_type>
+union_or(const MasksConstProxy &currentMasks,
+         const MasksConstProxy &otherMasks) {
+  std::map<typename MasksConstProxy::key_type,
+           typename MasksConstProxy::mapped_type>
+      out;
+
+  for (const auto &[key, item] : currentMasks) {
+    out.emplace(key, item);
+  }
+
+  for (const auto &[key, item] : otherMasks) {
+    const auto it = currentMasks.find(key);
+    if (it != currentMasks.end()) {
+      out[key] |= item;
+    } else {
+      out.emplace(key, item);
+    }
+  }
+  return out;
+}
+
+void union_or_in_place(const MasksProxy &currentMasks,
+                       const MasksConstProxy &otherMasks) {
+  for (const auto &[key, item] : otherMasks) {
+    const auto it = currentMasks.find(key);
+    if (it != currentMasks.end()) {
+      it->second |= item;
+    } else {
+      currentMasks.set(key, item);
+    }
+  }
+}
 } // namespace scipp::core

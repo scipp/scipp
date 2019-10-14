@@ -237,6 +237,11 @@ void init_variable(py::module &m) {
   bind_binary_scalars(variable);
   bind_binary_scalars(variableProxy);
 
+  bind_or_operators<Variable>(variable);
+  bind_or_operators<VariableProxy>(variable);
+  bind_or_operators<Variable>(variableProxy);
+  bind_or_operators<VariableProxy>(variableProxy);
+
   bind_data_properties(variable);
   bind_data_properties(variableProxy);
 

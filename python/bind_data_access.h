@@ -69,7 +69,7 @@ inline py::buffer_info make_py_buffer_info(VariableProxy &view) {
 template <class... Ts> class as_VariableViewImpl;
 
 class DataAccessHelper {
-  template <class... Ts> friend struct as_VariableViewImpl;
+  template <class... Ts> friend class as_VariableViewImpl;
 
   template <class Getter, class T, class Var>
   static py::object as_py_array_t_impl(py::object &obj, Var &view) {
