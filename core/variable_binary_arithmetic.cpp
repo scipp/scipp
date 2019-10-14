@@ -136,7 +136,10 @@ template <class T1, class T2> Variable or_op(const T1 &a, const T2 &b) {
       overloaded{[](const Bool &var_, const Bool &other_) -> Bool {
                    return var_ | other_;
                  },
-                 [](const auto & /*unused*/, const auto & /*unused*/) {
+                 [](const auto & /*unused*/, const auto & /*unused*/) -> Bool {
+                   // Note that this may not return a Bool if implemented,
+                   // butspecifying the return type prevents
+                   // an error in clang
                    throw std::runtime_error("This operation can only be "
                                             "performed on containers with "
                                             "boolean data type.");
