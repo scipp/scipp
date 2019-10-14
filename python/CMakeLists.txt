@@ -3,6 +3,7 @@
 pybind11_add_module(_scipp
                     SHARED
                     SYSTEM
+                    counts.cpp
                     dataset.cpp
                     dimensions.cpp
                     dtype.cpp
