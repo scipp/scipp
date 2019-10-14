@@ -4,11 +4,9 @@
 /// @author Simon Heybrock
 #include <benchmark/benchmark.h>
 
+#include "common.h"
+
 #include "scipp/core/variable.h"
-
-#include "../core/test/make_sparse.h"
-
-#include <random>
 
 using namespace scipp::core;
 using namespace scipp;
@@ -54,23 +52,6 @@ template <typename T> struct Generate6D {
                             {Dim::Qx, size},
                             {Dim::Qy, size},
                             {Dim::Qz, size}});
-  }
-};
-
-template <typename T> struct GenerateSparse {
-  Variable operator()(int size) {
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::uniform_int_distribution<> dis(0, 100);
-
-    auto a = make_sparse_variable<T>(size);
-
-    /* Generate a random amount of sparse data for each point */
-    auto vals = a.template sparseValues<T>();
-    for (scipp::index i = 0; i < size; ++i)
-      vals[i] = scipp::core::sparse_container<T>(dis(gen), i);
-
-    return a;
   }
 };
 

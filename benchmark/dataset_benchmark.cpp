@@ -5,6 +5,8 @@
 
 #include <numeric>
 
+#include "common.h"
+
 #include "scipp/core/dataset.h"
 
 // Length of a string that can be stored with SSO
@@ -153,6 +155,17 @@ template <int NameLen> struct GenerateWithDataItems {
   }
 };
 
+template <int NameLen> struct GenerateWithSparseDataItems {
+  Dataset operator()(const int itemCount = 5, const int size = 100) {
+    Dataset d;
+    GenerateSparse<double> gen;
+    for (auto i = 0; i < itemCount; ++i) {
+      d.setData(std::to_string(i) + std::string(NameLen, 'i'), gen(size));
+    }
+    return d;
+  }
+};
+
 template <class Gen>
 static void BM_Dataset_item_access(benchmark::State &state) {
   const auto d = Gen()();
@@ -222,6 +235,12 @@ static void Args_Dataset_copy(benchmark::internal::Benchmark *b) {
 BENCHMARK_TEMPLATE(BM_Dataset_copy, GenerateWithDataItems<SHORT_STRING_LENGTH>)
     ->Apply(Args_Dataset_copy);
 BENCHMARK_TEMPLATE(BM_Dataset_copy, GenerateWithDataItems<LONG_STRING_LENGTH>)
+    ->Apply(Args_Dataset_copy);
+BENCHMARK_TEMPLATE(BM_Dataset_copy,
+                   GenerateWithSparseDataItems<SHORT_STRING_LENGTH>)
+    ->Apply(Args_Dataset_copy);
+BENCHMARK_TEMPLATE(BM_Dataset_copy,
+                   GenerateWithSparseDataItems<LONG_STRING_LENGTH>)
     ->Apply(Args_Dataset_copy);
 
 BENCHMARK_MAIN();
