@@ -5,8 +5,8 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
-from .tools import edges_to_centers, axis_label, parse_colorbar, \
-                   process_dimensions
+from ..tools import edges_to_centers, axis_label, parse_colorbar, \
+                    process_dimensions
 
 
 def plot_matplotlib(input_data, ndim=0, name=None, config=None, **kwargs):
