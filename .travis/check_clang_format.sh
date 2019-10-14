@@ -3,7 +3,7 @@
 # Check that the source conforms to the clang-format style
 
 # Find clang-format executable
-CLANG_FORMAT_EXE=clang-format-5.0
+CLANG_FORMAT_EXE=clang-format-6.0
 if [ -z "$(which $CLANG_FORMAT_EXE)" ]; then
   echo "Cannot find ${CLANG_FORMAT_EXE} executable"
   exit 1

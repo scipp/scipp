@@ -2,7 +2,7 @@
 # PYTHONPATH.
 import unittest
 
-import scipp as sp
+import scipp as sc
 import mantid.simpleapi as mantid
 import scipp.compat.mantid as mantidcompat
 # import matplotlib.pyplot as plt
@@ -18,7 +18,7 @@ class TestMantidConversion(unittest.TestCase):
         d = mantidcompat.to_dataset(ws)
         print(d)
         # self.assertEqual(d.dimensions.shape[])
-        # dataset = as_xarray(d[sp.Dim.Position, 1000:2000])
+        # dataset = as_xarray(d[sc.Dim.Position, 1000:2000])
         # dataset['Value'].plot()
         # plt.show()
         # plt.savefig('test.png')
@@ -31,22 +31,22 @@ class TestMantidConversion(unittest.TestCase):
 
         binned_mantid = mantidcompat.to_dataset(ws)
 
-        tof = sp.Variable(binned_mantid[sp.Coord.Tof])
+        tof = sc.Variable(binned_mantid[sc.Coord.Tof])
         d = mantidcompat.to_dataset(eventWS)
-        binned = sp.histogram(d, tof)
+        binned = sc.histogram(d, tof)
 
-        delta = sp.sum(binned_mantid - binned, sp.Dim.Position)
+        delta = sc.sum(binned_mantid - binned, sc.Dim.Position)
         print(delta)
 
         # ds = as_xarray(delta)
         # ds['Value'].plot()
         # plt.savefig('delta.png')
 
-        # ds = as_xarray(sum(binned, sp.Dim.Position))
+        # ds = as_xarray(sum(binned, sc.Dim.Position))
         # ds['Value'].plot()
         # plt.savefig('binned.png')
 
-        # ds = as_xarray(sum(binned_mantid, sp.Dim.Position))
+        # ds = as_xarray(sum(binned_mantid, sc.Dim.Position))
         # ds['Value'].plot()
         # plt.savefig('binned_mantid.png')
 
@@ -56,29 +56,29 @@ class TestMantidConversion(unittest.TestCase):
         eventWS = mantid.LoadEventNexus(filename)
         ws = mantid.Rebin(eventWS, -0.001, PreserveEvents=False)
         tmp = mantidcompat.to_dataset(ws)
-        tof = sp.Variable(tmp[sp.Coord.Tof])
+        tof = sc.Variable(tmp[sc.Coord.Tof])
         ws = mantid.ConvertUnits(InputWorkspace=ws, Target='DeltaE',
                                  EMode='Direct', EFixed=3.3056)
 
         converted_mantid = mantidcompat.to_dataset(ws)
-        converted_mantid[sp.Coord.Ei] = ([], 3.3059)
+        converted_mantid[sc.Coord.Ei] = ([], 3.3059)
 
         d = mantidcompat.to_dataset(eventWS, drop_pulse_times=True)
-        d[sp.Coord.Ei] = ([], 3.3059)
-        d.merge(sp.histogram(d, tof))
-        del(d[sp.Data.Events])
-        converted = sp.convert(d, sp.Dim.Tof, sp.Dim.DeltaE)
+        d[sc.Coord.Ei] = ([], 3.3059)
+        d.merge(sc.histogram(d, tof))
+        del(d[sc.Data.Events])
+        converted = sc.convert(d, sc.Dim.Tof, sc.Dim.DeltaE)
 
-        delta = sp.sum(converted_mantid - converted, sp.Dim.Position)
+        delta = sc.sum(converted_mantid - converted, sc.Dim.Position)
         print(delta)
 
         # ds = as_xarray(delta)
         # ds['Value'].plot()
 
-        # ds = as_xarray(sum(converted, sp.Dim.Position))
+        # ds = as_xarray(sum(converted, sc.Dim.Position))
         # ds['Value'].plot()
 
-        # ds = as_xarray(sum(converted_mantid, sp.Dim.Position))
+        # ds = as_xarray(sum(converted_mantid, sc.Dim.Position))
         # ds['Value'].plot()
         # plt.savefig('converted.png')
 
