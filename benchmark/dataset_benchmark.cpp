@@ -143,29 +143,6 @@ BENCHMARK_TEMPLATE(BM_Dataset_labels_slice, Generate6D<SHORT_STRING_LENGTH>,
 BENCHMARK_TEMPLATE(BM_Dataset_labels_slice, Generate6D<LONG_STRING_LENGTH>,
                    SliceXYQz);
 
-template <int NameLen> struct GenerateWithDataItems {
-  Dataset operator()(const int itemCount = 5, const int size = 100) {
-    Dataset d;
-    for (auto i = 0; i < itemCount; ++i) {
-      d.setData(std::to_string(i) + std::string(NameLen, 'i'),
-                makeVariable<double>(
-                    {{Dim::X, size}, {Dim::Y, size}, {Dim::Z, size}}));
-    }
-    return d;
-  }
-};
-
-template <int NameLen> struct GenerateWithSparseDataItems {
-  Dataset operator()(const int itemCount = 5, const int size = 100) {
-    Dataset d;
-    GenerateSparse<double> gen;
-    for (auto i = 0; i < itemCount; ++i) {
-      d.setData(std::to_string(i) + std::string(NameLen, 'i'), gen(size));
-    }
-    return d;
-  }
-};
-
 template <class Gen>
 static void BM_Dataset_item_access(benchmark::State &state) {
   const auto d = Gen()();
@@ -175,13 +152,14 @@ static void BM_Dataset_item_access(benchmark::State &state) {
   }
 }
 BENCHMARK_TEMPLATE(BM_Dataset_item_access,
-                   GenerateWithDataItems<SHORT_STRING_LENGTH>);
+                   Generate3DWithDataItems<SHORT_STRING_LENGTH>);
 BENCHMARK_TEMPLATE(BM_Dataset_item_access,
-                   GenerateWithDataItems<LONG_STRING_LENGTH>);
+                   Generate3DWithDataItems<LONG_STRING_LENGTH>);
 
 template <class Gen>
 static void BM_Dataset_iterate_items(benchmark::State &state) {
-  const auto d = Gen()(state.range(0));
+  const auto itemCount = state.range(0);
+  const auto d = Gen()(itemCount);
   for (auto _ : state) {
     for (const auto &[name, item] : d) {
       benchmark::DoNotOptimize(name);
@@ -189,18 +167,19 @@ static void BM_Dataset_iterate_items(benchmark::State &state) {
     }
   }
   state.counters["IterationItemRate"] = benchmark::Counter(
-      state.range(0), benchmark::Counter::kIsIterationInvariantRate);
+      itemCount, benchmark::Counter::kIsIterationInvariantRate);
 }
 BENCHMARK_TEMPLATE(BM_Dataset_iterate_items,
-                   GenerateWithDataItems<SHORT_STRING_LENGTH>)
+                   Generate3DWithDataItems<SHORT_STRING_LENGTH>)
     ->Range(1 << 2, 1 << 8);
 BENCHMARK_TEMPLATE(BM_Dataset_iterate_items,
-                   GenerateWithDataItems<LONG_STRING_LENGTH>)
+                   Generate3DWithDataItems<LONG_STRING_LENGTH>)
     ->Range(1 << 2, 1 << 8);
 
 template <class Gen, class Slice>
 static void BM_Dataset_iterate_slice_items(benchmark::State &state) {
-  const auto d = Gen()(state.range(0));
+  const auto itemCount = state.range(0);
+  const auto d = Gen()(itemCount);
   const auto s = Slice()(d);
   for (auto _ : state) {
     for (const auto &[name, item] : s) {
@@ -209,32 +188,36 @@ static void BM_Dataset_iterate_slice_items(benchmark::State &state) {
     }
   }
   state.counters["IterationItemRate"] = benchmark::Counter(
-      state.range(0), benchmark::Counter::kIsIterationInvariantRate);
+      itemCount, benchmark::Counter::kIsIterationInvariantRate);
 }
 BENCHMARK_TEMPLATE(BM_Dataset_iterate_slice_items,
-                   GenerateWithDataItems<SHORT_STRING_LENGTH>, SliceX)
+                   Generate3DWithDataItems<SHORT_STRING_LENGTH>, SliceX)
     ->Range(1 << 2, 1 << 8);
 BENCHMARK_TEMPLATE(BM_Dataset_iterate_slice_items,
-                   GenerateWithDataItems<SHORT_STRING_LENGTH>, SliceXY)
+                   Generate3DWithDataItems<SHORT_STRING_LENGTH>, SliceXY)
     ->Range(1 << 2, 1 << 8);
 BENCHMARK_TEMPLATE(BM_Dataset_iterate_slice_items,
-                   GenerateWithDataItems<SHORT_STRING_LENGTH>, SliceZXY)
+                   Generate3DWithDataItems<SHORT_STRING_LENGTH>, SliceZXY)
     ->Range(1 << 2, 1 << 8);
 
 template <class Gen> static void BM_Dataset_copy(benchmark::State &state) {
-  const auto d = Gen()(state.range(0), state.range(1));
+  const auto itemCount = state.range(0);
+  const auto itemLength = state.range(1);
+  const auto d = Gen()(itemCount, itemLength);
   for (auto _ : state) {
     Dataset copy(d);
   }
 }
 static void Args_Dataset_copy(benchmark::internal::Benchmark *b) {
   b->RangeMultiplier(2)
-      ->Ranges({{1, 16}, {32, 64}})
+      ->Ranges({/* Item count */ {1, 16},
+                /* Axis length */ {32, 64}})
       ->Unit(benchmark::kMicrosecond);
 }
-BENCHMARK_TEMPLATE(BM_Dataset_copy, GenerateWithDataItems<SHORT_STRING_LENGTH>)
+BENCHMARK_TEMPLATE(BM_Dataset_copy,
+                   Generate3DWithDataItems<SHORT_STRING_LENGTH>)
     ->Apply(Args_Dataset_copy);
-BENCHMARK_TEMPLATE(BM_Dataset_copy, GenerateWithDataItems<LONG_STRING_LENGTH>)
+BENCHMARK_TEMPLATE(BM_Dataset_copy, Generate3DWithDataItems<LONG_STRING_LENGTH>)
     ->Apply(Args_Dataset_copy);
 BENCHMARK_TEMPLATE(BM_Dataset_copy,
                    GenerateWithSparseDataItems<SHORT_STRING_LENGTH>)

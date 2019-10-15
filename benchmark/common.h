@@ -20,3 +20,26 @@ template <typename T> struct GenerateSparse {
     return a;
   }
 };
+
+template <int NameLen> struct Generate3DWithDataItems {
+  auto operator()(const int itemCount = 5, const int size = 100) {
+    Dataset d;
+    for (auto i = 0; i < itemCount; ++i) {
+      d.setData(std::to_string(i) + std::string(NameLen, 'i'),
+                makeVariable<double>(
+                    {{Dim::X, size}, {Dim::Y, size}, {Dim::Z, size}}));
+    }
+    return d;
+  }
+};
+
+template <int NameLen> struct GenerateWithSparseDataItems {
+  Dataset operator()(const int itemCount = 5, const int size = 100) {
+    Dataset d;
+    GenerateSparse<double> gen;
+    for (auto i = 0; i < itemCount; ++i) {
+      d.setData(std::to_string(i) + std::string(NameLen, 'i'), gen(size));
+    }
+    return d;
+  }
+};

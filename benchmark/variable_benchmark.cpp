@@ -56,7 +56,8 @@ template <typename T> struct Generate6D {
 };
 
 template <class Gen> static void BM_Variable_copy(benchmark::State &state) {
-  auto var = Gen()(state.range(0));
+  const auto axisLength = state.range(0);
+  auto var = Gen()(axisLength);
   for (auto _ : state) {
     Variable copy(var);
   }
