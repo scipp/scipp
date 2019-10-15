@@ -14,7 +14,12 @@ from contextlib import redirect_stdout
 
 def do_plot(d, **kwargs):
     with io.StringIO() as buf, redirect_stdout(buf):
-        sc.plot(d, **kwargs)
+        sc.plot.plot(d, **kwargs)
+
+        # TODO: The "static" backend is currently not tested as it requires
+        # the plotly-orca package to be installed via conda.
+        # sc.plot.plot(d, backend="static", **kwargs)
+
     return
 
 
@@ -42,7 +47,7 @@ def make_2d_dataset(variances=False):
     return d1
 
 
-def do_test_plot_1d(**kwargs):
+def test_plot_1d():
     d1 = sc.Dataset()
     N = 100
     d1.coords[sc.Dim.Tof] = sc.Variable([sc.Dim.Tof],
@@ -51,10 +56,10 @@ def do_test_plot_1d(**kwargs):
     d1["Sample"] = sc.Variable([sc.Dim.Tof],
                                values=10.0 * np.random.rand(N),
                                unit=sc.units.counts)
-    do_plot(d1, **kwargs)
+    do_plot(d1)
 
 
-def do_test_plot_1d_with_variances():
+def test_plot_1d_with_variances():
     d1 = sc.Dataset()
     N = 100
     d1.coords[sc.Dim.Tof] = sc.Variable([sc.Dim.Tof],
@@ -67,7 +72,7 @@ def do_test_plot_1d_with_variances():
     do_plot(d1)
 
 
-def do_test_plot_1d_bin_edges():
+def test_plot_1d_bin_edges():
     d1 = sc.Dataset()
     N = 100
     d1.coords[sc.Dim.Tof] = sc.Variable([sc.Dim.Tof],
@@ -80,7 +85,7 @@ def do_test_plot_1d_bin_edges():
     do_plot(d1)
 
 
-def do_test_plot_1d_bin_edges_with_variances():
+def test_plot_1d_bin_edges_with_variances():
     d1 = sc.Dataset()
     N = 100
     d1.coords[sc.Dim.Tof] = sc.Variable([sc.Dim.Tof],
@@ -94,7 +99,7 @@ def do_test_plot_1d_bin_edges_with_variances():
     do_plot(d1)
 
 
-def do_test_plot_1d_two_entries():
+def test_plot_1d_two_entries():
     d1 = sc.Dataset()
     N = 100
     d1.coords[sc.Dim.Tof] = sc.Variable([sc.Dim.Tof],
@@ -109,7 +114,7 @@ def do_test_plot_1d_two_entries():
     do_plot(d1)
 
 
-def do_test_plot_1d_list_of_datasets():
+def test_plot_1d_list_of_datasets():
     N = 100
     d1 = sc.Dataset()
     d1.coords[sc.Dim.Tof] = sc.Variable([sc.Dim.Tof],
@@ -131,32 +136,32 @@ def do_test_plot_1d_list_of_datasets():
     do_plot([d1, d2])
 
 
-def do_test_plot_2d_image():
+def test_plot_2d_image():
     d1 = make_2d_dataset()
     do_plot(d1)
 
 
-def do_test_plot_2d_image_with_axes():
+def test_plot_2d_image_with_axes():
     d1 = make_2d_dataset()
     do_plot(d1, axes=[sc.Dim.X, sc.Dim.Y])
 
 
-def do_test_plot_2d_image_with_variances():
+def test_plot_2d_image_with_variances():
     d1 = make_2d_dataset(variances=True)
     do_plot(d1)
 
 
-def do_test_plot_2d_image_with_filename(fname):
+def test_plot_2d_image_with_filename():
     d1 = make_2d_dataset()
-    do_plot(d1, filename=fname)
+    do_plot(d1, filename="image.html")
 
 
-def do_test_plot_2d_image_with_variances_with_filename(fname):
+def test_plot_2d_image_with_variances_with_filename():
     d1 = make_2d_dataset(variances=True)
-    do_plot(d1, filename=fname)
+    do_plot(d1, filename="val_and_var.html")
 
 
-def do_test_plot_collapse():
+def test_plot_collapse():
     N = 100
     M = 5
     d1 = sc.Dataset()
@@ -173,7 +178,7 @@ def do_test_plot_collapse():
     do_plot(d1, collapse=sc.Dim.Tof)
 
 
-def do_test_plot_sliceviewer():
+def test_plot_sliceviewer():
     d1 = sc.Dataset()
     n1 = 20
     n2 = 30
@@ -190,7 +195,7 @@ def do_test_plot_sliceviewer():
     do_plot(d1)
 
 
-def do_test_plot_sliceviewer_with_variances():
+def test_plot_sliceviewer_with_variances():
     d1 = sc.Dataset()
     n1 = 20
     n2 = 30
@@ -208,7 +213,7 @@ def do_test_plot_sliceviewer_with_variances():
     do_plot(d1, show_variances=True)
 
 
-def do_test_plot_sliceviewer_with_two_sliders():
+def test_plot_sliceviewer_with_two_sliders():
     d1 = sc.Dataset()
     n1 = 20
     n2 = 30
@@ -228,7 +233,7 @@ def do_test_plot_sliceviewer_with_two_sliders():
     do_plot(d1)
 
 
-def do_test_plot_sliceviewer_with_axes():
+def test_plot_sliceviewer_with_axes():
     d1 = sc.Dataset()
     n1 = 20
     n2 = 30
@@ -245,7 +250,7 @@ def do_test_plot_sliceviewer_with_axes():
     do_plot(d1, axes=[sc.Dim.Y, sc.Dim.X, sc.Dim.Z])
 
 
-def do_test_plot_sliceviewer_with_3d_projection():
+def test_plot_sliceviewer_with_3d_projection():
     d1 = sc.Dataset()
     n1 = 20
     n2 = 30
@@ -262,7 +267,7 @@ def do_test_plot_sliceviewer_with_3d_projection():
     do_plot(d1, projection="3d")
 
 
-def do_test_plot_sliceviewer_with_3d_projection_with_variances():
+def test_plot_sliceviewer_with_3d_projection_with_variances():
     d1 = sc.Dataset()
     n1 = 20
     n2 = 30
@@ -280,161 +285,11 @@ def do_test_plot_sliceviewer_with_3d_projection_with_variances():
     do_plot(d1, projection="3d", show_variances=True)
 
 
-def do_test_plot_2d_image_rasterized():
+def test_plot_2d_image_rasterized():
     d1 = make_2d_dataset()
     do_plot(d1, rasterize=True)
 
 
-def do_test_plot_2d_image_with_variances_rasterized():
+def test_plot_2d_image_with_variances_rasterized():
     d1 = make_2d_dataset(variances=True)
     do_plot(d1, rasterize=True)
-
-
-# Using plotly backend =======================================================
-
-
-def test_plot_1d():
-    do_test_plot_1d()
-
-
-def test_plot_1d_with_variances():
-    do_test_plot_1d_with_variances()
-
-
-def test_plot_1d_bin_edges():
-    do_test_plot_1d_bin_edges()
-
-
-def test_plot_1d_bin_edges_with_variances():
-    do_test_plot_1d_bin_edges_with_variances()
-
-
-def test_plot_1d_two_entries():
-    do_test_plot_1d_bin_edges_with_variances()
-
-
-def test_plot_1d_list_of_datasets():
-    do_test_plot_1d_list_of_datasets()
-
-
-def test_plot_2d_image():
-    do_test_plot_2d_image()
-
-
-def test_plot_2d_image_with_axes():
-    do_test_plot_2d_image_with_axes()
-
-
-def test_plot_2d_image_with_variances():
-    do_test_plot_2d_image_with_variances()
-
-
-def test_plot_2d_image_with_filename():
-    do_test_plot_2d_image_with_filename("image.html")
-
-
-def test_plot_2d_image_with_variances_with_filename():
-    do_test_plot_2d_image_with_variances_with_filename("val_and_var.html")
-
-
-def test_plot_collapse():
-    do_test_plot_collapse()
-
-
-def test_plot_sliceviewer():
-    do_test_plot_sliceviewer()
-
-
-def test_plot_sliceviewer_with_variances():
-    do_test_plot_sliceviewer_with_variances()
-
-
-def test_plot_sliceviewer_with_two_sliders():
-    do_test_plot_sliceviewer_with_two_sliders()
-
-
-def test_plot_sliceviewer_with_axes():
-    do_test_plot_sliceviewer_with_axes()
-
-
-def test_plot_sliceviewer_with_3d_projection():
-    do_test_plot_sliceviewer_with_3d_projection()
-
-
-def test_plot_sliceviewer_with_3d_projection_with_variances():
-    do_test_plot_sliceviewer_with_3d_projection_with_variances()
-
-
-def test_plot_2d_image_rasterized():
-    do_test_plot_2d_image_rasterized()
-
-
-def test_plot_2d_image_with_variances_rasterized():
-    do_test_plot_2d_image_with_variances_rasterized()
-
-
-# Using matplotlib backend ====================================================
-
-
-def test_plot_1d_mpl():
-    sc.plot_config.backend = "matplotlib"
-    do_test_plot_1d()
-
-
-def test_plot_1d_with_variances_mpl():
-    sc.plot_config.backend = "matplotlib"
-    do_test_plot_1d_with_variances()
-
-
-def test_plot_1d_bin_edges_mpl():
-    sc.plot_config.backend = "matplotlib"
-    do_test_plot_1d_bin_edges()
-
-
-def test_plot_1d_bin_edges_with_variances_mpl():
-    sc.plot_config.backend = "matplotlib"
-    do_test_plot_1d_bin_edges_with_variances()
-
-
-def test_plot_1d_two_entries_mpl():
-    sc.plot_config.backend = "matplotlib"
-    do_test_plot_1d_bin_edges_with_variances()
-
-
-def test_plot_1d_list_of_datasets_mpl():
-    sc.plot_config.backend = "matplotlib"
-    do_test_plot_1d_list_of_datasets()
-
-
-def test_plot_2d_image_mpl():
-    sc.plot_config.backend = "matplotlib"
-    do_test_plot_2d_image()
-
-
-def test_plot_2d_image_with_axes_mpl():
-    sc.plot_config.backend = "matplotlib"
-    do_test_plot_2d_image_with_axes()
-
-
-def test_plot_2d_image_with_variances_mpl():
-    sc.plot_config.backend = "matplotlib"
-    do_test_plot_2d_image_with_variances()
-
-
-def test_plot_2d_image_with_filename_mpl():
-    sc.plot_config.backend = "matplotlib"
-    do_test_plot_2d_image_with_filename("image.pdf")
-
-
-def test_plot_2d_image_with_variances_with_filename_mpl():
-    sc.plot_config.backend = "matplotlib"
-    do_test_plot_2d_image_with_variances_with_filename("val_and_var.pdf")
-
-
-def test_plot_collapse_mpl():
-    sc.plot_config.backend = "matplotlib"
-    do_test_plot_collapse()
-
-
-def test_plot_1d_mpl_as_keyword_arg():
-    do_test_plot_1d(backend="matplotlib")
