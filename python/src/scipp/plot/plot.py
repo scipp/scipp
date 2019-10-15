@@ -4,7 +4,6 @@
 
 # Scipp imports
 from .. import _scipp as sc
-from . import config
 
 
 def plot(input_data, collapse=None, backend=None, color=None, **kwargs):
@@ -71,7 +70,7 @@ def plot(input_data, collapse=None, backend=None, color=None, **kwargs):
                           backend=backend, **kwargs)
         else:
             plot_all(input_data=val[1], ndim=val[0], name=name,
-                                backend=backend, color=color, **kwargs)
+                     backend=backend, color=color, **kwargs)
 
     return
 

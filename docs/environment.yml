@@ -3,6 +3,7 @@ name: scipp-docs
 channels:
   - conda-forge
   - scipp/label/dev
+  - plotly
 
 dependencies:
   - python>=3
@@ -16,4 +17,5 @@ dependencies:
   - scipp
   - matplotlib
   - plotly
+  - plotly-orca
   - ipywidgets

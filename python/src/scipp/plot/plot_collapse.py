@@ -91,7 +91,7 @@ def plot_collapse(input_data, dim=None, name=None, filename=None, backend=None,
         if ds_temp.variances is not None:
             variances = ds_temp.variances
         ds[key] = sc.core.Variable([dim], values=ds_temp.values,
-                              variances=variances)
+                                   variances=variances)
         data[key] = ds[key]
         color.append(get_color(index=i))
 
