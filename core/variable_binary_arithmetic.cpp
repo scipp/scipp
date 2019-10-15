@@ -31,7 +31,7 @@ template <class... Ts> struct pair_product {
 template <class... Ts>
 using pair_product_t = typename pair_product<Ts...>::type;
 
-using arithmetic_type_pairs = pair_product_t<float, double, int32_t, int64_t>;
+using arithmetic_type_pairs = pair_product_t<float, double, int32_t, int64_t, bool>;
 
 using arithmetic_and_matrix_type_pairs = decltype(std::tuple_cat(
     std::declval<arithmetic_type_pairs>(),
@@ -295,6 +295,15 @@ Variable operator/(const double a, const VariableConstProxy &b_proxy) {
   return b;
 }
 
+Variable Variable::operator~() const {
+  return transform<bool>(
+      *this, overloaded{[](const auto &current) { return !current; },
+                        [](const units::Unit &unit) -> units::Unit {
+                          expect::equals(unit, units::dimensionless);
+                          return unit;
+                        }});
+}
+
 struct MakeVariableWithType {
   template <class T> struct Maker {
     static Variable apply(const VariableConstProxy &parent) {
@@ -321,5 +330,4 @@ Variable astype(const VariableConstProxy &var, DType type) {
   return type == var.dtype() ? Variable(var)
                              : MakeVariableWithType::make(var, type);
 }
-
 } // namespace scipp::core

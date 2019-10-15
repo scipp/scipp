@@ -217,16 +217,52 @@ Variable sum(const VariableConstProxy &var, const Dim dim) {
   return summed;
 }
 
+Variable sum(const VariableConstProxy &var, const Dim dim,
+             const MasksConstProxy &masks) {
+  if (masks.empty()) {
+    return sum(var, dim);
+  } else {
+    auto maskUnion = makeVariable<bool>(var.dims());
+    for (const auto &mask : masks) {
+      maskUnion |= mask.second;
+    }
+    return sum(var * ~maskUnion, dim);
+  }
+}
+
 Variable mean(const VariableConstProxy &var, const Dim dim) {
+  return mean(var, dim, 0);
+}
+
+Variable mean(const VariableConstProxy &var, const Dim dim,
+              const scipp::index num_masks) {
   // In principle we *could* support mean/sum over sparse dimension.
   expect::notSparse(var);
   auto summed = sum(var, dim);
-  auto scale = makeVariable<double>(1.0 / static_cast<double>(var.dims()[dim]));
+  auto scale = makeVariable<double>(
+      1.0 / static_cast<double>(var.dims()[dim] - num_masks));
   if (isInt(var.dtype()))
     summed = summed * scale;
   else
     summed *= scale;
   return summed;
+}
+
+Variable mean(const VariableConstProxy &var, const Dim dim,
+              const MasksConstProxy &masks) {
+  if (masks.empty()) {
+    return mean(var, dim, 0);
+  } else {
+    auto maskUnion = makeVariable<bool>(var.dims());
+    for (const auto &mask : masks) {
+      maskUnion |= mask.second;
+    }
+
+    scipp::index num_masks = std::count(maskUnion.values<bool>().begin(),
+                                        maskUnion.values<bool>().end(), true);
+
+    return mean(var * ~maskUnion, dim, num_masks);
+  }
 }
 
 Variable abs(const Variable &var) {
