@@ -113,42 +113,36 @@ BENCHMARK_TEMPLATE(BM_Variable_copy, GenerateSparse<float>)
 BENCHMARK_TEMPLATE(BM_Variable_copy, GenerateSparse<double>)
     ->Apply(Args_Variable_copy_sparse);
 
-/* static void BM_Variable_trivial_slice(benchmark::State &state) { */
-/*   auto var = makeVariable<double>({{Dim::Z, 10}, {Dim::Y, 20}, {Dim::X,
- * 30}}); */
+static void BM_Variable_trivial_slice(benchmark::State &state) {
+  auto var = makeVariable<double>({{Dim::Z, 10}, {Dim::Y, 20}, {Dim::X, 30}});
 
-/*   for (auto _ : state) { */
-/*     ConstVariableSlice view(var); */
-/*     Variable copy(view); */
-/*   } */
-/* } */
-/* BENCHMARK(BM_Variable_trivial_slice); */
+  for (auto _ : state) {
+    VariableProxy view(var);
+    Variable copy(view);
+  }
+}
+BENCHMARK(BM_Variable_trivial_slice);
 
-/* // The following two benchmarks "prove" that operator+ with a VariableSlice
- * is */
-/* // not unintentionally converting the second argument to a temporary
- * Variable. */
-/* static void BM_Variable_binary_with_Variable(benchmark::State &state) { */
-/*   auto var = makeVariable<double>({{Dim::Z, 10}, {Dim::Y, 20}, {Dim::X,
- * 30}}); */
-/*   Variable a = var(Dim::Z, 0, 8); */
+// The following two benchmarks "prove" that operator+ with a VariableProxy is
+// not unintentionally converting the second argument to a temporary Variable.
+static void BM_Variable_binary_with_Variable(benchmark::State &state) {
+  auto var = makeVariable<double>({{Dim::Z, 10}, {Dim::Y, 20}, {Dim::X, 30}});
+  Variable a(var.slice({Dim::Z, 0, 8}));
 
-/*   for (auto _ : state) { */
-/*     Variable b = var(Dim::Z, 1, 9); */
-/*     auto sum = a + b; */
-/*   } */
-/* } */
-/* static void BM_Variable_binary_with_VariableSlice(benchmark::State &state) {
- */
-/*   auto b = makeVariable<double>({{Dim::Z, 10}, {Dim::Y, 20}, {Dim::X, 30}});
- */
-/*   Variable a = b(Dim::Z, 0, 8); */
+  for (auto _ : state) {
+    Variable b(var.slice({Dim::Z, 1, 9}));
+    auto sum = a + b;
+  }
+}
+static void BM_Variable_binary_with_VariableProxy(benchmark::State &state) {
+  auto b = makeVariable<double>({{Dim::Z, 10}, {Dim::Y, 20}, {Dim::X, 30}});
+  Variable a(b.slice({Dim::Z, 0, 8}));
 
-/*   for (auto _ : state) { */
-/*     auto sum = a + b(Dim::Z, 1, 9); */
-/*   } */
-/* } */
-/* BENCHMARK(BM_Variable_binary_with_Variable); */
-/* BENCHMARK(BM_Variable_binary_with_VariableSlice); */
+  for (auto _ : state) {
+    auto sum = a + b.slice({Dim::Z, 1, 9});
+  }
+}
+BENCHMARK(BM_Variable_binary_with_Variable);
+BENCHMARK(BM_Variable_binary_with_VariableProxy);
 
 BENCHMARK_MAIN();
