@@ -2,7 +2,6 @@
 # Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock, Neil Vaytet
 
-
 import scipp as sc
 import numpy as np
 
@@ -69,9 +68,8 @@ def convert_Workspace2D_to_dataset(ws):
         coord = sc.Variable([dim], values=ws.readX(0), unit=unit)
     else:
         coord = sc.Variable([sc.Dim.Spectrum, dim],
-                             shape=(ws.getNumberHistograms(),
-                                    len(ws.readX(0))),
-                             unit=unit)
+                            shape=(ws.getNumberHistograms(), len(ws.readX(0))),
+                            unit=unit)
         for i in range(ws.getNumberHistograms()):
             coord[sc.Dim.Spectrum, i].values = ws.readX(i)
 
@@ -116,8 +114,8 @@ def convert_EventWorkspace_to_dataset(ws, load_pulse_times, EventType):
 
     # TODO Use unit information in workspace, if available.
     coord = sc.Variable([sc.Dim.Spectrum, dim],
-                         shape=[nHist, sc.Dimensions.Sparse],
-                         unit=unit)
+                        shape=[nHist, sc.Dimensions.Sparse],
+                        unit=unit)
     if load_pulse_times:
         labs = sc.Variable([sc.Dim.Spectrum, dim],
                            shape=[nHist, sc.Dimensions.Sparse])
@@ -206,10 +204,9 @@ def convert_TableWorkspace_to_dataset(ws, error_connection=None):
 
             if columnTypes[error_index] in blacklist_variance_types:
                 # Raise error to avoid numpy square error for strings
-                raise RuntimeError(
-                    "Variance can not have type string. \n"
-                    + "Data:     " + str(data_name) + "\n"
-                    + "Variance: " + str(error_name) + "\n")
+                raise RuntimeError("Variance can not have type string. \n" +
+                                   "Data:     " + str(data_name) + "\n" +
+                                   "Variance: " + str(error_name) + "\n")
 
             variance = np.array(ws.column(error_name))**2
             variables[data_name] = sc.Variable([sc.Dim.Row],
