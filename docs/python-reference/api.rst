@@ -52,6 +52,19 @@ Trigonometric
    asin
    acos
    atan
+   
+Counts
+~~~~~~
+
+"Counts" refers to the default unit of data after histogramming.
+It is also known as frequency.
+This can be converted into a counts (frequency) density, e.g., for visualization purposes.
+
+.. autosummary::
+   :toctree: ../generated
+
+   counts_to_density
+   density_to_counts
 
 Data types
 ==========
