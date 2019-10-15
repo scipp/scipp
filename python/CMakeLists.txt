@@ -11,6 +11,7 @@ pybind11_add_module(_scipp
                     sparse_container.cpp
                     units_neutron.cpp
                     variable.cpp
+                    variable_instantiate_py_object.cpp
                     variable_view.cpp)
 target_link_libraries(_scipp LINK_PRIVATE scipp-core scipp-neutron)
 
