@@ -981,12 +981,12 @@ TEST(DatasetSetData, labels) {
 }
 
 TEST(DatasetInPlaceStrongExceptionGuarantee, sparse) {
-  auto good = make_sparse_variable_with_variance();
-  set_sparse_values(good, {{1, 2, 3}, {4}});
-  set_sparse_variances(good, {{5, 6, 7}, {8}});
-  auto bad = make_sparse_variable_with_variance();
-  set_sparse_values(bad, {{0.1, 0.2, 0.3}, {0.4}});
-  set_sparse_variances(bad, {{0.5, 0.6}, {0.8}});
+  auto good = make_sparse_variable_with_variance<double>();
+  set_sparse_values<double>(good, {{1, 2, 3}, {4}});
+  set_sparse_variances<double>(good, {{5, 6, 7}, {8}});
+  auto bad = make_sparse_variable_with_variance<double>();
+  set_sparse_values<double>(bad, {{0.1, 0.2, 0.3}, {0.4}});
+  set_sparse_variances<double>(bad, {{0.5, 0.6}, {0.8}});
   DataArray good_array(good, {}, {});
 
   // We have no control over the iteration order in the implementation of binary
