@@ -15,7 +15,10 @@ auto component_positions(const Dataset &d) {
 }
 
 VariableConstProxy position(const core::Dataset &d) {
-  return d.labels()["position"];
+  if (d.coords().contains(Dim::Position))
+    return d.coords()[Dim::Position];
+  else
+    return d.labels()["position"];
 }
 
 Variable source_position(const Dataset &d) {
