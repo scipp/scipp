@@ -10,5 +10,5 @@ from ._scipp import __version__
 from . import neutron
 from .show import show
 from .table import table
-from .plot import plot, config as plot_config
+from . import plot
 from .extend_units import *

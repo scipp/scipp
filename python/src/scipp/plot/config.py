@@ -4,8 +4,8 @@
 # @author Neil Vaytet
 
 
-# The plotting backend
-backend = "plotly"
+# The plotting backend: possible choices are "interactive" or "static"
+backend = "interactive"
 
 # The colorbar properties
 cb = {"name": "viridis", "log": False, "min": None, "max": None,
@@ -16,3 +16,6 @@ height = 600
 
 # The default image width (in pixels)
 width = 950
+
+# The size threshold above which an image will automatically be rasterized
+rasterize_threshold = 100000

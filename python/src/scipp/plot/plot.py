@@ -2,33 +2,19 @@
 # Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
-import numpy as np
+# Scipp imports
 from .. import _scipp as sc
 from . import config
-from .plot_collapse import plot_collapse
-# The need for importing matplotlib.pyplot here is a little strange, but the
-# reason is the following. We want to delay the imports of plot_matplotlib and
-# plot_plotly to inside dispatch_to_backend() in order to hide them from the
-# user in the notebook. However, by doing this, the first time a plot is made
-# it is not displayed. Re-runnnig the cell will display it. So when
-# matplotlib is imported, some magic must happen which enables plots to appear
-# in the notebook output, and apparently this needs to happen before the cell
-# is executed. Importing matplotlib here is a workaround, for lack of a better
-# fix. See here: https://github.com/jupyter/notebook/issues/3691
-# One could also add %matplotlib inline to the notebooks, but that would also
-# not be the prettiest solution.
-# Finally, note that this workaround will not work if the import of scipp
-# happens inside the same cell as the call to plot.
-try:
-    import matplotlib.pyplot as plt # noqa
-except ImportError:  # Catch error in case matplotlib is not installed
-    pass
 
 
 def plot(input_data, collapse=None, backend=None, color=None, **kwargs):
     """
     Wrapper function to plot any kind of dataset
     """
+
+    # Delayed imports
+    from .plot_tools import get_color
+    from .plot_collapse import plot_collapse
 
     # Create a list of variables which will then be dispatched to the plot_auto
     # function.
@@ -72,9 +58,7 @@ def plot(input_data, collapse=None, backend=None, color=None, **kwargs):
             if color is None:
                 color = []
                 for l in val[1].keys():
-                    color.append(dispatch_to_backend(get_color=True,
-                                                     backend=backend,
-                                                     index=color_count))
+                    color.append(get_color(index=color_count))
                     color_count += 1
             elif not isinstance(color, list):
                 color = [color]
@@ -86,36 +70,30 @@ def plot(input_data, collapse=None, backend=None, color=None, **kwargs):
             plot_collapse(input_data=val[1], dim=collapse, name=name,
                           backend=backend, **kwargs)
         else:
-            dispatch_to_backend(get_color=False, backend=backend,
-                                input_data=val[1], ndim=val[0], name=name,
-                                color=color, **kwargs)
+            plot_all(input_data=val[1], ndim=val[0], name=name,
+                                backend=backend, color=color, **kwargs)
 
     return
 
 
-def dispatch_to_backend(get_color=False, backend=None, **kwargs):
+def plot_all(input_data, ndim=0, name=None, backend=None, collapse=None,
+             projection="2d", **kwargs):
     """
-    Select the appropriate backend for plotting (plotly or matplotlib) and
-    send the data to be plotted to the appropriate function.
+    Function to automatically dispatch the input dataset to the appropriate
+    plotting function depending on its dimensions
     """
 
-    if backend is None:
-        backend = config.backend
+    # Delayed imports
+    from .plot_1d import plot_1d
+    from .plot_2d import plot_2d
+    from .plot_3d import plot_3d
 
-    if backend == "matplotlib":
-        from .matplotlib.plot_matplotlib import plot_matplotlib, get_mpl_color
-        if get_color:
-            return get_mpl_color(**kwargs)
-        else:
-            plot_matplotlib(**kwargs)
-    elif backend == "plotly":
-        from .plotly.plot_plotly import plot_plotly, get_plotly_color
-        if get_color:
-            return get_plotly_color(**kwargs)
-        else:
-            plot_plotly(**kwargs)
+    if ndim == 1:
+        plot_1d(input_data, backend=backend, **kwargs)
+    elif projection.lower() == "2d":
+        plot_2d(input_data, name=name, ndim=ndim, backend=backend, **kwargs)
+    elif projection.lower() == "3d":
+        plot_3d(input_data, name=name, ndim=ndim, backend=backend, **kwargs)
     else:
-        raise RuntimeError("Unknown backend {}. Currently supported "
-                           "backends are 'plotly' and "
-                           "'matplotlib'".format(backend))
+        raise RuntimeError("Wrong projection type.")
     return

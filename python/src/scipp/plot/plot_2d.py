@@ -2,18 +2,16 @@
 # Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
-import numpy as np
-from ...tools import axis_label, parse_colorbar
-from .. import config
+# Scipp imports
+from ..tools import axis_label, parse_colorbar
+from . import config
+from .plot_tools import render_plot
 
-# Plotly imports
-from IPython.display import display
-from plotly.io import write_html, write_image
+# Other imports
+import numpy as np
 import ipywidgets as widgets
 import plotly.graph_objs as go
 from plotly.subplots import make_subplots
-
-# Other imports
 from PIL import Image, ImageOps
 from matplotlib import cm
 from matplotlib.colors import Normalize
@@ -21,7 +19,7 @@ from matplotlib.colors import Normalize
 
 def plot_2d(input_data, axes=None, contours=False, cb=None, filename=None,
             name=None, figsize=None, show_variances=False, ndim=0,
-            rasterize="auto", **kwargs):
+            rasterize="auto", backend=None, **kwargs):
     """
     Plot a 2D slice through a N dimensional dataset. For every dimension above
     2, a slider is created to adjust the position of the slice in that
@@ -57,7 +55,7 @@ def plot_2d(input_data, axes=None, contours=False, cb=None, filename=None,
         shapes = dict(zip(input_data.dims, input_data.shape))
         for dim in axes[-2:]:
             imsize *= shapes[dim]
-        rasterize = imsize > 100000
+        rasterize = imsize > config.rasterize_threshold
 
     plot_type = 'heatmap'
 
@@ -85,13 +83,9 @@ def plot_2d(input_data, axes=None, contours=False, cb=None, filename=None,
                   value_name=title, cb=cbar, show_variances=show_variances,
                   rasterize=rasterize)
 
-    if filename is not None:
-        if filename.endswith(".html"):
-            write_html(fig=sv.fig, file=filename, auto_open=False)
-        else:
-            write_image(fig=sv.fig, file=filename)
-    else:
-        display(sv.vbox)
+    render_plot(static_fig=sv.fig, interactive_fig=sv.vbox, backend=backend,
+                filename=filename)
+
     return
 
 

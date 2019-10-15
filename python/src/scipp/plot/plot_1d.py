@@ -2,21 +2,18 @@
 # Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
+# Scipp imports
+from ..tools import edges_to_centers, axis_label
+from . import config
+from .plot_tools import render_plot
+
+# Other imports
 import numpy as np
-from ...tools import edges_to_centers, axis_label
-from .. import config
-
-# Plotly imports
-from IPython.display import display
-from plotly.io import write_html, write_image
-# from plotly.colors import DEFAULT_PLOTLY_COLORS
-# import ipywidgets as widgets
 import plotly.graph_objs as go
-# from plotly.subplots import make_subplots
 
 
-def plot_1d(input_data, logx=False, logy=False, logxy=False, axes=None,
-            color=None, filename=None):
+def plot_1d(input_data, backend=None, logx=False, logy=False, logxy=False,
+            axes=None, color=None, filename=None):
     """
     Plot a 1D spectrum.
 
@@ -85,11 +82,17 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, axes=None,
         layout["yaxis"]["type"] = "log"
 
     fig = go.Figure(data=data, layout=layout)
-    if filename is not None:
-        if filename.endswith(".html"):
-            write_html(fig=fig, file=filename, auto_open=False)
-        else:
-            write_image(fig=fig, file=filename)
-    else:
-        display(fig)
+    render_plot(static_fig=fig, interactive_fig=fig, backend=backend,
+                filename=filename)
+    # if filename is not None:
+    #     if filename.endswith(".html"):
+    #         write_html(fig=fig, file=filename, auto_open=False)
+    #     else:
+    #         write_image(fig=fig, file=filename)
+    # else:
+    #     # display(fig)
+    #     # Image(pio.to_image(fig, format='png'))
+    #     # display(Image(to_image(fig, format='png')))
+    #     display_figure(static_fig=fig, interactive_fig=fig,
+    #                    backend=backend)
     return

@@ -2,8 +2,13 @@
 # Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
-import numpy as np
+# Scipp imports
 from .. import _scipp as sc
+from .plot_tools import get_color
+from .plot_1d import plot_1d
+
+# Other imports
+import numpy as np
 
 
 def plot_collapse(input_data, dim=None, name=None, filename=None, backend=None,
@@ -88,11 +93,9 @@ def plot_collapse(input_data, dim=None, name=None, filename=None, backend=None,
         ds[key] = sc.core.Variable([dim], values=ds_temp.values,
                               variances=variances)
         data[key] = ds[key]
-        color.append(dispatch_to_backend(get_color=True, backend=backend,
-                                         index=i))
+        color.append(get_color(index=i))
 
     # Send the newly created dictionary of DataProxy to the plot_1d function
-    dispatch_to_backend(get_color=False, backend=backend, input_data=data,
-                        ndim=1, color=color, **kwargs)
+    plot_1d(input_data=data, backend=backend, color=color, **kwargs)
 
     return

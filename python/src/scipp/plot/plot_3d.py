@@ -2,14 +2,14 @@
 # Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
-import numpy as np
-from ...tools import axis_label, parse_colorbar
-from .. import config
+# Scipp imports
+from ..tools import axis_label, parse_colorbar
+from . import config
 from .plot_2d import Slicer2d
+from .plot_tools import render_plot
 
-# Plotly imports
-from IPython.display import display
-from plotly.io import write_html, write_image
+# Other imports
+import numpy as np
 import ipywidgets as widgets
 import plotly.graph_objs as go
 from plotly.subplots import make_subplots
@@ -17,7 +17,7 @@ from plotly.subplots import make_subplots
 
 def plot_3d(input_data, axes=None, contours=False, cb=None, filename=None,
             name=None, figsize=None, show_variances=False, ndim=0,
-            **kwargs):
+            backend=None, **kwargs):
     """
     Plot a 3-slice through a N dimensional dataset. For every dimension above
     3, a slider is created to adjust the position of the slice in that
@@ -64,13 +64,19 @@ def plot_3d(input_data, axes=None, contours=False, cb=None, filename=None,
     else:
         sv = Slicer3d(layout=layout, input_data=input_data, axes=axes,
                       value_name=title, cb=cbar, show_variances=show_variances)
-    if filename is not None:
-        if filename.endswith(".html"):
-            write_html(fig=sv.fig, file=filename, auto_open=False)
-        else:
-            write_image(fig=sv.fig, file=filename)
-    else:
-        display(sv.vbox)
+
+    render_plot(static_fig=sv.fig, interactive_fig=sv.vbox, backend=backend,
+                filename=filename)
+
+    # if filename is not None:
+    #     if filename.endswith(".html"):
+    #         write_html(fig=sv.fig, file=filename, auto_open=False)
+    #     else:
+    #         write_image(fig=sv.fig, file=filename)
+    # else:
+    #     display_figure(static_fig=sv.fig, interactive_fig=sv.vbox,
+    #                    backend=backend)
+    #     # display(sv.vbox)
 
     return
 
