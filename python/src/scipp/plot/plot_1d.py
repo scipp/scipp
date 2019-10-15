@@ -41,23 +41,24 @@ def plot_1d(input_data, backend=None, logx=False, logy=False, logxy=False,
             histogram = True
 
         # Define trace
-        trace = dict(x=x, y=y, name=ylab, type='scattergl')
+        trace = dict(x=x, y=y, name=ylab, type="scattergl")
         if histogram:
-            trace["line"] = {"shape": 'hv'}
+            trace["line"] = {"shape": "hv"}
             trace["y"] = np.concatenate((trace["y"], [0.0]))
-            trace["fill"] = 'tozeroy'
+            trace["fill"] = "tozeroy"
+            trace["mode"] = "lines"
         if color is not None:
             trace["marker"] = {"color": color[color_count]}
         # Include variance if present
         if var.variances is not None:
             err_dict = dict(
-                    type='data',
+                    type="data",
                     array=np.sqrt(var.variances),
                     visible=True,
                     color=color[color_count])
             if histogram:
                 trace2 = dict(x=edges_to_centers(x), y=y, showlegend=False,
-                              type='scattergl', mode='markers',
+                              type="scattergl", mode="markers",
                               error_y=err_dict,
                               marker={"color": color[color_count]})
                 data.append(trace2)
@@ -84,15 +85,4 @@ def plot_1d(input_data, backend=None, logx=False, logy=False, logxy=False,
     fig = go.Figure(data=data, layout=layout)
     render_plot(static_fig=fig, interactive_fig=fig, backend=backend,
                 filename=filename)
-    # if filename is not None:
-    #     if filename.endswith(".html"):
-    #         write_html(fig=fig, file=filename, auto_open=False)
-    #     else:
-    #         write_image(fig=fig, file=filename)
-    # else:
-    #     # display(fig)
-    #     # Image(pio.to_image(fig, format='png'))
-    #     # display(Image(to_image(fig, format='png')))
-    #     display_figure(static_fig=fig, interactive_fig=fig,
-    #                    backend=backend)
     return
