@@ -24,31 +24,34 @@ Variable makeCoordData(const Dimensions &dims) {
 }
 
 template <int NameLen> struct Generate2D {
-  Dataset operator()(const int size = 100) {
+  Dataset operator()(const int axisLength = 100) {
     Dataset d;
-    d.setCoord(Dim::X, makeCoordData({Dim::X, size}));
-    d.setCoord(Dim::Y, makeCoordData({Dim::Y, size}));
-    d.setLabels(std::string(NameLen, 'a'), makeCoordData({Dim::X, size}));
-    d.setLabels(std::string(NameLen, 'b'), makeCoordData({Dim::Y, size}));
+    d.setCoord(Dim::X, makeCoordData({Dim::X, axisLength}));
+    d.setCoord(Dim::Y, makeCoordData({Dim::Y, axisLength}));
+    d.setLabels(std::string(NameLen, 'a'), makeCoordData({Dim::X, axisLength}));
+    d.setLabels(std::string(NameLen, 'b'), makeCoordData({Dim::Y, axisLength}));
     return d;
   }
 };
 
 template <int NameLen> struct Generate6D {
-  Dataset operator()(const int size = 100) {
+  Dataset operator()(const int axisLength = 100) {
     Dataset d;
-    d.setCoord(Dim::X, makeCoordData({Dim::X, size}));
-    d.setCoord(Dim::Y, makeCoordData({Dim::Y, size}));
-    d.setCoord(Dim::Z, makeCoordData({Dim::Z, size}));
-    d.setCoord(Dim::Qx, makeCoordData({Dim::Qx, size}));
-    d.setCoord(Dim::Qy, makeCoordData({Dim::Qy, size}));
-    d.setCoord(Dim::Qz, makeCoordData({Dim::Qz, size}));
-    d.setLabels(std::string(NameLen, 'a'), makeCoordData({Dim::X, size}));
-    d.setLabels(std::string(NameLen, 'b'), makeCoordData({Dim::Y, size}));
-    d.setLabels(std::string(NameLen, 'c'), makeCoordData({Dim::Z, size}));
-    d.setLabels(std::string(NameLen, 'd'), makeCoordData({Dim::Qx, size}));
-    d.setLabels(std::string(NameLen, 'e'), makeCoordData({Dim::Qy, size}));
-    d.setLabels(std::string(NameLen, 'f'), makeCoordData({Dim::Qz, size}));
+    d.setCoord(Dim::X, makeCoordData({Dim::X, axisLength}));
+    d.setCoord(Dim::Y, makeCoordData({Dim::Y, axisLength}));
+    d.setCoord(Dim::Z, makeCoordData({Dim::Z, axisLength}));
+    d.setCoord(Dim::Qx, makeCoordData({Dim::Qx, axisLength}));
+    d.setCoord(Dim::Qy, makeCoordData({Dim::Qy, axisLength}));
+    d.setCoord(Dim::Qz, makeCoordData({Dim::Qz, axisLength}));
+    d.setLabels(std::string(NameLen, 'a'), makeCoordData({Dim::X, axisLength}));
+    d.setLabels(std::string(NameLen, 'b'), makeCoordData({Dim::Y, axisLength}));
+    d.setLabels(std::string(NameLen, 'c'), makeCoordData({Dim::Z, axisLength}));
+    d.setLabels(std::string(NameLen, 'd'),
+                makeCoordData({Dim::Qx, axisLength}));
+    d.setLabels(std::string(NameLen, 'e'),
+                makeCoordData({Dim::Qy, axisLength}));
+    d.setLabels(std::string(NameLen, 'f'),
+                makeCoordData({Dim::Qz, axisLength}));
     return d;
   }
 };
@@ -145,7 +148,7 @@ BENCHMARK_TEMPLATE(BM_Dataset_labels_slice, Generate6D<LONG_STRING_LENGTH>,
 
 template <class Gen>
 static void BM_Dataset_item_access(benchmark::State &state) {
-  const auto d = Gen()();
+  const auto d = std::get<0>(Gen()());
   const auto name = d.begin()->second.name();
   for (auto _ : state) {
     d[name];
@@ -159,7 +162,7 @@ BENCHMARK_TEMPLATE(BM_Dataset_item_access,
 template <class Gen>
 static void BM_Dataset_iterate_items(benchmark::State &state) {
   const auto itemCount = state.range(0);
-  const auto d = Gen()(itemCount);
+  const auto d = std::get<0>(Gen()(itemCount));
   for (auto _ : state) {
     for (const auto &[name, item] : d) {
       benchmark::DoNotOptimize(name);
@@ -179,7 +182,7 @@ BENCHMARK_TEMPLATE(BM_Dataset_iterate_items,
 template <class Gen, class Slice>
 static void BM_Dataset_iterate_slice_items(benchmark::State &state) {
   const auto itemCount = state.range(0);
-  const auto d = Gen()(itemCount);
+  const auto d = std::get<0>(Gen()(itemCount));
   const auto s = Slice()(d);
   for (auto _ : state) {
     for (const auto &[name, item] : s) {
@@ -203,10 +206,13 @@ BENCHMARK_TEMPLATE(BM_Dataset_iterate_slice_items,
 template <class Gen> static void BM_Dataset_copy(benchmark::State &state) {
   const auto itemCount = state.range(0);
   const auto itemLength = state.range(1);
-  const auto d = Gen()(itemCount, itemLength);
+  const auto [d, size] = Gen()(itemCount, itemLength);
   for (auto _ : state) {
     Dataset copy(d);
   }
+  state.counters["Bandwidth"] =
+      benchmark::Counter(size, benchmark::Counter::kIsIterationInvariantRate,
+                         benchmark::Counter::OneK::kIs1024);
 }
 static void Args_Dataset_copy(benchmark::internal::Benchmark *b) {
   b->RangeMultiplier(2)

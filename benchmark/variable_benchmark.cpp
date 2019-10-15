@@ -12,55 +12,70 @@ using namespace scipp::core;
 using namespace scipp;
 
 template <typename T> struct Generate1D {
-  Variable operator()(int size) { return makeVariable<T>({Dim::X, size}); }
+  auto operator()(int length) {
+    return std::make_tuple(makeVariable<T>({Dim::X, length}),
+                           sizeof(T) * length);
+  }
 };
 
 template <typename T> struct Generate2D {
-  Variable operator()(int size) {
-    return makeVariable<T>({{Dim::X, size}, {Dim::Y, size}});
+  auto operator()(int length) {
+    return std::make_tuple(
+        makeVariable<T>({{Dim::X, length}, {Dim::Y, length}}),
+        sizeof(T) * std::pow(length, 2));
   }
 };
 
 template <typename T> struct Generate3D {
-  Variable operator()(int size) {
-    return makeVariable<T>({{Dim::X, size}, {Dim::Y, size}, {Dim::Z, size}});
+  auto operator()(int length) {
+    return std::make_tuple(
+        makeVariable<T>({{Dim::X, length}, {Dim::Y, length}, {Dim::Z, length}}),
+        sizeof(T) * std::pow(length, 3));
   }
 };
 
 template <typename T> struct Generate4D {
-  Variable operator()(int size) {
-    return makeVariable<T>(
-        {{Dim::X, size}, {Dim::Y, size}, {Dim::Z, size}, {Dim::Qx, size}});
+  auto operator()(int length) {
+    return std::make_tuple(makeVariable<T>({{Dim::X, length},
+                                            {Dim::Y, length},
+                                            {Dim::Z, length},
+                                            {Dim::Qx, length}}),
+                           sizeof(T) * std::pow(length, 4));
   }
 };
 
 template <typename T> struct Generate5D {
-  Variable operator()(int size) {
-    return makeVariable<T>({{Dim::X, size},
-                            {Dim::Y, size},
-                            {Dim::Z, size},
-                            {Dim::Qx, size},
-                            {Dim::Qy, size}});
+  auto operator()(int length) {
+    return std::make_tuple(makeVariable<T>({{Dim::X, length},
+                                            {Dim::Y, length},
+                                            {Dim::Z, length},
+                                            {Dim::Qx, length},
+                                            {Dim::Qy, length}}),
+                           sizeof(T) * std::pow(length, 5));
   }
 };
 
 template <typename T> struct Generate6D {
-  Variable operator()(int size) {
-    return makeVariable<T>({{Dim::X, size},
-                            {Dim::Y, size},
-                            {Dim::Z, size},
-                            {Dim::Qx, size},
-                            {Dim::Qy, size},
-                            {Dim::Qz, size}});
+  auto operator()(int length) {
+    return std::make_tuple(makeVariable<T>({{Dim::X, length},
+                                            {Dim::Y, length},
+                                            {Dim::Z, length},
+                                            {Dim::Qx, length},
+                                            {Dim::Qy, length},
+                                            {Dim::Qz, length}}),
+                           sizeof(T) * std::pow(length, 6));
   }
 };
 
 template <class Gen> static void BM_Variable_copy(benchmark::State &state) {
   const auto axisLength = state.range(0);
-  auto var = Gen()(axisLength);
+  auto [var, size] = Gen()(axisLength);
   for (auto _ : state) {
     Variable copy(var);
   }
+  state.counters["Bandwidth"] =
+      benchmark::Counter(size, benchmark::Counter::kIsIterationInvariantRate,
+                         benchmark::Counter::OneK::kIs1024);
 }
 static void Args_Variable_copy(benchmark::internal::Benchmark *b) {
   b->Arg(10)->Arg(20);
