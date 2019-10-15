@@ -73,7 +73,8 @@ template <class Gen> static void BM_Variable_copy(benchmark::State &state) {
   for (auto _ : state) {
     Variable copy(var);
   }
-  state.counters["Bandwidth"] =
+  state.counters["SizeBytes"] = size;
+  state.counters["BandwidthBytes"] =
       benchmark::Counter(size, benchmark::Counter::kIsIterationInvariantRate,
                          benchmark::Counter::OneK::kIs1024);
 }
