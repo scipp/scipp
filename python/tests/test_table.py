@@ -91,3 +91,25 @@ def test_variable():
                     unit=sc.units.us,
                     variances=0.1 * np.random.rand(N))
     sc.table(v)
+
+
+def test_dataset_with_coords_only():
+    d = sc.Dataset()
+    N = 10
+    d.coords[Dim.Tof] = sc.Variable([Dim.Tof],
+                                    values=np.arange(N).astype(np.float64),
+                                    variances=0.1 * np.random.rand(N))
+    sc.table(d)
+
+
+def test_dataset_with_labels():
+    d = sc.Dataset()
+    N = 10
+    d.coords[Dim.Tof] = sc.Variable([Dim.Tof],
+                                    values=np.arange(N).astype(np.float64),
+                                    variances=0.1 * np.random.rand(N))
+    d['Counts'] = sc.Variable([Dim.Tof],
+                              values=10.0 * np.random.rand(N),
+                              variances=np.random.rand(N))
+    d.labels["Normalized"] = sc.Variable([Dim.Tof], values=np.arange(N))
+    sc.table(d)

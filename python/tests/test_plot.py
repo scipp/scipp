@@ -6,7 +6,6 @@ import scipp as sc
 import numpy as np
 import io
 from contextlib import redirect_stdout
-import pytest
 
 # TODO: For now we are just checking that the plot does not throw any errors.
 # In the future it would be nice to check the output by either comparing
@@ -174,23 +173,6 @@ def do_test_plot_collapse():
     do_plot(d1, collapse=sc.Dim.Tof)
 
 
-def do_test_plot_waterfall():
-    N = 100
-    M = 5
-    d1 = sc.Dataset()
-    d1.coords[sc.Dim.Tof] = sc.Variable([sc.Dim.Tof],
-                                        values=np.arange(N + 1).astype(
-                                            np.float64),
-                                        unit=sc.units.us)
-    d1.coords[sc.Dim.X] = sc.Variable([sc.Dim.X],
-                                      values=np.arange(M).astype(np.float64),
-                                      unit=sc.units.m)
-    d1["Sample"] = sc.Variable([sc.Dim.X, sc.Dim.Tof],
-                               values=10.0 * np.random.rand(M, N),
-                               variances=np.random.rand(M, N))
-    do_plot(d1, waterfall=sc.Dim.X)
-
-
 def do_test_plot_sliceviewer():
     d1 = sc.Dataset()
     n1 = 20
@@ -206,6 +188,24 @@ def do_test_plot_sliceviewer():
                                values=np.arange(n1 * n2 * n3).reshape(
                                    n3, n2, n1).astype(np.float64))
     do_plot(d1)
+
+
+def do_test_plot_sliceviewer_with_variances():
+    d1 = sc.Dataset()
+    n1 = 20
+    n2 = 30
+    n3 = 40
+    d1.coords[sc.Dim.X] = sc.Variable([sc.Dim.X],
+                                      np.arange(n1).astype(np.float64))
+    d1.coords[sc.Dim.Y] = sc.Variable([sc.Dim.Y],
+                                      np.arange(n2).astype(np.float64))
+    d1.coords[sc.Dim.Z] = sc.Variable([sc.Dim.Z],
+                                      np.arange(n3).astype(np.float64))
+    a = np.arange(n1 * n2 * n3).reshape(n3, n2, n1).astype(np.float64)
+    d1["Sample"] = sc.Variable([sc.Dim.Z, sc.Dim.Y, sc.Dim.X],
+                               values=a,
+                               variances=np.random.rand(n3, n2, n1) * a * 0.1)
+    do_plot(d1, show_variances=True)
 
 
 def do_test_plot_sliceviewer_with_two_sliders():
@@ -245,7 +245,53 @@ def do_test_plot_sliceviewer_with_axes():
     do_plot(d1, axes=[sc.Dim.Y, sc.Dim.X, sc.Dim.Z])
 
 
+def do_test_plot_sliceviewer_with_3d_projection():
+    d1 = sc.Dataset()
+    n1 = 20
+    n2 = 30
+    n3 = 40
+    d1.coords[sc.Dim.X] = sc.Variable([sc.Dim.X],
+                                      np.arange(n1).astype(np.float64))
+    d1.coords[sc.Dim.Y] = sc.Variable([sc.Dim.Y],
+                                      np.arange(n2).astype(np.float64))
+    d1.coords[sc.Dim.Z] = sc.Variable([sc.Dim.Z],
+                                      np.arange(n3).astype(np.float64))
+    d1["Sample"] = sc.Variable([sc.Dim.Z, sc.Dim.Y, sc.Dim.X],
+                               values=np.arange(n1 * n2 * n3).reshape(
+                                   n3, n2, n1).astype(np.float64))
+    do_plot(d1, projection="3d")
+
+
+def do_test_plot_sliceviewer_with_3d_projection_with_variances():
+    d1 = sc.Dataset()
+    n1 = 20
+    n2 = 30
+    n3 = 40
+    d1.coords[sc.Dim.X] = sc.Variable([sc.Dim.X],
+                                      np.arange(n1).astype(np.float64))
+    d1.coords[sc.Dim.Y] = sc.Variable([sc.Dim.Y],
+                                      np.arange(n2).astype(np.float64))
+    d1.coords[sc.Dim.Z] = sc.Variable([sc.Dim.Z],
+                                      np.arange(n3).astype(np.float64))
+    a = np.arange(n1 * n2 * n3).reshape(n3, n2, n1).astype(np.float64)
+    d1["Sample"] = sc.Variable([sc.Dim.Z, sc.Dim.Y, sc.Dim.X],
+                               values=a,
+                               variances=np.random.rand(n3, n2, n1) * a * 0.1)
+    do_plot(d1, projection="3d", show_variances=True)
+
+
+def do_test_plot_2d_image_rasterized():
+    d1 = make_2d_dataset()
+    do_plot(d1, rasterize=True)
+
+
+def do_test_plot_2d_image_with_variances_rasterized():
+    d1 = make_2d_dataset(variances=True)
+    do_plot(d1, rasterize=True)
+
+
 # Using plotly backend =======================================================
+
 
 def test_plot_1d():
     do_test_plot_1d()
@@ -275,13 +321,6 @@ def test_plot_2d_image():
     do_test_plot_2d_image()
 
 
-@pytest.mark.skip(reason="This test fails from time to time because objects "
-                  "are running out of scope, so we disable it for now. "
-                  "More specifically, in plot.py L306:\n"
-                  "  if (zlabs[0] == xlabs[0]) and "
-                  "(zlabs[1] == ylabs[0]):\n"
-                  "xlabs and ylabs sometimes contains the same thing, "
-                  "when they should in fact be different")
 def test_plot_2d_image_with_axes():
     do_test_plot_2d_image_with_axes()
 
@@ -291,24 +330,23 @@ def test_plot_2d_image_with_variances():
 
 
 def test_plot_2d_image_with_filename():
-    do_test_plot_2d_image_with_filename("test.html")
+    do_test_plot_2d_image_with_filename("image.html")
 
 
 def test_plot_2d_image_with_variances_with_filename():
-    do_test_plot_2d_image_with_variances_with_filename(["values.html",
-                                                        "errors.html"])
+    do_test_plot_2d_image_with_variances_with_filename("val_and_var.html")
 
 
 def test_plot_collapse():
     do_test_plot_collapse()
 
 
-def test_plot_waterfall():
-    do_test_plot_waterfall()
-
-
 def test_plot_sliceviewer():
     do_test_plot_sliceviewer()
+
+
+def test_plot_sliceviewer_with_variances():
+    do_test_plot_sliceviewer_with_variances()
 
 
 def test_plot_sliceviewer_with_two_sliders():
@@ -319,7 +357,24 @@ def test_plot_sliceviewer_with_axes():
     do_test_plot_sliceviewer_with_axes()
 
 
+def test_plot_sliceviewer_with_3d_projection():
+    do_test_plot_sliceviewer_with_3d_projection()
+
+
+def test_plot_sliceviewer_with_3d_projection_with_variances():
+    do_test_plot_sliceviewer_with_3d_projection_with_variances()
+
+
+def test_plot_2d_image_rasterized():
+    do_test_plot_2d_image_rasterized()
+
+
+def test_plot_2d_image_with_variances_rasterized():
+    do_test_plot_2d_image_with_variances_rasterized()
+
+
 # Using matplotlib backend ====================================================
+
 
 def test_plot_1d_mpl():
     sc.plot_config.backend = "matplotlib"

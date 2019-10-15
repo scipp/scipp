@@ -7,12 +7,8 @@
 
 #include "scipp-units_export.h"
 #include "scipp/common/except.h"
+#include "scipp/units/string.h"
 #include "scipp/units/unit.h"
-
-namespace scipp::units {
-
-SCIPP_UNITS_EXPORT std::string to_string(const Unit &unit);
-}
 
 namespace scipp::except {
 

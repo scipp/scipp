@@ -27,6 +27,7 @@ TEST(DatasetTest, clear) {
   ASSERT_FALSE(dataset.coords().empty());
   ASSERT_FALSE(dataset.labels().empty());
   ASSERT_FALSE(dataset.attrs().empty());
+  ASSERT_FALSE(dataset.masks().empty());
 
   ASSERT_NO_THROW(dataset.clear());
 
@@ -34,6 +35,7 @@ TEST(DatasetTest, clear) {
   ASSERT_FALSE(dataset.coords().empty());
   ASSERT_FALSE(dataset.labels().empty());
   ASSERT_FALSE(dataset.attrs().empty());
+  ASSERT_FALSE(dataset.masks().empty());
 }
 
 TEST(DatasetTest, erase_single_non_existant) {
@@ -119,6 +121,27 @@ TEST(DatasetTest, setAttr) {
   ASSERT_NO_THROW(d.setAttr("a", var));
   ASSERT_EQ(d.size(), 0);
   ASSERT_EQ(d.attrs().size(), 2);
+}
+
+TEST(DatasetTest, setMask) {
+  Dataset d;
+  const auto var = makeVariable<bool>({Dim::X, 3}, {false, true, false});
+
+  ASSERT_EQ(d.size(), 0);
+  ASSERT_EQ(d.masks().size(), 0);
+
+  ASSERT_NO_THROW(d.setMask("a", var));
+  ASSERT_EQ(d.size(), 0);
+  ASSERT_EQ(d.masks().size(), 1);
+  ASSERT_EQ(d.masks()["a"], var);
+
+  ASSERT_NO_THROW(d.setMask("b", var));
+  ASSERT_EQ(d.size(), 0);
+  ASSERT_EQ(d.masks().size(), 2);
+
+  ASSERT_NO_THROW(d.setMask("a", var));
+  ASSERT_EQ(d.size(), 0);
+  ASSERT_EQ(d.masks().size(), 2);
 }
 
 TEST(DatasetTest, setData_with_and_without_variances) {
