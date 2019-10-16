@@ -40,10 +40,9 @@ def plot(input_data, collapse=None, backend=None, color=None, **kwargs):
             coords = var.coords
             ndims = len(coords)
             if ndims == 1:
-                lab = coords[var.dims[0]]
                 # Make a unique key from the dataset id in case there are more
                 # than one dataset with 1D variables with the same coordinates
-                key = "{}_{}".format(str(id(ds)), lab)
+                key = "{}_{}".format(str(id(ds)), str(var.dims[0]))
                 if key in tobeplotted.keys():
                     tobeplotted[key][1][name] = ds[name]
                 else:
@@ -53,6 +52,7 @@ def plot(input_data, collapse=None, backend=None, color=None, **kwargs):
 
     # Plot all the subsets
     color_count = 0
+    output = dict()
     for key, val in tobeplotted.items():
         if val[0] == 1:
             if color is None:
@@ -67,10 +67,13 @@ def plot(input_data, collapse=None, backend=None, color=None, **kwargs):
             color = None
             name = key
         if collapse is not None:
-            return plot_collapse(input_data=val[1], dim=collapse, name=name,
-                                 backend=backend, **kwargs)
+            output[key] = plot_collapse(input_data=val[1], dim=collapse,
+                                        name=name, backend=backend, **kwargs)
         else:
-            return dispatch(input_data=val[1], ndim=val[0], name=name,
-                            backend=backend, color=color, **kwargs)
+            output[key] =  dispatch(input_data=val[1], ndim=val[0], name=name,
+                                    backend=backend, color=color, **kwargs)
 
-    return
+    if backend == "matplotlib":
+        return output
+    else:
+        return
