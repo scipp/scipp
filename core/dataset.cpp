@@ -360,7 +360,7 @@ void Dataset::setSparseCoord(const std::string &name, Variable coord) {
   m_data[name].coord = std::move(coord);
 }
 
-/// Remove the sparse labels with given name and label name.
+/// Set (insert or replace) the sparse labels with given name and label name.
 void Dataset::setSparseLabels(const std::string &name,
                               const std::string &labelName, Variable labels) {
   if (!labels.dims().sparse())
