@@ -4,8 +4,8 @@
 
 # Scipp imports
 from .. import _scipp as sc
-from .plot_tools import get_color
-from .plot_1d import plot_1d
+from .tools import get_color
+from .dispatch import dispatch
 
 # Other imports
 import numpy as np
@@ -96,6 +96,7 @@ def plot_collapse(input_data, dim=None, name=None, filename=None, backend=None,
         color.append(get_color(index=i))
 
     # Send the newly created dictionary of DataProxy to the plot_1d function
-    plot_1d(input_data=data, backend=backend, color=color, **kwargs)
+    return dispatch(input_data=data, ndim=1, backend=backend, color=color,
+                    **kwargs)
 
     return

@@ -3,9 +3,8 @@
 # @author Neil Vaytet
 
 # Scipp imports
-from ..tools import axis_label, parse_colorbar
 from . import config
-from .plot_tools import render_plot
+from .tools import axis_label, parse_colorbar, render_plot
 
 # Other imports
 import numpy as np

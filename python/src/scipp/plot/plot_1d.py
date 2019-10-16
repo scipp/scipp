@@ -3,9 +3,8 @@
 # @author Neil Vaytet
 
 # Scipp imports
-from ..tools import edges_to_centers, axis_label
 from . import config
-from .plot_tools import render_plot
+from .tools import edges_to_centers, axis_label, render_plot
 
 # Other imports
 import numpy as np
@@ -13,7 +12,7 @@ import plotly.graph_objs as go
 
 
 def plot_1d(input_data, backend=None, logx=False, logy=False, logxy=False,
-            axes=None, color=None, filename=None):
+            color=None, filename=None):
     """
     Plot a 1D spectrum.
 
@@ -26,8 +25,7 @@ def plot_1d(input_data, backend=None, logx=False, logy=False, logxy=False,
     """
 
     data = []
-    color_count = 0
-    for name, var in input_data.items():
+    for i, (name, var) in enumerate(input_data.items()):
         xcoord = var.coords[var.dims[0]]
         x = xcoord.values
         xlab = axis_label(xcoord)
@@ -48,25 +46,24 @@ def plot_1d(input_data, backend=None, logx=False, logy=False, logxy=False,
             trace["fill"] = "tozeroy"
             trace["mode"] = "lines"
         if color is not None:
-            trace["marker"] = {"color": color[color_count]}
+            trace["marker"] = {"color": color[i]}
         # Include variance if present
         if var.variances is not None:
             err_dict = dict(
                     type="data",
                     array=np.sqrt(var.variances),
                     visible=True,
-                    color=color[color_count])
+                    color=color[i])
             if histogram:
                 trace2 = dict(x=edges_to_centers(x), y=y, showlegend=False,
                               type="scattergl", mode="markers",
                               error_y=err_dict,
-                              marker={"color": color[color_count]})
+                              marker={"color": color[i]})
                 data.append(trace2)
             else:
                 trace["error_y"] = err_dict
 
         data.append(trace)
-        color_count += 1
 
     layout = dict(
         xaxis=dict(title=xlab),

@@ -3,7 +3,7 @@
 # @author Neil Vaytet
 
 # Scipp imports
-from .. import _scipp as sc
+from .._scipp import core as sc
 
 
 def plot(input_data, collapse=None, backend=None, color=None, **kwargs):
@@ -12,8 +12,9 @@ def plot(input_data, collapse=None, backend=None, color=None, **kwargs):
     """
 
     # Delayed imports
-    from .plot_tools import get_color
+    from .tools import get_color
     from .plot_collapse import plot_collapse
+    from .dispatch import dispatch
 
     # Create a list of variables which will then be dispatched to the plot_auto
     # function.
@@ -26,8 +27,8 @@ def plot(input_data, collapse=None, backend=None, color=None, **kwargs):
     # TODO: 0D data is currently ignored -> find a nice way of
     # displaying it?
     tp = type(input_data)
-    if tp is sc.core.DataProxy or tp is sc.core.DataArray:
-        ds = sc.core.Dataset()
+    if tp is sc.DataProxy or tp is sc.DataArray:
+        ds = sc.Dataset()
         ds[input_data.name] = input_data
         input_data = ds
     if tp is not list:
@@ -66,33 +67,10 @@ def plot(input_data, collapse=None, backend=None, color=None, **kwargs):
             color = None
             name = key
         if collapse is not None:
-            plot_collapse(input_data=val[1], dim=collapse, name=name,
-                          backend=backend, **kwargs)
+            return plot_collapse(input_data=val[1], dim=collapse, name=name,
+                                 backend=backend, **kwargs)
         else:
-            plot_all(input_data=val[1], ndim=val[0], name=name,
-                     backend=backend, color=color, **kwargs)
+            return dispatch(input_data=val[1], ndim=val[0], name=name,
+                            backend=backend, color=color, **kwargs)
 
-    return
-
-
-def plot_all(input_data, ndim=0, name=None, backend=None, collapse=None,
-             projection="2d", **kwargs):
-    """
-    Function to automatically dispatch the input dataset to the appropriate
-    plotting function depending on its dimensions
-    """
-
-    # Delayed imports
-    from .plot_1d import plot_1d
-    from .plot_2d import plot_2d
-    from .plot_3d import plot_3d
-
-    if ndim == 1:
-        plot_1d(input_data, backend=backend, **kwargs)
-    elif projection.lower() == "2d":
-        plot_2d(input_data, name=name, ndim=ndim, backend=backend, **kwargs)
-    elif projection.lower() == "3d":
-        plot_3d(input_data, name=name, ndim=ndim, backend=backend, **kwargs)
-    else:
-        raise RuntimeError("Wrong projection type.")
     return

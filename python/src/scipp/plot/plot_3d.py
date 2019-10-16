@@ -3,10 +3,9 @@
 # @author Neil Vaytet
 
 # Scipp imports
-from ..tools import axis_label, parse_colorbar
 from . import config
+from .tools import axis_label, parse_colorbar, render_plot
 from .plot_2d import Slicer2d
-from .plot_tools import render_plot
 
 # Other imports
 import numpy as np
@@ -67,16 +66,6 @@ def plot_3d(input_data, axes=None, contours=False, cb=None, filename=None,
 
     render_plot(static_fig=sv.fig, interactive_fig=sv.vbox, backend=backend,
                 filename=filename)
-
-    # if filename is not None:
-    #     if filename.endswith(".html"):
-    #         write_html(fig=sv.fig, file=filename, auto_open=False)
-    #     else:
-    #         write_image(fig=sv.fig, file=filename)
-    # else:
-    #     display_figure(static_fig=sv.fig, interactive_fig=sv.vbox,
-    #                    backend=backend)
-    #     # display(sv.vbox)
 
     return
 
