@@ -70,8 +70,8 @@ def plot(input_data, collapse=None, backend=None, color=None, **kwargs):
             output[key] = plot_collapse(input_data=val[1], dim=collapse,
                                         name=name, backend=backend, **kwargs)
         else:
-            output[key] =  dispatch(input_data=val[1], ndim=val[0], name=name,
-                                    backend=backend, color=color, **kwargs)
+            output[key] = dispatch(input_data=val[1], ndim=val[0], name=name,
+                                   backend=backend, color=color, **kwargs)
 
     if backend == "matplotlib":
         return output
