@@ -2,7 +2,8 @@ version: '{build}'
 os: Visual Studio 2019
 branches:
   only:
-  - master # TODO
+  - master
+  - visual_studio_build # TODO remove 
     
 matrix:
   fast_finish: true
