@@ -189,8 +189,12 @@ void init_variable(py::module &m) {
   // This should be in the certain order
   bind_init_0D(variable);
   bind_init_0D<bool>(variable);
+#ifdef _WIN32
+  // C long 32 bit on windows.
   bind_init_0D<int32_t>(variable);
+#else
   bind_init_0D<int64_t>(variable);
+#endif
   bind_init_0D<double>(variable);
   //------------------------------------
 
