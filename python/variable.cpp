@@ -189,6 +189,7 @@ void init_variable(py::module &m) {
   // This should be in the certain order
   bind_init_0D(variable);
   bind_init_0D<bool>(variable);
+  bind_init_0D<int32_t>(variable);
   bind_init_0D<int64_t>(variable);
   bind_init_0D<double>(variable);
   //------------------------------------

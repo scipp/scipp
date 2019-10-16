@@ -2,6 +2,7 @@
 # Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Simon Heybrock
+import sys
 import pytest
 
 import scipp as sc
@@ -298,7 +299,7 @@ def test_sparse_setitem_int64_t():
 
 
 def test_create_dtype():
-    var = sc.Variable([Dim.X], values=np.arange(4))
+    var = sc.Variable([Dim.X], values=np.arange(4).astype(np.int64))
     assert var.dtype == sc.dtype.int64
     var = sc.Variable([Dim.X], values=np.arange(4).astype(np.int32))
     assert var.dtype == sc.dtype.int32
@@ -549,9 +550,9 @@ def test_set_variance_convert_dtype():
 
 
 def test_sum_mean():
-    var = sc.Variable([Dim.X], values=np.ones(5).astype(np.int64))
-    assert sc.sum(var, Dim.X) == sc.Variable(5)
-    var = sc.Variable([Dim.X], values=np.arange(6).astype(np.int64))
+    var = sc.Variable([Dim.X], values=np.arange(5))
+    assert sc.sum(var, Dim.X) == sc.Variable(10)
+    var = sc.Variable([Dim.X], values=np.arange(6))
     assert sc.mean(var, Dim.X) == sc.Variable(2.5)
 
 
@@ -576,7 +577,11 @@ def test_construct_0d_numpy():
 
 
 def test_construct_0d_native_python_types():
-    assert sc.Variable(2).dtype == sc.dtype.int64
+    if sys.platform == "win32":
+        # Windows defaults to a 32 bit integer
+        assert sc.Variable(2).dtype == sc.dtype.int32
+    else:
+        assert sc.Variable(2).dtype == sc.dtype.int64
     assert sc.Variable(2.0).dtype == sc.dtype.double
     assert sc.Variable(True).dtype == sc.dtype.bool
 

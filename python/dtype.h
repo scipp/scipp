@@ -3,6 +3,9 @@
 /// @file
 #ifndef SCIPPY_DTYPE_PYTHON
 #define SCIPPY_DTYPE_PYTHON
+
+#include "pybind11.h"
+
 namespace pybind11 {
 class dtype;
 }

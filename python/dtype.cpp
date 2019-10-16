@@ -3,7 +3,6 @@
 /// @file
 /// @author Simon Heybrock
 #include "scipp/core/string.h"
-
 #include "bind_enum.h"
 #include "dtype.h"
 #include "pybind11.h"
@@ -25,7 +24,8 @@ scipp::core::DType scipp_dtype(const py::dtype &type) {
   if (type.is(py::dtype::of<std::int64_t>()) ||
       (type.kind() == 'i' && type.itemsize() == 8))
     return scipp::core::dtype<int64_t>;
-  if (type.is(py::dtype::of<std::int32_t>()))
+  if (type.is(py::dtype::of<std::int32_t>()) ||
+      (type.kind() == 'i' && type.itemsize() == 4))
     return scipp::core::dtype<int32_t>;
   if (type.is(py::dtype::of<bool>()))
     return scipp::core::dtype<bool>;
