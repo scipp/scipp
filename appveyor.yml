@@ -16,7 +16,7 @@ configuration:
 
 install:
 - set PATH=%PATH%;c:\Program Files (x86)\Microsoft Visual Studio 15.0\Common7\IDE\
-- git clone https://github.com/scipp/scipp.git
+- git clone https://github.com/scipp/scipp.git scipp
 - cd scipp
 - git submodule init
 - git submodule update
