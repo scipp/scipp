@@ -1,0 +1,37 @@
+version: '{build}'
+os: Visual Studio 2019
+branches:
+  only:
+  - master # TODO
+    
+matrix:
+  fast_finish: true
+
+platform:
+  - x64
+
+configuration:
+  - Release
+
+install:
+- set PATH=%PATH%;c:\Program Files (x86)\Microsoft Visual Studio 15.0\Common7\IDE\
+- git clone https://github.com/OwenArnold/scipp.git
+- cd scipp
+- git submodule init
+- git submodule update
+- cd ..
+- mkdir build
+- cd build%
+
+build_script:
+- cmake -G "Visual Studio 16 2019" -A x64 -DPYTHON_EXECUTABLE="C:/Python36-x64/python.exe" -DCMAKE_INSTALL_PREFIX=../install ../scipp
+- cmake --build . --config Release --target install all-tests
+
+test_script:
+- C:\projects\scipp\build\core\test\Release\scipp-core-test.exe
+- C:\projects\scipp\build\neutron\test\Release\scipp-neutron-test.exe
+- C:\projects\scipp\build\units\test\Release\scipp-units-test.exe
+- C:\Python36-x64\python.exe -m pip install -r ..\python\requirements.txt
+- set PYTHONPATH=%PYTHONPATH%;..\install
+- cd ..\python
+- C:\Python36-x64\python.exe -m pytest
