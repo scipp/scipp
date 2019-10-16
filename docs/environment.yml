@@ -19,3 +19,4 @@ dependencies:
   - plotly
   - plotly-orca
   - ipywidgets
+  - psutil
