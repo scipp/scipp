@@ -5,6 +5,7 @@
 #define SCIPPY_DTYPE_PYTHON
 
 #include "pybind11.h"
+#include <scipp/core/dtype.h>
 
 namespace pybind11 {
 class dtype;
