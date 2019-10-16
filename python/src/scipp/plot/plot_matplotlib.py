@@ -5,7 +5,8 @@
 
 # Scipp imports
 from . import config
-from .tools import *
+from .tools import edges_to_centers, centers_to_edges, axis_label, \
+                   parse_colorbar
 
 # Other imports
 import numpy as np
@@ -78,7 +79,6 @@ def plot_2d(input_data, name=None, axes=None, contours=False, cb=None,
     if input_data.variances is None and variances:
         raise RuntimeError("The supplied data does not contain variances.")
 
-
     if axes is None:
         axes = input_data.dims
 
@@ -89,7 +89,7 @@ def plot_2d(input_data, name=None, axes=None, contours=False, cb=None,
 
     xcoord = coords[axes[-1]]
     ycoord = coords[axes[-2]]
-    xy = [ xcoord.values, ycoord.values]
+    xy = [xcoord.values, ycoord.values]
 
     # Check for bin edges
     dims = [xcoord.dims[0], ycoord.dims[0]]
@@ -108,8 +108,8 @@ def plot_2d(input_data, name=None, axes=None, contours=False, cb=None,
             grid_edges[i] = xy[i]
             grid_centers[i] = edges_to_centers(xy[i])
         else:
-            raise RuntimeError("Dimensions of x Coord ({}) and Value ({}) do not "
-                               "match.".format(shapes[i], nz[idx[i]]))
+            raise RuntimeError("Dimensions of x Coord ({}) and Value ({}) do "
+                               "not match.".format(shapes[i], nz[idx[i]]))
 
     # Parse colorbar
     cbar = parse_colorbar(config.cb, cb)

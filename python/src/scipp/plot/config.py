@@ -4,7 +4,8 @@
 # @author Neil Vaytet
 
 
-# The plotting backend: possible choices are "interactive" or "static"
+# The plotting backend: possible choices are "interactive", "static" and
+# "matplotlib"
 backend = "interactive"
 
 # The list of default line colors

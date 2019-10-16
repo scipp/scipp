@@ -39,9 +39,11 @@ def dispatch(input_data, ndim=0, name=None, backend=None, collapse=None,
         if ndim == 1:
             plot_1d(input_data, backend=backend, **kwargs)
         elif projection.lower() == "2d":
-            plot_2d(input_data, name=name, ndim=ndim, backend=backend, **kwargs)
+            plot_2d(input_data, name=name, ndim=ndim, backend=backend,
+                    **kwargs)
         elif projection.lower() == "3d":
-            plot_3d(input_data, name=name, ndim=ndim, backend=backend, **kwargs)
+            plot_3d(input_data, name=name, ndim=ndim, backend=backend,
+                    **kwargs)
         else:
             raise RuntimeError("Wrong projection type. Expected either '2d' "
                                "or '3d', got {}.".format(projection))
