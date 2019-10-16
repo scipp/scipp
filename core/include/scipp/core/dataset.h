@@ -388,6 +388,7 @@ public:
   void eraseCoord(const Dim dim);
   void eraseLabels(const std::string &labelName);
   void eraseAttr(const std::string &attrName);
+  void eraseMask(const std::string &maskName);
   void eraseSparseCoord(const std::string &name);
   void eraseSparseLabels(const std::string &name, const std::string &labelName);
 
@@ -706,6 +707,8 @@ public:
         m_parent->eraseLabels(key);
       if constexpr (std::is_same_v<Base, AttrsConstProxy>)
         m_parent->eraseAttr(key);
+      if constexpr (std::is_same_v<Base, MasksConstProxy>)
+        m_parent->eraseMask(key);
     } else {
       if constexpr (std::is_same_v<Base, CoordsConstProxy>) {
         if (Base::m_items.count(key) == 0) {
@@ -718,11 +721,10 @@ public:
                                         to_string(key) + " found," + suffix);
         }
         m_parent->eraseSparseCoord(*m_name);
-      }
-      if constexpr (std::is_same_v<Base, LabelsConstProxy>)
+      } else if constexpr (std::is_same_v<Base, LabelsConstProxy>)
         m_parent->eraseSparseLabels(*m_name, key);
-      if constexpr (std::is_same_v<Base, AttrsConstProxy>)
-        throw std::runtime_error("Attributes cannot be sparse.");
+      else
+        throw std::runtime_error("The instance cannot be sparse.");
     }
   }
 };

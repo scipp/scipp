@@ -421,3 +421,19 @@ TEST(DatasetTest, erase_attrs) {
   ds.setAttr("attr_x", attrs);
   EXPECT_EQ(ref, ds);
 }
+
+TEST(DatasetTest, erase_masks) {
+  DatasetFactory3D factory;
+  const auto ref = factory.make();
+  Dataset ds(ref);
+  auto mask = Variable(ref.masks()["masks_x"]);
+  ds.eraseMask("masks_x");
+  EXPECT_FALSE(ds.masks().contains("masks_x"));
+  ds.setMask("masks_x", mask);
+  EXPECT_EQ(ref, ds);
+
+  ds.masks().erase("masks_x");
+  EXPECT_FALSE(ds.masks().contains("masks_x"));
+  ds.setMask("masks_x", mask);
+  EXPECT_EQ(ref, ds);
+}

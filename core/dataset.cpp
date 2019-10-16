@@ -400,6 +400,11 @@ void Dataset::eraseAttr(const std::string &attrName) {
   erase_from_map(&Dataset::m_attrs, attrName);
 }
 
+/// Removes an attribute for the given attribute name.
+void Dataset::eraseMask(const std::string &maskName) {
+  erase_from_map(&Dataset::m_masks, maskName);
+}
+
 /// Remove the sparse coordinate with given name.
 ///
 /// Sparse coordinates can exist even without corresponding data.
