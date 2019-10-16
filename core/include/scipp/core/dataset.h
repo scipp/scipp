@@ -254,7 +254,6 @@ template <class D> struct make_item {
 template <class D> make_item(D *)->make_item<D>;
 } // namespace detail
 
-
 /// Collection of data arrays.
 class SCIPP_CORE_EXPORT Dataset {
 public:
@@ -466,7 +465,8 @@ private:
   void rebuildDims();
 
   template <class Key, class Val>
-  void erase_from_map(std::unordered_map<Key, Val> Dataset::* map, const Key& key) {
+  void erase_from_map(std::unordered_map<Key, Val> Dataset::*map,
+                      const Key &key) {
     (this->*map).erase(key);
     rebuildDims();
   }
@@ -478,7 +478,6 @@ private:
   std::unordered_map<std::string, Variable> m_masks;
   detail::dataset_item_map m_data;
 };
-
 
 /// Common functionality for other const-proxy classes.
 template <class Id, class Key> class ConstProxy {

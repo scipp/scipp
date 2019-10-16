@@ -683,6 +683,17 @@ def test_attrs_delitem():
     del d.attrs['attr']
     assert d == dref
 
+
+def test_masks_delitem():
+    var = sc.Variable([Dim.X], values=np.array([True, True, False]))
+    d = sc.Dataset({'a': var}, coords={Dim.X: var})
+    dref = d.copy()
+    d.masks['masks'] = var
+    assert d != dref
+    del d.masks['masks']
+    assert d == dref
+
+
 # def test_delitem(self):
 #    dataset = sc.Dataset()
 #    dataset[sc.Data.Value, "data"] = ([sc.Dim.Z, sc.Dim.Y, sc.Dim.X],
