@@ -1,4 +1,5 @@
 # Download and unpack boost at configure time
+message(STATUS "${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/boost/include/boost")
 configure_file(${CMAKE_SOURCE_DIR}/CMake/boost.in
                ${CMAKE_BINARY_DIR}/boost-download/CMakeLists.txt)
 
