@@ -16,8 +16,9 @@ env:
 
 before_install:
   - docker pull nvaytet/scipp-ci
-  - docker run -d -p 127.0.0.1:80:4567 nvaytet/scipp-ci
-  - docker ps -a
+  # - docker run -d -p 127.0.0.1:80:4567 nvaytet/scipp-ci
+  # - docker run nvaytet/scipp-ci
+  # - docker ps -a
 
 jobs:
   include:
@@ -26,11 +27,11 @@ jobs:
       name: "Clang-format"
       if: NOT type = cron
       # before_install: .travis/before_install.sh
-      script: .travis/check_clang_format.sh
+      script: docker run nvaytet/scipp-ci /bin/sh .travis/check_clang_format.sh
     - name: "Flake8"
       if: NOT type = cron
       # before_install: .travis/before_install.sh
-      script: .travis/check_flake8.sh
+      script: docker run nvaytet/scipp-ci /bin/sh .travis/check_flake8.sh
       # Then start parallel build of gcc and clang in the Test stage
     - stage: "Unit tests"
       compiler: gcc
