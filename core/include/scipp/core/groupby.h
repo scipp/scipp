@@ -11,8 +11,17 @@
 
 namespace scipp::core {
 
-SCIPP_CORE_EXPORT DataArray groupby(const DatasetConstProxy &dataset,
-                                    const std::string &labels);
+struct SCIPP_CORE_EXPORT GroupBy {
+  Dataset mean(const Dim dim) const;
+
+  DatasetConstProxy m_data;
+  Variable m_key;
+  std::vector<std::vector<scipp::index>> m_groups;
+};
+
+SCIPP_CORE_EXPORT GroupBy groupby(const DatasetConstProxy &dataset,
+                                  const std::string &labels,
+                                  const Dim targetDim);
 
 } // namespace scipp::core
 

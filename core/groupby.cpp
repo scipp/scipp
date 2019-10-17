@@ -9,10 +9,31 @@
 #include "scipp/core/indexed_slice_view.h"
 #include "scipp/core/tag_util.h"
 
+#include "dataset_operations_common.h"
+
 namespace scipp::core {
 
+Dataset GroupBy::mean(const Dim dim) const {
+  auto slice_array = [dim](auto &&data, auto &&... _) {
+    constexpr auto slice = [](const VariableConstProxy &var, auto &&... args) {
+      return Variable(var.slice({args...}));
+    };
+    if (data.dims().contains(dim))
+      return apply_to_data_and_drop_dim(data, slice, dim, _...);
+    else
+      return DataArray(data);
+  };
+  // Delete anything (but data) that depends on the mean dimension `dim`.
+  Dataset out = apply_to_items(m_data, slice_array, 0, scipp::size(m_groups));
+
+  out.rename(dim, m_key.dims().inner());
+
+  return out;
+}
+
 template <class T> struct MakeGroups {
-  static auto apply(const DatasetConstProxy &d, const std::string &labels) {
+  static auto apply(const DatasetConstProxy &d, const std::string &labels,
+                    const Dim targetDim) {
     const auto &key = d.labels()[labels];
     if (key.dims().ndim() != 1)
       throw except::DimensionError("Group-by key must be 1-dimensional");
@@ -26,29 +47,23 @@ template <class T> struct MakeGroups {
     // TODO Better just return indices, without copying data into groups.
     // Alternatively return map to IndexedSliceView?
 
-    const Dim dim = key.dims().inner();
-    const Dimensions dims{dim, scipp::size(indices)};
+    const Dimensions dims{targetDim, scipp::size(indices)};
     Vector<T> keys;
-    Vector<Dataset> groups;
-    for (const auto &item : indices) {
+    std::vector<std::vector<scipp::index>> groups;
+    for (auto &item : indices) {
       keys.push_back(item.first);
-      groups.emplace_back(concatenate(IndexedSliceView{d, dim, item.second}));
+      groups.emplace_back(std::move(item.second));
     }
     auto keys_ = makeVariable<T>(dims, std::move(keys));
     keys_.setUnit(key.unit());
-    return DataArray(makeVariable<Dataset>(dims, std::move(groups)), {},
-                     {{labels, std::move(keys_)}});
+    return GroupBy{d, std::move(keys_), std::move(groups)};
   }
 };
 
-static auto makeGroups(const DatasetConstProxy &dataset,
-                       const std::string &labels) {
+GroupBy groupby(const DatasetConstProxy &dataset, const std::string &labels,
+                const Dim targetDim) {
   return CallDType<double, float, int64_t, int32_t, bool, std::string>::apply<
-      MakeGroups>(dataset.labels()[labels].dtype(), dataset, labels);
-}
-
-DataArray groupby(const DatasetConstProxy &dataset, const std::string &labels) {
-  return makeGroups(dataset, labels);
+      MakeGroups>(dataset.labels()[labels].dtype(), dataset, labels, targetDim);
 }
 
 } // namespace scipp::core

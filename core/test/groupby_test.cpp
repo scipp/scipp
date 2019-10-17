@@ -16,7 +16,10 @@ TEST(GroupbyTest, dataset_1d) {
   d.setLabels("label1", makeVariable<double>({Dim::X, 3}, units::m, {1, 2, 3}));
   d.setLabels("label2", makeVariable<double>({Dim::X, 3}, units::m, {1, 1, 3}));
 
-  auto grouped = groupby(d, "label2");
+  auto grouped = groupby(d, "label2", Dim::Y);
+  auto result = grouped.mean(Dim::X);
+  EXPECT_EQ(result["b"].dims(), Dimensions({Dim::Y, 2}));
+  /*
   EXPECT_EQ(grouped.dims(), Dimensions({Dim::X, 2}));
   // Should we use Dim::Group instead, and coords()[Dim::Group]?
   // Or just hide the data array as an implementation detail (better!)
@@ -25,4 +28,5 @@ TEST(GroupbyTest, dataset_1d) {
   EXPECT_EQ(keys[1], 3.0);
   EXPECT_EQ(grouped.values<Dataset>()[0], d.slice({Dim::X, 0, 2}));
   EXPECT_EQ(grouped.values<Dataset>()[1], d.slice({Dim::X, 2, 3}));
+  */
 }
