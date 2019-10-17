@@ -28,4 +28,3 @@ endif()
 
 set(BOOST_INCLUDEDIR "${CMAKE_BINARY_DIR}/boost/include" CACHE PATH "Path to boost")
 set(BOOST_NO_SYSTEM_PATHS ON)
-#set(Boost_INCLUDE_DIRS "${CMAKE_BINARY_DIR}/boost/include")
