@@ -3,7 +3,7 @@ language: cpp
 services:
   - docker
 
-cache: ccache
+#cache: ccache
 
 branches:
   only:
@@ -23,17 +23,23 @@ before_install:
 
 jobs:
   include:
+
       # Check clang format and flake8 in the first stage
     - stage: "Code formatting"
       name: "Clang-format"
       if: NOT type = cron
-      # before_install: .travis/before_install.sh
-      script: docker run nvaytet/scipp-ci /bin/sh -c "cd /opt/scipp && .travis/check_clang_format.sh"
-    - name: "Flake8"
+      before_install: .travis/before_install.sh
+      # script: docker run nvaytet/scipp-ci /bin/sh -c "cd /opt/scipp && .travis/check_clang_format.sh"
+      script: .travis/check_clang_format.sh
+
+    - stage: "Code formatting"
+      name: "Flake8"
       if: NOT type = cron
-      # before_install: .travis/before_install.sh
+      before_install: .travis/before_install.sh
       # script: docker run nvaytet/scipp-ci /bin/sh -c "ls; pwd; .travis/check_flake8.sh"
-      script: docker run nvaytet/scipp-ci /bin/sh -c "cd /opt/scipp && .travis/check_flake8.sh"
+      # script: docker run nvaytet/scipp-ci /bin/sh -c "cd /opt/scipp && .travis/check_flake8.sh"
+      script: .travis/check_flake8.sh
+
       # Then start parallel build of gcc and clang in the Test stage
     - stage: "Unit tests"
       # compiler: gcc
@@ -42,13 +48,16 @@ jobs:
       # before_install: .travis/before_install.sh
       # install: .travis/install_linux_toolchain.sh
       script: docker run nvaytet/scipp-ci /bin/sh -c "cd /opt/scipp/build && grep PYTHON CMakeCache.txt && grep PREFIX CMakeCache.txt && make -j2 install all-tests all-benchmarks && /opt/scipp/.travis/run_tests.sh"
+
     - stage: "Unit tests"
       name: "clang"
       if: NOT type = cron
       # before_install: .travis/before_install.sh
       # install: .travis/install_linux_toolchain.sh
       script: docker run nvaytet/scipp-ci /bin/sh -c "/opt/scipp/.travis/run_tests.sh"
-    - os: osx
+
+    - stage: "Unit tests"
+      os: osx
       name: "apple clang"
       if: NOT type = cron
       osx_image: xcode10.2
@@ -56,6 +65,7 @@ jobs:
       env:
         - PYTHON_EXECUTABLE="/usr/local/bin/python3"
       script: .travis/run_tests.sh -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=OFF
+
     - stage: "Deploy"
       name: "conda linux"
       if: NOT type = cron AND branch = master AND NOT type = pull_request
@@ -68,6 +78,7 @@ jobs:
         - .travis/conda_build_and_deploy.sh --label 'dev'
         - .travis/trigger_docker_build.sh
         - .travis/trigger_readthedocs_build.sh
+
     - stage: "Deploy"
       os: osx
       osx_image: xcode10.2
@@ -83,6 +94,7 @@ jobs:
       install:
         - .travis/install_conda.sh "Miniconda3-latest-MacOSX-x86_64.sh"
       script: travis_wait .travis/conda_build_and_deploy.sh --label 'dev'
+
     - stage: "Deploy"
       name: "conda linux python3.6"
       if: type = cron AND branch = master
@@ -93,6 +105,7 @@ jobs:
       install: .travis/install_conda.sh "Miniconda3-latest-Linux-x86_64.sh"
       script:
         - travis_wait .travis/conda_build_and_deploy.sh --label 'dev' --python 3.6
+
     - stage: "Deploy"
       name: "release conda linux"
       if: NOT type = cron AND NOT type = pull_request AND tag =~ /^\d+(\.\d+)*/
@@ -104,6 +117,7 @@ jobs:
       script:
         - travis_wait .travis/conda_build_and_deploy.sh
         - travis_wait .travis/conda_build_and_deploy.sh --python 3.6
+
     - stage: "Deploy"
       os: osx
       osx_image: xcode10.2
