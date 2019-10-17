@@ -594,6 +594,12 @@ def test_construct_0d_native_python_types():
     assert sc.Variable(True).dtype == sc.dtype.bool
 
 
+def test_construct_0d_dtype():
+    assert sc.Variable(2, dtype=np.int32).dtype == sc.dtype.int32
+    assert sc.Variable(np.float64(2), dtype=np.float32).dtype == sc.dtype.float
+    assert sc.Variable(1, dtype=np.bool).dtype == sc.dtype.bool
+
+
 def test_rename_dims():
     values = np.arange(6).reshape(2, 3)
     xy = sc.Variable(dims=[Dim.X, Dim.Y], values=values)
