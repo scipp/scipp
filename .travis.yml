@@ -15,10 +15,9 @@ env:
     - PYTHON_EXECUTABLE="/usr/bin/python3"
 
 before_install:
-  global:
-    - docker pull nvaytet/scipp-ci
-    - docker run -d -p 127.0.0.1:80:4567 nvaytet/scipp-ci
-    - docker ps -a
+  - docker pull nvaytet/scipp-ci
+  - docker run -d -p 127.0.0.1:80:4567 nvaytet/scipp-ci
+  - docker ps -a
 
 jobs:
   include:
