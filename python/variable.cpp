@@ -10,8 +10,8 @@
 #include "scipp/core/except.h"
 #include "scipp/core/sort.h"
 #include "scipp/core/tag_util.h"
-#include "scipp/core/variable.h"
 #include "scipp/core/transform.h"
+#include "scipp/core/variable.h"
 
 #include "bind_data_access.h"
 #include "bind_operators.h"
@@ -54,18 +54,31 @@ template <class T> struct MakeVariableDefaultInit {
                         const std::vector<scipp::index> &shape,
                         const units::Unit unit, const bool variances) {
     Dimensions dims(labels, shape);
-    auto var = variances ? makeVariableWithVariances<T>(dims)
-                         : makeVariable<T>(dims);
+    auto var =
+        variances ? makeVariableWithVariances<T>(dims) : makeVariable<T>(dims);
     var.setUnit(unit);
     return var;
   }
 };
 
-//template <class T> struct MakeODFromNativePythonTypes {
-//  static Variable apply(const units::Unit unit, const T& value, const std::optional<T>& variance) {
-//    auto var = variance ? makeVariableWithVariances<T>({}, {value}, {*variance}) : makeVariable<T>({}, value);
-//  }
-//};
+template <class ST> struct MakeODFromNativePythonTypes {
+  template <class T> struct Maker {
+    static Variable apply(const units::Unit unit, const ST &value,
+                          const std::optional<ST> &variance) {
+      auto var = variance ? makeVariable<T>(T(value), T(variance.value()))
+                          : makeVariable<T>(T(value));
+      var.setUnit(unit);
+      return var;
+    }
+  };
+
+  static Variable make(const units::Unit unit, const ST &value,
+                       const std::optional<ST> &variance,
+                       const py::object &dtype) {
+    return CallDType<double, float, int64_t, int32_t, bool>::apply<Maker>(
+        scipp_dtype(dtype), unit, value, variance);
+  }
+};
 
 Variable doMakeVariable(const std::vector<Dim> &labels, py::array &values,
                         std::optional<py::array> &variances,
@@ -88,8 +101,6 @@ Variable makeVariableDefaultInit(const std::vector<Dim> &labels,
                                                        variances);
 }
 
-//Variable makeODFromNativePythonTypes(py::object &dtype)
-
 template <class T>
 auto do_init_0D(const T &value, const std::optional<T> &variance,
                 const units::Unit &unit) {
@@ -102,22 +113,28 @@ auto do_init_0D(const T &value, const std::optional<T> &variance,
   return var;
 }
 
-// This function is used only to bind native python types: pyInt -> int64_t; pyFloat -> double
 template <class T> void bind_init_0D(py::class_<Variable> &c) {
   c.def(py::init([](const T &value, const std::optional<T> &variance,
+                    const units::Unit &unit) {
+          return do_init_0D(value, variance, unit);
+        }),
+        py::arg("value"), py::arg("variance") = std::nullopt,
+        py::arg("unit") = units::Unit(units::dimensionless));
+}
+
+// This function is used only to bind native python types: pyInt -> int64_t;
+// pyFloat -> double
+template <class T>
+void bind_init_0D_native_python_types(py::class_<Variable> &c) {
+  c.def(py::init([](const T &value, const std::optional<T> &variance,
                     const units::Unit &unit, py::object &dtype) {
+          static_assert(std::is_same_v<T, int64_t> ||
+                        std::is_same_v<T, double> || std::is_same_v<T, bool>);
           if (dtype.is_none())
             return do_init_0D(value, variance, unit);
           else {
-            auto var = makeVariableDefaultInit({}, {}, unit, dtype, variance.has_value());
-            transform_in_place<float, double>(var,
-                overloaded{[&value, &variance](auto &x) {
-                  using vav = std::decay<decltype(x)>;
-                  if constexpr (scipp::core::detail::is_ValueAndVariance_v<vav>)
-                    variance ? x += vav(value, *variance) : x+= value; },
-                           [](units::Unit &) {}});
-
-            return var;
+            return MakeODFromNativePythonTypes<T>::make(unit, value, variance,
+                                                        dtype);
           }
         }),
         py::arg("value"), py::arg("variance") = std::nullopt,
@@ -125,7 +142,7 @@ template <class T> void bind_init_0D(py::class_<Variable> &c) {
         py::arg("dtype") = py::none());
 }
 
-void bind_init_0D(py::class_<Variable> &c) {
+void bind_init_0D_numpy_types(py::class_<Variable> &c) {
   c.def(py::init([](py::buffer &b, const std::optional<py::buffer> &v,
                     const units::Unit &unit, py::object &dtype) {
           py::buffer_info info = b.request();
@@ -214,10 +231,10 @@ void init_variable(py::module &m) {
   bind_init_1D<int32_t>(variable);
   bind_init_1D<double>(variable);
   // This should be in the certain order
-  bind_init_0D(variable);
-  bind_init_0D<bool>(variable);
-  bind_init_0D<int64_t>(variable);
-  bind_init_0D<double>(variable);
+  bind_init_0D_numpy_types(variable);
+  bind_init_0D_native_python_types<bool>(variable);
+  bind_init_0D_native_python_types<int64_t>(variable);
+  bind_init_0D_native_python_types<double>(variable);
   bind_init_0D<py::object>(variable);
   //------------------------------------
 
