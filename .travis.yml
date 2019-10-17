@@ -16,6 +16,7 @@ env:
 
 before_install:
   - docker pull nvaytet/scipp-ci
+  - docker run nvaytet/scipp-ci /bin/sh -c "cd /opt/scipp/scipp && git fetch origin +refs/pull/${TRAVIS_PULL_REQUEST}/merge && git checkout -qf FETCH_HEAD"
   # - docker run -d -p 127.0.0.1:80:4567 nvaytet/scipp-ci
   # - docker run nvaytet/scipp-ci
   # - docker ps -a
@@ -27,26 +28,26 @@ jobs:
       name: "Clang-format"
       if: NOT type = cron
       # before_install: .travis/before_install.sh
-      script: COMMAND=$(cat .travis/check_clang_format.sh) && docker run nvaytet/scipp-ci /bin/sh -c "${COMMAND}"
+      script: docker run nvaytet/scipp-ci /bin/sh -c "/opt/scipp/scipp/.travis/check_clang_format.sh"
     - name: "Flake8"
       if: NOT type = cron
       # before_install: .travis/before_install.sh
       # script: docker run nvaytet/scipp-ci /bin/sh -c "ls; pwd; .travis/check_flake8.sh"
-      script: COMMAND=$(cat .travis/check_flake8.sh) && docker run nvaytet/scipp-ci /bin/sh -c "${COMMAND}"
+      script: docker run nvaytet/scipp-ci /bin/sh -c "/opt/scipp/scipp/.travis/check_flake8.sh"
       # Then start parallel build of gcc and clang in the Test stage
     - stage: "Unit tests"
-      compiler: gcc
+      # compiler: gcc
       name: "gcc"
       if: NOT type = cron
       # before_install: .travis/before_install.sh
       # install: .travis/install_linux_toolchain.sh
-      script: .travis/run_tests.sh
-    - compiler: clang
+      script: docker run nvaytet/scipp-ci /bin/sh -c "/opt/scipp/scipp/.travis/run_tests.sh"
+    - stage: "Unit tests"
       name: "clang"
       if: NOT type = cron
       # before_install: .travis/before_install.sh
       # install: .travis/install_linux_toolchain.sh
-      script: .travis/run_tests.sh
+      script: docker run nvaytet/scipp-ci /bin/sh -c "/opt/scipp/scipp/.travis/run_tests.sh"
     - os: osx
       name: "apple clang"
       if: NOT type = cron
