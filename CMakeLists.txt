@@ -35,7 +35,7 @@ include(GenerateExportHeader)
 find_package(Boost REQUIRED)
 find_package(Python COMPONENTS Interpreter Development)
 
-if("${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}" VERSION_LESS "3.5")
+if("${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}" VERSION_LESS "3.5")
   message(FATAL_ERROR "Python v3 interpreter must be greater than or equal to 3.5. Found ${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}")
 endif()
 
