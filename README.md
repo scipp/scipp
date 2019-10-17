@@ -1,6 +1,6 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE.txt)
-[![Build Status](https://www.travis-ci.org/scipp/scipp.svg?branch=master)](https://www.travis-ci.org/scipp/scipp)
-[![Build status](https://ci.appveyor.com/api/projects/status/xd1ctsj87siv9ag5?svg=true)](https://ci.appveyor.com/project/Scipp/scipp-unbdg)
+[![Build Status Travis](https://www.travis-ci.org/scipp/scipp.svg?branch=master)](https://www.travis-ci.org/scipp/scipp)
+[![Build status Appveyor](https://ci.appveyor.com/api/projects/status/8vbdq64u8mgvjbta?svg=true)](https://ci.appveyor.com/project/Scipp/scipp-l7qf3)
 [![Documentation Status](https://readthedocs.org/projects/scipp/badge/?version=latest)](https://scipp.readthedocs.io/en/latest/?badge=latest)
 [![Anaconda-Server Badge](https://anaconda.org/scipp/scipp/badges/installer/conda.svg)](https://conda.anaconda.org/scipp/label/dev)
 [![Docker Cloud Build Status](https://img.shields.io/docker/cloud/build/scipp/scipp-jupyter-demo)](https://hub.docker.com/r/scipp/scipp-jupyter-demo)
