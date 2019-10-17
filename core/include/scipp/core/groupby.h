@@ -12,6 +12,8 @@
 namespace scipp::core {
 
 struct SCIPP_CORE_EXPORT GroupBy {
+  scipp::index size() const noexcept { return scipp::size(m_groups); }
+
   Dataset mean(const Dim dim) const;
 
   DatasetConstProxy m_data;

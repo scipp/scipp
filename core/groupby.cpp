@@ -25,23 +25,23 @@ Dataset GroupBy::mean(const Dim dim) const {
   };
   Dataset out = apply_to_items(
       m_data, [](auto &&... _) { return apply_to_data_and_drop_dim(_...); },
-      init_var, dim, scipp::size(m_groups));
+      init_var, dim, size());
   const Dim outDim = m_key.dims().inner();
   out.rename(dim, outDim);
 
   // 2. Apply to each group, storing result in output slice
-  scipp::index i = 0;
-  for (const auto &group : m_groups) {
-    const auto out_slice = out.slice({outDim, i++});
-    for (scipp::index slice = 0; slice < scipp::size(group); ++slice) {
+  for (scipp::index group = 0; group < size(); ++group) {
+    const auto out_slice = out.slice({outDim, group});
+    const auto &indices = m_groups[group];
+    for (scipp::index slice = 0; slice < scipp::size(indices); ++slice) {
       // TODO Run this only on data, as it is we compare coordinates for every
       // slice, which is inefficient.
       // TODO use slices with thickness and `sum_in_place(out_slice, data_slice,
       // dim)` to avoid inefficient single-slice handling.
-      const auto &data_slice = m_data.slice({dim, group[slice]});
+      const auto &data_slice = m_data.slice({dim, indices[slice]});
       out_slice += data_slice;
     }
-    out_slice /= static_cast<double>(scipp::size(group));
+    out_slice /= static_cast<double>(scipp::size(indices));
   }
 
   // 3. Set the group labels as new coord
