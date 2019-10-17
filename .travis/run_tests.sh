@@ -2,12 +2,12 @@
 
 set -xe
 
-# Build scipp
-mkdir -p build
-mkdir -p install
-cd build
-cmake -DPYTHON_EXECUTABLE=${PYTHON_EXECUTABLE} $@ -DCMAKE_INSTALL_PREFIX=../install ..
-make -j2 install all-tests all-benchmarks
+# # Build scipp
+# mkdir -p build
+# mkdir -p install
+# cd build
+# cmake -DPYTHON_EXECUTABLE=${PYTHON_EXECUTABLE} $@ -DCMAKE_INSTALL_PREFIX=../install ..
+# make -j2 install all-tests all-benchmarks
 
 # Units tests
 ./units/test/scipp-units-test
