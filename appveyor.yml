@@ -2,13 +2,7 @@ version: '{build}'
 os: Visual Studio 2019
 branches:
   only:
-  - visual_studio_build # TODO remove 
-
-init:
-  - ps: iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
-
-on_finish:
-  - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
+  - visual_studio_build # TODO change to master 
 
 matrix:
   fast_finish: true
