@@ -26,14 +26,19 @@ DataArray apply_and_drop_dim_impl(const DataConstProxy &a, Func func,
     if (attr.dims().inner() != dim)
       attrs.emplace(name, attr);
 
+  std::map<std::string, Variable> masks;
+  for (auto &&[name, mask] : a.masks())
+    if (mask.dims().inner() != dim)
+      masks.emplace(name, mask);
+
   if constexpr (ApplyToData)
     return DataArray(func(a.data(), dim, std::forward<Args>(args)...),
-                     std::move(coords), std::move(labels), std::move(attrs),
-                     a.name());
+                     std::move(coords), std::move(labels), std::move(masks),
+                     std::move(attrs), a.name());
   else
     return DataArray(func(a, dim, std::forward<Args>(args)...),
-                     std::move(coords), std::move(labels), std::move(attrs),
-                     a.name());
+                     std::move(coords), std::move(labels), std::move(masks),
+                     std::move(attrs), a.name());
 }
 
 template <class Func, class... Args>
@@ -132,8 +137,12 @@ Dataset histogram(const Dataset &dataset, const Dim &dim) {
 }
 
 Dataset merge(const DatasetConstProxy &a, const DatasetConstProxy &b) {
+  // When merging datasets the contents of the masks are not OR'ed, but
+  // checked if present in both dataset with the same values with `union_`.
+  // If the values are different the merge will fail.
   return Dataset(union_(a, b), union_(a.coords(), b.coords()),
-                 union_(a.labels(), b.labels()), union_(a.attrs(), b.attrs()));
+                 union_(a.labels(), b.labels()), union_(a.masks(), b.masks()),
+                 union_(a.attrs(), b.attrs()));
 }
 
 /// Concatenate a and b, assuming that a and b contain bin edges.
@@ -191,7 +200,8 @@ DataArray concatenate(const DataConstProxy &a, const DataConstProxy &b,
     return DataArray{a};
   return DataArray(concatenate(a.data(), b.data(), dim),
                    concat(a.coords(), b.coords(), dim, a.dims(), b.dims()),
-                   concat(a.labels(), b.labels(), dim, a.dims(), b.dims()));
+                   concat(a.labels(), b.labels(), dim, a.dims(), b.dims()),
+                   concat(a.masks(), b.masks(), dim, a.dims(), b.dims()));
 }
 
 Dataset concatenate(const DatasetConstProxy &a, const DatasetConstProxy &b,

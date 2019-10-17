@@ -3,8 +3,7 @@
 # @file
 # @author Igor Gudich & Neil Vaytet
 
-import scipp as sc
-from .tools import axis_label
+from ._scipp import core as sc
 
 
 def value_to_string(val, precision=3):
@@ -17,6 +16,22 @@ def value_to_string(val, precision=3):
         text = "{}".format(val)
         if len(text) > precision + 2 + (text[0] == '-'):
             text = "{val:.{prec}f}".format(val=val, prec=precision)
+    return text
+
+
+def title_to_string(var, name=None, replace_dim=True):
+    """
+    Make a column title with "Name [unit]"
+    """
+    if name is not None:
+        text = name
+    else:
+        text = str(var.dims[0])
+        if replace_dim:
+            text = text.replace("Dim.", "")
+
+    if var.unit != sc.units.dimensionless:
+        text += " [{}]".format(var.unit)
     return text
 
 
@@ -68,15 +83,15 @@ def table_from_dataset(dataset, is_hist=False, headers=2):
         if coord is not None:
             html += "<th {} colspan='{}'>{}</th>".format(
                 mstyle, 1 + (coord.variances is not None),
-                axis_label(coord, replace_dim=False))
+                title_to_string(coord, replace_dim=False))
         for key, lab in dataset.labels:
             html += "<th {} colspan='{}'>{}</th>".format(
                 mstyle, 1 + (lab.variances is not None),
-                axis_label(lab, name=key))
+                title_to_string(lab, name=key))
         for key, val in dataset:
             html += "<th {} colspan='{}'>{}</th>".format(
                 mstyle, 1 + (val.variances is not None),
-                axis_label(val, name=key))
+                title_to_string(val, name=key))
         html += "</tr><tr>"
         if coord is not None:
             html += "<th {}>Values</th>".format(mstyle)

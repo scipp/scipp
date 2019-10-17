@@ -69,7 +69,7 @@ inline py::buffer_info make_py_buffer_info(VariableProxy &view) {
 template <class... Ts> class as_VariableViewImpl;
 
 class DataAccessHelper {
-  template <class... Ts> friend struct as_VariableViewImpl;
+  template <class... Ts> friend class as_VariableViewImpl;
 
   template <class Getter, class T, class Var>
   static py::object as_py_array_t_impl(py::object &obj, Var &view) {
@@ -156,6 +156,8 @@ template <class... Ts> class as_VariableViewImpl {
       return {Getter::template get<Dataset>(proxy)};
     case dtype<Eigen::Vector3d>:
       return {Getter::template get<Eigen::Vector3d>(proxy)};
+    case dtype<py::object>:
+      return {Getter::template get<py::object>(proxy)};
     default:
       throw std::runtime_error("not implemented for this type.");
     }
@@ -232,10 +234,15 @@ template <class... Ts> class as_VariableViewImpl {
             //    slicing a 1-D array).
             // 2. For 1-D sparse data, where the individual item is then a
             //    vector-like object.
-            if (dims.shape().size() == 0)
-              return py::cast(data[0], py::return_value_policy::reference);
-            else
+            if (dims.shape().size() == 0) {
+              if constexpr (std::is_same_v<std::decay_t<decltype(data[0])>,
+                                           py::object>)
+                return data[0];
+              else
+                return py::cast(data[0], py::return_value_policy::reference);
+            } else {
               return py::cast(data);
+            }
           },
           get<Getter>(proxy));
     }
@@ -275,9 +282,13 @@ public:
     expect::equals(Dimensions(), view.dims());
     return std::visit(
         [&obj](const auto &data) {
-          // Passing `obj` as parent so py::keep_alive works.
-          return py::cast(data[0], py::return_value_policy::reference_internal,
-                          obj);
+          if constexpr (std::is_same_v<std::decay_t<decltype(data[0])>,
+                                       py::object>)
+            return data[0];
+          else
+            // Passing `obj` as parent so py::keep_alive works.
+            return py::cast(data[0],
+                            py::return_value_policy::reference_internal, obj);
         },
         get<get_values>(view));
   }
@@ -290,9 +301,13 @@ public:
     expect::equals(Dimensions(), view.dims());
     return std::visit(
         [&obj](const auto &data) {
-          // Passing `obj` as parent so py::keep_alive works.
-          return py::cast(data[0], py::return_value_policy::reference_internal,
-                          obj);
+          if constexpr (std::is_same_v<std::decay_t<decltype(data[0])>,
+                                       py::object>)
+            return data[0];
+          else
+            // Passing `obj` as parent so py::keep_alive works.
+            return py::cast(data[0],
+                            py::return_value_policy::reference_internal, obj);
         },
         get<get_variances>(view));
   }
@@ -326,7 +341,7 @@ using as_VariableView =
     as_VariableViewImpl<double, float, int64_t, int32_t, bool, std::string,
                         sparse_container<double>, sparse_container<float>,
                         sparse_container<int64_t>, DataArray, Dataset,
-                        Eigen::Vector3d>;
+                        Eigen::Vector3d, py::object>;
 
 template <class T, class... Ignored>
 void bind_data_properties(pybind11::class_<T, Ignored...> &c) {

@@ -113,6 +113,38 @@ Variable &Variable::operator/=(const VariableConstProxy &other) & {
   return divide_equals(*this, other);
 }
 
+template <class T1, class T2> T1 &or_equals(T1 &variable, const T2 &other) {
+  transform_in_place<pair_self_t<bool>>(
+      variable, other,
+      overloaded{[](auto &var_, const auto &other_) { var_ |= other_; },
+                 [](units::Unit &varUnit, const units::Unit &otherUnit) {
+                   expect::equals(varUnit, units::dimensionless);
+                   expect::equals(otherUnit, units::dimensionless);
+                 }});
+
+  return variable;
+}
+
+template <class T1, class T2> Variable or_op(const T1 &a, const T2 &b) {
+  return transform<pair_self_t<bool>>(
+      a, b,
+      overloaded{[](const auto &var_, const auto &other_) -> bool {
+                   return var_ | other_;
+                 },
+                 [](const units::Unit &aUnit, const units::Unit &bUnit) {
+                   expect::equals(aUnit, units::dimensionless);
+                   expect::equals(bUnit, units::dimensionless);
+                   return aUnit;
+                 }});
+}
+
+Variable &Variable::operator|=(const Variable &other) & {
+  return or_equals(*this, other);
+}
+Variable &Variable::operator|=(const VariableConstProxy &other) & {
+  return or_equals(*this, other);
+}
+
 VariableProxy VariableProxy::operator+=(const Variable &other) const {
   return plus_equals(*this, other);
 }
@@ -141,6 +173,13 @@ VariableProxy VariableProxy::operator/=(const VariableConstProxy &other) const {
   return divide_equals(*this, other);
 }
 
+VariableProxy VariableProxy::operator|=(const Variable &other) const {
+  return or_equals(*this, other);
+}
+VariableProxy VariableProxy::operator|=(const VariableConstProxy &other) const {
+  return or_equals(*this, other);
+}
+
 Variable VariableConstProxy::operator-() const {
   Variable copy(*this);
   return -copy;
@@ -152,6 +191,7 @@ Variable operator*(const Variable &a, const Variable &b) { return times(a, b); }
 Variable operator/(const Variable &a, const Variable &b) {
   return divide(a, b);
 }
+Variable operator|(const Variable &a, const Variable &b) { return or_op(a, b); }
 Variable operator+(const Variable &a, const VariableConstProxy &b) {
   return plus(a, b);
 }
@@ -163,6 +203,9 @@ Variable operator*(const Variable &a, const VariableConstProxy &b) {
 }
 Variable operator/(const Variable &a, const VariableConstProxy &b) {
   return divide(a, b);
+}
+Variable operator|(const Variable &a, const VariableConstProxy &b) {
+  return or_op(a, b);
 }
 Variable operator+(const VariableConstProxy &a, const Variable &b) {
   return plus(a, b);
@@ -176,6 +219,9 @@ Variable operator*(const VariableConstProxy &a, const Variable &b) {
 Variable operator/(const VariableConstProxy &a, const Variable &b) {
   return divide(a, b);
 }
+Variable operator|(const VariableConstProxy &a, const Variable &b) {
+  return or_op(a, b);
+}
 Variable operator+(const VariableConstProxy &a, const VariableConstProxy &b) {
   return plus(a, b);
 }
@@ -187,6 +233,9 @@ Variable operator*(const VariableConstProxy &a, const VariableConstProxy &b) {
 }
 Variable operator/(const VariableConstProxy &a, const VariableConstProxy &b) {
   return divide(a, b);
+}
+Variable operator|(const VariableConstProxy &a, const VariableConstProxy &b) {
+  return or_op(a, b);
 }
 Variable operator+(const VariableConstProxy &a_, const double b) {
   Variable a(a_);
