@@ -33,14 +33,24 @@ Dataset GroupBy::mean(const Dim dim) const {
   // 2. Apply to each group, storing result in output slice
   for (scipp::index group = 0; group < size(); ++group) {
     const auto out_slice = out.slice({outDim, group});
-    const auto &indices = m_groups[group];
-    scipp::index count = 0;
-    for (const auto &slice : indices) {
-      count += slice.end() - slice.begin();
-      for (const auto & [ name, item ] : m_data.slice(slice))
-        sum_impl(out_slice[name].data(), item.data());
+    for (const auto & [ name, item ] : m_data) {
+      for (const auto &slice : m_groups[group]) {
+        sum_impl(out_slice[name].data(), item.data().slice(slice));
+      }
     }
-    out_slice *= 1.0 / count;
+  }
+  auto scale = makeVariable<double>({outDim, size()});
+  const auto scaleT = scale.values<double>();
+  for (scipp::index group = 0; group < size(); ++group)
+    for (const auto &slice : m_groups[group])
+      scaleT[group] += slice.end() - slice.begin();
+  scale = 1.0 / scale;
+
+  for (const auto & [ name, item ] : out) {
+    if (isInt(item.data().dtype()))
+      out.setData(name, item.data() * scale);
+    else
+      item *= scale;
   }
 
   // 3. Set the group labels as new coord
@@ -62,6 +72,7 @@ template <class T> struct MakeGroups {
     const auto dim = key.dims().inner();
     std::map<T, std::vector<Slice>> indices;
     for (scipp::index i = 0; i < scipp::size(values);) {
+      const auto begin = i;
       const auto value = values[i];
       while (values[i] == value)
         ++i;
