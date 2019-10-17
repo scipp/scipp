@@ -7,26 +7,28 @@
 using namespace scipp;
 using namespace scipp::core;
 
-TEST(GroupbyTest, dataset_1d) {
+TEST(GroupbyTest, dataset_1d_and_2d) {
   Dataset d;
   d.setData("a",
-            makeVariable<int>({Dim::X, 3}, units::m, {1, 2, 3}, {4, 5, 6}));
+            makeVariable<double>({Dim::X, 3}, units::m, {1, 2, 3}, {4, 5, 6}));
   d.setData("b", makeVariable<double>({Dim::X, 3}, units::s, {0.1, 0.2, 0.3}));
-  d.setData("scalar", makeVariable<double>(1.2));
+  d.setData("c", makeVariable<double>({{Dim::Z, 2}, {Dim::X, 3}}, units::s,
+                                      {1, 2, 3, 4, 5, 6}));
+  d.setAttr("scalar", makeVariable<double>(1.2));
   d.setLabels("label1", makeVariable<double>({Dim::X, 3}, units::m, {1, 2, 3}));
   d.setLabels("label2", makeVariable<double>({Dim::X, 3}, units::m, {1, 1, 3}));
 
+  Dataset expected;
+  expected.setData("a", makeVariable<double>({Dim::Y, 2}, units::m, {1.5, 3.0},
+                                             {9.0 / 4, 6.0}));
+  expected.setData("b", makeVariable<double>({Dim::Y, 2}, units::s,
+                                             {(0.1 + 0.2) / 2.0, 0.3}));
+  expected.setData("c", makeVariable<double>({{Dim::Z, 2}, {Dim::Y, 2}},
+                                             units::s, {1.5, 3.0, 4.5, 6.0}));
+  expected.setAttr("scalar", makeVariable<double>(1.2));
+  expected.setCoord(Dim::Y,
+                    makeVariable<double>({Dim::Y, 2}, units::m, {1, 3}));
+
   auto grouped = groupby(d, "label2", Dim::Y);
-  auto result = grouped.mean(Dim::X);
-  EXPECT_EQ(result["b"].dims(), Dimensions({Dim::Y, 2}));
-  /*
-  EXPECT_EQ(grouped.dims(), Dimensions({Dim::X, 2}));
-  // Should we use Dim::Group instead, and coords()[Dim::Group]?
-  // Or just hide the data array as an implementation detail (better!)
-  const auto &keys = grouped.labels()["label2"].values<double>();
-  EXPECT_EQ(keys[0], 1.0);
-  EXPECT_EQ(keys[1], 3.0);
-  EXPECT_EQ(grouped.values<Dataset>()[0], d.slice({Dim::X, 0, 2}));
-  EXPECT_EQ(grouped.values<Dataset>()[1], d.slice({Dim::X, 2, 3}));
-  */
+  EXPECT_EQ(grouped.mean(Dim::X), expected);
 }

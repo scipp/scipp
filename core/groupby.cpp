@@ -14,19 +14,35 @@
 namespace scipp::core {
 
 Dataset GroupBy::mean(const Dim dim) const {
-  auto slice_array = [dim](auto &&data, auto &&... _) {
-    constexpr auto slice = [](const VariableConstProxy &var, auto &&... args) {
-      return Variable(var.slice({args...}));
-    };
-    if (data.dims().contains(dim))
-      return apply_to_data_and_drop_dim(data, slice, dim, _...);
-    else
-      return DataArray(data);
+  // 1. Prepare output dataset
+  constexpr auto do_slice = [](const VariableConstProxy &var, auto &&... args) {
+    return Variable(var.slice({args...}));
+  };
+  constexpr auto slice_array = [](auto &&... _) {
+    return apply_to_data_and_drop_dim(_...);
   };
   // Delete anything (but data) that depends on the mean dimension `dim`.
-  Dataset out = apply_to_items(m_data, slice_array, 0, scipp::size(m_groups));
+  Dataset out = apply_to_items(m_data, slice_array, do_slice, dim, 0,
+                               scipp::size(m_groups));
+  const Dim outDim = m_key.dims().inner();
+  out.rename(dim, outDim);
 
-  out.rename(dim, m_key.dims().inner());
+  // 2. Apply to each group, storing result in output slice
+  scipp::index i = 0;
+  for (const auto &group : m_groups) {
+    const auto out_slice = out.slice({outDim, i++});
+    for (scipp::index slice = 0; slice < scipp::size(group); ++slice) {
+      const auto &data_slice = m_data.slice({dim, group[slice]});
+      if (slice == 0)
+        out_slice.assign(data_slice);
+      else
+        out_slice += data_slice;
+    }
+    out_slice /= static_cast<double>(scipp::size(group));
+  }
+
+  // 3. Set the group labels as new coord
+  out.setCoord(outDim, m_key);
 
   return out;
 }
