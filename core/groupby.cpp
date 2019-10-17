@@ -14,16 +14,18 @@
 namespace scipp::core {
 
 Dataset GroupBy::mean(const Dim dim) const {
-  // 1. Prepare output dataset
-  constexpr auto do_slice = [](const VariableConstProxy &var, auto &&... args) {
-    return Variable(var.slice({args...}));
+  // 1. Prepare output dataset:
+  // - Delete anything (but data) that depends on the mean dimension `dim`.
+  // - Default-init data.
+  constexpr auto init_var = [](const VariableConstProxy &var, const Dim dim_,
+                               const scipp::index size_) {
+    auto dims = var.dims();
+    dims.resize(dim_, size_);
+    return Variable(var, dims);
   };
-  constexpr auto slice_array = [](auto &&... _) {
-    return apply_to_data_and_drop_dim(_...);
-  };
-  // Delete anything (but data) that depends on the mean dimension `dim`.
-  Dataset out = apply_to_items(m_data, slice_array, do_slice, dim, 0,
-                               scipp::size(m_groups));
+  Dataset out = apply_to_items(
+      m_data, [](auto &&... _) { return apply_to_data_and_drop_dim(_...); },
+      init_var, dim, scipp::size(m_groups));
   const Dim outDim = m_key.dims().inner();
   out.rename(dim, outDim);
 
@@ -32,11 +34,12 @@ Dataset GroupBy::mean(const Dim dim) const {
   for (const auto &group : m_groups) {
     const auto out_slice = out.slice({outDim, i++});
     for (scipp::index slice = 0; slice < scipp::size(group); ++slice) {
+      // TODO Run this only on data, as it is we compare coordinates for every
+      // slice, which is inefficient.
+      // TODO use slices with thickness and `sum_in_place(out_slice, data_slice,
+      // dim)` to avoid inefficient single-slice handling.
       const auto &data_slice = m_data.slice({dim, group[slice]});
-      if (slice == 0)
-        out_slice.assign(data_slice);
-      else
-        out_slice += data_slice;
+      out_slice += data_slice;
     }
     out_slice /= static_cast<double>(scipp::size(group));
   }
