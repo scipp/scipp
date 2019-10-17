@@ -363,7 +363,6 @@ void Dataset::setSparseCoord(const std::string &name, Variable coord) {
 /// Set (insert or replace) the sparse labels with given name and label name.
 void Dataset::setSparseLabels(const std::string &name,
                               const std::string &labelName, Variable labels) {
-  setDims(labels.dims());
   if (!labels.dims().sparse())
     throw std::runtime_error("Variable passed to Dataset::setSparseLabels does "
                              "not contain sparse data.");
@@ -376,12 +375,65 @@ void Dataset::setSparseLabels(const std::string &name,
       throw std::runtime_error("Cannot set sparse labels if values or "
                                "variances are not sparse.");
   }
+
   const auto &data = m_data.at(name);
   if (!data.data && !data.coord)
     throw std::runtime_error(
         "Cannot set sparse labels: Require either values or a sparse coord.");
 
+  setDims(labels.dims());
   m_data[name].labels.insert_or_assign(labelName, std::move(labels));
+}
+
+/// Removes the coordinate for the given dimension.
+void Dataset::eraseCoord(const Dim dim) {
+  erase_from_map(&Dataset::m_coords, dim);
+}
+
+/// Removes the labels for the given label name.
+void Dataset::eraseLabels(const std::string &labelName) {
+  erase_from_map(&Dataset::m_labels, labelName);
+}
+
+/// Removes an attribute for the given attribute name.
+void Dataset::eraseAttr(const std::string &attrName) {
+  erase_from_map(&Dataset::m_attrs, attrName);
+}
+
+/// Removes an attribute for the given attribute name.
+void Dataset::eraseMask(const std::string &maskName) {
+  erase_from_map(&Dataset::m_masks, maskName);
+}
+
+/// Remove the sparse coordinate with given name.
+///
+/// Sparse coordinates can exist even without corresponding data.
+void Dataset::eraseSparseCoord(const std::string &name) {
+  auto iter = m_data.find(name);
+  if (iter == m_data.end())
+    throw scipp::except::SparseDataError("No sparse data with name " + name +
+                                         " found.");
+
+  auto &data = iter->second;
+  !data.data ? [this, &iter]() { m_data.erase(iter); }() : data.coord.reset();
+  rebuildDims();
+}
+
+/// Remove the sparse labels with given name and label name.
+void Dataset::eraseSparseLabels(const std::string &name,
+                                const std::string &labelName) {
+  auto iter = m_data.find(name);
+  if (iter == m_data.end())
+    throw std::runtime_error("No sparse data with name " + name + " found.");
+
+  auto &data = iter->second;
+  auto liter = data.labels.find(labelName);
+  if (liter == data.labels.end())
+    throw scipp::except::SparseDataError("No sparse data with name " + name +
+                                         " found.");
+
+  data.labels.size() == 1 ? data.labels.clear()
+                          : [this, &iter]() { m_data.erase(iter); }();
 }
 
 /// Return const slice of the dataset along given dimension with given extents.

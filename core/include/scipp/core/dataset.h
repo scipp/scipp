@@ -384,6 +384,13 @@ public:
     setSparseLabels(name, labelName, Variable(labels));
   }
 
+  void eraseCoord(const Dim dim);
+  void eraseLabels(const std::string &labelName);
+  void eraseAttr(const std::string &attrName);
+  void eraseMask(const std::string &maskName);
+  void eraseSparseCoord(const std::string &name);
+  void eraseSparseLabels(const std::string &name, const std::string &labelName);
+
   DatasetConstProxy slice(const Slice slice1) const &;
   DatasetConstProxy slice(const Slice slice1, const Slice slice2) const &;
   DatasetConstProxy slice(const Slice slice1, const Slice slice2,
@@ -456,6 +463,13 @@ private:
   void setExtent(const Dim dim, const scipp::index extent, const bool isCoord);
   void setDims(const Dimensions &dims, const Dim coordDim = Dim::Invalid);
   void rebuildDims();
+
+  template <class Key, class Val>
+  void erase_from_map(std::unordered_map<Key, Val> Dataset::*map,
+                      const Key &key) {
+    (this->*map).erase(key);
+    rebuildDims();
+  }
 
   std::unordered_map<Dim, scipp::index> m_dims;
   std::unordered_map<Dim, Variable> m_coords;
@@ -674,6 +688,43 @@ public:
         m_parent->setAttr(key, var);
     }
     // TODO rebuild *this?!
+  }
+
+  void erase(const typename Base::key_type key) {
+    if (!m_parent || !Base::m_slices.empty())
+      throw std::runtime_error(
+          "Cannot remove coord/labels/attr field from a slice.");
+
+    bool sparse = m_name; // Does proxy points on sparse data or not
+    if (sparse)
+      sparse &= (*m_parent)[*m_name].dims().sparse();
+
+    if (!sparse) {
+      if constexpr (std::is_same_v<Base, CoordsConstProxy>)
+        m_parent->eraseCoord(key);
+      if constexpr (std::is_same_v<Base, LabelsConstProxy>)
+        m_parent->eraseLabels(key);
+      if constexpr (std::is_same_v<Base, AttrsConstProxy>)
+        m_parent->eraseAttr(key);
+      if constexpr (std::is_same_v<Base, MasksConstProxy>)
+        m_parent->eraseMask(key);
+    } else {
+      if constexpr (std::is_same_v<Base, CoordsConstProxy>) {
+        if (Base::m_items.count(key) == 0) {
+          std::string suffix =
+              Base::m_items.empty()
+                  ? "no sparse coordinate defined "
+                  : " sparse coordinate is defined for dim " +
+                        to_string(Base::m_items.begin()->first);
+          throw except::SparseDataError("No coordinate with dim " +
+                                        to_string(key) + " found," + suffix);
+        }
+        m_parent->eraseSparseCoord(*m_name);
+      } else if constexpr (std::is_same_v<Base, LabelsConstProxy>)
+        m_parent->eraseSparseLabels(*m_name, key);
+      else
+        throw std::runtime_error("The instance cannot be sparse.");
+    }
   }
 };
 
