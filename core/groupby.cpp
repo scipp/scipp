@@ -34,14 +34,13 @@ Dataset GroupBy::mean(const Dim dim) const {
   for (scipp::index group = 0; group < size(); ++group) {
     const auto out_slice = out.slice({outDim, group});
     const auto &indices = m_groups[group];
-    for (scipp::index slice = 0; slice < scipp::size(indices); ++slice) {
-      // TODO use slices with thickness and `sum_in_place(out_slice, data_slice,
-      // dim)` to avoid inefficient single-slice handling.
-      const auto &data_slice = m_data.slice({dim, indices[slice]});
-      for (const auto & [ name, item ] : data_slice)
+    scipp::index count = 0;
+    for (const auto &slice : indices) {
+      count += slice.end() - slice.begin();
+      for (const auto & [ name, item ] : m_data.slice(slice))
         sum_impl(out_slice[name].data(), item.data());
     }
-    out_slice /= static_cast<double>(scipp::size(indices));
+    out_slice *= 1.0 / count;
   }
 
   // 3. Set the group labels as new coord
@@ -60,15 +59,18 @@ template <class T> struct MakeGroups {
       throw except::VariancesError("Group-by key cannot have variances");
     const auto &values = key.values<T>();
 
-    std::map<T, std::vector<scipp::index>> indices;
-    for (scipp::index i = 0; i < scipp::size(values); ++i)
-      indices[values[i]].push_back(i);
-    // TODO Better just return indices, without copying data into groups.
-    // Alternatively return map to IndexedSliceView?
+    const auto dim = key.dims().inner();
+    std::map<T, std::vector<Slice>> indices;
+    for (scipp::index i = 0; i < scipp::size(values);) {
+      const auto value = values[i];
+      while (values[i] == value)
+        ++i;
+      indices[value].emplace_back(dim, begin, i);
+    }
 
     const Dimensions dims{targetDim, scipp::size(indices)};
     Vector<T> keys;
-    std::vector<std::vector<scipp::index>> groups;
+    std::vector<std::vector<Slice>> groups;
     for (auto &item : indices) {
       keys.push_back(item.first);
       groups.emplace_back(std::move(item.second));

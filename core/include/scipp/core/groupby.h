@@ -18,7 +18,7 @@ struct SCIPP_CORE_EXPORT GroupBy {
 
   DatasetConstProxy m_data;
   Variable m_key;
-  std::vector<std::vector<scipp::index>> m_groups;
+  std::vector<std::vector<Slice>> m_groups;
 };
 
 SCIPP_CORE_EXPORT GroupBy groupby(const DatasetConstProxy &dataset,
