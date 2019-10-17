@@ -39,9 +39,6 @@ if("${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}" VERSION_LESS "3.5")
   message(FATAL_ERROR "Python v3 interpreter must be greater than or equal to 3.5. Found ${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}")
 endif()
 
-
-
-
 option(WITH_CTEST "Enable ctest integration of tests" ON)
 option(DYNAMIC_LIB "Build shared libraries" OFF)
 
