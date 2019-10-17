@@ -10,6 +10,7 @@
 #include "scipp/core/tag_util.h"
 
 #include "dataset_operations_common.h"
+#include "variable_operations_common.h"
 
 namespace scipp::core {
 
@@ -34,12 +35,11 @@ Dataset GroupBy::mean(const Dim dim) const {
     const auto out_slice = out.slice({outDim, group});
     const auto &indices = m_groups[group];
     for (scipp::index slice = 0; slice < scipp::size(indices); ++slice) {
-      // TODO Run this only on data, as it is we compare coordinates for every
-      // slice, which is inefficient.
       // TODO use slices with thickness and `sum_in_place(out_slice, data_slice,
       // dim)` to avoid inefficient single-slice handling.
       const auto &data_slice = m_data.slice({dim, indices[slice]});
-      out_slice += data_slice;
+      for (const auto & [ name, item ] : data_slice)
+        sum_impl(out_slice[name].data(), item.data());
     }
     out_slice /= static_cast<double>(scipp::size(indices));
   }
