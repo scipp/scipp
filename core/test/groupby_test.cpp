@@ -10,7 +10,7 @@ using namespace scipp::core;
 TEST(GroupbyTest, dataset_1d_and_2d) {
   Dataset d;
   d.setData("a",
-            makeVariable<double>({Dim::X, 3}, units::m, {1, 2, 3}, {4, 5, 6}));
+            makeVariable<int>({Dim::X, 3}, units::m, {1, 2, 3}, {4, 5, 6}));
   d.setData("b", makeVariable<double>({Dim::X, 3}, units::s, {0.1, 0.2, 0.3}));
   d.setData("c", makeVariable<double>({{Dim::Z, 2}, {Dim::X, 3}}, units::s,
                                       {1, 2, 3, 4, 5, 6}));

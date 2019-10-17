@@ -13,8 +13,10 @@ namespace scipp::core {
 
 struct SCIPP_CORE_EXPORT GroupBy {
   scipp::index size() const noexcept { return scipp::size(m_groups); }
+  Dim dim() const noexcept { return m_key.dims().inner(); }
 
   Dataset mean(const Dim dim) const;
+  Dataset sum(const Dim dim) const;
 
   DatasetConstProxy m_data;
   Variable m_key;
