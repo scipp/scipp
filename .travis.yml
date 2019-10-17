@@ -16,7 +16,7 @@ env:
 
 before_install:
   - docker pull nvaytet/scipp-ci
-  - docker run nvaytet/scipp-ci /bin/sh -c "cd /opt/scipp/scipp && git fetch origin +refs/pull/${TRAVIS_PULL_REQUEST}/merge && git checkout -qf FETCH_HEAD"
+  - docker run nvaytet/scipp-ci /bin/sh -c "cd /opt/scipp && git fetch origin +refs/pull/${TRAVIS_PULL_REQUEST}/merge && git checkout -qf FETCH_HEAD"
   # - docker run -d -p 127.0.0.1:80:4567 nvaytet/scipp-ci
   # - docker run nvaytet/scipp-ci
   # - docker ps -a
@@ -28,12 +28,12 @@ jobs:
       name: "Clang-format"
       if: NOT type = cron
       # before_install: .travis/before_install.sh
-      script: docker run nvaytet/scipp-ci /bin/sh -c "cd /opt/scipp/scipp && .travis/check_clang_format.sh"
+      script: docker run nvaytet/scipp-ci /bin/sh -c "cd /opt/scipp && .travis/check_clang_format.sh"
     - name: "Flake8"
       if: NOT type = cron
       # before_install: .travis/before_install.sh
       # script: docker run nvaytet/scipp-ci /bin/sh -c "ls; pwd; .travis/check_flake8.sh"
-      script: docker run nvaytet/scipp-ci /bin/sh -c "cd /opt/scipp/scipp && .travis/check_flake8.sh"
+      script: docker run nvaytet/scipp-ci /bin/sh -c "cd /opt/scipp && .travis/check_flake8.sh"
       # Then start parallel build of gcc and clang in the Test stage
     - stage: "Unit tests"
       # compiler: gcc
@@ -41,13 +41,13 @@ jobs:
       if: NOT type = cron
       # before_install: .travis/before_install.sh
       # install: .travis/install_linux_toolchain.sh
-      script: docker run nvaytet/scipp-ci /bin/sh -c "cd /opt/scipp/scipp_build && make -j2 install all-tests all-benchmarks && .travis/run_tests.sh"
+      script: docker run nvaytet/scipp-ci /bin/sh -c "cd /opt/scipp/build && make -j2 install all-tests all-benchmarks && /opt/scipp/.travis/run_tests.sh"
     - stage: "Unit tests"
       name: "clang"
       if: NOT type = cron
       # before_install: .travis/before_install.sh
       # install: .travis/install_linux_toolchain.sh
-      script: docker run nvaytet/scipp-ci /bin/sh -c "/opt/scipp/scipp/.travis/run_tests.sh"
+      script: docker run nvaytet/scipp-ci /bin/sh -c "/opt/scipp/.travis/run_tests.sh"
     - os: osx
       name: "apple clang"
       if: NOT type = cron
