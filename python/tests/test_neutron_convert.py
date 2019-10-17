@@ -54,10 +54,14 @@ def test_neutron_convert():
 def test_neutron_beamline():
     d = make_dataset_with_beamline()
 
-    assert sc.neutron.source_position(d) == sc.Variable(value=[0, 0, -10],
-                                                        unit=sc.units.m)
-    assert sc.neutron.sample_position(d) == sc.Variable(value=[0, 0, 0],
-                                                        unit=sc.units.m)
+    assert sc.neutron.source_position(d) == sc.Variable(
+        value=np.array([0, 0, -10]),
+        dtype=sc.dtype.vector_3_double,
+        unit=sc.units.m)
+    assert sc.neutron.sample_position(d) == sc.Variable(
+        value=np.array([0, 0, 0]),
+        dtype=sc.dtype.vector_3_double,
+        unit=sc.units.m)
     assert sc.neutron.l1(d) == 10.0 * sc.units.m
     assert sc.neutron.l2(d) == sc.Variable(dims=[Dim.Position],
                                            values=np.ones(4),

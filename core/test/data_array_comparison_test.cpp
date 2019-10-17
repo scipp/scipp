@@ -24,6 +24,7 @@ protected:
     dataset.setCoord(Dim::Y, makeVariable<double>({Dim::Y, 3}));
 
     dataset.setLabels("labels", makeVariable<int>({Dim::X, 4}));
+    dataset.setMask("mask", makeVariable<bool>({Dim::X, 4}));
 
     dataset.setAttr("attr", makeVariable<int>({}));
 
@@ -81,6 +82,16 @@ auto make_1_labels(const std::string &name, const Dimensions &dims,
 }
 
 template <class T, class T2>
+auto make_1_mask(const std::string &name, const Dimensions &dims,
+                 const units::Unit unit,
+                 const std::initializer_list<T2> &data) {
+  Dataset d;
+  d.setMask(name, makeVariable<T>(dims, unit, data));
+  d.setData("", makeVariable<T>(dims));
+  return DataArray(d[""]);
+}
+
+template <class T, class T2>
 auto make_1_attr(const std::string &name, const Dimensions &dims,
                  const units::Unit unit,
                  const std::initializer_list<T2> &data) {
@@ -114,7 +125,8 @@ auto make_values_and_variances(const std::string &name, const Dimensions &dims,
 // comparison of Variable, but it ensures that the content is actually compared
 // and thus serves as a baseline for the follow-up tests.
 TEST_F(DataArray_comparison_operators, single_coord) {
-  auto a = make_1_coord<double>(Dim::X, {Dim::X, 3}, units::m, {1, 2, 3});
+  auto a =
+      make_1_coord<double>(Dim::X, {Dim::X, 3}, units::m, {false, true, false});
   expect_eq(a, a);
   expect_ne(a, make_values<double>({Dim::X, 3}));
   expect_ne(a, make_1_coord<float>(Dim::X, {Dim::X, 3}, units::m, {1, 2, 3}));
@@ -135,6 +147,21 @@ TEST_F(DataArray_comparison_operators, single_labels) {
   expect_ne(a, make_1_labels<double>("a", {Dim::X, 2}, units::m, {1, 2}));
   expect_ne(a, make_1_labels<double>("a", {Dim::X, 3}, units::s, {1, 2, 3}));
   expect_ne(a, make_1_labels<double>("a", {Dim::X, 3}, units::m, {1, 2, 4}));
+}
+
+TEST_F(DataArray_comparison_operators, single_mask) {
+  auto a = make_1_mask<bool>("a", {Dim::X, 3}, units::m, {true, false, true});
+  expect_eq(a, a);
+  expect_ne(a, make_values<bool>({Dim::X, 3}));
+  expect_ne(a,
+            make_1_mask<bool>("b", {Dim::X, 3}, units::m, {true, false, true}));
+  expect_ne(a,
+            make_1_mask<bool>("a", {Dim::Y, 3}, units::m, {true, false, true}));
+  expect_ne(a, make_1_mask<bool>("a", {Dim::X, 2}, units::m, {true, false}));
+  expect_ne(a,
+            make_1_mask<bool>("a", {Dim::X, 3}, units::s, {true, false, true}));
+  expect_ne(
+      a, make_1_mask<bool>("a", {Dim::X, 3}, units::m, {false, false, false}));
 }
 
 TEST_F(DataArray_comparison_operators, single_attr) {
@@ -208,6 +235,13 @@ TEST_F(DataArray_comparison_operators, extra_coord) {
 TEST_F(DataArray_comparison_operators, extra_labels) {
   auto extra = dataset;
   extra.setLabels("extra", makeVariable<double>(0.0));
+  for (const auto [name, a] : extra)
+    expect_ne(a, dataset[name]);
+}
+
+TEST_F(DataArray_comparison_operators, extra_mask) {
+  auto extra = dataset;
+  extra.setMask("extra", makeVariable<bool>(false));
   for (const auto [name, a] : extra)
     expect_ne(a, dataset[name]);
 }

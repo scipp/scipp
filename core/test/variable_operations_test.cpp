@@ -996,3 +996,22 @@ TEST(VariableTest, divide_with_variance) {
   EXPECT_DOUBLE_EQ(q.variances<double>()[0], expected.variances<double>()[0]);
   EXPECT_DOUBLE_EQ(q.variances<double>()[1], expected.variances<double>()[1]);
 }
+
+TEST(VariableTest, boolean_or) {
+  const auto a = makeVariable<bool>({Dim::X, 3}, {false, true, false});
+  const auto b = makeVariable<bool>({Dim::X, 3}, {false, false, false});
+  const auto expected = makeVariable<bool>({Dim::X, 3}, {false, true, false});
+
+  const auto result = a | b;
+
+  EXPECT_EQ(result, expected);
+}
+
+TEST(VariableTest, boolean_or_equals) {
+  auto a = makeVariable<bool>({Dim::X, 3}, {false, true, false});
+  const auto b = makeVariable<bool>({Dim::X, 3}, {false, false, false});
+  a |= b;
+  const auto expected = makeVariable<bool>({Dim::X, 3}, {false, true, false});
+
+  EXPECT_EQ(a, expected);
+}

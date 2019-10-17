@@ -75,6 +75,7 @@ public:
   CoordsConstProxy coords() const noexcept;
   LabelsConstProxy labels() const noexcept;
   AttrsConstProxy attrs() const noexcept;
+  MasksConstProxy masks() const noexcept;
 
   /// Return true if the proxy contains data values.
   bool hasData() const noexcept { return m_data->second.data.has_value(); }
@@ -147,6 +148,7 @@ public:
 
   CoordsProxy coords() const noexcept;
   LabelsProxy labels() const noexcept;
+  MasksProxy masks() const noexcept;
   AttrsProxy attrs() const noexcept;
 
   void setUnit(const units::Unit unit) const;
@@ -264,12 +266,16 @@ public:
   explicit Dataset(const DataConstProxy &data);
   explicit Dataset(const std::map<std::string, DataConstProxy> &data);
 
-  template <class DataMap, class CoordMap, class LabelsMap, class AttrMap>
-  Dataset(DataMap data, CoordMap coords, LabelsMap labels, AttrMap attrs) {
+  template <class DataMap, class CoordMap, class LabelsMap, class MasksMap,
+            class AttrMap>
+  Dataset(DataMap data, CoordMap coords, LabelsMap labels, MasksMap masks,
+          AttrMap attrs) {
     for (auto &&[dim, coord] : coords)
       setCoord(dim, std::move(coord));
     for (auto &&[name, labs] : labels)
       setLabels(std::string(name), std::move(labs));
+    for (auto &&[name, mask] : masks)
+      setMask(std::string(name), std::move(mask));
     for (auto &&[name, attr] : attrs)
       setAttr(std::string(name), std::move(attr));
     for (auto &&[name, item] : data)
@@ -295,6 +301,9 @@ public:
 
   AttrsConstProxy attrs() const noexcept;
   AttrsProxy attrs() noexcept;
+
+  MasksConstProxy masks() const noexcept;
+  MasksProxy masks() noexcept;
 
   bool contains(const std::string &name) const noexcept;
 
@@ -342,6 +351,7 @@ public:
 
   void setCoord(const Dim dim, Variable coord);
   void setLabels(const std::string &labelName, Variable labels);
+  void setMask(const std::string &masksName, Variable masks);
   void setAttr(const std::string &attrName, Variable attr);
   void setData(const std::string &name, Variable data);
   void setData(const std::string &name, const DataConstProxy &data);
@@ -355,6 +365,9 @@ public:
   void setLabels(const std::string &labelName,
                  const VariableConstProxy &labels) {
     setLabels(labelName, Variable(labels));
+  }
+  void setMask(const std::string &masksName, const VariableConstProxy &mask) {
+    setMask(masksName, Variable(mask));
   }
   void setAttr(const std::string &attrName, const VariableConstProxy &attr) {
     setAttr(attrName, Variable(attr));
@@ -370,6 +383,13 @@ public:
                        const VariableConstProxy &labels) {
     setSparseLabels(name, labelName, Variable(labels));
   }
+
+  void eraseCoord(const Dim dim);
+  void eraseLabels(const std::string &labelName);
+  void eraseAttr(const std::string &attrName);
+  void eraseMask(const std::string &maskName);
+  void eraseSparseCoord(const std::string &name);
+  void eraseSparseLabels(const std::string &name, const std::string &labelName);
 
   DatasetConstProxy slice(const Slice slice1) const &;
   DatasetConstProxy slice(const Slice slice1, const Slice slice2) const &;
@@ -444,10 +464,18 @@ private:
   void setDims(const Dimensions &dims, const Dim coordDim = Dim::Invalid);
   void rebuildDims();
 
+  template <class Key, class Val>
+  void erase_from_map(std::unordered_map<Key, Val> Dataset::*map,
+                      const Key &key) {
+    (this->*map).erase(key);
+    rebuildDims();
+  }
+
   std::unordered_map<Dim, scipp::index> m_dims;
   std::unordered_map<Dim, Variable> m_coords;
   std::unordered_map<std::string, Variable> m_labels;
   std::unordered_map<std::string, Variable> m_attrs;
+  std::unordered_map<std::string, Variable> m_masks;
   detail::dataset_item_map m_data;
 };
 
@@ -633,7 +661,8 @@ public:
     return slice(slice1, slice2).slice(slice3);
   }
 
-  void set(const typename Base::key_type key, const VariableConstProxy &var) {
+  void set(const typename Base::key_type key,
+           const VariableConstProxy &var) const {
     if (!m_parent || !Base::m_slices.empty())
       throw std::runtime_error(
           "Cannot add coord/labels/attr field to a slice.");
@@ -649,20 +678,53 @@ public:
       if constexpr (std::is_same_v<Base, AttrsConstProxy>)
         throw std::runtime_error("Attributes cannot be sparse.");
     } else {
-      // TODO Would like to add coords for DataArray, as a temporary hack we
-      // allow adding dense coords of the parent size is 1.
-      if (m_name && m_parent->size() != 1)
-        throw std::runtime_error(
-            "Dense coord/labels/attr must be added to "
-            "coords of dataset, not coords of dataset items.");
       if constexpr (std::is_same_v<Base, CoordsConstProxy>)
         m_parent->setCoord(key, var);
       if constexpr (std::is_same_v<Base, LabelsConstProxy>)
         m_parent->setLabels(key, var);
+      if constexpr (std::is_same_v<Base, MasksConstProxy>)
+        m_parent->setMask(key, var);
       if constexpr (std::is_same_v<Base, AttrsConstProxy>)
         m_parent->setAttr(key, var);
     }
     // TODO rebuild *this?!
+  }
+
+  void erase(const typename Base::key_type key) {
+    if (!m_parent || !Base::m_slices.empty())
+      throw std::runtime_error(
+          "Cannot remove coord/labels/attr field from a slice.");
+
+    bool sparse = m_name; // Does proxy points on sparse data or not
+    if (sparse)
+      sparse &= (*m_parent)[*m_name].dims().sparse();
+
+    if (!sparse) {
+      if constexpr (std::is_same_v<Base, CoordsConstProxy>)
+        m_parent->eraseCoord(key);
+      if constexpr (std::is_same_v<Base, LabelsConstProxy>)
+        m_parent->eraseLabels(key);
+      if constexpr (std::is_same_v<Base, AttrsConstProxy>)
+        m_parent->eraseAttr(key);
+      if constexpr (std::is_same_v<Base, MasksConstProxy>)
+        m_parent->eraseMask(key);
+    } else {
+      if constexpr (std::is_same_v<Base, CoordsConstProxy>) {
+        if (Base::m_items.count(key) == 0) {
+          std::string suffix =
+              Base::m_items.empty()
+                  ? "no sparse coordinate defined "
+                  : " sparse coordinate is defined for dim " +
+                        to_string(Base::m_items.begin()->first);
+          throw except::SparseDataError("No coordinate with dim " +
+                                        to_string(key) + " found," + suffix);
+        }
+        m_parent->eraseSparseCoord(*m_name);
+      } else if constexpr (std::is_same_v<Base, LabelsConstProxy>)
+        m_parent->eraseSparseLabels(*m_name, key);
+      else
+        throw std::runtime_error("The instance cannot be sparse.");
+    }
   }
 };
 
@@ -705,6 +767,7 @@ public:
   CoordsConstProxy coords() const noexcept;
   LabelsConstProxy labels() const noexcept;
   AttrsConstProxy attrs() const noexcept;
+  MasksConstProxy masks() const noexcept;
 
   bool contains(const std::string &name) const noexcept;
 
@@ -796,6 +859,7 @@ public:
   CoordsProxy coords() const noexcept;
   LabelsProxy labels() const noexcept;
   AttrsProxy attrs() const noexcept;
+  MasksProxy masks() const noexcept;
 
   DataProxy operator[](const std::string &name) const;
 
@@ -887,24 +951,32 @@ public:
   explicit DataArray(const DataConstProxy &proxy);
   template <class CoordMap = std::map<Dim, Variable>,
             class LabelsMap = std::map<std::string, Variable>,
+            class MasksMap = std::map<std::string, Variable>,
             class AttrMap = std::map<std::string, Variable>>
   DataArray(std::optional<Variable> data, CoordMap coords = {},
-            LabelsMap labels = {}, AttrMap attrs = {},
+            LabelsMap labels = {}, MasksMap masks = {}, AttrMap attrs = {},
             const std::string &name = "") {
     if (data)
       m_holder.setData(name, std::move(*data));
+
     for (auto &&[dim, c] : coords)
       if (c.dims().sparse())
         m_holder.setSparseCoord(name, std::move(c));
       else
         m_holder.setCoord(dim, std::move(c));
+
     for (auto &&[label_name, l] : labels)
       if (l.dims().sparse())
         m_holder.setSparseLabels(name, std::string(label_name), std::move(l));
       else
         m_holder.setLabels(std::string(label_name), std::move(l));
+
+    for (auto &&[attr_name, m] : masks)
+      m_holder.setMask(std::string(attr_name), std::move(m));
+
     for (auto &&[attr_name, a] : attrs)
       m_holder.setAttr(std::string(attr_name), std::move(a));
+
     if (m_holder.size() != 1)
       throw std::runtime_error(
           "DataArray must have either data or a sparse coordinate.");
@@ -924,6 +996,9 @@ public:
 
   AttrsConstProxy attrs() const { return get().attrs(); }
   AttrsProxy attrs() { return get().attrs(); }
+
+  MasksConstProxy masks() const { return get().masks(); }
+  MasksProxy masks() { return get().masks(); }
 
   Dimensions dims() const { return get().dims(); }
   DType dtype() const { return get().dtype(); }
@@ -1224,6 +1299,20 @@ SCIPP_CORE_EXPORT Dataset rebin(const DatasetConstProxy &d, const Dim dim,
 
 SCIPP_CORE_EXPORT VariableConstProxy same(const VariableConstProxy &a,
                                           const VariableConstProxy &b);
+
+/// Union the masks of the two proxies.
+/// If any of the masks repeat they are OR'ed.
+/// The result is stored in a new map
+SCIPP_CORE_EXPORT std::map<typename MasksConstProxy::key_type,
+                           typename MasksConstProxy::mapped_type>
+union_or(const MasksConstProxy &currentMasks,
+         const MasksConstProxy &otherMasks);
+
+/// Union the masks of the two proxies.
+/// If any of the masks repeat they are OR'ed.
+/// The result is stored in the first proxy.
+SCIPP_CORE_EXPORT void union_or_in_place(const MasksProxy &currentMasks,
+                                         const MasksConstProxy &otherMasks);
 
 } // namespace scipp::core
 

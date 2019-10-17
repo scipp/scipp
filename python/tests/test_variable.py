@@ -393,6 +393,19 @@ def test_binary_divide():
     assert np.array_equal(c.values, data / data / data / data)
 
 
+def test_binary_or():
+    a = sc.Variable(False)
+    b = sc.Variable(True)
+    a |= b
+    assert a == sc.Variable(True)
+
+
+def test_in_place_binary_or():
+    a = sc.Variable(False)
+    b = sc.Variable(True)
+    assert (a | b) == sc.Variable(True)
+
+
 def test_in_place_binary_with_scalar():
     v = sc.Variable([Dim.X], values=[10])
     copy = v.copy()
@@ -573,6 +586,13 @@ def test_construct_0d_numpy():
     v = sc.Variable([sc.Dim.X], values=np.array([0]), dtype=np.float32)
     var = sc.Variable(v[sc.Dim.X, 0])
     assert var == sc.Variable(np.float32())
+
+    v = sc.Variable([sc.Dim.X], values=np.array([0]), dtype=np.float32)
+    var = sc.Variable(v[sc.Dim.X, 0])
+    var.unit = sc.units.m
+    assert var == np.float32(0.0) * sc.units.m
+    var.unit = sc.units.m**(-1)
+    assert var == np.float32(0.0) / sc.units.m
 
 
 def test_construct_0d_native_python_types():

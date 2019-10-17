@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
+#include <algorithm>
+
 #include "dataset_test_common.h"
 
 Variable makeRandom(const Dimensions &dims) {
@@ -22,6 +24,16 @@ DatasetFactory3D::DatasetFactory3D(const scipp::index lx_,
   base.setLabels("labels_xy", makeVariable<double>({{Dim::X, lx}, {Dim::Y, ly}},
                                                    rand(lx * ly)));
   base.setLabels("labels_z", makeVariable<double>({Dim::Z, lz}, rand(lz)));
+  base.setMask("masks_x", makeVariable<bool>(
+                              {Dim::X, lx},
+                              makeBools<BoolsGeneratorType::ALTERNATING>(lx)));
+  base.setMask(
+      "masks_xy",
+      makeVariable<bool>({{Dim::X, lx}, {Dim::Y, ly}},
+                         makeBools<BoolsGeneratorType::ALTERNATING>(lx * ly)));
+  base.setMask("masks_z", makeVariable<bool>(
+                              {Dim::Z, lz},
+                              makeBools<BoolsGeneratorType::ALTERNATING>(lz)));
 
   base.setAttr("attr_scalar", makeVariable<double>(rand(1).front()));
   base.setAttr("attr_x", makeVariable<double>({Dim::X, lx}, rand(lx)));
@@ -93,5 +105,16 @@ Dataset make_sparse_2d(std::initializer_list<double> values, std::string key) {
   var.sparseValues<double>()[0] = values;
   var.sparseValues<double>()[1] = values;
   ds.setData(key, var);
+  return ds;
+}
+
+Dataset make_1d_masked() {
+  Random random;
+
+  Dataset ds;
+  ds.setData("data_x", makeVariable<double>({Dim::X, 10}, random(10)));
+  ds.setMask("masks_x",
+             makeVariable<bool>(
+                 {Dim::X, 10}, makeBools<BoolsGeneratorType::ALTERNATING>(10)));
   return ds;
 }

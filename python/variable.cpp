@@ -81,16 +81,22 @@ Variable makeVariableDefaultInit(const std::vector<Dim> &labels,
                                                        variances);
 }
 
+template <class T>
+auto do_init_0D(const T &value, const std::optional<T> &variance,
+                const units::Unit &unit) {
+  Variable var;
+  if (variance)
+    var = makeVariable<T>(value, *variance);
+  else
+    var = makeVariable<T>(value);
+  var.setUnit(unit);
+  return var;
+}
+
 template <class T> void bind_init_0D(py::class_<Variable> &c) {
   c.def(py::init([](const T &value, const std::optional<T> &variance,
                     const units::Unit &unit) {
-          Variable var;
-          if (variance)
-            var = makeVariable<T>(value, *variance);
-          else
-            var = makeVariable<T>(value);
-          var.setUnit(unit);
-          return var;
+          return do_init_0D(value, variance, unit);
         }),
         py::arg("value"), py::arg("variance") = std::nullopt,
         py::arg("unit") = units::Unit(units::dimensionless));
@@ -106,6 +112,12 @@ void bind_init_0D(py::class_<Variable> &c) {
 
             return py::cast<Variable>(
                 pyMakeVariable0D(py::array(b), v, unit, dtype));
+          } else if (info.ndim == 1 &&
+                     scipp_dtype(dtype) == core::dtype<Eigen::Vector3d>) {
+            return do_init_0D<Eigen::Vector3d>(
+                b.cast<Eigen::Vector3d>(),
+                v ? std::optional(v->cast<Eigen::Vector3d>()) : std::nullopt,
+                unit);
           } else {
             throw scipp::except::VariableError(
                 "Wrong overload for making 0D variable.");
@@ -165,14 +177,6 @@ void init_variable(py::module &m) {
       .def("__deepcopy__",
            [](Variable &self, py::dict) { return Variable(self); })
       .def_property_readonly("dtype", &Variable::dtype)
-      .def(py::self + double(), py::call_guard<py::gil_scoped_release>())
-      .def(py::self - double(), py::call_guard<py::gil_scoped_release>())
-      .def(py::self * double(), py::call_guard<py::gil_scoped_release>())
-      .def(py::self / double(), py::call_guard<py::gil_scoped_release>())
-      .def(py::self += double(), py::call_guard<py::gil_scoped_release>())
-      .def(py::self -= double(), py::call_guard<py::gil_scoped_release>())
-      .def(py::self *= double(), py::call_guard<py::gil_scoped_release>())
-      .def(py::self /= double(), py::call_guard<py::gil_scoped_release>())
       .def("__radd__", [](Variable &a, double &b) { return a + b; },
            py::is_operator())
       .def("__rsub__", [](Variable &a, double &b) { return b - a; },
@@ -191,6 +195,7 @@ void init_variable(py::module &m) {
   bind_init_0D<bool>(variable);
   bind_init_0D<int64_t>(variable);
   bind_init_0D<double>(variable);
+  bind_init_0D<py::object>(variable);
   //------------------------------------
 
   py::class_<VariableConstProxy>(m, "VariableConstProxy")
@@ -236,6 +241,11 @@ void init_variable(py::module &m) {
   bind_binary<VariableProxy>(variableProxy);
   bind_binary_scalars(variable);
   bind_binary_scalars(variableProxy);
+
+  bind_or_operators<Variable>(variable);
+  bind_or_operators<VariableProxy>(variable);
+  bind_or_operators<Variable>(variableProxy);
+  bind_or_operators<VariableProxy>(variableProxy);
 
   bind_data_properties(variable);
   bind_data_properties(variableProxy);
