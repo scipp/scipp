@@ -450,7 +450,7 @@ def test_dot():
                     unit=sc.units.m, dtype=sc.dtype.vector_3_double)
     b = sc.Variable(dims=[Dim.X],
                     values=[[1, 0, 0], [1, 0, 0]],
-                    unit=sc.units.m)
+                    unit=sc.units.m, dtype=sc.dtype.vector_3_double)
     expected = sc.Variable([Dim.X],
                            values=np.array([1.0, 0.0]),
                            unit=sc.units.m**2)
