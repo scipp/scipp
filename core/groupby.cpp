@@ -14,10 +14,12 @@
 
 namespace scipp::core {
 
-Dataset GroupBy::sum(const Dim dim) const {
-  // 1. Prepare output dataset:
-  // - Delete anything (but data) that depends on the reduction dimension `dim`.
-  // - Default-init data.
+/// Helper for creating output for "combine" step for "apply" steps that reduce
+/// a dimension.
+///
+/// - Delete anything (but data) that depends on the reduction dimension.
+/// - Default-init data.
+Dataset GroupBy::makeReductionOutput(const Dim reductionDim) const {
   constexpr auto init_var = [](const VariableConstProxy &var, const Dim dim_,
                                const scipp::index size_) {
     auto dims = var.dims();
@@ -26,14 +28,17 @@ Dataset GroupBy::sum(const Dim dim) const {
   };
   Dataset out = apply_to_items(
       m_data, [](auto &&... _) { return apply_to_data_and_drop_dim(_...); },
-      init_var, dim, size());
-  const Dim outDim = this->dim();
-  out.rename(dim, outDim);
-  out.setCoord(outDim, m_key);
+      init_var, reductionDim, size());
+  out.rename(reductionDim, dim());
+  out.setCoord(dim(), m_key);
+  return out;
+}
 
-  // 2. Apply to each group, storing result in output slice
+Dataset GroupBy::sum(const Dim reductionDim) const {
+  auto out = makeReductionOutput(reductionDim);
+  // Apply to each group, storing result in output slice
   for (scipp::index group = 0; group < size(); ++group) {
-    const auto out_slice = out.slice({outDim, group});
+    const auto out_slice = out.slice({dim(), group});
     for (const auto & [ name, item ] : m_data) {
       const auto out_data = out_slice[name].data();
       for (const auto &slice : m_groups[group]) {
@@ -44,13 +49,12 @@ Dataset GroupBy::sum(const Dim dim) const {
   return out;
 }
 
-Dataset GroupBy::mean(const Dim dim) const {
+Dataset GroupBy::mean(const Dim reductionDim) const {
   // 1. Sum into output slices
-  auto out = sum(dim);
+  auto out = sum(reductionDim);
 
   // 2. Compute number of slices N contributing to each out slice
-  const Dim outDim = this->dim();
-  auto scale = makeVariable<double>({outDim, size()});
+  auto scale = makeVariable<double>({dim(), size()});
   const auto scaleT = scale.values<double>();
   for (scipp::index group = 0; group < size(); ++group)
     for (const auto &slice : m_groups[group])

@@ -11,12 +11,21 @@
 
 namespace scipp::core {
 
-struct SCIPP_CORE_EXPORT GroupBy {
+/// Helper class for implementing "split-apply-combine" functionality.
+class SCIPP_CORE_EXPORT GroupBy {
+public:
+  GroupBy(const DatasetConstProxy &data, Variable &&key,
+          std::vector<std::vector<Slice>> &&groups)
+      : m_data(data), m_key(std::move(key)), m_groups(std::move(groups)) {}
+
   scipp::index size() const noexcept { return scipp::size(m_groups); }
   Dim dim() const noexcept { return m_key.dims().inner(); }
 
-  Dataset mean(const Dim dim) const;
-  Dataset sum(const Dim dim) const;
+  Dataset mean(const Dim reductionDim) const;
+  Dataset sum(const Dim reductionDim) const;
+
+private:
+  Dataset makeReductionOutput(const Dim reductionDim) const;
 
   DatasetConstProxy m_data;
   Variable m_key;
