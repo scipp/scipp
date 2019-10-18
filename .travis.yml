@@ -3,7 +3,7 @@ language: cpp
 services:
   - docker
 
-#cache: ccache
+cache: ccache
 
 branches:
   only:
