@@ -33,12 +33,12 @@ scipp::core::DType scipp_dtype(const py::dtype &type) {
 }
 
 scipp::core::DType scipp_dtype(const py::object &type) {
-  //Check None first, then native scipp Dtype, then numpy.dtype
+  // Check None first, then native scipp Dtype, then numpy.dtype
   if (type.is_none())
     return DType::Unknown;
   try {
     return type.cast<DType>();
   } catch (const py::cast_error &) {
-      return scipp_dtype(py::dtype::from_args(type));
+    return scipp_dtype(py::dtype::from_args(type));
   }
 }
