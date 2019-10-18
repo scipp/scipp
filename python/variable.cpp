@@ -290,12 +290,6 @@ void init_variable(py::module &m) {
 
   py::implicitly_convertible<Variable, VariableConstProxy>();
 
-  m.def("__make_variable_0d",
-        [](py::array val, std::optional<py::array> &var, const units::Unit unit,
-           const py::object &dtype) {
-          return doMakeVariable({}, val, var, unit, dtype);
-        });
-
   m.def("reshape",
         [](const VariableProxy &self, const std::vector<Dim> &labels,
            const py::tuple &shape) {
