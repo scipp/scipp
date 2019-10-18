@@ -13,7 +13,8 @@ branches:
 env:
   global:
     - PYTHON_EXECUTABLE="/usr/bin/python3"
-    - UNITTESTS="cd /opt/scipp && bash .travis/unit_tests.sh ${TRAVIS_PULL_REQUEST}"
+    - GITFETCH="cd /opt/scipp/build && git fetch origin +refs/pull/${TRAVIS_PULL_REQUEST}/merge && git checkout -qf FETCH_HEAD && git branch"
+    - UNITTESTS="${GITFETCH} && make -j2 install all-tests all-benchmarks && bash ../.travis/run_tests.sh"
 
 before_install:
   - echo "somestring" ${TRAVIS_PULL_REQUEST} "|| and inside a string|${TRAVIS_PULL_REQUEST}|"
