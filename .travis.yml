@@ -15,6 +15,7 @@ env:
     - PYTHON_EXECUTABLE="/usr/bin/python3"
 
 before_install:
+  - echo "somestring" ${TRAVIS_PULL_REQUEST} "|| and inside a string|${TRAVIS_PULL_REQUEST}|"
   - docker pull nvaytet/scipp-ci
   - docker run nvaytet/scipp-ci /bin/sh -c "cd /opt/scipp && git fetch origin +refs/pull/${TRAVIS_PULL_REQUEST}/merge && git checkout -qf FETCH_HEAD"
   # - docker run -d -p 127.0.0.1:80:4567 nvaytet/scipp-ci
