@@ -187,6 +187,22 @@ template <class T> void bind_init_1D(py::class_<Variable> &c) {
       py::arg("unit") = units::Unit(units::dimensionless));
 }
 
+void bind_init_list(py::class_<Variable> &c) {
+  c.def(
+      py::init([](const std::array<Dim, 1> &label, const py::list &values,
+                  const std::optional<py::list> &variances,
+                  const units::Unit &unit, py::object &dtype) {
+        auto arr = py::array(values);
+        auto varr = variances ? std::optional(py::array(*variances)) : std::nullopt;
+        auto dims = std::vector<Dim>{label[0]};
+        return doMakeVariable(dims, arr, varr, unit, dtype);
+      }),
+      py::arg("dims"), py::arg("values"), py::arg("variances") = std::nullopt,
+      py::arg("unit") = units::Unit(units::dimensionless),
+      py::arg("dtype") = py::none()
+      );
+}
+
 void init_variable(py::module &m) {
   py::class_<Variable> variable(m, "Variable", R"(
     Array of values with dimension labels and a unit, optionally including an array of variances.)");
@@ -196,6 +212,8 @@ void init_variable(py::module &m) {
   bind_init_0D<Eigen::Vector3d>(variable);
   bind_init_1D<std::string>(variable);
   bind_init_1D<Eigen::Vector3d>(variable);
+//  bind_init_list(variable);
+
   variable.def(py::init<const VariableProxy &>())
       .def(py::init(&makeVariableDefaultInit),
            py::arg("dims") = std::vector<Dim>{},
@@ -203,7 +221,7 @@ void init_variable(py::module &m) {
            py::arg("unit") = units::Unit(units::dimensionless),
            py::arg("dtype") = py::dtype::of<double>(),
            py::arg("variances").noconvert() = false)
-      .def(py::init(&doMakeVariable), py::arg("dims"), py::arg("values"),
+      .def(py::init(&doMakeVariable), py::arg("dims"), py::arg("values"), // py::array
            py::arg("variances") = std::nullopt,
            py::arg("unit") = units::Unit(units::dimensionless),
            py::arg("dtype") = py::none())
