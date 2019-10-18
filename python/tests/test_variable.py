@@ -130,7 +130,7 @@ def test_create_1D_string():
 def test_create_1D_vector_3_double():
     var = sc.Variable(dims=[Dim.X],
                       values=[[1, 2, 3], [4, 5, 6]],
-                      unit=sc.units.m)
+                      unit=sc.units.m, dtype=sc.dtype.vector_3_double)
     assert len(var.values) == 2
     np.testing.assert_array_equal(var.values[0], [1, 2, 3])
     np.testing.assert_array_equal(var.values[1], [4, 5, 6])
@@ -447,7 +447,7 @@ def test_abs():
 def test_dot():
     a = sc.Variable(dims=[Dim.X],
                     values=[[1, 0, 0], [0, 1, 0]],
-                    unit=sc.units.m)
+                    unit=sc.units.m, dtype=sc.dtype.vector_3_double)
     b = sc.Variable(dims=[Dim.X],
                     values=[[1, 0, 0], [1, 0, 0]],
                     unit=sc.units.m)
@@ -478,7 +478,7 @@ def test_mean():
 def test_norm():
     var = sc.Variable(dims=[Dim.X],
                       values=[[1, 0, 0], [3, 4, 0]],
-                      unit=sc.units.m)
+                      unit=sc.units.m, dtype=sc.dtype.vector_3_double)
     expected = sc.Variable([Dim.X],
                            values=np.array([1.0, 5.0]),
                            unit=sc.units.m)
