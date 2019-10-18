@@ -82,8 +82,7 @@ template <class ST> struct MakeODFromNativePythonTypes {
 
 template <class T>
 Variable bind_init_1D(const std::vector<Dim> &labels,
-                      const std::vector<T> &values,
-                      const units::Unit &unit) {
+                      const std::vector<T> &values, const units::Unit &unit) {
   Variable var;
   Dimensions dims({labels[0]}, {scipp::size(values)});
   var = makeVariable<T>(dims, values);
