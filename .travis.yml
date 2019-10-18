@@ -47,7 +47,7 @@ jobs:
       if: NOT type = cron
       # before_install: .travis/before_install.sh
       # install: .travis/install_linux_toolchain.sh
-      script: docker run nvaytet/scipp-ci /bin/sh -c "cd /opt/scipp/build && grep PYTHON CMakeCache.txt && grep PREFIX CMakeCache.txt && make -j2 install all-tests all-benchmarks && /opt/scipp/.travis/run_tests.sh"
+      script: docker run nvaytet/scipp-ci /bin/sh -c "cd /opt/scipp/build && grep PYTHON CMakeCache.txt && grep PREFIX CMakeCache.txt && make -j2 install all-tests all-benchmarks && cat /opt/scipp/.travis/run_tests.sh && /opt/scipp/.travis/run_tests.sh"
 
     - stage: "Unit tests"
       name: "clang"
