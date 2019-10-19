@@ -1,5 +1,7 @@
 language: cpp
 
+dist: bionic
+
 services:
   - docker
 
@@ -13,126 +15,145 @@ branches:
 env:
   global:
     - PYTHON_EXECUTABLE="/usr/bin/python3"
-    - GITFETCH="cd /opt/scipp/build && git fetch origin +refs/pull/${TRAVIS_PULL_REQUEST}/merge && git checkout -qf FETCH_HEAD && git branch"
-    - UNITTESTS="${GITFETCH} && make -j2 install all-tests all-benchmarks && bash ../.travis/run_tests.sh"
+    - GITFETCH="cd /opt/scipp/build && git fetch origin +refs/pull/${TRAVIS_PULL_REQUEST}/merge && git checkout -qf FETCH_HEAD"
+    - BUILDINSTALL="make -j2 install"
+    - BUILDALL="$BUILDINSTALL all-tests all-benchmarks"
+    - RUNTESTS="bash ../.travis/run_tests.sh"
+    - CONDABUILD="cd ../ && bash .travis/conda_build_and_deploy.sh"
+    - BUILDTRIGGERS="bash .travis/trigger_docker_build.sh && bash .travis/trigger_readthedocs_build.sh"
+    - DOCKERREPO="nvaytet/scipp-ci:"
 
-before_install:
-  - echo "somestring" ${TRAVIS_PULL_REQUEST} "|| and inside a string|${TRAVIS_PULL_REQUEST}|"
-  - docker pull nvaytet/scipp-ci
-  # - docker run nvaytet/scipp-ci /bin/sh -c "cd /opt/scipp && git fetch origin +refs/pull/${TRAVIS_PULL_REQUEST}/merge && git checkout -qf FETCH_HEAD && git branch"
-  # - docker run -d -p 127.0.0.1:80:4567 nvaytet/scipp-ci
-  # - docker run nvaytet/scipp-ci
-  # - docker ps -a
+# before_install:
+#   - docker pull nvaytet/scipp-ci
 
 jobs:
   include:
 
-    #   # Check clang format and flake8 in the first stage
-    # - stage: "Code formatting"
-    #   name: "Clang-format"
-    #   if: NOT type = cron
-    #   before_install: .travis/before_install.sh
-    #   # script: docker run nvaytet/scipp-ci /bin/sh -c "cd /opt/scipp && .travis/check_clang_format.sh"
-    #   script: .travis/check_clang_format.sh
+      # Check clang format and flake8 in the first stage
+    - stage: "Code formatting"
+      name: "Clang-format"
+      if: NOT type = cron
+      before_install: .travis/before_install.sh
+      script: .travis/check_clang_format.sh
 
-    # - stage: "Code formatting"
-    #   name: "Flake8"
-    #   if: NOT type = cron
-    #   before_install: .travis/before_install.sh
-    #   # script: docker run nvaytet/scipp-ci /bin/sh -c "ls; pwd; .travis/check_flake8.sh"
-    #   # script: docker run nvaytet/scipp-ci /bin/sh -c "cd /opt/scipp && .travis/check_flake8.sh"
-    #   script: .travis/check_flake8.sh
+    - stage: "Code formatting"
+      name: "Flake8"
+      if: NOT type = cron
+      before_install: .travis/before_install.sh
+      script: .travis/check_flake8.sh
 
       # Then start parallel build of gcc and clang in the Test stage
     - stage: "Unit tests"
-      # compiler: gcc
       name: "gcc"
       if: NOT type = cron
-      # before_install: .travis/before_install.sh
-      # install: .travis/install_linux_toolchain.sh
-      script: docker run nvaytet/scipp-ci /bin/sh -c "$UNITTESTS"
+      env:
+        - IMAGE="gcc-py37"
+      before_install: docker pull ${DOCKERREPO}${IMAGE}
+      script: docker run ${DOCKERREPO}${IMAGE} /bin/sh -c "$GITFETCH && $BUILDALL && $RUNTESTS"
 
-    # - stage: "Unit tests"
-    #   name: "clang"
-    #   if: NOT type = cron
-    #   # before_install: .travis/before_install.sh
-    #   # install: .travis/install_linux_toolchain.sh
-    #   script: docker run nvaytet/scipp-ci /bin/sh -c "/opt/scipp/.travis/run_tests.sh"
+    - stage: "Unit tests"
+      name: "clang"
+      if: NOT type = cron
+      env:
+        - IMAGE="clang-py37"
+      before_install: docker pull ${DOCKERREPO}${IMAGE}
+      script: docker run ${DOCKERREPO}${IMAGE} /bin/sh -c "$GITFETCH && $BUILDALL && $RUNTESTS"
 
-    # - stage: "Unit tests"
-    #   os: osx
-    #   name: "apple clang"
-    #   if: NOT type = cron
-    #   osx_image: xcode10.2
-    #   before_install: brew install ccache ninja
-    #   env:
-    #     - PYTHON_EXECUTABLE="/usr/local/bin/python3"
-    #   script: .travis/run_tests.sh -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=OFF
+    - stage: "Unit tests"
+      os: osx
+      name: "apple clang"
+      if: NOT type = cron
+      osx_image: xcode10.2
+      before_install: brew install ccache ninja
+      env:
+        - PYTHON_EXECUTABLE="/usr/local/bin/python3"
+      script: .travis/run_tests.sh -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=OFF
 
-    # - stage: "Deploy"
-    #   name: "conda linux"
-    #   if: NOT type = cron AND branch = master AND NOT type = pull_request
-    #   git:
-    #     depth: false
-    #   env:
-    #     - PATH="$HOME/miniconda/bin:$PATH"
-    #   install: .travis/install_conda.sh "Miniconda3-latest-Linux-x86_64.sh"
-    #   script:
-    #     - .travis/conda_build_and_deploy.sh --label 'dev'
-    #     - .travis/trigger_docker_build.sh
-    #     - .travis/trigger_readthedocs_build.sh
+    - stage: "Deploy"
+      name: "conda linux"
+      if: NOT type = cron AND branch = master AND NOT type = pull_request
+      git:
+        depth: false
+      # env:
+      #   - PATH="$HOME/miniconda/bin:$PATH"
+      # install: .travis/install_conda.sh "Miniconda3-latest-Linux-x86_64.sh"
+      env:
+        - IMAGE="gcc-py37"
+      before_install: docker pull ${DOCKERREPO}${IMAGE}
+      script: travis_wait docker run ${DOCKERREPO}${IMAGE} /bin/sh -c "$GITFETCH && $BUILDINSTALL && $CONDABUILD --label 'dev' ./conda/linux && $BUILDTRIGGERS"
+        # - .travis/conda_build_and_deploy.sh --label 'dev'
+        # - .travis/trigger_docker_build.sh
+        # - .travis/trigger_readthedocs_build.sh
 
-    # - stage: "Deploy"
-    #   os: osx
-    #   osx_image: xcode10.2
-    #   name: "conda osx"
-    #   if: NOT type = cron AND branch = master AND NOT type = pull_request
-    #   git:
-    #     depth: false
-    #   env:
-    #     - PATH="$HOME/miniconda/bin:$PATH"
-    #     - CC=/usr/bin/clang
-    #     - CXX=/usr/bin/clang++
-    #     - OSX_VERSION=10.14
-    #   install:
-    #     - .travis/install_conda.sh "Miniconda3-latest-MacOSX-x86_64.sh"
-    #   script: travis_wait .travis/conda_build_and_deploy.sh --label 'dev'
+    - stage: "Deploy"
+      os: osx
+      osx_image: xcode10.2
+      name: "conda osx"
+      if: NOT type = cron AND branch = master AND NOT type = pull_request
+      git:
+        depth: false
+      env:
+        - PATH="$HOME/miniconda/bin:$PATH"
+        - CC=/usr/bin/clang
+        - CXX=/usr/bin/clang++
+        - OSX_VERSION=10.14
+      install:
+        - .travis/install_conda.sh "Miniconda3-latest-MacOSX-x86_64.sh"
+      script: travis_wait .travis/conda_build_and_deploy.sh --label 'dev' ./conda/osx
 
-    # - stage: "Deploy"
-    #   name: "conda linux python3.6"
-    #   if: type = cron AND branch = master
-    #   git:
-    #     depth: false
-    #   env:
-    #     - PATH="$HOME/miniconda/bin:$PATH"
-    #   install: .travis/install_conda.sh "Miniconda3-latest-Linux-x86_64.sh"
-    #   script:
-    #     - travis_wait .travis/conda_build_and_deploy.sh --label 'dev' --python 3.6
+    - stage: "Deploy"
+      name: "conda linux python3.6"
+      if: type = cron AND branch = master
+      git:
+        depth: false
+      # env:
+      #   - PATH="$HOME/miniconda/bin:$PATH"
+      # install: .travis/install_conda.sh "Miniconda3-latest-Linux-x86_64.sh"
+      env:
+        - IMAGE="gcc-py36"
+      before_install: docker pull ${DOCKERREPO}${IMAGE}
+      script: travis_wait docker run ${DOCKERREPO}${IMAGE} /bin/sh -c "$GITFETCH && $BUILDINSTALL && $CONDABUILD --label 'dev' ./conda/linux"
+      # script: 
+      #   - travis_wait .travis/conda_build_and_deploy.sh --label 'dev' --python 3.6
 
-    # - stage: "Deploy"
-    #   name: "release conda linux"
-    #   if: NOT type = cron AND NOT type = pull_request AND tag =~ /^\d+(\.\d+)*/
-    #   git:
-    #     depth: false
-    #   env:
-    #     - PATH="$HOME/miniconda/bin:$PATH"
-    #   install: .travis/install_conda.sh "Miniconda3-latest-Linux-x86_64.sh"
-    #   script:
-    #     - travis_wait .travis/conda_build_and_deploy.sh
-    #     - travis_wait .travis/conda_build_and_deploy.sh --python 3.6
+    - stage: "Deploy"
+      name: "release conda linux"
+      if: NOT type = cron AND NOT type = pull_request AND tag =~ /^\d+(\.\d+)*/
+      git:
+        depth: false
+      # env:
+      #   - PATH="$HOME/miniconda/bin:$PATH"
+      # install: .travis/install_conda.sh "Miniconda3-latest-Linux-x86_64.sh"
+      env:
+        - IMAGE="gcc-py37"
+      before_install: docker pull ${DOCKERREPO}${IMAGE}
+      script: travis_wait docker run ${DOCKERREPO}${IMAGE} /bin/sh -c "$GITFETCH && $BUILDINSTALL && $CONDABUILD --label 'dev' ./conda/linux"
 
-    # - stage: "Deploy"
-    #   os: osx
-    #   osx_image: xcode10.2
-    #   name: "release conda osx"
-    #   if: NOT type = cron AND NOT type = pull_request AND tag =~ /^\d+(\.\d+)*/
-    #   git:
-    #     depth: false
-    #   env:
-    #     - PATH="$HOME/miniconda/bin:$PATH"
-    #     - CC=/usr/bin/clang
-    #     - CXX=/usr/bin/clang++
-    #     - OSX_VERSION=10.14
-    #   install:
-    #     - .travis/install_conda.sh "Miniconda3-latest-MacOSX-x86_64.sh"
-    #   script: travis_wait .travis/conda_build_and_deploy.sh
+    - stage: "Deploy"
+      name: "release conda linux python3.6"
+      if: NOT type = cron AND NOT type = pull_request AND tag =~ /^\d+(\.\d+)*/
+      git:
+        depth: false
+      # env:
+      #   - PATH="$HOME/miniconda/bin:$PATH"
+      # install: .travis/install_conda.sh "Miniconda3-latest-Linux-x86_64.sh"
+      env:
+        - IMAGE="gcc-py36"
+      before_install: docker pull ${DOCKERREPO}${IMAGE}
+      script: travis_wait docker run ${DOCKERREPO}${IMAGE} /bin/sh -c "$GITFETCH && $BUILDINSTALL && $CONDABUILD --label 'dev' ./conda/linux"
+
+    - stage: "Deploy"
+      os: osx
+      osx_image: xcode10.2
+      name: "release conda osx"
+      if: NOT type = cron AND NOT type = pull_request AND tag =~ /^\d+(\.\d+)*/
+      git:
+        depth: false
+      env:
+        - PATH="$HOME/miniconda/bin:$PATH"
+        - CC=/usr/bin/clang
+        - CXX=/usr/bin/clang++
+        - OSX_VERSION=10.14
+      install:
+        - .travis/install_conda.sh "Miniconda3-latest-MacOSX-x86_64.sh"
+      script: travis_wait .travis/conda_build_and_deploy.sh
