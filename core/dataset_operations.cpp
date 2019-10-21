@@ -36,6 +36,7 @@ DataArray histogram(const DataConstProxy &sparse,
         auto coord = _sparse.coords()[_dim];
         auto edgesSpan = _binEdges.values<double>();
         expect::histogram::sorted_edges(edgesSpan);
+        std::vector<double> edges(edgesSpan.begin(), edgesSpan.end());
         auto resDims{_sparse.dims()};
         auto len = _binEdges.dims()[_dim] - 1;
         resDims.resize(resDims.index(_dim), len);
@@ -45,9 +46,9 @@ DataArray histogram(const DataConstProxy &sparse,
           const auto &coord_i = coord.sparseValues<double>()[i];
           auto curRes = res.values<double>().begin() + i * len;
           for (const auto &c : coord_i) {
-            auto it = std::upper_bound(edgesSpan.begin(), edgesSpan.end(), c);
-            if (it != edgesSpan.end() && it != edgesSpan.begin())
-              ++(*(curRes + (--it - edgesSpan.begin())));
+            auto it = std::upper_bound(edges.begin(), edges.end(), c);
+            if (it != edges.end() && it != edges.begin())
+              ++(*(curRes + (--it - edges.begin())));
           }
         }
         std::copy(res.values<double>().begin(), res.values<double>().end(),
