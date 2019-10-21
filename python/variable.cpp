@@ -185,7 +185,7 @@ void bind_init_0D_numpy_types(py::class_<Variable> &c) {
         py::arg("dtype") = py::none());
 }
 
-void bind_init_list(py::class_<Variable> &c) {
+void bind_init_1d_list(py::class_<Variable> &c) {
   c.def(py::init([](const std::array<Dim, 1> &label, const py::list &values,
                     const std::optional<py::list> &variances,
                     const units::Unit &unit, py::object &dtype) {
@@ -248,7 +248,7 @@ void init_variable(py::module &m) {
            py::is_operator())
       .def("__repr__", [](const Variable &self) { return to_string(self); });
 
-  bind_init_list(variable);
+  bind_init_1d_list(variable);
   // For some reason, pybind11 does not convert python lists to py::array,
   // so we need to bind the lists manually.
   // TODO: maybe there is a better way to do this?
