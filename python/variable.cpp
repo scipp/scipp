@@ -123,7 +123,7 @@ template <class T> void bind_init_0D(py::class_<Variable> &c) {
 }
 
 // This function is used only to bind native python types: pyInt -> int64_t;
-// pyFloat -> double
+// pyFloat -> double; pyBool->bool
 template <class T>
 void bind_init_0D_native_python_types(py::class_<Variable> &c) {
   c.def(py::init([](const T &value, const std::optional<T> &variance,
