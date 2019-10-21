@@ -325,7 +325,7 @@ void init_variable(py::module &m) {
         :seealso: :py:class:`scipp.sum`
         :return: New variable containing the mean.
         :rtype: Variable)");
-  m.def("norm", py::overload_cast<const Variable &>(&norm),
+  m.def("norm", py::overload_cast<const VariableConstProxy &>(&norm),
         py::call_guard<py::gil_scoped_release>(), R"(
         Element-wise norm.
 
@@ -351,7 +351,7 @@ void init_variable(py::module &m) {
         py::call_guard<py::gil_scoped_release>(),
         "Split a Variable along a given Dimension.");
 
-  m.def("sqrt", [](const Variable &self) { return sqrt(self); },
+  m.def("sqrt", [](const VariableConstProxy &self) { return sqrt(self); },
         py::call_guard<py::gil_scoped_release>(), R"(
         Element-wise square-root.
 
