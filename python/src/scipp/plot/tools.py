@@ -121,9 +121,9 @@ def get_1d_axes(var, axes, name):
     Utility to simplify getting 1d axes labels and coordinate arrays
     """
     if axes is None:
-        axes = {var.dims[0] : var.dims[0]}
+        axes = {var.dims[0]: var.dims[0]}
     elif isinstance(axes, str):
-        axes = {var.dims[0] : axes}
+        axes = {var.dims[0]: axes}
     dim, lab, xcoord = axis_to_dim_label(var, axes[var.dims[0]])
     x = xcoord.values
     xlab = axis_label(var=xcoord, name=lab)

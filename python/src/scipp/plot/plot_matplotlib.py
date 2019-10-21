@@ -84,7 +84,6 @@ def plot_2d(input_data, name=None, axes=None, contours=False, cb=None,
         axes = input_data.dims
 
     # Get coordinates axes and dimensions
-    coords = input_data.coords
     zdims = input_data.dims
     nz = input_data.shape
 
