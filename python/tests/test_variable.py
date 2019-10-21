@@ -613,3 +613,8 @@ def test_rename_dims():
     zy = sc.Variable(dims=[Dim.Z, Dim.Y], values=values)
     xy.rename_dims({Dim.X: Dim.Z})
     assert xy == zy
+
+
+def test_create_1d_with_strings():
+    v = sc.Variable([Dim.X], values=["aaa", "ff", "bb"])
+    assert np.all(v.values == np.array(["aaa", "ff", "bb"]))
