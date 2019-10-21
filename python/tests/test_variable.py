@@ -597,11 +597,7 @@ def test_construct_0d_numpy():
 
 
 def test_construct_0d_native_python_types():
-    if sys.platform == "win32":
-        # Windows defaults to a 32 bit integer
-        assert sc.Variable(2).dtype == sc.dtype.int32
-    else:
-        assert sc.Variable(2).dtype == sc.dtype.int64
+    assert sc.Variable(2).dtype == sc.dtype.int64
     assert sc.Variable(2.0).dtype == sc.dtype.double
     assert sc.Variable(True).dtype == sc.dtype.bool
 
