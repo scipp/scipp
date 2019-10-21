@@ -33,9 +33,10 @@ DataArray histogram(const DataConstProxy &sparse,
       sparse,
       [](const DataConstProxy &sparse_, const Dim dim_,
          const VariableConstProxy &binEdges_) {
-        auto coord = sparse_.coords()[dim_];
+        const auto &coord = sparse_.coords()[dim_].sparseValues<double>();
         auto edgesSpan = binEdges_.values<double>();
         expect::histogram::sorted_edges(edgesSpan);
+        // Copy to avoid slow iterator obtained from VariableConstProxy.
         const std::vector<double> edges(edgesSpan.begin(), edgesSpan.end());
         auto resDims{sparse_.dims()};
         auto len = binEdges_.dims()[dim_] - 1;
@@ -43,9 +44,8 @@ DataArray histogram(const DataConstProxy &sparse,
         Variable res =
             makeVariableWithVariances<double>(resDims, units::counts);
         for (scipp::index i = 0; i < sparse_.dims().volume(); ++i) {
-          const auto &coord_i = coord.sparseValues<double>()[i];
           auto curRes = res.values<double>().begin() + i * len;
-          for (const auto &c : coord_i) {
+          for (const auto &c : coord[i]) {
             auto it = std::upper_bound(edges.begin(), edges.end(), c);
             if (it != edges.end() && it != edges.begin())
               ++(*(curRes + (--it - edges.begin())));
