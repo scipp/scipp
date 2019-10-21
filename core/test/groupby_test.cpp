@@ -35,7 +35,7 @@ TEST(GroupbyTest, dataset_1d_and_2d) {
   EXPECT_EQ(grouped.mean(Dim::X), expected);
 }
 
-TEST(GroupbyTest, bins) {
+static auto make_dataset_for_bin_test() {
   Dataset d;
   d.setData("a", makeVariable<double>({Dim::X, 5}, units::s,
                                       {0.1, 0.2, 0.3, 0.4, 0.5}));
@@ -46,6 +46,11 @@ TEST(GroupbyTest, bins) {
               makeVariable<double>({Dim::X, 5}, units::m, {1, 2, 3, 4, 5}));
   d.setLabels("labels2", makeVariable<double>({Dim::X, 5}, units::m,
                                               {1.0, 1.1, 2.5, 4.0, 1.2}));
+  return d;
+}
+
+TEST(GroupbyTest, bins) {
+  Dataset d = make_dataset_for_bin_test();
 
   auto bins = makeVariable<double>({Dim::Z, 4}, units::m, {0.0, 1.0, 2.0, 3.0});
 
@@ -58,4 +63,17 @@ TEST(GroupbyTest, bins) {
   expected.setAttr("scalar", makeVariable<double>(1.2));
 
   EXPECT_EQ(groupby(d, "labels2", bins).sum(Dim::X), expected);
+}
+
+TEST(GroupbyTest, bins_mean_empty) {
+  Dataset d = make_dataset_for_bin_test();
+
+  auto bins = makeVariable<double>({Dim::Z, 4}, units::m, {0.0, 1.0, 2.0, 3.0});
+
+  const auto binned = groupby(d, "labels2", bins).mean(Dim::X);
+  EXPECT_TRUE(std::isnan(binned["a"].values<double>()[0]));
+  EXPECT_FALSE(std::isnan(binned["a"].values<double>()[1]));
+  EXPECT_TRUE(std::isnan(binned["b"].values<double>()[0]));
+  EXPECT_TRUE(std::isnan(binned["b"].values<double>()[3]));
+  EXPECT_FALSE(std::isnan(binned["b"].values<double>()[1]));
 }
