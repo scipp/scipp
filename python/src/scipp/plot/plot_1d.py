@@ -4,7 +4,7 @@
 
 # Scipp imports
 from . import config
-from .tools import edges_to_centers, axis_label, render_plot, axis_to_dim_label
+from .tools import edges_to_centers, axis_label, render_plot, get_1d_axes
 
 # Other imports
 import numpy as np
@@ -26,19 +26,8 @@ def plot_1d(input_data, backend=None, logx=False, logy=False, logxy=False,
 
     data = []
     for i, (name, var) in enumerate(input_data.items()):
-        if axes is None:
-            axes = {var.dims[0] : var.dims[0]}
-        elif isinstance(axes, str):
-            axes = {var.dims[0] : axes}
-        dim, lab = axis_to_dim_label(var, axes[var.dims[0]])
-        if lab is not None:
-            xcoord = var.labels[lab]
-        else:
-            xcoord = var.coords[dim]
-        x = xcoord.values
-        xlab = axis_label(var=xcoord, name=lab)
-        y = var.values
-        ylab = axis_label(var=var, name=name)
+
+        xlab, ylab, x, y = get_1d_axes(var, axes, name)
 
         nx = x.shape[0]
         ny = y.shape[0]

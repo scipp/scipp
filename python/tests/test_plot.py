@@ -113,7 +113,7 @@ def test_plot_1d_bin_edges():
 
 def test_plot_1d_with_labels():
     d1 = make_1d_dataset(labels=True)
-    do_plot(d1, axes="somelabels", test_mpl_backend=False)
+    do_plot(d1, axes="somelabels", test_mpl_backend=True)
 
 
 def test_plot_1d_log_axes():
@@ -152,7 +152,7 @@ def test_plot_1d_three_entries_with_labels():
                                        values=np.linspace(151., 155., N),
                                        unit=sc.units.s)
     do_plot(d1, axes={sc.Dim.X: "Xlabels", sc.Dim.Tof: "somelabels"},
-            test_mpl_backend=False)
+            test_mpl_backend=True)
 
 
 def test_plot_1d_list_of_datasets():

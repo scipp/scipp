@@ -101,18 +101,35 @@ def axis_to_dim_label(dataset, axis):
     """
     Get dimensions and label (if present) from requested axis
     """
-
     if isinstance(axis, Dim):
         dim = axis
         lab = None
+        var = dataset.coords[dim]
     elif isinstance(axis, str):
         dim = dataset.labels[axis].dims[0]
         lab = axis
+        var = dataset.labels[lab]
     else:
         raise RuntimeError("Unsupported axis found in 'axes': {}. This must "
                            "be either a Scipp dimension "
                            "or a string.".format(axis))
-    return dim, lab
+    return dim, lab, var
+
+
+def get_1d_axes(var, axes, name):
+    """
+    Utility to simplify getting 1d axes labels and coordinate arrays
+    """
+    if axes is None:
+        axes = {var.dims[0] : var.dims[0]}
+    elif isinstance(axes, str):
+        axes = {var.dims[0] : axes}
+    dim, lab, xcoord = axis_to_dim_label(var, axes[var.dims[0]])
+    x = xcoord.values
+    xlab = axis_label(var=xcoord, name=lab)
+    y = var.values
+    ylab = axis_label(var=var, name=name)
+    return xlab, ylab, x, y
 
 
 class Slicer:
@@ -146,21 +163,16 @@ class Slicer:
             raise RuntimeError("Duplicate entry in axes: {}".format(axes))
         # Iterate through axes and collect dimensions
         for ax in axes:
-            dim, lab = axis_to_dim_label(self.input_data, ax)
+            dim, lab, var = axis_to_dim_label(self.input_data, ax)
             if (lab is not None) and (dim in axes):
                 raise RuntimeError("The dimension of the labels cannot also "
                                    "be specified as another axis.")
             self.slider_dims.append(dim)
-            self.slider_labels[str(dim)] = lab
-        self.ndim = len(self.slider_dims)
-        for dim in self.slider_dims:
             key = str(dim)
+            self.slider_labels[key] = lab
+            self.slider_x[key] = var
             self.slider_nx[key] = self.shapes[dim]
-            if self.slider_labels[key] is not None:
-                self.slider_x[key] = self.labels[self.slider_labels[key]]
-            else:
-                self.slider_x[key] = self.coords[dim]
-        self.nslices = len(self.slider_dims)
+        self.ndim = len(self.slider_dims)
 
         # Initialise list for VBox container
         self.vbox = []
@@ -199,7 +211,6 @@ class Slicer:
             if self.ndim == 2:
                 self.slider[key].layout.display = 'none'
                 labvalue = descr
-            print(labvalue, descr, self.slider_labels[key])
             # Add a label widget to display the value of the z coordinate
             self.lab[key] = widgets.Label(value=labvalue)
             # Add one set of buttons per dimension
