@@ -31,18 +31,18 @@ DataArray histogram(const DataConstProxy &sparse,
 
   auto result = apply_and_drop_dim(
       sparse,
-      [](const DataConstProxy &_sparse, const Dim _dim,
-         const VariableConstProxy &_binEdges) {
-        auto coord = _sparse.coords()[_dim];
-        auto edgesSpan = _binEdges.values<double>();
+      [](const DataConstProxy &sparse_, const Dim dim_,
+         const VariableConstProxy &binEdges_) {
+        auto coord = sparse_.coords()[dim_];
+        auto edgesSpan = binEdges_.values<double>();
         expect::histogram::sorted_edges(edgesSpan);
-        std::vector<double> edges(edgesSpan.begin(), edgesSpan.end());
-        auto resDims{_sparse.dims()};
-        auto len = _binEdges.dims()[_dim] - 1;
-        resDims.resize(resDims.index(_dim), len);
+        const std::vector<double> edges(edgesSpan.begin(), edgesSpan.end());
+        auto resDims{sparse_.dims()};
+        auto len = binEdges_.dims()[dim_] - 1;
+        resDims.resize(resDims.index(dim_), len);
         Variable res =
             makeVariableWithVariances<double>(resDims, units::counts);
-        for (scipp::index i = 0; i < _sparse.dims().volume(); ++i) {
+        for (scipp::index i = 0; i < sparse_.dims().volume(); ++i) {
           const auto &coord_i = coord.sparseValues<double>()[i];
           auto curRes = res.values<double>().begin() + i * len;
           for (const auto &c : coord_i) {
