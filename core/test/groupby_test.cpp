@@ -101,3 +101,33 @@ TEST(GroupbyTest, bins_mean_empty) {
   EXPECT_TRUE(std::isnan(binned["b"].values<double>()[3]));
   EXPECT_FALSE(std::isnan(binned["b"].values<double>()[1]));
 }
+
+TEST(GroupbyTest, single_bin) {
+  Dataset d = make_dataset_for_bin_test();
+
+  auto bins = makeVariable<double>({Dim::Z, 2}, units::m, {1.0, 5.0});
+  const auto groups = groupby(d, "labels2", bins);
+
+  // Non-range slice drops Dim::Z and the corresponding coord (the edges), so
+  // the result must be equal to a global `sum` or `mean`.
+  EXPECT_EQ(groups.sum(Dim::X).slice({Dim::Z, 0}), sum(d, Dim::X));
+  EXPECT_EQ(groups.mean(Dim::X).slice({Dim::Z, 0}), mean(d, Dim::X));
+}
+
+TEST(GroupbyTest, two_bin) {
+  Dataset d = make_dataset_for_bin_test();
+
+  auto bins = makeVariable<double>({Dim::Z, 3}, units::m, {1.0, 2.0, 5.0});
+  const auto groups = groupby(d, "labels2", bins);
+
+  auto group0 =
+      concatenate(d.slice({Dim::X, 0, 2}), d.slice({Dim::X, 4, 5}), Dim::X);
+  // concatenate does currently not preserve attributes
+  group0.setAttr("scalar", d.attrs()["scalar"]);
+  EXPECT_EQ(groups.sum(Dim::X).slice({Dim::Z, 0}), sum(group0, Dim::X));
+  EXPECT_EQ(groups.mean(Dim::X).slice({Dim::Z, 0}), mean(group0, Dim::X));
+
+  const auto group1 = d.slice({Dim::X, 2, 4});
+  EXPECT_EQ(groups.sum(Dim::X).slice({Dim::Z, 1}), sum(group1, Dim::X));
+  EXPECT_EQ(groups.mean(Dim::X).slice({Dim::Z, 1}), mean(group1, Dim::X));
+}
