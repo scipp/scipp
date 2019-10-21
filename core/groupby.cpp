@@ -35,12 +35,13 @@ Dataset GroupBy::makeReductionOutput(const Dim reductionDim) const {
   return out;
 }
 
+/// Apply sum to groups and return combined dataset.
 Dataset GroupBy::sum(const Dim reductionDim) const {
   auto out = makeReductionOutput(reductionDim);
   // Apply to each group, storing result in output slice
   for (scipp::index group = 0; group < size(); ++group) {
     const auto out_slice = out.slice({dim(), group});
-    for (const auto & [ name, item ] : m_data) {
+    for (const auto &[name, item] : m_data) {
       const auto out_data = out_slice[name].data();
       for (const auto &slice : m_groups[group]) {
         sum_impl(out_data, item.data().slice(slice));
@@ -50,6 +51,7 @@ Dataset GroupBy::sum(const Dim reductionDim) const {
   return out;
 }
 
+/// Apply mean to groups and return combined dataset.
 Dataset GroupBy::mean(const Dim reductionDim) const {
   // 1. Sum into output slices
   auto out = sum(reductionDim);
@@ -63,7 +65,7 @@ Dataset GroupBy::mean(const Dim reductionDim) const {
   scale = 1.0 / scale;
 
   // 3. sum/N -> mean
-  for (const auto & [ name, item ] : out) {
+  for (const auto &[name, item] : out) {
     if (isInt(item.data().dtype()))
       out.setData(name, item.data() * scale);
     else
@@ -126,35 +128,41 @@ template <class T> struct MakeBinGroups {
     expect::histogram::sorted_edges(edges);
 
     const auto dim = key.dims().inner();
-    std::vector<std::vector<Slice>> groups(bins.dims()[bins.dims().inner()] -
-                                           1);
+    std::vector<std::vector<Slice>> groups(edges.size() - 1);
     for (scipp::index i = 0; i < scipp::size(values);) {
       // Use contiguous (thick) slices if possible to avoid overhead of slice
       // handling in follow-up "apply" steps.
       const auto value = values[i];
-      auto rightEdge = std::upper_bound(edges.begin(), edges.end(), value);
-      if (rightEdge != edges.end() && rightEdge != edges.begin()) {
-        auto leftEdge = rightEdge - 1;
-        const auto begin = i;
-        while ((*leftEdge <= values[i]) && (values[i] < *rightEdge) &&
+      const auto begin = i++;
+      auto right = std::upper_bound(edges.begin(), edges.end(), value);
+      if (right != edges.end() && right != edges.begin()) {
+        auto left = right - 1;
+        while ((*left <= values[i]) && (values[i] < *right) &&
                i < scipp::size(values))
           ++i;
-        groups[std::distance(edges.begin(), leftEdge)].emplace_back(dim, begin,
-                                                                    i);
-      } else {
-        ++i;
+        groups[std::distance(edges.begin(), left)].emplace_back(dim, begin, i);
       }
     }
     return GroupBy{d, Variable(bins), std::move(groups)};
   }
 };
 
+/// Create GroupBy object as part of "split-apply-combine" mechanism.
+///
+/// Groups the slices of `dataset` according to values in given by `labels`.
+/// Grouping of labels will create a new coordinate for `targetDim` in a later
+/// apply/combine step.
 GroupBy groupby(const DatasetConstProxy &dataset, const std::string &labels,
                 const Dim targetDim) {
   return CallDType<double, float, int64_t, int32_t, bool, std::string>::apply<
       MakeGroups>(dataset.labels()[labels].dtype(), dataset, labels, targetDim);
 }
 
+/// Create GroupBy object as part of "split-apply-combine" mechanism.
+///
+/// Groups the slices of `dataset` according to values in given by `labels`.
+/// Grouping of labels is according to given `bins`, which will be added as a
+/// new coordinate to the output in a later apply/combine step.
 GroupBy groupby(const DatasetConstProxy &dataset, const std::string &labels,
                 const VariableConstProxy &bins) {
   return CallDType<double, float, int64_t, int32_t>::apply<MakeBinGroups>(
