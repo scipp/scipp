@@ -266,6 +266,7 @@ def test_plot_sliceviewer_with_labels_bad_dimension():
     assert str(e.value) == ("The dimension of the labels cannot also be "
                             "specified as another axis.")
 
+
 def test_plot_sliceviewer_with_3d_projection():
     d1 = make_3d_dataset()
     do_plot(d1, projection="3d")
