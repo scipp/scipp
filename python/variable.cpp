@@ -82,9 +82,10 @@ template <class ST> struct MakeODFromNativePythonTypes {
 
 template <class T>
 Variable bind_init_1D(const std::vector<Dim> &labels,
+                      const std::vector<scipp::index> &shape,
                       const std::vector<T> &values, const units::Unit &unit) {
   Variable var;
-  Dimensions dims({labels[0]}, {scipp::size(values)});
+  Dimensions dims(labels, shape);
   var = makeVariable<T>(dims, values);
   var.setUnit(unit);
   return var;
@@ -98,7 +99,10 @@ Variable doMakeVariable(const std::vector<Dim> &labels, py::array &values,
       dtype.is_none() ? scipp_dtype(values.dtype()) : scipp_dtype(dtype);
 
   if (dtypeTag == DType::String) {
-    return bind_init_1D(labels, values.cast<std::vector<std::string>>(), unit);
+    std::vector<scipp::index> shape(values.shape(),
+                                    values.shape() + values.ndim());
+    return bind_init_1D(labels, shape, values.cast<std::vector<std::string>>(),
+                        unit);
   }
 
   return CallDType<double, float, int64_t, int32_t, bool>::apply<MakeVariable>(
