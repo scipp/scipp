@@ -7,6 +7,7 @@ pybind11_add_module(_scipp
                     dataset.cpp
                     dimensions.cpp
                     dtype.cpp
+                    groupby.cpp
                     neutron.cpp
                     scipp.cpp
                     sparse_container.cpp

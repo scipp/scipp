@@ -144,8 +144,9 @@ public:
 };
 
 SCIPP_UNITS_DECLARE_DIMENSIONS(Detector, DSpacing, Energy, EnergyTransfer,
-                               Position, Q, Qx, Qy, Qz, Row, Spectrum,
-                               Temperature, Time, Tof, Wavelength, X, Y, Z)
+                               Position, Q, Qx, Qy, Qz, Row, ScatteringAngle,
+                               Spectrum, Temperature, Time, Tof, Wavelength, X,
+                               Y, Z)
 
 } // namespace neutron
 

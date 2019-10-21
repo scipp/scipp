@@ -126,7 +126,8 @@ template <class T> struct MakeBinGroups {
     expect::histogram::sorted_edges(edges);
 
     const auto dim = key.dims().inner();
-    std::map<T, std::vector<Slice>> indices;
+    std::vector<std::vector<Slice>> groups(bins.dims()[bins.dims().inner()] -
+                                           1);
     for (scipp::index i = 0; i < scipp::size(values);) {
       // Use contiguous (thick) slices if possible to avoid overhead of slice
       // handling in follow-up "apply" steps.
@@ -138,17 +139,11 @@ template <class T> struct MakeBinGroups {
         while ((*leftEdge <= values[i]) && (values[i] < *rightEdge) &&
                i < scipp::size(values))
           ++i;
-        indices[*leftEdge].emplace_back(dim, begin, i);
+        groups[std::distance(edges.begin(), leftEdge)].emplace_back(dim, begin,
+                                                                    i);
       } else {
         ++i;
       }
-    }
-
-    std::vector<std::vector<Slice>> groups;
-    for (auto &item : indices) {
-      // key is unused, required only above for assigning multiple chunks to
-      // same group
-      groups.emplace_back(std::move(item.second));
     }
     return GroupBy{d, Variable(bins), std::move(groups)};
   }
