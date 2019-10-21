@@ -47,14 +47,14 @@ TEST(GroupbyTest, bins) {
   d.setLabels("labels2", makeVariable<double>({Dim::X, 5}, units::m,
                                               {1.0, 1.1, 2.5, 4.0, 1.2}));
 
-  auto bins = makeVariable<double>({Dim::Z, 3}, units::m, {1.0, 2.0, 3.0});
+  auto bins = makeVariable<double>({Dim::Z, 4}, units::m, {0.0, 1.0, 2.0, 3.0});
 
   Dataset expected;
   expected.setCoord(Dim::Z, bins);
-  expected.setData("a",
-                   makeVariable<double>({Dim::Z, 2}, units::s, {0.8, 0.3}));
-  expected.setData("b", makeVariable<double>({{Dim::Y, 2}, {Dim::Z, 2}},
-                                             units::s, {8, 3, 23, 8}));
+  expected.setData(
+      "a", makeVariable<double>({Dim::Z, 3}, units::s, {0.0, 0.8, 0.3}));
+  expected.setData("b", makeVariable<double>({{Dim::Y, 2}, {Dim::Z, 3}},
+                                             units::s, {0, 8, 3, 0, 23, 8}));
   expected.setAttr("scalar", makeVariable<double>(1.2));
 
   EXPECT_EQ(groupby(d, "labels2", bins).sum(Dim::X), expected);
