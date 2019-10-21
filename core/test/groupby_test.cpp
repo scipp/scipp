@@ -7,7 +7,7 @@
 using namespace scipp;
 using namespace scipp::core;
 
-TEST(GroupbyTest, dataset_1d_and_2d) {
+static auto make_dataset_for_groupby_test() {
   Dataset d;
   d.setData("a",
             makeVariable<int>({Dim::X, 3}, units::m, {1, 2, 3}, {4, 5, 6}));
@@ -19,6 +19,30 @@ TEST(GroupbyTest, dataset_1d_and_2d) {
               makeVariable<double>({Dim::X, 3}, units::m, {1, 2, 3}));
   d.setLabels("labels2",
               makeVariable<double>({Dim::X, 3}, units::m, {1, 1, 3}));
+  return d;
+}
+
+TEST(GroupbyTest, fail_key_not_found) {
+  Dataset d = make_dataset_for_groupby_test();
+  EXPECT_THROW(groupby(d, "invalid", Dim::Y), except::NotFoundError);
+}
+
+TEST(GroupbyTest, fail_key_2d) {
+  Dataset d = make_dataset_for_groupby_test();
+  d.setLabels("2d", makeVariable<double>({{Dim::Z, 2}, {Dim::X, 3}}, units::s,
+                                         {1, 2, 3, 4, 5, 6}));
+  EXPECT_THROW(groupby(d, "2d", Dim::Y), except::DimensionError);
+}
+
+TEST(GroupbyTest, fail_key_with_variances) {
+  Dataset d = make_dataset_for_groupby_test();
+  d.setLabels("variances",
+              makeVariable<int>({Dim::X, 3}, units::m, {1, 2, 3}, {4, 5, 6}));
+  EXPECT_THROW(groupby(d, "variances", Dim::Y), except::VariancesError);
+}
+
+TEST(GroupbyTest, dataset_1d_and_2d) {
+  Dataset d = make_dataset_for_groupby_test();
 
   Dataset expected;
   expected.setData("a", makeVariable<double>({Dim::Y, 2}, units::m, {1.5, 3.0},
