@@ -4,7 +4,7 @@
 
 # Scipp imports
 from . import config
-from .tools import edges_to_centers, axis_label, render_plot
+from .tools import edges_to_centers, axis_label, render_plot, axis_to_dim_label
 
 # Other imports
 import numpy as np
@@ -12,7 +12,7 @@ import plotly.graph_objs as go
 
 
 def plot_1d(input_data, backend=None, logx=False, logy=False, logxy=False,
-            color=None, filename=None):
+            color=None, filename=None, axes=None):
     """
     Plot a 1D spectrum.
 
@@ -26,9 +26,17 @@ def plot_1d(input_data, backend=None, logx=False, logy=False, logxy=False,
 
     data = []
     for i, (name, var) in enumerate(input_data.items()):
-        xcoord = var.coords[var.dims[0]]
+        if axes is None:
+            axes = {var.dims[0] : var.dims[0]}
+        elif isinstance(axes, str):
+            axes = {var.dims[0] : axes}
+        dim, lab = axis_to_dim_label(var, axes[var.dims[0]])
+        if lab is not None:
+            xcoord = var.labels[lab]
+        else:
+            xcoord = var.coords[dim]
         x = xcoord.values
-        xlab = axis_label(xcoord)
+        xlab = axis_label(var=xcoord, name=lab)
         y = var.values
         ylab = axis_label(var=var, name=name)
 

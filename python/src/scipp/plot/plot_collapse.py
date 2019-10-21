@@ -12,7 +12,7 @@ import numpy as np
 
 
 def plot_collapse(input_data, dim=None, name=None, filename=None, backend=None,
-                  **kwargs):
+                  color=None, **kwargs):
     """
     Collapse higher dimensions into a 1D plot.
     """
@@ -77,9 +77,13 @@ def plot_collapse(input_data, dim=None, name=None, filename=None, backend=None,
     slice_list = np.reshape(
         np.transpose(slice_list), (volume, len(slice_dims), 2))
 
+    auto_color = False
+    if color is None:
+        color = []
+        auto_color = True
+
     # Extract each entry from the slice_list, make temporary dataset and add to
     # input dictionary for plot_1d
-    color = []
     for i, line in enumerate(slice_list):
         ds_temp = input_data
         key = ""
@@ -93,7 +97,8 @@ def plot_collapse(input_data, dim=None, name=None, filename=None, backend=None,
         ds[key] = sc.core.Variable([dim], values=ds_temp.values,
                                    variances=variances)
         data[key] = ds[key]
-        color.append(get_color(index=i))
+        if auto_color:
+            color.append(get_color(index=i))
 
     # Send the newly created dictionary of DataProxy to the plot_1d function
     return dispatch(input_data=data, ndim=1, backend=backend, color=color,
