@@ -335,8 +335,9 @@ def test_coords_proxy_comparison_operators():
 def test_sum_mean():
     d = sc.Dataset(
         {
-            'a': sc.Variable([Dim.X, Dim.Y], values=np.arange(6, dtype=np.int64).reshape(2,
-                                                                         3)),
+            'a': sc.Variable([Dim.X, Dim.Y],
+                             values=np.arange(6, dtype=np.int64)
+                             .reshape(2, 3)),
             'b': sc.Variable([Dim.Y], values=np.arange(3, dtype=np.int64))
         },
         coords={
@@ -345,16 +346,20 @@ def test_sum_mean():
         },
         labels={
             "l1": sc.Variable([Dim.X, Dim.Y],
-                              values=np.arange(6, dtype=np.int64).reshape(2, 3)),
+                              values=np.arange(6, dtype=np.int64)
+                              .reshape(2, 3)),
             "l2": sc.Variable([Dim.X], values=np.arange(2, dtype=np.int64))
         })
     d_ref = sc.Dataset(
         {
-            'a': sc.Variable([Dim.X], values=np.array([3, 12], dtype=np.int64)),
+            'a': sc.Variable([Dim.X],
+                             values=np.array([3, 12], dtype=np.int64)),
             'b': sc.Variable(3)
         },
-        coords={Dim.X: sc.Variable([Dim.X], values=np.arange(2, dtype=np.int64))},
-        labels={"l2": sc.Variable([Dim.X], values=np.arange(2, dtype=np.int64))})
+        coords={Dim.X: sc.Variable([Dim.X],
+                                   values=np.arange(2, dtype=np.int64))},
+        labels={"l2": sc.Variable([Dim.X],
+                                  values=np.arange(2, dtype=np.int64))})
 
     assert sc.sum(d, Dim.Y) == d_ref
     assert (sc.mean(d, Dim.Y)["a"].values == [1.0, 4.0]).all()
