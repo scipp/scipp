@@ -563,9 +563,9 @@ def test_set_variance_convert_dtype():
 
 
 def test_sum_mean():
-    var = sc.Variable([Dim.X], values=np.arange(5))
+    var = sc.Variable([Dim.X], values=np.arange(5, dtype=np.int64))
     assert sc.sum(var, Dim.X) == sc.Variable(10)
-    var = sc.Variable([Dim.X], values=np.arange(6))
+    var = sc.Variable([Dim.X], values=np.arange(6, dtype=np.int64))
     assert sc.mean(var, Dim.X) == sc.Variable(2.5)
 
 
