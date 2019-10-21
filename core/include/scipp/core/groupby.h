@@ -35,6 +35,9 @@ private:
 SCIPP_CORE_EXPORT GroupBy groupby(const DatasetConstProxy &dataset,
                                   const std::string &labels,
                                   const Dim targetDim);
+SCIPP_CORE_EXPORT GroupBy groupby(const DatasetConstProxy &dataset,
+                                  const std::string &labels,
+                                  const VariableConstProxy &bins);
 
 } // namespace scipp::core
 

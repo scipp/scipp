@@ -7,6 +7,7 @@
 #include "scipp/core/transform.h"
 
 #include "dataset_operations_common.h"
+#include "histogram.h"
 
 namespace scipp::core {
 
@@ -34,9 +35,7 @@ DataArray histogram(const DataConstProxy &sparse,
          const VariableConstProxy &_binEdges) {
         auto coord = _sparse.coords()[_dim];
         auto edgesSpan = _binEdges.values<double>();
-        if (!std::is_sorted(edgesSpan.begin(), edgesSpan.end()))
-          throw std::logic_error(
-              "Bin edges should be sorted to make the histogram.");
+        expect::histogram::sorted_edges(edgesSpan);
         auto resDims{_sparse.dims()};
         auto len = _binEdges.dims()[_dim] - 1;
         resDims.resize(resDims.index(_dim), len);

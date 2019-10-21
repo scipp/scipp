@@ -10,6 +10,7 @@
 #include "scipp/core/tag_util.h"
 
 #include "dataset_operations_common.h"
+#include "histogram.h"
 #include "variable_operations_common.h"
 
 namespace scipp::core {
@@ -72,14 +73,18 @@ Dataset GroupBy::mean(const Dim reductionDim) const {
   return out;
 }
 
+static void expectValidGroupbyKey(const VariableConstProxy &key) {
+  if (key.dims().ndim() != 1)
+    throw except::DimensionError("Group-by key must be 1-dimensional");
+  if (key.hasVariances())
+    throw except::VariancesError("Group-by key cannot have variances");
+}
+
 template <class T> struct MakeGroups {
   static auto apply(const DatasetConstProxy &d, const std::string &labels,
                     const Dim targetDim) {
     const auto &key = d.labels()[labels];
-    if (key.dims().ndim() != 1)
-      throw except::DimensionError("Group-by key must be 1-dimensional");
-    if (key.hasVariances())
-      throw except::VariancesError("Group-by key cannot have variances");
+    expectValidGroupbyKey(key);
     const auto &values = key.values<T>();
 
     const auto dim = key.dims().inner();
@@ -89,7 +94,7 @@ template <class T> struct MakeGroups {
       // handling in follow-up "apply" steps.
       const auto begin = i;
       const auto value = values[i];
-      while (values[i] == value)
+      while (values[i] == value && i < scipp::size(values))
         ++i;
       indices[value].emplace_back(dim, begin, i);
     }
@@ -107,10 +112,58 @@ template <class T> struct MakeGroups {
   }
 };
 
+template <class T> struct MakeBinGroups {
+  static auto apply(const DatasetConstProxy &d, const std::string &labels,
+                    const VariableConstProxy &bins) {
+    const auto &key = d.labels()[labels];
+    expectValidGroupbyKey(key);
+    if (bins.dims().ndim() != 1)
+      throw except::DimensionError("Group-by bins must be 1-dimensional");
+    if (key.unit() != bins.unit())
+      throw except::UnitError("Group-by key must have same unit as bins");
+    const auto &values = key.values<T>();
+    const auto &edges = bins.values<T>();
+    expect::histogram::sorted_edges(edges);
+
+    const auto dim = key.dims().inner();
+    std::map<T, std::vector<Slice>> indices;
+    for (scipp::index i = 0; i < scipp::size(values);) {
+      // Use contiguous (thick) slices if possible to avoid overhead of slice
+      // handling in follow-up "apply" steps.
+      const auto value = values[i];
+      auto rightEdge = std::upper_bound(edges.begin(), edges.end(), value);
+      if (rightEdge != edges.end() && rightEdge != edges.begin()) {
+        auto leftEdge = rightEdge - 1;
+        const auto begin = i;
+        while ((*leftEdge <= values[i]) && (values[i] < *rightEdge) &&
+               i < scipp::size(values))
+          ++i;
+        indices[*leftEdge].emplace_back(dim, begin, i);
+      } else {
+        ++i;
+      }
+    }
+
+    std::vector<std::vector<Slice>> groups;
+    for (auto &item : indices) {
+      // key is unused, required only above for assigning multiple chunks to
+      // same group
+      groups.emplace_back(std::move(item.second));
+    }
+    return GroupBy{d, Variable(bins), std::move(groups)};
+  }
+};
+
 GroupBy groupby(const DatasetConstProxy &dataset, const std::string &labels,
                 const Dim targetDim) {
   return CallDType<double, float, int64_t, int32_t, bool, std::string>::apply<
       MakeGroups>(dataset.labels()[labels].dtype(), dataset, labels, targetDim);
+}
+
+GroupBy groupby(const DatasetConstProxy &dataset, const std::string &labels,
+                const VariableConstProxy &bins) {
+  return CallDType<double, float, int64_t, int32_t>::apply<MakeBinGroups>(
+      dataset.labels()[labels].dtype(), dataset, labels, bins);
 }
 
 } // namespace scipp::core
