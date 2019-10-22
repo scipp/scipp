@@ -107,7 +107,7 @@ def test_coord_setitem_sparse():
     assert d['a'].coords[Dim.X] != var
     assert d['a'].coords[Dim.X] != d.coords[Dim.X]
     # This would not work:
-    with pytest.raises(IndexError):
+    with pytest.raises(RuntimeError):
         d['b'].coords[Dim.X] = sparse
 
 
@@ -649,7 +649,7 @@ def test_coords_delitem_sparse():
     with pytest.raises(RuntimeError):
         del d['a'].coords[Dim.Z]
     del d['a'].coords[Dim.X]
-    with pytest.raises(IndexError):
+    with pytest.raises(RuntimeError):
         d['a'].coords[Dim.X]
 
 
