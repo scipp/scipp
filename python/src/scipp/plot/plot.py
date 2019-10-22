@@ -50,25 +50,31 @@ def plot(input_data, collapse=None, backend=None, color=None, **kwargs):
             elif ndims > 1:
                 tobeplotted[name] = [ndims, ds[name]]
 
+    # Prepare color containers
+    auto_color = False
+    if color is None:
+        auto_color = True
+    elif not isinstance(color, list):
+        color = [color]
+
     # Plot all the subsets
     color_count = 0
     output = dict()
     for key, val in tobeplotted.items():
         if val[0] == 1:
-            if color is None:
+            if auto_color:
                 color = []
                 for l in val[1].keys():
                     color.append(get_color(index=color_count))
                     color_count += 1
-            elif not isinstance(color, list):
-                color = [color]
             name = None
         else:
             color = None
             name = key
         if collapse is not None:
             output[key] = plot_collapse(input_data=val[1], dim=collapse,
-                                        name=name, backend=backend, **kwargs)
+                                        name=name, backend=backend,
+                                        color=color, **kwargs)
         else:
             output[key] = dispatch(input_data=val[1], ndim=val[0], name=name,
                                    backend=backend, color=color, **kwargs)

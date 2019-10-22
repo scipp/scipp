@@ -6,7 +6,7 @@
 # Scipp imports
 from . import config
 from .tools import edges_to_centers, centers_to_edges, axis_label, \
-                   parse_colorbar
+                   parse_colorbar, get_1d_axes, axis_to_dim_label
 
 # Other imports
 import numpy as np
@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 
 
 def plot_1d(input_data, logx=False, logy=False, logxy=False,
-            color=None, filename=None, title=None, mpl_axes=None):
+            color=None, filename=None, title=None, axes=None, mpl_axes=None):
     """
     Plot a 1D spectrum.
     Input is a dictionary containing a list of DataProxy.
@@ -32,11 +32,8 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False,
            "errorbar": {}}
 
     for i, (name, var) in enumerate(input_data.items()):
-        xcoord = var.coords[var.dims[0]]
-        x = xcoord.values
-        xlab = axis_label(xcoord)
-        y = var.values
-        ylab = axis_label(var=var, name=name)
+
+        xlab, ylab, x, y = get_1d_axes(var, axes, name)
 
         # Check for bin edges
         if x.shape[0] == y.shape[0] + 1:
@@ -59,6 +56,10 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False,
     ax.legend()
     if title is not None:
         ax.set_title(title)
+    if logx or logxy:
+        ax.set_xscale("log")
+    if logy or logxy:
+        ax.set_yscale("log")
 
     out["ax"] = ax
     if fig is not None:
@@ -83,12 +84,11 @@ def plot_2d(input_data, name=None, axes=None, contours=False, cb=None,
         axes = input_data.dims
 
     # Get coordinates axes and dimensions
-    coords = input_data.coords
     zdims = input_data.dims
     nz = input_data.shape
 
-    xcoord = coords[axes[-1]]
-    ycoord = coords[axes[-2]]
+    dimx, labx, xcoord = axis_to_dim_label(input_data, axes[-1])
+    dimy, laby, ycoord = axis_to_dim_label(input_data, axes[-2])
     xy = [xcoord.values, ycoord.values]
 
     # Check for bin edges
@@ -121,8 +121,8 @@ def plot_2d(input_data, name=None, axes=None, contours=False, cb=None,
     else:
         fig, ax = plt.subplots(1, 1)
 
-    ax.set_xlabel(axis_label(xcoord))
-    ax.set_ylabel(axis_label(ycoord))
+    ax.set_xlabel(axis_label(xcoord, name=labx))
+    ax.set_ylabel(axis_label(ycoord, name=laby))
 
     if variances:
         z = input_data.variances
