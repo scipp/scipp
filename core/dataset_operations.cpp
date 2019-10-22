@@ -198,16 +198,34 @@ Dataset rebin(const DatasetConstProxy &d, const Dim dim,
 DataArray resize(const DataConstProxy &a, const Dim dim,
                  const scipp::index size) {
   if (a.dims().sparse()) {
-    const Dim sparseDim = a.dims().sparseDim();
-    // DataArray out(a.slice({dim, 0}));
+    const auto resize_if_sparse = [dim, size](const auto &var) {
+      return var.dims().sparse() ? resize(var, dim, size) : Variable{var};
+    };
+
+    std::map<Dim, Variable> coords;
+    for (auto &&[d, coord] : a.coords())
+      if (d != dim)
+        coords.emplace(d, resize_if_sparse(coord));
+
     std::map<std::string, Variable> labels;
     for (auto &&[name, label] : a.labels())
-      if (label.dims().sparse())
-        labels.emplace(name, resize(label, dim, size));
+      if (label.dims().inner() != dim)
+        labels.emplace(name, resize_if_sparse(label));
+
+    std::map<std::string, Variable> attrs;
+    for (auto &&[name, attr] : a.attrs())
+      if (attr.dims().inner() != dim)
+        attrs.emplace(name, resize_if_sparse(attr));
+
+    std::map<std::string, Variable> masks;
+    for (auto &&[name, mask] : a.masks())
+      if (mask.dims().inner() != dim)
+        masks.emplace(name, resize_if_sparse(mask));
+
     return DataArray{a.hasData() ? resize(a.data(), dim, size)
                                  : std::optional<Variable>{},
-                     {{sparseDim, resize(a.coords()[sparseDim], dim, size)}},
-                     std::move(labels)};
+                     std::move(coords), std::move(labels), std::move(masks),
+                     std::move(attrs)};
   } else {
     return apply_to_data_and_drop_dim(
         a, [](auto &&... _) { return resize(_...); }, dim, size);

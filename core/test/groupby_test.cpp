@@ -162,12 +162,18 @@ TEST(GroupbyTest, flatten_coord_only) {
   DataArray a{
       std::nullopt,
       {{Dim::X, make_sparse_in()}},
-      {{"labels", makeVariable<double>({Dim::Y, 3}, units::m, {1, 1, 3})}}};
+      {{"labels", makeVariable<double>({Dim::Y, 3}, units::m, {1, 1, 3})},
+       {"dense", makeVariable<double>({Dim::X, 5}, units::m, {1, 2, 3, 4, 5})}},
+      {},
+      {{"scalar_attr", makeVariable<double>(1.2)}}};
 
   DataArray expected{
       std::nullopt,
       {{Dim::X, make_sparse_out()},
-       {Dim::Z, makeVariable<double>({Dim::Z, 2}, units::m, {1, 3})}}};
+       {Dim::Z, makeVariable<double>({Dim::Z, 2}, units::m, {1, 3})}},
+      {{"dense", makeVariable<double>({Dim::X, 5}, units::m, {1, 2, 3, 4, 5})}},
+      {},
+      {{"scalar_attr", makeVariable<double>(1.2)}}};
 
   EXPECT_EQ(groupby(a, "labels", Dim::Z).flatten(Dim::Y), expected);
 }
