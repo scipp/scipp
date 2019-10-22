@@ -346,3 +346,94 @@ TEST(DatasetTest, sum_and_mean) {
   EXPECT_THROW(core::sum(make_sparse_2d({1, 2, 3, 4}, {0, 0}), Dim::X),
                except::DimensionError);
 }
+
+TEST(DatasetTest, erase_coord) {
+  DatasetFactory3D factory;
+  const auto ref = factory.make();
+  Dataset ds(ref);
+  auto coord = Variable(ds.coords()[Dim::X]);
+  ds.eraseCoord(Dim::X);
+  EXPECT_FALSE(ds.coords().contains(Dim::X));
+  ds.setCoord(Dim::X, coord);
+  EXPECT_EQ(ref, ds);
+
+  ds.coords().erase(Dim::X);
+  EXPECT_FALSE(ds.coords().contains(Dim::X));
+  ds.setCoord(Dim::X, coord);
+  EXPECT_EQ(ref, ds);
+
+  const auto var =
+      makeVariable<double>({Dim::X, Dim::Y}, {3, Dimensions::Sparse});
+  ds.setSparseCoord("newCoord", var);
+  EXPECT_TRUE(ds["newCoord"].coords().contains(Dim::X));
+  ds.eraseSparseCoord("newCoord");
+  EXPECT_EQ(ref, ds);
+
+  ds.setSparseCoord("newCoord", var);
+  ds.setData("newCoord", makeVariable<double>({Dim::X}, {Dimensions::Sparse}));
+  EXPECT_TRUE(ds["newCoord"].coords().contains(Dim::X));
+  EXPECT_THROW(ds["newCoord"].coords().erase(Dim::Z), except::SparseDataError);
+  ds["newCoord"].coords().erase(Dim::X);
+  EXPECT_FALSE(ds["newCoord"].coords().contains(Dim::X));
+}
+
+TEST(DatasetTest, erase_labels) {
+  DatasetFactory3D factory;
+  const auto ref = factory.make();
+  Dataset ds(ref);
+  auto labels = Variable(ds.labels()["labels_x"]);
+  ds.eraseLabels("labels_x");
+  EXPECT_FALSE(ds.labels().contains("labels_x"));
+  ds.setLabels("labels_x", labels);
+  EXPECT_EQ(ref, ds);
+
+  ds.labels().erase("labels_x");
+  EXPECT_FALSE(ds.labels().contains("labels_x"));
+  ds.setLabels("labels_x", labels);
+  EXPECT_EQ(ref, ds);
+
+  const auto var =
+      makeVariable<double>({Dim::X, Dim::Y}, {3, Dimensions::Sparse});
+  ds.setSparseCoord("newCoord", var);
+  ds.setSparseLabels("newCoord", "labels_sparse", var);
+  EXPECT_TRUE(ds["newCoord"].labels().contains("labels_sparse"));
+  ds.eraseSparseLabels("newCoord", "labels_sparse");
+  EXPECT_FALSE(ds["newCoord"].labels().contains("labels_sparse"));
+
+  ds.setSparseLabels("newCoord", "labels_sparse", var);
+  EXPECT_TRUE(ds["newCoord"].labels().contains("labels_sparse"));
+  ds["newCoord"].labels().erase("labels_sparse");
+  EXPECT_FALSE(ds["newCoord"].labels().contains("labels_sparse"));
+}
+
+TEST(DatasetTest, erase_attrs) {
+  DatasetFactory3D factory;
+  const auto ref = factory.make();
+  Dataset ds(ref);
+  auto attrs = Variable(ds.attrs()["attr_x"]);
+  ds.eraseAttr("attr_x");
+  EXPECT_FALSE(ds.attrs().contains("attr_x"));
+  ds.setAttr("attr_x", attrs);
+  EXPECT_EQ(ref, ds);
+
+  ds.attrs().erase("attr_x");
+  EXPECT_FALSE(ds.attrs().contains("attr_x"));
+  ds.setAttr("attr_x", attrs);
+  EXPECT_EQ(ref, ds);
+}
+
+TEST(DatasetTest, erase_masks) {
+  DatasetFactory3D factory;
+  const auto ref = factory.make();
+  Dataset ds(ref);
+  auto mask = Variable(ref.masks()["masks_x"]);
+  ds.eraseMask("masks_x");
+  EXPECT_FALSE(ds.masks().contains("masks_x"));
+  ds.setMask("masks_x", mask);
+  EXPECT_EQ(ref, ds);
+
+  ds.masks().erase("masks_x");
+  EXPECT_FALSE(ds.masks().contains("masks_x"));
+  ds.setMask("masks_x", mask);
+  EXPECT_EQ(ref, ds);
+}
