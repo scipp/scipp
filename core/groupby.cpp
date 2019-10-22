@@ -33,30 +33,28 @@ T GroupBy<T>::makeReductionOutput(const Dim reductionDim) const {
 /// This only supports sparse data.
 template <class T> T GroupBy<T>::flatten(const Dim reductionDim) const {
   auto out = makeReductionOutput(reductionDim);
+  const auto apply = [&](const auto &out_, const auto &in,
+                         const scipp::index group_) {
+    const Dim sparseDim = in.dims().sparseDim();
+    for (const auto &slice : groups()[group_]) {
+      const auto &array = in.slice(slice);
+      flatten_impl(out_.coords()[sparseDim], array.coords()[sparseDim]);
+      if (in.hasData())
+        flatten_impl(out_.data(), array.data());
+      for (auto &&[label_name, label] : out_.labels()) {
+        if (label.dims().sparse())
+          flatten_impl(label, array.labels()[label_name]);
+      }
+    }
+  };
   // Apply to each group, storing result in output slice
   for (scipp::index group = 0; group < size(); ++group) {
     const auto out_slice = out.slice({dim(), group});
     if constexpr (std::is_same_v<T, Dataset>) {
-      /*
-      for (const auto &[name, item] : m_data) {
-        const auto out_data = out_slice[name].data();
-        for (const auto &slice : groups()[group]) {
-          sum_impl(out_data, item.data().slice(slice));
-        }
-      }
-      */
+      for (const auto &[name, item] : m_data)
+        apply(out_slice[name], item, group);
     } else {
-      const Dim sparseDim = out.dims().sparseDim();
-      for (const auto &slice : groups()[group]) {
-        const auto &array = m_data.slice(slice);
-        flatten_impl(out_slice.coords()[sparseDim], array.coords()[sparseDim]);
-        if (out.hasData())
-          flatten_impl(out_slice.data(), array.data());
-        for (auto &&[name, label] : out_slice.labels()) {
-          if (label.dims().sparse())
-            flatten_impl(label, array.labels()[name]);
-        }
-      }
+      apply(out_slice, m_data, group);
     }
   }
   return out;

@@ -158,22 +158,29 @@ auto make_sparse_out() {
   return var;
 }
 
-TEST(GroupbyTest, flatten_coord_only) {
-  DataArray a{
+DataArray make_sparse_array_in() {
+  return {
       std::nullopt,
       {{Dim::X, make_sparse_in()}},
       {{"labels", makeVariable<double>({Dim::Y, 3}, units::m, {1, 1, 3})},
        {"dense", makeVariable<double>({Dim::X, 5}, units::m, {1, 2, 3, 4, 5})}},
       {},
       {{"scalar_attr", makeVariable<double>(1.2)}}};
+}
 
-  DataArray expected{
+DataArray make_sparse_array_out() {
+  return {
       std::nullopt,
       {{Dim::X, make_sparse_out()},
        {Dim::Z, makeVariable<double>({Dim::Z, 2}, units::m, {1, 3})}},
       {{"dense", makeVariable<double>({Dim::X, 5}, units::m, {1, 2, 3, 4, 5})}},
       {},
       {{"scalar_attr", makeVariable<double>(1.2)}}};
+}
+
+TEST(GroupbyTest, flatten_coord_only) {
+  const auto a = make_sparse_array_in();
+  const auto expected = make_sparse_array_out();
 
   EXPECT_EQ(groupby(a, "labels", Dim::Z).flatten(Dim::Y), expected);
 }
@@ -206,4 +213,13 @@ TEST(GroupbyTest, flatten_coord_and_data) {
        {Dim::Z, makeVariable<double>({Dim::Z, 2}, units::m, {1, 3})}}};
 
   EXPECT_EQ(groupby(a, "labels", Dim::Z).flatten(Dim::Y), expected);
+}
+
+TEST(GroupbyTest, flatten_dataset_coord_only) {
+  const auto a = make_sparse_array_in();
+  const auto expected = make_sparse_array_out();
+
+  const Dataset d{{{"a", a}, {"b", a}}};
+  const Dataset expected_d{{{"a", expected}, {"b", expected}}};
+  EXPECT_EQ(groupby(d, "labels", Dim::Z).flatten(Dim::Y), expected_d);
 }
