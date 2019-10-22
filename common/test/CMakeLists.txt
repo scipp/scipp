@@ -2,7 +2,10 @@
 # Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 set(TARGET_NAME "scipp-common-test")
 add_dependencies(all-tests ${TARGET_NAME})
-add_executable(${TARGET_NAME} EXCLUDE_FROM_ALL index_test.cpp)
+add_executable(${TARGET_NAME}
+               EXCLUDE_FROM_ALL
+               index_test.cpp
+               is_linspace_test.cpp)
 target_link_libraries(${TARGET_NAME}
                       LINK_PRIVATE
                       scipp-common

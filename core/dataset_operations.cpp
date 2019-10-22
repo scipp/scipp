@@ -2,6 +2,7 @@
 // Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
+#include "scipp/common/numeric.h"
 #include "scipp/core/dataset.h"
 #include "scipp/core/except.h"
 #include "scipp/core/transform.h"
@@ -43,12 +44,28 @@ DataArray histogram(const DataConstProxy &sparse,
         resDims.resize(resDims.index(dim_), len);
         Variable res =
             makeVariableWithVariances<double>(resDims, units::counts);
-        for (scipp::index i = 0; i < sparse_.dims().volume(); ++i) {
-          auto curRes = res.values<double>().begin() + i * len;
-          for (const auto &c : coord[i]) {
-            auto it = std::upper_bound(edges.begin(), edges.end(), c);
-            if (it != edges.end() && it != edges.begin())
-              ++(*(curRes + (--it - edges.begin())));
+        if (scipp::numeric::is_linspace(edges)) {
+          // Special implementation for linear bins. Gives a 0x to 20x speedup
+          // for few and many events per histogram, respectively.
+          const double offset = edges.front();
+          const double nbin = static_cast<double>(len);
+          const double scale = nbin / (edges.back() - edges.front());
+          for (scipp::index i = 0; i < sparse_.dims().volume(); ++i) {
+            auto curRes = res.values<double>().begin() + i * len;
+            for (const auto &c : coord[i]) {
+              const double bin = (c - offset) * scale;
+              if (bin >= 0.0 && bin < nbin)
+                ++(*(curRes + static_cast<scipp::index>(bin)));
+            }
+          }
+        } else {
+          for (scipp::index i = 0; i < sparse_.dims().volume(); ++i) {
+            auto curRes = res.values<double>().begin() + i * len;
+            for (const auto &c : coord[i]) {
+              auto it = std::upper_bound(edges.begin(), edges.end(), c);
+              if (it != edges.end() && it != edges.begin())
+                ++(*(curRes + (--it - edges.begin())));
+            }
           }
         }
         std::copy(res.values<double>().begin(), res.values<double>().end(),
