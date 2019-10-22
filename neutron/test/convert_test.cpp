@@ -61,8 +61,8 @@ TEST(Convert, Tof_to_DSpacing) {
   EXPECT_EQ(dspacing["counts"].dims(),
             Dimensions({{Dim::Spectrum, 2}, {Dim::DSpacing, 3}}));
 
-  ASSERT_THROW(dspacing.coords()[Dim::Tof], std::out_of_range);
-  ASSERT_NO_THROW(dspacing.coords()[Dim::DSpacing]);
+  ASSERT_FALSE(dspacing.coords().contains(Dim::Tof));
+  ASSERT_TRUE(dspacing.coords().contains(Dim::DSpacing));
 
   const auto &coord = dspacing.coords()[Dim::DSpacing];
   // Due to conversion, the coordinate now also depends on Dim::Spectrum.
@@ -220,8 +220,8 @@ TEST(Convert, Tof_to_Wavelength) {
   EXPECT_EQ(wavelength["counts"].dims(),
             Dimensions({{Dim::Spectrum, 2}, {Dim::Wavelength, 3}}));
 
-  ASSERT_THROW(wavelength.coords()[Dim::Tof], std::out_of_range);
-  ASSERT_NO_THROW(wavelength.coords()[Dim::Wavelength]);
+  ASSERT_FALSE(wavelength.coords().contains(Dim::Tof));
+  ASSERT_TRUE(wavelength.coords().contains(Dim::Wavelength));
 
   const auto &coord = wavelength.coords()[Dim::Wavelength];
   // Due to conversion, the coordinate now also depends on Dim::Spectrum.
@@ -329,8 +329,8 @@ TEST(Convert, Tof_to_Energy_Elastic) {
   EXPECT_EQ(energy["counts"].dims(),
             Dimensions({{Dim::Spectrum, 2}, {Dim::Energy, 3}}));
 
-  ASSERT_THROW(energy.coords()[Dim::Tof], std::out_of_range);
-  ASSERT_NO_THROW(energy.coords()[Dim::Energy]);
+  ASSERT_FALSE(energy.coords().contains(Dim::Tof));
+  ASSERT_TRUE(energy.coords().contains(Dim::Energy));
 
   const auto &coord = energy.coords()[Dim::Energy];
   // Due to conversion, the coordinate now also depends on Dim::Spectrum.
