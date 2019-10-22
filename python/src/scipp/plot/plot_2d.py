@@ -4,7 +4,7 @@
 
 # Scipp imports
 from . import config
-from .tools import axis_label, parse_colorbar, render_plot
+from .tools import axis_label, parse_colorbar, render_plot, Slicer
 
 # Other imports
 import numpy as np
@@ -51,9 +51,10 @@ def plot_2d(input_data, axes=None, contours=False, cb=None, filename=None,
     # Automatically switch to rasterization if image is large
     if rasterize == "auto":
         imsize = 1
-        shapes = dict(zip(input_data.dims, input_data.shape))
-        for dim in axes[-2:]:
-            imsize *= shapes[dim]
+        # Find the two largest dimensions
+        shapes = np.sort(input_data.shape)[::-1]
+        for i in range(2):
+            imsize *= shapes[i]
         rasterize = imsize > config.rasterize_threshold
 
     plot_type = 'heatmap'
@@ -61,7 +62,6 @@ def plot_2d(input_data, axes=None, contours=False, cb=None, filename=None,
     if rasterize:
         layout["xaxis"] = dict(showgrid=False, zeroline=False, autorange=True)
         layout["yaxis"] = dict(showgrid=False, zeroline=False, autorange=True)
-        plot_type = 'heatmap'
         hoverinfo = 'skip'
     else:
         if contours:
@@ -88,85 +88,16 @@ def plot_2d(input_data, axes=None, contours=False, cb=None, filename=None,
     return
 
 
-class Slicer2d:
+class Slicer2d(Slicer):
 
     def __init__(self, data, layout, input_data, axes,
                  value_name, cb, show_variances, rasterize, surface3d=False):
 
-        self.input_data = input_data
-        self.show_variances = ((self.input_data.variances is not None) and
-                               show_variances)
-        # self.value_name = value_name
-        self.cb = cb
+        super().__init__(input_data, axes, value_name, cb, show_variances,
+                         button_options=['X', 'Y'])
+
         self.surface3d = surface3d
-        self.value_name = value_name
         self.rasterize = rasterize
-
-        # Get the dimensions of the image to be displayed
-        self.coords = self.input_data.coords
-        self.shapes = dict(zip(self.input_data.dims, self.input_data.shape))
-
-        # Size of the slider coordinate arrays
-        self.slider_nx = dict()
-        # Save dimensions tags for sliders, e.g. Dim.X
-        self.slider_dims = []
-        # Store coordinates of dimensions that will be in sliders
-        self.slider_x = dict()
-        for ax in axes:
-            self.slider_dims.append(ax)
-        self.ndim = len(self.slider_dims)
-        for dim in self.slider_dims:
-            key = str(dim)
-            self.slider_nx[key] = self.shapes[dim]
-            self.slider_x[key] = self.coords[dim].values
-        self.nslices = len(self.slider_dims)
-
-        # Initialise list for VBox container
-        self.vbox = []
-
-        # Initialise slider and label containers
-        self.lab = dict()
-        self.slider = dict()
-        self.buttons = dict()
-        # Default starting index for slider
-        indx = 0
-
-        # Now begin loop to construct sliders
-        button_values = [None] * (self.ndim - 2) + ['Y'] + ['X']
-        for i, dim in enumerate(self.slider_dims):
-            key = str(dim)
-            # Add a label widget to display the value of the z coordinate
-            self.lab[key] = widgets.Label(value=str(self.slider_x[key][indx]))
-            # Add an IntSlider to slide along the z dimension of the array
-            self.slider[key] = widgets.IntSlider(
-                value=indx,
-                min=0,
-                max=self.slider_nx[key] - 1,
-                step=1,
-                description=key,
-                continuous_update=True,
-                readout=False, disabled=(i >= self.ndim-2)
-            )
-            self.buttons[key] = widgets.ToggleButtons(
-                options=['X', 'Y'], description='',
-                value=button_values[i],
-                disabled=False,
-                button_style='')
-            setattr(self.buttons[key], "dim_str", key)
-            setattr(self.buttons[key], "dim", dim)
-            setattr(self.buttons[key], "old_value", self.buttons[key].value)
-            setattr(self.slider[key], "dim_str", key)
-            setattr(self.slider[key], "dim", dim)
-            self.buttons[key].on_msg(self.update_buttons)
-            # Add an observer to the slider
-            self.slider[key].observe(self.update_slice2d, names="value")
-            # Add coordinate name and unit
-            self.vbox.append(widgets.HBox([self.slider[key], self.lab[key],
-                                           self.buttons[key]]))
-        if self.ndim == 2:
-            for key in self.slider.keys():
-                self.slider[key].layout.display = 'none'
-                self.lab[key].value = key
 
         # Initialise Figure and VBox objects
         self.fig = None
@@ -242,7 +173,7 @@ class Slicer2d:
 
         # Call update_slice once to make the initial image
         self.update_axes()
-        self.update_slice2d(None)
+        self.update_slice(None)
         self.vbox = [self.fig] + self.vbox
         self.vbox = widgets.VBox(self.vbox)
         self.vbox.layout.align_items = 'center'
@@ -265,7 +196,7 @@ class Slicer2d:
                     self.slider[key].disabled = False
         owner.old_value = owner.value
         self.update_axes()
-        self.update_slice2d(None)
+        self.update_slice(None)
 
         return
 
@@ -274,36 +205,40 @@ class Slicer2d:
         for key, button in self.buttons.items():
             if self.slider[key].disabled:
                 but_val = button.value.lower()
-                but_dim = button.dim
                 for i in range(1 + self.show_variances):
                     if self.rasterize:
                         self.fig.data[i][but_val] = \
-                            self.coords[but_dim].values[[0, -1]]
+                            self.slider_x[key].values[[0, -1]]
                     else:
                         self.fig.data[i][but_val] = \
-                            self.coords[but_dim].values
+                            self.slider_x[key].values
                 if self.surface3d:
                     self.fig.layout.scene1["{}axis_title".format(
-                        but_val)] = axis_label(self.coords[but_dim])
+                        but_val)] = axis_label(self.slider_x[key],
+                                               name=self.slider_labels[key])
                     if self.show_variances:
                         self.fig.layout.scene2["{}axis_title".format(
-                            but_val)] = axis_label(self.coords[but_dim])
+                            but_val)] = axis_label(
+                                self.slider_x[key],
+                                name=self.slider_labels[key])
                 else:
                     if self.show_variances:
                         func = getattr(self.fig, 'update_{}axes'.format(
                             but_val))
                         for i in range(2):
                             func(title_text=axis_label(
-                                self.coords[but_dim]), row=1, col=i+1)
+                                self.slider_x[key],
+                                name=self.slider_labels[key]),
+                                row=1, col=i+1)
                     else:
                         axis_str = "{}axis".format(but_val)
                         self.fig.layout[axis_str]["title"] = axis_label(
-                            self.coords[but_dim])
+                            self.slider_x[key], name=self.slider_labels[key])
 
         return
 
     # Define function to update slices
-    def update_slice2d(self, change):
+    def update_slice(self, change):
         # The dimensions to be sliced have been saved in slider_dims
         vslice = self.input_data
         # Slice along dimensions with active sliders
@@ -311,7 +246,7 @@ class Slicer2d:
         for key, val in self.slider.items():
             if not val.disabled:
                 self.lab[key].value = str(
-                    self.slider_x[key][val.value])
+                    self.slider_x[key].values[val.value])
                 vslice = vslice[val.dim, val.value]
             else:
                 button_dims[self.buttons[key].value.lower() == "y"] = val.dim
