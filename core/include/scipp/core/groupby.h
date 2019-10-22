@@ -11,33 +11,55 @@
 
 namespace scipp::core {
 
-/// Helper class for implementing "split-apply-combine" functionality.
-class SCIPP_CORE_EXPORT GroupBy {
+/// Implementation detail of GroupBy.
+///
+/// Stores the actual grouping details, independent of the container type.
+class SCIPP_CORE_EXPORT GroupByGrouping {
 public:
-  GroupBy(const DatasetConstProxy &data, Variable &&key,
-          std::vector<std::vector<Slice>> &&groups)
-      : m_data(data), m_key(std::move(key)), m_groups(std::move(groups)) {}
+  GroupByGrouping(Variable &&key, std::vector<std::vector<Slice>> &&groups)
+      : m_key(std::move(key)), m_groups(std::move(groups)) {}
 
   scipp::index size() const noexcept { return scipp::size(m_groups); }
   Dim dim() const noexcept { return m_key.dims().inner(); }
-
-  Dataset mean(const Dim reductionDim) const;
-  Dataset sum(const Dim reductionDim) const;
+  const Variable &key() const noexcept { return m_key; }
+  const std::vector<std::vector<Slice>> &groups() const noexcept {
+    return m_groups;
+  }
 
 private:
-  Dataset makeReductionOutput(const Dim reductionDim) const;
-
-  DatasetConstProxy m_data;
   Variable m_key;
   std::vector<std::vector<Slice>> m_groups;
 };
 
-SCIPP_CORE_EXPORT GroupBy groupby(const DatasetConstProxy &dataset,
-                                  const std::string &labels,
-                                  const Dim targetDim);
-SCIPP_CORE_EXPORT GroupBy groupby(const DatasetConstProxy &dataset,
-                                  const std::string &labels,
-                                  const VariableConstProxy &bins);
+/// Helper class for implementing "split-apply-combine" functionality.
+template <class T> class SCIPP_CORE_EXPORT GroupBy {
+public:
+  GroupBy(const typename T::const_view_type &data, GroupByGrouping &&grouping)
+      : m_data(data), m_grouping(std::move(grouping)) {}
+
+  scipp::index size() const noexcept { return m_grouping.size(); }
+  Dim dim() const noexcept { return m_grouping.dim(); }
+  const Variable &key() const noexcept { return m_grouping.key(); }
+  const std::vector<std::vector<Slice>> &groups() const noexcept {
+    return m_grouping.groups();
+  }
+
+  T mean(const Dim reductionDim) const;
+  T sum(const Dim reductionDim) const;
+
+private:
+  T makeReductionOutput(const Dim reductionDim) const;
+
+  typename T::const_view_type m_data;
+  GroupByGrouping m_grouping;
+};
+
+SCIPP_CORE_EXPORT GroupBy<Dataset> groupby(const DatasetConstProxy &dataset,
+                                           const std::string &labels,
+                                           const Dim targetDim);
+SCIPP_CORE_EXPORT GroupBy<Dataset> groupby(const DatasetConstProxy &dataset,
+                                           const std::string &labels,
+                                           const VariableConstProxy &bins);
 
 } // namespace scipp::core
 
