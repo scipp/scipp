@@ -142,20 +142,14 @@ void Dataset::erase(const std::string_view name) {
 
 /// Return a const proxy to data and coordinates with given name.
 DataConstProxy Dataset::operator[](const std::string &name) const {
-  const auto it = m_data.find(name);
-  if (it == m_data.end())
-    throw std::out_of_range("Could not find data with name " +
-                            std::string(name) + ".");
-  return DataConstProxy(*this, *it);
+  expect::contains(*this, name);
+  return DataConstProxy(*this, *m_data.find(name));
 }
 
 /// Return a proxy to data and coordinates with given name.
 DataProxy Dataset::operator[](const std::string &name) {
-  const auto it = m_data.find(name);
-  if (it == m_data.end())
-    throw std::out_of_range("Could not find data with name " +
-                            std::string(name) + ".");
-  return DataProxy(*this, *it);
+  expect::contains(*this, name);
+  return DataProxy(*this, *m_data.find(name));
 }
 
 namespace extents {
@@ -733,11 +727,6 @@ MasksProxy DatasetProxy::masks() const noexcept {
                     makeProxyItems<std::string>(m_mutableDataset->m_masks),
                     slices());
 }
-void DatasetConstProxy::expectValidKey(const std::string &name) const {
-  if (std::find(m_indices.begin(), m_indices.end(), name) == m_indices.end())
-    throw std::out_of_range("Invalid key `" + std::string(name) +
-                            "` in Dataset access.");
-}
 
 bool DatasetConstProxy::contains(const std::string &name) const noexcept {
   return std::find(m_indices.begin(), m_indices.end(), name) != m_indices.end();
@@ -745,13 +734,13 @@ bool DatasetConstProxy::contains(const std::string &name) const noexcept {
 
 /// Return a const proxy to data and coordinates with given name.
 DataConstProxy DatasetConstProxy::operator[](const std::string &name) const {
-  expectValidKey(name);
+  expect::contains(*this, name);
   return {*m_dataset, *(*m_dataset).m_data.find(name), slices()};
 }
 
 /// Return a proxy to data and coordinates with given name.
 DataProxy DatasetProxy::operator[](const std::string &name) const {
-  expectValidKey(name);
+  expect::contains(*this, name);
   return {*m_mutableDataset, *(*m_mutableDataset).m_data.find(name), slices()};
 }
 
@@ -793,7 +782,7 @@ template <class A, class B> bool dataset_equals(const A &a, const B &b) {
     try {
       if (data != b[std::string(name)])
         return false;
-    } catch (std::out_of_range &) {
+    } catch (except::NotFoundError &) {
       return false;
     }
   }

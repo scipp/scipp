@@ -34,7 +34,7 @@ TEST(HistogramTest, fail_edges_not_sorted) {
   ASSERT_THROW(
       core::histogram(sparse["sparse"],
                       makeVariable<double>({Dim::Y, 6}, {1, 3, 2, 4, 5, 6})),
-      std::logic_error);
+      except::BinEdgeError);
 }
 
 auto make_single_sparse() {

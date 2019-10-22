@@ -977,7 +977,7 @@ TEST(DatasetSetData, labels) {
   d.setLabels(
       "l1", makeVariable<double>({Dim::X},
                                  {d.coords()[Dim::X].values<double>().size()}));
-  EXPECT_THROW(dense.setData("data_x_2", d["data_x"]), std::logic_error);
+  EXPECT_THROW(dense.setData("data_x_2", d["data_x"]), except::NotFoundError);
 }
 
 TEST(DatasetInPlaceStrongExceptionGuarantee, sparse) {
