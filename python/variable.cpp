@@ -10,6 +10,7 @@
 #include "scipp/core/except.h"
 #include "scipp/core/sort.h"
 #include "scipp/core/tag_util.h"
+#include "scipp/core/transform.h"
 #include "scipp/core/variable.h"
 
 #include "bind_data_access.h"
@@ -53,10 +54,29 @@ template <class T> struct MakeVariableDefaultInit {
                         const std::vector<scipp::index> &shape,
                         const units::Unit unit, const bool variances) {
     Dimensions dims(labels, shape);
-    auto var = variances ? scipp::core::makeVariableWithVariances<T>(dims)
-                         : scipp::core::makeVariable<T>(dims);
+    auto var =
+        variances ? makeVariableWithVariances<T>(dims) : makeVariable<T>(dims);
     var.setUnit(unit);
     return var;
+  }
+};
+
+template <class ST> struct MakeODFromNativePythonTypes {
+  template <class T> struct Maker {
+    static Variable apply(const units::Unit unit, const ST &value,
+                          const std::optional<ST> &variance) {
+      auto var = variance ? makeVariable<T>(T(value), T(variance.value()))
+                          : makeVariable<T>(T(value));
+      var.setUnit(unit);
+      return var;
+    }
+  };
+
+  static Variable make(const units::Unit unit, const ST &value,
+                       const std::optional<ST> &variance,
+                       const py::object &dtype) {
+    return CallDType<double, float, int64_t, int32_t, bool>::apply<Maker>(
+        scipp_dtype(dtype), unit, value, variance);
   }
 };
 
@@ -102,16 +122,34 @@ template <class T> void bind_init_0D(py::class_<Variable> &c) {
         py::arg("unit") = units::Unit(units::dimensionless));
 }
 
-void bind_init_0D(py::class_<Variable> &c) {
+// This function is used only to bind native python types: pyInt -> int64_t;
+// pyFloat -> double; pyBool->bool
+template <class T>
+void bind_init_0D_native_python_types(py::class_<Variable> &c) {
+  c.def(py::init([](const T &value, const std::optional<T> &variance,
+                    const units::Unit &unit, py::object &dtype) {
+          static_assert(std::is_same_v<T, int64_t> ||
+                        std::is_same_v<T, double> || std::is_same_v<T, bool>);
+          if (dtype.is_none())
+            return do_init_0D(value, variance, unit);
+          else {
+            return MakeODFromNativePythonTypes<T>::make(unit, value, variance,
+                                                        dtype);
+          }
+        }),
+        py::arg("value"), py::arg("variance") = std::nullopt,
+        py::arg("unit") = units::Unit(units::dimensionless),
+        py::arg("dtype") = py::none());
+}
+
+void bind_init_0D_numpy_types(py::class_<Variable> &c) {
   c.def(py::init([](py::buffer &b, const std::optional<py::buffer> &v,
                     const units::Unit &unit, py::object &dtype) {
           py::buffer_info info = b.request();
           if (info.ndim == 0) {
-            auto pyMakeVariable0D = py::module::import("scipp._scipp.core")
-                                        .attr("__make_variable_0d");
-
-            return py::cast<Variable>(
-                pyMakeVariable0D(py::array(b), v, unit, dtype));
+            auto arr = py::array(b);
+            auto varr = v ? std::optional{py::array(*v)} : std::nullopt;
+            return doMakeVariable({}, arr, varr, unit, dtype);
           } else if (info.ndim == 1 &&
                      scipp_dtype(dtype) == core::dtype<Eigen::Vector3d>) {
             return do_init_0D<Eigen::Vector3d>(
@@ -191,10 +229,10 @@ void init_variable(py::module &m) {
   bind_init_1D<int32_t>(variable);
   bind_init_1D<double>(variable);
   // This should be in the certain order
-  bind_init_0D(variable);
-  bind_init_0D<bool>(variable);
-  bind_init_0D<int64_t>(variable);
-  bind_init_0D<double>(variable);
+  bind_init_0D_numpy_types(variable);
+  bind_init_0D_native_python_types<bool>(variable);
+  bind_init_0D_native_python_types<int64_t>(variable);
+  bind_init_0D_native_python_types<double>(variable);
   bind_init_0D<py::object>(variable);
   //------------------------------------
 
@@ -251,12 +289,6 @@ void init_variable(py::module &m) {
   bind_data_properties(variableProxy);
 
   py::implicitly_convertible<Variable, VariableConstProxy>();
-
-  m.def("__make_variable_0d",
-        [](py::array val, std::optional<py::array> &var, const units::Unit unit,
-           const py::object &dtype) {
-          return doMakeVariable({}, val, var, unit, dtype);
-        });
 
   m.def("reshape",
         [](const VariableProxy &self, const std::vector<Dim> &labels,
@@ -325,7 +357,7 @@ void init_variable(py::module &m) {
         :seealso: :py:class:`scipp.sum`
         :return: New variable containing the mean.
         :rtype: Variable)");
-  m.def("norm", py::overload_cast<const Variable &>(&norm),
+  m.def("norm", py::overload_cast<const VariableConstProxy &>(&norm),
         py::call_guard<py::gil_scoped_release>(), R"(
         Element-wise norm.
 
@@ -351,7 +383,7 @@ void init_variable(py::module &m) {
         py::call_guard<py::gil_scoped_release>(),
         "Split a Variable along a given Dimension.");
 
-  m.def("sqrt", [](const Variable &self) { return sqrt(self); },
+  m.def("sqrt", [](const VariableConstProxy &self) { return sqrt(self); },
         py::call_guard<py::gil_scoped_release>(), R"(
         Element-wise square-root.
 

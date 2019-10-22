@@ -4,7 +4,7 @@
 
 # Scipp imports
 from . import config
-from .tools import axis_label, parse_colorbar, render_plot
+from .tools import axis_label, parse_colorbar, render_plot, Slicer
 from .plot_2d import Slicer2d
 
 # Other imports
@@ -70,73 +70,15 @@ def plot_3d(input_data, axes=None, contours=False, cb=None, filename=None,
     return
 
 
-class Slicer3d:
+class Slicer3d(Slicer):
 
     def __init__(self, layout, input_data, axes,
                  value_name, cb, show_variances):
 
-        self.input_data = input_data
-        self.show_variances = ((self.input_data.variances is not None) and
-                               show_variances)
-        self.cb = cb
+        super().__init__(input_data, axes, value_name, cb, show_variances,
+                         button_options=['X', 'Y', 'Z'])
+
         self.cube = None
-
-        # Get the dimensions of the image to be displayed
-        self.coords = self.input_data.coords
-        self.shapes = dict(zip(self.input_data.dims, self.input_data.shape))
-
-        # Size of the slider coordinate arrays
-        self.slider_nx = dict()
-        # Save dimensions tags for sliders, e.g. Dim.X
-        self.slider_dims = []
-        # Store coordinates of dimensions that will be in sliders
-        self.slider_x = dict()
-        for ax in axes:
-            self.slider_dims.append(ax)
-        self.ndim = len(self.slider_dims)
-        for dim in self.slider_dims:
-            key = str(dim)
-            self.slider_nx[key] = self.shapes[dim]
-            self.slider_x[key] = self.coords[dim].values
-        self.nslices = len(self.slider_dims)
-
-        # Initialise list for VBox container
-        self.vbox = []
-
-        # Initialise slider and label containers
-        self.lab = dict()
-        self.slider = dict()
-        self.buttons = dict()
-
-        # Now begin loop to construct sliders
-        button_values = [None] * (self.ndim - 3) + ['Z'] + ['Y'] + ['X']
-        for i, dim in enumerate(self.slider_dims):
-            key = str(dim)
-            indx = (self.slider_nx[key] - 1) // 2
-            # Add a label widget to display the value of the z coordinate
-            self.lab[key] = widgets.Label(value=str(self.slider_x[key][indx]))
-            # Add an IntSlider to slide along the z dimension of the array
-            self.slider[key] = widgets.IntSlider(value=indx, min=0,
-                                                 max=self.slider_nx[key] - 1,
-                                                 step=1, description=key,
-                                                 continuous_update=True,
-                                                 readout=False, disabled=False)
-            self.buttons[key] = widgets.ToggleButtons(
-                options=['X', 'Y', 'Z'], description='',
-                value=button_values[i],
-                disabled=False,
-                button_style='')
-            setattr(self.buttons[key], "dim_str", key)
-            setattr(self.buttons[key], "dim", dim)
-            setattr(self.buttons[key], "old_value", self.buttons[key].value)
-            setattr(self.slider[key], "dim_str", key)
-            setattr(self.slider[key], "dim", dim)
-            self.buttons[key].on_msg(self.update_buttons)
-            # Add an observer to the slider
-            self.slider[key].observe(self.update_slice3d, names="value")
-            # Add coordinate name and unit
-            self.vbox.append(widgets.HBox([self.slider[key], self.lab[key],
-                                           self.buttons[key]]))
 
         # Initialise Figure and VBox objects
         self.fig = None
@@ -215,7 +157,7 @@ class Slicer3d:
         for key, button in self.buttons.items():
             if button.value is not None:
                 titles[button.value.lower()] = axis_label(
-                    self.coords[button.dim])
+                    self.slider_x[key], name=self.slider_labels[key])
                 buttons_dims[button.value.lower()] = button.dim_str
 
         axes_dict = dict(xaxis_title=titles["x"],
@@ -239,7 +181,7 @@ class Slicer3d:
         for key, val in self.slider.items():
             if self.buttons[key].value is None:
                 self.lab[key].value = str(
-                    self.slider_x[key][val.value])
+                    self.slider_x[key].values[val.value])
                 self.cube = self.cube[val.dim, val.value]
 
         # The dimensions to be sliced have been saved in slider_dims
@@ -247,7 +189,7 @@ class Slicer3d:
         vslices = dict()
         for key, val in self.slider.items():
             if self.buttons[key].value is not None:
-                loc = self.slider_x[key][val.value]
+                loc = self.slider_x[key].values[val.value]
                 self.lab[key].value = str(loc)
                 vslices[self.buttons[key].value.lower()] = \
                     {"slice": self.cube[val.dim, val.value], "loc": loc}
@@ -259,8 +201,8 @@ class Slicer3d:
         for i, (key, val) in enumerate(sorted(vslices.items())):
             if update_coordinates:
                 xx, yy = np.meshgrid(
-                    self.slider_x[button_dims[permutations[key][0]]],
-                    self.slider_x[button_dims[permutations[key][1]]])
+                    self.slider_x[button_dims[permutations[key][0]]].values,
+                    self.slider_x[button_dims[permutations[key][1]]].values)
                 for j in range(1 + self.show_variances):
                     k = i + 3 * j
                     setattr(self.fig.data[k], key,
@@ -276,14 +218,14 @@ class Slicer3d:
         return
 
     # Define function to update slices
-    def update_slice3d(self, change):
+    def update_slice(self, change):
         if self.buttons[change["owner"].dim_str].value is None:
             self.update_cube(update_coordinates=False)
         else:
             # Update only one slice
             # The dimensions to be sliced have been saved in slider_dims
             key = change["owner"].dim_str
-            loc = self.slider_x[key][change["new"]]
+            loc = self.slider_x[key].values[change["new"]]
             self.lab[key].value = str(loc)
             vslice = self.cube[change["owner"].dim, change["new"]]
 

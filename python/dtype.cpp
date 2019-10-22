@@ -32,34 +32,13 @@ scipp::core::DType scipp_dtype(const py::dtype &type) {
   throw std::runtime_error("Unsupported numpy dtype.");
 }
 
-// temporary solution untill https://github.com/pybind/pybind11/issues/1538
-// is not solved
-scipp::core::DType scipp_dtype_fall_back(const py::object &type) {
-  py::object numpy = py::module::import("numpy");
-  py::object maketype = numpy.attr("dtype");
-  py::object new_type = maketype(type);
-  return scipp_dtype(new_type.cast<py::dtype>());
-}
-
 scipp::core::DType scipp_dtype(const py::object &type) {
-  // The manual conversion from py::object is solving a number of problems:
-  // 1. On Travis' clang (7.0.0) we get a weird error (ImportError:
-  //    UnicodeDecodeError: 'utf-8' codec can't decode byte 0xe1 in position 2:
-  //    invalid continuation byte) when using the DType enum as a default value
-  //    for py::arg. Importing the module fails.
-  // 2. We want to support both numpy dtype as well as scipp dtype.
-  // 3. In the implementation below, `type.cast<py::dtype>()` always succeeds,
-  //    yielding a unsupported numpy dtype. Therefore we need to try casting to
-  //    `DType` first, which works for some reason.
+  // Check None first, then native scipp Dtype, then numpy.dtype
   if (type.is_none())
     return DType::Unknown;
   try {
     return type.cast<DType>();
   } catch (const py::cast_error &) {
-    try {
-      return scipp_dtype(type.cast<py::dtype>());
-    } catch (...) {
-      return scipp_dtype_fall_back(type);
-    }
+    return scipp_dtype(py::dtype::from_args(type));
   }
 }

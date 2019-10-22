@@ -143,9 +143,9 @@ public:
   using Unit_impl<Unit>::Unit_impl;
 };
 
-SCIPP_UNITS_DECLARE_DIMENSIONS(DSpacing, Energy, EnergyTransfer, Position, Q,
-                               Qx, Qy, Qz, Row, Spectrum, Temperature, Time,
-                               Tof, Wavelength, X, Y, Z)
+SCIPP_UNITS_DECLARE_DIMENSIONS(Detector, DSpacing, Energy, EnergyTransfer,
+                               Position, Q, Qx, Qy, Qz, Row, Spectrum,
+                               Temperature, Time, Tof, Wavelength, X, Y, Z)
 
 } // namespace neutron
 
