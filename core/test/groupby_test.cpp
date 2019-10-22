@@ -172,6 +172,22 @@ TEST(GroupbyTest, flatten_coord_only) {
   EXPECT_EQ(groupby(a, "labels", Dim::Z).flatten(Dim::Y), expected);
 }
 
+TEST(GroupbyTest, flatten_coord_and_labels) {
+  DataArray a{
+      std::nullopt,
+      {{Dim::X, make_sparse_in()}},
+      {{"sparse", make_sparse_in() * 0.3},
+       {"labels", makeVariable<double>({Dim::Y, 3}, units::m, {1, 1, 3})}}};
+
+  DataArray expected{
+      std::nullopt,
+      {{Dim::X, make_sparse_out()},
+       {Dim::Z, makeVariable<double>({Dim::Z, 2}, units::m, {1, 3})}},
+      {{"sparse", make_sparse_out() * 0.3}}};
+
+  EXPECT_EQ(groupby(a, "labels", Dim::Z).flatten(Dim::Y), expected);
+}
+
 TEST(GroupbyTest, flatten_coord_and_data) {
   DataArray a{
       make_sparse_in() * 1.5,

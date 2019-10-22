@@ -200,8 +200,14 @@ DataArray resize(const DataConstProxy &a, const Dim dim,
   if (a.dims().sparse()) {
     const Dim sparseDim = a.dims().sparseDim();
     // DataArray out(a.slice({dim, 0}));
-    return DataArray{std::nullopt,
-                     {{sparseDim, resize(a.coords()[sparseDim], dim, size)}}};
+    std::map<std::string, Variable> labels;
+    for (auto &&[name, label] : a.labels())
+      if (label.dims().sparse())
+        labels.emplace(name, resize(label, dim, size));
+    return DataArray{a.hasData() ? resize(a.data(), dim, size)
+                                 : std::optional<Variable>{},
+                     {{sparseDim, resize(a.coords()[sparseDim], dim, size)}},
+                     std::move(labels)};
   } else {
     return apply_to_data_and_drop_dim(
         a, [](auto &&... _) { return resize(_...); }, dim, size);

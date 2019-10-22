@@ -52,6 +52,10 @@ template <class T> T GroupBy<T>::flatten(const Dim reductionDim) const {
         flatten_impl(out_slice.coords()[sparseDim], array.coords()[sparseDim]);
         if (out.hasData())
           flatten_impl(out_slice.data(), array.data());
+        for (auto &&[name, label] : out_slice.labels()) {
+          if (label.dims().sparse())
+            flatten_impl(label, array.labels()[name]);
+        }
       }
     }
   }
