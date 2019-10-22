@@ -25,10 +25,10 @@ Dataset makeDatasetWithBeamline() {
   beamline.setLabels("component_info", makeVariable<Dataset>(components));
   // TODO Need fuzzy comparison for variables to write a convenient test with
   // detectors away from the axes.
-  beamline.setCoord(Dim::Position, makeVariable<Eigen::Vector3d>(
-                                       {Dim::Position, 2}, units::m,
-                                       {Eigen::Vector3d{1.0, 0.0, 0.01},
-                                        Eigen::Vector3d{0.0, 1.0, 0.01}}));
+  beamline.setLabels("position", makeVariable<Eigen::Vector3d>(
+                                     {Dim::Spectrum, 2}, units::m,
+                                     {Eigen::Vector3d{1.0, 0.0, 0.01},
+                                      Eigen::Vector3d{0.0, 1.0, 0.01}}));
   return beamline;
 }
 
@@ -47,14 +47,14 @@ TEST_F(BeamlineTest, basics) {
 
 TEST_F(BeamlineTest, l2) {
   ASSERT_EQ(l2(dataset),
-            makeVariable<double>({Dim::Position, 2}, units::m, {1.0, 1.0}));
+            makeVariable<double>({Dim::Spectrum, 2}, units::m, {1.0, 1.0}));
 }
 
 template <class T> constexpr T pi = T(3.1415926535897932385L);
 
 TEST_F(BeamlineTest, scattering_angle) {
   ASSERT_EQ(two_theta(dataset),
-            makeVariable<double>({Dim::Position, 2}, units::rad,
+            makeVariable<double>({Dim::Spectrum, 2}, units::rad,
                                  {pi<double> / 2, pi<double> / 2}));
   ASSERT_EQ(scattering_angle(dataset), 0.5 * two_theta(dataset));
 }

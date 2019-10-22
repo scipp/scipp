@@ -13,10 +13,12 @@
 namespace scipp::core {
 class Dataset;
 class Variable;
+class VariableConstProxy;
 } // namespace scipp::core
 
 namespace scipp::neutron {
 
+SCIPP_NEUTRON_EXPORT core::VariableConstProxy position(const core::Dataset &d);
 SCIPP_NEUTRON_EXPORT core::Variable source_position(const core::Dataset &d);
 SCIPP_NEUTRON_EXPORT core::Variable sample_position(const core::Dataset &d);
 SCIPP_NEUTRON_EXPORT core::Variable l1(const core::Dataset &d);
