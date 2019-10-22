@@ -41,7 +41,7 @@ set(SRC_FILES
 
 set(LINK_TYPE "STATIC")
 if(DYNAMIC_LIB)
-  set(LINK_TYPE "SHARED")
+  set(LINK_TYPE "SHARED" ../python/Binder.h)
 endif(DYNAMIC_LIB)
 
 add_library(${TARGET_NAME} ${LINK_TYPE} ${INC_FILES} ${SRC_FILES})

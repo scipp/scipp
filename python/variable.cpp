@@ -20,6 +20,7 @@
 #include "numpy.h"
 #include "pybind11.h"
 #include "rename.h"
+#include "Binder.h"
 
 using namespace scipp;
 using namespace scipp::core;
@@ -214,13 +215,15 @@ void bind_init_1d_list(py::class_<Variable> &c) {
 }
 
 void init_variable(py::module &m) {
-  py::class_<Variable> variable(m, "Variable", R"(
+  bind::Binder<py::class_<Variable>> binder(m, "Variable", R"(
     Array of values with dimension labels and a unit, optionally including an array of variances.)");
-  bind_init_0D<DataArray>(variable);
-  bind_init_0D<Dataset>(variable);
-  bind_init_0D<std::string>(variable);
-  bind_init_0D<Eigen::Vector3d>(variable);
-  variable.def(py::init<const VariableProxy &>())
+
+  binder.append({bind_init_0D<DataArray>, bind::Priority::NativeScipp});
+  binder.append({bind_init_0D<Dataset>, bind::Priority::NativeScipp});
+  binder.append({bind_init_0D<std::string>, bind::Priority::NativeScipp});
+  binder.append({bind_init_0D<Eigen::Vector3d>, bind::Priority::NativeScipp});
+
+  binder.append({[](py::class_<Variable>& variable) {variable.def(py::init<const VariableProxy &>())
       .def(py::init(&makeVariableDefaultInit),
            py::arg("dims") = std::vector<Dim>{},
            py::arg("shape") = std::vector<scipp::index>{},
@@ -246,20 +249,20 @@ void init_variable(py::module &m) {
            py::is_operator())
       .def("__rmul__", [](Variable &a, double &b) { return a * b; },
            py::is_operator())
-      .def("__repr__", [](const Variable &self) { return to_string(self); });
+      .def("__repr__", [](const Variable &self) { return to_string(self); });}, bind::Priority::NumpyArray});
 
-  bind_init_1d_list(variable);
-  // For some reason, pybind11 does not convert python lists to py::array,
-  // so we need to bind the lists manually.
-  // TODO: maybe there is a better way to do this?
-  //  bind_init_1D<int32_t>(variable);
-  //  bind_init_1D<double>(variable);
-  // This should be in the certain order
-  bind_init_0D_numpy_types(variable);
-  bind_init_0D_native_python_types<bool>(variable);
-  bind_init_0D_native_python_types<int64_t>(variable);
-  bind_init_0D_native_python_types<double>(variable);
-  bind_init_0D<py::object>(variable);
+
+  binder.append({bind_init_1d_list, bind::Priority::PythonList});
+
+  binder.append({bind_init_0D_numpy_types, bind::Priority::NumpyBuffer});
+  binder.append({[](auto& variable) {
+    bind_init_0D_native_python_types<bool>(variable);
+    bind_init_0D_native_python_types<int64_t>(variable);
+    bind_init_0D_native_python_types<double>(variable);
+  }, bind::Priority::NativePython});
+  binder.append({bind_init_0D<py::object>, bind::Priority::PythonObject});
+  auto variable = binder.bind();
+
   //------------------------------------
 
   py::class_<VariableConstProxy>(m, "VariableConstProxy")
