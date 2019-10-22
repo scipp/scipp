@@ -537,6 +537,7 @@ public:
 
   /// Return a const proxy to the coordinate for given dimension.
   VariableConstProxy operator[](const Key key) const {
+    expect::contains(*this, key);
     return detail::makeSlice(*m_items.at(key).first, m_slices);
   }
 
@@ -583,7 +584,7 @@ public:
       try {
         if (data != other[name])
           return false;
-      } catch (std::out_of_range &) {
+      } catch (except::NotFoundError &) {
         return false;
       }
     }
@@ -626,6 +627,7 @@ public:
 
   /// Return a proxy to the coordinate for given dimension.
   VariableProxy operator[](const typename Base::key_type key) const {
+    expect::contains(*this, key);
     return detail::makeSlice(*Base::items().at(key).second, Base::slices());
   }
 

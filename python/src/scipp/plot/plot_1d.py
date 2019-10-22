@@ -36,7 +36,7 @@ def plot_1d(input_data, backend=None, logx=False, logy=False, logxy=False,
             histogram = True
 
         # Define trace
-        trace = dict(x=x, y=y, name=ylab, type="scattergl")
+        trace = dict(x=x, y=y, name=name, type="scattergl")
         if histogram:
             trace["line"] = {"shape": "hv"}
             trace["y"] = np.concatenate((trace["y"], [0.0]))
@@ -64,7 +64,7 @@ def plot_1d(input_data, backend=None, logx=False, logy=False, logxy=False,
 
     layout = dict(
         xaxis=dict(title=xlab),
-        yaxis=dict(),
+        yaxis=dict(title=ylab),
         showlegend=True,
         legend=dict(x=0.0, y=1.15, orientation="h"),
         height=config.height

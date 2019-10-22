@@ -23,9 +23,6 @@ def render_plot(static_fig=None, interactive_fig=None, backend=None,
     import IPython.display as disp
     from plotly.io import write_html, write_image, to_image
 
-    if backend is None:
-        backend = config.backend
-
     if filename is not None:
         if filename.endswith(".html"):
             write_html(fig=static_fig, file=filename, auto_open=False)
@@ -65,21 +62,23 @@ def centers_to_edges(x):
     return np.concatenate([[2.0 * x[0] - e[0]], e, [2.0 * x[-1] - e[-1]]])
 
 
-def axis_label(var, name=None, log=False, replace_dim=True):
+def axis_label(var=None, name=None, log=False, replace_dim=True):
     """
     Make an axis label with "Name [unit]"
     """
+    label = ""
     if name is not None:
         label = name
-    else:
+    elif var is not None:
         label = str(var.dims[0])
         if replace_dim:
             label = label.replace("Dim.", "")
 
     if log:
         label = "log\u2081\u2080(" + label + ")"
-    if var.unit != dimensionless:
-        label += " [{}]".format(var.unit)
+    if var is not None:
+        if var.unit != dimensionless:
+            label += " [{}]".format(var.unit)
     return label
 
 
@@ -131,7 +130,7 @@ def get_1d_axes(var, axes, name):
     x = xcoord.values
     xlab = axis_label(var=xcoord, name=lab)
     y = var.values
-    ylab = axis_label(var=var, name=name)
+    ylab = axis_label(var=var, name="")
     return xlab, ylab, x, y
 
 
