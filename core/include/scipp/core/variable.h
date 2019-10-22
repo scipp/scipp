@@ -907,6 +907,8 @@ SCIPP_CORE_EXPORT Variable permute(const Variable &var, const Dim dim,
 SCIPP_CORE_EXPORT Variable rebin(const VariableConstProxy &var, const Dim dim,
                                  const VariableConstProxy &oldCoord,
                                  const VariableConstProxy &newCoord);
+SCIPP_CORE_EXPORT Variable resize(const VariableConstProxy &var, const Dim dim,
+                                  const scipp::index size);
 SCIPP_CORE_EXPORT Variable reverse(Variable var, const Dim dim);
 SCIPP_CORE_EXPORT Variable sqrt(const VariableConstProxy &var);
 

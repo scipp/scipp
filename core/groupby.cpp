@@ -22,15 +22,7 @@ namespace scipp::core {
 /// - Default-init data.
 template <class T>
 T GroupBy<T>::makeReductionOutput(const Dim reductionDim) const {
-  constexpr auto init_var = [](const VariableConstProxy &var, const Dim dim_,
-                               const scipp::index size_) {
-    auto dims = var.dims();
-    dims.resize(dim_, size_);
-    return Variable(var, dims);
-  };
-  auto out = apply_to_items(
-      m_data, [](auto &&... _) { return apply_to_data_and_drop_dim(_...); },
-      init_var, reductionDim, size());
+  auto out = resize(m_data, reductionDim, size());
   out.rename(reductionDim, dim());
   out.setCoord(dim(), key());
   return out;
@@ -59,7 +51,7 @@ template <class T> T GroupBy<T>::sum(const Dim reductionDim) const {
   return out;
 }
 
-/// Apply mean to groups and return combined dataset.
+/// Apply mean to groups and return combined data.
 template <class T> T GroupBy<T>::mean(const Dim reductionDim) const {
   // 1. Sum into output slices
   auto out = sum(reductionDim);

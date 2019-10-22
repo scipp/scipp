@@ -216,6 +216,13 @@ void swap(Variable &var, const Dim dim, const scipp::index a,
   var.slice({dim, b}).assign(tmp);
 }
 
+Variable resize(const VariableConstProxy &var, const Dim dim,
+                const scipp::index size) {
+  auto dims = var.dims();
+  dims.resize(dim, size);
+  return Variable(var, dims);
+}
+
 Variable reverse(Variable var, const Dim dim) {
   const auto size = var.dims()[dim];
   for (scipp::index i = 0; i < size / 2; ++i)

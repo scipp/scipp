@@ -195,6 +195,25 @@ Dataset rebin(const DatasetConstProxy &d, const Dim dim,
                         coord);
 }
 
+DataArray resize(const DataConstProxy &a, const Dim dim,
+                 const scipp::index size) {
+  if (a.dims().sparse()) {
+    const Dim sparseDim = a.dims().sparseDim();
+    // DataArray out(a.slice({dim, 0}));
+    return DataArray{std::nullopt,
+                     {{sparseDim, resize(a.coords()[sparseDim], dim, size)}}};
+  } else {
+    return apply_to_data_and_drop_dim(
+        a, [](auto &&... _) { return resize(_...); }, dim, size);
+  }
+}
+
+Dataset resize(const DatasetConstProxy &d, const Dim dim,
+               const scipp::index size) {
+  return apply_to_items(d, [](auto &&... _) { return resize(_...); }, dim,
+                        size);
+}
+
 /// Return one of the inputs if they are the same, throw otherwise.
 VariableConstProxy same(const VariableConstProxy &a,
                         const VariableConstProxy &b) {

@@ -1304,6 +1304,11 @@ SCIPP_CORE_EXPORT DataArray rebin(const DataConstProxy &a, const Dim dim,
 SCIPP_CORE_EXPORT Dataset rebin(const DatasetConstProxy &d, const Dim dim,
                                 const VariableConstProxy &coord);
 
+SCIPP_CORE_EXPORT DataArray resize(const DataConstProxy &a, const Dim dim,
+                                   const scipp::index size);
+SCIPP_CORE_EXPORT Dataset resize(const DatasetConstProxy &d, const Dim dim,
+                                 const scipp::index size);
+
 SCIPP_CORE_EXPORT VariableConstProxy same(const VariableConstProxy &a,
                                           const VariableConstProxy &b);
 
