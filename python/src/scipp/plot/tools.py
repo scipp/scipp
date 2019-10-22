@@ -106,7 +106,10 @@ def axis_to_dim_label(dataset, axis):
         lab = None
         var = dataset.coords[dim]
     elif isinstance(axis, str):
-        dim = dataset.labels[axis].dims[0]
+        # By convention, the last dim of the labels is the inner dimension,
+        # but note that for now two-dimensional labels are not supported in
+        # the plotting.
+        dim = dataset.labels[axis].dims[-1]
         lab = axis
         var = dataset.labels[lab]
     else:
