@@ -28,7 +28,37 @@ T GroupBy<T>::makeReductionOutput(const Dim reductionDim) const {
   return out;
 }
 
-/// Apply sum to groups and return combined dataset.
+/// Flatten provided dimension in each group and return combined data.
+///
+/// This only supports sparse data.
+template <class T> T GroupBy<T>::flatten(const Dim reductionDim) const {
+  auto out = makeReductionOutput(reductionDim);
+  // Apply to each group, storing result in output slice
+  for (scipp::index group = 0; group < size(); ++group) {
+    const auto out_slice = out.slice({dim(), group});
+    if constexpr (std::is_same_v<T, Dataset>) {
+      /*
+      for (const auto &[name, item] : m_data) {
+        const auto out_data = out_slice[name].data();
+        for (const auto &slice : groups()[group]) {
+          sum_impl(out_data, item.data().slice(slice));
+        }
+      }
+      */
+    } else {
+      const Dim sparseDim = out.dims().sparseDim();
+      for (const auto &slice : groups()[group]) {
+        const auto &array = m_data.slice(slice);
+        flatten_impl(out_slice.coords()[sparseDim], array.coords()[sparseDim]);
+        if (out.hasData())
+          flatten_impl(out_slice.data(), array.data());
+      }
+    }
+  }
+  return out;
+}
+
+/// Apply sum to groups and return combined data.
 template <class T> T GroupBy<T>::sum(const Dim reductionDim) const {
   auto out = makeReductionOutput(reductionDim);
   // Apply to each group, storing result in output slice

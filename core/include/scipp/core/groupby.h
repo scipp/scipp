@@ -44,6 +44,7 @@ public:
     return m_grouping.groups();
   }
 
+  T flatten(const Dim reductionDim) const;
   T mean(const Dim reductionDim) const;
   T sum(const Dim reductionDim) const;
 

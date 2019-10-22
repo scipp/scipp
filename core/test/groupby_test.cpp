@@ -4,6 +4,8 @@
 
 #include "scipp/core/groupby.h"
 
+#include "test_macros.h"
+
 using namespace scipp;
 using namespace scipp::core;
 
@@ -137,4 +139,49 @@ TEST(GroupbyTest, two_bin) {
   const auto group1 = d.slice({Dim::X, 2, 4});
   EXPECT_EQ(groups.sum(Dim::X).slice({Dim::Z, 1}), sum(group1, Dim::X));
   EXPECT_EQ(groups.mean(Dim::X).slice({Dim::Z, 1}), mean(group1, Dim::X));
+}
+
+auto make_sparse_in() {
+  auto var = makeVariable<double>({Dim::Y, Dim::X}, {3, Dimensions::Sparse});
+  const auto &var_ = var.sparseValues<double>();
+  var_[0] = {1, 2, 3};
+  var_[1] = {4, 5};
+  var_[2] = {6, 7};
+  return var;
+}
+
+auto make_sparse_out() {
+  auto var = makeVariable<double>({Dim::Z, Dim::X}, {2, Dimensions::Sparse});
+  const auto &var_ = var.sparseValues<double>();
+  var_[0] = {1, 2, 3, 4, 5};
+  var_[1] = {6, 7};
+  return var;
+}
+
+TEST(GroupbyTest, flatten_coord_only) {
+  DataArray a{
+      std::nullopt,
+      {{Dim::X, make_sparse_in()}},
+      {{"labels", makeVariable<double>({Dim::Y, 3}, units::m, {1, 1, 3})}}};
+
+  DataArray expected{
+      std::nullopt,
+      {{Dim::X, make_sparse_out()},
+       {Dim::Z, makeVariable<double>({Dim::Z, 2}, units::m, {1, 3})}}};
+
+  EXPECT_EQ(groupby(a, "labels", Dim::Z).flatten(Dim::Y), expected);
+}
+
+TEST(GroupbyTest, flatten_coord_and_data) {
+  DataArray a{
+      make_sparse_in() * 1.5,
+      {{Dim::X, make_sparse_in()}},
+      {{"labels", makeVariable<double>({Dim::Y, 3}, units::m, {1, 1, 3})}}};
+
+  DataArray expected{
+      make_sparse_out() * 1.5,
+      {{Dim::X, make_sparse_out()},
+       {Dim::Z, makeVariable<double>({Dim::Z, 2}, units::m, {1, 3})}}};
+
+  EXPECT_EQ(groupby(a, "labels", Dim::Z).flatten(Dim::Y), expected);
 }
