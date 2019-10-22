@@ -159,7 +159,34 @@ template <class T> struct MakeBinGroups {
   }
 };
 
-/// Create GroupBy object as part of "split-apply-combine" mechanism.
+/// Create GroupBy<DataArray> object as part of "split-apply-combine" mechanism.
+///
+/// Groups the slices of `array` according to values in given by `labels`.
+/// Grouping of labels will create a new coordinate for `targetDim` in a later
+/// apply/combine step.
+GroupBy<DataArray> groupby(const DataConstProxy &array,
+                           const std::string &labels, const Dim targetDim) {
+  const auto &key = array.labels()[labels];
+  return {array, CallDType<double, float, int64_t, int32_t, bool,
+                           std::string>::apply<MakeGroups>(key.dtype(), key,
+                                                           targetDim)};
+}
+
+/// Create GroupBy<DataArray> object as part of "split-apply-combine" mechanism.
+///
+/// Groups the slices of `array` according to values in given by `labels`.
+/// Grouping of labels is according to given `bins`, which will be added as a
+/// new coordinate to the output in a later apply/combine step.
+GroupBy<DataArray> groupby(const DataConstProxy &array,
+                           const std::string &labels,
+                           const VariableConstProxy &bins) {
+  const auto &key = array.labels()[labels];
+  return {array,
+          CallDType<double, float, int64_t, int32_t>::apply<MakeBinGroups>(
+              key.dtype(), key, bins)};
+}
+
+/// Create GroupBy<Dataset> object as part of "split-apply-combine" mechanism.
 ///
 /// Groups the slices of `dataset` according to values in given by `labels`.
 /// Grouping of labels will create a new coordinate for `targetDim` in a later
@@ -172,7 +199,7 @@ GroupBy<Dataset> groupby(const DatasetConstProxy &dataset,
                                                              targetDim)};
 }
 
-/// Create GroupBy object as part of "split-apply-combine" mechanism.
+/// Create GroupBy<Dataset> object as part of "split-apply-combine" mechanism.
 ///
 /// Groups the slices of `dataset` according to values in given by `labels`.
 /// Grouping of labels is according to given `bins`, which will be added as a
@@ -186,6 +213,7 @@ GroupBy<Dataset> groupby(const DatasetConstProxy &dataset,
               key.dtype(), key, bins)};
 }
 
+template class GroupBy<DataArray>;
 template class GroupBy<Dataset>;
 
 } // namespace scipp::core
