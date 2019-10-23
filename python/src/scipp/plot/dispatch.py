@@ -4,7 +4,7 @@
 
 
 def dispatch(input_data, ndim=0, name=None, backend=None, collapse=None,
-             projection="2d", **kwargs):
+             sparse_dim=None, bins=None, projection="2d", **kwargs):
     """
     Function to automatically dispatch the input dataset to the appropriate
     plotting function depending on its dimensions
@@ -35,6 +35,14 @@ def dispatch(input_data, ndim=0, name=None, backend=None, collapse=None,
         from .plot_1d import plot_1d
         from .plot_2d import plot_2d
         from .plot_3d import plot_3d
+        from .plot_sparse import histogram_sparse_data, plot_sparse
+
+        if sparse_dim is not None:
+            if bins is not None:
+                input_data = histogram_sparse_data(input_data, sparse_dim, bins)
+            else:
+                plot_sparse(input_data, ndim=ndim, backend=backend, **kwargs)
+                return
 
         if ndim == 1:
             plot_1d(input_data, backend=backend, **kwargs)

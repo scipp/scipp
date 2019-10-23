@@ -39,10 +39,10 @@ def plot(input_data, collapse=None, backend=None, color=None, **kwargs):
         input_data = [input_data]
 
     tobeplotted = dict()
+    sparse_dim = dict()
     for ds in input_data:
         for name, var in ds:
-            coords = var.coords
-            ndims = len(coords)
+            ndims = len(var.dims)
             if ndims == 1:
                 # Construct a key from the dimension and the unit, to group
                 # compatible data together.
@@ -52,7 +52,9 @@ def plot(input_data, collapse=None, backend=None, color=None, **kwargs):
                 else:
                     tobeplotted[key] = [ndims, {name: ds[name]}]
             elif ndims > 1:
-                tobeplotted[name] = [ndims, ds[name]]
+                key = name
+                tobeplotted[key] = [ndims, ds[name]]
+            sparse_dim[key] = var.sparse_dim
 
     # Prepare color containers
     auto_color = False
@@ -81,7 +83,8 @@ def plot(input_data, collapse=None, backend=None, color=None, **kwargs):
                                         color=color, **kwargs)
         else:
             output[key] = dispatch(input_data=val[1], ndim=val[0], name=name,
-                                   backend=backend, color=color, **kwargs)
+                                   backend=backend, color=color, sparse_dim=sparse_dim[key],
+                                   **kwargs)
 
     if backend == "matplotlib":
         return output
