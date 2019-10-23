@@ -4,7 +4,7 @@
 
 # Scipp imports
 from . import config
-from .tools import edges_to_centers, render_plot, get_1d_axes
+from .tools import axis_label, render_plot
 from .._scipp import core as sc
 
 # Other imports
@@ -27,16 +27,22 @@ def flatten_sparse_data():
 def visit_sparse_data(input_data, sparse_dim, return_scatter_array=False):
     xmin =  1.0e30
     xmax = -1.0e30
-    ndims = len(input_data.dims)
     vslice = input_data
     dims = input_data.dims
     shapes = input_data.shape
+    ndims = len(dims)
     # Construct tuple of ranges over dimension shapes
     indices = tuple()
     for i in range(ndims - 1):
         indices += range(shapes[i]),
     if return_scatter_array:
-        scatter_array = [[]] * ndims
+        # Note: apparently, creating this array of empty arrays as
+        # scatter_array = [[]] * ndims
+        # does not work here as each of the sub-arrays are the same object, so
+        # appending values to one will also append to the others!
+        scatter_array = []
+        for i in range(ndims):
+            scatter_array.append([])
     # Now construct all indices combinations using itertools
     for ind in product(*indices):
         # And for each indices combination, slice the original
@@ -53,7 +59,7 @@ def visit_sparse_data(input_data, sparse_dim, return_scatter_array=False):
             if return_scatter_array:
                 for i in range(ndims - 1):
                     scatter_array[i].append(np.ones_like(vals) * input_data.coords[dims[i]].values[ind[i]])
-                scatter_array[-1].append(values)
+                scatter_array[-1].append(vals)
 
     if return_scatter_array:
         for i in range(ndims):
@@ -96,56 +102,61 @@ def plot_sparse(input_data, ndim=0, sparse_dim=None, backend=None, logx=False, l
     TODO: find a more general way of handling arguments to be sent to plotly,
     probably via a dictionay of arguments
     """
+    dims = input_data.dims
+    coords = input_data.coords
 
-    xmin, xmax, data = visit_sparse_data(input_data, sparse_dim=sparse_dim, return_scatter_array=True)
+    xmin, xmax, xyz = visit_sparse_data(input_data, sparse_dim=sparse_dim, return_scatter_array=True)
 
-    data = []
-    for i, (name, var) in enumerate(input_data.items()):
+    data = [dict(x=xyz[1], y=xyz[0], type='scattergl', mode='markers', name=input_data.name)]
 
-        xlab, ylab, x, y = get_1d_axes(var, axes, name)
+    # data = []
+    # for i, (name, var) in enumerate(input_data.items()):
 
-        nx = x.shape[0]
-        ny = y.shape[0]
-        histogram = False
-        if nx == ny + 1:
-            histogram = True
+    #     xlab, ylab, x, y = get_1d_axes(var, axes, name)
 
-        # Define trace
-        trace = dict(x=x, y=y, name=name, type="scattergl")
-        if histogram:
-            trace["line"] = {"shape": "hv"}
-            trace["y"] = np.concatenate((trace["y"], [0.0]))
-            trace["fill"] = "tozeroy"
-            trace["mode"] = "lines"
-        if color is not None:
-            trace["marker"] = {"color": color[i]}
-        # Include variance if present
-        if var.variances is not None:
-            err_dict = dict(
-                    type="data",
-                    array=np.sqrt(var.variances),
-                    visible=True,
-                    color=color[i])
-            if histogram:
-                trace2 = dict(x=edges_to_centers(x), y=y, showlegend=False,
-                              type="scattergl", mode="markers",
-                              error_y=err_dict,
-                              marker={"color": color[i]})
-                data.append(trace2)
-            else:
-                trace["error_y"] = err_dict
+    #     nx = x.shape[0]
+    #     ny = y.shape[0]
+    #     histogram = False
+    #     if nx == ny + 1:
+    #         histogram = True
 
-        data.append(trace)
+    #     # Define trace
+    #     trace = dict(x=x, y=y, name=name, type="scattergl")
+    #     if histogram:
+    #         trace["line"] = {"shape": "hv"}
+    #         trace["y"] = np.concatenate((trace["y"], [0.0]))
+    #         trace["fill"] = "tozeroy"
+    #         trace["mode"] = "lines"
+    #     if color is not None:
+    #         trace["marker"] = {"color": color[i]}
+    #     # Include variance if present
+    #     if var.variances is not None:
+    #         err_dict = dict(
+    #                 type="data",
+    #                 array=np.sqrt(var.variances),
+    #                 visible=True,
+    #                 color=color[i])
+    #         if histogram:
+    #             trace2 = dict(x=edges_to_centers(x), y=y, showlegend=False,
+    #                           type="scattergl", mode="markers",
+    #                           error_y=err_dict,
+    #                           marker={"color": color[i]})
+    #             data.append(trace2)
+    #         else:
+    #             trace["error_y"] = err_dict
+
+    #     data.append(trace)
+
 
     layout = dict(
-        xaxis=dict(title=xlab),
-        yaxis=dict(title=ylab),
+        xaxis=dict(title=axis_label(coords[dims[-1]])),
+        yaxis=dict(title=axis_label(coords[dims[0]])),
         showlegend=True,
         legend=dict(x=0.0, y=1.15, orientation="h"),
         height=config.height
     )
-    if histogram:
-        layout["barmode"] = "overlay"
+    # if histogram:
+    #     layout["barmode"] = "overlay"
     if logx or logxy:
         layout["xaxis"]["type"] = "log"
     if logy or logxy:

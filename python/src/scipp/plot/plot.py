@@ -43,10 +43,16 @@ def plot(input_data, collapse=None, backend=None, color=None, **kwargs):
     for ds in input_data:
         for name, var in ds:
             ndims = len(var.dims)
+            sp_dim = var.sparse_dim
             if ndims == 1:
                 # Construct a key from the dimension and the unit, to group
                 # compatible data together.
-                key = "{}.{}".format(str(var.dims[0]), str(var.unit))
+                print(var)
+                key = "{}.".format(str(var.dims[0]))
+                if sp_dim is not None:
+                    key = "{}{}".format(key, str(var.coords[sp_dim].unit))
+                else:
+                    key = "{}{}".format(key, str(var.unit))
                 if key in tobeplotted.keys():
                     tobeplotted[key][1][name] = ds[name]
                 else:
@@ -54,7 +60,7 @@ def plot(input_data, collapse=None, backend=None, color=None, **kwargs):
             elif ndims > 1:
                 key = name
                 tobeplotted[key] = [ndims, ds[name]]
-            sparse_dim[key] = var.sparse_dim
+            sparse_dim[key] = sp_dim
 
     # Prepare color containers
     auto_color = False

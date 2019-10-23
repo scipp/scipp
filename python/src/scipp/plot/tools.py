@@ -70,7 +70,7 @@ def axis_label(var=None, name=None, log=False, replace_dim=True):
     if name is not None:
         label = name
     elif var is not None:
-        label = str(var.dims[0])
+        label = str(var.dims[-1])
         if replace_dim:
             label = label.replace("Dim.", "")
 
