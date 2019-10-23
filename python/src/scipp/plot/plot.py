@@ -3,6 +3,7 @@
 # @author Neil Vaytet
 
 # Scipp imports
+from . import config
 from .._scipp import core as sc
 
 
@@ -15,6 +16,9 @@ def plot(input_data, collapse=None, backend=None, color=None, **kwargs):
     from .tools import get_color
     from .plot_collapse import plot_collapse
     from .dispatch import dispatch
+
+    if backend is None:
+        backend = config.backend
 
     # Create a list of variables which will then be dispatched to the plot_auto
     # function.
@@ -40,9 +44,9 @@ def plot(input_data, collapse=None, backend=None, color=None, **kwargs):
             coords = var.coords
             ndims = len(coords)
             if ndims == 1:
-                # Make a unique key from the dataset id in case there are more
-                # than one dataset with 1D variables with the same coordinates
-                key = "{}_{}".format(str(id(ds)), str(var.dims[0]))
+                # Construct a key from the dimension and the unit, to group
+                # compatible data together.
+                key = "{}.{}".format(str(var.dims[0]), str(var.unit))
                 if key in tobeplotted.keys():
                     tobeplotted[key][1][name] = ds[name]
                 else:

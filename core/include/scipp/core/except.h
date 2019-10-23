@@ -96,6 +96,10 @@ struct SCIPP_CORE_EXPORT BinEdgeError : public std::runtime_error {
   using std::runtime_error::runtime_error;
 };
 
+struct SCIPP_CORE_EXPORT NotFoundError : public std::runtime_error {
+  using std::runtime_error::runtime_error;
+};
+
 } // namespace scipp::except
 
 namespace scipp::core::expect {
@@ -128,8 +132,8 @@ inline auto to_string(const std::string &s) { return s; }
 
 template <class A, class B> void contains(const A &a, const B &b) {
   if (!a.contains(b))
-    throw std::runtime_error("Expected " + to_string(a) + " to contain " +
-                             to_string(b) + ".");
+    throw except::NotFoundError("Expected " + to_string(a) + " to contain " +
+                                to_string(b) + ".");
 }
 template <class T> void unit(const T &object, const units::Unit &unit) {
   expect::equals(object.unit(), unit);

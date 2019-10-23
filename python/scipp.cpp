@@ -10,6 +10,7 @@ void init_dataset(py::module &);
 void init_dimensions(py::module &);
 void init_dtype(py::module &);
 void init_counts(py::module &);
+void init_groupby(py::module &);
 void init_neutron(py::module &);
 void init_sparse_container(py::module &);
 void init_units_neutron(py::module &);
@@ -23,6 +24,7 @@ void init_core(py::module &m) {
   init_dataset(core);
   init_dimensions(core);
   init_dtype(core);
+  init_groupby(core);
   init_sparse_container(core);
   init_variable(core);
   init_variable_view(core);
