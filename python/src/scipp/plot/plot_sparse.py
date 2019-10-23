@@ -24,6 +24,43 @@ def flatten_sparse_data():
     y = np.concatenate(y)
 
 
+def visit_sparse_data(input_data, sparse_dim, return_scatter_array=False):
+    xmin =  1.0e30
+    xmax = -1.0e30
+    ndims = len(input_data.dims)
+    vslice = input_data
+    dims = input_data.dims
+    shapes = input_data.shape
+    # Construct tuple of ranges over dimension shapes
+    indices = tuple()
+    for i in range(ndims - 1):
+        indices += range(shapes[i]),
+    if return_scatter_array:
+        scatter_array = [[]] * ndims
+    # Now construct all indices combinations using itertools
+    for ind in product(*indices):
+        # And for each indices combination, slice the original
+        # data down to the sparse dimension
+        vslice = input_data
+        for i in range(ndims - 1):
+            vslice = vslice[dims[i], ind[i]]
+        # We should now be left with the bare sparse array for
+        # this particular pixel
+        vals = vslice.coords[sparse_dim].values
+        if len(vals) > 0:
+            xmin = min(xmin, np.nanmin(vals))
+            xmax = max(xmax, np.nanmax(vals))
+            if return_scatter_array:
+                for i in range(ndims - 1):
+                    scatter_array[i].append(np.ones_like(vals) * input_data.coords[dims[i]].values[ind[i]])
+                scatter_array[-1].append(values)
+
+    if return_scatter_array:
+        for i in range(ndims):
+            scatter_array[i] = np.concatenate(scatter_array[i])
+        return xmin, xmax, scatter_array
+    else:
+        return xmin, xmax
 
 
 def histogram_sparse_data(input_data, sparse_dim, bins):
@@ -31,29 +68,7 @@ def histogram_sparse_data(input_data, sparse_dim, bins):
         bins = 256
     if isinstance(bins, int):
         # Find min and max
-        xmin =  1.0e30
-        xmax = -1.0e30
-        ndims = len(input_data.dims)
-        vslice = input_data
-        dims = input_data.dims
-        shapes = input_data.shape
-        # Construct tuple of ranges over dimension shapes
-        indices = tuple()
-        for i in range(ndims - 1):
-            indices += range(shapes[i]),
-        # Now construct all indices combinations using itertools
-        for ind in product(*indices):
-            # And for each indices combination, slice the original
-            # data down to the sparse dimension
-            vslice = input_data
-            for i in range(ndims - 1):
-                vslice = vslice[dims[i], ind[i]]
-            # We should now be left with the bare sparse array for
-            # this particular pixel
-            vals = vslice.coords[sparse_dim].values
-            if len(vals) > 0:
-                xmin = min(xmin, np.nanmin(vals))
-                xmax = max(xmax, np.nanmax(vals))
+        xmin, xmax = visit_sparse_data(input_data, sparse_dim)
         dx = (xmax - xmin) / float(bins)
         # Add padding
         xmin -= 0.5 * dx
@@ -69,7 +84,7 @@ def histogram_sparse_data(input_data, sparse_dim, bins):
     return sc.histogram(input_data, bins)
 
 
-def plot_sparse(input_data, backend=None, logx=False, logy=False, logxy=False,
+def plot_sparse(input_data, ndim=0, sparse_dim=None, backend=None, logx=False, logy=False, logxy=False,
                    color=None, filename=None, axes=None):
     """
     Plot a 1D spectrum.
@@ -81,6 +96,8 @@ def plot_sparse(input_data, backend=None, logx=False, logy=False, logxy=False,
     TODO: find a more general way of handling arguments to be sent to plotly,
     probably via a dictionay of arguments
     """
+
+    xmin, xmax, data = visit_sparse_data(input_data, sparse_dim=sparse_dim, return_scatter_array=True)
 
     data = []
     for i, (name, var) in enumerate(input_data.items()):

@@ -41,7 +41,7 @@ def dispatch(input_data, ndim=0, name=None, backend=None, collapse=None,
             if bins is not None:
                 input_data = histogram_sparse_data(input_data, sparse_dim, bins)
             else:
-                plot_sparse(input_data, ndim=ndim, backend=backend, **kwargs)
+                plot_sparse(input_data, ndim=ndim, sparse_dim=sparse_dim, backend=backend, **kwargs)
                 return
 
         if ndim == 1:
