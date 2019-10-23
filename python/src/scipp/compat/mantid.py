@@ -27,19 +27,20 @@ def convert_instrument(ws):
 
 
 def init_pos_spectrum_no(nHist, ws):
-    pos = sc.Variable([sc.Dim.Spectrum], [nHist], unit=sc.units.m,
-                      dtype=sc.dtype.vector_3_double)
-    num = sc.Variable([sc.Dim.Spectrum], [nHist], dtype=np.float32)
+    pos = np.zeros([nHist, 3])
+    num = np.zeros([nHist], dtype=np.int32)
 
     spec_info = ws.spectrumInfo()
     for i in range(nHist):
         if spec_info.hasDetectors(i):
             p = spec_info.position(i)
-            pos[sc.Dim.Spectrum, i].value = (p.X(), p.Y(), p.Z())
+            pos[i, :] = [p.X(), p.Y(), p.Z()]
         else:
-            pos[sc.Dim.Spectrum, i].value = (np.nan, np.nan, np.nan)
-        num[sc.Dim.Spectrum, i].value = ws.getSpectrum(i).getSpectrumNo()
-
+            pos[i, :] = [np.nan, np.nan, np.nan]
+        num[i] = ws.getSpectrum(i).getSpectrumNo()
+    pos = sc.Variable([sc.Dim.Spectrum], values=pos, unit=sc.units.m,
+                      dtype=sc.dtype.vector_3_double)
+    num = sc.Variable([sc.Dim.Spectrum], values=num)
     return pos, num
 
 

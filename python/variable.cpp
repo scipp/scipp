@@ -81,15 +81,28 @@ template <class ST> struct MakeODFromNativePythonTypes {
 };
 
 template <class T>
-Variable bind_init_1D(const std::vector<Dim> &labels,
-                      const std::vector<scipp::index> &shape,
-                      const std::vector<T> &values, const units::Unit &unit) {
+Variable bind_init_1D_no_variance(const std::vector<Dim> &labels,
+                                  const std::vector<scipp::index> &shape,
+                                  const std::vector<T> &values,
+                                  const units::Unit &unit) {
   Variable var;
   Dimensions dims(labels, shape);
   var = makeVariable<T>(dims, values);
   var.setUnit(unit);
   return var;
 };
+
+template <class T>
+auto do_init_0D(const T &value, const std::optional<T> &variance,
+                const units::Unit &unit) {
+  Variable var;
+  if (variance)
+    var = makeVariable<T>(value, *variance);
+  else
+    var = makeVariable<T>(value);
+  var.setUnit(unit);
+  return var;
+}
 
 Variable doMakeVariable(const std::vector<Dim> &labels, py::array &values,
                         std::optional<py::array> &variances,
@@ -98,11 +111,20 @@ Variable doMakeVariable(const std::vector<Dim> &labels, py::array &values,
   const auto dtypeTag =
       dtype.is_none() ? scipp_dtype(values.dtype()) : scipp_dtype(dtype);
 
-  if (dtypeTag == DType::String) {
-    std::vector<scipp::index> shape(values.shape(),
-                                    values.shape() + values.ndim());
-    return bind_init_1D(labels, shape, values.cast<std::vector<std::string>>(),
-                        unit);
+  if (labels.size() == 1 && !variances) {
+    if (dtypeTag == core::dtype<std::string>) {
+      std::vector<scipp::index> shape(values.shape(),
+                                      values.shape() + values.ndim());
+      return bind_init_1D_no_variance(
+          labels, shape, values.cast<std::vector<std::string>>(), unit);
+    }
+
+    if (dtypeTag == core::dtype<Eigen::Vector3d>) {
+      std::vector<scipp::index> shape(values.shape(),
+                                      values.shape() + values.ndim() - 1);
+      return bind_init_1D_no_variance(
+          labels, shape, values.cast<std::vector<Eigen::Vector3d>>(), unit);
+    }
   }
 
   return CallDType<double, float, int64_t, int32_t, bool>::apply<MakeVariable>(
@@ -118,18 +140,6 @@ Variable makeVariableDefaultInit(const std::vector<Dim> &labels,
       Eigen::Vector3d>::apply<MakeVariableDefaultInit>(scipp_dtype(dtype),
                                                        labels, shape, unit,
                                                        variances);
-}
-
-template <class T>
-auto do_init_0D(const T &value, const std::optional<T> &variance,
-                const units::Unit &unit) {
-  Variable var;
-  if (variance)
-    var = makeVariable<T>(value, *variance);
-  else
-    var = makeVariable<T>(value);
-  var.setUnit(unit);
-  return var;
 }
 
 template <class T> void bind_init_0D(py::class_<Variable> &c) {
