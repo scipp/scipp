@@ -5,6 +5,7 @@
 #include "scipp/core/dataset.h"
 #include "scipp/neutron/beamline.h"
 #include "scipp/neutron/convert.h"
+#include "scipp/neutron/diffraction/convert_with_calibration.h"
 
 #include "pybind11.h"
 
