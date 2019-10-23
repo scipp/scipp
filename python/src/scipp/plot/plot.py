@@ -35,61 +35,76 @@ def plot(input_data, collapse=None, backend=None, color=None, **kwargs):
         ds = sc.Dataset()
         ds[input_data.name] = input_data
         input_data = ds
-    if tp is not list:
-        input_data = [input_data]
-
-    tobeplotted = dict()
-    sparse_dim = dict()
-    for ds in input_data:
-        for name, var in ds:
-            ndims = len(var.dims)
-            sp_dim = var.sparse_dim
-            if ndims == 1:
-                # Construct a key from the dimension and the unit, to group
-                # compatible data together.
-                print(var)
-                key = "{}.".format(str(var.dims[0]))
-                if sp_dim is not None:
-                    key = "{}{}".format(key, str(var.coords[sp_dim].unit))
-                else:
-                    key = "{}{}".format(key, str(var.unit))
-                if key in tobeplotted.keys():
-                    tobeplotted[key][1][name] = ds[name]
-                else:
-                    tobeplotted[key] = [ndims, {name: ds[name]}]
-            elif ndims > 1:
-                key = name
-                tobeplotted[key] = [ndims, ds[name]]
-            sparse_dim[key] = sp_dim
+    # if tp is not list:
+    #     input_data = [input_data]
 
     # Prepare color containers
     auto_color = False
+    cols = []
     if color is None:
         auto_color = True
-    elif not isinstance(color, list):
-        color = [color]
+    color_count = 0
+
+    tobeplotted = dict()
+    sparse_dim = dict()
+    # for ds in input_data:
+    for name, var in sorted(input_data):
+        ndims = len(var.dims)
+        sp_dim = var.sparse_dim
+        if ndims == 1:
+            # Construct a key from the dimension and the unit, to group
+            # compatible data together.
+            print(name, color_count)
+            key = "{}.".format(str(var.dims[0]))
+            if sp_dim is not None:
+                key = "{}{}".format(key, str(var.coords[sp_dim].unit))
+            else:
+                key = "{}{}".format(key, str(var.unit))
+
+            if key not in tobeplotted.keys():
+                tobeplotted[key] = [ndims, sc.Dataset(), []]
+            tobeplotted[key][1][name] = input_data[name]
+            if auto_color:
+                col = get_color(index=color_count)
+            elif not isinstance(color, list):
+                col = color
+            else:
+                col = color[color_count]
+            tobeplotted[key][2].append(col)
+            color_count += 1
+            # else:
+            #     tobeplotted[key] = [ndims, sc.Dataset()]
+            #     {name: ds[name]}]
+        elif ndims > 1:
+            key = name
+            tobeplotted[key] = [ndims, input_data[name], None]
+        sparse_dim[key] = sp_dim
+
+    
+    # elif not isinstance(color, list):
+    #     color = [color]
 
     # Plot all the subsets
-    color_count = 0
+    # color_count = 0
     output = dict()
     for key, val in tobeplotted.items():
-        if val[0] == 1:
-            if auto_color:
-                color = []
-                for l in val[1].keys():
-                    color.append(get_color(index=color_count))
-                    color_count += 1
-            name = None
-        else:
-            color = None
-            name = key
+        # if val[0] == 1:
+        #     if auto_color:
+        #         color = []
+        #         for l in val[1].keys():
+        #             color.append(get_color(index=color_count))
+        #             color_count += 1
+        #     name = None
+        # else:
+        #     color = None
+        #     name = key
         if collapse is not None:
             output[key] = plot_collapse(input_data=val[1], dim=collapse,
-                                        name=name, backend=backend,
-                                        color=color, **kwargs)
+                                        backend=backend,
+                                        color=val[2], **kwargs)
         else:
-            output[key] = dispatch(input_data=val[1], ndim=val[0], name=name,
-                                   backend=backend, color=color, sparse_dim=sparse_dim[key],
+            output[key] = dispatch(input_data=val[1], ndim=val[0],
+                                   backend=backend, color=val[2], sparse_dim=sparse_dim[key],
                                    **kwargs)
 
     if backend == "matplotlib":

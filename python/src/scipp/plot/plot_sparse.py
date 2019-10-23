@@ -87,7 +87,10 @@ def histogram_sparse_data(input_data, sparse_dim, bins):
     elif isinstance(bins, sc.Variable):
         pass
 
-    return sc.histogram(input_data, bins)
+    out = sc.histogram(input_data, bins)
+    if len(input_data.dims) == 1:
+        out = {str(sparse_dim): out}
+    return out
 
 
 def plot_sparse(input_data, ndim=0, sparse_dim=None, backend=None, logx=False, logy=False, logxy=False,
