@@ -4,7 +4,7 @@
 
 # Scipp imports
 from . import config
-from .tools import edges_to_centers, axis_label, render_plot
+from .tools import edges_to_centers, render_plot, get_1d_axes
 
 # Other imports
 import numpy as np
@@ -12,7 +12,7 @@ import plotly.graph_objs as go
 
 
 def plot_1d(input_data, backend=None, logx=False, logy=False, logxy=False,
-            color=None, filename=None):
+            color=None, filename=None, axes=None):
     """
     Plot a 1D spectrum.
 
@@ -26,11 +26,8 @@ def plot_1d(input_data, backend=None, logx=False, logy=False, logxy=False,
 
     data = []
     for i, (name, var) in enumerate(input_data.items()):
-        xcoord = var.coords[var.dims[0]]
-        x = xcoord.values
-        xlab = axis_label(xcoord)
-        y = var.values
-        ylab = axis_label(var=var, name=name)
+
+        xlab, ylab, x, y = get_1d_axes(var, axes, name)
 
         nx = x.shape[0]
         ny = y.shape[0]
@@ -39,7 +36,7 @@ def plot_1d(input_data, backend=None, logx=False, logy=False, logxy=False,
             histogram = True
 
         # Define trace
-        trace = dict(x=x, y=y, name=ylab, type="scattergl")
+        trace = dict(x=x, y=y, name=name, type="scattergl")
         if histogram:
             trace["line"] = {"shape": "hv"}
             trace["y"] = np.concatenate((trace["y"], [0.0]))
@@ -67,7 +64,7 @@ def plot_1d(input_data, backend=None, logx=False, logy=False, logxy=False,
 
     layout = dict(
         xaxis=dict(title=xlab),
-        yaxis=dict(),
+        yaxis=dict(title=ylab),
         showlegend=True,
         legend=dict(x=0.0, y=1.15, orientation="h"),
         height=config.height

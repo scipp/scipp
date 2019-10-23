@@ -14,7 +14,7 @@ def dispatch(input_data, ndim=0, name=None, backend=None, collapse=None,
         raise RuntimeError("Invalid number of dimensions for "
                            "plotting: {}".format(ndim))
 
-    if backend == "matplotlib":
+    if backend == "matplotlib" or backend == "matplotlib:quiet":
 
         from .plot_matplotlib import plot_1d, plot_2d
         if ndim == 1:
