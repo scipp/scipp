@@ -36,7 +36,7 @@ jobs:
     - stage: "Unit tests"
       name: "gcc"
       if: NOT type = cron
-      script: docker run --rm --tty -v "$PWD:/scipp" -v "$HOME/.ccache:/root/.ccache" -e PYTHON_EXECUTABLE=/opt/conda/bin/python -e CC=gcc-8 -e CXX=g++-8 scipp/ci bash -c "cd /scipp && .travis/run_tests.sh"
+      script: docker run --rm --tty --memory-swap=-1 -v "$PWD:/scipp" -v "$HOME/.ccache:/root/.ccache" -e PYTHON_EXECUTABLE=/opt/conda/bin/python -e CC=gcc-8 -e CXX=g++-8 scipp/ci bash -c "cd /scipp && .travis/run_tests.sh"
 
     - stage: "Unit tests"
       name: "clang"
