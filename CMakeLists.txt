@@ -32,7 +32,7 @@ include(Eigen)
 include(pybind11)
 include(GoogleBenchmark)
 include(GenerateExportHeader)
-find_package(Boost REQUIRED)
+find_package(Boost 1.67 REQUIRED)
 find_package(Python COMPONENTS Interpreter Development)
 
 if("${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}" VERSION_LESS "3.5")
