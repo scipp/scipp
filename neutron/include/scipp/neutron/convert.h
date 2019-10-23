@@ -21,10 +21,4 @@ SCIPP_NEUTRON_EXPORT core::Dataset convert(core::Dataset d, const Dim from,
 
 } // namespace scipp::neutron
 
-namespace scipp::neutron::diffraction {
-
-SCIPP_NEUTRON_EXPORT core::Dataset convert_with_calibration(core::Dataset d, const core::Dataset &cal);
-
-} // namespace scipp::neutron::diffraction
-
 #endif // SCIPP_NEUTRON_CONVERT_H

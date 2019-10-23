@@ -5,8 +5,6 @@
 #ifndef SCIPP_NEUTRON_CONVERT_WITH_CALIBRATION_H
 #define SCIPP_NEUTRON_CONVERT_WITH_CALIBRATION_H
 
-#include <vector>
-
 #include "scipp-neutron_export.h"
 #include "scipp/units/unit.h"
 

@@ -28,13 +28,13 @@ Dataset convert_with_calibration(Dataset d, const Dataset &cal){
   //scipp::core::expect::contains(cal, "difc");
 
   // 2. Record ToF bin widths
-  const auto oldBinWidths = counts::getBinWidths(d, {Dim::Tof});
+  const auto oldBinWidths = counts::getBinWidths(d.coords(), {Dim::Tof});
 
   // 3. Transform coordinate
   d.setCoord(Dim::Tof, (d.coords()[Dim::Tof] - cal["tzero"].data()) / cal["difc"].data());
 
   // 4. Record DSpacing bin widths
-  const auto newBinWidths = counts::getBinWidths(d, {Dim::Tof});
+  const auto newBinWidths = counts::getBinWidths(d.coords(), {Dim::Tof});
 
   // 5. Transform variables
   for (const auto & [ name, data ] : d) {
