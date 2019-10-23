@@ -132,7 +132,13 @@ def plot_sparse(input_data, ndim=0, sparse_dim=None, backend=None, logx=False, l
 
     xmin, xmax, xyz = visit_sparse_data(input_data, sparse_dim=sparse_dim, return_scatter_array=True)
 
-    data = [dict(x=xyz[1], y=xyz[0], type='scattergl', mode='markers', name=name)]
+    xxx = ["x", "y", "z"]
+    params = {}
+    for i in range(len(dims)):
+        params[xxx[i]] = xyz[-1-i]
+    # print(params)
+
+    data = [dict(**params, type='scattergl', mode='markers', name=name)]
 
     # data = []
     # for i, (name, var) in enumerate(input_data.items()):
