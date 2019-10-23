@@ -2,7 +2,7 @@ version: '{build}'
 os: Visual Studio 2019
 branches:
   only:
-  - visual_studio_build # TODO change to master 
+  - master
 
 matrix:
   fast_finish: true
