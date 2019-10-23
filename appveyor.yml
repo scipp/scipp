@@ -3,6 +3,7 @@ os: Visual Studio 2019
 branches:
   only:
   - windows_conda 
+  - master
 
 matrix:
   fast_finish: true
