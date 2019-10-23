@@ -12,7 +12,7 @@ requirements:
     - gxx_linux-64 7.3.* [linux64]
     - git
     - python {{ python }}
-    - ninja
+    - ninja [!win]
   run:
     - numpy {{ numpy }}
     - python {{ python }}
@@ -24,6 +24,7 @@ build:
     - CC
     - CXX
     - OSX_VERSION
+    - GENERATOR
 about:
   home: https://scipp.readthedocs.io/en/latest/
   license: GPLv3
