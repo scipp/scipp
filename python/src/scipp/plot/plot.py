@@ -54,7 +54,6 @@ def plot(input_data, collapse=None, backend=None, color=None, **kwargs):
         if ndims == 1:
             # Construct a key from the dimension and the unit, to group
             # compatible data together.
-            print(name, color_count)
             key = "{}.".format(str(var.dims[0]))
             if sp_dim is not None:
                 key = "{}{}".format(key, str(var.coords[sp_dim].unit))
@@ -77,7 +76,7 @@ def plot(input_data, collapse=None, backend=None, color=None, **kwargs):
             #     {name: ds[name]}]
         elif ndims > 1:
             key = name
-            tobeplotted[key] = [ndims, input_data[name], None]
+            tobeplotted[key] = [ndims, sc.Dataset(input_data[name]), None]
         sparse_dim[key] = sp_dim
 
     
