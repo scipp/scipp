@@ -6,8 +6,8 @@ add_executable(${TARGET_NAME} EXCLUDE_FROM_ALL dimension_test.cpp unit_test.cpp)
 target_link_libraries(${TARGET_NAME}
                       LINK_PRIVATE
                       scipp-units
-                      GTest::Main
                       scipp_test_helpers
+					  gtest_main
                       ${GTEST_LIBRARIES}
                       ${GMOCK_LIBRARIES})
 set_property(TARGET ${TARGET_NAME} PROPERTY INTERPROCEDURAL_OPTIMIZATION ${INTERPROCEDURAL_OPTIMIZATION_TESTS})

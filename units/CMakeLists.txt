@@ -29,6 +29,7 @@ add_library(${TARGET_NAME} ${LINK_TYPE} ${INC_FILES} ${SRC_FILES})
 generate_export_header(${TARGET_NAME})
 target_compile_definitions(${TARGET_NAME} PUBLIC
                            SCIPP_UNITS_${SCIPP_UNITS_SYSTEM})
+include_directories(SYSTEM ${GMOCK_INCLUDE_DIR} ${GTEST_INCLUDE_DIR})
 target_link_libraries(${TARGET_NAME} PUBLIC scipp-common Boost::boost)
 target_include_directories(
   ${TARGET_NAME}
