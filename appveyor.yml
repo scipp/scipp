@@ -2,7 +2,7 @@ version: '{build}'
 os: Visual Studio 2019
 branches:
   only:
-  - visual_studio_build # TODO change to master 
+  - windows_conda 
 
 matrix:
   fast_finish: true
@@ -13,12 +13,18 @@ platform:
 configuration:
   - Release
 
+environment:
+  PYTHON_VERSION: 3.6
+  MINICONDA: C:\Miniconda36-x64
+
 install:
-- set PATH=%PATH%;c:\Program Files (x86)\Microsoft Visual Studio 15.0\Common7\IDE\
 - cd %APPVEYOR_BUILD_FOLDER%
 - git submodule update --init
 - mkdir build
 - cd build%
+- set PATH=%MINICONDA%;%MINICONDA%\\Scripts;%PATH%"
+- conda config --set always_yes yes --set changeps1 no
+- conda install -c conda-forge conda-build anaconda
 
 build_script:
 - cmake -G "Visual Studio 16 2019" -A x64 -DPYTHON_EXECUTABLE="C:/Python36-x64/python.exe" -DCMAKE_INSTALL_PREFIX=../install ..
