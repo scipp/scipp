@@ -52,6 +52,11 @@ template <class T> struct ValuesAndVariances {
     variances.clear();
   }
 
+  void reserve(const scipp::index capacity) const {
+    values.reserve(capacity);
+    variances.reserve(capacity);
+  }
+
   // Note that methods like insert, begin, and end are required as long as we
   // support sparse data via a plain container such as std::vector, e.g., for
   // concatenation using a.insert(a.end(), b.begin(), b.end()). We are
