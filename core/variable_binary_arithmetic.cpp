@@ -7,6 +7,7 @@
 #include "scipp/core/except.h"
 #include "scipp/core/transform.h"
 #include "scipp/core/variable.h"
+#include "scipp/core/tag_util.h"
 
 #include "operators.h"
 
@@ -300,6 +301,26 @@ Variable operator/(const double a, const VariableConstProxy &b_proxy) {
             b_ = static_cast<std::remove_reference_t<decltype(b_)>>(a / b_);
           }});
   return b;
+}
+
+struct MakeVariableWithType {
+  template<class T> struct Maker {
+    static Variable apply(const VariableConstProxy& parent) {
+      if (parent.hasVariances())
+        return makeVariableWithVariances<T>(parent.dims(), parent.unit());
+      else
+        return makeVariable<T>(parent.dims(), parent.unit());
+    }
+  };
+  static Variable make(const VariableConstProxy& parent, DType type) {
+    return CallDType<double, float, int64_t, int32_t, bool>::apply<Maker>(type, parent);
+  }
+};
+
+Variable astype(const VariableConstProxy &var, DType type) {
+  auto variable = MakeVariableWithType::make(var, type);
+  variable += var;
+  return variable;
 }
 
 } // namespace scipp::core
