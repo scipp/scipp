@@ -11,11 +11,12 @@ add_executable(${TARGET_NAME} EXCLUDE_FROM_ALL
                beamline_test.cpp
                convert_test.cpp
                )
+include_directories(SYSTEM ${GMOCK_INCLUDE_DIR} ${GTEST_INCLUDE_DIR})
 target_link_libraries(${TARGET_NAME}
                       LINK_PRIVATE
                       scipp-neutron
-                      GTest::Main
                       scipp_test_helpers
+					  gtest_main
                       ${GTEST_LIBRARIES}
                       ${GMOCK_LIBRARIES})
 set_property(TARGET ${TARGET_NAME} PROPERTY INTERPROCEDURAL_OPTIMIZATION ${INTERPROCEDURAL_OPTIMIZATION_TESTS})
