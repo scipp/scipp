@@ -167,7 +167,8 @@ Variable counts(const VariableConstProxy &var) {
       pair_custom_t<std::pair<scipp::index, sparse_container<double>>>>(
       counts, var,
       overloaded{[](scipp::index &c, const auto &sparse) { c = sparse.size(); },
-                 disable_variance_first_arg{}});
+                 disable_variance_first_arg{},
+                 transform_flags::no_variance_output});
   return counts;
 }
 
