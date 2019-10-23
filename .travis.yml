@@ -17,14 +17,21 @@ env:
 jobs:
   include:
     - stage: "Code formatting"
-      name: "Clang-format"
+      name: "clang-format"
       if: NOT type = cron
-      script: docker run --rm --tty -v "$PWD:/scipp" scipp/ci bash -c "cd /scipp && .travis/check_clang_format.sh"
+      before_install:
+        - sudo apt-get update
+        - sudo apt-get install --yes clang-format-6.0
+      script: .travis/check_clang_format.sh
 
     - stage: "Code formatting"
-      name: "Flake8"
+      name: "flake8"
       if: NOT type = cron
-      script: docker run --rm --tty -v "$PWD:/scipp" scipp/ci bash -c "cd /scipp && .travis/check_flake8.sh"
+      before_install:
+        - sudo apt-get update
+        - sudo apt-get install --yes python3-pip
+        - sudo pip3 install flake8
+      script: .travis/check_flake8.sh
 
     - stage: "Unit tests"
       name: "gcc"
