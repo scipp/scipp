@@ -249,11 +249,6 @@ void init_variable(py::module &m) {
       .def("__repr__", [](const Variable &self) { return to_string(self); });
 
   bind_init_list(variable);
-  // For some reason, pybind11 does not convert python lists to py::array,
-  // so we need to bind the lists manually.
-  // TODO: maybe there is a better way to do this?
-  //  bind_init_1D<int32_t>(variable);
-  //  bind_init_1D<double>(variable);
   // This should be in the certain order
   bind_init_0D_numpy_types(variable);
   bind_init_0D_native_python_types<bool>(variable);
