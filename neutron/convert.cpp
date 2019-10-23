@@ -12,6 +12,8 @@
 #include "scipp/neutron/beamline.h"
 #include "scipp/neutron/convert.h"
 
+#include <iostream>
+
 using namespace scipp::core;
 
 namespace scipp::neutron {
@@ -34,8 +36,11 @@ static Dataset convert_with_factor(Dataset &&d, const Dim from, const Dim to,
                                    const Variable &factor) {
   // 1. Transform coordinate
   // Cannot use *= since often a broadcast into Dim::Spectrum is required.
-  if (d.coords().contains(from))
+  if (d.coords().contains(from)) {
+    std::cout << to_string(factor.dtype()) << " "
+              << to_string(d.coords()[from].dtype()) << "\n";
     d.setCoord(from, d.coords()[from] * factor);
+  }
 
   // 2. Transform variables
   for (const auto &[name, data] : d) {
@@ -70,7 +75,7 @@ auto tofToDSpacing(const Dataset &d) {
                       (m_to_angstrom * tof_to_s);
   conversionFactor *= sqrt(0.5 * (1.0 - dot(beam, scattered)));
 
-  return 1.0 / conversionFactor;
+  return reciprocal(conversionFactor);
 }
 
 static auto tofToWavelength(const Dataset &d) {
@@ -231,13 +236,14 @@ Dataset convert(Dataset d, const Dim from, const Dim to) {
   if ((from == Dim::Tof) && (to == Dim::DSpacing))
     return convert_with_factor(std::move(d), from, to, tofToDSpacing(d));
   if ((from == Dim::DSpacing) && (to == Dim::Tof))
-    return convert_with_factor(std::move(d), from, to, 1.0 / tofToDSpacing(d));
+    return convert_with_factor(std::move(d), from, to,
+                               reciprocal(tofToDSpacing(d)));
 
   if ((from == Dim::Tof) && (to == Dim::Wavelength))
     return convert_with_factor(std::move(d), from, to, tofToWavelength(d));
   if ((from == Dim::Wavelength) && (to == Dim::Tof))
     return convert_with_factor(std::move(d), from, to,
-                               1.0 / tofToWavelength(d));
+                               reciprocal(tofToWavelength(d)));
 
   if ((from == Dim::Tof) && (to == Dim::Energy))
     return tofToEnergy(std::move(d));

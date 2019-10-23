@@ -53,6 +53,29 @@ template <class T1, class T2> Variable plus(const T1 &a, const T2 &b) {
   return transform<arithmetic_and_matrix_type_pairs>(a, b, plus_);
 }
 
+template <class T> class hasReciprocal {
+  static void detect(...);
+  template <class U> static decltype(reciprocal(std::declval<U>())) detect(U);
+
+public:
+  static constexpr bool value =
+      !std::is_same_v<void, decltype(detect(std::declval<T>()))>;
+};
+
+static constexpr auto reciprocal_ = [](const auto a_) {
+  if constexpr (hasReciprocal<std::decay_t<decltype(a_)>>::value)
+    return reciprocal(a_);
+  else
+    return static_cast<decltype(a_)>(1) / a_;
+};
+
+Variable reciprocal(const VariableConstProxy &var) {
+  return transform<double, float, int64_t, int32_t>(
+      var, overloaded{reciprocal_, [](const units::Unit &unit) {
+                        return units::Unit(units::dimensionless) / unit;
+                      }});
+}
+
 Variable Variable::operator-() const {
   return transform<double, float, int64_t, Eigen::Vector3d>(
       *this, [](const auto a) { return -a; });

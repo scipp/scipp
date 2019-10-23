@@ -56,6 +56,11 @@ constexpr auto operator-(const ValueAndVariance<T> a) noexcept {
   return ValueAndVariance{-a.value, a.variance};
 }
 
+template <class T> constexpr auto reciprocal(const ValueAndVariance<T> &a) {
+  auto f = static_cast<T>(1) / a.value;
+  return ValueAndVariance<T>(f, -f * a.variance / a.value);
+}
+
 template <class T> constexpr auto sqrt(const ValueAndVariance<T> a) noexcept {
   using std::sqrt;
   return ValueAndVariance{sqrt(a.value),
