@@ -10,7 +10,7 @@ def get_pos(pos):
     return [pos.X(), pos.Y(), pos.Z()]
 
 
-def convert_instrument(ws):
+def make_component_info(ws):
     compInfo = sc.Dataset({
         'position':
         sc.Variable(dims=[sc.Dim.Row],
@@ -26,8 +26,46 @@ def convert_instrument(ws):
     return sc.Variable(value=compInfo)
 
 
-def init_pos_spectrum_no(nHist, ws):
+def make_detector_info(ws):
+    nHist = ws.getNumberHistograms()
+    det_info = ws.detectorInfo()
+    # det -> spec mapping
+    nDet = det_info.size()
+    spectrum = sc.Variable([sc.Dim.Detector],
+                           shape=(nDet, ),
+                           dtype=sc.dtype.int32)
+    has_spectrum = sc.Variable([sc.Dim.Detector],
+                               values=np.full((nDet, ), False))
+    spectrum_ = spectrum.values
+    has_spectrum_ = has_spectrum.values
+    spec_info = ws.spectrumInfo()
+    for i in range(nHist):
+        spec_def = spec_info.getSpectrumDefinition(i)
+        # This assumes that each detector is part of exactly one spectrum
+        for j in range(len(spec_def)):
+            det, time = spec_def[j]
+            if time != 0:
+                raise RuntimeError(
+                    "Conversion of Mantid Workspace with scanning instrument "
+                    "not supported yet.")
+            spectrum_[det] = i
+            has_spectrum_[det] = True
+    detector = sc.Variable([sc.Dim.Detector], values=det_info.detectorIDs())
 
+    # Remove any information about detectors withou data (a spectrum). This
+    # mostly just gets in the way and including it in the default converter
+    # is probably not required.
+    spectrum = sc.filter(spectrum, has_spectrum)
+    detector = sc.filter(detector, has_spectrum)
+
+    # May want to include more information here, such as detector positions,
+    # but for now this is not necessary.
+    return sc.Variable(value=sc.Dataset(coords={sc.Dim.Detector: detector},
+                                        labels={'spectrum': spectrum}))
+
+
+def init_pos_spectrum_no(ws):
+    nHist = ws.getNumberHistograms()
     pos = np.zeros([nHist, 3])
     num = np.zeros([nHist], dtype=np.int32)
 
@@ -46,9 +84,9 @@ def init_pos_spectrum_no(nHist, ws):
 
 def convert_Workspace2D_to_dataset(ws):
     cb = ws.isCommonBins()
-    nHist = ws.getNumberHistograms()
-    comp_info = convert_instrument(ws)
-    pos, num = init_pos_spectrum_no(nHist, ws)
+    comp_info = make_component_info(ws)
+    det_info = make_detector_info(ws)
+    pos, num = init_pos_spectrum_no(ws)
 
     # TODO More cases?
     allowed_units = {
@@ -85,7 +123,8 @@ def convert_Workspace2D_to_dataset(ws):
                          },
                          labels={
                              "position": pos,
-                             "component_info": comp_info
+                             "component_info": comp_info,
+                             "detector_info": det_info
                          })
 
     data = array.data
@@ -109,8 +148,9 @@ def convert_EventWorkspace_to_dataset(ws, load_pulse_times, EventType):
         [dim, unit] = allowed_units[xunit]
 
     nHist = ws.getNumberHistograms()
-    comp_info = convert_instrument(ws)
-    pos, num = init_pos_spectrum_no(nHist, ws)
+    comp_info = make_component_info(ws)
+    det_info = make_detector_info(ws)
+    pos, num = init_pos_spectrum_no(ws)
 
     # TODO Use unit information in workspace, if available.
     coord = sc.Variable([sc.Dim.Spectrum, dim],
@@ -149,7 +189,8 @@ def convert_EventWorkspace_to_dataset(ws, load_pulse_times, EventType):
         },
         "labels": {
             "position": pos,
-            "component_info": comp_info
+            "component_info": comp_info,
+            "detector_info": det_info
         }
     }
     if load_pulse_times:
