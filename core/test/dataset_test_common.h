@@ -3,29 +3,15 @@
 #ifndef DATASET_TEST_COMMON_H
 #define DATASET_TEST_COMMON_H
 
+#include "random.h"
 #include "test_macros.h"
 #include <gtest/gtest.h>
-
-#include <algorithm>
-#include <random>
 
 #include "scipp/core/dataset.h"
 #include "scipp/core/dimensions.h"
 
 using namespace scipp;
 using namespace scipp::core;
-
-class Random {
-  std::mt19937 mt{std::random_device()()};
-  std::uniform_real_distribution<double> dist{-2.0, 2.0};
-
-public:
-  std::vector<double> operator()(const scipp::index size) {
-    std::vector<double> data(size);
-    std::generate(data.begin(), data.end(), [this]() { return dist(mt); });
-    return data;
-  }
-};
 
 enum BoolsGeneratorType { ALTERNATING, FALSE, TRUE };
 
