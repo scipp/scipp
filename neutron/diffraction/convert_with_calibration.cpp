@@ -20,7 +20,7 @@ Dataset convert_with_calibration(Dataset d, Dataset cal) {
   if (d.labels().contains("detector_info")) {
     // 2a. Merge cal with detector_info, which contains information on how `d`
     // groups its detectors. At the same time, the coord comparison in `merge`
-    // unsures that detector IDs of `d` match those of `cal` .
+    // ensures that detector IDs of `d` match those of `cal` .
     const auto &detector_info = d.labels()["detector_info"].value<Dataset>();
     cal = merge(detector_info, cal);
 
