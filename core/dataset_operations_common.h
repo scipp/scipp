@@ -55,6 +55,11 @@ DataArray apply_and_drop_dim(const DataConstProxy &a, Func func, const Dim dim,
 }
 
 template <class Func, class... Args>
+DataArray apply_to_items(const DataConstProxy &d, Func func, Args &&... args) {
+  return func(d, std::forward<Args>(args)...);
+}
+
+template <class Func, class... Args>
 Dataset apply_to_items(const DatasetConstProxy &d, Func func, Args &&... args) {
   Dataset result;
   for (const auto &[name, data] : d)

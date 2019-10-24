@@ -138,6 +138,17 @@ Variable filter(const Variable &var, const Variable &filter) {
   return out;
 }
 
+void flatten_impl(const VariableProxy &summed, const VariableConstProxy &var) {
+  accumulate_in_place<pair_self_t<sparse_container<double>>,
+                      pair_self_t<sparse_container<float>>,
+                      pair_self_t<sparse_container<int64_t>>,
+                      pair_self_t<sparse_container<int32_t>>>(
+      summed, var,
+      overloaded{
+          [](auto &a, const auto &b) { a.insert(a.end(), b.begin(), b.end()); },
+          [](units::Unit &a, const units::Unit &b) { expect::equals(a, b); }});
+}
+
 void sum_impl(const VariableProxy &summed, const VariableConstProxy &var) {
   accumulate_in_place<
       pair_self_t<double, float, int64_t, int32_t, Eigen::Vector3d>>(
@@ -214,6 +225,13 @@ void swap(Variable &var, const Dim dim, const scipp::index a,
   const Variable tmp(var.slice({dim, a}));
   var.slice({dim, a}).assign(var.slice({dim, b}));
   var.slice({dim, b}).assign(tmp);
+}
+
+Variable resize(const VariableConstProxy &var, const Dim dim,
+                const scipp::index size) {
+  auto dims = var.dims();
+  dims.resize(dim, size);
+  return Variable(var, dims);
 }
 
 Variable reverse(Variable var, const Dim dim) {
