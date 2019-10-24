@@ -4,7 +4,7 @@
 
 # Scipp imports
 from . import config
-from .tools import axis_label, render_plot
+from .tools import axis_label, render_plot, parse_colorbar
 from .._scipp import core as sc
 
 # Other imports
@@ -24,10 +24,10 @@ from itertools import product
 #     y = np.concatenate(y)
 
 
-def visit_sparse_data(input_data, sparse_dim, return_scatter_array=False):
+def visit_sparse_data(input_data, sparse_dim, return_sparse_data=False):
     xmin =  1.0e30
     xmax = -1.0e30
-    vslice = input_data
+    # vslice = input_data
     dims = input_data.dims
     shapes = input_data.shape
     ndims = len(dims)
@@ -38,20 +38,24 @@ def visit_sparse_data(input_data, sparse_dim, return_scatter_array=False):
             indices += range(shapes[i]),
     else:
         indices = [0],
-    if return_scatter_array:
-        # Note: apparently, creating this array of empty arrays as
-        # scatter_array = [[]] * ndims
-        # does not work here as each of the sub-arrays are the same object, so
-        # appending values to one will also append to the others!
+    original = next(iter(input_data))[1]
+    # print("before")
+    # print(original.data)
+    # print("after")
+    data_exists = original.data is not None
+    if return_sparse_data:
         scatter_array = []
         for i in range(ndims):
+            scatter_array.append([])
+        # Append the data (weights) associated to the sparse coordinate
+        if data_exists:
             scatter_array.append([])
     # print(indices)
     # Now construct all indices combinations using itertools
     for ind in product(*indices):
         # And for each indices combination, slice the original
         # data down to the sparse dimension
-        vslice = next(iter(input_data))[1]
+        vslice = original
         if ndims > 1:
             # vslice = input_data
             for i in range(ndims - 1):
@@ -74,15 +78,18 @@ def visit_sparse_data(input_data, sparse_dim, return_scatter_array=False):
         if len(vals) > 0:
             xmin = min(xmin, np.nanmin(vals))
             xmax = max(xmax, np.nanmax(vals))
-            if return_scatter_array:
+            if return_sparse_data:
                 for i in range(ndims - 1):
                     scatter_array[i].append(np.ones_like(vals) * input_data.coords[dims[i]].values[ind[i]])
-                scatter_array[-1].append(vals)
+                scatter_array[-1-data_exists].append(vals)
+                if data_exists:
+                    scatter_array[-1].append(vslice.values)
 
-    if return_scatter_array:
-        for i in range(ndims):
+
+    if return_sparse_data:
+        for i in range(ndims + data_exists):
             scatter_array[i] = np.concatenate(scatter_array[i])
-        return xmin, xmax, scatter_array
+        return xmin, xmax, scatter_array, data_exists
     else:
         return xmin, xmax
 
@@ -114,7 +121,7 @@ def histogram_sparse_data(input_data, sparse_dim, bins):
 
 
 def plot_sparse(input_data, ndim=0, sparse_dim=None, backend=None, logx=False, logy=False, logxy=False,
-                   color=None, filename=None, axes=None):
+                   color=None, filename=None, axes=None, size=50.0, cb=None):
     """
     Plot a 1D spectrum.
 
@@ -129,16 +136,41 @@ def plot_sparse(input_data, ndim=0, sparse_dim=None, backend=None, logx=False, l
     name, var = next(iter(input_data))
     dims = var.dims
     coords = var.coords
+    ndims = len(dims)
 
-    xmin, xmax, xyz = visit_sparse_data(input_data, sparse_dim=sparse_dim, return_scatter_array=True)
+    xmin, xmax, sparse_data, data_exists = visit_sparse_data(
+        input_data, sparse_dim=sparse_dim, return_sparse_data=True)
 
-    xxx = ["x", "y", "z"]
-    params = {}
-    for i in range(len(dims)):
-        params[xxx[i]] = xyz[-1-i]
+    # Parse colorbar
+    cbar = parse_colorbar(config.cb, cb, plotly=True)
+
+    # print(sparse_data[-1])
+    # print(type(sparse_data[-1]))
+    # print(size * sparse_data[-1])
+
+    xyz = "xyz"
+    data = dict(type='scattergl', mode='markers', name=name)
+    for i in range(ndims):
+        data[xyz[i]] = sparse_data[-1 - data_exists - i]
     # print(params)
+    # spd = np.zeros_like(sparse_data[0])
+    if data_exists:
+        # spd = sparse_data[-1].copy()
+        vmax = np.amax(sparse_data[-1])
+        # print(spd)
+        data["marker"] = {"size": sparse_data[-1].copy(),
+                          "sizemode": "area",
+                          "sizeref": 2.0 * vmax/(size**2),
+                          "color": sparse_data[-1],
+                          "colorscale": cbar["name"],
+                          "showscale":True,
+                          "colorbar": {"title": "Weights",
+                                       "titleside": "right"}
+                         }
 
-    data = [dict(**params, type='scattergl', mode='markers', name=name)]
+    # print(data)
+
+    # data = [params]
 
     # data = []
     # for i, (name, var) in enumerate(input_data.items()):
@@ -193,7 +225,7 @@ def plot_sparse(input_data, ndim=0, sparse_dim=None, backend=None, logx=False, l
     if logy or logxy:
         layout["yaxis"]["type"] = "log"
 
-    fig = go.Figure(data=data, layout=layout)
+    fig = go.Figure(data=[data], layout=layout)
     render_plot(static_fig=fig, interactive_fig=fig, backend=backend,
                 filename=filename)
     return
