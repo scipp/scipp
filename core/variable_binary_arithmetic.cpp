@@ -3,11 +3,13 @@
 /// @file
 /// @author Simon Heybrock
 #include <cmath>
+#include <iostream>
 
+#include "scipp/core/dataset.h"
 #include "scipp/core/except.h"
+#include "scipp/core/tag_util.h"
 #include "scipp/core/transform.h"
 #include "scipp/core/variable.h"
-#include "scipp/core/tag_util.h"
 
 #include "operators.h"
 
@@ -304,23 +306,25 @@ Variable operator/(const double a, const VariableConstProxy &b_proxy) {
 }
 
 struct MakeVariableWithType {
-  template<class T> struct Maker {
-    static Variable apply(const VariableConstProxy& parent) {
-      if (parent.hasVariances())
-        return makeVariableWithVariances<T>(parent.dims(), parent.unit());
-      else
-        return makeVariable<T>(parent.dims(), parent.unit());
+  template <class T> struct Maker {
+    static Variable apply(const VariableConstProxy &parent) {
+     return transform<double, float, int64_t, int32_t, bool>(parent, overloaded{
+       [](const units::Unit &x){ return x; },
+       [](const auto &x){
+         if constexpr (detail::is_ValueAndVariance_v<std::decay_t<decltype(x)>>)
+          return detail::ValueAndVariance<T>{static_cast<T>(x.value), static_cast<T>(x.variance)};
+         else
+           return static_cast<T>(x);
+       }});
     }
   };
-  static Variable make(const VariableConstProxy& parent, DType type) {
-    return CallDType<double, float, int64_t, int32_t, bool>::apply<Maker>(type, parent);
+  static Variable make(const VariableConstProxy &var, DType type) {
+    return CallDType<double, float, int64_t, int32_t, bool>::apply<Maker>(type, var);
   }
 };
 
 Variable astype(const VariableConstProxy &var, DType type) {
-  auto variable = MakeVariableWithType::make(var, type);
-  variable += var;
-  return variable;
+  return MakeVariableWithType::make(var, type);
 }
 
 } // namespace scipp::core
