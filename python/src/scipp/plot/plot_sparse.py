@@ -21,6 +21,8 @@ def visit_sparse_data(input_data, sparse_dim, return_sparse_data=False,
     dims = input_data.dims
     shapes = input_data.shape
     ndims = len(dims)
+    print(dims)
+    print(ndims)
     # Construct tuple of ranges over dimension shapes
     if ndims > 1:
         indices = tuple()
@@ -46,6 +48,8 @@ def visit_sparse_data(input_data, sparse_dim, return_sparse_data=False,
             scatter_array.append([])
 
     # Now construct all indices combinations using itertools
+    print(indices)
+    exit()
     for ind in product(*indices):
         # And for each indices combination, slice the original
         # data down to the sparse dimension
@@ -98,7 +102,7 @@ def histogram_sparse_data(input_data, sparse_dim, bins):
 
 
 def plot_sparse(input_data, ndim=0, sparse_dim=None, backend=None, logx=False, logy=False, logxy=False,
-                weights=None, size=50.0, filename=None, axes=None, cb=None, **kwargs):
+                weights=True, size=50.0, filename=None, axes=None, cb=None, **kwargs):
     """
     Produce a scatter plot from sparse data.
     """
@@ -113,7 +117,13 @@ def plot_sparse(input_data, ndim=0, sparse_dim=None, backend=None, logx=False, l
     cbar = parse_colorbar(config.cb, cb, plotly=True)
 
     xyz = "xyz"
-    data = dict(type='scattergl', mode='markers', name=name)
+    if ndims < 3:
+        plot_type = "scattergl"
+    elif ndims == 3:
+        plot_type = "scatter3d"
+    else:
+        raise RuntimeError("Scatter plots for sparse data support at most 3 dimensions.")
+    data = dict(type=plot_type, mode='markers', name=name)
     for i in range(ndims):
         data[xyz[i]] = sparse_data[ndims - 1 - i]
     if len(sparse_data) > ndims:
