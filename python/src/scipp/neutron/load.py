@@ -67,6 +67,10 @@ def load_calibration(filename, mantid_LoadDiffCal_args={}):
 
     cal_data["group"] = sc.Variable([sc.Dim.Row], values=group_list)
 
+    cal_data.rename_dims({sc.Dim.Row: sc.Dim.Detector})
+    cal_data.coord[sc.Dim.Detector] = cal_data['detid']
+    del cal_data['detid']
+
     # Delete generated mantid workspaces
     base_name = mantid_LoadDiffCal_args["WorkspaceName"]
     mantid.mtd.remove(base_name + "_cal")
