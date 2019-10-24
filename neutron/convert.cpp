@@ -42,7 +42,7 @@ static Dataset convert_with_factor(Dataset &&d, const Dim from, const Dim to,
   }
 
   // 2. Transform variables
-  for (const auto &[name, data] : d) {
+  for (const auto & [ name, data ] : d) {
     static_cast<void>(name);
     if (data.dims().sparse()) {
       data.coords()[from] *= factor;
@@ -116,7 +116,7 @@ Dataset tofToEnergy(Dataset &&d) {
   const auto newBinWidths = counts::getBinWidths(d.coords(), {Dim::Tof});
 
   // 5. Transform variables
-  for (const auto &[name, data] : d) {
+  for (const auto & [ name, data ] : d) {
     static_cast<void>(name);
     if (data.coords()[Dim::Tof].dims().sparse()) {
       data.coords()[Dim::Tof].assign(
@@ -147,7 +147,7 @@ Dataset energyToTof(Dataset &&d) {
   const auto newBinWidths = counts::getBinWidths(d.coords(), {Dim::Energy});
 
   // 5. Transform variables
-  for (const auto &[name, data] : d) {
+  for (const auto & [ name, data ] : d) {
     static_cast<void>(name);
     if (data.coords()[Dim::Energy].dims().sparse()) {
       data.coords()[Dim::Energy].assign(
