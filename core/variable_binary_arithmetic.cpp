@@ -327,7 +327,8 @@ struct MakeVariableWithType {
 };
 
 Variable astype(const VariableConstProxy &var, DType type) {
-  return MakeVariableWithType::make(var, type);
+  return type == var.dtype() ? Variable(var)
+                             : MakeVariableWithType::make(var, type);
 }
 
 } // namespace scipp::core
