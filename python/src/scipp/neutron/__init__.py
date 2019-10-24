@@ -6,4 +6,5 @@
 # flake8: noqa
 
 from .._scipp.neutron import *
+from . import diffraction
 from ..compat.mantid import load

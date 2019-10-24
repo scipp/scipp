@@ -62,6 +62,7 @@ Documentation
    :maxdepth: 2
 
    scipp-neutron/overview
+   scipp-neutron/diffraction
    scipp-neutron/from-mantid-to-scipp
 
 .. toctree::
