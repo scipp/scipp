@@ -73,7 +73,7 @@ static constexpr auto reciprocal_ = [](const auto a_) {
 };
 
 Variable reciprocal(const VariableConstProxy &var) {
-  return transform<double, float, int64_t, int32_t>(
+  return transform<double, float>(
       var, overloaded{reciprocal_, [](const units::Unit &unit) {
                         return units::Unit(units::dimensionless) / unit;
                       }});
