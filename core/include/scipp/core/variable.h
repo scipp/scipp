@@ -16,6 +16,7 @@
 #include "scipp/common/span.h"
 #include "scipp/core/dimensions.h"
 #include "scipp/core/dtype.h"
+#include "scipp/core/except.h"
 #include "scipp/core/slice.h"
 #include "scipp/core/string.h"
 #include "scipp/core/variable_view.h"
@@ -651,6 +652,10 @@ public:
   }
   template <class T> auto sparseVariances() const {
     return castVariances<sparse_container<T>>();
+  }
+  template <class T> const auto &value() const {
+    expect::equals(dims(), Dimensions());
+    return values<T>()[0];
   }
 
   bool operator==(const Variable &other) const;
