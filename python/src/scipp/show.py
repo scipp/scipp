@@ -4,7 +4,7 @@
 from math import ceil
 
 import numpy as np
-import scipp as sc
+from ._scipp import core as sc
 
 _colors = {
     'coord': ['dde9af', 'bcd35f', '89a02c'],

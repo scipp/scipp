@@ -2,7 +2,7 @@
 # Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock, Neil Vaytet
 
-import scipp as sc
+from .._scipp import core as sc
 import numpy as np
 
 

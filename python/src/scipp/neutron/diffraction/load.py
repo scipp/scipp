@@ -2,8 +2,11 @@
 # Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 # @author Mads Bertelsen
 
-import scipp as sc
-import scipp.neutron.exceptions as exceptions
+import numpy as np
+
+from ..._scipp import core as sc
+from ...compat.mantid import convert_TableWorkspace_to_dataset
+from .. import exceptions
 
 
 def load_calibration(filename, mantid_LoadDiffCal_args={}):
@@ -46,7 +49,7 @@ def load_calibration(filename, mantid_LoadDiffCal_args={}):
     output = mantid.LoadDiffCal(Filename=filename, **mantid_LoadDiffCal_args)
 
     cal_ws = output.OutputCalWorkspace
-    cal_data = sc.compat.mantid.convert_TableWorkspace_to_dataset(cal_ws)
+    cal_data = convert_TableWorkspace_to_dataset(cal_ws)
 
     # Modify units of cal_data
     cal_data["difc"].unit = sc.units.us/sc.units.angstrom
@@ -63,12 +66,12 @@ def load_calibration(filename, mantid_LoadDiffCal_args={}):
         group_map[group_ws.getDetector(i).getID()] = group_ws.readY(i)[0]
 
     # Create list with same ordering as in the cal_data dataset
-    group_list = [group_map[detid] for detid in cal_data["detid"].values]
+    group_list = np.array([group_map[detid] for detid in cal_data["detid"].values])
 
     cal_data["group"] = sc.Variable([sc.Dim.Row], values=group_list)
 
     cal_data.rename_dims({sc.Dim.Row: sc.Dim.Detector})
-    cal_data.coord[sc.Dim.Detector] = cal_data['detid']
+    cal_data.coords[sc.Dim.Detector] = cal_data['detid'].data
     del cal_data['detid']
 
     # Delete generated mantid workspaces
