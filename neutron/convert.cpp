@@ -12,8 +12,6 @@
 #include "scipp/neutron/beamline.h"
 #include "scipp/neutron/convert.h"
 
-#include <iostream>
-
 using namespace scipp::core;
 
 namespace scipp::neutron {
