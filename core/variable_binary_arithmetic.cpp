@@ -3,7 +3,6 @@
 /// @file
 /// @author Simon Heybrock
 #include <cmath>
-#include <iostream>
 
 #include "scipp/core/dataset.h"
 #include "scipp/core/except.h"
