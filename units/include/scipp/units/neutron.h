@@ -86,7 +86,7 @@ template <>
 struct boost::units::base_unit_info<
     scipp::units::detail::tof::wavelength_base_unit> {
   static std::string name() { return "angstroms"; }
-  static std::string symbol() { return "\u212B"; }
+  static std::string symbol() { return u8"\u212B"; }
 };
 
 template <>
@@ -106,7 +106,7 @@ struct boost::units::base_unit_info<
 template <>
 struct boost::units::base_unit_info<scipp::units::detail::tof::tof_base_unit> {
   static std::string name() { return "microseconds"; }
-  static std::string symbol() { return "\u03BCs"; }
+  static std::string symbol() { return u8"\u03BCs"; }
 };
 
 template <>
@@ -143,9 +143,10 @@ public:
   using Unit_impl<Unit>::Unit_impl;
 };
 
-SCIPP_UNITS_DECLARE_DIMENSIONS(DSpacing, Energy, EnergyTransfer, Position, Q,
-                               Qx, Qy, Qz, Row, Spectrum, Temperature, Time,
-                               Tof, Wavelength, X, Y, Z)
+SCIPP_UNITS_DECLARE_DIMENSIONS(Detector, DSpacing, Energy, EnergyTransfer,
+                               Position, Q, Qx, Qy, Qz, Row, ScatteringAngle,
+                               Spectrum, Temperature, Time, Tof, Wavelength, X,
+                               Y, Z)
 
 } // namespace neutron
 

@@ -96,12 +96,27 @@ struct SCIPP_CORE_EXPORT BinEdgeError : public std::runtime_error {
   using std::runtime_error::runtime_error;
 };
 
+struct SCIPP_CORE_EXPORT NotFoundError : public std::runtime_error {
+  using std::runtime_error::runtime_error;
+};
+
 } // namespace scipp::except
 
 namespace scipp::core::expect {
 template <class A, class B> void equals(const A &a, const B &b) {
   if (a != b)
     throw scipp::except::MismatchError(a, b);
+}
+
+template <class A, class Dim, class System, class Enable>
+void equals(const A &a, const boost::units::unit<Dim, System, Enable> &unit) {
+  const auto expectedUnit = units::Unit(unit);
+  if (a != expectedUnit)
+    throw scipp::except::MismatchError(a, expectedUnit);
+}
+template <class A, class Dim, class System, class Enable>
+void equals(const boost::units::unit<Dim, System, Enable> &unit, const A &a) {
+  equals(a, unit);
 }
 
 SCIPP_CORE_EXPORT void dimensionMatches(const Dimensions &dims, const Dim dim,
@@ -113,10 +128,12 @@ void sizeMatches(const T &range, const Ts &... other) {
     throw except::SizeError("Expected matching sizes.");
 }
 
-template <class T> void contains(const T &a, const T &b) {
+inline auto to_string(const std::string &s) { return s; }
+
+template <class A, class B> void contains(const A &a, const B &b) {
   if (!a.contains(b))
-    throw std::runtime_error("Expected " + to_string(a) + " to contain " +
-                             to_string(b) + ".");
+    throw except::NotFoundError("Expected " + to_string(a) + " to contain " +
+                                to_string(b) + ".");
 }
 template <class T> void unit(const T &object, const units::Unit &unit) {
   expect::equals(object.unit(), unit);

@@ -12,6 +12,38 @@
 using namespace scipp;
 using namespace scipp::core;
 
+template <typename T>
+class VariableScalarOperatorTest : public ::testing::Test {
+public:
+  Variable variable{makeVariable<T>({Dim::X, 1}, {10})};
+  const T scalar{2};
+
+  T value() const { return this->variable.template values<T>()[0]; }
+};
+
+using ScalarTypes = ::testing::Types<double, float, int64_t, int32_t>;
+TYPED_TEST_SUITE(VariableScalarOperatorTest, ScalarTypes);
+
+TYPED_TEST(VariableScalarOperatorTest, plus_equals) {
+  this->variable += this->scalar;
+  EXPECT_EQ(this->value(), 12);
+}
+
+TYPED_TEST(VariableScalarOperatorTest, minus_equals) {
+  this->variable -= this->scalar;
+  EXPECT_EQ(this->value(), 8);
+}
+
+TYPED_TEST(VariableScalarOperatorTest, times_equals) {
+  this->variable *= this->scalar;
+  EXPECT_EQ(this->value(), 20);
+}
+
+TYPED_TEST(VariableScalarOperatorTest, divide_equals) {
+  this->variable /= this->scalar;
+  EXPECT_EQ(this->value(), 5);
+}
+
 TEST(Variable, operator_unary_minus) {
   const auto a = makeVariable<double>({Dim::X, 2}, units::m, {1.1, 2.2});
   const auto expected =
@@ -319,10 +351,29 @@ TEST(Variable, operator_divide_scalar_double) {
 
 TEST(Variable, operator_divide_scalar_float) {
   const auto a = makeVariable<float>({Dim::X, 2}, units::m, {2.0, 4.0});
-  const auto result = 1.111 / a;
+  const auto result = 1.111f / a;
   EXPECT_EQ(result.values<float>()[0], 1.111f / 2.0f);
   EXPECT_EQ(result.values<float>()[1], 1.111f / 4.0f);
   EXPECT_EQ(result.unit(), units::dimensionless / units::m);
+}
+
+TEST(Variable, operator_allowed_types) {
+  auto i32 = makeVariable<int32_t>(10);
+  auto i64 = makeVariable<int64_t>(10);
+  auto f = makeVariable<float>(0.5f);
+  auto d = makeVariable<double>(0.5);
+
+  /* Can operate on higher precision from lower precision */
+  EXPECT_NO_THROW(i64 += i32);
+  EXPECT_NO_THROW(d += f);
+
+  /* Can not operate on lower precision from higher precision */
+  EXPECT_ANY_THROW(i32 += i64);
+  EXPECT_ANY_THROW(f += d);
+
+  /* Expect promotion to double if one parameter is double */
+  EXPECT_EQ(dtype<double>, (f + d).dtype());
+  EXPECT_EQ(dtype<double>, (d + f).dtype());
 }
 
 TEST(Variable, concatenate) {
@@ -873,24 +924,24 @@ TEST(Variable, reverse) {
 TEST(Variable, non_in_place_scalar_operations) {
   auto var = makeVariable<double>({{Dim::X, 2}}, {1, 2});
 
-  auto sum = var + 1;
+  auto sum = var + 1.0;
   EXPECT_TRUE(equals(sum.values<double>(), {2, 3}));
-  sum = 2 + var;
+  sum = 2.0 + var;
   EXPECT_TRUE(equals(sum.values<double>(), {3, 4}));
 
-  auto diff = var - 1;
+  auto diff = var - 1.0;
   EXPECT_TRUE(equals(diff.values<double>(), {0, 1}));
-  diff = 2 - var;
+  diff = 2.0 - var;
   EXPECT_TRUE(equals(diff.values<double>(), {1, 0}));
 
-  auto prod = var * 2;
+  auto prod = var * 2.0;
   EXPECT_TRUE(equals(prod.values<double>(), {2, 4}));
-  prod = 3 * var;
+  prod = 3.0 * var;
   EXPECT_TRUE(equals(prod.values<double>(), {3, 6}));
 
-  auto ratio = var / 2;
+  auto ratio = var / 2.0;
   EXPECT_TRUE(equals(ratio.values<double>(), {1.0 / 2.0, 1.0}));
-  ratio = 3 / var;
+  ratio = 3.0 / var;
   EXPECT_TRUE(equals(ratio.values<double>(), {3.0, 1.5}));
 }
 
@@ -898,17 +949,17 @@ TEST(VariableProxy, scalar_operations) {
   auto var = makeVariable<double>({{Dim::Y, 2}, {Dim::X, 3}},
                                   {11, 12, 13, 21, 22, 23});
 
-  var.slice({Dim::X, 0}) += 1;
+  var.slice({Dim::X, 0}) += 1.0;
   EXPECT_TRUE(equals(var.values<double>(), {12, 12, 13, 22, 22, 23}));
-  var.slice({Dim::Y, 1}) += 1;
+  var.slice({Dim::Y, 1}) += 1.0;
   EXPECT_TRUE(equals(var.values<double>(), {12, 12, 13, 23, 23, 24}));
-  var.slice({Dim::X, 1, 3}) += 1;
+  var.slice({Dim::X, 1, 3}) += 1.0;
   EXPECT_TRUE(equals(var.values<double>(), {12, 13, 14, 23, 24, 25}));
-  var.slice({Dim::X, 1}) -= 1;
+  var.slice({Dim::X, 1}) -= 1.0;
   EXPECT_TRUE(equals(var.values<double>(), {12, 12, 14, 23, 23, 25}));
-  var.slice({Dim::X, 2}) *= 0;
+  var.slice({Dim::X, 2}) *= 0.0;
   EXPECT_TRUE(equals(var.values<double>(), {12, 12, 0, 23, 23, 0}));
-  var.slice({Dim::Y, 0}) /= 2;
+  var.slice({Dim::Y, 0}) /= 2.0;
   EXPECT_TRUE(equals(var.values<double>(), {6, 6, 0, 23, 23, 0}));
 }
 
@@ -944,4 +995,23 @@ TEST(VariableTest, divide_with_variance) {
   EXPECT_DOUBLE_EQ(q.values<double>()[1], expected.values<double>()[1]);
   EXPECT_DOUBLE_EQ(q.variances<double>()[0], expected.variances<double>()[0]);
   EXPECT_DOUBLE_EQ(q.variances<double>()[1], expected.variances<double>()[1]);
+}
+
+TEST(VariableTest, boolean_or) {
+  const auto a = makeVariable<bool>({Dim::X, 3}, {false, true, false});
+  const auto b = makeVariable<bool>({Dim::X, 3}, {false, false, false});
+  const auto expected = makeVariable<bool>({Dim::X, 3}, {false, true, false});
+
+  const auto result = a | b;
+
+  EXPECT_EQ(result, expected);
+}
+
+TEST(VariableTest, boolean_or_equals) {
+  auto a = makeVariable<bool>({Dim::X, 3}, {false, true, false});
+  const auto b = makeVariable<bool>({Dim::X, 3}, {false, false, false});
+  a |= b;
+  const auto expected = makeVariable<bool>({Dim::X, 3}, {false, true, false});
+
+  EXPECT_EQ(a, expected);
 }

@@ -15,6 +15,7 @@ TEST(MergeTest, simple) {
   a.setCoord(Dim::Y, makeVariable<int>({Dim::Y, 3}, {6, 7, 8}));
   a.setData("data_1", makeVariable<int>({Dim::X, 3}, {15, 16, 17}));
   a.setLabels("label_1", makeVariable<int>({Dim::Y, 3}, {9, 8, 7}));
+  a.setMask("masks_1", makeVariable<bool>({Dim::X, 3}, {false, true, false}));
   a.setAttr("attr_1", makeVariable<int>(42));
   a.setAttr("attr_2", makeVariable<int>(495));
 
@@ -22,6 +23,7 @@ TEST(MergeTest, simple) {
   b.setCoord(Dim::X, makeVariable<int>({Dim::X, 3}, {1, 2, 3}));
   b.setData("data_2", makeVariable<int>({Dim::X, 3}, {11, 12, 13}));
   b.setLabels("label_2", makeVariable<int>({Dim::X, 3}, {9, 8, 9}));
+  b.setMask("masks_2", makeVariable<bool>({Dim::X, 3}, {false, true, false}));
   b.setAttr("attr_2", makeVariable<int>(495));
 
   const auto d = merge(a, b);
@@ -34,6 +36,9 @@ TEST(MergeTest, simple) {
 
   EXPECT_EQ(a.labels()["label_1"], d.labels()["label_1"]);
   EXPECT_EQ(b.labels()["label_2"], d.labels()["label_2"]);
+
+  EXPECT_EQ(a.masks()["masks_1"], d.masks()["masks_1"]);
+  EXPECT_EQ(b.masks()["masks_2"], d.masks()["masks_2"]);
 
   EXPECT_EQ(a.attrs()["attr_1"], d.attrs()["attr_1"]);
   EXPECT_EQ(b.attrs()["attr_2"], d.attrs()["attr_2"]);
@@ -141,6 +146,16 @@ TEST(MergeTest, non_matching_sparse_labels) {
     b.setSparseLabels("sparse", "l", label);
   }
 
+  EXPECT_THROW(auto d = merge(a, b), std::runtime_error);
+}
+
+TEST(MergeTest, non_matching_masks) {
+  Dataset a;
+  Dataset b;
+  a.setMask("a",
+            makeVariable<bool>({Dim::X, 5}, {false, true, false, true, false}));
+  b.setMask("a",
+            makeVariable<bool>({Dim::X, 5}, {true, true, true, true, true}));
   EXPECT_THROW(auto d = merge(a, b), std::runtime_error);
 }
 

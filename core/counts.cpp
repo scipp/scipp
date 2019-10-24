@@ -10,11 +10,11 @@ namespace scipp::core {
 
 namespace counts {
 
-std::vector<Variable> getBinWidths(const Dataset &d,
+std::vector<Variable> getBinWidths(const CoordsConstProxy &c,
                                    const std::vector<Dim> &dims) {
   std::vector<Variable> binWidths;
   for (const auto dim : dims) {
-    const auto &coord = d.coords()[dim];
+    const auto &coord = c[dim];
     if (coord.unit() == units::dimensionless)
       throw std::runtime_error("Dimensionless axis cannot be used for "
                                "conversion from or to density");
@@ -48,12 +48,22 @@ Dataset toDensity(Dataset d, const Dim dim) {
 }
 
 Dataset toDensity(Dataset d, const std::vector<Dim> &dims) {
-  const auto binWidths = getBinWidths(d, dims);
-  for (const auto & [ name, data ] : d) {
+  const auto binWidths = getBinWidths(d.coords(), dims);
+  for (const auto &[name, data] : d) {
     static_cast<void>(name);
     toDensity(data, binWidths);
   }
   return d;
+}
+
+DataArray toDensity(DataArray a, const Dim dim) {
+  return toDensity(std::move(a), std::vector<Dim>{dim});
+}
+
+DataArray toDensity(DataArray a, const std::vector<Dim> &dims) {
+  const auto binWidths = getBinWidths(a.coords(), dims);
+  toDensity(a, binWidths);
+  return a;
 }
 
 void fromDensity(const DataProxy data, const std::vector<Variable> &binWidths) {
@@ -70,12 +80,22 @@ Dataset fromDensity(Dataset d, const Dim dim) {
 }
 
 Dataset fromDensity(Dataset d, const std::vector<Dim> &dims) {
-  const auto binWidths = getBinWidths(d, dims);
-  for (const auto & [ name, data ] : d) {
+  const auto binWidths = getBinWidths(d.coords(), dims);
+  for (const auto &[name, data] : d) {
     static_cast<void>(name);
     fromDensity(data, binWidths);
   }
   return d;
+}
+
+DataArray fromDensity(DataArray a, const Dim dim) {
+  return fromDensity(std::move(a), std::vector<Dim>{dim});
+}
+
+DataArray fromDensity(DataArray a, const std::vector<Dim> &dims) {
+  const auto binWidths = getBinWidths(a.coords(), dims);
+  fromDensity(a, binWidths);
+  return a;
 }
 
 } // namespace counts

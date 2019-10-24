@@ -4,14 +4,15 @@
 /// @author Simon Heybrock
 #include <cmath>
 
-#include "operators.h"
-
 #include "scipp/core/apply.h"
 #include "scipp/core/counts.h"
 #include "scipp/core/dtype.h"
 #include "scipp/core/except.h"
 #include "scipp/core/transform.h"
 #include "scipp/core/variable.h"
+
+#include "operators.h"
+#include "variable_operations_common.h"
 
 namespace scipp::core {
 
@@ -137,14 +138,18 @@ Variable filter(const Variable &var, const Variable &filter) {
   return out;
 }
 
+void sum_impl(const VariableProxy &summed, const VariableConstProxy &var) {
+  accumulate_in_place<
+      pair_self_t<double, float, int64_t, int32_t, Eigen::Vector3d>>(
+      summed, var, [](auto &&a, auto &&b) { a += b; });
+}
+
 Variable sum(const VariableConstProxy &var, const Dim dim) {
   expect::notSparse(var);
   auto dims = var.dims();
   dims.erase(dim);
   Variable summed(var, dims);
-  accumulate_in_place<
-      pair_self_t<double, float, int64_t, int32_t, Eigen::Vector3d>>(
-      summed, var, [](auto &&a, auto &&b) { a += b; });
+  sum_impl(summed, var);
   return summed;
 }
 
@@ -165,13 +170,13 @@ Variable abs(const Variable &var) {
   return transform<double, float>(var, [](const auto x) { return abs(x); });
 }
 
-Variable norm(const Variable &var) {
+Variable norm(const VariableConstProxy &var) {
   return transform<Eigen::Vector3d>(
       var, overloaded{[](const auto &x) { return x.norm(); },
                       [](const units::Unit &x) { return x; }});
 }
 
-Variable sqrt(const Variable &var) {
+Variable sqrt(const VariableConstProxy &var) {
   using std::sqrt;
   return transform<double, float>(var, [](const auto x) { return sqrt(x); });
 }

@@ -13,11 +13,13 @@ TEST(ConcatenateTest, simple_1d) {
   a.setCoord(Dim::X, makeVariable<int>({Dim::X, 3}, {1, 2, 3}));
   a.setData("data_1", makeVariable<int>({Dim::X, 3}, {11, 12, 13}));
   a.setLabels("label_1", makeVariable<int>({Dim::X, 3}, {21, 22, 23}));
+  a.setMask("mask_1", makeVariable<bool>({Dim::X, 3}, {false, true, false}));
 
   Dataset b;
   b.setCoord(Dim::X, makeVariable<int>({Dim::X, 3}, {4, 5, 6}));
   b.setData("data_1", makeVariable<int>({Dim::X, 3}, {14, 15, 16}));
   b.setLabels("label_1", makeVariable<int>({Dim::X, 3}, {24, 25, 26}));
+  b.setMask("mask_1", makeVariable<bool>({Dim::X, 3}, {false, true, false}));
 
   const auto d = concatenate(a, b, Dim::X);
 
@@ -27,6 +29,9 @@ TEST(ConcatenateTest, simple_1d) {
             makeVariable<int>({Dim::X, 6}, {11, 12, 13, 14, 15, 16}));
   EXPECT_EQ(d.labels()["label_1"],
             makeVariable<int>({Dim::X, 6}, {21, 22, 23, 24, 25, 26}));
+  EXPECT_EQ(d.masks()["mask_1"],
+            makeVariable<bool>({Dim::X, 6},
+                               {false, true, false, false, true, false}));
 }
 
 TEST(ConcatenateTest, simple_1d_histogram) {
@@ -35,12 +40,14 @@ TEST(ConcatenateTest, simple_1d_histogram) {
   a.setData("data_1", makeVariable<int>({Dim::X, 2}, {11, 12}));
   a.setLabels("edge_labels", makeVariable<int>({Dim::X, 3}, {21, 22, 23}));
   a.setLabels("labels", makeVariable<int>({Dim::X, 2}, {21, 22}));
+  a.setMask("masks", makeVariable<bool>({Dim::X, 2}, {false, true}));
 
   Dataset b;
   b.setCoord(Dim::X, makeVariable<int>({Dim::X, 3}, {3, 4, 5}));
   b.setData("data_1", makeVariable<int>({Dim::X, 2}, {13, 14}));
   b.setLabels("edge_labels", makeVariable<int>({Dim::X, 3}, {23, 24, 25}));
   b.setLabels("labels", makeVariable<int>({Dim::X, 2}, {24, 25}));
+  b.setMask("masks", makeVariable<bool>({Dim::X, 2}, {false, true}));
 
   Dataset expected;
   expected.setCoord(Dim::X, makeVariable<int>({Dim::X, 5}, {1, 2, 3, 4, 5}));
@@ -49,6 +56,8 @@ TEST(ConcatenateTest, simple_1d_histogram) {
                      makeVariable<int>({Dim::X, 5}, {21, 22, 23, 24, 25}));
   expected.setLabels("labels",
                      makeVariable<int>({Dim::X, 4}, {21, 22, 24, 25}));
+  expected.setMask("masks",
+                   makeVariable<bool>({Dim::X, 4}, {false, true, false, true}));
 
   EXPECT_EQ(concatenate(a, b, Dim::X), expected);
 }
@@ -114,22 +123,25 @@ TEST(ConcatenateTest, non_dependant_data_is_stacked) {
 
 TEST(ConcatenateTest, concat_2d_coord) {
   Dataset a;
-  a.setCoord(Dim::X, makeVariable<double>({Dim::X, 3}, {1, 2, 3}));
-  a.setData("data_1", makeVariable<double>({Dim::X, 3}, {11, 12, 13}));
+  a.setCoord(Dim::X, makeVariable<int>({Dim::X, 3}, {1, 2, 3}));
+  a.setData("data_1", makeVariable<int>({Dim::X, 3}, {11, 12, 13}));
   a.setLabels("label_1", makeVariable<int>({Dim::X, 3}, {21, 22, 23}));
+  a.setMask("mask_1", makeVariable<bool>({Dim::X, 3}, {false, true, false}));
 
   Dataset b(a);
   b.coords()[Dim::X] += 3;
-  b["data_1"].data() += 1;
+  b["data_1"].data() += 100;
 
   Dataset expected;
   expected.setCoord(Dim::X,
-                    makeVariable<double>({{Dim::Y, 4}, {Dim::X, 3}},
-                                         {1, 2, 3, 4, 5, 6, 4, 5, 6, 1, 2, 3}));
-  expected.setData("data_1", makeVariable<double>({{Dim::Y, 4}, {Dim::X, 3}},
-                                                  {11, 12, 13, 12, 13, 14, 12,
-                                                   13, 14, 11, 12, 13}));
+                    makeVariable<int>({{Dim::Y, 4}, {Dim::X, 3}},
+                                      {1, 2, 3, 4, 5, 6, 4, 5, 6, 1, 2, 3}));
+  expected.setData("data_1", makeVariable<int>({{Dim::Y, 4}, {Dim::X, 3}},
+                                               {11, 12, 13, 111, 112, 113, 111,
+                                                112, 113, 11, 12, 13}));
   expected.setLabels("label_1", makeVariable<int>({Dim::X, 3}, {21, 22, 23}));
+  expected.setMask("mask_1",
+                   makeVariable<bool>({Dim::X, 3}, {false, true, false}));
 
   const auto ab = concatenate(a, b, Dim::Y);
   const auto ba = concatenate(b, a, Dim::Y);

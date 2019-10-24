@@ -10,7 +10,7 @@ ExternalProject_Add(boost
   BINARY_DIR        "${CMAKE_BINARY_DIR}/boost-build"
   CONFIGURE_COMMAND ""
   BUILD_COMMAND     ""
-  INSTALL_COMMAND   mkdir -p ${CMAKE_BINARY_DIR}/boost/include
-            COMMAND cp -a ${CMAKE_BINARY_DIR}/boost-src/boost ${CMAKE_BINARY_DIR}/boost/include
+  INSTALL_COMMAND   "${CMAKE_COMMAND}" -E make_directory ${CMAKE_BINARY_DIR}/boost/include/boost
+  COMMAND   "${CMAKE_COMMAND}" -E copy_directory ${CMAKE_BINARY_DIR}/boost-src/boost ${CMAKE_BINARY_DIR}/boost/include/boost
   TEST_COMMAND      ""
 )

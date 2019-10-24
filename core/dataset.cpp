@@ -59,18 +59,19 @@ auto makeProxyItems(const Dimensions &dims, T1 &coords, T2 *sparse = nullptr) {
 }
 
 Dataset::Dataset(const DatasetConstProxy &proxy)
-    : Dataset(proxy, proxy.coords(), proxy.labels(), proxy.attrs()) {}
+    : Dataset(proxy, proxy.coords(), proxy.labels(), proxy.masks(),
+              proxy.attrs()) {}
 
 Dataset::Dataset(const DataConstProxy &data) { setData(data.name(), data); }
 
 Dataset::Dataset(const std::map<std::string, DataConstProxy> &data) {
-  for (const auto & [ name, item ] : data)
+  for (const auto &[name, item] : data)
     setData(name, item);
 }
 
 /// Removes all data items from the Dataset.
 ///
-/// Coordinates, labels and attributes are not modified.
+/// Coordinates, labels, attributes and masks are not modified.
 /// This operation invalidates any proxy objects creeated from this dataset.
 void Dataset::clear() {
   m_data.clear();
@@ -113,6 +114,16 @@ AttrsProxy Dataset::attrs() noexcept {
   return AttrsProxy(this, nullptr, makeProxyItems<std::string>(m_attrs));
 }
 
+/// Return a const proxy to all masks of the dataset.
+MasksConstProxy Dataset::masks() const noexcept {
+  return MasksConstProxy(makeProxyItems<std::string>(m_masks));
+}
+
+/// Return a proxy to all masks of the dataset.
+MasksProxy Dataset::masks() noexcept {
+  return MasksProxy(this, nullptr, makeProxyItems<std::string>(m_masks));
+}
+
 bool Dataset::contains(const std::string &name) const noexcept {
   return m_data.count(name) == 1;
 }
@@ -131,26 +142,22 @@ void Dataset::erase(const std::string_view name) {
 
 /// Return a const proxy to data and coordinates with given name.
 DataConstProxy Dataset::operator[](const std::string &name) const {
-  const auto it = m_data.find(name);
-  if (it == m_data.end())
-    throw std::out_of_range("Could not find data with name " +
-                            std::string(name) + ".");
-  return DataConstProxy(*this, *it);
+  expect::contains(*this, name);
+  return DataConstProxy(*this, *m_data.find(name));
 }
 
 /// Return a proxy to data and coordinates with given name.
 DataProxy Dataset::operator[](const std::string &name) {
-  const auto it = m_data.find(name);
-  if (it == m_data.end())
-    throw std::out_of_range("Could not find data with name " +
-                            std::string(name) + ".");
-  return DataProxy(*this, *it);
+  expect::contains(*this, name);
+  return DataProxy(*this, *m_data.find(name));
 }
 
 namespace extents {
 // Internally use negative extent -1 to indicate unknown edge state. The `-1`
 // is required for dimensions with extent 0.
 scipp::index makeUnknownEdgeState(const scipp::index extent) {
+  if (extent == Dimensions::Sparse)
+    return extent;
   return -extent - 1;
 }
 scipp::index shrink(const scipp::index extent) { return extent - 1; }
@@ -176,10 +183,12 @@ void setExtent(std::unordered_map<Dim, scipp::index> &dims, const Dim dim,
   // is required for dimensions with extent 0.
   if (it == dims.end()) {
     dims[dim] = extents::makeUnknownEdgeState(extent);
-  } else {
+  } else if (extent != Dimensions::Sparse) {
     auto &heldExtent = it->second;
     if (extents::isUnknownEdgeState(heldExtent)) {
-      if (extents::isSame(extent, heldExtent)) { // Do nothing
+      if (heldExtent == Dimensions::Sparse) {
+        heldExtent = extents::makeUnknownEdgeState(extent);
+      } else if (extents::isSame(extent, heldExtent)) { // Do nothing
       } else if (extents::oneLarger(extent, heldExtent) && isCoord) {
         heldExtent = extents::shrink(extent);
       } else if (extents::oneSmaller(extent, heldExtent) && !isCoord) {
@@ -209,6 +218,8 @@ void Dataset::setDims(const Dimensions &dims, const Dim coordDim) {
   auto tmp = m_dims;
   for (const auto dim : dims.denseLabels())
     extents::setExtent(tmp, dim, dims[dim], dim == coordDim);
+  if (dims.sparse())
+    extents::setExtent(tmp, dims.sparseDim(), Dimensions::Sparse, false);
   m_dims = tmp;
 }
 
@@ -224,6 +235,9 @@ void Dataset::rebuildDims() {
   }
   for (const auto &l : m_labels) {
     setDims(l.second.dims());
+  }
+  for (const auto &m : m_masks) {
+    setDims(m.second.dims());
   }
   for (const auto &a : m_attrs) {
     setDims(a.second.dims());
@@ -252,6 +266,15 @@ void Dataset::setAttr(const std::string &attrName, Variable attr) {
   m_attrs.insert_or_assign(attrName, std::move(attr));
 }
 
+/// Set (insert or replace) the masks for the given mask name.
+///
+/// Note that the mask name has no relation to names of data items.
+void Dataset::setMask(const std::string &masksName, Variable masks) {
+  setDims(masks.dims());
+
+  m_masks.insert_or_assign(masksName, std::move(masks));
+}
+
 /// Set (insert or replace) data (values, optional variances) with given name.
 ///
 /// Throws if the provided values bring the dataset into an inconsistent state
@@ -268,12 +291,12 @@ void Dataset::setData(const std::string &name, Variable data) {
 
 /// Set (insert or replace) data item with given name.
 ///
-/// Coordinates, labels, and attributes of the data array are added to the
+/// Coordinates, labels, attributes and masks of the data array are added to the
 /// dataset. Throws if there are existing but mismatching coords, labels, or
 /// attributes. Throws if the provided data brings the dataset into an
 /// inconsistent state (mismatching dtype, unit, or dimensions).
 void Dataset::setData(const std::string &name, const DataConstProxy &data) {
-  for (const auto & [ dim, coord ] : data.coords()) {
+  for (const auto &[dim, coord] : data.coords()) {
     if (coord.dims().sparse()) {
       setSparseCoord(name, coord);
     } else {
@@ -283,7 +306,7 @@ void Dataset::setData(const std::string &name, const DataConstProxy &data) {
         setCoord(dim, coord);
     }
   }
-  for (const auto & [ nm, labs ] : data.labels()) {
+  for (const auto &[nm, labs] : data.labels()) {
     if (labs.dims().sparse()) {
       setSparseLabels(name, std::string(nm), labs);
     } else {
@@ -293,7 +316,12 @@ void Dataset::setData(const std::string &name, const DataConstProxy &data) {
         setLabels(std::string(nm), labs);
     }
   }
-  for (const auto & [ nm, attr ] : data.attrs()) {
+
+  for (const auto &[nm, mask] : data.masks()) {
+    setMask(std::string(nm), mask);
+  }
+
+  for (const auto &[nm, attr] : data.attrs()) {
     if (const auto it = m_attrs.find(std::string(nm)); it != m_attrs.end())
       expect::equals(attr, it->second);
     else
@@ -329,7 +357,6 @@ void Dataset::setSparseCoord(const std::string &name, Variable coord) {
 /// Set (insert or replace) the sparse labels with given name and label name.
 void Dataset::setSparseLabels(const std::string &name,
                               const std::string &labelName, Variable labels) {
-  setDims(labels.dims());
   if (!labels.dims().sparse())
     throw std::runtime_error("Variable passed to Dataset::setSparseLabels does "
                              "not contain sparse data.");
@@ -342,12 +369,65 @@ void Dataset::setSparseLabels(const std::string &name,
       throw std::runtime_error("Cannot set sparse labels if values or "
                                "variances are not sparse.");
   }
+
   const auto &data = m_data.at(name);
   if (!data.data && !data.coord)
     throw std::runtime_error(
         "Cannot set sparse labels: Require either values or a sparse coord.");
 
+  setDims(labels.dims());
   m_data[name].labels.insert_or_assign(labelName, std::move(labels));
+}
+
+/// Removes the coordinate for the given dimension.
+void Dataset::eraseCoord(const Dim dim) {
+  erase_from_map(&Dataset::m_coords, dim);
+}
+
+/// Removes the labels for the given label name.
+void Dataset::eraseLabels(const std::string &labelName) {
+  erase_from_map(&Dataset::m_labels, labelName);
+}
+
+/// Removes an attribute for the given attribute name.
+void Dataset::eraseAttr(const std::string &attrName) {
+  erase_from_map(&Dataset::m_attrs, attrName);
+}
+
+/// Removes an attribute for the given attribute name.
+void Dataset::eraseMask(const std::string &maskName) {
+  erase_from_map(&Dataset::m_masks, maskName);
+}
+
+/// Remove the sparse coordinate with given name.
+///
+/// Sparse coordinates can exist even without corresponding data.
+void Dataset::eraseSparseCoord(const std::string &name) {
+  auto iter = m_data.find(name);
+  if (iter == m_data.end())
+    throw scipp::except::SparseDataError("No sparse data with name " + name +
+                                         " found.");
+
+  auto &data = iter->second;
+  !data.data ? [this, &iter]() { m_data.erase(iter); }() : data.coord.reset();
+  rebuildDims();
+}
+
+/// Remove the sparse labels with given name and label name.
+void Dataset::eraseSparseLabels(const std::string &name,
+                                const std::string &labelName) {
+  auto iter = m_data.find(name);
+  if (iter == m_data.end())
+    throw std::runtime_error("No sparse data with name " + name + " found.");
+
+  auto &data = iter->second;
+  auto liter = data.labels.find(labelName);
+  if (liter == data.labels.end())
+    throw scipp::except::SparseDataError("No sparse data with name " + name +
+                                         " found.");
+
+  data.labels.size() == 1 ? data.labels.clear()
+                          : [this, &iter]() { m_data.erase(iter); }();
 }
 
 /// Return const slice of the dataset along given dimension with given extents.
@@ -436,7 +516,8 @@ void Dataset::rename(const Dim from, const Dim to) {
     map.insert(std::move(node));
   };
   relabel(m_dims);
-  relabel(m_coords);
+  if (coords().contains(from))
+    relabel(m_coords);
   for (auto &item : m_coords)
     item.second.rename(from, to);
   for (auto &item : m_labels)
@@ -449,7 +530,7 @@ void Dataset::rename(const Dim from, const Dim to) {
       value.data->rename(from, to);
     if (value.coord)
       value.coord->rename(from, to);
-    for (auto labels : value.labels)
+    for (auto &labels : value.labels)
       labels.second.rename(from, to);
   }
 }
@@ -516,6 +597,12 @@ AttrsConstProxy DataConstProxy::attrs() const noexcept {
       makeProxyItems<std::string>(dims(), m_dataset->m_attrs), slices());
 }
 
+/// Return a const proxy to all masks of the data proxy.
+MasksConstProxy DataConstProxy::masks() const noexcept {
+  return MasksConstProxy(
+      makeProxyItems<std::string>(dims(), m_dataset->m_masks), slices());
+}
+
 /// Return a proxy to all coordinates of the data proxy.
 ///
 /// If the data has a sparse dimension the returned proxy will not contain any
@@ -548,6 +635,13 @@ AttrsProxy DataProxy::attrs() const noexcept {
       makeProxyItems<std::string>(dims(), m_mutableDataset->m_attrs), slices());
 }
 
+/// Return a proxy to all masks of the data proxy.
+MasksProxy DataProxy::masks() const noexcept {
+  return MasksProxy(
+      m_mutableDataset, &name(),
+      makeProxyItems<std::string>(dims(), m_mutableDataset->m_masks), slices());
+}
+
 DataProxy DataProxy::assign(const DataConstProxy &other) const {
   expect::coordsAndLabelsAreSuperset(*this, other);
   // TODO here and below: If other has data, we should either fail, or create
@@ -570,7 +664,7 @@ DataProxy DataProxy::assign(const VariableConstProxy &other) const {
 }
 
 DatasetProxy DatasetProxy::assign(const DatasetConstProxy &other) const {
-  for (const auto & [ name, data ] : other)
+  for (const auto &[name, data] : other)
     operator[](name).assign(data);
   return *this;
 }
@@ -620,11 +714,18 @@ AttrsProxy DatasetProxy::attrs() const noexcept {
                     makeProxyItems<std::string>(m_mutableDataset->m_attrs),
                     slices());
 }
+/// Return a const proxy to all masks of the dataset slice.
+MasksConstProxy DatasetConstProxy::masks() const noexcept {
+  return MasksConstProxy(makeProxyItems<std::string>(m_dataset->m_masks),
+                         slices());
+}
 
-void DatasetConstProxy::expectValidKey(const std::string &name) const {
-  if (std::find(m_indices.begin(), m_indices.end(), name) == m_indices.end())
-    throw std::out_of_range("Invalid key `" + std::string(name) +
-                            "` in Dataset access.");
+/// Return a proxy to all masks of the dataset slice.
+MasksProxy DatasetProxy::masks() const noexcept {
+  auto *parent = slices().empty() ? m_mutableDataset : nullptr;
+  return MasksProxy(parent, nullptr,
+                    makeProxyItems<std::string>(m_mutableDataset->m_masks),
+                    slices());
 }
 
 bool DatasetConstProxy::contains(const std::string &name) const noexcept {
@@ -633,13 +734,13 @@ bool DatasetConstProxy::contains(const std::string &name) const noexcept {
 
 /// Return a const proxy to data and coordinates with given name.
 DataConstProxy DatasetConstProxy::operator[](const std::string &name) const {
-  expectValidKey(name);
+  expect::contains(*this, name);
   return {*m_dataset, *(*m_dataset).m_data.find(name), slices()};
 }
 
 /// Return a proxy to data and coordinates with given name.
 DataProxy DatasetProxy::operator[](const std::string &name) const {
-  expectValidKey(name);
+  expect::contains(*this, name);
   return {*m_mutableDataset, *(*m_mutableDataset).m_data.find(name), slices()};
 }
 
@@ -652,6 +753,8 @@ bool operator==(const DataConstProxy &a, const DataConstProxy &b) {
   if (a.coords() != b.coords())
     return false;
   if (a.labels() != b.labels())
+    return false;
+  if (a.masks() != b.masks())
     return false;
   if (a.attrs() != b.attrs())
     return false;
@@ -671,13 +774,15 @@ template <class A, class B> bool dataset_equals(const A &a, const B &b) {
     return false;
   if (a.labels() != b.labels())
     return false;
+  if (a.masks() != b.masks())
+    return false;
   if (a.attrs() != b.attrs())
     return false;
-  for (const auto & [ name, data ] : a) {
+  for (const auto &[name, data] : a) {
     try {
       if (data != b[std::string(name)])
         return false;
-    } catch (std::out_of_range &) {
+    } catch (except::NotFoundError &) {
       return false;
     }
   }
@@ -728,16 +833,15 @@ std::unordered_map<Dim, scipp::index> DatasetConstProxy::dimensions() const {
 
   auto base_dims = m_dataset->dimensions();
   // Note current slices are ordered, but NOT unique
-  for (const auto & [ slice, extents ] : m_slices) {
+  for (const auto &[slice, extents] : m_slices) {
     (void)extents;
     auto it = base_dims.find(slice.dim());
     if (!slice.isRange()) { // For non-range. Erase dimension
       base_dims.erase(it);
     } else {
-      it->second =
-          slice.end() -
-          slice.begin(); // Take extent from slice. This is the effect that
-                         // the successful slice range will have
+      it->second = slice.end() -
+                   slice.begin(); // Take extent from slice. This is the effect
+                                  // that the successful slice range will have
     }
   }
   return base_dims;
@@ -751,4 +855,38 @@ std::unordered_map<Dim, scipp::index> Dataset::dimensions() const {
   return all;
 }
 
+std::map<typename MasksConstProxy::key_type,
+         typename MasksConstProxy::mapped_type>
+union_or(const MasksConstProxy &currentMasks,
+         const MasksConstProxy &otherMasks) {
+  std::map<typename MasksConstProxy::key_type,
+           typename MasksConstProxy::mapped_type>
+      out;
+
+  for (const auto &[key, item] : currentMasks) {
+    out.emplace(key, item);
+  }
+
+  for (const auto &[key, item] : otherMasks) {
+    const auto it = currentMasks.find(key);
+    if (it != currentMasks.end()) {
+      out[key] |= item;
+    } else {
+      out.emplace(key, item);
+    }
+  }
+  return out;
+}
+
+void union_or_in_place(const MasksProxy &currentMasks,
+                       const MasksConstProxy &otherMasks) {
+  for (const auto &[key, item] : otherMasks) {
+    const auto it = currentMasks.find(key);
+    if (it != currentMasks.end()) {
+      it->second |= item;
+    } else {
+      currentMasks.set(key, item);
+    }
+  }
+}
 } // namespace scipp::core

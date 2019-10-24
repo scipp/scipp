@@ -10,6 +10,7 @@
 #include "scipp/core/except.h"
 #include "scipp/core/sort.h"
 #include "scipp/core/tag_util.h"
+#include "scipp/core/transform.h"
 #include "scipp/core/variable.h"
 
 #include "bind_data_access.h"
@@ -18,6 +19,7 @@
 #include "dtype.h"
 #include "numpy.h"
 #include "pybind11.h"
+#include "rename.h"
 
 using namespace scipp;
 using namespace scipp::core;
@@ -52,10 +54,29 @@ template <class T> struct MakeVariableDefaultInit {
                         const std::vector<scipp::index> &shape,
                         const units::Unit unit, const bool variances) {
     Dimensions dims(labels, shape);
-    auto var = variances ? scipp::core::makeVariableWithVariances<T>(dims)
-                         : scipp::core::makeVariable<T>(dims);
+    auto var =
+        variances ? makeVariableWithVariances<T>(dims) : makeVariable<T>(dims);
     var.setUnit(unit);
     return var;
+  }
+};
+
+template <class ST> struct MakeODFromNativePythonTypes {
+  template <class T> struct Maker {
+    static Variable apply(const units::Unit unit, const ST &value,
+                          const std::optional<ST> &variance) {
+      auto var = variance ? makeVariable<T>(T(value), T(variance.value()))
+                          : makeVariable<T>(T(value));
+      var.setUnit(unit);
+      return var;
+    }
+  };
+
+  static Variable make(const units::Unit unit, const ST &value,
+                       const std::optional<ST> &variance,
+                       const py::object &dtype) {
+    return CallDType<double, float, int64_t, int32_t, bool>::apply<Maker>(
+        scipp_dtype(dtype), unit, value, variance);
   }
 };
 
@@ -80,19 +101,69 @@ Variable makeVariableDefaultInit(const std::vector<Dim> &labels,
                                                        variances);
 }
 
+template <class T>
+auto do_init_0D(const T &value, const std::optional<T> &variance,
+                const units::Unit &unit) {
+  Variable var;
+  if (variance)
+    var = makeVariable<T>(value, *variance);
+  else
+    var = makeVariable<T>(value);
+  var.setUnit(unit);
+  return var;
+}
+
 template <class T> void bind_init_0D(py::class_<Variable> &c) {
   c.def(py::init([](const T &value, const std::optional<T> &variance,
                     const units::Unit &unit) {
-          Variable var;
-          if (variance)
-            var = makeVariable<T>(value, *variance);
-          else
-            var = makeVariable<T>(value);
-          var.setUnit(unit);
-          return var;
+          return do_init_0D(value, variance, unit);
         }),
         py::arg("value"), py::arg("variance") = std::nullopt,
         py::arg("unit") = units::Unit(units::dimensionless));
+}
+
+// This function is used only to bind native python types: pyInt -> int64_t;
+// pyFloat -> double; pyBool->bool
+template <class T>
+void bind_init_0D_native_python_types(py::class_<Variable> &c) {
+  c.def(py::init([](const T &value, const std::optional<T> &variance,
+                    const units::Unit &unit, py::object &dtype) {
+          static_assert(std::is_same_v<T, int64_t> ||
+                        std::is_same_v<T, double> || std::is_same_v<T, bool>);
+          if (dtype.is_none())
+            return do_init_0D(value, variance, unit);
+          else {
+            return MakeODFromNativePythonTypes<T>::make(unit, value, variance,
+                                                        dtype);
+          }
+        }),
+        py::arg("value"), py::arg("variance") = std::nullopt,
+        py::arg("unit") = units::Unit(units::dimensionless),
+        py::arg("dtype") = py::none());
+}
+
+void bind_init_0D_numpy_types(py::class_<Variable> &c) {
+  c.def(py::init([](py::buffer &b, const std::optional<py::buffer> &v,
+                    const units::Unit &unit, py::object &dtype) {
+          py::buffer_info info = b.request();
+          if (info.ndim == 0) {
+            auto arr = py::array(b);
+            auto varr = v ? std::optional{py::array(*v)} : std::nullopt;
+            return doMakeVariable({}, arr, varr, unit, dtype);
+          } else if (info.ndim == 1 &&
+                     scipp_dtype(dtype) == core::dtype<Eigen::Vector3d>) {
+            return do_init_0D<Eigen::Vector3d>(
+                b.cast<Eigen::Vector3d>(),
+                v ? std::optional(v->cast<Eigen::Vector3d>()) : std::nullopt,
+                unit);
+          } else {
+            throw scipp::except::VariableError(
+                "Wrong overload for making 0D variable.");
+          }
+        }),
+        py::arg("value").noconvert(), py::arg("variance") = std::nullopt,
+        py::arg("unit") = units::Unit(units::dimensionless),
+        py::arg("dtype") = py::none());
 }
 
 template <class T> void bind_init_1D(py::class_<Variable> &c) {
@@ -121,10 +192,6 @@ void init_variable(py::module &m) {
     Array of values with dimension labels and a unit, optionally including an array of variances.)");
   bind_init_0D<DataArray>(variable);
   bind_init_0D<Dataset>(variable);
-  bind_init_0D<int64_t>(variable);
-  bind_init_0D<int32_t>(variable);
-  bind_init_0D<double>(variable);
-  bind_init_0D<float>(variable);
   bind_init_0D<std::string>(variable);
   bind_init_0D<Eigen::Vector3d>(variable);
   bind_init_1D<std::string>(variable);
@@ -140,20 +207,14 @@ void init_variable(py::module &m) {
            py::arg("variances") = std::nullopt,
            py::arg("unit") = units::Unit(units::dimensionless),
            py::arg("dtype") = py::none())
+      .def("rename_dims", &rename_dims<Variable>, py::arg("dims_dict"),
+           "Rename dimensions.")
       .def("copy", [](const Variable &self) { return self; },
            "Return a (deep) copy.")
       .def("__copy__", [](Variable &self) { return Variable(self); })
       .def("__deepcopy__",
            [](Variable &self, py::dict) { return Variable(self); })
       .def_property_readonly("dtype", &Variable::dtype)
-      .def(py::self + double(), py::call_guard<py::gil_scoped_release>())
-      .def(py::self - double(), py::call_guard<py::gil_scoped_release>())
-      .def(py::self * double(), py::call_guard<py::gil_scoped_release>())
-      .def(py::self / double(), py::call_guard<py::gil_scoped_release>())
-      .def(py::self += double(), py::call_guard<py::gil_scoped_release>())
-      .def(py::self -= double(), py::call_guard<py::gil_scoped_release>())
-      .def(py::self *= double(), py::call_guard<py::gil_scoped_release>())
-      .def(py::self /= double(), py::call_guard<py::gil_scoped_release>())
       .def("__radd__", [](Variable &a, double &b) { return a + b; },
            py::is_operator())
       .def("__rsub__", [](Variable &a, double &b) { return b - a; },
@@ -167,6 +228,13 @@ void init_variable(py::module &m) {
   // TODO: maybe there is a better way to do this?
   bind_init_1D<int32_t>(variable);
   bind_init_1D<double>(variable);
+  // This should be in the certain order
+  bind_init_0D_numpy_types(variable);
+  bind_init_0D_native_python_types<bool>(variable);
+  bind_init_0D_native_python_types<int64_t>(variable);
+  bind_init_0D_native_python_types<double>(variable);
+  bind_init_0D<py::object>(variable);
+  //------------------------------------
 
   py::class_<VariableConstProxy>(m, "VariableConstProxy")
       .def(py::init<const Variable &>());
@@ -181,14 +249,6 @@ void init_variable(py::module &m) {
       .def("__copy__", [](VariableProxy &self) { return Variable(self); })
       .def("__deepcopy__",
            [](VariableProxy &self, py::dict) { return Variable(self); })
-      .def(py::self += double(), py::call_guard<py::gil_scoped_release>())
-      .def(py::self -= double(), py::call_guard<py::gil_scoped_release>())
-      .def(py::self *= double(), py::call_guard<py::gil_scoped_release>())
-      .def(py::self /= double(), py::call_guard<py::gil_scoped_release>())
-      .def(py::self + double(), py::call_guard<py::gil_scoped_release>())
-      .def(py::self - double(), py::call_guard<py::gil_scoped_release>())
-      .def(py::self * double(), py::call_guard<py::gil_scoped_release>())
-      .def(py::self / double(), py::call_guard<py::gil_scoped_release>())
       .def("__radd__", [](VariableProxy &a, double &b) { return a + b; },
            py::is_operator())
       .def("__rsub__", [](VariableProxy &a, double &b) { return b - a; },
@@ -210,11 +270,20 @@ void init_variable(py::module &m) {
   bind_in_place_binary<VariableProxy>(variable);
   bind_in_place_binary<Variable>(variableProxy);
   bind_in_place_binary<VariableProxy>(variableProxy);
+  bind_in_place_binary_scalars(variable);
+  bind_in_place_binary_scalars(variableProxy);
 
   bind_binary<Variable>(variable);
   bind_binary<VariableProxy>(variable);
   bind_binary<Variable>(variableProxy);
   bind_binary<VariableProxy>(variableProxy);
+  bind_binary_scalars(variable);
+  bind_binary_scalars(variableProxy);
+
+  bind_or_operators<Variable>(variable);
+  bind_or_operators<VariableProxy>(variable);
+  bind_or_operators<Variable>(variableProxy);
+  bind_or_operators<VariableProxy>(variableProxy);
 
   bind_data_properties(variable);
   bind_data_properties(variableProxy);
@@ -288,7 +357,7 @@ void init_variable(py::module &m) {
         :seealso: :py:class:`scipp.sum`
         :return: New variable containing the mean.
         :rtype: Variable)");
-  m.def("norm", py::overload_cast<const Variable &>(&norm),
+  m.def("norm", py::overload_cast<const VariableConstProxy &>(&norm),
         py::call_guard<py::gil_scoped_release>(), R"(
         Element-wise norm.
 
@@ -314,7 +383,7 @@ void init_variable(py::module &m) {
         py::call_guard<py::gil_scoped_release>(),
         "Split a Variable along a given Dimension.");
 
-  m.def("sqrt", [](const Variable &self) { return sqrt(self); },
+  m.def("sqrt", [](const VariableConstProxy &self) { return sqrt(self); },
         py::call_guard<py::gil_scoped_release>(), R"(
         Element-wise square-root.
 

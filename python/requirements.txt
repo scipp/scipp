@@ -1,8 +1,9 @@
-numpy==1.14.6
-pandas==0.24.2
-xarray==0.11.3
-matplotlib==3.0.3
+numpy
+pandas
+xarray
+matplotlib
 nose
-ipywidgets==7.4.2
-plotly==3.6.1
+ipywidgets
+plotly
 pytest
+Pillow

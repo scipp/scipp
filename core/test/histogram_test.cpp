@@ -34,7 +34,7 @@ TEST(HistogramTest, fail_edges_not_sorted) {
   ASSERT_THROW(
       core::histogram(sparse["sparse"],
                       makeVariable<double>({Dim::Y, 6}, {1, 3, 2, 4, 5, 6})),
-      std::logic_error);
+      except::BinEdgeError);
 }
 
 auto make_single_sparse() {
@@ -48,7 +48,7 @@ auto make_single_sparse() {
 DataArray make_expected(const Variable &var, const Variable &edges) {
   auto dim = var.dims().inner();
   std::map<Dim, Variable> coords = {{dim, edges}};
-  auto expected = DataArray(var, coords, {}, {}, "sparse");
+  auto expected = DataArray(var, coords, {}, {}, {}, "sparse");
   return expected;
 }
 

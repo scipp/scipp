@@ -28,7 +28,7 @@ template <class T> struct MakePermutation {
   }
 };
 
-auto makePermutation(const VariableConstProxy &key) {
+static auto makePermutation(const VariableConstProxy &key) {
   return CallDType<double, float, int64_t, int32_t, bool,
                    std::string>::apply<MakePermutation>(key.dtype(), key);
 }

@@ -12,11 +12,12 @@ using namespace scipp;
 using namespace scipp::core;
 using namespace scipp::neutron;
 
-Dataset makeTofDataForUnitConversion() {
+Dataset makeTofDataForUnitConversion(const bool dense_coord = true) {
   Dataset tof;
 
-  tof.setCoord(Dim::Tof, makeVariable<double>({Dim::Tof, 4}, units::us,
-                                              {4000, 5000, 6100, 7300}));
+  if (dense_coord)
+    tof.setCoord(Dim::Tof, makeVariable<double>({Dim::Tof, 4}, units::us,
+                                                {4000, 5000, 6100, 7300}));
 
   Dataset components;
   // Source and sample
@@ -25,26 +26,27 @@ Dataset makeTofDataForUnitConversion() {
                                      {Eigen::Vector3d{0.0, 0.0, -10.0},
                                       Eigen::Vector3d{0.0, 0.0, 0.0}}));
   tof.setLabels("component_info", makeVariable<Dataset>(components));
-  tof.setCoord(Dim::Position,
-               makeVariable<Eigen::Vector3d>({Dim::Position, 2}, units::m,
-                                             {Eigen::Vector3d{1.0, 0.0, 0.0},
-                                              Eigen::Vector3d{0.1, 0.0, 1.0}}));
+  tof.setLabels("position", makeVariable<Eigen::Vector3d>(
+                                {Dim::Spectrum, 2}, units::m,
+                                {Eigen::Vector3d{1.0, 0.0, 0.0},
+                                 Eigen::Vector3d{0.1, 0.0, 1.0}}));
 
   tof.setData("counts",
-              makeVariable<double>({{Dim::Position, 2}, {Dim::Tof, 3}},
+              makeVariable<double>({{Dim::Spectrum, 2}, {Dim::Tof, 3}},
                                    {1, 2, 3, 4, 5, 6}));
   tof["counts"].data().setUnit(units::counts);
 
   auto events =
-      makeVariable<double>({Dim::Position, Dim::Tof}, {2, Dimensions::Sparse});
+      makeVariable<double>({Dim::Spectrum, Dim::Tof}, {2, Dimensions::Sparse});
   events.setUnit(units::us);
   auto eventLists = events.sparseValues<double>();
   eventLists[0] = {1000, 3000, 2000, 4000};
   eventLists[1] = {5000, 6000, 3000};
-  tof.setSparseCoord("events", std::move(events));
+  tof.setSparseCoord("events", events);
+  tof.setSparseLabels("events", "aux", events);
 
   tof.setData("density",
-              makeVariable<double>({{Dim::Position, 2}, {Dim::Tof, 3}},
+              makeVariable<double>({{Dim::Spectrum, 2}, {Dim::Tof, 3}},
                                    {1, 2, 3, 4, 5, 6}));
   tof["density"].data().setUnit(units::counts / units::us);
 
@@ -57,14 +59,14 @@ TEST(Convert, Tof_to_DSpacing) {
   auto dspacing = convert(tof, Dim::Tof, Dim::DSpacing);
 
   EXPECT_EQ(dspacing["counts"].dims(),
-            Dimensions({{Dim::Position, 2}, {Dim::DSpacing, 3}}));
+            Dimensions({{Dim::Spectrum, 2}, {Dim::DSpacing, 3}}));
 
-  ASSERT_THROW(dspacing.coords()[Dim::Tof], std::out_of_range);
-  ASSERT_NO_THROW(dspacing.coords()[Dim::DSpacing]);
+  ASSERT_FALSE(dspacing.coords().contains(Dim::Tof));
+  ASSERT_TRUE(dspacing.coords().contains(Dim::DSpacing));
 
   const auto &coord = dspacing.coords()[Dim::DSpacing];
   // Due to conversion, the coordinate now also depends on Dim::Spectrum.
-  ASSERT_EQ(coord.dims(), Dimensions({{Dim::Position, 2}, {Dim::DSpacing, 4}}));
+  ASSERT_EQ(coord.dims(), Dimensions({{Dim::Spectrum, 2}, {Dim::DSpacing, 4}}));
   EXPECT_EQ(coord.unit(), units::angstrom);
 
   const auto values = coord.values<double>();
@@ -98,13 +100,13 @@ TEST(Convert, Tof_to_DSpacing) {
 
   ASSERT_TRUE(dspacing.contains("counts"));
   const auto &data = dspacing["counts"];
-  ASSERT_EQ(data.dims(), Dimensions({{Dim::Position, 2}, {Dim::DSpacing, 3}}));
+  ASSERT_EQ(data.dims(), Dimensions({{Dim::Spectrum, 2}, {Dim::DSpacing, 3}}));
   EXPECT_TRUE(equals(data.values<double>(), {1, 2, 3, 4, 5, 6}));
   EXPECT_EQ(data.unit(), units::counts);
 
   ASSERT_TRUE(dspacing.contains("events"));
   const auto &events = dspacing["events"];
-  ASSERT_EQ(events.dims(), Dimensions({Dim::Position, Dim::DSpacing},
+  ASSERT_EQ(events.dims(), Dimensions({Dim::Spectrum, Dim::DSpacing},
                                       {2, Dimensions::Sparse}));
   const auto &tof0 = tof["events"].coords()[Dim::Tof].sparseValues<double>()[0];
   const auto &d0 = events.coords()[Dim::DSpacing].sparseValues<double>()[0];
@@ -126,7 +128,7 @@ TEST(Convert, Tof_to_DSpacing) {
   ASSERT_TRUE(dspacing.contains("density"));
   const auto &density = dspacing["density"];
   ASSERT_EQ(density.dims(),
-            Dimensions({{Dim::Position, 2}, {Dim::DSpacing, 3}}));
+            Dimensions({{Dim::Spectrum, 2}, {Dim::DSpacing, 3}}));
   EXPECT_EQ(density.unit(), units::counts / units::angstrom);
   const auto vals = density.values<double>();
   EXPECT_FALSE(equals(vals, {1, 2, 3, 4, 5, 6}));
@@ -139,9 +141,44 @@ TEST(Convert, Tof_to_DSpacing) {
   EXPECT_DOUBLE_EQ(vals[4], 5.0 * 1100 / (values[6] - values[5]));
   EXPECT_DOUBLE_EQ(vals[5], 6.0 * 1200 / (values[7] - values[6]));
 
-  ASSERT_EQ(dspacing.coords()[Dim::Position], tof.coords()[Dim::Position]);
+  ASSERT_EQ(dspacing.labels()["position"], tof.labels()["position"]);
   ASSERT_EQ(dspacing.labels()["component_info"],
             tof.labels()["component_info"]);
+}
+
+TEST(Convert, converts_sparse_labels) {
+  // label "conversion" is name change of dim
+  Dataset tof = makeTofDataForUnitConversion();
+  Dataset dspacing = convert(tof, Dim::Tof, Dim::DSpacing);
+  Dimensions expected({Dim::Spectrum, Dim::DSpacing}, {2, Dimensions::Sparse});
+  EXPECT_EQ(dspacing["events"].coords()[Dim::DSpacing].dims(), expected);
+  EXPECT_EQ(dspacing["events"].labels()["aux"].dims(), expected);
+}
+
+TEST(Convert, Tof_to_DSpacing_no_dense_coord) {
+  const bool dense_coord = false;
+  Dataset tof = makeTofDataForUnitConversion(dense_coord);
+  EXPECT_FALSE(tof.coords().contains(Dim::Tof));
+  Dataset dspacing;
+
+  EXPECT_NO_THROW(dspacing = convert(tof, Dim::Tof, Dim::DSpacing));
+  EXPECT_EQ(
+      dspacing["events"].dims(),
+      Dimensions({Dim::Spectrum, Dim::DSpacing}, {2, Dimensions::Sparse}));
+}
+
+TEST(Convert, Tof_to_DSpacing_no_dense_content) {
+  const bool dense_coord = false;
+  Dataset tof = makeTofDataForUnitConversion(dense_coord);
+  EXPECT_FALSE(tof.coords().contains(Dim::Tof));
+  tof.erase("counts");
+  tof.erase("density");
+
+  Dataset dspacing;
+  EXPECT_NO_THROW(dspacing = convert(tof, Dim::Tof, Dim::DSpacing));
+  EXPECT_EQ(
+      dspacing["events"].dims(),
+      Dimensions({Dim::Spectrum, Dim::DSpacing}, {2, Dimensions::Sparse}));
 }
 
 TEST(Convert, DSpacing_to_Tof) {
@@ -155,7 +192,7 @@ TEST(Convert, DSpacing_to_Tof) {
 
   /* Test coordinates */
   /* Broadcasting is needed as conversion introduces the dependance on
-   * Dim::Position */
+   * Dim::Spectrum */
   const auto expected_tofs =
       broadcast(tof_original.coords()[Dim::Tof], tof.coords()[Dim::Tof].dims());
   EXPECT_TRUE(equals(tof.coords()[Dim::Tof].values<double>(),
@@ -181,15 +218,15 @@ TEST(Convert, Tof_to_Wavelength) {
   auto wavelength = convert(tof, Dim::Tof, Dim::Wavelength);
 
   EXPECT_EQ(wavelength["counts"].dims(),
-            Dimensions({{Dim::Position, 2}, {Dim::Wavelength, 3}}));
+            Dimensions({{Dim::Spectrum, 2}, {Dim::Wavelength, 3}}));
 
-  ASSERT_THROW(wavelength.coords()[Dim::Tof], std::out_of_range);
-  ASSERT_NO_THROW(wavelength.coords()[Dim::Wavelength]);
+  ASSERT_FALSE(wavelength.coords().contains(Dim::Tof));
+  ASSERT_TRUE(wavelength.coords().contains(Dim::Wavelength));
 
   const auto &coord = wavelength.coords()[Dim::Wavelength];
   // Due to conversion, the coordinate now also depends on Dim::Spectrum.
   ASSERT_EQ(coord.dims(),
-            Dimensions({{Dim::Position, 2}, {Dim::Wavelength, 4}}));
+            Dimensions({{Dim::Spectrum, 2}, {Dim::Wavelength, 4}}));
   EXPECT_EQ(coord.unit(), units::angstrom);
 
   const auto values = coord.values<double>();
@@ -212,13 +249,13 @@ TEST(Convert, Tof_to_Wavelength) {
   ASSERT_TRUE(wavelength.contains("counts"));
   const auto &data = wavelength["counts"];
   ASSERT_EQ(data.dims(),
-            Dimensions({{Dim::Position, 2}, {Dim::Wavelength, 3}}));
+            Dimensions({{Dim::Spectrum, 2}, {Dim::Wavelength, 3}}));
   EXPECT_TRUE(equals(data.values<double>(), {1, 2, 3, 4, 5, 6}));
   EXPECT_EQ(data.unit(), units::counts);
 
   ASSERT_TRUE(wavelength.contains("events"));
   const auto &events = wavelength["events"];
-  ASSERT_EQ(events.dims(), Dimensions({Dim::Position, Dim::Wavelength},
+  ASSERT_EQ(events.dims(), Dimensions({Dim::Spectrum, Dim::Wavelength},
                                       {2, Dimensions::Sparse}));
   const auto &tof0 = tof["events"].coords()[Dim::Tof].sparseValues<double>()[0];
   const auto &d0 = events.coords()[Dim::Wavelength].sparseValues<double>()[0];
@@ -237,7 +274,7 @@ TEST(Convert, Tof_to_Wavelength) {
   ASSERT_TRUE(wavelength.contains("density"));
   const auto &density = wavelength["density"];
   ASSERT_EQ(density.dims(),
-            Dimensions({{Dim::Position, 2}, {Dim::Wavelength, 3}}));
+            Dimensions({{Dim::Spectrum, 2}, {Dim::Wavelength, 3}}));
   EXPECT_EQ(density.unit(), units::counts / units::angstrom);
   const auto vals = density.values<double>();
   EXPECT_FALSE(equals(vals, {1, 2, 3, 4, 5, 6}));
@@ -250,7 +287,7 @@ TEST(Convert, Tof_to_Wavelength) {
   EXPECT_DOUBLE_EQ(vals[4], 5.0 * 1100 / (values[6] - values[5]));
   EXPECT_DOUBLE_EQ(vals[5], 6.0 * 1200 / (values[7] - values[6]));
 
-  ASSERT_EQ(wavelength.coords()[Dim::Position], tof.coords()[Dim::Position]);
+  ASSERT_EQ(wavelength.labels()["position"], tof.labels()["position"]);
   ASSERT_EQ(wavelength.labels()["component_info"],
             tof.labels()["component_info"]);
 }
@@ -266,7 +303,7 @@ TEST(Convert, Wavelength_to_Tof) {
 
   // Test coordinates
   // Broadcasting is needed as conversion introduces the dependance on
-  // Dim::Position
+  // Dim::Spectrum
   EXPECT_EQ(tof.coords()[Dim::Tof], broadcast(tof_original.coords()[Dim::Tof],
                                               tof.coords()[Dim::Tof].dims()));
 
@@ -290,14 +327,14 @@ TEST(Convert, Tof_to_Energy_Elastic) {
   auto energy = convert(tof, Dim::Tof, Dim::Energy);
 
   EXPECT_EQ(energy["counts"].dims(),
-            Dimensions({{Dim::Position, 2}, {Dim::Energy, 3}}));
+            Dimensions({{Dim::Spectrum, 2}, {Dim::Energy, 3}}));
 
-  ASSERT_THROW(energy.coords()[Dim::Tof], std::out_of_range);
-  ASSERT_NO_THROW(energy.coords()[Dim::Energy]);
+  ASSERT_FALSE(energy.coords().contains(Dim::Tof));
+  ASSERT_TRUE(energy.coords().contains(Dim::Energy));
 
   const auto &coord = energy.coords()[Dim::Energy];
   // Due to conversion, the coordinate now also depends on Dim::Spectrum.
-  ASSERT_EQ(coord.dims(), Dimensions({{Dim::Position, 2}, {Dim::Energy, 4}}));
+  ASSERT_EQ(coord.dims(), Dimensions({{Dim::Spectrum, 2}, {Dim::Energy, 4}}));
   EXPECT_EQ(coord.unit(), units::meV);
 
   const auto values = coord.values<double>();
@@ -340,14 +377,14 @@ TEST(Convert, Tof_to_Energy_Elastic) {
 
   ASSERT_TRUE(energy.contains("counts"));
   const auto &data = energy["counts"];
-  ASSERT_EQ(data.dims(), Dimensions({{Dim::Position, 2}, {Dim::Energy, 3}}));
+  ASSERT_EQ(data.dims(), Dimensions({{Dim::Spectrum, 2}, {Dim::Energy, 3}}));
   EXPECT_TRUE(equals(data.values<double>(), {1, 2, 3, 4, 5, 6}));
   EXPECT_EQ(data.unit(), units::counts);
 
   ASSERT_TRUE(energy.contains("events"));
   const auto &events = energy["events"];
   ASSERT_EQ(events.dims(),
-            Dimensions({Dim::Position, Dim::Energy}, {2, Dimensions::Sparse}));
+            Dimensions({Dim::Spectrum, Dim::Energy}, {2, Dimensions::Sparse}));
   const auto &tof0 = tof["events"].coords()[Dim::Tof].sparseValues<double>()[0];
   const auto &e0 = events.coords()[Dim::Energy].sparseValues<double>()[0];
   ASSERT_EQ(scipp::size(e0), 4);
@@ -382,7 +419,7 @@ TEST(Convert, Tof_to_Energy_Elastic) {
 
   ASSERT_TRUE(energy.contains("density"));
   const auto &density = energy["density"];
-  ASSERT_EQ(density.dims(), Dimensions({{Dim::Position, 2}, {Dim::Energy, 3}}));
+  ASSERT_EQ(density.dims(), Dimensions({{Dim::Spectrum, 2}, {Dim::Energy, 3}}));
   EXPECT_EQ(density.unit(), units::counts / units::meV);
   const auto vals = density.values<double>();
   EXPECT_FALSE(equals(vals, {1, 2, 3, 4, 5, 6}));
@@ -395,7 +432,7 @@ TEST(Convert, Tof_to_Energy_Elastic) {
   EXPECT_DOUBLE_EQ(vals[4], 5.0 * 1100 / (values[6] - values[5]));
   EXPECT_DOUBLE_EQ(vals[5], 6.0 * 1200 / (values[7] - values[6]));
 
-  ASSERT_EQ(energy.coords()[Dim::Position], tof.coords()[Dim::Position]);
+  ASSERT_EQ(energy.labels()["position"], tof.labels()["position"]);
   ASSERT_EQ(energy.labels()["component_info"], tof.labels()["component_info"]);
 }
 
@@ -410,7 +447,7 @@ TEST(Convert, Energy_to_Tof_Elastic) {
 
   /* Test coordinates */
   /* Broadcasting is needed as conversion introduces the dependance on
-   * Dim::Position */
+   * Dim::Spectrum */
   {
     const auto expected = broadcast(tof_original.coords()[Dim::Tof],
                                     tof.coords()[Dim::Tof].dims());

@@ -96,6 +96,8 @@ std::string to_string(const DType dtype) {
     return "sparse_int32";
   case DType::EigenVector3d:
     return "vector_3_double";
+  case DType::PyObject:
+    return "PyObject";
   case DType::Unknown:
     return "unknown";
   default:
@@ -174,14 +176,14 @@ auto format_data_proxy(const Key &name, const DataConstProxy &data,
     s << format_variable(name, data.data(), datasetDims);
   else
     s << tab << name << '\n';
-  for (const auto & [ dim, coord ] : data.coords())
+  for (const auto &[dim, coord] : data.coords())
     if (coord.dims().sparse()) {
       s << tab << tab << "Sparse coordinate:\n";
       s << format_variable(std::string(tab) + std::string(tab) + to_string(dim),
                            coord, datasetDims);
     }
   bool sparseLabels = false;
-  for (const auto & [ label_name, labels ] : data.labels())
+  for (const auto &[label_name, labels] : data.labels())
     if (labels.dims().sparse()) {
       if (!sparseLabels) {
         s << tab << tab << "Sparse labels:\n";
@@ -209,20 +211,26 @@ std::string do_to_string(const D &dataset, const std::string &id,
   s << id + '\n';
   s << "Dimensions: " << to_string(dims) << '\n';
 
-  if (!dataset.coords().empty())
+  if (!dataset.coords().empty()) {
     s << "Coordinates:\n";
-  for (const auto & [ dim, var ] : dataset.coords())
-    s << format_variable(dim, var, dims);
-
-  if (!dataset.labels().empty())
+    for (const auto &[dim, var] : dataset.coords())
+      s << format_variable(dim, var, dims);
+  }
+  if (!dataset.labels().empty()) {
     s << "Labels:\n";
-  for (const auto & [ name, var ] : dataset.labels())
-    s << format_variable(name, var, dims);
-
-  if (!dataset.attrs().empty())
+    for (const auto &[name, var] : dataset.labels())
+      s << format_variable(name, var, dims);
+  }
+  if (!dataset.attrs().empty()) {
     s << "Attributes:\n";
-  for (const auto & [ name, var ] : dataset.attrs())
-    s << format_variable(name, var, dims);
+    for (const auto &[name, var] : dataset.attrs())
+      s << format_variable(name, var, dims);
+  }
+  if (!dataset.masks().empty()) {
+    s << "Masks:\n";
+    for (const auto &[name, var] : dataset.masks())
+      s << format_variable(name, var, dims);
+  }
 
   if constexpr (std::is_same_v<D, DataArray> ||
                 std::is_same_v<D, DataConstProxy>) {

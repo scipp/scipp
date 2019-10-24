@@ -39,9 +39,7 @@ def test_create_from_data_arrays():
     base = sc.Dataset({
         'a': var1,
         'b': var2
-    },
-                      coords={Dim.X: var1},
-                      labels={'aux': var1})
+    }, coords={Dim.X: var1}, labels={'aux': var1})
     d = sc.Dataset({'a': base['a'], 'b': base['b']})
     assert d == base
     swapped = sc.Dataset({'a': base['b'], 'b': base['a']})
@@ -109,7 +107,7 @@ def test_coord_setitem_sparse():
     assert d['a'].coords[Dim.X] != var
     assert d['a'].coords[Dim.X] != d.coords[Dim.X]
     # This would not work:
-    with pytest.raises(IndexError):
+    with pytest.raises(RuntimeError):
         d['b'].coords[Dim.X] = sparse
 
 
@@ -159,6 +157,28 @@ def test_contains_labels():
     assert "a" not in d.labels
     d.labels["a"] = sc.Variable(1.0)
     assert "a" in d.labels
+
+
+def test_masks_setitem():
+    var = sc.Variable([Dim.X], values=np.arange(4))
+    d = sc.Dataset({'a': var}, coords={Dim.X: var})
+    with pytest.raises(RuntimeError):
+        d[Dim.X, 2:3].labels['label'] = sc.Variable(True)
+    d.masks['mask'] = sc.Variable([Dim.X],
+                                  values=np.array([True, False,
+                                                   True, False]))
+    assert len(d) == 1
+    assert len(d.masks) == 1
+    assert d.masks['mask'] == sc.Variable([Dim.X],
+                                          values=np.array([True, False,
+                                                           True, False]))
+
+
+def test_contains_masks():
+    d = sc.Dataset()
+    assert "a" not in d.masks
+    d.masks["a"] = sc.Variable(True)
+    assert "a" in d.masks
 
 
 def test_attrs_setitem():
@@ -315,26 +335,31 @@ def test_coords_proxy_comparison_operators():
 def test_sum_mean():
     d = sc.Dataset(
         {
-            'a': sc.Variable([Dim.X, Dim.Y], values=np.arange(6).reshape(2,
-                                                                         3)),
-            'b': sc.Variable([Dim.Y], values=np.arange(3))
+            'a': sc.Variable([Dim.X, Dim.Y],
+                             values=np.arange(6, dtype=np.int64)
+                             .reshape(2, 3)),
+            'b': sc.Variable([Dim.Y], values=np.arange(3, dtype=np.int64))
         },
         coords={
-            Dim.X: sc.Variable([Dim.X], values=np.arange(2)),
-            Dim.Y: sc.Variable([Dim.Y], values=np.arange(3))
+            Dim.X: sc.Variable([Dim.X], values=np.arange(2, dtype=np.int64)),
+            Dim.Y: sc.Variable([Dim.Y], values=np.arange(3, dtype=np.int64))
         },
         labels={
             "l1": sc.Variable([Dim.X, Dim.Y],
-                              values=np.arange(6).reshape(2, 3)),
-            "l2": sc.Variable([Dim.X], values=np.arange(2))
+                              values=np.arange(6, dtype=np.int64)
+                              .reshape(2, 3)),
+            "l2": sc.Variable([Dim.X], values=np.arange(2, dtype=np.int64))
         })
     d_ref = sc.Dataset(
         {
-            'a': sc.Variable([Dim.X], values=np.array([3, 12])),
+            'a': sc.Variable([Dim.X],
+                             values=np.array([3, 12], dtype=np.int64)),
             'b': sc.Variable(3)
         },
-        coords={Dim.X: sc.Variable([Dim.X], values=np.arange(2))},
-        labels={"l2": sc.Variable([Dim.X], values=np.arange(2))})
+        coords={Dim.X: sc.Variable([Dim.X],
+                                   values=np.arange(2, dtype=np.int64))},
+        labels={"l2": sc.Variable([Dim.X],
+                                  values=np.arange(2, dtype=np.int64))})
 
     assert sc.sum(d, Dim.Y) == d_ref
     assert (sc.mean(d, Dim.Y)["a"].values == [1.0, 4.0]).all()
@@ -364,7 +389,7 @@ def test_dataset_histogram():
     var[Dim.X, 1].values = np.ones(6)
     ds = sc.Dataset()
     ds["s"] = sc.DataArray(coords={Dim.Y: var})
-    ds["s1"] = sc.DataArray(coords={Dim.Y: var * 5})
+    ds["s1"] = sc.DataArray(coords={Dim.Y: var * 5.0})
     h = sc.histogram(
         ds, sc.Variable(values=np.arange(5, dtype=np.float64), dims=[Dim.Y]))
     assert np.array_equal(
@@ -497,6 +522,32 @@ def test_binary_of_item_with_variable():
     assert d == copy
 
 
+def test_in_place_binary_with_scalar():
+    d = sc.Dataset(
+        {'data': sc.Variable([Dim.X], values=[10])},
+        coords={Dim.X: sc.Variable([Dim.X], values=[10])})
+    copy = d.copy()
+
+    d += 2
+    d *= 2
+    d -= 4
+    d /= 2
+    assert d == copy
+
+
+def test_proxy_in_place_binary_with_scalar():
+    d = sc.Dataset(
+        {'data': sc.Variable([Dim.X], values=[10])},
+        coords={Dim.X: sc.Variable([Dim.X], values=[10])})
+    copy = d.copy()
+
+    d['data'] += 2
+    d['data'] *= 2
+    d['data'] -= 4
+    d['data'] /= 2
+    assert d == copy
+
+
 def test_add_sum_of_columns():
     d = sc.Dataset({
         'a': sc.Variable([Dim.X], values=np.arange(10.0)),
@@ -522,18 +573,19 @@ def test_name():
     assert array.name == ''
 
 
-def make_simple_dataset():
+def make_simple_dataset(dim1=Dim.X, dim2=Dim.Y, seed=None):
+    if seed is not None:
+        np.random.seed(seed)
     return sc.Dataset(
         {
-            'a': sc.Variable(dims=[Dim.X, Dim.Y], values=np.random.rand(2, 3)),
+            'a': sc.Variable(dims=[dim1, dim2], values=np.random.rand(2, 3)),
             'b': sc.Variable(1.0)
         },
         coords={
-            Dim.X: sc.Variable([Dim.X], values=np.arange(2.0),
-                               unit=sc.units.m),
-            Dim.Y: sc.Variable([Dim.Y], values=np.arange(3.0), unit=sc.units.m)
+            dim1: sc.Variable([dim1], values=np.arange(2.0), unit=sc.units.m),
+            dim2: sc.Variable([dim2], values=np.arange(3.0), unit=sc.units.m)
         },
-        labels={'aux': sc.Variable([Dim.Y], values=np.random.rand(3))})
+        labels={'aux': sc.Variable([dim2], values=np.random.rand(3))})
 
 
 def test_dataset_proxy_set_variance():
@@ -574,6 +626,77 @@ def test_sort():
         },
         labels={'aux': sc.Variable([Dim.X], values=[1.0, 0.0])})
     assert sc.sort(d, d['b'].data) == expected
+
+
+def test_rename_dims():
+    d = make_simple_dataset(Dim.X, Dim.Y, seed=0)
+    d.rename_dims({Dim.Y: Dim.Z})
+    assert d == make_simple_dataset(Dim.X, Dim.Z, seed=0)
+    d.rename_dims(dims_dict={Dim.X: Dim.Y, Dim.Z: Dim.X})
+    assert d == make_simple_dataset(Dim.Y, Dim.X, seed=0)
+
+
+def test_coord_delitem():
+    var = sc.Variable([Dim.X], values=np.arange(4))
+    d = sc.Dataset({'a': var}, coords={Dim.X: var})
+    dref = d.copy()
+    d.coords[Dim.Y] = sc.Variable(1.0)
+    assert dref != d
+    del d.coords[Dim.Y]
+    assert dref == d
+
+
+def test_coords_delitem_sparse():
+    var = sc.Variable([Dim.X], values=np.arange(4))
+    sparse = sc.Variable([sc.Dim.X], [sc.Dimensions.Sparse])
+    d = sc.Dataset({'a': sparse}, coords={Dim.X: var})
+    d['a'].coords[Dim.X] = sparse
+    with pytest.raises(RuntimeError):
+        del d['a'].coords[Dim.Z]
+    del d['a'].coords[Dim.X]
+    with pytest.raises(RuntimeError):
+        d['a'].coords[Dim.X]
+
+
+def test_labels_delitem():
+    var = sc.Variable([Dim.X], values=np.arange(4))
+    d = sc.Dataset({'a': var}, coords={Dim.X: var})
+    dref = d.copy()
+    d.labels['label'] = sc.Variable(1.0)
+    assert d != dref
+    del d.labels['label']
+    assert d == dref
+
+
+def test_labels_delitem_sparse():
+    var = sc.Variable([Dim.X], values=np.arange(4))
+    sparse = sc.Variable([sc.Dim.X], [sc.Dimensions.Sparse])
+    d = sc.Dataset({'a': sparse}, coords={Dim.X: var})
+    dref = d.copy()
+    d['a'].labels['label'] = sparse
+    assert d != dref
+    del d['a'].labels['label']
+    assert d == dref
+
+
+def test_attrs_delitem():
+    var = sc.Variable([Dim.X], values=np.arange(4))
+    d = sc.Dataset({'a': var}, coords={Dim.X: var})
+    dref = d.copy()
+    d.attrs['attr'] = sc.Variable(1.0)
+    assert d != dref
+    del d.attrs['attr']
+    assert d == dref
+
+
+def test_masks_delitem():
+    var = sc.Variable([Dim.X], values=np.array([True, True, False]))
+    d = sc.Dataset({'a': var}, coords={Dim.X: var})
+    dref = d.copy()
+    d.masks['masks'] = var
+    assert d != dref
+    del d.masks['masks']
+    assert d == dref
 
 
 # def test_delitem(self):

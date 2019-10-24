@@ -243,6 +243,25 @@ private:
 class VariableConstProxy;
 class VariableProxy;
 
+template <class T> constexpr bool is_variable_or_proxy() {
+  return std::is_same_v<T, Variable> || std::is_same_v<T, VariableConstProxy> ||
+         std::is_same_v<T, VariableProxy>;
+}
+
+class DatasetConstProxy;
+class DatasetProxy;
+class Dataset;
+class DataArray;
+class DataProxy;
+
+template <class T> constexpr bool is_container_or_proxy() {
+  return std::is_same_v<T, Dataset> || std::is_same_v<T, DatasetProxy> ||
+         std::is_same_v<T, DatasetConstProxy> || std::is_same_v<T, Variable> ||
+         std::is_same_v<T, VariableProxy> ||
+         std::is_same_v<T, VariableConstProxy> ||
+         std::is_same_v<T, DataArray> || std::is_same_v<T, DataProxy>;
+}
+
 namespace detail {
 template <class T> struct default_init {
   static T value() { return T(); }
@@ -256,6 +275,8 @@ struct default_init<Eigen::Matrix<T, Rows, Cols>> {
   }
 };
 } // namespace detail
+
+template <class T> Variable makeVariable(T value);
 
 /// Variable is a type-erased handle to any data structure representing a
 /// multi-dimensional array. It has a name, a unit, and a set of named
@@ -339,28 +360,47 @@ public:
   bool operator!=(const Variable &other) const;
   bool operator!=(const VariableConstProxy &other) const;
   Variable operator-() const;
+
   Variable &operator+=(const Variable &other) &;
   Variable &operator+=(const VariableConstProxy &other) &;
-  Variable &operator+=(const double value) &;
+  template <typename T, typename = std::enable_if_t<!is_variable_or_proxy<T>()>>
+  Variable &operator+=(const T v) & {
+    return *this += makeVariable<underlying_type_t<T>>(v);
+  }
+
   Variable &operator-=(const Variable &other) &;
   Variable &operator-=(const VariableConstProxy &other) &;
-  Variable &operator-=(const double value) &;
+  template <typename T, typename = std::enable_if_t<!is_variable_or_proxy<T>()>>
+  Variable &operator-=(const T v) & {
+    return *this -= makeVariable<underlying_type_t<T>>(v);
+  }
+
   Variable &operator*=(const Variable &other) &;
   Variable &operator*=(const VariableConstProxy &other) &;
-  Variable &operator*=(const double value) &;
+  template <typename T, typename = std::enable_if_t<!is_variable_or_proxy<T>()>>
+  Variable &operator*=(const T v) & {
+    return *this *= makeVariable<underlying_type_t<T>>(v);
+  }
   template <class T>
   Variable &operator*=(const boost::units::quantity<T> &quantity) & {
     setUnit(unit() * units::Unit(T{}));
     return *this *= quantity.value();
   }
+
   Variable &operator/=(const Variable &other) &;
   Variable &operator/=(const VariableConstProxy &other) &;
-  Variable &operator/=(const double value) &;
+  template <typename T, typename = std::enable_if_t<!is_variable_or_proxy<T>()>>
+  Variable &operator/=(const T v) & {
+    return *this /= makeVariable<underlying_type_t<T>>(v);
+  }
   template <class T>
   Variable &operator/=(const boost::units::quantity<T> &quantity) & {
     setUnit(unit() / units::Unit(T{}));
     return *this /= quantity.value();
   }
+
+  Variable &operator|=(const Variable &other) &;
+  Variable &operator|=(const VariableConstProxy &other) &;
 
   const VariableConcept &data() const && = delete;
   const VariableConcept &data() const & { return *m_object; }
@@ -704,18 +744,37 @@ public:
   // returning `a += b` but I am not sure how Pybind11 handles object lifetimes
   // (would this suffer from the same issue?).
   template <class T> VariableProxy assign(const T &other) const;
+
   VariableProxy operator+=(const Variable &other) const;
   VariableProxy operator+=(const VariableConstProxy &other) const;
-  VariableProxy operator+=(const double value) const;
+  template <typename T, typename = std::enable_if_t<!is_variable_or_proxy<T>()>>
+  VariableProxy operator+=(const T v) const {
+    return *this += makeVariable<T>(v);
+  }
+
   VariableProxy operator-=(const Variable &other) const;
   VariableProxy operator-=(const VariableConstProxy &other) const;
-  VariableProxy operator-=(const double value) const;
+  template <typename T, typename = std::enable_if_t<!is_variable_or_proxy<T>()>>
+  VariableProxy operator-=(const T v) const {
+    return *this -= makeVariable<underlying_type_t<T>>(v);
+  }
+
   VariableProxy operator*=(const Variable &other) const;
   VariableProxy operator*=(const VariableConstProxy &other) const;
-  VariableProxy operator*=(const double value) const;
+  template <typename T, typename = std::enable_if_t<!is_variable_or_proxy<T>()>>
+  VariableProxy operator*=(const T v) const {
+    return *this *= makeVariable<underlying_type_t<T>>(v);
+  }
+
   VariableProxy operator/=(const Variable &other) const;
   VariableProxy operator/=(const VariableConstProxy &other) const;
-  VariableProxy operator/=(const double value) const;
+  template <typename T, typename = std::enable_if_t<!is_variable_or_proxy<T>()>>
+  VariableProxy operator/=(const T v) const {
+    return *this /= makeVariable<underlying_type_t<T>>(v);
+  }
+
+  VariableProxy operator|=(const Variable &other) const;
+  VariableProxy operator|=(const VariableConstProxy &other) const;
 
   template <class T> void setVariances(Vector<T> &&v) const;
 
@@ -736,6 +795,7 @@ SCIPP_CORE_EXPORT Variable operator+(const Variable &a, const Variable &b);
 SCIPP_CORE_EXPORT Variable operator-(const Variable &a, const Variable &b);
 SCIPP_CORE_EXPORT Variable operator*(const Variable &a, const Variable &b);
 SCIPP_CORE_EXPORT Variable operator/(const Variable &a, const Variable &b);
+SCIPP_CORE_EXPORT Variable operator|(const Variable &a, const Variable &b);
 SCIPP_CORE_EXPORT Variable operator+(const Variable &a,
                                      const VariableConstProxy &b);
 SCIPP_CORE_EXPORT Variable operator-(const Variable &a,
@@ -744,6 +804,8 @@ SCIPP_CORE_EXPORT Variable operator*(const Variable &a,
                                      const VariableConstProxy &b);
 SCIPP_CORE_EXPORT Variable operator/(const Variable &a,
                                      const VariableConstProxy &b);
+SCIPP_CORE_EXPORT Variable operator|(const Variable &a,
+                                     const VariableConstProxy &b);
 SCIPP_CORE_EXPORT Variable operator+(const VariableConstProxy &a,
                                      const Variable &b);
 SCIPP_CORE_EXPORT Variable operator-(const VariableConstProxy &a,
@@ -752,6 +814,8 @@ SCIPP_CORE_EXPORT Variable operator*(const VariableConstProxy &a,
                                      const Variable &b);
 SCIPP_CORE_EXPORT Variable operator/(const VariableConstProxy &a,
                                      const Variable &b);
+SCIPP_CORE_EXPORT Variable operator|(const VariableConstProxy &a,
+                                     const Variable &b);
 SCIPP_CORE_EXPORT Variable operator+(const VariableConstProxy &a,
                                      const VariableConstProxy &b);
 SCIPP_CORE_EXPORT Variable operator-(const VariableConstProxy &a,
@@ -759,26 +823,45 @@ SCIPP_CORE_EXPORT Variable operator-(const VariableConstProxy &a,
 SCIPP_CORE_EXPORT Variable operator*(const VariableConstProxy &a,
                                      const VariableConstProxy &b);
 SCIPP_CORE_EXPORT Variable operator/(const VariableConstProxy &a,
+                                     const VariableConstProxy &b);
+SCIPP_CORE_EXPORT Variable operator|(const VariableConstProxy &a,
                                      const VariableConstProxy &b);
 // Note: If the left-hand-side in an addition is a VariableProxy this simply
 // implicitly converts it to a Variable. A copy for the return value is required
 // anyway so this is a convenient way to avoid defining more overloads.
-SCIPP_CORE_EXPORT Variable operator+(const VariableConstProxy &a,
-                                     const double b);
-SCIPP_CORE_EXPORT Variable operator-(const VariableConstProxy &a,
-                                     const double b);
-SCIPP_CORE_EXPORT Variable operator*(const VariableConstProxy &a,
-                                     const double b);
-SCIPP_CORE_EXPORT Variable operator/(const VariableConstProxy &a,
-                                     const double b);
-SCIPP_CORE_EXPORT Variable operator+(const double a,
-                                     const VariableConstProxy &b);
-SCIPP_CORE_EXPORT Variable operator-(const double a,
-                                     const VariableConstProxy &b);
-SCIPP_CORE_EXPORT Variable operator*(const double a,
-                                     const VariableConstProxy &b);
-SCIPP_CORE_EXPORT Variable operator/(const double a,
-                                     const VariableConstProxy &b);
+template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
+Variable operator+(const T value, const VariableConstProxy &a) {
+  return makeVariable<T>(value) + a;
+}
+template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
+Variable operator-(const T value, const VariableConstProxy &a) {
+  return makeVariable<T>(value) - a;
+}
+template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
+Variable operator*(const T value, const VariableConstProxy &a) {
+  return makeVariable<T>(value) * a;
+}
+template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
+Variable operator/(const T value, const VariableConstProxy &a) {
+  return makeVariable<T>(value) / a;
+}
+template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
+Variable operator+(const VariableConstProxy &a, const T value) {
+  return a + makeVariable<T>(value);
+}
+template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
+Variable operator-(const VariableConstProxy &a, const T value) {
+  return a - makeVariable<T>(value);
+}
+template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
+Variable operator*(const VariableConstProxy &a, const T value) {
+  return a * makeVariable<T>(value);
+}
+template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
+Variable operator/(const VariableConstProxy &a, const T value) {
+  return a / makeVariable<T>(value);
+}
+
 template <class T>
 Variable operator*(Variable a, const boost::units::quantity<T> &quantity) {
   return std::move(a *= quantity);
@@ -818,14 +901,14 @@ SCIPP_CORE_EXPORT Variable concatenate(const VariableConstProxy &a1,
 SCIPP_CORE_EXPORT Variable dot(const Variable &a, const Variable &b);
 SCIPP_CORE_EXPORT Variable filter(const Variable &var, const Variable &filter);
 SCIPP_CORE_EXPORT Variable mean(const VariableConstProxy &var, const Dim dim);
-SCIPP_CORE_EXPORT Variable norm(const Variable &var);
+SCIPP_CORE_EXPORT Variable norm(const VariableConstProxy &var);
 SCIPP_CORE_EXPORT Variable permute(const Variable &var, const Dim dim,
                                    const std::vector<scipp::index> &indices);
 SCIPP_CORE_EXPORT Variable rebin(const VariableConstProxy &var, const Dim dim,
                                  const VariableConstProxy &oldCoord,
                                  const VariableConstProxy &newCoord);
 SCIPP_CORE_EXPORT Variable reverse(Variable var, const Dim dim);
-SCIPP_CORE_EXPORT Variable sqrt(const Variable &var);
+SCIPP_CORE_EXPORT Variable sqrt(const VariableConstProxy &var);
 
 SCIPP_CORE_EXPORT Variable sum(const VariableConstProxy &var, const Dim dim);
 SCIPP_CORE_EXPORT Variable copy(const VariableConstProxy &var);

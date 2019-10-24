@@ -2,7 +2,6 @@
 # Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 cmake_minimum_required(VERSION 3.10.2)
 project(scipp)
-
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -27,20 +26,17 @@ set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMake"
 
 find_package(Sanitizers REQUIRED)
 
+include(GTest)
 include(boost)
 include(Eigen)
 include(pybind11)
-include(GoogleTest)
 include(GoogleBenchmark)
 include(GenerateExportHeader)
+find_package(Boost 1.67 REQUIRED)
 
 if("${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}" VERSION_LESS "3.5")
   message(FATAL_ERROR "Python v3 interpreter must be greater than or equal to 3.5. Found ${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}")
 endif()
-
-find_package(Boost 1.67 REQUIRED)
-
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-omit-frame-pointer")
 
 option(WITH_CTEST "Enable ctest integration of tests" ON)
 option(DYNAMIC_LIB "Build shared libraries" OFF)
@@ -48,13 +44,14 @@ option(DYNAMIC_LIB "Build shared libraries" OFF)
 include(CheckIPOSupported)
 check_ipo_supported(RESULT result OUTPUT output)
 if (result)
-  if (NOT CMAKE_INTERPROCEDURAL_OPTIMIZATION)
-    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
-  endif (NOT CMAKE_INTERPROCEDURAL_OPTIMIZATION)
+  if (NOT DEFINED CMAKE_INTERPROCEDURAL_OPTIMIZATION)
+    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE CACHE BOOL "Link-time optimization: ON/OFF" FORCE)
+  endif ()
+  message("IPO set to ${CMAKE_INTERPROCEDURAL_OPTIMIZATION}")
 else ()
-  set(CMAKE_INTERPROCEDURAL_OPTIMIZATION FALSE)
+  set(CMAKE_INTERPROCEDURAL_OPTIMIZATION FALSE CACHE BOOL "Link-time optimization: ON/OFF" FORCE)
   message(WARNING "IPO is not supported: ${output}")
-endif (result)
+endif ()
 
 # See https://github.com/pybind/pybind11/issues/1604
 set(INTERPROCEDURAL_OPTIMIZATION_TESTS FALSE)
@@ -87,23 +84,26 @@ execute_process(
   OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 if(${HAVE_GIT_VERSION_INFO} EQUAL 0)
-  message("Got version from Git: ${GIT_VERSION_INFO}")
+  message(STATUS "Got version from Git: ${GIT_VERSION_INFO}")
   add_definitions(-DSCIPP_VERSION="${GIT_VERSION_INFO}")
 endif()
 
-add_compile_options(-Wall
-                    -Wextra
-                    -Wpedantic
-                    -Wunused
-                    -Wshadow
-                    -Winit-self
-                    -Wpointer-arith
-                    -Woverloaded-virtual
-                    -Wold-style-cast
-                    -Wcast-qual
-                    -Wcast-align)
-add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-Woverloaded-virtual>
-                    $<$<COMPILE_LANGUAGE:CXX>:-fno-operator-names>)
+if(NOT WIN32)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-omit-frame-pointer")
+	add_compile_options(-Wall
+						-Wextra
+						-Wpedantic
+						-Wunused
+						-Wshadow
+						-Winit-self
+						-Wpointer-arith
+						-Woverloaded-virtual
+						-Wold-style-cast
+						-Wcast-qual
+						-Wcast-align)
+	add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-Woverloaded-virtual>
+						$<$<COMPILE_LANGUAGE:CXX>:-fno-operator-names>)
+endif(NOT WIN32)
 # This is currently causing to many warnings, reenable when appropriate.
 # add_compile_options ( -Wconversion )
 

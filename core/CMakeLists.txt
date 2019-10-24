@@ -27,6 +27,7 @@ set(SRC_FILES
     dimensions.cpp
     dtype.cpp
     except.cpp
+    groupby.cpp
     rebin.cpp
     slice.cpp
     sort.cpp

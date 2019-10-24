@@ -5,11 +5,12 @@
 
 #include "test_macros.h"
 
-#include "../operators.h"
 #include "make_sparse.h"
 #include "scipp/core/dimensions.h"
 #include "scipp/core/transform.h"
 #include "scipp/core/variable.h"
+
+#include "../operators.h"
 
 using namespace scipp;
 using namespace scipp::core;
@@ -582,12 +583,12 @@ TEST_F(TransformTest_sparse_binary_values_variances_size_fail,
 }
 
 TEST_F(TransformBinaryTest, sparse_val_var_with_sparse_val_var) {
-  auto a = make_sparse_variable_with_variance();
-  set_sparse_values(a, {{1, 2, 3}, {4}});
-  set_sparse_variances(a, {{5, 6, 7}, {8}});
-  auto b = make_sparse_variable_with_variance();
-  set_sparse_values(b, {{0.1, 0.2, 0.3}, {0.4}});
-  set_sparse_variances(b, {{0.5, 0.6, 0.7}, {0.8}});
+  auto a = make_sparse_variable_with_variance<double>();
+  set_sparse_values<double>(a, {{1, 2, 3}, {4}});
+  set_sparse_variances<double>(a, {{5, 6, 7}, {8}});
+  auto b = make_sparse_variable_with_variance<double>();
+  set_sparse_values<double>(b, {{0.1, 0.2, 0.3}, {0.4}});
+  set_sparse_variances<double>(b, {{0.5, 0.6, 0.7}, {0.8}});
 
   const auto ab = transform<pair_self_t<double>>(a, b, op);
   transform_in_place<pair_self_t<double>>(a, b, op_in_place);
@@ -611,11 +612,11 @@ TEST_F(TransformBinaryTest, sparse_val_var_with_sparse_val_var) {
 }
 
 TEST_F(TransformBinaryTest, sparse_val_var_with_sparse_val) {
-  auto a = make_sparse_variable_with_variance();
-  set_sparse_values(a, {{1, 2, 3}, {4}});
-  set_sparse_variances(a, {{5, 6, 7}, {8}});
-  auto b = make_sparse_variable();
-  set_sparse_values(b, {{0.1, 0.2, 0.3}, {0.4}});
+  auto a = make_sparse_variable_with_variance<double>();
+  set_sparse_values<double>(a, {{1, 2, 3}, {4}});
+  set_sparse_variances<double>(a, {{5, 6, 7}, {8}});
+  auto b = make_sparse_variable<double>();
+  set_sparse_values<double>(b, {{0.1, 0.2, 0.3}, {0.4}});
 
   const auto ab = transform<pair_self_t<double>>(a, b, op);
   transform_in_place<pair_self_t<double>>(a, b, op_in_place);
@@ -637,9 +638,9 @@ TEST_F(TransformBinaryTest, sparse_val_var_with_sparse_val) {
 }
 
 TEST_F(TransformBinaryTest, sparse_val_var_with_val_var) {
-  auto a = make_sparse_variable_with_variance();
-  set_sparse_values(a, {{1, 2, 3}, {4}});
-  set_sparse_variances(a, {{5, 6, 7}, {8}});
+  auto a = make_sparse_variable_with_variance<double>();
+  set_sparse_values<double>(a, {{1, 2, 3}, {4}});
+  set_sparse_variances<double>(a, {{5, 6, 7}, {8}});
   auto b = makeVariable<double>({Dim::Y, 2}, {1.5, 1.6}, {1.7, 1.8});
 
   const auto ab = transform<pair_self_t<double>>(a, b, op);
@@ -662,9 +663,9 @@ TEST_F(TransformBinaryTest, sparse_val_var_with_val_var) {
 }
 
 TEST_F(TransformBinaryTest, sparse_val_var_with_val) {
-  auto a = make_sparse_variable_with_variance();
-  set_sparse_values(a, {{1, 2, 3}, {4}});
-  set_sparse_variances(a, {{5, 6, 7}, {8}});
+  auto a = make_sparse_variable_with_variance<double>();
+  set_sparse_values<double>(a, {{1, 2, 3}, {4}});
+  set_sparse_variances<double>(a, {{5, 6, 7}, {8}});
   auto b = makeVariable<double>({Dim::Y, 2}, {1.5, 1.6});
 
   const auto ab = transform<pair_self_t<double>>(a, b, op);
@@ -687,9 +688,9 @@ TEST_F(TransformBinaryTest, sparse_val_var_with_val) {
 }
 
 TEST_F(TransformBinaryTest, broadcast_sparse_val_var_with_val) {
-  auto a = make_sparse_variable_with_variance();
-  set_sparse_values(a, {{1, 2, 3}, {4}});
-  set_sparse_variances(a, {{5, 6, 7}, {8}});
+  auto a = make_sparse_variable_with_variance<double>();
+  set_sparse_values<double>(a, {{1, 2, 3}, {4}});
+  set_sparse_variances<double>(a, {{5, 6, 7}, {8}});
   const auto b = makeVariable<float>({Dim::Z, 2}, {1.5, 1.6});
 
   const auto ab = transform<pair_custom_t<std::pair<double, float>>>(a, b, op);
@@ -723,9 +724,9 @@ TEST_F(TransformBinaryTest, broadcast_sparse_val_var_with_val) {
 // integrations, but may be unexpected. Should we fail and support this as a
 // separate operation instead?
 TEST_F(TransformBinaryTest, DISABLED_broadcast_sparse_val_var_with_val) {
-  auto a = make_sparse_variable_with_variance();
-  set_sparse_values(a, {{1, 2, 3}, {4}});
-  set_sparse_variances(a, {{5, 6, 7}, {8}});
+  auto a = make_sparse_variable_with_variance<double>();
+  set_sparse_values<double>(a, {{1, 2, 3}, {4}});
+  set_sparse_variances<double>(a, {{5, 6, 7}, {8}});
   const auto b = makeVariable<float>({Dim::Z, 2}, {1.5, 1.6});
 
   EXPECT_THROW((transform_in_place<pair_custom_t<std::pair<double, float>>>(
@@ -811,10 +812,10 @@ TEST_F(TransformInPlaceDryRunTest, variances_fail) {
 }
 
 TEST_F(TransformInPlaceDryRunTest, sparse_variance_length_fail) {
-  auto a = make_sparse_variable_with_variance();
+  auto a = make_sparse_variable_with_variance<double>();
   a.setUnit(units::m);
-  set_sparse_values(a, {{1, 2, 3}, {4}});
-  set_sparse_variances(a, {{5, 6, 7}, {8, 9}});
+  set_sparse_values<double>(a, {{1, 2, 3}, {4}});
+  set_sparse_variances<double>(a, {{5, 6, 7}, {8, 9}});
   const auto original(a);
 
   EXPECT_THROW(dry_run::transform_in_place<double>(a, unary),
@@ -826,14 +827,14 @@ TEST_F(TransformInPlaceDryRunTest, sparse_variance_length_fail) {
 }
 
 TEST_F(TransformInPlaceDryRunTest, sparse_length_fail) {
-  auto a = make_sparse_variable_with_variance();
+  auto a = make_sparse_variable_with_variance<double>();
   a.setUnit(units::m);
-  set_sparse_values(a, {{1, 2, 3}, {4}});
-  set_sparse_variances(a, {{5, 6, 7}, {8}});
-  auto b = make_sparse_variable_with_variance();
+  set_sparse_values<double>(a, {{1, 2, 3}, {4}});
+  set_sparse_variances<double>(a, {{5, 6, 7}, {8}});
+  auto b = make_sparse_variable_with_variance<double>();
   b.setUnit(units::m);
-  set_sparse_values(b, {{1, 2, 3}, {4, 5}});
-  set_sparse_variances(b, {{5, 6, 7}, {8, 9}});
+  set_sparse_values<double>(b, {{1, 2, 3}, {4, 5}});
+  set_sparse_variances<double>(b, {{5, 6, 7}, {8, 9}});
   const auto original(a);
 
   EXPECT_THROW(dry_run::transform_in_place<pair_self_t<double>>(a, b, binary),
@@ -842,12 +843,12 @@ TEST_F(TransformInPlaceDryRunTest, sparse_length_fail) {
 }
 
 TEST_F(TransformInPlaceDryRunTest, sparse_no_variances_length_fail) {
-  auto a = make_sparse_variable();
+  auto a = make_sparse_variable<double>();
   a.setUnit(units::m);
-  set_sparse_values(a, {{1, 2, 3}, {4}});
-  auto b = make_sparse_variable();
+  set_sparse_values<double>(a, {{1, 2, 3}, {4}});
+  auto b = make_sparse_variable<double>();
   b.setUnit(units::m);
-  set_sparse_values(b, {{1, 2, 3}, {4, 5}});
+  set_sparse_values<double>(b, {{1, 2, 3}, {4, 5}});
   const auto original(a);
 
   EXPECT_THROW(dry_run::transform_in_place<pair_self_t<double>>(a, b, binary),
@@ -856,10 +857,10 @@ TEST_F(TransformInPlaceDryRunTest, sparse_no_variances_length_fail) {
 }
 
 TEST_F(TransformInPlaceDryRunTest, unchanged_if_success) {
-  auto a = make_sparse_variable_with_variance();
+  auto a = make_sparse_variable_with_variance<double>();
   a.setUnit(units::m);
-  set_sparse_values(a, {{1, 2, 3}, {4}});
-  set_sparse_variances(a, {{5, 6, 7}, {8}});
+  set_sparse_values<double>(a, {{1, 2, 3}, {4}});
+  set_sparse_variances<double>(a, {{5, 6, 7}, {8}});
   const auto original(a);
 
   dry_run::transform_in_place<double>(a, unary);
