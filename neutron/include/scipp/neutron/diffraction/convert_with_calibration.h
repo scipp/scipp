@@ -6,11 +6,7 @@
 #define SCIPP_NEUTRON_CONVERT_WITH_CALIBRATION_H
 
 #include "scipp-neutron_export.h"
-#include "scipp/units/unit.h"
-
-namespace scipp::core {
-class Dataset;
-}
+#include "scipp/core/dataset.h"
 
 namespace scipp::neutron::diffraction {
 

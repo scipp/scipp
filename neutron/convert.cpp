@@ -8,8 +8,6 @@
 
 #include "scipp/core/counts.h"
 #include "scipp/core/dataset.h"
-#include "scipp/core/transform.h"
-#include "scipp/core/except.h"
 #include "scipp/neutron/beamline.h"
 #include "scipp/neutron/convert.h"
 
