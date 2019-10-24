@@ -308,18 +308,22 @@ Variable operator/(const double a, const VariableConstProxy &b_proxy) {
 struct MakeVariableWithType {
   template <class T> struct Maker {
     static Variable apply(const VariableConstProxy &parent) {
-     return transform<double, float, int64_t, int32_t, bool>(parent, overloaded{
-       [](const units::Unit &x){ return x; },
-       [](const auto &x){
-         if constexpr (detail::is_ValueAndVariance_v<std::decay_t<decltype(x)>>)
-          return detail::ValueAndVariance<T>{static_cast<T>(x.value), static_cast<T>(x.variance)};
-         else
-           return static_cast<T>(x);
-       }});
+      return transform<double, float, int64_t, int32_t, bool>(
+          parent, overloaded{[](const units::Unit &x) { return x; },
+                             [](const auto &x) {
+                               if constexpr (detail::is_ValueAndVariance_v<
+                                                 std::decay_t<decltype(x)>>)
+                                 return detail::ValueAndVariance<T>{
+                                     static_cast<T>(x.value),
+                                     static_cast<T>(x.variance)};
+                               else
+                                 return static_cast<T>(x);
+                             }});
     }
   };
   static Variable make(const VariableConstProxy &var, DType type) {
-    return CallDType<double, float, int64_t, int32_t, bool>::apply<Maker>(type, var);
+    return CallDType<double, float, int64_t, int32_t, bool>::apply<Maker>(type,
+                                                                          var);
   }
 };
 
