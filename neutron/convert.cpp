@@ -40,7 +40,7 @@ static Dataset convert_with_factor(Dataset &&d, const Dim from, const Dim to,
   }
 
   // 2. Transform variables
-  for (const auto & [ name, data ] : d) {
+  for (const auto &[name, data] : d) {
     static_cast<void>(name);
     if (data.dims().sparse()) {
       data.coords()[from] *= factor;
@@ -99,27 +99,26 @@ auto tofToEnergyConversionFactor(const Dataset &d) {
 
 Dataset tofToEnergy(Dataset &&d) {
   // 1. Compute conversion factor
-  const auto conversionFactor =
-      astype(tofToEnergyConversionFactor(d), d.coords()[Dim::Tof].dtype());
+  const auto conversionFactor = tofToEnergyConversionFactor(d);
 
   // 2. Record ToF bin widths
   const auto oldBinWidths = counts::getBinWidths(d.coords(), {Dim::Tof});
 
   // 3. Transform coordinate
-  d.setCoord(Dim::Tof,
-             (reciprocal((d.coords()[Dim::Tof] * d.coords()[Dim::Tof]))) *
-                 conversionFactor);
+  const auto &coordsSq = d.coords()[Dim::Tof] * d.coords()[Dim::Tof];
+  d.setCoord(Dim::Tof, (reciprocal(coordsSq) *
+                        astype(conversionFactor, coordsSq.dtype())));
 
   // 4. Record energy bin widths
   const auto newBinWidths = counts::getBinWidths(d.coords(), {Dim::Tof});
 
   // 5. Transform variables
-  for (const auto & [ name, data ] : d) {
+  for (const auto &[name, data] : d) {
     static_cast<void>(name);
     if (data.coords()[Dim::Tof].dims().sparse()) {
+      const auto &cSq = data.coords()[Dim::Tof] * data.coords()[Dim::Tof];
       data.coords()[Dim::Tof].assign(
-          (reciprocal((data.coords()[Dim::Tof] * data.coords()[Dim::Tof]))) *
-          conversionFactor);
+          (reciprocal(cSq) * astype(conversionFactor, cSq.dtype())));
     } else if (data.unit().isCountDensity()) {
       counts::fromDensity(data, oldBinWidths);
       counts::toDensity(data, newBinWidths);
@@ -132,24 +131,26 @@ Dataset tofToEnergy(Dataset &&d) {
 
 Dataset energyToTof(Dataset &&d) {
   // 1. Compute conversion factor
-  const auto conversionFactor =
-      astype(tofToEnergyConversionFactor(d), d.coords()[Dim::Energy].dtype());
+  const auto conversionFactor = tofToEnergyConversionFactor(d);
 
   // 2. Record energy bin widths
   const auto oldBinWidths = counts::getBinWidths(d.coords(), {Dim::Energy});
 
   // 3. Transform coordinate
-  d.setCoord(Dim::Energy, sqrt(conversionFactor / d.coords()[Dim::Energy]));
+  const auto &coordsSqrt = d.coords()[Dim::Energy];
+  d.setCoord(Dim::Energy,
+             sqrt(astype(conversionFactor, coordsSqrt.dtype()) / coordsSqrt));
 
   // 4. Record ToF bin widths
   const auto newBinWidths = counts::getBinWidths(d.coords(), {Dim::Energy});
 
   // 5. Transform variables
-  for (const auto & [ name, data ] : d) {
+  for (const auto &[name, data] : d) {
     static_cast<void>(name);
     if (data.coords()[Dim::Energy].dims().sparse()) {
+      const auto &cSqrt = data.coords()[Dim::Energy];
       data.coords()[Dim::Energy].assign(
-          sqrt(conversionFactor / data.coords()[Dim::Energy]));
+          sqrt(astype(conversionFactor, cSqrt.dtype()) / cSqrt));
     } else if (data.unit().isCountDensity()) {
       counts::fromDensity(data, oldBinWidths);
       counts::toDensity(data, newBinWidths);
