@@ -62,12 +62,14 @@ def load_calibration(filename, mantid_LoadDiffCal_args={}):
     for i in range(group_ws.getNumberHistograms()):
         group_map[group_ws.getDetector(i).getID()] = group_ws.readY(i)[0]
 
-    group_list = []
-    detID_list = cal_data["detid"].values
-    for i in range(len(detID_list)):
-        group_list.append(group_map[detID_list[i]])
+    # Create list with same ordering as in the cal_data dataset
+    group_list = [group_map[detid] for detid in cal_data["detid"].values]
 
     cal_data["group"] = sc.Variable([sc.Dim.Row], values=group_list)
+
+    cal_data.rename_dims({sc.Dim.Row: sc.Dim.Detector})
+    cal_data.coord[sc.Dim.Detector] = cal_data['detid']
+    del cal_data['detid']
 
     # Delete generated mantid workspaces
     base_name = mantid_LoadDiffCal_args["WorkspaceName"]
