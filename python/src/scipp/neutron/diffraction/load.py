@@ -52,8 +52,8 @@ def load_calibration(filename, mantid_LoadDiffCal_args={}):
     cal_data = convert_TableWorkspace_to_dataset(cal_ws)
 
     # Modify units of cal_data
-    cal_data["difc"].unit = sc.units.us/sc.units.angstrom
-    cal_data["difa"].unit = sc.units.us/sc.units.angstrom/sc.units.angstrom
+    cal_data["difc"].unit = sc.units.us / sc.units.angstrom
+    cal_data["difa"].unit = sc.units.us / sc.units.angstrom / sc.units.angstrom
     cal_data["tzero"].unit = sc.units.us
 
     # Mask data not used, but is loaded by LoadDiffCal
@@ -66,7 +66,9 @@ def load_calibration(filename, mantid_LoadDiffCal_args={}):
         group_map[group_ws.getDetector(i).getID()] = group_ws.readY(i)[0]
 
     # Create list with same ordering as in the cal_data dataset
-    group_list = np.array([group_map[detid] for detid in cal_data["detid"].values])
+    group_list = np.array(
+        [group_map[detid] for detid in cal_data["detid"].values],
+        dtype=np.int32)
 
     cal_data["group"] = sc.Variable([sc.Dim.Row], values=group_list)
 
