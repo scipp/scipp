@@ -64,18 +64,18 @@ public:
       !std::is_same_v<void, decltype(detect(std::declval<T>()))>;
 };
 
-static constexpr auto reciprocal_ = [](const auto a_) {
-  if constexpr (hasReciprocal<std::decay_t<decltype(a_)>>::value)
-    return reciprocal(a_);
-  else
-    return static_cast<decltype(a_)>(1) / a_;
-};
-
 Variable reciprocal(const VariableConstProxy &var) {
   return transform<double, float>(
-      var, overloaded{reciprocal_, [](const units::Unit &unit) {
-                        return units::Unit(units::dimensionless) / unit;
-                      }});
+      var,
+      overloaded{
+          [](const auto &a_) {
+            return static_cast<
+                       detail::element_type_t<std::decay_t<decltype(a_)>>>(1) /
+                   a_;
+          },
+          [](const units::Unit &unit) {
+            return units::Unit(units::dimensionless) / unit;
+          }});
 }
 
 Variable Variable::operator-() const {
