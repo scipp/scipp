@@ -27,7 +27,6 @@ def make_component_info(ws):
 
 
 def make_detector_info(ws):
-    nHist = ws.getNumberHistograms()
     det_info = ws.detectorInfo()
     # det -> spec mapping
     nDet = det_info.size()
