@@ -55,15 +55,6 @@ template <class T1, class T2> Variable plus(const T1 &a, const T2 &b) {
   return transform<arithmetic_and_matrix_type_pairs>(a, b, plus_);
 }
 
-template <class T> class hasReciprocal {
-  static void detect(...);
-  template <class U> static decltype(reciprocal(std::declval<U>())) detect(U);
-
-public:
-  static constexpr bool value =
-      !std::is_same_v<void, decltype(detect(std::declval<T>()))>;
-};
-
 Variable reciprocal(const VariableConstProxy &var) {
   return transform<double, float>(
       var,
