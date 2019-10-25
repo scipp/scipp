@@ -4,11 +4,18 @@
 
 from .._scipp import core as sc
 import numpy as np
+from copy import deepcopy
 
 
 def get_pos(pos):
     return [pos.X(), pos.Y(), pos.Z()]
 
+
+def make_run(ws):
+    return sc.Variable(value=deepcopy(ws.run()))
+
+def make_sample(ws):
+    return sc.Variable(value=deepcopy(ws.getSample()))
 
 def make_component_info(ws):
     compInfo = sc.Dataset({
@@ -123,7 +130,9 @@ def convert_Workspace2D_to_dataset(ws):
                          labels={
                              "position": pos,
                              "component_info": comp_info,
-                             "detector_info": det_info
+                             "detector_info": det_info,
+                             "run" : make_run(ws),
+                             "sample" : make_sample(ws)
                          })
 
     data = array.data
@@ -189,7 +198,9 @@ def convert_EventWorkspace_to_dataset(ws, load_pulse_times, EventType):
         "labels": {
             "position": pos,
             "component_info": comp_info,
-            "detector_info": det_info
+            "detector_info": det_info,
+            "run" : make_run(ws),
+            "sample" : make_sample(ws)
         }
     }
     if load_pulse_times:
