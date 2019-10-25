@@ -618,3 +618,45 @@ def test_rename_dims():
 def test_create_1d_with_strings():
     v = sc.Variable([Dim.X], values=["aaa", "ff", "bb"])
     assert np.all(v.values == np.array(["aaa", "ff", "bb"]))
+
+
+def test_out_arg_none():
+    values = np.arange(6.0).reshape(2, 3)
+    var = sc.Variable(dims=[Dim.X, Dim.Y], values=values)
+    original = var.copy()
+    expected = sc.sqrt(var)
+    result = sc.func_with_out_arg(var[Dim.X, 1:])
+    assert var[Dim.X, 1:] != expected[Dim.X, 1:]
+    assert result == expected[Dim.X, 1:]
+    result += 1.0
+    assert result != expected[Dim.X, 1:]
+    assert var == original
+
+
+def test_out_arg_same():
+    values = np.arange(6.0).reshape(2, 3)
+    var = sc.Variable(dims=[Dim.X, Dim.Y], values=values)
+    expected = sc.sqrt(var)
+    result = sc.func_with_out_arg(var[Dim.X, 1:], var[Dim.X, 1:])
+    assert var[Dim.X, 1:] == expected[Dim.X, 1:]
+    assert result == expected[Dim.X, 1:]
+    assert result == var[Dim.X, 1:]
+    result += 1.0
+    assert result != expected[Dim.X, 1:]
+    assert result == var[Dim.X, 1:]
+
+
+def test_out_arg_different():
+    values = np.arange(6.0).reshape(2, 3)
+    var = sc.Variable(dims=[Dim.X, Dim.Y], values=values)
+    original = var.copy()
+    expected = sc.sqrt(var)
+    out = var[Dim.X, 1:].copy()
+    out *= 0.0
+    result = sc.func_with_out_arg(var[Dim.X, 1:], out=out)
+    assert var == original
+    assert result == expected[Dim.X, 1:]
+    assert result == out
+    result += 1.0
+    assert result != expected[Dim.X, 1:]
+    assert result == out

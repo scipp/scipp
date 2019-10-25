@@ -479,4 +479,21 @@ void init_variable(py::module &m) {
         :raises: If the unit is dimensionless, or if the dtype has no atan, e.g., if it is an integer
         :return: Copy of the input with values replaced by the atan. Output unit is rad.
         :rtype: Variable)");
+
+  m.def("func_with_out_arg",
+        [](const VariableConstProxy &self, Variable &out) {
+          out = sqrt(self);
+          return py::cast(VariableProxy(out));
+        },
+        py::arg("x"), py::arg("out"));
+  m.def("func_with_out_arg",
+        [](const VariableConstProxy &self, std::optional<VariableProxy> &out) {
+          if (out) {
+            out->assign(sqrt(self));
+            return py::cast(*out);
+          } else {
+            return py::cast(sqrt(self));
+          }
+        },
+        py::arg("x"), py::arg("out") = std::nullopt);
 }
