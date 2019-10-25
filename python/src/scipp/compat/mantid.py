@@ -39,8 +39,8 @@ def make_detector_info(ws):
     spectrum_ = spectrum.values
     has_spectrum_ = has_spectrum.values
     spec_info = ws.spectrumInfo()
-    for i in range(nHist):
-        spec_def = spec_info.getSpectrumDefinition(i)
+    for i, spec in enumerate(spec_info):
+        spec_def = spec.getSpectrumDefinition()
         # This assumes that each detector is part of exactly one spectrum
         for j in range(len(spec_def)):
             det, time = spec_def[j]
@@ -52,7 +52,7 @@ def make_detector_info(ws):
             has_spectrum_[det] = True
     detector = sc.Variable([sc.Dim.Detector], values=det_info.detectorIDs())
 
-    # Remove any information about detectors withou data (a spectrum). This
+    # Remove any information about detectors without data (a spectrum). This
     # mostly just gets in the way and including it in the default converter
     # is probably not required.
     spectrum = sc.filter(spectrum, has_spectrum)
