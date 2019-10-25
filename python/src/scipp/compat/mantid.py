@@ -40,7 +40,7 @@ def make_detector_info(ws):
     has_spectrum_ = has_spectrum.values
     spec_info = ws.spectrumInfo()
     for i, spec in enumerate(spec_info):
-        spec_def = spec.getSpectrumDefinition()
+        spec_def = spec.spectrumDefinition
         # This assumes that each detector is part of exactly one spectrum
         for j in range(len(spec_def)):
             det, time = spec_def[j]
