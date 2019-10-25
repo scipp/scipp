@@ -336,6 +336,22 @@ public:
   template <class T> auto sparseVariances() {
     return scipp::span(cast<sparse_container<T>>(true));
   }
+  template <class T> const auto &value() const {
+    expect::equals(dims(), Dimensions());
+    return values<T>()[0];
+  }
+  template <class T> const auto &variance() const {
+    expect::equals(dims(), Dimensions());
+    return variances<T>()[0];
+  }
+  template <class T> auto &value() {
+    expect::equals(dims(), Dimensions());
+    return values<T>()[0];
+  }
+  template <class T> auto &variance() {
+    expect::equals(dims(), Dimensions());
+    return variances<T>()[0];
+  }
 
   // ATTENTION: It is really important to avoid any function returning a
   // (Const)VariableProxy for rvalue Variable. Otherwise the resulting slice
@@ -657,6 +673,10 @@ public:
     expect::equals(dims(), Dimensions());
     return values<T>()[0];
   }
+  template <class T> const auto &variance() const {
+    expect::equals(dims(), Dimensions());
+    return variances<T>()[0];
+  }
 
   bool operator==(const Variable &other) const;
   bool operator==(const VariableConstProxy &other) const;
@@ -732,6 +752,14 @@ public:
   }
   template <class T> auto sparseVariances() const {
     return castVariances<sparse_container<T>>();
+  }
+  template <class T> auto &value() const {
+    expect::equals(dims(), Dimensions());
+    return values<T>()[0];
+  }
+  template <class T> auto &variance() const {
+    expect::equals(dims(), Dimensions());
+    return variances<T>()[0];
   }
 
   // Note: We want to support things like `var(Dim::X, 0) += var2`, i.e., when
