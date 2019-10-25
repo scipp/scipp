@@ -32,9 +32,12 @@ Dataset convert_with_calibration(Dataset d, Dataset cal) {
     // present this should probably be ok.
     cal = groupby(cal, "spectrum", Dim::Spectrum).mean(Dim::Detector);
   } else if (d.dimensions().count(cal["tzero"].dims().inner()) != 1) {
-    throw except::DimensionError(
-        "Calibration depends on dimension that is not present in the converted "
-        "data. Missing detector information?");
+    throw except::DimensionError("Calibration depends on dimension " +
+                                 to_string(cal["tzero"].dims().inner()) +
+                                 " that is not present in the converted "
+                                 "data " +
+                                 to_string(d) +
+                                 ". Missing detector information?");
   }
 
   // 3. Transform coordinate
