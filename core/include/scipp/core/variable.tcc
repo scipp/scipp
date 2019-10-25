@@ -620,8 +620,7 @@ Variable::cast(const bool variances_) const {
   if (!variances_)
     return dm.m_values;
   else {
-    if (!hasVariances())
-      throw std::runtime_error("No variances");
+    expect::hasVariances(*this);
     return *dm.m_variances;
   }
 }
@@ -632,8 +631,7 @@ Vector<underlying_type_t<T>> &Variable::cast(const bool variances_) {
   if (!variances_)
     return dm.m_values;
   else {
-    if (!hasVariances())
-      throw std::runtime_error("No variances");
+    expect::hasVariances(*this);
     return *dm.m_variances;
   }
 }
@@ -653,6 +651,7 @@ VariableConstProxy::cast() const {
 template <class T>
 const VariableView<const underlying_type_t<T>>
 VariableConstProxy::castVariances() const {
+  expect::hasVariances(*this);
   using TT = underlying_type_t<T>;
   if (!m_view)
     return requireT<const DataModel<Vector<TT>>>(data()).variancesView(dims());
@@ -674,6 +673,7 @@ VariableView<underlying_type_t<T>> VariableProxy::cast() const {
 
 template <class T>
 VariableView<underlying_type_t<T>> VariableProxy::castVariances() const {
+  expect::hasVariances(*this);
   using TT = underlying_type_t<T>;
   if (m_view)
     return *requireT<const ViewModel<VariableView<TT>>>(data()).m_variances;

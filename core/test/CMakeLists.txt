@@ -29,6 +29,7 @@ add_executable(${TARGET_NAME} EXCLUDE_FROM_ALL
                value_and_variance_test.cpp
                variable_custom_type_test.cpp
                variable_operations_test.cpp
+               variable_scalar_accessors_test.cpp
                variable_test.cpp
                variable_trigonometry_test.cpp
                variable_view_test.cpp
