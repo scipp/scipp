@@ -21,8 +21,11 @@ def visit_sparse_data(input_data, sparse_dim, return_sparse_data=False,
     dims = input_data.dims
     shapes = input_data.shape
     ndims = len(dims)
-    print(dims)
-    print(ndims)
+    # Remove the sparse dim from dims
+    isparse = dims.index(sparse_dim)
+    dims.pop(isparse)
+    shapes.pop(isparse)
+
     # Construct tuple of ranges over dimension shapes
     if ndims > 1:
         indices = tuple()
@@ -48,14 +51,11 @@ def visit_sparse_data(input_data, sparse_dim, return_sparse_data=False,
             scatter_array.append([])
 
     # Now construct all indices combinations using itertools
-    print(indices)
-    exit()
     for ind in product(*indices):
         # And for each indices combination, slice the original
         # data down to the sparse dimension
         vslice = var
         if ndims > 1:
-            # vslice = input_data
             for i in range(ndims - 1):
                 vslice = vslice[dims[i], ind[i]]
 
@@ -79,7 +79,6 @@ def visit_sparse_data(input_data, sparse_dim, return_sparse_data=False,
 
 
 def histogram_sparse_data(input_data, sparse_dim, bins):
-    # print(input_data)
     var = next(iter(input_data))[1]
     if isinstance(bins, bool):
         bins = 256
@@ -102,7 +101,7 @@ def histogram_sparse_data(input_data, sparse_dim, bins):
 
 
 def plot_sparse(input_data, ndim=0, sparse_dim=None, backend=None, logx=False, logy=False, logxy=False,
-                weights=True, size=50.0, filename=None, axes=None, cb=None, **kwargs):
+                weights=True, size=50.0, filename=None, axes=None, cb=None, opacity=1.0, **kwargs):
     """
     Produce a scatter plot from sparse data.
     """
@@ -123,11 +122,16 @@ def plot_sparse(input_data, ndim=0, sparse_dim=None, backend=None, logx=False, l
         plot_type = "scatter3d"
     else:
         raise RuntimeError("Scatter plots for sparse data support at most 3 dimensions.")
-    data = dict(type=plot_type, mode='markers', name=name)
+    data = dict(type=plot_type, mode='markers', name=name,
+                marker={"line": {"color": '#ffffff',
+                                 "width": 1},
+                        "opacity": opacity
+                       }
+                )
     for i in range(ndims):
         data[xyz[i]] = sparse_data[ndims - 1 - i]
     if len(sparse_data) > ndims:
-        data["marker"] = dict()
+        # data["marker"] = dict()
 
         # TODO: Having both color and size code for the weights leads to
         # strange in plotly, where it would seem some objects are either
@@ -148,7 +152,7 @@ def plot_sparse(input_data, ndim=0, sparse_dim=None, backend=None, logx=False, l
                                           "titleside": "right"}
 
     layout = dict(
-        xaxis=dict(title=axis_label(coords[dims[-1]])),
+        xaxis=dict(title=axis_label(coords[sparse_dim])),
         yaxis=dict(title=axis_label(coords[dims[0]])),
         showlegend=True,
         legend=dict(x=0.0, y=1.15, orientation="h"),
@@ -160,6 +164,11 @@ def plot_sparse(input_data, ndim=0, sparse_dim=None, backend=None, logx=False, l
         layout["yaxis"]["type"] = "log"
 
     fig = go.Figure(data=[data], layout=layout)
+    if ndims == 3:
+        fig.update_layout(scene={"xaxis_title": axis_label(coords[sparse_dim]),
+                                 "yaxis_title": axis_label(coords[dims[1]]),
+                                 "zaxis_title": axis_label(coords[dims[0]])})
+
     render_plot(static_fig=fig, interactive_fig=fig, backend=backend,
                 filename=filename)
     return
