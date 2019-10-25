@@ -12,7 +12,7 @@ else
 fi
 
 # Perform formatting
-find common core neutron python test units -type f -name '*.h' -o -name '*.cpp' | xargs ${CLANG_FORMAT_EXE} -i -style=file;
+git diff origin/master --name-only -- '*.cpp' '*.h' | xargs ${CLANG_FORMAT_EXE} -i -style=file;
 DIRTY=$(git ls-files --modified);
 
 if [ -z "${DIRTY}" ]; then
