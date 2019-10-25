@@ -473,8 +473,7 @@ TEST(Convert, convert_with_factor_type_promotion) {
   Dataset tof = makeTofDataForUnitConversion();
   tof.setCoord(Dim::Tof, makeVariable<float>({Dim::Tof, 4}, units::us,
                                              {4000, 5000, 6100, 7300}));
-  auto dimsToConvert = std::vector{Dim::DSpacing, Dim::Wavelength, Dim::Energy};
-  for (auto &&d : dimsToConvert) {
+  for (auto &&d : {Dim::DSpacing, Dim::Wavelength, Dim::Energy}) {
     auto res = convert(tof, Dim::Tof, d);
     EXPECT_EQ(res.coords()[d].dtype(), core::dtype<float>);
 
