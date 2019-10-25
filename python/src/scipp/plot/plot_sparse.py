@@ -16,7 +16,7 @@ from itertools import product
 def visit_sparse_data(input_data, sparse_dim, return_sparse_data=False,
                       weights=None):
 
-    xmin =  1.0e30
+    xmin = 1.0e30
     xmax = -1.0e30
     dims = input_data.dims
     shapes = input_data.shape
@@ -65,7 +65,9 @@ def visit_sparse_data(input_data, sparse_dim, return_sparse_data=False,
             xmax = max(xmax, np.nanmax(vals))
             if return_sparse_data:
                 for i in range(ndims - 1):
-                    scatter_array[i].append(np.ones_like(vals) * input_data.coords[dims[i]].values[ind[i]])
+                    scatter_array[i].append(
+                        np.ones_like(vals) *
+                        input_data.coords[dims[i]].values[ind[i]])
                 scatter_array[ndims - 1].append(vals)
                 if data_exists:
                     scatter_array[ndims].append(vslice.values)
@@ -89,7 +91,8 @@ def histogram_sparse_data(input_data, sparse_dim, bins):
         # Add padding
         xmin -= 0.5 * dx
         xmax += 0.5 * dx
-        bins = sc.Variable([sparse_dim], values=np.linspace(xmin, xmax, bins + 1),
+        bins = sc.Variable([sparse_dim],
+                           values=np.linspace(xmin, xmax, bins + 1),
                            unit=var.coords[sparse_dim].unit)
     elif isinstance(bins, np.ndarray):
         bins = sc.Variable([sparse_dim], values=bins,
@@ -100,8 +103,9 @@ def histogram_sparse_data(input_data, sparse_dim, bins):
     return sc.histogram(input_data, bins)
 
 
-def plot_sparse(input_data, ndim=0, sparse_dim=None, backend=None, logx=False, logy=False, logxy=False,
-                weights=True, size=50.0, filename=None, axes=None, cb=None, opacity=1.0, **kwargs):
+def plot_sparse(input_data, ndim=0, sparse_dim=None, backend=None, logx=False,
+                logy=False, logxy=False, weights=True, size=50.0,
+                filename=None, axes=None, cb=None, opacity=1.0, **kwargs):
     """
     Produce a scatter plot from sparse data.
     """
@@ -121,17 +125,15 @@ def plot_sparse(input_data, ndim=0, sparse_dim=None, backend=None, logx=False, l
     elif ndims == 3:
         plot_type = "scatter3d"
     else:
-        raise RuntimeError("Scatter plots for sparse data support at most 3 dimensions.")
+        raise RuntimeError("Scatter plots for sparse data support at most "
+                           "3 dimensions.")
     data = dict(type=plot_type, mode='markers', name=name,
                 marker={"line": {"color": '#ffffff',
                                  "width": 1},
-                        "opacity": opacity
-                       }
-                )
+                        "opacity": opacity})
     for i in range(ndims):
         data[xyz[i]] = sparse_data[ndims - 1 - i]
     if len(sparse_data) > ndims:
-        # data["marker"] = dict()
 
         # TODO: Having both color and size code for the weights leads to
         # strange in plotly, where it would seem some objects are either
@@ -141,13 +143,13 @@ def plot_sparse(input_data, ndim=0, sparse_dim=None, backend=None, logx=False, l
         #     # Copies are apparently required here
         #     data["marker"]["size"] = sparse_data[-1].copy()
         #     data["marker"]["sizemode"] = "area"
-        #     data["marker"]["sizeref"] = 2.0 * np.amax(sparse_data[-1])/(size**2)
+        #     data["marker"]["sizeref"] = 2*np.amax(sparse_data[-1])/(size**2)
         # if weights.count("color") > 0:
 
         if weights is not None:
             data["marker"]["color"] = sparse_data[-1]
             data["marker"]["colorscale"] = cbar["name"]
-            data["marker"]["showscale"] =True
+            data["marker"]["showscale"] = True
             data["marker"]["colorbar"] = {"title": "Weights",
                                           "titleside": "right"}
 
@@ -172,4 +174,3 @@ def plot_sparse(input_data, ndim=0, sparse_dim=None, backend=None, logx=False, l
     render_plot(static_fig=fig, interactive_fig=fig, backend=backend,
                 filename=filename)
     return
-

@@ -20,34 +20,26 @@ def plot(input_data, collapse=None, backend=None, color=None, **kwargs):
     if backend is None:
         backend = config.backend
 
-    # Create a list of variables which will then be dispatched to the plot_auto
-    # function.
+    # Create a list of variables which will then be dispatched to correct
+    # plotting function.
     # Search through the variables and group the 1D datasets that have
-    # the same coordinate axis.
-    # tobeplotted is a dict that holds pairs of
-    # [number_of_dimensions, DatasetSlice], or
-    # [number_of_dimensions, [List of DatasetSlices]] in the case of
-    # 1d sc.Data.
-    # TODO: 0D data is currently ignored -> find a nice way of
-    # displaying it?
+    # the same coordinates and units.
+    # tobeplotted is a dict that holds three items:
+    # [number_of_dimensions, Dataset, color_list].
     tp = type(input_data)
     if tp is sc.DataProxy or tp is sc.DataArray:
         ds = sc.Dataset()
         ds[input_data.name] = input_data
         input_data = ds
-    # if tp is not list:
-    #     input_data = [input_data]
 
     # Prepare color containers
     auto_color = False
-    cols = []
     if color is None:
         auto_color = True
     color_count = 0
 
     tobeplotted = dict()
     sparse_dim = dict()
-    # for ds in input_data:
     for name, var in sorted(input_data):
         ndims = len(var.dims)
         sp_dim = var.sparse_dim
@@ -71,39 +63,27 @@ def plot(input_data, collapse=None, backend=None, color=None, **kwargs):
                 col = color[color_count]
             tobeplotted[key][2].append(col)
             color_count += 1
-            # else:
-            #     tobeplotted[key] = [ndims, sc.Dataset()]
-            #     {name: ds[name]}]
         elif ndims > 1:
             key = name
             tobeplotted[key] = [ndims, sc.Dataset(input_data[name]), None]
         sparse_dim[key] = sp_dim
 
-    
-    # elif not isinstance(color, list):
-    #     color = [color]
-
     # Plot all the subsets
     # color_count = 0
     output = dict()
     for key, val in tobeplotted.items():
-        # if val[0] == 1:
-        #     if auto_color:
-        #         color = []
-        #         for l in val[1].keys():
-        #             color.append(get_color(index=color_count))
-        #             color_count += 1
-        #     name = None
-        # else:
-        #     color = None
-        #     name = key
         if collapse is not None:
-            output[key] = plot_collapse(input_data=val[1], dim=collapse,
+            output[key] = plot_collapse(input_data=val[1],
+                                        dim=collapse,
                                         backend=backend,
-                                        color=val[2], **kwargs)
+                                        color=val[2],
+                                        **kwargs)
         else:
-            output[key] = dispatch(input_data=val[1], ndim=val[0],
-                                   backend=backend, color=val[2], sparse_dim=sparse_dim[key],
+            output[key] = dispatch(input_data=val[1],
+                                   ndim=val[0],
+                                   backend=backend,
+                                   color=val[2],
+                                   sparse_dim=sparse_dim[key],
                                    **kwargs)
 
     if backend == "matplotlib":
