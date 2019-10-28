@@ -17,7 +17,7 @@ def dispatch(input_data, ndim=0, name=None, backend=None, collapse=None,
                            "plotting: {}".format(ndim))
 
     if sparse_dim is not None and bins is not None:
-            input_data = histogram_sparse_data(input_data, sparse_dim, bins)
+        input_data = histogram_sparse_data(input_data, sparse_dim, bins)
 
     if backend == "matplotlib" or backend == "matplotlib:quiet":
 
@@ -46,8 +46,8 @@ def dispatch(input_data, ndim=0, name=None, backend=None, collapse=None,
         from .plot_sparse import plot_sparse
 
         if sparse_dim is not None and bins is None:
-                plot_sparse(input_data, ndim=ndim, sparse_dim=sparse_dim,
-                            backend=backend, **kwargs)
+            plot_sparse(input_data, ndim=ndim, sparse_dim=sparse_dim,
+                        backend=backend, **kwargs)
         elif ndim == 1:
             plot_1d(input_data, backend=backend, **kwargs)
         elif projection.lower() == "2d":

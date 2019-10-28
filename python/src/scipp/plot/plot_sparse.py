@@ -7,7 +7,6 @@ from . import config
 from .render import render_plot
 from .sparse import visit_sparse_data
 from .tools import axis_label, parse_colorbar
-from .._scipp import core as sc
 
 # Other imports
 import plotly.graph_objs as go

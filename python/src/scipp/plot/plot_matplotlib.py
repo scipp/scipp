@@ -4,7 +4,6 @@
 # @author Neil Vaytet
 
 # Scipp imports
-from . import config
 from .sparse import visit_sparse_data
 from .tools import edges_to_centers, centers_to_edges, axis_label, \
                    parse_colorbar, get_1d_axes, axis_to_dim_label
@@ -220,7 +219,7 @@ def plot_sparse(input_data, ndim=0, sparse_dim=None, logx=False,
         if ndims < 3:
             fig, ax = plt.subplots(1, 1)
         else:
-            from mpl_toolkits.mplot3d import Axes3D
+            from mpl_toolkits.mplot3d import Axes3D # noqa
             fig, ax = plt.subplots(1, 1, subplot_kw={'projection': "3d"})
     if mpl_cax is not None:
         cax = mpl_cax
@@ -247,7 +246,7 @@ def plot_sparse(input_data, ndim=0, sparse_dim=None, logx=False,
 
     ax.set_xlabel(axis_label(coords[sparse_dim]))
     if ndims > 1:
-        ax.set_ylabel(axis_label(coords[dims[int(ndims==3)]]))
+        ax.set_ylabel(axis_label(coords[dims[int(ndims == 3)]]))
     if ndims == 3:
         ax.set_zlabel(axis_label(coords[dims[0]]))
 
