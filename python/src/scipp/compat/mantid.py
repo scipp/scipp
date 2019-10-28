@@ -16,6 +16,12 @@ def make_run(ws):
 def make_sample(ws):
     return sc.Variable(value=deepcopy(ws.sample()))
 
+def make_run(ws):
+    return sc.Variable(value=deepcopy(ws.run()))
+
+def make_sample(ws):
+    return sc.Variable(value=deepcopy(ws.getSample()))
+
 def make_component_info(ws):
     compInfo = sc.Dataset({
         'position':
