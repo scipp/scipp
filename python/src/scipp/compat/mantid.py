@@ -10,12 +10,11 @@ from copy import deepcopy
 def get_pos(pos):
     return [pos.X(), pos.Y(), pos.Z()]
 
-
 def make_run(ws):
     return sc.Variable(value=deepcopy(ws.run()))
 
 def make_sample(ws):
-    return sc.Variable(value=deepcopy(ws.getSample()))
+    return sc.Variable(value=deepcopy(ws.sample()))
 
 def make_component_info(ws):
     compInfo = sc.Dataset({
@@ -97,7 +96,8 @@ def convert_Workspace2D_to_dataset(ws):
     # TODO More cases?
     allowed_units = {
         "DeltaE": [sc.Dim.EnergyTransfer, sc.units.meV],
-        "TOF": [sc.Dim.Tof, sc.units.us]
+        "TOF": [sc.Dim.Tof, sc.units.us],
+        "Wavelength": [sc.Dim.Wavelength, sc.units.angstrom]
     }
     xunit = ws.getAxis(0).getUnit().unitID()
     if xunit not in allowed_units.keys():
