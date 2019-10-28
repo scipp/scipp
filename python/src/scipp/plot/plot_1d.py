@@ -4,7 +4,8 @@
 
 # Scipp imports
 from . import config
-from .tools import edges_to_centers, render_plot, get_1d_axes
+from .render import render_plot
+from .tools import edges_to_centers, get_1d_axes
 
 # Other imports
 import numpy as np

@@ -3,9 +3,9 @@
 # @author Neil Vaytet
 
 # Scipp imports
-from .._scipp import core as sc
-from .tools import get_color
 from .dispatch import dispatch
+from .tools import get_color
+from .._scipp import core as sc
 
 # Other imports
 import numpy as np

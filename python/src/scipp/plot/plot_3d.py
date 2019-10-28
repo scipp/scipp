@@ -4,8 +4,10 @@
 
 # Scipp imports
 from . import config
-from .tools import axis_label, parse_colorbar, render_plot, Slicer
 from .plot_2d import Slicer2d
+from .render import render_plot
+from .slicer import Slicer
+from .tools import axis_label, parse_colorbar
 
 # Other imports
 import numpy as np
@@ -24,14 +26,12 @@ def plot_3d(input_data, axes=None, contours=False, cb=None, filename=None,
     the position of the slice in 3D space.
     """
 
-    # Get the variable inside the dataset
-    name, var = next(iter(input_data))
-
+    var = input_data[name]
     if axes is None:
         axes = var.dims
 
     # Parse colorbar
-    cbar = parse_colorbar(config.cb, cb, plotly=True)
+    cbar = parse_colorbar(cb, plotly=True)
 
     # Make title
     title = axis_label(var=var, name=name, log=cbar["log"])

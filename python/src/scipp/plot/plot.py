@@ -69,7 +69,6 @@ def plot(input_data, collapse=None, backend=None, color=None, **kwargs):
         sparse_dim[key] = sp_dim
 
     # Plot all the subsets
-    # color_count = 0
     output = dict()
     for key, val in tobeplotted.items():
         if collapse is not None:
@@ -80,6 +79,7 @@ def plot(input_data, collapse=None, backend=None, color=None, **kwargs):
                                         **kwargs)
         else:
             output[key] = dispatch(input_data=val[1],
+                                   name=key,
                                    ndim=val[0],
                                    backend=backend,
                                    color=val[2],
