@@ -217,12 +217,11 @@ def plot_sparse(input_data, ndim=0, sparse_dim=None, logx=False,
     if mpl_axes is not None:
         ax = mpl_axes
     else:
-        fig = plt.Figure()
         if ndims < 3:
-            ax = fig.add_subplot(111)
+            fig, ax = plt.subplots(1, 1)
         else:
             from mpl_toolkits.mplot3d import Axes3D
-            ax = fig.add_subplot(111, projection='3d')
+            fig, ax = plt.subplots(1, 1, subplot_kw={'projection': "3d"})
     if mpl_cax is not None:
         cax = mpl_cax
     else:
