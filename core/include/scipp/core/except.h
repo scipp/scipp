@@ -155,6 +155,11 @@ void SCIPP_CORE_EXPORT notSparse(const Dimensions &dims);
 template <class T> void notSparse(const T &object) { notSparse(object.dims()); }
 void SCIPP_CORE_EXPORT validDim(const Dim dim);
 void SCIPP_CORE_EXPORT validExtent(const scipp::index size);
+template <class T> void hasVariances(const T &variable) {
+  if (!variable.hasVariances())
+    throw except::VariancesError(to_string(variable) +
+                                 " does not have variances.");
+}
 
 } // namespace scipp::core::expect
 

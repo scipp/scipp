@@ -5,6 +5,7 @@
 #include "scipp/core/dataset.h"
 #include "scipp/neutron/beamline.h"
 #include "scipp/neutron/convert.h"
+#include "scipp/neutron/diffraction/convert_with_calibration.h"
 
 #include "pybind11.h"
 
@@ -15,6 +16,19 @@ namespace py = pybind11;
 
 void init_neutron(py::module &m) {
   auto neutron = m.def_submodule("neutron");
+  auto diffraction = m.def_submodule("neutron_diffraction");
+
+  diffraction.def("convert_with_calibration",
+                  diffraction::convert_with_calibration, py::arg("data"),
+                  py::arg("calibration"), R"(
+    Convert unit of powder-diffraction data based on calibration.
+
+    :param data: Input data with time-of-flight dimension (Dim.Tof)
+    :param calibration: Table of calibration constants
+    :return: New dataset with time-of-flight converted to d-spacing (Dim.DSpacing)
+    :rtype: Dataset
+
+    .. seealso:: Use :py:func:`scipp.neutron.convert` for unit conversion based on beamline-geometry information instead of calibration information.)");
 
   neutron.def("convert", convert, py::call_guard<py::gil_scoped_release>(),
               R"(

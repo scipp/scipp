@@ -7,6 +7,7 @@
 
 namespace scipp::core {
 
+void flatten_impl(const VariableProxy &summed, const VariableConstProxy &var);
 void sum_impl(const VariableProxy &summed, const VariableConstProxy &var);
 
 } // namespace scipp::core

@@ -13,12 +13,17 @@ using namespace scipp::core;
 
 namespace py = pybind11;
 
-void init_groupby(py::module &m) {
-  py::class_<GroupBy> groupBy(m, "GroupBy", R"(
+template <class T> void bind_groupby(py::module &m, const std::string &name) {
+  py::class_<GroupBy<T>> groupBy(m, name.c_str(), R"(
     GroupBy object implementing to split-apply-combine mechanism.)");
 
-  groupBy.def("mean", &GroupBy::mean);
-  groupBy.def("sum", &GroupBy::sum);
+  groupBy.def("mean", &GroupBy<T>::mean);
+  groupBy.def("sum", &GroupBy<T>::sum);
+}
+
+void init_groupby(py::module &m) {
+  bind_groupby<DataArray>(m, "GroupByDataArray");
+  bind_groupby<Dataset>(m, "GroupByDataset");
 
   m.def("groupby",
         py::overload_cast<const DatasetConstProxy &, const std::string &,

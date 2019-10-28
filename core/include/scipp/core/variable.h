@@ -16,6 +16,7 @@
 #include "scipp/common/span.h"
 #include "scipp/core/dimensions.h"
 #include "scipp/core/dtype.h"
+#include "scipp/core/except.h"
 #include "scipp/core/slice.h"
 #include "scipp/core/string.h"
 #include "scipp/core/variable_view.h"
@@ -335,6 +336,22 @@ public:
   template <class T> auto sparseVariances() {
     return scipp::span(cast<sparse_container<T>>(true));
   }
+  template <class T> const auto &value() const {
+    expect::equals(dims(), Dimensions());
+    return values<T>()[0];
+  }
+  template <class T> const auto &variance() const {
+    expect::equals(dims(), Dimensions());
+    return variances<T>()[0];
+  }
+  template <class T> auto &value() {
+    expect::equals(dims(), Dimensions());
+    return values<T>()[0];
+  }
+  template <class T> auto &variance() {
+    expect::equals(dims(), Dimensions());
+    return variances<T>()[0];
+  }
 
   // ATTENTION: It is really important to avoid any function returning a
   // (Const)VariableProxy for rvalue Variable. Otherwise the resulting slice
@@ -652,6 +669,14 @@ public:
   template <class T> auto sparseVariances() const {
     return castVariances<sparse_container<T>>();
   }
+  template <class T> const auto &value() const {
+    expect::equals(dims(), Dimensions());
+    return values<T>()[0];
+  }
+  template <class T> const auto &variance() const {
+    expect::equals(dims(), Dimensions());
+    return variances<T>()[0];
+  }
 
   bool operator==(const Variable &other) const;
   bool operator==(const VariableConstProxy &other) const;
@@ -727,6 +752,14 @@ public:
   }
   template <class T> auto sparseVariances() const {
     return castVariances<sparse_container<T>>();
+  }
+  template <class T> auto &value() const {
+    expect::equals(dims(), Dimensions());
+    return values<T>()[0];
+  }
+  template <class T> auto &variance() const {
+    expect::equals(dims(), Dimensions());
+    return variances<T>()[0];
   }
 
   // Note: We want to support things like `var(Dim::X, 0) += var2`, i.e., when
@@ -907,6 +940,8 @@ SCIPP_CORE_EXPORT Variable permute(const Variable &var, const Dim dim,
 SCIPP_CORE_EXPORT Variable rebin(const VariableConstProxy &var, const Dim dim,
                                  const VariableConstProxy &oldCoord,
                                  const VariableConstProxy &newCoord);
+SCIPP_CORE_EXPORT Variable resize(const VariableConstProxy &var, const Dim dim,
+                                  const scipp::index size);
 SCIPP_CORE_EXPORT Variable reverse(Variable var, const Dim dim);
 SCIPP_CORE_EXPORT Variable sqrt(const VariableConstProxy &var);
 
