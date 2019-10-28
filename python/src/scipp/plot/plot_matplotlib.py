@@ -247,7 +247,8 @@ def plot_sparse(input_data, ndim=0, sparse_dim=None, logx=False,
         out["cb"] = c
 
     ax.set_xlabel(axis_label(coords[sparse_dim]))
-    ax.set_ylabel(axis_label(coords[dims[int(ndims==3)]]))
+    if ndims > 1:
+        ax.set_ylabel(axis_label(coords[dims[int(ndims==3)]]))
     if ndims == 3:
         ax.set_zlabel(axis_label(coords[dims[0]]))
 

@@ -65,11 +65,12 @@ def plot_sparse(input_data, ndim=0, sparse_dim=None, backend=None, logx=False,
 
     layout = dict(
         xaxis=dict(title=axis_label(coords[sparse_dim])),
-        yaxis=dict(title=axis_label(coords[dims[0]])),
         showlegend=True,
         legend=dict(x=0.0, y=1.15, orientation="h"),
         height=config.height
     )
+    if ndims > 1:
+        layout["yaxis"] = dict(title=axis_label(coords[dims[0]]))
     if logx or logxy:
         layout["xaxis"]["type"] = "log"
     if logy or logxy:
