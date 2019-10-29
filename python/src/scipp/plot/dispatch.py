@@ -37,7 +37,7 @@ def dispatch(input_data, ndim=0, name=None, backend=None, collapse=None,
                                "interactive backend instead by setting "
                                "scipp.plot.config.backend = 'interactive'.")
 
-    else:
+    elif backend == "interactive" or backend == "static":
 
         # Delayed imports
         from .plot_1d import plot_1d
@@ -59,5 +59,11 @@ def dispatch(input_data, ndim=0, name=None, backend=None, collapse=None,
         else:
             raise RuntimeError("Wrong projection type. Expected either '2d' "
                                "or '3d', got {}.".format(projection))
+
+    else:
+        raise RuntimeError("Unknown backend {}. Currently supported "
+                           "backends are 'interactive', 'static', "
+                           "'matplotlib' and "
+                           "'matplotlib:quiet'".format(backend))
 
     return

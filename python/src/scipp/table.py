@@ -3,6 +3,7 @@
 # @file
 # @author Igor Gudich & Neil Vaytet
 
+from .config import member_colors
 from ._scipp import core as sc
 
 
