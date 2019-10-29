@@ -234,7 +234,7 @@ std::string do_to_string(const D &dataset, const std::string &id,
 
   if constexpr (std::is_same_v<D, DataArray> ||
                 std::is_same_v<D, DataConstProxy>) {
-    s << format_data_proxy("", dataset);
+    s << "Data:\n" << format_data_proxy(dataset.name(), dataset);
   } else {
     if (!dataset.empty())
       s << "Data:\n";
