@@ -4,7 +4,9 @@
 
 # Scipp imports
 from . import config
-from .tools import axis_label, parse_colorbar, render_plot, Slicer
+from .render import render_plot
+from .slicer import Slicer
+from .tools import axis_label, parse_colorbar
 
 # Other imports
 import numpy as np
@@ -25,20 +27,21 @@ def plot_2d(input_data, axes=None, contours=False, cb=None, filename=None,
     particular dimension.
     """
 
+    var = input_data[name]
     if axes is None:
-        axes = input_data.dims
+        axes = var.dims
 
     # Parse colorbar
-    cbar = parse_colorbar(config.cb, cb, plotly=True)
+    cbar = parse_colorbar(cb, plotly=True)
 
     # Make title
-    title = axis_label(var=input_data, name=name, log=cbar["log"])
+    title = axis_label(var=var, name=name, log=cbar["log"])
 
     if figsize is None:
         figsize = [config.width, config.height]
 
     layout = {"height": figsize[1], "width": figsize[0]}
-    if input_data.variances is not None and show_variances:
+    if var.variances is not None and show_variances:
         layout["height"] = 0.7 * layout["height"]
 
     cbdict = {"title": title,
@@ -52,7 +55,7 @@ def plot_2d(input_data, axes=None, contours=False, cb=None, filename=None,
     if rasterize == "auto":
         imsize = 1
         # Find the two largest dimensions
-        shapes = np.sort(input_data.shape)[::-1]
+        shapes = np.sort(var.shape)[::-1]
         for i in range(2):
             imsize *= shapes[i]
         rasterize = imsize > config.rasterize_threshold
@@ -78,7 +81,7 @@ def plot_2d(input_data, axes=None, contours=False, cb=None, filename=None,
                 hoverinfo=hoverinfo
                 )
 
-    sv = Slicer2d(data=data, layout=layout, input_data=input_data, axes=axes,
+    sv = Slicer2d(data=data, layout=layout, input_data=var, axes=axes,
                   value_name=title, cb=cbar, show_variances=show_variances,
                   rasterize=rasterize)
 

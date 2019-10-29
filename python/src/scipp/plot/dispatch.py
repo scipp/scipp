@@ -2,9 +2,11 @@
 # Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
+from .sparse import histogram_sparse_data
+
 
 def dispatch(input_data, ndim=0, name=None, backend=None, collapse=None,
-             projection="2d", **kwargs):
+             sparse_dim=None, bins=None, projection="2d", **kwargs):
     """
     Function to automatically dispatch the input dataset to the appropriate
     plotting function depending on its dimensions
@@ -14,10 +16,16 @@ def dispatch(input_data, ndim=0, name=None, backend=None, collapse=None,
         raise RuntimeError("Invalid number of dimensions for "
                            "plotting: {}".format(ndim))
 
+    if sparse_dim is not None and bins is not None:
+        input_data = histogram_sparse_data(input_data, sparse_dim, bins)
+
     if backend == "matplotlib" or backend == "matplotlib:quiet":
 
-        from .plot_matplotlib import plot_1d, plot_2d
-        if ndim == 1:
+        from .plot_matplotlib import plot_1d, plot_2d, plot_sparse
+        if sparse_dim is not None and bins is None:
+            return plot_sparse(input_data, name=name, sparse_dim=sparse_dim,
+                               **kwargs)
+        elif ndim == 1:
             return plot_1d(input_data, **kwargs)
         elif ndim == 2:
             return plot_2d(input_data, name=name, **kwargs)
@@ -35,8 +43,12 @@ def dispatch(input_data, ndim=0, name=None, backend=None, collapse=None,
         from .plot_1d import plot_1d
         from .plot_2d import plot_2d
         from .plot_3d import plot_3d
+        from .plot_sparse import plot_sparse
 
-        if ndim == 1:
+        if sparse_dim is not None and bins is None:
+            plot_sparse(input_data, ndim=ndim, sparse_dim=sparse_dim,
+                        backend=backend, **kwargs)
+        elif ndim == 1:
             plot_1d(input_data, backend=backend, **kwargs)
         elif projection.lower() == "2d":
             plot_2d(input_data, name=name, ndim=ndim, backend=backend,

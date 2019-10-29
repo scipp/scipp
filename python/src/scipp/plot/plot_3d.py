@@ -4,8 +4,10 @@
 
 # Scipp imports
 from . import config
-from .tools import axis_label, parse_colorbar, render_plot, Slicer
 from .plot_2d import Slicer2d
+from .render import render_plot
+from .slicer import Slicer
+from .tools import axis_label, parse_colorbar
 
 # Other imports
 import numpy as np
@@ -24,20 +26,21 @@ def plot_3d(input_data, axes=None, contours=False, cb=None, filename=None,
     the position of the slice in 3D space.
     """
 
+    var = input_data[name]
     if axes is None:
-        axes = input_data.dims
+        axes = var.dims
 
     # Parse colorbar
-    cbar = parse_colorbar(config.cb, cb, plotly=True)
+    cbar = parse_colorbar(cb, plotly=True)
 
     # Make title
-    title = axis_label(var=input_data, name=name, log=cbar["log"])
+    title = axis_label(var=var, name=name, log=cbar["log"])
 
     if figsize is None:
         figsize = [config.width, config.height]
 
     layout = {"height": figsize[1], "width": figsize[0]}
-    if input_data.variances is not None and show_variances:
+    if var.variances is not None and show_variances:
         layout["height"] = 0.7 * layout["height"]
 
     if ndim == 2:
@@ -56,12 +59,12 @@ def plot_3d(input_data, axes=None, contours=False, cb=None, filename=None,
                         thickness=0.03)
                     )
 
-        sv = Slicer2d(data=data, layout=layout, input_data=input_data,
+        sv = Slicer2d(data=data, layout=layout, input_data=var,
                       axes=axes, value_name=title, cb=cbar,
                       show_variances=show_variances, rasterize=False,
                       surface3d=True)
     else:
-        sv = Slicer3d(layout=layout, input_data=input_data, axes=axes,
+        sv = Slicer3d(layout=layout, input_data=var, axes=axes,
                       value_name=title, cb=cbar, show_variances=show_variances)
 
     render_plot(static_fig=sv.fig, interactive_fig=sv.vbox, backend=backend,
