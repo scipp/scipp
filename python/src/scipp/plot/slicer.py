@@ -110,7 +110,7 @@ class Slicer:
             setattr(self.slider[key], "dim_str", key)
             setattr(self.slider[key], "dim", dim)
             setattr(self.showhide[key], "dim_str", key)
-            setattr(self.showhide[key], "value", (button_values[i] is not None))
+            setattr(self.showhide[key], "value", button_values[i] is not None)
             # Add observer to buttons
             self.buttons[key].on_msg(self.update_buttons)
             # Add an observer to the slider
@@ -120,6 +120,7 @@ class Slicer:
             # Add the row of slider + buttons
             row = [self.slider[key], self.lab[key], self.buttons[key]]
             if len(button_options) == 3:
-                row += [widgets.HTML(value="&nbsp;&nbsp;&nbsp;&nbsp;"), self.showhide[key]]
+                row += [widgets.HTML(value="&nbsp;&nbsp;&nbsp;&nbsp;"),
+                        self.showhide[key]]
             self.vbox.append(widgets.HBox(row))
         return

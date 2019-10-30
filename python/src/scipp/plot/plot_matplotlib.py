@@ -129,13 +129,10 @@ def plot_2d(input_data, name=None, axes=None, contours=False, cb=None,
         cax = [None] * (1 + show_variances)
 
     # Make sure axes are stored in arrays
-    try:
-        _ = len(ax)
-    except TypeError:
+    array_types = [list, np.ndarray]
+    if type(ax) not in array_types:
         ax = [ax]
-    try:
-        _ = len(cax)
-    except TypeError:
+    if type(cax) not in array_types:
         cax = [cax]
 
     # Update axes labels
