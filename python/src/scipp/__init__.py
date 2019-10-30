@@ -12,3 +12,4 @@ from .show import show
 from .table import table
 from . import plot
 from .extend_units import *
+from . import config

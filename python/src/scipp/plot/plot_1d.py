@@ -3,7 +3,7 @@
 # @author Neil Vaytet
 
 # Scipp imports
-from . import config
+from ..config import plot as config
 from .render import render_plot
 from .tools import edges_to_centers, get_1d_axes
 

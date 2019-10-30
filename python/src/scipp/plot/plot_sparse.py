@@ -3,7 +3,7 @@
 # @author Neil Vaytet
 
 # Scipp imports
-from . import config
+from ..config import plot as config
 from .render import render_plot
 from .sparse import visit_sparse_data
 from .tools import axis_label, parse_colorbar
