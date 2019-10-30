@@ -4,32 +4,46 @@
 # @author Neil Vaytet
 
 
-# The plotting backend: possible choices are "interactive", "static",
-# "matplotlib", and "matplotlib:quiet"
-backend = "interactive"
+class _Plot:
 
-# The list of default line colors
-color_list = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd',
-              '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf']
+    def __init__(self):
 
-# The colorbar properties
-cb = {"name": "viridis", "log": False, "min": None, "max": None,
-      "min_var": None, "max_var": None}
+        # The plotting backend: possible choices are "interactive", "static",
+        # "matplotlib", and "matplotlib:quiet"
+        self.backend = "interactive"
 
-# The default image height (in pixels)
-height = 600
+        # The list of default line colors
+        self.color_list = ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728",
+                           "#9467bd", "#8c564b", "#e377c2", "#7f7f7f",
+                           "#bcbd22", "#17becf"]
 
-# The default image width (in pixels)
-width = 950
+        # The colorbar properties
+        self.cb = {"name": "viridis", "log": False, "min": None, "max": None,
+                   "min_var": None, "max_var": None}
 
-# The size threshold above which an image will automatically be rasterized
-rasterize_threshold = 100000
+        # The default image height (in pixels)
+        self.height = 600
 
-# The colors for each dataset member used in table and show functions
-member_colors = {
-    'coord': ['dde9af', 'bcd35f', '89a02c'],
-    'data': ['ffe680', 'ffd42a', 'd4aa00'],
-    'labels': ['afdde9', '5fbcd3', '2c89a0'],
-    'attr': ['ff8080', 'ff2a2a', 'd40000'],
-    'inactive': ['cccccc', '888888', '444444']
-}
+        # The default image width (in pixels)
+        self.width = 950
+
+        # The size threshold above which an image will automatically be rasterized
+        self.rasterize_threshold = 100000
+
+
+class _Colors:
+
+    def __init__(self):
+
+        # The colors for each dataset member used in table and show functions
+        self.scheme = {
+            "coord": ["#dde9af", "#bcd35f", "#89a02c"],
+            "data": ["#ffe680", "#ffd42a", "#d4aa00"],
+            "labels": ["#afdde9", "#5fbcd3", "#2c89a0"],
+            "attr": ["#ff8080", "#ff2a2a", "#d40000"],
+            "inactive": ["#cccccc", "#888888", "#444444"]
+        }
+
+
+plot = _Plot()
+colors = _Colors()

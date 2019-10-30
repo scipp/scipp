@@ -3,7 +3,7 @@
 # @author Neil Vaytet
 
 # Scipp imports
-from . import config
+from ..config import plot as config
 from .._scipp.core import Dim
 from .._scipp.core.units import dimensionless
 

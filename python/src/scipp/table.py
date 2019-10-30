@@ -3,7 +3,7 @@
 # @file
 # @author Igor Gudich & Neil Vaytet
 
-from .config import member_colors
+from .config import colors
 from ._scipp import core as sc
 
 
@@ -39,8 +39,12 @@ def title_to_string(var, name=None, replace_dim=True):
 def table_from_dataset(dataset, is_hist=False, headers=2):
 
     bstyle = "style='border: 1px solid black;"
-    cstyle = bstyle + "background-color: #adf3e0;text-align: center;'"
-    lstyle = bstyle + "background-color: #d9c0fa;text-align: center;'"
+    cstyle = bstyle + "background-color: {};text-align: center;'".format(
+        colors.scheme["coord"][0])
+    lstyle = bstyle + "background-color: {};text-align: center;'".format(
+        colors.scheme["labels"][0])
+    dstyle = bstyle + "background-color: {};text-align: center;'".format(
+        colors.scheme["data"][0])
     mstyle = bstyle + "text-align: center;'"
     bstyle += "'"
     estyle = "style='border: 0px solid white;background-color: #ffffff;'"
@@ -75,7 +79,7 @@ def table_from_dataset(dataset, is_hist=False, headers=2):
             html += "<th {} colspan='{}'>Labels</th>".format(lstyle,
                                                              colsp_labs)
         if colsp_data > 0:
-            html += "<th {} colspan='{}'>Data</th>".format(mstyle,
+            html += "<th {} colspan='{}'>Data</th>".format(dstyle,
                                                            colsp_data)
         html += "</tr>"
 

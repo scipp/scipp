@@ -35,7 +35,7 @@ def dispatch(input_data, ndim=0, name=None, backend=None, collapse=None,
                                "1D or 2D dataset by slicing your object. "
                                "Alternatively, try using the plotly "
                                "interactive backend instead by setting "
-                               "scipp.plot.config.backend = 'interactive'.")
+                               "scipp.config.plot.backend = 'interactive'.")
 
     elif backend == "interactive" or backend == "static":
 
