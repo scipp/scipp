@@ -27,7 +27,7 @@ class _Plot:
         # The default image width (in pixels)
         self.width = 950
 
-        # The size threshold above which an image will automatically be rasterized
+        # The size threshold above which an image is automatically rasterized
         self.rasterize_threshold = 100000
 
 
