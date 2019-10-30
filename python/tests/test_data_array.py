@@ -15,7 +15,25 @@ def make_dataarray(dim1=Dim.X, dim2=Dim.Y, seed=None):
             dim1: sc.Variable([dim1], values=np.arange(2.0), unit=sc.units.m),
             dim2: sc.Variable([dim2], values=np.arange(3.0), unit=sc.units.m)
         },
-        labels={'aux': sc.Variable([dim2], values=np.random.rand(3))})
+        labels={'aux': sc.Variable([dim2], values=np.random.rand(3))},
+        attrs={'meta': sc.Variable([dim2], values=np.arange(3))})
+
+
+def test_init():
+    d = sc.DataArray(
+        data=sc.Variable(dims=[sc.Dim.X], values=np.arange(3)),
+        coords={
+            sc.Dim.X:
+            sc.Variable([sc.Dim.X], values=np.arange(3), unit=sc.units.m),
+        },
+        labels={'lib1': sc.Variable([sc.Dim.X], values=np.random.rand(3))},
+        attrs={'met1': sc.Variable([sc.Dim.X], values=np.arange(3))},
+        masks={
+            'mask1': sc.Variable([sc.Dim.X], values=np.ones(3, dtype=np.bool))
+        })
+    assert len(d.attrs) == 1
+    assert len(d.labels) == 1
+    assert len(d.masks) == 1
 
 
 def test_in_place_binary_with_variable():

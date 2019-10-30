@@ -69,7 +69,6 @@ class TestMantidConversion(unittest.TestCase):
         del converted.labels["run"]
         del converted.labels["sample"]
 
-        print(converted_mantid)
         self.assertTrue(
             np.all(np.isclose(converted_mantid.values, converted[""].values))
         )

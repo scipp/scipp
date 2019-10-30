@@ -148,10 +148,12 @@ void init_dataset(py::module &m) {
   dataArray.def(
       py::init<const std::optional<Variable> &, const std::map<Dim, Variable> &,
                const std::map<std::string, Variable> &,
+               const std::map<std::string, Variable> &,
                const std::map<std::string, Variable> &>(),
       py::arg("data") = std::nullopt,
       py::arg("coords") = std::map<Dim, Variable>{},
       py::arg("labels") = std::map<std::string, Variable>{},
+      py::arg("masks") = std::map<std::string, Variable>{},
       py::arg("attrs") = std::map<std::string, Variable>{});
 
   py::class_<DataConstProxy>(m, "DataConstProxy")
