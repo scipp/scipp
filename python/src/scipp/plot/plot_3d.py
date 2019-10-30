@@ -159,7 +159,10 @@ class Slicer3d(Slicer):
             self.showhide[key].value = (button.value is not None)
             self.showhide[key].disabled = (button.value is None)
             self.showhide[key].description = "hide"
-            self.showhide[key].style.button_color = 'gray'
+            if button.value is None:
+                self.showhide[key].button_style = ""
+            else:
+                self.showhide[key].button_style = "success"
         self.update_axes()
 
         return
@@ -244,7 +247,6 @@ class Slicer3d(Slicer):
             vslice = self.cube[change["owner"].dim, change["new"]]
 
             # Now move slice
-            # slice_indices = {"x": 0, "y": 1, "z": 2}
             ax_dim = self.buttons[key].value.lower()
             xy = getattr(self.fig.data[self.slice_indices[ax_dim]], ax_dim)
             for i in range(1 + self.show_variances):
@@ -267,19 +269,10 @@ class Slicer3d(Slicer):
         return values
 
     def update_showhide(self, owner):
-        # print(event)
-        print(owner)
         owner.value = not owner.value
         owner.description = "hide" if owner.value else "show"
-        owner.style.button_color = "gray" if owner.value else "lightgray"
+        owner.button_style = "success" if owner.value else "danger"
         key = owner.dim_str
         ax_dim = self.buttons[key].value.lower()
         self.fig.data[self.slice_indices[ax_dim]].visible = owner.value
-        # for key, button in self.buttons.items():
-        #     if (button.value == owner.value) and (key != owner.dim_str):
-        #         button.value = owner.old_value
-        #         button.old_value = button.value
-        # owner.old_value = owner.value
-        # self.update_axes()
-
         return
