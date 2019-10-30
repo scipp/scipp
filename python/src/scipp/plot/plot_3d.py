@@ -108,6 +108,11 @@ class Slicer3d(Slicer):
         colorbars = [{"x": 1.0, "title": value_name,
                       "thicknessmode": 'fraction', "thickness": 0.02}]
 
+        # Store min/max for each dimension for invisible scatter
+        self.xminmax = dict()
+        for key, val in self.slider_x.items():
+            self.xminmax[key] = [val[0], val[-1]]
+
         if self.show_variances:
             self.fig = go.FigureWidget(
                 make_subplots(rows=1, cols=2, horizontal_spacing=0.16,
@@ -125,6 +130,12 @@ class Slicer3d(Slicer):
                                                   colorscale=self.cb["name"],
                                                   colorbar=colorbars[i]),
                                        row=1, col=i+1)
+                # self.fig.add_trace(go.Scatter(cmin=val["cmin"],
+                #                                   cmax=val["cmax"],
+                #                                   showscale=j < 1,
+                #                                   colorscale=self.cb["name"],
+                #                                   colorbar=colorbars[i]),
+                #                        row=1, col=i+1)
             self.fig.update_layout(height=layout["height"],
                                    width=layout["width"])
         else:
@@ -274,5 +285,7 @@ class Slicer3d(Slicer):
         owner.button_style = "success" if owner.value else "danger"
         key = owner.dim_str
         ax_dim = self.buttons[key].value.lower()
-        self.fig.data[self.slice_indices[ax_dim]].visible = owner.value
+        for i in range(1 + self.show_variances):
+            k = self.slice_indices[ax_dim] + (3 * (i > 0))
+            self.fig.data[k].visible = owner.value
         return
