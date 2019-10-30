@@ -82,6 +82,7 @@ class Slicer3d(Slicer):
                          button_options=['X', 'Y', 'Z'])
 
         self.cube = None
+        self.slice_indices = {"x": 0, "y": 1, "z": 2}
 
         # Initialise Figure and VBox objects
         self.fig = None
@@ -149,6 +150,16 @@ class Slicer3d(Slicer):
                 button.value = owner.old_value
                 button.old_value = button.value
         owner.old_value = owner.value
+        # Update the show/hide checkboxes
+        for key, button in self.buttons.items():
+            ax_dim = self.buttons[key].value
+            if ax_dim is not None:
+                ax_dim = ax_dim.lower()
+                self.fig.data[self.slice_indices[ax_dim]].visible = True
+            self.showhide[key].value = (button.value is not None)
+            self.showhide[key].disabled = (button.value is None)
+            self.showhide[key].description = "hide"
+            self.showhide[key].style.button_color = 'gray'
         self.update_axes()
 
         return
@@ -233,11 +244,11 @@ class Slicer3d(Slicer):
             vslice = self.cube[change["owner"].dim, change["new"]]
 
             # Now move slice
-            slice_indices = {"x": 0, "y": 1, "z": 2}
+            # slice_indices = {"x": 0, "y": 1, "z": 2}
             ax_dim = self.buttons[key].value.lower()
-            xy = getattr(self.fig.data[slice_indices[ax_dim]], ax_dim)
+            xy = getattr(self.fig.data[self.slice_indices[ax_dim]], ax_dim)
             for i in range(1 + self.show_variances):
-                k = slice_indices[ax_dim] + (3 * (i > 0))
+                k = self.slice_indices[ax_dim] + (3 * (i > 0))
                 setattr(self.fig.data[k], ax_dim, xy / xy * loc)
                 self.fig.data[k].surfacecolor = \
                     self.check_transpose(vslice, variances=(i > 0))
@@ -254,3 +265,21 @@ class Slicer3d(Slicer):
         if ord(button_values[0]) < ord(button_values[1]):
             values = values.T
         return values
+
+    def update_showhide(self, owner):
+        # print(event)
+        print(owner)
+        owner.value = not owner.value
+        owner.description = "hide" if owner.value else "show"
+        owner.style.button_color = "gray" if owner.value else "lightgray"
+        key = owner.dim_str
+        ax_dim = self.buttons[key].value.lower()
+        self.fig.data[self.slice_indices[ax_dim]].visible = owner.value
+        # for key, button in self.buttons.items():
+        #     if (button.value == owner.value) and (key != owner.dim_str):
+        #         button.value = owner.old_value
+        #         button.old_value = button.value
+        # owner.old_value = owner.value
+        # self.update_axes()
+
+        return
