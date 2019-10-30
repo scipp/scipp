@@ -40,7 +40,8 @@ class TestMantidConversion(unittest.TestCase):
         del binned_mantid.labels["sample"]
         del binned.labels["run"]
         del binned.labels["sample"]
-        delta = sc.sum(sc.sum(binned_mantid - binned, sc.Dim.Spectrum), sc.Dim.Tof)
+        delta = sc.sum(binned_mantid - binned, sc.Dim.Spectrum)
+        delta = sc.sum(delta, sc.Dim.Tof)
         self.assertLess(np.abs(delta.value), 1e-5)
 
     def test_unit_conversion(self):
