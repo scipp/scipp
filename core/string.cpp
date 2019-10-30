@@ -163,7 +163,7 @@ auto format_variable(const Key &key, const Var &variable,
     s << "[PyObject]";
   else
     s << apply<ValuesToString>(variable.data().dtype(),
-                             VariableConstProxy(variable));
+                               VariableConstProxy(variable));
   if (variable.hasVariances())
     s << colSep
       << apply<VariancesToString>(variable.data().dtype(),
