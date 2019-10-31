@@ -118,8 +118,8 @@ inline constexpr bool has_variances_v = has_variances<T>::value;
 /// Helper for the transform implementation to unify iteration of data with and
 /// without variances as well as sparse are dense container.
 template <class T>
-static constexpr decltype(auto) value_and_maybe_variance(T &&range,
-                                                         const scipp::index i) {
+static constexpr decltype(auto) value_maybe_variance(T &&range,
+                                                     const scipp::index i) {
   if constexpr (has_variances_v<std::decay_t<T>>) {
     if constexpr (is_sparse_v<decltype(range.values.data()[0])>)
       return ValuesAndVariances{range.values.data()[i],
@@ -170,7 +170,7 @@ static auto check_and_get_size(const T1 &a, const T2 &b) {
 struct SparseFlag {};
 
 // Helpers for handling a tuple of indices (integers or ViewIndex).
-namespace iter_detail {
+namespace iter {
 
 template <class T, size_t... I>
 static constexpr void increment_impl(T &&indices,
@@ -212,19 +212,18 @@ template <class T> static constexpr auto get(const T &index) noexcept {
     return index.get();
 }
 
-} // namespace iter_detail
+} // namespace iter
 
 template <class Op, class Indices, class... Args, size_t... I>
 static constexpr auto call_impl(Op &&op, const Indices &indices,
                                 std::index_sequence<I...>, Args &&... args) {
-  return op(detail::value_and_maybe_variance(
-      args, iter_detail::get(std::get<I + 1>(indices)))...);
+  return op(value_maybe_variance(args, iter::get(std::get<I + 1>(indices)))...);
 }
 template <class Op, class Indices, class Out, class... Args>
 static constexpr void call(Op &&op, const Indices &indices, Out &&out,
                            Args &&... args) {
-  const auto i = iter_detail::get(std::get<0>(indices));
-  auto &&out_ = detail::value_and_maybe_variance(out, i);
+  const auto i = iter::get(std::get<0>(indices));
+  auto &&out_ = value_maybe_variance(out, i);
   out_ = call_impl(std::forward<Op>(op), indices,
                    std::make_index_sequence<std::tuple_size_v<Indices> - 1>{},
                    std::forward<Args>(args)...);
@@ -241,18 +240,17 @@ template <class Op, class Indices, class Arg, class... Args, size_t... I>
 static constexpr void call_in_place_impl(Op &&op, const Indices &indices,
                                          std::index_sequence<I...>, Arg &&arg,
                                          Args &&... args) {
-  static_assert(std::is_same_v<
-                decltype(op(arg, detail::value_and_maybe_variance(
-                                     args, iter_detail::get(
-                                               std::get<I + 1>(indices)))...)),
-                void>);
-  op(arg, detail::value_and_maybe_variance(
-              args, iter_detail::get(std::get<I + 1>(indices)))...);
+  static_assert(
+      std::is_same_v<
+          decltype(op(arg, value_maybe_variance(
+                               args, iter::get(std::get<I + 1>(indices)))...)),
+          void>);
+  op(arg, value_maybe_variance(args, iter::get(std::get<I + 1>(indices)))...);
 }
 template <class Op, class Indices, class Arg, class... Args>
 static constexpr void call_in_place(Op &&op, const Indices &indices, Arg &&arg,
                                     Args &&... args) {
-  const auto i = iter_detail::get(std::get<0>(indices));
+  const auto i = iter::get(std::get<0>(indices));
   // Two cases are distinguished here:
   // 1. In the case of sparse data we create ValuesAndVariances, which hold
   //    references that can be modified.
@@ -262,7 +260,7 @@ static constexpr void call_in_place(Op &&op, const Indices &indices, Arg &&arg,
   // transform_in_place_impl for the iteration over each individual
   // sparse_container. This then falls into case 2 and thus the recursion
   // terminates with the second level.
-  auto &&arg_ = detail::value_and_maybe_variance(arg, i);
+  auto &&arg_ = value_maybe_variance(arg, i);
   call_in_place_impl(std::forward<Op>(op), indices,
                      std::make_index_sequence<std::tuple_size_v<Indices> - 1>{},
                      std::forward<decltype(arg_)>(arg_),
@@ -275,10 +273,10 @@ static constexpr void call_in_place(Op &&op, const Indices &indices, Arg &&arg,
 
 template <class Op, class Out, class... Ts>
 static void transform_elements(Op op, Out &&out, Ts &&... other) {
-  auto indices = std::tuple{iter_detail::begin_index(out),
-                            iter_detail::begin_index(other)...};
-  const auto end = iter_detail::end_index(out);
-  for (; std::get<0>(indices) != end; iter_detail::increment(indices))
+  auto indices =
+      std::tuple{iter::begin_index(out), iter::begin_index(other)...};
+  const auto end = iter::end_index(out);
+  for (; std::get<0>(indices) != end; iter::increment(indices))
     call(op, indices, out, other...);
 }
 
@@ -533,14 +531,14 @@ template <bool dry_run> struct in_place {
   template <class Op, class T, class... Ts>
   static void transform_in_place_impl(Op op, T &&arg, Ts &&... other) {
     using namespace detail;
-    auto indices = std::tuple{iter_detail::begin_index(arg),
-                              iter_detail::begin_index(other)...};
-    const auto end = iter_detail::end_index(arg);
+    auto indices =
+        std::tuple{iter::begin_index(arg), iter::begin_index(other)...};
+    const auto end = iter::end_index(arg);
     // For sparse data we can fail for any subitem if the sizes to not match. To
     // avoid partially modifying (and thus corrupting) data in an in-place
     // operation we need to do the checks before any modification happens.
     if constexpr (is_sparse_v<typename std::decay_t<T>::value_type>) {
-      for (auto i = indices; std::get<0>(i) != end; iter_detail::increment(i)) {
+      for (auto i = indices; std::get<0>(i) != end; iter::increment(i)) {
         call_in_place(
             [](auto &&... args) {
               if constexpr (std::is_base_of_v<SparseFlag, Op>)
@@ -553,7 +551,7 @@ template <bool dry_run> struct in_place {
       return;
     // WARNING: Do not parallelize this loop in all cases! The output may have a
     // dimension with stride zero so parallelization must be done with care.
-    for (; std::get<0>(indices) != end; iter_detail::increment(indices))
+    for (; std::get<0>(indices) != end; iter::increment(indices))
       call_in_place(op, indices, arg, other...);
   }
 
