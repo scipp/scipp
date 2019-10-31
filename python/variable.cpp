@@ -81,10 +81,10 @@ template <class ST> struct MakeODFromNativePythonTypes {
 };
 
 template <class T>
-Variable bind_init_1D_no_variance(const std::vector<Dim> &labels,
-                                  const std::vector<scipp::index> &shape,
-                                  const std::vector<T> &values,
-                                  const units::Unit &unit) {
+Variable init_1D_no_variance(const std::vector<Dim> &labels,
+                             const std::vector<scipp::index> &shape,
+                             const std::vector<T> &values,
+                             const units::Unit &unit) {
   Variable var;
   Dimensions dims(labels, shape);
   var = makeVariable<T>(dims, values);
@@ -115,14 +115,14 @@ Variable doMakeVariable(const std::vector<Dim> &labels, py::array &values,
     if (dtypeTag == core::dtype<std::string>) {
       std::vector<scipp::index> shape(values.shape(),
                                       values.shape() + values.ndim());
-      return bind_init_1D_no_variance(
+      return init_1D_no_variance(
           labels, shape, values.cast<std::vector<std::string>>(), unit);
     }
 
     if (dtypeTag == core::dtype<Eigen::Vector3d>) {
       std::vector<scipp::index> shape(values.shape(),
                                       values.shape() + values.ndim() - 1);
-      return bind_init_1D_no_variance(
+      return init_1D_no_variance(
           labels, shape, values.cast<std::vector<Eigen::Vector3d>>(), unit);
     }
   }
