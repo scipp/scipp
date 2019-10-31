@@ -34,14 +34,15 @@ template <class T> struct MakeVariable {
     // automatic conversions such as integer to double, if required.
     py::array_t<T> valuesT(values);
     py::buffer_info info = valuesT.request();
-    Dimensions dims(labels, info.shape);
+    Dimensions dims(labels, {info.shape.begin(), info.shape.end()});
     auto var =
         variances ? makeVariableWithVariances<T>(dims) : makeVariable<T>(dims);
     copy_flattened<T>(valuesT, var.template values<T>());
     if (variances) {
       py::array_t<T> variancesT(*variances);
       info = variancesT.request();
-      expect::equals(dims, Dimensions(labels, info.shape));
+      expect::equals(
+          dims, Dimensions(labels, {info.shape.begin(), info.shape.end()}));
       copy_flattened<T>(variancesT, var.template variances<T>());
     }
     var.setUnit(unit);

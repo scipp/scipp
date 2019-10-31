@@ -3,6 +3,10 @@
 
 add_custom_target(all-benchmarks)
 
+add_executable(groupby_benchmark EXCLUDE_FROM_ALL groupby_benchmark.cpp)
+add_dependencies(all-benchmarks groupby_benchmark)
+target_link_libraries(groupby_benchmark LINK_PRIVATE scipp-core benchmark)
+
 add_executable(histogram_benchmark EXCLUDE_FROM_ALL histogram_benchmark.cpp)
 add_dependencies(all-benchmarks histogram_benchmark)
 target_link_libraries(histogram_benchmark

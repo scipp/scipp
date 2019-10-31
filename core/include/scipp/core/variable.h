@@ -960,6 +960,12 @@ SCIPP_CORE_EXPORT Variable asin(const Variable &var);
 SCIPP_CORE_EXPORT Variable acos(const Variable &var);
 SCIPP_CORE_EXPORT Variable atan(const Variable &var);
 
+namespace sparse {
+SCIPP_CORE_EXPORT Variable counts(const VariableConstProxy &var);
+SCIPP_CORE_EXPORT void reserve(const VariableProxy &sparse,
+                               const VariableConstProxy &capacity);
+} // namespace sparse
+
 } // namespace scipp::core
 
 #endif // VARIABLE_H

@@ -326,3 +326,11 @@ TEST(DimensionsTest, merge_sparse) {
   EXPECT_EQ(merge(b, a),
             Dimensions({Dim::X, Dim::Y, Dim::Z}, {2, 3, Dimensions::Sparse}));
 }
+
+TEST(DimensionsTest, index) {
+  Dimensions dims({Dim::X, Dim::Y}, {1, Dimensions::Sparse});
+  ASSERT_THROW(dims.index(Dim::Invalid), except::DimensionError);
+  ASSERT_THROW(dims.index(Dim::Z), except::DimensionNotFoundError);
+  EXPECT_EQ(dims.index(Dim::X), 0);
+  EXPECT_EQ(dims.index(Dim::Y), 1);
+}
