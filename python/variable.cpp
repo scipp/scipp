@@ -115,8 +115,8 @@ Variable doMakeVariable(const std::vector<Dim> &labels, py::array &values,
     if (dtypeTag == core::dtype<std::string>) {
       std::vector<scipp::index> shape(values.shape(),
                                       values.shape() + values.ndim());
-      return init_1D_no_variance(
-          labels, shape, values.cast<std::vector<std::string>>(), unit);
+      return init_1D_no_variance(labels, shape,
+                                 values.cast<std::vector<std::string>>(), unit);
     }
 
     if (dtypeTag == core::dtype<Eigen::Vector3d>) {
