@@ -150,7 +150,7 @@ struct disable_variance_second_arg {
   template <class First, class Second>
   void operator()(const First &,
                   const scipp::core::detail::ValueAndVariance<Second>) const {
-    throw except::VariancesError("Variances in first argument not supported.");
+    throw except::VariancesError("Variances in second argument not supported.");
   }
 };
 
