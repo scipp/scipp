@@ -922,6 +922,10 @@ operator/(T v, const units::Unit &unit) {
       {}, units::Unit(units::dimensionless) / unit, {v});
 }
 
+SCIPP_CORE_EXPORT Variable astype(const VariableConstProxy &var,
+                                  const DType type);
+SCIPP_CORE_EXPORT Variable reciprocal(const VariableConstProxy &var);
+
 SCIPP_CORE_EXPORT std::vector<Variable>
 split(const Variable &var, const Dim dim,
       const std::vector<scipp::index> &indices);

@@ -4,7 +4,9 @@
 /// @author Simon Heybrock
 #include <cmath>
 
+#include "scipp/core/dataset.h"
 #include "scipp/core/except.h"
+#include "scipp/core/tag_util.h"
 #include "scipp/core/transform.h"
 #include "scipp/core/variable.h"
 
@@ -51,6 +53,20 @@ static constexpr auto divide_ = [](const auto a_, const auto b_) {
 };
 template <class T1, class T2> Variable plus(const T1 &a, const T2 &b) {
   return transform<arithmetic_and_matrix_type_pairs>(a, b, plus_);
+}
+
+Variable reciprocal(const VariableConstProxy &var) {
+  return transform<double, float>(
+      var,
+      overloaded{
+          [](const auto &a_) {
+            return static_cast<
+                       detail::element_type_t<std::decay_t<decltype(a_)>>>(1) /
+                   a_;
+          },
+          [](const units::Unit &unit) {
+            return units::Unit(units::dimensionless) / unit;
+          }});
 }
 
 Variable Variable::operator-() const {
@@ -277,6 +293,33 @@ Variable operator/(const double a, const VariableConstProxy &b_proxy) {
             b_ = static_cast<std::remove_reference_t<decltype(b_)>>(a / b_);
           }});
   return b;
+}
+
+struct MakeVariableWithType {
+  template <class T> struct Maker {
+    static Variable apply(const VariableConstProxy &parent) {
+      return transform<double, float, int64_t, int32_t, bool>(
+          parent, overloaded{[](const units::Unit &x) { return x; },
+                             [](const auto &x) {
+                               if constexpr (detail::is_ValueAndVariance_v<
+                                                 std::decay_t<decltype(x)>>)
+                                 return detail::ValueAndVariance<T>{
+                                     static_cast<T>(x.value),
+                                     static_cast<T>(x.variance)};
+                               else
+                                 return static_cast<T>(x);
+                             }});
+    }
+  };
+  static Variable make(const VariableConstProxy &var, DType type) {
+    return CallDType<double, float, int64_t, int32_t, bool>::apply<Maker>(type,
+                                                                          var);
+  }
+};
+
+Variable astype(const VariableConstProxy &var, DType type) {
+  return type == var.dtype() ? Variable(var)
+                             : MakeVariableWithType::make(var, type);
 }
 
 } // namespace scipp::core
