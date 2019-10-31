@@ -18,7 +18,7 @@ Dataset convert_with_calibration(Dataset d, Dataset cal) {
 
   if (d.coords().contains(Dim::Tof)) {
     // 1. Record ToF bin widths
-    OldBinWidths = counts::getBinWidths(d.coords(), {Dim::Tof});
+    oldBinWidths = counts::getBinWidths(d.coords(), {Dim::Tof});
   }
 
   // 2. There may be a grouping of detectors, in which case we need to apply it
