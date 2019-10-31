@@ -260,6 +260,7 @@ public:
   using key_type = std::string;
   using mapped_type = DataArray;
   using value_type = std::pair<const std::string &, DataConstProxy>;
+  using const_view_type = DatasetConstProxy;
 
   Dataset() = default;
   explicit Dataset(const DatasetConstProxy &proxy);
@@ -949,6 +950,8 @@ SCIPP_CORE_EXPORT Dataset copy(const DatasetConstProxy &dataset);
 /// Data array, a variable with coordinates, labels, and attributes.
 class SCIPP_CORE_EXPORT DataArray {
 public:
+  using const_view_type = DataConstProxy;
+
   DataArray() = default;
   explicit DataArray(const DataConstProxy &proxy);
   template <class CoordMap = std::map<Dim, Variable>,
@@ -1066,6 +1069,8 @@ public:
   DataArray &operator/=(const T value) {
     return *this /= makeVariable<T>(value);
   }
+
+  void setData(Variable data) { m_holder.setData(name(), std::move(data)); }
 
   // TODO need to define some details regarding handling of dense coords in case
   // the array is sparse, not exposing this to Python for now.
@@ -1298,6 +1303,11 @@ SCIPP_CORE_EXPORT DataArray rebin(const DataConstProxy &a, const Dim dim,
                                   const VariableConstProxy &coord);
 SCIPP_CORE_EXPORT Dataset rebin(const DatasetConstProxy &d, const Dim dim,
                                 const VariableConstProxy &coord);
+
+SCIPP_CORE_EXPORT DataArray resize(const DataConstProxy &a, const Dim dim,
+                                   const scipp::index size);
+SCIPP_CORE_EXPORT Dataset resize(const DatasetConstProxy &d, const Dim dim,
+                                 const scipp::index size);
 
 SCIPP_CORE_EXPORT VariableConstProxy same(const VariableConstProxy &a,
                                           const VariableConstProxy &b);

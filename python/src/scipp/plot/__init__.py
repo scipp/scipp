@@ -6,4 +6,3 @@
 # flake8: noqa
 
 from .plot import plot
-from . import config

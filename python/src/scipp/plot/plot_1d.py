@@ -3,8 +3,9 @@
 # @author Neil Vaytet
 
 # Scipp imports
-from . import config
-from .tools import edges_to_centers, render_plot, get_1d_axes
+from ..config import plot as config
+from .render import render_plot
+from .tools import edges_to_centers, get_1d_axes
 
 # Other imports
 import numpy as np
@@ -25,7 +26,7 @@ def plot_1d(input_data, backend=None, logx=False, logy=False, logxy=False,
     """
 
     data = []
-    for i, (name, var) in enumerate(input_data.items()):
+    for i, (name, var) in enumerate(sorted(input_data)):
 
         xlab, ylab, x, y = get_1d_axes(var, axes, name)
 

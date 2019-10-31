@@ -10,8 +10,13 @@
 #include "scipp/core/variable_view.h"
 #include "scipp/core/vector.h"
 #include "scipp/units/unit.h"
+#include <optional>
 
 namespace scipp::core {
+
+#ifdef _WIN32
+#define __PRETTY_FUNCTION__ __FUNCSIG__
+#endif
 
 template <class T, class C> auto &requireT(C &concept) {
   try {
@@ -615,8 +620,7 @@ Variable::cast(const bool variances_) const {
   if (!variances_)
     return dm.m_values;
   else {
-    if (!hasVariances())
-      throw std::runtime_error("No variances");
+    expect::hasVariances(*this);
     return *dm.m_variances;
   }
 }
@@ -627,8 +631,7 @@ Vector<underlying_type_t<T>> &Variable::cast(const bool variances_) {
   if (!variances_)
     return dm.m_values;
   else {
-    if (!hasVariances())
-      throw std::runtime_error("No variances");
+    expect::hasVariances(*this);
     return *dm.m_variances;
   }
 }
@@ -648,6 +651,7 @@ VariableConstProxy::cast() const {
 template <class T>
 const VariableView<const underlying_type_t<T>>
 VariableConstProxy::castVariances() const {
+  expect::hasVariances(*this);
   using TT = underlying_type_t<T>;
   if (!m_view)
     return requireT<const DataModel<Vector<TT>>>(data()).variancesView(dims());
@@ -669,6 +673,7 @@ VariableView<underlying_type_t<T>> VariableProxy::cast() const {
 
 template <class T>
 VariableView<underlying_type_t<T>> VariableProxy::castVariances() const {
+  expect::hasVariances(*this);
   using TT = underlying_type_t<T>;
   if (m_view)
     return *requireT<const ViewModel<VariableView<TT>>>(data()).m_variances;
@@ -687,7 +692,7 @@ template <class T> void Variable::setVariances(Vector<T> &&v) {
   };
   try {
     apply_in_place<double, float, int64_t, int32_t>(lmb, *this);
-  } catch (std::bad_variant_access &e) {
+  } catch (std::bad_variant_access &) {
     throw except::TypeError(std::string("Can't set variance for the type: ") +
                             to_string(dtype()));
   }
