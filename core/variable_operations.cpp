@@ -204,7 +204,8 @@ void flatten_impl(const VariableProxy &summed, const VariableConstProxy &var) {
 
 void sum_impl(const VariableProxy &summed, const VariableConstProxy &var) {
   accumulate_in_place<
-      pair_self_t<double, float, int64_t, int32_t, Eigen::Vector3d>>(
+      pair_self_t<double, float, int64_t, int32_t, Eigen::Vector3d>,
+      pair_custom_t<std::pair<int64_t, bool>>>(
       summed, var, [](auto &&a, auto &&b) { a += b; });
 }
 
@@ -212,7 +213,10 @@ Variable sum(const VariableConstProxy &var, const Dim dim) {
   expect::notSparse(var);
   auto dims = var.dims();
   dims.erase(dim);
-  Variable summed(var, dims);
+  // Bool DType is a bit special in that it cannot contain it's sum.
+  // Instead the sum is stored in a int64_t Variable
+  Variable summed{var.dtype() == DType::Bool ? makeVariable<int64_t>(dims)
+                                             : Variable(var, dims)};
   sum_impl(summed, var);
   return summed;
 }
@@ -231,16 +235,17 @@ Variable sum(const VariableConstProxy &var, const Dim dim,
 }
 
 Variable mean(const VariableConstProxy &var, const Dim dim) {
-  return mean(var, dim, 0);
+  return mean(var, dim, makeVariable<int64_t>(0));
 }
 
 Variable mean(const VariableConstProxy &var, const Dim dim,
-              const scipp::index num_masks) {
+              const VariableConstProxy &masks_sum) {
   // In principle we *could* support mean/sum over sparse dimension.
   expect::notSparse(var);
   auto summed = sum(var, dim);
-  auto scale = makeVariable<double>(
-      1.0 / static_cast<double>(var.dims()[dim] - num_masks));
+
+  auto scale = 1.0 / (makeVariable<double>(var.dims()[dim]) - masks_sum);
+
   if (isInt(var.dtype()))
     summed = summed * scale;
   else
@@ -251,17 +256,16 @@ Variable mean(const VariableConstProxy &var, const Dim dim,
 Variable mean(const VariableConstProxy &var, const Dim dim,
               const MasksConstProxy &masks) {
   if (masks.empty()) {
-    return mean(var, dim, 0);
+    return mean(var, dim);
   } else {
-    auto maskUnion = makeVariable<bool>(var.dims());
+    auto masks_union = makeVariable<bool>(var.dims());
     for (const auto &mask : masks) {
-      maskUnion |= mask.second;
+      masks_union |= mask.second;
     }
 
-    scipp::index num_masks = std::count(maskUnion.values<bool>().begin(),
-                                        maskUnion.values<bool>().end(), true);
+    const auto masks_sum = sum(masks_union, dim);
 
-    return mean(var * ~maskUnion, dim, num_masks);
+    return mean(var * ~masks_union, dim, masks_sum);
   }
 }
 

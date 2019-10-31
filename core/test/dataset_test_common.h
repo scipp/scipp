@@ -13,7 +13,7 @@
 using namespace scipp;
 using namespace scipp::core;
 
-enum BoolsGeneratorType { ALTERNATING, FALSE, TRUE };
+enum BoolsGeneratorType { ALTERNATING, FALSE, TRUE, EVERY_THIRD };
 
 template <BoolsGeneratorType type = BoolsGeneratorType::ALTERNATING>
 std::vector<bool> makeBools(const scipp::index size) {
@@ -21,6 +21,8 @@ std::vector<bool> makeBools(const scipp::index size) {
   for (scipp::index i = 0; i < size; ++i)
     if constexpr (type == BoolsGeneratorType::ALTERNATING) {
       data[i] = i % 2;
+    } else if constexpr (type == BoolsGeneratorType::EVERY_THIRD) {
+      data[i] = i % 3 == 0;
     } else if constexpr (type == BoolsGeneratorType::FALSE) {
       data[i] = false;
     } else {

@@ -67,5 +67,41 @@ TYPED_TEST(DatasetShapeChangingOpTest, mean_fully_masked) {
     EXPECT_TRUE(std::isnan(result["data_x"].values<TypeParam>()[0]));
   else
     EXPECT_TRUE(std::isnan(result["data_x"].values<double>()[0]));
+}
 
+TEST(DatasetOperationsTest, mean_two_dims) {
+  Dataset ds;
+  // the negative values should have been masked out
+  ds.setData("data_xy", makeVariable<int64_t>(
+                            {{Dim::X, 5}, {Dim::Y, 2}},
+                            {-999, -999, 3, -999, 5, 6, -999, 10, 10, -999}));
+
+  ds.setMask("mask_xy", makeVariable<bool>({{Dim::X, 5}, {Dim::Y, 2}},
+                                           {true, true, false, true, false,
+                                            false, true, false, false, true}));
+
+  const Dataset result = mean(ds, Dim::X);
+
+  ASSERT_EQ(result["data_xy"].data(),
+            makeVariable<double>({Dim::Y, 2}, {6, 8}));
+}
+
+TEST(DatasetOperationsTest, mean_three_dims) {
+  Dataset ds;
+  // the negative values should have been masked out
+  ds.setData("data_xy", makeVariable<int64_t>(
+                            {{Dim::Z, 2}, {Dim::X, 5}, {Dim::Y, 2}},
+                            {-999, -999, 3, -999, 5, 6, -999, 10, 10, -999,
+                             -999, -999, 3, -999, 5, 6, -999, 10, 10, -999}));
+
+  ds.setMask("mask_xy",
+             makeVariable<bool>({{Dim::Z, 2}, {Dim::X, 5}, {Dim::Y, 2}},
+                                {true,  true,  false, true,  false, false, true,
+                                 false, false, true,  true,  true,  false, true,
+                                 false, false, true,  false, false, true}));
+
+  const Dataset result = mean(ds, Dim::X);
+
+  ASSERT_EQ(result["data_xy"].data(),
+            makeVariable<double>({{Dim::Z, 2}, {Dim::Y, 2}}, {6, 8, 6, 8}));
 }
