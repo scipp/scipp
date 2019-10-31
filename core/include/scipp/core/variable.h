@@ -267,6 +267,24 @@ struct default_init<Eigen::Matrix<T, Rows, Cols>> {
 
 template <class T> Variable makeVariable(T value);
 
+template <class T> struct Values {
+  Vector<T> values;
+  Values(const Values &) = delete;
+  explicit Values(Vector<T> &&v) : values(std::move(v)) {}
+  template <class... Ts>
+  explicit Values(Ts &&... args) : values(std::forward<Ts>(args)...) {}
+};
+template <class T> Values(Vector<T> &&)->Values<T>;
+
+template <class T> struct Variances {
+  std::optional<Vector<T>> variances;
+  Variances(const Variances &) = delete;
+  explicit Variances(std::optional<Vector<T>> &&v) : variances(std::move(v)) {}
+  template <class... Ts>
+  explicit Variances(Ts &&... args) : variances(std::forward<Ts>(args)...) {}
+};
+template <class T> Variances(std::optional<T> &&)->Variances<T>;
+
 /// Variable is a type-erased handle to any data structure representing a
 /// multi-dimensional array. It has a name, a unit, and a set of named
 /// dimensions.
@@ -430,6 +448,50 @@ public:
   template <class T> void setVariances(Vector<T> &&v);
 
 private:
+  template <class T>
+  Variable(units::Unit &&u, Dimensions &&s, Values<T> &&val,
+           Variances<T> &&var);
+
+  // traits for universal Variable constructor
+  template <class T, class... Args>
+  using hasType = std::disjunction<std::is_same<T, std::decay_t<Args>>...>;
+
+  template <class... Ts> // given types
+  struct helper {
+    template <class... Args> // needed types
+    constexpr static int check_types() {
+      return (hasType<Args, Ts...>::value + ...);
+    }
+
+    template <class T, class... Args> static T construct(Ts &&... ts) {
+      auto tp = std::make_tuple(std::forward<Ts>(ts)...);
+      return T(std::forward<Args>(hlp<Args, Ts...>(tp))...);
+    }
+
+  private:
+    template <class T, class... Args>
+    static decltype(auto) hlp(std::tuple<Args...> &tp) {
+      if constexpr (hasType<T, Ts...>::value)
+        return std::get<T>(tp);
+      else
+        return T{};
+    }
+  };
+
+public:
+  template <class T, class... Ts>
+  static Variable constructVariable(Ts &&... args) {
+    using helper = helper<Ts...>;
+    constexpr auto nn = helper::template check_types<units::Unit, Dimensions,
+                                                     Values<T>, Variances<T>>();
+    static_assert(nn ==
+                  std::tuple_size_v<decltype(std::forward_as_tuple(args...))>);
+    return helper::template construct<Variable, units::Unit, Dimensions,
+                                      Values<T>, Variances<T>>(
+        std::forward<Ts>(args)...);
+  }
+
+private:
   template <class T> const Vector<T> &cast(const bool variances = false) const;
   template <class T> Vector<T> &cast(const bool variances = false);
 
@@ -525,6 +587,14 @@ Variable makeVariable(const Dimensions &dimensions, const units::Unit unit,
                   Vector<T>(values.begin(), values.end()),
                   Vector<T>(variances.begin(), variances.end()));
 }
+
+template <class T>
+Variable::Variable(units::Unit &&u, Dimensions &&s, Values<T> &&val,
+                   Variances<T> &&var)
+    : Variable(std::move(var.variances
+                             ? Variable(u, s, val.values,
+                                        *var.variances) // TODO check if copied
+                             : Variable(u, s, val.values))) {}
 
 namespace detail {
 template <class... N> struct is_vector : std::false_type {};
