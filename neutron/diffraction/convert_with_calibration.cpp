@@ -17,8 +17,8 @@ Dataset convert_with_calibration(Dataset d, Dataset cal) {
   std::vector<Variable> newBinWidths;
 
   if (d.coords().contains(Dim::Tof)) {
-      // 1. Record ToF bin widths
-      oldBinWidths = counts::getBinWidths(d.coords(), {Dim::Tof});
+    // 1. Record ToF bin widths
+    OldBinWidths = counts::getBinWidths(d.coords(), {Dim::Tof});
   }
 
   // 2. There may be a grouping of detectors, in which case we need to apply it
@@ -47,13 +47,13 @@ Dataset convert_with_calibration(Dataset d, Dataset cal) {
   }
 
   if (d.coords().contains(Dim::Tof)) {
-      // 3. Transform coordinate
-      d.setCoord(Dim::Tof,
-                 (d.coords()[Dim::Tof] - cal["tzero"].data())
-                 / cal["difc"].data());
+    // 3. Transform coordinate
+    d.setCoord(Dim::Tof,
+               (d.coords()[Dim::Tof] - cal["tzero"].data())
+               / cal["difc"].data());
 
-      // 4. Record DSpacing bin widths
-      newBinWidths = counts::getBinWidths(d.coords(), {Dim::Tof});
+    // 4. Record DSpacing bin widths
+    newBinWidths = counts::getBinWidths(d.coords(), {Dim::Tof});
   }
 
   // 5. Transform variables
