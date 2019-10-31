@@ -25,4 +25,5 @@ if(result)
   message(FATAL_ERROR "Install step for boost failed: ${result}")
 endif()
 
-set(BOOST_ROOT "${CMAKE_BINARY_DIR}/boost/include" CACHE PATH "Path to boost")
+set(BOOST_INCLUDEDIR "${CMAKE_BINARY_DIR}/boost/include" CACHE PATH "Path to boost")
+set(BOOST_NO_SYSTEM_PATHS ON)

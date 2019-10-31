@@ -4,6 +4,10 @@
 /// @author Simon Heybrock
 
 // from https://stackoverflow.com/a/12942652/1458281
+
+#ifndef ALIGNED_ALLOCATOR_H
+#define ALIGNED_ALLOCATOR_H
+
 #include <cassert>
 
 #include "scipp/core/memory_pool.h"
@@ -22,7 +26,9 @@ void deallocate_aligned_memory(void *ptr) noexcept;
 
 //#define USE_POOL
 
-constexpr bool is_power_of_two(int v) { return v && ((v & (v - 1)) == 0); }
+template <typename T> constexpr bool is_power_of_two(T v) {
+  return v && ((v & (v - 1)) == 0);
+}
 
 inline void *allocate_aligned_memory(size_t align, size_t size) {
   assert(align >= sizeof(void *));
@@ -37,11 +43,9 @@ inline void *allocate_aligned_memory(size_t align, size_t size) {
 #else
   void *ptr = nullptr;
   int rc = posix_memalign(&ptr, align, size);
-
   if (rc != 0) {
     return nullptr;
   }
-
   return ptr;
 #endif
 }
@@ -50,7 +54,11 @@ inline void deallocate_aligned_memory(void *ptr) noexcept {
 #ifdef USE_POOL
   return instance().deallocate(ptr);
 #else
+#ifdef _WIN32
+  return _aligned_free(ptr);
+#else
   return free(ptr);
+#endif
 #endif
 }
 } // namespace detail
@@ -187,3 +195,4 @@ inline bool operator!=(const AlignedAllocator<T, TAlign> &,
 }
 
 } // namespace scipp::core
+#endif // ALIGNED_ALLOCATOR_H

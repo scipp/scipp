@@ -20,56 +20,95 @@ namespace scipp::core {
 ///
 /// - Delete anything (but data) that depends on the reduction dimension.
 /// - Default-init data.
-Dataset GroupBy::makeReductionOutput(const Dim reductionDim) const {
-  constexpr auto init_var = [](const VariableConstProxy &var, const Dim dim_,
-                               const scipp::index size_) {
-    auto dims = var.dims();
-    dims.resize(dim_, size_);
-    return Variable(var, dims);
-  };
-  Dataset out = apply_to_items(
-      m_data, [](auto &&... _) { return apply_to_data_and_drop_dim(_...); },
-      init_var, reductionDim, size());
+template <class T>
+T GroupBy<T>::makeReductionOutput(const Dim reductionDim) const {
+  auto out = resize(m_data, reductionDim, size());
   out.rename(reductionDim, dim());
-  out.setCoord(dim(), m_key);
+  out.setCoord(dim(), key());
   return out;
 }
 
-/// Apply sum to groups and return combined dataset.
-Dataset GroupBy::sum(const Dim reductionDim) const {
+/// Flatten provided dimension in each group and return combined data.
+///
+/// This only supports sparse data.
+template <class T> T GroupBy<T>::flatten(const Dim reductionDim) const {
+  auto out = makeReductionOutput(reductionDim);
+  const auto apply = [&](const auto &out_, const auto &in,
+                         const scipp::index group_) {
+    const Dim sparseDim = in.dims().sparseDim();
+    for (const auto &slice : groups()[group_]) {
+      const auto &array = in.slice(slice);
+      flatten_impl(out_.coords()[sparseDim], array.coords()[sparseDim]);
+      if (in.hasData())
+        flatten_impl(out_.data(), array.data());
+      for (auto &&[label_name, label] : out_.labels()) {
+        if (label.dims().sparse())
+          flatten_impl(label, array.labels()[label_name]);
+      }
+    }
+  };
+  // Apply to each group, storing result in output slice
+  for (scipp::index group = 0; group < size(); ++group) {
+    const auto out_slice = out.slice({dim(), group});
+    if constexpr (std::is_same_v<T, Dataset>) {
+      for (const auto &[name, item] : m_data)
+        apply(out_slice[name], item, group);
+    } else {
+      apply(out_slice, m_data, group);
+    }
+  }
+  return out;
+}
+
+/// Apply sum to groups and return combined data.
+template <class T> T GroupBy<T>::sum(const Dim reductionDim) const {
   auto out = makeReductionOutput(reductionDim);
   // Apply to each group, storing result in output slice
   for (scipp::index group = 0; group < size(); ++group) {
     const auto out_slice = out.slice({dim(), group});
-    for (const auto &[name, item] : m_data) {
-      const auto out_data = out_slice[name].data();
-      for (const auto &slice : m_groups[group]) {
-        sum_impl(out_data, item.data().slice(slice));
+    if constexpr (std::is_same_v<T, Dataset>) {
+      for (const auto &[name, item] : m_data) {
+        const auto out_data = out_slice[name].data();
+        for (const auto &slice : groups()[group]) {
+          sum_impl(out_data, item.data().slice(slice));
+        }
+      }
+    } else {
+      const auto out_data = out_slice.data();
+      for (const auto &slice : groups()[group]) {
+        sum_impl(out_data, m_data.data().slice(slice));
       }
     }
   }
   return out;
 }
 
-/// Apply mean to groups and return combined dataset.
-Dataset GroupBy::mean(const Dim reductionDim) const {
+/// Apply mean to groups and return combined data.
+template <class T> T GroupBy<T>::mean(const Dim reductionDim) const {
   // 1. Sum into output slices
   auto out = sum(reductionDim);
 
   // 2. Compute number of slices N contributing to each out slice
   auto scale = makeVariable<double>({dim(), size()});
-  const auto scaleT = scale.values<double>();
+  const auto scaleT = scale.template values<double>();
   for (scipp::index group = 0; group < size(); ++group)
-    for (const auto &slice : m_groups[group])
+    for (const auto &slice : groups()[group])
       scaleT[group] += slice.end() - slice.begin();
   scale = 1.0 / scale;
 
   // 3. sum/N -> mean
-  for (const auto &[name, item] : out) {
-    if (isInt(item.data().dtype()))
-      out.setData(name, item.data() * scale);
+  if constexpr (std::is_same_v<T, Dataset>) {
+    for (const auto &[name, item] : out) {
+      if (isInt(item.data().dtype()))
+        out.setData(name, item.data() * scale);
+      else
+        item *= scale;
+    }
+  } else {
+    if (isInt(out.data().dtype()))
+      out.setData(out.data() * scale);
     else
-      item *= scale;
+      out *= scale;
   }
 
   return out;
@@ -83,9 +122,7 @@ static void expectValidGroupbyKey(const VariableConstProxy &key) {
 }
 
 template <class T> struct MakeGroups {
-  static auto apply(const DatasetConstProxy &d, const std::string &labels,
-                    const Dim targetDim) {
-    const auto &key = d.labels()[labels];
+  static auto apply(const VariableConstProxy &key, const Dim targetDim) {
     expectValidGroupbyKey(key);
     const auto &values = key.values<T>();
 
@@ -110,14 +147,13 @@ template <class T> struct MakeGroups {
     }
     auto keys_ = makeVariable<T>(dims, std::move(keys));
     keys_.setUnit(key.unit());
-    return GroupBy{d, std::move(keys_), std::move(groups)};
+    return GroupByGrouping{std::move(keys_), std::move(groups)};
   }
 };
 
 template <class T> struct MakeBinGroups {
-  static auto apply(const DatasetConstProxy &d, const std::string &labels,
+  static auto apply(const VariableConstProxy &key,
                     const VariableConstProxy &bins) {
-    const auto &key = d.labels()[labels];
     expectValidGroupbyKey(key);
     if (bins.dims().ndim() != 1)
       throw except::DimensionError("Group-by bins must be 1-dimensional");
@@ -143,30 +179,65 @@ template <class T> struct MakeBinGroups {
         groups[std::distance(edges.begin(), left)].emplace_back(dim, begin, i);
       }
     }
-    return GroupBy{d, Variable(bins), std::move(groups)};
+    return GroupByGrouping{Variable(bins), std::move(groups)};
   }
 };
 
-/// Create GroupBy object as part of "split-apply-combine" mechanism.
+/// Create GroupBy<DataArray> object as part of "split-apply-combine" mechanism.
+///
+/// Groups the slices of `array` according to values in given by `labels`.
+/// Grouping of labels will create a new coordinate for `targetDim` in a later
+/// apply/combine step.
+GroupBy<DataArray> groupby(const DataConstProxy &array,
+                           const std::string &labels, const Dim targetDim) {
+  const auto &key = array.labels()[labels];
+  return {array, CallDType<double, float, int64_t, int32_t, bool,
+                           std::string>::apply<MakeGroups>(key.dtype(), key,
+                                                           targetDim)};
+}
+
+/// Create GroupBy<DataArray> object as part of "split-apply-combine" mechanism.
+///
+/// Groups the slices of `array` according to values in given by `labels`.
+/// Grouping of labels is according to given `bins`, which will be added as a
+/// new coordinate to the output in a later apply/combine step.
+GroupBy<DataArray> groupby(const DataConstProxy &array,
+                           const std::string &labels,
+                           const VariableConstProxy &bins) {
+  const auto &key = array.labels()[labels];
+  return {array,
+          CallDType<double, float, int64_t, int32_t>::apply<MakeBinGroups>(
+              key.dtype(), key, bins)};
+}
+
+/// Create GroupBy<Dataset> object as part of "split-apply-combine" mechanism.
 ///
 /// Groups the slices of `dataset` according to values in given by `labels`.
 /// Grouping of labels will create a new coordinate for `targetDim` in a later
 /// apply/combine step.
-GroupBy groupby(const DatasetConstProxy &dataset, const std::string &labels,
-                const Dim targetDim) {
-  return CallDType<double, float, int64_t, int32_t, bool, std::string>::apply<
-      MakeGroups>(dataset.labels()[labels].dtype(), dataset, labels, targetDim);
+GroupBy<Dataset> groupby(const DatasetConstProxy &dataset,
+                         const std::string &labels, const Dim targetDim) {
+  const auto &key = dataset.labels()[labels];
+  return {dataset, CallDType<double, float, int64_t, int32_t, bool,
+                             std::string>::apply<MakeGroups>(key.dtype(), key,
+                                                             targetDim)};
 }
 
-/// Create GroupBy object as part of "split-apply-combine" mechanism.
+/// Create GroupBy<Dataset> object as part of "split-apply-combine" mechanism.
 ///
 /// Groups the slices of `dataset` according to values in given by `labels`.
 /// Grouping of labels is according to given `bins`, which will be added as a
 /// new coordinate to the output in a later apply/combine step.
-GroupBy groupby(const DatasetConstProxy &dataset, const std::string &labels,
-                const VariableConstProxy &bins) {
-  return CallDType<double, float, int64_t, int32_t>::apply<MakeBinGroups>(
-      dataset.labels()[labels].dtype(), dataset, labels, bins);
+GroupBy<Dataset> groupby(const DatasetConstProxy &dataset,
+                         const std::string &labels,
+                         const VariableConstProxy &bins) {
+  const auto &key = dataset.labels()[labels];
+  return {dataset,
+          CallDType<double, float, int64_t, int32_t>::apply<MakeBinGroups>(
+              key.dtype(), key, bins)};
 }
+
+template class GroupBy<DataArray>;
+template class GroupBy<Dataset>;
 
 } // namespace scipp::core

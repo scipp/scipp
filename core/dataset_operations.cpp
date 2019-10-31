@@ -2,6 +2,7 @@
 // Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
+#include "scipp/common/numeric.h"
 #include "scipp/core/dataset.h"
 #include "scipp/core/except.h"
 #include "scipp/core/transform.h"
@@ -31,23 +32,40 @@ DataArray histogram(const DataConstProxy &sparse,
 
   auto result = apply_and_drop_dim(
       sparse,
-      [](const DataConstProxy &_sparse, const Dim _dim,
-         const VariableConstProxy &_binEdges) {
-        auto coord = _sparse.coords()[_dim];
-        auto edgesSpan = _binEdges.values<double>();
+      [](const DataConstProxy &sparse_, const Dim dim_,
+         const VariableConstProxy &binEdges_) {
+        const auto &coord = sparse_.coords()[dim_].sparseValues<double>();
+        auto edgesSpan = binEdges_.values<double>();
         expect::histogram::sorted_edges(edgesSpan);
-        auto resDims{_sparse.dims()};
-        auto len = _binEdges.dims()[_dim] - 1;
-        resDims.resize(resDims.index(_dim), len);
+        // Copy to avoid slow iterator obtained from VariableConstProxy.
+        const std::vector<double> edges(edgesSpan.begin(), edgesSpan.end());
+        auto resDims{sparse_.dims()};
+        auto len = binEdges_.dims()[dim_] - 1;
+        resDims.resize(resDims.index(dim_), len);
         Variable res =
             makeVariableWithVariances<double>(resDims, units::counts);
-        for (scipp::index i = 0; i < _sparse.dims().volume(); ++i) {
-          const auto &coord_i = coord.sparseValues<double>()[i];
-          auto curRes = res.values<double>().begin() + i * len;
-          for (const auto &c : coord_i) {
-            auto it = std::upper_bound(edgesSpan.begin(), edgesSpan.end(), c);
-            if (it != edgesSpan.end() && it != edgesSpan.begin())
-              ++(*(curRes + (--it - edgesSpan.begin())));
+        if (scipp::numeric::is_linspace(edges)) {
+          // Special implementation for linear bins. Gives a 0x to 20x speedup
+          // for few and many events per histogram, respectively.
+          const double offset = edges.front();
+          const double nbin = static_cast<double>(len);
+          const double scale = nbin / (edges.back() - edges.front());
+          for (scipp::index i = 0; i < sparse_.dims().volume(); ++i) {
+            auto curRes = res.values<double>().begin() + i * len;
+            for (const auto &c : coord[i]) {
+              const double bin = (c - offset) * scale;
+              if (bin >= 0.0 && bin < nbin)
+                ++(*(curRes + static_cast<scipp::index>(bin)));
+            }
+          }
+        } else {
+          for (scipp::index i = 0; i < sparse_.dims().volume(); ++i) {
+            auto curRes = res.values<double>().begin() + i * len;
+            for (const auto &c : coord[i]) {
+              auto it = std::upper_bound(edges.begin(), edges.end(), c);
+              if (it != edges.end() && it != edges.begin())
+                ++(*(curRes + (--it - edges.begin())));
+            }
           }
         }
         std::copy(res.values<double>().begin(), res.values<double>().end(),
@@ -193,6 +211,49 @@ Dataset rebin(const DatasetConstProxy &d, const Dim dim,
               const VariableConstProxy &coord) {
   return apply_to_items(d, [](auto &&... _) { return rebin(_...); }, dim,
                         coord);
+}
+
+DataArray resize(const DataConstProxy &a, const Dim dim,
+                 const scipp::index size) {
+  if (a.dims().sparse()) {
+    const auto resize_if_sparse = [dim, size](const auto &var) {
+      return var.dims().sparse() ? resize(var, dim, size) : Variable{var};
+    };
+
+    std::map<Dim, Variable> coords;
+    for (auto &&[d, coord] : a.coords())
+      if (d != dim)
+        coords.emplace(d, resize_if_sparse(coord));
+
+    std::map<std::string, Variable> labels;
+    for (auto &&[name, label] : a.labels())
+      if (label.dims().inner() != dim)
+        labels.emplace(name, resize_if_sparse(label));
+
+    std::map<std::string, Variable> attrs;
+    for (auto &&[name, attr] : a.attrs())
+      if (attr.dims().inner() != dim)
+        attrs.emplace(name, resize_if_sparse(attr));
+
+    std::map<std::string, Variable> masks;
+    for (auto &&[name, mask] : a.masks())
+      if (mask.dims().inner() != dim)
+        masks.emplace(name, resize_if_sparse(mask));
+
+    return DataArray{a.hasData() ? resize(a.data(), dim, size)
+                                 : std::optional<Variable>{},
+                     std::move(coords), std::move(labels), std::move(masks),
+                     std::move(attrs)};
+  } else {
+    return apply_to_data_and_drop_dim(
+        a, [](auto &&... _) { return resize(_...); }, dim, size);
+  }
+}
+
+Dataset resize(const DatasetConstProxy &d, const Dim dim,
+               const scipp::index size) {
+  return apply_to_items(d, [](auto &&... _) { return resize(_...); }, dim,
+                        size);
 }
 
 /// Return one of the inputs if they are the same, throw otherwise.

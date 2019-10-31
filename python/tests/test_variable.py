@@ -298,7 +298,7 @@ def test_sparse_setitem_int64_t():
 
 
 def test_create_dtype():
-    var = sc.Variable([Dim.X], values=np.arange(4))
+    var = sc.Variable([Dim.X], values=np.arange(4).astype(np.int64))
     assert var.dtype == sc.dtype.int64
     var = sc.Variable([Dim.X], values=np.arange(4).astype(np.int32))
     assert var.dtype == sc.dtype.int32
@@ -562,9 +562,9 @@ def test_set_variance_convert_dtype():
 
 
 def test_sum_mean():
-    var = sc.Variable([Dim.X], values=np.ones(5).astype(np.int64))
-    assert sc.sum(var, Dim.X) == sc.Variable(5)
-    var = sc.Variable([Dim.X], values=np.arange(6).astype(np.int64))
+    var = sc.Variable([Dim.X], values=np.arange(5, dtype=np.int64))
+    assert sc.sum(var, Dim.X) == sc.Variable(10)
+    var = sc.Variable([Dim.X], values=np.arange(6, dtype=np.int64))
     assert sc.mean(var, Dim.X) == sc.Variable(2.5)
 
 

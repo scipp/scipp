@@ -2,8 +2,9 @@
 # Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 set(TARGET_NAME "scipp-neutron")
 set(INC_FILES include/scipp/neutron/convert.h)
+set(INC_FILES include/scipp/neutron/diffraction/convert_with_calibration.h)
 
-set(SRC_FILES beamline.cpp convert.cpp)
+set(SRC_FILES beamline.cpp convert.cpp diffraction/convert_with_calibration.cpp)
 
 set(LINK_TYPE "STATIC")
 if(DYNAMIC_LIB)
