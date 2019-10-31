@@ -56,3 +56,16 @@ TYPED_TEST(DatasetShapeChangingOpTest, mean_masked) {
   else // non floating point gets the result as a double
     ASSERT_EQ(result["data_x"].data(), makeVariable<double>({2}));
 }
+
+TYPED_TEST(DatasetShapeChangingOpTest, mean_fully_masked) {
+  this->ds.setMask(
+      "full_mask",
+      makeVariable<bool>({Dim::X, 5}, makeBools<BoolsGeneratorType::TRUE>(5)));
+  const Dataset result = mean(this->ds, Dim::X);
+
+  if constexpr (std::is_floating_point_v<TypeParam>)
+    EXPECT_TRUE(std::isnan(result["data_x"].values<TypeParam>()[0]));
+  else
+    EXPECT_TRUE(std::isnan(result["data_x"].values<double>()[0]));
+
+}
