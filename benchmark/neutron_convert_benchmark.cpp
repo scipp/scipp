@@ -25,13 +25,14 @@ auto make_beamline(const scipp::index size) {
 }
 
 auto make_sparse_coord_only(const scipp::index size, const scipp::index count) {
+  auto out = make_beamline(size);
   auto var = makeVariable<double>({Dim::Spectrum, Dim::Tof},
                                   {size, Dimensions::Sparse});
   auto vals = var.sparseValues<double>();
   for (scipp::index i = 0; i < size; ++i)
     vals[i].resize(count, 5000.0);
-  DataArray sparse(std::nullopt, {{Dim::Tof, std::move(var)}});
-  return merge(make_beamline(size), Dataset({{"", std::move(sparse)}}));
+  out.setSparseCoord("", std::move(var));
+  return out;
 }
 
 static void BM_neutron_convert(benchmark::State &state, const Dim targetDim) {
