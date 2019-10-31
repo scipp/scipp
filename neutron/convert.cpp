@@ -8,6 +8,7 @@
 
 #include "scipp/core/counts.h"
 #include "scipp/core/dataset.h"
+#include "scipp/core/transform.h"
 #include "scipp/neutron/beamline.h"
 #include "scipp/neutron/convert.h"
 
@@ -119,9 +120,11 @@ Dataset tofToEnergy(Dataset &&d) {
   for (const auto &[name, data] : d) {
     static_cast<void>(name);
     if (data.coords()[Dim::Tof].dims().sparse()) {
-      const auto &coord = data.coords()[Dim::Tof];
-      data.coords()[Dim::Tof].assign(astype(conversionFactor, coord.dtype()) /
-                                     (coord * coord));
+      transform_in_place<pair_self_t<double, float>>(
+          data.coords()[Dim::Tof], conversionFactor,
+          [](auto &coord_, const auto &factor) {
+            coord_ = factor / (coord_ * coord_);
+          });
     } else if (data.unit().isCountDensity()) {
       counts::fromDensity(data, oldBinWidths);
       counts::toDensity(data, newBinWidths);
@@ -155,9 +158,11 @@ Dataset energyToTof(Dataset &&d) {
   for (const auto &[name, data] : d) {
     static_cast<void>(name);
     if (data.coords()[Dim::Energy].dims().sparse()) {
-      const auto &coord = data.coords()[Dim::Energy];
-      data.coords()[Dim::Energy].assign(
-          sqrt(astype(conversionFactor, coord.dtype()) / coord));
+      transform_in_place<pair_self_t<double, float>>(
+          data.coords()[Dim::Energy], conversionFactor,
+          [](auto &coord_, const auto &factor) {
+            coord_ = sqrt(factor / coord_);
+          });
     } else if (data.unit().isCountDensity()) {
       counts::fromDensity(data, oldBinWidths);
       counts::toDensity(data, newBinWidths);

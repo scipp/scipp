@@ -25,6 +25,7 @@
 
 #include "scipp/common/overloaded.h"
 #include "scipp/core/except.h"
+#include "scipp/core/transform_common.h"
 #include "scipp/core/value_and_variance.h"
 #include "scipp/core/variable.h"
 #include "scipp/core/visit.h"
