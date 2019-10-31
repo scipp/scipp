@@ -31,6 +31,13 @@
 
 namespace scipp::core {
 
+namespace transform_flags {
+/// Add this to overloaded operator to indicate that the operation does not
+/// produce output with variances, even if the inputs contain variances.
+static constexpr auto no_variance_output = []() {};
+using no_variance_output_t = decltype(no_variance_output);
+} // namespace transform_flags
+
 namespace detail {
 
 /// A values/variances pair based on references to sparse data containers.
@@ -50,6 +57,11 @@ template <class T> struct ValuesAndVariances {
   void clear() {
     values.clear();
     variances.clear();
+  }
+
+  void reserve(const scipp::index capacity) const {
+    values.reserve(capacity);
+    variances.reserve(capacity);
   }
 
   // Note that methods like insert, begin, and end are required as long as we
@@ -583,8 +595,14 @@ template <bool dry_run> struct in_place {
         }
       }
     } else if (b.hasVariances()) {
-      throw std::runtime_error(
-          "RHS in operation has variances but LHS does not.");
+      if constexpr (std::is_base_of_v<transform_flags::no_variance_output_t,
+                                      Op>) {
+        auto b_var = b.variances();
+        transform_in_place_impl(op, a_val, ValuesAndVariances{b_val, b_var});
+      } else {
+        throw std::runtime_error(
+            "RHS in operation has variances but LHS does not.");
+      }
     } else {
       transform_in_place_impl(op, a_val, b_val);
     }

@@ -1015,3 +1015,18 @@ TEST(VariableTest, boolean_or_equals) {
 
   EXPECT_EQ(a, expected);
 }
+
+template <class T> class ReciprocalTest : public ::testing::Test {};
+
+using test_types = ::testing::Types<float, double>;
+TYPED_TEST_CASE(ReciprocalTest, test_types);
+
+TYPED_TEST(ReciprocalTest, variable_reciprocal) {
+  using T = TypeParam;
+  auto var1 = makeVariable<T>(2);
+  auto var2 = makeVariable<T>(0.5);
+  ASSERT_EQ(reciprocal(var1), var2);
+  var1 = makeVariable<T>(2, 1);
+  var2 = makeVariable<T>(0.5, 0.0625);
+  ASSERT_EQ(reciprocal(var1), var2);
+}

@@ -33,8 +33,10 @@ static Dataset convert_with_factor(Dataset &&d, const Dim from, const Dim to,
                                    const Variable &factor) {
   // 1. Transform coordinate
   // Cannot use *= since often a broadcast into Dim::Spectrum is required.
-  if (d.coords().contains(from))
-    d.setCoord(from, d.coords()[from] * factor);
+  if (d.coords().contains(from)) {
+    const auto &coords = d.coords()[from];
+    d.setCoord(from, coords * astype(factor, coords.dtype()));
+  }
 
   // 2. Transform variables
   for (const auto &[name, data] : d) {
@@ -69,7 +71,7 @@ auto tofToDSpacing(const Dataset &d) {
                       (m_to_angstrom * tof_to_s);
   conversionFactor *= sqrt(0.5 * (1.0 - dot(beam, scattered)));
 
-  return 1.0 / conversionFactor;
+  return reciprocal(conversionFactor);
 }
 
 static auto tofToWavelength(const Dataset &d) {
@@ -102,8 +104,9 @@ Dataset tofToEnergy(Dataset &&d) {
   const auto oldBinWidths = counts::getBinWidths(d.coords(), {Dim::Tof});
 
   // 3. Transform coordinate
-  d.setCoord(Dim::Tof, (1.0 / (d.coords()[Dim::Tof] * d.coords()[Dim::Tof])) *
-                           conversionFactor);
+  const auto &coordsSq = d.coords()[Dim::Tof] * d.coords()[Dim::Tof];
+  d.setCoord(Dim::Tof, (reciprocal(coordsSq) *
+                        astype(conversionFactor, coordsSq.dtype())));
 
   // 4. Record energy bin widths
   const auto newBinWidths = counts::getBinWidths(d.coords(), {Dim::Tof});
@@ -112,9 +115,9 @@ Dataset tofToEnergy(Dataset &&d) {
   for (const auto &[name, data] : d) {
     static_cast<void>(name);
     if (data.coords()[Dim::Tof].dims().sparse()) {
+      const auto &cSq = data.coords()[Dim::Tof] * data.coords()[Dim::Tof];
       data.coords()[Dim::Tof].assign(
-          (1.0 / (data.coords()[Dim::Tof] * data.coords()[Dim::Tof])) *
-          conversionFactor);
+          (reciprocal(cSq) * astype(conversionFactor, cSq.dtype())));
     } else if (data.unit().isCountDensity()) {
       counts::fromDensity(data, oldBinWidths);
       counts::toDensity(data, newBinWidths);
@@ -133,7 +136,9 @@ Dataset energyToTof(Dataset &&d) {
   const auto oldBinWidths = counts::getBinWidths(d.coords(), {Dim::Energy});
 
   // 3. Transform coordinate
-  d.setCoord(Dim::Energy, sqrt(conversionFactor / d.coords()[Dim::Energy]));
+  const auto &coordsSqrt = d.coords()[Dim::Energy];
+  d.setCoord(Dim::Energy,
+             sqrt(astype(conversionFactor, coordsSqrt.dtype()) / coordsSqrt));
 
   // 4. Record ToF bin widths
   const auto newBinWidths = counts::getBinWidths(d.coords(), {Dim::Energy});
@@ -142,8 +147,9 @@ Dataset energyToTof(Dataset &&d) {
   for (const auto &[name, data] : d) {
     static_cast<void>(name);
     if (data.coords()[Dim::Energy].dims().sparse()) {
+      const auto &cSqrt = data.coords()[Dim::Energy];
       data.coords()[Dim::Energy].assign(
-          sqrt(conversionFactor / data.coords()[Dim::Energy]));
+          sqrt(astype(conversionFactor, cSqrt.dtype()) / cSqrt));
     } else if (data.unit().isCountDensity()) {
       counts::fromDensity(data, oldBinWidths);
       counts::toDensity(data, newBinWidths);
@@ -230,13 +236,14 @@ Dataset convert(Dataset d, const Dim from, const Dim to) {
   if ((from == Dim::Tof) && (to == Dim::DSpacing))
     return convert_with_factor(std::move(d), from, to, tofToDSpacing(d));
   if ((from == Dim::DSpacing) && (to == Dim::Tof))
-    return convert_with_factor(std::move(d), from, to, 1.0 / tofToDSpacing(d));
+    return convert_with_factor(std::move(d), from, to,
+                               reciprocal(tofToDSpacing(d)));
 
   if ((from == Dim::Tof) && (to == Dim::Wavelength))
     return convert_with_factor(std::move(d), from, to, tofToWavelength(d));
   if ((from == Dim::Wavelength) && (to == Dim::Tof))
     return convert_with_factor(std::move(d), from, to,
-                               1.0 / tofToWavelength(d));
+                               reciprocal(tofToWavelength(d)));
 
   if ((from == Dim::Tof) && (to == Dim::Energy))
     return tofToEnergy(std::move(d));

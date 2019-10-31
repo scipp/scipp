@@ -16,7 +16,7 @@ namespace py = pybind11;
 
 void init_neutron(py::module &m) {
   auto neutron = m.def_submodule("neutron");
-  auto diffraction = neutron.def_submodule("diffraction");
+  auto diffraction = m.def_submodule("neutron_diffraction");
 
   diffraction.def("convert_with_calibration",
                   diffraction::convert_with_calibration, py::arg("data"),

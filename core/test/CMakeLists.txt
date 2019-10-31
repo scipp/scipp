@@ -25,10 +25,12 @@ add_executable(${TARGET_NAME} EXCLUDE_FROM_ALL
                rebin_test.cpp
                slice_test.cpp
                sort_test.cpp
+               sparse_counts_test.cpp
                transform_test.cpp
                value_and_variance_test.cpp
                variable_custom_type_test.cpp
                variable_operations_test.cpp
+               variable_scalar_accessors_test.cpp
                variable_test.cpp
                variable_trigonometry_test.cpp
                variable_view_test.cpp

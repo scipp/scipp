@@ -16,6 +16,7 @@
 #include "scipp/common/span.h"
 #include "scipp/core/dimensions.h"
 #include "scipp/core/dtype.h"
+#include "scipp/core/except.h"
 #include "scipp/core/slice.h"
 #include "scipp/core/string.h"
 #include "scipp/core/variable_view.h"
@@ -335,6 +336,22 @@ public:
   template <class T> auto sparseVariances() {
     return scipp::span(cast<sparse_container<T>>(true));
   }
+  template <class T> const auto &value() const {
+    expect::equals(dims(), Dimensions());
+    return values<T>()[0];
+  }
+  template <class T> const auto &variance() const {
+    expect::equals(dims(), Dimensions());
+    return variances<T>()[0];
+  }
+  template <class T> auto &value() {
+    expect::equals(dims(), Dimensions());
+    return values<T>()[0];
+  }
+  template <class T> auto &variance() {
+    expect::equals(dims(), Dimensions());
+    return variances<T>()[0];
+  }
 
   // ATTENTION: It is really important to avoid any function returning a
   // (Const)VariableProxy for rvalue Variable. Otherwise the resulting slice
@@ -652,6 +669,14 @@ public:
   template <class T> auto sparseVariances() const {
     return castVariances<sparse_container<T>>();
   }
+  template <class T> const auto &value() const {
+    expect::equals(dims(), Dimensions());
+    return values<T>()[0];
+  }
+  template <class T> const auto &variance() const {
+    expect::equals(dims(), Dimensions());
+    return variances<T>()[0];
+  }
 
   bool operator==(const Variable &other) const;
   bool operator==(const VariableConstProxy &other) const;
@@ -727,6 +752,14 @@ public:
   }
   template <class T> auto sparseVariances() const {
     return castVariances<sparse_container<T>>();
+  }
+  template <class T> auto &value() const {
+    expect::equals(dims(), Dimensions());
+    return values<T>()[0];
+  }
+  template <class T> auto &variance() const {
+    expect::equals(dims(), Dimensions());
+    return variances<T>()[0];
   }
 
   // Note: We want to support things like `var(Dim::X, 0) += var2`, i.e., when
@@ -889,6 +922,10 @@ operator/(T v, const units::Unit &unit) {
       {}, units::Unit(units::dimensionless) / unit, {v});
 }
 
+SCIPP_CORE_EXPORT Variable astype(const VariableConstProxy &var,
+                                  const DType type);
+SCIPP_CORE_EXPORT Variable reciprocal(const VariableConstProxy &var);
+
 SCIPP_CORE_EXPORT std::vector<Variable>
 split(const Variable &var, const Dim dim,
       const std::vector<scipp::index> &indices);
@@ -922,6 +959,12 @@ SCIPP_CORE_EXPORT Variable tan(const Variable &var);
 SCIPP_CORE_EXPORT Variable asin(const Variable &var);
 SCIPP_CORE_EXPORT Variable acos(const Variable &var);
 SCIPP_CORE_EXPORT Variable atan(const Variable &var);
+
+namespace sparse {
+SCIPP_CORE_EXPORT Variable counts(const VariableConstProxy &var);
+SCIPP_CORE_EXPORT void reserve(const VariableProxy &sparse,
+                               const VariableConstProxy &capacity);
+} // namespace sparse
 
 } // namespace scipp::core
 

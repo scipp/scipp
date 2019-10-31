@@ -4,15 +4,8 @@
 from math import ceil
 
 import numpy as np
-import scipp as sc
-
-_colors = {
-    'coord': ['dde9af', 'bcd35f', '89a02c'],
-    'data': ['ffe680', 'ffd42a', 'd4aa00'],
-    'labels': ['afdde9', '5fbcd3', '2c89a0'],
-    'attr': ['ff8080', 'ff2a2a', 'd40000'],
-    'inactive': ['cccccc', '888888', '444444']
-}
+from ._scipp import core as sc
+from .config import colors
 
 # Unit is `em`. This particular value is chosen to avoid a horizontal scroll
 # bar with the readthedocs theme.
@@ -47,15 +40,15 @@ class VariableDrawer():
     def _draw_box(self, origin_x, origin_y, color, xlen=1):
         return " ".join([
             '<rect',
-            'style="fill:#{};fill-opacity:1;stroke:#000;stroke-width:0.05"',
+            'style="fill:{};fill-opacity:1;stroke:#000;stroke-width:0.05"',
             'id="rect"',
             'width="xlen" height="1" x="origin_x" y="origin_y"/>',
             '<path',
-            'style="fill:#{};stroke:#000;stroke-width:0.05;stroke-linejoin:round"',  # noqa #501
+            'style="fill:{};stroke:#000;stroke-width:0.05;stroke-linejoin:round"',  # noqa #501
             'd="m origin_x origin_y l 0.3 -0.3 h xlen l -0.3 0.3 z"',
             'id="path1" />',
             '<path',
-            'style="fill:#{};stroke:#000;stroke-width:0.05;stroke-linejoin:round"',  # noqa #501
+            'style="fill:{};stroke:#000;stroke-width:0.05;stroke-linejoin:round"',  # noqa #501
             'd="m origin_x origin_y m xlen 0 l 0.3 -0.3 v 1 l -0.3 0.3 z"',
             'id="path2" />'
         ]).format(*color).replace("origin_x", str(origin_x)).replace(
@@ -236,13 +229,14 @@ class VariableDrawer():
             if self._variable.sparse_dim is not None:
                 for name, label in self._variable.labels:
                     if label.sparse_dim is not None:
-                        items.append((name, label.values, _colors['labels']))
+                        items.append((name, label.values,
+                                      colors.scheme['labels']))
                 sparse_dim = self._variable.sparse_dim
                 for dim, coord in self._variable.coords:
                     if dim == sparse_dim:
                         items.append((str(sparse_dim),
                                       self._variable.coords[sparse_dim].values,
-                                      _colors['coord']))
+                                      colors.scheme['coord']))
 
         for i, (name, data, color) in enumerate(items):
             svg += '<g>'
@@ -272,7 +266,7 @@ class VariableDrawer():
             '<svg width={}em viewBox="0 0 {} {}">{}</svg>'.format(
                 _svg_width, max(_cubes_in_full_width,
                                 self.size()[0]),
-                self.size()[1], self.draw(color=_colors['data'])))
+                self.size()[1], self.draw(color=colors.scheme['data'])))
 
 
 class DatasetDrawer():
@@ -328,12 +322,12 @@ class DatasetDrawer():
         area_xy = []
         area_0d = []
         if is_data_array(self._dataset):
-            area_xy.append(('', self._dataset, _colors['data']))
+            area_xy.append(('', self._dataset, colors.scheme['data']))
         else:
             # Render highest-dimension items last so coords are optically
             # aligned
             for name, data in dataset:
-                item = (name, data, _colors['data'])
+                item = (name, data, colors.scheme['data'])
                 if data.dims != dims:
                     if len(data.dims) == 0:
                         area_0d.append(item)
@@ -351,7 +345,7 @@ class DatasetDrawer():
         for dim, coord in dataset.coords:
             if coord.sparse_dim is not None:
                 continue
-            item = (dim, coord, _colors['coord'])
+            item = (dim, coord, colors.scheme['coord'])
             if len(coord.dims) == 0:
                 area_0d.append(item)
             elif coord.dims[-1] == dims[-1]:
@@ -364,7 +358,7 @@ class DatasetDrawer():
         for name, labels in dataset.labels:
             if labels.sparse_dim is not None:
                 continue
-            item = (name, labels, _colors['labels'])
+            item = (name, labels, colors.scheme['labels'])
             if len(labels.dims) == 0:
                 area_0d.append(item)
             elif labels.dims[-1] == dims[-1]:
@@ -377,7 +371,7 @@ class DatasetDrawer():
         for name, attr in dataset.attrs:
             if attr.sparse_dim is not None:
                 continue
-            item = (name, attr, _colors['attr'])
+            item = (name, attr, colors.scheme['attr'])
             if len(attr.dims) == 0:
                 area_0d.append(item)
             elif attr.dims[-1] == dims[-1]:
