@@ -3,8 +3,6 @@
 /// @file
 #include <benchmark/benchmark.h>
 
-#include "random.h"
-
 #include "scipp/core/dataset.h"
 #include "scipp/neutron/convert.h"
 
@@ -30,13 +28,10 @@ auto make_sparse_coord_only(const scipp::index size, const scipp::index count) {
   auto var = makeVariable<double>({Dim::Spectrum, Dim::Tof},
                                   {size, Dimensions::Sparse});
   auto vals = var.sparseValues<double>();
-  Random rand(0.0, 1000.0);
-  for (scipp::index i = 0; i < size; ++i) {
-    auto data = rand(count);
-    vals[i].assign(data.begin(), data.end());
-  }
+  for (scipp::index i = 0; i < size; ++i)
+    vals[i].resize(count, 5000.0);
   DataArray sparse(std::nullopt, {{Dim::Tof, std::move(var)}});
-  return merge(make_beamline(size), Dataset({{"", sparse}}));
+  return merge(make_beamline(size), Dataset({{"", std::move(sparse)}}));
 }
 
 static void BM_neutron_convert(benchmark::State &state, const Dim targetDim) {
@@ -44,7 +39,13 @@ static void BM_neutron_convert(benchmark::State &state, const Dim targetDim) {
   const scipp::index nHist = 4e7 / nEvent;
   const auto sparse = make_sparse_coord_only(nHist, nEvent);
   for (auto _ : state) {
-    benchmark::DoNotOptimize(neutron::convert(sparse, Dim::Tof, targetDim));
+    state.PauseTiming();
+    Dataset data = sparse;
+    state.ResumeTiming();
+    data = neutron::convert(std::move(data), Dim::Tof, targetDim);
+    state.PauseTiming();
+    data = Dataset();
+    state.ResumeTiming();
   }
   state.SetItemsProcessed(state.iterations() * nHist * nEvent);
   state.SetBytesProcessed(state.iterations() * nHist * nEvent * 2 *

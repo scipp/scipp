@@ -86,7 +86,7 @@ BENCHMARK(BM_transform_in_place_slice)
 // Arguments are:
 // range(0) -> ny
 // range(1) -> average nx (uniform distribution of sparse extents)
-// range(2) -> variances false/true (true not initialized yet)
+// range(2) -> variances false/true (true not implemented yet)
 static void BM_transform_in_place_sparse(benchmark::State &state) {
   const auto ny = state.range(0);
   const auto nx = state.range(1);
