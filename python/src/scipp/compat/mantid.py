@@ -76,7 +76,8 @@ def init_pos_spectrum_no(ws):
         else:
             pos[i, :] = [np.nan, np.nan, np.nan]
         num[i] = ws.getSpectrum(i).getSpectrumNo()
-    pos = sc.Variable([sc.Dim.Spectrum], values=pos, unit=sc.units.m)
+    pos = sc.Variable([sc.Dim.Spectrum], values=pos, unit=sc.units.m,
+                      dtype=sc.dtype.vector_3_double)
     num = sc.Variable([sc.Dim.Spectrum], values=num)
     return pos, num
 
