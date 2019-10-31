@@ -100,16 +100,20 @@ Dataset tofToEnergy(Dataset &&d) {
   // 1. Compute conversion factor
   const auto conversionFactor = tofToEnergyConversionFactor(d);
 
-  // 2. Record ToF bin widths
-  const auto oldBinWidths = counts::getBinWidths(d.coords(), {Dim::Tof});
+  std::vector<Variable> oldBinWidths;
+  std::vector<Variable> newBinWidths;
+  if (d.coords().contains(Dim::Tof)) {
+    // 2. Record ToF bin widths
+    oldBinWidths = counts::getBinWidths(d.coords(), {Dim::Tof});
 
-  // 3. Transform coordinate
-  const auto &coordsSq = d.coords()[Dim::Tof] * d.coords()[Dim::Tof];
-  d.setCoord(Dim::Tof, (reciprocal(coordsSq) *
-                        astype(conversionFactor, coordsSq.dtype())));
+    // 3. Transform coordinate
+    const auto &coordsSq = d.coords()[Dim::Tof] * d.coords()[Dim::Tof];
+    d.setCoord(Dim::Tof, (reciprocal(coordsSq) *
+                          astype(conversionFactor, coordsSq.dtype())));
 
-  // 4. Record energy bin widths
-  const auto newBinWidths = counts::getBinWidths(d.coords(), {Dim::Tof});
+    // 4. Record energy bin widths
+    newBinWidths = counts::getBinWidths(d.coords(), {Dim::Tof});
+  }
 
   // 5. Transform variables
   for (const auto &[name, data] : d) {
@@ -132,16 +136,20 @@ Dataset energyToTof(Dataset &&d) {
   // 1. Compute conversion factor
   const auto conversionFactor = tofToEnergyConversionFactor(d);
 
-  // 2. Record energy bin widths
-  const auto oldBinWidths = counts::getBinWidths(d.coords(), {Dim::Energy});
+  std::vector<Variable> oldBinWidths;
+  std::vector<Variable> newBinWidths;
+  if (d.coords().contains(Dim::Energy)) {
+    // 2. Record energy bin widths
+    oldBinWidths = counts::getBinWidths(d.coords(), {Dim::Energy});
 
-  // 3. Transform coordinate
-  const auto &coordsSqrt = d.coords()[Dim::Energy];
-  d.setCoord(Dim::Energy,
-             sqrt(astype(conversionFactor, coordsSqrt.dtype()) / coordsSqrt));
+    // 3. Transform coordinate
+    const auto &coordsSqrt = d.coords()[Dim::Energy];
+    d.setCoord(Dim::Energy,
+               sqrt(astype(conversionFactor, coordsSqrt.dtype()) / coordsSqrt));
 
-  // 4. Record ToF bin widths
-  const auto newBinWidths = counts::getBinWidths(d.coords(), {Dim::Energy});
+    // 4. Record ToF bin widths
+    newBinWidths = counts::getBinWidths(d.coords(), {Dim::Energy});
+  }
 
   // 5. Transform variables
   for (const auto &[name, data] : d) {
