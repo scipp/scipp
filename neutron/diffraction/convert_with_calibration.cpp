@@ -48,9 +48,8 @@ Dataset convert_with_calibration(Dataset d, Dataset cal) {
 
   if (d.coords().contains(Dim::Tof)) {
     // 3. Transform coordinate
-    d.setCoord(Dim::Tof,
-               (d.coords()[Dim::Tof] - cal["tzero"].data())
-               / cal["difc"].data());
+    d.setCoord(Dim::Tof, (d.coords()[Dim::Tof] - cal["tzero"].data()) /
+                             cal["difc"].data());
 
     // 4. Record DSpacing bin widths
     newBinWidths = counts::getBinWidths(d.coords(), {Dim::Tof});
