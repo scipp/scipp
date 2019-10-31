@@ -36,7 +36,7 @@ auto make_sparse_coord_only(const scipp::index size, const scipp::index count) {
 
 static void BM_neutron_convert(benchmark::State &state, const Dim targetDim) {
   const scipp::index nEvent = state.range(0);
-  const scipp::index nHist = 4e7 / nEvent;
+  const scipp::index nHist = 1e8 / nEvent;
   const auto sparse = make_sparse_coord_only(nHist, nEvent);
   for (auto _ : state) {
     state.PauseTiming();
@@ -50,18 +50,19 @@ static void BM_neutron_convert(benchmark::State &state, const Dim targetDim) {
   state.SetItemsProcessed(state.iterations() * nHist * nEvent);
   state.SetBytesProcessed(state.iterations() * nHist * nEvent * 2 *
                           sizeof(double));
+  state.counters["positions"] = benchmark::Counter(nHist);
 }
 
 // Params are:
 // - nEvent
 BENCHMARK_CAPTURE(BM_neutron_convert, Dim::DSpacing, Dim::DSpacing)
     ->RangeMultiplier(2)
-    ->Ranges({{64, 2 << 14}});
+    ->Ranges({{8, 2 << 14}});
 BENCHMARK_CAPTURE(BM_neutron_convert, Dim::Wavelength, Dim::Wavelength)
     ->RangeMultiplier(2)
-    ->Ranges({{64, 2 << 14}});
+    ->Ranges({{8, 2 << 14}});
 BENCHMARK_CAPTURE(BM_neutron_convert, Dim::Energy, Dim::Energy)
     ->RangeMultiplier(2)
-    ->Ranges({{64, 2 << 14}});
+    ->Ranges({{8, 2 << 14}});
 
 BENCHMARK_MAIN();
