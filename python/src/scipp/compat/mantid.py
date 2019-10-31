@@ -133,7 +133,9 @@ def convert_Workspace2D_to_dataset(ws):
                          labels={
                              "position": pos,
                              "component_info": comp_info,
-                             "detector_info": det_info,
+                             "detector_info": det_info
+                         },
+                         attrs={
                              "run": make_run(ws),
                              "sample": make_sample(ws)
                          })
@@ -201,7 +203,9 @@ def convert_EventWorkspace_to_dataset(ws, load_pulse_times, EventType):
         "labels": {
             "position": pos,
             "component_info": comp_info,
-            "detector_info": det_info,
+            "detector_info": det_info
+        },
+        "attrs": {
             "run": make_run(ws),
             "sample": make_sample(ws)
         }
@@ -316,8 +320,7 @@ def load(filename="",
         raise ImportError(
             "Mantid Python API was not found, please install Mantid framework "
             "as detailed in the installation instructions (https://scipp."
-            "readthedocs.io/en/latest/getting-started/installation.html)"
-        )
+            "readthedocs.io/en/latest/getting-started/installation.html)")
 
     ws = mantid.Load(filename, **kwargs)
     if instrument_filename is not None:
