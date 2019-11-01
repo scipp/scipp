@@ -331,9 +331,9 @@ Variable copy(const VariableConstProxy &var) { return Variable(var); }
 
 Variable masks_merge(const MasksConstProxy &masks, const Dimensions dims) {
   auto mask_union = makeVariable<bool>(dims);
-    for (const auto &mask : masks) {
-      mask_union |= mask.second;
-    }
-    return mask_union;
+  for (const auto &mask : masks) {
+    mask_union |= mask.second;
+  }
+  return mask_union;
 }
 } // namespace scipp::core

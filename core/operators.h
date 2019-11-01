@@ -41,10 +41,8 @@ struct times_equals {
   using types = decltype(std::tuple_cat(
       pair_self_t<double, float, int32_t, int64_t>{},
       pair_custom_t<std::pair<double, float>, std::pair<float, double>,
-                    std::pair<int64_t, int32_t>,
-                    std::pair<double, bool>,
-                    std::pair<float, bool>,
-                    std::pair<int64_t, bool>,
+                    std::pair<int64_t, int32_t>, std::pair<double, bool>,
+                    std::pair<float, bool>, std::pair<int64_t, bool>,
                     std::pair<int32_t, bool>,
                     std::pair<Eigen::Vector3d, double>>{}));
 };

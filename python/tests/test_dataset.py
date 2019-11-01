@@ -372,7 +372,8 @@ def test_sum_masked():
             'a': sc.Variable([Dim.X], values=np.array([1, 5, 4, 5, 1]))
         },
         masks={
-            "m1": sc.Variable([Dim.X], values=np.array([False, True, False, True, False]))
+            "m1": sc.Variable([Dim.X], values=np.array([
+                False, True, False, True, False]))
         })
 
     d_ref = sc.Dataset(
@@ -389,7 +390,8 @@ def test_mean_masked():
             'a': sc.Variable([Dim.X], values=np.array([1, 5, 4, 5, 1]))
         },
         masks={
-            "m1": sc.Variable([Dim.X], values=np.array([False, True, False, True, False]))
+            "m1": sc.Variable([Dim.X], values=np.array([
+                False, True, False, True, False]))
         })
     d_ref = sc.Dataset(
         {
