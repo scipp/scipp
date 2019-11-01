@@ -269,6 +269,8 @@ template <class T> Variable makeVariable(T value);
 
 template <class T> struct Values {
   Vector<T> values;
+  Values() = default;
+  Values(Values &&) = default;
   Values(const Values &) = delete;
   explicit Values(Vector<T> &&v) : values(std::move(v)) {}
   template <class... Ts>
@@ -278,6 +280,8 @@ template <class T> Values(Vector<T> &&)->Values<T>;
 
 template <class T> struct Variances {
   std::optional<Vector<T>> variances;
+  Variances() = default;
+  Variances(Variances &&) = default;
   Variances(const Variances &) = delete;
   explicit Variances(std::optional<Vector<T>> &&v) : variances(std::move(v)) {}
   template <class... Ts>
@@ -591,10 +595,11 @@ Variable makeVariable(const Dimensions &dimensions, const units::Unit unit,
 template <class T>
 Variable::Variable(units::Unit &&u, Dimensions &&s, Values<T> &&val,
                    Variances<T> &&var)
-    : Variable(std::move(var.variances
-                             ? Variable(u, s, val.values,
-                                        *var.variances) // TODO check if copied
-                             : Variable(u, s, val.values))) {}
+    : Variable(std::move(
+          var.variances
+              ? Variable(u, s, std::move(val.values),
+                         std::move(*var.variances))
+              : Variable(u, s, std::move(val.values)))) {}
 
 namespace detail {
 template <class... N> struct is_vector : std::false_type {};
