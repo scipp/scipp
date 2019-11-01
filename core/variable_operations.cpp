@@ -226,11 +226,8 @@ Variable sum(const VariableConstProxy &var, const Dim dim,
   if (masks.empty()) {
     return sum(var, dim);
   } else {
-    auto maskUnion = makeVariable<bool>(var.dims());
-    for (const auto &mask : masks) {
-      maskUnion |= mask.second;
-    }
-    return sum(var * ~maskUnion, dim);
+    const auto mask_union = masks_merge(masks, var.dims());
+    return sum(var * ~mask_union, dim);
   }
 }
 
@@ -258,14 +255,9 @@ Variable mean(const VariableConstProxy &var, const Dim dim,
   if (masks.empty()) {
     return mean(var, dim);
   } else {
-    auto masks_union = makeVariable<bool>(var.dims());
-    for (const auto &mask : masks) {
-      masks_union |= mask.second;
-    }
-
-    const auto masks_sum = sum(masks_union, dim);
-
-    return mean(var * ~masks_union, dim, masks_sum);
+    const auto mask_union = masks_merge(masks, var.dims());
+    const auto masks_sum = sum(mask_union, dim);
+    return mean(var * ~mask_union, dim, masks_sum);
   }
 }
 
@@ -337,4 +329,11 @@ Variable reverse(Variable var, const Dim dim) {
 /// Return a deep copy of a Variable or of a VariableProxy.
 Variable copy(const VariableConstProxy &var) { return Variable(var); }
 
+Variable masks_merge(const MasksConstProxy &masks, const Dimensions dims) {
+  auto mask_union = makeVariable<bool>(dims);
+    for (const auto &mask : masks) {
+      mask_union |= mask.second;
+    }
+    return mask_union;
+}
 } // namespace scipp::core
