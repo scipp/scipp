@@ -16,6 +16,7 @@ static auto make_element_array() {
 template <class T> void check_element_array(const element_array<T> x) {
   ASSERT_TRUE(x);
   ASSERT_EQ(x.size(), 3);
+  ASSERT_FALSE(x.empty());
   ASSERT_NE(x.data(), nullptr);
   ASSERT_EQ(x.data()[0], 1.1f);
   ASSERT_EQ(x.data()[1], 2.2f);
@@ -24,6 +25,7 @@ template <class T> void check_element_array(const element_array<T> x) {
 
 template <class T> void check_null_element_array(const element_array<T> x) {
   ASSERT_FALSE(x);
+  ASSERT_FALSE(x.empty());
   ASSERT_EQ(x.size(), -1);
   ASSERT_EQ(x.data(), nullptr);
 }
@@ -33,8 +35,33 @@ TEST(ElementArrayTest, construct_default) {
   check_null_element_array(x);
 }
 
+TEST(ElementArrayTest, construct_size) {
+  element_array<int64_t> x(2);
+  ASSERT_TRUE(x);
+  ASSERT_EQ(x.size(), 2);
+  ASSERT_FALSE(x.empty());
+  ASSERT_NE(x.data(), nullptr);
+  ASSERT_EQ(x.data()[0], 0);
+  ASSERT_EQ(x.data()[1], 0);
+}
+
+TEST(ElementArrayTest, construct_size_and_value) {
+  element_array<int64_t> x(2, 7);
+  ASSERT_TRUE(x);
+  ASSERT_EQ(x.size(), 2);
+  ASSERT_FALSE(x.empty());
+  ASSERT_NE(x.data(), nullptr);
+  ASSERT_EQ(x.data()[0], 7);
+  ASSERT_EQ(x.data()[1], 7);
+}
+
 TEST(ElementArrayTest, construct_iterators) {
   auto x = make_element_array();
+  check_element_array(x);
+}
+
+TEST(ElementArrayTest, construct_initializer_list) {
+  element_array<float> x({1.1, 2.2, 3.3});
   check_element_array(x);
 }
 
@@ -86,6 +113,9 @@ TEST(ElementArrayTest, resize) {
   ASSERT_NE(x.data(), nullptr);
   ASSERT_EQ(x.data()[0], 0.0f);
   ASSERT_EQ(x.data()[1], 0.0f);
+  ASSERT_FALSE(x.empty());
+  x.resize(0);
+  ASSERT_TRUE(x.empty());
 }
 
 TEST(ElementArrayTest, resize_no_init) {
@@ -94,5 +124,10 @@ TEST(ElementArrayTest, resize_no_init) {
   ASSERT_TRUE(x);
   ASSERT_EQ(x.size(), 2);
   ASSERT_NE(x.data(), nullptr);
-  // Data values could be anything.
+
+  // Data values could be anything, no assert.
+
+  ASSERT_FALSE(x.empty());
+  x.resize_no_init(0);
+  ASSERT_TRUE(x.empty());
 }

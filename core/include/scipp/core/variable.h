@@ -32,7 +32,6 @@ struct is_sparse_container<sparse_container<T>> : std::true_type {};
 // std::vector<bool> may have a packed non-thread-safe implementation which we
 // need to avoid. Therefore we use std::vector<Bool> instead.
 template <class T> struct underlying_type { using type = T; };
-template <> struct underlying_type<bool> { using type = Bool; };
 template <class T> using underlying_type_t = typename underlying_type<T>::type;
 template <class... A, class... B>
 struct underlying_type<std::tuple<std::pair<A, B>...>> {

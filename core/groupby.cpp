@@ -139,7 +139,7 @@ template <class T> struct MakeGroups {
     }
 
     const Dimensions dims{targetDim, scipp::size(indices)};
-    Vector<T> keys;
+    std::vector<T> keys;
     std::vector<std::vector<Slice>> groups;
     for (auto &item : indices) {
       keys.push_back(item.first);

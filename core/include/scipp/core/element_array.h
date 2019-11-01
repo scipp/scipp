@@ -5,6 +5,7 @@
 #ifndef SCIPP_CORE_ELEMENT_ARRAY_H
 #define SCIPP_CORE_ELEMENT_ARRAY_H
 
+#include <algorithm>
 #include <memory>
 
 #include "scipp/common/index.h"
@@ -19,11 +20,21 @@ template <class T> auto make_unique_default_init(const scipp::index size) {
 
 template <class T> class element_array {
 public:
+  using value_type = T;
+
   element_array() noexcept = default;
-  template <class InputIt> element_array(InputIt first, InputIt last) {
+  explicit element_array(const scipp::index new_size, const T &value = T()) {
+    resize_no_init(new_size);
+    std::fill(data(), data() + size(), value);
+  }
+  template <class InputIt,
+            std::enable_if_t<!std::is_integral<InputIt>{}, int> = 0>
+  element_array(InputIt first, InputIt last) {
     resize_no_init(std::distance(first, last));
     std::copy(first, last, data());
   }
+  element_array(std::initializer_list<T> init)
+      : element_array(init.begin(), init.end()) {}
   element_array(element_array &&other) = default;
   element_array(const element_array &other)
       : element_array(other.data(), other.data() + other.size()) {}
@@ -34,8 +45,11 @@ public:
 
   explicit operator bool() const noexcept { return m_data.operator bool(); }
   scipp::index size() const noexcept { return m_size; }
+  [[nodiscard]] bool empty() const noexcept { return size() == 0; }
   const T *data() const noexcept { return m_data.get(); }
   T *data() noexcept { return m_data.get(); }
+  const T *begin() const noexcept { return data(); }
+  const T *end() const noexcept { return data() + size(); }
 
   void reset() noexcept {
     m_data.reset();
