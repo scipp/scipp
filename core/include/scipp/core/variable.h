@@ -942,8 +942,6 @@ SCIPP_CORE_EXPORT Variable dot(const Variable &a, const Variable &b);
 SCIPP_CORE_EXPORT Variable filter(const Variable &var, const Variable &filter);
 SCIPP_CORE_EXPORT Variable mean(const VariableConstProxy &var, const Dim dim);
 SCIPP_CORE_EXPORT Variable mean(const VariableConstProxy &var, const Dim dim,
-                                const VariableConstProxy &masks_sums);
-SCIPP_CORE_EXPORT Variable mean(const VariableConstProxy &var, const Dim dim,
                                 const MasksConstProxy &masks);
 SCIPP_CORE_EXPORT Variable norm(const VariableConstProxy &var);
 SCIPP_CORE_EXPORT Variable permute(const Variable &var, const Dim dim,
@@ -970,9 +968,7 @@ SCIPP_CORE_EXPORT Variable asin(const Variable &var);
 SCIPP_CORE_EXPORT Variable acos(const Variable &var);
 SCIPP_CORE_EXPORT Variable atan(const Variable &var);
 
-// Merges all masks contained in the MasksConstProxy into a single Variable
-SCIPP_CORE_EXPORT Variable masks_merge(const MasksConstProxy &masks,
-                                       const Dimensions dims);
+SCIPP_CORE_EXPORT Variable masks_merge(const MasksConstProxy &masks);
 
 namespace sparse {
 SCIPP_CORE_EXPORT Variable counts(const VariableConstProxy &var);
