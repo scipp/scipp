@@ -5,15 +5,10 @@
 #ifndef VECTOR_H
 #define VECTOR_H
 
-#include <vector>
-
-#include "scipp/core/aligned_allocator.h"
 #include "scipp/core/element_array.h"
 
 namespace scipp::core {
-
 template <class T> using Vector = detail::element_array<T>;
-// using Vector = std::vector<T, AlignedAllocator<T, Alignment::AVX>>;
 }
 
 #endif // VECTOR_H
