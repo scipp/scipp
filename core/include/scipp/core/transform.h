@@ -421,9 +421,12 @@ template <class Op> struct Transform {
     using Out = decltype(maybe_eval(op(handles->values()[0]...)));
     // TODO For optimal performance we should just make container without
     // element init here.
-    Variable out = (handles->hasVariances() || ...)
-                       ? makeVariableWithVariances<element_type_t<Out>>(dims)
-                       : makeVariable<element_type_t<Out>>(dims);
+    detail::element_array<element_type_t<Out>> elements;
+    elements.resize_no_init(dims.volume());
+    Variable out =
+        (handles->hasVariances() || ...)
+            ? makeVariableWithVariances<element_type_t<Out>>(dims)
+            : makeVariable<element_type_t<Out>>(dims, std::move(elements));
     auto &outT = static_cast<VariableConceptT<Out> &>(out.data());
     do_transform(as_view{*handles, dims}..., outT, op);
     return out;
