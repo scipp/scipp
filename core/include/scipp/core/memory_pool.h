@@ -9,6 +9,8 @@
 #include <mutex>
 #include <vector>
 
+#include "scipp/common/index.h"
+
 namespace scipp::core {
 #ifdef _WIN32
 // https://stackoverflow.com/questions/33696092/whats-the-correct-replacement-for-posix-memalign-in-windows

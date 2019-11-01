@@ -17,6 +17,7 @@ add_executable(${TARGET_NAME} EXCLUDE_FROM_ALL
                dataset_test_common.cpp
                dataset_test.cpp
                dimensions_test.cpp
+               element_array_test.cpp
                except_test.cpp
                groupby_test.cpp
                histogram_test.cpp
