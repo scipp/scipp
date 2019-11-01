@@ -59,6 +59,8 @@ TEST(Convert, fail_count_density) {
   for (const Dim dim : {Dim::DSpacing, Dim::Wavelength, Dim::Energy}) {
     Dataset a = tof;
     Dataset b = convert(a, Dim::Tof, dim);
+    EXPECT_NO_THROW(convert(a, Dim::Tof, dim));
+    EXPECT_NO_THROW(convert(b, dim, Dim::Tof));
     a.setData("", makeCountDensityData(a.coords()[Dim::Tof].unit()));
     b.setData("", makeCountDensityData(b.coords()[dim].unit()));
     EXPECT_THROW(convert(a, Dim::Tof, dim), except::UnitError);
