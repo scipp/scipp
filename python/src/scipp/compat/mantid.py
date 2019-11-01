@@ -4,10 +4,19 @@
 
 from .._scipp import core as sc
 import numpy as np
+from copy import deepcopy
 
 
 def get_pos(pos):
     return [pos.X(), pos.Y(), pos.Z()]
+
+
+def make_run(ws):
+    return sc.Variable(value=deepcopy(ws.run()))
+
+
+def make_sample(ws):
+    return sc.Variable(value=deepcopy(ws.sample()))
 
 
 def make_component_info(ws):
@@ -91,7 +100,8 @@ def convert_Workspace2D_to_dataset(ws):
     # TODO More cases?
     allowed_units = {
         "DeltaE": [sc.Dim.EnergyTransfer, sc.units.meV],
-        "TOF": [sc.Dim.Tof, sc.units.us]
+        "TOF": [sc.Dim.Tof, sc.units.us],
+        "Wavelength": [sc.Dim.Wavelength, sc.units.angstrom]
     }
     xunit = ws.getAxis(0).getUnit().unitID()
     if xunit not in allowed_units.keys():
@@ -125,6 +135,10 @@ def convert_Workspace2D_to_dataset(ws):
                              "position": pos,
                              "component_info": comp_info,
                              "detector_info": det_info
+                         },
+                         attrs={
+                             "run": make_run(ws),
+                             "sample": make_sample(ws)
                          })
 
     data = array.data
@@ -176,8 +190,8 @@ def convert_EventWorkspace_to_dataset(ws, load_pulse_times, EventType):
             # very slow.
             # TODO: Find a more efficient way to do this.
             pt = sp.getPulseTimes()
-            labs[sc.Dim.Spectrum,
-                 i].values = np.asarray([p.total_nanoseconds() for p in pt])
+            labs[sc.Dim.Spectrum, i].values = np.asarray(
+                [p.total_nanoseconds() for p in pt])
         if contains_weighted_events:
             weights[sc.Dim.Spectrum, i].values = sp.getWeights()
             weights[sc.Dim.Spectrum, i].variances = sp.getWeightErrors()
@@ -191,6 +205,10 @@ def convert_EventWorkspace_to_dataset(ws, load_pulse_times, EventType):
             "position": pos,
             "component_info": comp_info,
             "detector_info": det_info
+        },
+        "attrs": {
+            "run": make_run(ws),
+            "sample": make_sample(ws)
         }
     }
     if load_pulse_times:
@@ -299,12 +317,11 @@ def load(filename="",
     try:
         import mantid.simpleapi as mantid
         from mantid.api import EventType
-    except ImportError as e:
+    except ImportError:
         raise ImportError(
             "Mantid Python API was not found, please install Mantid framework "
             "as detailed in the installation instructions (https://scipp."
-            "readthedocs.io/en/latest/getting-started/installation.html)"
-        ) from e
+            "readthedocs.io/en/latest/getting-started/installation.html)")
 
     ws = mantid.Load(filename, **kwargs)
     if instrument_filename is not None:

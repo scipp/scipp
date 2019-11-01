@@ -4,84 +4,68 @@ import unittest
 
 import scipp as sc
 import mantid.simpleapi as mantid
+from mantid.api import EventType
 import scipp.compat.mantid as mantidcompat
-# import matplotlib.pyplot as plt
+import numpy as np
 
 
 class TestMantidConversion(unittest.TestCase):
-
     def test_Workspace2D(self):
         # This is from the Mantid system-test data
-        filename = 'CNCS_51936_event.nxs'
+        filename = "CNCS_51936_event.nxs"
         eventWS = mantid.LoadEventNexus(filename)
-        ws = mantid.Rebin(eventWS, -0.001, PreserveEvents=False)
-        d = mantidcompat.to_dataset(ws)
-        print(d)
-        # self.assertEqual(d.dimensions.shape[])
-        # dataset = as_xarray(d[sc.Dim.Position, 1000:2000])
-        # dataset['Value'].plot()
-        # plt.show()
-        # plt.savefig('test.png')
+        ws = mantid.Rebin(eventWS, 10000, PreserveEvents=False)
+        d = mantidcompat.convert_Workspace2D_to_dataset(ws)
+        self.assertEqual(
+            d.attrs["run"].value.getProperty("run_start").value,
+            "2012-05-21T15:14:56.279289666",
+        )
 
     def test_EventWorkspace(self):
         # This is from the Mantid system-test data
-        filename = 'CNCS_51936_event.nxs'
+        filename = "CNCS_51936_event.nxs"
         eventWS = mantid.LoadEventNexus(filename)
-        ws = mantid.Rebin(eventWS, -0.001, PreserveEvents=False)
+        ws = mantid.Rebin(eventWS, 10000)
 
-        binned_mantid = mantidcompat.to_dataset(ws)
+        binned_mantid = mantidcompat.convert_Workspace2D_to_dataset(ws)
 
-        tof = sc.Variable(binned_mantid[sc.Coord.Tof])
-        d = mantidcompat.to_dataset(eventWS)
-        binned = sc.histogram(d, tof)
+        target_tof = binned_mantid.coords[sc.Dim.Tof]
+        d = mantidcompat.convert_EventWorkspace_to_dataset(
+            eventWS, False, EventType.TOF)
+        binned = sc.histogram(d, target_tof)
 
-        delta = sc.sum(binned_mantid - binned, sc.Dim.Position)
-        print(delta)
-
-        # ds = as_xarray(delta)
-        # ds['Value'].plot()
-        # plt.savefig('delta.png')
-
-        # ds = as_xarray(sum(binned, sc.Dim.Position))
-        # ds['Value'].plot()
-        # plt.savefig('binned.png')
-
-        # ds = as_xarray(sum(binned_mantid, sc.Dim.Position))
-        # ds['Value'].plot()
-        # plt.savefig('binned_mantid.png')
+        delta = sc.sum(binned_mantid - binned, sc.Dim.Spectrum)
+        delta = sc.sum(delta, sc.Dim.Tof)
+        self.assertLess(np.abs(delta.value), 1e-5)
 
     def test_unit_conversion(self):
         # This is from the Mantid system-test data
-        filename = 'CNCS_51936_event.nxs'
+        filename = "CNCS_51936_event.nxs"
         eventWS = mantid.LoadEventNexus(filename)
-        ws = mantid.Rebin(eventWS, -0.001, PreserveEvents=False)
-        tmp = mantidcompat.to_dataset(ws)
-        tof = sc.Variable(tmp[sc.Coord.Tof])
-        ws = mantid.ConvertUnits(InputWorkspace=ws, Target='DeltaE',
-                                 EMode='Direct', EFixed=3.3056)
+        ws = mantid.Rebin(eventWS, 10000, PreserveEvents=False)
+        tmp = mantidcompat.convert_Workspace2D_to_dataset(ws)
+        target_tof = tmp.coords[sc.Dim.Tof]
+        ws = mantid.ConvertUnits(InputWorkspace=ws,
+                                 Target="Wavelength",
+                                 EMode="Elastic")
+        converted_mantid = mantidcompat.convert_Workspace2D_to_dataset(ws)
 
-        converted_mantid = mantidcompat.to_dataset(ws)
-        converted_mantid[sc.Coord.Ei] = ([], 3.3059)
+        da = mantidcompat.convert_EventWorkspace_to_dataset(
+            eventWS, False, EventType.TOF)
+        da = sc.histogram(da, target_tof)
+        d = sc.Dataset(da)
+        converted = sc.neutron.convert(d, sc.Dim.Tof, sc.Dim.Wavelength)
 
-        d = mantidcompat.to_dataset(eventWS, drop_pulse_times=True)
-        d[sc.Coord.Ei] = ([], 3.3059)
-        d.merge(sc.histogram(d, tof))
-        del(d[sc.Data.Events])
-        converted = sc.convert(d, sc.Dim.Tof, sc.Dim.DeltaE)
-
-        delta = sc.sum(converted_mantid - converted, sc.Dim.Position)
-        print(delta)
-
-        # ds = as_xarray(delta)
-        # ds['Value'].plot()
-
-        # ds = as_xarray(sum(converted, sc.Dim.Position))
-        # ds['Value'].plot()
-
-        # ds = as_xarray(sum(converted_mantid, sc.Dim.Position))
-        # ds['Value'].plot()
-        # plt.savefig('converted.png')
+        self.assertTrue(
+            np.all(np.isclose(converted_mantid.values, converted[""].values)))
+        self.assertTrue(
+            np.all(
+                np.isclose(
+                    converted_mantid.coords[sc.Dim.Wavelength].values,
+                    converted.coords[sc.Dim.Wavelength].values,
+                )))
+        # delta = sc.sum(converted_mantid - converted, sc.Dim.Spectrum)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

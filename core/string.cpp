@@ -152,14 +152,18 @@ template <class Key, class Var>
 auto format_variable(const Key &key, const Var &variable,
                      const Dimensions &datasetDims = Dimensions()) {
   std::stringstream s;
+  const auto dtype = variable.dtype();
   const std::string colSep("  ");
   s << tab << std::left << std::setw(24) << to_string(key);
   s << colSep << std::setw(9) << to_string(variable.dtype());
   s << colSep << std::setw(15) << '[' + variable.unit().name() + ']';
   s << colSep << make_dims_labels(variable, datasetDims);
-  s << colSep
-    << apply<ValuesToString>(variable.data().dtype(),
-                             VariableConstProxy(variable));
+  s << colSep;
+  if (dtype == DType::PyObject)
+    s << "[PyObject]";
+  else
+    s << apply<ValuesToString>(variable.data().dtype(),
+                               VariableConstProxy(variable));
   if (variable.hasVariances())
     s << colSep
       << apply<VariancesToString>(variable.data().dtype(),
