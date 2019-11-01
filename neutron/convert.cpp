@@ -6,7 +6,6 @@
 #include <boost/units/systems/si/codata/neutron_constants.hpp>
 #include <boost/units/systems/si/codata/universal_constants.hpp>
 
-#include "scipp/core/counts.h"
 #include "scipp/core/dataset.h"
 #include "scipp/core/transform.h"
 #include "scipp/neutron/beamline.h"
@@ -44,9 +43,6 @@ static Dataset convert_with_factor(Dataset &&d, const Dim from, const Dim to,
     static_cast<void>(name);
     if (data.dims().sparse()) {
       data.coords()[from] *= factor;
-    } else if (data.unit().isCountDensity()) {
-      // Conversion is just a scale factor, so density transform is simple:
-      data /= factor;
     }
   }
   d.rename(from, to);
@@ -101,22 +97,14 @@ Dataset tofToEnergy(Dataset &&d) {
   // 1. Compute conversion factor
   const auto conversionFactor = tofToEnergyConversionFactor(d);
 
-  std::vector<Variable> oldBinWidths;
-  std::vector<Variable> newBinWidths;
+  // 2. Transform coordinate
   if (d.coords().contains(Dim::Tof)) {
-    // 2. Record ToF bin widths
-    oldBinWidths = counts::getBinWidths(d.coords(), {Dim::Tof});
-
-    // 3. Transform coordinate
     const auto &coordSq = d.coords()[Dim::Tof] * d.coords()[Dim::Tof];
     d.setCoord(Dim::Tof, (reciprocal(coordSq) *
                           astype(conversionFactor, coordSq.dtype())));
-
-    // 4. Record energy bin widths
-    newBinWidths = counts::getBinWidths(d.coords(), {Dim::Tof});
   }
 
-  // 5. Transform variables
+  // 3. Transform variables
   for (const auto &[name, data] : d) {
     static_cast<void>(name);
     if (data.coords()[Dim::Tof].dims().sparse()) {
@@ -125,9 +113,6 @@ Dataset tofToEnergy(Dataset &&d) {
           [](auto &coord_, const auto &factor) {
             coord_ = factor / (coord_ * coord_);
           });
-    } else if (data.unit().isCountDensity()) {
-      counts::fromDensity(data, oldBinWidths);
-      counts::toDensity(data, newBinWidths);
     }
   }
 
@@ -139,22 +124,14 @@ Dataset energyToTof(Dataset &&d) {
   // 1. Compute conversion factor
   const auto conversionFactor = tofToEnergyConversionFactor(d);
 
-  std::vector<Variable> oldBinWidths;
-  std::vector<Variable> newBinWidths;
+  // 2. Transform coordinate
   if (d.coords().contains(Dim::Energy)) {
-    // 2. Record energy bin widths
-    oldBinWidths = counts::getBinWidths(d.coords(), {Dim::Energy});
-
-    // 3. Transform coordinate
     const auto &coordSqrt = d.coords()[Dim::Energy];
     d.setCoord(Dim::Energy,
                sqrt(astype(conversionFactor, coordSqrt.dtype()) / coordSqrt));
-
-    // 4. Record ToF bin widths
-    newBinWidths = counts::getBinWidths(d.coords(), {Dim::Energy});
   }
 
-  // 5. Transform variables
+  // 3. Transform variables
   for (const auto &[name, data] : d) {
     static_cast<void>(name);
     if (data.coords()[Dim::Energy].dims().sparse()) {
@@ -163,9 +140,6 @@ Dataset energyToTof(Dataset &&d) {
           [](auto &coord_, const auto &factor) {
             coord_ = sqrt(factor / coord_);
           });
-    } else if (data.unit().isCountDensity()) {
-      counts::fromDensity(data, oldBinWidths);
-      counts::toDensity(data, newBinWidths);
     }
   }
 
