@@ -246,6 +246,9 @@ Dataset tofToDeltaE(const Dataset &d) {
 */
 
 Dataset convert(Dataset d, const Dim from, const Dim to) {
+  for (const auto &item : d)
+    if (item.second.hasData())
+      expect::notCountDensity(item.second.unit());
   if ((from == Dim::Tof) && (to == Dim::DSpacing))
     return convert_with_factor(std::move(d), from, to, tofToDSpacing(d));
   if ((from == Dim::DSpacing) && (to == Dim::Tof))
