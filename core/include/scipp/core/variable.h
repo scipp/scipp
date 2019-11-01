@@ -268,15 +268,15 @@ struct default_init<Eigen::Matrix<T, Rows, Cols>> {
 template <class T> Variable makeVariable(T value);
 
 template <class T> struct Values {
-  Vector<T> values;
+  std::optional<Vector<T>> values;
   Values() = default;
   Values(Values &&) = default;
   Values(const Values &) = delete;
-  explicit Values(Vector<T> &&v) : values(std::move(v)) {}
+  explicit Values(std::optional<Vector<T>> &&v) : values(std::move(v)) {}
   template <class... Ts>
   explicit Values(Ts &&... args) : values(std::forward<Ts>(args)...) {}
 };
-template <class T> Values(Vector<T> &&)->Values<T>;
+template <class T> Values(std::optional<Vector<T>> &&)->Values<T>;
 
 template <class T> struct Variances {
   std::optional<Vector<T>> variances;
@@ -287,7 +287,7 @@ template <class T> struct Variances {
   template <class... Ts>
   explicit Variances(Ts &&... args) : variances(std::forward<Ts>(args)...) {}
 };
-template <class T> Variances(std::optional<T> &&)->Variances<T>;
+template <class T> Variances(std::optional<Vector<T>> &&)->Variances<T>;
 
 /// Variable is a type-erased handle to any data structure representing a
 /// multi-dimensional array. It has a name, a unit, and a set of named
@@ -453,6 +453,10 @@ public:
 
 private:
   template <class T>
+  Variable createVariable(units::Unit &&u, Dimensions &&s, Values<T> &&val,
+                          Variances<T> &&var);
+
+  template <class T>
   Variable(units::Unit &&u, Dimensions &&s, Values<T> &&val,
            Variances<T> &&var);
 
@@ -593,13 +597,28 @@ Variable makeVariable(const Dimensions &dimensions, const units::Unit unit,
 }
 
 template <class T>
+Variable Variable::createVariable(scipp::units::Unit &&u,
+                                  scipp::core::Dimensions &&s,
+                                  scipp::core::Values<T> &&val,
+                                  scipp::core::Variances<T> &&var) {
+  if (val.values && var.variances)
+    return Variable(u, s, std::move(*val.values), std::move(*var.variances));
+
+  if (val.values && !var.variances)
+    return Variable(u, s, std::move(*val.values));
+
+  if (!val.values && !var.variances)
+    return Variable(u, s, Vector<T>(s.volume()));
+
+  throw std::invalid_argument(
+      "Should contain values if variances are provided.");
+}
+
+template <class T>
 Variable::Variable(units::Unit &&u, Dimensions &&s, Values<T> &&val,
                    Variances<T> &&var)
-    : Variable(std::move(
-          var.variances
-              ? Variable(u, s, std::move(val.values),
-                         std::move(*var.variances))
-              : Variable(u, s, std::move(val.values)))) {}
+    : Variable(std::move(createVariable(std::move(u), std::move(s),
+                                        std::move(val), std::move(var)))) {}
 
 namespace detail {
 template <class... N> struct is_vector : std::false_type {};
