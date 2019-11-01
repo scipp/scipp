@@ -28,19 +28,18 @@ public:
   element_array() noexcept = default;
 
   explicit element_array(const scipp::index new_size, const T &value = T()) {
-    resize_no_init(new_size);
+    resize(new_size, default_init_elements);
     std::fill(data(), data() + size(), value);
   }
 
-  element_array(const scipp::index new_size,
-                const decltype(default_init_elements) &) {
-    resize_no_init(new_size);
+  element_array(const scipp::index new_size, const default_init_elements_t &) {
+    resize(new_size, default_init_elements);
   }
 
   template <class InputIt,
             std::enable_if_t<!std::is_integral<InputIt>{}, int> = 0>
   element_array(InputIt first, InputIt last) {
-    resize_no_init(std::distance(first, last));
+    resize(std::distance(first, last), default_init_elements);
     std::copy(first, last, data());
   }
 
@@ -80,16 +79,16 @@ public:
     m_size = -1;
   }
 
-  void resize_no_init(const scipp::index new_size) {
+  void resize(const scipp::index new_size) {
+    m_data = std::make_unique<T[]>(new_size);
+    m_size = new_size;
+  }
+
+  void resize(const scipp::index new_size, const default_init_elements_t &) {
     if (new_size != size()) {
       m_data = make_unique_default_init<T[]>(new_size);
       m_size = new_size;
     }
-  }
-
-  void resize(const scipp::index new_size) {
-    m_data = std::make_unique<T[]>(new_size);
-    m_size = new_size;
   }
 
 private:

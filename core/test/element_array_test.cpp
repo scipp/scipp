@@ -131,9 +131,9 @@ TEST(ElementArrayTest, resize) {
   ASSERT_TRUE(x.empty());
 }
 
-TEST(ElementArrayTest, resize_no_init) {
+TEST(ElementArrayTest, resize_default_init) {
   auto x = make_element_array();
-  x.resize_no_init(2);
+  x.resize(2, default_init_elements);
   ASSERT_TRUE(x);
   ASSERT_EQ(x.size(), 2);
   ASSERT_NE(x.data(), nullptr);
@@ -141,6 +141,6 @@ TEST(ElementArrayTest, resize_no_init) {
   // Data values could be anything, no assert.
 
   ASSERT_FALSE(x.empty());
-  x.resize_no_init(0);
+  x.resize(0, default_init_elements);
   ASSERT_TRUE(x.empty());
 }
