@@ -464,6 +464,18 @@ template <class T> Variable makeVariable(const Dimensions &dimensions) {
 }
 
 template <class T>
+Variable makeVariable(const Dimensions &dimensions,
+                      const detail::default_init_elements_t &init) {
+  if (dimensions.sparse())
+    return Variable(units::dimensionless, std::move(dimensions),
+                    Vector<sparse_container<underlying_type_t<T>>>(
+                        dimensions.volume(), init));
+  else
+    return Variable(units::dimensionless, std::move(dimensions),
+                    Vector<underlying_type_t<T>>(dimensions.volume(), init));
+}
+
+template <class T>
 Variable makeVariableWithVariances(const Dimensions &dimensions,
                                    units::Unit unit = units::dimensionless) {
   if (dimensions.sparse())
@@ -479,6 +491,22 @@ Variable makeVariableWithVariances(const Dimensions &dimensions,
                     Vector<underlying_type_t<T>>(
                         dimensions.volume(),
                         detail::default_init<underlying_type_t<T>>::value()));
+}
+
+template <class T>
+Variable
+makeVariableWithVariances(const Dimensions &dimensions,
+                          const detail::default_init_elements_t &init) {
+  if (dimensions.sparse())
+    return Variable(units::dimensionless, std::move(dimensions),
+                    Vector<sparse_container<underlying_type_t<T>>>(
+                        dimensions.volume(), init),
+                    Vector<sparse_container<underlying_type_t<T>>>(
+                        dimensions.volume(), init));
+  else
+    return Variable(units::dimensionless, std::move(dimensions),
+                    Vector<underlying_type_t<T>>(dimensions.volume(), init),
+                    Vector<underlying_type_t<T>>(dimensions.volume(), init));
 }
 
 template <class T>

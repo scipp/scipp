@@ -419,14 +419,11 @@ template <class Op> struct Transform {
   template <class... Ts> Variable operator()(Ts &&... handles) const {
     const auto dims = merge(handles->dims()...);
     using Out = decltype(maybe_eval(op(handles->values()[0]...)));
-    // TODO For optimal performance we should just make container without
-    // element init here.
-    detail::element_array<element_type_t<Out>> elements;
-    elements.resize_no_init(dims.volume());
     Variable out =
         (handles->hasVariances() || ...)
-            ? makeVariableWithVariances<element_type_t<Out>>(dims)
-            : makeVariable<element_type_t<Out>>(dims, std::move(elements));
+            ? makeVariableWithVariances<element_type_t<Out>>(
+                  dims, default_init_elements)
+            : makeVariable<element_type_t<Out>>(dims, default_init_elements);
     auto &outT = static_cast<VariableConceptT<Out> &>(out.data());
     do_transform(as_view{*handles, dims}..., outT, op);
     return out;

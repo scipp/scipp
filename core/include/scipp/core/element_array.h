@@ -18,27 +18,51 @@ template <class T> auto make_unique_default_init(const scipp::index size) {
   return std::unique_ptr<T>(new std::remove_extent_t<T>[size]);
 }
 
+static constexpr auto default_init_elements = []() {};
+using default_init_elements_t = decltype(default_init_elements);
+
 template <class T> class element_array {
 public:
   using value_type = T;
 
   element_array() noexcept = default;
+
   explicit element_array(const scipp::index new_size, const T &value = T()) {
     resize_no_init(new_size);
     std::fill(data(), data() + size(), value);
   }
+
+  element_array(const scipp::index new_size,
+                const decltype(default_init_elements) &) {
+    resize_no_init(new_size);
+  }
+
   template <class InputIt,
             std::enable_if_t<!std::is_integral<InputIt>{}, int> = 0>
   element_array(InputIt first, InputIt last) {
     resize_no_init(std::distance(first, last));
     std::copy(first, last, data());
   }
+
   element_array(std::initializer_list<T> init)
       : element_array(init.begin(), init.end()) {}
-  element_array(element_array &&other) = default;
+
+  element_array(element_array &&other) noexcept
+      : m_data(std::move(other.m_data)) {
+    m_size = other.m_size;
+    other.m_size = -1;
+  }
+
   element_array(const element_array &other)
       : element_array(other.data(), other.data() + other.size()) {}
-  element_array &operator=(element_array &&other) = default;
+
+  element_array &operator=(element_array &&other) noexcept {
+    m_data = std::move(other.m_data);
+    m_size = other.m_size;
+    other.m_size = -1;
+    return *this;
+  }
+
   element_array &operator=(const element_array &other) {
     return *this = element_array(other.data(), other.data() + other.size());
   }

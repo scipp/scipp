@@ -6,6 +6,7 @@
 
 #include "scipp/core/element_array.h"
 
+using scipp::core::detail::default_init_elements;
 using scipp::core::detail::element_array;
 
 static auto make_element_array() {
@@ -55,6 +56,14 @@ TEST(ElementArrayTest, construct_size_and_value) {
   ASSERT_EQ(x.data()[1], 7);
 }
 
+TEST(ElementArrayTest, construct_size_default_init) {
+  element_array<int64_t> x(2, default_init_elements);
+  ASSERT_TRUE(x);
+  ASSERT_EQ(x.size(), 2);
+  ASSERT_FALSE(x.empty());
+  ASSERT_NE(x.data(), nullptr);
+}
+
 TEST(ElementArrayTest, construct_iterators) {
   auto x = make_element_array();
   check_element_array(x);
@@ -70,6 +79,8 @@ TEST(ElementArrayTest, construct_move) {
   const auto ptr = x.data();
   auto y(std::move(x));
   ASSERT_FALSE(x);
+  ASSERT_FALSE(x.empty());
+  ASSERT_EQ(x.size(), -1);
   ASSERT_EQ(y.data(), ptr);
   check_element_array(y);
 }
@@ -87,6 +98,8 @@ TEST(ElementArrayTest, assign_move) {
   element_array<float> y;
   y = std::move(x);
   ASSERT_FALSE(x);
+  ASSERT_FALSE(x.empty());
+  ASSERT_EQ(x.size(), -1);
   ASSERT_EQ(y.data(), ptr);
   check_element_array(y);
 }
