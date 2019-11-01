@@ -38,7 +38,7 @@ static Dataset convert_with_factor(Dataset &&d, const Dim from, const Dim to,
     d.setCoord(from, coords * astype(factor, coords.dtype()));
   }
 
-  // 2. Transform variables
+  // 2. Transform sparse coordinates
   for (const auto &[name, data] : d) {
     static_cast<void>(name);
     if (data.dims().sparse()) {
@@ -104,7 +104,7 @@ Dataset tofToEnergy(Dataset &&d) {
                           astype(conversionFactor, coordSq.dtype())));
   }
 
-  // 3. Transform variables
+  // 3. Transform sparse coordinates
   for (const auto &[name, data] : d) {
     static_cast<void>(name);
     if (data.coords()[Dim::Tof].dims().sparse()) {
@@ -131,7 +131,7 @@ Dataset energyToTof(Dataset &&d) {
                sqrt(astype(conversionFactor, coordSqrt.dtype()) / coordSqrt));
   }
 
-  // 3. Transform variables
+  // 3. Transform sparse coordinates
   for (const auto &[name, data] : d) {
     static_cast<void>(name);
     if (data.coords()[Dim::Energy].dims().sparse()) {
