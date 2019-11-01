@@ -262,33 +262,8 @@ Dataset convert(Dataset d, const Dim from, const Dim to) {
     return tofToEnergy(std::move(d));
   if ((from == Dim::Energy) && (to == Dim::Tof))
     return energyToTof(std::move(d));
-  /*
-  if ((from == Dim::Tof) && (to == Dim::DeltaE))
-   return tofToDeltaE(d);
-   */
   throw std::runtime_error(
       "Conversion between requested dimensions not implemented yet.");
-  // How to convert? There are several cases:
-  // 1. Tof conversion as Mantid's ConvertUnits.
-  // 2. Axis conversion as Mantid's ConvertSpectrumAxis.
-  // 3. Conversion of multiple dimensions simultaneuously, e.g., to Q, which
-  //    cannot be done here since it affects more than one input and output
-  //    dimension. Should we have a variant that accepts a list of dimensions
-  //    for input and output?
-  // 4. Conversion from 1 to N or N to 1, e.g., Dim::Spectrum to X and Y pixel
-  //    index.
-  // Can Dim::Spectrum be converted to anything? Should we require a matching
-  // coordinate when doing a conversion? This does not make sense:
-  // auto converted = convert(dataset, Dim::Spectrum, Dim::Tof);
-  // This does if we can lookup the TwoTheta, make axis here, or require it?
-  // Should it do the reordering? Is sorting separately much less efficient?
-  // Dim::Spectrum is discrete, Dim::TwoTheta is in principle contiguous. How to
-  // handle that? Do we simply want to sort instead? Discrete->contiguous can be
-  // handled by binning? Or is Dim::TwoTheta implicitly also discrete?
-  // auto converted = convert(dataset, Dim::Spectrum, Dim::TwoTheta);
-  // This is a *derived* coordinate, no need to store it explicitly? May even be
-  // prevented?
-  // MDZipView<const Coord::TwoTheta>(dataset);
 }
 
 } // namespace scipp::neutron
