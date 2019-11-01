@@ -91,7 +91,7 @@ Variable init_1D_no_variance(const std::vector<Dim> &labels,
   var = makeVariable<T>(dims, values);
   var.setUnit(unit);
   return var;
-};
+}
 
 template <class T>
 auto do_init_0D(const T &value, const std::optional<T> &variance,

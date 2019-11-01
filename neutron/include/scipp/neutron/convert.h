@@ -8,11 +8,8 @@
 #include <vector>
 
 #include "scipp-neutron_export.h"
+#include "scipp/core/dataset.h"
 #include "scipp/units/unit.h"
-
-namespace scipp::core {
-class Dataset;
-}
 
 namespace scipp::neutron {
 

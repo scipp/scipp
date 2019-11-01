@@ -5,6 +5,7 @@
 
 #include "scipp/neutron/beamline.h"
 #include "scipp/core/dataset.h"
+#include "scipp/core/transform.h"
 
 using namespace scipp::core;
 
@@ -34,7 +35,16 @@ Variable l1(const Dataset &d) {
   return norm(sample_position(d) - source_position(d));
 }
 
-Variable l2(const Dataset &d) { return norm(position(d) - sample_position(d)); }
+Variable l2(const Dataset &d) {
+  // Use transform to avoid temporaries. For certain unit conversions this can
+  // cause a speedup >50%. Short version would be:
+  //   return norm(position(d) - sample_position(d));
+  return transform<pair_self_t<Eigen::Vector3d>>(
+      position(d), sample_position(d),
+      overloaded{
+          [](const auto &x, const auto &y) { return (x - y).norm(); },
+          [](const units::Unit &x, const units::Unit &y) { return x - y; }});
+}
 
 Variable scattering_angle(const Dataset &d) { return 0.5 * two_theta(d); }
 

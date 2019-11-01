@@ -65,6 +65,11 @@ void coordsAndLabelsAreSuperset(const DataConstProxy &a,
       throw except::CoordMismatchError("Expected labels to match.");
 }
 
+void notCountDensity(const units::Unit &unit) {
+  if (unit.isCountDensity())
+    throw except::UnitError("Expected non-count-density unit.");
+}
+
 void notSparse(const Dimensions &dims) {
   if (dims.sparse())
     throw except::DimensionError("Expected non-sparse dimensions.");
