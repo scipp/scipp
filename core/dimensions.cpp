@@ -189,6 +189,7 @@ Dim Dimensions::inner() const noexcept {
 }
 
 int32_t Dimensions::index(const Dim dim) const {
+  expect::validDim(dim);
   for (int32_t i = 0; i < NDIM_MAX; ++i)
     if (m_dims[i] == dim)
       return i;

@@ -217,8 +217,12 @@ std::string do_to_string(const D &dataset, const std::string &id,
 
   if (!dataset.coords().empty()) {
     s << "Coordinates:\n";
-    for (const auto &[dim, var] : dataset.coords())
-      s << format_variable(dim, var, dims);
+    for (const auto &[dim, var] : dataset.coords()) {
+      /* Only print the dense coordinates here (sparse coordinates will appear
+       * with their corresponding data item) */
+      if (var.dims().sparseDim() == Dim::Invalid)
+        s << format_variable(dim, var, dims);
+    }
   }
   if (!dataset.labels().empty()) {
     s << "Labels:\n";
@@ -238,7 +242,7 @@ std::string do_to_string(const D &dataset, const std::string &id,
 
   if constexpr (std::is_same_v<D, DataArray> ||
                 std::is_same_v<D, DataConstProxy>) {
-    s << format_data_proxy("", dataset);
+    s << "Data:\n" << format_data_proxy(dataset.name(), dataset);
   } else {
     if (!dataset.empty())
       s << "Data:\n";

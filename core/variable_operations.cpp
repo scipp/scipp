@@ -138,7 +138,60 @@ Variable filter(const Variable &var, const Variable &filter) {
   return out;
 }
 
+struct disable_variance_first_arg {
+  template <class First, class Second>
+  void operator()(const scipp::core::detail::ValueAndVariance<First>,
+                  const Second &) const {
+    throw except::VariancesError("Variances in first argument not supported.");
+  }
+};
+
+struct disable_variance_second_arg {
+  template <class First, class Second>
+  void operator()(const First &,
+                  const scipp::core::detail::ValueAndVariance<Second>) const {
+    throw except::VariancesError("Variances in second argument not supported.");
+  }
+};
+
+namespace sparse {
+/// Return array of sparse dimension extents, i.e., total counts.
+Variable counts(const VariableConstProxy &var) {
+  // To simplify this we would like to use `transform`, but this is currently
+  // not possible since the current implementation expects outputs with
+  // variances if any of the inputs has variances.
+  auto dims = var.dims();
+  dims.erase(dims.sparseDim());
+  auto counts = makeVariable<scipp::index>(dims, units::counts);
+  accumulate_in_place<
+      pair_custom_t<std::pair<scipp::index, sparse_container<double>>>>(
+      counts, var,
+      overloaded{[](scipp::index &c, const auto &sparse) { c = sparse.size(); },
+                 disable_variance_first_arg{},
+                 transform_flags::no_variance_output});
+  return counts;
+}
+
+/// Reserve memory in all sparse containers in `sparse`, based on `capacity`.
+void reserve(const VariableProxy &sparse, const VariableConstProxy &capacity) {
+  transform_in_place<
+      pair_custom_t<std::pair<sparse_container<double>, scipp::index>>>(
+      sparse, capacity,
+      overloaded{[](auto &&sparse_, const scipp::index capacity_) {
+                   return sparse_.reserve(capacity_);
+                 },
+                 disable_variance_second_arg{},
+                 [](const units::Unit &, const units::Unit &) {}});
+}
+} // namespace sparse
+
 void flatten_impl(const VariableProxy &summed, const VariableConstProxy &var) {
+  // 1. Reserve space in output. This yields approx. 3x speedup.
+  auto summed_counts = sparse::counts(summed);
+  sum_impl(summed_counts, sparse::counts(var));
+  sparse::reserve(summed, summed_counts);
+
+  // 2. Flatten dimension(s) by concatenating along sparse dim.
   accumulate_in_place<pair_self_t<sparse_container<double>>,
                       pair_self_t<sparse_container<float>>,
                       pair_self_t<sparse_container<int64_t>>,

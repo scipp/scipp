@@ -12,8 +12,14 @@ using namespace scipp::core;
 namespace scipp::neutron::diffraction {
 
 Dataset convert_with_calibration(Dataset d, Dataset cal) {
-  // 1. Record ToF bin widths
-  const auto oldBinWidths = counts::getBinWidths(d.coords(), {Dim::Tof});
+
+  std::vector<Variable> oldBinWidths;
+  std::vector<Variable> newBinWidths;
+
+  if (d.coords().contains(Dim::Tof)) {
+    // 1. Record ToF bin widths
+    oldBinWidths = counts::getBinWidths(d.coords(), {Dim::Tof});
+  }
 
   // 2. There may be a grouping of detectors, in which case we need to apply it
   // to the cal information first.
@@ -40,12 +46,14 @@ Dataset convert_with_calibration(Dataset d, Dataset cal) {
                                  ". Missing detector information?");
   }
 
-  // 3. Transform coordinate
-  d.setCoord(Dim::Tof,
-             (d.coords()[Dim::Tof] - cal["tzero"].data()) / cal["difc"].data());
+  if (d.coords().contains(Dim::Tof)) {
+    // 3. Transform coordinate
+    d.setCoord(Dim::Tof, (d.coords()[Dim::Tof] - cal["tzero"].data()) /
+                             cal["difc"].data());
 
-  // 4. Record DSpacing bin widths
-  const auto newBinWidths = counts::getBinWidths(d.coords(), {Dim::Tof});
+    // 4. Record DSpacing bin widths
+    newBinWidths = counts::getBinWidths(d.coords(), {Dim::Tof});
+  }
 
   // 5. Transform variables
   for (const auto &[name, data] : d) {
