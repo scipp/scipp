@@ -399,11 +399,64 @@ def test_binary_or():
     a |= b
     assert a == sc.Variable(True)
 
+    a = sc.Variable(False, True, False, True)
+    b = sc.Variable(False, False, True, False)
+    a |= b
+    assert a == sc.Variable(False, True, True, True)
+
 
 def test_in_place_binary_or():
     a = sc.Variable(False)
     b = sc.Variable(True)
     assert (a | b) == sc.Variable(True)
+
+    a = sc.Variable(False, True, False, True)
+    b = sc.Variable(False, False, True, False)
+    assert (a | b) == sc.Variable(False, True, True, True)
+
+
+def test_binary_and():
+    a = sc.Variable(False)
+    b = sc.Variable(True)
+    a &= b
+    assert a == sc.Variable(True)
+
+    a = sc.Variable(False, True, False, True)
+    b = sc.Variable(False, False, True, False)
+    a &= b
+    assert a == sc.Variable(False, True, True, True)
+
+
+def test_in_place_binary_and():
+    a = sc.Variable(False)
+    b = sc.Variable(True)
+    assert (a & b) == sc.Variable(True)
+
+    a = sc.Variable(False, True, False, True)
+    b = sc.Variable(False, False, True, False)
+    assert (a & b) == sc.Variable(False, True, True, True)
+
+
+def test_binary_xor():
+    a = sc.Variable(False)
+    b = sc.Variable(True)
+    a ^= b
+    assert a == sc.Variable(True)
+
+    a = sc.Variable(False, True, False, True)
+    b = sc.Variable(False, False, True, False)
+    a ^= b
+    assert a == sc.Variable(False, True, True, True)
+
+
+def test_in_place_binary_xor():
+    a = sc.Variable(False)
+    b = sc.Variable(True)
+    assert (a ^ b) == sc.Variable(True)
+
+    a = sc.Variable(False, True, False, True)
+    b = sc.Variable(False, False, True, False)
+    assert (a ^ b) == sc.Variable(False, True, True, True)
 
 
 def test_in_place_binary_with_scalar():
