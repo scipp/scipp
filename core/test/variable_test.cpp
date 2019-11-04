@@ -966,3 +966,24 @@ TEST(VariableTest, construct_mult_dev_unit) {
   EXPECT_EQ(1.0f / units::Unit(units::m), refDiv);
   EXPECT_EQ(int32_t(1) * units::Unit(units::kg), refMult);
 }
+
+template <class T> class AsTypeTest : public ::testing::Test {};
+
+using type_pairs =
+    ::testing::Types<std::pair<float, double>, std::pair<double, float>,
+                     std::pair<int32_t, float>>;
+TYPED_TEST_CASE(AsTypeTest, type_pairs);
+
+TYPED_TEST(AsTypeTest, variable_astype) {
+  using T1 = typename TypeParam::first_type;
+  using T2 = typename TypeParam::second_type;
+  auto var1 = makeVariable<T1>(1, 1);
+  auto var2 = makeVariable<T2>(1, 1);
+  ASSERT_EQ(astype(var1, core::dtype<T2>), var2);
+  var1 = makeVariable<T1>(1);
+  var2 = makeVariable<T2>(1);
+  ASSERT_EQ(astype(var1, core::dtype<T2>), var2);
+  var1 = makeVariable<T1>({Dim::X, 3}, units::m, {1.0, 2.0, 3.0});
+  var2 = makeVariable<T2>({Dim::X, 3}, units::m, {1.0, 2.0, 3.0});
+  ASSERT_EQ(astype(var1, core::dtype<T2>), var2);
+}

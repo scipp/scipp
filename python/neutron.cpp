@@ -14,6 +14,21 @@ using namespace scipp::neutron;
 
 namespace py = pybind11;
 
+void bind_convert(py::module &m) {
+  const char *doc = R"(
+    Convert dimension (unit) into another.
+
+    Currently only conversion from time-of-flight (Dim.Tof) to other time-of-flight-derived units such as d-spacing (Dim.DSpacing) is supported.
+
+    :param data: Input data with time-of-flight dimension (Dim.Tof)
+    :param from: Dimension to convert from
+    :param to: Dimension to convert into
+    :return: New dataset with converted dimension (dimension labels, coordinate values, and units)
+    :rtype: Dataset)";
+  m.def("convert", convert, py::arg("data"), py::arg("from"), py::arg("to"),
+        py::call_guard<py::gil_scoped_release>(), doc);
+}
+
 void init_neutron(py::module &m) {
   auto neutron = m.def_submodule("neutron");
   auto diffraction = m.def_submodule("neutron_diffraction");
@@ -30,14 +45,7 @@ void init_neutron(py::module &m) {
 
     .. seealso:: Use :py:func:`scipp.neutron.convert` for unit conversion based on beamline-geometry information instead of calibration information.)");
 
-  neutron.def("convert", convert, py::call_guard<py::gil_scoped_release>(),
-              R"(
-    Convert dimension (unit) into another.
-
-    Currently only conversion from time-of-flight (Dim.Tof) to other time-of-flight-derived units such as d-spacing (Dim.DSpacing) is supported.
-
-    :return: New dataset with converted dimension (dimension labels, coordinate values, and units)
-    :rtype: Dataset)");
+  bind_convert(neutron);
 
   neutron.def("source_position", source_position, R"(
     Extract the neutron source position from a dataset.

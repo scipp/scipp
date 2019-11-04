@@ -45,12 +45,27 @@ Dataset makeTofDataForUnitConversion(const bool dense_coord = true) {
   tof.setSparseCoord("events", events);
   tof.setSparseLabels("events", "aux", events);
 
-  tof.setData("density",
-              makeVariable<double>({{Dim::Spectrum, 2}, {Dim::Tof, 3}},
-                                   {1, 2, 3, 4, 5, 6}));
-  tof["density"].data().setUnit(units::counts / units::us);
-
   return tof;
+}
+
+Variable makeCountDensityData(const units::Unit &unit) {
+  return makeVariable<double>({{Dim::Spectrum, 2}, {Dim::Tof, 3}},
+                              units::Unit(units::counts) / unit,
+                              {1, 2, 3, 4, 5, 6});
+}
+
+TEST(Convert, fail_count_density) {
+  const Dataset tof = makeTofDataForUnitConversion();
+  for (const Dim dim : {Dim::DSpacing, Dim::Wavelength, Dim::Energy}) {
+    Dataset a = tof;
+    Dataset b = convert(a, Dim::Tof, dim);
+    EXPECT_NO_THROW(convert(a, Dim::Tof, dim));
+    EXPECT_NO_THROW(convert(b, dim, Dim::Tof));
+    a.setData("", makeCountDensityData(a.coords()[Dim::Tof].unit()));
+    b.setData("", makeCountDensityData(b.coords()[dim].unit()));
+    EXPECT_THROW(convert(a, Dim::Tof, dim), except::UnitError);
+    EXPECT_THROW(convert(b, dim, Dim::Tof), except::UnitError);
+  }
 }
 
 TEST(Convert, Tof_to_DSpacing) {
@@ -125,22 +140,6 @@ TEST(Convert, Tof_to_DSpacing) {
   EXPECT_NEAR(d1[2], 3956.0 / (1e6 * 11.0 / tof1[2]) * lambda_to_d,
               d1[2] * 1e-3);
 
-  ASSERT_TRUE(dspacing.contains("density"));
-  const auto &density = dspacing["density"];
-  ASSERT_EQ(density.dims(),
-            Dimensions({{Dim::Spectrum, 2}, {Dim::DSpacing, 3}}));
-  EXPECT_EQ(density.unit(), units::counts / units::angstrom);
-  const auto vals = density.values<double>();
-  EXPECT_FALSE(equals(vals, {1, 2, 3, 4, 5, 6}));
-  // Spectrum 0
-  EXPECT_DOUBLE_EQ(vals[0], 1.0 * 1000 / (values[1] - values[0]));
-  EXPECT_DOUBLE_EQ(vals[1], 2.0 * 1100 / (values[2] - values[1]));
-  EXPECT_DOUBLE_EQ(vals[2], 3.0 * 1200 / (values[3] - values[2]));
-  // Spectrum 1
-  EXPECT_DOUBLE_EQ(vals[3], 4.0 * 1000 / (values[5] - values[4]));
-  EXPECT_DOUBLE_EQ(vals[4], 5.0 * 1100 / (values[6] - values[5]));
-  EXPECT_DOUBLE_EQ(vals[5], 6.0 * 1200 / (values[7] - values[6]));
-
   ASSERT_EQ(dspacing.labels()["position"], tof.labels()["position"]);
   ASSERT_EQ(dspacing.labels()["component_info"],
             tof.labels()["component_info"]);
@@ -172,7 +171,6 @@ TEST(Convert, Tof_to_DSpacing_no_dense_content) {
   Dataset tof = makeTofDataForUnitConversion(dense_coord);
   EXPECT_FALSE(tof.coords().contains(Dim::Tof));
   tof.erase("counts");
-  tof.erase("density");
 
   Dataset dspacing;
   EXPECT_NO_THROW(dspacing = convert(tof, Dim::Tof, Dim::DSpacing));
@@ -205,11 +203,6 @@ TEST(Convert, DSpacing_to_Tof) {
       tof_original["events"].coords()[Dim::Tof].sparseValues<double>();
   EXPECT_TRUE(equals(events[0], events_original[0], 1e-15));
   EXPECT_TRUE(equals(events[1], events_original[1], 1e-12));
-
-  /* Test count density data */
-  ASSERT_TRUE(tof.contains("density"));
-  EXPECT_TRUE(equals(tof["density"].values<double>(),
-                     tof_original["density"].values<double>(), 1e-14));
 }
 
 TEST(Convert, Tof_to_Wavelength) {
@@ -271,22 +264,6 @@ TEST(Convert, Tof_to_Wavelength) {
   EXPECT_NEAR(d1[1], 3956.0 / (1e6 * 11.0 / tof1[1]), d1[1] * 1e-3);
   EXPECT_NEAR(d1[2], 3956.0 / (1e6 * 11.0 / tof1[2]), d1[2] * 1e-3);
 
-  ASSERT_TRUE(wavelength.contains("density"));
-  const auto &density = wavelength["density"];
-  ASSERT_EQ(density.dims(),
-            Dimensions({{Dim::Spectrum, 2}, {Dim::Wavelength, 3}}));
-  EXPECT_EQ(density.unit(), units::counts / units::angstrom);
-  const auto vals = density.values<double>();
-  EXPECT_FALSE(equals(vals, {1, 2, 3, 4, 5, 6}));
-  // Spectrum 0
-  EXPECT_DOUBLE_EQ(vals[0], 1.0 * 1000 / (values[1] - values[0]));
-  EXPECT_DOUBLE_EQ(vals[1], 2.0 * 1100 / (values[2] - values[1]));
-  EXPECT_DOUBLE_EQ(vals[2], 3.0 * 1200 / (values[3] - values[2]));
-  // Spectrum 1
-  EXPECT_DOUBLE_EQ(vals[3], 4.0 * 1000 / (values[5] - values[4]));
-  EXPECT_DOUBLE_EQ(vals[4], 5.0 * 1100 / (values[6] - values[5]));
-  EXPECT_DOUBLE_EQ(vals[5], 6.0 * 1200 / (values[7] - values[6]));
-
   ASSERT_EQ(wavelength.labels()["position"], tof.labels()["position"]);
   ASSERT_EQ(wavelength.labels()["component_info"],
             tof.labels()["component_info"]);
@@ -314,11 +291,6 @@ TEST(Convert, Wavelength_to_Tof) {
       tof_original["events"].coords()[Dim::Tof].sparseValues<double>();
   EXPECT_TRUE(equals(events[0], events_original[0], 1e-15));
   EXPECT_TRUE(equals(events[1], events_original[1], 1e-12));
-
-  // Test count density data
-  ASSERT_TRUE(tof.contains("density"));
-  EXPECT_TRUE(equals(tof["density"].values<double>(),
-                     tof_original["density"].values<double>(), 1e-14));
 }
 
 TEST(Convert, Tof_to_Energy_Elastic) {
@@ -417,21 +389,6 @@ TEST(Convert, Tof_to_Energy_Elastic) {
       e1[2], joule_to_mev * 0.5 * neutron_mass * std::pow(1e6 * L / tof1[2], 2),
       e1[2] * 1e-3);
 
-  ASSERT_TRUE(energy.contains("density"));
-  const auto &density = energy["density"];
-  ASSERT_EQ(density.dims(), Dimensions({{Dim::Spectrum, 2}, {Dim::Energy, 3}}));
-  EXPECT_EQ(density.unit(), units::counts / units::meV);
-  const auto vals = density.values<double>();
-  EXPECT_FALSE(equals(vals, {1, 2, 3, 4, 5, 6}));
-  // Spectrum 0
-  EXPECT_DOUBLE_EQ(vals[0], 1.0 * 1000 / (values[1] - values[0]));
-  EXPECT_DOUBLE_EQ(vals[1], 2.0 * 1100 / (values[2] - values[1]));
-  EXPECT_DOUBLE_EQ(vals[2], 3.0 * 1200 / (values[3] - values[2]));
-  // Spectrum 1
-  EXPECT_DOUBLE_EQ(vals[3], 4.0 * 1000 / (values[5] - values[4]));
-  EXPECT_DOUBLE_EQ(vals[4], 5.0 * 1100 / (values[6] - values[5]));
-  EXPECT_DOUBLE_EQ(vals[5], 6.0 * 1200 / (values[7] - values[6]));
-
   ASSERT_EQ(energy.labels()["position"], tof.labels()["position"]);
   ASSERT_EQ(energy.labels()["component_info"], tof.labels()["component_info"]);
 }
@@ -462,11 +419,19 @@ TEST(Convert, Energy_to_Tof_Elastic) {
       tof_original["events"].coords()[Dim::Tof].sparseValues<double>();
   EXPECT_TRUE(equals(events[0], events_original[0], 1e-15));
   EXPECT_TRUE(equals(events[1], events_original[1], 1e-15));
+}
 
-  /* Test count density data */
-  ASSERT_TRUE(tof.contains("density"));
-  EXPECT_TRUE(equals(tof["density"].values<double>(),
-                     tof_original["density"].values<double>(), 1e-12));
+TEST(Convert, convert_with_factor_type_promotion) {
+  Dataset tof = makeTofDataForUnitConversion();
+  tof.setCoord(Dim::Tof, makeVariable<float>({Dim::Tof, 4}, units::us,
+                                             {4000, 5000, 6100, 7300}));
+  for (auto &&d : {Dim::DSpacing, Dim::Wavelength, Dim::Energy}) {
+    auto res = convert(tof, Dim::Tof, d);
+    EXPECT_EQ(res.coords()[d].dtype(), core::dtype<float>);
+
+    res = convert(res, d, Dim::Tof);
+    EXPECT_EQ(res.coords()[Dim::Tof].dtype(), core::dtype<float>);
+  }
 }
 
 /*

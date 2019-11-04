@@ -29,6 +29,9 @@ scipp::core::DType scipp_dtype(const py::dtype &type) {
     return scipp::core::dtype<int32_t>;
   if (type.is(py::dtype::of<bool>()))
     return scipp::core::dtype<bool>;
+  if (py::str(static_cast<py::handle>(type))
+          .contains("<U")) // TODO is where normal way to do that ?
+    return scipp::core::dtype<std::string>;
   throw std::runtime_error("Unsupported numpy dtype.");
 }
 

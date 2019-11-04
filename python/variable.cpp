@@ -34,14 +34,15 @@ template <class T> struct MakeVariable {
     // automatic conversions such as integer to double, if required.
     py::array_t<T> valuesT(values);
     py::buffer_info info = valuesT.request();
-    Dimensions dims(labels, info.shape);
+    Dimensions dims(labels, {info.shape.begin(), info.shape.end()});
     auto var =
         variances ? makeVariableWithVariances<T>(dims) : makeVariable<T>(dims);
     copy_flattened<T>(valuesT, var.template values<T>());
     if (variances) {
       py::array_t<T> variancesT(*variances);
       info = variancesT.request();
-      expect::equals(dims, Dimensions(labels, info.shape));
+      expect::equals(
+          dims, Dimensions(labels, {info.shape.begin(), info.shape.end()}));
       copy_flattened<T>(variancesT, var.template variances<T>());
     }
     var.setUnit(unit);
@@ -80,12 +81,53 @@ template <class ST> struct MakeODFromNativePythonTypes {
   }
 };
 
+template <class T>
+Variable init_1D_no_variance(const std::vector<Dim> &labels,
+                             const std::vector<scipp::index> &shape,
+                             const std::vector<T> &values,
+                             const units::Unit &unit) {
+  Variable var;
+  Dimensions dims(labels, shape);
+  var = makeVariable<T>(dims, values);
+  var.setUnit(unit);
+  return var;
+}
+
+template <class T>
+auto do_init_0D(const T &value, const std::optional<T> &variance,
+                const units::Unit &unit) {
+  Variable var;
+  if (variance)
+    var = makeVariable<T>(value, *variance);
+  else
+    var = makeVariable<T>(value);
+  var.setUnit(unit);
+  return var;
+}
+
 Variable doMakeVariable(const std::vector<Dim> &labels, py::array &values,
                         std::optional<py::array> &variances,
                         const units::Unit unit, const py::object &dtype) {
   // Use custom dtype, otherwise dtype of data.
   const auto dtypeTag =
       dtype.is_none() ? scipp_dtype(values.dtype()) : scipp_dtype(dtype);
+
+  if (labels.size() == 1 && !variances) {
+    if (dtypeTag == core::dtype<std::string>) {
+      std::vector<scipp::index> shape(values.shape(),
+                                      values.shape() + values.ndim());
+      return init_1D_no_variance(labels, shape,
+                                 values.cast<std::vector<std::string>>(), unit);
+    }
+
+    if (dtypeTag == core::dtype<Eigen::Vector3d>) {
+      std::vector<scipp::index> shape(values.shape(),
+                                      values.shape() + values.ndim() - 1);
+      return init_1D_no_variance(
+          labels, shape, values.cast<std::vector<Eigen::Vector3d>>(), unit);
+    }
+  }
+
   return CallDType<double, float, int64_t, int32_t, bool>::apply<MakeVariable>(
       dtypeTag, labels, values, variances, unit);
 }
@@ -99,18 +141,6 @@ Variable makeVariableDefaultInit(const std::vector<Dim> &labels,
       Eigen::Vector3d>::apply<MakeVariableDefaultInit>(scipp_dtype(dtype),
                                                        labels, shape, unit,
                                                        variances);
-}
-
-template <class T>
-auto do_init_0D(const T &value, const std::optional<T> &variance,
-                const units::Unit &unit) {
-  Variable var;
-  if (variance)
-    var = makeVariable<T>(value, *variance);
-  else
-    var = makeVariable<T>(value);
-  var.setUnit(unit);
-  return var;
 }
 
 template <class T> void bind_init_0D(py::class_<Variable> &c) {
@@ -166,25 +196,32 @@ void bind_init_0D_numpy_types(py::class_<Variable> &c) {
         py::arg("dtype") = py::none());
 }
 
-template <class T> void bind_init_1D(py::class_<Variable> &c) {
-  c.def(
-      // Using fixed-size-1 array for the labels. This avoids the
-      // `T=Eigen::Vector3d` overload wrongly matching to an 2d (or higher)
-      // array with inner dimension 3 as `values`.
-      py::init([](const std::array<Dim, 1> &label, const std::vector<T> &values,
-                  const std::optional<std::vector<T>> &variances,
-                  const units::Unit &unit) {
-        Variable var;
-        Dimensions dims({label[0]}, {scipp::size(values)});
-        if (variances)
-          var = makeVariable<T>(dims, values, *variances);
-        else
-          var = makeVariable<T>(dims, values);
-        var.setUnit(unit);
-        return var;
-      }),
-      py::arg("dims"), py::arg("values"), py::arg("variances") = std::nullopt,
-      py::arg("unit") = units::Unit(units::dimensionless));
+void bind_init_list(py::class_<Variable> &c) {
+  c.def(py::init([](const std::array<Dim, 1> &label, const py::list &values,
+                    const std::optional<py::list> &variances,
+                    const units::Unit &unit, py::object &dtype) {
+          if (scipp_dtype(dtype) == core::dtype<Eigen::Vector3d>) {
+            auto val = values.cast<std::vector<Eigen::Vector3d>>();
+            Variable var;
+            Dimensions dims({label[0]}, {scipp::size(val)});
+            if (variances)
+              var = makeVariable<Eigen::Vector3d>(
+                  dims, val, variances->cast<std::vector<Eigen::Vector3d>>());
+            else
+              var = makeVariable<Eigen::Vector3d>(dims, val);
+            var.setUnit(unit);
+            return var;
+          }
+
+          auto arr = py::array(values);
+          auto varr =
+              variances ? std::optional(py::array(*variances)) : std::nullopt;
+          auto dims = std::vector<Dim>{label[0]};
+          return doMakeVariable(dims, arr, varr, unit, dtype);
+        }),
+        py::arg("dims"), py::arg("values"), py::arg("variances") = std::nullopt,
+        py::arg("unit") = units::Unit(units::dimensionless),
+        py::arg("dtype") = py::none());
 }
 
 void init_variable(py::module &m) {
@@ -194,8 +231,6 @@ void init_variable(py::module &m) {
   bind_init_0D<Dataset>(variable);
   bind_init_0D<std::string>(variable);
   bind_init_0D<Eigen::Vector3d>(variable);
-  bind_init_1D<std::string>(variable);
-  bind_init_1D<Eigen::Vector3d>(variable);
   variable.def(py::init<const VariableProxy &>())
       .def(py::init(&makeVariableDefaultInit),
            py::arg("dims") = std::vector<Dim>{},
@@ -203,7 +238,8 @@ void init_variable(py::module &m) {
            py::arg("unit") = units::Unit(units::dimensionless),
            py::arg("dtype") = py::dtype::of<double>(),
            py::arg("variances").noconvert() = false)
-      .def(py::init(&doMakeVariable), py::arg("dims"), py::arg("values"),
+      .def(py::init(&doMakeVariable), py::arg("dims"),
+           py::arg("values"), // py::array
            py::arg("variances") = std::nullopt,
            py::arg("unit") = units::Unit(units::dimensionless),
            py::arg("dtype") = py::none())
@@ -223,11 +259,7 @@ void init_variable(py::module &m) {
            py::is_operator())
       .def("__repr__", [](const Variable &self) { return to_string(self); });
 
-  // For some reason, pybind11 does not convert python lists to py::array,
-  // so we need to bind the lists manually.
-  // TODO: maybe there is a better way to do this?
-  bind_init_1D<int32_t>(variable);
-  bind_init_1D<double>(variable);
+  bind_init_list(variable);
   // This should be in the certain order
   bind_init_0D_numpy_types(variable);
   bind_init_0D_native_python_types<bool>(variable);

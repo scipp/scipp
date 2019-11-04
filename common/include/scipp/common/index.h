@@ -10,7 +10,7 @@ namespace scipp {
 /// Type to use for all container/array sizes and indices.
 ///
 /// As recommended by the C++ core guidelines, this is signed, i.e., not size_t.
-using index = std::ptrdiff_t;
+using index = int64_t;
 
 /// Return the size of a container as a signed index type.
 ///
