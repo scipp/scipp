@@ -318,12 +318,13 @@ public:
   template <class T>
   Variable(const units::Unit unit, const Dimensions &dimensions, T values,
            T variances);
+
   template <class T>
   Variable(const Dimensions &dimensions, std::initializer_list<T> values_)
       : Variable(units::dimensionless, std::move(dimensions),
                  Vector<T>(values_.begin(), values_.end())) {}
 
-  template <class... Ts> Variable(Ts &&... args, DType type);
+  template <class... Ts> Variable(const DType &type, Ts &&... args);
 
   explicit operator bool() const noexcept { return m_object.operator bool(); }
   Variable operator~() const;
@@ -502,10 +503,7 @@ private:
       return (hasType<Args, Ts...>::value + ...);
     }
 
-    template <class T, class... Args> static T construct(Ts &&... ts) {
-      auto tp = std::make_tuple(std::forward<Ts>(ts)...);
-      return T(std::forward<Args>(hlp<Args, Ts...>(tp))...);
-    }
+    template <class T, class... Args> static T construct(Ts &&... ts);
 
   private:
     template <class T, class... Args>
@@ -525,17 +523,14 @@ private:
 
 public:
   template <class T, class... Ts>
-  static Variable constructVariable(Ts &&... args) {
-    using helper = helper<Ts...>;
-    constexpr auto nn = helper::template check_types<units::Unit, Dimensions,
-                                                     Values<T>, Variances<T>>();
-    static_assert(nn ==
-                  std::tuple_size_v<decltype(std::forward_as_tuple(args...))>);
+  static Variable constructVariable(Ts &&... args);
 
-    return helper::template construct<Variable, units::Unit, Dimensions,
-                                      Values<T>, Variances<T>>(
-        std::forward<Ts>(args)...);
-  }
+private:
+  template <class... Ts> struct ConstructVariable {
+    template <class T> struct Maker { static Variable apply(Ts &&... args); };
+
+    static Variable make(Ts &&... args, DType type);
+  };
 
 private:
   template <class T> const Vector<T> &cast(const bool variances = false) const;
@@ -634,32 +629,10 @@ Variable makeVariable(const Dimensions &dimensions, const units::Unit unit,
                   Vector<T>(variances.begin(), variances.end()));
 }
 
-template <class T>
-Variable Variable::createVariable(scipp::units::Unit &&u,
-                                  scipp::core::Dimensions &&s,
-                                  scipp::core::Values<T> &&val,
-                                  scipp::core::Variances<T> &&var) {
-  if (val.values && var.variances)
-    return Variable(u, s, std::move(*val.values), std::move(*var.variances));
-
-  if (val.values && !var.variances)
-    return Variable(u, s, std::move(*val.values));
-
-  if (!val.values && !var.variances)
-    return Variable(u, s, Vector<T>(s.volume()));
-
-  throw std::invalid_argument(
-      "Should contain values if variances are provided.");
-}
-
-template <class T>
-Variable::Variable(units::Unit &&u, Dimensions &&s, Values<T> &&val,
-                   Variances<T> &&var)
-    : Variable(std::move(createVariable(std::move(u), std::move(s),
-                                        std::move(val), std::move(var)))) {}
-
 template <class... Ts>
-Variable::Variable(Ts &&... args, DType type) : Variable(Variable()) {}
+Variable::Variable(const DType &type, Ts &&... args)
+    : Variable{
+          ConstructVariable<Ts...>::make(std::forward<Ts>(args)..., type)} {}
 
 namespace detail {
 template <class... N> struct is_vector : std::false_type {};

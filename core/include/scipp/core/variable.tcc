@@ -5,6 +5,7 @@
 
 #include "scipp/core/apply.h"
 #include "scipp/core/dimensions.h"
+#include "scipp/core/tag_util.h"
 #include "scipp/core/transform.h"
 #include "scipp/core/variable.h"
 #include "scipp/core/variable_view.h"
@@ -612,6 +613,62 @@ Variable::Variable(const units::Unit unit, const Dimensions &dimensions,
                    : std::make_unique<DataModel<T>>(std::move(dimensions),
                                                     std::move(values_),
                                                     std::move(variances_))) {}
+
+template <class T>
+Variable Variable::createVariable(scipp::units::Unit &&u,
+                                  scipp::core::Dimensions &&s,
+                                  scipp::core::Values<T> &&val,
+                                  scipp::core::Variances<T> &&var) {
+  if (val.values && var.variances)
+    return Variable(u, s, std::move(*val.values), std::move(*var.variances));
+
+  if (val.values && !var.variances)
+    return Variable(u, s, std::move(*val.values));
+
+  if (!val.values && !var.variances)
+    return Variable(u, s, Vector<T>(s.volume()));
+
+  throw std::invalid_argument(
+      "Should contain values if variances are provided.");
+}
+
+template <class T>
+Variable::Variable(units::Unit &&u, Dimensions &&s, Values<T> &&val,
+                   Variances<T> &&var)
+    : Variable(std::move(createVariable(std::move(u), std::move(s),
+                                        std::move(val), std::move(var)))) {}
+
+template <class... Ts>
+template <class T, class... Args>
+T Variable::helper<Ts...>::construct(Ts &&... ts) {
+  auto tp = std::make_tuple(std::forward<Ts>(ts)...);
+  return T(std::forward<Args>(hlp<Args, Ts...>(tp))...);
+}
+
+template <class T, class... Ts>
+Variable Variable::constructVariable(Ts &&... args) {
+  using helper = helper<Ts...>;
+  constexpr auto nn = helper::template check_types<units::Unit, Dimensions,
+                                                   Values<T>, Variances<T>>();
+  static_assert(nn ==
+                std::tuple_size_v<decltype(std::forward_as_tuple(args...))>);
+
+  return helper::template construct<Variable, units::Unit, Dimensions,
+                                    Values<T>, Variances<T>>(
+      std::forward<Ts>(args)...);
+}
+
+template <class... Ts>
+template <class T>
+Variable Variable::ConstructVariable<Ts...>::Maker<T>::apply(Ts &&... args) {
+  return constructVariable<underlying_type_t<T>>(std::forward<Ts>(args)...);
+}
+
+template <class... Ts>
+Variable Variable::ConstructVariable<Ts...>::make(Ts &&... args, DType type) {
+  return CallDType<double, float, int64_t, int32_t, bool>::apply<Maker>(
+      type, std::forward<Ts>(args)...);
+}
 
 template <class T>
 const Vector<T> &Variable::cast(const bool variances_) const {
