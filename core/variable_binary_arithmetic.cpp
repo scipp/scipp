@@ -31,8 +31,11 @@ template <class... Ts> struct pair_product {
 template <class... Ts>
 using pair_product_t = typename pair_product<Ts...>::type;
 
-using arithmetic_type_pairs =
-    pair_product_t<float, double, int32_t, int64_t, bool>;
+using arithmetic_type_pairs = pair_product_t<float, double, int32_t, int64_t>;
+
+using arithmetic_type_pairs_with_bool =
+    decltype(std::tuple_cat(std::declval<arithmetic_type_pairs>(),
+                            std::declval<pair_numerical_with_t<bool>>()));
 
 using arithmetic_and_matrix_type_pairs = decltype(std::tuple_cat(
     std::declval<arithmetic_type_pairs>(),
@@ -104,7 +107,7 @@ template <class T1, class T2> T1 &times_equals(T1 &variable, const T2 &other) {
 }
 
 template <class T1, class T2> Variable times(const T1 &a, const T2 &b) {
-  return transform<arithmetic_type_pairs>(a, b, times_);
+  return transform<arithmetic_type_pairs_with_bool>(a, b, times_);
 }
 
 Variable &Variable::operator*=(const Variable &other) & {
