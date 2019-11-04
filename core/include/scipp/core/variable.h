@@ -549,7 +549,8 @@ private:
             if constexpr (std::is_convertible_v<T1, T2>) {
               return std::get<index>(tp);
             } else {
-              throw std::runtime_error("Can't convert " /*+ to_string(dtype<T1>) + " to " + to_string(dtype<T2>)*/);
+              throw std::runtime_error(
+                  "Can't convert " /*+ to_string(dtype<T1>) + " to " + to_string(dtype<T2>)*/);
               return T{};
             }
           } else {
