@@ -277,6 +277,20 @@ Variable sqrt(const VariableConstProxy &var) {
   return transform<double, float>(var, [](const auto x) { return sqrt(x); });
 }
 
+Variable sqrt(Variable &&var) {
+  using std::sqrt;
+  auto out(std::move(var));
+  sqrt(out, out);
+  return out;
+}
+
+VariableProxy sqrt(const VariableConstProxy &var, const VariableProxy &out) {
+  using std::sqrt;
+  transform_in_place<pair_self_t<double, float>>(
+      out, var, [](auto &x, const auto &y) { x = sqrt(y); });
+  return out;
+}
+
 Variable dot(const Variable &a, const Variable &b) {
   return transform<pair_self_t<Eigen::Vector3d>>(
       a, b,

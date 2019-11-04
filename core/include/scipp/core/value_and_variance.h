@@ -32,6 +32,12 @@ template <class T> struct ValueAndVariance {
     return *this;
   }
 
+  template <class T2> constexpr auto &operator=(const T2 other) noexcept {
+    value = other;
+    variance = 0.0;
+    return *this;
+  }
+
   template <class T2> constexpr auto &operator+=(const T2 other) noexcept {
     return *this = *this + other;
   }
