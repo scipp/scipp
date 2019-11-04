@@ -42,8 +42,9 @@ template <class... Ts> struct CallDType {
   }
 };
 
-template<class...Ts>
-struct CallDTypeWithSparse : public CallDType<Ts..., sparse_container<Ts>...> {};
+template <class... Ts>
+struct CallDTypeWithSparse : public CallDType<Ts..., sparse_container<Ts>...> {
+};
 
 template <template <class> class Callable, class... Args>
 auto apply(const DType dtype, Args &&... args) {

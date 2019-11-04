@@ -267,7 +267,10 @@ struct default_init<Eigen::Matrix<T, Rows, Cols>> {
 
 template <class T> Variable makeVariable(T value);
 
-template <class T> struct Values {
+struct ValuesMark {};
+
+template <class T> struct Values : ValuesMark {
+  using type = T;
   std::optional<Vector<T>> values;
   Values() = default;
   Values(Values &&) = default;
@@ -283,7 +286,10 @@ template <class T> struct Values {
 };
 template <class T> Values(std::optional<Vector<T>> &&)->Values<T>;
 
-template <class T> struct Variances {
+struct VariancesMark {};
+
+template <class T> struct Variances : VariancesMark {
+  using type = T;
   std::optional<Vector<T>> variances;
   Variances() = default;
   Variances(Variances &&) = default;
@@ -475,23 +481,27 @@ private:
 
   // traits for universal Variable constructor
 
-  template <class T1, class T2> struct is_same_or_convertible {
-    static constexpr bool value =
-        std::is_same_v<T1, T2> || std::is_convertible_v<T1, T2>;
+  template <class T1, class T2> struct is_same_or_values_or_variances {
+    static constexpr bool value = std::is_same_v<T1, T2> ||
+                                  (std::is_base_of_v<ValuesMark, T1> &&
+                                   std::is_base_of_v<ValuesMark, T2>) ||
+                                  (std::is_base_of_v<VariancesMark, T1> &&
+                                   std::is_base_of_v<VariancesMark, T2>);
   };
 
   template <class T, class... Args>
-  using hasType =
-      std::disjunction<is_same_or_convertible<T, std::decay_t<Args>>...>;
+  using hasType = std::disjunction<
+      is_same_or_values_or_variances<T, std::decay_t<Args>>...>;
 
   template <class T, class... Args> struct Indexer {
     template <std::size_t... IS>
-    static constexpr auto indexOfConvertible_impl(std::index_sequence<IS...>) {
-      return ((is_same_or_convertible<T, Args>::value * IS) + ...);
+    static constexpr auto
+    indexOfCorresponding_impl(std::index_sequence<IS...>) {
+      return ((is_same_or_values_or_variances<T, Args>::value * IS) + ...);
     }
 
-    static constexpr auto indexOfConvertible() {
-      return indexOfConvertible_impl(
+    static constexpr auto indexOfCorresponding() {
+      return indexOfCorresponding_impl(
           std::make_index_sequence<sizeof...(Args)>{});
     }
   };
@@ -511,7 +521,7 @@ private:
       if constexpr (!hasType<T, Ts...>::value)
         return T{};
       else {
-        constexpr auto index = Indexer<T, Args...>::indexOfConvertible();
+        constexpr auto index = Indexer<T, Args...>::indexOfCorresponding();
         using Type = decltype(std::get<index>(tp));
         if constexpr (std::is_same_v<T, Type>)
           return std::get<T>(tp);
