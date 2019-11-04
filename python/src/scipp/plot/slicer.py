@@ -55,6 +55,7 @@ class Slicer:
         self.slider = dict()
         self.buttons = dict()
         self.showhide = dict()
+        self.button_axis_to_dim = dict()
         # Default starting index for slider
         indx = 0
 
@@ -98,6 +99,7 @@ class Slicer:
                 button_style = ""
             else:
                 button_style = "success"
+                self.button_axis_to_dim[button_values[i].lower()] = key
             self.showhide[key] = widgets.Button(
                 description="hide",
                 disabled=(button_values[i] is None),

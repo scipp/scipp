@@ -39,7 +39,7 @@ def plot_3d(input_data, axes=None, contours=False, cb=None, filename=None,
     if figsize is None:
         figsize = [config.width, config.height]
 
-    layout = {"height": figsize[1], "width": figsize[0]}
+    layout = {"height": figsize[1], "width": figsize[0], "showlegend": False}
     if var.variances is not None and show_variances:
         layout["height"] = 0.7 * layout["height"]
 
@@ -110,8 +110,9 @@ class Slicer3d(Slicer):
 
         # Store min/max for each dimension for invisible scatter
         self.xminmax = dict()
-        for key, val in self.slider_x.items():
-            self.xminmax[key] = [val[0], val[-1]]
+        for key, var in self.slider_x.items():
+            self.xminmax[key] = [var.values[0], var.values[-1]]
+        scatter_x, scatter_y, scatter_z = self.get_outline_as_scatter()
 
         if self.show_variances:
             self.fig = go.FigureWidget(
@@ -126,25 +127,49 @@ class Slicer3d(Slicer):
                 for j in range(3):
                     self.fig.add_trace(go.Surface(cmin=val["cmin"],
                                                   cmax=val["cmax"],
-                                                  showscale=j < 1,
+                                                  showscale=False,
                                                   colorscale=self.cb["name"],
                                                   colorbar=colorbars[i]),
                                        row=1, col=i+1)
-                # self.fig.add_trace(go.Scatter(cmin=val["cmin"],
-                #                                   cmax=val["cmax"],
-                #                                   showscale=j < 1,
-                #                                   colorscale=self.cb["name"],
-                #                                   colorbar=colorbars[i]),
-                #                        row=1, col=i+1)
-            self.fig.update_layout(height=layout["height"],
-                                   width=layout["width"])
+                self.fig.add_trace(
+                    go.Scatter3d(x=scatter_x,
+                                 y=scatter_y,
+                                 z=scatter_z,
+                                 marker=dict(cmin=val["cmin"],
+                                             cmax=val["cmax"],
+                                             color=np.linspace(
+                                                 val["cmin"],
+                                                 val["cmax"], 8),
+                                             colorbar=colorbars[i],
+                                             colorscale=self.cb["name"],
+                                             showscale=True,
+                                             opacity=1.0e-6),
+                                 mode="markers",
+                                 hoverinfo="none"),
+                    row=1, col=i+1)
+            self.fig.update_layout(**layout)
         else:
             data = [go.Surface(cmin=params["values"]["cmin"],
                                cmax=params["values"]["cmax"],
                                colorscale=self.cb["name"],
                                colorbar=colorbars[0],
-                               showscale=j < 1)
+                               showscale=False)
                     for j in range(3)]
+
+            data += [go.Scatter3d(x=scatter_x,
+                                  y=scatter_y,
+                                  z=scatter_z,
+                                  marker=dict(cmin=params["values"]["cmin"],
+                                              cmax=params["values"]["cmax"],
+                                              color=np.linspace(
+                                                  params["values"]["cmin"],
+                                                  params["values"]["cmax"], 8),
+                                              colorbar=colorbars[0],
+                                              colorscale=self.cb["name"],
+                                              showscale=True,
+                                              opacity=1.0e-6),
+                                  mode="markers",
+                                  hoverinfo="none")]
             self.fig = go.FigureWidget(data=data, layout=layout)
 
         # Call update_slice once to make the initial image
@@ -163,10 +188,13 @@ class Slicer3d(Slicer):
         owner.old_value = owner.value
         # Update the show/hide checkboxes
         for key, button in self.buttons.items():
-            ax_dim = self.buttons[key].value
+            # ax_dim = self.buttons[key].value
+            ax_dim = button.value
             if ax_dim is not None:
                 ax_dim = ax_dim.lower()
-                self.fig.data[self.slice_indices[ax_dim]].visible = True
+                for j in range(1 + self.show_variances):
+                    k = self.slice_indices[ax_dim] + 4 * j
+                    self.fig.data[k].visible = True
             self.showhide[key].value = (button.value is not None)
             self.showhide[key].disabled = (button.value is None)
             self.showhide[key].description = "hide"
@@ -174,6 +202,12 @@ class Slicer3d(Slicer):
                 self.showhide[key].button_style = ""
             else:
                 self.showhide[key].button_style = "success"
+                self.button_axis_to_dim[ax_dim] = key
+        # Update the scatter
+        scatter_x, scatter_y, scatter_z = self.get_outline_as_scatter()
+        self.fig.data[3].update(x=scatter_x, y=scatter_y, z=scatter_z)
+        if self.show_variances:
+            self.fig.data[7].update(x=scatter_x, y=scatter_y, z=scatter_z)
         self.update_axes()
 
         return
@@ -232,7 +266,7 @@ class Slicer3d(Slicer):
                     self.slider_x[button_dims[permutations[key][0]]].values,
                     self.slider_x[button_dims[permutations[key][1]]].values)
                 for j in range(1 + self.show_variances):
-                    k = i + 3 * j
+                    k = i + 4 * j
                     setattr(self.fig.data[k], key,
                             np.ones_like(xx) * val["loc"])
                     setattr(self.fig.data[k], permutations[key][0], xx)
@@ -240,7 +274,7 @@ class Slicer3d(Slicer):
 
             self.fig.data[i].surfacecolor = self.check_transpose(val["slice"])
             if self.show_variances:
-                self.fig.data[i+3].surfacecolor = self.check_transpose(
+                self.fig.data[i+4].surfacecolor = self.check_transpose(
                     val["slice"], variances=True)
 
         return
@@ -261,7 +295,7 @@ class Slicer3d(Slicer):
             ax_dim = self.buttons[key].value.lower()
             xy = getattr(self.fig.data[self.slice_indices[ax_dim]], ax_dim)
             for i in range(1 + self.show_variances):
-                k = self.slice_indices[ax_dim] + (3 * (i > 0))
+                k = self.slice_indices[ax_dim] + 4 * i
                 setattr(self.fig.data[k], ax_dim, xy / xy * loc)
                 self.fig.data[k].surfacecolor = \
                     self.check_transpose(vslice, variances=(i > 0))
@@ -286,6 +320,13 @@ class Slicer3d(Slicer):
         key = owner.dim_str
         ax_dim = self.buttons[key].value.lower()
         for i in range(1 + self.show_variances):
-            k = self.slice_indices[ax_dim] + (3 * (i > 0))
+            k = self.slice_indices[ax_dim] + 4 * i
             self.fig.data[k].visible = owner.value
         return
+
+    def get_outline_as_scatter(self):
+        scatter_x, scatter_y, scatter_z = np.meshgrid(
+                self.xminmax[self.button_axis_to_dim["x"]],
+                self.xminmax[self.button_axis_to_dim["y"]],
+                self.xminmax[self.button_axis_to_dim["z"]])
+        return scatter_x.flatten(), scatter_y.flatten(), scatter_z.flatten()
