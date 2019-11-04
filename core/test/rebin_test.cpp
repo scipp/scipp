@@ -96,3 +96,57 @@ TEST_F(RebinTest, keeps_unrelated_labels_but_drops_others) {
 
   ASSERT_EQ(rebin(a, Dim::X, edges), expected);
 }
+
+class RebinMask1DTest : public ::testing::Test {
+protected:
+  Variable x =
+      makeVariable<double>({Dim::X, 10}, {1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
+
+  Variable mask =
+      makeVariable<bool>({Dim::X, 10}, {false, false, true, false, false, false,
+                                        false, false, false, false});
+};
+
+TEST_F(RebinMask1DTest, mask_1d) {
+
+  const auto edges = makeVariable<double>({Dim::X, 5}, {1, 3, 5, 7, 10});
+  const auto expected =
+      makeVariable<bool>({Dim::X, 4}, {false, true, false, false});
+
+  const auto result = rebin(mask, Dim::X, x, edges);
+
+  ASSERT_EQ(result, expected);
+}
+
+TEST_F(RebinMask1DTest, mask_weights_1d) {
+  const auto edges =
+      makeVariable<double>({Dim::X, 5}, {1.0, 3.5, 5.5, 7.0, 10.0});
+  const auto expected =
+      makeVariable<bool>({Dim::X, 4}, {true, true, false, false});
+
+  const auto result = rebin(mask, Dim::X, x, edges);
+
+  ASSERT_EQ(result, expected);
+}
+
+class RebinMask2DTest : public ::testing::Test {
+protected:
+  Variable x = makeVariable<double>({{Dim::Y, 2}, {Dim::X, 6}},
+                                    {1, 2, 3, 4, 5, 6, 1, 2, 3, 4, 5, 6});
+
+  Variable mask = makeVariable<bool>(
+      {{Dim::Y, 2}, {Dim::X, 5}},
+      {false, true, false, false, true, false, false, true, false, false});
+};
+
+TEST_F(RebinMask2DTest, mask_weights_2d) {
+  const auto edges =
+      makeVariable<double>({Dim::X, 5}, {1.0, 3.0, 4.0, 5.5, 6.0});
+  const auto expected =
+      makeVariable<bool>({{Dim::Y, 2}, {Dim::X, 4}},
+                         {true, false, true, true, false, true, false, false});
+
+  const auto result = rebin(mask, Dim::X, x, edges);
+
+  ASSERT_EQ(result, expected);
+}

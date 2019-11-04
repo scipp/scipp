@@ -6,6 +6,8 @@
 #include "scipp/core/except.h"
 #include "scipp/core/variable.h"
 
+using mask_rebinning_t = std::tuple<bool, bool, double, double>;
+
 namespace scipp::core {
 
 bool isMatchingOr1DBinEdge(const Dim dim, Dimensions edges,
@@ -17,14 +19,15 @@ bool isMatchingOr1DBinEdge(const Dim dim, Dimensions edges,
 }
 
 template <class T> class VariableConceptT;
-template <class T>
+template <class DataType, class CoordType>
 // Special rebin version for rebinning inner dimension to a joint new coord.
-static void
-rebinInner(const Dim dim, const VariableConceptT<T> &oldT,
-           VariableConceptT<T> &newT, const VariableConceptT<T> &oldCoordT,
-           const VariableConceptT<T> &newCoordT, bool variances = false) {
-  scipp::span<const T> oldData;
-  scipp::span<T> newData;
+static void rebinInner(const Dim dim, const VariableConceptT<DataType> &oldT,
+                       VariableConceptT<DataType> &newT,
+                       const VariableConceptT<CoordType> &oldCoordT,
+                       const VariableConceptT<CoordType> &newCoordT,
+                       bool variances = false) {
+  scipp::span<const DataType> oldData;
+  scipp::span<DataType> newData;
   if (variances) {
     oldData = oldT.variances();
     newData = newT.variances();
@@ -123,7 +126,7 @@ Variable rebin(const VariableConstProxy &var, const Dim dim,
   // Rebin could also implemented for count-densities. However, it may be better
   // to avoid this since it increases complexity. Instead, densities could
   // always be computed on-the-fly for visualization, if required.
-  expect::unit(var, units::counts);
+  // expect::unit(var, units::counts);
 
   auto do_rebin = [dim](auto &&out, auto &&old, auto &&oldCoord_,
                         auto &&newCoord_) {
@@ -149,7 +152,8 @@ Variable rebin(const VariableConstProxy &var, const Dim dim,
   dims.resize(dim, newCoord.dims()[dim] - 1);
   Variable rebinned(var, dims);
   if (rebinned.dims().inner() == dim) {
-    apply_in_place<double, float>(do_rebin, rebinned, var, oldCoord, newCoord);
+    apply_in_place<double, float, mask_rebinning_t>(do_rebin, rebinned, var,
+                                                    oldCoord, newCoord);
   } else {
     if (newCoord.dims().ndim() > 1)
       throw std::runtime_error(

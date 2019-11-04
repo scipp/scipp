@@ -1100,6 +1100,13 @@ public:
     setCoord(dim, Variable(coord));
   }
 
+  void setMask(const std::string &name, Variable mask) {
+    m_holder.setMask(name, std::move(mask));
+  }
+  void setMask(const std::string &name, const VariableConstProxy &mask) {
+    setMask(name, Variable(mask));
+  }
+
   DataConstProxy slice(const Slice slice1) const & {
     return get().slice(slice1);
   }
