@@ -100,25 +100,28 @@ class Slicer:
             else:
                 button_style = "success"
                 self.button_axis_to_dim[button_values[i].lower()] = key
-            self.showhide[key] = widgets.Button(
-                description="hide",
-                disabled=(button_values[i] is None),
-                button_style=button_style
-            )
-            self.showhide[key].layout.width = "70px"
             setattr(self.buttons[key], "dim_str", key)
             setattr(self.buttons[key], "dim", dim)
             setattr(self.buttons[key], "old_value", self.buttons[key].value)
             setattr(self.slider[key], "dim_str", key)
             setattr(self.slider[key], "dim", dim)
-            setattr(self.showhide[key], "dim_str", key)
-            setattr(self.showhide[key], "value", button_values[i] is not None)
+
+            if len(button_options) == 3:
+                self.showhide[key] = widgets.Button(
+                    description="hide",
+                    disabled=(button_values[i] is None),
+                    button_style=button_style
+                )
+                self.showhide[key].layout.width = "70px"
+                setattr(self.showhide[key], "dim_str", key)
+                setattr(self.showhide[key], "value", button_values[i] is not None)
+                # Add observer to show/hide buttons
+                self.showhide[key].on_click(self.update_showhide)
+
             # Add observer to buttons
             self.buttons[key].on_msg(self.update_buttons)
             # Add an observer to the slider
             self.slider[key].observe(self.update_slice, names="value")
-            # Add observer to checkboxes
-            self.showhide[key].on_click(self.update_showhide)
             # Add the row of slider + buttons
             row = [self.slider[key], self.lab[key], self.buttons[key]]
             if len(button_options) == 3:

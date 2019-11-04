@@ -43,6 +43,8 @@ def plot_2d(input_data, axes=None, contours=False, cb=None, filename=None,
     layout = {"height": figsize[1], "width": figsize[0]}
     if var.variances is not None and show_variances:
         layout["height"] = 0.7 * layout["height"]
+        layout["xaxis2"] = {"matches": "x"}
+        layout["yaxis2"] = {"matches": "y"}
 
     cbdict = {"title": title,
               "titleside": "right",
@@ -122,13 +124,12 @@ class Slicer2d(Slicer):
             data["colorbar"]["title"] = "variances"
             data["colorbar"]["x"] = 1.0
             self.fig.add_trace(data, row=1, col=2)
-            self.fig.update_layout(height=layout["height"],
-                                   width=layout["width"])
+            self.fig.update_layout(**layout)
             if self.rasterize:
                 self.fig.update_xaxes(row=1, col=1, **layout["xaxis"])
                 self.fig.update_xaxes(row=1, col=2, **layout["xaxis"])
-                self.fig.update_yaxes(row=1, col=1, **layout["yaxis"])
-                self.fig.update_yaxes(row=1, col=2, **layout["yaxis"])
+                self.fig.update_yaxes(row=1, col=1, **layout["xaxis"])
+                self.fig.update_yaxes(row=1, col=2, **layout["xaxis"])
         else:
             self.fig = go.FigureWidget(data=[data], layout=layout)
 
