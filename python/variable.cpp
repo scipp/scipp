@@ -275,7 +275,7 @@ void init_variable(py::module &m) {
         Proxy for Variable, representing a sliced or transposed view onto a variable;
         Mostly equivalent to Variable, see there for details.)");
   variableProxy.def_buffer(&make_py_buffer_info);
-  variableProxy
+  variableProxy.def(py::init<Variable &>())
       .def("copy", [](const VariableProxy &self) { return Variable(self); },
            "Return a (deep) copy.")
       .def("__copy__", [](VariableProxy &self) { return Variable(self); })
@@ -321,6 +321,7 @@ void init_variable(py::module &m) {
   bind_data_properties(variableProxy);
 
   py::implicitly_convertible<Variable, VariableConstProxy>();
+  py::implicitly_convertible<Variable, VariableProxy>();
 
   m.def("reshape",
         [](const VariableProxy &self, const std::vector<Dim> &labels,
@@ -417,6 +418,18 @@ void init_variable(py::module &m) {
 
   m.def("sqrt", [](const VariableConstProxy &self) { return sqrt(self); },
         py::call_guard<py::gil_scoped_release>(), R"(
+        Element-wise square-root.
+
+        :raises: If the dtype has no square-root, e.g., if it is a string
+        :return: Copy of the input with values replaced by the square-root.
+        :rtype: Variable)");
+
+  m.def("sqrt",
+        [](const VariableConstProxy &self, const VariableProxy &out) {
+          return sqrt(self, out);
+        },
+        py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>(),
+        R"(
         Element-wise square-root.
 
         :raises: If the dtype has no square-root, e.g., if it is a string

@@ -976,7 +976,10 @@ SCIPP_CORE_EXPORT Variable rebin(const VariableConstProxy &var, const Dim dim,
 SCIPP_CORE_EXPORT Variable resize(const VariableConstProxy &var, const Dim dim,
                                   const scipp::index size);
 SCIPP_CORE_EXPORT Variable reverse(Variable var, const Dim dim);
-SCIPP_CORE_EXPORT Variable sqrt(const VariableConstProxy &var);
+SCIPP_CORE_EXPORT[[nodiscard]] Variable sqrt(const VariableConstProxy &var);
+SCIPP_CORE_EXPORT[[nodiscard]] Variable sqrt(Variable &&var);
+SCIPP_CORE_EXPORT VariableProxy sqrt(const VariableConstProxy &var,
+                                     const VariableProxy &out);
 
 SCIPP_CORE_EXPORT Variable sum(const VariableConstProxy &var, const Dim dim);
 SCIPP_CORE_EXPORT Variable sum(const VariableConstProxy &var, const Dim dim,
