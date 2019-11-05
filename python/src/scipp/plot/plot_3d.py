@@ -18,7 +18,7 @@ from plotly.subplots import make_subplots
 
 def plot_3d(input_data, axes=None, contours=False, cb=None, filename=None,
             name=None, figsize=None, show_variances=False, ndim=0,
-            backend=None, **kwargs):
+            backend=None):
     """
     Plot a 3-slice through a N dimensional dataset. For every dimension above
     3, a slider is created to adjust the position of the slice in that

@@ -114,7 +114,8 @@ class Slicer:
                 )
                 self.showhide[key].layout.width = "70px"
                 setattr(self.showhide[key], "dim_str", key)
-                setattr(self.showhide[key], "value", button_values[i] is not None)
+                setattr(self.showhide[key], "value",
+                        button_values[i] is not None)
                 # Add observer to show/hide buttons
                 self.showhide[key].on_click(self.update_showhide)
 

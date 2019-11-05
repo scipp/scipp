@@ -20,7 +20,7 @@ from matplotlib.colors import Normalize
 
 def plot_2d(input_data, axes=None, contours=False, cb=None, filename=None,
             name=None, figsize=None, show_variances=False, ndim=0,
-            rasterize="auto", backend=None, **kwargs):
+            rasterize="auto", backend=None):
     """
     Plot a 2D slice through a N dimensional dataset. For every dimension above
     2, a slider is created to adjust the position of the slice in that
@@ -128,8 +128,8 @@ class Slicer2d(Slicer):
             if self.rasterize:
                 self.fig.update_xaxes(row=1, col=1, **layout["xaxis"])
                 self.fig.update_xaxes(row=1, col=2, **layout["xaxis"])
-                self.fig.update_yaxes(row=1, col=1, **layout["xaxis"])
-                self.fig.update_yaxes(row=1, col=2, **layout["xaxis"])
+                self.fig.update_yaxes(row=1, col=1, **layout["yaxis"])
+                self.fig.update_yaxes(row=1, col=2, **layout["yaxis"])
         else:
             self.fig = go.FigureWidget(data=[data], layout=layout)
 

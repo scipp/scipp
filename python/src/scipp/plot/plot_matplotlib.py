@@ -70,8 +70,7 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False,
 
 
 def plot_2d(input_data, name=None, axes=None, contours=False, cb=None,
-            filename=None, show_variances=False, mpl_axes=None, mpl_cax=None,
-            **kwargs):
+            filename=None, show_variances=False, mpl_axes=None, mpl_cax=None):
     """
     Plot a 2D image.
     If countours=True, a filled contour plot is produced, if False, then a
@@ -189,7 +188,7 @@ def plot_2d(input_data, name=None, axes=None, contours=False, cb=None,
 def plot_sparse(input_data, ndim=0, sparse_dim=None, logx=False,
                 logy=False, logxy=False, weights="color", size=10.0,
                 filename=None, axes=None, cb=None, opacity=1.0,
-                mpl_axes=None, mpl_cax=None, title=None, **kwargs):
+                mpl_axes=None, mpl_cax=None, title=None):
     """
     Produce a scatter plot from sparse data.
     """
