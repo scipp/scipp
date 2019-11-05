@@ -16,7 +16,7 @@ set(INC_FILES
     include/scipp/core/variable.h
     include/scipp/core/variable.tcc
     include/scipp/core/vector.h
-    include/scipp/core/view_index.h)
+    include/scipp/core/view_index.h include/scipp/core/values_and_variances_strong_types.h)
 
 set(SRC_FILES
     counts.cpp

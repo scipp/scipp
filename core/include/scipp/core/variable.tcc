@@ -615,10 +615,10 @@ Variable::Variable(const units::Unit unit, const Dimensions &dimensions,
                                                     std::move(variances_))) {}
 
 template <class T>
-Variable Variable::createVariable(scipp::units::Unit &&u,
-                                  scipp::core::Dimensions &&s,
-                                  scipp::core::Values<T> &&val,
-                                  scipp::core::Variances<T> &&var) {
+Variable Variable::fromUnitsDimsData(scipp::units::Unit &&u,
+                                     scipp::core::Dimensions &&s,
+                                     scipp::core::Values<T> &&val,
+                                     scipp::core::Variances<T> &&var) {
   if (val.values && var.variances)
     return Variable(u, s, std::move(*val.values), std::move(*var.variances));
 
@@ -635,24 +635,13 @@ Variable Variable::createVariable(scipp::units::Unit &&u,
 template <class T>
 Variable::Variable(units::Unit &&u, Dimensions &&s, Values<T> &&val,
                    Variances<T> &&var)
-    : Variable(std::move(createVariable(std::move(u), std::move(s),
-                                        std::move(val), std::move(var)))) {}
+    : Variable(std::move(fromUnitsDimsData(std::move(u), std::move(s),
+                                           std::move(val), std::move(var)))) {}
 
-template <class... Ts>
-template <class T, class... Args>
-T Variable::helper<Ts...>::construct(Ts &&... ts) {
-  auto tp = std::make_tuple(std::forward<Ts>(ts)...);
-  return T(std::forward<Args>(hlp<Args, Ts...>(tp))...);
-}
-
-template <class T, class... Ts>
-Variable Variable::constructVariable(Ts &&... args) {
-  using helper = helper<Ts...>;
-  constexpr auto nn = helper::template check_types<units::Unit, Dimensions,
-                                                   Values<T>, Variances<T>>();
-  static_assert(nn ==
-                std::tuple_size_v<decltype(std::forward_as_tuple(args...))>);
-
+template <class T, class... Ts> Variable Variable::fromArgs(Ts &&... args) {
+  using helper = ConstructorArgumentsMatcher<Ts...>;
+  helper::template checkArgTypesValid<units::Unit, Dimensions, Values<T>,
+                                      Variances<T>>();
   return helper::template construct<Variable, units::Unit, Dimensions,
                                     Values<T>, Variances<T>>(
       std::forward<Ts>(args)...);
@@ -661,7 +650,7 @@ Variable Variable::constructVariable(Ts &&... args) {
 template <class... Ts>
 template <class T>
 Variable Variable::ConstructVariable<Ts...>::Maker<T>::apply(Ts &&... args) {
-  return constructVariable<underlying_type_t<T>>(std::forward<Ts>(args)...);
+  return fromArgs<underlying_type_t<T>>(std::forward<Ts>(args)...);
 }
 
 template <class... Ts>
