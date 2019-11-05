@@ -482,23 +482,16 @@ private:
 
   // traits for universal Variable constructor
 
-  template <class T1, class T2> struct is_values_or_variances {
-    static constexpr bool value = (std::is_base_of_v<ValuesMark, T1> &&
-                                   std::is_base_of_v<ValuesMark, T2>) ||
-                                  (std::is_base_of_v<VariancesMark, T1> &&
-                                   std::is_base_of_v<VariancesMark, T2>);
-  };
   template <class T1, class T2>
-  using is_values_or_variances_v =
-      typename is_values_or_variances<T1, T2>::value;
+  static constexpr bool is_values_or_variances_v = (std::is_base_of_v<ValuesMark, T1> &&
+      std::is_base_of_v<ValuesMark, T2>) ||
+  (std::is_base_of_v<VariancesMark, T1> &&
+      std::is_base_of_v<VariancesMark, T2>);
 
   template <class T1, class T2> struct is_same_or_values_or_variances {
     static constexpr bool value =
-        std::is_same_v<T1, T2> || is_values_or_variances<T1, T2>::value;
+        std::is_same_v<T1, T2> || is_values_or_variances_v<T1, T2>;
   };
-  template <class T1, class T2>
-  using is_same_or_values_or_variances_v =
-      typename is_same_or_values_or_variances<T1, T2>::value;
 
   template <class T, class... Args>
   using hasType = std::disjunction<
@@ -527,12 +520,6 @@ private:
     template <class T, class... Args> static T construct(Ts &&... ts);
 
   private:
-    template <class T1, class T2> struct ValuesVariablesConvertible {
-      static constexpr auto value =
-          (std::is_same_v<T1, ValuesMark> && std::is_same_v<T2, ValuesMark>) ||
-          (std::is_same_v<T1, VariancesMark> &&
-           std::is_same_v<T2, VariancesMark>);
-    };
     template <class T, class... Args>
     static decltype(auto) hlp(std::tuple<Args...> &tp) {
       if constexpr (!hasType<T, Ts...>::value)
@@ -543,19 +530,16 @@ private:
         if constexpr (std::is_same_v<Type, T>)
           return std::get<index>(tp);
         else {
-          if constexpr (is_values_or_variances<T, Type>::value) {
+          if constexpr (is_values_or_variances_v<T, Type>) {
             using T1 = typename T::type;
             using T2 = typename Type::type;
             if constexpr (std::is_convertible_v<T1, T2>) {
               return std::get<index>(tp);
             } else {
-              throw std::runtime_error(
-                  "Can't convert " /*+ to_string(dtype<T1>) + " to " + to_string(dtype<T2>)*/);
+              throw except::TypeError(
+                  "Can't convert " + to_string(core::dtype<T1>) + " to " + to_string(core::dtype<T2>) + ".");
               return T{};
             }
-          } else {
-            throw std::runtime_error("Can't convert ");
-            return T{};
           }
         }
       }
