@@ -393,70 +393,76 @@ def test_binary_divide():
     assert np.array_equal(c.values, data / data / data / data)
 
 
-def test_binary_or():
+def test_in_place_binary_or():
     a = sc.Variable(False)
     b = sc.Variable(True)
     a |= b
     assert a == sc.Variable(True)
 
-    a = sc.Variable(False, True, False, True)
-    b = sc.Variable(False, False, True, False)
+    a = sc.Variable([Dim.X], values=np.array([False, True, False, True]))
+    b = sc.Variable([Dim.X], values=np.array([False, False, True, True]))
     a |= b
-    assert a == sc.Variable(False, True, True, True)
+    assert a == sc.Variable([Dim.X], values=np.array([
+        False, True, True, True]))
 
 
-def test_in_place_binary_or():
+def test_binary_or():
     a = sc.Variable(False)
     b = sc.Variable(True)
     assert (a | b) == sc.Variable(True)
 
-    a = sc.Variable(False, True, False, True)
-    b = sc.Variable(False, False, True, False)
-    assert (a | b) == sc.Variable(False, True, True, True)
-
-
-def test_binary_and():
-    a = sc.Variable(False)
-    b = sc.Variable(True)
-    a &= b
-    assert a == sc.Variable(True)
-
-    a = sc.Variable(False, True, False, True)
-    b = sc.Variable(False, False, True, False)
-    a &= b
-    assert a == sc.Variable(False, True, True, True)
+    a = sc.Variable([Dim.X], values=np.array([False, True, False, True]))
+    b = sc.Variable([Dim.X], values=np.array([False, False, True, True]))
+    assert (a | b) == sc.Variable([Dim.X], values=np.array([
+        False, True, True, True]))
 
 
 def test_in_place_binary_and():
     a = sc.Variable(False)
     b = sc.Variable(True)
-    assert (a & b) == sc.Variable(True)
+    a &= b
+    assert a == sc.Variable(False)
 
-    a = sc.Variable(False, True, False, True)
-    b = sc.Variable(False, False, True, False)
-    assert (a & b) == sc.Variable(False, True, True, True)
+    a = sc.Variable([Dim.X], values=np.array([False, True, False, True]))
+    b = sc.Variable([Dim.X], values=np.array([False, False, True, True]))
+    a &= b
+    assert a == sc.Variable([Dim.X], values=np.array([
+        False, False, False, True]))
 
 
-def test_binary_xor():
+def test_binary_and():
     a = sc.Variable(False)
     b = sc.Variable(True)
-    a ^= b
-    assert a == sc.Variable(True)
+    assert (a & b) == sc.Variable(False)
 
-    a = sc.Variable(False, True, False, True)
-    b = sc.Variable(False, False, True, False)
-    a ^= b
-    assert a == sc.Variable(False, True, True, True)
+    a = sc.Variable([Dim.X], values=np.array([False, True, False, True]))
+    b = sc.Variable([Dim.X], values=np.array([False, False, True, True]))
+    assert (a & b) == sc.Variable([Dim.X], values=np.array([
+        False, False, False, True]))
 
 
 def test_in_place_binary_xor():
     a = sc.Variable(False)
     b = sc.Variable(True)
+    a ^= b
+    assert a == sc.Variable(True)
+
+    a = sc.Variable([Dim.X], values=np.array([False, True, False, True]))
+    b = sc.Variable([Dim.X], values=np.array([False, False, True, True]))
+    a ^= b
+    assert a == sc.Variable([Dim.X], values=np.array([
+        False, True, True, False]))
+
+
+def test_binary_xor():
+    a = sc.Variable(False)
+    b = sc.Variable(True)
     assert (a ^ b) == sc.Variable(True)
 
-    a = sc.Variable(False, True, False, True)
-    b = sc.Variable(False, False, True, False)
-    assert (a ^ b) == sc.Variable(False, True, True, True)
+    a = sc.Variable([Dim.X], values=np.array([False, True, False, True]))
+    b = sc.Variable([Dim.X], values=np.array([False, False, True, True]))
+    assert (a ^ b) == sc.Variable([Dim.X], values=np.array([
+        False, True, True, False]))
 
 
 def test_in_place_binary_with_scalar():
