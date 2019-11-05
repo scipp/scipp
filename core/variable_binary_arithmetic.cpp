@@ -65,6 +65,30 @@ static constexpr auto dimensionless_unit_check_return =
       return aUnit;
     };
 
+static constexpr auto or_op_ = overloaded{
+    [](const auto &var_, const auto &other_) -> bool { return var_ | other_; },
+    dimensionless_unit_check_return};
+
+static constexpr auto or_equals_ =
+    overloaded{[](auto &var_, const auto &other_) { var_ |= other_; },
+               dimensionless_unit_check};
+
+static constexpr auto and_op_ = overloaded{
+    [](const auto &var_, const auto &other_) -> bool { return var_ & other_; },
+    dimensionless_unit_check_return};
+
+static constexpr auto and_equals_ =
+    overloaded{[](auto &var_, const auto &other_) { var_ &= other_; },
+               dimensionless_unit_check};
+
+static constexpr auto xor_op_ = overloaded{
+    [](const auto &var_, const auto &other_) -> bool { return var_ ^ other_; },
+    dimensionless_unit_check_return};
+
+static constexpr auto xor_equals_ =
+    overloaded{[](auto &var_, const auto &other_) { var_ ^= other_; },
+               dimensionless_unit_check};
+
 template <class T1, class T2> Variable plus(const T1 &a, const T2 &b) {
   return transform<arithmetic_and_matrix_type_pairs>(a, b, plus_);
 }
@@ -144,57 +168,30 @@ Variable &Variable::operator/=(const VariableConstProxy &other) & {
 }
 
 template <class T1, class T2> T1 &or_equals(T1 &variable, const T2 &other) {
-  transform_in_place<pair_self_t<bool>>(
-      variable, other,
-      overloaded{[](auto &var_, const auto &other_) { var_ |= other_; },
-                 dimensionless_unit_check});
-
+  transform_in_place<pair_self_t<bool>>(variable, other, or_equals_);
   return variable;
 }
 
 template <class T1, class T2> Variable or_op(const T1 &a, const T2 &b) {
-  return transform<pair_self_t<bool>>(
-      a, b,
-      overloaded{[](const auto &var_, const auto &other_) -> bool {
-                   return var_ | other_;
-                 },
-                 dimensionless_unit_check_return});
+  return transform<pair_self_t<bool>>(a, b, or_op_);
 }
 
 template <class T1, class T2> T1 &and_equals(T1 &variable, const T2 &other) {
-  transform_in_place<pair_self_t<bool>>(
-      variable, other,
-      overloaded{[](auto &var_, const auto &other_) { var_ &= other_; },
-                 dimensionless_unit_check});
-
+  transform_in_place<pair_self_t<bool>>(variable, other, and_equals_);
   return variable;
 }
 
 template <class T1, class T2> Variable and_op(const T1 &a, const T2 &b) {
-  return transform<pair_self_t<bool>>(
-      a, b,
-      overloaded{[](const auto &var_, const auto &other_) -> bool {
-                   return var_ & other_;
-                 },
-                 dimensionless_unit_check_return});
+  return transform<pair_self_t<bool>>(a, b, and_op_);
 }
 
 template <class T1, class T2> T1 &xor_equals(T1 &variable, const T2 &other) {
-  transform_in_place<pair_self_t<bool>>(
-      variable, other,
-      overloaded{[](auto &var_, const auto &other_) { var_ ^= other_; },
-                 dimensionless_unit_check});
-
+  transform_in_place<pair_self_t<bool>>(variable, other, xor_equals_);
   return variable;
 }
 
 template <class T1, class T2> Variable xor_op(const T1 &a, const T2 &b) {
-  return transform<pair_self_t<bool>>(
-      a, b,
-      overloaded{[](const auto &var_, const auto &other_) -> bool {
-                   return var_ ^ other_;
-                 },
-                 dimensionless_unit_check_return});
+  return transform<pair_self_t<bool>>(a, b, xor_op_);
 }
 
 Variable &Variable::operator|=(const Variable &other) & {
@@ -279,8 +276,12 @@ Variable operator/(const Variable &a, const Variable &b) {
   return divide(a, b);
 }
 Variable operator|(const Variable &a, const Variable &b) { return or_op(a, b); }
-Variable operator&(const Variable &a, const Variable &b) { return and_op(a, b); }
-Variable operator^(const Variable &a, const Variable &b) { return xor_op(a, b); }
+Variable operator&(const Variable &a, const Variable &b) {
+  return and_op(a, b);
+}
+Variable operator^(const Variable &a, const Variable &b) {
+  return xor_op(a, b);
+}
 Variable operator+(const Variable &a, const VariableConstProxy &b) {
   return plus(a, b);
 }
