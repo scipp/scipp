@@ -36,7 +36,7 @@ add_executable(${TARGET_NAME} EXCLUDE_FROM_ALL
                variable_trigonometry_test.cpp
                variable_view_test.cpp
                view_index_test.cpp
-               )
+        variable_universal_contructor_test.cpp)
 include_directories(SYSTEM ${GMOCK_INCLUDE_DIR} ${GTEST_INCLUDE_DIR})
 target_link_libraries(${TARGET_NAME}
                       LINK_PRIVATE
