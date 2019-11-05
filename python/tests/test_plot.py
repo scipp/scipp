@@ -248,13 +248,7 @@ def test_plot_2d_image_with_labels():
 
 def test_plot_2d_image_with_variances():
     d = make_2d_dataset(variances=True)
-    do_plot(d, show_variances=True)
-
-
-def test_plot_2d_image_with_variances_for_mpl():
-    d = make_2d_dataset(variances=True)
-    do_plot(d, test_plotly_backend=False, test_mpl_backend=True,
-            variances=True)
+    do_plot(d, show_variances=True, test_mpl_backend=True)
 
 
 def test_plot_2d_image_with_filename():

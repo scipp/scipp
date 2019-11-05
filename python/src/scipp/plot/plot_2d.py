@@ -20,7 +20,7 @@ from matplotlib.colors import Normalize
 
 def plot_2d(input_data, axes=None, contours=False, cb=None, filename=None,
             name=None, figsize=None, show_variances=False, ndim=0,
-            rasterize="auto", backend=None, **kwargs):
+            rasterize="auto", backend=None):
     """
     Plot a 2D slice through a N dimensional dataset. For every dimension above
     2, a slider is created to adjust the position of the slice in that
@@ -43,6 +43,8 @@ def plot_2d(input_data, axes=None, contours=False, cb=None, filename=None,
     layout = {"height": figsize[1], "width": figsize[0]}
     if var.variances is not None and show_variances:
         layout["height"] = 0.7 * layout["height"]
+        layout["xaxis2"] = {"matches": "x"}
+        layout["yaxis2"] = {"matches": "y"}
 
     cbdict = {"title": title,
               "titleside": "right",
@@ -122,8 +124,7 @@ class Slicer2d(Slicer):
             data["colorbar"]["title"] = "variances"
             data["colorbar"]["x"] = 1.0
             self.fig.add_trace(data, row=1, col=2)
-            self.fig.update_layout(height=layout["height"],
-                                   width=layout["width"])
+            self.fig.update_layout(**layout)
             if self.rasterize:
                 self.fig.update_xaxes(row=1, col=1, **layout["xaxis"])
                 self.fig.update_xaxes(row=1, col=2, **layout["xaxis"])
