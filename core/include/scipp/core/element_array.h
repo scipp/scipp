@@ -80,12 +80,20 @@ public:
   }
 
   void resize(const scipp::index new_size) {
-    m_data = std::make_unique<T[]>(new_size);
-    m_size = new_size;
+    if (new_size == 0) {
+      m_data.reset();
+      m_size = 0;
+    } else {
+      m_data = std::make_unique<T[]>(new_size);
+      m_size = new_size;
+    }
   }
 
   void resize(const scipp::index new_size, const default_init_elements_t &) {
-    if (new_size != size()) {
+    if (new_size == 0) {
+      m_data.reset();
+      m_size = 0;
+    } else if (new_size != size()) {
       m_data = make_unique_default_init<T[]>(new_size);
       m_size = new_size;
     }
