@@ -6,7 +6,6 @@
 #define VARIABLE_H
 
 #include <string>
-#include <type_traits>
 #include <variant>
 
 #include <Eigen/Dense>
@@ -22,7 +21,6 @@
 #include "scipp/core/value_and_variance.h"
 #include "scipp/core/values_and_variances_strong_types.h"
 #include "scipp/core/variable_view.h"
-#include "scipp/core/vector.h"
 #include "scipp/units/unit.h"
 
 namespace scipp::core {

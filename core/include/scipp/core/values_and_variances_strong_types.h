@@ -6,67 +6,61 @@
 #ifndef SCIPP_VALUES_AND_VARIANCES_STRONG_TYPES_H
 #define SCIPP_VALUES_AND_VARIANCES_STRONG_TYPES_H
 
+#include "scipp/core/except.h"
 #include "scipp/core/vector.h"
 #include <optional>
 #include <type_traits>
 
 namespace scipp::core {
-struct ValuesMark {};
 
-template <class T> struct Values : ValuesMark {
+template <class T, template <class> class Container, class Tag = void>
+struct MoveOnlyOptionalContainer : Tag {
   using type = T;
-  std::optional<Vector<T>> values;
-  Values() = default;
-  Values(Values &&) = default;
-  Values(const Values &) = delete;
-  explicit Values(std::optional<Vector<T>> &&v) : values(std::move(v)) {}
-  template <class... Ts>
-  explicit Values(Ts &&... args) : values(std::forward<Ts>(args)...) {}
-
-  template <class OtherT> operator Values<OtherT>() {
-    return Values<OtherT>{
-        std::optional{Vector<OtherT>(values->begin(), values->end())}};
+  std::optional<Container<T>> data;
+  MoveOnlyOptionalContainer() = default;
+  MoveOnlyOptionalContainer(MoveOnlyOptionalContainer &&) = default;
+  MoveOnlyOptionalContainer(const MoveOnlyOptionalContainer &) = delete;
+  explicit MoveOnlyOptionalContainer(std::optional<Container<T>> &&container)
+      : data(std::move(container)) {}
+  template <class U> operator MoveOnlyOptionalContainer<U, Container, Tag>() {
+    return data ? MoveOnlyOptionalContainer<U, Container, Tag>(
+                      std::optional(Container<U>(data->begin(), data->end())))
+                : MoveOnlyOptionalContainer<U, Container, Tag>();
   }
 };
-template <class T> Values(std::optional<Vector<T>> &&)->Values<T>;
 
-struct VariancesMark {};
+struct ValuesTag {};
 
-template <class T> struct Variances : VariancesMark {
-  using type = T;
-  std::optional<Vector<T>> variances;
-  Variances() = default;
-  Variances(Variances &&) = default;
-  Variances(const Variances &) = delete;
-  explicit Variances(std::optional<Vector<T>> &&v) : variances(std::move(v)) {}
-  template <class... Ts>
-  explicit Variances(Ts &&... args) : variances(std::forward<Ts>(args)...) {}
+template <class T>
+using Values = MoveOnlyOptionalContainer<T, Vector, ValuesTag>;
 
-  template <class OtherT> operator Variances<OtherT>() {
-    return Variances<OtherT>{
-        std::optional{Vector<OtherT>(variances->begin(), variances->end())}};
-  }
-};
-template <class T> Variances(std::optional<Vector<T>> &&)->Variances<T>;
+struct VariancesTag {};
 
-template <class T1, class T2>
+template <class T>
+using Variances = MoveOnlyOptionalContainer<T, Vector, VariancesTag>;
+
+namespace detail {
+template<class T1, class T2>
 constexpr bool is_values_or_variances_v =
-    std::is_base_of_v<ValuesMark, T1> &&std::is_base_of_v<ValuesMark, T2> ||
-    std::is_base_of_v<VariancesMark, T1> &&std::is_base_of_v<VariancesMark, T2>;
+    std::is_base_of_v<ValuesTag, T1> && std::is_base_of_v<ValuesTag, T2> ||
+        std::is_base_of_v<VariancesTag, T1> && std::is_base_of_v<VariancesTag, T2>;
 
-template <class T1, class T2> struct is_same_or_values_or_variances {
+template<class T1, class T2> struct is_same_or_values_or_variances {
   static constexpr bool value =
       std::is_same_v<T1, T2> || is_values_or_variances_v<T1, T2>;
 };
+template<class T1, class T2>
+bool constexpr is_same_or_values_or_variances_v =
+    is_same_or_values_or_variances<T1, T2>::value;
 
-template <class T, class... Args>
-using hasType =
-    std::disjunction<is_same_or_values_or_variances<T, std::decay_t<Args>>...>;
+template<class T, class... Args>
+constexpr bool is_type_in_pack_v = std::disjunction<
+    is_same_or_values_or_variances<T, std::decay_t<Args>>...>::value;
 
-template <class T, class... Args> struct Indexer {
-  template <std::size_t... IS>
+template<class T, class... Args> struct Indexer {
+  template<std::size_t... IS>
   static constexpr auto indexOfCorresponding_impl(std::index_sequence<IS...>) {
-    return ((is_same_or_values_or_variances<T, Args>::value * IS) + ...);
+    return ((is_same_or_values_or_variances_v<T, Args> * IS) + ...);
   }
 
   static constexpr auto indexOfCorresponding() {
@@ -75,21 +69,21 @@ template <class T, class... Args> struct Indexer {
   }
 };
 
-template <class... Ts> // given types
+template<class... Ts> // given types
 struct ConstructorArgumentsMatcher {
-  template <class... Args> // needed types
+  template<class... Args> // needed types
   constexpr static void checkArgTypesValid() {
-    static_assert((hasType<Args, Ts...>::value + ...) == sizeof...(Ts));
+    static_assert((is_type_in_pack_v<Args, Ts...> + ...) == sizeof...(Ts));
   }
-  template <class T, class... Args> static T construct(Ts &&... ts) {
+  template<class T, class... Args> static T construct(Ts &&... ts) {
     auto tp = std::make_tuple(std::forward<Ts>(ts)...);
     return T(std::forward<Args>(extractArgs<Args, Ts...>(tp))...);
   }
 
 private:
-  template <class T, class... Args>
+  template<class T, class... Args>
   static decltype(auto) extractArgs(std::tuple<Args...> &tp) {
-    if constexpr (!hasType<T, Ts...>::value)
+    if constexpr (!is_type_in_pack_v<T, Ts...>)
       return T{};
     else {
       constexpr auto index = Indexer<T, Args...>::indexOfCorresponding();
@@ -104,9 +98,9 @@ private:
             return std::get<index>(tp);
           } else {
             throw except::TypeError("Can't convert " +
-                                    to_string(core::dtype<T1>) + " to " +
-                                    to_string(core::dtype<T2>) + ".");
-            return T{};
+                to_string(core::dtype<T1>) + " to " +
+                to_string(core::dtype<T2>) + ".");
+            return T{}; //fake return usefull type for compiler
           }
         }
       }
@@ -114,6 +108,7 @@ private:
   }
 };
 
+} //namespace detail
 } // namespace scipp::core
 
 #endif // SCIPP_VALUES_AND_VARIANCES_STRONG_TYPES_H

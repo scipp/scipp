@@ -619,13 +619,13 @@ Variable Variable::fromUnitsDimsData(scipp::units::Unit &&u,
                                      scipp::core::Dimensions &&s,
                                      scipp::core::Values<T> &&val,
                                      scipp::core::Variances<T> &&var) {
-  if (val.values && var.variances)
-    return Variable(u, s, std::move(*val.values), std::move(*var.variances));
+  if (val.data && var.data)
+    return Variable(u, s, std::move(*val.data), std::move(*var.data));
 
-  if (val.values && !var.variances)
-    return Variable(u, s, std::move(*val.values));
+  if (val.data && !var.data)
+    return Variable(u, s, std::move(*val.data));
 
-  if (!val.values && !var.variances)
+  if (!val.data && !var.data)
     return Variable(u, s, Vector<T>(s.volume()));
 
   throw std::invalid_argument(
@@ -639,7 +639,7 @@ Variable::Variable(units::Unit &&u, Dimensions &&s, Values<T> &&val,
                                            std::move(val), std::move(var)))) {}
 
 template <class T, class... Ts> Variable Variable::fromArgs(Ts &&... args) {
-  using helper = ConstructorArgumentsMatcher<Ts...>;
+  using helper = detail::ConstructorArgumentsMatcher<Ts...>;
   helper::template checkArgTypesValid<units::Unit, Dimensions, Values<T>,
                                       Variances<T>>();
   return helper::template construct<Variable, units::Unit, Dimensions,
