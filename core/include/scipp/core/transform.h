@@ -518,7 +518,7 @@ template <class... Ts> overloaded_sparse(Ts...)->overloaded_sparse<Ts...>;
 template <class... TypePairs, class Op>
 static constexpr auto type_pairs(Op) noexcept {
   if constexpr (sizeof...(TypePairs) == 0)
-    return underlying_type_t<typename Op::types>{};
+    return typename Op::types{};
   else
     return std::tuple_cat(TypePairs{}...);
 }
