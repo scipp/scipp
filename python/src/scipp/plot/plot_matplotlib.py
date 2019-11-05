@@ -188,7 +188,7 @@ def plot_2d(input_data, name=None, axes=None, contours=False, cb=None,
 def plot_sparse(input_data, ndim=0, sparse_dim=None, logx=False,
                 logy=False, logxy=False, weights="color", size=10.0,
                 filename=None, axes=None, cb=None, opacity=1.0,
-                mpl_axes=None, mpl_cax=None, title=None):
+                mpl_axes=None, mpl_cax=None, title=None, color=None):
     """
     Produce a scatter plot from sparse data.
     """
@@ -222,7 +222,7 @@ def plot_sparse(input_data, ndim=0, sparse_dim=None, logx=False,
     else:
         cax = None
 
-    params = dict(label=name, edgecolors="#ffffff")
+    params = dict(label=name, edgecolors="#ffffff", c=color)
     xs = sparse_data[ndims - 1]
     ys = sparse_data[ndims - 2]
     if ndims == 3:

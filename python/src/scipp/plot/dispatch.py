@@ -24,7 +24,7 @@ def dispatch(input_data, ndim=0, name=None, backend=None, collapse=None,
 
         from .plot_matplotlib import plot_1d, plot_2d, plot_sparse
         if sparse_dim is not None and bins is None:
-            return plot_sparse(input_data, name=name, sparse_dim=sparse_dim,
+            return plot_sparse(input_data, sparse_dim=sparse_dim,
                                color=color, **kwargs)
         elif ndim == 1:
             return plot_1d(input_data, color=color, **kwargs)
