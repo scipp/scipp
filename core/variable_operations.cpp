@@ -204,7 +204,8 @@ void flatten_impl(const VariableProxy &summed, const VariableConstProxy &var) {
 
 void sum_impl(const VariableProxy &summed, const VariableConstProxy &var) {
   accumulate_in_place<
-      pair_self_t<double, float, int64_t, int32_t, Eigen::Vector3d>>(
+      pair_self_t<double, float, int64_t, int32_t, Eigen::Vector3d>,
+      pair_custom_t<std::pair<int64_t, bool>>>(
       summed, var, [](auto &&a, auto &&b) { a += b; });
 }
 
@@ -212,21 +213,52 @@ Variable sum(const VariableConstProxy &var, const Dim dim) {
   expect::notSparse(var);
   auto dims = var.dims();
   dims.erase(dim);
-  Variable summed(var, dims);
+  // Bool DType is a bit special in that it cannot contain it's sum.
+  // Instead the sum is stored in a int64_t Variable
+  Variable summed{var.dtype() == DType::Bool ? makeVariable<int64_t>(dims)
+                                             : Variable(var, dims)};
   sum_impl(summed, var);
   return summed;
 }
 
-Variable mean(const VariableConstProxy &var, const Dim dim) {
+Variable sum(const VariableConstProxy &var, const Dim dim,
+             const MasksConstProxy &masks) {
+  if (masks.empty()) {
+    return sum(var, dim);
+  } else {
+    const auto mask_union = masks_merge(masks);
+    return sum(var * ~mask_union, dim);
+  }
+}
+
+Variable mean(const VariableConstProxy &var, const Dim dim,
+              const VariableConstProxy &masks_sum) {
   // In principle we *could* support mean/sum over sparse dimension.
   expect::notSparse(var);
   auto summed = sum(var, dim);
-  auto scale = makeVariable<double>(1.0 / static_cast<double>(var.dims()[dim]));
+
+  auto scale = 1.0 / (makeVariable<double>(var.dims()[dim]) - masks_sum);
+
   if (isInt(var.dtype()))
     summed = summed * scale;
   else
     summed *= scale;
   return summed;
+}
+
+Variable mean(const VariableConstProxy &var, const Dim dim) {
+  return mean(var, dim, makeVariable<int64_t>(0));
+}
+
+Variable mean(const VariableConstProxy &var, const Dim dim,
+              const MasksConstProxy &masks) {
+  if (masks.empty()) {
+    return mean(var, dim);
+  } else {
+    const auto mask_union = masks_merge(masks);
+    const auto masks_sum = sum(mask_union, dim);
+    return mean(var * ~mask_union, dim, masks_sum);
+  }
 }
 
 Variable abs(const Variable &var) {
@@ -297,4 +329,12 @@ Variable reverse(Variable var, const Dim dim) {
 /// Return a deep copy of a Variable or of a VariableProxy.
 Variable copy(const VariableConstProxy &var) { return Variable(var); }
 
+/// Merges all masks contained in the MasksConstProxy into a single Variable
+Variable masks_merge(const MasksConstProxy &masks) {
+  auto mask_union = makeVariable<bool>(false);
+  for (const auto &mask : masks) {
+    mask_union = mask_union | mask.second;
+  }
+  return mask_union;
+}
 } // namespace scipp::core

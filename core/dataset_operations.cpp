@@ -179,7 +179,7 @@ Dataset concatenate(const DatasetConstProxy &a, const DatasetConstProxy &b,
 
 DataArray sum(const DataConstProxy &a, const Dim dim) {
   return apply_to_data_and_drop_dim(a, [](auto &&... _) { return sum(_...); },
-                                    dim);
+                                    dim, a.masks());
 }
 
 Dataset sum(const DatasetConstProxy &d, const Dim dim) {
@@ -192,7 +192,7 @@ Dataset sum(const DatasetConstProxy &d, const Dim dim) {
 
 DataArray mean(const DataConstProxy &a, const Dim dim) {
   return apply_to_data_and_drop_dim(a, [](auto &&... _) { return mean(_...); },
-                                    dim);
+                                    dim, a.masks());
 }
 
 Dataset mean(const DatasetConstProxy &d, const Dim dim) {

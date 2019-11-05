@@ -305,6 +305,7 @@ public:
   }
 
   explicit operator bool() const noexcept { return m_object.operator bool(); }
+  Variable operator~() const;
 
   units::Unit unit() const { return m_unit; }
   void setUnit(const units::Unit &unit) { m_unit = unit; }
@@ -607,6 +608,8 @@ public:
   explicit operator bool() const noexcept {
     return m_variable->operator bool();
   }
+
+  auto operator~() const { return m_variable->operator~(); }
 
   VariableConstProxy slice(const Slice slice) const {
     return VariableConstProxy(*this, slice.dim(), slice.begin(), slice.end());
@@ -938,6 +941,8 @@ SCIPP_CORE_EXPORT Variable concatenate(const VariableConstProxy &a1,
 SCIPP_CORE_EXPORT Variable dot(const Variable &a, const Variable &b);
 SCIPP_CORE_EXPORT Variable filter(const Variable &var, const Variable &filter);
 SCIPP_CORE_EXPORT Variable mean(const VariableConstProxy &var, const Dim dim);
+SCIPP_CORE_EXPORT Variable mean(const VariableConstProxy &var, const Dim dim,
+                                const MasksConstProxy &masks);
 SCIPP_CORE_EXPORT Variable norm(const VariableConstProxy &var);
 SCIPP_CORE_EXPORT Variable permute(const Variable &var, const Dim dim,
                                    const std::vector<scipp::index> &indices);
@@ -950,6 +955,9 @@ SCIPP_CORE_EXPORT Variable reverse(Variable var, const Dim dim);
 SCIPP_CORE_EXPORT Variable sqrt(const VariableConstProxy &var);
 
 SCIPP_CORE_EXPORT Variable sum(const VariableConstProxy &var, const Dim dim);
+SCIPP_CORE_EXPORT Variable sum(const VariableConstProxy &var, const Dim dim,
+                               const MasksConstProxy &masks);
+
 SCIPP_CORE_EXPORT Variable copy(const VariableConstProxy &var);
 
 // Trigonometrics
@@ -959,6 +967,8 @@ SCIPP_CORE_EXPORT Variable tan(const Variable &var);
 SCIPP_CORE_EXPORT Variable asin(const Variable &var);
 SCIPP_CORE_EXPORT Variable acos(const Variable &var);
 SCIPP_CORE_EXPORT Variable atan(const Variable &var);
+
+SCIPP_CORE_EXPORT Variable masks_merge(const MasksConstProxy &masks);
 
 namespace sparse {
 SCIPP_CORE_EXPORT Variable counts(const VariableConstProxy &var);

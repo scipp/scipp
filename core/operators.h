@@ -42,7 +42,8 @@ struct times_equals {
       pair_self_t<double, float, int32_t, int64_t>{},
       pair_custom_t<std::pair<double, float>, std::pair<float, double>,
                     std::pair<int64_t, int32_t>,
-                    std::pair<Eigen::Vector3d, double>>{}));
+                    std::pair<Eigen::Vector3d, double>>{},
+      pair_numerical_with_t<bool>{}));
 };
 struct divide_equals {
   template <class A, class B>
