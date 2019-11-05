@@ -41,6 +41,7 @@ Documentation
    user-guide/units
    user-guide/dtype
    user-guide/error-propagation
+   user-guide/groupby
    user-guide/plotting
 
 .. toctree::
