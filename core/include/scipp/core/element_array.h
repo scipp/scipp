@@ -18,9 +18,22 @@ template <class T> auto make_unique_default_init(const scipp::index size) {
   return std::unique_ptr<T>(new std::remove_extent_t<T>[size]);
 }
 
+/// Tag for requesting default-initialization in methods of class element_array.
 static constexpr auto default_init_elements = []() {};
 using default_init_elements_t = decltype(default_init_elements);
 
+/// Internal data container for Variable.
+///
+/// This provides a vector-like storage for arrays of elements in a variable.
+/// The reasons for now using std::vector are:
+/// - Avoiding the std::vector<bool> specialization which would cause issues
+///   with thread-safety.
+/// - Support default-initialized arrays as an internal optimization in
+///   implementing transform. This avoids costly initialization in cases where
+///   data would be immediately overwritten afterwards.
+/// - As a minor benefit, since the implementation has to store a pointer and a
+///   size, we can at the same time support an "optional" behavior, as used for
+///   the array of variances in a variable.
 template <class T> class element_array {
 public:
   using value_type = T;
@@ -32,6 +45,7 @@ public:
     std::fill(data(), data() + size(), value);
   }
 
+  /// Construct with default-initialized elements. Use with care.
   element_array(const scipp::index new_size, const default_init_elements_t &) {
     resize(new_size, default_init_elements);
   }
@@ -88,6 +102,7 @@ public:
     }
   }
 
+  /// Resize with default-initialized elements. Use with care.
   void resize(const scipp::index new_size, const default_init_elements_t &) {
     if (new_size == 0) {
       m_data.reset();
