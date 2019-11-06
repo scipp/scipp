@@ -53,9 +53,9 @@ TEST(VariableUniversalConstructorTest, type_construcors_mix) {
 TEST(VariableUniversalConstructorTest, no_copy_on_matched_types) {
   auto data = Vector<double>{1.0, 4.5, 2.7, 5.0, 7.0, 6.7};
   auto val = Values(Vector<double>(data));
-  auto valAddr = &(*val.data)[0];
+  auto valAddr = val.data->data();
   auto var = Variances(Vector<double>(data));
-  auto varAddr = &(*var.data)[0];
+  auto varAddr = var.data->data();
 
   auto variable =
       Variable(dtype<double>, Dimensions{{Dim::X, Dim::Y}, {2, 3}},
