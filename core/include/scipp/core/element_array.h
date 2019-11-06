@@ -24,7 +24,7 @@ using default_init_elements_t = decltype(default_init_elements);
 /// Internal data container for Variable.
 ///
 /// This provides a vector-like storage for arrays of elements in a variable.
-/// The reasons for now using std::vector are:
+/// The reasons for not using std::vector are:
 /// - Avoiding the std::vector<bool> specialization which would cause issues
 ///   with thread-safety.
 /// - Support default-initialized arrays as an internal optimization in
