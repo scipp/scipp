@@ -7,6 +7,7 @@
 #include <boost/units/systems/si/codata/universal_constants.hpp>
 
 #include "scipp/core/dataset.h"
+#include "scipp/core/dataset_util.h"
 #include "scipp/core/transform.h"
 #include "scipp/neutron/beamline.h"
 #include "scipp/neutron/convert.h"
@@ -28,13 +29,6 @@ const auto m_to_angstrom =
 const auto tofToEnergyPhysicalConstants =
     0.5 * boost::units::si::constants::codata::m_n * J_to_meV /
     (tof_to_s * tof_to_s);
-
-template <class T> static decltype(auto) iter(T &d) {
-  if constexpr (std::is_same_v<T, Dataset>)
-    return d;
-  else
-    return d.iter();
-}
 
 template <class T>
 static T convert_with_factor(T &&d, const Dim from, const Dim to,
@@ -252,11 +246,11 @@ template <class T> T convert_impl(T d, const Dim from, const Dim to) {
 }
 
 DataArray convert(DataArray d, const Dim from, const Dim to) {
-  return convert_impl(d, from, to);
+  return convert_impl(std::move(d), from, to);
 }
 
 Dataset convert(Dataset d, const Dim from, const Dim to) {
-  return convert_impl(d, from, to);
+  return convert_impl(std::move(d), from, to);
 }
 
 } // namespace scipp::neutron
