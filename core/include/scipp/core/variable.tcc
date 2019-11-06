@@ -650,7 +650,7 @@ template <class T, class... Ts> Variable Variable::fromArgs(Ts &&... args) {
 template <class... Ts>
 template <class T>
 Variable Variable::ConstructVariable<Ts...>::Maker<T>::apply(Ts &&... args) {
-  return fromArgs<underlying_type_t<T>>(std::forward<Ts>(args)...);
+  return fromArgs<T>(std::forward<Ts>(args)...);
 }
 
 template <class... Ts>
