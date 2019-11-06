@@ -13,37 +13,53 @@
 
 namespace scipp::core {
 
-template <class T, template <class> class Container, class Tag = void>
-struct MoveOnlyOptionalContainer : Tag {
-  using type = T;
+template <class T, template <class> class Container> struct OptionalContainer {
+  using value_type = T;
   std::optional<Container<T>> data;
-  MoveOnlyOptionalContainer() = default;
-  MoveOnlyOptionalContainer(MoveOnlyOptionalContainer &&) = default;
-  MoveOnlyOptionalContainer(const MoveOnlyOptionalContainer &) = delete;
-  explicit MoveOnlyOptionalContainer(std::optional<Container<T>> &&container)
-      : data(std::move(container)) {}
-  template <class U> operator MoveOnlyOptionalContainer<U, Container, Tag>() {
-    return data ? MoveOnlyOptionalContainer<U, Container, Tag>(
-                      std::optional(Container<U>(data->begin(), data->end())))
-                : MoveOnlyOptionalContainer<U, Container, Tag>();
+  OptionalContainer() = default;
+  OptionalContainer(OptionalContainer &&) = default;
+  explicit OptionalContainer(Container<T> &&v) : data(v) {}
+  explicit OptionalContainer(std::initializer_list<T> v) : data(v) {}
+  template <class Iter>
+  OptionalContainer(Iter it1, Iter it2) : data(Container<T>(it1, it2)) {}
+  template <class U>
+  explicit OptionalContainer(const std::optional<Container<U>> &opt)
+      : OptionalContainer(opt ? OptionalContainer(opt->begin(), opt->end())
+                              : OptionalContainer()) {}
+  template <class U> operator OptionalContainer<U, Container>() {
+    return OptionalContainer<U, Container>(data);
   }
 };
+template <class T, template <class> class Container>
+OptionalContainer(Container<T> &&)->OptionalContainer<T, Container>;
 
 struct ValuesTag {};
 
-template <class T>
-using Values = MoveOnlyOptionalContainer<T, Vector, ValuesTag>;
+template <class T> struct Values : ValuesTag, OptionalContainer<T, Vector> {
+  using OptionalContainer<T, Vector>::OptionalContainer;
+  template <class U> operator Values<U>() { return Values<U>(this->data); }
+};
+template <class T> Values(Vector<T> &&)->Values<T>;
+template <class T> Values(std::initializer_list<T>)->Values<T>;
 
 struct VariancesTag {};
 
 template <class T>
-using Variances = MoveOnlyOptionalContainer<T, Vector, VariancesTag>;
+struct Variances : VariancesTag, OptionalContainer<T, Vector> {
+  using OptionalContainer<T, Vector>::OptionalContainer;
+  template <class U> operator Variances<U>() {
+    return Variances<U>(this->data);
+  }
+};
+template <class T> Variances(Vector<T> &&)->Variances<T>;
+template <class T> Variances(std::initializer_list<T>)->Variances<T>;
 
 namespace detail {
 template <class T1, class T2>
 constexpr bool is_values_or_variances_v =
-    std::is_base_of_v<ValuesTag, T1> &&std::is_base_of_v<ValuesTag, T2> ||
-    std::is_base_of_v<VariancesTag, T1> &&std::is_base_of_v<VariancesTag, T2>;
+    (std::is_base_of_v<ValuesTag, T1> && std::is_base_of_v<ValuesTag, T2>) ||
+    (std::is_base_of_v<VariancesTag, T1> &&
+     std::is_base_of_v<VariancesTag, T2>);
 
 template <class T1, class T2> struct is_same_or_values_or_variances {
   static constexpr bool value =
@@ -92,14 +108,14 @@ private:
         return std::get<index>(tp);
       else {
         if constexpr (is_values_or_variances_v<T, Type>) {
-          using T1 = typename T::type;
-          using T2 = typename Type::type;
+          using T1 = typename T::value_type;
+          using T2 = typename Type::value_type;
           if constexpr (std::is_convertible_v<T1, T2>) {
             return std::get<index>(tp);
           } else {
-            throw except::TypeError("Can't convert " +
-                                    to_string(core::dtype<T1>) + " to " +
-                                    to_string(core::dtype<T2>) + ".");
+            throw std::logic_error("Can't convert " +
+                                   to_string(core::dtype<T1>) + " to " +
+                                   to_string(core::dtype<T2>) + ".");
             return T{}; // fake return usefull type for compiler
           }
         }
