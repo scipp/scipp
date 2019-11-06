@@ -75,7 +75,7 @@ public:
   }
 
   element_array &operator=(const element_array &other) {
-    return *this = element_array(other.data(), other.data() + other.size());
+    return *this = element_array(other.begin(), other.end());
   }
 
   explicit operator bool() const noexcept { return m_size != -1; }
