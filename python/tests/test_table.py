@@ -113,3 +113,34 @@ def test_dataset_with_labels():
                               variances=np.random.rand(N))
     d.labels["Normalized"] = sc.Variable([Dim.Tof], values=np.arange(N))
     sc.table(d)
+
+
+def test_dataset_with_masks():
+    d = sc.Dataset()
+    N = 10
+    d.coords[Dim.Tof] = sc.Variable([Dim.Tof],
+                                    values=np.arange(N).astype(np.float64),
+                                    variances=0.1 * np.random.rand(N))
+    d['Counts'] = sc.Variable([Dim.Tof],
+                              values=10.0 * np.random.rand(N),
+                              variances=np.random.rand(N))
+    d.labels["Normalized"] = sc.Variable([Dim.Tof], values=np.arange(N))
+
+    d.masks["Mask"] = sc.Variable([Dim.Tof], values=np.zeros(N, dtype=np.bool))
+
+    sc.table(d)
+
+
+def test_dataset_histogram_with_masks():
+    N = 10
+
+    d = sc.Dataset(
+        {"Counts": sc.Variable([Dim.X],
+                               values=10.0 * np.random.rand(N),
+                               variances=np.random.rand(N))},
+        {Dim.X: sc.Variable([Dim.X], values=np.arange(N+1))})
+    d.labels["Normalized"] = sc.Variable([Dim.X], values=np.arange(N))
+
+    d.masks["Mask"] = sc.Variable([Dim.X], values=np.zeros(N, dtype=np.bool))
+
+    sc.table(d)

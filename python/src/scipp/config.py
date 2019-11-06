@@ -41,7 +41,9 @@ class _Colors:
             "data": ["#ffe680", "#ffd42a", "#d4aa00"],
             "labels": ["#afdde9", "#5fbcd3", "#2c89a0"],
             "attr": ["#ff8080", "#ff2a2a", "#d40000"],
-            "inactive": ["#cccccc", "#888888", "#444444"]
+            "inactive": ["#cccccc", "#888888", "#444444"],
+            # TODO sort out the color
+            "masks": ["#ffaaff", "#5fbcd3", "#2c89a0"]
         }
 
 
