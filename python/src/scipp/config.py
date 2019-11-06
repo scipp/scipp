@@ -42,8 +42,7 @@ class _Colors:
             "labels": ["#afdde9", "#5fbcd3", "#2c89a0"],
             "attr": ["#ff8080", "#ff2a2a", "#d40000"],
             "inactive": ["#cccccc", "#888888", "#444444"],
-            # TODO sort out the color
-            "masks": ["#ffaaff", "#5fbcd3", "#2c89a0"]
+            "masks": ["#ffb3ff", "#ff80ff", "#cc00cc"]
         }
 
 
