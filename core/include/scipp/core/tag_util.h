@@ -4,6 +4,7 @@
 /// @author Simon Heybrock
 #ifndef TAG_UTIL_H
 #define TAG_UTIL_H
+#include "scipp/core/dataset.h"
 
 namespace scipp::core {
 
