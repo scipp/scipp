@@ -7,6 +7,7 @@
 
 #include <functional>
 #include <iosfwd>
+#include <map>
 #include <optional>
 #include <string>
 #include <unordered_map>
