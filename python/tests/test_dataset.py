@@ -366,6 +366,40 @@ def test_sum_mean():
     assert sc.mean(d, Dim.Y)["b"].value == 1.0
 
 
+def test_sum_masked():
+    d = sc.Dataset(
+        {
+            'a': sc.Variable([Dim.X], values=np.array([1, 5, 4, 5, 1]))
+        },
+        masks={
+            "m1": sc.Variable([Dim.X], values=np.array([
+                False, True, False, True, False]))
+        })
+
+    d_ref = sc.Dataset(
+        {
+            'a': sc.Variable(6)
+        })
+
+    assert sc.sum(d, Dim.X)["a"] == d_ref["a"]
+
+
+def test_mean_masked():
+    d = sc.Dataset(
+        {
+            'a': sc.Variable([Dim.X], values=np.array([1, 5, 4, 5, 1]))
+        },
+        masks={
+            "m1": sc.Variable([Dim.X], values=np.array([
+                False, True, False, True, False]))
+        })
+    d_ref = sc.Dataset(
+        {
+            'a': sc.Variable(2.0)
+        })
+    assert sc.mean(d, Dim.X)["a"] == d_ref["a"]
+
+
 def test_variable_histogram():
     var = sc.Variable(dims=[Dim.X, Dim.Y], shape=[2, sc.Dimensions.Sparse])
     var[Dim.X, 0].values = np.arange(3)

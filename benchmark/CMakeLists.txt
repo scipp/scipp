@@ -36,6 +36,10 @@ add_executable(dataset_benchmark EXCLUDE_FROM_ALL dataset_benchmark.cpp)
 add_dependencies(all-benchmarks dataset_benchmark)
 target_link_libraries(dataset_benchmark LINK_PRIVATE scipp-core benchmark)
 
+add_executable(dataset_operations_benchmark EXCLUDE_FROM_ALL dataset_operations_benchmark.cpp)
+add_dependencies(all-benchmarks dataset_operations_benchmark)
+target_link_libraries(dataset_operations_benchmark LINK_PRIVATE scipp-core benchmark)
+
 add_executable(legacy_histogram_benchmark EXCLUDE_FROM_ALL
                legacy_histogram_benchmark.cpp)
 # add_dependencies(all-benchmarks legacy_histogram_benchmark)

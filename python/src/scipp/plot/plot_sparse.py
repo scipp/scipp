@@ -14,7 +14,7 @@ import plotly.graph_objs as go
 
 def plot_sparse(input_data, ndim=0, sparse_dim=None, backend=None, logx=False,
                 logy=False, logxy=False, weights=True, size=50.0,
-                filename=None, axes=None, cb=None, opacity=1.0, **kwargs):
+                filename=None, axes=None, cb=None, opacity=1.0, color=None):
     """
     Produce a scatter plot from sparse data.
     """
@@ -39,7 +39,8 @@ def plot_sparse(input_data, ndim=0, sparse_dim=None, backend=None, logx=False,
     data = dict(type=plot_type, mode='markers', name=name,
                 marker={"line": {"color": '#ffffff',
                                  "width": 1},
-                        "opacity": opacity})
+                        "opacity": opacity,
+                        "color": color})
     for i in range(ndims):
         data[xyz[i]] = sparse_data[ndims - 1 - i]
     if len(sparse_data) > ndims:
