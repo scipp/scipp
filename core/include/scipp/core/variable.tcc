@@ -614,9 +614,18 @@ Variable::Variable(const units::Unit unit, const Dimensions &dimensions,
                                                     std::move(variances_))) {}
 
 template <class T>
-const Vector<underlying_type_t<T>> &
-Variable::cast(const bool variances_) const {
-  auto &dm = requireT<const DataModel<Vector<underlying_type_t<T>>>>(*m_object);
+const Vector<T> &Variable::cast(const bool variances_) const {
+  auto &dm = requireT<const DataModel<Vector<T>>>(*m_object);
+  if (!variances_)
+    return dm.m_values;
+  else {
+    expect::hasVariances(*this);
+    return *dm.m_variances;
+  }
+}
+
+template <class T> Vector<T> &Variable::cast(const bool variances_) {
+  auto &dm = requireT<DataModel<Vector<T>>>(*m_object);
   if (!variances_)
     return dm.m_values;
   else {
@@ -626,20 +635,8 @@ Variable::cast(const bool variances_) const {
 }
 
 template <class T>
-Vector<underlying_type_t<T>> &Variable::cast(const bool variances_) {
-  auto &dm = requireT<DataModel<Vector<underlying_type_t<T>>>>(*m_object);
-  if (!variances_)
-    return dm.m_values;
-  else {
-    expect::hasVariances(*this);
-    return *dm.m_variances;
-  }
-}
-
-template <class T>
-const VariableView<const underlying_type_t<T>>
-VariableConstProxy::cast() const {
-  using TT = underlying_type_t<T>;
+const VariableView<const T> VariableConstProxy::cast() const {
+  using TT = T;
   if (!m_view)
     return requireT<const DataModel<Vector<TT>>>(data()).valuesView(dims());
   if (m_view->isConstView())
@@ -649,10 +646,9 @@ VariableConstProxy::cast() const {
 }
 
 template <class T>
-const VariableView<const underlying_type_t<T>>
-VariableConstProxy::castVariances() const {
+const VariableView<const T> VariableConstProxy::castVariances() const {
   expect::hasVariances(*this);
-  using TT = underlying_type_t<T>;
+  using TT = T;
   if (!m_view)
     return requireT<const DataModel<Vector<TT>>>(data()).variancesView(dims());
   if (m_view->isConstView())
@@ -663,18 +659,16 @@ VariableConstProxy::castVariances() const {
           dims()};
 }
 
-template <class T>
-VariableView<underlying_type_t<T>> VariableProxy::cast() const {
-  using TT = underlying_type_t<T>;
+template <class T> VariableView<T> VariableProxy::cast() const {
+  using TT = T;
   if (m_view)
     return requireT<const ViewModel<VariableView<TT>>>(data()).m_values;
   return requireT<DataModel<Vector<TT>>>(data()).valuesView(dims());
 }
 
-template <class T>
-VariableView<underlying_type_t<T>> VariableProxy::castVariances() const {
+template <class T> VariableView<T> VariableProxy::castVariances() const {
   expect::hasVariances(*this);
-  using TT = underlying_type_t<T>;
+  using TT = T;
   if (m_view)
     return *requireT<const ViewModel<VariableView<TT>>>(data()).m_variances;
   return requireT<DataModel<Vector<TT>>>(data()).variancesView(dims());
@@ -682,7 +676,7 @@ VariableView<underlying_type_t<T>> VariableProxy::castVariances() const {
 
 template <class T> void Variable::setVariances(Vector<T> &&v) {
   auto lmb = [v = std::forward<decltype(v)>(v)](auto &&model) mutable {
-    using TT = underlying_type_t<T>;
+    using TT = T;
     // Handle, e.g., float input if Variable dtype is double.
     using TTT = typename std::decay_t<decltype(*model)>::value_type;
     if constexpr (std::is_same_v<TTT, T> && std::is_same_v<T, TT>)
@@ -714,21 +708,18 @@ template <class T> void VariableProxy::setVariances(Vector<T> &&v) const {
 */
 #define INSTANTIATE_VARIABLE(...)                                              \
   template Variable::Variable(const units::Unit, const Dimensions &,           \
-                              Vector<underlying_type_t<__VA_ARGS__>>);         \
+                              Vector<__VA_ARGS__>);                            \
   template Variable::Variable(const units::Unit, const Dimensions &,           \
-                              Vector<underlying_type_t<__VA_ARGS__>>,          \
-                              Vector<underlying_type_t<__VA_ARGS__>>);         \
-  template Vector<underlying_type_t<__VA_ARGS__>>                              \
-      &Variable::cast<__VA_ARGS__>(const bool);                                \
-  template const Vector<underlying_type_t<__VA_ARGS__>>                        \
-      &Variable::cast<__VA_ARGS__>(const bool) const;                          \
-  template const VariableView<const underlying_type_t<__VA_ARGS__>>            \
+                              Vector<__VA_ARGS__>, Vector<__VA_ARGS__>);       \
+  template Vector<__VA_ARGS__> &Variable::cast<__VA_ARGS__>(const bool);       \
+  template const Vector<__VA_ARGS__> &Variable::cast<__VA_ARGS__>(const bool)  \
+      const;                                                                   \
+  template const VariableView<const __VA_ARGS__>                               \
   VariableConstProxy::cast<__VA_ARGS__>() const;                               \
-  template const VariableView<const underlying_type_t<__VA_ARGS__>>            \
+  template const VariableView<const __VA_ARGS__>                               \
   VariableConstProxy::castVariances<__VA_ARGS__>() const;                      \
-  template VariableView<underlying_type_t<__VA_ARGS__>>                        \
-  VariableProxy::cast<__VA_ARGS__>() const;                                    \
-  template VariableView<underlying_type_t<__VA_ARGS__>>                        \
+  template VariableView<__VA_ARGS__> VariableProxy::cast<__VA_ARGS__>() const; \
+  template VariableView<__VA_ARGS__>                                           \
   VariableProxy::castVariances<__VA_ARGS__>() const;
 
 #define INSTANTIATE_SET_VARIANCES(...)                                         \

@@ -8,8 +8,6 @@
 #include <Eigen/Dense>
 #include <boost/container/small_vector.hpp>
 
-#include "scipp/core/bool.h"
-
 namespace pybind11 {
 class object;
 }
@@ -54,7 +52,6 @@ template <> constexpr DType dtype<int32_t> = DType::Int32;
 template <> constexpr DType dtype<int64_t> = DType::Int64;
 template <> constexpr DType dtype<std::string> = DType::String;
 template <> constexpr DType dtype<bool> = DType::Bool;
-template <> constexpr DType dtype<Bool> = DType::Bool;
 template <>
 constexpr DType dtype<sparse_container<double>> = DType::SparseDouble;
 template <> constexpr DType dtype<sparse_container<float>> = DType::SparseFloat;

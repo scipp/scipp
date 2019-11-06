@@ -129,9 +129,6 @@ TEST(TransformTest, apply_unary_dtype_preserved) {
 }
 
 TEST(TransformTest, dtype_bool) {
-  // Special test for bool: Internally Variable uses `Bool` to avoid using the
-  // specialization of std::vector<bool>. This test makes sure that everything
-  // is wrapped correctly with underlying_type_t.
   auto var = makeVariable<bool>({Dim::X, 2}, {true, false});
 
   EXPECT_EQ(
