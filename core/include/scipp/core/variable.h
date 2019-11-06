@@ -296,6 +296,10 @@ public:
       : Variable(units::dimensionless, std::move(dimensions),
                  Vector<T>(values_.begin(), values_.end())) {}
 
+  /// This is used to provide the constructors:
+  /// Variable(DType, Dimensions, Unit, Values<T1>, Variances<T2>)
+  /// with the only one obligatory argument DType, the other arguments are not
+  /// obligatory and could be given in arbitrary order.
   template <class... Ts> Variable(const DType &type, Ts &&... args);
 
   explicit operator bool() const noexcept { return m_object.operator bool(); }
@@ -437,6 +441,7 @@ public:
   template <class T> void setVariances(Vector<T> &&v);
 
 private:
+  // Helpers for universal constructors.
   template <class T>
   Variable fromUnitsDimsData(units::Unit &&u, Dimensions &&s, Values<T> &&val,
                              Variances<T> &&var);
