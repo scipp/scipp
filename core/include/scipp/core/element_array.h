@@ -91,6 +91,10 @@ public:
     m_size = -1;
   }
 
+  /// Resize the array.
+  ///
+  /// Unlike std::vector::resize, this does *not* preserve existing element
+  /// values.
   void resize(const scipp::index new_size) {
     if (new_size == 0) {
       m_data.reset();
