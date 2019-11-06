@@ -47,8 +47,7 @@ public:
       : element_array(init.begin(), init.end()) {}
 
   element_array(element_array &&other) noexcept
-      : m_data(std::move(other.m_data)) {
-    m_size = other.m_size;
+      : m_size(other.m_size), m_data(std::move(other.m_data)) {
     other.m_size = -1;
   }
 
