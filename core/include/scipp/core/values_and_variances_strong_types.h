@@ -85,9 +85,11 @@ template <class T, class... Args> struct Indexer {
   }
 };
 
-template <class... Ts> // given types
+template <class... Ts>
+// given types
 struct ConstructorArgumentsMatcher {
-  template <class... Args> // needed types
+  template <class... Args>
+  // needed types
   constexpr static void checkArgTypesValid() {
     static_assert((is_type_in_pack_v<Args, Ts...> + ...) == sizeof...(Ts));
   }
