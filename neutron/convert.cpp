@@ -253,22 +253,12 @@ DataArray convert(const DataConstProxy &d, const Dim from, const Dim to) {
   return convert(DataArray(d), from, to);
 }
 
-DataProxy convert(const DataConstProxy &d, const Dim from, const Dim to,
-                  const DataProxy &out) {
-  return out;
-}
-
 Dataset convert(Dataset d, const Dim from, const Dim to) {
   return convert_impl(std::move(d), from, to);
 }
 
 Dataset convert(const DatasetConstProxy &d, const Dim from, const Dim to) {
   return convert(Dataset(d), from, to);
-}
-
-DatasetProxy convert(const DatasetConstProxy &d, const Dim from, const Dim to,
-                     const DatasetProxy &out) {
-  return out;
 }
 
 } // namespace scipp::neutron
