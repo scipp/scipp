@@ -47,6 +47,7 @@ SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
 SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
                                            const Dataset &dataset);
 
+SCIPP_CORE_EXPORT std::string to_string(const bool b);
 SCIPP_CORE_EXPORT std::string to_string(const DType dtype);
 SCIPP_CORE_EXPORT std::string to_string(const Dimensions &dims);
 SCIPP_CORE_EXPORT std::string to_string(const Slice &slice);
