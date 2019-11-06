@@ -66,7 +66,7 @@ public:
     return *this = element_array(other.data(), other.data() + other.size());
   }
 
-  explicit operator bool() const noexcept { return m_data.operator bool(); }
+  explicit operator bool() const noexcept { return m_size != -1; }
   scipp::index size() const noexcept { return m_size; }
   [[nodiscard]] bool empty() const noexcept { return size() == 0; }
   const T *data() const noexcept { return m_data.get(); }
