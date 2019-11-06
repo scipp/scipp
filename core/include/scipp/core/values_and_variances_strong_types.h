@@ -36,8 +36,8 @@ template <class T, template <class> class Container> struct OptionalContainer {
 // order of arguments in the constructor, and not mixing values and variances.
 // The structs the OptionalContainer to treat the absence of argument in
 // constructor. Values and Variances should be separate types (not aliases) to
-// provide CTAD and custom deduction guides (because values and variables could
-// be of different types) to simplify syntax.
+// provide CTAD and custom deduction guides (because values and variables
+// could be of different types) to simplify syntax.
 
 struct ValuesTag {};
 
