@@ -9,7 +9,6 @@
 #include <memory>
 
 #include "scipp/common/index.h"
-#include "scipp/core/aligned_allocator.h"
 
 namespace scipp::core::detail {
 

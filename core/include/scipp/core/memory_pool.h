@@ -5,6 +5,7 @@
 #ifndef MEMORY_POOL_H
 #define MEMORY_POOL_H
 
+#include <array>
 #include <map>
 #include <mutex>
 #include <vector>
