@@ -552,6 +552,16 @@ def test_sqrt():
     assert sc.sqrt(var) == expected
 
 
+def test_sqrt_out():
+    var = sc.Variable([Dim.X], values=np.array([4.0, 9.0]), unit=sc.units.m**2)
+    expected = sc.Variable([Dim.X],
+                           values=np.array([2.0, 3.0]),
+                           unit=sc.units.m)
+    out = sc.sqrt(x=var, out=var)
+    assert var == expected
+    assert out == expected
+
+
 def test_sum():
     var = sc.Variable([Dim.X, Dim.Y],
                       values=np.array([[0.1, 0.3], [0.2, 0.6]]),
