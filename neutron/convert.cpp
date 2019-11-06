@@ -29,8 +29,16 @@ const auto tofToEnergyPhysicalConstants =
     0.5 * boost::units::si::constants::codata::m_n * J_to_meV /
     (tof_to_s * tof_to_s);
 
-static Dataset convert_with_factor(Dataset &&d, const Dim from, const Dim to,
-                                   const Variable &factor) {
+template <class T> static decltype(auto) iter(T &d) {
+  if constexpr (std::is_same_v<T, Dataset>)
+    return d;
+  else
+    return d.iter();
+}
+
+template <class T>
+static T convert_with_factor(T &&d, const Dim from, const Dim to,
+                             const Variable &factor) {
   // 1. Transform coordinate
   // Cannot use *= since often a broadcast into Dim::Spectrum is required.
   if (d.coords().contains(from)) {
@@ -39,7 +47,7 @@ static Dataset convert_with_factor(Dataset &&d, const Dim from, const Dim to,
   }
 
   // 2. Transform sparse coordinates
-  for (const auto &[name, data] : d) {
+  for (const auto &[name, data] : iter(d)) {
     static_cast<void>(name);
     if (data.dims().sparse()) {
       data.coords()[from] *= factor;
@@ -49,7 +57,7 @@ static Dataset convert_with_factor(Dataset &&d, const Dim from, const Dim to,
   return std::move(d);
 }
 
-auto tofToDSpacing(const Dataset &d) {
+template <class T> auto tofToDSpacing(const T &d) {
   const auto &sourcePos = source_position(d);
   const auto &samplePos = sample_position(d);
 
@@ -71,14 +79,14 @@ auto tofToDSpacing(const Dataset &d) {
   return reciprocal(conversionFactor);
 }
 
-static auto tofToWavelength(const Dataset &d) {
+template <class T> static auto tofToWavelength(const T &d) {
   const auto l = l1(d) + l2(d);
   return (tof_to_s * m_to_angstrom * boost::units::si::constants::codata::h /
           boost::units::si::constants::codata::m_n) /
          std::move(l);
 }
 
-auto tofToEnergyConversionFactor(const Dataset &d) {
+template <class T> auto tofToEnergyConversionFactor(const T &d) {
   const auto &samplePos = sample_position(d);
   const auto l1 = neutron::l1(d);
   const auto specPos = neutron::position(d);
@@ -93,7 +101,7 @@ auto tofToEnergyConversionFactor(const Dataset &d) {
   return conversionFactor;
 }
 
-Dataset tofToEnergy(Dataset &&d) {
+template <class T> T tofToEnergy(T &&d) {
   // 1. Compute conversion factor
   const auto conversionFactor = tofToEnergyConversionFactor(d);
 
@@ -105,7 +113,7 @@ Dataset tofToEnergy(Dataset &&d) {
   }
 
   // 3. Transform sparse coordinates
-  for (const auto &[name, data] : d) {
+  for (const auto &[name, data] : iter(d)) {
     static_cast<void>(name);
     if (data.coords()[Dim::Tof].dims().sparse()) {
       transform_in_place<pair_self_t<double, float>>(
@@ -120,7 +128,7 @@ Dataset tofToEnergy(Dataset &&d) {
   return std::move(d);
 }
 
-Dataset energyToTof(Dataset &&d) {
+template <class T> T energyToTof(T &&d) {
   // 1. Compute conversion factor
   const auto conversionFactor = tofToEnergyConversionFactor(d);
 
@@ -132,7 +140,7 @@ Dataset energyToTof(Dataset &&d) {
   }
 
   // 3. Transform sparse coordinates
-  for (const auto &[name, data] : d) {
+  for (const auto &[name, data] : iter(d)) {
     static_cast<void>(name);
     if (data.coords()[Dim::Energy].dims().sparse()) {
       transform_in_place<pair_self_t<double, float>>(
@@ -219,8 +227,8 @@ Dataset tofToDeltaE(const Dataset &d) {
 }
 */
 
-Dataset convert(Dataset d, const Dim from, const Dim to) {
-  for (const auto &item : d)
+template <class T> T convert_impl(T d, const Dim from, const Dim to) {
+  for (const auto &item : iter(d))
     if (item.second.hasData())
       expect::notCountDensity(item.second.unit());
   if ((from == Dim::Tof) && (to == Dim::DSpacing))
@@ -241,6 +249,14 @@ Dataset convert(Dataset d, const Dim from, const Dim to) {
     return energyToTof(std::move(d));
   throw std::runtime_error(
       "Conversion between requested dimensions not implemented yet.");
+}
+
+DataArray convert(DataArray d, const Dim from, const Dim to) {
+  return convert_impl(d, from, to);
+}
+
+Dataset convert(Dataset d, const Dim from, const Dim to) {
+  return convert_impl(d, from, to);
 }
 
 } // namespace scipp::neutron
