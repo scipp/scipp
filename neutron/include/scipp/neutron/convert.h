@@ -15,8 +15,18 @@ namespace scipp::neutron {
 
 SCIPP_NEUTRON_EXPORT core::DataArray convert(core::DataArray d, const Dim from,
                                              const Dim to);
+SCIPP_NEUTRON_EXPORT core::DataArray convert(const core::DataConstProxy &d,
+                                             const Dim from, const Dim to);
+SCIPP_NEUTRON_EXPORT core::DataProxy convert(const core::DataConstProxy &d,
+                                             const Dim from, const Dim to,
+                                             const core::DataProxy &out);
 SCIPP_NEUTRON_EXPORT core::Dataset convert(core::Dataset d, const Dim from,
                                            const Dim to);
+SCIPP_NEUTRON_EXPORT core::Dataset convert(const core::DatasetConstProxy &d,
+                                           const Dim from, const Dim to);
+SCIPP_NEUTRON_EXPORT core::DatasetProxy
+convert(const core::DatasetConstProxy &d, const Dim from, const Dim to,
+        const core::DatasetProxy &out);
 
 } // namespace scipp::neutron
 

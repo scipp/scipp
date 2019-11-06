@@ -61,6 +61,8 @@ template <class T> void bind_beamline(py::module &m) {
 }
 
 template <class T> void bind_convert(py::module &m) {
+  using ConstView = const typename T::const_view_type &;
+  using View = const typename T::view_type &;
   const char *doc = R"(
     Convert dimension (unit) into another.
 
@@ -71,8 +73,12 @@ template <class T> void bind_convert(py::module &m) {
     :param to: Dimension to convert into
     :return: New data array or dataset with converted dimension (dimension labels, coordinate values, and units)
     :rtype: DataArray or Dataset)";
-  m.def("convert", py::overload_cast<T, const Dim, const Dim>(convert),
+  m.def("convert", py::overload_cast<ConstView, const Dim, const Dim>(convert),
         py::arg("data"), py::arg("from"), py::arg("to"),
+        py::call_guard<py::gil_scoped_release>(), doc);
+  m.def("convert",
+        py::overload_cast<ConstView, const Dim, const Dim, View>(convert),
+        py::arg("data"), py::arg("from"), py::arg("to"), py::arg("out"),
         py::call_guard<py::gil_scoped_release>(), doc);
 }
 
