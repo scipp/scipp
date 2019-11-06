@@ -88,5 +88,5 @@ TEST(VariableUniversalConstructorTest, unconvertable_types) {
   EXPECT_THROW(Variable(dtype<Eigen::Vector3d>,
                         Dimensions{{Dim::X, Dim::Y}, {2, 1}},
                         Values({1.5f, 3.6f}), Variances({2.0, 3.0})),
-               std::logic_error);
+               except::TypeError);
 }

@@ -115,9 +115,9 @@ private:
           if constexpr (std::is_convertible_v<T1, T2>) {
             return std::get<index>(tp);
           } else {
-            throw std::logic_error("Can't convert " +
-                                   to_string(core::dtype<T1>) + " to " +
-                                   to_string(core::dtype<T2>) + ".");
+            throw except::TypeError("Can't convert " +
+                                    to_string(core::dtype<T1>) + " to " +
+                                    to_string(core::dtype<T2>) + ".");
             return T{}; // fake return usefull type for compiler
           }
         }
