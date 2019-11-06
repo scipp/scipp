@@ -998,9 +998,10 @@ TEST(VariableTest, divide_with_variance) {
 }
 
 TEST(VariableTest, boolean_or) {
-  const auto a = makeVariable<bool>({Dim::X, 3}, {false, true, false});
-  const auto b = makeVariable<bool>({Dim::X, 3}, {false, false, false});
-  const auto expected = makeVariable<bool>({Dim::X, 3}, {false, true, false});
+  const auto a = makeVariable<bool>({Dim::X, 4}, {false, true, false, true});
+  const auto b = makeVariable<bool>({Dim::X, 4}, {false, false, true, true});
+  const auto expected =
+      makeVariable<bool>({Dim::X, 4}, {false, true, true, true});
 
   const auto result = a | b;
 
@@ -1008,12 +1009,54 @@ TEST(VariableTest, boolean_or) {
 }
 
 TEST(VariableTest, boolean_or_equals) {
-  auto a = makeVariable<bool>({Dim::X, 3}, {false, true, false});
-  const auto b = makeVariable<bool>({Dim::X, 3}, {false, false, false});
+  auto a = makeVariable<bool>({Dim::X, 4}, {false, true, false, true});
+  const auto b = makeVariable<bool>({Dim::X, 4}, {false, false, true, true});
   a |= b;
-  const auto expected = makeVariable<bool>({Dim::X, 3}, {false, true, false});
+  const auto expected =
+      makeVariable<bool>({Dim::X, 4}, {false, true, true, true});
 
   EXPECT_EQ(a, expected);
+}
+
+TEST(VariableTest, boolean_and_equals) {
+  auto a = makeVariable<bool>({Dim::X, 4}, {false, true, false, true});
+  const auto b = makeVariable<bool>({Dim::X, 4}, {false, false, true, true});
+  a &= b;
+  const auto expected =
+      makeVariable<bool>({Dim::X, 4}, {false, false, false, true});
+
+  EXPECT_EQ(a, expected);
+}
+
+TEST(VariableTest, boolean_and) {
+  const auto a = makeVariable<bool>({Dim::X, 4}, {false, true, false, true});
+  const auto b = makeVariable<bool>({Dim::X, 4}, {false, false, true, true});
+  const auto expected =
+      makeVariable<bool>({Dim::X, 4}, {false, false, false, true});
+
+  const auto result = a & b;
+
+  EXPECT_EQ(result, expected);
+}
+
+TEST(VariableTest, boolean_xor_equals) {
+  auto a = makeVariable<bool>({Dim::X, 4}, {false, true, false, true});
+  const auto b = makeVariable<bool>({Dim::X, 4}, {false, false, true, true});
+  a ^= b;
+  const auto expected =
+      makeVariable<bool>({Dim::X, 4}, {false, true, true, false});
+
+  EXPECT_EQ(a, expected);
+}
+
+TEST(VariableTest, boolean_xor) {
+  const auto a = makeVariable<bool>({Dim::X, 4}, {false, true, false, true});
+  const auto b = makeVariable<bool>({Dim::X, 4}, {false, false, true, true});
+  const auto expected =
+      makeVariable<bool>({Dim::X, 4}, {false, true, true, false});
+  const auto result = a ^ b;
+
+  EXPECT_EQ(result, expected);
 }
 
 template <class T> class ReciprocalTest : public ::testing::Test {};

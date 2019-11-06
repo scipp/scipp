@@ -58,10 +58,18 @@ void bind_binary_scalars(pybind11::class_<T, Ignored...> &c) {
 }
 
 template <class Other, class T, class... Ignored>
-void bind_or_operators(pybind11::class_<T, Ignored...> &c) {
+void bind_boolean_operators(pybind11::class_<T, Ignored...> &c) {
   c.def("__or__", [](T &a, Other &b) { return a | b; }, py::is_operator(),
         py::call_guard<py::gil_scoped_release>());
   c.def("__ior__", [](T &a, Other &b) { return a |= b; }, py::is_operator(),
+        py::call_guard<py::gil_scoped_release>());
+  c.def("__xor__", [](T &a, Other &b) { return a ^ b; }, py::is_operator(),
+        py::call_guard<py::gil_scoped_release>());
+  c.def("__ixor__", [](T &a, Other &b) { return a ^= b; }, py::is_operator(),
+        py::call_guard<py::gil_scoped_release>());
+  c.def("__and__", [](T &a, Other &b) { return a & b; }, py::is_operator(),
+        py::call_guard<py::gil_scoped_release>());
+  c.def("__iand__", [](T &a, Other &b) { return a &= b; }, py::is_operator(),
         py::call_guard<py::gil_scoped_release>());
 }
 
