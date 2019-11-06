@@ -68,6 +68,8 @@ std::string to_string(const Dimensions &dims) {
   return s;
 }
 
+std::string to_string(const bool b) { return b ? "True" : "False"; }
+
 std::string to_string(const DType dtype) {
   switch (dtype) {
   case DType::String:
