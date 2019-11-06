@@ -24,7 +24,7 @@ INSTANTIATE_VARIABLE(sparse_container<int32_t>)
 // makeVariable overloads have a runtime branch that may instantiate a sparse
 // variable.
 INSTANTIATE_VARIABLE(sparse_container<std::string>)
-INSTANTIATE_VARIABLE(sparse_container<Bool>)
+INSTANTIATE_VARIABLE(sparse_container<bool>)
 INSTANTIATE_VARIABLE(sparse_container<Eigen::Vector3d>)
 
 INSTANTIATE_SET_VARIANCES(double)

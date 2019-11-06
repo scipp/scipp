@@ -120,8 +120,7 @@ template <class... Ts> class as_VariableViewImpl {
   template <class Proxy>
   using outVariant_t =
       std::variant<std::conditional_t<std::is_same_v<Proxy, Variable>,
-                                      scipp::span<underlying_type_t<Ts>>,
-                                      VariableView<underlying_type_t<Ts>>>...>;
+                                      scipp::span<Ts>, VariableView<Ts>>...>;
 
   template <class Getter, class Proxy>
   static outVariant_t<Proxy> get(Proxy &proxy) {

@@ -3,7 +3,6 @@
 set(TARGET_NAME "scipp-core-test")
 add_dependencies(all-tests ${TARGET_NAME})
 add_executable(${TARGET_NAME} EXCLUDE_FROM_ALL
-               bool_test.cpp
                concatenate_test.cpp
                coords_proxy_test.cpp
                counts_test.cpp
@@ -17,6 +16,7 @@ add_executable(${TARGET_NAME} EXCLUDE_FROM_ALL
                dataset_test_common.cpp
                dataset_test.cpp
                dimensions_test.cpp
+               element_array_test.cpp
                except_test.cpp
                groupby_test.cpp
                histogram_test.cpp
