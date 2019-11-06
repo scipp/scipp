@@ -1111,6 +1111,11 @@ public:
     return copy(get().slice(slice1, slice2, slice3));
   }
 
+  /// Iterable const view for generic code supporting Dataset and DataArray.
+  DatasetConstProxy iter() const noexcept { return m_holder; }
+  /// Iterable view for generic code supporting Dataset and DataArray.
+  DatasetProxy iter() noexcept { return m_holder; }
+
 private:
   DataConstProxy get() const;
   DataProxy get();
