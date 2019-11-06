@@ -60,7 +60,7 @@ template <class T> void bind_beamline(py::module &m) {
     :rtype: Variable)");
 }
 
-void bind_convert(py::module &m) {
+template <class T> void bind_convert(py::module &m) {
   const char *doc = R"(
     Convert dimension (unit) into another.
 
@@ -69,9 +69,10 @@ void bind_convert(py::module &m) {
     :param data: Input data with time-of-flight dimension (Dim.Tof)
     :param from: Dimension to convert from
     :param to: Dimension to convert into
-    :return: New dataset with converted dimension (dimension labels, coordinate values, and units)
-    :rtype: Dataset)";
-  m.def("convert", convert, py::arg("data"), py::arg("from"), py::arg("to"),
+    :return: New data array or dataset with converted dimension (dimension labels, coordinate values, and units)
+    :rtype: DataArray or Dataset)";
+  m.def("convert", py::overload_cast<T, const Dim, const Dim>(convert),
+        py::arg("data"), py::arg("from"), py::arg("to"),
         py::call_guard<py::gil_scoped_release>(), doc);
 }
 
@@ -91,7 +92,8 @@ void init_neutron(py::module &m) {
 
     .. seealso:: Use :py:func:`scipp.neutron.convert` for unit conversion based on beamline-geometry information instead of calibration information.)");
 
-  bind_convert(neutron);
+  bind_convert<core::DataArray>(neutron);
+  bind_convert<core::Dataset>(neutron);
   bind_beamline<core::DataArray>(neutron);
   bind_beamline<core::Dataset>(neutron);
 }
