@@ -26,18 +26,22 @@ protected:
     dataset.setLabels("labels", makeVariable<int>({Dim::X, 4}));
     dataset.setMask("mask", makeVariable<bool>({Dim::X, 4}));
 
-    dataset.setAttr("attr", makeVariable<int>({}));
+    dataset.setAttr("global_attr", makeVariable<int>({}));
 
     dataset.setData("val_and_var",
                     makeVariable<double>({{Dim::Y, 3}, {Dim::X, 4}},
                                          std::vector<double>(12),
                                          std::vector<double>(12)));
+    dataset.setAttr("val_and_var", "attr", makeVariable<int>({}));
 
     dataset.setData("val", makeVariable<double>({Dim::X, 4}));
+    dataset.setAttr("val", "attr", makeVariable<int>({}));
 
     dataset.setSparseCoord("sparse_coord", sparse_variable);
+    dataset.setAttr("sparse_coord", "attr", makeVariable<int>({}));
     dataset.setData("sparse_coord_and_val", sparse_variable);
     dataset.setSparseCoord("sparse_coord_and_val", sparse_variable);
+    dataset.setAttr("sparse_coord_and_val", "attr", makeVariable<int>({}));
   }
   void expect_eq(const DataConstProxy &a, const DataConstProxy &b) const {
     EXPECT_TRUE(a == b);
@@ -96,8 +100,8 @@ auto make_1_attr(const std::string &name, const Dimensions &dims,
                  const units::Unit unit,
                  const std::initializer_list<T2> &data) {
   Dataset d;
-  d.setAttr(name, makeVariable<T>(dims, unit, data));
   d.setData("", makeVariable<T>(dims));
+  d.setAttr("", name, makeVariable<T>(dims, unit, data));
   return DataArray(d[""]);
 }
 
@@ -248,9 +252,10 @@ TEST_F(DataArray_comparison_operators, extra_mask) {
 
 TEST_F(DataArray_comparison_operators, extra_attr) {
   auto extra = dataset;
-  extra.setAttr("extra", makeVariable<double>(0.0));
-  for (const auto [name, a] : extra)
+  for (const auto [name, a] : extra) {
+    extra.setAttr(name, "extra", makeVariable<double>(0.0));
     expect_ne(a, dataset[name]);
+  }
 }
 
 TEST_F(DataArray_comparison_operators, extra_variance) {

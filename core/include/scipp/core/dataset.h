@@ -35,6 +35,8 @@ struct DatasetData {
   std::optional<Variable> coord;
   /// Potential labels for the sparse dimension.
   std::unordered_map<std::string, Variable> labels;
+  /// Attributes for data.
+  std::unordered_map<std::string, Variable> attrs;
 };
 
 using dataset_item_map = std::unordered_map<std::string, DatasetData>;
@@ -356,6 +358,8 @@ public:
   void setLabels(const std::string &labelName, Variable labels);
   void setMask(const std::string &masksName, Variable masks);
   void setAttr(const std::string &attrName, Variable attr);
+  void setAttr(const std::string &name, const std::string &attrName,
+               Variable attr);
   void setData(const std::string &name, Variable data);
   void setData(const std::string &name, const DataConstProxy &data);
   void setSparseCoord(const std::string &name, Variable coord);
@@ -374,6 +378,10 @@ public:
   }
   void setAttr(const std::string &attrName, const VariableConstProxy &attr) {
     setAttr(attrName, Variable(attr));
+  }
+  void setAttr(const std::string &name, const std::string &attrName,
+               const VariableConstProxy &attr) {
+    setAttr(name, attrName, Variable(attr));
   }
   void setData(const std::string &name, const VariableConstProxy &data) {
     setData(name, Variable(data));
@@ -689,8 +697,12 @@ public:
         m_parent->setLabels(key, var);
       if constexpr (std::is_same_v<Base, MasksConstProxy>)
         m_parent->setMask(key, var);
-      if constexpr (std::is_same_v<Base, AttrsConstProxy>)
-        m_parent->setAttr(key, var);
+      if constexpr (std::is_same_v<Base, AttrsConstProxy>) {
+        if (m_name)
+          m_parent->setAttr(*m_name, key, var);
+        else
+          m_parent->setAttr(key, var);
+      }
     }
     // TODO rebuild *this?!
   }
@@ -983,7 +995,7 @@ public:
       m_holder.setMask(std::string(attr_name), std::move(m));
 
     for (auto &&[attr_name, a] : attrs)
-      m_holder.setAttr(std::string(attr_name), std::move(a));
+      m_holder.setAttr(name, std::string(attr_name), std::move(a));
 
     if (m_holder.size() != 1)
       throw std::runtime_error(

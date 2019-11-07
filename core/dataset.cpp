@@ -266,6 +266,14 @@ void Dataset::setAttr(const std::string &attrName, Variable attr) {
   m_attrs.insert_or_assign(attrName, std::move(attr));
 }
 
+/// Set (insert or replace) an attribute for item with given name.
+void Dataset::setAttr(const std::string &name, const std::string &attrName,
+                      Variable attr) {
+  expect::contains(*this, name);
+  setDims(attr.dims());
+  m_data[name].attrs.insert_or_assign(attrName, std::move(attr));
+}
+
 /// Set (insert or replace) the masks for the given mask name.
 ///
 /// Note that the mask name has no relation to names of data items.
@@ -317,19 +325,14 @@ void Dataset::setData(const std::string &name, const DataConstProxy &data) {
     }
   }
 
-  for (const auto &[nm, mask] : data.masks()) {
+  for (const auto &[nm, mask] : data.masks())
     setMask(std::string(nm), mask);
-  }
-
-  for (const auto &[nm, attr] : data.attrs()) {
-    if (const auto it = m_attrs.find(std::string(nm)); it != m_attrs.end())
-      expect::equals(attr, it->second);
-    else
-      setAttr(std::string(nm), attr);
-  }
 
   if (data.hasData())
     setData(name, data.data());
+
+  for (const auto &[nm, attr] : data.attrs())
+    setAttr(name, std::string(nm), attr);
 }
 
 /// Set (insert or replace) the sparse coordinate with given name.
@@ -532,6 +535,8 @@ void Dataset::rename(const Dim from, const Dim to) {
       value.coord->rename(from, to);
     for (auto &labels : value.labels)
       labels.second.rename(from, to);
+    for (auto &attr : value.attrs)
+      attr.second.rename(from, to);
   }
 }
 
@@ -594,7 +599,7 @@ LabelsConstProxy DataConstProxy::labels() const noexcept {
 /// Return a const proxy to all attributes of the data proxy.
 AttrsConstProxy DataConstProxy::attrs() const noexcept {
   return AttrsConstProxy(
-      makeProxyItems<std::string>(dims(), m_dataset->m_attrs), slices());
+      makeProxyItems<std::string>(dims(), m_data->second.attrs), slices());
 }
 
 /// Return a const proxy to all masks of the data proxy.
@@ -632,7 +637,8 @@ LabelsProxy DataProxy::labels() const noexcept {
 AttrsProxy DataProxy::attrs() const noexcept {
   return AttrsProxy(
       m_mutableDataset, &name(),
-      makeProxyItems<std::string>(dims(), m_mutableDataset->m_attrs), slices());
+      makeProxyItems<std::string>(dims(), m_mutableData->second.attrs),
+      slices());
 }
 
 /// Return a proxy to all masks of the data proxy.
