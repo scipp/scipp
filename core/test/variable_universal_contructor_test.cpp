@@ -33,22 +33,22 @@ TEST(VariableUniversalConstructorTest, dimensions_unit_basic) {
   EXPECT_EQ(oneMore, variable);
 }
 
-// TEST(VariableUniversalConstructorTest, type_construcors_mix) {
-//  auto v1 = Variable(dtype<float>, Dimensions{{Dim::X, Dim::Y}, {2, 1}},
-//                     Values(std::vector{1.5f, 3.6f}), Variances({2.0, 3.0}));
-//  auto v2 = Variable(dtype<float>, Dimensions{{Dim::X, Dim::Y}, {2, 1}},
-//                     Values({1.5, 3.6}), Variances({2, 3}));
-//  auto v3 = Variable(dtype<float>, units::Unit(), Dimensions{{Dim::X, Dim::Y},
-//  {2, 1}},
-//                     Values<float>({1.5f, 3.6}));
-//  v3.setVariances(Vector<float>{2, 3});
-//  EXPECT_EQ(v1, v2);
-//  EXPECT_EQ(v1, v3);
-//
-//  v2 = Variable(dtype<float>, Variances({2.0, 3.0}),
-//                Dimensions{{Dim::X, Dim::Y}, {2, 1}}, Values({1.5f, 3.6f}));
-//  EXPECT_EQ(v1, v2);
-//}
+TEST(VariableUniversalConstructorTest, type_construcors_mix) {
+  auto v1 = Variable(dtype<float>, Dimensions{{Dim::X, Dim::Y}, {2, 1}},
+                     Values(std::vector{1.5f, 3.6f}), Variances({2.0, 3.0}));
+  auto v2 = Variable(dtype<float>, Dimensions{{Dim::X, Dim::Y}, {2, 1}},
+                     Values({1.5, 3.6}), Variances({2, 3}));
+  //  auto v3 = Variable(dtype<float>, units::Unit(), Dimensions{{Dim::X,
+  //  Dim::Y}, {2, 1}},
+  //                     Values<float>({1.5f, 3.6}));
+  //  v3.setVariances(Vector<float>{2, 3});
+  //  EXPECT_EQ(v1, v2);
+  //  EXPECT_EQ(v1, v3);
+  //
+  //  v2 = Variable(dtype<float>, Variances({2.0, 3.0}),
+  //                Dimensions{{Dim::X, Dim::Y}, {2, 1}}, Values({1.5f, 3.6f}));
+  //  EXPECT_EQ(v1, v2);
+}
 
 TEST(VariableUniversalConstructorTest, no_copy_on_matched_types) {
   auto data = Vector<double>{1.0, 4.5, 2.7, 5.0, 7.0, 6.7};

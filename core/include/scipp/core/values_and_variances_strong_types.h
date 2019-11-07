@@ -36,8 +36,8 @@ template <class... Ts> auto Values(Ts &&... ts) noexcept {
 }
 
 template <class T> auto Values(std::initializer_list<T> &&init) noexcept {
-  return TaggedTuple<ValuesTag, std::initializer_list<T>>{
-      {}, std::forward_as_tuple(std::move(init))};
+  return TaggedTuple<ValuesTag, Vector<T>>{
+      {}, std::forward_as_tuple(Vector<T>(init))};
 }
 
 struct VariancesTag {};
@@ -48,8 +48,8 @@ template <class... Ts> auto Variances(Ts &&... ts) noexcept {
 }
 
 template <class T> auto Variances(std::initializer_list<T> &&init) noexcept {
-  return TaggedTuple<ValuesTag, std::initializer_list<T>>{
-      {}, std::forward_as_tuple(std::move(init))};
+  return TaggedTuple<ValuesTag, Vector<T>>{
+      {}, std::forward_as_tuple(Vector<T>(init))};
 }
 
 namespace detail {
@@ -96,9 +96,8 @@ public:
     //    if constexpr (canCreateVariable<Args...>::value)
     //      return VarT::template
     //      createVariable<ElemT>(std::forward<NonDataTypes>(extractArgs<NonDataTypes,
-    //      Ts...>(tp))...,
-    //          std::forward<VariancesTag,
-    //          VariancesTag>(extractTagged<ValuesTag, VariancesTag>(tp)));
+    //      Ts...>(tp))..., std::forward<VariancesTag,
+    //      VariancesTag>(extractTagged<ValuesTag, VariancesTag>(tp)));
     //    else
     //     throw except::TypeError("Can't create Variable of type " +
     //        to_string(core::dtype<ElemT>) + "from such type of Values and
