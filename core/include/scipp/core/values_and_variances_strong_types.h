@@ -11,6 +11,17 @@
 #include <optional>
 #include <type_traits>
 
+#include <string>
+
+template <class T, T x, class F> void transparent(F f) { f(); }
+
+template <bool B> constexpr void my_assert() { static_assert(B, "oh no"); }
+
+template <int X> void f() {
+  transparent<int, X>(
+      [] { transparent<long, X>([] { my_assert<X + 10 == -89>(); }); });
+}
+
 namespace scipp::core {
 
 // The structs needed for universal variable constructor are introduced below.
@@ -36,8 +47,8 @@ template <class... Ts> auto Values(Ts &&... ts) noexcept {
 }
 
 template <class T> auto Values(std::initializer_list<T> &&init) noexcept {
-  return TaggedTuple<ValuesTag, Vector<T>>{
-      {}, std::forward_as_tuple(Vector<T>(init))};
+  return TaggedTuple<ValuesTag, std::initializer_list<T>>{
+      {}, std::forward_as_tuple(std::move(init))};
 }
 
 struct VariancesTag {};
@@ -48,8 +59,8 @@ template <class... Ts> auto Variances(Ts &&... ts) noexcept {
 }
 
 template <class T> auto Variances(std::initializer_list<T> &&init) noexcept {
-  return TaggedTuple<ValuesTag, Vector<T>>{
-      {}, std::forward_as_tuple(Vector<T>(init))};
+  return TaggedTuple<VariancesTag, std::initializer_list<T>>{
+      {}, std::forward_as_tuple(std::move(init))};
 }
 
 namespace detail {
@@ -83,10 +94,10 @@ template <class VarT, class ElemT, class... Ts>
 class ConstructorArgumentsMatcher {
 public:
   template <class... NonDataTypes> constexpr static void checkArgTypesValid() {
-    constexpr auto nonDataTypesCount =
+    constexpr int nonDataTypesCount =
         (is_type_in_pack_v<NonDataTypes, Ts...> + ...);
-    constexpr auto hasVal = is_tag_in_pack_v<ValuesTag, Ts...>;
-    constexpr auto hasVar = is_tag_in_pack_v<VariancesTag, Ts...>;
+    constexpr bool hasVal = is_tag_in_pack_v<ValuesTag, Ts...>;
+    constexpr bool hasVar = is_tag_in_pack_v<VariancesTag, Ts...>;
     static_assert(nonDataTypesCount + hasVal + hasVar == sizeof...(Ts));
   }
 
@@ -94,15 +105,15 @@ public:
     auto tp = std::make_tuple(std::forward<Ts>(ts)...);
 
     //    if constexpr (canCreateVariable<Args...>::value)
-    //      return VarT::template
-    //      createVariable<ElemT>(std::forward<NonDataTypes>(extractArgs<NonDataTypes,
-    //      Ts...>(tp))..., std::forward<VariancesTag,
-    //      VariancesTag>(extractTagged<ValuesTag, VariancesTag>(tp)));
+    return VarT::template createVariable<ElemT>(
+        std::forward<NonDataTypes>(extractArgs<NonDataTypes, Ts...>(tp))...,
+        std::move(extractTagged<ValuesTag, Ts...>(tp).tuple),
+        std::move(extractTagged<VariancesTag, Ts...>(tp).tuple));
     //    else
     //     throw except::TypeError("Can't create Variable of type " +
     //        to_string(core::dtype<ElemT>) + "from such type of Values and
     //        Variances.");
-    return VarT();
+    // return VarT();
   }
 
 private:
@@ -120,23 +131,23 @@ private:
   //  };
 
   template <class T, class... Args>
-  static decltype(auto) extractArgs(std::tuple<Args &&...> &tp) {
+  static decltype(auto) extractArgs(std::tuple<Args...> &tp) {
     if constexpr (!is_type_in_pack_v<T, Ts...>)
       return T{};
     else {
       constexpr auto index =
-          Indexer<T, std::is_same, Args &&...>::indexOfCorresponding();
+          Indexer<T, std::is_same, Args...>::indexOfCorresponding();
       return std::get<index>(tp);
     }
   }
 
   template <class Tag, class... Args>
-  static decltype(auto) extractTagged(std::tuple<Args &&...> &tp) {
+  static decltype(auto) extractTagged(std::tuple<Args...> &tp) {
     if constexpr (!is_tag_in_pack_v<Tag, Ts...>)
-      return TaggedTuple{Tag{}, {}};
+      return TaggedTuple<Tag>();
     else {
       constexpr auto index =
-          Indexer<Tag, has_tag, Args &&...>::indexOfCorresponding();
+          Indexer<Tag, has_tag, Args...>::indexOfCorresponding();
       return std::get<index>(tp);
     }
   }
