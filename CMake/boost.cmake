@@ -7,20 +7,22 @@ configure_file(${CMAKE_SOURCE_DIR}/CMake/boost.in
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 
 execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
-                RESULT_VARIABLE result
-                WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/boost-download)
+                WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/boost-download
+                RESULT_VARIABLE result)
 if(result)
   message(FATAL_ERROR "CMake step for boost failed: ${result}")
 endif()
+
 execute_process(COMMAND ${CMAKE_COMMAND} --build .
-                RESULT_VARIABLE result
-                WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/boost-download)
+                WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/boost-download
+                RESULT_VARIABLE result)
 if(result)
   message(FATAL_ERROR "Build step for boost failed: ${result}")
 endif()
+
 execute_process(COMMAND ${CMAKE_COMMAND} --install .
-                RESULT_VARIABLE result
-                WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/boost-download)
+                WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/boost-download
+                RESULT_VARIABLE result)
 if(result)
   message(FATAL_ERROR "Install step for boost failed: ${result}")
 endif()
