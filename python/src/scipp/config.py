@@ -37,12 +37,12 @@ class _Colors:
 
         # The colors for each dataset member used in table and show functions
         self.scheme = {
-            "coord": ["#dde9af", "#bcd35f", "#89a02c"],
-            "data": ["#ffe680", "#ffd42a", "#d4aa00"],
-            "labels": ["#afdde9", "#5fbcd3", "#2c89a0"],
-            "attr": ["#ff8080", "#ff2a2a", "#d40000"],
-            "inactive": ["#cccccc", "#888888", "#444444"],
-            "masks": ["#ffb3ff", "#ff80ff", "#cc00cc"]
+            "coord": "#dde9af",
+            "data": "#ffe680",
+            "labels": "#afdde9",
+            "attr": "#ff8080",
+            "inactive": "#cccccc",
+            "masks": "#ffb3ff"
         }
 
 

@@ -2,6 +2,7 @@
 # Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
 from math import ceil
+import colorsys
 
 import numpy as np
 from ._scipp import core as sc
@@ -23,6 +24,37 @@ _smaller_font = round(0.6 * _svg_em, 2)
 
 def is_data_array(obj):
     return isinstance(obj, sc.DataArray) or isinstance(obj, sc.DataConstProxy)
+
+
+def _hex_to_rgb(hex_color):
+    rgb_hex = [hex_color[x:x+2] for x in [1, 3, 5]]
+    return [int(hex_value, 16) for hex_value in rgb_hex]
+
+
+def _rgb_to_hex(rgb):
+    hex_value = []
+    for i in rgb:
+        h = hex(int(i))[2:]
+        if len(h) < 2:
+            h = "{}0".format(h)
+        hex_value.append(h)
+    return "#" + "".join(hex_value)
+
+
+def _color_variants(hex_color):
+    # Convert hex to rgb
+    [r, g, b] = _hex_to_rgb(hex_color)
+    # Convert to HSV
+    h, s, v = colorsys.rgb_to_hsv(r, g, b)
+    # Colorize
+    s = min(1.0, max(0.0, s + 0.3))
+    r, g, b = colorsys.hsv_to_rgb(h, s, v)
+    top = _rgb_to_hex([r, g, b])
+    # Darken
+    v = min(255, max(0, v - 50))
+    r, g, b = colorsys.hsv_to_rgb(h, s, v)
+    side = _rgb_to_hex([r, g, b])
+    return [hex_color, top, side]
 
 
 class VariableDrawer():
@@ -51,8 +83,9 @@ class VariableDrawer():
             'style="fill:{};stroke:#000;stroke-width:0.05;stroke-linejoin:round"',  # noqa #501
             'd="m origin_x origin_y m xlen 0 l 0.3 -0.3 v 1 l -0.3 0.3 z"',
             'id="path2" />'
-        ]).format(*color).replace("origin_x", str(origin_x)).replace(
-            "origin_y", str(origin_y)).replace("xlen", str(xlen))
+        ]).format(*_color_variants(color)).replace(
+            "origin_x", str(origin_x)).replace(
+                "origin_y", str(origin_y)).replace("xlen", str(xlen))
 
     def _variance_offset(self):
         shape = self._extents()

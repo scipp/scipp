@@ -55,16 +55,16 @@ def _make_table_section_name_header(name, section, style):
 def _make_table_sections(dataset, coord, base_style):
     coord_style = "{} background-color: {};text-align: center;'".format(
         base_style,
-        colors.scheme["coord"][0])
+        colors.scheme["coord"])
     label_style = "{} background-color: {};text-align: center;'".format(
         base_style,
-        colors.scheme["labels"][0])
+        colors.scheme["labels"])
     mask_style = "{} background-color: {};text-align: center;'".format(
         base_style,
-        colors.scheme["masks"][0])
+        colors.scheme["masks"])
     data_style = "{} background-color: {};text-align: center;'".format(
         base_style,
-        colors.scheme["data"][0])
+        colors.scheme["data"])
 
     colsp_coord = 0
     if coord is not None:
