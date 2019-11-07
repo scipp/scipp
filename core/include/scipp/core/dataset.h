@@ -995,8 +995,8 @@ public:
       else
         m_holder.setLabels(std::string(label_name), std::move(l));
 
-    for (auto &&[attr_name, m] : masks)
-      m_holder.setMask(std::string(attr_name), std::move(m));
+    for (auto &&[mask_name, m] : masks)
+      m_holder.setMask(std::string(mask_name), std::move(m));
 
     for (auto &&[attr_name, a] : attrs)
       m_holder.setAttr(name, std::string(attr_name), std::move(a));
