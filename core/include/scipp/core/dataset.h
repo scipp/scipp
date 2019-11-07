@@ -398,6 +398,7 @@ public:
   void eraseCoord(const Dim dim);
   void eraseLabels(const std::string &labelName);
   void eraseAttr(const std::string &attrName);
+  void eraseAttr(const std::string &name, const std::string &attrName);
   void eraseMask(const std::string &maskName);
   void eraseSparseCoord(const std::string &name);
   void eraseSparseLabels(const std::string &name, const std::string &labelName);
@@ -476,9 +477,8 @@ private:
   void rebuildDims();
 
   template <class Key, class Val>
-  void erase_from_map(std::unordered_map<Key, Val> Dataset::*map,
-                      const Key &key) {
-    (this->*map).erase(key);
+  void erase_from_map(std::unordered_map<Key, Val> &map, const Key &key) {
+    map.erase(key);
     rebuildDims();
   }
 
@@ -721,8 +721,12 @@ public:
         m_parent->eraseCoord(key);
       if constexpr (std::is_same_v<Base, LabelsConstProxy>)
         m_parent->eraseLabels(key);
-      if constexpr (std::is_same_v<Base, AttrsConstProxy>)
-        m_parent->eraseAttr(key);
+      if constexpr (std::is_same_v<Base, AttrsConstProxy>) {
+        if (m_name)
+          m_parent->eraseAttr(*m_name, key);
+        else
+          m_parent->eraseAttr(key);
+      }
       if constexpr (std::is_same_v<Base, MasksConstProxy>)
         m_parent->eraseMask(key);
     } else {

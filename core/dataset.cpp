@@ -383,23 +383,27 @@ void Dataset::setSparseLabels(const std::string &name,
 }
 
 /// Removes the coordinate for the given dimension.
-void Dataset::eraseCoord(const Dim dim) {
-  erase_from_map(&Dataset::m_coords, dim);
-}
+void Dataset::eraseCoord(const Dim dim) { erase_from_map(m_coords, dim); }
 
 /// Removes the labels for the given label name.
 void Dataset::eraseLabels(const std::string &labelName) {
-  erase_from_map(&Dataset::m_labels, labelName);
+  erase_from_map(m_labels, labelName);
 }
 
 /// Removes an attribute for the given attribute name.
 void Dataset::eraseAttr(const std::string &attrName) {
-  erase_from_map(&Dataset::m_attrs, attrName);
+  erase_from_map(m_attrs, attrName);
+}
+
+/// Removes attribute with given attribute name from the given item.
+void Dataset::eraseAttr(const std::string &name, const std::string &attrName) {
+  expect::contains(*this, name);
+  erase_from_map(m_data[name].attrs, attrName);
 }
 
 /// Removes an attribute for the given attribute name.
 void Dataset::eraseMask(const std::string &maskName) {
-  erase_from_map(&Dataset::m_masks, maskName);
+  erase_from_map(m_masks, maskName);
 }
 
 /// Remove the sparse coordinate with given name.
