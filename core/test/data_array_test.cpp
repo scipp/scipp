@@ -29,9 +29,7 @@ TEST(DataArrayTest, sum_dataset_columns_via_DataArray) {
 
   dataset["data_zyx"] += dataset["data_xyz"];
 
-  // Direction compare fails since binary operation do not propagate attributes.
-  EXPECT_NE(sum, dataset["data_zyx"]);
-
-  dataset.setData("sum", sum);
-  EXPECT_EQ(dataset["sum"], dataset["data_zyx"]);
+  // This would fail if the data items had attributes, since += preserves them
+  // but + does not.
+  EXPECT_EQ(sum, dataset["data_zyx"]);
 }
