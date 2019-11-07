@@ -1114,9 +1114,9 @@ public:
   }
 
   /// Iterable const view for generic code supporting Dataset and DataArray.
-  DatasetConstProxy iter() const noexcept { return m_holder; }
+  DatasetConstProxy iterable_view() const noexcept { return m_holder; }
   /// Iterable view for generic code supporting Dataset and DataArray.
-  DatasetProxy iter() noexcept { return m_holder; }
+  DatasetProxy iterable_view() noexcept { return m_holder; }
 
 private:
   DataConstProxy get() const;
