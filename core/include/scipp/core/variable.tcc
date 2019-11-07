@@ -614,37 +614,19 @@ Variable::Variable(const units::Unit unit, const Dimensions &dimensions,
                                                     std::move(values_),
                                                     std::move(variances_))) {}
 
-template <class T>
-Variable Variable::fromUnitsDimsData(scipp::units::Unit &&u,
-                                     scipp::core::Dimensions &&s,
-                                     scipp::core::Values<T> &&val,
-                                     scipp::core::Variances<T> &&var) {
-  if (val.data && var.data)
-    return Variable(u, s, std::move(*val.data), std::move(*var.data));
-
-  if (val.data && !var.data)
-    return Variable(u, s, std::move(*val.data));
-
-  if (!val.data && !var.data)
-    return Variable(u, s, Vector<T>(s.volume()));
-
-  throw std::invalid_argument(
-      "Should contain values if variances are provided.");
+template <class T, class... T1, class... T2>
+Variable Variable::createVariable(units::Unit &&u, Dimensions &&s,
+                                  std::tuple<T1 &&...> &&val,
+                                  std::tuple<T2 &&...> &&var) {
+  return Variable(u, s, std::make_from_tuple<Vector<T>>(val),
+                  std::make_from_tuple<Vector<T>>(var));
 }
 
-template <class T>
-Variable::Variable(units::Unit &&u, Dimensions &&s, Values<T> &&val,
-                   Variances<T> &&var)
-    : Variable(std::move(fromUnitsDimsData(std::move(u), std::move(s),
-                                           std::move(val), std::move(var)))) {}
-
-template <class T, class... Ts> Variable Variable::fromArgs(Ts &&... args) {
-  using helper = detail::ConstructorArgumentsMatcher<Ts...>;
-  helper::template checkArgTypesValid<units::Unit, Dimensions, Values<T>,
-                                      Variances<T>>();
-  return helper::template construct<Variable, units::Unit, Dimensions,
-                                    Values<T>, Variances<T>>(
-      std::forward<Ts>(args)...);
+template <class T, class... Ts> Variable Variable::fromArgs(Ts &&... ts) {
+  using helper = detail::ConstructorArgumentsMatcher<Variable, T, Ts...>;
+  helper::template checkArgTypesValid<units::Unit, Dimensions>();
+  return helper::template construct<units::Unit, Dimensions>(
+      std::forward<Ts>(ts)...);
 }
 
 template <class... Ts>

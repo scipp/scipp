@@ -291,9 +291,10 @@ public:
   Variable(const units::Unit unit, const Dimensions &dimensions, T values,
            T variances);
 
-  template <class T>
-  Variable(units::Unit &&u, Dimensions &&s, Values<T> &&val,
-           Variances<T> &&var);
+  template <class T, class... T1, class... T2>
+  static Variable createVariable(units::Unit &&u, Dimensions &&s,
+                                 std::tuple<T1 &&...> &&val,
+                                 std::tuple<T2 &&...> &&var);
 
   template <class T>
   Variable(const Dimensions &dimensions, std::initializer_list<T> values_)
@@ -446,10 +447,6 @@ public:
   template <class T> void setVariances(Vector<T> &&v);
 
 private:
-  // Helpers for universal constructors.
-  template <class T>
-  Variable fromUnitsDimsData(units::Unit &&u, Dimensions &&s, Values<T> &&val,
-                             Variances<T> &&var);
   template <class T, class... Ts> static Variable fromArgs(Ts &&... args);
 
   template <class... Ts> struct ConstructVariable {
