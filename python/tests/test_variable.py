@@ -687,3 +687,8 @@ def test_rename_dims():
 def test_create_1d_with_strings():
     v = sc.Variable([Dim.X], values=["aaa", "ff", "bb"])
     assert np.all(v.values == np.array(["aaa", "ff", "bb"]))
+
+
+def test_bool_variable_repr():
+    a = sc.Variable([Dim.X], values=np.array([False, True, True, False, True]))
+    assert [expected in repr(a) for expected in ["True", "False", "..."]]
