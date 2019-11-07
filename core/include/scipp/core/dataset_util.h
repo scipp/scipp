@@ -17,7 +17,7 @@ template <class T> static decltype(auto) iter(T &d) {
   if constexpr (std::is_same_v<T, Dataset>)
     return d;
   else
-    return d.iter();
+    return d.iterable_view();
 }
 } // namespace scipp::core
 
