@@ -10,6 +10,8 @@
 
 namespace scipp::neutron::diffraction {
 
+SCIPP_NEUTRON_EXPORT core::DataArray
+convert_with_calibration(core::DataArray d, core::Dataset cal);
 SCIPP_NEUTRON_EXPORT core::Dataset convert_with_calibration(core::Dataset d,
                                                             core::Dataset cal);
 

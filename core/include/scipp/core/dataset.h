@@ -262,6 +262,7 @@ public:
   using mapped_type = DataArray;
   using value_type = std::pair<const std::string &, DataConstProxy>;
   using const_view_type = DatasetConstProxy;
+  using view_type = DatasetProxy;
 
   Dataset() = default;
   explicit Dataset(const DatasetConstProxy &proxy);
@@ -952,6 +953,7 @@ SCIPP_CORE_EXPORT Dataset copy(const DatasetConstProxy &dataset);
 class SCIPP_CORE_EXPORT DataArray {
 public:
   using const_view_type = DataConstProxy;
+  using view_type = DataProxy;
 
   DataArray() = default;
   explicit DataArray(const DataConstProxy &proxy);
@@ -1110,6 +1112,11 @@ public:
                   const Slice slice3) const && {
     return copy(get().slice(slice1, slice2, slice3));
   }
+
+  /// Iterable const view for generic code supporting Dataset and DataArray.
+  DatasetConstProxy iterable_view() const noexcept { return m_holder; }
+  /// Iterable view for generic code supporting Dataset and DataArray.
+  DatasetProxy iterable_view() noexcept { return m_holder; }
 
 private:
   DataConstProxy get() const;

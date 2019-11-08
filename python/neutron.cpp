@@ -60,7 +60,9 @@ template <class T> void bind_beamline(py::module &m) {
     :rtype: Variable)");
 }
 
-void bind_convert(py::module &m) {
+template <class T> void bind_convert(py::module &m) {
+  using ConstView = const typename T::const_view_type &;
+  using View = const typename T::view_type &;
   const char *doc = R"(
     Convert dimension (unit) into another.
 
@@ -69,29 +71,43 @@ void bind_convert(py::module &m) {
     :param data: Input data with time-of-flight dimension (Dim.Tof)
     :param from: Dimension to convert from
     :param to: Dimension to convert into
-    :return: New dataset with converted dimension (dimension labels, coordinate values, and units)
-    :rtype: Dataset)";
-  m.def("convert", convert, py::arg("data"), py::arg("from"), py::arg("to"),
+    :return: New data array or dataset with converted dimension (dimension labels, coordinate values, and units)
+    :rtype: DataArray or Dataset)";
+  m.def("convert", py::overload_cast<ConstView, const Dim, const Dim>(convert),
+        py::arg("data"), py::arg("from"), py::arg("to"),
         py::call_guard<py::gil_scoped_release>(), doc);
 }
 
-void init_neutron(py::module &m) {
-  auto neutron = m.def_submodule("neutron");
-  auto diffraction = m.def_submodule("neutron_diffraction");
-
-  diffraction.def("convert_with_calibration",
-                  diffraction::convert_with_calibration, py::arg("data"),
-                  py::arg("calibration"), R"(
+template <class T> void bind_convert_with_calibration(py::module &m) {
+  m.def("convert_with_calibration",
+        py::overload_cast<T, core::Dataset>(
+            diffraction::convert_with_calibration),
+        py::arg("data"), py::arg("calibration"), R"(
     Convert unit of powder-diffraction data based on calibration.
 
     :param data: Input data with time-of-flight dimension (Dim.Tof)
     :param calibration: Table of calibration constants
-    :return: New dataset with time-of-flight converted to d-spacing (Dim.DSpacing)
-    :rtype: Dataset
+    :return: New data array or dataset with time-of-flight converted to d-spacing (Dim.DSpacing)
+    :rtype: DataArray or Dataset
 
     .. seealso:: Use :py:func:`scipp.neutron.convert` for unit conversion based on beamline-geometry information instead of calibration information.)");
+}
 
-  bind_convert(neutron);
+void bind_diffraction(py::module &m) {
+  auto diffraction = m.def_submodule("neutron_diffraction");
+  bind_convert_with_calibration<core::DataArray>(diffraction);
+  bind_convert_with_calibration<core::Dataset>(diffraction);
+}
+
+void init_neutron(py::module &m) {
+  auto neutron = m.def_submodule("neutron");
+
+  bind_convert<core::DataArray>(neutron);
+  bind_convert<core::Dataset>(neutron);
   bind_beamline<core::DataArray>(neutron);
   bind_beamline<core::Dataset>(neutron);
+
+  // This is deliberately `m` and not `neutron` due to how nested imports work
+  // in Python in combination with mixed C++/Python modules.
+  bind_diffraction(m);
 }
