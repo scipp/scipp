@@ -660,20 +660,15 @@ template <bool dry_run> struct in_place {
         } else {
           do_transform_in_place(*a, as_view{*b, dimsA}, op);
         }
-      } else if (dimsA.contains(dimsB)) {
-        auto a_view = as_view{*a, dimsA};
-        if (b->isContiguous() && dimsA.isContiguousIn(dimsB)) {
-          do_transform_in_place(a_view, *b, op);
-        } else {
-          do_transform_in_place(a_view, as_view{*b, dimsA}, op);
-        }
       } else {
-        // LHS has fewer dimensions than RHS, e.g., for computing sum. Use view.
-        auto a_view = as_view{*a, dimsB};
+        // If LHS has fewer dimensions than RHS, e.g., for computing sum the
+        // view for iteration is based on dimsB.
+        const auto viewDims = dimsA.contains(dimsB) ? dimsA : dimsB;
+        auto a_view = as_view{*a, viewDims};
         if (b->isContiguous() && dimsA.isContiguousIn(dimsB)) {
           do_transform_in_place(a_view, *b, op);
         } else {
-          do_transform_in_place(a_view, as_view{*b, dimsB}, op);
+          do_transform_in_place(a_view, as_view{*b, viewDims}, op);
         }
       }
     }
