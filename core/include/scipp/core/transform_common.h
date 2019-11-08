@@ -14,26 +14,22 @@ template <class... Ts> struct pair_self {
 };
 template <class... Ts> struct pair_custom { using type = std::tuple<Ts...>; };
 template <class... Ts> struct pair_ {
-  template <class RHS> struct with {
-    using type = decltype(std::tuple_cat(std::tuple<std::pair<Ts, RHS>>{}...));
-  };
+  template <class RHS> using type = std::tuple<std::pair<Ts, RHS>...>;
 };
 
 template <class... Ts> using pair_self_t = typename pair_self<Ts...>::type;
 template <class... Ts> using pair_custom_t = typename pair_custom<Ts...>::type;
 template <class RHS>
 using pair_numerical_with_t =
-    typename pair_<double, float, int64_t, int32_t>::with<RHS>::type;
+    typename pair_<double, float, int64_t, int32_t>::type<RHS>;
 
 template <class... Ts> struct pair_product {
-  template <class T> struct pair_with {
-    using type = decltype(std::tuple_cat(std::tuple<std::pair<T, Ts>>{}...));
-  };
-  using type = decltype(std::tuple_cat(typename pair_with<Ts>::type{}...));
+  template <class T> using type = std::tuple<std::pair<T, Ts>...>;
 };
 
 template <class... Ts>
-using pair_product_t = typename pair_product<Ts...>::type;
+using pair_product_t = decltype(
+    std::tuple_cat(typename pair_product<Ts...>::template type<Ts>{}...));
 
 using arithmetic_type_pairs = pair_product_t<float, double, int32_t, int64_t>;
 
