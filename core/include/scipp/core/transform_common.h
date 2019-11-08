@@ -25,6 +25,41 @@ template <class RHS>
 using pair_numerical_with_t =
     typename pair_<double, float, int64_t, int32_t>::with<RHS>::type;
 
+template <class... Ts> struct pair_product {
+  template <class T> struct pair_with {
+    using type = decltype(std::tuple_cat(std::tuple<std::pair<T, Ts>>{}...));
+  };
+  using type = decltype(std::tuple_cat(typename pair_with<Ts>::type{}...));
+};
+
+template <class... Ts>
+using pair_product_t = typename pair_product<Ts...>::type;
+
+using arithmetic_type_pairs = pair_product_t<float, double, int32_t, int64_t>;
+
+using arithmetic_type_pairs_with_bool =
+    decltype(std::tuple_cat(std::declval<arithmetic_type_pairs>(),
+                            std::declval<pair_numerical_with_t<bool>>()));
+
+using arithmetic_and_matrix_type_pairs = decltype(std::tuple_cat(
+    std::declval<arithmetic_type_pairs>(),
+    std::tuple<std::pair<Eigen::Vector3d, Eigen::Vector3d>,
+               std::pair<int64_t, int32_t>, std::pair<int32_t, int64_t>,
+               std::pair<double, float>, std::pair<float, double>>()));
+
+static constexpr auto dimensionless_unit_check =
+    [](units::Unit &varUnit, const units::Unit &otherUnit) {
+      expect::equals(varUnit, units::dimensionless);
+      expect::equals(otherUnit, units::dimensionless);
+    };
+
+static constexpr auto dimensionless_unit_check_return =
+    [](const units::Unit &aUnit, const units::Unit &bUnit) {
+      expect::equals(aUnit, units::dimensionless);
+      expect::equals(bUnit, units::dimensionless);
+      return aUnit;
+    };
+
 } // namespace scipp::core
 
 #endif // SCIPP_CORE_TRANSFORM_COMMON_H

@@ -4,9 +4,7 @@
 /// @author Simon Heybrock
 #include <cmath>
 
-#include "scipp/core/dataset.h"
 #include "scipp/core/except.h"
-#include "scipp/core/tag_util.h"
 #include "scipp/core/transform.h"
 #include "scipp/core/variable.h"
 
@@ -21,28 +19,6 @@ template <class T1, class T2> T1 &plus_equals(T1 &variable, const T2 &other) {
   return variable;
 }
 
-template <class... Ts> struct pair_product {
-  template <class T> struct pair_with {
-    using type = decltype(std::tuple_cat(std::tuple<std::pair<T, Ts>>{}...));
-  };
-  using type = decltype(std::tuple_cat(typename pair_with<Ts>::type{}...));
-};
-
-template <class... Ts>
-using pair_product_t = typename pair_product<Ts...>::type;
-
-using arithmetic_type_pairs = pair_product_t<float, double, int32_t, int64_t>;
-
-using arithmetic_type_pairs_with_bool =
-    decltype(std::tuple_cat(std::declval<arithmetic_type_pairs>(),
-                            std::declval<pair_numerical_with_t<bool>>()));
-
-using arithmetic_and_matrix_type_pairs = decltype(std::tuple_cat(
-    std::declval<arithmetic_type_pairs>(),
-    std::tuple<std::pair<Eigen::Vector3d, Eigen::Vector3d>,
-               std::pair<int64_t, int32_t>, std::pair<int32_t, int64_t>,
-               std::pair<double, float>, std::pair<float, double>>()));
-
 static constexpr auto plus_ = [](const auto a_, const auto b_) {
   return a_ + b_;
 };
@@ -55,43 +31,6 @@ static constexpr auto times_ = [](const auto a_, const auto b_) {
 static constexpr auto divide_ = [](const auto a_, const auto b_) {
   return a_ / b_;
 };
-
-static constexpr auto dimensionless_unit_check =
-    [](units::Unit &varUnit, const units::Unit &otherUnit) {
-      expect::equals(varUnit, units::dimensionless);
-      expect::equals(otherUnit, units::dimensionless);
-    };
-
-static constexpr auto dimensionless_unit_check_return =
-    [](const units::Unit &aUnit, const units::Unit &bUnit) {
-      expect::equals(aUnit, units::dimensionless);
-      expect::equals(bUnit, units::dimensionless);
-      return aUnit;
-    };
-
-static constexpr auto or_op_ = overloaded{
-    [](const auto &var_, const auto &other_) -> bool { return var_ | other_; },
-    dimensionless_unit_check_return};
-
-static constexpr auto or_equals_ =
-    overloaded{[](auto &var_, const auto &other_) { var_ |= other_; },
-               dimensionless_unit_check};
-
-static constexpr auto and_op_ = overloaded{
-    [](const auto &var_, const auto &other_) -> bool { return var_ & other_; },
-    dimensionless_unit_check_return};
-
-static constexpr auto and_equals_ =
-    overloaded{[](auto &var_, const auto &other_) { var_ &= other_; },
-               dimensionless_unit_check};
-
-static constexpr auto xor_op_ = overloaded{
-    [](const auto &var_, const auto &other_) -> bool { return var_ ^ other_; },
-    dimensionless_unit_check_return};
-
-static constexpr auto xor_equals_ =
-    overloaded{[](auto &var_, const auto &other_) { var_ ^= other_; },
-               dimensionless_unit_check};
 
 template <class T1, class T2> Variable plus(const T1 &a, const T2 &b) {
   return transform<arithmetic_and_matrix_type_pairs>(a, b, plus_);
@@ -171,54 +110,6 @@ Variable &Variable::operator/=(const VariableConstProxy &other) & {
   return divide_equals(*this, other);
 }
 
-template <class T1, class T2> T1 &or_equals(T1 &variable, const T2 &other) {
-  transform_in_place<pair_self_t<bool>>(variable, other, or_equals_);
-  return variable;
-}
-
-template <class T1, class T2> Variable or_op(const T1 &a, const T2 &b) {
-  return transform<pair_self_t<bool>>(a, b, or_op_);
-}
-
-template <class T1, class T2> T1 &and_equals(T1 &variable, const T2 &other) {
-  transform_in_place<pair_self_t<bool>>(variable, other, and_equals_);
-  return variable;
-}
-
-template <class T1, class T2> Variable and_op(const T1 &a, const T2 &b) {
-  return transform<pair_self_t<bool>>(a, b, and_op_);
-}
-
-template <class T1, class T2> T1 &xor_equals(T1 &variable, const T2 &other) {
-  transform_in_place<pair_self_t<bool>>(variable, other, xor_equals_);
-  return variable;
-}
-
-template <class T1, class T2> Variable xor_op(const T1 &a, const T2 &b) {
-  return transform<pair_self_t<bool>>(a, b, xor_op_);
-}
-
-Variable &Variable::operator|=(const Variable &other) & {
-  return or_equals(*this, other);
-}
-Variable &Variable::operator|=(const VariableConstProxy &other) & {
-  return or_equals(*this, other);
-}
-
-Variable &Variable::operator&=(const Variable &other) & {
-  return and_equals(*this, other);
-}
-Variable &Variable::operator&=(const VariableConstProxy &other) & {
-  return and_equals(*this, other);
-}
-
-Variable &Variable::operator^=(const Variable &other) & {
-  return xor_equals(*this, other);
-}
-Variable &Variable::operator^=(const VariableConstProxy &other) & {
-  return xor_equals(*this, other);
-}
-
 VariableProxy VariableProxy::operator+=(const Variable &other) const {
   return plus_equals(*this, other);
 }
@@ -247,27 +138,6 @@ VariableProxy VariableProxy::operator/=(const VariableConstProxy &other) const {
   return divide_equals(*this, other);
 }
 
-VariableProxy VariableProxy::operator|=(const Variable &other) const {
-  return or_equals(*this, other);
-}
-VariableProxy VariableProxy::operator|=(const VariableConstProxy &other) const {
-  return or_equals(*this, other);
-}
-
-VariableProxy VariableProxy::operator&=(const Variable &other) const {
-  return and_equals(*this, other);
-}
-VariableProxy VariableProxy::operator&=(const VariableConstProxy &other) const {
-  return and_equals(*this, other);
-}
-
-VariableProxy VariableProxy::operator^=(const Variable &other) const {
-  return xor_equals(*this, other);
-}
-VariableProxy VariableProxy::operator^=(const VariableConstProxy &other) const {
-  return xor_equals(*this, other);
-}
-
 Variable VariableConstProxy::operator-() const {
   Variable copy(*this);
   return -copy;
@@ -278,13 +148,6 @@ Variable operator-(const Variable &a, const Variable &b) { return minus(a, b); }
 Variable operator*(const Variable &a, const Variable &b) { return times(a, b); }
 Variable operator/(const Variable &a, const Variable &b) {
   return divide(a, b);
-}
-Variable operator|(const Variable &a, const Variable &b) { return or_op(a, b); }
-Variable operator&(const Variable &a, const Variable &b) {
-  return and_op(a, b);
-}
-Variable operator^(const Variable &a, const Variable &b) {
-  return xor_op(a, b);
 }
 Variable operator+(const Variable &a, const VariableConstProxy &b) {
   return plus(a, b);
@@ -298,15 +161,6 @@ Variable operator*(const Variable &a, const VariableConstProxy &b) {
 Variable operator/(const Variable &a, const VariableConstProxy &b) {
   return divide(a, b);
 }
-Variable operator|(const Variable &a, const VariableConstProxy &b) {
-  return or_op(a, b);
-}
-Variable operator&(const Variable &a, const VariableConstProxy &b) {
-  return and_op(a, b);
-}
-Variable operator^(const Variable &a, const VariableConstProxy &b) {
-  return xor_op(a, b);
-}
 Variable operator+(const VariableConstProxy &a, const Variable &b) {
   return plus(a, b);
 }
@@ -319,15 +173,6 @@ Variable operator*(const VariableConstProxy &a, const Variable &b) {
 Variable operator/(const VariableConstProxy &a, const Variable &b) {
   return divide(a, b);
 }
-Variable operator|(const VariableConstProxy &a, const Variable &b) {
-  return or_op(a, b);
-}
-Variable operator&(const VariableConstProxy &a, const Variable &b) {
-  return and_op(a, b);
-}
-Variable operator^(const VariableConstProxy &a, const Variable &b) {
-  return xor_op(a, b);
-}
 Variable operator+(const VariableConstProxy &a, const VariableConstProxy &b) {
   return plus(a, b);
 }
@@ -339,15 +184,6 @@ Variable operator*(const VariableConstProxy &a, const VariableConstProxy &b) {
 }
 Variable operator/(const VariableConstProxy &a, const VariableConstProxy &b) {
   return divide(a, b);
-}
-Variable operator|(const VariableConstProxy &a, const VariableConstProxy &b) {
-  return or_op(a, b);
-}
-Variable operator&(const VariableConstProxy &a, const VariableConstProxy &b) {
-  return and_op(a, b);
-}
-Variable operator^(const VariableConstProxy &a, const VariableConstProxy &b) {
-  return xor_op(a, b);
 }
 Variable operator+(const VariableConstProxy &a_, const double b) {
   Variable a(a_);
@@ -391,39 +227,4 @@ Variable operator/(const double a, const VariableConstProxy &b_proxy) {
   return b;
 }
 
-Variable Variable::operator~() const {
-  return transform<bool>(
-      *this, overloaded{[](const auto &current) { return !current; },
-                        [](const units::Unit &unit) -> units::Unit {
-                          expect::equals(unit, units::dimensionless);
-                          return unit;
-                        }});
-}
-
-struct MakeVariableWithType {
-  template <class T> struct Maker {
-    static Variable apply(const VariableConstProxy &parent) {
-      return transform<double, float, int64_t, int32_t, bool>(
-          parent, overloaded{[](const units::Unit &x) { return x; },
-                             [](const auto &x) {
-                               if constexpr (detail::is_ValueAndVariance_v<
-                                                 std::decay_t<decltype(x)>>)
-                                 return detail::ValueAndVariance<T>{
-                                     static_cast<T>(x.value),
-                                     static_cast<T>(x.variance)};
-                               else
-                                 return static_cast<T>(x);
-                             }});
-    }
-  };
-  static Variable make(const VariableConstProxy &var, DType type) {
-    return CallDType<double, float, int64_t, int32_t, bool>::apply<Maker>(type,
-                                                                          var);
-  }
-};
-
-Variable astype(const VariableConstProxy &var, DType type) {
-  return type == var.dtype() ? Variable(var)
-                             : MakeVariableWithType::make(var, type);
-}
 } // namespace scipp::core
