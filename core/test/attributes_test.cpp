@@ -6,9 +6,6 @@
 
 using namespace scipp;
 using namespace scipp::core;
-  // to test:
-  // - operations with dataset and item attrs (sum, or directly apply_to_items?)
-  // - binary in-place operations preserving dataset and item attrs
 
 class AttributesTest : public ::testing::Test {
 protected:
@@ -93,6 +90,9 @@ TEST_F(AttributesTest, binary_ops_in_place) {
 
   auto result(d1);
   result += d2;
+  result -= d2;
+  result *= d2;
+  result /= d2;
   ASSERT_TRUE(result.attrs().contains("dataset_attr"));
   EXPECT_EQ(result.attrs()["dataset_attr"], scalar);
   ASSERT_TRUE(result["a"].attrs().contains("a_attr"));
@@ -101,17 +101,21 @@ TEST_F(AttributesTest, binary_ops_in_place) {
 
 TEST_F(AttributesTest, reduction_ops) {
   Dataset d;
-  d.setData("a", varX);
+  d.setCoord(Dim::X, makeVariable<double>({Dim::X, 3}, {0, 1, 2}));
+  d.setData("a", makeVariable<double>({Dim::X, 2}, units::counts, {10, 20}));
   d["a"].attrs().set("a_attr", scalar);
   d["a"].attrs().set("a_attr_x", varX);
   d.attrs().set("dataset_attr", scalar);
   d.attrs().set("dataset_attr_x", varX);
 
-  const auto result = sum(d, Dim::X);
-  ASSERT_TRUE(result.attrs().contains("dataset_attr"));
-  ASSERT_FALSE(result.attrs().contains("dataset_attr_x"));
-  EXPECT_EQ(result.attrs()["dataset_attr"], scalar);
-  ASSERT_TRUE(result["a"].attrs().contains("a_attr"));
-  ASSERT_FALSE(result["a"].attrs().contains("a_attr_x"));
-  EXPECT_EQ(result["a"].attrs()["a_attr"], scalar);
+  for (const auto &result :
+       {sum(d, Dim::X), mean(d, Dim::X), resize(d, Dim::X, 4),
+        rebin(d, Dim::X, makeVariable<double>({Dim::X, 2}, {0, 2}))}) {
+    ASSERT_TRUE(result.attrs().contains("dataset_attr"));
+    ASSERT_FALSE(result.attrs().contains("dataset_attr_x"));
+    EXPECT_EQ(result.attrs()["dataset_attr"], scalar);
+    ASSERT_TRUE(result["a"].attrs().contains("a_attr"));
+    ASSERT_FALSE(result["a"].attrs().contains("a_attr_x"));
+    EXPECT_EQ(result["a"].attrs()["a_attr"], scalar);
+  }
 }
