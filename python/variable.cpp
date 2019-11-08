@@ -203,7 +203,7 @@ void bind_init_list(py::class_<Variable> &c) {
           if (scipp_dtype(dtype) == core::dtype<Eigen::Vector3d>) {
             auto val = values.cast<std::vector<Eigen::Vector3d>>();
             Variable var;
-            Dimensions dims({label[0]}, {scipp::size(val)});
+            Dimensions dims(label[0], scipp::size(val));
             if (variances)
               var = makeVariable<Eigen::Vector3d>(
                   dims, val, variances->cast<std::vector<Eigen::Vector3d>>());
