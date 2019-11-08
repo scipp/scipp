@@ -333,9 +333,9 @@ template <class T> static constexpr auto maybe_eval(T &&_) {
 
 /// Functor for implementing operations with sparse data, see also
 /// TransformSparseInPlace.
-template <class Op> struct TransformSparse {
-  Op op;
-  template <class... Ts> constexpr auto operator()(const Ts &... args) const {
+struct TransformSparse {
+  template <class Op, class... Ts>
+  constexpr auto operator()(const Op &op, const Ts &... args) const {
     sparse_container<std::invoke_result_t<Op, element_type_t<Ts>...>> vals(
         check_and_get_size(args...));
     if constexpr ((has_variances_v<Ts> || ...)) {
@@ -498,7 +498,8 @@ using augment = augment_tuple<VariableConceptHandle>;
 template <class Op, class SparseOp> struct overloaded_sparse : Op, SparseOp {
   template <class... Ts> constexpr auto operator()(Ts &&... args) const {
     if constexpr ((transform_detail::is_sparse_v<std::decay_t<Ts>> || ...))
-      return SparseOp::operator()(std::forward<Ts>(args)...);
+      return SparseOp::operator()(static_cast<const Op &>(*this),
+                                  std::forward<Ts>(args)...);
     else if constexpr ((is_eigen_type_v<std::decay_t<Ts>> || ...))
       // WARNING! The explicit specification of the template arguments of
       // operator() is EXTREMELY IMPORTANT. It ensures that Eigen types are
@@ -613,11 +614,9 @@ template <bool dry_run> struct in_place {
   /// match in place of the user-provided ones. We then recursively call the
   /// transform function. In this second call we have descended into the sparse
   /// container so now the user-provided overload will match directly.
-  template <class Op>
   struct TransformSparseInPlace : public detail::SparseFlag {
-    Op op;
-    TransformSparseInPlace(Op op_) : op(op_) {}
-    template <class... Ts> constexpr void operator()(Ts &&... args) const {
+    template <class Op, class... Ts>
+    constexpr void operator()(const Op &op, Ts &&... args) const {
       using namespace detail;
       static_cast<void>(check_and_get_size(args...));
       transform_in_place_impl(op, maybe_broadcast(args)...);
@@ -702,8 +701,8 @@ template <bool dry_run> struct in_place {
                                               var.dataHandle());
       } else {
         scipp::core::visit(augment::insert_sparse(std::tuple<Ts...>{}))
-            .apply(makeTransformInPlace(detail::overloaded_sparse{
-                       op, TransformSparseInPlace<Op>{op}}),
+            .apply(makeTransformInPlace(
+                       detail::overloaded_sparse{op, TransformSparseInPlace{}}),
                    var.dataHandle());
       }
     } catch (const std::bad_variant_access &) {
@@ -729,8 +728,8 @@ template <bool dry_run> struct in_place {
         // being transformed in-place, so there are only three cases here.
         scipp::core::visit(
             augment::insert_sparse_in_place_pairs(std::tuple<Ts...>{}))
-            .apply(makeTransformInPlace(detail::overloaded_sparse{
-                       op, TransformSparseInPlace<Op>{op}}),
+            .apply(makeTransformInPlace(
+                       detail::overloaded_sparse{op, TransformSparseInPlace{}}),
                    var.dataHandle(), other.dataHandle());
       }
     } catch (const std::bad_variant_access &) {
@@ -821,10 +820,11 @@ template <class... Ts, class Var, class Op>
       result = scipp::core::visit_impl<Ts...>::apply(Transform{op},
                                                      var.dataHandle());
     } else {
-      result = scipp::core::visit(augment::insert_sparse(std::tuple<Ts...>{}))
-                   .apply(Transform{detail::overloaded_sparse{
-                              op, TransformSparse<Op>{op}}},
-                          var.dataHandle());
+      result =
+          scipp::core::visit(augment::insert_sparse(std::tuple<Ts...>{}))
+              .apply(
+                  Transform{detail::overloaded_sparse{op, TransformSparse{}}},
+                  var.dataHandle());
     }
   } catch (const std::bad_variant_access &) {
     throw std::runtime_error("Operation not implemented for this type.");
@@ -847,8 +847,7 @@ namespace detail {
       } else {
         return scipp::core::visit(
                    augment::insert_sparse_pairs(std::tuple<Ts...>{}))
-            .apply(Transform{detail::overloaded_sparse{
-                       op, TransformSparse<Op>{op}}},
+            .apply(Transform{detail::overloaded_sparse{op, TransformSparse{}}},
                    var1.dataHandle(), var2.dataHandle());
       }
     } catch (const std::bad_variant_access &) {
