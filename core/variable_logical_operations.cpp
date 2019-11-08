@@ -64,15 +64,18 @@ template <class T1, class T2> Variable xor_op(const T1 &a, const T2 &b) {
 }
 
 Variable &Variable::operator|=(const VariableConstProxy &other) & {
-  return or_equals(*this, other);
+  VariableProxy(*this) |= other;
+  return *this;
 }
 
 Variable &Variable::operator&=(const VariableConstProxy &other) & {
-  return and_equals(*this, other);
+  VariableProxy(*this) &= other;
+  return *this;
 }
 
 Variable &Variable::operator^=(const VariableConstProxy &other) & {
-  return xor_equals(*this, other);
+  VariableProxy(*this) ^= other;
+  return *this;
 }
 
 VariableProxy VariableProxy::operator|=(const VariableConstProxy &other) const {
