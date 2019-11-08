@@ -650,7 +650,10 @@ template <bool dry_run> struct in_place {
         if (a->valuesView(dimsA).overlaps(b->valuesView(dimsA))) {
           // If there is an overlap between lhs and rhs we copy the rhs before
           // applying the operation.
-          return operator()(a, b->copyT());
+          const auto &b_ = b->copyT();
+          // Ensuring that we call exactly same instance of operator() to avoid
+          // extra template instantiations, do not remove the static_cast.
+          return operator()(std::forward<A>(a), static_cast<B>(b_.get()));
         }
       }
 
@@ -765,8 +768,8 @@ void transform_in_place(Var &&var, Op op) {
 /// This overload is equivalent to std::transform with two input ranges and an
 /// output range identical to the secound input range, but avoids potentially
 /// costly element copies.
-template <class... TypePairs, class Var, class Var1, class Op>
-void transform_in_place(Var &&var, const Var1 &other, Op op) {
+template <class... TypePairs, class Var, class Op>
+void transform_in_place(Var &&var, const VariableConstProxy &other, Op op) {
   in_place<false>::transform<TypePairs...>(std::forward<Var>(var), other, op);
 }
 
@@ -781,8 +784,8 @@ void transform_in_place(Var &&var, const Var1 &other, Op op) {
 /// WARNING: In contrast to the transform algorithms, accumulate does not touch
 /// the unit, since it would be hard to track, e.g., in multiplication
 /// operations.
-template <class... TypePairs, class Var, class Var1, class Op>
-void accumulate_in_place(Var &&var, const Var1 &other, Op op) {
+template <class... TypePairs, class Var, class Op>
+void accumulate_in_place(Var &&var, const VariableConstProxy &other, Op op) {
   expect::contains(other.dims(), var.dims());
   // Wrapped implementation to convert multiple tuples into a parameter pack.
   in_place<false>::transform(std::tuple_cat(TypePairs{}...),
@@ -794,8 +797,8 @@ template <class... Ts, class Var, class Op>
 void transform_in_place(Var &&var, Op op) {
   in_place<true>::transform<Ts...>(std::forward<Var>(var), op);
 }
-template <class... TypePairs, class Var, class Var1, class Op>
-void transform_in_place(Var &&var, const Var1 &other, Op op) {
+template <class... TypePairs, class Var, class Op>
+void transform_in_place(Var &&var, const VariableConstProxy &other, Op op) {
   in_place<true>::transform<TypePairs...>(std::forward<Var>(var), other, op);
 }
 } // namespace dry_run
@@ -829,9 +832,9 @@ template <class... Ts, class Var, class Op>
 }
 
 namespace detail {
-  template <class... Ts, class Var1, class Var2, class Op>
-  Variable transform(std::tuple<Ts...> &&, const Var1 &var1, const Var2 &var2,
-                     Op op) {
+  template <class... Ts, class Op>
+  Variable transform(std::tuple<Ts...> &&, const VariableConstProxy &var1,
+                     const VariableConstProxy &var2, Op op) {
     using namespace detail;
     try {
       if constexpr (((is_sparse_v<typename Ts::first_type> ||
@@ -858,8 +861,9 @@ namespace detail {
 /// This overload is equivalent to std::transform with two input ranges, but
 /// avoids the need to manually create a new variable for the output and the
 /// need for, e.g., std::back_inserter.
-template <class... TypePairs, class Var1, class Var2, class Op>
-[[nodiscard]] Variable transform(const Var1 &var1, const Var2 &var2, Op op) {
+template <class... TypePairs, class Op>
+[[nodiscard]] Variable transform(const VariableConstProxy &var1,
+                                 const VariableConstProxy &var2, Op op) {
   auto unit = op(var1.unit(), var2.unit());
   // Wrapped implementation to convert multiple tuples into a parameter pack.
   auto result =
