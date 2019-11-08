@@ -56,7 +56,8 @@ Variable Variable::operator-() const {
 }
 
 Variable &Variable::operator+=(const VariableConstProxy &other) & {
-  return plus_equals(*this, other);
+  VariableProxy(*this) += other;
+  return *this;
 }
 
 template <class T1, class T2> T1 &minus_equals(T1 &variable, const T2 &other) {
@@ -69,7 +70,8 @@ template <class T1, class T2> Variable minus(const T1 &a, const T2 &b) {
 }
 
 Variable &Variable::operator-=(const VariableConstProxy &other) & {
-  return minus_equals(*this, other);
+  VariableProxy(*this) -= other;
+  return *this;
 }
 
 template <class T1, class T2> T1 &times_equals(T1 &variable, const T2 &other) {
@@ -82,7 +84,8 @@ template <class T1, class T2> Variable times(const T1 &a, const T2 &b) {
 }
 
 Variable &Variable::operator*=(const VariableConstProxy &other) & {
-  return times_equals(*this, other);
+  VariableProxy(*this) *= other;
+  return *this;
 }
 
 template <class T1, class T2> T1 &divide_equals(T1 &variable, const T2 &other) {
@@ -95,7 +98,8 @@ template <class T1, class T2> Variable divide(const T1 &a, const T2 &b) {
 }
 
 Variable &Variable::operator/=(const VariableConstProxy &other) & {
-  return divide_equals(*this, other);
+  VariableProxy(*this) /= other;
+  return *this;
 }
 
 VariableProxy VariableProxy::operator+=(const VariableConstProxy &other) const {
