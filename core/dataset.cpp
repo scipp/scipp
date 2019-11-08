@@ -270,7 +270,9 @@ void Dataset::setAttr(const std::string &attrName, Variable attr) {
 void Dataset::setAttr(const std::string &name, const std::string &attrName,
                       Variable attr) {
   expect::contains(*this, name);
-  setDims(attr.dims());
+  if (!operator[](name).dims().contains(attr.dims()))
+    throw except::DimensionError(
+        "Attribute dimensions must match and not exceed dimensions of data.");
   m_data[name].attrs.insert_or_assign(attrName, std::move(attr));
 }
 
