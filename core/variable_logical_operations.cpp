@@ -63,73 +63,30 @@ template <class T1, class T2> Variable xor_op(const T1 &a, const T2 &b) {
   return transform<pair_self_t<bool>>(a, b, xor_op_);
 }
 
-Variable &Variable::operator|=(const Variable &other) & {
-  return or_equals(*this, other);
-}
 Variable &Variable::operator|=(const VariableConstProxy &other) & {
   return or_equals(*this, other);
 }
 
-Variable &Variable::operator&=(const Variable &other) & {
-  return and_equals(*this, other);
-}
 Variable &Variable::operator&=(const VariableConstProxy &other) & {
   return and_equals(*this, other);
 }
 
-Variable &Variable::operator^=(const Variable &other) & {
-  return xor_equals(*this, other);
-}
 Variable &Variable::operator^=(const VariableConstProxy &other) & {
   return xor_equals(*this, other);
 }
 
-VariableProxy VariableProxy::operator|=(const Variable &other) const {
-  return or_equals(*this, other);
-}
 VariableProxy VariableProxy::operator|=(const VariableConstProxy &other) const {
   return or_equals(*this, other);
 }
 
-VariableProxy VariableProxy::operator&=(const Variable &other) const {
-  return and_equals(*this, other);
-}
 VariableProxy VariableProxy::operator&=(const VariableConstProxy &other) const {
   return and_equals(*this, other);
 }
 
-VariableProxy VariableProxy::operator^=(const Variable &other) const {
-  return xor_equals(*this, other);
-}
 VariableProxy VariableProxy::operator^=(const VariableConstProxy &other) const {
   return xor_equals(*this, other);
 }
 
-Variable operator|(const Variable &a, const Variable &b) { return or_op(a, b); }
-Variable operator&(const Variable &a, const Variable &b) {
-  return and_op(a, b);
-}
-Variable operator^(const Variable &a, const Variable &b) {
-  return xor_op(a, b);
-}
-Variable operator|(const Variable &a, const VariableConstProxy &b) {
-  return or_op(a, b);
-}
-Variable operator&(const Variable &a, const VariableConstProxy &b) {
-  return and_op(a, b);
-}
-Variable operator^(const Variable &a, const VariableConstProxy &b) {
-  return xor_op(a, b);
-}
-Variable operator|(const VariableConstProxy &a, const Variable &b) {
-  return or_op(a, b);
-}
-Variable operator&(const VariableConstProxy &a, const Variable &b) {
-  return and_op(a, b);
-}
-Variable operator^(const VariableConstProxy &a, const Variable &b) {
-  return xor_op(a, b);
-}
 Variable operator|(const VariableConstProxy &a, const VariableConstProxy &b) {
   return or_op(a, b);
 }
