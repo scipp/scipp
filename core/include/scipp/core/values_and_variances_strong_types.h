@@ -28,7 +28,8 @@ template <class Tag, class... Ts> struct TaggedTuple {
   std::tuple<Ts &&...> tuple;
 };
 
-template <class Tag, class T> struct TaggedTuple<Tag, std::initializer_list<T>> {
+template <class Tag, class T>
+struct TaggedTuple<Tag, std::initializer_list<T>> {
   using tag_type = Tag;
   using tuple_type = std::tuple<std::initializer_list<T>>;
   Tag tag;
@@ -43,7 +44,8 @@ template <class... Ts> auto Values(Ts &&... ts) noexcept {
 }
 
 template <class T> auto Values(std::initializer_list<T> init) noexcept {
-  return TaggedTuple<ValuesTag, typename std::initializer_list<T>::iterator, typename std::initializer_list<T>::iterator>{
+  return TaggedTuple<ValuesTag, typename std::initializer_list<T>::iterator,
+                     typename std::initializer_list<T>::iterator>{
       {}, std::forward_as_tuple(init.begin(), init.end())};
 }
 
@@ -55,7 +57,8 @@ template <class... Ts> auto Variances(Ts &&... ts) noexcept {
 }
 
 template <class T> auto Variances(std::initializer_list<T> init) noexcept {
-  return TaggedTuple<VariancesTag, typename std::initializer_list<T>::iterator, typename std::initializer_list<T>::iterator>{
+  return TaggedTuple<VariancesTag, typename std::initializer_list<T>::iterator,
+                     typename std::initializer_list<T>::iterator>{
       {}, std::forward_as_tuple(init.begin(), init.end())};
 }
 
