@@ -447,8 +447,6 @@ public:
   template <class T> void setVariances(Vector<T> &&v);
 
 private:
-  template <class T, class... Ts> static Variable fromArgs(Ts &&... args);
-
   template <class... Ts> struct ConstructVariable {
     template <class T> struct Maker { static Variable apply(Ts &&... args); };
 

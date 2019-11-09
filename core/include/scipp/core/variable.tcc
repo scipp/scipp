@@ -614,15 +614,55 @@ Variable::Variable(const units::Unit unit, const Dimensions &dimensions,
                                                     std::move(values_),
                                                     std::move(variances_))) {}
 
+template<class...T1>
+struct helper {
+  template <class...T2>
+  struct internal {
+//   template <class T>
+//   constexpr static
+//                    decltype(Variable(
+//                    units::Unit(),
+//                    Dimensions{},
+//                    std::declval<decltype(std::make_from_tuple<Vector<T>>(std::declval<std::tuple<T1&&...>&&>()))>(),
+//                    std::declval<decltype(std::make_from_tuple<Vector<T>>(std::declval<std::tuple<T2&&...>&&>()))>()),
+//                    bool{}) check() { return true; }
+
+    using fiter = std::vector<float>::iterator;
+
+    template <class T>
+    constexpr static
+        decltype(std::make_from_tuple<Vector<T>>(std::declval<std::tuple<T1&&...>&&>()),
+                 std::make_from_tuple<Vector<T>>(std::declval<std::tuple<T2&&...>&&>()),
+            //std::make_from_tuple<Vector<T>>(std::declval<std::tuple<fiter&&, fiter&&>&&>()),
+            //std::make_from_tuple<Vector<T>>(std::declval<std::tuple<std::string&&>&&>()),
+            Vector<T>(std::declval<fiter>(), std::declval<fiter>()),
+            bool{}) check() { return true; }
+
+    template<typename T, class... U>
+    constexpr static bool check(U...) { return false; }
+  };
+};
+
+//std::vector<float>::ite
 template <class T, class... T1, class... T2>
 Variable Variable::createVariable(units::Unit &&u, Dimensions &&s,
                                   std::tuple<T1 &&...> &&val,
                                   std::tuple<T2 &&...> &&var) {
-  return Variable(u, s, std::make_from_tuple<Vector<T>>(val),
-                  std::make_from_tuple<Vector<T>>(var));
+// if constexpr (helper<T1...>::template internal<T2...>::template check<T>()) {
+ if constexpr (std::is_trivially_constructible_v<Vector<T>, decltype(std::make_from_tuple<Vector<T>>(val))>) {
+   Vector<T> values{std::make_from_tuple<Vector<T>>(val)};
+   Vector<T> variances{std::make_from_tuple<Vector<T>>(var)};
+//   return Variable(u, s, std::move(values), std::move(variances));
+   throw except::TypeError("Test  valid\n");
+ }
+ else
+   throw except::TypeError("Test  invalid\n" );
 }
 
-template <class T, class... Ts> Variable Variable::fromArgs(Ts &&... ts) {
+
+template <class... Ts>
+template <class T>
+Variable Variable::ConstructVariable<Ts...>::Maker<T>::apply(Ts &&... ts) {
   using helper = detail::ConstructorArgumentsMatcher<Variable, T, Ts...>;
   helper::template checkArgTypesValid<units::Unit, Dimensions>();
   return helper::template construct<units::Unit, Dimensions>(
@@ -630,16 +670,11 @@ template <class T, class... Ts> Variable Variable::fromArgs(Ts &&... ts) {
 }
 
 template <class... Ts>
-template <class T>
-Variable Variable::ConstructVariable<Ts...>::Maker<T>::apply(Ts &&... args) {
-  return fromArgs<T>(std::forward<Ts>(args)...);
-}
-
-template <class... Ts>
 Variable Variable::ConstructVariable<Ts...>::make(Ts &&... args, DType type) {
-  return CallDTypeWithSparse<
-      double, float, int64_t, int32_t, bool, Eigen::Vector3d, std::string,
-      Dataset, DataArray>::apply<Maker>(type, std::forward<Ts>(args)...);
+  return CallDType<
+      double, float, int64_t, int32_t, bool, Eigen::Vector3d/*, std::string,
+      Dataset, DataArray*/>::apply<Maker>(type, std::forward<Ts>(args)...);
+
 }
 
 template <class T>

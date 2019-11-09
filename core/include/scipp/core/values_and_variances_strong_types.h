@@ -11,17 +11,6 @@
 #include <optional>
 #include <type_traits>
 
-#include <string>
-
-template <class T, T x, class F> void transparent(F f) { f(); }
-
-template <bool B> constexpr void my_assert() { static_assert(B, "oh no"); }
-
-template <int X> void f() {
-  transparent<int, X>(
-      [] { transparent<long, X>([] { my_assert<X + 10 == -89>(); }); });
-}
-
 namespace scipp::core {
 
 // The structs needed for universal variable constructor are introduced below.
@@ -39,6 +28,13 @@ template <class Tag, class... Ts> struct TaggedTuple {
   std::tuple<Ts &&...> tuple;
 };
 
+template <class Tag, class T> struct TaggedTuple<Tag, std::initializer_list<T>> {
+  using tag_type = Tag;
+  using tuple_type = std::tuple<std::initializer_list<T>>;
+  Tag tag;
+  std::tuple<std::initializer_list<T>> tuple;
+};
+
 struct ValuesTag {};
 
 template <class... Ts> auto Values(Ts &&... ts) noexcept {
@@ -46,9 +42,9 @@ template <class... Ts> auto Values(Ts &&... ts) noexcept {
       {}, std::forward_as_tuple(std::forward<Ts>(ts)...)};
 }
 
-template <class T> auto Values(std::initializer_list<T> &&init) noexcept {
-  return TaggedTuple<ValuesTag, std::initializer_list<T>>{
-      {}, std::forward_as_tuple(std::move(init))};
+template <class T> auto Values(std::initializer_list<T> init) noexcept {
+  return TaggedTuple<ValuesTag, typename std::initializer_list<T>::iterator, typename std::initializer_list<T>::iterator>{
+      {}, std::forward_as_tuple(init.begin(), init.end())};
 }
 
 struct VariancesTag {};
@@ -58,9 +54,9 @@ template <class... Ts> auto Variances(Ts &&... ts) noexcept {
       {}, std::forward_as_tuple(std::forward<Ts>(ts)...)};
 }
 
-template <class T> auto Variances(std::initializer_list<T> &&init) noexcept {
-  return TaggedTuple<VariancesTag, std::initializer_list<T>>{
-      {}, std::forward_as_tuple(std::move(init))};
+template <class T> auto Variances(std::initializer_list<T> init) noexcept {
+  return TaggedTuple<VariancesTag, typename std::initializer_list<T>::iterator, typename std::initializer_list<T>::iterator>{
+      {}, std::forward_as_tuple(init.begin(), init.end())};
 }
 
 namespace detail {
@@ -103,33 +99,13 @@ public:
 
   template <class... NonDataTypes> static VarT construct(Ts &&... ts) {
     auto tp = std::make_tuple(std::forward<Ts>(ts)...);
-
-    //    if constexpr (canCreateVariable<Args...>::value)
     return VarT::template createVariable<ElemT>(
         std::forward<NonDataTypes>(extractArgs<NonDataTypes, Ts...>(tp))...,
         std::move(extractTagged<ValuesTag, Ts...>(tp).tuple),
         std::move(extractTagged<VariancesTag, Ts...>(tp).tuple));
-    //    else
-    //     throw except::TypeError("Can't create Variable of type " +
-    //        to_string(core::dtype<ElemT>) + "from such type of Values and
-    //        Variances.");
-    // return VarT();
   }
 
 private:
-  //  VarT create(...) { throw except::TypeError("Can't create Variable of type
-  //  " + to_string(core::dtype<ElemT>) + "from such type of Values and
-  //  Variances."); }
-  //
-  //  template<class...NonDataTypes>
-  //  decltype(auto) create(std::tuple<Ts...> tp) {
-  //    return VarT::template
-  //    createVariable<ElemT>(std::forward<NonDataTypes>(extractArgs<NonDataTypes,
-  //    Ts...>(tp))...,
-  //          std::forward<VariancesTag, VariancesTag>(extractTagged<ValuesTag,
-  //          VariancesTag>(tp)));
-  //  };
-
   template <class T, class... Args>
   static decltype(auto) extractArgs(std::tuple<Args...> &tp) {
     if constexpr (!is_type_in_pack_v<T, Ts...>)
