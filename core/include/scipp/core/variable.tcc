@@ -624,9 +624,11 @@ Variable Variable::createVariable(units::Unit &&u, Dimensions &&s,
     Vector<T> variances{std::make_from_tuple<Vector<T>>(var)};
     return Variable(u, s, std::move(values), std::move(variances));
   } else
-    throw except::TypeError("Can't create the Variable with type " +
-                            to_string(core::dtype<T>) +
-                            "with such values and/or variances.");
+    throw except::TypeError(
+        "Can't create the Variable with type " + to_string(core::dtype<T>) +
+        " with such values and/or variances: " +
+        ((typeid(T1).name() + std::string(" ")) + ... + " ") + "; " +
+        ((typeid(T2).name() + std::string(" ")) + ... + " "));
 }
 
 template <class... Ts>
