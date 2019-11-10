@@ -36,8 +36,9 @@ template <class... Ts> auto Values(Ts &&... ts) noexcept {
 }
 
 template <class T> auto Values(std::initializer_list<T> init) noexcept {
-  return TaggedTuple<ValuesTag, Vector<T>>{
-      {}, std::forward_as_tuple(Vector<T>(init)) /*init.begin(), init.end())*/};
+  using iter = typename std::initializer_list<T>::iterator;
+  return TaggedTuple<ValuesTag, iter, iter>{
+      {}, std::make_tuple(init.begin(), init.end())};
 }
 
 struct VariancesTag {};
@@ -48,8 +49,9 @@ template <class... Ts> auto Variances(Ts &&... ts) noexcept {
 }
 
 template <class T> auto Variances(std::initializer_list<T> init) noexcept {
-  return TaggedTuple<VariancesTag, Vector<T>>{
-      {}, std::forward_as_tuple(Vector<T>(init)) /*init.begin(), init.end())*/};
+  using iter = typename std::initializer_list<T>::iterator;
+  return TaggedTuple<VariancesTag, iter, iter>{
+      {}, std::make_tuple(init.begin(), init.end())};
 }
 
 namespace detail {

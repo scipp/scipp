@@ -620,9 +620,21 @@ Variable Variable::createVariable(units::Unit &&u, Dimensions &&s,
                                   std::tuple<T2 &&...> &&var) {
   if constexpr (std::is_constructible_v<Vector<T>, T1 &&...> &&
                 std::is_constructible_v<Vector<T>, T2 &&...>) {
-    Vector<T> values{std::make_from_tuple<Vector<T>>(val)};
-    Vector<T> variances{std::make_from_tuple<Vector<T>>(var)};
-    return Variable(u, s, std::move(values), std::move(variances));
+    auto values = std::make_from_tuple<Vector<T>>(val);
+    auto variances = std::make_from_tuple<Vector<T>>(var);
+    constexpr bool has_val = (sizeof...(T1) > 0);
+    constexpr bool has_var = (sizeof...(T2) > 0);
+    if constexpr (has_val && has_var)
+      return Variable(u, s, std::move(values), std::move(variances));
+    if constexpr (has_val)
+      return Variable(u, s, std::move(values));
+    if constexpr (has_var)
+      throw std::logic_error("Can't have variance without values");
+    else {
+      auto res = makeVariable<T>(s);
+      res.setUnit(u);
+      return res;
+    }
   } else
     throw except::TypeError(
         "Can't create the Variable with type " + to_string(core::dtype<T>) +

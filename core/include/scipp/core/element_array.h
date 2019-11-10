@@ -49,24 +49,30 @@ public:
     resize(new_size, default_init_elements);
   }
 
-//  template <class InputIt,
-//            std::enable_if_t<!std::is_integral<InputIt>{}, int> = 0>
-//  element_array(InputIt first, InputIt last) {
-//    resize(std::distance(first, last), default_init_elements);
-//    std::copy(first, last, data());
-//  }
+  //  template <class InputIt,
+  //            std::enable_if_t<!std::is_integral<InputIt>{}, int> = 0>
+  //  element_array(InputIt first, InputIt last) {
+  //    resize(std::distance(first, last), default_init_elements);
+  //    std::copy(first, last, data());
+  //  }
 
-  template <class Iter, std::enable_if_t<std::is_assignable<T&, typename Iter::value_type>{}, int> = 0>
+  template <class Iter,
+            std::enable_if_t<
+                std::is_assignable<T &, typename Iter::value_type>{}, int> = 0>
   element_array(Iter first, Iter last) {
     resize(std::distance(first, last), default_init_elements);
     std::copy(first, last, data());
   }
 
-  template <class U, std::enable_if_t<std::is_constructible_v<T, U>, int> = 0>
-  element_array(U* first, U* last) {
+  template <class U, std::enable_if_t<std::is_assignable_v<T &, U>, int> = 0>
+  element_array(U *first, U *last) {
     resize(std::distance(first, last), default_init_elements);
     std::copy(first, last, data());
   }
+
+  template <class U, template <class> class Container,
+            std::enable_if_t<std::is_assignable_v<T &, U>, int> = 0>
+  element_array(const Container<U> &c) : element_array(c.begin(), c.end()) {}
 
   element_array(std::initializer_list<T> init)
       : element_array(init.begin(), init.end()) {}
@@ -96,7 +102,9 @@ public:
   const T *data() const noexcept { return m_data.get(); }
   T *data() noexcept { return m_data.get(); }
   const T *begin() const noexcept { return data(); }
-  const T *end() const noexcept { return data() + size(); }
+  const T *end() const noexcept {
+    return m_size < 0 ? begin() : data() + size();
+  }
 
   void reset() noexcept {
     m_data.reset();
