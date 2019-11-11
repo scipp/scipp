@@ -360,27 +360,22 @@ public:
   Variable reshape(const Dimensions &dims) &&;
   void rename(const Dim from, const Dim to);
 
-  bool operator==(const Variable &other) const;
   bool operator==(const VariableConstProxy &other) const;
-  bool operator!=(const Variable &other) const;
   bool operator!=(const VariableConstProxy &other) const;
   Variable operator-() const;
 
-  Variable &operator+=(const Variable &other) &;
   Variable &operator+=(const VariableConstProxy &other) &;
   template <typename T, typename = std::enable_if_t<!is_variable_or_proxy<T>()>>
   Variable &operator+=(const T v) & {
     return *this += makeVariable<T>(v);
   }
 
-  Variable &operator-=(const Variable &other) &;
   Variable &operator-=(const VariableConstProxy &other) &;
   template <typename T, typename = std::enable_if_t<!is_variable_or_proxy<T>()>>
   Variable &operator-=(const T v) & {
     return *this -= makeVariable<T>(v);
   }
 
-  Variable &operator*=(const Variable &other) &;
   Variable &operator*=(const VariableConstProxy &other) &;
   template <typename T, typename = std::enable_if_t<!is_variable_or_proxy<T>()>>
   Variable &operator*=(const T v) & {
@@ -392,7 +387,6 @@ public:
     return *this *= quantity.value();
   }
 
-  Variable &operator/=(const Variable &other) &;
   Variable &operator/=(const VariableConstProxy &other) &;
   template <typename T, typename = std::enable_if_t<!is_variable_or_proxy<T>()>>
   Variable &operator/=(const T v) & {
@@ -404,13 +398,8 @@ public:
     return *this /= quantity.value();
   }
 
-  Variable &operator|=(const Variable &other) &;
   Variable &operator|=(const VariableConstProxy &other) &;
-
-  Variable &operator&=(const Variable &other) &;
   Variable &operator&=(const VariableConstProxy &other) &;
-
-  Variable &operator^=(const Variable &other) &;
   Variable &operator^=(const VariableConstProxy &other) &;
 
   const VariableConcept &data() const && = delete;
@@ -681,9 +670,7 @@ public:
     return variances<T>()[0];
   }
 
-  bool operator==(const Variable &other) const;
   bool operator==(const VariableConstProxy &other) const;
-  bool operator!=(const Variable &other) const;
   bool operator!=(const VariableConstProxy &other) const;
   Variable operator-() const;
 
@@ -779,41 +766,32 @@ public:
   // (would this suffer from the same issue?).
   template <class T> VariableProxy assign(const T &other) const;
 
-  VariableProxy operator+=(const Variable &other) const;
   VariableProxy operator+=(const VariableConstProxy &other) const;
   template <typename T, typename = std::enable_if_t<!is_variable_or_proxy<T>()>>
   VariableProxy operator+=(const T v) const {
     return *this += makeVariable<T>(v);
   }
 
-  VariableProxy operator-=(const Variable &other) const;
   VariableProxy operator-=(const VariableConstProxy &other) const;
   template <typename T, typename = std::enable_if_t<!is_variable_or_proxy<T>()>>
   VariableProxy operator-=(const T v) const {
     return *this -= makeVariable<T>(v);
   }
 
-  VariableProxy operator*=(const Variable &other) const;
   VariableProxy operator*=(const VariableConstProxy &other) const;
   template <typename T, typename = std::enable_if_t<!is_variable_or_proxy<T>()>>
   VariableProxy operator*=(const T v) const {
     return *this *= makeVariable<T>(v);
   }
 
-  VariableProxy operator/=(const Variable &other) const;
   VariableProxy operator/=(const VariableConstProxy &other) const;
   template <typename T, typename = std::enable_if_t<!is_variable_or_proxy<T>()>>
   VariableProxy operator/=(const T v) const {
     return *this /= makeVariable<T>(v);
   }
 
-  VariableProxy operator|=(const Variable &other) const;
   VariableProxy operator|=(const VariableConstProxy &other) const;
-
-  VariableProxy operator&=(const Variable &other) const;
   VariableProxy operator&=(const VariableConstProxy &other) const;
-
-  VariableProxy operator^=(const Variable &other) const;
   VariableProxy operator^=(const VariableConstProxy &other) const;
 
   template <class T> void setVariances(Vector<T> &&v) const;
@@ -831,39 +809,6 @@ private:
   Variable *m_mutableVariable;
 };
 
-SCIPP_CORE_EXPORT Variable operator+(const Variable &a, const Variable &b);
-SCIPP_CORE_EXPORT Variable operator-(const Variable &a, const Variable &b);
-SCIPP_CORE_EXPORT Variable operator*(const Variable &a, const Variable &b);
-SCIPP_CORE_EXPORT Variable operator/(const Variable &a, const Variable &b);
-SCIPP_CORE_EXPORT Variable operator|(const Variable &a, const Variable &b);
-SCIPP_CORE_EXPORT Variable operator&(const Variable &a, const Variable &b);
-SCIPP_CORE_EXPORT Variable operator^(const Variable &a, const Variable &b);
-SCIPP_CORE_EXPORT Variable operator+(const Variable &a,
-                                     const VariableConstProxy &b);
-SCIPP_CORE_EXPORT Variable operator-(const Variable &a,
-                                     const VariableConstProxy &b);
-SCIPP_CORE_EXPORT Variable operator*(const Variable &a,
-                                     const VariableConstProxy &b);
-SCIPP_CORE_EXPORT Variable operator/(const Variable &a,
-                                     const VariableConstProxy &b);
-SCIPP_CORE_EXPORT Variable operator|(const Variable &a,
-                                     const VariableConstProxy &b);
-SCIPP_CORE_EXPORT Variable operator&(const Variable &a,
-                                     const VariableConstProxy &b);
-SCIPP_CORE_EXPORT Variable operator+(const VariableConstProxy &a,
-                                     const Variable &b);
-SCIPP_CORE_EXPORT Variable operator-(const VariableConstProxy &a,
-                                     const Variable &b);
-SCIPP_CORE_EXPORT Variable operator*(const VariableConstProxy &a,
-                                     const Variable &b);
-SCIPP_CORE_EXPORT Variable operator/(const VariableConstProxy &a,
-                                     const Variable &b);
-SCIPP_CORE_EXPORT Variable operator|(const VariableConstProxy &a,
-                                     const Variable &b);
-SCIPP_CORE_EXPORT Variable operator&(const VariableConstProxy &a,
-                                     const Variable &b);
-SCIPP_CORE_EXPORT Variable operator^(const VariableConstProxy &a,
-                                     const Variable &b);
 SCIPP_CORE_EXPORT Variable operator+(const VariableConstProxy &a,
                                      const VariableConstProxy &b);
 SCIPP_CORE_EXPORT Variable operator-(const VariableConstProxy &a,
