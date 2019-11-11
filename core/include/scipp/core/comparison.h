@@ -15,16 +15,18 @@ namespace scipp::core {
 /// Tests if the unit, values (and variances where appropriate) of two
 /// Variables are within an absolute tolerance.
 template <typename T>
-bool is_approx(Variable a, const Variable &b, const T tol) {
+bool is_approx(const VariableConstProxy &a, const VariableConstProxy &b,
+               const T tol) {
   if (a.dtype() != b.dtype())
     return false;
 
   if (a.hasVariances() != b.hasVariances())
     return false;
 
+  Variable aa(a);
   std::atomic_flag mismatch = ATOMIC_FLAG_INIT;
   transform_in_place<pair_self_t<T>>(
-      a, b,
+      aa, b,
       scipp::overloaded{[&](const T va, const T vb) {
                           if (std::abs(va - vb) >= tol)
                             mismatch.test_and_set();
