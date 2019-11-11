@@ -77,6 +77,18 @@ TEST_F(AttributesTest, slice_dataset_item_attrs) {
   ASSERT_TRUE(d["a"].slice({Dim::Y, 0, 1}).attrs().contains("x"));
 }
 
+TEST_F(AttributesTest, binary_ops) {
+  Dataset d;
+  d.setData("a", varX);
+  d["a"].attrs().set("a_attr", scalar);
+  d.attrs().set("dataset_attr", scalar);
+
+  for (const auto &result : {d + d, d - d, d * d, d / d}) {
+    EXPECT_TRUE(result.attrs().empty());
+    EXPECT_TRUE(result['a'].attrs().empty());
+  }
+}
+
 TEST_F(AttributesTest, binary_ops_in_place) {
   Dataset d1;
   d1.setData("a", varX);
@@ -86,17 +98,27 @@ TEST_F(AttributesTest, binary_ops_in_place) {
   Dataset d2;
   d2.setData("a", varX);
   d2["a"].attrs().set("a_attr", varX);
+  d2["a"].attrs().set("a_attr2", varX);
   d2.attrs().set("dataset_attr", varX);
+  d2.attrs().set("dataset_attr2", varX);
 
   auto result(d1);
+
+  auto check_preserved_only_lhs_attrs = [&]() {
+    ASSERT_EQ(result.attrs().size(), 1);
+    EXPECT_EQ(result.attrs()["dataset_attr"], scalar);
+    ASSERT_EQ(result["a"].attrs().size(), 1);
+    EXPECT_EQ(result["a"].attrs()["a_attr"], scalar);
+  };
+
   result += d2;
+  check_preserved_only_lhs_attrs();
   result -= d2;
+  check_preserved_only_lhs_attrs();
   result *= d2;
+  check_preserved_only_lhs_attrs();
   result /= d2;
-  ASSERT_TRUE(result.attrs().contains("dataset_attr"));
-  EXPECT_EQ(result.attrs()["dataset_attr"], scalar);
-  ASSERT_TRUE(result["a"].attrs().contains("a_attr"));
-  EXPECT_EQ(result["a"].attrs()["a_attr"], scalar);
+  check_preserved_only_lhs_attrs();
 }
 
 TEST_F(AttributesTest, reduction_ops) {
