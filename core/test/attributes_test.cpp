@@ -85,7 +85,7 @@ TEST_F(AttributesTest, binary_ops) {
 
   for (const auto &result : {d + d, d - d, d * d, d / d}) {
     EXPECT_TRUE(result.attrs().empty());
-    EXPECT_TRUE(result['a'].attrs().empty());
+    EXPECT_TRUE(result["a"].attrs().empty());
   }
 }
 
