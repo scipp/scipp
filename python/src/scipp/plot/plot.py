@@ -43,29 +43,37 @@ def plot(input_data, collapse=None, backend=None, color=None, **kwargs):
     for name, var in sorted(input_data):
         ndims = len(var.dims)
         sp_dim = var.sparse_dim
+        # Construct a key from the dimensions
+        key = "{}.".format(str(var.dims[0]))
         if ndims == 1:
-            # Construct a key from the dimension and the unit, to group
-            # compatible data together.
-            key = "{}.".format(str(var.dims[0]))
+            # Add unit to key
             if sp_dim is not None:
                 key = "{}{}".format(key, str(var.coords[sp_dim].unit))
             else:
                 key = "{}{}".format(key, str(var.unit))
-
-            if key not in tobeplotted.keys():
-                tobeplotted[key] = [ndims, sc.Dataset(), []]
-            tobeplotted[key][1][name] = input_data[name]
             if auto_color:
                 col = get_color(index=color_count)
             elif isinstance(color, list):
                 col = color[color_count]
             else:
                 col = color
-            tobeplotted[key][2].append(col)
             color_count += 1
-        elif ndims > 1:
-            key = name
-            tobeplotted[key] = [ndims, sc.Dataset(input_data[name]), color]
+
+
+        if key not in tobeplotted.keys():
+            tobeplotted[key] = [ndims, sc.Dataset(), []]
+        tobeplotted[key][1][name] = input_data[name]
+        # if auto_color:
+        #     col = get_color(index=color_count)
+        # elif isinstance(color, list):
+        #     col = color[color_count]
+        # else:
+        #     col = color
+        tobeplotted[key][2].append(col)
+        # color_count += 1
+        # elif ndims > 1:
+        #     key = name
+        #     tobeplotted[key] = [ndims, sc.Dataset(input_data[name]), color]
         sparse_dim[key] = sp_dim
 
     # Plot all the subsets

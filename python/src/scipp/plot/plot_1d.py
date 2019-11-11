@@ -77,7 +77,29 @@ def plot_1d(input_data, backend=None, logx=False, logy=False, logxy=False,
     if logy or logxy:
         layout["yaxis"]["type"] = "log"
 
-    fig = go.Figure(data=data, layout=layout)
-    render_plot(static_fig=fig, interactive_fig=fig, backend=backend,
+    sv = Slicer1d(data=data, layout=layout, input_data=input_data, axes=axes)
+
+
+    render_plot(static_fig=sv.fig, interactive_fig=sv.vbox, backend=backend,
                 filename=filename)
+
+    # fig = go.Figure(data=data, layout=layout)
+    # render_plot(static_fig=fig, interactive_fig=fig, backend=backend,
+    #             filename=filename)
     return
+
+
+
+class Slicer1d(Slicer):
+
+    def __init__(self, data, layout, input_data, axes):
+
+        super().__init__(input_data=input_data, axes=axes, button_options=['X'])
+
+        self.fig = go.FigureWidget(data=[data], layout=layout)
+
+        self.vbox = [self.fig] + self.vbox
+        self.vbox = widgets.VBox(self.vbox)
+        self.vbox.layout.align_items = 'center'
+
+        return
