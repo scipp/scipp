@@ -54,6 +54,31 @@ Variable makeCountDensityData(const units::Unit &unit) {
                               {1, 2, 3, 4, 5, 6});
 }
 
+// Tests for DataArray (or its view) as input, comparing against conversion of
+// Dataset.
+TEST(ConvertDataArray, from_tof) {
+  Dataset tof = makeTofDataForUnitConversion();
+  for (const auto &dim : {Dim::DSpacing, Dim::Wavelength, Dim::Energy}) {
+    const auto expected = convert(tof, Dim::Tof, dim);
+    Dataset result;
+    for (const auto &[name, data] : tof)
+      result.setData(name, convert(data, Dim::Tof, dim));
+    EXPECT_EQ(result, expected);
+  }
+}
+
+TEST(ConvertDataArray, to_tof) {
+  Dataset tof = makeTofDataForUnitConversion();
+  for (const auto &dim : {Dim::DSpacing, Dim::Wavelength, Dim::Energy}) {
+    const auto input = convert(tof, Dim::Tof, dim);
+    const auto expected = convert(input, dim, Dim::Tof);
+    Dataset result;
+    for (const auto &[name, data] : input)
+      result.setData(name, convert(data, dim, Dim::Tof));
+    EXPECT_EQ(result, expected);
+  }
+}
+
 TEST(Convert, fail_count_density) {
   const Dataset tof = makeTofDataForUnitConversion();
   for (const Dim dim : {Dim::DSpacing, Dim::Wavelength, Dim::Energy}) {

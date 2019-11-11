@@ -333,9 +333,9 @@ template <class T> static constexpr auto maybe_eval(T &&_) {
 
 /// Functor for implementing operations with sparse data, see also
 /// TransformSparseInPlace.
-template <class Op> struct TransformSparse {
-  Op op;
-  template <class... Ts> constexpr auto operator()(const Ts &... args) const {
+struct TransformSparse {
+  template <class Op, class... Ts>
+  constexpr auto operator()(const Op &op, const Ts &... args) const {
     sparse_container<std::invoke_result_t<Op, element_type_t<Ts>...>> vals(
         check_and_get_size(args...));
     if constexpr ((has_variances_v<Ts> || ...)) {
@@ -498,7 +498,8 @@ using augment = augment_tuple<VariableConceptHandle>;
 template <class Op, class SparseOp> struct overloaded_sparse : Op, SparseOp {
   template <class... Ts> constexpr auto operator()(Ts &&... args) const {
     if constexpr ((transform_detail::is_sparse_v<std::decay_t<Ts>> || ...))
-      return SparseOp::operator()(std::forward<Ts>(args)...);
+      return SparseOp::operator()(static_cast<const Op &>(*this),
+                                  std::forward<Ts>(args)...);
     else if constexpr ((is_eigen_type_v<std::decay_t<Ts>> || ...))
       // WARNING! The explicit specification of the template arguments of
       // operator() is EXTREMELY IMPORTANT. It ensures that Eigen types are
@@ -613,11 +614,9 @@ template <bool dry_run> struct in_place {
   /// match in place of the user-provided ones. We then recursively call the
   /// transform function. In this second call we have descended into the sparse
   /// container so now the user-provided overload will match directly.
-  template <class Op>
   struct TransformSparseInPlace : public detail::SparseFlag {
-    Op op;
-    TransformSparseInPlace(Op op_) : op(op_) {}
-    template <class... Ts> constexpr void operator()(Ts &&... args) const {
+    template <class Op, class... Ts>
+    constexpr void operator()(const Op &op, Ts &&... args) const {
       using namespace detail;
       static_cast<void>(check_and_get_size(args...));
       transform_in_place_impl(op, maybe_broadcast(args)...);
@@ -651,7 +650,10 @@ template <bool dry_run> struct in_place {
         if (a->valuesView(dimsA).overlaps(b->valuesView(dimsA))) {
           // If there is an overlap between lhs and rhs we copy the rhs before
           // applying the operation.
-          return operator()(a, b->copyT());
+          const auto &b_ = b->copyT();
+          // Ensuring that we call exactly same instance of operator() to avoid
+          // extra template instantiations, do not remove the static_cast.
+          return operator()(std::forward<A>(a), static_cast<B>(b_.get()));
         }
       }
 
@@ -661,20 +663,15 @@ template <bool dry_run> struct in_place {
         } else {
           do_transform_in_place(*a, as_view{*b, dimsA}, op);
         }
-      } else if (dimsA.contains(dimsB)) {
-        auto a_view = as_view{*a, dimsA};
-        if (b->isContiguous() && dimsA.isContiguousIn(dimsB)) {
-          do_transform_in_place(a_view, *b, op);
-        } else {
-          do_transform_in_place(a_view, as_view{*b, dimsA}, op);
-        }
       } else {
-        // LHS has fewer dimensions than RHS, e.g., for computing sum. Use view.
-        auto a_view = as_view{*a, dimsB};
+        // If LHS has fewer dimensions than RHS, e.g., for computing sum the
+        // view for iteration is based on dimsB.
+        const auto viewDims = dimsA.contains(dimsB) ? dimsA : dimsB;
+        auto a_view = as_view{*a, viewDims};
         if (b->isContiguous() && dimsA.isContiguousIn(dimsB)) {
           do_transform_in_place(a_view, *b, op);
         } else {
-          do_transform_in_place(a_view, as_view{*b, dimsB}, op);
+          do_transform_in_place(a_view, as_view{*b, viewDims}, op);
         }
       }
     }
@@ -702,8 +699,8 @@ template <bool dry_run> struct in_place {
                                               var.dataHandle());
       } else {
         scipp::core::visit(augment::insert_sparse(std::tuple<Ts...>{}))
-            .apply(makeTransformInPlace(detail::overloaded_sparse{
-                       op, TransformSparseInPlace<Op>{op}}),
+            .apply(makeTransformInPlace(
+                       detail::overloaded_sparse{op, TransformSparseInPlace{}}),
                    var.dataHandle());
       }
     } catch (const std::bad_variant_access &) {
@@ -729,8 +726,8 @@ template <bool dry_run> struct in_place {
         // being transformed in-place, so there are only three cases here.
         scipp::core::visit(
             augment::insert_sparse_in_place_pairs(std::tuple<Ts...>{}))
-            .apply(makeTransformInPlace(detail::overloaded_sparse{
-                       op, TransformSparseInPlace<Op>{op}}),
+            .apply(makeTransformInPlace(
+                       detail::overloaded_sparse{op, TransformSparseInPlace{}}),
                    var.dataHandle(), other.dataHandle());
       }
     } catch (const std::bad_variant_access &) {
@@ -771,8 +768,8 @@ void transform_in_place(Var &&var, Op op) {
 /// This overload is equivalent to std::transform with two input ranges and an
 /// output range identical to the secound input range, but avoids potentially
 /// costly element copies.
-template <class... TypePairs, class Var, class Var1, class Op>
-void transform_in_place(Var &&var, const Var1 &other, Op op) {
+template <class... TypePairs, class Var, class Op>
+void transform_in_place(Var &&var, const VariableConstProxy &other, Op op) {
   in_place<false>::transform<TypePairs...>(std::forward<Var>(var), other, op);
 }
 
@@ -787,8 +784,8 @@ void transform_in_place(Var &&var, const Var1 &other, Op op) {
 /// WARNING: In contrast to the transform algorithms, accumulate does not touch
 /// the unit, since it would be hard to track, e.g., in multiplication
 /// operations.
-template <class... TypePairs, class Var, class Var1, class Op>
-void accumulate_in_place(Var &&var, const Var1 &other, Op op) {
+template <class... TypePairs, class Var, class Op>
+void accumulate_in_place(Var &&var, const VariableConstProxy &other, Op op) {
   expect::contains(other.dims(), var.dims());
   // Wrapped implementation to convert multiple tuples into a parameter pack.
   in_place<false>::transform(std::tuple_cat(TypePairs{}...),
@@ -800,8 +797,8 @@ template <class... Ts, class Var, class Op>
 void transform_in_place(Var &&var, Op op) {
   in_place<true>::transform<Ts...>(std::forward<Var>(var), op);
 }
-template <class... TypePairs, class Var, class Var1, class Op>
-void transform_in_place(Var &&var, const Var1 &other, Op op) {
+template <class... TypePairs, class Var, class Op>
+void transform_in_place(Var &&var, const VariableConstProxy &other, Op op) {
   in_place<true>::transform<TypePairs...>(std::forward<Var>(var), other, op);
 }
 } // namespace dry_run
@@ -821,10 +818,11 @@ template <class... Ts, class Var, class Op>
       result = scipp::core::visit_impl<Ts...>::apply(Transform{op},
                                                      var.dataHandle());
     } else {
-      result = scipp::core::visit(augment::insert_sparse(std::tuple<Ts...>{}))
-                   .apply(Transform{detail::overloaded_sparse{
-                              op, TransformSparse<Op>{op}}},
-                          var.dataHandle());
+      result =
+          scipp::core::visit(augment::insert_sparse(std::tuple<Ts...>{}))
+              .apply(
+                  Transform{detail::overloaded_sparse{op, TransformSparse{}}},
+                  var.dataHandle());
     }
   } catch (const std::bad_variant_access &) {
     throw std::runtime_error("Operation not implemented for this type.");
@@ -834,9 +832,9 @@ template <class... Ts, class Var, class Op>
 }
 
 namespace detail {
-  template <class... Ts, class Var1, class Var2, class Op>
-  Variable transform(std::tuple<Ts...> &&, const Var1 &var1, const Var2 &var2,
-                     Op op) {
+  template <class... Ts, class Op>
+  Variable transform(std::tuple<Ts...> &&, const VariableConstProxy &var1,
+                     const VariableConstProxy &var2, Op op) {
     using namespace detail;
     try {
       if constexpr (((is_sparse_v<typename Ts::first_type> ||
@@ -847,8 +845,7 @@ namespace detail {
       } else {
         return scipp::core::visit(
                    augment::insert_sparse_pairs(std::tuple<Ts...>{}))
-            .apply(Transform{detail::overloaded_sparse{
-                       op, TransformSparse<Op>{op}}},
+            .apply(Transform{detail::overloaded_sparse{op, TransformSparse{}}},
                    var1.dataHandle(), var2.dataHandle());
       }
     } catch (const std::bad_variant_access &) {
@@ -864,8 +861,9 @@ namespace detail {
 /// This overload is equivalent to std::transform with two input ranges, but
 /// avoids the need to manually create a new variable for the output and the
 /// need for, e.g., std::back_inserter.
-template <class... TypePairs, class Var1, class Var2, class Op>
-[[nodiscard]] Variable transform(const Var1 &var1, const Var2 &var2, Op op) {
+template <class... TypePairs, class Op>
+[[nodiscard]] Variable transform(const VariableConstProxy &var1,
+                                 const VariableConstProxy &var2, Op op) {
   auto unit = op(var1.unit(), var2.unit());
   // Wrapped implementation to convert multiple tuples into a parameter pack.
   auto result =

@@ -52,16 +52,8 @@ template <class T1, class T2> bool equals(const T1 &a, const T2 &b) {
   return a.data() == b.data();
 }
 
-bool Variable::operator==(const Variable &other) const {
-  return equals(*this, other);
-}
-
 bool Variable::operator==(const VariableConstProxy &other) const {
   return equals(*this, other);
-}
-
-bool Variable::operator!=(const Variable &other) const {
-  return !(*this == other);
 }
 
 bool Variable::operator!=(const VariableConstProxy &other) const {
@@ -82,18 +74,12 @@ VariableProxy::assign(const VariableConstProxy &) const;
 template SCIPP_CORE_EXPORT VariableProxy
 VariableProxy::assign(const VariableProxy &) const;
 
-bool VariableConstProxy::operator==(const Variable &other) const {
+bool VariableConstProxy::operator==(const VariableConstProxy &other) const {
   // Always use deep comparison (pointer comparison does not make sense since we
   // may be looking at a different section).
   return equals(*this, other);
 }
-bool VariableConstProxy::operator==(const VariableConstProxy &other) const {
-  return equals(*this, other);
-}
 
-bool VariableConstProxy::operator!=(const Variable &other) const {
-  return !(*this == other);
-}
 bool VariableConstProxy::operator!=(const VariableConstProxy &other) const {
   return !(*this == other);
 }

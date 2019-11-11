@@ -37,7 +37,9 @@ set(SRC_FILES
     variable_binary_arithmetic.cpp
     variable_instantiate_basic.cpp
     variable_instantiate_dataset.cpp
+    variable_logical_operations.cpp
     variable_operations.cpp
+    variable_type_conversion.cpp
     view_index.cpp)
 
 set(LINK_TYPE "STATIC")
