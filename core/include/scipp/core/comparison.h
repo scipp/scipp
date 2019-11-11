@@ -12,10 +12,8 @@
 
 namespace scipp::core {
 
-/**
- * Tests if the unit, values (and variances where appropriate) of two Variables
- * are within an absolute tolerance.
- */
+/// Tests if the unit, values (and variances where appropriate) of two
+/// Variables are within an absolute tolerance.
 template <typename T>
 bool is_approx(Variable a, const Variable &b, const T tol) {
   if (a.dtype() != b.dtype())
