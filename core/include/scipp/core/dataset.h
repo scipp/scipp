@@ -35,6 +35,8 @@ struct DatasetData {
   std::optional<Variable> coord;
   /// Potential labels for the sparse dimension.
   std::unordered_map<std::string, Variable> labels;
+  /// Attributes for data.
+  std::unordered_map<std::string, Variable> attrs;
 };
 
 using dataset_item_map = std::unordered_map<std::string, DatasetData>;
@@ -356,6 +358,8 @@ public:
   void setLabels(const std::string &labelName, Variable labels);
   void setMask(const std::string &masksName, Variable masks);
   void setAttr(const std::string &attrName, Variable attr);
+  void setAttr(const std::string &name, const std::string &attrName,
+               Variable attr);
   void setData(const std::string &name, Variable data);
   void setData(const std::string &name, const DataConstProxy &data);
   void setSparseCoord(const std::string &name, Variable coord);
@@ -375,6 +379,10 @@ public:
   void setAttr(const std::string &attrName, const VariableConstProxy &attr) {
     setAttr(attrName, Variable(attr));
   }
+  void setAttr(const std::string &name, const std::string &attrName,
+               const VariableConstProxy &attr) {
+    setAttr(name, attrName, Variable(attr));
+  }
   void setData(const std::string &name, const VariableConstProxy &data) {
     setData(name, Variable(data));
   }
@@ -390,6 +398,7 @@ public:
   void eraseCoord(const Dim dim);
   void eraseLabels(const std::string &labelName);
   void eraseAttr(const std::string &attrName);
+  void eraseAttr(const std::string &name, const std::string &attrName);
   void eraseMask(const std::string &maskName);
   void eraseSparseCoord(const std::string &name);
   void eraseSparseLabels(const std::string &name, const std::string &labelName);
@@ -468,9 +477,8 @@ private:
   void rebuildDims();
 
   template <class Key, class Val>
-  void erase_from_map(std::unordered_map<Key, Val> Dataset::*map,
-                      const Key &key) {
-    (this->*map).erase(key);
+  void erase_from_map(std::unordered_map<Key, Val> &map, const Key &key) {
+    map.erase(key);
     rebuildDims();
   }
 
@@ -689,8 +697,12 @@ public:
         m_parent->setLabels(key, var);
       if constexpr (std::is_same_v<Base, MasksConstProxy>)
         m_parent->setMask(key, var);
-      if constexpr (std::is_same_v<Base, AttrsConstProxy>)
-        m_parent->setAttr(key, var);
+      if constexpr (std::is_same_v<Base, AttrsConstProxy>) {
+        if (m_name)
+          m_parent->setAttr(*m_name, key, var);
+        else
+          m_parent->setAttr(key, var);
+      }
     }
     // TODO rebuild *this?!
   }
@@ -700,7 +712,7 @@ public:
       throw std::runtime_error(
           "Cannot remove coord/labels/attr field from a slice.");
 
-    bool sparse = m_name; // Does proxy points on sparse data or not
+    bool sparse = m_name; // Does proxy point on sparse data or not
     if (sparse)
       sparse &= (*m_parent)[*m_name].dims().sparse();
 
@@ -709,8 +721,12 @@ public:
         m_parent->eraseCoord(key);
       if constexpr (std::is_same_v<Base, LabelsConstProxy>)
         m_parent->eraseLabels(key);
-      if constexpr (std::is_same_v<Base, AttrsConstProxy>)
-        m_parent->eraseAttr(key);
+      if constexpr (std::is_same_v<Base, AttrsConstProxy>) {
+        if (m_name)
+          m_parent->eraseAttr(*m_name, key);
+        else
+          m_parent->eraseAttr(key);
+      }
       if constexpr (std::is_same_v<Base, MasksConstProxy>)
         m_parent->eraseMask(key);
     } else {
@@ -979,11 +995,11 @@ public:
       else
         m_holder.setLabels(std::string(label_name), std::move(l));
 
-    for (auto &&[attr_name, m] : masks)
-      m_holder.setMask(std::string(attr_name), std::move(m));
+    for (auto &&[mask_name, m] : masks)
+      m_holder.setMask(std::string(mask_name), std::move(m));
 
     for (auto &&[attr_name, a] : attrs)
-      m_holder.setAttr(std::string(attr_name), std::move(a));
+      m_holder.setAttr(name, std::string(attr_name), std::move(a));
 
     if (m_holder.size() != 1)
       throw std::runtime_error(
