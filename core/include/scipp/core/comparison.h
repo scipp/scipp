@@ -19,6 +19,9 @@ bool is_approx(Variable a, const Variable &b, const T tol) {
   if (a.dtype() != b.dtype())
     return false;
 
+  if (a.hasVariances() != b.hasVariances())
+    return false;
+
   std::atomic_flag mismatch = ATOMIC_FLAG_INIT;
   transform_in_place<pair_self_t<T>>(
       a, b,

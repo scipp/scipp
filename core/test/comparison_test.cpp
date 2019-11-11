@@ -45,6 +45,12 @@ TEST(ComparisonTest, variable_variances_not_equal_outside_tolerance) {
   EXPECT_FALSE(is_approx(a, b, 0.1));
 }
 
+TEST(ComparisonTest, variable_variances_missing_in_one_operand) {
+  const auto a = makeVariable<double>(10.0);
+  const auto b = makeVariable<double>(10.0, 1.0);
+  EXPECT_FALSE(is_approx(a, b, 0.1));
+}
+
 TEST(ComparisonTest, variable_unit_not_equal) {
   const auto a = makeVariable<double>({Dim::X, 2}, {1.0, 2.0});
   auto b = makeVariable<double>({Dim::X, 2}, {1.0, 2.0});
