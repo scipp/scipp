@@ -613,19 +613,28 @@ Variable::Variable(const units::Unit unit, const Dimensions &dimensions,
                    : std::make_unique<DataModel<T>>(std::move(dimensions),
                                                     std::move(values_),
                                                     std::move(variances_))) {}
-
-template <class T, class... Ts> T make_move_from_tuple(std::tuple<Ts...> tp) {
-  return T(std::move(std::get<Ts>(tp))...);
+namespace detail {
+template <class T, class Tuple, std::size_t... I>
+constexpr T make_move_from_tuple_impl(Tuple &&t, std::index_sequence<I...>) {
+  return T(std::move(std::get<I>(t))...);
 }
+} // namespace detail
+
+template <class T, class Tuple> constexpr T make_move_from_tuple(Tuple &&t) {
+  return detail::make_move_from_tuple_impl<T>(
+      std::forward<Tuple>(t),
+      std::make_index_sequence<
+          std::tuple_size_v<std::remove_reference_t<Tuple>>>{});
+}
+
 template <class T, class... T1, class... T2>
 Variable Variable::createVariable(units::Unit &&u, Dimensions &&s,
                                   std::tuple<T1...> &&val,
                                   std::tuple<T2...> &&var) {
   if constexpr (std::is_constructible_v<Vector<T>, T1 &&...> &&
                 std::is_constructible_v<Vector<T>, T2 &&...>) {
-    auto values{make_move_from_tuple<Vector<T>, T1...>(val)};
-    std::cerr << "Value final address  : " << values.data() << "\n";
-    auto variances = std::make_from_tuple<Vector<T>>(var);
+    auto values = make_move_from_tuple<Vector<T>>(val);
+    auto variances = make_move_from_tuple<Vector<T>>(var);
     constexpr bool has_val = (sizeof...(T1) > 0);
     constexpr bool has_var = (sizeof...(T2) > 0);
     if constexpr (has_val && has_var)

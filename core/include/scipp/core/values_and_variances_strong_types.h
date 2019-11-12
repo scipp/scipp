@@ -34,8 +34,6 @@ struct ValuesTag {};
 template <class... Ts> auto Values(Ts &&... ts) noexcept {
   auto res = TaggedTuple<ValuesTag, std::remove_reference_t<Ts>...>{
       {}, std::make_tuple(std::forward<Ts>(ts)...)};
-  std::cerr << "Value wrapped address: " << std::get<0>(res.tuple).data()
-            << "\n";
   return res;
 }
 
@@ -99,7 +97,6 @@ public:
   template <class... NonDataTypes> static VarT construct(Ts &&... ts) {
     auto tp = std::make_tuple(std::forward<Ts>(ts)...);
     auto val = std::move(extractTagged<ValuesTag, Ts...>(tp).tuple);
-    std::cerr << "Value tuple address  : " << std::get<0>(val).data() << "\n";
     auto var = std::move(extractTagged<VariancesTag, Ts...>(tp).tuple);
     return VarT::template createVariable<ElemT>(
         std::forward<NonDataTypes>(extractArgs<NonDataTypes, Ts...>(tp))...,
