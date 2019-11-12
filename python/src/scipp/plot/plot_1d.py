@@ -101,7 +101,7 @@ def plot_1d(input_data, backend=None, logx=False, logy=False, logxy=False,
     sv = Slicer1d(data=data, layout=layout, input_data=input_data, axes=axes, color=color)
 
 
-    render_plot(static_fig=sv.fig, interactive_fig=sv.vbox, backend=backend,
+    render_plot(static_fig=sv.fig, interactive_fig=sv.box, backend=backend,
                 filename=filename)
 
     # fig = go.Figure(data=data, layout=layout)
@@ -118,8 +118,22 @@ class Slicer1d(Slicer):
         super().__init__(input_data=input_data, axes=axes, button_options=['X'])
 
         self.color = color
+        self.fig = go.FigureWidget(layout=layout)
 
-        self.fig = go.FigureWidget(data=data, layout=layout)
+        self.traces = dict()
+        for i, (name, var) in enumerate(sorted(self.input_data)):
+            # Define trace
+            # trace = dict(x=x, y=y, name=name, type="scattergl")
+            trace = dict(name=name, type="scattergl")
+            if color is not None:
+                trace["marker"] = {"color": color[i]}
+            self.traces[name] = i
+            self.fig.add_trace(trace)
+
+        # self.fig = go.FigureWidget(data=data, layout=layout)
+        # self.fields = []
+        # for i, (name, var) in enumerate(sorted(self.input_data)):
+        #     self.fields.append((name, i))
 
         # Disable buttons
         for key, button in self.buttons.items():
@@ -128,10 +142,32 @@ class Slicer1d(Slicer):
         self.update_axes(str(axes[-1]))
         self.update_slice(None)
         self.update_histograms()
-        self.vbox = [self.fig] + self.vbox
-        self.vbox = widgets.VBox(self.vbox)
-        self.vbox.layout.align_items = 'center'
 
+        self.keep_buttons = []
+        self.make_keep_button()
+
+        self.mbox = [self.fig] + self.vbox + [widgets.HBox(self.keep_buttons[0])]
+        self.box = widgets.VBox(self.mbox)
+        self.box.layout.align_items = 'center'
+
+        return
+
+    def make_keep_button(self):
+        drop = widgets.Dropdown(options=self.traces.keys(),
+                                description='', layout={'width': 'initial'})
+        but = widgets.Button(
+                    description="Keep",
+                    disabled=False,
+                    button_style="")
+        col = widgets.ColorPicker(
+    concise=True,
+    description='',
+    value='blue',
+    disabled=False
+)
+        setattr(but, "number", len(self.keep_buttons))
+        but.on_click(self.keep_trace)
+        self.keep_buttons.append([drop, but, col])
         return
 
 
@@ -278,3 +314,22 @@ class Slicer1d(Slicer):
                 trace["fill"] = None
                 trace["mode"] = None
         return
+
+    def keep_trace(self, owner):
+        # owner.value
+        print(self.traces[self.keep_buttons[owner.number][0].value])
+        self.fig.add_trace(self.fig.data[self.traces[self.keep_buttons[owner.number][0].value]])
+        # self.fig.data[owner.value]
+        self.fig.data[-1]["marker"]["color"] = self.keep_buttons[owner.number][2].value
+        self.make_keep_button()
+        # self.mbox = [self.fig] + self.vbox
+        # for b in self.keep_buttons:
+        #     print(b)
+        #     self.mbox.append(widgets.HBox(b))
+        # # self.box.children = widgets.VBox(self.mbox)
+        self.box.children=tuple(list(self.box.children) + [widgets.HBox(self.keep_buttons[-1])])
+
+        return
+
+
+
