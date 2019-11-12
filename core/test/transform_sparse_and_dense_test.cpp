@@ -95,23 +95,24 @@ TEST(TransformSparseAndDenseTest, sparse_times_dense) {
     spans.emplace_back(edges.values<double>().subspan(3 * i, 3));
   auto edges_view = makeVariable<span<double>>({Dim::Y, 2}, spans);
 
-  auto weights = makeVariable<double>({Dim::X, 2}, {2.0, 3.0}, {0.3, 0.4});
-  std::vector<span<double>> spans_val{weights.values<double>()};
-  std::vector<span<double>> spans_var{weights.variances<double>()};
-  auto weights_view = makeVariable<span<double>>({}, spans_val, spans_var);
+  auto weights = makeVariable<float>({Dim::X, 2}, {2.0, 3.0}, {0.3, 0.4});
+  std::vector<span<float>> spans_val{weights.values<float>()};
+  std::vector<span<float>> spans_var{weights.variances<float>()};
+  auto weights_view = makeVariable<span<float>>({}, spans_val, spans_var);
 
   DataArray hist(weights, {{Dim::X, edges}});
 
   const auto out = transform<std::tuple<
-      std::tuple<sparse_container<double>, span<double>, span<double>>>>(
+      std::tuple<sparse_container<double>, span<double>, span<float>>>>(
       var, edges_view, weights_view,
       overloaded{
           [](const auto &sparse, const auto &edges, const auto &weights) {
             expect::histogram::sorted_edges(edges);
-            constexpr bool have_variance = core::detail::is_ValueAndVariance_v<
-                std::decay_t<decltype(weights)>>;
-            using T =
-                sparse_container<float>; // TODO use type of input weights?
+            using W = std::decay_t<decltype(weights)>;
+            constexpr bool have_variance =
+                core::detail::is_ValueAndVariance_v<W>;
+            using T = sparse_container<
+                typename core::detail::element_type_t<W>::value_type>;
             T out_vals;
             T out_vars;
             out_vals.reserve(sparse.size());
@@ -119,11 +120,11 @@ TEST(TransformSparseAndDenseTest, sparse_times_dense) {
               out_vars.reserve(sparse.size());
             if (scipp::numeric::is_linspace(edges)) {
               auto len = scipp::size(sparse) - 1;
-              const double offset = edges.front();
-              const double nbin = static_cast<double>(len);
-              const double scale = nbin / (edges.back() - edges.front());
+              const auto offset = edges.front();
+              const auto nbin = static_cast<decltype(offset)>(len);
+              const auto scale = nbin / (edges.back() - edges.front());
               for (const auto c : sparse) {
-                const double bin = (c - offset) * scale;
+                const auto bin = (c - offset) * scale;
                 if (bin >= 0.0 && bin < nbin) {
                   if constexpr (have_variance) {
                     out_vals.emplace_back(weights.value[bin]);
@@ -132,6 +133,7 @@ TEST(TransformSparseAndDenseTest, sparse_times_dense) {
                     out_vals.emplace_back(weights[bin]);
                   }
                 } else {
+                  // TODO should we set NAN instead?
                   out_vals.emplace_back(1.0);
                   if constexpr (have_variance)
                     out_vars.emplace_back(1.0);
@@ -146,7 +148,8 @@ TEST(TransformSparseAndDenseTest, sparse_times_dense) {
               return out_vals;
             }
           },
-          [](const units::Unit &, const units::Unit &, const units::Unit &c) {
+          [](const units::Unit &a, const units::Unit &b, const units::Unit &c) {
+            expect::equals(a, b);
             return c;
           }});
   EXPECT_TRUE(out.hasVariances());
