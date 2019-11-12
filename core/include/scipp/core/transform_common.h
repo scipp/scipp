@@ -7,6 +7,9 @@
 
 #include <tuple>
 
+#include "scipp/core/except.h"
+#include "scipp/core/value_and_variance.h"
+
 namespace scipp::core {
 
 template <class... Ts> struct pair_self {
@@ -55,6 +58,29 @@ static constexpr auto dimensionless_unit_check_return =
       expect::equals(bUnit, units::dimensionless);
       return aUnit;
     };
+
+namespace transform_flags {
+/// Add this to overloaded operator to indicate that the operation does not
+/// produce output with variances, even if the inputs contain variances.
+static constexpr auto no_variance_output = []() {};
+using no_variance_output_t = decltype(no_variance_output);
+
+struct disable_variance_first_arg {
+  template <class First, class Second>
+  void operator()(const scipp::core::detail::ValueAndVariance<First>,
+                  const Second &) const {
+    throw except::VariancesError("Variances in first argument not supported.");
+  }
+};
+
+struct disable_variance_second_arg {
+  template <class First, class Second>
+  void operator()(const First &,
+                  const scipp::core::detail::ValueAndVariance<Second>) const {
+    throw except::VariancesError("Variances in second argument not supported.");
+  }
+};
+} // namespace transform_flags
 
 } // namespace scipp::core
 
