@@ -102,4 +102,4 @@ def get_1d_axes(var, axes, name):
     xlab = axis_label(var=xcoord, name=lab)
     y = var.values
     ylab = axis_label(var=var, name="")
-    return xlab, ylab, x, y
+    return xlab, ylab, x, y, axes

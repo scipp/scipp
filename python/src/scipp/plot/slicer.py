@@ -13,8 +13,10 @@ class Slicer:
         import ipywidgets as widgets
 
         self.input_data = input_data
-        self.show_variances = ((self.input_data.variances is not None) and
-                               show_variances)
+
+        self.show_variances = show_variances
+        if show_variances is not None:
+            self.show_variances = (self.input_data.variances is not None)
         self.cb = cb
         self.value_name = value_name
 
@@ -105,6 +107,10 @@ class Slicer:
             setattr(self.buttons[key], "old_value", self.buttons[key].value)
             setattr(self.slider[key], "dim_str", key)
             setattr(self.slider[key], "dim", dim)
+
+            if self.ndim == 1:
+                self.buttons[key].layout.display = 'none'
+                self.lab[key].layout.display = 'none'
 
             if len(button_options) == 3:
                 self.showhide[key] = widgets.Button(

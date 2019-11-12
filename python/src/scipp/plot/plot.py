@@ -7,7 +7,8 @@ from ..config import plot as config
 from .._scipp import core as sc
 
 
-def plot(input_data, collapse=None, backend=None, color=None, **kwargs):
+def plot(input_data, collapse=None, backend=None, color=None, projection=None,
+         **kwargs):
     """
     Wrapper function to plot any kind of dataset
     """
@@ -45,7 +46,8 @@ def plot(input_data, collapse=None, backend=None, color=None, **kwargs):
         sp_dim = var.sparse_dim
         # Construct a key from the dimensions
         key = "{}.".format(str(var.dims[0]))
-        if ndims == 1:
+        col = None
+        if ndims == 1 or projection.lower() == "1d":
             # Add unit to key
             if sp_dim is not None:
                 key = "{}{}".format(key, str(var.coords[sp_dim].unit))
@@ -92,6 +94,7 @@ def plot(input_data, collapse=None, backend=None, color=None, **kwargs):
                                    backend=backend,
                                    color=val[2],
                                    sparse_dim=sparse_dim[key],
+                                   projection=projection,
                                    **kwargs)
 
     if backend == "matplotlib":
