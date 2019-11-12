@@ -62,7 +62,6 @@ template <class T> void bind_beamline(py::module &m) {
 
 template <class T> void bind_convert(py::module &m) {
   using ConstView = const typename T::const_view_type &;
-  using View = const typename T::view_type &;
   const char *doc = R"(
     Convert dimension (unit) into another.
 
