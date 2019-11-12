@@ -351,7 +351,25 @@ static void do_transform(const T1 &a, const T2 &b, Out &out, Op op) {
 
 template <class T1, class T2, class T3, class Out, class Op>
 static void do_transform(const T1 &a, const T2 &b, const T3 &c, Out &out,
-                         Op op) {}
+                         Op op) {
+  // TODO There are 8 cases for value/variance combinations, i.e., to much to
+  // handle by hand. Until refactored, we just support specific use cases.
+  if (a.hasVariances() || b.hasVariances())
+    throw except::VariancesError("Implementation does not support variances in "
+                                 "first and second input yet.");
+  auto a_val = a.values();
+  auto b_val = b.values();
+  auto c_val = c.values();
+  auto out_val = out.values();
+  if (c.hasVariances()) {
+    auto c_var = c.variances();
+    auto out_var = out.variances();
+    transform_elements(op, ValuesAndVariances{out_val, out_var}, a_val, b_val,
+                       ValuesAndVariances{c_val, c_var});
+  } else {
+    transform_elements(op, out_val, a_val, b_val, c_val);
+  }
+}
 
 template <class T> struct as_view {
   using value_type = typename T::value_type;
