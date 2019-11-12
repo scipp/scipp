@@ -317,6 +317,7 @@ def load(filename="",
     try:
         import mantid.simpleapi as mantid
         from mantid.api import EventType
+        from mantid import AnalysisDataService
     except ImportError:
         raise ImportError(
             "Mantid Python API was not found, please install Mantid framework "
@@ -328,11 +329,19 @@ def load(filename="",
         mantid.LoadInstrument(ws,
                               FileName=instrument_filename,
                               RewriteSpectraMap=True)
+
+    dataset = None
     if ws.id() == 'Workspace2D':
-        return convert_Workspace2D_to_dataset(ws)
-    if ws.id() == 'EventWorkspace':
-        return convert_EventWorkspace_to_dataset(ws, load_pulse_times,
-                                                 EventType)
-    if ws.id() == 'TableWorkspace':
-        return convert_TableWorkspace_to_dataset(ws, error_connection)
-    raise RuntimeError('Unsupported workspace type')
+        dataset = convert_Workspace2D_to_dataset(ws)
+    elif ws.id() == 'EventWorkspace':
+        dataset = convert_EventWorkspace_to_dataset(ws, load_pulse_times,
+                                                    EventType)
+    elif ws.id() == 'TableWorkspace':
+        dataset = convert_TableWorkspace_to_dataset(ws, error_connection)
+
+    AnalysisDataService.Instance().remove(ws.name())
+
+    if dataset is None:
+        raise RuntimeError('Unsupported workspace type')
+
+    return dataset
