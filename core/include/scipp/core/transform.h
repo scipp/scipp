@@ -304,22 +304,41 @@ static void do_transform(const T1 &a, const T2 &b, Out &out, Op op) {
   auto b_val = b.values();
   auto out_val = out.values();
   if (a.hasVariances()) {
-    if constexpr (canHaveVariances<typename T1::value_type>() &&
-                  canHaveVariances<typename T2::value_type>()) {
-      auto a_var = a.variances();
-      auto out_var = out.variances();
-      if (b.hasVariances()) {
-        auto b_var = b.variances();
-        transform_elements(op, ValuesAndVariances{out_val, out_var},
-                           ValuesAndVariances{a_val, a_var},
-                           ValuesAndVariances{b_val, b_var});
-      } else {
-        transform_elements(op, ValuesAndVariances{out_val, out_var},
-                           ValuesAndVariances{a_val, a_var}, b_val);
+    if constexpr (std::is_base_of_v<transform_flags::expect_no_variance_arg0_t,
+                                    Op>) {
+      throw except::VariancesError(
+          "Variances in first argument not supported.");
+
+    } else {
+      if constexpr (canHaveVariances<typename T1::value_type>() &&
+                    canHaveVariances<typename T2::value_type>()) {
+        auto a_var = a.variances();
+        auto out_var = out.variances();
+        if (b.hasVariances()) {
+          if constexpr (std::is_base_of_v<
+                            transform_flags::expect_no_variance_arg1_t, Op>) {
+            throw except::VariancesError(
+                "Variances in second argument not supported.");
+          } else {
+
+            auto b_var = b.variances();
+            transform_elements(op, ValuesAndVariances{out_val, out_var},
+                               ValuesAndVariances{a_val, a_var},
+                               ValuesAndVariances{b_val, b_var});
+          }
+        } else {
+          transform_elements(op, ValuesAndVariances{out_val, out_var},
+                             ValuesAndVariances{a_val, a_var}, b_val);
+        }
       }
     }
   } else if (b.hasVariances()) {
-    if constexpr (canHaveVariances<typename T2::value_type>()) {
+    if constexpr (std::is_base_of_v<transform_flags::expect_no_variance_arg1_t,
+                                    Op>) {
+      throw except::VariancesError(
+          "Variances in second argument not supported.");
+
+    } else if constexpr (canHaveVariances<typename T2::value_type>()) {
       auto b_var = b.variances();
       auto out_var = out.variances();
       transform_elements(op, ValuesAndVariances{out_val, out_var}, a_val,
@@ -509,20 +528,38 @@ template <bool dry_run> struct in_place {
     auto a_val = a.values();
     auto b_val = b.values();
     if (a.hasVariances()) {
-      if constexpr (canHaveVariances<typename T1::value_type>() &&
-                    canHaveVariances<typename T2::value_type>()) {
-        auto a_var = a.variances();
-        if (b.hasVariances()) {
-          auto b_var = b.variances();
-          transform_in_place_impl(op, ValuesAndVariances{a_val, a_var},
-                                  ValuesAndVariances{b_val, b_var});
-        } else {
-          transform_in_place_impl(op, ValuesAndVariances{a_val, a_var}, b_val);
+      if constexpr (std::is_base_of_v<
+                        transform_flags::expect_no_variance_arg0_t, Op>) {
+        throw except::VariancesError(
+            "Variances in first argument not supported.");
+
+      } else {
+        if constexpr (canHaveVariances<typename T1::value_type>() &&
+                      canHaveVariances<typename T2::value_type>()) {
+          auto a_var = a.variances();
+          if (b.hasVariances()) {
+            if constexpr (std::is_base_of_v<
+                              transform_flags::expect_no_variance_arg1_t, Op>) {
+              throw except::VariancesError(
+                  "Variances in second argument not supported.");
+            } else {
+              auto b_var = b.variances();
+              transform_in_place_impl(op, ValuesAndVariances{a_val, a_var},
+                                      ValuesAndVariances{b_val, b_var});
+            }
+          } else {
+            transform_in_place_impl(op, ValuesAndVariances{a_val, a_var},
+                                    b_val);
+          }
         }
       }
     } else if (b.hasVariances()) {
-      if constexpr (std::is_base_of_v<transform_flags::no_variance_output_t,
-                                      Op>) {
+      if constexpr (std::is_base_of_v<
+                        transform_flags::expect_no_variance_arg1_t, Op>) {
+        throw except::VariancesError(
+            "Variances in second argument not supported.");
+      } else if constexpr (std::is_base_of_v<
+                               transform_flags::no_variance_output_t, Op>) {
         auto b_var = b.variances();
         transform_in_place_impl(op, a_val, ValuesAndVariances{b_val, b_var});
       } else {

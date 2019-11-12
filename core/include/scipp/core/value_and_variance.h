@@ -140,6 +140,9 @@ constexpr auto operator/(const T1 a, const ValueAndVariance<T2> b) noexcept {
 template <class T1, class T2>
 ValueAndVariance(const T1 &val, const T2 &var)
     ->ValueAndVariance<decltype(T1() + T2())>;
+template <class T>
+ValueAndVariance(const span<T> &val, const span<T> &var)
+    ->ValueAndVariance<span<T>>;
 
 template <class T> struct is_ValueAndVariance : std::false_type {};
 template <class T>

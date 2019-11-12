@@ -9,6 +9,7 @@
 
 #include "scipp/core/except.h"
 #include "scipp/core/value_and_variance.h"
+#include "scipp/core/values_and_variances.h"
 
 namespace scipp::core {
 
@@ -65,21 +66,33 @@ namespace transform_flags {
 static constexpr auto no_variance_output = []() {};
 using no_variance_output_t = decltype(no_variance_output);
 
-struct disable_variance_first_arg {
-  template <class First, class Second>
+struct expect_no_variance_arg0_t {
+  template <class First, class... Args>
   void operator()(const scipp::core::detail::ValueAndVariance<First>,
-                  const Second &) const {
-    throw except::VariancesError("Variances in first argument not supported.");
+                  const Args &...) const {
+  }
+  template <class First, class... Args>
+  void operator()(const scipp::core::detail::ValuesAndVariances<First>,
+                  const Args &...) const {
   }
 };
 
-struct disable_variance_second_arg {
-  template <class First, class Second>
+struct expect_no_variance_arg1_t {
+  template <class First, class Second, class... Args>
   void operator()(const First &,
-                  const scipp::core::detail::ValueAndVariance<Second>) const {
-    throw except::VariancesError("Variances in second argument not supported.");
+                  const scipp::core::detail::ValueAndVariance<Second>,
+                  const Args &...) const {
+  }
+  template <class First, class Second, class... Args>
+  void operator()(const First &,
+                  const scipp::core::detail::ValuesAndVariances<Second>,
+                  const Args &...) const {
   }
 };
+
+static constexpr auto expect_no_variance_arg0 = expect_no_variance_arg0_t{};
+static constexpr auto expect_no_variance_arg1 = expect_no_variance_arg1_t{};
+
 } // namespace transform_flags
 
 } // namespace scipp::core

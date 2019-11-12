@@ -36,7 +36,8 @@ template <class... Known> class VariableConceptHandle_impl;
 using VariableConceptHandle = VariableConceptHandle_impl<
     double, float, int64_t, int32_t, bool, Eigen::Vector3d,
     sparse_container<double>, sparse_container<float>,
-    sparse_container<int64_t>, sparse_container<int32_t>>;
+    sparse_container<int64_t>, sparse_container<int32_t>, span<double>,
+    span<float>>;
 
 /// Abstract base class for any data that can be held by Variable. Also used to
 /// hold views to data by (Const)VariableProxy. This is using so-called
@@ -92,7 +93,8 @@ template <class T> constexpr bool canHaveVariances() noexcept {
          std::is_same_v<U, sparse_container<double>> ||
          std::is_same_v<U, sparse_container<float>> ||
          std::is_same_v<U, sparse_container<int64_t>> ||
-         std::is_same_v<U, sparse_container<int32_t>>;
+         std::is_same_v<U, sparse_container<int32_t>> ||
+         std::is_same_v<U, span<double>> || std::is_same_v<U, span<float>>;
 }
 
 /// Partially typed implementation of VariableConcept. This is a common base
