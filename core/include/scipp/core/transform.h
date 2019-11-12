@@ -349,6 +349,10 @@ static void do_transform(const T1 &a, const T2 &b, Out &out, Op op) {
   }
 }
 
+template <class T1, class T2, class T3, class Out, class Op>
+static void do_transform(const T1 &a, const T2 &b, const T3 &c, Out &out,
+                         Op op) {}
+
 template <class T> struct as_view {
   using value_type = typename T::value_type;
   bool hasVariances() const { return data.hasVariances(); }
@@ -797,26 +801,37 @@ template <class... Ts, class Var, class Op>
 }
 
 namespace detail {
-  template <class... Ts, class Op>
-  Variable transform(std::tuple<Ts...> &&, const VariableConstProxy &var1,
-                     const VariableConstProxy &var2, Op op) {
+  template <class T> struct is_any_sparse;
+  template <class... Ts>
+  struct is_any_sparse<std::pair<Ts...>>
+      : std::conditional_t<(is_sparse<Ts>::value || ...), std::true_type,
+                           std::false_type> {};
+  template <class... Ts>
+  struct is_any_sparse<std::tuple<Ts...>>
+      : std::conditional_t<(is_sparse<Ts>::value || ...), std::true_type,
+                           std::false_type> {};
+
+  template <class... Ts, class Op, class... Vars>
+  Variable transform(std::tuple<Ts...> &&, Op op, const Vars &... vars) {
     using namespace detail;
     try {
-      if constexpr (((is_sparse_v<typename Ts::first_type> ||
-                      is_sparse_v<typename Ts::second_type>) ||
-                     ...)) {
-        return scipp::core::visit_impl<Ts...>::apply(
-            Transform{op}, var1.dataHandle(), var2.dataHandle());
+      if constexpr ((is_any_sparse<Ts>::value || ...)) {
+        return scipp::core::visit_impl<Ts...>::apply(Transform{op},
+                                                     vars.dataHandle()...);
       } else {
-        return scipp::core::visit(
-                   augment::insert_sparse_pairs(std::tuple<Ts...>{}))
-            .apply(Transform{detail::overloaded_sparse{op, TransformSparse{}}},
-                   var1.dataHandle(), var2.dataHandle());
+        if constexpr (((std::tuple_size_v<Ts> != 2) || ...)) {
+          throw std::runtime_error("not implemented");
+        } else {
+          return scipp::core::visit(
+                     augment::insert_sparse_pairs(std::tuple<Ts...>{}))
+              .apply(
+                  Transform{detail::overloaded_sparse{op, TransformSparse{}}},
+                  vars.dataHandle()...);
+        }
       }
     } catch (const std::bad_variant_access &) {
       throw except::TypeError("Cannot apply operation to item dtypes " +
-                              to_string(var1.dtype()) + " and " +
-                              to_string(var2.dtype()) + '.');
+                              ((to_string(vars.dtype()) + ' ') + ...));
     }
   }
 } // namespace detail
@@ -832,7 +847,21 @@ template <class... TypePairs, class Op>
   auto unit = op(var1.unit(), var2.unit());
   // Wrapped implementation to convert multiple tuples into a parameter pack.
   auto result =
-      detail::transform(std::tuple_cat(TypePairs{}...), var1, var2, op);
+      detail::transform(std::tuple_cat(TypePairs{}...), op, var1, var2);
+  result.setUnit(unit);
+  return result;
+}
+
+/// Transform the data elements of three variables and return a new Variable.
+template <class... TypeTuples, class Op>
+[[nodiscard]] Variable transform(const VariableConstProxy &var1,
+                                 const VariableConstProxy &var2,
+                                 const VariableConstProxy &var3, Op op) {
+  auto unit = op(var1.unit(), var2.unit(), var3.unit());
+  // Wrapped implementation to convert multiple tuples into a parameter
+  // pack.
+  auto result =
+      detail::transform(std::tuple_cat(TypeTuples{}...), op, var1, var2, var3);
   result.setUnit(unit);
   return result;
 }
