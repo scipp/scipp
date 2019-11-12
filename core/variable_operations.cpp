@@ -151,7 +151,7 @@ Variable counts(const VariableConstProxy &var) {
       pair_custom_t<std::pair<scipp::index, sparse_container<double>>>>(
       counts, var,
       overloaded{[](scipp::index &c, const auto &sparse) { c = sparse.size(); },
-                 transform_flags::expect_no_variance_arg0,
+                 transform_flags::expect_no_variance_arg<0>,
                  transform_flags::no_variance_output});
   return counts;
 }
@@ -164,7 +164,7 @@ void reserve(const VariableProxy &sparse, const VariableConstProxy &capacity) {
       overloaded{[](auto &&sparse_, const scipp::index capacity_) {
                    return sparse_.reserve(capacity_);
                  },
-                 transform_flags::expect_no_variance_arg1,
+                 transform_flags::expect_no_variance_arg<1>,
                  [](const units::Unit &, const units::Unit &) {}});
 }
 } // namespace sparse

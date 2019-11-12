@@ -11,7 +11,7 @@
 using namespace scipp;
 using namespace scipp::core;
 
-TEST(TransformSparseAndDenseTest, xxx) {
+TEST(TransformSparseAndDenseTest, two_args) {
   auto var = makeVariable<double>({Dim::Y, Dim::X}, {2, Dimensions::Sparse});
   auto vals = var.sparseValues<double>();
   vals[0] = {1, 2, 3};
@@ -35,7 +35,7 @@ TEST(TransformSparseAndDenseTest, xxx) {
                      fprintf(stderr, "b: %lf\n", b_);
                    return a;
                  },
-                 [](const units::Unit &a, const units::Unit &b) { return a; },
+                 [](const units::Unit &a, const units::Unit &) { return a; },
                  transform_flags::expect_no_variance_arg0,
                  transform_flags::expect_no_variance_arg1});
 }

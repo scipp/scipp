@@ -66,10 +66,9 @@ namespace transform_flags {
 static constexpr auto no_variance_output = []() {};
 using no_variance_output_t = decltype(no_variance_output);
 
-static constexpr auto expect_no_variance_arg0 = []() {};
-static constexpr auto expect_no_variance_arg1 = []() {};
-using expect_no_variance_arg0_t = decltype(expect_no_variance_arg0);
-using expect_no_variance_arg1_t = decltype(expect_no_variance_arg1);
+template <int N> static constexpr auto expect_no_variance_arg = []() {};
+template <int N>
+using expect_no_variance_arg_t = decltype(expect_no_variance_arg<N>);
 
 } // namespace transform_flags
 

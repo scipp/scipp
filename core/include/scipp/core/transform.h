@@ -304,8 +304,8 @@ static void do_transform(const T1 &a, const T2 &b, Out &out, Op op) {
   auto b_val = b.values();
   auto out_val = out.values();
   if (a.hasVariances()) {
-    if constexpr (std::is_base_of_v<transform_flags::expect_no_variance_arg0_t,
-                                    Op>) {
+    if constexpr (std::is_base_of_v<
+                      transform_flags::expect_no_variance_arg_t<0>, Op>) {
       throw except::VariancesError(
           "Variances in first argument not supported.");
 
@@ -316,7 +316,7 @@ static void do_transform(const T1 &a, const T2 &b, Out &out, Op op) {
         auto out_var = out.variances();
         if (b.hasVariances()) {
           if constexpr (std::is_base_of_v<
-                            transform_flags::expect_no_variance_arg1_t, Op>) {
+                            transform_flags::expect_no_variance_arg_t<1>, Op>) {
             throw except::VariancesError(
                 "Variances in second argument not supported.");
           } else {
@@ -333,8 +333,8 @@ static void do_transform(const T1 &a, const T2 &b, Out &out, Op op) {
       }
     }
   } else if (b.hasVariances()) {
-    if constexpr (std::is_base_of_v<transform_flags::expect_no_variance_arg1_t,
-                                    Op>) {
+    if constexpr (std::is_base_of_v<
+                      transform_flags::expect_no_variance_arg_t<1>, Op>) {
       throw except::VariancesError(
           "Variances in second argument not supported.");
 
@@ -529,7 +529,7 @@ template <bool dry_run> struct in_place {
     auto b_val = b.values();
     if (a.hasVariances()) {
       if constexpr (std::is_base_of_v<
-                        transform_flags::expect_no_variance_arg0_t, Op>) {
+                        transform_flags::expect_no_variance_arg_t<0>, Op>) {
         throw except::VariancesError(
             "Variances in first argument not supported.");
 
@@ -539,7 +539,8 @@ template <bool dry_run> struct in_place {
           auto a_var = a.variances();
           if (b.hasVariances()) {
             if constexpr (std::is_base_of_v<
-                              transform_flags::expect_no_variance_arg1_t, Op>) {
+                              transform_flags::expect_no_variance_arg_t<1>,
+                              Op>) {
               throw except::VariancesError(
                   "Variances in second argument not supported.");
             } else {
@@ -555,7 +556,7 @@ template <bool dry_run> struct in_place {
       }
     } else if (b.hasVariances()) {
       if constexpr (std::is_base_of_v<
-                        transform_flags::expect_no_variance_arg1_t, Op>) {
+                        transform_flags::expect_no_variance_arg_t<1>, Op>) {
         throw except::VariancesError(
             "Variances in second argument not supported.");
       } else if constexpr (std::is_base_of_v<
