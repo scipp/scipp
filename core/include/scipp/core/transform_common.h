@@ -66,32 +66,10 @@ namespace transform_flags {
 static constexpr auto no_variance_output = []() {};
 using no_variance_output_t = decltype(no_variance_output);
 
-struct expect_no_variance_arg0_t {
-  template <class First, class... Args>
-  void operator()(const scipp::core::detail::ValueAndVariance<First>,
-                  const Args &...) const {
-  }
-  template <class First, class... Args>
-  void operator()(const scipp::core::detail::ValuesAndVariances<First>,
-                  const Args &...) const {
-  }
-};
-
-struct expect_no_variance_arg1_t {
-  template <class First, class Second, class... Args>
-  void operator()(const First &,
-                  const scipp::core::detail::ValueAndVariance<Second>,
-                  const Args &...) const {
-  }
-  template <class First, class Second, class... Args>
-  void operator()(const First &,
-                  const scipp::core::detail::ValuesAndVariances<Second>,
-                  const Args &...) const {
-  }
-};
-
-static constexpr auto expect_no_variance_arg0 = expect_no_variance_arg0_t{};
-static constexpr auto expect_no_variance_arg1 = expect_no_variance_arg1_t{};
+static constexpr auto expect_no_variance_arg0 = []() {};
+static constexpr auto expect_no_variance_arg1 = []() {};
+using expect_no_variance_arg0_t = decltype(expect_no_variance_arg0);
+using expect_no_variance_arg1_t = decltype(expect_no_variance_arg1);
 
 } // namespace transform_flags
 
