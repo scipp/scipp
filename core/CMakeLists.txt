@@ -28,6 +28,7 @@ set(SRC_FILES
     dtype.cpp
     except.cpp
     groupby.cpp
+    histogram.cpp
     rebin.cpp
     slice.cpp
     sort.cpp
