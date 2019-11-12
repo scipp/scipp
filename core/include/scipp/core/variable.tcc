@@ -614,13 +614,17 @@ Variable::Variable(const units::Unit unit, const Dimensions &dimensions,
                                                     std::move(values_),
                                                     std::move(variances_))) {}
 
+template <class T, class... Ts> T make_move_from_tuple(std::tuple<Ts...> tp) {
+  return T(std::move(std::get<Ts>(tp))...);
+}
 template <class T, class... T1, class... T2>
 Variable Variable::createVariable(units::Unit &&u, Dimensions &&s,
-                                  std::tuple<T1 &&...> &&val,
-                                  std::tuple<T2 &&...> &&var) {
+                                  std::tuple<T1...> &&val,
+                                  std::tuple<T2...> &&var) {
   if constexpr (std::is_constructible_v<Vector<T>, T1 &&...> &&
                 std::is_constructible_v<Vector<T>, T2 &&...>) {
-    auto values = std::make_from_tuple<Vector<T>>(val);
+    auto values{make_move_from_tuple<Vector<T>, T1...>(val)};
+    std::cerr << "Value final address  : " << values.data() << "\n";
     auto variances = std::make_from_tuple<Vector<T>>(var);
     constexpr bool has_val = (sizeof...(T1) > 0);
     constexpr bool has_var = (sizeof...(T2) > 0);
@@ -657,6 +661,9 @@ Variable Variable::ConstructVariable<Ts...>::make(Ts &&... args, DType type) {
   return CallDTypeWithSparse<
       double, float, int64_t, int32_t, bool, Eigen::Vector3d, std::string,
       Dataset, DataArray>::apply<Maker>(type, std::forward<Ts>(args)...);
+  //  return CallDType<
+  //      double, float, int64_t, int32_t, bool>::apply<Maker>(type,
+  //      std::forward<Ts>(args)...);
 }
 
 template <class T>

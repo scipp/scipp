@@ -8,6 +8,7 @@
 
 #include "scipp/core/except.h"
 #include "scipp/core/vector.h"
+#include <iostream>
 #include <optional>
 #include <type_traits>
 
@@ -23,16 +24,19 @@ namespace scipp::core {
 
 template <class Tag, class... Ts> struct TaggedTuple {
   using tag_type = Tag;
-  using tuple_type = std::tuple<Ts &&...>;
-  Tag tag;
-  std::tuple<Ts &&...> tuple;
+  using tuple_type = std::tuple<Ts...>;
+  tag_type tag;
+  tuple_type tuple;
 };
 
 struct ValuesTag {};
 
 template <class... Ts> auto Values(Ts &&... ts) noexcept {
-  return TaggedTuple<ValuesTag, Ts...>{
-      {}, std::forward_as_tuple(std::forward<Ts>(ts)...)};
+  auto res = TaggedTuple<ValuesTag, std::remove_reference_t<Ts>...>{
+      {}, std::make_tuple(std::forward<Ts>(ts)...)};
+  std::cerr << "Value wrapped address: " << std::get<0>(res.tuple).data()
+            << "\n";
+  return res;
 }
 
 template <class T> auto Values(std::initializer_list<T> init) noexcept {
@@ -94,10 +98,12 @@ public:
 
   template <class... NonDataTypes> static VarT construct(Ts &&... ts) {
     auto tp = std::make_tuple(std::forward<Ts>(ts)...);
+    auto val = std::move(extractTagged<ValuesTag, Ts...>(tp).tuple);
+    std::cerr << "Value tuple address  : " << std::get<0>(val).data() << "\n";
+    auto var = std::move(extractTagged<VariancesTag, Ts...>(tp).tuple);
     return VarT::template createVariable<ElemT>(
         std::forward<NonDataTypes>(extractArgs<NonDataTypes, Ts...>(tp))...,
-        std::move(extractTagged<ValuesTag, Ts...>(tp).tuple),
-        std::move(extractTagged<VariancesTag, Ts...>(tp).tuple));
+        std::move(val), std::move(var));
   }
 
 private:

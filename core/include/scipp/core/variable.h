@@ -293,8 +293,8 @@ public:
 
   template <class T, class... T1, class... T2>
   static Variable createVariable(units::Unit &&u, Dimensions &&s,
-                                 std::tuple<T1 &&...> &&val,
-                                 std::tuple<T2 &&...> &&var);
+                                 std::tuple<T1...> &&val,
+                                 std::tuple<T2...> &&var);
 
   template <class T>
   Variable(const Dimensions &dimensions, std::initializer_list<T> values_)
