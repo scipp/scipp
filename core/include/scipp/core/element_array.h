@@ -49,13 +49,6 @@ public:
     resize(new_size, default_init_elements);
   }
 
-  //  template <class InputIt,
-  //            std::enable_if_t<!std::is_integral<InputIt>{}, int> = 0>
-  //  element_array(InputIt first, InputIt last) {
-  //    resize(std::distance(first, last), default_init_elements);
-  //    std::copy(first, last, data());
-  //  }
-
   template <class Iter,
             std::enable_if_t<
                 std::is_assignable<T &, typename Iter::value_type>{}, int> = 0>
