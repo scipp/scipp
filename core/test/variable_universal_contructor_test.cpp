@@ -47,8 +47,9 @@ TEST(VariableUniversalConstructorTest, type_construcors_mix) {
   EXPECT_EQ(v1, v2);
   EXPECT_EQ(v1, v3);
 
-  v2 = Variable(dtype<float>, Variances({2.0, 3.0}), Dims{Dim::X, Dim::Y},
-                Shape{2, 1}, Values(Vector<float>{1.5f, 3.6f}));
+  v2 = Variable(dtype<float>, Variances(Vector<double>{2.0, 3.0}),
+                Dims{Dim::X, Dim::Y}, Shape{2, 1},
+                Values(Vector<float>{1.5f, 3.6f}));
   EXPECT_EQ(v1, v2);
 }
 
@@ -87,18 +88,16 @@ TEST(VariableUniversalConstructorTest, convertable_types) {
 
 TEST(VariableUniversalConstructorTest, unconvertable_types) {
   EXPECT_THROW(Variable(dtype<Eigen::Vector3d>, Dims{Dim::X, Dim::Y},
-                        Shape{2, 1}, Values({1.5f, 3.6f}),
-                        Variances({2.0, 3.0})),
+                        Shape{2, 1}, Values{1.5f, 3.6f}, Variances{2.0, 3.0}),
                except::TypeError);
 }
 
 TEST(VariableUniversalConstructorTest, initializer_list) {
-  EXPECT_EQ(
-      Variable(dtype<int32_t>, Dims{Dim::X}, Shape{2}, Values({1.0, 1.0})),
-      Variable(dtype<int32_t>, Dims{Dim::X}, Shape{2},
-               Values(Vector<int32_t>(2, 1))));
-  EXPECT_EQ(Variable(dtype<int32_t>, Values({1.0, 1.0}), Dims{Dim::X}, Shape{2},
-                     Variances({2.0f, 2.0f})),
+  EXPECT_EQ(Variable(dtype<int32_t>, Dims{Dim::X}, Shape{2}, Values{1.0, 1.0}),
+            Variable(dtype<int32_t>, Dims{Dim::X}, Shape{2},
+                     Values(Vector<int32_t>(2, 1))));
+  EXPECT_EQ(Variable(dtype<int32_t>, Values{1.0, 1.0}, Dims{Dim::X}, Shape{2},
+                     Variances{2.0f, 2.0f}),
             Variable(dtype<int32_t>, Dims{Dim::X}, Shape{2},
                      Values(Vector<int32_t>(2, 1)),
                      Variances(Vector<double>(2, 2))));

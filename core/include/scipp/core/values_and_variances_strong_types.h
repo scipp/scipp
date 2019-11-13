@@ -44,13 +44,13 @@ template <class Tag, class... Ts> struct TaggedTuple {
 
 struct ValuesTag {};
 
-template <class... Ts> auto Values(Ts &&... ts) noexcept {
+template <class... Ts> auto values(Ts &&... ts) noexcept {
   auto res = TaggedTuple<ValuesTag, std::remove_reference_t<Ts>...>{
       {}, std::make_tuple(std::forward<Ts>(ts)...)};
   return res;
 }
 
-template <class T> auto Values(std::initializer_list<T> init) noexcept {
+template <class T> auto values(std::initializer_list<T> init) noexcept {
   using iter = typename std::initializer_list<T>::iterator;
   return TaggedTuple<ValuesTag, iter, iter>{
       {}, std::make_tuple(init.begin(), init.end())};
@@ -58,22 +58,58 @@ template <class T> auto Values(std::initializer_list<T> init) noexcept {
 
 struct VariancesTag {};
 
-template <class... Ts> auto Variances(Ts &&... ts) noexcept {
+template <class... Ts> auto variances(Ts &&... ts) noexcept {
   return TaggedTuple<VariancesTag, Ts...>{
       {}, std::forward_as_tuple(std::forward<Ts>(ts)...)};
 }
 
-template <class T> auto Variances(std::initializer_list<T> init) noexcept {
+template <class T> auto variances(std::initializer_list<T> init) noexcept {
   using iter = typename std::initializer_list<T>::iterator;
   return TaggedTuple<VariancesTag, iter, iter>{
       {}, std::make_tuple(init.begin(), init.end())};
 }
+
+template <class... Args>
+struct Values : decltype(values(std::declval<Args>()...)) {
+  Values(Args &&... args)
+      : decltype(values(std::declval<Args>()...))(
+            core::values(std::forward<Args>(args)...)) {}
+  template <class T>
+  Values(std::initializer_list<T> init)
+      : decltype(values(init))(core::values(init.begin(), init.end())) {}
+};
+template <class... Args> Values(Args &&... args)->Values<Args...>;
+template <class T>
+Values(std::initializer_list<T>)
+    ->Values<typename std::initializer_list<T>::iterator,
+             typename std::initializer_list<T>::iterator>;
+
+template <class... Args>
+struct Variances : decltype(variances(std::declval<Args>()...)) {
+  Variances(Args &&... args)
+      : decltype(variances(std::declval<Args>()...))(
+            core::variances(std::forward<Args>(args)...)) {}
+  template <class T>
+  Variances(std::initializer_list<T> init)
+      : decltype(variances(init))(core::variances(init.begin(), init.end())) {}
+};
+template <class... Args> Variances(Args &&... args)->Variances<Args...>;
+template <class T>
+Variances(std::initializer_list<T>)
+    ->Variances<typename std::initializer_list<T>::iterator,
+                typename std::initializer_list<T>::iterator>;
 
 namespace detail {
 template <class Tag, class T> struct has_tag : std::false_type {};
 
 template <class Tag, class... Ts>
 struct has_tag<Tag, TaggedTuple<Tag, Ts...>> : std::true_type {};
+
+template <class Tag, class... Ts>
+struct has_tag<Tag, Values<Ts...>> : std::is_same<Tag, ValuesTag> {};
+
+template <class Tag, class... Ts>
+struct has_tag<Tag, Variances<Ts...>> : std::is_same<Tag, VariancesTag> {};
 
 template <class T, class... Args>
 constexpr bool is_type_in_pack_v =
