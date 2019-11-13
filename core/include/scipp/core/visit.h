@@ -11,14 +11,15 @@
 
 namespace scipp::core {
 
+template <class T> class VariableConceptT;
+
+namespace visit_detail {
 template <class Variant> struct alternatives_are_const_ptr;
 template <class T, class... Ts>
 struct alternatives_are_const_ptr<std::variant<T, Ts...>> : std::true_type {};
 template <class T, class... Ts>
 struct alternatives_are_const_ptr<std::variant<std::unique_ptr<T>, Ts...>>
     : std::false_type {};
-
-template <class T> class VariableConceptT;
 
 template <class Variant, class T>
 using alternative =
@@ -38,9 +39,9 @@ auto get_args(Tuple<T...> &&, V &&... v) {
 }
 
 template <class... T, class F, class... V>
-decltype(auto) invoke_3(F &&f, V &&... v) {
-  // Determine return type from call based set of allowed inputs, this should
-  // give either Variable or void.
+decltype(auto) invoke(F &&f, V &&... v) {
+  // Determine return type from call based on first set of allowed inputs, this
+  // should give either Variable or void.
   using Ret = decltype(std::apply(
       std::forward<F>(f), get_args(std::tuple_element_t<0, std::tuple<T...>>{},
                                    std::forward<V>(v)...)));
@@ -54,7 +55,6 @@ decltype(auto) invoke_3(F &&f, V &&... v) {
                : false) ||
           ...))
       throw std::bad_variant_access{};
-
     return ret;
   } else {
     if (!((holds_alternatives(T{}, v...)
@@ -67,25 +67,29 @@ decltype(auto) invoke_3(F &&f, V &&... v) {
   }
 }
 
-namespace detail {
 template <class> struct is_tuple : std::false_type {};
 template <class... T> struct is_tuple<std::pair<T...>> : std::true_type {};
 template <class... T> struct is_tuple<std::tuple<T...>> : std::true_type {};
 
+/// Typedef for T is T is a tuple, else std::tuple<T, T, T, ...>, with T
+/// replicated sizeof...(V) times.
 template <class T, class... V>
-using duplicate = std::tuple<std::conditional_t<true, T, V>...>;
-} // namespace detail
+using maybe_duplicate =
+    std::conditional_t<is_tuple<T>::value, T,
+                       std::tuple<std::conditional_t<true, T, V>...>>;
+} // namespace visit_detail
 
+/// Apply callable to variants, similar to std::visit.
+///
+/// Does not generate code for all possible combinations of alternatives,
+/// instead the tuples Ts provide a list of type combinations to try.
 template <class... Ts> struct visit_impl {
   template <class F, class... V> static decltype(auto) apply(F &&f, V &&... v) {
-    using namespace detail;
-    if constexpr ((is_tuple<Ts>::value && ...))
-      return invoke_3<Ts...>(std::forward<F>(f), std::forward<V>(v)...);
-    else
-      // For a single input or if same type required for all inputs, Ts is not a
-      // tuple. We wrap it and expand it to the correct sizeof...(V).
-      return invoke_3<duplicate<Ts, V...>...>(std::forward<F>(f),
-                                              std::forward<V>(v)...);
+    using namespace visit_detail;
+    // For a single input or if same type required for all inputs, Ts is not a
+    // tuple. In that case we wrap it and expand it to the correct sizeof...(V).
+    return invoke<maybe_duplicate<Ts, V...>...>(std::forward<F>(f),
+                                                std::forward<V>(v)...);
   }
 };
 template <class... Ts> auto visit(const std::tuple<Ts...> &) {
