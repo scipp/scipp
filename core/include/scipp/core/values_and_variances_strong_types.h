@@ -8,7 +8,6 @@
 
 #include "scipp/core/except.h"
 #include "scipp/core/vector.h"
-#include <iostream>
 #include <optional>
 #include <type_traits>
 
@@ -19,6 +18,22 @@ namespace scipp::core {
 // order of arguments in the constructor, and not mixing values and variances.
 // Functions Values and Variances just forwards the arguments for constructing
 // internal variable structure - array storage.
+
+struct Shape {
+  std::vector<scipp::index> shape;
+  template <class... Args>
+  Shape(Args &&... args) : shape(std::forward<Args>(args)...) {}
+  template <class T>
+  Shape(std::initializer_list<T> init) : shape(init.begin(), init.end()) {}
+};
+
+struct Dims {
+  std::vector<Dim> dims;
+  template <class... Args>
+  Dims(Args &&... args) : dims(std::forward<Args>(args)...) {}
+  template <class T>
+  Dims(std::initializer_list<T> init) : dims(init.begin(), init.end()) {}
+};
 
 template <class Tag, class... Ts> struct TaggedTuple {
   using tag_type = Tag;
@@ -101,7 +116,11 @@ public:
         (is_type_in_pack_v<NonDataTypes, Ts...> + ...);
     constexpr bool hasVal = is_tag_in_pack_v<ValuesTag, Ts...>;
     constexpr bool hasVar = is_tag_in_pack_v<VariancesTag, Ts...>;
-    static_assert(nonDataTypesCount + hasVal + hasVar == sizeof...(Ts));
+    static_assert(
+        nonDataTypesCount + hasVal + hasVar == sizeof...(Ts),
+        "Arguments: units::Unit, Shape, Dims, Values and Variences could only "
+        "be used. Example: Variable(dtype<float>, units::Unit(units::kg), "
+        "Shape{1, 2}, Dims{Dim::X, Dim::Y}, Values({3, 4}))");
   }
 
   template <class... NonDataTypes> static VarT construct(Ts &&... ts) {

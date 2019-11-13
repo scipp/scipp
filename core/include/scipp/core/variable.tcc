@@ -615,7 +615,7 @@ Variable::Variable(const units::Unit unit, const Dimensions &dimensions,
                                                     std::move(variances_))) {}
 
 template <class T, class... T1, class... T2>
-Variable Variable::createVariable(units::Unit &&u, Dimensions &&s,
+Variable Variable::createVariable(units::Unit &&u, Dims &&d, Shape &&s,
                                   std::tuple<T1...> &&val,
                                   std::tuple<T2...> &&var) {
   if constexpr (std::is_constructible_v<Vector<T>, T1 &&...> &&
@@ -624,14 +624,15 @@ Variable Variable::createVariable(units::Unit &&u, Dimensions &&s,
     auto variances = detail::make_move_from_tuple<Vector<T>>(var);
     constexpr bool has_val = (sizeof...(T1) > 0);
     constexpr bool has_var = (sizeof...(T2) > 0);
+    auto dms = Dimensions{d.dims, s.shape};
     if constexpr (has_val && has_var)
-      return Variable(u, s, std::move(values), std::move(variances));
+      return Variable(u, dms, std::move(values), std::move(variances));
     if constexpr (has_val)
-      return Variable(u, s, std::move(values));
+      return Variable(u, dms, std::move(values));
     if constexpr (has_var)
       throw std::logic_error("Can't have variance without values");
     else {
-      auto res = makeVariable<T>(s);
+      auto res = makeVariable<T>(dms);
       res.setUnit(u);
       return res;
     }
@@ -647,8 +648,8 @@ template <class... Ts>
 template <class T>
 Variable Variable::ConstructVariable<Ts...>::Maker<T>::apply(Ts &&... ts) {
   using helper = detail::ConstructorArgumentsMatcher<Variable, T, Ts...>;
-  helper::template checkArgTypesValid<units::Unit, Dimensions>();
-  return helper::template construct<units::Unit, Dimensions>(
+  helper::template checkArgTypesValid<units::Unit, Dims, Shape>();
+  return helper::template construct<units::Unit, Dims, Shape>(
       std::forward<Ts>(ts)...);
 }
 

@@ -292,7 +292,7 @@ public:
            T variances);
 
   template <class T, class... T1, class... T2>
-  static Variable createVariable(units::Unit &&u, Dimensions &&s,
+  static Variable createVariable(units::Unit &&u, Dims &&d, Shape &&s,
                                  std::tuple<T1...> &&val,
                                  std::tuple<T2...> &&var);
 
@@ -302,9 +302,11 @@ public:
                  Vector<T>(values_.begin(), values_.end())) {}
 
   /// This is used to provide the constructors:
-  /// Variable(DType, Dimensions, Unit, Values<T1>, Variances<T2>)
+  /// Variable(DType, Dims, Shape, Unit, Values<T1>, Variances<T2>)
   /// with the only one obligatory argument DType, the other arguments are not
-  /// obligatory and could be given in arbitrary order.
+  /// obligatory and could be given in arbitrary order. Example:
+  /// Variable(dtype<float>, units::Unit(units::kg), Shape{1, 2}, Dims{Dim::X,
+  /// Dim::Y}, Values({3, 4})).
   template <class... Ts> Variable(const DType &type, Ts &&... args);
 
   explicit operator bool() const noexcept { return m_object.operator bool(); }
