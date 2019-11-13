@@ -116,9 +116,10 @@ class Slicer:
                 self.showhide[key] = widgets.Button(
                     description="hide",
                     disabled=(button_values[i] is None),
-                    button_style=button_style
+                    button_style=button_style,
+                    layout={'width': "70px"}
                 )
-                self.showhide[key].layout.width = "70px"
+                # self.showhide[key].layout.width = "70px"
                 setattr(self.showhide[key], "dim_str", key)
                 setattr(self.showhide[key], "value",
                         button_values[i] is not None)

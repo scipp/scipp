@@ -144,10 +144,13 @@ class Slicer1d(Slicer):
         self.update_slice(None)
         self.update_histograms()
 
-        self.keep_buttons = []
+        self.keep_buttons = dict()
         self.make_keep_button()
 
-        self.mbox = [self.fig] + self.vbox + [widgets.HBox(self.keep_buttons[0])]
+        self.mbox = [self.fig] + self.vbox# + [widgets.HBox(self.keep_buttons[0])]
+        for key, val in self.keep_buttons.items():
+            self.mbox.append(widgets.HBox(val))
+        # print(self.mbox)
         self.box = widgets.VBox(self.mbox)
         self.box.layout.align_items = 'center'
 
@@ -159,7 +162,8 @@ class Slicer1d(Slicer):
         but = widgets.Button(
                     description="Keep",
                     disabled=False,
-                    button_style="")
+                    button_style="",
+                    layout={'width': "70px"})
         r = lambda: random.randint(0,255)
         col = widgets.ColorPicker(
     concise=True,
@@ -167,9 +171,10 @@ class Slicer1d(Slicer):
     value='#%02X%02X%02X' % (r(),r(),r()),
     disabled=False
 )
-        setattr(but, "number", len(self.keep_buttons))
-        but.on_click(self.keep_trace)
-        self.keep_buttons.append([drop, but, col])
+        key = str(id(but))
+        setattr(but, "id", key)
+        but.on_click(self.keep_remove_trace)
+        self.keep_buttons[key] = [drop, but, col]
         return
 
 
@@ -317,26 +322,77 @@ class Slicer1d(Slicer):
                 trace["mode"] = None
         return
 
+    def keep_remove_trace(self, owner):
+        # print(owner)
+        # print(dir(owner))
+        if owner.description == "Keep":
+            self.keep_trace(owner)
+        elif owner.description == "Remove":
+            self.remove_trace(owner)
+        return
+
     def keep_trace(self, owner):
         # owner.value
-        lab = self.keep_buttons[owner.number][0].value
-        print(self.traces[self.keep_buttons[owner.number][0].value])
+        lab = self.keep_buttons[owner.id][0].value
+        print(self.traces[self.keep_buttons[owner.id][0].value])
+        setattr(owner, "trace_number", len(self.fig.data))
         self.fig.add_trace(self.fig.data[self.traces[lab]])
         # self.fig.data[owner.value]
-        self.fig.data[-1]["marker"]["color"] = self.keep_buttons[owner.number][2].value
+        self.fig.data[-1]["marker"]["color"] = self.keep_buttons[owner.id][2].value
+        self.fig.data[-1]["showlegend"] = False
         # lab = 
         for key, val in self.slider.items():
                 if not val.disabled:
                     lab = "{},{}:{}".format(lab, key, val.value)
+        # self.fig.data[-1]["name"] = lab
         print(lab)
-        self.keep_buttons[-1][0] = widgets.Label(value=lab)
+        self.keep_buttons[owner.id][0] = widgets.Label(value=lab, layout={'width': "150px"})
         self.make_keep_button()
-        # self.mbox = [self.fig] + self.vbox
-        # for b in self.keep_buttons:
-        #     print(b)
-        #     self.mbox.append(widgets.HBox(b))
+        owner.description = "Remove"
+        self.mbox = [self.fig] + self.vbox
+        for k, b in self.keep_buttons.items():
+            print(k, b)
+            self.mbox.append(widgets.HBox(b))
+        self.box.children=tuple(self.mbox)
         # # self.box.children = widgets.VBox(self.mbox)
-        self.box.children=tuple(list(self.box.children) + [widgets.HBox(self.keep_buttons[-1])])
+        # self.box.children=tuple(list(self.box.children) + [widgets.HBox(self.keep_buttons[-1])])
+        # self.box.children=tuple([self.fig] + self.vbox + [widgets.HBox(tuple(b) for b in self.keep_buttons)])
+
+        return
+
+    def remove_trace(self, owner):
+        # del owner
+        # # owner.value
+        del self.keep_buttons[owner.id]
+        data = []
+        for i in range(len(self.fig.data)):
+            if i != owner.trace_number:
+                data.append(self.fig.data[i])
+        self.fig.data = data
+        # lab = self.keep_buttons[owner.id][0].value
+        # print(self.traces[self.keep_buttons[owner.id][0].value])
+        # self.fig.add_trace(self.fig.data[self.traces[lab]])
+        # print(self.traces[self.keep_buttons[owner.number][0].value])
+        # self.fig.add_trace(self.fig.data[self.traces[lab]])
+        # # self.fig.data[owner.value]
+        # self.fig.data[-1]["marker"]["color"] = self.keep_buttons[owner.number][2].value
+        # self.fig.data[-1]["showlegend"] = False
+        # # lab = 
+        # for key, val in self.slider.items():
+        #         if not val.disabled:
+        #             lab = "{},{}:{}".format(lab, key, val.value)
+        # # self.fig.data[-1]["name"] = lab
+        # print(lab)
+        # self.keep_buttons[-1][0] = widgets.Label(value=lab, layout={'width': "150px"})
+        # self.make_keep_button()
+        self.mbox = [self.fig] + self.vbox
+        for k, b in self.keep_buttons.items():
+            print(k, b)
+            self.mbox.append(widgets.HBox(b))
+        self.box.children=tuple(self.mbox)
+        # # self.box.children = widgets.VBox(self.mbox)
+        # self.box.children=tuple(list(self.box.children) + [widgets.HBox(self.keep_buttons[-1])])
+        # self.box.children=tuple([self.fig] + self.vbox + [widgets.HBox(tuple(b) for b in self.keep_buttons)])
 
         return
 
