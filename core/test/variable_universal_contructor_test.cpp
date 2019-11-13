@@ -33,13 +33,6 @@ TEST(VariableUniversalConstructorTest, dimensions_unit_basic) {
   EXPECT_EQ(oneMore, variable);
 }
 
-TEST(VariableUniversalConstructorTest, type_test) {
-  auto flt = std::vector{1.5f, 3.6f};
-  EXPECT_ANY_THROW(Variable(dtype<Eigen::Vector3d>,
-                            Dimensions{{Dim::X, Dim::Y}, {2, 1}},
-                            Values(flt.begin(), flt.end())));
-}
-
 TEST(VariableUniversalConstructorTest, type_construcors_mix) {
   auto flt = std::vector{1.5f, 3.6f};
   auto v1 = Variable(dtype<float>, Dimensions{{Dim::X, Dim::Y}, {2, 1}},
@@ -99,4 +92,16 @@ TEST(VariableUniversalConstructorTest, unconvertable_types) {
                         Dimensions{{Dim::X, Dim::Y}, {2, 1}},
                         Values({1.5f, 3.6f}), Variances({2.0, 3.0})),
                except::TypeError);
+}
+
+TEST(VariableUniversalConstructorTest, initializer_list) {
+  EXPECT_EQ(
+      Variable(dtype<int32_t>, Dimensions{{Dim::X}, {2}}, Values({1.0, 1.0})),
+      Variable(dtype<int32_t>, Dimensions{{Dim::X}, {2}},
+               Values(Vector<int32_t>(2, 1))));
+  EXPECT_EQ(Variable(dtype<int32_t>, Values({1.0, 1.0}),
+                     Dimensions{{Dim::X}, {2}}, Variances({2.0f, 2.0f})),
+            Variable(dtype<int32_t>, Dimensions{{Dim::X}, {2}},
+                     Values(Vector<int32_t>(2, 1)),
+                     Variances(Vector<double>(2, 2))));
 }

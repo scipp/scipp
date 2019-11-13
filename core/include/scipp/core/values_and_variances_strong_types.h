@@ -17,10 +17,8 @@ namespace scipp::core {
 // The structs needed for universal variable constructor are introduced below.
 // Tags are used to match the corresponding arguments treating the arbitrary
 // order of arguments in the constructor, and not mixing values and variances.
-// The structs the OptionalContainer to treat the absence of argument in
-// constructor. Values and Variances should be separate types (not aliases) to
-// provide CTAD and custom deduction guides (because values and variables
-// could be of different types) to simplify syntax.
+// Functions Values and Variances just forwards the arguments for constructing
+// internal variable structure - array storage.
 
 template <class Tag, class... Ts> struct TaggedTuple {
   using tag_type = Tag;
@@ -82,6 +80,18 @@ struct Indexer {
         std::make_index_sequence<sizeof...(Args)>{});
   }
 };
+
+template <class T, class Tuple, std::size_t... I>
+constexpr T make_move_from_tuple_impl(Tuple &&t, std::index_sequence<I...>) {
+  return T(std::move(std::get<I>(t))...);
+}
+
+template <class T, class Tuple> constexpr T make_move_from_tuple(Tuple &&t) {
+  return detail::make_move_from_tuple_impl<T>(
+      std::forward<Tuple>(t),
+      std::make_index_sequence<
+          std::tuple_size_v<std::remove_reference_t<Tuple>>>{});
+}
 
 template <class VarT, class ElemT, class... Ts>
 class ConstructorArgumentsMatcher {

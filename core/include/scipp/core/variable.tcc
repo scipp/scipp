@@ -613,19 +613,6 @@ Variable::Variable(const units::Unit unit, const Dimensions &dimensions,
                    : std::make_unique<DataModel<T>>(std::move(dimensions),
                                                     std::move(values_),
                                                     std::move(variances_))) {}
-namespace detail {
-template <class T, class Tuple, std::size_t... I>
-constexpr T make_move_from_tuple_impl(Tuple &&t, std::index_sequence<I...>) {
-  return T(std::move(std::get<I>(t))...);
-}
-} // namespace detail
-
-template <class T, class Tuple> constexpr T make_move_from_tuple(Tuple &&t) {
-  return detail::make_move_from_tuple_impl<T>(
-      std::forward<Tuple>(t),
-      std::make_index_sequence<
-          std::tuple_size_v<std::remove_reference_t<Tuple>>>{});
-}
 
 template <class T, class... T1, class... T2>
 Variable Variable::createVariable(units::Unit &&u, Dimensions &&s,
@@ -633,8 +620,8 @@ Variable Variable::createVariable(units::Unit &&u, Dimensions &&s,
                                   std::tuple<T2...> &&var) {
   if constexpr (std::is_constructible_v<Vector<T>, T1 &&...> &&
                 std::is_constructible_v<Vector<T>, T2 &&...>) {
-    auto values = make_move_from_tuple<Vector<T>>(val);
-    auto variances = make_move_from_tuple<Vector<T>>(var);
+    auto values = detail::make_move_from_tuple<Vector<T>>(val);
+    auto variances = detail::make_move_from_tuple<Vector<T>>(var);
     constexpr bool has_val = (sizeof...(T1) > 0);
     constexpr bool has_var = (sizeof...(T2) > 0);
     if constexpr (has_val && has_var)
@@ -670,9 +657,6 @@ Variable Variable::ConstructVariable<Ts...>::make(Ts &&... args, DType type) {
   return CallDTypeWithSparse<
       double, float, int64_t, int32_t, bool, Eigen::Vector3d, std::string,
       Dataset, DataArray>::apply<Maker>(type, std::forward<Ts>(args)...);
-  //  return CallDType<
-  //      double, float, int64_t, int32_t, bool>::apply<Maker>(type,
-  //      std::forward<Ts>(args)...);
 }
 
 template <class T>
