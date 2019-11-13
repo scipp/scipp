@@ -67,3 +67,9 @@ def test_rename_dims():
     assert d == make_dataarray(Dim.X, Dim.Z, seed=0)
     d.rename_dims(dims_dict={Dim.X: Dim.Y, Dim.Z: Dim.X})
     assert d == make_dataarray(Dim.Y, Dim.X, seed=0)
+
+
+def test_setitem_works_for_view_and_array():
+    a = make_dataarray(Dim.X, Dim.Y, seed=0)
+    a[Dim.X, :][Dim.X, 0] = a[Dim.X, 1]
+    a[Dim.X, 0] = a[Dim.X, 1]
