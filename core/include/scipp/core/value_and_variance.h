@@ -18,6 +18,8 @@ namespace detail {
 /// functions. Since T is assumed to be small it is copied into the class and
 /// extracted later. See also ValuesAndVariances.
 template <class T> struct ValueAndVariance {
+  using value_type = std::remove_cv_t<T>;
+
   /// This constructor is essential to prevent warnings about narrowing the
   /// types in initializer lists used below
   template <class T1, class T2>

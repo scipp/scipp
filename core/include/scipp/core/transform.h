@@ -446,19 +446,17 @@ struct augment_tuple<VariableConceptHandle_impl<Known...>> {
             sparse_container<typename Ts::first_type>,
             sparse_container<typename Ts::second_type>, Known...>::type{}...);
   }
-  template <class... Ts>
-  static auto insert_sparse_pairs(const std::tuple<Ts...> &) {
+  template <class... First, class... Second>
+  static auto insert_sparse(const std::tuple<std::pair<First, Second>...> &) {
     return std::tuple_cat(
-        std::tuple<Ts...>{},
-        typename optional_sparse_pair<
-            typename Ts::first_type, sparse_container<typename Ts::second_type>,
-            Known...>::type{}...,
-        typename optional_sparse_pair<sparse_container<typename Ts::first_type>,
-                                      typename Ts::second_type,
+        std::tuple<std::pair<First, Second>...>{},
+        typename optional_sparse_pair<First, sparse_container<Second>,
                                       Known...>::type{}...,
-        typename optional_sparse_pair<
-            sparse_container<typename Ts::first_type>,
-            sparse_container<typename Ts::second_type>, Known...>::type{}...);
+        typename optional_sparse_pair<sparse_container<First>, Second,
+                                      Known...>::type{}...,
+        typename optional_sparse_pair<sparse_container<First>,
+                                      sparse_container<Second>,
+                                      Known...>::type{}...);
   }
 };
 using augment = augment_tuple<VariableConceptHandle>;
@@ -790,69 +788,56 @@ void transform_in_place(Var &&var, const VariableConstProxy &other, Op op) {
 }
 } // namespace dry_run
 
+namespace detail {
+template <class T>
+struct is_any_sparse
+    : std::conditional_t<is_sparse<T>::value, std::true_type, std::false_type> {
+};
+template <class... Ts>
+struct is_any_sparse<std::pair<Ts...>>
+    : std::conditional_t<(is_sparse<Ts>::value || ...), std::true_type,
+                         std::false_type> {};
+template <class... Ts>
+struct is_any_sparse<std::tuple<Ts...>>
+    : std::conditional_t<(is_sparse<Ts>::value || ...), std::true_type,
+                         std::false_type> {};
+
+template <class... Ts, class Op, class... Vars>
+Variable transform(std::tuple<Ts...> &&, Op op, const Vars &... vars) {
+  using namespace detail;
+  try {
+    if constexpr ((is_any_sparse<Ts>::value || ...)) {
+      return scipp::core::visit_impl<Ts...>::apply(Transform{op},
+                                                   vars.dataHandle()...);
+    } else {
+      if constexpr (sizeof...(Vars) > 2) {
+        throw std::runtime_error("not implemented");
+      } else {
+        return scipp::core::visit(augment::insert_sparse(std::tuple<Ts...>{}))
+            .apply(Transform{detail::overloaded_sparse{op, TransformSparse{}}},
+                   vars.dataHandle()...);
+      }
+    }
+  } catch (const std::bad_variant_access &) {
+    throw except::TypeError("Cannot apply operation to item dtypes " +
+                            ((to_string(vars.dtype()) + ' ') + ...));
+  }
+  }
+} // namespace detail
+
 /// Transform the data elements of a variable and return a new Variable.
 ///
 /// This overload is equivalent to std::transform with a single input range, but
 /// avoids the need to manually create a new variable for the output and the
 /// need for, e.g., std::back_inserter.
-template <class... Ts, class Var, class Op>
-[[nodiscard]] Variable transform(const Var &var, Op op) {
-  using namespace detail;
+template <class... Ts, class Op>
+[[nodiscard]] Variable transform(const VariableConstProxy &var, Op op) {
   auto unit = op(var.unit());
-  Variable result;
-  try {
-    if constexpr ((is_sparse_v<Ts> || ...)) {
-      result = scipp::core::visit_impl<Ts...>::apply(Transform{op},
-                                                     var.dataHandle());
-    } else {
-      result =
-          scipp::core::visit(augment::insert_sparse(std::tuple<Ts...>{}))
-              .apply(
-                  Transform{detail::overloaded_sparse{op, TransformSparse{}}},
-                  var.dataHandle());
-    }
-  } catch (const std::bad_variant_access &) {
-    throw std::runtime_error("Operation not implemented for this type.");
-  }
+  // Wrapped implementation to convert multiple tuples into a parameter pack.
+  auto result = detail::transform(std::tuple<Ts...>{}, op, var);
   result.setUnit(unit);
   return result;
 }
-
-namespace detail {
-  template <class T> struct is_any_sparse;
-  template <class... Ts>
-  struct is_any_sparse<std::pair<Ts...>>
-      : std::conditional_t<(is_sparse<Ts>::value || ...), std::true_type,
-                           std::false_type> {};
-  template <class... Ts>
-  struct is_any_sparse<std::tuple<Ts...>>
-      : std::conditional_t<(is_sparse<Ts>::value || ...), std::true_type,
-                           std::false_type> {};
-
-  template <class... Ts, class Op, class... Vars>
-  Variable transform(std::tuple<Ts...> &&, Op op, const Vars &... vars) {
-    using namespace detail;
-    try {
-      if constexpr ((is_any_sparse<Ts>::value || ...)) {
-        return scipp::core::visit_impl<Ts...>::apply(Transform{op},
-                                                     vars.dataHandle()...);
-      } else {
-        if constexpr (((std::tuple_size_v<Ts> != 2) || ...)) {
-          throw std::runtime_error("not implemented");
-        } else {
-          return scipp::core::visit(
-                     augment::insert_sparse_pairs(std::tuple<Ts...>{}))
-              .apply(
-                  Transform{detail::overloaded_sparse{op, TransformSparse{}}},
-                  vars.dataHandle()...);
-        }
-      }
-    } catch (const std::bad_variant_access &) {
-      throw except::TypeError("Cannot apply operation to item dtypes " +
-                              ((to_string(vars.dtype()) + ' ') + ...));
-    }
-  }
-} // namespace detail
 
 /// Transform the data elements of two variables and return a new Variable.
 ///
