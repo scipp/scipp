@@ -205,6 +205,14 @@ class Slicer1d(Slicer):
         self.update_axes(owner.dim_str)
         self.update_slice(None)
         self.update_histograms()
+
+        self.keep_buttons = dict()
+        self.make_keep_button()
+        self.mbox = [self.fig] + self.vbox
+        # print(self.keep_buttons)
+        for k, b in self.keep_buttons.items():
+            self.mbox.append(widgets.HBox(b))
+        self.box.children=tuple(self.mbox)
         # for i in range(len(self.fig.data)):
         #     histogram = False
         #     trace = self.fig.data[i]
@@ -224,6 +232,7 @@ class Slicer1d(Slicer):
         return
 
     def update_axes(self, dim_str):
+        self.fig.data = self.fig.data[:len(self.input_data)]
         for i in range(len(self.fig.data)):
             self.fig.data[i].x = self.slider_x[dim_str].values
 
@@ -334,7 +343,7 @@ class Slicer1d(Slicer):
     def keep_trace(self, owner):
         # owner.value
         lab = self.keep_buttons[owner.id][0].value
-        print(self.traces[self.keep_buttons[owner.id][0].value])
+        # print(self.traces[self.keep_buttons[owner.id][0].value])
         setattr(owner, "trace_number", len(self.fig.data))
         self.fig.add_trace(self.fig.data[self.traces[lab]])
         # self.fig.data[owner.value]
@@ -345,13 +354,13 @@ class Slicer1d(Slicer):
                 if not val.disabled:
                     lab = "{},{}:{}".format(lab, key, val.value)
         # self.fig.data[-1]["name"] = lab
-        print(lab)
+        # print(lab)
         self.keep_buttons[owner.id][0] = widgets.Label(value=lab, layout={'width': "150px"})
         self.make_keep_button()
         owner.description = "Remove"
         self.mbox = [self.fig] + self.vbox
         for k, b in self.keep_buttons.items():
-            print(k, b)
+            # print(k, b)
             self.mbox.append(widgets.HBox(b))
         self.box.children=tuple(self.mbox)
         # # self.box.children = widgets.VBox(self.mbox)
@@ -363,6 +372,9 @@ class Slicer1d(Slicer):
     def remove_trace(self, owner):
         # del owner
         # # owner.value
+        print(self.keep_buttons.keys())
+        print("removing", owner.id)
+        print(owner.trace_number)
         del self.keep_buttons[owner.id]
         data = []
         for i in range(len(self.fig.data)):
@@ -387,7 +399,7 @@ class Slicer1d(Slicer):
         # self.make_keep_button()
         self.mbox = [self.fig] + self.vbox
         for k, b in self.keep_buttons.items():
-            print(k, b)
+            # print(k, b)
             self.mbox.append(widgets.HBox(b))
         self.box.children=tuple(self.mbox)
         # # self.box.children = widgets.VBox(self.mbox)
