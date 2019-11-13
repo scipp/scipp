@@ -13,6 +13,7 @@ from .tools import axis_label
 import numpy as np
 import plotly.graph_objs as go
 import ipywidgets as widgets
+import random
 
 
 def plot_1d(input_data, backend=None, logx=False, logy=False, logxy=False,
@@ -159,10 +160,11 @@ class Slicer1d(Slicer):
                     description="Keep",
                     disabled=False,
                     button_style="")
+        r = lambda: random.randint(0,255)
         col = widgets.ColorPicker(
     concise=True,
     description='',
-    value='blue',
+    value='#%02X%02X%02X' % (r(),r(),r()),
     disabled=False
 )
         setattr(but, "number", len(self.keep_buttons))
@@ -317,10 +319,17 @@ class Slicer1d(Slicer):
 
     def keep_trace(self, owner):
         # owner.value
+        lab = self.keep_buttons[owner.number][0].value
         print(self.traces[self.keep_buttons[owner.number][0].value])
-        self.fig.add_trace(self.fig.data[self.traces[self.keep_buttons[owner.number][0].value]])
+        self.fig.add_trace(self.fig.data[self.traces[lab]])
         # self.fig.data[owner.value]
         self.fig.data[-1]["marker"]["color"] = self.keep_buttons[owner.number][2].value
+        # lab = 
+        for key, val in self.slider.items():
+                if not val.disabled:
+                    lab = "{},{}:{}".format(lab, key, val.value)
+        print(lab)
+        self.keep_buttons[-1][0] = widgets.Label(value=lab)
         self.make_keep_button()
         # self.mbox = [self.fig] + self.vbox
         # for b in self.keep_buttons:
