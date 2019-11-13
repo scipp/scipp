@@ -680,12 +680,11 @@ template <bool dry_run> struct in_place {
       // they are elements of dense or sparse data), so we add overloads for
       // sparse data processing.
       if constexpr ((is_sparse_v<Ts> || ...)) {
-        scipp::core::visit_impl<Ts...>::apply(makeTransformInPlace(op),
-                                              var.dataHandle());
+        visit_impl<Ts...>::apply(makeTransformInPlace(op), var.dataHandle());
       } else {
-        scipp::core::visit(augment::insert_sparse(std::tuple<Ts...>{}))
+        core::visit(augment::insert_sparse(std::tuple<Ts...>{}))
             .apply(makeTransformInPlace(
-                       detail::overloaded_sparse{op, TransformSparseInPlace{}}),
+                       overloaded_sparse{op, TransformSparseInPlace{}}),
                    var.dataHandle());
       }
     } catch (const std::bad_variant_access &) {
@@ -704,15 +703,14 @@ template <bool dry_run> struct in_place {
       if constexpr (((is_sparse_v<typename Ts::first_type> ||
                       is_sparse_v<typename Ts::second_type>) ||
                      ...)) {
-        scipp::core::visit_impl<Ts...>::apply(
-            makeTransformInPlace(op), var.dataHandle(), other.dataHandle());
+        visit_impl<Ts...>::apply(makeTransformInPlace(op), var.dataHandle(),
+                                 other.dataHandle());
       } else {
         // Note that if only one of the inputs is sparse it must be the one
         // being transformed in-place, so there are only three cases here.
-        scipp::core::visit(
-            augment::insert_sparse_in_place_pairs(std::tuple<Ts...>{}))
+        core::visit(augment::insert_sparse_in_place_pairs(std::tuple<Ts...>{}))
             .apply(makeTransformInPlace(
-                       detail::overloaded_sparse{op, TransformSparseInPlace{}}),
+                       overloaded_sparse{op, TransformSparseInPlace{}}),
                    var.dataHandle(), other.dataHandle());
       }
     } catch (const std::bad_variant_access &) {
@@ -806,28 +804,24 @@ template <class... Ts, class Op, class... Vars>
 Variable transform(std::tuple<Ts...> &&, Op op, const Vars &... vars) {
   using namespace detail;
   auto unit = op(vars.unit()...);
-  Variable result;
+  Variable out;
   try {
     if constexpr ((is_any_sparse<Ts>::value || ...)) {
-      result = scipp::core::visit_impl<Ts...>::apply(Transform{op},
-                                                     vars.dataHandle()...);
+      out = visit_impl<Ts...>::apply(Transform{op}, vars.dataHandle()...);
+    } else if constexpr (sizeof...(Vars) > 2) {
+      static_assert("Transform with more than 2 arguments not implemented "
+                    "yet for element-wise operation.");
     } else {
-      if constexpr (sizeof...(Vars) > 2) {
-        throw std::runtime_error("not implemented");
-      } else {
-        result =
-            scipp::core::visit(augment::insert_sparse(std::tuple<Ts...>{}))
-                .apply(
-                    Transform{detail::overloaded_sparse{op, TransformSparse{}}},
-                    vars.dataHandle()...);
-      }
+      out = core::visit(augment::insert_sparse(std::tuple<Ts...>{}))
+                .apply(Transform{overloaded_sparse{op, TransformSparse{}}},
+                       vars.dataHandle()...);
     }
   } catch (const std::bad_variant_access &) {
     throw except::TypeError("Cannot apply operation to item dtypes " +
                             ((to_string(vars.dtype()) + ' ') + ...));
   }
-  result.setUnit(unit);
-  return result;
+  out.setUnit(unit);
+  return out;
 }
 } // namespace detail
 
