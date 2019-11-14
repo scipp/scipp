@@ -647,9 +647,9 @@ Variable Variable::createVariable(units::Unit &&u, Dims &&d, Shape &&s,
 template <class... Ts>
 template <class T>
 Variable Variable::ConstructVariable<Ts...>::Maker<T>::apply(Ts &&... ts) {
-  using helper = detail::ConstructorArgumentsMatcher<Variable, T, Ts...>;
+  using helper = detail::ConstructorArgumentsMatcher<Variable, Ts...>;
   helper::template checkArgTypesValid<units::Unit, Dims, Shape>();
-  return helper::template construct<units::Unit, Dims, Shape>(
+  return helper::template construct<T, units::Unit, Dims, Shape>(
       std::forward<Ts>(ts)...);
 }
 

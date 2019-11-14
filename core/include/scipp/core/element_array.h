@@ -49,23 +49,19 @@ public:
     resize(new_size, default_init_elements);
   }
 
-  template <class Iter,
-            std::enable_if_t<
-                std::is_assignable<T &, typename Iter::value_type>{}, int> = 0>
+  template <
+      class Iter,
+      std::enable_if_t<
+          std::is_assignable<T &, decltype(*std::declval<Iter>())>{}, int> = 0>
   element_array(Iter first, Iter last) {
-    resize(std::distance(first, last), default_init_elements);
-    std::copy(first, last, data());
-  }
-
-  template <class U, std::enable_if_t<std::is_assignable_v<T &, U>, int> = 0>
-  element_array(U *first, U *last) {
     resize(std::distance(first, last), default_init_elements);
     std::copy(first, last, data());
   }
 
   template <class U, template <class> class Container,
             std::enable_if_t<std::is_assignable_v<T &, U>, int> = 0>
-  element_array(Container<U> &&c) : element_array(c.begin(), c.end()) {}
+  explicit element_array(Container<U> &&c)
+      : element_array(c.begin(), c.end()) {}
 
   template <class U, std::enable_if_t<std::is_assignable_v<U &, T>, int> = 0>
   operator element_array<U>() {
