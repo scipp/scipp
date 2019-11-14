@@ -354,7 +354,9 @@ template <class Op> struct Transform {
 };
 template <class Op> Transform(Op)->Transform<Op>;
 
-template <class T, class... Known> struct optional_sparse {
+template <class T, class Handle> struct optional_sparse;
+template <class T, class... Known>
+struct optional_sparse<T, VariableConceptHandle_impl<Known...>> {
   using type = std::conditional_t<std::disjunction_v<std::is_same<T, Known>...>,
                                   std::tuple<T>, std::tuple<>>;
 };
@@ -369,23 +371,27 @@ template <template <typename...> class C, typename... Ts1, typename... Ts2,
 struct tuple_cat<C<Ts1...>, C<Ts2...>, Ts3...>
     : public tuple_cat<C<Ts1..., Ts2...>, Ts3...> {};
 
-template <class T1, class T2, class... Known> struct optional_sparse_pair {
+template <class T1, class T2, class Handle> struct optional_sparse_pair;
+template <class T1, class T2, class... Known>
+struct optional_sparse_pair<T1, T2, VariableConceptHandle_impl<Known...>> {
   using type =
       std::conditional_t<std::disjunction_v<std::is_same<T1, Known>...> &&
                              std::disjunction_v<std::is_same<T2, Known>...>,
                          std::tuple<std::pair<T1, T2>>, std::tuple<>>;
 };
+template <class T>
+using optional_sparse_t =
+    typename optional_sparse<T, VariableConceptHandle>::type;
+template <class T1, class T2>
+using optional_sparse_pair_t =
+    typename optional_sparse_pair<T1, T2, VariableConceptHandle>::type;
 
 /// Augment a tuple of types with the corresponding sparse types, if they exist.
-template <class Handle> struct augment_tuple;
-
-template <class... Known>
-struct augment_tuple<VariableConceptHandle_impl<Known...>> {
+struct augment {
   template <class... Ts> static auto insert_sparse(const std::tuple<Ts...> &) {
     return
         typename tuple_cat<std::tuple<Ts...>,
-                           typename optional_sparse<sparse_container<Ts>,
-                                                    Known...>::type...>::type{};
+                           optional_sparse_t<sparse_container<Ts>>...>::type{};
   }
 
   template <class... Ts>
@@ -398,26 +404,20 @@ struct augment_tuple<VariableConceptHandle_impl<Known...>> {
   insert_sparse_in_place(const std::tuple<std::pair<First, Second>...> &) {
     return std::tuple_cat(
         std::tuple<std::pair<First, Second>...>{},
-        typename optional_sparse_pair<sparse_container<First>, Second,
-                                      Known...>::type{}...,
-        typename optional_sparse_pair<sparse_container<First>,
-                                      sparse_container<Second>,
-                                      Known...>::type{}...);
+        optional_sparse_pair_t<sparse_container<First>, Second>{}...,
+        optional_sparse_pair_t<sparse_container<First>,
+                               sparse_container<Second>>{}...);
   }
   template <class... First, class... Second>
   static auto insert_sparse(const std::tuple<std::pair<First, Second>...> &) {
     return std::tuple_cat(
         std::tuple<std::pair<First, Second>...>{},
-        typename optional_sparse_pair<First, sparse_container<Second>,
-                                      Known...>::type{}...,
-        typename optional_sparse_pair<sparse_container<First>, Second,
-                                      Known...>::type{}...,
-        typename optional_sparse_pair<sparse_container<First>,
-                                      sparse_container<Second>,
-                                      Known...>::type{}...);
+        optional_sparse_pair_t<First, sparse_container<Second>>{}...,
+        optional_sparse_pair_t<sparse_container<First>, Second>{}...,
+        optional_sparse_pair_t<sparse_container<First>,
+                               sparse_container<Second>>{}...);
   }
 };
-using augment = augment_tuple<VariableConceptHandle>;
 
 template <class Op, class SparseOp> struct overloaded_sparse : Op, SparseOp {
   template <class... Ts> constexpr auto operator()(Ts &&... args) const {
