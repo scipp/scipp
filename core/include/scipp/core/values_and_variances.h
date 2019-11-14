@@ -28,7 +28,7 @@ template <class T> struct ValuesAndVariances {
   T &values;
   T &variances;
 
-  void clear() {
+  void clear() noexcept {
     values.clear();
     variances.clear();
   }
@@ -62,10 +62,12 @@ template <class T> struct ValuesAndVariances {
                              "without variances, or vice versa.");
   }
 
-  auto begin() { return std::pair(values.begin(), variances.begin()); }
-  auto begin() const { return std::pair(values.begin(), variances.begin()); }
-  auto end() { return std::pair(values.end(), variances.end()); }
-  auto end() const { return std::pair(values.end(), variances.end()); }
+  auto begin() noexcept { return std::pair(values.begin(), variances.begin()); }
+  auto begin() const noexcept {
+    return std::pair(values.begin(), variances.begin());
+  }
+  auto end() noexcept { return std::pair(values.end(), variances.end()); }
+  auto end() const noexcept { return std::pair(values.end(), variances.end()); }
 
   constexpr auto size() const noexcept { return values.size(); }
 };

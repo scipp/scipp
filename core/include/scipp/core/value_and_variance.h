@@ -23,7 +23,7 @@ template <class T> struct ValueAndVariance {
   /// This constructor is essential to prevent warnings about narrowing the
   /// types in initializer lists used below
   template <class T1, class T2>
-  constexpr ValueAndVariance(T1 t1, T2 t2) : value(t1), variance(t2) {}
+  constexpr ValueAndVariance(T1 t1, T2 t2) noexcept : value(t1), variance(t2) {}
   T value;
   T variance;
 

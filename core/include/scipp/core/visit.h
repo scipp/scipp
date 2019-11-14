@@ -28,12 +28,13 @@ using alternative =
                        std::unique_ptr<VariableConceptT<T>>>;
 
 template <template <class...> class Tuple, class... T, class... V>
-bool holds_alternatives(Tuple<T...> &&, const V &... v) {
+static constexpr bool holds_alternatives(Tuple<T...> &&,
+                                         const V &... v) noexcept {
   return (std::holds_alternative<alternative<V, T>>(v) && ...);
 }
 
 template <template <class...> class Tuple, class... T, class... V>
-auto get_args(Tuple<T...> &&, V &&... v) {
+static constexpr auto get_args(Tuple<T...> &&, V &&... v) noexcept {
   return std::forward_as_tuple(
       std::get<alternative<V, T>>(std::forward<V>(v))...);
 }
