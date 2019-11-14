@@ -277,97 +277,52 @@ struct TransformSparse {
   }
 };
 
-/// Helper for transform implementation, performing branching between output
-/// with and without variances.
-template <class T1, class Out, class Op>
-static void do_transform(const T1 &a, Out &out, Op op) {
-  auto a_val = a.values();
+/// Recursion endpoint for do_transform.
+///
+/// Call transform_elements with or without variances for output, depending on
+/// whether any of the arguments has variances or not.
+template <class Op, class Out, class Tuple>
+static void do_transform(Op op, Out &&out, Tuple &&processed) {
   auto out_val = out.values();
-  if (a.hasVariances()) {
-    if constexpr (canHaveVariances<typename T1::value_type>()) {
-      auto a_var = a.variances();
-      auto out_var = out.variances();
-      transform_elements(op, ValuesAndVariances{out_val, out_var},
-                         ValuesAndVariances{a_val, a_var});
-    }
-  } else {
-    transform_elements(op, out_val, a_val);
-  }
+  std::apply(
+      [&](auto &&... args) {
+        if constexpr ((is_ValuesAndVariances_v<std::decay_t<decltype(args)>> ||
+                       ...)) {
+          auto out_var = out.variances();
+          transform_elements(op, ValuesAndVariances{out_val, out_var},
+                             std::forward<decltype(args)>(args)...);
+        } else {
+          transform_elements(op, out_val,
+                             std::forward<decltype(args)>(args)...);
+        }
+      },
+      std::forward<Tuple>(processed));
 }
 
 /// Helper for transform implementation, performing branching between output
 /// with and without variances as well as handling other operands with and
 /// without variances.
-template <class T1, class T2, class Out, class Op>
-static void do_transform(const T1 &a, const T2 &b, Out &out, Op op) {
-  auto a_val = a.values();
-  auto b_val = b.values();
-  auto out_val = out.values();
-  if (a.hasVariances()) {
-    if constexpr (std::is_base_of_v<
-                      transform_flags::expect_no_variance_arg_t<0>, Op>) {
-      throw except::VariancesError(
-          "Variances in first argument not supported.");
-
-    } else {
-      if constexpr (canHaveVariances<typename T1::value_type>() &&
-                    canHaveVariances<typename T2::value_type>()) {
-        auto a_var = a.variances();
-        auto out_var = out.variances();
-        if (b.hasVariances()) {
-          if constexpr (std::is_base_of_v<
-                            transform_flags::expect_no_variance_arg_t<1>, Op>) {
-            throw except::VariancesError(
-                "Variances in second argument not supported.");
-          } else {
-
-            auto b_var = b.variances();
-            transform_elements(op, ValuesAndVariances{out_val, out_var},
-                               ValuesAndVariances{a_val, a_var},
-                               ValuesAndVariances{b_val, b_var});
-          }
-        } else {
-          transform_elements(op, ValuesAndVariances{out_val, out_var},
-                             ValuesAndVariances{a_val, a_var}, b_val);
-        }
-      }
-    }
-  } else if (b.hasVariances()) {
-    if constexpr (std::is_base_of_v<
-                      transform_flags::expect_no_variance_arg_t<1>, Op>) {
-      throw except::VariancesError(
-          "Variances in second argument not supported.");
-
-    } else if constexpr (canHaveVariances<typename T2::value_type>()) {
-      auto b_var = b.variances();
-      auto out_var = out.variances();
-      transform_elements(op, ValuesAndVariances{out_val, out_var}, a_val,
-                         ValuesAndVariances{b_val, b_var});
+template <class Op, class Out, class Tuple, class Arg, class... Args>
+static void do_transform(Op op, Out &&out, Tuple &&processed, const Arg &arg,
+                         const Args &... args) {
+  auto vals = arg.values();
+  if (arg.hasVariances()) {
+    if constexpr (std::is_base_of_v<transform_flags::expect_no_variance_arg_t<
+                                        std::tuple_size_v<Tuple>>,
+                                    Op>) {
+      throw except::VariancesError("Variances in argument " +
+                                   std::to_string(std::tuple_size_v<Tuple>) +
+                                   " not supported.");
+    } else if constexpr (canHaveVariances<typename Arg::value_type>()) {
+      auto vars = arg.variances();
+      do_transform(
+          op, std::forward<Out>(out),
+          std::tuple_cat(processed, std::tuple(ValuesAndVariances{vals, vars})),
+          args...);
     }
   } else {
-    transform_elements(op, out_val, a_val, b_val);
-  }
-}
-
-template <class T1, class T2, class T3, class Out, class Op>
-static void do_transform(const T1 &a, const T2 &b, const T3 &c, Out &out,
-                         Op op) {
-  // TODO There are 8 cases for value/variance combinations, i.e., to much to
-  // handle by hand. Until refactored, we just support specific use cases.
-  if (a.hasVariances() || b.hasVariances())
-    throw except::VariancesError("Implementation does not support variances in "
-                                 "first and second input yet.");
-  auto a_val = a.values();
-  auto b_val = b.values();
-  auto c_val = c.values();
-  auto out_val = out.values();
-  if (c.hasVariances()) {
-    auto c_var = c.variances();
-    auto out_var = out.variances();
-    transform_elements(op, ValuesAndVariances{out_val, out_var}, a_val, b_val,
-                       ValuesAndVariances{c_val, c_var});
-  } else {
-    transform_elements(op, out_val, a_val, b_val, c_val);
+    do_transform(op, std::forward<Out>(out),
+                 std::tuple_cat(processed, std::tuple(vals)), args...);
   }
 }
 
@@ -393,7 +348,7 @@ template <class Op> struct Transform {
                   dims, default_init_elements)
             : makeVariable<element_type_t<Out>>(dims, default_init_elements);
     auto &outT = static_cast<VariableConceptT<Out> &>(out.data());
-    do_transform(as_view{*handles, dims}..., outT, op);
+    do_transform(op, outT, std::tuple<>(), as_view{*handles, dims}...);
     return out;
   }
 };

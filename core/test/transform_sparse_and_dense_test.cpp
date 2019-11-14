@@ -74,6 +74,8 @@ TEST(TransformSparseAndDenseTest, three_args) {
                    } else
                      return a;
                  },
+                 transform_flags::expect_no_variance_arg<0>,
+                 transform_flags::expect_no_variance_arg<1>,
                  [](const units::Unit &a, const units::Unit &,
                     const units::Unit &) { return a; }});
   EXPECT_TRUE(out.hasVariances());
@@ -88,19 +90,19 @@ TEST(TransformSparseAndDenseTest, sparse_times_dense) {
   vals[0] = {1.1, 2.2, 3.3};
   vals[1] = {1.1, 2.2, 3.3, 5.5};
 
-  auto edges =
+  auto edges_ =
       makeVariable<double>({{Dim::Y, 2}, {Dim::X, 3}}, {0, 2, 4, 1, 3, 5});
   std::vector<span<double>> spans;
   for (scipp::index i = 0; i < 2; ++i)
-    spans.emplace_back(edges.values<double>().subspan(3 * i, 3));
+    spans.emplace_back(edges_.values<double>().subspan(3 * i, 3));
   auto edges_view = makeVariable<span<double>>({Dim::Y, 2}, spans);
 
-  auto weights = makeVariable<float>({Dim::X, 2}, {2.0, 3.0}, {0.3, 0.4});
-  std::vector<span<float>> spans_val{weights.values<float>()};
-  std::vector<span<float>> spans_var{weights.variances<float>()};
+  auto weights_ = makeVariable<float>({Dim::X, 2}, {2.0, 3.0}, {0.3, 0.4});
+  std::vector<span<float>> spans_val{weights_.values<float>()};
+  std::vector<span<float>> spans_var{weights_.variances<float>()};
   auto weights_view = makeVariable<span<float>>({}, spans_val, spans_var);
 
-  DataArray hist(weights, {{Dim::X, edges}});
+  DataArray hist(weights_, {{Dim::X, edges_}});
 
   const auto out = transform<std::tuple<
       std::tuple<sparse_container<double>, span<double>, span<float>>>>(
@@ -148,6 +150,8 @@ TEST(TransformSparseAndDenseTest, sparse_times_dense) {
               return out_vals;
             }
           },
+          transform_flags::expect_no_variance_arg<0>,
+          transform_flags::expect_no_variance_arg<1>,
           [](const units::Unit &a, const units::Unit &b, const units::Unit &c) {
             expect::equals(a, b);
             return c;
