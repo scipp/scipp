@@ -71,7 +71,7 @@ template <class> struct is_tuple : std::false_type {};
 template <class... T> struct is_tuple<std::pair<T...>> : std::true_type {};
 template <class... T> struct is_tuple<std::tuple<T...>> : std::true_type {};
 
-/// Typedef for T is T is a tuple, else std::tuple<T, T, T, ...>, with T
+/// Typedef for T if T is a tuple, else std::tuple<T, T, T, ...>, with T
 /// replicated sizeof...(V) times.
 template <class T, class... V>
 using maybe_duplicate =
