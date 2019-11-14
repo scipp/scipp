@@ -31,14 +31,7 @@ TEST(TransformSparseAndDenseTest, two_args) {
   const auto result = transform<
       pair_custom_t<std::pair<sparse_container<double>, span<double>>>>(
       var, dense_view,
-      overloaded{[](const auto &a, const auto &b) {
-                   fprintf(stderr, "%ld %ld\n", a.size(), b.size());
-                   for (auto &a_ : a)
-                     fprintf(stderr, "a: %lf\n", a_);
-                   for (auto &b_ : b)
-                     fprintf(stderr, "b: %lf\n", b_);
-                   return a;
-                 },
+      overloaded{[](const auto &a, const auto &) { return a; },
                  [](const units::Unit &a, const units::Unit &) { return a; },
                  transform_flags::expect_no_variance_arg<0>,
                  transform_flags::expect_no_variance_arg<1>});
