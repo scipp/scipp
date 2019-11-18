@@ -23,7 +23,7 @@ auto make_subspans(const VariableView<T> &data, const scipp::index span_len) {
                        span_len);
 }
 
-/// Return Variable containing spans over given dimensions as elements.
+/// Return Variable containing spans over given dimension as elements.
 template <class T, class Var> Variable subspan_view(Var &var, const Dim dim) {
   expect::notSparse(var);
   if (dim != var.dims().inner())
@@ -68,12 +68,15 @@ template <class Var> Variable subspan_view_impl(Var &var, const Dim dim) {
   return invoke<double, float>(var.dtype(), var, dim);
 }
 
+/// Return Variable containing mutable spans over given dimension as elements.
 Variable subspan_view(Variable &var, const Dim dim) {
   return subspan_view_impl(var, dim);
 }
+/// Return Variable containing mutable spans over given dimension as elements.
 Variable subspan_view(const VariableProxy &var, const Dim dim) {
   return subspan_view_impl(var, dim);
 }
+/// Return Variable containing const spans over given dimension as elements.
 Variable subspan_view(const VariableConstProxy &var, const Dim dim) {
   return subspan_view_impl(var, dim);
 }
