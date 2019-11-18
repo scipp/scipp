@@ -20,16 +20,16 @@ protected:
 
 TEST_F(SubspanViewTest, fail_sparse) {
   auto sparse = makeVariable<double>({Dim::Y, Dim::X}, {2, Dimensions::Sparse});
-  EXPECT_THROW(subspan_view<double>(sparse, Dim::X), except::DimensionError);
-  EXPECT_THROW(subspan_view<double>(sparse, Dim::Y), except::DimensionError);
+  EXPECT_THROW(subspan_view(sparse, Dim::X), except::DimensionError);
+  EXPECT_THROW(subspan_view(sparse, Dim::Y), except::DimensionError);
 }
 
 TEST_F(SubspanViewTest, fail_not_inner) {
-  EXPECT_THROW(subspan_view<double>(var, Dim::Y), except::DimensionError);
+  EXPECT_THROW(subspan_view(var, Dim::Y), except::DimensionError);
 }
 
 TEST_F(SubspanViewTest, values) {
-  auto view = subspan_view<double>(var, Dim::X);
+  auto view = subspan_view(var, Dim::X);
   EXPECT_EQ(view.dims(), Dimensions({Dim::Y, 2}));
   EXPECT_EQ(view.unit(), units::m);
   EXPECT_TRUE(equals(view.values<span<double>>()[0], {1, 2, 3}));
@@ -38,7 +38,7 @@ TEST_F(SubspanViewTest, values) {
 }
 
 TEST_F(SubspanViewTest, values_and_errors) {
-  auto view = subspan_view<double>(var_with_errors, Dim::X);
+  auto view = subspan_view(var_with_errors, Dim::X);
   EXPECT_EQ(view.dims(), Dimensions({Dim::Y, 2}));
   EXPECT_EQ(view.unit(), units::m);
   EXPECT_TRUE(equals(view.values<span<double>>()[0], {1, 2, 3}));
@@ -49,11 +49,6 @@ TEST_F(SubspanViewTest, values_and_errors) {
 
 TEST_F(SubspanViewTest, view_of_const) {
   const auto &const_var = var;
-  auto view = subspan_view<double>(const_var, Dim::X);
-  EXPECT_NO_THROW(view.values<span<const double>>());
-}
-
-TEST_F(SubspanViewTest, const_view) {
-  auto view = subspan_view<const double>(var, Dim::X);
+  auto view = subspan_view(const_var, Dim::X);
   EXPECT_NO_THROW(view.values<span<const double>>());
 }

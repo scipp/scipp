@@ -24,7 +24,7 @@ TEST(TransformSparseAndDenseTest, two_args) {
 
   auto dense =
       makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}}, {1.1, 2.2, 3.3, 4.4});
-  auto dense_view = subspan_view<double>(dense, Dim::X);
+  auto dense_view = subspan_view(dense, Dim::X);
 
   const auto result = transform<
       pair_custom_t<std::pair<sparse_container<double>, span<double>>>>(
@@ -43,12 +43,11 @@ TEST(TransformSparseAndDenseTest, three_args) {
 
   auto dense =
       makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}}, {1.1, 2.2, 3.3, 4.4});
-  auto dense_view = subspan_view<double>(dense, Dim::X);
+  auto dense_view = subspan_view(dense, Dim::X);
 
   auto dense_with_variance =
       makeVariable<double>({Dim::X, 2}, {0.1, 0.2}, {0.3, 0.4});
-  auto dense_with_variance_view =
-      subspan_view<double>(dense_with_variance, Dim::X);
+  auto dense_with_variance_view = subspan_view(dense_with_variance, Dim::X);
 
   const auto out = transform<std::tuple<
       std::tuple<sparse_container<double>, span<double>, span<double>>>>(
@@ -78,10 +77,10 @@ TEST(TransformSparseAndDenseTest, sparse_times_dense) {
 
   auto edges_ =
       makeVariable<double>({{Dim::Y, 2}, {Dim::X, 3}}, {0, 2, 4, 1, 3, 5});
-  auto edges_view = subspan_view<double>(edges_, Dim::X);
+  auto edges_view = subspan_view(edges_, Dim::X);
 
   auto weights_ = makeVariable<float>({Dim::X, 2}, {2.0, 3.0}, {0.3, 0.4});
-  auto weights_view = subspan_view<float>(weights_, Dim::X);
+  auto weights_view = subspan_view(weights_, Dim::X);
 
   DataArray hist(weights_, {{Dim::X, edges_}});
 
