@@ -233,8 +233,9 @@ class Slicer1d(Slicer):
 
     def update_axes(self, dim_str):
         self.fig.data = self.fig.data[:len(self.input_data)]
-        for i in range(len(self.fig.data)):
-            self.fig.data[i].x = self.slider_x[dim_str].values
+        self.fig.update_traces(x=self.slider_x[dim_str].values)
+        # for i in range(len(self.fig.data)):
+        #     self.fig.data[i].x = self.slider_x[dim_str].values
 
         # # Go through the buttons and select the right coordinates for the axes
         # for key, button in self.buttons.items():
@@ -344,15 +345,16 @@ class Slicer1d(Slicer):
         # owner.value
         lab = self.keep_buttons[owner.id][0].value
         # print(self.traces[self.keep_buttons[owner.id][0].value])
-        setattr(owner, "trace_number", len(self.fig.data))
+        # setattr(owner, "trace_number", len(self.fig.data))
         self.fig.add_trace(self.fig.data[self.traces[lab]])
         # self.fig.data[owner.value]
         self.fig.data[-1]["marker"]["color"] = self.keep_buttons[owner.id][2].value
         self.fig.data[-1]["showlegend"] = False
+        self.fig.data[-1]["meta"] = owner.id
         # lab = 
         for key, val in self.slider.items():
-                if not val.disabled:
-                    lab = "{},{}:{}".format(lab, key, val.value)
+            if not val.disabled:
+                lab = "{},{}:{}".format(lab, key, val.value)
         # self.fig.data[-1]["name"] = lab
         # print(lab)
         self.keep_buttons[owner.id][0] = widgets.Label(value=lab, layout={'width': "150px"})
@@ -374,12 +376,13 @@ class Slicer1d(Slicer):
         # # owner.value
         print(self.keep_buttons.keys())
         print("removing", owner.id)
-        print(owner.trace_number)
+        # print(owner.trace_number)
         del self.keep_buttons[owner.id]
         data = []
-        for i in range(len(self.fig.data)):
-            if i != owner.trace_number:
-                data.append(self.fig.data[i])
+        for tr in self.fig.data:
+        # for i in range(len(self.fig.data)):
+            if tr.meta != owner.id:
+                data.append(tr)
         self.fig.data = data
         # lab = self.keep_buttons[owner.id][0].value
         # print(self.traces[self.keep_buttons[owner.id][0].value])
