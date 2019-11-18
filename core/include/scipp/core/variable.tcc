@@ -620,8 +620,10 @@ Variable Variable::createVariable(units::Unit &&u, Dims &&d, Shape &&s,
                                   std::tuple<T2...> &&var) {
   if constexpr (std::is_constructible_v<Vector<T>, T1 &&...> &&
                 std::is_constructible_v<Vector<T>, T2 &&...>) {
-    auto values = detail::make_move_from_tuple<Vector<T>>(val);
-    auto variances = detail::make_move_from_tuple<Vector<T>>(var);
+    auto values =
+        std::make_from_tuple<Vector<T>>(std::forward<std::tuple<T1...>>(val));
+    auto variances =
+        std::make_from_tuple<Vector<T>>(std::forward<std::tuple<T2...>>(var));
     constexpr bool has_val = (sizeof...(T1) > 0);
     constexpr bool has_var = (sizeof...(T2) > 0);
     auto dms = Dimensions{d.data, s.data};

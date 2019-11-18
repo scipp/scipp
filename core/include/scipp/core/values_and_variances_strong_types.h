@@ -7,8 +7,6 @@
 #define SCIPP_VALUES_AND_VARIANCES_STRONG_TYPES_H
 
 #include "scipp/core/except.h"
-#include "scipp/core/vector.h"
-#include <optional>
 #include <type_traits>
 
 namespace scipp::core {
@@ -21,16 +19,13 @@ namespace scipp::core {
 
 namespace detail {
 
-template <class U>
-struct vector_like {
+template <class U> struct vector_like {
   std::vector<U> data;
   template <class... Args>
   vector_like(Args &&... args) : data(std::forward<Args>(args)...) {}
   template <class T>
   vector_like(std::initializer_list<T> init) : data(init.begin(), init.end()) {}
 };
-
-
 
 template <class Tag, class... Ts> struct TaggedTuple {
   using tag_type = Tag;
@@ -137,13 +132,6 @@ public:
 template <class T, class Tuple, std::size_t... I>
 constexpr T make_move_from_tuple_impl(Tuple &&t, std::index_sequence<I...>) {
   return T(std::move(std::get<I>(t))...);
-}
-
-template <class T, class Tuple> constexpr T make_move_from_tuple(Tuple &&t) {
-  return detail::make_move_from_tuple_impl<T>(
-      std::forward<Tuple>(t),
-      std::make_index_sequence<
-          std::tuple_size_v<std::remove_reference_t<Tuple>>>{});
 }
 
 template <class VarT, class... Ts> class ConstructorArgumentsMatcher {
