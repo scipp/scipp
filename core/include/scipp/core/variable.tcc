@@ -630,7 +630,7 @@ Variable Variable::createVariable(units::Unit &&u, Dims &&d, Shape &&s,
     if constexpr (has_val)
       return Variable(u, dms, std::move(values));
     if constexpr (has_var)
-      throw std::logic_error("Can't have variance without values");
+      throw except::VariancesError("Can't have variance without values");
     else {
       auto res = makeVariable<T>(dms);
       res.setUnit(u);
