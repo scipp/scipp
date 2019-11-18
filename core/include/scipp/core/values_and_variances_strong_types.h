@@ -19,23 +19,18 @@ namespace scipp::core {
 // Structures Values and Variances just forwards the arguments for constructing
 // internal variable structure - array storage.
 
-struct Shape {
-  std::vector<scipp::index> shape;
-  template <class... Args>
-  Shape(Args &&... args) : shape(std::forward<Args>(args)...) {}
-  template <class T>
-  Shape(std::initializer_list<T> init) : shape(init.begin(), init.end()) {}
-};
-
-struct Dims {
-  std::vector<Dim> dims;
-  template <class... Args>
-  Dims(Args &&... args) : dims(std::forward<Args>(args)...) {}
-  template <class T>
-  Dims(std::initializer_list<T> init) : dims(init.begin(), init.end()) {}
-};
-
 namespace detail {
+
+template <class U>
+struct vector_like {
+  std::vector<U> data;
+  template <class... Args>
+  vector_like(Args &&... args) : data(std::forward<Args>(args)...) {}
+  template <class T>
+  vector_like(std::initializer_list<T> init) : data(init.begin(), init.end()) {}
+};
+
+
 
 template <class Tag, class... Ts> struct TaggedTuple {
   using tag_type = Tag;
@@ -56,7 +51,7 @@ template <class Tag, class... Ts> auto makeTaggedTuple(Ts &&... ts) {
 template <class Tag, class T>
 auto makeTaggedTuple(std::initializer_list<T> init) {
   using iter = typename std::initializer_list<T>::iterator;
-  return TaggedTuple<VariancesTag, iter, iter>{
+  return TaggedTuple<Tag, iter, iter>{
       {}, std::make_tuple(init.begin(), init.end())};
 }
 
@@ -64,6 +59,9 @@ template <class Tag, class... Args>
 using MakeTaggedTupleReturnType =
     decltype(makeTaggedTuple<Tag>(std::declval<Args>()...));
 } // namespace detail
+
+using Shape = detail::vector_like<scipp::index>;
+using Dims = detail::vector_like<Dim>;
 
 template <class... Args>
 using ValuesTaggedTupple =
@@ -177,11 +175,8 @@ private:
   static decltype(auto) extractArgs(std::tuple<Args...> &tp) {
     if constexpr (!is_type_in_pack_v<T, Ts...>)
       return T{};
-    else {
-      constexpr auto index =
-          Indexer<T, std::is_same, Args...>::indexOfCorresponding();
-      return std::get<index>(tp);
-    }
+    else
+      return std::get<T>(tp);
   }
 
   template <class Tag, class... Args>
