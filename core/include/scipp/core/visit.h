@@ -39,28 +39,29 @@ static constexpr auto get_args(Tuple<T...> &&, V &&... v) noexcept {
       std::get<alternative<V, T>>(std::forward<V>(v))...);
 }
 
-template <class... T, class F, class... V>
+template <class... Tuple, class F, class... V>
 decltype(auto) invoke(F &&f, V &&... v) {
   // Determine return type from call based on first set of allowed inputs, this
   // should give either Variable or void.
-  using Ret = decltype(std::apply(
-      std::forward<F>(f), get_args(std::tuple_element_t<0, std::tuple<T...>>{},
-                                   std::forward<V>(v)...)));
+  using Ret = decltype(
+      std::apply(std::forward<F>(f),
+                 get_args(std::tuple_element_t<0, std::tuple<Tuple...>>{},
+                          std::forward<V>(v)...)));
 
   if constexpr (!std::is_same_v<void, Ret>) {
     Ret ret;
-    if (!((holds_alternatives(T{}, v...)
+    if (!((holds_alternatives(Tuple{}, v...)
                ? (ret = std::apply(std::forward<F>(f),
-                                   get_args(T{}, std::forward<V>(v)...)),
+                                   get_args(Tuple{}, std::forward<V>(v)...)),
                   true)
                : false) ||
           ...))
       throw std::bad_variant_access{};
     return ret;
   } else {
-    if (!((holds_alternatives(T{}, v...)
+    if (!((holds_alternatives(Tuple{}, v...)
                ? (std::apply(std::forward<F>(f),
-                             get_args(T{}, std::forward<V>(v)...)),
+                             get_args(Tuple{}, std::forward<V>(v)...)),
                   true)
                : false) ||
           ...))
