@@ -61,21 +61,10 @@ def plot(input_data, collapse=None, backend=None, color=None, projection=None,
                 col = color
             color_count += 1
 
-
         if key not in tobeplotted.keys():
             tobeplotted[key] = [ndims, sc.Dataset(), []]
         tobeplotted[key][1][name] = input_data[name]
-        # if auto_color:
-        #     col = get_color(index=color_count)
-        # elif isinstance(color, list):
-        #     col = color[color_count]
-        # else:
-        #     col = color
         tobeplotted[key][2].append(col)
-        # color_count += 1
-        # elif ndims > 1:
-        #     key = name
-        #     tobeplotted[key] = [ndims, sc.Dataset(input_data[name]), color]
         sparse_dim[key] = sp_dim
 
     # Plot all the subsets

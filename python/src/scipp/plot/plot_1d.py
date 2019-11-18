@@ -5,7 +5,6 @@
 # Scipp imports
 from ..config import plot as config
 from .render import render_plot
-from .tools import edges_to_centers, get_1d_axes
 from .slicer import Slicer
 from .tools import axis_label
 
@@ -13,7 +12,6 @@ from .tools import axis_label
 import numpy as np
 import plotly.graph_objs as go
 import ipywidgets as widgets
-import random
 
 
 def plot_1d(input_data, backend=None, logx=False, logy=False, logxy=False,
@@ -124,10 +122,10 @@ class Slicer1d(Slicer):
         but = widgets.Button(description="Keep", disabled=False,
                              button_style="", layout={'width': "70px"})
         # Generate a random color. TODO: should we initialise the seed?
-        r = lambda: random.randint(0,255)
-        col = widgets.ColorPicker(concise=True, description='',
-                                  value='#%02X%02X%02X' % (r(),r(),r()),
-                                  disabled=False)
+        col = widgets.ColorPicker(
+            concise=True, description='',
+            value='#%02X%02X%02X' % (tuple(np.random.randint(0, 255, 3))),
+            disabled=False)
         # Make a unique id
         key = str(id(but))
         setattr(but, "id", key)
@@ -155,7 +153,7 @@ class Slicer1d(Slicer):
         self.mbox = [self.fig] + self.vbox
         for k, b in self.keep_buttons.items():
             self.mbox.append(widgets.HBox(b))
-        self.box.children=tuple(self.mbox)
+        self.box.children = tuple(self.mbox)
         return
 
     def update_axes(self, dim_str):
@@ -184,7 +182,6 @@ class Slicer1d(Slicer):
 
     def update_histograms(self):
         for i in range(len(self.fig.data)):
-            histogram = False
             trace = self.fig.data[i]
             if len(trace.x) == len(trace.y) + 1:
                 trace["line"] = {"shape": "hvh"}
@@ -221,7 +218,7 @@ class Slicer1d(Slicer):
         self.mbox = [self.fig] + self.vbox
         for k, b in self.keep_buttons.items():
             self.mbox.append(widgets.HBox(b))
-        self.box.children=tuple(self.mbox)
+        self.box.children = tuple(self.mbox)
         return
 
     def remove_trace(self, owner):
@@ -234,7 +231,7 @@ class Slicer1d(Slicer):
         self.mbox = [self.fig] + self.vbox
         for k, b in self.keep_buttons.items():
             self.mbox.append(widgets.HBox(b))
-        self.box.children=tuple(self.mbox)
+        self.box.children = tuple(self.mbox)
         return
 
     def update_trace_color(self, change):

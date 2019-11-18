@@ -81,9 +81,9 @@ class Slicer:
                 step=1,
                 description=descr,
                 continuous_update=True,
-                readout=False, disabled=((i >= self.ndim-len(button_options)) and
-                                         len(button_options) < 3)
-            )
+                readout=False,
+                disabled=((i >= self.ndim-len(button_options)) and
+                          len(button_options) < 3))
             labvalue = str(self.slider_x[key].values[indx])
             if self.ndim == len(button_options):
                 self.slider[key].layout.display = 'none'
