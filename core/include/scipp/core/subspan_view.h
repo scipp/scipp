@@ -9,6 +9,7 @@
 
 namespace scipp::core {
 
+/// Helper returning vector of subspans with given length.
 template <class T>
 auto make_subspans(const span<T> &data, const scipp::index span_len) {
   const auto len = data.size() / span_len;
@@ -19,6 +20,7 @@ auto make_subspans(const span<T> &data, const scipp::index span_len) {
   return spans;
 }
 
+/// Return Variable containing spans over given dimensions as elements.
 template <class T, class Var> Variable subspan_view(Var &var, const Dim dim) {
   expect::notSparse(var);
   if (dim != var.dims().inner())
