@@ -5,8 +5,6 @@
 
 #include "test_macros.h"
 
-#include "scipp/core/dimensions.h"
-#include "scipp/core/except.h"
 #include "scipp/core/variable.h"
 #include "scipp/core/variable.tcc"
 
