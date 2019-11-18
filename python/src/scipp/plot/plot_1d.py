@@ -173,7 +173,9 @@ class Slicer1d(Slicer):
 )
         key = str(id(but))
         setattr(but, "id", key)
+        setattr(col, "id", key)
         but.on_click(self.keep_remove_trace)
+        col.observe(self.update_trace_color, names="value")
         self.keep_buttons[key] = [drop, but, col]
         return
 
@@ -374,8 +376,8 @@ class Slicer1d(Slicer):
     def remove_trace(self, owner):
         # del owner
         # # owner.value
-        print(self.keep_buttons.keys())
-        print("removing", owner.id)
+        # print(self.keep_buttons.keys())
+        # print("removing", owner.id)
         # print(owner.trace_number)
         del self.keep_buttons[owner.id]
         data = []
@@ -411,5 +413,10 @@ class Slicer1d(Slicer):
 
         return
 
+    def update_trace_color(self, change):
+        for tr in self.fig.data:
+            if tr.meta == change["owner"].id:
+                tr["marker"]["color"] = change["new"]
+                return
 
 
