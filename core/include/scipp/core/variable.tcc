@@ -5,7 +5,6 @@
 
 #include "scipp/core/apply.h"
 #include "scipp/core/dimensions.h"
-#include "scipp/core/tag_util.h"
 #include "scipp/core/transform.h"
 #include "scipp/core/variable.h"
 #include "scipp/core/variable_view.h"
@@ -659,8 +658,8 @@ Variable Variable::ConstructVariable<Ts...>::make(Ts &&... args, DType type) {
   using helper = detail::ConstructorArgumentsMatcher<Variable, Ts...>;
   helper::template checkArgTypesValid<units::Unit, Dims, Shape>();
   return CallDTypeWithSparse<
-      double, float, int64_t, int32_t, bool, Eigen::Vector3d, std::string,
-      Dataset, DataArray>::apply<Maker>(type, std::forward<Ts>(args)...);
+      double, float, int64_t, int32_t, bool, Eigen::Vector3d,
+      std::string>::apply<Maker>(type, std::forward<Ts>(args)...);
 }
 
 template <class T>
