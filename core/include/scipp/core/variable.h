@@ -291,10 +291,10 @@ public:
   Variable(const units::Unit unit, const Dimensions &dimensions, T values,
            T variances);
 
-  template <class T, class... T1, class... T2>
+  template <class T>
   static Variable createVariable(units::Unit &&u, Dims &&d, Shape &&s,
-                                 std::tuple<T1...> &&val,
-                                 std::tuple<T2...> &&var);
+                                 std::optional<Vector<T>> &&val,
+                                 std::optional<Vector<T>> &&var);
 
   template <class T>
   Variable(const Dimensions &dimensions, std::initializer_list<T> values_)
@@ -541,36 +541,22 @@ Variable makeVariable(const Dimensions &dimensions, const units::Unit unit,
                   Vector<T>(variances.begin(), variances.end()));
 }
 
-template <class T, class... T1, class... T2>
+template <class T>
 Variable Variable::createVariable(units::Unit &&u, Dims &&d, Shape &&s,
-                                  std::tuple<T1...> &&val,
-                                  std::tuple<T2...> &&var) {
-  if constexpr (std::is_constructible_v<Vector<T>, T1 &&...> &&
-                std::is_constructible_v<Vector<T>, T2 &&...>) {
-    auto values =
-        std::make_from_tuple<Vector<T>>(std::forward<std::tuple<T1...>>(val));
-    auto variances =
-        std::make_from_tuple<Vector<T>>(std::forward<std::tuple<T2...>>(var));
-    constexpr bool has_val = (sizeof...(T1) > 0);
-    constexpr bool has_var = (sizeof...(T2) > 0);
-    auto dms = Dimensions{d.data, s.data};
-    if constexpr (has_val && has_var)
-      return Variable(u, dms, std::move(values), std::move(variances));
-    if constexpr (has_val)
-      return Variable(u, dms, std::move(values));
-    if constexpr (has_var)
-      throw except::VariancesError("Can't have variance without values");
-    else {
-      auto res = makeVariable<T>(dms);
-      res.setUnit(u);
-      return res;
-    }
-  } else
-    throw except::TypeError(
-        "Can't create the Variable with type " + to_string(core::dtype<T>) +
-        " with such values and/or variances: " +
-        ((typeid(T1).name() + std::string(" ")) + ... + " ") + "; " +
-        ((typeid(T2).name() + std::string(" ")) + ... + " "));
+                                  std::optional<Vector<T>> &&val,
+                                  std::optional<Vector<T>> &&var) {
+  auto dms = Dimensions{d.data, s.data};
+  if (val && var)
+    return Variable(u, dms, std::move(*val), std::move(*var));
+  if (val)
+    return Variable(u, dms, std::move(*val));
+  if (var)
+    throw except::VariancesError("Can't have variance without values");
+  else {
+    auto res = makeVariable<T>(dms);
+    res.setUnit(u);
+    return res;
+  }
 }
 
 template <class... Ts>

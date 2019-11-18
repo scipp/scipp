@@ -7,6 +7,7 @@
 #define SCIPP_VALUES_AND_VARIANCES_STRONG_TYPES_H
 
 #include "scipp/core/except.h"
+#include "scipp/core/vector.h"
 #include <type_traits>
 
 namespace scipp::core {
@@ -59,15 +60,13 @@ using Dims = detail::vector_like<Dim>;
 template <class... Args>
 using ArgsTupple = detail::MakeArgsTupleReturnType<Args...>;
 
-template <class... Args>
-struct Values : std::tuple<Args...>, detail::ValuesTag {
-  using tag_type = detail::ValuesTag;
+template <class... Args> struct Values : detail::ValuesTag {
+  ArgsTupple<Args...> tuple;
   Values(Args &&... args)
-      : ArgsTupple<Args...>(
-            detail::makeArgsTuple(std::forward<Args>(args)...)) {}
+      : tuple(detail::makeArgsTuple(std::forward<Args>(args)...)) {}
   template <class T>
   Values(std::initializer_list<T> init)
-      : ArgsTupple<Args...>(detail::makeArgsTuple(init.begin(), init.end())) {}
+      : tuple(detail::makeArgsTuple(init.begin(), init.end())) {}
 };
 template <class... Args> Values(Args &&... args)->Values<Args...>;
 template <class T>
@@ -77,13 +76,12 @@ Values(std::initializer_list<T>)
 
 template <class... Args>
 struct Variances : std::tuple<Args...>, detail::VariancesTag {
-  using tag_type = detail::VariancesTag;
+  ArgsTupple<Args...> tuple;
   Variances(Args &&... args)
-      : ArgsTupple<Args...>(
-            detail::makeArgsTuple(std::forward<Args>(args)...)) {}
+      : tuple(detail::makeArgsTuple(std::forward<Args>(args)...)) {}
   template <class T>
   Variances(std::initializer_list<T> init)
-      : ArgsTupple<Args...>(detail::makeArgsTuple(init.begin(), init.end())) {}
+      : tuple(detail::makeArgsTuple(init.begin(), init.end())) {}
 };
 template <class... Args> Variances(Args &&... args)->Variances<Args...>;
 template <class T>
@@ -116,6 +114,17 @@ public:
   }
 };
 
+template <class T, class Tuple>
+struct is_constructible_from_tuple : std::false_type {};
+
+template <class T, class... Ts>
+struct is_constructible_from_tuple<T, std::tuple<Ts...>>
+    : std::is_constructible<T, Ts...> {};
+
+template <class T, class Tuple>
+constexpr bool is_constructible_from_tuple_v =
+    is_constructible_from_tuple<T, Tuple>::value;
+
 template <class VarT, class... Ts> class ConstructorArgumentsMatcher {
 public:
   template <class... NonDataTypes> constexpr static void checkArgTypesValid() {
@@ -125,7 +134,7 @@ public:
     constexpr bool hasVar = is_tag_in_pack_v<VariancesTag, Ts...>;
     static_assert(
         nonDataTypesCount + hasVal + hasVar == sizeof...(Ts),
-        "Arguments: units::Unit, Shape, Dims, Values and Variences could only "
+        "Arguments: units::Unit, Shape, Dims, Values and Variances could only "
         "be used. Example: Variable(dtype<float>, units::Unit(units::kg), "
         "Shape{1, 2}, Dims{Dim::X, Dim::Y}, Values({3, 4}))");
   }
@@ -133,10 +142,31 @@ public:
   template <class ElemT, class... NonDataTypes>
   static VarT construct(Ts &&... ts) {
     auto tp = std::make_tuple(std::forward<Ts>(ts)...);
-    return VarT::template createVariable<ElemT>(
-        std::forward<NonDataTypes>(extractArgs<NonDataTypes, Ts...>(tp))...,
-        std::move(extractTagged<ValuesTag, Ts...>(tp)),
-        std::move(extractTagged<VariancesTag, Ts...>(tp)));
+    auto valArgs = std::move(extractTagged<ValuesTag, Ts...>(tp));
+    auto varArgs = std::move(extractTagged<VariancesTag, Ts...>(tp));
+
+    constexpr bool hasVal = std::tuple_size_v<decltype(valArgs)>;
+    constexpr bool hasVar = std::tuple_size_v<decltype(varArgs)>;
+    constexpr bool constrVal =
+        is_constructible_from_tuple_v<Vector<ElemT>, decltype(valArgs)>;
+    constexpr bool constrVar =
+        is_constructible_from_tuple_v<Vector<ElemT>, decltype(varArgs)>;
+
+    if constexpr ((hasVal && !constrVal) || (hasVar && !constrVar))
+      throw except::TypeError("Can't create the Variable with type " +
+                              to_string(core::dtype<ElemT>) +
+                              " with such values and/or variances.");
+    else {
+      std::optional<Vector<ElemT>> values;
+      if (hasVal)
+        values = std::make_from_tuple<Vector<ElemT>>(std::move(valArgs));
+      std::optional<Vector<ElemT>> variances;
+      if (hasVar)
+        variances = std::make_from_tuple<Vector<ElemT>>(std::move(varArgs));
+      return VarT::template createVariable<ElemT>(
+          std::forward<NonDataTypes>(extractArgs<NonDataTypes, Ts...>(tp))...,
+          std::move(values), std::move(variances));
+    }
   }
 
 private:
@@ -155,7 +185,7 @@ private:
     else {
       constexpr auto index =
           Indexer<Tag, has_tag, Args...>::indexOfCorresponding();
-      return std::move(std::get<index>(tp));
+      return std::move(std::get<index>(tp).tuple);
     }
   }
 };
