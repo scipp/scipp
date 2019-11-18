@@ -613,55 +613,6 @@ Variable::Variable(const units::Unit unit, const Dimensions &dimensions,
                                                     std::move(values_),
                                                     std::move(variances_))) {}
 
-template <class T, class... T1, class... T2>
-Variable Variable::createVariable(units::Unit &&u, Dims &&d, Shape &&s,
-                                  std::tuple<T1...> &&val,
-                                  std::tuple<T2...> &&var) {
-  if constexpr (std::is_constructible_v<Vector<T>, T1 &&...> &&
-                std::is_constructible_v<Vector<T>, T2 &&...>) {
-    auto values =
-        std::make_from_tuple<Vector<T>>(std::forward<std::tuple<T1...>>(val));
-    auto variances =
-        std::make_from_tuple<Vector<T>>(std::forward<std::tuple<T2...>>(var));
-    constexpr bool has_val = (sizeof...(T1) > 0);
-    constexpr bool has_var = (sizeof...(T2) > 0);
-    auto dms = Dimensions{d.data, s.data};
-    if constexpr (has_val && has_var)
-      return Variable(u, dms, std::move(values), std::move(variances));
-    if constexpr (has_val)
-      return Variable(u, dms, std::move(values));
-    if constexpr (has_var)
-      throw except::VariancesError("Can't have variance without values");
-    else {
-      auto res = makeVariable<T>(dms);
-      res.setUnit(u);
-      return res;
-    }
-  } else
-    throw except::TypeError(
-        "Can't create the Variable with type " + to_string(core::dtype<T>) +
-        " with such values and/or variances: " +
-        ((typeid(T1).name() + std::string(" ")) + ... + " ") + "; " +
-        ((typeid(T2).name() + std::string(" ")) + ... + " "));
-}
-
-template <class... Ts>
-template <class T>
-Variable Variable::ConstructVariable<Ts...>::Maker<T>::apply(Ts &&... ts) {
-  using helper = detail::ConstructorArgumentsMatcher<Variable, Ts...>;
-  return helper::template construct<T, units::Unit, Dims, Shape>(
-      std::forward<Ts>(ts)...);
-}
-
-template <class... Ts>
-Variable Variable::ConstructVariable<Ts...>::make(Ts &&... args, DType type) {
-  using helper = detail::ConstructorArgumentsMatcher<Variable, Ts...>;
-  helper::template checkArgTypesValid<units::Unit, Dims, Shape>();
-  return CallDTypeWithSparse<
-      double, float, int64_t, int32_t, bool, Eigen::Vector3d,
-      std::string>::apply<Maker>(type, std::forward<Ts>(args)...);
-}
-
 template <class T>
 const Vector<T> &Variable::cast(const bool variances_) const {
   auto &dm = requireT<const DataModel<Vector<T>>>(*m_object);
