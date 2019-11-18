@@ -53,19 +53,18 @@ template <class T, class Var> Variable subspan_view(Var &var, const Dim dim) {
 }
 
 template <class... Ts, class... Args>
-auto invoke(const DType dtype, Args &&... args) {
-  using Ret = decltype(subspan_view<double>(std::forward<Args>(args)...));
-  Ret ret;
+auto invoke_subspan_view(const DType dtype, Args &&... args) {
+  Variable ret;
   if (!((scipp::core::dtype<Ts> == dtype
              ? (ret = subspan_view<Ts>(std::forward<Args>(args)...), true)
              : false) ||
         ...))
-    throw std::runtime_error("Unsupported dtype.");
+    throw except::TypeError("Unsupported dtype.");
   return ret;
 }
 
 template <class Var> Variable subspan_view_impl(Var &var, const Dim dim) {
-  return invoke<double, float>(var.dtype(), var, dim);
+  return invoke_subspan_view<double, float>(var.dtype(), var, dim);
 }
 
 /// Return Variable containing mutable spans over given dimension as elements.
