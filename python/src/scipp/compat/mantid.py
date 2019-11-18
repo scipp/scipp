@@ -157,23 +157,27 @@ def convert_Workspace2D_to_dataset(ws):
                 },
         attrs={"run": make_run(ws),
                              "sample": make_sample(ws)
-               },
-        masks={"bin": make_bin_masks(common_bins,
-                                     dim,
-                                     ws.blocksize(),
-                                     ws.getNumberHistograms()),
-               "spectrum": sc.Variable([sc.Dim.Spectrum],
-                                       shape=(ws.getNumberHistograms(),),
-                                       dtype=sc.dtype.bool)
                })
 
-    data = array.data
-    spectrum_masks = array.masks["spectrum"]
-    bin_masks = array.masks["bin"]
+    if ws.detectorInfo().hasMaskedDetectors():
+        array.masks["spectrum"] = sc.Variable([sc.Dim.Spectrum],
+                                              shape=(ws.getNumberHistograms(),),
+                                              dtype=sc.dtype.bool)
+        spectrum_masks = array.masks["spectrum"]
 
     if common_bins and ws.hasMaskedBins(0):
-        set_common_bins_masks(bin_masks, dim, ws.maskedBinsIndices(0))
+        bin_masks = array.masks["bin"]
+        array.masks["bin"] = make_bin_masks(common_bins, dim,
+                                            ws.blocksize(),
+                                            ws.getNumberHistograms())
 
+        set_common_bins_masks(bin_masks, dim, ws.maskedBinsIndices(0))
+    elif not common_bins:
+        array.masks["bin"] = make_bin_masks(common_bins, dim,
+                                            ws.blocksize(),
+                                            ws.getNumberHistograms())
+
+    data = array.data
     spectrum_info = ws.spectrumInfo()
     for i in range(ws.getNumberHistograms()):
         data[sc.Dim.Spectrum, i].values = ws.readY(i)
