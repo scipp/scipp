@@ -38,39 +38,36 @@ struct ValuesTag {};
 
 struct VariancesTag {};
 
-template <class Tag, class... Ts> auto makeTaggedTuple(Ts &&... ts) {
-  return TaggedTuple<Tag, std::remove_reference_t<Ts>...>{
-      {}, std::make_tuple(std::forward<Ts>(ts)...)};
+template <class... Ts> auto makeArgsTuple(Ts &&... ts) {
+  return std::make_tuple<std::remove_reference_t<Ts>...>(
+      std::forward<Ts>(ts)...);
 }
 
-template <class Tag, class T>
-auto makeTaggedTuple(std::initializer_list<T> init) {
+template <class T> auto makeArgsTuple(std::initializer_list<T> init) {
   using iter = typename std::initializer_list<T>::iterator;
-  return TaggedTuple<Tag, iter, iter>{
-      {}, std::make_tuple(init.begin(), init.end())};
+  return std::make_tuple<iter, iter>(init.begin(), init.end());
 }
 
-template <class Tag, class... Args>
-using MakeTaggedTupleReturnType =
-    decltype(makeTaggedTuple<Tag>(std::declval<Args>()...));
+template <class... Args>
+using MakeArgsTupleReturnType =
+    decltype(makeArgsTuple(std::declval<Args>()...));
 } // namespace detail
 
 using Shape = detail::vector_like<scipp::index>;
 using Dims = detail::vector_like<Dim>;
 
 template <class... Args>
-using ValuesTaggedTupple =
-    detail::MakeTaggedTupleReturnType<detail::ValuesTag, Args...>;
+using ArgsTupple = detail::MakeArgsTupleReturnType<Args...>;
 
-template <class... Args> struct Values : ValuesTaggedTupple<Args...> {
+template <class... Args>
+struct Values : std::tuple<Args...>, detail::ValuesTag {
   using tag_type = detail::ValuesTag;
   Values(Args &&... args)
-      : ValuesTaggedTupple<Args...>(
-            detail::makeTaggedTuple<tag_type>(std::forward<Args>(args)...)) {}
+      : ArgsTupple<Args...>(
+            detail::makeArgsTuple(std::forward<Args>(args)...)) {}
   template <class T>
   Values(std::initializer_list<T> init)
-      : ValuesTaggedTupple<Args...>(
-            detail::makeTaggedTuple<tag_type>(init.begin(), init.end())) {}
+      : ArgsTupple<Args...>(detail::makeArgsTuple(init.begin(), init.end())) {}
 };
 template <class... Args> Values(Args &&... args)->Values<Args...>;
 template <class T>
@@ -79,18 +76,14 @@ Values(std::initializer_list<T>)
              typename std::initializer_list<T>::iterator>;
 
 template <class... Args>
-using VariancesTaggedTupple =
-    detail::MakeTaggedTupleReturnType<detail::VariancesTag, Args...>;
-
-template <class... Args> struct Variances : VariancesTaggedTupple<Args...> {
+struct Variances : std::tuple<Args...>, detail::VariancesTag {
   using tag_type = detail::VariancesTag;
   Variances(Args &&... args)
-      : VariancesTaggedTupple<Args...>(
-            detail::makeTaggedTuple<tag_type>(std::forward<Args>(args)...)) {}
+      : ArgsTupple<Args...>(
+            detail::makeArgsTuple(std::forward<Args>(args)...)) {}
   template <class T>
   Variances(std::initializer_list<T> init)
-      : VariancesTaggedTupple<Args...>(
-            detail::makeTaggedTuple<tag_type>(init.begin(), init.end())) {}
+      : ArgsTupple<Args...>(detail::makeArgsTuple(init.begin(), init.end())) {}
 };
 template <class... Args> Variances(Args &&... args)->Variances<Args...>;
 template <class T>
@@ -99,13 +92,7 @@ Variances(std::initializer_list<T>)
                 typename std::initializer_list<T>::iterator>;
 
 namespace detail {
-template <class Tag, class T> struct has_tag : std::false_type {};
-
-template <class Tag, class... Ts>
-struct has_tag<Tag, Values<Ts...>> : std::is_same<Tag, ValuesTag> {};
-
-template <class Tag, class... Ts>
-struct has_tag<Tag, Variances<Ts...>> : std::is_same<Tag, VariancesTag> {};
+template <class Tag, class T> struct has_tag : std::is_base_of<Tag, T> {};
 
 template <class T, class... Args>
 constexpr bool is_type_in_pack_v =
@@ -129,11 +116,6 @@ public:
   }
 };
 
-template <class T, class Tuple, std::size_t... I>
-constexpr T make_move_from_tuple_impl(Tuple &&t, std::index_sequence<I...>) {
-  return T(std::move(std::get<I>(t))...);
-}
-
 template <class VarT, class... Ts> class ConstructorArgumentsMatcher {
 public:
   template <class... NonDataTypes> constexpr static void checkArgTypesValid() {
@@ -151,11 +133,10 @@ public:
   template <class ElemT, class... NonDataTypes>
   static VarT construct(Ts &&... ts) {
     auto tp = std::make_tuple(std::forward<Ts>(ts)...);
-    auto val = std::move(extractTagged<ValuesTag, Ts...>(tp).tuple);
-    auto var = std::move(extractTagged<VariancesTag, Ts...>(tp).tuple);
     return VarT::template createVariable<ElemT>(
         std::forward<NonDataTypes>(extractArgs<NonDataTypes, Ts...>(tp))...,
-        std::move(val), std::move(var));
+        std::move(extractTagged<ValuesTag, Ts...>(tp)),
+        std::move(extractTagged<VariancesTag, Ts...>(tp)));
   }
 
 private:
@@ -170,11 +151,11 @@ private:
   template <class Tag, class... Args>
   static decltype(auto) extractTagged(std::tuple<Args...> &tp) {
     if constexpr (!is_tag_in_pack_v<Tag, Ts...>)
-      return TaggedTuple<Tag>();
+      return std::tuple{};
     else {
       constexpr auto index =
           Indexer<Tag, has_tag, Args...>::indexOfCorresponding();
-      return std::get<index>(tp);
+      return std::move(std::get<index>(tp));
     }
   }
 };
