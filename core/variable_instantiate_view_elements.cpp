@@ -10,6 +10,8 @@ namespace scipp::core {
 // Variable's elements are views into other variables. Used internally for
 // implementing functionality for sparse data combined with dense data using
 // transform.
+INSTANTIATE_VARIABLE(span<const double>)
+INSTANTIATE_VARIABLE(span<const float>)
 INSTANTIATE_VARIABLE(span<double>)
 INSTANTIATE_VARIABLE(span<float>)
 
