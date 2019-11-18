@@ -27,6 +27,8 @@ def plot_2d(input_data, axes=None, contours=False, cb=None, filename=None,
     particular dimension.
     """
 
+    print(input_data)
+    print(name)
     var = input_data[name]
     if axes is None:
         axes = var.dims

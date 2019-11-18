@@ -98,7 +98,7 @@ class Slicer1d(Slicer):
         for key, button in self.buttons.items():
             if self.slider[key].disabled:
                 button.disabled = True
-        self.update_axes(str(axes[-1]))
+        self.update_axes(str(self.slider_dims[-1]))
         self.update_slice(None)
         self.update_histograms()
 

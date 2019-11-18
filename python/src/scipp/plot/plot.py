@@ -44,10 +44,10 @@ def plot(input_data, collapse=None, backend=None, color=None, projection=None,
     for name, var in sorted(input_data):
         ndims = len(var.dims)
         sp_dim = var.sparse_dim
-        # Construct a key from the dimensions
-        key = "{}.".format(str(var.dims[0]))
         col = None
-        if ndims == 1 or projection.lower() == "1d":
+        if ndims == 1 or projection == "1d" or projection == "1D":
+            # Construct a key from the dimensions
+            key = "{}.".format(str(var.dims[0]))
             # Add unit to key
             if sp_dim is not None:
                 key = "{}{}".format(key, str(var.coords[sp_dim].unit))
@@ -57,9 +57,15 @@ def plot(input_data, collapse=None, backend=None, color=None, projection=None,
                 col = get_color(index=color_count)
             elif isinstance(color, list):
                 col = color[color_count]
+                if isinstance(col, int):
+                    col = get_color(index=col)
+            elif isinstance(color, int):
+                col = get_color(index=color)
             else:
                 col = color
             color_count += 1
+        else:
+            key = name
 
         if key not in tobeplotted.keys():
             tobeplotted[key] = [ndims, sc.Dataset(), []]
