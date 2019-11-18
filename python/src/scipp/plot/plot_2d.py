@@ -7,6 +7,8 @@ from ..config import plot as config
 from .render import render_plot
 from .slicer import Slicer
 from .tools import axis_label, parse_colorbar
+from .._scipp.core.units import dimensionless
+
 
 # Other imports
 import numpy as np
@@ -27,8 +29,6 @@ def plot_2d(input_data, axes=None, contours=False, cb=None, filename=None,
     particular dimension.
     """
 
-    print(input_data)
-    print(name)
     var = input_data[name]
     if axes is None:
         axes = var.dims
@@ -253,6 +253,8 @@ class Slicer2d(Slicer):
             if not val.disabled:
                 self.lab[key].value = str(
                     self.slider_x[key].values[val.value])
+                if self.slider_x[key].unit != dimensionless:
+                    self.lab[key].value += " [{}]".format(self.slider_x[key].unit)
                 vslice = vslice[val.dim, val.value]
             else:
                 button_dims[self.buttons[key].value.lower() == "y"] = val.dim

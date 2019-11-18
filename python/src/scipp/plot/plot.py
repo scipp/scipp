@@ -44,28 +44,40 @@ def plot(input_data, collapse=None, backend=None, color=None, projection=None,
     for name, var in sorted(input_data):
         ndims = len(var.dims)
         sp_dim = var.sparse_dim
-        col = None
+        # col = None
         if ndims == 1 or projection == "1d" or projection == "1D":
             # Construct a key from the dimensions
-            key = "{}.".format(str(var.dims[0]))
+            key = "{}.".format(str(var.dims))
             # Add unit to key
             if sp_dim is not None:
                 key = "{}{}".format(key, str(var.coords[sp_dim].unit))
             else:
                 key = "{}{}".format(key, str(var.unit))
-            if auto_color:
-                col = get_color(index=color_count)
-            elif isinstance(color, list):
-                col = color[color_count]
-                if isinstance(col, int):
-                    col = get_color(index=col)
-            elif isinstance(color, int):
-                col = get_color(index=color)
-            else:
-                col = color
-            color_count += 1
+            # if auto_color:
+            #     col = get_color(index=color_count)
+            # elif isinstance(color, list):
+            #     col = color[color_count]
+            #     if isinstance(col, int):
+            #         col = get_color(index=col)
+            # elif isinstance(color, int):
+            #     col = get_color(index=color)
+            # else:
+            #     col = color
+            # color_count += 1
         else:
             key = name
+
+        if auto_color:
+            col = get_color(index=color_count)
+        elif isinstance(color, list):
+            col = color[color_count]
+            if isinstance(col, int):
+                col = get_color(index=col)
+        elif isinstance(color, int):
+            col = get_color(index=color)
+        else:
+            col = color
+        color_count += 1
 
         if key not in tobeplotted.keys():
             tobeplotted[key] = [ndims, sc.Dataset(), []]
@@ -80,7 +92,6 @@ def plot(input_data, collapse=None, backend=None, color=None, projection=None,
             output[key] = plot_collapse(input_data=val[1],
                                         dim=collapse,
                                         backend=backend,
-                                        color=val[2],
                                         **kwargs)
         else:
             output[key] = dispatch(input_data=val[1],

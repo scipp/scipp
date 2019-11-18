@@ -8,6 +8,7 @@ from .plot_2d import Slicer2d
 from .render import render_plot
 from .slicer import Slicer
 from .tools import axis_label, parse_colorbar
+from .._scipp.core.units import dimensionless
 
 # Other imports
 import numpy as np
@@ -244,6 +245,8 @@ class Slicer3d(Slicer):
             if self.buttons[key].value is None:
                 self.lab[key].value = str(
                     self.slider_x[key].values[val.value])
+                if self.slider_x[key].unit != dimensionless:
+                    self.lab[key].value += " [{}]".format(self.slider_x[key].unit)
                 self.cube = self.cube[val.dim, val.value]
 
         # The dimensions to be sliced have been saved in slider_dims
@@ -253,6 +256,8 @@ class Slicer3d(Slicer):
             if self.buttons[key].value is not None:
                 loc = self.slider_x[key].values[val.value]
                 self.lab[key].value = str(loc)
+                if self.slider_x[key].unit != dimensionless:
+                    self.lab[key].value += " [{}]".format(self.slider_x[key].unit)
                 vslices[self.buttons[key].value.lower()] = \
                     {"slice": self.cube[val.dim, val.value], "loc": loc}
                 button_dims[self.buttons[key].value.lower()] = key
@@ -289,6 +294,8 @@ class Slicer3d(Slicer):
             key = change["owner"].dim_str
             loc = self.slider_x[key].values[change["new"]]
             self.lab[key].value = str(loc)
+            if self.slider_x[key].unit != dimensionless:
+                self.lab[key].value += " [{}]".format(self.slider_x[key].unit)
             vslice = self.cube[change["owner"].dim, change["new"]]
 
             # Now move slice

@@ -3,20 +3,22 @@
 # @author Neil Vaytet
 
 from .tools import axis_to_dim_label
+from .._scipp.core.units import dimensionless
 
 
 class Slicer:
 
     def __init__(self, input_data=None, axes=None, value_name=None, cb=None,
-                 show_variances=None, button_options=None):
+                 show_variances=False, button_options=None):
 
         import ipywidgets as widgets
 
         self.input_data = input_data
 
         self.show_variances = show_variances
-        if show_variances is not None:
+        if self.show_variances:
             self.show_variances = (self.input_data.variances is not None)
+        # self.show_variances = (self.input_data.variances is not None) and show_variances
         self.cb = cb
         self.value_name = value_name
 
@@ -85,6 +87,8 @@ class Slicer:
                 disabled=((i >= self.ndim-len(button_options)) and
                           len(button_options) < 3))
             labvalue = str(self.slider_x[key].values[indx])
+            if self.slider_x[key].unit != dimensionless:
+                labvalue += " [{}]".format(self.slider_x[key].unit)
             if self.ndim == len(button_options):
                 self.slider[key].layout.display = 'none'
                 labvalue = descr
