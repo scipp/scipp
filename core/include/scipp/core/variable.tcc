@@ -624,7 +624,7 @@ Variable Variable::createVariable(units::Unit &&u, Dims &&d, Shape &&s,
     auto variances = detail::make_move_from_tuple<Vector<T>>(var);
     constexpr bool has_val = (sizeof...(T1) > 0);
     constexpr bool has_var = (sizeof...(T2) > 0);
-    auto dms = Dimensions{d.dims, s.shape};
+    auto dms = Dimensions{d.data, s.data};
     if constexpr (has_val && has_var)
       return Variable(u, dms, std::move(values), std::move(variances));
     if constexpr (has_val)
@@ -648,13 +648,14 @@ template <class... Ts>
 template <class T>
 Variable Variable::ConstructVariable<Ts...>::Maker<T>::apply(Ts &&... ts) {
   using helper = detail::ConstructorArgumentsMatcher<Variable, Ts...>;
-  helper::template checkArgTypesValid<units::Unit, Dims, Shape>();
   return helper::template construct<T, units::Unit, Dims, Shape>(
       std::forward<Ts>(ts)...);
 }
 
 template <class... Ts>
 Variable Variable::ConstructVariable<Ts...>::make(Ts &&... args, DType type) {
+  using helper = detail::ConstructorArgumentsMatcher<Variable, Ts...>;
+  helper::template checkArgTypesValid<units::Unit, Dims, Shape>();
   return CallDTypeWithSparse<
       double, float, int64_t, int32_t, bool, Eigen::Vector3d, std::string,
       Dataset, DataArray>::apply<Maker>(type, std::forward<Ts>(args)...);
