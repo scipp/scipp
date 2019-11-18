@@ -5,6 +5,8 @@
 #ifndef SCIPP_CORE_VALUES_AND_VARIANCES_H
 #define SCIPP_CORE_VALUES_AND_VARIANCES_H
 
+#include "scipp/core/except.h"
+
 namespace scipp::core {
 
 namespace detail {
@@ -58,8 +60,8 @@ template <class T> struct ValuesAndVariances {
     variances.insert(pos.second, first.second, last.second);
   }
   template <class... Ts> void insert(const Ts &...) {
-    throw std::runtime_error("Cannot insert data with variances into data "
-                             "without variances, or vice versa.");
+    throw except::VariancesError("Cannot insert data with variances into data "
+                                 "without variances, or vice versa.");
   }
 
   auto begin() noexcept { return std::pair(values.begin(), variances.begin()); }
