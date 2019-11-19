@@ -29,6 +29,7 @@ add_executable(${TARGET_NAME} EXCLUDE_FROM_ALL
                slice_test.cpp
                sort_test.cpp
                sparse_counts_test.cpp
+               transform_sparse_and_dense_test.cpp
                transform_test.cpp
                value_and_variance_test.cpp
                variable_custom_type_test.cpp

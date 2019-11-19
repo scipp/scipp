@@ -138,22 +138,6 @@ Variable filter(const Variable &var, const Variable &filter) {
   return out;
 }
 
-struct disable_variance_first_arg {
-  template <class First, class Second>
-  void operator()(const scipp::core::detail::ValueAndVariance<First>,
-                  const Second &) const {
-    throw except::VariancesError("Variances in first argument not supported.");
-  }
-};
-
-struct disable_variance_second_arg {
-  template <class First, class Second>
-  void operator()(const First &,
-                  const scipp::core::detail::ValueAndVariance<Second>) const {
-    throw except::VariancesError("Variances in second argument not supported.");
-  }
-};
-
 namespace sparse {
 /// Return array of sparse dimension extents, i.e., total counts.
 Variable counts(const VariableConstProxy &var) {
@@ -167,7 +151,7 @@ Variable counts(const VariableConstProxy &var) {
       pair_custom_t<std::pair<scipp::index, sparse_container<double>>>>(
       counts, var,
       overloaded{[](scipp::index &c, const auto &sparse) { c = sparse.size(); },
-                 disable_variance_first_arg{},
+                 transform_flags::expect_no_variance_arg<0>,
                  transform_flags::no_variance_output});
   return counts;
 }
@@ -180,7 +164,7 @@ void reserve(const VariableProxy &sparse, const VariableConstProxy &capacity) {
       overloaded{[](auto &&sparse_, const scipp::index capacity_) {
                    return sparse_.reserve(capacity_);
                  },
-                 disable_variance_second_arg{},
+                 transform_flags::expect_no_variance_arg<1>,
                  [](const units::Unit &, const units::Unit &) {}});
 }
 } // namespace sparse

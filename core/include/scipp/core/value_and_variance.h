@@ -18,10 +18,12 @@ namespace detail {
 /// functions. Since T is assumed to be small it is copied into the class and
 /// extracted later. See also ValuesAndVariances.
 template <class T> struct ValueAndVariance {
+  using value_type = std::remove_cv_t<T>;
+
   /// This constructor is essential to prevent warnings about narrowing the
   /// types in initializer lists used below
   template <class T1, class T2>
-  constexpr ValueAndVariance(T1 t1, T2 t2) : value(t1), variance(t2) {}
+  constexpr ValueAndVariance(T1 t1, T2 t2) noexcept : value(t1), variance(t2) {}
   T value;
   T variance;
 
@@ -140,6 +142,9 @@ constexpr auto operator/(const T1 a, const ValueAndVariance<T2> b) noexcept {
 template <class T1, class T2>
 ValueAndVariance(const T1 &val, const T2 &var)
     ->ValueAndVariance<decltype(T1() + T2())>;
+template <class T>
+ValueAndVariance(const span<T> &val, const span<T> &var)
+    ->ValueAndVariance<span<T>>;
 
 template <class T> struct is_ValueAndVariance : std::false_type {};
 template <class T>
