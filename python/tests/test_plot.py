@@ -259,6 +259,11 @@ def test_plot_sliceviewer_with_3d_projection_with_labels():
     do_plot(d, projection="3d", axes=[sc.Dim.X, sc.Dim.Y, "somelabels"])
 
 
+def test_plot_sliceviewer_with_1d_projection():
+    d = make_dense_dataset(ndim=3)
+    do_plot(d, projection="1d")
+
+
 def test_plot_2d_image_rasterized():
     d = make_dense_dataset(ndim=2)
     do_plot(d, rasterize=True)
