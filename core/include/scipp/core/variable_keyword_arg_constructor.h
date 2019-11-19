@@ -3,8 +3,8 @@
 /// @file
 /// @author Igor Gudich
 
-#ifndef SCIPP_VALUES_AND_VARIANCES_STRONG_TYPES_H
-#define SCIPP_VALUES_AND_VARIANCES_STRONG_TYPES_H
+#ifndef SCIPP_VARIABLE_KEYWORD_ARG_CONSTRUCTOR_H
+#define SCIPP_VARIABLE_KEYWORD_ARG_CONSTRUCTOR_H
 
 #include "scipp/core/except.h"
 #include "scipp/core/vector.h"
@@ -193,4 +193,4 @@ private:
 } // namespace detail
 } // namespace scipp::core
 
-#endif // SCIPP_VALUES_AND_VARIANCES_STRONG_TYPES_H
+#endif //SCIPP_VARIABLE_KEYWORD_ARG_CONSTRUCTOR_H

@@ -19,7 +19,7 @@
 #include "scipp/core/slice.h"
 #include "scipp/core/string.h"
 #include "scipp/core/tag_util.h"
-#include "scipp/core/values_and_variances_strong_types.h"
+#include "scipp/core/variable_keyword_arg_constructor.h"
 #include "scipp/core/variable_view.h"
 #include "scipp/units/unit.h"
 
