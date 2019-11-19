@@ -178,13 +178,18 @@ bool is_sparse_and_histogram(const DataConstProxy &a, const DataConstProxy &b) {
 
 template <class Op>
 auto sparse_dense_op(Op op, const DataConstProxy &a, const DataConstProxy &b) {
-  // Note that the current implementation will fail if any of the inputs is
-  // sparse data *with weights*, except for the special case of matching sizes.
   if (!is_sparse_and_histogram(a, b))
     return op(a.data(), b.data());
-  if (a.dims().sparse() && !a.hasData()) {
+  if (a.dims().sparse()) {
     const Dim dim = a.dims().sparseDim();
-    return sparse_dense_op_impl(op, a.coords()[dim], b.coords()[dim], b.data());
+    auto out =
+        sparse_dense_op_impl(op, a.coords()[dim], b.coords()[dim], b.data());
+    if (a.hasData()) {
+      // Undo implicit factor of counts added by sparse_dense_op_impl
+      out.setUnit(out.unit() / units::Unit(units::counts));
+      out *= a.data();
+    }
+    return out;
   }
   // histogram divided by sparse not supported, would typically result in unit
   // 1/counts which is meaningless

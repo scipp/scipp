@@ -43,22 +43,28 @@ auto make_sparse() {
   return DataArray(std::optional<Variable>(), {{Dim::X, var}});
 }
 
-TEST(DataArraySparseArithmeticTest, fail_sparse_with_non_histogram) {
+auto make_histogram() {
+  auto edges = makeVariable<double>({{Dim::Y, 2}, {Dim::X, 3}}, units::us,
+                                    {0, 2, 4, 1, 3, 5});
+  auto weights = makeVariable<double>({Dim::X, 2}, {2.0, 3.0}, {0.3, 0.4});
+
+  return DataArray(weights, {{Dim::X, edges}});
+}
+
+TEST(DataArraySparseArithmeticTest, fail_sparse_op_non_histogram) {
   const auto sparse = make_sparse();
   auto coord = makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}}, {0, 2, 1, 3});
   auto weights = makeVariable<double>({Dim::X, 2}, {2.0, 3.0}, {0.3, 0.4});
   DataArray not_hist(weights, {{Dim::X, coord}});
 
   EXPECT_THROW(sparse * not_hist, except::SparseDataError);
+  EXPECT_THROW(not_hist * sparse, except::SparseDataError);
+  EXPECT_THROW(sparse / not_hist, except::SparseDataError);
 }
 
 TEST(DataArraySparseArithmeticTest, sparse_times_histogram) {
   const auto sparse = make_sparse();
-  auto edges = makeVariable<double>({{Dim::Y, 2}, {Dim::X, 3}}, units::us,
-                                    {0, 2, 4, 1, 3, 5});
-  auto weights = makeVariable<double>({Dim::X, 2}, {2.0, 3.0}, {0.3, 0.4});
-
-  DataArray hist(weights, {{Dim::X, edges}});
+  const auto hist = make_histogram();
 
   for (const auto result : {sparse * hist, hist * sparse}) {
     EXPECT_EQ(result.coords()[Dim::X], sparse.coords()[Dim::X]);
@@ -73,13 +79,33 @@ TEST(DataArraySparseArithmeticTest, sparse_times_histogram) {
   }
 }
 
+TEST(DataArraySparseArithmeticTest, sparse_with_values_times_histogram) {
+  auto sparse = make_sparse();
+  const auto hist = make_histogram();
+  Variable weights(sparse.coords()[Dim::X]);
+  weights.setUnit(units::counts);
+  weights *= 0.0;
+  weights += 2.0 * units::Unit(units::counts);
+  sparse.setData(weights);
+
+  for (const auto result : {sparse * hist, hist * sparse}) {
+    EXPECT_EQ(result.coords()[Dim::X], sparse.coords()[Dim::X]);
+    EXPECT_TRUE(result.hasVariances());
+    const auto out_vals = result.data().sparseValues<double>();
+    EXPECT_TRUE(equals(out_vals[0], {2.0 * 2, 2.0 * 3, 2.0 * 3}));
+    // out of range of edges -> value set to 0, consistent with rebin behavior
+    EXPECT_TRUE(equals(out_vals[1], {2.0 * 2, 2.0 * 2, 2.0 * 3, 0.0}));
+    const auto out_vars = result.data().sparseVariances<double>();
+    EXPECT_TRUE(equals(out_vars[0],
+                       {2.0 * 2.0 * 0.3, 2.0 * 2.0 * 0.4, 2.0 * 2.0 * 0.4}));
+    EXPECT_TRUE(equals(
+        out_vars[1], {2.0 * 2.0 * 0.3, 2.0 * 2.0 * 0.3, 2.0 * 2.0 * 0.4, 0.0}));
+  }
+}
+
 TEST(DataArraySparseArithmeticTest, sparse_over_histogram) {
   const auto sparse = make_sparse();
-  auto edges = makeVariable<double>({{Dim::Y, 2}, {Dim::X, 3}}, units::us,
-                                    {0, 2, 4, 1, 3, 5});
-  auto weights = makeVariable<double>({Dim::X, 2}, {2.0, 3.0}, {0.3, 0.4});
-
-  DataArray hist(weights, {{Dim::X, edges}});
+  const auto hist = make_histogram();
 
   const auto result = sparse / hist;
   EXPECT_EQ(result.coords()[Dim::X], sparse.coords()[Dim::X]);
