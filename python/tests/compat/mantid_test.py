@@ -16,6 +16,8 @@ class TestMantidConversion(unittest.TestCase):
     def setUpClass(cls):
         # This is from the Mantid system-test data
         filename = "CNCS_51936_event.nxs"
+        # This needs OutputWorkspace specified, as it doesn't
+        # pick up the name from the class variable name
         cls.base_event_ws = mantid.LoadEventNexus(
             MantidDataHelper.find_file(filename),
             OutputWorkspace="test_ws{}".format(__file__))

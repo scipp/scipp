@@ -147,42 +147,44 @@ def convert_Workspace2D_to_dataset(ws):
                                                  len(ws.readY(0))),
                                           unit=sc.units.counts,
                                           variances=True),
-                         coords={
-                             dim: coord,
-                             sc.Dim.Spectrum: num
-    },
-        labels={"position": pos,
-                             "component_info": comp_info,
-                             "detector_info": det_info
-                },
-        attrs={"run": make_run(ws),
-                             "sample": make_sample(ws)
-               })
+                         coords={dim: coord,
+                                 sc.Dim.Spectrum: num
+                                 },
+                         labels={"position": pos,
+                                 "component_info": comp_info,
+                                 "detector_info": det_info
+                                 },
+                         attrs={"run": make_run(ws),
+                                "sample": make_sample(ws)
+                                }
+                         )
 
+    spectrum_masks = None
     if ws.detectorInfo().hasMaskedDetectors():
-        array.masks["spectrum"] = sc.Variable([sc.Dim.Spectrum],
-                                              shape=(ws.getNumberHistograms(),),
-                                              dtype=sc.dtype.bool)
+        array.masks["spectrum"] = sc.Variable(
+            [sc.Dim.Spectrum],
+            shape=(ws.getNumberHistograms(),),
+            dtype=sc.dtype.bool)
         spectrum_masks = array.masks["spectrum"]
 
-    if common_bins and ws.hasMaskedBins(0):
+    if ws.hasAnyMaskedBins():
+        array.masks["bin"] = make_bin_masks(common_bins, dim,
+                                            ws.blocksize(),
+                                            ws.getNumberHistograms())
         bin_masks = array.masks["bin"]
-        array.masks["bin"] = make_bin_masks(common_bins, dim,
-                                            ws.blocksize(),
-                                            ws.getNumberHistograms())
-
-        set_common_bins_masks(bin_masks, dim, ws.maskedBinsIndices(0))
-    elif not common_bins:
-        array.masks["bin"] = make_bin_masks(common_bins, dim,
-                                            ws.blocksize(),
-                                            ws.getNumberHistograms())
+        # set all the bin masks now - they're all the same
+        if common_bins:
+            set_common_bins_masks(bin_masks, dim, ws.maskedBinsIndices(0))
 
     data = array.data
     spectrum_info = ws.spectrumInfo()
     for i in range(ws.getNumberHistograms()):
         data[sc.Dim.Spectrum, i].values = ws.readY(i)
         data[sc.Dim.Spectrum, i].variances = np.power(ws.readE(i), 2)
-        spectrum_masks[sc.Dim.Spectrum, i].value = spectrum_info.isMasked(i)
+
+        if spectrum_masks:
+            spectrum_masks[sc.Dim.Spectrum,
+                           i].value = spectrum_info.isMasked(i)
 
         if not common_bins and ws.hasMaskedBins(i):
             set_bin_masks(bin_masks, dim, i, ws.maskedBinsIndices(i))
