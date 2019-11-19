@@ -172,8 +172,8 @@ class Slicer1d(Slicer):
             for key, val in self.slider.items():
                 if not val.disabled:
                     if i == 0:
-                        self.lab[key].value = str(
-                            self.slider_x[key].values[val.value])
+                        self.lab[key].value = self.make_slider_label(
+                            self.slider_x[key], val.value)
                     vslice = vslice[val.dim, val.value]
             self.fig.data[i].y = vslice.values
             if var.variances is not None:
