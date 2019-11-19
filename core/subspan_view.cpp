@@ -80,5 +80,4 @@ Variable subspan_view(const VariableConstProxy &var, const Dim dim) {
   return subspan_view_impl(var, dim);
 }
 
-
 } // namespace scipp::core
