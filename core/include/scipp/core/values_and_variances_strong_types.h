@@ -163,7 +163,7 @@ public:
       std::optional<Vector<ElemT>> variances;
       if (hasVar)
         variances = std::make_from_tuple<Vector<ElemT>>(std::move(varArgs));
-      return VarT::template createVariable<ElemT>(
+      return VarT::template create<ElemT>(
           std::forward<NonDataTypes>(extractArgs<NonDataTypes, Ts...>(tp))...,
           std::move(values), std::move(variances));
     }
