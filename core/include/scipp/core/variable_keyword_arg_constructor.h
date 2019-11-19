@@ -193,4 +193,4 @@ private:
 } // namespace detail
 } // namespace scipp::core
 
-#endif //SCIPP_VARIABLE_KEYWORD_ARG_CONSTRUCTOR_H
+#endif // SCIPP_VARIABLE_KEYWORD_ARG_CONSTRUCTOR_H
