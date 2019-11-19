@@ -86,9 +86,7 @@ class Slicer:
                 readout=False,
                 disabled=((i >= self.ndim-len(button_options)) and
                           len(button_options) < 3))
-            labvalue = str(self.slider_x[key].values[indx])
-            if self.slider_x[key].unit != dimensionless:
-                labvalue += " [{}]".format(self.slider_x[key].unit)
+            labvalue = self.make_slider_label(self.slider_x[key], indx)
             if self.ndim == len(button_options):
                 self.slider[key].layout.display = 'none'
                 labvalue = descr
@@ -141,3 +139,9 @@ class Slicer:
                         self.showhide[key]]
             self.vbox.append(widgets.HBox(row))
         return
+
+    def make_slider_label(self, var, indx):
+        lab = str(var.values[indx])
+        if var.unit != dimensionless:
+            lab += " [{}]".format(var.unit)
+        return lab
