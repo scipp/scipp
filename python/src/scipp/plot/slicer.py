@@ -18,7 +18,6 @@ class Slicer:
         self.show_variances = show_variances
         if self.show_variances:
             self.show_variances = (self.input_data.variances is not None)
-        # self.show_variances = (self.input_data.variances is not None) and show_variances
         self.cb = cb
         self.value_name = value_name
 
@@ -121,7 +120,6 @@ class Slicer:
                     button_style=button_style,
                     layout={'width': "70px"}
                 )
-                # self.showhide[key].layout.width = "70px"
                 setattr(self.showhide[key], "dim_str", key)
                 setattr(self.showhide[key], "value",
                         button_values[i] is not None)
