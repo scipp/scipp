@@ -28,6 +28,7 @@ set(SRC_FILES
     dtype.cpp
     except.cpp
     groupby.cpp
+    histogram.cpp
     rebin.cpp
     slice.cpp
     sort.cpp
@@ -37,6 +38,7 @@ set(SRC_FILES
     variable_binary_arithmetic.cpp
     variable_instantiate_basic.cpp
     variable_instantiate_dataset.cpp
+    variable_instantiate_view_elements.cpp
     variable_logical_operations.cpp
     variable_operations.cpp
     variable_type_conversion.cpp
