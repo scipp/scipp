@@ -9,7 +9,7 @@ from .._scipp.core.units import dimensionless
 class Slicer:
 
     def __init__(self, input_data=None, axes=None, value_name=None, cb=None,
-                 show_variances=False, button_options=None):
+                 show_variances=False, button_options=None, volume=False):
 
         import ipywidgets as widgets
 
@@ -68,13 +68,14 @@ class Slicer:
         for i, dim in enumerate(self.slider_dims):
             key = str(dim)
             # If this is a 3d projection, place slices half-way
-            if len(button_options) == 3:
+            if len(button_options) == 3 and (not volume):
                 indx = (self.slider_nx[key] - 1) // 2
             if self.slider_labels[key] is not None:
                 descr = self.slider_labels[key]
             else:
                 descr = key
             # Add an IntSlider to slide along the z dimension of the array
+            print("slider keys", key)
             self.slider[key] = widgets.IntSlider(
                 value=indx,
                 min=0,
@@ -84,7 +85,7 @@ class Slicer:
                 continuous_update=True,
                 readout=False,
                 disabled=((i >= self.ndim-len(button_options)) and
-                          len(button_options) < 3))
+                          ((len(button_options) < 3) or volume)))
             labvalue = self.make_slider_label(self.slider_x[key], indx)
             if self.ndim == len(button_options):
                 self.slider[key].layout.display = 'none'
@@ -113,7 +114,7 @@ class Slicer:
                 self.buttons[key].layout.display = 'none'
                 self.lab[key].layout.display = 'none'
 
-            if len(button_options) == 3:
+            if (len(button_options) == 3) and (not volume):
                 self.showhide[key] = widgets.Button(
                     description="hide",
                     disabled=(button_values[i] is None),
@@ -132,7 +133,7 @@ class Slicer:
             self.slider[key].observe(self.update_slice, names="value")
             # Add the row of slider + buttons
             row = [self.slider[key], self.lab[key], self.buttons[key]]
-            if len(button_options) == 3:
+            if (len(button_options) == 3) and (not volume):
                 row += [widgets.HTML(value="&nbsp;&nbsp;&nbsp;&nbsp;"),
                         self.showhide[key]]
             self.vbox.append(widgets.HBox(row))
