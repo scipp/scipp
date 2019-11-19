@@ -73,15 +73,23 @@ Variable sparse_dense_op_impl(Op op, const VariableConstProxy &sparseCoord_,
                 const auto bin = (c - offset) * scale;
                 if (bin >= 0.0 && bin < nbin) {
                   if constexpr (have_variance) {
-                    out_vals.emplace_back(op(1.0, weights.value[bin]));
-                    out_vars.emplace_back(op(1.0, weights.variance[bin]));
+                    const auto [val, var] =
+                        op(1.0, detail::ValueAndVariance{
+                                    weights.value[bin], weights.variance[bin]});
+                    out_vals.emplace_back(val);
+                    out_vars.emplace_back(var);
                   } else {
                     out_vals.emplace_back(op(1.0, weights[bin]));
                   }
                 } else {
-                  out_vals.emplace_back(op(1.0, 0.0));
-                  if constexpr (have_variance)
-                    out_vars.emplace_back(op(1.0, 0.0));
+                  if constexpr (have_variance) {
+                    const auto [val, var] =
+                        op(1.0, detail::ValueAndVariance{0.0, 0.0});
+                    out_vals.emplace_back(val);
+                    out_vars.emplace_back(var);
+                  } else {
+                    out_vals.emplace_back(op(1.0, 0.0));
+                  }
                 }
               }
             } else {
@@ -158,17 +166,30 @@ DataArray operator-(const DataConstProxy &a, const DataConstProxy &b) {
           union_(a.labels(), b.labels()), union_or(a.masks(), b.masks())};
 }
 
+bool is_histogram(const DataConstProxy &a, const Dim dim) {
+  const auto dims = a.dims();
+  const auto coords = a.coords();
+  return !dims.sparse() && dims.contains(dim) && coords.contains(dim) &&
+         coords[dim].dims()[dim] == dims[dim] + 1;
+}
+
+bool is_sparse_and_histogram(const DataConstProxy &a, const DataConstProxy &b) {
+  return (a.dims().sparse() && is_histogram(b, a.dims().sparseDim())) ||
+         (b.dims().sparse() && is_histogram(a, b.dims().sparseDim()));
+}
+
 template <class Op>
 auto sparse_dense_op(Op op, const DataConstProxy &a, const DataConstProxy &b) {
   // Note that the current implementation will fail if any of the inputs is
-  // sparse data *with weights*.
-  if (a.hasData() && b.hasData())
-    return a.data() * b.data();
+  // sparse data *with weights*, except for the special case of matching sizes.
+  if (!is_sparse_and_histogram(a, b))
+    return op(a.data(), b.data());
   if (a.dims().sparse() && !a.hasData()) {
     const Dim dim = a.dims().sparseDim();
     return sparse_dense_op_impl(op, a.coords()[dim], b.coords()[dim], b.data());
   }
-  // dense/sparse not supported yet.
+  // histogram divided by sparse not supported, would typically result in unit
+  // 1/counts which is meaningless
   if constexpr (std::is_same_v<Op, std::decay_t<decltype(times)>>)
     return sparse_dense_op(op, b, a);
 
@@ -176,10 +197,11 @@ auto sparse_dense_op(Op op, const DataConstProxy &a, const DataConstProxy &b) {
                                 "data in binary arithmetic operation.");
 }
 
-auto sparse_dense_union(const DataConstProxy &a, const DataConstProxy &b) {
-  if (!a.dims().sparse() && !b.dims().sparse())
+auto sparse_dense_coord_union(const DataConstProxy &a,
+                              const DataConstProxy &b) {
+  if (!is_sparse_and_histogram(a, b))
     return union_(a.coords(), b.coords());
-  // Trick: Use slice to remove dense coord.
+  // Use slice to remove dense coord, since output will be sparse.
   if (a.dims().sparse())
     return union_(a.coords(), b.slice({a.dims().sparseDim(), 0}).coords());
   else
@@ -187,12 +209,12 @@ auto sparse_dense_union(const DataConstProxy &a, const DataConstProxy &b) {
 }
 
 DataArray operator*(const DataConstProxy &a, const DataConstProxy &b) {
-  return {sparse_dense_op(times, a, b), sparse_dense_union(a, b),
+  return {sparse_dense_op(times, a, b), sparse_dense_coord_union(a, b),
           union_(a.labels(), b.labels()), union_or(a.masks(), b.masks())};
 }
 
 DataArray operator/(const DataConstProxy &a, const DataConstProxy &b) {
-  return {a.data() / b.data(), union_(a.coords(), b.coords()),
+  return {sparse_dense_op(divide, a, b), sparse_dense_coord_union(a, b),
           union_(a.labels(), b.labels()), union_or(a.masks(), b.masks())};
 }
 
