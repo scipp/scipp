@@ -52,17 +52,18 @@ TEST(TransformSparseAndDenseTest, three_args) {
   const auto out = transform<std::tuple<
       std::tuple<sparse_container<double>, span<double>, span<double>>>>(
       var, dense_view, dense_with_variance_view,
-      overloaded{[](const auto &a, const auto &, const auto &c) {
-                   if constexpr (core::detail::is_ValueAndVariance_v<
-                                     std::decay_t<decltype(c)>>) {
-                     return std::pair(a, a);
-                   } else
-                     return a;
-                 },
-                 transform_flags::expect_no_variance_arg<0>,
-                 transform_flags::expect_no_variance_arg<1>,
-                 [](const units::Unit &a, const units::Unit &,
-                    const units::Unit &) { return a; }});
+      overloaded{
+          [](const auto &a, const auto &, const auto &c) {
+            if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(c)>>) {
+              return std::pair(a, a);
+            } else
+              return a;
+          },
+          transform_flags::expect_no_variance_arg<0>,
+          transform_flags::expect_no_variance_arg<1>,
+          [](const units::Unit &a, const units::Unit &, const units::Unit &) {
+            return a;
+          }});
   EXPECT_TRUE(out.hasVariances());
   EXPECT_TRUE(equals(out.sparseValues<double>(), var.sparseValues<double>()));
   EXPECT_TRUE(
@@ -91,8 +92,7 @@ TEST(TransformSparseAndDenseTest, sparse_times_dense) {
           [](const auto &sparse, const auto &edges, const auto &weights) {
             expect::histogram::sorted_edges(edges);
             using W = std::decay_t<decltype(weights)>;
-            constexpr bool have_variance =
-                core::detail::is_ValueAndVariance_v<W>;
+            constexpr bool have_variance = is_ValueAndVariance_v<W>;
             using T = sparse_container<
                 typename core::detail::element_type_t<W>::value_type>;
             T out_vals;

@@ -18,16 +18,16 @@ struct MakeVariableWithType {
   template <class T> struct Maker {
     static Variable apply(const VariableConstProxy &parent) {
       return transform<double, float, int64_t, int32_t, bool>(
-          parent, overloaded{[](const units::Unit &x) { return x; },
-                             [](const auto &x) {
-                               if constexpr (detail::is_ValueAndVariance_v<
-                                                 std::decay_t<decltype(x)>>)
-                                 return detail::ValueAndVariance<T>{
-                                     static_cast<T>(x.value),
-                                     static_cast<T>(x.variance)};
-                               else
-                                 return static_cast<T>(x);
-                             }});
+          parent,
+          overloaded{
+              [](const units::Unit &x) { return x; },
+              [](const auto &x) {
+                if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(x)>>)
+                  return ValueAndVariance<T>{static_cast<T>(x.value),
+                                             static_cast<T>(x.variance)};
+                else
+                  return static_cast<T>(x);
+              }});
     }
   };
   static Variable make(const VariableConstProxy &var, DType type) {

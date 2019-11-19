@@ -11,8 +11,6 @@
 using namespace scipp;
 using namespace scipp::core;
 
-using ValueAndVariance = scipp::core::detail::ValueAndVariance<double>;
-
 TEST(ValueAndVarianceTest, unary_negate) {
   const ValueAndVariance a{5.0, 1.0};
   const auto b = -a;

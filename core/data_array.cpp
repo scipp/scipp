@@ -55,8 +55,7 @@ Variable sparse_dense_op_impl(Op op, const VariableConstProxy &sparseCoord_,
           [op](const auto &sparse, const auto &edges, const auto &weights) {
             expect::histogram::sorted_edges(edges);
             using W = std::decay_t<decltype(weights)>;
-            constexpr bool have_variance =
-                core::detail::is_ValueAndVariance_v<W>;
+            constexpr bool have_variance = is_ValueAndVariance_v<W>;
             using T = sparse_container<
                 typename core::detail::element_type_t<W>::value_type>;
             T out_vals;
@@ -74,8 +73,8 @@ Variable sparse_dense_op_impl(Op op, const VariableConstProxy &sparseCoord_,
                 if (bin >= 0.0 && bin < nbin) {
                   if constexpr (have_variance) {
                     const auto [val, var] =
-                        op(1.0, detail::ValueAndVariance{
-                                    weights.value[bin], weights.variance[bin]});
+                        op(1.0, ValueAndVariance{weights.value[bin],
+                                                 weights.variance[bin]});
                     out_vals.emplace_back(val);
                     out_vars.emplace_back(var);
                   } else {
@@ -83,8 +82,7 @@ Variable sparse_dense_op_impl(Op op, const VariableConstProxy &sparseCoord_,
                   }
                 } else {
                   if constexpr (have_variance) {
-                    const auto [val, var] =
-                        op(1.0, detail::ValueAndVariance{0.0, 0.0});
+                    const auto [val, var] = op(1.0, ValueAndVariance{0.0, 0.0});
                     out_vals.emplace_back(val);
                     out_vars.emplace_back(var);
                   } else {

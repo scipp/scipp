@@ -29,12 +29,10 @@ bool is_approx(const VariableConstProxy &a, const VariableConstProxy &b,
       aa, b,
       scipp::overloaded{
           [&](const auto &va, const auto &vb) {
-            if constexpr (detail::is_ValueAndVariance_v<
-                              std::decay_t<decltype(va)>> !=
-                          detail::is_ValueAndVariance_v<
-                              std::decay_t<decltype(vb)>>) {
+            if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(va)>> !=
+                          is_ValueAndVariance_v<std::decay_t<decltype(vb)>>) {
               mismatch.test_and_set();
-            } else if constexpr (detail::is_ValueAndVariance_v<
+            } else if constexpr (is_ValueAndVariance_v<
                                      std::decay_t<decltype(va)>>) {
               if ((std::abs(va.value - vb.value) >= tol) ||
                   (std::abs(va.variance - vb.variance) >= tol))
