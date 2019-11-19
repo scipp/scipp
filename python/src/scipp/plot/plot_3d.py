@@ -137,6 +137,7 @@ class Slicer3d(Slicer):
                         isomax=val["cmax"],
                         opacity=0.1, # needs to be small to see through all surfaces
                         surface_count=volume_sampling, # needs to be a large number for good volume rendering
+                        colorscale=self.cb["name"]
                         ))
                 else:
                     for j in range(3):
@@ -174,6 +175,7 @@ class Slicer3d(Slicer):
                     isomax=params["values"]["cmax"],
                     opacity=0.1, # needs to be small to see through all surfaces
                     surface_count=volume_sampling, # needs to be a large number for good volume rendering
+                    colorscale=self.cb["name"]
                     )]
             else:
                 data = [go.Surface(cmin=params["values"]["cmin"],
@@ -302,7 +304,12 @@ class Slicer3d(Slicer):
             print("button_dims", button_dims)
             print("cubedims", self.cube.dims)
             # self.fig.data[0].value = self.check_transpose(self.cube).flatten()
-            self.fig.data[0].value = self.cube.values.T.flatten()
+            transpose = [str(dim) for dim in self.cube.dims] != [button_dims["x"], button_dims["y"], button_dims["z"]]
+            print("transpose", transpose)
+            values = self.cube.values
+            if transpose:
+                values = values.T
+            self.fig.data[0].value = values.flatten()
             print("value", np.shape(self.check_transpose(self.cube)))
             print("cube", np.shape(self.cube.values))
             print("cube.T", np.shape(self.cube.values.T))
@@ -311,7 +318,10 @@ class Slicer3d(Slicer):
                 self.fig.data[1].x = xyz_arrays[0].flatten()
                 self.fig.data[1].y = xyz_arrays[1].flatten()
                 self.fig.data[1].z = xyz_arrays[2].flatten()
-                self.fig.data[1].value = self.cube.variances.T.flatten()
+                variances = self.cube.variances
+                if transpose:
+                    variances = variances.T
+                self.fig.data[1].value = variances.flatten()
                 
 
         else:
