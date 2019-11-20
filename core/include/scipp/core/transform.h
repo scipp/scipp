@@ -547,7 +547,8 @@ template <bool dry_run> struct in_place {
         throw except::VariancesError(
             "Variances in second argument not supported.");
       } else if constexpr (std::is_base_of_v<
-                               transform_flags::no_variance_output_t, Op>) {
+                               transform_flags::expect_no_variance_arg_t<0>,
+                               Op>) {
         auto b_var = b.variances();
         transform_in_place_impl(op, a_val, ValuesAndVariances{b_val, b_var});
       } else {
