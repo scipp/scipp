@@ -259,12 +259,16 @@ void init_dataset(py::module &m) {
   m.def("concatenate",
         py::overload_cast<const DataConstProxy &, const DataConstProxy &,
                           const Dim>(&concatenate),
+        py::arg("x"), py::arg("y"), py::arg("dim"),
         py::call_guard<py::gil_scoped_release>(), R"(
         Concatenate input data array along the given dimension.
 
         Concatenates the data, coords, labels and masks of the data array.
         Coords, labels and masks for any but the given dimension are required to match and are copied to the output without changes.
 
+        :param x: First DataArray.
+        :param y: Second DataArray.
+        :param dim: Dimension along which to concatenate.
         :raises: If the dtype or unit does not match, or if the dimensions and shapes are incompatible.
         :return: New data array containing all data, coords, labels, and masks of the input arrays.
         :rtype: DataArray)");
@@ -272,12 +276,16 @@ void init_dataset(py::module &m) {
   m.def("concatenate",
         py::overload_cast<const DatasetConstProxy &, const DatasetConstProxy &,
                           const Dim>(&concatenate),
+        py::arg("x"), py::arg("y"), py::arg("dim"),
         py::call_guard<py::gil_scoped_release>(), R"(
         Concatenate input datasets along the given dimension.
 
         Concatenate all cooresponding items in the input datasets.
         The output contains only items that are present in both inputs.
 
+        :param x: First Dataset.
+        :param y: Second Dataset.
+        :param dim: Dimension along which to concatenate.
         :raises: If the dtype or unit does not match, or if the dimensions and shapes are incompatible.
         :return: New dataset.
         :rtype: Dataset)");
@@ -286,76 +294,111 @@ void init_dataset(py::module &m) {
         [](const DataConstProxy &ds, const Variable &bins) {
           return core::histogram(ds, bins);
         },
-        py::call_guard<py::gil_scoped_release>(),
-        "Returns a new Variable with values in bins for for sparse dims");
+        py::arg("x"), py::arg("bins"), py::call_guard<py::gil_scoped_release>(),
+        R"(Returns a new DataArray with values in bins for sparse dims.
+
+        :param x: Data to histogram.
+        :param bins: Bin edges.
+        :return: Histogramed data.
+        :rtype: DataArray)");
 
   m.def("histogram",
         [](const DataConstProxy &ds, const VariableConstProxy &bins) {
           return core::histogram(ds, bins);
         },
-        py::call_guard<py::gil_scoped_release>(),
-        "Returns a new Variable with values in bins for sparse dims");
+        py::arg("x"), py::arg("bins"), py::call_guard<py::gil_scoped_release>(),
+        R"(Returns a new DataArray with values in bins for sparse dims.
+
+        :param x: Data to histogram.
+        :param bins: Bin edges.
+        :return: Histogramed data.
+        :rtype: DataArray)");
 
   m.def("histogram",
         [](const Dataset &ds, const VariableConstProxy &bins) {
           return core::histogram(ds, bins);
         },
-        py::call_guard<py::gil_scoped_release>(),
-        "Returns a new Dataset with histograms for sparse dims");
+        py::arg("x"), py::arg("bins"), py::call_guard<py::gil_scoped_release>(),
+        R"(Returns a new Dataset with values in bins for sparse dims.
+
+        :param x: Data to histogram.
+        :param bins: Bin edges.
+        :return: Histogramed data.
+        :rtype: Dataset)");
 
   m.def("histogram",
         [](const Dataset &ds, const Variable &bins) {
           return core::histogram(ds, bins);
         },
-        py::call_guard<py::gil_scoped_release>(),
-        "Returns a new Dataset with histograms for sparse dims");
+        py::arg("x"), py::arg("bins"), py::call_guard<py::gil_scoped_release>(),
+        R"(Returns a new Dataset with values in bins for sparse dims.
+
+        :param x: Data to histogram.
+        :param bins: Bin edges.
+        :return: Histogramed data.
+        :rtype: Dataset)");
 
   m.def("merge",
         [](const DatasetConstProxy &lhs, const DatasetConstProxy &rhs) {
           return core::merge(lhs, rhs);
         },
+        py::arg("lhs"), py::arg("rhs"),
         py::call_guard<py::gil_scoped_release>(), R"(
         Union of two datasets.
 
+        :param lhs: First Dataset.
+        :param rhs: Second Dataset.
         :raises: If there are conflicting items with different content.
         :return: A new dataset that contains the union of all data items, coords, labels, masks and attributes.
         :rtype: Dataset)");
 
   m.def("sum", py::overload_cast<const DataConstProxy &, const Dim>(&sum),
-        py::call_guard<py::gil_scoped_release>(), R"(
+        py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
+        R"(
         Element-wise sum over the specified dimension.
 
+        :param x: Data to sum.
+        :param dim: Dimension over which to sum.
         :raises: If the dimension does not exist, or if the dtype cannot be summed, e.g., if it is a string
         :seealso: :py:class:`scipp.mean`
         :return: New data array containing the sum.
         :rtype: DataArray)");
 
   m.def("sum", py::overload_cast<const DatasetConstProxy &, const Dim>(&sum),
-        py::call_guard<py::gil_scoped_release>(), R"(
+        py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
+        R"(
         Element-wise sum over the specified dimension.
 
+        :param x: Data to sum.
+        :param dim: Dimension over which to sum.
         :raises: If the dimension does not exist, or if the dtype cannot be summed, e.g., if it is a string
         :seealso: :py:class:`scipp.mean`
         :return: New dataset containing the sum for each data item.
         :rtype: Dataset)");
 
   m.def("mean", py::overload_cast<const DataConstProxy &, const Dim>(&mean),
-        py::call_guard<py::gil_scoped_release>(), R"(
+        py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
+        R"(
         Element-wise mean over the specified dimension, if variances are present, the new variance is computated as standard-deviation of the mean.
 
         See the documentation for the mean of a Variable for details in the computation of the ouput variance.
 
+        :param x: Data to calculate mean of.
+        :param dim: Dimension over which to calculate mean.
         :raises: If the dimension does not exist, or if the dtype cannot be summed, e.g., if it is a string
         :seealso: :py:class:`scipp.mean`
         :return: New data array containing the mean for each data item.
         :rtype: DataArray)");
 
   m.def("mean", py::overload_cast<const DatasetConstProxy &, const Dim>(&mean),
-        py::call_guard<py::gil_scoped_release>(), R"(
+        py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
+        R"(
         Element-wise mean over the specified dimension, if variances are present, the new variance is computated as standard-deviation of the mean.
 
         See the documentation for the mean of a Variable for details in the computation of the ouput variance.
 
+        :param x: Data to calculate mean of.
+        :param dim: Dimension over which to calculate mean.
         :raises: If the dimension does not exist, or if the dtype cannot be summed, e.g., if it is a string
         :seealso: :py:class:`scipp.mean`
         :return: New dataset containing the mean for each data item.
@@ -364,18 +407,27 @@ void init_dataset(py::module &m) {
   m.def("rebin",
         py::overload_cast<const DataConstProxy &, const Dim,
                           const VariableConstProxy &>(&rebin),
+        py::arg("x"), py::arg("dim"), py::arg("bins"),
         py::call_guard<py::gil_scoped_release>(), R"(
         Rebin a dimension of a data array.
 
+        :param x: Data to rebin.
+        :param dim: Dimension to rebin over.
+        :param bins: New bin edges.
         :raises: If data cannot be rebinned, e.g., if the unit is not counts, or the existing coordinate is not a bin-edge coordinate.
         :return: A new data array with data rebinned according to the new coordinate.
         :rtype: DataArray)");
+
   m.def("rebin",
         py::overload_cast<const DatasetConstProxy &, const Dim,
                           const VariableConstProxy &>(&rebin),
+        py::arg("x"), py::arg("dim"), py::arg("bins"),
         py::call_guard<py::gil_scoped_release>(), R"(
         Rebin a dimension of a dataset.
 
+        :param x: Data to rebin.
+        :param dim: Dimension to rebin over.
+        :param bins: New bin edges.
         :raises: If data cannot be rebinned, e.g., if the unit is not counts, or the existing coordinate is not a bin-edge coordinate.
         :return: A new dataset with data rebinned according to the new coordinate.
         :rtype: Dataset)");
@@ -383,25 +435,26 @@ void init_dataset(py::module &m) {
   m.def("sort",
         py::overload_cast<const DataConstProxy &, const VariableConstProxy &>(
             &sort),
-        py::arg("data"), py::arg("key"),
-        py::call_guard<py::gil_scoped_release>(),
+        py::arg("x"), py::arg("key"), py::call_guard<py::gil_scoped_release>(),
         R"(Sort data array along a dimension by a sort key.
 
         :raises: If the key is invalid, e.g., if it has not exactly one dimension, or if its dtype is not sortable.
         :return: New sorted data array.
         :rtype: DataArray)");
+
   m.def(
       "sort", py::overload_cast<const DataConstProxy &, const Dim &>(&sort),
-      py::arg("data"), py::arg("key"), py::call_guard<py::gil_scoped_release>(),
+      py::arg("x"), py::arg("key"), py::call_guard<py::gil_scoped_release>(),
       R"(Sort data array along a dimension by the coordinate values for that dimension.
 
       :raises: If the key is invalid, e.g., if it has not exactly one dimension, or if its dtype is not sortable.
       :return: New sorted data array.
       :rtype: DataArray)");
+
   m.def(
       "sort",
       py::overload_cast<const DataConstProxy &, const std::string &>(&sort),
-      py::arg("data"), py::arg("key"), py::call_guard<py::gil_scoped_release>(),
+      py::arg("x"), py::arg("key"), py::call_guard<py::gil_scoped_release>(),
       R"(Sort data array along a dimension by the label values for the given key.
 
       :raises: If the key is invalid, e.g., if it has not exactly one dimension, or if its dtype is not sortable.
@@ -412,24 +465,26 @@ void init_dataset(py::module &m) {
       "sort",
       py::overload_cast<const DatasetConstProxy &, const VariableConstProxy &>(
           &sort),
-      py::arg("data"), py::arg("key"), py::call_guard<py::gil_scoped_release>(),
+      py::arg("x"), py::arg("key"), py::call_guard<py::gil_scoped_release>(),
       R"(Sort dataset along a dimension by a sort key.
 
         :raises: If the key is invalid, e.g., if it has not exactly one dimension, or if its dtype is not sortable.
         :return: New sorted dataset.
         :rtype: Dataset)");
+
   m.def(
       "sort", py::overload_cast<const DatasetConstProxy &, const Dim &>(&sort),
-      py::arg("data"), py::arg("key"), py::call_guard<py::gil_scoped_release>(),
+      py::arg("x"), py::arg("key"), py::call_guard<py::gil_scoped_release>(),
       R"(Sort dataset along a dimension by the coordinate values for that dimension.
 
       :raises: If the key is invalid, e.g., if it has not exactly one dimension, or if its dtype is not sortable.
       :return: New sorted dataset.
       :rtype: Dataset)");
+
   m.def(
       "sort",
       py::overload_cast<const DatasetConstProxy &, const std::string &>(&sort),
-      py::arg("data"), py::arg("key"), py::call_guard<py::gil_scoped_release>(),
+      py::arg("x"), py::arg("key"), py::call_guard<py::gil_scoped_release>(),
       R"(Sort dataset along a dimension by the label values for the given key.
 
       :raises: If the key is invalid, e.g., if it has not exactly one dimension, or if its dtype is not sortable.
