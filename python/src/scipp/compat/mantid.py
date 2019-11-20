@@ -359,7 +359,7 @@ def load(filename="",
 
     try:
         import mantid.simpleapi as mantid
-        from mantid.api import EventType
+        from mantid.api import EventType, Workspace
         from mantid import AnalysisDataService
     except ImportError:
         raise ImportError(
@@ -367,22 +367,36 @@ def load(filename="",
             "as detailed in the installation instructions (https://scipp."
             "readthedocs.io/en/latest/getting-started/installation.html)")
 
-    ws = mantid.Load(filename, **kwargs)
+    loaded = mantid.Load(filename, **kwargs)
+
+    # Determine what Load has provided us
+    if isinstance(loaded, Workspace):
+        # A single workspace
+        data_ws = loaded
+        monitor_ws = None
+    else:
+        # Seperate data and monitor workspaces
+        data_ws = loaded.OutputWorkspace
+        monitor_ws = loaded.MonitorWorkspace
+
     if instrument_filename is not None:
-        mantid.LoadInstrument(ws,
+        mantid.LoadInstrument(data_ws,
                               FileName=instrument_filename,
                               RewriteSpectraMap=True)
 
     dataset = None
-    if ws.id() == 'Workspace2D':
-        dataset = convert_Workspace2D_to_dataset(ws)
-    elif ws.id() == 'EventWorkspace':
-        dataset = convert_EventWorkspace_to_dataset(ws, load_pulse_times,
+    if data_ws.id() == 'Workspace2D':
+        dataset = convert_Workspace2D_to_dataset(data_ws)
+    elif data_ws.id() == 'EventWorkspace':
+        dataset = convert_EventWorkspace_to_dataset(data_ws, load_pulse_times,
                                                     EventType)
-    elif ws.id() == 'TableWorkspace':
-        dataset = convert_TableWorkspace_to_dataset(ws, error_connection)
+    elif data_ws.id() == 'TableWorkspace':
+        dataset = convert_TableWorkspace_to_dataset(data_ws, error_connection)
 
-    AnalysisDataService.Instance().remove(ws.name())
+    # Remove workspaces from Mantid's ADS once we are done with them
+    AnalysisDataService.Instance().remove(data_ws.name())
+    if monitor_ws is not None:
+        AnalysisDataService.Instance().remove(monitor_ws.name())
 
     if dataset is None:
         raise RuntimeError('Unsupported workspace type')
