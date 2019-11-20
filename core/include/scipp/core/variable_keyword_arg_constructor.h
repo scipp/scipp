@@ -42,19 +42,16 @@ template <class T> auto makeArgsTuple(std::initializer_list<T> init) {
   return std::make_tuple<iter, iter>(init.begin(), init.end());
 }
 
-template <class... Args>
-using MakeArgsTupleReturnType =
-    decltype(makeArgsTuple(std::declval<Args>()...));
 } // namespace detail
 
 using Shape = detail::vector_like<scipp::index>;
 using Dims = detail::vector_like<Dim>;
 
 template <class... Args>
-using ArgsTupple = detail::MakeArgsTupleReturnType<Args...>;
+using ArgsTuple = decltype(detail::makeArgsTuple(std::declval<Args>()...));
 
 template <class... Args> struct Values : detail::ValuesTag {
-  ArgsTupple<Args...> tuple;
+  ArgsTuple<Args...> tuple;
   Values(Args &&... args)
       : tuple(detail::makeArgsTuple(std::forward<Args>(args)...)) {}
   template <class T>
@@ -69,7 +66,7 @@ Values(std::initializer_list<T>)
 
 template <class... Args>
 struct Variances : std::tuple<Args...>, detail::VariancesTag {
-  ArgsTupple<Args...> tuple;
+  ArgsTuple<Args...> tuple;
   Variances(Args &&... args)
       : tuple(detail::makeArgsTuple(std::forward<Args>(args)...)) {}
   template <class T>
