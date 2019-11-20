@@ -264,6 +264,20 @@ def test_plot_sliceviewer_with_1d_projection():
     do_plot(d, projection="1d")
 
 
+def test_plot_volume():
+    d = make_dense_dataset(ndim=3)
+    do_plot(d, projection="volume")
+
+
+def test_plot_convenience_methods():
+    d = make_dense_dataset(ndim=3)
+    with io.StringIO() as buf, redirect_stdout(buf):
+        sc.plot.image(d)
+        sc.plot.threeslice(d)
+        sc.plot.volume(d)
+        sc.plot.superplot(d)
+
+
 def test_plot_2d_image_rasterized():
     d = make_dense_dataset(ndim=2)
     do_plot(d, rasterize=True)
