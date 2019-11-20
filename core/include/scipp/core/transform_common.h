@@ -67,6 +67,9 @@ template <int N> static constexpr auto expect_no_variance_arg = []() {};
 template <int N>
 using expect_no_variance_arg_t = decltype(expect_no_variance_arg<N>);
 
+template <int N> static constexpr auto expect_variance_arg = []() {};
+template <int N> using expect_variance_arg_t = decltype(expect_variance_arg<N>);
+
 } // namespace transform_flags
 
 } // namespace scipp::core
