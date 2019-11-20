@@ -173,6 +173,7 @@ class Slicer3d(Slicer):
                 vol_trace["isomin"] = params["values"]["cmin"]
                 vol_trace["isomax"] = params["values"]["cmax"]
                 vol_trace["meta"] = "values"
+                vol_trace["colorbar"] = colorbars[0]
                 data = [vol_trace]
             else:
                 data = [go.Surface(cmin=params["values"]["cmin"],
