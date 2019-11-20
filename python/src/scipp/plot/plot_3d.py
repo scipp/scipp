@@ -117,9 +117,9 @@ class Slicer3d(Slicer):
 
         # Make a generic volume trace
         if self.volume:
-            vol_trace = go.Volume(x=[0], y=[0], z=[0], value=[0],
-                        opacity=0.1, surface_count=volume_sampling,
-                        colorscale=self.cb["name"], showscale=True)
+            vol_trace = go.Volume(x=[0], y=[0], z=[0], value=[0], opacity=0.1,
+                                  surface_count=volume_sampling,
+                                  colorscale=self.cb["name"], showscale=True)
 
         xyz = "xyz"
         if self.show_variances:
@@ -363,7 +363,7 @@ class Slicer3d(Slicer):
             # Now move slice
             ax_dim = self.buttons[key].value.lower()
             xy = {ax_dim: np.ones_like(
-                self.fig.data[slice_indices[ax_dim]][ax_dim]) * \
+                self.fig.data[slice_indices[ax_dim]][ax_dim]) *
                     self.slider_x[key].values[change["new"]]}
 
             self.fig.update_traces(
