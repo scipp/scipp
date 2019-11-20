@@ -268,7 +268,7 @@ void init_dataset(py::module &m) {
 
         :param x: First DataProxy.
         :param y: Second DataProxy.
-        :param dim: Dimensions along which to concatenate.
+        :param dim: Dimension along which to concatenate.
         :raises: If the dtype or unit does not match, or if the dimensions and shapes are incompatible.
         :return: New data array containing all data, coords, labels, and masks of the input arrays.
         :rtype: DataArray)");
@@ -285,7 +285,7 @@ void init_dataset(py::module &m) {
 
         :param x: First Dataset.
         :param y: Second Dataset.
-        :param dim: Dimensions along which to concatenate.
+        :param dim: Dimension along which to concatenate.
         :raises: If the dtype or unit does not match, or if the dimensions and shapes are incompatible.
         :return: New dataset.
         :rtype: Dataset)");

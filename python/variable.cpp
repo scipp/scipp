@@ -371,7 +371,7 @@ void init_variable(py::module &m) {
 
         :param x: First Variable.
         :param y: Second Variable.
-        :param dim: Dimensions along which to concatenate.
+        :param dim: Dimension along which to concatenate.
         :raises: If the dtype or unit does not match, or if the dimensions and shapes are incompatible.
         :return: New variable containing all elements of the input variables.
         :rtype: Variable)");
