@@ -242,8 +242,8 @@ class Slicer3d(Slicer):
         # Slice along dimensions with active sliders
         for key, val in self.slider.items():
             if self.buttons[key].value is None:
-                self.lab[key].value = str(
-                    self.slider_x[key].values[val.value])
+                self.lab[key].value = self.make_slider_label(
+                    self.slider_x[key], val.value)
                 self.cube = self.cube[val.dim, val.value]
 
         # The dimensions to be sliced have been saved in slider_dims
@@ -251,10 +251,11 @@ class Slicer3d(Slicer):
         vslices = dict()
         for key, val in self.slider.items():
             if self.buttons[key].value is not None:
-                loc = self.slider_x[key].values[val.value]
-                self.lab[key].value = str(loc)
-                vslices[self.buttons[key].value.lower()] = \
-                    {"slice": self.cube[val.dim, val.value], "loc": loc}
+                self.lab[key].value = self.make_slider_label(
+                    self.slider_x[key], val.value)
+                vslices[self.buttons[key].value.lower()] = {
+                    "slice": self.cube[val.dim, val.value],
+                    "loc": self.slider_x[key].values[val.value]}
                 button_dims[self.buttons[key].value.lower()] = key
 
         # Now make 3 slices
@@ -287,8 +288,8 @@ class Slicer3d(Slicer):
             # Update only one slice
             # The dimensions to be sliced have been saved in slider_dims
             key = change["owner"].dim_str
-            loc = self.slider_x[key].values[change["new"]]
-            self.lab[key].value = str(loc)
+            self.lab[key].value = self.make_slider_label(
+                    self.slider_x[key], change["new"])
             vslice = self.cube[change["owner"].dim, change["new"]]
 
             # Now move slice
@@ -296,7 +297,9 @@ class Slicer3d(Slicer):
             xy = getattr(self.fig.data[self.slice_indices[ax_dim]], ax_dim)
             for i in range(1 + self.show_variances):
                 k = self.slice_indices[ax_dim] + 4 * i
-                setattr(self.fig.data[k], ax_dim, xy / xy * loc)
+                setattr(
+                    self.fig.data[k],
+                    ax_dim, xy / xy * self.slider_x[key].values[change["new"]])
                 self.fig.data[k].surfacecolor = \
                     self.check_transpose(vslice, variances=(i > 0))
         return

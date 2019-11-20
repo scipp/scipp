@@ -3,18 +3,21 @@
 # @author Neil Vaytet
 
 from .tools import axis_to_dim_label
+from .._scipp.core.units import dimensionless
 
 
 class Slicer:
 
-    def __init__(self, input_data, axes, value_name, cb, show_variances,
-                 button_options):
+    def __init__(self, input_data=None, axes=None, value_name=None, cb=None,
+                 show_variances=False, button_options=None):
 
         import ipywidgets as widgets
 
         self.input_data = input_data
-        self.show_variances = ((self.input_data.variances is not None) and
-                               show_variances)
+
+        self.show_variances = show_variances
+        if self.show_variances:
+            self.show_variances = (self.input_data.variances is not None)
         self.cb = cb
         self.value_name = value_name
 
@@ -79,11 +82,11 @@ class Slicer:
                 step=1,
                 description=descr,
                 continuous_update=True,
-                readout=False, disabled=((i >= self.ndim-2) and
-                                         len(button_options) == 2)
-            )
-            labvalue = str(self.slider_x[key].values[indx])
-            if self.ndim == 2:
+                readout=False,
+                disabled=((i >= self.ndim-len(button_options)) and
+                          len(button_options) < 3))
+            labvalue = self.make_slider_label(self.slider_x[key], indx)
+            if self.ndim == len(button_options):
                 self.slider[key].layout.display = 'none'
                 labvalue = descr
             # Add a label widget to display the value of the z coordinate
@@ -106,13 +109,17 @@ class Slicer:
             setattr(self.slider[key], "dim_str", key)
             setattr(self.slider[key], "dim", dim)
 
+            if self.ndim == 1:
+                self.buttons[key].layout.display = 'none'
+                self.lab[key].layout.display = 'none'
+
             if len(button_options) == 3:
                 self.showhide[key] = widgets.Button(
                     description="hide",
                     disabled=(button_values[i] is None),
-                    button_style=button_style
+                    button_style=button_style,
+                    layout={'width': "70px"}
                 )
-                self.showhide[key].layout.width = "70px"
                 setattr(self.showhide[key], "dim_str", key)
                 setattr(self.showhide[key], "value",
                         button_values[i] is not None)
@@ -130,3 +137,9 @@ class Slicer:
                         self.showhide[key]]
             self.vbox.append(widgets.HBox(row))
         return
+
+    def make_slider_label(self, var, indx):
+        lab = str(var.values[indx])
+        if var.unit != dimensionless:
+            lab += " [{}]".format(var.unit)
+        return lab
