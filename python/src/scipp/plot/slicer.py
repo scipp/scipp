@@ -75,7 +75,6 @@ class Slicer:
             else:
                 descr = key
             # Add an IntSlider to slide along the z dimension of the array
-            print("slider keys", key)
             self.slider[key] = widgets.IntSlider(
                 value=indx,
                 min=0,
@@ -90,7 +89,6 @@ class Slicer:
             if self.ndim == len(button_options):
                 self.slider[key].layout.display = 'none'
                 labvalue = descr
-            print(labvalue)
             # Add a label widget to display the value of the z coordinate
             self.lab[key] = widgets.Label(value=labvalue)
             # Add one set of buttons per dimension

@@ -83,7 +83,6 @@ class Slicer3d(Slicer):
                          button_options=['X', 'Y', 'Z'], volume=volume)
 
         self.cube = None
-        self.slice_indices = {"x": 0, "y": 1, "z": 2}
         self.volume = volume
 
         # Initialise Figure and VBox objects
@@ -224,9 +223,6 @@ class Slicer3d(Slicer):
                 ax_dim = button.value
                 if ax_dim is not None:
                     ax_dim = ax_dim.lower()
-                    # for j in range(1 + self.show_variances):
-                    #     k = self.slice_indices[ax_dim] + (4 * self.volume) * j
-                    #     self.fig.data[k].visible = True
                 self.fig.update_traces(visible=True)
                 self.showhide[key].value = (button.value is not None)
                 self.showhide[key].disabled = (button.value is None)
@@ -240,9 +236,6 @@ class Slicer3d(Slicer):
             scatter_x, scatter_y, scatter_z = self.get_outline_as_scatter()
             self.fig.update_traces(x=scatter_x, y=scatter_y, z=scatter_z,
                                    selector={"name": "scatter"})
-            # self.fig.data[3].update(x=scatter_x, y=scatter_y, z=scatter_z)
-            # if self.show_variances:
-            #     self.fig.data[7].update(x=scatter_x, y=scatter_y, z=scatter_z)
         self.update_axes()
 
         return
@@ -341,13 +334,6 @@ class Slicer3d(Slicer):
                     self.fig.update_traces(
                         **args, selector={"name": "slice_{}".format(key)})
 
-                    # for j in range(1 + self.show_variances):
-                    #     k = i + 4 * j
-                    #     setattr(self.fig.data[k], key,
-                    #             np.ones_like(xx) * val["loc"])
-                    #     setattr(self.fig.data[k], permutations[key][0], xx)
-                    #     setattr(self.fig.data[k], permutations[key][1], yy)
-
                 self.fig.update_traces(
                     surfacecolor=self.check_transpose(val["slice"]),
                     selector={"name": "slice_{}".format(key),
@@ -359,12 +345,6 @@ class Slicer3d(Slicer):
                         selector={"name": "slice_{}".format(key),
                                   "meta": "variances"})
 
-                # self.fig.data[i].surfacecolor = self.check_transpose(
-                #     val["slice"])
-                # if self.show_variances:
-                #     self.fig.data[i+4].surfacecolor = self.check_transpose(
-                #         val["slice"], variances=True)
-
         return
 
     # Define function to update slices
@@ -374,6 +354,7 @@ class Slicer3d(Slicer):
         else:
             # Update only one slice
             # The dimensions to be sliced have been saved in slider_dims
+            slice_indices = {"x": 0, "y": 1, "z": 2}
             key = change["owner"].dim_str
             self.lab[key].value = self.make_slider_label(
                     self.slider_x[key], change["new"])
@@ -382,7 +363,7 @@ class Slicer3d(Slicer):
             # Now move slice
             ax_dim = self.buttons[key].value.lower()
             xy = {ax_dim: np.ones_like(
-                self.fig.data[self.slice_indices[ax_dim]][ax_dim]) * \
+                self.fig.data[slice_indices[ax_dim]][ax_dim]) * \
                     self.slider_x[key].values[change["new"]]}
 
             self.fig.update_traces(
