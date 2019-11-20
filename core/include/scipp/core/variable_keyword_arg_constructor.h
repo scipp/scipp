@@ -90,11 +90,10 @@ template <class Tag, class... Args>
 constexpr bool is_tag_in_pack_v =
     std::disjunction<has_tag<Tag, Args>...>::value;
 
-template <class T, template <class T1, class T2> class Cond, class... Args>
-class Indexer {
+template <class T, class... Args> class Indexer {
   template <std::size_t... IS>
   static constexpr auto indexOfCorresponding_impl(std::index_sequence<IS...>) {
-    return ((Cond<T, Args>::value * IS) + ...);
+    return ((has_tag<T, Args>::value * IS) + ...);
   }
 
 public:
@@ -173,8 +172,7 @@ private:
     if constexpr (!is_tag_in_pack_v<Tag, Ts...>)
       return std::tuple{};
     else {
-      constexpr auto index =
-          Indexer<Tag, has_tag, Args...>::indexOfCorresponding();
+      constexpr auto index = Indexer<Tag, Args...>::indexOfCorresponding();
       return std::move(std::get<index>(tp).tuple);
     }
   }
