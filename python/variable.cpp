@@ -329,15 +329,18 @@ void init_variable(py::module &m) {
           Dimensions dims(labels, shape.cast<std::vector<scipp::index>>());
           return self.reshape(dims);
         },
-        py::arg("variable"), py::arg("dims"), py::arg("shape"),
+        py::arg("x"), py::arg("dims"), py::arg("shape"),
         R"(
         Reshape a variable.
 
+        :param x: Data to reshape.
+        :param dims: List of new dimensions.
+        :param shape: New extents in each dimension.
         :raises: If the volume of the old shape is not equal to the volume of the new shape.
         :return: New variable with requested dimension labels and shape.
         :rtype: Variable)");
 
-  m.def("abs", [](const Variable &self) { return abs(self); },
+  m.def("abs", [](const Variable &self) { return abs(self); }, py::arg("x"),
         py::call_guard<py::gil_scoped_release>(), R"(
         Element-wise absolute value.
 
@@ -345,16 +348,20 @@ void init_variable(py::module &m) {
         :seealso: :py:class:`scipp.norm` for vector-like dtype
         :return: Copy of the input with values replaced by the absolute values
         :rtype: Variable)");
+
   m.def("dot", py::overload_cast<const Variable &, const Variable &>(&dot),
-        py::call_guard<py::gil_scoped_release>(), R"(
+        py::arg("x"), py::arg("y"), py::call_guard<py::gil_scoped_release>(),
+        R"(
         Element-wise dot-product.
 
         :raises: If the dtype is not a vector such as :py:class:`scipp.dtype.vector_3_double`
         :return: New variable with scalar elements based on the two inputs.
         :rtype: Variable)");
+
   m.def("concatenate",
         py::overload_cast<const VariableConstProxy &,
                           const VariableConstProxy &, const Dim>(&concatenate),
+        py::arg("x"), py::arg("y"), py::arg("dim"),
         py::call_guard<py::gil_scoped_release>(), R"(
         Concatenate input variables along the given dimension.
 
@@ -362,11 +369,16 @@ void init_variable(py::module &m) {
         - Along an existing dimension, yielding a new dimension extent given by the sum of the input's extents.
         - Along a new dimension that is not contained in either of the inputs, yielding an output with one extra dimensions.
 
+        :param x: First Variable.
+        :param y: Second Variable.
+        :param dim: Dimension along which to concatenate.
         :raises: If the dtype or unit does not match, or if the dimensions and shapes are incompatible.
         :return: New variable containing all elements of the input variables.
         :rtype: Variable)");
+
   m.def("filter",
         py::overload_cast<const Variable &, const Variable &>(&filter),
+        py::arg("x"), py::arg("filter"),
         py::call_guard<py::gil_scoped_release>(), R"(
         Selects elements for a Variable using a filter (mask).
 
@@ -377,8 +389,10 @@ void init_variable(py::module &m) {
         :raises: If the filter variable is not 1 dimensional.
         :return: New variable containing the data selected by the filter
         :rtype: Variable)");
+
   m.def("mean", py::overload_cast<const VariableConstProxy &, const Dim>(&mean),
-        py::call_guard<py::gil_scoped_release>(), R"(
+        py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
+        R"(
         Element-wise mean over the specified dimension, if variances are present, the new variance is computated as standard-deviation of the mean.
 
         If the input has variances, the variances stored in the ouput are based on the "standard deviation of the mean", i.e., :math:`\sigma_{mean} = \sigma / \sqrt{N}`.
@@ -390,8 +404,9 @@ void init_variable(py::module &m) {
         :seealso: :py:class:`scipp.sum`
         :return: New variable containing the mean.
         :rtype: Variable)");
+
   m.def("norm", py::overload_cast<const VariableConstProxy &>(&norm),
-        py::call_guard<py::gil_scoped_release>(), R"(
+        py::arg("x"), py::call_guard<py::gil_scoped_release>(), R"(
         Element-wise norm.
 
         :raises: If the dtype has no norm, i.e., if it is not a vector
@@ -417,7 +432,7 @@ void init_variable(py::module &m) {
         "Split a Variable along a given Dimension.");
 
   m.def("sqrt", [](const VariableConstProxy &self) { return sqrt(self); },
-        py::call_guard<py::gil_scoped_release>(), R"(
+        py::arg("x"), py::call_guard<py::gil_scoped_release>(), R"(
         Element-wise square-root.
 
         :raises: If the dtype has no square-root, e.g., if it is a string
@@ -437,15 +452,18 @@ void init_variable(py::module &m) {
         :rtype: Variable)");
 
   m.def("sum", py::overload_cast<const VariableConstProxy &, const Dim>(&sum),
-        py::call_guard<py::gil_scoped_release>(), R"(
+        py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
+        R"(
         Element-wise sum over the specified dimension.
 
+        :param x: Data to sum.
+        :param dim: Dimension over which to sum.
         :raises: If the dimension does not exist, or if the dtype cannot be summed, e.g., if it is a string
         :seealso: :py:class:`scipp.mean`
         :return: New variable containing the sum.
         :rtype: Variable)");
 
-  m.def("sin", [](const Variable &self) { return sin(self); },
+  m.def("sin", [](const Variable &self) { return sin(self); }, py::arg("x"),
         py::call_guard<py::gil_scoped_release>(), R"(
         Element-wise sin.
 
@@ -453,7 +471,7 @@ void init_variable(py::module &m) {
         :return: Copy of the input with values replaced by the sin.
         :rtype: Variable)");
 
-  m.def("cos", [](const Variable &self) { return cos(self); },
+  m.def("cos", [](const Variable &self) { return cos(self); }, py::arg("x"),
         py::call_guard<py::gil_scoped_release>(), R"(
         Element-wise cos.
 
@@ -461,7 +479,7 @@ void init_variable(py::module &m) {
         :return: Copy of the input with values replaced by the cos.
         :rtype: Variable)");
 
-  m.def("tan", [](const Variable &self) { return tan(self); },
+  m.def("tan", [](const Variable &self) { return tan(self); }, py::arg("x"),
         py::call_guard<py::gil_scoped_release>(), R"(
         Element-wise tan.
 
@@ -469,7 +487,7 @@ void init_variable(py::module &m) {
         :return: Copy of the input with values replaced by the tan.
         :rtype: Variable)");
 
-  m.def("asin", [](const Variable &self) { return asin(self); },
+  m.def("asin", [](const Variable &self) { return asin(self); }, py::arg("x"),
         py::call_guard<py::gil_scoped_release>(), R"(
         Element-wise asin.
 
@@ -477,7 +495,7 @@ void init_variable(py::module &m) {
         :return: Copy of the input with values replaced by the asin. Output unit is rad.
         :rtype: Variable)");
 
-  m.def("acos", [](const Variable &self) { return acos(self); },
+  m.def("acos", [](const Variable &self) { return acos(self); }, py::arg("x"),
         py::call_guard<py::gil_scoped_release>(), R"(
         Element-wise acos.
 
@@ -485,7 +503,7 @@ void init_variable(py::module &m) {
         :return: Copy of the input with values replaced by the acos. Output unit is rad.
         :rtype: Variable)");
 
-  m.def("atan", [](const Variable &self) { return atan(self); },
+  m.def("atan", [](const Variable &self) { return atan(self); }, py::arg("x"),
         py::call_guard<py::gil_scoped_release>(), R"(
         Element-wise atan.
 
