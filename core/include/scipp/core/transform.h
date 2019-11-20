@@ -223,6 +223,7 @@ struct element_type<ValuesAndVariances<const sparse_container<T>>> {
 /// This helper allows the use of a common transform implementation when mixing
 /// sparse and non-sparse data.
 template <class T> struct broadcast {
+  using value_type = std::remove_const_t<T>;
   constexpr auto operator[](const scipp::index) const noexcept { return value; }
   constexpr auto data() const noexcept { return *this; }
   T value;
@@ -472,7 +473,8 @@ template <bool dry_run> struct in_place {
     // For sparse data we can fail for any subitem if the sizes to not match. To
     // avoid partially modifying (and thus corrupting) data in an in-place
     // operation we need to do the checks before any modification happens.
-    if constexpr (is_sparse_v<typename std::decay_t<T>::value_type>) {
+    if constexpr (is_sparse_v<typename std::decay_t<T>::value_type> ||
+                  (is_sparse_v<typename std::decay_t<Ts>::value_type> || ...)) {
       for (auto i = indices; std::get<0>(i) != end; iter::increment(i)) {
         call_in_place(
             [](auto &&... args) {
