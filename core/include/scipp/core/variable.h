@@ -446,6 +446,22 @@ private:
   units::Unit m_unit;
   VariableConceptHandle m_object;
 };
+/// This is used to provide the fabric function:
+/// createVariable<type>(Dims, Shape, Unit, Values<T1>, Variances<T2>)
+/// with the obligatory template argument type, function arguments are not
+/// obligatory and could be given in arbitrary order, but suposed to be wrapped
+/// in certain classes.
+/// Example: createVariable<float>(units::Unit(units::kg),
+/// Shape{1, 2}, Dims{Dim::X, Dim::Y}, Values({3, 4})).
+
+// The name should be changed to makeVariable after refactoring:
+// getting rid of all other makeVariable.
+template <class T, class... Ts> Variable createVariable(Ts &&... ts) {
+  using helper = detail::ConstructorArgumentsMatcher<Variable, Ts...>;
+  helper::template checkArgTypesValid<units::Unit, Dims, Shape>();
+  return helper::template construct<T, units::Unit, Dims, Shape>(
+      std::forward<Ts>(ts)...);
+}
 
 template <class T> Variable makeVariable(const Dimensions &dimensions) {
   if (dimensions.sparse())
@@ -561,15 +577,11 @@ Variable Variable::create(units::Unit &&u, Dims &&d, Shape &&s,
 template <class... Ts>
 template <class T>
 Variable Variable::ConstructVariable<Ts...>::Maker<T>::apply(Ts &&... ts) {
-  using helper = detail::ConstructorArgumentsMatcher<Variable, Ts...>;
-  return helper::template construct<T, units::Unit, Dims, Shape>(
-      std::forward<Ts>(ts)...);
+  return createVariable<T>(std::forward<Ts>(ts)...);
 }
 
 template <class... Ts>
 Variable Variable::ConstructVariable<Ts...>::make(Ts &&... args, DType type) {
-  using helper = detail::ConstructorArgumentsMatcher<Variable, Ts...>;
-  helper::template checkArgTypesValid<units::Unit, Dims, Shape>();
   return CallDTypeWithSparse<
       double, float, int64_t, int32_t, bool, Eigen::Vector3d,
       std::string>::apply<Maker>(type, std::forward<Ts>(args)...);
