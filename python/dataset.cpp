@@ -266,8 +266,8 @@ void init_dataset(py::module &m) {
         Concatenates the data, coords, labels and masks of the data array.
         Coords, labels and masks for any but the given dimension are required to match and are copied to the output without changes.
 
-        :param x: First DataProxy.
-        :param y: Second DataProxy.
+        :param x: First DataArray.
+        :param y: Second DataArray.
         :param dim: Dimension along which to concatenate.
         :raises: If the dtype or unit does not match, or if the dimensions and shapes are incompatible.
         :return: New data array containing all data, coords, labels, and masks of the input arrays.
@@ -295,7 +295,7 @@ void init_dataset(py::module &m) {
           return core::histogram(ds, bins);
         },
         py::arg("x"), py::arg("bins"), py::call_guard<py::gil_scoped_release>(),
-        R"(Returns a new DataArray with values in bins for for sparse dims.
+        R"(Returns a new DataArray with values in bins for sparse dims.
 
         :param x: Data to histogram.
         :param bins: Bin edges.
@@ -307,7 +307,7 @@ void init_dataset(py::module &m) {
           return core::histogram(ds, bins);
         },
         py::arg("x"), py::arg("bins"), py::call_guard<py::gil_scoped_release>(),
-        R"(Returns a new DataArray with values in bins for for sparse dims.
+        R"(Returns a new DataArray with values in bins for sparse dims.
 
         :param x: Data to histogram.
         :param bins: Bin edges.
@@ -319,7 +319,7 @@ void init_dataset(py::module &m) {
           return core::histogram(ds, bins);
         },
         py::arg("x"), py::arg("bins"), py::call_guard<py::gil_scoped_release>(),
-        R"(Returns a new Dataset with values in bins for for sparse dims.
+        R"(Returns a new Dataset with values in bins for sparse dims.
 
         :param x: Data to histogram.
         :param bins: Bin edges.
@@ -331,7 +331,7 @@ void init_dataset(py::module &m) {
           return core::histogram(ds, bins);
         },
         py::arg("x"), py::arg("bins"), py::call_guard<py::gil_scoped_release>(),
-        R"(Returns a new Dataset with values in bins for for sparse dims.
+        R"(Returns a new Dataset with values in bins for sparse dims.
 
         :param x: Data to histogram.
         :param bins: Bin edges.
