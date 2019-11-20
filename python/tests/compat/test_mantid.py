@@ -44,7 +44,6 @@ class TestMantidConversion(unittest.TestCase):
 
     def test_EventWorkspace(self):
         import mantid.simpleapi as mantid
-        from mantid.api import EventType
         eventWS = mantid.CloneWorkspace(self.base_event_ws)
         ws = mantid.Rebin(eventWS, 10000)
 
@@ -52,7 +51,7 @@ class TestMantidConversion(unittest.TestCase):
 
         target_tof = binned_mantid.coords[sc.Dim.Tof]
         d = mantidcompat.convert_EventWorkspace_to_dataset(
-            eventWS, False, EventType.TOF)
+            eventWS, False)
         binned = sc.histogram(d, target_tof)
 
         delta = sc.sum(binned_mantid - binned, sc.Dim.Spectrum)
@@ -61,7 +60,6 @@ class TestMantidConversion(unittest.TestCase):
 
     def test_unit_conversion(self):
         import mantid.simpleapi as mantid
-        from mantid.api import EventType
         eventWS = mantid.CloneWorkspace(self.base_event_ws)
         ws = mantid.Rebin(eventWS, 10000, PreserveEvents=False)
         tmp = mantidcompat.convert_Workspace2D_to_dataset(ws)
@@ -72,7 +70,7 @@ class TestMantidConversion(unittest.TestCase):
         converted_mantid = mantidcompat.convert_Workspace2D_to_dataset(ws)
 
         da = mantidcompat.convert_EventWorkspace_to_dataset(
-            eventWS, False, EventType.TOF)
+            eventWS, False)
         da = sc.histogram(da, target_tof)
         d = sc.Dataset(da)
         converted = sc.neutron.convert(d, sc.Dim.Tof, sc.Dim.Wavelength)
@@ -150,6 +148,11 @@ class TestMantidConversion(unittest.TestCase):
         np.testing.assert_array_equal(
             ds.masks["spectrum"].values[0:3],
             [True, True, True])
+
+    def test_EventWorkspace_with_monitors(self):
+        filename = MantidDataHelper.find_file("CNCS_51936_event.nxs")
+        ds = mantidcompat.load(filename, LoadMonitors=True)
+        assert isinstance(ds.attrs['monitors'].values, sc.DataArray)
 
 
 if __name__ == "__main__":

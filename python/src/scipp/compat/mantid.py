@@ -192,8 +192,8 @@ def convert_Workspace2D_to_dataset(ws):
     return array
 
 
-def convert_EventWorkspace_to_dataset(ws, load_pulse_times, EventType):
-
+def convert_EventWorkspace_to_dataset(ws, load_pulse_times):
+    from mantid.api import EventType
     allowed_units = {"TOF": [sc.Dim.Tof, sc.units.us]}
     xunit = ws.getAxis(0).getUnit().unitID()
     if xunit not in allowed_units.keys():
@@ -359,7 +359,7 @@ def load(filename="",
 
     try:
         import mantid.simpleapi as mantid
-        from mantid.api import EventType, Workspace
+        from mantid.api import Workspace
         from mantid import AnalysisDataService
     except ImportError:
         raise ImportError(
@@ -388,17 +388,18 @@ def load(filename="",
     if data_ws.id() == 'Workspace2D':
         dataset = convert_Workspace2D_to_dataset(data_ws)
     elif data_ws.id() == 'EventWorkspace':
-        dataset = convert_EventWorkspace_to_dataset(data_ws, load_pulse_times,
-                                                    EventType)
+        dataset = convert_EventWorkspace_to_dataset(data_ws, load_pulse_times)
     elif data_ws.id() == 'TableWorkspace':
         dataset = convert_TableWorkspace_to_dataset(data_ws, error_connection)
-
-    # Remove workspaces from Mantid's ADS once we are done with them
     AnalysisDataService.Instance().remove(data_ws.name())
-    if monitor_ws is not None:
-        AnalysisDataService.Instance().remove(monitor_ws.name())
 
     if dataset is None:
         raise RuntimeError('Unsupported workspace type')
+    elif monitor_ws is not None:
+        if monitor_ws.id() == 'Workspace2D':
+            dataset.attrs["monitors"] = sc.Variable(value=convert_Workspace2D_to_dataset(monitor_ws))
+        elif monitor_ws.id() == 'EventWorkspace':
+            dataset.attrs["monitors"] = sc.Variable(value=convert_EventWorkspace_to_dataset(monitor_ws, load_pulse_times))
+        AnalysisDataService.Instance().remove(monitor_ws.name())
 
     return dataset
