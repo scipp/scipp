@@ -548,9 +548,13 @@ Variable Variable::create(units::Unit &&u, Dims &&d, Shape &&s,
   if (var)
     throw except::VariancesError("Can't have variance without values");
   else {
-    auto res = makeVariable<T>(dms);
-    res.setUnit(u);
-    return res;
+    if constexpr (is_sparse_container<T>::value) {
+      throw except::TypeError("unreachable");
+    } else {
+      auto res = makeVariable<T>(dms);
+      res.setUnit(u);
+      return res;
+    }
   }
 }
 

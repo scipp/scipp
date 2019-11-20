@@ -6,7 +6,6 @@
 #include "test_macros.h"
 
 #include "scipp/core/variable.h"
-#include "scipp/core/variable.tcc"
 
 using namespace scipp;
 using namespace scipp::core;
