@@ -28,13 +28,6 @@ template <class U> struct vector_like {
   vector_like(std::initializer_list<T> init) : data(init.begin(), init.end()) {}
 };
 
-template <class Tag, class... Ts> struct TaggedTuple {
-  using tag_type = Tag;
-  using tuple_type = std::tuple<Ts...>;
-  tag_type tag;
-  tuple_type tuple;
-};
-
 struct ValuesTag {};
 
 struct VariancesTag {};
