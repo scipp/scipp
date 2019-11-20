@@ -28,13 +28,6 @@ template <class U> struct vector_like {
   vector_like(std::initializer_list<T> init) : data(init.begin(), init.end()) {}
 };
 
-template <class Tag, class... Ts> struct TaggedTuple {
-  using tag_type = Tag;
-  using tuple_type = std::tuple<Ts...>;
-  tag_type tag;
-  tuple_type tuple;
-};
-
 struct ValuesTag {};
 
 struct VariancesTag {};
@@ -49,19 +42,16 @@ template <class T> auto makeArgsTuple(std::initializer_list<T> init) {
   return std::make_tuple<iter, iter>(init.begin(), init.end());
 }
 
-template <class... Args>
-using MakeArgsTupleReturnType =
-    decltype(makeArgsTuple(std::declval<Args>()...));
 } // namespace detail
 
 using Shape = detail::vector_like<scipp::index>;
 using Dims = detail::vector_like<Dim>;
 
 template <class... Args>
-using ArgsTupple = detail::MakeArgsTupleReturnType<Args...>;
+using ArgsTuple = decltype(detail::makeArgsTuple(std::declval<Args>()...));
 
 template <class... Args> struct Values : detail::ValuesTag {
-  ArgsTupple<Args...> tuple;
+  ArgsTuple<Args...> tuple;
   Values(Args &&... args)
       : tuple(detail::makeArgsTuple(std::forward<Args>(args)...)) {}
   template <class T>
@@ -76,7 +66,7 @@ Values(std::initializer_list<T>)
 
 template <class... Args>
 struct Variances : std::tuple<Args...>, detail::VariancesTag {
-  ArgsTupple<Args...> tuple;
+  ArgsTuple<Args...> tuple;
   Variances(Args &&... args)
       : tuple(detail::makeArgsTuple(std::forward<Args>(args)...)) {}
   template <class T>
@@ -100,11 +90,10 @@ template <class Tag, class... Args>
 constexpr bool is_tag_in_pack_v =
     std::disjunction<has_tag<Tag, Args>...>::value;
 
-template <class T, template <class T1, class T2> class Cond, class... Args>
-class Indexer {
+template <class T, class... Args> class Indexer {
   template <std::size_t... IS>
   static constexpr auto indexOfCorresponding_impl(std::index_sequence<IS...>) {
-    return ((Cond<T, Args>::value * IS) + ...);
+    return ((has_tag<T, Args>::value * IS) + ...);
   }
 
 public:
@@ -183,8 +172,7 @@ private:
     if constexpr (!is_tag_in_pack_v<Tag, Ts...>)
       return std::tuple{};
     else {
-      constexpr auto index =
-          Indexer<Tag, has_tag, Args...>::indexOfCorresponding();
+      constexpr auto index = Indexer<Tag, Args...>::indexOfCorresponding();
       return std::move(std::get<index>(tp).tuple);
     }
   }
