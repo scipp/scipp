@@ -46,16 +46,16 @@ auto make_sparse() {
 auto make_histogram() {
   auto edges = makeVariable<double>({{Dim::Y, 2}, {Dim::X, 3}}, units::us,
                                     {0, 2, 4, 1, 3, 5});
-  auto weights = makeVariable<double>({Dim::X, 2}, {2.0, 3.0}, {0.3, 0.4});
+  auto data = makeVariable<double>({Dim::X, 2}, {2.0, 3.0}, {0.3, 0.4});
 
-  return DataArray(weights, {{Dim::X, edges}});
+  return DataArray(data, {{Dim::X, edges}});
 }
 
 TEST(DataArraySparseArithmeticTest, fail_sparse_op_non_histogram) {
   const auto sparse = make_sparse();
   auto coord = makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}}, {0, 2, 1, 3});
-  auto weights = makeVariable<double>({Dim::X, 2}, {2.0, 3.0}, {0.3, 0.4});
-  DataArray not_hist(weights, {{Dim::X, coord}});
+  auto data = makeVariable<double>({Dim::X, 2}, {2.0, 3.0}, {0.3, 0.4});
+  DataArray not_hist(data, {{Dim::X, coord}});
 
   EXPECT_THROW(sparse * not_hist, except::SparseDataError);
   EXPECT_THROW(not_hist * sparse, except::SparseDataError);
@@ -82,11 +82,11 @@ TEST(DataArraySparseArithmeticTest, sparse_times_histogram) {
 TEST(DataArraySparseArithmeticTest, sparse_with_values_times_histogram) {
   auto sparse = make_sparse();
   const auto hist = make_histogram();
-  Variable weights(sparse.coords()[Dim::X]);
-  weights.setUnit(units::counts);
-  weights *= 0.0;
-  weights += 2.0 * units::Unit(units::counts);
-  sparse.setData(weights);
+  Variable data(sparse.coords()[Dim::X]);
+  data.setUnit(units::counts);
+  data *= 0.0;
+  data += 2.0 * units::Unit(units::counts);
+  sparse.setData(data);
 
   for (const auto result : {sparse * hist, hist * sparse}) {
     EXPECT_EQ(result.coords()[Dim::X], sparse.coords()[Dim::X]);
