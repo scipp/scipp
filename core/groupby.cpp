@@ -6,11 +6,11 @@
 
 #include "scipp/core/except.h"
 #include "scipp/core/groupby.h"
+#include "scipp/core/histogram.h"
 #include "scipp/core/indexed_slice_view.h"
 #include "scipp/core/tag_util.h"
 
 #include "dataset_operations_common.h"
-#include "histogram.h"
 #include "variable_operations_common.h"
 
 namespace scipp::core {

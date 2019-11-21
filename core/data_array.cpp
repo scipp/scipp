@@ -2,9 +2,9 @@
 // Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#include "histogram.h"
 #include "scipp/common/numeric.h"
 #include "scipp/core/dataset.h"
+#include "scipp/core/histogram.h"
 #include "scipp/core/subspan_view.h"
 #include "scipp/core/transform.h"
 
@@ -162,13 +162,6 @@ DataArray operator+(const DataConstProxy &a, const DataConstProxy &b) {
 DataArray operator-(const DataConstProxy &a, const DataConstProxy &b) {
   return {a.data() - b.data(), union_(a.coords(), b.coords()),
           union_(a.labels(), b.labels()), union_or(a.masks(), b.masks())};
-}
-
-bool is_histogram(const DataConstProxy &a, const Dim dim) {
-  const auto dims = a.dims();
-  const auto coords = a.coords();
-  return !dims.sparse() && dims.contains(dim) && coords.contains(dim) &&
-         coords[dim].dims()[dim] == dims[dim] + 1;
 }
 
 bool is_sparse_and_histogram(const DataConstProxy &a, const DataConstProxy &b) {
