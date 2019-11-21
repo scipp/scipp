@@ -85,6 +85,15 @@ template <class Types, class Op>
       return transform_subspan_impl<Types>(dim, size, op, var1, var2);
     }
 
+template <class Types, class Op>
+[[nodiscard]] Variable
+    transform_subspan(const Dim dim, const scipp::index size,
+                      const VariableConstProxy &var1,
+                      const VariableConstProxy &var2,
+                      const VariableConstProxy &var3, Op op) {
+      return transform_subspan_impl<Types>(dim, size, op, var1, var2, var3);
+    }
+
 } // namespace scipp::core
 
 #endif // SCIPP_CORE_TRANSFORM_SUBSPAN_H

@@ -64,7 +64,7 @@ Variable sparse_dense_op_impl(Op op, const VariableConstProxy &sparseCoord_,
             if (have_variance)
               out_vars.reserve(sparse.size());
             if (scipp::numeric::is_linspace(edges)) {
-              auto len = scipp::size(sparse) - 1;
+              auto len = scipp::size(edges) - 1;
               const auto offset = edges.front();
               const auto nbin = static_cast<decltype(offset)>(len);
               const auto scale = nbin / (edges.back() - edges.front());

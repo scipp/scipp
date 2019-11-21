@@ -36,6 +36,39 @@ static constexpr auto make_histogram = [](auto &data, const auto &events,
   std::copy(data.value.begin(), data.value.end(), data.variance.begin());
 };
 
+static constexpr auto make_histogram_from_weighted =
+    [](auto &data, const auto &events, const auto &weights, const auto &edges) {
+      expect::histogram::sorted_edges(edges);
+      if (scipp::numeric::is_linspace(edges)) {
+        const double offset = edges.front();
+        const double nbin = static_cast<double>(scipp::size(data.value));
+        const double scale = nbin / (edges.back() - edges.front());
+        for (scipp::index i = 0; i < scipp::size(events); ++i) {
+          const auto x = events[i];
+          const double bin = (x - offset) * scale;
+          if (bin >= 0.0 && bin < nbin) {
+            const auto b = static_cast<scipp::index>(bin);
+            const auto w = weights.values[i];
+            const auto e = weights.variances[i];
+            data.value[b] += w;
+            data.variance[b] += e;
+          }
+        }
+      } else {
+        for (scipp::index i = 0; i < scipp::size(events); ++i) {
+          const auto x = events[i];
+          auto it = std::upper_bound(edges.begin(), edges.end(), x);
+          if (it != edges.end() && it != edges.begin()) {
+            const auto b = --it - edges.begin();
+            const auto w = weights.values[i];
+            const auto e = weights.variances[i];
+            data.value[b] += w;
+            data.variance[b] += e;
+          }
+        }
+      }
+    };
+
 static constexpr auto make_histogram_unit = [](const units::Unit &sparse_unit,
                                                const units::Unit &edge_unit) {
   if (sparse_unit != edge_unit)
@@ -44,29 +77,57 @@ static constexpr auto make_histogram_unit = [](const units::Unit &sparse_unit,
   return units::counts;
 };
 
+static constexpr auto make_histogram_unit_from_weighted =
+    [](const units::Unit &sparse_unit, const units::Unit &weights_unit,
+       const units::Unit &edge_unit) {
+      if (sparse_unit != edge_unit)
+        throw except::UnitError("Bin edges must have same unit as the sparse "
+                                "input coordinate.");
+      if (weights_unit != units::counts)
+        throw except::UnitError(
+            "Weights of sparse data must be `units::counts`.");
+      return weights_unit;
+    };
+
 DataArray histogram(const DataConstProxy &sparse,
                     const VariableConstProxy &binEdges) {
-  if (sparse.hasData())
-    throw except::SparseDataError(
-        "`histogram` is not implemented for sparse data with values yet.");
   auto dim = binEdges.dims().inner();
 
   auto result = apply_and_drop_dim(
       sparse,
       [](const DataConstProxy &sparse_, const Dim dim_,
          const VariableConstProxy &binEdges_) {
-        return transform_subspan<
-            std::tuple<std::tuple<span<double>, sparse_container<double>,
-                                  span<const double>>,
-                       std::tuple<span<double>, sparse_container<float>,
-                                  span<const double>>,
-                       std::tuple<span<double>, sparse_container<float>,
-                                  span<const float>>>>(
-            dim_, binEdges_.dims()[dim_] - 1, sparse_.coords()[dim_], binEdges_,
-            overloaded{make_histogram, make_histogram_unit,
-                       transform_flags::expect_variance_arg<0>,
-                       transform_flags::expect_no_variance_arg<1>,
-                       transform_flags::expect_no_variance_arg<2>});
+        if (sparse_.hasData()) {
+          return transform_subspan<std::tuple<
+              std::tuple<span<double>, sparse_container<double>,
+                         sparse_container<double>, span<const double>>,
+              std::tuple<span<double>, sparse_container<float>,
+                         sparse_container<double>, span<const double>>,
+              std::tuple<span<double>, sparse_container<float>,
+                         sparse_container<double>, span<const float>>>>(
+              dim_, binEdges_.dims()[dim_] - 1, sparse_.coords()[dim_],
+              sparse_.data(), binEdges_,
+              overloaded{make_histogram_from_weighted,
+                         make_histogram_unit_from_weighted,
+                         transform_flags::expect_variance_arg<0>,
+                         transform_flags::expect_no_variance_arg<1>,
+                         transform_flags::expect_variance_arg<2>,
+                         transform_flags::expect_no_variance_arg<3>});
+        } else {
+          return transform_subspan<
+              std::tuple<std::tuple<span<double>, sparse_container<double>,
+                                    span<const double>>,
+                         std::tuple<span<double>, sparse_container<float>,
+                                    span<const double>>,
+                         std::tuple<span<double>, sparse_container<float>,
+                                    span<const float>>>>(
+              dim_, binEdges_.dims()[dim_] - 1, sparse_.coords()[dim_],
+              binEdges_,
+              overloaded{make_histogram, make_histogram_unit,
+                         transform_flags::expect_variance_arg<0>,
+                         transform_flags::expect_no_variance_arg<1>,
+                         transform_flags::expect_no_variance_arg<2>});
+        }
       },
       dim, binEdges);
   result.setCoord(dim, binEdges);
