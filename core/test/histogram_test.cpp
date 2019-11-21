@@ -12,6 +12,7 @@ using namespace scipp::core;
 
 TEST(HistogramTest, is_histogram) {
   const auto dataX = makeVariable<double>({Dim::X, 2});
+  const auto dataY = makeVariable<double>({Dim::Y, 2});
   const auto dataXY = makeVariable<double>({{Dim::X, 2}, {Dim::Y, 3}});
   const auto edgesX = makeVariable<double>({Dim::X, 3});
   const auto edgesY = makeVariable<double>({Dim::Y, 4});
@@ -34,6 +35,10 @@ TEST(HistogramTest, is_histogram) {
   EXPECT_FALSE(is_histogram(DataArray(dataX, {{Dim::X, coordY}}), Dim::X));
   EXPECT_FALSE(is_histogram(DataArray(dataX, {{Dim::Y, coordX}}), Dim::X));
   EXPECT_FALSE(is_histogram(DataArray(dataX, {{Dim::Y, coordY}}), Dim::X));
+
+  // Coord length X is 2 and data does not depend on X, but this is *not*
+  // interpreted as a single-bin histogram.
+  EXPECT_FALSE(is_histogram(DataArray(dataY, {{Dim::X, coordX}}), Dim::X));
 
   const auto sparse = makeVariable<double>({Dim::X, Dimensions::Sparse});
   EXPECT_FALSE(is_histogram(DataArray(sparse, {{Dim::X, coordX}}), Dim::X));
