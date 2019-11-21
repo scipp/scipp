@@ -10,6 +10,53 @@
 
 namespace scipp::core {
 
+namespace transform_subspan_detail {
+static constexpr auto erase = [](Dimensions dims, const Dim dim) {
+  dims.erase(dim);
+  return dims;
+};
+static constexpr auto need_subspan = [](const VariableConstProxy &var,
+                                        const Dim dim) {
+  return !var.dims().sparse() && var.dims().contains(dim);
+};
+
+static constexpr auto maybe_subspan = [](VariableConstProxy &var,
+                                         const Dim dim) {
+  Variable ret;
+  if (need_subspan(var, dim)) {
+    ret = subspan_view(var, dim);
+    var = ret;
+  }
+  return ret;
+};
+} // namespace transform_subspan_detail
+
+template <class Types, class Op, class... Var>
+[[nodiscard]] Variable transform_subspan_impl(const Dim dim,
+                                              const scipp::index size, Op op,
+                                              Var... var) {
+  using namespace transform_subspan_detail;
+
+  auto dims = merge(erase(var.dims(), dim)...);
+  dims.addInner(dim, size);
+
+  // This will cause failure below unless the output type (first type in inner
+  // tuple) is the same in all inner tuples.
+  using OutT =
+      typename std::tuple_element_t<0,
+                                    std::tuple_element_t<0, Types>>::value_type;
+  Variable out =
+      std::is_base_of_v<transform_flags::expect_variance_arg_t<0>, Op>
+          ? makeVariableWithVariances<OutT>(dims)
+          : makeVariable<OutT>(dims);
+
+  const auto keep_subspan_vars_alive = std::array{maybe_subspan(var, dim)...};
+
+  out.setUnit(op(var.unit()...));
+  in_place<false>::transform_data(Types{}, op, subspan_view(out, dim), var...);
+  return out;
+}
+
 /// Non-element-wise transform.
 ///
 /// This is a specialized version of transform, handling the case of inputs (and
@@ -31,42 +78,12 @@ namespace scipp::core {
 /// 5. Use the flag transform_flags::expect_variance_arg<0> to control whether
 ///    the output should have variances or not.
 template <class Types, class Op>
-[[nodiscard]] Variable transform_subspan(const Dim dim, const scipp::index size,
-                                         VariableConstProxy var1,
-                                         VariableConstProxy var2, Op op) {
-  auto dims1 = var1.dims();
-  auto dims2 = var2.dims();
-  dims1.erase(dim);
-  dims2.erase(dim);
-  auto dims = merge(dims1, dims2);
-  dims.addInner(dim, size);
-
-  // This will cause failure below unless the output type (first type in inner
-  // tuple) is the same in all inner tuples.
-  using OutT =
-      typename std::tuple_element_t<0,
-                                    std::tuple_element_t<0, Types>>::value_type;
-  Variable out =
-      std::is_base_of_v<transform_flags::expect_variance_arg_t<0>, Op>
-          ? makeVariableWithVariances<OutT>(dims)
-          : makeVariable<OutT>(dims);
-
-  Variable var1_subspans;
-  Variable var2_subspans;
-  if (!var1.dims().sparse()) {
-    var1_subspans = subspan_view(var1, dim);
-    var1 = VariableConstProxy(var1_subspans);
-  }
-  if (!var2.dims().sparse()) {
-    var2_subspans = subspan_view(var2, dim);
-    var2 = VariableConstProxy(var2_subspans);
-  }
-
-  out.setUnit(op(var1.unit(), var2.unit()));
-  in_place<false>::transform_data(Types{}, op, subspan_view(out, dim), var1,
-                                  var2);
-  return out;
-}
+[[nodiscard]] Variable
+    transform_subspan(const Dim dim, const scipp::index size,
+                      const VariableConstProxy &var1,
+                      const VariableConstProxy &var2, Op op) {
+      return transform_subspan_impl<Types>(dim, size, op, var1, var2);
+    }
 
 } // namespace scipp::core
 
