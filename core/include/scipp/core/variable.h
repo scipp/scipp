@@ -459,8 +459,11 @@ private:
 template <class T, class... Ts> Variable createVariable(Ts &&... ts) {
   using helper = detail::ConstructorArgumentsMatcher<Variable, Ts...>;
   helper::template checkArgTypesValid<units::Unit, Dims, Shape>();
-  return helper::template construct<T, units::Unit, Dims, Shape>(
-      std::forward<Ts>(ts)...);
+  auto [valArgs, varArgs, nonData] =
+      helper::template extractArguments<units::Unit, Dims, Shape>(
+          std::forward<Ts>(ts)...);
+  return helper::template construct<T>(std::move(valArgs), std::move(varArgs),
+                                       std::move(nonData));
 }
 
 template <class T> Variable makeVariable(const Dimensions &dimensions) {

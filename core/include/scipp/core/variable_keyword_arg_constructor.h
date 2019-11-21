@@ -128,28 +128,26 @@ public:
         "Shape{1, 2}, Dims{Dim::X, Dim::Y}, Values({3, 4}))");
   }
 
-  template <class...NonDataTypes>
-  static auto extractArguments(Ts&&...ts) {
+  template <class... NonDataTypes> static auto extractArguments(Ts &&... ts) {
     auto tp = std::make_tuple(std::forward<Ts>(ts)...);
     return std::make_tuple(std::move(extractTagged<ValuesTag, Ts...>(tp)),
                            std::move(extractTagged<VariancesTag, Ts...>(tp)),
-                           std::tuple<NonDataTypes...>(std::move(extractArgs<NonDataTypes, Ts...>(tp))...));
+                           std::tuple<NonDataTypes...>(std::move(
+                               extractArgs<NonDataTypes, Ts...>(tp))...));
   }
 
-  template <class ElemT, class... NonDataTypes>
-  static VarT construct(Ts &&... ts) {
-//    auto tp = std::make_tuple(std::forward<Ts>(ts)...);
-//    auto valArgs = std::move(extractTagged<ValuesTag, Ts...>(tp));
-//    auto varArgs = std::move(extractTagged<VariancesTag, Ts...>(tp));
+  template <class ElemT, class... ValArgs, class... VarArgs,
+            class... NonDataTypes>
+  static VarT construct(std::tuple<ValArgs...> &&valArgs,
+                        std::tuple<VarArgs...> &&varArgs,
+                        std::tuple<NonDataTypes...> &&nonData) {
 
-    auto [valArgs, varArgs, nonData] = extractArguments<NonDataTypes...>(std::forward<Ts>(ts)...);
-
-    constexpr bool hasVal = std::tuple_size_v<decltype(valArgs)>;
-    constexpr bool hasVar = std::tuple_size_v<decltype(varArgs)>;
+    constexpr bool hasVal = sizeof...(ValArgs);
+    constexpr bool hasVar = sizeof...(VarArgs);
     constexpr bool constrVal =
-        is_constructible_from_tuple_v<Vector<ElemT>, decltype(valArgs)>;
+        std::is_constructible_v<Vector<ElemT>, ValArgs...>;
     constexpr bool constrVar =
-        is_constructible_from_tuple_v<Vector<ElemT>, decltype(varArgs)>;
+        std::is_constructible_v<Vector<ElemT>, VarArgs...>;
 
     if constexpr ((hasVal && !constrVal) || (hasVar && !constrVar))
       throw except::TypeError("Can't create the Variable with type " +
@@ -162,8 +160,9 @@ public:
       std::optional<Vector<ElemT>> variances;
       if (hasVar)
         variances = std::make_from_tuple<Vector<ElemT>>(std::move(varArgs));
-      return VarT::template create<ElemT>(std::move(std::get<NonDataTypes>(nonData))...,
-          std::move(values), std::move(variances));
+      return VarT::template create<ElemT>(
+          std::move(std::get<NonDataTypes>(nonData))..., std::move(values),
+          std::move(variances));
     }
   }
 
