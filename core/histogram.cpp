@@ -2,13 +2,13 @@
 // Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
+#include "scipp/core/histogram.h"
 #include "scipp/common/numeric.h"
 #include "scipp/core/dataset.h"
 #include "scipp/core/except.h"
 #include "scipp/core/transform.h"
 
 #include "dataset_operations_common.h"
-#include "histogram.h"
 
 namespace scipp::core {
 
@@ -98,6 +98,14 @@ Dataset histogram(const Dataset &dataset, const Variable &bins) {
 Dataset histogram(const Dataset &dataset, const Dim &dim) {
   auto bins = dataset.coords()[dim];
   return histogram(dataset, bins);
+}
+
+bool is_histogram(const DataConstProxy &a, const Dim dim) {
+  const auto dims = a.dims();
+  const auto coords = a.coords();
+  return !dims.sparse() && dims.contains(dim) && coords.contains(dim) &&
+         coords[dim].dims().contains(dim) &&
+         coords[dim].dims()[dim] == dims[dim] + 1;
 }
 
 } // namespace scipp::core

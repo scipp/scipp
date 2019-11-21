@@ -5,9 +5,44 @@
 #include <gtest/gtest.h>
 
 #include "scipp/core/dataset.h"
+#include "scipp/core/histogram.h"
 
 using namespace scipp;
 using namespace scipp::core;
+
+TEST(HistogramTest, is_histogram) {
+  const auto dataX = makeVariable<double>({Dim::X, 2});
+  const auto dataY = makeVariable<double>({Dim::Y, 2});
+  const auto dataXY = makeVariable<double>({{Dim::X, 2}, {Dim::Y, 3}});
+  const auto edgesX = makeVariable<double>({Dim::X, 3});
+  const auto edgesY = makeVariable<double>({Dim::Y, 4});
+  const auto coordX = makeVariable<double>({Dim::X, 2});
+  const auto coordY = makeVariable<double>({Dim::Y, 3});
+
+  const auto histX = DataArray(dataX, {{Dim::X, edgesX}});
+  EXPECT_TRUE(is_histogram(histX, Dim::X));
+  EXPECT_FALSE(is_histogram(histX, Dim::Y));
+
+  const auto histX2d = DataArray(dataXY, {{Dim::X, edgesX}});
+  EXPECT_TRUE(is_histogram(histX2d, Dim::X));
+  EXPECT_FALSE(is_histogram(histX2d, Dim::Y));
+
+  const auto histY2d = DataArray(dataXY, {{Dim::X, coordX}, {Dim::Y, edgesY}});
+  EXPECT_FALSE(is_histogram(histY2d, Dim::X));
+  EXPECT_TRUE(is_histogram(histY2d, Dim::Y));
+
+  EXPECT_FALSE(is_histogram(DataArray(dataX, {{Dim::X, coordX}}), Dim::X));
+  EXPECT_FALSE(is_histogram(DataArray(dataX, {{Dim::X, coordY}}), Dim::X));
+  EXPECT_FALSE(is_histogram(DataArray(dataX, {{Dim::Y, coordX}}), Dim::X));
+  EXPECT_FALSE(is_histogram(DataArray(dataX, {{Dim::Y, coordY}}), Dim::X));
+
+  // Coord length X is 2 and data does not depend on X, but this is *not*
+  // interpreted as a single-bin histogram.
+  EXPECT_FALSE(is_histogram(DataArray(dataY, {{Dim::X, coordX}}), Dim::X));
+
+  const auto sparse = makeVariable<double>({Dim::X, Dimensions::Sparse});
+  EXPECT_FALSE(is_histogram(DataArray(sparse, {{Dim::X, coordX}}), Dim::X));
+}
 
 Dataset make_2d_sparse_coord_only(const std::string &name) {
   Dataset sparse;

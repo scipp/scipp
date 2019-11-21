@@ -32,6 +32,7 @@ set(SRC_FILES
     rebin.cpp
     slice.cpp
     sort.cpp
+    subspan_view.cpp
     string.cpp
     trigonometry.cpp
     variable.cpp

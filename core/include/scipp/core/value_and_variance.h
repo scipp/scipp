@@ -8,8 +8,6 @@
 
 namespace scipp::core {
 
-namespace detail {
-
 /// A value/variance pair with operators that propagate uncertainties.
 ///
 /// This is intended for small T such as double, float, and int. It is the
@@ -151,8 +149,6 @@ template <class T>
 struct is_ValueAndVariance<ValueAndVariance<T>> : std::true_type {};
 template <class T>
 inline constexpr bool is_ValueAndVariance_v = is_ValueAndVariance<T>::value;
-
-} // namespace detail
 
 } // namespace scipp::core
 

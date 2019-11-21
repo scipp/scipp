@@ -158,7 +158,7 @@ static constexpr void call(Op &&op, const Indices &indices, Out &&out,
   // If the output is sparse, ValuesAndVariances::operator= already does the job
   // in the line above (since ValuesAndVariances wraps references), if not
   // sparse then copy to actual output.
-  if constexpr (detail::is_ValueAndVariance_v<std::decay_t<decltype(out_)>>) {
+  if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(out_)>>) {
     out.values.data()[i] = out_.value;
     out.variances.data()[i] = out_.variance;
   }
@@ -193,7 +193,7 @@ static constexpr void call_in_place(Op &&op, const Indices &indices, Arg &&arg,
                      std::make_index_sequence<std::tuple_size_v<Indices> - 1>{},
                      std::forward<decltype(arg_)>(arg_),
                      std::forward<Args>(args)...);
-  if constexpr (detail::is_ValueAndVariance_v<std::decay_t<decltype(arg_)>>) {
+  if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(arg_)>>) {
     arg.values.data()[i] = arg_.value;
     arg.variances.data()[i] = arg_.variance;
   }
