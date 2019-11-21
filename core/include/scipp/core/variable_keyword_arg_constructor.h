@@ -128,11 +128,21 @@ public:
         "Shape{1, 2}, Dims{Dim::X, Dim::Y}, Values({3, 4}))");
   }
 
+  template <class...NonDataTypes>
+  static auto extractArguments(Ts&&...ts) {
+    auto tp = std::make_tuple(std::forward<Ts>(ts)...);
+    return std::make_tuple(std::move(extractTagged<ValuesTag, Ts...>(tp)),
+                           std::move(extractTagged<VariancesTag, Ts...>(tp)),
+                           std::tuple<NonDataTypes...>(std::move(extractArgs<NonDataTypes, Ts...>(tp))...));
+  }
+
   template <class ElemT, class... NonDataTypes>
   static VarT construct(Ts &&... ts) {
-    auto tp = std::make_tuple(std::forward<Ts>(ts)...);
-    auto valArgs = std::move(extractTagged<ValuesTag, Ts...>(tp));
-    auto varArgs = std::move(extractTagged<VariancesTag, Ts...>(tp));
+//    auto tp = std::make_tuple(std::forward<Ts>(ts)...);
+//    auto valArgs = std::move(extractTagged<ValuesTag, Ts...>(tp));
+//    auto varArgs = std::move(extractTagged<VariancesTag, Ts...>(tp));
+
+    auto [valArgs, varArgs, nonData] = extractArguments<NonDataTypes...>(std::forward<Ts>(ts)...);
 
     constexpr bool hasVal = std::tuple_size_v<decltype(valArgs)>;
     constexpr bool hasVar = std::tuple_size_v<decltype(varArgs)>;
@@ -152,8 +162,7 @@ public:
       std::optional<Vector<ElemT>> variances;
       if (hasVar)
         variances = std::make_from_tuple<Vector<ElemT>>(std::move(varArgs));
-      return VarT::template create<ElemT>(
-          std::forward<NonDataTypes>(extractArgs<NonDataTypes, Ts...>(tp))...,
+      return VarT::template create<ElemT>(std::move(std::get<NonDataTypes>(nonData))...,
           std::move(values), std::move(variances));
     }
   }
