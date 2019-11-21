@@ -1,19 +1,29 @@
 # Tests in this file work only with a working Mantid installation available in
 # PYTHONPATH.
 import unittest
+import pytest
 
 import scipp as sc
-import mantid.simpleapi as mantid
-from mantid.api import EventType
 import scipp.compat.mantid as mantidcompat
 import numpy as np
 
 from mantid_data_helper import MantidDataHelper
 
 
+def mantid_is_available():
+    try:
+        import mantid  # noqa: F401
+        return True
+    except ImportError:
+        return False
+
+
+@pytest.mark.skipif(not mantid_is_available(),
+                    reason='Mantid framework is unavailable')
 class TestMantidConversion(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        import mantid.simpleapi as mantid
         # This is from the Mantid system-test data
         filename = "CNCS_51936_event.nxs"
         # This needs OutputWorkspace specified, as it doesn't
@@ -23,6 +33,7 @@ class TestMantidConversion(unittest.TestCase):
             OutputWorkspace="test_ws{}".format(__file__))
 
     def test_Workspace2D(self):
+        import mantid.simpleapi as mantid
         eventWS = mantid.CloneWorkspace(self.base_event_ws)
         ws = mantid.Rebin(eventWS, 10000, PreserveEvents=False)
         d = mantidcompat.convert_Workspace2D_to_dataset(ws)
@@ -32,6 +43,8 @@ class TestMantidConversion(unittest.TestCase):
         )
 
     def test_EventWorkspace(self):
+        import mantid.simpleapi as mantid
+        from mantid.api import EventType
         eventWS = mantid.CloneWorkspace(self.base_event_ws)
         ws = mantid.Rebin(eventWS, 10000)
 
@@ -47,6 +60,8 @@ class TestMantidConversion(unittest.TestCase):
         self.assertLess(np.abs(delta.value), 1e-5)
 
     def test_unit_conversion(self):
+        import mantid.simpleapi as mantid
+        from mantid.api import EventType
         eventWS = mantid.CloneWorkspace(self.base_event_ws)
         ws = mantid.Rebin(eventWS, 10000, PreserveEvents=False)
         tmp = mantidcompat.convert_Workspace2D_to_dataset(ws)
@@ -74,6 +89,7 @@ class TestMantidConversion(unittest.TestCase):
 
     @staticmethod
     def _mask_bins_and_spectra(ws, xmin, xmax, num_spectra):
+        import mantid.simpleapi as mantid
         masked_ws = mantid.MaskBins(ws, XMin=xmin, XMax=xmax)
 
         # mask the first 3 spectra
@@ -83,6 +99,7 @@ class TestMantidConversion(unittest.TestCase):
         return masked_ws
 
     def test_Workspace2D_common_bins_masks(self):
+        import mantid.simpleapi as mantid
         eventWS = mantid.CloneWorkspace(self.base_event_ws)
         ws = mantid.Rebin(eventWS, 10000, PreserveEvents=False)
         ws_x = ws.readX(0)
@@ -106,6 +123,7 @@ class TestMantidConversion(unittest.TestCase):
             [True, True, True])
 
     def test_Workspace2D_not_common_bins_masks(self):
+        import mantid.simpleapi as mantid
         eventWS = mantid.CloneWorkspace(self.base_event_ws)
         ws = mantid.Rebin(eventWS, 10000, PreserveEvents=False)
         ws = mantid.ConvertUnits(ws, "Wavelength",
