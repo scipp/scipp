@@ -180,8 +180,14 @@ auto sparse_dense_op(Op op, const DataConstProxy &a, const DataConstProxy &b) {
     auto out =
         sparse_dense_op_impl(op, a.coords()[dim], b.coords()[dim], b.data());
     if (a.hasData()) {
+      throw std::runtime_error("Operation between sparse data with values and "
+                               "histogram not implemented yet");
       // Undo implicit factor of counts added by sparse_dense_op_impl
       out.setUnit(out.unit() / units::Unit(units::counts));
+      // TODO This does not work, because the implicit "1" used by
+      // sparse_dense_op_impl for the uncertainties breaks the chaining of
+      // operations. Is there a better way apart from having a completely
+      // separate implementation?
       out *= a.data();
     }
     return out;
