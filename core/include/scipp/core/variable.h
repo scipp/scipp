@@ -25,6 +25,15 @@
 
 namespace scipp::core {
 
+namespace detail {
+template <class T> struct element_type { using type = T; };
+template <class T> struct element_type<sparse_container<T>> { using type = T; };
+template <class T> struct element_type<const sparse_container<T>> {
+  using type = T;
+};
+template <class T> using element_type_t = typename element_type<T>::type;
+} // namespace detail
+
 template <class T> struct is_sparse_container : std::false_type {};
 template <class T>
 struct is_sparse_container<sparse_container<T>> : std::true_type {};
@@ -462,8 +471,14 @@ template <class T, class... Ts> Variable createVariable(Ts &&... ts) {
   auto [valArgs, varArgs, nonData] =
       helper::template extractArguments<units::Unit, Dims, Shape>(
           std::forward<Ts>(ts)...);
-  return helper::template construct<T>(std::move(valArgs), std::move(varArgs),
-                                       std::move(nonData));
+  const auto &shape = std::get<Shape>(nonData);
+  const auto &d = shape.data;
+  if (std::find(d.cbegin(), d.cend(), Dimensions::Sparse) != d.end())
+    return helper::template construct<sparse_container<T>>(
+        std::move(valArgs), std::move(varArgs), std::move(nonData));
+  else
+    return helper::template construct<T>(std::move(valArgs), std::move(varArgs),
+                                         std::move(nonData));
 }
 
 template <class T> Variable makeVariable(const Dimensions &dimensions) {
@@ -580,7 +595,7 @@ Variable Variable::create(units::Unit &&u, Dims &&d, Shape &&s,
 template <class... Ts>
 template <class T>
 Variable Variable::ConstructVariable<Ts...>::Maker<T>::apply(Ts &&... ts) {
-  return createVariable<T>(std::forward<Ts>(ts)...);
+  return createVariable<detail::element_type_t<T>>(std::forward<Ts>(ts)...);
 }
 
 template <class... Ts>
