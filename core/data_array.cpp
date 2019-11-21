@@ -73,8 +73,9 @@ Variable sparse_dense_op_impl(Op op, const VariableConstProxy &sparseCoord_,
                 if (bin >= 0.0 && bin < nbin) {
                   if constexpr (have_variance) {
                     const auto [val, var] =
-                        op(1.0, ValueAndVariance{weights.value[bin],
-                                                 weights.variance[bin]});
+                        op(ValueAndVariance(1.0, 1.0),
+                           ValueAndVariance{weights.value[bin],
+                                            weights.variance[bin]});
                     out_vals.emplace_back(val);
                     out_vars.emplace_back(var);
                   } else {
@@ -82,7 +83,8 @@ Variable sparse_dense_op_impl(Op op, const VariableConstProxy &sparseCoord_,
                   }
                 } else {
                   if constexpr (have_variance) {
-                    const auto [val, var] = op(1.0, ValueAndVariance{0.0, 0.0});
+                    const auto [val, var] = op(ValueAndVariance(1.0, 1.0),
+                                               ValueAndVariance{0.0, 0.0});
                     out_vals.emplace_back(val);
                     out_vars.emplace_back(var);
                   } else {

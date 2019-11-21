@@ -69,13 +69,21 @@ TEST(DataArraySparseArithmeticTest, sparse_times_histogram) {
   for (const auto result : {sparse * hist, hist * sparse}) {
     EXPECT_EQ(result.coords()[Dim::X], sparse.coords()[Dim::X]);
     EXPECT_TRUE(result.hasVariances());
+
     const auto out_vals = result.data().sparseValues<double>();
-    EXPECT_TRUE(equals(out_vals[0], {2, 3, 3}));
-    // out of range of edges -> value set to 0, consistent with rebin behavior
-    EXPECT_TRUE(equals(out_vals[1], {2, 2, 3, 0}));
     const auto out_vars = result.data().sparseVariances<double>();
-    EXPECT_TRUE(equals(out_vars[0], {0.3, 0.4, 0.4}));
-    EXPECT_TRUE(equals(out_vars[1], {0.3, 0.3, 0.4, 0.0}));
+
+    auto expected =
+        makeVariable<double>({Dim::X, 3}, {1, 1, 1}, {1, 1, 1}) *
+        makeVariable<double>({Dim::X, 3}, {2.0, 3.0, 3.0}, {0.3, 0.4, 0.4});
+    EXPECT_TRUE(equals(out_vals[0], expected.values<double>()));
+    EXPECT_TRUE(equals(out_vars[0], expected.variances<double>()));
+    // out of range of edges -> value set to 0, consistent with rebin behavior
+    expected = makeVariable<double>({Dim::X, 4}, {1, 1, 1, 1}, {1, 1, 1, 1}) *
+               makeVariable<double>({Dim::X, 4}, {2.0, 2.0, 3.0, 0.0},
+                                    {0.3, 0.3, 0.4, 0.0});
+    EXPECT_TRUE(equals(out_vals[1], expected.values<double>()));
+    EXPECT_TRUE(equals(out_vars[1], expected.variances<double>()));
   }
 }
 
@@ -92,14 +100,19 @@ TEST(DataArraySparseArithmeticTest, sparse_with_values_times_histogram) {
     EXPECT_EQ(result.coords()[Dim::X], sparse.coords()[Dim::X]);
     EXPECT_TRUE(result.hasVariances());
     const auto out_vals = result.data().sparseValues<double>();
-    EXPECT_TRUE(equals(out_vals[0], {2.0 * 2, 2.0 * 3, 2.0 * 3}));
-    // out of range of edges -> value set to 0, consistent with rebin behavior
-    EXPECT_TRUE(equals(out_vals[1], {2.0 * 2, 2.0 * 2, 2.0 * 3, 0.0}));
     const auto out_vars = result.data().sparseVariances<double>();
-    EXPECT_TRUE(equals(out_vars[0],
-                       {2.0 * 2.0 * 0.3, 2.0 * 2.0 * 0.4, 2.0 * 2.0 * 0.4}));
-    EXPECT_TRUE(equals(
-        out_vars[1], {2.0 * 2.0 * 0.3, 2.0 * 2.0 * 0.3, 2.0 * 2.0 * 0.4, 0.0}));
+
+    auto expected =
+        makeVariable<double>({Dim::X, 3}, {2, 2, 2}, {0, 0, 0}) *
+        makeVariable<double>({Dim::X, 3}, {2.0, 3.0, 3.0}, {0.3, 0.4, 0.4});
+    EXPECT_TRUE(equals(out_vals[0], expected.values<double>()));
+    EXPECT_TRUE(equals(out_vars[0], expected.variances<double>()));
+    // out of range of edges -> value set to 0, consistent with rebin behavior
+    expected = makeVariable<double>({Dim::X, 4}, {2, 2, 2, 2}, {0, 0, 0, 0}) *
+               makeVariable<double>({Dim::X, 4}, {2.0, 2.0, 3.0, 0.0},
+                                    {0.3, 0.3, 0.4, 0.0});
+    EXPECT_TRUE(equals(out_vals[1], expected.values<double>()));
+    EXPECT_TRUE(equals(out_vars[1], expected.variances<double>()));
   }
 }
 
@@ -111,14 +124,18 @@ TEST(DataArraySparseArithmeticTest, sparse_over_histogram) {
   EXPECT_EQ(result.coords()[Dim::X], sparse.coords()[Dim::X]);
   EXPECT_TRUE(result.hasVariances());
   const auto out_vals = result.data().sparseValues<double>();
-  EXPECT_TRUE(equals(out_vals[0], {1.0 / 2, 1.0 / 3, 1.0 / 3}));
-  EXPECT_TRUE(equals(out_vals[1], {1.0 / 2, 1.0 / 2, 1.0 / 3,
-                                   std::numeric_limits<double>::infinity()}));
   const auto out_vars = result.data().sparseVariances<double>();
-  EXPECT_TRUE(equals(out_vars[0], {0.3 / (2 * 2 * 2 * 2), 0.4 / (3 * 3 * 3 * 3),
-                                   0.4 / (3 * 3 * 3 * 3)}));
-  EXPECT_EQ(out_vars[1][0], 0.3 / (2 * 2 * 2 * 2));
-  EXPECT_EQ(out_vars[1][1], 0.3 / (2 * 2 * 2 * 2));
-  EXPECT_EQ(out_vars[1][2], 0.4 / (3 * 3 * 3 * 3));
+
+  auto expected =
+      makeVariable<double>({Dim::X, 3}, {1, 1, 1}, {1, 1, 1}) /
+      makeVariable<double>({Dim::X, 3}, {2.0, 3.0, 3.0}, {0.3, 0.4, 0.4});
+  EXPECT_TRUE(equals(out_vals[0], expected.values<double>()));
+  EXPECT_TRUE(equals(out_vars[0], expected.variances<double>()));
+  expected = makeVariable<double>({Dim::X, 4}, {1, 1, 1, 1}, {1, 1, 1, 1}) /
+             makeVariable<double>({Dim::X, 4}, {2.0, 2.0, 3.0, 0.0},
+                                  {0.3, 0.3, 0.4, 0.0});
+  EXPECT_TRUE(equals(out_vals[1], expected.values<double>()));
+  EXPECT_TRUE(equals(span<const double>(out_vars[1]).subspan(0, 3),
+                     expected.slice({Dim::X, 0, 3}).variances<double>()));
   EXPECT_TRUE(std::isnan(out_vars[1][3]));
 }
