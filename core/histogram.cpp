@@ -36,34 +36,37 @@ static constexpr auto make_histogram = [](auto &data, const auto &events,
   std::copy(data.value.begin(), data.value.end(), data.variance.begin());
 };
 
+static constexpr auto make_histogram_unit = [](const units::Unit &sparse_unit,
+                                               const units::Unit &edge_unit) {
+  if (sparse_unit != edge_unit)
+    throw except::UnitError("Bin edges must have same unit as the sparse "
+                            "input coordinate.");
+  return units::counts;
+};
+
 DataArray histogram(const DataConstProxy &sparse,
                     const VariableConstProxy &binEdges) {
   if (sparse.hasData())
     throw except::SparseDataError(
         "`histogram` is not implemented for sparse data with values yet.");
   auto dim = binEdges.dims().inner();
-  if (binEdges.unit() != sparse.coords()[dim].unit())
-    throw std::logic_error(
-        "Bin edges must have same unit as the sparse input coordinate.");
-  if (binEdges.dtype() != dtype<double> ||
-      sparse.coords()[dim].dtype() != DType::Double)
-    throw std::logic_error("Histogram is only available for double type.");
 
   auto result = apply_and_drop_dim(
       sparse,
       [](const DataConstProxy &sparse_, const Dim dim_,
          const VariableConstProxy &binEdges_) {
-        return transform_subspan<std::tuple<std::tuple<
-            span<double>, sparse_container<double>, span<const double>>>>(
+        return transform_subspan<
+            std::tuple<std::tuple<span<double>, sparse_container<double>,
+                                  span<const double>>,
+                       std::tuple<span<double>, sparse_container<float>,
+                                  span<const double>>,
+                       std::tuple<span<double>, sparse_container<float>,
+                                  span<const float>>>>(
             dim_, binEdges_.dims()[dim_] - 1, sparse_.coords()[dim_], binEdges_,
-            overloaded{make_histogram, transform_flags::expect_variance_arg<0>,
+            overloaded{make_histogram, make_histogram_unit,
+                       transform_flags::expect_variance_arg<0>,
                        transform_flags::expect_no_variance_arg<1>,
-                       transform_flags::expect_no_variance_arg<2>,
-                       [](const units::Unit &sparse_unit,
-                          const units::Unit &edge_unit) {
-                         expect::equals(sparse_unit, edge_unit);
-                         return units::counts;
-                       }});
+                       transform_flags::expect_no_variance_arg<2>});
       },
       dim, binEdges);
   result.setCoord(dim, binEdges);
