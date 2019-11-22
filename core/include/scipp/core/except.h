@@ -2,8 +2,8 @@
 // Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#ifndef EXCEPT_H
-#define EXCEPT_H
+#ifndef SCIPP_CORE_EXCEPT_H
+#define SCIPP_CORE_EXCEPT_H
 
 #include <stdexcept>
 #include <string>
@@ -33,6 +33,10 @@ namespace scipp::except {
 
 struct SCIPP_CORE_EXPORT TypeError : public std::runtime_error {
   using std::runtime_error::runtime_error;
+
+  template <class... Vars>
+  TypeError(const std::string &msg, const Vars &... vars)
+      : std::runtime_error(msg + ((to_string(vars.dtype()) + ' ') + ...)) {}
 };
 
 using DataArrayError = Error<core::DataArray>;
@@ -164,4 +168,4 @@ template <class T> void hasVariances(const T &variable) {
 
 } // namespace scipp::core::expect
 
-#endif // EXCEPT_H
+#endif // SCIPP_CORE_EXCEPT_H
