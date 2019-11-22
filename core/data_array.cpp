@@ -40,6 +40,49 @@ constexpr static auto divide = [](const auto &a, const auto &b) {
   return a / b;
 };
 
+constexpr static auto apply_op_sparse_dense = [](auto op, const auto &sparse,
+                                                 const auto &edges,
+                                                 const auto &weights) {
+  expect::histogram::sorted_edges(edges);
+  using W = std::decay_t<decltype(weights)>;
+  constexpr bool have_variance = is_ValueAndVariance_v<W>;
+  using ElemT = typename core::detail::element_type_t<W>::value_type;
+  using T = sparse_container<ElemT>;
+  T out_vals;
+  T out_vars;
+  out_vals.reserve(sparse.size());
+  if (have_variance)
+    out_vars.reserve(sparse.size());
+  if (scipp::numeric::is_linspace(edges)) {
+    auto len = scipp::size(edges) - 1;
+    const auto offset = edges.front();
+    const auto nbin = static_cast<decltype(offset)>(len);
+    const auto scale = nbin / (edges.back() - edges.front());
+    for (const auto c : sparse) {
+      const auto bin = (c - offset) * scale;
+      if constexpr (have_variance) {
+        const auto [val, var] =
+            op(ValueAndVariance(1.0, 1.0),
+               bin >= 0.0 && bin < nbin
+                   ? ValueAndVariance{weights.value[bin], weights.variance[bin]}
+                   : ValueAndVariance<ElemT>{0.0, 0.0});
+        out_vals.emplace_back(val);
+        out_vars.emplace_back(var);
+      } else {
+        out_vals.emplace_back(
+            op(1.0, bin >= 0.0 && bin < nbin ? weights[bin] : 0.0));
+      }
+    }
+  } else {
+    throw std::runtime_error("Only equal-sized bins supported.");
+  }
+  if constexpr (have_variance) {
+    return std::pair(std::move(out_vals), std::move(out_vars));
+  } else {
+    return out_vals;
+  }
+};
+
 template <class Op>
 Variable sparse_dense_op_impl(Op op, const VariableConstProxy &sparseCoord_,
                               const VariableConstProxy &edges_,
@@ -52,47 +95,7 @@ Variable sparse_dense_op_impl(Op op, const VariableConstProxy &sparseCoord_,
                             span<const float>>>>(
       sparseCoord_, subspan_view(edges_, dim), subspan_view(weights_, dim),
       overloaded{
-          [op](const auto &sparse, const auto &edges, const auto &weights) {
-            expect::histogram::sorted_edges(edges);
-            using W = std::decay_t<decltype(weights)>;
-            constexpr bool have_variance = is_ValueAndVariance_v<W>;
-            using ElemT = typename core::detail::element_type_t<W>::value_type;
-            using T = sparse_container<ElemT>;
-            T out_vals;
-            T out_vars;
-            out_vals.reserve(sparse.size());
-            if (have_variance)
-              out_vars.reserve(sparse.size());
-            if (scipp::numeric::is_linspace(edges)) {
-              auto len = scipp::size(edges) - 1;
-              const auto offset = edges.front();
-              const auto nbin = static_cast<decltype(offset)>(len);
-              const auto scale = nbin / (edges.back() - edges.front());
-              for (const auto c : sparse) {
-                const auto bin = (c - offset) * scale;
-                if constexpr (have_variance) {
-                  const auto [val, var] =
-                      op(ValueAndVariance(1.0, 1.0),
-                         bin >= 0.0 && bin < nbin
-                             ? ValueAndVariance{weights.value[bin],
-                                                weights.variance[bin]}
-                             : ValueAndVariance<ElemT>{0.0, 0.0});
-                  out_vals.emplace_back(val);
-                  out_vars.emplace_back(var);
-                } else {
-                  out_vals.emplace_back(
-                      op(1.0, bin >= 0.0 && bin < nbin ? weights[bin] : 0.0));
-                }
-              }
-            } else {
-              throw std::runtime_error("Only equal-sized bins supported.");
-            }
-            if constexpr (have_variance) {
-              return std::pair(std::move(out_vals), std::move(out_vars));
-            } else {
-              return out_vals;
-            }
-          },
+          [op](const auto &... a) { return apply_op_sparse_dense(op, a...); },
           transform_flags::expect_no_variance_arg<0>,
           transform_flags::expect_no_variance_arg<1>,
           [op](const units::Unit &sparse, const units::Unit &edges,
