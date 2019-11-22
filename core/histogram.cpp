@@ -18,9 +18,7 @@ static constexpr auto make_histogram = [](auto &data, const auto &events,
   if (scipp::numeric::is_linspace(edges)) {
     // Special implementation for linear bins. Gives a 1x to 20x speedup
     // for few and many events per histogram, respectively.
-    const double offset = edges.front();
-    const double nbin = static_cast<double>(scipp::size(data.value));
-    const double scale = nbin / (edges.back() - edges.front());
+    const auto [offset, nbin, scale] = linear_edge_params(edges);
     for (const auto &e : events) {
       const double bin = (e - offset) * scale;
       if (bin >= 0.0 && bin < nbin)
@@ -40,9 +38,7 @@ static constexpr auto make_histogram_from_weighted =
     [](auto &data, const auto &events, const auto &weights, const auto &edges) {
       expect::histogram::sorted_edges(edges);
       if (scipp::numeric::is_linspace(edges)) {
-        const double offset = edges.front();
-        const double nbin = static_cast<double>(scipp::size(data.value));
-        const double scale = nbin / (edges.back() - edges.front());
+        const auto [offset, nbin, scale] = linear_edge_params(edges);
         for (scipp::index i = 0; i < scipp::size(events); ++i) {
           const auto x = events[i];
           const double bin = (x - offset) * scale;

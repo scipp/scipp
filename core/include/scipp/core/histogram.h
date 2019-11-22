@@ -13,6 +13,15 @@ namespace scipp::core {
 
 SCIPP_CORE_EXPORT bool is_histogram(const DataConstProxy &a, const Dim dim);
 
+/// Return params for computing bin index for linear edges (constant bin width).
+constexpr static auto linear_edge_params = [](const auto &edges) {
+  auto len = scipp::size(edges) - 1;
+  const auto offset = edges.front();
+  const auto nbin = static_cast<decltype(offset)>(len);
+  const auto scale = nbin / (edges.back() - edges.front());
+  return std::array{offset, nbin, scale};
+};
+
 namespace expect::histogram {
 template <class T> void sorted_edges(const T &edges) {
   if (!std::is_sorted(edges.begin(), edges.end()))

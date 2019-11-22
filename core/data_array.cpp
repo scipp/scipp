@@ -40,7 +40,7 @@ constexpr static auto divide = [](const auto &a, const auto &b) {
   return a / b;
 };
 
-constexpr static auto apply_op_sparse_dense = [](auto op, const auto &sparse,
+constexpr static auto apply_op_sparse_dense = [](auto op, const auto &coord,
                                                  const auto &edges,
                                                  const auto &weights) {
   expect::histogram::sorted_edges(edges);
@@ -50,19 +50,16 @@ constexpr static auto apply_op_sparse_dense = [](auto op, const auto &sparse,
   using T = sparse_container<ElemT>;
   T out_vals;
   T out_vars;
-  out_vals.reserve(sparse.size());
+  out_vals.reserve(coord.size());
   if (have_variance)
-    out_vars.reserve(sparse.size());
+    out_vars.reserve(coord.size());
   if (scipp::numeric::is_linspace(edges)) {
-    auto len = scipp::size(edges) - 1;
-    const auto offset = edges.front();
-    const auto nbin = static_cast<decltype(offset)>(len);
-    const auto scale = nbin / (edges.back() - edges.front());
-    for (const auto c : sparse) {
+    const auto [offset, nbin, scale] = linear_edge_params(edges);
+    for (const auto c : coord) {
       const auto bin = (c - offset) * scale;
       if constexpr (have_variance) {
         const auto [val, var] =
-            op(ValueAndVariance(1.0, 1.0),
+            op(ValueAndVariance<ElemT>(1.0, 1.0),
                bin >= 0.0 && bin < nbin
                    ? ValueAndVariance{weights.value[bin], weights.variance[bin]}
                    : ValueAndVariance<ElemT>{0.0, 0.0});
