@@ -43,7 +43,6 @@ constexpr static auto divide = [](const auto &a, const auto &b) {
 constexpr static auto apply_op_sparse_dense = [](auto op, const auto &coord,
                                                  const auto &edges,
                                                  const auto &weights) {
-  expect::histogram::sorted_edges(edges);
   using W = std::decay_t<decltype(weights)>;
   constexpr bool have_variance = is_ValueAndVariance_v<W>;
   using ElemT = typename core::detail::element_type_t<W>::value_type;
@@ -71,7 +70,8 @@ constexpr static auto apply_op_sparse_dense = [](auto op, const auto &coord,
       }
     }
   } else {
-    throw std::runtime_error("Only equal-sized bins supported.");
+    expect::histogram::sorted_edges(edges);
+    throw std::runtime_error("Non-constant bin width not supported yet.");
   }
   if constexpr (have_variance) {
     return std::pair(std::move(out_vals), std::move(out_vars));
