@@ -87,9 +87,7 @@ TEST(DataArraySparseArithmeticTest, sparse_times_histogram) {
   }
 }
 
-// TODO Disabled since implementation not available yet.
-TEST(DataArraySparseArithmeticTest,
-     DISABLED_sparse_with_values_times_histogram) {
+TEST(DataArraySparseArithmeticTest, sparse_with_values_times_histogram) {
   auto sparse = make_sparse();
   const auto hist = make_histogram();
   Variable data(sparse.coords()[Dim::X]);

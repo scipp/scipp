@@ -40,9 +40,9 @@ constexpr static auto divide = [](const auto &a, const auto &b) {
   return a / b;
 };
 
-constexpr static auto apply_op_sparse_dense = [](auto op, const auto &coord,
-                                                 const auto &edges,
-                                                 const auto &weights) {
+template <int Variance, class Op, class Coord, class Edges, class Weights>
+auto apply_op_sparse_dense(Op op, const Coord &coord, const Edges &edges,
+                           const Weights &weights) {
   using W = std::decay_t<decltype(weights)>;
   constexpr bool have_variance = is_ValueAndVariance_v<W>;
   using ElemT = typename core::detail::element_type_t<W>::value_type;
@@ -50,7 +50,7 @@ constexpr static auto apply_op_sparse_dense = [](auto op, const auto &coord,
   T out_vals;
   T out_vars;
   out_vals.reserve(coord.size());
-  if (have_variance)
+  if constexpr (have_variance)
     out_vars.reserve(coord.size());
   if (scipp::numeric::is_linspace(edges)) {
     const auto [offset, nbin, scale] = linear_edge_params(edges);
@@ -58,7 +58,7 @@ constexpr static auto apply_op_sparse_dense = [](auto op, const auto &coord,
       const auto bin = (c - offset) * scale;
       if constexpr (have_variance) {
         const auto [val, var] =
-            op(ValueAndVariance<ElemT>(1.0, 1.0),
+            op(ValueAndVariance<ElemT>(1.0, Variance),
                bin >= 0.0 && bin < nbin
                    ? ValueAndVariance{weights.value[bin], weights.variance[bin]}
                    : ValueAndVariance<ElemT>{0.0, 0.0});
@@ -78,9 +78,9 @@ constexpr static auto apply_op_sparse_dense = [](auto op, const auto &coord,
   } else {
     return out_vals;
   }
-};
+}
 
-template <class Op>
+template <int Variance, class Op>
 Variable sparse_dense_op_impl(Op op, const VariableConstProxy &sparseCoord_,
                               const VariableConstProxy &edges_,
                               const VariableConstProxy &weights_) {
@@ -91,16 +91,18 @@ Variable sparse_dense_op_impl(Op op, const VariableConstProxy &sparseCoord_,
                  std::tuple<sparse_container<float>, span<const float>,
                             span<const float>>>>(
       sparseCoord_, subspan_view(edges_, dim), subspan_view(weights_, dim),
-      overloaded{
-          [op](const auto &... a) { return apply_op_sparse_dense(op, a...); },
-          transform_flags::expect_no_variance_arg<0>,
-          transform_flags::expect_no_variance_arg<1>,
-          [op](const units::Unit &sparse, const units::Unit &edges,
-               const units::Unit &weights) {
-            expect::equals(sparse, edges);
-            // Sparse data without values has an implicit value of 1 count.
-            return op(units::Unit(units::counts), weights);
-          }});
+      overloaded{[op](const auto &... a) {
+                   return apply_op_sparse_dense<Variance>(op, a...);
+                 },
+                 transform_flags::expect_no_variance_arg<0>,
+                 transform_flags::expect_no_variance_arg<1>,
+                 [op](const units::Unit &sparse, const units::Unit &edges,
+                      const units::Unit &weights) {
+                   expect::equals(sparse, edges);
+                   // Sparse data without values has an implicit value of 1
+                   // count.
+                   return op(units::Unit(units::counts), weights);
+                 }});
 }
 
 DataArray &DataArray::operator+=(const DataConstProxy &other) {
@@ -169,20 +171,16 @@ auto sparse_dense_op(Op op, const DataConstProxy &a, const DataConstProxy &b) {
     return op(a.data(), b.data());
   if (a.dims().sparse()) {
     const Dim dim = a.dims().sparseDim();
-    auto out =
-        sparse_dense_op_impl(op, a.coords()[dim], b.coords()[dim], b.data());
     if (a.hasData()) {
-      throw std::runtime_error("Operation between sparse data with values and "
-                               "histogram not implemented yet");
+      auto out = sparse_dense_op_impl<0>(op, a.coords()[dim], b.coords()[dim],
+                                         b.data());
       // Undo implicit factor of counts added by sparse_dense_op_impl
       out.setUnit(out.unit() / units::Unit(units::counts));
-      // TODO This does not work, because the implicit "1" used by
-      // sparse_dense_op_impl for the uncertainties breaks the chaining of
-      // operations. Is there a better way apart from having a completely
-      // separate implementation?
-      out *= a.data();
+      return out * a.data(); // not in-place so type promotion can happen
+    } else {
+      return sparse_dense_op_impl<1>(op, a.coords()[dim], b.coords()[dim],
+                                     b.data());
     }
-    return out;
   }
   // histogram divided by sparse not supported, would typically result in unit
   // 1/counts which is meaningless
