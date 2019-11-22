@@ -119,10 +119,10 @@ public:
 
   template <class... NonDataTypes> static auto extractArguments(Ts &&... ts) {
     auto tp = std::make_tuple(std::forward<Ts>(ts)...);
-    return std::make_tuple(std::move(extractTagged<ValuesTag, Ts...>(tp)),
-                           std::move(extractTagged<VariancesTag, Ts...>(tp)),
-                           std::tuple<NonDataTypes...>(std::move(
-                               extractArgs<NonDataTypes, Ts...>(tp))...));
+    return std::make_tuple(
+        std::move(extractTagged<ValuesTag, Ts...>(tp)),
+        std::move(extractTagged<VariancesTag, Ts...>(tp)),
+        std::tuple<NonDataTypes...>(extractArgs<NonDataTypes, Ts...>(tp)...));
   }
 
   template <class ElemT, class... ValArgs, class... VarArgs,
@@ -161,7 +161,7 @@ private:
     if constexpr (!is_type_in_pack_v<T, Ts...>)
       return T{};
     else
-      return std::get<T>(tp);
+      return std::move(std::get<T>(tp));
   }
 
   template <class Tag, class... Args>
