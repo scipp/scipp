@@ -153,6 +153,7 @@ Dataset histogram(const Dataset &dataset, const Dim &dim) {
   return histogram(dataset, bins);
 }
 
+/// Return true if the data array respresents a histogram for given dim.
 bool is_histogram(const DataConstProxy &a, const Dim dim) {
   const auto dims = a.dims();
   const auto coords = a.coords();
