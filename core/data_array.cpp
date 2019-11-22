@@ -56,8 +56,8 @@ Variable sparse_dense_op_impl(Op op, const VariableConstProxy &sparseCoord_,
             expect::histogram::sorted_edges(edges);
             using W = std::decay_t<decltype(weights)>;
             constexpr bool have_variance = is_ValueAndVariance_v<W>;
-            using T = sparse_container<
-                typename core::detail::element_type_t<W>::value_type>;
+            using ElemT = typename core::detail::element_type_t<W>::value_type;
+            using T = sparse_container<ElemT>;
             T out_vals;
             T out_vars;
             out_vals.reserve(sparse.size());
@@ -70,26 +70,18 @@ Variable sparse_dense_op_impl(Op op, const VariableConstProxy &sparseCoord_,
               const auto scale = nbin / (edges.back() - edges.front());
               for (const auto c : sparse) {
                 const auto bin = (c - offset) * scale;
-                if (bin >= 0.0 && bin < nbin) {
-                  if constexpr (have_variance) {
-                    const auto [val, var] =
-                        op(ValueAndVariance(1.0, 1.0),
-                           ValueAndVariance{weights.value[bin],
-                                            weights.variance[bin]});
-                    out_vals.emplace_back(val);
-                    out_vars.emplace_back(var);
-                  } else {
-                    out_vals.emplace_back(op(1.0, weights[bin]));
-                  }
+                if constexpr (have_variance) {
+                  const auto [val, var] =
+                      op(ValueAndVariance(1.0, 1.0),
+                         bin >= 0.0 && bin < nbin
+                             ? ValueAndVariance{weights.value[bin],
+                                                weights.variance[bin]}
+                             : ValueAndVariance<ElemT>{0.0, 0.0});
+                  out_vals.emplace_back(val);
+                  out_vars.emplace_back(var);
                 } else {
-                  if constexpr (have_variance) {
-                    const auto [val, var] = op(ValueAndVariance(1.0, 1.0),
-                                               ValueAndVariance{0.0, 0.0});
-                    out_vals.emplace_back(val);
-                    out_vars.emplace_back(var);
-                  } else {
-                    out_vals.emplace_back(op(1.0, 0.0));
-                  }
+                  out_vals.emplace_back(
+                      op(1.0, bin >= 0.0 && bin < nbin ? weights[bin] : 0.0));
                 }
               }
             } else {
