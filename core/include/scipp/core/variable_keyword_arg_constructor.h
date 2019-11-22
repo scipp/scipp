@@ -120,8 +120,8 @@ public:
   template <class... NonDataTypes> static auto extractArguments(Ts &&... ts) {
     auto tp = std::make_tuple(std::forward<Ts>(ts)...);
     return std::make_tuple(
-        std::move(extractTagged<ValuesTag, Ts...>(tp)),
-        std::move(extractTagged<VariancesTag, Ts...>(tp)),
+        extractTagged<ValuesTag, Ts...>(tp),
+        extractTagged<VariancesTag, Ts...>(tp),
         std::tuple<NonDataTypes...>(extractArgs<NonDataTypes, Ts...>(tp)...));
   }
 
@@ -157,7 +157,7 @@ public:
 
 private:
   template <class T, class... Args>
-  static decltype(auto) extractArgs(std::tuple<Args...> &tp) {
+  static auto extractArgs(std::tuple<Args...> &tp) {
     if constexpr (!is_type_in_pack_v<T, Ts...>)
       return T{};
     else
@@ -165,7 +165,7 @@ private:
   }
 
   template <class Tag, class... Args>
-  static decltype(auto) extractTagged(std::tuple<Args...> &tp) {
+  static auto extractTagged(std::tuple<Args...> &tp) {
     if constexpr (!is_tag_in_pack_v<Tag, Ts...>)
       return std::tuple{};
     else {
