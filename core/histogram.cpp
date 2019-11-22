@@ -85,6 +85,16 @@ static constexpr auto make_histogram_unit_from_weighted =
       return weights_unit;
     };
 
+namespace histogram_detail {
+template <class Out, class Coord, class Edge>
+using args = std::tuple<span<Out>, sparse_container<Coord>, span<const Edge>>;
+}
+namespace histogram_weighted_detail {
+template <class Out, class Coord, class Weight, class Edge>
+using args = std::tuple<span<Out>, sparse_container<Coord>,
+                        sparse_container<Weight>, span<const Edge>>;
+}
+
 DataArray histogram(const DataConstProxy &sparse,
                     const VariableConstProxy &binEdges) {
   auto dim = binEdges.dims().inner();
@@ -94,13 +104,11 @@ DataArray histogram(const DataConstProxy &sparse,
       [](const DataConstProxy &sparse_, const Dim dim_,
          const VariableConstProxy &binEdges_) {
         if (sparse_.hasData()) {
-          return transform_subspan<std::tuple<
-              std::tuple<span<double>, sparse_container<double>,
-                         sparse_container<double>, span<const double>>,
-              std::tuple<span<double>, sparse_container<float>,
-                         sparse_container<double>, span<const double>>,
-              std::tuple<span<double>, sparse_container<float>,
-                         sparse_container<double>, span<const float>>>>(
+          using namespace histogram_weighted_detail;
+          return transform_subspan<
+              std::tuple<args<double, double, double, double>,
+                         args<double, float, double, double>,
+                         args<double, float, double, float>>>(
               dim_, binEdges_.dims()[dim_] - 1, sparse_.coords()[dim_],
               sparse_.data(), binEdges_,
               overloaded{make_histogram_from_weighted,
@@ -110,13 +118,10 @@ DataArray histogram(const DataConstProxy &sparse,
                          transform_flags::expect_variance_arg<2>,
                          transform_flags::expect_no_variance_arg<3>});
         } else {
-          return transform_subspan<
-              std::tuple<std::tuple<span<double>, sparse_container<double>,
-                                    span<const double>>,
-                         std::tuple<span<double>, sparse_container<float>,
-                                    span<const double>>,
-                         std::tuple<span<double>, sparse_container<float>,
-                                    span<const float>>>>(
+          using namespace histogram_detail;
+          return transform_subspan<std::tuple<args<double, double, double>,
+                                              args<double, float, double>,
+                                              args<double, float, float>>>(
               dim_, binEdges_.dims()[dim_] - 1, sparse_.coords()[dim_],
               binEdges_,
               overloaded{make_histogram, make_histogram_unit,

@@ -80,16 +80,21 @@ auto apply_op_sparse_dense(Op op, const Coord &coord, const Edges &edges,
   }
 }
 
+namespace sparse_dense_op_impl_detail {
+template <class CoordT, class EdgeT, class WeightT>
+using args = std::tuple<sparse_container<CoordT>, span<const EdgeT>,
+                        span<const WeightT>>;
+}
+
 template <int Variance, class Op>
 Variable sparse_dense_op_impl(Op op, const VariableConstProxy &sparseCoord_,
                               const VariableConstProxy &edges_,
                               const VariableConstProxy &weights_) {
+  using namespace sparse_dense_op_impl_detail;
   const Dim dim = sparseCoord_.dims().sparseDim();
   return transform<
-      std::tuple<std::tuple<sparse_container<double>, span<const double>,
-                            span<const double>>,
-                 std::tuple<sparse_container<float>, span<const float>,
-                            span<const float>>>>(
+      std::tuple<args<double, double, double>, args<float, double, double>,
+                 args<float, float, float>>>(
       sparseCoord_, subspan_view(edges_, dim), subspan_view(weights_, dim),
       overloaded{[op](const auto &... a) {
                    return apply_op_sparse_dense<Variance>(op, a...);
