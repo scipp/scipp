@@ -103,17 +103,6 @@ public:
   }
 };
 
-template <class T, class Tuple>
-struct is_constructible_from_tuple : std::false_type {};
-
-template <class T, class... Ts>
-struct is_constructible_from_tuple<T, std::tuple<Ts...>>
-    : std::is_constructible<T, Ts...> {};
-
-template <class T, class Tuple>
-constexpr bool is_constructible_from_tuple_v =
-    is_constructible_from_tuple<T, Tuple>::value;
-
 template <class VarT, class... Ts> class ConstructorArgumentsMatcher {
 public:
   template <class... NonDataTypes> constexpr static void checkArgTypesValid() {
