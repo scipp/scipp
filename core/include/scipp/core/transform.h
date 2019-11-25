@@ -27,86 +27,13 @@
 #include "scipp/core/except.h"
 #include "scipp/core/transform_common.h"
 #include "scipp/core/value_and_variance.h"
+#include "scipp/core/values_and_variances.h"
 #include "scipp/core/variable.h"
 #include "scipp/core/visit.h"
 
 namespace scipp::core {
 
-namespace transform_flags {
-/// Add this to overloaded operator to indicate that the operation does not
-/// produce output with variances, even if the inputs contain variances.
-static constexpr auto no_variance_output = []() {};
-using no_variance_output_t = decltype(no_variance_output);
-} // namespace transform_flags
-
 namespace detail {
-
-/// A values/variances pair based on references to sparse data containers.
-///
-/// This is a helper for implementing operations for sparse container such as
-/// `clear`, and for descending into the sparse container itself, using a nested
-/// call to an iteration function.
-template <class T> struct ValuesAndVariances {
-  using value_type = typename T::value_type;
-
-  ValuesAndVariances(T &val, T &var) : values(val), variances(var) {
-    expect::sizeMatches(values, variances);
-  }
-  ValuesAndVariances &operator=(std::pair<T, T> &&data) {
-    values = std::move(data.first);
-    variances = std::move(data.second);
-    return *this;
-  }
-  T &values;
-  T &variances;
-
-  void clear() {
-    values.clear();
-    variances.clear();
-  }
-
-  void reserve(const scipp::index capacity) const {
-    values.reserve(capacity);
-    variances.reserve(capacity);
-  }
-
-  // Note that methods like insert, begin, and end are required as long as we
-  // support sparse data via a plain container such as std::vector, e.g., for
-  // concatenation using a.insert(a.end(), b.begin(), b.end()). We are
-  // supporting this here by simply working with pairs of iterators. This
-  // approach is not an actual proxy iterator and will not compile if client
-  // code attempts to increment the iterators. We could support `next` and
-  // `advance` easily, so client code can simply use something like:
-  //   using std::next;
-  //   next(it);
-  // instead of `++it`. Algorithms like `std::sort` would probably still not
-  // work though.
-  // The function arguments are iterator pairs as created by `begin` and `end`.
-  template <class OutputIt, class InputIt>
-  auto insert(std::pair<OutputIt, OutputIt> pos,
-              std::pair<InputIt, InputIt> first,
-              std::pair<InputIt, InputIt> last) {
-    values.insert(pos.first, first.first, last.first);
-    variances.insert(pos.second, first.second, last.second);
-  }
-  template <class... Ts> void insert(const Ts &...) {
-    throw std::runtime_error("Cannot insert data with variances into data "
-                             "without variances, or vice versa.");
-  }
-
-  auto begin() { return std::pair(values.begin(), variances.begin()); }
-  auto begin() const { return std::pair(values.begin(), variances.begin()); }
-  auto end() { return std::pair(values.end(), variances.end()); }
-  auto end() const { return std::pair(values.end(), variances.end()); }
-
-  constexpr auto size() const noexcept { return values.size(); }
-};
-
-template <class T> struct is_ValuesAndVariances : std::false_type {};
-template <class T>
-struct is_ValuesAndVariances<ValuesAndVariances<T>> : std::true_type {};
-template <class T>
-inline constexpr bool is_ValuesAndVariances_v = is_ValuesAndVariances<T>::value;
 
 template <class T> struct has_variances : std::false_type {};
 template <class T>
@@ -231,7 +158,7 @@ static constexpr void call(Op &&op, const Indices &indices, Out &&out,
   // If the output is sparse, ValuesAndVariances::operator= already does the job
   // in the line above (since ValuesAndVariances wraps references), if not
   // sparse then copy to actual output.
-  if constexpr (detail::is_ValueAndVariance_v<std::decay_t<decltype(out_)>>) {
+  if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(out_)>>) {
     out.values.data()[i] = out_.value;
     out.variances.data()[i] = out_.variance;
   }
@@ -266,7 +193,7 @@ static constexpr void call_in_place(Op &&op, const Indices &indices, Arg &&arg,
                      std::make_index_sequence<std::tuple_size_v<Indices> - 1>{},
                      std::forward<decltype(arg_)>(arg_),
                      std::forward<Args>(args)...);
-  if constexpr (detail::is_ValueAndVariance_v<std::decay_t<decltype(arg_)>>) {
+  if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(arg_)>>) {
     arg.values.data()[i] = arg_.value;
     arg.variances.data()[i] = arg_.variance;
   }
@@ -344,56 +271,52 @@ struct TransformSparse {
   }
 };
 
-/// Helper for transform implementation, performing branching between output
-/// with and without variances.
-template <class T1, class Out, class Op>
-static void do_transform(const T1 &a, Out &out, Op op) {
-  auto a_val = a.values();
+/// Recursion endpoint for do_transform.
+///
+/// Call transform_elements with or without variances for output, depending on
+/// whether any of the arguments has variances or not.
+template <class Op, class Out, class Tuple>
+static void do_transform(Op op, Out &&out, Tuple &&processed) {
   auto out_val = out.values();
-  if (a.hasVariances()) {
-    if constexpr (canHaveVariances<typename T1::value_type>()) {
-      auto a_var = a.variances();
-      auto out_var = out.variances();
-      transform_elements(op, ValuesAndVariances{out_val, out_var},
-                         ValuesAndVariances{a_val, a_var});
-    }
-  } else {
-    transform_elements(op, out_val, a_val);
-  }
+  std::apply(
+      [&](auto &&... args) {
+        if constexpr ((is_ValuesAndVariances_v<std::decay_t<decltype(args)>> ||
+                       ...)) {
+          auto out_var = out.variances();
+          transform_elements(op, ValuesAndVariances{out_val, out_var},
+                             std::forward<decltype(args)>(args)...);
+        } else {
+          transform_elements(op, out_val,
+                             std::forward<decltype(args)>(args)...);
+        }
+      },
+      std::forward<Tuple>(processed));
 }
 
 /// Helper for transform implementation, performing branching between output
 /// with and without variances as well as handling other operands with and
 /// without variances.
-template <class T1, class T2, class Out, class Op>
-static void do_transform(const T1 &a, const T2 &b, Out &out, Op op) {
-  auto a_val = a.values();
-  auto b_val = b.values();
-  auto out_val = out.values();
-  if (a.hasVariances()) {
-    if constexpr (canHaveVariances<typename T1::value_type>() &&
-                  canHaveVariances<typename T2::value_type>()) {
-      auto a_var = a.variances();
-      auto out_var = out.variances();
-      if (b.hasVariances()) {
-        auto b_var = b.variances();
-        transform_elements(op, ValuesAndVariances{out_val, out_var},
-                           ValuesAndVariances{a_val, a_var},
-                           ValuesAndVariances{b_val, b_var});
-      } else {
-        transform_elements(op, ValuesAndVariances{out_val, out_var},
-                           ValuesAndVariances{a_val, a_var}, b_val);
-      }
-    }
-  } else if (b.hasVariances()) {
-    if constexpr (canHaveVariances<typename T2::value_type>()) {
-      auto b_var = b.variances();
-      auto out_var = out.variances();
-      transform_elements(op, ValuesAndVariances{out_val, out_var}, a_val,
-                         ValuesAndVariances{b_val, b_var});
+template <class Op, class Out, class Tuple, class Arg, class... Args>
+static void do_transform(Op op, Out &&out, Tuple &&processed, const Arg &arg,
+                         const Args &... args) {
+  auto vals = arg.values();
+  if (arg.hasVariances()) {
+    if constexpr (std::is_base_of_v<transform_flags::expect_no_variance_arg_t<
+                                        std::tuple_size_v<Tuple>>,
+                                    Op>) {
+      throw except::VariancesError("Variances in argument " +
+                                   std::to_string(std::tuple_size_v<Tuple>) +
+                                   " not supported.");
+    } else if constexpr (canHaveVariances<typename Arg::value_type>()) {
+      auto vars = arg.variances();
+      do_transform(
+          op, std::forward<Out>(out),
+          std::tuple_cat(processed, std::tuple(ValuesAndVariances{vals, vars})),
+          args...);
     }
   } else {
-    transform_elements(op, out_val, a_val, b_val);
+    do_transform(op, std::forward<Out>(out),
+                 std::tuple_cat(processed, std::tuple(vals)), args...);
   }
 }
 
@@ -419,13 +342,15 @@ template <class Op> struct Transform {
                   dims, default_init_elements)
             : makeVariable<element_type_t<Out>>(dims, default_init_elements);
     auto &outT = static_cast<VariableConceptT<Out> &>(out.data());
-    do_transform(as_view{*handles, dims}..., outT, op);
+    do_transform(op, outT, std::tuple<>(), as_view{*handles, dims}...);
     return out;
   }
 };
 template <class Op> Transform(Op)->Transform<Op>;
 
-template <class T, class... Known> struct optional_sparse {
+template <class T, class Handle> struct optional_sparse;
+template <class T, class... Known>
+struct optional_sparse<T, VariableConceptHandle_impl<Known...>> {
   using type = std::conditional_t<std::disjunction_v<std::is_same<T, Known>...>,
                                   std::tuple<T>, std::tuple<>>;
 };
@@ -440,54 +365,53 @@ template <template <typename...> class C, typename... Ts1, typename... Ts2,
 struct tuple_cat<C<Ts1...>, C<Ts2...>, Ts3...>
     : public tuple_cat<C<Ts1..., Ts2...>, Ts3...> {};
 
-template <class T1, class T2, class... Known> struct optional_sparse_pair {
+template <class T1, class T2, class Handle> struct optional_sparse_pair;
+template <class T1, class T2, class... Known>
+struct optional_sparse_pair<T1, T2, VariableConceptHandle_impl<Known...>> {
   using type =
       std::conditional_t<std::disjunction_v<std::is_same<T1, Known>...> &&
                              std::disjunction_v<std::is_same<T2, Known>...>,
                          std::tuple<std::pair<T1, T2>>, std::tuple<>>;
 };
+template <class T>
+using optional_sparse_t =
+    typename optional_sparse<T, VariableConceptHandle>::type;
+template <class T1, class T2>
+using optional_sparse_pair_t =
+    typename optional_sparse_pair<T1, T2, VariableConceptHandle>::type;
 
 /// Augment a tuple of types with the corresponding sparse types, if they exist.
-template <class Handle> struct augment_tuple;
-
-template <class... Known>
-struct augment_tuple<VariableConceptHandle_impl<Known...>> {
+struct augment {
   template <class... Ts> static auto insert_sparse(const std::tuple<Ts...> &) {
     return
         typename tuple_cat<std::tuple<Ts...>,
-                           typename optional_sparse<sparse_container<Ts>,
-                                                    Known...>::type...>::type{};
+                           optional_sparse_t<sparse_container<Ts>>...>::type{};
   }
 
-  /// Augment a tuple of type pairs with the corresponding sparse types, if they
-  /// exist.
   template <class... Ts>
-  static auto insert_sparse_in_place_pairs(const std::tuple<Ts...> &) {
-    return std::tuple_cat(
-        std::tuple<Ts...>{},
-        typename optional_sparse_pair<sparse_container<typename Ts::first_type>,
-                                      typename Ts::second_type,
-                                      Known...>::type{}...,
-        typename optional_sparse_pair<
-            sparse_container<typename Ts::first_type>,
-            sparse_container<typename Ts::second_type>, Known...>::type{}...);
+  static auto insert_sparse_in_place(const std::tuple<Ts...> &tuple) {
+    return insert_sparse(tuple);
   }
-  template <class... Ts>
-  static auto insert_sparse_pairs(const std::tuple<Ts...> &) {
+
+  template <class... First, class... Second>
+  static auto
+  insert_sparse_in_place(const std::tuple<std::pair<First, Second>...> &) {
     return std::tuple_cat(
-        std::tuple<Ts...>{},
-        typename optional_sparse_pair<
-            typename Ts::first_type, sparse_container<typename Ts::second_type>,
-            Known...>::type{}...,
-        typename optional_sparse_pair<sparse_container<typename Ts::first_type>,
-                                      typename Ts::second_type,
-                                      Known...>::type{}...,
-        typename optional_sparse_pair<
-            sparse_container<typename Ts::first_type>,
-            sparse_container<typename Ts::second_type>, Known...>::type{}...);
+        std::tuple<std::pair<First, Second>...>{},
+        optional_sparse_pair_t<sparse_container<First>, Second>{}...,
+        optional_sparse_pair_t<sparse_container<First>,
+                               sparse_container<Second>>{}...);
+  }
+  template <class... First, class... Second>
+  static auto insert_sparse(const std::tuple<std::pair<First, Second>...> &) {
+    return std::tuple_cat(
+        std::tuple<std::pair<First, Second>...>{},
+        optional_sparse_pair_t<First, sparse_container<Second>>{}...,
+        optional_sparse_pair_t<sparse_container<First>, Second>{}...,
+        optional_sparse_pair_t<sparse_container<First>,
+                               sparse_container<Second>>{}...);
   }
 };
-using augment = augment_tuple<VariableConceptHandle>;
 
 template <class Op, class SparseOp> struct overloaded_sparse : Op, SparseOp {
   template <class... Ts> constexpr auto operator()(Ts &&... args) const {
@@ -508,14 +432,29 @@ template <class Op, class SparseOp> struct overloaded_sparse : Op, SparseOp {
 };
 template <class... Ts> overloaded_sparse(Ts...)->overloaded_sparse<Ts...>;
 
+template <class T>
+struct is_any_sparse
+    : std::conditional_t<is_sparse<T>::value, std::true_type, std::false_type> {
+};
+template <class... Ts>
+struct is_any_sparse<std::pair<Ts...>>
+    : std::conditional_t<(is_sparse<Ts>::value || ...), std::true_type,
+                         std::false_type> {};
+template <class... Ts>
+struct is_any_sparse<std::tuple<Ts...>>
+    : std::conditional_t<(is_sparse<Ts>::value || ...), std::true_type,
+                         std::false_type> {};
+
 } // namespace detail
 
-template <class... TypePairs, class Op>
-static constexpr auto type_pairs(Op) noexcept {
-  if constexpr (sizeof...(TypePairs) == 0)
+template <class... Ts, class Op>
+static constexpr auto type_tuples(Op) noexcept {
+  if constexpr (sizeof...(Ts) == 0)
     return typename Op::types{};
+  else if constexpr ((visit_detail::is_tuple<Ts>::value || ...))
+    return std::tuple_cat(Ts{}...);
   else
-    return std::tuple_cat(TypePairs{}...);
+    return std::tuple<Ts...>{};
 }
 
 /// Helper class wrapping functions for in-place transform.
@@ -576,20 +515,39 @@ template <bool dry_run> struct in_place {
     auto a_val = a.values();
     auto b_val = b.values();
     if (a.hasVariances()) {
-      if constexpr (canHaveVariances<typename T1::value_type>() &&
-                    canHaveVariances<typename T2::value_type>()) {
-        auto a_var = a.variances();
-        if (b.hasVariances()) {
-          auto b_var = b.variances();
-          transform_in_place_impl(op, ValuesAndVariances{a_val, a_var},
-                                  ValuesAndVariances{b_val, b_var});
-        } else {
-          transform_in_place_impl(op, ValuesAndVariances{a_val, a_var}, b_val);
+      if constexpr (std::is_base_of_v<
+                        transform_flags::expect_no_variance_arg_t<0>, Op>) {
+        throw except::VariancesError(
+            "Variances in first argument not supported.");
+
+      } else {
+        if constexpr (canHaveVariances<typename T1::value_type>() &&
+                      canHaveVariances<typename T2::value_type>()) {
+          auto a_var = a.variances();
+          if (b.hasVariances()) {
+            if constexpr (std::is_base_of_v<
+                              transform_flags::expect_no_variance_arg_t<1>,
+                              Op>) {
+              throw except::VariancesError(
+                  "Variances in second argument not supported.");
+            } else {
+              auto b_var = b.variances();
+              transform_in_place_impl(op, ValuesAndVariances{a_val, a_var},
+                                      ValuesAndVariances{b_val, b_var});
+            }
+          } else {
+            transform_in_place_impl(op, ValuesAndVariances{a_val, a_var},
+                                    b_val);
+          }
         }
       }
     } else if (b.hasVariances()) {
-      if constexpr (std::is_base_of_v<transform_flags::no_variance_output_t,
-                                      Op>) {
+      if constexpr (std::is_base_of_v<
+                        transform_flags::expect_no_variance_arg_t<1>, Op>) {
+        throw except::VariancesError(
+            "Variances in second argument not supported.");
+      } else if constexpr (std::is_base_of_v<
+                               transform_flags::no_variance_output_t, Op>) {
         auto b_var = b.variances();
         transform_in_place_impl(op, a_val, ValuesAndVariances{b_val, b_var});
       } else {
@@ -675,71 +633,45 @@ template <bool dry_run> struct in_place {
     return TransformInPlace<Op>{op};
   }
 
-  template <class... Ts, class Var, class Op>
-  static void transform(Var &&var, Op op) {
+  template <class... Ts, class Op, class Var, class... Other>
+  static void transform_data(std::tuple<Ts...> &&, Op op, Var &&var,
+                             const Other &... other) {
     using namespace detail;
-    auto unit = var.unit();
-    op(unit);
-    // Stop early in bad cases of changing units (if `var` is a slice):
-    var.expectCanSetUnit(unit);
     try {
       // If a sparse_container<T> is specified explicitly as a type we assume
       // that the caller provides a matching overload. Otherwise we assume the
       // provided operator is for individual elements (regardless of whether
       // they are elements of dense or sparse data), so we add overloads for
       // sparse data processing.
-      if constexpr ((is_sparse_v<Ts> || ...)) {
-        scipp::core::visit_impl<Ts...>::apply(makeTransformInPlace(op),
-                                              var.dataHandle());
-      } else {
-        scipp::core::visit(augment::insert_sparse(std::tuple<Ts...>{}))
-            .apply(makeTransformInPlace(
-                       detail::overloaded_sparse{op, TransformSparseInPlace{}}),
-                   var.dataHandle());
-      }
-    } catch (const std::bad_variant_access &) {
-      throw std::runtime_error("Operation not implemented for this type.");
-    }
-    if constexpr (dry_run)
-      return;
-    var.setUnit(unit);
-  }
-
-  template <class... Ts, class Var, class Var1, class Op>
-  static void transform(std::tuple<Ts...> &&, Var &&var, const Var1 &other,
-                        Op op) {
-    using namespace detail;
-    try {
-      if constexpr (((is_sparse_v<typename Ts::first_type> ||
-                      is_sparse_v<typename Ts::second_type>) ||
-                     ...)) {
-        scipp::core::visit_impl<Ts...>::apply(
-            makeTransformInPlace(op), var.dataHandle(), other.dataHandle());
+      if constexpr ((is_any_sparse<Ts>::value || ...)) {
+        visit_impl<Ts...>::apply(makeTransformInPlace(op), var.dataHandle(),
+                                 other.dataHandle()...);
       } else {
         // Note that if only one of the inputs is sparse it must be the one
         // being transformed in-place, so there are only three cases here.
-        scipp::core::visit(
-            augment::insert_sparse_in_place_pairs(std::tuple<Ts...>{}))
+        core::visit(augment::insert_sparse_in_place(std::tuple<Ts...>{}))
             .apply(makeTransformInPlace(
-                       detail::overloaded_sparse{op, TransformSparseInPlace{}}),
-                   var.dataHandle(), other.dataHandle());
+                       overloaded_sparse{op, TransformSparseInPlace{}}),
+                   var.dataHandle(), other.dataHandle()...);
       }
     } catch (const std::bad_variant_access &) {
       throw except::TypeError("Cannot apply operation to item dtypes " +
-                              to_string(var.dtype()) + " and " +
-                              to_string(other.dtype()) + '.');
+                              [](auto &&... v) {
+                                return ((to_string(v.dtype()) + ' ') + ...);
+                              }(var, other...));
     }
   }
-  template <class... TypePairs, class Var, class Var1, class Op>
-  static void transform(Var &&var, const Var1 &other, Op op) {
+  template <class... Ts, class Op, class Var, class... Other>
+  static void transform(Op op, Var &&var, const Other &... other) {
     using namespace detail;
-    expect::contains(var.dims(), other.dims());
+    (expect::contains(var.dims(), other.dims()), ...);
     auto unit = var.unit();
-    op(unit, other.unit());
+    op(unit, other.unit()...);
     // Stop early in bad cases of changing units (if `var` is a slice):
     var.expectCanSetUnit(unit);
     // Wrapped implementation to convert multiple tuples into a parameter pack.
-    transform(type_pairs<TypePairs...>(op), std::forward<Var>(var), other, op);
+    transform_data(type_tuples<Ts...>(op), op, std::forward<Var>(var),
+                   other...);
     if constexpr (dry_run)
       return;
     var.setUnit(unit);
@@ -754,7 +686,7 @@ template <bool dry_run> struct in_place {
 /// identical to the input range, but avoids potentially costly element copies.
 template <class... Ts, class Var, class Op>
 void transform_in_place(Var &&var, Op op) {
-  in_place<false>::transform<Ts...>(std::forward<Var>(var), op);
+  in_place<false>::transform<Ts...>(op, std::forward<Var>(var));
 }
 
 /// Transform the data elements of a variable in-place.
@@ -764,7 +696,7 @@ void transform_in_place(Var &&var, Op op) {
 /// costly element copies.
 template <class... TypePairs, class Var, class Op>
 void transform_in_place(Var &&var, const VariableConstProxy &other, Op op) {
-  in_place<false>::transform<TypePairs...>(std::forward<Var>(var), other, op);
+  in_place<false>::transform<TypePairs...>(op, std::forward<Var>(var), other);
 }
 
 /// Accumulate data elements of a variable in-place.
@@ -782,73 +714,56 @@ template <class... TypePairs, class Var, class Op>
 void accumulate_in_place(Var &&var, const VariableConstProxy &other, Op op) {
   expect::contains(other.dims(), var.dims());
   // Wrapped implementation to convert multiple tuples into a parameter pack.
-  in_place<false>::transform(std::tuple_cat(TypePairs{}...),
-                             std::forward<Var>(var), other, op);
+  in_place<false>::transform_data(std::tuple_cat(TypePairs{}...), op,
+                                  std::forward<Var>(var), other);
 }
 
 namespace dry_run {
 template <class... Ts, class Var, class Op>
 void transform_in_place(Var &&var, Op op) {
-  in_place<true>::transform<Ts...>(std::forward<Var>(var), op);
+  in_place<true>::transform<Ts...>(op, std::forward<Var>(var));
 }
 template <class... TypePairs, class Var, class Op>
 void transform_in_place(Var &&var, const VariableConstProxy &other, Op op) {
-  in_place<true>::transform<TypePairs...>(std::forward<Var>(var), other, op);
+  in_place<true>::transform<TypePairs...>(op, std::forward<Var>(var), other);
 }
 } // namespace dry_run
+
+namespace detail {
+template <class... Ts, class Op, class... Vars>
+Variable transform(std::tuple<Ts...> &&, Op op, const Vars &... vars) {
+  using namespace detail;
+  auto unit = op(vars.unit()...);
+  Variable out;
+  try {
+    if constexpr ((is_any_sparse<Ts>::value || ...)) {
+      out = visit_impl<Ts...>::apply(Transform{op}, vars.dataHandle()...);
+    } else if constexpr (sizeof...(Vars) > 2) {
+      static_assert("Transform with more than 2 arguments not implemented "
+                    "yet for element-wise operation.");
+    } else {
+      out = core::visit(augment::insert_sparse(std::tuple<Ts...>{}))
+                .apply(Transform{overloaded_sparse{op, TransformSparse{}}},
+                       vars.dataHandle()...);
+    }
+  } catch (const std::bad_variant_access &) {
+    throw except::TypeError("Cannot apply operation to item dtypes " +
+                            ((to_string(vars.dtype()) + ' ') + ...));
+  }
+  out.setUnit(unit);
+  return out;
+}
+} // namespace detail
 
 /// Transform the data elements of a variable and return a new Variable.
 ///
 /// This overload is equivalent to std::transform with a single input range, but
 /// avoids the need to manually create a new variable for the output and the
 /// need for, e.g., std::back_inserter.
-template <class... Ts, class Var, class Op>
-[[nodiscard]] Variable transform(const Var &var, Op op) {
-  using namespace detail;
-  auto unit = op(var.unit());
-  Variable result;
-  try {
-    if constexpr ((is_sparse_v<Ts> || ...)) {
-      result = scipp::core::visit_impl<Ts...>::apply(Transform{op},
-                                                     var.dataHandle());
-    } else {
-      result =
-          scipp::core::visit(augment::insert_sparse(std::tuple<Ts...>{}))
-              .apply(
-                  Transform{detail::overloaded_sparse{op, TransformSparse{}}},
-                  var.dataHandle());
-    }
-  } catch (const std::bad_variant_access &) {
-    throw std::runtime_error("Operation not implemented for this type.");
-  }
-  result.setUnit(unit);
-  return result;
+template <class... Ts, class Op>
+[[nodiscard]] Variable transform(const VariableConstProxy &var, Op op) {
+  return detail::transform(std::tuple<Ts...>{}, op, var);
 }
-
-namespace detail {
-  template <class... Ts, class Op>
-  Variable transform(std::tuple<Ts...> &&, const VariableConstProxy &var1,
-                     const VariableConstProxy &var2, Op op) {
-    using namespace detail;
-    try {
-      if constexpr (((is_sparse_v<typename Ts::first_type> ||
-                      is_sparse_v<typename Ts::second_type>) ||
-                     ...)) {
-        return scipp::core::visit_impl<Ts...>::apply(
-            Transform{op}, var1.dataHandle(), var2.dataHandle());
-      } else {
-        return scipp::core::visit(
-                   augment::insert_sparse_pairs(std::tuple<Ts...>{}))
-            .apply(Transform{detail::overloaded_sparse{op, TransformSparse{}}},
-                   var1.dataHandle(), var2.dataHandle());
-      }
-    } catch (const std::bad_variant_access &) {
-      throw except::TypeError("Cannot apply operation to item dtypes " +
-                              to_string(var1.dtype()) + " and " +
-                              to_string(var2.dtype()) + '.');
-    }
-  }
-} // namespace detail
 
 /// Transform the data elements of two variables and return a new Variable.
 ///
@@ -858,13 +773,17 @@ namespace detail {
 template <class... TypePairs, class Op>
 [[nodiscard]] Variable transform(const VariableConstProxy &var1,
                                  const VariableConstProxy &var2, Op op) {
-  auto unit = op(var1.unit(), var2.unit());
-  // Wrapped implementation to convert multiple tuples into a parameter pack.
-  auto result =
-      detail::transform(std::tuple_cat(TypePairs{}...), var1, var2, op);
-  result.setUnit(unit);
-  return result;
+  return detail::transform(std::tuple_cat(TypePairs{}...), op, var1, var2);
 }
+
+/// Transform the data elements of three variables and return a new Variable.
+template <class... TypeTuples, class Op>
+[[nodiscard]] Variable
+    transform(const VariableConstProxy &var1, const VariableConstProxy &var2,
+              const VariableConstProxy &var3, Op op) {
+      return detail::transform(std::tuple_cat(TypeTuples{}...), op, var1, var2,
+                               var3);
+    }
 
 } // namespace scipp::core
 

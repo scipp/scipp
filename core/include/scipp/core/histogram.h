@@ -11,6 +11,8 @@
 
 namespace scipp::core {
 
+SCIPP_CORE_EXPORT bool is_histogram(const DataConstProxy &a, const Dim dim);
+
 namespace expect::histogram {
 template <class T> void sorted_edges(const T &edges) {
   if (!std::is_sorted(edges.begin(), edges.end()))

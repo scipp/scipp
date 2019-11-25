@@ -8,6 +8,7 @@ from .render import render_plot
 from .slicer import Slicer
 from .tools import axis_label, parse_colorbar
 
+
 # Other imports
 import numpy as np
 import ipywidgets as widgets
@@ -249,8 +250,8 @@ class Slicer2d(Slicer):
         button_dims = [None, None]
         for key, val in self.slider.items():
             if not val.disabled:
-                self.lab[key].value = str(
-                    self.slider_x[key].values[val.value])
+                self.lab[key].value = self.make_slider_label(
+                    self.slider_x[key], val.value)
                 vslice = vslice[val.dim, val.value]
             else:
                 button_dims[self.buttons[key].value.lower() == "y"] = val.dim

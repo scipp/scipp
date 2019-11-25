@@ -40,14 +40,16 @@ def plot_sparse(input_data, ndim=0, sparse_dim=None, backend=None, logx=False,
                 marker={"line": {"color": '#ffffff',
                                  "width": 1},
                         "opacity": opacity,
-                        "color": color})
+                        "color": color[0]})
+
     for i in range(ndims):
         data[xyz[i]] = sparse_data[ndims - 1 - i]
     if len(sparse_data) > ndims:
 
         # TODO: Having both color and size code for the weights leads to
-        # strange in plotly, where it would seem some objects are either
-        # modified or run out of scope. We will keep just the color for now.
+        # strange behaviour in plotly, where it would seem some objects are
+        # either modified or run out of scope. We will keep just the color
+        # for now.
 
         # if weights.count("size") > 0:
         #     # Copies are apparently required here

@@ -6,7 +6,7 @@
 # Scipp imports
 from .sparse import visit_sparse_data
 from .tools import edges_to_centers, centers_to_edges, axis_label, \
-                   parse_colorbar, get_1d_axes, axis_to_dim_label
+                   parse_colorbar, axis_to_dim_label
 
 # Other imports
 import numpy as np
@@ -31,9 +31,16 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False,
     out = {"fill_between": {}, "step": {}, "line": {},
            "errorbar": {}}
 
+    if axes is None:
+        axes = input_data.dims
+
     for i, (name, var) in enumerate(input_data):
 
-        xlab, ylab, x, y = get_1d_axes(var, axes, name)
+        dim, lab, xcoord = axis_to_dim_label(var, axes[-1])
+        x = xcoord.values
+        xlab = axis_label(var=xcoord, name=lab)
+        y = var.values
+        ylab = axis_label(var=var, name="")
 
         # Check for bin edges
         if x.shape[0] == y.shape[0] + 1:

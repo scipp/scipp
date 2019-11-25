@@ -6,7 +6,7 @@ from .sparse import histogram_sparse_data
 
 
 def dispatch(input_data, ndim=0, name=None, backend=None, collapse=None,
-             sparse_dim=None, bins=None, projection="2d", color=None,
+             sparse_dim=None, bins=None, projection=None, color=None,
              **kwargs):
     """
     Function to automatically dispatch the input dataset to the appropriate
@@ -46,17 +46,24 @@ def dispatch(input_data, ndim=0, name=None, backend=None, collapse=None,
         from .plot_3d import plot_3d
         from .plot_sparse import plot_sparse
 
+        if projection is None:
+            if ndim < 3:
+                projection = "{}d".format(ndim)
+            else:
+                projection = "2d"
+        projection = projection.lower()
+
         if sparse_dim is not None and bins is None:
             plot_sparse(input_data, ndim=ndim, sparse_dim=sparse_dim,
                         backend=backend, color=color, **kwargs)
-        elif ndim == 1:
+        elif projection == "1d":
             plot_1d(input_data, backend=backend, color=color, **kwargs)
-        elif projection.lower() == "2d":
+        elif projection == "2d":
             plot_2d(input_data, name=name, ndim=ndim, backend=backend,
                     **kwargs)
-        elif projection.lower() == "3d":
+        elif projection == "3d" or projection == "volume":
             plot_3d(input_data, name=name, ndim=ndim, backend=backend,
-                    **kwargs)
+                    volume=(projection == "volume"), **kwargs)
         else:
             raise RuntimeError("Wrong projection type. Expected either '2d' "
                                "or '3d', got {}.".format(projection))

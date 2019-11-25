@@ -5,7 +5,6 @@
 #ifndef SPAN_H
 #define SPAN_H
 
-#define TCB_SPAN_STD_COMPLIANT_MODE
 #define TCB_SPAN_NAMESPACE_NAME scipp
 #include "tcb/span.hpp"
 
