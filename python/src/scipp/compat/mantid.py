@@ -234,7 +234,7 @@ def convert_EventWorkspace_to_dataset(ws, load_pulse_times):
             # TODO: Find a more efficient way to do this.
             pt = sp.getPulseTimes()
             labs[sc.Dim.Spectrum, i].values = np.asarray(
-                [p.total_nanoseconds() for p in pt])
+                [p.totalNanoseconds() for p in pt])
         if contains_weighted_events:
             weights[sc.Dim.Spectrum, i].values = sp.getWeights()
             weights[sc.Dim.Spectrum, i].variances = sp.getWeightErrors()
