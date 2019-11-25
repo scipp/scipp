@@ -5,6 +5,7 @@
 #include "scipp/core/apply.h"
 #include "scipp/core/except.h"
 #include "scipp/core/variable.h"
+#include "scipp/units/except.h"
 
 namespace scipp::core {
 
@@ -124,7 +125,7 @@ Variable rebin(const VariableConstProxy &var, const Dim dim,
   // Rebin could also implemented for count-densities. However, it may be better
   // to avoid this since it increases complexity. Instead, densities could
   // always be computed on-the-fly for visualization, if required.
-  expect::unit_one_of(var, {units::counts, units::dimensionless});
+  expect::unit_one_of(var, {units::counts, units::Unit(units::dimensionless)});
 
   auto do_rebin = [dim](auto &&out, auto &&old, auto &&oldCoord_,
                         auto &&newCoord_) {

@@ -5,7 +5,11 @@
 #ifndef SCIPP_COMMON_EXCEPT_H
 #define SCIPP_COMMON_EXCEPT_H
 
+#include <initializer_list>
+#include <sstream>
 #include <stdexcept>
+
+#include "scipp/common/string.h"
 
 namespace scipp::except {
 
@@ -20,6 +24,10 @@ template <class T> struct MismatchError : public Error<T> {
   template <class A, class B>
   MismatchError(const A &a, const B &b)
       : Error<T>(a, " expected to be equal to " + to_string(b)) {}
+
+  template <class A, class B>
+  MismatchError(const A &a, const std::initializer_list<B> b)
+      : Error<T>(a, " expected to be equal to one of " + to_string(b)) {}
 };
 
 } // namespace scipp::except
