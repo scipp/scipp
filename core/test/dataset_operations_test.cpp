@@ -108,7 +108,7 @@ TEST(DatasetOperationsTest, mean_three_dims) {
 
 TEST(DatasetOperationsTest, rebin) {
   Dataset ds;
-  ds.setCoord(Dim::X, makeVariable<double>({Dim::X, 5}, {1, 2, 3, 4, 5}));
+  ds.setCoord(Dim::X, makeVariable<double>({Dim::X, 6}, {1, 2, 3, 4, 5, 6}));
   ds.setData("data_x", makeVariable<double>({Dim::X, 5}, {1, 2, 3, 4, 5}));
 
   ds.setMask("mask_x", makeVariable<bool>({Dim::X, 5},

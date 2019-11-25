@@ -9,13 +9,12 @@
 
 namespace scipp::core {
 
-bool isMatchingOr1DBinEdge(const Dim dim, Dimensions edges,
-                           const Dimensions &toMatch) {
-  if (edges.shape().size() == 1)
-    return true;
+bool isBinEdge(const Dim dim, Dimensions edges, const Dimensions &toMatch) {
   edges.resize(dim, edges[dim] - 1);
-  return edges == toMatch;
+  return edges[dim] == toMatch[dim];
 }
+
+bool is1D(Dimensions edges) { return edges.shape().size() == 1; }
 
 template <class T> class VariableConceptT;
 template <class DataType, class CoordType>
@@ -134,16 +133,30 @@ Variable rebin(const VariableConstProxy &var, const Dim dim,
     const auto &oldCoordT = *oldCoord_;
     const auto &newCoordT = *newCoord_;
     auto &outT = *out;
-    const auto &dims = outT.dims();
-    if (dims.inner() == dim &&
-        isMatchingOr1DBinEdge(dim, oldCoordT.dims(), oldT.dims()) &&
-        isMatchingOr1DBinEdge(dim, newCoordT.dims(), dims)) {
+    const auto &out_dims = outT.dims();
+
+    // dimension along which the data is being rebinned
+    const bool rebin_dim_valid = out_dims.inner() == dim;
+
+    const bool input_valid = isBinEdge(dim, oldCoordT.dims(), oldT.dims());
+
+    const bool output_valid =
+        is1D(newCoordT.dims()) && isBinEdge(dim, newCoordT.dims(), out_dims);
+
+    if (rebin_dim_valid && input_valid && output_valid) {
       rebinInner(dim, oldT, outT, oldCoordT, newCoordT);
       if (oldT.hasVariances())
         rebinInner(dim, oldT, outT, oldCoordT, newCoordT, true);
-    } else {
+    } else if (!rebin_dim_valid) {
+      // TODO the new coord should be 1D or the same dim as newCoord.
       throw std::runtime_error(
-          "TODO the new coord should be 1D or the same dim as newCoord.");
+          "The new coord should be the same dimensions as the output coord.");
+    } else if (!input_valid) {
+      throw std::runtime_error(
+          "The input does not have coordinates with bin-edges.");
+    } else if (!output_valid) {
+      throw std::runtime_error(
+          "The output is not 1D or does not have coordinates with bin-edges.");
     }
   };
 

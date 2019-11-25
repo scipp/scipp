@@ -100,7 +100,7 @@ TEST_F(RebinTest, keeps_unrelated_labels_but_drops_others) {
 class RebinMask1DTest : public ::testing::Test {
 protected:
   Variable x =
-      makeVariable<double>({Dim::X, 10}, {1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
+      makeVariable<double>({Dim::X, 11}, {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11});
 
   Variable mask =
       makeVariable<bool>({Dim::X, 10}, {false, false, true, false, false, false,
