@@ -60,6 +60,9 @@ static constexpr auto dimensionless_unit_check_return =
       return aUnit;
     };
 
+/// Flags for transform, added as overloads to the operator. These are never
+/// actually called since flag presence is checked via the base class of the
+/// operator.
 namespace transform_flags {
 /// Add this to overloaded operator to indicate that the operation does not
 /// support variances in the specified argument.
@@ -67,6 +70,8 @@ template <int N> static constexpr auto expect_no_variance_arg = []() {};
 template <int N>
 using expect_no_variance_arg_t = decltype(expect_no_variance_arg<N>);
 
+/// Add this to overloaded operator to indicate that the operation requires
+/// variances in the specified argument.
 template <int N> static constexpr auto expect_variance_arg = []() {};
 template <int N> using expect_variance_arg_t = decltype(expect_variance_arg<N>);
 
