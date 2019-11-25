@@ -42,15 +42,9 @@ template <class... Ts> struct CallDType {
   }
 };
 
-template <template <class> class Callable, class... Args>
-auto apply(const DType dtype, Args &&... args) {
-  return callDType<Callable>(
-      std::tuple<double, float, int64_t, int32_t, std::string, bool,
-                 sparse_container<double>, sparse_container<float>,
-                 sparse_container<int64_t>, DataArray, Dataset,
-                 Eigen::Vector3d>{},
-      dtype, std::forward<Args>(args)...);
-}
+template <class... Ts>
+struct CallDTypeWithSparse : public CallDType<Ts..., sparse_container<Ts>...> {
+};
 
 } // namespace scipp::core
 

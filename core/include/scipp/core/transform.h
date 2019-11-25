@@ -208,11 +208,6 @@ static void transform_elements(Op op, Out &&out, Ts &&... other) {
     call(op, indices, out, other...);
 }
 
-template <class T> struct element_type { using type = T; };
-template <class T> struct element_type<sparse_container<T>> { using type = T; };
-template <class T> struct element_type<const sparse_container<T>> {
-  using type = T;
-};
 template <class T> struct element_type<ValueAndVariance<T>> { using type = T; };
 template <class T>
 struct element_type<ValuesAndVariances<sparse_container<T>>> {
@@ -222,7 +217,6 @@ template <class T>
 struct element_type<ValuesAndVariances<const sparse_container<T>>> {
   using type = T;
 };
-template <class T> using element_type_t = typename element_type<T>::type;
 
 /// Broadcast a constant to arbitrary size. Helper for TransformSparse.
 ///

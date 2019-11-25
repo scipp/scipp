@@ -6,7 +6,6 @@
 #define VARIABLE_H
 
 #include <string>
-#include <type_traits>
 #include <variant>
 
 #include <Eigen/Dense>
@@ -19,11 +18,21 @@
 #include "scipp/core/except.h"
 #include "scipp/core/slice.h"
 #include "scipp/core/string.h"
+#include "scipp/core/tag_util.h"
+#include "scipp/core/variable_keyword_arg_constructor.h"
 #include "scipp/core/variable_view.h"
-#include "scipp/core/vector.h"
 #include "scipp/units/unit.h"
 
 namespace scipp::core {
+
+namespace detail {
+template <class T> struct element_type { using type = T; };
+template <class T> struct element_type<sparse_container<T>> { using type = T; };
+template <class T> struct element_type<const sparse_container<T>> {
+  using type = T;
+};
+template <class T> using element_type_t = typename element_type<T>::type;
+} // namespace detail
 
 template <class T> struct is_sparse_container : std::false_type {};
 template <class T>
@@ -290,10 +299,24 @@ public:
   template <class T>
   Variable(const units::Unit unit, const Dimensions &dimensions, T values,
            T variances);
+
+  template <class T>
+  static Variable create(units::Unit &&u, Dims &&d, Shape &&s,
+                         std::optional<Vector<T>> &&val,
+                         std::optional<Vector<T>> &&var);
+
   template <class T>
   Variable(const Dimensions &dimensions, std::initializer_list<T> values_)
       : Variable(units::dimensionless, std::move(dimensions),
                  Vector<T>(values_.begin(), values_.end())) {}
+
+  /// This is used to provide the constructors:
+  /// Variable(DType, Dims, Shape, Unit, Values<T1>, Variances<T2>)
+  /// with the only one obligatory argument DType, the other arguments are not
+  /// obligatory and could be given in arbitrary order. Example:
+  /// Variable(dtype<float>, units::Unit(units::kg), Shape{1, 2}, Dims{Dim::X,
+  /// Dim::Y}, Values({3, 4})).
+  template <class... Ts> Variable(const DType &type, Ts &&... args);
 
   explicit operator bool() const noexcept { return m_object.operator bool(); }
   Variable operator~() const;
@@ -423,20 +446,52 @@ public:
   template <class T> void setVariances(Vector<T> &&v);
 
 private:
+  template <class... Ts> struct ConstructVariable {
+    template <class T> struct Maker { static Variable apply(Ts &&... args); };
+
+    static Variable make(Ts &&... args, DType type);
+  };
+
+private:
   template <class T> const Vector<T> &cast(const bool variances = false) const;
   template <class T> Vector<T> &cast(const bool variances = false);
 
   units::Unit m_unit;
   VariableConceptHandle m_object;
 };
+/// This is used to provide the fabric function:
+/// createVariable<type>(Dims, Shape, Unit, Values<T1>, Variances<T2>)
+/// with the obligatory template argument type, function arguments are not
+/// obligatory and could be given in arbitrary order, but suposed to be wrapped
+/// in certain classes.
+/// Example: createVariable<float>(units::Unit(units::kg),
+/// Shape{1, 2}, Dims{Dim::X, Dim::Y}, Values({3, 4})).
+
+// The name should be changed to makeVariable after refactoring:
+// getting rid of all other makeVariable.
+template <class T, class... Ts> Variable createVariable(Ts &&... ts) {
+  using helper = detail::ConstructorArgumentsMatcher<Variable, Ts...>;
+  helper::template checkArgTypesValid<units::Unit, Dims, Shape>();
+  auto [valArgs, varArgs, nonData] =
+      helper::template extractArguments<units::Unit, Dims, Shape>(
+          std::forward<Ts>(ts)...);
+  const auto &shape = std::get<Shape>(nonData);
+  const auto &d = shape.data;
+  if (std::find(d.cbegin(), d.cend(), Dimensions::Sparse) != d.end())
+    return helper::template construct<sparse_container<T>>(
+        std::move(valArgs), std::move(varArgs), std::move(nonData));
+  else
+    return helper::template construct<T>(std::move(valArgs), std::move(varArgs),
+                                         std::move(nonData));
+}
 
 template <class T> Variable makeVariable(const Dimensions &dimensions) {
   if (dimensions.sparse())
-    return Variable(units::dimensionless, std::move(dimensions),
+    return Variable(units::dimensionless, dimensions,
                     Vector<sparse_container<T>>(dimensions.volume()));
   else
     return Variable(
-        units::dimensionless, std::move(dimensions),
+        units::dimensionless, dimensions,
         Vector<T>(dimensions.volume(), detail::default_init<T>::value()));
 }
 
@@ -444,7 +499,7 @@ template <class T>
 Variable makeVariable(const Dimensions &dimensions,
                       const detail::default_init_elements_t &init) {
   if (dimensions.sparse())
-    return Variable(units::dimensionless, std::move(dimensions),
+    return Variable(units::dimensionless, dimensions,
                     Vector<sparse_container<T>>(dimensions.volume(), init));
   else
     return Variable(units::dimensionless, std::move(dimensions),
@@ -455,12 +510,12 @@ template <class T>
 Variable makeVariableWithVariances(const Dimensions &dimensions,
                                    units::Unit unit = units::dimensionless) {
   if (dimensions.sparse())
-    return Variable(unit, std::move(dimensions),
+    return Variable(unit, dimensions,
                     Vector<sparse_container<T>>(dimensions.volume()),
                     Vector<sparse_container<T>>(dimensions.volume()));
   else
     return Variable(
-        unit, std::move(dimensions),
+        unit, dimensions,
         Vector<T>(dimensions.volume(), detail::default_init<T>::value()),
         Vector<T>(dimensions.volume(), detail::default_init<T>::value()));
 }
@@ -470,11 +525,11 @@ Variable
 makeVariableWithVariances(const Dimensions &dimensions,
                           const detail::default_init_elements_t &init) {
   if (dimensions.sparse())
-    return Variable(units::dimensionless, std::move(dimensions),
+    return Variable(units::dimensionless, dimensions,
                     Vector<sparse_container<T>>(dimensions.volume(), init),
                     Vector<sparse_container<T>>(dimensions.volume(), init));
   else
-    return Variable(units::dimensionless, std::move(dimensions),
+    return Variable(units::dimensionless, dimensions,
                     Vector<T>(dimensions.volume(), init),
                     Vector<T>(dimensions.volume(), init));
 }
@@ -518,6 +573,46 @@ Variable makeVariable(const Dimensions &dimensions, const units::Unit unit,
                   Vector<T>(values.begin(), values.end()),
                   Vector<T>(variances.begin(), variances.end()));
 }
+
+template <class T>
+Variable Variable::create(units::Unit &&u, Dims &&d, Shape &&s,
+                          std::optional<Vector<T>> &&val,
+                          std::optional<Vector<T>> &&var) {
+  auto dms = Dimensions{d.data, s.data};
+  if (val && var)
+    return Variable(u, dms, std::move(*val), std::move(*var));
+  if (val)
+    return Variable(u, dms, std::move(*val));
+  if (var)
+    throw except::VariancesError("Can't have variance without values");
+  else {
+    if constexpr (is_sparse_container<T>::value) {
+      throw except::TypeError("unreachable");
+    } else {
+      auto res = makeVariable<T>(dms);
+      res.setUnit(u);
+      return res;
+    }
+  }
+}
+
+template <class... Ts>
+template <class T>
+Variable Variable::ConstructVariable<Ts...>::Maker<T>::apply(Ts &&... ts) {
+  return createVariable<detail::element_type_t<T>>(std::forward<Ts>(ts)...);
+}
+
+template <class... Ts>
+Variable Variable::ConstructVariable<Ts...>::make(Ts &&... args, DType type) {
+  return CallDTypeWithSparse<
+      double, float, int64_t, int32_t, bool, Eigen::Vector3d,
+      std::string>::apply<Maker>(type, std::forward<Ts>(args)...);
+}
+
+template <class... Ts>
+Variable::Variable(const DType &type, Ts &&... args)
+    : Variable{
+          ConstructVariable<Ts...>::make(std::forward<Ts>(args)..., type)} {}
 
 namespace detail {
 template <class... N> struct is_vector : std::false_type {};
@@ -693,7 +788,7 @@ protected:
 /** Mutable view into (a subset of) a Variable.
  *
  * By inheriting from VariableConstProxy any code that works for
- * VariableConstProxy will automatically work also for this mutable variant. */
+ * VariableConstProxy will automatically work also for this mutable variant.*/
 class SCIPP_CORE_EXPORT VariableProxy : public VariableConstProxy {
 public:
   VariableProxy(Variable &variable)
