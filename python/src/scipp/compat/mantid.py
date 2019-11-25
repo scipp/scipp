@@ -386,6 +386,11 @@ def load(filename="",
 
     dataset = None
     if data_ws.id() == 'Workspace2D':
+        has_monitors = False
+        for spec in data_ws.spectrumInfo():
+            has_monitors |= spec.isMonitor
+        if has_monitors:
+            data_ws, monitor_ws = mantid.ExtractMonitors(data_ws)
         dataset = convert_Workspace2D_to_dataset(data_ws)
     elif data_ws.id() == 'EventWorkspace':
         dataset = convert_EventWorkspace_to_dataset(data_ws, load_pulse_times)
@@ -394,6 +399,7 @@ def load(filename="",
     AnalysisDataService.Instance().remove(data_ws.name())
 
     if dataset is None:
+        # TODO: monitor workspace is not deleted from ADS here
         raise RuntimeError('Unsupported workspace type')
     elif monitor_ws is not None:
         if monitor_ws.id() == 'Workspace2D':

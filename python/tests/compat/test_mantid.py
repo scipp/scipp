@@ -149,10 +149,26 @@ class TestMantidConversion(unittest.TestCase):
             ds.masks["spectrum"].values[0:3],
             [True, True, True])
 
+    def test_Workspace2D_with_separate_monitors(self):
+        filename = MantidDataHelper.find_file("WISH00016748.raw")
+        ds = mantidcompat.load(filename, LoadMonitors="Separate")
+        monitors = ds.attrs['monitors'].values
+        assert isinstance(monitors, sc.DataArray)
+        assert monitors.shape == [5, 4471]
+
+    def test_Workspace2D_with_include_monitors(self):
+        filename = MantidDataHelper.find_file("WISH00016748.raw")
+        ds = mantidcompat.load(filename, LoadMonitors="Include")
+        monitors = ds.attrs['monitors'].values
+        assert isinstance(monitors, sc.DataArray)
+        assert monitors.shape == [5, 4471]
+
     def test_EventWorkspace_with_monitors(self):
         filename = MantidDataHelper.find_file("CNCS_51936_event.nxs")
         ds = mantidcompat.load(filename, LoadMonitors=True)
-        assert isinstance(ds.attrs['monitors'].values, sc.DataArray)
+        monitors = ds.attrs['monitors'].values
+        assert isinstance(monitors, sc.DataArray)
+        assert monitors.shape == [2, 200001]
 
 
 if __name__ == "__main__":
