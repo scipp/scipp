@@ -388,6 +388,8 @@ def load(filename="",
         has_monitors = False
         for spec in data_ws.spectrumInfo():
             has_monitors |= spec.isMonitor
+            if has_monitors:
+                break
         if has_monitors:
             data_ws, monitor_ws = mantid.ExtractMonitors(data_ws,
                                                          StoreInADS=False)
