@@ -55,10 +55,11 @@ auto apply_op_sparse_dense(Op op, const Coord &coord, const Edges &edges,
   if (scipp::numeric::is_linspace(edges)) {
     const auto [offset, nbin, scale] = linear_edge_params(edges);
     for (const auto c : coord) {
+      constexpr auto event_weight = 1.0;
       const auto bin = (c - offset) * scale;
       if constexpr (have_variance) {
         const auto [val, var] =
-            op(ValueAndVariance<ElemT>(1.0, Variance),
+            op(ValueAndVariance<ElemT>(event_weight, Variance),
                bin >= 0.0 && bin < nbin
                    ? ValueAndVariance{weights.value[bin], weights.variance[bin]}
                    : ValueAndVariance<ElemT>{0.0, 0.0});
@@ -66,7 +67,7 @@ auto apply_op_sparse_dense(Op op, const Coord &coord, const Edges &edges,
         out_vars.emplace_back(var);
       } else {
         out_vals.emplace_back(
-            op(1.0, bin >= 0.0 && bin < nbin ? weights[bin] : 0.0));
+            op(event_weight, bin >= 0.0 && bin < nbin ? weights[bin] : 0.0));
       }
     }
   } else {
