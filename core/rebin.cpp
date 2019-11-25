@@ -6,8 +6,6 @@
 #include "scipp/core/except.h"
 #include "scipp/core/variable.h"
 
-using mask_rebinning_t = std::tuple<bool, bool, double, double>;
-
 namespace scipp::core {
 
 bool isMatchingOr1DBinEdge(const Dim dim, Dimensions edges,
@@ -126,7 +124,7 @@ Variable rebin(const VariableConstProxy &var, const Dim dim,
   // Rebin could also implemented for count-densities. However, it may be better
   // to avoid this since it increases complexity. Instead, densities could
   // always be computed on-the-fly for visualization, if required.
-  // expect::unit(var, units::counts);
+  expect::unit_one_of(var, {units::counts, units::dimensionless});
 
   auto do_rebin = [dim](auto &&out, auto &&old, auto &&oldCoord_,
                         auto &&newCoord_) {
@@ -152,6 +150,7 @@ Variable rebin(const VariableConstProxy &var, const Dim dim,
   dims.resize(dim, newCoord.dims()[dim] - 1);
   Variable rebinned(var, dims);
   if (rebinned.dims().inner() == dim) {
+    using mask_rebinning_t = std::tuple<bool, bool, double, double>;
     apply_in_place<double, float, mask_rebinning_t>(do_rebin, rebinned, var,
                                                     oldCoord, newCoord);
   } else {

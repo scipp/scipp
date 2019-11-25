@@ -116,7 +116,8 @@ DataArray rebin(const DataConstProxy &a, const Dim dim,
       a, [](auto &&... _) { return rebin(_...); }, dim, a.coords()[dim], coord);
 
   for (auto &&[name, mask] : a.masks()) {
-    rebinned.setMask(name, rebin(mask, dim, a.coords()[dim], coord));
+    if (mask.dims().contains(dim))
+      rebinned.masks().set(name, rebin(mask, dim, a.coords()[dim], coord));
   }
 
   rebinned.setCoord(dim, coord);
