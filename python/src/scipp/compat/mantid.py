@@ -360,14 +360,13 @@ def load(filename="",
     try:
         import mantid.simpleapi as mantid
         from mantid.api import Workspace
-        from mantid import AnalysisDataService
     except ImportError:
         raise ImportError(
             "Mantid Python API was not found, please install Mantid framework "
             "as detailed in the installation instructions (https://scipp."
             "readthedocs.io/en/latest/getting-started/installation.html)")
 
-    loaded = mantid.Load(filename, **kwargs)
+    loaded = mantid.Load(filename, StoreInADS=False, **kwargs)
 
     # Determine what Load has provided us
     if isinstance(loaded, Workspace):
@@ -390,22 +389,19 @@ def load(filename="",
         for spec in data_ws.spectrumInfo():
             has_monitors |= spec.isMonitor
         if has_monitors:
-            data_ws, monitor_ws = mantid.ExtractMonitors(data_ws)
+            data_ws, monitor_ws = mantid.ExtractMonitors(data_ws, StoreInADS=False)
         dataset = convert_Workspace2D_to_dataset(data_ws)
     elif data_ws.id() == 'EventWorkspace':
         dataset = convert_EventWorkspace_to_dataset(data_ws, load_pulse_times)
     elif data_ws.id() == 'TableWorkspace':
         dataset = convert_TableWorkspace_to_dataset(data_ws, error_connection)
-    AnalysisDataService.Instance().remove(data_ws.name())
 
     if dataset is None:
-        # TODO: monitor workspace is not deleted from ADS here
         raise RuntimeError('Unsupported workspace type')
     elif monitor_ws is not None:
         if monitor_ws.id() == 'Workspace2D':
             dataset.attrs["monitors"] = sc.Variable(value=convert_Workspace2D_to_dataset(monitor_ws))
         elif monitor_ws.id() == 'EventWorkspace':
             dataset.attrs["monitors"] = sc.Variable(value=convert_EventWorkspace_to_dataset(monitor_ws, load_pulse_times))
-        AnalysisDataService.Instance().remove(monitor_ws.name())
 
     return dataset
