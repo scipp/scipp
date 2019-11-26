@@ -36,7 +36,7 @@ class TestMantidConversion(unittest.TestCase):
         import mantid.simpleapi as mantid
         eventWS = mantid.CloneWorkspace(self.base_event_ws)
         ws = mantid.Rebin(eventWS, 10000, PreserveEvents=False)
-        d = mantidcompat.convert_Workspace2D_to_dataset(ws)
+        d = mantidcompat.convert_Workspace2D_to_dataarray(ws)
         self.assertEqual(
             d.attrs["run"].value.getProperty("run_start").value,
             "2012-05-21T15:14:56.279289666",
@@ -47,10 +47,10 @@ class TestMantidConversion(unittest.TestCase):
         eventWS = mantid.CloneWorkspace(self.base_event_ws)
         ws = mantid.Rebin(eventWS, 10000)
 
-        binned_mantid = mantidcompat.convert_Workspace2D_to_dataset(ws)
+        binned_mantid = mantidcompat.convert_Workspace2D_to_dataarray(ws)
 
         target_tof = binned_mantid.coords[sc.Dim.Tof]
-        d = mantidcompat.convert_EventWorkspace_to_dataset(
+        d = mantidcompat.convertEventWorkspace_to_dataarray(
             eventWS, False)
         binned = sc.histogram(d, target_tof)
 
@@ -62,14 +62,14 @@ class TestMantidConversion(unittest.TestCase):
         import mantid.simpleapi as mantid
         eventWS = mantid.CloneWorkspace(self.base_event_ws)
         ws = mantid.Rebin(eventWS, 10000, PreserveEvents=False)
-        tmp = mantidcompat.convert_Workspace2D_to_dataset(ws)
+        tmp = mantidcompat.convert_Workspace2D_to_dataarray(ws)
         target_tof = tmp.coords[sc.Dim.Tof]
         ws = mantid.ConvertUnits(InputWorkspace=ws,
                                  Target="Wavelength",
                                  EMode="Elastic")
-        converted_mantid = mantidcompat.convert_Workspace2D_to_dataset(ws)
+        converted_mantid = mantidcompat.convert_Workspace2D_to_dataarray(ws)
 
-        da = mantidcompat.convert_EventWorkspace_to_dataset(
+        da = mantidcompat.convertEventWorkspace_to_dataarray(
             eventWS, False)
         da = sc.histogram(da, target_tof)
         d = sc.Dataset(da)
@@ -110,7 +110,7 @@ class TestMantidConversion(unittest.TestCase):
 
         self.assertTrue(masked_ws.isCommonBins())
 
-        ds = mantidcompat.convert_Workspace2D_to_dataset(masked_ws)
+        ds = mantidcompat.convert_Workspace2D_to_dataarray(masked_ws)
 
         np.testing.assert_array_equal(
             ds.masks["bin"].values[0:3],
@@ -133,7 +133,7 @@ class TestMantidConversion(unittest.TestCase):
 
         self.assertFalse(masked_ws.isCommonBins())
 
-        ds = mantidcompat.convert_Workspace2D_to_dataset(masked_ws)
+        ds = mantidcompat.convert_Workspace2D_to_dataarray(masked_ws)
 
         # bin with 3 masks
         np.testing.assert_array_equal(

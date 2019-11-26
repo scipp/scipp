@@ -111,7 +111,7 @@ def set_bin_masks(bin_masks, dim, index, masked_bins):
         bin_masks[sc.Dim.Spectrum, index][dim, masked_bin].value = True
 
 
-def convert_Workspace2D_to_dataset(ws):
+def convert_Workspace2D_to_dataarray(ws):
     common_bins = ws.isCommonBins()
     comp_info = make_component_info(ws)
     det_info = make_detector_info(ws)
@@ -192,7 +192,7 @@ def convert_Workspace2D_to_dataset(ws):
     return array
 
 
-def convert_EventWorkspace_to_dataset(ws, load_pulse_times):
+def convertEventWorkspace_to_dataarray(ws, load_pulse_times):
     from mantid.api import EventType
     allowed_units = {"TOF": [sc.Dim.Tof, sc.units.us]}
     xunit = ws.getAxis(0).getUnit().unitID()
@@ -397,9 +397,9 @@ def load(filename="",
         if has_monitors:
             data_ws, monitor_ws = mantid.ExtractMonitors(data_ws,
                                                          StoreInADS=False)
-        dataset = convert_Workspace2D_to_dataset(data_ws)
+        dataset = convert_Workspace2D_to_dataarray(data_ws)
     elif data_ws.id() == 'EventWorkspace':
-        dataset = convert_EventWorkspace_to_dataset(data_ws, load_pulse_times)
+        dataset = convertEventWorkspace_to_dataarray(data_ws, load_pulse_times)
     elif data_ws.id() == 'TableWorkspace':
         dataset = convert_TableWorkspace_to_dataset(data_ws, error_connection)
 
@@ -408,10 +408,10 @@ def load(filename="",
     elif monitor_ws is not None:
         if monitor_ws.id() == 'Workspace2D':
             dataset.attrs["monitors"] = sc.Variable(
-                value=convert_Workspace2D_to_dataset(monitor_ws))
+                value=convert_Workspace2D_to_dataarray(monitor_ws))
         elif monitor_ws.id() == 'EventWorkspace':
             dataset.attrs["monitors"] = sc.Variable(
-                value=convert_EventWorkspace_to_dataset(monitor_ws,
-                                                        load_pulse_times))
+                value=convertEventWorkspace_to_dataarray(monitor_ws,
+                                                         load_pulse_times))
 
     return dataset
