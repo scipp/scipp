@@ -111,7 +111,7 @@ def set_bin_masks(bin_masks, dim, index, masked_bins):
         bin_masks[sc.Dim.Spectrum, index][dim, masked_bin].value = True
 
 
-def convert_Workspace2D_to_dataset(ws):
+def convert_Workspace2D_to_dataarray(ws):
     common_bins = ws.isCommonBins()
     comp_info = make_component_info(ws)
     det_info = make_detector_info(ws)
@@ -192,8 +192,8 @@ def convert_Workspace2D_to_dataset(ws):
     return array
 
 
-def convert_EventWorkspace_to_dataset(ws, load_pulse_times, EventType):
-
+def convertEventWorkspace_to_dataarray(ws, load_pulse_times):
+    from mantid.api import EventType
     allowed_units = {"TOF": [sc.Dim.Tof, sc.units.us]}
     xunit = ws.getAxis(0).getUnit().unitID()
     if xunit not in allowed_units.keys():
@@ -234,7 +234,7 @@ def convert_EventWorkspace_to_dataset(ws, load_pulse_times, EventType):
             # TODO: Find a more efficient way to do this.
             pt = sp.getPulseTimes()
             labs[sc.Dim.Spectrum, i].values = np.asarray(
-                [p.total_nanoseconds() for p in pt])
+                [p.totalNanoseconds() for p in pt])
         if contains_weighted_events:
             weights[sc.Dim.Spectrum, i].values = sp.getWeights()
             weights[sc.Dim.Spectrum, i].variances = sp.getWeightErrors()
@@ -326,7 +326,7 @@ def load(filename="",
          load_pulse_times=True,
          instrument_filename=None,
          error_connection=None,
-         **kwargs):
+         mantid_args=None):
     """
     Wrapper function to provide a load method for a Nexus file, hiding mantid
     specific code from the scipp interface. All other keyword arguments not
@@ -338,7 +338,8 @@ def load(filename="",
       from scipp.neutron import load
       d = sc.Dataset()
       d["sample"] = load(filename='PG3_4844_event.nxs', \
-                         BankName='bank184', load_pulse_times=True)
+                         load_pulse_times=True, \
+                         mantid_args={'BankName': 'bank184'})
 
     See also the neutron-data tutorial.
 
@@ -359,32 +360,58 @@ def load(filename="",
 
     try:
         import mantid.simpleapi as mantid
-        from mantid.api import EventType
-        from mantid import AnalysisDataService
+        from mantid.api import Workspace
     except ImportError:
         raise ImportError(
             "Mantid Python API was not found, please install Mantid framework "
             "as detailed in the installation instructions (https://scipp."
             "readthedocs.io/en/latest/getting-started/installation.html)")
 
-    ws = mantid.Load(filename, **kwargs)
+    if mantid_args is None:
+        mantid_args = {}
+
+    loaded = mantid.Load(filename, StoreInADS=False, **mantid_args)
+
+    # Determine what Load has provided us
+    if isinstance(loaded, Workspace):
+        # A single workspace
+        data_ws = loaded
+        monitor_ws = None
+    else:
+        # Seperate data and monitor workspaces
+        data_ws = loaded.OutputWorkspace
+        monitor_ws = loaded.MonitorWorkspace
+
     if instrument_filename is not None:
-        mantid.LoadInstrument(ws,
+        mantid.LoadInstrument(data_ws,
                               FileName=instrument_filename,
                               RewriteSpectraMap=True)
 
     dataset = None
-    if ws.id() == 'Workspace2D':
-        dataset = convert_Workspace2D_to_dataset(ws)
-    elif ws.id() == 'EventWorkspace':
-        dataset = convert_EventWorkspace_to_dataset(ws, load_pulse_times,
-                                                    EventType)
-    elif ws.id() == 'TableWorkspace':
-        dataset = convert_TableWorkspace_to_dataset(ws, error_connection)
-
-    AnalysisDataService.Instance().remove(ws.name())
+    if data_ws.id() == 'Workspace2D':
+        has_monitors = False
+        for spec in data_ws.spectrumInfo():
+            has_monitors |= spec.isMonitor
+            if has_monitors:
+                break
+        if has_monitors:
+            data_ws, monitor_ws = mantid.ExtractMonitors(data_ws,
+                                                         StoreInADS=False)
+        dataset = convert_Workspace2D_to_dataarray(data_ws)
+    elif data_ws.id() == 'EventWorkspace':
+        dataset = convertEventWorkspace_to_dataarray(data_ws, load_pulse_times)
+    elif data_ws.id() == 'TableWorkspace':
+        dataset = convert_TableWorkspace_to_dataset(data_ws, error_connection)
 
     if dataset is None:
         raise RuntimeError('Unsupported workspace type')
+    elif monitor_ws is not None:
+        if monitor_ws.id() == 'Workspace2D':
+            dataset.attrs["monitors"] = sc.Variable(
+                value=convert_Workspace2D_to_dataarray(monitor_ws))
+        elif monitor_ws.id() == 'EventWorkspace':
+            dataset.attrs["monitors"] = sc.Variable(
+                value=convertEventWorkspace_to_dataarray(monitor_ws,
+                                                         load_pulse_times))
 
     return dataset

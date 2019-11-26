@@ -13,7 +13,10 @@ class MantidDataHelper:
     DATA_FILES = {
         "CNCS_51936_event.nxs": {
             "hash": "5ba401e489260a44374b5be12b780911",
-            "algorithm": "MD5"}
+            "algorithm": "MD5"},
+        "WISH00016748.raw": {
+            "hash": "37ecc6f99662b57e405ed967bdc068af",
+            "algorithm": "MD5"},
     }
     REMOTE_URL = "http://mantidweb.nd.rl.ac.uk/externaldata/isis-readonly/"\
         "{algorithm}/{hash}"

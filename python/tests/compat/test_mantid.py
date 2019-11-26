@@ -36,7 +36,7 @@ class TestMantidConversion(unittest.TestCase):
         import mantid.simpleapi as mantid
         eventWS = mantid.CloneWorkspace(self.base_event_ws)
         ws = mantid.Rebin(eventWS, 10000, PreserveEvents=False)
-        d = mantidcompat.convert_Workspace2D_to_dataset(ws)
+        d = mantidcompat.convert_Workspace2D_to_dataarray(ws)
         self.assertEqual(
             d.attrs["run"].value.getProperty("run_start").value,
             "2012-05-21T15:14:56.279289666",
@@ -44,15 +44,14 @@ class TestMantidConversion(unittest.TestCase):
 
     def test_EventWorkspace(self):
         import mantid.simpleapi as mantid
-        from mantid.api import EventType
         eventWS = mantid.CloneWorkspace(self.base_event_ws)
         ws = mantid.Rebin(eventWS, 10000)
 
-        binned_mantid = mantidcompat.convert_Workspace2D_to_dataset(ws)
+        binned_mantid = mantidcompat.convert_Workspace2D_to_dataarray(ws)
 
         target_tof = binned_mantid.coords[sc.Dim.Tof]
-        d = mantidcompat.convert_EventWorkspace_to_dataset(
-            eventWS, False, EventType.TOF)
+        d = mantidcompat.convertEventWorkspace_to_dataarray(
+            eventWS, False)
         binned = sc.histogram(d, target_tof)
 
         delta = sc.sum(binned_mantid - binned, sc.Dim.Spectrum)
@@ -61,18 +60,17 @@ class TestMantidConversion(unittest.TestCase):
 
     def test_unit_conversion(self):
         import mantid.simpleapi as mantid
-        from mantid.api import EventType
         eventWS = mantid.CloneWorkspace(self.base_event_ws)
         ws = mantid.Rebin(eventWS, 10000, PreserveEvents=False)
-        tmp = mantidcompat.convert_Workspace2D_to_dataset(ws)
+        tmp = mantidcompat.convert_Workspace2D_to_dataarray(ws)
         target_tof = tmp.coords[sc.Dim.Tof]
         ws = mantid.ConvertUnits(InputWorkspace=ws,
                                  Target="Wavelength",
                                  EMode="Elastic")
-        converted_mantid = mantidcompat.convert_Workspace2D_to_dataset(ws)
+        converted_mantid = mantidcompat.convert_Workspace2D_to_dataarray(ws)
 
-        da = mantidcompat.convert_EventWorkspace_to_dataset(
-            eventWS, False, EventType.TOF)
+        da = mantidcompat.convertEventWorkspace_to_dataarray(
+            eventWS, False)
         da = sc.histogram(da, target_tof)
         d = sc.Dataset(da)
         converted = sc.neutron.convert(d, sc.Dim.Tof, sc.Dim.Wavelength)
@@ -112,7 +110,7 @@ class TestMantidConversion(unittest.TestCase):
 
         self.assertTrue(masked_ws.isCommonBins())
 
-        ds = mantidcompat.convert_Workspace2D_to_dataset(masked_ws)
+        ds = mantidcompat.convert_Workspace2D_to_dataarray(masked_ws)
 
         np.testing.assert_array_equal(
             ds.masks["bin"].values[0:3],
@@ -135,7 +133,7 @@ class TestMantidConversion(unittest.TestCase):
 
         self.assertFalse(masked_ws.isCommonBins())
 
-        ds = mantidcompat.convert_Workspace2D_to_dataset(masked_ws)
+        ds = mantidcompat.convert_Workspace2D_to_dataarray(masked_ws)
 
         # bin with 3 masks
         np.testing.assert_array_equal(
@@ -150,6 +148,29 @@ class TestMantidConversion(unittest.TestCase):
         np.testing.assert_array_equal(
             ds.masks["spectrum"].values[0:3],
             [True, True, True])
+
+    def test_Workspace2D_with_separate_monitors(self):
+        filename = MantidDataHelper.find_file("WISH00016748.raw")
+        ds = mantidcompat.load(filename,
+                               mantid_args={"LoadMonitors": "Separate"})
+        monitors = ds.attrs['monitors'].values
+        assert isinstance(monitors, sc.DataArray)
+        assert monitors.shape == [5, 4471]
+
+    def test_Workspace2D_with_include_monitors(self):
+        filename = MantidDataHelper.find_file("WISH00016748.raw")
+        ds = mantidcompat.load(filename,
+                               mantid_args={"LoadMonitors": "Include"})
+        monitors = ds.attrs['monitors'].values
+        assert isinstance(monitors, sc.DataArray)
+        assert monitors.shape == [5, 4471]
+
+    def test_EventWorkspace_with_monitors(self):
+        filename = MantidDataHelper.find_file("CNCS_51936_event.nxs")
+        ds = mantidcompat.load(filename, mantid_args={"LoadMonitors": True})
+        monitors = ds.attrs['monitors'].values
+        assert isinstance(monitors, sc.DataArray)
+        assert monitors.shape == [2, 200001]
 
 
 if __name__ == "__main__":
