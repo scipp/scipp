@@ -326,7 +326,7 @@ def load(filename="",
          load_pulse_times=True,
          instrument_filename=None,
          error_connection=None,
-         **kwargs):
+         mantid_args=None):
     """
     Wrapper function to provide a load method for a Nexus file, hiding mantid
     specific code from the scipp interface. All other keyword arguments not
@@ -338,7 +338,8 @@ def load(filename="",
       from scipp.neutron import load
       d = sc.Dataset()
       d["sample"] = load(filename='PG3_4844_event.nxs', \
-                         BankName='bank184', load_pulse_times=True)
+                         load_pulse_times=True, \
+                         mantid_args={'BankName': 'bank184'})
 
     See also the neutron-data tutorial.
 
@@ -366,7 +367,10 @@ def load(filename="",
             "as detailed in the installation instructions (https://scipp."
             "readthedocs.io/en/latest/getting-started/installation.html)")
 
-    loaded = mantid.Load(filename, StoreInADS=False, **kwargs)
+    if mantid_args is None:
+        mantid_args = {}
+
+    loaded = mantid.Load(filename, StoreInADS=False, **mantid_args)
 
     # Determine what Load has provided us
     if isinstance(loaded, Workspace):
