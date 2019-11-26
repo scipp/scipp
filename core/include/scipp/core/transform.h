@@ -223,6 +223,7 @@ struct element_type<ValuesAndVariances<const sparse_container<T>>> {
 /// This helper allows the use of a common transform implementation when mixing
 /// sparse and non-sparse data.
 template <class T> struct broadcast {
+  using value_type = std::remove_const_t<T>;
   constexpr auto operator[](const scipp::index) const noexcept { return value; }
   constexpr auto data() const noexcept { return *this; }
   T value;
@@ -472,7 +473,8 @@ template <bool dry_run> struct in_place {
     // For sparse data we can fail for any subitem if the sizes to not match. To
     // avoid partially modifying (and thus corrupting) data in an in-place
     // operation we need to do the checks before any modification happens.
-    if constexpr (is_sparse_v<typename std::decay_t<T>::value_type>) {
+    if constexpr (is_sparse_v<typename std::decay_t<T>::value_type> ||
+                  (is_sparse_v<typename std::decay_t<Ts>::value_type> || ...)) {
       for (auto i = indices; std::get<0>(i) != end; iter::increment(i)) {
         call_in_place(
             [](auto &&... args) {
@@ -490,72 +492,65 @@ template <bool dry_run> struct in_place {
       call_in_place(op, indices, arg, other...);
   }
 
-  /// Helper for in-place transform implementation, performing branching between
-  /// output with and without variances.
-  template <class T1, class Op>
-  static void do_transform_in_place(T1 &a, Op op) {
+  /// Recursion endpoint for do_transform_in_place.
+  ///
+  /// Calls transform_in_place_impl unless the output has no variance even
+  /// though it should.
+  template <class Op, class Tuple>
+  static void do_transform_in_place(Op op, Tuple &&processed) {
     using namespace detail;
-    auto a_val = a.values();
-    if (a.hasVariances()) {
-      if constexpr (canHaveVariances<typename T1::value_type>()) {
-        auto a_var = a.variances();
-        transform_in_place_impl(op, ValuesAndVariances{a_val, a_var});
-      }
-    } else {
-      transform_in_place_impl(op, a_val);
-    }
+    std::apply(
+        [&](auto &&arg, auto &&... args) {
+          if constexpr (is_ValuesAndVariances_v<std::decay_t<decltype(arg)>> ||
+                        !(is_ValuesAndVariances_v<
+                              std::decay_t<decltype(args)>> ||
+                          ...) ||
+                        std::is_base_of_v<
+                            transform_flags::expect_no_variance_arg_t<0>, Op>) {
+            transform_in_place_impl(op, std::forward<decltype(arg)>(arg),
+                                    std::forward<decltype(args)>(args)...);
+          } else {
+            throw except::VariancesError(
+                "Output has no variance but at least one input does.");
+          }
+        },
+        std::forward<Tuple>(processed));
   }
 
   /// Helper for in-place transform implementation, performing branching between
   /// output with and without variances as well as handling other operands with
   /// and without variances.
-  template <class T1, class T2, class Op>
-  static void do_transform_in_place(T1 &a, const T2 &b, Op op) {
+  template <class Op, class Tuple, class Arg, class... Args>
+  static void do_transform_in_place(Op op, Tuple &&processed, Arg &arg,
+                                    const Args &... args) {
     using namespace detail;
-    auto a_val = a.values();
-    auto b_val = b.values();
-    if (a.hasVariances()) {
-      if constexpr (std::is_base_of_v<
-                        transform_flags::expect_no_variance_arg_t<0>, Op>) {
-        throw except::VariancesError(
-            "Variances in first argument not supported.");
-
-      } else {
-        if constexpr (canHaveVariances<typename T1::value_type>() &&
-                      canHaveVariances<typename T2::value_type>()) {
-          auto a_var = a.variances();
-          if (b.hasVariances()) {
-            if constexpr (std::is_base_of_v<
-                              transform_flags::expect_no_variance_arg_t<1>,
-                              Op>) {
-              throw except::VariancesError(
-                  "Variances in second argument not supported.");
-            } else {
-              auto b_var = b.variances();
-              transform_in_place_impl(op, ValuesAndVariances{a_val, a_var},
-                                      ValuesAndVariances{b_val, b_var});
-            }
-          } else {
-            transform_in_place_impl(op, ValuesAndVariances{a_val, a_var},
-                                    b_val);
-          }
-        }
-      }
-    } else if (b.hasVariances()) {
-      if constexpr (std::is_base_of_v<
-                        transform_flags::expect_no_variance_arg_t<1>, Op>) {
-        throw except::VariancesError(
-            "Variances in second argument not supported.");
-      } else if constexpr (std::is_base_of_v<
-                               transform_flags::no_variance_output_t, Op>) {
-        auto b_var = b.variances();
-        transform_in_place_impl(op, a_val, ValuesAndVariances{b_val, b_var});
-      } else {
-        throw std::runtime_error(
-            "RHS in operation has variances but LHS does not.");
+    auto vals = arg.values();
+    if (arg.hasVariances()) {
+      if constexpr (std::is_base_of_v<transform_flags::expect_no_variance_arg_t<
+                                          std::tuple_size_v<Tuple>>,
+                                      Op>) {
+        throw except::VariancesError("Variances in argument " +
+                                     std::to_string(std::tuple_size_v<Tuple>) +
+                                     " not supported.");
+      } else if constexpr (canHaveVariances<typename Arg::value_type>()) {
+        auto vars = arg.variances();
+        do_transform_in_place(
+            op,
+            std::tuple_cat(processed,
+                           std::tuple(ValuesAndVariances{vals, vars})),
+            args...);
       }
     } else {
-      transform_in_place_impl(op, a_val, b_val);
+      if constexpr (std::is_base_of_v<transform_flags::expect_variance_arg_t<
+                                          std::tuple_size_v<Tuple>>,
+                                      Op>) {
+        throw except::VariancesError("Argument " +
+                                     std::to_string(std::tuple_size_v<Tuple>) +
+                                     " must have variances.");
+      } else {
+        do_transform_in_place(op, std::tuple_cat(processed, std::tuple(vals)),
+                              args...);
+      }
     }
   }
 
@@ -586,9 +581,9 @@ template <bool dry_run> struct in_place {
       using namespace detail;
       auto view = as_view{*handle, handle->dims()};
       if (handle->isContiguous())
-        do_transform_in_place(*handle, op);
+        do_transform_in_place(op, std::tuple<>{}, *handle);
       else
-        do_transform_in_place(view, op);
+        do_transform_in_place(op, std::tuple<>{}, view);
     }
 
     template <class A, class B> void operator()(A &&a, B &&b) const {
@@ -611,9 +606,9 @@ template <bool dry_run> struct in_place {
 
       if (a->isContiguous() && dimsA.contains(dimsB)) {
         if (b->isContiguous() && dimsA.isContiguousIn(dimsB)) {
-          do_transform_in_place(*a, *b, op);
+          do_transform_in_place(op, std::tuple<>{}, *a, *b);
         } else {
-          do_transform_in_place(*a, as_view{*b, dimsA}, op);
+          do_transform_in_place(op, std::tuple<>{}, *a, as_view{*b, dimsA});
         }
       } else {
         // If LHS has fewer dimensions than RHS, e.g., for computing sum the
@@ -621,11 +616,21 @@ template <bool dry_run> struct in_place {
         const auto viewDims = dimsA.contains(dimsB) ? dimsA : dimsB;
         auto a_view = as_view{*a, viewDims};
         if (b->isContiguous() && dimsA.isContiguousIn(dimsB)) {
-          do_transform_in_place(a_view, *b, op);
+          do_transform_in_place(op, std::tuple<>{}, a_view, *b);
         } else {
-          do_transform_in_place(a_view, as_view{*b, viewDims}, op);
+          do_transform_in_place(op, std::tuple<>{}, a_view,
+                                as_view{*b, viewDims});
         }
       }
+    }
+
+    template <class T, class... Ts>
+    void operator()(T &&out, Ts &&... handles) const {
+      using namespace detail;
+      const auto dims = merge(out->dims(), handles->dims()...);
+      auto out_view = as_view{*out, dims};
+      do_transform_in_place(op, std::tuple<>{}, out_view,
+                            as_view{*handles, dims}...);
     }
   };
   // gcc cannot deal with deduction guide for nested class => helper function.
@@ -646,6 +651,9 @@ template <bool dry_run> struct in_place {
       if constexpr ((is_any_sparse<Ts>::value || ...)) {
         visit_impl<Ts...>::apply(makeTransformInPlace(op), var.dataHandle(),
                                  other.dataHandle()...);
+      } else if constexpr (sizeof...(Other) > 1) {
+        static_assert("Transform with more than 2 arguments not implemented "
+                      "yet for element-wise operation.");
       } else {
         // Note that if only one of the inputs is sparse it must be the one
         // being transformed in-place, so there are only three cases here.
@@ -695,6 +703,14 @@ void transform_in_place(Var &&var, Op op) {
 template <class... TypePairs, class Var, class Op>
 void transform_in_place(Var &&var, const VariableConstProxy &other, Op op) {
   in_place<false>::transform<TypePairs...>(op, std::forward<Var>(var), other);
+}
+
+/// Transform the data elements of a variable in-place.
+template <class... TypePairs, class Var, class Op>
+void transform_in_place(Var &&var, const VariableConstProxy &var1,
+                        const VariableConstProxy &var2, Op op) {
+  in_place<false>::transform<TypePairs...>(op, std::forward<Var>(var), var1,
+                                           var2);
 }
 
 /// Accumulate data elements of a variable in-place.

@@ -54,16 +54,6 @@ Dataset make_2d_sparse_coord_only(const std::string &name) {
   return sparse;
 }
 
-TEST(HistogramTest, fail_with_data) {
-  // This is not implemented yet and should currently fail. Remove this test
-  // once implemented with "weighted" sparse data.
-  auto sparse = make_2d_sparse_coord_only("sparse");
-  sparse.setData("sparse", sparse["sparse"].coords()[Dim::Y]);
-  ASSERT_THROW(core::histogram(sparse["sparse"],
-                               makeVariable<double>({Dim::Y, 2}, {1, 6})),
-               except::SparseDataError);
-}
-
 TEST(HistogramTest, fail_edges_not_sorted) {
   auto sparse = make_2d_sparse_coord_only("sparse");
   ASSERT_THROW(
@@ -125,6 +115,27 @@ TEST(HistogramTest, data_proxy) {
       edges);
 
   EXPECT_EQ(hist, expected);
+}
+
+TEST(HistogramTest, with_data) {
+  auto sparse = make_2d_sparse_coord_only("sparse");
+  Variable data = makeVariableWithVariances<double>(
+      {{Dim::X, 3}, {Dim::Y, Dimensions::Sparse}});
+  data.sparseValues<double>()[0] = {1, 1, 1, 2, 2};
+  data.sparseValues<double>()[1] = {2, 2, 2, 2, 2};
+  data.sparseValues<double>()[2] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+  data.sparseVariances<double>()[0] = {1, 1, 1, 2, 2};
+  data.sparseVariances<double>()[1] = {2, 2, 2, 2, 2};
+  data.sparseVariances<double>()[2] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+  data.setUnit(units::counts);
+  sparse.setData("sparse", data);
+  auto edges = makeVariable<double>({Dim::Y, 6}, {1, 2, 3, 4, 5, 6});
+  std::vector<double> ref{1, 1, 1, 2, 2, 0, 0, 2, 2, 2, 2, 3, 0, 3, 0};
+  auto expected = make_expected(
+      makeVariable<double>({{Dim::X, 3}, {Dim::Y, 5}}, units::counts, ref, ref),
+      edges);
+
+  EXPECT_EQ(core::histogram(sparse["sparse"], edges), expected);
 }
 
 TEST(HistogramTest, dataset) {
