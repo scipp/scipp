@@ -18,7 +18,8 @@ void apply_in_place(Op op, Var &&var, const Vars &... vars) {
     scipp::core::visit_impl<Ts...>::apply(op, var.dataHandle(),
                                           vars.dataHandle()...);
   } catch (const std::bad_variant_access &) {
-    throw except::TypeError("");
+    throw except::TypeError("Cannot apply operation to item dtypes: ", var,
+                            vars...);
   }
 }
 

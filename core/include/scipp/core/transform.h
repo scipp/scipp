@@ -655,10 +655,8 @@ template <bool dry_run> struct in_place {
                    var.dataHandle(), other.dataHandle()...);
       }
     } catch (const std::bad_variant_access &) {
-      throw except::TypeError("Cannot apply operation to item dtypes " +
-                              [](auto &&... v) {
-                                return ((to_string(v.dtype()) + ' ') + ...);
-                              }(var, other...));
+      throw except::TypeError("Cannot apply operation to item dtypes ", var,
+                              other...);
     }
   }
   template <class... Ts, class Op, class Var, class... Other>
@@ -747,8 +745,7 @@ Variable transform(std::tuple<Ts...> &&, Op op, const Vars &... vars) {
                        vars.dataHandle()...);
     }
   } catch (const std::bad_variant_access &) {
-    throw except::TypeError("Cannot apply operation to item dtypes " +
-                            ((to_string(vars.dtype()) + ' ') + ...));
+    throw except::TypeError("Cannot apply operation to item dtypes ", vars...);
   }
   out.setUnit(unit);
   return out;
