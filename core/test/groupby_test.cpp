@@ -9,45 +9,44 @@
 using namespace scipp;
 using namespace scipp::core;
 
-static auto make_dataset_for_groupby_test() {
-  Dataset d;
-  d.setData("a",
-            makeVariable<int>({Dim::X, 3}, units::m, {1, 2, 3}, {4, 5, 6}));
-  d.setData("b", makeVariable<double>({Dim::X, 3}, units::s, {0.1, 0.2, 0.3}));
-  d.setData("c", makeVariable<double>({{Dim::Z, 2}, {Dim::X, 3}}, units::s,
-                                      {1, 2, 3, 4, 5, 6}));
-  d.setAttr("a", "scalar", makeVariable<double>(1.2));
-  d.setLabels("labels1",
-              makeVariable<double>({Dim::X, 3}, units::m, {1, 2, 3}));
-  d.setLabels("labels2",
-              makeVariable<double>({Dim::X, 3}, units::m, {1, 1, 3}));
-  return d;
-}
+struct GroupbyTest : public ::testing::Test {
+  GroupbyTest() {
+    d.setData("a",
+              makeVariable<int>({Dim::X, 3}, units::m, {1, 2, 3}, {4, 5, 6}));
+    d.setData("b",
+              makeVariable<double>({Dim::X, 3}, units::s, {0.1, 0.2, 0.3}));
+    d.setData("c", makeVariable<double>({{Dim::Z, 2}, {Dim::X, 3}}, units::s,
+                                        {1, 2, 3, 4, 5, 6}));
+    d.setAttr("a", "scalar", makeVariable<double>(1.2));
+    d.setLabels("labels1",
+                makeVariable<double>({Dim::X, 3}, units::m, {1, 2, 3}));
+    d.setLabels("labels2",
+                makeVariable<double>({Dim::X, 3}, units::m, {1, 1, 3}));
+  }
 
-TEST(GroupbyTest, fail_key_not_found) {
-  Dataset d = make_dataset_for_groupby_test();
+  Dataset d;
+};
+
+TEST_F(GroupbyTest, fail_key_not_found) {
   EXPECT_THROW(groupby(d, "invalid", Dim::Y), except::NotFoundError);
   EXPECT_THROW(groupby(d["a"], "invalid", Dim::Y), except::NotFoundError);
 }
 
-TEST(GroupbyTest, fail_key_2d) {
-  Dataset d = make_dataset_for_groupby_test();
+TEST_F(GroupbyTest, fail_key_2d) {
   d.setLabels("2d", makeVariable<double>({{Dim::Z, 2}, {Dim::X, 3}}, units::s,
                                          {1, 2, 3, 4, 5, 6}));
   EXPECT_THROW(groupby(d, "2d", Dim::Y), except::DimensionError);
   EXPECT_THROW(groupby(d["a"], "2d", Dim::Y), except::DimensionError);
 }
 
-TEST(GroupbyTest, fail_key_with_variances) {
-  Dataset d = make_dataset_for_groupby_test();
+TEST_F(GroupbyTest, fail_key_with_variances) {
   d.setLabels("variances",
               makeVariable<int>({Dim::X, 3}, units::m, {1, 2, 3}, {4, 5, 6}));
   EXPECT_THROW(groupby(d, "variances", Dim::Y), except::VariancesError);
   EXPECT_THROW(groupby(d["a"], "variances", Dim::Y), except::VariancesError);
 }
 
-TEST(GroupbyTest, dataset_1d_and_2d) {
-  Dataset d = make_dataset_for_groupby_test();
+TEST_F(GroupbyTest, dataset_1d_and_2d) {
 
   Dataset expected;
   expected.setData("a", makeVariable<double>({Dim::Y, 2}, units::m, {1.5, 3.0},
@@ -66,23 +65,23 @@ TEST(GroupbyTest, dataset_1d_and_2d) {
   EXPECT_EQ(groupby(d["c"], "labels2", Dim::Y).mean(Dim::X), expected["c"]);
 }
 
-static auto make_dataset_for_bin_test() {
+struct GroupbyWithBinsTest : public ::testing::Test {
+  GroupbyWithBinsTest() {
+    d.setData("a", makeVariable<double>({Dim::X, 5}, units::s,
+                                        {0.1, 0.2, 0.3, 0.4, 0.5}));
+    d.setData("b", makeVariable<double>({{Dim::Y, 2}, {Dim::X, 5}}, units::s,
+                                        {1, 2, 3, 4, 5, 6, 7, 8, 9, 10}));
+    d.setAttr("a", "scalar", makeVariable<double>(1.2));
+    d.setLabels("labels1",
+                makeVariable<double>({Dim::X, 5}, units::m, {1, 2, 3, 4, 5}));
+    d.setLabels("labels2", makeVariable<double>({Dim::X, 5}, units::m,
+                                                {1.0, 1.1, 2.5, 4.0, 1.2}));
+  }
+
   Dataset d;
-  d.setData("a", makeVariable<double>({Dim::X, 5}, units::s,
-                                      {0.1, 0.2, 0.3, 0.4, 0.5}));
-  d.setData("b", makeVariable<double>({{Dim::Y, 2}, {Dim::X, 5}}, units::s,
-                                      {1, 2, 3, 4, 5, 6, 7, 8, 9, 10}));
-  d.setAttr("a", "scalar", makeVariable<double>(1.2));
-  d.setLabels("labels1",
-              makeVariable<double>({Dim::X, 5}, units::m, {1, 2, 3, 4, 5}));
-  d.setLabels("labels2", makeVariable<double>({Dim::X, 5}, units::m,
-                                              {1.0, 1.1, 2.5, 4.0, 1.2}));
-  return d;
-}
+};
 
-TEST(GroupbyTest, bins) {
-  Dataset d = make_dataset_for_bin_test();
-
+TEST_F(GroupbyWithBinsTest, bins) {
   auto bins = makeVariable<double>({Dim::Z, 4}, units::m, {0.0, 1.0, 2.0, 3.0});
 
   Dataset expected;
@@ -98,9 +97,7 @@ TEST(GroupbyTest, bins) {
   EXPECT_EQ(groupby(d["b"], "labels2", bins).sum(Dim::X), expected["b"]);
 }
 
-TEST(GroupbyTest, bins_mean_empty) {
-  Dataset d = make_dataset_for_bin_test();
-
+TEST_F(GroupbyWithBinsTest, bins_mean_empty) {
   auto bins = makeVariable<double>({Dim::Z, 4}, units::m, {0.0, 1.0, 2.0, 3.0});
 
   const auto binned = groupby(d, "labels2", bins).mean(Dim::X);
@@ -111,9 +108,7 @@ TEST(GroupbyTest, bins_mean_empty) {
   EXPECT_FALSE(std::isnan(binned["b"].values<double>()[1]));
 }
 
-TEST(GroupbyTest, single_bin) {
-  Dataset d = make_dataset_for_bin_test();
-
+TEST_F(GroupbyWithBinsTest, single_bin) {
   auto bins = makeVariable<double>({Dim::Z, 2}, units::m, {1.0, 5.0});
   const auto groups = groupby(d, "labels2", bins);
 
@@ -123,9 +118,7 @@ TEST(GroupbyTest, single_bin) {
   EXPECT_EQ(groups.mean(Dim::X).slice({Dim::Z, 0}), mean(d, Dim::X));
 }
 
-TEST(GroupbyTest, two_bin) {
-  Dataset d = make_dataset_for_bin_test();
-
+TEST_F(GroupbyWithBinsTest, two_bin) {
   auto bins = makeVariable<double>({Dim::Z, 3}, units::m, {1.0, 2.0, 5.0});
   const auto groups = groupby(d, "labels2", bins);
 
@@ -158,34 +151,35 @@ auto make_sparse_out() {
   return var;
 }
 
-DataArray make_sparse_array_in() {
-  return {
+struct GroupbyFlattenCoordOnly : public ::testing::Test {
+  const DataArray a{
       std::nullopt,
       {{Dim::X, make_sparse_in()}},
       {{"labels", makeVariable<double>({Dim::Y, 3}, units::m, {1, 1, 3})},
        {"dense", makeVariable<double>({Dim::X, 5}, units::m, {1, 2, 3, 4, 5})}},
       {},
       {{"scalar_attr", makeVariable<double>(1.2)}}};
-}
 
-DataArray make_sparse_array_out() {
-  return {
+  const DataArray expected{
       std::nullopt,
       {{Dim::X, make_sparse_out()},
        {Dim::Z, makeVariable<double>({Dim::Z, 2}, units::m, {1, 3})}},
       {{"dense", makeVariable<double>({Dim::X, 5}, units::m, {1, 2, 3, 4, 5})}},
       {},
       {{"scalar_attr", makeVariable<double>(1.2)}}};
-}
+};
 
-TEST(GroupbyTest, flatten_coord_only) {
-  const auto a = make_sparse_array_in();
-  const auto expected = make_sparse_array_out();
-
+TEST_F(GroupbyFlattenCoordOnly, flatten_coord_only) {
   EXPECT_EQ(groupby(a, "labels", Dim::Z).flatten(Dim::Y), expected);
 }
 
-TEST(GroupbyTest, flatten_coord_and_labels) {
+TEST_F(GroupbyFlattenCoordOnly, flatten_dataset_coord_only) {
+  const Dataset d{{{"a", a}, {"b", a}}};
+  const Dataset expected_d{{{"a", expected}, {"b", expected}}};
+  EXPECT_EQ(groupby(d, "labels", Dim::Z).flatten(Dim::Y), expected_d);
+}
+
+TEST(GroupbyFlattenTest, flatten_coord_and_labels) {
   DataArray a{
       std::nullopt,
       {{Dim::X, make_sparse_in()}},
@@ -201,7 +195,7 @@ TEST(GroupbyTest, flatten_coord_and_labels) {
   EXPECT_EQ(groupby(a, "labels", Dim::Z).flatten(Dim::Y), expected);
 }
 
-TEST(GroupbyTest, flatten_coord_and_data) {
+TEST(GroupbyFlattenTest, flatten_coord_and_data) {
   DataArray a{
       make_sparse_in() * 1.5,
       {{Dim::X, make_sparse_in()}},
@@ -213,13 +207,4 @@ TEST(GroupbyTest, flatten_coord_and_data) {
        {Dim::Z, makeVariable<double>({Dim::Z, 2}, units::m, {1, 3})}}};
 
   EXPECT_EQ(groupby(a, "labels", Dim::Z).flatten(Dim::Y), expected);
-}
-
-TEST(GroupbyTest, flatten_dataset_coord_only) {
-  const auto a = make_sparse_array_in();
-  const auto expected = make_sparse_array_out();
-
-  const Dataset d{{{"a", a}, {"b", a}}};
-  const Dataset expected_d{{{"a", expected}, {"b", expected}}};
-  EXPECT_EQ(groupby(d, "labels", Dim::Z).flatten(Dim::Y), expected_d);
 }
