@@ -140,6 +140,7 @@ class Slicer2d(Slicer):
         if not self.show_variances:
             self.ax = [self.ax]
         self.im = []
+        self.cbar = []
         # self.im = self.ax.imshow([0])
 
 
@@ -175,6 +176,7 @@ class Slicer2d(Slicer):
                 self.im.append(self.ax[i].imshow([[0, 1],[0, 1]], vmin=vmin, vmax=vmax,
                                extent=np.array(list(self.extent.values())).flatten(),
                                origin="lower", interpolation="none"))
+                self.cbar.append(plt.colorbar(self.im[i], ax=self.ax[i]))
 
         # if self.surface3d:
         #     self.fig.layout.scene1.zaxis.title = self.value_name
