@@ -35,6 +35,18 @@ TEST(MeanTest, basic) {
   EXPECT_EQ(mean(var, Dim::Y), meanY);
 }
 
+TEST(MeanTest, masked) {
+  const auto var = makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}}, units::m,
+                                        {1.0, 2.0, 3.0, 4.0});
+  const auto mask = makeVariable<bool>({Dim::X, 2}, {false, true});
+  DataArray a(var);
+  a.masks().set("mask", mask);
+  const auto meanX = makeVariable<double>({Dim::Y, 2}, units::m, {1.0, 3.0});
+  const auto meanY = makeVariable<double>({Dim::X, 2}, units::m, {2.0, 3.0});
+  EXPECT_EQ(mean(a, Dim::X).data(), meanX);
+  EXPECT_EQ(mean(a, Dim::Y).data(), meanY);
+}
+
 TEST(MeanTest, dtype_float_preserved) {
   const auto var = makeVariable<float>({{Dim::Y, 2}, {Dim::X, 2}}, units::m,
                                        {1.0, 2.0, 3.0, 4.0});

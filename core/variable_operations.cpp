@@ -206,12 +206,12 @@ Variable sum(const VariableConstProxy &var, const Dim dim) {
 
 Variable sum(const VariableConstProxy &var, const Dim dim,
              const MasksConstProxy &masks) {
-  if (masks.empty()) {
-    return sum(var, dim);
-  } else {
+  if (!masks.empty()) {
     const auto mask_union = masks_merge(masks);
-    return sum(var * ~mask_union, dim);
+    if (mask_union.dims().contains(dim))
+      return sum(var * ~mask_union, dim);
   }
+  return sum(var, dim);
 }
 
 Variable mean(const VariableConstProxy &var, const Dim dim,
@@ -235,13 +235,14 @@ Variable mean(const VariableConstProxy &var, const Dim dim) {
 
 Variable mean(const VariableConstProxy &var, const Dim dim,
               const MasksConstProxy &masks) {
-  if (masks.empty()) {
-    return mean(var, dim);
-  } else {
+  if (!masks.empty()) {
     const auto mask_union = masks_merge(masks);
-    const auto masks_sum = sum(mask_union, dim);
-    return mean(var * ~mask_union, dim, masks_sum);
+    if (mask_union.dims().contains(dim)) {
+      const auto masks_sum = sum(mask_union, dim);
+      return mean(var * ~mask_union, dim, masks_sum);
+    }
   }
+  return mean(var, dim);
 }
 
 Variable abs(const Variable &var) {
