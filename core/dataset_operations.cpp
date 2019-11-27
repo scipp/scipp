@@ -88,6 +88,14 @@ Dataset concatenate(const DatasetConstProxy &a, const DatasetConstProxy &b,
   return result;
 }
 
+DataArray flatten(const DataConstProxy &a, const Dim dim) {
+  return apply_or_drop_dim(a, [](auto &&... _) { return flatten(_...); }, dim);
+}
+
+Dataset flatten(const DatasetConstProxy &d, const Dim dim) {
+  return apply_to_items(d, [](auto &&... _) { return flatten(_...); }, dim);
+}
+
 DataArray sum(const DataConstProxy &a, const Dim dim) {
   return apply_to_data_and_drop_dim(a, [](auto &&... _) { return sum(_...); },
                                     dim, a.masks());

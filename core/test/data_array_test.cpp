@@ -139,32 +139,3 @@ TEST(DataArraySparseArithmeticTest, sparse_over_histogram) {
                      expected.slice({Dim::X, 0, 3}).variances<double>()));
   EXPECT_TRUE(std::isnan(out_vars[1][3]));
 }
-
-TEST(DataArraySparseArithmeticTest, consistency_with_histogram) {
-  // Apart from uncertainties, the order of operations does not matter. We can
-  // either first multiply and then histogram, or first histogram and then
-  // multiply.
-  const auto sparse = make_sparse();
-  auto edges = makeVariable<double>({Dim::X, 4}, units::us, {1, 2, 3, 4});
-  auto data =
-      makeVariable<double>({Dim::X, 3}, {2.0, 3.0, 4.0}, {0.3, 0.4, 0.5});
-
-  auto hist = DataArray(data, {{Dim::X, edges}});
-  auto bins = hist.coords()[Dim::X];
-  auto ab = histogram(sparse * hist, bins);
-  auto ba = histogram(sparse, bins) * hist;
-
-  // Case 1: 1 event per bin => uncertainties are the same
-  EXPECT_EQ(ab, ba);
-
-  hist = make_histogram();
-  bins = hist.coords()[Dim::X];
-  ab = histogram(sparse * hist, bins);
-  ba = histogram(sparse, bins) * hist;
-
-  // Case 2: Multiple events per bin => uncertainties differ, set to 0 before
-  // comparison.
-  ab.setVariances(Vector<double>(4));
-  ba.setVariances(Vector<double>(4));
-  EXPECT_EQ(ab, ba);
-}
