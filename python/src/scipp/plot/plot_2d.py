@@ -136,11 +136,12 @@ class Slicer2d(Slicer):
         # else:
         #     self.fig = go.FigureWidget(data=[data], layout=layout)
 
-        self.fig, self.ax = plt.subplots(1, 1 + self.show_variances)
+        self.fig, self.ax = plt.subplots(1, 1 + self.show_variances)#, sharex=True, sharey=True)
         if not self.show_variances:
             self.ax = [self.ax]
         self.im = []
         self.cbar = []
+        self.fig.autoscale(enable=True, axis='both')
         # self.im = self.ax.imshow([0])
 
 
@@ -224,10 +225,12 @@ class Slicer2d(Slicer):
 
     def update_axes(self):
         # Go through the buttons and select the right coordinates for the axes
+        axlabels = {"x": None, "y": None}
         for key, button in self.buttons.items():
             if self.slider[key].disabled:
                 but_val = button.value.lower()
-                extent = self.slider_x[key].values[[0, -1]]
+                # extent = self.slider_x[key].values[[0, -1]]
+                self.extent[but_val] = self.slider_x[key].values[[0, -1]]
 
                 for i in range(1 + self.show_variances):
                     # if self.rasterize:
@@ -237,7 +240,7 @@ class Slicer2d(Slicer):
                         # self.fig.data[i][but_val] = \
                         #     self.slider_x[key].values
 
-                    self.extent[but_val] = extent
+                    # self.extent[but_val] = extent
                 # if self.surface3d:
                 #     self.fig.layout.scene1["{}axis_title".format(
                 #         but_val)] = axis_label(self.slider_x[key],
@@ -248,12 +251,15 @@ class Slicer2d(Slicer):
                 #                 self.slider_x[key],
                 #                 name=self.slider_labels[key])
                 # else:
-                    # self.ax[i].
-                    func = getattr(self.ax[i], '{}axis'.format(
-                            but_val))
-                    func.set_label(axis_label(
+                    # # self.ax[i].
+                    # func = getattr(self.ax[i], '{}axis'.format(
+                    #         but_val))
+                    # func.set_label(axis_label(
+                    #             self.slider_x[key],
+                    #             name=self.slider_labels[key]))
+                    axlabels[but_val] = axis_label(
                                 self.slider_x[key],
-                                name=self.slider_labels[key]))
+                                name=self.slider_labels[key])
                     # if self.show_variances:
                     #     func = getattr(self.fig, 'update_{}axes'.format(
                     #         but_val))
@@ -266,8 +272,15 @@ class Slicer2d(Slicer):
                     #     axis_str = "{}axis".format(but_val)
                     #     self.fig.layout[axis_str]["title"] = axis_label(
                     #         self.slider_x[key], name=self.slider_labels[key])
+
         for i in range(1 + self.show_variances):
             self.im[i].set_extent(np.array(list(self.extent.values())).flatten())
+            self.ax[i].set_xlabel(axlabels["x"])
+            self.ax[i].set_ylabel(axlabels["y"])
+            self.ax[i].set_xlim(self.extent["x"])
+            self.ax[i].set_ylim(self.extent["y"])
+            
+            
 
         return
 
