@@ -9,6 +9,7 @@ pybind11_add_module(_scipp
                     dtype.cpp
                     groupby.cpp
                     neutron.cpp
+                    operations.cpp
                     scipp.cpp
                     sparse_container.cpp
                     units_neutron.cpp
