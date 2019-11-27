@@ -31,7 +31,7 @@ install:
 - echo Conda Updates Started %time%
 - conda update libarchive
 - echo Conda Build Started %time%
-- conda-build --user 'scipp' --token "$ANACONDA_TOKEN" ../conda
+- conda-build --user 'scipp' --token "$ANACONDA_TOKEN" --label 'dev' ../conda
 
 build_script:
 - cmake -G "Visual Studio 16 2019" -A x64 -DPYTHON_EXECUTABLE="C:/Python36-x64/python.exe" -DCMAKE_INSTALL_PREFIX=../install ..
