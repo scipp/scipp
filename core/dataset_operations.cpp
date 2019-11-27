@@ -89,7 +89,7 @@ Dataset concatenate(const DatasetConstProxy &a, const DatasetConstProxy &b,
 }
 
 DataArray flatten(const DataConstProxy &a, const Dim dim) {
-  return apply_or_drop_dim(a, [](auto &&... _) { return flatten(_...); }, dim);
+  return apply_or_copy_dim(a, [](auto &&... _) { return flatten(_...); }, dim);
 }
 
 Dataset flatten(const DatasetConstProxy &d, const Dim dim) {
