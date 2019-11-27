@@ -503,7 +503,6 @@ namespace scipp::core {
 
   // The name should be changed to makeVariable after refactoring:
   // getting rid of all other makeVariable.
-
   template <class T, class... Ts> Variable createVariable(Ts && ... ts) {
     using helper = detail::ConstructorArgumentsMatcher<Variable, Ts...>;
     constexpr bool useDimsAndShape =
@@ -519,17 +518,17 @@ namespace scipp::core {
 
     if
       constexpr(useDimsAndShape) {
-        auto[valArgs, varArgs, nonData] =
-            helper::template extractArguments<units::Unit, Dims, Shape>(
-                std::forward<Ts>(ts)...);
-        const auto &shape = std::get<Shape>(nonData);
-        const auto &d = shape.data;
-        if (std::find(d.cbegin(), d.cend(), Dimensions::Sparse) != d.end())
-          return helper::template construct<sparse_container<T> >(
-              std::move(valArgs), std::move(varArgs), std::move(nonData));
-        else
-          return helper::template construct<T>(
-              std::move(valArgs), std::move(varArgs), std::move(nonData));
+    auto[valArgs, varArgs, nonData] =
+        helper::template extractArguments<units::Unit, Dims, Shape>(
+            std::forward<Ts>(ts)...);
+    const auto &shape = std::get<Shape>(nonData);
+    const auto &d = shape.data;
+    if (std::find(d.cbegin(), d.cend(), Dimensions::Sparse) != d.end())
+      return helper::template construct<sparse_container<T> >(
+          std::move(valArgs), std::move(varArgs), std::move(nonData));
+    else
+      return helper::template construct<T>(
+          std::move(valArgs), std::move(varArgs),std::move(nonData));
       }
     else {
       auto[valArgs, varArgs, nonData] =
@@ -539,7 +538,7 @@ namespace scipp::core {
       if (dimensions.sparse())
         return helper::template construct<sparse_container<T> >(
             std::move(valArgs), std::move(varArgs), std::move(nonData));
-      else
+  else
         return helper::template construct<T>(
             std::move(valArgs), std::move(varArgs), std::move(nonData));
     }
@@ -555,16 +554,16 @@ namespace scipp::core {
           Vector<T>(dimensions.volume(), detail::default_init<T>::value()));
   }
 
-template <class T>
-Variable makeVariableInit(const Dimensions &dimensions,
-                          const detail::default_init_elements_t &init) {
-  if (dimensions.sparse())
-    return Variable(units::dimensionless, dimensions,
-                    Vector<sparse_container<T>>(dimensions.volume(), init));
-  else
-    return Variable(units::dimensionless, std::move(dimensions),
-                    Vector<T>(dimensions.volume(), init));
-}
+  template <class T>
+  Variable makeVariableInit(const Dimensions & dimensions,
+                            const detail::default_init_elements_t & init) {
+    if (dimensions.sparse())
+      return Variable(units::dimensionless, dimensions,
+                      Vector<sparse_container<T> >(dimensions.volume(), init));
+    else
+      return Variable(units::dimensionless, std::move(dimensions),
+                      Vector<T>(dimensions.volume(), init));
+  }
 
   template <class T>
   Variable makeVariableWithVariances(const Dimensions & dimensions,
@@ -645,19 +644,21 @@ Variable makeVariableInit(const Dimensions &dimensions,
   Variable Variable::create(units::Unit && u, Dimensions && d,
                             std::optional<Vector<T> > && val,
                             std::optional<Vector<T> > && var) {
-    auto dms { d };
-  if (val && var)
-    return Variable(u, dms, std::move(*val), std::move(*var));
-  if (val)
-    return Variable(u, dms, std::move(*val));
-  if (var)
-    throw except::VariancesError("Can't have variance without values");
-  else {
-    if constexpr (is_sparse_container<T>::value)
-          return Variable(u, dms, Vector<T>(dms.volume()));
-    else
+    auto dms  { d }
+    ;
+    if (val && var)
+      return Variable(u, dms, std::move(*val), std::move(*var));
+    if (val)
+      return Variable(u, dms, std::move(*val));
+    if (var)
+      throw except::VariancesError("Can't have variance without values");
+    else {
+      if
+        constexpr(is_sparse_container<T>::value) return Variable(
+            u, dms, Vector<T>(dms.volume()));
+      else
         return Variable(
-          u, dms, Vector<T>(dms.volume(), detail::default_init<T>::value()));
+            u, dms, Vector<T>(dms.volume(), detail::default_init<T>::value()));
     }
   }
 
@@ -668,9 +669,7 @@ Variable makeVariableInit(const Dimensions &dimensions,
     auto dms = Dimensions { d.data, s.data }
     ;
     return create(std::move(u), std::move(dms), std::move(val), std::move(var));
-  }
-
-  template <class... Ts>
+  }template <class... Ts>
   template <class T>
   Variable Variable::ConstructVariable<Ts...>::Maker<T>::apply(Ts && ... ts) {
     return createVariable<detail::element_type_t<T> >(std::forward<Ts>(ts)...);
