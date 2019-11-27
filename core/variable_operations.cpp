@@ -169,6 +169,9 @@ void reserve(const VariableProxy &sparse, const VariableConstProxy &capacity) {
 } // namespace sparse
 
 void flatten_impl(const VariableProxy &summed, const VariableConstProxy &var) {
+  if (!var.dims().sparse())
+    throw except::DimensionError("`flatten` can only be used for sparse data, "
+                                 "use `sum` for dense data.");
   // 1. Reserve space in output. This yields approx. 3x speedup.
   auto summed_counts = sparse::counts(summed);
   sum_impl(summed_counts, sparse::counts(var));
@@ -185,7 +188,22 @@ void flatten_impl(const VariableProxy &summed, const VariableConstProxy &var) {
           [](units::Unit &a, const units::Unit &b) { expect::equals(a, b); }});
 }
 
+/// Flatten dimension by concatenating along sparse dimension.
+///
+/// This is equivalent to summing dense data along a dimension, in the sense
+/// that summing histogrammed data is the same as histogramming flattened data.
+Variable flatten(const VariableConstProxy &var, const Dim dim) {
+  auto dims = var.dims();
+  dims.erase(dim);
+  Variable flattened(var, dims);
+  flatten_impl(flattened, var);
+  return flattened;
+}
+
 void sum_impl(const VariableProxy &summed, const VariableConstProxy &var) {
+  if (var.dims().sparse())
+    throw except::DimensionError("`sum` can only be used for sparse data, use "
+                                 "`flatten` for dense data.");
   accumulate_in_place<
       pair_self_t<double, float, int64_t, int32_t, Eigen::Vector3d>,
       pair_custom_t<std::pair<int64_t, bool>>>(
@@ -193,7 +211,6 @@ void sum_impl(const VariableProxy &summed, const VariableConstProxy &var) {
 }
 
 Variable sum(const VariableConstProxy &var, const Dim dim) {
-  expect::notSparse(var);
   auto dims = var.dims();
   dims.erase(dim);
   // Bool DType is a bit special in that it cannot contain it's sum.

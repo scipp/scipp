@@ -1016,6 +1016,8 @@ SCIPP_CORE_EXPORT Variable reverse(Variable var, const Dim dim);
 SCIPP_CORE_EXPORT VariableProxy sqrt(const VariableConstProxy &var,
                                      const VariableProxy &out);
 
+SCIPP_CORE_EXPORT Variable flatten(const VariableConstProxy &var,
+                                   const Dim dim);
 SCIPP_CORE_EXPORT Variable sum(const VariableConstProxy &var, const Dim dim);
 SCIPP_CORE_EXPORT Variable sum(const VariableConstProxy &var, const Dim dim,
                                const MasksConstProxy &masks);
