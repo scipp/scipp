@@ -3,8 +3,8 @@
 /// @file
 /// @author Simon Heybrock
 
-#include "scipp/core/dataset.h"
 #include "pybind11.h"
+#include "scipp/core/dataset.h"
 
 using namespace scipp;
 using namespace scipp::core;
