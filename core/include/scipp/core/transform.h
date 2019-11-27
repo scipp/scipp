@@ -341,7 +341,7 @@ template <class Op> struct Transform {
         (handles->hasVariances() || ...)
             ? makeVariableWithVariances<element_type_t<Out>>(
                   dims, default_init_elements)
-            : makeVariable<element_type_t<Out>>(dims, default_init_elements);
+            : makeVariableInit<element_type_t<Out>>(dims, default_init_elements);
     auto &outT = static_cast<VariableConceptT<Out> &>(out.data());
     do_transform(op, outT, std::tuple<>(), as_view{*handles, dims}...);
     return out;

@@ -555,16 +555,16 @@ namespace scipp::core {
           Vector<T>(dimensions.volume(), detail::default_init<T>::value()));
   }
 
-  template <class T>
-  Variable makeVariable(const Dimensions & dimensions,
-                        const detail::default_init_elements_t & init) {
-    if (dimensions.sparse())
-      return Variable(units::dimensionless, dimensions,
-                      Vector<sparse_container<T> >(dimensions.volume(), init));
-    else
-      return Variable(units::dimensionless, std::move(dimensions),
-                      Vector<T>(dimensions.volume(), init));
-  }
+template <class T>
+Variable makeVariableInit(const Dimensions &dimensions,
+                      const detail::default_init_elements_t &init) {
+  if (dimensions.sparse())
+    return Variable(units::dimensionless, dimensions,
+                    Vector<sparse_container<T>>(dimensions.volume(), init));
+  else
+    return Variable(units::dimensionless, std::move(dimensions),
+                    Vector<T>(dimensions.volume(), init));
+}
 
   template <class T>
   Variable makeVariableWithVariances(const Dimensions & dimensions,
