@@ -24,19 +24,31 @@ namespace detail {
 template <class U> struct vector_like {
   std::vector<U> data;
   template <class... Args>
-  vector_like(Args &&... args) : data(make<U>(std::forward<Args>(args)...)) {}
+  vector_like(Args &&... args) : data(make(std::forward<Args>(args)...)) {}
 
   template <class T>
   vector_like(std::initializer_list<T> init) : data(init.begin(), init.end()) {}
-  vector_like(scipp::span<const U> span) : data(span.begin(), span.end()) {}
-  vector_like(const scipp::span<const U> &span)
-      : data(span.begin(), span.end()) {}
 
 private:
+  template <class T> struct is_span : std::false_type {};
+
+  template <class T> struct is_span<scipp::span<T>> : std::true_type {};
+
+  template <class T> constexpr static bool is_span_v = is_span<T>::value;
+
   // This is to override the std::vector(size_t num_elems, const Type& element)
   // insted of [elem, elem, ..., elem] we want [Type(num_elems), element]
+  // And also make the vector from span
   template <class... Args> static std::vector<U> make(Args &&... args) {
-    if constexpr (sizeof...(Args) == 2) {
+    if constexpr (sizeof...(Args) == 1) {
+      using Tuple = std::tuple<Args...>;
+      using T0 = std::tuple_element_t<0, Tuple>;
+      if constexpr (is_span_v<T0>)
+        return std::vector<U>(std::forward<Args>(args).begin()...,
+                              std::forward<Args>(args).end()...);
+      else
+        return std::vector<U>(std::forward<Args>(args)...);
+    } else if constexpr (sizeof...(Args) == 2) {
       using Tuple = std::tuple<Args...>;
       using T0 = std::tuple_element_t<0, Tuple>;
       using T1 = std::tuple_element_t<1, Tuple>;
