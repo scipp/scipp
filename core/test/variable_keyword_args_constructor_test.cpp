@@ -9,6 +9,10 @@
 
 using namespace scipp;
 using namespace scipp::core;
+TEST(CreateVariableTest, construct_sparse) {
+  auto var = createVariable<double>(Dims{Dim::X, Dim::Y},
+                                    Shape{2, Dimensions::Sparse});
+}
 
 TEST(VariableUniversalConstructorTest, dimensions_unit_basic) {
   auto variable = Variable(dtype<float>, Dims{Dim::X, Dim::Y}, Shape{2, 3},

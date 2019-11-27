@@ -557,7 +557,7 @@ namespace scipp::core {
 
 template <class T>
 Variable makeVariableInit(const Dimensions &dimensions,
-                      const detail::default_init_elements_t &init) {
+                          const detail::default_init_elements_t &init) {
   if (dimensions.sparse())
     return Variable(units::dimensionless, dimensions,
                     Vector<sparse_container<T>>(dimensions.volume(), init));
@@ -645,24 +645,19 @@ Variable makeVariableInit(const Dimensions &dimensions,
   Variable Variable::create(units::Unit && u, Dimensions && d,
                             std::optional<Vector<T> > && val,
                             std::optional<Vector<T> > && var) {
-    auto dms { d }
-    ;
-    if (val && var)
-      return Variable(u, dms, std::move(*val), std::move(*var));
-    if (val)
-      return Variable(u, dms, std::move(*val));
-    if (var)
-      throw except::VariancesError("Can't have variance without values");
-    else {
-      if
-        constexpr(is_sparse_container<T>::value) {
-          throw except::TypeError("unreachable");
-        }
-      else {
-        auto res = makeVariable<T>(dms);
-        res.setUnit(u);
-        return res;
-      }
+    auto dms { d };
+  if (val && var)
+    return Variable(u, dms, std::move(*val), std::move(*var));
+  if (val)
+    return Variable(u, dms, std::move(*val));
+  if (var)
+    throw except::VariancesError("Can't have variance without values");
+  else {
+    if constexpr (is_sparse_container<T>::value)
+          return Variable(u, dms, Vector<T>(dms.volume()));
+    else
+        return Variable(
+          u, dms, Vector<T>(dms.volume(), detail::default_init<T>::value()));
     }
   }
 
