@@ -10,8 +10,10 @@ from .tools import axis_label
 
 # Other imports
 import numpy as np
-import plotly.graph_objs as go
+# import plotly.graph_objs as go
+import matplotlib.pyplot as plt
 import ipywidgets as widgets
+import IPython.display as disp
 
 
 def plot_1d(input_data, backend=None, logx=False, logy=False, logxy=False,
@@ -70,8 +72,10 @@ def plot_1d(input_data, backend=None, logx=False, logy=False, logxy=False,
 
     sv = Slicer1d(data=data, layout=layout, input_data=input_data, axes=axes,
                   color=color)
-    render_plot(static_fig=sv.fig, interactive_fig=sv.box, backend=backend,
-                filename=filename)
+    disp.display(sv.box)
+
+    # render_plot(static_fig=sv.fig, interactive_fig=sv.box, backend=backend,
+    #             filename=filename)
 
     return
 
@@ -84,7 +88,8 @@ class Slicer1d(Slicer):
                          button_options=['X'])
 
         self.color = color
-        self.fig = go.FigureWidget(layout=layout)
+        self.fig, self.ax = plt.subplots(1, 1)
+        self.ax.set_ylim(layout["yaxis"]["range"])
 
         self.traces = dict()
         for i, (name, var) in enumerate(sorted(self.input_data)):
@@ -92,7 +97,7 @@ class Slicer1d(Slicer):
             if color is not None:
                 trace["marker"] = {"color": color[i]}
             self.traces[name] = i
-            self.fig.add_trace(trace)
+            self.ax.plot([0], [0], label=name)
 
         # Disable buttons
         for key, button in self.buttons.items():
@@ -108,7 +113,8 @@ class Slicer1d(Slicer):
 
         # vbox contains the original sliders and buttons. In mbox, we include
         # the keep trace buttons.
-        self.mbox = [self.fig] + self.vbox
+        # self.mbox = [self.fig] + self.vbox
+        self.mbox = self.vbox.copy()
         for key, val in self.keep_buttons.items():
             self.mbox.append(widgets.HBox(val))
         self.box = widgets.VBox(self.mbox)
@@ -150,17 +156,27 @@ class Slicer1d(Slicer):
 
         self.keep_buttons = dict()
         self.make_keep_button()
-        self.mbox = [self.fig] + self.vbox
+        # self.mbox = [self.fig] + self.vbox
+        self.mbox = self.vbox.copy()
         for k, b in self.keep_buttons.items():
             self.mbox.append(widgets.HBox(b))
         self.box.children = tuple(self.mbox)
         return
 
     def update_axes(self, dim_str):
-        self.fig.data = self.fig.data[:len(self.input_data)]
-        self.fig.update_traces(x=self.slider_x[dim_str].values)
-        self.fig.layout["xaxis"]["title"] = axis_label(
-            self.slider_x[dim_str], name=self.slider_labels[dim_str])
+        newlist = self.ax.lines[:len(self.input_data)]
+        self.ax.lines = newlist
+        # for i, line in enumerate(self.ax.lines):
+        #     if i >= len(self.input_data):
+        #         self.ax.lines.remove(
+        # self.fig.data = self.fig.data[:len(self.input_data)]
+        for line in self.ax.lines:
+            line.set_xdata(self.slider_x[dim_str].values)
+            # print(line.get_xdata())
+        self.ax.set_xlim([self.slider_x[dim_str].values[0], self.slider_x[dim_str].values[-1]])
+        # self.fig.update_traces(x=self.slider_x[dim_str].values)
+        # self.fig.layout["xaxis"]["title"] = axis_label(
+        #     self.slider_x[dim_str], name=self.slider_labels[dim_str])
         return
 
     # Define function to update slices
@@ -175,23 +191,24 @@ class Slicer1d(Slicer):
                         self.lab[key].value = self.make_slider_label(
                             self.slider_x[key], val.value)
                     vslice = vslice[val.dim, val.value]
-            self.fig.data[i].y = vslice.values
+            # self.fig.data[i].y = vslice.values
+            self.ax.lines[i].set_ydata(vslice.values)
             if var.variances is not None:
                 self.fig.data[i]["error_y"].array = np.sqrt(vslice.variances)
         return
 
     def update_histograms(self):
-        for i in range(len(self.fig.data)):
-            trace = self.fig.data[i]
-            if len(trace.x) == len(trace.y) + 1:
-                trace["line"] = {"shape": "hvh"}
-                trace["x"] = 0.5 * (trace["x"][:-1] + trace["x"][1:])
-                trace["fill"] = "tozeroy"
-                trace["mode"] = "lines"
-            else:
-                trace["line"] = None
-                trace["fill"] = None
-                trace["mode"] = None
+        # for i in range(len(self.fig.data)):
+        #     trace = self.fig.data[i]
+        #     if len(trace.x) == len(trace.y) + 1:
+        #         trace["line"] = {"shape": "hvh"}
+        #         trace["x"] = 0.5 * (trace["x"][:-1] + trace["x"][1:])
+        #         trace["fill"] = "tozeroy"
+        #         trace["mode"] = "lines"
+        #     else:
+        #         trace["line"] = None
+        #         trace["fill"] = None
+        #         trace["mode"] = None
         return
 
     def keep_remove_trace(self, owner):
