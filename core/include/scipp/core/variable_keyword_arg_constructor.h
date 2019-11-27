@@ -27,7 +27,8 @@ template <class U> struct vector_like {
   template <class T>
   vector_like(std::initializer_list<T> init) : data(init.begin(), init.end()) {}
   vector_like(scipp::span<const U> span) : data(span.begin(), span.end()) {}
-  vector_like(const scipp::span<const U>& span) : data(span.begin(), span.end()) {}
+  vector_like(const scipp::span<const U> &span)
+      : data(span.begin(), span.end()) {}
 };
 
 struct ValuesTag {};
