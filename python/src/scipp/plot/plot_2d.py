@@ -264,6 +264,8 @@ class Slicer2d(Slicer):
                     #     axis_str = "{}axis".format(but_val)
                     #     self.fig.layout[axis_str]["title"] = axis_label(
                     #         self.slider_x[key], name=self.slider_labels[key])
+        for i in range(1 + self.show_variances):
+            self.im[i].set_extent(np.array(list(self.extent.values())).flatten())
 
         return
 
