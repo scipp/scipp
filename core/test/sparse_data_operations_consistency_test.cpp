@@ -56,9 +56,41 @@ TEST(SparseDataOperationsConsistencyTest, multiply) {
   EXPECT_EQ(ab, ba);
 }
 
-TEST(SparseDataOperationsConsistencyTest, flatten_and_sum) {
+TEST(SparseDataOperationsConsistencyTest, flatten_sum) {
   const auto sparse = make_sparse_array_coord_only();
   auto edges = makeVariable<double>({Dim::X, 3}, units::us, {1, 3, 6});
   EXPECT_EQ(sum(histogram(sparse, edges), Dim::Y),
             histogram(flatten(sparse, Dim::Y), edges));
+}
+
+TEST(SparseDataOperationsConsistencyTest, flatten_multiply_sum) {
+  const auto sparse = make_sparse_array_coord_only();
+  auto edges = makeVariable<double>({Dim::X, 3}, units::us, {1, 3, 5});
+  auto data = makeVariable<double>({Dim::X, 2}, {2.0, 3.0}, {0.3, 0.4});
+  auto hist = DataArray(data, {{Dim::X, edges}});
+
+  auto hfm = histogram(flatten(hist * sparse, Dim::Y), edges);
+  auto hmf = histogram(hist * flatten(sparse, Dim::Y), edges);
+  auto mhf = hist * histogram(flatten(sparse, Dim::Y), edges);
+  auto msh = hist * sum(histogram(sparse, edges), Dim::Y);
+  auto shm = sum(histogram(hist * sparse, edges), Dim::Y);
+  auto smh = sum(hist * histogram(sparse, edges), Dim::Y);
+
+  // Same variances among "histogram after multiply" group
+  EXPECT_EQ(hfm, hmf);
+  EXPECT_EQ(hfm, shm);
+
+  // Same variances among "multiply after histogram" group
+  EXPECT_EQ(mhf, msh);
+  // ... except that summing last also leads to smaller variances
+  EXPECT_NE(mhf, smh);
+
+  // Cross-group: Uncertainties differ due to multiple events per bin, set to 0.
+  hfm.setVariances(Vector<double>(2));
+  mhf.setVariances(Vector<double>(2));
+  msh.setVariances(Vector<double>(2));
+  smh.setVariances(Vector<double>(2));
+  EXPECT_EQ(hfm, mhf);
+  EXPECT_EQ(hfm, msh);
+  EXPECT_EQ(hfm, smh);
 }
