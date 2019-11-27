@@ -27,7 +27,7 @@ install:
 - set PATH=%MINICONDA%;%MINICONDA%\\Scripts;%PATH%"
 - conda config --set always_yes yes --set changeps1 no
 - echo Conda Install Started %time%
-- conda install -c conda-forge conda-build 
+- conda install -c conda-forge conda-build anaconda-client
 - echo Conda Updates Started %time%
 - conda update libarchive
 - echo Conda Build Started %time%
