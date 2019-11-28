@@ -141,7 +141,7 @@ class Slicer2d(Slicer):
             self.ax = [self.ax]
         self.im = []
         self.cbar = []
-        self.fig.autoscale(enable=True, axis='both')
+        # self.fig.autoscale(enable=True, axis='both')
         # self.im = self.ax.imshow([0])
 
 

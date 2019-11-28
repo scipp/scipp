@@ -10,6 +10,7 @@ from .tools import axis_label
 
 # Other imports
 import numpy as np
+import copy as cp
 # import plotly.graph_objs as go
 import matplotlib.pyplot as plt
 import ipywidgets as widgets
@@ -45,30 +46,40 @@ def plot_1d(input_data, backend=None, logx=False, logy=False, logxy=False,
         ymin = min(ymin, np.nanmin(var.values - err))
         ymax = max(ymax, np.nanmax(var.values + err))
 
-        # Define trace
-        trace = dict(name=name, type="scattergl")
-        if color is not None:
-            trace["marker"] = {"color": color[i]}
-        data.append(trace)
+        # # Define trace
+        # trace = dict(name=name, type="scattergl")
+        # if color is not None:
+        #     trace["marker"] = {"color": color[i]}
+        # data.append(trace)
 
     if axes is None:
         axes = ax
 
-    layout = dict(
-        xaxis=dict(),
-        yaxis=dict(),
-        showlegend=True,
-        legend=dict(x=0.0, y=1.15, orientation="h"),
-        height=config.height,
-        width=config.width
-    )
-    if logx or logxy:
-        layout["xaxis"]["type"] = "log"
+    layout = dict(logx=logx or logxy, logy=logy or logxy)
+
+    # layout = dict(
+    #     xaxis=dict(),
+    #     yaxis=dict(),
+    #     showlegend=True,
+    #     legend=dict(x=0.0, y=1.15, orientation="h"),
+    #     height=config.height,
+    #     width=config.width
+    # )
+    # if logx or logxy:
+    #     layout["xaxis"]["type"] = "log"
     if logy or logxy:
-        layout["yaxis"]["type"] = "log"
+        # layout["yaxis"]["type"] = "log"
         [ymin, ymax] = np.log10([ymin, ymax])
     dy = 0.05*(ymax - ymin)
-    layout["yaxis"]["range"] = [ymin-dy, ymax+dy]
+    layout["yrange"] = [ymin-dy, ymax+dy]
+    if logy or logxy:
+        layout["yrange"] = 10.0**np.array(layout["yrange"])
+
+    #     layout["yrange"] = [10.0**(ymin-dy), 10.0**(ymax+dy)]
+    # else:
+    #     dy = 0.05*(ymax - ymin)
+    #     layout["yrange"] = [ymin-dy, ymax+dy]
+
 
     sv = Slicer1d(data=data, layout=layout, input_data=input_data, axes=axes,
                   color=color)
@@ -89,15 +100,29 @@ class Slicer1d(Slicer):
 
         self.color = color
         self.fig, self.ax = plt.subplots(1, 1)
-        self.ax.set_ylim(layout["yaxis"]["range"])
+        self.ax.set_ylim(layout["yrange"])
+        if layout["logx"]:
+            self.ax.set_xscale("log")
+        if layout["logy"]:
+            self.ax.set_yscale("log")
 
-        self.traces = dict()
+        self.traces = dict(lines=dict(), error_x=dict(), error_y=dict(), error_xy=dict())
+        self.trace_types = dict()
         for i, (name, var) in enumerate(sorted(self.input_data)):
-            trace = dict(name=name, type="scattergl")
-            if color is not None:
-                trace["marker"] = {"color": color[i]}
-            self.traces[name] = i
-            self.ax.plot([0], [0], label=name)
+            # trace = dict(name=name, type="scattergl")
+            # if color is not None:
+            #     trace["marker"] = {"color": color[i]}
+            # self.traces[name] = dict(index=i)
+            # line=self.ax.plot([0], [0], label=name))
+            if var.variances is not None:
+                self.trace_types[name] = "error_y"
+                self.traces["error_y"][name] = self.ax.errorbar([1], [1], yerr=[0],
+                                                color=color[i], zorder=10)
+            else:
+                self.trace_types[name] = "lines"
+                self.traces["lines"][name] = self.ax.plot([1], [1], label=name, color=color[i], zorder=10)
+        self.lines = self.ax.lines.copy()
+        self.collections = self.ax.collections.copy()
 
         # Disable buttons
         for key, button in self.buttons.items():
@@ -123,7 +148,7 @@ class Slicer1d(Slicer):
         return
 
     def make_keep_button(self):
-        drop = widgets.Dropdown(options=self.traces.keys(), description='',
+        drop = widgets.Dropdown(options=self.trace_types.keys(), description='',
                                 layout={'width': 'initial'})
         but = widgets.Button(description="Keep", disabled=False,
                              button_style="", layout={'width': "70px"})
@@ -164,16 +189,49 @@ class Slicer1d(Slicer):
         return
 
     def update_axes(self, dim_str):
-        newlist = self.ax.lines[:len(self.input_data)]
-        self.ax.lines = newlist
-        # for i, line in enumerate(self.ax.lines):
-        #     if i >= len(self.input_data):
-        #         self.ax.lines.remove(
-        # self.fig.data = self.fig.data[:len(self.input_data)]
+        # print(self.ax.lines)
+        # newlist = self.ax.lines[:len(self.input_data)]
+        # self.ax.lines = newlist
+        print(self.ax.lines)
+        print(self.lines)
+        print(self.ax.collections)
+        print(self.collections)
+        self.ax.lines = self.lines.copy()
+        self.ax.collections = self.collections.copy()
+
+        new_x = self.slider_x[dim_str].values
+
         for line in self.ax.lines:
-            line.set_xdata(self.slider_x[dim_str].values)
-            # print(line.get_xdata())
-        self.ax.set_xlim([self.slider_x[dim_str].values[0], self.slider_x[dim_str].values[-1]])
+            line.set_xdata(new_x)
+
+        for key, val in self.traces["error_y"].items():
+            # print(val)
+            # print(val[0], val[1], val[2])
+            val.get_children()[1].set_segments(self.generate_segments(new_x, np.ones_like(new_x), np.zeros_like(new_x)))
+
+
+        # # for i, line in enumerate(self.ax.lines):
+        # #     if i >= len(self.input_data):
+        # #         self.ax.lines.remove(
+        # # self.fig.data = self.fig.data[:len(self.input_data)]
+        # for i, (name, var) in enumerate(sorted(self.input_data)):
+        #     # trace = dict(name=name, type="scattergl")
+        #     # if color is not None:
+        #     #     trace["marker"] = {"color": color[i]}
+        #     self.traces[name] = dict(index=i)
+        #     # line=self.ax.plot([0], [0], label=name))
+        #     if var.variances is not None:
+        #         self.traces[name]["errorbar"] = self.ax.errorbar([0], [0], yerr=[0],
+        #                                         color=color[i])
+        #     else:
+        #         self.traces[name]["line"] = self.ax.plot([0], [0], label=name, color=color[i])
+
+        # for line in self.ax.lines:
+        #     line.set_xdata(self.slider_x[dim_str].values)
+        #     # print(line.get_xdata())
+        self.ax.set_xlim([new_x[0], new_x[-1]])
+        self.ax.set_xlabel(axis_label(self.slider_x[dim_str],
+                                      name=self.slider_labels[dim_str]))
         # self.fig.update_traces(x=self.slider_x[dim_str].values)
         # self.fig.layout["xaxis"]["title"] = axis_label(
         #     self.slider_x[dim_str], name=self.slider_labels[dim_str])
@@ -191,10 +249,18 @@ class Slicer1d(Slicer):
                         self.lab[key].value = self.make_slider_label(
                             self.slider_x[key], val.value)
                     vslice = vslice[val.dim, val.value]
-            # self.fig.data[i].y = vslice.values
-            self.ax.lines[i].set_ydata(vslice.values)
+            # # self.fig.data[i].y = vslice.values
+            # self.ax.lines[i].set_ydata(vslice.values)
             if var.variances is not None:
-                self.fig.data[i]["error_y"].array = np.sqrt(vslice.variances)
+                self.traces["error_y"][name][0].set_ydata(vslice.values)
+                self.traces["error_y"][name].get_children()[1].set_segments(
+                    self.generate_segments(
+                        self.traces["error_y"][name][0].get_xdata(),
+                        vslice.values,
+                        np.sqrt(vslice.variances)))
+                # self.fig.data[i]["error_y"].array = np.sqrt(vslice.variances)
+            else:
+                self.traces["lines"][name][0].set_ydata(vslice.values)
         return
 
     def update_histograms(self):
@@ -220,11 +286,44 @@ class Slicer1d(Slicer):
 
     def keep_trace(self, owner):
         lab = self.keep_buttons[owner.id][0].value
-        self.fig.add_trace(self.fig.data[self.traces[lab]])
-        self.fig.data[-1]["marker"]["color"] = self.keep_buttons[
-            owner.id][2].value
-        self.fig.data[-1]["showlegend"] = False
-        self.fig.data[-1]["meta"] = owner.id
+        if self.trace_types[lab] == "lines":
+            # line = self.traces["lines"][name]
+            # self.ax.plot(line.get_xdata(), line.get_ydata(), color=self.keep_buttons[owner.id][2].value)
+            # # if var.variances is not None:
+            # #     self.trace_types[name] = "error_y"
+            # #     self.traces["error_y"][name] = self.ax.errorbar([1], [1], yerr=[0],
+            # #                                     color=color[i])
+            # # else:
+            # #     self.trace_types[name] = "lines"
+            # #     self.traces["lines"][name] = self.ax.plot([1], [1], label=name, color=color[i])
+            self.ax.lines.append(cp.copy(self.traces["lines"][lab]))
+            # self.ax.lines[-1].set_color(self.keep_buttons[owner.id][2].value)
+            # self.ax.lines[-1].set_url(owner.id)
+
+        elif self.trace_types[lab] == "error_y":
+            err = self.traces["error_y"][lab].get_children()
+
+            # self.ax.plot(line.get_xdata(), line.get_ydata(), color=color[i], self.keep_buttons[owner.id][2].value)
+
+            self.ax.lines.append(cp.copy(err[0]))
+            self.ax.collections.append(cp.copy(err[1]))
+            self.ax.collections[-1].set_color(self.keep_buttons[owner.id][2].value)
+            self.ax.collections[-1].set_url(owner.id)
+            self.ax.collections[-1].set_zorder(1)
+
+
+        self.ax.lines[-1].set_color(self.keep_buttons[owner.id][2].value)
+        self.ax.lines[-1].set_url(owner.id)
+        self.ax.lines[-1].set_zorder(1)
+
+
+
+
+        # # self.fig.add_trace(self.fig.data[self.traces[lab]])
+        # self.fig.data[-1]["marker"]["color"] = self.keep_buttons[
+        #     owner.id][2].value
+        # self.fig.data[-1]["showlegend"] = False
+        # self.fig.data[-1]["meta"] = owner.id
         for key, val in self.slider.items():
             if not val.disabled:
                 lab = "{},{}:{}".format(lab, key, val.value)
@@ -232,7 +331,8 @@ class Slicer1d(Slicer):
             value=lab, layout={'width': "initial"}, title=lab)
         self.make_keep_button()
         owner.description = "Remove"
-        self.mbox = [self.fig] + self.vbox
+        # self.mbox = [self.fig] + self.vbox
+        self.mbox = self.vbox.copy()
         for k, b in self.keep_buttons.items():
             self.mbox.append(widgets.HBox(b))
         self.box.children = tuple(self.mbox)
@@ -240,19 +340,41 @@ class Slicer1d(Slicer):
 
     def remove_trace(self, owner):
         del self.keep_buttons[owner.id]
-        data = []
-        for tr in self.fig.data:
-            if tr.meta != owner.id:
-                data.append(tr)
-        self.fig.data = data
-        self.mbox = [self.fig] + self.vbox
+        lines = []
+        for line in self.ax.lines:
+            if line.get_url() != owner.id:
+                lines.append(line)
+        collections = []
+        for coll in self.ax.collections:
+            if coll.get_url() != owner.id:
+                collections.append(coll)
+        self.ax.lines = lines
+        self.ax.collections = collections
+        self.fig.canvas.draw()
+
+        # for tr in self.fig.data:
+        #     if tr.meta != owner.id:
+        #         data.append(tr)
+        # self.fig.data = data
+        # self.mbox = [self.fig] + self.vbox
+        self.mbox = self.vbox.copy()
         for k, b in self.keep_buttons.items():
             self.mbox.append(widgets.HBox(b))
         self.box.children = tuple(self.mbox)
         return
 
     def update_trace_color(self, change):
-        for tr in self.fig.data:
-            if tr.meta == change["owner"].id:
-                tr["marker"]["color"] = change["new"]
-                return
+        for line in self.ax.lines:
+            if line.get_url() == change["owner"].id:
+                line.set_color(change["new"])
+        for coll in self.ax.collections:
+            if coll.get_url() == change["owner"].id:
+                coll.set_color(change["new"])
+        self.fig.canvas.draw()
+        return
+
+    def generate_segments(self, x, y, e):
+        arr1 = np.array([x, x]).T.flatten()
+        arr2 = np.array([y-np.sqrt(e), y+np.sqrt(e)]).T.flatten()
+        return np.array([arr1, arr2]).T.flatten().reshape(len(x), 2, 2)
+

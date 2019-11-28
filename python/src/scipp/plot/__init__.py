@@ -7,6 +7,9 @@
 
 from .plot import plot
 
+from IPython import get_ipython
+get_ipython().run_line_magic('matplotlib', 'notebook')
+
 
 def superplot(dataset, **kwargs):
     return plot(dataset, projection="1d", **kwargs)
