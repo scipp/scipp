@@ -34,9 +34,6 @@ test_script:
 - '%APPVEYOR_BUILD_FOLDER%\build\core\test\%CONFIGURATION%\scipp-core-test.exe'
 - '%APPVEYOR_BUILD_FOLDER%\build\neutron\test\%CONFIGURATION%\scipp-neutron-test.exe'
 - '%APPVEYOR_BUILD_FOLDER%\build\units\test\%CONFIGURATION%\scipp-units-test.exe'
-- C:\Python36-x64\python.exe -m pip install -r ..\python\requirements.txt
-- set PYTHONPATH=%PYTHONPATH%;..\install
-- C:\Python36-x64\python.exe -m pytest ..\python
 
 after_test:
 - set PATH=%MINICONDA%;%MINICONDA%\\Scripts;%PATH%"
