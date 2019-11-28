@@ -12,14 +12,25 @@
 
 namespace scipp::core {
 
-// The structs needed for universal variable constructor are introduced below.
-// Tags are used to match the corresponding arguments treating the arbitrary
-// order of arguments in the constructor, and not mixing values and variances.
-// Structures Values and Variances just forwards the arguments for
-// constructing
-// internal variable structure - array storage.
+// The structs needed for keyword-like variable constructor are introduced
+// below. Tags are used to match the corresponding arguments treating the
+// arbitrary order of arguments in the constructor, and not mixing values and
+// variances. Structures Values and Variances just forwards the arguments for
+// constructing internal variable structure - array storage.
 
 namespace detail {
+
+template <class T> class has_begin_end {
+  static void detect(...);
+  template <class U>
+  static decltype(U().begin(), U().end(), bool{}) detect(const U &);
+
+public:
+  static constexpr bool value =
+      !std::is_same<void, decltype(detect(std::declval<T>()))>::value;
+};
+
+template <class T> constexpr bool has_begin_end_v = has_begin_end<T>::value;
 
 template <class U> struct vector_like {
   std::vector<U> data;
@@ -30,20 +41,14 @@ template <class U> struct vector_like {
   vector_like(std::initializer_list<T> init) : data(init.begin(), init.end()) {}
 
 private:
-  template <class T> struct is_span : std::false_type {};
-
-  template <class T> struct is_span<scipp::span<T>> : std::true_type {};
-
-  template <class T> constexpr static bool is_span_v = is_span<T>::value;
-
   // This is to override the std::vector(size_t num_elems, const Type& element)
   // insted of [elem, elem, ..., elem] we want [Type(num_elems), element]
-  // And also make the vector from span
+  // And also make the vector from all structs havind begin() and end()
   template <class... Args> static std::vector<U> make(Args &&... args) {
     if constexpr (sizeof...(Args) == 1) {
       using Tuple = std::tuple<Args...>;
       using T0 = std::tuple_element_t<0, Tuple>;
-      if constexpr (is_span_v<T0>)
+      if constexpr (has_begin_end_v<T0>)
         return std::vector<U>(std::forward<Args>(args).begin()...,
                               std::forward<Args>(args).end()...);
       else
