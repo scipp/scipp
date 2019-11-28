@@ -24,6 +24,14 @@ install:
 - git submodule update --init
 - mkdir build
 - cd build
+- set PATH=%MINICONDA%;%MINICONDA%\\Scripts;%PATH%"
+- conda config --set always_yes yes --set changeps1 no
+- echo Conda Install Started %time%
+- conda install -c conda-forge conda-build anaconda-client
+- echo Conda Updates Started %time%
+- conda update libarchive
+- echo Conda Build Started %time%
+- conda-build --user scipp --token %ANACONDA_TOKEN% --label dev ../conda
 
 build_script:
 - cmake -G "Visual Studio 16 2019" -A x64 -DPYTHON_EXECUTABLE="C:/Python36-x64/python.exe" -DCMAKE_INSTALL_PREFIX=../install ..
@@ -39,12 +47,4 @@ test_script:
 - cd ..\python
 - C:\Python36-x64\python.exe -m pytest
 
-after_test:
-- set PATH=%MINICONDA%;%MINICONDA%\\Scripts;%PATH%"
-- conda config --set always_yes yes --set changeps1 no
-- echo Conda Install Started %time%
-- conda install -c conda-forge conda-build anaconda-client
-- echo Conda Updates Started %time%
-- conda update libarchive
-- echo Conda Build Started %time%
-- conda-build --user scipp --token %ANACONDA_TOKEN% --label dev ../conda
+
