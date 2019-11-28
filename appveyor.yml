@@ -37,6 +37,8 @@ test_script:
 - '%APPVEYOR_BUILD_FOLDER%\build\units\test\%CONFIGURATION%\scipp-units-test.exe'
 
 after_test:
+- echo after_test working directory %cd%
+- cd %APPVEYOR_BUILD_FOLDER%
 - conda config --set always_yes yes --set changeps1 no
 - echo Conda Install Started %time%
 - conda install -c conda-forge conda-build anaconda-client
