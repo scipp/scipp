@@ -280,7 +280,7 @@ template <class Op, class Out, class Tuple>
 static void do_transform(Op op, Out &&out, Tuple &&processed) {
   auto out_val = out.values();
   std::apply(
-      [&](auto &&... args) {
+      [&op, &out, &out_val](auto &&... args) {
         if constexpr ((is_ValuesAndVariances_v<std::decay_t<decltype(args)>> ||
                        ...)) {
           auto out_var = out.variances();
@@ -500,7 +500,7 @@ template <bool dry_run> struct in_place {
   static void do_transform_in_place(Op op, Tuple &&processed) {
     using namespace detail;
     std::apply(
-        [&](auto &&arg, auto &&... args) {
+        [&op](auto &&arg, auto &&... args) {
           if constexpr (is_ValuesAndVariances_v<std::decay_t<decltype(arg)>> ||
                         !(is_ValuesAndVariances_v<
                               std::decay_t<decltype(args)>> ||

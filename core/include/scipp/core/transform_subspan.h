@@ -22,12 +22,12 @@ static constexpr auto need_subspan = [](const VariableConstProxy &var,
 
 static constexpr auto maybe_subspan = [](VariableConstProxy &var,
                                          const Dim dim) {
-  Variable ret;
+  auto ret = std::make_unique<Variable>();
   if (need_subspan(var, dim)) {
-    ret = subspan_view(var, dim);
-    var = ret;
+    *ret = subspan_view(var, dim);
+    var = *ret;
   }
-  return ret;
+  return std::move(ret);
 };
 } // namespace transform_subspan_detail
 
@@ -39,7 +39,6 @@ template <class Types, class Op, class... Var>
 
   auto dims = merge(erase(var.dims(), dim)...);
   dims.addInner(dim, size);
-
   // This will cause failure below unless the output type (first type in inner
   // tuple) is the same in all inner tuples.
   using OutT =
