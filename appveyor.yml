@@ -47,4 +47,4 @@ after_test:
 - echo Conda Updates Started %time%
 - conda update libarchive
 - echo Conda Build Started %time%
-- conda-build --user scipp --token "%ANACONDA_TOKEN%" --label dev ../conda
+- conda-build --user scipp --token %ANACONDA_TOKEN% --label dev ../conda
