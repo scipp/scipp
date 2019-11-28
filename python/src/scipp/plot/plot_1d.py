@@ -107,20 +107,26 @@ class Slicer1d(Slicer):
             self.ax.set_yscale("log")
 
         self.traces = dict(lines=dict(), error_x=dict(), error_y=dict(), error_xy=dict())
-        self.trace_types = dict()
+        # self.trace_types = dict()
+        self.names = []
         for i, (name, var) in enumerate(sorted(self.input_data)):
+            self.names.append(name)
             # trace = dict(name=name, type="scattergl")
             # if color is not None:
             #     trace["marker"] = {"color": color[i]}
             # self.traces[name] = dict(index=i)
             # line=self.ax.plot([0], [0], label=name))
+
+            # self.trace_types[name] = "lines"
+            [self.traces["lines"][name]] = self.ax.plot([1], [1], label=name, color=color[i], zorder=10)
+
             if var.variances is not None:
-                self.trace_types[name] = "error_y"
+                # self.trace_types[name] = "error_y"
                 self.traces["error_y"][name] = self.ax.errorbar([1], [1], yerr=[0],
-                                                color=color[i], zorder=10)
-            else:
-                self.trace_types[name] = "lines"
-                self.traces["lines"][name] = self.ax.plot([1], [1], label=name, color=color[i], zorder=10)
+                                                color=color[i], zorder=10, fmt="none")
+            # else:
+                # self.trace_types[name] = "lines"
+                # self.traces["lines"][name] = self.ax.plot([1], [1], label=name, color=color[i], zorder=10)
         self.lines = self.ax.lines.copy()
         self.collections = self.ax.collections.copy()
 
@@ -148,7 +154,7 @@ class Slicer1d(Slicer):
         return
 
     def make_keep_button(self):
-        drop = widgets.Dropdown(options=self.trace_types.keys(), description='',
+        drop = widgets.Dropdown(options=self.names, description='',
                                 layout={'width': 'initial'})
         but = widgets.Button(description="Keep", disabled=False,
                              button_style="", layout={'width': "70px"})
@@ -192,10 +198,10 @@ class Slicer1d(Slicer):
         # print(self.ax.lines)
         # newlist = self.ax.lines[:len(self.input_data)]
         # self.ax.lines = newlist
-        print(self.ax.lines)
-        print(self.lines)
-        print(self.ax.collections)
-        print(self.collections)
+        # print(self.ax.lines)
+        # print(self.lines)
+        # print(self.ax.collections)
+        # print(self.collections)
         self.ax.lines = self.lines.copy()
         self.ax.collections = self.collections.copy()
 
@@ -204,10 +210,13 @@ class Slicer1d(Slicer):
         for line in self.ax.lines:
             line.set_xdata(new_x)
 
-        for key, val in self.traces["error_y"].items():
-            # print(val)
-            # print(val[0], val[1], val[2])
-            val.get_children()[1].set_segments(self.generate_segments(new_x, np.ones_like(new_x), np.zeros_like(new_x)))
+        for coll in self.collections:
+            coll.set_segments(self.generate_segments(new_x, np.ones_like(new_x), np.zeros_like(new_x)))
+
+        # for key, val in self.traces["error_y"].items():
+        #     # print(val)
+        #     # print(val[0], val[1], val[2])
+        #     val.get_children()[1].set_segments(self.generate_segments(new_x, np.ones_like(new_x), np.zeros_like(new_x)))
 
 
         # # for i, line in enumerate(self.ax.lines):
@@ -251,16 +260,17 @@ class Slicer1d(Slicer):
                     vslice = vslice[val.dim, val.value]
             # # self.fig.data[i].y = vslice.values
             # self.ax.lines[i].set_ydata(vslice.values)
+            self.traces["lines"][name].set_ydata(vslice.values)
             if var.variances is not None:
-                self.traces["error_y"][name][0].set_ydata(vslice.values)
-                self.traces["error_y"][name].get_children()[1].set_segments(
+                # self.traces["error_y"][name][0].set_ydata(vslice.values)
+                self.traces["error_y"][name].get_children()[0].set_segments(
                     self.generate_segments(
-                        self.traces["error_y"][name][0].get_xdata(),
+                        self.traces["lines"][name].get_xdata(),
                         vslice.values,
                         np.sqrt(vslice.variances)))
-                # self.fig.data[i]["error_y"].array = np.sqrt(vslice.variances)
-            else:
-                self.traces["lines"][name][0].set_ydata(vslice.values)
+            #     # self.fig.data[i]["error_y"].array = np.sqrt(vslice.variances)
+            # else:
+            #     self.traces["lines"][name][0].set_ydata(vslice.values)
         return
 
     def update_histograms(self):
@@ -286,35 +296,37 @@ class Slicer1d(Slicer):
 
     def keep_trace(self, owner):
         lab = self.keep_buttons[owner.id][0].value
-        if self.trace_types[lab] == "lines":
-            # line = self.traces["lines"][name]
-            # self.ax.plot(line.get_xdata(), line.get_ydata(), color=self.keep_buttons[owner.id][2].value)
-            # # if var.variances is not None:
-            # #     self.trace_types[name] = "error_y"
-            # #     self.traces["error_y"][name] = self.ax.errorbar([1], [1], yerr=[0],
-            # #                                     color=color[i])
-            # # else:
-            # #     self.trace_types[name] = "lines"
-            # #     self.traces["lines"][name] = self.ax.plot([1], [1], label=name, color=color[i])
-            self.ax.lines.append(cp.copy(self.traces["lines"][lab]))
-            # self.ax.lines[-1].set_color(self.keep_buttons[owner.id][2].value)
-            # self.ax.lines[-1].set_url(owner.id)
+        # if self.trace_types[lab] == "lines":
+        #     # line = self.traces["lines"][name]
+        #     # self.ax.plot(line.get_xdata(), line.get_ydata(), color=self.keep_buttons[owner.id][2].value)
+        #     # # if var.variances is not None:
+        #     # #     self.trace_types[name] = "error_y"
+        #     # #     self.traces["error_y"][name] = self.ax.errorbar([1], [1], yerr=[0],
+        #     # #                                     color=color[i])
+        #     # # else:
+        #     # #     self.trace_types[name] = "lines"
+        #     # #     self.traces["lines"][name] = self.ax.plot([1], [1], label=name, color=color[i])
+        #     self.ax.lines.append(cp.copy(self.traces["lines"][lab]))
+        #     # self.ax.lines[-1].set_color(self.keep_buttons[owner.id][2].value)
+        #     # self.ax.lines[-1].set_url(owner.id)
 
-        elif self.trace_types[lab] == "error_y":
+        self.ax.lines.append(cp.copy(self.traces["lines"][lab]))
+        self.ax.lines[-1].set_color(self.keep_buttons[owner.id][2].value)
+        self.ax.lines[-1].set_url(owner.id)
+        self.ax.lines[-1].set_zorder(1)
+        if self.input_data[lab].variances is not None:
+        # if self.trace_types[lab] == "error_y":
             err = self.traces["error_y"][lab].get_children()
 
             # self.ax.plot(line.get_xdata(), line.get_ydata(), color=color[i], self.keep_buttons[owner.id][2].value)
 
-            self.ax.lines.append(cp.copy(err[0]))
-            self.ax.collections.append(cp.copy(err[1]))
+            # self.ax.lines.append(cp.copy(err[0]))
+            self.ax.collections.append(cp.copy(err[0]))
             self.ax.collections[-1].set_color(self.keep_buttons[owner.id][2].value)
             self.ax.collections[-1].set_url(owner.id)
             self.ax.collections[-1].set_zorder(1)
 
 
-        self.ax.lines[-1].set_color(self.keep_buttons[owner.id][2].value)
-        self.ax.lines[-1].set_url(owner.id)
-        self.ax.lines[-1].set_zorder(1)
 
 
 
