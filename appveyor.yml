@@ -42,7 +42,6 @@ after_test:
 - cd %APPVEYOR_BUILD_FOLDER%
 - echo after_test working directory %cd%
 - git submodule update --init
-- mkdir build
 - cd build
 - set PATH=%MINICONDA%;%MINICONDA%\\Scripts;%PATH%"
 - conda config --set always_yes yes --set changeps1 no
