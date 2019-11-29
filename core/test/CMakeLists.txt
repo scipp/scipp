@@ -49,7 +49,10 @@ target_link_libraries(${TARGET_NAME}
                       scipp_test_helpers
                       ${GTEST_LIBRARIES}
                       ${GMOCK_LIBRARIES})
-target_compile_options(${TARGET_NAME} PRIVATE "/bigobj")
+
+if(WIN32)
+  target_compile_options(${TARGET_NAME} PRIVATE "/bigobj")
+endif()
 
 set_property(TARGET ${TARGET_NAME} PROPERTY INTERPROCEDURAL_OPTIMIZATION ${INTERPROCEDURAL_OPTIMIZATION_TESTS})
 add_sanitizers(${TARGET_NAME})

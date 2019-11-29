@@ -53,11 +53,9 @@ public:
       class Iter,
       std::enable_if_t<
           std::is_assignable<T &, decltype(*std::declval<Iter>())>{}, int> = 0>
-  element_array(Iter first, Iter last, scipp::index size = -1) {
-    if (size > -1) {
-      resize(std::distance(first, last), default_init_elements);
-      std::copy(first, last, data());
-    }
+  element_array(Iter first, Iter last) {
+    resize(std::distance(first, last), default_init_elements);
+    std::copy(first, last, data());
   }
 
   template <class U, template <class> class Container,
@@ -79,7 +77,7 @@ public:
   }
 
   element_array(const element_array &other)
-      : element_array(other.begin(), other.end(), other.size()) {}
+      : element_array(from_other(other)) {}
 
   element_array &operator=(element_array &&other) noexcept {
     m_data = std::move(other.m_data);
@@ -133,6 +131,15 @@ public:
   }
 
 private:
+  element_array from_other(const element_array &other) {
+    if (other.size() == -1) {
+      return element_array();
+    } else if (other.size() == 0) {
+      return element_array(0);
+    } else {
+      return element_array(other.begin(), other.end());
+    }
+  }
   scipp::index m_size{-1};
   std::unique_ptr<T[]> m_data;
 };
