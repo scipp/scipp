@@ -6,7 +6,7 @@
 from ..config import plot as config
 from .render import render_plot
 from .slicer import Slicer
-from .tools import axis_label
+from .tools import axis_label, edges_to_centers
 
 # Other imports
 import numpy as np
@@ -107,36 +107,37 @@ class Slicer1d(Slicer):
             self.ax.set_yscale("log")
 
         self.traces = dict(lines=dict(), error_x=dict(), error_y=dict(), error_xy=dict())
-        # self.trace_types = dict()
+        self.color = color
+        # # self.trace_types = dict()
         self.names = []
         for i, (name, var) in enumerate(sorted(self.input_data)):
             self.names.append(name)
-            # trace = dict(name=name, type="scattergl")
-            # if color is not None:
-            #     trace["marker"] = {"color": color[i]}
-            # self.traces[name] = dict(index=i)
-            # line=self.ax.plot([0], [0], label=name))
+        #     # trace = dict(name=name, type="scattergl")
+        #     # if color is not None:
+        #     #     trace["marker"] = {"color": color[i]}
+        #     # self.traces[name] = dict(index=i)
+        #     # line=self.ax.plot([0], [0], label=name))
 
-            # self.trace_types[name] = "lines"
-            [self.traces["lines"][name]] = self.ax.plot([1], [1], label=name, color=color[i], zorder=10)
+        #     # self.trace_types[name] = "lines"
+        #     [self.traces["lines"][name]] = self.ax.plot([1], [1], label=name, color=color[i], zorder=10)
 
-            if var.variances is not None:
-                # self.trace_types[name] = "error_y"
-                self.traces["error_y"][name] = self.ax.errorbar([1], [1], yerr=[0],
-                                                color=color[i], zorder=10, fmt="none")
-            # else:
-                # self.trace_types[name] = "lines"
-                # self.traces["lines"][name] = self.ax.plot([1], [1], label=name, color=color[i], zorder=10)
-        self.lines = self.ax.lines.copy()
-        self.collections = self.ax.collections.copy()
+        #     if var.variances is not None:
+        #         # self.trace_types[name] = "error_y"
+        #         self.traces["error_y"][name] = self.ax.errorbar([1], [1], yerr=[0],
+        #                                         color=color[i], zorder=10, fmt="none")
+        #     # else:
+        #         # self.trace_types[name] = "lines"
+        #         # self.traces["lines"][name] = self.ax.plot([1], [1], label=name, color=color[i], zorder=10)
+        # self.lines = self.ax.lines.copy()
+        # self.collections = self.ax.collections.copy()
 
         # Disable buttons
         for key, button in self.buttons.items():
             if self.slider[key].disabled:
                 button.disabled = True
-        self.update_axes(str(self.slider_dims[-1]))
-        self.update_slice(None)
-        self.update_histograms()
+        self.update_axes(str(axes[-1]))
+        # self.update_slice(None)
+        # self.update_histograms()
 
         self.keep_buttons = dict()
         if self.ndim > 1:
@@ -177,13 +178,14 @@ class Slicer1d(Slicer):
             if key == owner.dim_str:
                 self.slider[key].disabled = True
                 button.disabled = True
+                self.button_axis_to_dim["x"] = key
             else:
                 self.slider[key].disabled = False
                 button.value = None
                 button.disabled = False
         self.update_axes(owner.dim_str)
-        self.update_slice(None)
-        self.update_histograms()
+        # self.update_slice(None)
+        # self.update_histograms()
 
         self.keep_buttons = dict()
         self.make_keep_button()
@@ -195,45 +197,77 @@ class Slicer1d(Slicer):
         return
 
     def update_axes(self, dim_str):
-        # print(self.ax.lines)
-        # newlist = self.ax.lines[:len(self.input_data)]
-        # self.ax.lines = newlist
-        # print(self.ax.lines)
-        # print(self.lines)
-        # print(self.ax.collections)
-        # print(self.collections)
-        self.ax.lines = self.lines.copy()
-        self.ax.collections = self.collections.copy()
+        # # print(self.ax.lines)
+        # # newlist = self.ax.lines[:len(self.input_data)]
+        # # self.ax.lines = newlist
+        # # print(self.ax.lines)
+        # # print(self.lines)
+        # # print(self.ax.collections)
+        # # print(self.collections)
+        self.ax.lines = []
+        self.ax.collections = []
+        self.traces = dict(lines=dict(), error_x=dict(), error_y=dict(), error_xy=dict())
 
         new_x = self.slider_x[dim_str].values
+        xc = edges_to_centers(new_x)
 
-        for line in self.ax.lines:
-            line.set_xdata(new_x)
+        for i, (name, var) in enumerate(sorted(self.input_data)):
+            vslice = self.slice_data(var)
+            if self.histograms[name][dim_str]:
+                [self.traces["lines"][name]] = self.ax.step(
+                    new_x, np.concatenate(([0], vslice.values)), label=name,
+                    color=self.color[i], zorder=10)
+            else:
+                [self.traces["lines"][name]] = self.ax.plot(
+                    new_x, vslice.values, label=name, color=self.color[i],
+                    zorder=10)
+            if var.variances is not None:
+                if self.histograms[name][dim_str]:
+                    self.traces["error_y"][name] = self.ax.errorbar(xc, vslice.values, yerr=np.sqrt(vslice.variances),
+                                                color=self.color[i], zorder=10, fmt="none")
+                else:
+                    self.traces["error_y"][name] = self.ax.errorbar(new_x, vslice.values, yerr=np.sqrt(vslice.variances),
+                                                color=self.color[i], zorder=10, fmt="none")
 
-        for coll in self.collections:
-            coll.set_segments(self.generate_segments(new_x, np.ones_like(new_x), np.zeros_like(new_x)))
-
-        # for key, val in self.traces["error_y"].items():
-        #     # print(val)
-        #     # print(val[0], val[1], val[2])
-        #     val.get_children()[1].set_segments(self.generate_segments(new_x, np.ones_like(new_x), np.zeros_like(new_x)))
 
 
-        # # for i, line in enumerate(self.ax.lines):
-        # #     if i >= len(self.input_data):
-        # #         self.ax.lines.remove(
-        # # self.fig.data = self.fig.data[:len(self.input_data)]
-        # for i, (name, var) in enumerate(sorted(self.input_data)):
-        #     # trace = dict(name=name, type="scattergl")
-        #     # if color is not None:
-        #     #     trace["marker"] = {"color": color[i]}
-        #     self.traces[name] = dict(index=i)
-        #     # line=self.ax.plot([0], [0], label=name))
+
+        #     self.traces["lines"][name].set_xdata(new_x)
         #     if var.variances is not None:
-        #         self.traces[name]["errorbar"] = self.ax.errorbar([0], [0], yerr=[0],
-        #                                         color=color[i])
-        #     else:
-        #         self.traces[name]["line"] = self.ax.plot([0], [0], label=name, color=color[i])
+        #         if self.histograms[name][dim_str]:
+        #             segs = self.generate_new_segments(xc, np.ones_like(xc))
+        #         else:
+        #             segs = self.generate_new_segments(new_x, np.ones_like(new_x))
+        #         self.traces["error_y"][name].get_children()[0].set_segments(segs)
+
+
+        # # for line in self.ax.lines:
+        # #     line.set_xdata(new_x)
+
+        # # for coll in self.collections:
+        # #     coll.set_segments(self.generate_segments(new_x, np.ones_like(new_x), np.zeros_like(new_x)))
+
+        # # # for key, val in self.traces["error_y"].items():
+        # # #     # print(val)
+        # # #     # print(val[0], val[1], val[2])
+        # # #     val.get_children()[1].set_segments(self.generate_segments(new_x, np.ones_like(new_x), np.zeros_like(new_x)))
+
+
+        # # # # for i, line in enumerate(self.ax.lines):
+        # # # #     if i >= len(self.input_data):
+        # # # #         self.ax.lines.remove(
+        # # # # self.fig.data = self.fig.data[:len(self.input_data)]
+        # # # for i, (name, var) in enumerate(sorted(self.input_data)):
+        # # #     # trace = dict(name=name, type="scattergl")
+        # # #     # if color is not None:
+        # # #     #     trace["marker"] = {"color": color[i]}
+        # # #     self.traces[name] = dict(index=i)
+        # # #     # line=self.ax.plot([0], [0], label=name))
+        # # #     if var.variances is not None:
+        # # #         self.traces[name]["errorbar"] = self.ax.errorbar([0], [0], yerr=[0],
+        # # #                                         color=color[i])
+        # # #     else:
+        # # #         self.traces[name]["line"] = self.ax.plot([0], [0], label=name, color=color[i])
 
         # for line in self.ax.lines:
         #     line.set_xdata(self.slider_x[dim_str].values)
@@ -246,26 +280,53 @@ class Slicer1d(Slicer):
         #     self.slider_x[dim_str], name=self.slider_labels[dim_str])
         return
 
+    def slice_data(self, var):
+        vslice = var
+        # Slice along dimensions with active sliders
+        for key, val in self.slider.items():
+            if not val.disabled:
+                vslice = vslice[val.dim, val.value]
+        return vslice
+        # vals = vslice.values
+        # if self.histograms[name][key]:
+        #     vals = np.concatenate(([0], vals))
+
+        # self.traces["lines"][name].set_ydata(vals)
+        # if var.variances is not None:
+        #     # self.traces["error_y"][name][0].set_ydata(vslice.values)
+        #     coll = self.traces["error_y"][name].get_children()[0]
+        #     coll.set_segments(
+        #         self.change_segments_y(
+        #             coll.get_segments(),
+        #             vslice.values,
+        #             np.sqrt(vslice.variances)))
+
     # Define function to update slices
     def update_slice(self, change):
         # The dimensions to be sliced have been saved in slider_dims
+        # print(change)
+        # print(self.button_axis_to_dim)
         for i, (name, var) in enumerate(sorted(self.input_data)):
-            vslice = var
-            # Slice along dimensions with active sliders
-            for key, val in self.slider.items():
-                if not val.disabled:
-                    if i == 0:
-                        self.lab[key].value = self.make_slider_label(
-                            self.slider_x[key], val.value)
-                    vslice = vslice[val.dim, val.value]
-            # # self.fig.data[i].y = vslice.values
-            # self.ax.lines[i].set_ydata(vslice.values)
-            self.traces["lines"][name].set_ydata(vslice.values)
+            vslice = self.slice_data(var)
+            # # Slice along dimensions with active sliders
+            # for key, val in self.slider.items():
+            #     if not val.disabled:
+            #         if i == 0:
+            #             self.lab[key].value = self.make_slider_label(
+            #                 self.slider_x[key], val.value)
+            #         vslice = vslice[val.dim, val.value]
+            # # # self.fig.data[i].y = vslice.values
+            # # self.ax.lines[i].set_ydata(vslice.values)
+            vals = vslice.values
+            if self.histograms[name][self.button_axis_to_dim["x"]]:
+                vals = np.concatenate(([0], vals))
+            self.traces["lines"][name].set_ydata(vals)
             if var.variances is not None:
                 # self.traces["error_y"][name][0].set_ydata(vslice.values)
-                self.traces["error_y"][name].get_children()[0].set_segments(
-                    self.generate_segments(
-                        self.traces["lines"][name].get_xdata(),
+                coll = self.traces["error_y"][name].get_children()[0]
+                coll.set_segments(
+                    self.change_segments_y(
+                        coll.get_segments(),
                         vslice.values,
                         np.sqrt(vslice.variances)))
             #     # self.fig.data[i]["error_y"].array = np.sqrt(vslice.variances)
@@ -385,8 +446,14 @@ class Slicer1d(Slicer):
         self.fig.canvas.draw()
         return
 
-    def generate_segments(self, x, y, e):
+    def generate_new_segments(self, x, y):
         arr1 = np.array([x, x]).T.flatten()
-        arr2 = np.array([y-np.sqrt(e), y+np.sqrt(e)]).T.flatten()
+        arr2 = np.array([y, y]).T.flatten()
         return np.array([arr1, arr2]).T.flatten().reshape(len(x), 2, 2)
+
+
+    def change_segments_y(self, s, y, e):
+        arr1 = np.array(s).flatten()[::2]
+        arr2 = np.array([y-np.sqrt(e), y+np.sqrt(e)]).T.flatten()
+        return np.array([arr1, arr2]).T.flatten().reshape(len(y), 2, 2)
 

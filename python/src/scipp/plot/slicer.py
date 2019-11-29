@@ -29,7 +29,7 @@ class Slicer:
         # Size of the slider coordinate arrays
         self.slider_nx = dict()
         # Save dimensions tags for sliders, e.g. Dim.X
-        self.slider_dims = []
+        self.slider_dims = dict()
         # Store coordinates of dimensions that will be in sliders
         self.slider_x = dict()
         # Store labels for sliders if any
@@ -43,12 +43,24 @@ class Slicer:
             if (lab is not None) and (dim in axes):
                 raise RuntimeError("The dimension of the labels cannot also "
                                    "be specified as another axis.")
-            self.slider_dims.append(dim)
             key = str(dim)
+            self.slider_dims[key] = dim
             self.slider_labels[key] = lab
             self.slider_x[key] = var
+            print(key, self.slider_x[key])
             self.slider_nx[key] = self.shapes[dim]
         self.ndim = len(self.slider_dims)
+
+        # Save information on histograms
+        self.histograms = dict()
+        for name, var in self.input_data:
+            self.histograms[name] = dict()
+            for key, x in self.slider_x.items():
+                # print(name, key, nx, self.slider_x[key].shape, var.shape)
+                indx = var.dims.index(self.slider_dims[key])
+                self.histograms[name][key] = var.shape[indx] == x.shape[0] - 1
+                # print(var.shape[self.slider_dims[key]],x.shape[0])
+        print(self.histograms)
 
         # Initialise list for VBox container
         self.vbox = []
@@ -65,8 +77,8 @@ class Slicer:
         # Now begin loop to construct sliders
         button_values = [None] * (self.ndim - len(button_options)) + \
             button_options[::-1]
-        for i, dim in enumerate(self.slider_dims):
-            key = str(dim)
+        for i, (key, dim) in enumerate(self.slider_dims.items()):
+            # key = str(dim)
             # If this is a 3d projection, place slices half-way
             if len(button_options) == 3 and (not volume):
                 indx = (self.slider_nx[key] - 1) // 2
