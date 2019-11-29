@@ -47,20 +47,32 @@ class Slicer:
             self.slider_dims[key] = dim
             self.slider_labels[key] = lab
             self.slider_x[key] = var
-            print(key, self.slider_x[key])
             self.slider_nx[key] = self.shapes[dim]
         self.ndim = len(self.slider_dims)
 
         # Save information on histograms
         self.histograms = dict()
-        for name, var in self.input_data:
-            self.histograms[name] = dict()
+        if hasattr(self.input_data, "name"):
+            # name = self.input_data.name
+            # self.histograms[name] = dict()
             for key, x in self.slider_x.items():
-                # print(name, key, nx, self.slider_x[key].shape, var.shape)
-                indx = var.dims.index(self.slider_dims[key])
-                self.histograms[name][key] = var.shape[indx] == x.shape[0] - 1
-                # print(var.shape[self.slider_dims[key]],x.shape[0])
-        print(self.histograms)
+                indx = self.input_data.dims.index(self.slider_dims[key])
+                # print(indx)
+                # print(self.input_data.dims)
+                # print(self.slider_dims[key])
+                # print(var.shape)
+                # print(x.shape)
+                # print(var)
+                # print(x)
+                self.histograms[key] = self.input_data.shape[indx] == x.shape[0] - 1
+        else:
+            for name, var in self.input_data:
+                self.histograms[name] = dict()
+                for key, x in self.slider_x.items():
+                    # print(name, key, nx, self.slider_x[key].shape, var.shape)
+                    indx = var.dims.index(self.slider_dims[key])
+                    self.histograms[name][key] = var.shape[indx] == x.shape[0] - 1
+                    # print(var.shape[self.slider_dims[key]],x.shape[0])
 
         # Initialise list for VBox container
         self.vbox = []

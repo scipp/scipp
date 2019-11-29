@@ -31,58 +31,58 @@ def plot_1d(input_data, backend=None, logx=False, logy=False, logxy=False,
     probably via a dictionay of arguments
     """
 
-    ymin = 1.0e30
-    ymax = -1.0e30
+    # ymin = 1.0e30
+    # ymax = -1.0e30
 
-    data = []
-    for i, (name, var) in enumerate(sorted(input_data)):
+    # data = []
+    # for i, (name, var) in enumerate(sorted(input_data)):
 
-        ax = var.dims
-        if var.variances is not None:
-            err = np.sqrt(var.variances)
-        else:
-            err = 0.0
+    #     ax = var.dims
+    #     if var.variances is not None:
+    #         err = np.sqrt(var.variances)
+    #     else:
+    #         err = 0.0
 
-        ymin = min(ymin, np.nanmin(var.values - err))
-        ymax = max(ymax, np.nanmax(var.values + err))
+    #     ymin = min(ymin, np.nanmin(var.values - err))
+    #     ymax = max(ymax, np.nanmax(var.values + err))
+    #     ylab = axis_label(var=var, name="")
 
-        # # Define trace
-        # trace = dict(name=name, type="scattergl")
-        # if color is not None:
-        #     trace["marker"] = {"color": color[i]}
-        # data.append(trace)
+    #     # # Define trace
+    #     # trace = dict(name=name, type="scattergl")
+    #     # if color is not None:
+    #     #     trace["marker"] = {"color": color[i]}
+    #     # data.append(trace)
 
     if axes is None:
-        axes = ax
+        axes = input_data.dims
 
     layout = dict(logx=logx or logxy, logy=logy or logxy)
 
-    # layout = dict(
-    #     xaxis=dict(),
-    #     yaxis=dict(),
-    #     showlegend=True,
-    #     legend=dict(x=0.0, y=1.15, orientation="h"),
-    #     height=config.height,
-    #     width=config.width
-    # )
-    # if logx or logxy:
-    #     layout["xaxis"]["type"] = "log"
-    if logy or logxy:
-        # layout["yaxis"]["type"] = "log"
-        [ymin, ymax] = np.log10([ymin, ymax])
-    dy = 0.05*(ymax - ymin)
-    layout["yrange"] = [ymin-dy, ymax+dy]
-    if logy or logxy:
-        layout["yrange"] = 10.0**np.array(layout["yrange"])
+    # # layout = dict(
+    # #     xaxis=dict(),
+    # #     yaxis=dict(),
+    # #     showlegend=True,
+    # #     legend=dict(x=0.0, y=1.15, orientation="h"),
+    # #     height=config.height,
+    # #     width=config.width
+    # # )
+    # # if logx or logxy:
+    # #     layout["xaxis"]["type"] = "log"
+    # if logy or logxy:
+    #     # layout["yaxis"]["type"] = "log"
+    #     [ymin, ymax] = np.log10([ymin, ymax])
+    # dy = 0.05*(ymax - ymin)
+    # layout["yrange"] = [ymin-dy, ymax+dy]
+    # if logy or logxy:
+    #     layout["yrange"] = 10.0**np.array(layout["yrange"])
 
-    #     layout["yrange"] = [10.0**(ymin-dy), 10.0**(ymax+dy)]
-    # else:
-    #     dy = 0.05*(ymax - ymin)
-    #     layout["yrange"] = [ymin-dy, ymax+dy]
+    # #     layout["yrange"] = [10.0**(ymin-dy), 10.0**(ymax+dy)]
+    # # else:
+    # #     dy = 0.05*(ymax - ymin)
+    # #     layout["yrange"] = [ymin-dy, ymax+dy]
 
 
-    sv = Slicer1d(data=data, layout=layout, input_data=input_data, axes=axes,
-                  color=color)
+    sv = Slicer1d(input_data=input_data, layout=layout, axes=axes, color=color)
     disp.display(sv.box)
 
     # render_plot(static_fig=sv.fig, interactive_fig=sv.box, backend=backend,
@@ -93,25 +93,31 @@ def plot_1d(input_data, backend=None, logx=False, logy=False, logxy=False,
 
 class Slicer1d(Slicer):
 
-    def __init__(self, data, layout, input_data, axes, color):
+    def __init__(self, input_data, layout, axes, color):
 
         super().__init__(input_data=input_data, axes=axes,
                          button_options=['X'])
 
         self.color = color
         self.fig, self.ax = plt.subplots(1, 1)
-        self.ax.set_ylim(layout["yrange"])
-        if layout["logx"]:
-            self.ax.set_xscale("log")
-        if layout["logy"]:
-            self.ax.set_yscale("log")
+        
 
         self.traces = dict(lines=dict(), error_x=dict(), error_y=dict(), error_xy=dict())
         self.color = color
         # # self.trace_types = dict()
         self.names = []
+        ymin = 1.0e30
+        ymax = -1.0e30
         for i, (name, var) in enumerate(sorted(self.input_data)):
             self.names.append(name)
+            if var.variances is not None:
+                err = np.sqrt(var.variances)
+            else:
+                err = 0.0
+
+            ymin = min(ymin, np.nanmin(var.values - err))
+            ymax = max(ymax, np.nanmax(var.values + err))
+            ylab = axis_label(var=var, name="")
         #     # trace = dict(name=name, type="scattergl")
         #     # if color is not None:
         #     #     trace["marker"] = {"color": color[i]}
@@ -131,13 +137,29 @@ class Slicer1d(Slicer):
         # self.lines = self.ax.lines.copy()
         # self.collections = self.ax.collections.copy()
 
+        if layout["logy"]:
+            [ymin, ymax] = np.log10([ymin, ymax])
+        dy = 0.05*(ymax - ymin)
+        layout["yrange"] = [ymin-dy, ymax+dy]
+        if layout["logy"]:
+            layout["yrange"] = 10.0**np.array(layout["yrange"])
+        self.ax.set_ylim(layout["yrange"])
+        if layout["logx"]:
+            self.ax.set_xscale("log")
+        if layout["logy"]:
+            self.ax.set_yscale("log")
+        # self.ax.set_ylabel(ylab)
+        # self.ax.legend()
+
         # Disable buttons
         for key, button in self.buttons.items():
             if self.slider[key].disabled:
                 button.disabled = True
-        self.update_axes(str(axes[-1]))
+        self.update_axes(str(list(self.slider_dims.keys())[-1]))
         # self.update_slice(None)
         # self.update_histograms()
+        self.ax.set_ylabel(ylab)
+        self.ax.legend()
 
         self.keep_buttons = dict()
         if self.ndim > 1:
@@ -451,8 +473,9 @@ class Slicer1d(Slicer):
         arr2 = np.array([y, y]).T.flatten()
         return np.array([arr1, arr2]).T.flatten().reshape(len(x), 2, 2)
 
-
     def change_segments_y(self, s, y, e):
+        # TODO: this can be optimized to substitute the y values in-place in
+        # the original segments array
         arr1 = np.array(s).flatten()[::2]
         arr2 = np.array([y-np.sqrt(e), y+np.sqrt(e)]).T.flatten()
         return np.array([arr1, arr2]).T.flatten().reshape(len(y), 2, 2)

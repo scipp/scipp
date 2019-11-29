@@ -61,9 +61,9 @@ def parse_colorbar(cb, plotly=False):
     if cb is not None:
         for key, val in cb.items():
             cbar[key] = val
-    # In plotly, colorbar names start with an uppercase letter
-    if plotly:
-        cbar["name"] = cbar["name"].capitalize()
+    # # In plotly, colorbar names start with an uppercase letter
+    # if plotly:
+    #     cbar["name"] = cbar["name"].capitalize()
     return cbar
 
 

@@ -176,7 +176,7 @@ class Slicer2d(Slicer):
                 val["vmax"] = vmax
                 self.im.append(self.ax[i].imshow([[0, 1],[0, 1]], vmin=vmin, vmax=vmax,
                                extent=np.array(list(self.extent.values())).flatten(),
-                               origin="lower", interpolation="none"))
+                               origin="lower", interpolation="none", cmap=self.cb["name"]))
                 self.cbar.append(plt.colorbar(self.im[i], ax=self.ax[i]))
 
         # if self.surface3d:
@@ -230,7 +230,13 @@ class Slicer2d(Slicer):
             if self.slider[key].disabled:
                 but_val = button.value.lower()
                 # extent = self.slider_x[key].values[[0, -1]]
-                self.extent[but_val] = self.slider_x[key].values[[0, -1]]
+                if not self.histograms[key]:
+                    xc = self.slider_x[key].values
+                    xmin = 1.5 * xc[0] - 0.5 * xc[1]
+                    xmax = 1.5 * xc[-1] - 0.5 * xc[-2]
+                    self.extent[but_val] = [xmin, xmax]
+                else:
+                    self.extent[but_val] = self.slider_x[key].values[[0, -1]]
 
                 for i in range(1 + self.show_variances):
                     # if self.rasterize:
