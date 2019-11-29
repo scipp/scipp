@@ -15,6 +15,11 @@ TEST(CreateVariableTest, construct_sparse) {
 
   auto dims = Dimensions();
   createVariable<int64_t>(Dims(dims.labels()), Shape(dims.shape()));
+  auto dimensions = Dimensions{{Dim::X, Dim::Y}, {2, Dimensions::Sparse}};
+  createVariable<double>(
+      Dimensions{dimensions},
+      Values{sparse_container<double>(), sparse_container<double>()},
+      Variances{sparse_container<double>(), sparse_container<double>()});
 }
 
 TEST(VariableUniversalConstructorTest, dimensions_unit_basic) {
