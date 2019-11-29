@@ -475,40 +475,42 @@ private:
 // The name should be changed to makeVariable after refactoring:
 // getting rid of all other makeVariable.
 
-
 template <class T, class... Ts> Variable createVariable(Ts &&... ts) {
   using helper = detail::ConstructorArgumentsMatcher<Variable, Ts...>;
-  constexpr bool useDimsAndShape = helper::template checkArgTypesValid<units::Unit, Dims, Shape>();
-  constexpr bool useDimensions = helper::template checkArgTypesValid<units::Unit, Dimensions>();
+  constexpr bool useDimsAndShape =
+      helper::template checkArgTypesValid<units::Unit, Dims, Shape>();
+  constexpr bool useDimensions =
+      helper::template checkArgTypesValid<units::Unit, Dimensions>();
 
-  static_assert(useDimsAndShape || useDimensions,
+  static_assert(
+      useDimsAndShape || useDimensions,
       "Arguments: units::Unit, Shape, Dims, Values and Variances could only "
       "be used. Example: Variable(dtype<float>, units::Unit(units::kg), "
       "Shape{1, 2}, Dims{Dim::X, Dim::Y}, Values({3, 4}))");
 
   if constexpr (useDimsAndShape) {
     auto [valArgs, varArgs, nonData] =
-    helper::template extractArguments<units::Unit, Dims, Shape>(
-        std::forward<Ts>(ts)...);
+        helper::template extractArguments<units::Unit, Dims, Shape>(
+            std::forward<Ts>(ts)...);
     const auto &shape = std::get<Shape>(nonData);
     const auto &d = shape.data;
     if (std::find(d.cbegin(), d.cend(), Dimensions::Sparse) != d.end())
       return helper::template construct<sparse_container<T>>(
           std::move(valArgs), std::move(varArgs), std::move(nonData));
     else
-      return helper::template construct<T>(std::move(valArgs), std::move(varArgs),
-                                           std::move(nonData));
+      return helper::template construct<T>(
+          std::move(valArgs), std::move(varArgs), std::move(nonData));
   } else {
     auto [valArgs, varArgs, nonData] =
-    helper::template extractArguments<units::Unit, Dimensions>(
-        std::forward<Ts>(ts)...);
+        helper::template extractArguments<units::Unit, Dimensions>(
+            std::forward<Ts>(ts)...);
     const auto &dimensions = std::get<Dimensions>(nonData);
     if (dimensions.sparse())
       return helper::template construct<sparse_container<T>>(
           std::move(valArgs), std::move(varArgs), std::move(nonData));
     else
-      return helper::template construct<T>(std::move(valArgs), std::move(varArgs),
-                                           std::move(nonData));
+      return helper::template construct<T>(
+          std::move(valArgs), std::move(varArgs), std::move(nonData));
   }
 }
 
