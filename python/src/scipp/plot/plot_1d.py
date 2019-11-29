@@ -115,8 +115,12 @@ class Slicer1d(Slicer):
             else:
                 err = 0.0
 
-            ymin = min(ymin, np.nanmin(var.values - err))
-            ymax = max(ymax, np.nanmax(var.values + err))
+            if layout["logy"]:
+                ymin = min(ymin, np.nanmin(np.log10(var.values - err)))
+                ymax = max(ymax, np.nanmax(np.log10(var.values + err)))
+            else:
+                ymin = min(ymin, np.nanmin(var.values - err))
+                ymax = max(ymax, np.nanmax(var.values + err))
             ylab = axis_label(var=var, name="")
         #     # trace = dict(name=name, type="scattergl")
         #     # if color is not None:
@@ -137,8 +141,8 @@ class Slicer1d(Slicer):
         # self.lines = self.ax.lines.copy()
         # self.collections = self.ax.collections.copy()
 
-        if layout["logy"]:
-            [ymin, ymax] = np.log10([ymin, ymax])
+        # if layout["logy"]:
+        #     [ymin, ymax] = np.log10([ymin, ymax])
         dy = 0.05*(ymax - ymin)
         layout["yrange"] = [ymin-dy, ymax+dy]
         if layout["logy"]:

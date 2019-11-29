@@ -22,10 +22,10 @@ class _Plot:
                    "min_var": None, "max_var": None}
 
         # The default image height (in pixels)
-        self.height = 600
+        self.height = 6
 
         # The default image width (in pixels)
-        self.width = 950
+        self.width = 9
 
         # The size threshold above which an image is automatically rasterized
         self.rasterize_threshold = 100000

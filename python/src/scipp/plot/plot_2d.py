@@ -16,7 +16,7 @@ import ipywidgets as widgets
 # from plotly.subplots import make_subplots
 # from PIL import Image, ImageOps
 from matplotlib import cm
-from matplotlib.colors import Normalize
+from matplotlib.colors import Normalize, LogNorm
 import matplotlib.pyplot as plt
 
 
@@ -107,8 +107,8 @@ class Slicer2d(Slicer):
         self.rasterize = rasterize
 
         # Initialise Figure and VBox objects
-        self.fig = None
-        self.params = {"values": {"name": value_name, "cbmin": "min", "cbmax": "max"},
+        # self.fig = None
+        self.params = {"values": {"name": self.input_data.name, "cbmin": "min", "cbmax": "max"},
                   "variances": None}
         if self.show_variances:
             self.params["variances"] = {"name": "variances", "cbmin": "min_var", "cbmax": "max_var"}
@@ -136,7 +136,8 @@ class Slicer2d(Slicer):
         # else:
         #     self.fig = go.FigureWidget(data=[data], layout=layout)
 
-        self.fig, self.ax = plt.subplots(1, 1 + self.show_variances)#, sharex=True, sharey=True)
+        self.fig, self.ax = plt.subplots(1, 1 + self.show_variances,
+            figsize=(config.width, config.height/(1.0+self.show_variances)))#, sharex=True, sharey=True)
         if not self.show_variances:
             self.ax = [self.ax]
         self.im = []
@@ -174,12 +175,20 @@ class Slicer2d(Slicer):
                 # self.fig.data[i][attr_names[1]] = vmax
                 val["vmin"] = vmin
                 val["vmax"] = vmax
-                self.im.append(self.ax[i].imshow([[0, 1],[0, 1]], vmin=vmin, vmax=vmax,
+                v = arr[np.where(np.isfinite(arr))]
+                vmin = np.amin(v)
+                vmax = np.amax(v)
+                if self.cb["log"]:
+                    norm = LogNorm(vmin=self.cb[val["cbmin"]], vmax=self.cb[val["cbmax"]])
+                else:
+                    norm = Normalize(vmin=self.cb[val["cbmin"]], vmax=self.cb[val["cbmin"]])
+                self.im.append(self.ax[i].imshow([[vmin, vmax],[vmin, vmax]], norm=norm,
                                extent=np.array(list(self.extent.values())).flatten(),
                                origin="lower", interpolation="none", cmap=self.cb["name"]))
                 self.cbar.append(plt.colorbar(self.im[i], ax=self.ax[i]))
                 self.ax[i].set_title(val["name"])
-                # self.cbar[-1].ax.yaxis.set_label_coords(-1.1, 0.5)
+                self.cbar[-1].ax.set_ylabel(axis_label(var=self.input_data, name=""))
+                self.cbar[-1].ax.yaxis.set_label_coords(-1.1, 0.5)
 
         # if self.surface3d:
         #     self.fig.layout.scene1.zaxis.title = self.value_name
@@ -309,29 +318,29 @@ class Slicer2d(Slicer):
         # Check if dimensions of arrays agree, if not, plot the transpose
         slice_dims = vslice.dims
         transp = slice_dims == button_dims
-        self.update_z2d(vslice.values, transp, self.cb["log"], 0)
+        self.update_z2d(vslice.values, transp, 0)
         if self.show_variances:
-            self.update_z2d(vslice.variances, transp, self.cb["log"], 1)
+            self.update_z2d(vslice.variances, transp, 1)
         return
 
-    def update_z2d(self, values, transp, log, indx):
+    def update_z2d(self, values, transp, indx):
         if transp:
             values = values.T
-        if log:
-            with np.errstate(invalid="ignore", divide="ignore"):
-                values = np.log10(values)
-        # if self.rasterize:
-        #     seg_colors = self.scalarMap[indx].to_rgba(values)
-        #     # Image is upside down by default and needs to be flipped
-        #     img = ImageOps.flip(Image.fromarray(np.uint8(seg_colors*255)))
-        #     self.fig.layout["images"][indx]["x"] = self.fig.data[indx]["x"][0]
-        #     self.fig.layout["images"][indx]["sizex"] = \
-        #         self.fig.data[indx]["x"][-1] - self.fig.data[indx]["x"][0]
-        #     self.fig.layout["images"][indx]["y"] = self.fig.data[indx]["y"][-1]
-        #     self.fig.layout["images"][indx]["sizey"] = \
-        #         self.fig.data[indx]["y"][-1] - self.fig.data[indx]["y"][0]
-        #     self.fig.layout["images"][indx]["source"] = img
-        # else:
-            # self.fig.data[indx].z = values
+        # if log:
+        #     with np.errstate(invalid="ignore", divide="ignore"):
+        #         values = np.log10(values)
+        # # if self.rasterize:
+        # #     seg_colors = self.scalarMap[indx].to_rgba(values)
+        # #     # Image is upside down by default and needs to be flipped
+        # #     img = ImageOps.flip(Image.fromarray(np.uint8(seg_colors*255)))
+        # #     self.fig.layout["images"][indx]["x"] = self.fig.data[indx]["x"][0]
+        # #     self.fig.layout["images"][indx]["sizex"] = \
+        # #         self.fig.data[indx]["x"][-1] - self.fig.data[indx]["x"][0]
+        # #     self.fig.layout["images"][indx]["y"] = self.fig.data[indx]["y"][-1]
+        # #     self.fig.layout["images"][indx]["sizey"] = \
+        # #         self.fig.data[indx]["y"][-1] - self.fig.data[indx]["y"][0]
+        # #     self.fig.layout["images"][indx]["source"] = img
+        # # else:
+        #     # self.fig.data[indx].z = values
         self.im[indx].set_data(values)
         return
