@@ -105,16 +105,12 @@ public:
 
 template <class VarT, class... Ts> class ConstructorArgumentsMatcher {
 public:
-  template <class... NonDataTypes> constexpr static void checkArgTypesValid() {
+  template <class... NonDataTypes> constexpr static bool checkArgTypesValid() {
     constexpr int nonDataTypesCount =
         (is_type_in_pack_v<NonDataTypes, Ts...> + ...);
     constexpr bool hasVal = is_tag_in_pack_v<ValuesTag, Ts...>;
     constexpr bool hasVar = is_tag_in_pack_v<VariancesTag, Ts...>;
-    static_assert(
-        nonDataTypesCount + hasVal + hasVar == sizeof...(Ts),
-        "Arguments: units::Unit, Shape, Dims, Values and Variances could only "
-        "be used. Example: Variable(dtype<float>, units::Unit(units::kg), "
-        "Shape{1, 2}, Dims{Dim::X, Dim::Y}, Values({3, 4}))");
+    return nonDataTypesCount + hasVal + hasVar == sizeof...(Ts);
   }
 
   template <class... NonDataTypes> static auto extractArguments(Ts &&... ts) {
