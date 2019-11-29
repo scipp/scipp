@@ -489,7 +489,7 @@ template <class T, class... Ts> Variable createVariable(Ts &&... ts) {
       "Shape{1, 2}, Dims{Dim::X, Dim::Y}, Values({3, 4}))");
 
   if constexpr (useDimsAndShape) {
-    auto [valArgs, varArgs, nonData] =
+    auto[valArgs, varArgs, nonData] =
         helper::template extractArguments<units::Unit, Dims, Shape>(
             std::forward<Ts>(ts)...);
     const auto &shape = std::get<Shape>(nonData);
@@ -501,7 +501,7 @@ template <class T, class... Ts> Variable createVariable(Ts &&... ts) {
       return helper::template construct<T>(
           std::move(valArgs), std::move(varArgs), std::move(nonData));
   } else {
-    auto [valArgs, varArgs, nonData] =
+    auto[valArgs, varArgs, nonData] =
         helper::template extractArguments<units::Unit, Dimensions>(
             std::forward<Ts>(ts)...);
     const auto &dimensions = std::get<Dimensions>(nonData);
