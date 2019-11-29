@@ -19,9 +19,7 @@ environment:
   MINICONDA: C:\Miniconda36-x64
 
 install:
-- echo Install Started %time%
 - cd %APPVEYOR_BUILD_FOLDER%
-- echo install working directory %cd%
 - git submodule update --init
 - mkdir build
 - cd build
@@ -38,20 +36,13 @@ test_script:
 - '%APPVEYOR_BUILD_FOLDER%\build\units\test\%CONFIGURATION%\scipp-units-test.exe'
 
 after_test:
-- echo Conda Packaging Started %time%
 - cd %APPVEYOR_BUILD_FOLDER%
-- echo after_test working directory %cd%
 - git submodule update --init
-- rd build /s/q
-- mkdir build
-- cd build
-- set PATH=%MINICONDA%;%MINICONDA%\\Scripts;%PATH%"
+- mkdir conda_build
+- cd conda_build
 - conda config --set always_yes yes --set changeps1 no
-- echo Conda Install Started %time%
 - conda install -c conda-forge conda-build anaconda-client
-- echo Conda Updates Started %time%
 - conda update libarchive
-- echo Conda Build Started %time%
 - conda-build --user scipp --token %ANACONDA_TOKEN% --label dev ../conda
 
 
