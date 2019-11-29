@@ -5,7 +5,6 @@
 #ifndef VARIABLE_H
 #define VARIABLE_H
 
-#include <iostream>
 #include <optional>
 #include <string>
 #include <utility>

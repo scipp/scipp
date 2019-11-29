@@ -5,7 +5,6 @@
 #ifndef SCIPP_CORE_EXCEPT_H
 #define SCIPP_CORE_EXCEPT_H
 
-#include <iostream>
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
@@ -14,8 +13,6 @@
 #include "scipp/common/except.h"
 #include "scipp/common/index.h"
 #include "scipp/core/dtype.h"
-#include "scipp/core/string.h"
-#include "scipp/core/variable.h"
 #include "scipp/units/except.h"
 #include "scipp/units/unit.h"
 
@@ -36,6 +33,9 @@ namespace scipp::except {
 
 struct SCIPP_CORE_EXPORT TypeError : public std::runtime_error {
   using std::runtime_error::runtime_error;
+
+  template <class... Vars>
+  TypeError(const std::string &msg) : std::runtime_error(msg) {}
 
   template <class... Vars>
   TypeError(const std::string &msg, Vars &&... vars)

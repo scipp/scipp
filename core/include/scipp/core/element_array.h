@@ -7,6 +7,7 @@
 
 #include <algorithm>
 #include <memory>
+#include <optional>
 
 #include "scipp/common/index.h"
 
@@ -53,8 +54,9 @@ public:
       class Iter,
       std::enable_if_t<
           std::is_assignable<T &, decltype(*std::declval<Iter>())>{}, int> = 0>
-  element_array(Iter first, Iter last, scipp::index size = -1) {
-    if (size > -1) {
+  element_array(Iter first, Iter last,
+                std::optional<scipp::index> size = std::nullopt) {
+    if (!size.has_value() || (size.has_value() && *size > -1)) {
       resize(std::distance(first, last), default_init_elements);
       std::copy(first, last, data());
     }
