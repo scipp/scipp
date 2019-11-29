@@ -108,10 +108,10 @@ class Slicer2d(Slicer):
 
         # Initialise Figure and VBox objects
         self.fig = None
-        self.params = {"values": {"cbmin": "min", "cbmax": "max"},
+        self.params = {"values": {"name": value_name, "cbmin": "min", "cbmax": "max"},
                   "variances": None}
         if self.show_variances:
-            self.params["variances"] = {"cbmin": "min_var", "cbmax": "max_var"}
+            self.params["variances"] = {"name": "variances", "cbmin": "min_var", "cbmax": "max_var"}
         self.extent = {"x": [0, 1], "y": [0, 1]}
         #     if self.surface3d:
         #         self.fig = go.FigureWidget(
@@ -178,6 +178,8 @@ class Slicer2d(Slicer):
                                extent=np.array(list(self.extent.values())).flatten(),
                                origin="lower", interpolation="none", cmap=self.cb["name"]))
                 self.cbar.append(plt.colorbar(self.im[i], ax=self.ax[i]))
+                self.ax[i].set_title(val["name"])
+                # self.cbar[-1].ax.yaxis.set_label_coords(-1.1, 0.5)
 
         # if self.surface3d:
         #     self.fig.layout.scene1.zaxis.title = self.value_name
