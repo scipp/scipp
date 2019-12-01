@@ -37,9 +37,9 @@ test_script:
 
 after_test:
 - cd %APPVEYOR_BUILD_FOLDER%
-- git submodule update --init
-- mkdir conda_build
-- cd conda_build
+- rd build /s/q
+- mkdir build
+- cd build
 - conda config --set always_yes yes --set changeps1 no
 - conda install -c conda-forge conda-build anaconda-client
 - conda update libarchive
