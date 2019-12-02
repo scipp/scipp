@@ -9,8 +9,12 @@
 
 using namespace scipp;
 using namespace scipp::core;
+
 TEST(CreateVariableTest, from_single_value) {
   auto var = createVariable<float>(Values{0}, Variances{1});
+  EXPECT_EQ(var.dtype(), dtype<float>);
+  EXPECT_EQ(var.value<float>(), 0.0f);
+  EXPECT_EQ(var.variance<float>(), 1.0f);
 }
 
 TEST(CreateVariableTest, construct_sparse) {
