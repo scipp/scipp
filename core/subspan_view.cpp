@@ -49,7 +49,7 @@ template <class T, class Var> Variable subspan_view(Var &var, const Dim dim) {
   return makeVariable<span<MaybeConstT>>(
       dims, var.unit(), values_view(var_ref),
       var.hasVariances() ? variances_view(var_ref)
-                         : std::vector<span<MaybeConstT>>{});
+                         : std::vector<span<MaybeConstT>>{})/*LABEL_1*/;
 }
 
 template <class... Ts, class... Args>
