@@ -11,11 +11,12 @@ using namespace scipp::core;
 
 class SubspanViewTest : public ::testing::Test {
 protected:
-  Variable var{makeVariable<double>({{Dim::Y, 2}, {Dim::X, 3}}, units::m,
-                                    {1, 2, 3, 4, 5, 6})};
-  Variable var_with_errors{makeVariable<double>({{Dim::Y, 2}, {Dim::X, 3}},
-                                                units::m, {1, 2, 3, 4, 5, 6},
-                                                {7, 8, 9, 10, 11, 12})};
+  Variable var{createVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 3},
+                                      units::Unit(units::m),
+                                      Values{1, 2, 3, 4, 5, 6})};
+  Variable var_with_errors{createVariable<double>(
+      Dims{Dim::Y, Dim::X}, Shape{2, 3}, units::Unit(units::m),
+      Values{1, 2, 3, 4, 5, 6}, Variances{7, 8, 9, 10, 11, 12})};
 };
 
 TEST_F(SubspanViewTest, fail_sparse) {
