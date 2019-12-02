@@ -48,10 +48,10 @@ after_test:
 - conda update libarchive
 - ps: |
     if ($env:APPVEYOR_REPO_TAG -eq "true") {
-      $env:CONDA_LABEL = ''
+      $env:CONDA_LABEL = ""
     }
     else {
-      $env:CONDA_LABEL = --label dev
+      $env:CONDA_LABEL = "--label dev"
     }
 - conda-build --user scipp --token %ANACONDA_TOKEN% $env:CONDA_LABEL ../conda
 
