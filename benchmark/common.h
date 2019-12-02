@@ -30,8 +30,8 @@ template <int NameLen> struct Generate3DWithDataItems {
     Dataset d;
     for (auto i = 0; i < itemCount; ++i) {
       d.setData(std::to_string(i) + std::string(NameLen, 'i'),
-                makeVariable<double>(
-                    {{Dim::X, length}, {Dim::Y, length}, {Dim::Z, length}}));
+                createVariable<double>(Dims{Dim::X, Dim::Y, Dim::Z},
+                                       Shape{length, length, length}));
     }
     return std::make_tuple(d, sizeof(double) * itemCount * std::pow(length, 3));
   }
