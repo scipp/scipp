@@ -56,11 +56,13 @@ TEST(SliceTest, test_end_valid) {
 
 TEST(DatasetTest, simple_sparse_slice) {
   Dataset dataset;
-  auto var = makeVariable<double>({{Dim::Y, Dim::X}, {2, Dimensions::Sparse}});
+  auto var = createVariable<double>(Dims{Dim::Y, Dim::X},
+                                    Shape{2, Dimensions::Sparse});
   var.sparseValues<double>()[0] = {4, 5, 6};
   var.sparseValues<double>()[1] = {7, 8, 9};
   dataset.setData("data", var);
-  dataset.setCoord(Dim::Y, makeVariable<double>({Dim::Y, 2}, {1, 2}));
+  dataset.setCoord(
+      Dim::Y, createVariable<double>(Dims{Dim::Y}, Shape{2}, Values{1, 2}));
 
   auto sliced = dataset.slice({Dim::Y, 1, 2});
   EXPECT_EQ(sliced["data"].data(), var.slice({Dim::Y, 1, 2}));
@@ -68,13 +70,15 @@ TEST(DatasetTest, simple_sparse_slice) {
 
 TEST(DatasetTest, simple_sparse_slice_and_sparse_coords) {
   Dataset dataset;
-  auto var = makeVariable<double>({{Dim::Y, Dim::X}, {2, Dimensions::Sparse}});
+  auto var = createVariable<double>(Dims{Dim::Y, Dim::X},
+                                    Shape{2, Dimensions::Sparse});
   var.sparseValues<double>()[0] = {4, 5, 6};
   var.sparseValues<double>()[1] = {7, 8, 9};
   dataset.setData("data", var);
-  dataset.setCoord(Dim::Y, makeVariable<double>({Dim::Y, 2}, {1, 2}));
-  auto sparseCoord =
-      makeVariable<double>({{Dim::Y, 2}, {Dim::X, Dimensions::Sparse}});
+  dataset.setCoord(
+      Dim::Y, createVariable<double>(Dims{Dim::Y}, Shape{2}, Values{1, 2}));
+  auto sparseCoord = createVariable<double>(Dims{Dim::Y, Dim::X},
+                                            Shape{2, Dimensions::Sparse});
   sparseCoord.sparseValues<double>()[0] = {1, 2, 3};
   sparseCoord.sparseValues<double>()[1] = {4, 5, 6};
   dataset.setSparseCoord("data", sparseCoord);
@@ -108,16 +112,19 @@ TEST_F(Dataset3DTest, dimension_extent_check_replace_with_edge_coord) {
   ASSERT_NE(edge_coord["data_xyz"], dataset["data_xyz"]);
   // Cannot incrementally grow.
   ASSERT_ANY_THROW(edge_coord.setCoord(Dim::X, makeRandom({Dim::X, 6})));
-  // Minor implementation shortcoming: Currently we cannot go back to non-edges.
+  // Minor implementation shortcoming: Currently we cannot go back to
+  // non-edges.
   ASSERT_ANY_THROW(edge_coord.setCoord(Dim::X, makeRandom({Dim::X, 4})));
 }
 
 TEST_F(Dataset3DTest,
        dimension_extent_check_prevents_non_edge_coord_with_edge_data) {
-  // If we reduce the X extent to 3 we would have data defined at the edges, but
+  // If we reduce the X extent to 3 we would have data defined at the edges,
+  // but
   // the coord is not. This is forbidden.
   ASSERT_ANY_THROW(dataset.setCoord(Dim::X, makeRandom({Dim::X, 3})));
-  // We *can* set data with X extent 3. The X coord is now bin edges, and other
+  // We *can* set data with X extent 3. The X coord is now bin edges, and
+  // other
   // data is defined on the edges.
   ASSERT_NO_THROW(dataset.setData("non_edge_data", makeRandom({Dim::X, 3})));
   // Now the X extent of the dataset is 3, but since we have data on the edges
@@ -140,25 +147,29 @@ TEST_F(Dataset3DTest, dimension_extent_check_non_coord_dimension_fail) {
 
 TEST_F(Dataset3DTest, data_check_upon_setting_sparse_coordinates) {
   Dataset sparse;
-  auto data_var = makeVariable<double>({Dim::X, Dimensions::Sparse});
+  auto data_var =
+      createVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse});
   data_var.sparseValues<double>()[0] = {1, 1, 1};
-  auto coords_var = makeVariable<double>({Dim::X, Dimensions::Sparse});
+  auto coords_var =
+      createVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse});
   coords_var.sparseValues<double>()[0] = {1, 2, 3};
   sparse.setData("sparse_x", data_var);
   // The following should be OK. Data is sparse.
   sparse.setSparseCoord("sparse_x", coords_var);
 
   // Check with dense data
-  ASSERT_THROW(
-      dataset.setSparseCoord(
-          "data_x", makeVariable<double>({Dim::X, Dimensions::Sparse})),
-      std::runtime_error);
+  ASSERT_THROW(dataset.setSparseCoord(
+                   "data_x", createVariable<double>(Dims{Dim::X},
+                                                    Shape{Dimensions::Sparse})),
+               std::runtime_error);
 }
 
 TEST_F(Dataset3DTest, dimension_extent_check_labels_dimension_fail) {
   // We cannot have labels on edges unless the coords are also edges. Note the
-  // slight inconsistency though: Labels are typically though of as being for a
-  // particular dimension (the inner one), but we can have labels on edges also
+  // slight inconsistency though: Labels are typically though of as being for
+  // a
+  // particular dimension (the inner one), but we can have labels on edges
+  // also
   // for the other dimensions (x in this case), just like data.
   ASSERT_ANY_THROW(
       dataset.setLabels("bad_labels", makeRandom({{Dim::X, 4}, {Dim::Y, 6}})));
@@ -312,16 +323,18 @@ TEST_P(Dataset3DTest_slice_x, slice) {
 TEST_P(Dataset3DTest_slice_sparse, slice) {
   Dataset ds;
   const auto pos = GetParam();
-  auto var = makeVariable<double>(
-      {{Dim::X, Dim::Y, Dim::Z}, {2, 2, Dimensions::Sparse}});
+  auto var = createVariable<double>(Dims{Dim::X, Dim::Y, Dim::Z},
+                                    Shape{2l, 2l, Dimensions::Sparse});
   var.sparseValues<double>()[0] = {1, 2, 3};
   var.sparseValues<double>()[1] = {4, 5, 6};
   var.sparseValues<double>()[2] = {7};
   var.sparseValues<double>()[3] = {8, 9};
 
   ds.setData("xyz_data", var);
-  ds.setCoord(Dim::X, makeVariable<double>({Dim::X, 2}, {0, 1}));
-  ds.setCoord(Dim::Y, makeVariable<double>({Dim::Y, 2}, {0, 1}));
+  ds.setCoord(Dim::X,
+              createVariable<double>(Dims{Dim::X}, Shape{2}, Values{0, 1}));
+  ds.setCoord(Dim::Y,
+              createVariable<double>(Dims{Dim::Y}, Shape{2}, Values{0, 1}));
 
   auto sliced = ds.slice({Dim::X, pos});
   auto data = sliced["xyz_data"].data().sparseValues<double>();
