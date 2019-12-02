@@ -14,13 +14,15 @@ auto make_beamline(const scipp::index size) {
 
   Dataset components;
   // Source and sample
-  components.setData("position", makeVariable<Eigen::Vector3d>(
-                                     {Dim::Row, 2}, units::m,
-                                     {Eigen::Vector3d{0.0, 0.0, -10.0},
-                                      Eigen::Vector3d{0.0, 0.0, 0.0}}));
+  components.setData("position",
+                     createVariable<Eigen::Vector3d>(
+                         Dims{Dim::Row}, Shape{2}, units::Unit(units::m),
+                         Values{Eigen::Vector3d{0.0, 0.0, -10.0},
+                                Eigen::Vector3d{0.0, 0.0, 0.0}}));
   beamline.setLabels("component_info", makeVariable<Dataset>(components));
-  beamline.setLabels("position", makeVariable<Eigen::Vector3d>(
-                                     {Dim::Spectrum, size}, units::m));
+  beamline.setLabels(
+      "position", createVariable<Eigen::Vector3d>(
+                      Dims{Dim::Spectrum}, Shape{size}, units::Unit(units::m)));
   return beamline;
 }
 
