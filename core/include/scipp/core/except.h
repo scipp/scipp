@@ -114,11 +114,8 @@ template <class A, class B> void equals(const A &a, const B &b) {
 }
 
 template <class A, class B>
-void equals_one_of(const A &a, const std::initializer_list<B> possible) {
-  const auto result = std::find(possible.begin(), possible.end(), a);
-
-  // if none were equal throw the exception
-  if (result == possible.end())
+void equals_any_of(const A &a, const std::initializer_list<B> possible) {
+  if (std::find(possible.begin(), possible.end(), a) == possible.end())
     throw scipp::except::MismatchError(a, possible);
 }
 
@@ -154,8 +151,8 @@ template <class T> void unit(const T &object, const units::Unit &unit) {
 }
 
 template <class T>
-void unit_one_of(const T &object, std::initializer_list<units::Unit> units) {
-  expect::equals_one_of(object.unit(), units);
+void unit_any_of(const T &object, std::initializer_list<units::Unit> units) {
+  expect::equals_any_of(object.unit(), units);
 }
 
 template <class T> void countsOrCountsDensity(const T &object) {

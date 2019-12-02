@@ -6,10 +6,7 @@
 #define SCIPP_COMMON_EXCEPT_H
 
 #include <initializer_list>
-#include <sstream>
 #include <stdexcept>
-
-#include "scipp/common/string.h"
 
 namespace scipp::except {
 
