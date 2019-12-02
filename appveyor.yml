@@ -51,7 +51,7 @@ after_test:
     if ($env:APPVEYOR_REPO_TAG -eq "true") {
       $env:CONDA_LABEL = ""
     }
-- conda-build --user scipp --token %ANACONDA_TOKEN% $env:CONDA_LABEL ../conda
+- conda-build --user scipp --token %ANACONDA_TOKEN% %CONDA_LABEL% ../conda
 
 
 
