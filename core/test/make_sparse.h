@@ -20,7 +20,7 @@ inline auto make_sparse_variable_with_variance(int length = 2) {
 
 template <typename T> inline auto make_sparse_variable(int length = 2) {
   Dimensions dims({Dim::Y, Dim::X}, {length, Dimensions::Sparse});
-  return makeVariable<T>(dims);
+  return createVariable<T>(Dimensions(dims));
 }
 
 template <typename T>
