@@ -35,8 +35,8 @@ template <class T> struct MakeVariable {
     py::array_t<T> valuesT(values);
     py::buffer_info info = valuesT.request();
     Dimensions dims(labels, {info.shape.begin(), info.shape.end()});
-    auto var =
-        variances ? makeVariableWithVariances<T>(dims) : makeVariable<T>(dims);
+    auto var = variances ? makeVariableWithVariances<T>(dims)
+                         : createVariable<T>(Dimensions(dims));
     copy_flattened<T>(valuesT, var.template values<T>());
     if (variances) {
       py::array_t<T> variancesT(*variances);
@@ -55,8 +55,8 @@ template <class T> struct MakeVariableDefaultInit {
                         const std::vector<scipp::index> &shape,
                         const units::Unit unit, const bool variances) {
     Dimensions dims(labels, shape);
-    auto var =
-        variances ? makeVariableWithVariances<T>(dims) : makeVariable<T>(dims);
+    auto var = variances ? makeVariableWithVariances<T>(dims)
+                         : createVariable<T>(Dimensions(dims));
     var.setUnit(unit);
     return var;
   }
@@ -88,7 +88,7 @@ Variable init_1D_no_variance(const std::vector<Dim> &labels,
                              const units::Unit &unit) {
   Variable var;
   Dimensions dims(labels, shape);
-  var = makeVariable<T>(dims, values);
+  var = makeVariable<T>(dims, values) /*LABEL_1*/;
   var.setUnit(unit);
   return var;
 }
@@ -206,9 +206,10 @@ void bind_init_list(py::class_<Variable> &c) {
             Dimensions dims(label[0], scipp::size(val));
             if (variances)
               var = makeVariable<Eigen::Vector3d>(
-                  dims, val, variances->cast<std::vector<Eigen::Vector3d>>());
+                  dims, val,
+                  variances->cast<std::vector<Eigen::Vector3d>>()) /*LABEL_1*/;
             else
-              var = makeVariable<Eigen::Vector3d>(dims, val);
+              var = makeVariable<Eigen::Vector3d>(dims, val) /*LABEL_1*/;
             var.setUnit(unit);
             return var;
           }
