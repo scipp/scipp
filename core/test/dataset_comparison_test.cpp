@@ -44,10 +44,12 @@ protected:
 
     dataset.setAttr("attr", makeVariable<int>({}));
 
-    dataset.setData("val_and_var",
-                    makeVariable<double>({{Dim::Y, 3}, {Dim::X, 4}},
-                                         std::vector<double>(12),
-                                         std::vector<double>(12)) /*LABEL_1*/);
+    auto vector = std::vector<double>(12);
+    dataset.setData(
+        "val_and_var",
+        createVariable<double>(Dims{Dim::Y, Dim::X}, Shape{3, 4},
+                               Values(vector.begin(), vector.end()),
+                               Variances(vector.begin(), vector.end())));
 
     dataset.setData("val", createVariable<double>(Dims{Dim::X}, Shape{4}));
 
@@ -181,9 +183,11 @@ TEST_F(Dataset_comparison_operators, extra_data) {
 
 TEST_F(Dataset_comparison_operators, extra_variance) {
   auto extra = dataset;
-  extra.setData("val",
-                makeVariable<double>({Dim::X, 4}, std::vector<double>(4),
-                                     std::vector<double>(4)) /*LABEL_1*/);
+  auto vector = std::vector<double>(4);
+  extra.setData(
+      "val", createVariable<double>(Dimensions{Dim::X, 4},
+                                    Values(vector.begin(), vector.end()),
+                                    Variances(vector.begin(), vector.end())));
   expect_ne(extra, dataset);
 }
 
