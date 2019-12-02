@@ -41,7 +41,7 @@ template <class T> T GroupBy<T>::flatten(const Dim reductionDim) const {
       flatten_impl(out_.coords()[sparseDim], array.coords()[sparseDim]);
       if (in.hasData())
         flatten_impl(out_.data(), array.data());
-      for (auto &&[label_name, label] : out_.labels()) {
+      for (auto && [ label_name, label ] : out_.labels()) {
         if (label.dims().sparse())
           flatten_impl(label, array.labels()[label_name]);
       }
@@ -51,7 +51,7 @@ template <class T> T GroupBy<T>::flatten(const Dim reductionDim) const {
   for (scipp::index group = 0; group < size(); ++group) {
     const auto out_slice = out.slice({dim(), group});
     if constexpr (std::is_same_v<T, Dataset>) {
-      for (const auto &[name, item] : m_data)
+      for (const auto & [ name, item ] : m_data)
         apply(out_slice[name], item, group);
     } else {
       apply(out_slice, m_data, group);
@@ -67,7 +67,7 @@ template <class T> T GroupBy<T>::sum(const Dim reductionDim) const {
   for (scipp::index group = 0; group < size(); ++group) {
     const auto out_slice = out.slice({dim(), group});
     if constexpr (std::is_same_v<T, Dataset>) {
-      for (const auto &[name, item] : m_data) {
+      for (const auto & [ name, item ] : m_data) {
         const auto out_data = out_slice[name].data();
         for (const auto &slice : groups()[group]) {
           sum_impl(out_data, item.data().slice(slice));
@@ -98,7 +98,7 @@ template <class T> T GroupBy<T>::mean(const Dim reductionDim) const {
 
   // 3. sum/N -> mean
   if constexpr (std::is_same_v<T, Dataset>) {
-    for (const auto &[name, item] : out) {
+    for (const auto & [ name, item ] : out) {
       if (isInt(item.data().dtype()))
         out.setData(name, item.data() * scale);
       else
