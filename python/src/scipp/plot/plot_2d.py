@@ -157,24 +157,24 @@ class Slicer2d(Slicer):
         for i, (key, val) in enumerate(sorted(self.params.items())):
             if val is not None:
                 arr = getattr(self.input_data, key)
-                if self.cb[val["cbmin"]] is not None:
-                    vmin = self.cb[val["cbmin"]]
-                else:
-                    vmin = np.amin(arr[np.where(np.isfinite(arr))])
-                if self.cb[val["cbmax"]] is not None:
-                    vmax = self.cb[val["cbmax"]]
-                else:
-                    vmax = np.amax(arr[np.where(np.isfinite(arr))])
+                # if self.cb[val["cbmin"]] is not None:
+                #     vmin = self.cb[val["cbmin"]]
+                # else:
+                #     vmin = np.amin(arr[np.where(np.isfinite(arr))])
+                # if self.cb[val["cbmax"]] is not None:
+                #     vmax = self.cb[val["cbmax"]]
+                # else:
+                #     vmax = np.amax(arr[np.where(np.isfinite(arr))])
 
                 # if rasterize:
                 #     self.scalarMap[i] = cm.ScalarMappable(
                 #         norm=Normalize(vmin=vmin, vmax=vmax),
                 #         cmap=self.cb["name"].lower())
 
-                # self.fig.data[i][attr_names[0]] = vmin
-                # self.fig.data[i][attr_names[1]] = vmax
-                val["vmin"] = vmin
-                val["vmax"] = vmax
+                # # self.fig.data[i][attr_names[0]] = vmin
+                # # self.fig.data[i][attr_names[1]] = vmax
+                # val["vmin"] = vmin
+                # val["vmax"] = vmax
                 v = arr[np.where(np.isfinite(arr))]
                 vmin = np.amin(v)
                 vmax = np.amax(v)

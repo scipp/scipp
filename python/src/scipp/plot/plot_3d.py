@@ -14,8 +14,11 @@ from .._scipp import core as sc
 # Other imports
 import numpy as np
 import ipywidgets as widgets
-import plotly.graph_objs as go
-from plotly.subplots import make_subplots
+from matplotlib import cm
+from matplotlib.colors import Normalize, LogNorm
+
+# import plotly.graph_objs as go
+# from plotly.subplots import make_subplots
 
 
 def plot_3d(input_data, axes=None, contours=False, cb=None, filename=None,
@@ -28,6 +31,7 @@ def plot_3d(input_data, axes=None, contours=False, cb=None, filename=None,
     the position of the slice in 3D space.
     """
 
+
     var = input_data[name]
     if axes is None:
         axes = var.dims
@@ -35,38 +39,40 @@ def plot_3d(input_data, axes=None, contours=False, cb=None, filename=None,
     # Parse colorbar
     cbar = parse_colorbar(cb, plotly=True)
 
-    # Make title
-    title = axis_label(var=var, name=name, log=cbar["log"])
+    # # Make title
+    # title = axis_label(var=var, name=name, log=cbar["log"])
 
-    if figsize is None:
-        figsize = [config.width, config.height]
+    # if figsize is None:
+    #     figsize = [config.width, config.height]
 
-    layout = {"height": figsize[1], "width": figsize[0], "showlegend": False}
-    if var.variances is not None and show_variances:
-        layout["height"] = 0.7 * layout["height"]
+    # layout = {"height": figsize[1], "width": figsize[0], "showlegend": False}
+    # if var.variances is not None and show_variances:
+    #     layout["height"] = 0.7 * layout["height"]
 
-    if ndim == 2:
+    # if ndim == 2:
 
-        data = dict(x=[0], y=[0], z=[0], type="surface",
-                    colorscale=cbar["name"],
-                    colorbar=dict(
-                        title=title,
-                        titleside='right',
-                        lenmode='fraction',
-                        len=1.05,
-                        thicknessmode='fraction',
-                        thickness=0.03)
-                    )
+    #     data = dict(x=[0], y=[0], z=[0], type="surface",
+    #                 colorscale=cbar["name"],
+    #                 colorbar=dict(
+    #                     title=title,
+    #                     titleside='right',
+    #                     lenmode='fraction',
+    #                     len=1.05,
+    #                     thicknessmode='fraction',
+    #                     thickness=0.03)
+    #                 )
 
-        sv = Slicer2d(data=data, layout=layout, input_data=var,
-                      axes=axes, value_name=title, cb=cbar,
-                      show_variances=show_variances, rasterize=False,
-                      surface3d=True)
-    else:
-        sv = Slicer3d(layout=layout, input_data=var, axes=axes,
-                      value_name=title, cb=cbar,
-                      show_variances=show_variances, volume=volume,
-                      volume_sampling=volume_sampling)
+    #     sv = Slicer2d(data=data, layout=layout, input_data=var,
+    #                   axes=axes, value_name=title, cb=cbar,
+    #                   show_variances=show_variances, rasterize=False,
+    #                   surface3d=True)
+    # else:
+    layout = None
+    title=None
+    sv = Slicer3d(layout=layout, input_data=var, axes=axes,
+                  value_name=title, cb=cbar,
+                  show_variances=show_variances, volume=volume,
+                  volume_sampling=volume_sampling)
 
     render_plot(static_fig=sv.fig, interactive_fig=sv.vbox, backend=backend,
                 filename=filename)
@@ -82,11 +88,13 @@ class Slicer3d(Slicer):
         super().__init__(input_data, axes, value_name, cb, show_variances,
                          button_options=['X', 'Y', 'Z'], volume=volume)
 
+        import ipyvolume as ipv
+
         self.cube = None
         self.volume = volume
 
         # Initialise Figure and VBox objects
-        self.fig = None
+        self.fig = ipv.figure()
         params = {"values": {"cbmin": "min", "cbmax": "max"},
                   "variances": None}
         if self.show_variances:
@@ -96,15 +104,19 @@ class Slicer3d(Slicer):
         # TODO: should there be auto scaling as slider value is changed?
         for i, (key, val) in enumerate(sorted(params.items())):
             if val is not None:
-                arr = getattr(self.input_data, key)
-                if self.cb[val["cbmin"]] is not None:
-                    val["cmin"] = self.cb[val["cbmin"]]
+                # arr = getattr(self.input_data, key)
+                # if self.cb[val["cbmin"]] is not None:
+                #     val["cmin"] = self.cb[val["cbmin"]]
+                # else:
+                #     val["cmin"] = np.amin(arr[np.where(np.isfinite(arr))])
+                # if self.cb[val["cbmax"]] is not None:
+                #     val["cmax"] = self.cb[val["cbmax"]]
+                # else:
+                #     val["cmax"] = np.amax(arr[np.where(np.isfinite(arr))])
+                if self.cb["log"]:
+                    val["norm"] = LogNorm(vmin=self.cb[val["cbmin"]], vmax=self.cb[val["cbmax"]])
                 else:
-                    val["cmin"] = np.amin(arr[np.where(np.isfinite(arr))])
-                if self.cb[val["cbmax"]] is not None:
-                    val["cmax"] = self.cb[val["cbmax"]]
-                else:
-                    val["cmax"] = np.amax(arr[np.where(np.isfinite(arr))])
+                    val["norm"] = Normalize(vmin=self.cb[val["cbmin"]], vmax=self.cb[val["cbmin"]])
 
         colorbars = [{"x": 1.0, "title": value_name,
                       "thicknessmode": 'fraction', "thickness": 0.02}]
@@ -113,7 +125,14 @@ class Slicer3d(Slicer):
         self.xminmax = dict()
         for key, var in self.slider_x.items():
             self.xminmax[key] = [var.values[0], var.values[-1]]
-        scatter_x, scatter_y, scatter_z = self.get_outline_as_scatter()
+        outl_x, outl_y, outl_z = self.get_outline()
+
+        self.outline = ipv.plot_wireframe(outl_x, outl_y, outl_z, color="green")
+        ipv.show()
+        return
+
+
+
 
         # Make a generic volume trace
         if self.volume:
@@ -401,9 +420,16 @@ class Slicer3d(Slicer):
                                selector={"name": "slice_{}".format(ax_dim)})
         return
 
-    def get_outline_as_scatter(self):
-        scatter_x, scatter_y, scatter_z = np.meshgrid(
+    def get_outline(self):
+        return np.meshgrid(
                 self.xminmax[self.button_axis_to_dim["x"]],
                 self.xminmax[self.button_axis_to_dim["y"]],
                 self.xminmax[self.button_axis_to_dim["z"]])
-        return scatter_x.flatten(), scatter_y.flatten(), scatter_z.flatten()
+
+    # def get_box(self):
+
+    #     f
+    #     return np.meshgrid(
+    #             self.xminmax[self.button_axis_to_dim["x"]],
+    #             self.xminmax[self.button_axis_to_dim["y"]],
+    #             self.xminmax[self.button_axis_to_dim["z"]])
