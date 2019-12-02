@@ -17,7 +17,6 @@ configuration:
 environment:
   PYTHON_VERSION: 3.6
   MINICONDA: C:\Miniconda36-x64
-  CONDA_LABEL: --label dev
 
 install:
 - cd %APPVEYOR_BUILD_FOLDER%
@@ -47,6 +46,13 @@ after_test:
 - conda config --set always_yes yes --set changeps1 no
 - conda install -c conda-forge conda-build anaconda-client
 - conda update libarchive
+- ps: |
+    if ($env:APPVEYOR_REPO_TAG -eq "true") {
+      $env:CONDA_LABEL = ''
+    }
+    else {
+      $env:CONDA_LABEL = --label dev
+    }
 - conda-build --user scipp --token %ANACONDA_TOKEN% $env:CONDA_LABEL ../conda
 
 
