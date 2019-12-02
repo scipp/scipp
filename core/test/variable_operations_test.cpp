@@ -15,7 +15,7 @@ using namespace scipp::core;
 template <typename T>
 class VariableScalarOperatorTest : public ::testing::Test {
 public:
-  Variable variable{makeVariable<T>({Dim::X, 1}, {10})};
+  Variable variable{createVariable<T>(Dims{Dim::X}, Shape{1}, Values{10})};
   const T scalar{2};
 
   T value() const { return this->variable.template values<T>()[0]; }
@@ -45,22 +45,25 @@ TYPED_TEST(VariableScalarOperatorTest, divide_equals) {
 }
 
 TEST(Variable, operator_unary_minus) {
-  const auto a = makeVariable<double>({Dim::X, 2}, units::m, {1.1, 2.2});
-  const auto expected =
-      makeVariable<double>({Dim::X, 2}, units::m, {-1.1, -2.2});
+  const auto a = createVariable<double>(
+      Dims{Dim::X}, Shape{2}, units::Unit(units::m), Values{1.1, 2.2});
+  const auto expected = createVariable<double>(
+      Dims{Dim::X}, Shape{2}, units::Unit(units::m), Values{-1.1, -2.2});
   auto b = -a;
   EXPECT_EQ(b, expected);
 }
 
 TEST(VariableProxy, unary_minus) {
-  const auto a = makeVariable<double>({Dim::X, 2}, units::m, {1.1, 2.2});
-  const auto expected = makeVariable<double>({}, units::m, {-2.2});
+  const auto a = createVariable<double>(
+      Dims{Dim::X}, Shape{2}, units::Unit(units::m), Values{1.1, 2.2});
+  const auto expected = createVariable<double>(
+      Dims(), Shape(), units::Unit(units::m), Values{-2.2});
   auto b = -a.slice({Dim::X, 1});
   EXPECT_EQ(b, expected);
 }
 
 TEST(Variable, operator_plus_equal) {
-  auto a = makeVariable<double>({Dim::X, 2}, {1.1, 2.2});
+  auto a = createVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.1, 2.2});
 
   ASSERT_NO_THROW(a += a);
   EXPECT_EQ(a.values<double>()[0], 2.2);
@@ -68,7 +71,7 @@ TEST(Variable, operator_plus_equal) {
 }
 
 TEST(Variable, operator_plus_equal_automatic_broadcast_of_rhs) {
-  auto a = makeVariable<double>({Dim::X, 2}, {1.1, 2.2});
+  auto a = createVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.1, 2.2});
 
   auto fewer_dimensions = makeVariable<double>(1.0);
 
@@ -78,26 +81,30 @@ TEST(Variable, operator_plus_equal_automatic_broadcast_of_rhs) {
 }
 
 TEST(Variable, operator_plus_equal_transpose) {
-  auto a = makeVariable<double>({{Dim::Y, 3}, {Dim::X, 2}}, units::m,
-                                {1.0, 2.0, 3.0, 4.0, 5.0, 6.0});
-  auto transpose = makeVariable<double>({{Dim::X, 2}, {Dim::Y, 3}}, units::m,
-                                        {1.0, 3.0, 5.0, 2.0, 4.0, 6.0});
+  auto a = createVariable<double>(Dims{Dim::Y, Dim::X}, Shape{3, 2},
+                                  units::Unit(units::m),
+                                  Values{1.0, 2.0, 3.0, 4.0, 5.0, 6.0});
+  auto transpose = createVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 3},
+                                          units::Unit(units::m),
+                                          Values{1.0, 3.0, 5.0, 2.0, 4.0, 6.0});
 
   EXPECT_NO_THROW(a += transpose);
-  ASSERT_EQ(a, makeVariable<double>({{Dim::Y, 3}, {Dim::X, 2}}, units::m,
-                                    {2.0, 4.0, 6.0, 8.0, 10.0, 12.0}));
+  ASSERT_EQ(a, createVariable<double>(Dims{Dim::Y, Dim::X}, Shape{3, 2},
+                                      units::Unit(units::m),
+                                      Values{2.0, 4.0, 6.0, 8.0, 10.0, 12.0}));
 }
 
 TEST(Variable, operator_plus_equal_different_dimensions) {
-  auto a = makeVariable<double>({Dim::X, 2}, {1.1, 2.2});
+  auto a = createVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.1, 2.2});
 
-  auto different_dimensions = makeVariable<double>({Dim::Y, 2}, {1.1, 2.2});
+  auto different_dimensions =
+      createVariable<double>(Dims{Dim::Y}, Shape{2}, Values{1.1, 2.2});
   EXPECT_THROW_MSG(a += different_dimensions, std::runtime_error,
                    "Expected {{Dim.X, 2}} to contain {{Dim.Y, 2}}.");
 }
 
 TEST(Variable, operator_plus_equal_different_unit) {
-  auto a = makeVariable<double>({Dim::X, 2}, {1.1, 2.2});
+  auto a = createVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.1, 2.2});
 
   auto different_unit(a);
   different_unit.setUnit(units::m);
@@ -105,25 +112,26 @@ TEST(Variable, operator_plus_equal_different_unit) {
 }
 
 TEST(Variable, operator_plus_equal_non_arithmetic_type) {
-  auto a = makeVariable<std::string>({Dim::X, 1}, {std::string("test")});
+  auto a = createVariable<std::string>(Dims{Dim::X}, Shape{1},
+                                       Values{std::string("test")});
   EXPECT_THROW(a += a, except::TypeError);
 }
 
 TEST(Variable, operator_plus_equal_different_variables_different_element_type) {
-  auto a = makeVariable<double>({Dim::X, 1}, {1.0});
-  auto b = makeVariable<int64_t>({Dim::X, 1}, {2});
+  auto a = createVariable<double>(Dims{Dim::X}, Shape{1}, Values{1.0});
+  auto b = createVariable<int64_t>(Dims{Dim::X}, Shape{1}, Values{2});
   EXPECT_THROW(a += b, except::TypeError);
 }
 
 TEST(Variable, operator_plus_equal_different_variables_same_element_type) {
-  auto a = makeVariable<double>({Dim::X, 1}, {1.0});
-  auto b = makeVariable<double>({Dim::X, 1}, {2.0});
+  auto a = createVariable<double>(Dims{Dim::X}, Shape{1}, Values{1.0});
+  auto b = createVariable<double>(Dims{Dim::X}, Shape{1}, Values{2.0});
   EXPECT_NO_THROW(a += b);
   EXPECT_EQ(a.values<double>()[0], 3.0);
 }
 
 TEST(Variable, operator_plus_equal_scalar) {
-  auto a = makeVariable<double>({Dim::X, 2}, {1.1, 2.2});
+  auto a = createVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.1, 2.2});
 
   EXPECT_NO_THROW(a += 1.0);
   EXPECT_EQ(a.values<double>()[0], 2.1);
@@ -131,7 +139,7 @@ TEST(Variable, operator_plus_equal_scalar) {
 }
 
 TEST(Variable, operator_plus_equal_custom_type) {
-  auto a = makeVariable<float>({Dim::X, 2}, {1.1f, 2.2f});
+  auto a = createVariable<float>(Dims{Dim::X}, Shape{2}, Values{1.1f, 2.2f});
 
   EXPECT_NO_THROW(a += a);
   EXPECT_EQ(a.values<float>()[0], 2.2f);
@@ -139,8 +147,10 @@ TEST(Variable, operator_plus_equal_custom_type) {
 }
 
 TEST(Variable, operator_plus) {
-  auto a = makeVariable<double>({Dim::X, 2}, {1.0, 2.0}, {3.0, 4.0});
-  auto b = makeVariable<float>({{Dim::Y, 2}, {Dim::Z, Dimensions::Sparse}});
+  auto a = createVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.0, 2.0},
+                                  Variances{3.0, 4.0});
+  auto b =
+      createVariable<float>(Dims{Dim::Y, Dim::Z}, Shape{2, Dimensions::Sparse});
   auto b_ = b.sparseValues<float>();
   b_[0] = {0.1, 0.2};
   b_[1] = {0.3};
@@ -163,9 +173,11 @@ TEST(Variable, operator_plus) {
 }
 
 TEST(Variable, operator_plus_unit_fail) {
-  auto a = makeVariable<double>({Dim::X, 2}, {1.0, 2.0}, {3.0, 4.0});
+  auto a = createVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.0, 2.0},
+                                  Variances{3.0, 4.0});
   a.setUnit(units::m);
-  auto b = makeVariable<double>({Dim::X, 2}, {1.0, 2.0}, {3.0, 4.0});
+  auto b = createVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.0, 2.0},
+                                  Variances{3.0, 4.0});
   b.setUnit(units::s);
   ASSERT_ANY_THROW(a + b);
   b.setUnit(units::m);
@@ -173,11 +185,11 @@ TEST(Variable, operator_plus_unit_fail) {
 }
 
 TEST(Variable, operator_plus_eigen_type) {
-  const auto var = makeVariable<Eigen::Vector3d>(
-      {Dim::X, 2},
-      {Eigen::Vector3d{1.0, 2.0, 3.0}, Eigen::Vector3d{0.1, 0.2, 0.3}});
-  const auto expected = makeVariable<Eigen::Vector3d>(
-      Dimensions{}, {Eigen::Vector3d{1.1, 2.2, 3.3}});
+  const auto var = createVariable<Eigen::Vector3d>(
+      Dims{Dim::X}, Shape{2},
+      Values{Eigen::Vector3d{1.0, 2.0, 3.0}, Eigen::Vector3d{0.1, 0.2, 0.3}});
+  const auto expected = createVariable<Eigen::Vector3d>(
+      Dims(), Shape(), Values{Eigen::Vector3d{1.1, 2.2, 3.3}});
 
   const auto result = var.slice({Dim::X, 0}) + var.slice({Dim::X, 1});
 
@@ -189,7 +201,7 @@ TEST(SparseVariable, operator_plus) {
   auto sparse_ = sparse.sparseValues<double>();
   sparse_[0] = {1, 2, 3};
   sparse_[1] = {4};
-  auto dense = makeVariable<double>({Dim::Y, 2}, {1.5, 0.5});
+  auto dense = createVariable<double>(Dims{Dim::Y}, Shape{2}, Values{1.5, 0.5});
 
   sparse += dense;
 
@@ -198,7 +210,8 @@ TEST(SparseVariable, operator_plus) {
 }
 
 TEST(Variable, operator_times_equal) {
-  auto a = makeVariable<double>({Dim::X, 2}, units::m, {2.0, 3.0});
+  auto a = createVariable<double>(Dims{Dim::X}, Shape{2}, units::Unit(units::m),
+                                  Values{2.0, 3.0});
 
   EXPECT_EQ(a.unit(), units::m);
   EXPECT_NO_THROW(a *= a);
@@ -208,7 +221,8 @@ TEST(Variable, operator_times_equal) {
 }
 
 TEST(Variable, operator_times_equal_scalar) {
-  auto a = makeVariable<double>({Dim::X, 2}, units::m, {2.0, 3.0});
+  auto a = createVariable<double>(Dims{Dim::X}, Shape{2}, units::Unit(units::m),
+                                  Values{2.0, 3.0});
 
   EXPECT_EQ(a.unit(), units::m);
   EXPECT_NO_THROW(a *= 2.0);
@@ -218,7 +232,9 @@ TEST(Variable, operator_times_equal_scalar) {
 }
 
 TEST(Variable, operator_times_equal_unit_fail_integrity) {
-  auto a = makeVariable<double>({Dim::X, 2}, units::m * units::m, {2.0, 3.0});
+  auto a = createVariable<double>(Dims{Dim::X}, Shape{2},
+                                  units::Unit(units::m * units::m),
+                                  Values{2.0, 3.0});
   const auto expected(a);
 
   // This test relies on m^4 being an unsupported unit.
@@ -227,7 +243,8 @@ TEST(Variable, operator_times_equal_unit_fail_integrity) {
 }
 
 TEST(Variable, operator_binary_equal_data_fail_unit_integrity) {
-  auto a = makeVariable<float>({{Dim::Y, 2}, {Dim::Z, Dimensions::Sparse}});
+  auto a =
+      createVariable<float>(Dims{Dim::Y, Dim::Z}, Shape{2, Dimensions::Sparse});
   auto a_ = a.sparseValues<float>();
   auto b(a);
   a_[0] = {0.1, 0.2};
@@ -242,7 +259,8 @@ TEST(Variable, operator_binary_equal_data_fail_unit_integrity) {
 }
 
 TEST(Variable, operator_binary_equal_data_fail_data_integrity) {
-  auto a = makeVariable<float>({{Dim::Y, 2}, {Dim::Z, Dimensions::Sparse}});
+  auto a =
+      createVariable<float>(Dims{Dim::Y, Dim::Z}, Shape{2, Dimensions::Sparse});
   auto a_ = a.sparseValues<float>();
   a_[0] = {0.1, 0.2};
   auto b(a);
@@ -288,7 +306,8 @@ TEST(Variable, operator_binary_equal_with_variances_data_fail_data_integrity) {
 }
 
 TEST(Variable, operator_times_equal_slice_unit_fail_integrity) {
-  auto a = makeVariable<float>({{Dim::Y, 2}, {Dim::Z, Dimensions::Sparse}});
+  auto a =
+      createVariable<float>(Dims{Dim::Y, Dim::Z}, Shape{2, Dimensions::Sparse});
   auto a_ = a.sparseValues<float>();
   a_[0] = {0.1, 0.2};
   a_[1] = {0.3};
@@ -301,17 +320,17 @@ TEST(Variable, operator_times_equal_slice_unit_fail_integrity) {
 }
 
 TEST(Variable, operator_times_can_broadcast) {
-  auto a = makeVariable<double>({Dim::X, 2}, {0.5, 1.5});
-  auto b = makeVariable<double>({Dim::Y, 2}, {2.0, 3.0});
+  auto a = createVariable<double>(Dims{Dim::X}, Shape{2}, Values{0.5, 1.5});
+  auto b = createVariable<double>(Dims{Dim::Y}, Shape{2}, Values{2.0, 3.0});
 
   auto ab = a * b;
-  auto reference =
-      makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}}, {1.0, 3.0, 1.5, 4.5});
+  auto reference = createVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
+                                          Values{1.0, 3.0, 1.5, 4.5});
   EXPECT_EQ(ab, reference);
 }
 
 TEST(Variable, operator_divide_equal) {
-  auto a = makeVariable<double>({Dim::X, 2}, {2.0, 3.0});
+  auto a = createVariable<double>(Dims{Dim::X}, Shape{2}, Values{2.0, 3.0});
   auto b = makeVariable<double>(2.0);
   b.setUnit(units::m);
 
@@ -322,7 +341,8 @@ TEST(Variable, operator_divide_equal) {
 }
 
 TEST(Variable, operator_divide_equal_self) {
-  auto a = makeVariable<double>({Dim::X, 2}, units::m, {2.0, 3.0});
+  auto a = createVariable<double>(Dims{Dim::X}, Shape{2}, units::Unit(units::m),
+                                  Values{2.0, 3.0});
 
   EXPECT_EQ(a.unit(), units::m);
   EXPECT_NO_THROW(a /= a);
@@ -332,7 +352,8 @@ TEST(Variable, operator_divide_equal_self) {
 }
 
 TEST(Variable, operator_divide_equal_scalar) {
-  auto a = makeVariable<double>({Dim::X, 2}, units::m, {2.0, 4.0});
+  auto a = createVariable<double>(Dims{Dim::X}, Shape{2}, units::Unit(units::m),
+                                  Values{2.0, 4.0});
 
   EXPECT_EQ(a.unit(), units::m);
   EXPECT_NO_THROW(a /= 2.0);
@@ -342,7 +363,8 @@ TEST(Variable, operator_divide_equal_scalar) {
 }
 
 TEST(Variable, operator_divide_scalar_double) {
-  const auto a = makeVariable<double>({Dim::X, 2}, units::m, {2.0, 4.0});
+  const auto a = createVariable<double>(
+      Dims{Dim::X}, Shape{2}, units::Unit(units::m), Values{2.0, 4.0});
   const auto result = 1.111 / a;
   EXPECT_EQ(result.values<double>()[0], 1.111 / 2.0);
   EXPECT_EQ(result.values<double>()[1], 1.111 / 4.0);
@@ -350,7 +372,8 @@ TEST(Variable, operator_divide_scalar_double) {
 }
 
 TEST(Variable, operator_divide_scalar_float) {
-  const auto a = makeVariable<float>({Dim::X, 2}, units::m, {2.0, 4.0});
+  const auto a = createVariable<float>(Dims{Dim::X}, Shape{2},
+                                       units::Unit(units::m), Values{2.0, 4.0});
   const auto result = 1.111f / a;
   EXPECT_EQ(result.values<float>()[0], 1.111f / 2.0f);
   EXPECT_EQ(result.values<float>()[1], 1.111f / 4.0f);
@@ -378,8 +401,8 @@ TEST(Variable, operator_allowed_types) {
 
 TEST(Variable, concatenate) {
   Dimensions dims(Dim::Tof, 1);
-  auto a = makeVariable<double>(dims, {1.0});
-  auto b = makeVariable<double>(dims, {2.0});
+  auto a = createVariable<double>(Dimensions(dims), Values{1.0});
+  auto b = createVariable<double>(Dimensions(dims), Values{2.0});
   a.setUnit(units::m);
   b.setUnit(units::m);
   auto ab = concatenate(a, b, Dim::Tof);
@@ -422,22 +445,22 @@ TEST(Variable, concatenate) {
 }
 
 TEST(Variable, concatenate_volume_with_slice) {
-  auto a = makeVariable<double>({Dim::X, 1}, {1.0});
+  auto a = createVariable<double>(Dims{Dim::X}, Shape{1}, Values{1.0});
   auto aa = concatenate(a, a, Dim::X);
   EXPECT_NO_THROW(concatenate(aa, a, Dim::X));
 }
 
 TEST(Variable, concatenate_slice_with_volume) {
-  auto a = makeVariable<double>({Dim::X, 1}, {1.0});
+  auto a = createVariable<double>(Dims{Dim::X}, Shape{1}, Values{1.0});
   auto aa = concatenate(a, a, Dim::X);
   EXPECT_NO_THROW(concatenate(a, aa, Dim::X));
 }
 
 TEST(Variable, concatenate_fail) {
   Dimensions dims(Dim::Tof, 1);
-  auto a = makeVariable<double>(dims, {1.0});
-  auto b = makeVariable<double>(dims, {2.0});
-  auto c = makeVariable<float>(dims, {2.0});
+  auto a = createVariable<double>(Dimensions(dims), Values{1.0});
+  auto b = createVariable<double>(Dimensions(dims), Values{2.0});
+  auto c = createVariable<float>(Dimensions(dims), Values{2.0});
   EXPECT_THROW_MSG(concatenate(a, c, Dim::Tof), std::runtime_error,
                    "Cannot concatenate Variables: Data types do not match.");
   auto aa = concatenate(a, a, Dim::Tof);
@@ -448,7 +471,7 @@ TEST(Variable, concatenate_fail) {
 
 TEST(Variable, concatenate_unit_fail) {
   Dimensions dims(Dim::X, 1);
-  auto a = makeVariable<double>(dims, {1.0});
+  auto a = createVariable<double>(Dimensions(dims), Values{1.0});
   auto b(a);
   EXPECT_NO_THROW(concatenate(a, b, Dim::X));
   a.setUnit(units::m);
@@ -519,10 +542,12 @@ TEST(SparseVariable, concatenate_along_sparse_dimension_with_variances) {
 
 #ifdef SCIPP_UNITS_NEUTRON
 TEST(Variable, rebin) {
-  auto var = makeVariable<double>({Dim::X, 2}, {1.0, 2.0});
+  auto var = createVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.0, 2.0});
   var.setUnit(units::counts);
-  const auto oldEdge = makeVariable<double>({Dim::X, 3}, {1.0, 2.0, 3.0});
-  const auto newEdge = makeVariable<double>({Dim::X, 2}, {1.0, 3.0});
+  const auto oldEdge =
+      createVariable<double>(Dims{Dim::X}, Shape{3}, Values{1.0, 2.0, 3.0});
+  const auto newEdge =
+      createVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.0, 3.0});
   auto rebinned = rebin(var, Dim::X, oldEdge, newEdge);
   ASSERT_EQ(rebinned.dims().shape().size(), 1);
   ASSERT_EQ(rebinned.dims().volume(), 1);
@@ -532,84 +557,98 @@ TEST(Variable, rebin) {
 #endif
 
 TEST(Variable, sum) {
-  const auto var = makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}}, units::m,
-                                        {1.0, 2.0, 3.0, 4.0});
-  const auto expectedX =
-      makeVariable<double>({{Dim::Y, 2}}, units::m, {3.0, 7.0});
-  const auto expectedY =
-      makeVariable<double>({{Dim::X, 2}}, units::m, {4.0, 6.0});
+  const auto var =
+      createVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
+                             units::Unit(units::m), Values{1.0, 2.0, 3.0, 4.0});
+  const auto expectedX = createVariable<double>(
+      Dims{Dim::Y}, Shape{2}, units::Unit(units::m), Values{3.0, 7.0});
+  const auto expectedY = createVariable<double>(
+      Dims{Dim::X}, Shape{2}, units::Unit(units::m), Values{4.0, 6.0});
   EXPECT_EQ(sum(var, Dim::X), expectedX);
   EXPECT_EQ(sum(var, Dim::Y), expectedY);
 }
 
 TEST(VariableConstProxy, sum) {
-  const auto var = makeVariable<float>({Dim::X, 4}, {1.0, 2.0, 3.0, 4.0});
+  const auto var =
+      createVariable<float>(Dims{Dim::X}, Shape{4}, Values{1.0, 2.0, 3.0, 4.0});
   EXPECT_EQ(sum(var.slice({Dim::X, 0, 2}), Dim::X), makeVariable<float>(3));
 }
 
 TEST(Variable, abs) {
   auto reference =
-      makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}}, units::m, {1, 2, 3, 4});
-  auto var = makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}}, units::m,
-                                  {1.0, -2.0, -3.0, 4.0});
+      createVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
+                             units::Unit(units::m), Values{1, 2, 3, 4});
+  auto var = createVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
+                                    units::Unit(units::m),
+                                    Values{1.0, -2.0, -3.0, 4.0});
   EXPECT_EQ(abs(var), reference);
 }
 
 TEST(Variable, norm_of_vector) {
   auto reference =
-      makeVariable<double>({Dim::X, 3}, units::m, {sqrt(2.0), sqrt(2.0), 2.0});
-  auto var = makeVariable<Eigen::Vector3d>({Dim::X, 3}, units::m,
-                                           {Eigen::Vector3d{1, 0, -1},
-                                            Eigen::Vector3d{1, 1, 0},
-                                            Eigen::Vector3d{0, 0, -2}});
+      createVariable<double>(Dims{Dim::X}, Shape{3}, units::Unit(units::m),
+                             Values{sqrt(2.0), sqrt(2.0), 2.0});
+  auto var = createVariable<Eigen::Vector3d>(
+      Dims{Dim::X}, Shape{3}, units::Unit(units::m),
+      Values{Eigen::Vector3d{1, 0, -1}, Eigen::Vector3d{1, 1, 0},
+             Eigen::Vector3d{0, 0, -2}});
   EXPECT_EQ(norm(var), reference);
 }
 
 TEST(Variable, sqrt_double) {
   // TODO Currently comparisons of variables do not provide special handling of
   // NaN, so sqrt of negative values will yield variables that are never equal.
-  auto reference = makeVariable<double>({Dim::X, 2}, {1, 2});
+  auto reference = createVariable<double>(Dims{Dim::X}, Shape{2}, Values{1, 2});
   reference.setUnit(units::m);
-  auto var = makeVariable<double>({Dim::X, 2}, {1, 4});
+  auto var = createVariable<double>(Dims{Dim::X}, Shape{2}, Values{1, 4});
   var.setUnit(units::m * units::m);
   EXPECT_EQ(sqrt(var), reference);
 }
 
 TEST(Variable, sqrt_float) {
-  auto reference = makeVariable<float>({Dim::X, 2}, {1, 2});
+  auto reference = createVariable<float>(Dims{Dim::X}, Shape{2}, Values{1, 2});
   reference.setUnit(units::m);
-  auto var = makeVariable<float>({Dim::X, 2}, {1, 4});
+  auto var = createVariable<float>(Dims{Dim::X}, Shape{2}, Values{1, 4});
   var.setUnit(units::m * units::m);
   EXPECT_EQ(sqrt(var), reference);
 }
 
 TEST(VariableSqrtOutArg, unit_fail) {
-  auto var = makeVariable<double>({Dim::X, 3}, units::m * units::m, {1, 4, 9});
+  auto var =
+      createVariable<double>(Dims{Dim::X}, Shape{3},
+                             units::Unit(units::m * units::m), Values{1, 4, 9});
   EXPECT_THROW(sqrt(var.slice({Dim::X, 0, 2}), var.slice({Dim::X, 0, 2})),
                except::UnitError);
 }
 
 TEST(VariableSqrtOutArg, full_in_place) {
-  auto var = makeVariable<double>({Dim::X, 3}, units::m * units::m, {1, 4, 9});
+  auto var =
+      createVariable<double>(Dims{Dim::X}, Shape{3},
+                             units::Unit(units::m * units::m), Values{1, 4, 9});
   auto view = sqrt(var, var);
-  EXPECT_EQ(var, makeVariable<double>({Dim::X, 3}, units::m, {1, 2, 3}));
+  EXPECT_EQ(var,
+            createVariable<double>(Dims{Dim::X}, Shape{3},
+                                   units::Unit(units::m), Values{1, 2, 3}));
   EXPECT_EQ(view, var);
   EXPECT_EQ(view.underlying(), var);
 }
 
 TEST(VariableSqrtOutArg, partial) {
   const auto var =
-      makeVariable<double>({Dim::X, 3}, units::m * units::m, {1, 4, 9});
-  auto out = makeVariable<double>({Dim::X, 2}, units::m);
+      createVariable<double>(Dims{Dim::X}, Shape{3},
+                             units::Unit(units::m * units::m), Values{1, 4, 9});
+  auto out =
+      createVariable<double>(Dims{Dim::X}, Shape{2}, units::Unit(units::m));
   auto view = sqrt(var.slice({Dim::X, 1, 3}), out);
-  EXPECT_EQ(out, makeVariable<double>({Dim::X, 2}, units::m, {2, 3}));
+  EXPECT_EQ(out, createVariable<double>(Dims{Dim::X}, Shape{2},
+                                        units::Unit(units::m), Values{2, 3}));
   EXPECT_EQ(view, out);
   EXPECT_EQ(view.underlying(), out);
 }
 
 TEST(VariableProxy, minus_equals_failures) {
-  auto var =
-      makeVariable<double>({{Dim::X, 2}, {Dim::Y, 2}}, {1.0, 2.0, 3.0, 4.0});
+  auto var = createVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 2},
+                                    Values{1.0, 2.0, 3.0, 4.0});
 
   EXPECT_THROW_MSG(var -= var.slice({Dim::X, 0, 1}), std::runtime_error,
                    "Expected {{Dim.X, 2}, {Dim.Y, 2}} to contain {{Dim.X, "
@@ -617,8 +656,8 @@ TEST(VariableProxy, minus_equals_failures) {
 }
 
 TEST(VariableProxy, self_overlapping_view_operation) {
-  auto var =
-      makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}}, {1.0, 2.0, 3.0, 4.0});
+  auto var = createVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
+                                    Values{1.0, 2.0, 3.0, 4.0});
 
   var -= var.slice({Dim::Y, 0});
   const auto data = var.values<double>();
@@ -632,8 +671,8 @@ TEST(VariableProxy, self_overlapping_view_operation) {
 }
 
 TEST(VariableProxy, minus_equals_slice_const_outer) {
-  auto var =
-      makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}}, {1.0, 2.0, 3.0, 4.0});
+  auto var = createVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
+                                    Values{1.0, 2.0, 3.0, 4.0});
   const auto copy(var);
 
   var -= copy.slice({Dim::Y, 0});
@@ -650,8 +689,8 @@ TEST(VariableProxy, minus_equals_slice_const_outer) {
 }
 
 TEST(VariableProxy, minus_equals_slice_outer) {
-  auto var =
-      makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}}, {1.0, 2.0, 3.0, 4.0});
+  auto var = createVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
+                                    Values{1.0, 2.0, 3.0, 4.0});
   auto copy(var);
 
   var -= copy.slice({Dim::Y, 0});
@@ -668,8 +707,8 @@ TEST(VariableProxy, minus_equals_slice_outer) {
 }
 
 TEST(VariableProxy, minus_equals_slice_inner) {
-  auto var =
-      makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}}, {1.0, 2.0, 3.0, 4.0});
+  auto var = createVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
+                                    Values{1.0, 2.0, 3.0, 4.0});
   auto copy(var);
 
   var -= copy.slice({Dim::X, 0});
@@ -686,8 +725,8 @@ TEST(VariableProxy, minus_equals_slice_inner) {
 }
 
 TEST(VariableProxy, minus_equals_slice_of_slice) {
-  auto var =
-      makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}}, {1.0, 2.0, 3.0, 4.0});
+  auto var = createVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
+                                    Values{1.0, 2.0, 3.0, 4.0});
   auto copy(var);
 
   var -= copy.slice({Dim::X, 1}).slice({Dim::Y, 1});
@@ -699,11 +738,11 @@ TEST(VariableProxy, minus_equals_slice_of_slice) {
 }
 
 TEST(VariableProxy, minus_equals_nontrivial_slices) {
-  auto source = makeVariable<double>(
-      {{Dim::Y, 3}, {Dim::X, 3}},
-      {11.0, 12.0, 13.0, 21.0, 22.0, 23.0, 31.0, 32.0, 33.0});
+  auto source = createVariable<double>(
+      Dims{Dim::Y, Dim::X}, Shape{3, 3},
+      Values{11.0, 12.0, 13.0, 21.0, 22.0, 23.0, 31.0, 32.0, 33.0});
   {
-    auto target = makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}});
+    auto target = createVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2});
     target -= source.slice({Dim::X, 0, 2}).slice({Dim::Y, 0, 2});
     const auto data = target.values<double>();
     EXPECT_EQ(data[0], -11.0);
@@ -712,7 +751,7 @@ TEST(VariableProxy, minus_equals_nontrivial_slices) {
     EXPECT_EQ(data[3], -22.0);
   }
   {
-    auto target = makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}});
+    auto target = createVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2});
     target -= source.slice({Dim::X, 1, 3}).slice({Dim::Y, 0, 2});
     const auto data = target.values<double>();
     EXPECT_EQ(data[0], -12.0);
@@ -721,7 +760,7 @@ TEST(VariableProxy, minus_equals_nontrivial_slices) {
     EXPECT_EQ(data[3], -23.0);
   }
   {
-    auto target = makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}});
+    auto target = createVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2});
     target -= source.slice({Dim::X, 0, 2}).slice({Dim::Y, 1, 3});
     const auto data = target.values<double>();
     EXPECT_EQ(data[0], -21.0);
@@ -730,7 +769,7 @@ TEST(VariableProxy, minus_equals_nontrivial_slices) {
     EXPECT_EQ(data[3], -32.0);
   }
   {
-    auto target = makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}});
+    auto target = createVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2});
     target -= source.slice({Dim::X, 1, 3}).slice({Dim::Y, 1, 3});
     const auto data = target.values<double>();
     EXPECT_EQ(data[0], -22.0);
@@ -741,8 +780,8 @@ TEST(VariableProxy, minus_equals_nontrivial_slices) {
 }
 
 TEST(VariableProxy, slice_inner_minus_equals) {
-  auto var =
-      makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}}, {1.0, 2.0, 3.0, 4.0});
+  auto var = createVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
+                                    Values{1.0, 2.0, 3.0, 4.0});
 
   var.slice({Dim::X, 0}) -= var.slice({Dim::X, 1});
   const auto data = var.values<double>();
@@ -753,8 +792,8 @@ TEST(VariableProxy, slice_inner_minus_equals) {
 }
 
 TEST(VariableProxy, slice_outer_minus_equals) {
-  auto var =
-      makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}}, {1.0, 2.0, 3.0, 4.0});
+  auto var = createVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
+                                    Values{1.0, 2.0, 3.0, 4.0});
 
   var.slice({Dim::Y, 0}) -= var.slice({Dim::Y, 1});
   const auto data = var.values<double>();
@@ -766,9 +805,9 @@ TEST(VariableProxy, slice_outer_minus_equals) {
 
 TEST(VariableProxy, nontrivial_slice_minus_equals) {
   {
-    auto target = makeVariable<double>({{Dim::Y, 3}, {Dim::X, 3}});
-    auto source = makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}},
-                                       {11.0, 12.0, 21.0, 22.0});
+    auto target = createVariable<double>(Dims{Dim::Y, Dim::X}, Shape{3, 3});
+    auto source = createVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
+                                         Values{11.0, 12.0, 21.0, 22.0});
     target.slice({Dim::X, 0, 2}).slice({Dim::Y, 0, 2}) -= source;
     const auto data = target.values<double>();
     EXPECT_EQ(data[0], -11.0);
@@ -782,9 +821,9 @@ TEST(VariableProxy, nontrivial_slice_minus_equals) {
     EXPECT_EQ(data[8], 0.0);
   }
   {
-    auto target = makeVariable<double>({{Dim::Y, 3}, {Dim::X, 3}});
-    auto source = makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}},
-                                       {11.0, 12.0, 21.0, 22.0});
+    auto target = createVariable<double>(Dims{Dim::Y, Dim::X}, Shape{3, 3});
+    auto source = createVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
+                                         Values{11.0, 12.0, 21.0, 22.0});
     target.slice({Dim::X, 1, 3}).slice({Dim::Y, 0, 2}) -= source;
     const auto data = target.values<double>();
     EXPECT_EQ(data[0], 0.0);
@@ -798,9 +837,9 @@ TEST(VariableProxy, nontrivial_slice_minus_equals) {
     EXPECT_EQ(data[8], 0.0);
   }
   {
-    auto target = makeVariable<double>({{Dim::Y, 3}, {Dim::X, 3}});
-    auto source = makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}},
-                                       {11.0, 12.0, 21.0, 22.0});
+    auto target = createVariable<double>(Dims{Dim::Y, Dim::X}, Shape{3, 3});
+    auto source = createVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
+                                         Values{11.0, 12.0, 21.0, 22.0});
     target.slice({Dim::X, 0, 2}).slice({Dim::Y, 1, 3}) -= source;
     const auto data = target.values<double>();
     EXPECT_EQ(data[0], 0.0);
@@ -814,9 +853,9 @@ TEST(VariableProxy, nontrivial_slice_minus_equals) {
     EXPECT_EQ(data[8], 0.0);
   }
   {
-    auto target = makeVariable<double>({{Dim::Y, 3}, {Dim::X, 3}});
-    auto source = makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}},
-                                       {11.0, 12.0, 21.0, 22.0});
+    auto target = createVariable<double>(Dims{Dim::Y, Dim::X}, Shape{3, 3});
+    auto source = createVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
+                                         Values{11.0, 12.0, 21.0, 22.0});
     target.slice({Dim::X, 1, 3}).slice({Dim::Y, 1, 3}) -= source;
     const auto data = target.values<double>();
     EXPECT_EQ(data[0], 0.0);
@@ -833,9 +872,10 @@ TEST(VariableProxy, nontrivial_slice_minus_equals) {
 
 TEST(VariableProxy, nontrivial_slice_minus_equals_slice) {
   {
-    auto target = makeVariable<double>({{Dim::Y, 3}, {Dim::X, 3}});
-    auto source = makeVariable<double>({{Dim::Y, 2}, {Dim::X, 3}},
-                                       {666.0, 11.0, 12.0, 666.0, 21.0, 22.0});
+    auto target = createVariable<double>(Dims{Dim::Y, Dim::X}, Shape{3, 3});
+    auto source =
+        createVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 3},
+                               Values{666.0, 11.0, 12.0, 666.0, 21.0, 22.0});
     target.slice({Dim::X, 0, 2}).slice({Dim::Y, 0, 2}) -=
         source.slice({Dim::X, 1, 3});
     const auto data = target.values<double>();
@@ -850,9 +890,10 @@ TEST(VariableProxy, nontrivial_slice_minus_equals_slice) {
     EXPECT_EQ(data[8], 0.0);
   }
   {
-    auto target = makeVariable<double>({{Dim::Y, 3}, {Dim::X, 3}});
-    auto source = makeVariable<double>({{Dim::Y, 2}, {Dim::X, 3}},
-                                       {666.0, 11.0, 12.0, 666.0, 21.0, 22.0});
+    auto target = createVariable<double>(Dims{Dim::Y, Dim::X}, Shape{3, 3});
+    auto source =
+        createVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 3},
+                               Values{666.0, 11.0, 12.0, 666.0, 21.0, 22.0});
     target.slice({Dim::X, 1, 3}).slice({Dim::Y, 0, 2}) -=
         source.slice({Dim::X, 1, 3});
     const auto data = target.values<double>();
@@ -867,9 +908,10 @@ TEST(VariableProxy, nontrivial_slice_minus_equals_slice) {
     EXPECT_EQ(data[8], 0.0);
   }
   {
-    auto target = makeVariable<double>({{Dim::Y, 3}, {Dim::X, 3}});
-    auto source = makeVariable<double>({{Dim::Y, 2}, {Dim::X, 3}},
-                                       {666.0, 11.0, 12.0, 666.0, 21.0, 22.0});
+    auto target = createVariable<double>(Dims{Dim::Y, Dim::X}, Shape{3, 3});
+    auto source =
+        createVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 3},
+                               Values{666.0, 11.0, 12.0, 666.0, 21.0, 22.0});
     target.slice({Dim::X, 0, 2}).slice({Dim::Y, 1, 3}) -=
         source.slice({Dim::X, 1, 3});
     const auto data = target.values<double>();
@@ -884,9 +926,10 @@ TEST(VariableProxy, nontrivial_slice_minus_equals_slice) {
     EXPECT_EQ(data[8], 0.0);
   }
   {
-    auto target = makeVariable<double>({{Dim::Y, 3}, {Dim::X, 3}});
-    auto source = makeVariable<double>({{Dim::Y, 2}, {Dim::X, 3}},
-                                       {666.0, 11.0, 12.0, 666.0, 21.0, 22.0});
+    auto target = createVariable<double>(Dims{Dim::Y, Dim::X}, Shape{3, 3});
+    auto source =
+        createVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 3},
+                               Values{666.0, 11.0, 12.0, 666.0, 21.0, 22.0});
     target.slice({Dim::X, 1, 3}).slice({Dim::Y, 1, 3}) -=
         source.slice({Dim::X, 1, 3});
     const auto data = target.values<double>();
@@ -903,8 +946,9 @@ TEST(VariableProxy, nontrivial_slice_minus_equals_slice) {
 }
 
 TEST(VariableProxy, slice_minus_lower_dimensional) {
-  auto target = makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}});
-  auto source = makeVariable<double>({Dim::X, 2}, {1.0, 2.0});
+  auto target = createVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2});
+  auto source =
+      createVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.0, 2.0});
   EXPECT_EQ(target.slice({Dim::Y, 1, 2}).dims(),
             (Dimensions{{Dim::Y, 1}, {Dim::X, 2}}));
 
@@ -918,7 +962,8 @@ TEST(VariableProxy, slice_minus_lower_dimensional) {
 }
 
 TEST(VariableProxy, slice_binary_operations) {
-  auto v = makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}}, {1, 2, 3, 4});
+  auto v = createVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
+                                  Values{1, 2, 3, 4});
   // Note: There does not seem to be a way to test whether this is using the
   // operators that convert the second argument to Variable (it should not), or
   // keep it as a view. See variable_benchmark.cpp for an attempt to verify
@@ -934,19 +979,19 @@ TEST(VariableProxy, slice_binary_operations) {
 }
 
 TEST(Variable, reverse) {
-  auto var =
-      makeVariable<double>({{Dim::Y, 2}, {Dim::X, 3}}, {1, 2, 3, 4, 5, 6});
-  auto reverseX =
-      makeVariable<double>({{Dim::Y, 2}, {Dim::X, 3}}, {3, 2, 1, 6, 5, 4});
-  auto reverseY =
-      makeVariable<double>({{Dim::Y, 2}, {Dim::X, 3}}, {4, 5, 6, 1, 2, 3});
+  auto var = createVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 3},
+                                    Values{1, 2, 3, 4, 5, 6});
+  auto reverseX = createVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 3},
+                                         Values{3, 2, 1, 6, 5, 4});
+  auto reverseY = createVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 3},
+                                         Values{4, 5, 6, 1, 2, 3});
 
   EXPECT_EQ(reverse(var, Dim::X), reverseX);
   EXPECT_EQ(reverse(var, Dim::Y), reverseY);
 }
 
 TEST(Variable, non_in_place_scalar_operations) {
-  auto var = makeVariable<double>({{Dim::X, 2}}, {1, 2});
+  auto var = createVariable<double>(Dims{Dim::X}, Shape{2}, Values{1, 2});
 
   auto sum = var + 1.0;
   EXPECT_TRUE(equals(sum.values<double>(), {2, 3}));
@@ -970,8 +1015,8 @@ TEST(Variable, non_in_place_scalar_operations) {
 }
 
 TEST(VariableProxy, scalar_operations) {
-  auto var = makeVariable<double>({{Dim::Y, 2}, {Dim::X, 3}},
-                                  {11, 12, 13, 21, 22, 23});
+  auto var = createVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 3},
+                                    Values{11, 12, 13, 21, 22, 23});
 
   var.slice({Dim::X, 0}) += 1.0;
   EXPECT_TRUE(equals(var.values<double>(), {12, 12, 13, 22, 22, 23}));
@@ -988,12 +1033,12 @@ TEST(VariableProxy, scalar_operations) {
 }
 
 TEST(VariableTest, binary_op_with_variance) {
-  const auto var = makeVariable<double>({{Dim::X, 2}, {Dim::Y, 3}},
-                                        {1.0, 2.0, 3.0, 4.0, 5.0, 6.0},
-                                        {0.1, 0.2, 0.3, 0.4, 0.5, 0.6});
-  const auto sum = makeVariable<double>({{Dim::X, 2}, {Dim::Y, 3}},
-                                        {2.0, 4.0, 6.0, 8.0, 10.0, 12.0},
-                                        {0.2, 0.4, 0.6, 0.8, 1.0, 1.2});
+  const auto var = createVariable<double>(
+      Dims{Dim::X, Dim::Y}, Shape{2, 3}, Values{1.0, 2.0, 3.0, 4.0, 5.0, 6.0},
+      Variances{0.1, 0.2, 0.3, 0.4, 0.5, 0.6});
+  const auto sum = createVariable<double>(
+      Dims{Dim::X, Dim::Y}, Shape{2, 3}, Values{2.0, 4.0, 6.0, 8.0, 10.0, 12.0},
+      Variances{0.2, 0.4, 0.6, 0.8, 1.0, 1.2});
   auto tmp = var + var;
   EXPECT_TRUE(tmp.hasVariances());
   EXPECT_EQ(tmp.variances<double>()[0], 0.2);
@@ -1005,15 +1050,18 @@ TEST(VariableTest, binary_op_with_variance) {
 
 TEST(VariableTest, divide_with_variance) {
   // Note the 0.0: With a wrong implementation the resulting variance is INF.
-  const auto a = makeVariable<double>({Dim::X, 2}, {2.0, 0.0}, {0.1, 0.1});
-  const auto b = makeVariable<double>({Dim::X, 2}, {3.0, 3.0}, {0.2, 0.2});
-  const auto expected = makeVariable<double>(
-      {Dim::X, 2}, {2.0 / 3.0, 0.0},
-      // Relative errors are added
-      {(0.1 / (2.0 * 2.0) + 0.2 / (3.0 * 3.0)) * (2.0 / 3.0) * (2.0 / 3.0),
-       // (0.1 / (0.0 * 0.0) + 0.2 / (3.0 * 3.0)) * (0.0 / 3.0) * (0.0 / 3.0)
-       // naively, but if we take the limit...
-       0.1 / (3.0 * 3.0)});
+  const auto a = createVariable<double>(Dims{Dim::X}, Shape{2},
+                                        Values{2.0, 0.0}, Variances{0.1, 0.1});
+  const auto b = createVariable<double>(Dims{Dim::X}, Shape{2},
+                                        Values{3.0, 3.0}, Variances{0.2, 0.2});
+  const auto expected =
+      createVariable<double>(Dims{Dim::X}, Shape{2}, Values{2.0 / 3.0, 0.0},
+                             Variances{(0.1 / (2.0 * 2.0) + 0.2 / (3.0 * 3.0)) *
+                                           (2.0 / 3.0) * (2.0 / 3.0),
+                                       /* (0.1 / (0.0 * 0.0) + 0.2 / (3.0
+                                        * 3.0)) * (0.0 / 3.0) * (0.0 / 3.0)
+                                        naively, but if we take the limit... */
+                                           0.1 / (3.0 * 3.0)});
   const auto q = a / b;
   EXPECT_DOUBLE_EQ(q.values<double>()[0], expected.values<double>()[0]);
   EXPECT_DOUBLE_EQ(q.values<double>()[1], expected.values<double>()[1]);
@@ -1022,10 +1070,12 @@ TEST(VariableTest, divide_with_variance) {
 }
 
 TEST(VariableTest, boolean_or) {
-  const auto a = makeVariable<bool>({Dim::X, 4}, {false, true, false, true});
-  const auto b = makeVariable<bool>({Dim::X, 4}, {false, false, true, true});
-  const auto expected =
-      makeVariable<bool>({Dim::X, 4}, {false, true, true, true});
+  const auto a = createVariable<bool>(Dims{Dim::X}, Shape{4},
+                                      Values{false, true, false, true});
+  const auto b = createVariable<bool>(Dims{Dim::X}, Shape{4},
+                                      Values{false, false, true, true});
+  const auto expected = createVariable<bool>(Dims{Dim::X}, Shape{4},
+                                             Values{false, true, true, true});
 
   const auto result = a | b;
 
@@ -1033,30 +1083,36 @@ TEST(VariableTest, boolean_or) {
 }
 
 TEST(VariableTest, boolean_or_equals) {
-  auto a = makeVariable<bool>({Dim::X, 4}, {false, true, false, true});
-  const auto b = makeVariable<bool>({Dim::X, 4}, {false, false, true, true});
+  auto a = createVariable<bool>(Dims{Dim::X}, Shape{4},
+                                Values{false, true, false, true});
+  const auto b = createVariable<bool>(Dims{Dim::X}, Shape{4},
+                                      Values{false, false, true, true});
   a |= b;
-  const auto expected =
-      makeVariable<bool>({Dim::X, 4}, {false, true, true, true});
+  const auto expected = createVariable<bool>(Dims{Dim::X}, Shape{4},
+                                             Values{false, true, true, true});
 
   EXPECT_EQ(a, expected);
 }
 
 TEST(VariableTest, boolean_and_equals) {
-  auto a = makeVariable<bool>({Dim::X, 4}, {false, true, false, true});
-  const auto b = makeVariable<bool>({Dim::X, 4}, {false, false, true, true});
+  auto a = createVariable<bool>(Dims{Dim::X}, Shape{4},
+                                Values{false, true, false, true});
+  const auto b = createVariable<bool>(Dims{Dim::X}, Shape{4},
+                                      Values{false, false, true, true});
   a &= b;
-  const auto expected =
-      makeVariable<bool>({Dim::X, 4}, {false, false, false, true});
+  const auto expected = createVariable<bool>(Dims{Dim::X}, Shape{4},
+                                             Values{false, false, false, true});
 
   EXPECT_EQ(a, expected);
 }
 
 TEST(VariableTest, boolean_and) {
-  const auto a = makeVariable<bool>({Dim::X, 4}, {false, true, false, true});
-  const auto b = makeVariable<bool>({Dim::X, 4}, {false, false, true, true});
-  const auto expected =
-      makeVariable<bool>({Dim::X, 4}, {false, false, false, true});
+  const auto a = createVariable<bool>(Dims{Dim::X}, Shape{4},
+                                      Values{false, true, false, true});
+  const auto b = createVariable<bool>(Dims{Dim::X}, Shape{4},
+                                      Values{false, false, true, true});
+  const auto expected = createVariable<bool>(Dims{Dim::X}, Shape{4},
+                                             Values{false, false, false, true});
 
   const auto result = a & b;
 
@@ -1064,20 +1120,24 @@ TEST(VariableTest, boolean_and) {
 }
 
 TEST(VariableTest, boolean_xor_equals) {
-  auto a = makeVariable<bool>({Dim::X, 4}, {false, true, false, true});
-  const auto b = makeVariable<bool>({Dim::X, 4}, {false, false, true, true});
+  auto a = createVariable<bool>(Dims{Dim::X}, Shape{4},
+                                Values{false, true, false, true});
+  const auto b = createVariable<bool>(Dims{Dim::X}, Shape{4},
+                                      Values{false, false, true, true});
   a ^= b;
-  const auto expected =
-      makeVariable<bool>({Dim::X, 4}, {false, true, true, false});
+  const auto expected = createVariable<bool>(Dims{Dim::X}, Shape{4},
+                                             Values{false, true, true, false});
 
   EXPECT_EQ(a, expected);
 }
 
 TEST(VariableTest, boolean_xor) {
-  const auto a = makeVariable<bool>({Dim::X, 4}, {false, true, false, true});
-  const auto b = makeVariable<bool>({Dim::X, 4}, {false, false, true, true});
-  const auto expected =
-      makeVariable<bool>({Dim::X, 4}, {false, true, true, false});
+  const auto a = createVariable<bool>(Dims{Dim::X}, Shape{4},
+                                      Values{false, true, false, true});
+  const auto b = createVariable<bool>(Dims{Dim::X}, Shape{4},
+                                      Values{false, false, true, true});
+  const auto expected = createVariable<bool>(Dims{Dim::X}, Shape{4},
+                                             Values{false, true, true, false});
   const auto result = a ^ b;
 
   EXPECT_EQ(result, expected);
