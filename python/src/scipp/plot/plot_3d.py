@@ -95,6 +95,7 @@ class Slicer3d(Slicer):
 
         # Initialise Figure and VBox objects
         self.fig = ipv.figure()
+        self.fig.animation = 0
         params = {"values": {"cbmin": "min", "cbmax": "max"},
                   "variances": None}
         if self.show_variances:
@@ -125,107 +126,140 @@ class Slicer3d(Slicer):
         self.xminmax = dict()
         for key, var in self.slider_x.items():
             self.xminmax[key] = [var.values[0], var.values[-1]]
-        outl_x, outl_y, outl_z = self.get_outline()
+        # outl_x, outl_y, outl_z = self.get_box()
+        outl_x, outl_y, outl_z = np.meshgrid([-10, 60], [-10, 60], [-10, 60])
 
         self.outline = ipv.plot_wireframe(outl_x, outl_y, outl_z, color="green")
-        ipv.show()
-        return
+        wframes = self.get_outlines()
+        meshes = self.get_meshes()
+        self.wireframes = dict()
+        self.surfaces = dict()
+        # for xyz in "xyz":
+        #     print(wframes[xyz][0])
+        #     print(wframes[xyz][1])
+        key = self.button_axis_to_dim["x"]
+        self.wireframes["x"] = ipv.plot_wireframe(
+            np.ones_like(wframes["x"][0]) * self.slider_x[key].values[self.slider[key].value],
+            wframes["x"][0], wframes["x"][1], color="red")
+        self.surfaces["x"] = ipv.plot_surface(
+            np.ones_like(meshes["x"][0]) * self.slider_x[key].values[self.slider[key].value],
+            meshes["x"][0], meshes["x"][1], color="blue")
+        
+        key = self.button_axis_to_dim["y"]
+        self.wireframes["y"] = ipv.plot_wireframe(wframes["y"][1],
+            np.ones_like(wframes["y"][0]) * self.slider_x[key].values[self.slider[key].value],
+            wframes["y"][0], color="red")
+        self.surfaces["y"] = ipv.plot_surface(meshes["y"][1],
+            np.ones_like(meshes["y"][0]) * self.slider_x[key].values[self.slider[key].value],
+            meshes["y"][0], color="blue")
+
+        key = self.button_axis_to_dim["z"]
+        self.wireframes["z"] = ipv.plot_wireframe(
+            wframes["z"][0], wframes["z"][1],
+            np.ones_like(wframes["z"][0]) * self.slider_x[key].values[self.slider[key].value], color="red")
+        self.surfaces["z"] = ipv.plot_surface(
+            meshes["z"][0], meshes["z"][1],
+            np.ones_like(meshes["z"][0]) * self.slider_x[key].values[self.slider[key].value], color="blue")
+
+
+        # ipv.show()
+        # return
 
 
 
 
-        # Make a generic volume trace
-        if self.volume:
-            vol_trace = go.Volume(x=[0], y=[0], z=[0], value=[0], opacity=0.1,
-                                  surface_count=volume_sampling,
-                                  colorscale=self.cb["name"], showscale=True)
+        # # Make a generic volume trace
+        # if self.volume:
+        #     vol_trace = go.Volume(x=[0], y=[0], z=[0], value=[0], opacity=0.1,
+        #                           surface_count=volume_sampling,
+        #                           colorscale=self.cb["name"], showscale=True)
 
-        xyz = "xyz"
-        if self.show_variances:
-            self.fig = go.FigureWidget(
-                make_subplots(rows=1, cols=2, horizontal_spacing=0.16,
-                              specs=[[{"type": "scene"}, {"type": "scene"}]]))
+        # xyz = "xyz"
+        # if self.show_variances:
+        #     self.fig = go.FigureWidget(
+        #         make_subplots(rows=1, cols=2, horizontal_spacing=0.16,
+        #                       specs=[[{"type": "scene"}, {"type": "scene"}]]))
 
-            colorbars.append({"x": 1.0, "title": "Variances",
-                              "thicknessmode": 'fraction', "thickness": 0.02})
-            colorbars[0]["x"] = -0.1
+        #     colorbars.append({"x": 1.0, "title": "Variances",
+        #                       "thicknessmode": 'fraction', "thickness": 0.02})
+        #     colorbars[0]["x"] = -0.1
 
-            for i, (key, val) in enumerate(sorted(params.items())):
-                if self.volume:
-                    vol_trace["isomin"] = val["cmin"]
-                    vol_trace["isomax"] = val["cmax"]
-                    vol_trace["meta"] = key
-                    vol_trace["colorbar"] = colorbars[i]
-                    self.fig.add_trace(vol_trace, row=1, col=i+1)
-                else:
-                    for j in range(3):
-                        self.fig.add_trace(
-                            go.Surface(cmin=val["cmin"],
-                                       cmax=val["cmax"],
-                                       showscale=False,
-                                       colorscale=self.cb["name"],
-                                       colorbar=colorbars[i],
-                                       meta=key,
-                                       name="slice_{}".format(xyz[j])),
-                            row=1, col=i+1)
-                    self.fig.add_trace(
-                        go.Scatter3d(x=scatter_x,
-                                     y=scatter_y,
-                                     z=scatter_z,
-                                     marker=dict(cmin=val["cmin"],
-                                                 cmax=val["cmax"],
-                                                 color=np.linspace(
-                                                     val["cmin"],
-                                                     val["cmax"], 8),
-                                                 colorbar=colorbars[i],
-                                                 colorscale=self.cb["name"],
-                                                 showscale=True,
-                                                 opacity=1.0e-6),
-                                     mode="markers",
-                                     hoverinfo="none",
-                                     meta=key,
-                                     name="scatter"),
-                        row=1, col=i+1)
-            self.fig.update_layout(**layout)
-        else:
-            if self.volume:
-                vol_trace["isomin"] = params["values"]["cmin"]
-                vol_trace["isomax"] = params["values"]["cmax"]
-                vol_trace["meta"] = "values"
-                vol_trace["colorbar"] = colorbars[0]
-                data = [vol_trace]
-            else:
-                data = [go.Surface(cmin=params["values"]["cmin"],
-                                   cmax=params["values"]["cmax"],
-                                   colorscale=self.cb["name"],
-                                   colorbar=colorbars[0],
-                                   showscale=False,
-                                   meta="values",
-                                   name="slice_{}".format(xyz[j]))
-                        for j in range(3)]
+        #     for i, (key, val) in enumerate(sorted(params.items())):
+        #         if self.volume:
+        #             vol_trace["isomin"] = val["cmin"]
+        #             vol_trace["isomax"] = val["cmax"]
+        #             vol_trace["meta"] = key
+        #             vol_trace["colorbar"] = colorbars[i]
+        #             self.fig.add_trace(vol_trace, row=1, col=i+1)
+        #         else:
+        #             for j in range(3):
+        #                 self.fig.add_trace(
+        #                     go.Surface(cmin=val["cmin"],
+        #                                cmax=val["cmax"],
+        #                                showscale=False,
+        #                                colorscale=self.cb["name"],
+        #                                colorbar=colorbars[i],
+        #                                meta=key,
+        #                                name="slice_{}".format(xyz[j])),
+        #                     row=1, col=i+1)
+        #             self.fig.add_trace(
+        #                 go.Scatter3d(x=scatter_x,
+        #                              y=scatter_y,
+        #                              z=scatter_z,
+        #                              marker=dict(cmin=val["cmin"],
+        #                                          cmax=val["cmax"],
+        #                                          color=np.linspace(
+        #                                              val["cmin"],
+        #                                              val["cmax"], 8),
+        #                                          colorbar=colorbars[i],
+        #                                          colorscale=self.cb["name"],
+        #                                          showscale=True,
+        #                                          opacity=1.0e-6),
+        #                              mode="markers",
+        #                              hoverinfo="none",
+        #                              meta=key,
+        #                              name="scatter"),
+        #                 row=1, col=i+1)
+        #     self.fig.update_layout(**layout)
+        # else:
+        #     if self.volume:
+        #         vol_trace["isomin"] = params["values"]["cmin"]
+        #         vol_trace["isomax"] = params["values"]["cmax"]
+        #         vol_trace["meta"] = "values"
+        #         vol_trace["colorbar"] = colorbars[0]
+        #         data = [vol_trace]
+        #     else:
+        #         data = [go.Surface(cmin=params["values"]["cmin"],
+        #                            cmax=params["values"]["cmax"],
+        #                            colorscale=self.cb["name"],
+        #                            colorbar=colorbars[0],
+        #                            showscale=False,
+        #                            meta="values",
+        #                            name="slice_{}".format(xyz[j]))
+        #                 for j in range(3)]
 
-                data += [go.Scatter3d(
-                             x=scatter_x,
-                             y=scatter_y,
-                             z=scatter_z,
-                             marker=dict(cmin=params["values"]["cmin"],
-                                         cmax=params["values"]["cmax"],
-                                         color=np.linspace(
-                                             params["values"]["cmin"],
-                                             params["values"]["cmax"], 8),
-                                         colorbar=colorbars[0],
-                                         colorscale=self.cb["name"],
-                                         showscale=True,
-                                         opacity=1.0e-6),
-                             mode="markers",
-                             hoverinfo="none",
-                             meta="values",
-                             name="scatter")]
-            self.fig = go.FigureWidget(data=data, layout=layout)
+        #         data += [go.Scatter3d(
+        #                      x=scatter_x,
+        #                      y=scatter_y,
+        #                      z=scatter_z,
+        #                      marker=dict(cmin=params["values"]["cmin"],
+        #                                  cmax=params["values"]["cmax"],
+        #                                  color=np.linspace(
+        #                                      params["values"]["cmin"],
+        #                                      params["values"]["cmax"], 8),
+        #                                  colorbar=colorbars[0],
+        #                                  colorscale=self.cb["name"],
+        #                                  showscale=True,
+        #                                  opacity=1.0e-6),
+        #                      mode="markers",
+        #                      hoverinfo="none",
+        #                      meta="values",
+        #                      name="scatter")]
+        #     self.fig = go.FigureWidget(data=data, layout=layout)
 
         # Call update_slice once to make the initial image
         self.update_axes()
-        self.vbox = [self.fig] + self.vbox
+        self.vbox = [ipv.gcc()] + self.vbox
         self.vbox = widgets.VBox(self.vbox)
         self.vbox.layout.align_items = 'center'
 
@@ -270,17 +304,21 @@ class Slicer3d(Slicer):
                     self.slider_x[key], name=self.slider_labels[key])
                 buttons_dims[button.value.lower()] = button.dim_str
 
-        axes_dict = dict(xaxis_title=titles["x"],
-                         yaxis_title=titles["y"],
-                         zaxis_title=titles["z"])
+        # axes_dict = dict(xaxis_title=titles["x"],
+        #                  yaxis_title=titles["y"],
+        #                  zaxis_title=titles["z"])
 
-        if self.show_variances:
-            self.fig.layout.scene1 = axes_dict
-            self.fig.layout.scene2 = axes_dict
-        else:
-            self.fig.update_layout(scene=axes_dict)
+        # if self.show_variances:
+        #     self.fig.layout.scene1 = axes_dict
+        #     self.fig.layout.scene2 = axes_dict
+        # else:
+        #     self.fig.update_layout(scene=axes_dict)
+        self.fig.xlabel = titles["x"]
+        self.fig.ylabel = titles["y"]
+        self.fig.zlabel = titles["z"]
+        
 
-        self.update_cube()
+        # self.update_cube()
 
         return
 
@@ -310,60 +348,60 @@ class Slicer3d(Slicer):
                         "slice": self.cube[val.dim, val.value],
                         "loc": self.slider_x[key].values[val.value]}
 
-        if self.volume:
+        # if self.volume:
 
-            xyz = []
-            for w in ["x", "y", "z"]:
-                xyz.append(self.slider_x[button_dim_str[w]].values)
-            xyz_arrays = np.meshgrid(*xyz, indexing='ij')
-            base_dims = [button_dim["x"], button_dim["y"], button_dim["z"]]
-            transpose = [str(dim) for dim in self.cube.dims] != \
-                [button_dim_str["x"], button_dim_str["y"], button_dim_str["z"]]
-            if transpose:
-                # Use scipp's automatic transpose capabilities
-                base_var = sc.Variable(base_dims,
-                                       values=np.ones_like(xyz_arrays[0]))
-                self.cube = base_var * self.cube.data
-            self.fig.update_traces(x=xyz_arrays[0].flatten(),
-                                   y=xyz_arrays[1].flatten(),
-                                   z=xyz_arrays[2].flatten(),
-                                   value=self.cube.values.flatten(),
-                                   selector={"meta": "values"})
-            if self.show_variances:
-                self.fig.update_traces(x=xyz_arrays[0].flatten(),
-                                       y=xyz_arrays[1].flatten(),
-                                       z=xyz_arrays[2].flatten(),
-                                       value=self.cube.variances.flatten(),
-                                       selector={"meta": "variances"})
+        #     xyz = []
+        #     for w in ["x", "y", "z"]:
+        #         xyz.append(self.slider_x[button_dim_str[w]].values)
+        #     xyz_arrays = np.meshgrid(*xyz, indexing='ij')
+        #     base_dims = [button_dim["x"], button_dim["y"], button_dim["z"]]
+        #     transpose = [str(dim) for dim in self.cube.dims] != \
+        #         [button_dim_str["x"], button_dim_str["y"], button_dim_str["z"]]
+        #     if transpose:
+        #         # Use scipp's automatic transpose capabilities
+        #         base_var = sc.Variable(base_dims,
+        #                                values=np.ones_like(xyz_arrays[0]))
+        #         self.cube = base_var * self.cube.data
+        #     self.fig.update_traces(x=xyz_arrays[0].flatten(),
+        #                            y=xyz_arrays[1].flatten(),
+        #                            z=xyz_arrays[2].flatten(),
+        #                            value=self.cube.values.flatten(),
+        #                            selector={"meta": "values"})
+        #     if self.show_variances:
+        #         self.fig.update_traces(x=xyz_arrays[0].flatten(),
+        #                                y=xyz_arrays[1].flatten(),
+        #                                z=xyz_arrays[2].flatten(),
+        #                                value=self.cube.variances.flatten(),
+        #                                selector={"meta": "variances"})
 
-        else:
+        # else:
 
-            # Now make 3 slices
-            permutations = {"x": ["y", "z"], "y": ["x", "z"], "z": ["x", "y"]}
+        # Now make 3 slices
+        permutations = {"x": ["y", "z"], "y": ["x", "z"], "z": ["x", "y"]}
 
-            for key, val in sorted(vslices.items()):
-                if update_coordinates:
-                    xx, yy = np.meshgrid(
-                        self.slider_x[
-                            button_dim_str[permutations[key][0]]].values,
-                        self.slider_x[
-                            button_dim_str[permutations[key][1]]].values)
-                    args = {key: np.ones_like(xx) * val["loc"],
-                            permutations[key][0]: xx,
-                            permutations[key][1]: yy}
-                    self.fig.update_traces(
-                        **args, selector={"name": "slice_{}".format(key)})
-
+        for key, val in sorted(vslices.items()):
+            if update_coordinates:
+                xx, yy = np.meshgrid(
+                    self.slider_x[
+                        button_dim_str[permutations[key][0]]].values,
+                    self.slider_x[
+                        button_dim_str[permutations[key][1]]].values)
+                args = {key: np.ones_like(xx) * val["loc"],
+                        permutations[key][0]: xx,
+                        permutations[key][1]: yy}
                 self.fig.update_traces(
-                    surfacecolor=self.check_transpose(val["slice"]),
+                    **args, selector={"name": "slice_{}".format(key)})
+
+            self.fig.update_traces(
+                surfacecolor=self.check_transpose(val["slice"]),
+                selector={"name": "slice_{}".format(key),
+                          "meta": "values"})
+            if self.show_variances:
+                self.fig.update_traces(
+                    surfacecolor=self.check_transpose(val["slice"],
+                                                      variances=True),
                     selector={"name": "slice_{}".format(key),
-                              "meta": "values"})
-                if self.show_variances:
-                    self.fig.update_traces(
-                        surfacecolor=self.check_transpose(val["slice"],
-                                                          variances=True),
-                        selector={"name": "slice_{}".format(key),
-                                  "meta": "variances"})
+                              "meta": "variances"})
 
         return
 
@@ -420,11 +458,39 @@ class Slicer3d(Slicer):
                                selector={"name": "slice_{}".format(ax_dim)})
         return
 
-    def get_outline(self):
+    def get_outlines(self):
+        outlines = dict()
+        outlines["z"] =  np.meshgrid(
+            self.xminmax[self.button_axis_to_dim["x"]],
+            self.xminmax[self.button_axis_to_dim["y"]])
+        outlines["y"] =  np.meshgrid(
+            self.xminmax[self.button_axis_to_dim["z"]],
+            self.xminmax[self.button_axis_to_dim["x"]])
+        outlines["x"] =  np.meshgrid(
+            self.xminmax[self.button_axis_to_dim["y"]],
+            self.xminmax[self.button_axis_to_dim["z"]])
+        return outlines
+
+    def get_meshes(self):
+        meshes = dict()
+        meshes["z"] =  np.meshgrid(
+            self.slider_x[self.button_axis_to_dim["x"]].values,
+            self.slider_x[self.button_axis_to_dim["y"]].values)
+        meshes["y"] =  np.meshgrid(
+            self.slider_x[self.button_axis_to_dim["z"]].values,
+            self.slider_x[self.button_axis_to_dim["x"]].values)
+        meshes["x"] =  np.meshgrid(
+            self.slider_x[self.button_axis_to_dim["y"]].values,
+            self.slider_x[self.button_axis_to_dim["z"]].values)
+        return meshes
+
+
+    def get_box(self):
         return np.meshgrid(
                 self.xminmax[self.button_axis_to_dim["x"]],
                 self.xminmax[self.button_axis_to_dim["y"]],
                 self.xminmax[self.button_axis_to_dim["z"]])
+
 
     # def get_box(self):
 
