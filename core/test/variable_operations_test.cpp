@@ -1061,7 +1061,7 @@ TEST(VariableTest, divide_with_variance) {
                                        /* (0.1 / (0.0 * 0.0) + 0.2 / (3.0
                                         * 3.0)) * (0.0 / 3.0) * (0.0 / 3.0)
                                         naively, but if we take the limit... */
-                                           0.1 / (3.0 * 3.0)});
+                                       0.1 / (3.0 * 3.0)});
   const auto q = a / b;
   EXPECT_DOUBLE_EQ(q.values<double>()[0], expected.values<double>()[0]);
   EXPECT_DOUBLE_EQ(q.values<double>()[1], expected.values<double>()[1]);
