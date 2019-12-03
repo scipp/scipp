@@ -17,7 +17,8 @@ using namespace scipp;
 using namespace scipp::core;
 
 TEST(TransformSparseAndDenseTest, two_args) {
-  auto var = makeVariable<double>({Dim::Y, Dim::X}, {2, Dimensions::Sparse});
+  auto var = createVariable<double>(Dims{Dim::Y, Dim::X},
+                                    Shape{2l, Dimensions::Sparse});
   auto vals = var.sparseValues<double>();
   vals[0] = {1, 2, 3};
   vals[1] = {4};
@@ -40,7 +41,8 @@ TEST(TransformSparseAndDenseTest, two_args) {
 }
 
 TEST(TransformSparseAndDenseTest, three_args) {
-  auto var = makeVariable<double>({Dim::Y, Dim::X}, {2, Dimensions::Sparse});
+  auto var = createVariable<double>(Dims{Dim::Y, Dim::X},
+                                    Shape{2l, Dimensions::Sparse});
   auto vals = var.sparseValues<double>();
   vals[0] = {1, 2, 3};
   vals[1] = {4};

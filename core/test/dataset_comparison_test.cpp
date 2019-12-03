@@ -35,14 +35,14 @@ private:
 
 protected:
   Dataset_comparison_operators()
-      : sparse_variable(makeVariable<double>({Dim::Y, Dim::Z, Dim::X},
-                                             {3, 2, Dimensions::Sparse})) {
+      : sparse_variable(createVariable<double>(
+            Dims{Dim::Y, Dim::Z, Dim::X}, Shape{3l, 2l, Dimensions::Sparse})) {
     dataset.setCoord(Dim::X, createVariable<double>(Dims{Dim::X}, Shape{4}));
     dataset.setCoord(Dim::Y, createVariable<double>(Dims{Dim::Y}, Shape{3}));
 
     dataset.setLabels("labels", createVariable<int>(Dims{Dim::X}, Shape{4}));
 
-    dataset.setAttr("attr", makeVariable<int>({}));
+    dataset.setAttr("attr", createVariable<int>(Values{int{}}));
 
     auto vector = std::vector<double>(12);
     dataset.setData(

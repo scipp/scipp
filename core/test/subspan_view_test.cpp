@@ -20,7 +20,8 @@ protected:
 };
 
 TEST_F(SubspanViewTest, fail_sparse) {
-  auto sparse = makeVariable<double>({Dim::Y, Dim::X}, {2, Dimensions::Sparse});
+  auto sparse = createVariable<double>(Dims{Dim::Y, Dim::X},
+                                       Shape{2l, Dimensions::Sparse});
   EXPECT_THROW(subspan_view(sparse, Dim::X), except::DimensionError);
   EXPECT_THROW(subspan_view(sparse, Dim::Y), except::DimensionError);
 }

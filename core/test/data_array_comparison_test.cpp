@@ -18,15 +18,15 @@ using namespace scipp::core;
 class DataArray_comparison_operators : public ::testing::Test {
 protected:
   DataArray_comparison_operators()
-      : sparse_variable(makeVariable<double>({Dim::Y, Dim::Z, Dim::X},
-                                             {3, 2, Dimensions::Sparse})) {
+      : sparse_variable(createVariable<double>(
+            Dims{Dim::Y, Dim::Z, Dim::X}, Shape{3l, 2l, Dimensions::Sparse})) {
     dataset.setCoord(Dim::X, createVariable<double>(Dims{Dim::X}, Shape{4}));
     dataset.setCoord(Dim::Y, createVariable<double>(Dims{Dim::Y}, Shape{3}));
 
     dataset.setLabels("labels", createVariable<int>(Dims{Dim::X}, Shape{4}));
     dataset.setMask("mask", createVariable<bool>(Dims{Dim::X}, Shape{4}));
 
-    dataset.setAttr("global_attr", makeVariable<int>({}));
+    dataset.setAttr("global_attr", createVariable<int>(Values{int{}}));
 
     auto vector = std::vector<double>(12);
     dataset.setData(
@@ -34,16 +34,17 @@ protected:
         createVariable<double>(Dims{Dim::Y, Dim::X}, Shape{3, 4},
                                Values(vector.begin(), vector.end()),
                                Variances(vector.begin(), vector.end())));
-    dataset.setAttr("val_and_var", "attr", makeVariable<int>({}));
+    dataset.setAttr("val_and_var", "attr", createVariable<int>(Values{int{}}));
 
     dataset.setData("val", createVariable<double>(Dims{Dim::X}, Shape{4}));
-    dataset.setAttr("val", "attr", makeVariable<int>({}));
+    dataset.setAttr("val", "attr", createVariable<int>(Values{int{}}));
 
     dataset.setSparseCoord("sparse_coord", sparse_variable);
-    dataset.setAttr("sparse_coord", "attr", makeVariable<int>({}));
+    dataset.setAttr("sparse_coord", "attr", createVariable<int>(Values{int{}}));
     dataset.setData("sparse_coord_and_val", sparse_variable);
     dataset.setSparseCoord("sparse_coord_and_val", sparse_variable);
-    dataset.setAttr("sparse_coord_and_val", "attr", makeVariable<int>({}));
+    dataset.setAttr("sparse_coord_and_val", "attr",
+                    createVariable<int>(Values{int{}}));
   }
   void expect_eq(const DataConstProxy &a, const DataConstProxy &b) const {
     EXPECT_TRUE(a == b);
@@ -240,21 +241,21 @@ TEST_F(DataArray_comparison_operators, copy) {
 
 TEST_F(DataArray_comparison_operators, extra_coord) {
   auto extra = dataset;
-  extra.setCoord(Dim::Z, makeVariable<double>(0.0));
+  extra.setCoord(Dim::Z, createVariable<double>(Values{0.0}));
   for (const auto [name, a] : extra)
     expect_ne(a, dataset[name]);
 }
 
 TEST_F(DataArray_comparison_operators, extra_labels) {
   auto extra = dataset;
-  extra.setLabels("extra", makeVariable<double>(0.0));
+  extra.setLabels("extra", createVariable<double>(Values{0.0}));
   for (const auto [name, a] : extra)
     expect_ne(a, dataset[name]);
 }
 
 TEST_F(DataArray_comparison_operators, extra_mask) {
   auto extra = dataset;
-  extra.setMask("extra", makeVariable<bool>(false));
+  extra.setMask("extra", createVariable<bool>(Values{false}));
   for (const auto [name, a] : extra)
     expect_ne(a, dataset[name]);
 }
@@ -262,7 +263,7 @@ TEST_F(DataArray_comparison_operators, extra_mask) {
 TEST_F(DataArray_comparison_operators, extra_attr) {
   auto extra = dataset;
   for (const auto [name, a] : extra) {
-    extra.setAttr(name, "extra", makeVariable<double>(0.0));
+    extra.setAttr(name, "extra", createVariable<double>(Values{0.0}));
     expect_ne(a, dataset[name]);
   }
 }

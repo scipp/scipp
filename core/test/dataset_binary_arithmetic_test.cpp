@@ -302,7 +302,7 @@ TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_Dataset_coord_mismatch) {
 
 TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_Dataset_with_missing_items) {
   auto a = datasetFactory.make();
-  a.setData("extra", makeVariable<double>({}));
+  a.setData("extra", createVariable<double>(Values{double{}}));
   auto b = datasetFactory.make();
   auto reference(a);
 
@@ -319,7 +319,7 @@ TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_Dataset_with_missing_items) {
 TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_Dataset_with_extra_items) {
   auto a = datasetFactory.make();
   auto b = datasetFactory.make();
-  b.setData("extra", makeVariable<double>({}));
+  b.setData("extra", createVariable<double>(Values{double{}}));
 
   ASSERT_ANY_THROW(TestFixture::op(a, b));
 }
@@ -539,7 +539,7 @@ TYPED_TEST(DatasetProxyBinaryEqualsOpTest, rhs_Dataset_coord_mismatch) {
 
 TYPED_TEST(DatasetProxyBinaryEqualsOpTest, rhs_Dataset_with_missing_items) {
   auto a = datasetFactory.make();
-  a.setData("extra", makeVariable<double>({}));
+  a.setData("extra", createVariable<double>(Values{double{}}));
   auto b = datasetFactory.make();
   auto reference(a);
 
@@ -556,7 +556,7 @@ TYPED_TEST(DatasetProxyBinaryEqualsOpTest, rhs_Dataset_with_missing_items) {
 TYPED_TEST(DatasetProxyBinaryEqualsOpTest, rhs_Dataset_with_extra_items) {
   auto a = datasetFactory.make();
   auto b = datasetFactory.make();
-  b.setData("extra", makeVariable<double>({}));
+  b.setData("extra", createVariable<double>(Values{double{}}));
 
   ASSERT_ANY_THROW(TestFixture::op(DatasetProxy(a), b));
 }
@@ -674,7 +674,7 @@ TYPED_TEST(DatasetBinaryOpTest, broadcast) {
   const auto x =
       createVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
   const auto y = createVariable<double>(Dims{Dim::Y}, Shape{2}, Values{1, 2});
-  const auto c = makeVariable<double>(2.0);
+  const auto c = createVariable<double>(Values{2.0});
   Dataset a;
   Dataset b;
   a.setCoord(Dim::X, x);
@@ -767,7 +767,7 @@ TYPED_TEST(DatasetBinaryOpTest, sparse_with_dense_fail) {
 
 TYPED_TEST(DatasetBinaryOpTest, sparse_with_dense) {
   Dataset dense;
-  dense.setData("a", makeVariable<double>(2.0));
+  dense.setData("a", createVariable<double>(Values{2.0}));
   const auto sparse =
       make_sparse_with_coords_and_labels({1.1, 2.2}, {1.0, 2.0}, "a");
 
@@ -781,7 +781,7 @@ TYPED_TEST(DatasetBinaryOpTest, sparse_with_dense) {
 
 TYPED_TEST(DatasetBinaryOpTest, dense_with_sparse) {
   Dataset dense;
-  dense.setData("a", makeVariable<double>(2.0));
+  dense.setData("a", createVariable<double>(Values{2.0}));
   const auto sparse =
       make_sparse_with_coords_and_labels({1.1, 2.2}, {1.0, 2.0}, "a");
 
@@ -961,7 +961,7 @@ Dataset non_trivial_2d_sparse(std::string_view name) {
 TEST(DatasetSetData, sparse_to_sparse) {
   auto base = non_trivial_2d_sparse("base");
   auto other = non_trivial_2d_sparse("other");
-  other["other"] *= makeVariable<double>(2);
+  other["other"] *= createVariable<double>(Values{2});
   base.setData("other", other["other"]);
   EXPECT_EQ(other["other"], base["other"]);
 }

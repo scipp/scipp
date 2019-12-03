@@ -95,7 +95,8 @@ Dataset DatasetFactory3D::make() {
                       Dimensions{{Dim::X, lx}, {Dim::Y, ly}, {Dim::Z, lz}},
                       Values(dvalXYZ.begin(), dvalXYZ.end())));
 
-  dataset.setData("data_scalar", makeVariable<double>(rand(1).front()));
+  dataset.setData("data_scalar",
+                  createVariable<double>(Values{rand(1).front()}));
 
   return dataset;
 }
@@ -139,7 +140,8 @@ Dataset make_sparse_with_coords_and_labels(
 
 Dataset make_sparse_2d(std::initializer_list<double> values, std::string key) {
   Dataset ds;
-  auto var = makeVariable<double>({Dim::X, Dim::Y}, {2, Dimensions::Sparse});
+  auto var = createVariable<double>(Dims{Dim::X, Dim::Y},
+                                    Shape{2l, Dimensions::Sparse});
   var.sparseValues<double>()[0] = values;
   var.sparseValues<double>()[1] = values;
   ds.setData(key, var);

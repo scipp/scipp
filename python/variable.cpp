@@ -66,8 +66,9 @@ template <class ST> struct MakeODFromNativePythonTypes {
   template <class T> struct Maker {
     static Variable apply(const units::Unit unit, const ST &value,
                           const std::optional<ST> &variance) {
-      auto var = variance ? makeVariable<T>(T(value), T(variance.value()))
-                          : makeVariable<T>(T(value));
+      auto var = variance ? createVariable<T>(Values{T(value)},
+                                              Variances{T(variance.value())})
+                          : createVariable<T>(Values{T(value)});
       var.setUnit(unit);
       return var;
     }
@@ -98,9 +99,9 @@ auto do_init_0D(const T &value, const std::optional<T> &variance,
                 const units::Unit &unit) {
   Variable var;
   if (variance)
-    var = makeVariable<T>(value, *variance);
+    var = createVariable<T>(Values{value}, Variances{*variance});
   else
-    var = makeVariable<T>(value);
+    var = createVariable<T>(Values{value});
   var.setUnit(unit);
   return var;
 }

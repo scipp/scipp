@@ -53,9 +53,9 @@ TYPED_TEST(DatasetProxyTest, bad_item_access) {
 
 TYPED_TEST(DatasetProxyTest, name) {
   Dataset d;
-  d.setData("a", makeVariable<double>({}));
-  d.setData("b", makeVariable<float>({}));
-  d.setData("c", makeVariable<int64_t>({}));
+  d.setData("a", createVariable<double>(Values{double{}}));
+  d.setData("b", createVariable<float>(Values{float{}}));
+  d.setData("c", createVariable<int64_t>(Values{int64_t{}}));
   auto &&proxy = TestFixture::access(d);
 
   for (const auto &name : {"a", "b", "c"})
@@ -66,9 +66,9 @@ TYPED_TEST(DatasetProxyTest, name) {
 
 TYPED_TEST(DatasetProxyTest, find_and_contains) {
   Dataset d;
-  d.setData("a", makeVariable<double>({}));
-  d.setData("b", makeVariable<float>({}));
-  d.setData("c", makeVariable<int64_t>({}));
+  d.setData("a", createVariable<double>(Values{double{}}));
+  d.setData("b", createVariable<float>(Values{float{}}));
+  d.setData("c", createVariable<int64_t>(Values{int64_t{}}));
   auto &&proxy = TestFixture::access(d);
 
   EXPECT_EQ(proxy.find("not a thing"), proxy.end());
@@ -108,7 +108,7 @@ TYPED_TEST(DatasetProxyTest, iterators_empty_dataset) {
 
 TYPED_TEST(DatasetProxyTest, iterators_only_coords) {
   Dataset d;
-  d.setCoord(Dim::X, makeVariable<double>({}));
+  d.setCoord(Dim::X, createVariable<double>(Values{double{}}));
   auto &&proxy = TestFixture::access(d);
   ASSERT_NO_THROW(proxy.begin());
   ASSERT_NO_THROW(proxy.end());
@@ -117,7 +117,7 @@ TYPED_TEST(DatasetProxyTest, iterators_only_coords) {
 
 TYPED_TEST(DatasetProxyTest, iterators_only_labels) {
   Dataset d;
-  d.setLabels("a", makeVariable<double>({}));
+  d.setLabels("a", createVariable<double>(Values{double{}}));
   auto &&proxy = TestFixture::access(d);
   ASSERT_NO_THROW(proxy.begin());
   ASSERT_NO_THROW(proxy.end());
@@ -126,7 +126,7 @@ TYPED_TEST(DatasetProxyTest, iterators_only_labels) {
 
 TYPED_TEST(DatasetProxyTest, iterators_only_attrs) {
   Dataset d;
-  d.setAttr("a", makeVariable<double>({}));
+  d.setAttr("a", createVariable<double>(Values{double{}}));
   auto &&proxy = TestFixture::access(d);
   ASSERT_NO_THROW(proxy.begin());
   ASSERT_NO_THROW(proxy.end());
@@ -135,9 +135,9 @@ TYPED_TEST(DatasetProxyTest, iterators_only_attrs) {
 
 TYPED_TEST(DatasetProxyTest, iterators) {
   Dataset d;
-  d.setData("a", makeVariable<double>({}));
-  d.setData("b", makeVariable<float>({}));
-  d.setData("c", makeVariable<int64_t>({}));
+  d.setData("a", createVariable<double>(Values{double{}}));
+  d.setData("b", createVariable<float>(Values{float{}}));
+  d.setData("c", createVariable<int64_t>(Values{int64_t{}}));
   auto &&proxy = TestFixture::access(d);
 
   ASSERT_NO_THROW(proxy.begin());
