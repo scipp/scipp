@@ -283,7 +283,6 @@ struct default_init<Eigen::Matrix<T, Rows, Cols>> {
 } // namespace detail
 
 template <class T, class... Ts> Variable createVariable(Ts &&... ts);
-template <class T> Variable makeVariable(T value);
 
 /// Variable is a type-erased handle to any data structure representing a
 /// multi-dimensional array. It has a name, a unit, and a set of named
@@ -557,21 +556,6 @@ makeVariableWithVariances(const Dimensions &dimensions,
     return Variable(units::dimensionless, dimensions,
                     Vector<T>(dimensions.volume(), init),
                     Vector<T>(dimensions.volume(), init));
-}
-
-template <class T>
-Variable makeVariable(const std::initializer_list<Dim> &dims,
-                      const std::initializer_list<scipp::index> &shape) {
-  return createVariable<T>(Dimensions(dims, shape));
-}
-
-template <class T> Variable makeVariable(T value) {
-  return Variable(units::dimensionless, Dimensions{}, Vector<T>(1, value));
-}
-
-template <class T> Variable makeVariable(T value, T variance) {
-  return Variable(units::dimensionless, Dimensions{}, Vector<T>(1, value),
-                  Vector<T>(1, variance));
 }
 
 template <class T>

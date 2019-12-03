@@ -208,25 +208,25 @@ public:
   template <typename T,
             typename = std::enable_if_t<!is_container_or_proxy<T>()>>
   DataProxy operator+=(const T value) const {
-    return *this += makeVariable<T>(value);
+    return *this += createVariable<T>(Values{value});
   }
 
   template <typename T,
             typename = std::enable_if_t<!is_container_or_proxy<T>()>>
   DataProxy operator-=(const T value) const {
-    return *this -= makeVariable<T>(value);
+    return *this -= createVariable<T>(Values{value});
   }
 
   template <typename T,
             typename = std::enable_if_t<!is_container_or_proxy<T>()>>
   DataProxy operator*=(const T value) const {
-    return *this *= makeVariable<T>(value);
+    return *this *= createVariable<T>(Values{value});
   }
 
   template <typename T,
             typename = std::enable_if_t<!is_container_or_proxy<T>()>>
   DataProxy operator/=(const T value) const {
-    return *this /= makeVariable<T>(value);
+    return *this /= createVariable<T>(Values{value});
   }
 
 private:
@@ -1068,25 +1068,25 @@ public:
   template <typename T,
             typename = std::enable_if_t<!is_container_or_proxy<T>()>>
   DataArray &operator+=(const T value) {
-    return *this += makeVariable<T>(value);
+    return *this += createVariable<T>(Values{value});
   }
 
   template <typename T,
             typename = std::enable_if_t<!is_container_or_proxy<T>()>>
   DataArray &operator-=(const T value) {
-    return *this -= makeVariable<T>(value);
+    return *this -= createVariable<T>(Values{value});
   }
 
   template <typename T,
             typename = std::enable_if_t<!is_container_or_proxy<T>()>>
   DataArray &operator*=(const T value) {
-    return *this *= makeVariable<T>(value);
+    return *this *= createVariable<T>(Values{value});
   }
 
   template <typename T,
             typename = std::enable_if_t<!is_container_or_proxy<T>()>>
   DataArray &operator/=(const T value) {
-    return *this /= makeVariable<T>(value);
+    return *this /= createVariable<T>(Values{value});
   }
 
   void setData(Variable data) { m_holder.setData(name(), std::move(data)); }
