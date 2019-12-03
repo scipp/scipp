@@ -87,8 +87,8 @@ Variable init_1D_no_variance(const std::vector<Dim> &labels,
                              const std::vector<T> &values,
                              const units::Unit &unit) {
   Variable var;
-  Dimensions dims(labels, shape);
-  var = makeVariable<T>(dims, values) /*LABEL_1*/;
+  var = createVariable<T>(Dims(labels), Shape(shape),
+                          Values(values.begin(), values.end()));
   var.setUnit(unit);
   return var;
 }
@@ -202,16 +202,19 @@ void bind_init_list(py::class_<Variable> &c) {
                     const units::Unit &unit, py::object &dtype) {
           if (scipp_dtype(dtype) == core::dtype<Eigen::Vector3d>) {
             auto val = values.cast<std::vector<Eigen::Vector3d>>();
-            Variable var;
-            Dimensions dims(label[0], scipp::size(val));
-            if (variances)
-              var = makeVariable<Eigen::Vector3d>(
-                  dims, val,
-                  variances->cast<std::vector<Eigen::Vector3d>>()) /*LABEL_1*/;
-            else
-              var = makeVariable<Eigen::Vector3d>(dims, val) /*LABEL_1*/;
-            var.setUnit(unit);
-            return var;
+            Variable variable;
+            if (variances) {
+              auto var = variances->cast<std::vector<Eigen::Vector3d>>();
+              variable = createVariable<Eigen::Vector3d>(
+                  Dims{label[0]}, Shape{scipp::size(val)},
+                  Values(val.begin(), val.end()),
+                  Variances(var.begin(), var.end()));
+            } else
+              variable = createVariable<Eigen::Vector3d>(
+                  Dims{label[0]}, Shape{scipp::size(val)},
+                  Values(val.begin(), val.end()));
+            variable.setUnit(unit);
+            return variable;
           }
 
           auto arr = py::array(values);
