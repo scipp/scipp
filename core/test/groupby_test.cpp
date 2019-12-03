@@ -20,7 +20,7 @@ static auto make_dataset_for_groupby_test() {
   d.setData("c", createVariable<double>(Dims{Dim::Z, Dim::X}, Shape{2, 3},
                                         units::Unit(units::s),
                                         Values{1, 2, 3, 4, 5, 6}));
-  d.setAttr("a", "scalar", makeVariable<double>(1.2));
+  d.setAttr("a", "scalar", createVariable<double>(Values{1.2}));
   d.setLabels("labels1",
               createVariable<double>(Dims{Dim::X}, Shape{3},
                                      units::Unit(units::m), Values{1, 2, 3}));
@@ -67,7 +67,7 @@ TEST(GroupbyTest, dataset_1d_and_2d) {
   expected.setData("c", createVariable<double>(
                             Dims{Dim::Z, Dim::Y}, Shape{2, 2},
                             units::Unit(units::s), Values{1.5, 3.0, 4.5, 6.0}));
-  expected.setAttr("a", "scalar", makeVariable<double>(1.2));
+  expected.setAttr("a", "scalar", createVariable<double>(Values{1.2}));
   expected.setCoord(Dim::Y, createVariable<double>(Dims{Dim::Y}, Shape{2},
                                                    units::Unit(units::m),
                                                    Values{1, 3}));
@@ -86,7 +86,7 @@ static auto make_dataset_for_bin_test() {
   d.setData("b", createVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 5},
                                         units::Unit(units::s),
                                         Values{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}));
-  d.setAttr("a", "scalar", makeVariable<double>(1.2));
+  d.setAttr("a", "scalar", createVariable<double>(Values{1.2}));
   d.setLabels("labels1", createVariable<double>(Dims{Dim::X}, Shape{5},
                                                 units::Unit(units::m),
                                                 Values{1, 2, 3, 4, 5}));
@@ -111,7 +111,7 @@ TEST(GroupbyTest, bins) {
   expected.setData("b", createVariable<double>(
                             Dims{Dim::Y, Dim::Z}, Shape{2, 3},
                             units::Unit(units::s), Values{0, 8, 3, 0, 23, 8}));
-  expected.setAttr("a", "scalar", makeVariable<double>(1.2));
+  expected.setAttr("a", "scalar", createVariable<double>(Values{1.2}));
 
   EXPECT_EQ(groupby(d, "labels2", bins).sum(Dim::X), expected);
   EXPECT_EQ(groupby(d["a"], "labels2", bins).sum(Dim::X), expected["a"]);
@@ -166,7 +166,8 @@ TEST(GroupbyTest, two_bin) {
 }
 
 auto make_sparse_in() {
-  auto var = makeVariable<double>({Dim::Y, Dim::X}, {3, Dimensions::Sparse});
+  auto var = createVariable<double>(Dims{Dim::Y, Dim::X},
+                                    Shape{3l, Dimensions::Sparse});
   const auto &var_ = var.sparseValues<double>();
   var_[0] = {1, 2, 3};
   var_[1] = {4, 5};
@@ -175,7 +176,8 @@ auto make_sparse_in() {
 }
 
 auto make_sparse_out() {
-  auto var = makeVariable<double>({Dim::Z, Dim::X}, {2, Dimensions::Sparse});
+  auto var = createVariable<double>(Dims{Dim::Z, Dim::X},
+                                    Shape{2l, Dimensions::Sparse});
   const auto &var_ = var.sparseValues<double>();
   var_[0] = {1, 2, 3, 4, 5};
   var_[1] = {6, 7};
@@ -192,7 +194,7 @@ DataArray make_sparse_array_in() {
                                             units::Unit(units::m),
                                             Values{1, 2, 3, 4, 5})}},
           {},
-          {{"scalar_attr", makeVariable<double>(1.2)}}};
+          {{"scalar_attr", createVariable<double>(Values{1.2})}}};
 }
 
 DataArray make_sparse_array_out() {
@@ -205,7 +207,7 @@ DataArray make_sparse_array_out() {
         createVariable<double>(Dims{Dim::X}, Shape{5}, units::Unit(units::m),
                                Values{1, 2, 3, 4, 5})}},
       {},
-      {{"scalar_attr", makeVariable<double>(1.2)}}};
+      {{"scalar_attr", createVariable<double>(Values{1.2})}}};
 }
 
 TEST(GroupbyTest, flatten_coord_only) {

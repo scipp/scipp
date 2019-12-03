@@ -81,7 +81,7 @@ TEST(MeanTest, variances_as_standard_deviation_of_the_mean) {
 TEST(MeanTest, dataset_mean_fails) {
   Dataset d;
   d.setData("a", createVariable<double>(Dims{Dim::X}, Shape{2}));
-  d.setData("b", makeVariable<double>(1.0));
+  d.setData("b", createVariable<double>(Values{1.0}));
   // "b" does not depend on X, so this fails. This could change in the future if
   // we find a clear definition of the functions behavior in this case.
   EXPECT_THROW(mean(d, Dim::X), except::DimensionError);

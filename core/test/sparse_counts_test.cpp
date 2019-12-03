@@ -8,8 +8,8 @@ using namespace scipp;
 using namespace scipp::core;
 
 static auto make_sparse() {
-  auto var = makeVariable<double>({Dim::Z, Dim::Y, Dim::X},
-                                  {3, 2, Dimensions::Sparse});
+  auto var = createVariable<double>(Dims{Dim::Z, Dim::Y, Dim::X},
+                                    Shape{3l, 2l, Dimensions::Sparse});
   scipp::index count = 0;
   for (auto &v : var.sparseValues<double>())
     v.resize(count++);
@@ -29,7 +29,7 @@ static auto make_sparse_with_variances() {
 }
 
 TEST(SparseCountsTest, fail_dense) {
-  auto bad = makeVariable<double>(1.0);
+  auto bad = createVariable<double>(Values{1.0});
   EXPECT_ANY_THROW(sparse::counts(bad));
 }
 
