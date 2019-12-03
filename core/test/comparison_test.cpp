@@ -42,20 +42,20 @@ TEST(ComparisonTest, variable_not_equal_outside_tolerance) {
 }
 
 TEST(ComparisonTest, variable_variances_equal) {
-  const auto a = makeVariable<double>(10.0, 1.0);
-  const auto b = makeVariable<double>(10.0, 1.0);
+  const auto a = createVariable<double>(Values{10.0}, Variances{1.0});
+  const auto b = createVariable<double>(Values{10.0}, Variances{1.0});
   EXPECT_TRUE(is_approx(a, b, 0.1));
 }
 
 TEST(ComparisonTest, variable_variances_not_equal_outside_tolerance) {
-  const auto a = makeVariable<double>(10.0, 1.0);
-  const auto b = makeVariable<double>(10.0, 0.5);
+  const auto a = createVariable<double>(Values{10.0}, Variances{1.0});
+  const auto b = createVariable<double>(Values{10.0}, Variances{0.5});
   EXPECT_FALSE(is_approx(a, b, 0.1));
 }
 
 TEST(ComparisonTest, variable_variances_missing_in_one_operand) {
-  const auto a = makeVariable<double>(10.0);
-  const auto b = makeVariable<double>(10.0, 1.0);
+  const auto a = createVariable<double>(Values{10.0});
+  const auto b = createVariable<double>(Values{10.0}, Variances{1.0});
   EXPECT_FALSE(is_approx(a, b, 0.1));
 }
 

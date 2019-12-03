@@ -889,7 +889,7 @@ SCIPP_CORE_EXPORT Variable operator^(const VariableConstProxy &a,
 // anyway so this is a convenient way to avoid defining more overloads.
 template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
 Variable operator+(const T value, const VariableConstProxy &a) {
-  return makeVariable<T>(value) + a;
+  return createVariable<T>(Values{value}) + a;
 }
 template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
 Variable operator-(const T value, const VariableConstProxy &a) {
