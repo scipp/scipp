@@ -558,6 +558,12 @@ makeVariableWithVariances(const Dimensions &dimensions,
                     Vector<T>(dimensions.volume(), init));
 }
 
+template <class T>
+Variable makeVariable(const std::initializer_list<Dim> &dims,
+                      const std::initializer_list<scipp::index> &shape) {
+  return createVariable<T>(Dimensions(dims, shape));
+}
+
 template <class T> Variable makeVariable(T value) {
   return Variable(units::dimensionless, Dimensions{}, Vector<T>(1, value));
 }
@@ -923,20 +929,22 @@ Variable operator/(Variable a, const boost::units::quantity<T> &quantity) {
 }
 template <class T>
 Variable operator/(const boost::units::quantity<T> &quantity, Variable a) {
-  return createVariable<double>(Dimensions{}, units::Unit(T{}), Values{quantity.value()}) /
+  return createVariable<double>(Dimensions{}, units::Unit(T{}),
+                                Values{quantity.value()}) /
          std::move(a);
 }
 
 template <typename T>
 std::enable_if_t<std::is_arithmetic_v<T>, Variable>
 operator*(T v, const units::Unit &unit) {
-  return makeVariable<T>({}, unit, {v});
+  return createVariable<T>(Dimensions{}, units::Unit{unit}, Values{v});
 }
 
 template <typename T>
 std::enable_if_t<std::is_arithmetic_v<T>, Variable>
 operator/(T v, const units::Unit &unit) {
-  return makeVariable<T>({}, units::Unit(units::dimensionless) / unit, {v});
+  return createVariable<T>(Dimensions{},
+                           units::Unit(units::dimensionless) / unit, Values{v});
 }
 
 SCIPP_CORE_EXPORT Variable astype(const VariableConstProxy &var,
