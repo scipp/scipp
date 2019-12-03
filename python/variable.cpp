@@ -229,7 +229,8 @@ void bind_init_list(py::class_<Variable> &c) {
 }
 
 void init_variable(py::module &m) {
-  py::class_<Variable> variable(m, "Variable", R"(
+  py::class_<Variable> variable(m, "Variable",
+                                R"(
     Array of values with dimension labels and a unit, optionally including an array of variances.)");
   bind_init_0D<DataArray>(variable);
   bind_init_0D<Dataset>(variable);
@@ -275,7 +276,8 @@ void init_variable(py::module &m) {
   py::class_<VariableConstProxy>(m, "VariableConstProxy")
       .def(py::init<const Variable &>());
   py::class_<VariableProxy, VariableConstProxy> variableProxy(
-      m, "VariableProxy", py::buffer_protocol(), R"(
+      m, "VariableProxy", py::buffer_protocol(),
+      R"(
         Proxy for Variable, representing a sliced or transposed view onto a variable;
         Mostly equivalent to Variable, see there for details.)");
   variableProxy.def_buffer(&make_py_buffer_info);
@@ -345,7 +347,8 @@ void init_variable(py::module &m) {
         :rtype: Variable)");
 
   m.def("abs", [](const Variable &self) { return abs(self); }, py::arg("x"),
-        py::call_guard<py::gil_scoped_release>(), R"(
+        py::call_guard<py::gil_scoped_release>(),
+        R"(
         Element-wise absolute value.
 
         :raises: If the dtype has no absolute value, e.g., if it is a string
@@ -366,7 +369,8 @@ void init_variable(py::module &m) {
         py::overload_cast<const VariableConstProxy &,
                           const VariableConstProxy &, const Dim>(&concatenate),
         py::arg("x"), py::arg("y"), py::arg("dim"),
-        py::call_guard<py::gil_scoped_release>(), R"(
+        py::call_guard<py::gil_scoped_release>(),
+        R"(
         Concatenate input variables along the given dimension.
 
         Concatenation can happen in two ways:
@@ -380,10 +384,10 @@ void init_variable(py::module &m) {
         :return: New variable containing all elements of the input variables.
         :rtype: Variable)");
 
-  m.def("filter",
-        py::overload_cast<const Variable &, const Variable &>(&filter),
-        py::arg("x"), py::arg("filter"),
-        py::call_guard<py::gil_scoped_release>(), R"(
+  m.def(
+      "filter", py::overload_cast<const Variable &, const Variable &>(&filter),
+      py::arg("x"), py::arg("filter"), py::call_guard<py::gil_scoped_release>(),
+      R"(
         Selects elements for a Variable using a filter (mask).
 
         The filter variable must be 1D and of bool type.
@@ -410,7 +414,8 @@ void init_variable(py::module &m) {
         :rtype: Variable)");
 
   m.def("norm", py::overload_cast<const VariableConstProxy &>(&norm),
-        py::arg("x"), py::call_guard<py::gil_scoped_release>(), R"(
+        py::arg("x"), py::call_guard<py::gil_scoped_release>(),
+        R"(
         Element-wise norm.
 
         :raises: If the dtype has no norm, i.e., if it is not a vector
@@ -436,7 +441,8 @@ void init_variable(py::module &m) {
         "Split a Variable along a given Dimension.");
 
   m.def("sqrt", [](const VariableConstProxy &self) { return sqrt(self); },
-        py::arg("x"), py::call_guard<py::gil_scoped_release>(), R"(
+        py::arg("x"), py::call_guard<py::gil_scoped_release>(),
+        R"(
         Element-wise square-root.
 
         :raises: If the dtype has no square-root, e.g., if it is a string
@@ -468,7 +474,8 @@ void init_variable(py::module &m) {
         :rtype: Variable)");
 
   m.def("sin", [](const Variable &self) { return sin(self); }, py::arg("x"),
-        py::call_guard<py::gil_scoped_release>(), R"(
+        py::call_guard<py::gil_scoped_release>(),
+        R"(
         Element-wise sin.
 
         :raises: If the unit is not a plane-angle unit, or if the dtype has no sin, e.g., if it is an integer
@@ -476,7 +483,8 @@ void init_variable(py::module &m) {
         :rtype: Variable)");
 
   m.def("cos", [](const Variable &self) { return cos(self); }, py::arg("x"),
-        py::call_guard<py::gil_scoped_release>(), R"(
+        py::call_guard<py::gil_scoped_release>(),
+        R"(
         Element-wise cos.
 
         :raises: If the unit is not a plane-angle unit, or if the dtype has no cos, e.g., if it is an integer
@@ -484,7 +492,8 @@ void init_variable(py::module &m) {
         :rtype: Variable)");
 
   m.def("tan", [](const Variable &self) { return tan(self); }, py::arg("x"),
-        py::call_guard<py::gil_scoped_release>(), R"(
+        py::call_guard<py::gil_scoped_release>(),
+        R"(
         Element-wise tan.
 
         :raises: If the unit is not a plane-angle unit, or if the dtype has no tan, e.g., if it is an integer
@@ -492,7 +501,8 @@ void init_variable(py::module &m) {
         :rtype: Variable)");
 
   m.def("asin", [](const Variable &self) { return asin(self); }, py::arg("x"),
-        py::call_guard<py::gil_scoped_release>(), R"(
+        py::call_guard<py::gil_scoped_release>(),
+        R"(
         Element-wise asin.
 
         :raises: If the unit is dimensionless, or if the dtype has no asin, e.g., if it is an integer
@@ -500,7 +510,8 @@ void init_variable(py::module &m) {
         :rtype: Variable)");
 
   m.def("acos", [](const Variable &self) { return acos(self); }, py::arg("x"),
-        py::call_guard<py::gil_scoped_release>(), R"(
+        py::call_guard<py::gil_scoped_release>(),
+        R"(
         Element-wise acos.
 
         :raises: If the unit is dimensionless, or if the dtype has no acos, e.g., if it is an integer
@@ -508,7 +519,8 @@ void init_variable(py::module &m) {
         :rtype: Variable)");
 
   m.def("atan", [](const Variable &self) { return atan(self); }, py::arg("x"),
-        py::call_guard<py::gil_scoped_release>(), R"(
+        py::call_guard<py::gil_scoped_release>(),
+        R"(
         Element-wise atan.
 
         :raises: If the unit is dimensionless, or if the dtype has no atan, e.g., if it is an integer
