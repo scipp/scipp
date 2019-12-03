@@ -282,6 +282,7 @@ struct default_init<Eigen::Matrix<T, Rows, Cols>> {
 };
 } // namespace detail
 
+template <class T, class... Ts> Variable createVariable(Ts &&... ts);
 template <class T> Variable makeVariable(T value);
 
 /// Variable is a type-erased handle to any data structure representing a
@@ -403,19 +404,19 @@ public:
   Variable &operator+=(const VariableConstProxy &other) &;
   template <typename T, typename = std::enable_if_t<!is_variable_or_proxy<T>()>>
   Variable &operator+=(const T v) & {
-    return *this += makeVariable<T>(v);
+    return *this += createVariable<T>(Values{v});
   }
 
   Variable &operator-=(const VariableConstProxy &other) &;
   template <typename T, typename = std::enable_if_t<!is_variable_or_proxy<T>()>>
   Variable &operator-=(const T v) & {
-    return *this -= makeVariable<T>(v);
+    return *this -= createVariable<T>(Values{v});
   }
 
   Variable &operator*=(const VariableConstProxy &other) &;
   template <typename T, typename = std::enable_if_t<!is_variable_or_proxy<T>()>>
   Variable &operator*=(const T v) & {
-    return *this *= makeVariable<T>(v);
+    return *this *= createVariable<T>(Values{v});
   }
   template <class T>
   Variable &operator*=(const boost::units::quantity<T> &quantity) & {
@@ -426,7 +427,7 @@ public:
   Variable &operator/=(const VariableConstProxy &other) &;
   template <typename T, typename = std::enable_if_t<!is_variable_or_proxy<T>()>>
   Variable &operator/=(const T v) & {
-    return *this /= makeVariable<T>(v);
+    return *this /= createVariable<T>(Values{v});
   }
   template <class T>
   Variable &operator/=(const boost::units::quantity<T> &quantity) & {
@@ -828,25 +829,25 @@ public:
   VariableProxy operator+=(const VariableConstProxy &other) const;
   template <typename T, typename = std::enable_if_t<!is_variable_or_proxy<T>()>>
   VariableProxy operator+=(const T v) const {
-    return *this += makeVariable<T>(v);
+    return *this += createVariable<T>(Values{v});
   }
 
   VariableProxy operator-=(const VariableConstProxy &other) const;
   template <typename T, typename = std::enable_if_t<!is_variable_or_proxy<T>()>>
   VariableProxy operator-=(const T v) const {
-    return *this -= makeVariable<T>(v);
+    return *this -= createVariable<T>(Values{v});
   }
 
   VariableProxy operator*=(const VariableConstProxy &other) const;
   template <typename T, typename = std::enable_if_t<!is_variable_or_proxy<T>()>>
   VariableProxy operator*=(const T v) const {
-    return *this *= makeVariable<T>(v);
+    return *this *= createVariable<T>(Values{v});
   }
 
   VariableProxy operator/=(const VariableConstProxy &other) const;
   template <typename T, typename = std::enable_if_t<!is_variable_or_proxy<T>()>>
   VariableProxy operator/=(const T v) const {
-    return *this /= makeVariable<T>(v);
+    return *this /= createVariable<T>(Values{v});
   }
 
   VariableProxy operator|=(const VariableConstProxy &other) const;
@@ -892,31 +893,31 @@ Variable operator+(const T value, const VariableConstProxy &a) {
 }
 template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
 Variable operator-(const T value, const VariableConstProxy &a) {
-  return makeVariable<T>(value) - a;
+  return createVariable<T>(Values{value}) - a;
 }
 template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
 Variable operator*(const T value, const VariableConstProxy &a) {
-  return makeVariable<T>(value) * a;
+  return createVariable<T>(Values{value}) * a;
 }
 template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
 Variable operator/(const T value, const VariableConstProxy &a) {
-  return makeVariable<T>(value) / a;
+  return createVariable<T>(Values{value}) / a;
 }
 template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
 Variable operator+(const VariableConstProxy &a, const T value) {
-  return a + makeVariable<T>(value);
+  return a + createVariable<T>(Values{value});
 }
 template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
 Variable operator-(const VariableConstProxy &a, const T value) {
-  return a - makeVariable<T>(value);
+  return a - createVariable<T>(Values{value});
 }
 template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
 Variable operator*(const VariableConstProxy &a, const T value) {
-  return a * makeVariable<T>(value);
+  return a * createVariable<T>(Values{value});
 }
 template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
 Variable operator/(const VariableConstProxy &a, const T value) {
-  return a / makeVariable<T>(value);
+  return a / createVariable<T>(Values{value});
 }
 
 template <class T>
