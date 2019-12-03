@@ -429,8 +429,9 @@ TYPED_TEST_SUITE(DatasetMaskSlicingBinaryOpTest, Binary);
 TYPED_TEST(DatasetMaskSlicingBinaryOpTest, binary_op_on_sliced_masks) {
   auto a = make_1d_masked();
 
-  const auto expectedMasks = makeVariable<bool>(
-      {Dim::X, 3}, makeBools<BoolsGeneratorType::TRUE>(3)) /*LABEL_1*/;
+  auto bools = makeBools<BoolsGeneratorType::TRUE>(3);
+  const auto expectedMasks = createVariable<bool>(
+      Dimensions{Dim::X, 3}, Values(bools.begin(), bools.end()));
 
   // these are conveniently 0 1 0 and 1 0 1
   const auto slice1 = a.slice({Dim::X, 0, 3});
