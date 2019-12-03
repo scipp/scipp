@@ -14,6 +14,7 @@ from .._scipp import core as sc
 # Other imports
 import numpy as np
 import ipywidgets as widgets
+from ipyevents import Event
 from matplotlib import cm
 from matplotlib.colors import Normalize, LogNorm
 
@@ -101,6 +102,8 @@ class Slicer3d(Slicer):
         if self.show_variances:
             params["variances"] = {"cbmin": "min_var", "cbmax": "max_var"}
 
+        self.scalar_map = dict()
+
         # Set colorbar limits once to keep them constant for slicer
         # TODO: should there be auto scaling as slider value is changed?
         for i, (key, val) in enumerate(sorted(params.items())):
@@ -114,10 +117,18 @@ class Slicer3d(Slicer):
                 #     val["cmax"] = self.cb[val["cbmax"]]
                 # else:
                 #     val["cmax"] = np.amax(arr[np.where(np.isfinite(arr))])
+                # if self.cb["log"]:
+                #     val["norm"] = LogNorm(vmin=self.cb[val["cbmin"]], vmax=self.cb[val["cbmax"]])
+                # else:
+                #     val["norm"] = Normalize(vmin=self.cb[val["cbmin"]], vmax=self.cb[val["cbmin"]])
                 if self.cb["log"]:
-                    val["norm"] = LogNorm(vmin=self.cb[val["cbmin"]], vmax=self.cb[val["cbmax"]])
+                    norm = LogNorm(vmin=self.cb[val["cbmin"]], vmax=self.cb[val["cbmax"]])
                 else:
-                    val["norm"] = Normalize(vmin=self.cb[val["cbmin"]], vmax=self.cb[val["cbmin"]])
+                    norm = Normalize(vmin=self.cb[val["cbmin"]], vmax=self.cb[val["cbmin"]])
+
+
+                self.scalar_map[key] = cm.ScalarMappable(norm=norm,
+                                                         cmap=self.cb["name"])
 
         colorbars = [{"x": 1.0, "title": value_name,
                       "thicknessmode": 'fraction', "thickness": 0.02}]
@@ -160,6 +171,15 @@ class Slicer3d(Slicer):
         self.surfaces["z"] = ipv.plot_surface(
             meshes["z"][0], meshes["z"][1],
             np.ones_like(meshes["z"][0]) * self.slider_x[key].values[self.slider[key].value], color="blue")
+
+
+        # self.mouse_events = dict()
+        # for key, sl in self.slider.items():
+        #     self.mouse_events[key] = Event(source=sl, watched_events=['mouseup'])
+        #     self.mouse_events[key].on_dom_event(update_surface)
+
+
+
 
 
         # ipv.show()
@@ -318,7 +338,7 @@ class Slicer3d(Slicer):
         self.fig.zlabel = titles["z"]
         
 
-        # self.update_cube()
+        self.update_cube()
 
         return
 
@@ -389,19 +409,28 @@ class Slicer3d(Slicer):
                 args = {key: np.ones_like(xx) * val["loc"],
                         permutations[key][0]: xx,
                         permutations[key][1]: yy}
-                self.fig.update_traces(
-                    **args, selector={"name": "slice_{}".format(key)})
 
-            self.fig.update_traces(
-                surfacecolor=self.check_transpose(val["slice"]),
-                selector={"name": "slice_{}".format(key),
-                          "meta": "values"})
-            if self.show_variances:
-                self.fig.update_traces(
-                    surfacecolor=self.check_transpose(val["slice"],
-                                                      variances=True),
-                    selector={"name": "slice_{}".format(key),
-                              "meta": "variances"})
+                # for k, v in args.items():
+                #     setattr(self.surfaces[key], k, v)
+
+
+                # self.fig.update_traces(
+                #     **args, selector={"name": "slice_{}".format(key)})
+            colors = self.scalar_map["values"].to_rgba(self.check_transpose(val["slice"]).flatten())
+            print(key)
+            print(colors)
+
+            self.surfaces[key].color = colors
+            # self.fig.update_traces(
+            #     surfacecolor=self.check_transpose(val["slice"]),
+            #     selector={"name": "slice_{}".format(key),
+            #               "meta": "values"})
+            # if self.show_variances:
+            #     self.fig.update_traces(
+            #         surfacecolor=self.check_transpose(val["slice"],
+            #                                           variances=True),
+            #         selector={"name": "slice_{}".format(key),
+            #                   "meta": "variances"})
 
         return
 
@@ -416,7 +445,69 @@ class Slicer3d(Slicer):
             key = change["owner"].dim_str
             self.lab[key].value = self.make_slider_label(
                     self.slider_x[key], change["new"])
+            # vslice = self.cube[change["owner"].dim, change["new"]]
+
+            # Now move slice
+            ax_dim = self.buttons[key].value.lower()
+            setattr(self.wireframes[ax_dim], ax_dim,
+                    getattr(self.wireframes[ax_dim], ax_dim) * 0.0 +
+                    self.slider_x[key].values[change["new"]])
+
+            # # TODO: is using a combination of getattr and setattr slower?
+            # # Code would be more compact but i'm not clear if the operation
+            # # would still be in-place
+            # if ax_dim == "x":
+            #     self.wireframes[ax_dim].x[...] = self.slider_x[key].values[change["new"]]
+            # elif ax_dim == "y":
+            #     self.wireframes[ax_dim].y[...] = self.slider_x[key].values[change["new"]]
+            # elif ax_dim == "z":
+            #     self.wireframes[ax_dim].z[...] = self.slider_x[key].values[change["new"]]
+
+
+
+
+            #  = ipv.plot_wireframe(
+            # np.ones_like(wframes["x"][0]) * self.slider_x[key].values[self.slider[key].value],
+            # wframes["x"][0], wframes["x"][1], color="red")
+            # xy = {ax_dim: np.ones_like(
+            #     self.fig.data[slice_indices[ax_dim]][ax_dim]) *
+            #         self.slider_x[key].values[change["new"]]}
+
+            
+
+            # self.fig.update_traces(
+            #     **xy, selector={"name": "slice_{}".format(ax_dim)})
+            # self.fig.update_traces(surfacecolor=self.check_transpose(vslice),
+            #                        selector={"name": "slice_{}".format(ax_dim),
+            #                                  "meta": "values"})
+            # if self.show_variances:
+            #     self.fig.update_traces(
+            #         surfacecolor=self.check_transpose(vslice, variances=True),
+            #         selector={"name": "slice_{}".format(ax_dim),
+            #                   "meta": "variances"})
+        return
+
+    # Define function to update slices
+    def update_surface(self, event):
+        print(event)
+        if self.buttons[change["owner"].dim_str].value is None:
+            self.update_cube(update_coordinates=False)
+        else:
+            # Update only one slice
+            # The dimensions to be sliced have been saved in slider_dims
+            slice_indices = {"x": 0, "y": 1, "z": 2}
+            key = change["owner"].dim_str
+            self.lab[key].value = self.make_slider_label(
+                    self.slider_x[key], change["new"])
             vslice = self.cube[change["owner"].dim, change["new"]]
+
+
+
+            self.surfaces["x"] = ipv.plot_surface(
+            np.ones_like(meshes["x"][0]) * self.slider_x[key].values[self.slider[key].value],
+            meshes["x"][0], meshes["x"][1], color="blue")
+
+
 
             # Now move slice
             ax_dim = self.buttons[key].value.lower()
