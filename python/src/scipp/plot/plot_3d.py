@@ -153,36 +153,60 @@ class Slicer3d(Slicer):
         #     print(wframes[xyz][0])
         #     print(wframes[xyz][1])
         # print("surface coordinates")
-        key = self.button_axis_to_dim["x"]
-        self.wireframes["x"] = ipv.plot_wireframe(
-            np.ones_like(wframes["x"][0]) * self.slider_x[key].values[self.slider[key].value],
-            wframes["x"][0], wframes["x"][1], color="red")
-        self.surfaces["x"] = ipv.plot_surface(
-            np.ones_like(meshes["x"][0]) * self.slider_x[key].values[self.slider[key].value],
-            meshes["x"][0], meshes["x"][1], color="red")
-        # print("x:")
-        # print(np.shape(self.surfaces["x"].x), self.surfaces["x"].x)
-        # print(np.shape(self.surfaces["x"].y), self.surfaces["x"].y)
-        # print(np.shape(self.surfaces["x"].z), self.surfaces["x"].z)
-        key = self.button_axis_to_dim["y"]
-        self.wireframes["y"] = ipv.plot_wireframe(wframes["y"][0],
-            np.ones_like(wframes["y"][0]) * self.slider_x[key].values[self.slider[key].value],
-            wframes["y"][1], color="red")
-        self.surfaces["y"] = ipv.plot_surface(meshes["y"][0],
-            np.ones_like(meshes["y"][0]) * self.slider_x[key].values[self.slider[key].value],
-            meshes["y"][1], color="green")
-        # print("y:")
-        # print(np.shape(self.surfaces["y"].x), self.surfaces["y"].x)
-        # print(np.shape(self.surfaces["y"].y), self.surfaces["y"].y)
-        # print(np.shape(self.surfaces["y"].z), self.surfaces["y"].z)
 
-        key = self.button_axis_to_dim["z"]
-        self.wireframes["z"] = ipv.plot_wireframe(
-            wframes["z"][0], wframes["z"][1],
-            np.ones_like(wframes["z"][0]) * self.slider_x[key].values[self.slider[key].value], color="red")
-        self.surfaces["z"] = ipv.plot_surface(
-            meshes["z"][0], meshes["z"][1],
-            np.ones_like(meshes["z"][0]) * self.slider_x[key].values[self.slider[key].value], color="blue")
+        surf_args = dict.fromkeys(self.permutations)
+        wfrm_args = dict.fromkeys(self.permutations)
+        print(wframes)
+        for xyz, perm in self.permutations.items():
+            print(xyz, perm)
+            key = self.button_axis_to_dim[xyz]
+
+            wfrm_args[xyz] = np.ones_like(wframes[xyz][perm[0]]) * self.slider_x[key].values[self.slider[key].value]
+            surf_args[xyz] = np.ones_like(meshes[xyz][perm[0]]) * self.slider_x[key].values[self.slider[key].value]
+            for p in perm:
+                wfrm_args[p] = wframes[xyz][p]
+                surf_args[p] = meshes[xyz][p]
+
+            self.wireframes[xyz] = ipv.plot_wireframe(**wfrm_args, color="red")
+            self.surfaces[xyz] = ipv.plot_surface(**surf_args, color="red")
+
+            # self.wireframes[xyz] = ipv.plot_wireframe(
+            #     np.ones_like(wframes[xyz][perm[0]]) * self.slider_x[key].values[self.slider[key].value],
+            #     wframes[xyz][perm[0]], wframes[xyz][perm[1]], color="red")
+            # self.surfaces[xyz] = ipv.plot_surface(
+            #     np.ones_like(meshes[xyz][perm[0]]) * self.slider_x[key].values[self.slider[key].value],
+            #     meshes[xyz][perm[0]], meshes[xyz][perm[1]], color="red")
+
+        # key = self.button_axis_to_dim["x"]
+        # self.wireframes["x"] = ipv.plot_wireframe(
+        #     np.ones_like(wframes["x"]["y"]) * self.slider_x[key].values[self.slider[key].value],
+        #     wframes["x"]["y"], wframes["x"]["z"], color="red")
+        # self.surfaces["x"] = ipv.plot_surface(
+        #     np.ones_like(meshes["x"]["y"]) * self.slider_x[key].values[self.slider[key].value],
+        #     meshes["x"][0], meshes["x"][1], color="red")
+        # # print("x:")
+        # # print(np.shape(self.surfaces["x"].x), self.surfaces["x"].x)
+        # # print(np.shape(self.surfaces["x"].y), self.surfaces["x"].y)
+        # # print(np.shape(self.surfaces["x"].z), self.surfaces["x"].z)
+        # key = self.button_axis_to_dim["y"]
+        # self.wireframes["y"] = ipv.plot_wireframe(wframes["y"][0],
+        #     np.ones_like(wframes["y"][0]) * self.slider_x[key].values[self.slider[key].value],
+        #     wframes["y"][1], color="red")
+        # self.surfaces["y"] = ipv.plot_surface(meshes["y"][0],
+        #     np.ones_like(meshes["y"][0]) * self.slider_x[key].values[self.slider[key].value],
+        #     meshes["y"][1], color="green")
+        # # print("y:")
+        # # print(np.shape(self.surfaces["y"].x), self.surfaces["y"].x)
+        # # print(np.shape(self.surfaces["y"].y), self.surfaces["y"].y)
+        # # print(np.shape(self.surfaces["y"].z), self.surfaces["y"].z)
+
+        # key = self.button_axis_to_dim["z"]
+        # self.wireframes["z"] = ipv.plot_wireframe(
+        #     wframes["z"][0], wframes["z"][1],
+        #     np.ones_like(wframes["z"][0]) * self.slider_x[key].values[self.slider[key].value], color="red")
+        # self.surfaces["z"] = ipv.plot_surface(
+        #     meshes["z"][0], meshes["z"][1],
+        #     np.ones_like(meshes["z"][0]) * self.slider_x[key].values[self.slider[key].value], color="blue")
         # print("z:")
         # print(np.shape(self.surfaces["z"].x), self.surfaces["z"].x)
         # # print(np.shape(self.surfaces["z"].y), self.surfaces["z"].y)
@@ -464,13 +488,16 @@ class Slicer3d(Slicer):
         wframes = None
         meshes = None
         if update_coordinates:
-            # wframes = self.get_outlines()
+            wframes = self.get_outlines()
             meshes = self.get_meshes()
+        surf_args = dict.fromkeys(self.permutations)
+        wfrm_args = dict.fromkeys(self.permutations)
 
         for key, val in sorted(vslices.items()):
             # print("================")
             # print(key)
             if update_coordinates:
+                perm = self.permutations[key]
                 # xx, yy = np.meshgrid(
                 #     self.slider_x[
                 #         button_dim_str[self.permutations[key][0]]].values,
@@ -479,9 +506,24 @@ class Slicer3d(Slicer):
                 # args = {key: np.ones_like(xx) * val["loc"],
                 #         self.permutations[key][0]: xx,
                 #         self.permutations[key][1]: yy}
-                args = {key: np.ones_like(meshes[key][0]) * val["loc"],
-                        self.permutations[key][0]: meshes[key][0],
-                        self.permutations[key][1]: meshes[key][1]}
+                surf_args[key] = np.ones_like(meshes[key][perm[0]]) * val["loc"]
+                wfrm_args[key] = np.ones_like(wframes[key][perm[0]]) * val["loc"]
+                for p in perm:
+                    surf_args[p] = meshes[key][p]
+                    wfrm_args[p] = wframes[key][p]
+
+                #              self.permutations[key][1]: meshes[key][1]}
+                # wfrm_args = {key: np.ones_like(wframes[key][0]) * val["loc"],
+                #              self.permutations[key][0]: wframes[key][0],
+                #              self.permutations[key][1]: wframes[key][1]}
+
+
+                # surf_args = {key: np.ones_like(meshes[key][0]) * val["loc"],
+                #              self.permutations[key][0]: meshes[key][0],
+                #              self.permutations[key][1]: meshes[key][1]}
+                # wfrm_args = {key: np.ones_like(wframes[key][0]) * val["loc"],
+                #              self.permutations[key][0]: wframes[key][0],
+                #              self.permutations[key][1]: wframes[key][1]}
 
                 # setattr(self.surfaces[key], key, (np.ones_like(meshes[self.permutations[key][0]]) * val["loc"]).flatten())
                 # setattr(self.surfaces[key], self.permutations[key][0], (np.ones_like(meshes[self.permutations[key][0]]) * val["loc"]).flatten())
@@ -489,9 +531,17 @@ class Slicer3d(Slicer):
                 
 
 
-                for k, v in args.items():
+                for xyz in surf_args.keys():
                     # print(key, k, v)
-                    setattr(self.surfaces[key], k, v.flatten())
+                    setattr(self.surfaces[key], xyz, surf_args[xyz].flatten())
+                    setattr(self.wireframes[key], xyz, wfrm_args[xyz].flatten())
+
+
+
+        # self.wireframes["x"] = ipv.plot_wireframe(
+        #     np.ones_like(wframes["x"][0]) * self.slider_x[key].values[self.slider[key].value],
+        #     wframes["x"][0], wframes["x"][1], color="red")
+
 
             #     self.surfaces["x"] = ipv.plot_surface(
             # np.ones_like(meshes["x"][0]) * self.slider_x[key].values[self.slider[key].value],
@@ -684,7 +734,8 @@ class Slicer3d(Slicer):
     def get_outlines(self):
         outlines = dict()
         for key, val in self.permutations.items():
-            outlines[key] =  np.meshgrid(
+            outlines[key] = dict()
+            outlines[key][val[0]], outlines[key][val[1]] = np.meshgrid(
                 self.xminmax[self.button_axis_to_dim[val[0]]],
                 self.xminmax[self.button_axis_to_dim[val[1]]])
         # outlines["y"] =  np.meshgrid(
@@ -698,7 +749,8 @@ class Slicer3d(Slicer):
     def get_meshes(self):
         meshes = dict()
         for key, val in self.permutations.items():
-            meshes[key] =  np.meshgrid(
+            meshes[key] = dict()
+            meshes[key][val[0]], meshes[key][val[1]] = np.meshgrid(
                 self.slider_x[self.button_axis_to_dim[val[0]]].values,
                 self.slider_x[self.button_axis_to_dim[val[1]]].values)
         # meshes["y"] =  np.meshgrid(
