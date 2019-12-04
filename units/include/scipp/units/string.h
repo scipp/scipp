@@ -4,6 +4,8 @@
 /// @author Simon Heybrock
 #ifndef SCIPP_UNITS_STRING_H
 #define SCIPP_UNITS_STRING_H
+
+#include <initializer_list>
 #include <string>
 
 #include "scipp-units_export.h"
@@ -12,6 +14,7 @@
 namespace scipp::units {
 
 SCIPP_UNITS_EXPORT std::string to_string(const units::Unit &unit);
+template <class T> std::string to_string(const std::initializer_list<T> items);
 
 } // namespace scipp::units
 
