@@ -350,9 +350,10 @@ class Slicer3d(Slicer):
                 button.old_value = button.value
         owner.old_value = owner.value
         # if not self.volume:
-        # Show all surfaces
-        for k, v in self.surfaces.items():
-            v.visible = False
+        # Show all surfaces, hide all wireframes
+        for key in self.surfaces.keys():
+            self.surfaces[key].visible = True
+            self.wireframes[key].visible = True
         # Update the show/hide checkboxes
         for key, button in self.buttons.items():
             ax_dim = button.value
@@ -512,6 +513,28 @@ class Slicer3d(Slicer):
                     surf_args[p] = meshes[key][p]
                     wfrm_args[p] = wframes[key][p]
 
+
+
+
+# #=============================================
+#         surf_args = dict.fromkeys(self.permutations)
+#         wfrm_args = dict.fromkeys(self.permutations)
+#         print(wframes)
+#         for xyz, perm in self.permutations.items():
+#             print(xyz, perm)
+#             key = self.button_axis_to_dim[xyz]
+
+#             wfrm_args[xyz] = np.ones_like(wframes[xyz][perm[0]]) * self.slider_x[key].values[self.slider[key].value]
+#             surf_args[xyz] = np.ones_like(meshes[xyz][perm[0]]) * self.slider_x[key].values[self.slider[key].value]
+#             for p in perm:
+#                 wfrm_args[p] = wframes[xyz][p]
+#                 surf_args[p] = meshes[xyz][p]
+
+#             self.wireframes[xyz] = ipv.plot_wireframe(**wfrm_args, color="red")
+#             self.surfaces[xyz] = ipv.plot_surface(**surf_args, color="red")
+# #=============================================
+
+
                 #              self.permutations[key][1]: meshes[key][1]}
                 # wfrm_args = {key: np.ones_like(wframes[key][0]) * val["loc"],
                 #              self.permutations[key][0]: wframes[key][0],
@@ -531,10 +554,16 @@ class Slicer3d(Slicer):
                 
 
 
+                print(key, "STARTING HERE +++++++++++++++++++")
+                print(surf_args)
+                print(wfrm_args)
                 for xyz in surf_args.keys():
-                    # print(key, k, v)
+                    print(xyz, np.shape(surf_args[xyz]), surf_args[xyz])
                     setattr(self.surfaces[key], xyz, surf_args[xyz].flatten())
                     setattr(self.wireframes[key], xyz, wfrm_args[xyz].flatten())
+                    # print("end for this key")
+                # import ipyvolume as ipv
+                # ipv.plot_wireframe(**surf_args, color="blue")
 
 
 
@@ -558,7 +587,9 @@ class Slicer3d(Slicer):
             # # if key == "z":
             # #   break
 
+            print("shape of values", np.shape(val["slice"].values), np.shape(self.check_transpose(val["slice"])))
             self.surfaces[key].color = self.scalar_map["values"].to_rgba(self.check_transpose(val["slice"]).flatten())
+            # self.surfaces[key].color = "red"
             # self.fig.update_traces(
             #     surfacecolor=self.check_transpose(val["slice"]),
             #     selector={"name": "slice_{}".format(key),
@@ -716,7 +747,7 @@ class Slicer3d(Slicer):
             values = vslice.values
         print(button_values)
         print(ord(button_values[0]), ord(button_values[1]))
-        if ord(button_values[0]) < ord(button_values[1]):
+        if ord(button_values[0]) > ord(button_values[1]):
             values = values.T
         return values
 
@@ -737,7 +768,7 @@ class Slicer3d(Slicer):
             outlines[key] = dict()
             outlines[key][val[0]], outlines[key][val[1]] = np.meshgrid(
                 self.xminmax[self.button_axis_to_dim[val[0]]],
-                self.xminmax[self.button_axis_to_dim[val[1]]])
+                self.xminmax[self.button_axis_to_dim[val[1]]], indexing="ij")
         # outlines["y"] =  np.meshgrid(
         #     self.xminmax[self.button_axis_to_dim["x"]],
         #     self.xminmax[self.button_axis_to_dim["z"]])
@@ -752,7 +783,7 @@ class Slicer3d(Slicer):
             meshes[key] = dict()
             meshes[key][val[0]], meshes[key][val[1]] = np.meshgrid(
                 self.slider_x[self.button_axis_to_dim[val[0]]].values,
-                self.slider_x[self.button_axis_to_dim[val[1]]].values)
+                self.slider_x[self.button_axis_to_dim[val[1]]].values, indexing="ij")
         # meshes["y"] =  np.meshgrid(
         #     self.slider_x[self.button_axis_to_dim["x"]].values,
         #     self.slider_x[self.button_axis_to_dim["z"]].values)
@@ -780,7 +811,7 @@ class Slicer3d(Slicer):
         print(dx)
         print(arrays)
 
-        return np.meshgrid(arrays["x"], arrays["y"], arrays["z"])
+        return np.meshgrid(arrays["x"], arrays["y"], arrays["z"], indexing="ij")
                 # self.xminmax[self.button_axis_to_dim["x"]],
                 # self.xminmax[self.button_axis_to_dim["y"]],
                 # self.xminmax[self.button_axis_to_dim["z"]])
