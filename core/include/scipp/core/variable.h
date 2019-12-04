@@ -48,14 +48,12 @@ using VariableConceptHandle = VariableConceptHandle_impl<
     sparse_container<int64_t>, sparse_container<int32_t>, span<const double>,
     span<double>, span<const float>, span<float>>;
 
-/// Abstract base class for any data that can be held by Variable. Also used
-/// to
+/// Abstract base class for any data that can be held by Variable. Also used to
 /// hold views to data by (Const)VariableProxy. This is using so-called
 /// concept-based polymorphism, see talks by Sean Parent.
 ///
 /// This is the most generic representation for a multi-dimensional array of
-/// data. More operations are supportd by the partially-typed
-/// VariableConceptT.
+/// data. More operations are supportd by the partially-typed VariableConceptT.
 class SCIPP_CORE_EXPORT VariableConcept {
 public:
   VariableConcept(const Dimensions &dimensions);
@@ -112,10 +110,8 @@ template <class T> constexpr bool canHaveVariances() noexcept {
 
 /// Partially typed implementation of VariableConcept. This is a common base
 /// class for DataModel<T> and ViewModel<T>. The former holds data in a
-/// contiguous array, whereas the latter is a (potentially non-contiguous)
-/// view
-/// into the former. This base class implements functionality that is common
-/// to
+/// contiguous array, whereas the latter is a (potentially non-contiguous) view
+/// into the former. This base class implements functionality that is common to
 /// both, for a specific T.
 template <class T> class VariableConceptT : public VariableConcept {
 public:
@@ -446,8 +442,7 @@ public:
   /// Return variant of pointers to underlying data.
   ///
   /// This is intended for internal use (such as implementing transform
-  /// algorithms) and should not need to be used directly by higher-level
-  /// code.
+  /// algorithms) and should not need to be used directly by higher-level code.
   auto dataHandle() const && = delete;
   auto dataHandle() const & { return m_object.variant(); }
   const auto &dataHandle() && = delete;
@@ -472,8 +467,7 @@ private:
 /// This is used to provide the fabric function:
 /// createVariable<type>(Dims, Shape, Unit, Values<T1>, Variances<T2>)
 /// with the obligatory template argument type, function arguments are not
-/// obligatory and could be given in arbitrary order, but suposed to be
-/// wrapped
+/// obligatory and could be given in arbitrary order, but suposed to be wrapped
 /// in certain classes.
 /// Example: createVariable<float>(units::Unit(units::kg),
 /// Shape{1, 2}, Dims{Dim::X, Dim::Y}, Values({3, 4})).
@@ -891,22 +885,16 @@ public:
   // Note: We want to support things like `var(Dim::X, 0) += var2`, i.e., when
   // the left-hand-side is a temporary. This is ok since data is modified in
   // underlying Variable. However, we do not return the typical `VariableProxy
-  // &` from these operations since that could reference a temporary. Due to
-  // the
+  // &` from these operations since that could reference a temporary. Due to the
   // way Python implements things like __iadd__ we must return an object
-  // referencing the data though. We therefore return by value (this is not
-  // for
-  // free since it involves a memory allocation but is probably relatively
-  // cheap
+  // referencing the data though. We therefore return by value (this is not for
+  // free since it involves a memory allocation but is probably relatively cheap
   // compared to other things). If the return by value turns out to be a
   // performance issue, another option is to have overloads for *this of types
-  // `&` and `&&` with distinct return types (by reference in the first case,
-  // by
-  // value in the second). In principle we may also change the implementation
-  // of
+  // `&` and `&&` with distinct return types (by reference in the first case, by
+  // value in the second). In principle we may also change the implementation of
   // the Python exports to return `a` after calling `a += b` instead of
-  // returning `a += b` but I am not sure how Pybind11 handles object
-  // lifetimes
+  // returning `a += b` but I am not sure how Pybind11 handles object lifetimes
   // (would this suffer from the same issue?).
   template <class T> VariableProxy assign(const T &other) const;
 
@@ -968,8 +956,7 @@ SCIPP_CORE_EXPORT Variable operator&(const VariableConstProxy &a,
 SCIPP_CORE_EXPORT Variable operator^(const VariableConstProxy &a,
                                      const VariableConstProxy &b);
 // Note: If the left-hand-side in an addition is a VariableProxy this simply
-// implicitly converts it to a Variable. A copy for the return value is
-// required
+// implicitly converts it to a Variable. A copy for the return value is required
 // anyway so this is a convenient way to avoid defining more overloads.
 template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
 Variable operator+(const T value, const VariableConstProxy &a) {
