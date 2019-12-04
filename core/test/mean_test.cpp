@@ -45,6 +45,8 @@ TEST(MeanTest, masked) {
   const auto meanY = makeVariable<double>({Dim::X, 2}, units::m, {2.0, 3.0});
   EXPECT_EQ(mean(a, Dim::X).data(), meanX);
   EXPECT_EQ(mean(a, Dim::Y).data(), meanY);
+  EXPECT_FALSE(sum(a, Dim::X).masks().contains("mask"));
+  EXPECT_TRUE(sum(a, Dim::Y).masks().contains("mask"));
 }
 
 TEST(MeanTest, dtype_float_preserved) {

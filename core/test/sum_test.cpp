@@ -8,7 +8,7 @@
 using namespace scipp;
 using namespace scipp::core;
 
-TEST(SumTest, masked) {
+TEST(SumTest, masked_data_array) {
   const auto var = makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}}, units::m,
                                         {1.0, 2.0, 3.0, 4.0});
   const auto mask = makeVariable<bool>({Dim::X, 2}, {false, true});
@@ -18,4 +18,6 @@ TEST(SumTest, masked) {
   const auto sumY = makeVariable<double>({Dim::X, 2}, units::m, {4.0, 6.0});
   EXPECT_EQ(sum(a, Dim::X).data(), sumX);
   EXPECT_EQ(sum(a, Dim::Y).data(), sumY);
+  EXPECT_FALSE(sum(a, Dim::X).masks().contains("mask"));
+  EXPECT_TRUE(sum(a, Dim::Y).masks().contains("mask"));
 }
