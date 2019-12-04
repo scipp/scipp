@@ -19,6 +19,11 @@ from matplotlib.colors import Normalize, LogNorm
 import copy as cp
 # import matplotlib.pyplot as plt
 
+try:
+    import ipyvolume as ipv
+    from ipyevents import Event
+except:
+    pass
 
 # import plotly.graph_objs as go
 # from plotly.subplots import make_subplots
@@ -77,7 +82,7 @@ def plot_3d(input_data, axes=None, contours=False, cb=None, filename=None,
                   show_variances=show_variances, volume=volume,
                   volume_sampling=volume_sampling)
 
-    render_plot(static_fig=sv.fig, interactive_fig=sv.vbox, backend=backend,
+    render_plot(static_fig=sv.fig, interactive_fig=sv.box, backend=backend,
                 filename=filename)
 
     return
@@ -91,11 +96,12 @@ class Slicer3d(Slicer):
         super().__init__(input_data, axes, value_name, cb, show_variances,
                          button_options=['X', 'Y', 'Z'], volume=volume)
 
-        import ipyvolume as ipv
-        from ipyevents import Event
+        # import ipyvolume as ipv
+        # from ipyevents import Event
 
         self.cube = None
         self.volume = volume
+        # self.clear = ipv.clear
 
         # Initialise Figure and VBox objects
         self.fig = ipv.figure()
@@ -151,24 +157,26 @@ class Slicer3d(Slicer):
         self.surfaces = dict()
         # for xyz in "xyz":
         #     print(wframes[xyz][0])
-        #     print(wframes[xyz][1])
-        # print("surface coordinates")
+        # #     print(wframes[xyz][1])
+        # # print("surface coordinates")
 
-        surf_args = dict.fromkeys(self.permutations)
-        wfrm_args = dict.fromkeys(self.permutations)
-        print(wframes)
-        for xyz, perm in self.permutations.items():
-            print(xyz, perm)
-            key = self.button_axis_to_dim[xyz]
+        # #======================================================================
+        # surf_args = dict.fromkeys(self.permutations)
+        # wfrm_args = dict.fromkeys(self.permutations)
+        # # print(wframes)
+        # for xyz, perm in self.permutations.items():
+        #     print(xyz, perm)
+        #     key = self.button_axis_to_dim[xyz]
 
-            wfrm_args[xyz] = np.ones_like(wframes[xyz][perm[0]]) * self.slider_x[key].values[self.slider[key].value]
-            surf_args[xyz] = np.ones_like(meshes[xyz][perm[0]]) * self.slider_x[key].values[self.slider[key].value]
-            for p in perm:
-                wfrm_args[p] = wframes[xyz][p]
-                surf_args[p] = meshes[xyz][p]
+        #     wfrm_args[xyz] = np.ones_like(wframes[xyz][perm[0]]) * self.slider_x[key].values[self.slider[key].value]
+        #     surf_args[xyz] = np.ones_like(meshes[xyz][perm[0]]) * self.slider_x[key].values[self.slider[key].value]
+        #     for p in perm:
+        #         wfrm_args[p] = wframes[xyz][p]
+        #         surf_args[p] = meshes[xyz][p]
 
-            self.wireframes[xyz] = ipv.plot_wireframe(**wfrm_args, color="red")
-            self.surfaces[xyz] = ipv.plot_surface(**surf_args, color="red")
+        #     self.wireframes[xyz] = ipv.plot_wireframe(**wfrm_args, color="red")
+        #     self.surfaces[xyz] = ipv.plot_surface(**surf_args, color="red")
+        # #======================================================================
 
             # self.wireframes[xyz] = ipv.plot_wireframe(
             #     np.ones_like(wframes[xyz][perm[0]]) * self.slider_x[key].values[self.slider[key].value],
@@ -336,10 +344,11 @@ class Slicer3d(Slicer):
         #     self.fig = go.FigureWidget(data=data, layout=layout)
 
         # Call update_slice once to make the initial image
+        self.status = False
         self.update_axes()
-        self.vbox = [ipv.gcc()] + self.vbox
-        self.vbox = widgets.VBox(self.vbox)
-        self.vbox.layout.align_items = 'center'
+        self.box = [ipv.gcc()] + self.vbox
+        self.box = widgets.VBox(self.box)
+        self.box.layout.align_items = 'center'
 
         return
 
@@ -368,6 +377,14 @@ class Slicer3d(Slicer):
             else:
                 self.showhide[key].button_style = "success"
                 self.button_axis_to_dim[ax_dim] = key
+
+        # view = ipv.view()
+        # ipv.clear()
+        # delattr(self, "fig")
+        # self.fig = ipv.gcf()
+        # self.fig.animation = 0
+        # ipv.view(*view)
+        self.fig.meshes = []
         # Update the scatter
         outl_x, outl_y, outl_z = self.get_box()
         outl_x = outl_x.flatten()
@@ -388,7 +405,9 @@ class Slicer3d(Slicer):
         # self.fig.update_traces(x=scatter_x, y=scatter_y, z=scatter_z,
         #                        selector={"name": "scatter"})
         # self.wireframes["x"].x = outl_x
+
         self.update_axes()
+        # self.box.children = tuple([ipv.gcc()] + self.vbox)
 
         return
 
@@ -555,15 +574,46 @@ class Slicer3d(Slicer):
 
 
                 print(key, "STARTING HERE +++++++++++++++++++")
-                print(surf_args)
-                print(wfrm_args)
-                for xyz in surf_args.keys():
-                    print(xyz, np.shape(surf_args[xyz]), surf_args[xyz])
-                    setattr(self.surfaces[key], xyz, surf_args[xyz].flatten())
-                    setattr(self.wireframes[key], xyz, wfrm_args[xyz].flatten())
-                    # print("end for this key")
-                # import ipyvolume as ipv
-                # ipv.plot_wireframe(**surf_args, color="blue")
+                # # print(surf_args)
+                # # print(wfrm_args)
+                # # print("before", np.shape(self.surfaces[key].x))
+                # # # self.surfaces[key].x.resize(surf_args["x"].flatten().shape)
+                # # self.surfaces[key].x = surf_args["x"].flatten()
+                # # print("after", np.shape(self.surfaces[key].x), np.shape(surf_args["x"].flatten()))
+                # # # self.surfaces[key].x = surf_args["x"].flatten()
+                # # print("before", np.shape(self.surfaces[key].y))
+                # # # self.surfaces[key].y.resize(surf_args["y"].flatten().shape)
+                # # print("after", np.shape(self.surfaces[key].y), np.shape(surf_args["y"].flatten()))
+                # # self.surfaces[key].y = surf_args["y"].flatten()
+                # # print("before", np.shape(self.surfaces[key].z))
+                # # # self.surfaces[key].z.resize(surf_args["z"].flatten().shape)
+                # # print("after", np.shape(self.surfaces[key].z), np.shape(surf_args["z"].flatten()))
+                # # self.surfaces[key].z = surf_args["z"].flatten()
+
+                # # # self.wireframes[key].x = wfrm_args["x"].flatten()
+                # # # self.wireframes[key].y = wfrm_args["y"].flatten()
+                # # # self.wireframes[key].z = wfrm_args["z"].flatten()
+                # # #     # setattr(self.wireframes[key], xyz, wfrm_args[xyz]
+                # for xyz in surf_args.keys():
+                #     print(xyz, np.shape(surf_args[xyz]), np.amin(surf_args[xyz]), np.amax(surf_args[xyz]))
+                #     print(xyz, np.shape(wfrm_args[xyz]), np.amin(wfrm_args[xyz]), np.amax(wfrm_args[xyz]))
+                #     print("before surf", np.shape(getattr(self.surfaces[key], xyz)))
+                #     # self.wireframes[xyz] = ipv.plot_wireframe(**wfrm_args, color="red")
+                #     # self.surfaces[xyz] = ipv.plot_surface(**surf_args, color="blue")
+                #     # # ipv.plot_wireframe(**surf_args, color="black")
+                #     setattr(self.surfaces[key], xyz, surf_args[xyz].flatten())
+                #     self.surfaces[key].send_state(xyz)
+                #     setattr(self.wireframes[key], xyz, wfrm_args[xyz].flatten())
+                #     self.wireframes[key].send_state(xyz)
+                #     print("after surf", np.shape(getattr(self.surfaces[key], xyz)))
+                    
+                # # #     # print("end for this key")
+                # # # if self.status:
+                # # # #     import ipyvolume as ipv
+                # # # #     ipv.plot_wireframe(**surf_args, color="blue")
+
+                self.wireframes[key] = ipv.plot_wireframe(**wfrm_args, color="red")
+                self.surfaces[key] = ipv.plot_surface(**surf_args, color="blue")
 
 
 
@@ -587,8 +637,10 @@ class Slicer3d(Slicer):
             # # if key == "z":
             # #   break
 
+            print("before color", np.shape(self.surfaces[key].color))
             print("shape of values", np.shape(val["slice"].values), np.shape(self.check_transpose(val["slice"])))
             self.surfaces[key].color = self.scalar_map["values"].to_rgba(self.check_transpose(val["slice"]).flatten())
+            print("after color", np.shape(self.surfaces[key].color))
             # self.surfaces[key].color = "red"
             # self.fig.update_traces(
             #     surfacecolor=self.check_transpose(val["slice"]),
@@ -601,6 +653,7 @@ class Slicer3d(Slicer):
             #         selector={"name": "slice_{}".format(key),
             #                   "meta": "variances"})
 
+        self.status = True
         return
 
     # Define function to update slices
