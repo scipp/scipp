@@ -57,6 +57,12 @@ void bind_binary_scalars(pybind11::class_<T, Ignored...> &c) {
   bind_binary<int64_t>(c);
 }
 
+template <class T, class... Ignored>
+void bind_boolean_unary(pybind11::class_<T, Ignored...> &c) {
+  c.def("__invert__", [](T &a) { return ~a; }, py::is_operator(),
+        py::call_guard<py::gil_scoped_release>());
+}
+
 template <class Other, class T, class... Ignored>
 void bind_boolean_operators(pybind11::class_<T, Ignored...> &c) {
   c.def("__or__", [](T &a, Other &b) { return a | b; }, py::is_operator(),

@@ -61,7 +61,7 @@ def _make_table_sections(dataset, coord, base_style):
         colors.scheme["labels"])
     mask_style = "{} background-color: {};text-align: center;'".format(
         base_style,
-        colors.scheme["masks"])
+        colors.scheme["mask"])
     data_style = "{} background-color: {};text-align: center;'".format(
         base_style,
         colors.scheme["data"])
