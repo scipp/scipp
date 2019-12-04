@@ -21,8 +21,7 @@ def make_sample(ws):
 
 def make_bin_masks(common_bins, dim, num_bins, num_spectra):
     if common_bins:
-        return sc.Variable([dim], shape=(num_bins,),
-                           dtype=sc.dtype.bool)
+        return sc.Variable([dim], shape=(num_bins, ), dtype=sc.dtype.bool)
     else:
         return sc.Variable([sc.Dim.Spectrum, dim],
                            shape=(num_spectra, num_bins),
@@ -95,7 +94,9 @@ def init_pos_spectrum_no(ws):
         else:
             pos[i, :] = [np.nan, np.nan, np.nan]
         num[i] = ws.getSpectrum(i).getSpectrumNo()
-    pos = sc.Variable([sc.Dim.Spectrum], values=pos, unit=sc.units.m,
+    pos = sc.Variable([sc.Dim.Spectrum],
+                      values=pos,
+                      unit=sc.units.m,
                       dtype=sc.dtype.vector_3_double)
     num = sc.Variable([sc.Dim.Spectrum], values=num)
     return pos, num
@@ -147,29 +148,30 @@ def convert_Workspace2D_to_dataarray(ws):
                                                  len(ws.readY(0))),
                                           unit=sc.units.counts,
                                           variances=True),
-                         coords={dim: coord,
-                                 sc.Dim.Spectrum: num
-                                 },
-                         labels={"position": pos,
-                                 "component_info": comp_info,
-                                 "detector_info": det_info
-                                 },
-                         attrs={"run": make_run(ws),
-                                "sample": make_sample(ws)
-                                }
-                         )
+                         coords={
+                             dim: coord,
+                             sc.Dim.Spectrum: num
+                         },
+                         labels={
+                             "position": pos,
+                             "component_info": comp_info,
+                             "detector_info": det_info
+                         },
+                         attrs={
+                             "run": make_run(ws),
+                             "sample": make_sample(ws)
+                         })
 
     spectrum_masks = None
     if ws.detectorInfo().hasMaskedDetectors():
         array.masks["spectrum"] = sc.Variable(
             [sc.Dim.Spectrum],
-            shape=(ws.getNumberHistograms(),),
+            shape=(ws.getNumberHistograms(), ),
             dtype=sc.dtype.bool)
         spectrum_masks = array.masks["spectrum"]
 
     if ws.hasAnyMaskedBins():
-        array.masks["bin"] = make_bin_masks(common_bins, dim,
-                                            ws.blocksize(),
+        array.masks["bin"] = make_bin_masks(common_bins, dim, ws.blocksize(),
                                             ws.getNumberHistograms())
         bin_masks = array.masks["bin"]
         # set all the bin masks now - they're all the same
@@ -233,8 +235,8 @@ def convertEventWorkspace_to_dataarray(ws, load_pulse_times):
             # very slow.
             # TODO: Find a more efficient way to do this.
             pt = sp.getPulseTimes()
-            labs[sc.Dim.Spectrum, i].values = np.asarray(
-                [p.totalNanoseconds() for p in pt])
+            labs[sc.Dim.Spectrum,
+                 i].values = np.asarray([p.totalNanoseconds() for p in pt])
         if contains_weighted_events:
             weights[sc.Dim.Spectrum, i].values = sp.getWeights()
             weights[sc.Dim.Spectrum, i].variances = sp.getWeightErrors()
@@ -259,6 +261,32 @@ def convertEventWorkspace_to_dataarray(ws, load_pulse_times):
     if contains_weighted_events:
         coords_labs_data["data"] = weights
     return sc.DataArray(**coords_labs_data)
+
+
+def convertMDHistoWorkspace_to_dataset(md_histo):
+    ndims = md_histo.getNumDims()
+    if ndims > 3:
+        raise RuntimeError("Converter cannot process md histo workspace input "
+                           "with > 3 dimensions. Input has {}.".format(ndims))
+    out_dims = [sc.Dim.X, sc.Dim.Y, sc.Dim.Z]
+    coords = dict()
+    dims_used = []
+    for i in range(ndims):
+        dim = md_histo.getDimension(i)
+        coords[out_dims[i]] = sc.Variable(
+            dims=[out_dims[i]],
+            values=np.linspace(dim.getMinimum(), dim.getMaximum(),
+                               dim.getNBins()))
+        dims_used.append(out_dims[i])
+    data = sc.Variable(dims=dims_used,
+                       values=md_histo.getSignalArray(),
+                       variances=md_histo.getErrorSquaredArray())
+    nevents = sc.Variable(dims=dims_used, values=md_histo.getNumEventsArray())
+    da = sc.DataArray(coords=coords, data=data, attrs={'nevents': nevents})
+    ds = sc.Dataset(da)
+    ds.attrs['nevents'] = da.attrs[
+        'nevents']  # TODO. attrs not passed in init. proper fix needed.
+    return ds
 
 
 def convert_TableWorkspace_to_dataset(ws, error_connection=None):
@@ -402,16 +430,19 @@ def load(filename="",
         dataset = convertEventWorkspace_to_dataarray(data_ws, load_pulse_times)
     elif data_ws.id() == 'TableWorkspace':
         dataset = convert_TableWorkspace_to_dataset(data_ws, error_connection)
+    elif data_ws.id() == 'MDHistoWorkspace':
+        dataset = convertMDHistoWorkspace_to_dataset(data_ws)
 
     if dataset is None:
-        raise RuntimeError('Unsupported workspace type')
+        raise RuntimeError('Unsupported workspace type {}'.format(
+            data_ws.id()))
     elif monitor_ws is not None:
         if monitor_ws.id() == 'Workspace2D':
             dataset.attrs["monitors"] = sc.Variable(
                 value=convert_Workspace2D_to_dataarray(monitor_ws))
         elif monitor_ws.id() == 'EventWorkspace':
             dataset.attrs["monitors"] = sc.Variable(
-                value=convertEventWorkspace_to_dataarray(monitor_ws,
-                                                         load_pulse_times))
+                value=convertEventWorkspace_to_dataarray(
+                    monitor_ws, load_pulse_times))
 
     return dataset

@@ -172,6 +172,44 @@ class TestMantidConversion(unittest.TestCase):
         assert isinstance(monitors, sc.DataArray)
         assert monitors.shape == [2, 200001]
 
+    def test_mdhisto_workspace(self):
+        from mantid.simpleapi import (CreateMDWorkspace, FakeMDEventData,
+                                      BinMD, SaveMD)
+
+        md_event = CreateMDWorkspace(Dimensions=3,
+                                     Extents=[-10, 10, -10, 10, -10, 10],
+                                     Names='A,B,C',
+                                     Units='U,U,U',
+                                     StoreInADS=False)
+        FakeMDEventData(InputWorkspace=md_event,
+                        PeakParams=[100000, 0, 0, 0, 1],
+                        StoreInADS=False)  # Add Peak
+        md_histo = BinMD(InputWorkspace=md_event,
+                         AlignedDim0='A,-10,10,3',
+                         AlignedDim1='B,-10,10,4',
+                         AlignedDim2='C,-10,10,5',
+                         StoreInADS=False)
+        file_name = 'md_histo.nxs'
+        SaveMD(InputWorkspace=md_histo,
+               Filename='md_histo.nxs',
+               StoreInADS=False)
+
+        histo_dataset = mantidcompat.load(file_name)
+
+        self.assertEqual(histo_dataset.coords[sc.Dim.X].values.shape, (3, ))
+        self.assertEqual(histo_dataset.coords[sc.Dim.Y].values.shape, (4, ))
+        self.assertEqual(histo_dataset.coords[sc.Dim.Z].values.shape, (5, ))
+        # Sum over 2 dimensions to simplify finding max.
+        max_1d = sc.sum(sc.sum(histo_dataset[''], dim=sc.Dim.Y),
+                        dim=sc.Dim.X).values
+        max_index = np.argmax(max_1d)
+        # Check position of max 'peak'
+        self.assertEqual(np.floor(len(max_1d) / 2), max_index)
+        # All events in central 'peak'
+        self.assertEqual(100000, max_1d[max_index])
+
+        self.assertTrue('nevents' in histo_dataset.attrs)
+
 
 if __name__ == "__main__":
     unittest.main()
