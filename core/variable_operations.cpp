@@ -207,7 +207,7 @@ Variable sum(const VariableConstProxy &var, const Dim dim) {
 Variable sum(const VariableConstProxy &var, const Dim dim,
              const MasksConstProxy &masks) {
   if (!masks.empty()) {
-    const auto mask_union = masks_merge(masks);
+    const auto mask_union = masks_merge(masks, dim);
     if (mask_union.dims().contains(dim))
       return sum(var * ~mask_union, dim);
   }
@@ -236,7 +236,7 @@ Variable mean(const VariableConstProxy &var, const Dim dim) {
 Variable mean(const VariableConstProxy &var, const Dim dim,
               const MasksConstProxy &masks) {
   if (!masks.empty()) {
-    const auto mask_union = masks_merge(masks);
+    const auto mask_union = masks_merge(masks, dim);
     if (mask_union.dims().contains(dim)) {
       const auto masks_sum = sum(mask_union, dim);
       return mean(var * ~mask_union, dim, masks_sum);
@@ -328,10 +328,12 @@ Variable reverse(Variable var, const Dim dim) {
 Variable copy(const VariableConstProxy &var) { return Variable(var); }
 
 /// Merges all masks contained in the MasksConstProxy into a single Variable
-Variable masks_merge(const MasksConstProxy &masks) {
+Variable masks_merge(const MasksConstProxy &masks, const Dim dim) {
   auto mask_union = makeVariable<bool>(false);
   for (const auto &mask : masks) {
-    mask_union = mask_union | mask.second;
+    if (mask.second.dims().contains(dim)) {
+      mask_union = mask_union | mask.second;
+    }
   }
   return mask_union;
 }

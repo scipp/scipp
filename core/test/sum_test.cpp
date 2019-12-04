@@ -21,3 +21,21 @@ TEST(SumTest, masked_data_array) {
   EXPECT_FALSE(sum(a, Dim::X).masks().contains("mask"));
   EXPECT_TRUE(sum(a, Dim::Y).masks().contains("mask"));
 }
+
+TEST(SumTest, masked_data_array_two_masks) {
+  const auto var = makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}}, units::m,
+                                        {1.0, 2.0, 3.0, 4.0});
+  const auto maskX = makeVariable<bool>({Dim::X, 2}, {false, true});
+  const auto maskY = makeVariable<bool>({Dim::Y, 2}, {false, true});
+  DataArray a(var);
+  a.masks().set("x", maskX);
+  a.masks().set("y", maskY);
+  const auto sumX = makeVariable<double>({Dim::Y, 2}, units::m, {1.0, 3.0});
+  const auto sumY = makeVariable<double>({Dim::X, 2}, units::m, {1.0, 2.0});
+  EXPECT_EQ(sum(a, Dim::X).data(), sumX);
+  EXPECT_EQ(sum(a, Dim::Y).data(), sumY);
+  EXPECT_FALSE(sum(a, Dim::X).masks().contains("x"));
+  EXPECT_TRUE(sum(a, Dim::X).masks().contains("y"));
+  EXPECT_TRUE(sum(a, Dim::Y).masks().contains("x"));
+  EXPECT_FALSE(sum(a, Dim::Y).masks().contains("y"));
+}
