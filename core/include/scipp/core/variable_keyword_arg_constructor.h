@@ -149,9 +149,7 @@ public:
         (is_type_in_pack_v<NonDataTypes, Ts...> + ...);
     constexpr bool hasVal = is_tag_in_pack_v<ValuesTag, Ts...>;
     constexpr bool hasVar = is_tag_in_pack_v<VariancesTag, Ts...>;
-    return
-        nonDataTypesCount + hasVal + hasVar == sizeof...(Ts);
-
+    return nonDataTypesCount + hasVal + hasVar == sizeof...(Ts);
   }
 
   template <class... NonDataTypes> static auto extractArguments(Ts &&... ts) {
