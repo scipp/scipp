@@ -19,13 +19,34 @@ void bind_comparison(pybind11::class_<T, Ignored...> &c) {
 
 template <class Other, class T, class... Ignored>
 void bind_in_place_binary(pybind11::class_<T, Ignored...> &c) {
-  c.def("__iadd__", [](T &a, Other &b) { return a += b; }, py::is_operator(),
+  // In-place operators return py::object due to the way in-place operators work
+  // in Python (assigning return value to this). This avoids extra copies, and
+  // additionally ensures that all references to the object keep referencing the
+  // same object after the operation.
+  c.def("__iadd__",
+        [](py::object &a, Other &b) {
+          a.cast<T &>() += b;
+          return a;
+        },
+        py::is_operator(), py::call_guard<py::gil_scoped_release>());
+  c.def("__isub__",
+        [](py::object &a, Other &b) {
+          a.cast<T &>() -= b;
+          return a;
+        },
+        py::is_operator(), py::call_guard<py::gil_scoped_release>());
+  c.def("__imul__",
+        [](py::object &a, Other &b) {
+          a.cast<T &>() *= b;
+          return a;
+        },
+        py::is_operator(),
         py::call_guard<py::gil_scoped_release>());
-  c.def("__isub__", [](T &a, Other &b) { return a -= b; }, py::is_operator(),
-        py::call_guard<py::gil_scoped_release>());
-  c.def("__imul__", [](T &a, Other &b) { return a *= b; }, py::is_operator(),
-        py::call_guard<py::gil_scoped_release>());
-  c.def("__itruediv__", [](T &a, Other &b) { return a /= b; },
+  c.def("__itruediv__",
+        [](py::object &a, Other &b) {
+          a.cast<T &>() /= b;
+          return a;
+        },
         py::is_operator(), py::call_guard<py::gil_scoped_release>());
 }
 
@@ -67,16 +88,28 @@ template <class Other, class T, class... Ignored>
 void bind_boolean_operators(pybind11::class_<T, Ignored...> &c) {
   c.def("__or__", [](T &a, Other &b) { return a | b; }, py::is_operator(),
         py::call_guard<py::gil_scoped_release>());
-  c.def("__ior__", [](T &a, Other &b) { return a |= b; }, py::is_operator(),
-        py::call_guard<py::gil_scoped_release>());
   c.def("__xor__", [](T &a, Other &b) { return a ^ b; }, py::is_operator(),
-        py::call_guard<py::gil_scoped_release>());
-  c.def("__ixor__", [](T &a, Other &b) { return a ^= b; }, py::is_operator(),
         py::call_guard<py::gil_scoped_release>());
   c.def("__and__", [](T &a, Other &b) { return a & b; }, py::is_operator(),
         py::call_guard<py::gil_scoped_release>());
-  c.def("__iand__", [](T &a, Other &b) { return a &= b; }, py::is_operator(),
-        py::call_guard<py::gil_scoped_release>());
+  c.def("__ior__",
+        [](py::object &a, Other &b) {
+          a.cast<T &>() |= b;
+          return a;
+        },
+        py::is_operator(), py::call_guard<py::gil_scoped_release>());
+  c.def("__ixor__",
+        [](py::object &a, Other &b) {
+          a.cast<T &>() ^= b;
+          return a;
+        },
+        py::is_operator(), py::call_guard<py::gil_scoped_release>());
+  c.def("__iand__",
+        [](py::object &a, Other &b) {
+          a.cast<T &>() &= b;
+          return a;
+        },
+        py::is_operator(), py::call_guard<py::gil_scoped_release>());
 }
 
 #endif // SCIPP_PYTHON_BIND_OPERATORS_H
