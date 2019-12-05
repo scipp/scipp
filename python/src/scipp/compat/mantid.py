@@ -97,7 +97,7 @@ def validate_and_get_unit(unit):
     }
 
     if unit not in known_units.keys():
-        raise RuntimeError("X-axis unit not currently supported."
+        raise RuntimeError("Axis unit not currently supported."
                            "Possible values are: {}, "
                            "got '{}'. ".format(
                                [k for k in known_units.keys()], unit))
