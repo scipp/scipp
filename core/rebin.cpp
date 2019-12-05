@@ -5,26 +5,27 @@
 #include "scipp/core/apply.h"
 #include "scipp/core/except.h"
 #include "scipp/core/variable.h"
+#include "scipp/units/except.h"
 
 namespace scipp::core {
 
-bool isMatchingOr1DBinEdge(const Dim dim, Dimensions edges,
-                           const Dimensions &toMatch) {
-  if (edges.shape().size() == 1)
-    return true;
+bool isBinEdge(const Dim dim, Dimensions edges, const Dimensions &toMatch) {
   edges.resize(dim, edges[dim] - 1);
-  return edges == toMatch;
+  return edges[dim] == toMatch[dim];
 }
 
+bool is1D(Dimensions edges) { return edges.shape().size() == 1; }
+
 template <class T> class VariableConceptT;
-template <class T>
+template <class DataType, class CoordType>
 // Special rebin version for rebinning inner dimension to a joint new coord.
-static void
-rebinInner(const Dim dim, const VariableConceptT<T> &oldT,
-           VariableConceptT<T> &newT, const VariableConceptT<T> &oldCoordT,
-           const VariableConceptT<T> &newCoordT, bool variances = false) {
-  scipp::span<const T> oldData;
-  scipp::span<T> newData;
+static void rebinInner(const Dim dim, const VariableConceptT<DataType> &oldT,
+                       VariableConceptT<DataType> &newT,
+                       const VariableConceptT<CoordType> &oldCoordT,
+                       const VariableConceptT<CoordType> &newCoordT,
+                       bool variances = false) {
+  scipp::span<const DataType> oldData;
+  scipp::span<DataType> newData;
   if (variances) {
     oldData = oldT.variances();
     newData = newT.variances();
@@ -123,7 +124,7 @@ Variable rebin(const VariableConstProxy &var, const Dim dim,
   // Rebin could also implemented for count-densities. However, it may be better
   // to avoid this since it increases complexity. Instead, densities could
   // always be computed on-the-fly for visualization, if required.
-  expect::unit(var, units::counts);
+  expect::unit_any_of(var, {units::counts, units::Unit(units::dimensionless)});
 
   auto do_rebin = [dim](auto &&out, auto &&old, auto &&oldCoord_,
                         auto &&newCoord_) {
@@ -132,16 +133,30 @@ Variable rebin(const VariableConstProxy &var, const Dim dim,
     const auto &oldCoordT = *oldCoord_;
     const auto &newCoordT = *newCoord_;
     auto &outT = *out;
-    const auto &dims = outT.dims();
-    if (dims.inner() == dim &&
-        isMatchingOr1DBinEdge(dim, oldCoordT.dims(), oldT.dims()) &&
-        isMatchingOr1DBinEdge(dim, newCoordT.dims(), dims)) {
+    const auto &out_dims = outT.dims();
+
+    // dimension along which the data is being rebinned
+    const bool rebin_dim_valid = out_dims.inner() == dim;
+
+    const bool input_valid = isBinEdge(dim, oldCoordT.dims(), oldT.dims());
+
+    const bool output_valid =
+        is1D(newCoordT.dims()) && isBinEdge(dim, newCoordT.dims(), out_dims);
+
+    if (rebin_dim_valid && input_valid && output_valid) {
       rebinInner(dim, oldT, outT, oldCoordT, newCoordT);
       if (oldT.hasVariances())
         rebinInner(dim, oldT, outT, oldCoordT, newCoordT, true);
-    } else {
+    } else if (!rebin_dim_valid) {
+      // TODO the new coord should be 1D or the same dim as newCoord.
       throw std::runtime_error(
-          "TODO the new coord should be 1D or the same dim as newCoord.");
+          "The new coord should be the same dimensions as the output coord.");
+    } else if (!input_valid) {
+      throw std::runtime_error(
+          "The input does not have coordinates with bin-edges.");
+    } else if (!output_valid) {
+      throw std::runtime_error(
+          "The output is not 1D or does not have coordinates with bin-edges.");
     }
   };
 
@@ -149,7 +164,9 @@ Variable rebin(const VariableConstProxy &var, const Dim dim,
   dims.resize(dim, newCoord.dims()[dim] - 1);
   Variable rebinned(var, dims);
   if (rebinned.dims().inner() == dim) {
-    apply_in_place<double, float>(do_rebin, rebinned, var, oldCoord, newCoord);
+    using mask_rebinning_t = std::tuple<bool, bool, double, double>;
+    apply_in_place<double, float, mask_rebinning_t>(do_rebin, rebinned, var,
+                                                    oldCoord, newCoord);
   } else {
     if (newCoord.dims().ndim() > 1)
       throw std::runtime_error(

@@ -37,12 +37,14 @@ Documentation
    user-guide/data-structures
    user-guide/slicing
    user-guide/computation
+   user-guide/masking
    user-guide/sparse-data
    user-guide/units
    user-guide/dtype
    user-guide/error-propagation
    user-guide/groupby
    user-guide/plotting
+   user-guide/how_to
 
 .. toctree::
    :caption: Tutorials
