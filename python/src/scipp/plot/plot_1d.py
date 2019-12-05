@@ -170,11 +170,13 @@ class Slicer1d(Slicer):
                     zorder=10)
             if var.variances is not None:
                 if self.histograms[name][dim_str]:
-                    self.members["error_y"][name] = self.ax.errorbar(xc, vslice.values, yerr=np.sqrt(vslice.variances),
-                                                color=self.color[i], zorder=10, fmt="none")
+                    self.members["error_y"][name] = self.ax.errorbar(
+                        xc, vslice.values, yerr=np.sqrt(vslice.variances),
+                        color=self.color[i], zorder=10, fmt="none")
                 else:
-                    self.members["error_y"][name] = self.ax.errorbar(new_x, vslice.values, yerr=np.sqrt(vslice.variances),
-                                                color=self.color[i], zorder=10, fmt="none")
+                    self.members["error_y"][name] = self.ax.errorbar(
+                        new_x, vslice.values, yerr=np.sqrt(vslice.variances),
+                        color=self.color[i], zorder=10, fmt="none")
 
         self.ax.set_xlim([new_x[0], new_x[-1]])
         self.ax.set_xlabel(axis_label(self.slider_x[dim_str],
@@ -222,7 +224,8 @@ class Slicer1d(Slicer):
         if self.input_data[lab].variances is not None:
             err = self.members["error_y"][lab].get_children()
             self.ax.collections.append(cp.copy(err[0]))
-            self.ax.collections[-1].set_color(self.keep_buttons[owner.id][2].value)
+            self.ax.collections[-1].set_color(
+                self.keep_buttons[owner.id][2].value)
             self.ax.collections[-1].set_url(owner.id)
             self.ax.collections[-1].set_zorder(1)
 

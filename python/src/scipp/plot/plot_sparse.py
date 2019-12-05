@@ -9,7 +9,13 @@ from .sparse import visit_sparse_data
 from .tools import axis_label, parse_colorbar
 
 # Other imports
-import plotly.graph_objs as go
+# import plotly.graph_objs as go
+import matplotlib.pyplot as plt
+try:
+    import ipyvolume as ipv
+except:
+    pass
+
 
 
 def plot_sparse(input_data, ndim=0, sparse_dim=None, backend=None, logx=False,
@@ -26,16 +32,118 @@ def plot_sparse(input_data, ndim=0, sparse_dim=None, backend=None, logx=False,
     coords = var.coords
 
     # Parse colorbar
-    cbar = parse_colorbar(cb, plotly=True)
+    cbar = parse_colorbar(cb)
 
     xyz = "xyz"
     if ndims < 3:
-        plot_type = "scattergl"
+        fig, ax = plt.subplots(1, 1, figsize=(config.width/config.dpi,
+                                              config.height/config.dpi),
+                               dpi=config.dpi)
+        params = dict(label=name, edgecolors="#ffffff", c=color)
+        xs = sparse_data[ndims - 1]
+        ys = sparse_data[ndims - 2]
+        if len(sparse_data) > ndims:
+            if weights.count("size") > 0:
+                params["s"] = sparse_data[-1] * size
+            if weights.count("color") > 0:
+                params["c"] = sparse_data[-1]
+                params["cmap"] = cbar["name"]
+
+        scat = ax.scatter(xs, ys, **params)
+        if len(sparse_data) > ndims and weights.count("color") > 0:
+            c = plt.colorbar(scat, ax=ax, cax=cax)
+            c.ax.set_ylabel(axis_label(name="Weights", log=cbar["log"]))
+            out["cb"] = c
+
+        ax.set_xlabel(axis_label(coords[sparse_dim]))
+        if ndims > 1:
+            ax.set_ylabel(axis_label(coords[dims[int(ndims == 3)]]))
+
+        ax.legend()
+        if title is not None:
+            ax.set_title(title)
+        if logx or logxy:
+            ax.set_xscale("log")
+        if logy or logxy:
+            ax.set_yscale("log")
+
     elif ndims == 3:
-        plot_type = "scatter3d"
+
+        fig = ipv.figure(width=config.width, height=config.height,
+                         animation=0)
+
+        params = dict(color=color)
+        params["x"] = sparse_data[ndims - 1]
+        params["y"] = sparse_data[ndims - 2]
+        params["z"] = sparse_data[0]
+        if len(sparse_data) > ndims and weights:
+            scalar_map = cm.ScalarMappable(norm=norm,
+                                                         cmap=self.cb["name"])
+            params["color"] = sparse_data[-1]
+            params["cmap"] = cbar["name"]
+
+        scat = ax.scatter(xs, ys, **params)
+        if len(sparse_data) > ndims and weights.count("color") > 0:
+            c = plt.colorbar(scat, ax=ax, cax=cax)
+            c.ax.set_ylabel(axis_label(name="Weights", log=cbar["log"]))
+            out["cb"] = c
+
+        ax.set_xlabel(axis_label(coords[sparse_dim]))
+        if ndims > 1:
+            ax.set_ylabel(axis_label(coords[dims[int(ndims == 3)]]))
+        if ndims == 3:
+            ax.set_zlabel(axis_label(coords[dims[0]]))
+
+        ax.legend()
+        if title is not None:
+            ax.set_title(title)
+        if logx or logxy:
+            ax.set_xscale("log")
+        if logy or logxy:
+            ax.set_yscale("log")
+
     else:
         raise RuntimeError("Scatter plots for sparse data support at most "
                            "3 dimensions.")
+
+
+
+    params = dict(label=name, edgecolors="#ffffff", c=color)
+    xs = sparse_data[ndims - 1]
+    ys = sparse_data[ndims - 2]
+    if ndims == 3:
+        params["zs"] = sparse_data[0]
+    if len(sparse_data) > ndims:
+        if weights.count("size") > 0:
+            params["s"] = sparse_data[-1] * size
+        if weights.count("color") > 0:
+            params["c"] = sparse_data[-1]
+            params["cmap"] = cbar["name"]
+
+    scat = ax.scatter(xs, ys, **params)
+    if len(sparse_data) > ndims and weights.count("color") > 0:
+        c = plt.colorbar(scat, ax=ax, cax=cax)
+        c.ax.set_ylabel(axis_label(name="Weights", log=cbar["log"]))
+        out["cb"] = c
+
+    ax.set_xlabel(axis_label(coords[sparse_dim]))
+    if ndims > 1:
+        ax.set_ylabel(axis_label(coords[dims[int(ndims == 3)]]))
+    if ndims == 3:
+        ax.set_zlabel(axis_label(coords[dims[0]]))
+
+    ax.legend()
+    if title is not None:
+        ax.set_title(title)
+    if logx or logxy:
+        ax.set_xscale("log")
+    if logy or logxy:
+        ax.set_yscale("log")
+
+
+
+
+
     data = dict(type=plot_type, mode='markers', name=name,
                 marker={"line": {"color": '#ffffff',
                                  "width": 1},

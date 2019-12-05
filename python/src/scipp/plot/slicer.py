@@ -2,7 +2,7 @@
 # Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
-from .tools import axis_to_dim_label
+from .tools import axis_to_dim_label, parse_colorbar
 from .._scipp.core.units import dimensionless
 
 
@@ -20,7 +20,7 @@ class Slicer:
         self.show_variances = show_variances
         if self.show_variances:
             self.show_variances = (self.input_data.variances is not None)
-        self.cb = cb
+        self.cb = parse_colorbar(cb, input_data, self.show_variances)
         # self.value_name = value_name
 
         # Get the dimensions of the image to be displayed

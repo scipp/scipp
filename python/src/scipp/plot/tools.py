@@ -9,6 +9,7 @@ from .._scipp.core.units import dimensionless
 
 # Other imports
 import numpy as np
+from matplotlib.colors import Normalize, LogNorm
 
 
 def get_color(index=0):
@@ -53,17 +54,42 @@ def axis_label(var=None, name=None, log=False, replace_dim=True):
     return label
 
 
-def parse_colorbar(cb, plotly=False):
+def parse_colorbar(cb, var=None, show_variances=False):
     """
     Construct the colorbar using default and input values
     """
     cbar = config.cb.copy()
+    cbar["norm"] = dict()
+    # cbar["vmax"] = dict()
     if cb is not None:
         for key, val in cb.items():
             cbar[key] = val
     # # In plotly, colorbar names start with an uppercase letter
     # if plotly:
     #     cbar["name"] = cbar["name"].capitalize()
+    params = {"values": {"cbmin": "min", "cbmax": "max"}}
+    if var.variances is not None and show_variances:
+        params["variances"] = {"cbmin": "min_var", "cbmax": "max_var"}
+    for key, val in sorted(params.items()):
+        arr = getattr(var, key)
+        if cbar["log"]:
+            subset = np.where(np.isfinite(np.log10(arr)))
+        else:
+            subset = np.where(np.isfinite(arr))
+        if cbar[val["cbmin"]] is not None:
+            vmin = cbar[val["cbmin"]]
+        else:
+            vmin = np.amin(arr[subset])
+        if cbar[val["cbmax"]] is not None:
+            vmax = cbar[val["cbmax"]]
+        else:
+            vmax = np.amax(arr[subset])
+        if cbar["log"]:
+            norm = LogNorm(vmin=vmin, vmax=vmax)
+        else:
+            norm = Normalize(vmin=vmin, vmax=vmax)
+        cbar["norm"][key] = norm
+
     return cbar
 
 
