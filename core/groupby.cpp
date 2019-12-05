@@ -108,9 +108,9 @@ template <class T> T GroupBy<T>::mean(const Dim reductionDim) const {
   const auto scaleT = scale.template values<double>();
   for (scipp::index group = 0; group < size(); ++group)
     for (const auto &slice : groups()[group]) {
-      // N contributing to each slice
+      // N contributing to each slice.
       scaleT[group] += slice.end() - slice.begin();
-      // N masks for each slice, that need to be subtracted
+      // N masks for each slice, that need to be subtracted.
       const auto masks = m_data.slice(slice).masks();
       if (!masks.empty()) {
         const auto merged_masks = masks_merge(masks, reductionDim);

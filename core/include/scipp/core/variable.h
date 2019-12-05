@@ -480,9 +480,10 @@ private:
 // The name should be changed to makeVariable after refactoring:
 // getting rid of all other makeVariable.
 template <class T, class... Ts> Variable createVariable(Ts &&... ts) {
-  using helper = detail::ConstructorArgumentsMatcher<Variable, Ts...>;
-  constexpr bool useDimsAndShape =
-      helper::template checkArgTypesValid<units::Unit, Dims, Shape>();
+  using helper =
+      detail::ConstructorArgumentsMatcher<Variable, Ts...> constexpr bool
+          useDimsAndShape =
+              helper::template checkArgTypesValid<units::Unit, Dims, Shape>();
   constexpr bool useDimensions =
       helper::template checkArgTypesValid<units::Unit, Dimensions>();
 
