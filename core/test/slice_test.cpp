@@ -29,115 +29,66 @@ TEST(SliceTest, test_construction) {
 }
 
 TEST(SliceTest, test_equals) {
-  Slice ref { Dim::X, 1, 2 }
-  ;
+  Slice ref{Dim::X, 1, 2};
 
   EXPECT_EQ(ref, ref);
-  EXPECT_EQ(ref, (Slice {
-    Dim::X, 1, 2
-  }));
-  EXPECT_NE(ref, (Slice {
-    Dim::Y, 1, 2
-  }));
-  EXPECT_NE(ref, (Slice {
-    Dim::X, 0, 2
-  }));
-  EXPECT_NE(ref, (Slice {
-    Dim::X, 1, 3
-  }));
+  EXPECT_EQ(ref, (Slice{Dim::X, 1, 2}));
+  EXPECT_NE(ref, (Slice{Dim::Y, 1, 2}));
+  EXPECT_NE(ref, (Slice{Dim::X, 0, 2}));
+  EXPECT_NE(ref, (Slice{Dim::X, 1, 3}));
 }
 
 TEST(SliceTest, test_assignment) {
-  Slice a { Dim::X, 1, 2 }
-  ;
-  Slice b { Dim::Y, 2, 3 }
-  ;
+  Slice a{Dim::X, 1, 2};
+  Slice b{Dim::Y, 2, 3};
   a = b;
   EXPECT_EQ(a, b);
 }
 
 TEST(SliceTest, test_begin_valid) {
-  EXPECT_THROW((Slice {
-    Dim::X, -1 /*invalid begin index*/, 1
-  }),
+  EXPECT_THROW((Slice{Dim::X, -1 /*invalid begin index*/, 1}),
                except::SliceError);
 }
 
 TEST(SliceTest, test_end_valid) {
-  EXPECT_THROW((Slice {
-    Dim::X, 2, 1 /*invalid end index*/
-  }),
+  EXPECT_THROW((Slice{
+                   Dim::X, 2, 1 /*invalid end index*/
+               }),
                except::SliceError);
 }
 
 TEST(DatasetTest, simple_sparse_slice) {
   Dataset dataset;
-  auto var = createVariable<double>(Dims {
-    Dim::Y, Dim::X
-  },
-                                    Shape {
-    2, Dimensions::Sparse
-  });
-  var.sparseValues<double>()[0] = { 4, 5, 6 };
-  var.sparseValues<double>()[1] = { 7, 8, 9 };
+  auto var = createVariable<double>(Dims{Dim::Y, Dim::X},
+                                    Shape{2, Dimensions::Sparse});
+  var.sparseValues<double>()[0] = {4, 5, 6};
+  var.sparseValues<double>()[1] = {7, 8, 9};
   dataset.setData("data", var);
-  dataset.setCoord(Dim::Y, createVariable<double>(Dims {
-    Dim::Y
-  },
-                                                  Shape {
-    2
-  },
-                                                  Values {
-    1, 2
-  }));
+  dataset.setCoord(
+      Dim::Y, createVariable<double>(Dims{Dim::Y}, Shape{2}, Values{1, 2}));
 
-  auto sliced = dataset.slice({
-    Dim::Y, 1, 2
-  });
-  EXPECT_EQ(sliced["data"].data(), var.slice({
-    Dim::Y, 1, 2
-  }));
+  auto sliced = dataset.slice({Dim::Y, 1, 2});
+  EXPECT_EQ(sliced["data"].data(), var.slice({Dim::Y, 1, 2}));
 }
 
 TEST(DatasetTest, simple_sparse_slice_and_sparse_coords) {
   Dataset dataset;
-  auto var = createVariable<double>(Dims {
-    Dim::Y, Dim::X
-  },
-                                    Shape {
-    2, Dimensions::Sparse
-  });
-  var.sparseValues<double>()[0] = { 4, 5, 6 };
-  var.sparseValues<double>()[1] = { 7, 8, 9 };
+  auto var = createVariable<double>(Dims{Dim::Y, Dim::X},
+                                    Shape{2, Dimensions::Sparse});
+  var.sparseValues<double>()[0] = {4, 5, 6};
+  var.sparseValues<double>()[1] = {7, 8, 9};
   dataset.setData("data", var);
-  dataset.setCoord(Dim::Y, createVariable<double>(Dims {
-    Dim::Y
-  },
-                                                  Shape {
-    2
-  },
-                                                  Values {
-    1, 2
-  }));
-  auto sparseCoord = createVariable<double>(Dims {
-    Dim::Y, Dim::X
-  },
-                                            Shape {
-    2, Dimensions::Sparse
-  });
-  sparseCoord.sparseValues<double>()[0] = { 1, 2, 3 };
-  sparseCoord.sparseValues<double>()[1] = { 4, 5, 6 };
+  dataset.setCoord(
+      Dim::Y, createVariable<double>(Dims{Dim::Y}, Shape{2}, Values{1, 2}));
+  auto sparseCoord = createVariable<double>(Dims{Dim::Y, Dim::X},
+                                            Shape{2, Dimensions::Sparse});
+  sparseCoord.sparseValues<double>()[0] = {1, 2, 3};
+  sparseCoord.sparseValues<double>()[1] = {4, 5, 6};
   dataset.setSparseCoord("data", sparseCoord);
 
-  auto sliced = dataset.slice({
-    Dim::Y, 1, 2
-  });
-  EXPECT_EQ(sliced["data"].data(), var.slice({
-    Dim::Y, 1, 2
-  }));
-  EXPECT_EQ(sliced["data"].coords()[Dim::X], sparseCoord.slice({
-    Dim::Y, 1, 2
-  }));
+  auto sliced = dataset.slice({Dim::Y, 1, 2});
+  EXPECT_EQ(sliced["data"].data(), var.slice({Dim::Y, 1, 2}));
+  EXPECT_EQ(sliced["data"].coords()[Dim::X], sparseCoord.slice({Dim::Y, 1, 2}));
 }
 
 class Dataset3DTest : public ::testing::Test {
@@ -160,135 +111,85 @@ protected:
 
 TEST_F(Dataset3DTest, dimension_extent_check_replace_with_edge_coord) {
   auto edge_coord = dataset;
-  ASSERT_NO_THROW(edge_coord.setCoord(Dim::X, makeRandom({
-    Dim::X, 5
-  })));
+  ASSERT_NO_THROW(edge_coord.setCoord(Dim::X, makeRandom({Dim::X, 5})));
   ASSERT_NE(edge_coord["data_xyz"], dataset["data_xyz"]);
-    // Cannot incrementally grow.
-  ASSERT_ANY_THROW(edge_coord.setCoord(Dim::X, makeRandom({
-    Dim::X, 6
-  })));
-    // Minor implementation shortcoming: Currently we cannot go back to
-    // non-edges.
-  ASSERT_ANY_THROW(edge_coord.setCoord(Dim::X, makeRandom({
-    Dim::X, 4
-  })));
+  // Cannot incrementally grow.
+  ASSERT_ANY_THROW(edge_coord.setCoord(Dim::X, makeRandom({Dim::X, 6})));
+  // Minor implementation shortcoming: Currently we cannot go back to
+  // non-edges.
+  ASSERT_ANY_THROW(edge_coord.setCoord(Dim::X, makeRandom({Dim::X, 4})));
 }
 
 TEST_F(Dataset3DTest,
        dimension_extent_check_prevents_non_edge_coord_with_edge_data) {
-    // If we reduce the X extent to 3 we would have data defined at the edges,
-    // but
-    // the coord is not. This is forbidden.
-  ASSERT_ANY_THROW(dataset.setCoord(Dim::X, makeRandom({
-    Dim::X, 3
-  })));
-    // We *can* set data with X extent 3. The X coord is now bin edges, and
-    // other
-    // data is defined on the edges.
-  ASSERT_NO_THROW(dataset.setData("non_edge_data", makeRandom({
-    Dim::X, 3
-  })));
-    // Now the X extent of the dataset is 3, but since we have data on the edges
-    // we still cannot change the coord to non-edges.
-  ASSERT_ANY_THROW(dataset.setCoord(Dim::X, makeRandom({
-    Dim::X, 3
-  })));
+  // If we reduce the X extent to 3 we would have data defined at the edges,
+  // but
+  // the coord is not. This is forbidden.
+  ASSERT_ANY_THROW(dataset.setCoord(Dim::X, makeRandom({Dim::X, 3})));
+  // We *can* set data with X extent 3. The X coord is now bin edges, and
+  // other
+  // data is defined on the edges.
+  ASSERT_NO_THROW(dataset.setData("non_edge_data", makeRandom({Dim::X, 3})));
+  // Now the X extent of the dataset is 3, but since we have data on the edges
+  // we still cannot change the coord to non-edges.
+  ASSERT_ANY_THROW(dataset.setCoord(Dim::X, makeRandom({Dim::X, 3})));
 }
 
 TEST_F(Dataset3DTest,
        dimension_extent_check_prevents_setting_edge_data_without_edge_coord) {
-  ASSERT_ANY_THROW(dataset.setData("edge_data", makeRandom({
-    Dim::X, 5
-  })));
-  ASSERT_NO_THROW(dataset.setCoord(Dim::X, makeRandom({
-    Dim::X, 5
-  })));
-  ASSERT_NO_THROW(dataset.setData("edge_data", makeRandom({
-    Dim::X, 5
-  })));
+  ASSERT_ANY_THROW(dataset.setData("edge_data", makeRandom({Dim::X, 5})));
+  ASSERT_NO_THROW(dataset.setCoord(Dim::X, makeRandom({Dim::X, 5})));
+  ASSERT_NO_THROW(dataset.setData("edge_data", makeRandom({Dim::X, 5})));
 }
 
 TEST_F(Dataset3DTest, dimension_extent_check_non_coord_dimension_fail) {
-    // This is the Y coordinate but has extra extent in X.
-  ASSERT_ANY_THROW(dataset.setCoord(Dim::Y, makeRandom({
-    { Dim::X, 5 }
-    , { Dim::Y, 5 }
-  })));
+  // This is the Y coordinate but has extra extent in X.
+  ASSERT_ANY_THROW(
+      dataset.setCoord(Dim::Y, makeRandom({{Dim::X, 5}, {Dim::Y, 5}})));
 }
 
 TEST_F(Dataset3DTest, data_check_upon_setting_sparse_coordinates) {
   Dataset sparse;
-  auto data_var = createVariable<double>(Dims {
-    Dim::X
-  },
-                                         Shape {
-    Dimensions::Sparse
-  });
-  data_var.sparseValues<double>()[0] = { 1, 1, 1 };
-  auto coords_var = createVariable<double>(Dims {
-    Dim::X
-  },
-                                           Shape {
-    Dimensions::Sparse
-  });
-  coords_var.sparseValues<double>()[0] = { 1, 2, 3 };
+  auto data_var =
+      createVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse});
+  data_var.sparseValues<double>()[0] = {1, 1, 1};
+  auto coords_var =
+      createVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse});
+  coords_var.sparseValues<double>()[0] = {1, 2, 3};
   sparse.setData("sparse_x", data_var);
   // The following should be OK. Data is sparse
   sparse.setSparseCoord("sparse_x", coords_var);
 
-    // Check with dense data
-  ASSERT_THROW(dataset.setSparseCoord("data_x", createVariable<double>(Dims {
-    Dim::X
-  },
-                                                                       Shape {
-    Dimensions::Sparse
-  })),
+  // Check with dense data
+  ASSERT_THROW(dataset.setSparseCoord(
+                   "data_x", createVariable<double>(Dims{Dim::X},
+                                                    Shape{Dimensions::Sparse})),
                std::runtime_error);
 }
 
 TEST_F(Dataset3DTest, dimension_extent_check_labels_dimension_fail) {
-    // We cannot have labels on edges unless the coords are also edges. Note the
-    // slight inconsistency though: Labels are typically though of as being for
-    // a
-    // particular dimension (the inner one), but we can have labels on edges
-    // also
-    // for the other dimensions (x in this case), just like data.
-  ASSERT_ANY_THROW(dataset.setLabels("bad_labels", makeRandom({
-    { Dim::X, 4 }
-    , { Dim::Y, 6 }
-  })));
-  ASSERT_ANY_THROW(dataset.setLabels("bad_labels", makeRandom({
-    { Dim::X, 5 }
-    , { Dim::Y, 5 }
-  })));
-  dataset.setCoord(Dim::Y, makeRandom({
-    { Dim::X, 4 }
-    , { Dim::Y, 6 }
-  }));
-  ASSERT_ANY_THROW(dataset.setLabels("bad_labels", makeRandom({
-    { Dim::X, 5 }
-    , { Dim::Y, 5 }
-  })));
-  dataset.setCoord(Dim::X, makeRandom({
-    Dim::X, 5
-  }));
-  ASSERT_NO_THROW(dataset.setLabels("good_labels", makeRandom({
-    { Dim::X, 5 }
-    , { Dim::Y, 5 }
-  })));
-  ASSERT_NO_THROW(dataset.setLabels("good_labels", makeRandom({
-    { Dim::X, 5 }
-    , { Dim::Y, 6 }
-  })));
-  ASSERT_NO_THROW(dataset.setLabels("good_labels", makeRandom({
-    { Dim::X, 4 }
-    , { Dim::Y, 6 }
-  })));
-  ASSERT_NO_THROW(dataset.setLabels("good_labels", makeRandom({
-    { Dim::X, 4 }
-    , { Dim::Y, 5 }
-  })));
+  // We cannot have labels on edges unless the coords are also edges. Note the
+  // slight inconsistency though: Labels are typically though of as being for
+  // a
+  // particular dimension (the inner one), but we can have labels on edges
+  // also
+  // for the other dimensions (x in this case), just like data.
+  ASSERT_ANY_THROW(
+      dataset.setLabels("bad_labels", makeRandom({{Dim::X, 4}, {Dim::Y, 6}})));
+  ASSERT_ANY_THROW(
+      dataset.setLabels("bad_labels", makeRandom({{Dim::X, 5}, {Dim::Y, 5}})));
+  dataset.setCoord(Dim::Y, makeRandom({{Dim::X, 4}, {Dim::Y, 6}}));
+  ASSERT_ANY_THROW(
+      dataset.setLabels("bad_labels", makeRandom({{Dim::X, 5}, {Dim::Y, 5}})));
+  dataset.setCoord(Dim::X, makeRandom({Dim::X, 5}));
+  ASSERT_NO_THROW(
+      dataset.setLabels("good_labels", makeRandom({{Dim::X, 5}, {Dim::Y, 5}})));
+  ASSERT_NO_THROW(
+      dataset.setLabels("good_labels", makeRandom({{Dim::X, 5}, {Dim::Y, 6}})));
+  ASSERT_NO_THROW(
+      dataset.setLabels("good_labels", makeRandom({{Dim::X, 4}, {Dim::Y, 6}})));
+  ASSERT_NO_THROW(
+      dataset.setLabels("good_labels", makeRandom({{Dim::X, 4}, {Dim::Y, 5}})));
 }
 
 class Dataset3DTest_slice_x : public Dataset3DTest,
@@ -298,123 +199,86 @@ protected:
     Dataset d;
     d.setCoord(Dim::Time, dataset.coords()[Dim::Time]);
     d.setCoord(Dim::Y, dataset.coords()[Dim::Y]);
-    d.setCoord(Dim::Z, dataset.coords()[Dim::Z].slice({
-      Dim::X, pos
-    }));
-    d.setLabels("labels_xy", dataset.labels()["labels_xy"].slice({
-      Dim::X, pos
-    }));
+    d.setCoord(Dim::Z, dataset.coords()[Dim::Z].slice({Dim::X, pos}));
+    d.setLabels("labels_xy",
+                dataset.labels()["labels_xy"].slice({Dim::X, pos}));
     d.setLabels("labels_z", dataset.labels()["labels_z"]);
-    d.setMask("masks_xy", dataset.masks()["masks_xy"].slice({
-      Dim::X, pos
-    }));
+    d.setMask("masks_xy", dataset.masks()["masks_xy"].slice({Dim::X, pos}));
     d.setMask("masks_z", dataset.masks()["masks_z"]);
     d.setAttr("attr_scalar", dataset.attrs()["attr_scalar"]);
-    d.setData("values_x", dataset["values_x"].data().slice({
-      Dim::X, pos
-    }));
-    d.setData("data_x", dataset["data_x"].data().slice({
-      Dim::X, pos
-    }));
-    d.setData("data_xy", dataset["data_xy"].data().slice({
-      Dim::X, pos
-    }));
-    d.setData("data_zyx", dataset["data_zyx"].data().slice({
-      Dim::X, pos
-    }));
-    d.setData("data_xyz", dataset["data_xyz"].data().slice({
-      Dim::X, pos
-    }));
+    d.setData("values_x", dataset["values_x"].data().slice({Dim::X, pos}));
+    d.setData("data_x", dataset["data_x"].data().slice({Dim::X, pos}));
+    d.setData("data_xy", dataset["data_xy"].data().slice({Dim::X, pos}));
+    d.setData("data_zyx", dataset["data_zyx"].data().slice({Dim::X, pos}));
+    d.setData("data_xyz", dataset["data_xyz"].data().slice({Dim::X, pos}));
     return d;
   }
 };
 class Dataset3DTest_slice_y : public Dataset3DTest,
-                              public ::testing::WithParamInterface<int> {
-};
+                              public ::testing::WithParamInterface<int> {};
 class Dataset3DTest_slice_z : public Dataset3DTest,
-                              public ::testing::WithParamInterface<int> {
-};
+                              public ::testing::WithParamInterface<int> {};
 class Dataset3DTest_slice_sparse : public Dataset3DTest,
-                                   public ::testing::WithParamInterface<int> {
-};
+                                   public ::testing::WithParamInterface<int> {};
 
-class Dataset3DTest_slice_range_x
-    : public Dataset3DTest,
-      public ::testing::WithParamInterface<
-          std::pair<scipp::index, scipp::index> > {
+class Dataset3DTest_slice_range_x : public Dataset3DTest,
+                                    public ::testing::WithParamInterface<
+                                        std::pair<scipp::index, scipp::index>> {
 };
-class Dataset3DTest_slice_range_y
-    : public Dataset3DTest,
-      public ::testing::WithParamInterface<
-          std::pair<scipp::index, scipp::index> > {
+class Dataset3DTest_slice_range_y : public Dataset3DTest,
+                                    public ::testing::WithParamInterface<
+                                        std::pair<scipp::index, scipp::index>> {
 protected:
   Dataset reference(const scipp::index begin, const scipp::index end) {
     Dataset d;
     d.setCoord(Dim::Time, dataset.coords()[Dim::Time]);
     d.setCoord(Dim::X, dataset.coords()[Dim::X]);
-    d.setCoord(Dim::Y, dataset.coords()[Dim::Y].slice({
-      Dim::Y, begin, end
-    }));
-    d.setCoord(Dim::Z, dataset.coords()[Dim::Z].slice({
-      Dim::Y, begin, end
-    }));
+    d.setCoord(Dim::Y, dataset.coords()[Dim::Y].slice({Dim::Y, begin, end}));
+    d.setCoord(Dim::Z, dataset.coords()[Dim::Z].slice({Dim::Y, begin, end}));
     d.setLabels("labels_x", dataset.labels()["labels_x"]);
-    d.setLabels("labels_xy", dataset.labels()["labels_xy"].slice({
-      Dim::Y, begin, end
-    }));
+    d.setLabels("labels_xy",
+                dataset.labels()["labels_xy"].slice({Dim::Y, begin, end}));
     d.setLabels("labels_z", dataset.labels()["labels_z"]);
 
     d.setMask("masks_x", dataset.masks()["masks_x"]);
-    d.setMask("masks_xy", dataset.masks()["masks_xy"].slice({
-      Dim::Y, begin, end
-    }));
+    d.setMask("masks_xy",
+              dataset.masks()["masks_xy"].slice({Dim::Y, begin, end}));
     d.setMask("masks_z", dataset.masks()["masks_z"]);
 
     d.setAttr("attr_scalar", dataset.attrs()["attr_scalar"]);
     d.setAttr("attr_x", dataset.attrs()["attr_x"]);
-    d.setData("data_xy", dataset["data_xy"].data().slice({
-      Dim::Y, begin, end
-    }));
-    d.setData("data_zyx", dataset["data_zyx"].data().slice({
-      Dim::Y, begin, end
-    }));
-    d.setData("data_xyz", dataset["data_xyz"].data().slice({
-      Dim::Y, begin, end
-    }));
+    d.setData("data_xy", dataset["data_xy"].data().slice({Dim::Y, begin, end}));
+    d.setData("data_zyx",
+              dataset["data_zyx"].data().slice({Dim::Y, begin, end}));
+    d.setData("data_xyz",
+              dataset["data_xyz"].data().slice({Dim::Y, begin, end}));
     return d;
   }
 };
-class Dataset3DTest_slice_range_z
-    : public Dataset3DTest,
-      public ::testing::WithParamInterface<
-          std::pair<scipp::index, scipp::index> > {
+class Dataset3DTest_slice_range_z : public Dataset3DTest,
+                                    public ::testing::WithParamInterface<
+                                        std::pair<scipp::index, scipp::index>> {
 protected:
   Dataset reference(const scipp::index begin, const scipp::index end) {
     Dataset d;
     d.setCoord(Dim::Time, dataset.coords()[Dim::Time]);
     d.setCoord(Dim::X, dataset.coords()[Dim::X]);
     d.setCoord(Dim::Y, dataset.coords()[Dim::Y]);
-    d.setCoord(Dim::Z, dataset.coords()[Dim::Z].slice({
-      Dim::Z, begin, end
-    }));
+    d.setCoord(Dim::Z, dataset.coords()[Dim::Z].slice({Dim::Z, begin, end}));
     d.setLabels("labels_x", dataset.labels()["labels_x"]);
     d.setLabels("labels_xy", dataset.labels()["labels_xy"]);
-    d.setLabels("labels_z", dataset.labels()["labels_z"].slice({
-      Dim::Z, begin, end
-    }));
+    d.setLabels("labels_z",
+                dataset.labels()["labels_z"].slice({Dim::Z, begin, end}));
     d.setMask("masks_x", dataset.masks()["masks_x"]);
     d.setMask("masks_xy", dataset.masks()["masks_xy"]);
-    d.setMask("masks_z", dataset.masks()["masks_z"].slice({
-      Dim::Z, begin, end
-    }));
+    d.setMask("masks_z",
+              dataset.masks()["masks_z"].slice({Dim::Z, begin, end}));
     d.setAttr("attr_scalar", dataset.attrs()["attr_scalar"]);
     d.setAttr("attr_x", dataset.attrs()["attr_x"]);
-    d.setData("data_zyx", dataset["data_zyx"].data().slice({
-      Dim::Z, begin, end
-    }));
-    d.setData("data_xyz", dataset["data_xyz"].data().slice({
-      Dim::Z, begin, end
-    }));
+    d.setData("data_zyx",
+              dataset["data_zyx"].data().slice({Dim::Z, begin, end}));
+    d.setData("data_xyz",
+              dataset["data_xyz"].data().slice({Dim::Z, begin, end}));
     return d;
   }
 };
@@ -456,49 +320,26 @@ INSTANTIATE_TEST_SUITE_P(AllPositions, Dataset3DTest_slice_sparse,
 
 TEST_P(Dataset3DTest_slice_x, slice) {
   const auto pos = GetParam();
-  EXPECT_EQ(dataset.slice({
-    Dim::X, pos
-  }),
-            reference(pos));
+  EXPECT_EQ(dataset.slice({Dim::X, pos}), reference(pos));
 }
 
 TEST_P(Dataset3DTest_slice_sparse, slice) {
   Dataset ds;
   const auto pos = GetParam();
-  auto var = createVariable<double>(Dims {
-    Dim::X, Dim::Y, Dim::Z
-  },
-                                    Shape {
-    2l, 2l, Dimensions::Sparse
-  });
-  var.sparseValues<double>()[0] = { 1, 2, 3 };
-  var.sparseValues<double>()[1] = { 4, 5, 6 };
-  var.sparseValues<double>()[2] = { 7 };
-  var.sparseValues<double>()[3] = { 8, 9 };
+  auto var = createVariable<double>(Dims{Dim::X, Dim::Y, Dim::Z},
+                                    Shape{2l, 2l, Dimensions::Sparse});
+  var.sparseValues<double>()[0] = {1, 2, 3};
+  var.sparseValues<double>()[1] = {4, 5, 6};
+  var.sparseValues<double>()[2] = {7};
+  var.sparseValues<double>()[3] = {8, 9};
 
   ds.setData("xyz_data", var);
-  ds.setCoord(Dim::X, createVariable<double>(Dims {
-    Dim::X
-  },
-                                             Shape {
-    2
-  },
-                                             Values {
-    0, 1
-  }));
-  ds.setCoord(Dim::Y, createVariable<double>(Dims {
-    Dim::Y
-  },
-                                             Shape {
-    2
-  },
-                                             Values {
-    0, 1
-  }));
+  ds.setCoord(Dim::X,
+              createVariable<double>(Dims{Dim::X}, Shape{2}, Values{0, 1}));
+  ds.setCoord(Dim::Y,
+              createVariable<double>(Dims{Dim::Y}, Shape{2}, Values{0, 1}));
 
-  auto sliced = ds.slice({
-    Dim::X, pos
-  });
+  auto sliced = ds.slice({Dim::X, pos});
   auto data = sliced["xyz_data"].data().sparseValues<double>();
   EXPECT_EQ(data.size(), 2);
   scipp::core::sparse_container<double> expected =
@@ -511,19 +352,10 @@ TEST_P(Dataset3DTest_slice_sparse, slice) {
 TEST_P(Dataset3DTest_slice_x, slice_bin_edges) {
   const auto pos = GetParam();
   auto datasetWithEdges = dataset;
-  datasetWithEdges.setCoord(Dim::X, makeRandom({
-    Dim::X, 5
-  }));
-  EXPECT_EQ(datasetWithEdges.slice({
-    Dim::X, pos
-  }),
-            reference(pos));
-  EXPECT_EQ(datasetWithEdges.slice({
-    Dim::X, pos
-  }),
-            dataset.slice({
-    Dim::X, pos
-  }));
+  datasetWithEdges.setCoord(Dim::X, makeRandom({Dim::X, 5}));
+  EXPECT_EQ(datasetWithEdges.slice({Dim::X, pos}), reference(pos));
+  EXPECT_EQ(datasetWithEdges.slice({Dim::X, pos}),
+            dataset.slice({Dim::X, pos}));
 }
 
 TEST_P(Dataset3DTest_slice_y, slice) {
@@ -531,29 +363,20 @@ TEST_P(Dataset3DTest_slice_y, slice) {
   Dataset reference;
   reference.setCoord(Dim::Time, dataset.coords()[Dim::Time]);
   reference.setCoord(Dim::X, dataset.coords()[Dim::X]);
-  reference.setCoord(Dim::Z, dataset.coords()[Dim::Z].slice({
-    Dim::Y, pos
-  }));
+  reference.setCoord(Dim::Z, dataset.coords()[Dim::Z].slice({Dim::Y, pos}));
   reference.setLabels("labels_x", dataset.labels()["labels_x"]);
   reference.setLabels("labels_z", dataset.labels()["labels_z"]);
   reference.setMask("masks_x", dataset.masks()["masks_x"]);
   reference.setMask("masks_z", dataset.masks()["masks_z"]);
   reference.setAttr("attr_scalar", dataset.attrs()["attr_scalar"]);
   reference.setAttr("attr_x", dataset.attrs()["attr_x"]);
-  reference.setData("data_xy", dataset["data_xy"].data().slice({
-    Dim::Y, pos
-  }));
-  reference.setData("data_zyx", dataset["data_zyx"].data().slice({
-    Dim::Y, pos
-  }));
-  reference.setData("data_xyz", dataset["data_xyz"].data().slice({
-    Dim::Y, pos
-  }));
+  reference.setData("data_xy", dataset["data_xy"].data().slice({Dim::Y, pos}));
+  reference.setData("data_zyx",
+                    dataset["data_zyx"].data().slice({Dim::Y, pos}));
+  reference.setData("data_xyz",
+                    dataset["data_xyz"].data().slice({Dim::Y, pos}));
 
-  EXPECT_EQ(dataset.slice({
-    Dim::Y, pos
-  }),
-            reference);
+  EXPECT_EQ(dataset.slice({Dim::Y, pos}), reference);
 }
 
 TEST_P(Dataset3DTest_slice_z, slice) {
@@ -568,344 +391,135 @@ TEST_P(Dataset3DTest_slice_z, slice) {
   reference.setMask("masks_xy", dataset.masks()["masks_xy"]);
   reference.setAttr("attr_scalar", dataset.attrs()["attr_scalar"]);
   reference.setAttr("attr_x", dataset.attrs()["attr_x"]);
-  reference.setData("data_zyx", dataset["data_zyx"].data().slice({
-    Dim::Z, pos
-  }));
-  reference.setData("data_xyz", dataset["data_xyz"].data().slice({
-    Dim::Z, pos
-  }));
+  reference.setData("data_zyx",
+                    dataset["data_zyx"].data().slice({Dim::Z, pos}));
+  reference.setData("data_xyz",
+                    dataset["data_xyz"].data().slice({Dim::Z, pos}));
 
-  EXPECT_EQ(dataset.slice({
-    Dim::Z, pos
-  }),
-            reference);
+  EXPECT_EQ(dataset.slice({Dim::Z, pos}), reference);
 }
 
 TEST_P(Dataset3DTest_slice_range_x, slice) {
-  const auto[begin, end] = GetParam();
+  const auto [begin, end] = GetParam();
   Dataset reference;
   reference.setCoord(Dim::Time, dataset.coords()[Dim::Time]);
-  reference.setCoord(Dim::X, dataset.coords()[Dim::X].slice({
-    Dim::X, begin, end
-  }));
+  reference.setCoord(Dim::X,
+                     dataset.coords()[Dim::X].slice({Dim::X, begin, end}));
   reference.setCoord(Dim::Y, dataset.coords()[Dim::Y]);
-  reference.setCoord(Dim::Z, dataset.coords()[Dim::Z].slice({
-    Dim::X, begin, end
-  }));
-  reference.setLabels("labels_x", dataset.labels()["labels_x"].slice({
-    Dim::X, begin, end
-  }));
-  reference.setLabels("labels_xy", dataset.labels()["labels_xy"].slice({
-    Dim::X, begin, end
-  }));
+  reference.setCoord(Dim::Z,
+                     dataset.coords()[Dim::Z].slice({Dim::X, begin, end}));
+  reference.setLabels("labels_x",
+                      dataset.labels()["labels_x"].slice({Dim::X, begin, end}));
+  reference.setLabels(
+      "labels_xy", dataset.labels()["labels_xy"].slice({Dim::X, begin, end}));
   reference.setLabels("labels_z", dataset.labels()["labels_z"]);
-  reference.setMask("masks_x", dataset.masks()["masks_x"].slice({
-    Dim::X, begin, end
-  }));
-  reference.setMask("masks_xy", dataset.masks()["masks_xy"].slice({
-    Dim::X, begin, end
-  }));
+  reference.setMask("masks_x",
+                    dataset.masks()["masks_x"].slice({Dim::X, begin, end}));
+  reference.setMask("masks_xy",
+                    dataset.masks()["masks_xy"].slice({Dim::X, begin, end}));
   reference.setMask("masks_z", dataset.masks()["masks_z"]);
   reference.setAttr("attr_scalar", dataset.attrs()["attr_scalar"]);
-  reference.setAttr("attr_x", dataset.attrs()["attr_x"].slice({
-    Dim::X, begin, end
-  }));
-  reference.setData("values_x", dataset["values_x"].data().slice({
-    Dim::X, begin, end
-  }));
-  reference.setData("data_x", dataset["data_x"].data().slice({
-    Dim::X, begin, end
-  }));
-  reference.setData("data_xy", dataset["data_xy"].data().slice({
-    Dim::X, begin, end
-  }));
-  reference.setData("data_zyx", dataset["data_zyx"].data().slice({
-    Dim::X, begin, end
-  }));
-  reference.setData("data_xyz", dataset["data_xyz"].data().slice({
-    Dim::X, begin, end
-  }));
+  reference.setAttr("attr_x",
+                    dataset.attrs()["attr_x"].slice({Dim::X, begin, end}));
+  reference.setData("values_x",
+                    dataset["values_x"].data().slice({Dim::X, begin, end}));
+  reference.setData("data_x",
+                    dataset["data_x"].data().slice({Dim::X, begin, end}));
+  reference.setData("data_xy",
+                    dataset["data_xy"].data().slice({Dim::X, begin, end}));
+  reference.setData("data_zyx",
+                    dataset["data_zyx"].data().slice({Dim::X, begin, end}));
+  reference.setData("data_xyz",
+                    dataset["data_xyz"].data().slice({Dim::X, begin, end}));
 
-  EXPECT_EQ(dataset.slice({
-    Dim::X, begin, end
-  }),
-            reference);
+  EXPECT_EQ(dataset.slice({Dim::X, begin, end}), reference);
 }
 
 TEST_P(Dataset3DTest_slice_range_y, slice) {
-  const auto[begin, end] = GetParam();
-  EXPECT_EQ(dataset.slice({
-    Dim::Y, begin, end
-  }),
-            reference(begin, end));
+  const auto [begin, end] = GetParam();
+  EXPECT_EQ(dataset.slice({Dim::Y, begin, end}), reference(begin, end));
 }
 
 TEST_P(Dataset3DTest_slice_range_y, slice_with_edges) {
-  const auto[begin, end] = GetParam();
+  const auto [begin, end] = GetParam();
   auto datasetWithEdges = dataset;
-  const auto yEdges = makeRandom({
-    Dim::Y, 6
-  });
+  const auto yEdges = makeRandom({Dim::Y, 6});
   datasetWithEdges.setCoord(Dim::Y, yEdges);
   auto referenceWithEdges = reference(begin, end);
-    // Is this the correct behavior for edges also in case the range is empty?
-  referenceWithEdges.setCoord(Dim::Y, yEdges.slice({
-    Dim::Y, begin, end + 1
-  }));
-  EXPECT_EQ(datasetWithEdges.slice({
-    Dim::Y, begin, end
-  }),
-            referenceWithEdges);
+  // Is this the correct behavior for edges also in case the range is empty?
+  referenceWithEdges.setCoord(Dim::Y, yEdges.slice({Dim::Y, begin, end + 1}));
+  EXPECT_EQ(datasetWithEdges.slice({Dim::Y, begin, end}), referenceWithEdges);
 }
 
 TEST_P(Dataset3DTest_slice_range_y, slice_with_z_edges) {
-  const auto[begin, end] = GetParam();
+  const auto [begin, end] = GetParam();
   auto datasetWithEdges = dataset;
-  const auto zEdges = makeRandom({
-    { Dim::X, 4 }
-    , { Dim::Y, 5 }
-    , { Dim::Z, 7 }
-  });
+  const auto zEdges = makeRandom({{Dim::X, 4}, {Dim::Y, 5}, {Dim::Z, 7}});
   datasetWithEdges.setCoord(Dim::Z, zEdges);
   auto referenceWithEdges = reference(begin, end);
-  referenceWithEdges.setCoord(Dim::Z, zEdges.slice({
-    Dim::Y, begin, end
-  }));
-  EXPECT_EQ(datasetWithEdges.slice({
-    Dim::Y, begin, end
-  }),
-            referenceWithEdges);
+  referenceWithEdges.setCoord(Dim::Z, zEdges.slice({Dim::Y, begin, end}));
+  EXPECT_EQ(datasetWithEdges.slice({Dim::Y, begin, end}), referenceWithEdges);
 }
 
 TEST_P(Dataset3DTest_slice_range_z, slice) {
-  const auto[begin, end] = GetParam();
-  EXPECT_EQ(dataset.slice({
-    Dim::Z, begin, end
-  }),
-            reference(begin, end));
+  const auto [begin, end] = GetParam();
+  EXPECT_EQ(dataset.slice({Dim::Z, begin, end}), reference(begin, end));
 }
 
 TEST_P(Dataset3DTest_slice_range_z, slice_with_edges) {
-  const auto[begin, end] = GetParam();
+  const auto [begin, end] = GetParam();
   auto datasetWithEdges = dataset;
-  const auto zEdges = makeRandom({
-    { Dim::X, 4 }
-    , { Dim::Y, 5 }
-    , { Dim::Z, 7 }
-  });
+  const auto zEdges = makeRandom({{Dim::X, 4}, {Dim::Y, 5}, {Dim::Z, 7}});
   datasetWithEdges.setCoord(Dim::Z, zEdges);
   auto referenceWithEdges = reference(begin, end);
-  referenceWithEdges.setCoord(Dim::Z, zEdges.slice({
-    Dim::Z, begin, end + 1
-  }));
-  EXPECT_EQ(datasetWithEdges.slice({
-    Dim::Z, begin, end
-  }),
-            referenceWithEdges);
+  referenceWithEdges.setCoord(Dim::Z, zEdges.slice({Dim::Z, begin, end + 1}));
+  EXPECT_EQ(datasetWithEdges.slice({Dim::Z, begin, end}), referenceWithEdges);
 }
 
 TEST_F(Dataset3DTest, nested_slice) {
-  for (const auto dim : {
-    Dim::X, Dim::Y, Dim::Z
-  }) {
-    EXPECT_EQ(dataset.slice({
-      dim, 1, 3
-    },
-                            {
-      dim, 1
-    }),
-              dataset.slice({
-      dim, 2
-    }));
+  for (const auto dim : {Dim::X, Dim::Y, Dim::Z}) {
+    EXPECT_EQ(dataset.slice({dim, 1, 3}, {dim, 1}), dataset.slice({dim, 2}));
   }
 }
 
 TEST_F(Dataset3DTest, nested_slice_range) {
-  for (const auto dim : {
-    Dim::X, Dim::Y, Dim::Z
-  }) {
-    EXPECT_EQ(dataset.slice({
-      dim, 1, 3
-    },
-                            {
-      dim, 0, 2
-    }),
-              dataset.slice({
-      dim, 1, 3
-    }));
-    EXPECT_EQ(dataset.slice({
-      dim, 1, 3
-    },
-                            {
-      dim, 1, 2
-    }),
-              dataset.slice({
-      dim, 2, 3
-    }));
+  for (const auto dim : {Dim::X, Dim::Y, Dim::Z}) {
+    EXPECT_EQ(dataset.slice({dim, 1, 3}, {dim, 0, 2}),
+              dataset.slice({dim, 1, 3}));
+    EXPECT_EQ(dataset.slice({dim, 1, 3}, {dim, 1, 2}),
+              dataset.slice({dim, 2, 3}));
   }
 }
 
 TEST_F(Dataset3DTest, nested_slice_range_bin_edges) {
   auto datasetWithEdges = dataset;
-  datasetWithEdges.setCoord(Dim::X, makeRandom({
-    Dim::X, 5
-  }));
-  EXPECT_EQ(datasetWithEdges.slice({
-    Dim::X, 1, 3
-  },
-                                   {
-    Dim::X, 0, 2
-  }),
-            datasetWithEdges.slice({
-    Dim::X, 1, 3
-  }));
-  EXPECT_EQ(datasetWithEdges.slice({
-    Dim::X, 1, 3
-  },
-                                   {
-    Dim::X, 1, 2
-  }),
-            datasetWithEdges.slice({
-    Dim::X, 2, 3
-  }));
+  datasetWithEdges.setCoord(Dim::X, makeRandom({Dim::X, 5}));
+  EXPECT_EQ(datasetWithEdges.slice({Dim::X, 1, 3}, {Dim::X, 0, 2}),
+            datasetWithEdges.slice({Dim::X, 1, 3}));
+  EXPECT_EQ(datasetWithEdges.slice({Dim::X, 1, 3}, {Dim::X, 1, 2}),
+            datasetWithEdges.slice({Dim::X, 2, 3}));
 }
 
 TEST_F(Dataset3DTest, commutative_slice) {
-  EXPECT_EQ(dataset.slice({
-    Dim::X, 1, 3
-  },
-                          {
-    Dim::Y, 2
-  }),
-            dataset.slice({
-    Dim::Y, 2
-  },
-                          {
-    Dim::X, 1, 3
-  }));
-  EXPECT_EQ(dataset.slice({
-    Dim::X, 1, 3
-  },
-                          {
-    Dim::Y, 2
-  },
-                          {
-    Dim::Z, 3, 4
-  }),
-            dataset.slice({
-    Dim::Y, 2
-  },
-                          {
-    Dim::Z, 3, 4
-  },
-                          {
-    Dim::X, 1, 3
-  }));
-  EXPECT_EQ(dataset.slice({
-    Dim::X, 1, 3
-  },
-                          {
-    Dim::Y, 2
-  },
-                          {
-    Dim::Z, 3, 4
-  }),
-            dataset.slice({
-    Dim::Z, 3, 4
-  },
-                          {
-    Dim::Y, 2
-  },
-                          {
-    Dim::X, 1, 3
-  }));
-  EXPECT_EQ(dataset.slice({
-    Dim::X, 1, 3
-  },
-                          {
-    Dim::Y, 2
-  },
-                          {
-    Dim::Z, 3, 4
-  }),
-            dataset.slice({
-    Dim::Z, 3, 4
-  },
-                          {
-    Dim::X, 1, 3
-  },
-                          {
-    Dim::Y, 2
-  }));
+  EXPECT_EQ(dataset.slice({Dim::X, 1, 3}, {Dim::Y, 2}),
+            dataset.slice({Dim::Y, 2}, {Dim::X, 1, 3}));
+  EXPECT_EQ(dataset.slice({Dim::X, 1, 3}, {Dim::Y, 2}, {Dim::Z, 3, 4}),
+            dataset.slice({Dim::Y, 2}, {Dim::Z, 3, 4}, {Dim::X, 1, 3}));
+  EXPECT_EQ(dataset.slice({Dim::X, 1, 3}, {Dim::Y, 2}, {Dim::Z, 3, 4}),
+            dataset.slice({Dim::Z, 3, 4}, {Dim::Y, 2}, {Dim::X, 1, 3}));
+  EXPECT_EQ(dataset.slice({Dim::X, 1, 3}, {Dim::Y, 2}, {Dim::Z, 3, 4}),
+            dataset.slice({Dim::Z, 3, 4}, {Dim::X, 1, 3}, {Dim::Y, 2}));
 }
 
 TEST_F(Dataset3DTest, commutative_slice_range) {
-  EXPECT_EQ(dataset.slice({
-    Dim::X, 1, 3
-  },
-                          {
-    Dim::Y, 2, 4
-  }),
-            dataset.slice({
-    Dim::Y, 2, 4
-  },
-                          {
-    Dim::X, 1, 3
-  }));
-  EXPECT_EQ(dataset.slice({
-    Dim::X, 1, 3
-  },
-                          {
-    Dim::Y, 2, 4
-  },
-                          {
-    Dim::Z, 3, 4
-  }),
-            dataset.slice({
-    Dim::Y, 2, 4
-  },
-                          {
-    Dim::Z, 3, 4
-  },
-                          {
-    Dim::X, 1, 3
-  }));
-  EXPECT_EQ(dataset.slice({
-    Dim::X, 1, 3
-  },
-                          {
-    Dim::Y, 2, 4
-  },
-                          {
-    Dim::Z, 3, 4
-  }),
-            dataset.slice({
-    Dim::Z, 3, 4
-  },
-                          {
-    Dim::Y, 2, 4
-  },
-                          {
-    Dim::X, 1, 3
-  }));
-  EXPECT_EQ(dataset.slice({
-    Dim::X, 1, 3
-  },
-                          {
-    Dim::Y, 2, 4
-  },
-                          {
-    Dim::Z, 3, 4
-  }),
-            dataset.slice({
-    Dim::Z, 3, 4
-  },
-                          {
-    Dim::X, 1, 3
-  },
-                          {
-    Dim::Y, 2, 4
-  }));
+  EXPECT_EQ(dataset.slice({Dim::X, 1, 3}, {Dim::Y, 2, 4}),
+            dataset.slice({Dim::Y, 2, 4}, {Dim::X, 1, 3}));
+  EXPECT_EQ(dataset.slice({Dim::X, 1, 3}, {Dim::Y, 2, 4}, {Dim::Z, 3, 4}),
+            dataset.slice({Dim::Y, 2, 4}, {Dim::Z, 3, 4}, {Dim::X, 1, 3}));
+  EXPECT_EQ(dataset.slice({Dim::X, 1, 3}, {Dim::Y, 2, 4}, {Dim::Z, 3, 4}),
+            dataset.slice({Dim::Z, 3, 4}, {Dim::Y, 2, 4}, {Dim::X, 1, 3}));
+  EXPECT_EQ(dataset.slice({Dim::X, 1, 3}, {Dim::Y, 2, 4}, {Dim::Z, 3, 4}),
+            dataset.slice({Dim::Z, 3, 4}, {Dim::X, 1, 3}, {Dim::Y, 2, 4}));
 }
 
 using DataProxyTypes = ::testing::Types<DataProxy, DataConstProxy>;
@@ -925,28 +539,15 @@ TYPED_TEST_SUITE(DataProxy3DTest, DataProxyTypes);
 // slicing DataProxy.
 TYPED_TEST(DataProxy3DTest, slice_single) {
   auto &d = TestFixture::dataset();
-  for (const auto[name, item] : d) {
-    for (const auto dim : {
-      Dim::X, Dim::Y, Dim::Z
-    }) {
+  for (const auto [name, item] : d) {
+    for (const auto dim : {Dim::X, Dim::Y, Dim::Z}) {
       if (item.dims().contains(dim)) {
-        EXPECT_ANY_THROW(item.slice({
-          dim, -1
-        }));
+        EXPECT_ANY_THROW(item.slice({dim, -1}));
         for (scipp::index i = 0; i < item.dims()[dim]; ++i)
-          EXPECT_EQ(item.slice({
-            dim, i
-          }),
-                    d.slice({
-            dim, i
-          })[name]);
-        EXPECT_ANY_THROW(item.slice({
-          dim, item.dims()[dim]
-        }));
+          EXPECT_EQ(item.slice({dim, i}), d.slice({dim, i})[name]);
+        EXPECT_ANY_THROW(item.slice({dim, item.dims()[dim]}));
       } else {
-        EXPECT_ANY_THROW(item.slice({
-          dim, 0
-        }));
+        EXPECT_ANY_THROW(item.slice({dim, 0}));
       }
     }
   }
@@ -954,28 +555,17 @@ TYPED_TEST(DataProxy3DTest, slice_single) {
 
 TYPED_TEST(DataProxy3DTest, slice_length_0) {
   auto &d = TestFixture::dataset();
-  for (const auto[name, item] : d) {
-    for (const auto dim : {
-      Dim::X, Dim::Y, Dim::Z
-    }) {
+  for (const auto [name, item] : d) {
+    for (const auto dim : {Dim::X, Dim::Y, Dim::Z}) {
       if (item.dims().contains(dim)) {
-        EXPECT_ANY_THROW(item.slice({
-          dim, -1, -1
-        }));
+        EXPECT_ANY_THROW(item.slice({dim, -1, -1}));
         for (scipp::index i = 0; i < item.dims()[dim]; ++i)
-          EXPECT_EQ(item.slice({
-            dim, i, i + 0
-          }),
-                    d.slice({
-            dim, i, i + 0
-          })[name]);
-        EXPECT_ANY_THROW(item.slice({
-          dim, item.dims()[dim], item.dims()[dim] + 0
-        }));
+          EXPECT_EQ(item.slice({dim, i, i + 0}),
+                    d.slice({dim, i, i + 0})[name]);
+        EXPECT_ANY_THROW(
+            item.slice({dim, item.dims()[dim], item.dims()[dim] + 0}));
       } else {
-        EXPECT_ANY_THROW(item.slice({
-          dim, 0, 0
-        }));
+        EXPECT_ANY_THROW(item.slice({dim, 0, 0}));
       }
     }
   }
@@ -983,28 +573,17 @@ TYPED_TEST(DataProxy3DTest, slice_length_0) {
 
 TYPED_TEST(DataProxy3DTest, slice_length_1) {
   auto &d = TestFixture::dataset();
-  for (const auto[name, item] : d) {
-    for (const auto dim : {
-      Dim::X, Dim::Y, Dim::Z
-    }) {
+  for (const auto [name, item] : d) {
+    for (const auto dim : {Dim::X, Dim::Y, Dim::Z}) {
       if (item.dims().contains(dim)) {
-        EXPECT_ANY_THROW(item.slice({
-          dim, -1, 0
-        }));
+        EXPECT_ANY_THROW(item.slice({dim, -1, 0}));
         for (scipp::index i = 0; i < item.dims()[dim]; ++i)
-          EXPECT_EQ(item.slice({
-            dim, i, i + 1
-          }),
-                    d.slice({
-            dim, i, i + 1
-          })[name]);
-        EXPECT_ANY_THROW(item.slice({
-          dim, item.dims()[dim], item.dims()[dim] + 1
-        }));
+          EXPECT_EQ(item.slice({dim, i, i + 1}),
+                    d.slice({dim, i, i + 1})[name]);
+        EXPECT_ANY_THROW(
+            item.slice({dim, item.dims()[dim], item.dims()[dim] + 1}));
       } else {
-        EXPECT_ANY_THROW(item.slice({
-          dim, 0, 0
-        }));
+        EXPECT_ANY_THROW(item.slice({dim, 0, 0}));
       }
     }
   }
@@ -1012,28 +591,17 @@ TYPED_TEST(DataProxy3DTest, slice_length_1) {
 
 TYPED_TEST(DataProxy3DTest, slice) {
   auto &d = TestFixture::dataset();
-  for (const auto[name, item] : d) {
-    for (const auto dim : {
-      Dim::X, Dim::Y, Dim::Z
-    }) {
+  for (const auto [name, item] : d) {
+    for (const auto dim : {Dim::X, Dim::Y, Dim::Z}) {
       if (item.dims().contains(dim)) {
-        EXPECT_ANY_THROW(item.slice({
-          dim, -1, 1
-        }));
+        EXPECT_ANY_THROW(item.slice({dim, -1, 1}));
         for (scipp::index i = 0; i < item.dims()[dim] - 1; ++i)
-          EXPECT_EQ(item.slice({
-            dim, i, i + 2
-          }),
-                    d.slice({
-            dim, i, i + 2
-          })[name]);
-        EXPECT_ANY_THROW(item.slice({
-          dim, item.dims()[dim], item.dims()[dim] + 2
-        }));
+          EXPECT_EQ(item.slice({dim, i, i + 2}),
+                    d.slice({dim, i, i + 2})[name]);
+        EXPECT_ANY_THROW(
+            item.slice({dim, item.dims()[dim], item.dims()[dim] + 2}));
       } else {
-        EXPECT_ANY_THROW(item.slice({
-          dim, 0, 2
-        }));
+        EXPECT_ANY_THROW(item.slice({dim, 0, 2}));
       }
     }
   }
@@ -1041,72 +609,40 @@ TYPED_TEST(DataProxy3DTest, slice) {
 
 TYPED_TEST(DataProxy3DTest, slice_slice_range) {
   auto &d = TestFixture::dataset();
-  const auto slice = d.slice({
-    Dim::X, 2, 4
-  });
+  const auto slice = d.slice({Dim::X, 2, 4});
   // Slice proxy created from DatasetProxy as opposed to directly from Dataset.
-  for (const auto[name, item] : slice) {
-    for (const auto dim : {
-      Dim::X, Dim::Y, Dim::Z
-    }) {
+  for (const auto [name, item] : slice) {
+    for (const auto dim : {Dim::X, Dim::Y, Dim::Z}) {
       if (item.dims().contains(dim)) {
-        EXPECT_ANY_THROW(item.slice({
-          dim, -1
-        }));
+        EXPECT_ANY_THROW(item.slice({dim, -1}));
         for (scipp::index i = 0; i < item.dims()[dim]; ++i)
-          EXPECT_EQ(item.slice({
-            dim, i
-          }),
-                    d.slice({
-            Dim::X, 2, 4
-          },
-                            {
-            dim, i
-          })[name]);
-        EXPECT_ANY_THROW(item.slice({
-          dim, item.dims()[dim]
-        }));
+          EXPECT_EQ(item.slice({dim, i}),
+                    d.slice({Dim::X, 2, 4}, {dim, i})[name]);
+        EXPECT_ANY_THROW(item.slice({dim, item.dims()[dim]}));
       } else {
-        EXPECT_ANY_THROW(item.slice({
-          dim, 0
-        }));
+        EXPECT_ANY_THROW(item.slice({dim, 0}));
       }
     }
   }
 }
 
 TYPED_TEST(DataProxy3DTest, slice_single_with_edges) {
-  auto x = { Dim::X };
-  auto xy = { Dim::X, Dim::Y };
-  auto yz = { Dim::Y, Dim::Z };
-  auto xyz = { Dim::X, Dim::Y, Dim::Z };
-  for (const auto &edgeDims : {
-    x, xy, yz, xyz
-  }) {
+  auto x = {Dim::X};
+  auto xy = {Dim::X, Dim::Y};
+  auto yz = {Dim::Y, Dim::Z};
+  auto xyz = {Dim::X, Dim::Y, Dim::Z};
+  for (const auto &edgeDims : {x, xy, yz, xyz}) {
     typename TestFixture::dataset_type d =
         TestFixture::datasetWithEdges(edgeDims);
-    for (const auto[name, item] : d) {
-      for (const auto dim : {
-        Dim::X, Dim::Y, Dim::Z
-      }) {
+    for (const auto [name, item] : d) {
+      for (const auto dim : {Dim::X, Dim::Y, Dim::Z}) {
         if (item.dims().contains(dim)) {
-          EXPECT_ANY_THROW(item.slice({
-            dim, -1
-          }));
+          EXPECT_ANY_THROW(item.slice({dim, -1}));
           for (scipp::index i = 0; i < item.dims()[dim]; ++i)
-            EXPECT_EQ(item.slice({
-              dim, i
-            }),
-                      d.slice({
-              dim, i
-            })[name]);
-          EXPECT_ANY_THROW(item.slice({
-            dim, item.dims()[dim]
-          }));
+            EXPECT_EQ(item.slice({dim, i}), d.slice({dim, i})[name]);
+          EXPECT_ANY_THROW(item.slice({dim, item.dims()[dim]}));
         } else {
-          EXPECT_ANY_THROW(item.slice({
-            dim, 0
-          }));
+          EXPECT_ANY_THROW(item.slice({dim, 0}));
         }
       }
     }
@@ -1114,41 +650,28 @@ TYPED_TEST(DataProxy3DTest, slice_single_with_edges) {
 }
 
 TYPED_TEST(DataProxy3DTest, slice_length_0_with_edges) {
-  auto x = { Dim::X };
-  auto xy = { Dim::X, Dim::Y };
-  auto yz = { Dim::Y, Dim::Z };
-  auto xyz = { Dim::X, Dim::Y, Dim::Z };
-  for (const auto &edgeDims : {
-    x, xy, yz, xyz
-  }) {
+  auto x = {Dim::X};
+  auto xy = {Dim::X, Dim::Y};
+  auto yz = {Dim::Y, Dim::Z};
+  auto xyz = {Dim::X, Dim::Y, Dim::Z};
+  for (const auto &edgeDims : {x, xy, yz, xyz}) {
     typename TestFixture::dataset_type d =
         TestFixture::datasetWithEdges(edgeDims);
-    for (const auto[name, item] : d) {
-      for (const auto dim : {
-        Dim::X, Dim::Y, Dim::Z
-      }) {
+    for (const auto [name, item] : d) {
+      for (const auto dim : {Dim::X, Dim::Y, Dim::Z}) {
         if (item.dims().contains(dim)) {
-          EXPECT_ANY_THROW(item.slice({
-            dim, -1, -1
-          }));
+          EXPECT_ANY_THROW(item.slice({dim, -1, -1}));
           for (scipp::index i = 0; i < item.dims()[dim]; ++i) {
-            const auto slice = item.slice({
-              dim, i, i + 0
-            });
-            EXPECT_EQ(slice, d.slice({
-              dim, i, i + 0
-            })[name]);
+            const auto slice = item.slice({dim, i, i + 0});
+            EXPECT_EQ(slice, d.slice({dim, i, i + 0})[name]);
             if (std::set(edgeDims).count(dim)) {
               EXPECT_EQ(slice.coords()[dim].dims()[dim], 1);
             }
           }
-          EXPECT_ANY_THROW(item.slice({
-            dim, item.dims()[dim], item.dims()[dim] + 0
-          }));
+          EXPECT_ANY_THROW(
+              item.slice({dim, item.dims()[dim], item.dims()[dim] + 0}));
         } else {
-          EXPECT_ANY_THROW(item.slice({
-            dim, 0, 0
-          }));
+          EXPECT_ANY_THROW(item.slice({dim, 0, 0}));
         }
       }
     }
@@ -1156,41 +679,28 @@ TYPED_TEST(DataProxy3DTest, slice_length_0_with_edges) {
 }
 
 TYPED_TEST(DataProxy3DTest, slice_length_1_with_edges) {
-  auto x = { Dim::X };
-  auto xy = { Dim::X, Dim::Y };
-  auto yz = { Dim::Y, Dim::Z };
-  auto xyz = { Dim::X, Dim::Y, Dim::Z };
-  for (const auto &edgeDims : {
-    x, xy, yz, xyz
-  }) {
+  auto x = {Dim::X};
+  auto xy = {Dim::X, Dim::Y};
+  auto yz = {Dim::Y, Dim::Z};
+  auto xyz = {Dim::X, Dim::Y, Dim::Z};
+  for (const auto &edgeDims : {x, xy, yz, xyz}) {
     typename TestFixture::dataset_type d =
         TestFixture::datasetWithEdges(edgeDims);
-    for (const auto[name, item] : d) {
-      for (const auto dim : {
-        Dim::X, Dim::Y, Dim::Z
-      }) {
+    for (const auto [name, item] : d) {
+      for (const auto dim : {Dim::X, Dim::Y, Dim::Z}) {
         if (item.dims().contains(dim)) {
-          EXPECT_ANY_THROW(item.slice({
-            dim, -1, 0
-          }));
+          EXPECT_ANY_THROW(item.slice({dim, -1, 0}));
           for (scipp::index i = 0; i < item.dims()[dim]; ++i) {
-            const auto slice = item.slice({
-              dim, i, i + 1
-            });
-            EXPECT_EQ(slice, d.slice({
-              dim, i, i + 1
-            })[name]);
+            const auto slice = item.slice({dim, i, i + 1});
+            EXPECT_EQ(slice, d.slice({dim, i, i + 1})[name]);
             if (std::set(edgeDims).count(dim)) {
               EXPECT_EQ(slice.coords()[dim].dims()[dim], 2);
             }
           }
-          EXPECT_ANY_THROW(item.slice({
-            dim, item.dims()[dim], item.dims()[dim] + 1
-          }));
+          EXPECT_ANY_THROW(
+              item.slice({dim, item.dims()[dim], item.dims()[dim] + 1}));
         } else {
-          EXPECT_ANY_THROW(item.slice({
-            dim, 0, 0
-          }));
+          EXPECT_ANY_THROW(item.slice({dim, 0, 0}));
         }
       }
     }
@@ -1198,41 +708,28 @@ TYPED_TEST(DataProxy3DTest, slice_length_1_with_edges) {
 }
 
 TYPED_TEST(DataProxy3DTest, slice_with_edges) {
-  auto x = { Dim::X };
-  auto xy = { Dim::X, Dim::Y };
-  auto yz = { Dim::Y, Dim::Z };
-  auto xyz = { Dim::X, Dim::Y, Dim::Z };
-  for (const auto &edgeDims : {
-    x, xy, yz, xyz
-  }) {
+  auto x = {Dim::X};
+  auto xy = {Dim::X, Dim::Y};
+  auto yz = {Dim::Y, Dim::Z};
+  auto xyz = {Dim::X, Dim::Y, Dim::Z};
+  for (const auto &edgeDims : {x, xy, yz, xyz}) {
     typename TestFixture::dataset_type d =
         TestFixture::datasetWithEdges(edgeDims);
-    for (const auto[name, item] : d) {
-      for (const auto dim : {
-        Dim::X, Dim::Y, Dim::Z
-      }) {
+    for (const auto [name, item] : d) {
+      for (const auto dim : {Dim::X, Dim::Y, Dim::Z}) {
         if (item.dims().contains(dim)) {
-          EXPECT_ANY_THROW(item.slice({
-            dim, -1, 1
-          }));
+          EXPECT_ANY_THROW(item.slice({dim, -1, 1}));
           for (scipp::index i = 0; i < item.dims()[dim] - 1; ++i) {
-            const auto slice = item.slice({
-              dim, i, i + 2
-            });
-            EXPECT_EQ(slice, d.slice({
-              dim, i, i + 2
-            })[name]);
+            const auto slice = item.slice({dim, i, i + 2});
+            EXPECT_EQ(slice, d.slice({dim, i, i + 2})[name]);
             if (std::set(edgeDims).count(dim)) {
               EXPECT_EQ(slice.coords()[dim].dims()[dim], 3);
             }
           }
-          EXPECT_ANY_THROW(item.slice({
-            dim, item.dims()[dim], item.dims()[dim] + 2
-          }));
+          EXPECT_ANY_THROW(
+              item.slice({dim, item.dims()[dim], item.dims()[dim] + 2}));
         } else {
-          EXPECT_ANY_THROW(item.slice({
-            dim, 0, 2
-          }));
+          EXPECT_ANY_THROW(item.slice({dim, 0, 2}));
         }
       }
     }
