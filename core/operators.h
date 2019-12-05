@@ -7,15 +7,9 @@
 
 #include <Eigen/Dense>
 
+#include "scipp/core/transform_common.h"
+
 namespace scipp::core {
-
-template <class... Ts> struct pair_self {
-  using type = std::tuple<std::pair<Ts, Ts>...>;
-};
-template <class... Ts> struct pair_custom { using type = std::tuple<Ts...>; };
-
-template <class... Ts> using pair_self_t = typename pair_self<Ts...>::type;
-template <class... Ts> using pair_custom_t = typename pair_custom<Ts...>::type;
 
 namespace operator_detail {
 struct plus_equals {
@@ -48,7 +42,8 @@ struct times_equals {
       pair_self_t<double, float, int32_t, int64_t>{},
       pair_custom_t<std::pair<double, float>, std::pair<float, double>,
                     std::pair<int64_t, int32_t>,
-                    std::pair<Eigen::Vector3d, double>>{}));
+                    std::pair<Eigen::Vector3d, double>>{},
+      pair_numerical_with_t<bool>{}));
 };
 struct divide_equals {
   template <class A, class B>

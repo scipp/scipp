@@ -2,9 +2,12 @@
 # Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
+from .sparse import histogram_sparse_data
+
 
 def dispatch(input_data, ndim=0, name=None, backend=None, collapse=None,
-             projection="2d", **kwargs):
+             sparse_dim=None, bins=None, projection=None, color=None,
+             **kwargs):
     """
     Function to automatically dispatch the input dataset to the appropriate
     plotting function depending on its dimensions
@@ -14,11 +17,17 @@ def dispatch(input_data, ndim=0, name=None, backend=None, collapse=None,
         raise RuntimeError("Invalid number of dimensions for "
                            "plotting: {}".format(ndim))
 
+    if sparse_dim is not None and bins is not None:
+        input_data = histogram_sparse_data(input_data, sparse_dim, bins)
+
     if backend == "matplotlib" or backend == "matplotlib:quiet":
 
-        from .plot_matplotlib import plot_1d, plot_2d
-        if ndim == 1:
-            return plot_1d(input_data, **kwargs)
+        from .plot_matplotlib import plot_1d, plot_2d, plot_sparse
+        if sparse_dim is not None and bins is None:
+            return plot_sparse(input_data, sparse_dim=sparse_dim,
+                               color=color, **kwargs)
+        elif ndim == 1:
+            return plot_1d(input_data, color=color, **kwargs)
         elif ndim == 2:
             return plot_2d(input_data, name=name, **kwargs)
         elif ndim > 2:
@@ -27,25 +36,42 @@ def dispatch(input_data, ndim=0, name=None, backend=None, collapse=None,
                                "1D or 2D dataset by slicing your object. "
                                "Alternatively, try using the plotly "
                                "interactive backend instead by setting "
-                               "scipp.plot.config.backend = 'interactive'.")
+                               "scipp.config.plot.backend = 'interactive'.")
 
-    else:
+    elif backend == "interactive" or backend == "static":
 
         # Delayed imports
         from .plot_1d import plot_1d
         from .plot_2d import plot_2d
         from .plot_3d import plot_3d
+        from .plot_sparse import plot_sparse
 
-        if ndim == 1:
-            plot_1d(input_data, backend=backend, **kwargs)
-        elif projection.lower() == "2d":
+        if projection is None:
+            if ndim < 3:
+                projection = "{}d".format(ndim)
+            else:
+                projection = "2d"
+        projection = projection.lower()
+
+        if sparse_dim is not None and bins is None:
+            plot_sparse(input_data, ndim=ndim, sparse_dim=sparse_dim,
+                        backend=backend, color=color, **kwargs)
+        elif projection == "1d":
+            plot_1d(input_data, backend=backend, color=color, **kwargs)
+        elif projection == "2d":
             plot_2d(input_data, name=name, ndim=ndim, backend=backend,
                     **kwargs)
-        elif projection.lower() == "3d":
+        elif projection == "3d" or projection == "volume":
             plot_3d(input_data, name=name, ndim=ndim, backend=backend,
-                    **kwargs)
+                    volume=(projection == "volume"), **kwargs)
         else:
             raise RuntimeError("Wrong projection type. Expected either '2d' "
                                "or '3d', got {}.".format(projection))
+
+    else:
+        raise RuntimeError("Unknown backend {}. Currently supported "
+                           "backends are 'interactive', 'static', "
+                           "'matplotlib' and "
+                           "'matplotlib:quiet'".format(backend))
 
     return

@@ -3,6 +3,7 @@
 # @file
 # @author Igor Gudich & Neil Vaytet
 
+from .config import colors
 from ._scipp import core as sc
 
 
@@ -35,14 +36,127 @@ def title_to_string(var, name=None, replace_dim=True):
     return text
 
 
-def table_from_dataset(dataset, is_hist=False, headers=2):
+def _make_table_section_name_header(name, section, style):
+    """
+    Adds a first row of the table that contains the names of the sections
+    being displayed in the table. This is usually the first row and will
+    contain Data, Labels, Masks, etc.
+    """
+    col_separators = 0
+    for key, sec in section:
+        col_separators += 1 + (sec.variances is not None)
+    if col_separators > 0:
+        return "<th {} colspan='{}'>{}</th>".format(
+            style, col_separators, name)
+    else:
+        return ""
 
-    bstyle = "style='border: 1px solid black;"
-    cstyle = bstyle + "background-color: #adf3e0;text-align: center;'"
-    lstyle = bstyle + "background-color: #d9c0fa;text-align: center;'"
-    mstyle = bstyle + "text-align: center;'"
-    bstyle += "'"
-    estyle = "style='border: 0px solid white;background-color: #ffffff;'"
+
+def _make_table_sections(dataset, coord, base_style):
+    coord_style = "{} background-color: {};text-align: center;'".format(
+        base_style,
+        colors.scheme["coord"])
+    label_style = "{} background-color: {};text-align: center;'".format(
+        base_style,
+        colors.scheme["labels"])
+    mask_style = "{} background-color: {};text-align: center;'".format(
+        base_style,
+        colors.scheme["mask"])
+    data_style = "{} background-color: {};text-align: center;'".format(
+        base_style,
+        colors.scheme["data"])
+
+    colsp_coord = 0
+    if coord is not None:
+        colsp_coord = 1 + (coord.variances is not None)
+    html = ["<tr>"]
+
+    if colsp_coord > 0:
+        html.append("<th {} colspan='{}'>Coordinate</th>".format(coord_style,
+                                                                 colsp_coord))
+    html.append(_make_table_section_name_header(
+        "Labels", dataset.labels, label_style))
+    html.append(_make_table_section_name_header(
+        "Masks", dataset.masks, mask_style))
+    html.append(_make_table_section_name_header(
+        "Data", dataset, data_style))
+
+    html.append("</tr>")
+
+    return "".join(html)
+
+
+def _make_table_unit_headers(section, text_style):
+    """
+    Adds a row containing the unit of the section
+    """
+    html = []
+    for key, val in section:
+        html.append("<th {} colspan='{}'>{}</th>".format(
+            text_style, 1 + (val.variances is not None),
+            title_to_string(val, name=key)))
+    return "".join(html)
+
+
+def _make_table_subsections(section, text_style):
+    """
+    Adds Value | Variance columns for the section.
+    """
+    html = []
+
+    for key, val in section:
+        html.append("<th {}>Values</th>".format(text_style))
+        if val.variances is not None:
+            html.append("<th {}>Variances</th>".format(text_style))
+
+    return "".join(html)
+
+
+def _make_value_rows(section, coord, index, base_style, edge_style):
+    html = []
+    for key, val in section:
+        header_line_for_bin_edges = False
+        if coord is not None:
+            if len(val.values) == len(coord.values) - 1:
+                header_line_for_bin_edges = True
+        if header_line_for_bin_edges:
+            if index == 0:
+                html.append("<td {}></td>".format(edge_style))
+                if val.variances is not None:
+                    html.append("<td {}></td>".format(edge_style))
+        else:
+            html.append("<td rowspan='2' {}>{}</td>".format(
+                base_style, value_to_string(val.values[index])))
+            if val.variances is not None:
+                html.append("<td rowspan='2' {}>{}</td>".format(
+                    base_style, value_to_string(val.variances[index])))
+
+    return "".join(html)
+
+
+def _make_trailing_cells(section, coord, index, size, base_style, edge_style):
+    html = []
+    for key, val in section:
+        if len(val.values) == len(coord.values) - 1:
+            if index == size - 1:
+                html.append("<td {}></td>".format(edge_style))
+                if val.variances is not None:
+                    html.append("<td {}></td>".format(edge_style))
+            else:
+                html.append("<td rowspan='2' {}>{}</td>".format(
+                    base_style, value_to_string(val.values[index])))
+                if val.variances is not None:
+                    html.append("<td rowspan='2' {}>{}</td>".format(
+                        base_style, value_to_string(val.variances[index])))
+
+    return "".join(html)
+
+
+def table_from_dataset(dataset, is_hist=False, headers=2):
+    base_style = "style='border: 1px solid black;"
+
+    mstyle = base_style + "text-align: center;'"
+    edge_style = "style='border: 0px solid white;background-color: #ffffff;'"
 
     # Declare table
     html = "<table style='border-collapse: collapse;'>"
@@ -57,135 +171,72 @@ def table_from_dataset(dataset, is_hist=False, headers=2):
                 size += 1
 
     if headers > 1:
-        colsp_coord = 0
-        if coord is not None:
-            colsp_coord = 1 + (coord.variances is not None)
-        colsp_labs = 0
-        for key, lab in dataset.labels:
-            colsp_labs += 1 + (lab.variances is not None)
-        colsp_data = 0
-        for key, val in dataset:
-            colsp_data += 1 + (val.variances is not None)
-        html += "<tr>"
-        if colsp_coord > 0:
-            html += "<th {} colspan='{}'>Coordinate</th>".format(cstyle,
-                                                                 colsp_coord)
-        if colsp_labs > 0:
-            html += "<th {} colspan='{}'>Labels</th>".format(lstyle,
-                                                             colsp_labs)
-        if colsp_data > 0:
-            html += "<th {} colspan='{}'>Data</th>".format(mstyle,
-                                                           colsp_data)
-        html += "</tr>"
+        html += _make_table_sections(dataset, coord, base_style)
 
     if headers > 0:
         html += "<tr>"
+
         if coord is not None:
             html += "<th {} colspan='{}'>{}</th>".format(
                 mstyle, 1 + (coord.variances is not None),
                 title_to_string(coord, replace_dim=False))
-        for key, lab in dataset.labels:
-            html += "<th {} colspan='{}'>{}</th>".format(
-                mstyle, 1 + (lab.variances is not None),
-                title_to_string(lab, name=key))
-        for key, val in dataset:
-            html += "<th {} colspan='{}'>{}</th>".format(
-                mstyle, 1 + (val.variances is not None),
-                title_to_string(val, name=key))
+
+        html += _make_table_unit_headers(dataset.labels, mstyle)
+        html += _make_table_unit_headers(dataset.masks, mstyle)
+        html += _make_table_unit_headers(dataset, mstyle)
+
         html += "</tr><tr>"
+
         if coord is not None:
             html += "<th {}>Values</th>".format(mstyle)
             if coord.variances is not None:
                 html += "<th {}>Variances</th>".format(mstyle)
-        for key, lab in dataset.labels:
-            html += "<th {}>Values</th>".format(mstyle)
-            if lab.variances is not None:
-                html += "<th {}>Variances</th>".format(mstyle)
-        for key, val in dataset:
-            html += "<th {}>Values</th>".format(mstyle)
-            if val.variances is not None:
-                html += "<th {}>Variances</th>".format(mstyle)
+        html += _make_table_subsections(dataset.labels, mstyle)
+        html += _make_table_subsections(dataset.masks, mstyle)
+        html += _make_table_subsections(dataset, mstyle)
         html += "</tr>"
-    if size is None:
+
+    # the base style still does not have a closing quote, so we add it here
+    base_style += "'"
+
+    if size is None:  # handle 0D variable
         html += "<tr>"
         for key, val in dataset:
-            html += "<td {}>{}</td>".format(bstyle, value_to_string(val.value))
+            html += "<td {}>{}</td>".format(base_style,
+                                            value_to_string(val.value))
             if val.variances is not None:
-                html += "<td {}>{}</td>".format(bstyle,
+                html += "<td {}>{}</td>".format(base_style,
                                                 value_to_string(val.variance))
         html += "</tr>"
     else:
         for i in range(size):
-            html += '<tr style="font-weight:normal">'
+            html += '<tr>'
             # Add coordinates
             if coord is not None:
                 text = value_to_string(coord.values[i])
-                html += "<td rowspan='2' {}>{}</td>".format(bstyle, text)
+                html += "<td rowspan='2' {}>{}</td>".format(base_style, text)
                 if coord.variances is not None:
                     text = value_to_string(coord.variances[i])
-                    html += "<td rowspan='2' {}>{}</td>".format(bstyle, text)
-            # Add labels
-            for key, lab in dataset.labels:
-                header_line_for_bin_edges = False
-                if coord is not None:
-                    if len(lab.values) == len(coord.values) - 1:
-                        header_line_for_bin_edges = True
-                if header_line_for_bin_edges:
-                    if i == 0:
-                        html += "<td {}></td>".format(estyle)
-                        if lab.variances is not None:
-                            html += "<td {}></td>".format(estyle)
-                else:
                     html += "<td rowspan='2' {}>{}</td>".format(
-                        bstyle, value_to_string(lab.values[i]))
-                    if lab.variances is not None:
-                        html += "<td rowspan='2' {}>{}</td>".format(
-                            bstyle, value_to_string(lab.variances[i]))
-            # Add data fields
-            for key, val in dataset:
-                header_line_for_bin_edges = False
-                if coord is not None:
-                    if len(val.values) == len(coord.values) - 1:
-                        header_line_for_bin_edges = True
-                if header_line_for_bin_edges:
-                    if i == 0:
-                        html += "<td {}></td>".format(estyle)
-                        if val.variances is not None:
-                            html += "<td {}></td>".format(estyle)
-                else:
-                    html += "<td rowspan='2' {}>{}</td>".format(
-                        bstyle, value_to_string(val.values[i]))
-                    if val.variances is not None:
-                        html += "<td rowspan='2' {}>{}</td>".format(
-                            bstyle, value_to_string(val.variances[i]))
+                        base_style, text)
+
+            html += _make_value_rows(
+                dataset.labels, coord, i, base_style, edge_style)
+            html += _make_value_rows(
+                dataset.masks, coord, i, base_style, edge_style)
+            html += _make_value_rows(
+                dataset, coord, i, base_style, edge_style)
+
             html += "</tr><tr>"
             # If there are bin edges, we need to add trailing cells for data
             # and labels
             if coord is not None:
-                for key, lab in dataset.labels:
-                    if len(lab.values) == len(coord.values) - 1:
-                        if i == size - 1:
-                            html += "<td {}></td>".format(estyle)
-                            if lab.variances is not None:
-                                html += "<td {}></td>".format(estyle)
-                        else:
-                            html += "<td rowspan='2' {}>{}</td>".format(
-                                bstyle, value_to_string(lab.values[i]))
-                            if lab.variances is not None:
-                                html += "<td rowspan='2' {}>{}</td>".format(
-                                    bstyle, value_to_string(lab.variances[i]))
-                for key, val in dataset:
-                    if len(val.values) == len(coord.values) - 1:
-                        if i == size - 1:
-                            html += "<td {}></td>".format(estyle)
-                            if val.variances is not None:
-                                html += "<td {}></td>".format(estyle)
-                        else:
-                            html += "<td rowspan='2' {}>{}</td>".format(
-                                bstyle, value_to_string(val.values[i]))
-                            if val.variances is not None:
-                                html += "<td rowspan='2' {}>{}</td>".format(
-                                    bstyle, value_to_string(val.variances[i]))
+                html += _make_trailing_cells(
+                    dataset.labels, coord, i, size, base_style, edge_style)
+                html += _make_trailing_cells(
+                    dataset.masks, coord, i, size, base_style, edge_style)
+                html += _make_trailing_cells(
+                    dataset, coord, i, size, base_style, edge_style)
             html += "</tr>"
 
     html += "</table>"
@@ -255,6 +306,19 @@ def table(dataset):
                 tabledict["1D Variables"][key].labels[name] = lab
                 is_empty[key] = False
 
+        # Next add the masks
+        for name, mask in dataset.masks:
+            if len(mask.dims) == 1:
+                dim = mask.dims[0]
+                key = str(dim)
+                if len(dataset.coords) > 0:
+                    if len(dataset.coords[dim].values) == len(mask.values) + 1:
+                        is_histogram[key] = True
+                    tabledict["1D Variables"][key].coords[dim] = \
+                        dataset.coords[dim]
+                tabledict["1D Variables"][key].masks[name] = mask
+                is_empty[key] = False
+
         # Now purge out the empty entries
         for key, val in is_empty.items():
             if val:
@@ -307,5 +371,3 @@ def table(dataset):
     output += "</table>"
 
     display(HTML(output))
-
-    return

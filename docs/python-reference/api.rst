@@ -14,6 +14,8 @@ Classes
    DataProxy
    Dataset
    DatasetProxy
+   GroupByDataArray
+   GroupByDataset
 
 Free functions
 ==============
@@ -39,6 +41,20 @@ General
    sort
    sqrt
    sum
+
+Group-by (split-apply-combine)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. autosummary::
+   :toctree: ../generated
+
+   groupby
+   GroupByDataArray.flatten
+   GroupByDataArray.mean
+   GroupByDataArray.sum
+   GroupByDataset.flatten
+   GroupByDataset.mean
+   GroupByDataset.sum
 
 Trigonometric
 ~~~~~~~~~~~~~

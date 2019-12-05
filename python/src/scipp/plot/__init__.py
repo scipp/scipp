@@ -6,4 +6,16 @@
 # flake8: noqa
 
 from .plot import plot
-from . import config
+
+
+def superplot(dataset, **kwargs):
+    return plot(dataset, projection="1d", **kwargs)
+
+def image(dataset, **kwargs):
+    return plot(dataset, projection="2d", **kwargs)
+
+def threeslice(dataset, **kwargs):
+    return plot(dataset, projection="3d", **kwargs)
+
+def volume(dataset, **kwargs):
+    return plot(dataset, projection="volume", **kwargs)

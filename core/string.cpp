@@ -68,6 +68,8 @@ std::string to_string(const Dimensions &dims) {
   return s;
 }
 
+std::string to_string(const bool b) { return b ? "True" : "False"; }
+
 std::string to_string(const DType dtype) {
   switch (dtype) {
   case DType::String:
@@ -148,18 +150,32 @@ template <class T> struct VariancesToString {
   }
 };
 
+template <template <class> class Callable, class... Args>
+auto apply(const DType dtype, Args &&... args) {
+  return callDType<Callable>(
+      std::tuple<double, float, int64_t, int32_t, std::string, bool,
+                 sparse_container<double>, sparse_container<float>,
+                 sparse_container<int64_t>, DataArray, Dataset,
+                 Eigen::Vector3d>{},
+      dtype, std::forward<Args>(args)...);
+}
+
 template <class Key, class Var>
 auto format_variable(const Key &key, const Var &variable,
                      const Dimensions &datasetDims = Dimensions()) {
   std::stringstream s;
+  const auto dtype = variable.dtype();
   const std::string colSep("  ");
   s << tab << std::left << std::setw(24) << to_string(key);
   s << colSep << std::setw(9) << to_string(variable.dtype());
   s << colSep << std::setw(15) << '[' + variable.unit().name() + ']';
   s << colSep << make_dims_labels(variable, datasetDims);
-  s << colSep
-    << apply<ValuesToString>(variable.data().dtype(),
-                             VariableConstProxy(variable));
+  s << colSep;
+  if (dtype == DType::PyObject)
+    s << "[PyObject]";
+  else
+    s << apply<ValuesToString>(variable.data().dtype(),
+                               VariableConstProxy(variable));
   if (variable.hasVariances())
     s << colSep
       << apply<VariancesToString>(variable.data().dtype(),
@@ -193,6 +209,12 @@ auto format_data_proxy(const Key &name, const DataConstProxy &data,
                                std::string(label_name),
                            labels, datasetDims);
     }
+
+  if (!data.attrs().empty()) {
+    s << tab << "Attributes:\n";
+    for (const auto &[attr_name, var] : data.attrs())
+      s << tab << tab << format_variable(attr_name, var, datasetDims);
+  }
   return s.str();
 }
 
@@ -213,8 +235,12 @@ std::string do_to_string(const D &dataset, const std::string &id,
 
   if (!dataset.coords().empty()) {
     s << "Coordinates:\n";
-    for (const auto &[dim, var] : dataset.coords())
-      s << format_variable(dim, var, dims);
+    for (const auto &[dim, var] : dataset.coords()) {
+      /* Only print the dense coordinates here (sparse coordinates will appear
+       * with their corresponding data item) */
+      if (var.dims().sparseDim() == Dim::Invalid)
+        s << format_variable(dim, var, dims);
+    }
   }
   if (!dataset.labels().empty()) {
     s << "Labels:\n";
@@ -234,7 +260,7 @@ std::string do_to_string(const D &dataset, const std::string &id,
 
   if constexpr (std::is_same_v<D, DataArray> ||
                 std::is_same_v<D, DataConstProxy>) {
-    s << format_data_proxy("", dataset);
+    s << "Data:\n" << format_data_proxy(dataset.name(), dataset);
   } else {
     if (!dataset.empty())
       s << "Data:\n";

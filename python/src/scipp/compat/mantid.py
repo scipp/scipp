@@ -2,15 +2,34 @@
 # Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock, Neil Vaytet
 
-import scipp as sc
+from .._scipp import core as sc
 import numpy as np
+from copy import deepcopy
 
 
 def get_pos(pos):
     return [pos.X(), pos.Y(), pos.Z()]
 
 
-def convert_instrument(ws):
+def make_run(ws):
+    return sc.Variable(value=deepcopy(ws.run()))
+
+
+def make_sample(ws):
+    return sc.Variable(value=deepcopy(ws.sample()))
+
+
+def make_bin_masks(common_bins, dim, num_bins, num_spectra):
+    if common_bins:
+        return sc.Variable([dim], shape=(num_bins,),
+                           dtype=sc.dtype.bool)
+    else:
+        return sc.Variable([sc.Dim.Spectrum, dim],
+                           shape=(num_spectra, num_bins),
+                           dtype=sc.dtype.bool)
+
+
+def make_component_info(ws):
     compInfo = sc.Dataset({
         'position':
         sc.Variable(dims=[sc.Dim.Row],
@@ -26,8 +45,45 @@ def convert_instrument(ws):
     return sc.Variable(value=compInfo)
 
 
-def init_pos_spectrum_no(nHist, ws):
+def make_detector_info(ws):
+    det_info = ws.detectorInfo()
+    # det -> spec mapping
+    nDet = det_info.size()
+    spectrum = sc.Variable([sc.Dim.Detector],
+                           shape=(nDet, ),
+                           dtype=sc.dtype.int32)
+    has_spectrum = sc.Variable([sc.Dim.Detector],
+                               values=np.full((nDet, ), False))
+    spectrum_ = spectrum.values
+    has_spectrum_ = has_spectrum.values
+    spec_info = ws.spectrumInfo()
+    for i, spec in enumerate(spec_info):
+        spec_def = spec.spectrumDefinition
+        # This assumes that each detector is part of exactly one spectrum
+        for j in range(len(spec_def)):
+            det, time = spec_def[j]
+            if time != 0:
+                raise RuntimeError(
+                    "Conversion of Mantid Workspace with scanning instrument "
+                    "not supported yet.")
+            spectrum_[det] = i
+            has_spectrum_[det] = True
+    detector = sc.Variable([sc.Dim.Detector], values=det_info.detectorIDs())
 
+    # Remove any information about detectors without data (a spectrum). This
+    # mostly just gets in the way and including it in the default converter
+    # is probably not required.
+    spectrum = sc.filter(spectrum, has_spectrum)
+    detector = sc.filter(detector, has_spectrum)
+
+    # May want to include more information here, such as detector positions,
+    # but for now this is not necessary.
+    return sc.Variable(value=sc.Dataset(coords={sc.Dim.Detector: detector},
+                                        labels={'spectrum': spectrum}))
+
+
+def init_pos_spectrum_no(ws):
+    nHist = ws.getNumberHistograms()
     pos = np.zeros([nHist, 3])
     num = np.zeros([nHist], dtype=np.int32)
 
@@ -39,21 +95,33 @@ def init_pos_spectrum_no(nHist, ws):
         else:
             pos[i, :] = [np.nan, np.nan, np.nan]
         num[i] = ws.getSpectrum(i).getSpectrumNo()
-    pos = sc.Variable([sc.Dim.Spectrum], values=pos, unit=sc.units.m)
+    pos = sc.Variable([sc.Dim.Spectrum], values=pos, unit=sc.units.m,
+                      dtype=sc.dtype.vector_3_double)
     num = sc.Variable([sc.Dim.Spectrum], values=num)
     return pos, num
 
 
-def convert_Workspace2D_to_dataset(ws):
-    cb = ws.isCommonBins()
-    nHist = ws.getNumberHistograms()
-    comp_info = convert_instrument(ws)
-    pos, num = init_pos_spectrum_no(nHist, ws)
+def set_common_bins_masks(bin_masks, dim, masked_bins):
+    for masked_bin in masked_bins:
+        bin_masks[dim, masked_bin].value = True
+
+
+def set_bin_masks(bin_masks, dim, index, masked_bins):
+    for masked_bin in masked_bins:
+        bin_masks[sc.Dim.Spectrum, index][dim, masked_bin].value = True
+
+
+def convert_Workspace2D_to_dataarray(ws):
+    common_bins = ws.isCommonBins()
+    comp_info = make_component_info(ws)
+    det_info = make_detector_info(ws)
+    pos, num = init_pos_spectrum_no(ws)
 
     # TODO More cases?
     allowed_units = {
         "DeltaE": [sc.Dim.EnergyTransfer, sc.units.meV],
-        "TOF": [sc.Dim.Tof, sc.units.us]
+        "TOF": [sc.Dim.Tof, sc.units.us],
+        "Wavelength": [sc.Dim.Wavelength, sc.units.angstrom]
     }
     xunit = ws.getAxis(0).getUnit().unitID()
     if xunit not in allowed_units.keys():
@@ -64,7 +132,7 @@ def convert_Workspace2D_to_dataset(ws):
     else:
         [dim, unit] = allowed_units[xunit]
 
-    if cb:
+    if common_bins:
         coord = sc.Variable([dim], values=ws.readX(0), unit=unit)
     else:
         coord = sc.Variable([sc.Dim.Spectrum, dim],
@@ -79,25 +147,53 @@ def convert_Workspace2D_to_dataset(ws):
                                                  len(ws.readY(0))),
                                           unit=sc.units.counts,
                                           variances=True),
-                         coords={
-                             dim: coord,
-                             sc.Dim.Spectrum: num
-                         },
-                         labels={
-                             "position": pos,
-                             "component_info": comp_info
-                         })
+                         coords={dim: coord,
+                                 sc.Dim.Spectrum: num
+                                 },
+                         labels={"position": pos,
+                                 "component_info": comp_info,
+                                 "detector_info": det_info
+                                 },
+                         attrs={"run": make_run(ws),
+                                "sample": make_sample(ws)
+                                }
+                         )
+
+    spectrum_masks = None
+    if ws.detectorInfo().hasMaskedDetectors():
+        array.masks["spectrum"] = sc.Variable(
+            [sc.Dim.Spectrum],
+            shape=(ws.getNumberHistograms(),),
+            dtype=sc.dtype.bool)
+        spectrum_masks = array.masks["spectrum"]
+
+    if ws.hasAnyMaskedBins():
+        array.masks["bin"] = make_bin_masks(common_bins, dim,
+                                            ws.blocksize(),
+                                            ws.getNumberHistograms())
+        bin_masks = array.masks["bin"]
+        # set all the bin masks now - they're all the same
+        if common_bins:
+            set_common_bins_masks(bin_masks, dim, ws.maskedBinsIndices(0))
 
     data = array.data
+    spectrum_info = ws.spectrumInfo()
     for i in range(ws.getNumberHistograms()):
         data[sc.Dim.Spectrum, i].values = ws.readY(i)
         data[sc.Dim.Spectrum, i].variances = np.power(ws.readE(i), 2)
 
+        if spectrum_masks:
+            spectrum_masks[sc.Dim.Spectrum,
+                           i].value = spectrum_info.isMasked(i)
+
+        if not common_bins and ws.hasMaskedBins(i):
+            set_bin_masks(bin_masks, dim, i, ws.maskedBinsIndices(i))
+
     return array
 
 
-def convert_EventWorkspace_to_dataset(ws, load_pulse_times, EventType):
-
+def convertEventWorkspace_to_dataarray(ws, load_pulse_times):
+    from mantid.api import EventType
     allowed_units = {"TOF": [sc.Dim.Tof, sc.units.us]}
     xunit = ws.getAxis(0).getUnit().unitID()
     if xunit not in allowed_units.keys():
@@ -109,8 +205,9 @@ def convert_EventWorkspace_to_dataset(ws, load_pulse_times, EventType):
         [dim, unit] = allowed_units[xunit]
 
     nHist = ws.getNumberHistograms()
-    comp_info = convert_instrument(ws)
-    pos, num = init_pos_spectrum_no(nHist, ws)
+    comp_info = make_component_info(ws)
+    det_info = make_detector_info(ws)
+    pos, num = init_pos_spectrum_no(ws)
 
     # TODO Use unit information in workspace, if available.
     coord = sc.Variable([sc.Dim.Spectrum, dim],
@@ -136,8 +233,8 @@ def convert_EventWorkspace_to_dataset(ws, load_pulse_times, EventType):
             # very slow.
             # TODO: Find a more efficient way to do this.
             pt = sp.getPulseTimes()
-            labs[sc.Dim.Spectrum,
-                 i].values = np.asarray([p.total_nanoseconds() for p in pt])
+            labs[sc.Dim.Spectrum, i].values = np.asarray(
+                [p.totalNanoseconds() for p in pt])
         if contains_weighted_events:
             weights[sc.Dim.Spectrum, i].values = sp.getWeights()
             weights[sc.Dim.Spectrum, i].variances = sp.getWeightErrors()
@@ -149,7 +246,12 @@ def convert_EventWorkspace_to_dataset(ws, load_pulse_times, EventType):
         },
         "labels": {
             "position": pos,
-            "component_info": comp_info
+            "component_info": comp_info,
+            "detector_info": det_info
+        },
+        "attrs": {
+            "run": make_run(ws),
+            "sample": make_sample(ws)
         }
     }
     if load_pulse_times:
@@ -224,7 +326,7 @@ def load(filename="",
          load_pulse_times=True,
          instrument_filename=None,
          error_connection=None,
-         **kwargs):
+         mantid_args=None):
     """
     Wrapper function to provide a load method for a Nexus file, hiding mantid
     specific code from the scipp interface. All other keyword arguments not
@@ -236,7 +338,8 @@ def load(filename="",
       from scipp.neutron import load
       d = sc.Dataset()
       d["sample"] = load(filename='PG3_4844_event.nxs', \
-                         BankName='bank184', load_pulse_times=True)
+                         load_pulse_times=True, \
+                         mantid_args={'BankName': 'bank184'})
 
     See also the neutron-data tutorial.
 
@@ -257,24 +360,58 @@ def load(filename="",
 
     try:
         import mantid.simpleapi as mantid
-        from mantid.api import EventType
-    except ImportError as e:
+        from mantid.api import Workspace
+    except ImportError:
         raise ImportError(
             "Mantid Python API was not found, please install Mantid framework "
             "as detailed in the installation instructions (https://scipp."
-            "readthedocs.io/en/latest/getting-started/installation.html)"
-        ) from e
+            "readthedocs.io/en/latest/getting-started/installation.html)")
 
-    ws = mantid.Load(filename, **kwargs)
+    if mantid_args is None:
+        mantid_args = {}
+
+    loaded = mantid.Load(filename, StoreInADS=False, **mantid_args)
+
+    # Determine what Load has provided us
+    if isinstance(loaded, Workspace):
+        # A single workspace
+        data_ws = loaded
+        monitor_ws = None
+    else:
+        # Seperate data and monitor workspaces
+        data_ws = loaded.OutputWorkspace
+        monitor_ws = loaded.MonitorWorkspace
+
     if instrument_filename is not None:
-        mantid.LoadInstrument(ws,
+        mantid.LoadInstrument(data_ws,
                               FileName=instrument_filename,
                               RewriteSpectraMap=True)
-    if ws.id() == 'Workspace2D':
-        return convert_Workspace2D_to_dataset(ws)
-    if ws.id() == 'EventWorkspace':
-        return convert_EventWorkspace_to_dataset(ws, load_pulse_times,
-                                                 EventType)
-    if ws.id() == 'TableWorkspace':
-        return convert_TableWorkspace_to_dataset(ws, error_connection)
-    raise RuntimeError('Unsupported workspace type')
+
+    dataset = None
+    if data_ws.id() == 'Workspace2D':
+        has_monitors = False
+        for spec in data_ws.spectrumInfo():
+            has_monitors |= spec.isMonitor
+            if has_monitors:
+                break
+        if has_monitors:
+            data_ws, monitor_ws = mantid.ExtractMonitors(data_ws,
+                                                         StoreInADS=False)
+        dataset = convert_Workspace2D_to_dataarray(data_ws)
+    elif data_ws.id() == 'EventWorkspace':
+        dataset = convertEventWorkspace_to_dataarray(data_ws, load_pulse_times)
+    elif data_ws.id() == 'TableWorkspace':
+        dataset = convert_TableWorkspace_to_dataset(data_ws, error_connection)
+
+    if dataset is None:
+        raise RuntimeError('Unsupported workspace type')
+    elif monitor_ws is not None:
+        if monitor_ws.id() == 'Workspace2D':
+            dataset.attrs["monitors"] = sc.Variable(
+                value=convert_Workspace2D_to_dataarray(monitor_ws))
+        elif monitor_ws.id() == 'EventWorkspace':
+            dataset.attrs["monitors"] = sc.Variable(
+                value=convertEventWorkspace_to_dataarray(monitor_ws,
+                                                         load_pulse_times))
+
+    return dataset

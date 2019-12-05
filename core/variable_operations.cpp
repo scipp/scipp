@@ -138,9 +138,57 @@ Variable filter(const Variable &var, const Variable &filter) {
   return out;
 }
 
+namespace sparse {
+/// Return array of sparse dimension extents, i.e., total counts.
+Variable counts(const VariableConstProxy &var) {
+  // To simplify this we would like to use `transform`, but this is currently
+  // not possible since the current implementation expects outputs with
+  // variances if any of the inputs has variances.
+  auto dims = var.dims();
+  dims.erase(dims.sparseDim());
+  auto counts = makeVariable<scipp::index>(dims, units::counts);
+  accumulate_in_place<
+      pair_custom_t<std::pair<scipp::index, sparse_container<double>>>>(
+      counts, var,
+      overloaded{[](scipp::index &c, const auto &sparse) { c = sparse.size(); },
+                 transform_flags::expect_no_variance_arg<0>});
+  return counts;
+}
+
+/// Reserve memory in all sparse containers in `sparse`, based on `capacity`.
+void reserve(const VariableProxy &sparse, const VariableConstProxy &capacity) {
+  transform_in_place<
+      pair_custom_t<std::pair<sparse_container<double>, scipp::index>>>(
+      sparse, capacity,
+      overloaded{[](auto &&sparse_, const scipp::index capacity_) {
+                   return sparse_.reserve(capacity_);
+                 },
+                 transform_flags::expect_no_variance_arg<1>,
+                 [](const units::Unit &, const units::Unit &) {}});
+}
+} // namespace sparse
+
+void flatten_impl(const VariableProxy &summed, const VariableConstProxy &var) {
+  // 1. Reserve space in output. This yields approx. 3x speedup.
+  auto summed_counts = sparse::counts(summed);
+  sum_impl(summed_counts, sparse::counts(var));
+  sparse::reserve(summed, summed_counts);
+
+  // 2. Flatten dimension(s) by concatenating along sparse dim.
+  accumulate_in_place<pair_self_t<sparse_container<double>>,
+                      pair_self_t<sparse_container<float>>,
+                      pair_self_t<sparse_container<int64_t>>,
+                      pair_self_t<sparse_container<int32_t>>>(
+      summed, var,
+      overloaded{
+          [](auto &a, const auto &b) { a.insert(a.end(), b.begin(), b.end()); },
+          [](units::Unit &a, const units::Unit &b) { expect::equals(a, b); }});
+}
+
 void sum_impl(const VariableProxy &summed, const VariableConstProxy &var) {
   accumulate_in_place<
-      pair_self_t<double, float, int64_t, int32_t, Eigen::Vector3d>>(
+      pair_self_t<double, float, int64_t, int32_t, Eigen::Vector3d>,
+      pair_custom_t<std::pair<int64_t, bool>>>(
       summed, var, [](auto &&a, auto &&b) { a += b; });
 }
 
@@ -148,21 +196,53 @@ Variable sum(const VariableConstProxy &var, const Dim dim) {
   expect::notSparse(var);
   auto dims = var.dims();
   dims.erase(dim);
-  Variable summed(var, dims);
+  // Bool DType is a bit special in that it cannot contain it's sum.
+  // Instead the sum is stored in a int64_t Variable
+  Variable summed{var.dtype() == DType::Bool ? makeVariable<int64_t>(dims)
+                                             : Variable(var, dims)};
   sum_impl(summed, var);
   return summed;
 }
 
-Variable mean(const VariableConstProxy &var, const Dim dim) {
+Variable sum(const VariableConstProxy &var, const Dim dim,
+             const MasksConstProxy &masks) {
+  if (!masks.empty()) {
+    const auto mask_union = masks_merge(masks, dim);
+    if (mask_union.dims().contains(dim))
+      return sum(var * ~mask_union, dim);
+  }
+  return sum(var, dim);
+}
+
+Variable mean(const VariableConstProxy &var, const Dim dim,
+              const VariableConstProxy &masks_sum) {
   // In principle we *could* support mean/sum over sparse dimension.
   expect::notSparse(var);
   auto summed = sum(var, dim);
-  auto scale = makeVariable<double>(1.0 / static_cast<double>(var.dims()[dim]));
+
+  auto scale = 1.0 / (makeVariable<double>(var.dims()[dim]) - masks_sum);
+
   if (isInt(var.dtype()))
     summed = summed * scale;
   else
     summed *= scale;
   return summed;
+}
+
+Variable mean(const VariableConstProxy &var, const Dim dim) {
+  return mean(var, dim, makeVariable<int64_t>(0));
+}
+
+Variable mean(const VariableConstProxy &var, const Dim dim,
+              const MasksConstProxy &masks) {
+  if (!masks.empty()) {
+    const auto mask_union = masks_merge(masks, dim);
+    if (mask_union.dims().contains(dim)) {
+      const auto masks_sum = sum(mask_union, dim);
+      return mean(var * ~mask_union, dim, masks_sum);
+    }
+  }
+  return mean(var, dim);
 }
 
 Variable abs(const Variable &var) {
@@ -179,6 +259,20 @@ Variable norm(const VariableConstProxy &var) {
 Variable sqrt(const VariableConstProxy &var) {
   using std::sqrt;
   return transform<double, float>(var, [](const auto x) { return sqrt(x); });
+}
+
+Variable sqrt(Variable &&var) {
+  using std::sqrt;
+  auto out(std::move(var));
+  sqrt(out, out);
+  return out;
+}
+
+VariableProxy sqrt(const VariableConstProxy &var, const VariableProxy &out) {
+  using std::sqrt;
+  transform_in_place<pair_self_t<double, float>>(
+      out, var, [](auto &x, const auto &y) { x = sqrt(y); });
+  return out;
 }
 
 Variable dot(const Variable &a, const Variable &b) {
@@ -216,6 +310,13 @@ void swap(Variable &var, const Dim dim, const scipp::index a,
   var.slice({dim, b}).assign(tmp);
 }
 
+Variable resize(const VariableConstProxy &var, const Dim dim,
+                const scipp::index size) {
+  auto dims = var.dims();
+  dims.resize(dim, size);
+  return Variable(var, dims);
+}
+
 Variable reverse(Variable var, const Dim dim) {
   const auto size = var.dims()[dim];
   for (scipp::index i = 0; i < size / 2; ++i)
@@ -226,4 +327,14 @@ Variable reverse(Variable var, const Dim dim) {
 /// Return a deep copy of a Variable or of a VariableProxy.
 Variable copy(const VariableConstProxy &var) { return Variable(var); }
 
+/// Merges all masks contained in the MasksConstProxy into a single Variable
+Variable masks_merge(const MasksConstProxy &masks, const Dim dim) {
+  auto mask_union = makeVariable<bool>(false);
+  for (const auto &mask : masks) {
+    if (mask.second.dims().contains(dim)) {
+      mask_union = mask_union | mask.second;
+    }
+  }
+  return mask_union;
+}
 } // namespace scipp::core

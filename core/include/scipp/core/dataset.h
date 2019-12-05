@@ -7,6 +7,7 @@
 
 #include <functional>
 #include <iosfwd>
+#include <map>
 #include <optional>
 #include <string>
 #include <unordered_map>
@@ -34,6 +35,8 @@ struct DatasetData {
   std::optional<Variable> coord;
   /// Potential labels for the sparse dimension.
   std::unordered_map<std::string, Variable> labels;
+  /// Attributes for data.
+  std::unordered_map<std::string, Variable> attrs;
 };
 
 using dataset_item_map = std::unordered_map<std::string, DatasetData>;
@@ -260,6 +263,8 @@ public:
   using key_type = std::string;
   using mapped_type = DataArray;
   using value_type = std::pair<const std::string &, DataConstProxy>;
+  using const_view_type = DatasetConstProxy;
+  using view_type = DatasetProxy;
 
   Dataset() = default;
   explicit Dataset(const DatasetConstProxy &proxy);
@@ -353,6 +358,8 @@ public:
   void setLabels(const std::string &labelName, Variable labels);
   void setMask(const std::string &masksName, Variable masks);
   void setAttr(const std::string &attrName, Variable attr);
+  void setAttr(const std::string &name, const std::string &attrName,
+               Variable attr);
   void setData(const std::string &name, Variable data);
   void setData(const std::string &name, const DataConstProxy &data);
   void setSparseCoord(const std::string &name, Variable coord);
@@ -372,6 +379,10 @@ public:
   void setAttr(const std::string &attrName, const VariableConstProxy &attr) {
     setAttr(attrName, Variable(attr));
   }
+  void setAttr(const std::string &name, const std::string &attrName,
+               const VariableConstProxy &attr) {
+    setAttr(name, attrName, Variable(attr));
+  }
   void setData(const std::string &name, const VariableConstProxy &data) {
     setData(name, Variable(data));
   }
@@ -387,6 +398,7 @@ public:
   void eraseCoord(const Dim dim);
   void eraseLabels(const std::string &labelName);
   void eraseAttr(const std::string &attrName);
+  void eraseAttr(const std::string &name, const std::string &attrName);
   void eraseMask(const std::string &maskName);
   void eraseSparseCoord(const std::string &name);
   void eraseSparseLabels(const std::string &name, const std::string &labelName);
@@ -465,9 +477,8 @@ private:
   void rebuildDims();
 
   template <class Key, class Val>
-  void erase_from_map(std::unordered_map<Key, Val> Dataset::*map,
-                      const Key &key) {
-    (this->*map).erase(key);
+  void erase_from_map(std::unordered_map<Key, Val> &map, const Key &key) {
+    map.erase(key);
     rebuildDims();
   }
 
@@ -686,8 +697,12 @@ public:
         m_parent->setLabels(key, var);
       if constexpr (std::is_same_v<Base, MasksConstProxy>)
         m_parent->setMask(key, var);
-      if constexpr (std::is_same_v<Base, AttrsConstProxy>)
-        m_parent->setAttr(key, var);
+      if constexpr (std::is_same_v<Base, AttrsConstProxy>) {
+        if (m_name)
+          m_parent->setAttr(*m_name, key, var);
+        else
+          m_parent->setAttr(key, var);
+      }
     }
     // TODO rebuild *this?!
   }
@@ -697,7 +712,7 @@ public:
       throw std::runtime_error(
           "Cannot remove coord/labels/attr field from a slice.");
 
-    bool sparse = m_name; // Does proxy points on sparse data or not
+    bool sparse = m_name; // Does proxy point on sparse data or not
     if (sparse)
       sparse &= (*m_parent)[*m_name].dims().sparse();
 
@@ -706,8 +721,12 @@ public:
         m_parent->eraseCoord(key);
       if constexpr (std::is_same_v<Base, LabelsConstProxy>)
         m_parent->eraseLabels(key);
-      if constexpr (std::is_same_v<Base, AttrsConstProxy>)
-        m_parent->eraseAttr(key);
+      if constexpr (std::is_same_v<Base, AttrsConstProxy>) {
+        if (m_name)
+          m_parent->eraseAttr(*m_name, key);
+        else
+          m_parent->eraseAttr(key);
+      }
       if constexpr (std::is_same_v<Base, MasksConstProxy>)
         m_parent->eraseMask(key);
     } else {
@@ -949,6 +968,9 @@ SCIPP_CORE_EXPORT Dataset copy(const DatasetConstProxy &dataset);
 /// Data array, a variable with coordinates, labels, and attributes.
 class SCIPP_CORE_EXPORT DataArray {
 public:
+  using const_view_type = DataConstProxy;
+  using view_type = DataProxy;
+
   DataArray() = default;
   explicit DataArray(const DataConstProxy &proxy);
   template <class CoordMap = std::map<Dim, Variable>,
@@ -973,11 +995,11 @@ public:
       else
         m_holder.setLabels(std::string(label_name), std::move(l));
 
-    for (auto &&[attr_name, m] : masks)
-      m_holder.setMask(std::string(attr_name), std::move(m));
+    for (auto &&[mask_name, m] : masks)
+      m_holder.setMask(std::string(mask_name), std::move(m));
 
     for (auto &&[attr_name, a] : attrs)
-      m_holder.setAttr(std::string(attr_name), std::move(a));
+      m_holder.setAttr(name, std::string(attr_name), std::move(a));
 
     if (m_holder.size() != 1)
       throw std::runtime_error(
@@ -1067,6 +1089,8 @@ public:
     return *this /= makeVariable<T>(value);
   }
 
+  void setData(Variable data) { m_holder.setData(name(), std::move(data)); }
+
   // TODO need to define some details regarding handling of dense coords in case
   // the array is sparse, not exposing this to Python for now.
   void setCoord(const Dim dim, Variable coord) {
@@ -1104,6 +1128,11 @@ public:
                   const Slice slice3) const && {
     return copy(get().slice(slice1, slice2, slice3));
   }
+
+  /// Iterable const view for generic code supporting Dataset and DataArray.
+  DatasetConstProxy iterable_view() const noexcept { return m_holder; }
+  /// Iterable view for generic code supporting Dataset and DataArray.
+  DatasetProxy iterable_view() noexcept { return m_holder; }
 
 private:
   DataConstProxy get() const;
@@ -1298,6 +1327,11 @@ SCIPP_CORE_EXPORT DataArray rebin(const DataConstProxy &a, const Dim dim,
                                   const VariableConstProxy &coord);
 SCIPP_CORE_EXPORT Dataset rebin(const DatasetConstProxy &d, const Dim dim,
                                 const VariableConstProxy &coord);
+
+SCIPP_CORE_EXPORT DataArray resize(const DataConstProxy &a, const Dim dim,
+                                   const scipp::index size);
+SCIPP_CORE_EXPORT Dataset resize(const DatasetConstProxy &d, const Dim dim,
+                                 const scipp::index size);
 
 SCIPP_CORE_EXPORT VariableConstProxy same(const VariableConstProxy &a,
                                           const VariableConstProxy &b);

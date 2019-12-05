@@ -2,9 +2,10 @@
 // Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#ifndef EXCEPT_H
-#define EXCEPT_H
+#ifndef SCIPP_CORE_EXCEPT_H
+#define SCIPP_CORE_EXCEPT_H
 
+#include <algorithm>
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
@@ -33,6 +34,13 @@ namespace scipp::except {
 
 struct SCIPP_CORE_EXPORT TypeError : public std::runtime_error {
   using std::runtime_error::runtime_error;
+
+  template <class... Vars>
+  TypeError(const std::string &msg) : std::runtime_error(msg) {}
+
+  template <class... Vars>
+  TypeError(const std::string &msg, Vars &&... vars)
+      : std::runtime_error(msg + ((to_string(vars.dtype()) + ' ') + ...)) {}
 };
 
 using DataArrayError = Error<core::DataArray>;
@@ -108,6 +116,12 @@ template <class A, class B> void equals(const A &a, const B &b) {
     throw scipp::except::MismatchError(a, b);
 }
 
+template <class A, class B>
+void equals_any_of(const A &a, const std::initializer_list<B> possible) {
+  if (std::find(possible.begin(), possible.end(), a) == possible.end())
+    throw scipp::except::MismatchError(a, possible);
+}
+
 template <class A, class Dim, class System, class Enable>
 void equals(const A &a, const boost::units::unit<Dim, System, Enable> &unit) {
   const auto expectedUnit = units::Unit(unit);
@@ -139,6 +153,11 @@ template <class T> void unit(const T &object, const units::Unit &unit) {
   expect::equals(object.unit(), unit);
 }
 
+template <class T>
+void unit_any_of(const T &object, std::initializer_list<units::Unit> units) {
+  expect::equals_any_of(object.unit(), units);
+}
+
 template <class T> void countsOrCountsDensity(const T &object) {
   if (!object.unit().isCounts() && !object.unit().isCountDensity())
     throw except::UnitError("Expected counts or counts-density, got " +
@@ -151,11 +170,17 @@ void SCIPP_CORE_EXPORT validSlice(
 
 void SCIPP_CORE_EXPORT coordsAndLabelsAreSuperset(const DataConstProxy &a,
                                                   const DataConstProxy &b);
+void SCIPP_CORE_EXPORT notCountDensity(const units::Unit &unit);
 void SCIPP_CORE_EXPORT notSparse(const Dimensions &dims);
 template <class T> void notSparse(const T &object) { notSparse(object.dims()); }
 void SCIPP_CORE_EXPORT validDim(const Dim dim);
 void SCIPP_CORE_EXPORT validExtent(const scipp::index size);
+template <class T> void hasVariances(const T &variable) {
+  if (!variable.hasVariances())
+    throw except::VariancesError(to_string(variable) +
+                                 " does not have variances.");
+}
 
 } // namespace scipp::core::expect
 
-#endif // EXCEPT_H
+#endif // SCIPP_CORE_EXCEPT_H

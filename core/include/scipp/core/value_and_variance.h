@@ -8,8 +8,6 @@
 
 namespace scipp::core {
 
-namespace detail {
-
 /// A value/variance pair with operators that propagate uncertainties.
 ///
 /// This is intended for small T such as double, float, and int. It is the
@@ -18,10 +16,12 @@ namespace detail {
 /// functions. Since T is assumed to be small it is copied into the class and
 /// extracted later. See also ValuesAndVariances.
 template <class T> struct ValueAndVariance {
+  using value_type = std::remove_cv_t<T>;
+
   /// This constructor is essential to prevent warnings about narrowing the
   /// types in initializer lists used below
   template <class T1, class T2>
-  constexpr ValueAndVariance(T1 t1, T2 t2) : value(t1), variance(t2) {}
+  constexpr ValueAndVariance(T1 t1, T2 t2) noexcept : value(t1), variance(t2) {}
   T value;
   T variance;
 
@@ -29,6 +29,12 @@ template <class T> struct ValueAndVariance {
   constexpr auto &operator=(const ValueAndVariance<T2> other) noexcept {
     value = other.value;
     variance = other.variance;
+    return *this;
+  }
+
+  template <class T2> constexpr auto &operator=(const T2 other) noexcept {
+    value = other;
+    variance = 0.0;
     return *this;
   }
 
@@ -134,14 +140,15 @@ constexpr auto operator/(const T1 a, const ValueAndVariance<T2> b) noexcept {
 template <class T1, class T2>
 ValueAndVariance(const T1 &val, const T2 &var)
     ->ValueAndVariance<decltype(T1() + T2())>;
+template <class T>
+ValueAndVariance(const span<T> &val, const span<T> &var)
+    ->ValueAndVariance<span<T>>;
 
 template <class T> struct is_ValueAndVariance : std::false_type {};
 template <class T>
 struct is_ValueAndVariance<ValueAndVariance<T>> : std::true_type {};
 template <class T>
 inline constexpr bool is_ValueAndVariance_v = is_ValueAndVariance<T>::value;
-
-} // namespace detail
 
 } // namespace scipp::core
 

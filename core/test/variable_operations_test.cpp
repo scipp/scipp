@@ -567,7 +567,7 @@ TEST(Variable, norm_of_vector) {
 
 TEST(Variable, sqrt_double) {
   // TODO Currently comparisons of variables do not provide special handling of
-  // NaN, so sqrt of negative values will lead variables that are never equal.
+  // NaN, so sqrt of negative values will yield variables that are never equal.
   auto reference = makeVariable<double>({Dim::X, 2}, {1, 2});
   reference.setUnit(units::m);
   auto var = makeVariable<double>({Dim::X, 2}, {1, 4});
@@ -581,6 +581,30 @@ TEST(Variable, sqrt_float) {
   auto var = makeVariable<float>({Dim::X, 2}, {1, 4});
   var.setUnit(units::m * units::m);
   EXPECT_EQ(sqrt(var), reference);
+}
+
+TEST(VariableSqrtOutArg, unit_fail) {
+  auto var = makeVariable<double>({Dim::X, 3}, units::m * units::m, {1, 4, 9});
+  EXPECT_THROW(sqrt(var.slice({Dim::X, 0, 2}), var.slice({Dim::X, 0, 2})),
+               except::UnitError);
+}
+
+TEST(VariableSqrtOutArg, full_in_place) {
+  auto var = makeVariable<double>({Dim::X, 3}, units::m * units::m, {1, 4, 9});
+  auto view = sqrt(var, var);
+  EXPECT_EQ(var, makeVariable<double>({Dim::X, 3}, units::m, {1, 2, 3}));
+  EXPECT_EQ(view, var);
+  EXPECT_EQ(view.underlying(), var);
+}
+
+TEST(VariableSqrtOutArg, partial) {
+  const auto var =
+      makeVariable<double>({Dim::X, 3}, units::m * units::m, {1, 4, 9});
+  auto out = makeVariable<double>({Dim::X, 2}, units::m);
+  auto view = sqrt(var.slice({Dim::X, 1, 3}), out);
+  EXPECT_EQ(out, makeVariable<double>({Dim::X, 2}, units::m, {2, 3}));
+  EXPECT_EQ(view, out);
+  EXPECT_EQ(view.underlying(), out);
 }
 
 TEST(VariableProxy, minus_equals_failures) {
@@ -998,9 +1022,10 @@ TEST(VariableTest, divide_with_variance) {
 }
 
 TEST(VariableTest, boolean_or) {
-  const auto a = makeVariable<bool>({Dim::X, 3}, {false, true, false});
-  const auto b = makeVariable<bool>({Dim::X, 3}, {false, false, false});
-  const auto expected = makeVariable<bool>({Dim::X, 3}, {false, true, false});
+  const auto a = makeVariable<bool>({Dim::X, 4}, {false, true, false, true});
+  const auto b = makeVariable<bool>({Dim::X, 4}, {false, false, true, true});
+  const auto expected =
+      makeVariable<bool>({Dim::X, 4}, {false, true, true, true});
 
   const auto result = a | b;
 
@@ -1008,10 +1033,67 @@ TEST(VariableTest, boolean_or) {
 }
 
 TEST(VariableTest, boolean_or_equals) {
-  auto a = makeVariable<bool>({Dim::X, 3}, {false, true, false});
-  const auto b = makeVariable<bool>({Dim::X, 3}, {false, false, false});
+  auto a = makeVariable<bool>({Dim::X, 4}, {false, true, false, true});
+  const auto b = makeVariable<bool>({Dim::X, 4}, {false, false, true, true});
   a |= b;
-  const auto expected = makeVariable<bool>({Dim::X, 3}, {false, true, false});
+  const auto expected =
+      makeVariable<bool>({Dim::X, 4}, {false, true, true, true});
 
   EXPECT_EQ(a, expected);
+}
+
+TEST(VariableTest, boolean_and_equals) {
+  auto a = makeVariable<bool>({Dim::X, 4}, {false, true, false, true});
+  const auto b = makeVariable<bool>({Dim::X, 4}, {false, false, true, true});
+  a &= b;
+  const auto expected =
+      makeVariable<bool>({Dim::X, 4}, {false, false, false, true});
+
+  EXPECT_EQ(a, expected);
+}
+
+TEST(VariableTest, boolean_and) {
+  const auto a = makeVariable<bool>({Dim::X, 4}, {false, true, false, true});
+  const auto b = makeVariable<bool>({Dim::X, 4}, {false, false, true, true});
+  const auto expected =
+      makeVariable<bool>({Dim::X, 4}, {false, false, false, true});
+
+  const auto result = a & b;
+
+  EXPECT_EQ(result, expected);
+}
+
+TEST(VariableTest, boolean_xor_equals) {
+  auto a = makeVariable<bool>({Dim::X, 4}, {false, true, false, true});
+  const auto b = makeVariable<bool>({Dim::X, 4}, {false, false, true, true});
+  a ^= b;
+  const auto expected =
+      makeVariable<bool>({Dim::X, 4}, {false, true, true, false});
+
+  EXPECT_EQ(a, expected);
+}
+
+TEST(VariableTest, boolean_xor) {
+  const auto a = makeVariable<bool>({Dim::X, 4}, {false, true, false, true});
+  const auto b = makeVariable<bool>({Dim::X, 4}, {false, false, true, true});
+  const auto expected =
+      makeVariable<bool>({Dim::X, 4}, {false, true, true, false});
+  const auto result = a ^ b;
+
+  EXPECT_EQ(result, expected);
+}
+
+template <class T> class ReciprocalTest : public ::testing::Test {};
+
+using test_types = ::testing::Types<float, double>;
+TYPED_TEST_CASE(ReciprocalTest, test_types);
+
+TYPED_TEST(ReciprocalTest, variable_reciprocal) {
+  using T = TypeParam;
+  auto var1 = makeVariable<T>(2);
+  auto var2 = makeVariable<T>(0.5);
+  ASSERT_EQ(reciprocal(var1), var2);
+  var1 = makeVariable<T>(2, 1);
+  var2 = makeVariable<T>(0.5, 0.0625);
+  ASSERT_EQ(reciprocal(var1), var2);
 }

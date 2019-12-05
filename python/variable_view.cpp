@@ -58,7 +58,7 @@ void declare_VariableView(py::module &m, const std::string &suffix) {
 void init_variable_view(py::module &m) {
   declare_span<double>(m, "double");
   declare_span<float>(m, "float");
-  declare_span<Bool>(m, "bool");
+  declare_span<bool>(m, "bool");
   declare_span<const double>(m, "double_const");
   declare_span<const long>(m, "long_const");
   declare_span<long>(m, "long");
@@ -77,7 +77,7 @@ void init_variable_view(py::module &m) {
   declare_VariableView<int64_t>(m, "int64");
   declare_VariableView<int32_t>(m, "int32");
   declare_VariableView<std::string>(m, "string");
-  declare_VariableView<Bool>(m, "bool");
+  declare_VariableView<bool>(m, "bool");
   declare_VariableView<sparse_container<double>>(m, "sparse_double");
   declare_VariableView<sparse_container<float>>(m, "sparse_float");
   declare_VariableView<sparse_container<int64_t>>(m, "sparse_int64_t");

@@ -5,9 +5,44 @@
 #include <gtest/gtest.h>
 
 #include "scipp/core/dataset.h"
+#include "scipp/core/histogram.h"
 
 using namespace scipp;
 using namespace scipp::core;
+
+TEST(HistogramTest, is_histogram) {
+  const auto dataX = makeVariable<double>({Dim::X, 2});
+  const auto dataY = makeVariable<double>({Dim::Y, 2});
+  const auto dataXY = makeVariable<double>({{Dim::X, 2}, {Dim::Y, 3}});
+  const auto edgesX = makeVariable<double>({Dim::X, 3});
+  const auto edgesY = makeVariable<double>({Dim::Y, 4});
+  const auto coordX = makeVariable<double>({Dim::X, 2});
+  const auto coordY = makeVariable<double>({Dim::Y, 3});
+
+  const auto histX = DataArray(dataX, {{Dim::X, edgesX}});
+  EXPECT_TRUE(is_histogram(histX, Dim::X));
+  EXPECT_FALSE(is_histogram(histX, Dim::Y));
+
+  const auto histX2d = DataArray(dataXY, {{Dim::X, edgesX}});
+  EXPECT_TRUE(is_histogram(histX2d, Dim::X));
+  EXPECT_FALSE(is_histogram(histX2d, Dim::Y));
+
+  const auto histY2d = DataArray(dataXY, {{Dim::X, coordX}, {Dim::Y, edgesY}});
+  EXPECT_FALSE(is_histogram(histY2d, Dim::X));
+  EXPECT_TRUE(is_histogram(histY2d, Dim::Y));
+
+  EXPECT_FALSE(is_histogram(DataArray(dataX, {{Dim::X, coordX}}), Dim::X));
+  EXPECT_FALSE(is_histogram(DataArray(dataX, {{Dim::X, coordY}}), Dim::X));
+  EXPECT_FALSE(is_histogram(DataArray(dataX, {{Dim::Y, coordX}}), Dim::X));
+  EXPECT_FALSE(is_histogram(DataArray(dataX, {{Dim::Y, coordY}}), Dim::X));
+
+  // Coord length X is 2 and data does not depend on X, but this is *not*
+  // interpreted as a single-bin histogram.
+  EXPECT_FALSE(is_histogram(DataArray(dataY, {{Dim::X, coordX}}), Dim::X));
+
+  const auto sparse = makeVariable<double>({Dim::X, Dimensions::Sparse});
+  EXPECT_FALSE(is_histogram(DataArray(sparse, {{Dim::X, coordX}}), Dim::X));
+}
 
 Dataset make_2d_sparse_coord_only(const std::string &name) {
   Dataset sparse;
@@ -17,16 +52,6 @@ Dataset make_2d_sparse_coord_only(const std::string &name) {
   var.sparseValues<double>()[2] = {-1, 0, 0, 1, 1, 2, 2, 2, 4, 4, 4, 6};
   sparse.setSparseCoord(name, var);
   return sparse;
-}
-
-TEST(HistogramTest, fail_with_data) {
-  // This is not implemented yet and should currently fail. Remove this test
-  // once implemented with "weighted" sparse data.
-  auto sparse = make_2d_sparse_coord_only("sparse");
-  sparse.setData("sparse", sparse["sparse"].coords()[Dim::Y]);
-  ASSERT_THROW(core::histogram(sparse["sparse"],
-                               makeVariable<double>({Dim::Y, 2}, {1, 6})),
-               except::SparseDataError);
 }
 
 TEST(HistogramTest, fail_edges_not_sorted) {
@@ -90,6 +115,27 @@ TEST(HistogramTest, data_proxy) {
       edges);
 
   EXPECT_EQ(hist, expected);
+}
+
+TEST(HistogramTest, with_data) {
+  auto sparse = make_2d_sparse_coord_only("sparse");
+  Variable data = makeVariableWithVariances<double>(
+      {{Dim::X, 3}, {Dim::Y, Dimensions::Sparse}});
+  data.sparseValues<double>()[0] = {1, 1, 1, 2, 2};
+  data.sparseValues<double>()[1] = {2, 2, 2, 2, 2};
+  data.sparseValues<double>()[2] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+  data.sparseVariances<double>()[0] = {1, 1, 1, 2, 2};
+  data.sparseVariances<double>()[1] = {2, 2, 2, 2, 2};
+  data.sparseVariances<double>()[2] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+  data.setUnit(units::counts);
+  sparse.setData("sparse", data);
+  auto edges = makeVariable<double>({Dim::Y, 6}, {1, 2, 3, 4, 5, 6});
+  std::vector<double> ref{1, 1, 1, 2, 2, 0, 0, 2, 2, 2, 2, 3, 0, 3, 0};
+  auto expected = make_expected(
+      makeVariable<double>({{Dim::X, 3}, {Dim::Y, 5}}, units::counts, ref, ref),
+      edges);
+
+  EXPECT_EQ(core::histogram(sparse["sparse"], edges), expected);
 }
 
 TEST(HistogramTest, dataset) {

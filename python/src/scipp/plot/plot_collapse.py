@@ -3,23 +3,25 @@
 # @author Neil Vaytet
 
 # Scipp imports
-from .. import _scipp as sc
-from .tools import get_color
 from .dispatch import dispatch
+from .tools import get_color
+from .._scipp import core as sc
 
 # Other imports
 import numpy as np
 
 
 def plot_collapse(input_data, dim=None, name=None, filename=None, backend=None,
-                  color=None, **kwargs):
+                  **kwargs):
     """
     Collapse higher dimensions into a 1D plot.
     """
 
-    dims = input_data.dims
-    shape = input_data.shape
-    coords = input_data.coords
+    # Get the variable inside the dataset
+    name, var = next(iter(input_data))
+
+    dims = var.dims
+    shape = var.shape
 
     # Gather list of dimensions that are to be collapsed
     slice_dims = []
@@ -31,11 +33,8 @@ def plot_collapse(input_data, dim=None, name=None, filename=None, backend=None,
             slice_shape[d] = size
             volume *= size
 
-    # Create temporary Dataset
-    ds = sc.core.Dataset()
-    ds.coords[dim] = sc.core.Variable([dim], values=coords[dim].values)
-    # A dictionary to hold the DataProxy objects
-    data = dict()
+    # Create temporary Dataset to collect all 1D slices as 1D variables
+    ds = sc.Dataset(coords={dim: var.coords[dim]})
 
     # Go through the dims that need to be collapsed, and create an array that
     # holds the range of indices for each dimension
@@ -77,31 +76,20 @@ def plot_collapse(input_data, dim=None, name=None, filename=None, backend=None,
     slice_list = np.reshape(
         np.transpose(slice_list), (volume, len(slice_dims), 2))
 
-    auto_color = False
-    if color is None:
-        color = []
-        auto_color = True
-
+    color = []
     # Extract each entry from the slice_list, make temporary dataset and add to
     # input dictionary for plot_1d
     for i, line in enumerate(slice_list):
-        ds_temp = input_data
+        vslice = var
         key = ""
         for s in line:
-            ds_temp = ds_temp[s[0], s[1]]
+            vslice = vslice[s[0], s[1]]
             key += "{}-{}-".format(str(s[0]), s[1])
-        # Add variances
-        variances = None
-        if ds_temp.variances is not None:
-            variances = ds_temp.variances
-        ds[key] = sc.core.Variable([dim], values=ds_temp.values,
-                                   variances=variances)
-        data[key] = ds[key]
-        if auto_color:
-            color.append(get_color(index=i))
+        ds[key] = vslice
+        color.append(get_color(index=i))
 
     # Send the newly created dictionary of DataProxy to the plot_1d function
-    return dispatch(input_data=data, ndim=1, backend=backend, color=color,
+    return dispatch(input_data=ds, ndim=1, backend=backend, color=color,
                     **kwargs)
 
     return

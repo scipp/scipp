@@ -4,9 +4,9 @@
 # @author Neil Vaytet
 
 # Scipp imports
-from . import config
+from .sparse import visit_sparse_data
 from .tools import edges_to_centers, centers_to_edges, axis_label, \
-                   parse_colorbar, get_1d_axes, axis_to_dim_label
+                   parse_colorbar, axis_to_dim_label
 
 # Other imports
 import numpy as np
@@ -31,9 +31,16 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False,
     out = {"fill_between": {}, "step": {}, "line": {},
            "errorbar": {}}
 
-    for i, (name, var) in enumerate(input_data.items()):
+    if axes is None:
+        axes = input_data.dims
 
-        xlab, ylab, x, y = get_1d_axes(var, axes, name)
+    for i, (name, var) in enumerate(input_data):
+
+        dim, lab, xcoord = axis_to_dim_label(var, axes[-1])
+        x = xcoord.values
+        xlab = axis_label(var=xcoord, name=lab)
+        y = var.values
+        ylab = axis_label(var=var, name="")
 
         # Check for bin edges
         if x.shape[0] == y.shape[0] + 1:
@@ -70,26 +77,27 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False,
 
 
 def plot_2d(input_data, name=None, axes=None, contours=False, cb=None,
-            filename=None, show_variances=False, mpl_axes=None, mpl_cax=None,
-            **kwargs):
+            filename=None, show_variances=False, mpl_axes=None, mpl_cax=None):
     """
     Plot a 2D image.
     If countours=True, a filled contour plot is produced, if False, then a
     standard image made of pixels is created.
     """
 
-    if input_data.variances is None and show_variances:
+    var = input_data[name]
+
+    if var.variances is None and show_variances:
         raise RuntimeError("The supplied data does not contain variances.")
 
     if axes is None:
-        axes = input_data.dims
+        axes = var.dims
 
     # Get coordinates axes and dimensions
-    zdims = input_data.dims
-    nz = input_data.shape
+    zdims = var.dims
+    nz = var.shape
 
-    dimx, labx, xcoord = axis_to_dim_label(input_data, axes[-1])
-    dimy, laby, ycoord = axis_to_dim_label(input_data, axes[-2])
+    dimx, labx, xcoord = axis_to_dim_label(var, axes[-1])
+    dimy, laby, ycoord = axis_to_dim_label(var, axes[-2])
     xy = [xcoord.values, ycoord.values]
 
     # Check for bin edges
@@ -113,7 +121,7 @@ def plot_2d(input_data, name=None, axes=None, contours=False, cb=None,
                                "not match.".format(shapes[i], nz[idx[i]]))
 
     # Parse colorbar
-    cbar = parse_colorbar(config.cb, cb)
+    cbar = parse_colorbar(cb)
 
     # Get or create matplotlib axes
     fig = None
@@ -127,13 +135,10 @@ def plot_2d(input_data, name=None, axes=None, contours=False, cb=None,
         cax = [None] * (1 + show_variances)
 
     # Make sure axes are stored in arrays
-    try:
-        _ = len(ax)
-    except TypeError:
+    array_types = [list, np.ndarray]
+    if type(ax) not in array_types:
         ax = [ax]
-    try:
-        _ = len(cax)
-    except TypeError:
+    if type(cax) not in array_types:
         cax = [cax]
 
     # Update axes labels
@@ -150,7 +155,7 @@ def plot_2d(input_data, name=None, axes=None, contours=False, cb=None,
 
     for i, (key, param) in enumerate(sorted(params.items())):
         # if param is not None:
-        arr = getattr(input_data, key)
+        arr = getattr(var, key)
         if cbar["log"]:
             with np.errstate(invalid="ignore", divide="ignore"):
                 arr = np.log10(arr)
@@ -176,10 +181,88 @@ def plot_2d(input_data, name=None, axes=None, contours=False, cb=None,
                                             grid_edges[1][-1]],
                                origin="lower", aspect="auto", **args)
         c = plt.colorbar(img, ax=ax[i], cax=cax[i])
-        c.ax.set_ylabel(axis_label(var=input_data, name=param["cblab"],
+        c.ax.set_ylabel(axis_label(var=var, name=param["cblab"],
                                    log=cbar["log"]))
 
         out[key] = {"ax": ax[i], "cb": c, "img": img}
+
+    if fig is not None:
+        out["fig"] = fig
+
+    return out
+
+
+def plot_sparse(input_data, ndim=0, sparse_dim=None, logx=False,
+                logy=False, logxy=False, weights="color", size=10.0,
+                filename=None, axes=None, cb=None, opacity=1.0,
+                mpl_axes=None, mpl_cax=None, title=None, color=None):
+    """
+    Produce a scatter plot from sparse data.
+    """
+
+    xmin, xmax, sparse_data, var, name, dims, ndims = visit_sparse_data(
+        input_data, sparse_dim=sparse_dim, return_sparse_data=True,
+        weights=weights)
+
+    if ndims > 3:
+        raise RuntimeError("Scatter plots for sparse data with matplotlib "
+                           "support at most 3 dimensions.")
+
+    coords = var.coords
+
+    # Parse colorbar
+    cbar = parse_colorbar(cb)
+    out = {}
+
+    # Get or create matplotlib axes
+    fig = None
+    if mpl_axes is not None:
+        ax = mpl_axes
+    else:
+        if ndims < 3:
+            fig, ax = plt.subplots(1, 1)
+        else:
+            from mpl_toolkits.mplot3d import Axes3D # noqa
+            fig, ax = plt.subplots(1, 1, subplot_kw={'projection': "3d"})
+    if mpl_cax is not None:
+        cax = mpl_cax
+    else:
+        cax = None
+
+    params = dict(label=name, edgecolors="#ffffff", c=color)
+    xs = sparse_data[ndims - 1]
+    ys = sparse_data[ndims - 2]
+    if ndims == 3:
+        params["zs"] = sparse_data[0]
+    if len(sparse_data) > ndims:
+        if weights.count("size") > 0:
+            params["s"] = sparse_data[-1] * size
+        if weights.count("color") > 0:
+            params["c"] = sparse_data[-1]
+            params["cmap"] = cbar["name"]
+
+    scat = ax.scatter(xs, ys, **params)
+    if len(sparse_data) > ndims and weights.count("color") > 0:
+        c = plt.colorbar(scat, ax=ax, cax=cax)
+        c.ax.set_ylabel(axis_label(name="Weights", log=cbar["log"]))
+        out["cb"] = c
+
+    ax.set_xlabel(axis_label(coords[sparse_dim]))
+    if ndims > 1:
+        ax.set_ylabel(axis_label(coords[dims[int(ndims == 3)]]))
+    if ndims == 3:
+        ax.set_zlabel(axis_label(coords[dims[0]]))
+
+    ax.legend()
+    if title is not None:
+        ax.set_title(title)
+    if logx or logxy:
+        ax.set_xscale("log")
+    if logy or logxy:
+        ax.set_yscale("log")
+
+    out["ax"] = ax
+    out["scat"] = scat
 
     if fig is not None:
         out["fig"] = fig

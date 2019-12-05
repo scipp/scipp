@@ -3,8 +3,11 @@
 # @author Neil Vaytet
 
 # Scipp imports
-from . import config
-from .tools import axis_label, parse_colorbar, render_plot, Slicer
+from ..config import plot as config
+from .render import render_plot
+from .slicer import Slicer
+from .tools import axis_label, parse_colorbar
+
 
 # Other imports
 import numpy as np
@@ -18,28 +21,31 @@ from matplotlib.colors import Normalize
 
 def plot_2d(input_data, axes=None, contours=False, cb=None, filename=None,
             name=None, figsize=None, show_variances=False, ndim=0,
-            rasterize="auto", backend=None, **kwargs):
+            rasterize="auto", backend=None):
     """
     Plot a 2D slice through a N dimensional dataset. For every dimension above
     2, a slider is created to adjust the position of the slice in that
     particular dimension.
     """
 
+    var = input_data[name]
     if axes is None:
-        axes = input_data.dims
+        axes = var.dims
 
     # Parse colorbar
-    cbar = parse_colorbar(config.cb, cb, plotly=True)
+    cbar = parse_colorbar(cb, plotly=True)
 
     # Make title
-    title = axis_label(var=input_data, name=name, log=cbar["log"])
+    title = axis_label(var=var, name=name, log=cbar["log"])
 
     if figsize is None:
         figsize = [config.width, config.height]
 
     layout = {"height": figsize[1], "width": figsize[0]}
-    if input_data.variances is not None and show_variances:
+    if var.variances is not None and show_variances:
         layout["height"] = 0.7 * layout["height"]
+        layout["xaxis2"] = {"matches": "x"}
+        layout["yaxis2"] = {"matches": "y"}
 
     cbdict = {"title": title,
               "titleside": "right",
@@ -52,7 +58,7 @@ def plot_2d(input_data, axes=None, contours=False, cb=None, filename=None,
     if rasterize == "auto":
         imsize = 1
         # Find the two largest dimensions
-        shapes = np.sort(input_data.shape)[::-1]
+        shapes = np.sort(var.shape)[::-1]
         for i in range(2):
             imsize *= shapes[i]
         rasterize = imsize > config.rasterize_threshold
@@ -78,7 +84,7 @@ def plot_2d(input_data, axes=None, contours=False, cb=None, filename=None,
                 hoverinfo=hoverinfo
                 )
 
-    sv = Slicer2d(data=data, layout=layout, input_data=input_data, axes=axes,
+    sv = Slicer2d(data=data, layout=layout, input_data=var, axes=axes,
                   value_name=title, cb=cbar, show_variances=show_variances,
                   rasterize=rasterize)
 
@@ -119,8 +125,7 @@ class Slicer2d(Slicer):
             data["colorbar"]["title"] = "variances"
             data["colorbar"]["x"] = 1.0
             self.fig.add_trace(data, row=1, col=2)
-            self.fig.update_layout(height=layout["height"],
-                                   width=layout["width"])
+            self.fig.update_layout(**layout)
             if self.rasterize:
                 self.fig.update_xaxes(row=1, col=1, **layout["xaxis"])
                 self.fig.update_xaxes(row=1, col=2, **layout["xaxis"])
@@ -245,8 +250,8 @@ class Slicer2d(Slicer):
         button_dims = [None, None]
         for key, val in self.slider.items():
             if not val.disabled:
-                self.lab[key].value = str(
-                    self.slider_x[key].values[val.value])
+                self.lab[key].value = self.make_slider_label(
+                    self.slider_x[key], val.value)
                 vslice = vslice[val.dim, val.value]
             else:
                 button_dims[self.buttons[key].value.lower() == "y"] = val.dim

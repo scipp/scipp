@@ -17,17 +17,17 @@ DataArray apply_and_drop_dim_impl(const DataConstProxy &a, Func func,
 
   std::map<std::string, Variable> labels;
   for (auto &&[name, label] : a.labels())
-    if (label.dims().inner() != dim)
+    if (!label.dims().contains(dim))
       labels.emplace(name, label);
 
   std::map<std::string, Variable> attrs;
   for (auto &&[name, attr] : a.attrs())
-    if (attr.dims().inner() != dim)
+    if (!attr.dims().contains(dim))
       attrs.emplace(name, attr);
 
   std::map<std::string, Variable> masks;
   for (auto &&[name, mask] : a.masks())
-    if (mask.dims().inner() != dim)
+    if (!mask.dims().contains(dim))
       masks.emplace(name, mask);
 
   if constexpr (ApplyToData)
@@ -55,10 +55,19 @@ DataArray apply_and_drop_dim(const DataConstProxy &a, Func func, const Dim dim,
 }
 
 template <class Func, class... Args>
-Dataset apply_to_items(const DatasetConstProxy &d, Func func, Args &&... args) {
+DataArray apply_to_items(const DataConstProxy &d, Func func, Args &&... args) {
+  return func(d, std::forward<Args>(args)...);
+}
+
+template <class Func, class... Args>
+Dataset apply_to_items(const DatasetConstProxy &d, Func func, const Dim dim,
+                       Args &&... args) {
   Dataset result;
   for (const auto &[name, data] : d)
-    result.setData(name, func(data, std::forward<Args>(args)...));
+    result.setData(name, func(data, dim, std::forward<Args>(args)...));
+  for (auto &&[name, attr] : d.attrs())
+    if (!attr.dims().contains(dim))
+      result.setAttr(name, attr);
   return result;
 }
 

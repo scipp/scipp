@@ -6,8 +6,8 @@
 #include <boost/units/systems/si/codata/neutron_constants.hpp>
 #include <boost/units/systems/si/codata/universal_constants.hpp>
 
-#include "scipp/core/counts.h"
 #include "scipp/core/dataset.h"
+#include "scipp/core/dataset_util.h"
 #include "scipp/core/transform.h"
 #include "scipp/neutron/beamline.h"
 #include "scipp/neutron/convert.h"
@@ -30,28 +30,28 @@ const auto tofToEnergyPhysicalConstants =
     0.5 * boost::units::si::constants::codata::m_n * J_to_meV /
     (tof_to_s * tof_to_s);
 
-static Dataset convert_with_factor(Dataset &&d, const Dim from, const Dim to,
-                                   const Variable &factor) {
+template <class T>
+static T convert_with_factor(T &&d, const Dim from, const Dim to,
+                             const Variable &factor) {
   // 1. Transform coordinate
   // Cannot use *= since often a broadcast into Dim::Spectrum is required.
-  if (d.coords().contains(from))
-    d.setCoord(from, d.coords()[from] * factor);
+  if (d.coords().contains(from)) {
+    const auto &coords = d.coords()[from];
+    d.setCoord(from, coords * astype(factor, coords.dtype()));
+  }
 
-  // 2. Transform variables
-  for (const auto &[name, data] : d) {
+  // 2. Transform sparse coordinates
+  for (const auto &[name, data] : iter(d)) {
     static_cast<void>(name);
     if (data.dims().sparse()) {
       data.coords()[from] *= factor;
-    } else if (data.unit().isCountDensity()) {
-      // Conversion is just a scale factor, so density transform is simple:
-      data /= factor;
     }
   }
   d.rename(from, to);
   return std::move(d);
 }
 
-auto tofToDSpacing(const Dataset &d) {
+template <class T> auto tofToDSpacing(const T &d) {
   const auto &sourcePos = source_position(d);
   const auto &samplePos = sample_position(d);
 
@@ -70,17 +70,17 @@ auto tofToDSpacing(const Dataset &d) {
                       (m_to_angstrom * tof_to_s);
   conversionFactor *= sqrt(0.5 * (1.0 - dot(beam, scattered)));
 
-  return 1.0 / conversionFactor;
+  return reciprocal(conversionFactor);
 }
 
-static auto tofToWavelength(const Dataset &d) {
+template <class T> static auto tofToWavelength(const T &d) {
   const auto l = l1(d) + l2(d);
   return (tof_to_s * m_to_angstrom * boost::units::si::constants::codata::h /
           boost::units::si::constants::codata::m_n) /
          std::move(l);
 }
 
-auto tofToEnergyConversionFactor(const Dataset &d) {
+template <class T> auto tofToEnergyConversionFactor(const T &d) {
   const auto &samplePos = sample_position(d);
   const auto l1 = neutron::l1(d);
   const auto specPos = neutron::position(d);
@@ -95,30 +95,26 @@ auto tofToEnergyConversionFactor(const Dataset &d) {
   return conversionFactor;
 }
 
-Dataset tofToEnergy(Dataset &&d) {
+template <class T> T tofToEnergy(T &&d) {
   // 1. Compute conversion factor
   const auto conversionFactor = tofToEnergyConversionFactor(d);
 
-  // 2. Record ToF bin widths
-  const auto oldBinWidths = counts::getBinWidths(d.coords(), {Dim::Tof});
+  // 2. Transform coordinate
+  if (d.coords().contains(Dim::Tof)) {
+    const auto &coordSq = d.coords()[Dim::Tof] * d.coords()[Dim::Tof];
+    d.setCoord(Dim::Tof, (reciprocal(coordSq) *
+                          astype(conversionFactor, coordSq.dtype())));
+  }
 
-  // 3. Transform coordinate
-  d.setCoord(Dim::Tof, (1.0 / (d.coords()[Dim::Tof] * d.coords()[Dim::Tof])) *
-                           conversionFactor);
-
-  // 4. Record energy bin widths
-  const auto newBinWidths = counts::getBinWidths(d.coords(), {Dim::Tof});
-
-  // 5. Transform variables
-  for (const auto &[name, data] : d) {
+  // 3. Transform sparse coordinates
+  for (const auto &[name, data] : iter(d)) {
     static_cast<void>(name);
     if (data.coords()[Dim::Tof].dims().sparse()) {
-      data.coords()[Dim::Tof].assign(
-          (1.0 / (data.coords()[Dim::Tof] * data.coords()[Dim::Tof])) *
-          conversionFactor);
-    } else if (data.unit().isCountDensity()) {
-      counts::fromDensity(data, oldBinWidths);
-      counts::toDensity(data, newBinWidths);
+      transform_in_place<pair_self_t<double, float>>(
+          data.coords()[Dim::Tof], conversionFactor,
+          [](auto &coord_, const auto &factor) {
+            coord_ = factor / (coord_ * coord_);
+          });
     }
   }
 
@@ -126,28 +122,26 @@ Dataset tofToEnergy(Dataset &&d) {
   return std::move(d);
 }
 
-Dataset energyToTof(Dataset &&d) {
+template <class T> T energyToTof(T &&d) {
   // 1. Compute conversion factor
   const auto conversionFactor = tofToEnergyConversionFactor(d);
 
-  // 2. Record energy bin widths
-  const auto oldBinWidths = counts::getBinWidths(d.coords(), {Dim::Energy});
+  // 2. Transform coordinate
+  if (d.coords().contains(Dim::Energy)) {
+    const auto &coordSqrt = d.coords()[Dim::Energy];
+    d.setCoord(Dim::Energy,
+               sqrt(astype(conversionFactor, coordSqrt.dtype()) / coordSqrt));
+  }
 
-  // 3. Transform coordinate
-  d.setCoord(Dim::Energy, sqrt(conversionFactor / d.coords()[Dim::Energy]));
-
-  // 4. Record ToF bin widths
-  const auto newBinWidths = counts::getBinWidths(d.coords(), {Dim::Energy});
-
-  // 5. Transform variables
-  for (const auto &[name, data] : d) {
+  // 3. Transform sparse coordinates
+  for (const auto &[name, data] : iter(d)) {
     static_cast<void>(name);
     if (data.coords()[Dim::Energy].dims().sparse()) {
-      data.coords()[Dim::Energy].assign(
-          sqrt(conversionFactor / data.coords()[Dim::Energy]));
-    } else if (data.unit().isCountDensity()) {
-      counts::fromDensity(data, oldBinWidths);
-      counts::toDensity(data, newBinWidths);
+      transform_in_place<pair_self_t<double, float>>(
+          data.coords()[Dim::Energy], conversionFactor,
+          [](auto &coord_, const auto &factor) {
+            coord_ = sqrt(factor / coord_);
+          });
     }
   }
 
@@ -227,49 +221,44 @@ Dataset tofToDeltaE(const Dataset &d) {
 }
 */
 
-Dataset convert(Dataset d, const Dim from, const Dim to) {
+template <class T> T convert_impl(T d, const Dim from, const Dim to) {
+  for (const auto &item : iter(d))
+    if (item.second.hasData())
+      expect::notCountDensity(item.second.unit());
   if ((from == Dim::Tof) && (to == Dim::DSpacing))
     return convert_with_factor(std::move(d), from, to, tofToDSpacing(d));
   if ((from == Dim::DSpacing) && (to == Dim::Tof))
-    return convert_with_factor(std::move(d), from, to, 1.0 / tofToDSpacing(d));
+    return convert_with_factor(std::move(d), from, to,
+                               reciprocal(tofToDSpacing(d)));
 
   if ((from == Dim::Tof) && (to == Dim::Wavelength))
     return convert_with_factor(std::move(d), from, to, tofToWavelength(d));
   if ((from == Dim::Wavelength) && (to == Dim::Tof))
     return convert_with_factor(std::move(d), from, to,
-                               1.0 / tofToWavelength(d));
+                               reciprocal(tofToWavelength(d)));
 
   if ((from == Dim::Tof) && (to == Dim::Energy))
     return tofToEnergy(std::move(d));
   if ((from == Dim::Energy) && (to == Dim::Tof))
     return energyToTof(std::move(d));
-  /*
-  if ((from == Dim::Tof) && (to == Dim::DeltaE))
-   return tofToDeltaE(d);
-   */
   throw std::runtime_error(
       "Conversion between requested dimensions not implemented yet.");
-  // How to convert? There are several cases:
-  // 1. Tof conversion as Mantid's ConvertUnits.
-  // 2. Axis conversion as Mantid's ConvertSpectrumAxis.
-  // 3. Conversion of multiple dimensions simultaneuously, e.g., to Q, which
-  //    cannot be done here since it affects more than one input and output
-  //    dimension. Should we have a variant that accepts a list of dimensions
-  //    for input and output?
-  // 4. Conversion from 1 to N or N to 1, e.g., Dim::Spectrum to X and Y pixel
-  //    index.
-  // Can Dim::Spectrum be converted to anything? Should we require a matching
-  // coordinate when doing a conversion? This does not make sense:
-  // auto converted = convert(dataset, Dim::Spectrum, Dim::Tof);
-  // This does if we can lookup the TwoTheta, make axis here, or require it?
-  // Should it do the reordering? Is sorting separately much less efficient?
-  // Dim::Spectrum is discrete, Dim::TwoTheta is in principle contiguous. How to
-  // handle that? Do we simply want to sort instead? Discrete->contiguous can be
-  // handled by binning? Or is Dim::TwoTheta implicitly also discrete?
-  // auto converted = convert(dataset, Dim::Spectrum, Dim::TwoTheta);
-  // This is a *derived* coordinate, no need to store it explicitly? May even be
-  // prevented?
-  // MDZipView<const Coord::TwoTheta>(dataset);
+}
+
+DataArray convert(DataArray d, const Dim from, const Dim to) {
+  return convert_impl(std::move(d), from, to);
+}
+
+DataArray convert(const DataConstProxy &d, const Dim from, const Dim to) {
+  return convert(DataArray(d), from, to);
+}
+
+Dataset convert(Dataset d, const Dim from, const Dim to) {
+  return convert_impl(std::move(d), from, to);
+}
+
+Dataset convert(const DatasetConstProxy &d, const Dim from, const Dim to) {
+  return convert(Dataset(d), from, to);
 }
 
 } // namespace scipp::neutron

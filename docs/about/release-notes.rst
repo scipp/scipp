@@ -3,6 +3,13 @@
 Release Notes
 =============
 
+Changes since v0.1
+------------------
+
+* Support for masks stored in ``DataArray`` and ``Dataset``.
+* Support for ``groupby``, implementing a split-apply-combine approach as known from pandas.
+* Significant performance improvements for majority of operations. Typically performance is now in the same ballpark as what the memory bandwidth on a single CPU core can support.
+
 v0.1 (September 2019)
 ---------------------
 

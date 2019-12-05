@@ -129,9 +129,6 @@ TEST(TransformTest, apply_unary_dtype_preserved) {
 }
 
 TEST(TransformTest, dtype_bool) {
-  // Special test for bool: Internally Variable uses `Bool` to avoid using the
-  // specialization of std::vector<bool>. This test makes sure that everything
-  // is wrapped correctly with underlying_type_t.
   auto var = makeVariable<bool>({Dim::X, 2}, {true, false});
 
   EXPECT_EQ(
@@ -739,8 +736,8 @@ TEST_F(TransformBinaryTest, DISABLED_broadcast_sparse_val_var_with_val) {
 // helper. If this turns out to be a useful feature we should move
 // ValueAndVariance out of the `detail` namespace and document the mechanism.
 constexpr auto user_op(const double) { return 123.0; }
-constexpr auto user_op(const scipp::core::detail::ValueAndVariance<double>) {
-  return scipp::core::detail::ValueAndVariance<double>{123.0, 456.0};
+constexpr auto user_op(const ValueAndVariance<double>) {
+  return ValueAndVariance<double>{123.0, 456.0};
 }
 constexpr auto user_op(const units::Unit &) { return units::s; }
 

@@ -16,7 +16,8 @@ set(INC_FILES
     include/scipp/core/variable.h
     include/scipp/core/variable.tcc
     include/scipp/core/vector.h
-    include/scipp/core/view_index.h)
+    include/scipp/core/view_index.h
+        include/scipp/core/variable_keyword_arg_constructor.h)
 
 set(SRC_FILES
     counts.cpp
@@ -28,16 +29,21 @@ set(SRC_FILES
     dtype.cpp
     except.cpp
     groupby.cpp
+    histogram.cpp
     rebin.cpp
     slice.cpp
     sort.cpp
+    subspan_view.cpp
     string.cpp
     trigonometry.cpp
     variable.cpp
     variable_binary_arithmetic.cpp
     variable_instantiate_basic.cpp
     variable_instantiate_dataset.cpp
+    variable_instantiate_view_elements.cpp
+    variable_logical_operations.cpp
     variable_operations.cpp
+    variable_type_conversion.cpp
     view_index.cpp)
 
 set(LINK_TYPE "STATIC")
