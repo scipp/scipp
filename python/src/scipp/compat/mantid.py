@@ -19,12 +19,12 @@ def make_sample(ws):
     return sc.Variable(value=deepcopy(ws.sample()))
 
 
-def make_bin_masks(common_bins, dim, num_bins, num_spectra):
+def make_bin_masks(common_bins, spec_dim, dim, num_bins, num_spectra):
     if common_bins:
         return sc.Variable([dim], shape=(num_bins,),
                            dtype=sc.dtype.bool)
     else:
-        return sc.Variable([sc.Dim.Spectrum, dim],
+        return sc.Variable([spec_dim, dim],
                            shape=(num_spectra, num_bins),
                            dtype=sc.dtype.bool)
 
@@ -82,35 +82,6 @@ def make_detector_info(ws):
                                         labels={'spectrum': spectrum}))
 
 
-def init_pos_spectrum_no(ws):
-    nHist = ws.getNumberHistograms()
-    pos = np.zeros([nHist, 3])
-    num = np.zeros([nHist], dtype=np.int32)
-
-    spec_info = ws.spectrumInfo()
-    for i in range(nHist):
-        if spec_info.hasDetectors(i):
-            p = spec_info.position(i)
-            pos[i, :] = [p.X(), p.Y(), p.Z()]
-        else:
-            pos[i, :] = [np.nan, np.nan, np.nan]
-        num[i] = ws.getSpectrum(i).getSpectrumNo()
-    pos = sc.Variable([sc.Dim.Spectrum], values=pos, unit=sc.units.m,
-                      dtype=sc.dtype.vector_3_double)
-    num = sc.Variable([sc.Dim.Spectrum], values=num)
-    return pos, num
-
-
-def set_common_bins_masks(bin_masks, dim, masked_bins):
-    for masked_bin in masked_bins:
-        bin_masks[dim, masked_bin].value = True
-
-
-def set_bin_masks(bin_masks, dim, index, masked_bins):
-    for masked_bin in masked_bins:
-        bin_masks[sc.Dim.Spectrum, index][dim, masked_bin].value = True
-
-
 def validate_and_get_unit(unit):
     known_units = {
         "DeltaE": [sc.Dim.EnergyTransfer, sc.units.meV],
@@ -118,8 +89,10 @@ def validate_and_get_unit(unit):
         "Wavelength": [sc.Dim.Wavelength, sc.units.angstrom],
         "Energy": [sc.Dim.Energy, sc.units.meV],
         "dSpacing": [sc.Dim.DSpacing, sc.units.angstrom],
-        "MomentumTransfer": [sc.Dim.Q, sc.units.dimensionless / sc.units.angstrom],
-        "QSquared": [sc.Dim.QSquared, sc.units.dimensionless / (sc.units.angstrom * sc.units.angstrom)],
+        "MomentumTransfer": [sc.Dim.Q, sc.units.dimensionless /
+                             sc.units.angstrom],
+        "QSquared": [sc.Dim.QSquared, sc.units.dimensionless /
+                     (sc.units.angstrom * sc.units.angstrom)],
         "Label": [sc.Dim.Spectrum, sc.units.dimensionless],
     }
 
@@ -132,14 +105,44 @@ def validate_and_get_unit(unit):
         return known_units[unit]
 
 
+def init_pos(ws):
+    nHist = ws.getNumberHistograms()
+    pos = np.zeros([nHist, 3])
+
+    spec_info = ws.spectrumInfo()
+    for i in range(nHist):
+        if spec_info.hasDetectors(i):
+            p = spec_info.position(i)
+            pos[i, :] = [p.X(), p.Y(), p.Z()]
+        else:
+            pos[i, :] = [np.nan, np.nan, np.nan]
+    return sc.Variable([sc.Dim.Spectrum], values=pos, unit=sc.units.m,
+                       dtype=sc.dtype.vector_3_double)
+
+
+def init_spec_axis(ws):
+    axis = ws.getAxis(1)
+    dim, unit = validate_and_get_unit(axis.getUnit().unitID())
+    return dim, sc.Variable([dim], values=axis.extractValues(), unit=unit)
+
+
+def set_common_bins_masks(bin_masks, dim, masked_bins):
+    for masked_bin in masked_bins:
+        bin_masks[dim, masked_bin].value = True
+
+
+def set_bin_masks(bin_masks, dim, index, masked_bins):
+    for masked_bin in masked_bins:
+        bin_masks[sc.Dim.Spectrum, index][dim, masked_bin].value = True
+
+
 def convert_Workspace2D_to_dataarray(ws):
     common_bins = ws.isCommonBins()
     comp_info = make_component_info(ws)
     det_info = make_detector_info(ws)
-    pos, num = init_pos_spectrum_no(ws)
-
+    pos = init_pos(ws)
     dim, unit = validate_and_get_unit(ws.getAxis(0).getUnit().unitID())
-    spec_dim, _ = validate_and_get_unit(ws.getAxis(1).getUnit().unitID())
+    spec_dim, spec_coord = init_spec_axis(ws)
 
     if common_bins:
         coord = sc.Variable([dim], values=ws.readX(0), unit=unit)
@@ -148,7 +151,7 @@ def convert_Workspace2D_to_dataarray(ws):
                             shape=(ws.getNumberHistograms(), len(ws.readX(0))),
                             unit=unit)
         for i in range(ws.getNumberHistograms()):
-            coord[sc.Dim.Spectrum, i].values = ws.readX(i)
+            coord[spec_dim, i].values = ws.readX(i)
 
     # TODO Use unit information in workspace, if available.
     array = sc.DataArray(data=sc.Variable([spec_dim, dim],
@@ -157,7 +160,7 @@ def convert_Workspace2D_to_dataarray(ws):
                                           unit=sc.units.counts,
                                           variances=True),
                          coords={dim: coord,
-                                 spec_dim: num
+                                 spec_dim: spec_coord
                                  },
                          labels={"position": pos,
                                  "component_info": comp_info,
@@ -171,13 +174,13 @@ def convert_Workspace2D_to_dataarray(ws):
     spectrum_masks = None
     if ws.detectorInfo().hasMaskedDetectors():
         array.masks["spectrum"] = sc.Variable(
-            [sc.Dim.Spectrum],
+            [spec_dim],
             shape=(ws.getNumberHistograms(),),
             dtype=sc.dtype.bool)
         spectrum_masks = array.masks["spectrum"]
 
     if ws.hasAnyMaskedBins():
-        array.masks["bin"] = make_bin_masks(common_bins, dim,
+        array.masks["bin"] = make_bin_masks(common_bins, spec_dim, dim,
                                             ws.blocksize(),
                                             ws.getNumberHistograms())
         bin_masks = array.masks["bin"]
@@ -188,11 +191,11 @@ def convert_Workspace2D_to_dataarray(ws):
     data = array.data
     spectrum_info = ws.spectrumInfo()
     for i in range(ws.getNumberHistograms()):
-        data[sc.Dim.Spectrum, i].values = ws.readY(i)
-        data[sc.Dim.Spectrum, i].variances = np.power(ws.readE(i), 2)
+        data[spec_dim, i].values = ws.readY(i)
+        data[spec_dim, i].variances = np.power(ws.readE(i), 2)
 
         if spectrum_masks:
-            spectrum_masks[sc.Dim.Spectrum,
+            spectrum_masks[spec_dim,
                            i].value = spectrum_info.isMasked(i)
 
         if not common_bins and ws.hasMaskedBins(i):
@@ -205,18 +208,17 @@ def convertEventWorkspace_to_dataarray(ws, load_pulse_times):
     from mantid.api import EventType
 
     dim, unit = validate_and_get_unit(ws.getAxis(0).getUnit().unitID())
-    spec_dim, _ = validate_and_get_unit(ws.getAxis(1).getUnit().unitID())
-
+    spec_dim, spec_coord = init_spec_axis(ws)
     nHist = ws.getNumberHistograms()
     comp_info = make_component_info(ws)
     det_info = make_detector_info(ws)
-    pos, num = init_pos_spectrum_no(ws)
+    pos = init_pos(ws)
 
     coord = sc.Variable([spec_dim, dim],
                         shape=[nHist, sc.Dimensions.Sparse],
                         unit=unit)
     if load_pulse_times:
-        labs = sc.Variable([sc.Dim.Spectrum, dim],
+        labs = sc.Variable([spec_dim, dim],
                            shape=[nHist, sc.Dimensions.Sparse])
 
     # Check for weighted events
@@ -224,27 +226,27 @@ def convertEventWorkspace_to_dataarray(ws, load_pulse_times):
     contains_weighted_events = ((evtp == EventType.WEIGHTED)
                                 or (evtp == EventType.WEIGHTED_NOTIME))
     if contains_weighted_events:
-        weights = sc.Variable([sc.Dim.Spectrum, dim],
+        weights = sc.Variable([spec_dim, dim],
                               shape=[nHist, sc.Dimensions.Sparse])
 
     for i in range(nHist):
         sp = ws.getSpectrum(i)
-        coord[sc.Dim.Spectrum, i].values = sp.getTofs()
+        coord[spec_dim, i].values = sp.getTofs()
         if load_pulse_times:
             # Pulse times have a Mantid-specific format so the conversion is
             # very slow.
             # TODO: Find a more efficient way to do this.
             pt = sp.getPulseTimes()
-            labs[sc.Dim.Spectrum, i].values = np.asarray(
+            labs[spec_dim, i].values = np.asarray(
                 [p.totalNanoseconds() for p in pt])
         if contains_weighted_events:
-            weights[sc.Dim.Spectrum, i].values = sp.getWeights()
-            weights[sc.Dim.Spectrum, i].variances = sp.getWeightErrors()
+            weights[spec_dim, i].values = sp.getWeights()
+            weights[spec_dim, i].variances = sp.getWeightErrors()
 
     coords_labs_data = {
         "coords": {
             dim: coord,
-            sc.Dim.Spectrum: num
+            spec_dim: spec_coord
         },
         "labels": {
             "position": pos,
@@ -390,7 +392,7 @@ def load(filename="",
                               RewriteSpectraMap=True)
 
     dataset = None
-    if data_ws.id() == 'Workspace2D':
+    if data_ws.id() == 'Workspace2D' or data_ws.id() == 'RebinnedOutput':
         has_monitors = False
         for spec in data_ws.spectrumInfo():
             has_monitors |= spec.isMonitor
