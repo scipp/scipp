@@ -121,20 +121,26 @@ TEST(DatasetOperationsTest, mean_three_dims) {
 
 TEST(DatasetOperationsTest, rebin) {
   Dataset ds;
-  ds.setCoord(Dim::X, makeVariable<double>({Dim::X, 6}, {1, 2, 3, 4, 5, 6}));
-  ds.setData("data_x", makeVariable<double>({Dim::X, 5}, {1, 2, 3, 4, 5}));
+  ds.setCoord(Dim::X, createVariable<double>(Dimensions{Dim::X, 6},
+                                             Values{1, 2, 3, 4, 5, 6}));
+  ds.setData("data_x", createVariable<double>(Dimensions{Dim::X, 5},
+                                              Values{1, 2, 3, 4, 5}));
 
-  ds.setMask("mask_x", makeVariable<bool>({Dim::X, 5},
-                                          {false, false, true, false, false}));
-  ds.setMask("mask_y", makeVariable<bool>({Dim::Y, 5},
-                                          {false, false, true, false, false}));
+  ds.setMask("mask_x",
+             createVariable<bool>(Dimensions{Dim::X, 5},
+                                  Values{false, false, true, false, false}));
+  ds.setMask("mask_y",
+             createVariable<bool>(Dimensions{Dim::Y, 5},
+                                  Values{false, false, true, false, false}));
 
-  const auto edges = makeVariable<double>({Dim::X, 3}, {1, 3, 5});
+  const auto edges =
+      createVariable<double>(Dimensions{Dim::X, 3}, Values{1, 3, 5});
   const Dataset result = rebin(ds, Dim::X, edges);
 
-  ASSERT_EQ(result["data_x"].data(), makeVariable<double>({Dim::X, 2}, {3, 7}));
+  ASSERT_EQ(result["data_x"].data(),
+            createVariable<double>(Dimensions{Dim::X, 2}, Values{3, 7}));
   ASSERT_EQ(result["data_x"].masks()["mask_x"],
-            makeVariable<bool>({Dim::X, 2}, {false, true}));
+            createVariable<bool>(Dimensions{Dim::X, 2}, Values{false, true}));
   // the Y masks should not have been touched
   ASSERT_EQ(ds.masks().size(), 2);
   ASSERT_EQ(ds.masks()["mask_y"].dims(), Dimensions(Dim::Y, 5));

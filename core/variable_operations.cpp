@@ -239,7 +239,8 @@ Variable mean(const VariableConstProxy &var, const Dim dim,
   expect::notSparse(var);
   auto summed = sum(var, dim);
 
-  auto scale = 1.0 / (makeVariable<double>(var.dims()[dim]) - masks_sum);
+  auto scale =
+      1.0 / (createVariable<double>(Values{var.dims()[dim]}) - masks_sum);
 
   if (isInt(var.dtype()))
     summed = summed * scale;
@@ -249,7 +250,7 @@ Variable mean(const VariableConstProxy &var, const Dim dim,
 }
 
 Variable mean(const VariableConstProxy &var, const Dim dim) {
-  return mean(var, dim, makeVariable<int64_t>(0));
+  return mean(var, dim, createVariable<int64_t>(Values{0}));
 }
 
 Variable mean(const VariableConstProxy &var, const Dim dim,
@@ -348,7 +349,7 @@ Variable copy(const VariableConstProxy &var) { return Variable(var); }
 
 /// Merges all masks contained in the MasksConstProxy into a single Variable
 Variable masks_merge(const MasksConstProxy &masks, const Dim dim) {
-  auto mask_union = makeVariable<bool>(false);
+  auto mask_union = createVariable<bool>(Values{false});
   for (const auto &mask : masks) {
     if (mask.second.dims().contains(dim)) {
       mask_union = mask_union | mask.second;
