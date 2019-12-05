@@ -40,8 +40,7 @@ void bind_in_place_binary(pybind11::class_<T, Ignored...> &c) {
           a.cast<T &>() *= b;
           return a;
         },
-        py::is_operator(),
-        py::call_guard<py::gil_scoped_release>());
+        py::is_operator(), py::call_guard<py::gil_scoped_release>());
   c.def("__itruediv__",
         [](py::object &a, Other &b) {
           a.cast<T &>() /= b;
