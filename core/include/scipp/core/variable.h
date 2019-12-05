@@ -288,6 +288,9 @@ template <class T> Variable makeVariable(T value);
 /// dimensions.
 class SCIPP_CORE_EXPORT Variable {
 public:
+  using const_view_type = VariableConstProxy;
+  using view_type = VariableProxy;
+
   Variable() = default;
   // Having this non-explicit is convenient when passing (potential)
   // variable slices to functions that do not support slices, but implicit
@@ -1051,6 +1054,8 @@ SCIPP_CORE_EXPORT Variable reverse(Variable var, const Dim dim);
 SCIPP_CORE_EXPORT VariableProxy sqrt(const VariableConstProxy &var,
                                      const VariableProxy &out);
 
+SCIPP_CORE_EXPORT Variable flatten(const VariableConstProxy &var,
+                                   const Dim dim);
 SCIPP_CORE_EXPORT Variable sum(const VariableConstProxy &var, const Dim dim);
 SCIPP_CORE_EXPORT Variable sum(const VariableConstProxy &var, const Dim dim,
                                const MasksConstProxy &masks);
