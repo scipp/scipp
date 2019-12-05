@@ -5,6 +5,7 @@
 # Scipp imports
 from ..config import plot as config
 from .._scipp import core as sc
+from .sciplot import SciPlot
 
 
 def plot(input_data, collapse=None, backend=None, color=None, projection=None,
@@ -86,7 +87,7 @@ def plot(input_data, collapse=None, backend=None, color=None, projection=None,
             sparse_dim[key] = sp_dim
 
     # Plot all the subsets
-    output = dict()
+    output = SciPlot()
     for key, val in tobeplotted.items():
         if collapse is not None:
             output[key] = plot_collapse(input_data=val["dataset"],
@@ -104,8 +105,4 @@ def plot(input_data, collapse=None, backend=None, color=None, projection=None,
                                    projection=projection,
                                    axes=val["axes"],
                                    **kwargs)
-
-    if backend == "matplotlib":
-        return output
-    else:
-        return
+    return output

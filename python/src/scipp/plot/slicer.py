@@ -8,18 +8,20 @@ from .._scipp.core.units import dimensionless
 
 class Slicer:
 
-    def __init__(self, input_data=None, axes=None, value_name=None, cb=None,
+    def __init__(self, input_data=None, axes=None, cb=None,
                  show_variances=False, button_options=None, volume=False):
 
         import ipywidgets as widgets
 
         self.input_data = input_data
+        self.members = dict(widgets=dict(sliders=dict(), togglebuttons=dict(),
+                            buttons=dict(), labels=dict()))
 
         self.show_variances = show_variances
         if self.show_variances:
             self.show_variances = (self.input_data.variances is not None)
         self.cb = cb
-        self.value_name = value_name
+        # self.value_name = value_name
 
         # Get the dimensions of the image to be displayed
         self.coords = self.input_data.coords
@@ -149,6 +151,7 @@ class Slicer:
                         button_values[i] is not None)
                 # Add observer to show/hide buttons
                 self.showhide[key].on_click(self.update_showhide)
+                self.members["widgets"]["buttons"][key] = self.showhide[key]
 
             # Add observer to buttons
             self.buttons[key].on_msg(self.update_buttons)
@@ -160,6 +163,12 @@ class Slicer:
                 row += [widgets.HTML(value="&nbsp;&nbsp;&nbsp;&nbsp;"),
                         self.showhide[key]]
             self.vbox.append(widgets.HBox(row))
+
+            # Construct members object
+            self.members["widgets"]["sliders"][key] = self.slider[key]
+            self.members["widgets"]["togglebuttons"][key] = self.buttons[key]
+            self.members["widgets"]["labels"][key] = self.lab[key]
+
         return
 
     def make_slider_label(self, var, indx):
