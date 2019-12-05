@@ -20,21 +20,21 @@ protected:
   DataArray_comparison_operators()
       : sparse_variable(makeVariable<double>({Dim::Y, Dim::Z, Dim::X},
                                              {3, 2, Dimensions::Sparse})) {
-    dataset.setCoord(Dim::X, makeVariable<double>({Dim::X, 4}));
-    dataset.setCoord(Dim::Y, makeVariable<double>({Dim::Y, 3}));
+    dataset.setCoord(Dim::X, createVariable<double>(Dims{Dim::X}, Shape{4}));
+    dataset.setCoord(Dim::Y, createVariable<double>(Dims{Dim::Y}, Shape{3}));
 
-    dataset.setLabels("labels", makeVariable<int>({Dim::X, 4}));
-    dataset.setMask("mask", makeVariable<bool>({Dim::X, 4}));
+    dataset.setLabels("labels", createVariable<int>(Dims{Dim::X}, Shape{4}));
+    dataset.setMask("mask", createVariable<bool>(Dims{Dim::X}, Shape{4}));
 
     dataset.setAttr("global_attr", makeVariable<int>({}));
 
     dataset.setData("val_and_var",
                     makeVariable<double>({{Dim::Y, 3}, {Dim::X, 4}},
                                          std::vector<double>(12),
-                                         std::vector<double>(12)));
+                                         std::vector<double>(12)) /*LABEL_1*/);
     dataset.setAttr("val_and_var", "attr", makeVariable<int>({}));
 
-    dataset.setData("val", makeVariable<double>({Dim::X, 4}));
+    dataset.setData("val", createVariable<double>(Dims{Dim::X}, Shape{4}));
     dataset.setAttr("val", "attr", makeVariable<int>({}));
 
     dataset.setSparseCoord("sparse_coord", sparse_variable);
@@ -62,7 +62,7 @@ protected:
 
 template <class T> auto make_values(const Dimensions &dims) {
   Dataset d;
-  d.setData("", makeVariable<T>(dims));
+  d.setData("", createVariable<T>(Dimensions(dims)));
   return DataArray(d[""]);
 }
 
@@ -70,8 +70,9 @@ template <class T, class T2>
 auto make_1_coord(const Dim dim, const Dimensions &dims, const units::Unit unit,
                   const std::initializer_list<T2> &data) {
   Dataset d;
-  d.setCoord(dim, makeVariable<T>(dims, unit, data));
-  d.setData("", makeVariable<T>(dims));
+  d.setCoord(dim, createVariable<T>(Dimensions(dims), units::Unit(unit),
+                                    Values(data)));
+  d.setData("", createVariable<T>(Dimensions(dims)));
   return DataArray(d[""]);
 }
 
@@ -80,8 +81,9 @@ auto make_1_labels(const std::string &name, const Dimensions &dims,
                    const units::Unit unit,
                    const std::initializer_list<T2> &data) {
   Dataset d;
-  d.setLabels(name, makeVariable<T>(dims, unit, data));
-  d.setData("", makeVariable<T>(dims));
+  d.setLabels(name, createVariable<T>(Dimensions(dims), units::Unit(unit),
+                                      Values(data)));
+  d.setData("", createVariable<T>(Dimensions(dims)));
   return DataArray(d[""]);
 }
 
@@ -90,8 +92,9 @@ auto make_1_mask(const std::string &name, const Dimensions &dims,
                  const units::Unit unit,
                  const std::initializer_list<T2> &data) {
   Dataset d;
-  d.setMask(name, makeVariable<T>(dims, unit, data));
-  d.setData("", makeVariable<T>(dims));
+  d.setMask(name, createVariable<T>(Dimensions(dims), units::Unit(unit),
+                                    Values(data)));
+  d.setData("", createVariable<T>(Dimensions(dims)));
   return DataArray(d[""]);
 }
 
@@ -100,8 +103,10 @@ auto make_1_attr(const std::string &name, const Dimensions &dims,
                  const units::Unit unit,
                  const std::initializer_list<T2> &data) {
   Dataset d;
-  d.setData("", makeVariable<T>(dims));
-  d.setAttr("", name, makeVariable<T>(dims, unit, data));
+  d.setData("", createVariable<T>(Dimensions(dims)));
+  d.setAttr(
+      "", name,
+      createVariable<T>(Dimensions(dims), units::Unit(unit), Values(data)));
   return DataArray(d[""]);
 }
 
@@ -110,7 +115,8 @@ auto make_values(const std::string &name, const Dimensions &dims,
                  const units::Unit unit,
                  const std::initializer_list<T2> &data) {
   Dataset d;
-  d.setData(name, makeVariable<T>(dims, unit, data));
+  d.setData(name, createVariable<T>(Dimensions(dims), units::Unit(unit),
+                                    Values(data)));
   return DataArray(d[name]);
 }
 
@@ -120,7 +126,8 @@ auto make_values_and_variances(const std::string &name, const Dimensions &dims,
                                const std::initializer_list<T2> &values,
                                const std::initializer_list<T2> &variances) {
   Dataset d;
-  d.setData(name, makeVariable<T>(dims, unit, values, variances));
+  d.setData(name, createVariable<T>(Dimensions(dims), units::Unit(unit),
+                                    Values(values), Variances(variances)));
   return DataArray(d[name]);
 }
 
@@ -260,8 +267,9 @@ TEST_F(DataArray_comparison_operators, extra_attr) {
 
 TEST_F(DataArray_comparison_operators, extra_variance) {
   auto extra = dataset;
-  extra.setData("val", makeVariable<double>({Dim::X, 4}, std::vector<double>(4),
-                                            std::vector<double>(4)));
+  extra.setData("val",
+                makeVariable<double>({Dim::X, 4}, std::vector<double>(4),
+                                     std::vector<double>(4)) /*LABEL_1*/);
   expect_ne(extra["val"], dataset["val"]);
 }
 
@@ -313,7 +321,7 @@ TEST_F(DataArray_comparison_operators, different_attr_insertion_order) {
 TEST_F(DataArray_comparison_operators, with_sparse_dimension_data) {
   // a and b same, c different number of sparse values
   auto a = Dataset();
-  auto data = makeVariable<double>({Dim::X, Dimensions::Sparse});
+  auto data = createVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse});
   const std::string var_name = "test_var";
   data.sparseValues<double>()[0] = {1, 2, 3};
   a.setData(var_name, data);

@@ -10,25 +10,32 @@ using namespace scipp::core;
 
 TEST(SortTest, variable_1d) {
   const auto var =
-      makeVariable<int>({Dim::X, 3}, units::m, {1, 2, 3}, {4, 5, 6});
-  const auto key = makeVariable<int>({Dim::X, 3}, {10, 20, -1});
+      createVariable<int>(Dims{Dim::X}, Shape{3}, units::Unit(units::m),
+                          Values{1, 2, 3}, Variances{4, 5, 6});
+  const auto key =
+      createVariable<int>(Dims{Dim::X}, Shape{3}, Values{10, 20, -1});
   const auto expected =
-      makeVariable<int>({Dim::X, 3}, units::m, {3, 1, 2}, {6, 4, 5});
+      createVariable<int>(Dims{Dim::X}, Shape{3}, units::Unit(units::m),
+                          Values{3, 1, 2}, Variances{6, 4, 5});
 
   EXPECT_EQ(sort(var, key), expected);
 }
 
 TEST(SortTest, variable_2d) {
-  const auto var = makeVariable<int>({{Dim::Y, 2}, {Dim::X, 3}}, units::m,
-                                     {1, 2, 3, 4, 5, 6});
+  const auto var =
+      createVariable<int>(Dims{Dim::Y, Dim::X}, Shape{2, 3},
+                          units::Unit(units::m), Values{1, 2, 3, 4, 5, 6});
 
-  const auto keyX = makeVariable<int>({Dim::X, 3}, {10, 20, -1});
-  const auto expectedX = makeVariable<int>({{Dim::Y, 2}, {Dim::X, 3}}, units::m,
-                                           {3, 1, 2, 6, 4, 5});
+  const auto keyX =
+      createVariable<int>(Dims{Dim::X}, Shape{3}, Values{10, 20, -1});
+  const auto expectedX =
+      createVariable<int>(Dims{Dim::Y, Dim::X}, Shape{2, 3},
+                          units::Unit(units::m), Values{3, 1, 2, 6, 4, 5});
 
-  const auto keyY = makeVariable<int>({Dim::Y, 2}, {1, 0});
-  const auto expectedY = makeVariable<int>({{Dim::Y, 2}, {Dim::X, 3}}, units::m,
-                                           {4, 5, 6, 1, 2, 3});
+  const auto keyY = createVariable<int>(Dims{Dim::Y}, Shape{2}, Values{1, 0});
+  const auto expectedY =
+      createVariable<int>(Dims{Dim::Y, Dim::X}, Shape{2, 3},
+                          units::Unit(units::m), Values{4, 5, 6, 1, 2, 3});
 
   EXPECT_EQ(sort(var, keyX), expectedX);
   EXPECT_EQ(sort(var, keyY), expectedY);
@@ -37,20 +44,29 @@ TEST(SortTest, variable_2d) {
 TEST(SortTest, dataset_1d) {
   Dataset d;
   d.setData("a",
-            makeVariable<int>({Dim::X, 3}, units::m, {1, 2, 3}, {4, 5, 6}));
-  d.setData("b", makeVariable<double>({Dim::X, 3}, units::s, {0.1, 0.2, 0.3}));
+            createVariable<int>(Dims{Dim::X}, Shape{3}, units::Unit(units::m),
+                                Values{1, 2, 3}, Variances{4, 5, 6}));
+  d.setData("b", createVariable<double>(Dims{Dim::X}, Shape{3},
+                                        units::Unit(units::s),
+                                        Values{0.1, 0.2, 0.3}));
   d.setData("scalar", makeVariable<double>(1.2));
-  d.setCoord(Dim::X, makeVariable<double>({Dim::X, 3}, units::m, {1, 2, 3}));
+  d.setCoord(Dim::X,
+             createVariable<double>(Dims{Dim::X}, Shape{3},
+                                    units::Unit(units::m), Values{1, 2, 3}));
 
   Dataset expected;
   expected.setData(
-      "a", makeVariable<int>({Dim::X, 3}, units::m, {3, 1, 2}, {6, 4, 5}));
-  expected.setData(
-      "b", makeVariable<double>({Dim::X, 3}, units::s, {0.3, 0.1, 0.2}));
-  expected.setCoord(Dim::X,
-                    makeVariable<double>({Dim::X, 3}, units::m, {3, 1, 2}));
+      "a", createVariable<int>(Dims{Dim::X}, Shape{3}, units::Unit(units::m),
+                               Values{3, 1, 2}, Variances{6, 4, 5}));
+  expected.setData("b", createVariable<double>(Dims{Dim::X}, Shape{3},
+                                               units::Unit(units::s),
+                                               Values{0.3, 0.1, 0.2}));
+  expected.setCoord(Dim::X, createVariable<double>(Dims{Dim::X}, Shape{3},
+                                                   units::Unit(units::m),
+                                                   Values{3, 1, 2}));
 
-  const auto key = makeVariable<int>({Dim::X, 3}, {10, 20, -1});
+  const auto key =
+      createVariable<int>(Dims{Dim::X}, Shape{3}, Values{10, 20, -1});
 
   // Note that the result does not contain `scalar`. Is this a bug or a feature?
   // - Should we throw if there is any scalar data/coord?

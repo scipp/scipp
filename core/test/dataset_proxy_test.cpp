@@ -83,10 +83,10 @@ TYPED_TEST(DatasetProxyTest, find_and_contains) {
 
 TYPED_TEST(DatasetProxyTest, find_in_slice) {
   Dataset d;
-  d.setCoord(Dim::X, makeVariable<double>({Dim::X, 2}));
-  d.setCoord(Dim::Y, makeVariable<double>({Dim::Y, 2}));
-  d.setData("a", makeVariable<double>({Dim::X, 2}));
-  d.setData("b", makeVariable<float>({Dim::Y, 2}));
+  d.setCoord(Dim::X, createVariable<double>(Dims{Dim::X}, Shape{2}));
+  d.setCoord(Dim::Y, createVariable<double>(Dims{Dim::Y}, Shape{2}));
+  d.setData("a", createVariable<double>(Dims{Dim::X}, Shape{2}));
+  d.setData("b", createVariable<float>(Dims{Dim::Y}, Shape{2}));
   auto &&proxy = TestFixture::access(d);
 
   const auto slice = proxy.slice({Dim::X, 1});
