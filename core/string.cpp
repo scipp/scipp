@@ -163,6 +163,8 @@ auto apply(const DType dtype, Args &&... args) {
 template <class Key, class Var>
 auto format_variable(const Key &key, const Var &variable,
                      const Dimensions &datasetDims = Dimensions()) {
+  if (!variable)
+    return std::string(tab) + "invalid variable\n";
   std::stringstream s;
   const auto dtype = variable.dtype();
   const std::string colSep("  ");
