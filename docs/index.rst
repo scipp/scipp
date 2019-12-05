@@ -44,6 +44,7 @@ Documentation
    user-guide/error-propagation
    user-guide/groupby
    user-guide/plotting
+   user-guide/how_to
 
 .. toctree::
    :caption: Tutorials
