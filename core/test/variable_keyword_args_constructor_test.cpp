@@ -9,6 +9,18 @@
 
 using namespace scipp;
 using namespace scipp::core;
+TEST(CreateVariableTest, construct_sparse) {
+  auto var = createVariable<double>(Dims{Dim::X, Dim::Y},
+                                    Shape{2, Dimensions::Sparse});
+
+  auto dims = Dimensions();
+  createVariable<int64_t>(Dims(dims.labels()), Shape(dims.shape()));
+  auto dimensions = Dimensions{{Dim::X, Dim::Y}, {2, Dimensions::Sparse}};
+  createVariable<double>(
+      Dimensions{dimensions},
+      Values{sparse_container<double>(), sparse_container<double>()},
+      Variances{sparse_container<double>(), sparse_container<double>()});
+}
 
 TEST(VariableUniversalConstructorTest, dimensions_unit_basic) {
   auto variable = Variable(dtype<float>, Dims{Dim::X, Dim::Y}, Shape{2, 3},
