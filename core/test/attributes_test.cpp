@@ -10,9 +10,10 @@ using namespace scipp::core;
 class AttributesTest : public ::testing::Test {
 protected:
   const Variable scalar = makeVariable<double>(1);
-  const Variable varX = makeVariable<double>({Dim::X, 2}, {2, 3});
-  const Variable varZX =
-      makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}}, {4, 5, 6, 7});
+  const Variable varX =
+      createVariable<double>(Dims{Dim::X}, Shape{2}, Values{2, 3});
+  const Variable varZX = createVariable<double>(
+      Dims{Dim::Y, Dim::X}, Shape{2, 2}, Values{4, 5, 6, 7});
 };
 
 TEST_F(AttributesTest, dataset_attrs) {
@@ -123,8 +124,11 @@ TEST_F(AttributesTest, binary_ops_in_place) {
 
 TEST_F(AttributesTest, reduction_ops) {
   Dataset d;
-  d.setCoord(Dim::X, makeVariable<double>({Dim::X, 3}, {0, 1, 2}));
-  d.setData("a", makeVariable<double>({Dim::X, 2}, units::counts, {10, 20}));
+  d.setCoord(Dim::X,
+             createVariable<double>(Dims{Dim::X}, Shape{3}, Values{0, 1, 2}));
+  d.setData("a",
+            createVariable<double>(Dims{Dim::X}, Shape{2},
+                                   units::Unit(units::counts), Values{10, 20}));
   d["a"].attrs().set("a_attr", scalar);
   d["a"].attrs().set("a_attr_x", varX);
   d.attrs().set("dataset_attr", scalar);
@@ -132,7 +136,8 @@ TEST_F(AttributesTest, reduction_ops) {
 
   for (const auto &result :
        {sum(d, Dim::X), mean(d, Dim::X), resize(d, Dim::X, 4),
-        rebin(d, Dim::X, makeVariable<double>({Dim::X, 2}, {0, 2}))}) {
+        rebin(d, Dim::X,
+              createVariable<double>(Dims{Dim::X}, Shape{2}, Values{0, 2}))}) {
     ASSERT_TRUE(result.attrs().contains("dataset_attr"));
     ASSERT_FALSE(result.attrs().contains("dataset_attr_x"));
     EXPECT_EQ(result.attrs()["dataset_attr"], scalar);

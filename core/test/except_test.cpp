@@ -25,26 +25,38 @@ TEST(StringFormattingTest, to_string_Dataset) {
 
 std::tuple<Dataset, Dataset> makeDatasets() {
   Dataset a;
-  a.setCoord(Dim::X, makeVariable<double>({Dim::X, 3}, {1, 2, 3}));
-  a.setCoord(Dim::Y, makeVariable<double>({Dim::Y, 3}, {1, 2, 3}));
-  a.setCoord(Dim::Z, makeVariable<double>({Dim::Z, 3}, {1, 2, 3}));
-  a.setLabels("label_1", makeVariable<int>({Dim::X, 3}, {21, 22, 23}));
-  a.setLabels("label_2", makeVariable<int>({Dim::Y, 3}, {21, 22, 23}));
-  a.setLabels("label_3", makeVariable<int>({Dim::Z, 3}, {21, 22, 23}));
-  a.setData("a", makeVariable<int>({Dim::X, 3}, {1, 2, 3}));
-  a.setData("b", makeVariable<int>({Dim::Y, 3}, {1, 2, 3}));
-  a.setData("c", makeVariable<int>({Dim::Z, 3}, {1, 2, 3}));
+  a.setCoord(Dim::X,
+             createVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3}));
+  a.setCoord(Dim::Y,
+             createVariable<double>(Dims{Dim::Y}, Shape{3}, Values{1, 2, 3}));
+  a.setCoord(Dim::Z,
+             createVariable<double>(Dims{Dim::Z}, Shape{3}, Values{1, 2, 3}));
+  a.setLabels("label_1",
+              createVariable<int>(Dims{Dim::X}, Shape{3}, Values{21, 22, 23}));
+  a.setLabels("label_2",
+              createVariable<int>(Dims{Dim::Y}, Shape{3}, Values{21, 22, 23}));
+  a.setLabels("label_3",
+              createVariable<int>(Dims{Dim::Z}, Shape{3}, Values{21, 22, 23}));
+  a.setData("a", createVariable<int>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3}));
+  a.setData("b", createVariable<int>(Dims{Dim::Y}, Shape{3}, Values{1, 2, 3}));
+  a.setData("c", createVariable<int>(Dims{Dim::Z}, Shape{3}, Values{1, 2, 3}));
 
   Dataset b;
-  b.setCoord(Dim::X, makeVariable<double>({Dim::X, 3}, {1, 2, 3}));
-  b.setCoord(Dim::Y, makeVariable<double>({Dim::Y, 3}, {1, 2, 3}));
-  b.setCoord(Dim::Z, makeVariable<double>({Dim::Z, 3}, {1, 2, 3}));
-  b.setLabels("label_1", makeVariable<int>({Dim::X, 3}, {21, 22, 23}));
-  b.setLabels("label_2", makeVariable<int>({Dim::Y, 3}, {21, 22, 23}));
-  b.setLabels("label_3", makeVariable<int>({Dim::Z, 3}, {21, 22, 23}));
-  b.setData("a", makeVariable<int>({Dim::X, 3}, {1, 2, 3}));
-  b.setData("b", makeVariable<int>({Dim::Y, 3}, {1, 2, 3}));
-  b.setData("c", makeVariable<int>({Dim::Z, 3}, {1, 2, 3}));
+  b.setCoord(Dim::X,
+             createVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3}));
+  b.setCoord(Dim::Y,
+             createVariable<double>(Dims{Dim::Y}, Shape{3}, Values{1, 2, 3}));
+  b.setCoord(Dim::Z,
+             createVariable<double>(Dims{Dim::Z}, Shape{3}, Values{1, 2, 3}));
+  b.setLabels("label_1",
+              createVariable<int>(Dims{Dim::X}, Shape{3}, Values{21, 22, 23}));
+  b.setLabels("label_2",
+              createVariable<int>(Dims{Dim::Y}, Shape{3}, Values{21, 22, 23}));
+  b.setLabels("label_3",
+              createVariable<int>(Dims{Dim::Z}, Shape{3}, Values{21, 22, 23}));
+  b.setData("a", createVariable<int>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3}));
+  b.setData("b", createVariable<int>(Dims{Dim::Y}, Shape{3}, Values{1, 2, 3}));
+  b.setData("c", createVariable<int>(Dims{Dim::Z}, Shape{3}, Values{1, 2, 3}));
 
   return std::make_tuple(a, b);
 }
