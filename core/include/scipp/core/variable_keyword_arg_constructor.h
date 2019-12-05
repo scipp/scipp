@@ -12,20 +12,59 @@
 
 namespace scipp::core {
 
-// The structs needed for universal variable constructor are introduced below.
-// Tags are used to match the corresponding arguments treating the arbitrary
-// order of arguments in the constructor, and not mixing values and variances.
-// Structures Values and Variances just forwards the arguments for constructing
-// internal variable structure - array storage.
+// The structs needed for keyword-like variable constructor are introduced
+// below. Tags are used to match the corresponding arguments treating the
+// arbitrary order of arguments in the constructor, and not mixing values and
+// variances. Structures Values and Variances just forwards the arguments for
+// constructing internal variable structure - array storage.
 
 namespace detail {
+
+template <class T> class has_begin_end {
+  static void detect(...);
+  template <class U>
+  static decltype(U().begin(), U().end(), bool{}) detect(const U &);
+
+public:
+  static constexpr bool value =
+      !std::is_same<void, decltype(detect(std::declval<T>()))>::value;
+};
+
+template <class T> constexpr bool has_begin_end_v = has_begin_end<T>::value;
 
 template <class U> struct vector_like {
   std::vector<U> data;
   template <class... Args>
-  vector_like(Args &&... args) : data(std::forward<Args>(args)...) {}
+  vector_like(Args &&... args) : data(make(std::forward<Args>(args)...)) {}
+
   template <class T>
   vector_like(std::initializer_list<T> init) : data(init.begin(), init.end()) {}
+
+private:
+  // This is to override the std::vector(size_t num_elems, const Type& element)
+  // insted of [elem, elem, ..., elem] we want [Type(num_elems), element]
+  // And also make the vector from all structs havind begin() and end()
+  template <class... Args> static std::vector<U> make(Args &&... args) {
+    if constexpr (sizeof...(Args) == 1) {
+      using Tuple = std::tuple<Args...>;
+      using T0 = std::tuple_element_t<0, Tuple>;
+      if constexpr (has_begin_end_v<T0>)
+        return std::vector<U>(std::forward<Args>(args).begin()...,
+                              std::forward<Args>(args).end()...);
+      else
+        return std::vector<U>(std::forward<Args>(args)...);
+    } else if constexpr (sizeof...(Args) == 2) {
+      using Tuple = std::tuple<Args...>;
+      using T0 = std::tuple_element_t<0, Tuple>;
+      using T1 = std::tuple_element_t<1, Tuple>;
+      if constexpr (!std::is_same_v<T0, T1>)
+        return std::vector{U(std::forward<Args>(args))...};
+      else
+        return std::vector<U>(std::forward<Args>(args)...);
+    } else {
+      return std::vector<U>(std::forward<Args>(args)...);
+    }
+  }
 };
 
 struct ValuesTag {};
@@ -105,16 +144,12 @@ public:
 
 template <class VarT, class... Ts> class ConstructorArgumentsMatcher {
 public:
-  template <class... NonDataTypes> constexpr static void checkArgTypesValid() {
+  template <class... NonDataTypes> constexpr static bool checkArgTypesValid() {
     constexpr int nonDataTypesCount =
         (is_type_in_pack_v<NonDataTypes, Ts...> + ...);
     constexpr bool hasVal = is_tag_in_pack_v<ValuesTag, Ts...>;
     constexpr bool hasVar = is_tag_in_pack_v<VariancesTag, Ts...>;
-    static_assert(
-        nonDataTypesCount + hasVal + hasVar == sizeof...(Ts),
-        "Arguments: units::Unit, Shape, Dims, Values and Variances could only "
-        "be used. Example: Variable(dtype<float>, units::Unit(units::kg), "
-        "Shape{1, 2}, Dims{Dim::X, Dim::Y}, Values({3, 4}))");
+    return nonDataTypesCount + hasVal + hasVar == sizeof...(Ts);
   }
 
   template <class... NonDataTypes> static auto extractArguments(Ts &&... ts) {

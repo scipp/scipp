@@ -122,6 +122,12 @@ DataArray rebin(const DataConstProxy &a, const Dim dim,
                 const VariableConstProxy &coord) {
   auto rebinned = apply_to_data_and_drop_dim(
       a, [](auto &&... _) { return rebin(_...); }, dim, a.coords()[dim], coord);
+
+  for (auto &&[name, mask] : a.masks()) {
+    if (mask.dims().contains(dim))
+      rebinned.masks().set(name, rebin(mask, dim, a.coords()[dim], coord));
+  }
+
   rebinned.setCoord(dim, coord);
   return rebinned;
 }
