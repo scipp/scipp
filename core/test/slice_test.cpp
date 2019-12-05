@@ -151,7 +151,7 @@ TEST_F(Dataset3DTest, data_check_upon_setting_sparse_coordinates) {
       createVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse});
   coords_var.sparseValues<double>()[0] = {1, 2, 3};
   sparse.setData("sparse_x", data_var);
-  // The following should be OK. Data is sparse.
+  // The following should be OK. Data is sparse
   sparse.setSparseCoord("sparse_x", coords_var);
 
   // Check with dense data
