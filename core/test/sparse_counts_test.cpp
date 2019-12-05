@@ -35,16 +35,18 @@ TEST(SparseCountsTest, fail_dense) {
 
 TEST(SparseCountsTest, no_variances) {
   const auto var = make_sparse();
-  auto expected = makeVariable<scipp::index>({{Dim::Z, 3}, {Dim::Y, 2}},
-                                             units::counts, {0, 1, 2, 3, 4, 5});
+  auto expected = createVariable<scipp::index>(
+      Dims{Dim::Z, Dim::Y}, Shape{3, 2}, units::Unit(units::counts),
+      Values{0, 1, 2, 3, 4, 5});
 
   EXPECT_EQ(sparse::counts(var), expected);
 }
 
 TEST(SparseCountsTest, variances) {
   const auto var = make_sparse_with_variances();
-  auto expected = makeVariable<scipp::index>({{Dim::Z, 3}, {Dim::Y, 2}},
-                                             units::counts, {0, 1, 2, 3, 4, 5});
+  auto expected = createVariable<scipp::index>(
+      Dims{Dim::Z, Dim::Y}, Shape{3, 2}, units::Unit(units::counts),
+      Values{0, 1, 2, 3, 4, 5});
 
   EXPECT_EQ(sparse::counts(var), expected);
 }

@@ -146,7 +146,8 @@ Variable counts(const VariableConstProxy &var) {
   // variances if any of the inputs has variances.
   auto dims = var.dims();
   dims.erase(dims.sparseDim());
-  auto counts = makeVariable<scipp::index>(dims, units::counts);
+  auto counts = createVariable<scipp::index>(Dimensions(dims),
+                                             units::Unit(units::counts));
   accumulate_in_place<
       pair_custom_t<std::pair<scipp::index, sparse_container<double>>>>(
       counts, var,
@@ -215,8 +216,9 @@ Variable sum(const VariableConstProxy &var, const Dim dim) {
   dims.erase(dim);
   // Bool DType is a bit special in that it cannot contain it's sum.
   // Instead the sum is stored in a int64_t Variable
-  Variable summed{var.dtype() == DType::Bool ? makeVariable<int64_t>(dims)
-                                             : Variable(var, dims)};
+  Variable summed{var.dtype() == DType::Bool
+                      ? createVariable<int64_t>(Dimensions(dims))
+                      : Variable(var, dims)};
   sum_impl(summed, var);
   return summed;
 }

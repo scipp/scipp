@@ -53,7 +53,7 @@ TYPED_TEST(DataProxyTest, sparse_sparseDim) {
 
 TYPED_TEST(DataProxyTest, dims) {
   Dataset d;
-  const auto dense = makeVariable<double>({{Dim::X, 1}, {Dim::Y, 2}});
+  const auto dense = createVariable<double>(Dims{Dim::X, Dim::Y}, Shape{1, 2});
   const auto sparse = makeVariable<double>({Dim::X, Dim::Y, Dim::Z},
                                            {1, 2, Dimensions::Sparse});
   typename TestFixture::dataset_type &d_ref(d);
@@ -71,9 +71,11 @@ TYPED_TEST(DataProxyTest, dims) {
 TYPED_TEST(DataProxyTest, dims_with_extra_coords) {
   Dataset d;
   typename TestFixture::dataset_type &d_ref(d);
-  const auto x = makeVariable<double>({Dim::X, 3}, {1, 2, 3});
-  const auto y = makeVariable<double>({Dim::Y, 3}, {4, 5, 6});
-  const auto var = makeVariable<double>({Dim::X, 3});
+  const auto x =
+      createVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
+  const auto y =
+      createVariable<double>(Dims{Dim::Y}, Shape{3}, Values{4, 5, 6});
+  const auto var = createVariable<double>(Dims{Dim::X}, Shape{3});
   d.setCoord(Dim::X, x);
   d.setCoord(Dim::Y, y);
   d.setData("a", var);
@@ -100,7 +102,7 @@ TYPED_TEST(DataProxyTest, unit_access_fails_without_values) {
 TYPED_TEST(DataProxyTest, coords) {
   Dataset d;
   typename TestFixture::dataset_type &d_ref(d);
-  const auto var = makeVariable<double>({Dim::X, 3});
+  const auto var = createVariable<double>(Dims{Dim::X}, Shape{3});
   d.setCoord(Dim::X, var);
   d.setData("a", var);
 
@@ -125,8 +127,10 @@ TYPED_TEST(DataProxyTest, coords_sparse) {
 TYPED_TEST(DataProxyTest, coords_sparse_shadow) {
   Dataset d;
   typename TestFixture::dataset_type &d_ref(d);
-  const auto x = makeVariable<double>({Dim::X, 3}, {1, 2, 3});
-  const auto y = makeVariable<double>({Dim::Y, 3}, {4, 5, 6});
+  const auto x =
+      createVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
+  const auto y =
+      createVariable<double>(Dims{Dim::Y}, Shape{3}, Values{4, 5, 6});
   const auto sparse =
       makeVariable<double>({Dim::X, Dim::Y}, {3, Dimensions::Sparse});
   d.setCoord(Dim::X, x);
@@ -146,8 +150,10 @@ TYPED_TEST(DataProxyTest, coords_sparse_shadow) {
 TYPED_TEST(DataProxyTest, coords_sparse_shadow_even_if_no_coord) {
   Dataset d;
   typename TestFixture::dataset_type &d_ref(d);
-  const auto x = makeVariable<double>({Dim::X, 3}, {1, 2, 3});
-  const auto y = makeVariable<double>({Dim::Y, 3}, {4, 5, 6});
+  const auto x =
+      createVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
+  const auto y =
+      createVariable<double>(Dims{Dim::Y}, Shape{3}, Values{4, 5, 6});
   const auto sparse =
       makeVariable<double>({Dim::X, Dim::Y}, {3, Dimensions::Sparse});
   d.setCoord(Dim::X, x);
@@ -167,9 +173,11 @@ TYPED_TEST(DataProxyTest, coords_sparse_shadow_even_if_no_coord) {
 TYPED_TEST(DataProxyTest, coords_contains_only_relevant) {
   Dataset d;
   typename TestFixture::dataset_type &d_ref(d);
-  const auto x = makeVariable<double>({Dim::X, 3}, {1, 2, 3});
-  const auto y = makeVariable<double>({Dim::Y, 3}, {4, 5, 6});
-  const auto var = makeVariable<double>({Dim::X, 3});
+  const auto x =
+      createVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
+  const auto y =
+      createVariable<double>(Dims{Dim::Y}, Shape{3}, Values{4, 5, 6});
+  const auto var = createVariable<double>(Dims{Dim::X}, Shape{3});
   d.setCoord(Dim::X, x);
   d.setCoord(Dim::Y, y);
   d.setData("a", var);
@@ -184,9 +192,10 @@ TYPED_TEST(DataProxyTest, coords_contains_only_relevant) {
 TYPED_TEST(DataProxyTest, coords_contains_only_relevant_2d_dropped) {
   Dataset d;
   typename TestFixture::dataset_type &d_ref(d);
-  const auto x = makeVariable<double>({Dim::X, 3}, {1, 2, 3});
-  const auto y = makeVariable<double>({{Dim::Y, 3}, {Dim::X, 3}});
-  const auto var = makeVariable<double>({Dim::X, 3});
+  const auto x =
+      createVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
+  const auto y = createVariable<double>(Dims{Dim::Y, Dim::X}, Shape{3, 3});
+  const auto var = createVariable<double>(Dims{Dim::X}, Shape{3});
   d.setCoord(Dim::X, x);
   d.setCoord(Dim::Y, y);
   d.setData("a", var);
@@ -202,9 +211,9 @@ TYPED_TEST(DataProxyTest,
            coords_contains_only_relevant_2d_not_dropped_inconsistency) {
   Dataset d;
   typename TestFixture::dataset_type &d_ref(d);
-  const auto x = makeVariable<double>({{Dim::Y, 3}, {Dim::X, 3}});
-  const auto y = makeVariable<double>({Dim::Y, 3});
-  const auto var = makeVariable<double>({Dim::X, 3});
+  const auto x = createVariable<double>(Dims{Dim::Y, Dim::X}, Shape{3, 3});
+  const auto y = createVariable<double>(Dims{Dim::Y}, Shape{3});
+  const auto var = createVariable<double>(Dims{Dim::X}, Shape{3});
   d.setCoord(Dim::X, x);
   d.setCoord(Dim::Y, y);
   d.setData("a", var);
@@ -238,7 +247,8 @@ TYPED_TEST(DataProxyTest, hasData_hasVariances) {
 TYPED_TEST(DataProxyTest, values_variances) {
   Dataset d;
   typename TestFixture::dataset_type &d_ref(d);
-  const auto var = makeVariable<double>({Dim::X, 2}, {1, 2}, {3, 4});
+  const auto var = createVariable<double>(Dims{Dim::X}, Shape{2}, Values{1, 2},
+                                          Variances{3, 4});
   d.setData("a", var);
 
   ASSERT_EQ(d_ref["a"].data(), var);
