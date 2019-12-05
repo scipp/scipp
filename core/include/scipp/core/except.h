@@ -36,7 +36,10 @@ struct SCIPP_CORE_EXPORT TypeError : public std::runtime_error {
   using std::runtime_error::runtime_error;
 
   template <class... Vars>
-  TypeError(const std::string &msg, const Vars &... vars)
+  TypeError(const std::string &msg) : std::runtime_error(msg) {}
+
+  template <class... Vars>
+  TypeError(const std::string &msg, Vars &&... vars)
       : std::runtime_error(msg + ((to_string(vars.dtype()) + ' ') + ...)) {}
 };
 

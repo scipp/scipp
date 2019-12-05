@@ -209,13 +209,17 @@ auto sparse_dense_coord_union(const DataConstProxy &a,
 }
 
 DataArray operator*(const DataConstProxy &a, const DataConstProxy &b) {
-  return {sparse_dense_op(times, a, b), sparse_dense_coord_union(a, b),
-          union_(a.labels(), b.labels()), union_or(a.masks(), b.masks())};
+  const auto data = sparse_dense_op(times, a, b);
+  const auto coords = sparse_dense_coord_union(a, b);
+  return {std::move(data), std::move(coords), union_(a.labels(), b.labels()),
+          union_or(a.masks(), b.masks())};
 }
 
 DataArray operator/(const DataConstProxy &a, const DataConstProxy &b) {
-  return {sparse_dense_op(divide, a, b), sparse_dense_coord_union(a, b),
-          union_(a.labels(), b.labels()), union_or(a.masks(), b.masks())};
+  const auto data = sparse_dense_op(divide, a, b);
+  const auto coords = sparse_dense_coord_union(a, b);
+  return {std::move(data), std::move(coords), union_(a.labels(), b.labels()),
+          union_or(a.masks(), b.masks())};
 }
 
 DataArray operator+(const DataConstProxy &a, const VariableConstProxy &b) {

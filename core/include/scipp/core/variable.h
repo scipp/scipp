@@ -5,8 +5,11 @@
 #ifndef VARIABLE_H
 #define VARIABLE_H
 
+#include <optional>
 #include <string>
+#include <utility>
 #include <variant>
+#include <vector>
 
 #include <Eigen/Dense>
 
@@ -293,7 +296,6 @@ public:
   Variable(const Variable &parent, const Dimensions &dims);
   Variable(const VariableConstProxy &parent, const Dimensions &dims);
   Variable(const Variable &parent, VariableConceptHandle data);
-
   template <class T>
   Variable(const units::Unit unit, const Dimensions &dimensions, T object);
   template <class T>
@@ -683,11 +685,11 @@ public:
   VariableConstProxy(const Variable &variable) : m_variable(&variable) {}
   VariableConstProxy(const Variable &variable, const Dimensions &dims)
       : m_variable(&variable), m_view(variable.data().reshape(dims)) {}
-  VariableConstProxy(const VariableConstProxy &other) = default;
   VariableConstProxy(const Variable &variable, const Dim dim,
                      const scipp::index begin, const scipp::index end = -1)
       : m_variable(&variable),
         m_view(variable.data().makeView(dim, begin, end)) {}
+  VariableConstProxy(const VariableConstProxy &other) = default;
   VariableConstProxy(const VariableConstProxy &slice, const Dim dim,
                      const scipp::index begin, const scipp::index end = -1)
       : m_variable(slice.m_variable),

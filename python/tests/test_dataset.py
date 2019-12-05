@@ -369,7 +369,8 @@ def test_sum_mean():
 def test_sum_masked():
     d = sc.Dataset(
         {
-            'a': sc.Variable([Dim.X], values=np.array([1, 5, 4, 5, 1]))
+            'a': sc.Variable([Dim.X], values=np.array([1, 5, 4, 5, 1],
+                                                      dtype=np.int64))
         },
         masks={
             "m1": sc.Variable([Dim.X], values=np.array([
@@ -378,10 +379,11 @@ def test_sum_masked():
 
     d_ref = sc.Dataset(
         {
-            'a': sc.Variable(6)
+            'a': sc.Variable(np.int64(6))
         })
 
-    assert sc.sum(d, Dim.X)["a"] == d_ref["a"]
+    result = sc.sum(d, Dim.X)["a"]
+    assert result == d_ref["a"]
 
 
 def test_mean_masked():
