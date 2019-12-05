@@ -112,19 +112,16 @@ TEST_F(Dataset3DTest, dimension_extent_check_replace_with_edge_coord) {
   ASSERT_NE(edge_coord["data_xyz"], dataset["data_xyz"]);
   // Cannot incrementally grow.
   ASSERT_ANY_THROW(edge_coord.setCoord(Dim::X, makeRandom({Dim::X, 6})));
-  // Minor implementation shortcoming: Currently we cannot go back to
-  // non-edges.
+  // Minor implementation shortcoming: Currently we cannot go back to non-edges.
   ASSERT_ANY_THROW(edge_coord.setCoord(Dim::X, makeRandom({Dim::X, 4})));
 }
 
 TEST_F(Dataset3DTest,
        dimension_extent_check_prevents_non_edge_coord_with_edge_data) {
-  // If we reduce the X extent to 3 we would have data defined at the edges,
-  // but
+  // If we reduce the X extent to 3 we would have data defined at the edges, but
   // the coord is not. This is forbidden.
   ASSERT_ANY_THROW(dataset.setCoord(Dim::X, makeRandom({Dim::X, 3})));
-  // We *can* set data with X extent 3. The X coord is now bin edges, and
-  // other
+  // We *can* set data with X extent 3. The X coord is now bin edges, and other
   // data is defined on the edges.
   ASSERT_NO_THROW(dataset.setData("non_edge_data", makeRandom({Dim::X, 3})));
   // Now the X extent of the dataset is 3, but since we have data on the edges
@@ -166,10 +163,8 @@ TEST_F(Dataset3DTest, data_check_upon_setting_sparse_coordinates) {
 
 TEST_F(Dataset3DTest, dimension_extent_check_labels_dimension_fail) {
   // We cannot have labels on edges unless the coords are also edges. Note the
-  // slight inconsistency though: Labels are typically though of as being for
-  // a
-  // particular dimension (the inner one), but we can have labels on edges
-  // also
+  // slight inconsistency though: Labels are typically though of as being for a
+  // particular dimension (the inner one), but we can have labels on edges also
   // for the other dimensions (x in this case), just like data.
   ASSERT_ANY_THROW(
       dataset.setLabels("bad_labels", makeRandom({{Dim::X, 4}, {Dim::Y, 6}})));
