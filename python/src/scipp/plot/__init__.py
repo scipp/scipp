@@ -6,9 +6,13 @@
 # flake8: noqa
 
 from .plot import plot
+from ..config import plot as config
 
-from IPython import get_ipython
-get_ipython().run_line_magic('matplotlib', 'notebook')
+try:
+    from IPython import get_ipython
+    get_ipython().run_line_magic('matplotlib', config.backend)
+except:
+    pass
 
 
 def superplot(dataset, **kwargs):

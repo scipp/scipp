@@ -65,8 +65,7 @@ def dispatch(input_data, ndim=0, name=None, backend=None, collapse=None,
     elif projection == "2d":
         return plot_2d(input_data, name=name, **kwargs)
     elif projection == "3d" or projection == "volume":
-        return plot_3d(input_data, name=name,
-                       volume=(projection == "volume"), **kwargs)
+        return plot_3d(input_data, name=name, **kwargs)
     else:
         raise RuntimeError("Wrong projection type. Expected either '2d' "
                            "or '3d', got {}.".format(projection))

@@ -17,8 +17,8 @@ from matplotlib.colors import Normalize, LogNorm
 import matplotlib.pyplot as plt
 
 
-def plot_2d(input_data, axes=None, cb=None, filename=None,
-            name=None, figsize=None, show_variances=False):
+def plot_2d(input_data=None, axes=None, cb=None, filename=None, name=None,
+            figsize=None, show_variances=False):
     """
     Plot a 2D slice through a N dimensional dataset. For every dimension above
     2, a slider is created to adjust the position of the slice in that
@@ -42,16 +42,18 @@ def plot_2d(input_data, axes=None, cb=None, filename=None,
 
 class Slicer2d(Slicer):
 
-    def __init__(self, input_data, axes, cb, show_variances):
+    def __init__(self, input_data=None, axes=None, cb=None,
+                 show_variances=False):
 
-        super().__init__(input_data, axes, cb, show_variances,
+        super().__init__(input_data=input_data, axes=axes, cb=cb,
+                         show_variances=show_variances,
                          button_options=['X', 'Y'])
 
-        # Initialise Figure and VBox objects
+        self.members.update({"images": {}, "colorbars": {}})
+
         self.params = {"values": {"name": self.input_data.name,
                                   "cbmin": "min", "cbmax": "max"},
                        "variances": None}
-        self.members.update({"images": {}, "colorbars": {}})
         if self.show_variances:
             self.params["variances"] = {"name": "variances",
                                         "cbmin": "min_var", "cbmax": "max_var"}
@@ -59,7 +61,9 @@ class Slicer2d(Slicer):
 
         self.fig, ax = plt.subplots(
             1, 1 + self.show_variances,
-            figsize=(config.width, config.height/(1.0+self.show_variances)),
+            figsize=(config.width/config.dpi,
+                     config.height/(1.0+self.show_variances)/config.dpi),
+            dpi=config.dpi,
             sharex=True, sharey=True)
         self.ax = dict()
         self.im = dict()

@@ -8,9 +8,9 @@ class _Plot:
 
     def __init__(self):
 
-        # The plotting backend: possible choices are "interactive", "static",
-        # "matplotlib", and "matplotlib:quiet"
-        self.backend = "interactive"
+        # The plotting backend: possible choices are "inline" (static) or
+        # "notebook" (interactive)
+        self.backend = "notebook"
 
         # The list of default line colors
         self.color_list = ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728",
@@ -22,13 +22,13 @@ class _Plot:
                    "min_var": None, "max_var": None}
 
         # The default image height (in pixels)
-        self.height = 6
+        self.height = 600
 
         # The default image width (in pixels)
-        self.width = 9
+        self.width = 900
 
-        # The size threshold above which an image is automatically rasterized
-        self.rasterize_threshold = 100000
+        # Resolution
+        self.dpi = 100
 
 
 class _Colors:

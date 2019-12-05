@@ -42,13 +42,16 @@ def plot_1d(input_data, backend=None, logx=False, logy=False, logxy=False,
 
 class Slicer1d(Slicer):
 
-    def __init__(self, input_data, layout, axes, color):
+    def __init__(self, input_data=None, layout=None, axes=None, color=None):
 
         super().__init__(input_data=input_data, axes=axes,
                          button_options=['X'])
 
         self.color = color
-        self.fig, self.ax = plt.subplots(1, 1)
+        self.fig, self.ax = plt.subplots(1, 1,
+                                         figsize=(config.width/config.dpi,
+                                                  config.height/config.dpi),
+                                         dpi=config.dpi)
         self.members.update({"lines": {}, "error_x": {}, "error_y": {},
                              "error_xy": {}})
         self.color = color

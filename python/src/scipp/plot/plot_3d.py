@@ -4,12 +4,9 @@
 
 # Scipp imports
 from ..config import plot as config
-from .plot_2d import Slicer2d
 from .render import render_plot
 from .slicer import Slicer
 from .tools import axis_label, parse_colorbar
-from .._scipp import core as sc
-
 
 # Other imports
 import numpy as np
@@ -17,7 +14,6 @@ import ipywidgets as widgets
 from matplotlib import cm
 from matplotlib.colors import Normalize, LogNorm
 import copy as cp
-# import matplotlib.pyplot as plt
 
 try:
     import ipyvolume as ipv
@@ -25,13 +21,9 @@ try:
 except:
     pass
 
-# import plotly.graph_objs as go
-# from plotly.subplots import make_subplots
 
-
-def plot_3d(input_data, axes=None, contours=False, cb=None, filename=None,
-            name=None, figsize=None, show_variances=False, ndim=0,
-            backend=None, volume=False, volume_sampling=15):
+def plot_3d(input_data=None, axes=None, cb=None, filename=None, name=None,
+            figsize=None, show_variances=False):
     """
     Plot a 3-slice through a N dimensional dataset. For every dimension above
     3, a slider is created to adjust the position of the slice in that
@@ -45,7 +37,7 @@ def plot_3d(input_data, axes=None, contours=False, cb=None, filename=None,
         axes = var.dims
 
     # Parse colorbar
-    cbar = parse_colorbar(cb, plotly=True)
+    cbar = parse_colorbar(cb)
 
     # # Make title
     # title = axis_label(var=var, name=name, log=cbar["log"])
@@ -75,36 +67,36 @@ def plot_3d(input_data, axes=None, contours=False, cb=None, filename=None,
     #                   show_variances=show_variances, rasterize=False,
     #                   surface3d=True)
     # else:
-    layout = None
-    title=None
-    sv = Slicer3d(layout=layout, input_data=var, axes=axes,
-                  value_name=title, cb=cbar,
-                  show_variances=show_variances, volume=volume,
-                  volume_sampling=volume_sampling)
+    # layout = None
+    # title=None
+    sv = Slicer3d(input_data=var, axes=axes, cb=cbar,
+                  show_variances=show_variances)
 
-    render_plot(static_fig=sv.fig, interactive_fig=sv.box, backend=backend,
-                filename=filename)
+    render_plot(figure=sv.fig, widgets=sv.box, filename=filename)
 
-    return
+    return sv.members
 
 
 class Slicer3d(Slicer):
 
-    def __init__(self, layout, input_data, axes, value_name, cb,
-                 show_variances, volume, volume_sampling):
+    def __init__(self, input_data=None, axes=None, cb=None,
+                 show_variances=False):
 
-        super().__init__(input_data, axes, value_name, cb, show_variances,
-                         button_options=['X', 'Y', 'Z'], volume=volume)
+        super().__init__(input_data=input_data, axes=axes, cb=cb,
+                         show_variances=show_variances,
+                         button_options=['X', 'Y', 'Z'])
 
         # import ipyvolume as ipv
         # from ipyevents import Event
 
         self.cube = None
-        self.volume = volume
+        self.members.update({"surfaces": {}, "wireframes": {}, "outlines": {},
+                             "fig": {}})
+
         # self.clear = ipv.clear
 
         # Initialise Figure and VBox objects
-        self.fig = ipv.figure()
+        self.fig = ipv.figure(width=800, height=650)
         self.fig.animation = 0
         params = {"values": {"cbmin": "min", "cbmax": "max"},
                   "variances": None}
@@ -138,9 +130,13 @@ class Slicer3d(Slicer):
 
                 self.scalar_map[key] = cm.ScalarMappable(norm=norm,
                                                          cmap=self.cb["name"])
+                # self.members["outlines"][key] = None
+                self.members["surfaces"][key] = {}
+                self.members["wireframes"][key] = {}
 
-        colorbars = [{"x": 1.0, "title": value_name,
-                      "thicknessmode": 'fraction', "thickness": 0.02}]
+
+        # colorbars = [{"x": 1.0, "title": value_name,
+        #               "thicknessmode": 'fraction', "thickness": 0.02}]
         self.permutations = {"x": ["y", "z"], "y": ["x", "z"], "z": ["x", "y"]}
 
         # Store min/max for each dimension for invisible scatter
@@ -150,7 +146,7 @@ class Slicer3d(Slicer):
         outl_x, outl_y, outl_z = self.get_box()
         # outl_x, outl_y, outl_z = np.meshgrid([-10, 60], [-10, 60], [-10, 60])
 
-        self.outline = ipv.plot_wireframe(outl_x, outl_y, outl_z, color="green")
+        self.outline = ipv.plot_wireframe(outl_x, outl_y, outl_z, color="black")
         wframes = self.get_outlines()
         meshes = self.get_meshes()
         self.wireframes = dict()
@@ -350,6 +346,12 @@ class Slicer3d(Slicer):
         self.box = widgets.VBox(self.box)
         self.box.layout.align_items = 'center'
 
+        # for i, (key, val) in enumerate(sorted(params.items())):
+        #     if val is not None:
+        #         self.members["outlines"][key] = self.outline
+        self.members["outlines"]["values"] = self.outline
+        self.members["fig"]["values"] = self.fig
+
         return
 
     def update_buttons(self, owner, event, dummy):
@@ -362,7 +364,7 @@ class Slicer3d(Slicer):
         # Show all surfaces, hide all wireframes
         for key in self.surfaces.keys():
             self.surfaces[key].visible = True
-            self.wireframes[key].visible = True
+            self.wireframes[key].visible = False
         # Update the show/hide checkboxes
         for key, button in self.buttons.items():
             ax_dim = button.value
@@ -464,15 +466,15 @@ class Slicer3d(Slicer):
                 s = self.buttons[key].value.lower()
                 button_dim_str[s] = key
                 button_dim[s] = val.dim
-                if not self.volume:
-                    self.lab[key].value = self.make_slider_label(
-                        self.slider_x[key], val.value)
-                    # print(s, key)
-                    vslices[s] = {"slice": self.cube[val.dim, val.value],
-                                  "loc": self.slider_x[key].values[val.value]}
-                    # print(np.shape(vslices[s]["slice"].values))
-                    # ax[i].imshow(vslices[s]["slice"].values)
-                    # i += 1
+                # if not self.volume:
+                self.lab[key].value = self.make_slider_label(
+                    self.slider_x[key], val.value)
+                # print(s, key)
+                vslices[s] = {"slice": self.cube[val.dim, val.value],
+                              "loc": self.slider_x[key].values[val.value]}
+                # print(np.shape(vslices[s]["slice"].values))
+                # ax[i].imshow(vslices[s]["slice"].values)
+                # i += 1
 
         # if self.volume:
 
@@ -573,7 +575,7 @@ class Slicer3d(Slicer):
                 
 
 
-                print(key, "STARTING HERE +++++++++++++++++++")
+                # print(key, "STARTING HERE +++++++++++++++++++")
                 # # print(surf_args)
                 # # print(wfrm_args)
                 # # print("before", np.shape(self.surfaces[key].x))
@@ -613,7 +615,10 @@ class Slicer3d(Slicer):
                 # # # #     ipv.plot_wireframe(**surf_args, color="blue")
 
                 self.wireframes[key] = ipv.plot_wireframe(**wfrm_args, color="red")
-                self.surfaces[key] = ipv.plot_surface(**surf_args, color="blue")
+                self.wireframes[key].visible = False
+                self.surfaces[key] = ipv.plot_surface(**surf_args)
+                self.members["wireframes"]["values"][key] = self.wireframes[key]
+                self.members["surfaces"]["values"][key] = self.surfaces[key]
 
 
 
@@ -637,10 +642,10 @@ class Slicer3d(Slicer):
             # # if key == "z":
             # #   break
 
-            print("before color", np.shape(self.surfaces[key].color))
-            print("shape of values", np.shape(val["slice"].values), np.shape(self.check_transpose(val["slice"])))
+            # print("before color", np.shape(self.surfaces[key].color))
+            # print("shape of values", np.shape(val["slice"].values), np.shape(self.check_transpose(val["slice"])))
             self.surfaces[key].color = self.scalar_map["values"].to_rgba(self.check_transpose(val["slice"]).flatten())
-            print("after color", np.shape(self.surfaces[key].color))
+            # print("after color", np.shape(self.surfaces[key].color))
             # self.surfaces[key].color = "red"
             # self.fig.update_traces(
             #     surfacecolor=self.check_transpose(val["slice"]),
@@ -798,8 +803,8 @@ class Slicer3d(Slicer):
             values = vslice.variances
         else:
             values = vslice.values
-        print(button_values)
-        print(ord(button_values[0]), ord(button_values[1]))
+        # print(button_values)
+        # print(ord(button_values[0]), ord(button_values[1]))
         if ord(button_values[0]) > ord(button_values[1]):
             values = values.T
         return values
@@ -855,14 +860,14 @@ class Slicer3d(Slicer):
                       self.xminmax[self.button_axis_to_dim[ax]][0])
             # print(ax, size, 
         max_size = np.amax(list(dx.values()))
-        print(max_size)
+        # print(max_size)
         arrays = dict()
         for ax, size in dx.items():
             diff = max_size - size
             arrays[ax] = [self.xminmax[self.button_axis_to_dim[ax]][0] - 0.5*diff,
                           self.xminmax[self.button_axis_to_dim[ax]][1] + 0.5*diff]
-        print(dx)
-        print(arrays)
+        # print(dx)
+        # print(arrays)
 
         return np.meshgrid(arrays["x"], arrays["y"], arrays["z"], indexing="ij")
                 # self.xminmax[self.button_axis_to_dim["x"]],
