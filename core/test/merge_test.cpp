@@ -11,19 +11,28 @@ using namespace scipp::core;
 
 TEST(MergeTest, simple) {
   Dataset a;
-  a.setCoord(Dim::X, makeVariable<int>({Dim::X, 3}, {1, 2, 3}));
-  a.setCoord(Dim::Y, makeVariable<int>({Dim::Y, 3}, {6, 7, 8}));
-  a.setData("data_1", makeVariable<int>({Dim::X, 3}, {15, 16, 17}));
-  a.setLabels("label_1", makeVariable<int>({Dim::Y, 3}, {9, 8, 7}));
-  a.setMask("masks_1", makeVariable<bool>({Dim::X, 3}, {false, true, false}));
+  a.setCoord(Dim::X,
+             createVariable<int>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3}));
+  a.setCoord(Dim::Y,
+             createVariable<int>(Dims{Dim::Y}, Shape{3}, Values{6, 7, 8}));
+  a.setData("data_1",
+            createVariable<int>(Dims{Dim::X}, Shape{3}, Values{15, 16, 17}));
+  a.setLabels("label_1",
+              createVariable<int>(Dims{Dim::Y}, Shape{3}, Values{9, 8, 7}));
+  a.setMask("masks_1", createVariable<bool>(Dims{Dim::X}, Shape{3},
+                                            Values{false, true, false}));
   a.setAttr("attr_1", makeVariable<int>(42));
   a.setAttr("attr_2", makeVariable<int>(495));
 
   Dataset b;
-  b.setCoord(Dim::X, makeVariable<int>({Dim::X, 3}, {1, 2, 3}));
-  b.setData("data_2", makeVariable<int>({Dim::X, 3}, {11, 12, 13}));
-  b.setLabels("label_2", makeVariable<int>({Dim::X, 3}, {9, 8, 9}));
-  b.setMask("masks_2", makeVariable<bool>({Dim::X, 3}, {false, true, false}));
+  b.setCoord(Dim::X,
+             createVariable<int>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3}));
+  b.setData("data_2",
+            createVariable<int>(Dims{Dim::X}, Shape{3}, Values{11, 12, 13}));
+  b.setLabels("label_2",
+              createVariable<int>(Dims{Dim::X}, Shape{3}, Values{9, 8, 9}));
+  b.setMask("masks_2", createVariable<bool>(Dims{Dim::X}, Shape{3},
+                                            Values{false, true, false}));
   b.setAttr("attr_2", makeVariable<int>(495));
 
   const auto d = merge(a, b);
@@ -45,18 +54,21 @@ TEST(MergeTest, simple) {
 }
 
 TEST(MergeTest, sparse) {
-  auto sparseCoord = makeVariable<int>({Dim::X, Dimensions::Sparse});
+  auto sparseCoord =
+      createVariable<int>(Dims{Dim::X}, Shape{Dimensions::Sparse});
   sparseCoord.sparseValues<int>()[0] = {1, 2, 3, 4};
 
   Dataset a;
   {
-    a.setData("sparse", makeVariable<int>({Dim::X, Dimensions::Sparse}));
+    a.setData("sparse",
+              createVariable<int>(Dims{Dim::X}, Shape{Dimensions::Sparse}));
     a.setSparseCoord("sparse", sparseCoord);
   }
 
   Dataset b;
   {
-    b.setData("sparse", makeVariable<int>({Dim::X, Dimensions::Sparse}));
+    b.setData("sparse",
+              createVariable<int>(Dims{Dim::X}, Shape{Dimensions::Sparse}));
     b.setSparseCoord("sparse", sparseCoord);
   }
 
@@ -69,8 +81,10 @@ TEST(MergeTest, sparse) {
 TEST(MergeTest, non_matching_dense_data) {
   Dataset a;
   Dataset b;
-  a.setData("data", makeVariable<int>({Dim::X, 5}, {1, 2, 3, 4, 5}));
-  b.setData("data", makeVariable<int>({Dim::X, 5}, {2, 3, 4, 5, 6}));
+  a.setData("data",
+            createVariable<int>(Dims{Dim::X}, Shape{5}, Values{1, 2, 3, 4, 5}));
+  b.setData("data",
+            createVariable<int>(Dims{Dim::X}, Shape{5}, Values{2, 3, 4, 5, 6}));
   EXPECT_THROW(auto d = merge(a, b), std::runtime_error);
 }
 
@@ -95,8 +109,10 @@ TEST(MergeTest, non_matching_sparse_data) {
 TEST(MergeTest, non_matching_dense_coords) {
   Dataset a;
   Dataset b;
-  a.setCoord(Dim::X, makeVariable<int>({Dim::X, 5}, {1, 2, 3, 4, 5}));
-  b.setCoord(Dim::X, makeVariable<int>({Dim::X, 5}, {2, 3, 4, 5, 6}));
+  a.setCoord(Dim::X, createVariable<int>(Dims{Dim::X}, Shape{5},
+                                         Values{1, 2, 3, 4, 5}));
+  b.setCoord(Dim::X, createVariable<int>(Dims{Dim::X}, Shape{5},
+                                         Values{2, 3, 4, 5, 6}));
   EXPECT_THROW(auto d = merge(a, b), std::runtime_error);
 }
 
@@ -121,8 +137,10 @@ TEST(MergeTest, non_matching_sparse_coords) {
 TEST(MergeTest, non_matching_dense_labels) {
   Dataset a;
   Dataset b;
-  a.setLabels("l", makeVariable<int>({Dim::X, 5}, {1, 2, 3, 4, 5}));
-  b.setLabels("l", makeVariable<int>({Dim::X, 5}, {2, 3, 4, 5, 6}));
+  a.setLabels(
+      "l", createVariable<int>(Dims{Dim::X}, Shape{5}, Values{1, 2, 3, 4, 5}));
+  b.setLabels(
+      "l", createVariable<int>(Dims{Dim::X}, Shape{5}, Values{2, 3, 4, 5, 6}));
   EXPECT_THROW(auto d = merge(a, b), std::runtime_error);
 }
 
@@ -152,17 +170,19 @@ TEST(MergeTest, non_matching_sparse_labels) {
 TEST(MergeTest, non_matching_masks) {
   Dataset a;
   Dataset b;
-  a.setMask("a",
-            makeVariable<bool>({Dim::X, 5}, {false, true, false, true, false}));
-  b.setMask("a",
-            makeVariable<bool>({Dim::X, 5}, {true, true, true, true, true}));
+  a.setMask("a", createVariable<bool>(Dims{Dim::X}, Shape{5},
+                                      Values{false, true, false, true, false}));
+  b.setMask("a", createVariable<bool>(Dims{Dim::X}, Shape{5},
+                                      Values{true, true, true, true, true}));
   EXPECT_THROW(auto d = merge(a, b), std::runtime_error);
 }
 
 TEST(MergeTest, non_matching_attrs) {
   Dataset a;
   Dataset b;
-  a.setAttr("a", makeVariable<int>({Dim::X, 5}, {1, 2, 3, 4, 5}));
-  b.setAttr("a", makeVariable<int>({Dim::X, 5}, {2, 3, 4, 5, 6}));
+  a.setAttr("a",
+            createVariable<int>(Dims{Dim::X}, Shape{5}, Values{1, 2, 3, 4, 5}));
+  b.setAttr("a",
+            createVariable<int>(Dims{Dim::X}, Shape{5}, Values{2, 3, 4, 5, 6}));
   EXPECT_THROW(auto d = merge(a, b), std::runtime_error);
 }

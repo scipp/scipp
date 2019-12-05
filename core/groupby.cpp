@@ -104,7 +104,7 @@ template <class T> T GroupBy<T>::mean(const Dim reductionDim) const {
   auto out = sum(reductionDim);
 
   // 2. Compute number of slices N contributing to each out slice
-  auto scale = makeVariable<double>({dim(), size()});
+  auto scale = createVariable<double>(Dims{dim()}, Shape{size()});
   const auto scaleT = scale.template values<double>();
   for (scipp::index group = 0; group < size(); ++group)
     for (const auto &slice : groups()[group]) {
@@ -172,7 +172,7 @@ template <class T> struct MakeGroups {
       keys.push_back(item.first);
       groups.emplace_back(std::move(item.second));
     }
-    auto keys_ = makeVariable<T>(dims, std::move(keys));
+    auto keys_ = makeVariable<T>(dims, std::move(keys)) /*LABEL_1*/;
     keys_.setUnit(key.unit());
     return GroupByGrouping{std::move(keys_), std::move(groups)};
   }
