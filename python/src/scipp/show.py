@@ -267,7 +267,7 @@ class VariableDrawer():
                 for name, mask in self._variable.masks:
                     if label.sparse_dim is not None:
                         items.append((name, mask.values,
-                                      colors.scheme['masks']))
+                                      colors.scheme['mask']))
                 sparse_dim = self._variable.sparse_dim
                 for dim, coord in self._variable.coords:
                     if dim == sparse_dim:
@@ -408,7 +408,7 @@ class DatasetDrawer():
         for name, masks in dataset.masks:
             if masks.sparse_dim is not None:
                 continue
-            item = (name, masks, colors.scheme['masks'])
+            item = (name, masks, colors.scheme['mask'])
             if len(masks.dims) == 0:
                 area_0d.append(item)
             elif masks.dims[-1] == dims[-1]:

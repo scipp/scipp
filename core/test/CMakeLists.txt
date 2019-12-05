@@ -30,6 +30,7 @@ add_executable(${TARGET_NAME} EXCLUDE_FROM_ALL
                sort_test.cpp
                sparse_counts_test.cpp
                subspan_view_test.cpp
+               sum_test.cpp
                transform_sparse_and_dense_test.cpp
                transform_test.cpp
                value_and_variance_test.cpp

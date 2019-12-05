@@ -37,6 +37,7 @@ Documentation
    user-guide/data-structures
    user-guide/slicing
    user-guide/computation
+   user-guide/masking
    user-guide/sparse-data
    user-guide/units
    user-guide/dtype

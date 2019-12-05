@@ -209,6 +209,12 @@ auto format_data_proxy(const Key &name, const DataConstProxy &data,
                                std::string(label_name),
                            labels, datasetDims);
     }
+
+  if (!data.attrs().empty()) {
+    s << tab << "Attributes:\n";
+    for (const auto &[attr_name, var] : data.attrs())
+      s << tab << tab << format_variable(attr_name, var, datasetDims);
+  }
   return s.str();
 }
 
