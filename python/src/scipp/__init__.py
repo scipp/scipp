@@ -13,3 +13,4 @@ from .table import table
 from . import plot
 from .extend_units import *
 from . import config
+from .table_html import to_html
