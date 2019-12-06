@@ -58,9 +58,11 @@ public:
     std::copy(first, last, data());
   }
 
-  template <class U, template <class> class Container,
-            std::enable_if_t<std::is_assignable_v<T &, U>, int> = 0>
-  explicit element_array(Container<U> &&c)
+  template <
+      class Container,
+      std::enable_if_t<
+          std::is_assignable_v<T &, typename Container::value_type>, int> = 0>
+  explicit element_array(const Container &c)
       : element_array(c.begin(), c.end()) {}
 
   template <class U, std::enable_if_t<std::is_assignable_v<U &, T>, int> = 0>

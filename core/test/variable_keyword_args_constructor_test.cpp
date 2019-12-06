@@ -108,3 +108,9 @@ TEST(VariableUniversalConstructorTest, initializer_list) {
                      Values(Vector<int32_t>(2, 1)),
                      Variances(Vector<double>(2, 2))));
 }
+
+TEST(VariableUniversalConstructorTest, from_vector) {
+  EXPECT_EQ(createVariable<double>(Dims{Dim::X}, Shape{3},
+                                   Values(std::vector<int>{1, 2, 3})),
+            createVariable<double>(Dims{Dim::X}, Shape{3}, Values({1, 2, 3})));
+}
