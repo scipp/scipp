@@ -80,7 +80,11 @@ def plot_sparse(input_data, ndim=0, sparse_dim=None, logx=False,
         fig = ipv.figure(width=config.width, height=config.height,
                          animation=0)
 
-        params = dict(color=color)
+        params = dict()
+        if isinstance(color, list):
+            params["color"] = color[0]
+        else:
+            params["color"] = color
         params["x"] = sparse_data[ndims - 1]
         params["y"] = sparse_data[ndims - 2]
         params["z"] = sparse_data[0]

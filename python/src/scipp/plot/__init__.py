@@ -8,6 +8,12 @@
 from .plot import plot
 from ..config import plot as config
 
+try:
+    from IPython import get_ipython
+    get_ipython().run_line_magic("matplotlib", "inline")
+except:
+    pass
+
 
 def superplot(dataset, **kwargs):
     return plot(dataset, projection="1d", **kwargs)

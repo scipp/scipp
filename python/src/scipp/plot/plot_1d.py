@@ -73,8 +73,12 @@ class Slicer1d(Slicer):
                 err = 0.0
 
             if layout["logy"]:
-                ymin = min(ymin, np.nanmin(np.log10(var.values - err)))
-                ymax = max(ymax, np.nanmax(np.log10(var.values + err)))
+                arr = np.log10(var.values - err)
+                subset = np.where(np.isfinite(arr))
+                ymin = min(ymin, np.amin(arr[subset]))
+                arr = np.log10(var.values + err)
+                subset = np.where(np.isfinite(arr))
+                ymax = max(ymax, np.amax(arr[subset]))
             else:
                 ymin = min(ymin, np.nanmin(var.values - err))
                 ymax = max(ymax, np.nanmax(var.values + err))
