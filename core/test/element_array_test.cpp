@@ -108,6 +108,11 @@ TEST(ElementArrayTest, construct_initializer_list_empty) {
   check_empty_element_array(x);
 }
 
+TEST(ElementArrayTest, construct_std_container) {
+  check_element_array(element_array<float>(std::array{1.1f, 2.2f, 3.3f}));
+  check_element_array(element_array<float>(std::vector{1.1f, 2.2f, 3.3f}));
+}
+
 TEST(ElementArrayTest, construct_move) {
   auto x = make_element_array();
   const auto ptr = x.data();
