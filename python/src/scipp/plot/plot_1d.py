@@ -13,11 +13,10 @@ import numpy as np
 import copy as cp
 import matplotlib.pyplot as plt
 import ipywidgets as widgets
-import IPython.display as disp
 
 
 def plot_1d(input_data, backend=None, logx=False, logy=False, logxy=False,
-            color=None, filename=None, axes=None):
+            color=None, filename=None, axes=None, mpl_axes=None):
     """
     Plot a 1D spectrum.
 
@@ -33,25 +32,33 @@ def plot_1d(input_data, backend=None, logx=False, logy=False, logxy=False,
 
     layout = dict(logx=logx or logxy, logy=logy or logxy)
 
-    sv = Slicer1d(input_data=input_data, layout=layout, axes=axes, color=color)
+    sv = Slicer1d(input_data=input_data, layout=layout, axes=axes, color=color,
+                  mpl_axes=mpl_axes)
 
-    render_plot(figure=sv.fig, widgets=sv.box, filename=filename)
+    if mpl_axes is None:
+        render_plot(figure=sv.fig, widgets=sv.box, filename=filename)
 
     return sv.members
 
 
 class Slicer1d(Slicer):
 
-    def __init__(self, input_data=None, layout=None, axes=None, color=None):
+    def __init__(self, input_data=None, layout=None, axes=None, color=None,
+                 mpl_axes=None):
 
         super().__init__(input_data=input_data, axes=axes,
                          button_options=['X'])
 
         self.color = color
-        self.fig, self.ax = plt.subplots(1, 1,
-                                         figsize=(config.width/config.dpi,
-                                                  config.height/config.dpi),
-                                         dpi=config.dpi)
+        self.fig = None
+        self.mpl_axes = mpl_axes
+        if self.mpl_axes is not None:
+            self.ax = self.mpl_axes
+        else:
+            self.fig, self.ax = plt.subplots(
+                1, 1, figsize=(config.width/config.dpi,
+                               config.height/config.dpi),
+                dpi=config.dpi)
         self.members.update({"lines": {}, "error_x": {}, "error_y": {},
                              "error_xy": {}})
         self.color = color
@@ -149,10 +156,11 @@ class Slicer1d(Slicer):
         return
 
     def update_axes(self, dim_str):
-        self.ax.lines = []
-        self.ax.collections = []
-        self.members.update({"lines": {}, "error_x": {}, "error_y": {},
-                             "error_xy": {}})
+        if self.mpl_axes is None:
+            self.ax.lines = []
+            self.ax.collections = []
+            self.members.update({"lines": {}, "error_x": {}, "error_y": {},
+                                 "error_xy": {}})
 
         new_x = self.slider_x[dim_str].values
         xc = edges_to_centers(new_x)

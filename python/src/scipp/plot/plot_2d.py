@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt
 
 
 def plot_2d(input_data=None, axes=None, cb=None, filename=None, name=None,
-            figsize=None, show_variances=False):
+            figsize=None, show_variances=False, mpl_axes=None):
     """
     Plot a 2D slice through a N dimensional dataset. For every dimension above
     2, a slider is created to adjust the position of the slice in that
@@ -30,9 +30,10 @@ def plot_2d(input_data=None, axes=None, cb=None, filename=None, name=None,
         axes = var.dims
 
     sv = Slicer2d(input_data=var, axes=axes, cb=cb,
-                  show_variances=show_variances)
+                  show_variances=show_variances, mpl_axes=mpl_axes)
 
-    render_plot(figure=sv.fig, widgets=sv.vbox, filename=filename)
+    if mpl_axes is None:
+        render_plot(figure=sv.fig, widgets=sv.vbox, filename=filename)
 
     return sv.members
 
@@ -40,7 +41,7 @@ def plot_2d(input_data=None, axes=None, cb=None, filename=None, name=None,
 class Slicer2d(Slicer):
 
     def __init__(self, input_data=None, axes=None, cb=None,
-                 show_variances=False):
+                 show_variances=False, mpl_axes=None):
 
         super().__init__(input_data=input_data, axes=axes, cb=cb,
                          show_variances=show_variances,
@@ -49,31 +50,58 @@ class Slicer2d(Slicer):
         self.members.update({"images": {}, "colorbars": {}})
         self.extent = {"x": [0, 1], "y": [0, 1]}
 
-        self.fig, ax = plt.subplots(
-            1, 1 + self.show_variances,
-            figsize=(config.width/config.dpi,
-                     config.height/(1.0+self.show_variances)/config.dpi),
-            dpi=config.dpi,
-            sharex=True, sharey=True)
+        # Get or create matplotlib axes
+        self.fig = None
+        cax = [None] * (1 + show_variances)
+        if mpl_axes is not None:
+            if isinstance(mpl_axes, dict):
+                ax = [None, None]
+                for key, val in mpl_axes.items():
+                    if key == "ax" or key == "ax_values":
+                        ax[0] = val
+                    if key == "cax" or key == "cax_values":
+                        cax[0] = val
+                    if key == "ax_variances":
+                        ax[1] = val
+                    if key == "cax_variances":
+                        cax[1] = val
+            else:
+                # Case where only a single axis is given
+                ax = [mpl_axes]
+        else:
+            self.fig, ax = plt.subplots(
+                1, 1 + self.show_variances,
+                figsize=(config.width/config.dpi,
+                         config.height/(1.0+self.show_variances)/config.dpi),
+                dpi=config.dpi,
+                sharex=True, sharey=True)
+            if not self.show_variances:
+                ax = [ax]
+
         self.ax = dict()
+        self.cax = dict()
         self.im = dict()
         self.cbar = dict()
+
+        self.ax["values"] = ax[0]
+        self.cax["values"] = cax[0]
         if self.show_variances:
-            self.ax.update({"values": ax[0], "variances": ax[1]})
-        else:
-            self.ax["values"] = ax
+            self.ax["variances"] = ax[1]
+            self.cax["variances"] = cax[1]
 
         for key, norm in self.cb["norm"].items():
             self.im[key] = self.ax[key].imshow(
                 [[1, 1],[1, 1]], norm=norm,
                 extent=np.array(list(self.extent.values())).flatten(),
                 origin="lower", interpolation="none", cmap=self.cb["name"])
-            self.cbar[key] = plt.colorbar(self.im[key], ax=self.ax[key])
+            self.cbar[key] = plt.colorbar(self.im[key], ax=self.ax[key],
+                                          cax=self.cax[key])
             self.ax[key].set_title(
                 self.input_data.name if key == "values" else key)
             self.cbar[key].ax.set_ylabel(axis_label(var=self.input_data,
                                                     name=""))
-            self.cbar[key].ax.yaxis.set_label_coords(-1.1, 0.5)
+            if self.cax[key] is None:
+                self.cbar[key].ax.yaxis.set_label_coords(-1.1, 0.5)
             self.members["images"][key] = self.im[key]
             self.members["colorbars"][key] = self.cbar[key]
 
