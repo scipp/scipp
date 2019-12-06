@@ -18,6 +18,7 @@
 #include "bind_slice_methods.h"
 #include "dtype.h"
 #include "numpy.h"
+#include "py_object.h"
 #include "pybind11.h"
 #include "rename.h"
 
@@ -144,10 +145,11 @@ Variable makeVariableDefaultInit(const std::vector<Dim> &labels,
                                                        variances);
 }
 
-template <class T> void bind_init_0D(py::class_<Variable> &c) {
+template <class T, class Target = T>
+void bind_init_0D(py::class_<Variable> &c) {
   c.def(py::init([](const T &value, const std::optional<T> &variance,
                     const units::Unit &unit) {
-          return do_init_0D(value, variance, unit);
+          return do_init_0D<Target>(value, variance, unit);
         }),
         py::arg("value"), py::arg("variance") = std::nullopt,
         py::arg("unit") = units::Unit(units::dimensionless));
@@ -270,7 +272,7 @@ void init_variable(py::module &m) {
   bind_init_0D_native_python_types<bool>(variable);
   bind_init_0D_native_python_types<int64_t>(variable);
   bind_init_0D_native_python_types<double>(variable);
-  bind_init_0D<py::object>(variable);
+  bind_init_0D<py::object, scipp::python::PyObject>(variable);
   //------------------------------------
 
   py::class_<VariableConstProxy>(m, "VariableConstProxy")

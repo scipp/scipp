@@ -39,3 +39,10 @@ def test_scalar_Variable_py_object_shallow_copy():
     copy.value[0] = 666
     assert copy.value == [666, 2, 3]
     assert var.value == [666, 2, 3]
+
+
+def test_scalar_Variable_py_object_comparison():
+    a = sc.Variable(value=[1,2])
+    b = sc.Variable(value=[1,2])
+    assert a == b
+    assert not (a != b)
