@@ -20,7 +20,8 @@ using namespace scipp::core;
 Variable makeCoordData(const Dimensions &dims) {
   std::vector<double> data(dims.volume());
   std::iota(data.begin(), data.end(), 0);
-  return makeVariable<double>(dims, data);
+  return createVariable<double>(Dimensions(dims),
+                                Values(data.begin(), data.end()));
 }
 
 template <int NameLen> struct Generate2D {

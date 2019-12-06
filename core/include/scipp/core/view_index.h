@@ -2,8 +2,8 @@
 // Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Neil Vaytet
-#ifndef VIEW_INDEX_H
-#define VIEW_INDEX_H
+#ifndef SCIPP_CORE_VIEW_INDEX_H
+#define SCIPP_CORE_VIEW_INDEX_H
 
 #include "scipp-core_export.h"
 #include "scipp/core/dimensions.h"
@@ -112,4 +112,4 @@ private:
 
 } // namespace scipp::core
 
-#endif // VIEW_INDEX_H
+#endif // SCIPP_CORE_VIEW_INDEX_H

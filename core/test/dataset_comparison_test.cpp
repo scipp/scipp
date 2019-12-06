@@ -37,19 +37,19 @@ protected:
   Dataset_comparison_operators()
       : sparse_variable(makeVariable<double>({Dim::Y, Dim::Z, Dim::X},
                                              {3, 2, Dimensions::Sparse})) {
-    dataset.setCoord(Dim::X, makeVariable<double>({Dim::X, 4}));
-    dataset.setCoord(Dim::Y, makeVariable<double>({Dim::Y, 3}));
+    dataset.setCoord(Dim::X, createVariable<double>(Dims{Dim::X}, Shape{4}));
+    dataset.setCoord(Dim::Y, createVariable<double>(Dims{Dim::Y}, Shape{3}));
 
-    dataset.setLabels("labels", makeVariable<int>({Dim::X, 4}));
+    dataset.setLabels("labels", createVariable<int>(Dims{Dim::X}, Shape{4}));
 
     dataset.setAttr("attr", makeVariable<int>({}));
 
     dataset.setData("val_and_var",
                     makeVariable<double>({{Dim::Y, 3}, {Dim::X, 4}},
                                          std::vector<double>(12),
-                                         std::vector<double>(12)));
+                                         std::vector<double>(12)) /*LABEL_1*/);
 
-    dataset.setData("val", makeVariable<double>({Dim::X, 4}));
+    dataset.setData("val", createVariable<double>(Dims{Dim::X}, Shape{4}));
 
     dataset.setSparseCoord("sparse_coord", sparse_variable);
     dataset.setData("sparse_coord_and_val", sparse_variable);
@@ -157,32 +157,33 @@ TEST_F(Dataset_comparison_operators, self) {
 
 TEST_F(Dataset_comparison_operators, extra_coord) {
   auto extra = dataset;
-  extra.setCoord(Dim::Z, makeVariable<double>({Dim::Z, 2}));
+  extra.setCoord(Dim::Z, createVariable<double>(Dims{Dim::Z}, Shape{2}));
   expect_ne(extra, dataset);
 }
 
 TEST_F(Dataset_comparison_operators, extra_labels) {
   auto extra = dataset;
-  extra.setLabels("extra", makeVariable<double>({Dim::Z, 2}));
+  extra.setLabels("extra", createVariable<double>(Dims{Dim::Z}, Shape{2}));
   expect_ne(extra, dataset);
 }
 
 TEST_F(Dataset_comparison_operators, extra_attr) {
   auto extra = dataset;
-  extra.setAttr("extra", makeVariable<double>({Dim::Z, 2}));
+  extra.setAttr("extra", createVariable<double>(Dims{Dim::Z}, Shape{2}));
   expect_ne(extra, dataset);
 }
 
 TEST_F(Dataset_comparison_operators, extra_data) {
   auto extra = dataset;
-  extra.setData("extra", makeVariable<double>({Dim::Z, 2}));
+  extra.setData("extra", createVariable<double>(Dims{Dim::Z}, Shape{2}));
   expect_ne(extra, dataset);
 }
 
 TEST_F(Dataset_comparison_operators, extra_variance) {
   auto extra = dataset;
-  extra.setData("val", makeVariable<double>({Dim::X, 4}, std::vector<double>(4),
-                                            std::vector<double>(4)));
+  extra.setData("val",
+                makeVariable<double>({Dim::X, 4}, std::vector<double>(4),
+                                     std::vector<double>(4)) /*LABEL_1*/);
   expect_ne(extra, dataset);
 }
 
@@ -241,7 +242,7 @@ TEST_F(Dataset_comparison_operators, different_data_insertion_order) {
 TEST_F(Dataset_comparison_operators, with_sparse_dimension_data) {
   // a and b same, c different number of sparse values
   auto a = make_empty();
-  auto data = makeVariable<double>({Dim::X, Dimensions::Sparse});
+  auto data = createVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse});
   const std::string var_name = "test_var";
   data.sparseValues<double>()[0] = {1, 2, 3};
   a.setData(var_name, data);

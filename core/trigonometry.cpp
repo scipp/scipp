@@ -12,8 +12,9 @@
 namespace scipp::core {
 
 Variable to_rad(Variable var) {
-  const auto scale =
-      makeVariable<double>({}, units::rad / units::deg, {pi<double> / 180.0});
+  const auto scale = createVariable<double>(
+      Dims(), Shape(), units::Unit(units::rad / units::deg),
+      Values{pi<double> / 180.0});
   return var * scale;
 }
 

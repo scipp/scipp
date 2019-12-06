@@ -20,8 +20,8 @@
 ///    client-provided overload will match.
 ///
 /// @author Simon Heybrock
-#ifndef TRANSFORM_H
-#define TRANSFORM_H
+#ifndef SCIPP_CORE_TRANSFORM_H
+#define SCIPP_CORE_TRANSFORM_H
 
 #include "scipp/common/overloaded.h"
 #include "scipp/core/except.h"
@@ -280,7 +280,7 @@ template <class Op, class Out, class Tuple>
 static void do_transform(Op op, Out &&out, Tuple &&processed) {
   auto out_val = out.values();
   std::apply(
-      [&](auto &&... args) {
+      [&op, &out, &out_val](auto &&... args) {
         if constexpr ((is_ValuesAndVariances_v<std::decay_t<decltype(args)>> ||
                        ...)) {
           auto out_var = out.variances();
@@ -337,11 +337,11 @@ template <class Op> struct Transform {
   template <class... Ts> Variable operator()(Ts &&... handles) const {
     const auto dims = merge(handles->dims()...);
     using Out = decltype(maybe_eval(op(handles->values()[0]...)));
-    Variable out =
-        (handles->hasVariances() || ...)
-            ? makeVariableWithVariances<element_type_t<Out>>(
-                  dims, default_init_elements)
-            : makeVariable<element_type_t<Out>>(dims, default_init_elements);
+    Variable out = (handles->hasVariances() || ...)
+                       ? makeVariableWithVariances<element_type_t<Out>>(
+                             dims, default_init_elements)
+                       : makeVariableInit<element_type_t<Out>>(
+                             dims, default_init_elements);
     auto &outT = static_cast<VariableConceptT<Out> &>(out.data());
     do_transform(op, outT, std::tuple<>(), as_view{*handles, dims}...);
     return out;
@@ -500,7 +500,7 @@ template <bool dry_run> struct in_place {
   static void do_transform_in_place(Op op, Tuple &&processed) {
     using namespace detail;
     std::apply(
-        [&](auto &&arg, auto &&... args) {
+        [&op](auto &&arg, auto &&... args) {
           if constexpr (is_ValuesAndVariances_v<std::decay_t<decltype(arg)>> ||
                         !(is_ValuesAndVariances_v<
                               std::decay_t<decltype(args)>> ||
@@ -800,4 +800,4 @@ template <class... TypeTuples, class Op>
 
 } // namespace scipp::core
 
-#endif // TRANSFORM_H
+#endif // SCIPP_CORE_TRANSFORM_H

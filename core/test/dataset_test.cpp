@@ -53,19 +53,20 @@ TEST(DatasetTest, erase_single) {
 TEST(DatasetTest, erase_extents_rebuild) {
   Dataset d;
 
-  d.setData("a", makeVariable<double>({Dim::X, 10}));
+  d.setData("a", createVariable<double>(Dims{Dim::X}, Shape{10}));
   ASSERT_TRUE(d.contains("a"));
 
   ASSERT_NO_THROW(d.erase("a"));
   ASSERT_FALSE(d.contains("a"));
 
-  ASSERT_NO_THROW(d.setData("a", makeVariable<double>({Dim::X, 15})));
+  ASSERT_NO_THROW(
+      d.setData("a", createVariable<double>(Dims{Dim::X}, Shape{15})));
   ASSERT_TRUE(d.contains("a"));
 }
 
 TEST(DatasetTest, setCoord) {
   Dataset d;
-  const auto var = makeVariable<double>({Dim::X, 3});
+  const auto var = createVariable<double>(Dims{Dim::X}, Shape{3});
 
   ASSERT_EQ(d.size(), 0);
   ASSERT_EQ(d.coords().size(), 0);
@@ -85,7 +86,7 @@ TEST(DatasetTest, setCoord) {
 
 TEST(DatasetTest, setLabels) {
   Dataset d;
-  const auto var = makeVariable<double>({Dim::X, 3});
+  const auto var = createVariable<double>(Dims{Dim::X}, Shape{3});
 
   ASSERT_EQ(d.size(), 0);
   ASSERT_EQ(d.labels().size(), 0);
@@ -105,7 +106,7 @@ TEST(DatasetTest, setLabels) {
 
 TEST(DatasetTest, setAttr) {
   Dataset d;
-  const auto var = makeVariable<double>({Dim::X, 3});
+  const auto var = createVariable<double>(Dims{Dim::X}, Shape{3});
 
   ASSERT_EQ(d.size(), 0);
   ASSERT_EQ(d.attrs().size(), 0);
@@ -125,7 +126,8 @@ TEST(DatasetTest, setAttr) {
 
 TEST(DatasetTest, setMask) {
   Dataset d;
-  const auto var = makeVariable<bool>({Dim::X, 3}, {false, true, false});
+  const auto var =
+      createVariable<bool>(Dims{Dim::X}, Shape{3}, Values{false, true, false});
 
   ASSERT_EQ(d.size(), 0);
   ASSERT_EQ(d.masks().size(), 0);
@@ -146,7 +148,7 @@ TEST(DatasetTest, setMask) {
 
 TEST(DatasetTest, setData_with_and_without_variances) {
   Dataset d;
-  const auto var = makeVariable<double>({Dim::X, 3});
+  const auto var = createVariable<double>(Dims{Dim::X}, Shape{3});
 
   ASSERT_NO_THROW(d.setData("a", var));
   ASSERT_EQ(d.size(), 1);
@@ -157,15 +159,16 @@ TEST(DatasetTest, setData_with_and_without_variances) {
   ASSERT_NO_THROW(d.setData("a", var));
   ASSERT_EQ(d.size(), 2);
 
-  ASSERT_NO_THROW(
-      d.setData("a", makeVariable<double>({Dim::X, 3}, {1, 1, 1}, {0, 0, 0})));
+  ASSERT_NO_THROW(d.setData("a", createVariable<double>(Dims{Dim::X}, Shape{3},
+                                                        Values{1, 1, 1},
+                                                        Variances{0, 0, 0})));
   ASSERT_EQ(d.size(), 2);
 }
 
 TEST(DatasetTest, setLabels_with_name_matching_data_name) {
   Dataset d;
-  d.setData("a", makeVariable<double>({Dim::X, 3}));
-  d.setData("b", makeVariable<double>({Dim::X, 3}));
+  d.setData("a", createVariable<double>(Dims{Dim::X}, Shape{3}));
+  d.setData("b", createVariable<double>(Dims{Dim::X}, Shape{3}));
 
   // It is possible to set labels with a name matching data. However, there is
   // no special meaning attached to this. In particular it is *not* linking the
@@ -179,7 +182,7 @@ TEST(DatasetTest, setLabels_with_name_matching_data_name) {
 
 TEST(DatasetTest, setSparseCoord_not_sparse_fail) {
   Dataset d;
-  const auto var = makeVariable<double>({Dim::X, 3});
+  const auto var = createVariable<double>(Dims{Dim::X}, Shape{3});
 
   ASSERT_ANY_THROW(d.setSparseCoord("a", var));
 }
@@ -283,7 +286,7 @@ template <typename T> void do_test_slice_validation(const T &container) {
 
 TEST(DatasetTest, slice_validation_simple) {
   Dataset dataset;
-  auto var = makeVariable<double>({Dim::X, 2}, {1, 2});
+  auto var = createVariable<double>(Dims{Dim::X}, Shape{2}, Values{1, 2});
   dataset.setCoord(Dim::X, var);
   do_test_slice_validation(dataset);
 
@@ -298,7 +301,7 @@ TEST(DatasetTest, slice_validation_simple) {
 
 TEST(DatasetTest, slice_with_no_coords) {
   Dataset ds;
-  auto var = makeVariable<double>({Dim::X, 4}, {1, 2, 3, 4});
+  auto var = createVariable<double>(Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4});
   ds.setData("a", var);
   // No dataset coords. slicing should still work.
   auto slice = ds.slice(Slice{Dim::X, 0, 2});
@@ -309,9 +312,11 @@ TEST(DatasetTest, slice_with_no_coords) {
 TEST(DatasetTest, slice_validation_complex) {
 
   Dataset ds;
-  auto var1 = makeVariable<double>({Dim::X, 4}, {1, 2, 3, 4});
+  auto var1 =
+      createVariable<double>(Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4});
   ds.setCoord(Dim::X, var1);
-  auto var2 = makeVariable<double>({Dim::Y, 4}, {1, 2, 3, 4});
+  auto var2 =
+      createVariable<double>(Dims{Dim::Y}, Shape{4}, Values{1, 2, 3, 4});
   ds.setCoord(Dim::Y, var2);
 
   // Slice arguments applied in order.

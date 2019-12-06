@@ -2,8 +2,8 @@
 // Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#ifndef DTYPE_H
-#define DTYPE_H
+#ifndef SCIPP_CORE_DTYPE_H
+#define SCIPP_CORE_DTYPE_H
 
 #include <Eigen/Dense>
 #include <boost/container/small_vector.hpp>
@@ -70,4 +70,4 @@ bool isBool(DType tp);
 
 } // namespace scipp::core
 
-#endif // DTYPE_H
+#endif // SCIPP_CORE_DTYPE_H

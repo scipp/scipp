@@ -41,8 +41,7 @@ class _Colors:
             "data": "#ffe680",
             "labels": "#afdde9",
             "attr": "#ff8080",
-            "inactive": "#cccccc",
-            "masks": "#ffb3ff"
+            "mask": "#cccccc"
         }
 
 

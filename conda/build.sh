@@ -5,7 +5,7 @@ mkdir -p 'build' && cd 'build'
 
 # Perform CMake configuration
 cmake \
-  -G"Ninja" \
+  -G"$GENERATOR" \
   -DPYTHON_EXECUTABLE="$CONDA_PREFIX/bin/python" \
   -DCMAKE_INSTALL_PREFIX="$CONDA_PREFIX" \
   -DCMAKE_OSX_DEPLOYMENT_TARGET=$OSX_VERSION \
@@ -20,5 +20,5 @@ if [ $rc -ne 0 ]; then
 fi
 
 # Build, install and move scipp Python library to site packages location
-ninja install -v && \
+cmake --build . --target install && \
   mv "$CONDA_PREFIX/scipp" "$CONDA_PREFIX"/lib/python*/

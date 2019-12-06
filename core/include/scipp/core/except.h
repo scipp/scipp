@@ -5,6 +5,7 @@
 #ifndef SCIPP_CORE_EXCEPT_H
 #define SCIPP_CORE_EXCEPT_H
 
+#include <algorithm>
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
@@ -35,7 +36,10 @@ struct SCIPP_CORE_EXPORT TypeError : public std::runtime_error {
   using std::runtime_error::runtime_error;
 
   template <class... Vars>
-  TypeError(const std::string &msg, const Vars &... vars)
+  TypeError(const std::string &msg) : std::runtime_error(msg) {}
+
+  template <class... Vars>
+  TypeError(const std::string &msg, Vars &&... vars)
       : std::runtime_error(msg + ((to_string(vars.dtype()) + ' ') + ...)) {}
 };
 
@@ -112,6 +116,12 @@ template <class A, class B> void equals(const A &a, const B &b) {
     throw scipp::except::MismatchError(a, b);
 }
 
+template <class A, class B>
+void equals_any_of(const A &a, const std::initializer_list<B> possible) {
+  if (std::find(possible.begin(), possible.end(), a) == possible.end())
+    throw scipp::except::MismatchError(a, possible);
+}
+
 template <class A, class Dim, class System, class Enable>
 void equals(const A &a, const boost::units::unit<Dim, System, Enable> &unit) {
   const auto expectedUnit = units::Unit(unit);
@@ -141,6 +151,11 @@ template <class A, class B> void contains(const A &a, const B &b) {
 }
 template <class T> void unit(const T &object, const units::Unit &unit) {
   expect::equals(object.unit(), unit);
+}
+
+template <class T>
+void unit_any_of(const T &object, std::initializer_list<units::Unit> units) {
+  expect::equals_any_of(object.unit(), units);
 }
 
 template <class T> void countsOrCountsDensity(const T &object) {

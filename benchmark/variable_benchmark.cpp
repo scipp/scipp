@@ -13,7 +13,7 @@ using namespace scipp;
 
 template <typename T> struct Generate1D {
   auto operator()(int length) {
-    return std::make_tuple(makeVariable<T>({Dim::X, length}),
+    return std::make_tuple(createVariable<T>(Dims{Dim::X}, Shape{length}),
                            sizeof(T) * length);
   }
 };
@@ -21,49 +21,44 @@ template <typename T> struct Generate1D {
 template <typename T> struct Generate2D {
   auto operator()(int length) {
     return std::make_tuple(
-        makeVariable<T>({{Dim::X, length}, {Dim::Y, length}}),
+        createVariable<T>(Dims{Dim::X, Dim::Y}, Shape{length, length}),
         sizeof(T) * std::pow(length, 2));
   }
 };
 
 template <typename T> struct Generate3D {
   auto operator()(int length) {
-    return std::make_tuple(
-        makeVariable<T>({{Dim::X, length}, {Dim::Y, length}, {Dim::Z, length}}),
-        sizeof(T) * std::pow(length, 3));
+    return std::make_tuple(createVariable<T>(Dims{Dim::X, Dim::Y, Dim::Z},
+                                             Shape{length, length, length}),
+                           sizeof(T) * std::pow(length, 3));
   }
 };
 
 template <typename T> struct Generate4D {
   auto operator()(int length) {
-    return std::make_tuple(makeVariable<T>({{Dim::X, length},
-                                            {Dim::Y, length},
-                                            {Dim::Z, length},
-                                            {Dim::Qx, length}}),
-                           sizeof(T) * std::pow(length, 4));
+    return std::make_tuple(
+        createVariable<T>(Dims{Dim::X, Dim::Y, Dim::Z, Dim::Qx},
+                          Shape{length, length, length, length}),
+        sizeof(T) * std::pow(length, 4));
   }
 };
 
 template <typename T> struct Generate5D {
   auto operator()(int length) {
-    return std::make_tuple(makeVariable<T>({{Dim::X, length},
-                                            {Dim::Y, length},
-                                            {Dim::Z, length},
-                                            {Dim::Qx, length},
-                                            {Dim::Qy, length}}),
-                           sizeof(T) * std::pow(length, 5));
+    return std::make_tuple(
+        createVariable<T>(Dims{Dim::X, Dim::Y, Dim::Z, Dim::Qx, Dim::Qy},
+                          Shape{length, length, length, length, length}),
+        sizeof(T) * std::pow(length, 5));
   }
 };
 
 template <typename T> struct Generate6D {
   auto operator()(int length) {
-    return std::make_tuple(makeVariable<T>({{Dim::X, length},
-                                            {Dim::Y, length},
-                                            {Dim::Z, length},
-                                            {Dim::Qx, length},
-                                            {Dim::Qy, length},
-                                            {Dim::Qz, length}}),
-                           sizeof(T) * std::pow(length, 6));
+    return std::make_tuple(
+        createVariable<T>(
+            Dims{Dim::X, Dim::Y, Dim::Z, Dim::Qx, Dim::Qy, Dim::Qz},
+            Shape{length, length, length, length, length, length}),
+        sizeof(T) * std::pow(length, 6));
   }
 };
 
@@ -114,7 +109,8 @@ BENCHMARK_TEMPLATE(BM_Variable_copy, GenerateSparse<double>)
     ->Apply(Args_Variable_copy_sparse);
 
 static void BM_Variable_trivial_slice(benchmark::State &state) {
-  auto var = makeVariable<double>({{Dim::Z, 10}, {Dim::Y, 20}, {Dim::X, 30}});
+  auto var =
+      createVariable<double>(Dims{Dim::Z, Dim::Y, Dim::X}, Shape{10, 20, 30});
 
   for (auto _ : state) {
     VariableProxy view(var);
@@ -126,7 +122,8 @@ BENCHMARK(BM_Variable_trivial_slice);
 // The following two benchmarks "prove" that operator+ with a VariableProxy is
 // not unintentionally converting the second argument to a temporary Variable.
 static void BM_Variable_binary_with_Variable(benchmark::State &state) {
-  auto var = makeVariable<double>({{Dim::Z, 10}, {Dim::Y, 20}, {Dim::X, 30}});
+  auto var =
+      createVariable<double>(Dims{Dim::Z, Dim::Y, Dim::X}, Shape{10, 20, 30});
   Variable a(var.slice({Dim::Z, 0, 8}));
 
   for (auto _ : state) {
@@ -135,7 +132,8 @@ static void BM_Variable_binary_with_Variable(benchmark::State &state) {
   }
 }
 static void BM_Variable_binary_with_VariableProxy(benchmark::State &state) {
-  auto b = makeVariable<double>({{Dim::Z, 10}, {Dim::Y, 20}, {Dim::X, 30}});
+  auto b =
+      createVariable<double>(Dims{Dim::Z, Dim::Y, Dim::X}, Shape{10, 20, 30});
   Variable a(b.slice({Dim::Z, 0, 8}));
 
   for (auto _ : state) {
