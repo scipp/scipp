@@ -56,52 +56,38 @@ std::tuple<Dataset, Dataset> generateBinaryOpTestCase() {
 
   const auto coordX = rand(lx);
   const auto coordY = rand(ly);
-  const auto valY = rand(ly);
-  const auto boolsY = makeBools(ly);
-  const auto labelT = createVariable<double>(Dimensions{Dim::Y, ly},
-                                             Values(valY.begin(), valY.end()));
-  const auto masks = createVariable<bool>(Dimensions{Dim::Y, ly},
-                                          Values(boolsY.begin(), boolsY.end()));
+  const auto labelT =
+      createVariable<double>(Dimensions{Dim::Y, ly}, Values(rand(ly)));
+  const auto masks =
+      createVariable<bool>(Dimensions{Dim::Y, ly}, Values(makeBools(ly)));
 
   Dataset a;
   {
-    a.setCoord(Dim::X,
-               createVariable<double>(Dims{Dim::X}, Shape{lx},
-                                      Values(coordX.begin(), coordX.end())));
-    a.setCoord(Dim::Y,
-               createVariable<double>(Dims{Dim::Y}, Shape{ly},
-                                      Values(coordY.begin(), coordY.end())));
+    a.setCoord(Dim::X, createVariable<double>(Dims{Dim::X}, Shape{lx},
+                                              Values(std::vector(coordX))));
+    a.setCoord(Dim::Y, createVariable<double>(Dims{Dim::Y}, Shape{ly},
+                                              Values(std::vector(coordY))));
 
     a.setLabels("t", labelT);
     a.setMask("mask", masks);
-
-    const auto valX = rand(lx);
-    const auto valY = rand(ly);
-
     a.setData("data_a",
-              createVariable<double>(Dimensions{Dim::X, lx},
-                                     Values(valX.begin(), valX.end())));
+              createVariable<double>(Dimensions{Dim::X, lx}, Values(rand(lx))));
     a.setData("data_b",
-              createVariable<double>(Dimensions{Dim::Y, ly},
-                                     Values(valY.begin(), valY.end())));
+              createVariable<double>(Dimensions{Dim::Y, ly}, Values(rand(ly))));
   }
 
   Dataset b;
   {
-    b.setCoord(Dim::X,
-               createVariable<double>(Dims{Dim::X}, Shape{lx},
-                                      Values(coordX.begin(), coordX.end())));
-    b.setCoord(Dim::Y,
-               createVariable<double>(Dims{Dim::Y}, Shape{ly},
-                                      Values(coordY.begin(), coordY.end())));
+    b.setCoord(Dim::X, createVariable<double>(Dims{Dim::X}, Shape{lx},
+                                              Values(std::vector(coordX))));
+    b.setCoord(Dim::Y, createVariable<double>(Dims{Dim::Y}, Shape{ly},
+                                              Values(std::vector(coordY))));
 
     b.setLabels("t", labelT);
     b.setMask("mask", masks);
 
-    const auto valY = rand(ly);
     b.setData("data_a",
-              createVariable<double>(Dimensions{Dim::Y, ly},
-                                     Values(valY.begin(), valY.end())));
+              createVariable<double>(Dimensions{Dim::Y, ly}, Values(rand(ly))));
   }
 
   return std::make_tuple(a, b);
@@ -412,10 +398,9 @@ TYPED_TEST(DatasetBinaryEqualsOpTest,
 TYPED_TEST(DatasetBinaryEqualsOpTest, masks_propagate) {
   auto a = datasetFactory.make();
   auto b = datasetFactory.make();
-  auto boolsX = makeBools<BoolsGeneratorType::TRUE>(datasetFactory.lx);
-  const auto expectedMasks =
-      createVariable<bool>(Dimensions{Dim::X, datasetFactory.lx},
-                           Values(boolsX.begin(), boolsX.end()));
+  const auto expectedMasks = createVariable<bool>(
+      Dimensions{Dim::X, datasetFactory.lx},
+      Values(makeBools<BoolsGeneratorType::TRUE>(datasetFactory.lx)));
 
   b.setMask("masks_x", expectedMasks);
 
@@ -429,9 +414,8 @@ TYPED_TEST_SUITE(DatasetMaskSlicingBinaryOpTest, Binary);
 TYPED_TEST(DatasetMaskSlicingBinaryOpTest, binary_op_on_sliced_masks) {
   auto a = make_1d_masked();
 
-  auto bools = makeBools<BoolsGeneratorType::TRUE>(3);
   const auto expectedMasks = createVariable<bool>(
-      Dimensions{Dim::X, 3}, Values(bools.begin(), bools.end()));
+      Dimensions{Dim::X, 3}, Values(makeBools<BoolsGeneratorType::TRUE>(3)));
 
   // these are conveniently 0 1 0 and 1 0 1
   const auto slice1 = a.slice({Dim::X, 0, 3});
@@ -929,10 +913,9 @@ TYPED_TEST(DatasetBinaryOpTest, masks_propagate) {
   auto a = datasetFactory.make();
   auto b = datasetFactory.make();
 
-  auto boolsX = makeBools<BoolsGeneratorType::TRUE>(datasetFactory.lx);
-  const auto expectedMasks =
-      createVariable<bool>(Dimensions{Dim::X, datasetFactory.lx},
-                           Values(boolsX.begin(), boolsX.end()));
+  const auto expectedMasks = createVariable<bool>(
+      Dimensions{Dim::X, datasetFactory.lx},
+      Values(makeBools<BoolsGeneratorType::TRUE>(datasetFactory.lx)));
 
   b.setMask("masks_x", expectedMasks);
 

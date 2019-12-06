@@ -172,8 +172,7 @@ template <class T> struct MakeGroups {
       keys.push_back(item.first);
       groups.emplace_back(std::move(item.second));
     }
-    auto keys_ =
-        createVariable<T>(Dimensions{dims}, Values(keys.begin(), keys.end()));
+    auto keys_ = createVariable<T>(Dimensions{dims}, Values(std::move(keys)));
     keys_.setUnit(key.unit());
     return GroupByGrouping{std::move(keys_), std::move(groups)};
   }

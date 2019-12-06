@@ -65,10 +65,10 @@ TYPED_TEST(DatasetShapeChangingOpTest, mean_masked) {
 }
 
 TYPED_TEST(DatasetShapeChangingOpTest, mean_fully_masked) {
-  auto bools = makeBools<BoolsGeneratorType::TRUE>(5);
-  this->ds.setMask("full_mask",
-                   createVariable<bool>(Dimensions{Dim::X, 5},
-                                        Values(bools.begin(), bools.end())));
+  this->ds.setMask(
+      "full_mask",
+      createVariable<bool>(Dimensions{Dim::X, 5},
+                           Values(makeBools<BoolsGeneratorType::TRUE>(5))));
   const Dataset result = mean(this->ds, Dim::X);
 
   if constexpr (std::is_floating_point_v<TypeParam>)
