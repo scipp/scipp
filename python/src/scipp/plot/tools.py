@@ -54,7 +54,7 @@ def axis_label(var=None, name=None, log=False, replace_dim=True):
     return label
 
 
-def parse_colorbar(cb, var=None, show_variances=False):
+def parse_colorbar(cb, var=None, show_variances=False, values=None):
     """
     Construct the colorbar using default and input values
     """
@@ -69,8 +69,12 @@ def parse_colorbar(cb, var=None, show_variances=False):
     params = {"values": {"cbmin": "min", "cbmax": "max"}}
     if var.variances is not None and show_variances:
         params["variances"] = {"cbmin": "min_var", "cbmax": "max_var"}
+
     for key, val in sorted(params.items()):
-        arr = getattr(var, key)
+        if values is not None:
+            arr = values
+        else:
+            arr = getattr(var, key)
         if cbar["log"]:
             subset = np.where(np.isfinite(np.log10(arr)))
         else:

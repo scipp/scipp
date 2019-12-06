@@ -14,5 +14,6 @@ def render_plot(figure=None, widgets=None, filename=None):
     if filename is not None:
         figure.savefig(filename)
     else:
-        disp.display(widgets)
+        if widgets is not None:
+            disp.display(widgets)
     return

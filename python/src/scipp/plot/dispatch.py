@@ -59,7 +59,7 @@ def dispatch(input_data, ndim=0, name=None, backend=None, collapse=None,
 
     if sparse_dim is not None and bins is None:
         return plot_sparse(input_data, ndim=ndim, sparse_dim=sparse_dim,
-                    backend=backend, color=color, **kwargs)
+                           color=color, **kwargs)
     elif projection == "1d":
         return plot_1d(input_data, backend=backend, color=color, **kwargs)
     elif projection == "2d":
