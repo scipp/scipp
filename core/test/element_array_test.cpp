@@ -2,6 +2,7 @@
 // Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
+#include <array>
 #include <vector>
 
 #include "scipp/core/element_array.h"
@@ -109,8 +110,7 @@ TEST(ElementArrayTest, construct_initializer_list_empty) {
 }
 
 TEST(ElementArrayTest, construct_std_container) {
-  check_element_array(
-      element_array<float>(std::array<float, 3>{1.1, 2.2, 3.3}));
+  check_element_array(element_array<float>(std::array{1.1f, 2.2f, 3.3f}));
   check_element_array(element_array<float>(std::vector{1.1f, 2.2f, 3.3f}));
 }
 
