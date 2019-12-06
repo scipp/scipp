@@ -10,7 +10,7 @@ branches:
 env:
   global:
     - PYTHON_EXECUTABLE="/usr/bin/python3"
-    - GENERATOR=ninja
+    - GENERATOR=Ninja
 
 jobs:
   include:
