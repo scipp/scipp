@@ -22,10 +22,10 @@ class _Plot:
                    "min_var": None, "max_var": None}
 
         # The default image height (in pixels)
-        self.height = 600
+        self.height = 533
 
         # The default image width (in pixels)
-        self.width = 900
+        self.width = 800
 
         # Resolution
         self.dpi = 100

@@ -11,10 +11,10 @@ from .tools import axis_label, parse_colorbar
 # Other imports
 import matplotlib.pyplot as plt
 from matplotlib import cm
-try:
-    import ipyvolume as ipv
-except:
-    pass
+# try:
+#     import ipyvolume as ipv
+# except:
+#     pass
 
 
 def plot_sparse(input_data, ndim=0, sparse_dim=None, logx=False,
@@ -37,8 +37,9 @@ def plot_sparse(input_data, ndim=0, sparse_dim=None, logx=False,
     cbar = parse_colorbar(cb, var, values=sparse_data[-1])
 
     members = {}
+    ipv = None
 
-    xyz = "xyz"
+
     if ndims < 3:
         fig, ax = plt.subplots(1, 1, figsize=(config.width/config.dpi,
                                               config.height/config.dpi),
@@ -79,6 +80,8 @@ def plot_sparse(input_data, ndim=0, sparse_dim=None, logx=False,
 
     elif ndims == 3:
 
+        import ipyvolume as ipv
+
         fig = ipv.figure(width=config.width, height=config.height,
                          animation=0)
 
@@ -106,11 +109,12 @@ def plot_sparse(input_data, ndim=0, sparse_dim=None, logx=False,
         #     ax.set_yscale("log")
         widg = fig
 
+
     else:
         raise RuntimeError("Scatter plots for sparse data support at most "
                            "3 dimensions.")
 
-    render_plot(figure=fig, widgets=widg, filename=filename)
+    render_plot(figure=fig, widgets=widg, filename=filename, ipv=ipv)
 
     members.update({"fig": fig, "scatter": scat})
 

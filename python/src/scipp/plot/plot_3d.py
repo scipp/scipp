@@ -19,7 +19,7 @@ try:
     import ipyvolume as ipv
     from ipyevents import Event
 except:
-    pass
+    ipv = None
 
 
 def plot_3d(input_data=None, axes=None, cb=None, filename=None, name=None,
@@ -41,7 +41,7 @@ def plot_3d(input_data=None, axes=None, cb=None, filename=None, name=None,
     sv = Slicer3d(input_data=var, axes=axes, cb=cb,
                   show_variances=show_variances)
 
-    render_plot(figure=sv.fig, widgets=sv.box, filename=filename)
+    render_plot(figure=sv.fig, widgets=sv.box, filename=filename, ipv=ipv)
 
     return sv.members
 

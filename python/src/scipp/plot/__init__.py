@@ -24,5 +24,5 @@ def image(dataset, **kwargs):
 def threeslice(dataset, **kwargs):
     return plot(dataset, projection="3d", **kwargs)
 
-def volume(dataset, **kwargs):
-    return plot(dataset, projection="volume", **kwargs)
+# def volume(dataset, **kwargs):
+#     return plot(dataset, projection="volume", **kwargs)
