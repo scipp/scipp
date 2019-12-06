@@ -11,14 +11,23 @@ namespace py = pybind11;
 
 namespace scipp::python {
 
-/// Wrapper around pybind11::object to provide deep comparison.
-///
-/// Note that since we have no explicit copy constructor the compiler-generated
-/// one makes a shallow copy, since this is what py::object does.
+/// Wrapper around pybind11::object to provide deep copy and deep comparison.
 class PyObject {
 public:
   PyObject() = default;
+  PyObject(PyObject &&other) = default;
+  PyObject &operator=(PyObject &&other) = default;
+
+  PyObject(const PyObject &other) { *this = other; }
+  PyObject &operator=(const PyObject &other) {
+    py::object copy = py::module::import("copy");
+    py::object deepcopy = copy.attr("deepcopy");
+    m_object = deepcopy(other.m_object);
+    return *this;
+  }
+
   PyObject(const py::object &object) : m_object(object) {}
+
   const py::object &to_pybind() const noexcept { return m_object; }
   py::object &to_pybind() noexcept { return m_object; }
 
