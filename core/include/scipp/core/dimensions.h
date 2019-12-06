@@ -2,8 +2,8 @@
 // Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#ifndef DIMENSIONS_H
-#define DIMENSIONS_H
+#ifndef SCIPP_CORE_DIMENSIONS_H
+#define SCIPP_CORE_DIMENSIONS_H
 
 #include <limits>
 #include <memory>
@@ -167,4 +167,4 @@ Dimensions merge(const Dimensions &a, const Dimensions &b,
 
 } // namespace scipp::core
 
-#endif // DIMENSIONS_H
+#endif // SCIPP_CORE_DIMENSIONS_H

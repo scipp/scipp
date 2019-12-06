@@ -2,8 +2,8 @@
 // Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#ifndef VARIABLE_VIEW_H
-#define VARIABLE_VIEW_H
+#ifndef SCIPP_CORE_VARIABLE_VIEW_H
+#define SCIPP_CORE_VARIABLE_VIEW_H
 
 #include <algorithm>
 
@@ -191,4 +191,4 @@ inline constexpr bool is_VariableView_v = is_VariableView<T>::value;
 
 } // namespace scipp::core
 
-#endif // VARIABLE_VIEW_H
+#endif // SCIPP_CORE_VARIABLE_VIEW_H
