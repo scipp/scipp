@@ -20,8 +20,8 @@
 ///    client-provided overload will match.
 ///
 /// @author Simon Heybrock
-#ifndef TRANSFORM_H
-#define TRANSFORM_H
+#ifndef SCIPP_CORE_TRANSFORM_H
+#define SCIPP_CORE_TRANSFORM_H
 
 #include "scipp/common/overloaded.h"
 #include "scipp/core/except.h"
@@ -800,4 +800,4 @@ template <class... TypeTuples, class Op>
 
 } // namespace scipp::core
 
-#endif // TRANSFORM_H
+#endif // SCIPP_CORE_TRANSFORM_H

@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 /// @file
-#ifndef TEST_OPERATIONS_H
-#define TEST_OPERATIONS_H
+#ifndef SCIPP_TEST_OPERATIONS_H
+#define SCIPP_TEST_OPERATIONS_H
 
 #include <gtest/gtest.h>
 
@@ -57,4 +57,4 @@ using Binary = ::testing::Types<plus, minus, times, divide>;
 using BinaryEquals =
     ::testing::Types<plus_equals, minus_equals, times_equals, divide_equals>;
 
-#endif // TEST_OPERATIONS_H
+#endif // SCIPP_TEST_OPERATIONS_H

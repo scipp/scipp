@@ -2,8 +2,8 @@
 // Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#ifndef DATASET_INDEX_H
-#define DATASET_INDEX_H
+#ifndef SCIPP_CORE_DATASET_INDEX_H
+#define SCIPP_CORE_DATASET_INDEX_H
 
 #include <unordered_map>
 
@@ -33,4 +33,4 @@ private:
 
 } // namespace scipp::core
 
-#endif // DATASET_INDEX_H
+#endif // SCIPP_CORE_DATASET_INDEX_H

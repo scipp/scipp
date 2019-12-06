@@ -2,8 +2,8 @@
 // Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#ifndef VARIABLE_H
-#define VARIABLE_H
+#ifndef SCIPP_CORE_VARIABLE_H
+#define SCIPP_CORE_VARIABLE_H
 
 #include <optional>
 #include <string>
@@ -983,4 +983,4 @@ SCIPP_CORE_EXPORT void reserve(const VariableProxy &sparse,
 
 } // namespace scipp::core
 
-#endif // VARIABLE_H
+#endif // SCIPP_CORE_VARIABLE_H

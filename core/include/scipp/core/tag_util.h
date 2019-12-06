@@ -2,8 +2,8 @@
 // Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#ifndef TAG_UTIL_H
-#define TAG_UTIL_H
+#ifndef SCIPP_CORE_TAG_UTIL_H
+#define SCIPP_CORE_TAG_UTIL_H
 
 namespace scipp::core {
 
@@ -48,4 +48,4 @@ struct CallDTypeWithSparse : public CallDType<Ts..., sparse_container<Ts>...> {
 
 } // namespace scipp::core
 
-#endif // TAG_UTIL_H
+#endif // SCIPP_CORE_TAG_UTIL_H
