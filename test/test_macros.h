@@ -2,8 +2,8 @@
 // Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#ifndef TEST_MACROS_H
-#define TEST_MACROS_H
+#ifndef SCIPP_TEST_MACROS_H
+#define SCIPP_TEST_MACROS_H
 
 #include <algorithm>
 #include <cmath>
@@ -56,4 +56,4 @@ bool equals(const T1 &a, const T2 &b, const Tol tolerance) {
 #define ASSERT_NO_THROW_NODISCARD(expr) ASSERT_NO_THROW((void)expr)
 #define ASSERT_THROW_NODISCARD(expr, type) ASSERT_THROW((void)expr, type)
 
-#endif // TEST_MACROS_H
+#endif // SCIPP_TEST_MACROS_H
