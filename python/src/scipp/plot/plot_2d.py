@@ -29,9 +29,6 @@ def plot_2d(input_data=None, axes=None, cb=None, filename=None, name=None,
     if axes is None:
         axes = var.dims
 
-    # # Parse colorbar
-    # cbar = parse_colorbar(cb, var)
-
     sv = Slicer2d(input_data=var, axes=axes, cb=cb,
                   show_variances=show_variances)
 
@@ -50,13 +47,6 @@ class Slicer2d(Slicer):
                          button_options=['X', 'Y'])
 
         self.members.update({"images": {}, "colorbars": {}})
-
-        # self.params = {"values": {"name": self.input_data.name,
-        #                           "cbmin": "min", "cbmax": "max"},
-        #                "variances": None}
-        # if self.show_variances:
-        #     self.params["variances"] = {"name": "variances",
-        #                                 "cbmin": "min_var", "cbmax": "max_var"}
         self.extent = {"x": [0, 1], "y": [0, 1]}
 
         self.fig, ax = plt.subplots(
@@ -73,38 +63,7 @@ class Slicer2d(Slicer):
         else:
             self.ax["values"] = ax
 
-        
-        # Set colorbar limits once to keep them constant for slicer
-        # TODO: should there be auto scaling as slider value is changed?
-        # for key, val in sorted(self.params.items()):
         for key, norm in self.cb["norm"].items():
-            # if val is not None:
-                # arr = getattr(self.input_data, key)
-                # # v = arr[np.where(np.isfinite(arr))]
-                # # vmin = np.amin(v)
-                # # vmax = np.amax(v)
-                # # if self.cb["log"]:
-                # #     norm = LogNorm(vmin=self.cb[val["cbmin"]],
-                # #                    vmax=self.cb[val["cbmax"]])
-                # # else:
-                # #     norm = Normalize(vmin=self.cb[val["cbmin"]],
-                # #                      vmax=self.cb[val["cbmin"]])
-                # if self.cb["log"]:
-                #     subset = np.where(np.isfinite(np.log10(arr)))
-                # else:
-                #     subset = np.where(np.isfinite(arr))
-                # if self.cb[val["cbmin"]] is not None:
-                #     vmin = self.cb[val["cbmin"]]
-                # else:
-                #     vmin = np.amin(arr[subset])
-                # if self.cb[val["cbmax"]] is not None:
-                #     vmax = self.cb[val["cbmax"]]
-                # else:
-                #     vmax = np.amax(arr[subset])
-                # if self.cb["log"]:
-                #     norm = LogNorm(vmin=vmin, vmax=vmax)
-                # else:
-                #     norm = Normalize(vmin=vmin, vmax=vmax)
             self.im[key] = self.ax[key].imshow(
                 [[1, 1],[1, 1]], norm=norm,
                 extent=np.array(list(self.extent.values())).flatten(),

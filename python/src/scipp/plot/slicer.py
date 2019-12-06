@@ -20,7 +20,8 @@ class Slicer:
         self.show_variances = show_variances
         if self.show_variances:
             self.show_variances = (self.input_data.variances is not None)
-        self.cb = parse_colorbar(cb, input_data, self.show_variances)
+        if len(button_options) > 1:
+            self.cb = parse_colorbar(cb, input_data, self.show_variances)
         # self.value_name = value_name
 
         # Get the dimensions of the image to be displayed

@@ -60,13 +60,12 @@ def parse_colorbar(cb, var=None, show_variances=False):
     """
     cbar = config.cb.copy()
     cbar["norm"] = dict()
-    # cbar["vmax"] = dict()
     if cb is not None:
-        for key, val in cb.items():
-            cbar[key] = val
-    # # In plotly, colorbar names start with an uppercase letter
-    # if plotly:
-    #     cbar["name"] = cbar["name"].capitalize()
+        if isinstance(cb, str):
+            cbar["name"] = cb
+        else:
+            for key, val in cb.items():
+                cbar[key] = val
     params = {"values": {"cbmin": "min", "cbmax": "max"}}
     if var.variances is not None and show_variances:
         params["variances"] = {"cbmin": "min_var", "cbmax": "max_var"}
@@ -89,7 +88,6 @@ def parse_colorbar(cb, var=None, show_variances=False):
         else:
             norm = Normalize(vmin=vmin, vmax=vmax)
         cbar["norm"][key] = norm
-
     return cbar
 
 

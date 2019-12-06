@@ -103,7 +103,6 @@ class Slicer1d(Slicer):
             self.mbox.append(widgets.HBox(val))
         self.box = widgets.VBox(self.mbox)
         self.box.layout.align_items = 'center'
-        # print(self.box.children)
 
         # Populate the members
         self.members["fig"] = self.fig
