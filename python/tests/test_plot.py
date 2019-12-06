@@ -14,19 +14,10 @@ import pytest
 # checksums or by using tools like squish.
 
 
-def do_plot(d, test_plotly_backend=True, test_mpl_backend=False, **kwargs):
+def do_plot(d, **kwargs):
     with io.StringIO() as buf, redirect_stdout(buf):
-        if test_plotly_backend:
-            sc.plot.plot(d, **kwargs)
-        if test_mpl_backend:
-            out = sc.plot.plot(d, backend="matplotlib", **kwargs)
-            assert isinstance(out, dict)
-
-        # TODO: The "static" backend is currently not tested as it requires
-        # the plotly-orca package to be installed via conda.
-        # sc.plot.plot(d, backend="static", **kwargs)
-
-    return
+        out = sc.plot.plot(d, **kwargs)
+    return out
 
 
 def make_dense_dataset(ndim=1, variances=False, binedges=False, labels=False):
