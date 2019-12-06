@@ -11,7 +11,10 @@ namespace py = pybind11;
 
 namespace scipp::python {
 
-/// Wrapper around pybind11::object to provide deep comparison and copies.
+/// Wrapper around pybind11::object to provide deep comparison.
+///
+/// Note that since we have no explicit copy constructor the compiler-generated
+/// one makes a shallow copy, since this is what py::object does.
 class PyObject {
 public:
   PyObject() = default;
