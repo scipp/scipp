@@ -172,6 +172,12 @@ class TestMantidConversion(unittest.TestCase):
         assert isinstance(monitors, sc.DataArray)
         assert monitors.shape == [2, 200001]
 
+    def test_Workspace2D_with_specific_axis_units(self):
+        filename = MantidDataHelper.find_file("iris26176_graphite002_sqw.nxs")
+        ds = mantidcompat.load(filename)
+        assert ds.shape == [23, 200]
+        assert ds.dims == [sc.Dim.Q, sc.Dim.EnergyTransfer]
+
 
 if __name__ == "__main__":
     unittest.main()

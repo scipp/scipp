@@ -144,9 +144,9 @@ public:
 };
 
 SCIPP_UNITS_DECLARE_DIMENSIONS(Detector, DSpacing, Energy, EnergyTransfer,
-                               Position, Q, Qx, Qy, Qz, Row, ScatteringAngle,
-                               Spectrum, Temperature, Time, Tof, Wavelength, X,
-                               Y, Z)
+                               Position, Q, QSquared, Qx, Qy, Qz, Row,
+                               ScatteringAngle, Spectrum, Temperature, Time,
+                               Tof, Wavelength, X, Y, Z)
 
 } // namespace neutron
 
@@ -160,7 +160,9 @@ template <> struct supported_units<neutron::Unit> {
           meV *us *us *dimensionless, kg *m / s, m / s, c, c *m, meV / c,
           dimensionless / c, K, us / angstrom, us / (angstrom * angstrom),
           us / (m * angstrom), angstrom / us, (m * angstrom) / us, us *us,
-          dimensionless / (us * us), dimensionless / meV)));
+          dimensionless / (us * us), dimensionless / meV,
+          dimensionless / angstrom, angstrom *angstrom,
+          dimensionless / (angstrom * angstrom))));
 };
 template <> struct counts_unit<neutron::Unit> {
   using type = decltype(counts);
