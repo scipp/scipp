@@ -269,15 +269,18 @@ def convertMDHistoWorkspace_to_dataset(md_histo):
         raise RuntimeError("Converter cannot process md histo workspace input "
                            "with > 3 dimensions. Input has {}.".format(ndims))
     out_dims = [sc.Dim.X, sc.Dim.Y, sc.Dim.Z]
+    q_out_dims = [sc.Dim.Qx, sc.Dim.Qy, sc.Dim.Qz]
     coords = dict()
     dims_used = []
     for i in range(ndims):
         dim = md_histo.getDimension(i)
-        coords[out_dims[i]] = sc.Variable(
-            dims=[out_dims[i]],
+        frame = dim.getMDFrame()
+        sc_dim = q_out_dims[i] if frame.isQ() else out_dims[i]
+        coords[sc_dim] = sc.Variable(
+            dims=[sc_dim],
             values=np.linspace(dim.getMinimum(), dim.getMaximum(),
                                dim.getNBins()))
-        dims_used.append(out_dims[i])
+        dims_used.append(sc_dim)
     data = sc.Variable(dims=dims_used,
                        values=md_histo.getSignalArray(),
                        variances=md_histo.getErrorSquaredArray())
