@@ -98,11 +98,13 @@ Variable init_1D_no_variance(const std::vector<Dim> &labels,
 template <class T>
 auto do_init_0D(const T &value, const std::optional<T> &variance,
                 const units::Unit &unit) {
+  using Elem = std::conditional_t<std::is_same_v<T, py::object>,
+                                  scipp::python::PyObject, T>;
   Variable var;
   if (variance)
-    var = createVariable<T>(Values{value}, Variances{*variance});
+    var = createVariable<Elem>(Values{value}, Variances{*variance});
   else
-    var = createVariable<T>(Values{value});
+    var = createVariable<Elem>(Values{value});
   var.setUnit(unit);
   return var;
 }
@@ -145,11 +147,10 @@ Variable makeVariableDefaultInit(const std::vector<Dim> &labels,
                                                        variances);
 }
 
-template <class T, class Target = T>
-void bind_init_0D(py::class_<Variable> &c) {
+template <class T> void bind_init_0D(py::class_<Variable> &c) {
   c.def(py::init([](const T &value, const std::optional<T> &variance,
                     const units::Unit &unit) {
-          return do_init_0D<Target>(value, variance, unit);
+          return do_init_0D(value, variance, unit);
         }),
         py::arg("value"), py::arg("variance") = std::nullopt,
         py::arg("unit") = units::Unit(units::dimensionless));
@@ -267,12 +268,12 @@ void init_variable(py::module &m) {
       .def("__repr__", [](const Variable &self) { return to_string(self); });
 
   bind_init_list(variable);
-  // This should be in the certain order
+  // Order matters for pybind11's overload resolution. Do not change.
   bind_init_0D_numpy_types(variable);
   bind_init_0D_native_python_types<bool>(variable);
   bind_init_0D_native_python_types<int64_t>(variable);
   bind_init_0D_native_python_types<double>(variable);
-  bind_init_0D<py::object, scipp::python::PyObject>(variable);
+  bind_init_0D<py::object>(variable);
   //------------------------------------
 
   py::class_<VariableConstProxy>(m, "VariableConstProxy")
