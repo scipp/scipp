@@ -8,7 +8,6 @@ from .render import render_plot
 from .slicer import Slicer
 from .tools import axis_label
 
-
 # Other imports
 import numpy as np
 import ipywidgets as widgets

@@ -11,10 +11,6 @@ from .tools import axis_label, parse_colorbar
 # Other imports
 import matplotlib.pyplot as plt
 from matplotlib import cm
-# try:
-#     import ipyvolume as ipv
-# except:
-#     pass
 
 
 def plot_sparse(input_data, ndim=0, sparse_dim=None, logx=False,
@@ -38,7 +34,6 @@ def plot_sparse(input_data, ndim=0, sparse_dim=None, logx=False,
 
     members = {}
     ipv = None
-
 
     if ndims < 3:
         fig, ax = plt.subplots(1, 1, figsize=(config.width/config.dpi,

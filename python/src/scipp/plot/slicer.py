@@ -22,7 +22,6 @@ class Slicer:
             self.show_variances = (self.input_data.variances is not None)
         if len(button_options) > 1:
             self.cb = parse_colorbar(cb, input_data, self.show_variances)
-        # self.value_name = value_name
 
         # Get the dimensions of the image to be displayed
         self.coords = self.input_data.coords
@@ -56,26 +55,17 @@ class Slicer:
         # Save information on histograms
         self.histograms = dict()
         if hasattr(self.input_data, "name"):
-            # name = self.input_data.name
-            # self.histograms[name] = dict()
             for key, x in self.slider_x.items():
                 indx = self.input_data.dims.index(self.slider_dims[key])
-                # print(indx)
-                # print(self.input_data.dims)
-                # print(self.slider_dims[key])
-                # print(var.shape)
-                # print(x.shape)
-                # print(var)
-                # print(x)
-                self.histograms[key] = self.input_data.shape[indx] == x.shape[0] - 1
+                self.histograms[key] = self.input_data.shape[indx] == \
+                    x.shape[0] - 1
         else:
             for name, var in self.input_data:
                 self.histograms[name] = dict()
                 for key, x in self.slider_x.items():
-                    # print(name, key, nx, self.slider_x[key].shape, var.shape)
                     indx = var.dims.index(self.slider_dims[key])
-                    self.histograms[name][key] = var.shape[indx] == x.shape[0] - 1
-                    # print(var.shape[self.slider_dims[key]],x.shape[0])
+                    self.histograms[name][key] = var.shape[indx] == \
+                        x.shape[0] - 1
 
         # Initialise list for VBox container
         self.vbox = []
@@ -93,7 +83,6 @@ class Slicer:
         button_values = [None] * (self.ndim - len(button_options)) + \
             button_options[::-1]
         for i, (key, dim) in enumerate(self.slider_dims.items()):
-            # key = str(dim)
             # If this is a 3d projection, place slices half-way
             if len(button_options) == 3 and (not volume):
                 indx = (self.slider_nx[key] - 1) // 2

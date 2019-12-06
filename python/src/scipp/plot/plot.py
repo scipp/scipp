@@ -8,8 +8,8 @@ from .._scipp import core as sc
 from .sciplot import SciPlot
 
 
-def plot(input_data, collapse=None, backend=None, color=None, projection=None,
-         axes=None, **kwargs):
+def plot(input_data, collapse=None, color=None, projection=None, axes=None,
+         **kwargs):
     """
     Wrapper function to plot any kind of dataset
     """
@@ -18,9 +18,6 @@ def plot(input_data, collapse=None, backend=None, color=None, projection=None,
     from .tools import get_color
     from .plot_collapse import plot_collapse
     from .dispatch import dispatch
-
-    if backend is None:
-        backend = config.backend
 
     # Create a list of variables which will then be dispatched to correct
     # plotting function.
@@ -92,14 +89,12 @@ def plot(input_data, collapse=None, backend=None, color=None, projection=None,
         if collapse is not None:
             output[key] = plot_collapse(input_data=val["dataset"],
                                         dim=collapse,
-                                        backend=backend,
                                         axes=val["axes"],
                                         **kwargs)
         else:
             output[key] = dispatch(input_data=val["dataset"],
                                    name=key,
                                    ndim=val["ndims"],
-                                   backend=backend,
                                    color=val["colors"],
                                    sparse_dim=sparse_dim[key],
                                    projection=projection,

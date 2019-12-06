@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 import ipywidgets as widgets
 
 
-def plot_1d(input_data, backend=None, logx=False, logy=False, logxy=False,
+def plot_1d(input_data, logx=False, logy=False, logxy=False,
             color=None, filename=None, axes=None, mpl_axes=None):
     """
     Plot a 1D spectrum.

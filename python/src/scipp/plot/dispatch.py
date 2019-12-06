@@ -9,9 +9,8 @@ from .plot_sparse import plot_sparse
 from .sparse import histogram_sparse_data
 
 
-def dispatch(input_data, ndim=0, name=None, backend=None, collapse=None,
-             sparse_dim=None, bins=None, projection=None, color=None,
-             **kwargs):
+def dispatch(input_data, ndim=0, name=None, collapse=None, sparse_dim=None,
+             bins=None, projection=None, color=None, **kwargs):
     """
     Function to automatically dispatch the input dataset to the appropriate
     plotting function depending on its dimensions
@@ -35,7 +34,7 @@ def dispatch(input_data, ndim=0, name=None, backend=None, collapse=None,
         return plot_sparse(input_data, ndim=ndim, sparse_dim=sparse_dim,
                            color=color, **kwargs)
     elif projection == "1d":
-        return plot_1d(input_data, backend=backend, color=color, **kwargs)
+        return plot_1d(input_data, color=color, **kwargs)
     elif projection == "2d":
         return plot_2d(input_data, name=name, **kwargs)
     elif projection == "3d":
