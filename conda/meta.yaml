@@ -24,6 +24,7 @@ build:
     - CC
     - CXX
     - OSX_VERSION
+    - GENERATOR
 about:
   home: https://scipp.readthedocs.io/en/latest/
   license: GPLv3
