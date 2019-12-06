@@ -11,8 +11,6 @@ from .tools import axis_label
 # Other imports
 import numpy as np
 import ipywidgets as widgets
-from matplotlib import cm
-from matplotlib.colors import Normalize, LogNorm
 import matplotlib.pyplot as plt
 
 
@@ -90,7 +88,7 @@ class Slicer2d(Slicer):
 
         for key, norm in self.cb["norm"].items():
             self.im[key] = self.ax[key].imshow(
-                [[1, 1],[1, 1]], norm=norm,
+                [[1, 1], [1, 1]], norm=norm,
                 extent=np.array(list(self.extent.values())).flatten(),
                 origin="lower", interpolation="none", cmap=self.cb["name"])
             self.cbar[key] = plt.colorbar(self.im[key], ax=self.ax[key],

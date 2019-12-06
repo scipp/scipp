@@ -12,7 +12,7 @@ class SciPlot(dict):
     More functionalities can be added in the future.
     """
 
-    def __init__(self,*arg,**kw):
+    def __init__(self, *arg, **kw):
         super(SciPlot, self).__init__(*arg, **kw)
 
     def __repr__(self):

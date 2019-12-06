@@ -3,7 +3,6 @@
 # @author Neil Vaytet
 
 # Scipp imports
-from ..config import plot as config
 from .._scipp import core as sc
 from .sciplot import SciPlot
 

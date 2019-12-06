@@ -104,7 +104,6 @@ def plot_sparse(input_data, ndim=0, sparse_dim=None, logx=False,
         #     ax.set_yscale("log")
         widg = fig
 
-
     else:
         raise RuntimeError("Scatter plots for sparse data support at most "
                            "3 dimensions.")

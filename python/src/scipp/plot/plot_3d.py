@@ -6,19 +6,17 @@
 from ..config import plot as config
 from .render import render_plot
 from .slicer import Slicer
-from .tools import axis_label, parse_colorbar
+from .tools import axis_label
 
 # Other imports
 import numpy as np
 import ipywidgets as widgets
 from matplotlib import cm
-# from matplotlib.colors import Normalize, LogNorm
-import copy as cp
 
 try:
     import ipyvolume as ipv
     from ipyevents import Event
-except:
+except ImportError:
     ipv = None
 
 
@@ -67,7 +65,6 @@ class Slicer3d(Slicer):
             self.members["surfaces"][key] = {}
             self.members["wireframes"][key] = {}
 
-
         self.permutations = {"x": ["y", "z"], "y": ["x", "z"], "z": ["x", "y"]}
 
         # Store min/max for each dimension for invisible scatter
@@ -78,12 +75,12 @@ class Slicer3d(Slicer):
 
         self.outline = ipv.plot_wireframe(outl_x, outl_y, outl_z,
                                           color="black")
-        wframes = self.get_outlines()
-        meshes = self.get_meshes()
         self.wireframes = dict()
         self.surfaces = dict()
 
         # #====================================================================
+        # wframes = self.get_outlines()
+        # meshes = self.get_meshes()
         # surf_args = dict.fromkeys(self.permutations)
         # wfrm_args = dict.fromkeys(self.permutations)
         # # print(wframes)
@@ -250,7 +247,7 @@ class Slicer3d(Slicer):
         else:
             # Update only one slice
             # The dimensions to be sliced have been saved in slider_dims
-            slice_indices = {"x": 0, "y": 1, "z": 2}
+            # slice_indices = {"x": 0, "y": 1, "z": 2}
             key = change["owner"].dim_str
             self.lab[key].value = self.make_slider_label(
                     self.slider_x[key], change["new"])
@@ -269,19 +266,19 @@ class Slicer3d(Slicer):
     def update_surface(self, event):
         key = self.last_changed_slider_dim
         if key is not None:
-          # Now move slice
-          index = self.slider[key].value
-          vslice = self.cube[self.slider_dims[key], index]
-          ax_dim = self.buttons[key].value.lower()
-          self.wireframes[ax_dim].visible = False
+            # Now move slice
+            index = self.slider[key].value
+            vslice = self.cube[self.slider_dims[key], index]
+            ax_dim = self.buttons[key].value.lower()
+            self.wireframes[ax_dim].visible = False
 
-          setattr(self.surfaces[ax_dim], ax_dim,
-                  getattr(self.surfaces[ax_dim], ax_dim) * 0.0 +
-                  self.slider_x[key].values[index])
+            setattr(self.surfaces[ax_dim], ax_dim,
+                    getattr(self.surfaces[ax_dim], ax_dim) * 0.0 +
+                    self.slider_x[key].values[index])
 
-          self.surfaces[self.buttons[key].value.lower()].color = \
-              self.scalar_map["values"].to_rgba(
-                  self.check_transpose(vslice).flatten())
+            self.surfaces[self.buttons[key].value.lower()].color = \
+                self.scalar_map["values"].to_rgba(
+                    self.check_transpose(vslice).flatten())
         return
 
     def check_transpose(self, vslice, variances=False):
