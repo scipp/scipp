@@ -17,6 +17,12 @@ TEST(CreateVariableTest, from_single_value) {
   EXPECT_EQ(var.variance<float>(), 1.0f);
 }
 
+TEST(CreateVariableTest, from_vector) {
+  EXPECT_EQ(createVariable<double>(Dims{Dim::X}, Shape{3},
+                                   Values(std::vector<int>{1, 2, 3})),
+            createVariable<double>(Dims{Dim::X}, Shape{3}, Values({1, 2, 3})));
+}
+
 TEST(CreateVariableTest, construct_sparse) {
   auto var = createVariable<double>(Dims{Dim::X, Dim::Y},
                                     Shape{2, Dimensions::Sparse});
