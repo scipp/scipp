@@ -6,9 +6,7 @@
 
 Variable makeRandom(const Dimensions &dims) {
   Random rand;
-  auto vect = rand(dims.volume());
-  return createVariable<double>(Dimensions{dims},
-                                Values(vect.begin(), vect.end()));
+  return createVariable<double>(Dimensions{dims}, Values(rand(dims.volume())));
 }
 
 DatasetFactory3D::DatasetFactory3D(const scipp::index lx_,
@@ -33,16 +31,19 @@ DatasetFactory3D::DatasetFactory3D(const scipp::index lx_,
   base.setLabels("labels_z", createVariable<double>(Dimensions{Dim::Z, lz},
                                                     Values(rand(lz))));
 
-  auto bX = makeBools<BoolsGeneratorType::ALTERNATING>(lx);
-  auto bXY = makeBools<BoolsGeneratorType::ALTERNATING>(lx * ly);
-  auto bZ = makeBools<BoolsGeneratorType::ALTERNATING>(lz);
-  base.setMask("masks_x", createVariable<bool>(Dimensions{Dim::X, lx},
-                                               Values(bX.begin(), bX.end())));
-  base.setMask("masks_xy",
-               createVariable<bool>(Dimensions{{Dim::X, lx}, {Dim::Y, ly}},
-                                    Values(bXY.begin(), bXY.end())));
-  base.setMask("masks_z", createVariable<bool>(Dimensions{Dim::Z, lz},
-                                               Values(bZ.begin(), bZ.end())));
+  base.setMask("masks_x",
+               createVariable<bool>(
+                   Dimensions{Dim::X, lx},
+                   Values(makeBools<BoolsGeneratorType::ALTERNATING>(lx))));
+  base.setMask(
+      "masks_xy",
+      createVariable<bool>(
+          Dimensions{{Dim::X, lx}, {Dim::Y, ly}},
+          Values(makeBools<BoolsGeneratorType::ALTERNATING>(lx * ly))));
+  base.setMask("masks_z",
+               createVariable<bool>(
+                   Dimensions{Dim::Z, lz},
+                   Values(makeBools<BoolsGeneratorType::ALTERNATING>(lz))));
 
   base.setAttr("attr_scalar", createVariable<double>(Values{rand(1).front()}));
   base.setAttr("attr_x", createVariable<double>(Dimensions{Dim::X, lx},
