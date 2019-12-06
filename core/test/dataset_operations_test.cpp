@@ -32,9 +32,11 @@ template <typename T>
 class DatasetShapeChangingOpTest : public ::testing::Test {
 public:
   void SetUp() {
-    ds.setData("data_x", makeVariable<T>({Dim::X, 5}, {1, 5, 4, 5, 1}));
-    ds.setMask("masks_x", makeVariable<bool>(
-                              {Dim::X, 5}, {false, true, false, true, false}));
+    ds.setData("data_x", createVariable<T>(Dims{Dim::X}, Shape{5},
+                                           Values{1, 5, 4, 5, 1}));
+    ds.setMask("masks_x",
+               createVariable<bool>(Dims{Dim::X}, Shape{5},
+                                    Values{false, true, false, true, false}));
   }
   Dataset ds;
 };
@@ -60,7 +62,8 @@ TYPED_TEST(DatasetShapeChangingOpTest, mean_masked) {
 TYPED_TEST(DatasetShapeChangingOpTest, mean_fully_masked) {
   this->ds.setMask(
       "full_mask",
-      makeVariable<bool>({Dim::X, 5}, makeBools<BoolsGeneratorType::TRUE>(5)));
+      makeVariable<bool>({Dim::X, 5},
+                         makeBools<BoolsGeneratorType::TRUE>(5)) /*LABEL_1*/);
   const Dataset result = mean(this->ds, Dim::X);
 
   if constexpr (std::is_floating_point_v<TypeParam>)
@@ -72,38 +75,43 @@ TYPED_TEST(DatasetShapeChangingOpTest, mean_fully_masked) {
 TEST(DatasetOperationsTest, mean_two_dims) {
   Dataset ds;
   // the negative values should have been masked out
-  ds.setData("data_xy", makeVariable<int64_t>(
-                            {{Dim::X, 5}, {Dim::Y, 2}},
-                            {-999, -999, 3, -999, 5, 6, -999, 10, 10, -999}));
+  ds.setData("data_xy",
+             createVariable<int64_t>(
+                 Dims{Dim::X, Dim::Y}, Shape{5, 2},
+                 Values{-999, -999, 3, -999, 5, 6, -999, 10, 10, -999}));
 
-  ds.setMask("mask_xy", makeVariable<bool>({{Dim::X, 5}, {Dim::Y, 2}},
-                                           {true, true, false, true, false,
-                                            false, true, false, false, true}));
+  ds.setMask("mask_xy",
+             createVariable<bool>(Dims{Dim::X, Dim::Y}, Shape{5, 2},
+                                  Values{true, true, false, true, false, false,
+                                         true, false, false, true}));
 
   const Dataset result = mean(ds, Dim::X);
 
   ASSERT_EQ(result["data_xy"].data(),
-            makeVariable<double>({Dim::Y, 2}, {6, 8}));
+            createVariable<double>(Dims{Dim::Y}, Shape{2}, Values{6, 8}));
 }
 
 TEST(DatasetOperationsTest, mean_three_dims) {
   Dataset ds;
   // the negative values should have been masked out
-  ds.setData("data_xy", makeVariable<int64_t>(
-                            {{Dim::Z, 2}, {Dim::X, 5}, {Dim::Y, 2}},
-                            {-999, -999, 3, -999, 5, 6, -999, 10, 10, -999,
-                             -999, -999, 3, -999, 5, 6, -999, 10, 10, -999}));
+  ds.setData("data_xy",
+             createVariable<int64_t>(
+                 Dims{Dim::Z, Dim::X, Dim::Y}, Shape{2, 5, 2},
+                 Values{-999, -999, 3, -999, 5, 6, -999, 10, 10, -999,
+                        -999, -999, 3, -999, 5, 6, -999, 10, 10, -999}));
 
   ds.setMask("mask_xy",
-             makeVariable<bool>({{Dim::Z, 2}, {Dim::X, 5}, {Dim::Y, 2}},
-                                {true,  true,  false, true,  false, false, true,
-                                 false, false, true,  true,  true,  false, true,
-                                 false, false, true,  false, false, true}));
+             createVariable<bool>(Dims{Dim::Z, Dim::X, Dim::Y}, Shape{2, 5, 2},
+                                  Values{true,  true, false, true,  false,
+                                         false, true, false, false, true,
+                                         true,  true, false, true,  false,
+                                         false, true, false, false, true}));
 
   const Dataset result = mean(ds, Dim::X);
 
   ASSERT_EQ(result["data_xy"].data(),
-            makeVariable<double>({{Dim::Z, 2}, {Dim::Y, 2}}, {6, 8, 6, 8}));
+            createVariable<double>(Dims{Dim::Z, Dim::Y}, Shape{2, 2},
+                                   Values{6, 8, 6, 8}));
 }
 
 TEST(DatasetOperationsTest, rebin) {

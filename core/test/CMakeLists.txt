@@ -29,6 +29,8 @@ add_executable(${TARGET_NAME} EXCLUDE_FROM_ALL
                slice_test.cpp
                sort_test.cpp
                sparse_counts_test.cpp
+               sparse_data_operations_consistency_test.cpp
+               string_test.cpp
                subspan_view_test.cpp
                sum_test.cpp
                transform_sparse_and_dense_test.cpp

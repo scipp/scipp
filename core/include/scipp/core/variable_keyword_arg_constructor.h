@@ -12,20 +12,43 @@
 
 namespace scipp::core {
 
-// The structs needed for universal variable constructor are introduced below.
-// Tags are used to match the corresponding arguments treating the arbitrary
-// order of arguments in the constructor, and not mixing values and variances.
-// Structures Values and Variances just forwards the arguments for constructing
-// internal variable structure - array storage.
+// The structs needed for keyword-like variable constructor are introduced
+// below. Tags are used to match the corresponding arguments treating the
+// arbitrary order of arguments in the constructor, and not mixing values and
+// variances. Structures Values and Variances just forwards the arguments for
+// constructing internal variable structure - array storage.
 
 namespace detail {
+template <int N, typename... Ts>
+using nthDecayType =
+    typename std::decay_t<std::tuple_element_t<N, std::tuple<Ts...>>>;
+
+template <class... Args> constexpr bool has_last_arg_int64_t() {
+  constexpr size_t n = sizeof...(Args);
+  if constexpr (n == 0)
+    return false;
+  else
+    return std::is_same_v<nthDecayType<n - 1, Args...>,
+                          std::decay_t<decltype(Dimensions::Sparse)>>;
+}
 
 template <class U> struct vector_like {
   std::vector<U> data;
   template <class... Args>
-  vector_like(Args &&... args) : data(std::forward<Args>(args)...) {}
+  vector_like(Args &&... args) : data(make(std::forward<Args>(args)...)) {}
+
   template <class T>
   vector_like(std::initializer_list<T> init) : data(init.begin(), init.end()) {}
+
+private:
+  // This is to override the std::vector(size_t num_elems, const Type& element)
+  // insted of [elem, elem, ..., elem] we want [Type(num_elems), element]
+  template <class... Args> static std::vector<U> make(Args &&... args) {
+    if constexpr (has_last_arg_int64_t<Args...>())
+      return std::vector{U(std::forward<Args>(args))...};
+    else
+      return std::vector<U>(std::forward<Args>(args)...);
+  }
 };
 
 struct ValuesTag {};
@@ -105,16 +128,12 @@ public:
 
 template <class VarT, class... Ts> class ConstructorArgumentsMatcher {
 public:
-  template <class... NonDataTypes> constexpr static void checkArgTypesValid() {
+  template <class... NonDataTypes> constexpr static bool checkArgTypesValid() {
     constexpr int nonDataTypesCount =
         (is_type_in_pack_v<NonDataTypes, Ts...> + ...);
     constexpr bool hasVal = is_tag_in_pack_v<ValuesTag, Ts...>;
     constexpr bool hasVar = is_tag_in_pack_v<VariancesTag, Ts...>;
-    static_assert(
-        nonDataTypesCount + hasVal + hasVar == sizeof...(Ts),
-        "Arguments: units::Unit, Shape, Dims, Values and Variances could only "
-        "be used. Example: Variable(dtype<float>, units::Unit(units::kg), "
-        "Shape{1, 2}, Dims{Dim::X, Dim::Y}, Values({3, 4}))");
+    return nonDataTypesCount + hasVal + hasVar == sizeof...(Ts);
   }
 
   template <class... NonDataTypes> static auto extractArguments(Ts &&... ts) {

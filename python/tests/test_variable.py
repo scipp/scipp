@@ -130,7 +130,8 @@ def test_create_1D_string():
 def test_create_1D_vector_3_double():
     var = sc.Variable(dims=[Dim.X],
                       values=[[1, 2, 3], [4, 5, 6]],
-                      unit=sc.units.m, dtype=sc.dtype.vector_3_double)
+                      unit=sc.units.m,
+                      dtype=sc.dtype.vector_3_double)
     assert len(var.values) == 2
     np.testing.assert_array_equal(var.values[0], [1, 2, 3])
     np.testing.assert_array_equal(var.values[1], [4, 5, 6])
@@ -331,6 +332,87 @@ def test_slicing():
     assert np.array_equal(var_slice.values, np.array([0, 1]))
 
 
+def test_iadd():
+    expected = sc.Variable(2.2)
+    a = sc.Variable(1.2)
+    b = a
+    a += 1.0
+    assert a == expected
+    assert b == expected
+    # This extra check is important: It can happen that an implementation of,
+    # e.g., __iadd__ does an in-place modification, updating `b`, but then the
+    # return value is assigned to `a`, which could break the connection unless
+    # the correct Python object is returned.
+    a += 1.0
+    assert a == b
+
+
+def test_isub():
+    expected = sc.Variable(2.2 - 1.0)
+    a = sc.Variable(2.2)
+    b = a
+    a -= 1.0
+    assert a == expected
+    assert b == expected
+    a -= 1.0
+    assert a == b
+
+
+def test_imul():
+    expected = sc.Variable(2.4)
+    a = sc.Variable(1.2)
+    b = a
+    a *= 2.0
+    assert a == expected
+    assert b == expected
+    a *= 2.0
+    assert a == b
+
+
+def test_idiv():
+    expected = sc.Variable(1.2)
+    a = sc.Variable(2.4)
+    b = a
+    a /= 2.0
+    assert a == expected
+    assert b == expected
+    a /= 2.0
+    assert a == b
+
+
+def test_iand():
+    expected = sc.Variable(False)
+    a = sc.Variable(True)
+    b = a
+    a &= sc.Variable(False)
+    assert a == expected
+    assert b == expected
+    a |= sc.Variable(True)
+    assert a == b
+
+
+def test_ior():
+    expected = sc.Variable(True)
+    a = sc.Variable(False)
+    b = a
+    a |= sc.Variable(True)
+    assert a == expected
+    assert b == expected
+    a &= sc.Variable(False)
+    assert a == b
+
+
+def test_ixor():
+    expected = sc.Variable(True)
+    a = sc.Variable(False)
+    b = a
+    a ^= sc.Variable(True)
+    assert a == expected
+    assert b == expected
+    a ^= sc.Variable(True)
+    assert a == b
+
+
 def test_binary_plus():
     a, b, a_slice, b_slice, data = make_variables()
     c = a + b
@@ -402,8 +484,8 @@ def test_in_place_binary_or():
     a = sc.Variable([Dim.X], values=np.array([False, True, False, True]))
     b = sc.Variable([Dim.X], values=np.array([False, False, True, True]))
     a |= b
-    assert a == sc.Variable([Dim.X], values=np.array([
-        False, True, True, True]))
+    assert a == sc.Variable([Dim.X],
+                            values=np.array([False, True, True, True]))
 
 
 def test_binary_or():
@@ -413,8 +495,8 @@ def test_binary_or():
 
     a = sc.Variable([Dim.X], values=np.array([False, True, False, True]))
     b = sc.Variable([Dim.X], values=np.array([False, False, True, True]))
-    assert (a | b) == sc.Variable([Dim.X], values=np.array([
-        False, True, True, True]))
+    assert (a | b) == sc.Variable([Dim.X],
+                                  values=np.array([False, True, True, True]))
 
 
 def test_in_place_binary_and():
@@ -426,8 +508,8 @@ def test_in_place_binary_and():
     a = sc.Variable([Dim.X], values=np.array([False, True, False, True]))
     b = sc.Variable([Dim.X], values=np.array([False, False, True, True]))
     a &= b
-    assert a == sc.Variable([Dim.X], values=np.array([
-        False, False, False, True]))
+    assert a == sc.Variable([Dim.X],
+                            values=np.array([False, False, False, True]))
 
 
 def test_binary_and():
@@ -437,8 +519,8 @@ def test_binary_and():
 
     a = sc.Variable([Dim.X], values=np.array([False, True, False, True]))
     b = sc.Variable([Dim.X], values=np.array([False, False, True, True]))
-    assert (a & b) == sc.Variable([Dim.X], values=np.array([
-        False, False, False, True]))
+    assert (a & b) == sc.Variable([Dim.X],
+                                  values=np.array([False, False, False, True]))
 
 
 def test_in_place_binary_xor():
@@ -450,8 +532,8 @@ def test_in_place_binary_xor():
     a = sc.Variable([Dim.X], values=np.array([False, True, False, True]))
     b = sc.Variable([Dim.X], values=np.array([False, False, True, True]))
     a ^= b
-    assert a == sc.Variable([Dim.X], values=np.array([
-        False, True, True, False]))
+    assert a == sc.Variable([Dim.X],
+                            values=np.array([False, True, True, False]))
 
 
 def test_binary_xor():
@@ -461,8 +543,8 @@ def test_binary_xor():
 
     a = sc.Variable([Dim.X], values=np.array([False, True, False, True]))
     b = sc.Variable([Dim.X], values=np.array([False, False, True, True]))
-    assert (a ^ b) == sc.Variable([Dim.X], values=np.array([
-        False, True, True, False]))
+    assert (a ^ b) == sc.Variable([Dim.X],
+                                  values=np.array([False, True, True, False]))
 
 
 def test_in_place_binary_with_scalar():
@@ -506,10 +588,12 @@ def test_abs():
 def test_dot():
     a = sc.Variable(dims=[Dim.X],
                     values=[[1, 0, 0], [0, 1, 0]],
-                    unit=sc.units.m, dtype=sc.dtype.vector_3_double)
+                    unit=sc.units.m,
+                    dtype=sc.dtype.vector_3_double)
     b = sc.Variable(dims=[Dim.X],
                     values=[[1, 0, 0], [1, 0, 0]],
-                    unit=sc.units.m, dtype=sc.dtype.vector_3_double)
+                    unit=sc.units.m,
+                    dtype=sc.dtype.vector_3_double)
     expected = sc.Variable([Dim.X],
                            values=np.array([1.0, 0.0]),
                            unit=sc.units.m**2)
@@ -537,7 +621,8 @@ def test_mean():
 def test_norm():
     var = sc.Variable(dims=[Dim.X],
                       values=[[1, 0, 0], [3, 4, 0]],
-                      unit=sc.units.m, dtype=sc.dtype.vector_3_double)
+                      unit=sc.units.m,
+                      dtype=sc.dtype.vector_3_double)
     expected = sc.Variable([Dim.X],
                            values=np.array([1.0, 5.0]),
                            unit=sc.units.m)

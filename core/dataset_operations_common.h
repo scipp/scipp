@@ -40,6 +40,32 @@ DataArray apply_and_drop_dim_impl(const DataConstProxy &a, Func func,
                      std::move(attrs), a.name());
 }
 
+/// Create new data array by applying Func to everything depending on dim, copy
+/// otherwise.
+template <class Func>
+DataArray apply_or_copy_dim(const DataConstProxy &a, Func func, const Dim dim) {
+  std::map<Dim, Variable> coords;
+  for (auto &&[d, coord] : a.coords())
+    coords.emplace(d, coord.dims().contains(dim) ? func(coord, dim) : coord);
+
+  std::map<std::string, Variable> labels;
+  for (auto &&[name, label] : a.labels())
+    labels.emplace(name, label.dims().contains(dim) ? func(label, dim) : label);
+
+  std::map<std::string, Variable> attrs;
+  for (auto &&[name, attr] : a.attrs())
+    attrs.emplace(name, attr.dims().contains(dim) ? func(attr, dim) : attr);
+
+  std::map<std::string, Variable> masks;
+  for (auto &&[name, mask] : a.masks())
+    masks.emplace(name, mask.dims().contains(dim) ? func(mask, dim) : mask);
+
+  return DataArray(a.hasData() ? func(a.data(), dim)
+                               : std::optional<Variable>(),
+                   std::move(coords), std::move(labels), std::move(masks),
+                   std::move(attrs), a.name());
+}
+
 template <class Func, class... Args>
 DataArray apply_to_data_and_drop_dim(const DataConstProxy &a, Func func,
                                      const Dim dim, Args &&... args) {

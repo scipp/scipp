@@ -288,6 +288,9 @@ template <class T> Variable makeVariable(T value);
 /// dimensions.
 class SCIPP_CORE_EXPORT Variable {
 public:
+  using const_view_type = VariableConstProxy;
+  using view_type = VariableProxy;
+
   Variable() = default;
   // Having this non-explicit is convenient when passing (potential)
   // variable slices to functions that do not support slices, but implicit
@@ -304,6 +307,11 @@ public:
 
   template <class T>
   static Variable create(units::Unit &&u, Dims &&d, Shape &&s,
+                         std::optional<Vector<T>> &&val,
+                         std::optional<Vector<T>> &&var);
+
+  template <class T>
+  static Variable create(units::Unit &&u, Dimensions &&d,
                          std::optional<Vector<T>> &&val,
                          std::optional<Vector<T>> &&var);
 
@@ -473,18 +481,41 @@ private:
 // getting rid of all other makeVariable.
 template <class T, class... Ts> Variable createVariable(Ts &&... ts) {
   using helper = detail::ConstructorArgumentsMatcher<Variable, Ts...>;
-  helper::template checkArgTypesValid<units::Unit, Dims, Shape>();
-  auto [valArgs, varArgs, nonData] =
-      helper::template extractArguments<units::Unit, Dims, Shape>(
-          std::forward<Ts>(ts)...);
-  const auto &shape = std::get<Shape>(nonData);
-  const auto &d = shape.data;
-  if (std::find(d.cbegin(), d.cend(), Dimensions::Sparse) != d.end())
-    return helper::template construct<sparse_container<T>>(
-        std::move(valArgs), std::move(varArgs), std::move(nonData));
-  else
-    return helper::template construct<T>(std::move(valArgs), std::move(varArgs),
-                                         std::move(nonData));
+  constexpr bool useDimsAndShape =
+      helper::template checkArgTypesValid<units::Unit, Dims, Shape>();
+  constexpr bool useDimensions =
+      helper::template checkArgTypesValid<units::Unit, Dimensions>();
+
+  static_assert(
+      useDimsAndShape || useDimensions,
+      "Arguments: units::Unit, Shape, Dims, Values and Variances could only "
+      "be used. Example: Variable(dtype<float>, units::Unit(units::kg), "
+      "Shape{1, 2}, Dims{Dim::X, Dim::Y}, Values({3, 4}))");
+
+  if constexpr (useDimsAndShape) {
+    auto [valArgs, varArgs, nonData] =
+        helper::template extractArguments<units::Unit, Dims, Shape>(
+            std::forward<Ts>(ts)...);
+    const auto &shape = std::get<Shape>(nonData);
+    const auto &d = shape.data;
+    if (std::find(d.cbegin(), d.cend(), Dimensions::Sparse) != d.end())
+      return helper::template construct<sparse_container<T>>(
+          std::move(valArgs), std::move(varArgs), std::move(nonData));
+    else
+      return helper::template construct<T>(
+          std::move(valArgs), std::move(varArgs), std::move(nonData));
+  } else {
+    auto [valArgs, varArgs, nonData] =
+        helper::template extractArguments<units::Unit, Dimensions>(
+            std::forward<Ts>(ts)...);
+    const auto &dimensions = std::get<Dimensions>(nonData);
+    if (dimensions.sparse())
+      return helper::template construct<sparse_container<T>>(
+          std::move(valArgs), std::move(varArgs), std::move(nonData));
+    else
+      return helper::template construct<T>(
+          std::move(valArgs), std::move(varArgs), std::move(nonData));
+  }
 }
 
 template <class T> Variable makeVariable(const Dimensions &dimensions) {
@@ -498,8 +529,8 @@ template <class T> Variable makeVariable(const Dimensions &dimensions) {
 }
 
 template <class T>
-Variable makeVariable(const Dimensions &dimensions,
-                      const detail::default_init_elements_t &init) {
+Variable makeVariableInit(const Dimensions &dimensions,
+                          const detail::default_init_elements_t &init) {
   if (dimensions.sparse())
     return Variable(units::dimensionless, dimensions,
                     Vector<sparse_container<T>>(dimensions.volume(), init));
@@ -577,10 +608,10 @@ Variable makeVariable(const Dimensions &dimensions, const units::Unit unit,
 }
 
 template <class T>
-Variable Variable::create(units::Unit &&u, Dims &&d, Shape &&s,
+Variable Variable::create(units::Unit &&u, Dimensions &&d,
                           std::optional<Vector<T>> &&val,
                           std::optional<Vector<T>> &&var) {
-  auto dms = Dimensions{d.data, s.data};
+  auto dms{d};
   if (val && var)
     return Variable(u, dms, std::move(*val), std::move(*var));
   if (val)
@@ -588,16 +619,21 @@ Variable Variable::create(units::Unit &&u, Dims &&d, Shape &&s,
   if (var)
     throw except::VariancesError("Can't have variance without values");
   else {
-    if constexpr (is_sparse_container<T>::value) {
-      throw except::TypeError("unreachable");
-    } else {
-      auto res = makeVariable<T>(dms);
-      res.setUnit(u);
-      return res;
-    }
+    if constexpr (is_sparse_container<T>::value)
+      return Variable(u, dms, Vector<T>(dms.volume()));
+    else
+      return Variable(
+          u, dms, Vector<T>(dms.volume(), detail::default_init<T>::value()));
   }
 }
 
+template <class T>
+Variable Variable::create(units::Unit &&u, Dims &&d, Shape &&s,
+                          std::optional<Vector<T>> &&val,
+                          std::optional<Vector<T>> &&var) {
+  auto dms = Dimensions{d.data, s.data};
+  return create(std::move(u), std::move(dms), std::move(val), std::move(var));
+}
 template <class... Ts>
 template <class T>
 Variable Variable::ConstructVariable<Ts...>::Maker<T>::apply(Ts &&... ts) {
@@ -1018,6 +1054,8 @@ SCIPP_CORE_EXPORT Variable reverse(Variable var, const Dim dim);
 SCIPP_CORE_EXPORT VariableProxy sqrt(const VariableConstProxy &var,
                                      const VariableProxy &out);
 
+SCIPP_CORE_EXPORT Variable flatten(const VariableConstProxy &var,
+                                   const Dim dim);
 SCIPP_CORE_EXPORT Variable sum(const VariableConstProxy &var, const Dim dim);
 SCIPP_CORE_EXPORT Variable sum(const VariableConstProxy &var, const Dim dim,
                                const MasksConstProxy &masks);
