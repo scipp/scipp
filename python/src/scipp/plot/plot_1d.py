@@ -185,7 +185,8 @@ class Slicer1d(Slicer):
                         new_x, vslice.values, yerr=np.sqrt(vslice.variances),
                         color=self.color[i], zorder=10, fmt="none")
 
-        self.ax.set_xlim([new_x[0], new_x[-1]])
+        deltax = 0.05 * (new_x[-1] - new_x[0])
+        self.ax.set_xlim([new_x[0] - deltax, new_x[-1] + deltax])
         self.ax.set_xlabel(axis_label(self.slider_x[dim_str],
                                       name=self.slider_labels[dim_str]))
         return

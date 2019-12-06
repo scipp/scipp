@@ -30,6 +30,10 @@ class _Plot:
         # Resolution
         self.dpi = 100
 
+        # Aspect ratio for images: 'equal' will conserve the aspect ratio,
+        # while 'auto' will stretch the image to the size of the figure
+        self.aspect = "equal"
+
 
 class _Colors:
 

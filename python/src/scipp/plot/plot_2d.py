@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 
 
 def plot_2d(input_data=None, axes=None, cb=None, filename=None, name=None,
-            figsize=None, show_variances=False, mpl_axes=None):
+            figsize=None, show_variances=False, mpl_axes=None, aspect=None):
     """
     Plot a 2D slice through a N dimensional dataset. For every dimension above
     2, a slider is created to adjust the position of the slice in that
@@ -27,7 +27,8 @@ def plot_2d(input_data=None, axes=None, cb=None, filename=None, name=None,
         axes = var.dims
 
     sv = Slicer2d(input_data=var, axes=axes, cb=cb,
-                  show_variances=show_variances, mpl_axes=mpl_axes)
+                  show_variances=show_variances, mpl_axes=mpl_axes,
+                  aspect=aspect)
 
     if mpl_axes is None:
         render_plot(figure=sv.fig, widgets=sv.vbox, filename=filename)
@@ -38,7 +39,7 @@ def plot_2d(input_data=None, axes=None, cb=None, filename=None, name=None,
 class Slicer2d(Slicer):
 
     def __init__(self, input_data=None, axes=None, cb=None,
-                 show_variances=False, mpl_axes=None):
+                 show_variances=False, mpl_axes=None, aspect=None):
 
         super().__init__(input_data=input_data, axes=axes, cb=cb,
                          show_variances=show_variances,
@@ -46,6 +47,8 @@ class Slicer2d(Slicer):
 
         self.members.update({"images": {}, "colorbars": {}})
         self.extent = {"x": [0, 1], "y": [0, 1]}
+        if aspect is None:
+            aspect = config.aspect
 
         # Get or create matplotlib axes
         self.fig = None
@@ -90,7 +93,8 @@ class Slicer2d(Slicer):
             self.im[key] = self.ax[key].imshow(
                 [[1, 1], [1, 1]], norm=norm,
                 extent=np.array(list(self.extent.values())).flatten(),
-                origin="lower", interpolation="none", cmap=self.cb["name"])
+                origin="lower", interpolation="none", cmap=self.cb["name"],
+                aspect=aspect)
             self.cbar[key] = plt.colorbar(self.im[key], ax=self.ax[key],
                                           cax=self.cax[key])
             self.ax[key].set_title(
