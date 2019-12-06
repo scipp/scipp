@@ -65,11 +65,6 @@ public:
   explicit element_array(const Container &c)
       : element_array(c.begin(), c.end()) {}
 
-  template <class U, std::enable_if_t<std::is_assignable_v<U &, T>, int> = 0>
-  operator element_array<U>() {
-    return element_array<U>(begin(), end());
-  }
-
   element_array(std::initializer_list<T> init)
       : element_array(init.begin(), init.end()) {}
 
