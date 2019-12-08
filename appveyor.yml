@@ -4,6 +4,7 @@ os: Visual Studio 2019
 branches:	
   only:	
   - master
+  - windows_diagnose
   
 matrix:
   fast_finish: true
@@ -19,17 +20,22 @@ environment:
   MINICONDA: C:\Miniconda36-x64
 
 install:
+- echo install started %time%
 - cd %APPVEYOR_BUILD_FOLDER%
 - git submodule update --init
 - mkdir build
 - cd build
 - set PATH=%MINICONDA%;%MINICONDA%\\Scripts;%PATH%"
+- echo install finished %time%
 
 build_script:
+- echo build started %time%
 - cmake -G "Visual Studio 16 2019" -A x64 -DPYTHON_EXECUTABLE="C:/Python36-x64/python.exe" -DCMAKE_INSTALL_PREFIX=../install ..
 - cmake --build . --config %CONFIGURATION% --target install all-tests
+- echo build finished %time%
 
 test_script:
+- echo tests started %time%
 - '%APPVEYOR_BUILD_FOLDER%\build\common\test\%CONFIGURATION%\scipp-common-test.exe'
 - '%APPVEYOR_BUILD_FOLDER%\build\core\test\%CONFIGURATION%\scipp-core-test.exe'
 - '%APPVEYOR_BUILD_FOLDER%\build\neutron\test\%CONFIGURATION%\scipp-neutron-test.exe'
@@ -37,19 +43,24 @@ test_script:
 - C:\Python36-x64\python.exe -m pip install -r ..\python\requirements.txt
 - set PYTHONPATH=%PYTHONPATH%;..\install
 - C:\Python36-x64\python.exe -m pytest ..\python
+- echo tests finished %time%
 
 deploy_script:
+- echo deploy started %time%
 - ps: if (Test-Path env:APPVEYOR_PULL_REQUEST_HEAD_REPO_BRANCH) { Exit-AppVeyorBuild }
 - cd %APPVEYOR_BUILD_FOLDER%
 - rd build /s/q
 - mkdir build
 - cd build
 - conda config --set always_yes yes --set changeps1 no
+- echo deploy install started %time%
 - conda install -c conda-forge conda-build anaconda-client
+- echo deploy update started %time%
 - conda update libarchive
 - if "%APPVEYOR_REPO_TAG%"=="true" set LABEL=main
 - if "%APPVEYOR_REPO_TAG%"=="false" if "%APPVEYOR_REPO_BRANCH%"=="master" set LABEL=dev
 - echo using label %LABEL%
+- echo deploy build started %time%
 - conda-build --user scipp --token %ANACONDA_TOKEN% --label %LABEL% ../conda
 
 
