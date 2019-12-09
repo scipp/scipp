@@ -14,7 +14,8 @@ using namespace scipp::core;
 
 auto make_2d_sparse_coord_only(const scipp::index size,
                                const scipp::index count) {
-  auto var = makeVariable<double>({Dim::X, Dim::Y}, {size, Dimensions::Sparse});
+  auto var = createVariable<double>(Dims{Dim::X, Dim::Y},
+                                    Shape{size, Dimensions::Sparse});
   auto vals = var.sparseValues<double>();
   Random rand(0.0, 1000.0);
   for (scipp::index i = 0; i < size; ++i) {

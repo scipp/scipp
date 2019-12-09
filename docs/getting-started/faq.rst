@@ -33,8 +33,8 @@ We should note that at least some of our additional requirements, in particular 
 What about performance?
 -----------------------
 
-In its current state (around the 0.1 milestone) scipp does not support multi-threading and many parts of the implementation are not yet written to deliver optimal performance.
-This was a deliberate choice for this early milestone.
+In its current state scipp does not support multi-threading and not all parts of the implementation are written to deliver optimal performance.
+This was a deliberate choice for the early milestones.
 We chose to focus first on delivering a decent API and tested implementation.
-After these basics and the codebase have been consolidated, our roadmap contains various performance-related work.
+After these basics and the codebase have been consolidated, our roadmap contains more performance-related work and parallelization.
 Rest assured that we have undertaken steps during the design and prototyping process to ensure that the architecture and data structures are compatible with higher performance needs.

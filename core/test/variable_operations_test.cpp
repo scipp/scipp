@@ -73,7 +73,7 @@ TEST(Variable, operator_plus_equal) {
 TEST(Variable, operator_plus_equal_automatic_broadcast_of_rhs) {
   auto a = createVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.1, 2.2});
 
-  auto fewer_dimensions = makeVariable<double>(1.0);
+  auto fewer_dimensions = createVariable<double>(Values{1.0});
 
   ASSERT_NO_THROW(a += fewer_dimensions);
   EXPECT_EQ(a.values<double>()[0], 2.1);
@@ -197,7 +197,8 @@ TEST(Variable, operator_plus_eigen_type) {
 }
 
 TEST(SparseVariable, operator_plus) {
-  auto sparse = makeVariable<double>({Dim::Y, Dim::X}, {2, Dimensions::Sparse});
+  auto sparse = createVariable<double>(Dims{Dim::Y, Dim::X},
+                                       Shape{2l, Dimensions::Sparse});
   auto sparse_ = sparse.sparseValues<double>();
   sparse_[0] = {1, 2, 3};
   sparse_[1] = {4};
@@ -331,7 +332,7 @@ TEST(Variable, operator_times_can_broadcast) {
 
 TEST(Variable, operator_divide_equal) {
   auto a = createVariable<double>(Dims{Dim::X}, Shape{2}, Values{2.0, 3.0});
-  auto b = makeVariable<double>(2.0);
+  auto b = createVariable<double>(Values{2.0});
   b.setUnit(units::m);
 
   EXPECT_NO_THROW(a /= b);
@@ -381,10 +382,10 @@ TEST(Variable, operator_divide_scalar_float) {
 }
 
 TEST(Variable, operator_allowed_types) {
-  auto i32 = makeVariable<int32_t>(10);
-  auto i64 = makeVariable<int64_t>(10);
-  auto f = makeVariable<float>(0.5f);
-  auto d = makeVariable<double>(0.5);
+  auto i32 = createVariable<int32_t>(Values{10});
+  auto i64 = createVariable<int64_t>(Values{10});
+  auto f = createVariable<float>(Values{0.5f});
+  auto d = createVariable<double>(Values{0.5});
 
   /* Can operate on higher precision from lower precision */
   EXPECT_NO_THROW(i64 += i32);
@@ -492,11 +493,13 @@ TEST(SparseVariable, concatenate) {
 }
 
 TEST(SparseVariable, concatenate_along_sparse_dimension) {
-  auto a = makeVariable<double>({Dim::Y, Dim::X}, {2, Dimensions::Sparse});
+  auto a = createVariable<double>(Dims{Dim::Y, Dim::X},
+                                  Shape{2l, Dimensions::Sparse});
   auto a_ = a.sparseValues<double>();
   a_[0] = {1, 2, 3};
   a_[1] = {1, 2};
-  auto b = makeVariable<double>({Dim::Y, Dim::X}, {2, Dimensions::Sparse});
+  auto b = createVariable<double>(Dims{Dim::Y, Dim::X},
+                                  Shape{2l, Dimensions::Sparse});
   auto b_ = b.sparseValues<double>();
   b_[0] = {1, 3};
   b_[1] = {};
@@ -571,7 +574,8 @@ TEST(Variable, sum) {
 TEST(VariableConstProxy, sum) {
   const auto var =
       createVariable<float>(Dims{Dim::X}, Shape{4}, Values{1.0, 2.0, 3.0, 4.0});
-  EXPECT_EQ(sum(var.slice({Dim::X, 0, 2}), Dim::X), makeVariable<float>(3));
+  EXPECT_EQ(sum(var.slice({Dim::X, 0, 2}), Dim::X),
+            createVariable<float>(Values{3}));
 }
 
 TEST(Variable, abs) {
@@ -1150,10 +1154,10 @@ TYPED_TEST_CASE(ReciprocalTest, test_types);
 
 TYPED_TEST(ReciprocalTest, variable_reciprocal) {
   using T = TypeParam;
-  auto var1 = makeVariable<T>(2);
-  auto var2 = makeVariable<T>(0.5);
+  auto var1 = createVariable<T>(Values{2});
+  auto var2 = createVariable<T>(Values{0.5});
   ASSERT_EQ(reciprocal(var1), var2);
-  var1 = makeVariable<T>(2, 1);
-  var2 = makeVariable<T>(0.5, 0.0625);
+  var1 = createVariable<T>(Values{2}, Variances{1});
+  var2 = createVariable<T>(Values{0.5}, Variances{0.0625});
   ASSERT_EQ(reciprocal(var1), var2);
 }

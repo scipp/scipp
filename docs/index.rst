@@ -40,9 +40,6 @@ Documentation
    user-guide/computation
    user-guide/masking
    user-guide/sparse-data
-   user-guide/units
-   user-guide/dtype
-   user-guide/error-propagation
    user-guide/groupby
    user-guide/plotting
    user-guide/how_to
@@ -56,10 +53,13 @@ Documentation
    tutorials/neutron-data
 
 .. toctree::
-   :caption: Python Reference
+   :caption: Reference
    :maxdepth: 2
 
    python-reference/api
+   python-reference/dtype
+   python-reference/units
+   python-reference/error-propagation
 
 .. toctree::
    :caption: Neutron-scattering

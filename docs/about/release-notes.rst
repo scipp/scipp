@@ -7,7 +7,19 @@ Changes since v0.1
 ------------------
 
 * Support for masks stored in ``DataArray`` and ``Dataset``.
+
 * Support for ``groupby``, implementing a split-apply-combine approach as known from pandas.
+
+* Enhanced support for sparse data:
+
+  * Histogramming with "weighted" data.
+  * Multiplication/division operators between sparse data and histogram.
+
+* Enhanced plotting support:
+
+  * Now focussing on ``matplotlib``.
+  * Multi-dimensional plots with interactive sliders, and much more.
+
 * Significant performance improvements for majority of operations. Typically performance is now in the same ballpark as what the memory bandwidth on a single CPU core can support.
 
 v0.1 (September 2019)

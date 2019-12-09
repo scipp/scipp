@@ -46,10 +46,17 @@ template <class T, class Var> Variable subspan_view(Var &var, const Dim dim) {
   std::conditional_t<std::is_const_v<T>, const Var, Var> &var_ref = var;
   using MaybeConstT =
       std::conditional_t<std::is_const_v<Var>, std::add_const_t<T>, T>;
-  return makeVariable<span<MaybeConstT>>(
-      dims, var.unit(), values_view(var_ref),
-      var.hasVariances() ? variances_view(var_ref)
-                         : std::vector<span<MaybeConstT>>{}) /*LABEL_1*/;
+  auto valuesView = values_view(var_ref);
+  if (var.hasVariances()) {
+    auto variancesView = variances_view(var_ref);
+    return createVariable<span<MaybeConstT>>(
+        Dimensions{dims}, var.unit(),
+        Values(valuesView.begin(), valuesView.end()),
+        Variances(variancesView.begin(), variancesView.end()));
+  } else
+    return createVariable<span<MaybeConstT>>(
+        Dimensions{dims}, var.unit(),
+        Values(valuesView.begin(), valuesView.end()));
 }
 
 template <class... Ts, class... Args>
