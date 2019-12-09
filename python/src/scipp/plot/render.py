@@ -2,6 +2,8 @@
 # Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
+import matplotlib
+
 
 def render_plot(figure=None, widgets=None, filename=None, ipv=None):
     """
@@ -21,6 +23,7 @@ def render_plot(figure=None, widgets=None, filename=None, ipv=None):
         else:
             figure.savefig(filename, bbox_inches="tight")
     else:
-        if widgets is not None:
+        if widgets is not None and (ipv is not None or
+                                    matplotlib.get_backend() == "nbAgg"):
             disp.display(widgets)
     return

@@ -10,8 +10,8 @@ from ..config import plot as config
 
 try:
     from IPython import get_ipython
-    get_ipython().run_line_magic("matplotlib", "inline")
-except:
+    get_ipython().run_line_magic("matplotlib", "notebook")
+except ImportError:
     pass
 
 
@@ -23,6 +23,3 @@ def image(dataset, **kwargs):
 
 def threeslice(dataset, **kwargs):
     return plot(dataset, projection="3d", **kwargs)
-
-# def volume(dataset, **kwargs):
-#     return plot(dataset, projection="volume", **kwargs)

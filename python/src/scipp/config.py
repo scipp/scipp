@@ -28,7 +28,7 @@ class _Plot:
 
         # Aspect ratio for images: 'equal' will conserve the aspect ratio,
         # while 'auto' will stretch the image to the size of the figure
-        self.aspect = "equal"
+        self.aspect = "auto"
 
 
 class _Colors:

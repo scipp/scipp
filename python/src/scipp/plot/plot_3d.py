@@ -29,6 +29,12 @@ def plot_3d(input_data=None, axes=None, cb=None, filename=None, name=None,
     the position of the slice in 3D space.
     """
 
+    # Portect against unloaded module
+    if ipv is None:
+        raise RuntimeError("Three-dimensional projections require ipyvolume "
+                           "and ipyevents to be installed. Use conda/pip "
+                           "install ipyvolume ipyevents.")
+
     var = input_data[name]
     if axes is None:
         axes = var.dims
