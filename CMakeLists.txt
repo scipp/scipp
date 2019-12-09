@@ -89,7 +89,10 @@ if(${HAVE_GIT_VERSION_INFO} EQUAL 0)
 endif()
 
 
-if(NOT WIN32)
+if(WIN32)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
+    message(STATUS "Added parallel build arguments to CMAKE_CXX_FLAGS: ${CMAKE_CXX_FLAGS}")
+else(WIN32)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-omit-frame-pointer")
 	add_compile_options(-Wall
 						-Wextra
@@ -103,14 +106,8 @@ if(NOT WIN32)
 						-Wcast-qual
 						-Wcast-align)
 	add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-Woverloaded-virtual>
-						$<$<COMPILE_LANGUAGE:CXX>:-fno-operator-names>)
-						
-else(NOT WIN32)
-    if(${CMAKE_GENERATOR} MATCHES MSVC)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
-        message(STATUS "Added parallel build arguments to CMAKE_CXX_FLAGS: ${CMAKE_CXX_FLAGS}")
-    endif()
-endif(NOT WIN32)
+						$<$<COMPILE_LANGUAGE:CXX>:-fno-operator-names>)					
+endif(WIN32)
 # This is currently causing to many warnings, reenable when appropriate.
 # add_compile_options ( -Wconversion )
 
