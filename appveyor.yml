@@ -47,7 +47,9 @@ test_script:
 
 deploy_script:
 - echo deploy started %time%
+- echo APPVEYOR_PULL_REQUEST_HEAD_REPO_BRANCH %APPVEYOR_PULL_REQUEST_HEAD_REPO_BRANCH%
 - ps: if (Test-Path env:APPVEYOR_PULL_REQUEST_HEAD_REPO_BRANCH) { Exit-AppVeyorBuild }
+- echo APPVEYOR_REPO_BRANCH %APPVEYOR_REPO_BRANCH%
 - cd %APPVEYOR_BUILD_FOLDER%
 - rd build /s/q
 - mkdir build
