@@ -30,8 +30,7 @@ protected:
 
     dataset.setData("val_and_var",
                     createVariable<double>(Dims{Dim::Y, Dim::X}, Shape{3, 4},
-                                           Values(std::vector<double>(12)),
-                                           Variances(std::vector<double>(12))));
+                                           Values(12), Variances(12)));
     dataset.setAttr("val_and_var", "attr", createVariable<int>(Values{int{}}));
 
     dataset.setData("val", createVariable<double>(Dims{Dim::X}, Shape{4}));
@@ -268,10 +267,8 @@ TEST_F(DataArray_comparison_operators, extra_attr) {
 
 TEST_F(DataArray_comparison_operators, extra_variance) {
   auto extra = dataset;
-  extra.setData("val",
-                createVariable<double>(Dimensions{Dim::X, 4},
-                                       Values(std::vector<double>(4)),
-                                       Variances(std::vector<double>(4))));
+  extra.setData("val", createVariable<double>(Dimensions{Dim::X, 4}, Values(4),
+                                              Variances(4)));
   expect_ne(extra["val"], dataset["val"]);
 }
 
