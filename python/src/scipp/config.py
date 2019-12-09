@@ -24,7 +24,7 @@ class _Plot:
         self.width = 800
 
         # Resolution
-        self.dpi = 100
+        self.dpi = 96
 
         # Aspect ratio for images: 'equal' will conserve the aspect ratio,
         # while 'auto' will stretch the image to the size of the figure

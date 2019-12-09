@@ -93,7 +93,7 @@ class Slicer2d(Slicer):
             self.im[key] = self.ax[key].imshow(
                 [[1, 1], [1, 1]], norm=norm,
                 extent=np.array(list(self.extent.values())).flatten(),
-                origin="lower", interpolation="none", cmap=self.cb["name"],
+                origin="lower", interpolation="nearest", cmap=self.cb["name"],
                 aspect=aspect)
             self.cbar[key] = plt.colorbar(self.im[key], ax=self.ax[key],
                                           cax=self.cax[key])

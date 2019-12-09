@@ -219,3 +219,11 @@ texinfo_documents = [
      author, 'scipp', 'One line description of project.',
      'Miscellaneous'),
 ]
+
+
+# -- Options for Matplotlib in notebooks ----------------------------------
+
+nbsphinx_execute_arguments = [
+    "--InlineBackend.figure_formats={'svg', 'pdf'}",
+    "--InlineBackend.rc={'figure.dpi': 96}",
+]

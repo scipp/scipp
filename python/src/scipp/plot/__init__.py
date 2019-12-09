@@ -6,11 +6,16 @@
 # flake8: noqa
 
 from .plot import plot
-from ..config import plot as config
 
+
+# If we are running inside a notebook, then make plot interactive by default.
+# From: https://stackoverflow.com/a/22424821
 try:
     from IPython import get_ipython
-    get_ipython().run_line_magic("matplotlib", "notebook")
+    ipy = get_ipython()
+    if ipy is not None:
+        if "IPKernelApp" in ipy.config:
+            ipy.run_line_magic("matplotlib", "notebook")
 except ImportError:
     pass
 
