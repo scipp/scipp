@@ -45,25 +45,39 @@ test_script:
 - C:\Python36-x64\python.exe -m pytest ..\python
 - echo tests finished %time%
 
-deploy_script:
-- echo deploy started %time%
-- echo APPVEYOR_PULL_REQUEST_HEAD_REPO_BRANCH %APPVEYOR_PULL_REQUEST_HEAD_REPO_BRANCH%
-- ps: if (Test-Path env:APPVEYOR_PULL_REQUEST_HEAD_REPO_BRANCH) { Exit-AppVeyorBuild }
-- echo APPVEYOR_REPO_BRANCH %APPVEYOR_REPO_BRANCH%
-- cd %APPVEYOR_BUILD_FOLDER%
-- rd build /s/q
-- mkdir build
-- cd build
-- conda config --set always_yes yes --set changeps1 no
-- echo deploy install started %time%
-- conda install -c conda-forge conda-build anaconda-client
-- echo deploy update started %time%
-- conda update libarchive
-- if "%APPVEYOR_REPO_TAG%"=="true" set LABEL=main
-- if "%APPVEYOR_REPO_TAG%"=="false" if "%APPVEYOR_REPO_BRANCH%"=="master" set LABEL=dev
-- echo using label %LABEL%
-- echo deploy build started %time%
-- conda-build --user scipp --token %ANACONDA_TOKEN% --label %LABEL% ../conda
+deploy_script: off
+
+for
+- 
+  branches:
+      only:
+         - master
+         - windows_diagnose
+  
+  build_script: off
+  
+  test_script: off
+
+  deploy_script:
+  - echo deploy started %time%
+  - echo APPVEYOR_PULL_REQUEST_HEAD_REPO_BRANCH %APPVEYOR_PULL_REQUEST_HEAD_REPO_BRANCH%
+  - ps: if (Test-Path env:APPVEYOR_PULL_REQUEST_HEAD_REPO_BRANCH) { Exit-AppVeyorBuild }
+  - echo APPVEYOR_REPO_BRANCH %APPVEYOR_REPO_BRANCH%
+  - cd %APPVEYOR_BUILD_FOLDER%
+  - rd build /s/q
+  - mkdir build
+  - cd build
+  - conda config --set always_yes yes --set changeps1 no
+  - echo deploy install started %time%
+  - conda install -c conda-forge conda-build anaconda-client
+  - echo deploy update started %time%
+  - conda update libarchive
+  - if "%APPVEYOR_REPO_TAG%"=="true" set LABEL=main
+  - if "%APPVEYOR_REPO_TAG%"=="false" if "%APPVEYOR_REPO_BRANCH%"=="master" set LABEL=dev
+  - if "%APPVEYOR_REPO_TAG%"=="false" if "%APPVEYOR_REPO_BRANCH%"=="windows_diagnose" set LABEL=dev
+  - echo using label %LABEL%
+  - echo deploy build started %time%
+  - conda-build --user scipp --token %ANACONDA_TOKEN% --label %LABEL% ../conda
 
 
 
