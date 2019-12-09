@@ -47,7 +47,7 @@ test_script:
 
 deploy_script: off
 
-for
+for:
 - 
   branches:
       only:
