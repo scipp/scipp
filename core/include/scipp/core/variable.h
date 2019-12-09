@@ -597,7 +597,7 @@ Variable Variable::create(units::Unit &&u, Dimensions &&d,
   auto dms{d};
   if (val && var) {
     if (val->size() == 0 && var->size() == 0)
-      return from_dimensions_and_unit_with_wariances<T>(dms, u);
+      return from_dimensions_and_unit_with_variances<T>(dms, u);
     else
       return Variable(u, dms, std::move(*val), std::move(*var));
   }
