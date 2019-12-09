@@ -81,11 +81,3 @@ This can be converted into a counts (frequency) density, e.g., for visualization
 
    counts_to_density
    density_to_counts
-
-Data types
-==========
-
-.. autosummary::
-   :toctree: ../generated
-
-   dtype
