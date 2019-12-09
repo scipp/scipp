@@ -47,9 +47,11 @@ for:
          - master
          - windows_diagnose
   
-  build_script: off
+  build_script:
+  - echo empty build step 
   
-  test_script: off
+  test_script: 
+  - echo empty test step 
 
   deploy_script:
   - echo deploy started %time%
