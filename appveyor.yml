@@ -15,7 +15,6 @@ environment:
   MINICONDA: C:\Miniconda36-x64
 
 install:
-- ps: Write-Output $env:APPVEYOR_PULL_REQUEST_HEAD_REPO_BRANCH 
 - cd %APPVEYOR_BUILD_FOLDER%
 - git submodule update --init
 - mkdir build
@@ -36,7 +35,7 @@ test_script:
 - C:\Python36-x64\python.exe -m pytest ..\python
 
 deploy_script:
-- ps: if ($env:APPVEYOR_PULL_REQUEST_HEAD_REPO_BRANCH -ne "master") { Exit-AppVeyorBuild }
+- ps: if (Test-Path env:APPVEYOR_PULL_REQUEST_HEAD_REPO_BRANCH) { Exit-AppVeyorBuild }
 - cd %APPVEYOR_BUILD_FOLDER%
 - rd build /s/q
 - mkdir build

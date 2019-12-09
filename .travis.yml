@@ -10,7 +10,7 @@ branches:
 env:
   global:
     - PYTHON_EXECUTABLE="/usr/bin/python3"
-    - GENERATOR=ninja
+    - GENERATOR=Ninja
 
 jobs:
   include:
@@ -108,4 +108,4 @@ jobs:
         - OSX_VERSION=10.14
       install:
         - .travis/install_conda.sh "Miniconda3-latest-MacOSX-x86_64.sh"
-      script: travis_wait .travis/conda_build_and_deploy.sh
+      script: travis_wait 30 .travis/conda_build_and_deploy.sh

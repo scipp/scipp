@@ -2,6 +2,7 @@
 // Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
+#include <array>
 #include <vector>
 
 #include "scipp/core/element_array.h"
