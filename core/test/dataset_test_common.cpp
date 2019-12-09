@@ -6,67 +6,76 @@
 
 Variable makeRandom(const Dimensions &dims) {
   Random rand;
-  return makeVariable<double>(dims, rand(dims.volume())) /*LABEL_1*/;
+  return createVariable<double>(Dimensions{dims}, Values(rand(dims.volume())));
 }
 
 DatasetFactory3D::DatasetFactory3D(const scipp::index lx_,
                                    const scipp::index ly_,
                                    const scipp::index lz_)
     : lx(lx_), ly(ly_), lz(lz_) {
-  base.setCoord(Dim::Time, makeVariable<double>(rand(1).front()));
-  base.setCoord(Dim::X,
-                makeVariable<double>({Dim::X, lx}, rand(lx)) /*LABEL_1*/);
-  base.setCoord(Dim::Y,
-                makeVariable<double>({Dim::Y, ly}, rand(ly)) /*LABEL_1*/);
+  base.setCoord(Dim::Time, createVariable<double>(Values{rand(1).front()}));
+  base.setCoord(
+      Dim::X, createVariable<double>(Dimensions{Dim::X, lx}, Values(rand(lx))));
+  base.setCoord(
+      Dim::Y, createVariable<double>(Dimensions{Dim::Y, ly}, Values(rand(ly))));
   base.setCoord(Dim::Z,
-                makeVariable<double>({{Dim::X, lx}, {Dim::Y, ly}, {Dim::Z, lz}},
-                                     rand(lx * ly * lz)) /*LABEL_1*/);
+                createVariable<double>(
+                    Dimensions{{Dim::X, lx}, {Dim::Y, ly}, {Dim::Z, lz}},
+                    Values(rand(lx * ly * lz))));
 
-  base.setLabels("labels_x",
-                 makeVariable<double>({Dim::X, lx}, rand(lx)) /*LABEL_1*/);
-  base.setLabels("labels_xy", makeVariable<double>({{Dim::X, lx}, {Dim::Y, ly}},
-                                                   rand(lx * ly)) /*LABEL_1*/);
-  base.setLabels("labels_z",
-                 makeVariable<double>({Dim::Z, lz}, rand(lz)) /*LABEL_1*/);
+  base.setLabels("labels_x", createVariable<double>(Dimensions{Dim::X, lx},
+                                                    Values(rand(lx))));
+  base.setLabels("labels_xy",
+                 createVariable<double>(Dimensions{{Dim::X, lx}, {Dim::Y, ly}},
+                                        Values(rand(lx * ly))));
+  base.setLabels("labels_z", createVariable<double>(Dimensions{Dim::Z, lz},
+                                                    Values(rand(lz))));
+
   base.setMask("masks_x",
-               makeVariable<bool>(
-                   {Dim::X, lx},
-                   makeBools<BoolsGeneratorType::ALTERNATING>(lx)) /*LABEL_1*/);
-  base.setMask("masks_xy",
-               makeVariable<bool>({{Dim::X, lx}, {Dim::Y, ly}},
-                                  makeBools<BoolsGeneratorType::ALTERNATING>(
-                                      lx * ly)) /*LABEL_1*/);
+               createVariable<bool>(
+                   Dimensions{Dim::X, lx},
+                   Values(makeBools<BoolsGeneratorType::ALTERNATING>(lx))));
+  base.setMask(
+      "masks_xy",
+      createVariable<bool>(
+          Dimensions{{Dim::X, lx}, {Dim::Y, ly}},
+          Values(makeBools<BoolsGeneratorType::ALTERNATING>(lx * ly))));
   base.setMask("masks_z",
-               makeVariable<bool>(
-                   {Dim::Z, lz},
-                   makeBools<BoolsGeneratorType::ALTERNATING>(lz)) /*LABEL_1*/);
+               createVariable<bool>(
+                   Dimensions{Dim::Z, lz},
+                   Values(makeBools<BoolsGeneratorType::ALTERNATING>(lz))));
 
-  base.setAttr("attr_scalar", makeVariable<double>(rand(1).front()));
-  base.setAttr("attr_x",
-               makeVariable<double>({Dim::X, lx}, rand(lx)) /*LABEL_1*/);
+  base.setAttr("attr_scalar", createVariable<double>(Values{rand(1).front()}));
+  base.setAttr("attr_x", createVariable<double>(Dimensions{Dim::X, lx},
+                                                Values(rand(lx))));
 }
 
 Dataset DatasetFactory3D::make() {
   Dataset dataset(base);
-  dataset.setData("values_x",
-                  makeVariable<double>({Dim::X, lx}, rand(lx)) /*LABEL_1*/);
-  dataset.setData("data_x", makeVariable<double>({Dim::X, lx}, rand(lx),
-                                                 rand(lx)) /*LABEL_1*/);
+  dataset.setData("values_x", createVariable<double>(Dimensions{Dim::X, lx},
+                                                     Values(rand(lx))));
+  dataset.setData("data_x", createVariable<double>(Dimensions{Dim::X, lx},
+                                                   Values(rand(lx)),
+                                                   Variances(rand(lx))));
 
-  dataset.setData("data_xy", makeVariable<double>({{Dim::X, lx}, {Dim::Y, ly}},
-                                                  rand(lx * ly),
-                                                  rand(lx * ly)) /*LABEL_1*/);
+  dataset.setData("data_xy",
+                  createVariable<double>(Dimensions{{Dim::X, lx}, {Dim::Y, ly}},
+                                         Values(rand(lx * ly)),
+                                         Variances(rand(lx * ly))));
 
-  dataset.setData(
-      "data_zyx",
-      makeVariable<double>({{Dim::Z, lz}, {Dim::Y, ly}, {Dim::X, lx}},
-                           rand(lx * ly * lz), rand(lx * ly * lz)) /*LABEL_1*/);
+  dataset.setData("data_zyx",
+                  createVariable<double>(
+                      Dimensions{{Dim::Z, lz}, {Dim::Y, ly}, {Dim::X, lx}},
+                      Values(rand(lx * ly * lz)),
+                      Variances(rand(lx * ly * lz))));
 
-  dataset.setData("data_xyz", makeVariable<double>(
-                                  {{Dim::X, lx}, {Dim::Y, ly}, {Dim::Z, lz}},
-                                  rand(lx * ly * lz)) /*LABEL_1*/);
+  dataset.setData("data_xyz",
+                  createVariable<double>(
+                      Dimensions{{Dim::X, lx}, {Dim::Y, ly}, {Dim::Z, lz}},
+                      Values(rand(lx * ly * lz))));
 
-  dataset.setData("data_scalar", makeVariable<double>(rand(1).front()));
+  dataset.setData("data_scalar",
+                  createVariable<double>(Values{rand(1).front()}));
 
   return dataset;
 }
@@ -110,7 +119,8 @@ Dataset make_sparse_with_coords_and_labels(
 
 Dataset make_sparse_2d(std::initializer_list<double> values, std::string key) {
   Dataset ds;
-  auto var = makeVariable<double>({Dim::X, Dim::Y}, {2, Dimensions::Sparse});
+  auto var = createVariable<double>(Dims{Dim::X, Dim::Y},
+                                    Shape{2l, Dimensions::Sparse});
   var.sparseValues<double>()[0] = values;
   var.sparseValues<double>()[1] = values;
   ds.setData(key, var);
@@ -119,13 +129,12 @@ Dataset make_sparse_2d(std::initializer_list<double> values, std::string key) {
 
 Dataset make_1d_masked() {
   Random random;
-
   Dataset ds;
-  ds.setData("data_x",
-             makeVariable<double>({Dim::X, 10}, random(10)) /*LABEL_1*/);
+  ds.setData("data_x", createVariable<double>(Dimensions{Dim::X, 10},
+                                              Values(random(10))));
   ds.setMask("masks_x",
-             makeVariable<bool>(
-                 {Dim::X, 10},
-                 makeBools<BoolsGeneratorType::ALTERNATING>(10)) /*LABEL_1*/);
+             createVariable<bool>(
+                 Dimensions{Dim::X, 10},
+                 Values(makeBools<BoolsGeneratorType::ALTERNATING>(10))));
   return ds;
 }

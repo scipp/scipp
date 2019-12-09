@@ -40,8 +40,8 @@ TEST(Variable, move) {
 }
 
 TEST(Variable, makeVariable_custom_type) {
-  auto doubles = makeVariable<double>({});
-  auto floats = makeVariable<float>({});
+  auto doubles = createVariable<double>(Values{double{}});
+  auto floats = createVariable<float>(Values{float{}});
 
   ASSERT_NO_THROW(doubles.values<double>());
   ASSERT_NO_THROW(floats.values<float>());
@@ -66,8 +66,8 @@ TEST(Variable, makeVariable_custom_type_initializer_list) {
 }
 
 TEST(Variable, dtype) {
-  auto doubles = makeVariable<double>({});
-  auto floats = makeVariable<float>({});
+  auto doubles = createVariable<double>(Values{double{}});
+  auto floats = createVariable<float>(Values{float{}});
   EXPECT_EQ(doubles.dtype(), dtype<double>);
   EXPECT_NE(doubles.dtype(), dtype<float>);
   EXPECT_NE(floats.dtype(), dtype<double>);
@@ -121,10 +121,10 @@ protected:
 };
 
 TEST_F(Variable_comparison_operators, values_0d) {
-  const auto base = makeVariable<double>(1.1);
+  const auto base = createVariable<double>(Values{1.1});
   expect_eq(base, base);
-  expect_eq(base, makeVariable<double>(1.1));
-  expect_ne(base, makeVariable<double>(1.2));
+  expect_eq(base, createVariable<double>(Values{1.1}));
+  expect_ne(base, createVariable<double>(Values{1.2}));
 }
 
 TEST_F(Variable_comparison_operators, values_1d) {
@@ -148,11 +148,11 @@ TEST_F(Variable_comparison_operators, values_2d) {
 }
 
 TEST_F(Variable_comparison_operators, variances_0d) {
-  const auto base = makeVariable<double>(1.1, 0.1);
+  const auto base = createVariable<double>(Values{1.1}, Variances{0.1});
   expect_eq(base, base);
-  expect_eq(base, makeVariable<double>(1.1, 0.1));
-  expect_ne(base, makeVariable<double>(1.1));
-  expect_ne(base, makeVariable<double>(1.1, 0.2));
+  expect_eq(base, createVariable<double>(Values{1.1}, Variances{0.1}));
+  expect_ne(base, createVariable<double>(Values{1.1}));
+  expect_ne(base, createVariable<double>(Values{1.1}, Variances{0.2}));
 }
 
 TEST_F(Variable_comparison_operators, variances_1d) {
@@ -184,7 +184,7 @@ TEST_F(Variable_comparison_operators, variances_2d) {
 }
 
 TEST_F(Variable_comparison_operators, dimension_mismatch) {
-  expect_ne(makeVariable<double>(1.1),
+  expect_ne(createVariable<double>(Values{1.1}),
             createVariable<double>(Dims{Dim::X}, Shape{1}, Values{1.1}));
   expect_ne(createVariable<double>(Dims{Dim::X}, Shape{1}, Values{1.1}),
             createVariable<double>(Dims{Dim::Y}, Shape{1}, Values{1.1}));
@@ -211,26 +211,30 @@ TEST_F(Variable_comparison_operators, unit) {
 }
 
 TEST_F(Variable_comparison_operators, dtype) {
-  const auto base = makeVariable<double>(1.0);
-  expect_ne(base, makeVariable<float>(1.0));
+  const auto base = createVariable<double>(Values{1.0});
+  expect_ne(base, createVariable<float>(Values{1.0}));
 }
 
 TEST_F(Variable_comparison_operators, dense_sparse) {
-  auto dense = makeVariable<double>({Dim::Y, Dim::X}, {2, 0});
-  auto sparse = makeVariable<double>({Dim::Y, Dim::X}, {2, Dimensions::Sparse});
+  auto dense = createVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2l, 0l});
+  auto sparse = createVariable<double>(Dims{Dim::Y, Dim::X},
+                                       Shape{2l, Dimensions::Sparse});
   expect_ne(dense, sparse);
 }
 
 TEST_F(Variable_comparison_operators, sparse) {
-  auto a = makeVariable<double>({Dim::Y, Dim::X}, {2, Dimensions::Sparse});
+  auto a = createVariable<double>(Dims{Dim::Y, Dim::X},
+                                  Shape{2l, Dimensions::Sparse});
   auto a_ = a.sparseValues<double>();
   a_[0] = {1, 2, 3};
   a_[1] = {1, 2};
-  auto b = makeVariable<double>({Dim::Y, Dim::X}, {2, Dimensions::Sparse});
+  auto b = createVariable<double>(Dims{Dim::Y, Dim::X},
+                                  Shape{2l, Dimensions::Sparse});
   auto b_ = b.sparseValues<double>();
   b_[0] = {1, 2, 3};
   b_[1] = {1, 2};
-  auto c = makeVariable<double>({Dim::Y, Dim::X}, {2, Dimensions::Sparse});
+  auto c = createVariable<double>(Dims{Dim::Y, Dim::X},
+                                  Shape{2l, Dimensions::Sparse});
   auto c_ = c.sparseValues<double>();
   c_[0] = {1, 3};
   c_[1] = {};
@@ -264,8 +268,8 @@ TEST_F(Variable_comparison_operators, sparse_variances) {
   c_vars[0] = {1, 3};
   c_vars[1] = {};
 
-  auto a_no_vars =
-      makeVariable<double>({Dim::Y, Dim::X}, {2, Dimensions::Sparse});
+  auto a_no_vars = createVariable<double>(Dims{Dim::Y, Dim::X},
+                                          Shape{2l, Dimensions::Sparse});
   auto a_no_vars_ = a_no_vars.sparseValues<double>();
   a_no_vars_[0] = {1, 2, 3};
   a_no_vars_[1] = {1, 2};
@@ -337,8 +341,9 @@ TEST(Variable, assign_slice_unit_checks) {
 }
 
 TEST(Variable, assign_slice_variance_checks) {
-  const auto parent_vals = makeVariable<double>(1.0);
-  const auto parent_vals_vars = makeVariable<double>(1.0, 2.0);
+  const auto parent_vals = createVariable<double>(Values{1.0});
+  const auto parent_vals_vars =
+      createVariable<double>(Values{1.0}, Variances{2.0});
   auto vals = createVariable<double>(Dims{Dim::X}, Shape{4});
   auto vals_vars = makeVariableWithVariances<double>({Dim::X, 4});
 
@@ -911,8 +916,8 @@ TEST(Variable, access_typed_view_edges) {
 }
 
 TEST(SparseVariable, create) {
-  const auto var =
-      makeVariable<double>({Dim::Y, Dim::X}, {2, Dimensions::Sparse});
+  const auto var = createVariable<double>(Dims{Dim::Y, Dim::X},
+                                          Shape{2l, Dimensions::Sparse});
   EXPECT_TRUE(var.dims().sparse());
   EXPECT_EQ(var.dims().sparseDim(), Dim::X);
   // Should we return the full volume here, i.e., accumulate the extents of all
@@ -921,8 +926,8 @@ TEST(SparseVariable, create) {
 }
 
 TEST(SparseVariable, dtype) {
-  const auto var =
-      makeVariable<double>({Dim::Y, Dim::X}, {2, Dimensions::Sparse});
+  const auto var = createVariable<double>(Dims{Dim::Y, Dim::X},
+                                          Shape{2l, Dimensions::Sparse});
   // It is not clear that this is the best way of handling things.
   // Variable::dtype() makes sense like this, but it is not so clear for
   // VariableConcept::dtype().
@@ -938,8 +943,8 @@ TEST(SparseVariable, non_sparse_access_fail) {
 }
 
 TEST(SparseVariable, DISABLED_low_level_access) {
-  const auto var =
-      makeVariable<double>({Dim::Y, Dim::X}, {2, Dimensions::Sparse});
+  const auto var = createVariable<double>(Dims{Dim::Y, Dim::X},
+                                          Shape{2l, Dimensions::Sparse});
   // Need to decide whether we allow this direct access or not.
   ASSERT_THROW((var.values<sparse_container<double>>()), except::TypeError);
 }
@@ -960,7 +965,8 @@ TEST(SparseVariable, access) {
 }
 
 TEST(SparseVariable, resize_sparse) {
-  auto var = makeVariable<double>({Dim::Y, Dim::X}, {2, Dimensions::Sparse});
+  auto var = createVariable<double>(Dims{Dim::Y, Dim::X},
+                                    Shape{2l, Dimensions::Sparse});
   auto data = var.sparseValues<double>();
   data[1] = {1, 2, 3};
 }
@@ -981,7 +987,8 @@ TEST(SparseVariable, move) {
 }
 
 TEST(SparseVariable, slice) {
-  auto var = makeVariable<double>({Dim::Y, Dim::X}, {4, Dimensions::Sparse});
+  auto var = createVariable<double>(Dims{Dim::Y, Dim::X},
+                                    Shape{4l, Dimensions::Sparse});
   auto data = var.sparseValues<double>();
   data[0] = {1, 2, 3};
   data[1] = {1, 2};
@@ -997,7 +1004,8 @@ TEST(SparseVariable, slice) {
 }
 
 TEST(SparseVariable, slice_fail) {
-  auto var = makeVariable<double>({Dim::Y, Dim::X}, {4, Dimensions::Sparse});
+  auto var = createVariable<double>(Dims{Dim::Y, Dim::X},
+                                    Shape{4l, Dimensions::Sparse});
   auto data = var.sparseValues<double>();
   data[0] = {1, 2, 3};
   data[1] = {1, 2};
@@ -1008,22 +1016,23 @@ TEST(SparseVariable, slice_fail) {
 }
 
 TEST(VariableTest, create_with_variance) {
-  ASSERT_NO_THROW(makeVariable<double>(1.0, 0.1));
+  ASSERT_NO_THROW(createVariable<double>(Values{1.0}, Variances{0.1}));
   ASSERT_NO_THROW(createVariable<double>(Dims(), Shape(), units::Unit(units::m),
                                          Values{1.0}, Variances{0.1}));
 }
 
 TEST(VariableTest, hasVariances) {
-  ASSERT_FALSE(makeVariable<double>({}).hasVariances());
-  ASSERT_FALSE(makeVariable<double>(1.0).hasVariances());
-  ASSERT_TRUE(makeVariable<double>(1.0, 0.1).hasVariances());
+  ASSERT_FALSE(createVariable<double>(Values{double{}}).hasVariances());
+  ASSERT_FALSE(createVariable<double>(Values{1.0}).hasVariances());
+  ASSERT_TRUE(
+      createVariable<double>(Values{1.0}, Variances{0.1}).hasVariances());
   ASSERT_TRUE(createVariable<double>(Dims(), Shape(), units::Unit(units::m),
                                      Values{1.0}, Variances{0.1})
                   .hasVariances());
 }
 
 TEST(VariableTest, values_variances) {
-  const auto var = makeVariable<double>(1.0, 0.1);
+  const auto var = createVariable<double>(Values{1.0}, Variances{0.1});
   ASSERT_NO_THROW(var.values<double>());
   ASSERT_NO_THROW(var.variances<double>());
   ASSERT_TRUE(equals(var.values<double>(), {1.0}));
@@ -1075,7 +1084,7 @@ TEST(VariableTest, variances_unsupported_type_fail) {
 }
 
 TEST(VariableTest, construct_proxy_dims) {
-  auto var = makeVariable<double>({Dim::Y, Dim::X}, {2, 3});
+  auto var = createVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2l, 3l});
   Variable vv(var.slice({Dim::X, 0, 2}));
   ASSERT_NO_THROW(Variable(var.slice({Dim::X, 0, 2}), Dimensions(Dim::Y, 2)));
 }
@@ -1100,11 +1109,11 @@ TYPED_TEST_CASE(AsTypeTest, type_pairs);
 TYPED_TEST(AsTypeTest, variable_astype) {
   using T1 = typename TypeParam::first_type;
   using T2 = typename TypeParam::second_type;
-  auto var1 = makeVariable<T1>(1, 1);
-  auto var2 = makeVariable<T2>(1, 1);
+  auto var1 = createVariable<T1>(Values{1}, Variances{1});
+  auto var2 = createVariable<T2>(Values{1}, Variances{1});
   ASSERT_EQ(astype(var1, core::dtype<T2>), var2);
-  var1 = makeVariable<T1>(1);
-  var2 = makeVariable<T2>(1);
+  var1 = createVariable<T1>(Values{1});
+  var2 = createVariable<T2>(Values{1});
   ASSERT_EQ(astype(var1, core::dtype<T2>), var2);
   var1 = createVariable<T1>(Dims{Dim::X}, Shape{3}, units::Unit(units::m),
                             Values{1.0, 2.0, 3.0});

@@ -35,7 +35,8 @@ TEST(DataArrayTest, sum_dataset_columns_via_DataArray) {
 }
 
 auto make_sparse() {
-  auto var = makeVariable<double>({Dim::Y, Dim::X}, {2, Dimensions::Sparse});
+  auto var = createVariable<double>(Dims{Dim::Y, Dim::X},
+                                    Shape{2l, Dimensions::Sparse});
   var.setUnit(units::us);
   auto vals = var.sparseValues<double>();
   vals[0] = {1.1, 2.2, 3.3};

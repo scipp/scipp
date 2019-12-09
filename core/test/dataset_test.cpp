@@ -173,7 +173,7 @@ TEST(DatasetTest, setLabels_with_name_matching_data_name) {
   // It is possible to set labels with a name matching data. However, there is
   // no special meaning attached to this. In particular it is *not* linking the
   // labels to that data item.
-  ASSERT_NO_THROW(d.setLabels("a", makeVariable<double>({})));
+  ASSERT_NO_THROW(d.setLabels("a", createVariable<double>(Values{double{}})));
   ASSERT_EQ(d.size(), 2);
   ASSERT_EQ(d.labels().size(), 1);
   ASSERT_EQ(d["a"].labels().size(), 1);
@@ -189,8 +189,8 @@ TEST(DatasetTest, setSparseCoord_not_sparse_fail) {
 
 TEST(DatasetTest, setSparseCoord) {
   Dataset d;
-  const auto var =
-      makeVariable<double>({Dim::X, Dim::Y}, {3, Dimensions::Sparse});
+  const auto var = createVariable<double>(Dims{Dim::X, Dim::Y},
+                                          Shape{3l, Dimensions::Sparse});
 
   ASSERT_NO_THROW(d.setSparseCoord("a", var));
   ASSERT_EQ(d.size(), 1);
@@ -199,7 +199,8 @@ TEST(DatasetTest, setSparseCoord) {
 
 TEST(DatasetTest, setSparseLabels_missing_values_or_coord) {
   Dataset d;
-  const auto sparse = makeVariable<double>({Dim::X}, {Dimensions::Sparse});
+  const auto sparse =
+      createVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse});
 
   ASSERT_ANY_THROW(d.setSparseLabels("a", "x", sparse));
   d.setSparseCoord("a", sparse);
@@ -208,8 +209,9 @@ TEST(DatasetTest, setSparseLabels_missing_values_or_coord) {
 
 TEST(DatasetTest, setSparseLabels_not_sparse_fail) {
   Dataset d;
-  const auto dense = makeVariable<double>({});
-  const auto sparse = makeVariable<double>({Dim::X}, {Dimensions::Sparse});
+  const auto dense = createVariable<double>(Values{double{}});
+  const auto sparse =
+      createVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse});
 
   d.setSparseCoord("a", sparse);
   ASSERT_ANY_THROW(d.setSparseLabels("a", "x", dense));
@@ -217,7 +219,8 @@ TEST(DatasetTest, setSparseLabels_not_sparse_fail) {
 
 TEST(DatasetTest, setSparseLabels) {
   Dataset d;
-  const auto sparse = makeVariable<double>({Dim::X}, {Dimensions::Sparse});
+  const auto sparse =
+      createVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse});
   d.setSparseCoord("a", sparse);
 
   ASSERT_NO_THROW(d.setSparseLabels("a", "x", sparse));
@@ -239,9 +242,10 @@ TEST(DatasetTest, const_iterators_return_types) {
 }
 
 TEST(DatasetTest, set_dense_data_with_sparse_coord) {
-  auto sparse_variable =
-      makeVariable<double>({Dim::Y, Dim::X}, {2, Dimensions::Sparse});
-  auto dense_variable = makeVariable<double>({Dim::Y, Dim::X}, {2, 2});
+  auto sparse_variable = createVariable<double>(Dims{Dim::Y, Dim::X},
+                                                Shape{2l, Dimensions::Sparse});
+  auto dense_variable =
+      createVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2l, 2l});
 
   Dataset a;
   a.setData("sparse_coord_and_val", dense_variable);
@@ -340,13 +344,15 @@ TEST(DataProxyTest, set_variances) {
 TEST(DatasetTest, sum_and_mean) {
   auto ds = make_1_values_and_variances<float>(
       "a", {Dim::X, 3}, units::dimensionless, {1, 2, 3}, {12, 15, 18});
-  EXPECT_EQ(core::sum(ds, Dim::X)["a"].data(), makeVariable<float>(6, 45));
+  EXPECT_EQ(core::sum(ds, Dim::X)["a"].data(),
+            createVariable<float>(Values{6}, Variances{45}));
   EXPECT_EQ(core::sum(ds.slice({Dim::X, 0, 2}), Dim::X)["a"].data(),
-            makeVariable<float>(3, 27));
+            createVariable<float>(Values{3}, Variances{27}));
 
-  EXPECT_EQ(core::mean(ds, Dim::X)["a"].data(), makeVariable<float>(2, 5.0));
+  EXPECT_EQ(core::mean(ds, Dim::X)["a"].data(),
+            createVariable<float>(Values{2}, Variances{5.0}));
   EXPECT_EQ(core::mean(ds.slice({Dim::X, 0, 2}), Dim::X)["a"].data(),
-            makeVariable<float>(1.5, 6.75));
+            createVariable<float>(Values{1.5}, Variances{6.75}));
 
   EXPECT_THROW(core::sum(make_sparse_2d({1, 2, 3, 4}, {0, 0}), Dim::X),
                except::DimensionError);
@@ -367,15 +373,16 @@ TEST(DatasetTest, erase_coord) {
   ds.setCoord(Dim::X, coord);
   EXPECT_EQ(ref, ds);
 
-  const auto var =
-      makeVariable<double>({Dim::X, Dim::Y}, {3, Dimensions::Sparse});
+  const auto var = createVariable<double>(Dims{Dim::X, Dim::Y},
+                                          Shape{3l, Dimensions::Sparse});
   ds.setSparseCoord("newCoord", var);
   EXPECT_TRUE(ds["newCoord"].coords().contains(Dim::X));
   ds.eraseSparseCoord("newCoord");
   EXPECT_EQ(ref, ds);
 
   ds.setSparseCoord("newCoord", var);
-  ds.setData("newCoord", makeVariable<double>({Dim::X}, {Dimensions::Sparse}));
+  ds.setData("newCoord",
+             createVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse}));
   EXPECT_TRUE(ds["newCoord"].coords().contains(Dim::X));
   EXPECT_THROW(ds["newCoord"].coords().erase(Dim::Z), except::SparseDataError);
   ds["newCoord"].coords().erase(Dim::X);
@@ -397,8 +404,8 @@ TEST(DatasetTest, erase_labels) {
   ds.setLabels("labels_x", labels);
   EXPECT_EQ(ref, ds);
 
-  const auto var =
-      makeVariable<double>({Dim::X, Dim::Y}, {3, Dimensions::Sparse});
+  const auto var = createVariable<double>(Dims{Dim::X, Dim::Y},
+                                          Shape{3l, Dimensions::Sparse});
   ds.setSparseCoord("newCoord", var);
   ds.setSparseLabels("newCoord", "labels_sparse", var);
   EXPECT_TRUE(ds["newCoord"].labels().contains("labels_sparse"));

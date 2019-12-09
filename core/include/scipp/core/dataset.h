@@ -208,25 +208,25 @@ public:
   template <typename T,
             typename = std::enable_if_t<!is_container_or_proxy<T>()>>
   DataProxy operator+=(const T value) const {
-    return *this += makeVariable<T>(value);
+    return *this += createVariable<T>(Values{value});
   }
 
   template <typename T,
             typename = std::enable_if_t<!is_container_or_proxy<T>()>>
   DataProxy operator-=(const T value) const {
-    return *this -= makeVariable<T>(value);
+    return *this -= createVariable<T>(Values{value});
   }
 
   template <typename T,
             typename = std::enable_if_t<!is_container_or_proxy<T>()>>
   DataProxy operator*=(const T value) const {
-    return *this *= makeVariable<T>(value);
+    return *this *= createVariable<T>(Values{value});
   }
 
   template <typename T,
             typename = std::enable_if_t<!is_container_or_proxy<T>()>>
   DataProxy operator/=(const T value) const {
-    return *this /= makeVariable<T>(value);
+    return *this /= createVariable<T>(Values{value});
   }
 
 private:
@@ -443,25 +443,25 @@ public:
   template <typename T,
             typename = std::enable_if_t<!is_container_or_proxy<T>()>>
   Dataset &operator+=(const T value) {
-    return *this += makeVariable<T>(value);
+    return *this += createVariable<T>(Values{value});
   }
 
   template <typename T,
             typename = std::enable_if_t<!is_container_or_proxy<T>()>>
   Dataset &operator-=(const T value) {
-    return *this -= makeVariable<T>(value);
+    return *this -= createVariable<T>(Values{value});
   }
 
   template <typename T,
             typename = std::enable_if_t<!is_container_or_proxy<T>()>>
   Dataset &operator*=(const T value) {
-    return *this *= makeVariable<T>(value);
+    return *this *= createVariable<T>(Values{value});
   }
 
   template <typename T,
             typename = std::enable_if_t<!is_container_or_proxy<T>()>>
   Dataset &operator/=(const T value) {
-    return *this /= makeVariable<T>(value);
+    return *this /= createVariable<T>(Values{value});
   }
 
   std::unordered_map<Dim, scipp::index> dimensions() const;
@@ -935,25 +935,25 @@ public:
   template <typename T,
             typename = std::enable_if_t<!is_container_or_proxy<T>()>>
   DatasetProxy operator+=(const T value) const {
-    return *this += makeVariable<T>(value);
+    return *this += createVariable<T>(Values{value});
   }
 
   template <typename T,
             typename = std::enable_if_t<!is_container_or_proxy<T>()>>
   DatasetProxy operator-=(const T value) const {
-    return *this -= makeVariable<T>(value);
+    return *this -= createVariable<T>(Values{value});
   }
 
   template <typename T,
             typename = std::enable_if_t<!is_container_or_proxy<T>()>>
   DatasetProxy operator*=(const T value) const {
-    return *this *= makeVariable<T>(value);
+    return *this *= createVariable<T>(Values{value});
   }
 
   template <typename T,
             typename = std::enable_if_t<!is_container_or_proxy<T>()>>
   DatasetProxy operator/=(const T value) const {
-    return *this /= makeVariable<T>(value);
+    return *this /= createVariable<T>(Values{value});
   }
 
   DatasetProxy assign(const DatasetConstProxy &other) const;
@@ -1068,25 +1068,25 @@ public:
   template <typename T,
             typename = std::enable_if_t<!is_container_or_proxy<T>()>>
   DataArray &operator+=(const T value) {
-    return *this += makeVariable<T>(value);
+    return *this += createVariable<T>(Values{value});
   }
 
   template <typename T,
             typename = std::enable_if_t<!is_container_or_proxy<T>()>>
   DataArray &operator-=(const T value) {
-    return *this -= makeVariable<T>(value);
+    return *this -= createVariable<T>(Values{value});
   }
 
   template <typename T,
             typename = std::enable_if_t<!is_container_or_proxy<T>()>>
   DataArray &operator*=(const T value) {
-    return *this *= makeVariable<T>(value);
+    return *this *= createVariable<T>(Values{value});
   }
 
   template <typename T,
             typename = std::enable_if_t<!is_container_or_proxy<T>()>>
   DataArray &operator/=(const T value) {
-    return *this /= makeVariable<T>(value);
+    return *this /= createVariable<T>(Values{value});
   }
 
   void setData(Variable data) { m_holder.setData(name(), std::move(data)); }
@@ -1266,36 +1266,36 @@ SCIPP_CORE_EXPORT Dataset operator/(const VariableConstProxy &lhs,
 
 template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
 Dataset operator+(const T value, const DatasetConstProxy &a) {
-  return makeVariable<T>(value) + a;
+  return createVariable<T>(Values{value}) + a;
 }
 template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
 Dataset operator-(const T value, const DatasetConstProxy &a) {
-  return makeVariable<T>(value) - a;
+  return createVariable<T>(Values{value}) - a;
 }
 template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
 Dataset operator*(const T value, const DatasetConstProxy &a) {
-  return makeVariable<T>(value) * a;
+  return createVariable<T>(Values{value}) * a;
 }
 template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
 Dataset operator/(const T value, const DatasetConstProxy &a) {
-  return makeVariable<T>(value) / a;
+  return createVariable<T>(Values{value}) / a;
 }
 
 template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
 Dataset operator+(const DatasetConstProxy &a, const T value) {
-  return a + makeVariable<T>(value);
+  return a + createVariable<T>(Values{value});
 }
 template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
 Dataset operator-(const DatasetConstProxy &a, const T value) {
-  return a - makeVariable<T>(value);
+  return a - createVariable<T>(Values{value});
 }
 template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
 Dataset operator*(const DatasetConstProxy &a, const T value) {
-  return a * makeVariable<T>(value);
+  return a * createVariable<T>(Values{value});
 }
 template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
 Dataset operator/(const DatasetConstProxy &a, const T value) {
-  return a / makeVariable<T>(value);
+  return a / createVariable<T>(Values{value});
 }
 
 SCIPP_CORE_EXPORT DataArray histogram(const DataConstProxy &sparse,

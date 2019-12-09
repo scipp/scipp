@@ -8,8 +8,8 @@
 #include <Eigen/Dense>
 #include <boost/container/small_vector.hpp>
 
-namespace pybind11 {
-class object;
+namespace scipp::python {
+class PyObject;
 }
 
 namespace scipp::core {
@@ -62,7 +62,7 @@ constexpr DType dtype<sparse_container<int32_t>> = DType::SparseInt32;
 template <> constexpr DType dtype<DataArray> = DType::DataArray;
 template <> constexpr DType dtype<Dataset> = DType::Dataset;
 template <> constexpr DType dtype<Eigen::Vector3d> = DType::EigenVector3d;
-template <> constexpr DType dtype<pybind11::object> = DType::PyObject;
+template <> constexpr DType dtype<scipp::python::PyObject> = DType::PyObject;
 
 bool isInt(DType tp);
 bool isFloatingPoint(DType tp);

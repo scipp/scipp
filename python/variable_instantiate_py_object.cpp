@@ -4,12 +4,11 @@
 /// @author Simon Heybrock
 #include "scipp/core/variable.tcc"
 
+#include "py_object.h"
 #include "pybind11.h"
-
-namespace py = pybind11;
 
 namespace scipp::core {
 
-INSTANTIATE_VARIABLE(py::object)
+INSTANTIATE_VARIABLE(scipp::python::PyObject)
 
 } // namespace scipp::core
