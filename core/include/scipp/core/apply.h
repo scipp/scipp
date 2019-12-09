@@ -2,8 +2,8 @@
 // Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#ifndef APPLY_H
-#define APPLY_H
+#ifndef SCIPP_CORE_APPLY_H
+#define SCIPP_CORE_APPLY_H
 
 #include "scipp/core/except.h"
 #include "scipp/core/variable.h"
@@ -25,4 +25,4 @@ void apply_in_place(Op op, Var &&var, const Vars &... vars) {
 
 } // namespace scipp::core
 
-#endif // APPLY_H
+#endif // SCIPP_CORE_APPLY_H

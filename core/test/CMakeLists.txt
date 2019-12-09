@@ -29,7 +29,10 @@ add_executable(${TARGET_NAME} EXCLUDE_FROM_ALL
                slice_test.cpp
                sort_test.cpp
                sparse_counts_test.cpp
+               sparse_data_operations_consistency_test.cpp
+               string_test.cpp
                subspan_view_test.cpp
+               sum_test.cpp
                transform_sparse_and_dense_test.cpp
                transform_test.cpp
                value_and_variance_test.cpp
@@ -49,6 +52,11 @@ target_link_libraries(${TARGET_NAME}
                       scipp_test_helpers
                       ${GTEST_LIBRARIES}
                       ${GMOCK_LIBRARIES})
+
+if(WIN32)
+  target_compile_options(${TARGET_NAME} PRIVATE "/bigobj")
+endif()
+
 set_property(TARGET ${TARGET_NAME} PROPERTY INTERPROCEDURAL_OPTIMIZATION ${INTERPROCEDURAL_OPTIMIZATION_TESTS})
 add_sanitizers(${TARGET_NAME})
 if(${WITH_CTEST})

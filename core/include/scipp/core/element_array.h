@@ -58,15 +58,12 @@ public:
     std::copy(first, last, data());
   }
 
-  template <class U, template <class> class Container,
-            std::enable_if_t<std::is_assignable_v<T &, U>, int> = 0>
-  explicit element_array(Container<U> &&c)
+  template <
+      class Container,
+      std::enable_if_t<
+          std::is_assignable_v<T &, typename Container::value_type>, int> = 0>
+  explicit element_array(const Container &c)
       : element_array(c.begin(), c.end()) {}
-
-  template <class U, std::enable_if_t<std::is_assignable_v<U &, T>, int> = 0>
-  operator element_array<U>() {
-    return element_array<U>(begin(), end());
-  }
 
   element_array(std::initializer_list<T> init)
       : element_array(init.begin(), init.end()) {}
@@ -77,7 +74,7 @@ public:
   }
 
   element_array(const element_array &other)
-      : element_array(other.data(), other.data() + other.size()) {}
+      : element_array(from_other(other)) {}
 
   element_array &operator=(element_array &&other) noexcept {
     m_data = std::move(other.m_data);
@@ -131,6 +128,15 @@ public:
   }
 
 private:
+  element_array from_other(const element_array &other) {
+    if (other.size() == -1) {
+      return element_array();
+    } else if (other.size() == 0) {
+      return element_array(0);
+    } else {
+      return element_array(other.begin(), other.end());
+    }
+  }
   scipp::index m_size{-1};
   std::unique_ptr<T[]> m_data;
 };

@@ -2,8 +2,8 @@
 // Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#ifndef INDEX_H
-#define INDEX_H
+#ifndef SCIPP_COMMON_INDEX_H
+#define SCIPP_COMMON_INDEX_H
 #include <cstddef>
 
 namespace scipp {
@@ -23,4 +23,4 @@ template <class T> index size(const T &container) {
 }
 } // namespace scipp
 
-#endif // INDEX_H
+#endif // SCIPP_COMMON_INDEX_H

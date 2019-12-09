@@ -32,7 +32,8 @@ std::vector<bool> makeBools(const scipp::index size) {
 template <typename DType> Variable makeData(const Dimensions &dims) {
   std::vector<DType> data(dims.volume());
   std::iota(data.begin(), data.end(), static_cast<DType>(0));
-  return makeVariable<DType>(dims, data);
+  return createVariable<DType>(Dimensions(dims),
+                               Values(data.begin(), data.end()));
 }
 struct Generate {
   Dataset operator()(const int axisLength, const int num_masks = 0) {
@@ -40,9 +41,9 @@ struct Generate {
     d.setData("a", makeData<double>({Dim::X, axisLength}));
     for (int i = 0; i < num_masks; ++i) {
       d.setMask(std::string(1, ('a' + i)),
-                makeVariable<bool>(
-                    {Dim::X, axisLength},
-                    makeBools<BoolsGeneratorType::ALTERNATING>(axisLength)));
+                makeVariable<bool>({Dim::X, axisLength},
+                                   makeBools<BoolsGeneratorType::ALTERNATING>(
+                                       axisLength)) /*LABEL_1*/);
     }
     return d;
   }
@@ -57,7 +58,7 @@ struct Generate_2D_data {
       d.setMask(std::string(1, ('a' + i)),
                 makeVariable<bool>({{Dim::X, axisLength}, {Dim::Y, axisLength}},
                                    makeBools<BoolsGeneratorType::ALTERNATING>(
-                                       axisLength * axisLength)));
+                                       axisLength * axisLength)) /*LABEL_1*/);
     }
     return d;
   }
@@ -71,11 +72,12 @@ struct Generate_3D_data {
                                      {Dim::Z, axisLength}}));
     for (int i = 0; i < num_masks; ++i) {
       d.setMask(std::string(1, ('a' + i)),
-                makeVariable<bool>({{Dim::X, axisLength},
-                                    {Dim::Y, axisLength},
-                                    {Dim::Z, axisLength}},
-                                   makeBools<BoolsGeneratorType::ALTERNATING>(
-                                       axisLength * axisLength * axisLength)));
+                makeVariable<bool>(
+                    {{Dim::X, axisLength},
+                     {Dim::Y, axisLength},
+                     {Dim::Z, axisLength}},
+                    makeBools<BoolsGeneratorType::ALTERNATING>(
+                        axisLength * axisLength * axisLength)) /*LABEL_1*/);
     }
     return d;
   }

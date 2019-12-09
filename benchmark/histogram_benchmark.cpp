@@ -35,7 +35,8 @@ static void BM_histogram(benchmark::State &state) {
   std::iota(edges_.begin(), edges_.end(), 0.0);
   if (!linear)
     edges_.back() += 0.0001;
-  auto edges = makeVariable<double>({Dim::Y, nEdge}, edges_);
+  auto edges = createVariable<double>(Dims{Dim::Y}, Shape{nEdge},
+                                      Values(edges_.begin(), edges_.end()));
   edges *= 1000.0 / nEdge; // ensure all events are in range
   for (auto _ : state) {
     benchmark::DoNotOptimize(histogram(sparse, edges));

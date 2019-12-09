@@ -88,6 +88,14 @@ Dataset concatenate(const DatasetConstProxy &a, const DatasetConstProxy &b,
   return result;
 }
 
+DataArray flatten(const DataConstProxy &a, const Dim dim) {
+  return apply_or_copy_dim(a, [](auto &&... _) { return flatten(_...); }, dim);
+}
+
+Dataset flatten(const DatasetConstProxy &d, const Dim dim) {
+  return apply_to_items(d, [](auto &&... _) { return flatten(_...); }, dim);
+}
+
 DataArray sum(const DataConstProxy &a, const Dim dim) {
   return apply_to_data_and_drop_dim(a, [](auto &&... _) { return sum(_...); },
                                     dim, a.masks());
@@ -114,6 +122,12 @@ DataArray rebin(const DataConstProxy &a, const Dim dim,
                 const VariableConstProxy &coord) {
   auto rebinned = apply_to_data_and_drop_dim(
       a, [](auto &&... _) { return rebin(_...); }, dim, a.coords()[dim], coord);
+
+  for (auto &&[name, mask] : a.masks()) {
+    if (mask.dims().contains(dim))
+      rebinned.masks().set(name, rebin(mask, dim, a.coords()[dim], coord));
+  }
+
   rebinned.setCoord(dim, coord);
   return rebinned;
 }

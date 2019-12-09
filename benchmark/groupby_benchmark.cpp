@@ -27,7 +27,8 @@ static void BM_groupby_flatten(benchmark::State &state) {
   auto sparse = make_2d_sparse_coord_only(nHist, nEvent / nHist);
   std::vector<int64_t> group_(nHist);
   std::iota(group_.begin(), group_.end(), 0);
-  auto group = makeVariable<int64_t>({Dim::X, nHist}, group_);
+  auto group = createVariable<int64_t>(Dims{Dim::X}, Shape{nHist},
+                                       Values(group_.begin(), group_.end()));
   sparse.labels().set("group", group / (nHist / nGroup));
   for (auto _ : state) {
     benchmark::DoNotOptimize(groupby(sparse, "group", Dim::Z).flatten(Dim::X));

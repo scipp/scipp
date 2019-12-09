@@ -60,6 +60,25 @@ template <class T> T GroupBy<T>::flatten(const Dim reductionDim) const {
   return out;
 }
 
+template <class T>
+void sum_impl(const VariableProxy &out_data, const T &data_container,
+              const std::vector<Slice> &group, const Dim reductionDim) {
+  for (const auto &slice : group) {
+    const auto data_slice = data_container.slice(slice);
+    const auto masks = data_slice.masks();
+
+    if (!masks.empty()) {
+      const auto merged_inverted_masks = ~masks_merge(masks, reductionDim);
+
+      if (merged_inverted_masks.dims().contains(reductionDim))
+        sum_impl(out_data, data_slice.data() * merged_inverted_masks);
+
+    } else {
+      sum_impl(out_data, data_slice.data());
+    }
+  }
+}
+
 /// Apply sum to groups and return combined data.
 template <class T> T GroupBy<T>::sum(const Dim reductionDim) const {
   auto out = makeReductionOutput(reductionDim);
@@ -69,15 +88,11 @@ template <class T> T GroupBy<T>::sum(const Dim reductionDim) const {
     if constexpr (std::is_same_v<T, Dataset>) {
       for (const auto &[name, item] : m_data) {
         const auto out_data = out_slice[name].data();
-        for (const auto &slice : groups()[group]) {
-          sum_impl(out_data, item.data().slice(slice));
-        }
+        sum_impl(out_data, item, groups()[group], reductionDim);
       }
     } else {
       const auto out_data = out_slice.data();
-      for (const auto &slice : groups()[group]) {
-        sum_impl(out_data, m_data.data().slice(slice));
-      }
+      sum_impl(out_data, m_data, groups()[group], reductionDim);
     }
   }
   return out;
@@ -89,11 +104,23 @@ template <class T> T GroupBy<T>::mean(const Dim reductionDim) const {
   auto out = sum(reductionDim);
 
   // 2. Compute number of slices N contributing to each out slice
-  auto scale = makeVariable<double>({dim(), size()});
+  auto scale = createVariable<double>(Dims{dim()}, Shape{size()});
   const auto scaleT = scale.template values<double>();
   for (scipp::index group = 0; group < size(); ++group)
-    for (const auto &slice : groups()[group])
+    for (const auto &slice : groups()[group]) {
+      // N contributing to each slice
       scaleT[group] += slice.end() - slice.begin();
+      // N masks for each slice, that need to be subtracted
+      const auto masks = m_data.slice(slice).masks();
+      if (!masks.empty()) {
+        const auto merged_masks = masks_merge(masks, reductionDim);
+        if (merged_masks.dims().contains(reductionDim)) {
+          const auto masks_sum = core::sum(merged_masks, reductionDim);
+          scaleT[group] -= masks_sum.template value<int64_t>();
+        }
+      }
+    }
+
   scale = 1.0 / scale;
 
   // 3. sum/N -> mean
@@ -145,7 +172,7 @@ template <class T> struct MakeGroups {
       keys.push_back(item.first);
       groups.emplace_back(std::move(item.second));
     }
-    auto keys_ = makeVariable<T>(dims, std::move(keys));
+    auto keys_ = makeVariable<T>(dims, std::move(keys)) /*LABEL_1*/;
     keys_.setUnit(key.unit());
     return GroupByGrouping{std::move(keys_), std::move(groups)};
   }

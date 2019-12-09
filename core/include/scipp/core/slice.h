@@ -6,8 +6,8 @@
 #include "scipp/common/index.h"
 #include "scipp/units/unit.h"
 
-#ifndef SLICE_H
-#define SLICE_H
+#ifndef SCIPP_CORE_SLICE_H
+#define SCIPP_CORE_SLICE_H
 
 namespace scipp {
 namespace core {
@@ -36,4 +36,4 @@ private:
 } // namespace core
 } // namespace scipp
 
-#endif // SLICE_H
+#endif // SCIPP_CORE_SLICE_H

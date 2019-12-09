@@ -83,6 +83,8 @@ template <class T> std::string element_to_string(const T &item) {
   using std::to_string;
   if constexpr (std::is_same_v<T, std::string>)
     return {'"' + item + "\", "};
+  else if constexpr (std::is_same_v<T, bool>)
+    return core::to_string(item) + ", ";
   else if constexpr (std::is_same_v<T, Eigen::Vector3d>)
     return {"(" + to_string(item[0]) + ", " + to_string(item[1]) + ", " +
             to_string(item[2]) + "), "};

@@ -146,7 +146,8 @@ Variable counts(const VariableConstProxy &var) {
   // variances if any of the inputs has variances.
   auto dims = var.dims();
   dims.erase(dims.sparseDim());
-  auto counts = makeVariable<scipp::index>(dims, units::counts);
+  auto counts = createVariable<scipp::index>(Dimensions(dims),
+                                             units::Unit(units::counts));
   accumulate_in_place<
       pair_custom_t<std::pair<scipp::index, sparse_container<double>>>>(
       counts, var,
@@ -169,6 +170,9 @@ void reserve(const VariableProxy &sparse, const VariableConstProxy &capacity) {
 } // namespace sparse
 
 void flatten_impl(const VariableProxy &summed, const VariableConstProxy &var) {
+  if (!var.dims().sparse())
+    throw except::DimensionError("`flatten` can only be used for sparse data, "
+                                 "use `sum` for dense data.");
   // 1. Reserve space in output. This yields approx. 3x speedup.
   auto summed_counts = sparse::counts(summed);
   sum_impl(summed_counts, sparse::counts(var));
@@ -185,7 +189,22 @@ void flatten_impl(const VariableProxy &summed, const VariableConstProxy &var) {
           [](units::Unit &a, const units::Unit &b) { expect::equals(a, b); }});
 }
 
+/// Flatten dimension by concatenating along sparse dimension.
+///
+/// This is equivalent to summing dense data along a dimension, in the sense
+/// that summing histogrammed data is the same as histogramming flattened data.
+Variable flatten(const VariableConstProxy &var, const Dim dim) {
+  auto dims = var.dims();
+  dims.erase(dim);
+  Variable flattened(var, dims);
+  flatten_impl(flattened, var);
+  return flattened;
+}
+
 void sum_impl(const VariableProxy &summed, const VariableConstProxy &var) {
+  if (var.dims().sparse())
+    throw except::DimensionError("`sum` can only be used for sparse data, use "
+                                 "`flatten` for dense data.");
   accumulate_in_place<
       pair_self_t<double, float, int64_t, int32_t, Eigen::Vector3d>,
       pair_custom_t<std::pair<int64_t, bool>>>(
@@ -193,25 +212,25 @@ void sum_impl(const VariableProxy &summed, const VariableConstProxy &var) {
 }
 
 Variable sum(const VariableConstProxy &var, const Dim dim) {
-  expect::notSparse(var);
   auto dims = var.dims();
   dims.erase(dim);
   // Bool DType is a bit special in that it cannot contain it's sum.
   // Instead the sum is stored in a int64_t Variable
-  Variable summed{var.dtype() == DType::Bool ? makeVariable<int64_t>(dims)
-                                             : Variable(var, dims)};
+  Variable summed{var.dtype() == DType::Bool
+                      ? createVariable<int64_t>(Dimensions(dims))
+                      : Variable(var, dims)};
   sum_impl(summed, var);
   return summed;
 }
 
 Variable sum(const VariableConstProxy &var, const Dim dim,
              const MasksConstProxy &masks) {
-  if (masks.empty()) {
-    return sum(var, dim);
-  } else {
-    const auto mask_union = masks_merge(masks);
-    return sum(var * ~mask_union, dim);
+  if (!masks.empty()) {
+    const auto mask_union = masks_merge(masks, dim);
+    if (mask_union.dims().contains(dim))
+      return sum(var * ~mask_union, dim);
   }
+  return sum(var, dim);
 }
 
 Variable mean(const VariableConstProxy &var, const Dim dim,
@@ -235,13 +254,14 @@ Variable mean(const VariableConstProxy &var, const Dim dim) {
 
 Variable mean(const VariableConstProxy &var, const Dim dim,
               const MasksConstProxy &masks) {
-  if (masks.empty()) {
-    return mean(var, dim);
-  } else {
-    const auto mask_union = masks_merge(masks);
-    const auto masks_sum = sum(mask_union, dim);
-    return mean(var * ~mask_union, dim, masks_sum);
+  if (!masks.empty()) {
+    const auto mask_union = masks_merge(masks, dim);
+    if (mask_union.dims().contains(dim)) {
+      const auto masks_sum = sum(mask_union, dim);
+      return mean(var * ~mask_union, dim, masks_sum);
+    }
   }
+  return mean(var, dim);
 }
 
 Variable abs(const Variable &var) {
@@ -327,10 +347,12 @@ Variable reverse(Variable var, const Dim dim) {
 Variable copy(const VariableConstProxy &var) { return Variable(var); }
 
 /// Merges all masks contained in the MasksConstProxy into a single Variable
-Variable masks_merge(const MasksConstProxy &masks) {
+Variable masks_merge(const MasksConstProxy &masks, const Dim dim) {
   auto mask_union = makeVariable<bool>(false);
   for (const auto &mask : masks) {
-    mask_union = mask_union | mask.second;
+    if (mask.second.dims().contains(dim)) {
+      mask_union = mask_union | mask.second;
+    }
   }
   return mask_union;
 }
