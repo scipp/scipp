@@ -14,7 +14,7 @@ if(result)
   message(FATAL_ERROR "CMake step for googletest failed: ${result}")
 endif()
 execute_process(
-  COMMAND ${CMAKE_COMMAND} --build .
+  COMMAND ${CMAKE_COMMAND} --build . --config Release
   RESULT_VARIABLE result
   WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/googletest-download)
 if(result)
