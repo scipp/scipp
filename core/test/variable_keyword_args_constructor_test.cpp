@@ -17,6 +17,21 @@ TEST(CreateVariableTest, from_single_value) {
   EXPECT_EQ(var.variance<float>(), 1.0f);
 }
 
+TEST(CreateVariableTest, unitialized) {
+  auto noVariance = createVariable<float>(Dims{Dim::X}, Shape{3});
+  auto stillNoVariance =
+      createVariable<float>(Dims{Dim::X}, Shape{3}, Values(0));
+  auto withVariance =
+      createVariable<float>(Dims{Dim::X}, Shape{3}, Values(0), Variances(0));
+
+  EXPECT_FALSE(noVariance.hasVariances());
+  EXPECT_FALSE(stillNoVariance.hasVariances());
+  EXPECT_TRUE(withVariance.hasVariances());
+  EXPECT_EQ(noVariance.values<double>().size(), 3);
+  EXPECT_EQ(stillNoVariance.values<double>().size(), 3);
+  EXPECT_EQ(withVariance.values<double>().size(), 3);
+}
+
 TEST(CreateVariableTest, from_vector) {
   EXPECT_EQ(createVariable<double>(Dims{Dim::X}, Shape{3},
                                    Values(std::vector<int>{1, 2, 3})),
