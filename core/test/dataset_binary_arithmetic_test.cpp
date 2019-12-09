@@ -64,9 +64,9 @@ std::tuple<Dataset, Dataset> generateBinaryOpTestCase() {
   Dataset a;
   {
     a.setCoord(Dim::X, createVariable<double>(Dims{Dim::X}, Shape{lx},
-                                              Values(std::vector(coordX))));
+                                              Values(coordX)));
     a.setCoord(Dim::Y, createVariable<double>(Dims{Dim::Y}, Shape{ly},
-                                              Values(std::vector(coordY))));
+                                              Values(coordY)));
 
     a.setLabels("t", labelT);
     a.setMask("mask", masks);
@@ -79,9 +79,9 @@ std::tuple<Dataset, Dataset> generateBinaryOpTestCase() {
   Dataset b;
   {
     b.setCoord(Dim::X, createVariable<double>(Dims{Dim::X}, Shape{lx},
-                                              Values(std::vector(coordX))));
+                                              Values(coordX)));
     b.setCoord(Dim::Y, createVariable<double>(Dims{Dim::Y}, Shape{ly},
-                                              Values(std::vector(coordY))));
+                                              Values(coordY)));
 
     b.setLabels("t", labelT);
     b.setMask("mask", masks);

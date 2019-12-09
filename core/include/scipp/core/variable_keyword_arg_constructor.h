@@ -56,7 +56,7 @@ struct ValuesTag {};
 struct VariancesTag {};
 
 template <class... Ts> auto makeArgsTuple(Ts &&... ts) {
-  return std::make_tuple<std::remove_reference_t<Ts>...>(
+  return std::tuple<std::decay_t<Ts>...>(
       std::forward<Ts>(ts)...);
 }
 
