@@ -23,8 +23,8 @@ TEST(CreateVariableTest, from_vector) {
             createVariable<double>(Dims{Dim::X}, Shape{3}, Values({1, 2, 3})));
 
   const std::vector<double> v{1, 2, 3};
-  auto varRef = createVariable<double>(Dims{Dim::X}, Shape{3}, Values{1,2,3});
-  auto var = createVariable<double> (Dims{Dim::X}, Shape{3}, Values(v));
+  auto varRef = createVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
+  auto var = createVariable<double>(Dims{Dim::X}, Shape{3}, Values(v));
 }
 
 TEST(CreateVariableTest, construct_sparse) {
