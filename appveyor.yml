@@ -45,19 +45,15 @@ for:
   branches:
       only:
          - master
-         - windows_diagnose
   
   build_script:
-  - echo empty build step 
+  - echo skipping build step 
   
   test_script: 
-  - echo empty test step 
+  - echo skipping test step 
 
   deploy_script:
   - echo deploy started %time%
-  - echo APPVEYOR_PULL_REQUEST_HEAD_REPO_BRANCH %APPVEYOR_PULL_REQUEST_HEAD_REPO_BRANCH%
-  - ps: if (Test-Path env:APPVEYOR_PULL_REQUEST_HEAD_REPO_BRANCH) { Exit-AppVeyorBuild }
-  - echo APPVEYOR_REPO_BRANCH %APPVEYOR_REPO_BRANCH%
   - cd %APPVEYOR_BUILD_FOLDER%
   - rd build /s/q
   - mkdir build
@@ -69,7 +65,6 @@ for:
   - conda update libarchive
   - if "%APPVEYOR_REPO_TAG%"=="true" set LABEL=main
   - if "%APPVEYOR_REPO_TAG%"=="false" if "%APPVEYOR_REPO_BRANCH%"=="master" set LABEL=dev
-  - if "%APPVEYOR_REPO_TAG%"=="false" if "%APPVEYOR_REPO_BRANCH%"=="windows_diagnose" set LABEL=dev
   - echo using label %LABEL%
   - echo deploy build started %time%
   - conda-build --user scipp --token %ANACONDA_TOKEN% --label %LABEL% ../conda
