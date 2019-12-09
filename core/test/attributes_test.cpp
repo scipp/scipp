@@ -9,7 +9,7 @@ using namespace scipp::core;
 
 class AttributesTest : public ::testing::Test {
 protected:
-  const Variable scalar = makeVariable<double>(1);
+  const Variable scalar = createVariable<double>(Values{1});
   const Variable varX =
       createVariable<double>(Dims{Dim::X}, Shape{2}, Values{2, 3});
   const Variable varZX = createVariable<double>(

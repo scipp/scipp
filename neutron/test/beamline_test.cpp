@@ -23,7 +23,8 @@ Dataset makeDatasetWithBeamline() {
                      createVariable<Eigen::Vector3d>(
                          Dims{Dim::Row}, Shape{2}, units::Unit(units::m),
                          Values{source_pos, sample_pos}));
-  beamline.setLabels("component_info", makeVariable<Dataset>(components));
+  beamline.setLabels("component_info",
+                     createVariable<Dataset>(Values{components}));
   // TODO Need fuzzy comparison for variables to write a convenient test with
   // detectors away from the axes.
   beamline.setLabels("position",

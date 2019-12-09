@@ -24,7 +24,7 @@ using DataProxyTypes = ::testing::Types<DataProxy, DataConstProxy>;
 TYPED_TEST_SUITE(DataProxyTest, DataProxyTypes);
 
 TYPED_TEST(DataProxyTest, name_ignored_in_comparison) {
-  const auto var = makeVariable<double>(1.0);
+  const auto var = createVariable<double>(Values{1.0});
   Dataset d;
   d.setData("a", var);
   d.setData("b", var);
@@ -36,17 +36,18 @@ TYPED_TEST(DataProxyTest, sparse_sparseDim) {
   Dataset d;
   typename TestFixture::dataset_type &d_ref(d);
 
-  d.setData("dense", makeVariable<double>({}));
+  d.setData("dense", createVariable<double>(Values{double{}}));
   ASSERT_FALSE(d_ref["dense"].dims().sparse());
   ASSERT_EQ(d_ref["dense"].dims().sparseDim(), Dim::Invalid);
 
   d.setData("sparse_data",
-            makeVariable<double>({Dim::X}, {Dimensions::Sparse}));
+            createVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse}));
   ASSERT_TRUE(d_ref["sparse_data"].dims().sparse());
   ASSERT_EQ(d_ref["sparse_data"].dims().sparseDim(), Dim::X);
 
-  d.setSparseCoord("sparse_coord",
-                   makeVariable<double>({Dim::X}, {Dimensions::Sparse}));
+  d.setSparseCoord(
+      "sparse_coord",
+      createVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse}));
   ASSERT_TRUE(d_ref["sparse_coord"].dims().sparse());
   ASSERT_EQ(d_ref["sparse_coord"].dims().sparseDim(), Dim::X);
 }
@@ -54,8 +55,8 @@ TYPED_TEST(DataProxyTest, sparse_sparseDim) {
 TYPED_TEST(DataProxyTest, dims) {
   Dataset d;
   const auto dense = createVariable<double>(Dims{Dim::X, Dim::Y}, Shape{1, 2});
-  const auto sparse = makeVariable<double>({Dim::X, Dim::Y, Dim::Z},
-                                           {1, 2, Dimensions::Sparse});
+  const auto sparse = createVariable<double>(Dims{Dim::X, Dim::Y, Dim::Z},
+                                             Shape{1l, 2l, Dimensions::Sparse});
   typename TestFixture::dataset_type &d_ref(d);
 
   d.setData("dense", dense);
@@ -87,15 +88,15 @@ TYPED_TEST(DataProxyTest, unit) {
   Dataset d;
   typename TestFixture::dataset_type &d_ref(d);
 
-  d.setData("dense", makeVariable<double>({}));
+  d.setData("dense", createVariable<double>(Values{double{}}));
   EXPECT_EQ(d_ref["dense"].unit(), units::dimensionless);
 }
 
 TYPED_TEST(DataProxyTest, unit_access_fails_without_values) {
   Dataset d;
   typename TestFixture::dataset_type &d_ref(d);
-  d.setSparseCoord("sparse",
-                   makeVariable<double>({Dim::X}, {Dimensions::Sparse}));
+  d.setSparseCoord("sparse", createVariable<double>(Dims{Dim::X},
+                                                    Shape{Dimensions::Sparse}));
   EXPECT_THROW(d_ref["sparse"].unit(), except::SparseDataError);
 }
 
@@ -113,8 +114,8 @@ TYPED_TEST(DataProxyTest, coords) {
 TYPED_TEST(DataProxyTest, coords_sparse) {
   Dataset d;
   typename TestFixture::dataset_type &d_ref(d);
-  const auto var =
-      makeVariable<double>({Dim::X, Dim::Y}, {3, Dimensions::Sparse});
+  const auto var = createVariable<double>(Dims{Dim::X, Dim::Y},
+                                          Shape{3l, Dimensions::Sparse});
   d.setSparseCoord("a", var);
 
   ASSERT_NO_THROW(d_ref["a"].coords());
@@ -131,8 +132,8 @@ TYPED_TEST(DataProxyTest, coords_sparse_shadow) {
       createVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
   const auto y =
       createVariable<double>(Dims{Dim::Y}, Shape{3}, Values{4, 5, 6});
-  const auto sparse =
-      makeVariable<double>({Dim::X, Dim::Y}, {3, Dimensions::Sparse});
+  const auto sparse = createVariable<double>(Dims{Dim::X, Dim::Y},
+                                             Shape{3l, Dimensions::Sparse});
   d.setCoord(Dim::X, x);
   d.setCoord(Dim::Y, y);
   d.setSparseCoord("a", sparse);
@@ -154,8 +155,8 @@ TYPED_TEST(DataProxyTest, coords_sparse_shadow_even_if_no_coord) {
       createVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
   const auto y =
       createVariable<double>(Dims{Dim::Y}, Shape{3}, Values{4, 5, 6});
-  const auto sparse =
-      makeVariable<double>({Dim::X, Dim::Y}, {3, Dimensions::Sparse});
+  const auto sparse = createVariable<double>(Dims{Dim::X, Dim::Y},
+                                             Shape{3l, Dimensions::Sparse});
   d.setCoord(Dim::X, x);
   d.setCoord(Dim::Y, y);
   d.setData("a", sparse);
@@ -234,8 +235,8 @@ TYPED_TEST(DataProxyTest, hasData_hasVariances) {
   Dataset d;
   typename TestFixture::dataset_type &d_ref(d);
 
-  d.setData("a", makeVariable<double>({}));
-  d.setData("b", makeVariable<double>(1, 1));
+  d.setData("a", createVariable<double>(Values{double{}}));
+  d.setData("b", createVariable<double>(Values{1}, Variances{1}));
 
   ASSERT_TRUE(d_ref["a"].hasData());
   ASSERT_FALSE(d_ref["a"].hasVariances());
@@ -261,7 +262,8 @@ TYPED_TEST(DataProxyTest, values_variances) {
 TYPED_TEST(DataProxyTest, sparse_with_no_data) {
   Dataset d;
   typename TestFixture::dataset_type &d_ref(d);
-  d.setSparseCoord("a", makeVariable<double>({Dim::X}, {Dimensions::Sparse}));
+  d.setSparseCoord(
+      "a", createVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse}));
 
   EXPECT_ANY_THROW(d_ref["a"].data());
   ASSERT_FALSE(d_ref["a"].hasData());

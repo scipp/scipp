@@ -47,7 +47,7 @@ template <class Types, class Op, class... Var>
   Variable out =
       std::is_base_of_v<transform_flags::expect_variance_arg_t<0>, Op>
           ? makeVariableWithVariances<OutT>(dims)
-          : makeVariable<OutT>(dims);
+          : createVariable<OutT>(Dimensions{dims});
 
   const auto keep_subspan_vars_alive = std::array{maybe_subspan(var, dim)...};
 
