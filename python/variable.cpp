@@ -255,9 +255,11 @@ void init_variable(py::module &m) {
            "Rename dimensions.")
       .def("copy", [](const Variable &self) { return self; },
            "Return a (deep) copy.")
-      .def("__copy__", [](Variable &self) { return Variable(self); })
+      .def("__copy__", [](Variable &self) { return Variable(self); },
+           "Return a (deep) copy.")
       .def("__deepcopy__",
-           [](Variable &self, py::dict) { return Variable(self); })
+           [](Variable &self, py::dict) { return Variable(self); },
+           "Return a (deep) copy.")
       .def_property_readonly("dtype", &Variable::dtype)
       .def("__radd__", [](Variable &a, double &b) { return a + b; },
            py::is_operator())
