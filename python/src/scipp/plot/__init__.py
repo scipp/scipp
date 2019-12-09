@@ -7,14 +7,16 @@
 
 from .plot import plot
 
-
 # If we are running inside a notebook, then make plot interactive by default.
 # From: https://stackoverflow.com/a/22424821
 try:
     from IPython import get_ipython
     ipy = get_ipython()
     if ipy is not None:
-        if "IPKernelApp" in ipy.config:
+        import matplotlib
+        if matplotlib.rcParams["backend"] == "module://ipykernel.pylab.backend_inline":
+            ipy.run_line_magic("matplotlib", "inline")
+        elif "IPKernelApp" in ipy.config:
             ipy.run_line_magic("matplotlib", "notebook")
 except ImportError:
     pass
