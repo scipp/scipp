@@ -566,6 +566,17 @@ Variable from_dimensions_and_unit(const Dimensions &dms, const units::Unit &u) {
                     Vector<T>(dms.volume(), detail::default_init<T>::value()));
 }
 
+template <class T>
+Variable from_dimensions_and_unit_with_variances(const Dimensions &dms,
+                                                 const units::Unit &u) {
+  if constexpr (is_sparse_container<T>::value)
+    return Variable(u, dms, Vector<T>(dms.volume()), Vector<T>(dms.volume()));
+  else
+    return Variable(u, dms,
+                    Vector<T>(dms.volume(), detail::default_init<T>::value()),
+                    Vector<T>(dms.volume(), detail::default_init<T>::value()));
+}
+
 /// This function covers the cases of construction Variables from keyword
 /// argument. The Unit is completely arbitrary, the relations between Dims,
 /// Shape / Dimensions and actual data are following:
@@ -586,7 +597,7 @@ Variable Variable::create(units::Unit &&u, Dimensions &&d,
   auto dms{d};
   if (val && var) {
     if (val->size() == 0 && var->size() == 0)
-      return from_dimensions_and_unit<T>(dms, u);
+      return from_dimensions_and_unit_with_wariances<T>(dms, u);
     else
       return Variable(u, dms, std::move(*val), std::move(*var));
   }
