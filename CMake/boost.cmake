@@ -16,7 +16,7 @@ if(result)
 endif()
 
 execute_process(
-  COMMAND ${CMAKE_COMMAND} --build .
+  COMMAND ${CMAKE_COMMAND} --build . --config Release
   WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/boost-download
   RESULT_VARIABLE result)
 if(result)
