@@ -56,42 +56,38 @@ std::tuple<Dataset, Dataset> generateBinaryOpTestCase() {
 
   const auto coordX = rand(lx);
   const auto coordY = rand(ly);
-  const auto labelT = makeVariable<double>({Dim::Y, ly}, rand(ly)) /*LABEL_1*/;
+  const auto labelT =
+      createVariable<double>(Dimensions{Dim::Y, ly}, Values(rand(ly)));
   const auto masks =
-      makeVariable<bool>({Dim::Y, ly}, makeBools(ly)) /*LABEL_1*/;
+      createVariable<bool>(Dimensions{Dim::Y, ly}, Values(makeBools(ly)));
 
   Dataset a;
   {
     a.setCoord(Dim::X,
-               createVariable<double>(Dims{Dim::X}, Shape{lx},
-                                      Values(coordX.begin(), coordX.end())));
+               createVariable<double>(Dims{Dim::X}, Shape{lx}, Values(coordX)));
     a.setCoord(Dim::Y,
-               createVariable<double>(Dims{Dim::Y}, Shape{ly},
-                                      Values(coordY.begin(), coordY.end())));
+               createVariable<double>(Dims{Dim::Y}, Shape{ly}, Values(coordY)));
 
     a.setLabels("t", labelT);
     a.setMask("mask", masks);
-
     a.setData("data_a",
-              makeVariable<double>({Dim::X, lx}, rand(lx)) /*LABEL_1*/);
+              createVariable<double>(Dimensions{Dim::X, lx}, Values(rand(lx))));
     a.setData("data_b",
-              makeVariable<double>({Dim::Y, ly}, rand(ly)) /*LABEL_1*/);
+              createVariable<double>(Dimensions{Dim::Y, ly}, Values(rand(ly))));
   }
 
   Dataset b;
   {
     b.setCoord(Dim::X,
-               createVariable<double>(Dims{Dim::X}, Shape{lx},
-                                      Values(coordX.begin(), coordX.end())));
+               createVariable<double>(Dims{Dim::X}, Shape{lx}, Values(coordX)));
     b.setCoord(Dim::Y,
-               createVariable<double>(Dims{Dim::Y}, Shape{ly},
-                                      Values(coordY.begin(), coordY.end())));
+               createVariable<double>(Dims{Dim::Y}, Shape{ly}, Values(coordY)));
 
     b.setLabels("t", labelT);
     b.setMask("mask", masks);
 
     b.setData("data_a",
-              makeVariable<double>({Dim::Y, ly}, rand(ly)) /*LABEL_1*/);
+              createVariable<double>(Dimensions{Dim::Y, ly}, Values(rand(ly))));
   }
 
   return std::make_tuple(a, b);
@@ -292,7 +288,7 @@ TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_Dataset_coord_mismatch) {
 
 TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_Dataset_with_missing_items) {
   auto a = datasetFactory.make();
-  a.setData("extra", makeVariable<double>({}));
+  a.setData("extra", createVariable<double>(Values{double{}}));
   auto b = datasetFactory.make();
   auto reference(a);
 
@@ -309,7 +305,7 @@ TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_Dataset_with_missing_items) {
 TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_Dataset_with_extra_items) {
   auto a = datasetFactory.make();
   auto b = datasetFactory.make();
-  b.setData("extra", makeVariable<double>({}));
+  b.setData("extra", createVariable<double>(Values{double{}}));
 
   ASSERT_ANY_THROW(TestFixture::op(a, b));
 }
@@ -349,7 +345,8 @@ TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_DatasetProxy_coord_mismatch) {
 }
 
 TYPED_TEST(DatasetBinaryEqualsOpTest, coord_only_sparse_fails) {
-  auto var = makeVariable<double>({Dim::X, Dim::Y}, {2, Dimensions::Sparse});
+  auto var = createVariable<double>(Dims{Dim::X, Dim::Y},
+                                    Shape{2, Dimensions::Sparse});
   Dataset d;
   d.setSparseCoord("a", var);
   ASSERT_THROW(TestFixture::op(d, d), except::SparseDataError);
@@ -401,10 +398,9 @@ TYPED_TEST(DatasetBinaryEqualsOpTest,
 TYPED_TEST(DatasetBinaryEqualsOpTest, masks_propagate) {
   auto a = datasetFactory.make();
   auto b = datasetFactory.make();
-
-  const auto expectedMasks = makeVariable<bool>(
-      {Dim::X, datasetFactory.lx},
-      makeBools<BoolsGeneratorType::TRUE>(datasetFactory.lx)) /*LABEL_1*/;
+  const auto expectedMasks = createVariable<bool>(
+      Dimensions{Dim::X, datasetFactory.lx},
+      Values(makeBools<BoolsGeneratorType::TRUE>(datasetFactory.lx)));
 
   b.setMask("masks_x", expectedMasks);
 
@@ -418,8 +414,8 @@ TYPED_TEST_SUITE(DatasetMaskSlicingBinaryOpTest, Binary);
 TYPED_TEST(DatasetMaskSlicingBinaryOpTest, binary_op_on_sliced_masks) {
   auto a = make_1d_masked();
 
-  const auto expectedMasks = makeVariable<bool>(
-      {Dim::X, 3}, makeBools<BoolsGeneratorType::TRUE>(3)) /*LABEL_1*/;
+  const auto expectedMasks = createVariable<bool>(
+      Dimensions{Dim::X, 3}, Values(makeBools<BoolsGeneratorType::TRUE>(3)));
 
   // these are conveniently 0 1 0 and 1 0 1
   const auto slice1 = a.slice({Dim::X, 0, 3});
@@ -527,7 +523,7 @@ TYPED_TEST(DatasetProxyBinaryEqualsOpTest, rhs_Dataset_coord_mismatch) {
 
 TYPED_TEST(DatasetProxyBinaryEqualsOpTest, rhs_Dataset_with_missing_items) {
   auto a = datasetFactory.make();
-  a.setData("extra", makeVariable<double>({}));
+  a.setData("extra", createVariable<double>(Values{double{}}));
   auto b = datasetFactory.make();
   auto reference(a);
 
@@ -544,7 +540,7 @@ TYPED_TEST(DatasetProxyBinaryEqualsOpTest, rhs_Dataset_with_missing_items) {
 TYPED_TEST(DatasetProxyBinaryEqualsOpTest, rhs_Dataset_with_extra_items) {
   auto a = datasetFactory.make();
   auto b = datasetFactory.make();
-  b.setData("extra", makeVariable<double>({}));
+  b.setData("extra", createVariable<double>(Values{double{}}));
 
   ASSERT_ANY_THROW(TestFixture::op(DatasetProxy(a), b));
 }
@@ -662,7 +658,7 @@ TYPED_TEST(DatasetBinaryOpTest, broadcast) {
   const auto x =
       createVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
   const auto y = createVariable<double>(Dims{Dim::Y}, Shape{2}, Values{1, 2});
-  const auto c = makeVariable<double>(2.0);
+  const auto c = createVariable<double>(Values{2.0});
   Dataset a;
   Dataset b;
   a.setCoord(Dim::X, x);
@@ -747,14 +743,15 @@ TYPED_TEST(DatasetBinaryOpTest, sparse_with_dense_fail) {
   dense.setData("a",
                 createVariable<double>(Dims{Dim::X}, Shape{2}, Values{1, 2}));
   Dataset sparse;
-  sparse.setData("a", makeVariable<double>({Dim::X}, {Dimensions::Sparse}));
+  sparse.setData(
+      "a", createVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse}));
 
   ASSERT_THROW(TestFixture::op(sparse, dense), except::DimensionError);
 }
 
 TYPED_TEST(DatasetBinaryOpTest, sparse_with_dense) {
   Dataset dense;
-  dense.setData("a", makeVariable<double>(2.0));
+  dense.setData("a", createVariable<double>(Values{2.0}));
   const auto sparse =
       make_sparse_with_coords_and_labels({1.1, 2.2}, {1.0, 2.0}, "a");
 
@@ -768,7 +765,7 @@ TYPED_TEST(DatasetBinaryOpTest, sparse_with_dense) {
 
 TYPED_TEST(DatasetBinaryOpTest, dense_with_sparse) {
   Dataset dense;
-  dense.setData("a", makeVariable<double>(2.0));
+  dense.setData("a", createVariable<double>(Values{2.0}));
   const auto sparse =
       make_sparse_with_coords_and_labels({1.1, 2.2}, {1.0, 2.0}, "a");
 
@@ -916,9 +913,9 @@ TYPED_TEST(DatasetBinaryOpTest, masks_propagate) {
   auto a = datasetFactory.make();
   auto b = datasetFactory.make();
 
-  const auto expectedMasks = makeVariable<bool>(
-      {Dim::X, datasetFactory.lx},
-      makeBools<BoolsGeneratorType::TRUE>(datasetFactory.lx)) /*LABEL_1*/;
+  const auto expectedMasks = createVariable<bool>(
+      Dimensions{Dim::X, datasetFactory.lx},
+      Values(makeBools<BoolsGeneratorType::TRUE>(datasetFactory.lx)));
 
   b.setMask("masks_x", expectedMasks);
 
@@ -929,11 +926,13 @@ TYPED_TEST(DatasetBinaryOpTest, masks_propagate) {
 
 Dataset non_trivial_2d_sparse(std::string_view name) {
   Dataset sparse;
-  auto var = makeVariable<double>({Dim::X, Dim::Y}, {3, Dimensions::Sparse});
+  auto var = createVariable<double>(Dims{Dim::X, Dim::Y},
+                                    Shape{3, Dimensions::Sparse});
   var.sparseValues<double>()[0] = {1.5, 2.5, 3.5, 4.5, 5.5};
   var.sparseValues<double>()[1] = {3.5, 4.5, 5.5, 6.5, 7.5};
   var.sparseValues<double>()[2] = {-1, 0, 0, 1, 1, 2, 2, 2, 4, 4, 4, 6};
-  auto dvar = makeVariable<double>({Dim::X, Dim::Y}, {3, Dimensions::Sparse});
+  auto dvar = createVariable<double>(Dims{Dim::X, Dim::Y},
+                                     Shape{3, Dimensions::Sparse});
   dvar.sparseValues<double>()[0] = {1, 2, 3, 4, 5};
   dvar.sparseValues<double>()[1] = {3, 4, 5, 6, 7};
   dvar.sparseValues<double>()[2] = {1, 1, 1, 1, 1, 100, 1, 1, 1, 1, 1, 1};
@@ -945,14 +944,14 @@ Dataset non_trivial_2d_sparse(std::string_view name) {
 TEST(DatasetSetData, sparse_to_sparse) {
   auto base = non_trivial_2d_sparse("base");
   auto other = non_trivial_2d_sparse("other");
-  other["other"] *= makeVariable<double>(2);
+  other["other"] *= createVariable<double>(Values{2});
   base.setData("other", other["other"]);
   EXPECT_EQ(other["other"], base["other"]);
 }
 
 TEST(DatasetSetData, sparse_to_dense) {
   auto base = non_trivial_2d_sparse("base");
-  auto var = makeVariable<double>({Dim::Y}, {Dimensions::Sparse});
+  auto var = createVariable<double>(Dims{Dim::Y}, Shape{Dimensions::Sparse});
   var.sparseValues<double>()[0] = {1, 2, 3};
   base.setSparseLabels("base", "l", var);
 
@@ -983,15 +982,16 @@ TEST(DatasetSetData, dense_to_empty) {
 TEST(DatasetSetData, labels) {
   auto dense = datasetFactory.make();
   dense.setLabels(
-      "l", makeVariable<double>(
-               {Dim::X}, {dense.coords()[Dim::X].values<double>().size()}));
+      "l",
+      createVariable<double>(
+          Dims{Dim::X}, Shape{dense.coords()[Dim::X].values<double>().size()}));
   auto d = Dataset(dense.slice({Dim::Y, 0}));
   dense.setData("data_x_1", dense["data_x"]);
   EXPECT_EQ(dense["data_x"], dense["data_x_1"]);
 
-  d.setLabels(
-      "l1", makeVariable<double>({Dim::X},
-                                 {d.coords()[Dim::X].values<double>().size()}));
+  d.setLabels("l1", createVariable<double>(
+                        Dims{Dim::X},
+                        Shape{d.coords()[Dim::X].values<double>().size()}));
   EXPECT_THROW(dense.setData("data_x_2", d["data_x"]), except::NotFoundError);
 }
 

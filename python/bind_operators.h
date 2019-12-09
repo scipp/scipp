@@ -11,10 +11,11 @@ namespace py = pybind11;
 
 template <class Other, class T, class... Ignored>
 void bind_comparison(pybind11::class_<T, Ignored...> &c) {
-  c.def("__eq__", [](T &a, Other &b) { return a == b; }, py::is_operator(),
-        py::call_guard<py::gil_scoped_release>());
-  c.def("__ne__", [](T &a, Other &b) { return a != b; }, py::is_operator(),
-        py::call_guard<py::gil_scoped_release>());
+  // Not releasing GIL here due to segfault in Python C API
+  // (PyObject_RichCompare). It is unclear whether this is an issue with Python,
+  // with pybind11, or something we are doing wrong.
+  c.def("__eq__", [](T &a, Other &b) { return a == b; }, py::is_operator());
+  c.def("__ne__", [](T &a, Other &b) { return a != b; }, py::is_operator());
 }
 
 template <class Other, class T, class... Ignored>

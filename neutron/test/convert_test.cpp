@@ -27,7 +27,7 @@ Dataset makeTofDataForUnitConversion(const bool dense_coord = true) {
                          Dims{Dim::Row}, Shape{2}, units::Unit(units::m),
                          Values{Eigen::Vector3d{0.0, 0.0, -10.0},
                                 Eigen::Vector3d{0.0, 0.0, 0.0}}));
-  tof.setLabels("component_info", makeVariable<Dataset>(components));
+  tof.setLabels("component_info", createVariable<Dataset>(Values{components}));
   tof.setLabels("position",
                 createVariable<Eigen::Vector3d>(
                     Dims{Dim::Spectrum}, Shape{2}, units::Unit(units::m),
@@ -39,8 +39,8 @@ Dataset makeTofDataForUnitConversion(const bool dense_coord = true) {
                                      Values{1, 2, 3, 4, 5, 6}));
   tof["counts"].data().setUnit(units::counts);
 
-  auto events =
-      makeVariable<double>({Dim::Spectrum, Dim::Tof}, {2, Dimensions::Sparse});
+  auto events = createVariable<double>(Dims{Dim::Spectrum, Dim::Tof},
+                                       Shape{2l, Dimensions::Sparse});
   events.setUnit(units::us);
   auto eventLists = events.sparseValues<double>();
   eventLists[0] = {1000, 3000, 2000, 4000};

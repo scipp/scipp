@@ -27,15 +27,22 @@ def test_scalar_Variable_py_object_change():
     assert var.dtype == sc.dtype.PyObject
     assert var.value == [1, 2, 3]
     # Value assignment cannot change dtype, so the result is still PyObject,
-    # contrary to creating a variable directly from and integer.
+    # contrary to creating a variable directly from an integer.
     var.value = 1
     assert var.dtype == sc.dtype.PyObject
     assert var.value == 1
 
 
-def test_scalar_Variable_py_object_shallow_copy():
+def test_scalar_Variable_py_object_copy_is_deep_copy():
     var = sc.Variable(value=[1, 2, 3])
     copy = var.copy()
     copy.value[0] = 666
     assert copy.value == [666, 2, 3]
-    assert var.value == [666, 2, 3]
+    assert var.value == [1, 2, 3]
+
+
+def test_scalar_Variable_py_object_comparison():
+    a = sc.Variable(value=[1, 2])
+    b = sc.Variable(value=[1, 2])
+    assert a == b
+    assert not (a != b)

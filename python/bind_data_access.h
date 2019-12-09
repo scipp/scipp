@@ -14,6 +14,7 @@
 #include "scipp/core/variable.h"
 
 #include "numpy.h"
+#include "py_object.h"
 #include "pybind11.h"
 
 namespace py = pybind11;
@@ -155,8 +156,8 @@ template <class... Ts> class as_VariableViewImpl {
       return {Getter::template get<Dataset>(proxy)};
     case dtype<Eigen::Vector3d>:
       return {Getter::template get<Eigen::Vector3d>(proxy)};
-    case dtype<py::object>:
-      return {Getter::template get<py::object>(proxy)};
+    case dtype<scipp::python::PyObject>:
+      return {Getter::template get<scipp::python::PyObject>(proxy)};
     default:
       throw std::runtime_error("not implemented for this type.");
     }
@@ -235,8 +236,8 @@ template <class... Ts> class as_VariableViewImpl {
             //    vector-like object.
             if (dims.shape().size() == 0) {
               if constexpr (std::is_same_v<std::decay_t<decltype(data[0])>,
-                                           py::object>)
-                return data[0];
+                                           scipp::python::PyObject>)
+                return data[0].to_pybind();
               else
                 return py::cast(data[0], py::return_value_policy::reference);
             } else {
@@ -282,8 +283,8 @@ public:
     return std::visit(
         [&obj](const auto &data) {
           if constexpr (std::is_same_v<std::decay_t<decltype(data[0])>,
-                                       py::object>)
-            return data[0];
+                                       scipp::python::PyObject>)
+            return data[0].to_pybind();
           else
             // Passing `obj` as parent so py::keep_alive works.
             return py::cast(data[0],
@@ -301,8 +302,8 @@ public:
     return std::visit(
         [&obj](const auto &data) {
           if constexpr (std::is_same_v<std::decay_t<decltype(data[0])>,
-                                       py::object>)
-            return data[0];
+                                       scipp::python::PyObject>)
+            return data[0].to_pybind();
           else
             // Passing `obj` as parent so py::keep_alive works.
             return py::cast(data[0],
@@ -316,7 +317,11 @@ public:
     expect::equals(Dimensions(), view.dims());
     std::visit(
         [&o](const auto &data) {
-          data[0] = o.cast<typename std::decay_t<decltype(data)>::value_type>();
+          using T = typename std::decay_t<decltype(data)>::value_type;
+          if constexpr (std::is_same_v<T, scipp::python::PyObject>)
+            data[0] = o;
+          else
+            data[0] = o.cast<T>();
         },
         get<get_values>(view));
   }
@@ -330,7 +335,11 @@ public:
 
     std::visit(
         [&o](const auto &data) {
-          data[0] = o.cast<typename std::decay_t<decltype(data)>::value_type>();
+          using T = typename std::decay_t<decltype(data)>::value_type;
+          if constexpr (std::is_same_v<T, scipp::python::PyObject>)
+            data[0] = o;
+          else
+            data[0] = o.cast<T>();
         },
         get<get_variances>(view));
   }
@@ -340,7 +349,7 @@ using as_VariableView =
     as_VariableViewImpl<double, float, int64_t, int32_t, bool, std::string,
                         sparse_container<double>, sparse_container<float>,
                         sparse_container<int64_t>, DataArray, Dataset,
-                        Eigen::Vector3d, py::object>;
+                        Eigen::Vector3d, scipp::python::PyObject>;
 
 template <class T, class... Ignored>
 void bind_data_properties(pybind11::class_<T, Ignored...> &c) {

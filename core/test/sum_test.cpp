@@ -9,13 +9,17 @@ using namespace scipp;
 using namespace scipp::core;
 
 TEST(SumTest, masked_data_array) {
-  const auto var = makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}}, units::m,
-                                        {1.0, 2.0, 3.0, 4.0});
-  const auto mask = makeVariable<bool>({Dim::X, 2}, {false, true});
+  const auto var =
+      createVariable<double>(Dimensions{{Dim::Y, 2}, {Dim::X, 2}},
+                             units::Unit(units::m), Values{1.0, 2.0, 3.0, 4.0});
+  const auto mask =
+      createVariable<bool>(Dimensions{Dim::X, 2}, Values{false, true});
   DataArray a(var);
   a.masks().set("mask", mask);
-  const auto sumX = makeVariable<double>({Dim::Y, 2}, units::m, {1.0, 3.0});
-  const auto sumY = makeVariable<double>({Dim::X, 2}, units::m, {4.0, 6.0});
+  const auto sumX = createVariable<double>(
+      Dimensions{Dim::Y, 2}, units::Unit(units::m), Values{1.0, 3.0});
+  const auto sumY = createVariable<double>(
+      Dimensions{Dim::X, 2}, units::Unit(units::m), Values{4.0, 6.0});
   EXPECT_EQ(sum(a, Dim::X).data(), sumX);
   EXPECT_EQ(sum(a, Dim::Y).data(), sumY);
   EXPECT_FALSE(sum(a, Dim::X).masks().contains("mask"));
@@ -23,15 +27,20 @@ TEST(SumTest, masked_data_array) {
 }
 
 TEST(SumTest, masked_data_array_two_masks) {
-  const auto var = makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}}, units::m,
-                                        {1.0, 2.0, 3.0, 4.0});
-  const auto maskX = makeVariable<bool>({Dim::X, 2}, {false, true});
-  const auto maskY = makeVariable<bool>({Dim::Y, 2}, {false, true});
+  const auto var =
+      createVariable<double>(Dimensions{{Dim::Y, 2}, {Dim::X, 2}},
+                             units::Unit(units::m), Values{1.0, 2.0, 3.0, 4.0});
+  const auto maskX =
+      createVariable<bool>(Dimensions{Dim::X, 2}, Values{false, true});
+  const auto maskY =
+      createVariable<bool>(Dimensions{Dim::Y, 2}, Values{false, true});
   DataArray a(var);
   a.masks().set("x", maskX);
   a.masks().set("y", maskY);
-  const auto sumX = makeVariable<double>({Dim::Y, 2}, units::m, {1.0, 3.0});
-  const auto sumY = makeVariable<double>({Dim::X, 2}, units::m, {1.0, 2.0});
+  const auto sumX = createVariable<double>(
+      Dimensions{Dim::Y, 2}, units::Unit(units::m), Values{1.0, 3.0});
+  const auto sumY = createVariable<double>(
+      Dimensions{Dim::X, 2}, units::Unit(units::m), Values{1.0, 2.0});
   EXPECT_EQ(sum(a, Dim::X).data(), sumX);
   EXPECT_EQ(sum(a, Dim::Y).data(), sumY);
   EXPECT_FALSE(sum(a, Dim::X).masks().contains("x"));
