@@ -225,10 +225,6 @@ texinfo_documents = [
 
 nbsphinx_execute_arguments = [
     "--InlineBackend.figure_formats={'svg', 'pdf'}",
-    "--InlineBackend.rc={'figure.dpi': 96, 'backend': 'scipp_docs_build'}",
+    "--InlineBackend.rc={'figure.dpi': 96}",
+    "--Session.metadata={'scipp_docs_build': True}",
 ]
-
-# os.environ["SCIPP_DOCS_BUILD"] = "1"
-    # "--InlineBackend.rc={'figure.dpi': 96, 'backend': 'module://ipykernel.pylab.backend_inline'}",
-
-nbsphinx_allow_errors = True

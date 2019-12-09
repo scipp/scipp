@@ -5,21 +5,29 @@
 
 # flake8: noqa
 
-from .plot import plot
-
 # If we are running inside a notebook, then make plot interactive by default.
 # From: https://stackoverflow.com/a/22424821
 try:
     from IPython import get_ipython
     ipy = get_ipython()
     if ipy is not None:
-        import matplotlib
-        if matplotlib.rcParams["backend"] == "module://ipykernel.pylab.backend_inline":
+        cfg = ipy.config
+        try:
+            meta = cfg["Session"]["metadata"]
+            if hasattr(meta, to_dict):
+                meta = meta.to_dict()
+            is_doc_build = meta["scipp_docs_build"]
+        except KeyError:
+            is_doc_build = False
+        if is_doc_build:
             ipy.run_line_magic("matplotlib", "inline")
         elif "IPKernelApp" in ipy.config:
             ipy.run_line_magic("matplotlib", "notebook")
 except ImportError:
     pass
+
+
+from .plot import plot
 
 
 def superplot(dataset, **kwargs):
