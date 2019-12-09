@@ -1,10 +1,5 @@
 version: '{build}'
 os: Visual Studio 2019
-
-branches:	
-  only:	
-  - master
-  - windows_diagnose
   
 matrix:
   fast_finish: true
@@ -44,8 +39,6 @@ test_script:
 - set PYTHONPATH=%PYTHONPATH%;..\install
 - C:\Python36-x64\python.exe -m pytest ..\python
 - echo tests finished %time%
-
-deploy_script: off
 
 for:
 - 
