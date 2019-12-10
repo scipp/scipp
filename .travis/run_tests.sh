@@ -3,7 +3,7 @@
 set -xe
 
 # Build scipp and test ONLY if not deploying, i.e. not master and a pull_request event
-if [[$TRAVIS_PULL_REQUEST_BRANCH -ne 'master'] && [$TRAVIS_EVENT_TYPE -eq 'pull_request']]
+if [[$TRAVIS_EVENT_TYPE -eq 'pull_request']]
 then
     mkdir -p build
     mkdir -p install
