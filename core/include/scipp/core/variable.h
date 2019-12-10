@@ -612,7 +612,7 @@ Variable Variable::create(units::Unit &&u, Dimensions &&d,
   if (var)
     throw except::VariancesError("Can't have variance without values");
   else
-    from_dimensions_and_unit<T>(dms, u);
+    return from_dimensions_and_unit<T>(dms, u);
 }
 
 template <class T>

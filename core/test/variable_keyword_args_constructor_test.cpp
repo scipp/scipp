@@ -27,9 +27,10 @@ TEST(CreateVariableTest, unitialized) {
   EXPECT_FALSE(noVariance.hasVariances());
   EXPECT_FALSE(stillNoVariance.hasVariances());
   EXPECT_TRUE(withVariance.hasVariances());
-  EXPECT_EQ(noVariance.values<double>().size(), 3);
-  EXPECT_EQ(stillNoVariance.values<double>().size(), 3);
-  EXPECT_EQ(withVariance.values<double>().size(), 3);
+  EXPECT_EQ(noVariance.values<float>().size(), 3);
+  EXPECT_EQ(stillNoVariance.values<float>().size(), 3);
+  EXPECT_EQ(withVariance.values<float>().size(), 3);
+  EXPECT_EQ(withVariance.variances<float>().size(), 3);
 }
 
 TEST(CreateVariableTest, from_vector) {
