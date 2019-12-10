@@ -557,6 +557,7 @@ makeVariableWithVariances(const Dimensions &dimensions,
                     Vector<T>(dimensions.volume(), init));
 }
 
+namespace detail {
 template <class T>
 Variable from_dimensions_and_unit(const Dimensions &dms, const units::Unit &u) {
   auto volume = dms.volume();
@@ -577,6 +578,7 @@ Variable from_dimensions_and_unit_with_variances(const Dimensions &dms,
     return Variable(u, dms, Vector<T>(volume, detail::default_init<T>::value()),
                     Vector<T>(volume, detail::default_init<T>::value()));
 }
+} // namespace detail
 
 /// This function covers the cases of construction Variables from keyword
 /// argument. The Unit is completely arbitrary, the relations between Dims,
@@ -597,14 +599,14 @@ Variable Variable::create(units::Unit &&u, Dimensions &&d,
   auto dms{d};
   if (val && var) {
     if (val->size() < 0 && var->size() < 0)
-      return from_dimensions_and_unit_with_variances<T>(dms, u);
+      return detail::from_dimensions_and_unit_with_variances<T>(dms, u);
     else
       return Variable(u, dms, std::move(*val), std::move(*var));
   }
 
   if (val) {
     if (val->size() < 0)
-      return from_dimensions_and_unit<T>(dms, u);
+      return detail::from_dimensions_and_unit<T>(dms, u);
     else
       return Variable(u, dms, std::move(*val));
   }
@@ -612,7 +614,7 @@ Variable Variable::create(units::Unit &&u, Dimensions &&d,
   if (var)
     throw except::VariancesError("Can't have variance without values");
   else
-    return from_dimensions_and_unit<T>(dms, u);
+    return detail::from_dimensions_and_unit<T>(dms, u);
 }
 
 template <class T>
