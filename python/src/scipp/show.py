@@ -161,7 +161,6 @@ class VariableDrawer():
 
     def _draw_array(self, color, data, offset=[0, 0]):
         """Draw the array of boxes"""
-        shape = self._variable.shape
         dx = offset[0]
         dy = offset[1] + 0.3  # extra offset for top face of top row of cubes
         svg = ''
@@ -330,7 +329,7 @@ class DatasetDrawer():
                 if len(item.dims) > len(dims):
                     dims = item.dims
             for dim in self._dataset.dims:
-                if not dim in dims:
+                if dim not in dims:
                     dims = [dim] + dims
         if len(dims) > 3:
             raise RuntimeError("Cannot visualize {}-D data".format(len(dims)))
@@ -391,8 +390,8 @@ class DatasetDrawer():
                     area_xy.append(item)
 
         for what, items in zip(
-            ['coord', 'labels', 'mask', 'attr'],
-            [dataset.coords, dataset.labels, dataset.masks, dataset.attrs]):
+              ['coord', 'labels', 'mask', 'attr'],
+              [dataset.coords, dataset.labels, dataset.masks, dataset.attrs]):
             for name, var in items:
                 if var.sparse_dim is not None:
                     continue
