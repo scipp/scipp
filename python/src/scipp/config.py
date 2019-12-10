@@ -8,10 +8,6 @@ class _Plot:
 
     def __init__(self):
 
-        # The plotting backend: possible choices are "interactive", "static",
-        # "matplotlib", and "matplotlib:quiet"
-        self.backend = "interactive"
-
         # The list of default line colors
         self.color_list = ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728",
                            "#9467bd", "#8c564b", "#e377c2", "#7f7f7f",
@@ -22,13 +18,17 @@ class _Plot:
                    "min_var": None, "max_var": None}
 
         # The default image height (in pixels)
-        self.height = 600
+        self.height = 533
 
         # The default image width (in pixels)
-        self.width = 950
+        self.width = 800
 
-        # The size threshold above which an image is automatically rasterized
-        self.rasterize_threshold = 100000
+        # Resolution
+        self.dpi = 96
+
+        # Aspect ratio for images: 'equal' will conserve the aspect ratio,
+        # while 'auto' will stretch the image to the size of the figure
+        self.aspect = "auto"
 
 
 class _Colors:

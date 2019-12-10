@@ -8,12 +8,11 @@ dependencies:
   - python>=3
   - ipython=7.2.0
   - sphinx>=1.6
-  - pandoc
-  - nbconvert!=5.4
-  - ipykernel
+  - pip
+  - scipp
   - pip:
     - nbsphinx
-  - scipp
-  - matplotlib
-  - ipywidgets
-  - psutil
+    - matplotlib
+    - ipywidgets
+    - ipyvolume
+    - ipyevents

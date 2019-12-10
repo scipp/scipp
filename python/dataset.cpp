@@ -86,6 +86,11 @@ void bind_dataset_proxy_methods(py::class_<T, Ignored...> &c) {
   c.def("__contains__", &T::contains);
   c.def("copy", [](const T &self) { return Dataset(self); },
         "Return a (deep) copy.");
+  c.def("__copy__", [](const T &self) { return Dataset(self); },
+        "Return a (deep) copy.");
+  c.def("__deepcopy__",
+        [](const T &self, const py::dict &) { return Dataset(self); },
+        "Return a (deep) copy.");
   c.def_property_readonly("dims",
                           [](const T &self) {
                             std::vector<Dim> dims;
@@ -112,6 +117,11 @@ void bind_data_array_properties(py::class_<T, Ignored...> &c) {
   c.def_property_readonly("name", &T::name, R"(The name of the held data.)");
   c.def("__repr__", [](const T &self) { return to_string(self); });
   c.def("copy", [](const T &self) { return DataArray(self); },
+        "Return a (deep) copy.");
+  c.def("__copy__", [](const T &self) { return DataArray(self); },
+        "Return a (deep) copy.");
+  c.def("__deepcopy__",
+        [](const T &self, const py::dict &) { return DataArray(self); },
         "Return a (deep) copy.");
   c.def_property(
       "data",

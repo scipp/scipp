@@ -2,24 +2,26 @@
 # Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
-from .tools import axis_to_dim_label
+from .tools import axis_to_dim_label, parse_colorbar
 from .._scipp.core.units import dimensionless
 
 
 class Slicer:
 
-    def __init__(self, input_data=None, axes=None, value_name=None, cb=None,
+    def __init__(self, input_data=None, axes=None, cb=None,
                  show_variances=False, button_options=None, volume=False):
 
         import ipywidgets as widgets
 
         self.input_data = input_data
+        self.members = dict(widgets=dict(sliders=dict(), togglebuttons=dict(),
+                            buttons=dict(), labels=dict()))
 
         self.show_variances = show_variances
         if self.show_variances:
             self.show_variances = (self.input_data.variances is not None)
-        self.cb = cb
-        self.value_name = value_name
+        if len(button_options) > 1:
+            self.cb = parse_colorbar(cb, input_data, self.show_variances)
 
         # Get the dimensions of the image to be displayed
         self.coords = self.input_data.coords
@@ -29,7 +31,7 @@ class Slicer:
         # Size of the slider coordinate arrays
         self.slider_nx = dict()
         # Save dimensions tags for sliders, e.g. Dim.X
-        self.slider_dims = []
+        self.slider_dims = dict()
         # Store coordinates of dimensions that will be in sliders
         self.slider_x = dict()
         # Store labels for sliders if any
@@ -43,12 +45,27 @@ class Slicer:
             if (lab is not None) and (dim in axes):
                 raise RuntimeError("The dimension of the labels cannot also "
                                    "be specified as another axis.")
-            self.slider_dims.append(dim)
             key = str(dim)
+            self.slider_dims[key] = dim
             self.slider_labels[key] = lab
             self.slider_x[key] = var
             self.slider_nx[key] = self.shapes[dim]
         self.ndim = len(self.slider_dims)
+
+        # Save information on histograms
+        self.histograms = dict()
+        if hasattr(self.input_data, "name"):
+            for key, x in self.slider_x.items():
+                indx = self.input_data.dims.index(self.slider_dims[key])
+                self.histograms[key] = self.input_data.shape[indx] == \
+                    x.shape[0] - 1
+        else:
+            for name, var in self.input_data:
+                self.histograms[name] = dict()
+                for key, x in self.slider_x.items():
+                    indx = var.dims.index(self.slider_dims[key])
+                    self.histograms[name][key] = var.shape[indx] == \
+                        x.shape[0] - 1
 
         # Initialise list for VBox container
         self.vbox = []
@@ -65,8 +82,7 @@ class Slicer:
         # Now begin loop to construct sliders
         button_values = [None] * (self.ndim - len(button_options)) + \
             button_options[::-1]
-        for i, dim in enumerate(self.slider_dims):
-            key = str(dim)
+        for i, (key, dim) in enumerate(self.slider_dims.items()):
             # If this is a 3d projection, place slices half-way
             if len(button_options) == 3 and (not volume):
                 indx = (self.slider_nx[key] - 1) // 2
@@ -125,6 +141,7 @@ class Slicer:
                         button_values[i] is not None)
                 # Add observer to show/hide buttons
                 self.showhide[key].on_click(self.update_showhide)
+                self.members["widgets"]["buttons"][key] = self.showhide[key]
 
             # Add observer to buttons
             self.buttons[key].on_msg(self.update_buttons)
@@ -136,6 +153,12 @@ class Slicer:
                 row += [widgets.HTML(value="&nbsp;&nbsp;&nbsp;&nbsp;"),
                         self.showhide[key]]
             self.vbox.append(widgets.HBox(row))
+
+            # Construct members object
+            self.members["widgets"]["sliders"][key] = self.slider[key]
+            self.members["widgets"]["togglebuttons"][key] = self.buttons[key]
+            self.members["widgets"]["labels"][key] = self.lab[key]
+
         return
 
     def make_slider_label(self, var, indx):

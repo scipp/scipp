@@ -233,12 +233,8 @@ def convertEventWorkspace_to_dataarray(ws, load_pulse_times):
         sp = ws.getSpectrum(i)
         coord[spec_dim, i].values = sp.getTofs()
         if load_pulse_times:
-            # Pulse times have a Mantid-specific format so the conversion is
-            # very slow.
-            # TODO: Find a more efficient way to do this.
-            pt = sp.getPulseTimes()
-            labs[spec_dim, i].values = np.asarray(
-                [p.totalNanoseconds() for p in pt])
+            labs[spec_dim, i].values = \
+                sp.getPulseTimesAsNumpy().astype(np.int64)
         if contains_weighted_events:
             weights[spec_dim, i].values = sp.getWeights()
             weights[spec_dim, i].variances = sp.getWeightErrors()
