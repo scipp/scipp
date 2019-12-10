@@ -484,14 +484,14 @@ class DatasetDrawer():
         content += '<g transform="translate({},{})">{}</g>'.format(
             -w_y, height - h_y, c_y)
 
-        c, w_0d, h = draw_area(area_0d, 'x', reverse=True)
+        c, w_0d, h_0d = draw_area(area_0d, 'x', reverse=True)
         content += '<g transform="translate({},{})">{}</g>'.format(
             -w_0d, height, c)
         width += max(w_y, w_0d)
         left -= max(w_y, w_0d)
 
         content += '<g transform="translate(0,{})">{}</g>'.format(height, c_x)
-        height += h_x
+        height += max(h_x, h_0d)
 
         return '<svg width={}em viewBox="{} {} {} {}">{}</svg>'.format(
             _svg_width, left, top, max(_cubes_in_full_width, width), height,
