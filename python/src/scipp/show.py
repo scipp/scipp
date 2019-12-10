@@ -172,7 +172,7 @@ class VariableDrawer():
                     sparse = False
                     if lx == self._sparse_flag:
                         # TODO This works only for 2D and no transpose
-                        true_lx = ceil(len(data[ly - y - 1]) / self._x_stride)
+                        true_lx = ceil(len(data[ly - y - 1 + ly*(lz - z - 1)]) / self._x_stride)
                         if true_lx == 0:
                             true_lx = 1
                             x_scale *= 0
