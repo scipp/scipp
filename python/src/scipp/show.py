@@ -102,9 +102,10 @@ class VariableDrawer():
         dims = self._variable.dims
         d = dict(zip(dims, shape))
         e = []
+        max_extent = _cubes_in_full_width // 2
         for dim in self._target_dims:
             if dim in d:
-                e.append(d[dim])
+                e.append(min(d[dim], max_extent))
             elif dim in dims:
                 e.append(self._sparse_flag)
             else:
@@ -193,10 +194,6 @@ class VariableDrawer():
         return svg
 
     def _draw_labels(self, offset):
-        dims = self._variable.dims
-        shape = self._variable.shape
-        if self._variable.sparse_dim is not None:
-            shape = shape + [1]  # dummy extent so sparse dim label is drawn
         view_height = self.size()[1]
         svg = ''
         dx = offset[0]
@@ -229,10 +226,12 @@ class VariableDrawer():
                                 self._extents()[-2] - 0.3 * 0.5 * extent -
                                 0.2 * _smaller_font)).format(dim)
 
-        for dim, extent in zip(dims, shape):
-            svg += make_label(
-                dim, extent,
-                self._target_dims.index(dim) + (3 - len(self._target_dims)))
+        extents = self._extents()
+        for dim in self._variable.dims:
+            i = self._target_dims.index(dim) + (3 - len(self._target_dims))
+            # 1 is a dummy extent so sparse dim label is drawn at correct pos
+            extent = max(extents[i], 1)
+            svg += make_label(dim, extent, i)
         return svg
 
     def _draw_info(self, offset, title):
