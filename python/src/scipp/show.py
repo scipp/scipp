@@ -471,18 +471,18 @@ class DatasetDrawer():
 
         c, w, h = draw_area(area_xy, 'y')
         content += '<g transform="translate(0,{})">{}</g>'.format(height, c)
-        height += h
-        width += w
+        c_x, w_x, h_x = draw_area(area_x, 'y')
+        c_y, w_y, h_y = draw_area(area_y, 'x', reverse=True)
+        height += max(h, h_y)
+        width += max(w, w_x)
 
         c, w, h = draw_area(area_z, 'x')
         content += '<g transform="translate({},{})">{}</g>'.format(
             width, height - h, c)
         width += w
 
-        c, w_y, h = draw_area(area_y, 'x', reverse=True)
-        height = max(height, h)
         content += '<g transform="translate({},{})">{}</g>'.format(
-            -w_y, height - h, c)
+            -w_y, height - h_y, c_y)
 
         c, w_0d, h = draw_area(area_0d, 'x', reverse=True)
         content += '<g transform="translate({},{})">{}</g>'.format(
@@ -490,9 +490,8 @@ class DatasetDrawer():
         width += max(w_y, w_0d)
         left -= max(w_y, w_0d)
 
-        c, w, h = draw_area(area_x, 'y')
-        content += '<g transform="translate(0,{})">{}</g>'.format(height, c)
-        height += h
+        content += '<g transform="translate(0,{})">{}</g>'.format(height, c_x)
+        height += h_x
 
         return '<svg width={}em viewBox="{} {} {} {}">{}</svg>'.format(
             _svg_width, left, top, max(_cubes_in_full_width, width), height,
