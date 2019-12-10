@@ -24,4 +24,4 @@ then
 else
     echo 'build and test step skipped on' $TRAVIS_PULL_REQUEST_BRANCH
     echo 'build type' $TRAVIS_EVENT_TYPE 
-
+fi
