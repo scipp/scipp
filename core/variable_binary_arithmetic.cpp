@@ -4,20 +4,10 @@
 /// @author Simon Heybrock
 #include <cmath>
 
-#include "scipp/core/except.h"
 #include "scipp/core/transform.h"
 #include "scipp/core/variable.h"
 
-#include "operators.h"
-
 namespace scipp::core {
-
-template <class T1, class T2> T1 &plus_equals(T1 &variable, const T2 &other) {
-  // Note: This will broadcast/transpose the RHS if required. We do not support
-  // changing the dimensions of the LHS though!
-  transform_in_place(variable, other, operator_detail::plus_equals{});
-  return variable;
-}
 
 static constexpr auto plus_ = [](const auto a_, const auto b_) {
   return a_ + b_;
@@ -55,67 +45,16 @@ Variable Variable::operator-() const {
       *this, [](const auto a) { return -a; });
 }
 
-Variable &Variable::operator+=(const VariableConstProxy &other) & {
-  VariableProxy(*this) += other;
-  return *this;
-}
-
-template <class T1, class T2> T1 &minus_equals(T1 &variable, const T2 &other) {
-  transform_in_place(variable, other, operator_detail::minus_equals{});
-  return variable;
-}
-
 template <class T1, class T2> Variable minus(const T1 &a, const T2 &b) {
   return transform<arithmetic_and_matrix_type_pairs>(a, b, minus_);
-}
-
-Variable &Variable::operator-=(const VariableConstProxy &other) & {
-  VariableProxy(*this) -= other;
-  return *this;
-}
-
-template <class T1, class T2> T1 &times_equals(T1 &variable, const T2 &other) {
-  transform_in_place(variable, other, operator_detail::times_equals{});
-  return variable;
 }
 
 template <class T1, class T2> Variable times(const T1 &a, const T2 &b) {
   return transform<arithmetic_type_pairs_with_bool>(a, b, times_);
 }
 
-Variable &Variable::operator*=(const VariableConstProxy &other) & {
-  VariableProxy(*this) *= other;
-  return *this;
-}
-
-template <class T1, class T2> T1 &divide_equals(T1 &variable, const T2 &other) {
-  transform_in_place(variable, other, operator_detail::divide_equals{});
-  return variable;
-}
-
 template <class T1, class T2> Variable divide(const T1 &a, const T2 &b) {
   return transform<arithmetic_type_pairs>(a, b, divide_);
-}
-
-Variable &Variable::operator/=(const VariableConstProxy &other) & {
-  VariableProxy(*this) /= other;
-  return *this;
-}
-
-VariableProxy VariableProxy::operator+=(const VariableConstProxy &other) const {
-  return plus_equals(*this, other);
-}
-
-VariableProxy VariableProxy::operator-=(const VariableConstProxy &other) const {
-  return minus_equals(*this, other);
-}
-
-VariableProxy VariableProxy::operator*=(const VariableConstProxy &other) const {
-  return times_equals(*this, other);
-}
-
-VariableProxy VariableProxy::operator/=(const VariableConstProxy &other) const {
-  return divide_equals(*this, other);
 }
 
 Variable VariableConstProxy::operator-() const {
