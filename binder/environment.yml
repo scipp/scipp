@@ -8,4 +8,5 @@ dependencies:
   - python>=3
   - scipp
   - matplotlib
-  - plotly
+  - ipyvolume
+  - ipyevents
