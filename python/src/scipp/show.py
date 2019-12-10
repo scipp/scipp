@@ -27,7 +27,7 @@ def is_data_array(obj):
 
 
 def _hex_to_rgb(hex_color):
-    rgb_hex = [hex_color[x:x+2] for x in [1, 3, 5]]
+    rgb_hex = [hex_color[x:x + 2] for x in [1, 3, 5]]
     return [int(hex_value, 16) for hex_value in rgb_hex]
 
 
@@ -84,8 +84,9 @@ class VariableDrawer():
             'd="m origin_x origin_y m xlen 0 l 0.3 -0.3 v 1 l -0.3 0.3 z"',
             'id="path2" />'
         ]).format(*_color_variants(color)).replace(
-            "origin_x", str(origin_x)).replace(
-                "origin_y", str(origin_y)).replace("xlen", str(xlen))
+            "origin_x",
+            str(origin_x)).replace("origin_y",
+                                   str(origin_y)).replace("xlen", str(xlen))
 
     def _variance_offset(self):
         shape = self._extents()
@@ -172,7 +173,9 @@ class VariableDrawer():
                     sparse = False
                     if lx == self._sparse_flag:
                         # TODO This works only for 2D and no transpose
-                        true_lx = ceil(len(data[ly - y - 1 + ly*(lz - z - 1)]) / self._x_stride)
+                        true_lx = ceil(
+                            len(data[ly - y - 1 + ly * (lz - z - 1)]) /
+                            self._x_stride)
                         if true_lx == 0:
                             true_lx = 1
                             x_scale *= 0
@@ -262,12 +265,12 @@ class VariableDrawer():
             if self._variable.sparse_dim is not None:
                 for name, label in self._variable.labels:
                     if label.sparse_dim is not None:
-                        items.append((name, label.values,
-                                      colors.scheme['labels']))
+                        items.append(
+                            (name, label.values, colors.scheme['labels']))
                 for name, mask in self._variable.masks:
                     if label.sparse_dim is not None:
-                        items.append((name, mask.values,
-                                      colors.scheme['mask']))
+                        items.append(
+                            (name, mask.values, colors.scheme['mask']))
                 sparse_dim = self._variable.sparse_dim
                 for dim, coord in self._variable.coords:
                     if dim == sparse_dim:
