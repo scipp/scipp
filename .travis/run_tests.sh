@@ -23,5 +23,5 @@ then
     python3 -m pytest
 else
     echo 'build and test step skipped on' $TRAVIS_PULL_REQUEST_BRANCH
-fi
+    echo 'build type' $TRAVIS_EVENT_TYPE 
 
