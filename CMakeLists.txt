@@ -88,7 +88,9 @@ if(${HAVE_GIT_VERSION_INFO} EQUAL 0)
   add_definitions(-DSCIPP_VERSION="${GIT_VERSION_INFO}")
 endif()
 
-if(NOT WIN32)
+if(WIN32)
+    set(CMAKE_EXE_LINKER_FLAGS_RELEASE "/RELEASE /LTCG /OPT:REF /OPT:ICF /INCREMENTAL:NO")
+else(WIN32)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-omit-frame-pointer")
 	add_compile_options(-Wall
 						-Wextra
@@ -103,7 +105,7 @@ if(NOT WIN32)
 						-Wcast-align)
 	add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-Woverloaded-virtual>
 						$<$<COMPILE_LANGUAGE:CXX>:-fno-operator-names>)
-endif(NOT WIN32)
+endif(WIN32)
 # This is currently causing to many warnings, reenable when appropriate.
 # add_compile_options ( -Wconversion )
 
