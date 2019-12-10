@@ -28,7 +28,7 @@ jobs:
     - stage: "Unit tests"
       compiler: gcc
       name: "gcc"
-      if: branch = master AND type = pull_request
+      if: NOT branch = master AND type = pull_request
       before_install: .travis/before_install.sh
       install: .travis/install_linux_toolchain.sh
       script: .travis/run_tests.sh
