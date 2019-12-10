@@ -12,8 +12,8 @@ using namespace scipp::core;
 
 auto make_2d_sparse_coord_only(const scipp::index size,
                                const scipp::index count) {
-  auto var = createVariable<double>(Dims{Dim::X, Dim::Y},
-                                    Shape{size, Dimensions::Sparse});
+  auto var = makeVariable<double>(Dims{Dim::X, Dim::Y},
+                                  Shape{size, Dimensions::Sparse});
   auto vals = var.sparseValues<double>();
   for (scipp::index i = 0; i < size; ++i)
     vals[i].resize(count);
@@ -28,8 +28,8 @@ static void BM_groupby_flatten(benchmark::State &state) {
   auto sparse = make_2d_sparse_coord_only(nHist, nEvent / nHist);
   std::vector<int64_t> group_(nHist);
   std::iota(group_.begin(), group_.end(), 0);
-  auto group = createVariable<int64_t>(Dims{Dim::X}, Shape{nHist},
-                                       Values(group_.begin(), group_.end()));
+  auto group = makeVariable<int64_t>(Dims{Dim::X}, Shape{nHist},
+                                     Values(group_.begin(), group_.end()));
   sparse.labels().set("group", group / (nHist / nGroup));
   for (auto _ : state) {
     benchmark::DoNotOptimize(groupby(sparse, "group", Dim::Z).flatten(Dim::X));

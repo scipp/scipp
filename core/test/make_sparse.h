@@ -13,14 +13,14 @@ using namespace scipp::core;
 template <typename T>
 inline auto make_sparse_variable_with_variance(int length = 2) {
   Dimensions dims({Dim::Y, Dim::X}, {length, Dimensions::Sparse});
-  return createVariable<T>(
+  return makeVariable<T>(
       Dimensions(dims), Values{sparse_container<T>(), sparse_container<T>()},
       Variances{sparse_container<T>(), sparse_container<T>()});
 }
 
 template <typename T> inline auto make_sparse_variable(int length = 2) {
   Dimensions dims({Dim::Y, Dim::X}, {length, Dimensions::Sparse});
-  return createVariable<T>(Dimensions(dims));
+  return makeVariable<T>(Dimensions(dims));
 }
 
 template <typename T>

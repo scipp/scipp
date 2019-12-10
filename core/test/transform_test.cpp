@@ -25,7 +25,7 @@ protected:
 };
 
 TEST_F(TransformUnaryTest, dense) {
-  auto var = createVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.1, 2.2});
+  auto var = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.1, 2.2});
 
   const auto result = transform<double>(var, op);
   transform_in_place<double>(var, op_in_place);
@@ -36,8 +36,8 @@ TEST_F(TransformUnaryTest, dense) {
 }
 
 TEST_F(TransformUnaryTest, dense_with_variances) {
-  auto var = createVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.1, 2.2},
-                                    Variances{1.1, 3.0});
+  auto var = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.1, 2.2},
+                                  Variances{1.1, 3.0});
 
   const auto result = transform<double>(var, op);
   transform_in_place<double>(var, op_in_place);
@@ -48,8 +48,8 @@ TEST_F(TransformUnaryTest, dense_with_variances) {
 }
 
 TEST_F(TransformUnaryTest, elements_of_sparse) {
-  auto var = createVariable<double>(Dims{Dim::Y, Dim::X},
-                                    Shape{2l, Dimensions::Sparse});
+  auto var =
+      makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2l, Dimensions::Sparse});
   auto vals = var.sparseValues<double>();
   vals[0] = {1, 2, 3};
   vals[1] = {4};
@@ -63,7 +63,7 @@ TEST_F(TransformUnaryTest, elements_of_sparse) {
 }
 
 TEST_F(TransformUnaryTest, elements_of_sparse_with_variance) {
-  auto var = createVariable<double>(
+  auto var = makeVariable<double>(
       Dimensions{{Dim::Y, Dim::X}, {2, Dimensions::Sparse}}, Values{},
       Variances{});
   auto vals = var.sparseValues<double>();
@@ -85,7 +85,7 @@ TEST_F(TransformUnaryTest, elements_of_sparse_with_variance) {
 
 TEST_F(TransformUnaryTest, sparse_values_variances_size_fail) {
   Dimensions dims({Dim::Y, Dim::X}, {2, Dimensions::Sparse});
-  auto a = createVariable<double>(
+  auto a = makeVariable<double>(
       Dimensions(dims),
       Values{sparse_container<double>(2), sparse_container<double>(1)},
       Variances{sparse_container<double>(2), sparse_container<double>(2)});
@@ -98,11 +98,11 @@ TEST_F(TransformUnaryTest, sparse_values_variances_size_fail) {
 }
 
 TEST_F(TransformUnaryTest, in_place_unit_change) {
-  const auto var = createVariable<double>(
+  const auto var = makeVariable<double>(
       Dims{Dim::X}, Shape{2}, units::Unit(units::m), Values{1.0, 2.0});
-  const auto expected = createVariable<double>(Dims{Dim::X}, Shape{2},
-                                               units::Unit(units::m * units::m),
-                                               Values{1.0, 4.0});
+  const auto expected =
+      makeVariable<double>(Dims{Dim::X}, Shape{2},
+                           units::Unit(units::m * units::m), Values{1.0, 4.0});
   auto op_ = [](auto &&a) { a *= a; };
   Variable result;
 
@@ -118,7 +118,7 @@ TEST_F(TransformUnaryTest, in_place_unit_change) {
 
 TEST(TransformTest, apply_unary_implicit_conversion) {
   const auto var =
-      createVariable<float>(Dims{Dim::X}, Shape{2}, Values{1.1, 2.2});
+      makeVariable<float>(Dims{Dim::X}, Shape{2}, Values{1.1, 2.2});
   // The functor returns double, so the output type is also double.
   auto out = transform<float>(
       var, overloaded{[](const auto x) { return -1.0 * x; },
@@ -128,9 +128,9 @@ TEST(TransformTest, apply_unary_implicit_conversion) {
 
 TEST(TransformTest, apply_unary_dtype_preserved) {
   const auto varD =
-      createVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.1, 2.2});
+      makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.1, 2.2});
   const auto varF =
-      createVariable<float>(Dims{Dim::X}, Shape{2}, Values{1.1, 2.2});
+      makeVariable<float>(Dims{Dim::X}, Shape{2}, Values{1.1, 2.2});
   auto outD = transform<double, float>(varD, [](const auto x) { return -x; });
   auto outF = transform<double, float>(varF, [](const auto x) { return -x; });
   EXPECT_TRUE(equals(outD.values<double>(), {-1.1, -2.2}));
@@ -138,31 +138,31 @@ TEST(TransformTest, apply_unary_dtype_preserved) {
 }
 
 TEST(TransformTest, dtype_bool) {
-  auto var = createVariable<bool>(Dims{Dim::X}, Shape{2}, Values{true, false});
+  auto var = makeVariable<bool>(Dims{Dim::X}, Shape{2}, Values{true, false});
 
   EXPECT_EQ(
       transform<bool>(var, overloaded{[](const units::Unit &u) { return u; },
                                       [](const auto x) { return !x; }}),
-      createVariable<bool>(Dims{Dim::X}, Shape{2}, Values{false, true}));
+      makeVariable<bool>(Dims{Dim::X}, Shape{2}, Values{false, true}));
 
   EXPECT_EQ(transform<pair_self_t<bool>>(
                 var, var,
                 overloaded{
                     [](const units::Unit &a, const units::Unit &) { return a; },
                     [](const auto x, const auto y) { return !x || y; }}),
-            createVariable<bool>(Dims{Dim::X}, Shape{2}, Values{true, true}));
+            makeVariable<bool>(Dims{Dim::X}, Shape{2}, Values{true, true}));
 
   transform_in_place<bool>(
       var, overloaded{[](units::Unit &) {}, [](auto &x) { x = !x; }});
   EXPECT_EQ(var,
-            createVariable<bool>(Dims{Dim::X}, Shape{2}, Values{false, true}));
+            makeVariable<bool>(Dims{Dim::X}, Shape{2}, Values{false, true}));
 
   transform_in_place<pair_self_t<bool>>(
       var, var,
       overloaded{[](units::Unit &, const units::Unit &) {},
                  [](auto &x, const auto &y) { x = !x || y; }});
   EXPECT_EQ(var,
-            createVariable<bool>(Dims{Dim::X}, Shape{2}, Values{true, true}));
+            makeVariable<bool>(Dims{Dim::X}, Shape{2}, Values{true, true}));
 }
 
 class TransformBinaryTest : public ::testing::Test {
@@ -172,8 +172,8 @@ protected:
 };
 
 TEST_F(TransformBinaryTest, dense) {
-  auto a = createVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.1, 2.2});
-  const auto b = createVariable<double>(Values{3.3});
+  auto a = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.1, 2.2});
+  const auto b = makeVariable<double>(Values{3.3});
 
   const auto ab = transform<pair_self_t<double>>(a, b, op);
   const auto ba = transform<pair_self_t<double>>(b, a, op);
@@ -186,26 +186,26 @@ TEST_F(TransformBinaryTest, dense) {
 }
 
 TEST_F(TransformBinaryTest, dims_and_shape_fail_in_place) {
-  auto a = createVariable<double>(Dims{Dim::X}, Shape{2});
-  auto b = createVariable<double>(Dims{Dim::Y}, Shape{2});
-  auto c = createVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2});
+  auto a = makeVariable<double>(Dims{Dim::X}, Shape{2});
+  auto b = makeVariable<double>(Dims{Dim::Y}, Shape{2});
+  auto c = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2});
 
   EXPECT_ANY_THROW(transform_in_place<pair_self_t<double>>(a, b, op_in_place));
   EXPECT_ANY_THROW(transform_in_place<pair_self_t<double>>(a, c, op_in_place));
 }
 
 TEST_F(TransformBinaryTest, dims_and_shape_fail) {
-  auto a = createVariable<double>(Dims{Dim::X}, Shape{4});
-  auto b = createVariable<double>(Dims{Dim::X}, Shape{2});
-  auto c = createVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2});
+  auto a = makeVariable<double>(Dims{Dim::X}, Shape{4});
+  auto b = makeVariable<double>(Dims{Dim::X}, Shape{2});
+  auto c = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2});
 
   EXPECT_ANY_THROW(transform<pair_self_t<double>>(a, b, op));
   EXPECT_ANY_THROW(transform<pair_self_t<double>>(a, c, op));
 }
 
 TEST_F(TransformBinaryTest, dense_mixed_type) {
-  auto a = createVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.1, 2.2});
-  const auto b = createVariable<float>(Values{3.3});
+  auto a = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.1, 2.2});
+  const auto b = makeVariable<float>(Values{3.3});
 
   const auto ab = transform<pair_custom_t<std::pair<double, float>>>(a, b, op);
   const auto ba = transform<pair_custom_t<std::pair<float, double>>>(b, a, op);
@@ -219,9 +219,8 @@ TEST_F(TransformBinaryTest, dense_mixed_type) {
 }
 
 TEST_F(TransformBinaryTest, var_with_view) {
-  auto a = createVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.1, 2.2});
-  const auto b =
-      createVariable<double>(Dims{Dim::Y}, Shape{2}, Values{0.1, 3.3});
+  auto a = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.1, 2.2});
+  const auto b = makeVariable<double>(Dims{Dim::Y}, Shape{2}, Values{0.1, 3.3});
 
   auto ab = transform<pair_self_t<double>>(a, b.slice({Dim::Y, 1}), op);
   transform_in_place<pair_self_t<double>>(a, b.slice({Dim::Y, 1}), op_in_place);
@@ -231,7 +230,7 @@ TEST_F(TransformBinaryTest, var_with_view) {
 }
 
 TEST_F(TransformBinaryTest, in_place_self_overlap_without_variance) {
-  auto a = createVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.1, 2.2});
+  auto a = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.1, 2.2});
   Variable slice_copy(a.slice({Dim::X, 1}));
   auto reference = a * slice_copy;
   transform_in_place<pair_self_t<double>>(a, a.slice({Dim::X, 1}), op_in_place);
@@ -239,8 +238,8 @@ TEST_F(TransformBinaryTest, in_place_self_overlap_without_variance) {
 }
 
 TEST_F(TransformBinaryTest, in_place_self_overlap_with_variance) {
-  auto a = createVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.1, 2.2},
-                                  Variances{1.0, 2.0});
+  auto a = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.1, 2.2},
+                                Variances{1.0, 2.0});
   Variable slice_copy(a.slice({Dim::X, 1}));
   auto reference = a * slice_copy;
   // With self-overlap the implementation needs to make a copy of the rhs. This
@@ -251,8 +250,8 @@ TEST_F(TransformBinaryTest, in_place_self_overlap_with_variance) {
 }
 
 TEST_F(TransformBinaryTest, view_with_var) {
-  auto a = createVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.1, 2.2});
-  const auto b = createVariable<double>(Values{3.3});
+  auto a = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.1, 2.2});
+  const auto b = makeVariable<double>(Values{3.3});
 
   transform_in_place<pair_self_t<double>>(a.slice({Dim::X, 1}), b, op_in_place);
 
@@ -260,9 +259,8 @@ TEST_F(TransformBinaryTest, view_with_var) {
 }
 
 TEST_F(TransformBinaryTest, view_with_view) {
-  auto a = createVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.1, 2.2});
-  const auto b =
-      createVariable<double>(Dims{Dim::Y}, Shape{2}, Values{0.1, 3.3});
+  auto a = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.1, 2.2});
+  const auto b = makeVariable<double>(Dims{Dim::Y}, Shape{2}, Values{0.1, 3.3});
 
   transform_in_place<pair_self_t<double>>(a.slice({Dim::X, 1}),
                                           b.slice({Dim::Y, 1}), op_in_place);
@@ -271,12 +269,12 @@ TEST_F(TransformBinaryTest, view_with_view) {
 }
 
 TEST_F(TransformBinaryTest, dense_sparse) {
-  auto sparse = createVariable<double>(Dims{Dim::Y, Dim::X},
-                                       Shape{2l, Dimensions::Sparse});
+  auto sparse =
+      makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2l, Dimensions::Sparse});
   auto sparse_ = sparse.sparseValues<double>();
   sparse_[0] = {1, 2, 3};
   sparse_[1] = {4};
-  auto dense = createVariable<double>(Dims{Dim::Y}, Shape{2}, Values{1.5, 0.5});
+  auto dense = makeVariable<double>(Dims{Dim::Y}, Shape{2}, Values{1.5, 0.5});
 
   const auto ab = transform<pair_self_t<double>>(sparse, dense, op);
   const auto ba = transform<pair_self_t<double>>(dense, sparse, op);
@@ -290,10 +288,10 @@ TEST_F(TransformBinaryTest, dense_sparse) {
 
 TEST_F(TransformBinaryTest, sparse_size_fail) {
   Dimensions dims({Dim::Y, Dim::X}, {2, Dimensions::Sparse});
-  auto a = createVariable<double>(
+  auto a = makeVariable<double>(
       Dimensions(dims),
       Values{sparse_container<double>(2), sparse_container<double>(1)});
-  auto b = createVariable<double>(
+  auto b = makeVariable<double>(
       Dimensions(dims),
       Values{sparse_container<double>(2), sparse_container<double>()});
 
@@ -312,11 +310,11 @@ TEST_F(TransformBinaryTest, sparse_size_fail) {
 }
 
 TEST_F(TransformBinaryTest, in_place_unit_change) {
-  const auto var = createVariable<double>(
+  const auto var = makeVariable<double>(
       Dims{Dim::X}, Shape{2}, units::Unit(units::m), Values{1.0, 2.0});
-  const auto expected = createVariable<double>(Dims{Dim::X}, Shape{2},
-                                               units::Unit(units::m * units::m),
-                                               Values{1.0, 4.0});
+  const auto expected =
+      makeVariable<double>(Dims{Dim::X}, Shape{2},
+                           units::Unit(units::m * units::m), Values{1.0, 4.0});
   auto op_ = [](auto &&a, auto &&b) { a *= b; };
   Variable result;
 
@@ -332,23 +330,23 @@ TEST_F(TransformBinaryTest, in_place_unit_change) {
 }
 
 TEST(AccumulateTest, in_place) {
-  const auto var = createVariable<double>(
+  const auto var = makeVariable<double>(
       Dims{Dim::X}, Shape{2}, units::Unit(units::m), Values{1.0, 2.0});
-  const auto expected = createVariable<double>(Values{3.0});
+  const auto expected = makeVariable<double>(Values{3.0});
   auto op_ = [](auto &&a, auto &&b) { a += b; };
   Variable result;
 
   // Note how accumulate is ignoring the unit.
-  result = createVariable<double>(Values{double{}});
+  result = makeVariable<double>(Values{double{}});
   accumulate_in_place<pair_self_t<double>>(result, var, op_);
   EXPECT_EQ(result, expected);
 }
 
 TEST(TransformTest, Eigen_Vector3d_pass_by_value) {
-  const auto var = createVariable<Eigen::Vector3d>(
+  const auto var = makeVariable<Eigen::Vector3d>(
       Dims{Dim::X}, Shape{2},
       Values{Eigen::Vector3d{1.1, 2.2, 3.3}, Eigen::Vector3d{0.1, 0.2, 0.3}});
-  const auto expected = createVariable<Eigen::Vector3d>(
+  const auto expected = makeVariable<Eigen::Vector3d>(
       Dims(), Shape(), Values{Eigen::Vector3d{1.0, 2.0, 3.0}});
   // Passing Eigen types by value often causes issues, ensure that it works.
   auto op = [](const auto x, const auto y) { return x - y; };
@@ -360,10 +358,10 @@ TEST(TransformTest, Eigen_Vector3d_pass_by_value) {
 }
 
 TEST(TransformTest, mixed_precision) {
-  auto d = createVariable<double>(Values{1e-12});
-  auto f = createVariable<float>(Values{1e-12});
-  auto base_d = createVariable<double>(Values{1.0});
-  auto base_f = createVariable<float>(Values{1.0});
+  auto d = makeVariable<double>(Values{1e-12});
+  auto f = makeVariable<float>(Values{1e-12});
+  auto base_d = makeVariable<double>(Values{1.0});
+  auto base_f = makeVariable<float>(Values{1.0});
   auto op = [](const auto a, const auto b) { return a + b; };
   const auto sum_fd =
       transform<pair_custom_t<std::pair<float, double>>>(base_f, d, op);
@@ -384,10 +382,10 @@ TEST(TransformTest, mixed_precision) {
 }
 
 TEST(TransformTest, mixed_precision_in_place) {
-  auto d = createVariable<double>(Values{1e-12});
-  auto f = createVariable<float>(Values{1e-12});
-  auto sum_d = createVariable<double>(Values{1.0});
-  auto sum_f = createVariable<float>(Values{1.0});
+  auto d = makeVariable<double>(Values{1e-12});
+  auto f = makeVariable<float>(Values{1e-12});
+  auto sum_d = makeVariable<double>(Values{1.0});
+  auto sum_f = makeVariable<float>(Values{1.0});
   auto op = [](auto &a, const auto b) { a += b; };
   transform_in_place<pair_custom_t<std::pair<float, double>>>(sum_f, d, op);
   transform_in_place<pair_custom_t<std::pair<double, double>>>(sum_d, d, op);
@@ -402,10 +400,10 @@ TEST(TransformTest, mixed_precision_in_place) {
 }
 
 TEST(TransformTest, combined_uncertainty_propagation) {
-  auto a = createVariable<double>(Dims{Dim::X}, Shape{1}, Values{2.0},
-                                  Variances{0.1});
+  auto a =
+      makeVariable<double>(Dims{Dim::X}, Shape{1}, Values{2.0}, Variances{0.1});
   auto a_2_step(a);
-  const auto b = createVariable<double>(Values{3.0}, Variances{0.2});
+  const auto b = makeVariable<double>(Values{3.0}, Variances{0.2});
 
   const auto abb = transform<pair_self_t<double>>(
       a, b, [](const auto &x, const auto &y) { return x * y + y; });
@@ -423,8 +421,8 @@ TEST(TransformTest, combined_uncertainty_propagation) {
 }
 
 TEST(TransformTest, unary_on_sparse_container) {
-  auto a = createVariable<double>(Dims{Dim::Y, Dim::X},
-                                  Shape{2l, Dimensions::Sparse});
+  auto a =
+      makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2l, Dimensions::Sparse});
   auto a_ = a.sparseValues<double>();
   a_[0] = {1, 4, 9};
   a_[1] = {4};
@@ -437,7 +435,7 @@ TEST(TransformTest, unary_on_sparse_container) {
 
 TEST(TransformTest, unary_on_sparse_container_with_variance) {
   Dimensions dims({Dim::Y, Dim::X}, {2, Dimensions::Sparse});
-  auto a = createVariable<double>(
+  auto a = makeVariable<double>(
       Dimensions(dims),
       Values{sparse_container<double>(), sparse_container<double>()},
       Variances{sparse_container<double>(), sparse_container<double>()});
@@ -458,7 +456,7 @@ TEST(TransformTest, unary_on_sparse_container_with_variance) {
 
 TEST(TransformTest, unary_on_sparse_container_with_variance_size_fail) {
   Dimensions dims({Dim::Y, Dim::X}, {2, Dimensions::Sparse});
-  auto a = createVariable<double>(
+  auto a = makeVariable<double>(
       Dimensions(dims),
       Values{sparse_container<double>(), sparse_container<double>()},
       Variances{sparse_container<double>(), sparse_container<double>()});
@@ -482,7 +480,7 @@ TEST(TransformTest, unary_on_sparse_container_with_variance_size_fail) {
 
 TEST(TransformTest, binary_on_sparse_container_with_variance_size_fail) {
   Dimensions dims({Dim::Y, Dim::X}, {2, Dimensions::Sparse});
-  auto a = createVariable<double>(
+  auto a = makeVariable<double>(
       Dimensions(dims),
       Values{sparse_container<double>(), sparse_container<double>()},
       Variances{sparse_container<double>(), sparse_container<double>()});
@@ -508,7 +506,7 @@ TEST(TransformTest, binary_on_sparse_container_with_variance_size_fail) {
 TEST(TransformTest,
      binary_on_sparse_container_with_variance_accepts_size_mismatch) {
   Dimensions dims({Dim::Y, Dim::X}, {2, Dimensions::Sparse});
-  auto a = createVariable<double>(
+  auto a = makeVariable<double>(
       Dimensions(dims),
       Values{sparse_container<double>(), sparse_container<double>()},
       Variances{sparse_container<double>(), sparse_container<double>()});
@@ -534,12 +532,12 @@ class TransformTest_sparse_binary_values_variances_size_fail
     : public ::testing::Test {
 protected:
   Dimensions dims{{Dim::Y, Dim::X}, {2, Dimensions::Sparse}};
-  Variable a = createVariable<double>(
+  Variable a = makeVariable<double>(
       Dimensions(dims),
       Values{sparse_container<double>(2), sparse_container<double>(2)},
       Variances{sparse_container<double>(2), sparse_container<double>(2)});
   Variable val_var = a;
-  Variable val = createVariable<double>(
+  Variable val = makeVariable<double>(
       Dimensions(dims),
       Values{sparse_container<double>(2), sparse_container<double>(2)});
   static constexpr auto op = [](const auto i, const auto j) { return i * j; };
@@ -620,14 +618,14 @@ TEST_F(TransformBinaryTest, sparse_val_var_with_sparse_val_var) {
 
   // We rely on correctness of *dense* operations (Variable multiplcation is
   // also built on transform).
-  auto a0 = createVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3},
-                                   Variances{5, 6, 7});
-  auto b0 = createVariable<double>(
-      Dims{Dim::X}, Shape{3}, Values{0.1, 0.2, 0.3}, Variances{0.5, 0.6, 0.7});
+  auto a0 = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3},
+                                 Variances{5, 6, 7});
+  auto b0 = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{0.1, 0.2, 0.3},
+                                 Variances{0.5, 0.6, 0.7});
   auto a1 =
-      createVariable<double>(Dims{Dim::X}, Shape{1}, Values{4}, Variances{8});
-  auto b1 = createVariable<double>(Dims{Dim::X}, Shape{1}, Values{0.4},
-                                   Variances{0.8});
+      makeVariable<double>(Dims{Dim::X}, Shape{1}, Values{4}, Variances{8});
+  auto b1 =
+      makeVariable<double>(Dims{Dim::X}, Shape{1}, Values{0.4}, Variances{0.8});
   auto expected0 = a0 * b0;
   auto expected1 = a1 * b1;
   EXPECT_TRUE(equals(a.sparseValues<double>()[0], expected0.values<double>()));
@@ -650,13 +648,12 @@ TEST_F(TransformBinaryTest, sparse_val_var_with_sparse_val) {
   const auto ab = transform<pair_self_t<double>>(a, b, op);
   transform_in_place<pair_self_t<double>>(a, b, op_in_place);
 
-  auto a0 = createVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3},
-                                   Variances{5, 6, 7});
-  auto b0 =
-      createVariable<double>(Dims{Dim::X}, Shape{3}, Values{0.1, 0.2, 0.3});
+  auto a0 = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3},
+                                 Variances{5, 6, 7});
+  auto b0 = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{0.1, 0.2, 0.3});
   auto a1 =
-      createVariable<double>(Dims{Dim::X}, Shape{1}, Values{4}, Variances{8});
-  auto b1 = createVariable<double>(Dims{Dim::X}, Shape{1}, Values{0.4});
+      makeVariable<double>(Dims{Dim::X}, Shape{1}, Values{4}, Variances{8});
+  auto b1 = makeVariable<double>(Dims{Dim::X}, Shape{1}, Values{0.4});
   auto expected0 = a0 * b0;
   auto expected1 = a1 * b1;
   EXPECT_TRUE(equals(a.sparseValues<double>()[0], expected0.values<double>()));
@@ -673,18 +670,18 @@ TEST_F(TransformBinaryTest, sparse_val_var_with_val_var) {
   auto a = make_sparse_variable_with_variance<double>();
   set_sparse_values<double>(a, {{1, 2, 3}, {4}});
   set_sparse_variances<double>(a, {{5, 6, 7}, {8}});
-  auto b = createVariable<double>(Dims{Dim::Y}, Shape{2}, Values{1.5, 1.6},
-                                  Variances{1.7, 1.8});
+  auto b = makeVariable<double>(Dims{Dim::Y}, Shape{2}, Values{1.5, 1.6},
+                                Variances{1.7, 1.8});
 
   const auto ab = transform<pair_self_t<double>>(a, b, op);
   transform_in_place<pair_self_t<double>>(a, b, op_in_place);
 
-  auto a0 = createVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3},
-                                   Variances{5, 6, 7});
-  auto b0 = createVariable<double>(Values{1.5}, Variances{1.7});
+  auto a0 = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3},
+                                 Variances{5, 6, 7});
+  auto b0 = makeVariable<double>(Values{1.5}, Variances{1.7});
   auto a1 =
-      createVariable<double>(Dims{Dim::X}, Shape{1}, Values{4}, Variances{8});
-  auto b1 = createVariable<double>(Values{1.6}, Variances{1.8});
+      makeVariable<double>(Dims{Dim::X}, Shape{1}, Values{4}, Variances{8});
+  auto b1 = makeVariable<double>(Values{1.6}, Variances{1.8});
   auto expected0 = a0 * b0;
   auto expected1 = a1 * b1;
   EXPECT_TRUE(equals(a.sparseValues<double>()[0], expected0.values<double>()));
@@ -701,17 +698,17 @@ TEST_F(TransformBinaryTest, sparse_val_var_with_val) {
   auto a = make_sparse_variable_with_variance<double>();
   set_sparse_values<double>(a, {{1, 2, 3}, {4}});
   set_sparse_variances<double>(a, {{5, 6, 7}, {8}});
-  auto b = createVariable<double>(Dims{Dim::Y}, Shape{2}, Values{1.5, 1.6});
+  auto b = makeVariable<double>(Dims{Dim::Y}, Shape{2}, Values{1.5, 1.6});
 
   const auto ab = transform<pair_self_t<double>>(a, b, op);
   transform_in_place<pair_self_t<double>>(a, b, op_in_place);
 
-  auto a0 = createVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3},
-                                   Variances{5, 6, 7});
-  auto b0 = createVariable<double>(Values{1.5});
+  auto a0 = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3},
+                                 Variances{5, 6, 7});
+  auto b0 = makeVariable<double>(Values{1.5});
   auto a1 =
-      createVariable<double>(Dims{Dim::X}, Shape{1}, Values{4}, Variances{8});
-  auto b1 = createVariable<double>(Values{1.6});
+      makeVariable<double>(Dims{Dim::X}, Shape{1}, Values{4}, Variances{8});
+  auto b1 = makeVariable<double>(Values{1.6});
   auto expected0 = a0 * b0;
   auto expected1 = a1 * b1;
   EXPECT_TRUE(equals(a.sparseValues<double>()[0], expected0.values<double>()));
@@ -728,17 +725,16 @@ TEST_F(TransformBinaryTest, broadcast_sparse_val_var_with_val) {
   auto a = make_sparse_variable_with_variance<double>();
   set_sparse_values<double>(a, {{1, 2, 3}, {4}});
   set_sparse_variances<double>(a, {{5, 6, 7}, {8}});
-  const auto b =
-      createVariable<float>(Dims{Dim::Z}, Shape{2}, Values{1.5, 1.6});
+  const auto b = makeVariable<float>(Dims{Dim::Z}, Shape{2}, Values{1.5, 1.6});
 
   const auto ab = transform<pair_custom_t<std::pair<double, float>>>(a, b, op);
 
-  auto a0 = createVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3},
-                                   Variances{5, 6, 7});
-  auto b0 = createVariable<float>(Values{1.5});
+  auto a0 = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3},
+                                 Variances{5, 6, 7});
+  auto b0 = makeVariable<float>(Values{1.5});
   auto a1 =
-      createVariable<double>(Dims{Dim::X}, Shape{1}, Values{4}, Variances{8});
-  auto b1 = createVariable<float>(Values{1.6});
+      makeVariable<double>(Dims{Dim::X}, Shape{1}, Values{4}, Variances{8});
+  auto b1 = makeVariable<float>(Values{1.6});
   auto expected00 = a0 * b0;
   auto expected01 = a0 * b1;
   auto expected10 = a1 * b0;
@@ -767,8 +763,7 @@ TEST_F(TransformBinaryTest, DISABLED_broadcast_sparse_val_var_with_val) {
   auto a = make_sparse_variable_with_variance<double>();
   set_sparse_values<double>(a, {{1, 2, 3}, {4}});
   set_sparse_variances<double>(a, {{5, 6, 7}, {8}});
-  const auto b =
-      createVariable<float>(Dims{Dim::Z}, Shape{2}, Values{1.5, 1.6});
+  const auto b = makeVariable<float>(Dims{Dim::Z}, Shape{2}, Values{1.5, 1.6});
 
   EXPECT_THROW((transform_in_place<pair_custom_t<std::pair<double, float>>>(
                    a, b, op_in_place)),
@@ -786,16 +781,15 @@ constexpr auto user_op(const ValueAndVariance<double>) {
 constexpr auto user_op(const units::Unit &) { return units::s; }
 
 TEST(TransformTest, user_op_with_variances) {
-  auto var =
-      createVariable<double>(Dims{Dim::X}, Shape{2}, units::Unit(units::m),
-                             Values{1.1, 2.2}, Variances{1.1, 3.0});
+  auto var = makeVariable<double>(Dims{Dim::X}, Shape{2}, units::Unit(units::m),
+                                  Values{1.1, 2.2}, Variances{1.1, 3.0});
 
   const auto result = transform<double>(var, [](auto x) { return user_op(x); });
   transform_in_place<double>(var, [](auto &x) { x = user_op(x); });
 
   auto expected =
-      createVariable<double>(Dims{Dim::X}, Shape{2}, units::Unit(units::s),
-                             Values{123, 123}, Variances{456, 456});
+      makeVariable<double>(Dims{Dim::X}, Shape{2}, units::Unit(units::s),
+                           Values{123, 123}, Variances{456, 456});
   EXPECT_EQ(result, expected);
   EXPECT_EQ(result, var);
 }
@@ -811,7 +805,7 @@ protected:
 // failure. Maybe this should be a parametrized test?
 TEST_F(TransformInPlaceDryRunTest, unit_fail) {
   auto a =
-      createVariable<double>(Dims(), Shape(), units::Unit(units::m * units::m));
+      makeVariable<double>(Dims(), Shape(), units::Unit(units::m * units::m));
   const auto original(a);
 
   EXPECT_THROW(dry_run::transform_in_place<double>(a, unary),
@@ -823,8 +817,7 @@ TEST_F(TransformInPlaceDryRunTest, unit_fail) {
 }
 
 TEST_F(TransformInPlaceDryRunTest, slice_unit_fail) {
-  auto a =
-      createVariable<double>(Dims{Dim::X}, Shape{2}, units::Unit(units::m));
+  auto a = makeVariable<double>(Dims{Dim::X}, Shape{2}, units::Unit(units::m));
   const auto original(a);
 
   EXPECT_THROW(dry_run::transform_in_place<double>(a.slice({Dim::X, 0}), unary),
@@ -837,10 +830,8 @@ TEST_F(TransformInPlaceDryRunTest, slice_unit_fail) {
 }
 
 TEST_F(TransformInPlaceDryRunTest, dimensions_fail) {
-  auto a =
-      createVariable<double>(Dims{Dim::X}, Shape{2}, units::Unit(units::m));
-  auto b =
-      createVariable<double>(Dims{Dim::Y}, Shape{2}, units::Unit(units::m));
+  auto a = makeVariable<double>(Dims{Dim::X}, Shape{2}, units::Unit(units::m));
+  auto b = makeVariable<double>(Dims{Dim::Y}, Shape{2}, units::Unit(units::m));
   const auto original(a);
 
   EXPECT_THROW(dry_run::transform_in_place<pair_self_t<double>>(a, b, binary),
@@ -849,10 +840,9 @@ TEST_F(TransformInPlaceDryRunTest, dimensions_fail) {
 }
 
 TEST_F(TransformInPlaceDryRunTest, variances_fail) {
-  auto a =
-      createVariable<double>(Dims{Dim::X}, Shape{2}, units::Unit(units::m));
-  auto b = createVariable<double>(Dimensions{Dim::X, 2}, units::Unit(units::m),
-                                  Values{}, Variances{});
+  auto a = makeVariable<double>(Dims{Dim::X}, Shape{2}, units::Unit(units::m));
+  auto b = makeVariable<double>(Dimensions{Dim::X, 2}, units::Unit(units::m),
+                                Values{}, Variances{});
   const auto original(a);
 
   EXPECT_THROW(dry_run::transform_in_place<pair_self_t<double>>(a, b, binary),

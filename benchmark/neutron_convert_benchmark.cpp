@@ -15,22 +15,22 @@ auto make_beamline(const scipp::index size) {
   Dataset components;
   // Source and sample
   components.setData("position",
-                     createVariable<Eigen::Vector3d>(
+                     makeVariable<Eigen::Vector3d>(
                          Dims{Dim::Row}, Shape{2}, units::Unit(units::m),
                          Values{Eigen::Vector3d{0.0, 0.0, -10.0},
                                 Eigen::Vector3d{0.0, 0.0, 0.0}}));
   beamline.setLabels("component_info",
-                     createVariable<Dataset>(Values{components}));
+                     makeVariable<Dataset>(Values{components}));
   beamline.setLabels(
-      "position", createVariable<Eigen::Vector3d>(
+      "position", makeVariable<Eigen::Vector3d>(
                       Dims{Dim::Spectrum}, Shape{size}, units::Unit(units::m)));
   return beamline;
 }
 
 auto make_sparse_coord_only(const scipp::index size, const scipp::index count) {
   auto out = make_beamline(size);
-  auto var = createVariable<double>(Dims{Dim::Spectrum, Dim::Tof},
-                                    Shape{size, Dimensions::Sparse});
+  auto var = makeVariable<double>(Dims{Dim::Spectrum, Dim::Tof},
+                                  Shape{size, Dimensions::Sparse});
   auto vals = var.sparseValues<double>();
   for (scipp::index i = 0; i < size; ++i)
     vals[i].resize(count, 5000.0);

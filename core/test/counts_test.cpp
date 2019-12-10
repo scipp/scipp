@@ -11,12 +11,12 @@ using namespace scipp::core;
 
 TEST(CountsTest, toDensity_fromDensity) {
   Dataset d;
-  d.setCoord(Dim::Tof, createVariable<double>(Dims{Dim::Tof}, Shape{4},
-                                              units::Unit(units::us),
-                                              Values{1, 2, 4, 8}));
-  d.setData("", createVariable<double>(Dims{Dim::Tof}, Shape{3},
-                                       units::Unit(units::counts),
-                                       Values{12, 12, 12}));
+  d.setCoord(Dim::Tof,
+             makeVariable<double>(Dims{Dim::Tof}, Shape{4},
+                                  units::Unit(units::us), Values{1, 2, 4, 8}));
+  d.setData("", makeVariable<double>(Dims{Dim::Tof}, Shape{3},
+                                     units::Unit(units::counts),
+                                     Values{12, 12, 12}));
 
   d = counts::toDensity(std::move(d), Dim::Tof);
   auto result = d[""];

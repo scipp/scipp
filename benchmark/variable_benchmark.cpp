@@ -13,7 +13,7 @@ using namespace scipp;
 
 template <typename T> struct Generate1D {
   auto operator()(int length) {
-    return std::make_tuple(createVariable<T>(Dims{Dim::X}, Shape{length}),
+    return std::make_tuple(makeVariable<T>(Dims{Dim::X}, Shape{length}),
                            sizeof(T) * length);
   }
 };
@@ -21,15 +21,15 @@ template <typename T> struct Generate1D {
 template <typename T> struct Generate2D {
   auto operator()(int length) {
     return std::make_tuple(
-        createVariable<T>(Dims{Dim::X, Dim::Y}, Shape{length, length}),
+        makeVariable<T>(Dims{Dim::X, Dim::Y}, Shape{length, length}),
         sizeof(T) * std::pow(length, 2));
   }
 };
 
 template <typename T> struct Generate3D {
   auto operator()(int length) {
-    return std::make_tuple(createVariable<T>(Dims{Dim::X, Dim::Y, Dim::Z},
-                                             Shape{length, length, length}),
+    return std::make_tuple(makeVariable<T>(Dims{Dim::X, Dim::Y, Dim::Z},
+                                           Shape{length, length, length}),
                            sizeof(T) * std::pow(length, 3));
   }
 };
@@ -37,8 +37,8 @@ template <typename T> struct Generate3D {
 template <typename T> struct Generate4D {
   auto operator()(int length) {
     return std::make_tuple(
-        createVariable<T>(Dims{Dim::X, Dim::Y, Dim::Z, Dim::Qx},
-                          Shape{length, length, length, length}),
+        makeVariable<T>(Dims{Dim::X, Dim::Y, Dim::Z, Dim::Qx},
+                        Shape{length, length, length, length}),
         sizeof(T) * std::pow(length, 4));
   }
 };
@@ -46,8 +46,8 @@ template <typename T> struct Generate4D {
 template <typename T> struct Generate5D {
   auto operator()(int length) {
     return std::make_tuple(
-        createVariable<T>(Dims{Dim::X, Dim::Y, Dim::Z, Dim::Qx, Dim::Qy},
-                          Shape{length, length, length, length, length}),
+        makeVariable<T>(Dims{Dim::X, Dim::Y, Dim::Z, Dim::Qx, Dim::Qy},
+                        Shape{length, length, length, length, length}),
         sizeof(T) * std::pow(length, 5));
   }
 };
@@ -55,9 +55,8 @@ template <typename T> struct Generate5D {
 template <typename T> struct Generate6D {
   auto operator()(int length) {
     return std::make_tuple(
-        createVariable<T>(
-            Dims{Dim::X, Dim::Y, Dim::Z, Dim::Qx, Dim::Qy, Dim::Qz},
-            Shape{length, length, length, length, length, length}),
+        makeVariable<T>(Dims{Dim::X, Dim::Y, Dim::Z, Dim::Qx, Dim::Qy, Dim::Qz},
+                        Shape{length, length, length, length, length, length}),
         sizeof(T) * std::pow(length, 6));
   }
 };
@@ -110,7 +109,7 @@ BENCHMARK_TEMPLATE(BM_Variable_copy, GenerateSparse<double>)
 
 static void BM_Variable_trivial_slice(benchmark::State &state) {
   auto var =
-      createVariable<double>(Dims{Dim::Z, Dim::Y, Dim::X}, Shape{10, 20, 30});
+      makeVariable<double>(Dims{Dim::Z, Dim::Y, Dim::X}, Shape{10, 20, 30});
 
   for (auto _ : state) {
     VariableProxy view(var);
@@ -123,7 +122,7 @@ BENCHMARK(BM_Variable_trivial_slice);
 // not unintentionally converting the second argument to a temporary Variable.
 static void BM_Variable_binary_with_Variable(benchmark::State &state) {
   auto var =
-      createVariable<double>(Dims{Dim::Z, Dim::Y, Dim::X}, Shape{10, 20, 30});
+      makeVariable<double>(Dims{Dim::Z, Dim::Y, Dim::X}, Shape{10, 20, 30});
   Variable a(var.slice({Dim::Z, 0, 8}));
 
   for (auto _ : state) {
@@ -133,7 +132,7 @@ static void BM_Variable_binary_with_Variable(benchmark::State &state) {
 }
 static void BM_Variable_binary_with_VariableProxy(benchmark::State &state) {
   auto b =
-      createVariable<double>(Dims{Dim::Z, Dim::Y, Dim::X}, Shape{10, 20, 30});
+      makeVariable<double>(Dims{Dim::Z, Dim::Y, Dim::X}, Shape{10, 20, 30});
   Variable a(b.slice({Dim::Z, 0, 8}));
 
   for (auto _ : state) {

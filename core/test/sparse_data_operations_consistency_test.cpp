@@ -8,8 +8,8 @@ using namespace scipp;
 using namespace scipp::core;
 
 static auto make_sparse() {
-  auto var = createVariable<double>(Dims{Dim::Y, Dim::X},
-                                    Shape{2, Dimensions::Sparse});
+  auto var =
+      makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, Dimensions::Sparse});
   var.setUnit(units::us);
   auto vals = var.sparseValues<double>();
   vals[0] = {1.1, 2.2, 3.3};
@@ -23,10 +23,10 @@ static auto make_sparse_array_coord_only() {
 
 static auto make_histogram() {
   auto edges =
-      createVariable<double>(Dimensions{{Dim::Y, 2}, {Dim::X, 3}},
-                             units::Unit(units::us), Values{0, 2, 4, 1, 3, 5});
-  auto data = createVariable<double>(Dimensions{Dim::X, 2}, Values{2.0, 3.0},
-                                     Variances{0.3, 0.4});
+      makeVariable<double>(Dimensions{{Dim::Y, 2}, {Dim::X, 3}},
+                           units::Unit(units::us), Values{0, 2, 4, 1, 3, 5});
+  auto data = makeVariable<double>(Dimensions{Dim::X, 2}, Values{2.0, 3.0},
+                                   Variances{0.3, 0.4});
 
   return DataArray(data, {{Dim::X, edges}});
 }
@@ -36,10 +36,10 @@ TEST(SparseDataOperationsConsistencyTest, multiply) {
   // either first multiply and then histogram, or first histogram and then
   // multiply.
   const auto sparse = make_sparse_array_coord_only();
-  auto edges = createVariable<double>(
-      Dimensions{Dim::X, 4}, units::Unit(units::us), Values{1, 2, 3, 4});
-  auto data = createVariable<double>(
-      Dimensions{Dim::X, 3}, Values{2.0, 3.0, 4.0}, Variances{0.3, 0.4, 0.5});
+  auto edges = makeVariable<double>(Dimensions{Dim::X, 4},
+                                    units::Unit(units::us), Values{1, 2, 3, 4});
+  auto data = makeVariable<double>(Dimensions{Dim::X, 3}, Values{2.0, 3.0, 4.0},
+                                   Variances{0.3, 0.4, 0.5});
 
   auto hist = DataArray(data, {{Dim::X, edges}});
   auto ab = histogram(sparse * hist, edges);
@@ -62,18 +62,18 @@ TEST(SparseDataOperationsConsistencyTest, multiply) {
 
 TEST(SparseDataOperationsConsistencyTest, flatten_sum) {
   const auto sparse = make_sparse_array_coord_only();
-  auto edges = createVariable<double>(Dimensions{Dim::X, 3},
-                                      units::Unit(units::us), Values{1, 3, 6});
+  auto edges = makeVariable<double>(Dimensions{Dim::X, 3},
+                                    units::Unit(units::us), Values{1, 3, 6});
   EXPECT_EQ(sum(histogram(sparse, edges), Dim::Y),
             histogram(flatten(sparse, Dim::Y), edges));
 }
 
 TEST(SparseDataOperationsConsistencyTest, flatten_multiply_sum) {
   const auto sparse = make_sparse_array_coord_only();
-  auto edges = createVariable<double>(Dimensions{Dim::X, 3},
-                                      units::Unit(units::us), Values{1, 3, 5});
-  auto data = createVariable<double>(Dimensions{Dim::X, 2}, Values{2.0, 3.0},
-                                     Variances{0.3, 0.4});
+  auto edges = makeVariable<double>(Dimensions{Dim::X, 3},
+                                    units::Unit(units::us), Values{1, 3, 5});
+  auto data = makeVariable<double>(Dimensions{Dim::X, 2}, Values{2.0, 3.0},
+                                   Variances{0.3, 0.4});
   auto hist = DataArray(data, {{Dim::X, edges}});
 
   auto hfm = histogram(flatten(hist * sparse, Dim::Y), edges);

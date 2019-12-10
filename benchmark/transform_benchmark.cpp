@@ -21,8 +21,8 @@ void run(benchmark::State &state, Func func, bool variances = false) {
   const auto n = nx * ny;
   const Dimensions dims{{Dim::Y, ny}, {Dim::X, nx}};
   auto a = variances
-               ? createVariable<double>(Dimensions{dims}, Values{}, Variances{})
-               : createVariable<double>(Dimensions(dims));
+               ? makeVariable<double>(Dimensions{dims}, Values{}, Variances{})
+               : makeVariable<double>(Dimensions(dims));
   auto b = a;
   if constexpr (in_place) {
     static constexpr auto op{[](auto &a_, const auto &b_) { a_ *= b_; }};
@@ -157,8 +157,8 @@ static void BM_transform_in_place_sparse(benchmark::State &state) {
   const Dimensions dims{{Dim::Y, ny}, {Dim::X, Dimensions::Sparse}};
   bool variances = state.range(2);
   auto a = variances
-               ? createVariable<double>(Dimensions{dims}, Values{}, Variances{})
-               : createVariable<double>(Dimensions(dims));
+               ? makeVariable<double>(Dimensions{dims}, Values{}, Variances{})
+               : makeVariable<double>(Dimensions(dims));
 
   std::random_device rd;
   std::mt19937 mt(rd());
@@ -167,7 +167,7 @@ static void BM_transform_in_place_sparse(benchmark::State &state) {
     elems.resize(dist(mt));
 
   // sparse * dense typically occurs in unit conversion
-  auto b = createVariable<double>(Dims{Dim::Y}, Shape{ny});
+  auto b = makeVariable<double>(Dims{Dim::Y}, Shape{ny});
   static constexpr auto op{[](auto &a_, const auto &b_) { a_ *= b_; }};
 
   for (auto _ : state) {
