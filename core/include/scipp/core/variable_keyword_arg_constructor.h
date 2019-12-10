@@ -148,9 +148,8 @@ public:
   static VarT construct(std::tuple<ValArgs...> &&valArgs,
                         std::tuple<VarArgs...> &&varArgs,
                         std::tuple<NonDataTypes...> &&nonData) {
-
-    constexpr bool hasVal = sizeof...(ValArgs);
-    constexpr bool hasVar = sizeof...(VarArgs);
+    constexpr bool hasVal = is_tag_in_pack_v<ValuesTag, Ts...>;
+    constexpr bool hasVar = is_tag_in_pack_v<VariancesTag, Ts...>;
     constexpr bool constrVal =
         std::is_constructible_v<Vector<ElemT>, ValArgs...>;
     constexpr bool constrVar =

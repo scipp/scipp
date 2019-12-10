@@ -559,22 +559,23 @@ makeVariableWithVariances(const Dimensions &dimensions,
 
 template <class T>
 Variable from_dimensions_and_unit(const Dimensions &dms, const units::Unit &u) {
+  auto volume = dms.volume();
   if constexpr (is_sparse_container<T>::value)
-    return Variable(u, dms, Vector<T>(dms.volume()));
+    return Variable(u, dms, Vector<T>(volume));
   else
     return Variable(u, dms,
-                    Vector<T>(dms.volume(), detail::default_init<T>::value()));
+                    Vector<T>(volume, detail::default_init<T>::value()));
 }
 
 template <class T>
 Variable from_dimensions_and_unit_with_variances(const Dimensions &dms,
                                                  const units::Unit &u) {
+  auto volume = dms.volume();
   if constexpr (is_sparse_container<T>::value)
-    return Variable(u, dms, Vector<T>(dms.volume()), Vector<T>(dms.volume()));
+    return Variable(u, dms, Vector<T>(volume), Vector<T>(volume));
   else
-    return Variable(u, dms,
-                    Vector<T>(dms.volume(), detail::default_init<T>::value()),
-                    Vector<T>(dms.volume(), detail::default_init<T>::value()));
+    return Variable(u, dms, Vector<T>(volume, detail::default_init<T>::value()),
+                    Vector<T>(volume, detail::default_init<T>::value()));
 }
 
 /// This function covers the cases of construction Variables from keyword
@@ -585,25 +586,24 @@ Variable from_dimensions_and_unit_with_variances(const Dimensions &dms,
 /// 2. The Variances can't be provided without any Values.
 /// 3. Non empty Values and/or Variances should be consistent with shape.
 /// 4. If empty Values and/or Variances are provided, resulting Variable
-/// contains uninitialized Values and/or Variances, the only way to make
+/// contains uninitialized Values and/or Variances, the way to make
 /// Variable which contains both Values and Variances given length uninitialised
 /// is:
-///                  createVariable<T>(Dims{Dim::X}, Shape{5}, Values(0),
-///                  Variances(0)).
+///       createVariable<T>(Dims{Dim::X}, Shape{5}, Values{}, Variances{});
 template <class T>
 Variable Variable::create(units::Unit &&u, Dimensions &&d,
                           std::optional<Vector<T>> &&val,
                           std::optional<Vector<T>> &&var) {
   auto dms{d};
   if (val && var) {
-    if (val->size() == 0 && var->size() == 0)
+    if (val->size() < 0 && var->size() < 0)
       return from_dimensions_and_unit_with_variances<T>(dms, u);
     else
       return Variable(u, dms, std::move(*val), std::move(*var));
   }
 
   if (val) {
-    if (val->size() == 0)
+    if (val->size() < 0)
       return from_dimensions_and_unit<T>(dms, u);
     else
       return Variable(u, dms, std::move(*val));
