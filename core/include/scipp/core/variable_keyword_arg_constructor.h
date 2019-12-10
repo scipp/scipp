@@ -86,8 +86,7 @@ Values(std::initializer_list<T>)
     ->Values<typename std::initializer_list<T>::iterator,
              typename std::initializer_list<T>::iterator>;
 
-template <class... Args>
-struct Variances : std::tuple<Args...>, detail::VariancesTag {
+template <class... Args> struct Variances : detail::VariancesTag {
   ArgsTuple<Args...> tuple;
   Variances(Args &&... args)
       : tuple(detail::makeArgsTuple(std::forward<Args>(args)...)) {}

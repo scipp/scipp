@@ -332,40 +332,19 @@ template <class T> struct as_view {
 };
 template <class T> as_view(T &data, const Dimensions &dims)->as_view<T>;
 
-template <class T>
-Variable makeVariableInit(const Dimensions &dimensions,
-                          const default_init_elements_t &init) {
-  if (dimensions.sparse())
-    return Variable(units::dimensionless, dimensions,
-                    Vector<sparse_container<T>>(dimensions.volume(), init));
-  else
-    return Variable(units::dimensionless, std::move(dimensions),
-                    Vector<T>(dimensions.volume(), init));
-}
-
-template <class T>
-Variable makeVariableWithVariancesInit(const Dimensions &dimensions,
-                                       const default_init_elements_t &init) {
-  if (dimensions.sparse())
-    return Variable(units::dimensionless, dimensions,
-                    Vector<sparse_container<T>>(dimensions.volume(), init),
-                    Vector<sparse_container<T>>(dimensions.volume(), init));
-  else
-    return Variable(units::dimensionless, dimensions,
-                    Vector<T>(dimensions.volume(), init),
-                    Vector<T>(dimensions.volume(), init));
-}
-
 template <class Op> struct Transform {
   Op op;
   template <class... Ts> Variable operator()(Ts &&... handles) const {
     const auto dims = merge(handles->dims()...);
     using Out = decltype(maybe_eval(op(handles->values()[0]...)));
-    Variable out = (handles->hasVariances() || ...)
-                       ? makeVariableWithVariancesInit<element_type_t<Out>>(
-                             dims, default_init_elements)
-                       : makeVariableInit<element_type_t<Out>>(
-                             dims, default_init_elements);
+    auto volume = dims.volume();
+    Variable out =
+        (handles->hasVariances() || ...)
+            ? createVariable<element_type_t<Out>>(
+                  Dimensions{dims}, Values(volume, default_init_elements),
+                  Variances(volume, default_init_elements))
+            : createVariable<element_type_t<Out>>(
+                  Dimensions{dims}, Values(volume, default_init_elements));
     auto &outT = static_cast<VariableConceptT<Out> &>(out.data());
     do_transform(op, outT, std::tuple<>(), as_view{*handles, dims}...);
     return out;
