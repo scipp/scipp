@@ -379,7 +379,8 @@ class DatasetDrawer():
             # aligned
             for name, data in dataset:
                 item = (name, data, colors.scheme['data'])
-                if data.dims != dims:
+                # Using only x and 0d areas for 1-D dataset
+                if len(dims) == 1 or data.dims != dims:
                     if len(data.dims) == 0:
                         area_0d.append(item)
                     elif len(data.dims) != 1:
