@@ -194,6 +194,8 @@ class VariableDrawer():
     def _draw_labels(self, offset):
         dims = self._variable.dims
         shape = self._variable.shape
+        if self._variable.sparse_dim is not None:
+            shape = shape + [1] # dummy extent so sparse dim label is drawn
         view_height = self.size()[1]
         svg = ''
         dx = offset[0]
