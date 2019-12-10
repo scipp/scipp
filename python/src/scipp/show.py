@@ -68,6 +68,9 @@ class VariableDrawer():
         self._sparse_flag = -1
         self._sparse_box_scale = 0.3
         self._x_stride = 1
+        if len(self._variable.dims) > 3:
+            raise RuntimeError("Cannot visualize {}-D data".format(
+                len(self._variable.dims)))
 
     def _draw_box(self, origin_x, origin_y, color, xlen=1):
         return " ".join([
@@ -162,40 +165,38 @@ class VariableDrawer():
         dy = offset[1] + 0.3  # extra offset for top face of top row of cubes
         svg = ''
 
-        if len(shape) <= 3:
-            lz, ly, lx = self._extents()
-            if lx == self._sparse_flag:
-                self._sparse_extent()  # dummy call to init stride
-            for z in range(lz):
-                for y in reversed(range(ly)):
-                    true_lx = lx
-                    x_scale = 1
-                    sparse = False
-                    if lx == self._sparse_flag:
-                        true_lx = ceil(
-                            len(data[ly - y - 1 + ly * (lz - z - 1)]) /
-                            self._x_stride)
-                        if true_lx == 0:
-                            true_lx = 1
-                            x_scale *= 0
-                        x_scale *= self._sparse_box_scale
-                        sparse = True
-                    for x in range(true_lx):
-                        # Do not draw hidden boxes
-                        if not sparse:
-                            if z != lz - 1 and y != 0 and x != lx - 1:
-                                continue
-                        svg += self._draw_box(
-                            dx + x * x_scale + self._margin + 0.3 *
-                            (lz - z - 1), dy + y + 2 * self._margin + 0.3 * z,
-                            color, x_scale)
+        lz, ly, lx = self._extents()
+        if lx == self._sparse_flag:
+            self._sparse_extent()  # dummy call to init stride
+        for z in range(lz):
+            for y in reversed(range(ly)):
+                true_lx = lx
+                x_scale = 1
+                sparse = False
+                if lx == self._sparse_flag:
+                    true_lx = ceil(
+                        len(data[ly - y - 1 + ly * (lz - z - 1)]) /
+                        self._x_stride)
+                    if true_lx == 0:
+                        true_lx = 1
+                        x_scale *= 0
+                    x_scale *= self._sparse_box_scale
+                    sparse = True
+                for x in range(true_lx):
+                    # Do not draw hidden boxes
+                    if not sparse:
+                        if z != lz - 1 and y != 0 and x != lx - 1:
+                            continue
+                    svg += self._draw_box(
+                        dx + x * x_scale + self._margin + 0.3 * (lz - z - 1),
+                        dy + y + 2 * self._margin + 0.3 * z, color, x_scale)
         return svg
 
     def _draw_labels(self, offset):
         dims = self._variable.dims
         shape = self._variable.shape
         if self._variable.sparse_dim is not None:
-            shape = shape + [1] # dummy extent so sparse dim label is drawn
+            shape = shape + [1]  # dummy extent so sparse dim label is drawn
         view_height = self.size()[1]
         svg = ''
         dx = offset[0]
