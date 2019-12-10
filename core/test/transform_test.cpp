@@ -63,8 +63,9 @@ TEST_F(TransformUnaryTest, elements_of_sparse) {
 }
 
 TEST_F(TransformUnaryTest, elements_of_sparse_with_variance) {
-  auto var = makeVariableWithVariances<double>(
-      {{Dim::Y, Dim::X}, {2, Dimensions::Sparse}});
+  auto var = createVariable<double>(
+      Dimensions{{Dim::Y, Dim::X}, {2, Dimensions::Sparse}}, Values{},
+      Variances{});
   auto vals = var.sparseValues<double>();
   vals[0] = {1, 2, 3};
   vals[1] = {4};
@@ -850,7 +851,8 @@ TEST_F(TransformInPlaceDryRunTest, dimensions_fail) {
 TEST_F(TransformInPlaceDryRunTest, variances_fail) {
   auto a =
       createVariable<double>(Dims{Dim::X}, Shape{2}, units::Unit(units::m));
-  auto b = makeVariableWithVariances<double>({Dim::X, 2}, units::m);
+  auto b = createVariable<double>(Dimensions{Dim::X, 2}, units::Unit(units::m),
+                                  Values{}, Variances{});
   const auto original(a);
 
   EXPECT_THROW(dry_run::transform_in_place<pair_self_t<double>>(a, b, binary),

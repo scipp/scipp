@@ -245,8 +245,9 @@ TEST_F(Variable_comparison_operators, sparse) {
 }
 
 auto make_sparse_var_2d_with_variances() {
-  auto var = makeVariableWithVariances<double>(
-      {{Dim::Y, Dim::X}, {2, Dimensions::Sparse}});
+  auto var =
+      createVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, Dimensions::Sparse},
+                             Values{}, Variances{});
   auto vals = var.sparseValues<double>();
   vals[0] = {1, 2, 3};
   vals[1] = {1, 2};
@@ -259,8 +260,9 @@ auto make_sparse_var_2d_with_variances() {
 TEST_F(Variable_comparison_operators, sparse_variances) {
   const auto a = make_sparse_var_2d_with_variances();
   const auto b = make_sparse_var_2d_with_variances();
-  auto c = makeVariableWithVariances<double>(
-      {{Dim::Y, Dim::X}, {2, Dimensions::Sparse}});
+  auto c =
+      createVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, Dimensions::Sparse},
+                             Values{}, Variances{});
   auto c_vals = c.sparseValues<double>();
   c_vals[0] = {1, 2, 3};
   c_vals[1] = {1, 2};
@@ -306,8 +308,8 @@ TEST(Variable, assign_slice) {
              13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24},
       Variances{25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36,
                 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48});
-  const auto empty = makeVariableWithVariances<double>(
-      {{Dim::X, 4}, {Dim::Y, 2}, {Dim::Z, 3}});
+  const auto empty = createVariable<double>(
+      Dimensions{{Dim::X, 4}, {Dim::Y, 2}, {Dim::Z, 3}}, Values{}, Variances{});
 
   auto d(empty);
   EXPECT_NE(parent, d);
@@ -345,7 +347,8 @@ TEST(Variable, assign_slice_variance_checks) {
   const auto parent_vals_vars =
       createVariable<double>(Values{1.0}, Variances{2.0});
   auto vals = createVariable<double>(Dims{Dim::X}, Shape{4});
-  auto vals_vars = makeVariableWithVariances<double>({Dim::X, 4});
+  auto vals_vars =
+      createVariable<double>(Dimensions{Dim::X, 4}, Values{}, Variances{});
 
   EXPECT_NO_THROW(vals.slice({Dim::X, 1}).assign(parent_vals));
   EXPECT_NO_THROW(vals_vars.slice({Dim::X, 1}).assign(parent_vals_vars));
@@ -561,14 +564,16 @@ TEST(Variable, broadcast_fail) {
 }
 
 TEST(VariableProxy, full_const_view) {
-  const auto var = makeVariableWithVariances<double>({Dim::X, 3});
+  const auto var =
+      createVariable<double>(Dimensions{Dim::X, 3}, Values{}, Variances{});
   VariableConstProxy view(var);
   EXPECT_EQ(&var.values<double>()[0], &view.values<double>()[0]);
   EXPECT_EQ(&var.variances<double>()[0], &view.variances<double>()[0]);
 }
 
 TEST(VariableProxy, full_mutable_view) {
-  auto var = makeVariableWithVariances<double>({Dim::X, 3});
+  auto var =
+      createVariable<double>(Dimensions{Dim::X, 3}, Values{}, Variances{});
   VariableProxy view(var);
   EXPECT_EQ(&var.values<double>()[0], &view.values<double>()[0]);
   EXPECT_EQ(&var.variances<double>()[0], &view.variances<double>()[0]);
@@ -729,14 +734,15 @@ TEST(VariableProxy, slice_assign_from_variable_full_slice_can_change_unit) {
 
 TEST(VariableProxy, slice_assign_from_variable_variance_fail) {
   const auto vals = createVariable<double>(Dims{Dim::X}, Shape{1});
-  const auto vals_vars = makeVariableWithVariances<double>({Dim::X, 1});
+  const auto vals_vars =
+      createVariable<double>(Dimensions{Dim::X, 1}, Values{}, Variances{});
 
   auto target = createVariable<double>(Dims{Dim::X}, Shape{2});
   EXPECT_THROW(target.slice({Dim::X, 1, 2}).assign(vals_vars),
                except::VariancesError);
   EXPECT_NO_THROW(target.slice({Dim::X, 1, 2}).assign(vals));
 
-  target = makeVariableWithVariances<double>({Dim::X, 2});
+  target = createVariable<double>(Dimensions{Dim::X, 2}, Values{}, Variances{});
   EXPECT_THROW(target.slice({Dim::X, 1, 2}).assign(vals),
                except::VariancesError);
   EXPECT_NO_THROW(target.slice({Dim::X, 1, 2}).assign(vals_vars));
@@ -750,25 +756,25 @@ TEST(VariableProxy, slice_assign_from_variable) {
   // We might want to mimick Python's __setitem__, but operator= would (and
   // should!?) assign the view contents, not the data.
   const Dimensions dims({{Dim::Y, 3}, {Dim::X, 3}});
-  auto target = makeVariableWithVariances<double>(dims);
+  auto target = createVariable<double>(Dimensions{dims}, Values{}, Variances{});
   target.slice({Dim::X, 0, 2}).slice({Dim::Y, 0, 2}).assign(source);
   EXPECT_EQ(target, createVariable<double>(
                         Dimensions(dims), Values{11, 12, 0, 21, 22, 0, 0, 0, 0},
                         Variances{33, 34, 0, 43, 44, 0, 0, 0, 0}));
 
-  target = makeVariableWithVariances<double>(dims);
+  target = createVariable<double>(Dimensions{dims}, Values{}, Variances{});
   target.slice({Dim::X, 1, 3}).slice({Dim::Y, 0, 2}).assign(source);
   EXPECT_EQ(target, createVariable<double>(
                         Dimensions(dims), Values{0, 11, 12, 0, 21, 22, 0, 0, 0},
                         Variances{0, 33, 34, 0, 43, 44, 0, 0, 0}));
 
-  target = makeVariableWithVariances<double>(dims);
+  target = createVariable<double>(Dimensions{dims}, Values{}, Variances{});
   target.slice({Dim::X, 0, 2}).slice({Dim::Y, 1, 3}).assign(source);
   EXPECT_EQ(target, createVariable<double>(
                         Dimensions(dims), Values{0, 0, 0, 11, 12, 0, 21, 22, 0},
                         Variances{0, 0, 0, 33, 34, 0, 43, 44, 0}));
 
-  target = makeVariableWithVariances<double>(dims);
+  target = createVariable<double>(Dimensions{dims}, Values{}, Variances{});
   target.slice({Dim::X, 1, 3}).slice({Dim::Y, 1, 3}).assign(source);
   EXPECT_EQ(target, createVariable<double>(
                         Dimensions(dims), Values{0, 0, 0, 0, 11, 12, 0, 21, 22},
@@ -936,8 +942,9 @@ TEST(SparseVariable, dtype) {
 }
 
 TEST(SparseVariable, non_sparse_access_fail) {
-  const auto var = makeVariableWithVariances<double>(
-      {{Dim::Y, Dim::X}, {2, Dimensions::Sparse}});
+  const auto var =
+      createVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, Dimensions::Sparse},
+                             Values{}, Variances{});
   ASSERT_THROW(var.values<double>(), except::TypeError);
   ASSERT_THROW(var.variances<double>(), except::TypeError);
 }
@@ -950,8 +957,9 @@ TEST(SparseVariable, DISABLED_low_level_access) {
 }
 
 TEST(SparseVariable, access) {
-  const auto var = makeVariableWithVariances<double>(
-      {{Dim::Y, Dim::X}, {2, Dimensions::Sparse}});
+  const auto var =
+      createVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, Dimensions::Sparse},
+                             Values{}, Variances{});
   ASSERT_NO_THROW(var.sparseValues<double>());
   ASSERT_NO_THROW(var.sparseVariances<double>());
   const auto values = var.sparseValues<double>();

@@ -337,11 +337,14 @@ template <class Op> struct Transform {
   template <class... Ts> Variable operator()(Ts &&... handles) const {
     const auto dims = merge(handles->dims()...);
     using Out = decltype(maybe_eval(op(handles->values()[0]...)));
-    Variable out = (handles->hasVariances() || ...)
-                       ? makeVariableWithVariances<element_type_t<Out>>(
-                             dims, default_init_elements)
-                       : makeVariableInit<element_type_t<Out>>(
-                             dims, default_init_elements);
+    auto volume = dims.volume();
+    Variable out =
+        (handles->hasVariances() || ...)
+            ? createVariable<element_type_t<Out>>(
+                  Dimensions{dims}, Values(volume, default_init_elements),
+                  Variances(volume, default_init_elements))
+            : createVariable<element_type_t<Out>>(
+                  Dimensions{dims}, Values(volume, default_init_elements));
     auto &outT = static_cast<VariableConceptT<Out> &>(out.data());
     do_transform(op, outT, std::tuple<>(), as_view{*handles, dims}...);
     return out;

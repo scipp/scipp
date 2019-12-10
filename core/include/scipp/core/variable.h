@@ -518,63 +518,64 @@ template <class T, class... Ts> Variable createVariable(Ts &&... ts) {
   }
 }
 
+namespace detail {
 template <class T>
-Variable makeVariableInit(const Dimensions &dimensions,
-                          const detail::default_init_elements_t &init) {
-  if (dimensions.sparse())
-    return Variable(units::dimensionless, dimensions,
-                    Vector<sparse_container<T>>(dimensions.volume(), init));
+Variable from_dimensions_and_unit(const Dimensions &dms, const units::Unit &u) {
+  auto volume = dms.volume();
+  if constexpr (is_sparse_container<T>::value)
+    return Variable(u, dms, Vector<T>(volume));
   else
-    return Variable(units::dimensionless, std::move(dimensions),
-                    Vector<T>(dimensions.volume(), init));
+    return Variable(u, dms,
+                    Vector<T>(volume, detail::default_init<T>::value()));
 }
 
 template <class T>
-Variable makeVariableWithVariances(const Dimensions &dimensions,
-                                   units::Unit unit = units::dimensionless) {
-  if (dimensions.sparse())
-    return Variable(unit, dimensions,
-                    Vector<sparse_container<T>>(dimensions.volume()),
-                    Vector<sparse_container<T>>(dimensions.volume()));
+Variable from_dimensions_and_unit_with_variances(const Dimensions &dms,
+                                                 const units::Unit &u) {
+  auto volume = dms.volume();
+  if constexpr (is_sparse_container<T>::value)
+    return Variable(u, dms, Vector<T>(volume), Vector<T>(volume));
   else
-    return Variable(
-        unit, dimensions,
-        Vector<T>(dimensions.volume(), detail::default_init<T>::value()),
-        Vector<T>(dimensions.volume(), detail::default_init<T>::value()));
+    return Variable(u, dms, Vector<T>(volume, detail::default_init<T>::value()),
+                    Vector<T>(volume, detail::default_init<T>::value()));
 }
+} // namespace detail
 
-template <class T>
-Variable
-makeVariableWithVariances(const Dimensions &dimensions,
-                          const detail::default_init_elements_t &init) {
-  if (dimensions.sparse())
-    return Variable(units::dimensionless, dimensions,
-                    Vector<sparse_container<T>>(dimensions.volume(), init),
-                    Vector<sparse_container<T>>(dimensions.volume(), init));
-  else
-    return Variable(units::dimensionless, dimensions,
-                    Vector<T>(dimensions.volume(), init),
-                    Vector<T>(dimensions.volume(), init));
-}
-
+/// This function covers the cases of construction Variables from keyword
+/// argument. The Unit is completely arbitrary, the relations between Dims,
+/// Shape / Dimensions and actual data are following:
+/// 1. If neither Values nor Variances are provided, resulting Variable contains
+/// ONLY values of corresponding length.
+/// 2. The Variances can't be provided without any Values.
+/// 3. Non empty Values and/or Variances should be consistent with shape.
+/// 4. If empty Values and/or Variances are provided, resulting Variable
+/// contains default initialized Values and/or Variances, the way to make
+/// Variable which contains both Values and Variances given length uninitialised
+/// is:
+///       createVariable<T>(Dims{Dim::X}, Shape{5}, Values{}, Variances{});
 template <class T>
 Variable Variable::create(units::Unit &&u, Dimensions &&d,
                           std::optional<Vector<T>> &&val,
                           std::optional<Vector<T>> &&var) {
   auto dms{d};
-  if (val && var)
-    return Variable(u, dms, std::move(*val), std::move(*var));
-  if (val)
-    return Variable(u, dms, std::move(*val));
+  if (val && var) {
+    if (val->size() < 0 && var->size() < 0)
+      return detail::from_dimensions_and_unit_with_variances<T>(dms, u);
+    else
+      return Variable(u, dms, std::move(*val), std::move(*var));
+  }
+
+  if (val) {
+    if (val->size() < 0)
+      return detail::from_dimensions_and_unit<T>(dms, u);
+    else
+      return Variable(u, dms, std::move(*val));
+  }
+
   if (var)
     throw except::VariancesError("Can't have variance without values");
-  else {
-    if constexpr (is_sparse_container<T>::value)
-      return Variable(u, dms, Vector<T>(dms.volume()));
-    else
-      return Variable(
-          u, dms, Vector<T>(dms.volume(), detail::default_init<T>::value()));
-  }
+  else
+    return detail::from_dimensions_and_unit<T>(dms, u);
 }
 
 template <class T>

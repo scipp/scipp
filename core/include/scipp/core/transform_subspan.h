@@ -46,7 +46,7 @@ template <class Types, class Op, class... Var>
                                     std::tuple_element_t<0, Types>>::value_type;
   Variable out =
       std::is_base_of_v<transform_flags::expect_variance_arg_t<0>, Op>
-          ? makeVariableWithVariances<OutT>(dims)
+          ? createVariable<OutT>(Dimensions{dims}, Values{}, Variances{})
           : createVariable<OutT>(Dimensions{dims});
 
   const auto keep_subspan_vars_alive = std::array{maybe_subspan(var, dim)...};
