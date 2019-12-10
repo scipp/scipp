@@ -27,7 +27,7 @@ def is_data_array(obj):
 
 
 def _hex_to_rgb(hex_color):
-    rgb_hex = [hex_color[x:x+2] for x in [1, 3, 5]]
+    rgb_hex = [hex_color[x:x + 2] for x in [1, 3, 5]]
     return [int(hex_value, 16) for hex_value in rgb_hex]
 
 
@@ -68,6 +68,9 @@ class VariableDrawer():
         self._sparse_flag = -1
         self._sparse_box_scale = 0.3
         self._x_stride = 1
+        if len(self._variable.dims) > 3:
+            raise RuntimeError("Cannot visualize {}-D data".format(
+                len(self._variable.dims)))
 
     def _draw_box(self, origin_x, origin_y, color, xlen=1):
         return " ".join([
@@ -84,8 +87,9 @@ class VariableDrawer():
             'd="m origin_x origin_y m xlen 0 l 0.3 -0.3 v 1 l -0.3 0.3 z"',
             'id="path2" />'
         ]).format(*_color_variants(color)).replace(
-            "origin_x", str(origin_x)).replace(
-                "origin_y", str(origin_y)).replace("xlen", str(xlen))
+            "origin_x",
+            str(origin_x)).replace("origin_y",
+                                   str(origin_y)).replace("xlen", str(xlen))
 
     def _variance_offset(self):
         shape = self._extents()
@@ -98,9 +102,10 @@ class VariableDrawer():
         dims = self._variable.dims
         d = dict(zip(dims, shape))
         e = []
+        max_extent = _cubes_in_full_width // 2
         for dim in self._target_dims:
             if dim in d:
-                e.append(d[dim])
+                e.append(min(d[dim], max_extent))
             elif dim in dims:
                 e.append(self._sparse_flag)
             else:
@@ -156,42 +161,38 @@ class VariableDrawer():
 
     def _draw_array(self, color, data, offset=[0, 0]):
         """Draw the array of boxes"""
-        shape = self._variable.shape
         dx = offset[0]
         dy = offset[1] + 0.3  # extra offset for top face of top row of cubes
         svg = ''
 
-        if len(shape) <= 3:
-            lz, ly, lx = self._extents()
-            if lx == self._sparse_flag:
-                self._sparse_extent()  # dummy call to init stride
-            for z in range(lz):
-                for y in reversed(range(ly)):
-                    true_lx = lx
-                    x_scale = 1
-                    sparse = False
-                    if lx == self._sparse_flag:
-                        # TODO This works only for 2D and no transpose
-                        true_lx = ceil(len(data[ly - y - 1]) / self._x_stride)
-                        if true_lx == 0:
-                            true_lx = 1
-                            x_scale *= 0
-                        x_scale *= self._sparse_box_scale
-                        sparse = True
-                    for x in range(true_lx):
-                        # Do not draw hidden boxes
-                        if not sparse:
-                            if z != lz - 1 and y != 0 and x != lx - 1:
-                                continue
-                        svg += self._draw_box(
-                            dx + x * x_scale + self._margin + 0.3 *
-                            (lz - z - 1), dy + y + 2 * self._margin + 0.3 * z,
-                            color, x_scale)
+        lz, ly, lx = self._extents()
+        if lx == self._sparse_flag:
+            self._sparse_extent()  # dummy call to init stride
+        for z in range(lz):
+            for y in reversed(range(ly)):
+                true_lx = lx
+                x_scale = 1
+                sparse = False
+                if lx == self._sparse_flag:
+                    true_lx = ceil(
+                        len(data[ly - y - 1 + ly * (lz - z - 1)]) /
+                        self._x_stride)
+                    if true_lx == 0:
+                        true_lx = 1
+                        x_scale *= 0
+                    x_scale *= self._sparse_box_scale
+                    sparse = True
+                for x in range(true_lx):
+                    # Do not draw hidden boxes
+                    if not sparse:
+                        if z != lz - 1 and y != 0 and x != lx - 1:
+                            continue
+                    svg += self._draw_box(
+                        dx + x * x_scale + self._margin + 0.3 * (lz - z - 1),
+                        dy + y + 2 * self._margin + 0.3 * z, color, x_scale)
         return svg
 
     def _draw_labels(self, offset):
-        dims = self._variable.dims
-        shape = self._variable.shape
         view_height = self.size()[1]
         svg = ''
         dx = offset[0]
@@ -224,10 +225,12 @@ class VariableDrawer():
                                 self._extents()[-2] - 0.3 * 0.5 * extent -
                                 0.2 * _smaller_font)).format(dim)
 
-        for dim, extent in zip(dims, shape):
-            svg += make_label(
-                dim, extent,
-                self._target_dims.index(dim) + (3 - len(self._target_dims)))
+        extents = self._extents()
+        for dim in self._variable.dims:
+            i = self._target_dims.index(dim) + (3 - len(self._target_dims))
+            # 1 is a dummy extent so sparse dim label is drawn at correct pos
+            extent = max(extents[i], 1)
+            svg += make_label(dim, extent, i)
         return svg
 
     def _draw_info(self, offset, title):
@@ -262,12 +265,12 @@ class VariableDrawer():
             if self._variable.sparse_dim is not None:
                 for name, label in self._variable.labels:
                     if label.sparse_dim is not None:
-                        items.append((name, label.values,
-                                      colors.scheme['labels']))
+                        items.append(
+                            (name, label.values, colors.scheme['labels']))
                 for name, mask in self._variable.masks:
                     if label.sparse_dim is not None:
-                        items.append((name, mask.values,
-                                      colors.scheme['mask']))
+                        items.append(
+                            (name, mask.values, colors.scheme['mask']))
                 sparse_dim = self._variable.sparse_dim
                 for dim, coord in self._variable.coords:
                     if dim == sparse_dim:
@@ -315,18 +318,24 @@ class DatasetDrawer():
         # need one for the practical purpose of drawing variables with
         # consistent ordering. We simply use that of the item with highest
         # dimension count.
-        count = -1
         if is_data_array(self._dataset):
             dims = self._dataset.dims
-            count = len(dims)
         else:
+            dims = []
             for name, item in self._dataset:
-                if len(item.dims) > count:
+                if item.sparse_dim is not None:
                     dims = item.dims
-                    count = len(dims)
+                    break
+                if len(item.dims) > len(dims):
+                    dims = item.dims
+            for dim in self._dataset.dims:
+                if dim not in dims:
+                    dims = [dim] + dims
+        if len(dims) > 3:
+            raise RuntimeError("Cannot visualize {}-D data".format(len(dims)))
         return dims
 
-    def make_svg(self, dataset):
+    def make_svg(self):
         content = ''
         width = 0
         height = 0
@@ -363,9 +372,10 @@ class DatasetDrawer():
         else:
             # Render highest-dimension items last so coords are optically
             # aligned
-            for name, data in dataset:
+            for name, data in self._dataset:
                 item = (name, data, colors.scheme['data'])
-                if data.dims != dims:
+                # Using only x and 0d areas for 1-D dataset
+                if len(dims) == 1 or data.dims != dims:
                     if len(data.dims) == 0:
                         area_0d.append(item)
                     elif len(data.dims) != 1:
@@ -379,57 +389,22 @@ class DatasetDrawer():
                 else:
                     area_xy.append(item)
 
-        for dim, coord in dataset.coords:
-            if coord.sparse_dim is not None:
-                continue
-            item = (dim, coord, colors.scheme['coord'])
-            if len(coord.dims) == 0:
-                area_0d.append(item)
-            elif coord.dims[-1] == dims[-1]:
-                area_x.append(item)
-            elif coord.dims[-1] == dims[-2]:
-                area_y.append(item)
-            else:
-                area_z.append(item)
-
-        for name, labels in dataset.labels:
-            if labels.sparse_dim is not None:
-                continue
-            item = (name, labels, colors.scheme['labels'])
-            if len(labels.dims) == 0:
-                area_0d.append(item)
-            elif labels.dims[-1] == dims[-1]:
-                area_x.append(item)
-            elif labels.dims[-1] == dims[-2]:
-                area_y.append(item)
-            else:
-                area_z.append(item)
-
-        for name, masks in dataset.masks:
-            if masks.sparse_dim is not None:
-                continue
-            item = (name, masks, colors.scheme['mask'])
-            if len(masks.dims) == 0:
-                area_0d.append(item)
-            elif masks.dims[-1] == dims[-1]:
-                area_x.append(item)
-            elif masks.dims[-1] == dims[-2]:
-                area_y.append(item)
-            else:
-                area_z.append(item)
-
-        for name, attr in dataset.attrs:
-            if attr.sparse_dim is not None:
-                continue
-            item = (name, attr, colors.scheme['attr'])
-            if len(attr.dims) == 0:
-                area_0d.append(item)
-            elif attr.dims[-1] == dims[-1]:
-                area_x.append(item)
-            elif attr.dims[-1] == dims[-2]:
-                area_y.append(item)
-            else:
-                area_z.append(item)
+        for what, items in zip(['coord', 'labels', 'mask', 'attr'], [
+                self._dataset.coords, self._dataset.labels,
+                self._dataset.masks, self._dataset.attrs
+        ]):
+            for name, var in items:
+                if var.sparse_dim is not None:
+                    continue
+                item = (name, var, colors.scheme[what])
+                if len(var.dims) == 0:
+                    area_0d.append(item)
+                elif var.dims[-1] == dims[-1]:
+                    area_x.append(item)
+                elif var.dims[-1] == dims[-2]:
+                    area_y.append(item)
+                else:
+                    area_z.append(item)
 
         def draw_area(area, layout_direction, reverse=False):
             content = ''
@@ -457,42 +432,48 @@ class DatasetDrawer():
 
         c, w, h = draw_area(area_xy, 'y')
         content += '<g transform="translate(0,{})">{}</g>'.format(height, c)
-        height += h
-        width += w
+        c_x, w_x, h_x = draw_area(area_x, 'y')
+        c_y, w_y, h_y = draw_area(area_y, 'x', reverse=True)
+        height += max(h, h_y)
+        width += max(w, w_x)
 
         c, w, h = draw_area(area_z, 'x')
         content += '<g transform="translate({},{})">{}</g>'.format(
             width, height - h, c)
         width += w
 
-        c, w_y, h = draw_area(area_y, 'x', reverse=True)
         content += '<g transform="translate({},{})">{}</g>'.format(
-            -w_y, height - h, c)
+            -w_y, height - h_y, c_y)
 
-        c, w_0d, h = draw_area(area_0d, 'x', reverse=True)
+        c, w_0d, h_0d = draw_area(area_0d, 'x', reverse=True)
         content += '<g transform="translate({},{})">{}</g>'.format(
             -w_0d, height, c)
         width += max(w_y, w_0d)
         left -= max(w_y, w_0d)
 
-        c, w, h = draw_area(area_x, 'y')
-        content += '<g transform="translate(0,{})">{}</g>'.format(height, c)
-        height += h
+        content += '<g transform="translate(0,{})">{}</g>'.format(height, c_x)
+        height += max(h_x, h_0d)
 
         return '<svg width={}em viewBox="{} {} {} {}">{}</svg>'.format(
             _svg_width, left, top, max(_cubes_in_full_width, width), height,
             content)
 
 
-def show(container):
+def make_svg(container):
     """
-    Produce a graphical representation of a variable or dataset.
+    Return a svg representation of a variable or dataset.
     """
-    from IPython.core.display import display, HTML
     if isinstance(container, sc.Variable) or isinstance(
             container, sc.VariableProxy):
         draw = VariableDrawer(container)
-        display(HTML(draw.make_svg()))
     else:
         draw = DatasetDrawer(container)
-        display(HTML(draw.make_svg(container)))
+    return draw.make_svg()
+
+
+def show(container):
+    """
+    Show a graphical representation of a variable or dataset.
+    """
+    from IPython.core.display import display, HTML
+    display(HTML(make_svg(container)))
