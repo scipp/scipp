@@ -335,7 +335,7 @@ class DatasetDrawer():
             raise RuntimeError("Cannot visualize {}-D data".format(len(dims)))
         return dims
 
-    def make_svg(self, dataset):
+    def make_svg(self):
         content = ''
         width = 0
         height = 0
@@ -372,7 +372,7 @@ class DatasetDrawer():
         else:
             # Render highest-dimension items last so coords are optically
             # aligned
-            for name, data in dataset:
+            for name, data in self._dataset:
                 item = (name, data, colors.scheme['data'])
                 # Using only x and 0d areas for 1-D dataset
                 if len(dims) == 1 or data.dims != dims:
@@ -389,9 +389,10 @@ class DatasetDrawer():
                 else:
                     area_xy.append(item)
 
-        for what, items in zip(
-              ['coord', 'labels', 'mask', 'attr'],
-              [dataset.coords, dataset.labels, dataset.masks, dataset.attrs]):
+        for what, items in zip(['coord', 'labels', 'mask', 'attr'], [
+                self._dataset.coords, self._dataset.labels,
+                self._dataset.masks, self._dataset.attrs
+        ]):
             for name, var in items:
                 if var.sparse_dim is not None:
                     continue
@@ -458,15 +459,21 @@ class DatasetDrawer():
             content)
 
 
-def show(container):
+def make_svg(container):
     """
-    Produce a graphical representation of a variable or dataset.
+    Return a svg representation of a variable or dataset.
     """
-    from IPython.core.display import display, HTML
     if isinstance(container, sc.Variable) or isinstance(
             container, sc.VariableProxy):
         draw = VariableDrawer(container)
-        display(HTML(draw.make_svg()))
     else:
         draw = DatasetDrawer(container)
-        display(HTML(draw.make_svg(container)))
+    return draw.make_svg()
+
+
+def show(container):
+    """
+    Show a graphical representation of a variable or dataset.
+    """
+    from IPython.core.display import display, HTML
+    display(HTML(make_svg(container)))
