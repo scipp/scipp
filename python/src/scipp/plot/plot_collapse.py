@@ -11,8 +11,7 @@ from .._scipp import core as sc
 import numpy as np
 
 
-def plot_collapse(input_data, dim=None, name=None, filename=None, backend=None,
-                  **kwargs):
+def plot_collapse(input_data, dim=None, name=None, filename=None, **kwargs):
     """
     Collapse higher dimensions into a 1D plot.
     """
@@ -89,7 +88,6 @@ def plot_collapse(input_data, dim=None, name=None, filename=None, backend=None,
         color.append(get_color(index=i))
 
     # Send the newly created dictionary of DataProxy to the plot_1d function
-    return dispatch(input_data=ds, ndim=1, backend=backend, color=color,
-                    **kwargs)
+    return dispatch(input_data=ds, ndim=1, color=color, **kwargs)
 
     return

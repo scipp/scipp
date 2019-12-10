@@ -17,3 +17,5 @@ dependencies:
   - matplotlib
   - ipywidgets
   - psutil
+  - ipyvolume
+  - ipyevents

@@ -6,22 +6,16 @@
 from ..config import plot as config
 from .render import render_plot
 from .slicer import Slicer
-from .tools import axis_label, parse_colorbar
-
+from .tools import axis_label
 
 # Other imports
 import numpy as np
 import ipywidgets as widgets
-import plotly.graph_objs as go
-from plotly.subplots import make_subplots
-from PIL import Image, ImageOps
-from matplotlib import cm
-from matplotlib.colors import Normalize
+import matplotlib.pyplot as plt
 
 
-def plot_2d(input_data, axes=None, contours=False, cb=None, filename=None,
-            name=None, figsize=None, show_variances=False, ndim=0,
-            rasterize="auto", backend=None):
+def plot_2d(input_data=None, axes=None, cb=None, filename=None, name=None,
+            figsize=None, show_variances=False, mpl_axes=None, aspect=None):
     """
     Plot a 2D slice through a N dimensional dataset. For every dimension above
     2, a slider is created to adjust the position of the slice in that
@@ -32,156 +26,93 @@ def plot_2d(input_data, axes=None, contours=False, cb=None, filename=None,
     if axes is None:
         axes = var.dims
 
-    # Parse colorbar
-    cbar = parse_colorbar(cb, plotly=True)
+    sv = Slicer2d(input_data=var, axes=axes, cb=cb,
+                  show_variances=show_variances, mpl_axes=mpl_axes,
+                  aspect=aspect)
 
-    # Make title
-    title = axis_label(var=var, name=name, log=cbar["log"])
+    if mpl_axes is None:
+        render_plot(figure=sv.fig, widgets=sv.vbox, filename=filename)
 
-    if figsize is None:
-        figsize = [config.width, config.height]
-
-    layout = {"height": figsize[1], "width": figsize[0]}
-    if var.variances is not None and show_variances:
-        layout["height"] = 0.7 * layout["height"]
-        layout["xaxis2"] = {"matches": "x"}
-        layout["yaxis2"] = {"matches": "y"}
-
-    cbdict = {"title": title,
-              "titleside": "right",
-              "lenmode": 'fraction',
-              "len": 1.05,
-              "thicknessmode": 'fraction',
-              "thickness": 0.03}
-
-    # Automatically switch to rasterization if image is large
-    if rasterize == "auto":
-        imsize = 1
-        # Find the two largest dimensions
-        shapes = np.sort(var.shape)[::-1]
-        for i in range(2):
-            imsize *= shapes[i]
-        rasterize = imsize > config.rasterize_threshold
-
-    plot_type = 'heatmap'
-
-    if rasterize:
-        layout["xaxis"] = dict(showgrid=False, zeroline=False, autorange=True)
-        layout["yaxis"] = dict(showgrid=False, zeroline=False, autorange=True)
-        hoverinfo = 'skip'
-    else:
-        if contours:
-            plot_type = 'contour'
-        hoverinfo = "x+y+z"
-
-    data = dict(x=[0.0, 1.0],
-                y=[0.0, 1.0],
-                z=[[0.0]],
-                type=plot_type,
-                colorscale=cbar["name"],
-                colorbar=cbdict,
-                opacity=int(not rasterize),
-                hoverinfo=hoverinfo
-                )
-
-    sv = Slicer2d(data=data, layout=layout, input_data=var, axes=axes,
-                  value_name=title, cb=cbar, show_variances=show_variances,
-                  rasterize=rasterize)
-
-    render_plot(static_fig=sv.fig, interactive_fig=sv.vbox, backend=backend,
-                filename=filename)
-
-    return
+    return sv.members
 
 
 class Slicer2d(Slicer):
 
-    def __init__(self, data, layout, input_data, axes,
-                 value_name, cb, show_variances, rasterize, surface3d=False):
+    def __init__(self, input_data=None, axes=None, cb=None,
+                 show_variances=False, mpl_axes=None, aspect=None):
 
-        super().__init__(input_data, axes, value_name, cb, show_variances,
+        super().__init__(input_data=input_data, axes=axes, cb=cb,
+                         show_variances=show_variances,
                          button_options=['X', 'Y'])
 
-        self.surface3d = surface3d
-        self.rasterize = rasterize
+        self.members.update({"images": {}, "colorbars": {}})
+        self.extent = {"x": [0, 1], "y": [0, 1]}
+        if aspect is None:
+            aspect = config.aspect
 
-        # Initialise Figure and VBox objects
+        # Get or create matplotlib axes
         self.fig = None
-        params = {"values": {"cbmin": "min", "cbmax": "max"},
-                  "variances": None}
-        if self.show_variances:
-            params["variances"] = {"cbmin": "min_var", "cbmax": "max_var"}
-            if self.surface3d:
-                self.fig = go.FigureWidget(
-                    make_subplots(rows=1, cols=2, horizontal_spacing=0.16,
-                                  specs=[[{"type": "scene"},
-                                          {"type": "scene"}]]))
+        cax = [None] * (1 + show_variances)
+        if mpl_axes is not None:
+            if isinstance(mpl_axes, dict):
+                ax = [None, None]
+                for key, val in mpl_axes.items():
+                    if key == "ax" or key == "ax_values":
+                        ax[0] = val
+                    if key == "cax" or key == "cax_values":
+                        cax[0] = val
+                    if key == "ax_variances":
+                        ax[1] = val
+                    if key == "cax_variances":
+                        cax[1] = val
             else:
-                self.fig = go.FigureWidget(
-                    make_subplots(rows=1, cols=2, horizontal_spacing=0.16))
-            data["colorbar"]["x"] = 0.42
-            data["colorbar"]["thickness"] = 0.02
-            self.fig.add_trace(data, row=1, col=1)
-            data["colorbar"]["title"] = "variances"
-            data["colorbar"]["x"] = 1.0
-            self.fig.add_trace(data, row=1, col=2)
-            self.fig.update_layout(**layout)
-            if self.rasterize:
-                self.fig.update_xaxes(row=1, col=1, **layout["xaxis"])
-                self.fig.update_xaxes(row=1, col=2, **layout["xaxis"])
-                self.fig.update_yaxes(row=1, col=1, **layout["yaxis"])
-                self.fig.update_yaxes(row=1, col=2, **layout["yaxis"])
+                # Case where only a single axis is given
+                ax = [mpl_axes]
         else:
-            self.fig = go.FigureWidget(data=[data], layout=layout)
+            self.fig, ax = plt.subplots(
+                1, 1 + self.show_variances,
+                figsize=(config.width/config.dpi,
+                         config.height/(1.0+self.show_variances)/config.dpi),
+                dpi=config.dpi,
+                sharex=True, sharey=True)
+            if not self.show_variances:
+                ax = [ax]
 
-        # Set colorbar limits once to keep them constant for slicer
-        # TODO: should there be auto scaling as slider value is changed?
-        if self.surface3d:
-            attr_names = ["cmin", "cmax"]
-        else:
-            attr_names = ["zmin", "zmax"]
-        self.scalarMap = [None, None]
-        for i, (key, val) in enumerate(sorted(params.items())):
-            if val is not None:
-                arr = getattr(self.input_data, key)
-                if self.cb[val["cbmin"]] is not None:
-                    vmin = self.cb[val["cbmin"]]
-                else:
-                    vmin = np.amin(arr[np.where(np.isfinite(arr))])
-                if self.cb[val["cbmax"]] is not None:
-                    vmax = self.cb[val["cbmax"]]
-                else:
-                    vmax = np.amax(arr[np.where(np.isfinite(arr))])
+        self.ax = dict()
+        self.cax = dict()
+        self.im = dict()
+        self.cbar = dict()
 
-                if rasterize:
-                    self.scalarMap[i] = cm.ScalarMappable(
-                        norm=Normalize(vmin=vmin, vmax=vmax),
-                        cmap=self.cb["name"].lower())
+        self.ax["values"] = ax[0]
+        self.cax["values"] = cax[0]
+        if self.show_variances:
+            self.ax["variances"] = ax[1]
+            self.cax["variances"] = cax[1]
 
-                self.fig.data[i][attr_names[0]] = vmin
-                self.fig.data[i][attr_names[1]] = vmax
-
-        if self.surface3d:
-            self.fig.layout.scene1.zaxis.title = self.value_name
-            if self.show_variances:
-                self.fig.layout.scene2.zaxis.title = "variances"
-
-        if self.rasterize:
-            # Add background image
-            im_params = {"opacity": 1.0, "layer": "below", "sizing": "stretch",
-                         "source": None}
-            im_list = [go.layout.Image(xref="x", yref="y", **im_params)]
-            if self.show_variances:
-                im_list.append(go.layout.Image(xref="x2", yref="y2",
-                                               **im_params))
-            self.fig.update_layout(images=im_list)
+        for key, norm in self.cb["norm"].items():
+            self.im[key] = self.ax[key].imshow(
+                [[1, 1], [1, 1]], norm=norm,
+                extent=np.array(list(self.extent.values())).flatten(),
+                origin="lower", interpolation="nearest", cmap=self.cb["name"],
+                aspect=aspect)
+            self.cbar[key] = plt.colorbar(self.im[key], ax=self.ax[key],
+                                          cax=self.cax[key])
+            self.ax[key].set_title(
+                self.input_data.name if key == "values" else key)
+            self.cbar[key].ax.set_ylabel(axis_label(var=self.input_data,
+                                                    name=""))
+            if self.cax[key] is None:
+                self.cbar[key].ax.yaxis.set_label_coords(-1.1, 0.5)
+            self.members["images"][key] = self.im[key]
+            self.members["colorbars"][key] = self.cbar[key]
 
         # Call update_slice once to make the initial image
         self.update_axes()
         self.update_slice(None)
-        self.vbox = [self.fig] + self.vbox
         self.vbox = widgets.VBox(self.vbox)
         self.vbox.layout.align_items = 'center'
+        self.members["fig"] = self.fig
+        self.members["ax"] = self.ax
 
         return
 
@@ -207,38 +138,29 @@ class Slicer2d(Slicer):
 
     def update_axes(self):
         # Go through the buttons and select the right coordinates for the axes
+        axlabels = {"x": None, "y": None}
         for key, button in self.buttons.items():
             if self.slider[key].disabled:
                 but_val = button.value.lower()
-                for i in range(1 + self.show_variances):
-                    if self.rasterize:
-                        self.fig.data[i][but_val] = \
-                            self.slider_x[key].values[[0, -1]]
-                    else:
-                        self.fig.data[i][but_val] = \
-                            self.slider_x[key].values
-                if self.surface3d:
-                    self.fig.layout.scene1["{}axis_title".format(
-                        but_val)] = axis_label(self.slider_x[key],
-                                               name=self.slider_labels[key])
-                    if self.show_variances:
-                        self.fig.layout.scene2["{}axis_title".format(
-                            but_val)] = axis_label(
-                                self.slider_x[key],
-                                name=self.slider_labels[key])
+                if not self.histograms[key]:
+                    xc = self.slider_x[key].values
+                    xmin = 1.5 * xc[0] - 0.5 * xc[1]
+                    xmax = 1.5 * xc[-1] - 0.5 * xc[-2]
+                    self.extent[but_val] = [xmin, xmax]
                 else:
-                    if self.show_variances:
-                        func = getattr(self.fig, 'update_{}axes'.format(
-                            but_val))
-                        for i in range(2):
-                            func(title_text=axis_label(
-                                self.slider_x[key],
-                                name=self.slider_labels[key]),
-                                row=1, col=i+1)
-                    else:
-                        axis_str = "{}axis".format(but_val)
-                        self.fig.layout[axis_str]["title"] = axis_label(
-                            self.slider_x[key], name=self.slider_labels[key])
+                    self.extent[but_val] = self.slider_x[key].values[[0, -1]]
+
+                axlabels[but_val] = axis_label(
+                            self.slider_x[key],
+                            name=self.slider_labels[key])
+
+        for key in self.ax.keys():
+            self.im[key].set_extent(
+                np.array(list(self.extent.values())).flatten())
+            self.ax[key].set_xlabel(axlabels["x"])
+            self.ax[key].set_ylabel(axlabels["y"])
+            self.ax[key].set_xlim(self.extent["x"])
+            self.ax[key].set_ylim(self.extent["y"])
 
         return
 
@@ -259,28 +181,10 @@ class Slicer2d(Slicer):
         # Check if dimensions of arrays agree, if not, plot the transpose
         slice_dims = vslice.dims
         transp = slice_dims == button_dims
-        self.update_z2d(vslice.values, transp, self.cb["log"], 0)
-        if self.show_variances:
-            self.update_z2d(vslice.variances, transp, self.cb["log"], 1)
-        return
+        for key in self.im.keys():
+            if transp:
+                self.im[key].set_data(getattr(vslice, key).T)
+            else:
+                self.im[key].set_data(getattr(vslice, key))
 
-    def update_z2d(self, values, transp, log, indx):
-        if transp:
-            values = values.T
-        if log:
-            with np.errstate(invalid="ignore", divide="ignore"):
-                values = np.log10(values)
-        if self.rasterize:
-            seg_colors = self.scalarMap[indx].to_rgba(values)
-            # Image is upside down by default and needs to be flipped
-            img = ImageOps.flip(Image.fromarray(np.uint8(seg_colors*255)))
-            self.fig.layout["images"][indx]["x"] = self.fig.data[indx]["x"][0]
-            self.fig.layout["images"][indx]["sizex"] = \
-                self.fig.data[indx]["x"][-1] - self.fig.data[indx]["x"][0]
-            self.fig.layout["images"][indx]["y"] = self.fig.data[indx]["y"][-1]
-            self.fig.layout["images"][indx]["sizey"] = \
-                self.fig.data[indx]["y"][-1] - self.fig.data[indx]["y"][0]
-            self.fig.layout["images"][indx]["source"] = img
-        else:
-            self.fig.data[indx].z = values
         return

@@ -2,30 +2,28 @@
 # Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
+import matplotlib
 
-def render_plot(static_fig=None, interactive_fig=None, backend=None,
-                filename=None):
+
+def render_plot(figure=None, widgets=None, filename=None, ipv=None):
     """
-    Render the plot using either file export, static png inline display or
-    interactive display.
+    Render the plot using either file export or interactive display.
     """
 
     # Delay imports
     import IPython.display as disp
-    from plotly.io import write_html, write_image, to_image
 
     if filename is not None:
-        if filename.endswith(".html"):
-            write_html(fig=static_fig, file=filename, auto_open=False)
+        if ipv is not None:
+            if filename.endswith(".html"):
+                ipv.save(filename)
+            else:
+                raise RuntimeError("Only html export is supported for now "
+                                   "when using ipyvolume.")
         else:
-            write_image(fig=static_fig, file=filename)
+            figure.savefig(filename, bbox_inches="tight")
     else:
-        if backend == "static":
-            disp.display(disp.Image(to_image(static_fig, format='png')))
-        elif backend == "interactive":
-            disp.display(interactive_fig)
-        else:
-            raise RuntimeError("Unknown backend {}. Currently supported "
-                               "backends are 'interactive' and "
-                               "'static'".format(backend))
+        if widgets is not None and (ipv is not None or
+                                    matplotlib.get_backend() == "nbAgg"):
+            disp.display(widgets)
     return

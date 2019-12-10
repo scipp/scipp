@@ -1,9 +1,7 @@
 numpy
-pandas
-xarray
 matplotlib
 nose
 ipywidgets
-plotly
 pytest
-Pillow
+ipyvolume
+ipyevents

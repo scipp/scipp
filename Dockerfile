@@ -19,9 +19,6 @@ ARG PG3_4866_HASH=3d543bc6a646e622b3f4542bc3435e7e
 RUN wget -O /home/$NB_USER/data/PG3_4844_event.nxs http://198.74.56.37/ftp/external-data/MD5/$PG3_4844_HASH && \
     wget -O /home/$NB_USER/data/PG3_4866_event.nxs http://198.74.56.37/ftp/external-data/MD5/$PG3_4866_HASH
 
-# Enable Plotly JupyterLab extension
-RUN jupyter labextension install @jupyterlab/plotly-extension@0.18.1
-
 # Install Scipp and dependencies
 RUN conda install --yes \
       -c conda-forge \
@@ -30,9 +27,10 @@ RUN conda install --yes \
       -c mantid \
       ipython \
       matplotlib \
-      plotly \
       scipp \
       ipywidgets \
+      ipyvolume \
+      ipyevents \
       mantid-framework=4 \
       python=3.6 \
       numpy=1.15 && \
