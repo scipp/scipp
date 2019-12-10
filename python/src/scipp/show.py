@@ -480,6 +480,7 @@ class DatasetDrawer():
         width += w
 
         c, w_y, h = draw_area(area_y, 'x', reverse=True)
+        height = max(height, h)
         content += '<g transform="translate({},{})">{}</g>'.format(
             -w_y, height - h, c)
 
