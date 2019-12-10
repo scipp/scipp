@@ -157,8 +157,9 @@ TEST(Variable, operator_plus) {
 
   auto sum = a + b;
 
-  auto expected = makeVariableWithVariances<double>(
-      {{Dim::X, 2}, {Dim::Y, 2}, {Dim::Z, Dimensions::Sparse}});
+  auto expected = createVariable<double>(
+      Dimensions{{Dim::X, 2}, {Dim::Y, 2}, {Dim::Z, Dimensions::Sparse}},
+      Variances{}, Values{});
   auto vals = expected.sparseValues<double>();
   vals[0] = {1.0 + 0.1f, 1.0 + 0.2f};
   vals[1] = {1.0 + 0.3f};
@@ -276,8 +277,9 @@ TEST(Variable, operator_binary_equal_data_fail_data_integrity) {
 }
 
 TEST(Variable, operator_binary_equal_with_variances_data_fail_data_integrity) {
-  auto a = makeVariableWithVariances<float>(
-      {{Dim::Y, 2}, {Dim::Z, Dimensions::Sparse}});
+  auto a = createVariable<float>(
+      Dimensions{{Dim::Y, 2}, {Dim::Z, Dimensions::Sparse}}, Values{},
+      Variances{});
   auto a_ = a.sparseValues<float>();
   auto a_vars = a.sparseVariances<float>();
   a_[0] = {0.1, 0.2};
@@ -483,13 +485,16 @@ TEST(Variable, concatenate_unit_fail) {
 }
 
 TEST(SparseVariable, concatenate) {
-  const auto a = makeVariableWithVariances<double>(
-      {{Dim::Y, Dim::X}, {2, Dimensions::Sparse}});
-  const auto b = makeVariableWithVariances<double>(
-      {{Dim::Y, Dim::X}, {3, Dimensions::Sparse}});
+  const auto a =
+      createVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, Dimensions::Sparse},
+                             Values{}, Variances{});
+  const auto b =
+      createVariable<double>(Dims{Dim::Y, Dim::X}, Shape{3, Dimensions::Sparse},
+                             Values{}, Variances{});
   auto var = concatenate(a, b, Dim::Y);
-  EXPECT_EQ(var, makeVariableWithVariances<double>(
-                     {{Dim::Y, Dim::X}, {5, Dimensions::Sparse}}));
+  EXPECT_EQ(var, createVariable<double>(Dims{Dim::Y, Dim::X},
+                                        Shape{5, Dimensions::Sparse}, Values{},
+                                        Variances{}));
 }
 
 TEST(SparseVariable, concatenate_along_sparse_dimension) {
@@ -514,16 +519,18 @@ TEST(SparseVariable, concatenate_along_sparse_dimension) {
 }
 
 TEST(SparseVariable, concatenate_along_sparse_dimension_with_variances) {
-  auto a = makeVariableWithVariances<double>(
-      {{Dim::Y, Dim::X}, {2, Dimensions::Sparse}});
+  auto a =
+      createVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, Dimensions::Sparse},
+                             Values{}, Variances{});
   auto a_vals = a.sparseValues<double>();
   a_vals[0] = {1, 2, 3};
   a_vals[1] = {1, 2};
   auto a_vars = a.sparseVariances<double>();
   a_vars[0] = {4, 5, 6};
   a_vars[1] = {4, 5};
-  auto b = makeVariableWithVariances<double>(
-      {{Dim::Y, Dim::X}, {2, Dimensions::Sparse}});
+  auto b =
+      createVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, Dimensions::Sparse},
+                             Values{}, Variances{});
   auto b_vals = b.sparseValues<double>();
   b_vals[0] = {1, 3};
   b_vals[1] = {};

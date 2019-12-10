@@ -17,8 +17,9 @@ static auto make_sparse() {
 }
 
 static auto make_sparse_with_variances() {
-  auto var = makeVariableWithVariances<double>(
-      {{Dim::Z, 3}, {Dim::Y, 2}, {Dim::X, Dimensions::Sparse}});
+  auto var = createVariable<double>(
+      Dimensions{{Dim::Z, 3}, {Dim::Y, 2}, {Dim::X, Dimensions::Sparse}},
+      Values{}, Variances{});
   scipp::index count = 0;
   for (auto &v : var.sparseValues<double>())
     v.resize(count++);

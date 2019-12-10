@@ -134,8 +134,9 @@ TEST(HistogramTest, data_proxy) {
 
 TEST(HistogramTest, with_data) {
   auto sparse = make_2d_sparse_coord_only("sparse");
-  Variable data = makeVariableWithVariances<double>(
-      {{Dim::X, 3}, {Dim::Y, Dimensions::Sparse}});
+  Variable data = createVariable<double>(
+      Dimensions{{Dim::X, 3}, {Dim::Y, Dimensions::Sparse}}, Values{},
+      Variances{});
   data.sparseValues<double>()[0] = {1, 1, 1, 2, 2};
   data.sparseValues<double>()[1] = {2, 2, 2, 2, 2};
   data.sparseValues<double>()[2] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};

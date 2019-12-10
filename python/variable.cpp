@@ -35,8 +35,9 @@ template <class T> struct MakeVariable {
     py::array_t<T> valuesT(values);
     py::buffer_info info = valuesT.request();
     Dimensions dims(labels, {info.shape.begin(), info.shape.end()});
-    auto var = variances ? makeVariableWithVariances<T>(dims)
-                         : createVariable<T>(Dimensions(dims));
+    auto var = variances
+                   ? createVariable<T>(Dimensions{dims}, Values{}, Variances{})
+                   : createVariable<T>(Dimensions(dims));
     copy_flattened<T>(valuesT, var.template values<T>());
     if (variances) {
       py::array_t<T> variancesT(*variances);
@@ -55,8 +56,9 @@ template <class T> struct MakeVariableDefaultInit {
                         const std::vector<scipp::index> &shape,
                         const units::Unit unit, const bool variances) {
     Dimensions dims(labels, shape);
-    auto var = variances ? makeVariableWithVariances<T>(dims)
-                         : createVariable<T>(Dimensions(dims));
+    auto var = variances
+                   ? createVariable<T>(Dimensions{dims}, Values{}, Variances{})
+                   : createVariable<T>(Dimensions{dims});
     var.setUnit(unit);
     return var;
   }

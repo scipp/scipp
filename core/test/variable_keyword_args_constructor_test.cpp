@@ -17,7 +17,7 @@ TEST(CreateVariableTest, from_single_value) {
   EXPECT_EQ(var.variance<float>(), 1.0f);
 }
 
-TEST(CreateVariableTest, unitialized) {
+TEST(CreateVariableTest, default_init) {
   auto noVariance = createVariable<float>(Dims{Dim::X}, Shape{3});
   auto stillNoVariance =
       createVariable<float>(Dims{Dim::X}, Shape{3}, Values{});
