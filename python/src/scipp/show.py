@@ -172,7 +172,6 @@ class VariableDrawer():
                     x_scale = 1
                     sparse = False
                     if lx == self._sparse_flag:
-                        # TODO This works only for 2D and no transpose
                         true_lx = ceil(
                             len(data[ly - y - 1 + ly * (lz - z - 1)]) /
                             self._x_stride)
@@ -318,27 +317,19 @@ class DatasetDrawer():
         # need one for the practical purpose of drawing variables with
         # consistent ordering. We simply use that of the item with highest
         # dimension count.
-        count = -1
-        sparse = None
         if is_data_array(self._dataset):
-            if self._dataset.sparse_dim is not None:
-                sparse = item.sparse_dim
             dims = self._dataset.dims
-            count = len(dims)
         else:
+            dims = []
             for name, item in self._dataset:
                 if item.sparse_dim is not None:
-                    sparse = item.sparse_dim
-                if len(item.dims) > count:
                     dims = item.dims
-                    count = len(dims)
+                    break
+                if len(item.dims) > len(dims):
+                    dims = item.dims
             for dim in self._dataset.dims:
                 if not dim in dims:
                     dims = [dim] + dims
-        # Ensure that potential sparse dimension is the inner dimension
-        if sparse is not None:
-            dims.remove(sparse)
-            dims.append(sparse)
         if len(dims) > 3:
             raise RuntimeError("Cannot visualize {}-D data".format(len(dims)))
         return dims
