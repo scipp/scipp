@@ -8,8 +8,8 @@ from .._scipp.core.units import dimensionless
 
 class Slicer:
 
-    def __init__(self, input_data=None, axes=None, cb=None, masks=None,
-                 show_variances=False, button_options=None, volume=False):
+    def __init__(self, input_data=None, axes=None, data=None, variances=None,
+                 masks=None, button_options=None, volume=False):
 
         import ipywidgets as widgets
 
@@ -20,10 +20,13 @@ class Slicer:
         self.show_variances = show_variances
         if self.show_variances:
             self.show_variances = (self.input_data.variances is not None)
-        self.masks = masks
-        print(masks, len(masks))
-        if masks is not None:
-            self.show_masks = len(masks) > 0
+        # Gather 
+        self.masks = {"show": True, "color": None, "cmap": "gray"}
+        for k, m in masks.items():
+            self.masks[k] = m
+        print(masks, len(masks["masks"]))
+        if masks["masks"] is not None:
+            self.masks["show"] = self.masks["show"] and len(masks["masks"]) > 0
         if len(button_options) > 1:
             self.cb = parse_colorbar(cb, input_data, self.show_variances)
 

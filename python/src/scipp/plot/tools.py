@@ -54,11 +54,11 @@ def axis_label(var=None, name=None, log=False, replace_dim=True):
     return label
 
 
-def parse_colorbar(cb, var=None, show_variances=False, values=None):
+def parse_params(data=None, var=None, values=None):
     """
     Construct the colorbar using default and input values
     """
-    cbar = config.cb.copy()
+    params = config.params.copy()
     cbar["norm"] = dict()
     if cb is not None:
         if isinstance(cb, str):
