@@ -15,7 +15,8 @@ import matplotlib.pyplot as plt
 
 
 def plot_2d(input_data=None, axes=None, cb=None, filename=None, name=None,
-            figsize=None, show_variances=False, mpl_axes=None, aspect=None):
+            figsize=None, show_variances=False, mpl_axes=None, aspect=None,
+            masks=None):
     """
     Plot a 2D slice through a N dimensional dataset. For every dimension above
     2, a slider is created to adjust the position of the slice in that
@@ -25,10 +26,13 @@ def plot_2d(input_data=None, axes=None, cb=None, filename=None, name=None,
     var = input_data[name]
     if axes is None:
         axes = var.dims
+    if masks is None:
+        masks = {"show": True, "color": None}
+    masks["variable"]
 
     sv = Slicer2d(input_data=var, axes=axes, cb=cb,
                   show_variances=show_variances, mpl_axes=mpl_axes,
-                  aspect=aspect)
+                  aspect=aspect, masks=masks)
 
     if mpl_axes is None:
         render_plot(figure=sv.fig, widgets=sv.vbox, filename=filename)
@@ -38,7 +42,7 @@ def plot_2d(input_data=None, axes=None, cb=None, filename=None, name=None,
 
 class Slicer2d(Slicer):
 
-    def __init__(self, input_data=None, axes=None, cb=None,
+    def __init__(self, input_data=None, axes=None, cb=None, masks=None,
                  show_variances=False, mpl_axes=None, aspect=None):
 
         super().__init__(input_data=input_data, axes=axes, cb=cb,
