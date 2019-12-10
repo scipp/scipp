@@ -21,6 +21,7 @@ if [ "$TRAVIS_EVENT_TYPE" == "pull_request" ]   ; then
         export PYTHONPATH=$PYTHONPATH:../install
         cd ../python
         python3 -m pytest
+	exit 0
     fi
 fi
 echo 'build and test step skipped on' $TRAVIS_PULL_REQUEST_BRANCH
