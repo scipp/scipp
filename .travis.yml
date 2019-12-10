@@ -28,19 +28,19 @@ jobs:
     - stage: "Unit tests"
       compiler: gcc
       name: "gcc"
-      if: NOT type = cron
+      if: branch = master AND NOT type = pull_request
       before_install: .travis/before_install.sh
       install: .travis/install_linux_toolchain.sh
       script: .travis/run_tests.sh
     - compiler: clang
       name: "clang"
-      if: NOT type = cron
+      if: NOT branch = master AND type = pull_request
       before_install: .travis/before_install.sh
       install: .travis/install_linux_toolchain.sh
       script: .travis/run_tests.sh
     - os: osx
       name: "apple clang"
-      if: NOT type = cron
+      if: NOT branch = master AND type = pull_request
       osx_image: xcode10.2
       before_install: brew install ccache ninja
       env:
