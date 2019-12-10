@@ -14,7 +14,7 @@ try:
         cfg = ipy.config
         try:
             meta = cfg["Session"]["metadata"]
-            if hasattr(meta, to_dict):
+            if hasattr(meta, "to_dict"):
                 meta = meta.to_dict()
             is_doc_build = meta["scipp_docs_build"]
         except KeyError:
