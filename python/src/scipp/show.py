@@ -397,57 +397,21 @@ class DatasetDrawer():
                 else:
                     area_xy.append(item)
 
-        for dim, coord in dataset.coords:
-            if coord.sparse_dim is not None:
-                continue
-            item = (dim, coord, colors.scheme['coord'])
-            if len(coord.dims) == 0:
-                area_0d.append(item)
-            elif coord.dims[-1] == dims[-1]:
-                area_x.append(item)
-            elif coord.dims[-1] == dims[-2]:
-                area_y.append(item)
-            else:
-                area_z.append(item)
-
-        for name, labels in dataset.labels:
-            if labels.sparse_dim is not None:
-                continue
-            item = (name, labels, colors.scheme['labels'])
-            if len(labels.dims) == 0:
-                area_0d.append(item)
-            elif labels.dims[-1] == dims[-1]:
-                area_x.append(item)
-            elif labels.dims[-1] == dims[-2]:
-                area_y.append(item)
-            else:
-                area_z.append(item)
-
-        for name, masks in dataset.masks:
-            if masks.sparse_dim is not None:
-                continue
-            item = (name, masks, colors.scheme['mask'])
-            if len(masks.dims) == 0:
-                area_0d.append(item)
-            elif masks.dims[-1] == dims[-1]:
-                area_x.append(item)
-            elif masks.dims[-1] == dims[-2]:
-                area_y.append(item)
-            else:
-                area_z.append(item)
-
-        for name, attr in dataset.attrs:
-            if attr.sparse_dim is not None:
-                continue
-            item = (name, attr, colors.scheme['attr'])
-            if len(attr.dims) == 0:
-                area_0d.append(item)
-            elif attr.dims[-1] == dims[-1]:
-                area_x.append(item)
-            elif attr.dims[-1] == dims[-2]:
-                area_y.append(item)
-            else:
-                area_z.append(item)
+        for what, items in zip(
+            ['coord', 'labels', 'mask', 'attr'],
+            [dataset.coords, dataset.labels, dataset.masks, dataset.attrs]):
+            for name, var in items:
+                if var.sparse_dim is not None:
+                    continue
+                item = (name, var, colors.scheme[what])
+                if len(var.dims) == 0:
+                    area_0d.append(item)
+                elif var.dims[-1] == dims[-1]:
+                    area_x.append(item)
+                elif var.dims[-1] == dims[-2]:
+                    area_y.append(item)
+                else:
+                    area_z.append(item)
 
         def draw_area(area, layout_direction, reverse=False):
             content = ''
