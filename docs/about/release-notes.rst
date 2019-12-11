@@ -3,8 +3,8 @@
 Release Notes
 =============
 
-Changes since v0.1
-------------------
+v0.2 (December 2019)
+--------------------
 
 * Support for masks stored in ``DataArray`` and ``Dataset``.
 
@@ -21,6 +21,8 @@ Changes since v0.1
   * Multi-dimensional plots with interactive sliders, and much more.
 
 * Significant performance improvements for majority of operations. Typically performance is now in the same ballpark as what the memory bandwidth on a single CPU core can support.
+
+* Fancy ``_repr_html_`` for quick views of datasets in Jupyter notebooks.
 
 v0.1 (September 2019)
 ---------------------
