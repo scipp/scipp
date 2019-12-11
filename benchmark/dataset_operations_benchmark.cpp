@@ -32,8 +32,8 @@ std::vector<bool> makeBools(const scipp::index size) {
 template <typename DType> Variable makeData(const Dimensions &dims) {
   std::vector<DType> data(dims.volume());
   std::iota(data.begin(), data.end(), static_cast<DType>(0));
-  return createVariable<DType>(Dimensions(dims),
-                               Values(data.begin(), data.end()));
+  return makeVariable<DType>(Dimensions(dims),
+                             Values(data.begin(), data.end()));
 }
 struct Generate {
   Dataset operator()(const int axisLength, const int num_masks = 0) {
@@ -42,8 +42,8 @@ struct Generate {
     for (int i = 0; i < num_masks; ++i) {
       auto bools = makeBools<BoolsGeneratorType::ALTERNATING>(axisLength);
       d.setMask(std::string(1, ('a' + i)),
-                createVariable<bool>(Dims{Dim::X}, Shape{axisLength},
-                                     Values(bools.begin(), bools.end())));
+                makeVariable<bool>(Dims{Dim::X}, Shape{axisLength},
+                                   Values(bools.begin(), bools.end())));
     }
     return d;
   }
@@ -58,9 +58,9 @@ struct Generate_2D_data {
         makeBools<BoolsGeneratorType::ALTERNATING>(axisLength * axisLength);
     for (int i = 0; i < num_masks; ++i) {
       d.setMask(std::string(1, ('a' + i)),
-                createVariable<bool>(Dims{Dim::X, Dim::Y},
-                                     Shape{axisLength, axisLength},
-                                     Values(bools.begin(), bools.end())));
+                makeVariable<bool>(Dims{Dim::X, Dim::Y},
+                                   Shape{axisLength, axisLength},
+                                   Values(bools.begin(), bools.end())));
     }
     return d;
   }
@@ -76,9 +76,9 @@ struct Generate_3D_data {
         axisLength * axisLength * axisLength);
     for (int i = 0; i < num_masks; ++i) {
       d.setMask(std::string(1, ('a' + i)),
-                createVariable<bool>(Dims{Dim::X, Dim::Y, Dim::Z},
-                                     Shape{axisLength, axisLength, axisLength},
-                                     Values(bools.begin(), bools.end())));
+                makeVariable<bool>(Dims{Dim::X, Dim::Y, Dim::Z},
+                                   Shape{axisLength, axisLength, axisLength},
+                                   Values(bools.begin(), bools.end())));
     }
     return d;
   }

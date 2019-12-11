@@ -59,13 +59,13 @@ TEST(SliceTest, test_end_valid) {
 
 TEST(DatasetTest, simple_sparse_slice) {
   Dataset dataset;
-  auto var = createVariable<double>(Dims{Dim::Y, Dim::X},
-                                    Shape{2, Dimensions::Sparse});
+  auto var =
+      makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, Dimensions::Sparse});
   var.sparseValues<double>()[0] = {4, 5, 6};
   var.sparseValues<double>()[1] = {7, 8, 9};
   dataset.setData("data", var);
-  dataset.setCoord(
-      Dim::Y, createVariable<double>(Dims{Dim::Y}, Shape{2}, Values{1, 2}));
+  dataset.setCoord(Dim::Y,
+                   makeVariable<double>(Dims{Dim::Y}, Shape{2}, Values{1, 2}));
 
   auto sliced = dataset.slice({Dim::Y, 1, 2});
   EXPECT_EQ(sliced["data"].data(), var.slice({Dim::Y, 1, 2}));
@@ -73,15 +73,15 @@ TEST(DatasetTest, simple_sparse_slice) {
 
 TEST(DatasetTest, simple_sparse_slice_and_sparse_coords) {
   Dataset dataset;
-  auto var = createVariable<double>(Dims{Dim::Y, Dim::X},
-                                    Shape{2, Dimensions::Sparse});
+  auto var =
+      makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, Dimensions::Sparse});
   var.sparseValues<double>()[0] = {4, 5, 6};
   var.sparseValues<double>()[1] = {7, 8, 9};
   dataset.setData("data", var);
-  dataset.setCoord(
-      Dim::Y, createVariable<double>(Dims{Dim::Y}, Shape{2}, Values{1, 2}));
-  auto sparseCoord = createVariable<double>(Dims{Dim::Y, Dim::X},
-                                            Shape{2, Dimensions::Sparse});
+  dataset.setCoord(Dim::Y,
+                   makeVariable<double>(Dims{Dim::Y}, Shape{2}, Values{1, 2}));
+  auto sparseCoord =
+      makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, Dimensions::Sparse});
   sparseCoord.sparseValues<double>()[0] = {1, 2, 3};
   sparseCoord.sparseValues<double>()[1] = {4, 5, 6};
   dataset.setSparseCoord("data", sparseCoord);
@@ -150,11 +150,10 @@ TEST_F(Dataset3DTest, dimension_extent_check_non_coord_dimension_fail) {
 
 TEST_F(Dataset3DTest, data_check_upon_setting_sparse_coordinates) {
   Dataset sparse;
-  auto data_var =
-      createVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse});
+  auto data_var = makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse});
   data_var.sparseValues<double>()[0] = {1, 1, 1};
   auto coords_var =
-      createVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse});
+      makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse});
   coords_var.sparseValues<double>()[0] = {1, 2, 3};
   sparse.setData("sparse_x", data_var);
   // The following should be OK. Data is sparse
@@ -162,8 +161,8 @@ TEST_F(Dataset3DTest, data_check_upon_setting_sparse_coordinates) {
 
   // Check with dense data
   ASSERT_THROW(dataset.setSparseCoord(
-                   "data_x", createVariable<double>(Dims{Dim::X},
-                                                    Shape{Dimensions::Sparse})),
+                   "data_x", makeVariable<double>(Dims{Dim::X},
+                                                  Shape{Dimensions::Sparse})),
                std::runtime_error);
 }
 
@@ -326,8 +325,8 @@ TEST_P(Dataset3DTest_slice_x, slice) {
 TEST_P(Dataset3DTest_slice_sparse, slice) {
   Dataset ds;
   const auto pos = GetParam();
-  auto var = createVariable<double>(Dims{Dim::X, Dim::Y, Dim::Z},
-                                    Shape{2l, 2l, Dimensions::Sparse});
+  auto var = makeVariable<double>(Dims{Dim::X, Dim::Y, Dim::Z},
+                                  Shape{2l, 2l, Dimensions::Sparse});
   var.sparseValues<double>()[0] = {1, 2, 3};
   var.sparseValues<double>()[1] = {4, 5, 6};
   var.sparseValues<double>()[2] = {7};
@@ -335,9 +334,9 @@ TEST_P(Dataset3DTest_slice_sparse, slice) {
 
   ds.setData("xyz_data", var);
   ds.setCoord(Dim::X,
-              createVariable<double>(Dims{Dim::X}, Shape{2}, Values{0, 1}));
+              makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{0, 1}));
   ds.setCoord(Dim::Y,
-              createVariable<double>(Dims{Dim::Y}, Shape{2}, Values{0, 1}));
+              makeVariable<double>(Dims{Dim::Y}, Shape{2}, Values{0, 1}));
 
   auto sliced = ds.slice({Dim::X, pos});
   auto data = sliced["xyz_data"].data().sparseValues<double>();

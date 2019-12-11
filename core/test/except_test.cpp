@@ -13,12 +13,12 @@ using namespace scipp::core;
 
 TEST(StringFormattingTest, to_string_Dataset) {
   Dataset a;
-  a.setData("a", createVariable<double>(Values{double{}}));
-  a.setData("b", createVariable<double>(Values{double{}}));
+  a.setData("a", makeVariable<double>(Values{double{}}));
+  a.setData("b", makeVariable<double>(Values{double{}}));
   // Create new dataset with same variables but different order
   Dataset b;
-  b.setData("b", createVariable<double>(Values{double{}}));
-  b.setData("a", createVariable<double>(Values{double{}}));
+  b.setData("b", makeVariable<double>(Values{double{}}));
+  b.setData("a", makeVariable<double>(Values{double{}}));
   // string representations should be the same
   EXPECT_EQ(to_string(a), to_string(b));
 }
@@ -26,37 +26,37 @@ TEST(StringFormattingTest, to_string_Dataset) {
 std::tuple<Dataset, Dataset> makeDatasets() {
   Dataset a;
   a.setCoord(Dim::X,
-             createVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3}));
+             makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3}));
   a.setCoord(Dim::Y,
-             createVariable<double>(Dims{Dim::Y}, Shape{3}, Values{1, 2, 3}));
+             makeVariable<double>(Dims{Dim::Y}, Shape{3}, Values{1, 2, 3}));
   a.setCoord(Dim::Z,
-             createVariable<double>(Dims{Dim::Z}, Shape{3}, Values{1, 2, 3}));
+             makeVariable<double>(Dims{Dim::Z}, Shape{3}, Values{1, 2, 3}));
   a.setLabels("label_1",
-              createVariable<int>(Dims{Dim::X}, Shape{3}, Values{21, 22, 23}));
+              makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{21, 22, 23}));
   a.setLabels("label_2",
-              createVariable<int>(Dims{Dim::Y}, Shape{3}, Values{21, 22, 23}));
+              makeVariable<int>(Dims{Dim::Y}, Shape{3}, Values{21, 22, 23}));
   a.setLabels("label_3",
-              createVariable<int>(Dims{Dim::Z}, Shape{3}, Values{21, 22, 23}));
-  a.setData("a", createVariable<int>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3}));
-  a.setData("b", createVariable<int>(Dims{Dim::Y}, Shape{3}, Values{1, 2, 3}));
-  a.setData("c", createVariable<int>(Dims{Dim::Z}, Shape{3}, Values{1, 2, 3}));
+              makeVariable<int>(Dims{Dim::Z}, Shape{3}, Values{21, 22, 23}));
+  a.setData("a", makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3}));
+  a.setData("b", makeVariable<int>(Dims{Dim::Y}, Shape{3}, Values{1, 2, 3}));
+  a.setData("c", makeVariable<int>(Dims{Dim::Z}, Shape{3}, Values{1, 2, 3}));
 
   Dataset b;
   b.setCoord(Dim::X,
-             createVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3}));
+             makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3}));
   b.setCoord(Dim::Y,
-             createVariable<double>(Dims{Dim::Y}, Shape{3}, Values{1, 2, 3}));
+             makeVariable<double>(Dims{Dim::Y}, Shape{3}, Values{1, 2, 3}));
   b.setCoord(Dim::Z,
-             createVariable<double>(Dims{Dim::Z}, Shape{3}, Values{1, 2, 3}));
+             makeVariable<double>(Dims{Dim::Z}, Shape{3}, Values{1, 2, 3}));
   b.setLabels("label_1",
-              createVariable<int>(Dims{Dim::X}, Shape{3}, Values{21, 22, 23}));
+              makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{21, 22, 23}));
   b.setLabels("label_2",
-              createVariable<int>(Dims{Dim::Y}, Shape{3}, Values{21, 22, 23}));
+              makeVariable<int>(Dims{Dim::Y}, Shape{3}, Values{21, 22, 23}));
   b.setLabels("label_3",
-              createVariable<int>(Dims{Dim::Z}, Shape{3}, Values{21, 22, 23}));
-  b.setData("a", createVariable<int>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3}));
-  b.setData("b", createVariable<int>(Dims{Dim::Y}, Shape{3}, Values{1, 2, 3}));
-  b.setData("c", createVariable<int>(Dims{Dim::Z}, Shape{3}, Values{1, 2, 3}));
+              makeVariable<int>(Dims{Dim::Z}, Shape{3}, Values{21, 22, 23}));
+  b.setData("a", makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3}));
+  b.setData("b", makeVariable<int>(Dims{Dim::Y}, Shape{3}, Values{1, 2, 3}));
+  b.setData("c", makeVariable<int>(Dims{Dim::Z}, Shape{3}, Values{1, 2, 3}));
 
   return std::make_tuple(a, b);
 }
@@ -79,8 +79,8 @@ TEST(StringFormattingTest, to_string_ConstProxy) {
 
 TEST(StringFormattingTest, to_string_sparse_Dataset) {
   Dataset a;
-  a.setSparseCoord("a", createVariable<double>(Dims{Dim::Y, Dim::X},
-                                               Shape{4l, Dimensions::Sparse}));
+  a.setSparseCoord("a", makeVariable<double>(Dims{Dim::Y, Dim::X},
+                                             Shape{4l, Dimensions::Sparse}));
   ASSERT_NO_THROW(to_string(a));
 }
 

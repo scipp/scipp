@@ -35,8 +35,8 @@ TEST(DataArrayTest, sum_dataset_columns_via_DataArray) {
 }
 
 auto make_sparse() {
-  auto var = createVariable<double>(Dims{Dim::Y, Dim::X},
-                                    Shape{2l, Dimensions::Sparse});
+  auto var =
+      makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2l, Dimensions::Sparse});
   var.setUnit(units::us);
   auto vals = var.sparseValues<double>();
   vals[0] = {1.1, 2.2, 3.3};
@@ -46,20 +46,20 @@ auto make_sparse() {
 
 auto make_histogram() {
   auto edges =
-      createVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 3},
-                             units::Unit(units::us), Values{0, 2, 4, 1, 3, 5});
-  auto data = createVariable<double>(Dims{Dim::X}, Shape{2}, Values{2.0, 3.0},
-                                     Variances{0.3, 0.4});
+      makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 3},
+                           units::Unit(units::us), Values{0, 2, 4, 1, 3, 5});
+  auto data = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{2.0, 3.0},
+                                   Variances{0.3, 0.4});
 
   return DataArray(data, {{Dim::X, edges}});
 }
 
 TEST(DataArraySparseArithmeticTest, fail_sparse_op_non_histogram) {
   const auto sparse = make_sparse();
-  auto coord = createVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
-                                      Values{0, 2, 1, 3});
-  auto data = createVariable<double>(Dims{Dim::X}, Shape{2}, Values{2.0, 3.0},
-                                     Variances{0.3, 0.4});
+  auto coord = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
+                                    Values{0, 2, 1, 3});
+  auto data = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{2.0, 3.0},
+                                   Variances{0.3, 0.4});
   DataArray not_hist(data, {{Dim::X, coord}});
 
   EXPECT_THROW(sparse * not_hist, except::SparseDataError);
@@ -79,19 +79,18 @@ TEST(DataArraySparseArithmeticTest, sparse_times_histogram) {
     const auto out_vars = result.data().sparseVariances<double>();
 
     auto expected =
-        createVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 1, 1},
-                               Variances{1, 1, 1}) *
-        createVariable<double>(Dims{Dim::X}, Shape{3}, Values{2.0, 3.0, 3.0},
-                               Variances{0.3, 0.4, 0.4});
+        makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 1, 1},
+                             Variances{1, 1, 1}) *
+        makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{2.0, 3.0, 3.0},
+                             Variances{0.3, 0.4, 0.4});
     EXPECT_TRUE(equals(out_vals[0], expected.values<double>()));
     EXPECT_TRUE(equals(out_vars[0], expected.variances<double>()));
     // out of range of edges -> value set to 0, consistent with rebin behavior
     expected =
-        createVariable<double>(Dims{Dim::X}, Shape{4}, Values{1, 1, 1, 1},
-                               Variances{1, 1, 1, 1}) *
-        createVariable<double>(Dims{Dim::X}, Shape{4},
-                               Values{2.0, 2.0, 3.0, 0.0},
-                               Variances{0.3, 0.3, 0.4, 0.0});
+        makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1, 1, 1, 1},
+                             Variances{1, 1, 1, 1}) *
+        makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{2.0, 2.0, 3.0, 0.0},
+                             Variances{0.3, 0.3, 0.4, 0.0});
     EXPECT_TRUE(equals(out_vals[1], expected.values<double>()));
     EXPECT_TRUE(equals(out_vars[1], expected.variances<double>()));
   }
@@ -113,19 +112,18 @@ TEST(DataArraySparseArithmeticTest, sparse_with_values_times_histogram) {
     const auto out_vars = result.data().sparseVariances<double>();
 
     auto expected =
-        createVariable<double>(Dims{Dim::X}, Shape{3}, Values{2, 2, 2},
-                               Variances{0, 0, 0}) *
-        createVariable<double>(Dims{Dim::X}, Shape{3}, Values{2.0, 3.0, 3.0},
-                               Variances{0.3, 0.4, 0.4});
+        makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{2, 2, 2},
+                             Variances{0, 0, 0}) *
+        makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{2.0, 3.0, 3.0},
+                             Variances{0.3, 0.4, 0.4});
     EXPECT_TRUE(equals(out_vals[0], expected.values<double>()));
     EXPECT_TRUE(equals(out_vars[0], expected.variances<double>()));
     // out of range of edges -> value set to 0, consistent with rebin behavior
     expected =
-        createVariable<double>(Dims{Dim::X}, Shape{4}, Values{2, 2, 2, 2},
-                               Variances{0, 0, 0, 0}) *
-        createVariable<double>(Dims{Dim::X}, Shape{4},
-                               Values{2.0, 2.0, 3.0, 0.0},
-                               Variances{0.3, 0.3, 0.4, 0.0});
+        makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{2, 2, 2, 2},
+                             Variances{0, 0, 0, 0}) *
+        makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{2.0, 2.0, 3.0, 0.0},
+                             Variances{0.3, 0.3, 0.4, 0.0});
     EXPECT_TRUE(equals(out_vals[1], expected.values<double>()));
     EXPECT_TRUE(equals(out_vars[1], expected.variances<double>()));
   }
@@ -142,17 +140,17 @@ TEST(DataArraySparseArithmeticTest, sparse_over_histogram) {
   const auto out_vars = result.data().sparseVariances<double>();
 
   auto expected =
-      createVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 1, 1},
-                             Variances{1, 1, 1}) /
-      createVariable<double>(Dims{Dim::X}, Shape{3}, Values{2.0, 3.0, 3.0},
-                             Variances{0.3, 0.4, 0.4});
+      makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 1, 1},
+                           Variances{1, 1, 1}) /
+      makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{2.0, 3.0, 3.0},
+                           Variances{0.3, 0.4, 0.4});
   EXPECT_TRUE(equals(out_vals[0], expected.values<double>()));
   EXPECT_TRUE(equals(out_vars[0], expected.variances<double>()));
   expected =
-      createVariable<double>(Dims{Dim::X}, Shape{4}, Values{1, 1, 1, 1},
-                             Variances{1, 1, 1, 1}) /
-      createVariable<double>(Dims{Dim::X}, Shape{4}, Values{2.0, 2.0, 3.0, 0.0},
-                             Variances{0.3, 0.3, 0.4, 0.0});
+      makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1, 1, 1, 1},
+                           Variances{1, 1, 1, 1}) /
+      makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{2.0, 2.0, 3.0, 0.0},
+                           Variances{0.3, 0.3, 0.4, 0.0});
   EXPECT_TRUE(equals(out_vals[1], expected.values<double>()));
   EXPECT_TRUE(equals(span<const double>(out_vars[1]).subspan(0, 3),
                      expected.slice({Dim::X, 0, 3}).variances<double>()));

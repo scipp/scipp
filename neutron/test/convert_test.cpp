@@ -16,31 +16,31 @@ Dataset makeTofDataForUnitConversion(const bool dense_coord = true) {
   Dataset tof;
 
   if (dense_coord)
-    tof.setCoord(Dim::Tof, createVariable<double>(
+    tof.setCoord(Dim::Tof, makeVariable<double>(
                                Dims{Dim::Tof}, Shape{4}, units::Unit(units::us),
                                Values{4000, 5000, 6100, 7300}));
 
   Dataset components;
   // Source and sample
   components.setData("position",
-                     createVariable<Eigen::Vector3d>(
+                     makeVariable<Eigen::Vector3d>(
                          Dims{Dim::Row}, Shape{2}, units::Unit(units::m),
                          Values{Eigen::Vector3d{0.0, 0.0, -10.0},
                                 Eigen::Vector3d{0.0, 0.0, 0.0}}));
-  tof.setLabels("component_info", createVariable<Dataset>(Values{components}));
+  tof.setLabels("component_info", makeVariable<Dataset>(Values{components}));
   tof.setLabels("position",
-                createVariable<Eigen::Vector3d>(
+                makeVariable<Eigen::Vector3d>(
                     Dims{Dim::Spectrum}, Shape{2}, units::Unit(units::m),
                     Values{Eigen::Vector3d{1.0, 0.0, 0.0},
                            Eigen::Vector3d{0.1, 0.0, 1.0}}));
 
   tof.setData("counts",
-              createVariable<double>(Dims{Dim::Spectrum, Dim::Tof}, Shape{2, 3},
-                                     Values{1, 2, 3, 4, 5, 6}));
+              makeVariable<double>(Dims{Dim::Spectrum, Dim::Tof}, Shape{2, 3},
+                                   Values{1, 2, 3, 4, 5, 6}));
   tof["counts"].data().setUnit(units::counts);
 
-  auto events = createVariable<double>(Dims{Dim::Spectrum, Dim::Tof},
-                                       Shape{2l, Dimensions::Sparse});
+  auto events = makeVariable<double>(Dims{Dim::Spectrum, Dim::Tof},
+                                     Shape{2l, Dimensions::Sparse});
   events.setUnit(units::us);
   auto eventLists = events.sparseValues<double>();
   eventLists[0] = {1000, 3000, 2000, 4000};
@@ -52,9 +52,9 @@ Dataset makeTofDataForUnitConversion(const bool dense_coord = true) {
 }
 
 Variable makeCountDensityData(const units::Unit &unit) {
-  return createVariable<double>(Dims{Dim::Spectrum, Dim::Tof}, Shape{2, 3},
-                                units::Unit(units::counts) / unit,
-                                Values{1, 2, 3, 4, 5, 6});
+  return makeVariable<double>(Dims{Dim::Spectrum, Dim::Tof}, Shape{2, 3},
+                              units::Unit(units::counts) / unit,
+                              Values{1, 2, 3, 4, 5, 6});
 }
 
 // Tests for DataArray (or its view) as input, comparing against conversion of
@@ -451,9 +451,9 @@ TEST(Convert, Energy_to_Tof_Elastic) {
 
 TEST(Convert, convert_with_factor_type_promotion) {
   Dataset tof = makeTofDataForUnitConversion();
-  tof.setCoord(Dim::Tof, createVariable<float>(Dims{Dim::Tof}, Shape{4},
-                                               units::Unit(units::us),
-                                               Values{4000, 5000, 6100, 7300}));
+  tof.setCoord(Dim::Tof, makeVariable<float>(Dims{Dim::Tof}, Shape{4},
+                                             units::Unit(units::us),
+                                             Values{4000, 5000, 6100, 7300}));
   for (auto &&d : {Dim::DSpacing, Dim::Wavelength, Dim::Energy}) {
     auto res = convert(tof, Dim::Tof, d);
     EXPECT_EQ(res.coords()[d].dtype(), core::dtype<float>);

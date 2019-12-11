@@ -49,12 +49,12 @@ template <class T, class Var> Variable subspan_view(Var &var, const Dim dim) {
   auto valuesView = values_view(var_ref);
   if (var.hasVariances()) {
     auto variancesView = variances_view(var_ref);
-    return createVariable<span<MaybeConstT>>(
+    return makeVariable<span<MaybeConstT>>(
         Dimensions{dims}, var.unit(),
         Values(valuesView.begin(), valuesView.end()),
         Variances(variancesView.begin(), variancesView.end()));
   } else
-    return createVariable<span<MaybeConstT>>(
+    return makeVariable<span<MaybeConstT>>(
         Dimensions{dims}, var.unit(),
         Values(valuesView.begin(), valuesView.end()));
 }

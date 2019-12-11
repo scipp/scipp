@@ -11,17 +11,17 @@ using namespace scipp::core;
 
 class SubspanViewTest : public ::testing::Test {
 protected:
-  Variable var{createVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 3},
-                                      units::Unit(units::m),
-                                      Values{1, 2, 3, 4, 5, 6})};
-  Variable var_with_errors{createVariable<double>(
+  Variable var{makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 3},
+                                    units::Unit(units::m),
+                                    Values{1, 2, 3, 4, 5, 6})};
+  Variable var_with_errors{makeVariable<double>(
       Dims{Dim::Y, Dim::X}, Shape{2, 3}, units::Unit(units::m),
       Values{1, 2, 3, 4, 5, 6}, Variances{7, 8, 9, 10, 11, 12})};
 };
 
 TEST_F(SubspanViewTest, fail_sparse) {
-  auto sparse = createVariable<double>(Dims{Dim::Y, Dim::X},
-                                       Shape{2l, Dimensions::Sparse});
+  auto sparse =
+      makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2l, Dimensions::Sparse});
   EXPECT_THROW(subspan_view(sparse, Dim::X), except::DimensionError);
   EXPECT_THROW(subspan_view(sparse, Dim::Y), except::DimensionError);
 }
