@@ -108,8 +108,7 @@ def md_dimension(mantid_dim, index):
         if re.search(pattern, mantid_dim.name, re.IGNORECASE):
             return result
 
-
-    return [sc.Dim.X, sc.Dim.Y, sc.Dim.Z][index]
+    raise ValueError("Cannot infer scipp dimension from input mantid dimension {}".format(mantid_dim.name())) 
 
 
 def md_unit(frame):
@@ -317,7 +316,6 @@ def convertMDHistoWorkspace_to_dataset(md_histo):
         dim = md_histo.getDimension(i)
         frame = dim.getMDFrame()
         sc_dim = md_dimension(dim, i)
-        print(sc_dim)
         coords[sc_dim] = sc.Variable(dims=[sc_dim],
                                      values=np.linspace(
                                          dim.getMinimum(), dim.getMaximum(),
@@ -326,7 +324,7 @@ def convertMDHistoWorkspace_to_dataset(md_histo):
         dims_used.append(sc_dim)
     data = sc.Variable(dims=dims_used,
                        values=md_histo.getSignalArray(),
-                       variances=md_histo.getErrorSquaredArray())
+                       variances=md_histo.getErrorSquaredArray(), unit=sc.units.counts)
     nevents = sc.Variable(dims=dims_used, values=md_histo.getNumEventsArray())
     return sc.DataArray(coords=coords, data=data, attrs={'nevents': nevents})
 
