@@ -1,7 +1,7 @@
-C++ API for constructing ``Variable``
-=====================================
+C++ API for constructing variables
+==================================
 
-Logicaly ``Variable`` consists of:
+Logically ``Variable`` consists of:
 
     - `unit <../doxygen/unit__impl_8h.html>`_ that refers to the physical unit (kg, m, s, ...),
     - list of `dimensions <../doxygen/dimension_8h.html>`_ (X, Y, ToF, ...),
@@ -9,7 +9,7 @@ Logicaly ``Variable`` consists of:
     - values,
     - optionally variances.
 
-The `keyword` arguments fabric function is introduced. It allows to omit the arguments and pass them
+The `keyword` arguments factory function is introduced. It allows to omit the arguments and pass them
 in arbitrary order. The full form is following:
 
 .. code-block:: cpp
@@ -25,7 +25,7 @@ could be combined in `class Dimensions <../doxygen/classscipp_1_1core_1_1Dimensi
 
     makeVariable<float>(Dimensions{{Dim::X, 1}, {Dim::Y, 3}}, Unit{kg}, Values{1, 2, 3}, Variances{4, 5, 6});
 
-The default values for `Unit` is `dimensionless <../doxygen/unit__impl_8h_source.html>`_, omitting
+The default value for `Unit` is `dimensionless <../doxygen/unit__impl_8h_source.html>`_, omitting
 `Shape` and `Dims` or `Dimensions` leads to the 0-dimensional variable, let say scalar, which contains
 the data of one element: `Dimensions` default value is an empty list of dimensions.
 
@@ -65,7 +65,7 @@ is equal to
 
     Variable(dtype<float>, Dimensions{Dim::X, 5}, Values{}, Variances{});
 
-Use the fabric function where it is possible, the usage of the constructor generates a big amount
+Use the factory function where it is possible, the usage of the constructor generates a big amount
 of code, though it is convenient for instance in for python bindings or other case of runtime
 dispatching.
 
