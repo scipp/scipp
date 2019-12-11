@@ -174,7 +174,7 @@ class TestMantidConversion(unittest.TestCase):
 
     def test_mdhisto_workspace_q(self):
         from mantid.simpleapi import (CreateMDWorkspace, FakeMDEventData,
-                                      BinMD, SaveMD)
+                                      BinMD)
 
         md_event = CreateMDWorkspace(Dimensions=3,
                                      Extents=[-10, 10, -10, 10, -10, 10],
@@ -219,7 +219,7 @@ class TestMantidConversion(unittest.TestCase):
 
     def test_mdhisto_workspace_many_dims(self):
         from mantid.simpleapi import (CreateMDWorkspace, FakeMDEventData,
-                                      BinMD, SaveMD)
+                                      BinMD)
 
         md_event = CreateMDWorkspace(
             Dimensions=4,
@@ -239,6 +239,7 @@ class TestMantidConversion(unittest.TestCase):
 
         histo_dataarray = mantidcompat.convertMDHistoWorkspace_to_dataset(
             md_histo)
+        self.assertEqual(4, len(histo_dataarray.dims))
 
 
 if __name__ == "__main__":
