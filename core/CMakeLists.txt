@@ -38,6 +38,7 @@ set(SRC_FILES
     trigonometry.cpp
     variable.cpp
     variable_binary_arithmetic.cpp
+    variable_inplace_arithmetic.cpp
     variable_instantiate_basic.cpp
     variable_instantiate_dataset.cpp
     variable_instantiate_view_elements.cpp
