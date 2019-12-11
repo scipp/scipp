@@ -83,6 +83,7 @@ def make_detector_info(ws):
 
 
 def md_dimension(mantid_dim, index):
+    # Look for q dimensions
     patterns = ["^q.*{0}$".format(coord) for coord in ['x', 'y', 'z']]
     q_dims = [sc.Dim.Qx, sc.Dim.Qy, sc.Dim.Qz]
     pattern_result = zip(patterns, q_dims)
@@ -90,13 +91,33 @@ def md_dimension(mantid_dim, index):
         for pattern, result in pattern_result:
             if re.search(pattern, mantid_dim.name, re.IGNORECASE):
                 return result
+
+    # Look for common/known mantid dimensions
+    patterns = ["DeltaE", "T"]
+    dims = [sc.Dim.EnergyTransfer, sc.Dim.Temperature]
+    pattern_result = zip(patterns, dims)
+    for pattern, result in pattern_result:
+        if re.search(pattern, mantid_dim.name, re.IGNORECASE):
+            return result
+   
+    # Look for common spacial dimensions
+    patterns = ["^{0}$".format(coord) for coord in ['x', 'y', 'z']]
+    dims = [sc.Dim.X, sc.Dim.Y, sc.Dim.Z]
+    pattern_result = zip(patterns, dims)
+    for pattern, result in pattern_result:
+        if re.search(pattern, mantid_dim.name, re.IGNORECASE):
+            return result
+
+
     return [sc.Dim.X, sc.Dim.Y, sc.Dim.Z][index]
 
 
 def md_unit(frame):
     known_md_units = {
         "Angstrom^-1": sc.units.dimensionless / sc.units.angstrom,
-        "r.l.u": sc.units.dimensionless
+        "r.l.u": sc.units.dimensionless,
+        "T": sc.units.deg,
+        "DeltaE": sc.units.meV
     }
     if frame.getUnitLabel().ascii() in known_md_units:
         return known_md_units[frame.getUnitLabel().ascii()]
@@ -290,15 +311,13 @@ def convertEventWorkspace_to_dataarray(ws, load_pulse_times):
 
 def convertMDHistoWorkspace_to_dataset(md_histo):
     ndims = md_histo.getNumDims()
-    if ndims > 3:
-        raise RuntimeError("Converter cannot process md histo workspace input "
-                           "with > 3 dimensions. Input has {}.".format(ndims))
     coords = dict()
     dims_used = []
     for i in range(ndims):
         dim = md_histo.getDimension(i)
         frame = dim.getMDFrame()
         sc_dim = md_dimension(dim, i)
+        print(sc_dim)
         coords[sc_dim] = sc.Variable(dims=[sc_dim],
                                      values=np.linspace(
                                          dim.getMinimum(), dim.getMaximum(),
