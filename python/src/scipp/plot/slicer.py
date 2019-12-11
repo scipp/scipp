@@ -29,9 +29,10 @@ class Slicer:
                  "color": color}
         self.params["values"] = parse_params(params=values, globs=globs, array=self.input_data.values)
 
-        self.params["variances"] = parse_params(params=variances, defaults={"show": False}, globs=globs, array=np.sqrt(self.input_data.variances))
-        if self.params["variances"]["show"]:
-            self.params["variances"]["show"] = (self.input_data.variances is not None)
+        if self.input_data.variances is not None:
+            self.params["variances"] = parse_params(params=variances, defaults={"show": False}, globs=globs, array=np.sqrt(self.input_data.variances))
+        # if self.params["variances"]["show"]:
+        #     self.params["variances"]["show"] = (self.input_data.variances is not None)
 
         self.params["masks"] = parse_params(params=masks, defaults={"cmap": "gray", "cbar": False}, globs=globs)
         # print(masks, len(masks["masks"]))

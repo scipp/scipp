@@ -236,6 +236,8 @@ class Slicer2d(Slicer):
             msk = mslice.values
             if transp:
                 msk = msk.T
+
+        print(vslice.masks)
         for key in self.ax.keys():
             print(key)
             arr = getattr(vslice, key)
