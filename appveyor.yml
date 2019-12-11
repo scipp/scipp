@@ -31,7 +31,7 @@ install:
 
 build_script:
 - echo build started %time%
-- cmake -G "Visual Studio 16 2019" -A x64 -DCLCACHE_PATH=%MINICONDA%/Scripts -DPYTHON_EXECUTABLE=%MINICONDA%/python.exe" -DCMAKE_INSTALL_PREFIX=../install ..
+- cmake -G "Visual Studio 16 2019" -A x64 -DCLCACHE_PATH=%MINICONDA%/Scripts -DPYTHON_EXECUTABLE=%MINICONDA%/python.exe -DCMAKE_INSTALL_PREFIX=../install ..
 - cmake --build . --config %CONFIGURATION% --target install all-tests
 - echo build finished %time%
 - clcache.exe -s
