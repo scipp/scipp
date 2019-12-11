@@ -45,11 +45,12 @@ class Variable;
 template <class... Known> class VariableConceptHandle_impl;
 // Any item type that is listed here explicitly can be used with the templated
 // `transform`, i.e., we can pass arbitrary functors/lambdas to process data.
-using VariableConceptHandle = VariableConceptHandle_impl<
-    double, float, int64_t, int32_t, bool, Eigen::Vector3d,
-    sparse_container<double>, sparse_container<float>,
-    sparse_container<int64_t>, sparse_container<int32_t>, span<const double>,
-    span<double>, span<const float>, span<float>>;
+#define KNOWN                                                                  \
+  double, float, int64_t, int32_t, bool, Eigen::Vector3d,                      \
+      sparse_container<double>, sparse_container<float>,                       \
+      sparse_container<int64_t>, sparse_container<int32_t>,                    \
+      span<const double>, span<double>, span<const float>, span<float>
+using VariableConceptHandle = VariableConceptHandle_impl<KNOWN>;
 
 /// Abstract base class for any data that can be held by Variable. Also used to
 /// hold views to data by (Const)VariableProxy. This is using so-called
@@ -195,6 +196,9 @@ public:
 
 template <class... Known> class VariableConceptHandle_impl {
 public:
+  using variant_t =
+      std::variant<const VariableConcept *, const VariableConceptT<Known> *...>;
+
   VariableConceptHandle_impl()
       : m_object(std::unique_ptr<VariableConcept>(nullptr)) {}
   template <class T> VariableConceptHandle_impl(T object) {
@@ -215,29 +219,13 @@ public:
     return *this = other ? other->clone() : VariableConceptHandle_impl();
   }
 
-  explicit operator bool() const noexcept {
-    return std::visit([](auto &&ptr) { return bool(ptr); }, m_object);
-  }
-  VariableConcept &operator*() const {
-    return std::visit([](auto &&arg) -> VariableConcept & { return *arg; },
-                      m_object);
-  }
-  VariableConcept *operator->() const {
-    return std::visit(
-        [](auto &&arg) -> VariableConcept * { return arg.operator->(); },
-        m_object);
-  }
+  explicit operator bool() const noexcept;
+  VariableConcept &operator*() const;
+  VariableConcept *operator->() const;
 
   const auto &mutableVariant() const noexcept { return m_object; }
 
-  auto variant() const noexcept {
-    return std::visit(
-        [](auto &&arg) {
-          return std::variant<const VariableConcept *,
-                              const VariableConceptT<Known> *...>{arg.get()};
-        },
-        m_object);
-  }
+  variant_t variant() const noexcept;
 
 private:
   std::variant<std::unique_ptr<VariableConcept>,
