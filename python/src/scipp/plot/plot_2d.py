@@ -7,6 +7,8 @@ from ..config import plot as config
 from .render import render_plot
 from .slicer import Slicer
 from .tools import axis_label
+from .._scipp.core import Variable
+
 
 # Other imports
 import numpy as np
@@ -14,9 +16,10 @@ import ipywidgets as widgets
 import matplotlib.pyplot as plt
 
 
-def plot_2d(input_data=None, axes=None, data=None, variances=None, masks=None,
-            filename=None, name=None, figsize=None, show_variances=False,
-            mpl_axes=None, aspect=None):
+def plot_2d(input_data=None, axes=None, values=None, variances=None,
+            masks=None, filename=None, name=None, figsize=None, mpl_axes=None,
+            aspect=None, cmap=None, log=False, vmin=None, vmax=None,
+            color=None, logx=False, logy=False, logxy=False):
     """
     Plot a 2D slice through a N dimensional dataset. For every dimension above
     2, a slider is created to adjust the position of the slice in that
@@ -26,12 +29,14 @@ def plot_2d(input_data=None, axes=None, data=None, variances=None, masks=None,
     var = input_data[name]
     if axes is None:
         axes = var.dims
-    if masks is None:
-        masks = {}
-    masks["masks"] = input_data.masks
+    # if masks is None:
+    #     masks = {}
+    # masks["masks"] = input_data.masks
 
-    sv = Slicer2d(input_data=var, axes=axes, data=data, variances=variances,
-                  masks=masks, mpl_axes=mpl_axes, aspect=aspect)
+    sv = Slicer2d(input_data=var, axes=axes, values=values, variances=variances,
+                  masks=masks, mpl_axes=mpl_axes, aspect=aspect, cmap=cmap,
+                  log=log, vmin=vmin, vmax=vmax, color=color, logx=logx,
+                  logy=logy, logxy=logxy)
 
     if mpl_axes is None:
         render_plot(figure=sv.fig, widgets=sv.vbox, filename=filename)
@@ -41,11 +46,13 @@ def plot_2d(input_data=None, axes=None, data=None, variances=None, masks=None,
 
 class Slicer2d(Slicer):
 
-    def __init__(self, input_data=None, axes=None, data=None, variances=None,
-                 masks=None, mpl_axes=None, aspect=None):
+    def __init__(self, input_data=None, axes=None, values=None, variances=None,
+                 masks=None, mpl_axes=None, aspect=None, cmap=None, log=None,
+                 vmin=None, vmax=None, color=None, logx=False, logy=False, logxy=False):
 
-        super().__init__(input_data=input_data, axes=axes, data=data,
-                         variances=variances, masks=masks,
+        super().__init__(input_data=input_data, axes=axes, values=values,
+                         variances=variances, masks=masks, cmap=cmap,
+                         log=log, vmin=vmin, vmax=vmax, color=color,
                          button_options=['X', 'Y'])
 
         self.members.update({"images": {}, "colorbars": {}})
@@ -55,7 +62,7 @@ class Slicer2d(Slicer):
 
         # Get or create matplotlib axes
         self.fig = None
-        cax = [None] * (1 + show_variances)
+        cax = [None] * (1 + self.params["variances"]["show"])
         if mpl_axes is not None:
             if isinstance(mpl_axes, dict):
                 ax = [None, None]
@@ -73,12 +80,12 @@ class Slicer2d(Slicer):
                 ax = [mpl_axes]
         else:
             self.fig, ax = plt.subplots(
-                1, 1 + self.show_variances,
+                1, 1 + self.params["variances"]["show"],
                 figsize=(config.width/config.dpi,
-                         config.height/(1.0+self.show_variances)/config.dpi),
+                         config.height/(1.0+self.params["variances"]["show"])/config.dpi),
                 dpi=config.dpi,
                 sharex=True, sharey=True)
-            if not self.show_variances:
+            if not self.params["variances"]["show"]:
                 ax = [ax]
 
         self.ax = dict()
@@ -88,26 +95,40 @@ class Slicer2d(Slicer):
 
         self.ax["values"] = ax[0]
         self.cax["values"] = cax[0]
-        if self.show_variances:
+        panels = ["values"]
+        if self.params["variances"]["show"]:
             self.ax["variances"] = ax[1]
             self.cax["variances"] = cax[1]
+            panels.append("variances")
+        # if self.params["masks"]["show"]:
+        #     self.im["masks"] = dict()
 
-        for key, norm in self.cb["norm"].items():
-            self.im[key] = self.ax[key].imshow(
-                [[1, 1], [1, 1]], norm=norm,
-                extent=np.array(list(self.extent.values())).flatten(),
-                origin="lower", interpolation="nearest", cmap=self.cb["name"],
-                aspect=aspect)
-            self.cbar[key] = plt.colorbar(self.im[key], ax=self.ax[key],
-                                          cax=self.cax[key])
-            self.ax[key].set_title(
-                self.input_data.name if key == "values" else key)
-            self.cbar[key].ax.set_ylabel(axis_label(var=self.input_data,
-                                                    name=""))
-            if self.cax[key] is None:
-                self.cbar[key].ax.yaxis.set_label_coords(-1.1, 0.5)
-            self.members["images"][key] = self.im[key]
-            self.members["colorbars"][key] = self.cbar[key]
+        for key in panels:
+            if self.params[key]["show"]:
+                self.im[key] = self.ax[key].imshow(
+                    [[1.0, 1.0], [1.0, 1.0]], norm=self.params[key]["norm"],
+                    extent=np.array(list(self.extent.values())).flatten(),
+                    origin="lower", interpolation="nearest", cmap=self.params[key]["cmap"],
+                    aspect=aspect)
+                self.ax[key].set_title(
+                    self.input_data.name if key == "values" else "std dev.")
+                if self.params[key]["cbar"]:
+                    self.cbar[key] = plt.colorbar(self.im[key], ax=self.ax[key],
+                                                  cax=self.cax[key])
+                    self.cbar[key].ax.set_ylabel(axis_label(var=self.input_data,
+                                                            name=""))
+                if self.cax[key] is None:
+                    self.cbar[key].ax.yaxis.set_label_coords(-1.1, 0.5)
+                self.members["images"][key] = self.im[key]
+                self.members["colorbars"][key] = self.cbar[key]
+                if self.params["masks"]["show"]:
+                    # for name, var in self.masks:
+                    self.im[key + "_masks"] = self.ax[key].imshow(
+                        [[1.0, 1.0], [1.0, 1.0]], norm=self.params[key]["norm"],
+                        extent=np.array(list(self.extent.values())).flatten(),
+                        origin="lower", interpolation="nearest", cmap=self.params["masks"]["cmap"],
+                        aspect=aspect)
+
 
         # Call update_slice once to make the initial image
         self.update_axes()
@@ -171,6 +192,8 @@ class Slicer2d(Slicer):
     def update_slice(self, change):
         # The dimensions to be sliced have been saved in slider_dims
         vslice = self.input_data
+        if self.params["masks"]["show"]:
+            mslice = self.masks
         # Slice along dimensions with active sliders
         button_dims = [None, None]
         for key, val in self.slider.items():
@@ -178,16 +201,62 @@ class Slicer2d(Slicer):
                 self.lab[key].value = self.make_slider_label(
                     self.slider_x[key], val.value)
                 vslice = vslice[val.dim, val.value]
+                if self.params["masks"]["show"]:
+                    # # Masks do not necessarily have the same dimensions as the
+                    # # data, so only slice if the dimension is present in the
+                    # # mask dimensions. After that, it will automatically be
+                    # # broadcast to higher dimensions if needed.
+                    # if val.dim in mslice.dims:
+                    mslice = mslice[val.dim, val.value]
             else:
                 button_dims[self.buttons[key].value.lower() == "y"] = val.dim
 
         # Check if dimensions of arrays agree, if not, plot the transpose
         slice_dims = vslice.dims
         transp = slice_dims == button_dims
-        for key in self.im.keys():
-            if transp:
-                self.im[key].set_data(getattr(vslice, key).T)
-            else:
-                self.im[key].set_data(getattr(vslice, key))
 
+
+        # if self.params["masks"]["show"]:
+        #     shape_list = [self.shapes[dim] for dim in button_dims]
+        #     # Use scipp's automatic broadcast functionality to broadcast
+        #     # lower dimension masks to higher dimensions
+        #     mask_array = Variable(button_dims, #vslice.dims,
+        #                           values=np.ones(*shape_list),
+        #                           dtype=np.int)
+        #     mask_array *= Variable(mslice.dims,
+        #                            values=mslice.values.astype(np.int),
+        #                            dtype=np.int)
+
+        # if transp:
+        #     self.im["values"].set_data(vslice.values.T)
+        # else:
+        #     self.im["values"].set_data(vslice.values)
+
+        if self.params["masks"]["show"]:
+            msk = mslice.values
+            if transp:
+                msk = msk.T
+        for key in self.ax.keys():
+            print(key)
+            arr = getattr(vslice, key)
+            if key == "variances":
+                arr = np.sqrt(arr)
+            if transp:
+                arr = arr.T
+            self.im[key].set_data(arr)
+            if self.params["masks"]["show"]:
+                print(np.shape(msk), np.shape(arr))
+                print(msk)
+                print("===========")
+                print(np.where(msk, arr, None))
+                print("===========")
+                print(arr)
+                self.im[key + "_masks"].set_data(np.where(msk, arr, None))
+
+        return
+
+    def toggle_masks(self, change):
+        for key in self.ax.keys():
+            self.im[key + "_masks"].set_visible(change["new"])
+        change["owner"].description = "Hide masks" if change["new"] else "Show masks"
         return

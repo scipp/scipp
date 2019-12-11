@@ -6,7 +6,7 @@
 from ..config import plot as config
 from .render import render_plot
 from .sparse import visit_sparse_data
-from .tools import axis_label, parse_colorbar
+from .tools import axis_label, parse_params
 
 # Other imports
 import matplotlib.pyplot as plt
@@ -30,7 +30,7 @@ def plot_sparse(input_data, ndim=0, sparse_dim=None, logx=False,
     coords = var.coords
 
     # Parse colorbar
-    cbar = parse_colorbar(cb, var, values=sparse_data[-1])
+    cbar = parse_params(cb, var, values=sparse_data[-1])
 
     members = {}
     ipv = None

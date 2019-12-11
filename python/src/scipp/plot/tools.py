@@ -54,45 +54,65 @@ def axis_label(var=None, name=None, log=False, replace_dim=True):
     return label
 
 
-def parse_params(data=None, var=None, values=None):
+def parse_params(params=None, defaults=None, globs=None, array=None):
     """
-    Construct the colorbar using default and input values
+    Construct the colorbar settings using default and input values
     """
-    params = config.params.copy()
-    cbar["norm"] = dict()
-    if cb is not None:
-        if isinstance(cb, str):
-            cbar["name"] = cb
-        else:
-            for key, val in cb.items():
-                cbar[key] = val
-    params = {"values": {"cbmin": "min", "cbmax": "max"}}
-    if var.variances is not None and show_variances:
-        params["variances"] = {"cbmin": "min_var", "cbmax": "max_var"}
+    parsed = config.params.copy()
+    if defaults is not None:
+        for key, val in defaults.items():
+            parsed[key] = val
+    if globs is not None:
+        for key, val in globs.items():
+            # Global parameters need special treatment because by default they
+            # are set to None, and we don't want to overwrite the defaults.
+            if val is not None:
+                parsed[key] = val
+    if params is not None:
+        if isinstance(params, bool):
+            params = {"show": params}
+        for key, val in params.items():
+            parsed[key] = val
 
-    for key, val in sorted(params.items()):
-        if values is not None:
-            arr = values
+
+
+    # params["norm"] = dict()
+
+
+    # if  is not None:
+    #     if isinstance(cb, str):
+    #         cbar["name"] = cb
+    #     else:
+    #         for key, val in cb.items():
+    #             cbar[key] = val
+    # params = {"values": {"cbmin": "min", "cbmax": "max"}}
+    # if var.variances is not None and show_variances:
+    #     params["variances"] = {"cbmin": "min_var", "cbmax": "max_var"}
+
+    # for key, val in sorted(params.items()):
+    if array is not None:
+        # if values is not None:
+        #     arr = values
+        # else:
+        #     arr = getattr(var, key)
+        if parsed["log"]:
+            subset = np.where(np.isfinite(np.log10(array)))
         else:
-            arr = getattr(var, key)
-        if cbar["log"]:
-            subset = np.where(np.isfinite(np.log10(arr)))
+            subset = np.where(np.isfinite(array))
+        if parsed["vmin"] is not None:
+            vmin = parsed["vmin"]
         else:
-            subset = np.where(np.isfinite(arr))
-        if cbar[val["cbmin"]] is not None:
-            vmin = cbar[val["cbmin"]]
+            vmin = np.amin(array[subset])
+        if parsed["vmax"] is not None:
+            vmax = parsed["vmax"]
         else:
-            vmin = np.amin(arr[subset])
-        if cbar[val["cbmax"]] is not None:
-            vmax = cbar[val["cbmax"]]
-        else:
-            vmax = np.amax(arr[subset])
-        if cbar["log"]:
+            vmax = np.amax(array[subset])
+        if parsed["log"]:
             norm = LogNorm(vmin=vmin, vmax=vmax)
         else:
             norm = Normalize(vmin=vmin, vmax=vmax)
-        cbar["norm"][key] = norm
-    return cbar
+        parsed["norm"] = norm
+    return parsed
 
 
 def axis_to_dim_label(dataset, axis):

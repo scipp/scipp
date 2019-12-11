@@ -2,33 +2,64 @@
 # Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
-from .tools import axis_to_dim_label, parse_colorbar
+from .tools import axis_to_dim_label, parse_params
 from .._scipp.core.units import dimensionless
+from .._scipp.core import Variable
+
+# Other imports
+import numpy as np
 
 
 class Slicer:
 
-    def __init__(self, input_data=None, axes=None, data=None, variances=None,
-                 masks=None, button_options=None, volume=False):
+    def __init__(self, input_data=None, axes=None, values=None, variances=None,
+                 masks=None, cmap=None, log=None, vmin=None, vmax=None,
+                 color=None, button_options=None, volume=False):
 
         import ipywidgets as widgets
 
         self.input_data = input_data
+        # self.masks = self.input_data.masks
         self.members = dict(widgets=dict(sliders=dict(), togglebuttons=dict(),
-                            buttons=dict(), labels=dict()))
+                            togglebutton=dict(), buttons=dict(), labels=dict()))
 
-        self.show_variances = show_variances
-        if self.show_variances:
-            self.show_variances = (self.input_data.variances is not None)
-        # Gather 
-        self.masks = {"show": True, "color": None, "cmap": "gray"}
-        for k, m in masks.items():
-            self.masks[k] = m
-        print(masks, len(masks["masks"]))
-        if masks["masks"] is not None:
-            self.masks["show"] = self.masks["show"] and len(masks["masks"]) > 0
-        if len(button_options) > 1:
-            self.cb = parse_colorbar(cb, input_data, self.show_variances)
+        # Parse parameters for values, variances and masks
+        self.params = dict()
+        globs = {"cmap": cmap, "log": log, "vmin": vmin, "vmax": vmax,
+                 "color": color}
+        self.params["values"] = parse_params(params=values, globs=globs, array=self.input_data.values)
+
+        self.params["variances"] = parse_params(params=variances, defaults={"show": False}, globs=globs, array=np.sqrt(self.input_data.variances))
+        if self.params["variances"]["show"]:
+            self.params["variances"]["show"] = (self.input_data.variances is not None)
+
+        self.params["masks"] = parse_params(params=masks, defaults={"cmap": "gray", "cbar": False}, globs=globs)
+        # print(masks, len(masks["masks"]))
+        if self.input_data.masks is not None:
+            self.params["masks"]["show"] = self.params["masks"]["show"] and len(self.input_data.masks) > 0
+            # self.masks = combine_masks(self.masks)
+            self.masks = Variable(self.input_data.dims, values=np.ones_like(self.input_data.values, dtype=np.int32))
+            for name, msk in self.input_data.masks:
+                ok = False
+                for dim in msk.dims:
+                    if dim in self.masks.dims:
+                        ok = True
+                if ok:
+                    self.masks *= Variable(msk.dims, values=msk.values.astype(np.int32))
+
+
+        # if self.variances["show"]:
+        #     self.variances["show"] = (self.input_data.variances is not None)
+
+
+        # self.masks = {"show": True, "color": None, "cmap": "gray"}
+        # for k, m in masks.items():
+        #     self.masks[k] = m
+        # print(masks, len(masks["masks"]))
+        # if masks["masks"] is not None:
+        #     self.masks["show"] = self.masks["show"] and len(masks["masks"]) > 0
+        # if len(button_options) > 1:
+        #     self.cb = parse_colorbar(cb, input_data, self.show_variances)
 
         # Get the dimensions of the image to be displayed
         self.coords = self.input_data.coords
@@ -165,6 +196,15 @@ class Slicer:
             self.members["widgets"]["sliders"][key] = self.slider[key]
             self.members["widgets"]["togglebuttons"][key] = self.buttons[key]
             self.members["widgets"]["labels"][key] = self.lab[key]
+
+        if self.params["masks"]["show"]:
+            self.masks_button = widgets.ToggleButton(
+                value=self.params["masks"]["show"],
+                description="Hide masks" if self.params["masks"]["show"] else "Show masks",
+                disabled=False, button_style="")
+            self.masks_button.observe(self.toggle_masks, names="value")
+            self.vbox += [self.masks_button]
+            self.members["widgets"]["togglebutton"]["masks"] = self.masks_button
 
         return
 

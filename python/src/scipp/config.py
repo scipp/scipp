@@ -14,8 +14,8 @@ class _Plot:
                            "#bcbd22", "#17becf"]
 
         # The colorbar properties
-        self.params = {"cmap": "viridis", "log": False, "min": None,
-                       "max": None, "color": None}
+        self.params = {"cmap": "viridis", "log": False, "vmin": None,
+                       "vmax": None, "color": None, "show": True, "cbar": True}
 
         # The default image height (in pixels)
         self.height = 533
