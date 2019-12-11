@@ -38,14 +38,15 @@ class Slicer:
         if self.input_data.masks is not None:
             self.params["masks"]["show"] = self.params["masks"]["show"] and len(self.input_data.masks) > 0
             # self.masks = combine_masks(self.masks)
-            self.masks = Variable(self.input_data.dims, values=np.ones_like(self.input_data.values, dtype=np.int32))
+            masks = Variable(self.input_data.dims, values=np.ones_like(self.input_data.values, dtype=np.int32))
             for name, msk in self.input_data.masks:
                 ok = False
                 for dim in msk.dims:
-                    if dim in self.masks.dims:
+                    if dim in masks.dims:
                         ok = True
                 if ok:
-                    self.masks *= Variable(msk.dims, values=msk.values.astype(np.int32))
+                    masks *= Variable(msk.dims, values=msk.values.astype(np.int32))
+            self.input_data.masks = {"all": masks}
 
 
         # if self.variances["show"]:
