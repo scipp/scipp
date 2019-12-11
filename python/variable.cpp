@@ -36,8 +36,9 @@ template <class T> struct MakeVariable {
     py::array_t<T> valuesT(values);
     py::buffer_info info = valuesT.request();
     Dimensions dims(labels, {info.shape.begin(), info.shape.end()});
-    auto var = variances ? makeVariableWithVariances<T>(dims)
-                         : createVariable<T>(Dimensions(dims));
+    auto var = variances
+                   ? makeVariable<T>(Dimensions{dims}, Values{}, Variances{})
+                   : makeVariable<T>(Dimensions(dims));
     copy_flattened<T>(valuesT, var.template values<T>());
     if (variances) {
       py::array_t<T> variancesT(*variances);
@@ -56,8 +57,9 @@ template <class T> struct MakeVariableDefaultInit {
                         const std::vector<scipp::index> &shape,
                         const units::Unit unit, const bool variances) {
     Dimensions dims(labels, shape);
-    auto var = variances ? makeVariableWithVariances<T>(dims)
-                         : createVariable<T>(Dimensions(dims));
+    auto var = variances
+                   ? makeVariable<T>(Dimensions{dims}, Values{}, Variances{})
+                   : makeVariable<T>(Dimensions{dims});
     var.setUnit(unit);
     return var;
   }
@@ -67,9 +69,9 @@ template <class ST> struct MakeODFromNativePythonTypes {
   template <class T> struct Maker {
     static Variable apply(const units::Unit unit, const ST &value,
                           const std::optional<ST> &variance) {
-      auto var = variance ? createVariable<T>(Values{T(value)},
-                                              Variances{T(variance.value())})
-                          : createVariable<T>(Values{T(value)});
+      auto var = variance ? makeVariable<T>(Values{T(value)},
+                                            Variances{T(variance.value())})
+                          : makeVariable<T>(Values{T(value)});
       var.setUnit(unit);
       return var;
     }
@@ -89,8 +91,8 @@ Variable init_1D_no_variance(const std::vector<Dim> &labels,
                              const std::vector<T> &values,
                              const units::Unit &unit) {
   Variable var;
-  var = createVariable<T>(Dims(labels), Shape(shape),
-                          Values(values.begin(), values.end()));
+  var = makeVariable<T>(Dims(labels), Shape(shape),
+                        Values(values.begin(), values.end()));
   var.setUnit(unit);
   return var;
 }
@@ -102,9 +104,9 @@ auto do_init_0D(const T &value, const std::optional<T> &variance,
                                   scipp::python::PyObject, T>;
   Variable var;
   if (variance)
-    var = createVariable<Elem>(Values{value}, Variances{*variance});
+    var = makeVariable<Elem>(Values{value}, Variances{*variance});
   else
-    var = createVariable<Elem>(Values{value});
+    var = makeVariable<Elem>(Values{value});
   var.setUnit(unit);
   return var;
 }
@@ -209,12 +211,12 @@ void bind_init_list(py::class_<Variable> &c) {
             Variable variable;
             if (variances) {
               auto var = variances->cast<std::vector<Eigen::Vector3d>>();
-              variable = createVariable<Eigen::Vector3d>(
+              variable = makeVariable<Eigen::Vector3d>(
                   Dims{label[0]}, Shape{scipp::size(val)},
                   Values(val.begin(), val.end()),
                   Variances(var.begin(), var.end()), units::Unit(unit));
             } else
-              variable = createVariable<Eigen::Vector3d>(
+              variable = makeVariable<Eigen::Vector3d>(
                   Dims{label[0]}, Shape{scipp::size(val)},
                   Values(val.begin(), val.end()), units::Unit(unit));
             return variable;

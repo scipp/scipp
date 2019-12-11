@@ -12,7 +12,7 @@ using namespace scipp::core;
 
 TEST(IndexedSliceViewTest, variable) {
   const auto var =
-      createVariable<double>(Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4});
+      makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4});
   const auto view = IndexedSliceView{var, Dim::X, {2, 2, 0, 3, 1}};
   EXPECT_EQ(view.dim(), Dim::X);
   EXPECT_EQ(view.size(), 5);

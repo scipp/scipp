@@ -11,28 +11,49 @@ using namespace scipp;
 using namespace scipp::core;
 
 TEST(CreateVariableTest, from_single_value) {
-  auto var = createVariable<float>(Values{0}, Variances{1});
+  auto var = makeVariable<float>(Values{0}, Variances{1});
   EXPECT_EQ(var.dtype(), dtype<float>);
   EXPECT_EQ(var.value<float>(), 0.0f);
   EXPECT_EQ(var.variance<float>(), 1.0f);
 }
 
+TEST(CreateVariableTest, default_init) {
+  auto noVariance = makeVariable<float>(Dims{Dim::X}, Shape{3});
+  auto stillNoVariance = makeVariable<float>(Dims{Dim::X}, Shape{3}, Values{});
+  auto withVariance =
+      makeVariable<float>(Dims{Dim::X}, Shape{3}, Values{}, Variances{});
+
+  EXPECT_FALSE(noVariance.hasVariances());
+  EXPECT_FALSE(stillNoVariance.hasVariances());
+  EXPECT_TRUE(withVariance.hasVariances());
+  EXPECT_EQ(noVariance.values<float>().size(), 3);
+  EXPECT_EQ(stillNoVariance.values<float>().size(), 3);
+  EXPECT_EQ(withVariance.values<float>().size(), 3);
+  EXPECT_EQ(withVariance.variances<float>().size(), 3);
+
+  EXPECT_ANY_THROW(makeVariable<float>(Values(0), Variances(0)));
+
+  auto otherWithVariance = makeVariable<float>(Values{}, Variances{});
+  EXPECT_EQ(otherWithVariance.values<float>().size(), 1);
+  EXPECT_EQ(otherWithVariance.variances<float>().size(), 1);
+}
+
 TEST(CreateVariableTest, from_vector) {
-  EXPECT_EQ(createVariable<double>(Dims{Dim::X}, Shape{3},
-                                   Values(std::vector<int>{1, 2, 3})),
-            createVariable<double>(Dims{Dim::X}, Shape{3}, Values({1, 2, 3})));
+  EXPECT_EQ(makeVariable<double>(Dims{Dim::X}, Shape{3},
+                                 Values(std::vector<int>{1, 2, 3})),
+            makeVariable<double>(Dims{Dim::X}, Shape{3}, Values({1, 2, 3})));
 
   const std::vector<double> v{1, 2, 3};
-  auto varRef = createVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
-  auto var = createVariable<double>(Dims{Dim::X}, Shape{3}, Values(v));
+  auto varRef = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
+  auto var = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values(v));
 }
 
 TEST(CreateVariableTest, construct_sparse) {
-  auto var = createVariable<double>(Dims{Dim::X, Dim::Y},
-                                    Shape{2, Dimensions::Sparse});
+  auto var =
+      makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, Dimensions::Sparse});
 
   auto dimensions = Dimensions{{Dim::X, Dim::Y}, {2, Dimensions::Sparse}};
-  createVariable<double>(
+  makeVariable<double>(
       Dimensions{dimensions},
       Values{sparse_container<double>(), sparse_container<double>()},
       Variances{sparse_container<double>(), sparse_container<double>()});
@@ -128,7 +149,7 @@ TEST(VariableUniversalConstructorTest, initializer_list) {
 }
 
 TEST(VariableUniversalConstructorTest, from_vector) {
-  EXPECT_EQ(createVariable<double>(Dims{Dim::X}, Shape{3},
-                                   Values(std::vector<int>{1, 2, 3})),
-            createVariable<double>(Dims{Dim::X}, Shape{3}, Values({1, 2, 3})));
+  EXPECT_EQ(makeVariable<double>(Dims{Dim::X}, Shape{3},
+                                 Values(std::vector<int>{1, 2, 3})),
+            makeVariable<double>(Dims{Dim::X}, Shape{3}, Values({1, 2, 3})));
 }

@@ -14,15 +14,15 @@ using namespace scipp::core;
 
 TEST(MeanTest, unknown_dim_fail) {
   const auto var =
-      createVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
-                             units::Unit(units::m), Values{1.0, 2.0, 3.0, 4.0});
+      makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
+                           units::Unit(units::m), Values{1.0, 2.0, 3.0, 4.0});
   EXPECT_THROW(mean(var, Dim::Z), except::DimensionError);
 }
 
 TEST(MeanTest, sparse_dim_fail) {
   const auto var =
-      createVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, Dimensions::Sparse},
-                             units::Unit(units::m));
+      makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, Dimensions::Sparse},
+                           units::Unit(units::m));
   EXPECT_THROW(mean(var, Dim::X), except::DimensionError);
   EXPECT_THROW(mean(var, Dim::Y), except::DimensionError);
   EXPECT_THROW(mean(var, Dim::Z), except::DimensionError);
@@ -30,11 +30,11 @@ TEST(MeanTest, sparse_dim_fail) {
 
 TEST(MeanTest, basic) {
   const auto var =
-      createVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
-                             units::Unit(units::m), Values{1.0, 2.0, 3.0, 4.0});
-  const auto meanX = createVariable<double>(
+      makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
+                           units::Unit(units::m), Values{1.0, 2.0, 3.0, 4.0});
+  const auto meanX = makeVariable<double>(
       Dims{Dim::Y}, Shape{2}, units::Unit(units::m), Values{1.5, 3.5});
-  const auto meanY = createVariable<double>(
+  const auto meanY = makeVariable<double>(
       Dims{Dim::X}, Shape{2}, units::Unit(units::m), Values{2.0, 3.0});
   EXPECT_EQ(mean(var, Dim::X), meanX);
   EXPECT_EQ(mean(var, Dim::Y), meanY);
@@ -42,15 +42,15 @@ TEST(MeanTest, basic) {
 
 TEST(MeanTest, masked_data_array) {
   const auto var =
-      createVariable<double>(Dimensions{{Dim::Y, 2}, {Dim::X, 2}},
-                             units::Unit(units::m), Values{1.0, 2.0, 3.0, 4.0});
+      makeVariable<double>(Dimensions{{Dim::Y, 2}, {Dim::X, 2}},
+                           units::Unit(units::m), Values{1.0, 2.0, 3.0, 4.0});
   const auto mask =
-      createVariable<bool>(Dimensions{Dim::X, 2}, Values{false, true});
+      makeVariable<bool>(Dimensions{Dim::X, 2}, Values{false, true});
   DataArray a(var);
   a.masks().set("mask", mask);
-  const auto meanX = createVariable<double>(
+  const auto meanX = makeVariable<double>(
       Dimensions{Dim::Y, 2}, units::Unit(units::m), Values{1.0, 3.0});
-  const auto meanY = createVariable<double>(
+  const auto meanY = makeVariable<double>(
       Dimensions{Dim::X, 2}, units::Unit(units::m), Values{2.0, 3.0});
   EXPECT_EQ(mean(a, Dim::X).data(), meanX);
   EXPECT_EQ(mean(a, Dim::Y).data(), meanY);
@@ -60,18 +60,18 @@ TEST(MeanTest, masked_data_array) {
 
 TEST(MeanTest, masked_data_array_two_masks) {
   const auto var =
-      createVariable<double>(Dimensions{{Dim::Y, 2}, {Dim::X, 2}},
-                             units::Unit(units::m), Values{1.0, 2.0, 3.0, 4.0});
+      makeVariable<double>(Dimensions{{Dim::Y, 2}, {Dim::X, 2}},
+                           units::Unit(units::m), Values{1.0, 2.0, 3.0, 4.0});
   const auto maskX =
-      createVariable<bool>(Dimensions{Dim::X, 2}, Values{false, true});
+      makeVariable<bool>(Dimensions{Dim::X, 2}, Values{false, true});
   const auto maskY =
-      createVariable<bool>(Dimensions{Dim::Y, 2}, Values{false, true});
+      makeVariable<bool>(Dimensions{Dim::Y, 2}, Values{false, true});
   DataArray a(var);
   a.masks().set("x", maskX);
   a.masks().set("y", maskY);
-  const auto meanX = createVariable<double>(
+  const auto meanX = makeVariable<double>(
       Dimensions{Dim::Y, 2}, units::Unit(units::m), Values{1.0, 3.0});
-  const auto meanY = createVariable<double>(
+  const auto meanY = makeVariable<double>(
       Dimensions{Dim::X, 2}, units::Unit(units::m), Values{1.0, 2.0});
   EXPECT_EQ(mean(a, Dim::X).data(), meanX);
   EXPECT_EQ(mean(a, Dim::Y).data(), meanY);
@@ -83,11 +83,11 @@ TEST(MeanTest, masked_data_array_two_masks) {
 
 TEST(MeanTest, dtype_float_preserved) {
   const auto var =
-      createVariable<float>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
-                            units::Unit(units::m), Values{1.0, 2.0, 3.0, 4.0});
-  const auto meanX = createVariable<float>(
+      makeVariable<float>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
+                          units::Unit(units::m), Values{1.0, 2.0, 3.0, 4.0});
+  const auto meanX = makeVariable<float>(
       Dims{Dim::Y}, Shape{2}, units::Unit(units::m), Values{1.5, 3.5});
-  const auto meanY = createVariable<float>(
+  const auto meanY = makeVariable<float>(
       Dims{Dim::X}, Shape{2}, units::Unit(units::m), Values{2.0, 3.0});
   EXPECT_EQ(mean(var, Dim::X), meanX);
   EXPECT_EQ(mean(var, Dim::Y), meanY);
@@ -95,34 +95,34 @@ TEST(MeanTest, dtype_float_preserved) {
 
 TEST(MeanTest, dtype_int_gives_double_mean) {
   const auto var =
-      createVariable<int32_t>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
-                              units::Unit(units::m), Values{1, 2, 3, 4});
-  const auto meanX = createVariable<double>(
+      makeVariable<int32_t>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
+                            units::Unit(units::m), Values{1, 2, 3, 4});
+  const auto meanX = makeVariable<double>(
       Dims{Dim::Y}, Shape{2}, units::Unit(units::m), Values{1.5, 3.5});
-  const auto meanY = createVariable<double>(
+  const auto meanY = makeVariable<double>(
       Dims{Dim::X}, Shape{2}, units::Unit(units::m), Values{2.0, 3.0});
   EXPECT_EQ(mean(var, Dim::X), meanX);
   EXPECT_EQ(mean(var, Dim::Y), meanY);
 }
 
 TEST(MeanTest, variances_as_standard_deviation_of_the_mean) {
-  const auto var = createVariable<double>(
+  const auto var = makeVariable<double>(
       Dims{Dim::Y, Dim::X}, Shape{2, 2}, units::Unit(units::m),
       Values{1.0, 2.0, 3.0, 4.0}, Variances{5.0, 6.0, 7.0, 8.0});
   const auto meanX =
-      createVariable<double>(Dims{Dim::Y}, Shape{2}, units::Unit(units::m),
-                             Values{1.5, 3.5}, Variances{0.5 * 5.5, 0.5 * 7.5});
+      makeVariable<double>(Dims{Dim::Y}, Shape{2}, units::Unit(units::m),
+                           Values{1.5, 3.5}, Variances{0.5 * 5.5, 0.5 * 7.5});
   const auto meanY =
-      createVariable<double>(Dims{Dim::X}, Shape{2}, units::Unit(units::m),
-                             Values{2.0, 3.0}, Variances{0.5 * 6.0, 0.5 * 7.0});
+      makeVariable<double>(Dims{Dim::X}, Shape{2}, units::Unit(units::m),
+                           Values{2.0, 3.0}, Variances{0.5 * 6.0, 0.5 * 7.0});
   EXPECT_EQ(mean(var, Dim::X), meanX);
   EXPECT_EQ(mean(var, Dim::Y), meanY);
 }
 
 TEST(MeanTest, dataset_mean_fails) {
   Dataset d;
-  d.setData("a", createVariable<double>(Dims{Dim::X}, Shape{2}));
-  d.setData("b", createVariable<double>(Values{1.0}));
+  d.setData("a", makeVariable<double>(Dims{Dim::X}, Shape{2}));
+  d.setData("b", makeVariable<double>(Values{1.0}));
   // "b" does not depend on X, so this fails. This could change in the future if
   // we find a clear definition of the functions behavior in this case.
   EXPECT_THROW(mean(d, Dim::X), except::DimensionError);

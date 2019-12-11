@@ -77,6 +77,7 @@ Documentation
    cpp-reference/api
    cpp-reference/customizing
    cpp-reference/transform
+   cpp-reference/constructing_variables
 
 .. toctree::
    :caption: About

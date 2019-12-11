@@ -281,7 +281,7 @@ struct default_init<Eigen::Matrix<T, Rows, Cols>> {
 };
 } // namespace detail
 
-template <class T, class... Ts> Variable createVariable(Ts &&... ts);
+template <class T, class... Ts> Variable makeVariable(Ts &&... ts);
 
 /// Variable is a type-erased handle to any data structure representing a
 /// multi-dimensional array. It has a name, a unit, and a set of named
@@ -404,19 +404,19 @@ public:
   Variable &operator+=(const VariableConstProxy &other) &;
   template <typename T, typename = std::enable_if_t<!is_variable_or_proxy<T>()>>
   Variable &operator+=(const T v) & {
-    return *this += createVariable<T>(Values{v});
+    return *this += makeVariable<T>(Values{v});
   }
 
   Variable &operator-=(const VariableConstProxy &other) &;
   template <typename T, typename = std::enable_if_t<!is_variable_or_proxy<T>()>>
   Variable &operator-=(const T v) & {
-    return *this -= createVariable<T>(Values{v});
+    return *this -= makeVariable<T>(Values{v});
   }
 
   Variable &operator*=(const VariableConstProxy &other) &;
   template <typename T, typename = std::enable_if_t<!is_variable_or_proxy<T>()>>
   Variable &operator*=(const T v) & {
-    return *this *= createVariable<T>(Values{v});
+    return *this *= makeVariable<T>(Values{v});
   }
   template <class T>
   Variable &operator*=(const boost::units::quantity<T> &quantity) & {
@@ -427,7 +427,7 @@ public:
   Variable &operator/=(const VariableConstProxy &other) &;
   template <typename T, typename = std::enable_if_t<!is_variable_or_proxy<T>()>>
   Variable &operator/=(const T v) & {
-    return *this /= createVariable<T>(Values{v});
+    return *this /= makeVariable<T>(Values{v});
   }
   template <class T>
   Variable &operator/=(const boost::units::quantity<T> &quantity) & {
@@ -470,16 +470,16 @@ private:
   VariableConceptHandle m_object;
 };
 /// This is used to provide the fabric function:
-/// createVariable<type>(Dims, Shape, Unit, Values<T1>, Variances<T2>)
+/// makeVariable<type>(Dims, Shape, Unit, Values<T1>, Variances<T2>)
 /// with the obligatory template argument type, function arguments are not
 /// obligatory and could be given in arbitrary order, but suposed to be wrapped
 /// in certain classes.
-/// Example: createVariable<float>(units::Unit(units::kg),
+/// Example: makeVariable<float>(units::Unit(units::kg),
 /// Shape{1, 2}, Dims{Dim::X, Dim::Y}, Values({3, 4})).
 
 // The name should be changed to makeVariable after refactoring:
 // getting rid of all other makeVariable.
-template <class T, class... Ts> Variable createVariable(Ts &&... ts) {
+template <class T, class... Ts> Variable makeVariable(Ts &&... ts) {
   using helper = detail::ConstructorArgumentsMatcher<Variable, Ts...>;
   constexpr bool useDimsAndShape =
       helper::template checkArgTypesValid<units::Unit, Dims, Shape>();
@@ -518,63 +518,64 @@ template <class T, class... Ts> Variable createVariable(Ts &&... ts) {
   }
 }
 
+namespace detail {
 template <class T>
-Variable makeVariableInit(const Dimensions &dimensions,
-                          const detail::default_init_elements_t &init) {
-  if (dimensions.sparse())
-    return Variable(units::dimensionless, dimensions,
-                    Vector<sparse_container<T>>(dimensions.volume(), init));
+Variable from_dimensions_and_unit(const Dimensions &dms, const units::Unit &u) {
+  auto volume = dms.volume();
+  if constexpr (is_sparse_container<T>::value)
+    return Variable(u, dms, Vector<T>(volume));
   else
-    return Variable(units::dimensionless, std::move(dimensions),
-                    Vector<T>(dimensions.volume(), init));
+    return Variable(u, dms,
+                    Vector<T>(volume, detail::default_init<T>::value()));
 }
 
 template <class T>
-Variable makeVariableWithVariances(const Dimensions &dimensions,
-                                   units::Unit unit = units::dimensionless) {
-  if (dimensions.sparse())
-    return Variable(unit, dimensions,
-                    Vector<sparse_container<T>>(dimensions.volume()),
-                    Vector<sparse_container<T>>(dimensions.volume()));
+Variable from_dimensions_and_unit_with_variances(const Dimensions &dms,
+                                                 const units::Unit &u) {
+  auto volume = dms.volume();
+  if constexpr (is_sparse_container<T>::value)
+    return Variable(u, dms, Vector<T>(volume), Vector<T>(volume));
   else
-    return Variable(
-        unit, dimensions,
-        Vector<T>(dimensions.volume(), detail::default_init<T>::value()),
-        Vector<T>(dimensions.volume(), detail::default_init<T>::value()));
+    return Variable(u, dms, Vector<T>(volume, detail::default_init<T>::value()),
+                    Vector<T>(volume, detail::default_init<T>::value()));
 }
+} // namespace detail
 
-template <class T>
-Variable
-makeVariableWithVariances(const Dimensions &dimensions,
-                          const detail::default_init_elements_t &init) {
-  if (dimensions.sparse())
-    return Variable(units::dimensionless, dimensions,
-                    Vector<sparse_container<T>>(dimensions.volume(), init),
-                    Vector<sparse_container<T>>(dimensions.volume(), init));
-  else
-    return Variable(units::dimensionless, dimensions,
-                    Vector<T>(dimensions.volume(), init),
-                    Vector<T>(dimensions.volume(), init));
-}
-
+/// This function covers the cases of construction Variables from keyword
+/// argument. The Unit is completely arbitrary, the relations between Dims,
+/// Shape / Dimensions and actual data are following:
+/// 1. If neither Values nor Variances are provided, resulting Variable contains
+/// ONLY values of corresponding length.
+/// 2. The Variances can't be provided without any Values.
+/// 3. Non empty Values and/or Variances should be consistent with shape.
+/// 4. If empty Values and/or Variances are provided, resulting Variable
+/// contains default initialized Values and/or Variances, the way to make
+/// Variable which contains both Values and Variances given length uninitialised
+/// is:
+///       makeVariable<T>(Dims{Dim::X}, Shape{5}, Values{}, Variances{});
 template <class T>
 Variable Variable::create(units::Unit &&u, Dimensions &&d,
                           std::optional<Vector<T>> &&val,
                           std::optional<Vector<T>> &&var) {
   auto dms{d};
-  if (val && var)
-    return Variable(u, dms, std::move(*val), std::move(*var));
-  if (val)
-    return Variable(u, dms, std::move(*val));
+  if (val && var) {
+    if (val->size() < 0 && var->size() < 0)
+      return detail::from_dimensions_and_unit_with_variances<T>(dms, u);
+    else
+      return Variable(u, dms, std::move(*val), std::move(*var));
+  }
+
+  if (val) {
+    if (val->size() < 0)
+      return detail::from_dimensions_and_unit<T>(dms, u);
+    else
+      return Variable(u, dms, std::move(*val));
+  }
+
   if (var)
     throw except::VariancesError("Can't have variance without values");
-  else {
-    if constexpr (is_sparse_container<T>::value)
-      return Variable(u, dms, Vector<T>(dms.volume()));
-    else
-      return Variable(
-          u, dms, Vector<T>(dms.volume(), detail::default_init<T>::value()));
-  }
+  else
+    return detail::from_dimensions_and_unit<T>(dms, u);
 }
 
 template <class T>
@@ -587,7 +588,7 @@ Variable Variable::create(units::Unit &&u, Dims &&d, Shape &&s,
 template <class... Ts>
 template <class T>
 Variable Variable::ConstructVariable<Ts...>::Maker<T>::apply(Ts &&... ts) {
-  return createVariable<detail::element_type_t<T>>(std::forward<Ts>(ts)...);
+  return makeVariable<detail::element_type_t<T>>(std::forward<Ts>(ts)...);
 }
 
 template <class... Ts>
@@ -806,25 +807,25 @@ public:
   VariableProxy operator+=(const VariableConstProxy &other) const;
   template <typename T, typename = std::enable_if_t<!is_variable_or_proxy<T>()>>
   VariableProxy operator+=(const T v) const {
-    return *this += createVariable<T>(Values{v});
+    return *this += makeVariable<T>(Values{v});
   }
 
   VariableProxy operator-=(const VariableConstProxy &other) const;
   template <typename T, typename = std::enable_if_t<!is_variable_or_proxy<T>()>>
   VariableProxy operator-=(const T v) const {
-    return *this -= createVariable<T>(Values{v});
+    return *this -= makeVariable<T>(Values{v});
   }
 
   VariableProxy operator*=(const VariableConstProxy &other) const;
   template <typename T, typename = std::enable_if_t<!is_variable_or_proxy<T>()>>
   VariableProxy operator*=(const T v) const {
-    return *this *= createVariable<T>(Values{v});
+    return *this *= makeVariable<T>(Values{v});
   }
 
   VariableProxy operator/=(const VariableConstProxy &other) const;
   template <typename T, typename = std::enable_if_t<!is_variable_or_proxy<T>()>>
   VariableProxy operator/=(const T v) const {
-    return *this /= createVariable<T>(Values{v});
+    return *this /= makeVariable<T>(Values{v});
   }
 
   VariableProxy operator|=(const VariableConstProxy &other) const;
@@ -865,35 +866,35 @@ SCIPP_CORE_EXPORT Variable operator^(const VariableConstProxy &a,
 // anyway so this is a convenient way to avoid defining more overloads.
 template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
 Variable operator+(const T value, const VariableConstProxy &a) {
-  return createVariable<T>(Values{value}) + a;
+  return makeVariable<T>(Values{value}) + a;
 }
 template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
 Variable operator-(const T value, const VariableConstProxy &a) {
-  return createVariable<T>(Values{value}) - a;
+  return makeVariable<T>(Values{value}) - a;
 }
 template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
 Variable operator*(const T value, const VariableConstProxy &a) {
-  return createVariable<T>(Values{value}) * a;
+  return makeVariable<T>(Values{value}) * a;
 }
 template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
 Variable operator/(const T value, const VariableConstProxy &a) {
-  return createVariable<T>(Values{value}) / a;
+  return makeVariable<T>(Values{value}) / a;
 }
 template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
 Variable operator+(const VariableConstProxy &a, const T value) {
-  return a + createVariable<T>(Values{value});
+  return a + makeVariable<T>(Values{value});
 }
 template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
 Variable operator-(const VariableConstProxy &a, const T value) {
-  return a - createVariable<T>(Values{value});
+  return a - makeVariable<T>(Values{value});
 }
 template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
 Variable operator*(const VariableConstProxy &a, const T value) {
-  return a * createVariable<T>(Values{value});
+  return a * makeVariable<T>(Values{value});
 }
 template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
 Variable operator/(const VariableConstProxy &a, const T value) {
-  return a / createVariable<T>(Values{value});
+  return a / makeVariable<T>(Values{value});
 }
 
 template <class T>
@@ -906,22 +907,22 @@ Variable operator/(Variable a, const boost::units::quantity<T> &quantity) {
 }
 template <class T>
 Variable operator/(const boost::units::quantity<T> &quantity, Variable a) {
-  return createVariable<double>(Dimensions{}, units::Unit(T{}),
-                                Values{quantity.value()}) /
+  return makeVariable<double>(Dimensions{}, units::Unit(T{}),
+                              Values{quantity.value()}) /
          std::move(a);
 }
 
 template <typename T>
 std::enable_if_t<std::is_arithmetic_v<T>, Variable>
 operator*(T v, const units::Unit &unit) {
-  return createVariable<T>(Dimensions{}, units::Unit{unit}, Values{v});
+  return makeVariable<T>(Dimensions{}, units::Unit{unit}, Values{v});
 }
 
 template <typename T>
 std::enable_if_t<std::is_arithmetic_v<T>, Variable>
 operator/(T v, const units::Unit &unit) {
-  return createVariable<T>(Dimensions{},
-                           units::Unit(units::dimensionless) / unit, Values{v});
+  return makeVariable<T>(Dimensions{}, units::Unit(units::dimensionless) / unit,
+                         Values{v});
 }
 
 SCIPP_CORE_EXPORT Variable astype(const VariableConstProxy &var,

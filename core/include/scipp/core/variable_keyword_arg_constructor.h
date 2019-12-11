@@ -86,8 +86,7 @@ Values(std::initializer_list<T>)
     ->Values<typename std::initializer_list<T>::iterator,
              typename std::initializer_list<T>::iterator>;
 
-template <class... Args>
-struct Variances : std::tuple<Args...>, detail::VariancesTag {
+template <class... Args> struct Variances : detail::VariancesTag {
   ArgsTuple<Args...> tuple;
   Variances(Args &&... args)
       : tuple(detail::makeArgsTuple(std::forward<Args>(args)...)) {}
@@ -148,9 +147,8 @@ public:
   static VarT construct(std::tuple<ValArgs...> &&valArgs,
                         std::tuple<VarArgs...> &&varArgs,
                         std::tuple<NonDataTypes...> &&nonData) {
-
-    constexpr bool hasVal = sizeof...(ValArgs);
-    constexpr bool hasVar = sizeof...(VarArgs);
+    constexpr bool hasVal = is_tag_in_pack_v<ValuesTag, Ts...>;
+    constexpr bool hasVar = is_tag_in_pack_v<VariancesTag, Ts...>;
     constexpr bool constrVal =
         std::is_constructible_v<Vector<ElemT>, ValArgs...>;
     constexpr bool constrVar =

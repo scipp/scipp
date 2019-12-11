@@ -18,8 +18,8 @@ template <class T> auto make_unique_default_init(const scipp::index size) {
 }
 
 /// Tag for requesting default-initialization in methods of class element_array.
-static constexpr auto default_init_elements = []() {};
-using default_init_elements_t = decltype(default_init_elements);
+struct default_init_elements_t {};
+static constexpr auto default_init_elements = default_init_elements_t{};
 
 /// Internal data container for Variable.
 ///

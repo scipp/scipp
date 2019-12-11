@@ -17,14 +17,14 @@ using namespace scipp;
 using namespace scipp::core;
 
 TEST(TransformSparseAndDenseTest, two_args) {
-  auto var = createVariable<double>(Dims{Dim::Y, Dim::X},
-                                    Shape{2l, Dimensions::Sparse});
+  auto var =
+      makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2l, Dimensions::Sparse});
   auto vals = var.sparseValues<double>();
   vals[0] = {1, 2, 3};
   vals[1] = {4};
 
-  auto dense = createVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
-                                      Values{1.1, 2.2, 3.3, 4.4});
+  auto dense = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
+                                    Values{1.1, 2.2, 3.3, 4.4});
   auto dense_view = subspan_view(dense, Dim::X);
 
   const auto result = transform<
@@ -41,17 +41,17 @@ TEST(TransformSparseAndDenseTest, two_args) {
 }
 
 TEST(TransformSparseAndDenseTest, three_args) {
-  auto var = createVariable<double>(Dims{Dim::Y, Dim::X},
-                                    Shape{2l, Dimensions::Sparse});
+  auto var =
+      makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2l, Dimensions::Sparse});
   auto vals = var.sparseValues<double>();
   vals[0] = {1, 2, 3};
   vals[1] = {4};
 
-  auto dense = createVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
-                                      Values{1.1, 2.2, 3.3, 4.4});
+  auto dense = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
+                                    Values{1.1, 2.2, 3.3, 4.4});
   auto dense_view = subspan_view(dense, Dim::X);
 
-  auto dense_with_variance = createVariable<double>(
+  auto dense_with_variance = makeVariable<double>(
       Dims{Dim::X}, Shape{2}, Values{0.1, 0.2}, Variances{0.3, 0.4});
   auto dense_with_variance_view = subspan_view(dense_with_variance, Dim::X);
 

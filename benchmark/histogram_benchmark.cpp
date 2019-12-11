@@ -14,8 +14,8 @@ using namespace scipp::core;
 
 auto make_2d_sparse_coord_only(const scipp::index size,
                                const scipp::index count) {
-  auto var = createVariable<double>(Dims{Dim::X, Dim::Y},
-                                    Shape{size, Dimensions::Sparse});
+  auto var = makeVariable<double>(Dims{Dim::X, Dim::Y},
+                                  Shape{size, Dimensions::Sparse});
   auto vals = var.sparseValues<double>();
   Random rand(0.0, 1000.0);
   for (scipp::index i = 0; i < size; ++i) {
@@ -36,8 +36,8 @@ static void BM_histogram(benchmark::State &state) {
   std::iota(edges_.begin(), edges_.end(), 0.0);
   if (!linear)
     edges_.back() += 0.0001;
-  auto edges = createVariable<double>(Dims{Dim::Y}, Shape{nEdge},
-                                      Values(edges_.begin(), edges_.end()));
+  auto edges = makeVariable<double>(Dims{Dim::Y}, Shape{nEdge},
+                                    Values(edges_.begin(), edges_.end()));
   edges *= 1000.0 / nEdge; // ensure all events are in range
   for (auto _ : state) {
     benchmark::DoNotOptimize(histogram(sparse, edges));

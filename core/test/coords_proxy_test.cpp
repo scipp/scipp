@@ -40,9 +40,8 @@ TYPED_TEST(CoordsProxyTest, bad_item_access) {
 
 TYPED_TEST(CoordsProxyTest, item_access) {
   Dataset d;
-  const auto x =
-      createVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
-  const auto y = createVariable<double>(Dims{Dim::Y}, Shape{2}, Values{4, 5});
+  const auto x = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
+  const auto y = makeVariable<double>(Dims{Dim::Y}, Shape{2}, Values{4, 5});
   d.setCoord(Dim::X, x);
   d.setCoord(Dim::Y, y);
 
@@ -53,10 +52,9 @@ TYPED_TEST(CoordsProxyTest, item_access) {
 
 TYPED_TEST(CoordsProxyTest, sparse_coords_values_and_coords) {
   Dataset d;
-  auto data = createVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse});
+  auto data = makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse});
   data.sparseValues<double>()[0] = {1, 2, 3};
-  auto s_coords =
-      createVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse});
+  auto s_coords = makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse});
   s_coords.sparseValues<double>()[0] = {4, 5, 6};
   d.setData("test", data);
   d.setSparseCoord("test", s_coords);
@@ -77,9 +75,8 @@ TYPED_TEST(CoordsProxyTest, iterators_empty_coords) {
 
 TYPED_TEST(CoordsProxyTest, iterators) {
   Dataset d;
-  const auto x =
-      createVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
-  const auto y = createVariable<double>(Dims{Dim::Y}, Shape{2}, Values{4, 5});
+  const auto x = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
+  const auto y = makeVariable<double>(Dims{Dim::Y}, Shape{2}, Values{4, 5});
   d.setCoord(Dim::X, x);
   d.setCoord(Dim::Y, y);
   const auto coords = TestFixture::access(d).coords();
@@ -103,9 +100,8 @@ TYPED_TEST(CoordsProxyTest, iterators) {
 
 TYPED_TEST(CoordsProxyTest, slice) {
   Dataset d;
-  const auto x =
-      createVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
-  const auto y = createVariable<double>(Dims{Dim::Y}, Shape{2}, Values{1, 2});
+  const auto x = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
+  const auto y = makeVariable<double>(Dims{Dim::Y}, Shape{2}, Values{1, 2});
   d.setCoord(Dim::X, x);
   d.setCoord(Dim::Y, y);
   const auto coords = TestFixture::access(d).coords();
@@ -144,9 +140,9 @@ TYPED_TEST(CoordsProxyTest, find_and_contains) {
 
 auto make_dataset_2d_coord_x_1d_coord_y() {
   Dataset d;
-  const auto x = createVariable<double>(Dims{Dim::X, Dim::Y}, Shape{3, 2},
-                                        Values{1, 2, 3, 4, 5, 6});
-  const auto y = createVariable<double>(Dims{Dim::Y}, Shape{2}, Values{1, 2});
+  const auto x = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{3, 2},
+                                      Values{1, 2, 3, 4, 5, 6});
+  const auto y = makeVariable<double>(Dims{Dim::Y}, Shape{2}, Values{1, 2});
   d.setCoord(Dim::X, x);
   d.setCoord(Dim::Y, y);
   return d;
@@ -220,13 +216,12 @@ TEST(CoordsProxy, slice_return_type) {
 
 TEST(MutableCoordsProxyTest, item_write) {
   Dataset d;
-  const auto x =
-      createVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
-  const auto y = createVariable<double>(Dims{Dim::Y}, Shape{2}, Values{4, 5});
+  const auto x = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
+  const auto y = makeVariable<double>(Dims{Dim::Y}, Shape{2}, Values{4, 5});
   const auto x_reference =
-      createVariable<double>(Dims{Dim::X}, Shape{3}, Values{1.5, 2.0, 3.0});
+      makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1.5, 2.0, 3.0});
   const auto y_reference =
-      createVariable<double>(Dims{Dim::Y}, Shape{2}, Values{4.5, 5.0});
+      makeVariable<double>(Dims{Dim::Y}, Shape{2}, Values{4.5, 5.0});
   d.setCoord(Dim::X, x);
   d.setCoord(Dim::Y, y);
 
@@ -245,17 +240,17 @@ TEST(CoordsProxy, modify_slice) {
   for (auto &x : slice[Dim::X].values<double>())
     x = 0.0;
 
-  const auto reference = createVariable<double>(
-      Dims{Dim::X, Dim::Y}, Shape{3, 2}, Values{1, 2, 0, 0, 5, 6});
+  const auto reference = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{3, 2},
+                                              Values{1, 2, 0, 0, 5, 6});
   EXPECT_EQ(d.coords()[Dim::X], reference);
 }
 
 TEST(CoordsConstProxy, slice_bin_edges_with_2D_coord) {
   Dataset d;
-  const auto x = createVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
-                                        Values{1, 2, 3, 4});
+  const auto x = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
+                                      Values{1, 2, 3, 4});
   const auto y_edges =
-      createVariable<double>(Dims{Dim::Y}, Shape{3}, Values{1, 2, 3});
+      makeVariable<double>(Dims{Dim::Y}, Shape{3}, Values{1, 2, 3});
   d.setCoord(Dim::X, x);
   d.setCoord(Dim::Y, y_edges);
   const auto coords = d.coords();
