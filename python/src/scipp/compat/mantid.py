@@ -99,7 +99,7 @@ def md_dimension(mantid_dim, index):
     for pattern, result in pattern_result:
         if re.search(pattern, mantid_dim.name, re.IGNORECASE):
             return result
-   
+
     # Look for common spacial dimensions
     patterns = ["^{0}$".format(coord) for coord in ['x', 'y', 'z']]
     dims = [sc.Dim.X, sc.Dim.Y, sc.Dim.Z]
@@ -108,7 +108,9 @@ def md_dimension(mantid_dim, index):
         if re.search(pattern, mantid_dim.name, re.IGNORECASE):
             return result
 
-    raise ValueError("Cannot infer scipp dimension from input mantid dimension {}".format(mantid_dim.name())) 
+    raise ValueError(
+        "Cannot infer scipp dimension from input mantid dimension {}".format(
+            mantid_dim.name()))
 
 
 def md_unit(frame):
@@ -324,7 +326,8 @@ def convertMDHistoWorkspace_to_dataset(md_histo):
         dims_used.append(sc_dim)
     data = sc.Variable(dims=dims_used,
                        values=md_histo.getSignalArray(),
-                       variances=md_histo.getErrorSquaredArray(), unit=sc.units.counts)
+                       variances=md_histo.getErrorSquaredArray(),
+                       unit=sc.units.counts)
     nevents = sc.Variable(dims=dims_used, values=md_histo.getNumEventsArray())
     return sc.DataArray(coords=coords, data=data, attrs={'nevents': nevents})
 

@@ -191,7 +191,8 @@ class TestMantidConversion(unittest.TestCase):
                          AlignedDim2='Q_z,-10,10,5',
                          StoreInADS=False)
 
-        histo_dataarray = mantidcompat.convertMDHistoWorkspace_to_dataset(md_histo)
+        histo_dataarray = mantidcompat.convertMDHistoWorkspace_to_dataset(
+            md_histo)
 
         self.assertEqual(histo_dataarray.coords[sc.Dim.Qx].values.shape, (4, ))
         self.assertEqual(histo_dataarray.coords[sc.Dim.Qy].values.shape, (3, ))
@@ -203,7 +204,7 @@ class TestMantidConversion(unittest.TestCase):
         self.assertEqual(histo_dataarray.coords[sc.Dim.Qz].unit,
                          sc.units.dimensionless / sc.units.angstrom)
 
-        self.assertEquals(histo_dataarray.values.shape, (3,4,5))
+        self.assertEquals(histo_dataarray.values.shape, (3, 4, 5))
 
         # Sum over 2 dimensions to simplify finding max.
         max_1d = sc.sum(sc.sum(histo_dataarray, dim=sc.Dim.Qy),
@@ -215,16 +216,17 @@ class TestMantidConversion(unittest.TestCase):
         self.assertEqual(100000, max_1d[max_index])
 
         self.assertTrue('nevents' in histo_dataarray.attrs)
-    
+
     def test_mdhisto_workspace_many_dims(self):
         from mantid.simpleapi import (CreateMDWorkspace, FakeMDEventData,
                                       BinMD, SaveMD)
 
-        md_event = CreateMDWorkspace(Dimensions=4,
-                                     Extents=[-10, 10, -10, 10, -10, 10, -10, 10],
-                                     Names='deltae,y,z,T',
-                                     Units='U,U,U,U',
-                                     StoreInADS=False)
+        md_event = CreateMDWorkspace(
+            Dimensions=4,
+            Extents=[-10, 10, -10, 10, -10, 10, -10, 10],
+            Names='deltae,y,z,T',
+            Units='U,U,U,U',
+            StoreInADS=False)
         FakeMDEventData(InputWorkspace=md_event,
                         PeakParams=[100000, 0, 0, 0, 0, 1],
                         StoreInADS=False)  # Add Peak
@@ -235,7 +237,9 @@ class TestMantidConversion(unittest.TestCase):
                          AlignedDim3='T,-10,10,7',
                          StoreInADS=False)
 
-        histo_dataarray = mantidcompat.convertMDHistoWorkspace_to_dataset(md_histo)
+        histo_dataarray = mantidcompat.convertMDHistoWorkspace_to_dataset(
+            md_histo)
+
 
 if __name__ == "__main__":
     unittest.main()
