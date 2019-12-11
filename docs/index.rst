@@ -47,7 +47,8 @@ Documentation
    :caption: Visualization
    :maxdepth: 2
 
-   visualization/plotting
+   visualization/plotting-overview
+   visualization/plotting-in-depth
 
 .. toctree::
    :caption: Tutorials
