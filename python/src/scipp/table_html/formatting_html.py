@@ -9,7 +9,7 @@ from functools import partial, reduce
 from html import escape
 import numpy as np
 
-import scipp as sc
+from .._scipp import core as sc
 
 CSS_FILE_PATH = f"{os.path.dirname(__file__)}/style.css"
 with open(CSS_FILE_PATH, 'r') as f:
@@ -295,7 +295,8 @@ def _mapping_section(mapping, name, details_func, max_items_collapse,
 
 
 def dim_section(dataset):
-    dim_list = format_dims(dataset.dims, dataset.shape, dataset.coords)
+    coords = dataset.coords if hasattr(dataset, "coords") else []
+    dim_list = format_dims(dataset.dims, dataset.shape, coords)
 
     return collapsible_section(
         "Dimensions", inline_details=dim_list, enabled=False, collapsed=True
@@ -353,7 +354,6 @@ data_section = partial(
     max_items_collapse=15,
 )
 
-
 attr_section = partial(
     _mapping_section,
     name="Attributes",
@@ -391,6 +391,19 @@ def dataset_repr(ds):
         data_section(ds),
         mask_section(ds.masks),
         attr_section(ds.attrs),
+    ]
+
+    return _obj_repr(header_components, sections)
+
+
+def variable_repr(var):
+    obj_type = "scipp.{}".format(type(var).__name__)
+
+    header_components = [f"<div class='xr-obj-type'>{escape(obj_type)}</div>"]
+
+    sections = [
+        dim_section(var),
+        data_section([('', var)]),
     ]
 
     return _obj_repr(header_components, sections)
