@@ -52,7 +52,7 @@ def _format_non_sparse(var, has_variances):
 
 
 def _format_sparse(var, has_variances):
-    if var.data is None:
+    if hasattr(var, "data") and var.data is None:
         return "no data in sparse array"
     s = []
     size = var.shape[0]
