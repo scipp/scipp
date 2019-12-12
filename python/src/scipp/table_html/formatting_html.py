@@ -329,7 +329,6 @@ coord_section = partial(
     name="Coordinates",
     details_func=summarize_coords,
     max_items_collapse=25,
-    add_value_variance_labels=True,
 )
 
 label_section = partial(
@@ -385,13 +384,28 @@ def dataset_repr(ds):
 
     header_components = [f"<div class='xr-obj-type'>{escape(obj_type)}</div>"]
 
-    sections = [
-        dim_section(ds),
-        coord_section(ds.coords),
-        label_section(ds.labels),
-        data_section(ds),
-        mask_section(ds.masks),
-        attr_section(ds.attrs),
-    ]
+    sections = [dim_section(ds)]
+
+    # ensure that the values/variances labels are present
+    # the first section will add them will also flip this
+    # flag so that they are not repeatedly
+    add_value_variance_labels = True
+    if len(ds.coords) > 0:
+        sections.append(coord_section(
+            ds.coords, add_value_variance_labels=add_value_variance_labels))
+        add_value_variance_labels = False
+    if len(ds.labels) > 0:
+        sections.append(label_section(
+            ds.labels, add_value_variance_labels=add_value_variance_labels))
+        add_value_variance_labels = False
+
+    sections.append(data_section(
+        ds, add_value_variance_labels=add_value_variance_labels))
+    add_value_variance_labels = False
+
+    if len(ds.masks) > 0:
+        sections.append(mask_section(ds.masks))
+    if len(ds.attrs) > 0:
+        sections.append(attr_section(ds.attrs))
 
     return _obj_repr(header_components, sections)
