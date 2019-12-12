@@ -117,7 +117,7 @@ def md_unit(frame):
     known_md_units = {
         "Angstrom^-1": sc.units.dimensionless / sc.units.angstrom,
         "r.l.u": sc.units.dimensionless,
-        "T": sc.units.deg,
+        "T": sc.units.K,
         "DeltaE": sc.units.meV
     }
     if frame.getUnitLabel().ascii() in known_md_units:
