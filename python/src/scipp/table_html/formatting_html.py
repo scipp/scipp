@@ -388,7 +388,7 @@ def dataset_repr(ds):
         dim_section(ds),
         coord_section(ds.coords),
         label_section(ds.labels),
-        data_section(ds),
+        data_section(ds if hasattr(ds, '__len__') else [('', ds)]),
         mask_section(ds.masks),
         attr_section(ds.attrs),
     ]
