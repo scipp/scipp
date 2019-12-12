@@ -228,7 +228,8 @@ def summarize_variable(name, var, is_index=False, has_attrs=False):
             xr-preview'>{variances_preview}</div>",
         f"<input id='{attrs_id}' class='xr-var-attrs-in' ",
         f"type='checkbox' {disabled}>",
-        f"<label for='{attrs_id}' class='{'xr-hide-icon' if not has_attrs else ''}'"
+        f"<label for='{attrs_id}' "
+        f"class='{'' if has_attrs else 'xr-hide-icon'}'"
         " title='Show/Hide attributes'>",
         f"{attrs_icon}</label>",
         f"<input id='{data_id}' class='xr-var-data-in' type='checkbox'>",
