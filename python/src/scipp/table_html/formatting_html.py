@@ -262,10 +262,13 @@ def collapsible_section(name, inline_details="", details="", n_items=None,
     tip = " title='Expand/collapse section'" if enabled else ""
 
     if add_value_variance_labels:
-        val_var_html = f"<div class='sc-section-header \
-                            sc-section-header-values'>Values</div>\
-                         <div class='sc-section-header \
-                            sc-section-header-variances'>Variances</div>"
+        val_var_html = "<div class='sc-section-header "\
+            "sc-section-header-values'>"\
+            "<span class='sc-section-header-text'>Values</span>"\
+            "</div><div class='sc-section-header "\
+            "sc-section-header-variances'>"\
+            "<span class='sc-section-header-text'>Variances</span>"\
+            "</div>"
     else:
         val_var_html = ""
 

@@ -341,4 +341,11 @@ label.xr-hide-icon svg{
 
 .sc-section-header{
   color:#555;
+  margin: auto 0;
+}
+.sc-section-header-text{
+  display:inline-block;
+  vertical-align: middle;
+  /* matches the margin from  xr-section-item */
+  margin-bottom: 5px;
 }
