@@ -9,9 +9,8 @@ class _Plot:
     def __init__(self):
 
         # The list of default line colors
-        self.color_list = ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728",
-                           "#9467bd", "#8c564b", "#e377c2", "#7f7f7f",
-                           "#bcbd22", "#17becf"]
+        self.color = ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd",
+                      "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf"]
 
         # The colorbar properties
         self.params = {"cmap": "viridis", "log": False, "vmin": None,
@@ -29,6 +28,16 @@ class _Plot:
         # Aspect ratio for images: 'equal' will conserve the aspect ratio,
         # while 'auto' will stretch the image to the size of the figure
         self.aspect = "auto"
+
+        # Make list of markers for matplotlib
+        self.marker = ['o', 'v', '^', '<', '>', '1', '2', '3', '4', '8', 's',
+                       'p', '*', 'h', 'H', '+', 'x', 'D', 'd']
+
+        # Default line width for 1D plots
+        self.linewidth = 1.5
+
+        # Default line style for 1D non-histogram plots
+        self.linestyle = "none"
 
 
 class _Colors:

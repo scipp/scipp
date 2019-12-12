@@ -4,7 +4,7 @@
 
 # Scipp imports
 from .dispatch import dispatch
-from .tools import get_color
+from .tools import get_line_param
 from .._scipp import core as sc
 
 # Other imports

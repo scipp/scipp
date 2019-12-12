@@ -9,14 +9,19 @@ from .._scipp.core.units import dimensionless
 
 # Other imports
 import numpy as np
-from matplotlib.colors import Normalize, LogNorm
+from matplotlib.colors import Normalize, LogNorm, LinearSegmentedColormap
 
 
-def get_color(index=0):
+def get_line_param(name=None, index=None):
     """
-    Get the i-th color in the list of standard colors.
+    Get the default line parameter from the config.
+    If an index is supplied, return the i-th item in the list.
     """
-    return config.color_list[index % len(config.color_list)]
+    param = getattr(config, name)
+    if index is not None:
+        return param[index % len(param)]
+    else:
+        return param
 
 
 def edges_to_centers(x):
@@ -74,27 +79,7 @@ def parse_params(params=None, defaults=None, globs=None, array=None):
         for key, val in params.items():
             parsed[key] = val
 
-
-
-    # params["norm"] = dict()
-
-
-    # if  is not None:
-    #     if isinstance(cb, str):
-    #         cbar["name"] = cb
-    #     else:
-    #         for key, val in cb.items():
-    #             cbar[key] = val
-    # params = {"values": {"cbmin": "min", "cbmax": "max"}}
-    # if var.variances is not None and show_variances:
-    #     params["variances"] = {"cbmin": "min_var", "cbmax": "max_var"}
-
-    # for key, val in sorted(params.items()):
     if array is not None:
-        # if values is not None:
-        #     arr = values
-        # else:
-        #     arr = getattr(var, key)
         if parsed["log"]:
             with np.errstate(divide="ignore", invalid="ignore"):
                 subset = np.where(np.isfinite(np.log10(array)))
@@ -113,6 +98,12 @@ def parse_params(params=None, defaults=None, globs=None, array=None):
         else:
             norm = Normalize(vmin=vmin, vmax=vmax)
         parsed["norm"] = norm
+
+    # Convert color into custom colormap
+    if parsed["color"] is not None:
+        parsed["cmap"] = LinearSegmentedColormap.from_list(
+            "tmp", [parsed["color"], parsed["color"]])
+
     return parsed
 
 
@@ -152,10 +143,3 @@ def get_1d_axes(var, axes, name):
     y = var.values
     ylab = axis_label(var=var, name="")
     return xlab, ylab, x, y, axes
-
-
-# def dims_and_shapes(var):
-#     out = {}
-#     for i, dim in enumerate(var.dims):
-#         out[str(dim)] = var.shape[i]
-#     return out

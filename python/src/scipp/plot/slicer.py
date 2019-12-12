@@ -27,13 +27,16 @@ class Slicer:
         self.params = dict()
         globs = {"cmap": cmap, "log": log, "vmin": vmin, "vmax": vmax,
                  "color": color}
-        self.params["values"] = parse_params(params=values, globs=globs,
-                                             array=self.input_data.values)
 
-        if self.input_data.variances is not None:
-            self.params["variances"] = parse_params(
-                params=variances, defaults={"show": False}, globs=globs,
-                array=np.sqrt(self.input_data.variances))
+        if hasattr(self.input_data, "values"):
+            self.params["values"] = parse_params(params=values, globs=globs,
+                                                 array=self.input_data.values)
+
+        if hasattr(self.input_data, "variances"):
+            if self.input_data.variances is not None:
+                self.params["variances"] = parse_params(
+                    params=variances, defaults={"show": False}, globs=globs,
+                    array=np.sqrt(self.input_data.variances))
 
         self.params["masks"] = parse_params(
             params=masks, defaults={"cmap": "gray", "cbar": False},

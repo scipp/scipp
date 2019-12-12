@@ -29,14 +29,11 @@ def plot_2d(input_data=None, axes=None, values=None, variances=None,
     var = input_data[name]
     if axes is None:
         axes = var.dims
-    # if masks is None:
-    #     masks = {}
-    # masks["masks"] = input_data.masks
 
     sv = Slicer2d(input_data=var, axes=axes, values=values, variances=variances,
                   masks=masks, mpl_axes=mpl_axes, aspect=aspect, cmap=cmap,
-                  log=log, vmin=vmin, vmax=vmax, color=color, logx=logx,
-                  logy=logy, logxy=logxy)
+                  log=log, vmin=vmin, vmax=vmax, color=color, logx=logx or logxy,
+                  logy=logy or logxy)
 
     if mpl_axes is None:
         render_plot(figure=sv.fig, widgets=sv.vbox, filename=filename)
@@ -48,7 +45,7 @@ class Slicer2d(Slicer):
 
     def __init__(self, input_data=None, axes=None, values=None, variances=None,
                  masks=None, mpl_axes=None, aspect=None, cmap=None, log=None,
-                 vmin=None, vmax=None, color=None, logx=False, logy=False, logxy=False):
+                 vmin=None, vmax=None, color=None, logx=False, logy=False):
 
         super().__init__(input_data=input_data, axes=axes, values=values,
                          variances=variances, masks=masks, cmap=cmap,
@@ -126,7 +123,10 @@ class Slicer2d(Slicer):
                         extent=extent_array,
                         origin="lower", interpolation="nearest", cmap=self.params["masks"]["cmap"],
                         aspect=aspect)
-
+                if logx:
+                    self.ax[key].set_xscale("log")
+                if logy:
+                    self.ax[key].set_yscale("log")
 
         # Call update_slice once to make the initial image
         self.update_axes()
@@ -223,11 +223,11 @@ class Slicer2d(Slicer):
             # large.
             # Here, the data is at most 2D, so having the Variable creation
             # and broadcasting should remain cheap.
-            msk = Variable(button_dims, values=np.ones(shape_list, dtype=np.int32))
+            msk = Variable(button_dims, values=np.ones(shape_list,
+                                                       dtype=np.int32))
             msk *= Variable(mslice.dims, values=mslice.values.astype(np.int32))
 
         for key in self.ax.keys():
-            print(key)
             arr = getattr(vslice, key)
             if key == "variances":
                 arr = np.sqrt(arr)
@@ -235,14 +235,16 @@ class Slicer2d(Slicer):
                 arr = arr.T
             self.im[key].set_data(arr)
             if self.params["masks"]["show"]:
-                self.im[self.get_mask_key(key)].set_data(np.where(msk.values, arr, None).astype(np.float))
+                self.im[self.get_mask_key(key)].set_data(
+                    np.where(msk.values, arr, None).astype(np.float))
 
         return
 
     def toggle_masks(self, change):
         for key in self.ax.keys():
             self.im[key + "_masks"].set_visible(change["new"])
-        change["owner"].description = "Hide masks" if change["new"] else "Show masks"
+        change["owner"].description = "Hide masks" if change["new"] else \
+            "Show masks"
         return
 
     def get_mask_key(self, key):

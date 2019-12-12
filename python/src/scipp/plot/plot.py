@@ -7,14 +7,14 @@ from .._scipp import core as sc
 from .sciplot import SciPlot
 
 
-def plot(input_data, collapse=None, color=None, projection=None, axes=None,
-         **kwargs):
+def plot(input_data, collapse=None, projection=None, axes=None, color=None,
+         marker=None, linestyle=None, linewidth=None, **kwargs):
     """
     Wrapper function to plot any kind of dataset
     """
 
     # Delayed imports
-    from .tools import get_color
+    from .tools import get_line_param
     from .plot_collapse import plot_collapse
     from .dispatch import dispatch
 
@@ -30,11 +30,18 @@ def plot(input_data, collapse=None, color=None, projection=None, axes=None,
         ds[input_data.name] = input_data
         input_data = ds
 
-    # Prepare color containers
-    auto_color = False
-    if color is None:
-        auto_color = True
-    color_count = 0
+    # Prepare color and marker containers
+    line_params = {"color": [color, True],
+                   "marker": [marker, True],
+                   "linestyle": [linestyle, False],
+                   "linewidth": [linewidth, False]}
+
+    # auto_color = False
+    # if color is None:
+    #     auto_color = True
+
+    # Counter for 1d data
+    line_count = -1
 
     tobeplotted = dict()
     sparse_dim = dict()
@@ -60,26 +67,62 @@ def plot(input_data, collapse=None, color=None, projection=None, axes=None,
                     key = "{}{}".format(key, str(var.coords[sp_dim].unit))
                 else:
                     key = "{}{}".format(key, str(var.unit))
+                line_count += 1
             else:
                 key = name
 
-            if auto_color:
-                col = get_color(index=color_count)
-            elif isinstance(color, list):
-                col = color[color_count]
-                if isinstance(col, int):
-                    col = get_color(index=col)
-            elif isinstance(color, int):
-                col = get_color(index=color)
-            else:
-                col = color
-            color_count += 1
+            params = {}
+            for n, p in line_params.items():
+                if p[0] is None:
+                    params[n] = get_line_param(
+                        name=n, index=line_count if p[1] else None)
+                elif isinstance(p[0], list):
+                    col = p[0][line_count]
+                    if isinstance(col, int) and p[1]:
+                        col = get_line_param(
+                            name=n, index=col)
+                elif isinstance(p[0], int):
+                    col = get_line_param(
+                            name=n, index=p[0])
+                else:
+                    col = p[0]
+
+
+            print(params)
+
+            # if auto_color:
+            #     col = get_color(index=line_count)
+            # elif isinstance(color, list):
+            #     col = color[line_count]
+            #     if isinstance(col, int):
+            #         col = get_color(index=col)
+            # elif isinstance(color, int):
+            #     col = get_color(index=color)
+            # else:
+            #     col = color
+
+
+
+            # if auto_color:
+            #     col = get_color(index=line_count)
+            # elif isinstance(color, list):
+            #     col = color[line_count]
+            #     if isinstance(col, int):
+            #         col = get_color(index=col)
+            # elif isinstance(color, int):
+            #     col = get_color(index=color)
+            # else:
+            #     col = color
+            # # color_count += 1
 
             if key not in tobeplotted.keys():
                 tobeplotted[key] = dict(ndims=ndims, dataset=sc.Dataset(),
-                                        colors=[], axes=ax)
+                                        axes=ax, params=dict())
+                for n in params.keys():
+                    tobeplotted[key]["params"][n] = []
             tobeplotted[key]["dataset"][name] = input_data[name]
-            tobeplotted[key]["colors"].append(col)
+            for n, p in params.items():
+                tobeplotted[key]["params"][n].append(p)
             sparse_dim[key] = sp_dim
 
     # Plot all the subsets
@@ -94,9 +137,10 @@ def plot(input_data, collapse=None, color=None, projection=None, axes=None,
             output[key] = dispatch(input_data=val["dataset"],
                                    name=key,
                                    ndim=val["ndims"],
-                                   color=val["colors"],
+                                   # color=val["color"],
                                    sparse_dim=sparse_dim[key],
                                    projection=projection,
                                    axes=val["axes"],
+                                   **val["params"],
                                    **kwargs)
     return output

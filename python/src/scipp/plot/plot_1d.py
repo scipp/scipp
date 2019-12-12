@@ -15,8 +15,10 @@ import matplotlib.pyplot as plt
 import ipywidgets as widgets
 
 
-def plot_1d(input_data, logx=False, logy=False, logxy=False,
-            color=None, filename=None, axes=None, mpl_axes=None):
+def plot_1d(input_data=None, axes=None, values=None, variances=None,
+            masks=None, filename=None, figsize=None, mpl_axes=None,
+            color=None, marker=None, linewidth=None, linestyle=None,
+            logx=False, logy=False, logxy=False):
     """
     Plot a 1D spectrum.
 
@@ -30,10 +32,12 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False,
     if axes is None:
         axes = input_data.dims
 
-    layout = dict(logx=logx or logxy, logy=logy or logxy)
+    # layout = dict(logx=logx or logxy, logy=logy or logxy)
 
-    sv = Slicer1d(input_data=input_data, layout=layout, axes=axes, color=color,
-                  mpl_axes=mpl_axes)
+    sv = Slicer1d(input_data=input_data, axes=axes, values=values,
+                  variances=variances, masks=masks, color=color,
+                  marker=marker, linewidth=linewidth, linestyle=linestyle,
+                  logx=logx or logxy, logy=logy or logxy)
 
     if mpl_axes is None:
         render_plot(figure=sv.fig, widgets=sv.box, filename=filename)
@@ -43,13 +47,16 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False,
 
 class Slicer1d(Slicer):
 
-    def __init__(self, input_data=None, layout=None, axes=None, color=None,
-                 mpl_axes=None):
+    def __init__(self, input_data=None, axes=None, values=None,
+                 variances=None, masks=None, mpl_axes=None, color=None,
+                 marker=None, linewidth=None, linestyle=None,
+                 logx=False, logy=False):
 
-        super().__init__(input_data=input_data, axes=axes,
+        super().__init__(input_data=input_data, axes=axes, values=values,
+                         variances=variances, masks=masks,
                          button_options=['X'])
 
-        self.color = color
+        # self.color = color
         self.fig = None
         self.mpl_axes = mpl_axes
         if self.mpl_axes is not None:
@@ -62,6 +69,15 @@ class Slicer1d(Slicer):
         self.members.update({"lines": {}, "error_x": {}, "error_y": {},
                              "error_xy": {}})
         self.color = color
+        self.marker = marker
+        self.linewidth = linewidth
+        self.linestyle = linestyle
+        print(self.color)
+        print(self.marker)
+        print(self.linewidth)
+        print(self.linestyle)
+
+
         self.names = []
         ymin = 1.0e30
         ymax = -1.0e30
@@ -72,7 +88,7 @@ class Slicer1d(Slicer):
             else:
                 err = 0.0
 
-            if layout["logy"]:
+            if logy:
                 with np.errstate(divide="ignore", invalid="ignore"):
                     arr = np.log10(var.values - err)
                     subset = np.where(np.isfinite(arr))
@@ -86,13 +102,13 @@ class Slicer1d(Slicer):
             ylab = axis_label(var=var, name="")
 
         dy = 0.05*(ymax - ymin)
-        layout["yrange"] = [ymin-dy, ymax+dy]
-        if layout["logy"]:
-            layout["yrange"] = 10.0**np.array(layout["yrange"])
-        self.ax.set_ylim(layout["yrange"])
-        if layout["logx"]:
+        yrange = [ymin-dy, ymax+dy]
+        if logy:
+            yrange = 10.0**np.array(yrange)
+        self.ax.set_ylim(yrange)
+        if logx:
             self.ax.set_xscale("log")
-        if layout["logy"]:
+        if logy:
             self.ax.set_yscale("log")
 
         # Disable buttons
@@ -179,7 +195,8 @@ class Slicer1d(Slicer):
             else:
                 [self.members["lines"][name]] = self.ax.plot(
                     new_x, vslice.values, label=name, color=self.color[i],
-                    zorder=10)
+                    marker=self.marker[i], linewidth=self.linewidth[i],
+                    linestyle=self.linestyle[i], zorder=10)
             if var.variances is not None:
                 if self.histograms[name][dim_str]:
                     self.members["error_y"][name] = self.ax.errorbar(
