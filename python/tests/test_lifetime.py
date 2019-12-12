@@ -74,3 +74,46 @@ def test_lifetime_coord_values():
     values = d.coords[Dim.X].values
     d += d
     assert np.array_equal(values, var.values)
+
+
+def test_lifetime_xxx():
+    var = sc.Variable([Dim.X], values=['ab', 'c'])
+    #var = sc.Variable([Dim.X], values=np.arange(12).astype()
+    #vals = sc.sum(var, Dim.Y).values
+    vals = var.copy().values
+    import gc
+    gc.collect()
+    assert vals[0] == 'ab'
+    #assert var.value['a'].values[-1] == 9
+    #assert var.copy().values['a'].values[-1] == 9
+
+
+def test_lifetime_scalar_py_object():
+    var = sc.Variable(value=[1] * 100000)
+    assert var.dtype == sc.dtype.PyObject
+    val = var.copy().value
+    import gc
+    gc.collect()
+    var.copy()  # do something allocating memory to trigger potential segfault
+    assert val[-1] == 1
+
+
+def test_lifetime_scalar():
+    elem = sc.Variable([Dim.X], values=np.arange(100000))
+    var = sc.Variable(value=elem)
+    assert var.values == elem
+    vals = var.copy().values
+    import gc
+    gc.collect()
+    var.copy()  # do something allocating memory to trigger potential segfault
+    assert var.values == elem
+
+
+def test_lifetime_string_array():
+    var = sc.Variable([Dim.X], values=['ab', 'c'] * 100000)
+    assert var.values[100000] == 'ab'
+    vals = var.copy().values
+    import gc
+    gc.collect()
+    var.copy()  # do something allocating memory to trigger potential segfault
+    assert vals[100000] == 'ab'

@@ -227,7 +227,7 @@ template <class... Ts> class as_VariableViewImpl {
       return DataAccessHelper::as_py_array_t_impl<Getter, bool>(obj, proxy);
     default:
       return std::visit(
-          [&proxy](const auto &data) {
+          [&proxy, &obj](const auto &data) {
             const auto &dims = proxy.dims();
             // We return an individual item in two cases:
             // 1. For 0-D data (consistent with numpy behavior, e.g., when
@@ -236,12 +236,27 @@ template <class... Ts> class as_VariableViewImpl {
             //    vector-like object.
             if (dims.shape().size() == 0) {
               if constexpr (std::is_same_v<std::decay_t<decltype(data[0])>,
-                                           scipp::python::PyObject>)
+                                           scipp::python::PyObject>) {
+                // Returning PyObject. This increments the reference counter of
+                // the element, so it is ok if the parent `obj` (the variable)
+                // goes out of scope.
                 return data[0].to_pybind();
-              else
-                return py::cast(data[0], py::return_value_policy::reference);
+              } else {
+                // Returning reference to element in variable. Return-policy
+                // reference_internal keeps alive `obj`. Note that an attempt to
+                // pass `keep_alive` as a call policy to `def_property` failed,
+                // resulting in exception from pybind11, so we have handle it by
+                // hand here.
+                return py::cast(
+                    data[0], py::return_value_policy::reference_internal, obj);
+              }
             } else {
-              return py::cast(data);
+              // Returning view (span or VariableView) by value. This references
+              // data in variable, so it must be kept alive. There is no policy
+              // that supports this, so we use `keep_alive_impl` manually.
+              auto ret = py::cast(data, py::return_value_policy::move);
+              pybind11::detail::keep_alive_impl(ret, obj);
+              return ret;
             }
           },
           get<Getter>(proxy));
@@ -383,14 +398,12 @@ void bind_data_properties(pybind11::class_<T, Ignored...> &c) {
 
   c.def_property("unit", &T::unit, &T::setUnit, "Physical unit of the data.");
 
-  c.def_property(
-      "values",
-      py::cpp_function(&as_VariableView::values<T>, py::keep_alive<0, 1>()),
-      &as_VariableView::set_values<T>, "Array of values of the data.");
-  c.def_property(
-      "variances",
-      py::cpp_function(&as_VariableView::variances<T>, py::keep_alive<0, 1>()),
-      &as_VariableView::set_variances<T>, "Array of variances of the data.");
+  c.def_property("values", &as_VariableView::values<T>,
+                 &as_VariableView::set_values<T>,
+                 "Array of values of the data.");
+  c.def_property("variances", &as_VariableView::variances<T>,
+                 &as_VariableView::set_variances<T>,
+                 "Array of variances of the data.");
   c.def_property(
       "value", &as_VariableView::value<T>, &as_VariableView::set_value<T>,
       "The only value for 0-dimensional data, raising an exception if the data "
