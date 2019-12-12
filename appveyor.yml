@@ -13,8 +13,9 @@ configuration:
 environment:
   PYTHON_VERSION: 3.6
   MINICONDA: C:\Miniconda36-x64
+  APPVEYOR_SAVE_CACHE_ON_ERROR: true
   
-cache: c:\\users\\appveyor\\clcache -> appveyor.yml
+cache: C:\Users\appveyor\clcache -> appveyor.yml
 
 install:
 - echo install started %time%
