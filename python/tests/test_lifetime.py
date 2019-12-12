@@ -76,18 +76,6 @@ def test_lifetime_coord_values():
     assert np.array_equal(values, var.values)
 
 
-def test_lifetime_xxx():
-    var = sc.Variable([Dim.X], values=['ab', 'c'])
-    #var = sc.Variable([Dim.X], values=np.arange(12).astype()
-    #vals = sc.sum(var, Dim.Y).values
-    vals = var.copy().values
-    import gc
-    gc.collect()
-    assert vals[0] == 'ab'
-    #assert var.value['a'].values[-1] == 9
-    #assert var.copy().values['a'].values[-1] == 9
-
-
 def test_lifetime_scalar_py_object():
     var = sc.Variable(value=[1] * 100000)
     assert var.dtype == sc.dtype.PyObject
