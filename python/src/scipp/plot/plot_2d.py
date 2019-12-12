@@ -100,14 +100,13 @@ class Slicer2d(Slicer):
             self.ax["variances"] = ax[1]
             self.cax["variances"] = cax[1]
             panels.append("variances")
-        # if self.params["masks"]["show"]:
-        #     self.im["masks"] = dict()
 
+        extent_array = np.array(list(self.extent.values())).flatten()
         for key in panels:
             if self.params[key]["show"]:
                 self.im[key] = self.ax[key].imshow(
                     [[1.0, 1.0], [1.0, 1.0]], norm=self.params[key]["norm"],
-                    extent=np.array(list(self.extent.values())).flatten(),
+                    extent=extent_array,
                     origin="lower", interpolation="nearest", cmap=self.params[key]["cmap"],
                     aspect=aspect)
                 self.ax[key].set_title(
@@ -122,10 +121,9 @@ class Slicer2d(Slicer):
                 self.members["images"][key] = self.im[key]
                 self.members["colorbars"][key] = self.cbar[key]
                 if self.params["masks"]["show"]:
-                    # for name, var in self.masks:
-                    self.im[key + "_masks"] = self.ax[key].imshow(
+                    self.im[self.get_mask_key(key)] = self.ax[key].imshow(
                         [[1.0, 1.0], [1.0, 1.0]], norm=self.params[key]["norm"],
-                        extent=np.array(list(self.extent.values())).flatten(),
+                        extent=extent_array,
                         origin="lower", interpolation="nearest", cmap=self.params["masks"]["cmap"],
                         aspect=aspect)
 
@@ -178,9 +176,11 @@ class Slicer2d(Slicer):
                             self.slider_x[key],
                             name=self.slider_labels[key])
 
+        extent_array = np.array(list(self.extent.values())).flatten()
         for key in self.ax.keys():
-            self.im[key].set_extent(
-                np.array(list(self.extent.values())).flatten())
+            self.im[key].set_extent(extent_array)
+            if self.params["masks"]["show"]:
+                self.im[self.get_mask_key(key)].set_extent(extent_array)
             self.ax[key].set_xlabel(axlabels["x"])
             self.ax[key].set_ylabel(axlabels["y"])
             self.ax[key].set_xlim(self.extent["x"])
@@ -201,43 +201,31 @@ class Slicer2d(Slicer):
                 self.lab[key].value = self.make_slider_label(
                     self.slider_x[key], val.value)
                 vslice = vslice[val.dim, val.value]
+                # At this point, after masks were combined, all their
+                # dimensions should be contained in the input_data.dims.
                 if self.params["masks"]["show"]:
-                    # # Masks do not necessarily have the same dimensions as the
-                    # # data, so only slice if the dimension is present in the
-                    # # mask dimensions. After that, it will automatically be
-                    # # broadcast to higher dimensions if needed.
-                    # if val.dim in mslice.dims:
                     mslice = mslice[val.dim, val.value]
             else:
-                button_dims[self.buttons[key].value.lower() == "y"] = val.dim
+                button_dims[self.buttons[key].value.lower() == "x"] = val.dim
 
         # Check if dimensions of arrays agree, if not, plot the transpose
         slice_dims = vslice.dims
-        transp = slice_dims == button_dims
-
-
-        # if self.params["masks"]["show"]:
-        #     shape_list = [self.shapes[dim] for dim in button_dims]
-        #     # Use scipp's automatic broadcast functionality to broadcast
-        #     # lower dimension masks to higher dimensions
-        #     mask_array = Variable(button_dims, #vslice.dims,
-        #                           values=np.ones(*shape_list),
-        #                           dtype=np.int)
-        #     mask_array *= Variable(mslice.dims,
-        #                            values=mslice.values.astype(np.int),
-        #                            dtype=np.int)
-
-        # if transp:
-        #     self.im["values"].set_data(vslice.values.T)
-        # else:
-        #     self.im["values"].set_data(vslice.values)
+        transp = slice_dims != button_dims
 
         if self.params["masks"]["show"]:
-            msk = mslice.values
-            if transp:
-                msk = msk.T
+            shape_list = [self.shapes[dim] for dim in button_dims]
+            # Use scipp's automatic broadcast functionality to broadcast
+            # lower dimension masks to higher dimensions.
+            # TODO: creating a Variable here could become expensive when
+            # sliders are being used. We could consider performing the
+            # automatic broadcasting once and store it in the Slicer class,
+            # but this could create a large memory overhead if the data is
+            # large.
+            # Here, the data is at most 2D, so having the Variable creation
+            # and broadcasting should remain cheap.
+            msk = Variable(button_dims, values=np.ones(shape_list, dtype=np.int32))
+            msk *= Variable(mslice.dims, values=mslice.values.astype(np.int32))
 
-        print(vslice.masks)
         for key in self.ax.keys():
             print(key)
             arr = getattr(vslice, key)
@@ -247,13 +235,7 @@ class Slicer2d(Slicer):
                 arr = arr.T
             self.im[key].set_data(arr)
             if self.params["masks"]["show"]:
-                print(np.shape(msk), np.shape(arr))
-                print(msk)
-                print("===========")
-                print(np.where(msk, arr, None))
-                print("===========")
-                print(arr)
-                self.im[key + "_masks"].set_data(np.where(msk, arr, None))
+                self.im[self.get_mask_key(key)].set_data(np.where(msk.values, arr, None).astype(np.float))
 
         return
 
@@ -262,3 +244,6 @@ class Slicer2d(Slicer):
             self.im[key + "_masks"].set_visible(change["new"])
         change["owner"].description = "Hide masks" if change["new"] else "Show masks"
         return
+
+    def get_mask_key(self, key):
+        return key + "_masks"

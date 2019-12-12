@@ -4,7 +4,7 @@
 
 from .tools import axis_to_dim_label, parse_params
 from .._scipp.core.units import dimensionless
-from .._scipp.core import Variable
+from .._scipp.core import combine_masks
 
 # Other imports
 import numpy as np
@@ -19,49 +19,31 @@ class Slicer:
         import ipywidgets as widgets
 
         self.input_data = input_data
-        # self.masks = self.input_data.masks
         self.members = dict(widgets=dict(sliders=dict(), togglebuttons=dict(),
-                            togglebutton=dict(), buttons=dict(), labels=dict()))
+                            togglebutton=dict(), buttons=dict(),
+                            labels=dict()))
 
         # Parse parameters for values, variances and masks
         self.params = dict()
         globs = {"cmap": cmap, "log": log, "vmin": vmin, "vmax": vmax,
                  "color": color}
-        self.params["values"] = parse_params(params=values, globs=globs, array=self.input_data.values)
+        self.params["values"] = parse_params(params=values, globs=globs,
+                                             array=self.input_data.values)
 
         if self.input_data.variances is not None:
-            self.params["variances"] = parse_params(params=variances, defaults={"show": False}, globs=globs, array=np.sqrt(self.input_data.variances))
-        # if self.params["variances"]["show"]:
-        #     self.params["variances"]["show"] = (self.input_data.variances is not None)
+            self.params["variances"] = parse_params(
+                params=variances, defaults={"show": False}, globs=globs,
+                array=np.sqrt(self.input_data.variances))
 
-        self.params["masks"] = parse_params(params=masks, defaults={"cmap": "gray", "cbar": False}, globs=globs)
-        # print(masks, len(masks["masks"]))
-        if self.input_data.masks is not None:
-            self.params["masks"]["show"] = self.params["masks"]["show"] and len(self.input_data.masks) > 0
-            # self.masks = combine_masks(self.masks)
-            masks = Variable(self.input_data.dims, values=np.ones_like(self.input_data.values, dtype=np.int32))
-            for name, msk in self.input_data.masks:
-                ok = False
-                for dim in msk.dims:
-                    if dim in masks.dims:
-                        ok = True
-                if ok:
-                    masks *= Variable(msk.dims, values=msk.values.astype(np.int32))
-            self.input_data.masks = {"all": masks}
-
-
-        # if self.variances["show"]:
-        #     self.variances["show"] = (self.input_data.variances is not None)
-
-
-        # self.masks = {"show": True, "color": None, "cmap": "gray"}
-        # for k, m in masks.items():
-        #     self.masks[k] = m
-        # print(masks, len(masks["masks"]))
-        # if masks["masks"] is not None:
-        #     self.masks["show"] = self.masks["show"] and len(masks["masks"]) > 0
-        # if len(button_options) > 1:
-        #     self.cb = parse_colorbar(cb, input_data, self.show_variances)
+        self.params["masks"] = parse_params(
+            params=masks, defaults={"cmap": "gray", "cbar": False},
+            globs=globs)
+        self.params["masks"]["show"] = (self.params["masks"]["show"] and
+                                        len(self.input_data.masks) > 0)
+        if self.params["masks"]["show"]:
+            self.masks = combine_masks(self.input_data.masks,
+                                       self.input_data.dims,
+                                       self.input_data.shape)
 
         # Get the dimensions of the image to be displayed
         self.coords = self.input_data.coords

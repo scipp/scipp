@@ -68,7 +68,8 @@ void sum_impl(const VariableProxy &out_data, const T &data_container,
     const auto masks = data_slice.masks();
 
     if (!masks.empty()) {
-      const auto merged_inverted_masks = ~masks_merge(masks, reductionDim);
+      const auto merged_inverted_masks =
+          ~masks_merge_if_contains(masks, reductionDim);
 
       if (merged_inverted_masks.dims().contains(reductionDim))
         sum_impl(out_data, data_slice.data() * merged_inverted_masks);
@@ -113,7 +114,7 @@ template <class T> T GroupBy<T>::mean(const Dim reductionDim) const {
       // N masks for each slice, that need to be subtracted
       const auto masks = m_data.slice(slice).masks();
       if (!masks.empty()) {
-        const auto merged_masks = masks_merge(masks, reductionDim);
+        const auto merged_masks = masks_merge_if_contains(masks, reductionDim);
         if (merged_masks.dims().contains(reductionDim)) {
           const auto masks_sum = core::sum(merged_masks, reductionDim);
           scaleT[group] -= masks_sum.template value<int64_t>();

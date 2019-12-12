@@ -973,8 +973,11 @@ SCIPP_CORE_EXPORT Variable asin(const Variable &var);
 SCIPP_CORE_EXPORT Variable acos(const Variable &var);
 SCIPP_CORE_EXPORT Variable atan(const Variable &var);
 
-SCIPP_CORE_EXPORT Variable masks_merge(const MasksConstProxy &masks,
-                                       const Dim dim);
+SCIPP_CORE_EXPORT Variable masks_merge_if_contains(const MasksConstProxy &masks,
+                                                   const Dim dim);
+
+SCIPP_CORE_EXPORT Variable
+masks_merge_if_contained(const MasksConstProxy &masks, const Dimensions &dims);
 
 namespace sparse {
 SCIPP_CORE_EXPORT Variable counts(const VariableConstProxy &var);

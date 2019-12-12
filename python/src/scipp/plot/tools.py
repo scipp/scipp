@@ -96,7 +96,8 @@ def parse_params(params=None, defaults=None, globs=None, array=None):
         # else:
         #     arr = getattr(var, key)
         if parsed["log"]:
-            subset = np.where(np.isfinite(np.log10(array)))
+            with np.errstate(divide="ignore", invalid="ignore"):
+                subset = np.where(np.isfinite(np.log10(array)))
         else:
             subset = np.where(np.isfinite(array))
         if parsed["vmin"] is not None:
@@ -151,3 +152,10 @@ def get_1d_axes(var, axes, name):
     y = var.values
     ylab = axis_label(var=var, name="")
     return xlab, ylab, x, y, axes
+
+
+# def dims_and_shapes(var):
+#     out = {}
+#     for i, dim in enumerate(var.dims):
+#         out[str(dim)] = var.shape[i]
+#     return out

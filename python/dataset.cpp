@@ -501,14 +501,16 @@ void init_dataset(py::module &m) {
       :return: New sorted dataset.
       :rtype: Dataset)");
 
-  // m.def("combine_masks",
-  //       [](const MasksConstProxy &msk) {
-  //         return core::masks_merge(msk, msk.dims()[0]);
-  //       },
-  //       py::call_guard<py::gil_scoped_release>(), R"(
-  //       Combine all masks into a single one following the OR operation.
-  //       :return: A new variable that contains the union of all masks.
-  //       :rtype: Variable)");
+  m.def("combine_masks",
+        [](const MasksConstProxy &msk, const std::vector<Dim> &labels,
+           const std::vector<scipp::index> &shape) {
+          return core::masks_merge_if_contained(
+              msk, core::Dimensions(labels, shape));
+        },
+        py::call_guard<py::gil_scoped_release>(), R"(
+        Combine all masks into a single one following the OR operation.
+        :return: A new variable that contains the union of all masks.
+        :rtype: Variable)");
 
   py::implicitly_convertible<DataArray, DataConstProxy>();
   py::implicitly_convertible<DataArray, DataProxy>();
