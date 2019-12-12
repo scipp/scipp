@@ -21,6 +21,10 @@ with open(ICONS_SVG_PATH, 'r') as f:
     ICONS_SVG = "".join(f.readlines())
 
 
+def _is_dataset(x):
+    return isinstance(x, sc.Dataset) or isinstance(x, sc.DataProxy)
+
+
 def _format_array(data, size):
     i = 0
     s = []
@@ -240,8 +244,10 @@ def summarize_variable(name, var, is_index=False, is_attr=None):
 
 
 def summarize_vars(dataset):
+    hide_attrs = not _is_dataset(dataset)
     vars_li = "".join(
-        f"<li class='xr-var-item'>{summarize_variable(name, values)}</li>"
+        "<li class='xr-var-item'>{}</li>".format(
+            summarize_variable(name, values, is_attr=hide_attrs))
         for name, values in dataset
     )
 
