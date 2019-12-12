@@ -18,6 +18,7 @@ environment:
 cache: C:\Users\appveyor\clcache -> appveyor.yml
 
 install:
+- type C:\Users\appveyor\clcache\stats.txt
 - echo install started %time%
 - cd %APPVEYOR_BUILD_FOLDER%
 - git submodule update --init
