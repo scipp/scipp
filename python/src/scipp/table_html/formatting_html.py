@@ -144,7 +144,7 @@ def summarize_attrs_simple(attrs):
 def summarize_attrs(attrs):
     attrs_li = "".join(
         f"<li class='xr-var-item'>\
-            {summarize_variable(name, values, is_attr=True)}</li>"
+            {summarize_variable(name, values, has_attrs=False)}</li>"
         for name, values in attrs
     )
     return f"<ul class='xr-var-list'>{attrs_li}</ul>"
@@ -174,7 +174,7 @@ def summarize_coords(coords):
     return f"<ul class='xr-var-list'>{vars_li}</ul>"
 
 
-def summarize_variable(name, var, is_index=False, is_attr=None):
+def summarize_variable(name, var, is_index=False, has_attrs=False):
     """
     :param name:
     :param var:
@@ -182,9 +182,8 @@ def summarize_variable(name, var, is_index=False, is_attr=None):
                      coordinates that represent the indices of
                      a dimension that the data contains
 
-    :param is_attr: If the variable is for an attribute, then this
-                    hides the show/hide attributes button.
-
+    :param has_attrs: If the variable is for a section that cannot contain
+                      attributes, then this hides the show/hide button.
     """
     cssclass_idx = " class='xr-has-index'" if is_index else ""
     dims_text = ', '.join(escape(f'{str(dim)} [sparse]'
@@ -227,7 +226,7 @@ def summarize_variable(name, var, is_index=False, is_attr=None):
             xr-preview'>{variances_preview}</div>",
         f"<input id='{attrs_id}' class='xr-var-attrs-in' ",
         f"type='checkbox' {disabled}>",
-        f"<label for='{attrs_id}' class='{'xr-hide-icon' if is_attr else '1'}'"
+        f"<label for='{attrs_id}' class='{'xr-hide-icon' if not has_attrs else ''}'"
         " title='Show/Hide attributes'>",
         f"{attrs_icon}</label>",
         f"<input id='{data_id}' class='xr-var-data-in' type='checkbox'>",
@@ -239,9 +238,10 @@ def summarize_variable(name, var, is_index=False, is_attr=None):
     return "".join(html)
 
 
-def summarize_vars(dataset):
+def summarize_data(dataset):
     vars_li = "".join(
-        f"<li class='xr-var-item'>{summarize_variable(name, values)}</li>"
+        "<li class='xr-var-item'>"
+        f"{summarize_variable(name, values, has_attrs=True)}</li>"
         for name, values in dataset
     )
 
@@ -250,7 +250,8 @@ def summarize_vars(dataset):
 
 def collapsible_section(name, inline_details="", details="", n_items=None,
                         enabled=True, collapsed=False,
-                        add_value_variance_labels=False):
+                        add_value_variance_labels=False,
+                        has_attrs=False):
     # "unique" id to expand/collapse the section
     data_id = "section-" + str(uuid.uuid4())
 
@@ -349,7 +350,7 @@ mask_section = partial(
 data_section = partial(
     _mapping_section,
     name="Data",
-    details_func=summarize_vars,
+    details_func=summarize_data,
     max_items_collapse=15,
 )
 
