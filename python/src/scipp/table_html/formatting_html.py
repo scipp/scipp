@@ -9,7 +9,7 @@ from functools import partial, reduce
 from html import escape
 import numpy as np
 
-import scipp as sc
+from .._scipp import core as sc
 
 CSS_FILE_PATH = f"{os.path.dirname(__file__)}/style.css"
 with open(CSS_FILE_PATH, 'r') as f:
@@ -19,6 +19,10 @@ with open(CSS_FILE_PATH, 'r') as f:
 ICONS_SVG_PATH = f"{os.path.dirname(__file__)}/icons-svg-inline.html"
 with open(ICONS_SVG_PATH, 'r') as f:
     ICONS_SVG = "".join(f.readlines())
+
+
+def _is_dataset(x):
+    return isinstance(x, sc.Dataset) or isinstance(x, sc.DataProxy)
 
 
 def _format_array(data, size):
@@ -240,8 +244,10 @@ def summarize_variable(name, var, is_index=False, is_attr=None):
 
 
 def summarize_vars(dataset):
+    hide_attrs = not _is_dataset(dataset)
     vars_li = "".join(
-        f"<li class='xr-var-item'>{summarize_variable(name, values)}</li>"
+        "<li class='xr-var-item'>{}</li>".format(
+            summarize_variable(name, values, is_attr=hide_attrs))
         for name, values in dataset
     )
 
@@ -295,7 +301,8 @@ def _mapping_section(mapping, name, details_func, max_items_collapse,
 
 
 def dim_section(dataset):
-    dim_list = format_dims(dataset.dims, dataset.shape, dataset.coords)
+    coords = dataset.coords if hasattr(dataset, "coords") else []
+    dim_list = format_dims(dataset.dims, dataset.shape, coords)
 
     return collapsible_section(
         "Dimensions", inline_details=dim_list, enabled=False, collapsed=True
@@ -353,7 +360,6 @@ data_section = partial(
     max_items_collapse=15,
 )
 
-
 attr_section = partial(
     _mapping_section,
     name="Attributes",
@@ -388,9 +394,22 @@ def dataset_repr(ds):
         dim_section(ds),
         coord_section(ds.coords),
         label_section(ds.labels),
-        data_section(ds),
+        data_section(ds if hasattr(ds, '__len__') else [('', ds)]),
         mask_section(ds.masks),
         attr_section(ds.attrs),
+    ]
+
+    return _obj_repr(header_components, sections)
+
+
+def variable_repr(var):
+    obj_type = "scipp.{}".format(type(var).__name__)
+
+    header_components = [f"<div class='xr-obj-type'>{escape(obj_type)}</div>"]
+
+    sections = [
+        dim_section(var),
+        data_section([('', var)]),
     ]
 
     return _obj_repr(header_components, sections)
