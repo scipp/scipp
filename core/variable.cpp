@@ -9,6 +9,47 @@
 
 namespace scipp::core {
 
+template <class... Known>
+VariableConceptHandle_impl<Known...>::operator bool() const noexcept {
+  return std::visit([](auto &&ptr) { return bool(ptr); }, m_object);
+}
+
+template <class... Known>
+VariableConcept &VariableConceptHandle_impl<Known...>::operator*() const {
+  return std::visit([](auto &&arg) -> VariableConcept & { return *arg; },
+                    m_object);
+}
+
+template <class... Known>
+VariableConcept *VariableConceptHandle_impl<Known...>::operator->() const {
+  return std::visit(
+      [](auto &&arg) -> VariableConcept * { return arg.operator->(); },
+      m_object);
+}
+
+template <class... Known>
+typename VariableConceptHandle_impl<Known...>::variant_t
+VariableConceptHandle_impl<Known...>::variant() const noexcept {
+  return std::visit(
+      [](auto &&arg) {
+        return std::variant<const VariableConcept *,
+                            const VariableConceptT<Known> *...>{arg.get()};
+      },
+      m_object);
+}
+
+// Explicit instantiation of complete class does not work, at least on gcc.
+// Apparently the type is already defined and the attribute is ignored, so we
+// have to do it separately for each method.
+template SCIPP_CORE_EXPORT VariableConceptHandle_impl<KNOWN>::
+operator bool() const;
+template SCIPP_CORE_EXPORT VariableConcept &VariableConceptHandle_impl<KNOWN>::
+operator*() const;
+template SCIPP_CORE_EXPORT VariableConcept *VariableConceptHandle_impl<KNOWN>::
+operator->() const;
+template SCIPP_CORE_EXPORT typename VariableConceptHandle_impl<KNOWN>::variant_t
+VariableConceptHandle_impl<KNOWN>::variant() const noexcept;
+
 VariableConcept::VariableConcept(const Dimensions &dimensions)
     : m_dimensions(dimensions) {}
 
