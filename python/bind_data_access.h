@@ -353,7 +353,15 @@ using as_VariableView =
 
 template <class T, class... Ignored>
 void bind_data_properties(pybind11::class_<T, Ignored...> &c) {
-  c.def_property_readonly("dtype", [](const T &self) { return self.dtype(); },
+  c.def_property_readonly("dtype",
+                          [](const T &self) {
+                            if constexpr (std::is_same_v<T, DataArray> ||
+                                          std::is_same_v<T, DataProxy>)
+                              return self.hasData() ? py::cast(self.dtype())
+                                                    : py::none();
+                            else
+                              return self.dtype();
+                          },
                           "Data type contained in the variable.");
   c.def_property_readonly("dims",
                           [](const T &self) {
@@ -381,7 +389,15 @@ void bind_data_properties(pybind11::class_<T, Ignored...> &c) {
                           "the data is not sparse.",
                           py::return_value_policy::copy);
 
-  c.def_property("unit", &T::unit, &T::setUnit, "Physical unit of the data.");
+  c.def_property("unit",
+                 [](const T &self) {
+                   if constexpr (std::is_same_v<T, DataArray> ||
+                                 std::is_same_v<T, DataProxy>)
+                     return self.hasData() ? py::cast(self.unit()) : py::none();
+                   else
+                     return self.unit();
+                 },
+                 &T::setUnit, "Physical unit of the data.");
 
   c.def_property(
       "values",
