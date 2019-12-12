@@ -41,6 +41,8 @@ def _make_row(data_html, variances_html=None):
 
 
 def _format_row(data, size):
+    if size == 0:
+        return _make_row("[]")
     return _make_row(_format_array(data, size))
 
 
