@@ -17,8 +17,7 @@ import ipywidgets as widgets
 
 def plot_1d(input_data=None, axes=None, values=None, variances=None,
             masks=None, filename=None, figsize=None, mpl_axes=None,
-            color=None, marker=None, linewidth=None, linestyle=None,
-            logx=False, logy=False, logxy=False):
+            params=None, logx=False, logy=False, logxy=False):
     """
     Plot a 1D spectrum.
 
@@ -35,8 +34,7 @@ def plot_1d(input_data=None, axes=None, values=None, variances=None,
     # layout = dict(logx=logx or logxy, logy=logy or logxy)
 
     sv = Slicer1d(input_data=input_data, axes=axes, values=values,
-                  variances=variances, masks=masks, color=color,
-                  marker=marker, linewidth=linewidth, linestyle=linestyle,
+                  variances=variances, masks=masks, params=params,
                   logx=logx or logxy, logy=logy or logxy)
 
     if mpl_axes is None:
@@ -48,8 +46,7 @@ def plot_1d(input_data=None, axes=None, values=None, variances=None,
 class Slicer1d(Slicer):
 
     def __init__(self, input_data=None, axes=None, values=None,
-                 variances=None, masks=None, mpl_axes=None, color=None,
-                 marker=None, linewidth=None, linestyle=None,
+                 variances=None, masks=None, mpl_axes=None, params=None,
                  logx=False, logy=False):
 
         super().__init__(input_data=input_data, axes=axes, values=values,
@@ -68,14 +65,14 @@ class Slicer1d(Slicer):
                 dpi=config.dpi)
         self.members.update({"lines": {}, "error_x": {}, "error_y": {},
                              "error_xy": {}})
-        self.color = color
-        self.marker = marker
-        self.linewidth = linewidth
-        self.linestyle = linestyle
-        print(self.color)
-        print(self.marker)
-        print(self.linewidth)
-        print(self.linestyle)
+        self.params = params
+        # self.marker = marker
+        # self.linewidth = linewidth
+        # self.linestyle = linestyle
+        print(self.params)
+        # print(self.marker)
+        # print(self.linewidth)
+        # print(self.linestyle)
 
 
         self.names = []
@@ -191,21 +188,21 @@ class Slicer1d(Slicer):
             if self.histograms[name][dim_str]:
                 [self.members["lines"][name]] = self.ax.step(
                     new_x, np.concatenate(([0], vslice.values)), label=name,
-                    color=self.color[i], zorder=10)
+                    zorder=10,
+                    **{key: self.params[key][i] for key in ["color", "linewidth"]})
             else:
                 [self.members["lines"][name]] = self.ax.plot(
-                    new_x, vslice.values, label=name, color=self.color[i],
-                    marker=self.marker[i], linewidth=self.linewidth[i],
-                    linestyle=self.linestyle[i], zorder=10)
+                    new_x, vslice.values, label=name, zorder=10,
+                    **{key: self.params[key][i] for key in self.params.keys()})
             if var.variances is not None:
                 if self.histograms[name][dim_str]:
                     self.members["error_y"][name] = self.ax.errorbar(
                         xc, vslice.values, yerr=np.sqrt(vslice.variances),
-                        color=self.color[i], zorder=10, fmt="none")
+                        color=self.params["color"][i], zorder=10, fmt="none")
                 else:
                     self.members["error_y"][name] = self.ax.errorbar(
                         new_x, vslice.values, yerr=np.sqrt(vslice.variances),
-                        color=self.color[i], zorder=10, fmt="none")
+                        color=self.params["color"][i], zorder=10, fmt="none")
 
         deltax = 0.05 * (new_x[-1] - new_x[0])
         self.ax.set_xlim([new_x[0] - deltax, new_x[-1] + deltax])

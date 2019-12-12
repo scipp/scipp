@@ -18,10 +18,7 @@ def get_line_param(name=None, index=None):
     If an index is supplied, return the i-th item in the list.
     """
     param = getattr(config, name)
-    if index is not None:
-        return param[index % len(param)]
-    else:
-        return param
+    return param[index % len(param)]
 
 
 def edges_to_centers(x):

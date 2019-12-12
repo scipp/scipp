@@ -31,10 +31,10 @@ def plot(input_data, collapse=None, projection=None, axes=None, color=None,
         input_data = ds
 
     # Prepare color and marker containers
-    line_params = {"color": [color, True],
-                   "marker": [marker, True],
-                   "linestyle": [linestyle, False],
-                   "linewidth": [linewidth, False]}
+    line_params = {"color": color,
+                   "marker": marker,
+                   "linestyle": linestyle,
+                   "linewidth": linewidth}
 
     # auto_color = False
     # if color is None:
@@ -73,19 +73,17 @@ def plot(input_data, collapse=None, projection=None, axes=None, color=None,
 
             params = {}
             for n, p in line_params.items():
-                if p[0] is None:
-                    params[n] = get_line_param(
-                        name=n, index=line_count if p[1] else None)
-                elif isinstance(p[0], list):
-                    col = p[0][line_count]
-                    if isinstance(col, int) and p[1]:
-                        col = get_line_param(
-                            name=n, index=col)
-                elif isinstance(p[0], int):
-                    col = get_line_param(
-                            name=n, index=p[0])
+                if p is None:
+                    params[n] = get_line_param(name=n, index=line_count)
+                elif isinstance(p, list):
+                    params[n] = p[line_count]
+                    if isinstance(params[n], int):
+                        params[n] = get_line_param(
+                            name=n, index=params[n])
+                elif isinstance(p, int):
+                    params[n] = get_line_param(name=n, index=p)
                 else:
-                    col = p[0]
+                    params[n] = p
 
 
             print(params)
@@ -141,6 +139,6 @@ def plot(input_data, collapse=None, projection=None, axes=None, color=None,
                                    sparse_dim=sparse_dim[key],
                                    projection=projection,
                                    axes=val["axes"],
-                                   **val["params"],
+                                   params=val["params"],
                                    **kwargs)
     return output

@@ -34,10 +34,10 @@ class _Plot:
                        'p', '*', 'h', 'H', '+', 'x', 'D', 'd']
 
         # Default line width for 1D plots
-        self.linewidth = 1.5
+        self.linewidth = [1.5]
 
         # Default line style for 1D non-histogram plots
-        self.linestyle = "none"
+        self.linestyle = ["none"]
 
 
 class _Colors:
