@@ -94,7 +94,7 @@ def test_lifetime_scalar():
     import gc
     gc.collect()
     var.copy()  # do something allocating memory to trigger potential segfault
-    assert var.values == elem
+    assert vals == elem
 
 
 def test_lifetime_string_array():
