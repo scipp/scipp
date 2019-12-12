@@ -353,6 +353,8 @@ using as_VariableView =
 
 template <class T, class... Ignored>
 void bind_data_properties(pybind11::class_<T, Ignored...> &c) {
+  c.def_property_readonly("dtype", [](const T &self) { return self.dtype(); },
+                          "Data type contained in the variable.");
   c.def_property_readonly("dims",
                           [](const T &self) {
                             const auto &dims = self.dims();
