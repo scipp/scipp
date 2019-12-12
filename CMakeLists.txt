@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
-cmake_minimum_required(VERSION 3.13.0)
+cmake_minimum_required(VERSION 3.12.0)
 project(scipp)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -14,14 +14,18 @@ endif(CCACHE_FOUND)
 if(MSVC)
     set(CLCACHE_PATH "" CACHE PATH "Path to installed clcache executable directory")
     if(EXISTS ${CLCACHE_PATH})
-	    set(CMAKE_VS_GLOBALS
-		"CLToolExe=clcache.exe"
-		"CLToolPath=${CLCACHE_PATH}"
-		"TrackFileAccess=false")
-	    message(STATUS "Will attempt to use clcache")
+        if(NOT CMAKE_VERSION VERSION_LESS 3.13)
+                set(CMAKE_VS_GLOBALS
+                    "CLToolExe=clcache.exe"
+                    "CLToolPath=${CLCACHE_PATH}"
+                    "TrackFileAccess=false")
+                message(STATUS "Will attempt to use clcache")
+        else(NOT CMAKE_VERSION VERSION_LESS 3.13)
+		message(WARNING "CMake version ${CMAKE_VERSION} too low to support CLCACHE. Not enabled.")
+        endif(NOT CMAKE_VERSION VERSION_LESS 3.13)
     else(EXISTS ${CLCACHE_PATH})
-	    message(STATUS "CLCACHE_PATH not specified. No clcache usage.")
-	    unset(CMAKE_VS_GLOBALS) # Clear all vs globals
+        message(STATUS "CLCACHE_PATH not specified. Not enabled.")
+        unset(CMAKE_VS_GLOBALS) # Clear all vs globals
     endif(EXISTS ${CLCACHE_PATH})
 endif(MSVC)
 
@@ -103,19 +107,19 @@ endif()
 
 if(NOT WIN32)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-omit-frame-pointer")
-	add_compile_options(-Wall
-						-Wextra
-						-Wpedantic
-						-Wunused
-						-Wshadow
-						-Winit-self
-						-Wpointer-arith
-						-Woverloaded-virtual
-						-Wold-style-cast
-						-Wcast-qual
-						-Wcast-align)
-	add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-Woverloaded-virtual>
-						$<$<COMPILE_LANGUAGE:CXX>:-fno-operator-names>)
+    add_compile_options(-Wall
+                        -Wextra
+                        -Wpedantic
+                        -Wunused
+                        -Wshadow
+                        -Winit-self
+                        -Wpointer-arith
+                        -Woverloaded-virtual
+                        -Wold-style-cast
+                        -Wcast-qual
+                        -Wcast-align)
+    add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-Woverloaded-virtual>
+                        $<$<COMPILE_LANGUAGE:CXX>:-fno-operator-names>)
 
 endif(NOT WIN32)
 # This is currently causing to many warnings, reenable when appropriate.
