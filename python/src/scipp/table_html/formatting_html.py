@@ -7,7 +7,6 @@ import uuid
 
 from functools import partial, reduce
 from html import escape
-import numpy as np
 
 from .._scipp import core as sc
 
