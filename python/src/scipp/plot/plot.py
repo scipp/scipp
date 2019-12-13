@@ -36,10 +36,6 @@ def plot(input_data, collapse=None, projection=None, axes=None, color=None,
                    "linestyle": linestyle,
                    "linewidth": linewidth}
 
-    # auto_color = False
-    # if color is None:
-    #     auto_color = True
-
     # Counter for 1d data
     line_count = -1
 
@@ -76,7 +72,8 @@ def plot(input_data, collapse=None, projection=None, axes=None, color=None,
             mpl_line_params = {}
             for n, p in line_params.items():
                 if p is None:
-                    mpl_line_params[n] = get_line_param(name=n, index=line_count)
+                    mpl_line_params[n] = get_line_param(name=n,
+                                                        index=line_count)
                 elif isinstance(p, list):
                     mpl_line_params[n] = p[line_count]
                     if isinstance(mpl_line_params[n], int):
@@ -86,34 +83,6 @@ def plot(input_data, collapse=None, projection=None, axes=None, color=None,
                     mpl_line_params[n] = get_line_param(name=n, index=p)
                 else:
                     mpl_line_params[n] = p
-
-
-            print(mpl_line_params)
-
-            # if auto_color:
-            #     col = get_color(index=line_count)
-            # elif isinstance(color, list):
-            #     col = color[line_count]
-            #     if isinstance(col, int):
-            #         col = get_color(index=col)
-            # elif isinstance(color, int):
-            #     col = get_color(index=color)
-            # else:
-            #     col = color
-
-
-
-            # if auto_color:
-            #     col = get_color(index=line_count)
-            # elif isinstance(color, list):
-            #     col = color[line_count]
-            #     if isinstance(col, int):
-            #         col = get_color(index=col)
-            # elif isinstance(color, int):
-            #     col = get_color(index=color)
-            # else:
-            #     col = color
-            # # color_count += 1
 
             if key not in tobeplotted.keys():
                 tobeplotted[key] = dict(ndims=ndims, dataset=sc.Dataset(),
@@ -137,7 +106,6 @@ def plot(input_data, collapse=None, projection=None, axes=None, color=None,
             output[key] = dispatch(input_data=val["dataset"],
                                    name=key,
                                    ndim=val["ndims"],
-                                   # color=val["color"],
                                    sparse_dim=sparse_dim[key],
                                    projection=projection,
                                    axes=val["axes"],

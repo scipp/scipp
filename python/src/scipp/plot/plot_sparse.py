@@ -17,7 +17,7 @@ def plot_sparse(input_data, ndim=0, sparse_dim=None, logx=False,
                 logy=False, logxy=False, weights="color", size=10.0,
                 filename=None, axes=None, mpl_axes=None, opacity=0.7,
                 title=None, mpl_scatter_params=None, cmap=None, log=None,
-                 vmin=None, vmax=None):
+                vmin=None, vmax=None):
     """
     Produce a scatter plot from sparse data.
     TODO: make plot_sparse use the slicer machinery to also have buttons and
@@ -38,25 +38,11 @@ def plot_sparse(input_data, ndim=0, sparse_dim=None, logx=False,
     ipv = None
 
     if ndims < 3:
-        # fig, ax = plt.subplots(1, 1, figsize=(config.width/config.dpi,
-        #                                       config.height/config.dpi),
-        #                        dpi=config.dpi)
         fig = None
         ax = {"ax": None, "cax": None}
         if mpl_axes is not None:
-            # ax = {"ax": None, "cax": None}
             if isinstance(mpl_axes, dict):
                 ax.update(mpl_axes)
-                # ax = None
-                # for key, val in mpl_axes.items():
-                #     if key == "ax" or key == "ax_values":
-                #         ax[0] = val
-                #     if key == "cax" or key == "cax_values":
-                #         cax[0] = val
-                #     if key == "ax_variances":
-                #         ax[1] = val
-                #     if key == "cax_variances":
-                #         cax[1] = val
             else:
                 # Case where only a single axis is given
                 ax["ax"] = mpl_axes
@@ -82,8 +68,6 @@ def plot_sparse(input_data, ndim=0, sparse_dim=None, logx=False,
                 params["cmap"] = cbar["cmap"]
                 params["norm"] = cbar["norm"]
 
-        # if marker is None:
-        #     marker = "o"
         scat = ax["ax"].scatter(xs, ys, **params)
         if len(sparse_data) > ndims and weights.count("color") > 0:
             colorbar = plt.colorbar(scat, ax=ax["ax"], cax=ax["cax"])
@@ -111,20 +95,13 @@ def plot_sparse(input_data, ndim=0, sparse_dim=None, logx=False,
 
         params = dict(color=mpl_scatter_params["color"][0],
                       marker=mpl_scatter_params["marker"][0])
-        # if isinstance(color, list):
-        #     params["color"] = mpl_scatter_params["color"][0]
-        # else:
-        #     params["color"] = color
-        # params["x"] = sparse_data[ndims - 1]
-        # params["y"] = sparse_data[ndims - 2]
-        # params["z"] = sparse_data[0]
         if len(sparse_data) > ndims and weights:
             scalar_map = cm.ScalarMappable(norm=cbar["norm"],
                                            cmap=cbar["cmap"])
             params["color"] = scalar_map.to_rgba(sparse_data[-1])
 
-        # if params["marker"] is None or len(params["marker"]) == 1:
-        #     marker = "sphere"
+        if params["marker"] is None or len(params["marker"]) == 1:
+            params["marker"] = "sphere"
         scat = ipv.scatter(x=sparse_data[ndims - 1], y=sparse_data[ndims - 2],
                            z=sparse_data[0], **params)
 

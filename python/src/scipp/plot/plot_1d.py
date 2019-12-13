@@ -193,9 +193,9 @@ class Slicer1d(Slicer):
                 if self.params["masks"]["show"]:
                     me = np.concatenate(([False], mslice.values))
                     [self.members["masks"][name]] = self.ax.step(
-                    new_x, self.mask_to_float(me, ye),
-                    linewidth=self.mpl_line_params["linewidth"][i]*3,
-                    color=self.params["masks"]["color"], zorder=9)
+                        new_x, self.mask_to_float(me, ye),
+                        linewidth=self.mpl_line_params["linewidth"][i]*3,
+                        color=self.params["masks"]["color"], zorder=9)
 
             else:
 
@@ -212,7 +212,7 @@ class Slicer1d(Slicer):
                         zorder=10, mec=self.params["masks"]["color"], mew=3,
                         linestyle="none",
                         **{key: self.mpl_line_params[key][i] for key in
-                           ["color", "marker"]} )
+                           ["color", "marker"]})
 
             # Add error bars
             if var.variances is not None:

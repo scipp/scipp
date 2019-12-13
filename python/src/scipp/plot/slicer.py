@@ -33,17 +33,18 @@ class Slicer:
                                                  array=self.input_data.values)
 
         if hasattr(self.input_data, "variances"):
+            self.params["variances"] = {"show": False}
             if self.input_data.variances is not None:
-                self.params["variances"] = parse_params(
-                    params=variances, defaults={"show": False}, globs=globs,
-                    array=np.sqrt(self.input_data.variances))
+                self.params["variances"].update(
+                    parse_params(params=variances, defaults={"show": False},
+                                 globs=globs,
+                                 array=np.sqrt(self.input_data.variances)))
 
         self.params["masks"] = parse_params(
             params=masks, defaults={"cmap": "gray", "cbar": False},
             globs=globs)
         self.params["masks"]["show"] = (self.params["masks"]["show"] and
                                         len(self.input_data.masks) > 0)
-        print("PARAMS", self.params)
         if self.params["masks"]["show"]:
             self.masks = combine_masks(self.input_data.masks,
                                        self.input_data.dims,
@@ -188,11 +189,13 @@ class Slicer:
         if self.params["masks"]["show"]:
             self.masks_button = widgets.ToggleButton(
                 value=self.params["masks"]["show"],
-                description="Hide masks" if self.params["masks"]["show"] else "Show masks",
+                description="Hide masks" if self.params["masks"]["show"] else
+                            "Show masks",
                 disabled=False, button_style="")
             self.masks_button.observe(self.toggle_masks, names="value")
             self.vbox += [self.masks_button]
-            self.members["widgets"]["togglebutton"]["masks"] = self.masks_button
+            self.members["widgets"]["togglebutton"]["masks"] = \
+                self.masks_button
 
         return
 
