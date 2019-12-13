@@ -9,7 +9,7 @@ from functools import partial, reduce
 from html import escape
 import numpy as np
 
-import scipp as sc
+from .._scipp import core as sc
 
 CSS_FILE_PATH = f"{os.path.dirname(__file__)}/style.css"
 with open(CSS_FILE_PATH, 'r') as f:
@@ -19,6 +19,10 @@ with open(CSS_FILE_PATH, 'r') as f:
 ICONS_SVG_PATH = f"{os.path.dirname(__file__)}/icons-svg-inline.html"
 with open(ICONS_SVG_PATH, 'r') as f:
     ICONS_SVG = "".join(f.readlines())
+
+
+def _is_dataset(x):
+    return isinstance(x, sc.Dataset) or isinstance(x, sc.DataProxy)
 
 
 def _format_array(data, size):
@@ -54,6 +58,8 @@ def _format_non_sparse(var, has_variances):
 
 
 def _format_sparse(var, has_variances):
+    if hasattr(var, "data") and var.data is None:
+        return "no data in sparse array"
     s = []
     size = var.shape[0]
 
@@ -242,12 +248,12 @@ def summarize_variable(name, var, is_index=False, has_attrs=False):
 
 
 def summarize_data(dataset):
+    has_attrs = _is_dataset(dataset)
     vars_li = "".join(
         "<li class='xr-var-item'>"
-        f"{summarize_variable(name, values, has_attrs=True)}</li>"
+        f"{summarize_variable(name, values, has_attrs=has_attrs)}</li>"
         for name, values in dataset
     )
-
     return f"<ul class='xr-var-list'>{vars_li}</ul>"
 
 
@@ -302,7 +308,8 @@ def _mapping_section(mapping, name, details_func, max_items_collapse,
 
 
 def dim_section(dataset):
-    dim_list = format_dims(dataset.dims, dataset.shape, dataset.coords)
+    coords = dataset.coords if hasattr(dataset, "coords") else []
+    dim_list = format_dims(dataset.dims, dataset.shape, coords)
 
     return collapsible_section(
         "Dimensions", inline_details=dim_list, enabled=False, collapsed=True
@@ -359,7 +366,6 @@ data_section = partial(
     max_items_collapse=15,
 )
 
-
 attr_section = partial(
     _mapping_section,
     name="Attributes",
@@ -406,12 +412,26 @@ def dataset_repr(ds):
         add_value_variance_labels = False
 
     sections.append(data_section(
-        ds, add_value_variance_labels=add_value_variance_labels))
+        ds if hasattr(ds, '__len__') else [('', ds)]),
+        add_value_variance_labels=add_value_variance_labels))
     add_value_variance_labels = False
 
     if len(ds.masks) > 0:
         sections.append(mask_section(ds.masks))
     if len(ds.attrs) > 0:
         sections.append(attr_section(ds.attrs))
+
+    return _obj_repr(header_components, sections)
+
+
+def variable_repr(var):
+    obj_type = "scipp.{}".format(type(var).__name__)
+
+    header_components = [f"<div class='xr-obj-type'>{escape(obj_type)}</div>"]
+
+    sections = [
+        dim_section(var),
+        data_section([('', var)], add_value_variance_labels=True),
+    ]
 
     return _obj_repr(header_components, sections)
