@@ -15,7 +15,6 @@ CSS_FILE_PATH = f"{os.path.dirname(__file__)}/style.css"
 with open(CSS_FILE_PATH, 'r') as f:
     CSS_STYLE = "".join(f.readlines())
 
-
 ICONS_SVG_PATH = f"{os.path.dirname(__file__)}/icons-svg-inline.html"
 with open(ICONS_SVG_PATH, 'r') as f:
     ICONS_SVG = "".join(f.readlines())
@@ -25,13 +24,13 @@ def _is_dataset(x):
     return isinstance(x, sc.Dataset) or isinstance(x, sc.DataProxy)
 
 
-def _format_array(data, size):
+def _format_array(data, size, ellipsis_after, do_ellide=True):
     i = 0
     s = []
     while i < size:
-        if i == 2 and size > 4:
+        if do_ellide and i == ellipsis_after and size > 2 * ellipsis_after + 1:
             s.append("...")
-            i = size - 2
+            i = size - ellipsis_after
         elem = data[i]
         if not hasattr(data, "dtype") or data.dtype != np.bool:
             elem = round(elem, 2)
@@ -44,36 +43,41 @@ def _make_row(data_html, variances_html=None):
     return f"<div>{data_html}</div>"
 
 
-def _format_row(data, size):
-    if size == 0:
-        return _make_row("[]")
-    return _make_row(_format_array(data, size))
-
-
 def _format_non_sparse(var, has_variances):
     size = reduce(operator.mul, var.shape, 1)
     # flatten avoids displaying square brackets in the output
     data = retrieve(var, variances=has_variances).flatten()
-    return _format_row(data, size)
+    return _make_row(_format_array(data, size, ellipsis_after=2))
+
+
+def _get_sparse(var, variances, ellipsis_after, summary=False):
+    if hasattr(var, "data") and var.data is None:
+        return ["no data, implicitly 1"]
+    size = var.shape[0]
+    i = 0
+    s = []
+
+    do_ellide = summary or size > 1000 or sum([
+        len(retrieve(var, variances=variances)[i])
+        for i in range(min(size, 1000))
+    ]) > 1000
+    while i < size:
+        if i == ellipsis_after and do_ellide and size > 2 * ellipsis_after + 1:
+            s.append("...")
+            i = size - ellipsis_after
+        data = retrieve(var, variances=variances)[i]
+        if summary:
+            s.append(f'len={len(data)}')
+        else:
+            s.append('sparse({})'.format(
+                _format_array(data, len(data), ellipsis_after, do_ellide)))
+        i += 1
+    return s
 
 
 def _format_sparse(var, has_variances):
-    if hasattr(var, "data") and var.data is None:
-        return "no data in sparse array"
-    s = []
-    size = var.shape[0]
-
-    i = 0
-    s = []
-    while i < size:
-        if i == 2 and size > 5:
-            s.append(_make_row("...", ''))
-            i = size - 2
-        data = retrieve(var, variances=has_variances)[i]
-        s.append(_format_row(data, len(data)))
-        i += 1
-
-    return "".join(s)
+    s = _get_sparse(var, has_variances, ellipsis_after=1, summary=True)
+    return _make_row(", ".join([row for row in s]))
 
 
 def inline_variable_repr(var, has_variances=False):
@@ -96,19 +100,14 @@ def retrieve(var, variances=False, single=False):
 
 def _short_data_repr_html_non_sparse(var, variances=False):
     if hasattr(var, "data"):
-        data_repr = repr(retrieve(var.data, variances))
+        return repr(retrieve(var.data, variances))
     else:
-        data_repr = repr(retrieve(var, variances))
-    return data_repr
+        return repr(retrieve(var, variances))
 
 
 def _short_data_repr_html_sparse(var, variances=False):
-    s = []
-    non_sparse_dim = var.dims[0]
-    for i in range(var.shape[0]):
-        s.append(repr(retrieve(var[non_sparse_dim, i], variances)))
-
-    return "\n".join(s)
+    return "array([" + ",\n       ".join(
+        _get_sparse(var, variances, ellipsis_after=3)) + "])"
 
 
 def short_data_repr_html(var, variances=False):
@@ -128,45 +127,39 @@ def format_dims(dims, sizes, coords):
         return ""
 
     dim_css_map = {
-        dim: " class='xr-has-index'" if dim in coords else "" for dim in dims
+        dim: " class='xr-has-index'" if dim in coords else ""
+        for dim in dims
     }
 
     dims_li = "".join(
-        f"<li><span{dim_css_map[dim]}>" f"{escape(str(dim))}</span>: "
+        f"<li><span{dim_css_map[dim]}>"
+        f"{escape(str(dim))}</span>: "
         f"{size if size != sc.Dimensions.Sparse else 'Sparse' }</li>"
-        for dim, size in zip(dims, sizes)
-    )
+        for dim, size in zip(dims, sizes))
 
     return f"<ul class='xr-dim-list'>{dims_li}</ul>"
 
 
 def summarize_attrs_simple(attrs):
-    attrs_dl = "".join(
-        f"<dt><span>{escape(name)} :</span></dt>" f"<dd>{values}</dd>"
-        for name, values in attrs
-    )
+    attrs_dl = "".join(f"<dt><span>{escape(name)} :</span></dt>"
+                       f"<dd>{values}</dd>" for name, values in attrs)
 
     return f"<dl class='xr-attrs'>{attrs_dl}</dl>"
 
 
 def summarize_attrs(attrs):
-    attrs_li = "".join(
-        f"<li class='xr-var-item'>\
+    attrs_li = "".join(f"<li class='xr-var-item'>\
             {summarize_variable(name, values, has_attrs=False)}</li>"
-        for name, values in attrs
-    )
+                       for name, values in attrs)
     return f"<ul class='xr-var-list'>{attrs_li}</ul>"
 
 
 def _icon(icon_name):
     # icon_name is defined in icon-svg-inline.html
-    return (
-        "<svg class='icon xr-{0}'>"
-        "<use xlink:href='#{0}'>"
-        "</use>"
-        "</svg>".format(icon_name)
-
-    )
+    return ("<svg class='icon xr-{0}'>"
+            "<use xlink:href='#{0}'>"
+            "</use>"
+            "</svg>".format(icon_name))
 
 
 def summarize_coord(dim, var):
@@ -194,10 +187,9 @@ def summarize_variable(name, var, is_index=False, has_attrs=False):
                       attributes, then this hides the show/hide button.
     """
     cssclass_idx = " class='xr-has-index'" if is_index else ""
-    dims_text = ', '.join(escape(f'{str(dim)} [sparse]'
-                                 if dim == var.sparse_dim
-                                 else str(dim))
-                          for dim in var.dims)
+    dims_text = ', '.join(
+        escape(f'{str(dim)} [sparse]' if dim == var.sparse_dim else str(dim))
+        for dim in var.dims)
     dims_str = f"({dims_text})"
     name = escape(name)
     dtype = var.dtype
@@ -252,13 +244,16 @@ def summarize_data(dataset):
     vars_li = "".join(
         "<li class='xr-var-item'>"
         f"{summarize_variable(name, values, has_attrs=has_attrs)}</li>"
-        for name, values in dataset
-    )
+        for name, values in dataset)
     return f"<ul class='xr-var-list'>{vars_li}</ul>"
 
 
-def collapsible_section(name, inline_details="", details="", n_items=None,
-                        enabled=True, collapsed=False,
+def collapsible_section(name,
+                        inline_details="",
+                        details="",
+                        n_items=None,
+                        enabled=True,
+                        collapsed=False,
                         add_value_variance_labels=False,
                         has_attrs=False):
     # "unique" id to expand/collapse the section
@@ -281,19 +276,21 @@ def collapsible_section(name, inline_details="", details="", n_items=None,
     else:
         val_var_html = ""
 
-    return (
-        f"<input id='{data_id}' class='xr-section-summary-in' "
-        f"type='checkbox' {enabled} {collapsed}>"
-        f"<label for='{data_id}' class='xr-section-summary' {tip}>"
-        f"{name}:{n_items_span}</label>"
-        f"<div class='xr-section-inline-details'>{inline_details}</div>"
-        f"{val_var_html}"
-        f"<div class='xr-section-details'>{details}</div>"
-    )
+    return (f"<input id='{data_id}' class='xr-section-summary-in' "
+            f"type='checkbox' {enabled} {collapsed}>"
+            f"<label for='{data_id}' class='xr-section-summary' {tip}>"
+            f"{name}:{n_items_span}</label>"
+            f"<div class='xr-section-inline-details'>{inline_details}</div>"
+            f"{val_var_html}"
+            f"<div class='xr-section-details'>{details}</div>")
 
 
-def _mapping_section(mapping, name, details_func, max_items_collapse,
-                     enabled=True, add_value_variance_labels=False):
+def _mapping_section(mapping,
+                     name,
+                     details_func,
+                     max_items_collapse,
+                     enabled=True,
+                     add_value_variance_labels=False):
     n_items = len(mapping)
     collapsed = n_items >= max_items_collapse
 
@@ -311,9 +308,10 @@ def dim_section(dataset):
     coords = dataset.coords if hasattr(dataset, "coords") else []
     dim_list = format_dims(dataset.dims, dataset.shape, coords)
 
-    return collapsible_section(
-        "Dimensions", inline_details=dim_list, enabled=False, collapsed=True
-    )
+    return collapsible_section("Dimensions",
+                               inline_details=dim_list,
+                               enabled=False,
+                               collapsed=True)
 
 
 def array_section(obj):
@@ -324,17 +322,15 @@ def array_section(obj):
     data_repr = short_data_repr_html(obj)
     data_icon = _icon("icon-database")
 
-    return (
-        "<div class='xr-array-wrap'>"
-        f"<input id='{data_id}' \
+    return ("<div class='xr-array-wrap'>"
+            f"<input id='{data_id}' \
             class='xr-array-in' type='checkbox' {collapsed}>"
-        f"<label for='{data_id}' \
+            f"<label for='{data_id}' \
             title='Show/hide data repr'>{data_icon}</label>"
-        f"<div class='xr-array-preview \
+            f"<div class='xr-array-preview \
             xr-preview'><span>{preview}</span></div>"
-        f"<pre class='xr-array-data'>{data_repr}</pre>"
-        "</div>"
-    )
+            f"<pre class='xr-array-data'>{data_repr}</pre>"
+            "</div>")
 
 
 coord_section = partial(
@@ -344,20 +340,15 @@ coord_section = partial(
     max_items_collapse=25,
 )
 
-label_section = partial(
-    _mapping_section,
-    name="Labels",
-    details_func=summarize_coords,
-    max_items_collapse=10
-)
+label_section = partial(_mapping_section,
+                        name="Labels",
+                        details_func=summarize_coords,
+                        max_items_collapse=10)
 
-mask_section = partial(
-    _mapping_section,
-    name="Masks",
-    details_func=summarize_coords,
-    max_items_collapse=10
-)
-
+mask_section = partial(_mapping_section,
+                       name="Masks",
+                       details_func=summarize_coords,
+                       max_items_collapse=10)
 
 data_section = partial(
     _mapping_section,
@@ -377,18 +368,16 @@ attr_section = partial(
 def _obj_repr(header_components, sections):
     header = f"<div class='xr-header'>"\
         f"{''.join(h for h in header_components)}</div>"
-    sections = "".join(
-        f"<li class='xr-section-item'>{s}</li>" for s in sections)
+    sections = "".join(f"<li class='xr-section-item'>{s}</li>"
+                       for s in sections)
 
-    return (
-        "<div>"
-        f"{ICONS_SVG}<style>{CSS_STYLE}</style>"
-        "<div class='xr-wrap'>"
-        f"{header}"
-        f"<ul class='xr-sections'>{sections}</ul>"
-        "</div>"
-        "</div>"
-    )
+    return ("<div>"
+            f"{ICONS_SVG}<style>{CSS_STYLE}</style>"
+            "<div class='xr-wrap'>"
+            f"{header}"
+            f"<ul class='xr-sections'>{sections}</ul>"
+            "</div>"
+            "</div>")
 
 
 def dataset_repr(ds):
@@ -403,17 +392,19 @@ def dataset_repr(ds):
     # flag so that they are not repeatedly
     add_value_variance_labels = True
     if len(ds.coords) > 0:
-        sections.append(coord_section(
-            ds.coords, add_value_variance_labels=add_value_variance_labels))
+        sections.append(
+            coord_section(ds.coords,
+                          add_value_variance_labels=add_value_variance_labels))
         add_value_variance_labels = False
     if len(ds.labels) > 0:
-        sections.append(label_section(
-            ds.labels, add_value_variance_labels=add_value_variance_labels))
+        sections.append(
+            label_section(ds.labels,
+                          add_value_variance_labels=add_value_variance_labels))
         add_value_variance_labels = False
 
-    sections.append(data_section(
-        ds if hasattr(ds, '__len__') else [('', ds)],
-        add_value_variance_labels=add_value_variance_labels))
+    sections.append(
+        data_section(ds if hasattr(ds, '__len__') else [('', ds)],
+                     add_value_variance_labels=add_value_variance_labels))
     add_value_variance_labels = False
 
     if len(ds.masks) > 0:
