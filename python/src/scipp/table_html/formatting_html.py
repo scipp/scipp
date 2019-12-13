@@ -24,11 +24,11 @@ def _is_dataset(x):
     return isinstance(x, sc.Dataset) or isinstance(x, sc.DataProxy)
 
 
-def _format_array(data, size, ellipsis_after):
+def _format_array(data, size, ellipsis_after, do_ellide=True):
     i = 0
     s = []
     while i < size:
-        if i == ellipsis_after and size > 2 * ellipsis_after + 1:
+        if do_ellide and i == ellipsis_after and size > 2 * ellipsis_after + 1:
             s.append("...")
             i = size - ellipsis_after
         elem = data[i]
@@ -50,25 +50,31 @@ def _format_non_sparse(var, has_variances):
     return _make_row(_format_array(data, size, ellipsis_after=2))
 
 
-def _get_sparse(var, variances, ellipsis_after):
+def _get_sparse(var, variances, ellipsis_after, summary=False):
     if hasattr(var, "data") and var.data is None:
         return ["no data, implicitly 1"]
     size = var.shape[0]
     i = 0
     s = []
+
+    do_ellide = summary or size > 1000 or sum([
+        len(retrieve(var, variances=variances)[i])
+        for i in range(min(size, 1000))
+    ]) > 1000
     while i < size:
-        if i == ellipsis_after and size > 2 * ellipsis_after + 1:
+        if i == ellipsis_after and do_ellide and size > 2 * ellipsis_after + 1:
             s.append("...")
             i = size - ellipsis_after
         data = retrieve(var, variances=variances)[i]
-        s.append('list(' + _format_array(data, len(data), ellipsis_after) +
+        s.append('list(' +
+                 _format_array(data, len(data), ellipsis_after, do_ellide) +
                  ')')
         i += 1
     return s
 
 
 def _format_sparse(var, has_variances):
-    s = _get_sparse(var, has_variances, ellipsis_after=2)
+    s = _get_sparse(var, has_variances, ellipsis_after=2, summary=True)
     return "".join([_make_row(row) for row in s])
 
 
