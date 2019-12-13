@@ -408,7 +408,7 @@ void bind_data_properties(pybind11::class_<T, Ignored...> &c) {
                  [](const T &self) {
                    if constexpr (std::is_same_v<T, DataArray> ||
                                  std::is_same_v<T, DataProxy>)
-                     return self.hasData() ? py::cast(self.unit()) : py::none();
+                     return self.hasData() ? self.unit() : units::counts;
                    else
                      return self.unit();
                  },

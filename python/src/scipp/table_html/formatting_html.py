@@ -51,6 +51,8 @@ def _format_non_sparse(var, has_variances):
 
 
 def _get_sparse(var, variances, ellipsis_after):
+    if hasattr(var, "data") and var.data is None:
+        return ["no data, implicitly 1"]
     size = var.shape[0]
     i = 0
     s = []
@@ -66,9 +68,6 @@ def _get_sparse(var, variances, ellipsis_after):
 
 
 def _format_sparse(var, has_variances):
-    if hasattr(var, "data") and var.data is None:
-        return "no data in sparse array"
-
     s = _get_sparse(var, has_variances, ellipsis_after=2)
     return "".join([_make_row(row) for row in s])
 
@@ -93,10 +92,9 @@ def retrieve(var, variances=False, single=False):
 
 def _short_data_repr_html_non_sparse(var, variances=False):
     if hasattr(var, "data"):
-        data_repr = repr(retrieve(var.data, variances))
+        return repr(retrieve(var.data, variances))
     else:
-        data_repr = repr(retrieve(var, variances))
-    return data_repr
+        return repr(retrieve(var, variances))
 
 
 def _short_data_repr_html_sparse(var, variances=False):
