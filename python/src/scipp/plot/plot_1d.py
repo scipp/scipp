@@ -31,8 +31,6 @@ def plot_1d(input_data=None, axes=None, values=None, variances=None,
     if axes is None:
         axes = input_data.dims
 
-    # layout = dict(logx=logx or logxy, logy=logy or logxy)
-
     sv = Slicer1d(input_data=input_data, axes=axes, values=values,
                   variances=variances, masks=masks,
                   mpl_line_params=mpl_line_params, logx=logx or logxy,
@@ -184,12 +182,14 @@ class Slicer1d(Slicer):
         for i, (name, var) in enumerate(sorted(self.input_data)):
             vslice = self.slice_data(var)
 
+            # If this is a histogram, plot a step function
             if self.histograms[name][dim_str]:
                 ye = np.concatenate(([0], vslice.values))
                 [self.members["lines"][name]] = self.ax.step(
                     new_x, ye, label=name, zorder=10,
                     **{key: self.mpl_line_params[key][i] for key in
                        ["color", "linewidth"]})
+                # Add masks if any
                 if self.params["masks"]["show"]:
                     me = np.concatenate(([False], mslice.values))
                     [self.members["masks"][name]] = self.ax.step(
@@ -199,10 +199,12 @@ class Slicer1d(Slicer):
 
             else:
 
+                # If this is not a histogram, just use normal plot
                 [self.members["lines"][name]] = self.ax.plot(
                     new_x, vslice.values, label=name, zorder=10,
                     **{key: self.mpl_line_params[key][i] for key in
                        self.mpl_line_params.keys()})
+                # Add masks if any
                 if self.params["masks"]["show"]:
                     [self.members["masks"][name]] = self.ax.plot(
                         new_x,
@@ -212,6 +214,7 @@ class Slicer1d(Slicer):
                         **{key: self.mpl_line_params[key][i] for key in
                            ["color", "marker"]} )
 
+            # Add error bars
             if var.variances is not None:
                 if self.histograms[name][dim_str]:
                     self.members["error_y"][name] = self.ax.errorbar(

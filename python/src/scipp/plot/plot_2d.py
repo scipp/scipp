@@ -30,10 +30,10 @@ def plot_2d(input_data=None, axes=None, values=None, variances=None,
     if axes is None:
         axes = var.dims
 
-    sv = Slicer2d(input_data=var, axes=axes, values=values, variances=variances,
-                  masks=masks, mpl_axes=mpl_axes, aspect=aspect, cmap=cmap,
-                  log=log, vmin=vmin, vmax=vmax, color=color, logx=logx or logxy,
-                  logy=logy or logxy)
+    sv = Slicer2d(input_data=var, axes=axes, values=values,
+                  variances=variances, masks=masks, mpl_axes=mpl_axes,
+                  aspect=aspect, cmap=cmap, log=log, vmin=vmin, vmax=vmax,
+                  color=color, logx=logx or logxy, logy=logy or logxy)
 
     if mpl_axes is None:
         render_plot(figure=sv.fig, widgets=sv.vbox, filename=filename)
@@ -78,8 +78,9 @@ class Slicer2d(Slicer):
         else:
             self.fig, ax = plt.subplots(
                 1, 1 + self.params["variances"]["show"],
-                figsize=(config.width/config.dpi,
-                         config.height/(1.0+self.params["variances"]["show"])/config.dpi),
+                figsize=(config.width / config.dpi,
+                         config.height /
+                         (1.0 + self.params["variances"]["show"])/config.dpi),
                 dpi=config.dpi,
                 sharex=True, sharey=True)
             if not self.params["variances"]["show"]:
@@ -103,26 +104,25 @@ class Slicer2d(Slicer):
             if self.params[key]["show"]:
                 self.im[key] = self.ax[key].imshow(
                     [[1.0, 1.0], [1.0, 1.0]], norm=self.params[key]["norm"],
-                    extent=extent_array,
-                    origin="lower", interpolation="nearest", cmap=self.params[key]["cmap"],
-                    aspect=aspect)
+                    extent=extent_array, origin="lower", aspect=aspect,
+                    interpolation="nearest", cmap=self.params[key]["cmap"])
                 self.ax[key].set_title(
                     self.input_data.name if key == "values" else "std dev.")
                 if self.params[key]["cbar"]:
-                    self.cbar[key] = plt.colorbar(self.im[key], ax=self.ax[key],
-                                                  cax=self.cax[key])
-                    self.cbar[key].ax.set_ylabel(axis_label(var=self.input_data,
-                                                            name=""))
+                    self.cbar[key] = plt.colorbar(
+                        self.im[key], ax=self.ax[key], cax=self.cax[key])
+                    self.cbar[key].ax.set_ylabel(
+                        axis_label(var=self.input_data, name=""))
                 if self.cax[key] is None:
                     self.cbar[key].ax.yaxis.set_label_coords(-1.1, 0.5)
                 self.members["images"][key] = self.im[key]
                 self.members["colorbars"][key] = self.cbar[key]
                 if self.params["masks"]["show"]:
                     self.im[self.get_mask_key(key)] = self.ax[key].imshow(
-                        [[1.0, 1.0], [1.0, 1.0]], norm=self.params[key]["norm"],
-                        extent=extent_array,
-                        origin="lower", interpolation="nearest", cmap=self.params["masks"]["cmap"],
-                        aspect=aspect)
+                        [[1.0, 1.0], [1.0, 1.0]], extent=extent_array,
+                        norm=self.params[key]["norm"], origin="lower",
+                        interpolation="nearest", aspect=aspect,
+                        cmap=self.params["masks"]["cmap"])
                 if logx:
                     self.ax[key].set_xscale("log")
                 if logy:
@@ -237,7 +237,6 @@ class Slicer2d(Slicer):
             if self.params["masks"]["show"]:
                 self.im[self.get_mask_key(key)].set_data(
                     self.mask_to_float(msk.values, arr))
-                    # np.where(msk.values, arr, None).astype(np.float))
 
         return
 

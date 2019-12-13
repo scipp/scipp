@@ -32,7 +32,7 @@ def dispatch(input_data, ndim=0, name=None, collapse=None, sparse_dim=None,
 
     if sparse_dim is not None and bins is None:
         return plot_sparse(input_data, ndim=ndim, sparse_dim=sparse_dim,
-                           color=color, **kwargs)
+                           mpl_scatter_params=mpl_line_params, **kwargs)
     elif projection == "1d":
         return plot_1d(input_data, mpl_line_params=mpl_line_params, **kwargs)
     elif projection == "2d":

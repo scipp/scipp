@@ -70,6 +70,8 @@ def plot(input_data, collapse=None, projection=None, axes=None, color=None,
                 line_count += 1
             else:
                 key = name
+                if sp_dim is not None:
+                    line_count += 1
 
             mpl_line_params = {}
             for n, p in line_params.items():
