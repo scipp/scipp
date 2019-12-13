@@ -44,36 +44,38 @@ def _make_row(data_html, variances_html=None):
     return f"<div>{data_html}</div>"
 
 
-def _format_row(data, size):
+def _get_row(data, size):
     if size == 0:
-        return _make_row("[]")
-    return _make_row(_format_array(data, size))
+        return "[]"
+    return _format_array(data, size)
 
 
 def _format_non_sparse(var, has_variances):
     size = reduce(operator.mul, var.shape, 1)
     # flatten avoids displaying square brackets in the output
     data = retrieve(var, variances=has_variances).flatten()
-    return _format_row(data, size)
+    return _make_row(_get_row(data, size))
 
+
+def _get_sparse(var, variances, ellipsis_after):
+    size = var.shape[0]
+    i = 0
+    s = []
+    while i < size:
+        if i == ellipsis_after and size > 2*ellipsis_after+1:
+            s.append("...")
+            i = size - ellipsis_after
+        data = retrieve(var, variances=variances)[i]
+        s.append(_get_row(data, len(data)))
+        i += 1
+    return s
 
 def _format_sparse(var, has_variances):
     if hasattr(var, "data") and var.data is None:
         return "no data in sparse array"
-    s = []
-    size = var.shape[0]
 
-    i = 0
-    s = []
-    while i < size:
-        if i == 2 and size > 5:
-            s.append(_make_row("...", ''))
-            i = size - 2
-        data = retrieve(var, variances=has_variances)[i]
-        s.append(_format_row(data, len(data)))
-        i += 1
-
-    return "".join(s)
+    s = _get_sparse(var, has_variances, ellipsis_after=2)
+    return "".join([_make_row(row) for row in s])
 
 
 def inline_variable_repr(var, has_variances=False):
@@ -103,12 +105,7 @@ def _short_data_repr_html_non_sparse(var, variances=False):
 
 
 def _short_data_repr_html_sparse(var, variances=False):
-    s = []
-    non_sparse_dim = var.dims[0]
-    for i in range(var.shape[0]):
-        s.append(repr(retrieve(var[non_sparse_dim, i], variances)))
-
-    return "\n".join(s)
+    return "\n".join(_get_sparse(var, variances, ellipsis_after=3))
 
 
 def short_data_repr_html(var, variances=False):
