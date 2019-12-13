@@ -412,7 +412,7 @@ def dataset_repr(ds):
         add_value_variance_labels = False
 
     sections.append(data_section(
-        ds if hasattr(ds, '__len__') else [('', ds)]),
+        ds if hasattr(ds, '__len__') else [('', ds)],
         add_value_variance_labels=add_value_variance_labels))
     add_value_variance_labels = False
 
