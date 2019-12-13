@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
-cmake_minimum_required(VERSION 3.12.0)
+cmake_minimum_required(VERSION 3.10.2)
 project(scipp)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
