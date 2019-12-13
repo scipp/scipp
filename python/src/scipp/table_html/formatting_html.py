@@ -66,16 +66,18 @@ def _get_sparse(var, variances, ellipsis_after, summary=False):
             s.append("...")
             i = size - ellipsis_after
         data = retrieve(var, variances=variances)[i]
-        s.append('sparse({})'.format(
-            f'len={len(data)}' if summary else _format_array(
-                data, len(data), ellipsis_after, do_ellide)))
+        if summary:
+            s.append(f'len={len(data)}')
+        else:
+            s.append('sparse({})'.format(
+                _format_array(data, len(data), ellipsis_after, do_ellide)))
         i += 1
     return s
 
 
 def _format_sparse(var, has_variances):
-    s = _get_sparse(var, has_variances, ellipsis_after=2, summary=True)
-    return "".join([_make_row(row) for row in s])
+    s = _get_sparse(var, has_variances, ellipsis_after=1, summary=True)
+    return _make_row(", ".join([row for row in s]))
 
 
 def inline_variable_repr(var, has_variances=False):
