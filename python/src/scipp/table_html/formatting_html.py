@@ -221,9 +221,8 @@ def summarize_variable(name, var, is_index=False, has_attrs=False):
         f"<div class='xr-var-dims'>{dims_str}</div>",
         f"<div class='xr-var-dtype'>{dtype}</div>",
         f"<div class='xr-var-unit'>{unit}</div>",
-        f"<div class='xr-value-preview xr-preview'>{preview}</div>",
-        f"<div class='xr-variance-preview \
-            xr-preview'>{variances_preview}</div>",
+        f"<div class='xr-value-preview xr-preview'><span>{preview}</span>"
+        f"{f'<span>{variances_preview}</span>' if var.variances is not None else ''}</div>",
         f"<input id='{attrs_id}' class='xr-var-attrs-in' ",
         f"type='checkbox' {disabled}>",
         f"<label for='{attrs_id}' "
@@ -254,7 +253,6 @@ def collapsible_section(name,
                         n_items=None,
                         enabled=True,
                         collapsed=False,
-                        add_value_variance_labels=False,
                         has_attrs=False):
     # "unique" id to expand/collapse the section
     data_id = "section-" + str(uuid.uuid4())
@@ -265,23 +263,11 @@ def collapsible_section(name,
     collapsed = "" if collapsed or not has_items else "checked"
     tip = " title='Expand/collapse section'" if enabled else ""
 
-    if add_value_variance_labels:
-        val_var_html = "<div class='sc-section-header "\
-            "sc-section-header-values'>"\
-            "<span class='sc-section-header-text'>Values</span>"\
-            "</div><div class='sc-section-header "\
-            "sc-section-header-variances'>"\
-            "<span class='sc-section-header-text'>Variances</span>"\
-            "</div>"
-    else:
-        val_var_html = ""
-
     return (f"<input id='{data_id}' class='xr-section-summary-in' "
             f"type='checkbox' {enabled} {collapsed}>"
             f"<label for='{data_id}' class='xr-section-summary' {tip}>"
             f"{name}:{n_items_span}</label>"
             f"<div class='xr-section-inline-details'>{inline_details}</div>"
-            f"{val_var_html}"
             f"<div class='xr-section-details'>{details}</div>")
 
 
@@ -289,8 +275,7 @@ def _mapping_section(mapping,
                      name,
                      details_func,
                      max_items_collapse,
-                     enabled=True,
-                     add_value_variance_labels=False):
+                     enabled=True):
     n_items = len(mapping)
     collapsed = n_items >= max_items_collapse
 
@@ -300,7 +285,6 @@ def _mapping_section(mapping,
         n_items=n_items,
         enabled=enabled,
         collapsed=collapsed,
-        add_value_variance_labels=add_value_variance_labels,
     )
 
 
@@ -387,25 +371,13 @@ def dataset_repr(ds):
 
     sections = [dim_section(ds)]
 
-    # ensure that the values/variances labels are present
-    # the first section will add them will also flip this
-    # flag so that they are not repeatedly
-    add_value_variance_labels = True
     if len(ds.coords) > 0:
-        sections.append(
-            coord_section(ds.coords,
-                          add_value_variance_labels=add_value_variance_labels))
-        add_value_variance_labels = False
+        sections.append(coord_section(ds.coords))
     if len(ds.labels) > 0:
-        sections.append(
-            label_section(ds.labels,
-                          add_value_variance_labels=add_value_variance_labels))
-        add_value_variance_labels = False
+        sections.append(label_section(ds.labels))
 
     sections.append(
-        data_section(ds if hasattr(ds, '__len__') else [('', ds)],
-                     add_value_variance_labels=add_value_variance_labels))
-    add_value_variance_labels = False
+        data_section(ds if hasattr(ds, '__len__') else [('', ds)]))
 
     if len(ds.masks) > 0:
         sections.append(mask_section(ds.masks))
@@ -422,7 +394,7 @@ def variable_repr(var):
 
     sections = [
         dim_section(var),
-        data_section([('', var)], add_value_variance_labels=True),
+        data_section([('', var)]),
     ]
 
     return _obj_repr(header_components, sections)
