@@ -43,17 +43,11 @@ def _make_row(data_html, variances_html=None):
     return f"<div>{data_html}</div>"
 
 
-def _get_row(data, size, ellipsis_after):
-    if size == 0:
-        return "list()"
-    return 'list(' + _format_array(data, size, ellipsis_after) + ')'
-
-
 def _format_non_sparse(var, has_variances):
     size = reduce(operator.mul, var.shape, 1)
     # flatten avoids displaying square brackets in the output
     data = retrieve(var, variances=has_variances).flatten()
-    return _make_row(_get_row(data, size, ellipsis_after=2))
+    return _make_row(_format_array(data, size, ellipsis_after=2))
 
 
 def _get_sparse(var, variances, ellipsis_after):
@@ -65,7 +59,8 @@ def _get_sparse(var, variances, ellipsis_after):
             s.append("...")
             i = size - ellipsis_after
         data = retrieve(var, variances=variances)[i]
-        s.append(_get_row(data, len(data), ellipsis_after))
+        s.append('list(' + _format_array(data, len(data), ellipsis_after) +
+                 ')')
         i += 1
     return s
 
