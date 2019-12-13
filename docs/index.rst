@@ -49,6 +49,7 @@ Documentation
 
    visualization/plotting-overview
    visualization/plotting-in-depth
+   visualization/customizing-figures
 
 .. toctree::
    :caption: Tutorials

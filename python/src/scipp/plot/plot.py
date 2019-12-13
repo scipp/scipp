@@ -23,20 +23,20 @@ def plot(input_data, collapse=None, projection=None, axes=None, color=None,
     # Search through the variables and group the 1D datasets that have
     # the same coordinates and units.
     # tobeplotted is a dict that holds four items:
-    # [number_of_dimensions, Dataset, color_list, axes].
+    # {number_of_dimensions, Dataset, axes, line_parameters}.
     tp = type(input_data)
     if tp is sc.DataProxy or tp is sc.DataArray:
         ds = sc.Dataset()
         ds[input_data.name] = input_data
         input_data = ds
 
-    # Prepare color and marker containers
+    # Prepare container for matplotlib line parameters
     line_params = {"color": color,
                    "marker": marker,
                    "linestyle": linestyle,
                    "linewidth": linewidth}
 
-    # Counter for 1d data
+    # Counter for 1d/sparse data
     line_count = -1
 
     tobeplotted = dict()

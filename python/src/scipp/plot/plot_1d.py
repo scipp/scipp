@@ -32,7 +32,7 @@ def plot_1d(input_data=None, axes=None, values=None, variances=None,
         axes = input_data.dims
 
     sv = Slicer1d(input_data=input_data, axes=axes, values=values,
-                  variances=variances, masks=masks,
+                  variances=variances, masks=masks, mpl_axes=mpl_axes,
                   mpl_line_params=mpl_line_params, logx=logx or logxy,
                   logy=logy or logxy)
 
