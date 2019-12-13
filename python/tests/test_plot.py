@@ -20,7 +20,8 @@ def do_plot(d, **kwargs):
     return out
 
 
-def make_dense_dataset(ndim=1, variances=False, binedges=False, labels=False):
+def make_dense_dataset(ndim=1, variances=False, binedges=False, labels=False,
+                       masks=False):
 
     dim_list = [sc.Dim.Tof, sc.Dim.X, sc.Dim.Y, sc.Dim.Z, sc.Dim.Qx]
 
@@ -36,7 +37,7 @@ def make_dense_dataset(ndim=1, variances=False, binedges=False, labels=False):
             [dim_list[i]], np.arange(n + binedges).astype(np.float64))
         dims.append(dim_list[i])
         shapes.append(n)
-    a = np.arange(np.prod(shapes)).reshape(*shapes).astype(np.float64)
+    a = np.sin(np.arange(np.prod(shapes)).reshape(*shapes).astype(np.float64))
     d["Sample"] = sc.Variable(dims, values=a)
     if variances:
         d["Sample"].variances = np.abs(np.random.normal(a * 0.1, 0.05))
@@ -44,6 +45,8 @@ def make_dense_dataset(ndim=1, variances=False, binedges=False, labels=False):
         d.labels["somelabels"] = sc.Variable(
             [dim_list[0]], values=np.linspace(101., 105., shapes[0]),
             unit=sc.units.s)
+    if masks:
+        d.masks["mask"] = sc.Variable(dims, values=np.where(a > 0, True, False))
     return d
 
 
@@ -161,6 +164,11 @@ def test_plot_1d_three_entries_with_labels():
     do_plot(d, axes={sc.Dim.X: "Xlabels", sc.Dim.Tof: "somelabels"})
 
 
+def test_plot_1d_with_masks():
+    d = make_dense_dataset(ndim=1, masks=True)
+    do_plot(d)
+
+
 def test_plot_2d_image():
     d = make_dense_dataset(ndim=2)
     do_plot(d)
@@ -178,7 +186,7 @@ def test_plot_2d_image_with_labels():
 
 def test_plot_2d_image_with_variances():
     d = make_dense_dataset(ndim=2, variances=True)
-    do_plot(d, show_variances=True)
+    do_plot(d, variances=True)
 
 
 def test_plot_2d_image_with_filename():
@@ -188,11 +196,16 @@ def test_plot_2d_image_with_filename():
 
 def test_plot_2d_image_with_variances_with_filename():
     d = make_dense_dataset(ndim=2, variances=True)
-    do_plot(d, show_variances=True, filename="val_and_var.pdf")
+    do_plot(d, variances=True, filename="val_and_var.pdf")
 
 
 def test_plot_2d_image_with_bin_edges():
     d = make_dense_dataset(ndim=2, binedges=True)
+    do_plot(d)
+
+
+def test_plot_2d_with_masks():
+    d = make_dense_dataset(ndim=2, masks=True)
     do_plot(d)
 
 
@@ -208,7 +221,7 @@ def test_plot_sliceviewer():
 
 def test_plot_sliceviewer_with_variances():
     d = make_dense_dataset(ndim=3, variances=True)
-    do_plot(d, show_variances=True)
+    do_plot(d, variances=True)
 
 
 def test_plot_sliceviewer_with_two_sliders():
@@ -241,7 +254,7 @@ def test_plot_sliceviewer_with_3d_projection():
 
 def test_plot_sliceviewer_with_3d_projection_with_variances():
     d = make_dense_dataset(ndim=3, variances=True)
-    do_plot(d, projection="3d", show_variances=True)
+    do_plot(d, projection="3d", variances=True)
 
 
 def test_plot_sliceviewer_with_3d_projection_with_labels():
