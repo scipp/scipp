@@ -45,6 +45,8 @@ def _make_row(data_html, variances_html=None):
 
 
 def _format_row(data, size):
+    if size == 0:
+        return _make_row("[]")
     return _make_row(_format_array(data, size))
 
 
@@ -150,7 +152,7 @@ def summarize_attrs_simple(attrs):
 def summarize_attrs(attrs):
     attrs_li = "".join(
         f"<li class='xr-var-item'>\
-            {summarize_variable(name, values, is_attr=True)}</li>"
+            {summarize_variable(name, values, has_attrs=False)}</li>"
         for name, values in attrs
     )
     return f"<ul class='xr-var-list'>{attrs_li}</ul>"
@@ -180,7 +182,7 @@ def summarize_coords(coords):
     return f"<ul class='xr-var-list'>{vars_li}</ul>"
 
 
-def summarize_variable(name, var, is_index=False, is_attr=None):
+def summarize_variable(name, var, is_index=False, has_attrs=False):
     """
     :param name:
     :param var:
@@ -188,9 +190,8 @@ def summarize_variable(name, var, is_index=False, is_attr=None):
                      coordinates that represent the indices of
                      a dimension that the data contains
 
-    :param is_attr: If the variable is for an attribute, then this
-                    hides the show/hide attributes button.
-
+    :param has_attrs: If the variable is for a section that cannot contain
+                      attributes, then this hides the show/hide button.
     """
     cssclass_idx = " class='xr-has-index'" if is_index else ""
     dims_text = ', '.join(escape(f'{str(dim)} [sparse]'
@@ -233,7 +234,8 @@ def summarize_variable(name, var, is_index=False, is_attr=None):
             xr-preview'>{variances_preview}</div>",
         f"<input id='{attrs_id}' class='xr-var-attrs-in' ",
         f"type='checkbox' {disabled}>",
-        f"<label for='{attrs_id}' class='{'xr-hide-icon' if is_attr else '1'}'"
+        f"<label for='{attrs_id}' "
+        f"class='{'' if has_attrs else 'xr-hide-icon'}'"
         " title='Show/Hide attributes'>",
         f"{attrs_icon}</label>",
         f"<input id='{data_id}' class='xr-var-data-in' type='checkbox'>",
@@ -245,20 +247,20 @@ def summarize_variable(name, var, is_index=False, is_attr=None):
     return "".join(html)
 
 
-def summarize_vars(dataset):
-    hide_attrs = not _is_dataset(dataset)
+def summarize_data(dataset):
+    has_attrs = _is_dataset(dataset)
     vars_li = "".join(
-        "<li class='xr-var-item'>{}</li>".format(
-            summarize_variable(name, values, is_attr=hide_attrs))
+        "<li class='xr-var-item'>"
+        f"{summarize_variable(name, values, has_attrs=has_attrs)}</li>"
         for name, values in dataset
     )
-
     return f"<ul class='xr-var-list'>{vars_li}</ul>"
 
 
 def collapsible_section(name, inline_details="", details="", n_items=None,
                         enabled=True, collapsed=False,
-                        add_value_variance_labels=False):
+                        add_value_variance_labels=False,
+                        has_attrs=False):
     # "unique" id to expand/collapse the section
     data_id = "section-" + str(uuid.uuid4())
 
@@ -269,10 +271,13 @@ def collapsible_section(name, inline_details="", details="", n_items=None,
     tip = " title='Expand/collapse section'" if enabled else ""
 
     if add_value_variance_labels:
-        val_var_html = f"<div class='sc-section-header \
-                            sc-section-header-values'>Values</div>\
-                         <div class='sc-section-header \
-                            sc-section-header-variances'>Variances</div>"
+        val_var_html = "<div class='sc-section-header "\
+            "sc-section-header-values'>"\
+            "<span class='sc-section-header-text'>Values</span>"\
+            "</div><div class='sc-section-header "\
+            "sc-section-header-variances'>"\
+            "<span class='sc-section-header-text'>Variances</span>"\
+            "</div>"
     else:
         val_var_html = ""
 
@@ -337,7 +342,6 @@ coord_section = partial(
     name="Coordinates",
     details_func=summarize_coords,
     max_items_collapse=25,
-    add_value_variance_labels=True,
 )
 
 label_section = partial(
@@ -358,7 +362,7 @@ mask_section = partial(
 data_section = partial(
     _mapping_section,
     name="Data",
-    details_func=summarize_vars,
+    details_func=summarize_data,
     max_items_collapse=15,
 )
 
@@ -392,14 +396,30 @@ def dataset_repr(ds):
 
     header_components = [f"<div class='xr-obj-type'>{escape(obj_type)}</div>"]
 
-    sections = [
-        dim_section(ds),
-        coord_section(ds.coords),
-        label_section(ds.labels),
-        data_section(ds if hasattr(ds, '__len__') else [('', ds)]),
-        mask_section(ds.masks),
-        attr_section(ds.attrs),
-    ]
+    sections = [dim_section(ds)]
+
+    # ensure that the values/variances labels are present
+    # the first section will add them will also flip this
+    # flag so that they are not repeatedly
+    add_value_variance_labels = True
+    if len(ds.coords) > 0:
+        sections.append(coord_section(
+            ds.coords, add_value_variance_labels=add_value_variance_labels))
+        add_value_variance_labels = False
+    if len(ds.labels) > 0:
+        sections.append(label_section(
+            ds.labels, add_value_variance_labels=add_value_variance_labels))
+        add_value_variance_labels = False
+
+    sections.append(data_section(
+        ds if hasattr(ds, '__len__') else [('', ds)],
+        add_value_variance_labels=add_value_variance_labels))
+    add_value_variance_labels = False
+
+    if len(ds.masks) > 0:
+        sections.append(mask_section(ds.masks))
+    if len(ds.attrs) > 0:
+        sections.append(attr_section(ds.attrs))
 
     return _obj_repr(header_components, sections)
 
@@ -411,7 +431,7 @@ def variable_repr(var):
 
     sections = [
         dim_section(var),
-        data_section([('', var)]),
+        data_section([('', var)], add_value_variance_labels=True),
     ]
 
     return _obj_repr(header_components, sections)
