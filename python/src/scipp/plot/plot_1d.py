@@ -34,8 +34,9 @@ def plot_1d(input_data=None, axes=None, values=None, variances=None,
     # layout = dict(logx=logx or logxy, logy=logy or logxy)
 
     sv = Slicer1d(input_data=input_data, axes=axes, values=values,
-                  variances=variances, masks=masks, mpl_line_params=mpl_line_params,
-                  logx=logx or logxy, logy=logy or logxy)
+                  variances=variances, masks=masks,
+                  mpl_line_params=mpl_line_params, logx=logx or logxy,
+                  logy=logy or logxy)
 
     if mpl_axes is None:
         render_plot(figure=sv.fig, widgets=sv.box, filename=filename)
@@ -46,14 +47,13 @@ def plot_1d(input_data=None, axes=None, values=None, variances=None,
 class Slicer1d(Slicer):
 
     def __init__(self, input_data=None, axes=None, values=None,
-                 variances=None, masks=None, mpl_axes=None, mpl_line_params=None,
-                 logx=False, logy=False):
+                 variances=None, masks=None, mpl_axes=None,
+                 mpl_line_params=None, logx=False, logy=False):
 
         super().__init__(input_data=input_data, axes=axes, values=values,
                          variances=variances, masks=masks,
                          button_options=['X'])
 
-        # self.color = color
         self.fig = None
         self.mpl_axes = mpl_axes
         if self.mpl_axes is not None:
@@ -63,17 +63,12 @@ class Slicer1d(Slicer):
                 1, 1, figsize=(config.width/config.dpi,
                                config.height/config.dpi),
                 dpi=config.dpi)
+
+        # Initialise container for returning matplotlib objects
         self.members.update({"lines": {}, "error_x": {}, "error_y": {},
                              "error_xy": {}})
+        # Save the line parameters (color, linewidth...)
         self.mpl_line_params = mpl_line_params
-        # self.marker = marker
-        # self.linewidth = linewidth
-        # self.linestyle = linestyle
-        print(self.mpl_line_params)
-        # print(self.marker)
-        # print(self.linewidth)
-        # print(self.linestyle)
-
 
         self.names = []
         ymin = 1.0e30
@@ -188,28 +183,46 @@ class Slicer1d(Slicer):
 
         for i, (name, var) in enumerate(sorted(self.input_data)):
             vslice = self.slice_data(var)
+
             if self.histograms[name][dim_str]:
+                ye = np.concatenate(([0], vslice.values))
                 [self.members["lines"][name]] = self.ax.step(
-                    new_x, np.concatenate(([0], vslice.values)), label=name,
-                    zorder=10,
-                    **{key: self.mpl_line_params[key][i] for key in ["color", "linewidth"]})
+                    new_x, ye, label=name, zorder=10,
+                    **{key: self.mpl_line_params[key][i] for key in
+                       ["color", "linewidth"]})
+                if self.params["masks"]["show"]:
+                    me = np.concatenate(([False], mslice.values))
+                    [self.members["masks"][name]] = self.ax.step(
+                    new_x, self.mask_to_float(me, ye),
+                    linewidth=self.mpl_line_params["linewidth"][i]*3,
+                    color=self.params["masks"]["color"], zorder=9)
+
             else:
+
                 [self.members["lines"][name]] = self.ax.plot(
                     new_x, vslice.values, label=name, zorder=10,
-                    **{key: self.mpl_line_params[key][i] for key in self.mpl_line_params.keys()})
+                    **{key: self.mpl_line_params[key][i] for key in
+                       self.mpl_line_params.keys()})
                 if self.params["masks"]["show"]:
                     [self.members["masks"][name]] = self.ax.plot(
-                        new_x, self.mask_to_float(mslice.values, vslice.values), zorder=10, mec=self.params["masks"]["color"], mew=3, linestyle="none",
-                        **{key: self.mpl_line_params[key][i] for key in ["color", "marker"]} )
+                        new_x,
+                        self.mask_to_float(mslice.values, vslice.values),
+                        zorder=10, mec=self.params["masks"]["color"], mew=3,
+                        linestyle="none",
+                        **{key: self.mpl_line_params[key][i] for key in
+                           ["color", "marker"]} )
+
             if var.variances is not None:
                 if self.histograms[name][dim_str]:
                     self.members["error_y"][name] = self.ax.errorbar(
                         xc, vslice.values, yerr=np.sqrt(vslice.variances),
-                        color=self.mpl_line_params["color"][i], zorder=10, fmt="none")
+                        color=self.mpl_line_params["color"][i], zorder=10,
+                        fmt="none")
                 else:
                     self.members["error_y"][name] = self.ax.errorbar(
                         new_x, vslice.values, yerr=np.sqrt(vslice.variances),
-                        color=self.mpl_line_params["color"][i], zorder=10, fmt="none")
+                        color=self.mpl_line_params["color"][i], zorder=10,
+                        fmt="none")
 
         deltax = 0.05 * (new_x[-1] - new_x[0])
         self.ax.set_xlim([new_x[0] - deltax, new_x[-1] + deltax])
@@ -219,22 +232,10 @@ class Slicer1d(Slicer):
 
     def slice_data(self, var):
         vslice = var
-        # mslice = None
-        # if self.params["masks"]["show"]:
-        #     mslice = self.masks
-        #     for key, val in self.slider.items():
-        #         if not val.disabled and (val.dim in mslice.dims):
-        #             mslice = mslice[val.dim, val.value]
         # Slice along dimensions with active sliders
         for key, val in self.slider.items():
             if not val.disabled:
                 vslice = vslice[val.dim, val.value]
-        #         # At this point, after masks were combined, all their
-        #         # dimensions should be contained in the input_data.dims.
-        #         if self.params["masks"]["show"]:
-        #             mslice = mslice[val.dim, val.value]
-        # if mslice is not None:
-        #     mslice = np.where(mslice.values, vslice.values, None).astype(np.float)
         return vslice
 
     def slice_masks(self):
@@ -254,8 +255,13 @@ class Slicer1d(Slicer):
             if self.histograms[name][self.button_axis_to_dim["x"]]:
                 vals = np.concatenate(([0], vals))
             self.members["lines"][name].set_ydata(vals)
+
             if self.params["masks"]["show"]:
-                self.members["masks"][name].set_ydata(self.mask_to_float(mslice.values, vslice.values))
+                msk = mslice.values
+                if self.histograms[name][self.button_axis_to_dim["x"]]:
+                    msk = np.concatenate(([False], msk))
+                self.members["masks"][name].set_ydata(
+                    self.mask_to_float(msk, vals))
             if var.variances is not None:
                 coll = self.members["error_y"][name].get_children()[0]
                 coll.set_segments(
