@@ -41,8 +41,14 @@ Documentation
    user-guide/masking
    user-guide/sparse-data
    user-guide/groupby
-   user-guide/plotting
    user-guide/how_to
+
+.. toctree::
+   :caption: Visualization
+   :maxdepth: 2
+
+   visualization/plotting-overview
+   visualization/plotting-in-depth
 
 .. toctree::
    :caption: Tutorials

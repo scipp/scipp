@@ -161,7 +161,9 @@ scipp::index makeUnknownEdgeState(const scipp::index extent) {
   return -extent - 1;
 }
 scipp::index shrink(const scipp::index extent) { return extent - 1; }
-bool isUnknownEdgeState(const scipp::index extent) { return extent < 0; }
+bool isUnknownEdgeState(const scipp::index extent) {
+  return extent < 0 && extent != Dimensions::Sparse;
+}
 scipp::index decodeExtent(const scipp::index extent) {
   if (isUnknownEdgeState(extent))
     return -extent - 1;
@@ -185,10 +187,11 @@ void setExtent(std::unordered_map<Dim, scipp::index> &dims, const Dim dim,
     dims[dim] = extents::makeUnknownEdgeState(extent);
   } else if (extent != Dimensions::Sparse) {
     auto &heldExtent = it->second;
+    if (heldExtent == Dimensions::Sparse) {
+      heldExtent = extents::makeUnknownEdgeState(extent);
+    }
     if (extents::isUnknownEdgeState(heldExtent)) {
-      if (heldExtent == Dimensions::Sparse) {
-        heldExtent = extents::makeUnknownEdgeState(extent);
-      } else if (extents::isSame(extent, heldExtent)) { // Do nothing
+      if (extents::isSame(extent, heldExtent)) { // Do nothing
       } else if (extents::oneLarger(extent, heldExtent) && isCoord) {
         heldExtent = extents::shrink(extent);
       } else if (extents::oneSmaller(extent, heldExtent) && !isCoord) {

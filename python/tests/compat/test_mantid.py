@@ -172,11 +172,74 @@ class TestMantidConversion(unittest.TestCase):
         assert isinstance(monitors, sc.DataArray)
         assert monitors.shape == [2, 200001]
 
-    def test_Workspace2D_with_specific_axis_units(self):
-        filename = MantidDataHelper.find_file("iris26176_graphite002_sqw.nxs")
-        ds = mantidcompat.load(filename)
-        assert ds.shape == [23, 200]
-        assert ds.dims == [sc.Dim.Q, sc.Dim.EnergyTransfer]
+    def test_mdhisto_workspace_q(self):
+        from mantid.simpleapi import (CreateMDWorkspace, FakeMDEventData,
+                                      BinMD)
+
+        md_event = CreateMDWorkspace(Dimensions=3,
+                                     Extents=[-10, 10, -10, 10, -10, 10],
+                                     Names='Q_x,Q_y,Q_z',
+                                     Units='U,U,U',
+                                     Frames='QLab,QLab,QLab',
+                                     StoreInADS=False)
+        FakeMDEventData(InputWorkspace=md_event,
+                        PeakParams=[100000, 0, 0, 0, 1],
+                        StoreInADS=False)  # Add Peak
+        md_histo = BinMD(InputWorkspace=md_event,
+                         AlignedDim0='Q_y,-10,10,3',
+                         AlignedDim1='Q_x,-10,10,4',
+                         AlignedDim2='Q_z,-10,10,5',
+                         StoreInADS=False)
+
+        histo_dataarray = mantidcompat.convertMDHistoWorkspace_to_dataset(
+            md_histo)
+
+        self.assertEqual(histo_dataarray.coords[sc.Dim.Qx].values.shape, (4, ))
+        self.assertEqual(histo_dataarray.coords[sc.Dim.Qy].values.shape, (3, ))
+        self.assertEqual(histo_dataarray.coords[sc.Dim.Qz].values.shape, (5, ))
+        self.assertEqual(histo_dataarray.coords[sc.Dim.Qx].unit,
+                         sc.units.dimensionless / sc.units.angstrom)
+        self.assertEqual(histo_dataarray.coords[sc.Dim.Qy].unit,
+                         sc.units.dimensionless / sc.units.angstrom)
+        self.assertEqual(histo_dataarray.coords[sc.Dim.Qz].unit,
+                         sc.units.dimensionless / sc.units.angstrom)
+
+        self.assertEquals(histo_dataarray.values.shape, (3, 4, 5))
+
+        # Sum over 2 dimensions to simplify finding max.
+        max_1d = sc.sum(sc.sum(histo_dataarray, dim=sc.Dim.Qy),
+                        dim=sc.Dim.Qx).values
+        max_index = np.argmax(max_1d)
+        # Check position of max 'peak'
+        self.assertEqual(np.floor(len(max_1d) / 2), max_index)
+        # All events in central 'peak'
+        self.assertEqual(100000, max_1d[max_index])
+
+        self.assertTrue('nevents' in histo_dataarray.attrs)
+
+    def test_mdhisto_workspace_many_dims(self):
+        from mantid.simpleapi import (CreateMDWorkspace, FakeMDEventData,
+                                      BinMD)
+
+        md_event = CreateMDWorkspace(
+            Dimensions=4,
+            Extents=[-10, 10, -10, 10, -10, 10, -10, 10],
+            Names='deltae,y,z,T',
+            Units='U,U,U,U',
+            StoreInADS=False)
+        FakeMDEventData(InputWorkspace=md_event,
+                        PeakParams=[100000, 0, 0, 0, 0, 1],
+                        StoreInADS=False)  # Add Peak
+        md_histo = BinMD(InputWorkspace=md_event,
+                         AlignedDim0='deltae,-10,10,3',
+                         AlignedDim1='y,-10,10,4',
+                         AlignedDim2='z,-10,10,5',
+                         AlignedDim3='T,-10,10,7',
+                         StoreInADS=False)
+
+        histo_dataarray = mantidcompat.convertMDHistoWorkspace_to_dataset(
+            md_histo)
+        self.assertEqual(4, len(histo_dataarray.dims))
 
 
 if __name__ == "__main__":
