@@ -45,8 +45,8 @@ def _make_row(data_html, variances_html=None):
 
 def _get_row(data, size, ellipsis_after):
     if size == 0:
-        return "[]"
-    return _format_array(data, size, ellipsis_after)
+        return "list()"
+    return 'list(' + _format_array(data, size, ellipsis_after) + ')'
 
 
 def _format_non_sparse(var, has_variances):
@@ -105,7 +105,8 @@ def _short_data_repr_html_non_sparse(var, variances=False):
 
 
 def _short_data_repr_html_sparse(var, variances=False):
-    return "\n".join(_get_sparse(var, variances, ellipsis_after=3))
+    return "array([" + ",\n       ".join(
+        _get_sparse(var, variances, ellipsis_after=3)) + "])"
 
 
 def short_data_repr_html(var, variances=False):
