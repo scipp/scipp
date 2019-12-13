@@ -32,7 +32,7 @@ def _format_array(data, size, ellipsis_after, do_ellide=True):
             s.append("...")
             i = size - ellipsis_after
         elem = data[i]
-        if not hasattr(data, "dtype") or data.dtype != np.bool:
+        if hasattr(elem, "__round__"):
             elem = round(elem, 2)
         s.append(str(elem))
         i += 1
@@ -46,7 +46,9 @@ def _make_row(data_html, variances_html=None):
 def _format_non_sparse(var, has_variances):
     size = reduce(operator.mul, var.shape, 1)
     # flatten avoids displaying square brackets in the output
-    data = retrieve(var, variances=has_variances).flatten()
+    data = retrieve(var, variances=has_variances)
+    if hasattr(data, 'flatten'):
+        data = data.flatten()
     return _make_row(_format_array(data, size, ellipsis_after=2))
 
 
