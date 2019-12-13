@@ -236,7 +236,8 @@ class Slicer2d(Slicer):
             self.im[key].set_data(arr)
             if self.params["masks"]["show"]:
                 self.im[self.get_mask_key(key)].set_data(
-                    np.where(msk.values, arr, None).astype(np.float))
+                    self.mask_to_float(msk.values, arr))
+                    # np.where(msk.values, arr, None).astype(np.float))
 
         return
 

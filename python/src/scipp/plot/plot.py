@@ -71,22 +71,22 @@ def plot(input_data, collapse=None, projection=None, axes=None, color=None,
             else:
                 key = name
 
-            params = {}
+            mpl_line_params = {}
             for n, p in line_params.items():
                 if p is None:
-                    params[n] = get_line_param(name=n, index=line_count)
+                    mpl_line_params[n] = get_line_param(name=n, index=line_count)
                 elif isinstance(p, list):
-                    params[n] = p[line_count]
-                    if isinstance(params[n], int):
-                        params[n] = get_line_param(
-                            name=n, index=params[n])
+                    mpl_line_params[n] = p[line_count]
+                    if isinstance(mpl_line_params[n], int):
+                        mpl_line_params[n] = get_line_param(
+                            name=n, index=mpl_line_params[n])
                 elif isinstance(p, int):
-                    params[n] = get_line_param(name=n, index=p)
+                    mpl_line_params[n] = get_line_param(name=n, index=p)
                 else:
-                    params[n] = p
+                    mpl_line_params[n] = p
 
 
-            print(params)
+            print(mpl_line_params)
 
             # if auto_color:
             #     col = get_color(index=line_count)
@@ -115,12 +115,12 @@ def plot(input_data, collapse=None, projection=None, axes=None, color=None,
 
             if key not in tobeplotted.keys():
                 tobeplotted[key] = dict(ndims=ndims, dataset=sc.Dataset(),
-                                        axes=ax, params=dict())
-                for n in params.keys():
-                    tobeplotted[key]["params"][n] = []
+                                        axes=ax, mpl_line_params=dict())
+                for n in mpl_line_params.keys():
+                    tobeplotted[key]["mpl_line_params"][n] = []
             tobeplotted[key]["dataset"][name] = input_data[name]
-            for n, p in params.items():
-                tobeplotted[key]["params"][n].append(p)
+            for n, p in mpl_line_params.items():
+                tobeplotted[key]["mpl_line_params"][n].append(p)
             sparse_dim[key] = sp_dim
 
     # Plot all the subsets
@@ -139,6 +139,6 @@ def plot(input_data, collapse=None, projection=None, axes=None, color=None,
                                    sparse_dim=sparse_dim[key],
                                    projection=projection,
                                    axes=val["axes"],
-                                   params=val["params"],
+                                   mpl_line_params=val["mpl_line_params"],
                                    **kwargs)
     return output

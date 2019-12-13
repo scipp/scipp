@@ -43,6 +43,7 @@ class Slicer:
             globs=globs)
         self.params["masks"]["show"] = (self.params["masks"]["show"] and
                                         len(self.input_data.masks) > 0)
+        print("PARAMS", self.params)
         if self.params["masks"]["show"]:
             self.masks = combine_masks(self.input_data.masks,
                                        self.input_data.dims,
@@ -200,3 +201,6 @@ class Slicer:
         if var.unit != dimensionless:
             lab += " [{}]".format(var.unit)
         return lab
+
+    def mask_to_float(self, mask, var):
+        return np.where(mask, var, None).astype(np.float)
