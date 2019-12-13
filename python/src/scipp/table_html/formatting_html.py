@@ -66,9 +66,9 @@ def _get_sparse(var, variances, ellipsis_after, summary=False):
             s.append("...")
             i = size - ellipsis_after
         data = retrieve(var, variances=variances)[i]
-        s.append('list(' +
-                 _format_array(data, len(data), ellipsis_after, do_ellide) +
-                 ')')
+        s.append('sparse({})'.format(
+            f'len={len(data)}' if summary else _format_array(
+                data, len(data), ellipsis_after, do_ellide)))
         i += 1
     return s
 
