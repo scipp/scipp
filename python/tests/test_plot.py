@@ -3,6 +3,8 @@
 # @file
 # @author Neil Vaytet
 import scipp as sc
+from scipp import Dim
+from scipp.plot import plot
 import numpy as np
 import io
 from contextlib import redirect_stdout
@@ -13,17 +15,10 @@ import pytest
 # In the future it would be nice to check the output by either comparing
 # checksums or by using tools like squish.
 
-
-def do_plot(d, **kwargs):
-    with io.StringIO() as buf, redirect_stdout(buf):
-        out = sc.plot.plot(d, **kwargs)
-    return out
-
-
 def make_dense_dataset(ndim=1, variances=False, binedges=False, labels=False,
                        masks=False):
 
-    dim_list = [sc.Dim.Tof, sc.Dim.X, sc.Dim.Y, sc.Dim.Z, sc.Dim.Qx]
+    dim_list = [Dim.Tof, Dim.X, Dim.Y, Dim.Z, Dim.Qx]
 
     N = 50
     M = 10
@@ -53,7 +48,7 @@ def make_dense_dataset(ndim=1, variances=False, binedges=False, labels=False,
 
 def make_sparse_dataset(ndim=1, data=False):
 
-    dim_list = [sc.Dim.Tof, sc.Dim.X, sc.Dim.Y, sc.Dim.Z, sc.Dim.Qx]
+    dim_list = [Dim.Tof, Dim.X, Dim.Y, Dim.Z, Dim.Qx]
 
     N = 50
     M = 10
@@ -109,174 +104,174 @@ def make_sparse_dataset(ndim=1, data=False):
 
 def test_plot_1d():
     d = make_dense_dataset(ndim=1)
-    do_plot(d)
+    plot(d)
 
 
 def test_plot_1d_with_variances():
     d = make_dense_dataset(ndim=1, variances=True)
-    do_plot(d)
+    plot(d)
 
 
 def test_plot_1d_bin_edges():
     d = make_dense_dataset(ndim=1, binedges=True)
-    do_plot(d)
+    plot(d)
 
 
 def test_plot_1d_with_labels():
     d = make_dense_dataset(ndim=1, labels=True)
-    do_plot(d, axes=["somelabels"])
+    plot(d, axes=["somelabels"])
 
 
 def test_plot_1d_log_axes():
     d = make_dense_dataset(ndim=1)
-    do_plot(d, logx=True)
-    do_plot(d, logy=True)
-    do_plot(d, logxy=True)
+    plot(d, logx=True)
+    plot(d, logy=True)
+    plot(d, logxy=True)
 
 
 def test_plot_1d_bin_edges_with_variances():
     d = make_dense_dataset(ndim=1, variances=True, binedges=True)
-    do_plot(d)
+    plot(d)
 
 
 def test_plot_1d_two_entries():
     d = make_dense_dataset(ndim=1)
-    d["Background"] = sc.Variable([sc.Dim.Tof],
+    d["Background"] = sc.Variable([Dim.Tof],
                                   values=2.0 * np.random.rand(50),
                                   unit=sc.units.counts)
-    do_plot(d)
+    plot(d)
 
 
 def test_plot_1d_three_entries_with_labels():
     N = 50
     d = make_dense_dataset(ndim=1, labels=True)
-    d["Background"] = sc.Variable([sc.Dim.Tof],
+    d["Background"] = sc.Variable([Dim.Tof],
                                   values=2.0 * np.random.rand(N),
                                   unit=sc.units.counts)
-    d.coords[sc.Dim.X] = sc.Variable([sc.Dim.X],
+    d.coords[Dim.X] = sc.Variable([Dim.X],
                                      values=np.arange(N).astype(np.float64),
                                      unit=sc.units.m)
-    d["Sample2"] = sc.Variable([sc.Dim.X],
+    d["Sample2"] = sc.Variable([Dim.X],
                                values=10.0 * np.random.rand(N),
                                unit=sc.units.counts)
-    d.labels["Xlabels"] = sc.Variable([sc.Dim.X],
+    d.labels["Xlabels"] = sc.Variable([Dim.X],
                                       values=np.linspace(151., 155., N),
                                       unit=sc.units.s)
-    do_plot(d, axes={sc.Dim.X: "Xlabels", sc.Dim.Tof: "somelabels"})
+    plot(d, axes={Dim.X: "Xlabels", Dim.Tof: "somelabels"})
 
 
 def test_plot_1d_with_masks():
     d = make_dense_dataset(ndim=1, masks=True)
-    do_plot(d)
+    plot(d)
 
 
 def test_plot_2d_image():
     d = make_dense_dataset(ndim=2)
-    do_plot(d)
+    plot(d)
 
 
 def test_plot_2d_image_with_axes():
     d = make_dense_dataset(ndim=2)
-    do_plot(d, axes=[sc.Dim.Tof, sc.Dim.X])
+    plot(d, axes=[Dim.Tof, Dim.X])
 
 
 def test_plot_2d_image_with_labels():
     d = make_dense_dataset(ndim=2, labels=True)
-    do_plot(d, axes=[sc.Dim.X, "somelabels"])
+    plot(d, axes=[Dim.X, "somelabels"])
 
 
 def test_plot_2d_image_with_variances():
     d = make_dense_dataset(ndim=2, variances=True)
-    do_plot(d, variances=True)
+    plot(d, variances=True)
 
 
 def test_plot_2d_image_with_filename():
     d = make_dense_dataset(ndim=2)
-    do_plot(d, filename="image.pdf")
+    plot(d, filename="image.pdf")
 
 
 def test_plot_2d_image_with_variances_with_filename():
     d = make_dense_dataset(ndim=2, variances=True)
-    do_plot(d, variances=True, filename="val_and_var.pdf")
+    plot(d, variances=True, filename="val_and_var.pdf")
 
 
 def test_plot_2d_image_with_bin_edges():
     d = make_dense_dataset(ndim=2, binedges=True)
-    do_plot(d)
+    plot(d)
 
 
 def test_plot_2d_with_masks():
     d = make_dense_dataset(ndim=2, masks=True)
-    do_plot(d)
+    plot(d)
 
 
 def test_plot_collapse():
     d = make_dense_dataset(ndim=2)
-    do_plot(d, collapse=sc.Dim.Tof)
+    plot(d, collapse=Dim.Tof)
 
 
 def test_plot_sliceviewer():
     d = make_dense_dataset(ndim=3)
-    do_plot(d)
+    plot(d)
 
 
 def test_plot_sliceviewer_with_variances():
     d = make_dense_dataset(ndim=3, variances=True)
-    do_plot(d, variances=True)
+    plot(d, variances=True)
 
 
 def test_plot_sliceviewer_with_two_sliders():
     d = make_dense_dataset(ndim=4)
-    do_plot(d)
+    plot(d)
 
 
 def test_plot_sliceviewer_with_axes():
     d = make_dense_dataset(ndim=3)
-    do_plot(d, axes=[sc.Dim.X, sc.Dim.Tof, sc.Dim.Y])
+    plot(d, axes=[Dim.X, Dim.Tof, Dim.Y])
 
 
 def test_plot_sliceviewer_with_labels():
     d = make_dense_dataset(ndim=3, labels=True)
-    do_plot(d, axes=[sc.Dim.X, sc.Dim.Y, "somelabels"])
+    plot(d, axes=[Dim.X, Dim.Y, "somelabels"])
 
 
 def test_plot_sliceviewer_with_labels_bad_dimension():
     d = make_dense_dataset(ndim=3, labels=True)
     with pytest.raises(Exception) as e:
-        do_plot(d, axes=[sc.Dim.Tof, sc.Dim.Y, "somelabels"])
+        plot(d, axes=[Dim.Tof, Dim.Y, "somelabels"])
     assert str(e.value) == ("The dimension of the labels cannot also be "
                             "specified as another axis.")
 
 
 def test_plot_sliceviewer_with_3d_projection():
     d = make_dense_dataset(ndim=3)
-    do_plot(d, projection="3d")
+    plot(d, projection="3d")
 
 
 def test_plot_sliceviewer_with_3d_projection_with_variances():
     d = make_dense_dataset(ndim=3, variances=True)
-    do_plot(d, projection="3d", variances=True)
+    plot(d, projection="3d", variances=True)
 
 
 def test_plot_sliceviewer_with_3d_projection_with_labels():
     d = make_dense_dataset(ndim=3, labels=True)
-    do_plot(d, projection="3d", axes=[sc.Dim.X, sc.Dim.Y, "somelabels"])
+    plot(d, projection="3d", axes=[Dim.X, Dim.Y, "somelabels"])
 
 
 def test_plot_3d_with_filename():
     d = make_dense_dataset(ndim=3)
-    do_plot(d, projection="3d", filename="a3dplot.html")
+    plot(d, projection="3d", filename="a3dplot.html")
 
 
 def test_plot_sliceviewer_with_1d_projection():
     d = make_dense_dataset(ndim=3)
-    do_plot(d, projection="1d")
+    plot(d, projection="1d")
 
 
 @pytest.mark.skip(reason="Volume rendering is not yet supported.")
 def test_plot_volume():
     d = make_dense_dataset(ndim=3)
-    do_plot(d, projection="volume")
+    plot(d, projection="volume")
 
 
 def test_plot_convenience_methods():
@@ -290,89 +285,102 @@ def test_plot_convenience_methods():
 
 def test_plot_1d_sparse_data():
     d = make_sparse_dataset(ndim=1)
-    do_plot(d)
+    plot(d)
 
 
 def test_plot_1d_sparse_data_with_weights():
     d = make_sparse_dataset(ndim=1, data=True)
-    do_plot(d)
+    plot(d)
 
 
 def test_plot_1d_sparse_data_with_int_bins():
     d = make_sparse_dataset(ndim=1)
-    do_plot(d, bins=50)
+    plot(d, bins=50)
 
 
 def test_plot_1d_sparse_data_with_nparray_bins():
     d = make_sparse_dataset(ndim=1)
-    do_plot(d, bins=np.linspace(0.0, 105.0, 50))
+    plot(d, bins=np.linspace(0.0, 105.0, 50))
 
 
 def test_plot_1d_sparse_data_with_Variable_bins():
     d = make_sparse_dataset(ndim=1)
-    bins = sc.Variable([sc.Dim.Tof],
+    bins = sc.Variable([Dim.Tof],
                        values=np.linspace(0.0, 105.0, 50),
                        unit=sc.units.us)
-    do_plot(d, bins=bins)
+    plot(d, bins=bins)
 
 
 def test_plot_2d_sparse_data():
     d = make_sparse_dataset(ndim=2)
-    do_plot(d)
+    plot(d)
 
 
 def test_plot_2d_sparse_data_with_weights():
     d = make_sparse_dataset(ndim=2, data=True)
-    do_plot(d)
+    plot(d)
 
 
 def test_plot_2d_sparse_data_with_int_bins():
     d = make_sparse_dataset(ndim=2)
-    do_plot(d, bins=50)
+    plot(d, bins=50)
 
 
 def test_plot_2d_sparse_data_with_nparray_bins():
     d = make_sparse_dataset(ndim=2)
-    do_plot(d, bins=np.linspace(0.0, 105.0, 50))
+    plot(d, bins=np.linspace(0.0, 105.0, 50))
 
 
 def test_plot_2d_sparse_data_with_Variable_bins():
     d = make_sparse_dataset(ndim=2)
-    bins = sc.Variable([sc.Dim.Tof],
+    bins = sc.Variable([Dim.Tof],
                        values=np.linspace(0.0, 105.0, 50),
                        unit=sc.units.us)
-    do_plot(d, bins=bins)
+    plot(d, bins=bins)
 
 
 def test_plot_3d_sparse_data():
     d = make_sparse_dataset(ndim=3)
-    do_plot(d)
+    plot(d)
 
 
 def test_plot_3d_sparse_data_with_weights():
     d = make_sparse_dataset(ndim=3, data=True)
-    do_plot(d)
+    plot(d)
 
 
 @pytest.mark.skip(reason="RuntimeError: Only the simple case histograms may "
                          "be constructed for now: 2 dims including sparse.")
 def test_plot_3d_sparse_data_with_int_bins():
     d = make_sparse_dataset(ndim=3)
-    do_plot(d, bins=50)
+    plot(d, bins=50)
 
 
 @pytest.mark.skip(reason="RuntimeError: Only the simple case histograms may "
                          "be constructed for now: 2 dims including sparse.")
 def test_plot_3d_sparse_data_with_nparray_bins():
     d = make_sparse_dataset(ndim=3)
-    do_plot(d, bins=np.linspace(0.0, 105.0, 50))
+    plot(d, bins=np.linspace(0.0, 105.0, 50))
 
 
 @pytest.mark.skip(reason="RuntimeError: Only the simple case histograms may "
                          "be constructed for now: 2 dims including sparse.")
 def test_plot_3d_sparse_data_with_Variable_bins():
     d = make_sparse_dataset(ndim=3)
-    bins = sc.Variable([sc.Dim.Tof],
+    bins = sc.Variable([Dim.Tof],
                        values=np.linspace(0.0, 105.0, 50),
                        unit=sc.units.us)
-    do_plot(d, bins=bins)
+    plot(d, bins=bins)
+
+
+def test_plot_variable():
+    N = 50
+    v1d = sc.Variable([Dim.Tof], values=np.random.rand(N),
+                      unit=sc.units.counts)
+    v2d = sc.Variable([Dim.Tof, Dim.X], values=np.random.rand(N, N),
+                      unit=sc.units.K)
+    v3d = sc.Variable([Dim.Tof, Dim.X, Dim.Y], values=np.random.rand(N, N, N),
+                      unit=sc.units.m)
+    plot(v1d)
+    plot(v2d)
+    plot(v3d)

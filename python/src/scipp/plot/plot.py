@@ -6,6 +6,9 @@
 from .._scipp import core as sc
 from .sciplot import SciPlot
 
+# Other imports
+import numpy as np
+
 
 def plot(input_data, collapse=None, projection=None, axes=None, color=None,
          marker=None, linestyle=None, linewidth=None, **kwargs):
@@ -25,9 +28,16 @@ def plot(input_data, collapse=None, projection=None, axes=None, color=None,
     # tobeplotted is a dict that holds four items:
     # {number_of_dimensions, Dataset, axes, line_parameters}.
     tp = type(input_data)
+    ds = None
     if tp is sc.DataProxy or tp is sc.DataArray:
         ds = sc.Dataset()
         ds[input_data.name] = input_data
+    if tp is sc.VariableProxy or tp is sc.Variable:
+        ds = sc.Dataset()
+        ds[" "] = input_data
+        for shp, dim in zip(input_data.shape, input_data.dims):
+            ds.coords[dim] = sc.Variable([dim], values=np.arange(shp))
+    if ds is not None:
         input_data = ds
 
     # Prepare container for matplotlib line parameters
