@@ -2,6 +2,7 @@
 # Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Neil Vaytet
+
 import scipp as sc
 from scipp import Dim
 from scipp.plot import plot
@@ -11,9 +12,11 @@ from contextlib import redirect_stdout
 from itertools import product
 import pytest
 
+
 # TODO: For now we are just checking that the plot does not throw any errors.
 # In the future it would be nice to check the output by either comparing
 # checksums or by using tools like squish.
+
 
 def make_dense_dataset(ndim=1, variances=False, binedges=False, labels=False,
                        masks=False):
@@ -149,8 +152,8 @@ def test_plot_1d_three_entries_with_labels():
                                   values=2.0 * np.random.rand(N),
                                   unit=sc.units.counts)
     d.coords[Dim.X] = sc.Variable([Dim.X],
-                                     values=np.arange(N).astype(np.float64),
-                                     unit=sc.units.m)
+                                  values=np.arange(N).astype(np.float64),
+                                  unit=sc.units.m)
     d["Sample2"] = sc.Variable([Dim.X],
                                values=10.0 * np.random.rand(N),
                                unit=sc.units.counts)
