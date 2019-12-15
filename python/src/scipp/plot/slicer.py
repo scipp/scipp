@@ -4,7 +4,7 @@
 
 from .tools import axis_to_dim_label, parse_params
 from .._scipp.core.units import dimensionless
-from .._scipp.core import combine_masks
+from .._scipp.core import combine_masks, Variable
 
 # Other imports
 import numpy as np
@@ -52,6 +52,11 @@ class Slicer:
 
         # Get the dimensions of the image to be displayed
         self.coords = self.input_data.coords
+        for shp, dim in zip(self.input_data.shape, self.input_data.dims):
+            if not self.coords.__contains__(dim):
+                self.input_data.coords[dim] = Variable(
+                    [dim], values=np.arange(shp))
+
         self.labels = self.input_data.labels
         self.shapes = dict(zip(self.input_data.dims, self.input_data.shape))
 

@@ -6,9 +6,6 @@
 from .._scipp import core as sc
 from .sciplot import SciPlot
 
-# Other imports
-import numpy as np
-
 
 def plot(input_data, collapse=None, projection=None, axes=None, color=None,
          marker=None, linestyle=None, linewidth=None, **kwargs):
@@ -21,23 +18,13 @@ def plot(input_data, collapse=None, projection=None, axes=None, color=None,
     from .plot_collapse import plot_collapse
     from .dispatch import dispatch
 
-    # Create a list of variables which will then be dispatched to correct
-    # plotting function.
-    # Search through the variables and group the 1D datasets that have
-    # the same coordinates and units.
-    # tobeplotted is a dict that holds four items:
-    # {number_of_dimensions, Dataset, axes, line_parameters}.
     tp = type(input_data)
-    ds = None
-    if tp is sc.DataProxy or tp is sc.DataArray:
+    # Convert non-Datasets to temporary Dataset
+    if (tp is sc.DataProxy) or (tp is sc.DataArray) or \
+       (tp is sc.VariableProxy) or (tp is sc.Variable):
         ds = sc.Dataset()
-        ds[input_data.name] = input_data
-    if tp is sc.VariableProxy or tp is sc.Variable:
-        ds = sc.Dataset()
-        ds[" "] = input_data
-        for shp, dim in zip(input_data.shape, input_data.dims):
-            ds.coords[dim] = sc.Variable([dim], values=np.arange(shp))
-    if ds is not None:
+        ds[input_data.name if hasattr(input_data, "name")
+            else " "] = input_data
         input_data = ds
 
     # Prepare container for matplotlib line parameters
@@ -49,6 +36,12 @@ def plot(input_data, collapse=None, projection=None, axes=None, color=None,
     # Counter for 1d/sparse data
     line_count = -1
 
+    # Create a list of variables which will then be dispatched to correct
+    # plotting function.
+    # Search through the variables and group the 1D datasets that have
+    # the same coordinates and units.
+    # tobeplotted is a dict that holds four items:
+    # {number_of_dimensions, Dataset, axes, line_parameters}.
     tobeplotted = dict()
     sparse_dim = dict()
     for name, var in sorted(input_data):
