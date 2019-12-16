@@ -8,6 +8,8 @@ import uuid
 from functools import partial, reduce
 from html import escape
 
+import numpy as np
+
 from .._scipp import core as sc
 
 CSS_FILE_PATH = f"{os.path.dirname(__file__)}/style.css"
@@ -32,7 +34,8 @@ def _format_array(data, size, ellipsis_after, do_ellide=True):
             i = size - ellipsis_after
         elem = data[i]
         if hasattr(elem, "__round__"):
-            elem = round(elem, 2)
+            if not hasattr(data, "dtype") or data.dtype != np.bool:
+                elem = round(elem, 2)
         s.append(str(elem))
         i += 1
     return escape(", ".join(s))
