@@ -2,6 +2,7 @@
 # Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
+from ..config import plot as config
 from .tools import axis_to_dim_label, parse_params
 from .._scipp.core.units import dimensionless
 from .._scipp.core import combine_masks
@@ -14,7 +15,7 @@ class Slicer:
 
     def __init__(self, input_data=None, axes=None, values=None, variances=None,
                  masks=None, cmap=None, log=None, vmin=None, vmax=None,
-                 color=None, button_options=None, volume=False):
+                 color=None, button_options=None, volume=False, aspect=None):
 
         import ipywidgets as widgets
 
@@ -54,6 +55,10 @@ class Slicer:
         self.coords = self.input_data.coords
         self.labels = self.input_data.labels
         self.shapes = dict(zip(self.input_data.dims, self.input_data.shape))
+        # Save aspect ratio setting
+        self.aspect = aspect
+        if self.aspect is None:
+            self.aspect = config.aspect
 
         # Size of the slider coordinate arrays
         self.slider_nx = dict()

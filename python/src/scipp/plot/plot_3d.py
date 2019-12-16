@@ -21,7 +21,7 @@ except ImportError:
 
 
 def plot_3d(input_data=None, axes=None, values=None, variances=None,
-            masks=None, filename=None, name=None, figsize=None,
+            masks=None, filename=None, name=None, figsize=None, aspect=None,
             cmap=None, log=False, vmin=None, vmax=None, color=None):
     """
     Plot a 3-slice through a N dimensional dataset. For every dimension above
@@ -42,7 +42,7 @@ def plot_3d(input_data=None, axes=None, values=None, variances=None,
 
     sv = Slicer3d(input_data=var, axes=axes, values=values,
                   variances=variances, masks=masks, cmap=cmap, log=log,
-                  vmin=vmin, vmax=vmax, color=color)
+                  vmin=vmin, vmax=vmax, color=color, aspect=aspect)
 
     render_plot(figure=sv.fig, widgets=sv.box, filename=filename, ipv=ipv)
 
@@ -53,12 +53,12 @@ class Slicer3d(Slicer):
 
     def __init__(self, input_data=None, axes=None, values=None, variances=None,
                  masks=None, cmap=None, log=None, vmin=None, vmax=None,
-                 color=None):
+                 color=None, aspect=None):
 
         super().__init__(input_data=input_data, axes=axes, values=values,
                          variances=variances, masks=masks, cmap=cmap,
                          log=log, vmin=vmin, vmax=vmax, color=color,
-                         button_options=['X', 'Y', 'Z'])
+                         aspect=aspect, button_options=['X', 'Y', 'Z'])
 
         self.cube = None
         self.members.update({"surfaces": {}, "wireframes": {}, "outlines": {},
@@ -337,22 +337,25 @@ class Slicer3d(Slicer):
         return meshes
 
     def get_box(self):
-        # max_size = 0.0
-        # dx = {"x": 0, "y": 0, "z": 0}
-        # for ax in dx.keys():
-        #     dx[ax] = (self.xminmax[self.button_axis_to_dim[ax]][1] -
-        #               self.xminmax[self.button_axis_to_dim[ax]][0])
-        # max_size = np.amax(list(dx.values()))
-        # arrays = dict()
-        # for ax, size in dx.items():
-        #     diff = max_size - size
-        #     arrays[ax] = [
-        #         self.xminmax[self.button_axis_to_dim[ax]][0] - 0.5*diff,
-        #         self.xminmax[self.button_axis_to_dim[ax]][1] + 0.5*diff]
+        if self.aspect == "equal":
+            max_size = 0.0
+            dx = {"x": 0, "y": 0, "z": 0}
+            for ax in dx.keys():
+                dx[ax] = np.ediff1d(self.xminmax[self.button_axis_to_dim[ax]])
+            max_size = np.amax(list(dx.values()))
+            arrays = dict()
+            for ax, size in dx.items():
+                diff = max_size - size
+                arrays[ax] = [
+                    self.xminmax[self.button_axis_to_dim[ax]][0] - 0.5*diff,
+                    self.xminmax[self.button_axis_to_dim[ax]][1] + 0.5*diff]
 
-        # # return np.meshgrid(arrays["x"], arrays["y"], arrays["z"],
-        # #                    indexing="ij")
-        return np.meshgrid(self.xminmax[self.button_axis_to_dim["x"]],
-                           self.xminmax[self.button_axis_to_dim["y"]],
-                           self.xminmax[self.button_axis_to_dim["z"]],
-                           indexing="ij")
+            return np.meshgrid(arrays["x"], arrays["y"], arrays["z"],
+                               indexing="ij")
+        elif self.aspect == "auto":
+            return np.meshgrid(self.xminmax[self.button_axis_to_dim["x"]],
+                               self.xminmax[self.button_axis_to_dim["y"]],
+                               self.xminmax[self.button_axis_to_dim["z"]],
+                               indexing="ij")
+        else:
+            raise RuntimeError("Unknown aspect ratio: {}".format(aspect))
