@@ -96,6 +96,8 @@ def plot(scipp_obj, collapse=None, projection=None, axes=None, color=None,
                 tobeplotted[key]["mpl_line_params"][n].append(p)
             sparse_dim[key] = sp_dim
 
+    print(tobeplotted)
+
     # Plot all the subsets
     output = SciPlot()
     for key, val in tobeplotted.items():
