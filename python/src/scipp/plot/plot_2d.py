@@ -50,12 +50,10 @@ class Slicer2d(Slicer):
         super().__init__(input_data=input_data, axes=axes, values=values,
                          variances=variances, masks=masks, cmap=cmap,
                          log=log, vmin=vmin, vmax=vmax, color=color,
-                         button_options=['X', 'Y'])
+                         aspect=aspect, button_options=['X', 'Y'])
 
         self.members.update({"images": {}, "colorbars": {}})
         self.extent = {"x": [0, 1], "y": [0, 1]}
-        if aspect is None:
-            aspect = config.aspect
 
         # Get or create matplotlib axes
         self.fig = None
@@ -104,7 +102,7 @@ class Slicer2d(Slicer):
             if self.params[key]["show"]:
                 self.im[key] = self.ax[key].imshow(
                     [[1.0, 1.0], [1.0, 1.0]], norm=self.params[key]["norm"],
-                    extent=extent_array, origin="lower", aspect=aspect,
+                    extent=extent_array, origin="lower", aspect=self.aspect,
                     interpolation="nearest", cmap=self.params[key]["cmap"])
                 self.ax[key].set_title(
                     self.input_data.name if key == "values" else "std dev.")
@@ -121,7 +119,7 @@ class Slicer2d(Slicer):
                     self.im[self.get_mask_key(key)] = self.ax[key].imshow(
                         [[1.0, 1.0], [1.0, 1.0]], extent=extent_array,
                         norm=self.params[key]["norm"], origin="lower",
-                        interpolation="nearest", aspect=aspect,
+                        interpolation="nearest", aspect=self.aspect,
                         cmap=self.params["masks"]["cmap"])
                 if logx:
                     self.ax[key].set_xscale("log")
