@@ -8,6 +8,11 @@ namespace py = pybind11;
 
 namespace scipp::python {
 
+PyObject::~PyObject() {
+  py::gil_scoped_acquire acquire;
+  m_object = py::object();
+}
+
 PyObject::PyObject(const py::object &object) {
   if (object) {
     // It is essential to acquire the GIL here. For reasons not entirely clear,

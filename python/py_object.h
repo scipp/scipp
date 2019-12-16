@@ -19,6 +19,7 @@ public:
   PyObject &operator=(PyObject &&other) = default;
   PyObject(const PyObject &other) : PyObject(other.m_object) {}
   PyObject &operator=(const PyObject &other) { return *this = PyObject(other); }
+  ~PyObject();
 
   PyObject(const py::object &object);
 
