@@ -198,7 +198,7 @@ def summarize_variable(name, var, is_index=False, has_attrs=False):
         for dim in var.dims)
     dims_str = f"({dims_text})"
     name = escape(name)
-    dtype = var.dtype
+    dtype = repr(var.dtype)[6:]
     unit = '' if var.unit == sc.units.dimensionless else var.unit
 
     # "unique" ids required to expand/collapse subsections
