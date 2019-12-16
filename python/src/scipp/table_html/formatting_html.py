@@ -49,6 +49,9 @@ def _format_non_sparse(var, has_variances):
     size = reduce(operator.mul, var.shape, 1)
     # flatten avoids displaying square brackets in the output
     data = retrieve(var, variances=has_variances)
+    # avoid unintentional indexing into value of 0-D data
+    if len(var.shape) == 0:
+        data = [data, ]
     if hasattr(data, 'flatten'):
         data = data.flatten()
     s = _format_array(data, size, ellipsis_after=2)
