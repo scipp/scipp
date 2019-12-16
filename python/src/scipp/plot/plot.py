@@ -7,7 +7,7 @@ from .._scipp import core as sc
 from .sciplot import SciPlot
 
 
-def plot(input_data, collapse=None, projection=None, axes=None, color=None,
+def plot(scipp_obj, collapse=None, projection=None, axes=None, color=None,
          marker=None, linestyle=None, linewidth=None, **kwargs):
     """
     Wrapper function to plot any kind of dataset
@@ -18,14 +18,22 @@ def plot(input_data, collapse=None, projection=None, axes=None, color=None,
     from .plot_collapse import plot_collapse
     from .dispatch import dispatch
 
-    tp = type(input_data)
-    # Convert non-Datasets to temporary Dataset
-    if (tp is sc.DataProxy) or (tp is sc.DataArray) or \
-       (tp is sc.VariableProxy) or (tp is sc.Variable):
-        ds = sc.Dataset()
-        ds[input_data.name if hasattr(input_data, "name")
-            else " "] = input_data
-        input_data = ds
+    tp = type(scipp_obj)
+    # # Convert non-Datasets to temporary Dataset
+    # if (tp is sc.DataProxy) or (tp is sc.DataArray) or \
+    #    (tp is sc.VariableProxy) or (tp is sc.Variable):
+    #     ds = sc.Dataset()
+    #     ds[scipp_obj.name if hasattr(scipp_obj, "name")
+    #         else " "] = scipp_obj
+    #     scipp_obj = ds
+
+    inventory = dict()
+    if type(scipp_obj) is sc.Dataset:
+        for name, var in sorted(scipp_obj):
+            inventory[name] = var
+    else:
+        inventory[scipp_obj.name if hasattr(scipp_obj, "name")
+                  else " ".name] = scipp_obj
 
     # Prepare container for matplotlib line parameters
     line_params = {"color": color,
@@ -36,6 +44,10 @@ def plot(input_data, collapse=None, projection=None, axes=None, color=None,
     # Counter for 1d/sparse data
     line_count = -1
 
+
+
+
+
     # Create a list of variables which will then be dispatched to correct
     # plotting function.
     # Search through the variables and group the 1D datasets that have
@@ -44,7 +56,7 @@ def plot(input_data, collapse=None, projection=None, axes=None, color=None,
     # {number_of_dimensions, Dataset, axes, line_parameters}.
     tobeplotted = dict()
     sparse_dim = dict()
-    for name, var in sorted(input_data):
+    for name, var in sorted(inventory.items()):
         ndims = len(var.dims)
         if ndims > 0:
             sp_dim = var.sparse_dim
@@ -88,11 +100,11 @@ def plot(input_data, collapse=None, projection=None, axes=None, color=None,
                     mpl_line_params[n] = p
 
             if key not in tobeplotted.keys():
-                tobeplotted[key] = dict(ndims=ndims, dataset=sc.Dataset(),
+                tobeplotted[key] = dict(ndims=ndims, scipp_obj_dict=dict(),
                                         axes=ax, mpl_line_params=dict())
                 for n in mpl_line_params.keys():
                     tobeplotted[key]["mpl_line_params"][n] = []
-            tobeplotted[key]["dataset"][name] = input_data[name]
+            tobeplotted[key]["scipp_obj_dict"][name] = inventory[name]
             for n, p in mpl_line_params.items():
                 tobeplotted[key]["mpl_line_params"][n].append(p)
             sparse_dim[key] = sp_dim
@@ -101,12 +113,13 @@ def plot(input_data, collapse=None, projection=None, axes=None, color=None,
     output = SciPlot()
     for key, val in tobeplotted.items():
         if collapse is not None:
-            output[key] = plot_collapse(input_data=val["dataset"],
+            output[key] = plot_collapse(scipp_obj_dict=val["scipp_obj_dict"],
+                                        name=key,
                                         dim=collapse,
                                         axes=val["axes"],
                                         **kwargs)
         else:
-            output[key] = dispatch(input_data=val["dataset"],
+            output[key] = dispatch(scipp_obj_dict=val["scipp_obj_dict"],
                                    name=key,
                                    ndim=val["ndims"],
                                    sparse_dim=sparse_dim[key],

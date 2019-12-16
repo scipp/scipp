@@ -20,7 +20,7 @@ except ImportError:
     ipv = None
 
 
-def plot_3d(input_data=None, axes=None, values=None, variances=None,
+def plot_3d(scipp_obj_dict=None, axes=None, values=None, variances=None,
             masks=None, filename=None, name=None, figsize=None, aspect=None,
             cmap=None, log=False, vmin=None, vmax=None, color=None):
     """
@@ -36,11 +36,12 @@ def plot_3d(input_data=None, axes=None, values=None, variances=None,
                            "and ipyevents to be installed. Use conda/pip "
                            "install ipyvolume ipyevents.")
 
-    var = input_data[name]
-    if axes is None:
-        axes = var.dims
+    # var = input_data[name]
+    # if axes is None:
+    #     axes = var.dims
 
-    sv = Slicer3d(input_data=var, axes=axes, values=values,
+    sv = Slicer3d(scipp_obj_dict=scipp_obj_dict,
+                  data_array=scipp_obj_dict[name], axes=axes, values=values,
                   variances=variances, masks=masks, cmap=cmap, log=log,
                   vmin=vmin, vmax=vmax, color=color, aspect=aspect)
 
@@ -51,14 +52,15 @@ def plot_3d(input_data=None, axes=None, values=None, variances=None,
 
 class Slicer3d(Slicer):
 
-    def __init__(self, input_data=None, axes=None, values=None, variances=None,
-                 masks=None, cmap=None, log=None, vmin=None, vmax=None,
-                 color=None, aspect=None):
+    def __init__(self, scipp_obj_dict=None, data_array=None, axes=None,
+                 values=None, variances=None, masks=None, cmap=None, log=None,
+                 vmin=None, vmax=None, color=None, aspect=None):
 
-        super().__init__(input_data=input_data, axes=axes, values=values,
-                         variances=variances, masks=masks, cmap=cmap,
-                         log=log, vmin=vmin, vmax=vmax, color=color,
-                         aspect=aspect, button_options=['X', 'Y', 'Z'])
+        super().__init__(scipp_obj_dict=scipp_obj_dict, data_array=data_array,
+                         axes=axes, values=values, variances=variances,
+                         masks=masks, cmap=cmap, log=log, vmin=vmin, vmax=vmax,
+                         color=color, aspect=aspect,
+                         button_options=['X', 'Y', 'Z'])
 
         self.cube = None
         self.members.update({"surfaces": {}, "wireframes": {}, "outlines": {},
@@ -195,7 +197,7 @@ class Slicer3d(Slicer):
 
     def update_cube(self, update_coordinates=True):
         # The dimensions to be sliced have been saved in slider_dims
-        self.cube = self.input_data
+        self.cube = self.data_array
         self.last_changed_slider_dim = None
         # Slice along dimensions with buttons who have no value, i.e. the
         # dimension is not used for any axis. This reduces the data volume to

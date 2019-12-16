@@ -16,7 +16,7 @@ import ipywidgets as widgets
 import matplotlib.pyplot as plt
 
 
-def plot_2d(input_data=None, axes=None, values=None, variances=None,
+def plot_2d(scipp_obj_dict=None, axes=None, values=None, variances=None,
             masks=None, filename=None, name=None, figsize=None, mpl_axes=None,
             aspect=None, cmap=None, log=False, vmin=None, vmax=None,
             color=None, logx=False, logy=False, logxy=False):
@@ -26,11 +26,8 @@ def plot_2d(input_data=None, axes=None, values=None, variances=None,
     particular dimension.
     """
 
-    var = input_data[name]
-    if axes is None:
-        axes = var.dims
-
-    sv = Slicer2d(input_data=var, axes=axes, values=values,
+    sv = Slicer2d(scipp_obj_dict=scipp_obj_dict,
+                  data_array=scipp_obj_dict[name], axes=axes, values=values,
                   variances=variances, masks=masks, mpl_axes=mpl_axes,
                   aspect=aspect, cmap=cmap, log=log, vmin=vmin, vmax=vmax,
                   color=color, logx=logx or logxy, logy=logy or logxy)
@@ -43,14 +40,15 @@ def plot_2d(input_data=None, axes=None, values=None, variances=None,
 
 class Slicer2d(Slicer):
 
-    def __init__(self, input_data=None, axes=None, values=None, variances=None,
-                 masks=None, mpl_axes=None, aspect=None, cmap=None, log=None,
-                 vmin=None, vmax=None, color=None, logx=False, logy=False):
+    def __init__(self, scipp_obj_dict=None, data_array=None, axes=None,
+                 values=None, variances=None, masks=None, mpl_axes=None,
+                 aspect=None, cmap=None, log=None, vmin=None, vmax=None,
+                 color=None, logx=False, logy=False):
 
-        super().__init__(input_data=input_data, axes=axes, values=values,
-                         variances=variances, masks=masks, cmap=cmap,
-                         log=log, vmin=vmin, vmax=vmax, color=color,
-                         aspect=aspect, button_options=['X', 'Y'])
+        super().__init__(scipp_obj_dict=scipp_obj_dict, data_array=data_array,
+                         axes=axes, values=values, variances=variances,
+                         masks=masks, cmap=cmap, log=log, vmin=vmin, vmax=vmax,
+                         color=color, aspect=aspect, button_options=['X', 'Y'])
 
         self.members.update({"images": {}, "colorbars": {}})
         self.extent = {"x": [0, 1], "y": [0, 1]}
@@ -105,12 +103,12 @@ class Slicer2d(Slicer):
                     extent=extent_array, origin="lower", aspect=self.aspect,
                     interpolation="nearest", cmap=self.params[key]["cmap"])
                 self.ax[key].set_title(
-                    self.input_data.name if key == "values" else "std dev.")
+                    self.data_array.name if key == "values" else "std dev.")
                 if self.params[key]["cbar"]:
                     self.cbar[key] = plt.colorbar(
                         self.im[key], ax=self.ax[key], cax=self.cax[key])
                     self.cbar[key].ax.set_ylabel(
-                        axis_label(var=self.input_data, name=""))
+                        axis_label(var=self.data_array, name=""))
                 if self.cax[key] is None:
                     self.cbar[key].ax.yaxis.set_label_coords(-1.1, 0.5)
                 self.members["images"][key] = self.im[key]
@@ -162,7 +160,7 @@ class Slicer2d(Slicer):
         for key, button in self.buttons.items():
             if self.slider[key].disabled:
                 but_val = button.value.lower()
-                if not self.histograms[key]:
+                if not self.histograms[self.name][key]:
                     xc = self.slider_x[key].values
                     xmin = 1.5 * xc[0] - 0.5 * xc[1]
                     xmax = 1.5 * xc[-1] - 0.5 * xc[-2]
@@ -189,7 +187,7 @@ class Slicer2d(Slicer):
     # Define function to update slices
     def update_slice(self, change):
         # The dimensions to be sliced have been saved in slider_dims
-        vslice = self.input_data
+        vslice = self.data_array
         if self.params["masks"]["show"]:
             mslice = self.masks
         # Slice along dimensions with active sliders
@@ -200,7 +198,7 @@ class Slicer2d(Slicer):
                     self.slider_x[key], val.value)
                 vslice = vslice[val.dim, val.value]
                 # At this point, after masks were combined, all their
-                # dimensions should be contained in the input_data.dims.
+                # dimensions should be contained in the data_array.dims.
                 if self.params["masks"]["show"]:
                     mslice = mslice[val.dim, val.value]
             else:

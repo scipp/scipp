@@ -13,13 +13,18 @@ import numpy as np
 
 class Slicer:
 
-    def __init__(self, input_data=None, axes=None, values=None, variances=None,
-                 masks=None, cmap=None, log=None, vmin=None, vmax=None,
-                 color=None, button_options=None, volume=False, aspect=None):
+    def __init__(self, scipp_obj_dict=None, data_array=None, axes=None,
+                 values=None, variances=None, masks=None, cmap=None, log=None,
+                 vmin=None, vmax=None, color=None, button_options=None,
+                 volume=False, aspect=None):
 
         import ipywidgets as widgets
 
-        self.input_data = input_data
+        self.scipp_obj_dict = scipp_obj_dict
+        self.data_array = data_array
+        self.name = self.data_array.name
+
+        # Member container for dict output
         self.members = dict(widgets=dict(sliders=dict(), togglebuttons=dict(),
                             togglebutton=dict(), buttons=dict(),
                             labels=dict()))
@@ -29,37 +34,37 @@ class Slicer:
         globs = {"cmap": cmap, "log": log, "vmin": vmin, "vmax": vmax,
                  "color": color}
 
-        if hasattr(self.input_data, "values"):
+        if hasattr(self.data_array, "values"):
             self.params["values"] = parse_params(params=values, globs=globs,
-                                                 array=self.input_data.values)
+                                                 array=self.data_array.values)
 
-        if hasattr(self.input_data, "variances"):
+        if hasattr(self.data_array, "variances"):
             self.params["variances"] = {"show": False}
-            if self.input_data.variances is not None:
+            if self.data_array.variances is not None:
                 self.params["variances"].update(
                     parse_params(params=variances, defaults={"show": False},
                                  globs=globs,
-                                 array=np.sqrt(self.input_data.variances)))
+                                 array=np.sqrt(self.data_array.variances)))
 
         self.params["masks"] = parse_params(
             params=masks, defaults={"cmap": "gray", "cbar": False},
             globs=globs)
         self.params["masks"]["show"] = (self.params["masks"]["show"] and
-                                        len(self.input_data.masks) > 0)
+                                        len(self.data_array.masks) > 0)
         if self.params["masks"]["show"]:
-            self.masks = combine_masks(self.input_data.masks,
-                                       self.input_data.dims,
-                                       self.input_data.shape)
+            self.masks = combine_masks(self.data_array.masks,
+                                       self.data_array.dims,
+                                       self.data_array.shape)
 
         # Get the dimensions of the image to be displayed
-        self.coords = self.input_data.coords
-        for shp, dim in zip(self.input_data.shape, self.input_data.dims):
+        self.coords = self.data_array.coords
+        for shp, dim in zip(self.data_array.shape, self.data_array.dims):
             if not self.coords.__contains__(dim):
-                self.input_data.coords[dim] = Variable(
+                self.data_array.coords[dim] = Variable(
                     [dim], values=np.arange(shp))
 
-        self.labels = self.input_data.labels
-        self.shapes = dict(zip(self.input_data.dims, self.input_data.shape))
+        self.labels = self.data_array.labels
+        self.shapes = dict(zip(self.data_array.dims, self.data_array.shape))
         # Save aspect ratio setting
         self.aspect = aspect
         if self.aspect is None:
@@ -73,12 +78,16 @@ class Slicer:
         self.slider_x = dict()
         # Store labels for sliders if any
         self.slider_labels = dict()
+
+        # Process axes dimensions
+        if axes is None:
+            axes = self.data_array.dims
         # Protect against duplicate entries in axes
         if len(axes) != len(set(axes)):
             raise RuntimeError("Duplicate entry in axes: {}".format(axes))
         # Iterate through axes and collect dimensions
         for ax in axes:
-            dim, lab, var = axis_to_dim_label(self.input_data, ax)
+            dim, lab, var = axis_to_dim_label(self.data_array, ax)
             if (lab is not None) and (dim in axes):
                 raise RuntimeError("The dimension of the labels cannot also "
                                    "be specified as another axis.")
@@ -91,18 +100,55 @@ class Slicer:
 
         # Save information on histograms
         self.histograms = dict()
-        if hasattr(self.input_data, "name"):
+        for name, var in self.scipp_obj_dict.items():
+            self.histograms[name] = dict()
             for key, x in self.slider_x.items():
-                indx = self.input_data.dims.index(self.slider_dims[key])
-                self.histograms[key] = self.input_data.shape[indx] == \
+                indx = var.dims.index(self.slider_dims[key])
+                self.histograms[name][key] = var.shape[indx] == \
                     x.shape[0] - 1
-        else:
-            for name, var in self.input_data:
-                self.histograms[name] = dict()
-                for key, x in self.slider_x.items():
-                    indx = var.dims.index(self.slider_dims[key])
-                    self.histograms[name][key] = var.shape[indx] == \
-                        x.shape[0] - 1
+
+
+
+        # # # for key, x in self.slider_x.items():
+        # # #     indx = self.data_array.dims.index(self.slider_dims[key])
+        # # #     self.histograms[key] = self.data_array.shape[indx] == x.shape[0]-1
+        # # # # print(self.data_array)
+        # # # # print(hasattr(self.data_array, "name"))
+
+
+        # # if hasattr(self.data_array, "name"):
+        # #     print("has name")
+        # #     for key, x in self.slider_x.items():
+        # #         indx = self.data_array.dims.index(self.slider_dims[key])
+        # #         self.histograms[key] = self.data_array.shape[indx] == \
+        # #             x.shape[0] - 1
+        # # else:
+        # #     print("no name")
+        # #     for name, var in self.data_array:
+        # #         self.histograms[name] = dict()
+        # #         for key, x in self.slider_x.items():
+        # #             indx = var.dims.index(self.slider_dims[key])
+        # #             self.histograms[name][key] = var.shape[indx] == \
+        # #                 x.shape[0] - 1
+        # # print(self.histograms)
+
+
+        # # if hasattr(self.data_array, "name"):
+        # #     print("has name")
+        # #     for key, x in self.slider_x.items():
+        # #         indx = self.data_array.dims.index(self.slider_dims[key])
+        # #         self.histograms[key] = self.data_array.shape[indx] == \
+        # #             x.shape[0] - 1
+        # # else:
+        # #     print("no name")
+        # #     for name, var in self.data_array:
+        # #         self.histograms[name] = dict()
+        # #         for key, x in self.slider_x.items():
+        # #             indx = var.dims.index(self.slider_dims[key])
+        # #             self.histograms[name][key] = var.shape[indx] == \
+        # #                 x.shape[0] - 1
+        # print(self.histograms)
+        # print("=====================")
 
         # Initialise list for VBox container
         self.vbox = []
