@@ -51,7 +51,10 @@ def _format_non_sparse(var, has_variances):
     data = retrieve(var, variances=has_variances)
     if hasattr(data, 'flatten'):
         data = data.flatten()
-    return _make_row(_format_array(data, size, ellipsis_after=2))
+    s = _format_array(data, size, ellipsis_after=2)
+    if has_variances:
+        s = 'σ² = ' + s
+    return _make_row(s)
 
 
 def _get_sparse(var, variances, ellipsis_after, summary=False):
