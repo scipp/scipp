@@ -14,6 +14,7 @@ from .._scipp.core import Variable
 import numpy as np
 import ipywidgets as widgets
 import matplotlib.pyplot as plt
+import warnings
 
 
 def plot_2d(input_data=None, axes=None, values=None, variances=None,
@@ -176,13 +177,15 @@ class Slicer2d(Slicer):
 
         extent_array = np.array(list(self.extent.values())).flatten()
         for key in self.ax.keys():
-            self.im[key].set_extent(extent_array)
-            if self.params["masks"]["show"]:
-                self.im[self.get_mask_key(key)].set_extent(extent_array)
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", category=UserWarning)
+                self.im[key].set_extent(extent_array)
+                if self.params["masks"]["show"]:
+                    self.im[self.get_mask_key(key)].set_extent(extent_array)
+                self.ax[key].set_xlim(self.extent["x"])
+                self.ax[key].set_ylim(self.extent["y"])
             self.ax[key].set_xlabel(axlabels["x"])
             self.ax[key].set_ylabel(axlabels["y"])
-            self.ax[key].set_xlim(self.extent["x"])
-            self.ax[key].set_ylim(self.extent["y"])
 
         return
 
