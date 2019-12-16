@@ -24,7 +24,7 @@ def plot(scipp_obj, collapse=None, projection=None, axes=None, color=None,
             inventory[name] = var
     else:
         inventory[scipp_obj.name if hasattr(scipp_obj, "name")
-                  else " ".name] = scipp_obj
+                  else " "] = scipp_obj
 
     # Prepare container for matplotlib line parameters
     line_params = {"color": color,

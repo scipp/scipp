@@ -158,7 +158,7 @@ class Slicer2d(Slicer):
         for key, button in self.buttons.items():
             if self.slider[key].disabled:
                 but_val = button.value.lower()
-                if not self.histograms[self.name][key]:
+                if not self.histograms[self.data_array.name][key]:
                     xc = self.slider_x[key].values
                     xmin = 1.5 * xc[0] - 0.5 * xc[1]
                     xmax = 1.5 * xc[-1] - 0.5 * xc[-2]

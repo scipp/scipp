@@ -24,7 +24,6 @@ class Slicer:
         if self.scipp_obj_dict is None:
             self.scipp_obj_dict = {data_array.name: data_array}
         self.data_array = data_array
-        self.name = self.data_array.name
 
         # Member container for dict output
         self.members = dict(widgets=dict(sliders=dict(), togglebuttons=dict(),
