@@ -230,7 +230,7 @@ def summarize_variable(name, var, is_index=False, has_attrs=False):
         f"<div class='xr-var-dims'>{dims_str}</div>",
         f"<div class='xr-var-dtype'>{dtype}</div>",
         f"<div class='xr-var-unit'>{unit}</div>",
-        f"<div class='xr-value-preview xr-preview'><span>{preview}</span>"
+        f"<div class='xr-value-preview xr-preview'><span>{preview}</span>",
         "{}</div>".format(f'<span>{variances_preview}</span>'
                           if var.variances is not None else ''),
         f"<input id='{attrs_id}' class='xr-var-attrs-in' ",
