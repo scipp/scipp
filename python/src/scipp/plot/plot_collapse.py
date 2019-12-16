@@ -5,23 +5,18 @@
 # Scipp imports
 from .dispatch import dispatch
 from .tools import get_line_param
-from .._scipp import core as sc
 
 # Other imports
 import numpy as np
 
 
-def plot_collapse(input_data, name=None, dim=None, filename=None, **kwargs):
+def plot_collapse(data_array, name=None, dim=None, filename=None, **kwargs):
     """
     Collapse higher dimensions into a 1D plot.
     """
 
-    # Get the variable inside the dataset
-    # name, var = next(iter(input_data))
-    var = input_data[name]
-
-    dims = var.dims
-    shape = var.shape
+    dims = data_array.dims
+    shape = data_array.shape
 
     # Gather list of dimensions that are to be collapsed
     slice_dims = []
@@ -34,7 +29,6 @@ def plot_collapse(input_data, name=None, dim=None, filename=None, **kwargs):
             volume *= size
 
     # Create container to collect all 1D slices as 1D variables
-    # ds = sc.Dataset(coords={dim: var.coords[dim]})
     all_slices = dict()
 
     # Go through the dims that need to be collapsed, and create an array that
@@ -82,7 +76,7 @@ def plot_collapse(input_data, name=None, dim=None, filename=None, **kwargs):
     # Extract each entry from the slice_list, make temporary dataset and add to
     # input dictionary for plot_1d
     for i, line in enumerate(slice_list):
-        vslice = var
+        vslice = data_array
         key = ""
         for s in line:
             vslice = vslice[s[0], s[1]]
@@ -92,7 +86,7 @@ def plot_collapse(input_data, name=None, dim=None, filename=None, **kwargs):
             mpl_line_params[p].append(get_line_param(name=p, index=i))
 
     # Send the newly created dictionary of DataProxy to the plot_1d function
-    return dispatch(input_data=all_slices, ndim=1, mpl_line_params=mpl_line_params,
-                    **kwargs)
+    return dispatch(scipp_obj_dict=all_slices, ndim=1,
+                    mpl_line_params=mpl_line_params, **kwargs)
 
     return

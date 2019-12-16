@@ -16,7 +16,7 @@ import ipywidgets as widgets
 import matplotlib.pyplot as plt
 
 
-def plot_2d(scipp_obj_dict=None, axes=None, values=None, variances=None,
+def plot_2d(data_array=None, axes=None, values=None, variances=None,
             masks=None, filename=None, name=None, figsize=None, mpl_axes=None,
             aspect=None, cmap=None, log=False, vmin=None, vmax=None,
             color=None, logx=False, logy=False, logxy=False):
@@ -26,8 +26,7 @@ def plot_2d(scipp_obj_dict=None, axes=None, values=None, variances=None,
     particular dimension.
     """
 
-    sv = Slicer2d(scipp_obj_dict=scipp_obj_dict,
-                  data_array=scipp_obj_dict[name], axes=axes, values=values,
+    sv = Slicer2d(data_array=data_array, axes=axes, values=values,
                   variances=variances, masks=masks, mpl_axes=mpl_axes,
                   aspect=aspect, cmap=cmap, log=log, vmin=vmin, vmax=vmax,
                   color=color, logx=logx or logxy, logy=logy or logxy)
@@ -40,15 +39,14 @@ def plot_2d(scipp_obj_dict=None, axes=None, values=None, variances=None,
 
 class Slicer2d(Slicer):
 
-    def __init__(self, scipp_obj_dict=None, data_array=None, axes=None,
-                 values=None, variances=None, masks=None, mpl_axes=None,
-                 aspect=None, cmap=None, log=None, vmin=None, vmax=None,
-                 color=None, logx=False, logy=False):
+    def __init__(self, data_array=None, axes=None, values=None, variances=None,
+                 masks=None, mpl_axes=None, aspect=None, cmap=None, log=None,
+                 vmin=None, vmax=None, color=None, logx=False, logy=False):
 
-        super().__init__(scipp_obj_dict=scipp_obj_dict, data_array=data_array,
-                         axes=axes, values=values, variances=variances,
-                         masks=masks, cmap=cmap, log=log, vmin=vmin, vmax=vmax,
-                         color=color, aspect=aspect, button_options=['X', 'Y'])
+        super().__init__(data_array=data_array, axes=axes, values=values,
+                         variances=variances, masks=masks, cmap=cmap, log=log,
+                         vmin=vmin, vmax=vmax, color=color, aspect=aspect,
+                         button_options=['X', 'Y'])
 
         self.members.update({"images": {}, "colorbars": {}})
         self.extent = {"x": [0, 1], "y": [0, 1]}

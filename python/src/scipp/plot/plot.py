@@ -18,15 +18,6 @@ def plot(scipp_obj, collapse=None, projection=None, axes=None, color=None,
     from .plot_collapse import plot_collapse
     from .dispatch import dispatch
 
-    tp = type(scipp_obj)
-    # # Convert non-Datasets to temporary Dataset
-    # if (tp is sc.DataProxy) or (tp is sc.DataArray) or \
-    #    (tp is sc.VariableProxy) or (tp is sc.Variable):
-    #     ds = sc.Dataset()
-    #     ds[scipp_obj.name if hasattr(scipp_obj, "name")
-    #         else " "] = scipp_obj
-    #     scipp_obj = ds
-
     inventory = dict()
     if type(scipp_obj) is sc.Dataset:
         for name, var in sorted(scipp_obj):
@@ -43,10 +34,6 @@ def plot(scipp_obj, collapse=None, projection=None, axes=None, color=None,
 
     # Counter for 1d/sparse data
     line_count = -1
-
-
-
-
 
     # Create a list of variables which will then be dispatched to correct
     # plotting function.
@@ -113,15 +100,12 @@ def plot(scipp_obj, collapse=None, projection=None, axes=None, color=None,
     output = SciPlot()
     for key, val in tobeplotted.items():
         if collapse is not None:
-            output[key] = plot_collapse(scipp_obj_dict=val["scipp_obj_dict"],
-                                        name=key,
-                                        dim=collapse,
-                                        axes=val["axes"],
-                                        **kwargs)
+            output[key] = plot_collapse(
+                data_array=val["scipp_obj_dict"][key], dim=collapse,
+                axes=val["axes"], **kwargs)
         else:
             output[key] = dispatch(scipp_obj_dict=val["scipp_obj_dict"],
-                                   name=key,
-                                   ndim=val["ndims"],
+                                   name=key, ndim=val["ndims"],
                                    sparse_dim=sparse_dim[key],
                                    projection=projection,
                                    axes=val["axes"],

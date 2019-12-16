@@ -21,6 +21,8 @@ class Slicer:
         import ipywidgets as widgets
 
         self.scipp_obj_dict = scipp_obj_dict
+        if self.scipp_obj_dict is None:
+            self.scipp_obj_dict = {data_array.name: data_array}
         self.data_array = data_array
         self.name = self.data_array.name
 
@@ -106,49 +108,6 @@ class Slicer:
                 indx = var.dims.index(self.slider_dims[key])
                 self.histograms[name][key] = var.shape[indx] == \
                     x.shape[0] - 1
-
-
-
-        # # # for key, x in self.slider_x.items():
-        # # #     indx = self.data_array.dims.index(self.slider_dims[key])
-        # # #     self.histograms[key] = self.data_array.shape[indx] == x.shape[0]-1
-        # # # # print(self.data_array)
-        # # # # print(hasattr(self.data_array, "name"))
-
-
-        # # if hasattr(self.data_array, "name"):
-        # #     print("has name")
-        # #     for key, x in self.slider_x.items():
-        # #         indx = self.data_array.dims.index(self.slider_dims[key])
-        # #         self.histograms[key] = self.data_array.shape[indx] == \
-        # #             x.shape[0] - 1
-        # # else:
-        # #     print("no name")
-        # #     for name, var in self.data_array:
-        # #         self.histograms[name] = dict()
-        # #         for key, x in self.slider_x.items():
-        # #             indx = var.dims.index(self.slider_dims[key])
-        # #             self.histograms[name][key] = var.shape[indx] == \
-        # #                 x.shape[0] - 1
-        # # print(self.histograms)
-
-
-        # # if hasattr(self.data_array, "name"):
-        # #     print("has name")
-        # #     for key, x in self.slider_x.items():
-        # #         indx = self.data_array.dims.index(self.slider_dims[key])
-        # #         self.histograms[key] = self.data_array.shape[indx] == \
-        # #             x.shape[0] - 1
-        # # else:
-        # #     print("no name")
-        # #     for name, var in self.data_array:
-        # #         self.histograms[name] = dict()
-        # #         for key, x in self.slider_x.items():
-        # #             indx = var.dims.index(self.slider_dims[key])
-        # #             self.histograms[name][key] = var.shape[indx] == \
-        # #                 x.shape[0] - 1
-        # print(self.histograms)
-        # print("=====================")
 
         # Initialise list for VBox container
         self.vbox = []

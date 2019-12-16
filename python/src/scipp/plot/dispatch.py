@@ -21,7 +21,8 @@ def dispatch(scipp_obj_dict, ndim=0, name=None, collapse=None, sparse_dim=None,
                            "plotting: {}".format(ndim))
 
     if sparse_dim is not None and bins is not None:
-        scipp_obj_dict = histogram_sparse_data(scipp_obj_dict, sparse_dim, bins)
+        scipp_obj_dict = {name: histogram_sparse_data(
+            scipp_obj_dict[name], sparse_dim, bins)}
 
     if projection is None:
         if ndim < 3:
@@ -31,14 +32,16 @@ def dispatch(scipp_obj_dict, ndim=0, name=None, collapse=None, sparse_dim=None,
     projection = projection.lower()
 
     if sparse_dim is not None and bins is None:
-        return plot_sparse(scipp_obj_dict, ndim=ndim, sparse_dim=sparse_dim,
+        return plot_sparse(scipp_obj_dict[name], ndim=ndim,
+                           sparse_dim=sparse_dim,
                            mpl_scatter_params=mpl_line_params, **kwargs)
     elif projection == "1d":
-        return plot_1d(scipp_obj_dict, mpl_line_params=mpl_line_params, **kwargs)
+        return plot_1d(scipp_obj_dict, mpl_line_params=mpl_line_params,
+                       **kwargs)
     elif projection == "2d":
-        return plot_2d(scipp_obj_dict, name=name, **kwargs)
+        return plot_2d(scipp_obj_dict[name], **kwargs)
     elif projection == "3d":
-        return plot_3d(scipp_obj_dict, name=name, **kwargs)
+        return plot_3d(scipp_obj_dict[name], **kwargs)
     else:
         raise RuntimeError("Wrong projection type. Expected either '2d' "
                            "or '3d', got {}.".format(projection))

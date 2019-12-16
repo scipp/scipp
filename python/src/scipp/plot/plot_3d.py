@@ -20,7 +20,7 @@ except ImportError:
     ipv = None
 
 
-def plot_3d(scipp_obj_dict=None, axes=None, values=None, variances=None,
+def plot_3d(data_array=None, axes=None, values=None, variances=None,
             masks=None, filename=None, name=None, figsize=None, aspect=None,
             cmap=None, log=False, vmin=None, vmax=None, color=None):
     """
@@ -36,12 +36,7 @@ def plot_3d(scipp_obj_dict=None, axes=None, values=None, variances=None,
                            "and ipyevents to be installed. Use conda/pip "
                            "install ipyvolume ipyevents.")
 
-    # var = input_data[name]
-    # if axes is None:
-    #     axes = var.dims
-
-    sv = Slicer3d(scipp_obj_dict=scipp_obj_dict,
-                  data_array=scipp_obj_dict[name], axes=axes, values=values,
+    sv = Slicer3d(data_array=data_array, axes=axes, values=values,
                   variances=variances, masks=masks, cmap=cmap, log=log,
                   vmin=vmin, vmax=vmax, color=color, aspect=aspect)
 
@@ -52,14 +47,13 @@ def plot_3d(scipp_obj_dict=None, axes=None, values=None, variances=None,
 
 class Slicer3d(Slicer):
 
-    def __init__(self, scipp_obj_dict=None, data_array=None, axes=None,
-                 values=None, variances=None, masks=None, cmap=None, log=None,
-                 vmin=None, vmax=None, color=None, aspect=None):
+    def __init__(self, data_array=None, axes=None, values=None, variances=None,
+                 masks=None, cmap=None, log=None, vmin=None, vmax=None,
+                 color=None, aspect=None):
 
-        super().__init__(scipp_obj_dict=scipp_obj_dict, data_array=data_array,
-                         axes=axes, values=values, variances=variances,
-                         masks=masks, cmap=cmap, log=log, vmin=vmin, vmax=vmax,
-                         color=color, aspect=aspect,
+        super().__init__(data_array=data_array, axes=axes, values=values,
+                         variances=variances, masks=masks, cmap=cmap, log=log,
+                         vmin=vmin, vmax=vmax, color=color, aspect=aspect,
                          button_options=['X', 'Y', 'Z'])
 
         self.cube = None

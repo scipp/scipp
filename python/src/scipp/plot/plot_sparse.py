@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 from matplotlib import cm
 
 
-def plot_sparse(input_data, ndim=0, sparse_dim=None, logx=False,
+def plot_sparse(data_array, ndim=0, sparse_dim=None, logx=False,
                 logy=False, logxy=False, weights="color", size=10.0,
                 filename=None, axes=None, mpl_axes=None, opacity=0.7,
                 title=None, mpl_scatter_params=None, cmap=None, log=None,
@@ -24,11 +24,11 @@ def plot_sparse(input_data, ndim=0, sparse_dim=None, logx=False,
     sliders.
     """
 
-    xmin, xmax, sparse_data, var, name, dims, ndims = visit_sparse_data(
-        input_data, sparse_dim=sparse_dim, return_sparse_data=True,
+    xmin, xmax, sparse_data, dims, ndims = visit_sparse_data(
+        data_array, sparse_dim=sparse_dim, return_sparse_data=True,
         weights=weights)
 
-    coords = var.coords
+    coords = data_array.coords
 
     # Parse parameters for colorbar
     globs = {"cmap": cmap, "log": log, "vmin": vmin, "vmax": vmax}
@@ -54,7 +54,7 @@ def plot_sparse(input_data, ndim=0, sparse_dim=None, logx=False,
 
         widg = None
         members.update(ax)
-        params = dict(label=name, edgecolors="#ffffff",
+        params = dict(label=data_array.name, edgecolors="#ffffff",
                       c=mpl_scatter_params["color"][0],
                       marker=mpl_scatter_params["marker"][0])
         xs = sparse_data[ndims - 1]
