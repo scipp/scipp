@@ -228,7 +228,8 @@ def summarize_variable(name, var, is_index=False, has_attrs=False):
         f"<div class='xr-var-dtype'>{dtype}</div>",
         f"<div class='xr-var-unit'>{unit}</div>",
         f"<div class='xr-value-preview xr-preview'><span>{preview}</span>"
-        f"{f'<span>{variances_preview}</span>' if var.variances is not None else ''}</div>",
+        "{}</div>".format(f'<span>{variances_preview}</span>'
+                          if var.variances is not None else ''),
         f"<input id='{attrs_id}' class='xr-var-attrs-in' ",
         f"type='checkbox' {disabled}>",
         f"<label for='{attrs_id}' "
@@ -382,8 +383,7 @@ def dataset_repr(ds):
     if len(ds.labels) > 0:
         sections.append(label_section(ds.labels))
 
-    sections.append(
-        data_section(ds if hasattr(ds, '__len__') else [('', ds)]))
+    sections.append(data_section(ds if hasattr(ds, '__len__') else [('', ds)]))
 
     if len(ds.masks) > 0:
         sections.append(mask_section(ds.masks))
