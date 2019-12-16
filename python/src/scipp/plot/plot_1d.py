@@ -13,6 +13,7 @@ import numpy as np
 import copy as cp
 import matplotlib.pyplot as plt
 import ipywidgets as widgets
+import warnings
 
 
 def plot_1d(input_data=None, axes=None, values=None, variances=None,
@@ -95,7 +96,9 @@ class Slicer1d(Slicer):
         yrange = [ymin-dy, ymax+dy]
         if logy:
             yrange = 10.0**np.array(yrange)
-        self.ax.set_ylim(yrange)
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=UserWarning)
+            self.ax.set_ylim(yrange)
         if logx:
             self.ax.set_xscale("log")
         if logy:
@@ -228,7 +231,9 @@ class Slicer1d(Slicer):
                         fmt="none")
 
         deltax = 0.05 * (new_x[-1] - new_x[0])
-        self.ax.set_xlim([new_x[0] - deltax, new_x[-1] + deltax])
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=UserWarning)
+            self.ax.set_xlim([new_x[0] - deltax, new_x[-1] + deltax])
         self.ax.set_xlabel(axis_label(self.slider_x[dim_str],
                                       name=self.slider_labels[dim_str]))
         return
