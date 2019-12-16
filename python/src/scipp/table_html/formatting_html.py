@@ -53,24 +53,27 @@ def _format_non_sparse(var, has_variances):
 def _get_sparse(var, variances, ellipsis_after, summary=False):
     if hasattr(var, "data") and var.data is None:
         return ["no data, implicitly 1"]
-    size = var.shape[0]
+    single = len(var.shape) == 0
+    size = 1 if single else var.shape[0]
     i = 0
     s = []
 
-    do_ellide = summary or size > 1000 or sum([
+    do_ellide = single or summary or size > 1000 or sum([
         len(retrieve(var, variances=variances)[i])
         for i in range(min(size, 1000))
     ]) > 1000
+
+    data = retrieve(var, variances=variances)
     while i < size:
         if i == ellipsis_after and do_ellide and size > 2 * ellipsis_after + 1:
             s.append("...")
             i = size - ellipsis_after
-        data = retrieve(var, variances=variances)[i]
+        item = data if single else data[i]
         if summary:
-            s.append(f'len={len(data)}')
+            s.append(f'len={len(item)}')
         else:
             s.append('sparse({})'.format(
-                _format_array(data, len(data), ellipsis_after, do_ellide)))
+                _format_array(item, len(item), ellipsis_after, do_ellide)))
         i += 1
     return s
 
@@ -81,10 +84,6 @@ def _format_sparse(var, has_variances):
 
 
 def inline_variable_repr(var, has_variances=False):
-    # this is a 0D variable: return it's only value
-    if len(var.shape) == 0:
-        return retrieve(var, variances=has_variances, single=True)
-
     if var.sparse_dim is None:
         return _format_non_sparse(var, has_variances)
     else:
