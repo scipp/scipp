@@ -19,6 +19,12 @@ if [ $rc -ne 0 ]; then
   exit $rc
 fi
 
+cmake --build . --target all-tests -- -v 
+# C++ tests
+./common/test/scipp-common-test
+./units/test/scipp-units-test
+./core/test/scipp-core-test
+./neutron/test/scipp-neutron-test
+
 # Build, install and move scipp Python library to site packages location
-cmake --build . --target install -- -v && \
-  mv "$CONDA_PREFIX/scipp" "$CONDA_PREFIX"/lib/python*/
+cmake --build . --target install -- -v && mv "$CONDA_PREFIX/scipp" "$CONDA_PREFIX"/lib/python*/
