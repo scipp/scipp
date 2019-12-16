@@ -358,4 +358,4 @@ class Slicer3d(Slicer):
                                self.xminmax[self.button_axis_to_dim["z"]],
                                indexing="ij")
         else:
-            raise RuntimeError("Unknown aspect ratio: {}".format(aspect))
+            raise RuntimeError("Unknown aspect ratio: {}".format(self.aspect))
