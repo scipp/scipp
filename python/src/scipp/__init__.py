@@ -13,4 +13,11 @@ from .table import table
 from . import plot
 from .extend_units import *
 from . import config
-from .table_html import to_html
+from .table_html import to_html, make_html
+
+setattr(Variable, '_repr_html_', make_html)
+setattr(VariableConstProxy, '_repr_html_', make_html)
+setattr(DataArray, '_repr_html_', make_html)
+setattr(DataConstProxy, '_repr_html_', make_html)
+setattr(Dataset, '_repr_html_', make_html)
+setattr(DatasetConstProxy, '_repr_html_', make_html)

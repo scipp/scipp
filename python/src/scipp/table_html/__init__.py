@@ -6,12 +6,14 @@ from .._scipp import core as sc
 from .formatting_html import dataset_repr, variable_repr
 
 
-def to_html(container):
-    from IPython.display import display, HTML
-
+def make_html(container):
     if isinstance(container, sc.Variable) or isinstance(
             container, sc.VariableProxy):
-        rep = variable_repr(container)
+        return variable_repr(container)
     else:
-        rep = dataset_repr(container)
-    display(HTML(rep))
+        return dataset_repr(container)
+
+
+def to_html(container):
+    from IPython.display import display, HTML
+    display(HTML(make_html(container)))
