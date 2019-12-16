@@ -173,15 +173,30 @@ def _icon(icon_name):
             "</svg>".format(icon_name))
 
 
-def summarize_coord(dim, var):
+def summarize_coord(dim, var, bin_edges=None):
     is_index = dim in var.dims
-    return summarize_variable(str(dim), var, is_index)
+    return summarize_variable(str(dim), var, is_index, bin_edges=bin_edges)
 
 
-def summarize_coords(coords):
+def find_bin_edges(var, ds):
+    """
+    Checks if the coordinate contains bin-edges.
+    """
+    bin_edges = []
+    for idx, dim in enumerate(var.dims):
+        len = var.shape[idx]
+        if dim in ds.dims:
+            if ds.shape[ds.dims.index(dim)] + 1 == len:
+                bin_edges.append(dim)
+    return bin_edges
+
+
+def summarize_coords(coords, ds):
     vars_li = "".join(
-        f"<li class='xr-var-item'>{summarize_coord(dim, values)}</span></li>"
-        for dim, values in coords)
+        "<li class='xr-var-item'>"
+        f"{summarize_coord(dim, var, bin_edges=find_bin_edges(var, ds))}"
+        "</span></li>"
+        for dim, var in coords)
 
     return f"<ul class='xr-var-list'>{vars_li}</ul>"
 
@@ -225,22 +240,39 @@ def _make_inline_attributes(var, has_attrs):
     return disabled, attrs_ul
 
 
-def summarize_variable(name, var, is_index=False, has_attrs=False):
+def _make_dim_labels(dim, sparse_dim, bin_edges=None):
+    # Note: the space needs to be here, otherwise
+    # there is a trailing whitespace when no dimension
+    # label has been added
+    if bin_edges and dim in bin_edges:
+        return " [bin-edge]"
+    elif dim == sparse_dim:
+        return " [sparse]"
+    else:
+        return ""
+
+
+def summarize_variable(name, var,
+                       is_index=False,
+                       has_attrs=False,
+                       bin_edges=None):
     """
-    :param name:
-    :param var:
+    :param name: Name of the variable
+    :param var: The variable itself, used to display dtype, unit, values, attrs
     :param is_index: If the variable is an index - used to bold
                      coordinates that represent the indices of
                      a dimension that the data contains
 
     :param has_attrs: If the variable is for a section that cannot contain
                       attributes, then this hides the show/hide button.
+
+    :param is_bin_edges: If true it will add the [bin-edges] variable
     """
     cssclass_idx = " class='xr-has-index'" if is_index else ""
     dims_text = ', '.join(
-        escape(f'{str(dim)} [sparse]' if dim == var.sparse_dim else str(dim))
+        f'{str(dim)}{_make_dim_labels(dim, var.sparse_dim, bin_edges)}'
         for dim in var.dims)
-    dims_str = f"({dims_text})"
+    dims_str = escape(f"({dims_text})")
     name = escape(name)
     dtype = repr(var.dtype)[6:]
     unit = '' if var.unit == sc.units.dimensionless else var.unit
@@ -319,16 +351,17 @@ def collapsible_section(name,
 
 
 def _mapping_section(mapping,
-                     name,
-                     details_func,
-                     max_items_collapse,
+                     *extra_details_func_args,
+                     name=None,
+                     details_func=None,
+                     max_items_collapse=None,
                      enabled=True):
     n_items = len(mapping)
     collapsed = n_items >= max_items_collapse
 
     return collapsible_section(
         name,
-        details=details_func(mapping),
+        details=details_func(mapping, *extra_details_func_args),
         n_items=n_items,
         enabled=enabled,
         collapsed=collapsed,
@@ -419,14 +452,14 @@ def dataset_repr(ds):
     sections = [dim_section(ds)]
 
     if len(ds.coords) > 0:
-        sections.append(coord_section(ds.coords))
+        sections.append(coord_section(ds.coords, ds))
     if len(ds.labels) > 0:
-        sections.append(label_section(ds.labels))
+        sections.append(label_section(ds.labels, ds))
 
     sections.append(data_section(ds if hasattr(ds, '__len__') else [('', ds)]))
 
     if len(ds.masks) > 0:
-        sections.append(mask_section(ds.masks))
+        sections.append(mask_section(ds.masks, ds))
     if len(ds.attrs) > 0:
         sections.append(attr_section(ds.attrs))
 
