@@ -6,7 +6,8 @@
 from ..config import plot as config
 from .render import render_plot
 from .slicer import Slicer
-from .tools import axis_label, edges_to_centers
+from .tools import edges_to_centers
+from ..utils import name_with_unit
 
 # Other imports
 import numpy as np
@@ -92,7 +93,7 @@ class Slicer1d(Slicer):
             else:
                 ymin = min(ymin, np.nanmin(var.values - err))
                 ymax = max(ymax, np.nanmax(var.values + err))
-            ylab = axis_label(var=var, name="")
+            ylab = name_with_unit(var=var, name="")
 
         dy = 0.05*(ymax - ymin)
         yrange = [ymin-dy, ymax+dy]
@@ -232,8 +233,8 @@ class Slicer1d(Slicer):
 
         deltax = 0.05 * (new_x[-1] - new_x[0])
         self.ax.set_xlim([new_x[0] - deltax, new_x[-1] + deltax])
-        self.ax.set_xlabel(axis_label(self.slider_x[dim_str],
-                                      name=self.slider_labels[dim_str]))
+        self.ax.set_xlabel(name_with_unit(self.slider_x[dim_str],
+                                          name=self.slider_labels[dim_str]))
         return
 
     def slice_data(self, var):
@@ -241,6 +242,8 @@ class Slicer1d(Slicer):
         # Slice along dimensions with active sliders
         for key, val in self.slider.items():
             if not val.disabled:
+                self.lab[key].value = self.make_slider_label(
+                    self.slider_x[key], val.value)
                 vslice = vslice[val.dim, val.value]
         return vslice
 

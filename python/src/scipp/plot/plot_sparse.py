@@ -6,7 +6,8 @@
 from ..config import plot as config
 from .render import render_plot
 from .sparse import visit_sparse_data
-from .tools import axis_label, parse_params
+from .tools import parse_params
+from ..utils import name_with_unit
 
 # Other imports
 import matplotlib.pyplot as plt
@@ -71,12 +72,13 @@ def plot_sparse(data_array, ndim=0, sparse_dim=None, logx=False,
         scat = ax["ax"].scatter(xs, ys, **params)
         if len(sparse_data) > ndims and weights.count("color") > 0:
             colorbar = plt.colorbar(scat, ax=ax["ax"], cax=ax["cax"])
-            colorbar.ax.set_ylabel(axis_label(name="Weights", log=cbar["log"]))
+            colorbar.ax.set_ylabel(name_with_unit(name="Weights",
+                                                  log=cbar["log"]))
             members["colorbars"] = colorbar
 
-        ax["ax"].set_xlabel(axis_label(coords[sparse_dim]))
+        ax["ax"].set_xlabel(name_with_unit(coords[sparse_dim]))
         if ndims > 1:
-            ax["ax"].set_ylabel(axis_label(coords[dims[int(ndims == 3)]]))
+            ax["ax"].set_ylabel(name_with_unit(coords[dims[int(ndims == 3)]]))
 
         ax["ax"].legend()
         if title is not None:
@@ -105,9 +107,9 @@ def plot_sparse(data_array, ndim=0, sparse_dim=None, logx=False,
         scat = ipv.scatter(x=sparse_data[ndims - 1], y=sparse_data[ndims - 2],
                            z=sparse_data[0], **params)
 
-        fig.xlabel = axis_label(coords[sparse_dim])
-        fig.ylabel = axis_label(coords[dims[int(ndims == 3)]])
-        fig.zlabel = axis_label(coords[dims[0]])
+        fig.xlabel = name_with_unit(coords[sparse_dim])
+        fig.ylabel = name_with_unit(coords[dims[int(ndims == 3)]])
+        fig.zlabel = name_with_unit(coords[dims[0]])
 
         # if logx or logxy:
         #     ax.set_xscale("log")

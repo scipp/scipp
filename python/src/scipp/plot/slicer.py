@@ -4,7 +4,7 @@
 
 from ..config import plot as config
 from .tools import axis_to_dim_label, parse_params
-from .._scipp.core.units import dimensionless
+from ..utils import name_with_unit, value_to_string
 from .._scipp.core import combine_masks, Variable
 
 # Other imports
@@ -214,10 +214,7 @@ class Slicer:
         return
 
     def make_slider_label(self, var, indx):
-        lab = str(var.values[indx])
-        if var.unit != dimensionless:
-            lab += " [{}]".format(var.unit)
-        return lab
+        return name_with_unit(var=var, name=value_to_string(var.values[indx]))
 
     def mask_to_float(self, mask, var):
         return np.where(mask, var, None).astype(np.float)

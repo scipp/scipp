@@ -6,7 +6,7 @@
 from ..config import plot as config
 from .render import render_plot
 from .slicer import Slicer
-from .tools import axis_label
+from ..utils import name_with_unit
 
 # Other imports
 import numpy as np
@@ -177,7 +177,7 @@ class Slicer3d(Slicer):
         buttons_dims = {"x": None, "y": None, "z": None}
         for key, button in self.buttons.items():
             if button.value is not None:
-                titles[button.value.lower()] = axis_label(
+                titles[button.value.lower()] = name_with_unit(
                     self.slider_x[key], name=self.slider_labels[key])
                 buttons_dims[button.value.lower()] = button.dim_str
 

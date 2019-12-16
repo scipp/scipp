@@ -20,16 +20,11 @@ def dispatch(scipp_obj_dict, ndim=0, name=None, collapse=None, sparse_dim=None,
         raise RuntimeError("Invalid number of dimensions for "
                            "plotting: {}".format(ndim))
 
-    print("==================", name)
-    print(scipp_obj_dict)
     if sparse_dim is not None and bins is not None:
         sparse_dict = {}
         for key, obj in scipp_obj_dict.items():
-            sparse_dict[name] =  histogram_sparse_data(obj, sparse_dim, bins)
+            sparse_dict[name] = histogram_sparse_data(obj, sparse_dim, bins)
         scipp_obj_dict = sparse_dict
-    print("++++++++++++++++++")
-    print(scipp_obj_dict)
-
 
     if projection is None:
         if ndim < 3:

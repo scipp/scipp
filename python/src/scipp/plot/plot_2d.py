@@ -6,7 +6,7 @@
 from ..config import plot as config
 from .render import render_plot
 from .slicer import Slicer
-from .tools import axis_label
+from ..utils import name_with_unit
 from .._scipp.core import Variable
 
 
@@ -106,7 +106,7 @@ class Slicer2d(Slicer):
                     self.cbar[key] = plt.colorbar(
                         self.im[key], ax=self.ax[key], cax=self.cax[key])
                     self.cbar[key].ax.set_ylabel(
-                        axis_label(var=self.data_array, name=""))
+                        name_with_unit(var=self.data_array, name=""))
                 if self.cax[key] is None:
                     self.cbar[key].ax.yaxis.set_label_coords(-1.1, 0.5)
                 self.members["images"][key] = self.im[key]
@@ -166,7 +166,7 @@ class Slicer2d(Slicer):
                 else:
                     self.extent[but_val] = self.slider_x[key].values[[0, -1]]
 
-                axlabels[but_val] = axis_label(
+                axlabels[but_val] = name_with_unit(
                             self.slider_x[key],
                             name=self.slider_labels[key])
 
