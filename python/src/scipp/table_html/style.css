@@ -9,6 +9,11 @@
   max-width: 800px;
 }
 
+/* The CSS styling for the inline attributes table */
+.xr-var-attrs .xr-wrap{
+  padding-left: 3em;
+}
+
 .xr-header {
   padding-top: 6px;
   padding-bottom: 6px;

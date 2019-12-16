@@ -184,6 +184,30 @@ def summarize_coords(coords):
     return f"<ul class='xr-var-list'>{vars_li}</ul>"
 
 
+def _make_inline_attributes(var):
+    disabled = "disabled"
+    attrs_ul = None
+    attrs_sections = []
+    if hasattr(var, "coords"):
+        attrs_sections.append(coord_section(var.coords))
+        disabled = ""
+    if hasattr(var, "attrs"):
+        attrs_sections.append(attr_section(var.attrs))
+        disabled = ""
+    if hasattr(var, "labels"):
+        attrs_sections.append(label_section(var.labels))
+        disabled = ""
+
+    if len(attrs_sections) > 0:
+        attrs_sections = "".join(f"<li class='xr-section-item'>{s}</li>"
+                                 for s in attrs_sections)
+        attrs_ul = "<div class='xr-wrap'>"\
+            f"<ul class='xr-sections'>{attrs_sections}</ul>"\
+            "</div>"
+
+    return disabled, attrs_ul
+
+
 def summarize_variable(name, var, is_index=False, has_attrs=False):
     """
     :param name:
@@ -207,12 +231,8 @@ def summarize_variable(name, var, is_index=False, has_attrs=False):
     # "unique" ids required to expand/collapse subsections
     attrs_id = "attrs-" + str(uuid.uuid4())
     data_id = "data-" + str(uuid.uuid4())
-    if hasattr(var, "attrs"):
-        disabled = "" if len(var.attrs) > 0 else "disabled"
-        attrs_ul = summarize_attrs_simple(var.attrs)
-    else:
-        disabled = "disabled"
-        attrs_ul = None
+
+    disabled, attrs_ul = _make_inline_attributes(var)
 
     preview = inline_variable_repr(var)
     data_repr = f"Values:<br>{short_data_repr_html(var)}"
