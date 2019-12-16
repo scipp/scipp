@@ -25,7 +25,7 @@ PyObject::PyObject(const py::object &object) {
 }
 
 bool PyObject::operator==(const PyObject &other) const {
-  // Similar to above, not releasing GIL here due to segfault in Python C API
+  // Similar to above, re-acquiring GIL here due to segfault in Python C API
   // (PyObject_RichCompare).
   py::gil_scoped_acquire acquire;
   return to_pybind().equal(other.to_pybind());
