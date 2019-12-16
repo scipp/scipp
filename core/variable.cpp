@@ -54,15 +54,11 @@ VariableConcept::VariableConcept(const Dimensions &dimensions)
     : m_dimensions(dimensions) {}
 
 Variable::Variable(const VariableConstProxy &slice)
-    : Variable(*slice.m_variable) {
-  if (slice.m_view) {
-    setUnit(slice.unit());
-    setDims(slice.dims());
-    // There is a bug in the implementation of MultiIndex used in VariableView
-    // in case one of the dimensions has extent 0.
-    if (dims().volume() != 0)
-      data().copy(slice.data(), Dim::Invalid, 0, 0, 1);
-  }
+    : Variable(slice, slice.dims()) {
+  // There is a bug in the implementation of MultiIndex used in VariableView
+  // in case one of the dimensions has extent 0.
+  if (dims().volume() != 0)
+    data().copy(slice.data(), Dim::Invalid, 0, 0, 1);
 }
 
 Variable::Variable(const Variable &parent, const Dimensions &dims)

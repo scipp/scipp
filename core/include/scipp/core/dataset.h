@@ -743,6 +743,8 @@ public:
         m_parent->eraseSparseCoord(*m_name);
       } else if constexpr (std::is_same_v<Base, LabelsConstProxy>)
         m_parent->eraseSparseLabels(*m_name, key);
+      else if constexpr (std::is_same_v<Base, AttrsConstProxy>)
+        m_parent->eraseAttr(*m_name, key);
       else
         throw std::runtime_error("The instance cannot be sparse.");
     }
