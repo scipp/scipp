@@ -226,7 +226,7 @@ Variable sum(const VariableConstProxy &var, const Dim dim) {
 Variable sum(const VariableConstProxy &var, const Dim dim,
              const MasksConstProxy &masks) {
   if (!masks.empty()) {
-    const auto mask_union = masks_merge(masks, dim);
+    const auto mask_union = masks_merge_if_contains(masks, dim);
     if (mask_union.dims().contains(dim))
       return sum(var * ~mask_union, dim);
   }
@@ -256,7 +256,7 @@ Variable mean(const VariableConstProxy &var, const Dim dim) {
 Variable mean(const VariableConstProxy &var, const Dim dim,
               const MasksConstProxy &masks) {
   if (!masks.empty()) {
-    const auto mask_union = masks_merge(masks, dim);
+    const auto mask_union = masks_merge_if_contains(masks, dim);
     if (mask_union.dims().contains(dim)) {
       const auto masks_sum = sum(mask_union, dim);
       return mean(var * ~mask_union, dim, masks_sum);
@@ -347,8 +347,9 @@ Variable reverse(Variable var, const Dim dim) {
 /// Return a deep copy of a Variable or of a VariableProxy.
 Variable copy(const VariableConstProxy &var) { return Variable(var); }
 
-/// Merges all masks contained in the MasksConstProxy into a single Variable
-Variable masks_merge(const MasksConstProxy &masks, const Dim dim) {
+/// Merges all masks contained in the MasksConstProxy that have the supplied
+//  dimension in their dimensions into a single Variable
+Variable masks_merge_if_contains(const MasksConstProxy &masks, const Dim dim) {
   auto mask_union = makeVariable<bool>(Values{false});
   for (const auto &mask : masks) {
     if (mask.second.dims().contains(dim)) {
@@ -357,4 +358,17 @@ Variable masks_merge(const MasksConstProxy &masks, const Dim dim) {
   }
   return mask_union;
 }
+
+/// Merges all the masks that have all their dimensions found in the given set
+//  of dimensions.
+Variable masks_merge_if_contained(const MasksConstProxy &masks,
+                                  const Dimensions &dims) {
+  auto mask_union = makeVariable<bool>(Values{false});
+  for (const auto &mask : masks) {
+    if (dims.contains(mask.second.dims()))
+      mask_union = mask_union | mask.second;
+  }
+  return mask_union;
+}
+
 } // namespace scipp::core

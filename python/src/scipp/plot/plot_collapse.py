@@ -4,7 +4,7 @@
 
 # Scipp imports
 from .dispatch import dispatch
-from .tools import get_color
+from .tools import get_line_param
 from .._scipp import core as sc
 
 # Other imports
@@ -75,7 +75,8 @@ def plot_collapse(input_data, dim=None, name=None, filename=None, **kwargs):
     slice_list = np.reshape(
         np.transpose(slice_list), (volume, len(slice_dims), 2))
 
-    color = []
+    mpl_line_params = {"color": [], "marker": [], "linestyle": [],
+                       "linewidth": []}
     # Extract each entry from the slice_list, make temporary dataset and add to
     # input dictionary for plot_1d
     for i, line in enumerate(slice_list):
@@ -85,9 +86,11 @@ def plot_collapse(input_data, dim=None, name=None, filename=None, **kwargs):
             vslice = vslice[s[0], s[1]]
             key += "{}-{}-".format(str(s[0]), s[1])
         ds[key] = vslice
-        color.append(get_color(index=i))
+        for p in mpl_line_params.keys():
+            mpl_line_params[p].append(get_line_param(name=p, index=i))
 
     # Send the newly created dictionary of DataProxy to the plot_1d function
-    return dispatch(input_data=ds, ndim=1, color=color, **kwargs)
+    return dispatch(input_data=ds, ndim=1, mpl_line_params=mpl_line_params,
+                    **kwargs)
 
     return

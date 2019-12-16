@@ -501,6 +501,23 @@ void init_dataset(py::module &m) {
       :return: New sorted dataset.
       :rtype: Dataset)");
 
+  m.def("combine_masks",
+        [](const MasksConstProxy &msk, const std::vector<Dim> &labels,
+           const std::vector<scipp::index> &shape) {
+          return core::masks_merge_if_contained(
+              msk, core::Dimensions(labels, shape));
+        },
+        py::call_guard<py::gil_scoped_release>(), R"(
+        Combine all masks into a single one following the OR operation.
+        This requires a masks proxy as an input, followed by the dimension
+        labels and shape of the Variable/DataArray. The labels and the shape
+        are used to create a Dimensions object. The function then iterates
+        through the masks proxy and combines only the masks that have all
+        their dimensions contained in the Variable/DataArray Dimensions.
+
+        :return: A new variable that contains the union of all masks.
+        :rtype: Variable)");
+
   py::implicitly_convertible<DataArray, DataConstProxy>();
   py::implicitly_convertible<DataArray, DataProxy>();
   py::implicitly_convertible<Dataset, DatasetConstProxy>();

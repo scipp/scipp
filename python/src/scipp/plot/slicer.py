@@ -2,31 +2,63 @@
 # Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
-from .tools import axis_to_dim_label, parse_colorbar
+from ..config import plot as config
+from .tools import axis_to_dim_label, parse_params
 from .._scipp.core.units import dimensionless
+from .._scipp.core import combine_masks
+
+# Other imports
+import numpy as np
 
 
 class Slicer:
 
-    def __init__(self, input_data=None, axes=None, cb=None,
-                 show_variances=False, button_options=None, volume=False):
+    def __init__(self, input_data=None, axes=None, values=None, variances=None,
+                 masks=None, cmap=None, log=None, vmin=None, vmax=None,
+                 color=None, button_options=None, volume=False, aspect=None):
 
         import ipywidgets as widgets
 
         self.input_data = input_data
         self.members = dict(widgets=dict(sliders=dict(), togglebuttons=dict(),
-                            buttons=dict(), labels=dict()))
+                            togglebutton=dict(), buttons=dict(),
+                            labels=dict()))
 
-        self.show_variances = show_variances
-        if self.show_variances:
-            self.show_variances = (self.input_data.variances is not None)
-        if len(button_options) > 1:
-            self.cb = parse_colorbar(cb, input_data, self.show_variances)
+        # Parse parameters for values, variances and masks
+        self.params = dict()
+        globs = {"cmap": cmap, "log": log, "vmin": vmin, "vmax": vmax,
+                 "color": color}
+
+        if hasattr(self.input_data, "values"):
+            self.params["values"] = parse_params(params=values, globs=globs,
+                                                 array=self.input_data.values)
+
+        if hasattr(self.input_data, "variances"):
+            self.params["variances"] = {"show": False}
+            if self.input_data.variances is not None:
+                self.params["variances"].update(
+                    parse_params(params=variances, defaults={"show": False},
+                                 globs=globs,
+                                 array=np.sqrt(self.input_data.variances)))
+
+        self.params["masks"] = parse_params(
+            params=masks, defaults={"cmap": "gray", "cbar": False},
+            globs=globs)
+        self.params["masks"]["show"] = (self.params["masks"]["show"] and
+                                        len(self.input_data.masks) > 0)
+        if self.params["masks"]["show"]:
+            self.masks = combine_masks(self.input_data.masks,
+                                       self.input_data.dims,
+                                       self.input_data.shape)
 
         # Get the dimensions of the image to be displayed
         self.coords = self.input_data.coords
         self.labels = self.input_data.labels
         self.shapes = dict(zip(self.input_data.dims, self.input_data.shape))
+        # Save aspect ratio setting
+        self.aspect = aspect
+        if self.aspect is None:
+            self.aspect = config.aspect
 
         # Size of the slider coordinate arrays
         self.slider_nx = dict()
@@ -159,6 +191,17 @@ class Slicer:
             self.members["widgets"]["togglebuttons"][key] = self.buttons[key]
             self.members["widgets"]["labels"][key] = self.lab[key]
 
+        if self.params["masks"]["show"]:
+            self.masks_button = widgets.ToggleButton(
+                value=self.params["masks"]["show"],
+                description="Hide masks" if self.params["masks"]["show"] else
+                            "Show masks",
+                disabled=False, button_style="")
+            self.masks_button.observe(self.toggle_masks, names="value")
+            self.vbox += [self.masks_button]
+            self.members["widgets"]["togglebutton"]["masks"] = \
+                self.masks_button
+
         return
 
     def make_slider_label(self, var, indx):
@@ -166,3 +209,6 @@ class Slicer:
         if var.unit != dimensionless:
             lab += " [{}]".format(var.unit)
         return lab
+
+    def mask_to_float(self, mask, var):
+        return np.where(mask, var, None).astype(np.float)

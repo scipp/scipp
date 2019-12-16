@@ -142,4 +142,28 @@ static void BM_Variable_binary_with_VariableProxy(benchmark::State &state) {
 BENCHMARK(BM_Variable_binary_with_Variable);
 BENCHMARK(BM_Variable_binary_with_VariableProxy);
 
+static void BM_Variable_assign_1d(benchmark::State &state) {
+  const auto size = state.range(0);
+
+  const auto a = makeVariable<double>(Dims{Dim::X}, Shape{size});
+  auto b = makeVariable<double>(Dims{Dim::X}, Shape{size});
+  VariableProxy bb(b);
+
+  for (auto _ : state) {
+    bb.assign(a);
+  }
+
+  constexpr auto read_write_factor = 3;
+  state.SetItemsProcessed(state.iterations() * size);
+  state.SetBytesProcessed(state.iterations() * sizeof(double) * size *
+                          read_write_factor);
+  state.counters["SizeBytes"] = sizeof(double) * size;
+}
+BENCHMARK(BM_Variable_assign_1d)
+    ->Unit(benchmark::kMillisecond)
+    ->Arg(1e7)
+    ->Arg(1e8)
+    ->Arg(1e9)
+    ->Arg(5e9);
+
 BENCHMARK_MAIN();

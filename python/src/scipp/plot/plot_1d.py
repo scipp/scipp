@@ -15,8 +15,9 @@ import matplotlib.pyplot as plt
 import ipywidgets as widgets
 
 
-def plot_1d(input_data, logx=False, logy=False, logxy=False,
-            color=None, filename=None, axes=None, mpl_axes=None):
+def plot_1d(input_data=None, axes=None, values=None, variances=None,
+            masks={"color": "k"}, filename=None, figsize=None, mpl_axes=None,
+            mpl_line_params=None, logx=False, logy=False, logxy=False):
     """
     Plot a 1D spectrum.
 
@@ -30,10 +31,10 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False,
     if axes is None:
         axes = input_data.dims
 
-    layout = dict(logx=logx or logxy, logy=logy or logxy)
-
-    sv = Slicer1d(input_data=input_data, layout=layout, axes=axes, color=color,
-                  mpl_axes=mpl_axes)
+    sv = Slicer1d(input_data=input_data, axes=axes, values=values,
+                  variances=variances, masks=masks, mpl_axes=mpl_axes,
+                  mpl_line_params=mpl_line_params, logx=logx or logxy,
+                  logy=logy or logxy)
 
     if mpl_axes is None:
         render_plot(figure=sv.fig, widgets=sv.box, filename=filename)
@@ -43,13 +44,14 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False,
 
 class Slicer1d(Slicer):
 
-    def __init__(self, input_data=None, layout=None, axes=None, color=None,
-                 mpl_axes=None):
+    def __init__(self, input_data=None, axes=None, values=None,
+                 variances=None, masks=None, mpl_axes=None,
+                 mpl_line_params=None, logx=False, logy=False):
 
-        super().__init__(input_data=input_data, axes=axes,
+        super().__init__(input_data=input_data, axes=axes, values=values,
+                         variances=variances, masks=masks,
                          button_options=['X'])
 
-        self.color = color
         self.fig = None
         self.mpl_axes = mpl_axes
         if self.mpl_axes is not None:
@@ -59,9 +61,13 @@ class Slicer1d(Slicer):
                 1, 1, figsize=(config.width/config.dpi,
                                config.height/config.dpi),
                 dpi=config.dpi)
+
+        # Initialise container for returning matplotlib objects
         self.members.update({"lines": {}, "error_x": {}, "error_y": {},
                              "error_xy": {}})
-        self.color = color
+        # Save the line parameters (color, linewidth...)
+        self.mpl_line_params = mpl_line_params
+
         self.names = []
         ymin = 1.0e30
         ymax = -1.0e30
@@ -72,26 +78,27 @@ class Slicer1d(Slicer):
             else:
                 err = 0.0
 
-            if layout["logy"]:
-                arr = np.log10(var.values - err)
-                subset = np.where(np.isfinite(arr))
-                ymin = min(ymin, np.amin(arr[subset]))
-                arr = np.log10(var.values + err)
-                subset = np.where(np.isfinite(arr))
-                ymax = max(ymax, np.amax(arr[subset]))
+            if logy:
+                with np.errstate(divide="ignore", invalid="ignore"):
+                    arr = np.log10(var.values - err)
+                    subset = np.where(np.isfinite(arr))
+                    ymin = min(ymin, np.amin(arr[subset]))
+                    arr = np.log10(var.values + err)
+                    subset = np.where(np.isfinite(arr))
+                    ymax = max(ymax, np.amax(arr[subset]))
             else:
                 ymin = min(ymin, np.nanmin(var.values - err))
                 ymax = max(ymax, np.nanmax(var.values + err))
             ylab = axis_label(var=var, name="")
 
         dy = 0.05*(ymax - ymin)
-        layout["yrange"] = [ymin-dy, ymax+dy]
-        if layout["logy"]:
-            layout["yrange"] = 10.0**np.array(layout["yrange"])
-        self.ax.set_ylim(layout["yrange"])
-        if layout["logx"]:
+        yrange = [ymin-dy, ymax+dy]
+        if logy:
+            yrange = 10.0**np.array(yrange)
+        self.ax.set_ylim(yrange)
+        if logx:
             self.ax.set_xscale("log")
-        if layout["logy"]:
+        if logy:
             self.ax.set_yscale("log")
 
         # Disable buttons
@@ -164,30 +171,61 @@ class Slicer1d(Slicer):
             self.ax.lines = []
             self.ax.collections = []
             self.members.update({"lines": {}, "error_x": {}, "error_y": {},
-                                 "error_xy": {}})
+                                 "error_xy": {}, "masks": {}})
 
         new_x = self.slider_x[dim_str].values
         xc = edges_to_centers(new_x)
 
+        if self.params["masks"]["show"]:
+            mslice = self.slice_masks()
+
         for i, (name, var) in enumerate(sorted(self.input_data)):
             vslice = self.slice_data(var)
+
+            # If this is a histogram, plot a step function
             if self.histograms[name][dim_str]:
+                ye = np.concatenate(([0], vslice.values))
                 [self.members["lines"][name]] = self.ax.step(
-                    new_x, np.concatenate(([0], vslice.values)), label=name,
-                    color=self.color[i], zorder=10)
+                    new_x, ye, label=name, zorder=10,
+                    **{key: self.mpl_line_params[key][i] for key in
+                       ["color", "linewidth"]})
+                # Add masks if any
+                if self.params["masks"]["show"]:
+                    me = np.concatenate(([False], mslice.values))
+                    [self.members["masks"][name]] = self.ax.step(
+                        new_x, self.mask_to_float(me, ye),
+                        linewidth=self.mpl_line_params["linewidth"][i]*3,
+                        color=self.params["masks"]["color"], zorder=9)
+
             else:
+
+                # If this is not a histogram, just use normal plot
                 [self.members["lines"][name]] = self.ax.plot(
-                    new_x, vslice.values, label=name, color=self.color[i],
-                    zorder=10)
+                    new_x, vslice.values, label=name, zorder=10,
+                    **{key: self.mpl_line_params[key][i] for key in
+                       self.mpl_line_params.keys()})
+                # Add masks if any
+                if self.params["masks"]["show"]:
+                    [self.members["masks"][name]] = self.ax.plot(
+                        new_x,
+                        self.mask_to_float(mslice.values, vslice.values),
+                        zorder=10, mec=self.params["masks"]["color"], mew=3,
+                        linestyle="none",
+                        **{key: self.mpl_line_params[key][i] for key in
+                           ["color", "marker"]})
+
+            # Add error bars
             if var.variances is not None:
                 if self.histograms[name][dim_str]:
                     self.members["error_y"][name] = self.ax.errorbar(
                         xc, vslice.values, yerr=np.sqrt(vslice.variances),
-                        color=self.color[i], zorder=10, fmt="none")
+                        color=self.mpl_line_params["color"][i], zorder=10,
+                        fmt="none")
                 else:
                     self.members["error_y"][name] = self.ax.errorbar(
                         new_x, vslice.values, yerr=np.sqrt(vslice.variances),
-                        color=self.color[i], zorder=10, fmt="none")
+                        color=self.mpl_line_params["color"][i], zorder=10,
+                        fmt="none")
 
         deltax = 0.05 * (new_x[-1] - new_x[0])
         self.ax.set_xlim([new_x[0] - deltax, new_x[-1] + deltax])
@@ -203,14 +241,30 @@ class Slicer1d(Slicer):
                 vslice = vslice[val.dim, val.value]
         return vslice
 
+    def slice_masks(self):
+        mslice = self.masks
+        for key, val in self.slider.items():
+            if not val.disabled and (val.dim in mslice.dims):
+                mslice = mslice[val.dim, val.value]
+        return mslice
+
     # Define function to update slices
     def update_slice(self, change):
+        if self.params["masks"]["show"]:
+            mslice = self.slice_masks()
         for i, (name, var) in enumerate(sorted(self.input_data)):
             vslice = self.slice_data(var)
             vals = vslice.values
             if self.histograms[name][self.button_axis_to_dim["x"]]:
                 vals = np.concatenate(([0], vals))
             self.members["lines"][name].set_ydata(vals)
+
+            if self.params["masks"]["show"]:
+                msk = mslice.values
+                if self.histograms[name][self.button_axis_to_dim["x"]]:
+                    msk = np.concatenate(([False], msk))
+                self.members["masks"][name].set_ydata(
+                    self.mask_to_float(msk, vals))
             if var.variances is not None:
                 coll = self.members["error_y"][name].get_children()[0]
                 coll.set_segments(
@@ -229,10 +283,14 @@ class Slicer1d(Slicer):
 
     def keep_trace(self, owner):
         lab = self.keep_buttons[owner.id][0].value
-        self.ax.lines.append(cp.copy(self.members["lines"][lab]))
-        self.ax.lines[-1].set_color(self.keep_buttons[owner.id][2].value)
-        self.ax.lines[-1].set_url(owner.id)
-        self.ax.lines[-1].set_zorder(1)
+        lines_to_keep = ["lines"]
+        if self.params["masks"]["show"]:
+            lines_to_keep.append("masks")
+        for l in lines_to_keep:
+            self.ax.lines.append(cp.copy(self.members[l][lab]))
+            self.ax.lines[-1].set_color(self.keep_buttons[owner.id][2].value)
+            self.ax.lines[-1].set_url(owner.id)
+            self.ax.lines[-1].set_zorder(1)
         if self.input_data[lab].variances is not None:
             err = self.members["error_y"][lab].get_children()
             self.ax.collections.append(cp.copy(err[0]))
@@ -294,3 +352,10 @@ class Slicer1d(Slicer):
         arr1 = np.array(s).flatten()[::2]
         arr2 = np.array([y-np.sqrt(e), y+np.sqrt(e)]).T.flatten()
         return np.array([arr1, arr2]).T.flatten().reshape(len(y), 2, 2)
+
+    def toggle_masks(self, change):
+        for n, msk in self.members["masks"].items():
+            msk.set_visible(change["new"])
+        change["owner"].description = "Hide masks" if change["new"] else \
+            "Show masks"
+        return
