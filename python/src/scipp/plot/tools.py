@@ -9,14 +9,16 @@ from .._scipp.core.units import dimensionless
 
 # Other imports
 import numpy as np
-from matplotlib.colors import Normalize, LogNorm
+from matplotlib.colors import Normalize, LogNorm, LinearSegmentedColormap
 
 
-def get_color(index=0):
+def get_line_param(name=None, index=None):
     """
-    Get the i-th color in the list of standard colors.
+    Get the default line parameter from the config.
+    If an index is supplied, return the i-th item in the list.
     """
-    return config.color_list[index % len(config.color_list)]
+    param = getattr(config, name)
+    return param[index % len(param)]
 
 
 def edges_to_centers(x):
@@ -54,45 +56,52 @@ def axis_label(var=None, name=None, log=False, replace_dim=True):
     return label
 
 
-def parse_colorbar(cb, var=None, show_variances=False, values=None):
+def parse_params(params=None, defaults=None, globs=None, array=None):
     """
-    Construct the colorbar using default and input values
+    Construct the colorbar settings using default and input values
     """
-    cbar = config.cb.copy()
-    cbar["norm"] = dict()
-    if cb is not None:
-        if isinstance(cb, str):
-            cbar["name"] = cb
-        else:
-            for key, val in cb.items():
-                cbar[key] = val
-    params = {"values": {"cbmin": "min", "cbmax": "max"}}
-    if var.variances is not None and show_variances:
-        params["variances"] = {"cbmin": "min_var", "cbmax": "max_var"}
+    parsed = config.params.copy()
+    if defaults is not None:
+        for key, val in defaults.items():
+            parsed[key] = val
+    if globs is not None:
+        for key, val in globs.items():
+            # Global parameters need special treatment because by default they
+            # are set to None, and we don't want to overwrite the defaults.
+            if val is not None:
+                parsed[key] = val
+    if params is not None:
+        if isinstance(params, bool):
+            params = {"show": params}
+        for key, val in params.items():
+            parsed[key] = val
 
-    for key, val in sorted(params.items()):
-        if values is not None:
-            arr = values
+    if array is not None:
+        if parsed["log"]:
+            with np.errstate(divide="ignore", invalid="ignore"):
+                subset = np.where(np.isfinite(np.log10(array)))
         else:
-            arr = getattr(var, key)
-        if cbar["log"]:
-            subset = np.where(np.isfinite(np.log10(arr)))
+            subset = np.where(np.isfinite(array))
+        if parsed["vmin"] is not None:
+            vmin = parsed["vmin"]
         else:
-            subset = np.where(np.isfinite(arr))
-        if cbar[val["cbmin"]] is not None:
-            vmin = cbar[val["cbmin"]]
+            vmin = np.amin(array[subset])
+        if parsed["vmax"] is not None:
+            vmax = parsed["vmax"]
         else:
-            vmin = np.amin(arr[subset])
-        if cbar[val["cbmax"]] is not None:
-            vmax = cbar[val["cbmax"]]
-        else:
-            vmax = np.amax(arr[subset])
-        if cbar["log"]:
+            vmax = np.amax(array[subset])
+        if parsed["log"]:
             norm = LogNorm(vmin=vmin, vmax=vmax)
         else:
             norm = Normalize(vmin=vmin, vmax=vmax)
-        cbar["norm"][key] = norm
-    return cbar
+        parsed["norm"] = norm
+
+    # Convert color into custom colormap
+    if parsed["color"] is not None:
+        parsed["cmap"] = LinearSegmentedColormap.from_list(
+            "tmp", [parsed["color"], parsed["color"]])
+
+    return parsed
 
 
 def axis_to_dim_label(dataset, axis):

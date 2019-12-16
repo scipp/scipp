@@ -20,8 +20,9 @@ except ImportError:
     ipv = None
 
 
-def plot_3d(input_data=None, axes=None, cb=None, filename=None, name=None,
-            figsize=None, show_variances=False):
+def plot_3d(input_data=None, axes=None, values=None, variances=None,
+            masks=None, filename=None, name=None, figsize=None, aspect=None,
+            cmap=None, log=False, vmin=None, vmax=None, color=None):
     """
     Plot a 3-slice through a N dimensional dataset. For every dimension above
     3, a slider is created to adjust the position of the slice in that
@@ -39,8 +40,9 @@ def plot_3d(input_data=None, axes=None, cb=None, filename=None, name=None,
     if axes is None:
         axes = var.dims
 
-    sv = Slicer3d(input_data=var, axes=axes, cb=cb,
-                  show_variances=show_variances)
+    sv = Slicer3d(input_data=var, axes=axes, values=values,
+                  variances=variances, masks=masks, cmap=cmap, log=log,
+                  vmin=vmin, vmax=vmax, color=color, aspect=aspect)
 
     render_plot(figure=sv.fig, widgets=sv.box, filename=filename, ipv=ipv)
 
@@ -49,12 +51,14 @@ def plot_3d(input_data=None, axes=None, cb=None, filename=None, name=None,
 
 class Slicer3d(Slicer):
 
-    def __init__(self, input_data=None, axes=None, cb=None,
-                 show_variances=False):
+    def __init__(self, input_data=None, axes=None, values=None, variances=None,
+                 masks=None, cmap=None, log=None, vmin=None, vmax=None,
+                 color=None, aspect=None):
 
-        super().__init__(input_data=input_data, axes=axes, cb=cb,
-                         show_variances=show_variances,
-                         button_options=['X', 'Y', 'Z'])
+        super().__init__(input_data=input_data, axes=axes, values=values,
+                         variances=variances, masks=masks, cmap=cmap,
+                         log=log, vmin=vmin, vmax=vmax, color=color,
+                         aspect=aspect, button_options=['X', 'Y', 'Z'])
 
         self.cube = None
         self.members.update({"surfaces": {}, "wireframes": {}, "outlines": {},
@@ -65,9 +69,13 @@ class Slicer3d(Slicer):
                               animation=0)
         self.scalar_map = dict()
 
-        for key, norm in self.cb["norm"].items():
-            self.scalar_map[key] = cm.ScalarMappable(norm=norm,
-                                                     cmap=self.cb["name"])
+        panels = ["values"]
+        if self.params["variances"]["show"]:
+            panels.append("variances")
+
+        for key in panels:
+            self.scalar_map[key] = cm.ScalarMappable(
+              norm=self.params[key]["norm"], cmap=self.params[key]["cmap"])
             self.members["surfaces"][key] = {}
             self.members["wireframes"][key] = {}
 
@@ -329,18 +337,25 @@ class Slicer3d(Slicer):
         return meshes
 
     def get_box(self):
-        max_size = 0.0
-        dx = {"x": 0, "y": 0, "z": 0}
-        for ax in dx.keys():
-            dx[ax] = (self.xminmax[self.button_axis_to_dim[ax]][1] -
-                      self.xminmax[self.button_axis_to_dim[ax]][0])
-        max_size = np.amax(list(dx.values()))
-        arrays = dict()
-        for ax, size in dx.items():
-            diff = max_size - size
-            arrays[ax] = [
-                self.xminmax[self.button_axis_to_dim[ax]][0] - 0.5*diff,
-                self.xminmax[self.button_axis_to_dim[ax]][1] + 0.5*diff]
+        if self.aspect == "equal":
+            max_size = 0.0
+            dx = {"x": 0, "y": 0, "z": 0}
+            for ax in dx.keys():
+                dx[ax] = np.ediff1d(self.xminmax[self.button_axis_to_dim[ax]])
+            max_size = np.amax(list(dx.values()))
+            arrays = dict()
+            for ax, size in dx.items():
+                diff = max_size - size
+                arrays[ax] = [
+                    self.xminmax[self.button_axis_to_dim[ax]][0] - 0.5*diff,
+                    self.xminmax[self.button_axis_to_dim[ax]][1] + 0.5*diff]
 
-        return np.meshgrid(arrays["x"], arrays["y"], arrays["z"],
-                           indexing="ij")
+            return np.meshgrid(arrays["x"], arrays["y"], arrays["z"],
+                               indexing="ij")
+        elif self.aspect == "auto":
+            return np.meshgrid(self.xminmax[self.button_axis_to_dim["x"]],
+                               self.xminmax[self.button_axis_to_dim["y"]],
+                               self.xminmax[self.button_axis_to_dim["z"]],
+                               indexing="ij")
+        else:
+            raise RuntimeError("Unknown aspect ratio: {}".format(self.aspect))
