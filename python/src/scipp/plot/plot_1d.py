@@ -245,7 +245,12 @@ class Slicer1d(Slicer):
             xticks = self.ax.get_xticks()
             if xticks[2] - xticks[1] < 1:
                 self.ax.xaxis.set_major_locator(ticker.MultipleLocator(1.0))
-            self.ax.set_xticklabels(self.slider_ticks[dim_str])
+                xticks = self.ax.get_xticks()
+            new_ticks = [""] * len(xticks)
+            for i, x in enumerate(xticks):
+                if x >= 0 and x < self.slider_nx[dim_str]:
+                    new_ticks[i] = self.slider_ticks[dim_str][int(x)]
+            self.ax.set_xticklabels(new_ticks)
         return
 
     def slice_data(self, var):

@@ -241,8 +241,8 @@ class Slicer:
                     make_fake_coord = True
                     ticks = np.array(
                         self.data_array.coords[dim].values).astype(str)
-                if ticks is not None:
-                    ticks = np.concatenate(([""], ticks))
+                # if ticks is not None:
+                #     ticks = np.concatenate(([""], ticks))
             if make_fake_coord:
                 var = Variable(
                     [dim], values=np.arange(self.dims_and_shapes[str(dim)]))
