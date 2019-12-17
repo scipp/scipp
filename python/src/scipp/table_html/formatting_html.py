@@ -22,7 +22,7 @@ with open(ICONS_SVG_PATH, 'r') as f:
 
 
 def _is_dataset(x):
-    return isinstance(x, sc.Dataset) or isinstance(x, sc.DataProxy)
+    return isinstance(x, sc.Dataset) or isinstance(x, sc.DatasetProxy)
 
 
 def _format_array(data, size, ellipsis_after, do_ellide=True):
@@ -194,9 +194,11 @@ def _extract_sparse(x):
     return [(key, value) for key, value in x if value.sparse_dim is not None]
 
 
-def _make_inline_attributes(var):
+def _make_inline_attributes(var, has_attrs):
     disabled = "disabled"
     attrs_ul = ""
+    if not has_attrs:
+        return disabled, attrs_ul
     attrs_sections = []
     if hasattr(var, "coords"):
         sparse_coords = _extract_sparse(var.coords)
@@ -247,7 +249,7 @@ def summarize_variable(name, var, is_index=False, has_attrs=False):
     attrs_id = "attrs-" + str(uuid.uuid4())
     data_id = "data-" + str(uuid.uuid4())
 
-    disabled, attrs_ul = _make_inline_attributes(var)
+    disabled, attrs_ul = _make_inline_attributes(var, has_attrs)
 
     preview = inline_variable_repr(var)
     data_repr = f"Values:<br>{short_data_repr_html(var)}"
