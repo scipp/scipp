@@ -238,7 +238,7 @@ class Slicer:
                     make_fake_coord = True
                     ticks = ["(" + ",".join([value_to_string(item, precision=2)
                                              for item in elem]) + ")"
-                            for elem in self.data_array.coords[dim].values]
+                             for elem in self.data_array.coords[dim].values]
                 if tp == dtype.string:
                     make_fake_coord = True
                     ticks = np.array(
