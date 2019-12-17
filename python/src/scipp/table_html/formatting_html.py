@@ -173,8 +173,9 @@ def _icon(icon_name):
             "</svg>".format(icon_name))
 
 
-def summarize_coord(dim, var, bin_edges=None):
+def summarize_coord(dim, var, ds=None):
     is_index = dim in var.dims
+    bin_edges = find_bin_edges(var, ds) if ds else None
     return summarize_variable(str(dim), var, is_index, bin_edges=bin_edges)
 
 
@@ -191,10 +192,10 @@ def find_bin_edges(var, ds):
     return bin_edges
 
 
-def summarize_coords(coords, ds):
+def summarize_coords(coords, ds=None):
     vars_li = "".join(
         "<li class='xr-var-item'>"
-        f"{summarize_coord(dim, var, bin_edges=find_bin_edges(var, ds))}"
+        f"{summarize_coord(dim, var, ds)}"
         "</span></li>"
         for dim, var in coords)
 
