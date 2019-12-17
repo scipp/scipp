@@ -42,7 +42,7 @@ def _format_array(data, size, ellipsis_after, do_ellide=True):
 
 
 def _make_row(data_html, variances_html=None):
-    return f"<div>{data_html}</div>"
+    return f"<div>{escape(data_html)}</div>"
 
 
 def _format_non_sparse(var, has_variances):
@@ -253,56 +253,43 @@ def _make_dim_labels(dim, sparse_dim, bin_edges=None):
         return ""
 
 
-def summarize_variable(name, var,
-                       is_index=False,
-                       has_attrs=False,
-                       bin_edges=None):
-    """
-    :param name: Name of the variable
-    :param var: The variable itself, used to display dtype, unit, values, attrs
-    :param is_index: If the variable is an index - used to bold
-                     coordinates that represent the indices of
-                     a dimension that the data contains
-
-    :param has_attrs: If the variable is for a section that cannot contain
-                      attributes, then this hides the show/hide button.
-
-    :param is_bin_edges: If true it will add the [bin-edges] variable
-    """
-    cssclass_idx = " class='xr-has-index'" if is_index else ""
+def _make_dim_str(var, bin_edges, add_sizes=False):
     dims_text = ', '.join(
-        f'{str(dim)}{_make_dim_labels(dim, var.sparse_dim, bin_edges)}'
-        for dim in var.dims)
-    dims_str = escape(f"({dims_text})")
-    name = escape(name)
-    dtype = repr(var.dtype)[6:]
-    unit = '' if var.unit == sc.units.dimensionless else var.unit
+        '{}{}{}'.format(
+            str(dim),
+            _make_dim_labels(dim, var.sparse_dim, bin_edges),
+            f': {size}' if add_sizes else ''
+        )
+        for dim, size in zip(var.dims, var.shape))
+    return dims_text
+
+
+def _format_common(is_index):
+    cssclass_idx = " class='xr-has-index'" if is_index else ""
 
     # "unique" ids required to expand/collapse subsections
     attrs_id = "attrs-" + str(uuid.uuid4())
     data_id = "data-" + str(uuid.uuid4())
-
-    disabled, attrs_ul = _make_inline_attributes(var, has_attrs)
-
-    preview = inline_variable_repr(var)
-    data_repr = f"Values:<br>{short_data_repr_html(var)}"
-    variances_preview = ""
-    if var.variances is not None:
-        variances_preview = inline_variable_repr(var, has_variances=True)
-        data_repr += f"<br><br>Variances:<br>\
-                       <div>{short_data_repr_html(var)}</div>"
-
     attrs_icon = _icon("icon-file-text2")
     data_icon = _icon("icon-database")
 
+    return cssclass_idx, attrs_id, attrs_icon, data_id, data_icon
+
+
+def _var_f(name, dims_str, dtype, unit,
+           preview, variances_preview,
+           attrs_ul, disabled, data_repr, is_index, has_attrs):
+    cssclass_idx, attrs_id, attrs_icon, data_id, data_icon = _format_common(
+        is_index)
+
     html = [
-        f"<div class='xr-var-name'><span{cssclass_idx}>{name}</span></div>",
-        f"<div class='xr-var-dims'>{dims_str}</div>",
-        f"<div class='xr-var-dtype'>{dtype}</div>",
-        f"<div class='xr-var-unit'>{unit}</div>",
+        f"<div class='sc-var-name'><span{cssclass_idx}>{dims_str}</span>"
+        "</div>",
+        f"<div class='xr-var-dtype'>{escape(dtype)}</div>",
+        f"<div class='xr-var-unit'>{escape(unit)}</div>",
         f"<div class='xr-value-preview xr-preview'><span>{preview}</span>",
         "{}</div>".format(f'<span>{variances_preview}</span>'
-                          if var.variances is not None else ''),
+                          if variances_preview is not None else ''),
         f"<input id='{attrs_id}' class='xr-var-attrs-in' ",
         f"type='checkbox' {disabled}>",
         f"<label for='{attrs_id}' "
@@ -318,11 +305,91 @@ def summarize_variable(name, var,
     return "".join(html)
 
 
+def _ds_f(name, dims_str, dtype, unit,
+          preview, variances_preview,
+          attrs_ul, disabled, data_repr, is_index, has_attrs):
+    cssclass_idx, attrs_id, attrs_icon, data_id, data_icon = _format_common(
+        is_index)
+
+    html = [
+        f"<div class='xr-var-name'><span{cssclass_idx}>{escape(name)}</span>"
+        "</div>",
+        f"<div class='xr-var-dims'>{escape(dims_str)}</div>",
+        f"<div class='xr-var-dtype'>{escape(dtype)}</div>",
+        f"<div class='xr-var-unit'>{escape(unit)}</div>",
+        f"<div class='xr-value-preview xr-preview'><span>{preview}</span>",
+        "{}</div>".format(f'<span>{variances_preview}</span>'
+                          if variances_preview is not None else ''),
+        f"<input id='{attrs_id}' class='xr-var-attrs-in' ",
+        f"type='checkbox' {disabled}>",
+        f"<label for='{attrs_id}' "
+        f"class='{'' if has_attrs else 'xr-hide-icon'}'"
+        " title='Show/Hide attributes'>",
+        f"{attrs_icon}</label>",
+        f"<input id='{data_id}' class='xr-var-data-in' type='checkbox'>",
+        f"<label for='{data_id}' title='Show/Hide data repr'>",
+        f"{data_icon}</label>",
+        f"<div class='xr-var-attrs'>{attrs_ul}</div>" if attrs_ul else "",
+        f"<pre class='xr-var-data'>{data_repr}</pre>",
+    ]
+    return "".join(html)
+
+
+def _prepare_variable_info(name, var,
+                           is_index=False,
+                           has_attrs=False,
+                           bin_edges=None):
+    """
+    :param name: Name of the variable
+    :param var: The variable itself, used to display dtype, unit, values, attrs
+    :param is_index: If the variable is an index - used to bold
+                     coordinates that represent the indices of
+                     a dimension that the data contains
+
+    :param has_attrs: If the variable is for a section that cannot contain
+                      attributes, then this hides the show/hide button.
+
+    :param is_bin_edges: If true it will add the [bin-edges] variable
+    """
+
+    dims_str = escape(f"({_make_dim_str(var, bin_edges, name is None)})")
+    dtype = repr(var.dtype)[6:]
+    unit = '' if var.unit == sc.units.dimensionless else repr(var.unit)
+
+    disabled, attrs_ul = _make_inline_attributes(var, has_attrs)
+
+    preview = inline_variable_repr(var)
+    data_repr = f"Values:<br>{short_data_repr_html(var)}"
+    variances_preview = None
+    if var.variances is not None:
+        variances_preview = inline_variable_repr(var, has_variances=True)
+        data_repr += f"<br><br>Variances:<br>\
+                       <div>{short_data_repr_html(var)}</div>"
+
+    return (name, dims_str, dtype, unit,
+            preview, variances_preview,
+            attrs_ul, disabled,
+            data_repr, is_index, has_attrs)
+
+
+def summarize_variable(name, var,
+                       is_index=False,
+                       has_attrs=False,
+                       bin_edges=None):
+    if name is None:
+        return _var_f(*_prepare_variable_info(
+            name, var, is_index, has_attrs, bin_edges))
+    else:
+        return _ds_f(*_prepare_variable_info(
+            name, var, is_index, has_attrs, bin_edges))
+
+
 def summarize_data(dataset):
     has_attrs = _is_dataset(dataset)
     vars_li = "".join(
         "<li class='xr-var-item'>"
-        f"{summarize_variable(name, values, has_attrs=has_attrs)}</li>"
+        f"{summarize_variable(name, values, has_attrs=has_attrs)}"
+        "</li>"
         for name, values in dataset)
     return f"<ul class='xr-var-list'>{vars_li}</ul>"
 
@@ -357,7 +424,7 @@ def _mapping_section(mapping,
                      details_func=None,
                      max_items_collapse=None,
                      enabled=True):
-    n_items = len(mapping)
+    n_items = len(mapping) if hasattr(mapping, "__len__") else 1
     collapsed = n_items >= max_items_collapse
 
     return collapsible_section(
@@ -379,24 +446,19 @@ def dim_section(dataset):
                                collapsed=True)
 
 
-def array_section(obj):
-    # "unique" id to expand/collapse the section
-    data_id = "section-" + str(uuid.uuid4())
-    collapsed = ""
-    preview = repr(obj.variable)
-    data_repr = short_data_repr_html(obj)
-    data_icon = _icon("icon-database")
+def summarize_array(var):
+    vars_li = "".join(
+        "<li class='xr-var-item'>"
+        f"{summarize_variable(None, var)}</li>")
+    return f"<ul class='xr-var-list'>{vars_li}</ul>"
 
-    return ("<div class='xr-array-wrap'>"
-            f"<input id='{data_id}' \
-            class='xr-array-in' type='checkbox' {collapsed}>"
-            f"<label for='{data_id}' \
-            title='Show/hide data repr'>{data_icon}</label>"
-            f"<div class='xr-array-preview \
-            xr-preview'><span>{preview}</span></div>"
-            f"<pre class='xr-array-data'>{data_repr}</pre>"
-            "</div>")
 
+array_section = partial(
+    _mapping_section,
+    name="Data",
+    details_func=summarize_array,
+    max_items_collapse=10,
+)
 
 coord_section = partial(
     _mapping_section,
@@ -467,6 +529,27 @@ def dataset_repr(ds):
     return _obj_repr(header_components, sections)
 
 
+def dataarray_repr(darray):
+    obj_type = "scipp.{}".format(type(darray).__name__)
+
+    header_components = [f"<div class='xr-obj-type'>{escape(obj_type)}</div>"]
+
+    sections = [dim_section(darray),
+                array_section(darray)]
+
+    if len(darray.coords) > 0:
+        sections.append(coord_section(darray.coords, darray))
+    if len(darray.labels) > 0:
+        sections.append(label_section(darray.labels))
+
+    if len(darray.masks) > 0:
+        sections.append(mask_section(darray.masks))
+    if len(darray.attrs) > 0:
+        sections.append(attr_section(darray.attrs))
+
+    return _obj_repr(header_components, sections)
+
+
 def variable_repr(var):
     obj_type = "scipp.{}".format(type(var).__name__)
 
@@ -474,7 +557,7 @@ def variable_repr(var):
 
     sections = [
         dim_section(var),
-        data_section([('', var)]),
+        array_section(var),
     ]
 
     return _obj_repr(header_components, sections)
