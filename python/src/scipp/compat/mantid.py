@@ -411,11 +411,15 @@ def load(filename="",
 
     Example of use:
 
-      from scipp.neutron import load
-      d = sc.Dataset()
-      d["sample"] = load(filename='PG3_4844_event.nxs', \
-                         load_pulse_times=True, \
-                         mantid_args={'BankName': 'bank184'})
+    .. highlight:: python
+    .. code-block:: python
+
+        from scipp.neutron import load
+        d = sc.Dataset()
+        d["sample"] = load(filename='PG3_4844_event.nxs',
+                           load_pulse_times=False,
+                           mantid_args={'BankName': 'bank184',
+                                        'LoadMonitors': True})
 
     See also the neutron-data tutorial.
 
@@ -427,6 +431,7 @@ def load(filename="",
     :param str instrument_filename: If specified, over-write the instrument
                                     definition in the final Dataset with the
                                     geometry contained in the file.
+    :param dict mantid_args: Dict of keyword arguments to forward to Mantid.
     :raises: If the Mantid workspace type returned by the Mantid loader is not
              either EventWorkspace or Workspace2D.
     :return: A Dataset containing the neutron event/histogram data and the
