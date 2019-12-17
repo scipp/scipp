@@ -47,6 +47,7 @@ Documentation
    :caption: Visualization
    :maxdepth: 2
 
+   visualization/representations-and-tables
    visualization/plotting-overview
    visualization/plotting-in-depth
    visualization/customizing-figures
