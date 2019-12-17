@@ -4,7 +4,6 @@
 
 # Scipp imports
 from ..config import plot as config
-from .._scipp.core import Dim
 
 # Other imports
 import numpy as np
@@ -84,25 +83,3 @@ def parse_params(params=None, defaults=None, globs=None, array=None):
             "tmp", [parsed["color"], parsed["color"]])
 
     return parsed
-
-
-def axis_to_dim_label(dataset, axis):
-    """
-    Get dimensions and label (if present) from requested axis
-    """
-    if isinstance(axis, Dim):
-        dim = axis
-        lab = None
-        var = dataset.coords[dim]
-    elif isinstance(axis, str):
-        # By convention, the last dim of the labels is the inner dimension,
-        # but note that for now two-dimensional labels are not supported in
-        # the plotting.
-        dim = dataset.labels[axis].dims[-1]
-        lab = axis
-        var = dataset.labels[lab]
-    else:
-        raise RuntimeError("Unsupported axis found in 'axes': {}. This must "
-                           "be either a Scipp dimension "
-                           "or a string.".format(axis))
-    return dim, lab, var

@@ -3,9 +3,10 @@
 # @author Neil Vaytet
 
 from ..config import plot as config
-from .tools import axis_to_dim_label, parse_params
+from .tools import parse_params
 from ..utils import name_with_unit, value_to_string
-from .._scipp.core import combine_masks, Variable
+from .._scipp.core import combine_masks, Variable, Dim
+
 
 # Other imports
 import numpy as np
@@ -55,12 +56,10 @@ class Slicer:
                                        self.data_array.dims,
                                        self.data_array.shape)
 
-        # Get the dimensions of the image to be displayed
-        self.coords = self.data_array.coords
+        # Create a helper dict to make dim to shape
+        self.dims_and_shapes = {}
         for shp, dim in zip(self.data_array.shape, self.data_array.dims):
-            if not self.coords.__contains__(dim):
-                self.data_array.coords[dim] = Variable(
-                    [dim], values=np.arange(shp))
+            self.dims_and_shapes[str(dim)] = shp
 
         self.labels = self.data_array.labels
         self.shapes = dict(zip(self.data_array.dims, self.data_array.shape))
@@ -86,7 +85,7 @@ class Slicer:
             raise RuntimeError("Duplicate entry in axes: {}".format(axes))
         # Iterate through axes and collect dimensions
         for ax in axes:
-            dim, lab, var = axis_to_dim_label(self.data_array, ax)
+            dim, lab, var = self.axis_to_dim_label(ax)
             if (lab is not None) and (dim in axes):
                 raise RuntimeError("The dimension of the labels cannot also "
                                    "be specified as another axis.")
@@ -216,3 +215,31 @@ class Slicer:
 
     def mask_to_float(self, mask, var):
         return np.where(mask, var, None).astype(np.float)
+
+    def axis_to_dim_label(self, axis):
+        """
+        Get dimensions and label (if present) from requested axis
+        """
+        if isinstance(axis, Dim):
+            dim = axis
+            lab = None
+            # for shp, dim in zip(self.data_array.shape, self.data_array.dims):
+            # if not self.coords.__contains__(dim):
+            #     self.coords[dim] = Variable([dim], values=np.arange(shp))
+            if not self.data_array.coords.__contains__(dim):
+                var = Variable(
+                    [dim], values=np.arange(self.dims_and_shapes[str(dim)]))
+            else:
+                var = self.data_array.coords[dim]
+        elif isinstance(axis, str):
+            # By convention, the last dim of the labels is the inner dimension,
+            # but note that for now two-dimensional labels are not supported in
+            # the plotting.
+            dim = self.data_array.labels[axis].dims[-1]
+            lab = axis
+            var = self.data_array.labels[lab]
+        else:
+            raise RuntimeError("Unsupported axis found in 'axes': {}. This must "
+                               "be either a Scipp dimension "
+                               "or a string.".format(axis))
+        return dim, lab, var
