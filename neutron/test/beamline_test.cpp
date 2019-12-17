@@ -62,6 +62,10 @@ TEST_F(BeamlineTest, l2) {
                                  units::Unit(units::m), Values{1.0, 1.0}));
 }
 
+TEST_F(BeamlineTest, flight_path_length) {
+  ASSERT_EQ(flight_path_length(dataset), l1(dataset) + l2(dataset));
+}
+
 template <class T> constexpr T pi = T(3.1415926535897932385L);
 
 TEST_F(BeamlineTest, scattering_angle) {
@@ -70,4 +74,17 @@ TEST_F(BeamlineTest, scattering_angle) {
                                  units::Unit(units::rad),
                                  Values{pi<double> / 2, pi<double> / 2}));
   ASSERT_EQ(scattering_angle(dataset), 0.5 * two_theta(dataset));
+}
+
+TEST_F(BeamlineTest, no_sample) {
+  Dataset d(dataset);
+  d.labels().erase("sample_position");
+  ASSERT_THROW(l1(d), except::NotFoundError);
+  ASSERT_THROW(l2(d), except::NotFoundError);
+  ASSERT_THROW(scattering_angle(d), except::NotFoundError);
+  ASSERT_EQ(flight_path_length(d),
+            makeVariable<double>(
+                Dims{Dim::Spectrum}, Shape{2}, units::Unit(units::m),
+                Values{(Eigen::Vector3d{1.0, 0.0, 0.01} - source_pos).norm(),
+                       (Eigen::Vector3d{0.0, 1.0, 0.01} - source_pos).norm()}));
 }

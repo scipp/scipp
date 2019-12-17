@@ -29,6 +29,8 @@ template <class T> static VariableConstProxy sample_position(const T &d) {
 }
 
 template <class T> static Variable flight_path_length(const T &d) {
+  // If there is no sample this returns the straight distance from the source,
+  // as required, e.g., for monitors.
   if (d.labels().contains("sample_position"))
     return l1(d) + l2(d);
   else
