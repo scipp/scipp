@@ -5,7 +5,7 @@
 from ..config import plot as config
 from .tools import parse_params
 from ..utils import name_with_unit, value_to_string
-from .._scipp.core import combine_masks, Variable, Dim
+from .._scipp.core import combine_masks, Variable, Dim, dtype
 
 
 # Other imports
@@ -74,6 +74,8 @@ class Slicer:
         self.slider_dims = dict()
         # Store coordinates of dimensions that will be in sliders
         self.slider_x = dict()
+        # Store ticklabels for a dimension
+        self.slider_ticks = dict()
         # Store labels for sliders if any
         self.slider_labels = dict()
 
@@ -85,7 +87,7 @@ class Slicer:
             raise RuntimeError("Duplicate entry in axes: {}".format(axes))
         # Iterate through axes and collect dimensions
         for ax in axes:
-            dim, lab, var = self.axis_to_dim_label(ax)
+            dim, lab, var, ticks = self.axis_to_dim_label(ax)
             if (lab is not None) and (dim in axes):
                 raise RuntimeError("The dimension of the labels cannot also "
                                    "be specified as another axis.")
@@ -93,6 +95,7 @@ class Slicer:
             self.slider_dims[key] = dim
             self.slider_labels[key] = lab
             self.slider_x[key] = var
+            self.slider_ticks[key] = ticks
             self.slider_nx[key] = self.shapes[dim]
         self.ndim = len(self.slider_dims)
 
@@ -223,10 +226,24 @@ class Slicer:
         if isinstance(axis, Dim):
             dim = axis
             lab = None
-            # for shp, dim in zip(self.data_array.shape, self.data_array.dims):
-            # if not self.coords.__contains__(dim):
-            #     self.coords[dim] = Variable([dim], values=np.arange(shp))
+            ticks = None
+            make_fake_coord = False
             if not self.data_array.coords.__contains__(dim):
+                make_fake_coord = True
+            else:
+                tp = self.data_array.coords[dim].dtype
+                if tp == dtype.vector_3_float64:
+                    make_fake_coord = True
+                    ticks = ["(" + ",".join([value_to_string(item, precision=2)
+                                             for item in elem]) + ")"
+                            for elem in self.data_array.coords[dim].values]
+                if tp == dtype.string:
+                    make_fake_coord = True
+                    ticks = np.array(
+                        self.data_array.coords[dim].values).astype(str)
+                if ticks is not None:
+                    ticks = np.concatenate(([""], ticks))
+            if make_fake_coord:
                 var = Variable(
                     [dim], values=np.arange(self.dims_and_shapes[str(dim)]))
             else:
@@ -239,7 +256,7 @@ class Slicer:
             lab = axis
             var = self.data_array.labels[lab]
         else:
-            raise RuntimeError("Unsupported axis found in 'axes': {}. This must "
-                               "be either a Scipp dimension "
+            raise RuntimeError("Unsupported axis found in 'axes': {}. This "
+                               "must be either a Scipp dimension "
                                "or a string.".format(axis))
-        return dim, lab, var
+        return dim, lab, var, ticks

@@ -13,6 +13,7 @@ from ..utils import name_with_unit
 import numpy as np
 import copy as cp
 import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
 import ipywidgets as widgets
 import warnings
 
@@ -240,6 +241,11 @@ class Slicer1d(Slicer):
             self.ax.set_xlim([new_x[0] - deltax, new_x[-1] + deltax])
         self.ax.set_xlabel(name_with_unit(self.slider_x[dim_str],
                                           name=self.slider_labels[dim_str]))
+        if self.slider_ticks[dim_str] is not None:
+            xticks = self.ax.get_xticks()
+            if xticks[2] - xticks[1] < 1:
+                self.ax.xaxis.set_major_locator(ticker.MultipleLocator(1.0))
+            self.ax.set_xticklabels(self.slider_ticks[dim_str])
         return
 
     def slice_data(self, var):
