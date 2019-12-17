@@ -15,11 +15,11 @@ PyObject::~PyObject() {
 
 PyObject::PyObject(const py::object &object) {
   if (object) {
-    // It is essential to acquire the GIL here. For reasons not entirely clear,
-    // calling Python code otherwise causes a segfault if the GIL has been
-    // released previously. Since this copy operation is called by anything that
-    // copies variables, this includes almost every C++ function with Python
-    // bindings because we typically do release the GIL everywhere.
+    // It is essential to acquire the GIL here. Calling Python code otherwise
+    // causes a segfault if the GIL has been released previously. Since this
+    // copy operation is called by anything that copies variables, this includes
+    // almost every C++ function with Python bindings because we typically do
+    // release the GIL everywhere.
     py::gil_scoped_acquire acquire;
     py::module copy = py::module::import("copy");
     py::object deepcopy = copy.attr("deepcopy");
