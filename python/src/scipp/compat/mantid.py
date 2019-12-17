@@ -30,19 +30,15 @@ def make_bin_masks(common_bins, spec_dim, dim, num_bins, num_spectra):
 
 
 def make_component_info(ws):
-    compInfo = sc.Dataset({
-        'position':
-        sc.Variable(dims=[sc.Dim.Row],
-                    shape=(2, ),
-                    dtype=sc.dtype.vector_3_float64,
-                    unit=sc.units.m)
-    })
-    # Current assumption: 0 is source, 1 is sample
     sourcePos = ws.componentInfo().sourcePosition()
     samplePos = ws.componentInfo().samplePosition()
-    compInfo['position'].values[0] = get_pos(sourcePos)
-    compInfo['position'].values[1] = get_pos(samplePos)
-    return sc.Variable(value=compInfo)
+
+    def as_var(pos):
+        return sc.Variable(value=np.array(get_pos(pos)),
+                           dtype=sc.dtype.vector_3_float64,
+                           unit=sc.units.m)
+
+    return as_var(sourcePos), as_var(samplePos)
 
 
 def make_detector_info(ws):
@@ -190,7 +186,7 @@ def set_bin_masks(bin_masks, dim, index, masked_bins):
 
 def convert_Workspace2D_to_dataarray(ws):
     common_bins = ws.isCommonBins()
-    comp_info = make_component_info(ws)
+    source_pos, sample_pos = make_component_info(ws)
     det_info = make_detector_info(ws)
     pos = init_pos(ws)
     dim, unit = validate_and_get_unit(ws.getAxis(0).getUnit().unitID())
@@ -217,7 +213,8 @@ def convert_Workspace2D_to_dataarray(ws):
                          },
                          labels={
                              "position": pos,
-                             "component_info": comp_info,
+                             "source_position": source_pos,
+                             "sample_position": sample_pos,
                              "detector_info": det_info
                          },
                          attrs={
@@ -263,7 +260,7 @@ def convertEventWorkspace_to_dataarray(ws, load_pulse_times):
     dim, unit = validate_and_get_unit(ws.getAxis(0).getUnit().unitID())
     spec_dim, spec_coord = init_spec_axis(ws)
     nHist = ws.getNumberHistograms()
-    comp_info = make_component_info(ws)
+    source_pos, sample_pos = make_component_info(ws)
     det_info = make_detector_info(ws)
     pos = init_pos(ws)
 
@@ -300,7 +297,8 @@ def convertEventWorkspace_to_dataarray(ws, load_pulse_times):
         },
         "labels": {
             "position": pos,
-            "component_info": comp_info,
+            "source_position": source_pos,
+            "sample_position": sample_pos,
             "detector_info": det_info
         },
         "attrs": {
