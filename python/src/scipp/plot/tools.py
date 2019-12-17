@@ -5,7 +5,6 @@
 # Scipp imports
 from ..config import plot as config
 from .._scipp.core import Dim
-from .._scipp.core.units import dimensionless
 
 # Other imports
 import numpy as np
@@ -36,26 +35,6 @@ def centers_to_edges(x):
     return np.concatenate([[2.0 * x[0] - e[0]], e, [2.0 * x[-1] - e[-1]]])
 
 
-def axis_label(var=None, name=None, log=False, replace_dim=True):
-    """
-    Make an axis label with "Name [unit]"
-    """
-    label = ""
-    if name is not None:
-        label = name
-    elif var is not None:
-        label = str(var.dims[-1])
-        if replace_dim:
-            label = label.replace("Dim.", "")
-
-    if log:
-        label = "log\u2081\u2080(" + label + ")"
-    if var is not None:
-        if var.unit != dimensionless:
-            label += " [{}]".format(var.unit)
-    return label
-
-
 def parse_params(params=None, defaults=None, globs=None, array=None):
     """
     Construct the colorbar settings using default and input values
@@ -77,21 +56,24 @@ def parse_params(params=None, defaults=None, globs=None, array=None):
             parsed[key] = val
 
     if array is not None:
+        # TODO: possibly need to add a C++ method for finding min/max of
+        # Variables to avoid the creation of a large array of bools in
+        # np.ma.masked_invalid
         if parsed["log"]:
             with np.errstate(divide="ignore", invalid="ignore"):
-                subset = np.where(np.isfinite(np.log10(array)))
+                subset = np.ma.masked_invalid(np.log10(array), copy=False)
         else:
-            subset = np.where(np.isfinite(array))
+            subset = np.ma.masked_invalid(array, copy=False)
         if parsed["vmin"] is not None:
             vmin = parsed["vmin"]
         else:
-            vmin = np.amin(array[subset])
+            vmin = subset.min()
         if parsed["vmax"] is not None:
             vmax = parsed["vmax"]
         else:
-            vmax = np.amax(array[subset])
+            vmax = subset.max()
         if parsed["log"]:
-            norm = LogNorm(vmin=vmin, vmax=vmax)
+            norm = LogNorm(vmin=10.0**vmin, vmax=10.0**vmax)
         else:
             norm = Normalize(vmin=vmin, vmax=vmax)
         parsed["norm"] = norm
@@ -124,19 +106,3 @@ def axis_to_dim_label(dataset, axis):
                            "be either a Scipp dimension "
                            "or a string.".format(axis))
     return dim, lab, var
-
-
-def get_1d_axes(var, axes, name):
-    """
-    Utility to simplify getting 1d axes labels and coordinate arrays
-    """
-    if axes is None:
-        axes = {var.dims[0]: var.dims[0]}
-    elif isinstance(axes, str):
-        axes = {var.dims[0]: axes}
-    dim, lab, xcoord = axis_to_dim_label(var, axes[var.dims[0]])
-    x = xcoord.values
-    xlab = axis_label(var=xcoord, name=lab)
-    y = var.values
-    ylab = axis_label(var=var, name="")
-    return xlab, ylab, x, y, axes

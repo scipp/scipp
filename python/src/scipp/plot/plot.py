@@ -7,8 +7,8 @@ from .._scipp import core as sc
 from .sciplot import SciPlot
 
 
-def plot(input_data, collapse=None, projection=None, axes=None, color=None,
-         marker=None, linestyle=None, linewidth=None, **kwargs):
+def plot(scipp_obj, collapse=None, projection=None, axes=None, color=None,
+         marker=None, linestyle=None, linewidth=None, bins=None, **kwargs):
     """
     Wrapper function to plot any kind of dataset
     """
@@ -18,14 +18,15 @@ def plot(input_data, collapse=None, projection=None, axes=None, color=None,
     from .plot_collapse import plot_collapse
     from .dispatch import dispatch
 
-    tp = type(input_data)
-    # Convert non-Datasets to temporary Dataset
-    if (tp is sc.DataProxy) or (tp is sc.DataArray) or \
-       (tp is sc.VariableProxy) or (tp is sc.Variable):
-        ds = sc.Dataset()
-        ds[input_data.name if hasattr(input_data, "name")
-            else " "] = input_data
-        input_data = ds
+    inventory = dict()
+    tp = type(scipp_obj)
+    if tp is sc.Dataset or tp is sc.DatasetProxy:
+        for name, var in sorted(scipp_obj):
+            inventory[name] = var
+    elif tp is sc.Variable or tp is sc.VariableProxy:
+        inventory[str(tp)] = sc.DataArray(data=scipp_obj)
+    else:
+        inventory[scipp_obj.name] = scipp_obj
 
     # Prepare container for matplotlib line parameters
     line_params = {"color": color,
@@ -44,12 +45,13 @@ def plot(input_data, collapse=None, projection=None, axes=None, color=None,
     # {number_of_dimensions, Dataset, axes, line_parameters}.
     tobeplotted = dict()
     sparse_dim = dict()
-    for name, var in sorted(input_data):
+    for name, var in sorted(inventory.items()):
         ndims = len(var.dims)
         if ndims > 0:
             sp_dim = var.sparse_dim
             ax = axes
-            if ndims == 1 or projection == "1d" or projection == "1D":
+            if ndims == 1 or projection == "1d" or projection == "1D" or \
+               (sp_dim is not None and bins is None):
                 # Construct a key from the dimensions
                 if axes is not None:
                     # Check if we are dealing with a dict mapping dimensions to
@@ -88,11 +90,11 @@ def plot(input_data, collapse=None, projection=None, axes=None, color=None,
                     mpl_line_params[n] = p
 
             if key not in tobeplotted.keys():
-                tobeplotted[key] = dict(ndims=ndims, dataset=sc.Dataset(),
+                tobeplotted[key] = dict(ndims=ndims, scipp_obj_dict=dict(),
                                         axes=ax, mpl_line_params=dict())
                 for n in mpl_line_params.keys():
                     tobeplotted[key]["mpl_line_params"][n] = []
-            tobeplotted[key]["dataset"][name] = input_data[name]
+            tobeplotted[key]["scipp_obj_dict"][name] = inventory[name]
             for n, p in mpl_line_params.items():
                 tobeplotted[key]["mpl_line_params"][n].append(p)
             sparse_dim[key] = sp_dim
@@ -101,17 +103,16 @@ def plot(input_data, collapse=None, projection=None, axes=None, color=None,
     output = SciPlot()
     for key, val in tobeplotted.items():
         if collapse is not None:
-            output[key] = plot_collapse(input_data=val["dataset"],
-                                        dim=collapse,
-                                        axes=val["axes"],
-                                        **kwargs)
+            output[key] = plot_collapse(
+                data_array=val["scipp_obj_dict"][key], dim=collapse,
+                axes=val["axes"], **kwargs)
         else:
-            output[key] = dispatch(input_data=val["dataset"],
-                                   name=key,
-                                   ndim=val["ndims"],
+            output[key] = dispatch(scipp_obj_dict=val["scipp_obj_dict"],
+                                   name=key, ndim=val["ndims"],
                                    sparse_dim=sparse_dim[key],
                                    projection=projection,
                                    axes=val["axes"],
                                    mpl_line_params=val["mpl_line_params"],
+                                   bins=bins,
                                    **kwargs)
     return output

@@ -6,7 +6,8 @@
 from ..config import plot as config
 from .render import render_plot
 from .slicer import Slicer
-from .tools import axis_label, edges_to_centers
+from .tools import edges_to_centers
+from ..utils import name_with_unit
 
 # Other imports
 import numpy as np
@@ -16,7 +17,7 @@ import ipywidgets as widgets
 import warnings
 
 
-def plot_1d(input_data=None, axes=None, values=None, variances=None,
+def plot_1d(scipp_obj_dict=None, axes=None, values=None, variances=None,
             masks={"color": "k"}, filename=None, figsize=None, mpl_axes=None,
             mpl_line_params=None, logx=False, logy=False, logxy=False):
     """
@@ -29,13 +30,15 @@ def plot_1d(input_data=None, axes=None, values=None, variances=None,
 
     """
 
+    # Get the first entry in the dict of scipp objects
+    _, data_array = next(iter(scipp_obj_dict.items()))
     if axes is None:
-        axes = input_data.dims
+        axes = data_array.dims
 
-    sv = Slicer1d(input_data=input_data, axes=axes, values=values,
-                  variances=variances, masks=masks, mpl_axes=mpl_axes,
-                  mpl_line_params=mpl_line_params, logx=logx or logxy,
-                  logy=logy or logxy)
+    sv = Slicer1d(scipp_obj_dict=scipp_obj_dict, data_array=data_array,
+                  axes=axes, values=values, variances=variances, masks=masks,
+                  mpl_axes=mpl_axes, mpl_line_params=mpl_line_params,
+                  logx=logx or logxy, logy=logy or logxy)
 
     if mpl_axes is None:
         render_plot(figure=sv.fig, widgets=sv.box, filename=filename)
@@ -45,14 +48,15 @@ def plot_1d(input_data=None, axes=None, values=None, variances=None,
 
 class Slicer1d(Slicer):
 
-    def __init__(self, input_data=None, axes=None, values=None,
-                 variances=None, masks=None, mpl_axes=None,
+    def __init__(self, scipp_obj_dict=None, data_array=None, axes=None,
+                 values=None, variances=None, masks=None, mpl_axes=None,
                  mpl_line_params=None, logx=False, logy=False):
 
-        super().__init__(input_data=input_data, axes=axes, values=values,
-                         variances=variances, masks=masks,
-                         button_options=['X'])
+        super().__init__(scipp_obj_dict=scipp_obj_dict, data_array=data_array,
+                         axes=axes, values=values, variances=variances,
+                         masks=masks, button_options=['X'])
 
+        self.scipp_obj_dict = scipp_obj_dict
         self.fig = None
         self.mpl_axes = mpl_axes
         if self.mpl_axes is not None:
@@ -72,7 +76,7 @@ class Slicer1d(Slicer):
         self.names = []
         ymin = 1.0e30
         ymax = -1.0e30
-        for i, (name, var) in enumerate(sorted(self.input_data)):
+        for i, (name, var) in enumerate(sorted(self.scipp_obj_dict.items())):
             self.names.append(name)
             if var.variances is not None:
                 err = np.sqrt(var.variances)
@@ -90,7 +94,7 @@ class Slicer1d(Slicer):
             else:
                 ymin = min(ymin, np.nanmin(var.values - err))
                 ymax = max(ymax, np.nanmax(var.values + err))
-            ylab = axis_label(var=var, name="")
+            ylab = name_with_unit(var=var, name="")
 
         dy = 0.05*(ymax - ymin)
         yrange = [ymin-dy, ymax+dy]
@@ -182,7 +186,7 @@ class Slicer1d(Slicer):
         if self.params["masks"]["show"]:
             mslice = self.slice_masks()
 
-        for i, (name, var) in enumerate(sorted(self.input_data)):
+        for i, (name, var) in enumerate(sorted(self.scipp_obj_dict.items())):
             vslice = self.slice_data(var)
 
             # If this is a histogram, plot a step function
@@ -234,8 +238,8 @@ class Slicer1d(Slicer):
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", category=UserWarning)
             self.ax.set_xlim([new_x[0] - deltax, new_x[-1] + deltax])
-        self.ax.set_xlabel(axis_label(self.slider_x[dim_str],
-                                      name=self.slider_labels[dim_str]))
+        self.ax.set_xlabel(name_with_unit(self.slider_x[dim_str],
+                                          name=self.slider_labels[dim_str]))
         return
 
     def slice_data(self, var):
@@ -243,6 +247,8 @@ class Slicer1d(Slicer):
         # Slice along dimensions with active sliders
         for key, val in self.slider.items():
             if not val.disabled:
+                self.lab[key].value = self.make_slider_label(
+                    self.slider_x[key], val.value)
                 vslice = vslice[val.dim, val.value]
         return vslice
 
@@ -257,7 +263,7 @@ class Slicer1d(Slicer):
     def update_slice(self, change):
         if self.params["masks"]["show"]:
             mslice = self.slice_masks()
-        for i, (name, var) in enumerate(sorted(self.input_data)):
+        for i, (name, var) in enumerate(sorted(self.scipp_obj_dict.items())):
             vslice = self.slice_data(var)
             vals = vslice.values
             if self.histograms[name][self.button_axis_to_dim["x"]]:
@@ -296,7 +302,7 @@ class Slicer1d(Slicer):
             self.ax.lines[-1].set_color(self.keep_buttons[owner.id][2].value)
             self.ax.lines[-1].set_url(owner.id)
             self.ax.lines[-1].set_zorder(1)
-        if self.input_data[lab].variances is not None:
+        if self.scipp_obj_dict[lab].variances is not None:
             err = self.members["error_y"][lab].get_children()
             self.ax.collections.append(cp.copy(err[0]))
             self.ax.collections[-1].set_color(

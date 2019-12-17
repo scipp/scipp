@@ -4,36 +4,8 @@
 # @author Igor Gudich & Neil Vaytet
 
 from .config import colors
+from .utils import value_to_string, name_with_unit
 from ._scipp import core as sc
-
-
-def value_to_string(val, precision=3):
-    if (not isinstance(val, float)) or (val == 0):
-        text = str(val)
-    elif (abs(val) >= 10.0**(precision+1)) or \
-         (abs(val) <= 10.0**(-precision-1)):
-        text = "{val:.{prec}e}".format(val=val, prec=precision)
-    else:
-        text = "{}".format(val)
-        if len(text) > precision + 2 + (text[0] == '-'):
-            text = "{val:.{prec}f}".format(val=val, prec=precision)
-    return text
-
-
-def title_to_string(var, name=None, replace_dim=True):
-    """
-    Make a column title with "Name [unit]"
-    """
-    if name is not None:
-        text = name
-    else:
-        text = str(var.dims[0])
-        if replace_dim:
-            text = text.replace("Dim.", "")
-
-    if var.unit != sc.units.dimensionless:
-        text += " [{}]".format(var.unit)
-    return text
 
 
 def _make_table_section_name_header(name, section, style):
@@ -94,7 +66,7 @@ def _make_table_unit_headers(section, text_style):
     for key, val in section:
         html.append("<th {} colspan='{}'>{}</th>".format(
             text_style, 1 + (val.variances is not None),
-            title_to_string(val, name=key)))
+            name_with_unit(val, name=key)))
     return "".join(html)
 
 
@@ -179,7 +151,7 @@ def table_from_dataset(dataset, is_hist=False, headers=2):
         if coord is not None:
             html += "<th {} colspan='{}'>{}</th>".format(
                 mstyle, 1 + (coord.variances is not None),
-                title_to_string(coord, replace_dim=False))
+                name_with_unit(coord, replace_dim=False))
 
         html += _make_table_unit_headers(dataset.labels, mstyle)
         html += _make_table_unit_headers(dataset.masks, mstyle)
