@@ -56,21 +56,24 @@ def parse_params(params=None, defaults=None, globs=None, array=None):
             parsed[key] = val
 
     if array is not None:
+        # TODO: possibly need to add a C++ method for finding min/max of
+        # Variables to avoid the creation of a large array of bools in
+        # np.ma.masked_invalid
         if parsed["log"]:
             with np.errstate(divide="ignore", invalid="ignore"):
-                subset = np.where(np.isfinite(np.log10(array)))
+                subset = np.ma.masked_invalid(np.log10(array), copy=False)
         else:
-            subset = np.where(np.isfinite(array))
+            subset = np.ma.masked_invalid(array, copy=False)
         if parsed["vmin"] is not None:
             vmin = parsed["vmin"]
         else:
-            vmin = np.amin(array[subset])
+            vmin = subset.min()
         if parsed["vmax"] is not None:
             vmax = parsed["vmax"]
         else:
-            vmax = np.amax(array[subset])
+            vmax = subset.max()
         if parsed["log"]:
-            norm = LogNorm(vmin=vmin, vmax=vmax)
+            norm = LogNorm(vmin=10.0**vmin, vmax=10.0**vmax)
         else:
             norm = Normalize(vmin=vmin, vmax=vmax)
         parsed["norm"] = norm

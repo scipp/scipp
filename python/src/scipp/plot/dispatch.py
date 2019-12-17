@@ -34,8 +34,7 @@ def dispatch(scipp_obj_dict, ndim=0, name=None, collapse=None, sparse_dim=None,
     projection = projection.lower()
 
     if sparse_dim is not None and bins is None:
-        return plot_sparse(scipp_obj_dict[name], ndim=ndim,
-                           sparse_dim=sparse_dim,
+        return plot_sparse(scipp_obj_dict, ndim=ndim, sparse_dim=sparse_dim,
                            mpl_scatter_params=mpl_line_params, **kwargs)
     elif projection == "1d":
         return plot_1d(scipp_obj_dict, mpl_line_params=mpl_line_params,

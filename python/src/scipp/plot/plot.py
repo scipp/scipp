@@ -8,7 +8,7 @@ from .sciplot import SciPlot
 
 
 def plot(scipp_obj, collapse=None, projection=None, axes=None, color=None,
-         marker=None, linestyle=None, linewidth=None, **kwargs):
+         marker=None, linestyle=None, linewidth=None, bins=None, **kwargs):
     """
     Wrapper function to plot any kind of dataset
     """
@@ -48,7 +48,8 @@ def plot(scipp_obj, collapse=None, projection=None, axes=None, color=None,
         if ndims > 0:
             sp_dim = var.sparse_dim
             ax = axes
-            if ndims == 1 or projection == "1d" or projection == "1D":
+            if ndims == 1 or projection == "1d" or projection == "1D" or \
+               (sp_dim is not None and bins is None):
                 # Construct a key from the dimensions
                 if axes is not None:
                     # Check if we are dealing with a dict mapping dimensions to
@@ -110,5 +111,6 @@ def plot(scipp_obj, collapse=None, projection=None, axes=None, color=None,
                                    projection=projection,
                                    axes=val["axes"],
                                    mpl_line_params=val["mpl_line_params"],
+                                   bins=bins,
                                    **kwargs)
     return output

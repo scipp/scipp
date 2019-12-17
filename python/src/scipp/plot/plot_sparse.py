@@ -10,11 +10,12 @@ from .tools import parse_params
 from ..utils import name_with_unit
 
 # Other imports
+import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import cm
 
 
-def plot_sparse(data_array, ndim=0, sparse_dim=None, logx=False,
+def plot_sparse(scipp_obj_dict, ndim=0, sparse_dim=None, logx=False,
                 logy=False, logxy=False, weights="color", size=10.0,
                 filename=None, axes=None, mpl_axes=None, opacity=0.7,
                 title=None, mpl_scatter_params=None, cmap=None, log=None,
@@ -25,17 +26,34 @@ def plot_sparse(data_array, ndim=0, sparse_dim=None, logx=False,
     sliders.
     """
 
-    xmin, xmax, sparse_data, dims, ndims = visit_sparse_data(
-        data_array, sparse_dim=sparse_dim, return_sparse_data=True,
-        weights=weights)
+    sparse_data = {}
+    data_minmax = []
+    key_save = None
+    key_weights = None
 
-    coords = data_array.coords
+    for key, data_array in scipp_obj_dict.items():
+
+        key_save = key
+
+        xmin, xmax, data, dims, ndims = visit_sparse_data(
+            data_array, sparse_dim=sparse_dim, return_sparse_data=True,
+            weights=weights)
+
+        sparse_data[key] = {"data": data, "dims": dims, "ndims": ndims,
+                            "coords": data_array.coords,
+                            "has_weights": len(data) > ndims}
+
+        if sparse_data[key]["has_weights"]:
+            key_weights = key
+            data_minmax.append(np.amin(data[-1]))
+            data_minmax.append(np.amax(data[-1]))
 
     # Parse parameters for colorbar
-    globs = {"cmap": cmap, "log": log, "vmin": vmin, "vmax": vmax}
-    cbar = parse_params(globs=globs, array=sparse_data[-1])
+    if key_weights is not None:
+        globs = {"cmap": cmap, "log": log, "vmin": vmin, "vmax": vmax}
+        cbar = parse_params(globs=globs, array=data_minmax)
 
-    members = {}
+    members = {"scatter": {}}
     ipv = None
 
     if ndims < 3:
@@ -55,30 +73,38 @@ def plot_sparse(data_array, ndim=0, sparse_dim=None, logx=False,
 
         widg = None
         members.update(ax)
-        params = dict(label=data_array.name, edgecolors="#ffffff",
-                      c=mpl_scatter_params["color"][0],
-                      marker=mpl_scatter_params["marker"][0])
-        xs = sparse_data[ndims - 1]
-        ys = sparse_data[ndims - 2]
-        if len(sparse_data) > ndims:
-            if weights.count("size") > 0:
-                params["s"] = sparse_data[-1] * size
-                params["alpha"] = opacity
-            if weights.count("color") > 0:
-                params["c"] = sparse_data[-1]
-                params["cmap"] = cbar["cmap"]
-                params["norm"] = cbar["norm"]
 
-        scat = ax["ax"].scatter(xs, ys, **params)
-        if len(sparse_data) > ndims and weights.count("color") > 0:
-            colorbar = plt.colorbar(scat, ax=ax["ax"], cax=ax["cax"])
+        for i, (key, data_array) in enumerate(scipp_obj_dict.items()):
+            params = dict(label=data_array.name, edgecolors="#ffffff",
+                          c=mpl_scatter_params["color"][i],
+                          marker=mpl_scatter_params["marker"][i])
+            xs = sparse_data[key]["data"][sparse_data[key]["ndims"] - 1]
+            ys = sparse_data[key]["data"][sparse_data[key]["ndims"] - 2]
+            if sparse_data[key]["has_weights"]:
+                if weights.count("size") > 0:
+                    params["s"] = sparse_data[key]["data"][-1] * size
+                    params["alpha"] = opacity
+                if weights.count("color") > 0:
+                    params["c"] = sparse_data[key]["data"][-1]
+                    params["cmap"] = cbar["cmap"]
+                    params["norm"] = cbar["norm"]
+
+            # print(params["norm"])
+            members["scatter"][key] = ax["ax"].scatter(xs, ys, **params)
+
+        if key_weights is not None and weights.count("color") > 0:
+            colorbar = plt.colorbar(members["scatter"][key_weights],
+                                    ax=ax["ax"], cax=ax["cax"])
             colorbar.ax.set_ylabel(name_with_unit(name="Weights",
                                                   log=cbar["log"]))
             members["colorbars"] = colorbar
 
-        ax["ax"].set_xlabel(name_with_unit(coords[sparse_dim]))
+        ax["ax"].set_xlabel(
+            name_with_unit(sparse_data[key_save]["coords"][sparse_dim]))
         if ndims > 1:
-            ax["ax"].set_ylabel(name_with_unit(coords[dims[int(ndims == 3)]]))
+            ax["ax"].set_ylabel(
+                name_with_unit(
+                    sparse_data[key_save]["coords"][sparse_data[key_save]["dims"][0]]))
 
         ax["ax"].legend()
         if title is not None:
@@ -123,6 +149,6 @@ def plot_sparse(data_array, ndim=0, sparse_dim=None, logx=False,
 
     render_plot(figure=fig, widgets=widg, filename=filename, ipv=ipv)
 
-    members.update({"fig": fig, "scatter": scat})
+    members.update({"fig": fig})
 
     return members
