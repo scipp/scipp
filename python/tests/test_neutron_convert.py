@@ -21,7 +21,7 @@ def make_dataset_with_beamline():
             Dim.Position:
             sc.Variable(dims=[Dim.Position],
                         shape=(4, ),
-                        dtype=sc.dtype.vector_3_double,
+                        dtype=sc.dtype.vector_3_float64,
                         unit=sc.units.m)
         },
         labels={'component_info': sc.Variable(dtype=sc.dtype.Dataset)})
@@ -33,7 +33,7 @@ def make_dataset_with_beamline():
         'position':
         sc.Variable(dims=[Dim.Row],
                     shape=(2, ),
-                    dtype=sc.dtype.vector_3_double,
+                    dtype=sc.dtype.vector_3_float64,
                     unit=sc.units.m)
     })
     component_info['position'].values[0] = [0, 0, -10]
@@ -56,11 +56,11 @@ def test_neutron_beamline():
 
     assert sc.neutron.source_position(d) == sc.Variable(
         value=np.array([0, 0, -10]),
-        dtype=sc.dtype.vector_3_double,
+        dtype=sc.dtype.vector_3_float64,
         unit=sc.units.m)
     assert sc.neutron.sample_position(d) == sc.Variable(
         value=np.array([0, 0, 0]),
-        dtype=sc.dtype.vector_3_double,
+        dtype=sc.dtype.vector_3_float64,
         unit=sc.units.m)
     assert sc.neutron.l1(d) == 10.0 * sc.units.m
     assert sc.neutron.l2(d) == sc.Variable(dims=[Dim.Position],

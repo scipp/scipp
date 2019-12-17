@@ -34,7 +34,7 @@ def make_component_info(ws):
         'position':
         sc.Variable(dims=[sc.Dim.Row],
                     shape=(2, ),
-                    dtype=sc.dtype.vector_3_double,
+                    dtype=sc.dtype.vector_3_float64,
                     unit=sc.units.m)
     })
     # Current assumption: 0 is source, 1 is sample
@@ -165,7 +165,7 @@ def init_pos(ws):
     return sc.Variable([sc.Dim.Spectrum],
                        values=pos,
                        unit=sc.units.m,
-                       dtype=sc.dtype.vector_3_double)
+                       dtype=sc.dtype.vector_3_float64)
 
 
 def init_spec_axis(ws):

@@ -22,24 +22,24 @@ def test_create_default():
     var = sc.Variable()
     assert var.dims == []
     assert var.sparse_dim is None
-    assert var.dtype == sc.dtype.double
+    assert var.dtype == sc.dtype.float64
     assert var.unit == sc.units.dimensionless
     assert var.value == 0.0
 
 
 def test_create_default_dtype():
     var = sc.Variable([sc.Dim.X], [4])
-    assert var.dtype == sc.dtype.double
+    assert var.dtype == sc.dtype.float64
 
 
 def test_create_with_dtype():
     var = sc.Variable(dims=[Dim.X], shape=[2], dtype=sc.dtype.float)
-    assert var.dtype == sc.dtype.float
+    assert var.dtype == sc.dtype.float32
 
 
 def test_create_with_numpy_dtype():
     var = sc.Variable(dims=[Dim.X], shape=[2], dtype=np.dtype(np.float32))
-    assert var.dtype == sc.dtype.float
+    assert var.dtype == sc.dtype.float32
 
 
 def test_create_with_variances():
@@ -58,7 +58,7 @@ def test_create_with_shape_and_variances():
 
 def test_create_sparse():
     var = sc.Variable([sc.Dim.X, sc.Dim.Y], [4, sc.Dimensions.Sparse])
-    assert var.dtype == sc.dtype.double
+    assert var.dtype == sc.dtype.float64
     assert var.sparse_dim == sc.Dim.Y
     assert len(var.values) == 4
     for vals in var.values:
@@ -67,7 +67,7 @@ def test_create_sparse():
 
 def test_create_from_numpy_1d():
     var = sc.Variable([sc.Dim.X], np.arange(4.0))
-    assert var.dtype == sc.dtype.double
+    assert var.dtype == sc.dtype.float64
     np.testing.assert_array_equal(var.values, np.arange(4))
 
 
@@ -81,7 +81,7 @@ def test_create_with_variances_from_numpy_1d():
     var = sc.Variable([sc.Dim.X],
                       values=np.arange(4.0),
                       variances=np.arange(4.0, 8.0))
-    assert var.dtype == sc.dtype.double
+    assert var.dtype == sc.dtype.float64
     np.testing.assert_array_equal(var.values, np.arange(4))
     np.testing.assert_array_equal(var.variances, np.arange(4, 8))
 
@@ -90,7 +90,7 @@ def test_create_scalar():
     var = sc.Variable(1.2)
     assert var.value == 1.2
     assert var.dims == []
-    assert var.dtype == sc.dtype.double
+    assert var.dtype == sc.dtype.float64
     assert var.unit == sc.units.dimensionless
 
 
@@ -107,7 +107,7 @@ def test_create_scalar_quantity():
     var = sc.Variable(1.2, unit=sc.units.m)
     assert var.value == 1.2
     assert var.dims == []
-    assert var.dtype == sc.dtype.double
+    assert var.dtype == sc.dtype.float64
     assert var.unit == sc.units.m
 
 
@@ -127,16 +127,16 @@ def test_create_1D_string():
     assert var.unit == sc.units.m
 
 
-def test_create_1D_vector_3_double():
+def test_create_1D_vector_3_float64():
     var = sc.Variable(dims=[Dim.X],
                       values=[[1, 2, 3], [4, 5, 6]],
                       unit=sc.units.m,
-                      dtype=sc.dtype.vector_3_double)
+                      dtype=sc.dtype.vector_3_float64)
     assert len(var.values) == 2
     np.testing.assert_array_equal(var.values[0], [1, 2, 3])
     np.testing.assert_array_equal(var.values[1], [4, 5, 6])
     assert var.dims == [Dim.X]
-    assert var.dtype == sc.dtype.vector_3_double
+    assert var.dtype == sc.dtype.vector_3_float64
     assert var.unit == sc.units.m
 
 
@@ -148,7 +148,7 @@ def test_create_2D_inner_size_3():
     np.testing.assert_array_equal(var.values[0], [0, 1, 2])
     np.testing.assert_array_equal(var.values[1], [3, 4, 5])
     assert var.dims == [Dim.X, Dim.Y]
-    assert var.dtype == sc.dtype.double
+    assert var.dtype == sc.dtype.float64
     assert var.unit == sc.units.m
 
 
@@ -286,7 +286,7 @@ def test_sparse_setitem_shape_fail():
 
 def test_sparse_setitem_float():
     var = sc.Variable([sc.Dim.X, sc.Dim.Y], [4, sc.Dimensions.Sparse],
-                      dtype=sc.dtype.float)
+                      dtype=sc.dtype.float32)
     var[Dim.X, 0].values = np.arange(4)
     assert len(var[Dim.X, 0].values) == 4
 
@@ -304,13 +304,13 @@ def test_create_dtype():
     var = sc.Variable([Dim.X], values=np.arange(4).astype(np.int32))
     assert var.dtype == sc.dtype.int32
     var = sc.Variable([Dim.X], values=np.arange(4).astype(np.float64))
-    assert var.dtype == sc.dtype.double
+    assert var.dtype == sc.dtype.float64
     var = sc.Variable([Dim.X], values=np.arange(4).astype(np.float32))
-    assert var.dtype == sc.dtype.float
+    assert var.dtype == sc.dtype.float32
     var = sc.Variable([Dim.X], (4, ), dtype=np.dtype(np.float64))
-    assert var.dtype == sc.dtype.double
+    assert var.dtype == sc.dtype.float64
     var = sc.Variable([Dim.X], (4, ), dtype=np.dtype(np.float32))
-    assert var.dtype == sc.dtype.float
+    assert var.dtype == sc.dtype.float32
     var = sc.Variable([Dim.X], (4, ), dtype=np.dtype(np.int64))
     assert var.dtype == sc.dtype.int64
     var = sc.Variable([Dim.X], (4, ), dtype=np.dtype(np.int32))
@@ -589,11 +589,11 @@ def test_dot():
     a = sc.Variable(dims=[Dim.X],
                     values=[[1, 0, 0], [0, 1, 0]],
                     unit=sc.units.m,
-                    dtype=sc.dtype.vector_3_double)
+                    dtype=sc.dtype.vector_3_float64)
     b = sc.Variable(dims=[Dim.X],
                     values=[[1, 0, 0], [1, 0, 0]],
                     unit=sc.units.m,
-                    dtype=sc.dtype.vector_3_double)
+                    dtype=sc.dtype.vector_3_float64)
     expected = sc.Variable([Dim.X],
                            values=np.array([1.0, 0.0]),
                            unit=sc.units.m**2)
@@ -622,7 +622,7 @@ def test_norm():
     var = sc.Variable(dims=[Dim.X],
                       values=[[1, 0, 0], [3, 4, 0]],
                       unit=sc.units.m,
-                      dtype=sc.dtype.vector_3_double)
+                      dtype=sc.dtype.vector_3_float64)
     expected = sc.Variable([Dim.X],
                            values=np.array([1.0, 5.0]),
                            unit=sc.units.m)
@@ -751,13 +751,14 @@ def test_construct_0d_numpy():
 
 def test_construct_0d_native_python_types():
     assert sc.Variable(2).dtype == sc.dtype.int64
-    assert sc.Variable(2.0).dtype == sc.dtype.double
+    assert sc.Variable(2.0).dtype == sc.dtype.float64
     assert sc.Variable(True).dtype == sc.dtype.bool
 
 
 def test_construct_0d_dtype():
     assert sc.Variable(2, dtype=np.int32).dtype == sc.dtype.int32
-    assert sc.Variable(np.float64(2), dtype=np.float32).dtype == sc.dtype.float
+    assert sc.Variable(np.float64(2),
+                       dtype=np.float32).dtype == sc.dtype.float32
     assert sc.Variable(1, dtype=np.bool).dtype == sc.dtype.bool
 
 
