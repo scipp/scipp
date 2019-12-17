@@ -241,8 +241,6 @@ class Slicer:
                     make_fake_coord = True
                     ticks = np.array(
                         self.data_array.coords[dim].values).astype(str)
-                # if ticks is not None:
-                #     ticks = np.concatenate(([""], ticks))
             if make_fake_coord:
                 var = Variable(
                     [dim], values=np.arange(self.dims_and_shapes[str(dim)]))
@@ -260,3 +258,19 @@ class Slicer:
                                "must be either a Scipp dimension "
                                "or a string.".format(axis))
         return dim, lab, var, ticks
+
+    def get_custom_ticks(self, ax, dim_str, xy="x"):
+        """
+        Return a list of string to be used as axis tick labels in the case of
+        strings or vectors as one axis coordinate.
+        """
+        getticks = getattr(ax, "get_{}ticks".format(xy))
+        xticks = getticks()
+        if xticks[2] - xticks[1] < 1:
+            ax.xaxis.set_major_locator(ticker.MultipleLocator(1.0))
+            xticks = getticks()
+        new_ticks = [""] * len(xticks)
+        for i, x in enumerate(xticks):
+            if x >= 0 and x < self.slider_nx[dim_str]:
+                new_ticks[i] = self.slider_ticks[dim_str][int(x)]
+        return new_ticks

@@ -155,7 +155,7 @@ class Slicer2d(Slicer):
 
     def update_axes(self):
         # Go through the buttons and select the right coordinates for the axes
-        axlabels = {"x": None, "y": None}
+        axparams = {"x": {}, "y": {}}
         for key, button in self.buttons.items():
             if self.slider[key].disabled:
                 but_val = button.value.lower()
@@ -167,9 +167,10 @@ class Slicer2d(Slicer):
                 else:
                     self.extent[but_val] = self.slider_x[key].values[[0, -1]]
 
-                axlabels[but_val] = name_with_unit(
+                axparams[but_val]["labels"] = name_with_unit(
                             self.slider_x[key],
                             name=self.slider_labels[key])
+                axparams[but_val]["dim_str"] = key
 
         extent_array = np.array(list(self.extent.values())).flatten()
         for key in self.ax.keys():
@@ -180,9 +181,13 @@ class Slicer2d(Slicer):
                     self.im[self.get_mask_key(key)].set_extent(extent_array)
                 self.ax[key].set_xlim(self.extent["x"])
                 self.ax[key].set_ylim(self.extent["y"])
-            self.ax[key].set_xlabel(axlabels["x"])
-            self.ax[key].set_ylabel(axlabels["y"])
-
+            self.ax[key].set_xlabel(axparams["x"]["labels"])
+            self.ax[key].set_ylabel(axparams["y"]["labels"])
+            for xy, param in axparams.items():
+                if self.slider_ticks[param["dim_str"]] is not None:
+                    getattr(self.ax[key], "set_{}ticklabels".format(xy))(
+                        self.get_custom_ticks(
+                            ax=self.ax[key], dim_str=param["dim_str"], xy=xy))
         return
 
     # Define function to update slices
