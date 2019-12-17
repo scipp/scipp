@@ -10,6 +10,7 @@ from .._scipp.core import combine_masks, Variable, Dim, dtype
 
 # Other imports
 import numpy as np
+import matplotlib.ticker as ticker
 
 
 class Slicer:
@@ -223,11 +224,12 @@ class Slicer:
         """
         Get dimensions and label (if present) from requested axis
         """
+        ticks = None
         if isinstance(axis, Dim):
             dim = axis
             lab = None
-            ticks = None
             make_fake_coord = False
+            fake_unit = None
             if not self.data_array.coords.__contains__(dim):
                 make_fake_coord = True
             else:
@@ -241,9 +243,13 @@ class Slicer:
                     make_fake_coord = True
                     ticks = np.array(
                         self.data_array.coords[dim].values).astype(str)
+                if make_fake_coord:
+                    fake_unit = self.data_array.coords[dim].unit
             if make_fake_coord:
-                var = Variable(
-                    [dim], values=np.arange(self.dims_and_shapes[str(dim)]))
+                args = {"values": np.arange(self.dims_and_shapes[str(dim)])}
+                if fake_unit is not None:
+                    args["unit"] = fake_unit
+                var = Variable([dim], **args)
             else:
                 var = self.data_array.coords[dim]
         elif isinstance(axis, str):

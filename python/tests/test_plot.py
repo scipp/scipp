@@ -101,7 +101,7 @@ def make_sparse_dataset(ndim=1, data=False):
     params = {"coords": {dim_list[0]: var}}
     if data:
         params["data"] = dat
-    d['a'] = sc.DataArray(**params)
+    d["a"] = sc.DataArray(**params)
     return d
 
 
@@ -397,3 +397,56 @@ def test_plot_dataset_proxy():
 def test_plot_data_array():
     d = make_dense_dataset(ndim=1)
     plot(d["Sample"])
+
+
+def test_plot_vector_axis_labels_1d():
+    d = sc.Dataset()
+    N = 10
+    vecs = []
+    for i in range(N):
+        vecs.append(np.random.random(3))
+    d.coords[Dim.X] = sc.Variable([Dim.X], values=vecs, unit=sc.units.m,
+                                  dtype=sc.dtype.vector_3_float64)
+    d["Sample"] = sc.Variable([Dim.X], values=np.random.rand(N),
+                              unit=sc.units.counts)
+    plot(d)
+
+
+def test_plot_string_axis_labels_1d():
+    d = sc.Dataset()
+    N = 10
+    d.coords[Dim.X] = sc.Variable(
+        dims=[Dim.X],
+        values=["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"],
+        unit=sc.units.m)
+    d["Sample"] = sc.Variable([Dim.X], values=np.random.rand(N),
+                              unit=sc.units.counts)
+    plot(d)
+
+
+def test_plot_string_axis_labels_1d_short():
+    d = sc.Dataset()
+    N = 5
+    d.coords[Dim.X] = sc.Variable(dims=[Dim.X],
+                                  values=["a", "b", "c", "d", "e"],
+                                  unit=sc.units.m)
+    d["Sample"] = sc.Variable([Dim.X], values=np.random.rand(N),
+                              unit=sc.units.counts)
+    plot(d)
+
+
+def test_plot_string_and_vector_axis_labels_2d():
+    N = 10
+    M = 5
+    vecs = []
+    for i in range(N):
+        vecs.append(np.random.random(3))
+    d = sc.Dataset()
+    d.coords[Dim.X] = sc.Variable([Dim.X], values=vecs, unit=sc.units.m,
+                                  dtype=sc.dtype.vector_3_float64)
+    d.coords[Dim.Y] = sc.Variable([Dim.Y], values=["a", "b", "c", "d", "e"],
+                                  unit=sc.units.m)
+    d["Signal"] = sc.Variable([Dim.Y, Dim.X],
+                              values=np.random.random([M, N]),
+                              unit=sc.units.counts)
+    plot(d)

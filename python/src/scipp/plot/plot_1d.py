@@ -13,7 +13,6 @@ from ..utils import name_with_unit
 import numpy as np
 import copy as cp
 import matplotlib.pyplot as plt
-import matplotlib.ticker as ticker
 import ipywidgets as widgets
 import warnings
 
