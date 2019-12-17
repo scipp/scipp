@@ -34,7 +34,7 @@ def make_component_info(ws):
         'position':
         sc.Variable(dims=[sc.Dim.Row],
                     shape=(2, ),
-                    dtype=sc.dtype.vector_3_double,
+                    dtype=sc.dtype.vector_3_float64,
                     unit=sc.units.m)
     })
     # Current assumption: 0 is source, 1 is sample
@@ -165,13 +165,17 @@ def init_pos(ws):
     return sc.Variable([sc.Dim.Spectrum],
                        values=pos,
                        unit=sc.units.m,
-                       dtype=sc.dtype.vector_3_double)
+                       dtype=sc.dtype.vector_3_float64)
 
 
 def init_spec_axis(ws):
     axis = ws.getAxis(1)
     dim, unit = validate_and_get_unit(axis.getUnit().unitID())
-    return dim, sc.Variable([dim], values=axis.extractValues(), unit=unit)
+    dtype = sc.dtype.int32 if dim == sc.Dim.Spectrum else None
+    return dim, sc.Variable([dim],
+                            values=axis.extractValues(),
+                            unit=unit,
+                            dtype=dtype)
 
 
 def set_common_bins_masks(bin_masks, dim, masked_bins):
@@ -268,7 +272,8 @@ def convertEventWorkspace_to_dataarray(ws, load_pulse_times):
                         unit=unit)
     if load_pulse_times:
         labs = sc.Variable([spec_dim, dim],
-                           shape=[nHist, sc.Dimensions.Sparse])
+                           shape=[nHist, sc.Dimensions.Sparse],
+                           dtype=sc.dtype.int64)
 
     # Check for weighted events
     evtp = ws.getSpectrum(0).getEventType()

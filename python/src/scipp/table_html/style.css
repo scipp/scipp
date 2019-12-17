@@ -9,6 +9,11 @@
   max-width: 800px;
 }
 
+/* The CSS styling for the inline attributes table */
+.xr-var-attrs .xr-wrap{
+  padding-left: 3em;
+}
+
 .xr-header {
   padding-top: 6px;
   padding-bottom: 6px;
@@ -249,14 +254,21 @@
   z-index: 1;
 }
 
-.xr-var-attrs,
+.xr-var-attrs {
+  display: block;
+}
 .xr-var-data {
   display: none;
+}
+.xr-var-attrs,
+.xr-var-data {
   background-color: #fff !important;
   padding-bottom: 5px !important;
 }
 
-.xr-var-attrs-in:checked ~ .xr-var-attrs,
+.xr-var-attrs-in:checked ~ .xr-var-attrs {
+  display: none;
+}
 .xr-var-data-in:checked ~ .xr-var-data {
   display: block;
 }
