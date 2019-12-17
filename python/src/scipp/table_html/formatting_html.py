@@ -196,7 +196,7 @@ def _extract_sparse(x):
 
 def _make_inline_attributes(var):
     disabled = "disabled"
-    attrs_ul = None
+    attrs_ul = ""
     attrs_sections = []
     if hasattr(var, "coords"):
         sparse_coords = _extract_sparse(var.coords)
@@ -277,7 +277,7 @@ def summarize_variable(name, var, is_index=False, has_attrs=False):
         f"<input id='{data_id}' class='xr-var-data-in' type='checkbox'>",
         f"<label for='{data_id}' title='Show/Hide data repr'>",
         f"{data_icon}</label>",
-        f"<div class='xr-var-attrs'>{attrs_ul}</div>",
+        f"<div class='xr-var-attrs'>{attrs_ul}</div>" if attrs_ul else "",
         f"<pre class='xr-var-data'>{data_repr}</pre>",
     ]
     return "".join(html)
