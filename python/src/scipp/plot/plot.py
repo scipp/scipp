@@ -19,12 +19,14 @@ def plot(scipp_obj, collapse=None, projection=None, axes=None, color=None,
     from .dispatch import dispatch
 
     inventory = dict()
-    if type(scipp_obj) is sc.Dataset:
+    tp = type(scipp_obj)
+    if tp is sc.Dataset:
         for name, var in sorted(scipp_obj):
             inventory[name] = var
+    elif tp is sc.Variable or tp is sc.VariableProxy:
+        inventory[str(tp)] = sc.DataArray(data=scipp_obj)
     else:
-        inventory[scipp_obj.name if hasattr(scipp_obj, "name")
-                  else " "] = scipp_obj
+        inventory[scipp_obj.name] = scipp_obj
 
     # Prepare container for matplotlib line parameters
     line_params = {"color": color,

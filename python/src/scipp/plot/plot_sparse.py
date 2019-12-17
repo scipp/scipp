@@ -104,7 +104,8 @@ def plot_sparse(scipp_obj_dict, ndim=0, sparse_dim=None, logx=False,
         if ndims > 1:
             ax["ax"].set_ylabel(
                 name_with_unit(
-                    sparse_data[key_save]["coords"][sparse_data[key_save]["dims"][0]]))
+                    sparse_data[key_save]["coords"]
+                    [sparse_data[key_save]["dims"][0]]))
 
         ax["ax"].legend()
         if title is not None:
@@ -121,26 +122,39 @@ def plot_sparse(scipp_obj_dict, ndim=0, sparse_dim=None, logx=False,
         fig = ipv.figure(width=config.width, height=config.height,
                          animation=0)
 
-        params = dict(color=mpl_scatter_params["color"][0],
-                      marker=mpl_scatter_params["marker"][0])
-        if len(sparse_data) > ndims and weights:
+        # Map mpl scatter markers to ipyvolume scatter markers
+        ipvmarkers = ["sphere", "arrow", "box", "diamond", "point_2d",
+                      "square_2d", "triangle_2d", "circle_2d"]
+        markers = {}
+        for i, m in enumerate(config.marker):
+            if i < len(ipvmarkers):
+                markers[m] = ipvmarkers[i]
+            else:
+                markers[m] = np.random.choice(ipvmarkers)
+
+        if key_weights is not None:
             scalar_map = cm.ScalarMappable(norm=cbar["norm"],
                                            cmap=cbar["cmap"])
-            params["color"] = scalar_map.to_rgba(sparse_data[-1])
 
-        if params["marker"] is None or len(params["marker"]) == 1:
-            params["marker"] = "sphere"
-        scat = ipv.scatter(x=sparse_data[ndims - 1], y=sparse_data[ndims - 2],
-                           z=sparse_data[0], **params)
+        for i, (key, data_array) in enumerate(scipp_obj_dict.items()):
+            params = dict(color=mpl_scatter_params["color"][i],
+                          marker=markers[mpl_scatter_params["marker"][i]])
+            if sparse_data[key]["has_weights"]:
+                params["color"] = scalar_map.to_rgba(
+                    sparse_data[key]["data"][-1])
 
-        fig.xlabel = name_with_unit(coords[sparse_dim])
-        fig.ylabel = name_with_unit(coords[dims[int(ndims == 3)]])
-        fig.zlabel = name_with_unit(coords[dims[0]])
+            members["scatter"][key] = ipv.scatter(
+                x=sparse_data[key]["data"][sparse_data[key]["ndims"] - 1],
+                y=sparse_data[key]["data"][sparse_data[key]["ndims"] - 2],
+                z=sparse_data[key]["data"][0], **params)
 
-        # if logx or logxy:
-        #     ax.set_xscale("log")
-        # if logy or logxy:
-        #     ax.set_yscale("log")
+        fig.xlabel = name_with_unit(sparse_data[key_save]["coords"]
+                                    [sparse_dim])
+        fig.ylabel = name_with_unit(sparse_data[key_save]["coords"]
+                                    [sparse_data[key_save]["dims"][1]])
+        fig.zlabel = name_with_unit(sparse_data[key_save]["coords"]
+                                    [sparse_data[key_save]["dims"][0]])
+
         widg = fig
 
     else:

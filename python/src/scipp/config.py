@@ -25,13 +25,13 @@ class _Plot:
         # Resolution
         self.dpi = 96
 
-        # Aspect ratio for images: 'equal' will conserve the aspect ratio,
-        # while 'auto' will stretch the image to the size of the figure
+        # Aspect ratio for images: "equal" will conserve the aspect ratio,
+        # while "auto" will stretch the image to the size of the figure
         self.aspect = "auto"
 
         # Make list of markers for matplotlib
-        self.marker = ['o', 'v', '^', '<', '>', '1', '2', '3', '4', '8', 's',
-                       'p', '*', 'h', 'H', '+', 'x', 'D', 'd']
+        self.marker = ["o", "^", "s", "d", "*", "1", "P", "h", "X", "v", "<",
+                       ">", "2", "3", "4", "8", "p", "H", "+", "x", "D"]
 
         # Default line width for 1D plots
         self.linewidth = [1.5]
