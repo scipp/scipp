@@ -171,7 +171,11 @@ def init_pos(ws):
 def init_spec_axis(ws):
     axis = ws.getAxis(1)
     dim, unit = validate_and_get_unit(axis.getUnit().unitID())
-    return dim, sc.Variable([dim], values=axis.extractValues(), unit=unit)
+    dtype = sc.dtype.int32 if dim == sc.Dim.Spectrum else None
+    return dim, sc.Variable([dim],
+                            values=axis.extractValues(),
+                            unit=unit,
+                            dtype=dtype)
 
 
 def set_common_bins_masks(bin_masks, dim, masked_bins):
