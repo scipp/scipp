@@ -272,7 +272,8 @@ def convertEventWorkspace_to_dataarray(ws, load_pulse_times):
                         unit=unit)
     if load_pulse_times:
         labs = sc.Variable([spec_dim, dim],
-                           shape=[nHist, sc.Dimensions.Sparse])
+                           shape=[nHist, sc.Dimensions.Sparse],
+                           dtype=sc.dtype.int64)
 
     # Check for weighted events
     evtp = ws.getSpectrum(0).getEventType()
