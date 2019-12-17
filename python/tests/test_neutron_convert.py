@@ -23,23 +23,18 @@ def make_dataset_with_beamline():
                         shape=(4, ),
                         dtype=sc.dtype.vector_3_float64,
                         unit=sc.units.m)
-        },
-        labels={'component_info': sc.Variable(dtype=sc.dtype.Dataset)})
+        })
     d.coords[Dim.Position].values[0] = [1, 0, 0]
     d.coords[Dim.Position].values[1] = [0, 1, 0]
     d.coords[Dim.Position].values[2] = [0, 0, 1]
     d.coords[Dim.Position].values[3] = [-1, 0, 0]
-    component_info = sc.Dataset({
-        'position':
-        sc.Variable(dims=[Dim.Row],
-                    shape=(2, ),
-                    dtype=sc.dtype.vector_3_float64,
-                    unit=sc.units.m)
-    })
-    component_info['position'].values[0] = [0, 0, -10]
-    component_info['position'].values[1] = [0, 0, 0]
 
-    d.labels['component_info'].value = component_info
+    d.labels['source_position'] = sc.Variable(value=np.array([0, 0, -10]),
+                                              dtype=sc.dtype.vector_3_float64,
+                                              unit=sc.units.m)
+    d.labels['sample_position'] = sc.Variable(value=np.array([0, 0, 0]),
+                                              dtype=sc.dtype.vector_3_float64,
+                                              unit=sc.units.m)
     return d
 
 

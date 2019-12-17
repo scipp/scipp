@@ -35,6 +35,14 @@ template <class T> void bind_beamline(py::module &m) {
     :return: A scalar variable containing the sample position.
     :rtype: Variable)");
 
+  m.def("flight_path_length", py::overload_cast<View>(flight_path_length), R"(
+    Compute the length of the total flight path from a data array or a dataset.
+
+    If a sample position is found this is the sum of `l1` and `l2`, otherwise the distance from the source.
+
+    :return: A scalar variable containing the total length of the flight path.
+    :rtype: Variable)");
+
   m.def("l1", py::overload_cast<View>(l1), R"(
     Compute L1, the length of the primary flight path (distance between neutron source and sample) from a data array or a dataset.
 
