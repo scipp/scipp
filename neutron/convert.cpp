@@ -74,19 +74,14 @@ template <class T> auto tofToDSpacing(const T &d) {
 }
 
 template <class T> static auto tofToWavelength(const T &d) {
-  const auto l = l1(d) + l2(d);
   return (tof_to_s * m_to_angstrom * boost::units::si::constants::codata::h /
           boost::units::si::constants::codata::m_n) /
-         std::move(l);
+         neutron::flight_path_length(d);
 }
 
 template <class T> auto tofToEnergyConversionFactor(const T &d) {
-  const auto &samplePos = sample_position(d);
-  const auto l1 = neutron::l1(d);
-  const auto specPos = neutron::position(d);
-
   // l_total = l1 + l2
-  auto conversionFactor(norm(specPos - samplePos) + l1);
+  auto conversionFactor = neutron::flight_path_length(d);
   // l_total^2
   conversionFactor *= conversionFactor;
 

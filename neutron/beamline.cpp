@@ -12,11 +12,6 @@ using namespace scipp::core;
 namespace scipp::neutron {
 
 namespace beamline_impl {
-template <class T> static auto component_positions(const T &d) {
-  return d.labels()["component_info"]
-      .template values<Dataset>()[0]["position"]
-      .data();
-}
 
 template <class T> static VariableConstProxy position(const T &d) {
   if (d.coords().contains(Dim::Position))
@@ -25,13 +20,19 @@ template <class T> static VariableConstProxy position(const T &d) {
     return d.labels()["position"];
 }
 
-template <class T> static Variable source_position(const T &d) {
-  // TODO Need a better mechanism to identify source and sample.
-  return Variable(component_positions(d).slice({Dim::Row, 0}));
+template <class T> static VariableConstProxy source_position(const T &d) {
+  return d.labels()["source_position"];
 }
 
-template <class T> static Variable sample_position(const T &d) {
-  return Variable(component_positions(d).slice({Dim::Row, 1}));
+template <class T> static VariableConstProxy sample_position(const T &d) {
+  return d.labels()["sample_position"];
+}
+
+template <class T> static Variable flight_path_length(const T &d) {
+  if (d.labels().contains("sample_position"))
+    return l1(d) + l2(d);
+  else
+    return norm(position(d) - source_position(d));
 }
 
 template <class T> static Variable l1(const T &d) {
@@ -68,11 +69,14 @@ template <class T> static Variable two_theta(const T &d) {
 core::VariableConstProxy position(const core::DatasetConstProxy &d) {
   return beamline_impl::position(d);
 }
-core::Variable source_position(const core::DatasetConstProxy &d) {
+core::VariableConstProxy source_position(const core::DatasetConstProxy &d) {
   return beamline_impl::source_position(d);
 }
-core::Variable sample_position(const core::DatasetConstProxy &d) {
+core::VariableConstProxy sample_position(const core::DatasetConstProxy &d) {
   return beamline_impl::sample_position(d);
+}
+core::Variable flight_path_length(const core::DatasetConstProxy &d) {
+  return beamline_impl::flight_path_length(d);
 }
 core::Variable l1(const core::DatasetConstProxy &d) {
   return beamline_impl::l1(d);
@@ -90,11 +94,14 @@ core::Variable two_theta(const core::DatasetConstProxy &d) {
 core::VariableConstProxy position(const core::DataConstProxy &d) {
   return beamline_impl::position(d);
 }
-core::Variable source_position(const core::DataConstProxy &d) {
+core::VariableConstProxy source_position(const core::DataConstProxy &d) {
   return beamline_impl::source_position(d);
 }
-core::Variable sample_position(const core::DataConstProxy &d) {
+core::VariableConstProxy sample_position(const core::DataConstProxy &d) {
   return beamline_impl::sample_position(d);
+}
+core::Variable flight_path_length(const core::DataConstProxy &d) {
+  return beamline_impl::flight_path_length(d);
 }
 core::Variable l1(const core::DataConstProxy &d) {
   return beamline_impl::l1(d);

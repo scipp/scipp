@@ -20,14 +20,15 @@ Dataset makeTofDataForUnitConversion(const bool dense_coord = true) {
                                Dims{Dim::Tof}, Shape{4}, units::Unit(units::us),
                                Values{4000, 5000, 6100, 7300}));
 
-  Dataset components;
-  // Source and sample
-  components.setData("position",
-                     makeVariable<Eigen::Vector3d>(
-                         Dims{Dim::Row}, Shape{2}, units::Unit(units::m),
-                         Values{Eigen::Vector3d{0.0, 0.0, -10.0},
-                                Eigen::Vector3d{0.0, 0.0, 0.0}}));
-  tof.setLabels("component_info", makeVariable<Dataset>(Values{components}));
+  static const auto source_pos = Eigen::Vector3d{0.0, 0.0, -10.0};
+  static const auto sample_pos = Eigen::Vector3d{0.0, 0.0, 0.0};
+  tof.setLabels(
+      "source_position",
+      makeVariable<Eigen::Vector3d>(units::Unit(units::m), Values{source_pos}));
+  tof.setLabels(
+      "sample_position",
+      makeVariable<Eigen::Vector3d>(units::Unit(units::m), Values{sample_pos}));
+
   tof.setLabels("position",
                 makeVariable<Eigen::Vector3d>(
                     Dims{Dim::Spectrum}, Shape{2}, units::Unit(units::m),
@@ -169,8 +170,10 @@ TEST(Convert, Tof_to_DSpacing) {
               d1[2] * 1e-3);
 
   ASSERT_EQ(dspacing.labels()["position"], tof.labels()["position"]);
-  ASSERT_EQ(dspacing.labels()["component_info"],
-            tof.labels()["component_info"]);
+  ASSERT_EQ(dspacing.labels()["source_position"],
+            tof.labels()["source_position"]);
+  ASSERT_EQ(dspacing.labels()["sample_position"],
+            tof.labels()["sample_position"]);
 }
 
 TEST(Convert, converts_sparse_labels) {
@@ -293,8 +296,10 @@ TEST(Convert, Tof_to_Wavelength) {
   EXPECT_NEAR(d1[2], 3956.0 / (1e6 * 11.0 / tof1[2]), d1[2] * 1e-3);
 
   ASSERT_EQ(wavelength.labels()["position"], tof.labels()["position"]);
-  ASSERT_EQ(wavelength.labels()["component_info"],
-            tof.labels()["component_info"]);
+  ASSERT_EQ(wavelength.labels()["source_position"],
+            tof.labels()["source_position"]);
+  ASSERT_EQ(wavelength.labels()["sample_position"],
+            tof.labels()["sample_position"]);
 }
 
 TEST(Convert, Wavelength_to_Tof) {
@@ -418,7 +423,10 @@ TEST(Convert, Tof_to_Energy_Elastic) {
       e1[2] * 1e-3);
 
   ASSERT_EQ(energy.labels()["position"], tof.labels()["position"]);
-  ASSERT_EQ(energy.labels()["component_info"], tof.labels()["component_info"]);
+  ASSERT_EQ(energy.labels()["source_position"],
+            tof.labels()["source_position"]);
+  ASSERT_EQ(energy.labels()["sample_position"],
+            tof.labels()["sample_position"]);
 }
 
 TEST(Convert, Energy_to_Tof_Elastic) {
