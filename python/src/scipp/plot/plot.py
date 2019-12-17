@@ -20,7 +20,7 @@ def plot(scipp_obj, collapse=None, projection=None, axes=None, color=None,
 
     inventory = dict()
     tp = type(scipp_obj)
-    if tp is sc.Dataset:
+    if tp is sc.Dataset or tp is sc.DatasetProxy:
         for name, var in sorted(scipp_obj):
             inventory[name] = var
     elif tp is sc.Variable or tp is sc.VariableProxy:

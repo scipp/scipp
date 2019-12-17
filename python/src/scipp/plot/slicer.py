@@ -35,17 +35,15 @@ class Slicer:
         globs = {"cmap": cmap, "log": log, "vmin": vmin, "vmax": vmax,
                  "color": color}
 
-        if hasattr(self.data_array, "values"):
-            self.params["values"] = parse_params(params=values, globs=globs,
-                                                 array=self.data_array.values)
+        self.params["values"] = parse_params(params=values, globs=globs,
+                                             array=self.data_array.values)
 
-        if hasattr(self.data_array, "variances"):
-            self.params["variances"] = {"show": False}
-            if self.data_array.variances is not None:
-                self.params["variances"].update(
-                    parse_params(params=variances, defaults={"show": False},
-                                 globs=globs,
-                                 array=np.sqrt(self.data_array.variances)))
+        self.params["variances"] = {"show": False}
+        if self.data_array.variances is not None:
+            self.params["variances"].update(
+                parse_params(params=variances, defaults={"show": False},
+                             globs=globs,
+                             array=np.sqrt(self.data_array.variances)))
 
         self.params["masks"] = parse_params(
             params=masks, defaults={"cmap": "gray", "cbar": False},

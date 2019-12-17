@@ -387,3 +387,13 @@ def test_plot_variable():
     plot(v1d)
     plot(v2d)
     plot(v3d)
+
+
+def test_plot_dataset_proxy():
+    d = make_dense_dataset(ndim=2)
+    plot(d[Dim.X, 0])
+
+
+def test_plot_data_array():
+    d = make_dense_dataset(ndim=1)
+    plot(d["Sample"])
