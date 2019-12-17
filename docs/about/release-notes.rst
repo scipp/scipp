@@ -24,6 +24,8 @@ v0.2 (December 2019)
 
 * Fancy ``_repr_html_`` for quick views of datasets in Jupyter notebooks.
 
+* Conda packages now also available for Windows.
+
 v0.1 (September 2019)
 ---------------------
 
