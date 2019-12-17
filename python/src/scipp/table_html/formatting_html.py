@@ -22,7 +22,7 @@ with open(ICONS_SVG_PATH, 'r') as f:
 
 
 def _is_dataset(x):
-    return isinstance(x, sc.Dataset) or isinstance(x, sc.DataProxy)
+    return isinstance(x, sc.Dataset) or isinstance(x, sc.DatasetProxy)
 
 
 def _format_array(data, size, ellipsis_after, do_ellide=True):
@@ -51,7 +51,9 @@ def _format_non_sparse(var, has_variances):
     data = retrieve(var, variances=has_variances)
     # avoid unintentional indexing into value of 0-D data
     if len(var.shape) == 0:
-        data = [data, ]
+        data = [
+            data,
+        ]
     if hasattr(data, 'flatten'):
         data = data.flatten()
     s = _format_array(data, size, ellipsis_after=2)
@@ -184,19 +186,34 @@ def summarize_coords(coords):
     return f"<ul class='xr-var-list'>{vars_li}</ul>"
 
 
-def _make_inline_attributes(var):
+def _extract_sparse(x):
+    """
+    Returns the (key, value) pairs where value has a sparse dim
+    :param x: dict-like, e.g., coords proxy or labels proxy
+    """
+    return [(key, value) for key, value in x if value.sparse_dim is not None]
+
+
+def _make_inline_attributes(var, has_attrs):
     disabled = "disabled"
-    attrs_ul = None
+    attrs_ul = ""
+    if not has_attrs:
+        return disabled, attrs_ul
     attrs_sections = []
     if hasattr(var, "coords"):
-        attrs_sections.append(coord_section(var.coords))
-        disabled = ""
-    if hasattr(var, "attrs"):
-        attrs_sections.append(attr_section(var.attrs))
-        disabled = ""
+        sparse_coords = _extract_sparse(var.coords)
+        if sparse_coords:
+            attrs_sections.append(coord_section(sparse_coords))
+            disabled = ""
     if hasattr(var, "labels"):
-        attrs_sections.append(label_section(var.labels))
-        disabled = ""
+        sparse_labels = _extract_sparse(var.labels)
+        if sparse_labels:
+            attrs_sections.append(label_section(sparse_labels))
+            disabled = ""
+    if hasattr(var, "attrs"):
+        if len(var.attrs) > 0:
+            attrs_sections.append(attr_section(var.attrs))
+            disabled = ""
 
     if len(attrs_sections) > 0:
         attrs_sections = "".join(f"<li class='xr-section-item'>{s}</li>"
@@ -232,7 +249,7 @@ def summarize_variable(name, var, is_index=False, has_attrs=False):
     attrs_id = "attrs-" + str(uuid.uuid4())
     data_id = "data-" + str(uuid.uuid4())
 
-    disabled, attrs_ul = _make_inline_attributes(var)
+    disabled, attrs_ul = _make_inline_attributes(var, has_attrs)
 
     preview = inline_variable_repr(var)
     data_repr = f"Values:<br>{short_data_repr_html(var)}"
@@ -262,7 +279,7 @@ def summarize_variable(name, var, is_index=False, has_attrs=False):
         f"<input id='{data_id}' class='xr-var-data-in' type='checkbox'>",
         f"<label for='{data_id}' title='Show/Hide data repr'>",
         f"{data_icon}</label>",
-        f"<div class='xr-var-attrs'>{attrs_ul}</div>",
+        f"<div class='xr-var-attrs'>{attrs_ul}</div>" if attrs_ul else "",
         f"<pre class='xr-var-data'>{data_repr}</pre>",
     ]
     return "".join(html)
