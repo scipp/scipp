@@ -33,7 +33,7 @@ def test_create_default_dtype():
 
 
 def test_create_with_dtype():
-    var = sc.Variable(dims=[Dim.X], shape=[2], dtype=sc.dtype.float)
+    var = sc.Variable(dims=[Dim.X], shape=[2], dtype=sc.dtype.float32)
     assert var.dtype == sc.dtype.float32
 
 
