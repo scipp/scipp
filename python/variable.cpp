@@ -256,12 +256,12 @@ void init_variable(py::module &m) {
       .def("rename_dims", &rename_dims<Variable>, py::arg("dims_dict"),
            "Rename dimensions.")
       .def("copy", [](const Variable &self) { return self; },
-           "Return a (deep) copy.")
+           py::call_guard<py::gil_scoped_release>(), "Return a (deep) copy.")
       .def("__copy__", [](Variable &self) { return Variable(self); },
-           "Return a (deep) copy.")
+           py::call_guard<py::gil_scoped_release>(), "Return a (deep) copy.")
       .def("__deepcopy__",
            [](Variable &self, py::dict) { return Variable(self); },
-           "Return a (deep) copy.")
+           py::call_guard<py::gil_scoped_release>(), "Return a (deep) copy.")
       .def_property_readonly("dtype", &Variable::dtype)
       .def("__radd__", [](Variable &a, double &b) { return a + b; },
            py::is_operator())

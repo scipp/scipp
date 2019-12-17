@@ -12,6 +12,11 @@ namespace py = pybind11;
 namespace scipp::python {
 
 /// Wrapper around pybind11::object to provide deep copy and deep comparison.
+///
+/// Whenever this class makes calls to Python it acquires the GIL first to
+/// ensure that it can be used as part of code that has a released GIL. Since
+/// this class is meant as an element type in Variable, this is often the case,
+/// e.g., in any operation that makes copies of variables.
 class PyObject {
 public:
   PyObject() = default;

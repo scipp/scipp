@@ -35,6 +35,8 @@ def test_scalar_Variable_py_object_change():
 
 def test_scalar_Variable_py_object_copy_is_deep_copy():
     var = sc.Variable(value=[1, 2, 3])
+    # Dataset.copy() releases the GIL. This will segfault unless
+    # scipp::python::PyObject::PyObject acquires the GIL.
     copy = var.copy()
     copy.value[0] = 666
     assert copy.value == [666, 2, 3]
@@ -46,3 +48,11 @@ def test_scalar_Variable_py_object_comparison():
     b = sc.Variable(value=[1, 2])
     assert a == b
     assert not (a != b)
+
+
+def test_py_object_delitem():
+    d = sc.Dataset()
+    d['a'] = sc.Variable(value=[1, 2])
+    # Dataset.__delitem__ releases the GIL. This will segfault unless
+    # scipp::python::PyObject::~PyObject acquires the GIL.
+    del d['a']
