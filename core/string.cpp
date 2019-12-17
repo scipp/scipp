@@ -81,23 +81,23 @@ std::string to_string(const DType dtype) {
   case DType::Dataset:
     return "Dataset";
   case DType::Float:
-    return "float";
+    return "float32";
   case DType::Double:
-    return "double";
+    return "float64";
   case DType::Int32:
     return "int32";
   case DType::Int64:
     return "int64";
   case DType::SparseFloat:
-    return "sparse_float";
+    return "sparse_float32";
   case DType::SparseDouble:
-    return "sparse_double";
+    return "sparse_float64";
   case DType::SparseInt64:
     return "sparse_int64";
   case DType::SparseInt32:
     return "sparse_int32";
   case DType::EigenVector3d:
-    return "vector_3_double";
+    return "vector_3_float64";
   case DType::PyObject:
     return "PyObject";
   case DType::Unknown:
