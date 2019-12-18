@@ -216,7 +216,7 @@ def _convert_MatrixWorkspace_info(ws):
     return info
 
 
-def convert_Workspace2D_to_dataarray(ws):
+def convert_Workspace2D_to_dataarray(ws, **ignored):
     common_bins = ws.isCommonBins()
     dim, unit = validate_and_get_unit(ws.getAxis(0).getUnit().unitID())
     spec_dim, spec_coord = init_spec_axis(ws)
@@ -265,7 +265,7 @@ def convert_Workspace2D_to_dataarray(ws):
     return array
 
 
-def convertEventWorkspace_to_dataarray(ws, load_pulse_times):
+def convertEventWorkspace_to_dataarray(ws, load_pulse_times, **ignored):
     from mantid.api import EventType
 
     dim, unit = validate_and_get_unit(ws.getAxis(0).getUnit().unitID())
@@ -308,7 +308,7 @@ def convertEventWorkspace_to_dataarray(ws, load_pulse_times):
     return sc.DataArray(**coords_labs_data)
 
 
-def convertMDHistoWorkspace_to_dataset(md_histo):
+def convertMDHistoWorkspace_to_dataset(md_histo, **ignored):
     ndims = md_histo.getNumDims()
     coords = dict()
     dims_used = []
@@ -330,7 +330,7 @@ def convertMDHistoWorkspace_to_dataset(md_histo):
     return sc.DataArray(coords=coords, data=data, attrs={'nevents': nevents})
 
 
-def convert_TableWorkspace_to_dataset(ws, error_connection=None):
+def convert_TableWorkspace_to_dataset(ws, error_connection=None, **ignored):
     """
     Converts from a Mantid TableWorkspace to a scipp dataset. It is possible
     to assign a column as the error for another column, in which case a
@@ -389,6 +389,57 @@ def convert_TableWorkspace_to_dataset(ws, error_connection=None):
                                                values=ws.column(i))
 
     return sc.Dataset(variables)  # Return scipp dataset with the variables
+
+
+def from_mantid(workspace, **kwargs):
+    """Convert Mantid workspace to a scipp data array or dataset
+    :param workspace: Mantid workspace to convert.
+    """
+    dataset = None
+    monitor_ws = None
+    if workspace.id() == 'Workspace2D' or workspace.id() == 'RebinnedOutput':
+        has_monitors = False
+        for spec in workspace.spectrumInfo():
+            has_monitors |= spec.isMonitor
+            if has_monitors:
+                break
+        if has_monitors:
+            import mantid.simpleapi as mantid
+            workspace, monitor_ws = mantid.ExtractMonitors(workspace,
+                                                           StoreInADS=False)
+        dataset = convert_Workspace2D_to_dataarray(workspace, **kwargs)
+    elif workspace.id() == 'EventWorkspace':
+        dataset = convertEventWorkspace_to_dataarray(workspace, **kwargs)
+    elif workspace.id() == 'TableWorkspace':
+        dataset = convert_TableWorkspace_to_dataset(workspace, **kwargs)
+    elif workspace.id() == 'MDHistoWorkspace':
+        dataset = convertMDHistoWorkspace_to_dataset(workspace, **kwargs)
+
+    if dataset is None:
+        raise RuntimeError('Unsupported workspace type {}'.format(
+            workspace.id()))
+
+    try:
+        # TODO Is there ever a case where a Workspace2D has a separate monitor
+        # workspace? This is not handled by ExtractMonitors above, I think.
+        if monitor_ws is None:
+            monitor_ws = workspace.getMonitorWorkspace()
+        if monitor_ws.id() == 'Workspace2D':
+            dataset.attrs["monitors"] = sc.Variable(
+                value=convert_Workspace2D_to_dataarray(monitor_ws))
+        elif monitor_ws.id() == 'EventWorkspace':
+            dataset.attrs["monitors"] = sc.Variable(
+                value=convertEventWorkspace_to_dataarray(
+                    monitor_ws, load_pulse_times))
+        # Remove some redundant information that is duplicated from workspace
+        mon = dataset.attrs["monitors"].value
+        del mon.labels['sample_position']
+        del mon.labels['detector_info']
+        del mon.attrs['run']
+        del mon.attrs['sample']
+    except:
+        pass
+    return dataset
 
 
 def load(filename="",
@@ -450,51 +501,15 @@ def load(filename="",
     if isinstance(loaded, Workspace):
         # A single workspace
         data_ws = loaded
-        monitor_ws = None
     else:
         # Seperate data and monitor workspaces
         data_ws = loaded.OutputWorkspace
-        monitor_ws = loaded.MonitorWorkspace
 
     if instrument_filename is not None:
         mantid.LoadInstrument(data_ws,
                               FileName=instrument_filename,
                               RewriteSpectraMap=True)
 
-    dataset = None
-    if data_ws.id() == 'Workspace2D' or data_ws.id() == 'RebinnedOutput':
-        has_monitors = False
-        for spec in data_ws.spectrumInfo():
-            has_monitors |= spec.isMonitor
-            if has_monitors:
-                break
-        if has_monitors:
-            data_ws, monitor_ws = mantid.ExtractMonitors(data_ws,
-                                                         StoreInADS=False)
-        dataset = convert_Workspace2D_to_dataarray(data_ws)
-    elif data_ws.id() == 'EventWorkspace':
-        dataset = convertEventWorkspace_to_dataarray(data_ws, load_pulse_times)
-    elif data_ws.id() == 'TableWorkspace':
-        dataset = convert_TableWorkspace_to_dataset(data_ws, error_connection)
-    elif data_ws.id() == 'MDHistoWorkspace':
-        dataset = convertMDHistoWorkspace_to_dataset(data_ws)
-
-    if dataset is None:
-        raise RuntimeError('Unsupported workspace type {}'.format(
-            data_ws.id()))
-    if monitor_ws is not None:
-        if monitor_ws.id() == 'Workspace2D':
-            dataset.attrs["monitors"] = sc.Variable(
-                value=convert_Workspace2D_to_dataarray(monitor_ws))
-        elif monitor_ws.id() == 'EventWorkspace':
-            dataset.attrs["monitors"] = sc.Variable(
-                value=convertEventWorkspace_to_dataarray(
-                    monitor_ws, load_pulse_times))
-        # Remove some redundant information that is duplicated from data_ws
-        mon = dataset.attrs["monitors"].value
-        del mon.labels['sample_position']
-        del mon.labels['detector_info']
-        del mon.attrs['run']
-        del mon.attrs['sample']
-
-    return dataset
+    return from_mantid(data_ws,
+                       load_pulse_times=load_pulse_times,
+                       error_connection=error_connection)

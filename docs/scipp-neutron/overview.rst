@@ -60,4 +60,5 @@ Loading Nexus files
 .. autosummary::
    :toctree: ../generated
 
+   from_mantid
    load
