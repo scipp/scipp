@@ -184,11 +184,13 @@ def find_bin_edges(var, ds):
     Checks if the coordinate contains bin-edges.
     """
     bin_edges = []
-    for idx, dim in enumerate(var.dims):
+    non_sparse_dims = [dim for dim in var.dims if dim !=
+                       var.sparse_dim] if var.sparse_dim else var.dims
+
+    for idx, dim in enumerate(non_sparse_dims):
         len = var.shape[idx]
-        if dim in ds.dims:
-            if ds.shape[ds.dims.index(dim)] + 1 == len:
-                bin_edges.append(dim)
+        if dim in ds.dims and ds.shape[ds.dims.index(dim)] + 1 == len:
+            bin_edges.append(dim)
     return bin_edges
 
 
@@ -387,10 +389,12 @@ def summarize_variable(name, var,
 def summarize_data(dataset):
     has_attrs = _is_dataset(dataset)
     vars_li = "".join(
-        "<li class='xr-var-item'>"
-        f"{summarize_variable(name, values, has_attrs=has_attrs)}"
-        "</li>"
-        for name, values in dataset)
+        "<li class='xr-var-item'>{}</li>".format(
+            summarize_variable(
+                name, var,
+                has_attrs=has_attrs,
+                bin_edges=find_bin_edges(var, dataset) if has_attrs else None))
+        for name, var in dataset)
     return f"<ul class='xr-var-list'>{vars_li}</ul>"
 
 
