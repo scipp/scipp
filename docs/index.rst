@@ -58,6 +58,7 @@ Documentation
 
    tutorials/introduction
    tutorials/multi-d-datasets
+   tutorials/neutron-diffraction
    tutorials/neutron-data
 
 .. toctree::
