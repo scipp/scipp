@@ -470,12 +470,9 @@ def summarize_array(var, is_variable=False):
     return f"<ul class='xr-var-list'>{vars_li}</ul>"
 
 
-variable_section = partial(
-    _mapping_section,
-    name="Data",
-    details_func=partial(summarize_array, is_variable=True),
-    max_items_collapse=10,
-)
+def variable_section(var):
+    return summarize_array(var, is_variable=True)
+
 
 coord_section = partial(
     _mapping_section,
