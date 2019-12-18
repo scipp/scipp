@@ -251,6 +251,12 @@ def convert_Workspace2D_to_dataarray(ws):
         if not common_bins and ws.hasMaskedBins(i):
             set_bin_masks(bin_masks, dim, i, ws.maskedBinsIndices(i))
 
+    # Avoid creating dimensions that are not required since this mostly an
+    # artifact of inflexible data structures and gets in the way when working
+    # with scipp.
+    if len(spec_coord.values) == 1:
+        array = array[spec_dim, 0].copy()
+        array.labels['position'] = pos[spec_dim, 0]
     return array
 
 
@@ -487,7 +493,7 @@ def load(filename="",
     if dataset is None:
         raise RuntimeError('Unsupported workspace type {}'.format(
             data_ws.id()))
-    elif monitor_ws is not None:
+    if monitor_ws is not None:
         if monitor_ws.id() == 'Workspace2D':
             dataset.attrs["monitors"] = sc.Variable(
                 value=convert_Workspace2D_to_dataarray(monitor_ws))
@@ -495,5 +501,11 @@ def load(filename="",
             dataset.attrs["monitors"] = sc.Variable(
                 value=convertEventWorkspace_to_dataarray(
                     monitor_ws, load_pulse_times))
+        # Remove some redundant information that is duplicated from data_ws
+        mon = dataset.attrs["monitors"].value
+        del mon.labels['sample_position']
+        del mon.labels['detector_info']
+        del mon.attrs['run']
+        del mon.attrs['sample']
 
     return dataset
