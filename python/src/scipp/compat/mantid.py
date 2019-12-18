@@ -426,18 +426,18 @@ def from_mantid(workspace, **kwargs):
             monitor_ws = workspace.getMonitorWorkspace()
         if monitor_ws.id() == 'Workspace2D':
             dataset.attrs["monitors"] = sc.Variable(
-                value=convert_Workspace2D_to_dataarray(monitor_ws))
+                value=convert_Workspace2D_to_dataarray(monitor_ws, **kwargs))
         elif monitor_ws.id() == 'EventWorkspace':
             dataset.attrs["monitors"] = sc.Variable(
                 value=convertEventWorkspace_to_dataarray(
-                    monitor_ws, load_pulse_times))
+                    monitor_ws, **kwargs))
         # Remove some redundant information that is duplicated from workspace
         mon = dataset.attrs["monitors"].value
         del mon.labels['sample_position']
         del mon.labels['detector_info']
         del mon.attrs['run']
         del mon.attrs['sample']
-    except:
+    except RuntimeError:
         pass
     return dataset
 
