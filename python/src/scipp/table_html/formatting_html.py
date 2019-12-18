@@ -243,26 +243,34 @@ def _make_inline_attributes(var, has_attrs):
     return disabled, attrs_ul
 
 
-def _make_dim_labels(dim, sparse_dim, bin_edges=None):
+def _make_dim_labels(dim, size, bin_edges=None):
     # Note: the space needs to be here, otherwise
     # there is a trailing whitespace when no dimension
     # label has been added
     if bin_edges and dim in bin_edges:
         return " [bin-edge]"
-    elif dim == sparse_dim:
+    elif size is None:
         return " [sparse]"
     else:
         return ""
 
 
 def _make_dim_str(var, bin_edges, add_dim_size=False):
+    dim_sizes = []
+    for idx, dim in enumerate(var.dims):
+        try:
+            shape = var.shape[idx]
+        except IndexError:
+            shape = None
+        dim_sizes.append((dim, shape))
+
     dims_text = ', '.join(
         '{}{}{}'.format(
             str(dim),
-            _make_dim_labels(dim, var.sparse_dim, bin_edges),
-            f': {size}' if add_dim_size else ''
+            _make_dim_labels(dim, size, bin_edges),
+            f': {size}' if add_dim_size and size is not None else ''
         )
-        for dim, size in zip(var.dims, var.shape))
+        for dim, size in dim_sizes)
     return dims_text
 
 
