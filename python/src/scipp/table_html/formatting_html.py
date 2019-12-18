@@ -255,12 +255,12 @@ def _make_dim_labels(dim, sparse_dim, bin_edges=None):
         return ""
 
 
-def _make_dim_str(var, bin_edges, add_sizes=False):
+def _make_dim_str(var, bin_edges, add_dim_size=False):
     dims_text = ', '.join(
         '{}{}{}'.format(
             str(dim),
             _make_dim_labels(dim, var.sparse_dim, bin_edges),
-            f': {size}' if add_sizes else ''
+            f': {size}' if add_dim_size else ''
         )
         for dim, size in zip(var.dims, var.shape))
     return dims_text
@@ -349,7 +349,8 @@ def _dataset_format(name, dims_str, dtype, unit,
 def _prepare_variable_info(name, var,
                            is_index=False,
                            has_attrs=False,
-                           bin_edges=None):
+                           bin_edges=None,
+                           add_dim_size=False):
     """
     :param name: Name of the variable
     :param var: The variable itself, used to display dtype, unit, values, attrs
@@ -360,10 +361,12 @@ def _prepare_variable_info(name, var,
     :param has_attrs: If the variable is for a section that cannot contain
                       attributes, then this hides the show/hide button.
 
-    :param is_bin_edges: If true it will add the [bin-edges] variable
+    :param bin_edges: List of Dimensions that are bin-edges
+    :param add_dim_size: If True the dimenion sizes will be appended in the
+                         dimension string
     """
 
-    dims_str = escape(f"({_make_dim_str(var, bin_edges, name is None)})")
+    dims_str = escape(f"({_make_dim_str(var, bin_edges, add_dim_size)})")
     dtype = repr(var.dtype)[6:]
     unit = '' if var.unit == sc.units.dimensionless else repr(var.unit)
 
@@ -386,13 +389,14 @@ def _prepare_variable_info(name, var,
 def summarize_variable(name, var,
                        is_index=False,
                        has_attrs=False,
-                       bin_edges=None):
+                       bin_edges=None,
+                       add_dim_size=False):
     if name is None:
         return _variable_format(*_prepare_variable_info(
-            name, var, is_index, has_attrs, bin_edges))
+            name, var, is_index, has_attrs, bin_edges, add_dim_size))
     else:
         return _dataset_format(*_prepare_variable_info(
-            name, var, is_index, has_attrs, bin_edges))
+            name, var, is_index, has_attrs, bin_edges, add_dim_size))
 
 
 def summarize_data(dataset):
@@ -459,17 +463,17 @@ def dim_section(dataset):
                                collapsed=True)
 
 
-def summarize_array(var):
+def summarize_array(var, is_variable=False):
     vars_li = "".join(
         "<li class='xr-var-item'>"
-        f"{summarize_variable(None, var)}</li>")
+        f"{summarize_variable(None, var, add_dim_size=is_variable)}</li>")
     return f"<ul class='xr-var-list'>{vars_li}</ul>"
 
 
-array_section = partial(
+variable_section = partial(
     _mapping_section,
     name="Data",
-    details_func=summarize_array,
+    details_func=partial(summarize_array, is_variable=True),
     max_items_collapse=10,
 )
 
@@ -542,35 +546,11 @@ def dataset_repr(ds):
     return _obj_repr(header_components, sections)
 
 
-def dataarray_repr(darray):
-    obj_type = "scipp.{}".format(type(darray).__name__)
-
-    header_components = [f"<div class='xr-obj-type'>{escape(obj_type)}</div>"]
-
-    sections = [dim_section(darray),
-                array_section(darray)]
-
-    if len(darray.coords) > 0:
-        sections.append(coord_section(darray.coords, darray))
-    if len(darray.labels) > 0:
-        sections.append(label_section(darray.labels))
-
-    if len(darray.masks) > 0:
-        sections.append(mask_section(darray.masks))
-    if len(darray.attrs) > 0:
-        sections.append(attr_section(darray.attrs))
-
-    return _obj_repr(header_components, sections)
-
-
 def variable_repr(var):
     obj_type = "scipp.{}".format(type(var).__name__)
 
     header_components = [f"<div class='xr-obj-type'>{escape(obj_type)}</div>"]
 
-    sections = [
-        dim_section(var),
-        array_section(var),
-    ]
+    sections = [variable_section(var)]
 
     return _obj_repr(header_components, sections)
