@@ -10,7 +10,8 @@ def make_html(container):
     if isinstance(container, sc.Variable) or isinstance(
             container, sc.VariableProxy):
         return variable_repr(container)
-    elif isinstance(container, sc.DataArray):
+    elif isinstance(container, sc.DataArray) or isinstance(
+            container, sc.DataProxy):
         return dataarray_repr(container)
     else:
         return dataset_repr(container)
