@@ -256,7 +256,7 @@ T swap_tof_related_labels_and_attrs(T &&x, const Dim from, const Dim to) {
         // a subsequent unit conversion of an item on its own would not be
         // possible. It needs to be determined if there is a better way to
         // handle attributes so this can be avoided.
-        for ([[maybe_unused]] const auto &[name, data] : iter(x))
+        for (const auto &[name, data] : iter(x))
           data.attrs().set(field, x.labels()[field]);
         x.attrs().set(field, x.labels()[field]);
         x.labels().erase(field);
@@ -268,7 +268,7 @@ T swap_tof_related_labels_and_attrs(T &&x, const Dim from, const Dim to) {
       if (x.labels().contains(field)) {
         x.labels().set(field, x.attrs()[field]);
         x.attrs().erase(field);
-        for ([[maybe_unused]] const auto &[name, data] : iter(x)) {
+        for (const auto &[name, data] : iter(x)) {
           expect::equals(x.labels()[field], data.attrs()[field]);
           data.attrs().erase(field);
         }
