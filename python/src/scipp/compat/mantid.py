@@ -184,11 +184,40 @@ def set_bin_masks(bin_masks, dim, index, masked_bins):
         bin_masks[sc.Dim.Spectrum, index][dim, masked_bin].value = True
 
 
-def convert_Workspace2D_to_dataarray(ws):
-    common_bins = ws.isCommonBins()
+def _convert_MatrixWorkspace_info(ws):
     source_pos, sample_pos = make_component_info(ws)
     det_info = make_detector_info(ws)
     pos = init_pos(ws)
+    spec_dim, spec_coord = init_spec_axis(ws)
+
+    info = {
+        "coords": {
+            spec_dim: spec_coord
+        },
+        "labels": {
+            "position": pos,
+            "source_position": source_pos,
+            "sample_position": sample_pos,
+            "detector_info": det_info
+        },
+        "masks": {},
+        "attrs": {
+            "run": make_run(ws),
+            "sample": make_sample(ws)
+        },
+    }
+
+    if ws.detectorInfo().hasMaskedDetectors():
+        spectrum_info = ws.spectrumInfo()
+        mask = np.array([
+            spectrum_info.isMasked(i) for i in range(ws.getNumberHistograms())
+        ])
+        info["masks"]["spectrum"] = sc.Variable([spec_dim], values=mask)
+    return info
+
+
+def convert_Workspace2D_to_dataarray(ws):
+    common_bins = ws.isCommonBins()
     dim, unit = validate_and_get_unit(ws.getAxis(0).getUnit().unitID())
     spec_dim, spec_coord = init_spec_axis(ws)
 
@@ -201,34 +230,14 @@ def convert_Workspace2D_to_dataarray(ws):
         for i in range(ws.getNumberHistograms()):
             coord[spec_dim, i].values = ws.readX(i)
 
-    # TODO Use unit information in workspace, if available.
-    array = sc.DataArray(data=sc.Variable([spec_dim, dim],
-                                          shape=(ws.getNumberHistograms(),
-                                                 len(ws.readY(0))),
-                                          unit=sc.units.counts,
-                                          variances=True),
-                         coords={
-                             dim: coord,
-                             spec_dim: spec_coord
-                         },
-                         labels={
-                             "position": pos,
-                             "source_position": source_pos,
-                             "sample_position": sample_pos,
-                             "detector_info": det_info
-                         },
-                         attrs={
-                             "run": make_run(ws),
-                             "sample": make_sample(ws)
-                         })
-
-    spectrum_masks = None
-    if ws.detectorInfo().hasMaskedDetectors():
-        array.masks["spectrum"] = sc.Variable(
-            [spec_dim],
-            shape=(ws.getNumberHistograms(), ),
-            dtype=sc.dtype.bool)
-        spectrum_masks = array.masks["spectrum"]
+    coords_labs_data = _convert_MatrixWorkspace_info(ws)
+    coords_labs_data["coords"][dim] = coord
+    coords_labs_data["data"] = sc.Variable([spec_dim, dim],
+                                           shape=(ws.getNumberHistograms(),
+                                                  len(ws.readY(0))),
+                                           unit=sc.units.counts,
+                                           variances=True)
+    array = sc.DataArray(**coords_labs_data)
 
     if ws.hasAnyMaskedBins():
         array.masks["bin"] = make_bin_masks(common_bins, spec_dim, dim,
@@ -240,13 +249,9 @@ def convert_Workspace2D_to_dataarray(ws):
             set_common_bins_masks(bin_masks, dim, ws.maskedBinsIndices(0))
 
     data = array.data
-    spectrum_info = ws.spectrumInfo()
     for i in range(ws.getNumberHistograms()):
         data[spec_dim, i].values = ws.readY(i)
         data[spec_dim, i].variances = np.power(ws.readE(i), 2)
-
-        if spectrum_masks:
-            spectrum_masks[spec_dim, i].value = spectrum_info.isMasked(i)
 
         if not common_bins and ws.hasMaskedBins(i):
             set_bin_masks(bin_masks, dim, i, ws.maskedBinsIndices(i))
@@ -255,8 +260,8 @@ def convert_Workspace2D_to_dataarray(ws):
     # artifact of inflexible data structures and gets in the way when working
     # with scipp.
     if len(spec_coord.values) == 1:
+        array.labels['position'] = array.labels['position'][spec_dim, 0]
         array = array[spec_dim, 0].copy()
-        array.labels['position'] = pos[spec_dim, 0]
     return array
 
 
@@ -266,9 +271,6 @@ def convertEventWorkspace_to_dataarray(ws, load_pulse_times):
     dim, unit = validate_and_get_unit(ws.getAxis(0).getUnit().unitID())
     spec_dim, spec_coord = init_spec_axis(ws)
     nHist = ws.getNumberHistograms()
-    source_pos, sample_pos = make_component_info(ws)
-    det_info = make_detector_info(ws)
-    pos = init_pos(ws)
 
     coord = sc.Variable([spec_dim, dim],
                         shape=[nHist, sc.Dimensions.Sparse],
@@ -296,22 +298,9 @@ def convertEventWorkspace_to_dataarray(ws, load_pulse_times):
             weights[spec_dim, i].values = sp.getWeights()
             weights[spec_dim, i].variances = sp.getWeightErrors()
 
-    coords_labs_data = {
-        "coords": {
-            dim: coord,
-            spec_dim: spec_coord
-        },
-        "labels": {
-            "position": pos,
-            "source_position": source_pos,
-            "sample_position": sample_pos,
-            "detector_info": det_info
-        },
-        "attrs": {
-            "run": make_run(ws),
-            "sample": make_sample(ws)
-        }
-    }
+    coords_labs_data = _convert_MatrixWorkspace_info(ws)
+    coords_labs_data["coords"][dim] = coord
+
     if load_pulse_times:
         coords_labs_data["labels"]["pulse_times"] = labs
     if contains_weighted_events:
