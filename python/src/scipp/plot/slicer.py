@@ -3,12 +3,14 @@
 # @author Neil Vaytet
 
 from ..config import plot as config
-from .tools import axis_to_dim_label, parse_params
+from .tools import parse_params
 from ..utils import name_with_unit, value_to_string
-from .._scipp.core import combine_masks, Variable
+from .._scipp.core import combine_masks, Variable, Dim, dtype
+
 
 # Other imports
 import numpy as np
+import matplotlib.ticker as ticker
 
 
 class Slicer:
@@ -55,12 +57,10 @@ class Slicer:
                                        self.data_array.dims,
                                        self.data_array.shape)
 
-        # Get the dimensions of the image to be displayed
-        self.coords = self.data_array.coords
+        # Create a helper dict to make dim to shape
+        self.dims_and_shapes = {}
         for shp, dim in zip(self.data_array.shape, self.data_array.dims):
-            if not self.coords.__contains__(dim):
-                self.data_array.coords[dim] = Variable(
-                    [dim], values=np.arange(shp))
+            self.dims_and_shapes[str(dim)] = shp
 
         self.labels = self.data_array.labels
         self.shapes = dict(zip(self.data_array.dims, self.data_array.shape))
@@ -75,6 +75,8 @@ class Slicer:
         self.slider_dims = dict()
         # Store coordinates of dimensions that will be in sliders
         self.slider_x = dict()
+        # Store ticklabels for a dimension
+        self.slider_ticks = dict()
         # Store labels for sliders if any
         self.slider_labels = dict()
 
@@ -86,7 +88,7 @@ class Slicer:
             raise RuntimeError("Duplicate entry in axes: {}".format(axes))
         # Iterate through axes and collect dimensions
         for ax in axes:
-            dim, lab, var = axis_to_dim_label(self.data_array, ax)
+            dim, lab, var, ticks = self.axis_to_dim_label(ax)
             if (lab is not None) and (dim in axes):
                 raise RuntimeError("The dimension of the labels cannot also "
                                    "be specified as another axis.")
@@ -94,6 +96,7 @@ class Slicer:
             self.slider_dims[key] = dim
             self.slider_labels[key] = lab
             self.slider_x[key] = var
+            self.slider_ticks[key] = ticks
             self.slider_nx[key] = self.shapes[dim]
         self.ndim = len(self.slider_dims)
 
@@ -216,3 +219,64 @@ class Slicer:
 
     def mask_to_float(self, mask, var):
         return np.where(mask, var, None).astype(np.float)
+
+    def axis_to_dim_label(self, axis):
+        """
+        Get dimensions and label (if present) from requested axis
+        """
+        ticks = None
+        if isinstance(axis, Dim):
+            dim = axis
+            lab = None
+            make_fake_coord = False
+            fake_unit = None
+            if not self.data_array.coords.__contains__(dim):
+                make_fake_coord = True
+            else:
+                tp = self.data_array.coords[dim].dtype
+                if tp == dtype.vector_3_float64:
+                    make_fake_coord = True
+                    ticks = ["(" + ",".join([value_to_string(item, precision=2)
+                                             for item in elem]) + ")"
+                             for elem in self.data_array.coords[dim].values]
+                if tp == dtype.string:
+                    make_fake_coord = True
+                    ticks = np.array(
+                        self.data_array.coords[dim].values).astype(str)
+                if make_fake_coord:
+                    fake_unit = self.data_array.coords[dim].unit
+            if make_fake_coord:
+                args = {"values": np.arange(self.dims_and_shapes[str(dim)])}
+                if fake_unit is not None:
+                    args["unit"] = fake_unit
+                var = Variable([dim], **args)
+            else:
+                var = self.data_array.coords[dim]
+        elif isinstance(axis, str):
+            # By convention, the last dim of the labels is the inner dimension,
+            # but note that for now two-dimensional labels are not supported in
+            # the plotting.
+            dim = self.data_array.labels[axis].dims[-1]
+            lab = axis
+            var = self.data_array.labels[lab]
+        else:
+            raise RuntimeError("Unsupported axis found in 'axes': {}. This "
+                               "must be either a Scipp dimension "
+                               "or a string.".format(axis))
+        return dim, lab, var, ticks
+
+    def get_custom_ticks(self, ax, dim_str, xy="x"):
+        """
+        Return a list of string to be used as axis tick labels in the case of
+        strings or vectors as one axis coordinate.
+        """
+        getticks = getattr(ax, "get_{}ticks".format(xy))
+        xticks = getticks()
+        if xticks[2] - xticks[1] < 1:
+            ax.xaxis.set_major_locator(ticker.MultipleLocator(1.0))
+            xticks = getticks()
+        new_ticks = [""] * len(xticks)
+        for i, x in enumerate(xticks):
+            if x >= 0 and x < self.slider_nx[dim_str]:
+                new_ticks[i] = self.slider_ticks[dim_str][int(x)]
+        return new_ticks
