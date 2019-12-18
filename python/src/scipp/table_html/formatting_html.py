@@ -42,7 +42,7 @@ def _format_array(data, size, ellipsis_after, do_ellide=True):
 
 
 def _make_row(data_html, variances_html=None):
-    return f"<div>{escape(data_html)}</div>"
+    return f"<div>{data_html}</div>"
 
 
 def _format_non_sparse(var, has_variances):
