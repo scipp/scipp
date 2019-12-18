@@ -278,9 +278,14 @@ def _format_common(is_index):
     return cssclass_idx, attrs_id, attrs_icon, data_id, data_icon
 
 
-def _var_f(name, dims_str, dtype, unit,
-           preview, variances_preview,
-           attrs_ul, disabled, data_repr, is_index, has_attrs):
+def _variable_format(name, dims_str, dtype, unit,
+                     preview, variances_preview,
+                     attrs_ul, disabled, data_repr, is_index, has_attrs):
+    """
+    Formats the variable data into the format expected when displaying
+    as a standalone Variable. This happens when a single Variable or
+    DataArray is displayed.
+    """
     cssclass_idx, attrs_id, attrs_icon, data_id, data_icon = _format_common(
         is_index)
 
@@ -307,9 +312,13 @@ def _var_f(name, dims_str, dtype, unit,
     return "".join(html)
 
 
-def _ds_f(name, dims_str, dtype, unit,
-          preview, variances_preview,
-          attrs_ul, disabled, data_repr, is_index, has_attrs):
+def _dataset_format(name, dims_str, dtype, unit,
+                    preview, variances_preview,
+                    attrs_ul, disabled, data_repr, is_index, has_attrs):
+    """
+    Formats the variable data into the format expected when displaying
+    as part of a dataset.
+    """
     cssclass_idx, attrs_id, attrs_icon, data_id, data_icon = _format_common(
         is_index)
 
@@ -379,10 +388,10 @@ def summarize_variable(name, var,
                        has_attrs=False,
                        bin_edges=None):
     if name is None:
-        return _var_f(*_prepare_variable_info(
+        return _variable_format(*_prepare_variable_info(
             name, var, is_index, has_attrs, bin_edges))
     else:
-        return _ds_f(*_prepare_variable_info(
+        return _dataset_format(*_prepare_variable_info(
             name, var, is_index, has_attrs, bin_edges))
 
 
