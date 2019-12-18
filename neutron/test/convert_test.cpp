@@ -67,7 +67,8 @@ TEST(ConvertDataArray, from_tof) {
     Dataset result;
     for (const auto &[name, data] : tof)
       result.setData(name, convert(data, Dim::Tof, dim));
-    EXPECT_EQ(result, expected);
+    for (const auto &[name, data] : result)
+      EXPECT_EQ(data, expected[name]);
   }
 }
 
@@ -79,7 +80,8 @@ TEST(ConvertDataArray, to_tof) {
     Dataset result;
     for (const auto &[name, data] : input)
       result.setData(name, convert(data, dim, Dim::Tof));
-    EXPECT_EQ(result, expected);
+    for (const auto &[name, data] : result)
+      EXPECT_EQ(data, expected[name]);
   }
 }
 
@@ -169,10 +171,10 @@ TEST(Convert, Tof_to_DSpacing) {
   EXPECT_NEAR(d1[2], 3956.0 / (1e6 * 11.0 / tof1[2]) * lambda_to_d,
               d1[2] * 1e-3);
 
-  ASSERT_EQ(dspacing.labels()["position"], tof.labels()["position"]);
-  ASSERT_EQ(dspacing.labels()["source_position"],
+  ASSERT_EQ(dspacing.attrs()["position"], tof.labels()["position"]);
+  ASSERT_EQ(dspacing.attrs()["source_position"],
             tof.labels()["source_position"]);
-  ASSERT_EQ(dspacing.labels()["sample_position"],
+  ASSERT_EQ(dspacing.attrs()["sample_position"],
             tof.labels()["sample_position"]);
 }
 
@@ -295,10 +297,10 @@ TEST(Convert, Tof_to_Wavelength) {
   EXPECT_NEAR(d1[1], 3956.0 / (1e6 * 11.0 / tof1[1]), d1[1] * 1e-3);
   EXPECT_NEAR(d1[2], 3956.0 / (1e6 * 11.0 / tof1[2]), d1[2] * 1e-3);
 
-  ASSERT_EQ(wavelength.labels()["position"], tof.labels()["position"]);
-  ASSERT_EQ(wavelength.labels()["source_position"],
+  ASSERT_EQ(wavelength.attrs()["position"], tof.labels()["position"]);
+  ASSERT_EQ(wavelength.attrs()["source_position"],
             tof.labels()["source_position"]);
-  ASSERT_EQ(wavelength.labels()["sample_position"],
+  ASSERT_EQ(wavelength.attrs()["sample_position"],
             tof.labels()["sample_position"]);
 }
 
@@ -422,11 +424,9 @@ TEST(Convert, Tof_to_Energy_Elastic) {
       e1[2], joule_to_mev * 0.5 * neutron_mass * std::pow(1e6 * L / tof1[2], 2),
       e1[2] * 1e-3);
 
-  ASSERT_EQ(energy.labels()["position"], tof.labels()["position"]);
-  ASSERT_EQ(energy.labels()["source_position"],
-            tof.labels()["source_position"]);
-  ASSERT_EQ(energy.labels()["sample_position"],
-            tof.labels()["sample_position"]);
+  ASSERT_EQ(energy.attrs()["position"], tof.labels()["position"]);
+  ASSERT_EQ(energy.attrs()["source_position"], tof.labels()["source_position"]);
+  ASSERT_EQ(energy.attrs()["sample_position"], tof.labels()["sample_position"]);
 }
 
 TEST(Convert, Energy_to_Tof_Elastic) {

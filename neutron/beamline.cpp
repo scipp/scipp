@@ -16,22 +16,31 @@ namespace beamline_impl {
 template <class T> static VariableConstProxy position(const T &d) {
   if (d.coords().contains(Dim::Position))
     return d.coords()[Dim::Position];
-  else
+  else if (d.labels().contains("position"))
     return d.labels()["position"];
+  else
+    return d.attrs()["position"];
 }
 
 template <class T> static VariableConstProxy source_position(const T &d) {
-  return d.labels()["source_position"];
+  if (d.labels().contains("source_position"))
+    return d.labels()["source_position"];
+  else
+    return d.attrs()["source_position"];
 }
 
 template <class T> static VariableConstProxy sample_position(const T &d) {
-  return d.labels()["sample_position"];
+  if (d.labels().contains("sample_position"))
+    return d.labels()["sample_position"];
+  else
+    return d.attrs()["sample_position"];
 }
 
 template <class T> static Variable flight_path_length(const T &d) {
   // If there is no sample this returns the straight distance from the source,
   // as required, e.g., for monitors.
-  if (d.labels().contains("sample_position"))
+  if (d.labels().contains("sample_position") ||
+      d.attrs().contains("sample_position"))
     return l1(d) + l2(d);
   else
     return norm(position(d) - source_position(d));
