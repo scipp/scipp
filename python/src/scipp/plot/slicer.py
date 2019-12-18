@@ -88,7 +88,7 @@ class Slicer:
             raise RuntimeError("Duplicate entry in axes: {}".format(axes))
         # Iterate through axes and collect dimensions
         for ax in axes:
-            dim, lab, var, ticks = self.axis_to_dim_label(ax)
+            dim, lab, var, ticks = self.axis_label_and_ticks(ax)
             if (lab is not None) and (dim in axes):
                 raise RuntimeError("The dimension of the labels cannot also "
                                    "be specified as another axis.")
@@ -220,7 +220,7 @@ class Slicer:
     def mask_to_float(self, mask, var):
         return np.where(mask, var, None).astype(np.float)
 
-    def axis_to_dim_label(self, axis):
+    def axis_label_and_ticks(self, axis):
         """
         Get dimensions and label (if present) from requested axis
         """
@@ -236,15 +236,15 @@ class Slicer:
                 tp = self.data_array.coords[dim].dtype
                 if tp == dtype.vector_3_float64:
                     make_fake_coord = True
-                    ticks = ["(" + ",".join([value_to_string(item, precision=2)
-                                             for item in elem]) + ")"
-                             for elem in self.data_array.coords[dim].values]
-                if tp == dtype.string:
+                    ticks = {"formatter": lambda x: "(" + ",".join(
+                                 [value_to_string(item, precision=2)
+                                  for item in x]) + ")"}
+                elif tp == dtype.string:
                     make_fake_coord = True
-                    ticks = np.array(
-                        self.data_array.coords[dim].values).astype(str)
+                    ticks = {"formatter": lambda x: x}
                 if make_fake_coord:
                     fake_unit = self.data_array.coords[dim].unit
+                    ticks["coord"] = self.data_array.coords[dim]
             if make_fake_coord:
                 args = {"values": np.arange(self.dims_and_shapes[str(dim)])}
                 if fake_unit is not None:
@@ -278,5 +278,6 @@ class Slicer:
         new_ticks = [""] * len(xticks)
         for i, x in enumerate(xticks):
             if x >= 0 and x < self.slider_nx[dim_str]:
-                new_ticks[i] = self.slider_ticks[dim_str][int(x)]
+                new_ticks[i] = self.slider_ticks[dim_str]["formatter"](
+                    self.slider_ticks[dim_str]["coord"].values[int(x)])
         return new_ticks
