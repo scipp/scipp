@@ -281,55 +281,58 @@ void init_variable(py::module &m) {
   //------------------------------------
 
   py::class_<VariableConstProxy>(m, "VariableConstProxy")
-      .def(py::init<const Variable &>());
+      .def(py::init<const Variable &>())
+      .def("copy",
+           [](const VariableConstProxy &self) { return Variable(self); },
+           "Return a (deep) copy.")
+      .def("__copy__",
+           [](const VariableConstProxy &self) { return Variable(self); })
+      .def("__deepcopy__",
+           [](VariableProxy &self, py::dict) { return Variable(self); })
+      .def("__repr__",
+           [](const VariableConstProxy &self) { return to_string(self); });
+
   py::class_<VariableProxy, VariableConstProxy> variableProxy(
       m, "VariableProxy", py::buffer_protocol(), R"(
         Proxy for Variable, representing a sliced or transposed view onto a variable;
         Mostly equivalent to Variable, see there for details.)");
   variableProxy.def_buffer(&make_py_buffer_info);
   variableProxy.def(py::init<Variable &>())
-      .def("copy", [](const VariableProxy &self) { return Variable(self); },
-           "Return a (deep) copy.")
-      .def("__copy__", [](VariableProxy &self) { return Variable(self); })
-      .def("__deepcopy__",
-           [](VariableProxy &self, py::dict) { return Variable(self); })
       .def("__radd__", [](VariableProxy &a, double &b) { return a + b; },
            py::is_operator())
       .def("__rsub__", [](VariableProxy &a, double &b) { return b - a; },
            py::is_operator())
       .def("__rmul__", [](VariableProxy &a, double &b) { return a * b; },
-           py::is_operator())
-      .def("__repr__",
-           [](const VariableProxy &self) { return to_string(self); });
+           py::is_operator());
 
   bind_slice_methods(variable);
   bind_slice_methods(variableProxy);
 
   bind_comparison<Variable>(variable);
-  bind_comparison<VariableProxy>(variable);
+  bind_comparison<VariableConstProxy>(variable);
   bind_comparison<Variable>(variableProxy);
-  bind_comparison<VariableProxy>(variableProxy);
+  bind_comparison<VariableConstProxy>(variableProxy);
 
   bind_in_place_binary<Variable>(variable);
-  bind_in_place_binary<VariableProxy>(variable);
+  bind_in_place_binary<VariableConstProxy>(variable);
   bind_in_place_binary<Variable>(variableProxy);
-  bind_in_place_binary<VariableProxy>(variableProxy);
+  bind_in_place_binary<VariableConstProxy>(variableProxy);
   bind_in_place_binary_scalars(variable);
   bind_in_place_binary_scalars(variableProxy);
 
   bind_binary<Variable>(variable);
-  bind_binary<VariableProxy>(variable);
+  bind_binary<VariableConstProxy>(variable);
   bind_binary<Variable>(variableProxy);
-  bind_binary<VariableProxy>(variableProxy);
+  bind_binary<VariableConstProxy>(variableProxy);
   bind_binary_scalars(variable);
   bind_binary_scalars(variableProxy);
 
   bind_boolean_unary(variable);
   bind_boolean_unary(variableProxy);
   bind_boolean_operators<Variable>(variable);
-  bind_boolean_operators<VariableProxy>(variable);
+  bind_boolean_operators<VariableConstProxy>(variable);
   bind_boolean_operators<Variable>(variableProxy);
-  bind_boolean_operators<VariableProxy>(variableProxy);
+  bind_boolean_operators<VariableConstProxy>(variableProxy);
 
   bind_data_properties(variable);
   bind_data_properties(variableProxy);

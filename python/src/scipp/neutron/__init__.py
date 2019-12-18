@@ -7,4 +7,4 @@
 
 from .._scipp.neutron import *
 from . import diffraction
-from ..compat.mantid import load
+from ..compat.mantid import from_mantid, load

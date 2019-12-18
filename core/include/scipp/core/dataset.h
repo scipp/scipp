@@ -741,9 +741,12 @@ public:
                                         to_string(key) + " found," + suffix);
         }
         m_parent->eraseSparseCoord(*m_name);
-      } else if constexpr (std::is_same_v<Base, LabelsConstProxy>)
-        m_parent->eraseSparseLabels(*m_name, key);
-      else if constexpr (std::is_same_v<Base, AttrsConstProxy>)
+      } else if constexpr (std::is_same_v<Base, LabelsConstProxy>) {
+        if (this->operator[](key).dims().sparse())
+          m_parent->eraseSparseLabels(*m_name, key);
+        else
+          m_parent->eraseLabels(key);
+      } else if constexpr (std::is_same_v<Base, AttrsConstProxy>)
         m_parent->eraseAttr(*m_name, key);
       else
         throw std::runtime_error("The instance cannot be sparse.");

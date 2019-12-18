@@ -74,19 +74,14 @@ template <class T> auto tofToDSpacing(const T &d) {
 }
 
 template <class T> static auto tofToWavelength(const T &d) {
-  const auto l = l1(d) + l2(d);
   return (tof_to_s * m_to_angstrom * boost::units::si::constants::codata::h /
           boost::units::si::constants::codata::m_n) /
-         std::move(l);
+         neutron::flight_path_length(d);
 }
 
 template <class T> auto tofToEnergyConversionFactor(const T &d) {
-  const auto &samplePos = sample_position(d);
-  const auto l1 = neutron::l1(d);
-  const auto specPos = neutron::position(d);
-
   // l_total = l1 + l2
-  auto conversionFactor(norm(specPos - samplePos) + l1);
+  auto conversionFactor = neutron::flight_path_length(d);
   // l_total^2
   conversionFactor *= conversionFactor;
 
@@ -245,8 +240,48 @@ template <class T> T convert_impl(T d, const Dim from, const Dim to) {
       "Conversion between requested dimensions not implemented yet.");
 }
 
+namespace {
+template <class T>
+T swap_tof_related_labels_and_attrs(T &&x, const Dim from, const Dim to) {
+  auto fields = {"position", "source_position", "sample_position"};
+  // TODO Add `extract` methods to do this in one step and avoid copies?
+  if (from == Dim::Tof) {
+    for (const auto &field : fields) {
+      if (x.labels().contains(field)) {
+        // TODO This is an unfortunate duplication of attributes. It is
+        // (currently?) required due to a limitation of handling attributes of
+        // Dataset and its items *independently* (no mapping of dataset
+        // attributes into item attributes occurs, unlike for coords and
+        // labels). If we did not also add the attributes to each of the items,
+        // a subsequent unit conversion of an item on its own would not be
+        // possible. It needs to be determined if there is a better way to
+        // handle attributes so this can be avoided.
+        for (const auto &item : iter(x))
+          item.second.attrs().set(field, x.labels()[field]);
+        x.attrs().set(field, x.labels()[field]);
+        x.labels().erase(field);
+      }
+    }
+  }
+  if (to == Dim::Tof) {
+    for (const auto &field : fields) {
+      if (x.labels().contains(field)) {
+        x.labels().set(field, x.attrs()[field]);
+        x.attrs().erase(field);
+        for (const auto &item : iter(x)) {
+          expect::equals(x.labels()[field], item.second.attrs()[field]);
+          item.second.attrs().erase(field);
+        }
+      }
+    }
+  }
+  return std::move(x);
+}
+} // namespace
+
 DataArray convert(DataArray d, const Dim from, const Dim to) {
-  return convert_impl(std::move(d), from, to);
+  return swap_tof_related_labels_and_attrs(convert_impl(std::move(d), from, to),
+                                           from, to);
 }
 
 DataArray convert(const DataConstProxy &d, const Dim from, const Dim to) {
@@ -254,7 +289,8 @@ DataArray convert(const DataConstProxy &d, const Dim from, const Dim to) {
 }
 
 Dataset convert(Dataset d, const Dim from, const Dim to) {
-  return convert_impl(std::move(d), from, to);
+  return swap_tof_related_labels_and_attrs(convert_impl(std::move(d), from, to),
+                                           from, to);
 }
 
 Dataset convert(const DatasetConstProxy &d, const Dim from, const Dim to) {

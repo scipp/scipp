@@ -268,8 +268,15 @@ def test_sparse_slice():
 
 def test_sparse_setitem():
     var = sc.Variable([sc.Dim.X, sc.Dim.Y], [4, sc.Dimensions.Sparse])
+    # __setitem__ of vector
     var[Dim.X, 0].values = np.arange(4)
     assert len(var[Dim.X, 0].values) == 4
+    # __setitem__ of span
+    var.values[1] = np.arange(3)
+    assert len(var[Dim.X, 1].values) == 3
+    # __setitem__ of VariableView
+    var[Dim.X, :].values[2] = np.arange(2)
+    assert len(var[Dim.X, 2].values) == 2
 
 
 def test_sparse_setitem_sparse_fail():

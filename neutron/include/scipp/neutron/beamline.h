@@ -13,10 +13,12 @@ namespace scipp::neutron {
 
 SCIPP_NEUTRON_EXPORT core::VariableConstProxy
 position(const core::DatasetConstProxy &d);
-SCIPP_NEUTRON_EXPORT core::Variable
+SCIPP_NEUTRON_EXPORT core::VariableConstProxy
 source_position(const core::DatasetConstProxy &d);
-SCIPP_NEUTRON_EXPORT core::Variable
+SCIPP_NEUTRON_EXPORT core::VariableConstProxy
 sample_position(const core::DatasetConstProxy &d);
+SCIPP_NEUTRON_EXPORT core::Variable
+flight_path_length(const core::DatasetConstProxy &d);
 SCIPP_NEUTRON_EXPORT core::Variable l1(const core::DatasetConstProxy &d);
 SCIPP_NEUTRON_EXPORT core::Variable l2(const core::DatasetConstProxy &d);
 SCIPP_NEUTRON_EXPORT core::Variable
@@ -25,10 +27,12 @@ SCIPP_NEUTRON_EXPORT core::Variable two_theta(const core::DatasetConstProxy &d);
 
 SCIPP_NEUTRON_EXPORT core::VariableConstProxy
 position(const core::DataConstProxy &d);
-SCIPP_NEUTRON_EXPORT core::Variable
+SCIPP_NEUTRON_EXPORT core::VariableConstProxy
 source_position(const core::DataConstProxy &d);
-SCIPP_NEUTRON_EXPORT core::Variable
+SCIPP_NEUTRON_EXPORT core::VariableConstProxy
 sample_position(const core::DataConstProxy &d);
+SCIPP_NEUTRON_EXPORT core::Variable
+flight_path_length(const core::DataConstProxy &d);
 SCIPP_NEUTRON_EXPORT core::Variable l1(const core::DataConstProxy &d);
 SCIPP_NEUTRON_EXPORT core::Variable l2(const core::DataConstProxy &d);
 SCIPP_NEUTRON_EXPORT core::Variable
