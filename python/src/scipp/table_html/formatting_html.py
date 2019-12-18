@@ -19,6 +19,10 @@ ICONS_SVG_PATH = f"{os.path.dirname(__file__)}/icons-svg-inline.html"
 with open(ICONS_SVG_PATH, 'r') as f:
     ICONS_SVG = "".join(f.readlines())
 
+SPARSE_LABEL = "[sparse]"
+BIN_EDGE_LABEL = "[bin-edge]"
+VARIANCE_PREFIX = "σ² = "
+
 
 def _is_dataset(x):
     return isinstance(x, sc.Dataset) or isinstance(x, sc.DatasetProxy)
@@ -57,7 +61,7 @@ def _format_non_sparse(var, has_variances):
         data = data.ravel()
     s = _format_array(data, size, ellipsis_after=2)
     if has_variances:
-        s = 'σ² = ' + s
+        s = f'{VARIANCE_PREFIX}{s}'
     return _make_row(s)
 
 
@@ -228,8 +232,9 @@ def _make_inline_attributes(var, has_attrs):
             disabled = ""
 
     if len(attrs_sections) > 0:
-        attrs_sections = "".join(f"<li class='xr-section-item'>{s}</li>"
-                                 for s in attrs_sections)
+        attrs_sections = "".join(
+            f"<li class='xr-section-item sc-subsection'>{s}</li>"
+            for s in attrs_sections)
         attrs_ul = "<div class='xr-wrap'>"\
             f"<ul class='xr-sections'>{attrs_sections}</ul>"\
             "</div>"
@@ -242,26 +247,21 @@ def _make_dim_labels(dim, size, bin_edges=None):
     # there is a trailing whitespace when no dimension
     # label has been added
     if bin_edges and dim in bin_edges:
-        return " [bin-edge]"
-    elif size is None:
-        return " [sparse]"
+        return f" {BIN_EDGE_LABEL}"
+    elif size == sc.Dimensions.Sparse:
+        return f" {SPARSE_LABEL}"
     else:
         return ""
 
 
 def _make_dim_str(var, bin_edges, add_dim_size=False):
-    dim_sizes = []
-    for idx, dim in enumerate(var.dims):
-        try:
-            shape = var.shape[idx]
-        except IndexError:
-            shape = None
-        dim_sizes.append((dim, shape))
-
-    dims_text = ', '.join('{}{}{}'.format(
-        str(dim), _make_dim_labels(dim, size, bin_edges),
-        f': {size}' if add_dim_size and size is not None else '')
-                          for dim, size in dim_sizes)
+    dims_text = ', '.join(
+        '{}{}{}'.format(
+            str(dim),
+            _make_dim_labels(dim, size, bin_edges),
+            f': {size}' if add_dim_size else ''
+        )
+        for dim, size in zip(var.dims, var.shape))
     return dims_text
 
 
@@ -404,7 +404,7 @@ def summarize_data(dataset):
             var,
             has_attrs=has_attrs,
             bin_edges=find_bin_edges(var, dataset) if has_attrs else None))
-                      for name, var in dataset)
+        for name, var in dataset)
     return f"<ul class='xr-var-list'>{vars_li}</ul>"
 
 
