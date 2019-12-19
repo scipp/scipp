@@ -161,7 +161,7 @@ template <class T> struct MakeGroups {
       // handling in follow-up "apply" steps.
       const auto begin = i;
       const auto value = values[i];
-      while (values[i] == value && i < scipp::size(values))
+      while (i < scipp::size(values) && values[i] == value)
         ++i;
       indices[value].emplace_back(dim, begin, i);
     }
@@ -201,8 +201,8 @@ template <class T> struct MakeBinGroups {
       auto right = std::upper_bound(edges.begin(), edges.end(), value);
       if (right != edges.end() && right != edges.begin()) {
         auto left = right - 1;
-        while ((*left <= values[i]) && (values[i] < *right) &&
-               i < scipp::size(values))
+        while (i < scipp::size(values) && (*left <= values[i]) &&
+               (values[i] < *right))
           ++i;
         groups[std::distance(edges.begin(), left)].emplace_back(dim, begin, i);
       }
