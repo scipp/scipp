@@ -265,7 +265,7 @@ def convert_Workspace2D_to_dataarray(ws, **ignored):
     return array
 
 
-def convertEventWorkspace_to_dataarray(ws, load_pulse_times, **ignored):
+def convertEventWorkspace_to_dataarray(ws, load_pulse_times=True, **ignored):
     from mantid.api import EventType
 
     dim, unit = validate_and_get_unit(ws.getAxis(0).getUnit().unitID())
@@ -292,8 +292,7 @@ def convertEventWorkspace_to_dataarray(ws, load_pulse_times, **ignored):
         sp = ws.getSpectrum(i)
         coord[spec_dim, i].values = sp.getTofs()
         if load_pulse_times:
-            labs[spec_dim, i].values = \
-                sp.getPulseTimesAsNumpy().astype(np.int64)
+            labs[spec_dim, i].values = sp.getPulseTimesAsNumpy()
         if contains_weighted_events:
             weights[spec_dim, i].values = sp.getWeights()
             weights[spec_dim, i].variances = sp.getWeightErrors()
@@ -429,8 +428,7 @@ def from_mantid(workspace, **kwargs):
                 value=convert_Workspace2D_to_dataarray(monitor_ws, **kwargs))
         elif monitor_ws.id() == 'EventWorkspace':
             dataset.attrs["monitors"] = sc.Variable(
-                value=convertEventWorkspace_to_dataarray(
-                    monitor_ws, **kwargs))
+                value=convertEventWorkspace_to_dataarray(monitor_ws, **kwargs))
         # Remove some redundant information that is duplicated from workspace
         mon = dataset.attrs["monitors"].value
         del mon.labels['sample_position']

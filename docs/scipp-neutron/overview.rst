@@ -33,8 +33,16 @@ The table below shows the supported unit conversions.
 Free functions
 --------------
 
-Conversions
-~~~~~~~~~~~
+Mantid Compatibility
+~~~~~~~~~~~~~~~~~~~~
+
+.. autosummary::
+   :toctree: ../generated
+
+   from_mantid
+
+Unit Conversion
+~~~~~~~~~~~~~~~
 
 .. autosummary::
    :toctree: ../generated
@@ -60,5 +68,4 @@ Loading Nexus files
 .. autosummary::
    :toctree: ../generated
 
-   from_mantid
    load
