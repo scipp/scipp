@@ -292,8 +292,7 @@ def convertEventWorkspace_to_dataarray(ws, load_pulse_times=True, **ignored):
         sp = ws.getSpectrum(i)
         coord[spec_dim, i].values = sp.getTofs()
         if load_pulse_times:
-            labs[spec_dim, i].values = \
-                sp.getPulseTimesAsNumpy().astype(np.int64)
+            labs[spec_dim, i].values = sp.getPulseTimesAsNumpy()
         if contains_weighted_events:
             weights[spec_dim, i].values = sp.getWeights()
             weights[spec_dim, i].variances = sp.getWeightErrors()
