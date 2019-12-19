@@ -79,9 +79,9 @@ static constexpr auto make_histogram_unit_from_weighted =
       if (sparse_unit != edge_unit)
         throw except::UnitError("Bin edges must have same unit as the sparse "
                                 "input coordinate.");
-      if (weights_unit != units::counts)
-        throw except::UnitError(
-            "Weights of sparse data must be `units::counts`.");
+      if (weights_unit != units::counts && weights_unit != units::dimensionless)
+        throw except::UnitError("Weights of sparse data must be "
+                                "`units::counts` or `units::dimensionless`.");
       return weights_unit;
     };
 
