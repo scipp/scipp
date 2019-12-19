@@ -26,6 +26,17 @@ v0.2 (December 2019)
 
 * Conda packages now also available for Windows.
 
+* ``scipp.neutron`` gets improved converters from Mantid, supporting neutron monitors, sample information, and run information stored as attributes.
+
+Contributors in this release:
+Owen Arnold,
+Igor Gudich,
+Simon Heybrock,
+Daniel Nixon,
+Dimitar Tasev,
+and Neil Vaytet
+
+
 v0.1 (September 2019)
 ---------------------
 
