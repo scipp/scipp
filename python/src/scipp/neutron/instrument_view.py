@@ -4,57 +4,115 @@
 
 # Scipp imports
 from ..config import plot as config
-from .render import render_plot
-from .slicer import Slicer
-from ..utils import name_with_unit
+from ..plot.render import render_plot
+from ..plot.sciplot import SciPlot
+from .._scipp import core as sc
+
+# from .slicer import Slicer
+# from ..utils import name_with_unit
 
 # Other imports
 import numpy as np
 import ipywidgets as widgets
 from matplotlib import cm
 
-try:
-    import ipyvolume as ipv
-    from ipyevents import Event
-except ImportError:
-    ipv = None
+# try:
+#     import ipyvolume as ipv
+#     from ipyevents import Event
+# except ImportError:
+#     ipv = None
 
 
-def plot_3d(data_array=None, axes=None, values=None, variances=None,
-            masks=None, filename=None, figsize=None, aspect=None,
-            cmap=None, log=False, vmin=None, vmax=None, color=None):
+def instrument_view(data_array=None, bins=None, masks=None, filename=None,
+                    figsize=None, aspect="equal", cmap=None, log=False,
+                    vmin=None, vmax=None):
     """
-    Plot a 3-slice through a N dimensional dataset. For every dimension above
-    3, a slider is created to adjust the position of the slice in that
-    particular dimension. For other dimensions, the sliders are used to adjust
-    the position of the slice in 3D space.
+    Plot a 3-dimensional view of the instrument.
+    Sliders are also generated to navigate the time-of-flight dimension.
     """
 
-    # Protect against unloaded module
-    if ipv is None:
-        raise RuntimeError("Three-dimensional projections require ipyvolume "
-                           "and ipyevents to be installed. Use conda/pip "
-                           "install ipyvolume ipyevents.")
+    try:
+        import ipyvolume as ipv
+    except ImportError:
+        raise RuntimeError("The instrument view requires ipyvolume  to be "
+                           "installed. Use conda/pip install ipyvolume.")
 
-    sv = Slicer3d(data_array=data_array, axes=axes, values=values,
-                  variances=variances, masks=masks, cmap=cmap, log=log,
-                  vmin=vmin, vmax=vmax, color=color, aspect=aspect)
+
+
+
+
+    iv = Instrument3d(data_array=data_array, bins=bins, masks=masks, cmap=cmap,
+                      log=log, vmin=vmin, vmax=vmax, aspect=aspect)
 
     render_plot(figure=sv.fig, widgets=sv.box, filename=filename, ipv=ipv)
 
-    return sv.members
+    return SciPlot(iv.members)
 
 
-class Slicer3d(Slicer):
+class Instrument3d:
 
-    def __init__(self, data_array=None, axes=None, values=None, variances=None,
-                 masks=None, cmap=None, log=None, vmin=None, vmax=None,
-                 color=None, aspect=None):
+    def __init__(self, data_array=None, bins=None, masks=None, cmap=None,
+                 log=None, vmin=None, vmax=None, aspect=None):
 
-        super().__init__(data_array=data_array, axes=axes, values=values,
-                         variances=variances, masks=masks, cmap=cmap, log=log,
-                         vmin=vmin, vmax=vmax, color=color, aspect=aspect,
-                         button_options=['X', 'Y', 'Z'])
+        # Initialise Figure
+        self.fig = ipv.figure(width=config.width, height=config.height,
+                              animation=0)
+
+        # Get detector positions
+        self.det_pos = np.array(data_array.labels["position"].values)
+
+        # Find extents of the detectors
+        self.xminmax = {}
+        for i, x in enumerate("xyz"):
+            self.xminmax[x] = [np.amin(self.det_pos[:, i]),
+                               np.amax(self.det_pos[:, i])]
+
+        # Make plot outline if aspect ratio is to be conserved
+        if aspect == "equal":
+            max_size = 0.0
+            dx = {"x": 0, "y": 0, "z": 0}
+            for ax in dx.keys():
+                dx[ax] = np.ediff1d(self.xminmax[ax])
+            max_size = np.amax(list(dx.values()))
+            arrays = dict()
+            for ax, size in dx.items():
+                diff = max_size - size
+                arrays[ax] = [self.xminmax[ax][0] - 0.5 * diff,
+                              self.xminmax[ax][1] + 0.5 * diff]
+
+            outl_x, outl_y, outl_z = np.meshgrid(arrays["x"], arrays["y"],
+                                                 arrays["z"], indexing="ij")
+            self.outline = ipv.plot_wireframe(outl_x, outl_y, outl_z,
+                                              color="black")
+
+        # Histogram the data in the Tof dimension
+        if bins is not None:
+            if data_array.sparse_dim is not None:
+                hist_data_array = histogram_sparse_data(
+                    data_array, data_array.sparse_dim, bins)
+            # if isinstance(bins, bool):
+            #     bins = 256
+            # if isinstance(bins, int):
+            #     # Find min and max
+            #     xmin, xmax = visit_sparse_data(data_array, sparse_dim)
+            #     dx = (xmax - xmin) / float(bins)
+            #     # Add padding
+            #     xmin -= 0.5 * dx
+            #     xmax += 0.5 * dx
+            #     bins = sc.Variable([sparse_dim],
+            #                        values=np.linspace(xmin, xmax, bins + 1),
+            #                        unit=data_array.coords[sparse_dim].unit)
+            # elif isinstance(bins, np.ndarray):
+            #     bins = sc.Variable([sparse_dim], values=bins,
+            #                        unit=data_array.coords[sparse_dim].unit)
+            # elif isinstance(bins, sc.Variable):
+            #     pass
+
+            # return sc.histogram(data_array, bins)
+            else:
+                hist_data_array = 
+
+
 
         self.cube = None
         self.members.update({"surfaces": {}, "wireframes": {}, "outlines": {},

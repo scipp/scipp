@@ -18,7 +18,7 @@ import warnings
 
 
 def plot_2d(data_array=None, axes=None, values=None, variances=None,
-            masks=None, filename=None, name=None, figsize=None, mpl_axes=None,
+            masks=None, filename=None, figsize=None, mpl_axes=None,
             aspect=None, cmap=None, log=False, vmin=None, vmax=None,
             color=None, logx=False, logy=False, logxy=False):
     """

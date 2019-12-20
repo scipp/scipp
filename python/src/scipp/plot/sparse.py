@@ -74,9 +74,22 @@ def visit_sparse_data(data_array, sparse_dim, return_sparse_data=False,
         return xmin, xmax
 
 
-def histogram_sparse_data(data_array, sparse_dim, bins):
+def make_bins(data_array, sparse_dim, bins):
+    """
+    Input bins can be different things:
+    - a bool (True): then a default number of 256 bins is made
+    - an integer: this denotes the number of bins. The input data is scanned
+      and the entire range of sparse data is covered, using the specified
+      number of bins.
+    - a numpy array: denotes the bin edges to be used
+    - a Variable: denotes bin edges, can be used directly in the histogramming
+      function.
+    """
     if isinstance(bins, bool):
-        bins = 256
+        if bins:
+            bins = 256
+        else:
+            bins = None
     if isinstance(bins, int):
         # Find min and max
         xmin, xmax = visit_sparse_data(data_array, sparse_dim)
@@ -92,5 +105,14 @@ def histogram_sparse_data(data_array, sparse_dim, bins):
                            unit=data_array.coords[sparse_dim].unit)
     elif isinstance(bins, sc.Variable):
         pass
+    else:
+        raise RuntimeError("Unknown bins type: {}".format(bins))
+    return bins
 
-    return sc.histogram(data_array, bins)
+
+def histogram_sparse_data(data_array, sparse_dim, bins):
+    """
+    Return a DataArray containing histogrammed sparse data, from specified
+    sparse dimensions and bins. See make_bins for more details.
+    """
+    return sc.histogram(data_array, make_bins(data_array, sparse_dim, bins))
