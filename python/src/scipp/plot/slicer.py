@@ -66,8 +66,6 @@ class Slicer:
 
         # Size of the slider coordinate arrays
         self.slider_nx = dict()
-        # Save dimensions tags for sliders, e.g. Dim.X
-        # self.slider_dims = dict()
         # Store coordinates of dimensions that will be in sliders
         self.slider_x = dict()
         # Store ticklabels for a dimension
@@ -87,8 +85,6 @@ class Slicer:
             if (lab is not None) and (dim in axes):
                 raise RuntimeError("The dimension of the labels cannot also "
                                    "be specified as another axis.")
-            # key = str(dim)
-            # self.slider_dims[key] = dim
             self.slider_labels[dim] = lab
             self.slider_x[dim] = var
             self.slider_ticks[dim] = ticks
@@ -156,10 +152,8 @@ class Slicer:
             else:
                 button_style = "success"
                 self.button_axis_to_dim[button_values[i].lower()] = dim
-            # setattr(self.buttons[key], "dim_str", key)
             setattr(self.buttons[dim], "dim", dim)
             setattr(self.buttons[dim], "old_value", self.buttons[dim].value)
-            # setattr(self.slider[key], "dim_str", key)
             setattr(self.slider[dim], "dim", dim)
 
             if self.ndim == 1:

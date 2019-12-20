@@ -204,14 +204,12 @@ class Slicer3d(Slicer):
                 self.cube = self.cube[dim, val.value]
 
         # The dimensions to be sliced have been saved in slider_dims
-        # button_dim_str = dict()
         button_dim = dict()
         vslices = dict()
         # Slice along dimensions with sliders who have a button value
         for dim, val in self.slider.items():
             if self.buttons[dim].value is not None:
                 s = self.buttons[dim].value.lower()
-                # button_dim_str[s] = key
                 button_dim[s] = dim
                 self.lab[dim].value = self.make_slider_label(
                     self.slider_x[dim], val.value)
@@ -308,7 +306,6 @@ class Slicer3d(Slicer):
         owner.value = not owner.value
         owner.description = "hide" if owner.value else "show"
         owner.button_style = "success" if owner.value else "danger"
-        # key = owner.dim_str
         ax_dim = self.buttons[owner.dim].value.lower()
         self.surfaces[ax_dim].visible = owner.value
         return
