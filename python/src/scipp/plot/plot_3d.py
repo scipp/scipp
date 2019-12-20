@@ -79,8 +79,8 @@ class Slicer3d(Slicer):
 
         # Store min/max for each dimension for invisible scatter
         self.xminmax = dict()
-        for key, var in self.slider_x.items():
-            self.xminmax[key] = [var.values[0], var.values[-1]]
+        for dim, var in self.slider_x.items():
+            self.xminmax[dim] = [var.values[0], var.values[-1]]
         outl_x, outl_y, outl_z = self.get_box()
 
         self.outline = ipv.plot_wireframe(outl_x, outl_y, outl_z,
@@ -113,10 +113,10 @@ class Slicer3d(Slicer):
 
         self.mouse_events = dict()
         self.last_changed_slider_dim = None
-        for key, sl in self.slider.items():
-            self.mouse_events[key] = Event(source=sl,
+        for dim, sl in self.slider.items():
+            self.mouse_events[dim] = Event(source=sl,
                                            watched_events=['mouseup'])
-            self.mouse_events[key].on_dom_event(self.update_surface)
+            self.mouse_events[dim].on_dom_event(self.update_surface)
 
         # Call update_slice once to make the initial image
         self.update_axes()
@@ -130,8 +130,8 @@ class Slicer3d(Slicer):
         return
 
     def update_buttons(self, owner, event, dummy):
-        for key, button in self.buttons.items():
-            if (button.value == owner.value) and (key != owner.dim_str):
+        for dim, button in self.buttons.items():
+            if (button.value == owner.value) and (dim != owner.dim):
                 button.value = owner.old_value
                 button.old_value = button.value
         owner.old_value = owner.value
@@ -140,18 +140,18 @@ class Slicer3d(Slicer):
             self.surfaces[key].visible = True
             self.wireframes[key].visible = False
         # Update the show/hide checkboxes
-        for key, button in self.buttons.items():
+        for dim, button in self.buttons.items():
             ax_dim = button.value
             if ax_dim is not None:
                 ax_dim = ax_dim.lower()
-            self.showhide[key].value = (button.value is not None)
-            self.showhide[key].disabled = (button.value is None)
-            self.showhide[key].description = "hide"
+            self.showhide[dim].value = (button.value is not None)
+            self.showhide[dim].disabled = (button.value is None)
+            self.showhide[dim].description = "hide"
             if button.value is None:
-                self.showhide[key].button_style = ""
+                self.showhide[dim].button_style = ""
             else:
-                self.showhide[key].button_style = "success"
-                self.button_axis_to_dim[ax_dim] = key
+                self.showhide[dim].button_style = "success"
+                self.button_axis_to_dim[ax_dim] = dim
 
         self.fig.meshes = []
         # Update the outline
@@ -175,11 +175,12 @@ class Slicer3d(Slicer):
         # Go through the buttons and select the right coordinates for the axes
         titles = dict()
         buttons_dims = {"x": None, "y": None, "z": None}
-        for key, button in self.buttons.items():
+        for dim, button in self.buttons.items():
             if button.value is not None:
                 titles[button.value.lower()] = name_with_unit(
-                    self.slider_x[key], name=self.slider_labels[key])
-                buttons_dims[button.value.lower()] = button.dim_str
+                    self.slider_x[dim], name=self.slider_labels[dim])
+                # buttons_dims[button.value.lower()] = button.dim
+                buttons_dims[button.value.lower()] = dim
 
         self.fig.xlabel = titles["x"]
         self.fig.ylabel = titles["y"]
@@ -196,26 +197,26 @@ class Slicer3d(Slicer):
         # Slice along dimensions with buttons who have no value, i.e. the
         # dimension is not used for any axis. This reduces the data volume to
         # a 3D cube.
-        for key, val in self.slider.items():
-            if self.buttons[key].value is None:
-                self.lab[key].value = self.make_slider_label(
-                    self.slider_x[key], val.value)
-                self.cube = self.cube[val.dim, val.value]
+        for dim, val in self.slider.items():
+            if self.buttons[dim].value is None:
+                self.lab[dim].value = self.make_slider_label(
+                    self.slider_x[dim], val.value)
+                self.cube = self.cube[dim, val.value]
 
         # The dimensions to be sliced have been saved in slider_dims
-        button_dim_str = dict()
+        # button_dim_str = dict()
         button_dim = dict()
         vslices = dict()
         # Slice along dimensions with sliders who have a button value
-        for key, val in self.slider.items():
-            if self.buttons[key].value is not None:
-                s = self.buttons[key].value.lower()
-                button_dim_str[s] = key
-                button_dim[s] = val.dim
-                self.lab[key].value = self.make_slider_label(
-                    self.slider_x[key], val.value)
-                vslices[s] = {"slice": self.cube[val.dim, val.value],
-                              "loc": self.slider_x[key].values[val.value]}
+        for dim, val in self.slider.items():
+            if self.buttons[dim].value is not None:
+                s = self.buttons[dim].value.lower()
+                # button_dim_str[s] = key
+                button_dim[s] = dim
+                self.lab[dim].value = self.make_slider_label(
+                    self.slider_x[dim], val.value)
+                vslices[s] = {"slice": self.cube[dim, val.value],
+                              "loc": self.slider_x[dim].values[val.value]}
 
         # Now make 3 slices
         wframes = None
@@ -252,48 +253,48 @@ class Slicer3d(Slicer):
 
     # Define function to update wireframes
     def update_slice(self, change):
-        if self.buttons[change["owner"].dim_str].value is None:
+        if self.buttons[change["owner"].dim].value is None:
             self.update_cube(update_coordinates=False)
         else:
             # Update only one slice
             # The dimensions to be sliced have been saved in slider_dims
             # slice_indices = {"x": 0, "y": 1, "z": 2}
-            key = change["owner"].dim_str
-            self.lab[key].value = self.make_slider_label(
-                    self.slider_x[key], change["new"])
+            dim = change["owner"].dim
+            self.lab[dim].value = self.make_slider_label(
+                    self.slider_x[dim], change["new"])
 
             # Now move slice
-            ax_dim = self.buttons[key].value.lower()
+            ax_dim = self.buttons[dim].value.lower()
             self.wireframes[ax_dim].visible = True
             setattr(self.wireframes[ax_dim], ax_dim,
                     getattr(self.wireframes[ax_dim], ax_dim) * 0.0 +
-                    self.slider_x[key].values[change["new"]])
+                    self.slider_x[dim].values[change["new"]])
 
-            self.last_changed_slider_dim = key
+            self.last_changed_slider_dim = dim
         return
 
     # Define function to update surfaces
     def update_surface(self, event):
-        key = self.last_changed_slider_dim
-        if key is not None:
+        dim = self.last_changed_slider_dim
+        if dim is not None:
             # Now move slice
-            index = self.slider[key].value
-            vslice = self.cube[self.slider_dims[key], index]
-            ax_dim = self.buttons[key].value.lower()
+            index = self.slider[dim].value
+            vslice = self.cube[dim, index]
+            ax_dim = self.buttons[dim].value.lower()
             self.wireframes[ax_dim].visible = False
 
             setattr(self.surfaces[ax_dim], ax_dim,
                     getattr(self.surfaces[ax_dim], ax_dim) * 0.0 +
-                    self.slider_x[key].values[index])
+                    self.slider_x[dim].values[index])
 
-            self.surfaces[self.buttons[key].value.lower()].color = \
+            self.surfaces[self.buttons[dim].value.lower()].color = \
                 self.scalar_map["values"].to_rgba(
                     self.check_transpose(vslice).flatten())
         return
 
     def check_transpose(self, vslice, variances=False):
         # Check if dimensions of arrays agree, if not, plot the transpose
-        button_values = [self.buttons[str(dim)].value.lower() for dim in
+        button_values = [self.buttons[dim].value.lower() for dim in
                          vslice.dims]
         if variances:
             values = vslice.variances
@@ -307,8 +308,8 @@ class Slicer3d(Slicer):
         owner.value = not owner.value
         owner.description = "hide" if owner.value else "show"
         owner.button_style = "success" if owner.value else "danger"
-        key = owner.dim_str
-        ax_dim = self.buttons[key].value.lower()
+        # key = owner.dim_str
+        ax_dim = self.buttons[owner.dim].value.lower()
         self.surfaces[ax_dim].visible = owner.value
         return
 

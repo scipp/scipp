@@ -109,10 +109,10 @@ class Slicer1d(Slicer):
             self.ax.set_yscale("log")
 
         # Disable buttons
-        for key, button in self.buttons.items():
-            if self.slider[key].disabled:
+        for dim, button in self.buttons.items():
+            if self.slider[dim].disabled:
                 button.disabled = True
-        self.update_axes(str(list(self.slider_dims.keys())[-1]))
+        self.update_axes(list(self.slider.keys())[-1])
 
         self.ax.set_ylabel(ylab)
         self.ax.legend()
@@ -155,16 +155,16 @@ class Slicer1d(Slicer):
         return
 
     def update_buttons(self, owner, event, dummy):
-        for key, button in self.buttons.items():
-            if key == owner.dim_str:
-                self.slider[key].disabled = True
+        for dim, button in self.buttons.items():
+            if dim == owner.dim:
+                self.slider[dim].disabled = True
                 button.disabled = True
-                self.button_axis_to_dim["x"] = key
+                self.button_axis_to_dim["x"] = dim
             else:
-                self.slider[key].disabled = False
+                self.slider[dim].disabled = False
                 button.value = None
                 button.disabled = False
-        self.update_axes(owner.dim_str)
+        self.update_axes(owner.dim)
         self.keep_buttons = dict()
         self.make_keep_button()
         self.mbox = self.vbox.copy()
@@ -173,14 +173,14 @@ class Slicer1d(Slicer):
         self.box.children = tuple(self.mbox)
         return
 
-    def update_axes(self, dim_str):
+    def update_axes(self, dim):
         if self.mpl_axes is None:
             self.ax.lines = []
             self.ax.collections = []
             self.members.update({"lines": {}, "error_x": {}, "error_y": {},
                                  "error_xy": {}, "masks": {}})
 
-        new_x = self.slider_x[dim_str].values
+        new_x = self.slider_x[dim].values
         xc = edges_to_centers(new_x)
 
         if self.params["masks"]["show"]:
@@ -190,7 +190,7 @@ class Slicer1d(Slicer):
             vslice = self.slice_data(var)
 
             # If this is a histogram, plot a step function
-            if self.histograms[name][dim_str]:
+            if self.histograms[name][dim]:
                 ye = np.concatenate(([0], vslice.values))
                 [self.members["lines"][name]] = self.ax.step(
                     new_x, ye, label=name, zorder=10,
@@ -223,7 +223,7 @@ class Slicer1d(Slicer):
 
             # Add error bars
             if var.variances is not None:
-                if self.histograms[name][dim_str]:
+                if self.histograms[name][dim]:
                     self.members["error_y"][name] = self.ax.errorbar(
                         xc, vslice.values, yerr=np.sqrt(vslice.variances),
                         color=self.mpl_line_params["color"][i], zorder=10,
@@ -238,27 +238,27 @@ class Slicer1d(Slicer):
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", category=UserWarning)
             self.ax.set_xlim([new_x[0] - deltax, new_x[-1] + deltax])
-        self.ax.set_xlabel(name_with_unit(self.slider_x[dim_str],
-                                          name=self.slider_labels[dim_str]))
-        if self.slider_ticks[dim_str] is not None:
-            self.ax.set_xticklabels(self.get_custom_ticks(self.ax, dim_str))
+        self.ax.set_xlabel(name_with_unit(self.slider_x[dim],
+                                          name=self.slider_labels[dim]))
+        if self.slider_ticks[dim] is not None:
+            self.ax.set_xticklabels(self.get_custom_ticks(self.ax, dim))
         return
 
     def slice_data(self, var):
         vslice = var
         # Slice along dimensions with active sliders
-        for key, val in self.slider.items():
+        for dim, val in self.slider.items():
             if not val.disabled:
-                self.lab[key].value = self.make_slider_label(
-                    self.slider_x[key], val.value)
+                self.lab[dim].value = self.make_slider_label(
+                    self.slider_x[dim], val.value)
                 vslice = vslice[val.dim, val.value]
         return vslice
 
     def slice_masks(self):
         mslice = self.masks
-        for key, val in self.slider.items():
-            if not val.disabled and (val.dim in mslice.dims):
-                mslice = mslice[val.dim, val.value]
+        for dim, val in self.slider.items():
+            if not val.disabled and (dim in mslice.dims):
+                mslice = mslice[dim, val.value]
         return mslice
 
     # Define function to update slices
@@ -312,9 +312,9 @@ class Slicer1d(Slicer):
             self.ax.collections[-1].set_url(owner.id)
             self.ax.collections[-1].set_zorder(1)
 
-        for key, val in self.slider.items():
+        for dim, val in self.slider.items():
             if not val.disabled:
-                lab = "{},{}:{}".format(lab, key, val.value)
+                lab = "{},{}:{}".format(lab, dim, val.value)
         self.keep_buttons[owner.id][0] = widgets.Label(
             value=lab, layout={'width': "initial"}, title=lab)
         self.make_keep_button()

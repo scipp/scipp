@@ -74,7 +74,7 @@ def visit_sparse_data(data_array, sparse_dim, return_sparse_data=False,
         return xmin, xmax
 
 
-def make_bins(data_array, sparse_dim, bins):
+def make_bins(data_array=None, sparse_dim=None, bins=None, dim=None):
     """
     Input bins can be different things:
     - a bool (True): then a default number of 256 bins is made
@@ -85,28 +85,42 @@ def make_bins(data_array, sparse_dim, bins):
     - a Variable: denotes bin edges, can be used directly in the histogramming
       function.
     """
-    if isinstance(bins, bool):
-        if bins:
-            bins = 256
-        else:
-            bins = None
-    if isinstance(bins, int):
-        # Find min and max
-        xmin, xmax = visit_sparse_data(data_array, sparse_dim)
-        dx = (xmax - xmin) / float(bins)
-        # Add padding
-        xmin -= 0.5 * dx
-        xmax += 0.5 * dx
-        bins = sc.Variable([sparse_dim],
-                           values=np.linspace(xmin, xmax, bins + 1),
-                           unit=data_array.coords[sparse_dim].unit)
-    elif isinstance(bins, np.ndarray):
-        bins = sc.Variable([sparse_dim], values=bins,
-                           unit=data_array.coords[sparse_dim].unit)
-    elif isinstance(bins, sc.Variable):
+    if isinstance(bins, sc.Variable):
         pass
     else:
-        raise RuntimeError("Unknown bins type: {}".format(bins))
+        if sparse_dim is not None:
+            bin_dim = sparse_dim
+        elif dim is not None:
+            bin_dim = dim
+        else:
+            raise RuntimeError("Must specify either sparse_dim or dim for "
+                               "making bins.")
+
+        if isinstance(bins, bool):
+            if bins:
+                bins = 256
+            else:
+                bins = None
+        if isinstance(bins, int):
+            # Find min and max
+            if sparse_dim is not None:
+                xmin, xmax = visit_sparse_data(data_array, sparse_dim)
+            else:
+                xmin = np.amin(data_array.coords[dim].values)
+                xmax = np.amax(data_array.coords[dim].values)
+
+            dx = (xmax - xmin) / float(bins)
+            # Add padding
+            xmin -= 0.5 * dx
+            xmax += 0.5 * dx
+            bins = sc.Variable([bin_dim],
+                               values=np.linspace(xmin, xmax, bins + 1),
+                               unit=data_array.coords[bin_dim].unit)
+        elif isinstance(bins, np.ndarray):
+            bins = sc.Variable([bin_dim], values=bins,
+                               unit=data_array.coords[bin_dim].unit)
+        else:
+            raise RuntimeError("Unknown bins type: {}".format(bins))
     return bins
 
 
@@ -115,4 +129,6 @@ def histogram_sparse_data(data_array, sparse_dim, bins):
     Return a DataArray containing histogrammed sparse data, from specified
     sparse dimensions and bins. See make_bins for more details.
     """
-    return sc.histogram(data_array, make_bins(data_array, sparse_dim, bins))
+    return sc.histogram(data_array, make_bins(data_array=data_array,
+                                              sparse_dim=sparse_dim,
+                                              bins=bins))

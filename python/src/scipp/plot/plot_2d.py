@@ -135,18 +135,18 @@ class Slicer2d(Slicer):
 
     def update_buttons(self, owner, event, dummy):
         toggle_slider = False
-        if not self.slider[owner.dim_str].disabled:
+        if not self.slider[owner.dim].disabled:
             toggle_slider = True
-            self.slider[owner.dim_str].disabled = True
-        for key, button in self.buttons.items():
-            if (button.value == owner.value) and (key != owner.dim_str):
-                if self.slider[key].disabled:
+            self.slider[owner.dim].disabled = True
+        for dim, button in self.buttons.items():
+            if (button.value == owner.value) and (dim != owner.dim):
+                if self.slider[dim].disabled:
                     button.value = owner.old_value
                 else:
                     button.value = None
                 button.old_value = button.value
                 if toggle_slider:
-                    self.slider[key].disabled = False
+                    self.slider[dim].disabled = False
         owner.old_value = owner.value
         self.update_axes()
         self.update_slice(None)
@@ -156,21 +156,21 @@ class Slicer2d(Slicer):
     def update_axes(self):
         # Go through the buttons and select the right coordinates for the axes
         axparams = {"x": {}, "y": {}}
-        for key, button in self.buttons.items():
-            if self.slider[key].disabled:
+        for dim, button in self.buttons.items():
+            if self.slider[dim].disabled:
                 but_val = button.value.lower()
-                if not self.histograms[self.data_array.name][key]:
-                    xc = self.slider_x[key].values
+                if not self.histograms[self.data_array.name][dim]:
+                    xc = self.slider_x[dim].values
                     xmin = 1.5 * xc[0] - 0.5 * xc[1]
                     xmax = 1.5 * xc[-1] - 0.5 * xc[-2]
                     self.extent[but_val] = [xmin, xmax]
                 else:
-                    self.extent[but_val] = self.slider_x[key].values[[0, -1]]
+                    self.extent[but_val] = self.slider_x[dim].values[[0, -1]]
 
                 axparams[but_val]["labels"] = name_with_unit(
-                            self.slider_x[key],
-                            name=self.slider_labels[key])
-                axparams[but_val]["dim_str"] = key
+                            self.slider_x[dim],
+                            name=self.slider_labels[dim])
+                axparams[but_val]["dim"] = dim
 
         extent_array = np.array(list(self.extent.values())).flatten()
         for key in self.ax.keys():
@@ -184,38 +184,39 @@ class Slicer2d(Slicer):
             self.ax[key].set_xlabel(axparams["x"]["labels"])
             self.ax[key].set_ylabel(axparams["y"]["labels"])
             for xy, param in axparams.items():
-                if self.slider_ticks[param["dim_str"]] is not None:
+                if self.slider_ticks[param["dim"]] is not None:
                     getattr(self.ax[key], "set_{}ticklabels".format(xy))(
                         self.get_custom_ticks(
-                            ax=self.ax[key], dim_str=param["dim_str"], xy=xy))
+                            ax=self.ax[key], dim=param["dim"], xy=xy))
         return
 
-    # Define function to update slices
     def update_slice(self, change):
-        # The dimensions to be sliced have been saved in slider_dims
+        """
+        Slice data according to new slider value.
+        """
         vslice = self.data_array
         if self.params["masks"]["show"]:
             mslice = self.masks
         # Slice along dimensions with active sliders
         button_dims = [None, None]
-        for key, val in self.slider.items():
+        for dim, val in self.slider.items():
             if not val.disabled:
-                self.lab[key].value = self.make_slider_label(
-                    self.slider_x[key], val.value)
+                self.lab[dim].value = self.make_slider_label(
+                    self.slider_x[dim], val.value)
                 vslice = vslice[val.dim, val.value]
                 # At this point, after masks were combined, all their
                 # dimensions should be contained in the data_array.dims.
                 if self.params["masks"]["show"]:
                     mslice = mslice[val.dim, val.value]
             else:
-                button_dims[self.buttons[key].value.lower() == "x"] = val.dim
+                button_dims[self.buttons[dim].value.lower() == "x"] = val.dim
 
         # Check if dimensions of arrays agree, if not, plot the transpose
         slice_dims = vslice.dims
         transp = slice_dims != button_dims
 
         if self.params["masks"]["show"]:
-            shape_list = [self.shapes[dim] for dim in button_dims]
+            shape_list = [self.shapes[bdim] for bdim in button_dims]
             # Use scipp's automatic broadcast functionality to broadcast
             # lower dimension masks to higher dimensions.
             # TODO: creating a Variable here could become expensive when

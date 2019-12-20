@@ -88,86 +88,40 @@ class Instrument3d:
         # Histogram the data in the Tof dimension
         if bins is not None:
             if data_array.sparse_dim is not None:
-                hist_data_array = histogram_sparse_data(
+                self.hist_data_array = histogram_sparse_data(
                     data_array, data_array.sparse_dim, bins)
-            # if isinstance(bins, bool):
-            #     bins = 256
-            # if isinstance(bins, int):
-            #     # Find min and max
-            #     xmin, xmax = visit_sparse_data(data_array, sparse_dim)
-            #     dx = (xmax - xmin) / float(bins)
-            #     # Add padding
-            #     xmin -= 0.5 * dx
-            #     xmax += 0.5 * dx
-            #     bins = sc.Variable([sparse_dim],
-            #                        values=np.linspace(xmin, xmax, bins + 1),
-            #                        unit=data_array.coords[sparse_dim].unit)
-            # elif isinstance(bins, np.ndarray):
-            #     bins = sc.Variable([sparse_dim], values=bins,
-            #                        unit=data_array.coords[sparse_dim].unit)
-            # elif isinstance(bins, sc.Variable):
-            #     pass
-
-            # return sc.histogram(data_array, bins)
             else:
-                hist_data_array = 
+                self.hist_data_array = sc.rebin(
+                    data_array, sc.Dim.Tof, make_bins(data_array=data_array,
+                                                      dim=sc.Dim.Tof,
+                                                      bins=bins))
+        else:
+            self.hist_data_array = data_array
+
+        # Parse input parameters
+        globs = {"cmap": cmap, "log": log, "vmin": vmin, "vmax": vmax}
+        params = parse_params(globs=globs, array=hist_data_array.values)
+
+        # if cmap is None:
+        #     cmap = config.cmap
+        self.scalar_map = cm.ScalarMappable(cmap=params["cmap"])
+        colors = self.scalar_map.to_rgba(
+            self.hist_data_array[sc.Dim.Tof, 0].values)
+
+        self.scatter = ipv.scatter(x=pos[:, 0], y=pos[:, 1], z=pos[:, 2],
+                                   marker="square_2d", size=1, color=colors)
+
+        self.tof_slider = widgets.IntSlider(value=0, min=0, max=99,
+                step=1,
+                description="Tof",
+                continuous_update=True, readout=False)
+
+    def update_colors(self, change):
+        scat.color = self.scalar_map.to_rgba(
+            self.hist_data_array[sc.Dim.Tof, change["new"]].values)
+        return
 
 
-
-        self.cube = None
-        self.members.update({"surfaces": {}, "wireframes": {}, "outlines": {},
-                             "fig": {}})
-
-        # Initialise Figure and VBox objects
-        self.fig = ipv.figure(width=config.width, height=config.height,
-                              animation=0)
-        self.scalar_map = dict()
-
-        panels = ["values"]
-        if self.params["variances"]["show"]:
-            panels.append("variances")
-
-        for key in panels:
-            self.scalar_map[key] = cm.ScalarMappable(
-              norm=self.params[key]["norm"], cmap=self.params[key]["cmap"])
-            self.members["surfaces"][key] = {}
-            self.members["wireframes"][key] = {}
-
-        self.permutations = {"x": ["y", "z"], "y": ["x", "z"], "z": ["x", "y"]}
-
-        # Store min/max for each dimension for invisible scatter
-        self.xminmax = dict()
-        for key, var in self.slider_x.items():
-            self.xminmax[key] = [var.values[0], var.values[-1]]
-        outl_x, outl_y, outl_z = self.get_box()
-
-        self.outline = ipv.plot_wireframe(outl_x, outl_y, outl_z,
-                                          color="black")
-        self.wireframes = dict()
-        self.surfaces = dict()
-
-        # #====================================================================
-        # wframes = self.get_outlines()
-        # meshes = self.get_meshes()
-        # surf_args = dict.fromkeys(self.permutations)
-        # wfrm_args = dict.fromkeys(self.permutations)
-        # # print(wframes)
-        # for xyz, perm in self.permutations.items():
-        #     print(xyz, perm)
-        #     key = self.button_axis_to_dim[xyz]
-
-        #     wfrm_args[xyz] = np.ones_like(wframes[xyz][perm[0]]) * \
-        #         self.slider_x[key].values[self.slider[key].value]
-        #     surf_args[xyz] = np.ones_like(meshes[xyz][perm[0]]) * \
-        #         self.slider_x[key].values[self.slider[key].value]
-        #     for p in perm:
-        #         wfrm_args[p] = wframes[xyz][p]
-        #         surf_args[p] = meshes[xyz][p]
-
-        #     self.wireframes[xyz] = ipv.plot_wireframe(**wfrm_args,
-        #                                               color="red")
-        #     self.surfaces[xyz] = ipv.plot_surface(**surf_args, color="red")
-        # #====================================================================
 
         self.mouse_events = dict()
         self.last_changed_slider_dim = None
