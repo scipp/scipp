@@ -24,7 +24,8 @@ except ImportError:
 
 def instrument_view(data_array=None, bins=None, masks=None, filename=None,
                     figsize=None, aspect="equal", cmap=None, log=False,
-                    vmin=None, vmax=None, size=1, projection="3D"):
+                    vmin=None, vmax=None, size=1, projection="3D",
+                    nan_color="#d3d3d3"):
     """
     Plot a 2D or 3D view of the instrument.
     A slider is also generated to navigate the time-of-flight dimension.
@@ -38,7 +39,8 @@ def instrument_view(data_array=None, bins=None, masks=None, filename=None,
 
     iv = InstrumentView(data_array=data_array, bins=bins, masks=masks,
                         cmap=cmap, log=log, vmin=vmin, vmax=vmax,
-                        aspect=aspect, size=size, projection=projection)
+                        aspect=aspect, size=size, projection=projection,
+                        nan_color=nan_color)
 
     render_plot(figure=iv.fig, widgets=iv.box, filename=filename, ipv=ipv)
 
@@ -49,7 +51,7 @@ class InstrumentView:
 
     def __init__(self, data_array=None, bins=None, masks=None, cmap=None,
                  log=None, vmin=None, vmax=None, aspect=None, size=1,
-                 projection=None):
+                 projection=None, nan_color=None):
 
         self.fig = None
         self.scatter = None
@@ -60,6 +62,8 @@ class InstrumentView:
         self.figurewidget = None
         self.mpl_figure = False
         self.image = None
+        self.nan_color = nan_color
+        self.log = log
 
         # Get detector positions
         self.det_pos = np.array(data_array.labels["position"].values)
@@ -90,7 +94,10 @@ class InstrumentView:
         globs = {"cmap": cmap, "log": log, "vmin": vmin, "vmax": vmax}
         self.params = parse_params(globs=globs,
                                    array=self.hist_data_array.values)
-        self.scalar_map = cm.ScalarMappable(cmap=self.params["cmap"])
+        cmap = cm.get_cmap(self.params["cmap"])
+        cmap.set_bad(color=self.nan_color)
+        self.scalar_map = cm.ScalarMappable(cmap=cmap,
+                                            norm=self.params["norm"])
 
         # Create a Tof slider and its label
         indx = self.hist_data_array.dims.index(sc.Dim.Tof)
@@ -204,14 +211,17 @@ class InstrumentView:
         self.scatter = ipv.scatter(x=self.det_pos[:, 0], y=self.det_pos[:, 1],
                                    z=self.det_pos[:, 2], marker="square_2d",
                                    size=self.size)
+        # self.scatter.material.transparent = True
 
         self.figurewidget = ipv.gcc()
         self.mpl_figure = False
         return
 
     def update_colors_3d(self, change):
-        self.scatter.color = self.scalar_map.to_rgba(
-            self.hist_data_array[sc.Dim.Tof, change["new"]].values)
+        arr = self.hist_data_array[sc.Dim.Tof, change["new"]].values
+        if self.log:
+            arr = np.ma.masked_where(arr <= 0, arr)
+        self.scatter.color = self.scalar_map.to_rgba(arr)
         return
 
     def projection_2d(self, projection):
