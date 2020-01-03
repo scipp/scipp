@@ -41,7 +41,8 @@ def plot_1d(scipp_obj_dict=None, axes=None, values=None, variances=None,
                   logx=logx or logxy, logy=logy or logxy)
 
     if mpl_axes is None:
-        render_plot(figure=sv.fig, widgets=sv.box, filename=filename)
+        render_plot(figure=sv.fig, widgets=sv.box, figurewidget=sv.fig.canvas,
+                    filename=filename)
 
     return sv.members
 

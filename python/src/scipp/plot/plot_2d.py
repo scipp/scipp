@@ -33,7 +33,8 @@ def plot_2d(data_array=None, axes=None, values=None, variances=None,
                   color=color, logx=logx or logxy, logy=logy or logxy)
 
     if mpl_axes is None:
-        render_plot(figure=sv.fig, widgets=sv.vbox, filename=filename)
+        render_plot(figure=sv.fig, widgets=sv.vbox, figurewidget=sv.fig.canvas,
+                    filename=filename)
 
     return sv.members
 

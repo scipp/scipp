@@ -3,9 +3,11 @@
 # @author Neil Vaytet
 
 import matplotlib
+import ipywidgets as ipw
 
 
-def render_plot(figure=None, widgets=None, filename=None, ipv=None):
+def render_plot(figure=None, widgets=None, figurewidget=None, filename=None,
+                ipv=None):
     """
     Render the plot using either file export or interactive display.
     """
@@ -23,7 +25,13 @@ def render_plot(figure=None, widgets=None, filename=None, ipv=None):
         else:
             figure.savefig(filename, bbox_inches="tight")
     else:
-        if widgets is not None and (ipv is not None or
-                                    matplotlib.get_backend() == "nbAgg"):
-            disp.display(widgets)
+        if widgets is not None and ipv is not None or \
+          matplotlib.get_backend().lower().endswith("nbagg"):
+            if figurewidget is not None:
+                to_screen = ipw.VBox([figurewidget, widgets])
+            else:
+                to_screen = widgets
+            disp.display(to_screen)
+        elif figure is not None:
+            disp.display(figure)
     return

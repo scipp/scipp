@@ -17,6 +17,14 @@ def plot(scipp_obj, collapse=None, projection=None, axes=None, color=None,
     from .tools import get_line_param
     from .plot_collapse import plot_collapse
     from .dispatch import dispatch
+    import matplotlib.pyplot as plt
+
+    # Temporarily disable automatic plotting in notebook
+    if plt.isinteractive():
+        plt.ioff()
+        re_enable_interactive = True
+    else:
+        re_enable_interactive = False
 
     inventory = dict()
     tp = type(scipp_obj)
@@ -115,4 +123,9 @@ def plot(scipp_obj, collapse=None, projection=None, axes=None, color=None,
                                    mpl_line_params=val["mpl_line_params"],
                                    bins=bins,
                                    **kwargs)
+
+    # Re-enable automatic plotting in notebook
+    if re_enable_interactive:
+        plt.ion()
+
     return output
