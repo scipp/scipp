@@ -5,3 +5,4 @@ ipywidgets
 pytest
 ipyvolume
 ipyevents
+ipympl
