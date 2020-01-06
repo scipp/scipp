@@ -21,7 +21,10 @@ fi
 # Show cmake settings
 cmake -B . -S .. -LA
 
-cmake --build . --target all-tests -- -v 
+cmake --build . --target scipp-common-test -- -v 
+cmake --build . --target scipp-core-test -- -v 
+cmake --build . --target scipp-units-test -- -v 
+cmake --build . --target scipp-neutron-test -- -v 
 # C++ tests
 ./common/test/scipp-common-test
 ./units/test/scipp-units-test
