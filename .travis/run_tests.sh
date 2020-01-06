@@ -7,6 +7,7 @@ mkdir -p build
 mkdir -p install
 cd build
 cmake -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=OFF -DPYTHON_EXECUTABLE=${PYTHON_EXECUTABLE} $@ -DCMAKE_INSTALL_PREFIX=../install ..
+cmake -L
 make -j2 install all-tests all-benchmarks
 
 # C++ tests

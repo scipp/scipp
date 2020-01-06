@@ -18,6 +18,8 @@ rc=$?
 if [ $rc -ne 0 ]; then
   exit $rc
 fi
+# Show cmake settings
+cmake -L
 
 cmake --build . --target all-tests -- -v 
 # C++ tests
