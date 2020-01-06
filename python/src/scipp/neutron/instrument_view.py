@@ -56,14 +56,17 @@ class InstrumentView:
                  log=None, vmin=None, vmax=None, aspect=None, size=1,
                  projection=None, nan_color=None, continuous_update=None):
 
-        self.fig = None
-        self.scatter = None
+        self.fig2d = None
+        self.fig3d = None
+        self.scatter2d = None
+        self.scatter3d = None
         self.outline = None
         self.size = size
         self.aspect = aspect
         self.do_update = None
         self.figurewidget = widgets.Output()
-        self.mpl_figure = False
+        self.figure2d = False
+        self.figure3d = False
         self.image = None
         self.nan_color = nan_color
         self.log = log
@@ -143,8 +146,10 @@ class InstrumentView:
         # Create members object
         self.members = {"widgets": {"sliders": self.tof_slider,
                                     "togglebuttons": self.togglebuttons},
-                        "fig": self.fig, "scatter": self.scatter,
-                        "outline": self.outline, "image": self.image}
+                        "fig2d": self.fig2d, "fig3d": self.fig3d,
+                        "scatter2d": self.scatter2d,
+                        "scatter3d": self.scatter3d,
+                        "outline": self.outline}
 
         return
 
@@ -168,15 +173,15 @@ class InstrumentView:
         update_children = False
 
         if change["new"] == "3D":
-            if self.fig is not None:
-                self.fig.clear()
+            # if self.fig is not None:
+            #     self.fig.clear()
             # update_children = True
             self.projection_3d()
             self.do_update = self.update_colors_3d
         else:
             if change["old"] == "3D":
-                if ipv is not None:
-                    ipv.clear()
+                # if ipv is not None:
+                #     ipv.clear()
                 update_children = True
             self.projection_2d(change["new"], update_children)
             self.do_update = self.update_colors_2d
@@ -195,33 +200,35 @@ class InstrumentView:
 
     def projection_3d(self):
         # Initialise Figure
-        self.fig = ipv.figure(width=config.width, height=config.height,
-                              animation=0, lighting=False)
-        # Make plot outline if aspect ratio is to be conserved
-        if self.aspect == "equal":
-            max_size = 0.0
-            dx = {"x": 0, "y": 0, "z": 0}
-            for ax in dx.keys():
-                dx[ax] = np.ediff1d(self.xminmax[ax])
-            max_size = np.amax(list(dx.values()))
-            arrays = dict()
-            for ax, s in dx.items():
-                diff = max_size - s
-                arrays[ax] = [self.xminmax[ax][0] - 0.5 * diff,
-                              self.xminmax[ax][1] + 0.5 * diff]
+        if not self.figure3d:
+            self.fig3d = ipv.figure(width=config.width, height=config.height,
+                                  animation=0, lighting=False)
+            # Make plot outline if aspect ratio is to be conserved
+            if self.aspect == "equal":
+                max_size = 0.0
+                dx = {"x": 0, "y": 0, "z": 0}
+                for ax in dx.keys():
+                    dx[ax] = np.ediff1d(self.xminmax[ax])
+                max_size = np.amax(list(dx.values()))
+                arrays = dict()
+                for ax, s in dx.items():
+                    diff = max_size - s
+                    arrays[ax] = [self.xminmax[ax][0] - 0.5 * diff,
+                                  self.xminmax[ax][1] + 0.5 * diff]
 
-            outl_x, outl_y, outl_z = np.meshgrid(arrays["x"], arrays["y"],
-                                                 arrays["z"], indexing="ij")
-            self.outline = ipv.plot_wireframe(outl_x, outl_y, outl_z,
-                                              color="black")
-        self.scatter = ipv.scatter(x=self.det_pos[:, 0], y=self.det_pos[:, 1],
-                                   z=self.det_pos[:, 2], marker="square_2d",
-                                   size=self.size)
+                outl_x, outl_y, outl_z = np.meshgrid(arrays["x"], arrays["y"],
+                                                     arrays["z"], indexing="ij")
+                self.outline = ipv.plot_wireframe(outl_x, outl_y, outl_z,
+                                                  color="black")
+            self.scatter3d = ipv.scatter(x=self.det_pos[:, 0], y=self.det_pos[:, 1],
+                                       z=self.det_pos[:, 2], marker="square_2d",
+                                       size=self.size)
+            self.figure3d = True
         # self.scatter.material.transparent = True
 
         # self.figurewidget = ipv.gcc()
         self.figurewidget.clear_output()
-        self.mpl_figure = False
+        # self.mpl_figure = False
         self.box.children = tuple([self.figurewidget, ipv.gcc(), self.vbox])
         return
 
@@ -229,7 +236,7 @@ class InstrumentView:
         arr = self.hist_data_array[sc.Dim.Tof, change["new"]].values
         if self.log:
             arr = np.ma.masked_where(arr <= 0, arr)
-        self.scatter.color = self.scalar_map.to_rgba(arr)
+        self.scatter3d.color = self.scalar_map.to_rgba(arr)
         return
 
     def projection_2d(self, projection, update_children):
@@ -237,14 +244,14 @@ class InstrumentView:
         # figure.
         if update_children:
             self.box.children = tuple([self.figurewidget, self.vbox])
-        if not self.mpl_figure:
-            self.fig, self.ax = plt.subplots(
+        if not self.figure2d:
+            self.fig2d, self.ax = plt.subplots(
                 1, 1, figsize=(config.width / config.dpi,
                                config.height / config.dpi))
-            self.figurewidget.clear_output()
-            with self.figurewidget:
-                disp.display(self.fig)
 
+        if update_children:
+            with self.figurewidget:
+                disp.display(self.fig2d)
 
         # Compute cylindrical or spherical projections
         theta = np.arctan2(self.det_pos[:, 2], self.det_pos[:, 0])
@@ -257,47 +264,30 @@ class InstrumentView:
                                          self.det_pos[:, 2]**2))
 
         # Create the scatter
-        if not self.mpl_figure:
+        if not self.figure2d:
             patches = []
             for x, y in zip(theta, z_or_phi):
-                # circle = Circle((x1,y1), r)
                 patches.append(Rectangle((x-0.5*self.size, y-0.5*self.size), self.size, self.size))
 
-            self.scatter = PatchCollection(patches, cmap=self.params["cmap"], norm=self.params["norm"],
+            self.scatter2d = PatchCollection(patches, cmap=self.params["cmap"], norm=self.params["norm"],
                 array=self.hist_data_array[sc.Dim.Tof,
                                        self.tof_slider.value].values)
-            self.ax.add_collection(self.scatter)
+            self.ax.add_collection(self.scatter2d)
             self.save_xy = np.array([theta, z_or_phi]).T
-# p.set_array(colors)
-# ax.add_collection(p)
-
-            # self.scatter = self.ax.scatter(
-            #     x=theta, y=z_or_phi, s=self.size,
-            #     c=self.hist_data_array[sc.Dim.Tof,
-            #                            self.tof_slider.value].values,
-            #     norm=self.params["norm"], cmap=self.params["cmap"],
-            #     marker="s")
             if self.params["cbar"]:
-                self.cbar = plt.colorbar(self.scatter, ax=self.ax)
+                self.cbar = plt.colorbar(self.scatter2d, ax=self.ax)
                 self.cbar.ax.set_ylabel(
                     name_with_unit(var=self.hist_data_array, name=""))
                 self.cbar.ax.yaxis.set_label_coords(-1.1, 0.5)
-            self.mpl_figure = True
-            # self.ax.set_xlim([np.amin(theta)-self.size, np.amax(theta)+self.size])
-            # self.ax.set_ylim([np.amin(z_or_phi)-self.size, np.amax(z_or_phi)+self.size])
+            self.figure2d = True
         else:
-            self.scatter.set_offset_position("data")
-            self.scatter.set_offsets(np.array([theta, z_or_phi]).T - self.save_xy)
+            self.scatter2d.set_offset_position("data")
+            self.scatter2d.set_offsets(np.array([theta, z_or_phi]).T - self.save_xy)
         self.ax.set_xlim([np.amin(theta)-self.size, np.amax(theta)+self.size])
         self.ax.set_ylim([np.amin(z_or_phi)-self.size, np.amax(z_or_phi)+self.size])
-        # self.ax.set_xlim([-5, 5])
-        # self.ax.set_ylim([-5, 5])
         return
 
     def update_colors_2d(self, change):
-        self.scatter.set_array(self.hist_data_array[sc.Dim.Tof, change["new"]].values)
-        # self.fig.canvas.flush_events()
-        self.fig.canvas.draw_idle()
-        # self.fig.canvas.update()
-        # print("Done", change["new"])
+        self.scatter2d.set_array(self.hist_data_array[sc.Dim.Tof, change["new"]].values)
+        self.fig2d.canvas.draw_idle()
         return
