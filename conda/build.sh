@@ -19,7 +19,7 @@ if [ $rc -ne 0 ]; then
   exit $rc
 fi
 # Show cmake settings
-cmake -B . -LA
+cmake -B . -S .. -LA
 
 cmake --build . --target all-tests -- -v 
 # C++ tests
