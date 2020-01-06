@@ -8,7 +8,7 @@
 #include "scipp/core/element_array.h"
 
 namespace scipp::core {
-template <class T> using Vector = detail::element_array<T>;
+template <class T> using Vector_to_substitute = detail::element_array<T>;
 }
 
 #endif // SCIPP_CORE_VECTOR_H

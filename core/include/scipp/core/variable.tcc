@@ -59,7 +59,7 @@ template <class T> class DataModel;
 template <class T>
 VariableConceptHandle
 VariableConceptT<T>::makeDefaultFromParent(const Dimensions &dims) const {
-  using TT = Vector<std::decay_t<T>>;
+  using TT = detail::element_array<std::decay_t<T>>;
   if (hasVariances())
     return std::make_unique<DataModel<TT>>(dims, TT(dims.volume()),
                                            TT(dims.volume()));
@@ -246,7 +246,7 @@ public:
                                "volume given by dimension extents");
   }
 
-  void setVariances(Vector<value_type> &&v) override {
+  void setVariances(detail::element_array<value_type> &&v) override {
     if (!canHaveVariances<value_type>())
       throw except::VariancesError("This data type cannot have variances.");
     if (v.size() != m_values.size())
@@ -561,7 +561,8 @@ public:
   std::unique_ptr<
       VariableConceptT<std::remove_const_t<typename T::element_type>>>
   copyT() const override {
-    using DataT = Vector<std::remove_const_t<typename T::element_type>>;
+    using DataT =
+        detail::element_array<std::remove_const_t<typename T::element_type>>;
     DataT values(m_values.begin(), m_values.end());
     std::optional<DataT> variances;
     if (hasVariances())
@@ -591,7 +592,7 @@ public:
   std::optional<T> m_variances;
 
 private:
-  void setVariances(Vector<value_type> &&) override {
+  void setVariances(detail::element_array<value_type> &&) override {
     throw std::logic_error(std::string("This shouldn't be called: ") +
                            __PRETTY_FUNCTION__);
   }
@@ -614,8 +615,8 @@ Variable::Variable(const units::Unit unit, const Dimensions &dimensions,
                                                     std::move(variances_))) {}
 
 template <class T>
-const Vector<T> &Variable::cast(const bool variances_) const {
-  auto &dm = requireT<const DataModel<Vector<T>>>(*m_object);
+const detail::element_array<T> &Variable::cast(const bool variances_) const {
+  auto &dm = requireT<const DataModel<detail::element_array<T>>>(*m_object);
   if (!variances_)
     return dm.m_values;
   else {
@@ -624,8 +625,9 @@ const Vector<T> &Variable::cast(const bool variances_) const {
   }
 }
 
-template <class T> Vector<T> &Variable::cast(const bool variances_) {
-  auto &dm = requireT<DataModel<Vector<T>>>(*m_object);
+template <class T>
+detail::element_array<T> &Variable::cast(const bool variances_) {
+  auto &dm = requireT<DataModel<detail::element_array<T>>>(*m_object);
   if (!variances_)
     return dm.m_values;
   else {
@@ -638,7 +640,8 @@ template <class T>
 const VariableView<const T> VariableConstProxy::cast() const {
   using TT = T;
   if (!m_view)
-    return requireT<const DataModel<Vector<TT>>>(data()).valuesView(dims());
+    return requireT<const DataModel<detail::element_array<TT>>>(data())
+        .valuesView(dims());
   if (m_view->isConstView())
     return requireT<const ViewModel<VariableView<const TT>>>(data()).m_values;
   // Make a const view from the mutable one.
@@ -650,7 +653,8 @@ const VariableView<const T> VariableConstProxy::castVariances() const {
   expect::hasVariances(*this);
   using TT = T;
   if (!m_view)
-    return requireT<const DataModel<Vector<TT>>>(data()).variancesView(dims());
+    return requireT<const DataModel<detail::element_array<TT>>>(data())
+        .variancesView(dims());
   if (m_view->isConstView())
     return *requireT<const ViewModel<VariableView<const TT>>>(data())
                 .m_variances;
@@ -663,7 +667,8 @@ template <class T> VariableView<T> VariableProxy::cast() const {
   using TT = T;
   if (m_view)
     return requireT<const ViewModel<VariableView<TT>>>(data()).m_values;
-  return requireT<DataModel<Vector<TT>>>(data()).valuesView(dims());
+  return requireT<DataModel<detail::element_array<TT>>>(data()).valuesView(
+      dims());
 }
 
 template <class T> VariableView<T> VariableProxy::castVariances() const {
@@ -671,10 +676,11 @@ template <class T> VariableView<T> VariableProxy::castVariances() const {
   using TT = T;
   if (m_view)
     return *requireT<const ViewModel<VariableView<TT>>>(data()).m_variances;
-  return requireT<DataModel<Vector<TT>>>(data()).variancesView(dims());
+  return requireT<DataModel<detail::element_array<TT>>>(data()).variancesView(
+      dims());
 }
 
-template <class T> void Variable::setVariances(Vector<T> &&v) {
+template <class T> void Variable::setVariances(detail::element_array<T> &&v) {
   auto lmb = [v = std::forward<decltype(v)>(v)](auto &&model) mutable {
     using TT = T;
     // Handle, e.g., float input if Variable dtype is double.
@@ -682,7 +688,7 @@ template <class T> void Variable::setVariances(Vector<T> &&v) {
     if constexpr (std::is_same_v<TTT, T> && std::is_same_v<T, TT>)
       model->setVariances(std::move(v));
     else
-      model->setVariances(Vector<TTT>(v.begin(), v.end()));
+      model->setVariances(detail::element_array<TTT>(v.begin(), v.end()));
   };
   try {
     apply_in_place<double, float, int64_t, int32_t>(lmb, *this);
@@ -692,7 +698,8 @@ template <class T> void Variable::setVariances(Vector<T> &&v) {
   }
 }
 
-template <class T> void VariableProxy::setVariances(Vector<T> &&v) const {
+template <class T>
+void VariableProxy::setVariances(detail::element_array<T> &&v) const {
   // If the proxy wraps the whole variable (common case: iterating a dataset)
   // m_view is not set. A more complex check would be to verify dimensions,
   // shape, and strides, but this should be sufficient for now.
@@ -706,14 +713,17 @@ template <class T> void VariableProxy::setVariances(Vector<T> &&v) const {
   Support explicit instantiations for templates for generic Variable and
   VariableConstProxy
 */
+using scipp::core::detail::element_array;
 #define INSTANTIATE_VARIABLE(...)                                              \
   template Variable::Variable(const units::Unit, const Dimensions &,           \
-                              Vector<__VA_ARGS__>);                            \
+                              element_array<__VA_ARGS__>);                     \
   template Variable::Variable(const units::Unit, const Dimensions &,           \
-                              Vector<__VA_ARGS__>, Vector<__VA_ARGS__>);       \
-  template Vector<__VA_ARGS__> &Variable::cast<__VA_ARGS__>(const bool);       \
-  template const Vector<__VA_ARGS__> &Variable::cast<__VA_ARGS__>(const bool)  \
-      const;                                                                   \
+                              element_array<__VA_ARGS__>,                      \
+                              element_array<__VA_ARGS__>);                     \
+  template element_array<__VA_ARGS__> &Variable::cast<__VA_ARGS__>(            \
+      const bool);                                                             \
+  template const element_array<__VA_ARGS__> &Variable::cast<__VA_ARGS__>(      \
+      const bool) const;                                                       \
   template const VariableView<const __VA_ARGS__>                               \
   VariableConstProxy::cast<__VA_ARGS__>() const;                               \
   template const VariableView<const __VA_ARGS__>                               \
@@ -723,8 +733,9 @@ template <class T> void VariableProxy::setVariances(Vector<T> &&v) const {
   VariableProxy::castVariances<__VA_ARGS__>() const;
 
 #define INSTANTIATE_SET_VARIANCES(...)                                         \
-  template void Variable::setVariances<__VA_ARGS__>(Vector<__VA_ARGS__> &&);   \
+  template void Variable::setVariances<__VA_ARGS__>(                           \
+      element_array<__VA_ARGS__> &&);                                          \
   template void VariableProxy::setVariances<__VA_ARGS__>(                      \
-      Vector<__VA_ARGS__> &&) const;
+      element_array<__VA_ARGS__> &&) const;
 
 } // namespace scipp::core

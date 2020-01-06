@@ -150,21 +150,23 @@ public:
     constexpr bool hasVal = is_tag_in_pack_v<ValuesTag, Ts...>;
     constexpr bool hasVar = is_tag_in_pack_v<VariancesTag, Ts...>;
     constexpr bool constrVal =
-        std::is_constructible_v<Vector<ElemT>, ValArgs...>;
+        std::is_constructible_v<detail::element_array<ElemT>, ValArgs...>;
     constexpr bool constrVar =
-        std::is_constructible_v<Vector<ElemT>, VarArgs...>;
+        std::is_constructible_v<detail::element_array<ElemT>, VarArgs...>;
 
     if constexpr ((hasVal && !constrVal) || (hasVar && !constrVar))
       throw except::TypeError("Can't create the Variable with type " +
                               to_string(core::dtype<ElemT>) +
                               " with such values and/or variances.");
     else {
-      std::optional<Vector<ElemT>> values;
+      std::optional<detail::element_array<ElemT>> values;
       if (hasVal)
-        values = std::make_from_tuple<Vector<ElemT>>(std::move(valArgs));
-      std::optional<Vector<ElemT>> variances;
+        values = std::make_from_tuple<detail::element_array<ElemT>>(
+            std::move(valArgs));
+      std::optional<detail::element_array<ElemT>> variances;
       if (hasVar)
-        variances = std::make_from_tuple<Vector<ElemT>>(std::move(varArgs));
+        variances = std::make_from_tuple<detail::element_array<ElemT>>(
+            std::move(varArgs));
       return VarT::template create<ElemT>(
           std::move(std::get<NonDataTypes>(nonData))..., std::move(values),
           std::move(variances));

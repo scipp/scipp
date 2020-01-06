@@ -24,7 +24,8 @@ using namespace scipp::core;
 template <class Var> struct VarianceSetter {
   template <class T> struct SetVariances {
     static void apply(Var &var) {
-      var.setVariances(Vector<T>(var.data().size()));
+      var.setVariances(
+          scipp::core::detail::element_array<T>(var.data().size()));
     }
   };
 

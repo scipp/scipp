@@ -79,30 +79,32 @@ TEST(VariableUniversalConstructorTest, dimensions_unit_basic) {
 }
 
 TEST(VariableUniversalConstructorTest, type_construcors_mix) {
+  using namespace scipp::core::detail;
   auto flt = std::vector{1.5f, 3.6f};
   auto v1 = Variable(dtype<float>, Dims{Dim::X, Dim::Y}, Shape{2, 1},
                      Values(flt.begin(), flt.end()),
-                     Variances(Vector<double>{2.0, 3.0}));
-  auto v2 =
-      Variable(dtype<float>, Dims{Dim::X, Dim::Y}, Shape{2, 1},
-               Values(Vector<double>{1.5, 3.6}), Variances(Vector<int>{2, 3}));
+                     Variances(element_array<double>{2.0, 3.0}));
+  auto v2 = Variable(dtype<float>, Dims{Dim::X, Dim::Y}, Shape{2, 1},
+                     Values(element_array<double>{1.5, 3.6}),
+                     Variances(element_array<int>{2, 3}));
   auto v3 = Variable(dtype<float>, units::Unit(), Dims{Dim::X, Dim::Y},
-                     Shape{2, 1}, Values(Vector<double>{1.5f, 3.6}));
-  v3.setVariances(Vector<float>{2, 3});
+                     Shape{2, 1}, Values(element_array<double>{1.5f, 3.6}));
+  v3.setVariances(element_array<float>{2, 3});
   EXPECT_EQ(v1, v2);
   EXPECT_EQ(v1, v3);
 
-  v2 = Variable(dtype<float>, Variances(Vector<double>{2.0, 3.0}),
+  v2 = Variable(dtype<float>, Variances(element_array<double>{2.0, 3.0}),
                 Dims{Dim::X, Dim::Y}, Shape{2, 1},
-                Values(Vector<float>{1.5f, 3.6f}));
+                Values(element_array<float>{1.5f, 3.6f}));
   EXPECT_EQ(v1, v2);
 }
 
 TEST(VariableUniversalConstructorTest, no_copy_on_matched_types) {
-  auto values = Vector<double>{1.0, 4.5, 2.7, 5.0, 7.0, 6.7};
-  auto variances = Vector<double>{1.0, 4.5, 2.7, 5.0, 7.0, 6.7};
-  auto valuesRef = Vector<double>(values);
-  auto variancesRef = Vector<double>(variances);
+  using namespace scipp::core::detail;
+  auto values = element_array<double>{1.0, 4.5, 2.7, 5.0, 7.0, 6.7};
+  auto variances = element_array<double>{1.0, 4.5, 2.7, 5.0, 7.0, 6.7};
+  auto valuesRef = element_array<double>(values);
+  auto variancesRef = element_array<double>(variances);
   auto valAddr = values.data();
   auto varAddr = variances.data();
 
@@ -119,16 +121,18 @@ TEST(VariableUniversalConstructorTest, no_copy_on_matched_types) {
 }
 
 TEST(VariableUniversalConstructorTest, convertable_types) {
-  auto data = Vector<double>{1.0, 4.5, 2.7, 5.0, 7.0, 6.7};
-  auto variable = Variable(dtype<int64_t>, Dims{Dim::X, Dim::Y}, Shape{2, 3},
-                           Values(Vector<double>(data)), units::Unit(units::kg),
-                           Variances(Vector<double>(data)));
+  using namespace scipp::core::detail;
+  auto data = element_array<double>{1.0, 4.5, 2.7, 5.0, 7.0, 6.7};
+  auto variable =
+      Variable(dtype<int64_t>, Dims{Dim::X, Dim::Y}, Shape{2, 3},
+               Values(element_array<double>(data)), units::Unit(units::kg),
+               Variances(element_array<double>(data)));
 
   EXPECT_EQ(variable.dtype(), dtype<int64_t>);
   EXPECT_TRUE(equals(variable.values<int64_t>(),
-                     Vector<int64_t>(data.begin(), data.end())));
+                     element_array<int64_t>(data.begin(), data.end())));
   EXPECT_TRUE(equals(variable.variances<int64_t>(),
-                     Vector<int64_t>(data.begin(), data.end())));
+                     element_array<int64_t>(data.begin(), data.end())));
 }
 
 TEST(VariableUniversalConstructorTest, unconvertable_types) {
@@ -138,14 +142,15 @@ TEST(VariableUniversalConstructorTest, unconvertable_types) {
 }
 
 TEST(VariableUniversalConstructorTest, initializer_list) {
+  using namespace scipp::core::detail;
   EXPECT_EQ(Variable(dtype<int32_t>, Dims{Dim::X}, Shape{2}, Values{1.0, 1.0}),
             Variable(dtype<int32_t>, Dims{Dim::X}, Shape{2},
-                     Values(Vector<int32_t>(2, 1))));
+                     Values(element_array<int32_t>(2, 1))));
   EXPECT_EQ(Variable(dtype<int32_t>, Values{1.0, 1.0}, Dims{Dim::X}, Shape{2},
                      Variances{2.0f, 2.0f}),
             Variable(dtype<int32_t>, Dims{Dim::X}, Shape{2},
-                     Values(Vector<int32_t>(2, 1)),
-                     Variances(Vector<double>(2, 2))));
+                     Values(element_array<int32_t>(2, 1)),
+                     Variances(element_array<double>(2, 2))));
 }
 
 TEST(VariableUniversalConstructorTest, from_vector) {
