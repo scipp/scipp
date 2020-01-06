@@ -338,7 +338,7 @@ class Slicer1d(Slicer):
                 collections.append(coll)
         self.ax.lines = lines
         self.ax.collections = collections
-        self.fig.canvas.draw()
+        self.fig.canvas.draw_idle()
         self.mbox = self.vbox.copy()
         for k, b in self.keep_buttons.items():
             self.mbox.append(widgets.HBox(b))
@@ -352,7 +352,7 @@ class Slicer1d(Slicer):
         for coll in self.ax.collections:
             if coll.get_url() == change["owner"].id:
                 coll.set_color(change["new"])
-        self.fig.canvas.draw()
+        self.fig.canvas.draw_idle()
         return
 
     def generate_new_segments(self, x, y):

@@ -21,7 +21,8 @@ try:
 except ImportError:
     ipv = None
 import IPython.display as disp
-
+from matplotlib.collections import PatchCollection
+from matplotlib.patches import Rectangle
 
 def instrument_view(data_array=None, bins=None, masks=None, filename=None,
                     figsize=None, aspect="equal", cmap=None, log=False,
@@ -257,23 +258,46 @@ class InstrumentView:
 
         # Create the scatter
         if not self.mpl_figure:
-            self.scatter = self.ax.scatter(
-                x=theta, y=z_or_phi, s=self.size,
-                c=self.hist_data_array[sc.Dim.Tof,
-                                       self.tof_slider.value].values,
-                norm=self.params["norm"], cmap=self.params["cmap"],
-                marker="s")
+            patches = []
+            for x, y in zip(theta, z_or_phi):
+                # circle = Circle((x1,y1), r)
+                patches.append(Rectangle((x-0.5*self.size, y-0.5*self.size), self.size, self.size))
+
+            self.scatter = PatchCollection(patches, cmap=self.params["cmap"], norm=self.params["norm"],
+                array=self.hist_data_array[sc.Dim.Tof,
+                                       self.tof_slider.value].values)
+            self.ax.add_collection(self.scatter)
+            self.save_xy = np.array([theta, z_or_phi]).T
+# p.set_array(colors)
+# ax.add_collection(p)
+
+            # self.scatter = self.ax.scatter(
+            #     x=theta, y=z_or_phi, s=self.size,
+            #     c=self.hist_data_array[sc.Dim.Tof,
+            #                            self.tof_slider.value].values,
+            #     norm=self.params["norm"], cmap=self.params["cmap"],
+            #     marker="s")
             if self.params["cbar"]:
                 self.cbar = plt.colorbar(self.scatter, ax=self.ax)
                 self.cbar.ax.set_ylabel(
                     name_with_unit(var=self.hist_data_array, name=""))
                 self.cbar.ax.yaxis.set_label_coords(-1.1, 0.5)
             self.mpl_figure = True
+            # self.ax.set_xlim([np.amin(theta)-self.size, np.amax(theta)+self.size])
+            # self.ax.set_ylim([np.amin(z_or_phi)-self.size, np.amax(z_or_phi)+self.size])
         else:
-            self.scatter.set_offsets(np.array([theta, z_or_phi]))
+            self.scatter.set_offset_position("data")
+            self.scatter.set_offsets(np.array([theta, z_or_phi]).T - self.save_xy)
+        self.ax.set_xlim([np.amin(theta)-self.size, np.amax(theta)+self.size])
+        self.ax.set_ylim([np.amin(z_or_phi)-self.size, np.amax(z_or_phi)+self.size])
+        # self.ax.set_xlim([-5, 5])
+        # self.ax.set_ylim([-5, 5])
         return
 
     def update_colors_2d(self, change):
         self.scatter.set_array(self.hist_data_array[sc.Dim.Tof, change["new"]].values)
-        self.fig.canvas.draw()
+        # self.fig.canvas.flush_events()
+        self.fig.canvas.draw_idle()
+        # self.fig.canvas.update()
+        # print("Done", change["new"])
         return
