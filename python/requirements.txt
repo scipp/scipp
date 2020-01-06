@@ -1,6 +1,5 @@
 numpy
 matplotlib
-nose
 ipywidgets
 pytest
 ipyvolume
