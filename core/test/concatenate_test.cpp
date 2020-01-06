@@ -187,3 +187,27 @@ TEST(ConcatenateTest, concat_2d_coord) {
 
   EXPECT_EQ(abba, expected);
 }
+
+TEST(ConcatenateTest, concatenate_sparse_no_data) {
+  auto var1 =
+      makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, Dimensions::Sparse});
+  auto var1_ = var1.sparseValues<double>();
+  var1_[0] = {1, 2, 3};
+  var1_[1] = {1, 2};
+  const auto var2 = concatenate(var1, var1, Dim::X);
+
+  const auto a =
+      DataArray(std::optional<Variable>(), {{Dim::X, var1}}, {{"labs", var1}});
+  const auto b =
+      DataArray(std::optional<Variable>(), {{Dim::X, var2}}, {{"labs", var2}});
+
+  const auto x = concatenate(a, b, Dim::X);
+  const auto y = concatenate(a, b, Dim::Y);
+
+  EXPECT_FALSE(x.hasData());
+  EXPECT_FALSE(y.hasData());
+  EXPECT_EQ(x.coords()[Dim::X], concatenate(var1, var2, Dim::X));
+  EXPECT_EQ(x.labels()["labs"], concatenate(var1, var2, Dim::X));
+  EXPECT_EQ(y.coords()[Dim::X], concatenate(var1, var2, Dim::Y));
+  EXPECT_EQ(y.labels()["labs"], concatenate(var1, var2, Dim::Y));
+}
