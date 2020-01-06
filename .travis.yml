@@ -97,6 +97,7 @@ jobs:
     - stage: "Deploy"
       os: osx
       osx_image: xcode10.2
+      before_install: brew install ccache ninja
       name: "release conda osx"
       if: NOT type = cron AND NOT type = pull_request AND tag =~ /^\d+(\.\d+)*/
       git:
