@@ -27,17 +27,14 @@ def render_plot(figure=None, widgets=None, filename=None, output=None,
     else:
         if widgets is not None and ipv is not None or \
           matplotlib.get_backend() == "nbAgg":
-          # matplotlib.get_backend().lower().endswith("nbagg"):
-            # print("widgets ar not None")
             if figure is not None:
-                # out = ipw.Output(layout={'border': '1px solid black'})
-                disp.display(ipw.VBox([output, widgets]))
+                to_screen = output
+                if widgets is not None:
+                    to_screen = ipw.VBox([output, widgets])
+                disp.display(to_screen)
                 with output:
                     disp.display(figure)
-                # disp.display(out)
-                # to_screen = ipw.VBox([output, widgets])
             else:
-                # to_screen = widgets
                 disp.display(widgets)
         elif figure is not None:
             disp.display(figure)

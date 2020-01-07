@@ -33,7 +33,7 @@ def plot(scipp_obj, collapse=None, projection=None, axes=None, color=None,
             inventory[name] = var
     elif tp is sc.Variable or tp is sc.VariableProxy:
         inventory[str(tp)] = sc.DataArray(data=scipp_obj)
-    elif tp is sc.Dataset or tp is sc.DatasetProxy:
+    elif tp is sc.DataArray or tp is sc.DataProxy:
         inventory[scipp_obj.name] = scipp_obj
     elif tp is dict:
         inventory = scipp_obj

@@ -17,10 +17,10 @@ import matplotlib.pyplot as plt
 import warnings
 
 
-def plot_2d(data_array=None, axes=None, values=None, variances=None,
-            masks=None, filename=None, figsize=None, mpl_axes=None,
-            aspect=None, cmap=None, log=False, vmin=None, vmax=None,
-            color=None, logx=False, logy=False, logxy=False):
+def plot_2d(data_array=None, output=None, axes=None, values=None,
+            variances=None, masks=None, filename=None, figsize=None,
+            mpl_axes=None, aspect=None, cmap=None, log=False, vmin=None,
+            vmax=None, color=None, logx=False, logy=False, logxy=False):
     """
     Plot a 2D slice through a N dimensional dataset. For every dimension above
     2, a slider is created to adjust the position of the slice in that
@@ -33,7 +33,8 @@ def plot_2d(data_array=None, axes=None, values=None, variances=None,
                   color=color, logx=logx or logxy, logy=logy or logxy)
 
     if mpl_axes is None:
-        render_plot(figure=sv.fig, widgets=sv.vbox, filename=filename)
+        render_plot(figure=sv.fig, widgets=sv.vbox, filename=filename,
+                    output=output)
 
     return sv.members
 

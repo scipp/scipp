@@ -20,9 +20,10 @@ except ImportError:
     ipv = None
 
 
-def plot_3d(data_array=None, axes=None, values=None, variances=None,
-            masks=None, filename=None, figsize=None, aspect=None,
-            cmap=None, log=False, vmin=None, vmax=None, color=None):
+def plot_3d(data_array=None, output=None, axes=None, values=None,
+            variances=None, masks=None, filename=None, figsize=None,
+            aspect=None, cmap=None, log=False, vmin=None, vmax=None,
+            color=None):
     """
     Plot a 3-slice through a N dimensional dataset. For every dimension above
     3, a slider is created to adjust the position of the slice in that
@@ -40,7 +41,7 @@ def plot_3d(data_array=None, axes=None, values=None, variances=None,
                   variances=variances, masks=masks, cmap=cmap, log=log,
                   vmin=vmin, vmax=vmax, color=color, aspect=aspect)
 
-    render_plot(figure=sv.fig, widgets=sv.box, filename=filename, ipv=ipv)
+    render_plot(widgets=sv.box, filename=filename, ipv=ipv, output=output)
 
     return sv.members
 

@@ -45,8 +45,8 @@ def dispatch(scipp_obj_dict, ndim=0, name=None, collapse=None, sparse_dim=None,
                            mpl_scatter_params=mpl_line_params, output=output,
                            **kwargs)
     elif projection == "1d":
-        return plot_1d(scipp_obj_dict, mpl_line_params=mpl_line_params,
-                       output=output, **kwargs)
+        return plot_1d(scipp_obj_dict, output=output,
+                       mpl_line_params=mpl_line_params, **kwargs)
     elif projection == "2d":
         return plot_2d(scipp_obj_dict[name], output=output, **kwargs)
     elif projection == "3d":

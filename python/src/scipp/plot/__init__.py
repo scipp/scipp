@@ -23,8 +23,8 @@ try:
             ipy.run_line_magic("matplotlib", "inline")
         elif "IPKernelApp" in ipy.config:
             ipy.run_line_magic("matplotlib", "notebook")
-            # ipy.run_cell_magic("html", "", "<style>.output_wrapper "
-            #                    ".ui-dialog-titlebar {display: none;}</style>")
+            ipy.run_cell_magic("html", "", "<style>.output_wrapper "
+                               ".ui-dialog-titlebar {display: none;}</style>")
 except ImportError:
     pass
 

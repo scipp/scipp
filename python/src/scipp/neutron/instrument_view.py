@@ -24,6 +24,7 @@ import IPython.display as disp
 from matplotlib.collections import PatchCollection
 from matplotlib.patches import Rectangle
 
+
 def instrument_view(data_array=None, bins=None, masks=None, filename=None,
                     figsize=None, aspect="equal", cmap=None, log=False,
                     vmin=None, vmax=None, size=0.1, projection="3D",
@@ -232,7 +233,7 @@ class InstrumentView:
         # Initialise Figure
         if not self.figure3d:
             self.fig3d = ipv.figure(width=config.width, height=config.height,
-                                  animation=0, lighting=False)
+                                    animation=0, lighting=False)
             max_size = 0.0
             dx = {"x": 0, "y": 0, "z": 0}
             for ax in dx.keys():
