@@ -73,7 +73,7 @@ jobs:
         - OSX_VERSION=10.14
       install:
         - .travis/install_conda.sh "Miniconda3-latest-MacOSX-x86_64.sh"
-      script: travis_wait 30 .travis/conda_build_and_deploy.sh --label 'dev'
+      script: travis_wait 40 .travis/conda_build_and_deploy.sh --label 'dev'
     - stage: "Deploy"
       name: "conda linux python3.6"
       if: type = cron AND branch = master
@@ -110,4 +110,4 @@ jobs:
         - OSX_VERSION=10.14
       install:
         - .travis/install_conda.sh "Miniconda3-latest-MacOSX-x86_64.sh"
-      script: travis_wait 30 .travis/conda_build_and_deploy.sh
+      script: travis_wait 40 .travis/conda_build_and_deploy.sh
