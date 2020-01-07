@@ -8,7 +8,6 @@
 #include "scipp/core/transform.h"
 #include "scipp/core/variable.h"
 #include "scipp/core/variable_view.h"
-#include "scipp/core/vector.h"
 #include "scipp/units/unit.h"
 #include <optional>
 

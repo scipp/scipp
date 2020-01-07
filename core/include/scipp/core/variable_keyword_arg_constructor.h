@@ -7,7 +7,6 @@
 #define SCIPP_VARIABLE_KEYWORD_ARG_CONSTRUCTOR_H
 
 #include "scipp/core/except.h"
-#include "scipp/core/vector.h"
 #include <type_traits>
 
 namespace scipp::core {

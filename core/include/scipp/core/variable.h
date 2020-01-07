@@ -18,6 +18,7 @@
 #include "scipp/common/span.h"
 #include "scipp/core/dimensions.h"
 #include "scipp/core/dtype.h"
+#include "scipp/core/element_array.h"
 #include "scipp/core/except.h"
 #include "scipp/core/slice.h"
 #include "scipp/core/string.h"
@@ -513,11 +514,10 @@ template <class T>
 Variable from_dimensions_and_unit(const Dimensions &dms, const units::Unit &u) {
   auto volume = dms.volume();
   if constexpr (is_sparse_container<T>::value)
-    return Variable(u, dms, detail::element_array<T>(volume));
+    return Variable(u, dms, element_array<T>(volume));
   else
-    return Variable(
-        u, dms,
-        detail::element_array<T>(volume, detail::default_init<T>::value()));
+    return Variable(u, dms,
+                    element_array<T>(volume, detail::default_init<T>::value()));
 }
 
 template <class T>
@@ -525,13 +525,11 @@ Variable from_dimensions_and_unit_with_variances(const Dimensions &dms,
                                                  const units::Unit &u) {
   auto volume = dms.volume();
   if constexpr (is_sparse_container<T>::value)
-    return Variable(u, dms, detail::element_array<T>(volume),
-                    detail::element_array<T>(volume));
+    return Variable(u, dms, element_array<T>(volume), element_array<T>(volume));
   else
-    return Variable(
-        u, dms,
-        detail::element_array<T>(volume, detail::default_init<T>::value()),
-        detail::element_array<T>(volume, detail::default_init<T>::value()));
+    return Variable(u, dms,
+                    element_array<T>(volume, detail::default_init<T>::value()),
+                    element_array<T>(volume, detail::default_init<T>::value()));
 }
 } // namespace detail
 

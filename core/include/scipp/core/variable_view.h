@@ -11,7 +11,6 @@
 
 #include "scipp/core/dimensions.h"
 #include "scipp/core/except.h"
-#include "scipp/core/vector.h"
 #include "scipp/core/view_index.h"
 
 namespace scipp::core {
