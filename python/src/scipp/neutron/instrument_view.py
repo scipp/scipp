@@ -26,7 +26,7 @@ from matplotlib.patches import Rectangle
 
 def instrument_view(data_array=None, bins=None, masks=None, filename=None,
                     figsize=None, aspect="equal", cmap=None, log=False,
-                    vmin=None, vmax=None, size=1, projection="3D",
+                    vmin=None, vmax=None, size=0.1, projection="3D",
                     nan_color="#d3d3d3", continuous_update=True):
     """
     Plot a 2D or 3D view of the instrument.
@@ -71,7 +71,6 @@ class InstrumentView:
         self.nan_color = nan_color
         self.log = log
         self.current_projection = None
-        # self.continuous_update = continuous_update
 
         # Get detector positions
         self.det_pos = np.array(data_array.labels["position"].values)
@@ -102,33 +101,43 @@ class InstrumentView:
         globs = {"cmap": cmap, "log": log, "vmin": vmin, "vmax": vmax}
         self.params = parse_params(globs=globs,
                                    array=self.hist_data_array.values)
-        # cmap = cm.get_cmap(self.params["cmap"])
-        # cmap.set_bad(color=self.nan_color)
-        self.scalar_map = cm.ScalarMappable(cmap=self.params["cmap"],
+        cmap = cm.get_cmap(self.params["cmap"])
+        cmap.set_bad(color=self.nan_color)
+        self.scalar_map = cm.ScalarMappable(cmap=cmap,
                                             norm=self.params["norm"])
-        print(self.params)
 
         # Create a Tof slider and its label
-        indx = self.hist_data_array.dims.index(sc.Dim.Tof)
+        self.tof_dim_indx = self.hist_data_array.dims.index(sc.Dim.Tof)
         self.tof_slider = widgets.IntSlider(
             value=0, min=0, step=1, description="Tof",
-            max=self.hist_data_array.shape[indx] - 1,
+            max=self.hist_data_array.shape[self.tof_dim_indx] - 1,
             continuous_update=continuous_update, readout=False)
         self.tof_slider.observe(self.update_colors, names="value")
         self.tof_label = widgets.Label()
+
+        # Add text boxes to change number of bins/bin size
+        self.nbins = widgets.Text(
+            value=str(self.hist_data_array.shape[self.tof_dim_indx]),
+            description="Number of bins:",
+            style={'description_width': 'initial'})
+        self.nbins.on_submit(self.update_nbins)
+
+        tof_values = self.hist_data_array.coords[sc.Dim.Tof].values
+        self.bin_size = widgets.Text(
+            value=str(tof_values[1] - tof_values[0]),
+            description="Bin size:")
+        self.bin_size.on_submit(self.update_bin_size)
 
         projections = ["3D", "Cylindrical X", "Cylindrical Y", "Cylindrical Z",
                        "Spherical X", "Spherical Y", "Spherical Z"]
 
         # Create toggle buttons to change projection
         self.buttons = {}
-        # self.current_projection = projection
         for p in projections:
             self.buttons[p] = widgets.Button(
                 description=p, disabled=False,
                 button_style=("info" if (p == projection) else ""))
             self.buttons[p].on_click(self.change_projection)
-        
         items = [self.buttons["3D"]]
         for x in "XYZ":
             items.append(self.buttons["Cylindrical {}".format(x)])
@@ -140,15 +149,11 @@ class InstrumentView:
             items,
             layout=widgets.Layout(grid_template_columns="repeat(3, 150px)"))
 
-        # self.togglebuttons = widgets.ToggleButtons(
-        #         options=projections, description="", value=projection,
-        #         disabled=False, button_style="")
-        # self.togglebuttons.observe(self.change_projection, names="value")
-
         # Place widgets in boxes
         self.vbox = widgets.VBox(
             [self.figurewidget,
              widgets.HBox([self.tof_slider, self.tof_label]),
+             widgets.HBox([self.nbins, self.bin_size]),
              self.togglebuttons])
         self.box = widgets.VBox([self.vbox])
         self.box.layout.align_items = "center"
@@ -159,18 +164,18 @@ class InstrumentView:
                   "installed. Use conda/pip install ipyvolume. Reverting to "
                   "2D projection.")
             self.buttons[projections[1]].button_style = "info"
-            # self.current_projection = projections[1]
             self.buttons["3D"].button_style = ""
             self.buttons["3D"].disabled = True
 
-
-        # print("self.current_projection", self.current_projection)
         # Update the figure
         self.change_projection(self.buttons[projection])
 
         # Create members object
         self.members = {"widgets": {"sliders": self.tof_slider,
-                                    "togglebuttons": self.togglebuttons},
+                                    "buttons": self.buttons,
+                                    "text": {"nbins": self.nbins,
+                                             "bin_size": self.bin_size}
+                                    },
                         "fig2d": self.fig2d, "fig3d": self.fig3d,
                         "scatter2d": self.scatter2d,
                         "scatter3d": self.scatter3d,
@@ -188,9 +193,6 @@ class InstrumentView:
 
     def change_projection(self, owner):
 
-        print(self.current_projection)
-        # print(change)
-        # if event is not None:
         if owner.description == self.current_projection:
             owner.button_style = "info"
             return
@@ -205,31 +207,18 @@ class InstrumentView:
             re_enable_interactive = False
 
         update_children = False
-        # if event is not None:
-        #     self.buttons[self.current_projection].value = False
 
-        # print('change["new"]', change["new"])
         if owner.description == "3D":
-            # if self.fig is not None:
-            #     self.fig.clear()
-            # update_children = True
             self.projection_3d()
-            print("Calling 3d")
             self.do_update = self.update_colors_3d
         else:
-            print("calling 2d")
             if self.current_projection == "3D":
-                # if ipv is not None:
-                #     ipv.clear()
                 update_children = True
             self.projection_2d(owner.description, update_children)
             self.do_update = self.update_colors_2d
 
         self.update_colors({"new": self.tof_slider.value})
 
-        # # Replace the figure in the VBox container
-        # if update_children:
-        #     self.box.children = tuple([self.figurewidget, self.vbox])
         self.current_projection = owner.description
         self.buttons[owner.description].button_style = "info"
 
@@ -244,13 +233,13 @@ class InstrumentView:
         if not self.figure3d:
             self.fig3d = ipv.figure(width=config.width, height=config.height,
                                   animation=0, lighting=False)
+            max_size = 0.0
+            dx = {"x": 0, "y": 0, "z": 0}
+            for ax in dx.keys():
+                dx[ax] = np.ediff1d(self.xminmax[ax])
+            max_size = np.amax(list(dx.values()))
             # Make plot outline if aspect ratio is to be conserved
             if self.aspect == "equal":
-                max_size = 0.0
-                dx = {"x": 0, "y": 0, "z": 0}
-                for ax in dx.keys():
-                    dx[ax] = np.ediff1d(self.xminmax[ax])
-                max_size = np.amax(list(dx.values()))
                 arrays = dict()
                 for ax, s in dx.items():
                     diff = max_size - s
@@ -258,18 +247,19 @@ class InstrumentView:
                                   self.xminmax[ax][1] + 0.5 * diff]
 
                 outl_x, outl_y, outl_z = np.meshgrid(arrays["x"], arrays["y"],
-                                                     arrays["z"], indexing="ij")
+                                                     arrays["z"],
+                                                     indexing="ij")
                 self.outline = ipv.plot_wireframe(outl_x, outl_y, outl_z,
                                                   color="black")
-            self.scatter3d = ipv.scatter(x=self.det_pos[:, 0], y=self.det_pos[:, 1],
-                                       z=self.det_pos[:, 2], marker="square_2d",
-                                       size=self.size)
+            # Try to guess marker size
+            perc_size = 100.0 * self.size / max_size
+            self.scatter3d = ipv.scatter(x=self.det_pos[:, 0],
+                                         y=self.det_pos[:, 1],
+                                         z=self.det_pos[:, 2],
+                                         marker="square_2d", size=perc_size)
             self.figure3d = True
-        # self.scatter.material.transparent = True
 
-        # self.figurewidget = ipv.gcc()
         self.figurewidget.clear_output()
-        # self.mpl_figure = False
         self.box.children = tuple([self.figurewidget, ipv.gcc(), self.vbox])
         return
 
@@ -312,11 +302,13 @@ class InstrumentView:
         if not self.figure2d:
             patches = []
             for x, y in zip(theta, z_or_phi):
-                patches.append(Rectangle((x-0.5*self.size, y-0.5*self.size), self.size, self.size))
+                patches.append(Rectangle((x-0.5*self.size, y-0.5*self.size),
+                                         self.size, self.size))
 
-            self.scatter2d = PatchCollection(patches, cmap=self.params["cmap"], norm=self.params["norm"],
+            self.scatter2d = PatchCollection(
+                patches, cmap=self.params["cmap"], norm=self.params["norm"],
                 array=self.hist_data_array[sc.Dim.Tof,
-                                       self.tof_slider.value].values)
+                                           self.tof_slider.value].values)
             self.ax.add_collection(self.scatter2d)
             self.save_xy = np.array([theta, z_or_phi]).T
             if self.params["cbar"]:
@@ -327,12 +319,67 @@ class InstrumentView:
             self.figure2d = True
         else:
             self.scatter2d.set_offset_position("data")
-            self.scatter2d.set_offsets(np.array([theta, z_or_phi]).T - self.save_xy)
-        self.ax.set_xlim([np.amin(theta)-self.size, np.amax(theta)+self.size])
-        self.ax.set_ylim([np.amin(z_or_phi)-self.size, np.amax(z_or_phi)+self.size])
+            self.scatter2d.set_offsets(np.array([theta, z_or_phi]).T -
+                                       self.save_xy)
+        self.ax.set_xlim([np.amin(theta) - self.size,
+                          np.amax(theta) + self.size])
+        self.ax.set_ylim([np.amin(z_or_phi) - self.size,
+                          np.amax(z_or_phi) + self.size])
         return
 
     def update_colors_2d(self, change):
-        self.scatter2d.set_array(self.hist_data_array[sc.Dim.Tof, change["new"]].values)
+        self.scatter2d.set_array(self.hist_data_array[sc.Dim.Tof,
+                                                      change["new"]].values)
         self.fig2d.canvas.draw_idle()
+        return
+
+    def update_nbins(self, owner):
+        try:
+            nbins = int(owner.value)
+        except ValueError:
+            print("Warning: could not convert value: {} to an "
+                  "integer.".format(owner.value))
+            return
+        self.rebin_data(nbins)
+        x = self.hist_data_array.coords[sc.Dim.Tof].values
+        self.bin_size.value = str(x[1] - x[0])
+        self.update_tof_slider()
+        return
+
+    def update_bin_size(self, owner):
+        try:
+            binw = float(owner.value)
+        except ValueError:
+            print("Warning: could not convert value: {} to a "
+                  "float.".format(owner.value))
+            return
+        x = self.hist_data_array.coords[sc.Dim.Tof].values
+        self.rebin_data(np.arange(x[0], x[-1], binw))
+        self.nbins.value = str(self.hist_data_array.shape[self.tof_dim_indx])
+        self.update_tof_slider()
+        return
+
+    def rebin_data(self, bins):
+        self.hist_data_array = sc.rebin(
+            self.hist_data_array, sc.Dim.Tof,
+            make_bins(data_array=self.hist_data_array,
+                      dim=sc.Dim.Tof, bins=bins))
+
+    def update_tof_slider(self):
+        """
+        Try to replace the slider around the same position
+        """
+
+        # Compute percentage position
+        perc_pos = self.tof_slider.value / self.tof_slider.max
+        # Compute new position
+        nbins = int(self.nbins.value)
+        new_pos = int(perc_pos * nbins)
+        # Either place new upper boundary first, or change slider value first
+        if new_pos > self.tof_slider.max:
+            self.tof_slider.max = nbins
+            self.tof_slider.value = new_pos
+        else:
+            self.tof_slider.value = new_pos
+            self.tof_slider.max = nbins
         return
