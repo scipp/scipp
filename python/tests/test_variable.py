@@ -592,6 +592,16 @@ def test_abs():
     assert sc.abs(var) == expected
 
 
+def test_abs_out():
+    var = sc.Variable([Dim.X], values=np.array([0.1, -0.2]), unit=sc.units.m)
+    expected = sc.Variable([Dim.X],
+                           values=np.array([0.1, 0.2]),
+                           unit=sc.units.m)
+    out = sc.abs(x=var, out=var)
+    assert var == expected
+    assert out == expected
+
+
 def test_dot():
     a = sc.Variable(dims=[Dim.X],
                     values=[[1, 0, 0], [0, 1, 0]],

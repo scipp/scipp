@@ -356,13 +356,26 @@ void init_variable(py::module &m) {
         :return: New variable with requested dimension labels and shape.
         :rtype: Variable)");
 
-  m.def("abs", [](const Variable &self) { return abs(self); }, py::arg("x"),
-        py::call_guard<py::gil_scoped_release>(), R"(
+  m.def("abs", [](const VariableConstProxy &self) { return abs(self); },
+        py::arg("x"), py::call_guard<py::gil_scoped_release>(), R"(
         Element-wise absolute value.
 
         :raises: If the dtype has no absolute value, e.g., if it is a string
         :seealso: :py:class:`scipp.norm` for vector-like dtype
         :return: Copy of the input with values replaced by the absolute values
+        :rtype: Variable)");
+
+  m.def("abs",
+        [](const VariableConstProxy &self, const VariableProxy &out) {
+          return abs(self, out);
+        },
+        py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>(),
+        R"(
+        Element-wise absolute value.
+
+        :raises: If the dtype has no absolute value, e.g., if it is a string
+        :seealso: :py:class:`scipp.norm` for vector-like dtype
+        :return: Input with values replaced by the absolute values
         :rtype: Variable)");
 
   m.def("dot", py::overload_cast<const Variable &, const Variable &>(&dot),

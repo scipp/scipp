@@ -28,19 +28,19 @@ jobs:
     - stage: "Unit tests"
       compiler: gcc
       name: "gcc"
-      if: NOT type = cron
+      if: type = pull_request
       before_install: .travis/before_install.sh
       install: .travis/install_linux_toolchain.sh
       script: .travis/run_tests.sh
     - compiler: clang
       name: "clang"
-      if: NOT type = cron
+      if: type = pull_request
       before_install: .travis/before_install.sh
       install: .travis/install_linux_toolchain.sh
       script: .travis/run_tests.sh
     - os: osx
       name: "apple clang"
-      if: NOT type = cron
+      if: type = pull_request
       osx_image: xcode10.2
       before_install: brew install ccache ninja
       env:
@@ -62,6 +62,7 @@ jobs:
       os: osx
       osx_image: xcode10.2
       name: "conda osx"
+      before_install: brew install ccache ninja
       if: NOT type = cron AND branch = master AND NOT type = pull_request
       git:
         depth: false
@@ -72,7 +73,7 @@ jobs:
         - OSX_VERSION=10.14
       install:
         - .travis/install_conda.sh "Miniconda3-latest-MacOSX-x86_64.sh"
-      script: travis_wait .travis/conda_build_and_deploy.sh --label 'dev'
+      script: travis_wait 40 .travis/conda_build_and_deploy.sh --label 'dev'
     - stage: "Deploy"
       name: "conda linux python3.6"
       if: type = cron AND branch = master
@@ -97,6 +98,7 @@ jobs:
     - stage: "Deploy"
       os: osx
       osx_image: xcode10.2
+      before_install: brew install ccache ninja
       name: "release conda osx"
       if: NOT type = cron AND NOT type = pull_request AND tag =~ /^\d+(\.\d+)*/
       git:
@@ -108,4 +110,4 @@ jobs:
         - OSX_VERSION=10.14
       install:
         - .travis/install_conda.sh "Miniconda3-latest-MacOSX-x86_64.sh"
-      script: travis_wait 30 .travis/conda_build_and_deploy.sh
+      script: travis_wait 40 .travis/conda_build_and_deploy.sh

@@ -49,13 +49,21 @@ auto concat(const T1 &a, const T2 &b, const Dim dim, const Dimensions &dimsA,
   std::map<typename T1::key_type, typename T1::mapped_type> out;
   for (const auto &[key, a_] : a) {
     if (dim_of_coord_or_labels(a, key) == dim) {
-      if ((a_.dims()[dim] == dimsA[dim]) != (b[key].dims()[dim] == dimsB[dim]))
+      if (a_.dims().sparseDim() == dim) {
+        if (b[key].dims().sparseDim() == dim)
+          out.emplace(key, concatenate(a_, b[key], dim));
+        else
+          throw except::SparseDataError("Either both or neither of the inputs "
+                                        "must be sparse in given dim.");
+      } else if ((a_.dims()[dim] == dimsA[dim]) !=
+                 (b[key].dims()[dim] == dimsB[dim])) {
         throw except::BinEdgeError(
             "Either both or neither of the inputs must be bin edges.");
-      if (a_.dims()[dim] == dimsA[dim])
+      } else if (a_.dims()[dim] == dimsA[dim]) {
         out.emplace(key, concatenate(a_, b[key], dim));
-      else
+      } else {
         out.emplace(key, join_edges(a_, b[key], dim));
+      }
     } else {
       // 1D coord is kept only if both inputs have matching 1D coords.
       if (a_.dims().contains(dim) || b[key].dims().contains(dim) ||
@@ -73,7 +81,9 @@ DataArray concatenate(const DataConstProxy &a, const DataConstProxy &b,
                       const Dim dim) {
   if (!a.dims().contains(dim) && a == b)
     return DataArray{a};
-  return DataArray(concatenate(a.data(), b.data(), dim),
+  return DataArray(a.hasData() || b.hasData()
+                       ? concatenate(a.data(), b.data(), dim)
+                       : std::optional<Variable>(),
                    concat(a.coords(), b.coords(), dim, a.dims(), b.dims()),
                    concat(a.labels(), b.labels(), dim, a.dims(), b.dims()),
                    concat(a.masks(), b.masks(), dim, a.dims(), b.dims()));

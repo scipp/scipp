@@ -17,6 +17,14 @@ requirements:
     - numpy {{ numpy }}
     - python {{ python }}
 
+test:
+  import:
+    - scipp
+  commands:
+  # Note that the following is fetching source again and using master 
+    - python -m pip install -r {{ environ.get('SRC_DIR') }}/python/requirements.txt 
+    - python -m pytest -v {{ environ.get('SRC_DIR') }}/python
+  
 build:
   # Build number is number of Git commits since last tag, if that fails use 0
   number: {{ environ.get('GIT_DESCRIBE_NUMBER', 0) }}
@@ -25,6 +33,8 @@ build:
     - CXX
     - OSX_VERSION
     - GENERATOR
+    - MINICONDA
+    - SRC_DIR
 about:
   home: https://scipp.readthedocs.io/en/latest/
   license: GPLv3

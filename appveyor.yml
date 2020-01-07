@@ -77,7 +77,7 @@ for:
   - if "%APPVEYOR_REPO_TAG%"=="false" if "%APPVEYOR_REPO_BRANCH%"=="master" set LABEL=dev
   - echo using label %LABEL%
   - echo deploy build started %time%
-  - conda-build --user scipp --token %ANACONDA_TOKEN% --label %LABEL% ../conda
+  - conda-build --user scipp --token %ANACONDA_TOKEN% --label %LABEL% --no-remove-work-dir ../conda
 
 
 
