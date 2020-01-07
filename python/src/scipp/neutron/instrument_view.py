@@ -290,7 +290,6 @@ class InstrumentView:
             with self.figurewidget:
                 disp.display(self.fig2d)
 
-
         # Compute cylindrical or spherical projections
         permutations = {"X": [0, 2, 1], "Y": [1, 0, 2], "Z": [2, 1, 0]}
         axis = projection[-1]
