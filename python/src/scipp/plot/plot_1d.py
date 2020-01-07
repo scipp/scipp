@@ -97,13 +97,15 @@ class Slicer1d(Slicer):
                 ymax = max(ymax, np.nanmax(var.values + err))
             ylab = name_with_unit(var=var, name="")
 
-        dy = 0.05*(ymax - ymin)
-        yrange = [ymin-dy, ymax+dy]
-        if logy:
-            yrange = 10.0**np.array(yrange)
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore", category=UserWarning)
-            self.ax.set_ylim(yrange)
+        if self.mpl_axes is None:
+            dy = 0.05*(ymax - ymin)
+            yrange = [ymin-dy, ymax+dy]
+            if logy:
+                yrange = 10.0**np.array(yrange)
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", category=UserWarning)
+                self.ax.set_ylim(yrange)
+
         if logx:
             self.ax.set_xscale("log")
         if logy:
@@ -235,10 +237,11 @@ class Slicer1d(Slicer):
                         color=self.mpl_line_params["color"][i], zorder=10,
                         fmt="none")
 
-        deltax = 0.05 * (new_x[-1] - new_x[0])
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore", category=UserWarning)
-            self.ax.set_xlim([new_x[0] - deltax, new_x[-1] + deltax])
+        if self.mpl_axes is None:
+            deltax = 0.05 * (new_x[-1] - new_x[0])
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", category=UserWarning)
+                self.ax.set_xlim([new_x[0] - deltax, new_x[-1] + deltax])
         self.ax.set_xlabel(name_with_unit(self.slider_x[dim],
                                           name=self.slider_labels[dim]))
         if self.slider_ticks[dim] is not None:

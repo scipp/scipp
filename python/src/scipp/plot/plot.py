@@ -33,8 +33,15 @@ def plot(scipp_obj, collapse=None, projection=None, axes=None, color=None,
             inventory[name] = var
     elif tp is sc.Variable or tp is sc.VariableProxy:
         inventory[str(tp)] = sc.DataArray(data=scipp_obj)
-    else:
+    elif tp is sc.Dataset or tp is sc.DatasetProxy:
         inventory[scipp_obj.name] = scipp_obj
+    elif tp is dict:
+        inventory = scipp_obj
+    else:
+        raise RuntimeError("plot: Unknown input type: {}. Allowed inputs are "
+                           "a Dataset, a DataArray, a Variable (and their "
+                           "respective proxies), and a dict of "
+                           "DataArrays.".format(tp))
 
     # Prepare container for matplotlib line parameters
     line_params = {"color": color,

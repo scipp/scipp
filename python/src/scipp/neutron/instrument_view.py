@@ -70,6 +70,7 @@ class InstrumentView:
         self.image = None
         self.nan_color = nan_color
         self.log = log
+        self.current_projection = None
         # self.continuous_update = continuous_update
 
         # Get detector positions
@@ -121,18 +122,19 @@ class InstrumentView:
 
         # Create toggle buttons to change projection
         self.buttons = {}
-        self.current_projection = projection
+        # self.current_projection = projection
         for p in projections:
-            self.buttons[p] = widgets.ToggleButton(
-                value=(p == self.current_projection), description=p,
-                disabled=False, button_style="")
-            self.buttons[p].on_msg(self.change_projection)
+            self.buttons[p] = widgets.Button(
+                description=p, disabled=False,
+                button_style=("info" if (p == projection) else ""))
+            self.buttons[p].on_click(self.change_projection)
         
         items = [self.buttons["3D"]]
         for x in "XYZ":
             items.append(self.buttons["Cylindrical {}".format(x)])
             items.append(self.buttons["Spherical {}".format(x)])
-            items.append(widgets.Label())
+            if x != "Z":
+                items.append(widgets.Label())
 
         self.togglebuttons = widgets.GridBox(
             items,
@@ -156,13 +158,15 @@ class InstrumentView:
             print("Warning: 3D projection requires ipyvolume to be "
                   "installed. Use conda/pip install ipyvolume. Reverting to "
                   "2D projection.")
-            self.buttons[projections[1]].value = True
-            self.current_projection = projections[1]
+            self.buttons[projections[1]].button_style = "info"
+            # self.current_projection = projections[1]
+            self.buttons["3D"].button_style = ""
             self.buttons["3D"].disabled = True
 
-        print("self.current_projection", self.current_projection)
+
+        # print("self.current_projection", self.current_projection)
         # Update the figure
-        self.change_projection(self.buttons[self.current_projection], None, None)
+        self.change_projection(self.buttons[projection])
 
         # Create members object
         self.members = {"widgets": {"sliders": self.tof_slider,
@@ -182,10 +186,16 @@ class InstrumentView:
                 self.hist_data_array.coords[sc.Dim.Tof].values[change["new"]]))
         return
 
-    def change_projection(self, owner, event, dummy):
+    def change_projection(self, owner):
 
         print(self.current_projection)
         # print(change)
+        # if event is not None:
+        if owner.description == self.current_projection:
+            owner.button_style = "info"
+            return
+        if self.current_projection is not None:
+            self.buttons[self.current_projection].button_style = ""
 
         # Temporarily disable automatic plotting in notebook
         if plt.isinteractive():
@@ -195,7 +205,8 @@ class InstrumentView:
             re_enable_interactive = False
 
         update_children = False
-        self.buttons[self.current_projection].value = False
+        # if event is not None:
+        #     self.buttons[self.current_projection].value = False
 
         # print('change["new"]', change["new"])
         if owner.description == "3D":
@@ -220,6 +231,7 @@ class InstrumentView:
         # if update_children:
         #     self.box.children = tuple([self.figurewidget, self.vbox])
         self.current_projection = owner.description
+        self.buttons[owner.description].button_style = "info"
 
         # Re-enable automatic plotting in notebook
         if re_enable_interactive:
@@ -283,11 +295,15 @@ class InstrumentView:
                 disp.display(self.fig2d)
 
         # Compute cylindrical or spherical projections
-        theta = np.arctan2(self.det_pos[:, 2], self.det_pos[:, 0])
-        if projection == "Cylindrical Y":
-            z_or_phi = self.det_pos[:, 1]
-        elif projection == "Spherical Y":
-            z_or_phi = np.arcsin(self.det_pos[:, 1] /
+        permutations = {"X": [0, 2, 1], "Y": [1, 0, 2], "Z": [2, 1, 0]}
+        axis = projection[-1]
+
+        theta = np.arctan2(self.det_pos[:, permutations[axis][2]],
+                           self.det_pos[:, permutations[axis][1]])
+        if projection.startswith("Cylindrical"):
+            z_or_phi = self.det_pos[:, permutations[axis][0]]
+        elif projection.startswith("Spherical"):
+            z_or_phi = np.arcsin(self.det_pos[:, permutations[axis][0]] /
                                  np.sqrt(self.det_pos[:, 0]**2 +
                                          self.det_pos[:, 1]**2 +
                                          self.det_pos[:, 2]**2))

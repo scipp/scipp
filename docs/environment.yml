@@ -16,4 +16,3 @@ dependencies:
     - ipywidgets
     - ipyvolume
     - ipyevents
-    - ipympl
