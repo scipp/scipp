@@ -920,7 +920,10 @@ SCIPP_CORE_EXPORT Variable reciprocal(const VariableConstProxy &var);
 SCIPP_CORE_EXPORT std::vector<Variable>
 split(const Variable &var, const Dim dim,
       const std::vector<scipp::index> &indices);
-SCIPP_CORE_EXPORT Variable abs(const Variable &var);
+[[nodiscard]] SCIPP_CORE_EXPORT Variable abs(const VariableConstProxy &var);
+[[nodiscard]] SCIPP_CORE_EXPORT Variable abs(Variable &&var);
+SCIPP_CORE_EXPORT VariableProxy abs(const VariableConstProxy &var,
+                                    const VariableProxy &out);
 SCIPP_CORE_EXPORT Variable broadcast(const VariableConstProxy &var,
                                      const Dimensions &dims);
 SCIPP_CORE_EXPORT Variable concatenate(const VariableConstProxy &a1,

@@ -265,9 +265,23 @@ Variable mean(const VariableConstProxy &var, const Dim dim,
   return mean(var, dim);
 }
 
-Variable abs(const Variable &var) {
+Variable abs(const VariableConstProxy &var) {
   using std::abs;
   return transform<double, float>(var, [](const auto x) { return abs(x); });
+}
+
+Variable abs(Variable &&var) {
+  using std::abs;
+  auto out(std::move(var));
+  abs(out, out);
+  return out;
+}
+
+VariableProxy abs(const VariableConstProxy &var, const VariableProxy &out) {
+  using std::abs;
+  transform_in_place<pair_self_t<double, float>>(
+      out, var, [](auto &x, const auto &y) { x = abs(y); });
+  return out;
 }
 
 Variable norm(const VariableConstProxy &var) {
