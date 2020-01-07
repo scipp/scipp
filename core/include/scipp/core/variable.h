@@ -216,6 +216,18 @@ public:
   operator=(VariableConceptHandle_impl &&) = default;
   VariableConceptHandle_impl &
   operator=(const VariableConceptHandle_impl &other) {
+    if (*this && other) {
+      // Avoid allocation of new element_array if output is of correct shape.
+      // This yields a 5x speedup in assignment operations of variables.
+      auto &concept = **this;
+      auto &otherConcept = *other;
+      if (!concept.isView() && !otherConcept.isView() &&
+          concept.dtype() == otherConcept.dtype() &&
+          concept.dims() == otherConcept.dims()) {
+        concept.copy(otherConcept, Dim::Invalid, 0, 0, 1);
+        return *this;
+      }
+    }
     return *this = other ? other->clone() : VariableConceptHandle_impl();
   }
 
