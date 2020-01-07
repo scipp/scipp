@@ -17,9 +17,10 @@ import ipywidgets as widgets
 import warnings
 
 
-def plot_1d(scipp_obj_dict=None, output=None, axes=None, values=None, variances=None,
-            masks={"color": "k"}, filename=None, figsize=None, mpl_axes=None,
-            mpl_line_params=None, logx=False, logy=False, logxy=False):
+def plot_1d(scipp_obj_dict=None, output=None, axes=None, values=None,
+            variances=None, masks={"color": "k"}, filename=None, figsize=None,
+            mpl_axes=None, mpl_line_params=None, logx=False, logy=False,
+            logxy=False):
     """
     Plot a 1D spectrum.
 

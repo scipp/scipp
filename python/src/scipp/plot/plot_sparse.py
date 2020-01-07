@@ -122,7 +122,7 @@ def plot_sparse(scipp_obj_dict, output=None, ndim=0, sparse_dim=None,
         import ipyvolume as ipv
 
         widg = ipv.figure(width=config.width, height=config.height,
-                         animation=0)
+                          animation=0)
 
         # Map mpl scatter markers to ipyvolume scatter markers
         ipvmarkers = ["sphere", "arrow", "box", "diamond", "point_2d",
