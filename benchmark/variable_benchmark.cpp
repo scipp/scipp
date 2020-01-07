@@ -66,14 +66,18 @@ template <class Gen> static void BM_Variable_copy(benchmark::State &state) {
   auto [var, size] = Gen()(axisLength);
   for (auto _ : state) {
     Variable copy(var);
+    state.PauseTiming();
+    copy = Variable();
+    state.ResumeTiming();
   }
+  constexpr auto read_write_factor = 3;
+  state.SetItemsProcessed(state.iterations() * size /
+                          (size / var.dims().volume()));
+  state.SetBytesProcessed(state.iterations() * size * read_write_factor);
   state.counters["SizeBytes"] = size;
-  state.counters["BandwidthBytes"] =
-      benchmark::Counter(size, benchmark::Counter::kIsIterationInvariantRate,
-                         benchmark::Counter::OneK::kIs1024);
 }
 static void Args_Variable_copy(benchmark::internal::Benchmark *b) {
-  b->Arg(10)->Arg(20);
+  b->Arg(10)->Arg(20)->Arg(30);
 }
 static void Args_Variable_copy_sparse(benchmark::internal::Benchmark *b) {
   b->Range(1 << 5, 1 << 12);
@@ -147,6 +151,28 @@ static void BM_Variable_assign_1d(benchmark::State &state) {
 
   const auto a = makeVariable<double>(Dims{Dim::X}, Shape{size});
   auto b = makeVariable<double>(Dims{Dim::X}, Shape{size});
+  for (auto _ : state) {
+    b = a;
+  }
+
+  constexpr auto read_write_factor = 3;
+  state.SetItemsProcessed(state.iterations() * size);
+  state.SetBytesProcessed(state.iterations() * sizeof(double) * size *
+                          read_write_factor);
+  state.counters["SizeBytes"] = sizeof(double) * size;
+}
+
+BENCHMARK(BM_Variable_assign_1d)
+    ->Unit(benchmark::kMillisecond)
+    ->Arg(1e7)
+    ->Arg(1e8)
+    ->Arg(1e9);
+
+static void BM_VariableProxy_assign_1d(benchmark::State &state) {
+  const auto size = state.range(0);
+
+  const auto a = makeVariable<double>(Dims{Dim::X}, Shape{size});
+  auto b = makeVariable<double>(Dims{Dim::X}, Shape{size});
   VariableProxy bb(b);
 
   for (auto _ : state) {
@@ -159,11 +185,11 @@ static void BM_Variable_assign_1d(benchmark::State &state) {
                           read_write_factor);
   state.counters["SizeBytes"] = sizeof(double) * size;
 }
-BENCHMARK(BM_Variable_assign_1d)
+
+BENCHMARK(BM_VariableProxy_assign_1d)
     ->Unit(benchmark::kMillisecond)
     ->Arg(1e7)
     ->Arg(1e8)
-    ->Arg(1e9)
-    ->Arg(5e9);
+    ->Arg(1e9);
 
 BENCHMARK_MAIN();
