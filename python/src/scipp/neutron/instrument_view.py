@@ -43,10 +43,8 @@ def instrument_view(data_array=None, bins=None, masks=None, filename=None,
     iv = InstrumentView(data_array=data_array, bins=bins, masks=masks,
                         cmap=cmap, log=log, vmin=vmin, vmax=vmax,
                         aspect=aspect, size=size, projection=projection,
-                        nan_color=nan_color,
+                        nan_color=nan_color, filename=filename,
                         continuous_update=continuous_update)
-
-    render_plot(widgets=iv.box, filename=filename, ipv=ipv)
 
     return SciPlot(iv.members)
 
@@ -55,7 +53,8 @@ class InstrumentView:
 
     def __init__(self, data_array=None, bins=None, masks=None, cmap=None,
                  log=None, vmin=None, vmax=None, aspect=None, size=1,
-                 projection=None, nan_color=None, continuous_update=None):
+                 projection=None, nan_color=None, filename=None,
+                 continuous_update=None):
 
         self.fig2d = None
         self.fig3d = None
@@ -152,11 +151,10 @@ class InstrumentView:
 
         # Place widgets in boxes
         self.vbox = widgets.VBox(
-            [self.figurewidget,
-             widgets.HBox([self.tof_slider, self.tof_label]),
+            [widgets.HBox([self.tof_slider, self.tof_label]),
              widgets.HBox([self.nbins, self.bin_size]),
              self.togglebuttons])
-        self.box = widgets.VBox([self.vbox])
+        self.box = widgets.VBox([self.figurewidget, self.vbox])
         self.box.layout.align_items = "center"
 
         # Protect against uninstalled ipyvolume
@@ -167,6 +165,12 @@ class InstrumentView:
             self.buttons[projections[1]].button_style = "info"
             self.buttons["3D"].button_style = ""
             self.buttons["3D"].disabled = True
+
+        # Render the plot here instead of at the top level because to capture
+        # the matplotlib output (if a 2D projection is requested to begin with,
+        # the output widget needs to be displayed first, before any mpl figure
+        # is displayed.
+        render_plot(widgets=self.box, filename=filename, ipv=ipv)
 
         # Update the figure
         self.change_projection(self.buttons[projection])
@@ -213,7 +217,8 @@ class InstrumentView:
             self.projection_3d()
             self.do_update = self.update_colors_3d
         else:
-            if self.current_projection == "3D":
+            if self.current_projection == "3D" or \
+               self.current_projection is None:
                 update_children = True
             self.projection_2d(owner.description, update_children)
             self.do_update = self.update_colors_2d
@@ -284,6 +289,7 @@ class InstrumentView:
         if update_children:
             with self.figurewidget:
                 disp.display(self.fig2d)
+
 
         # Compute cylindrical or spherical projections
         permutations = {"X": [0, 2, 1], "Y": [1, 0, 2], "Z": [2, 1, 0]}
