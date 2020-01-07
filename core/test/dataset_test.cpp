@@ -329,18 +329,14 @@ TEST(DatasetTest, slice_validation_complex) {
 }
 
 TEST(DataProxyTest, set_variances) {
-  using namespace scipp::core::detail;
   auto d = make_1_values<bool>("a", {Dim::X, 3}, units::m, {true, false, true});
-  EXPECT_THROW(d["a"].setVariances(element_array<double>{1, 2, 3}),
-               except::TypeError);
+  EXPECT_THROW(d["a"].setVariances<double>({1, 2, 3}), except::TypeError);
 
   auto dd = make_1_values<double>("a", {Dim::X, 3}, units::m, {1.0, 1.0, 1.0});
-  EXPECT_ANY_THROW(
-      dd["a"].setVariances(element_array<double>{2.0, 2.0, 2.0, 2.0}));
-  dd["a"].setVariances(element_array<double>{3.0, 3.0, 3.0});
-  EXPECT_EQ(
-      equals(dd["a"].variances<double>(), element_array<double>{3.0, 3.0, 3.0}),
-      true);
+  EXPECT_ANY_THROW(dd["a"].setVariances<double>({2.0, 2.0, 2.0, 2.0}));
+  dd["a"].setVariances<double>({3.0, 3.0, 3.0});
+  EXPECT_EQ(equals(dd["a"].variances<double>(), std::vector{3.0, 3.0, 3.0}),
+            true);
 }
 
 TEST(DatasetTest, sum_and_mean) {

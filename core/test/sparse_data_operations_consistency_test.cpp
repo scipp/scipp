@@ -32,7 +32,6 @@ static auto make_histogram() {
 }
 
 TEST(SparseDataOperationsConsistencyTest, multiply) {
-  using namespace scipp::core::detail;
   // Apart from uncertainties, the order of operations does not matter. We can
   // either first multiply and then histogram, or first histogram and then
   // multiply.
@@ -56,8 +55,8 @@ TEST(SparseDataOperationsConsistencyTest, multiply) {
 
   // Case 2: Multiple events per bin => uncertainties differ, set to 0 before
   // comparison.
-  ab.setVariances(element_array<double>(4));
-  ba.setVariances(element_array<double>(4));
+  ab.setVariances<double>({0, 0, 0, 0});
+  ba.setVariances<double>({0, 0, 0, 0});
   EXPECT_EQ(ab, ba);
 }
 
@@ -70,7 +69,6 @@ TEST(SparseDataOperationsConsistencyTest, flatten_sum) {
 }
 
 TEST(SparseDataOperationsConsistencyTest, flatten_multiply_sum) {
-  using namespace scipp::core::detail;
   const auto sparse = make_sparse_array_coord_only();
   auto edges = makeVariable<double>(Dimensions{Dim::X, 3},
                                     units::Unit(units::us), Values{1, 3, 5});
@@ -95,10 +93,10 @@ TEST(SparseDataOperationsConsistencyTest, flatten_multiply_sum) {
   EXPECT_NE(mhf, smh);
 
   // Cross-group: Uncertainties differ due to multiple events per bin, set to 0.
-  hfm.setVariances(element_array<double>(2));
-  mhf.setVariances(element_array<double>(2));
-  msh.setVariances(element_array<double>(2));
-  smh.setVariances(element_array<double>(2));
+  hfm.setVariances<double>({0, 0});
+  mhf.setVariances<double>({0, 0});
+  msh.setVariances<double>({0, 0});
+  smh.setVariances<double>({0, 0});
   EXPECT_EQ(hfm, mhf);
   EXPECT_EQ(hfm, msh);
   EXPECT_EQ(hfm, smh);

@@ -38,9 +38,7 @@ TEST(ExampleInstrument, basics) {
       {Eigen::Vector3d{0.0, 0.0, -10.0}, Eigen::Vector3d{0.0, 0.0, 0.0}});
 
   Dataset d;
-  detail::element_array<boost::container::small_vector<scipp::index, 1>>
-      grouping = {{0, 1}, {2, 3}};
-  d.insert(Coord::DetectorGrouping, {Dim::Spectrum, 2}, grouping);
+  d.insert(Coord::DetectorGrouping, {Dim::Spectrum, 2}, {{0, 1}, {2, 3}});
   d.insert(Coord::DetectorInfo, {}, {detectors});
   d.insert(Coord::ComponentInfo, {}, {components});
 
