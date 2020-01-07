@@ -116,13 +116,32 @@ class InstrumentView:
         self.tof_slider.observe(self.update_colors, names="value")
         self.tof_label = widgets.Label()
 
-        projections = ["3D", "Cylindrical Y", "Spherical Y"]
+        projections = ["3D", "Cylindrical X", "Cylindrical Y", "Cylindrical Z",
+                       "Spherical X", "Spherical Y", "Spherical Z"]
 
         # Create toggle buttons to change projection
-        self.togglebuttons = widgets.ToggleButtons(
-                options=projections, description="", value=projection,
+        self.buttons = {}
+        self.current_projection = projection
+        for p in projections:
+            self.buttons[p] = widgets.ToggleButton(
+                value=(p == self.current_projection), description=p,
                 disabled=False, button_style="")
-        self.togglebuttons.observe(self.change_projection, names="value")
+            self.buttons[p].on_msg(self.change_projection)
+        
+        items = [self.buttons["3D"]]
+        for x in "XYZ":
+            items.append(self.buttons["Cylindrical {}".format(x)])
+            items.append(self.buttons["Spherical {}".format(x)])
+            items.append(widgets.Label())
+
+        self.togglebuttons = widgets.GridBox(
+            items,
+            layout=widgets.Layout(grid_template_columns="repeat(3, 150px)"))
+
+        # self.togglebuttons = widgets.ToggleButtons(
+        #         options=projections, description="", value=projection,
+        #         disabled=False, button_style="")
+        # self.togglebuttons.observe(self.change_projection, names="value")
 
         # Place widgets in boxes
         self.vbox = widgets.VBox(
@@ -137,11 +156,13 @@ class InstrumentView:
             print("Warning: 3D projection requires ipyvolume to be "
                   "installed. Use conda/pip install ipyvolume. Reverting to "
                   "2D projection.")
-            self.togglebuttons.value = projections[1]
-            self.togglebuttons.options = projections[1:]
+            self.buttons[projections[1]].value = True
+            self.current_projection = projections[1]
+            self.buttons["3D"].disabled = True
 
+        print("self.current_projection", self.current_projection)
         # Update the figure
-        self.change_projection({"new": self.togglebuttons.value, "old": "3D"})
+        self.change_projection(self.buttons[self.current_projection], None, None)
 
         # Create members object
         self.members = {"widgets": {"sliders": self.tof_slider,
@@ -161,7 +182,10 @@ class InstrumentView:
                 self.hist_data_array.coords[sc.Dim.Tof].values[change["new"]]))
         return
 
-    def change_projection(self, change):
+    def change_projection(self, owner, event, dummy):
+
+        print(self.current_projection)
+        # print(change)
 
         # Temporarily disable automatic plotting in notebook
         if plt.isinteractive():
@@ -171,19 +195,23 @@ class InstrumentView:
             re_enable_interactive = False
 
         update_children = False
+        self.buttons[self.current_projection].value = False
 
-        if change["new"] == "3D":
+        # print('change["new"]', change["new"])
+        if owner.description == "3D":
             # if self.fig is not None:
             #     self.fig.clear()
             # update_children = True
             self.projection_3d()
+            print("Calling 3d")
             self.do_update = self.update_colors_3d
         else:
-            if change["old"] == "3D":
+            print("calling 2d")
+            if self.current_projection == "3D":
                 # if ipv is not None:
                 #     ipv.clear()
                 update_children = True
-            self.projection_2d(change["new"], update_children)
+            self.projection_2d(owner.description, update_children)
             self.do_update = self.update_colors_2d
 
         self.update_colors({"new": self.tof_slider.value})
@@ -191,6 +219,7 @@ class InstrumentView:
         # # Replace the figure in the VBox container
         # if update_children:
         #     self.box.children = tuple([self.figurewidget, self.vbox])
+        self.current_projection = owner.description
 
         # Re-enable automatic plotting in notebook
         if re_enable_interactive:
