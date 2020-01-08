@@ -18,6 +18,7 @@
 #include "scipp/common/span.h"
 #include "scipp/core/dimensions.h"
 #include "scipp/core/dtype.h"
+#include "scipp/core/element_array.h"
 #include "scipp/core/except.h"
 #include "scipp/core/slice.h"
 #include "scipp/core/string.h"
@@ -133,7 +134,7 @@ public:
   }
   static DType static_dtype() noexcept { return scipp::core::dtype<T>; }
 
-  virtual void setVariances(Vector<T> &&v) = 0;
+  virtual void setVariances(detail::element_array<T> &&v) = 0;
 
   virtual scipp::span<T> values() = 0;
   virtual scipp::span<T> values(const Dim dim, const scipp::index begin,
@@ -295,18 +296,18 @@ public:
 
   template <class T>
   static Variable create(units::Unit &&u, Dims &&d, Shape &&s,
-                         std::optional<Vector<T>> &&val,
-                         std::optional<Vector<T>> &&var);
+                         std::optional<detail::element_array<T>> &&val,
+                         std::optional<detail::element_array<T>> &&var);
 
   template <class T>
   static Variable create(units::Unit &&u, Dimensions &&d,
-                         std::optional<Vector<T>> &&val,
-                         std::optional<Vector<T>> &&var);
+                         std::optional<detail::element_array<T>> &&val,
+                         std::optional<detail::element_array<T>> &&var);
 
   template <class T>
   Variable(const Dimensions &dimensions, std::initializer_list<T> values_)
       : Variable(units::dimensionless, std::move(dimensions),
-                 Vector<T>(values_.begin(), values_.end())) {}
+                 detail::element_array<T>(values_.begin(), values_.end())) {}
 
   /// This is used to provide the constructors:
   /// Variable(DType, Dims, Shape, Unit, Values<T1>, Variances<T2>)
@@ -441,7 +442,7 @@ public:
   const auto &dataHandle() && = delete;
   const auto &dataHandle() & { return m_object.mutableVariant(); }
 
-  template <class T> void setVariances(Vector<T> &&v);
+  template <class T> void setVariances(detail::element_array<T> &&v);
 
 private:
   template <class... Ts> struct ConstructVariable {
@@ -451,8 +452,10 @@ private:
   };
 
 private:
-  template <class T> const Vector<T> &cast(const bool variances = false) const;
-  template <class T> Vector<T> &cast(const bool variances = false);
+  template <class T>
+  const detail::element_array<T> &cast(const bool variances = false) const;
+  template <class T>
+  detail::element_array<T> &cast(const bool variances = false);
 
   units::Unit m_unit;
   VariableConceptHandle m_object;
@@ -511,10 +514,10 @@ template <class T>
 Variable from_dimensions_and_unit(const Dimensions &dms, const units::Unit &u) {
   auto volume = dms.volume();
   if constexpr (is_sparse_container<T>::value)
-    return Variable(u, dms, Vector<T>(volume));
+    return Variable(u, dms, element_array<T>(volume));
   else
     return Variable(u, dms,
-                    Vector<T>(volume, detail::default_init<T>::value()));
+                    element_array<T>(volume, detail::default_init<T>::value()));
 }
 
 template <class T>
@@ -522,10 +525,11 @@ Variable from_dimensions_and_unit_with_variances(const Dimensions &dms,
                                                  const units::Unit &u) {
   auto volume = dms.volume();
   if constexpr (is_sparse_container<T>::value)
-    return Variable(u, dms, Vector<T>(volume), Vector<T>(volume));
+    return Variable(u, dms, element_array<T>(volume), element_array<T>(volume));
   else
-    return Variable(u, dms, Vector<T>(volume, detail::default_init<T>::value()),
-                    Vector<T>(volume, detail::default_init<T>::value()));
+    return Variable(u, dms,
+                    element_array<T>(volume, detail::default_init<T>::value()),
+                    element_array<T>(volume, detail::default_init<T>::value()));
 }
 } // namespace detail
 
@@ -543,8 +547,8 @@ Variable from_dimensions_and_unit_with_variances(const Dimensions &dms,
 ///       makeVariable<T>(Dims{Dim::X}, Shape{5}, Values{}, Variances{});
 template <class T>
 Variable Variable::create(units::Unit &&u, Dimensions &&d,
-                          std::optional<Vector<T>> &&val,
-                          std::optional<Vector<T>> &&var) {
+                          std::optional<detail::element_array<T>> &&val,
+                          std::optional<detail::element_array<T>> &&var) {
   auto dms{d};
   if (val && var) {
     if (val->size() < 0 && var->size() < 0)
@@ -568,8 +572,8 @@ Variable Variable::create(units::Unit &&u, Dimensions &&d,
 
 template <class T>
 Variable Variable::create(units::Unit &&u, Dims &&d, Shape &&s,
-                          std::optional<Vector<T>> &&val,
-                          std::optional<Vector<T>> &&var) {
+                          std::optional<detail::element_array<T>> &&val,
+                          std::optional<detail::element_array<T>> &&var) {
   auto dms = Dimensions{d.data, s.data};
   return create(std::move(u), std::move(dms), std::move(val), std::move(var));
 }
@@ -820,7 +824,7 @@ public:
   VariableProxy operator&=(const VariableConstProxy &other) const;
   VariableProxy operator^=(const VariableConstProxy &other) const;
 
-  template <class T> void setVariances(Vector<T> &&v) const;
+  template <class T> void setVariances(detail::element_array<T> &&v) const;
 
   void setUnit(const units::Unit &unit) const;
   void expectCanSetUnit(const units::Unit &unit) const;

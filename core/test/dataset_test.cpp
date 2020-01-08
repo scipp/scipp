@@ -330,12 +330,12 @@ TEST(DatasetTest, slice_validation_complex) {
 
 TEST(DataProxyTest, set_variances) {
   auto d = make_1_values<bool>("a", {Dim::X, 3}, units::m, {true, false, true});
-  EXPECT_THROW(d["a"].setVariances(Vector<double>{1, 2, 3}), except::TypeError);
+  EXPECT_THROW(d["a"].setVariances<double>({1, 2, 3}), except::TypeError);
 
   auto dd = make_1_values<double>("a", {Dim::X, 3}, units::m, {1.0, 1.0, 1.0});
-  EXPECT_ANY_THROW(dd["a"].setVariances(Vector<double>{2.0, 2.0, 2.0, 2.0}));
-  dd["a"].setVariances(Vector<double>{3.0, 3.0, 3.0});
-  EXPECT_EQ(equals(dd["a"].variances<double>(), Vector<double>{3.0, 3.0, 3.0}),
+  EXPECT_ANY_THROW(dd["a"].setVariances<double>({2.0, 2.0, 2.0, 2.0}));
+  dd["a"].setVariances<double>({3.0, 3.0, 3.0});
+  EXPECT_EQ(equals(dd["a"].variances<double>(), std::vector{3.0, 3.0, 3.0}),
             true);
 }
 
