@@ -85,5 +85,5 @@ def test_neutron_instrument_view_spherical():
 def test_neutron_instrument_view_with_dataset():
     d = make_dataset_with_beamline()
     d['b'] = sc.Variable([Dim.Position, Dim.Tof],
-                         values=np.arange(36).reshape(4, 9))
+                         values=np.arange(36.).reshape(4, 9))
     sc.neutron.instrument_view(d)

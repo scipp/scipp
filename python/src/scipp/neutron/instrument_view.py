@@ -28,7 +28,8 @@ from matplotlib.patches import Rectangle
 def instrument_view(scipp_obj=None, bins=None, masks=None, filename=None,
                     figsize=None, aspect="equal", cmap=None, log=False,
                     vmin=None, vmax=None, size=0.1, projection="3D",
-                    nan_color="#d3d3d3", continuous_update=True):
+                    nan_color="#d3d3d3", continuous_update=True,
+                    dim=sc.Dim.Tof):
     """
     Plot a 2D or 3D view of the instrument.
     A slider is also generated to navigate the time-of-flight dimension.
@@ -44,7 +45,7 @@ def instrument_view(scipp_obj=None, bins=None, masks=None, filename=None,
                         cmap=cmap, log=log, vmin=vmin, vmax=vmax,
                         aspect=aspect, size=size, projection=projection,
                         nan_color=nan_color, filename=filename,
-                        continuous_update=continuous_update)
+                        continuous_update=continuous_update, dim=dim)
 
     return SciPlot(iv.members)
 
@@ -54,7 +55,7 @@ class InstrumentView:
     def __init__(self, scipp_obj=None, bins=None, masks=None, cmap=None,
                  log=None, vmin=None, vmax=None, aspect=None, size=1,
                  projection=None, nan_color=None, filename=None,
-                 continuous_update=None):
+                 continuous_update=None, dim=None):
 
         self.fig2d = None
         self.fig3d = None
@@ -71,12 +72,14 @@ class InstrumentView:
         self.nan_color = nan_color
         self.log = log
         self.current_projection = None
+        self.dim = dim
 
         self.data_arrays = {}
         tp = type(scipp_obj)
         if tp is sc.Dataset or tp is sc.DatasetProxy:
             for key, var in sorted(scipp_obj):
-                self.data_arrays[key] = var
+                if self.dim in var.dims:
+                    self.data_arrays[key] = var
         elif tp is sc.DataArray or tp is sc.DataProxy:
             self.data_arrays[scipp_obj.name] = scipp_obj
         else:
@@ -108,14 +111,14 @@ class InstrumentView:
             if data_array.sparse_dim is not None and bins_here is None:
                 bins_here = True
             if bins_here is not None:
-                dim = None if data_array.sparse_dim is not None else sc.Dim.Tof
-                spdim = None if data_array.sparse_dim is None else sc.Dim.Tof
+                dim = None if data_array.sparse_dim is not None else self.dim
+                spdim = None if data_array.sparse_dim is None else self.dim
                 var = make_bins(
                     data_array=data_array, sparse_dim=spdim, dim=dim,
                     bins=bins_here,
                     padding=(data_array.sparse_dim is not None))
             else:
-                var = data_array.coords[sc.Dim.Tof]
+                var = data_array.coords[self.dim]
             self.minmax["tof"][0] = min(self.minmax["tof"][0], var.values[0])
             self.minmax["tof"][1] = max(self.minmax["tof"][1], var.values[-1])
             self.minmax["tof"][2] = var.shape[0]
@@ -135,13 +138,14 @@ class InstrumentView:
 
         # Create a Tof slider and its label
         self.tof_dim_indx = self.hist_data_array[self.key].dims.index(
-            sc.Dim.Tof)
-        self.tof_slider = widgets.IntSlider(
-            value=0, min=0, step=1, description="Tof",
+            self.dim)
+        self.slider = widgets.IntSlider(
+            value=0, min=0, step=1,
+            description=str(self.dim).replace("Dim.", ""),
             max=self.hist_data_array[self.key].shape[self.tof_dim_indx] - 1,
             continuous_update=continuous_update, readout=False)
-        self.tof_slider.observe(self.update_colors, names="value")
-        self.tof_label = widgets.Label()
+        self.slider.observe(self.update_colors, names="value")
+        self.label = widgets.Label()
 
         # Add text boxes to change number of bins/bin size
         self.nbins = widgets.Text(
@@ -150,7 +154,7 @@ class InstrumentView:
             style={"description_width": "initial"})
         self.nbins.on_submit(self.update_nbins)
 
-        tof_values = self.hist_data_array[self.key].coords[sc.Dim.Tof].values
+        tof_values = self.hist_data_array[self.key].coords[self.dim].values
         self.bin_size = widgets.Text(
             value=str(tof_values[1] - tof_values[0]),
             description="Bin size:")
@@ -179,7 +183,7 @@ class InstrumentView:
 
         # Place widgets in boxes
         self.vbox = widgets.VBox(
-            [widgets.HBox([self.dropdown, self.tof_slider, self.tof_label]),
+            [widgets.HBox([self.dropdown, self.slider, self.label]),
              widgets.HBox([self.nbins, self.bin_size]),
              self.togglebuttons])
         self.box = widgets.VBox([self.figurewidget, self.vbox])
@@ -204,7 +208,7 @@ class InstrumentView:
         self.change_projection(self.buttons[projection])
 
         # Create members object
-        self.members = {"widgets": {"sliders": self.tof_slider,
+        self.members = {"widgets": {"sliders": self.slider,
                                     "buttons": self.buttons,
                                     "text": {"nbins": self.nbins,
                                              "bin_size": self.bin_size},
@@ -231,8 +235,8 @@ class InstrumentView:
                     data_array, data_array.sparse_dim, bins)
             else:
                 self.hist_data_array[key] = sc.rebin(
-                    data_array, sc.Dim.Tof,
-                    make_bins(data_array=data_array, dim=sc.Dim.Tof,
+                    data_array, self.dim,
+                    make_bins(data_array=data_array, dim=self.dim,
                               bins=bins, padding=False))
 
             # Parse input parameters for colorbar
@@ -246,11 +250,11 @@ class InstrumentView:
 
     def update_colors(self, change):
         self.do_update(change)
-        self.tof_label.value = name_with_unit(
-            var=self.hist_data_array[self.key].coords[sc.Dim.Tof],
+        self.label.value = name_with_unit(
+            var=self.hist_data_array[self.key].coords[self.dim],
             name=value_to_string(
                 self.hist_data_array[self.key].coords[
-                    sc.Dim.Tof].values[change["new"]]))
+                    self.dim].values[change["new"]]))
         return
 
     def change_projection(self, owner):
@@ -280,7 +284,7 @@ class InstrumentView:
             self.projection_2d(owner.description, update_children)
             self.do_update = self.update_colors_2d
 
-        self.update_colors({"new": self.tof_slider.value})
+        self.update_colors({"new": self.slider.value})
 
         self.current_projection = owner.description
         self.buttons[owner.description].button_style = "info"
@@ -327,7 +331,7 @@ class InstrumentView:
         return
 
     def update_colors_3d(self, change):
-        arr = self.hist_data_array[self.key][sc.Dim.Tof, change["new"]].values
+        arr = self.hist_data_array[self.key][self.dim, change["new"]].values
         if self.log:
             arr = np.ma.masked_where(arr <= 0, arr)
         self.scatter3d.color = self.scalar_map[self.key].to_rgba(arr)
@@ -372,7 +376,7 @@ class InstrumentView:
                 patches, cmap=self.params[self.key]["cmap"],
                 norm=self.params[self.key]["norm"],
                 array=self.hist_data_array[
-                    self.key][sc.Dim.Tof, self.tof_slider.value].values)
+                    self.key][self.dim, self.slider.value].values)
             self.ax.add_collection(self.scatter2d)
             self.save_xy = np.array([theta, z_or_phi]).T
             if self.params[self.key]["cbar"]:
@@ -394,7 +398,7 @@ class InstrumentView:
 
     def update_colors_2d(self, change):
         self.scatter2d.set_array(
-            self.hist_data_array[self.key][sc.Dim.Tof, change["new"]].values)
+            self.hist_data_array[self.key][self.dim, change["new"]].values)
         self.fig2d.canvas.draw_idle()
         return
 
@@ -408,9 +412,9 @@ class InstrumentView:
         # self.rebin_data(nbins, from_nbins_text)
         self.rebin_data(np.linspace(
             self.minmax["tof"][0], self.minmax["tof"][1], nbins + 1))
-        x = self.hist_data_array[self.key].coords[sc.Dim.Tof].values
+        x = self.hist_data_array[self.key].coords[self.dim].values
         self.bin_size.value = str(x[1] - x[0])
-        self.update_tof_slider()
+        self.update_slider()
         return
 
     def update_bin_size(self, owner):
@@ -424,26 +428,26 @@ class InstrumentView:
             self.minmax["tof"][0], self.minmax["tof"][1], binw))
         self.nbins.value = str(self.hist_data_array[self.key].shape[
             self.tof_dim_indx])
-        self.update_tof_slider()
+        self.update_slider()
         return
 
-    def update_tof_slider(self):
+    def update_slider(self):
         """
         Try to replace the slider around the same position
         """
 
         # Compute percentage position
-        perc_pos = self.tof_slider.value / self.tof_slider.max
+        perc_pos = self.slider.value / self.slider.max
         # Compute new position
         nbins = int(self.nbins.value)
         new_pos = int(perc_pos * nbins)
         # Either place new upper boundary first, or change slider value first
-        if new_pos > self.tof_slider.max:
-            self.tof_slider.max = nbins
-            self.tof_slider.value = new_pos
+        if new_pos > self.slider.max:
+            self.slider.max = nbins
+            self.slider.value = new_pos
         else:
-            self.tof_slider.value = new_pos
-            self.tof_slider.max = nbins
+            self.slider.value = new_pos
+            self.slider.max = nbins
         return
 
     def change_data_array(self, change):
@@ -457,4 +461,4 @@ class InstrumentView:
                                     vmax=self.params[self.key]["vmax"])
             self.cbar.set_clim(vmin=self.params[self.key]["vmin"],
                                vmax=self.params[self.key]["vmax"])
-        self.update_colors({"new": self.tof_slider.value})
+        self.update_colors({"new": self.slider.value})
