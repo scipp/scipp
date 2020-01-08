@@ -13,11 +13,63 @@ TEST(VariableTrigonometryTest, sin) {
       Dims(), Shape(), units::Unit(units::rad), Values{pi<double>});
   const auto deg = makeVariable<double>(Dims(), Shape(),
                                         units::Unit(units::deg), Values{180.0});
+
   const auto expected =
       makeVariable<double>(Dims(), Shape(), units::Unit(units::dimensionless),
                            Values{sin(pi<double>)});
+
   EXPECT_EQ(sin(rad), expected);
   EXPECT_EQ(sin(deg), expected);
+}
+
+TEST(VariableTrigonometryTest, sin_in_place_full) {
+  auto rad =
+      makeVariable<double>(Dims{Dim::X}, Shape{3}, units::Unit(units::rad),
+                           Values{0.0, pi<double>, 2.0 * pi<double>});
+  auto deg =
+      makeVariable<double>(Dims{Dim::X}, Shape{3}, units::Unit(units::deg),
+                           Values{0.0, 180.0, 360.0});
+
+  auto rad_view = sin(rad, rad);
+  auto deg_view = sin(deg, deg);
+
+  const auto expected = makeVariable<double>(
+      Dims{Dim::X}, Shape{3},
+      Values{sin(0.0), sin(pi<double>), sin(2.0 * pi<double>)});
+
+  EXPECT_EQ(rad, expected);
+  EXPECT_EQ(rad_view, rad);
+  EXPECT_EQ(rad_view.underlying(), rad);
+
+  EXPECT_EQ(deg, expected);
+  EXPECT_EQ(deg_view, deg);
+  EXPECT_EQ(deg_view.underlying(), deg);
+}
+
+TEST(VariableTrigonometryTest, sin_in_place_partial) {
+  const auto rad =
+      makeVariable<double>(Dims{Dim::X}, Shape{3}, units::Unit(units::rad),
+                           Values{0.0, pi<double>, 2.0 * pi<double>});
+  const auto deg =
+      makeVariable<double>(Dims{Dim::X}, Shape{3}, units::Unit(units::deg),
+                           Values{0.0, 180.0, 360.0});
+
+  auto rad_out = makeVariable<double>(Dims{Dim::X}, Shape{2});
+  auto deg_out = makeVariable<double>(Dims{Dim::X}, Shape{2});
+
+  auto rad_view = sin(rad.slice({Dim::X, 1, 3}), rad_out);
+  auto deg_view = sin(rad.slice({Dim::X, 1, 3}), deg_out);
+
+  const auto expected = makeVariable<double>(
+      Dims{Dim::X}, Shape{2}, Values{sin(pi<double>), sin(2.0 * pi<double>)});
+
+  EXPECT_EQ(rad_out, expected);
+  EXPECT_EQ(rad_view, rad_out);
+  EXPECT_EQ(rad_view.underlying(), rad_out);
+
+  EXPECT_EQ(deg_out, expected);
+  EXPECT_EQ(deg_view, deg_out);
+  EXPECT_EQ(deg_view.underlying(), deg_out);
 }
 
 TEST(VariableTrigonometryTest, cos) {

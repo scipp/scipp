@@ -25,6 +25,24 @@ Variable sin(const VariableConstProxy &var) {
                       [](const auto &x) { return sin(x); }});
 }
 
+Variable sin(Variable &&var) {
+  using std::sin;
+  Variable out(std::move(var));
+  sin(out, out);
+  return out;
+}
+
+VariableProxy sin(const VariableConstProxy &var, const VariableProxy &out) {
+  using std::sin;
+  out.assign(var);
+  if (var.unit() == units::deg)
+    out *= deg_to_rad;
+  transform_in_place<double, float>(
+      out, overloaded{transform_flags::expect_no_variance_arg<0>,
+                      [](auto &x) { x = sin(x); }});
+  return out;
+}
+
 Variable cos(const VariableConstProxy &var) {
   using std::cos;
   Variable out(var);

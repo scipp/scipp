@@ -511,12 +511,24 @@ void init_variable(py::module &m) {
         :return: New variable containing the sum.
         :rtype: Variable)");
 
-  m.def("sin", [](const Variable &self) { return sin(self); }, py::arg("x"),
-        py::call_guard<py::gil_scoped_release>(), R"(
+  m.def("sin", [](const VariableConstProxy &self) { return sin(self); },
+        py::arg("x"), py::call_guard<py::gil_scoped_release>(), R"(
         Element-wise sin.
 
         :raises: If the unit is not a plane-angle unit, or if the dtype has no sin, e.g., if it is an integer
         :return: Copy of the input with values replaced by the sin.
+        :rtype: Variable)");
+
+  m.def("sin",
+        [](const VariableConstProxy &self, const VariableProxy &out) {
+          return sin(self, out);
+        },
+        py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>(),
+        R"(
+        Element-wise sin.
+
+        :raises: If the unit is not a plane-angle unit, or if the dtype has no sin, e.g., if it is an integer
+        :return: sin of input values.
         :rtype: Variable)");
 
   m.def("cos", [](const Variable &self) { return cos(self); }, py::arg("x"),

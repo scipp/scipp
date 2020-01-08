@@ -980,6 +980,9 @@ SCIPP_CORE_EXPORT Variable copy(const VariableConstProxy &var);
 
 // Trigonometrics
 [[nodiscard]] SCIPP_CORE_EXPORT Variable sin(const VariableConstProxy &var);
+[[nodiscard]] SCIPP_CORE_EXPORT Variable sin(Variable &&var);
+SCIPP_CORE_EXPORT VariableProxy sin(const VariableConstProxy &var,
+                                    const VariableProxy &out);
 [[nodiscard]] SCIPP_CORE_EXPORT Variable cos(const VariableConstProxy &var);
 [[nodiscard]] SCIPP_CORE_EXPORT Variable tan(const VariableConstProxy &var);
 [[nodiscard]] SCIPP_CORE_EXPORT Variable asin(const VariableConstProxy &var);

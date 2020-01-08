@@ -4,6 +4,7 @@
 # @author Simon Heybrock
 import pytest
 
+import math
 import scipp as sc
 from scipp import Dim
 import numpy as np
@@ -807,5 +808,27 @@ def test_reciprocal_out():
     var = sc.Variable([Dim.X], values=np.array([1.0, 2.0]))
     expected = sc.Variable([Dim.X], values=np.array([1.0 / 1.0, 1.0 / 2.0]))
     out = sc.reciprocal(x=var, out=var)
+    assert var == expected
+    assert out == expected
+
+
+def test_sin():
+    var = sc.Variable([Dim.X],
+                      values=np.array([0.0, math.pi]),
+                      unit=sc.units.rad)
+    expected = sc.Variable([Dim.X],
+                           values=np.array([math.sin(0.0), math.sin(math.pi)]),
+                           unit=sc.units.dimensionless)
+    assert sc.sin(var) == expected
+
+
+def test_sin_out():
+    var = sc.Variable([Dim.X],
+                      values=np.array([0.0, math.pi]),
+                      unit=sc.units.rad)
+    expected = sc.Variable([Dim.X],
+                           values=np.array([math.sin(0.0), math.sin(math.pi)]),
+                           unit=sc.units.dimensionless)
+    out = sc.sin(x=var, out=var)
     assert var == expected
     assert out == expected
