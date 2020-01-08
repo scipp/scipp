@@ -979,12 +979,12 @@ SCIPP_CORE_EXPORT Variable sum(const VariableConstProxy &var, const Dim dim,
 SCIPP_CORE_EXPORT Variable copy(const VariableConstProxy &var);
 
 // Trigonometrics
-SCIPP_CORE_EXPORT Variable sin(const Variable &var);
-SCIPP_CORE_EXPORT Variable cos(const Variable &var);
-SCIPP_CORE_EXPORT Variable tan(const Variable &var);
-SCIPP_CORE_EXPORT Variable asin(const Variable &var);
-SCIPP_CORE_EXPORT Variable acos(const Variable &var);
-SCIPP_CORE_EXPORT Variable atan(const Variable &var);
+[[nodiscard]] SCIPP_CORE_EXPORT Variable sin(const VariableConstProxy &var);
+[[nodiscard]] SCIPP_CORE_EXPORT Variable cos(const VariableConstProxy &var);
+[[nodiscard]] SCIPP_CORE_EXPORT Variable tan(const VariableConstProxy &var);
+[[nodiscard]] SCIPP_CORE_EXPORT Variable asin(const VariableConstProxy &var);
+[[nodiscard]] SCIPP_CORE_EXPORT Variable acos(const VariableConstProxy &var);
+[[nodiscard]] SCIPP_CORE_EXPORT Variable atan(const VariableConstProxy &var);
 
 SCIPP_CORE_EXPORT Variable masks_merge_if_contains(const MasksConstProxy &masks,
                                                    const Dim dim);

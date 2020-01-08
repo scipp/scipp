@@ -11,52 +11,55 @@
 
 namespace scipp::core {
 
-Variable to_rad(Variable var) {
-  const auto scale = makeVariable<double>(Dims(), Shape(),
-                                          units::Unit(units::rad / units::deg),
-                                          Values{pi<double> / 180.0});
-  return var * scale;
-}
+const auto deg_to_rad =
+    makeVariable<double>(Dims(), Shape(), units::Unit(units::rad / units::deg),
+                         Values{pi<double> / 180.0});
 
-Variable sin(const Variable &var) {
+Variable sin(const VariableConstProxy &var) {
   using std::sin;
-  const Variable &rad = var.unit() == units::deg ? to_rad(var) : var;
+  Variable out(var);
+  if (var.unit() == units::deg)
+    out *= deg_to_rad;
   return transform<double, float>(
-      rad, overloaded{transform_flags::expect_no_variance_arg<0>,
+      out, overloaded{transform_flags::expect_no_variance_arg<0>,
                       [](const auto &x) { return sin(x); }});
 }
 
-Variable cos(const Variable &var) {
+Variable cos(const VariableConstProxy &var) {
   using std::cos;
-  const Variable &rad = var.unit() == units::deg ? to_rad(var) : var;
+  Variable out(var);
+  if (var.unit() == units::deg)
+    out *= deg_to_rad;
   return transform<double, float>(
-      rad, overloaded{transform_flags::expect_no_variance_arg<0>,
+      out, overloaded{transform_flags::expect_no_variance_arg<0>,
                       [](const auto &x) { return cos(x); }});
 }
 
-Variable tan(const Variable &var) {
+Variable tan(const VariableConstProxy &var) {
   using std::tan;
-  const Variable &rad = var.unit() == units::deg ? to_rad(var) : var;
+  Variable out(var);
+  if (var.unit() == units::deg)
+    out *= deg_to_rad;
   return transform<double, float>(
-      rad, overloaded{transform_flags::expect_no_variance_arg<0>,
+      out, overloaded{transform_flags::expect_no_variance_arg<0>,
                       [](const auto &x) { return tan(x); }});
 }
 
-Variable asin(const Variable &var) {
+Variable asin(const VariableConstProxy &var) {
   using std::asin;
   return transform<double, float>(
       var, overloaded{transform_flags::expect_no_variance_arg<0>,
                       [](const auto &x) { return asin(x); }});
 }
 
-Variable acos(const Variable &var) {
+Variable acos(const VariableConstProxy &var) {
   using std::acos;
   return transform<double, float>(
       var, overloaded{transform_flags::expect_no_variance_arg<0>,
                       [](const auto &x) { return acos(x); }});
 }
 
-Variable atan(const Variable &var) {
+Variable atan(const VariableConstProxy &var) {
   using std::atan;
   return transform<double, float>(
       var, overloaded{transform_flags::expect_no_variance_arg<0>,
