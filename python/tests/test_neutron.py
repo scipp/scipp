@@ -65,3 +65,25 @@ def test_neutron_beamline():
     assert two_theta.unit == sc.units.rad
     assert two_theta.dims == [Dim.Position]
     assert sc.neutron.scattering_angle(d) == 0.5 * two_theta
+
+
+def test_neutron_instrument_view_3d():
+    d = make_dataset_with_beamline()
+    sc.neutron.instrument_view(d["a"])
+
+
+def test_neutron_instrument_view_cylindrical():
+    d = make_dataset_with_beamline()
+    sc.neutron.instrument_view(d["a"], projection="Cylindrical X")
+
+
+def test_neutron_instrument_view_spherical():
+    d = make_dataset_with_beamline()
+    sc.neutron.instrument_view(d["a"], projection="Spherical Y")
+
+
+def test_neutron_instrument_view_with_dataset():
+    d = make_dataset_with_beamline()
+    d['b'] = sc.Variable([Dim.Position, Dim.Tof],
+                         values=np.arange(36).reshape(4, 9))
+    sc.neutron.instrument_view(d)

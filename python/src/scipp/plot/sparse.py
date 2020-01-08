@@ -74,7 +74,8 @@ def visit_sparse_data(data_array, sparse_dim, return_sparse_data=False,
         return xmin, xmax
 
 
-def make_bins(data_array=None, sparse_dim=None, bins=None, dim=None):
+def make_bins(data_array=None, sparse_dim=None, bins=None, dim=None,
+              padding=True):
     """
     Input bins can be different things:
     - a bool (True): then a default number of 256 bins is made
@@ -111,8 +112,9 @@ def make_bins(data_array=None, sparse_dim=None, bins=None, dim=None):
 
             dx = (xmax - xmin) / float(bins)
             # Add padding
-            xmin -= 0.5 * dx
-            xmax += 0.5 * dx
+            if padding:
+                xmin -= 0.5 * dx
+                xmax += 0.5 * dx
             bins = sc.Variable([bin_dim],
                                values=np.linspace(xmin, xmax, bins + 1),
                                unit=data_array.coords[bin_dim].unit)
