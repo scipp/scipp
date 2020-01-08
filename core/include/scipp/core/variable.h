@@ -81,6 +81,7 @@ public:
   virtual VariableConceptHandle reshape(const Dimensions &dims) = 0;
 
   virtual bool operator==(const VariableConcept &other) const = 0;
+  virtual bool isSame(const VariableConcept &other) const = 0;
 
   virtual bool isContiguous() const = 0;
   virtual bool isView() const = 0;

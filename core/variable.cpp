@@ -98,6 +98,8 @@ bool Variable::operator!=(const VariableConstProxy &other) const {
 }
 
 template <class T> VariableProxy VariableProxy::assign(const T &other) const {
+  if (data().isSame(other.data()))
+    return *this; // Do nothing for self-assignment
   setUnit(other.unit());
   expect::equals(dims(), other.dims());
   data().copy(other.data(), Dim::Invalid, 0, 0, 1);
