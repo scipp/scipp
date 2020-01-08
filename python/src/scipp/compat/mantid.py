@@ -2,11 +2,13 @@
 # Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock, Neil Vaytet
 
-from .._scipp import core as sc
-from .. import detail
-import numpy as np
-from copy import deepcopy
 import re
+from copy import deepcopy
+
+import numpy as np
+
+from .. import detail
+from .._scipp import core as sc
 
 
 def get_pos(pos):
@@ -136,6 +138,7 @@ def validate_and_get_unit(unit):
             sc.units.dimensionless / (sc.units.angstrom * sc.units.angstrom)
         ],
         "Label": [sc.Dim.Spectrum, sc.units.dimensionless],
+        "Empty": [sc.Dim.Spectrum, sc.units.dimensionless]
     }
 
     if unit not in known_units.keys():
@@ -546,3 +549,100 @@ def load(filename="",
     return from_mantid(data_ws,
                        load_pulse_times=load_pulse_times,
                        error_connection=error_connection)
+
+
+def load_component_info(ds, file):
+    """
+    Adds the component info labels into the dataset. The following are added:
+
+    - source_position
+    - sample_position
+    - position
+
+    :param ds: Dataset on which the component info will be added as labels.
+    :param file: File from which the IDF will be loaded.
+                 This can be anything that mantid.Load can load.
+    """
+    try:
+        import mantid.simpleapi as mantid
+    except ImportError:
+        raise ImportError(
+            "Mantid Python API was not found, please install Mantid framework "
+            "as detailed in the installation instructions (https://scipp."
+            "readthedocs.io/en/latest/getting-started/installation.html)")
+    ws = mantid.Load(file)
+
+    source_pos, sample_pos = make_component_info(ws)
+
+    ds.labels["source_position"] = source_pos
+    ds.labels["sample_position"] = sample_pos
+    ds.labels["position"] = init_pos(ws)
+
+
+def validate_dim_and_get_mantid_string(unit_dim):
+    known_units = {
+        sc.Dim.EnergyTransfer: "DelteV",
+        sc.Dim.Tof: "TOF",
+        sc.Dim.Wavelength: "Wavelength",
+        sc.Dim.Energy: "Energy",
+        sc.Dim.DSpacing: "dSpacing",
+        sc.Dim.Q: "MomentumTransfer",
+        sc.Dim.QSquared: "QSquared",
+    }
+
+    if unit_dim not in known_units.keys():
+        raise RuntimeError("Axis unit not currently supported."
+                           "Possible values are: {}, "
+                           "got '{}'. ".format([k for k in known_units.keys()],
+                                               unit_dim))
+    else:
+        return known_units[unit_dim]
+
+
+def to_mantid(x, y, e, coord_dim, ws_name):
+    """
+    Use the values provided to create a Mantid workspace.
+
+    The Mantid layout expect the spectra to be the Outer-most dimension,
+    i.e. y.shape[0]. If that is not the case you might have to transpose
+    your data to fit that, otherwise it will not be aligned correctly in the
+    Mantid workspace.
+
+    :param x: Data to be used as X for the Mantid workspace.
+    :param y: Data to be used as Y for the Mantid workspace.
+    :param e: Data to be used as error for the Mantid workspace.
+              If `None` the np.sqrt of y will be used.
+    :param ws_name: The name of the OutputWorkspace
+    :param coord_dim: Dim of the coordinate, to be set as the equivalent
+                      UnitX on the Mantid workspace.
+    """
+    try:
+        import mantid.simpleapi as mantid
+    except ImportError:
+        raise ImportError(
+            "Mantid Python API was not found, please install Mantid framework "
+            "as detailed in the installation instructions (https://scipp."
+            "readthedocs.io/en/latest/getting-started/installation.html)")
+
+    assert len(y.shape) == 2, "Currently can only handle 2D data."
+
+    e = e if e is not None else np.sqrt(y)
+    nspec = y.shape[0]
+    unitX = validate_dim_and_get_mantid_string(coord_dim)
+
+    # Use AlgorithmManager and create as child for speed.
+    # Avoids history creation
+    alg = mantid.AlgorithmManager.create("CreateWorkspace")
+    alg.setChild(True)
+    alg.initialize()
+    alg.setProperty('DataX', x)
+    alg.setProperty('DataY', y)
+    alg.setProperty('DataE', e)
+    alg.setProperty('NSpec', nspec)
+    alg.setProperty('OutputWorkspace', ws_name)
+    alg.setProperty('UnitX', unitX)
+    alg.setProperty('WorkspaceTitle', ws_name)
+    alg.execute()
+    ws = alg.getProperty('OutputWorkspace').value
+    mantid.mtd.addOrReplace(ws_name, ws)
+    return ws

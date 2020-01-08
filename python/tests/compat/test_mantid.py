@@ -1,13 +1,14 @@
 # Tests in this file work only with a working Mantid installation available in
 # PYTHONPATH.
 import unittest
+
+import numpy as np
 import pytest
 
 import scipp as sc
-import scipp.compat.mantid as mantidcompat
-import numpy as np
-
 from mantid_data_helper import MantidDataHelper
+from scipp import Dim
+from scipp.compat import mantid as mantidcompat
 
 
 def mantid_is_available():
@@ -262,6 +263,61 @@ class TestMantidConversion(unittest.TestCase):
         histo_data_array = mantidcompat.convert_MDHistoWorkspace_to_data_array(
             md_histo)
         self.assertEqual(4, len(histo_data_array.dims))
+
+    def test_load_component_info(self):
+        ds = sc.Dataset()
+
+        sc.compat.mantid.load_component_info_from_instrument_file(
+            ds, MantidDataHelper.find_file("iris26176_graphite002_sqw.nxs"))
+
+        self.assertTrue("source_position" in ds.labels)
+        self.assertTrue("sample_position" in ds.labels)
+        self.assertTrue("position" in ds.labels)
+
+
+@pytest.mark.skipif(not mantid_is_available(),
+                    reason='Mantid framework is unavailable')
+@pytest.mark.parametrize("param_dim",
+                         (
+                             Dim.Tof,
+                             Dim.Wavelength
+                         )
+                         )
+def test_to_mantid(param_dim):
+    from mantid import mtd
+
+    data_len = 2
+    expected_bins = data_len + 1
+    expected_number_spectra = 10
+
+    y = sc.Variable([param_dim.Spectrum, param_dim],
+                    values=np.random.rand(expected_number_spectra, data_len),
+                    variances=np.random.rand(
+        expected_number_spectra, data_len))
+
+    x = sc.Variable([param_dim], values=np.arange(
+        expected_bins, dtype=np.float64))
+
+    expected_ws_name = "scipp_to_ws"
+
+    sc.compat.mantid.to_mantid(
+        x.values, y.values, y.variances, x.dims[0], expected_ws_name)
+
+    ws = mtd[expected_ws_name]
+
+    assert len(ws.readX(0)) == expected_bins
+    assert ws.getNumberHistograms() == expected_number_spectra
+
+    np.testing.assert_array_equal(ws.readX(0), x.values)
+    np.testing.assert_array_equal(ws.readY(0), y[Dim.Spectrum, 0])
+    np.testing.assert_array_equal(
+        ws.readE(0), y[Dim.Spectrum, 0].variances)
+
+
+def test_to_mantid_no_error():
+    x = sc.Variable([Dim.X], values=np.arange(100))
+    x = sc.Variable([Dim.X], values=np.arange(100))
+    x = sc.Variable([Dim.X], values=np.arange(100))
 
 
 if __name__ == "__main__":
