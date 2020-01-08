@@ -70,6 +70,12 @@ else ()
   message(WARNING "IPO is not supported: ${output}")
 endif ()
 
+# Taking into account AppleClang default visibility options
+check_cxx_compiler_flag("-fvisibility-inlines-hidden" SUPPORTS_FVISIBILITY_INLINES_HIDDEN_FLAG)
+if (SUPPORTS_FVISIBILITY_INLINES_HIDDEN_FLAG)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fvisibility-inlines-hidden")
+endif()
+
 # See https://github.com/pybind/pybind11/issues/1604
 set(INTERPROCEDURAL_OPTIMIZATION_TESTS FALSE)
 if(${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
