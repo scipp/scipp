@@ -230,7 +230,9 @@ def convert_monitors_ws(ws, converter, **ignored):
         if not definition.size() == 1:
             raise RuntimeError("Cannot deal with grouped monitor detectors")
         det_index = definition[0][0]  # Ignore time index
-        # We only ExtractSpectra for compability with exising convert_Workspace2D_to_dataarray. This could instead be refactored if found to be slow
+        # We only ExtractSpectra for compability with
+        # exising convert_Workspace2D_to_dataarray. This could instead be
+        # refactored if found to be slow
         monitor = mantid.ExtractSpectra(InputWorkspace=ws,
                                         WorkspaceIndexList=[index],
                                         StoreInADS=False)
