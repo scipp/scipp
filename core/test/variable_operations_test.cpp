@@ -624,6 +624,32 @@ TEST(Variable, sqrt_float) {
   EXPECT_EQ(sqrt(var), reference);
 }
 
+TEST(VariableReciprocalOutArg, full_in_place) {
+  auto var = makeVariable<double>(Dims{Dim::X}, Shape{3}, units::Unit(units::m),
+                                  Values{1, 4, 9});
+  auto view = reciprocal(var, var);
+  EXPECT_EQ(var,
+            makeVariable<double>(Dims{Dim::X}, Shape{3},
+                                 units::Unit(units::dimensionless / units::m),
+                                 Values{1., 1. / 4., 1. / 9.}));
+  EXPECT_EQ(view, var);
+  EXPECT_EQ(view.underlying(), var);
+}
+
+TEST(VariableReciprocalOutArg, partial) {
+  const auto var = makeVariable<double>(Dims{Dim::X}, Shape{3},
+                                        units::Unit(units::m), Values{1, 4, 9});
+  auto out =
+      makeVariable<double>(Dims{Dim::X}, Shape{2}, units::Unit(units::m));
+  auto view = reciprocal(var.slice({Dim::X, 1, 3}), out);
+  EXPECT_EQ(out,
+            makeVariable<double>(Dims{Dim::X}, Shape{2},
+                                 units::Unit(units::dimensionless / units::m),
+                                 Values{1. / 4., 1. / 9.}));
+  EXPECT_EQ(view, out);
+  EXPECT_EQ(view.underlying(), out);
+}
+
 TEST(VariableAbsOutArg, full_in_place) {
   auto var = makeVariable<double>(Dims{Dim::X}, Shape{3}, units::Unit(units::m),
                                   Values{1, -4, -9});

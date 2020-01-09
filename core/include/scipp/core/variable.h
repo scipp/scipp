@@ -81,6 +81,7 @@ public:
   virtual VariableConceptHandle reshape(const Dimensions &dims) = 0;
 
   virtual bool operator==(const VariableConcept &other) const = 0;
+  virtual bool isSame(const VariableConcept &other) const = 0;
 
   virtual bool isContiguous() const = 0;
   virtual bool isView() const = 0;
@@ -931,7 +932,12 @@ operator/(T v, const units::Unit &unit) {
 
 SCIPP_CORE_EXPORT Variable astype(const VariableConstProxy &var,
                                   const DType type);
-SCIPP_CORE_EXPORT Variable reciprocal(const VariableConstProxy &var);
+
+[[nodiscard]] SCIPP_CORE_EXPORT Variable
+reciprocal(const VariableConstProxy &var);
+[[nodiscard]] SCIPP_CORE_EXPORT Variable reciprocal(Variable &&var);
+SCIPP_CORE_EXPORT VariableProxy reciprocal(const VariableConstProxy &var,
+                                           const VariableProxy &out);
 
 SCIPP_CORE_EXPORT std::vector<Variable>
 split(const Variable &var, const Dim dim,

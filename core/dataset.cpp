@@ -309,6 +309,10 @@ void Dataset::setData(const std::string &name, Variable data) {
 /// attributes. Throws if the provided data brings the dataset into an
 /// inconsistent state (mismatching dtype, unit, or dimensions).
 void Dataset::setData(const std::string &name, const DataConstProxy &data) {
+  if (contains(name) && &m_data[name] == &data.underlying() &&
+      data.slices().empty())
+    return; // Self-assignment, return early.
+
   for (const auto &[dim, coord] : data.coords()) {
     if (coord.dims().sparse()) {
       setSparseCoord(name, coord);
@@ -658,6 +662,9 @@ MasksProxy DataProxy::masks() const noexcept {
 }
 
 DataProxy DataProxy::assign(const DataConstProxy &other) const {
+  if (&underlying() == &other.underlying() && slices() == other.slices())
+    return *this; // Self-assignment, return early.
+
   expect::coordsAndLabelsAreSuperset(*this, other);
   // TODO here and below: If other has data, we should either fail, or create
   // data.

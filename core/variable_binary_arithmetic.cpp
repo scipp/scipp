@@ -26,20 +26,6 @@ template <class T1, class T2> Variable plus(const T1 &a, const T2 &b) {
   return transform<arithmetic_and_matrix_type_pairs>(a, b, plus_);
 }
 
-Variable reciprocal(const VariableConstProxy &var) {
-  return transform<double, float>(
-      var,
-      overloaded{
-          [](const auto &a_) {
-            return static_cast<
-                       detail::element_type_t<std::decay_t<decltype(a_)>>>(1) /
-                   a_;
-          },
-          [](const units::Unit &unit) {
-            return units::Unit(units::dimensionless) / unit;
-          }});
-}
-
 Variable Variable::operator-() const {
   return transform<double, float, int64_t, Eigen::Vector3d>(
       *this, [](const auto a) { return -a; });

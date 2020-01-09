@@ -362,6 +362,9 @@ public:
     return std::make_unique<DataModel<T>>(this->dims(), m_values, m_variances);
   }
 
+  bool isSame(const VariableConcept &other) const override {
+    return this == &other;
+  }
   bool isContiguous() const override { return true; }
   bool isView() const override { return false; }
   bool isConstView() const override { return false; }
@@ -572,6 +575,16 @@ public:
 
   VariableConceptHandle clone() const override {
     return std::make_unique<ViewModel<T>>(this->dims(), m_values, m_variances);
+  }
+
+  bool isSame(const VariableConcept &other) const override {
+    // Views can be copied but can still refer to same data, so unlike for
+    // DataModel a pointer comparison is not sufficient here.
+    if (hasVariances() != other.hasVariances())
+      return false;
+    if (const auto *ptr = dynamic_cast<const ViewModel<T> *>(&other))
+      return m_values.isSame(ptr->m_values);
+    return false;
   }
 
   bool isContiguous() const override {

@@ -81,7 +81,6 @@ if(${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
     # with different INTERPROCEDURAL_OPTIMIZATION flag.
     set(INTERPROCEDURAL_OPTIMIZATION_TESTS ${CMAKE_INTERPROCEDURAL_OPTIMIZATION})
   endif()
-else()
   set(CMAKE_CXX_VISIBILITY_PRESET hidden)
   # Reduces binary size of, e.g., libscipp-core.so by several MB.
   set(CMAKE_VISIBILITY_INLINES_HIDDEN TRUE)
