@@ -217,6 +217,18 @@ public:
   operator=(VariableConceptHandle_impl &&) = default;
   VariableConceptHandle_impl &
   operator=(const VariableConceptHandle_impl &other) {
+    if (*this && other) {
+      // Avoid allocation of new element_array if output is of correct shape.
+      // This yields a 5x speedup in assignment operations of variables.
+      auto &concept = **this;
+      auto &otherConcept = *other;
+      if (!concept.isView() && !otherConcept.isView() &&
+          concept.dtype() == otherConcept.dtype() &&
+          concept.dims() == otherConcept.dims()) {
+        concept.copy(otherConcept, Dim::Invalid, 0, 0, 1);
+        return *this;
+      }
+    }
     return *this = other ? other->clone() : VariableConceptHandle_impl();
   }
 
@@ -924,7 +936,10 @@ SCIPP_CORE_EXPORT Variable reciprocal(const VariableConstProxy &var);
 SCIPP_CORE_EXPORT std::vector<Variable>
 split(const Variable &var, const Dim dim,
       const std::vector<scipp::index> &indices);
-SCIPP_CORE_EXPORT Variable abs(const Variable &var);
+[[nodiscard]] SCIPP_CORE_EXPORT Variable abs(const VariableConstProxy &var);
+[[nodiscard]] SCIPP_CORE_EXPORT Variable abs(Variable &&var);
+SCIPP_CORE_EXPORT VariableProxy abs(const VariableConstProxy &var,
+                                    const VariableProxy &out);
 SCIPP_CORE_EXPORT Variable broadcast(const VariableConstProxy &var,
                                      const Dimensions &dims);
 SCIPP_CORE_EXPORT Variable concatenate(const VariableConstProxy &a1,
