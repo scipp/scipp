@@ -447,17 +447,16 @@ def from_mantid(workspace, **kwargs):
         if monitor_ws is None:
             monitor_ws = workspace.getMonitorWorkspace()
         if monitor_ws.id() == 'Workspace2D':
-            monitors = convert_monitors_ws(monitor_ws,
-                                           convert_Workspace2D_to_dataarray,
-                                           **kwargs)
-            for name, monitor in monitors:
-                dataset.attrs[name] = sc.Variable(value=monitor)
+            converter = convert_Workspace2D_to_dataarray
         elif monitor_ws.id() == 'EventWorkspace':
-            monitors = convert_monitors_ws(monitor_ws,
-                                           convertEventWorkspace_to_dataarray,
+            converter = convertEventWorkspace_to_dataarray
+
+        monitors = convert_monitors_ws(monitor_ws,
+                                           converter,
                                            **kwargs)
-            for name, monitor in monitors:
-                dataset.attrs[name] = sc.Variable(value=monitor)
+        for name, monitor in monitors:
+            dataset.attrs[name] = sc.Variable(value=monitor)
+        
         # Remove some redundant information that is duplicated from workspace
         mon = dataset.attrs["monitors"].value
         del mon.labels['sample_position']
