@@ -27,13 +27,7 @@ static constexpr auto maybe_subspan = [](VariableConstProxy &var,
     *ret = subspan_view(var, dim);
     var = *ret;
   }
-// Suppressing the warning related to preventing the copy elision
-// because "move" is necessary here to keep the subspan view created
-// above valid, copy elision invalidates it for MSVC compiler.
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wpessimizing-move"
-  return std::move(ret);
-#pragma clang diagnostic pop
+  return ret;
 };
 } // namespace transform_subspan_detail
 
