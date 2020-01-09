@@ -26,6 +26,7 @@ add_executable(${TARGET_NAME} EXCLUDE_FROM_ALL
                mean_test.cpp
                merge_test.cpp
                rebin_test.cpp
+               self_assignment_test.cpp
                slice_test.cpp
                sort_test.cpp
                sparse_counts_test.cpp
