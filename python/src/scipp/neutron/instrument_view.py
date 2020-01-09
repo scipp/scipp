@@ -32,7 +32,10 @@ def instrument_view(scipp_obj=None, bins=None, masks=None, filename=None,
                     dim=sc.Dim.Tof):
     """
     Plot a 2D or 3D view of the instrument.
-    A slider is also generated to navigate the time-of-flight dimension.
+    A slider is also generated to navigate the dimension (dim) given as an
+    input. Since this is designed for neutron science, the default dimension
+    is neutron time-of-flight (sc.Dim.Tof), but this could be anything
+    (wavelength, temperature...)
 
     Example:
 

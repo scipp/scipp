@@ -59,7 +59,6 @@ def plot_sparse(scipp_obj_dict, output=None, ndim=0, sparse_dim=None,
     widg = None
 
     if ndims < 3:
-        # fig = None
         ax = {"ax": None, "cax": None}
         if mpl_axes is not None:
             if isinstance(mpl_axes, dict):
@@ -73,7 +72,6 @@ def plot_sparse(scipp_obj_dict, output=None, ndim=0, sparse_dim=None,
                                config.height/config.dpi),
                 dpi=config.dpi)
 
-        # widg = None
         members.update(ax)
 
         for i, (key, data_array) in enumerate(scipp_obj_dict.items()):
@@ -91,7 +89,6 @@ def plot_sparse(scipp_obj_dict, output=None, ndim=0, sparse_dim=None,
                     params["cmap"] = cbar["cmap"]
                     params["norm"] = cbar["norm"]
 
-            # print(params["norm"])
             members["scatter"][key] = ax["ax"].scatter(xs, ys, **params)
 
         if key_weights is not None and weights.count("color") > 0:
@@ -156,8 +153,6 @@ def plot_sparse(scipp_obj_dict, output=None, ndim=0, sparse_dim=None,
                                      [sparse_data[key_save]["dims"][1]])
         widg.zlabel = name_with_unit(sparse_data[key_save]["coords"]
                                      [sparse_data[key_save]["dims"][0]])
-
-        # widg = fig
 
     else:
         raise RuntimeError("Scatter plots for sparse data support at most "
