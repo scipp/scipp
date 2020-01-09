@@ -156,10 +156,9 @@ void init_dataset(py::module &m) {
     Named variable with associated coords, labels, and attributes.)");
   dataArray.def(py::init<const DataConstProxy &>());
   dataArray.def(
-      py::init<const std::optional<Variable> &, const std::map<Dim, Variable> &,
-               const std::map<std::string, Variable> &,
-               const std::map<std::string, Variable> &,
-               const std::map<std::string, Variable> &>(),
+      py::init<std::optional<Variable>, std::map<Dim, Variable>,
+               std::map<std::string, Variable>, std::map<std::string, Variable>,
+               std::map<std::string, Variable>>(),
       py::arg("data") = std::nullopt,
       py::arg("coords") = std::map<Dim, Variable>{},
       py::arg("labels") = std::map<std::string, Variable>{},
@@ -209,10 +208,6 @@ void init_dataset(py::module &m) {
       .def("__setitem__",
            [](Dataset &self, const std::string &name,
               const DataConstProxy &data) { self.setData(name, data); })
-      .def("__setitem__",
-           [](Dataset &self, const std::string &name, const DataArray &data) {
-             self.setData(name, data);
-           })
       .def("__delitem__", &Dataset::erase,
            py::call_guard<py::gil_scoped_release>())
       .def(
