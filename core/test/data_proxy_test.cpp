@@ -5,10 +5,9 @@
 
 #include <numeric>
 
+#include "scipp/common/fix_typed_test_suite_warnings.h"
 #include "scipp/core/dataset.h"
 #include "scipp/core/dimensions.h"
-
-#include "dataset_test_common.h"
 
 using namespace scipp;
 using namespace scipp::core;

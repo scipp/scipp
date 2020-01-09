@@ -5,6 +5,7 @@
 
 #include "test_macros.h"
 
+#include "scipp/common/fix_typed_test_suite_warnings.h"
 #include "scipp/core/dimensions.h"
 #include "scipp/core/except.h"
 #include "scipp/core/variable.h"

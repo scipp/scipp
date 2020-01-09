@@ -5,6 +5,7 @@
 
 #include <set>
 
+#include "scipp/common/fix_typed_test_suite_warnings.h"
 #include "scipp/core/dataset.h"
 
 using namespace scipp;

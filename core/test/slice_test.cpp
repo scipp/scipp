@@ -6,6 +6,7 @@
 #include <numeric>
 
 #include "dataset_test_common.h"
+#include "scipp/common/fix_typed_test_suite_warnings.h"
 #include "scipp/core/dataset.h"
 #include "scipp/core/dimensions.h"
 #include "scipp/core/except.h"

@@ -5,6 +5,7 @@
 #include <gtest/gtest.h>
 
 #include "dataset_test_common.h"
+#include "scipp/common/fix_typed_test_suite_warnings.h"
 #include "scipp/core/dataset.h"
 
 using namespace scipp;
