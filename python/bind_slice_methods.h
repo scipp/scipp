@@ -144,6 +144,10 @@ void bind_slice_methods(pybind11::class_<T, Ignored...> &c) {
     c.def("__setitem__", &slicer<T>::template set<DataProxy>);
     c.def("__setitem__", &slicer<T>::template set_range<DataProxy>);
   }
+  if constexpr (std::is_same_v<T, Dataset> || std::is_same_v<T, DatasetProxy>) {
+    c.def("__setitem__", &slicer<T>::template set<DatasetProxy>);
+    c.def("__setitem__", &slicer<T>::template set_range<DatasetProxy>);
+  }
 }
 
 #endif // SCIPPY_BIND_SLICE_METHODS_H
