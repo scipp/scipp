@@ -63,7 +63,8 @@ def make_detector_info(ws):
                     "not supported yet.")
             spectrum_[det] = i
             has_spectrum_[det] = True
-    detector = sc.Variable([sc.Dim.Detector], values=det_info.detectorIDs().astype(np.int32))
+    detector = sc.Variable([sc.Dim.Detector],
+                           values=det_info.detectorIDs().astype(np.int32))
 
     # Remove any information about detectors without data (a spectrum). This
     # mostly just gets in the way and including it in the default converter
