@@ -76,13 +76,11 @@ if(${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsized-deallocation")
   if(APPLE)
     add_compile_definitions(_APPLE_CLANG_)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-visibility-inlines-hidden")
   else()
     # For some reason clang6 on ubuntu18 can't link parts
     # with different INTERPROCEDURAL_OPTIMIZATION flag.
     set(INTERPROCEDURAL_OPTIMIZATION_TESTS ${CMAKE_INTERPROCEDURAL_OPTIMIZATION})
   endif()
-else()
   set(CMAKE_CXX_VISIBILITY_PRESET hidden)
   # Reduces binary size of, e.g., libscipp-core.so by several MB.
   set(CMAKE_VISIBILITY_INLINES_HIDDEN TRUE)
