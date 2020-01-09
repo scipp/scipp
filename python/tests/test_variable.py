@@ -795,3 +795,17 @@ def test_create_1d_with_strings():
 def test_bool_variable_repr():
     a = sc.Variable([Dim.X], values=np.array([False, True, True, False, True]))
     assert [expected in repr(a) for expected in ["True", "False", "..."]]
+
+
+def test_reciprocal():
+    var = sc.Variable([Dim.X], values=np.array([1.0, 2.0]))
+    expected = sc.Variable([Dim.X], values=np.array([1.0 / 1.0, 1.0 / 2.0]))
+    assert sc.reciprocal(var) == expected
+
+
+def test_reciprocal_out():
+    var = sc.Variable([Dim.X], values=np.array([1.0, 2.0]))
+    expected = sc.Variable([Dim.X], values=np.array([1.0 / 1.0, 1.0 / 2.0]))
+    out = sc.reciprocal(x=var, out=var)
+    assert var == expected
+    assert out == expected
