@@ -221,7 +221,7 @@ def convert_Workspace2D_to_monitors(ws, **ignored):
     spec_info = spec_info = ws.spectrumInfo()
     comp_info = ws.componentInfo()
     monitors = []
-    indexes = [ws.getIndexFromSpectrumNumber(int(i)) for i in spec_coord.values]
+    indexes = (ws.getIndexFromSpectrumNumber(int(i)) for i in spec_coord.values)
     import mantid.simpleapi as mantid
     for index in indexes:
         definition = spec_info.getSpectrumDefinition(index)
