@@ -18,11 +18,8 @@ const auto deg_to_rad =
 Variable sin(const VariableConstProxy &var) {
   using std::sin;
   Variable out(var);
-  if (var.unit() == units::deg)
-    out *= deg_to_rad;
-  return transform<double, float>(
-      out, overloaded{transform_flags::expect_no_variance_arg<0>,
-                      [](const auto &x) { return sin(x); }});
+  sin(out, out);
+  return out;
 }
 
 Variable sin(Variable &&var) {
@@ -46,11 +43,8 @@ VariableProxy sin(const VariableConstProxy &var, const VariableProxy &out) {
 Variable cos(const VariableConstProxy &var) {
   using std::cos;
   Variable out(var);
-  if (var.unit() == units::deg)
-    out *= deg_to_rad;
-  return transform<double, float>(
-      out, overloaded{transform_flags::expect_no_variance_arg<0>,
-                      [](const auto &x) { return cos(x); }});
+  cos(out, out);
+  return out;
 }
 
 Variable cos(Variable &&var) {
@@ -74,11 +68,8 @@ VariableProxy cos(const VariableConstProxy &var, const VariableProxy &out) {
 Variable tan(const VariableConstProxy &var) {
   using std::tan;
   Variable out(var);
-  if (var.unit() == units::deg)
-    out *= deg_to_rad;
-  return transform<double, float>(
-      out, overloaded{transform_flags::expect_no_variance_arg<0>,
-                      [](const auto &x) { return tan(x); }});
+  tan(out, out);
+  return out;
 }
 
 Variable tan(Variable &&var) {
