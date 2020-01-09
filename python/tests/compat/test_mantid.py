@@ -32,7 +32,7 @@ class TestMantidConversion(unittest.TestCase):
             MantidDataHelper.find_file(filename),
             OutputWorkspace="test_ws{}".format(__file__))
 
-    def xtest_Workspace2D(self):
+    def test_Workspace2D(self):
         import mantid.simpleapi as mantid
         eventWS = mantid.CloneWorkspace(self.base_event_ws)
         ws = mantid.Rebin(eventWS, 10000, PreserveEvents=False)
@@ -42,7 +42,7 @@ class TestMantidConversion(unittest.TestCase):
             "2012-05-21T15:14:56.279289666",
         )
 
-    def xtest_EventWorkspace(self):
+    def test_EventWorkspace(self):
         import mantid.simpleapi as mantid
         eventWS = mantid.CloneWorkspace(self.base_event_ws)
         ws = mantid.Rebin(eventWS, 10000)
@@ -57,7 +57,7 @@ class TestMantidConversion(unittest.TestCase):
         delta = sc.sum(delta, sc.Dim.Tof)
         self.assertLess(np.abs(delta.value), 1e-5)
 
-    def xtest_unit_conversion(self):
+    def test_unit_conversion(self):
         import mantid.simpleapi as mantid
         eventWS = mantid.CloneWorkspace(self.base_event_ws)
         ws = mantid.Rebin(eventWS, 10000, PreserveEvents=False)
@@ -94,7 +94,7 @@ class TestMantidConversion(unittest.TestCase):
 
         return masked_ws
 
-    def xtest_Workspace2D_common_bins_masks(self):
+    def test_Workspace2D_common_bins_masks(self):
         import mantid.simpleapi as mantid
         eventWS = mantid.CloneWorkspace(self.base_event_ws)
         ws = mantid.Rebin(eventWS, 10000, PreserveEvents=False)
@@ -116,7 +116,7 @@ class TestMantidConversion(unittest.TestCase):
         np.testing.assert_array_equal(ds.masks["spectrum"].values[0:3],
                                       [True, True, True])
 
-    def xtest_Workspace2D_not_common_bins_masks(self):
+    def test_Workspace2D_not_common_bins_masks(self):
         import mantid.simpleapi as mantid
         eventWS = mantid.CloneWorkspace(self.base_event_ws)
         ws = mantid.Rebin(eventWS, 10000, PreserveEvents=False)
@@ -182,7 +182,7 @@ class TestMantidConversion(unittest.TestCase):
             assert isinstance(monitors, sc.DataArray)
             assert monitors.shape == [200001]
 
-    def xtest_mdhisto_workspace_q(self):
+    def test_mdhisto_workspace_q(self):
         from mantid.simpleapi import (CreateMDWorkspace, FakeMDEventData,
                                       BinMD)
 
@@ -227,7 +227,7 @@ class TestMantidConversion(unittest.TestCase):
 
         self.assertTrue('nevents' in histo_dataarray.attrs)
 
-    def xtest_mdhisto_workspace_many_dims(self):
+    def test_mdhisto_workspace_many_dims(self):
         from mantid.simpleapi import (CreateMDWorkspace, FakeMDEventData,
                                       BinMD)
 
