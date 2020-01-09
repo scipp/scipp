@@ -234,8 +234,7 @@ def convert_monitors_ws(ws, converter, **ignored):
         monitor = mantid.ExtractSpectra(InputWorkspace=ws,
                                         WorkspaceIndexList=[index],
                                         StoreInADS=False)
-        monitors.append((comp_info.name(det_index),
-                         converter(monitor)))
+        monitors.append((comp_info.name(det_index), converter(monitor)))
     return monitors
 
 
@@ -451,12 +450,10 @@ def from_mantid(workspace, **kwargs):
         elif monitor_ws.id() == 'EventWorkspace':
             converter = convertEventWorkspace_to_dataarray
 
-        monitors = convert_monitors_ws(monitor_ws,
-                                           converter,
-                                           **kwargs)
+        monitors = convert_monitors_ws(monitor_ws, converter, **kwargs)
         for name, monitor in monitors:
             dataset.attrs[name] = sc.Variable(value=monitor)
-        
+
         # Remove some redundant information that is duplicated from workspace
         mon = dataset.attrs["monitors"].value
         del mon.labels['sample_position']
