@@ -55,7 +55,6 @@ def make_detector_info(ws):
     spec_info = ws.spectrumInfo()
     for i, spec in enumerate(spec_info):
         spec_def = spec.spectrumDefinition
-        # This assumes that each detector is part of exactly one spectrum
         for j in range(len(spec_def)):
             det, time = spec_def[j]
             if time != 0:
@@ -64,7 +63,7 @@ def make_detector_info(ws):
                     "not supported yet.")
             spectrum_[det] = i
             has_spectrum_[det] = True
-    detector = sc.Variable([sc.Dim.Detector], values=det_info.detectorIDs())
+    detector = sc.Variable([sc.Dim.Detector], values=det_info.detectorIDs().astype(np.int32))
 
     # Remove any information about detectors without data (a spectrum). This
     # mostly just gets in the way and including it in the default converter
