@@ -984,10 +984,25 @@ SCIPP_CORE_EXPORT Variable copy(const VariableConstProxy &var);
 SCIPP_CORE_EXPORT VariableProxy sin(const VariableConstProxy &var,
                                     const VariableProxy &out);
 [[nodiscard]] SCIPP_CORE_EXPORT Variable cos(const VariableConstProxy &var);
+[[nodiscard]] SCIPP_CORE_EXPORT Variable cos(Variable &&var);
+SCIPP_CORE_EXPORT VariableProxy cos(const VariableConstProxy &var,
+                                    const VariableProxy &out);
 [[nodiscard]] SCIPP_CORE_EXPORT Variable tan(const VariableConstProxy &var);
+[[nodiscard]] SCIPP_CORE_EXPORT Variable tan(Variable &&var);
+SCIPP_CORE_EXPORT VariableProxy tan(const VariableConstProxy &var,
+                                    const VariableProxy &out);
 [[nodiscard]] SCIPP_CORE_EXPORT Variable asin(const VariableConstProxy &var);
+[[nodiscard]] SCIPP_CORE_EXPORT Variable asin(Variable &&var);
+SCIPP_CORE_EXPORT VariableProxy asin(const VariableConstProxy &var,
+                                     const VariableProxy &out);
 [[nodiscard]] SCIPP_CORE_EXPORT Variable acos(const VariableConstProxy &var);
+[[nodiscard]] SCIPP_CORE_EXPORT Variable acos(Variable &&var);
+SCIPP_CORE_EXPORT VariableProxy acos(const VariableConstProxy &var,
+                                     const VariableProxy &out);
 [[nodiscard]] SCIPP_CORE_EXPORT Variable atan(const VariableConstProxy &var);
+[[nodiscard]] SCIPP_CORE_EXPORT Variable atan(Variable &&var);
+SCIPP_CORE_EXPORT VariableProxy atan(const VariableConstProxy &var,
+                                     const VariableProxy &out);
 
 SCIPP_CORE_EXPORT Variable masks_merge_if_contains(const MasksConstProxy &masks,
                                                    const Dim dim);
