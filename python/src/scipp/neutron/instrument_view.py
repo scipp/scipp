@@ -9,7 +9,7 @@ from ..plot.sciplot import SciPlot
 from ..plot.sparse import histogram_sparse_data, make_bins
 from ..plot.tools import parse_params
 from ..utils import name_with_unit, value_to_string
-from .._scipp import core as sc
+from .._scipp import core as sc, neutron as sn
 
 # Other imports
 import numpy as np
@@ -90,11 +90,8 @@ class InstrumentView:
                                "are a Dataset or a DataArray (and their "
                                "respective proxies).".format(tp))
 
-        # Get detector positions from either coordinates or labels
-        if sc.Dim.Position in scipp_obj.coords:
-            self.det_pos = np.array(scipp_obj.coords[sc.Dim.Position].values)
-        else:
-            self.det_pos = np.array(scipp_obj.labels["position"].values)
+        # Get detector positions
+        self.det_pos = np.array(sn.position(scipp_obj).values)
 
         # Find extents of the detectors
         self.minmax = {}

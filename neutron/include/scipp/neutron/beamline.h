@@ -17,6 +17,11 @@ SCIPP_NEUTRON_EXPORT core::VariableConstProxy
 source_position(const core::DatasetConstProxy &d);
 SCIPP_NEUTRON_EXPORT core::VariableConstProxy
 sample_position(const core::DatasetConstProxy &d);
+SCIPP_NEUTRON_EXPORT core::VariableProxy position(const core::DatasetProxy &d);
+SCIPP_NEUTRON_EXPORT core::VariableProxy
+source_position(const core::DatasetProxy &d);
+SCIPP_NEUTRON_EXPORT core::VariableProxy
+sample_position(const core::DatasetProxy &d);
 SCIPP_NEUTRON_EXPORT core::Variable
 flight_path_length(const core::DatasetConstProxy &d);
 SCIPP_NEUTRON_EXPORT core::Variable l1(const core::DatasetConstProxy &d);
@@ -31,6 +36,11 @@ SCIPP_NEUTRON_EXPORT core::VariableConstProxy
 source_position(const core::DataConstProxy &d);
 SCIPP_NEUTRON_EXPORT core::VariableConstProxy
 sample_position(const core::DataConstProxy &d);
+SCIPP_NEUTRON_EXPORT core::VariableProxy position(const core::DataProxy &d);
+SCIPP_NEUTRON_EXPORT core::VariableProxy
+source_position(const core::DataProxy &d);
+SCIPP_NEUTRON_EXPORT core::VariableProxy
+sample_position(const core::DataProxy &d);
 SCIPP_NEUTRON_EXPORT core::Variable
 flight_path_length(const core::DataConstProxy &d);
 SCIPP_NEUTRON_EXPORT core::Variable l1(const core::DataConstProxy &d);
