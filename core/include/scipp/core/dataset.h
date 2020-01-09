@@ -546,10 +546,10 @@ public:
     return m_items.find(k) != m_items.cend();
   }
 
-  std::vector<Key> keys(){
+  std::vector<Key> keys() {
     std::vector<Key> keys;
     keys.reserve(m_items.size());
-    for(const auto& [k, _] : m_items) {
+    for (const auto& [k, _] : m_items) {
       keys.push_back(k);
     }
     return keys;
