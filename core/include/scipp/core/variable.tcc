@@ -582,7 +582,7 @@ public:
     // DataModel a pointer comparison is not sufficient here.
     if (hasVariances() != other.hasVariances())
       return false;
-    if (const auto *ptr = dynamic_cast<const ViewModel<T> *>(&other); ptr)
+    if (const auto *ptr = dynamic_cast<const ViewModel<T> *>(&other))
       return m_values.isSame(ptr->m_values);
     return false;
   }

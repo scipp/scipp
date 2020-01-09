@@ -37,6 +37,7 @@ add_executable(${TARGET_NAME} EXCLUDE_FROM_ALL
                transform_sparse_and_dense_test.cpp
                transform_test.cpp
                value_and_variance_test.cpp
+               variable_concept_test.cpp
                variable_custom_type_test.cpp
                variable_operations_test.cpp
                variable_scalar_accessors_test.cpp
