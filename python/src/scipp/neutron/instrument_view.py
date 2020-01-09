@@ -90,19 +90,11 @@ class InstrumentView:
                                "are a Dataset or a DataArray (and their "
                                "respective proxies).".format(tp))
 
-        # Get detector positions
-        self.det_pos = np.array(sn.position(scipp_obj).values)
-
-        # Find extents of the detectors
-        self.minmax = {}
-        for i, x in enumerate("xyz"):
-            self.minmax[x] = [np.amin(self.det_pos[:, i]),
-                              np.amax(self.det_pos[:, i])]
-
         self.globs = {"cmap": cmap, "log": log, "vmin": vmin, "vmax": vmax}
         self.params = {}
         self.hist_data_array = {}
         self.scalar_map = {}
+        self.minmax = {}
 
         # Find the min/max time-of-flight limits and store them
         self.minmax["tof"] = [np.Inf, np.NINF, 1]
@@ -203,6 +195,14 @@ class InstrumentView:
         # the output widget needs to be displayed first, before any mpl figure
         # is displayed.
         render_plot(widgets=self.box, filename=filename, ipv=ipv)
+
+        # Get detector positions
+        self.det_pos = np.array(
+            sn.position(self.hist_data_array[self.key]).values)
+        # Find extents of the detectors
+        for i, x in enumerate("xyz"):
+            self.minmax[x] = [np.amin(self.det_pos[:, i]),
+                              np.amax(self.det_pos[:, i])]
 
         # Update the figure
         self.change_projection(self.buttons[projection])
