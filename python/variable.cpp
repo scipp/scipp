@@ -454,6 +454,25 @@ void init_variable(py::module &m) {
       :return: New sorted variable.
       :rtype: Variable)");
 
+  m.def("reciprocal",
+        [](const VariableConstProxy &self) { return reciprocal(self); },
+        py::arg("x"), py::call_guard<py::gil_scoped_release>(), R"(
+        Element-wise reciprocal.
+
+        :return: Reciprocal of the input values.
+        :rtype: Variable)");
+
+  m.def("reciprocal",
+        [](const VariableConstProxy &self, const VariableProxy &out) {
+          return reciprocal(self, out);
+        },
+        py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>(),
+        R"(
+        Element-wise reciprocal.
+
+        :return: Reciprocal of the input values.
+        :rtype: Variable)");
+
   m.def("split",
         py::overload_cast<const Variable &, const Dim,
                           const std::vector<scipp::index> &>(&split),
