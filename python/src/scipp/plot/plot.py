@@ -17,6 +17,14 @@ def plot(scipp_obj, collapse=None, projection=None, axes=None, color=None,
     from .tools import get_line_param
     from .plot_collapse import plot_collapse
     from .dispatch import dispatch
+    import matplotlib.pyplot as plt
+
+    # Temporarily disable automatic plotting in notebook
+    if plt.isinteractive():
+        plt.ioff()
+        re_enable_interactive = True
+    else:
+        re_enable_interactive = False
 
     inventory = dict()
     tp = type(scipp_obj)
@@ -25,8 +33,15 @@ def plot(scipp_obj, collapse=None, projection=None, axes=None, color=None,
             inventory[name] = var
     elif tp is sc.Variable or tp is sc.VariableProxy:
         inventory[str(tp)] = sc.DataArray(data=scipp_obj)
-    else:
+    elif tp is sc.DataArray or tp is sc.DataProxy:
         inventory[scipp_obj.name] = scipp_obj
+    elif tp is dict:
+        inventory = scipp_obj
+    else:
+        raise RuntimeError("plot: Unknown input type: {}. Allowed inputs are "
+                           "a Dataset, a DataArray, a Variable (and their "
+                           "respective proxies), and a dict of "
+                           "DataArrays.".format(tp))
 
     # Prepare container for matplotlib line parameters
     line_params = {"color": color,
@@ -115,4 +130,9 @@ def plot(scipp_obj, collapse=None, projection=None, axes=None, color=None,
                                    mpl_line_params=val["mpl_line_params"],
                                    bins=bins,
                                    **kwargs)
+
+    # Re-enable automatic plotting in notebook
+    if re_enable_interactive:
+        plt.ion()
+
     return output

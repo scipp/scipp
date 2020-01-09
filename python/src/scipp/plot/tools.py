@@ -63,18 +63,15 @@ def parse_params(params=None, defaults=None, globs=None, array=None):
                 subset = np.ma.masked_invalid(np.log10(array), copy=False)
         else:
             subset = np.ma.masked_invalid(array, copy=False)
-        if parsed["vmin"] is not None:
-            vmin = parsed["vmin"]
-        else:
-            vmin = subset.min()
-        if parsed["vmax"] is not None:
-            vmax = parsed["vmax"]
-        else:
-            vmax = subset.max()
+        if parsed["vmin"] is None:
+            parsed["vmin"] = subset.min()
+        if parsed["vmax"] is None:
+            parsed["vmax"] = subset.max()
         if parsed["log"]:
-            norm = LogNorm(vmin=10.0**vmin, vmax=10.0**vmax)
+            norm = LogNorm(vmin=10.0**parsed["vmin"],
+                           vmax=10.0**parsed["vmax"])
         else:
-            norm = Normalize(vmin=vmin, vmax=vmax)
+            norm = Normalize(vmin=parsed["vmin"], vmax=parsed["vmax"])
         parsed["norm"] = norm
 
     # Convert color into custom colormap
