@@ -129,6 +129,11 @@ def test_contains_coord():
     d.coords[Dim.X] = sc.Variable(1.0)
     assert Dim.X in d.coords
 
+def test_coords_keys():
+    d = sc.Dataset()
+    d.coords[Dim.X] = sc.Variable(1.0)
+    assert len(d.coords.keys()) == 1
+    assert d.coords.keys() == [Dim.X]
 
 def test_labels_setitem():
     var = sc.Variable([Dim.X], values=np.arange(4))
@@ -158,6 +163,11 @@ def test_contains_labels():
     d.labels["a"] = sc.Variable(1.0)
     assert "a" in d.labels
 
+def test_labels_keys():
+    d = sc.Dataset()
+    d.labels["b"] = sc.Variable(1.0)
+    assert len(d.labels.keys()) == 1
+    assert d.labels.keys() == ["b"]
 
 def test_masks_setitem():
     var = sc.Variable([Dim.X], values=np.arange(4))
@@ -204,13 +214,17 @@ def test_attrs_setitem_sparse():
     with pytest.raises(RuntimeError):
         d['a'].attrs['attr'] = sparse
 
-
 def test_contains_attrs():
     d = sc.Dataset()
     assert "b" not in d.attrs
     d.attrs["b"] = sc.Variable(1.0)
     assert "b" in d.attrs
 
+def test_attrs_keys():
+    d = sc.Dataset()
+    d.attrs["b"] = sc.Variable(1.0)
+    assert len(d.attrs.keys()) == 1
+    assert d.attrs.keys() == ["b"]
 
 def test_slice_item():
     d = sc.Dataset(
