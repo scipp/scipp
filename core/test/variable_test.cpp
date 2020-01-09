@@ -1099,7 +1099,7 @@ template <class T> class AsTypeTest : public ::testing::Test {};
 using type_pairs =
     ::testing::Types<std::pair<float, double>, std::pair<double, float>,
                      std::pair<int32_t, float>>;
-TYPED_TEST_CASE(AsTypeTest, type_pairs);
+TYPED_TEST_SUITE(AsTypeTest, type_pairs);
 
 TYPED_TEST(AsTypeTest, variable_astype) {
   using T1 = typename TypeParam::first_type;
