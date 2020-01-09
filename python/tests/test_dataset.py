@@ -39,9 +39,7 @@ def test_create_from_data_arrays():
     base = sc.Dataset({
         'a': var1,
         'b': var2
-    },
-                      coords={Dim.X: var1},
-                      labels={'aux': var1})
+    }, coords={Dim.X: var1}, labels={'aux': var1})
     d = sc.Dataset({'a': base['a'], 'b': base['b']})
     assert d == base
     swapped = sc.Dataset({'a': base['b'], 'b': base['a']})
@@ -181,12 +179,13 @@ def test_masks_setitem():
     with pytest.raises(RuntimeError):
         d[Dim.X, 2:3].labels['label'] = sc.Variable(True)
     d.masks['mask'] = sc.Variable([Dim.X],
-                                  values=np.array([True, False, True, False]))
+                                  values=np.array([True, False,
+                                                   True, False]))
     assert len(d) == 1
     assert len(d.masks) == 1
     assert d.masks['mask'] == sc.Variable([Dim.X],
-                                          values=np.array(
-                                              [True, False, True, False]))
+                                          values=np.array([True, False,
+                                                           True, False]))
 
 
 def test_contains_masks():
@@ -357,35 +356,31 @@ def test_coords_proxy_comparison_operators():
 def test_sum_mean():
     d = sc.Dataset(
         {
-            'a':
-            sc.Variable([Dim.X, Dim.Y],
-                        values=np.arange(6, dtype=np.int64).reshape(2, 3)),
-            'b':
-            sc.Variable([Dim.Y], values=np.arange(3, dtype=np.int64))
+            'a': sc.Variable([Dim.X, Dim.Y],
+                             values=np.arange(6, dtype=np.int64)
+                             .reshape(2, 3)),
+            'b': sc.Variable([Dim.Y], values=np.arange(3, dtype=np.int64))
         },
         coords={
             Dim.X: sc.Variable([Dim.X], values=np.arange(2, dtype=np.int64)),
             Dim.Y: sc.Variable([Dim.Y], values=np.arange(3, dtype=np.int64))
         },
         labels={
-            "l1":
-            sc.Variable([Dim.X, Dim.Y],
-                        values=np.arange(6, dtype=np.int64).reshape(2, 3)),
-            "l2":
-            sc.Variable([Dim.X], values=np.arange(2, dtype=np.int64))
+            "l1": sc.Variable([Dim.X, Dim.Y],
+                              values=np.arange(6, dtype=np.int64)
+                              .reshape(2, 3)),
+            "l2": sc.Variable([Dim.X], values=np.arange(2, dtype=np.int64))
         })
     d_ref = sc.Dataset(
         {
-            'a': sc.Variable([Dim.X], values=np.array([3, 12],
-                                                      dtype=np.int64)),
+            'a': sc.Variable([Dim.X],
+                             values=np.array([3, 12], dtype=np.int64)),
             'b': sc.Variable(3)
         },
-        coords={
-            Dim.X: sc.Variable([Dim.X], values=np.arange(2, dtype=np.int64))
-        },
-        labels={
-            "l2": sc.Variable([Dim.X], values=np.arange(2, dtype=np.int64))
-        })
+        coords={Dim.X: sc.Variable([Dim.X],
+                                   values=np.arange(2, dtype=np.int64))},
+        labels={"l2": sc.Variable([Dim.X],
+                                  values=np.arange(2, dtype=np.int64))})
 
     assert sc.sum(d, Dim.Y) == d_ref
     assert (sc.mean(d, Dim.Y)["a"].values == [1.0, 4.0]).all()
@@ -395,31 +390,34 @@ def test_sum_mean():
 def test_sum_masked():
     d = sc.Dataset(
         {
-            'a':
-            sc.Variable([Dim.X],
-                        values=np.array([1, 5, 4, 5, 1], dtype=np.int64))
+            'a': sc.Variable([Dim.X], values=np.array([1, 5, 4, 5, 1]))
         },
         masks={
-            "m1":
-            sc.Variable([Dim.X],
-                        values=np.array([False, True, False, True, False]))
+            "m1": sc.Variable([Dim.X], values=np.array([
+                False, True, False, True, False]))
         })
 
-    d_ref = sc.Dataset({'a': sc.Variable(np.int64(6))})
+    d_ref = sc.Dataset(
+        {
+            'a': sc.Variable(6)
+        })
 
-    result = sc.sum(d, Dim.X)["a"]
-    assert result == d_ref["a"]
+    assert sc.sum(d, Dim.X)["a"] == d_ref["a"]
 
 
 def test_mean_masked():
     d = sc.Dataset(
-        {'a': sc.Variable([Dim.X], values=np.array([1, 5, 4, 5, 1]))},
+        {
+            'a': sc.Variable([Dim.X], values=np.array([1, 5, 4, 5, 1]))
+        },
         masks={
-            "m1":
-            sc.Variable([Dim.X],
-                        values=np.array([False, True, False, True, False]))
+            "m1": sc.Variable([Dim.X], values=np.array([
+                False, True, False, True, False]))
         })
-    d_ref = sc.Dataset({'a': sc.Variable(2.0)})
+    d_ref = sc.Dataset(
+        {
+            'a': sc.Variable(2.0)
+        })
     assert sc.mean(d, Dim.X)["a"] == d_ref["a"]
 
 
@@ -580,8 +578,9 @@ def test_binary_of_item_with_variable():
 
 
 def test_in_place_binary_with_scalar():
-    d = sc.Dataset({'data': sc.Variable([Dim.X], values=[10])},
-                   coords={Dim.X: sc.Variable([Dim.X], values=[10])})
+    d = sc.Dataset(
+        {'data': sc.Variable([Dim.X], values=[10])},
+        coords={Dim.X: sc.Variable([Dim.X], values=[10])})
     copy = d.copy()
 
     d += 2
@@ -592,8 +591,9 @@ def test_in_place_binary_with_scalar():
 
 
 def test_proxy_in_place_binary_with_scalar():
-    d = sc.Dataset({'data': sc.Variable([Dim.X], values=[10])},
-                   coords={Dim.X: sc.Variable([Dim.X], values=[10])})
+    d = sc.Dataset(
+        {'data': sc.Variable([Dim.X], values=[10])},
+        coords={Dim.X: sc.Variable([Dim.X], values=[10])})
     copy = d.copy()
 
     d['data'] += 2
