@@ -63,8 +63,9 @@ def load_calibration(filename, mantid_LoadDiffCal_args={}):
     group_ws = output.OutputGroupingWorkspace
     group_map = {}  # dict from detectorID to group number
     spectrum_info = group_ws.spectrumInfo()
+    detector_info = group_ws.detectorInfo()
     det_ids = detector_info.detectorIDs().astype(np.int32)
-    for spec in spectrum_info:
+    for i, spec in enumerate(spectrum_info):
         spec_def = spec.spectrumDefinition
         # We take the first detector in the definition, because that's
         # what Mantid does via DetectorGroup::getID. Id is first det of group.
