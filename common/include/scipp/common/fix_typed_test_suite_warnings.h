@@ -4,7 +4,7 @@
 #ifndef SCIPP_FIX_TYPED_TEST_SUITE_WARNINGS_H
 #define SCIPP_FIX_TYPED_TEST_SUITE_WARNINGS_H
 
-//Originally definition of this macro in gtest contains ellipsis
+// Originally definition of this macro in gtest contains ellipsis
 // TYPED_TEST_SUITE(CaseName, Types, ...)
 // that obligate to pass at least 3 args to macro, using 2 args
 // leads to the warning, macro is redefined here to avoid this,
