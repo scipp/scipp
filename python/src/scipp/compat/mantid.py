@@ -215,6 +215,22 @@ def _convert_MatrixWorkspace_info(ws):
         info["masks"]["spectrum"] = sc.Variable([spec_dim], values=mask)
     return info
 
+def convert_Workspace2D_to_monitors(ws, **ignored):
+    dim, unit = validate_and_get_unit(ws.getAxis(0).getUnit().unitID())
+    spec_dim, spec_coord = init_spec_axis(ws)
+    spec_info = spec_info = ws.spectrumInfo()
+    comp_info = ws.componentInfo()
+    monitors = []
+    indexes = [ws.getIndexFromSpectrumNumber(int(i)) for i in spec_coord.values]
+    import mantid.simpleapi as mantid
+    for index in indexes:
+        definition = spec_info.getSpectrumDefinition(index)
+        if not definition.size() == 1:
+            raise RuntimeError("Cannot deal with grouped monitor detectors")
+        det_index = definition[0][0] # Ignore time index
+        monitor = mantid.ExtractSpectra(InputWorkspace=ws, WorkspaceIndexList=[index], StoreInADS=False)
+        monitors.append((comp_info.name(det_index), convert_Workspace2D_to_dataarray(monitor)))
+    return monitors
 
 def convert_Workspace2D_to_dataarray(ws, **ignored):
     common_bins = ws.isCommonBins()
@@ -424,8 +440,10 @@ def from_mantid(workspace, **kwargs):
         if monitor_ws is None:
             monitor_ws = workspace.getMonitorWorkspace()
         if monitor_ws.id() == 'Workspace2D':
-            dataset.attrs["monitors"] = sc.Variable(
-                value=convert_Workspace2D_to_dataarray(monitor_ws, **kwargs))
+            monitors = convert_Workspace2D_to_monitors(monitor_ws, **kwargs)
+            for name, monitor in monitors:
+                dataset.attrs[name] = sc.Variable(
+                    value=monitor)
         elif monitor_ws.id() == 'EventWorkspace':
             dataset.attrs["monitors"] = sc.Variable(
                 value=convertEventWorkspace_to_dataarray(monitor_ws, **kwargs))
