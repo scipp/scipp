@@ -210,21 +210,17 @@ void init_dataset(py::module &m) {
            [](Dataset &self, const std::string &name,
               const DataConstProxy &data) { self.setData(name, data); })
       .def("__setitem__",
-           [](Dataset &self, const std::tuple<Dim, scipp::index> &index,
-              DatasetProxy &other) {
-             auto [dim, i] = index;
-             for (const auto [name, item] : self.slice(Slice(dim, i)))
-               item.assign(other[name]);
-           })
-      .def("__delitem__", &Dataset::erase,
-           py::call_guard<py::gil_scoped_release>())
-      .def("__setitem__",
            [](Dataset &self, const std::string &name, const DataArray &data) {
              self.setData(name, data);
            })
+      .def("__delitem__", &Dataset::erase,
+           py::call_guard<py::gil_scoped_release>())
       .def(
           "clear", &Dataset::clear,
           R"(Removes all data (preserving coordinates, attributes, labels and masks.).)");
+  datasetProxy.def("__setitem__",
+                   [](const DatasetProxy &self, const std::string &name,
+                      const DataConstProxy &data) { self[name].assign(data); });
 
   bind_dataset_proxy_methods(dataset);
   bind_dataset_proxy_methods(datasetProxy);

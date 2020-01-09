@@ -148,6 +148,13 @@ public:
     return std::equal(begin(), end(), other.begin());
   }
 
+  /// Return true if *this and other are two equivalent views of the same data.
+  bool isSame(const VariableView<T> &other) const {
+    return (m_variable == other.m_variable) && (m_offset == other.m_offset) &&
+           (m_dimensions == other.m_dimensions) &&
+           (m_targetDimensions == other.m_targetDimensions);
+  }
+
   template <class T2> bool overlaps(const VariableView<T2> &other) const {
     // TODO We could be less restrictive here and use a more sophisticated check
     // based on offsets and dimensions, if there is a performance issue due to
