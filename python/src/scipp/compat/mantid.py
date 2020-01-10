@@ -452,15 +452,18 @@ def from_mantid(workspace, **kwargs):
     # TODO Is there ever a case where a Workspace2D has a separate monitor
     # workspace? This is not handled by ExtractMonitors above, I think.
     if monitor_ws is None:
-        monitor_ws = workspace.getMonitorWorkspace()
-    if monitor_ws.id() == 'Workspace2D':
-        converter = convert_Workspace2D_to_dataarray
-    elif monitor_ws.id() == 'EventWorkspace':
-        converter = convertEventWorkspace_to_dataarray
-    
-    monitors = convert_monitors_ws(monitor_ws, converter, **kwargs)
-    for name, monitor in monitors:
-        dataset.attrs[name] = sc.Variable(value=monitor)
+        if hasattr(workspace, 'getMonitorWorkspace'):
+            monitor_ws = workspace.getMonitorWorkspace()
+
+    if monitor_ws is not None:
+        if monitor_ws.id() == 'Workspace2D':
+            converter = convert_Workspace2D_to_dataarray
+        elif monitor_ws.id() == 'EventWorkspace':
+            converter = convertEventWorkspace_to_dataarray
+        
+        monitors = convert_monitors_ws(monitor_ws, converter, **kwargs)
+        for name, monitor in monitors:
+            dataset.attrs[name] = sc.Variable(value=monitor)
 
     return dataset
 
