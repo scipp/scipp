@@ -249,6 +249,7 @@ void Dataset::rebuildDims() {
 
 /// Set (insert or replace) the coordinate for the given dimension.
 void Dataset::setCoord(const Dim dim, Variable coord) {
+  expect::notSparse(coord);
   setDims(coord.dims(), dim);
   m_coords.insert_or_assign(dim, std::move(coord));
 }
@@ -257,6 +258,7 @@ void Dataset::setCoord(const Dim dim, Variable coord) {
 ///
 /// Note that the label name has no relation to names of data items.
 void Dataset::setLabels(const std::string &labelName, Variable labels) {
+  expect::notSparse(labels);
   setDims(labels.dims());
   m_labels.insert_or_assign(labelName, std::move(labels));
 }
@@ -265,6 +267,7 @@ void Dataset::setLabels(const std::string &labelName, Variable labels) {
 ///
 /// Note that the attribute name has no relation to names of data items.
 void Dataset::setAttr(const std::string &attrName, Variable attr) {
+  expect::notSparse(attr);
   setDims(attr.dims());
   m_attrs.insert_or_assign(attrName, std::move(attr));
 }
@@ -273,6 +276,7 @@ void Dataset::setAttr(const std::string &attrName, Variable attr) {
 void Dataset::setAttr(const std::string &name, const std::string &attrName,
                       Variable attr) {
   expect::contains(*this, name);
+  expect::notSparse(attr);
   if (!operator[](name).dims().contains(attr.dims()))
     throw except::DimensionError(
         "Attribute dimensions must match and not exceed dimensions of data.");
@@ -282,10 +286,10 @@ void Dataset::setAttr(const std::string &name, const std::string &attrName,
 /// Set (insert or replace) the masks for the given mask name.
 ///
 /// Note that the mask name has no relation to names of data items.
-void Dataset::setMask(const std::string &masksName, Variable masks) {
-  setDims(masks.dims());
-
-  m_masks.insert_or_assign(masksName, std::move(masks));
+void Dataset::setMask(const std::string &masksName, Variable mask) {
+  expect::notSparse(mask);
+  setDims(mask.dims());
+  m_masks.insert_or_assign(masksName, std::move(mask));
 }
 
 /// Set (insert or replace) data (values, optional variances) with given name.
