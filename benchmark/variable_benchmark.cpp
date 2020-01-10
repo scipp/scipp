@@ -192,4 +192,24 @@ BENCHMARK(BM_VariableProxy_assign_1d)
     ->Arg(1e8)
     ->Arg(1e9);
 
+static void BM_Variable_sin_rad(benchmark::State &state) {
+  const auto a =
+      makeVariable<double>(Dims{Dim::X}, Shape{1000}, units::Unit{units::rad});
+
+  for (auto _ : state) {
+    benchmark::DoNotOptimize(sin(a));
+  }
+}
+BENCHMARK(BM_Variable_sin_rad);
+
+static void BM_Variable_sin_deg(benchmark::State &state) {
+  const auto a =
+      makeVariable<double>(Dims{Dim::X}, Shape{1000}, units::Unit{units::deg});
+
+  for (auto _ : state) {
+    benchmark::DoNotOptimize(sin(a));
+  }
+}
+BENCHMARK(BM_Variable_sin_deg);
+
 BENCHMARK_MAIN();
