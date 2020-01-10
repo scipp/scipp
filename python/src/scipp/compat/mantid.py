@@ -233,10 +233,17 @@ def convert_monitors_ws(ws, converter, **ignored):
         # We only ExtractSpectra for compability with
         # exising convert_Workspace2D_to_dataarray. This could instead be
         # refactored if found to be slow
-        monitor = mantid.ExtractSpectra(InputWorkspace=ws,
+        monitor_ws = mantid.ExtractSpectra(InputWorkspace=ws,
                                         WorkspaceIndexList=[index],
                                         StoreInADS=False)
-        monitors.append((comp_info.name(det_index), converter(monitor)))
+        single_monitor = converter(monitor_ws)
+        # Remove redundant information that is duplicated from workspace
+        # We get this extra information from the generic converter reuse 
+        del single_monitor.labels['sample_position']
+        del single_monitor.labels['detector_info']
+        del single_monitor.attrs['run']
+        del single_monitor.attrs['sample']
+        monitors.append((comp_info.name(det_index), single_monitor))
     return monitors
 
 
@@ -454,11 +461,6 @@ def from_mantid(workspace, **kwargs):
 
         monitors = convert_monitors_ws(monitor_ws, converter, **kwargs)
         for name, monitor in monitors:
-            # Remove redundant information that is duplicated from workspace
-            del monitor.labels['sample_position']
-            del monitor.labels['detector_info']
-            del monitor.attrs['run']
-            del monitor.attrs['sample']
             dataset.attrs[name] = sc.Variable(value=monitor)
     except RuntimeError:
         pass
