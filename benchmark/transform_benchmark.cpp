@@ -46,7 +46,7 @@ void run(benchmark::State &state, Func func, bool variances = false) {
 static void BM_transform_in_place(benchmark::State &state) {
   run<true>(state,
             [](auto &state_, auto &&... args) {
-              for (auto _ : state_) {
+              for ([[maybe_unused]] auto _ : state_) {
                 transform_in_place<Types>(args...);
               }
             },
@@ -58,7 +58,7 @@ static void BM_transform_in_place_proxy(benchmark::State &state) {
             [](auto &state_, auto &a, auto &b, auto &op) {
               VariableProxy a_proxy(a);
               VariableConstProxy b_proxy(b);
-              for (auto _ : state_) {
+              for ([[maybe_unused]] auto _ : state_) {
                 transform_in_place<Types>(a_proxy, b_proxy, op);
               }
             },
@@ -72,7 +72,7 @@ static void BM_transform_in_place_slice(benchmark::State &state) {
               // exclude 1 out of 100 X elements here.
               auto a_slice = a.slice({Dim::X, 0, 99});
               auto b_slice = b.slice({Dim::X, 1, 100});
-              for (auto _ : state_) {
+              for ([[maybe_unused]] auto _ : state_) {
                 transform_in_place<Types>(a_slice, b_slice, op);
               }
             },
@@ -93,7 +93,7 @@ BENCHMARK(BM_transform_in_place_slice)
 static void BM_transform(benchmark::State &state) {
   run<false>(state,
              [](auto &state_, auto &&... args) {
-               for (auto _ : state_) {
+               for ([[maybe_unused]] auto _ : state_) {
                  auto out = transform<Types>(args...);
                  state_.PauseTiming();
                  out = Variable();
@@ -108,7 +108,7 @@ static void BM_transform_proxy(benchmark::State &state) {
              [](auto &state_, auto &a, auto &b, auto &op) {
                VariableProxy a_proxy(a);
                VariableConstProxy b_proxy(b);
-               for (auto _ : state_) {
+               for ([[maybe_unused]] auto _ : state_) {
                  auto out = transform<Types>(a_proxy, b_proxy, op);
                  state_.PauseTiming();
                  out = Variable();
@@ -125,7 +125,7 @@ static void BM_transform_slice(benchmark::State &state) {
                // exclude 1 out of 100 X elements here.
                auto a_slice = a.slice({Dim::X, 0, 99});
                auto b_slice = b.slice({Dim::X, 1, 100});
-               for (auto _ : state_) {
+               for ([[maybe_unused]] auto _ : state_) {
                  auto out = transform<Types>(a_slice, b_slice, op);
                  state_.PauseTiming();
                  out = Variable();
