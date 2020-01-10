@@ -3,8 +3,23 @@
 Frequently Asked Questions
 ==========================
 
+Specific help with using scipp
+------------------------------
+
+For help on specific issues with using **scipp**, you should first visit
+`this <https://github.com/scipp/scipp/issues?utf8=%E2%9C%93&q=label%3Aquestion>`_
+page to see if the problem you are facing has already been met/solved in the community.
+
+If you cannot find an answer, you can ask a new question by opening a new issue with the |QuestionLabel|_ label attached to it.
+
+.. |QuestionLabel| image:: ../images/question.png
+.. _QuestionLabel: https://github.com/scipp/scipp/issues?utf8=%E2%9C%93&q=label%3Aquestion
+
+General
+-------
+
 Why is xarray not enough?
--------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
 For our application (handling of neutron-scattering data, which is so far mostly done using `Mantid <https://mantidproject.org>`_), xarray is currently missing a number of features:
 
@@ -20,7 +35,7 @@ Instead of using xarray we intend to provide converters and partial interoperabi
 This lets us use, e.g., xarray's `powerful plotting functionality <https://xarray.pydata.org/en/stable/plotting.html>`_.
 
 Why are you not just contributing to xarray?
---------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This is a valid criticism and at times we still feel uncertain about this choice.
 The decision was made in the context of a larger project which needed to come to a conclusion within a couple of years, including all the items listed in the previous FAQ entry.
@@ -31,7 +46,7 @@ Furthermore, some of the requirements are unlikely to be obtainable within xarra
 We should note that at least some of our additional requirements, in particular physical units, are being pursued also by the xarray developers.
 
 What about performance?
------------------------
+~~~~~~~~~~~~~~~~~~~~~~~
 
 In its current state scipp does not support multi-threading and not all parts of the implementation are written to deliver optimal performance.
 This was a deliberate choice for the early milestones.
