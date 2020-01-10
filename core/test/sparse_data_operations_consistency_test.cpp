@@ -55,8 +55,8 @@ TEST(SparseDataOperationsConsistencyTest, multiply) {
 
   // Case 2: Multiple events per bin => uncertainties differ, set to 0 before
   // comparison.
-  ab.setVariances(Vector<double>(4));
-  ba.setVariances(Vector<double>(4));
+  ab.setVariances<double>({0, 0, 0, 0});
+  ba.setVariances<double>({0, 0, 0, 0});
   EXPECT_EQ(ab, ba);
 }
 
@@ -93,10 +93,10 @@ TEST(SparseDataOperationsConsistencyTest, flatten_multiply_sum) {
   EXPECT_NE(mhf, smh);
 
   // Cross-group: Uncertainties differ due to multiple events per bin, set to 0.
-  hfm.setVariances(Vector<double>(2));
-  mhf.setVariances(Vector<double>(2));
-  msh.setVariances(Vector<double>(2));
-  smh.setVariances(Vector<double>(2));
+  hfm.setVariances<double>({0, 0});
+  mhf.setVariances<double>({0, 0});
+  msh.setVariances<double>({0, 0});
+  smh.setVariances<double>({0, 0});
   EXPECT_EQ(hfm, mhf);
   EXPECT_EQ(hfm, msh);
   EXPECT_EQ(hfm, smh);

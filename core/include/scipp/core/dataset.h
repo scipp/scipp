@@ -158,7 +158,7 @@ public:
 
   /// Set variances for the data. If the data has no variances array, it is
   /// created.
-  template <class T> void setVariances(Vector<T> &&v) const {
+  template <class T> void setVariances(detail::element_array<T> &&v) const {
     data().setVariances(std::move(v));
   }
 
@@ -1035,7 +1035,7 @@ public:
 
   void setUnit(const units::Unit unit) { get().setUnit(unit); }
 
-  template <class T> void setVariances(Vector<T> &&v) {
+  template <class T> void setVariances(detail::element_array<T> &&v) {
     get().setVariances(std::move(v));
   }
 

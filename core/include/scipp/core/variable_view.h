@@ -11,7 +11,6 @@
 
 #include "scipp/core/dimensions.h"
 #include "scipp/core/except.h"
-#include "scipp/core/vector.h"
 #include "scipp/core/view_index.h"
 
 namespace scipp::core {
@@ -147,6 +146,13 @@ public:
     if (m_targetDimensions != other.m_targetDimensions)
       return false;
     return std::equal(begin(), end(), other.begin());
+  }
+
+  /// Return true if *this and other are two equivalent views of the same data.
+  bool isSame(const VariableView<T> &other) const {
+    return (m_variable == other.m_variable) && (m_offset == other.m_offset) &&
+           (m_dimensions == other.m_dimensions) &&
+           (m_targetDimensions == other.m_targetDimensions);
   }
 
   template <class T2> bool overlaps(const VariableView<T2> &other) const {

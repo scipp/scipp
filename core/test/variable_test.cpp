@@ -1035,13 +1035,13 @@ TEST(VariableTest, values_variances) {
 }
 
 template <typename Var> void test_set_variances(Var &var) {
-  var.setVariances(Vector<double>{5.0, 6.0, 7.0});
+  var.template setVariances<double>({5.0, 6.0, 7.0});
   ASSERT_TRUE(equals(var.template variances<double>(), {5.0, 6.0, 7.0}));
-  var.setVariances(Vector<double>{1.0, 2.0, 3.0});
+  var.template setVariances<double>({1.0, 2.0, 3.0});
   ASSERT_TRUE(equals(var.template variances<double>(), {1.0, 2.0, 3.0}));
-  EXPECT_THROW(var.setVariances(Vector<double>{1.0, 2.0, 3.0, 4.0}),
+  EXPECT_THROW(var.template setVariances<double>({1.0, 2.0, 3.0, 4.0}),
                except::SizeError);
-  EXPECT_NO_THROW(var.setVariances(Vector<float>{1.0, 2.0, 3.0}));
+  EXPECT_NO_THROW(var.template setVariances<float>({1.0, 2.0, 3.0}));
 }
 
 TEST(VariableTest, set_variances) {
