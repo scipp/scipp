@@ -37,6 +37,7 @@ General
    merge
    norm
    rebin
+   reciprocal
    reshape
    sort
    sqrt

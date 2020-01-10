@@ -62,18 +62,29 @@ def load_calibration(filename, mantid_LoadDiffCal_args={}):
     # Apply group information to dataset by matching detector id's to group nr
     group_ws = output.OutputGroupingWorkspace
     group_map = {}  # dict from detectorID to group number
-    for i in range(group_ws.getNumberHistograms()):
-        group_map[group_ws.getDetector(i).getID()] = group_ws.readY(i)[0]
+    spectrum_info = group_ws.spectrumInfo()
+    detector_info = group_ws.detectorInfo()
+    det_ids = detector_info.detectorIDs()
+    for i, spec in enumerate(spectrum_info):
+        spec_def = spec.spectrumDefinition
+        # We take the first detector in the definition, because that's
+        # what Mantid does via DetectorGroup::getID. Id is first det of group.
+        definition = spec_def[0]
+        # Discard time index
+        det_index = definition[0]
+        group_map[det_ids[det_index]] = group_ws.readY(i)[0]
 
     # Create list with same ordering as in the cal_data dataset
-    group_list = np.array(
-        [group_map[detid] for detid in cal_data["detid"].values],
+    cal_det_ids = cal_data["detid"].values
+    group_list = np.fromiter(
+        (group_map[detid] for detid in cal_det_ids), count=len(cal_det_ids),
         dtype=np.int32)
 
     cal_data["group"] = sc.Variable([sc.Dim.Row], values=group_list)
 
     cal_data.rename_dims({sc.Dim.Row: sc.Dim.Detector})
-    cal_data.coords[sc.Dim.Detector] = cal_data['detid'].data
+    cal_data.coords[sc.Dim.Detector] = sc.Variable(
+        [sc.Dim.Detector], values=cal_data['detid'].values.astype(np.int32))
     del cal_data['detid']
 
     # Delete generated mantid workspaces

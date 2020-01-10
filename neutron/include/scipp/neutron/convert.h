@@ -5,8 +5,6 @@
 #ifndef SCIPP_NEUTRON_CONVERT_H
 #define SCIPP_NEUTRON_CONVERT_H
 
-#include <vector>
-
 #include "scipp-neutron_export.h"
 #include "scipp/core/dataset.h"
 #include "scipp/units/unit.h"
