@@ -1,6 +1,6 @@
 ---
 name: Question
-about: Describe this issue template's purpose here.
+about: Ask a question about scipp
 title: ''
 labels: question
 assignees: ''
