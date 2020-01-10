@@ -13,7 +13,7 @@ namespace scipp::neutron {
 
 namespace beamline_impl {
 
-template <class T> static VariableConstProxy position(const T &d) {
+template <class T> static auto position(const T &d) {
   if (d.coords().contains(Dim::Position))
     return d.coords()[Dim::Position];
   else if (d.labels().contains("position"))
@@ -22,14 +22,14 @@ template <class T> static VariableConstProxy position(const T &d) {
     return d.attrs()["position"];
 }
 
-template <class T> static VariableConstProxy source_position(const T &d) {
+template <class T> static auto source_position(const T &d) {
   if (d.labels().contains("source_position"))
     return d.labels()["source_position"];
   else
     return d.attrs()["source_position"];
 }
 
-template <class T> static VariableConstProxy sample_position(const T &d) {
+template <class T> static auto sample_position(const T &d) {
   if (d.labels().contains("sample_position"))
     return d.labels()["sample_position"];
   else
@@ -86,6 +86,15 @@ core::VariableConstProxy source_position(const core::DatasetConstProxy &d) {
 core::VariableConstProxy sample_position(const core::DatasetConstProxy &d) {
   return beamline_impl::sample_position(d);
 }
+core::VariableProxy position(const core::DatasetProxy &d) {
+  return beamline_impl::position(d);
+}
+core::VariableProxy source_position(const core::DatasetProxy &d) {
+  return beamline_impl::source_position(d);
+}
+core::VariableProxy sample_position(const core::DatasetProxy &d) {
+  return beamline_impl::sample_position(d);
+}
 core::Variable flight_path_length(const core::DatasetConstProxy &d) {
   return beamline_impl::flight_path_length(d);
 }
@@ -109,6 +118,15 @@ core::VariableConstProxy source_position(const core::DataConstProxy &d) {
   return beamline_impl::source_position(d);
 }
 core::VariableConstProxy sample_position(const core::DataConstProxy &d) {
+  return beamline_impl::sample_position(d);
+}
+core::VariableProxy position(const core::DataProxy &d) {
+  return beamline_impl::position(d);
+}
+core::VariableProxy source_position(const core::DataProxy &d) {
+  return beamline_impl::source_position(d);
+}
+core::VariableProxy sample_position(const core::DataProxy &d) {
   return beamline_impl::sample_position(d);
 }
 core::Variable flight_path_length(const core::DataConstProxy &d) {
