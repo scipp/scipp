@@ -21,6 +21,7 @@ cache: C:\Users\appveyor\clcache -> appveyor.yml
 install:
 - echo install started %time%
 - cd %APPVEYOR_BUILD_FOLDER%
+- python -m pip install checksumdir --user
 - git submodule update --init
 - mkdir build
 - cd build
@@ -36,6 +37,7 @@ build_script:
 - cmake --build . --config %CONFIGURATION% --target install all-tests
 - echo build finished %time%
 - clcache.exe -s
+- python -c "import os; from checksumdir import dirhash; cache_dir = os.path.join(os.path.expanduser('~'), 'clcache'); f = open(os.path.join(cache_dir, '{}.hash'.format(dirhash(cache_dir, excluded_extensions=['hash']))), 'w'); f.close(); print('cache hash', dirhash(cache_dir, excluded_extensions=['hash']))"
 
 test_script:
 - echo tests started %time%
