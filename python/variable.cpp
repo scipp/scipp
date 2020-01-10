@@ -511,6 +511,21 @@ void init_variable(py::module &m) {
         :return: New variable containing the sum.
         :rtype: Variable)");
 
+  m.def("sum",
+        [](const VariableConstProxy &self, const Dim dim,
+           const VariableProxy &out) { return sum(self, dim, out); },
+        py::arg("x"), py::arg("dim"), py::arg("out"),
+        py::call_guard<py::gil_scoped_release>(),
+        R"(
+        Element-wise sum over the specified dimension.
+
+        :param x: Data to sum.
+        :param dim: Dimension over which to sum.
+        :raises: If the dimension does not exist, if the dtype cannot be summed, e.g., if it is a string or if the output variable contains the summing dimension.
+        :seealso: :py:class:`scipp.mean`
+        :return: Variable containing the sum.
+        :rtype: Variable)");
+
   m.def("sin", [](const VariableConstProxy &self) { return sin(self); },
         py::arg("x"), py::call_guard<py::gil_scoped_release>(), R"(
         Element-wise sin.

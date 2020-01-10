@@ -675,6 +675,21 @@ def test_sum():
     assert sc.sum(var, Dim.Y) == expected
 
 
+def test_sum_in_place():
+    var = sc.Variable([Dim.X, Dim.Y],
+                      values=np.array([[0.1, 0.3], [0.2, 0.6]]),
+                      unit=sc.units.m)
+    out_var = sc.Variable([Dim.X],
+                          values=np.array([0.0, 0.0]),
+                          unit=sc.units.m)
+    expected = sc.Variable([Dim.X],
+                           values=np.array([0.4, 0.8]),
+                           unit=sc.units.m)
+    out_view = sc.sum(var, Dim.Y, out=out_var)
+    assert out_var == expected
+    assert out_view == expected
+
+
 def test_variance_acess():
     v = sc.Variable()
     assert v.variance is None

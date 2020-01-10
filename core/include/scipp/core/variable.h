@@ -972,9 +972,16 @@ SCIPP_CORE_EXPORT VariableProxy sqrt(const VariableConstProxy &var,
 
 SCIPP_CORE_EXPORT Variable flatten(const VariableConstProxy &var,
                                    const Dim dim);
-SCIPP_CORE_EXPORT Variable sum(const VariableConstProxy &var, const Dim dim);
-SCIPP_CORE_EXPORT Variable sum(const VariableConstProxy &var, const Dim dim,
-                               const MasksConstProxy &masks);
+[[nodiscard]] SCIPP_CORE_EXPORT Variable sum(const VariableConstProxy &var,
+                                             const Dim dim);
+SCIPP_CORE_EXPORT VariableProxy sum(const VariableConstProxy &var,
+                                    const Dim dim, const VariableProxy &out);
+[[nodiscard]] SCIPP_CORE_EXPORT Variable sum(const VariableConstProxy &var,
+                                             const Dim dim,
+                                             const MasksConstProxy &masks);
+SCIPP_CORE_EXPORT VariableProxy sum(const VariableConstProxy &var,
+                                    const Dim dim, const MasksConstProxy &masks,
+                                    const VariableProxy &out);
 
 SCIPP_CORE_EXPORT Variable copy(const VariableConstProxy &var);
 
