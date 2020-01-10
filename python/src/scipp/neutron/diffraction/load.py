@@ -64,7 +64,7 @@ def load_calibration(filename, mantid_LoadDiffCal_args={}):
     group_map = {}  # dict from detectorID to group number
     spectrum_info = group_ws.spectrumInfo()
     detector_info = group_ws.detectorInfo()
-    det_ids = detector_info.detectorIDs().astype(np.int32)
+    det_ids = detector_info.detectorIDs()
     for i, spec in enumerate(spectrum_info):
         spec_def = spec.spectrumDefinition
         # We take the first detector in the definition, because that's
@@ -83,7 +83,7 @@ def load_calibration(filename, mantid_LoadDiffCal_args={}):
     cal_data["group"] = sc.Variable([sc.Dim.Row], values=group_list)
 
     cal_data.rename_dims({sc.Dim.Row: sc.Dim.Detector})
-    cal_data.coords[sc.Dim.Detector] = cal_data['detid'].data
+    cal_data.coords[sc.Dim.Detector] = sc.Variable([sc.Dim.Detector], values=cal_data['detid'].values.astype(np.int32))
     del cal_data['detid']
 
     # Delete generated mantid workspaces
