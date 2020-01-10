@@ -549,8 +549,8 @@ public:
   std::vector<Key> keys() {
     std::vector<Key> keys;
     keys.reserve(m_items.size());
-    for (const auto &[k, _] : m_items) {
-      keys.push_back(k);
+    for (const auto &p : m_items) {
+      keys.push_back(p.first);
     }
     return keys;
   }

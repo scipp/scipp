@@ -6,7 +6,12 @@ set -xe
 mkdir -p build
 mkdir -p install
 cd build
-cmake -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=OFF -DPYTHON_EXECUTABLE=${PYTHON_EXECUTABLE} $@ -DCMAKE_INSTALL_PREFIX=../install ..
+cmake -DCMAKE_CXX_FLAGS="-Werror" \
+      -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=OFF \
+      -DPYTHON_EXECUTABLE=${PYTHON_EXECUTABLE} \
+      $@ \
+      -DCMAKE_INSTALL_PREFIX=../install \
+      ..
 cmake -B . -S .. -LA
 make -j2 install all-tests all-benchmarks
 
