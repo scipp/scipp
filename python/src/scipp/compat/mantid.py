@@ -216,6 +216,30 @@ def _convert_MatrixWorkspace_info(ws):
     return info
 
 
+def convert_monitors_ws(ws, converter, **ignored):
+    import mantid.simpleapi as mantid
+    dim, unit = validate_and_get_unit(ws.getAxis(0).getUnit().unitID())
+    spec_dim, spec_coord = init_spec_axis(ws)
+    spec_info = spec_info = ws.spectrumInfo()
+    comp_info = ws.componentInfo()
+    monitors = []
+    indexes = (ws.getIndexFromSpectrumNumber(int(i))
+               for i in spec_coord.values)
+    for index in indexes:
+        definition = spec_info.getSpectrumDefinition(index)
+        if not definition.size() == 1:
+            raise RuntimeError("Cannot deal with grouped monitor detectors")
+        det_index = definition[0][0]  # Ignore time index
+        # We only ExtractSpectra for compability with
+        # exising convert_Workspace2D_to_dataarray. This could instead be
+        # refactored if found to be slow
+        monitor = mantid.ExtractSpectra(InputWorkspace=ws,
+                                        WorkspaceIndexList=[index],
+                                        StoreInADS=False)
+        monitors.append((comp_info.name(det_index), converter(monitor)))
+    return monitors
+
+
 def convert_Workspace2D_to_dataarray(ws, **ignored):
     common_bins = ws.isCommonBins()
     dim, unit = validate_and_get_unit(ws.getAxis(0).getUnit().unitID())
@@ -424,11 +448,14 @@ def from_mantid(workspace, **kwargs):
         if monitor_ws is None:
             monitor_ws = workspace.getMonitorWorkspace()
         if monitor_ws.id() == 'Workspace2D':
-            dataset.attrs["monitors"] = sc.Variable(
-                value=convert_Workspace2D_to_dataarray(monitor_ws, **kwargs))
+            converter = convert_Workspace2D_to_dataarray
         elif monitor_ws.id() == 'EventWorkspace':
-            dataset.attrs["monitors"] = sc.Variable(
-                value=convertEventWorkspace_to_dataarray(monitor_ws, **kwargs))
+            converter = convertEventWorkspace_to_dataarray
+
+        monitors = convert_monitors_ws(monitor_ws, converter, **kwargs)
+        for name, monitor in monitors:
+            dataset.attrs[name] = sc.Variable(value=monitor)
+
         # Remove some redundant information that is duplicated from workspace
         mon = dataset.attrs["monitors"].value
         del mon.labels['sample_position']

@@ -153,24 +153,40 @@ class TestMantidConversion(unittest.TestCase):
         filename = MantidDataHelper.find_file("WISH00016748.raw")
         ds = mantidcompat.load(filename,
                                mantid_args={"LoadMonitors": "Separate"})
-        monitors = ds.attrs['monitors'].values
-        assert isinstance(monitors, sc.DataArray)
-        assert monitors.shape == [5, 4471]
+        attrs = ds.attrs.keys()
+        expected_monitor_attrs = set(
+            ["monitor1", "monitor2", "monitor3", "monitor4", "monitor5"])
+        assert expected_monitor_attrs.issubset(attrs)
+
+        for monitor_name in expected_monitor_attrs:
+            monitors = ds.attrs[monitor_name].values
+            assert isinstance(monitors, sc.DataArray)
+            assert monitors.shape == [4471]
 
     def test_Workspace2D_with_include_monitors(self):
         filename = MantidDataHelper.find_file("WISH00016748.raw")
         ds = mantidcompat.load(filename,
                                mantid_args={"LoadMonitors": "Include"})
-        monitors = ds.attrs['monitors'].values
-        assert isinstance(monitors, sc.DataArray)
-        assert monitors.shape == [5, 4471]
+        attrs = ds.attrs.keys()
+        expected_monitor_attrs = set(
+            ["monitor1", "monitor2", "monitor3", "monitor4", "monitor5"])
+        assert expected_monitor_attrs.issubset(attrs)
+        for monitor_name in expected_monitor_attrs:
+            monitors = ds.attrs[monitor_name].values
+            assert isinstance(monitors, sc.DataArray)
+            assert monitors.shape == [4471]
 
     def test_EventWorkspace_with_monitors(self):
         filename = MantidDataHelper.find_file("CNCS_51936_event.nxs")
         ds = mantidcompat.load(filename, mantid_args={"LoadMonitors": True})
-        monitors = ds.attrs['monitors'].values
-        assert isinstance(monitors, sc.DataArray)
-        assert monitors.shape == [2, 200001]
+        attrs = ds.attrs.keys()
+        expected_monitor_attrs = set(
+            ["monitor2", "monitor3"])
+        assert expected_monitor_attrs.issubset(attrs)
+        for monitor_name in expected_monitor_attrs:
+            monitors = ds.attrs[monitor_name].values
+            assert isinstance(monitors, sc.DataArray)
+            assert monitors.shape == [200001]
 
     def test_mdhisto_workspace_q(self):
         from mantid.simpleapi import (CreateMDWorkspace, FakeMDEventData,

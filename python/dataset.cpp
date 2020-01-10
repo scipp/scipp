@@ -33,7 +33,8 @@ void bind_mutable_proxy(py::module &m, const std::string &name) {
                                       py::return_value_policy::move);
            },
            py::keep_alive<0, 1>())
-      .def("__contains__", &T::contains);
+      .def("__contains__", &T::contains)
+      .def("keys", &T::keys);
   bind_comparison<T>(proxy);
 }
 
