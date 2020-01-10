@@ -454,7 +454,7 @@ def from_mantid(workspace, **kwargs):
 
         monitors = convert_monitors_ws(monitor_ws, converter, **kwargs)
         for name, monitor in monitors:
-            # Remove some redundant information that is duplicated from workspace
+            # Remove redundant information that is duplicated from workspace
             del monitor.labels['sample_position']
             del monitor.labels['detector_info']
             del monitor.attrs['run']
