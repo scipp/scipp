@@ -1,16 +1,15 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
-#include "test_macros.h"
 #include <gtest/gtest.h>
 
 #include <numeric>
 
 #include "dataset_test_common.h"
-#include "scipp/common/fix_typed_test_suite_warnings.h"
 #include "scipp/core/dataset.h"
 #include "scipp/core/dimensions.h"
 #include "scipp/core/except.h"
 #include "scipp/core/slice.h"
+#include "test_macros.h"
 
 using namespace scipp;
 using namespace scipp::core;

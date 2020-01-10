@@ -2,9 +2,9 @@
 // Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
-#include "scipp/common/fix_typed_test_suite_warnings.h"
 #include "scipp/core/except.h"
 #include "scipp/core/variable.h"
+#include "test_macros.h"
 
 using namespace scipp;
 using namespace scipp::core;

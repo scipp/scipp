@@ -5,7 +5,7 @@
 
 #include "test_operations.h"
 
-#include "scipp/common/fix_typed_test_suite_warnings.h"
+#include "fix_typed_test_suite_warnings.h"
 #include "scipp/core/value_and_variance.h"
 
 using namespace scipp;
