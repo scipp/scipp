@@ -26,10 +26,12 @@ If you have a question about how to use **scipp**, you should first visit
 `this <https://github.com/scipp/scipp/issues?utf8=%E2%9C%93&q=label%3Aquestion>`_
 page to see if the problem you are facing has already been met/solved in the community.
 
-If you cannot find an answer, you can ask a new question by opening a new issue with the |QuestionLabel|_ label attached to it.
+If you cannot find an answer, you can ask a new question by
+`opening <https://github.com/scipp/scipp/issues/new?assignees=&labels=question&template=question.md&title=>`_
+a new |QuestionLabel|_ issue.
 
 .. |QuestionLabel| image:: images/question.png
-.. _QuestionLabel: https://github.com/scipp/scipp/issues?utf8=%E2%9C%93&q=label%3Aquestion
+.. _QuestionLabel: https://github.com/scipp/scipp/issues/new?assignees=&labels=question&template=question.md&title=
 
 Documentation
 =============
