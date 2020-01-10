@@ -180,6 +180,15 @@ TEST(DatasetTest, setLabels_with_name_matching_data_name) {
   ASSERT_EQ(d["b"].labels().size(), 1);
 }
 
+TEST(DatasetTest, setters_reject_sparse) {
+  Dataset d;
+  const auto var = makeVariable<int>(Dims{Dim::X}, Shape{Dimensions::Sparse});
+  ASSERT_THROW(d.setCoord(Dim::X, var), except::DimensionError);
+  ASSERT_THROW(d.setLabels("a", var), except::DimensionError);
+  ASSERT_THROW(d.setMask("a", var), except::DimensionError);
+  ASSERT_THROW(d.setAttr("a", var), except::DimensionError);
+}
+
 TEST(DatasetTest, setSparseCoord_not_sparse_fail) {
   Dataset d;
   const auto var = makeVariable<double>(Dims{Dim::X}, Shape{3});
