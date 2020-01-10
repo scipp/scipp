@@ -63,8 +63,7 @@ def make_detector_info(ws):
                     "not supported yet.")
             spectrum_[det] = i
             has_spectrum_[det] = True
-    detector = sc.Variable([sc.Dim.Detector],
-                           values=det_info.detectorIDs())
+    detector = sc.Variable([sc.Dim.Detector], values=det_info.detectorIDs())
 
     # Remove any information about detectors without data (a spectrum). This
     # mostly just gets in the way and including it in the default converter
@@ -234,11 +233,11 @@ def convert_monitors_ws(ws, converter, **ignored):
         # exising convert_Workspace2D_to_dataarray. This could instead be
         # refactored if found to be slow
         monitor_ws = mantid.ExtractSpectra(InputWorkspace=ws,
-                                        WorkspaceIndexList=[index],
-                                        StoreInADS=False)
+                                           WorkspaceIndexList=[index],
+                                           StoreInADS=False)
         single_monitor = converter(monitor_ws)
         # Remove redundant information that is duplicated from workspace
-        # We get this extra information from the generic converter reuse 
+        # We get this extra information from the generic converter reuse
         del single_monitor.labels['sample_position']
         del single_monitor.labels['detector_info']
         del single_monitor.attrs['run']
@@ -460,7 +459,7 @@ def from_mantid(workspace, **kwargs):
             converter = convert_Workspace2D_to_dataarray
         elif monitor_ws.id() == 'EventWorkspace':
             converter = convertEventWorkspace_to_dataarray
-        
+
         monitors = convert_monitors_ws(monitor_ws, converter, **kwargs)
         for name, monitor in monitors:
             dataset.attrs[name] = sc.Variable(value=monitor)
