@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
-#include "test_macros.h"
 #include <gtest/gtest.h>
 
 #include <set>
 
 #include "scipp/core/dataset.h"
+#include "test_macros.h"
 
 using namespace scipp;
 using namespace scipp::core;

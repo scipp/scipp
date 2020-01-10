@@ -3,9 +3,9 @@
 #include <gtest/gtest.h>
 #include <vector>
 
-#include "test_macros.h"
 #include "test_operations.h"
 
+#include "fix_typed_test_suite_warnings.h"
 #include "scipp/core/value_and_variance.h"
 
 using namespace scipp;

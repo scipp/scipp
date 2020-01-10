@@ -199,8 +199,8 @@ TEST_F(TransformBinaryTest, dims_and_shape_fail) {
   auto b = makeVariable<double>(Dims{Dim::X}, Shape{2});
   auto c = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2});
 
-  EXPECT_ANY_THROW(transform<pair_self_t<double>>(a, b, op));
-  EXPECT_ANY_THROW(transform<pair_self_t<double>>(a, c, op));
+  EXPECT_ANY_THROW(auto v = transform<pair_self_t<double>>(a, b, op));
+  EXPECT_ANY_THROW(auto v = transform<pair_self_t<double>>(a, c, op));
 }
 
 TEST_F(TransformBinaryTest, dense_mixed_type) {
