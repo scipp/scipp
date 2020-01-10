@@ -4,8 +4,7 @@ set(TARGET_NAME "scipp-common")
 set(INC_FILES
     include/scipp/common/index.h
     include/scipp/common/overloaded.h
-    include/scipp/common/span.h
-        ../test/fix_typed_test_suite_warnings.h)
+    include/scipp/common/span.h)
 
 add_library(${TARGET_NAME} INTERFACE)
 
