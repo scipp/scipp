@@ -1,6 +1,9 @@
+appdirs
 numpy
 matplotlib
 ipywidgets
 pytest
+python-configuration
+pyyaml
 ipyvolume
 ipyevents

@@ -16,15 +16,18 @@ requirements:
   run:
     - numpy {{ numpy }}
     - python {{ python }}
+    - appdirs
+    - python-configuration
+    - pyyaml
 
 test:
   import:
     - scipp
   commands:
-  # Note that the following is fetching source again and using master 
-    - python -m pip install -r {{ environ.get('SRC_DIR') }}/python/requirements.txt 
+    # Note that the following is fetching source again and using master
+    - python -m pip install -r {{ environ.get('SRC_DIR') }}/python/requirements.txt
     - python -m pytest -v {{ environ.get('SRC_DIR') }}/python
-  
+
 build:
   # Build number is number of Git commits since last tag, if that fails use 0
   number: {{ environ.get('GIT_DESCRIBE_NUMBER', 0) }}
