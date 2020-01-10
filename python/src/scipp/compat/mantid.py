@@ -454,14 +454,12 @@ def from_mantid(workspace, **kwargs):
 
         monitors = convert_monitors_ws(monitor_ws, converter, **kwargs)
         for name, monitor in monitors:
+            # Remove redundant information that is duplicated from workspace
+            del monitor.labels['sample_position']
+            del monitor.labels['detector_info']
+            del monitor.attrs['run']
+            del monitor.attrs['sample']
             dataset.attrs[name] = sc.Variable(value=monitor)
-
-        # Remove some redundant information that is duplicated from workspace
-        mon = dataset.attrs["monitors"].value
-        del mon.labels['sample_position']
-        del mon.labels['detector_info']
-        del mon.attrs['run']
-        del mon.attrs['sample']
     except RuntimeError:
         pass
     return dataset
