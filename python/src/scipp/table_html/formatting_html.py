@@ -22,6 +22,7 @@ with open(ICONS_SVG_PATH, 'r') as f:
 SPARSE_LABEL = "[sparse]"
 BIN_EDGE_LABEL = "[bin-edge]"
 VARIANCE_PREFIX = "σ² = "
+SPARSE_PREFIX = "len={}"
 
 
 def _is_dataset(x):
@@ -67,9 +68,23 @@ def _format_non_sparse(var, has_variances):
 
 def _get_sparse(var, variances, ellipsis_after, summary=False):
     if hasattr(var, "data") and var.data is None:
-        return ["no data, implicitly 1"]
+        return ["No data, implicitly 1"]
     single = len(var.shape) == 0
-    size = 1 if single else var.shape[0]
+
+    if single:
+        assert False, "AM I even tested??"
+        size = 1
+    elif var.shape[0] is None:
+        # handles a 1D Variable with only a sparse dimension
+        size = len(var.values)
+        if summary:
+            return [SPARSE_PREFIX.format(size)]
+        else:
+            return [_format_array(var.values, size, ellipsis_after, size > 1000)]
+    else:
+        # Handles 2D and higher Variables with a sparse dimension
+        size = var.shape[0]
+
     i = 0
     s = []
 
@@ -85,7 +100,7 @@ def _get_sparse(var, variances, ellipsis_after, summary=False):
             i = size - ellipsis_after
         item = data if single else data[i]
         if summary:
-            s.append(f'len={len(item)}')
+            s.append(SPARSE_PREFIX.format(len(item)))
         else:
             s.append('sparse({})'.format(
                 _format_array(item, len(item), ellipsis_after, do_ellide)))
@@ -142,10 +157,11 @@ def format_dims(dims, sizes, coords):
         for dim in dims
     }
 
+    print("Dims and sizes:", dims, sizes)
     dims_li = "".join(
         f"<li><span{dim_css_map[dim]}>"
         f"{escape(str(dim))}</span>: "
-        f"{size if size != sc.Dimensions.Sparse else 'Sparse' }</li>"
+        f"{size if size is not None else 'Sparse' }</li>"
         for dim, size in zip(dims, sizes))
 
     return f"<ul class='xr-dim-list'>{dims_li}</ul>"
@@ -248,7 +264,7 @@ def _make_dim_labels(dim, size, bin_edges=None):
     # label has been added
     if bin_edges and dim in bin_edges:
         return f" {BIN_EDGE_LABEL}"
-    elif size == sc.Dimensions.Sparse:
+    elif size is None:
         return f" {SPARSE_LABEL}"
     else:
         return ""
@@ -259,7 +275,7 @@ def _make_dim_str(var, bin_edges, add_dim_size=False):
         '{}{}{}'.format(
             str(dim),
             _make_dim_labels(dim, size, bin_edges),
-            f': {size}' if add_dim_size else ''
+            f': {size}' if add_dim_size and size is not None else ''
         )
         for dim, size in zip(var.dims, var.shape))
     return dims_text

@@ -390,12 +390,12 @@ void bind_data_properties(pybind11::class_<T, Ignored...> &c) {
   c.def_property_readonly("shape",
                           [](const T &self) {
                             const auto &dims = self.dims();
-                            auto shape{std::vector<scipp::index>(
-                                dims.shape().begin(), dims.shape().end())};
+                            py::list list = py::cast(dims.shape());
+
                             if (dims.sparse()) {
-                              shape.emplace_back(Dimensions::Sparse);
+                              list.append(py::none());
                             }
-                            return shape;
+                            return list;
                           },
                           "Shape of the data (read-only).",
                           py::return_value_policy::move);

@@ -100,6 +100,9 @@ def test_sparse_1d_variable():
     name = html.find_all(class_=VAR_NAME_CSS_CLASS)
     assert len(name) == 1
     assert_dims([Dim.X], name[0].text, has_sparse=True)
+    # This checks if the 'size' of the Sparse dim is being added
+    # which would add a useless 'None'
+    assert "None" not in name[0].text
     assert_unit(in_unit, html.find_all(class_=UNIT_CSS_CLASS))
 
     value = html.find_all(class_=VALUE_CSS_CLASS)

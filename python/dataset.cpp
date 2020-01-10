@@ -104,9 +104,13 @@ void bind_dataset_proxy_methods(py::class_<T, Ignored...> &c) {
                           py::return_value_policy::move);
   c.def_property_readonly("shape",
                           [](const T &self) {
-                            std::vector<scipp::index> shape;
+                            auto shape = py::list();
                             for (const auto &dim : self.dimensions()) {
-                              shape.push_back(dim.second);
+                              if (dim.second == Dimensions::Sparse) {
+                                shape.append(py::none());
+                              } else {
+                                shape.append(dim.second);
+                              }
                             }
                             return shape;
                           },
