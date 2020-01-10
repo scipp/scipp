@@ -308,22 +308,22 @@ TEST(VariableTrigonometryTest, atan_in_place_partial) {
 }
 
 TEST(VariableTrigonometryTest, unit_fail) {
-  EXPECT_THROW(sin(makeVariable<double>(Dims(), Shape(),
-                                        units::Unit(units::dimensionless))),
+  EXPECT_THROW(auto v = sin(makeVariable<double>(
+                   Dims(), Shape(), units::Unit(units::dimensionless))),
                except::UnitError);
-  EXPECT_THROW(cos(makeVariable<double>(Dims(), Shape(),
-                                        units::Unit(units::dimensionless))),
+  EXPECT_THROW(auto v = cos(makeVariable<double>(
+                   Dims(), Shape(), units::Unit(units::dimensionless))),
                except::UnitError);
-  EXPECT_THROW(tan(makeVariable<double>(Dims(), Shape(),
-                                        units::Unit(units::dimensionless))),
+  EXPECT_THROW(auto v = tan(makeVariable<double>(
+                   Dims(), Shape(), units::Unit(units::dimensionless))),
                except::UnitError);
-  EXPECT_THROW(
-      asin(makeVariable<double>(Dims(), Shape(), units::Unit(units::rad))),
-      except::UnitError);
-  EXPECT_THROW(
-      acos(makeVariable<double>(Dims(), Shape(), units::Unit(units::rad))),
-      except::UnitError);
-  EXPECT_THROW(
-      atan(makeVariable<double>(Dims(), Shape(), units::Unit(units::rad))),
-      except::UnitError);
+  EXPECT_THROW(auto v = asin(makeVariable<double>(Dims(), Shape(),
+                                                  units::Unit(units::rad))),
+               except::UnitError);
+  EXPECT_THROW(auto v = acos(makeVariable<double>(Dims(), Shape(),
+                                                  units::Unit(units::rad))),
+               except::UnitError);
+  EXPECT_THROW(auto v = atan(makeVariable<double>(Dims(), Shape(),
+                                                  units::Unit(units::rad))),
+               except::UnitError);
 }
