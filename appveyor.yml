@@ -21,12 +21,12 @@ cache: C:\Users\appveyor\clcache -> appveyor.yml
 install:
 - echo install started %time%
 - cd %APPVEYOR_BUILD_FOLDER%
-- python -m pip install checksumdir --user
 - git submodule update --init
 - mkdir build
 - cd build
 - set PATH=%MINICONDA%;%MINICONDA%\\Scripts;%PATH%"
 - call %MINICONDA%\\python.exe -m pip install clcache
+- call %MINICONDA%\\python.exe -m pip install checksumdir
 - clcache.exe -s
 - call "c://Program Files (x86)//Microsoft Visual Studio 14.0//VC//vcvarsall.bat"
 - echo install finished %time%
