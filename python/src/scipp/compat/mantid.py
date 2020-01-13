@@ -452,7 +452,11 @@ def from_mantid(workspace, **kwargs):
     # workspace? This is not handled by ExtractMonitors above, I think.
     if monitor_ws is None:
         if hasattr(workspace, 'getMonitorWorkspace'):
-            monitor_ws = workspace.getMonitorWorkspace()
+            try:
+                monitor_ws = workspace.getMonitorWorkspace()
+            except RuntimeError:
+                # Have to try/fail here. No inspect method on Mantid for this.
+                pass
 
     if monitor_ws is not None:
         if monitor_ws.id() == 'Workspace2D':
