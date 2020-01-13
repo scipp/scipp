@@ -18,7 +18,9 @@ static auto make_sparse() {
 }
 
 static auto make_sparse_array_coord_only() {
-  return DataArray(std::optional<Variable>(), {{Dim::X, make_sparse()}});
+  return DataArray(std::optional<Variable>(),
+                   {{Dim::X, make_sparse()},
+                    {Dim::Y, makeVariable<double>(Dimensions{Dim::Y, 2})}});
 }
 
 static auto make_histogram() {

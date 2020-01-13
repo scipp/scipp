@@ -391,7 +391,8 @@ TEST(GroupbyFlattenTest, flatten_coord_and_labels) {
 
 TEST(GroupbyFlattenTest, flatten_coord_and_data) {
   DataArray a{make_sparse_in() * 1.5,
-              {{Dim::X, make_sparse_in()}},
+              {{Dim::X, make_sparse_in()},
+               {Dim::Y, makeVariable<double>(Dims{Dim::Y}, Shape{3})}},
               {{"labels",
                 makeVariable<double>(Dims{Dim::Y}, Shape{3},
                                      units::Unit(units::m), Values{1, 1, 3})}}};
