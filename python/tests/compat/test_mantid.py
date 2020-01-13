@@ -274,50 +274,80 @@ class TestMantidConversion(unittest.TestCase):
         self.assertTrue("sample_position" in ds.labels)
         self.assertTrue("position" in ds.labels)
 
+    def test_to_workspace_2d_no_error(self):
+        # All Dims for which support is expected are
+        # tested in the parametrized test.
+        # Just set this one to a working one to avoid
+        # generating many repetitive tests.
+        param_dim = Dim.Tof
+
+        data_len = 2
+        expected_bins = data_len + 1
+        expected_number_spectra = 10
+
+        y = sc.Variable([Dim.Spectrum, param_dim],
+                        values=np.random.rand(
+                            expected_number_spectra, data_len))
+
+        x = sc.Variable([Dim.Spectrum, param_dim],
+                        values=np.arange(
+                            expected_number_spectra * expected_bins,
+            dtype=np.float64).reshape((expected_number_spectra,
+                                       expected_bins)))
+
+        ws = sc.compat.mantid.to_workspace_2d(
+            x.values, y.values, None, param_dim)
+
+        assert len(ws.readX(0)) == expected_bins
+        assert ws.getNumberHistograms() == expected_number_spectra
+
+        for i in range(expected_number_spectra):
+            np.testing.assert_array_equal(ws.readX(i), x[Dim.Spectrum, i])
+            np.testing.assert_array_equal(ws.readY(i), y[Dim.Spectrum, i])
+            np.testing.assert_array_equal(
+                ws.readE(i), np.sqrt(y[Dim.Spectrum, i].values))
+
 
 @pytest.mark.skipif(not mantid_is_available(),
                     reason='Mantid framework is unavailable')
 @pytest.mark.parametrize("param_dim",
                          (
                              Dim.Tof,
-                             Dim.Wavelength
+                             Dim.Wavelength,
+                             Dim.Energy,
+                             Dim.DSpacing,
+                             Dim.Q,
+                             Dim.QSquared,
+                             Dim.EnergyTransfer
                          )
                          )
-def test_to_mantid(param_dim):
-    from mantid import mtd
-
+def test_to_workspace_2d(param_dim):
     data_len = 2
     expected_bins = data_len + 1
     expected_number_spectra = 10
 
-    y = sc.Variable([param_dim.Spectrum, param_dim],
-                    values=np.random.rand(expected_number_spectra, data_len),
+    y = sc.Variable([Dim.Spectrum, param_dim],
+                    values=np.random.rand(
+                        expected_number_spectra, data_len),
                     variances=np.random.rand(
         expected_number_spectra, data_len))
 
-    x = sc.Variable([param_dim], values=np.arange(
-        expected_bins, dtype=np.float64))
+    x = sc.Variable([Dim.Spectrum, param_dim],
+                    values=np.arange(
+                        expected_number_spectra * expected_bins,
+        dtype=np.float64).reshape((expected_number_spectra, expected_bins)))
 
-    expected_ws_name = "scipp_to_ws"
-
-    sc.compat.mantid.to_mantid(
-        x.values, y.values, y.variances, x.dims[0], expected_ws_name)
-
-    ws = mtd[expected_ws_name]
+    ws = sc.compat.mantid.to_workspace_2d(
+        x.values, y.values, y.variances, param_dim)
 
     assert len(ws.readX(0)) == expected_bins
     assert ws.getNumberHistograms() == expected_number_spectra
 
-    np.testing.assert_array_equal(ws.readX(0), x.values)
-    np.testing.assert_array_equal(ws.readY(0), y[Dim.Spectrum, 0])
-    np.testing.assert_array_equal(
-        ws.readE(0), y[Dim.Spectrum, 0].variances)
-
-
-def test_to_mantid_no_error():
-    x = sc.Variable([Dim.X], values=np.arange(100))
-    x = sc.Variable([Dim.X], values=np.arange(100))
-    x = sc.Variable([Dim.X], values=np.arange(100))
+    for i in range(expected_number_spectra):
+        np.testing.assert_array_equal(ws.readX(i), x[Dim.Spectrum, i])
+        np.testing.assert_array_equal(ws.readY(i), y[Dim.Spectrum, i])
+        np.testing.assert_array_equal(
+            ws.readE(i), y[Dim.Spectrum, i].variances)
 
 
 if __name__ == "__main__":

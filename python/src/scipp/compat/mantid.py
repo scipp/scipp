@@ -581,7 +581,7 @@ def load_component_info(ds, file):
 
 def validate_dim_and_get_mantid_string(unit_dim):
     known_units = {
-        sc.Dim.EnergyTransfer: "DelteV",
+        sc.Dim.EnergyTransfer: "DeltaE",
         sc.Dim.Tof: "TOF",
         sc.Dim.Wavelength: "Wavelength",
         sc.Dim.Energy: "Energy",
@@ -599,7 +599,7 @@ def validate_dim_and_get_mantid_string(unit_dim):
         return known_units[unit_dim]
 
 
-def to_mantid(x, y, e, coord_dim, ws_name):
+def to_workspace_2d(x, y, e, coord_dim):
     """
     Use the values provided to create a Mantid workspace.
 
@@ -612,9 +612,9 @@ def to_mantid(x, y, e, coord_dim, ws_name):
     :param y: Data to be used as Y for the Mantid workspace.
     :param e: Data to be used as error for the Mantid workspace.
               If `None` the np.sqrt of y will be used.
-    :param ws_name: The name of the OutputWorkspace
     :param coord_dim: Dim of the coordinate, to be set as the equivalent
                       UnitX on the Mantid workspace.
+    :returns: Workspace2D containing the data for X, Y and E
     """
     try:
         import mantid.simpleapi as mantid
@@ -627,22 +627,24 @@ def to_mantid(x, y, e, coord_dim, ws_name):
     assert len(y.shape) == 2, "Currently can only handle 2D data."
 
     e = e if e is not None else np.sqrt(y)
-    nspec = y.shape[0]
+
     unitX = validate_dim_and_get_mantid_string(coord_dim)
 
-    # Use AlgorithmManager and create as child for speed.
-    # Avoids history creation
-    alg = mantid.AlgorithmManager.create("CreateWorkspace")
-    alg.setChild(True)
-    alg.initialize()
-    alg.setProperty('DataX', x)
-    alg.setProperty('DataY', y)
-    alg.setProperty('DataE', e)
-    alg.setProperty('NSpec', nspec)
-    alg.setProperty('OutputWorkspace', ws_name)
-    alg.setProperty('UnitX', unitX)
-    alg.setProperty('WorkspaceTitle', ws_name)
-    alg.execute()
-    ws = alg.getProperty('OutputWorkspace').value
-    mantid.mtd.addOrReplace(ws_name, ws)
+    nspec = y.shape[0]
+    nbins = x.shape[1]
+    nitems = y.shape[1]
+
+    ws = mantid.WorkspaceFactory.create("Workspace2D",
+                                        NVectors=nspec,
+                                        XLength=nbins,
+                                        YLength=nitems)
+
+    for i in range(nspec):
+        ws.setX(i, x[i])
+        ws.setY(i, y[i])
+        ws.setE(i, e[i])
+
+    # Set X-Axis unit
+    ws.getAxis(0).setUnit(unitX)
+
     return ws
