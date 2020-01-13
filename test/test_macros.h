@@ -9,6 +9,8 @@
 #include <cmath>
 #include <initializer_list>
 
+#include "fix_typed_test_suite_warnings.h"
+
 #define EXPECT_THROW_MSG(TRY_BLOCK, EXCEPTION_TYPE, MESSAGE)                   \
   EXPECT_THROW(                                                                \
       {                                                                        \

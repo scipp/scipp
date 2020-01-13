@@ -27,7 +27,7 @@ static constexpr auto maybe_subspan = [](VariableConstProxy &var,
     *ret = subspan_view(var, dim);
     var = *ret;
   }
-  return std::move(ret);
+  return ret;
 };
 } // namespace transform_subspan_detail
 

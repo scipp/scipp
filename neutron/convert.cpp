@@ -35,7 +35,7 @@ static T convert_with_factor(T &&d, const Dim from, const Dim to,
                              const Variable &factor) {
   // 1. Transform coordinate
   // Cannot use *= since often a broadcast into Dim::Spectrum is required.
-  if (d.coords().contains(from)) {
+  if (d.coords().contains(from) && !d.coords()[from].dims().sparse()) {
     const auto &coords = d.coords()[from];
     d.setCoord(from, coords * astype(factor, coords.dtype()));
   }
@@ -95,7 +95,7 @@ template <class T> T tofToEnergy(T &&d) {
   const auto conversionFactor = tofToEnergyConversionFactor(d);
 
   // 2. Transform coordinate
-  if (d.coords().contains(Dim::Tof)) {
+  if (d.coords().contains(Dim::Tof) && !d.coords()[Dim::Tof].dims().sparse()) {
     const auto &coordSq = d.coords()[Dim::Tof] * d.coords()[Dim::Tof];
     d.setCoord(Dim::Tof, (reciprocal(coordSq) *
                           astype(conversionFactor, coordSq.dtype())));
@@ -122,7 +122,8 @@ template <class T> T energyToTof(T &&d) {
   const auto conversionFactor = tofToEnergyConversionFactor(d);
 
   // 2. Transform coordinate
-  if (d.coords().contains(Dim::Energy)) {
+  if (d.coords().contains(Dim::Energy) &&
+      !d.coords()[Dim::Energy].dims().sparse()) {
     const auto &coordSqrt = d.coords()[Dim::Energy];
     d.setCoord(Dim::Energy,
                sqrt(astype(conversionFactor, coordSqrt.dtype()) / coordSqrt));

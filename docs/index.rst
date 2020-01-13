@@ -19,12 +19,26 @@ Physical units, which are also considered core functionality, are part of the **
 In addition, more specific functionality is made available in other modules.
 Currently the only example for this is **scipp.neutron** for handling data from neutron-scattering experiments.
 
+Where can I get help?
+---------------------
+
+If you have a question about how to use **scipp**, you should first visit
+`this <https://github.com/scipp/scipp/issues?utf8=%E2%9C%93&q=label%3Aquestion>`_
+page to see if the problem you are facing has already been met/solved in the community.
+
+If you cannot find an answer, you can ask a new question by
+`opening <https://github.com/scipp/scipp/issues/new?assignees=&labels=question&template=question.md&title=>`_
+a new |QuestionLabel|_ issue.
+
+.. |QuestionLabel| image:: images/question.png
+.. _QuestionLabel: https://github.com/scipp/scipp/issues/new?assignees=&labels=question&template=question.md&title=
+
 Documentation
 =============
 
 .. toctree::
    :caption: Getting Started
-   :maxdepth: 2
+   :maxdepth: 3
 
    getting-started/overview
    getting-started/faq
@@ -33,7 +47,7 @@ Documentation
 
 .. toctree::
    :caption: User Guide
-   :maxdepth: 2
+   :maxdepth: 3
 
    user-guide/data-structures
    user-guide/slicing
@@ -45,7 +59,7 @@ Documentation
 
 .. toctree::
    :caption: Visualization
-   :maxdepth: 2
+   :maxdepth: 3
 
    visualization/representations-and-tables
    visualization/plotting-overview
@@ -54,7 +68,7 @@ Documentation
 
 .. toctree::
    :caption: Tutorials
-   :maxdepth: 2
+   :maxdepth: 3
 
    tutorials/introduction
    tutorials/multi-d-datasets
@@ -63,7 +77,7 @@ Documentation
 
 .. toctree::
    :caption: Reference
-   :maxdepth: 2
+   :maxdepth: 3
 
    python-reference/api
    python-reference/dtype
@@ -72,7 +86,7 @@ Documentation
 
 .. toctree::
    :caption: Neutron-scattering
-   :maxdepth: 2
+   :maxdepth: 3
 
    scipp-neutron/overview
    scipp-neutron/groupby
@@ -82,7 +96,7 @@ Documentation
 
 .. toctree::
    :caption: C++ Reference
-   :maxdepth: 2
+   :maxdepth: 3
 
    cpp-reference/api
    cpp-reference/customizing
@@ -91,6 +105,6 @@ Documentation
 
 .. toctree::
    :caption: About
-   :maxdepth: 2
+   :maxdepth: 3
 
    about/release-notes

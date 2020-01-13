@@ -5,6 +5,7 @@
 
 #include "test_macros.h"
 
+#include "fix_typed_test_suite_warnings.h"
 #include "scipp/core/dimensions.h"
 #include "scipp/core/except.h"
 #include "scipp/core/variable.h"
@@ -1203,7 +1204,7 @@ TEST(VariableTest, boolean_xor) {
 template <class T> class ReciprocalTest : public ::testing::Test {};
 
 using test_types = ::testing::Types<float, double>;
-TYPED_TEST_CASE(ReciprocalTest, test_types);
+TYPED_TEST_SUITE(ReciprocalTest, test_types);
 
 TYPED_TEST(ReciprocalTest, variable_reciprocal) {
   using T = TypeParam;

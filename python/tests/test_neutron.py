@@ -46,6 +46,14 @@ def test_neutron_convert():
     assert dspacing.coords[Dim.DSpacing].unit == sc.units.angstrom
 
 
+def test_neutron_convert_out_arg():
+    d = make_dataset_with_beamline()
+
+    dspacing = sc.neutron.convert(d, Dim.Tof, Dim.DSpacing, out=d)
+    assert dspacing.coords[Dim.DSpacing].unit == sc.units.angstrom
+    assert dspacing is d
+
+
 def test_neutron_beamline():
     d = make_dataset_with_beamline()
 

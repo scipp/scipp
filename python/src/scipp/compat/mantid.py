@@ -55,7 +55,6 @@ def make_detector_info(ws):
     spec_info = ws.spectrumInfo()
     for i, spec in enumerate(spec_info):
         spec_def = spec.spectrumDefinition
-        # This assumes that each detector is part of exactly one spectrum
         for j in range(len(spec_def)):
             det, time = spec_def[j]
             if time != 0:
@@ -214,6 +213,37 @@ def _convert_MatrixWorkspace_info(ws):
         ])
         info["masks"]["spectrum"] = sc.Variable([spec_dim], values=mask)
     return info
+
+
+def convert_monitors_ws(ws, converter, **ignored):
+    import mantid.simpleapi as mantid
+    dim, unit = validate_and_get_unit(ws.getAxis(0).getUnit().unitID())
+    spec_dim, spec_coord = init_spec_axis(ws)
+    spec_info = spec_info = ws.spectrumInfo()
+    comp_info = ws.componentInfo()
+    monitors = []
+    indexes = (ws.getIndexFromSpectrumNumber(int(i))
+               for i in spec_coord.values)
+    for index in indexes:
+        definition = spec_info.getSpectrumDefinition(index)
+        if not definition.size() == 1:
+            raise RuntimeError("Cannot deal with grouped monitor detectors")
+        det_index = definition[0][0]  # Ignore time index
+        # We only ExtractSpectra for compability with
+        # exising convert_Workspace2D_to_dataarray. This could instead be
+        # refactored if found to be slow
+        monitor_ws = mantid.ExtractSpectra(InputWorkspace=ws,
+                                           WorkspaceIndexList=[index],
+                                           StoreInADS=False)
+        single_monitor = converter(monitor_ws)
+        # Remove redundant information that is duplicated from workspace
+        # We get this extra information from the generic converter reuse
+        del single_monitor.labels['sample_position']
+        del single_monitor.labels['detector_info']
+        del single_monitor.attrs['run']
+        del single_monitor.attrs['sample']
+        monitors.append((comp_info.name(det_index), single_monitor))
+    return monitors
 
 
 def convert_Workspace2D_to_dataarray(ws, **ignored):
@@ -418,25 +448,26 @@ def from_mantid(workspace, **kwargs):
         raise RuntimeError('Unsupported workspace type {}'.format(
             workspace.id()))
 
-    try:
-        # TODO Is there ever a case where a Workspace2D has a separate monitor
-        # workspace? This is not handled by ExtractMonitors above, I think.
-        if monitor_ws is None:
-            monitor_ws = workspace.getMonitorWorkspace()
+    # TODO Is there ever a case where a Workspace2D has a separate monitor
+    # workspace? This is not handled by ExtractMonitors above, I think.
+    if monitor_ws is None:
+        if hasattr(workspace, 'getMonitorWorkspace'):
+            try:
+                monitor_ws = workspace.getMonitorWorkspace()
+            except RuntimeError:
+                # Have to try/fail here. No inspect method on Mantid for this.
+                pass
+
+    if monitor_ws is not None:
         if monitor_ws.id() == 'Workspace2D':
-            dataset.attrs["monitors"] = sc.Variable(
-                value=convert_Workspace2D_to_dataarray(monitor_ws, **kwargs))
+            converter = convert_Workspace2D_to_dataarray
         elif monitor_ws.id() == 'EventWorkspace':
-            dataset.attrs["monitors"] = sc.Variable(
-                value=convertEventWorkspace_to_dataarray(monitor_ws, **kwargs))
-        # Remove some redundant information that is duplicated from workspace
-        mon = dataset.attrs["monitors"].value
-        del mon.labels['sample_position']
-        del mon.labels['detector_info']
-        del mon.attrs['run']
-        del mon.attrs['sample']
-    except RuntimeError:
-        pass
+            converter = convertEventWorkspace_to_dataarray
+
+        monitors = convert_monitors_ws(monitor_ws, converter, **kwargs)
+        for name, monitor in monitors:
+            dataset.attrs[name] = sc.Variable(value=monitor)
+
     return dataset
 
 

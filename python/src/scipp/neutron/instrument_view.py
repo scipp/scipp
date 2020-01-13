@@ -9,7 +9,7 @@ from ..plot.sciplot import SciPlot
 from ..plot.sparse import histogram_sparse_data, make_bins
 from ..plot.tools import parse_params
 from ..utils import name_with_unit, value_to_string
-from .._scipp import core as sc
+from .._scipp import core as sc, neutron as sn
 
 # Other imports
 import numpy as np
@@ -90,22 +90,11 @@ class InstrumentView:
                                "are a Dataset or a DataArray (and their "
                                "respective proxies).".format(tp))
 
-        # Get detector positions from either coordinates or labels
-        if sc.Dim.Position in scipp_obj.coords:
-            self.det_pos = np.array(scipp_obj.coords[sc.Dim.Position].values)
-        else:
-            self.det_pos = np.array(scipp_obj.labels["position"].values)
-
-        # Find extents of the detectors
-        self.minmax = {}
-        for i, x in enumerate("xyz"):
-            self.minmax[x] = [np.amin(self.det_pos[:, i]),
-                              np.amax(self.det_pos[:, i])]
-
         self.globs = {"cmap": cmap, "log": log, "vmin": vmin, "vmax": vmax}
         self.params = {}
         self.hist_data_array = {}
         self.scalar_map = {}
+        self.minmax = {}
 
         # Find the min/max time-of-flight limits and store them
         self.minmax["tof"] = [np.Inf, np.NINF, 1]
@@ -206,6 +195,14 @@ class InstrumentView:
         # the output widget needs to be displayed first, before any mpl figure
         # is displayed.
         render_plot(widgets=self.box, filename=filename, ipv=ipv)
+
+        # Get detector positions
+        self.det_pos = np.array(
+            sn.position(self.hist_data_array[self.key]).values)
+        # Find extents of the detectors
+        for i, x in enumerate("xyz"):
+            self.minmax[x] = [np.amin(self.det_pos[:, i]),
+                              np.amax(self.det_pos[:, i])]
 
         # Update the figure
         self.change_projection(self.buttons[projection])

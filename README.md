@@ -5,10 +5,14 @@
 [![Anaconda-Server Badge](https://anaconda.org/scipp/scipp/badges/installer/conda.svg)](https://conda.anaconda.org/scipp/label/dev)
 [![Docker Cloud Build Status](https://img.shields.io/docker/cloud/build/scipp/scipp-jupyter-demo)](https://hub.docker.com/r/scipp/scipp-jupyter-demo)
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/scipp/scipp/master?filepath=docs%2Fgetting-started%2Fquick-start.ipynb)
+[![Questions](https://img.shields.io/github/issues/scipp/scipp/question?color=%23d876e3&label=questions)](https://github.com/scipp/scipp/issues?utf8=%E2%9C%93&q=label%3Aquestion)
 
 # Scipp
 
 See https://scipp.readthedocs.io for project context and how to use and install the **scipp** Python module.
+
+See [here](https://github.com/scipp/scipp/issues?utf8=%E2%9C%93&q=label%3Aquestion) for a list of frequently asked questions on how to use scipp.
+This is also the place to ask new questions that have not been answered yet, by [opening](https://github.com/scipp/scipp/issues/new?assignees=&labels=question&template=question.md&title=) a new **Question** issue.
 
 ## Build instructions
 
@@ -21,7 +25,7 @@ See [installation](https://scipp.readthedocs.io/en/latest/getting-started/instal
 XCode 10.2 or greater provides a `clang++` implementation with sufficient language support for `scipp`.
 
 #### LLVM Clang
-You will need to be using [LLVM Clang](https://releases.llvm.org/download.html) version 7 or greater. 
+You will need to be using [LLVM Clang](https://releases.llvm.org/download.html) version 7 or greater.
 
 #### GCC
 You will need version 7 of GCC as a minimum.
@@ -39,7 +43,7 @@ cd build
 cmake -DPYTHON_EXECUTABLE=/usr/bin/python3 -DCMAKE_INSTALL_PREFIX=../install ..
 make -j4 all install
 ```
-Note that the `all` and `install` targets do NOT include the tests. Those must be built separately via `all-tests`. 
+Note that the `all` and `install` targets do NOT include the tests. Those must be built separately via `all-tests`.
 You should use Python 3.5 or greater.
 
 To use the `scipp` Python module:
