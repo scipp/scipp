@@ -149,7 +149,10 @@ Variable counts(const VariableConstProxy &var) {
   auto counts =
       makeVariable<scipp::index>(Dimensions(dims), units::Unit(units::counts));
   accumulate_in_place<
-      pair_custom_t<std::pair<scipp::index, sparse_container<double>>>>(
+      pair_custom_t<std::pair<scipp::index, sparse_container<double>>>,
+      pair_custom_t<std::pair<scipp::index, sparse_container<float>>>,
+      pair_custom_t<std::pair<scipp::index, sparse_container<int64_t>>>,
+      pair_custom_t<std::pair<scipp::index, sparse_container<int32_t>>>>(
       counts, var,
       overloaded{[](scipp::index &c, const auto &sparse) { c = sparse.size(); },
                  transform_flags::expect_no_variance_arg<0>});
@@ -159,7 +162,10 @@ Variable counts(const VariableConstProxy &var) {
 /// Reserve memory in all sparse containers in `sparse`, based on `capacity`.
 void reserve(const VariableProxy &sparse, const VariableConstProxy &capacity) {
   transform_in_place<
-      pair_custom_t<std::pair<sparse_container<double>, scipp::index>>>(
+      pair_custom_t<std::pair<sparse_container<double>, scipp::index>>,
+      pair_custom_t<std::pair<sparse_container<float>, scipp::index>>,
+      pair_custom_t<std::pair<sparse_container<int64_t>, scipp::index>>,
+      pair_custom_t<std::pair<sparse_container<int32_t>, scipp::index>>>(
       sparse, capacity,
       overloaded{[](auto &&sparse_, const scipp::index capacity_) {
                    return sparse_.reserve(capacity_);
