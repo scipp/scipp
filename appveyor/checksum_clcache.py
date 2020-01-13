@@ -3,7 +3,7 @@ import checksumdir
 
 
 def stamp_cache():
-    """ Stamp the cache directory root with a file as a comparit:.
+    """ Stamp the cache directory root with a file as a comparitor.
     At time of writing, not looks like appveyor does not properly
     compare clcache directory between builds.
 
