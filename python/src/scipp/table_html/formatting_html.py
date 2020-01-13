@@ -69,12 +69,8 @@ def _format_non_sparse(var, has_variances):
 def _get_sparse(var, variances, ellipsis_after, summary=False):
     if hasattr(var, "data") and var.data is None:
         return ["No data, implicitly 1"]
-    single = len(var.shape) == 0
 
-    if single:
-        assert False, "AM I even tested??"
-        size = 1
-    elif var.shape[0] is None:
+    if var.shape[0] is None:
         # handles a 1D Variable with only a sparse dimension
         size = len(var.values)
         if summary:
@@ -88,7 +84,7 @@ def _get_sparse(var, variances, ellipsis_after, summary=False):
     i = 0
     s = []
 
-    do_ellide = single or summary or size > 1000 or sum([
+    do_ellide = summary or size > 1000 or sum([
         len(retrieve(var, variances=variances)[i])
         for i in range(min(size, 1000))
     ]) > 1000
@@ -98,7 +94,7 @@ def _get_sparse(var, variances, ellipsis_after, summary=False):
         if i == ellipsis_after and do_ellide and size > 2 * ellipsis_after + 1:
             s.append("...")
             i = size - ellipsis_after
-        item = data if single else data[i]
+        item = data[i]
         if summary:
             s.append(SPARSE_PREFIX.format(len(item)))
         else:

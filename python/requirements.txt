@@ -4,3 +4,4 @@ ipywidgets
 pytest
 ipyvolume
 ipyevents
+bs4
