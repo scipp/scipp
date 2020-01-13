@@ -636,6 +636,19 @@ def test_mean():
     assert sc.mean(var, Dim.Y) == expected
 
 
+def test_mean_in_place():
+    var = sc.Variable([Dim.X, Dim.Y],
+                      values=np.array([[0.1, 0.3], [0.2, 0.6]]),
+                      unit=sc.units.m)
+    out = sc.Variable([Dim.X], values=np.array([0.0, 0.0]), unit=sc.units.m)
+    expected = sc.Variable([Dim.X],
+                           values=np.array([0.2, 0.4]),
+                           unit=sc.units.m)
+    view = sc.mean(var, Dim.Y, out)
+    assert out == expected
+    assert view == out
+
+
 def test_norm():
     var = sc.Variable(dims=[Dim.X],
                       values=[[1, 0, 0], [3, 4, 0]],

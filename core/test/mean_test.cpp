@@ -16,16 +16,16 @@ TEST(MeanTest, unknown_dim_fail) {
   const auto var =
       makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
                            units::Unit(units::m), Values{1.0, 2.0, 3.0, 4.0});
-  EXPECT_THROW(mean(var, Dim::Z), except::DimensionError);
+  EXPECT_THROW(const auto view = mean(var, Dim::Z), except::DimensionError);
 }
 
 TEST(MeanTest, sparse_dim_fail) {
   const auto var =
       makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, Dimensions::Sparse},
                            units::Unit(units::m));
-  EXPECT_THROW(mean(var, Dim::X), except::DimensionError);
-  EXPECT_THROW(mean(var, Dim::Y), except::DimensionError);
-  EXPECT_THROW(mean(var, Dim::Z), except::DimensionError);
+  EXPECT_THROW(const auto view = mean(var, Dim::X), except::DimensionError);
+  EXPECT_THROW(const auto view = mean(var, Dim::Y), except::DimensionError);
+  EXPECT_THROW(const auto view = mean(var, Dim::Z), except::DimensionError);
 }
 
 TEST(MeanTest, basic) {
@@ -38,6 +38,36 @@ TEST(MeanTest, basic) {
       Dims{Dim::X}, Shape{2}, units::Unit(units::m), Values{2.0, 3.0});
   EXPECT_EQ(mean(var, Dim::X), meanX);
   EXPECT_EQ(mean(var, Dim::Y), meanY);
+}
+
+TEST(MeanTest, basic_in_place) {
+  const auto var =
+      makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
+                           units::Unit(units::m), Values{1.0, 2.0, 3.0, 4.0});
+  auto meanX =
+      makeVariable<double>(Dims{Dim::Y}, Shape{2}, units::Unit(units::m));
+  auto meanY =
+      makeVariable<double>(Dims{Dim::X}, Shape{2}, units::Unit(units::m));
+  auto viewX = mean(var, Dim::X, meanX);
+  auto viewY = mean(var, Dim::Y, meanY);
+  const auto expectedX = makeVariable<double>(
+      Dims{Dim::Y}, Shape{2}, units::Unit(units::m), Values{1.5, 3.5});
+  const auto expectedY = makeVariable<double>(
+      Dims{Dim::X}, Shape{2}, units::Unit(units::m), Values{2.0, 3.0});
+  EXPECT_EQ(meanX, expectedX);
+  EXPECT_EQ(viewX, meanX);
+  EXPECT_EQ(viewX.underlying(), meanX);
+  EXPECT_EQ(meanY, expectedY);
+  EXPECT_EQ(viewY, meanY);
+  EXPECT_EQ(viewY.underlying(), meanY);
+}
+
+TEST(MeanTest, in_place_fail_output_dtype) {
+  const auto var =
+      makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
+                           units::Unit(units::m), Values{1.0, 2.0, 3.0, 4.0});
+  auto out = makeVariable<int>(Dims{Dim::Y}, Shape{2}, units::Unit(units::m));
+  EXPECT_THROW(const auto view = mean(var, Dim::X, out), except::UnitError);
 }
 
 TEST(MeanTest, masked_data_array) {
