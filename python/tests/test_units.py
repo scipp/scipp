@@ -22,17 +22,19 @@ class TestUnits(unittest.TestCase):
         self.assertEqual(repr(var1.unit), "m^2")
         var1.unit = sc.units.counts / sc.units.us
         self.assertEqual(repr(var1.unit), "counts \u03BCs^-1")
-        with self.assertRaisesRegex(RuntimeError, r"Unsupported unit as "
-                                    r"result of division: \(counts\) / \(m\)"):
+        with self.assertRaisesRegex(
+                RuntimeError, r"Unsupported unit as "
+                r"result of division: \(counts\) / \(m\)"):
             var1.unit = sc.units.counts / sc.units.m
         var1.unit = sc.units.m / sc.units.m * sc.units.counts
         self.assertEqual(repr(var1.unit), "counts")
         # The statement below fails because (sc.units.counts * sc.units.m) is
         # performed first and is not part of the currently supported set of
         # intermediate sc.units.
-        with self.assertRaisesRegex(RuntimeError, r"Unsupported unit as "
-                                    r"result of multiplication: "
-                                    r"\(counts\) \* \(m\)"):
+        with self.assertRaisesRegex(
+                RuntimeError, r"Unsupported unit as "
+                r"result of multiplication: "
+                r"\(counts\) \* \(m\)"):
             var1.unit = sc.units.counts * sc.units.m / sc.units.m
 
 

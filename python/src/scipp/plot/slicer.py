@@ -7,18 +7,27 @@ from .tools import parse_params
 from ..utils import name_with_unit, value_to_string
 from .._scipp.core import combine_masks, Variable, Dim, dtype
 
-
 # Other imports
 import numpy as np
 import matplotlib.ticker as ticker
 
 
 class Slicer:
-
-    def __init__(self, scipp_obj_dict=None, data_array=None, axes=None,
-                 values=None, variances=None, masks=None, cmap=None, log=None,
-                 vmin=None, vmax=None, color=None, button_options=None,
-                 volume=False, aspect=None):
+    def __init__(self,
+                 scipp_obj_dict=None,
+                 data_array=None,
+                 axes=None,
+                 values=None,
+                 variances=None,
+                 masks=None,
+                 cmap=None,
+                 log=None,
+                 vmin=None,
+                 vmax=None,
+                 color=None,
+                 button_options=None,
+                 volume=False,
+                 aspect=None):
 
         import ipywidgets as widgets
 
@@ -28,30 +37,42 @@ class Slicer:
         self.data_array = data_array
 
         # Member container for dict output
-        self.members = dict(widgets=dict(sliders=dict(), togglebuttons=dict(),
-                            togglebutton=dict(), buttons=dict(),
-                            labels=dict()))
+        self.members = dict(widgets=dict(sliders=dict(),
+                                         togglebuttons=dict(),
+                                         togglebutton=dict(),
+                                         buttons=dict(),
+                                         labels=dict()))
 
         # Parse parameters for values, variances and masks
         self.params = dict()
-        globs = {"cmap": cmap, "log": log, "vmin": vmin, "vmax": vmax,
-                 "color": color}
+        globs = {
+            "cmap": cmap,
+            "log": log,
+            "vmin": vmin,
+            "vmax": vmax,
+            "color": color
+        }
 
-        self.params["values"] = parse_params(params=values, globs=globs,
+        self.params["values"] = parse_params(params=values,
+                                             globs=globs,
                                              array=self.data_array.values)
 
         self.params["variances"] = {"show": False}
         if self.data_array.variances is not None:
             self.params["variances"].update(
-                parse_params(params=variances, defaults={"show": False},
+                parse_params(params=variances,
+                             defaults={"show": False},
                              globs=globs,
                              array=np.sqrt(self.data_array.variances)))
 
-        self.params["masks"] = parse_params(
-            params=masks, defaults={"cmap": "gray", "cbar": False},
-            globs=globs)
-        self.params["masks"]["show"] = (self.params["masks"]["show"] and
-                                        len(self.data_array.masks) > 0)
+        self.params["masks"] = parse_params(params=masks,
+                                            defaults={
+                                                "cmap": "gray",
+                                                "cbar": False
+                                            },
+                                            globs=globs)
+        self.params["masks"]["show"] = (self.params["masks"]["show"]
+                                        and len(self.data_array.masks) > 0)
         if self.params["masks"]["show"]:
             self.masks = combine_masks(self.data_array.masks,
                                        self.data_array.dims,
@@ -132,8 +153,8 @@ class Slicer:
                 description=descr,
                 continuous_update=True,
                 readout=False,
-                disabled=((i >= self.ndim-len(button_options)) and
-                          ((len(button_options) < 3) or volume)))
+                disabled=((i >= self.ndim - len(button_options))
+                          and ((len(button_options) < 3) or volume)))
             labvalue = self.make_slider_label(self.slider_x[dim], indx)
             if self.ndim == len(button_options):
                 self.slider[dim].layout.display = 'none'
@@ -142,7 +163,8 @@ class Slicer:
             self.lab[dim] = widgets.Label(value=labvalue)
             # Add one set of buttons per dimension
             self.buttons[dim] = widgets.ToggleButtons(
-                options=button_options, description='',
+                options=button_options,
+                description='',
                 value=button_values[i],
                 disabled=False,
                 button_style='',
@@ -165,8 +187,7 @@ class Slicer:
                     description="hide",
                     disabled=(button_values[i] is None),
                     button_style=button_style,
-                    layout={'width': "70px"}
-                )
+                    layout={'width': "70px"})
                 setattr(self.showhide[dim], "dim", dim)
                 setattr(self.showhide[dim], "value",
                         button_values[i] is not None)
@@ -181,8 +202,10 @@ class Slicer:
             # Add the row of slider + buttons
             row = [self.slider[dim], self.lab[dim], self.buttons[dim]]
             if (len(button_options) == 3) and (not volume):
-                row += [widgets.HTML(value="&nbsp;&nbsp;&nbsp;&nbsp;"),
-                        self.showhide[dim]]
+                row += [
+                    widgets.HTML(value="&nbsp;&nbsp;&nbsp;&nbsp;"),
+                    self.showhide[dim]
+                ]
             self.vbox.append(widgets.HBox(row))
 
             # Construct members object
@@ -193,9 +216,10 @@ class Slicer:
         if self.params["masks"]["show"]:
             self.masks_button = widgets.ToggleButton(
                 value=self.params["masks"]["show"],
-                description="Hide masks" if self.params["masks"]["show"] else
-                            "Show masks",
-                disabled=False, button_style="")
+                description="Hide masks"
+                if self.params["masks"]["show"] else "Show masks",
+                disabled=False,
+                button_style="")
             self.masks_button.observe(self.toggle_masks, names="value")
             self.vbox += [self.masks_button]
             self.members["widgets"]["togglebutton"]["masks"] = \
@@ -225,9 +249,12 @@ class Slicer:
                 tp = self.data_array.coords[dim].dtype
                 if tp == dtype.vector_3_float64:
                     make_fake_coord = True
-                    ticks = {"formatter": lambda x: "(" + ",".join(
-                                 [value_to_string(item, precision=2)
-                                  for item in x]) + ")"}
+                    ticks = {
+                        "formatter":
+                        lambda x: "(" + ",".join(
+                            [value_to_string(item, precision=2)
+                             for item in x]) + ")"
+                    }
                 elif tp == dtype.string:
                     make_fake_coord = True
                     ticks = {"formatter": lambda x: x}

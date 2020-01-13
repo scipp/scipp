@@ -9,8 +9,8 @@ import operator
 
 
 def test_type():
-    variable_slice = sc.Variable(
-        [Dim.X], np.arange(1, 10, dtype=float))[Dim.X, :]
+    variable_slice = sc.Variable([Dim.X], np.arange(1, 10,
+                                                    dtype=float))[Dim.X, :]
     assert type(variable_slice) == sc.VariableProxy
 
 

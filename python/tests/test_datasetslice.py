@@ -10,7 +10,6 @@ import operator
 
 
 class TestDatasetSlice(unittest.TestCase):
-
     def setUp(self):
         d = sc.Dataset()
         d[sc.Coord.X] = ([sc.Dim.X], np.arange(10))
@@ -35,22 +34,22 @@ class TestDatasetSlice(unittest.TestCase):
 
     def test_slice_back_ommit_range(self):
         sl = self._d[sc.Dim.X, 1:-1][sc.Data.Value, "a"].numpy
-        ref = np. array([1, 2, 3, 4, 5, 6, 7, 8], dtype=np.int64)
+        ref = np.array([1, 2, 3, 4, 5, 6, 7, 8], dtype=np.int64)
         self.assertEqual(ref.shape, sl.shape)
         self.assertEqual(np.allclose(sl, ref), True)
         # omitting range end
         sl = self._d[sc.Dim.X, 1:][sc.Data.Value, "b"].numpy
-        ref = np. array([1, 2, 3, 4, 5, 6, 7, 8, 9], dtype=np.int64)
+        ref = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9], dtype=np.int64)
         self.assertEqual(ref.shape, sl.shape)
         self.assertEqual(np.allclose(sl, ref), True)
         # omitting range begin
         sl = self._d[sc.Dim.X, :-1][sc.Data.Value, "a"].numpy
-        ref = np. array([0, 1, 2, 3, 4, 5, 6, 7, 8], dtype=np.int64)
+        ref = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8], dtype=np.int64)
         self.assertEqual(ref.shape, sl.shape)
         self.assertEqual(np.allclose(sl, ref), True)
         # omitting range both begin and end
         sl = self._d[sc.Dim.X, :][sc.Data.Value, "b"].numpy
-        ref = np. array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9], dtype=np.int64)
+        ref = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9], dtype=np.int64)
         self.assertEqual(ref.shape, sl.shape)
         self.assertEqual(np.allclose(sl, ref), True)
 
@@ -65,8 +64,8 @@ class TestDatasetSlice(unittest.TestCase):
         # Create slice
         ds_slice = self._d[sc.Dim.X, subset]
         # Test via variable_slice
-        self.assertEqual(len(ds_slice[sc.Coord.X]), len(
-            range(subset.start, subset.stop, subset.step)))
+        self.assertEqual(len(ds_slice[sc.Coord.X]),
+                         len(range(subset.start, subset.stop, subset.step)))
 
     def test_copy(self):
         import copy
@@ -86,14 +85,13 @@ class TestDatasetSlice(unittest.TestCase):
         self.assertNotEqual(s1[sc.Data.Value, "A"], s2[sc.Data.Value, "A"])
         self.assertNotEqual(s3[sc.Data.Value, "A"], s2[sc.Data.Value, "A"])
 
-    def _apply_test_op_rhs_ds_slice(
-        self,
-        op,
-        a,
-        b,
-        data,
-        lh_var_name="a",
-            rh_var_name="b"):
+    def _apply_test_op_rhs_ds_slice(self,
+                                    op,
+                                    a,
+                                    b,
+                                    data,
+                                    lh_var_name="a",
+                                    rh_var_name="b"):
         # Assume numpy operations are correct as comparitor
         with np.errstate(invalid='ignore'):
             op(data, b[sc.Data.Value, rh_var_name].numpy)
@@ -101,14 +99,13 @@ class TestDatasetSlice(unittest.TestCase):
         # Desired nan comparisons
         np.testing.assert_equal(a[sc.Data.Value, lh_var_name].numpy, data)
 
-    def _apply_test_op_rhs_variable(
-        self,
-        op,
-        a,
-        b,
-        data,
-        lh_var_name="a",
-            rh_var_name="b"):
+    def _apply_test_op_rhs_variable(self,
+                                    op,
+                                    a,
+                                    b,
+                                    data,
+                                    lh_var_name="a",
+                                    rh_var_name="b"):
         # Assume numpy operations are correct as comparitor
         op(data, b.numpy)
         op(a, b)
@@ -129,24 +126,27 @@ class TestDatasetSlice(unittest.TestCase):
 
         c = a + b
         # Variables "a" and "b" added despite different names
-        self.assertTrue(np.array_equal(
-            c[sc.Data.Value, "a"].numpy, data + data))
-        self.assertTrue(np.array_equal(
-            c[sc.Data.Variance, "a"].numpy, variance + variance))
+        self.assertTrue(
+            np.array_equal(c[sc.Data.Value, "a"].numpy, data + data))
+        self.assertTrue(
+            np.array_equal(c[sc.Data.Variance, "a"].numpy,
+                           variance + variance))
 
         c = a - b
         # Variables "a" and "b" subtracted despite different names
-        self.assertTrue(np.array_equal(
-            c[sc.Data.Value, "a"].numpy, data - data))
-        self.assertTrue(np.array_equal(
-            c[sc.Data.Variance, "a"].numpy, variance + variance))
+        self.assertTrue(
+            np.array_equal(c[sc.Data.Value, "a"].numpy, data - data))
+        self.assertTrue(
+            np.array_equal(c[sc.Data.Variance, "a"].numpy,
+                           variance + variance))
 
         c = a * b
         # Variables "a" and "b" multiplied despite different names
-        self.assertTrue(np.array_equal(
-            c[sc.Data.Value, "a"].numpy, data * data))
-        self.assertTrue(np.array_equal(
-            c[sc.Data.Variance, "a"].numpy, variance * (data * data) * 2))
+        self.assertTrue(
+            np.array_equal(c[sc.Data.Value, "a"].numpy, data * data))
+        self.assertTrue(
+            np.array_equal(c[sc.Data.Variance, "a"].numpy,
+                           variance * (data * data) * 2))
 
         c = a / b
         # Variables "a" and "b" divided despite different names
@@ -169,16 +169,16 @@ class TestDatasetSlice(unittest.TestCase):
         b_var = sc.Variable([sc.Dim.X], data)
 
         c = a + b_var
-        self.assertTrue(np.array_equal(
-            c[sc.Data.Value, "a"].numpy, data + data))
+        self.assertTrue(
+            np.array_equal(c[sc.Data.Value, "a"].numpy, data + data))
 
         c = a - b_var
-        self.assertTrue(np.array_equal(
-            c[sc.Data.Value, "a"].numpy, data - data))
+        self.assertTrue(
+            np.array_equal(c[sc.Data.Value, "a"].numpy, data - data))
 
         c = a * b_var
-        self.assertTrue(np.array_equal(
-            c[sc.Data.Value, "a"].numpy, data * data))
+        self.assertTrue(
+            np.array_equal(c[sc.Data.Value, "a"].numpy, data * data))
 
         c = a / b_var
         with np.errstate(invalid='ignore'):
@@ -199,29 +199,29 @@ class TestDatasetSlice(unittest.TestCase):
         data = np.copy(a[sc.Data.Value, "a"].numpy)
 
         c = a + 2.0
-        self.assertTrue(np.array_equal(
-            c[sc.Data.Value, "a"].numpy, data + 2.0))
+        self.assertTrue(np.array_equal(c[sc.Data.Value, "a"].numpy,
+                                       data + 2.0))
         c = a - b
-        self.assertTrue(np.array_equal(
-            c[sc.Data.Value, "a"].numpy, data - data))
+        self.assertTrue(
+            np.array_equal(c[sc.Data.Value, "a"].numpy, data - data))
         c = a - 2.0
-        self.assertTrue(np.array_equal(
-            c[sc.Data.Value, "a"].numpy, data - 2.0))
+        self.assertTrue(np.array_equal(c[sc.Data.Value, "a"].numpy,
+                                       data - 2.0))
         c = a * 2.0
-        self.assertTrue(np.array_equal(
-            c[sc.Data.Value, "a"].numpy, data * 2.0))
+        self.assertTrue(np.array_equal(c[sc.Data.Value, "a"].numpy,
+                                       data * 2.0))
         c = a / 2.0
-        self.assertTrue(np.array_equal(
-            c[sc.Data.Value, "a"].numpy, data / 2.0))
+        self.assertTrue(np.array_equal(c[sc.Data.Value, "a"].numpy,
+                                       data / 2.0))
         c = 2.0 + a
-        self.assertTrue(np.array_equal(
-            c[sc.Data.Value, "a"].numpy, data + 2.0))
+        self.assertTrue(np.array_equal(c[sc.Data.Value, "a"].numpy,
+                                       data + 2.0))
         c = 2.0 - a
-        self.assertTrue(np.array_equal(
-            c[sc.Data.Value, "a"].numpy, 2.0 - data))
+        self.assertTrue(np.array_equal(c[sc.Data.Value, "a"].numpy,
+                                       2.0 - data))
         c = 2.0 * a
-        self.assertTrue(np.array_equal(
-            c[sc.Data.Value, "a"].numpy, data * 2.0))
+        self.assertTrue(np.array_equal(c[sc.Data.Value, "a"].numpy,
+                                       data * 2.0))
 
         self._apply_test_op_rhs_ds_slice(operator.iadd, a, b, data)
         self._apply_test_op_rhs_ds_slice(operator.isub, a, b, data)
@@ -241,8 +241,8 @@ class TestDatasetSlice(unittest.TestCase):
         a2 = d.subset["a"]
         d3 = sc.Dataset()
         d3[sc.Coord.X] = ([sc.Dim.X], np.arange(10))
-        d3[sc.Data.Value, "a"] = (
-            [sc.Dim.X], np.arange(1, 11, dtype='float64'))
+        d3[sc.Data.Value, "a"] = ([sc.Dim.X], np.arange(1, 11,
+                                                        dtype='float64'))
         a3 = d3.subset["a"]
         self.assertEqual(d, d2)
         self.assertEqual(d2, d)
@@ -269,19 +269,19 @@ class TestDatasetSlice(unittest.TestCase):
         arr1 = np.arange(N * M).reshape(N, M).astype(np.float64) + 1
         d1[sc.Data.Value, "A"] = ([sc.Dim.X, sc.Dim.Y], arr1)
         d1 = d1[sc.Dim.X, 1:2]
-        self.assertEqual(list(d1[sc.Data.Value, "A"].data), [
-                         5.0, 6.0, 7.0, 8.0])
+        self.assertEqual(list(d1[sc.Data.Value, "A"].data),
+                         [5.0, 6.0, 7.0, 8.0])
 
     def test_set_dataset_slice_items(self):
         d = self._d.copy()
         d[sc.Data.Value, "a"][sc.Dim.X, 0:2] += \
             d[sc.Data.Value, "b"][sc.Dim.X, 1:3]
-        self.assertEqual(list(d[sc.Data.Value, "a"].data), [
-                         1, 3, 2, 3, 4, 5, 6, 7, 8, 9])
+        self.assertEqual(list(d[sc.Data.Value, "a"].data),
+                         [1, 3, 2, 3, 4, 5, 6, 7, 8, 9])
         d[sc.Data.Value, "a"][sc.Dim.X, 6] += \
             d[sc.Data.Value, "b"][sc.Dim.X, 8]
-        self.assertEqual(list(d[sc.Data.Value, "a"].data), [
-                         1, 3, 2, 3, 4, 5, 14, 7, 8, 9])
+        self.assertEqual(list(d[sc.Data.Value, "a"].data),
+                         [1, 3, 2, 3, 4, 5, 14, 7, 8, 9])
 
 
 if __name__ == '__main__':

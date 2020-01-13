@@ -50,8 +50,7 @@ class TestMantidConversion(unittest.TestCase):
         binned_mantid = mantidcompat.convert_Workspace2D_to_dataarray(ws)
 
         target_tof = binned_mantid.coords[sc.Dim.Tof]
-        d = mantidcompat.convertEventWorkspace_to_dataarray(
-            eventWS, False)
+        d = mantidcompat.convertEventWorkspace_to_dataarray(eventWS, False)
         binned = sc.histogram(d, target_tof)
 
         delta = sc.sum(binned_mantid - binned, sc.Dim.Spectrum)
@@ -69,8 +68,7 @@ class TestMantidConversion(unittest.TestCase):
                                  EMode="Elastic")
         converted_mantid = mantidcompat.convert_Workspace2D_to_dataarray(ws)
 
-        da = mantidcompat.convertEventWorkspace_to_dataarray(
-            eventWS, False)
+        da = mantidcompat.convertEventWorkspace_to_dataarray(eventWS, False)
         da = sc.histogram(da, target_tof)
         d = sc.Dataset(da)
         converted = sc.neutron.convert(d, sc.Dim.Tof, sc.Dim.Wavelength)
@@ -112,19 +110,18 @@ class TestMantidConversion(unittest.TestCase):
 
         ds = mantidcompat.convert_Workspace2D_to_dataarray(masked_ws)
 
-        np.testing.assert_array_equal(
-            ds.masks["bin"].values[0:3],
-            [True, True, True])
+        np.testing.assert_array_equal(ds.masks["bin"].values[0:3],
+                                      [True, True, True])
 
-        np.testing.assert_array_equal(
-            ds.masks["spectrum"].values[0:3],
-            [True, True, True])
+        np.testing.assert_array_equal(ds.masks["spectrum"].values[0:3],
+                                      [True, True, True])
 
     def test_Workspace2D_not_common_bins_masks(self):
         import mantid.simpleapi as mantid
         eventWS = mantid.CloneWorkspace(self.base_event_ws)
         ws = mantid.Rebin(eventWS, 10000, PreserveEvents=False)
-        ws = mantid.ConvertUnits(ws, "Wavelength",
+        ws = mantid.ConvertUnits(ws,
+                                 "Wavelength",
                                  EMode="Direct",
                                  EFixed=0.1231)
 
@@ -136,18 +133,15 @@ class TestMantidConversion(unittest.TestCase):
         ds = mantidcompat.convert_Workspace2D_to_dataarray(masked_ws)
 
         # bin with 3 masks
-        np.testing.assert_array_equal(
-            ds.masks["bin"].values[0],
-            [True, True, False, False, False])
+        np.testing.assert_array_equal(ds.masks["bin"].values[0],
+                                      [True, True, False, False, False])
 
         # bin with only 2
-        np.testing.assert_array_equal(
-            ds.masks["bin"].values[31],
-            [True, True, True, False, False])
+        np.testing.assert_array_equal(ds.masks["bin"].values[31],
+                                      [True, True, True, False, False])
 
-        np.testing.assert_array_equal(
-            ds.masks["spectrum"].values[0:3],
-            [True, True, True])
+        np.testing.assert_array_equal(ds.masks["spectrum"].values[0:3],
+                                      [True, True, True])
 
     def test_Workspace2D_with_separate_monitors(self):
         filename = MantidDataHelper.find_file("WISH00016748.raw")
@@ -180,8 +174,7 @@ class TestMantidConversion(unittest.TestCase):
         filename = MantidDataHelper.find_file("CNCS_51936_event.nxs")
         ds = mantidcompat.load(filename, mantid_args={"LoadMonitors": True})
         attrs = ds.attrs.keys()
-        expected_monitor_attrs = set(
-            ["monitor2", "monitor3"])
+        expected_monitor_attrs = set(["monitor2", "monitor3"])
         assert expected_monitor_attrs.issubset(attrs)
         for monitor_name in expected_monitor_attrs:
             monitor = ds.attrs[monitor_name].value

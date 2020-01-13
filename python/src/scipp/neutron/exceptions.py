@@ -3,6 +3,6 @@
 # @author Mads Bertelsen
 
 MantidNotFoundError = ImportError(
-      "Mantid Python API was not found, please install Mantid framework "
-      "as detailed in the installation instructions (https://scipp."
-      "readthedocs.io/en/latest/getting-started/installation.html)")
+    "Mantid Python API was not found, please install Mantid framework "
+    "as detailed in the installation instructions (https://scipp."
+    "readthedocs.io/en/latest/getting-started/installation.html)")
