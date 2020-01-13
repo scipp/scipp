@@ -37,7 +37,7 @@ build_script:
 - cmake --build . --config %CONFIGURATION% --target install all-tests
 - echo build finished %time%
 - clcache.exe -s
-- python appveyor\checksum_clcache.py 
+- python ..\appveyor\checksum_clcache.py 
 
 test_script:
 - echo tests started %time%
