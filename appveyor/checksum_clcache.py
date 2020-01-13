@@ -13,7 +13,7 @@ def stamp_cache():
     cache_dir = os.path.join(os.path.expanduser('~'), 'clcache')
     check_sum = checksumdir.dirhash(cache_dir, excluded_extensions=['hash'])
     # Write empty file with check_sum as name
-    f = open(os.path.join(cache_dir, '{}.hash'.format(check_sum), 'w'))
+    f = open(os.path.join(cache_dir, '{}.hash'.format(check_sum)), 'w')
     f.close()
     # Diagnostic
     print('cache hash', check_sum)
