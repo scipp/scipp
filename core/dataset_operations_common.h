@@ -44,21 +44,33 @@ DataArray apply_and_drop_dim_impl(const DataConstProxy &a, Func func,
 /// otherwise.
 template <class Func>
 DataArray apply_or_copy_dim(const DataConstProxy &a, Func func, const Dim dim) {
+  Dimensions drop({dim, a.dims()[dim]});
   std::map<Dim, Variable> coords;
+  // Note the `copy` call, ensuring that the return value of the ternary
+  // operator can be moved. Without `copy`, the result of `func` is always
+  // copied.
   for (auto &&[d, coord] : a.coords())
-    coords.emplace(d, coord.dims().contains(dim) ? func(coord, dim) : coord);
+    if (coord.dims() != drop)
+      coords.emplace(d, coord.dims().contains(dim) ? func(coord, dim)
+                                                   : copy(coord));
 
   std::map<std::string, Variable> labels;
   for (auto &&[name, label] : a.labels())
-    labels.emplace(name, label.dims().contains(dim) ? func(label, dim) : label);
+    if (label.dims() != drop)
+      labels.emplace(name, label.dims().contains(dim) ? func(label, dim)
+                                                      : copy(label));
 
   std::map<std::string, Variable> attrs;
   for (auto &&[name, attr] : a.attrs())
-    attrs.emplace(name, attr.dims().contains(dim) ? func(attr, dim) : attr);
+    if (attr.dims() != drop)
+      attrs.emplace(name,
+                    attr.dims().contains(dim) ? func(attr, dim) : copy(attr));
 
   std::map<std::string, Variable> masks;
   for (auto &&[name, mask] : a.masks())
-    masks.emplace(name, mask.dims().contains(dim) ? func(mask, dim) : mask);
+    if (mask.dims() != drop)
+      masks.emplace(name,
+                    mask.dims().contains(dim) ? func(mask, dim) : copy(mask));
 
   return DataArray(a.hasData() ? func(a.data(), dim)
                                : std::optional<Variable>(),
