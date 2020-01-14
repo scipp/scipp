@@ -14,6 +14,15 @@ def test_type():
     assert type(variable_slice) == sc.VariableProxy
 
 
+def test_astype():
+    variable_slice = sc.Variable(
+        [Dim.X], values=np.arange(1, 10, dtype=int))[Dim.X, :]
+    assert variable_slice.dtype == sc.dtype.int64
+
+    var_as_float = variable_slice.astype(sc.dtype.float64)
+    assert var_as_float.dtype == sc.dtype.float64
+
+
 def apply_test_op(op, a, b, data):
     op(a, b)
     # Assume numpy operations are correct as comparitor

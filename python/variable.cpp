@@ -233,6 +233,19 @@ void bind_init_list(py::class_<Variable> &c) {
         py::arg("dtype") = py::none());
 }
 
+template <class T, class... Ignored>
+void bind_astype(py::class_<T, Ignored...> &c) {
+  c.def("astype",
+        [](const T &self, const DType type) { return astype(self, type); },
+        py::call_guard<py::gil_scoped_release>(),
+        R"(
+        Converts a Variable to a different type.
+
+        :raises: If the variable cannot be converted to the requested dtype.
+        :return: New Variable with specified dtype.
+        :rtype: Variable)");
+}
+
 void init_variable(py::module &m) {
   py::class_<Variable> variable(m, "Variable",
                                 R"(
@@ -304,6 +317,9 @@ void init_variable(py::module &m) {
            py::is_operator())
       .def("__rmul__", [](VariableProxy &a, double &b) { return a * b; },
            py::is_operator());
+
+  bind_astype(variable);
+  bind_astype(variableProxy);
 
   bind_slice_methods(variable);
   bind_slice_methods(variableProxy);
