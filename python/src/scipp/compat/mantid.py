@@ -33,10 +33,21 @@ def make_bin_masks(common_bins, spec_dim, dim, num_bins, num_spectra):
 
 
 def make_component_info(ws):
-    sourcePos = ws.componentInfo().sourcePosition()
-    samplePos = ws.componentInfo().samplePosition()
+    component_info = ws.componentInfo()
+
+    if component_info.hasSource():
+        sourcePos = component_info.sourcePosition()
+    else:
+        sourcePos = None
+
+    if component_info.hasSample():
+        samplePos = component_info.samplePosition()
+    else:
+        samplePos = None
 
     def as_var(pos):
+        if pos is None:
+            return pos
         return sc.Variable(value=np.array(get_pos(pos)),
                            dtype=sc.dtype.vector_3_float64,
                            unit=sc.units.m)
@@ -220,8 +231,6 @@ def _convert_MatrixWorkspace_info(ws):
         },
         "labels": {
             "position": pos,
-            "source_position": source_pos,
-            "sample_position": sample_pos,
             "detector_info": det_info
         },
         "masks": {},
@@ -230,6 +239,11 @@ def _convert_MatrixWorkspace_info(ws):
             "sample": make_sample(ws)
         },
     }
+    if source_pos is not None:
+        info["labels"]["source_position"] = source_pos
+
+    if sample_pos is not None:
+        info["labels"]["sample_position"] = sample_pos
 
     if ws.detectorInfo().hasMaskedDetectors():
         spectrum_info = ws.spectrumInfo()
@@ -673,6 +687,15 @@ def to_workspace_2d(x, y, e, coord_dim):
 
 def fit(ws, function, workspace_index, start_x, end_x):
     """
+    Performs a fit on the workspace.
+
+    :param ws: The workspace on which the fit will be performed
+    :param function: The function used for the fit. This is anything
+                     that mantid.Fit's Function parameter can handle.
+    :param workspace_index: Workspace index which will be fitted.
+    :param start_x: Start X for the fit
+    :param end_x: End X for the fit
+    :returns: Dataset containing all of Fit's outputs
     """
     try:
         import mantid.simpleapi as mantid
@@ -684,9 +707,23 @@ def fit(ws, function, workspace_index, start_x, end_x):
 
     fit = mantid.Fit(Function=function,
                      InputWorkspace=ws,
-                     WorkspaceIndex=workspace_index, StartX=start_x, EndX=end_x,
+                     WorkspaceIndex=workspace_index,
+                     StartX=start_x, EndX=end_x,
                      CreateOutput=True)
-    result_ds = sc.Dataset(
+    return sc.Dataset(
         data={
-            'out_workspace': convert_Workspace2D_to_dataarray(fit.OutputWorkspace)}
+            'workspace': sc.Variable(
+                convert_Workspace2D_to_dataarray(fit.OutputWorkspace)),
+            'parameters': sc.Variable(
+                convert_TableWorkspace_to_dataset(fit.OutputParameters)),
+            'normalised_covariance_matrix': sc.Variable(
+                convert_TableWorkspace_to_dataset(
+                    fit.OutputNormalisedCovarianceMatrix)),
+        },
+        attrs={
+            'status': sc.Variable(fit.OutputStatus),
+            'chi2_over_DoF': sc.Variable(fit.OutputChi2overDoF),
+            'function': sc.Variable(str(fit.Function)),
+            'cost_function': sc.Variable(fit.CostFunction)
+        }
     )

@@ -307,6 +307,27 @@ class TestMantidConversion(unittest.TestCase):
             np.testing.assert_array_equal(
                 ws.readE(i), np.sqrt(y[Dim.Spectrum, i].values))
 
+    def test_fit_executes(self):
+        """
+        Tests that the fit executes, and the outputs
+        are moved into the dataset. Does not check the fit values.
+        """
+        from mantid.simpleapi import Fit, Load
+
+        ws = Load(MantidDataHelper.find_file(
+            "iris26176_graphite002_sqw.nxs"))
+
+        fit_ds = sc.compat.mantid.fit(ws,
+                                      'name=LinearBackground,A0=0,A1=1',
+                                      0, 0, 3)
+        self.assertTrue("workspace" in fit_ds)
+        self.assertTrue("normalised_covariance_matrix" in fit_ds)
+        self.assertTrue("parameters" in fit_ds)
+        self.assertTrue("cost_function" in fit_ds.attrs)
+        self.assertTrue("function" in fit_ds.attrs)
+        self.assertTrue("status" in fit_ds.attrs)
+        self.assertTrue("chi2_over_DoF" in fit_ds.attrs)
+
 
 @pytest.mark.skipif(not mantid_is_available(),
                     reason='Mantid framework is unavailable')
