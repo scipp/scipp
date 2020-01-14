@@ -2,9 +2,9 @@
 # Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Simon Heybrock
+import numpy as np
 import pytest
 
-import numpy as np
 import scipp as sc
 from scipp import Dim
 
@@ -752,6 +752,23 @@ def test_masks_delitem():
     assert d != dref
     del d.masks['masks']
     assert d == dref
+
+
+@pytest.mark.parametrize("dims, lengths",
+                         (([Dim.X], (sc.Dimensions.Sparse,)),
+                          ([Dim.X, Dim.Y], (10, sc.Dimensions.Sparse)),
+                          ([Dim.X, Dim.Y, Dim.Z],
+                           (10, 10, sc.Dimensions.Sparse)),
+                          ([Dim.X, Dim.Y, Dim.Z, Dim.Spectrum],
+                           (10, 10, 10, sc.Dimensions.Sparse)))
+                         )
+def test_sparse_dim_has_none_shape(dims, lengths):
+    ds = sc.Dataset(data={
+        "data": sc.Variable(dims, shape=lengths)
+    })
+
+    assert None in ds.shape
+    assert ds["data"].shape[-1] is None
 
 
 # def test_delitem(self):

@@ -2,12 +2,13 @@
 # Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Simon Heybrock
+import math
+
+import numpy as np
 import pytest
 
-import math
 import scipp as sc
 from scipp import Dim
-import numpy as np
 
 
 def make_variables():
@@ -988,3 +989,17 @@ def test_atan_out():
     out = sc.atan(x=var, out=var)
     assert var == expected
     assert out == expected
+
+
+@pytest.mark.parametrize("dims, lengths",
+                         (([Dim.X], (sc.Dimensions.Sparse,)),
+                          ([Dim.X, Dim.Y], (10, sc.Dimensions.Sparse)),
+                          ([Dim.X, Dim.Y, Dim.Z],
+                           (10, 10, sc.Dimensions.Sparse)),
+                          ([Dim.X, Dim.Y, Dim.Z, Dim.Spectrum],
+                           (10, 10, 10, sc.Dimensions.Sparse)))
+                         )
+def test_sparse_dim_has_none_shape(dims, lengths):
+    data = sc.Variable(dims, shape=lengths)
+
+    assert data.shape[-1] is None
