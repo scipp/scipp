@@ -33,10 +33,10 @@ def test_basic(dims, lengths):
     html = BeautifulSoup(make_html(data_array), features="html.parser")
     sections = html.find_all(class_="xr-section-item")
     assert len(sections) == 6
-    for actual_section, expected_section in zip(
-            sections,
-        ["Dimensions", "Coordinates", "Labels", "Data", "Masks", "Attributes"
-         ]):
+    expected_sections = [
+        "Dimensions", "Coordinates", "Labels", "Data", "Masks", "Attributes"
+    ]
+    for actual_section, expected_section in zip(sections, expected_sections):
         assert expected_section in actual_section.text
 
     dim_section = sections.pop(0)
@@ -82,10 +82,10 @@ def test_sparse(dims, lengths):
     sections = html.find_all(class_="xr-section-item")
 
     assert len(sections) == 6
-    for actual_section, expected_section in zip(
-            sections,
-        ["Dimensions", "Coordinates", "Labels", "Data", "Masks", "Attributes"
-         ]):
+    expected_sections = [
+        "Dimensions", "Coordinates", "Labels", "Data", "Masks", "Attributes"
+    ]
+    for actual_section, expected_section in zip(sections, expected_sections):
         assert expected_section in actual_section.text
 
     data_section = sections.pop(3)
@@ -138,10 +138,10 @@ def test_bin_edge(dims, lengths):
     html = BeautifulSoup(make_html(data_array), features="html.parser")
     sections = html.find_all(class_="xr-section-item")
     assert len(sections) == 6
-    for actual_section, expected_section in zip(
-            sections,
-        ["Dimensions", "Coordinates", "Labels", "Data", "Masks", "Attributes"
-         ]):
+    expected_sections = [
+        "Dimensions", "Coordinates", "Labels", "Data", "Masks", "Attributes"
+    ]
+    for actual_section, expected_section in zip(sections, expected_sections):
         assert expected_section in actual_section.text
 
     attr_section = sections.pop(len(sections) - 1)
@@ -198,11 +198,12 @@ def test_bin_edge_and_sparse(dims, lengths):
 
     html = BeautifulSoup(make_html(data_array), features="html.parser")
     sections = html.find_all(class_="xr-section-item")
+
+    expected_sections = [
+        "Dimensions", "Coordinates", "Labels", "Data", "Masks", "Attributes"
+    ]
     assert len(sections) == 6
-    for actual_section, expected_section in zip(
-            sections,
-        ["Dimensions", "Coordinates", "Labels", "Data", "Masks", "Attributes"
-         ]):
+    for actual_section, expected_section in zip(sections, expected_sections):
         assert expected_section in actual_section.text
 
     attr_section = sections.pop(len(sections) - 1)
