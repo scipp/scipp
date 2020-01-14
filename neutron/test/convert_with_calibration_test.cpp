@@ -53,8 +53,9 @@ TEST(ConvertWithCaliabrationDataArray, data_array) {
   const auto tof = makeTofDataForUnitConversion();
   const auto cal = makeCalTable();
 
-  for (const auto &[name, data] : tof)
-    EXPECT_NO_THROW(diffraction::convert_with_calibration(copy(data), cal));
+  for (const auto &item : tof)
+    EXPECT_NO_THROW(
+        diffraction::convert_with_calibration(copy(data.second), cal));
 }
 
 TEST(ConvertWithCaliabrationDataArray, dataset) {
