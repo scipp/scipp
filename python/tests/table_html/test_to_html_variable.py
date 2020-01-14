@@ -1,4 +1,3 @@
-
 import numpy as np
 import pytest
 from bs4 import BeautifulSoup
@@ -13,20 +12,19 @@ from .common import (UNIT_CSS_CLASS, VALUE_CSS_CLASS, VAR_NAME_CSS_CLASS,
 
 
 @pytest.mark.parametrize("dims, lengths",
-                         (([Dim.X], (10,)),
-                          ([Dim.X, Dim.Y], (10, 10)),
-                          ([Dim.X, Dim.Y, Dim.Z], (10, 10, 10)),
-                          ([Dim.X, Dim.Y, Dim.Z, Dim.Spectrum],
-                           (10, 10, 10, 10)))
-                         )
+                         (([Dim.X], (10, )), ([Dim.X, Dim.Y], (10, 10)),
+                          ([Dim.X, Dim.Y, Dim.Z],
+                           (10, 10, 10)), ([Dim.X, Dim.Y, Dim.Z, Dim.Spectrum],
+                                           (10, 10, 10, 10))))
 def test_basic(dims, lengths):
     in_unit = sc.units.m
     in_dtype = sc.dtype.float32
 
-    var = sc.Variable(
-        dims, unit=in_unit, dtype=in_dtype,
-        values=np.random.rand(*lengths),
-        variances=np.random.rand(*lengths))
+    var = sc.Variable(dims,
+                      unit=in_unit,
+                      dtype=in_dtype,
+                      values=np.random.rand(*lengths),
+                      variances=np.random.rand(*lengths))
 
     html = BeautifulSoup(make_html(var), features="html.parser")
 
@@ -47,12 +45,14 @@ def test_basic(dims, lengths):
 
 def test_data_not_elided():
     dims = [Dim.X]
-    lengths = (3,)
+    lengths = (3, )
     in_unit = sc.units.m
     in_dtype = sc.dtype.float32
 
-    var = sc.Variable(
-        dims, unit=in_unit, values=np.random.rand(*lengths), dtype=in_dtype)
+    var = sc.Variable(dims,
+                      unit=in_unit,
+                      values=np.random.rand(*lengths),
+                      dtype=in_dtype)
 
     html = BeautifulSoup(make_html(var), features="html.parser")
     assert_common(html, in_dtype)
@@ -72,7 +72,8 @@ def test_empty_sparse_1d_variable():
     in_dtype = sc.dtype.float32
     in_unit = sc.units.K
     var = sc.Variable([Dim.X], [sc.Dimensions.Sparse],
-                      unit=in_unit, dtype=in_dtype)
+                      unit=in_unit,
+                      dtype=in_dtype)
 
     html = BeautifulSoup(make_html(var), features="html.parser")
     assert_common(html, in_dtype)
@@ -89,7 +90,8 @@ def test_sparse_1d_variable():
     in_dtype = sc.dtype.float32
     in_unit = sc.units.deg
     var = sc.Variable([Dim.X], [sc.Dimensions.Sparse],
-                      unit=in_unit, dtype=in_dtype)
+                      unit=in_unit,
+                      dtype=in_dtype)
 
     length = 10
     var.values.extend(np.arange(length))
@@ -110,13 +112,11 @@ def test_sparse_1d_variable():
 
 
 @pytest.mark.parametrize("dims, lengths",
-                         (
-                             ([Dim.X, Dim.Y], (10, sc.Dimensions.Sparse)),
-                             ([Dim.X, Dim.Y, Dim.Z],
-                              (10, 10, sc.Dimensions.Sparse)),
-                             ([Dim.X, Dim.Y, Dim.Z, Dim.Spectrum],
-                                 (10, 10, 10, sc.Dimensions.Sparse)))
-                         )
+                         (([Dim.X, Dim.Y], (10, sc.Dimensions.Sparse)),
+                          ([Dim.X, Dim.Y, Dim.Z],
+                           (10, 10, sc.Dimensions.Sparse)),
+                          ([Dim.X, Dim.Y, Dim.Z, Dim.Spectrum],
+                           (10, 10, 10, sc.Dimensions.Sparse))))
 def test_sparse(dims, lengths):
     in_dtype = sc.dtype.float32
     in_unit = sc.units.deg

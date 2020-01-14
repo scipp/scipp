@@ -97,22 +97,27 @@ def assert_dims_section(data, dim_section, sparse=False):
             else 'Sparse' in dim_list[0].text
 
 
-def assert_section(section, name, dims, in_dtype, in_unit,
+def assert_section(section,
+                   name,
+                   dims,
+                   in_dtype,
+                   in_unit,
                    has_sparse=False,
                    has_bin_edges=False):
     if isinstance(name, str):
-        return _assert_section_single(section, name, dims,
-                                      in_dtype, in_unit,
-                                      has_sparse,
-                                      has_bin_edges)
+        return _assert_section_single(section, name, dims, in_dtype, in_unit,
+                                      has_sparse, has_bin_edges)
     elif isinstance(name, list):
-        return _assert_section_multiple(section, name,
-                                        dims, in_dtype, in_unit,
+        return _assert_section_multiple(section, name, dims, in_dtype, in_unit,
                                         has_sparse if has_sparse else [],
                                         has_bin_edges if has_bin_edges else [])
 
 
-def _assert_section_single(section, name, dims, in_dtype, in_unit,
+def _assert_section_single(section,
+                           name,
+                           dims,
+                           in_dtype,
+                           in_unit,
                            has_sparse=False,
                            has_bin_edges=False):
     name_html = section.find_all(class_=DATASET_NAME_CSS_CLASS)
@@ -126,8 +131,10 @@ def _assert_section_single(section, name, dims, in_dtype, in_unit,
     assert 0 < len(dims_html) < 2, \
         f"Unexpected number of dimension tags found: {len(name_html)}."\
         "Expected: 1."
-    assert_dims(dims, dims_html[0].text,
-                has_sparse=has_sparse, has_bin_edges=has_bin_edges)
+    assert_dims(dims,
+                dims_html[0].text,
+                has_sparse=has_sparse,
+                has_bin_edges=has_bin_edges)
     assert_dtype(in_dtype, section.find_all(class_=DTYPE_CSS_CLASS))
     assert_unit(in_unit, section.find_all(class_=UNIT_CSS_CLASS))
     value = section.find_all(class_=VALUE_CSS_CLASS)
@@ -137,7 +144,11 @@ def _assert_section_single(section, name, dims, in_dtype, in_unit,
     assert "..." in value[0].text
 
 
-def _assert_section_multiple(section, name, dims, in_dtype, in_unit,
+def _assert_section_multiple(section,
+                             name,
+                             dims,
+                             in_dtype,
+                             in_unit,
                              has_sparse=[],
                              has_bin_edges=[]):
     name_html = section.find_all(class_=DATASET_NAME_CSS_CLASS)
@@ -151,8 +162,10 @@ def _assert_section_multiple(section, name, dims, in_dtype, in_unit,
 
     dims_html = section.find_all(class_=DIMS_CSS_CLASS)
     for dim, sparse, bin_edges in zip(dims, has_sparse, has_bin_edges):
-        assert_dims(dim, dims_html[0].text,
-                    has_sparse=sparse, has_bin_edges=bin_edges)
+        assert_dims(dim,
+                    dims_html[0].text,
+                    has_sparse=sparse,
+                    has_bin_edges=bin_edges)
 
     for dtype in section.find_all(class_=DTYPE_CSS_CLASS):
         assert_dtype(in_dtype, [dtype])

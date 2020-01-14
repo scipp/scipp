@@ -992,13 +992,12 @@ def test_atan_out():
 
 
 @pytest.mark.parametrize("dims, lengths",
-                         (([Dim.X], (sc.Dimensions.Sparse,)),
+                         (([Dim.X], (sc.Dimensions.Sparse, )),
                           ([Dim.X, Dim.Y], (10, sc.Dimensions.Sparse)),
                           ([Dim.X, Dim.Y, Dim.Z],
                            (10, 10, sc.Dimensions.Sparse)),
                           ([Dim.X, Dim.Y, Dim.Z, Dim.Spectrum],
-                           (10, 10, 10, sc.Dimensions.Sparse)))
-                         )
+                           (10, 10, 10, sc.Dimensions.Sparse))))
 def test_sparse_dim_has_none_shape(dims, lengths):
     data = sc.Variable(dims, shape=lengths)
 

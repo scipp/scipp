@@ -76,7 +76,9 @@ def _get_sparse(var, variances, ellipsis_after, summary=False):
         if summary:
             return [SPARSE_PREFIX.format(size)]
         else:
-            return [_format_array(var.values, size, ellipsis_after, size > 1000)]
+            return [
+                _format_array(var.values, size, ellipsis_after, size > 1000)
+            ]
     else:
         # Handles 2D and higher Variables with a sparse dimension
         size = var.shape[0]
@@ -154,11 +156,10 @@ def format_dims(dims, sizes, coords):
     }
 
     print("Dims and sizes:", dims, sizes)
-    dims_li = "".join(
-        f"<li><span{dim_css_map[dim]}>"
-        f"{escape(str(dim))}</span>: "
-        f"{size if size is not None else 'Sparse' }</li>"
-        for dim, size in zip(dims, sizes))
+    dims_li = "".join(f"<li><span{dim_css_map[dim]}>"
+                      f"{escape(str(dim))}</span>: "
+                      f"{size if size is not None else 'Sparse' }</li>"
+                      for dim, size in zip(dims, sizes))
 
     return f"<ul class='xr-dim-list'>{dims_li}</ul>"
 
@@ -267,13 +268,10 @@ def _make_dim_labels(dim, size, bin_edges=None):
 
 
 def _make_dim_str(var, bin_edges, add_dim_size=False):
-    dims_text = ', '.join(
-        '{}{}{}'.format(
-            str(dim),
-            _make_dim_labels(dim, size, bin_edges),
-            f': {size}' if add_dim_size and size is not None else ''
-        )
-        for dim, size in zip(var.dims, var.shape))
+    dims_text = ', '.join('{}{}{}'.format(
+        str(dim), _make_dim_labels(dim, size, bin_edges),
+        f': {size}' if add_dim_size and size is not None else '')
+                          for dim, size in zip(var.dims, var.shape))
     return dims_text
 
 
@@ -416,7 +414,7 @@ def summarize_data(dataset):
             var,
             has_attrs=has_attrs,
             bin_edges=find_bin_edges(var, dataset) if has_attrs else None))
-        for name, var in dataset)
+                      for name, var in dataset)
     return f"<ul class='xr-var-list'>{vars_li}</ul>"
 
 
