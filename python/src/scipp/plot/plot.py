@@ -7,8 +7,16 @@ from .._scipp import core as sc
 from .sciplot import SciPlot
 
 
-def plot(scipp_obj, collapse=None, projection=None, axes=None, color=None,
-         marker=None, linestyle=None, linewidth=None, bins=None, **kwargs):
+def plot(scipp_obj,
+         collapse=None,
+         projection=None,
+         axes=None,
+         color=None,
+         marker=None,
+         linestyle=None,
+         linewidth=None,
+         bins=None,
+         **kwargs):
     """
     Wrapper function to plot any kind of dataset
     """
@@ -44,10 +52,12 @@ def plot(scipp_obj, collapse=None, projection=None, axes=None, color=None,
                            "DataArrays.".format(tp))
 
     # Prepare container for matplotlib line parameters
-    line_params = {"color": color,
-                   "marker": marker,
-                   "linestyle": linestyle,
-                   "linewidth": linewidth}
+    line_params = {
+        "color": color,
+        "marker": marker,
+        "linestyle": linestyle,
+        "linewidth": linewidth
+    }
 
     # Counter for 1d/sparse data
     line_count = -1
@@ -105,8 +115,10 @@ def plot(scipp_obj, collapse=None, projection=None, axes=None, color=None,
                     mpl_line_params[n] = p
 
             if key not in tobeplotted.keys():
-                tobeplotted[key] = dict(ndims=ndims, scipp_obj_dict=dict(),
-                                        axes=ax, mpl_line_params=dict())
+                tobeplotted[key] = dict(ndims=ndims,
+                                        scipp_obj_dict=dict(),
+                                        axes=ax,
+                                        mpl_line_params=dict())
                 for n in mpl_line_params.keys():
                     tobeplotted[key]["mpl_line_params"][n] = []
             tobeplotted[key]["scipp_obj_dict"][name] = inventory[name]
@@ -118,12 +130,14 @@ def plot(scipp_obj, collapse=None, projection=None, axes=None, color=None,
     output = SciPlot()
     for key, val in tobeplotted.items():
         if collapse is not None:
-            output[key] = plot_collapse(
-                data_array=val["scipp_obj_dict"][key], dim=collapse,
-                axes=val["axes"], **kwargs)
+            output[key] = plot_collapse(data_array=val["scipp_obj_dict"][key],
+                                        dim=collapse,
+                                        axes=val["axes"],
+                                        **kwargs)
         else:
             output[key] = dispatch(scipp_obj_dict=val["scipp_obj_dict"],
-                                   name=key, ndim=val["ndims"],
+                                   name=key,
+                                   ndim=val["ndims"],
                                    sparse_dim=sparse_dim[key],
                                    projection=projection,
                                    axes=val["axes"],

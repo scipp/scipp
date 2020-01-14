@@ -15,11 +15,25 @@ import matplotlib.pyplot as plt
 from matplotlib import cm
 
 
-def plot_sparse(scipp_obj_dict, output=None, ndim=0, sparse_dim=None,
-                logx=False, logy=False, logxy=False, weights="color",
-                size=10.0, filename=None, axes=None, mpl_axes=None,
-                opacity=0.7, title=None, mpl_scatter_params=None, cmap=None,
-                log=None, vmin=None, vmax=None):
+def plot_sparse(scipp_obj_dict,
+                output=None,
+                ndim=0,
+                sparse_dim=None,
+                logx=False,
+                logy=False,
+                logxy=False,
+                weights="color",
+                size=10.0,
+                filename=None,
+                axes=None,
+                mpl_axes=None,
+                opacity=0.7,
+                title=None,
+                mpl_scatter_params=None,
+                cmap=None,
+                log=None,
+                vmin=None,
+                vmax=None):
     """
     Produce a scatter plot from sparse data.
     TODO: make plot_sparse use the slicer machinery to also have buttons and
@@ -36,12 +50,18 @@ def plot_sparse(scipp_obj_dict, output=None, ndim=0, sparse_dim=None,
         key_save = key
 
         xmin, xmax, data, dims, ndims = visit_sparse_data(
-            data_array, sparse_dim=sparse_dim, return_sparse_data=True,
+            data_array,
+            sparse_dim=sparse_dim,
+            return_sparse_data=True,
             weights=weights)
 
-        sparse_data[key] = {"data": data, "dims": dims, "ndims": ndims,
-                            "coords": data_array.coords,
-                            "has_weights": len(data) > ndims}
+        sparse_data[key] = {
+            "data": data,
+            "dims": dims,
+            "ndims": ndims,
+            "coords": data_array.coords,
+            "has_weights": len(data) > ndims
+        }
 
         if sparse_data[key]["has_weights"]:
             key_weights = key
@@ -67,15 +87,17 @@ def plot_sparse(scipp_obj_dict, output=None, ndim=0, sparse_dim=None,
                 # Case where only a single axis is given
                 ax["ax"] = mpl_axes
         else:
-            fig, ax["ax"] = plt.subplots(
-                1, 1, figsize=(config.width/config.dpi,
-                               config.height/config.dpi),
-                dpi=config.dpi)
+            fig, ax["ax"] = plt.subplots(1,
+                                         1,
+                                         figsize=(config.width / config.dpi,
+                                                  config.height / config.dpi),
+                                         dpi=config.dpi)
 
         members.update(ax)
 
         for i, (key, data_array) in enumerate(scipp_obj_dict.items()):
-            params = dict(label=data_array.name, edgecolors="#ffffff",
+            params = dict(label=data_array.name,
+                          edgecolors="#ffffff",
                           c=mpl_scatter_params["color"][i],
                           marker=mpl_scatter_params["marker"][i])
             xs = sparse_data[key]["data"][sparse_data[key]["ndims"] - 1]
@@ -93,18 +115,18 @@ def plot_sparse(scipp_obj_dict, output=None, ndim=0, sparse_dim=None,
 
         if key_weights is not None and weights.count("color") > 0:
             colorbar = plt.colorbar(members["scatter"][key_weights],
-                                    ax=ax["ax"], cax=ax["cax"])
-            colorbar.ax.set_ylabel(name_with_unit(name="Weights",
-                                                  log=cbar["log"]))
+                                    ax=ax["ax"],
+                                    cax=ax["cax"])
+            colorbar.ax.set_ylabel(
+                name_with_unit(name="Weights", log=cbar["log"]))
             members["colorbars"] = colorbar
 
         ax["ax"].set_xlabel(
             name_with_unit(sparse_data[key_save]["coords"][sparse_dim]))
         if ndims > 1:
             ax["ax"].set_ylabel(
-                name_with_unit(
-                    sparse_data[key_save]["coords"]
-                    [sparse_data[key_save]["dims"][0]]))
+                name_with_unit(sparse_data[key_save]["coords"][
+                    sparse_data[key_save]["dims"][0]]))
 
         ax["ax"].legend()
         if title is not None:
@@ -118,12 +140,15 @@ def plot_sparse(scipp_obj_dict, output=None, ndim=0, sparse_dim=None,
 
         import ipyvolume as ipv
 
-        widg = ipv.figure(width=config.width, height=config.height,
+        widg = ipv.figure(width=config.width,
+                          height=config.height,
                           animation=0)
 
         # Map mpl scatter markers to ipyvolume scatter markers
-        ipvmarkers = ["sphere", "arrow", "box", "diamond", "point_2d",
-                      "square_2d", "triangle_2d", "circle_2d"]
+        ipvmarkers = [
+            "sphere", "arrow", "box", "diamond", "point_2d", "square_2d",
+            "triangle_2d", "circle_2d"
+        ]
         markers = {}
         for i, m in enumerate(config.marker):
             if i < len(ipvmarkers):
@@ -145,20 +170,24 @@ def plot_sparse(scipp_obj_dict, output=None, ndim=0, sparse_dim=None,
             members["scatter"][key] = ipv.scatter(
                 x=sparse_data[key]["data"][sparse_data[key]["ndims"] - 1],
                 y=sparse_data[key]["data"][sparse_data[key]["ndims"] - 2],
-                z=sparse_data[key]["data"][0], **params)
+                z=sparse_data[key]["data"][0],
+                **params)
 
-        widg.xlabel = name_with_unit(sparse_data[key_save]["coords"]
-                                     [sparse_dim])
-        widg.ylabel = name_with_unit(sparse_data[key_save]["coords"]
-                                     [sparse_data[key_save]["dims"][1]])
-        widg.zlabel = name_with_unit(sparse_data[key_save]["coords"]
-                                     [sparse_data[key_save]["dims"][0]])
+        widg.xlabel = name_with_unit(
+            sparse_data[key_save]["coords"][sparse_dim])
+        widg.ylabel = name_with_unit(
+            sparse_data[key_save]["coords"][sparse_data[key_save]["dims"][1]])
+        widg.zlabel = name_with_unit(
+            sparse_data[key_save]["coords"][sparse_data[key_save]["dims"][0]])
 
     else:
         raise RuntimeError("Scatter plots for sparse data support at most "
                            "3 dimensions.")
 
-    render_plot(figure=fig, widgets=widg, filename=filename, ipv=ipv,
+    render_plot(figure=fig,
+                widgets=widg,
+                filename=filename,
+                ipv=ipv,
                 output=output)
 
     members.update({"fig": fig, "widgets": widg})

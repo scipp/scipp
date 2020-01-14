@@ -5,16 +5,24 @@
 
 
 class _Plot:
-
     def __init__(self):
 
         # The list of default line colors
-        self.color = ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd",
-                      "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf"]
+        self.color = [
+            "#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b",
+            "#e377c2", "#7f7f7f", "#bcbd22", "#17becf"
+        ]
 
         # The colorbar properties
-        self.params = {"cmap": "viridis", "log": False, "vmin": None,
-                       "vmax": None, "color": None, "show": True, "cbar": True}
+        self.params = {
+            "cmap": "viridis",
+            "log": False,
+            "vmin": None,
+            "vmax": None,
+            "color": None,
+            "show": True,
+            "cbar": True
+        }
 
         # The default image height (in pixels)
         self.height = 533
@@ -30,8 +38,10 @@ class _Plot:
         self.aspect = "auto"
 
         # Make list of markers for matplotlib
-        self.marker = ["o", "^", "s", "d", "*", "1", "P", "h", "X", "v", "<",
-                       ">", "2", "3", "4", "8", "p", "H", "+", "x", "D"]
+        self.marker = [
+            "o", "^", "s", "d", "*", "1", "P", "h", "X", "v", "<", ">", "2",
+            "3", "4", "8", "p", "H", "+", "x", "D"
+        ]
 
         # Default line width for 1D plots
         self.linewidth = [1.5]
@@ -41,7 +51,6 @@ class _Plot:
 
 
 class _Colors:
-
     def __init__(self):
 
         # The colors for each dataset member used in table and show functions

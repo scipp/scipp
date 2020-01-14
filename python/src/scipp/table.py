@@ -18,25 +18,21 @@ def _make_table_section_name_header(name, section, style):
     for key, sec in section:
         col_separators += 1 + (sec.variances is not None)
     if col_separators > 0:
-        return "<th {} colspan='{}'>{}</th>".format(
-            style, col_separators, name)
+        return "<th {} colspan='{}'>{}</th>".format(style, col_separators,
+                                                    name)
     else:
         return ""
 
 
 def _make_table_sections(dataset, coord, base_style):
     coord_style = "{} background-color: {};text-align: center;'".format(
-        base_style,
-        colors.scheme["coord"])
+        base_style, colors.scheme["coord"])
     label_style = "{} background-color: {};text-align: center;'".format(
-        base_style,
-        colors.scheme["labels"])
+        base_style, colors.scheme["labels"])
     mask_style = "{} background-color: {};text-align: center;'".format(
-        base_style,
-        colors.scheme["mask"])
+        base_style, colors.scheme["mask"])
     data_style = "{} background-color: {};text-align: center;'".format(
-        base_style,
-        colors.scheme["data"])
+        base_style, colors.scheme["data"])
 
     colsp_coord = 0
     if coord is not None:
@@ -44,14 +40,13 @@ def _make_table_sections(dataset, coord, base_style):
     html = ["<tr>"]
 
     if colsp_coord > 0:
-        html.append("<th {} colspan='{}'>Coordinate</th>".format(coord_style,
-                                                                 colsp_coord))
-    html.append(_make_table_section_name_header(
-        "Labels", dataset.labels, label_style))
-    html.append(_make_table_section_name_header(
-        "Masks", dataset.masks, mask_style))
-    html.append(_make_table_section_name_header(
-        "Data", dataset, data_style))
+        html.append("<th {} colspan='{}'>Coordinate</th>".format(
+            coord_style, colsp_coord))
+    html.append(
+        _make_table_section_name_header("Labels", dataset.labels, label_style))
+    html.append(
+        _make_table_section_name_header("Masks", dataset.masks, mask_style))
+    html.append(_make_table_section_name_header("Data", dataset, data_style))
 
     html.append("</tr>")
 
@@ -192,23 +187,22 @@ def table_from_dataset(dataset, is_hist=False, headers=2):
                     html += "<td rowspan='2' {}>{}</td>".format(
                         base_style, text)
 
-            html += _make_value_rows(
-                dataset.labels, coord, i, base_style, edge_style)
-            html += _make_value_rows(
-                dataset.masks, coord, i, base_style, edge_style)
-            html += _make_value_rows(
-                dataset, coord, i, base_style, edge_style)
+            html += _make_value_rows(dataset.labels, coord, i, base_style,
+                                     edge_style)
+            html += _make_value_rows(dataset.masks, coord, i, base_style,
+                                     edge_style)
+            html += _make_value_rows(dataset, coord, i, base_style, edge_style)
 
             html += "</tr><tr>"
             # If there are bin edges, we need to add trailing cells for data
             # and labels
             if coord is not None:
-                html += _make_trailing_cells(
-                    dataset.labels, coord, i, size, base_style, edge_style)
-                html += _make_trailing_cells(
-                    dataset.masks, coord, i, size, base_style, edge_style)
-                html += _make_trailing_cells(
-                    dataset, coord, i, size, base_style, edge_style)
+                html += _make_trailing_cells(dataset.labels, coord, i, size,
+                                             base_style, edge_style)
+                html += _make_trailing_cells(dataset.masks, coord, i, size,
+                                             base_style, edge_style)
+                html += _make_trailing_cells(dataset, coord, i, size,
+                                             base_style, edge_style)
             html += "</tr>"
 
     html += "</table>"
@@ -294,7 +288,7 @@ def table(dataset):
         # Now purge out the empty entries
         for key, val in is_empty.items():
             if val:
-                del(tabledict["1D Variables"][key])
+                del (tabledict["1D Variables"][key])
 
     elif (tp is sc.DataArray) or (tp is sc.DataProxy):
         headers = 2
@@ -337,7 +331,8 @@ def table(dataset):
         output += subtitle.format("1D Variables")
         output += whitetd
         for key, val in sorted(tabledict["1D Variables"].items()):
-            output += table_from_dataset(val, is_hist=is_histogram[key],
+            output += table_from_dataset(val,
+                                         is_hist=is_histogram[key],
                                          headers=headers)
         output += "</td></tr>"
     output += "</table>"

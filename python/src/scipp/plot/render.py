@@ -6,7 +6,10 @@ import matplotlib
 import ipywidgets as ipw
 
 
-def render_plot(figure=None, widgets=None, filename=None, output=None,
+def render_plot(figure=None,
+                widgets=None,
+                filename=None,
+                output=None,
                 ipv=None):
     """
     Render the plot using either file export or interactive display.

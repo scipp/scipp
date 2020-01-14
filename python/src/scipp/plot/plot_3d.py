@@ -20,9 +20,19 @@ except ImportError:
     ipv = None
 
 
-def plot_3d(data_array=None, output=None, axes=None, values=None,
-            variances=None, masks=None, filename=None, figsize=None,
-            aspect=None, cmap=None, log=False, vmin=None, vmax=None,
+def plot_3d(data_array=None,
+            output=None,
+            axes=None,
+            values=None,
+            variances=None,
+            masks=None,
+            filename=None,
+            figsize=None,
+            aspect=None,
+            cmap=None,
+            log=False,
+            vmin=None,
+            vmax=None,
             color=None):
     """
     Plot a 3-slice through a N dimensional dataset. For every dimension above
@@ -37,9 +47,17 @@ def plot_3d(data_array=None, output=None, axes=None, values=None,
                            "and ipyevents to be installed. Use conda/pip "
                            "install ipyvolume ipyevents.")
 
-    sv = Slicer3d(data_array=data_array, axes=axes, values=values,
-                  variances=variances, masks=masks, cmap=cmap, log=log,
-                  vmin=vmin, vmax=vmax, color=color, aspect=aspect)
+    sv = Slicer3d(data_array=data_array,
+                  axes=axes,
+                  values=values,
+                  variances=variances,
+                  masks=masks,
+                  cmap=cmap,
+                  log=log,
+                  vmin=vmin,
+                  vmax=vmax,
+                  color=color,
+                  aspect=aspect)
 
     render_plot(widgets=sv.box, filename=filename, ipv=ipv, output=output)
 
@@ -47,22 +65,43 @@ def plot_3d(data_array=None, output=None, axes=None, values=None,
 
 
 class Slicer3d(Slicer):
+    def __init__(self,
+                 data_array=None,
+                 axes=None,
+                 values=None,
+                 variances=None,
+                 masks=None,
+                 cmap=None,
+                 log=None,
+                 vmin=None,
+                 vmax=None,
+                 color=None,
+                 aspect=None):
 
-    def __init__(self, data_array=None, axes=None, values=None, variances=None,
-                 masks=None, cmap=None, log=None, vmin=None, vmax=None,
-                 color=None, aspect=None):
-
-        super().__init__(data_array=data_array, axes=axes, values=values,
-                         variances=variances, masks=masks, cmap=cmap, log=log,
-                         vmin=vmin, vmax=vmax, color=color, aspect=aspect,
+        super().__init__(data_array=data_array,
+                         axes=axes,
+                         values=values,
+                         variances=variances,
+                         masks=masks,
+                         cmap=cmap,
+                         log=log,
+                         vmin=vmin,
+                         vmax=vmax,
+                         color=color,
+                         aspect=aspect,
                          button_options=['X', 'Y', 'Z'])
 
         self.cube = None
-        self.members.update({"surfaces": {}, "wireframes": {}, "outlines": {},
-                             "fig": {}})
+        self.members.update({
+            "surfaces": {},
+            "wireframes": {},
+            "outlines": {},
+            "fig": {}
+        })
 
         # Initialise Figure and VBox objects
-        self.fig = ipv.figure(width=config.width, height=config.height,
+        self.fig = ipv.figure(width=config.width,
+                              height=config.height,
                               animation=0)
         self.scalar_map = dict()
 
@@ -72,7 +111,7 @@ class Slicer3d(Slicer):
 
         for key in panels:
             self.scalar_map[key] = cm.ScalarMappable(
-              norm=self.params[key]["norm"], cmap=self.params[key]["cmap"])
+                norm=self.params[key]["norm"], cmap=self.params[key]["cmap"])
             self.members["surfaces"][key] = {}
             self.members["wireframes"][key] = {}
 
@@ -84,7 +123,9 @@ class Slicer3d(Slicer):
             self.xminmax[dim] = [var.values[0], var.values[-1]]
         outl_x, outl_y, outl_z = self.get_box()
 
-        self.outline = ipv.plot_wireframe(outl_x, outl_y, outl_z,
+        self.outline = ipv.plot_wireframe(outl_x,
+                                          outl_y,
+                                          outl_z,
                                           color="black")
         self.wireframes = dict()
         self.surfaces = dict()
@@ -214,8 +255,10 @@ class Slicer3d(Slicer):
                 button_dim[s] = dim
                 self.lab[dim].value = self.make_slider_label(
                     self.slider_x[dim], val.value)
-                vslices[s] = {"slice": self.cube[dim, val.value],
-                              "loc": self.slider_x[dim].values[val.value]}
+                vslices[s] = {
+                    "slice": self.cube[dim, val.value],
+                    "loc": self.slider_x[dim].values[val.value]
+                }
 
         # Now make 3 slices
         wframes = None
@@ -260,14 +303,15 @@ class Slicer3d(Slicer):
             # slice_indices = {"x": 0, "y": 1, "z": 2}
             dim = change["owner"].dim
             self.lab[dim].value = self.make_slider_label(
-                    self.slider_x[dim], change["new"])
+                self.slider_x[dim], change["new"])
 
             # Now move slice
             ax_dim = self.buttons[dim].value.lower()
             self.wireframes[ax_dim].visible = True
-            setattr(self.wireframes[ax_dim], ax_dim,
-                    getattr(self.wireframes[ax_dim], ax_dim) * 0.0 +
-                    self.slider_x[dim].values[change["new"]])
+            setattr(
+                self.wireframes[ax_dim], ax_dim,
+                getattr(self.wireframes[ax_dim], ax_dim) * 0.0 +
+                self.slider_x[dim].values[change["new"]])
 
             self.last_changed_slider_dim = dim
         return
@@ -282,9 +326,10 @@ class Slicer3d(Slicer):
             ax_dim = self.buttons[dim].value.lower()
             self.wireframes[ax_dim].visible = False
 
-            setattr(self.surfaces[ax_dim], ax_dim,
-                    getattr(self.surfaces[ax_dim], ax_dim) * 0.0 +
-                    self.slider_x[dim].values[index])
+            setattr(
+                self.surfaces[ax_dim], ax_dim,
+                getattr(self.surfaces[ax_dim], ax_dim) * 0.0 +
+                self.slider_x[dim].values[index])
 
             self.surfaces[self.buttons[dim].value.lower()].color = \
                 self.scalar_map["values"].to_rgba(
@@ -293,8 +338,9 @@ class Slicer3d(Slicer):
 
     def check_transpose(self, vslice, variances=False):
         # Check if dimensions of arrays agree, if not, plot the transpose
-        button_values = [self.buttons[dim].value.lower() for dim in
-                         vslice.dims]
+        button_values = [
+            self.buttons[dim].value.lower() for dim in vslice.dims
+        ]
         if variances:
             values = vslice.variances
         else:
@@ -342,10 +388,13 @@ class Slicer3d(Slicer):
             for ax, size in dx.items():
                 diff = max_size - size
                 arrays[ax] = [
-                    self.xminmax[self.button_axis_to_dim[ax]][0] - 0.5*diff,
-                    self.xminmax[self.button_axis_to_dim[ax]][1] + 0.5*diff]
+                    self.xminmax[self.button_axis_to_dim[ax]][0] - 0.5 * diff,
+                    self.xminmax[self.button_axis_to_dim[ax]][1] + 0.5 * diff
+                ]
 
-            return np.meshgrid(arrays["x"], arrays["y"], arrays["z"],
+            return np.meshgrid(arrays["x"],
+                               arrays["y"],
+                               arrays["z"],
                                indexing="ij")
         elif self.aspect == "auto":
             return np.meshgrid(self.xminmax[self.button_axis_to_dim["x"]],

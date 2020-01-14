@@ -184,8 +184,8 @@ def find_bin_edges(var, ds):
     Checks if the coordinate contains bin-edges.
     """
     bin_edges = []
-    non_sparse_dims = [dim for dim in var.dims if dim !=
-                       var.sparse_dim] if var.sparse_dim else var.dims
+    non_sparse_dims = [dim for dim in var.dims if dim != var.sparse_dim
+                       ] if var.sparse_dim else var.dims
 
     for idx, dim in enumerate(non_sparse_dims):
         len = var.shape[idx]
@@ -195,11 +195,9 @@ def find_bin_edges(var, ds):
 
 
 def summarize_coords(coords, ds=None):
-    vars_li = "".join(
-        "<li class='xr-var-item'>"
-        f"{summarize_coord(dim, var, ds)}"
-        "</span></li>"
-        for dim, var in coords)
+    vars_li = "".join("<li class='xr-var-item'>"
+                      f"{summarize_coord(dim, var, ds)}"
+                      "</span></li>" for dim, var in coords)
 
     return f"<ul class='xr-var-list'>{vars_li}</ul>"
 
@@ -264,13 +262,10 @@ def _make_dim_str(var, bin_edges, add_dim_size=False):
             shape = None
         dim_sizes.append((dim, shape))
 
-    dims_text = ', '.join(
-        '{}{}{}'.format(
-            str(dim),
-            _make_dim_labels(dim, size, bin_edges),
-            f': {size}' if add_dim_size and size is not None else ''
-        )
-        for dim, size in dim_sizes)
+    dims_text = ', '.join('{}{}{}'.format(
+        str(dim), _make_dim_labels(dim, size, bin_edges),
+        f': {size}' if add_dim_size and size is not None else '')
+                          for dim, size in dim_sizes)
     return dims_text
 
 
@@ -286,8 +281,7 @@ def _format_common(is_index):
     return cssclass_idx, attrs_id, attrs_icon, data_id, data_icon
 
 
-def _variable_format(name, dims_str, dtype, unit,
-                     preview, variances_preview,
+def _variable_format(name, dims_str, dtype, unit, preview, variances_preview,
                      attrs_ul, disabled, data_repr, is_index, has_attrs):
     """
     Formats the variable data into the format expected when displaying
@@ -320,8 +314,7 @@ def _variable_format(name, dims_str, dtype, unit,
     return "".join(html)
 
 
-def _dataset_format(name, dims_str, dtype, unit,
-                    preview, variances_preview,
+def _dataset_format(name, dims_str, dtype, unit, preview, variances_preview,
                     attrs_ul, disabled, data_repr, is_index, has_attrs):
     """
     Formats the variable data into the format expected when displaying
@@ -354,7 +347,8 @@ def _dataset_format(name, dims_str, dtype, unit,
     return "".join(html)
 
 
-def _prepare_variable_info(name, var,
+def _prepare_variable_info(name,
+                           var,
                            is_index=False,
                            has_attrs=False,
                            bin_edges=None,
@@ -388,13 +382,12 @@ def _prepare_variable_info(name, var,
         data_repr += f"<br><br>Variances:<br>\
                        <div>{short_data_repr_html(var)}</div>"
 
-    return (name, dims_str, dtype, unit,
-            preview, variances_preview,
-            attrs_ul, disabled,
-            data_repr, is_index, has_attrs)
+    return (name, dims_str, dtype, unit, preview, variances_preview, attrs_ul,
+            disabled, data_repr, is_index, has_attrs)
 
 
-def summarize_variable(name, var,
+def summarize_variable(name,
+                       var,
                        is_index=False,
                        has_attrs=False,
                        bin_edges=None,
@@ -409,13 +402,13 @@ def summarize_variable(name, var,
 
 def summarize_data(dataset):
     has_attrs = _is_dataset(dataset)
-    vars_li = "".join(
-        "<li class='xr-var-item'>{}</li>".format(
-            summarize_variable(
-                name, var,
-                has_attrs=has_attrs,
-                bin_edges=find_bin_edges(var, dataset) if has_attrs else None))
-        for name, var in dataset)
+    vars_li = "".join("<li class='xr-var-item'>{}</li>".format(
+        summarize_variable(
+            name,
+            var,
+            has_attrs=has_attrs,
+            bin_edges=find_bin_edges(var, dataset) if has_attrs else None))
+                      for name, var in dataset)
     return f"<ul class='xr-var-list'>{vars_li}</ul>"
 
 

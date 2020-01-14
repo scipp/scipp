@@ -76,9 +76,9 @@ def load_calibration(filename, mantid_LoadDiffCal_args={}):
 
     # Create list with same ordering as in the cal_data dataset
     cal_det_ids = cal_data["detid"].values
-    group_list = np.fromiter(
-        (group_map[detid] for detid in cal_det_ids), count=len(cal_det_ids),
-        dtype=np.int32)
+    group_list = np.fromiter((group_map[detid] for detid in cal_det_ids),
+                             count=len(cal_det_ids),
+                             dtype=np.int32)
 
     cal_data["group"] = sc.Variable([sc.Dim.Row], values=group_list)
 
