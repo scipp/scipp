@@ -406,10 +406,10 @@ public:
   // expects the reshaped view to be still valid).
   Variable reshape(const Dimensions &dims) &&;
 
-  VariableConstProxy transpose(const Dimensions &dims) const &;
-  VariableProxy transpose(const Dimensions &dims) &;
+  VariableConstProxy transpose(const std::vector<Dim> &dims = {}) const &;
+  VariableProxy transpose(const std::vector<Dim> &dims = {}) &;
   // Note: the same issue as for reshape above
-  Variable transpose(const Dimensions &dims) &&;
+  Variable transpose(const std::vector<Dim> &dims = {}) &&;
   void rename(const Dim from, const Dim to);
 
   bool operator==(const VariableConstProxy &other) const;
@@ -660,9 +660,18 @@ public:
     return VariableConstProxy(*this, slice.dim(), slice.begin(), slice.end());
   }
 
+  VariableConstProxy transpose(const std::vector<Dim> &dims = {}) const;
   // Note the return type. Reshaping a non-contiguous slice cannot return a
   // slice in general so we must return a copy of the data.
   Variable reshape(const Dimensions &dims) const;
+
+  template <class Var>
+  static VariableConstProxy makeTransposed(Var &var,
+                                           const std::vector<Dim> &dimOrder) {
+    auto res = VariableConstProxy(var);
+    res.m_view = res.data().transpose(dimOrder);
+    return res;
+  }
 
   units::Unit unit() const { return m_variable->unit(); }
 
@@ -780,6 +789,8 @@ public:
   VariableProxy slice(const Slice slice) const {
     return VariableProxy(*this, slice.dim(), slice.begin(), slice.end());
   }
+
+  VariableProxy transpose(const std::vector<Dim> &dims = {}) const;
 
   using VariableConstProxy::data;
 
