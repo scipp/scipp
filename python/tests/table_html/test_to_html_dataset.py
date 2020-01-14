@@ -43,11 +43,12 @@ def test_basic(dims, lengths):
 
     html = BeautifulSoup(make_html(dataset), features="html.parser")
     sections = html.find_all(class_="xr-section-item")
+
+    expected_sections = [
+        "Dimensions", "Coordinates", "Labels", "Data", "Masks", "Attributes"
+    ]
     assert len(sections) == 6
-    for actual_section, expected_section in zip(
-            sections,
-        ["Dimensions", "Coordinates", "Labels", "Data", "Masks", "Attributes"
-         ]):
+    for actual_section, expected_section in zip(sections, expected_sections):
         assert expected_section in actual_section.text
 
     attr_section = sections.pop(len(sections) - 1)
