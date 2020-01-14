@@ -15,8 +15,8 @@ def test_type():
 
 
 def test_astype():
-    variable_slice = sc.Variable(
-        [Dim.X], values=np.arange(1, 10, dtype=int))[Dim.X, :]
+    variable_slice = sc.Variable([Dim.X],
+                                 values=np.arange(1, 10, dtype=int))[Dim.X, :]
     assert variable_slice.dtype == sc.dtype.int64
 
     var_as_float = variable_slice.astype(sc.dtype.float64)
