@@ -450,6 +450,24 @@ void init_variable(py::module &m) {
         :return: New variable containing the mean.
         :rtype: Variable)");
 
+  m.def("mean",
+        [](const VariableConstProxy &x, const Dim dim,
+           const VariableProxy &out) { return mean(x, dim, out); },
+        py::arg("x"), py::arg("dim"), py::arg("out"),
+        py::call_guard<py::gil_scoped_release>(),
+        R"(
+        Element-wise mean over the specified dimension, if variances are present, the new variance is computated as standard-deviation of the mean.
+
+        If the input has variances, the variances stored in the ouput are based on the "standard deviation of the mean", i.e., :math:`\sigma_{mean} = \sigma / \sqrt{N}`.
+        :math:`N` is the length of the input dimension.
+        :math:`sigma` is estimated as the average of the standard deviations of the input elements along that dimension.
+        This assumes that elements follow a normal distribution.
+
+        :raises: If the dimension does not exist, or the dtype cannot be summed, e.g., if it is a string
+        :seealso: :py:class:`scipp.sum`
+        :return: Variable containing the mean.
+        :rtype: Variable)");
+
   m.def("norm", py::overload_cast<const VariableConstProxy &>(&norm),
         py::arg("x"), py::call_guard<py::gil_scoped_release>(), R"(
         Element-wise norm.
@@ -525,6 +543,21 @@ void init_variable(py::module &m) {
         :raises: If the dimension does not exist, or if the dtype cannot be summed, e.g., if it is a string
         :seealso: :py:class:`scipp.mean`
         :return: New variable containing the sum.
+        :rtype: Variable)");
+
+  m.def("sum",
+        [](const VariableConstProxy &self, const Dim dim,
+           const VariableProxy &out) { return sum(self, dim, out); },
+        py::arg("x"), py::arg("dim"), py::arg("out"),
+        py::call_guard<py::gil_scoped_release>(),
+        R"(
+        Element-wise sum over the specified dimension.
+
+        :param x: Data to sum.
+        :param dim: Dimension over which to sum.
+        :raises: If the dimension does not exist, if the dtype cannot be summed, e.g., if it is a string or if the output variable contains the summing dimension.
+        :seealso: :py:class:`scipp.mean`
+        :return: Variable containing the sum.
         :rtype: Variable)");
 
   m.def("sin", [](const VariableConstProxy &self) { return sin(self); },

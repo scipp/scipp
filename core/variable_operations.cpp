@@ -229,6 +229,23 @@ Variable sum(const VariableConstProxy &var, const Dim dim) {
   return summed;
 }
 
+VariableProxy sum(const VariableConstProxy &var, const Dim dim,
+                  const VariableProxy &out) {
+  if (var.dtype() == DType::Bool && out.dtype() != DType::Int64)
+    throw except::UnitError("In-place sum of Bool dtype must be stored in an "
+                            "output variable of Int64 dtype.");
+
+  auto dims = var.dims();
+  dims.erase(dim);
+  if (dims != out.dims())
+    throw except::DimensionError(
+        "Output argument dimensions must be equal to input dimensions without "
+        "the summing dimension.");
+
+  sum_impl(out, var);
+  return out;
+}
+
 Variable sum(const VariableConstProxy &var, const Dim dim,
              const MasksConstProxy &masks) {
   if (!masks.empty()) {
@@ -237,6 +254,16 @@ Variable sum(const VariableConstProxy &var, const Dim dim,
       return sum(var * ~mask_union, dim);
   }
   return sum(var, dim);
+}
+
+VariableProxy sum(const VariableConstProxy &var, const Dim dim,
+                  const MasksConstProxy &masks, const VariableProxy &out) {
+  if (!masks.empty()) {
+    const auto mask_union = masks_merge_if_contains(masks, dim);
+    if (mask_union.dims().contains(dim))
+      return sum(var * ~mask_union, dim, out);
+  }
+  return sum(var, dim, out);
 }
 
 Variable mean(const VariableConstProxy &var, const Dim dim,
@@ -255,8 +282,31 @@ Variable mean(const VariableConstProxy &var, const Dim dim,
   return summed;
 }
 
+VariableProxy mean(const VariableConstProxy &var, const Dim dim,
+                   const VariableConstProxy &masks_sum,
+                   const VariableProxy &out) {
+  // In principle we *could* support mean/sum over sparse dimension.
+  expect::notSparse(var);
+  if (isInt(out.dtype()))
+    throw except::UnitError(
+        "Cannot calculate mean in-place when output dtype is integer");
+
+  sum(var, dim, out);
+
+  auto scale =
+      1.0 / (makeVariable<double>(Values{var.dims()[dim]}) - masks_sum);
+
+  out *= scale;
+  return out;
+}
+
 Variable mean(const VariableConstProxy &var, const Dim dim) {
   return mean(var, dim, makeVariable<int64_t>(Values{0}));
+}
+
+VariableProxy mean(const VariableConstProxy &var, const Dim dim,
+                   const VariableProxy &out) {
+  return mean(var, dim, makeVariable<int64_t>(Values{0}), out);
 }
 
 Variable mean(const VariableConstProxy &var, const Dim dim,
@@ -269,6 +319,18 @@ Variable mean(const VariableConstProxy &var, const Dim dim,
     }
   }
   return mean(var, dim);
+}
+
+VariableProxy mean(const VariableConstProxy &var, const Dim dim,
+                   const MasksConstProxy &masks, const VariableProxy &out) {
+  if (!masks.empty()) {
+    const auto mask_union = masks_merge_if_contains(masks, dim);
+    if (mask_union.dims().contains(dim)) {
+      const auto masks_sum = sum(mask_union, dim);
+      return mean(var * ~mask_union, dim, masks_sum, out);
+    }
+  }
+  return mean(var, dim, out);
 }
 
 Variable reciprocal(const VariableConstProxy &var) {
