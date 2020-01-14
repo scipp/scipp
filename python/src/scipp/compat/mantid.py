@@ -167,14 +167,35 @@ def init_pos(ws):
                        dtype=sc.dtype.vector_3_float64)
 
 
+def _get_dtype_from_values(values):
+    if hasattr(values, 'dtype'):
+        dtype = values.dtype
+    else:
+        if len(values) > 0:
+            dtype = type(values[0])
+            if dtype is str:
+                dtype = sc.dtype.string
+            elif dtype is int:
+                dtype = sc.dtype.int32
+            elif dtype is float:
+                dtype = sc.dtype.float64
+            else:
+                raise RuntimeError(
+                    "Cannot handle the dtype that this "
+                    "workspace has on Axis 1.")
+        else:
+            raise RuntimeError(
+                "Axis 1 of this workspace has no values. "
+                "Cannot determine dtype.")
+    return dtype
+
+
 def init_spec_axis(ws):
     axis = ws.getAxis(1)
     dim, unit = validate_and_get_unit(axis.getUnit().unitID())
-    dtype = sc.dtype.int32 if dim == sc.Dim.Spectrum else None
-    return dim, sc.Variable([dim],
-                            values=axis.extractValues(),
-                            unit=unit,
-                            dtype=dtype)
+    values = axis.extractValues()
+    dtype = _get_dtype_from_values(values)
+    return dim, sc.Variable([dim], values=values, unit=unit, dtype=dtype)
 
 
 def set_common_bins_masks(bin_masks, dim, masked_bins):
@@ -648,3 +669,24 @@ def to_workspace_2d(x, y, e, coord_dim):
     ws.getAxis(0).setUnit(unitX)
 
     return ws
+
+
+def fit(ws, function, workspace_index, start_x, end_x):
+    """
+    """
+    try:
+        import mantid.simpleapi as mantid
+    except ImportError:
+        raise ImportError(
+            "Mantid Python API was not found, please install Mantid framework "
+            "as detailed in the installation instructions (https://scipp."
+            "readthedocs.io/en/latest/getting-started/installation.html)")
+
+    fit = mantid.Fit(Function=function,
+                     InputWorkspace=ws,
+                     WorkspaceIndex=workspace_index, StartX=start_x, EndX=end_x,
+                     CreateOutput=True)
+    result_ds = sc.Dataset(
+        data={
+            'out_workspace': convert_Workspace2D_to_dataarray(fit.OutputWorkspace)}
+    )
