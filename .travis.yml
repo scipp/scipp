@@ -15,17 +15,20 @@ env:
 jobs:
   include:
       # Check clang format and flake8 in the first stage
-    - stage: "Code formatting"
-      name: "Clang-format"
+    - stage: "Static Analysis"
+      name: "clang-format"
       if: NOT type = cron
       before_install: .travis/before_install.sh
       script: .travis/check_clang_format.sh
-    - name: "Flake8"
+    - name: "flake8 and yapf"
       if: NOT type = cron
       before_install: .travis/before_install.sh
-      script: .travis/check_flake8.sh
+      script:
+        - .travis/check_flake8.sh
+        - yapf --version
+        - yapf --diff --recursive 'python'
       # Then start parallel build of gcc and clang in the Test stage
-    - stage: "Unit tests"
+    - stage: "Unit Tests"
       compiler: gcc
       name: "gcc"
       if: type = pull_request

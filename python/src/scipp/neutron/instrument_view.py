@@ -25,10 +25,20 @@ from matplotlib.collections import PatchCollection
 from matplotlib.patches import Rectangle
 
 
-def instrument_view(scipp_obj=None, bins=None, masks=None, filename=None,
-                    figsize=None, aspect="equal", cmap=None, log=False,
-                    vmin=None, vmax=None, size=0.1, projection="3D",
-                    nan_color="#d3d3d3", continuous_update=True,
+def instrument_view(scipp_obj=None,
+                    bins=None,
+                    masks=None,
+                    filename=None,
+                    figsize=None,
+                    aspect="equal",
+                    cmap=None,
+                    log=False,
+                    vmin=None,
+                    vmax=None,
+                    size=0.1,
+                    projection="3D",
+                    nan_color="#d3d3d3",
+                    continuous_update=True,
                     dim=sc.Dim.Tof):
     """
     Plot a 2D or 3D view of the instrument.
@@ -44,21 +54,40 @@ def instrument_view(scipp_obj=None, bins=None, masks=None, filename=None,
     sn.instrument_view(sample)
     """
 
-    iv = InstrumentView(scipp_obj=scipp_obj, bins=bins, masks=masks,
-                        cmap=cmap, log=log, vmin=vmin, vmax=vmax,
-                        aspect=aspect, size=size, projection=projection,
-                        nan_color=nan_color, filename=filename,
-                        continuous_update=continuous_update, dim=dim)
+    iv = InstrumentView(scipp_obj=scipp_obj,
+                        bins=bins,
+                        masks=masks,
+                        cmap=cmap,
+                        log=log,
+                        vmin=vmin,
+                        vmax=vmax,
+                        aspect=aspect,
+                        size=size,
+                        projection=projection,
+                        nan_color=nan_color,
+                        filename=filename,
+                        continuous_update=continuous_update,
+                        dim=dim)
 
     return SciPlot(iv.members)
 
 
 class InstrumentView:
-
-    def __init__(self, scipp_obj=None, bins=None, masks=None, cmap=None,
-                 log=None, vmin=None, vmax=None, aspect=None, size=1,
-                 projection=None, nan_color=None, filename=None,
-                 continuous_update=None, dim=None):
+    def __init__(self,
+                 scipp_obj=None,
+                 bins=None,
+                 masks=None,
+                 cmap=None,
+                 log=None,
+                 vmin=None,
+                 vmax=None,
+                 aspect=None,
+                 size=1,
+                 projection=None,
+                 nan_color=None,
+                 filename=None,
+                 continuous_update=None,
+                 dim=None):
 
         self.fig2d = None
         self.fig3d = None
@@ -105,10 +134,11 @@ class InstrumentView:
             if bins_here is not None:
                 dim = None if data_array.sparse_dim is not None else self.dim
                 spdim = None if data_array.sparse_dim is None else self.dim
-                var = make_bins(
-                    data_array=data_array, sparse_dim=spdim, dim=dim,
-                    bins=bins_here,
-                    padding=(data_array.sparse_dim is not None))
+                var = make_bins(data_array=data_array,
+                                sparse_dim=spdim,
+                                dim=dim,
+                                bins=bins_here,
+                                padding=(data_array.sparse_dim is not None))
             else:
                 var = data_array.coords[self.dim]
             self.minmax["tof"][0] = min(self.minmax["tof"][0], var.values[0])
@@ -120,46 +150,50 @@ class InstrumentView:
 
         # Create dropdown menu to select the DataArray
         keys = list(self.hist_data_array.keys())
-        self.dropdown = widgets.Dropdown(
-            options=keys, description="Select entry:",
-            layout={"width": "initial"})
+        self.dropdown = widgets.Dropdown(options=keys,
+                                         description="Select entry:",
+                                         layout={"width": "initial"})
         self.dropdown.observe(self.change_data_array, names="value")
 
         # Store current active data entry (DataArray)
         self.key = keys[0]
 
         # Create a Tof slider and its label
-        self.tof_dim_indx = self.hist_data_array[self.key].dims.index(
-            self.dim)
+        self.tof_dim_indx = self.hist_data_array[self.key].dims.index(self.dim)
         self.slider = widgets.IntSlider(
-            value=0, min=0, step=1,
+            value=0,
+            min=0,
+            step=1,
             description=str(self.dim).replace("Dim.", ""),
             max=self.hist_data_array[self.key].shape[self.tof_dim_indx] - 1,
-            continuous_update=continuous_update, readout=False)
+            continuous_update=continuous_update,
+            readout=False)
         self.slider.observe(self.update_colors, names="value")
         self.label = widgets.Label()
 
         # Add text boxes to change number of bins/bin size
-        self.nbins = widgets.Text(
-            value=str(self.hist_data_array[self.key].shape[self.tof_dim_indx]),
-            description="Number of bins:",
-            style={"description_width": "initial"})
+        self.nbins = widgets.Text(value=str(
+            self.hist_data_array[self.key].shape[self.tof_dim_indx]),
+                                  description="Number of bins:",
+                                  style={"description_width": "initial"})
         self.nbins.on_submit(self.update_nbins)
 
         tof_values = self.hist_data_array[self.key].coords[self.dim].values
-        self.bin_size = widgets.Text(
-            value=str(tof_values[1] - tof_values[0]),
-            description="Bin size:")
+        self.bin_size = widgets.Text(value=str(tof_values[1] - tof_values[0]),
+                                     description="Bin size:")
         self.bin_size.on_submit(self.update_bin_size)
 
-        projections = ["3D", "Cylindrical X", "Cylindrical Y", "Cylindrical Z",
-                       "Spherical X", "Spherical Y", "Spherical Z"]
+        projections = [
+            "3D", "Cylindrical X", "Cylindrical Y", "Cylindrical Z",
+            "Spherical X", "Spherical Y", "Spherical Z"
+        ]
 
         # Create toggle buttons to change projection
         self.buttons = {}
         for p in projections:
             self.buttons[p] = widgets.Button(
-                description=p, disabled=False,
+                description=p,
+                disabled=False,
                 button_style=("info" if (p == projection) else ""))
             self.buttons[p].on_click(self.change_projection)
         items = [self.buttons["3D"]]
@@ -174,10 +208,10 @@ class InstrumentView:
             layout=widgets.Layout(grid_template_columns="repeat(3, 150px)"))
 
         # Place widgets in boxes
-        self.vbox = widgets.VBox(
-            [widgets.HBox([self.dropdown, self.slider, self.label]),
-             widgets.HBox([self.nbins, self.bin_size]),
-             self.togglebuttons])
+        self.vbox = widgets.VBox([
+            widgets.HBox([self.dropdown, self.slider, self.label]),
+            widgets.HBox([self.nbins, self.bin_size]), self.togglebuttons
+        ])
         self.box = widgets.VBox([self.figurewidget, self.vbox])
         self.box.layout.align_items = "center"
 
@@ -201,23 +235,31 @@ class InstrumentView:
             sn.position(self.hist_data_array[self.key]).values)
         # Find extents of the detectors
         for i, x in enumerate("xyz"):
-            self.minmax[x] = [np.amin(self.det_pos[:, i]),
-                              np.amax(self.det_pos[:, i])]
+            self.minmax[x] = [
+                np.amin(self.det_pos[:, i]),
+                np.amax(self.det_pos[:, i])
+            ]
 
         # Update the figure
         self.change_projection(self.buttons[projection])
 
         # Create members object
-        self.members = {"widgets": {"sliders": self.slider,
-                                    "buttons": self.buttons,
-                                    "text": {"nbins": self.nbins,
-                                             "bin_size": self.bin_size},
-                                    "dropdown": self.dropdown
-                                    },
-                        "fig2d": self.fig2d, "fig3d": self.fig3d,
-                        "scatter2d": self.scatter2d,
-                        "scatter3d": self.scatter3d,
-                        "outline": self.outline}
+        self.members = {
+            "widgets": {
+                "sliders": self.slider,
+                "buttons": self.buttons,
+                "text": {
+                    "nbins": self.nbins,
+                    "bin_size": self.bin_size
+                },
+                "dropdown": self.dropdown
+            },
+            "fig2d": self.fig2d,
+            "fig3d": self.fig3d,
+            "scatter2d": self.scatter2d,
+            "scatter3d": self.scatter3d,
+            "outline": self.outline
+        }
 
         return
 
@@ -236,8 +278,10 @@ class InstrumentView:
             else:
                 self.hist_data_array[key] = sc.rebin(
                     data_array, self.dim,
-                    make_bins(data_array=data_array, dim=self.dim,
-                              bins=bins, padding=False))
+                    make_bins(data_array=data_array,
+                              dim=self.dim,
+                              bins=bins,
+                              padding=False))
 
             # Parse input parameters for colorbar
             self.params[key] = parse_params(
@@ -252,9 +296,8 @@ class InstrumentView:
         self.do_update(change)
         self.label.value = name_with_unit(
             var=self.hist_data_array[self.key].coords[self.dim],
-            name=value_to_string(
-                self.hist_data_array[self.key].coords[
-                    self.dim].values[change["new"]]))
+            name=value_to_string(self.hist_data_array[self.key].coords[
+                self.dim].values[change["new"]]))
         return
 
     def change_projection(self, owner):
@@ -298,8 +341,10 @@ class InstrumentView:
     def projection_3d(self):
         # Initialise Figure
         if not self.figure3d:
-            self.fig3d = ipv.figure(width=config.width, height=config.height,
-                                    animation=0, lighting=False)
+            self.fig3d = ipv.figure(width=config.width,
+                                    height=config.height,
+                                    animation=0,
+                                    lighting=False)
             max_size = 0.0
             dx = {"x": 0, "y": 0, "z": 0}
             for ax in dx.keys():
@@ -310,20 +355,26 @@ class InstrumentView:
                 arrays = dict()
                 for ax, s in dx.items():
                     diff = max_size - s
-                    arrays[ax] = [self.minmax[ax][0] - 0.5 * diff,
-                                  self.minmax[ax][1] + 0.5 * diff]
+                    arrays[ax] = [
+                        self.minmax[ax][0] - 0.5 * diff,
+                        self.minmax[ax][1] + 0.5 * diff
+                    ]
 
-                outl_x, outl_y, outl_z = np.meshgrid(arrays["x"], arrays["y"],
+                outl_x, outl_y, outl_z = np.meshgrid(arrays["x"],
+                                                     arrays["y"],
                                                      arrays["z"],
                                                      indexing="ij")
-                self.outline = ipv.plot_wireframe(outl_x, outl_y, outl_z,
+                self.outline = ipv.plot_wireframe(outl_x,
+                                                  outl_y,
+                                                  outl_z,
                                                   color="black")
             # Try to guess marker size
             perc_size = 100.0 * self.size / max_size
             self.scatter3d = ipv.scatter(x=self.det_pos[:, 0],
                                          y=self.det_pos[:, 1],
                                          z=self.det_pos[:, 2],
-                                         marker="square_2d", size=perc_size)
+                                         marker="square_2d",
+                                         size=perc_size)
             self.figure3d = True
 
         self.figurewidget.clear_output()
@@ -344,8 +395,10 @@ class InstrumentView:
             self.box.children = tuple([self.figurewidget, self.vbox])
         if not self.figure2d:
             self.fig2d, self.ax = plt.subplots(
-                1, 1, figsize=(config.width / config.dpi,
-                               config.height / config.dpi))
+                1,
+                1,
+                figsize=(config.width / config.dpi,
+                         config.height / config.dpi))
 
         if update_children:
             with self.figurewidget:
@@ -360,23 +413,25 @@ class InstrumentView:
         if projection.startswith("Cylindrical"):
             z_or_phi = self.det_pos[:, permutations[axis][0]]
         elif projection.startswith("Spherical"):
-            z_or_phi = np.arcsin(self.det_pos[:, permutations[axis][0]] /
-                                 np.sqrt(self.det_pos[:, 0]**2 +
-                                         self.det_pos[:, 1]**2 +
-                                         self.det_pos[:, 2]**2))
+            z_or_phi = np.arcsin(
+                self.det_pos[:, permutations[axis][0]] /
+                np.sqrt(self.det_pos[:, 0]**2 + self.det_pos[:, 1]**2 +
+                        self.det_pos[:, 2]**2))
 
         # Create the scatter
         if not self.figure2d:
             patches = []
             for x, y in zip(theta, z_or_phi):
-                patches.append(Rectangle((x-0.5*self.size, y-0.5*self.size),
-                                         self.size, self.size))
+                patches.append(
+                    Rectangle((x - 0.5 * self.size, y - 0.5 * self.size),
+                              self.size, self.size))
 
             self.scatter2d = PatchCollection(
-                patches, cmap=self.params[self.key]["cmap"],
+                patches,
+                cmap=self.params[self.key]["cmap"],
                 norm=self.params[self.key]["norm"],
-                array=self.hist_data_array[
-                    self.key][self.dim, self.slider.value].values)
+                array=self.hist_data_array[self.key][self.dim,
+                                                     self.slider.value].values)
             self.ax.add_collection(self.scatter2d)
             self.save_xy = np.array([theta, z_or_phi]).T
             if self.params[self.key]["cbar"]:
@@ -388,12 +443,14 @@ class InstrumentView:
             self.figure2d = True
         else:
             self.scatter2d.set_offset_position("data")
-            self.scatter2d.set_offsets(np.array([theta, z_or_phi]).T -
-                                       self.save_xy)
-        self.ax.set_xlim([np.amin(theta) - self.size,
-                          np.amax(theta) + self.size])
-        self.ax.set_ylim([np.amin(z_or_phi) - self.size,
-                          np.amax(z_or_phi) + self.size])
+            self.scatter2d.set_offsets(
+                np.array([theta, z_or_phi]).T - self.save_xy)
+        self.ax.set_xlim(
+            [np.amin(theta) - self.size,
+             np.amax(theta) + self.size])
+        self.ax.set_ylim(
+            [np.amin(z_or_phi) - self.size,
+             np.amax(z_or_phi) + self.size])
         return
 
     def update_colors_2d(self, change):
@@ -410,8 +467,9 @@ class InstrumentView:
                   "integer.".format(owner.value))
             return
         # self.rebin_data(nbins, from_nbins_text)
-        self.rebin_data(np.linspace(
-            self.minmax["tof"][0], self.minmax["tof"][1], nbins + 1))
+        self.rebin_data(
+            np.linspace(self.minmax["tof"][0], self.minmax["tof"][1],
+                        nbins + 1))
         x = self.hist_data_array[self.key].coords[self.dim].values
         self.bin_size.value = str(x[1] - x[0])
         self.update_slider()
@@ -424,10 +482,10 @@ class InstrumentView:
             print("Warning: could not convert value: {} to a "
                   "float.".format(owner.value))
             return
-        self.rebin_data(np.arange(
-            self.minmax["tof"][0], self.minmax["tof"][1], binw))
-        self.nbins.value = str(self.hist_data_array[self.key].shape[
-            self.tof_dim_indx])
+        self.rebin_data(
+            np.arange(self.minmax["tof"][0], self.minmax["tof"][1], binw))
+        self.nbins.value = str(
+            self.hist_data_array[self.key].shape[self.tof_dim_indx])
         self.update_slider()
         return
 

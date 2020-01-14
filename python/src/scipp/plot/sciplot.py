@@ -11,7 +11,6 @@ class SciPlot(dict):
     button widgets.
     More functionalities can be added in the future.
     """
-
     def __init__(self, *arg, **kw):
         super(SciPlot, self).__init__(*arg, **kw)
 

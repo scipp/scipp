@@ -9,9 +9,18 @@ import operator
 
 
 def test_type():
-    variable_slice = sc.Variable(
-        [Dim.X], np.arange(1, 10, dtype=float))[Dim.X, :]
+    variable_slice = sc.Variable([Dim.X], np.arange(1, 10,
+                                                    dtype=float))[Dim.X, :]
     assert type(variable_slice) == sc.VariableProxy
+
+
+def test_astype():
+    variable_slice = sc.Variable([Dim.X],
+                                 values=np.arange(1, 10, dtype=int))[Dim.X, :]
+    assert variable_slice.dtype == sc.dtype.int64
+
+    var_as_float = variable_slice.astype(sc.dtype.float64)
+    assert var_as_float.dtype == sc.dtype.float64
 
 
 def apply_test_op(op, a, b, data):

@@ -153,6 +153,22 @@ def test_create_2D_inner_size_3():
     assert var.unit == sc.units.m
 
 
+def test_astype():
+    var = sc.Variable([sc.Dim.X], values=np.array([1, 2, 3, 4], dtype=int))
+    assert var.dtype == sc.dtype.int64
+
+    var_as_float = var.astype(sc.dtype.float64)
+    assert var_as_float.dtype == sc.dtype.float64
+
+
+def test_astype_bad_conversion():
+    var = sc.Variable([sc.Dim.X], values=np.array([1, 2, 3, 4], dtype=int))
+    assert var.dtype == sc.dtype.int64
+
+    with pytest.raises(RuntimeError):
+        var.astype(sc.dtype.string)
+
+
 def test_operation_with_scalar_quantity():
     reference = sc.Variable([sc.Dim.X], np.arange(4.0) * 1.5)
     reference.unit = sc.units.kg
@@ -845,7 +861,8 @@ def test_sin():
                       values=np.array([0.0, math.pi]),
                       unit=sc.units.rad)
     expected = sc.Variable([Dim.X],
-                           values=np.array([math.sin(0.0), math.sin(math.pi)]),
+                           values=np.array([math.sin(0.0),
+                                            math.sin(math.pi)]),
                            unit=sc.units.dimensionless)
     assert sc.sin(var) == expected
 
@@ -855,7 +872,8 @@ def test_sin_out():
                       values=np.array([0.0, math.pi]),
                       unit=sc.units.rad)
     expected = sc.Variable([Dim.X],
-                           values=np.array([math.sin(0.0), math.sin(math.pi)]),
+                           values=np.array([math.sin(0.0),
+                                            math.sin(math.pi)]),
                            unit=sc.units.dimensionless)
     out = sc.sin(x=var, out=var)
     assert var == expected
@@ -867,7 +885,8 @@ def test_cos():
                       values=np.array([0.0, math.pi]),
                       unit=sc.units.rad)
     expected = sc.Variable([Dim.X],
-                           values=np.array([math.cos(0.0), math.cos(math.pi)]),
+                           values=np.array([math.cos(0.0),
+                                            math.cos(math.pi)]),
                            unit=sc.units.dimensionless)
     assert sc.cos(var) == expected
 
@@ -877,7 +896,8 @@ def test_cos_out():
                       values=np.array([0.0, math.pi]),
                       unit=sc.units.rad)
     expected = sc.Variable([Dim.X],
-                           values=np.array([math.cos(0.0), math.cos(math.pi)]),
+                           values=np.array([math.cos(0.0),
+                                            math.cos(math.pi)]),
                            unit=sc.units.dimensionless)
     out = sc.cos(x=var, out=var)
     assert var == expected
@@ -889,8 +909,9 @@ def test_tan():
                       values=np.array([0.0, math.pi / 2.]),
                       unit=sc.units.rad)
     expected = sc.Variable([Dim.X],
-                           values=np.array([math.tan(0.0),
-                                            math.tan(math.pi / 2.)]),
+                           values=np.array(
+                               [math.tan(0.0),
+                                math.tan(math.pi / 2.)]),
                            unit=sc.units.dimensionless)
     assert sc.tan(var) == expected
 
@@ -900,8 +921,9 @@ def test_tan_out():
                       values=np.array([0.0, math.pi / 2.]),
                       unit=sc.units.rad)
     expected = sc.Variable([Dim.X],
-                           values=np.array([math.tan(0.0),
-                                            math.tan(math.pi / 2.)]),
+                           values=np.array(
+                               [math.tan(0.0),
+                                math.tan(math.pi / 2.)]),
                            unit=sc.units.dimensionless)
     out = sc.tan(x=var, out=var)
     assert var == expected
@@ -911,7 +933,8 @@ def test_tan_out():
 def test_asin():
     var = sc.Variable([Dim.X], values=np.array([0.0, 0.5]))
     expected = sc.Variable([Dim.X],
-                           values=np.array([math.asin(0.0), math.asin(0.5)]),
+                           values=np.array([math.asin(0.0),
+                                            math.asin(0.5)]),
                            unit=sc.units.rad)
     assert sc.asin(var) == expected
 
@@ -919,7 +942,8 @@ def test_asin():
 def test_asin_out():
     var = sc.Variable([Dim.X], values=np.array([0.0, 0.5]))
     expected = sc.Variable([Dim.X],
-                           values=np.array([math.asin(0.0), math.asin(0.5)]),
+                           values=np.array([math.asin(0.0),
+                                            math.asin(0.5)]),
                            unit=sc.units.rad)
     out = sc.asin(x=var, out=var)
     assert var == expected
@@ -929,7 +953,8 @@ def test_asin_out():
 def test_acos():
     var = sc.Variable([Dim.X], values=np.array([0.0, 0.5]))
     expected = sc.Variable([Dim.X],
-                           values=np.array([math.acos(0.0), math.acos(0.5)]),
+                           values=np.array([math.acos(0.0),
+                                            math.acos(0.5)]),
                            unit=sc.units.rad)
     assert sc.acos(var) == expected
 
@@ -937,7 +962,8 @@ def test_acos():
 def test_acos_out():
     var = sc.Variable([Dim.X], values=np.array([0.0, 0.5]))
     expected = sc.Variable([Dim.X],
-                           values=np.array([math.acos(0.0), math.acos(0.5)]),
+                           values=np.array([math.acos(0.0),
+                                            math.acos(0.5)]),
                            unit=sc.units.rad)
     out = sc.acos(x=var, out=var)
     assert var == expected
@@ -947,7 +973,8 @@ def test_acos_out():
 def test_atan():
     var = sc.Variable([Dim.X], values=np.array([0.0, 0.5]))
     expected = sc.Variable([Dim.X],
-                           values=np.array([math.atan(0.0), math.atan(0.5)]),
+                           values=np.array([math.atan(0.0),
+                                            math.atan(0.5)]),
                            unit=sc.units.rad)
     assert sc.atan(var) == expected
 
@@ -955,7 +982,8 @@ def test_atan():
 def test_atan_out():
     var = sc.Variable([Dim.X], values=np.array([0.0, 0.5]))
     expected = sc.Variable([Dim.X],
-                           values=np.array([math.atan(0.0), math.atan(0.5)]),
+                           values=np.array([math.atan(0.0),
+                                            math.atan(0.5)]),
                            unit=sc.units.rad)
     out = sc.atan(x=var, out=var)
     assert var == expected

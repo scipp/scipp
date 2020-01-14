@@ -135,10 +135,12 @@ def test_dataset_histogram_with_masks():
     N = 10
 
     d = sc.Dataset(
-        {"Counts": sc.Variable([Dim.X],
-                               values=10.0 * np.random.rand(N),
-                               variances=np.random.rand(N))},
-        {Dim.X: sc.Variable([Dim.X], values=np.arange(N+1))})
+        {
+            "Counts":
+            sc.Variable([Dim.X],
+                        values=10.0 * np.random.rand(N),
+                        variances=np.random.rand(N))
+        }, {Dim.X: sc.Variable([Dim.X], values=np.arange(N + 1))})
     d.labels["Normalized"] = sc.Variable([Dim.X], values=np.arange(N))
 
     d.masks["Mask"] = sc.Variable([Dim.X], values=np.zeros(N, dtype=np.bool))

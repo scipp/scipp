@@ -10,8 +10,15 @@ from .sparse import histogram_sparse_data
 import ipywidgets as ipw
 
 
-def dispatch(scipp_obj_dict, ndim=0, name=None, collapse=None, sparse_dim=None,
-             bins=None, projection=None, mpl_line_params=None,  **kwargs):
+def dispatch(scipp_obj_dict,
+             ndim=0,
+             name=None,
+             collapse=None,
+             sparse_dim=None,
+             bins=None,
+             projection=None,
+             mpl_line_params=None,
+             **kwargs):
     """
     Function to automatically dispatch the dict of scipp objects to the
     appropriate plotting function depending on its dimensions.
@@ -41,12 +48,17 @@ def dispatch(scipp_obj_dict, ndim=0, name=None, collapse=None, sparse_dim=None,
     output = ipw.Output()
 
     if sparse_dim is not None and bins is None:
-        return plot_sparse(scipp_obj_dict, ndim=ndim, sparse_dim=sparse_dim,
-                           mpl_scatter_params=mpl_line_params, output=output,
+        return plot_sparse(scipp_obj_dict,
+                           ndim=ndim,
+                           sparse_dim=sparse_dim,
+                           mpl_scatter_params=mpl_line_params,
+                           output=output,
                            **kwargs)
     elif projection == "1d":
-        return plot_1d(scipp_obj_dict, output=output,
-                       mpl_line_params=mpl_line_params, **kwargs)
+        return plot_1d(scipp_obj_dict,
+                       output=output,
+                       mpl_line_params=mpl_line_params,
+                       **kwargs)
     elif projection == "2d":
         return plot_2d(scipp_obj_dict[name], output=output, **kwargs)
     elif projection == "3d":

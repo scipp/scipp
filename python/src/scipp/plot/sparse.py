@@ -10,7 +10,9 @@ import numpy as np
 from itertools import product
 
 
-def visit_sparse_data(data_array, sparse_dim, return_sparse_data=False,
+def visit_sparse_data(data_array,
+                      sparse_dim,
+                      return_sparse_data=False,
                       weights=None):
 
     xmin = 1.0e30
@@ -74,7 +76,10 @@ def visit_sparse_data(data_array, sparse_dim, return_sparse_data=False,
         return xmin, xmax
 
 
-def make_bins(data_array=None, sparse_dim=None, bins=None, dim=None,
+def make_bins(data_array=None,
+              sparse_dim=None,
+              bins=None,
+              dim=None,
               padding=True):
     """
     Input bins can be different things:
@@ -119,7 +124,8 @@ def make_bins(data_array=None, sparse_dim=None, bins=None, dim=None,
                                values=np.linspace(xmin, xmax, bins + 1),
                                unit=data_array.coords[bin_dim].unit)
         elif isinstance(bins, np.ndarray):
-            bins = sc.Variable([bin_dim], values=bins,
+            bins = sc.Variable([bin_dim],
+                               values=bins,
                                unit=data_array.coords[bin_dim].unit)
         else:
             raise RuntimeError("Unknown bins type: {}".format(bins))
@@ -131,6 +137,6 @@ def histogram_sparse_data(data_array, sparse_dim, bins):
     Return a DataArray containing histogrammed sparse data, from specified
     sparse dimensions and bins. See make_bins for more details.
     """
-    return sc.histogram(data_array, make_bins(data_array=data_array,
-                                              sparse_dim=sparse_dim,
-                                              bins=bins))
+    return sc.histogram(
+        data_array,
+        make_bins(data_array=data_array, sparse_dim=sparse_dim, bins=bins))

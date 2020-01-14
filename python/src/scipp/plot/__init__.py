@@ -23,11 +23,11 @@ try:
             ipy.run_line_magic("matplotlib", "inline")
         elif "IPKernelApp" in ipy.config:
             ipy.run_line_magic("matplotlib", "notebook")
-            ipy.run_cell_magic("html", "", "<style>.output_wrapper "
-                               ".ui-dialog-titlebar {display: none;}</style>")
+            ipy.run_cell_magic(
+                "html", "", "<style>.output_wrapper "
+                ".ui-dialog-titlebar {display: none;}</style>")
 except ImportError:
     pass
-
 
 from .plot import plot
 
@@ -35,8 +35,10 @@ from .plot import plot
 def superplot(dataset, **kwargs):
     return plot(dataset, projection="1d", **kwargs)
 
+
 def image(dataset, **kwargs):
     return plot(dataset, projection="2d", **kwargs)
+
 
 def threeslice(dataset, **kwargs):
     return plot(dataset, projection="3d", **kwargs)
