@@ -1116,3 +1116,14 @@ TYPED_TEST(AsTypeTest, variable_astype) {
                           Values{1.0, 2.0, 3.0});
   ASSERT_EQ(astype(var1, core::dtype<T2>), var2);
 }
+
+TEST(VariableProxyTest, make_transposed) {
+  auto var = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{3, 2},
+                                  Values{1, 2, 3, 4, 5, 6},
+                                  Variances{11, 12, 13, 14, 15, 16});
+
+  auto ref = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 3},
+                                  Values{1, 3, 5, 2, 4, 6},
+                                  Variances{11, 13, 15, 12, 14, 16});
+  EXPECT_EQ(VariableProxy::makeTransposed(var, {Dim::Y, Dim::X}), ref);
+}

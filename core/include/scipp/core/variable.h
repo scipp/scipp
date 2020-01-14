@@ -80,6 +80,10 @@ public:
   virtual VariableConceptHandle reshape(const Dimensions &dims) const = 0;
   virtual VariableConceptHandle reshape(const Dimensions &dims) = 0;
 
+  virtual VariableConceptHandle
+  transpose(const std::vector<Dim> &dms) const = 0;
+  virtual VariableConceptHandle transpose(const std::vector<Dim> &dms) = 0;
+
   virtual bool operator==(const VariableConcept &other) const = 0;
   virtual bool isSame(const VariableConcept &other) const = 0;
 
@@ -189,6 +193,10 @@ public:
   VariableConceptHandle reshape(const Dimensions &dims) const override;
 
   VariableConceptHandle reshape(const Dimensions &dims) override;
+
+  VariableConceptHandle transpose(const std::vector<Dim> &dims) const override;
+
+  VariableConceptHandle transpose(const std::vector<Dim> &dims) override;
 
   bool operator==(const VariableConcept &other) const override;
   void copy(const VariableConcept &other, const Dim dim,
@@ -397,6 +405,11 @@ public:
   // will not go out of scope, so that is ok (unless someone changes var and
   // expects the reshaped view to be still valid).
   Variable reshape(const Dimensions &dims) &&;
+
+  VariableConstProxy transpose(const Dimensions &dims) const &;
+  VariableProxy transpose(const Dimensions &dims) &;
+  // Note: the same issue as for reshape above
+  Variable transpose(const Dimensions &dims) &&;
   void rename(const Dim from, const Dim to);
 
   bool operator==(const VariableConstProxy &other) const;
@@ -753,6 +766,15 @@ public:
                 const scipp::index begin, const scipp::index end = -1)
       : VariableConstProxy(slice), m_mutableVariable(slice.m_mutableVariable) {
     m_view = slice.data().makeView(dim, begin, end);
+  }
+
+  template <class Var>
+  static VariableProxy makeTransposed(Var &var,
+                                      const std::vector<Dim> &dimOrder) {
+    auto res = VariableProxy(var);
+    auto tmpConstProxy = VariableConstProxy(var);
+    res.m_view = tmpConstProxy.data().transpose(dimOrder);
+    return res;
   }
 
   VariableProxy slice(const Slice slice) const {
