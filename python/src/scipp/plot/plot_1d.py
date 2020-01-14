@@ -3,7 +3,7 @@
 # @author Neil Vaytet
 
 # Scipp imports
-from ..config import plot as config
+from .. import config
 from .render import render_plot
 from .slicer import Slicer
 from .tools import edges_to_centers
@@ -95,9 +95,9 @@ class Slicer1d(Slicer):
             self.fig, self.ax = plt.subplots(
                 1,
                 1,
-                figsize=(config.width / config.dpi,
-                         config.height / config.dpi),
-                dpi=config.dpi)
+                figsize=(config.plot.width / config.plot.dpi,
+                         config.plot.height / config.plot.dpi),
+                dpi=config.plot.dpi)
 
         # Initialise container for returning matplotlib objects
         self.members.update({

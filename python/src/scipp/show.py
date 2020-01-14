@@ -6,7 +6,7 @@ import colorsys
 
 import numpy as np
 from ._scipp import core as sc
-from .config import colors
+from . import config
 
 # Unit is `em`. This particular value is chosen to avoid a horizontal scroll
 # bar with the readthedocs theme.
@@ -266,17 +266,17 @@ class VariableDrawer():
                 for name, label in self._variable.labels:
                     if label.sparse_dim is not None:
                         items.append(
-                            (name, label.values, colors.scheme['labels']))
+                            (name, label.values, config.colors['labels']))
                 for name, mask in self._variable.masks:
                     if label.sparse_dim is not None:
                         items.append(
-                            (name, mask.values, colors.scheme['mask']))
+                            (name, mask.values, config.colors['mask']))
                 sparse_dim = self._variable.sparse_dim
                 for dim, coord in self._variable.coords:
                     if dim == sparse_dim:
                         items.append((str(sparse_dim),
                                       self._variable.coords[sparse_dim].values,
-                                      colors.scheme['coord']))
+                                      config.colors['coord']))
 
         for i, (name, data, color) in enumerate(items):
             svg += '<g>'
@@ -306,7 +306,7 @@ class VariableDrawer():
             '<svg width={}em viewBox="0 0 {} {}">{}</svg>'.format(
                 _svg_width, max(_cubes_in_full_width,
                                 self.size()[0]),
-                self.size()[1], self.draw(color=colors.scheme['data'])))
+                self.size()[1], self.draw(color=config.colors['data'])))
 
 
 class DatasetDrawer():
@@ -368,12 +368,12 @@ class DatasetDrawer():
         area_xy = []
         area_0d = []
         if is_data_array(self._dataset):
-            area_xy.append(('', self._dataset, colors.scheme['data']))
+            area_xy.append(('', self._dataset, config.colors['data']))
         else:
             # Render highest-dimension items last so coords are optically
             # aligned
             for name, data in self._dataset:
-                item = (name, data, colors.scheme['data'])
+                item = (name, data, config.colors['data'])
                 # Using only x and 0d areas for 1-D dataset
                 if len(dims) == 1 or data.dims != dims:
                     if len(data.dims) == 0:
@@ -396,7 +396,7 @@ class DatasetDrawer():
             for name, var in items:
                 if var.sparse_dim is not None:
                     continue
-                item = (name, var, colors.scheme[what])
+                item = (name, var, config.colors[what])
                 if len(var.dims) == 0:
                     area_0d.append(item)
                 elif var.dims[-1] == dims[-1]:

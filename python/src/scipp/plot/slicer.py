@@ -2,7 +2,7 @@
 # Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
-from ..config import plot as config
+from .. import config
 from .tools import parse_params
 from ..utils import name_with_unit, value_to_string
 from .._scipp.core import combine_masks, Variable, Dim, dtype
@@ -83,7 +83,7 @@ class Slicer:
         # Save aspect ratio setting
         self.aspect = aspect
         if self.aspect is None:
-            self.aspect = config.aspect
+            self.aspect = config.plot.aspect
 
         # Size of the slider coordinate arrays
         self.slider_nx = dict()

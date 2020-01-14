@@ -3,7 +3,7 @@
 # @author Neil Vaytet
 
 # Scipp imports
-from ..config import plot as config
+from .. import config
 from .render import render_plot
 from .slicer import Slicer
 from ..utils import name_with_unit
@@ -119,10 +119,11 @@ class Slicer2d(Slicer):
             self.fig, ax = plt.subplots(
                 1,
                 1 + self.params["variances"]["show"],
-                figsize=(config.width / config.dpi, config.height /
+                figsize=(config.plot.width / config.plot.dpi,
+                         config.plot.height /
                          (1.0 + self.params["variances"]["show"]) /
-                         config.dpi),
-                dpi=config.dpi,
+                         config.plot.dpi),
+                dpi=config.plot.dpi,
                 sharex=True,
                 sharey=True)
             if not self.params["variances"]["show"]:
