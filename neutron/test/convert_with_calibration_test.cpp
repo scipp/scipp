@@ -47,7 +47,7 @@ Dataset makeCalTable() {
                                            Values{3.3, 4.4}));
   return cal;
 }
-}
+} // namespace
 
 TEST(ConvertWithCaliabrationDataArray, data_array) {
   const auto tof = makeTofDataForUnitConversion();
