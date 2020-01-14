@@ -55,7 +55,7 @@ TEST(ConvertWithCaliabrationDataArray, data_array) {
 
   for (const auto &item : tof)
     EXPECT_NO_THROW(
-        diffraction::convert_with_calibration(copy(data.second), cal));
+        diffraction::convert_with_calibration(copy(item.second), cal));
 }
 
 TEST(ConvertWithCaliabrationDataArray, dataset) {
