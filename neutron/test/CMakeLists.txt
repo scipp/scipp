@@ -3,20 +3,16 @@
 set(TARGET_NAME "scipp-neutron-test")
 add_dependencies(all-tests ${TARGET_NAME})
 add_executable(${TARGET_NAME} EXCLUDE_FROM_ALL
-               #EventWorkspace_test.cpp
-               #example_instrument_test.cpp
-               #Run_test.cpp
-               #TableWorkspace_test.cpp
-               #Workspace2D_test.cpp
                beamline_test.cpp
                convert_test.cpp
+               convert_with_calibration_test.cpp
                )
 include_directories(SYSTEM ${GMOCK_INCLUDE_DIR} ${GTEST_INCLUDE_DIR})
 target_link_libraries(${TARGET_NAME}
                       LINK_PRIVATE
                       scipp-neutron
                       scipp_test_helpers
-					  gtest_main
+	              gtest_main
                       ${GTEST_LIBRARIES}
                       ${GMOCK_LIBRARIES})
 set_property(TARGET ${TARGET_NAME} PROPERTY INTERPROCEDURAL_OPTIMIZATION ${INTERPROCEDURAL_OPTIMIZATION_TESTS})
