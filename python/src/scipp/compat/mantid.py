@@ -191,13 +191,11 @@ def _get_dtype_from_values(values):
             elif dtype is float:
                 dtype = sc.dtype.float64
             else:
-                raise RuntimeError(
-                    "Cannot handle the dtype that this "
-                    "workspace has on Axis 1.")
+                raise RuntimeError("Cannot handle the dtype that this "
+                                   "workspace has on Axis 1.")
         else:
-            raise RuntimeError(
-                "Axis 1 of this workspace has no values. "
-                "Cannot determine dtype.")
+            raise RuntimeError("Axis 1 of this workspace has no values. "
+                               "Cannot determine dtype.")
     return dtype
 
 
@@ -634,7 +632,7 @@ def validate_dim_and_get_mantid_string(unit_dim):
         return known_units[unit_dim]
 
 
-def to_workspace_2d(x, y, e, coord_dim):
+def to_workspace_2d(x, y, e, coord_dim, instrument_file=None):
     """
     Use the values provided to create a Mantid workspace.
 
@@ -649,6 +647,8 @@ def to_workspace_2d(x, y, e, coord_dim):
               If `None` the np.sqrt of y will be used.
     :param coord_dim: Dim of the coordinate, to be set as the equivalent
                       UnitX on the Mantid workspace.
+    :param instrument_file: Instrument file that will be
+                            loaded into the workspace
     :returns: Workspace2D containing the data for X, Y and E
     """
     try:
@@ -682,6 +682,11 @@ def to_workspace_2d(x, y, e, coord_dim):
     # Set X-Axis unit
     ws.getAxis(0).setUnit(unitX)
 
+    if instrument_file is not None:
+        mantid.LoadInstrument(ws,
+                              FileName=instrument_file,
+                              RewriteSpectraMap=True)
+
     return ws
 
 
@@ -708,22 +713,22 @@ def fit(ws, function, workspace_index, start_x, end_x):
     fit = mantid.Fit(Function=function,
                      InputWorkspace=ws,
                      WorkspaceIndex=workspace_index,
-                     StartX=start_x, EndX=end_x,
+                     StartX=start_x,
+                     EndX=end_x,
                      CreateOutput=True)
-    return sc.Dataset(
-        data={
-            'workspace': sc.Variable(
-                convert_Workspace2D_to_dataarray(fit.OutputWorkspace)),
-            'parameters': sc.Variable(
-                convert_TableWorkspace_to_dataset(fit.OutputParameters)),
-            'normalised_covariance_matrix': sc.Variable(
-                convert_TableWorkspace_to_dataset(
-                    fit.OutputNormalisedCovarianceMatrix)),
-        },
-        attrs={
-            'status': sc.Variable(fit.OutputStatus),
-            'chi2_over_DoF': sc.Variable(fit.OutputChi2overDoF),
-            'function': sc.Variable(str(fit.Function)),
-            'cost_function': sc.Variable(fit.CostFunction)
-        }
-    )
+    return sc.Dataset(data={
+        'workspace':
+        sc.Variable(convert_Workspace2D_to_dataarray(fit.OutputWorkspace)),
+        'parameters':
+        sc.Variable(convert_TableWorkspace_to_dataset(fit.OutputParameters)),
+        'normalised_covariance_matrix':
+        sc.Variable(
+            convert_TableWorkspace_to_dataset(
+                fit.OutputNormalisedCovarianceMatrix)),
+    },
+                      attrs={
+                          'status': sc.Variable(fit.OutputStatus),
+                          'chi2_over_DoF': sc.Variable(fit.OutputChi2overDoF),
+                          'function': sc.Variable(str(fit.Function)),
+                          'cost_function': sc.Variable(fit.CostFunction)
+                      })
