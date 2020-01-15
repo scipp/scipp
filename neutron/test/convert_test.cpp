@@ -236,6 +236,12 @@ TEST(Convert, DSpacing_to_Tof) {
       tof_original["events"].coords()[Dim::Tof].sparseValues<double>();
   EXPECT_TRUE(equals(events[0], events_original[0], 1e-15));
   EXPECT_TRUE(equals(events[1], events_original[1], 1e-12));
+
+  ASSERT_EQ(tof.labels()["position"], tof_original.labels()["position"]);
+  ASSERT_EQ(tof.labels()["source_position"],
+            tof_original.labels()["source_position"]);
+  ASSERT_EQ(tof.labels()["sample_position"],
+            tof_original.labels()["sample_position"]);
 }
 
 TEST(Convert, Tof_to_Wavelength) {
@@ -326,6 +332,12 @@ TEST(Convert, Wavelength_to_Tof) {
       tof_original["events"].coords()[Dim::Tof].sparseValues<double>();
   EXPECT_TRUE(equals(events[0], events_original[0], 1e-15));
   EXPECT_TRUE(equals(events[1], events_original[1], 1e-12));
+
+  ASSERT_EQ(tof.labels()["position"], tof_original.labels()["position"]);
+  ASSERT_EQ(tof.labels()["source_position"],
+            tof_original.labels()["source_position"]);
+  ASSERT_EQ(tof.labels()["sample_position"],
+            tof_original.labels()["sample_position"]);
 }
 
 TEST(Convert, Tof_to_Energy_Elastic) {
@@ -455,6 +467,12 @@ TEST(Convert, Energy_to_Tof_Elastic) {
       tof_original["events"].coords()[Dim::Tof].sparseValues<double>();
   EXPECT_TRUE(equals(events[0], events_original[0], 1e-15));
   EXPECT_TRUE(equals(events[1], events_original[1], 1e-15));
+
+  ASSERT_EQ(tof.labels()["position"], tof_original.labels()["position"]);
+  ASSERT_EQ(tof.labels()["source_position"],
+            tof_original.labels()["source_position"]);
+  ASSERT_EQ(tof.labels()["sample_position"],
+            tof_original.labels()["sample_position"]);
 }
 
 TEST(Convert, convert_with_factor_type_promotion) {
