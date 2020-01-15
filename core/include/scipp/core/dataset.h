@@ -361,6 +361,7 @@ public:
   void setAttr(const std::string &name, const std::string &attrName,
                Variable attr);
   void setData(const std::string &name, Variable data);
+  void setDataMove(const std::string &name, DataArray data) { };
   void setData(const std::string &name, const DataConstProxy &data);
   void setSparseCoord(const std::string &name, Variable coord);
   void setSparseLabels(const std::string &name, const std::string &labelName,

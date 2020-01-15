@@ -148,10 +148,14 @@ void bind_data_array_properties(py::class_<T, Ignored...> &c) {
 struct MoveableVariable {
   Variable var;
 };
+struct MoveableDataArray {
+  DataArray data;
+};
 
 void init_dataset(py::module &m) {
   py::class_<Slice>(m, "Slice");
   py::class_<MoveableVariable>(m, "MoveableVariable");
+  py::class_<MoveableDataArray>(m, "MoveableDataArray");
 
   bind_mutable_proxy<CoordsProxy, CoordsConstProxy>(m, "Coords");
   bind_mutable_proxy<LabelsProxy, LabelsConstProxy>(m, "Labels");
@@ -170,17 +174,24 @@ void init_dataset(py::module &m) {
       py::arg("labels") = std::map<std::string, Variable>{},
       py::arg("masks") = std::map<std::string, Variable>{},
       py::arg("attrs") = std::map<std::string, Variable>{});
+  // dataArray.def(
+  //     py::init([](std::optional<MoveableVariable> &data, const std::map<Dim, Variable> &coords,
+  //              const std::map<std::string, Variable> &labels, const std::map<std::string, Variable> &masks,
+  //              const std::map<std::string, Variable> &attrs) { return DataArray(std::move(data.value().var), coords, labels, masks, attrs);}),
+  //     py::arg("data") = std::nullopt,
+  //     py::arg("coords") = std::map<Dim, Variable>{},
+  //     py::arg("labels") = std::map<std::string, Variable>{},
+  //     py::arg("masks") = std::map<std::string, Variable>{},
+  //     py::arg("attrs") = std::map<std::string, Variable>{});
   dataArray.def(
-      py::init([](std::optional<MoveableVariable>, std::map<Dim, Variable>,
-               std::map<std::string, Variable>, std::map<std::string, Variable>,
-               std::map<std::string, Variable>>()) {}
-
+      py::init([](MoveableVariable &data, const std::map<Dim, Variable> &coords,
+               const std::map<std::string, Variable> &labels, const std::map<std::string, Variable> &masks,
+               const std::map<std::string, Variable> &attrs) { return DataArray(std::move(data.var), coords, labels, masks, attrs);}),
       py::arg("data") = std::nullopt,
       py::arg("coords") = std::map<Dim, Variable>{},
       py::arg("labels") = std::map<std::string, Variable>{},
       py::arg("masks") = std::map<std::string, Variable>{},
       py::arg("attrs") = std::map<std::string, Variable>{});
-
 
 
   py::class_<DataConstProxy>(m, "DataConstProxy")
@@ -230,10 +241,10 @@ void init_dataset(py::module &m) {
       .def("__setitem__",
            [](Dataset &self, const std::string &name,
               const DataConstProxy &data) { self.setData(name, data); })
-      .def("__setitem__",
-           [](Dataset &self, const std::string &name, MoveableDataArray &mdat) {
-             self.setData(name, std::move(mvar.var));
-           })
+      // .def("__setitem__",
+      //      [](Dataset &self, const std::string &name, MoveableDataArray &mdat) {
+      //        self.setDataMove(name, std::move(mdat.data));
+      //      })
       .def("__delitem__", &Dataset::erase,
            py::call_guard<py::gil_scoped_release>())
       .def(
@@ -540,8 +551,24 @@ void init_dataset(py::module &m) {
   m.def("move",
         [](Variable &var) {
           auto mv = MoveableVariable{std::move(var)};
-          var = makeVariable<bool>(Dims{Dim::Invalid}, Shape{0});
+          var = makeVariable<bool>(Dims{Dim::X}, Shape{0});
+          // var = Variable();
           return mv;
+        },
+        py::call_guard<py::gil_scoped_release>(), R"(
+        This function can be used in a similar way to the C++ std::move to
+        transfer ownership of an input Variable to a container.
+        This is useful when wanting to avoid unnecessary copies of Variables
+        when inserting them into a Dataset.
+
+        :return: A MoveableVariable wrapper class.
+        :rtype: MoveableVariable)");
+
+  m.def("move",
+        [](DataArray &data) {
+          auto mda = MoveableDataArray{std::move(data)};
+          data = DataArray();
+          return mda;
         },
         py::call_guard<py::gil_scoped_release>(), R"(
         This function can be used in a similar way to the C++ std::move to
