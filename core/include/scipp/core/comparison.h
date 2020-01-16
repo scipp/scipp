@@ -6,11 +6,12 @@
 
 #include "dtype.h"
 #include "scipp/core/dataset.h"
+#include "scipp/core/string.h"
 #include "scipp/core/transform.h"
 #include "scipp/core/variable.h"
-#include "scipp/core/string.h"
 
 #include <atomic>
+#include <sstream>
 
 namespace scipp::core {
 
@@ -19,14 +20,17 @@ namespace scipp::core {
 template <typename T>
 bool is_approx(const VariableConstProxy &a, const VariableConstProxy &b,
                const T tol) {
-  if (a.dtype() != b.dtype())
-    return false; // TODO this should throw rather than return false IMHO
-
-  if(dtype<T> != a.dtype()) {
-    throw std::runtime_error("Type of tolerance " + to_string(dtype<T>) + " not same as lh operand " + to_string(a.dtype()));
+  if (a.dtype() != b.dtype()) {
+    std::stringstream ss;
+    ss << "is_approx. Types do not match. dtype a " << to_string(a.dtype())
+       << ". dtype b " << to_string(b.dtype());
+    throw except::VariableError(ss.str());
   }
-  if(dtype<T> != a.dtype()) {
-    throw std::runtime_error("Type of tolerance " + to_string(dtype<T>) + " not same as rh operand " + to_string(a.dtype()));
+  if (dtype<T> != a.dtype()) {
+    std::stringstream ss;
+    ss << "is_approx. Type of tol " << to_string(dtype<T>)
+       << " not same as type of input arguments " << to_string(a.dtype());
+    throw except::VariableError(ss.str());
   }
 
   if (a.hasVariances() != b.hasVariances())
