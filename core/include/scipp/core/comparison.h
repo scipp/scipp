@@ -11,7 +11,6 @@
 #include "scipp/core/variable.h"
 
 #include <atomic>
-#include <sstream>
 
 namespace scipp::core {
 
@@ -21,16 +20,16 @@ template <typename T>
 bool is_approx(const VariableConstProxy &a, const VariableConstProxy &b,
                const T tol) {
   if (a.dtype() != b.dtype()) {
-    std::stringstream ss;
-    ss << "is_approx. Types do not match. dtype a " << to_string(a.dtype())
-       << ". dtype b " << to_string(b.dtype());
-    throw except::VariableError(ss.str());
+    std::string message = "is_approx. Types do not match. dtype a " +
+                          to_string(a.dtype()) + ". dtype b " +
+                          to_string(b.dtype());
+    throw except::TypeError(message);
   }
   if (dtype<T> != a.dtype()) {
-    std::stringstream ss;
-    ss << "is_approx. Type of tol " << to_string(dtype<T>)
-       << " not same as type of input arguments " << to_string(a.dtype());
-    throw except::VariableError(ss.str());
+    std::string message = "is_approx. Type of tol " + to_string(dtype<T>) +
+                          " not same as type of input arguments " +
+                          to_string(a.dtype());
+    throw except::TypeError(message);
   }
 
   if (a.hasVariances() != b.hasVariances())

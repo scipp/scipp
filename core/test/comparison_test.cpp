@@ -61,12 +61,12 @@ TEST(ComparisonTest, variable_unit_not_equal) {
 TEST(ComparisonTest, variable_mismatched_dtype) {
   const auto a = makeVariable<float>(Dims{Dim::X}, Shape{2}, Values{1.0, 2.0});
   const auto b = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.0, 2.0});
-  EXPECT_THROW(is_approx(a, b, 0.1), except::VariableError);
+  EXPECT_THROW(is_approx(a, b, 0.1), except::TypeError);
 }
 
 TEST(ComparisonTest, tolerance_type_mismatch) {
   const auto a = makeVariable<float>(Dims{Dim::X}, Shape{2}, Values{1.0, 2.0});
   const auto b = makeVariable<float>(Dims{Dim::X}, Shape{2}, Values{1.0, 2.0});
-  EXPECT_THROW(is_approx(a, b, 0 /*implicit int*/), except::VariableError);
+  EXPECT_THROW(is_approx(a, b, 0 /*implicit int*/), except::TypeError);
   EXPECT_NO_THROW(is_approx(a, b, 0.0f));
 }
