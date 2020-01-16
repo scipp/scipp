@@ -5,15 +5,36 @@
 #ifndef SCIPP_CORE_DATASET_OPERATIONS_COMMON_H
 #define SCIPP_CORE_DATASET_OPERATIONS_COMMON_H
 
+#include "scipp/core/comparison.h"
+
 namespace scipp::core {
 
 template <bool ApplyToData, class Func, class... Args>
 DataArray apply_and_drop_dim_impl(const DataConstProxy &a, Func func,
                                   const Dim dim, Args &&... args) {
   std::map<Dim, Variable> coords;
-  for (auto &&[d, coord] : a.coords())
-    if (d != dim)
+  for (auto &&[d, coord] : a.coords()) {
+    // Coord dimension not same as operation dimension
+    if (d != dim) {
+      // Get all dimensions of coord
+      auto dims = coord.dims();
+      // Only if operation dimension is one of these
+      if (dims.contains(dim)) {
+        auto extent = dims[dim];
+        for (scipp::index i = 0; i < extent - 1; ++i) {
+          // slice neighbouring increments along operation dimension. Coord
+          // slices along these should all be equal.
+          const auto layer1 = coord.slice({dim, i, i + 1});
+          const auto layer2 = coord.slice({dim, i + 1, i + 2});
+          if (layer1 != layer2) {
+            throw except::CoordMismatchError(
+                "Coordinates for non-sum dimensions do not match");
+          }
+        }
+      }
       coords.emplace(d, coord);
+    }
+  }
 
   std::map<std::string, Variable> labels;
   for (auto &&[name, label] : a.labels())
