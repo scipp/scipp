@@ -121,12 +121,14 @@ TYPED_TEST(DataProxyBinaryEqualsOpTest, lhs_with_variance) {
   for (const auto &item : dataset_b) {
     auto dataset_a = datasetFactory.make();
     auto target = dataset_a["data_zyx"];
+    auto data_array = copy(target);
 
     Variable reference(target.data());
     TestFixture::op(reference, item.second.data());
 
     ASSERT_NO_THROW(target = TestFixture::op(target, item.second));
     EXPECT_EQ(target.data(), reference);
+    EXPECT_EQ(TestFixture::op(data_array, item.second), target);
   }
 }
 
@@ -136,6 +138,7 @@ TYPED_TEST(DataProxyBinaryEqualsOpTest, lhs_without_variance) {
   for (const auto &item : dataset_b) {
     auto dataset_a = datasetFactory.make();
     auto target = dataset_a["data_xyz"];
+    auto data_array = copy(target);
 
     if (item.second.hasVariances()) {
       ASSERT_ANY_THROW(TestFixture::op(target, item.second));
@@ -146,6 +149,7 @@ TYPED_TEST(DataProxyBinaryEqualsOpTest, lhs_without_variance) {
       ASSERT_NO_THROW(target = TestFixture::op(target, item.second));
       EXPECT_EQ(target.data(), reference);
       EXPECT_FALSE(target.hasVariances());
+      EXPECT_EQ(TestFixture::op(data_array, item.second), target);
     }
   }
 }
