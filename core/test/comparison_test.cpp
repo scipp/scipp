@@ -63,3 +63,10 @@ TEST(ComparisonTest, variable_mismatched_dtype) {
   const auto b = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.0, 2.0});
   EXPECT_FALSE(is_approx(a, b, 0.1));
 }
+
+TEST(ComparisonTest, tolerance_type_mismatch) {
+  const auto a = makeVariable<float>(Dims{Dim::X}, Shape{2}, Values{1.0, 2.0});
+  const auto b = makeVariable<float>(Dims{Dim::X}, Shape{2}, Values{1.0, 2.0});
+  EXPECT_THROW(is_approx(a, b, 0 /*implicit int*/), std::runtime_error);
+  EXPECT_NO_THROW(is_approx(a, b, 0.0f));
+}

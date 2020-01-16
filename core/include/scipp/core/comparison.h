@@ -4,9 +4,11 @@
 #ifndef SCIPP_CORE_COMPARISON_H
 #define SCIPP_CORE_COMPARISON_H
 
+#include "dtype.h"
 #include "scipp/core/dataset.h"
 #include "scipp/core/transform.h"
 #include "scipp/core/variable.h"
+#include "scipp/core/string.h"
 
 #include <atomic>
 
@@ -18,7 +20,14 @@ template <typename T>
 bool is_approx(const VariableConstProxy &a, const VariableConstProxy &b,
                const T tol) {
   if (a.dtype() != b.dtype())
-    return false;
+    return false; // TODO this should throw rather than return false IMHO
+
+  if(dtype<T> != a.dtype()) {
+    throw std::runtime_error("Type of tolerance " + to_string(dtype<T>) + " not same as lh operand " + to_string(a.dtype()));
+  }
+  if(dtype<T> != a.dtype()) {
+    throw std::runtime_error("Type of tolerance " + to_string(dtype<T>) + " not same as rh operand " + to_string(a.dtype()));
+  }
 
   if (a.hasVariances() != b.hasVariances())
     return false;
