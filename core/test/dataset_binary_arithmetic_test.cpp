@@ -119,7 +119,8 @@ TYPED_TEST(DataProxyBinaryEqualsOpTest, lhs_with_variance) {
   const auto dataset_b = datasetFactory.make();
 
   for (const auto &item : dataset_b) {
-    auto dataset_a = datasetFactory.make();
+    const bool randomMasks = true;
+    auto dataset_a = datasetFactory.make(randomMasks);
     auto target = dataset_a["data_zyx"];
     auto data_array = copy(target);
 
@@ -136,7 +137,8 @@ TYPED_TEST(DataProxyBinaryEqualsOpTest, lhs_without_variance) {
   const auto dataset_b = datasetFactory.make();
 
   for (const auto &item : dataset_b) {
-    auto dataset_a = datasetFactory.make();
+    const bool randomMasks = true;
+    auto dataset_a = datasetFactory.make(randomMasks);
     auto target = dataset_a["data_xyz"];
     auto data_array = copy(target);
 
@@ -158,7 +160,8 @@ TYPED_TEST(DataProxyBinaryEqualsOpTest, slice_lhs_with_variance) {
   const auto dataset_b = datasetFactory.make();
 
   for (const auto &item : dataset_b) {
-    auto dataset_a = datasetFactory.make();
+    const bool randomMasks = true;
+    auto dataset_a = datasetFactory.make(randomMasks);
     auto target = dataset_a["data_zyx"];
     const auto &dims = item.second.dims();
 

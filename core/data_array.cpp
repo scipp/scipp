@@ -118,12 +118,14 @@ Variable sparse_dense_op_impl(Op op, const VariableConstProxy &sparseCoord_,
 
 DataArray &DataArray::operator+=(const DataConstProxy &other) {
   expect::coordsAndLabelsAreSuperset(*this, other);
+  union_or_in_place(masks(), other.masks());
   data() += other.data();
   return *this;
 }
 
 DataArray &DataArray::operator-=(const DataConstProxy &other) {
   expect::coordsAndLabelsAreSuperset(*this, other);
+  union_or_in_place(masks(), other.masks());
   data() -= other.data();
   return *this;
 }
