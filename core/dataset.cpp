@@ -298,6 +298,7 @@ void Dataset::setMask(const std::string &masksName, Variable mask) {
 /// Throws if the provided values bring the dataset into an inconsistent state
 /// (mismatching dtype, unit, or dimensions).
 void Dataset::setData(const std::string &name, Variable data) {
+  std::cout << "Using setData for Variable" << std::endl;
   setDims(data.dims());
   const bool sparseData = data.dims().sparse();
 
@@ -308,42 +309,104 @@ void Dataset::setData(const std::string &name, Variable data) {
 }
 
 
-// void Dataset::setDataMove(const std::string &name, DataArray data) {
-//   std::cout << "Using new setData" << std::endl;
+void Dataset::setDataMove(const std::string &name, DataArray data) {
+  std::cout << "Using new setDataMove" << std::endl;
+  auto dataset = DataArray::to_dataset(std::move(data));
+//   // setDataFromDataArray(name, DataArray::to_dataset(std::move(data)));
+//   // // if (contains(name) && &m_data[name] == &data.underlying() &&
+//   // //     data.slices().empty())
+//   // //   return; // Self-assignment, return early.
+
+//   // for (const auto &[dim, coord] : data.coords()) {
+//   //   if (coord.dims().sparse()) {
+//   //     setSparseCoord(name, coord);
+//   //   } else {
+//   //     if (const auto it = m_coords.find(dim); it != m_coords.end())
+//   //       expect::equals(coord, it->second);
+//   //     else
+//   //       setCoord(dim, coord);
+//   //   }
+//   // }
+//   // for (const auto &[nm, labs] : data.labels()) {
+//   //   if (labs.dims().sparse()) {
+//   //     setSparseLabels(name, std::string(nm), labs);
+//   //   } else {
+//   //     if (const auto it = m_labels.find(std::string(nm)); it != m_labels.end())
+//   //       expect::equals(labs, it->second);
+//   //     else
+//   //       setLabels(std::string(nm), labs);
+//   //   }
+//   // }
+
+//   // for (const auto &[nm, mask] : data.masks())
+//   //   setMask(std::string(nm), mask);
+
+//   // if (data.hasData())
+//   //   setData(name, std::move(data.data()));
+
+//   // for (const auto &[nm, attr] : data.attrs())
+//   //   setAttr(name, std::string(nm), attr);
+// }
+
+// void Dataset::setDataFromDataArray(const std::string &name, Dataset data) {
+//   std::cout << "Using setDataFromDataArray" << std::endl;
+//   // auto dataset = DataArray::toDataset(data);
 //   // if (contains(name) && &m_data[name] == &data.underlying() &&
 //   //     data.slices().empty())
 //   //   return; // Self-assignment, return early.
 
-//   for (const auto &[dim, coord] : data.coords()) {
-//     if (coord.dims().sparse()) {
-//       setSparseCoord(name, coord);
-//     } else {
-//       if (const auto it = m_coords.find(dim); it != m_coords.end())
-//         expect::equals(coord, it->second);
-//       else
-//         setCoord(dim, coord);
-//     }
-//   }
-//   for (const auto &[nm, labs] : data.labels()) {
-//     if (labs.dims().sparse()) {
-//       setSparseLabels(name, std::string(nm), labs);
-//     } else {
-//       if (const auto it = m_labels.find(std::string(nm)); it != m_labels.end())
-//         expect::equals(labs, it->second);
-//       else
-//         setLabels(std::string(nm), labs);
-//     }
-//   }
+  for (const auto &[dim, coord] : dataset.m_coords) {
+    // if (coord.dims().sparse()) {
+    //   setSparseCoord(name, std::move(coord));
+    // } else {
+      if (const auto it = m_coords.find(dim); it != m_coords.end())
+        expect::equals(coord, it->second);
+      else
+        setCoord(dim, std::move(coord));
+    // }
+  }
+  for (const auto &[nm, labs] : dataset.m_labels) {
+    // if (labs.dims().sparse()) {
+    //   setSparseLabels(name, std::string(nm), std::move(labs));
+    // } else {
+      if (const auto it = m_labels.find(std::string(nm)); it != m_labels.end())
+        expect::equals(labs, it->second);
+      else
+        setLabels(std::string(nm), std::move(labs));
+    // }
+  }
 
-//   for (const auto &[nm, mask] : data.masks())
-//     setMask(std::string(nm), mask);
+  for (const auto &[nm, mask] : dataset.m_masks)
+    setMask(std::string(nm), std::move(mask));
 
-//   if (data.hasData())
-//     setData(name, std::move(data.data()));
+  for (const auto &[nm, attr] : dataset.m_attrs)
+    setAttr(name, std::string(nm), std::move(attr));
 
-//   for (const auto &[nm, attr] : data.attrs())
-//     setAttr(name, std::string(nm), attr);
-// }
+  // if (data.hasData())
+  // There can be only one DatasetData item, so get the first one with begin()
+  auto item = dataset.m_data.begin();
+  std::cout << "Just before setting data" << std::endl;
+  if (item->second.data)
+    setData(name, std::move(item->second.data.value()));
+  std::cout << "Just AFTER setting data" << std::endl;
+  if (item->second.coord)
+    setSparseCoord(name, std::move(item->second.coord.value()));
+  std::cout << "Just AFTER setSparseCoord" << std::endl;
+  for (const auto &[nm, labs] : item->second.labels)
+    setSparseLabels(name, std::string(nm), std::move(labs));
+  std::cout << "Just AFTER setSparseLabels" << std::endl;
+  for (const auto &[nm, attr] : item->second.attrs)
+    setAttr(name, std::string(nm), std::move(attr));
+  std::cout << "END" << std::endl;
+
+
+
+
+
+  // for (const auto &[nm, var] : iter(d)) {
+  //   setData(name, std::move(var));
+
+}
 
 /// Set (insert or replace) data item with given name.
 ///
@@ -352,39 +415,46 @@ void Dataset::setData(const std::string &name, Variable data) {
 /// attributes. Throws if the provided data brings the dataset into an
 /// inconsistent state (mismatching dtype, unit, or dimensions).
 void Dataset::setData(const std::string &name, const DataConstProxy &data) {
+  std::cout << "Using old setData" << std::endl;
   if (contains(name) && &m_data[name] == &data.underlying() &&
       data.slices().empty())
     return; // Self-assignment, return early.
+  // auto dataset = DataArray::to_dataset(copy(data));
+  // std::cout << "Copying DataArray" << std::endl;
+  // auto a = DataArray(data);
+  std::cout << "Calling setDataMove" << std::endl;
+  setDataMove(name, DataArray(data));
 
-  for (const auto &[dim, coord] : data.coords()) {
-    if (coord.dims().sparse()) {
-      setSparseCoord(name, coord);
-    } else {
-      if (const auto it = m_coords.find(dim); it != m_coords.end())
-        expect::equals(coord, it->second);
-      else
-        setCoord(dim, coord);
-    }
-  }
-  for (const auto &[nm, labs] : data.labels()) {
-    if (labs.dims().sparse()) {
-      setSparseLabels(name, std::string(nm), labs);
-    } else {
-      if (const auto it = m_labels.find(std::string(nm)); it != m_labels.end())
-        expect::equals(labs, it->second);
-      else
-        setLabels(std::string(nm), labs);
-    }
-  }
 
-  for (const auto &[nm, mask] : data.masks())
-    setMask(std::string(nm), mask);
+  // for (const auto &[dim, coord] : data.coords()) {
+  //   if (coord.dims().sparse()) {
+  //     setSparseCoord(name, coord);
+  //   } else {
+  //     if (const auto it = m_coords.find(dim); it != m_coords.end())
+  //       expect::equals(coord, it->second);
+  //     else
+  //       setCoord(dim, coord);
+  //   }
+  // }
+  // for (const auto &[nm, labs] : data.labels()) {
+  //   if (labs.dims().sparse()) {
+  //     setSparseLabels(name, std::string(nm), labs);
+  //   } else {
+  //     if (const auto it = m_labels.find(std::string(nm)); it != m_labels.end())
+  //       expect::equals(labs, it->second);
+  //     else
+  //       setLabels(std::string(nm), labs);
+  //   }
+  // }
 
-  if (data.hasData())
-    setData(name, data.data());
+  // for (const auto &[nm, mask] : data.masks())
+  //   setMask(std::string(nm), mask);
 
-  for (const auto &[nm, attr] : data.attrs())
-    setAttr(name, std::string(nm), attr);
+  // if (data.hasData())
+  //   setData(name, data.data());
+
+  // for (const auto &[nm, attr] : data.attrs())
+  //   setAttr(name, std::string(nm), attr);
 }
 
 /// Set (insert or replace) the sparse coordinate with given name.

@@ -361,8 +361,9 @@ public:
   void setAttr(const std::string &name, const std::string &attrName,
                Variable attr);
   void setData(const std::string &name, Variable data);
-  void setDataMove(const std::string &name, DataArray data) { };
   void setData(const std::string &name, const DataConstProxy &data);
+  // void setDataFromDataArray(const std::string &name, Dataset data);
+  void setDataMove(const std::string &name, DataArray data);
   void setSparseCoord(const std::string &name, Variable coord);
   void setSparseLabels(const std::string &name, const std::string &labelName,
                        Variable labels);
@@ -987,6 +988,10 @@ public:
   using view_type = DataProxy;
 
   DataArray() = default;
+  // DataArray(const DataArray &) = default;
+  // DataArray(DataArray&&)=default;
+  //   DataArray &operator=(const DataArray &) = default;
+  // DataArray &operator=(DataArray&&)=default;
   explicit DataArray(const DataConstProxy &proxy);
   template <class CoordMap = std::map<Dim, Variable>,
             class LabelsMap = std::map<std::string, Variable>,
@@ -1149,6 +1154,7 @@ public:
   /// Iterable view for generic code supporting Dataset and DataArray.
   DatasetProxy iterable_view() noexcept { return m_holder; }
 
+  static Dataset to_dataset(DataArray &&data) { return std::move(data.m_holder); }
 private:
   DataConstProxy get() const;
   DataProxy get();

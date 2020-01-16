@@ -241,10 +241,10 @@ void init_dataset(py::module &m) {
       .def("__setitem__",
            [](Dataset &self, const std::string &name,
               const DataConstProxy &data) { self.setData(name, data); })
-      // .def("__setitem__",
-      //      [](Dataset &self, const std::string &name, MoveableDataArray &mdat) {
-      //        self.setDataMove(name, std::move(mdat.data));
-      //      })
+      .def("__setitem__",
+           [](Dataset &self, const std::string &name, MoveableDataArray &mdat) {
+             self.setDataMove(name, std::move(mdat.data));
+           })
       .def("__delitem__", &Dataset::erase,
            py::call_guard<py::gil_scoped_release>())
       .def(
@@ -566,8 +566,11 @@ void init_dataset(py::module &m) {
 
   m.def("move",
         [](DataArray &data) {
+          std::cout << "Inside python move 1" << std::endl;
           auto mda = MoveableDataArray{std::move(data)};
+          std::cout << "Inside python move 2" << std::endl;
           data = DataArray();
+          std::cout << "Inside python move 3" << std::endl;
           return mda;
         },
         py::call_guard<py::gil_scoped_release>(), R"(
