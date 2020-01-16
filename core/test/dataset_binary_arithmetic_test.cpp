@@ -122,8 +122,8 @@ TYPED_TEST(DataProxyBinaryEqualsOpTest, lhs_with_variance) {
     auto dataset_a = datasetFactory.make();
     auto target = dataset_a["data_zyx"];
 
-    auto reference(target.data());
-    reference = TestFixture::op(target.data(), item.second.data());
+    Variable reference(target.data());
+    TestFixture::op(reference, item.second.data());
 
     ASSERT_NO_THROW(target = TestFixture::op(target, item.second));
     EXPECT_EQ(target.data(), reference);
@@ -140,8 +140,8 @@ TYPED_TEST(DataProxyBinaryEqualsOpTest, lhs_without_variance) {
     if (item.second.hasVariances()) {
       ASSERT_ANY_THROW(TestFixture::op(target, item.second));
     } else {
-      auto reference(target.data());
-      reference = TestFixture::op(target.data(), item.second.data());
+      Variable reference(target.data());
+      TestFixture::op(reference, item.second.data());
 
       ASSERT_NO_THROW(target = TestFixture::op(target, item.second));
       EXPECT_EQ(target.data(), reference);
@@ -159,8 +159,8 @@ TYPED_TEST(DataProxyBinaryEqualsOpTest, slice_lhs_with_variance) {
     const auto &dims = item.second.dims();
 
     for (const Dim dim : dims.labels()) {
-      auto reference(target.data());
-      reference = TestFixture::op(target.data(), item.second.data());
+      Variable reference(target.data());
+      TestFixture::op(reference, item.second.data().slice({dim, 2}));
 
       // Fails if any *other* multi-dimensional coord/label also depends on the
       // slicing dimension, since it will have mismatching values. Note that
@@ -178,12 +178,10 @@ TYPED_TEST(DataProxyBinaryEqualsOpTest, slice_lhs_with_variance) {
             return labels_.second.dims().inner() == dim ||
                    !labels_.second.dims().contains(dim);
           })) {
-        ASSERT_NO_THROW(
-            target = TestFixture::op(target, item.second.slice({dim, 2})));
+        ASSERT_NO_THROW(TestFixture::op(target, item.second.slice({dim, 2})));
         EXPECT_EQ(target.data(), reference);
       } else {
-        ASSERT_ANY_THROW(
-            target = TestFixture::op(target, item.second.slice({dim, 2})));
+        ASSERT_ANY_THROW(TestFixture::op(target, item.second.slice({dim, 2})));
       }
     }
   }
