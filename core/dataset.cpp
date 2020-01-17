@@ -303,7 +303,11 @@ void Dataset::setData(const std::string &name, Variable data) {
   if (contains(name) && operator[](name).dims().sparse() != sparseData)
     throw except::DimensionError("Cannot set dense values or variances if "
                                  "coordinates sparse or vice versa");
+
+  const auto rebuild_dims = contains(name);
   m_data[name].data = std::move(data);
+  if (rebuild_dims)
+    rebuildDims();
 }
 
 /// Set (insert or replace) data item with given name.
