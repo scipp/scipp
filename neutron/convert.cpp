@@ -257,8 +257,9 @@ T swap_tof_related_labels_and_attrs(T &&x, const Dim from, const Dim to) {
         // a subsequent unit conversion of an item on its own would not be
         // possible. It needs to be determined if there is a better way to
         // handle attributes so this can be avoided.
-        for (const auto &item : iter(x))
-          item.second.attrs().set(field, x.labels()[field]);
+        if constexpr (std::is_same_v<std::decay_t<T>, Dataset>)
+          for (const auto &item : iter(x))
+            item.second.attrs().set(field, x.labels()[field]);
         x.attrs().set(field, x.labels()[field]);
         x.labels().erase(field);
       }
@@ -266,12 +267,14 @@ T swap_tof_related_labels_and_attrs(T &&x, const Dim from, const Dim to) {
   }
   if (to == Dim::Tof) {
     for (const auto &field : fields) {
-      if (x.labels().contains(field)) {
+      if (x.attrs().contains(field)) {
         x.labels().set(field, x.attrs()[field]);
         x.attrs().erase(field);
-        for (const auto &item : iter(x)) {
-          expect::equals(x.labels()[field], item.second.attrs()[field]);
-          item.second.attrs().erase(field);
+        if constexpr (std::is_same_v<std::decay_t<T>, Dataset>) {
+          for (const auto &item : iter(x)) {
+            expect::equals(x.labels()[field], item.second.attrs()[field]);
+            item.second.attrs().erase(field);
+          }
         }
       }
     }
