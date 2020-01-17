@@ -546,6 +546,8 @@ void Dataset::rename(const Dim from, const Dim to) {
     item.second.rename(from, to);
   for (auto &item : m_labels)
     item.second.rename(from, to);
+  for (auto &item : m_masks)
+    item.second.rename(from, to);
   for (auto &item : m_attrs)
     item.second.rename(from, to);
   for (auto &item : m_data) {
