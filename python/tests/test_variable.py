@@ -988,3 +988,9 @@ def test_atan_out():
     out = sc.atan(x=var, out=var)
     assert var == expected
     assert out == expected
+
+
+def test_variable_data_array_binary_ops():
+    a = sc.DataArray(1.0 * sc.units.m)
+    var = 1.0 * sc.units.m
+    assert a / var == var / a

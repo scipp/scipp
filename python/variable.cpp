@@ -338,8 +338,10 @@ void init_variable(py::module &m) {
 
   bind_binary<Variable>(variable);
   bind_binary<VariableConstProxy>(variable);
+  bind_binary<DataProxy>(variable);
   bind_binary<Variable>(variableProxy);
   bind_binary<VariableConstProxy>(variableProxy);
+  bind_binary<DataProxy>(variableProxy);
   bind_binary_scalars(variable);
   bind_binary_scalars(variableProxy);
 
