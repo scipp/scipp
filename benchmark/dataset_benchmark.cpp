@@ -234,4 +234,14 @@ BENCHMARK_TEMPLATE(BM_Dataset_copy,
                    GenerateWithSparseDataItems<LONG_STRING_LENGTH>)
     ->Apply(Args_Dataset_copy);
 
+static void BM_Dataset_setData_replace(benchmark::State &state) {
+  const auto var = makeVariable<double>(Dims{Dim::X}, Shape{1});
+  Dataset d;
+  d.setData("x", var);
+  for (auto _ : state) {
+    d.setData("x", var);
+  }
+}
+BENCHMARK(BM_Dataset_setData_replace);
+
 BENCHMARK_MAIN();
