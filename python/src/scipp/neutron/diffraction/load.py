@@ -66,7 +66,9 @@ def load_calibration(filename, mantid_args={}):
                         count=rows,
                         dtype=np.int32)
 
-    cal_data.masks["mask"] = sc.Variable([sc.Dim.Row], values=mask)
+    # This is deliberately not stored as a mask since that would make
+    # subsequent handling, e.g., with groupby, more complicated.
+    cal_data["mask"] = sc.Variable([sc.Dim.Row], values=mask)
     cal_data["group"] = sc.Variable([sc.Dim.Row], values=group)
 
     cal_data.rename_dims({sc.Dim.Row: sc.Dim.Detector})
