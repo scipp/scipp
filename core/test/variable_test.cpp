@@ -1138,7 +1138,6 @@ TEST(TransposeTest, make_transposed_2d) {
                std::runtime_error);
 }
 
-#include <iostream>
 TEST(TransposeTest, make_transposed_multiple_d) {
   auto var = makeVariable<double>(Dims{Dim::X, Dim::Y, Dim::Z}, Shape{3, 2, 1},
                                   Values{1, 2, 3, 4, 5, 6},
@@ -1147,8 +1146,6 @@ TEST(TransposeTest, make_transposed_multiple_d) {
   auto ref = makeVariable<double>(Dims{Dim::Y, Dim::Z, Dim::X}, Shape{2, 1, 3},
                                   Values{1, 3, 5, 2, 4, 6},
                                   Variances{11, 13, 15, 12, 14, 16});
-  std::cout << VariableProxy::makeTransposed(var, {Dim::Y, Dim::Z, Dim::X})
-            << "\n";
   EXPECT_EQ(VariableProxy::makeTransposed(var, {Dim::Y, Dim::Z, Dim::X}), ref);
   EXPECT_EQ(VariableConstProxy::makeTransposed(var, {Dim::Y, Dim::Z, Dim::X}),
             ref);
