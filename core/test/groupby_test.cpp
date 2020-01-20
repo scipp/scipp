@@ -457,3 +457,48 @@ TEST(GroupbyFlattenTest, flatten_with_mask) {
 
   EXPECT_EQ(groupby(a, "labels", Dim::Z).flatten(Dim::Y), expected);
 }
+
+struct GroupbyLogicalTest : public ::testing::Test {
+  GroupbyLogicalTest() {
+    d.setData(
+        "a", makeVariable<bool>(Dimensions{{Dim::Z, 2}, {Dim::X, 3}},
+                                Values{true, false, false, true, true, false}));
+    d.setLabels("labels1",
+                makeVariable<double>(Dimensions{Dim::X, 3},
+                                     units::Unit(units::m), Values{1, 2, 3}));
+    d.setLabels("labels2",
+                makeVariable<double>(Dimensions{Dim::X, 3},
+                                     units::Unit(units::m), Values{1, 1, 3}));
+  }
+  Dataset d;
+};
+
+TEST_F(GroupbyLogicalTest, no_reduction) {
+  Dataset expected(d);
+  expected.rename(Dim::X, Dim::Y);
+  expected.setCoord(Dim::Y, expected.labels()["labels1"]);
+  expected.labels().erase("labels1");
+  expected.labels().erase("labels2");
+  EXPECT_EQ(groupby(d, "labels1", Dim::Y).all(Dim::X), expected);
+  EXPECT_EQ(groupby(d, "labels1", Dim::Y).any(Dim::X), expected);
+}
+
+TEST_F(GroupbyLogicalTest, all) {
+  Dataset expected;
+  expected.setData("a", makeVariable<bool>(Dimensions{{Dim::Z, 2}, {Dim::Y, 2}},
+                                           Values{false, false, true, false}));
+  expected.setCoord(Dim::Y,
+                    makeVariable<double>(Dimensions{Dim::Y, 2},
+                                         units::Unit(units::m), Values{1, 3}));
+  EXPECT_EQ(groupby(d, "labels2", Dim::Y).all(Dim::X), expected);
+}
+
+TEST_F(GroupbyLogicalTest, any) {
+  Dataset expected;
+  expected.setData("a", makeVariable<bool>(Dimensions{{Dim::Z, 2}, {Dim::Y, 2}},
+                                           Values{true, false, true, false}));
+  expected.setCoord(Dim::Y,
+                    makeVariable<double>(Dimensions{Dim::Y, 2},
+                                         units::Unit(units::m), Values{1, 3}));
+  EXPECT_EQ(groupby(d, "labels2", Dim::Y).any(Dim::X), expected);
+}
