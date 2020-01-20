@@ -154,7 +154,8 @@ def test_create_2D_inner_size_3():
 
 
 def test_astype():
-    var = sc.Variable([sc.Dim.X], values=np.array([1, 2, 3, 4], dtype=int))
+    var = sc.Variable([sc.Dim.X],
+                      values=np.array([1, 2, 3, 4], dtype=np.int64))
     assert var.dtype == sc.dtype.int64
 
     var_as_float = var.astype(sc.dtype.float64)
@@ -162,7 +163,8 @@ def test_astype():
 
 
 def test_astype_bad_conversion():
-    var = sc.Variable([sc.Dim.X], values=np.array([1, 2, 3, 4], dtype=int))
+    var = sc.Variable([sc.Dim.X],
+                      values=np.array([1, 2, 3, 4], dtype=np.int64))
     assert var.dtype == sc.dtype.int64
 
     with pytest.raises(RuntimeError):
@@ -988,3 +990,9 @@ def test_atan_out():
     out = sc.atan(x=var, out=var)
     assert var == expected
     assert out == expected
+
+
+def test_variable_data_array_binary_ops():
+    a = sc.DataArray(1.0 * sc.units.m)
+    var = 1.0 * sc.units.m
+    assert a / var == var / a
