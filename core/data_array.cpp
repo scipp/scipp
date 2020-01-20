@@ -32,13 +32,28 @@ DataProxy DataArray::get() {
   return m_holder.begin()->second;
 }
 
-constexpr static auto times = [](const auto &a, const auto &b) {
-  return a * b;
+namespace {
+struct Times {
+  template <class A, class B>
+  constexpr auto operator()(const A &a, const B &b) const {
+    return a * b;
+  }
+  template <class A, class B>
+  constexpr void inplace(const A &a, const B &b) const {
+    a *= b;
+  }
 };
-
-constexpr static auto divide = [](const auto &a, const auto &b) {
-  return a / b;
+struct Divide {
+  template <class A, class B>
+  constexpr auto operator()(const A &a, const B &b) const {
+    return a / b;
+  }
+  template <class A, class B>
+  constexpr void inplace(const A &a, const B &b) const {
+    a /= b;
+  }
 };
+} // namespace
 
 bool is_sparse_and_histogram(const DataConstProxy &a, const DataConstProxy &b) {
   return (a.dims().sparse() && is_histogram(b, a.dims().sparseDim())) ||
@@ -136,8 +151,7 @@ DataArray &sparse_dense_op_inplace(Op op, DataArray &a,
   if (!is_sparse_and_histogram(a, b)) {
     expect::coordsAndLabelsAreSuperset(a, b);
     union_or_in_place(a.masks(), b.masks());
-    std::is_same_v<Op, std::decay_t<decltype(times)>> ? a.data() *= b.data()
-                                                      : a.data() /= b.data();
+    op.inplace(a.data(), b.data());
   } else if (a.dims().sparse()) {
     const Dim dim = a.dims().sparseDim();
     // Coord for `dim` in `b` is mismatching that in `a` by definition. Use
@@ -162,11 +176,11 @@ DataArray &sparse_dense_op_inplace(Op op, DataArray &a,
 }
 
 DataArray &DataArray::operator*=(const DataConstProxy &other) {
-  return sparse_dense_op_inplace(times, *this, other);
+  return sparse_dense_op_inplace(Times{}, *this, other);
 }
 
 DataArray &DataArray::operator/=(const DataConstProxy &other) {
-  return sparse_dense_op_inplace(divide, *this, other);
+  return sparse_dense_op_inplace(Divide{}, *this, other);
 }
 
 DataArray &DataArray::operator+=(const VariableConstProxy &other) {
@@ -219,7 +233,7 @@ auto sparse_dense_op(Op op, const DataConstProxy &a, const DataConstProxy &b) {
   }
   // histogram divided by sparse not supported, would typically result in unit
   // 1/counts which is meaningless
-  if constexpr (std::is_same_v<Op, std::decay_t<decltype(times)>>)
+  if constexpr (std::is_same_v<Op, Times>)
     return sparse_dense_op(op, b, a);
 
   throw except::SparseDataError("Unsupported combination of sparse and dense "
@@ -238,14 +252,14 @@ auto sparse_dense_coord_union(const DataConstProxy &a,
 }
 
 DataArray operator*(const DataConstProxy &a, const DataConstProxy &b) {
-  const auto data = sparse_dense_op(times, a, b);
+  const auto data = sparse_dense_op(Times{}, a, b);
   const auto coords = sparse_dense_coord_union(a, b);
   return {std::move(data), std::move(coords), union_(a.labels(), b.labels()),
           union_or(a.masks(), b.masks())};
 }
 
 DataArray operator/(const DataConstProxy &a, const DataConstProxy &b) {
-  const auto data = sparse_dense_op(divide, a, b);
+  const auto data = sparse_dense_op(Divide{}, a, b);
   const auto coords = sparse_dense_coord_union(a, b);
   return {std::move(data), std::move(coords), union_(a.labels(), b.labels()),
           union_or(a.masks(), b.masks())};
