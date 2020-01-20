@@ -96,11 +96,35 @@ static constexpr auto sum =
           sum_impl(out_data, data_slice.data());
       }
     };
+
+template <void (*Func)(const VariableProxy &, const VariableConstProxy &)>
+static constexpr auto logical = [](const VariableProxy &out_data,
+                                   const auto &data_container,
+                                   const std::vector<Slice> &group,
+                                   const Dim reductionDim) {
+  static_cast<void>(reductionDim); // Will be used for mask handling.
+  for (const auto &slice : group) {
+    const auto data_slice = data_container.slice(slice);
+    if (!data_slice.masks().empty())
+      throw std::runtime_error("This operation does not support masks yet.");
+    Func(out_data, data_slice.data());
+  }
+};
 }
 
 /// Reduce each group using `sum` and return combined data.
 template <class T> T GroupBy<T>::sum(const Dim reductionDim) const {
   return reduce(groupby_detail::sum, reductionDim);
+}
+
+/// Reduce each group using `all` and return combined data.
+template <class T> T GroupBy<T>::all(const Dim reductionDim) const {
+  return reduce(groupby_detail::logical<all_impl>, reductionDim);
+}
+
+/// Reduce each group using `any` and return combined data.
+template <class T> T GroupBy<T>::any(const Dim reductionDim) const {
+  return reduce(groupby_detail::logical<any_impl>, reductionDim);
 }
 
 /// Apply mean to groups and return combined data.
