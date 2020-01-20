@@ -236,17 +236,12 @@ VariableProxy mean(const VariableConstProxy &var, const Dim dim,
 template <class Op>
 void reduce_impl(const VariableProxy &out, const VariableConstProxy &var) {
   expect::notSparse(var);
-  // A better way for initializing the output is needed so this can be used for
-  // more than just boolean logical operations.
-  out ^= makeVariable<bool>(Values{Op::init});
   accumulate_in_place(out, var, Op{});
 }
 
 template <class Op>
 Variable reduce(const VariableConstProxy &var, const Dim dim) {
-  auto dims = var.dims();
-  dims.erase(dim);
-  Variable out(var, dims);
+  Variable out(var.slice({dim, 0}));
   reduce_impl<Op>(out, var);
   return out;
 }

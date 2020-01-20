@@ -64,7 +64,6 @@ struct and_equals {
     a &= b;
   }
   using types = pair_self_t<bool>;
-  static constexpr auto init = true;
 };
 struct or_equals {
   template <class A, class B>
@@ -73,7 +72,6 @@ struct or_equals {
     a |= b;
   }
   using types = pair_self_t<bool>;
-  static constexpr auto init = false;
 };
 } // namespace operator_detail
 
