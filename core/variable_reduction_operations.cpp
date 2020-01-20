@@ -84,8 +84,8 @@ Variable flatten(const VariableConstProxy &var, const Dim dim) {
 
 void sum_impl(const VariableProxy &summed, const VariableConstProxy &var) {
   if (var.dims().sparse())
-    throw except::DimensionError("`sum` can only be used for sparse data, use "
-                                 "`flatten` for dense data.");
+    throw except::DimensionError("`sum` can only be used for dense data, use "
+                                 "`flatten` for sparse data.");
   accumulate_in_place<
       pair_self_t<double, float, int64_t, int32_t, Eigen::Vector3d>,
       pair_custom_t<std::pair<int64_t, bool>>>(
@@ -208,5 +208,38 @@ VariableProxy mean(const VariableConstProxy &var, const Dim dim,
   return mean(var, dim, out);
 }
 
+template <class Op>
+void reduce_impl(const VariableProxy &out, const VariableConstProxy &var) {
+  expect::notSparse(var);
+  // A better way for initializing the output is needed so this can be used for
+  // more than just boolean logical operations.
+  out ^= makeVariable<bool>(Values{Op::init});
+  accumulate_in_place(out, var, Op{});
+}
+
+template <class Op>
+Variable reduce(const VariableConstProxy &var, const Dim dim) {
+  auto dims = var.dims();
+  dims.erase(dim);
+  Variable out(var, dims);
+  reduce_impl<Op>(out, var);
+  return out;
+}
+
+void any_impl(const VariableProxy &out, const VariableConstProxy &var) {
+  reduce_impl<operator_detail::or_equals>(out, var);
+}
+
+Variable any(const VariableConstProxy &var, const Dim dim) {
+  return reduce<operator_detail::or_equals>(var, dim);
+}
+
+void all_impl(const VariableProxy &out, const VariableConstProxy &var) {
+  reduce_impl<operator_detail::and_equals>(out, var);
+}
+
+Variable all(const VariableConstProxy &var, const Dim dim) {
+  return reduce<operator_detail::and_equals>(var, dim);
+}
 
 } // namespace scipp::core

@@ -731,7 +731,7 @@ template <class... TypePairs, class Var, class Op>
 void accumulate_in_place(Var &&var, const VariableConstProxy &other, Op op) {
   expect::contains(other.dims(), var.dims());
   // Wrapped implementation to convert multiple tuples into a parameter pack.
-  in_place<false>::transform_data(std::tuple_cat(TypePairs{}...), op,
+  in_place<false>::transform_data(type_tuples<TypePairs...>(op), op,
                                   std::forward<Var>(var), other);
 }
 
