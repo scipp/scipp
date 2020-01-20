@@ -1188,4 +1188,8 @@ TEST(TransposeTest, different_api) {
 
   EXPECT_EQ(var.transpose().transpose(), var);
   EXPECT_EQ(constVar.transpose().transpose(), var);
+
+  Variable dummy = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 1},
+                                        Values{0, 0}, Variances{1, 1});
+  EXPECT_NO_THROW(tvar.slice({Dim::X, 0, 1}).assign(dummy));
 }
