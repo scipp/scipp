@@ -95,7 +95,7 @@ Variable sparse_dense_op_impl(Op op, const VariableConstProxy &sparseCoord_,
   const Dim dim = sparseCoord_.dims().sparseDim();
   return transform<
       std::tuple<args<double, double, double>, args<float, double, double>,
-                 args<float, float, float>>>(
+                 args<float, float, float>, args<double, float, float>>>(
       sparseCoord_, subspan_view(edges_, dim), subspan_view(weights_, dim),
       overloaded{[op](const auto &... a) {
                    return apply_op_sparse_dense<Variance>(op, a...);
