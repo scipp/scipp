@@ -273,8 +273,6 @@ Variable copy(const VariableConstProxy &var) { return Variable(var); }
 /// Merges all masks contained in the MasksConstProxy that have the supplied
 //  dimension in their dimensions into a single Variable
 Variable masks_merge_if_contains(const MasksConstProxy &masks, const Dim dim) {
-  if (masks.empty())
-    return Variable{};
   auto mask_union = makeVariable<bool>(Values{false});
   for (const auto &mask : masks) {
     if (mask.second.dims().contains(dim)) {
