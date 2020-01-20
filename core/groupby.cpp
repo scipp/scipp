@@ -88,22 +88,17 @@ static constexpr auto sum =
        const std::vector<Slice> &group, const Dim reductionDim) {
       for (const auto &slice : group) {
         const auto data_slice = data_container.slice(slice);
-        const auto masks = data_slice.masks();
-
-        if (!masks.empty()) {
-          const auto merged_inverted_masks =
-              ~masks_merge_if_contains(masks, reductionDim);
-
-          if (merged_inverted_masks.dims().contains(reductionDim))
-            return sum_impl(out_data,
-                            data_slice.data() * merged_inverted_masks);
-        }
-        sum_impl(out_data, data_slice.data());
+        const auto mask =
+            ~masks_merge_if_contains(data_slice.masks(), reductionDim);
+        if (mask.dims().contains(reductionDim))
+          sum_impl(out_data, data_slice.data() * mask);
+        else
+          sum_impl(out_data, data_slice.data());
       }
     };
 }
 
-/// Apply sum to groups and return combined data.
+/// Reduce each group using `sum` and return combined data.
 template <class T> T GroupBy<T>::sum(const Dim reductionDim) const {
   return reduce(groupby_detail::sum, reductionDim);
 }
