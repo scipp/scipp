@@ -50,6 +50,7 @@ public:
 
 private:
   T makeReductionOutput(const Dim reductionDim) const;
+  template <class Op> T reduce(Op op, const Dim reductionDim) const;
 
   typename T::const_view_type m_data;
   GroupByGrouping m_grouping;
