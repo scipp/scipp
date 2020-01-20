@@ -931,15 +931,17 @@ TYPED_TEST(DatasetBinaryOpTest, masks_propagate) {
 Dataset non_trivial_2d_sparse(std::string_view name) {
   Dataset sparse;
   auto var =
-      makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{3, Dimensions::Sparse});
+      makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{4, Dimensions::Sparse});
   var.sparseValues<double>()[0] = {1.5, 2.5, 3.5, 4.5, 5.5};
   var.sparseValues<double>()[1] = {3.5, 4.5, 5.5, 6.5, 7.5};
   var.sparseValues<double>()[2] = {-1, 0, 0, 1, 1, 2, 2, 2, 4, 4, 4, 6};
+  var.sparseValues<double>()[3] = {1};
   auto dvar =
-      makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{3, Dimensions::Sparse});
+      makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{4, Dimensions::Sparse});
   dvar.sparseValues<double>()[0] = {1, 2, 3, 4, 5};
   dvar.sparseValues<double>()[1] = {3, 4, 5, 6, 7};
   dvar.sparseValues<double>()[2] = {1, 1, 1, 1, 1, 100, 1, 1, 1, 1, 1, 1};
+  dvar.sparseValues<double>()[3] = {1};
   sparse.setData(std::string(name), dvar);
   sparse.setSparseCoord(std::string(name), var);
   return sparse;

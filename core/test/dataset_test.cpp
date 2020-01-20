@@ -165,6 +165,20 @@ TEST(DatasetTest, setData_with_and_without_variances) {
   ASSERT_EQ(d.size(), 2);
 }
 
+TEST(DatasetTest, setData_updates_dimensions) {
+  const auto xy = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 3});
+  const auto x = makeVariable<double>(Dims{Dim::X}, Shape{2});
+
+  Dataset d;
+  d.setData("x", xy);
+  d.setData("x", x);
+
+  const auto dims = d.dimensions();
+  ASSERT_TRUE(dims.find(Dim::X) != dims.end());
+  // Dim::Y should no longer appear in dimensions after item "x" was replaced.
+  ASSERT_TRUE(dims.find(Dim::Y) == dims.end());
+}
+
 TEST(DatasetTest, setLabels_with_name_matching_data_name) {
   Dataset d;
   d.setData("a", makeVariable<double>(Dims{Dim::X}, Shape{3}));
