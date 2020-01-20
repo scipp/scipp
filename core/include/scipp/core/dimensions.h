@@ -154,6 +154,8 @@ private:
                            Dim::Invalid};
 };
 
+SCIPP_CORE_EXPORT Dimensions denseDims(const Dimensions &dims);
+
 SCIPP_CORE_EXPORT constexpr Dimensions merge(const Dimensions &a) noexcept {
   return a;
 }

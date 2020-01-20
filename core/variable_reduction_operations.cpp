@@ -70,6 +70,37 @@ void flatten_impl(const VariableProxy &summed, const VariableConstProxy &var) {
           [](units::Unit &a, const units::Unit &b) { expect::equals(a, b); }});
 }
 
+namespace flatten_detail {
+template <class T>
+using args = std::tuple<sparse_container<T>, sparse_container<T>, bool>;
+}
+
+void flatten_impl(const VariableProxy &summed, const VariableConstProxy &var,
+                  const VariableConstProxy &mask) {
+  if (!var.dims().sparse())
+    throw except::DimensionError("`flatten` can only be used for sparse data, "
+                                 "use `sum` for dense data.");
+  // 1. Reserve space in output. This yields approx. 3x speedup.
+  auto summed_counts = sparse::counts(summed);
+  sum_impl(summed_counts, sparse::counts(var) * ~mask);
+  sparse::reserve(summed, summed_counts);
+
+  // 2. Flatten dimension(s) by concatenating along sparse dim.
+  using namespace flatten_detail;
+  accumulate_in_place<
+      std::tuple<args<double>, args<float>, args<int64_t>, args<int32_t>>>(
+      summed, var, mask,
+      overloaded{
+          [](auto &a, const auto &b, const auto &mask_) {
+            if (!mask_)
+              a.insert(a.end(), b.begin(), b.end());
+          },
+          [](units::Unit &a, const units::Unit &b, const units::Unit &mask_) {
+            expect::equals(mask_, units::dimensionless);
+            expect::equals(a, b);
+          }});
+}
+
 /// Flatten dimension by concatenating along sparse dimension.
 ///
 /// This is equivalent to summing dense data along a dimension, in the sense
@@ -80,6 +111,20 @@ Variable flatten(const VariableConstProxy &var, const Dim dim) {
   Variable flattened(var, dims);
   flatten_impl(flattened, var);
   return flattened;
+}
+
+/// Flatten with mask, skipping masked elements.
+Variable flatten(const VariableConstProxy &var, const Dim dim,
+                 const MasksConstProxy &masks) {
+  if (!masks.empty()) {
+    auto dims = var.dims();
+    dims.erase(dim);
+    Variable flattened(var, dims);
+    const auto mask = masks_merge_if_contains(masks, dim);
+    flatten_impl(flattened, var, mask);
+    return flattened;
+  }
+  return flatten(var, dim);
 }
 
 void sum_impl(const VariableProxy &summed, const VariableConstProxy &var) {
