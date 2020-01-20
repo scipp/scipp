@@ -38,12 +38,24 @@ template <class T> T GroupBy<T>::flatten(const Dim reductionDim) const {
     const Dim sparseDim = in.dims().sparseDim();
     for (const auto &slice : groups()[group_]) {
       const auto &array = in.slice(slice);
-      flatten_impl(out_.coords()[sparseDim], array.coords()[sparseDim]);
-      if (in.hasData())
-        flatten_impl(out_.data(), array.data());
-      for (auto &&[label_name, label] : out_.labels()) {
-        if (label.dims().sparse())
-          flatten_impl(label, array.labels()[label_name]);
+      const auto masks = array.masks();
+      if (!masks.empty()) {
+        const auto mask = masks_merge_if_contains(masks, reductionDim);
+        flatten_impl(out_.coords()[sparseDim], array.coords()[sparseDim], mask);
+        if (in.hasData())
+          flatten_impl(out_.data(), array.data(), mask);
+        for (auto &&[label_name, label] : out_.labels()) {
+          if (label.dims().sparse())
+            flatten_impl(label, array.labels()[label_name], mask);
+        }
+      } else {
+        flatten_impl(out_.coords()[sparseDim], array.coords()[sparseDim]);
+        if (in.hasData())
+          flatten_impl(out_.data(), array.data());
+        for (auto &&[label_name, label] : out_.labels()) {
+          if (label.dims().sparse())
+            flatten_impl(label, array.labels()[label_name]);
+        }
       }
     }
   };

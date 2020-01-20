@@ -328,11 +328,14 @@ auto make_sparse_in() {
   return var;
 }
 
-auto make_sparse_out() {
+auto make_sparse_out(bool mask = false) {
   auto var =
       makeVariable<double>(Dims{Dim::Z, Dim::X}, Shape{2l, Dimensions::Sparse});
   const auto &var_ = var.sparseValues<double>();
-  var_[0] = {1, 2, 3, 4, 5};
+  if (mask)
+    var_[0] = {1, 2, 3};
+  else
+    var_[0] = {1, 2, 3, 4, 5};
   var_[1] = {6, 7};
   return var;
 }
@@ -400,6 +403,26 @@ TEST(GroupbyFlattenTest, flatten_coord_and_data) {
   DataArray expected{
       make_sparse_out() * 1.5,
       {{Dim::X, make_sparse_out()},
+       {Dim::Z, makeVariable<double>(Dims{Dim::Z}, Shape{2},
+                                     units::Unit(units::m), Values{1, 3})}}};
+
+  EXPECT_EQ(groupby(a, "labels", Dim::Z).flatten(Dim::Y), expected);
+}
+
+TEST(GroupbyFlattenTest, flatten_with_mask) {
+  DataArray a{make_sparse_in() * 1.5,
+              {{Dim::X, make_sparse_in()},
+               {Dim::Y, makeVariable<double>(Dims{Dim::Y}, Shape{3})}},
+              {{"labels",
+                makeVariable<double>(Dims{Dim::Y}, Shape{3},
+                                     units::Unit(units::m), Values{1, 1, 3})}},
+              {{"mask_y", makeVariable<bool>(Dims{Dim::Y}, Shape{3},
+                                             Values{false, true, false})}}};
+
+  bool mask = true;
+  DataArray expected{
+      make_sparse_out(mask) * 1.5,
+      {{Dim::X, make_sparse_out(mask)},
        {Dim::Z, makeVariable<double>(Dims{Dim::Z}, Shape{2},
                                      units::Unit(units::m), Values{1, 3})}}};
 
