@@ -1122,20 +1122,18 @@ TEST(TransposeTest, make_transposed_2d) {
                                   Values{1, 2, 3, 4, 5, 6},
                                   Variances{11, 12, 13, 14, 15, 16});
 
+  const auto constVar = Variable(var);
+
   auto ref = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 3},
                                   Values{1, 3, 5, 2, 4, 6},
                                   Variances{11, 13, 15, 12, 14, 16});
-  EXPECT_EQ(VariableProxy::makeTransposed(var, {Dim::Y, Dim::X}), ref);
-  EXPECT_EQ(VariableConstProxy::makeTransposed(var, {Dim::Y, Dim::X}), ref);
+  EXPECT_EQ(var.transpose({Dim::Y, Dim::X}), ref);
+  EXPECT_EQ(constVar.transpose({Dim::Y, Dim::X}), ref);
 
-  EXPECT_THROW(VariableConstProxy::makeTransposed(var, {Dim::Y, Dim::Z}),
-               std::runtime_error);
-  EXPECT_THROW(VariableConstProxy::makeTransposed(var, {Dim::Y}),
-               std::runtime_error);
-  EXPECT_THROW(VariableProxy::makeTransposed(var, {Dim::Y, Dim::Z}),
-               std::runtime_error);
-  EXPECT_THROW(VariableProxy::makeTransposed(var, {Dim::Z}),
-               std::runtime_error);
+  EXPECT_THROW(constVar.transpose({Dim::Y, Dim::Z}), std::runtime_error);
+  EXPECT_THROW(constVar.transpose({Dim::Y}), std::runtime_error);
+  EXPECT_THROW(var.transpose({Dim::Y, Dim::Z}), std::runtime_error);
+  EXPECT_THROW(var.transpose({Dim::Z}), std::runtime_error);
 }
 
 TEST(TransposeTest, make_transposed_multiple_d) {
@@ -1143,21 +1141,18 @@ TEST(TransposeTest, make_transposed_multiple_d) {
                                   Values{1, 2, 3, 4, 5, 6},
                                   Variances{11, 12, 13, 14, 15, 16});
 
+  const auto constVar = Variable(var);
+
   auto ref = makeVariable<double>(Dims{Dim::Y, Dim::Z, Dim::X}, Shape{2, 1, 3},
                                   Values{1, 3, 5, 2, 4, 6},
                                   Variances{11, 13, 15, 12, 14, 16});
-  EXPECT_EQ(VariableProxy::makeTransposed(var, {Dim::Y, Dim::Z, Dim::X}), ref);
-  EXPECT_EQ(VariableConstProxy::makeTransposed(var, {Dim::Y, Dim::Z, Dim::X}),
-            ref);
+  EXPECT_EQ(var.transpose({Dim::Y, Dim::Z, Dim::X}), ref);
+  EXPECT_EQ(constVar.transpose({Dim::Y, Dim::Z, Dim::X}), ref);
 
-  EXPECT_THROW(VariableConstProxy::makeTransposed(var, {Dim::Y, Dim::Z}),
-               std::runtime_error);
-  EXPECT_THROW(VariableConstProxy::makeTransposed(var, {Dim::Y}),
-               std::runtime_error);
-  EXPECT_THROW(VariableProxy::makeTransposed(var, {Dim::Y, Dim::Z}),
-               std::runtime_error);
-  EXPECT_THROW(VariableProxy::makeTransposed(var, {Dim::Z}),
-               std::runtime_error);
+  EXPECT_THROW(constVar.transpose({Dim::Y, Dim::Z}), std::runtime_error);
+  EXPECT_THROW(constVar.transpose({Dim::Y}), std::runtime_error);
+  EXPECT_THROW(var.transpose({Dim::Y, Dim::Z}), std::runtime_error);
+  EXPECT_THROW(var.transpose({Dim::Z}), std::runtime_error);
 }
 
 TEST(TransposeTest, different_api) {
@@ -1190,4 +1185,7 @@ TEST(TransposeTest, different_api) {
                .transpose();
   static_assert(std::is_same_v<Variable, decltype(v)>);
   EXPECT_EQ(v, ref);
+
+  EXPECT_EQ(var.transpose().transpose(), var);
+  EXPECT_EQ(constVar.transpose().transpose(), var);
 }

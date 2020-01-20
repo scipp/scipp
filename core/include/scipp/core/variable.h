@@ -668,14 +668,6 @@ public:
   // slice in general so we must return a copy of the data.
   Variable reshape(const Dimensions &dims) const;
 
-  template <class Var>
-  static VariableConstProxy makeTransposed(Var &var,
-                                           const std::vector<Dim> &dimOrder) {
-    auto res = VariableConstProxy(var);
-    res.m_view = res.data().transpose(dimOrder);
-    return res;
-  }
-
   units::Unit unit() const { return m_variable->unit(); }
 
   // Note: Returning by value to avoid issues with referencing a temporary
@@ -744,6 +736,15 @@ public:
 
   auto &underlying() const { return *m_variable; }
 
+private:
+  template <class Var>
+  static VariableConstProxy makeTransposed(Var &var,
+                                           const std::vector<Dim> &dimOrder) {
+    auto res = VariableConstProxy(var);
+    res.m_view = res.data().transpose(dimOrder);
+    return res;
+  }
+
 protected:
   friend class Variable;
 
@@ -778,14 +779,6 @@ public:
                 const scipp::index begin, const scipp::index end = -1)
       : VariableConstProxy(slice), m_mutableVariable(slice.m_mutableVariable) {
     m_view = slice.data().makeView(dim, begin, end);
-  }
-
-  template <class Var>
-  static VariableProxy makeTransposed(Var &var,
-                                      const std::vector<Dim> &dimOrder) {
-    auto res = VariableProxy(var);
-    res.m_view = res.data().transpose(dimOrder);
-    return res;
   }
 
   VariableProxy slice(const Slice slice) const {
@@ -877,6 +870,15 @@ public:
   void setUnit(const units::Unit &unit) const;
   void expectCanSetUnit(const units::Unit &unit) const;
   scipp::index size() const { return data().size(); }
+
+private:
+  template <class Var>
+  static VariableProxy makeTransposed(Var &var,
+                                      const std::vector<Dim> &dimOrder) {
+    auto res = VariableProxy(var);
+    res.m_view = res.data().transpose(dimOrder);
+    return res;
+  }
 
 private:
   friend class Variable;
