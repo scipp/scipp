@@ -50,8 +50,17 @@ DatasetFactory3D::DatasetFactory3D(const scipp::index lx_,
                makeVariable<double>(Dimensions{Dim::X, lx}, Values(rand(lx))));
 }
 
-Dataset DatasetFactory3D::make() {
+Dataset DatasetFactory3D::make(const bool randomMasks) {
   Dataset dataset(base);
+  if (randomMasks) {
+    dataset.setMask("masks_x", makeVariable<bool>(Dimensions{Dim::X, lx},
+                                                  Values(randBool(lx))));
+    dataset.setMask("masks_xy",
+                    makeVariable<bool>(Dimensions{{Dim::X, lx}, {Dim::Y, ly}},
+                                       Values(randBool(lx * ly))));
+    dataset.setMask("masks_z", makeVariable<bool>(Dimensions{Dim::Z, lz},
+                                                  Values(randBool(lz))));
+  }
   dataset.setData("values_x", makeVariable<double>(Dimensions{Dim::X, lx},
                                                    Values(rand(lx))));
   dataset.setData("data_x",

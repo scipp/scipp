@@ -41,7 +41,7 @@ public:
   DatasetFactory3D(const scipp::index lx = 4, const scipp::index ly = 5,
                    const scipp::index lz = 6);
 
-  Dataset make();
+  Dataset make(const bool randomMasks = false);
 
   const scipp::index lx;
   const scipp::index ly;
@@ -49,6 +49,7 @@ public:
 
 private:
   Random rand;
+  RandomBool randBool;
   Dataset base;
 };
 

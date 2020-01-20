@@ -119,14 +119,17 @@ TYPED_TEST(DataProxyBinaryEqualsOpTest, lhs_with_variance) {
   const auto dataset_b = datasetFactory.make();
 
   for (const auto &item : dataset_b) {
-    auto dataset_a = datasetFactory.make();
+    const bool randomMasks = true;
+    auto dataset_a = datasetFactory.make(randomMasks);
     auto target = dataset_a["data_zyx"];
+    auto data_array = copy(target);
 
-    auto reference(target.data());
-    reference = TestFixture::op(target.data(), item.second.data());
+    Variable reference(target.data());
+    TestFixture::op(reference, item.second.data());
 
     ASSERT_NO_THROW(target = TestFixture::op(target, item.second));
     EXPECT_EQ(target.data(), reference);
+    EXPECT_EQ(TestFixture::op(data_array, item.second), target);
   }
 }
 
@@ -134,18 +137,21 @@ TYPED_TEST(DataProxyBinaryEqualsOpTest, lhs_without_variance) {
   const auto dataset_b = datasetFactory.make();
 
   for (const auto &item : dataset_b) {
-    auto dataset_a = datasetFactory.make();
+    const bool randomMasks = true;
+    auto dataset_a = datasetFactory.make(randomMasks);
     auto target = dataset_a["data_xyz"];
+    auto data_array = copy(target);
 
     if (item.second.hasVariances()) {
       ASSERT_ANY_THROW(TestFixture::op(target, item.second));
     } else {
-      auto reference(target.data());
-      reference = TestFixture::op(target.data(), item.second.data());
+      Variable reference(target.data());
+      TestFixture::op(reference, item.second.data());
 
       ASSERT_NO_THROW(target = TestFixture::op(target, item.second));
       EXPECT_EQ(target.data(), reference);
       EXPECT_FALSE(target.hasVariances());
+      EXPECT_EQ(TestFixture::op(data_array, item.second), target);
     }
   }
 }
@@ -154,13 +160,14 @@ TYPED_TEST(DataProxyBinaryEqualsOpTest, slice_lhs_with_variance) {
   const auto dataset_b = datasetFactory.make();
 
   for (const auto &item : dataset_b) {
-    auto dataset_a = datasetFactory.make();
+    const bool randomMasks = true;
+    auto dataset_a = datasetFactory.make(randomMasks);
     auto target = dataset_a["data_zyx"];
     const auto &dims = item.second.dims();
 
     for (const Dim dim : dims.labels()) {
-      auto reference(target.data());
-      reference = TestFixture::op(target.data(), item.second.data());
+      Variable reference(target.data());
+      TestFixture::op(reference, item.second.data().slice({dim, 2}));
 
       // Fails if any *other* multi-dimensional coord/label also depends on the
       // slicing dimension, since it will have mismatching values. Note that
@@ -178,12 +185,10 @@ TYPED_TEST(DataProxyBinaryEqualsOpTest, slice_lhs_with_variance) {
             return labels_.second.dims().inner() == dim ||
                    !labels_.second.dims().contains(dim);
           })) {
-        ASSERT_NO_THROW(
-            target = TestFixture::op(target, item.second.slice({dim, 2})));
+        ASSERT_NO_THROW(TestFixture::op(target, item.second.slice({dim, 2})));
         EXPECT_EQ(target.data(), reference);
       } else {
-        ASSERT_ANY_THROW(
-            target = TestFixture::op(target, item.second.slice({dim, 2})));
+        ASSERT_ANY_THROW(TestFixture::op(target, item.second.slice({dim, 2})));
       }
     }
   }
