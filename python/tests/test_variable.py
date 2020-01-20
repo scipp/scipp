@@ -993,6 +993,7 @@ def test_atan_out():
     assert out == expected
 
 
+
 @pytest.mark.parametrize("dims, lengths",
                          (([Dim.X], (sc.Dimensions.Sparse, )),
                           ([Dim.X, Dim.Y], (10, sc.Dimensions.Sparse)),
@@ -1004,3 +1005,8 @@ def test_sparse_dim_has_none_shape(dims, lengths):
     data = sc.Variable(dims, shape=lengths)
 
     assert data.shape[-1] is None
+
+def test_variable_data_array_binary_ops():
+    a = sc.DataArray(1.0 * sc.units.m)
+    var = 1.0 * sc.units.m
+    assert a / var == var / a
