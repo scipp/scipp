@@ -74,11 +74,9 @@ void sum_impl(const VariableProxy &out_data, const T &data_container,
           ~masks_merge_if_contains(masks, reductionDim);
 
       if (merged_inverted_masks.dims().contains(reductionDim))
-        sum_impl(out_data, data_slice.data() * merged_inverted_masks);
-
-    } else {
-      sum_impl(out_data, data_slice.data());
+        return sum_impl(out_data, data_slice.data() * merged_inverted_masks);
     }
+    sum_impl(out_data, data_slice.data());
   }
 }
 

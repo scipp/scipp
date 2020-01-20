@@ -77,7 +77,7 @@ TEST_F(GroupbyTest, dataset_1d_and_2d) {
 
 struct GroupbyMaskedTest : public GroupbyTest {
   GroupbyMaskedTest() : GroupbyTest() {
-    d.setMask("mask_a", makeVariable<bool>(Dimensions{Dim::X, 3},
+    d.setMask("mask_x", makeVariable<bool>(Dimensions{Dim::X, 3},
                                            Values{false, true, false}));
     d.setMask("mask_z",
               makeVariable<bool>(Dimensions{Dim::Z, 2}, Values{false, true}));
@@ -104,6 +104,35 @@ TEST_F(GroupbyMaskedTest, sum) {
 
   const auto result = groupby(d, "labels2", Dim::Y).sum(Dim::X);
   EXPECT_EQ(result, expected);
+}
+
+TEST_F(GroupbyMaskedTest, sum_irrelvant_mask) {
+  Dataset expected;
+  expected.setData("a", makeVariable<int>(Dimensions{Dim::Y, 2},
+                                          units::Unit(units::m), Values{3, 3},
+                                          Variances{9, 6}));
+  expected.setData("b", makeVariable<double>(Dimensions{Dim::Y, 2},
+                                             units::Unit(units::s),
+                                             Values{0.1 + 0.2, 0.3}));
+  expected.setData(
+      "c", makeVariable<double>(Dimensions{{Dim::Z, 2}, {Dim::Y, 2}},
+                                units::Unit(units::s), Values{3, 3, 9, 6}));
+  expected.setCoord(Dim::Y,
+                    makeVariable<double>(Dimensions{Dim::Y, 2},
+                                         units::Unit(units::m), Values{1, 3}));
+  expected.setAttr("a", "scalar", makeVariable<double>(Values{1.2}));
+  expected.setMask(
+      "mask_z", makeVariable<bool>(Dimensions{Dim::Z, 2}, Values{false, true}));
+
+  d.masks().erase("mask_x");
+  auto result = groupby(d, "labels2", Dim::Y).sum(Dim::X);
+  EXPECT_EQ(result, expected);
+
+  d.masks().erase("mask_z");
+  ASSERT_TRUE(d.masks().empty());
+  const auto expected2 = groupby(d, "labels2", Dim::Y).sum(Dim::X);
+  result.masks().erase("mask_z");
+  EXPECT_EQ(result, expected2);
 }
 
 TEST_F(GroupbyMaskedTest, mean_mask_ignores_values_properly) {
@@ -154,7 +183,7 @@ TEST_F(GroupbyMaskedTest, mean) {
 }
 
 TEST_F(GroupbyMaskedTest, mean2) {
-  d.setMask("mask_a", makeVariable<bool>(Dimensions{Dim::X, 3},
+  d.setMask("mask_x", makeVariable<bool>(Dimensions{Dim::X, 3},
                                          Values{false, false, true}));
 
   const auto result = groupby(d, "labels2", Dim::Y).mean(Dim::X);
