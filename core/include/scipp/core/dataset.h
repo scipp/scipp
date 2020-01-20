@@ -11,6 +11,7 @@
 #include <optional>
 #include <string>
 #include <unordered_map>
+#include <iostream>
 
 #include <boost/iterator/transform_iterator.hpp>
 
@@ -1000,6 +1001,7 @@ public:
   DataArray(std::optional<Variable> data, CoordMap coords = {},
             LabelsMap labels = {}, MasksMap masks = {}, AttrMap attrs = {},
             const std::string &name = "") {
+    std::cout << "Using this constructor which is the right one" << std::endl;
     if (data)
       m_holder.setData(name, std::move(*data));
 
