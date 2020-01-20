@@ -9,6 +9,18 @@
 
 namespace scipp::core {
 
+std::vector<scipp::index>
+detail::reorderedShape(const scipp::span<const Dim> &order,
+                       const Dimensions &dimensions) {
+  if (order.size() != dimensions.ndim())
+    throw std::runtime_error("Cannot transpose input dimensions should be "
+                             "exactly the same but maybe in different order.");
+  std::vector<scipp::index> res(order.size());
+  std::transform(order.begin(), order.end(), res.begin(),
+                 [&dimensions](auto &a) { return dimensions[a]; });
+  return res;
+}
+
 template <class... Known>
 VariableConceptHandle_impl<Known...>::operator bool() const noexcept {
   return std::visit([](auto &&ptr) { return bool(ptr); }, m_object);

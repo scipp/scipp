@@ -36,6 +36,9 @@ template <class T> struct element_type<const sparse_container<T>> {
   using type = T;
 };
 template <class T> using element_type_t = typename element_type<T>::type;
+
+std::vector<scipp::index> reorderedShape(const scipp::span<const Dim> &order,
+                                         const Dimensions &dimensions);
 } // namespace detail
 
 template <class T> struct is_sparse_container : std::false_type {};
@@ -781,8 +784,7 @@ public:
   static VariableProxy makeTransposed(Var &var,
                                       const std::vector<Dim> &dimOrder) {
     auto res = VariableProxy(var);
-    auto tmpConstProxy = VariableConstProxy(var);
-    res.m_view = tmpConstProxy.data().transpose(dimOrder);
+    res.m_view = res.data().transpose(dimOrder);
     return res;
   }
 

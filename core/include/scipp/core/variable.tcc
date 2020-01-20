@@ -138,23 +138,11 @@ VariableConceptHandle VariableConceptT<T>::reshape(const Dimensions &dims) {
       dims, valuesReshaped(dims), optionalVariancesReshaped(*this, dims));
 }
 
-inline std::vector<scipp::index>
-reorderedShape(const scipp::span<const Dim> &order,
-               const Dimensions &dimensions) {
-  if (order.size() != dimensions.ndim())
-    throw std::runtime_error("Cannot transpose input dimensions should be "
-                             "exactly the same but maybe in different order.");
-  std::vector<scipp::index> res(order.size());
-  std::transform(order.begin(), order.end(), res.begin(),
-                 [&dimensions](auto &a) { return dimensions[a]; });
-  return res;
-}
-
 template <class T>
 VariableConceptHandle
 VariableConceptT<T>::transpose(const std::vector<Dim> &tdims) const {
   auto dms = Dimensions(std::vector<Dim>(tdims.begin(), tdims.end()),
-                        reorderedShape(tdims, dims()));
+                        detail::reorderedShape(tdims, dims()));
   using U = decltype(valuesView(dms));
   return std::make_unique<ViewModel<U>>(
       dms, valuesView(dms),
@@ -165,7 +153,7 @@ template <class T>
 VariableConceptHandle
 VariableConceptT<T>::transpose(const std::vector<Dim> &tdims) {
   auto dms = Dimensions(std::vector<Dim>(tdims.begin(), tdims.end()),
-                        reorderedShape(tdims, dims()));
+                        detail::reorderedShape(tdims, dims()));
   using U = decltype(valuesView(dms));
   return std::make_unique<ViewModel<U>>(
       dms, valuesView(dms),
