@@ -500,7 +500,8 @@ private:
 // The name should be changed to makeVariable after refactoring:
 // getting rid of all other makeVariable.
 template <class T, class... Ts> Variable makeVariable(Ts &&... ts) {
-  static_assert(!std::disjunction_v<std::is_lvalue_reference<Ts>...>, "makeVariable inputs must be r-value references");
+  static_assert(!std::disjunction_v<std::is_lvalue_reference<Ts>...>,
+                "makeVariable inputs must be r-value references");
   using helper = detail::ConstructorArgumentsMatcher<Variable, Ts...>;
   constexpr bool useDimsAndShape =
       helper::template checkArgTypesValid<units::Unit, Dims, Shape>();
@@ -1072,7 +1073,9 @@ SCIPP_CORE_EXPORT Variable masks_merge_if_contains(const MasksConstProxy &masks,
 SCIPP_CORE_EXPORT Variable
 masks_merge_if_contained(const MasksConstProxy &masks, const Dimensions &dims);
 
-SCIPP_CORE_EXPORT VariableProxy replace_nan(const VariableConstProxy &var, double replacement, const VariableProxy &out);
+SCIPP_CORE_EXPORT VariableProxy replace_nan(const VariableConstProxy &var,
+                                            double replacement,
+                                            const VariableProxy &out);
 SCIPP_CORE_EXPORT Variable replace_nan(const VariableConstProxy &var);
 
 namespace sparse {

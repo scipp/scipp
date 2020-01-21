@@ -294,47 +294,52 @@ Variable masks_merge_if_contained(const MasksConstProxy &masks,
   return mask_union;
 }
 
-VariableProxy replace_nan(const VariableConstProxy &var, double replacement, const VariableProxy &out) {
+VariableProxy replace_nan(const VariableConstProxy &var, double replacement,
+                          const VariableProxy &out) {
 
-  if(var.dtype() != out.dtype())
+  if (var.dtype() != out.dtype())
     throw except::TypeError("Input and output variable types do not match");
-  if(var.dtype() != dtype<decltype(replacement)>)
+  if (var.dtype() != dtype<decltype(replacement)>)
     throw except::TypeError("Replacement type doesn't match type of input");
 
   transform_in_place<pair_self_t<double, float>>(
-      out, var, scipp::overloaded{
-      [&](auto &x, const auto &y) {
-            if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(x)>> &&  is_ValueAndVariance_v<std::decay_t<decltype(y)>>) {
+      out, var,
+      scipp::overloaded{
+          [&](auto &x, const auto &y) {
+            if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(x)>> &&
+                          is_ValueAndVariance_v<std::decay_t<decltype(y)>>) {
               const auto replace = std::isnan(y.value);
               x.value = replace ? replacement : y.value;
-              x.variance = replace ? replacement : y.variance; // Logic makes sense for counts
-            }
-            else {
+              x.variance = replace ? replacement
+                                   : y.variance; // Logic makes sense for counts
+            } else {
               x = std::isnan(y) ? replacement : y;
             }
           },
-      [&](units::Unit &ua, const units::Unit &ub) {
-        expect::equals(ua, ub);
-      }});
+          [&](units::Unit &ua, const units::Unit &ub) {
+            expect::equals(ua, ub);
+          }});
   return out;
 }
 
 Variable replace_nan(const VariableConstProxy &var) {
-  return  Variable(var);//transform<double>(var, overloaded{[](const auto& x) { return x < 0.0 ? -1.0 : x; }, [](const units::Unit &u){return u;}});
+  return Variable(
+      var); // transform<double>(var, overloaded{[](const auto& x) { return x <
+            // 0.0 ? -1.0 : x; }, [](const units::Unit &u){return u;}});
 
-/*
-  return transform<double, float>(
-      var,
-      overloaded{
-          [](const auto &a_) {
-            return static_cast<
-                       detail::element_type_t<std::decay_t<decltype(a_)>>>(1) /
-                   a_;
-          },
-          [](const units::Unit &unit) {
-            return units::Unit(units::dimensionless) / unit;
-          }});
-          */
+  /*
+    return transform<double, float>(
+        var,
+        overloaded{
+            [](const auto &a_) {
+              return static_cast<
+                         detail::element_type_t<std::decay_t<decltype(a_)>>>(1)
+    / a_;
+            },
+            [](const units::Unit &unit) {
+              return units::Unit(units::dimensionless) / unit;
+            }});
+            */
 }
 
 } // namespace scipp::core
