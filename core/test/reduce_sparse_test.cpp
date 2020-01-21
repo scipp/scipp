@@ -41,3 +41,23 @@ TEST(ReduceSparseTest, flatten_with_mask) {
                            Values{sparse_container<double>{1, 2, 3, 6, 7}});
   EXPECT_EQ(flatten(make_sparse(), Dim::Y, d.masks()), expected);
 }
+
+TEST(ReduceSparseTest, flatten_dataset_with_mask) {
+  Dataset d;
+  d.setMask("y", makeVariable<bool>(Dims{Dim::Y}, Shape{3},
+                                    Values{false, true, false}));
+  d.setSparseCoord("a", make_sparse());
+  d.setSparseCoord("b", make_sparse());
+  d.setSparseLabels("b", "label", make_sparse());
+  d.setData("b", make_sparse());
+  auto expected =
+      makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse},
+                           Values{sparse_container<double>{1, 2, 3, 6, 7}});
+
+  const auto flat = flatten(d, Dim::Y);
+
+  EXPECT_EQ(flat["a"].coords()[Dim::X], expected);
+  EXPECT_EQ(flat["b"].coords()[Dim::X], expected);
+  EXPECT_EQ(flat["b"].labels()["label"], expected);
+  EXPECT_EQ(flat["b"].data(), expected);
+}

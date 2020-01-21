@@ -42,8 +42,9 @@ DataArray apply_and_drop_dim_impl(const DataConstProxy &a, Func func,
 
 /// Create new data array by applying Func to everything depending on dim, copy
 /// otherwise.
-template <class Func>
-DataArray apply_or_copy_dim(const DataConstProxy &a, Func func, const Dim dim) {
+template <class Func, class... Args>
+DataArray apply_or_copy_dim(const DataConstProxy &a, Func func, const Dim dim,
+                            Args &&... args) {
   Dimensions drop({dim, a.dims()[dim]});
   std::map<Dim, Variable> coords;
   // Note the `copy` call, ensuring that the return value of the ternary
@@ -51,28 +52,29 @@ DataArray apply_or_copy_dim(const DataConstProxy &a, Func func, const Dim dim) {
   // copied.
   for (auto &&[d, coord] : a.coords())
     if (coord.dims() != drop)
-      coords.emplace(d, coord.dims().contains(dim) ? func(coord, dim)
+      coords.emplace(d, coord.dims().contains(dim) ? func(coord, dim, args...)
                                                    : copy(coord));
 
   std::map<std::string, Variable> labels;
   for (auto &&[name, label] : a.labels())
     if (label.dims() != drop)
-      labels.emplace(name, label.dims().contains(dim) ? func(label, dim)
-                                                      : copy(label));
+      labels.emplace(name, label.dims().contains(dim)
+                               ? func(label, dim, args...)
+                               : copy(label));
 
   std::map<std::string, Variable> attrs;
   for (auto &&[name, attr] : a.attrs())
     if (attr.dims() != drop)
-      attrs.emplace(name,
-                    attr.dims().contains(dim) ? func(attr, dim) : copy(attr));
+      attrs.emplace(name, attr.dims().contains(dim) ? func(attr, dim, args...)
+                                                    : copy(attr));
 
   std::map<std::string, Variable> masks;
   for (auto &&[name, mask] : a.masks())
     if (mask.dims() != drop)
-      masks.emplace(name,
-                    mask.dims().contains(dim) ? func(mask, dim) : copy(mask));
+      masks.emplace(name, mask.dims().contains(dim) ? func(mask, dim, args...)
+                                                    : copy(mask));
 
-  return DataArray(a.hasData() ? func(a.data(), dim)
+  return DataArray(a.hasData() ? func(a.data(), dim, args...)
                                : std::optional<Variable>(),
                    std::move(coords), std::move(labels), std::move(masks),
                    std::move(attrs), a.name());
