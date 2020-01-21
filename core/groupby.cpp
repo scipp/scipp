@@ -110,7 +110,7 @@ static constexpr auto logical = [](const VariableProxy &out_data,
     Func(out_data, data_slice.data());
   }
 };
-}
+} // namespace groupby_detail
 
 /// Reduce each group using `sum` and return combined data.
 template <class T> T GroupBy<T>::sum(const Dim reductionDim) const {
