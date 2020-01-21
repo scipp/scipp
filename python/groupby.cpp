@@ -80,6 +80,42 @@ template <class T> void bind_groupby(py::module &m, const std::string &name) {
       :type dim: Dim
       :return: Sum over each group, combined along dimension specified when calling :py:func:`scipp.groupby`
       :rtype: DataArray or Dataset)");
+
+  groupBy.def("all", &GroupBy<T>::all, py::arg("dim"),
+              py::call_guard<py::gil_scoped_release>(), R"(
+      Element-wise AND over the specified dimension within a group.
+
+      :param dim: Dimension to reduce
+      :type dim: Dim
+      :return: AND over each group, combined along dimension specified when calling :py:func:`scipp.groupby`
+      :rtype: DataArray or Dataset)");
+
+  groupBy.def("any", &GroupBy<T>::any, py::arg("dim"),
+              py::call_guard<py::gil_scoped_release>(), R"(
+      Element-wise OR over the specified dimension within a group.
+
+      :param dim: Dimension to reduce
+      :type dim: Dim
+      :return: OR over each group, combined along dimension specified when calling :py:func:`scipp.groupby`
+      :rtype: DataArray or Dataset)");
+
+  groupBy.def("max", &GroupBy<T>::max, py::arg("dim"),
+              py::call_guard<py::gil_scoped_release>(), R"(
+      Element-wise max over the specified dimension within a group.
+
+      :param dim: Dimension to reduce
+      :type dim: Dim
+      :return: Max over each group, combined along dimension specified when calling :py:func:`scipp.groupby`
+      :rtype: DataArray or Dataset)");
+
+  groupBy.def("min", &GroupBy<T>::min, py::arg("dim"),
+              py::call_guard<py::gil_scoped_release>(), R"(
+      Element-wise min over the specified dimension within a group.
+
+      :param dim: Dimension to reduce
+      :type dim: Dim
+      :return: Min over each group, combined along dimension specified when calling :py:func:`scipp.groupby`
+      :rtype: DataArray or Dataset)");
 }
 
 void init_groupby(py::module &m) {
