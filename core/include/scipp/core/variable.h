@@ -1071,6 +1071,9 @@ SCIPP_CORE_EXPORT Variable masks_merge_if_contains(const MasksConstProxy &masks,
 SCIPP_CORE_EXPORT Variable
 masks_merge_if_contained(const MasksConstProxy &masks, const Dimensions &dims);
 
+SCIPP_CORE_EXPORT VariableProxy replace_nan(const VariableConstProxy &var, double replacement, const VariableProxy &out);
+SCIPP_CORE_EXPORT Variable replace_nan(const VariableConstProxy &var);
+
 namespace sparse {
 SCIPP_CORE_EXPORT Variable counts(const VariableConstProxy &var);
 SCIPP_CORE_EXPORT void reserve(const VariableProxy &sparse,
