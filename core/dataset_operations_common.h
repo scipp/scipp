@@ -7,18 +7,42 @@
 
 namespace scipp::core {
 
+static inline void expectAlignedCoord(const Dim coord_dim,
+                                      const VariableConstProxy &var,
+                                      const Dim operation_dim) {
+  // Coordinate is 2D, but the dimension associated with the coordinate is
+  // different from that of the operation. Note we do not account for the
+  // possibility that the coordinates actually align along the operation
+  // dimension.
+  if (var.dims().ndim() > 1)
+    throw except::CoordMismatchError(
+        "VariableConstProxy Coord/Label has more than one dimension "
+        "associated with " +
+        to_string(coord_dim) +
+        " and will not be reduced by the operation dimension " +
+        to_string(operation_dim) + " Terminating operation.");
+}
+
 template <bool ApplyToData, class Func, class... Args>
 DataArray apply_and_drop_dim_impl(const DataConstProxy &a, Func func,
                                   const Dim dim, Args &&... args) {
   std::map<Dim, Variable> coords;
-  for (auto &&[d, coord] : a.coords())
-    if (d != dim)
+  for (auto &&[d, coord] : a.coords()) {
+    // Check coordinates will NOT be dropped
+    if (d != dim) {
+      expectAlignedCoord(d, coord, dim);
       coords.emplace(d, coord);
+    }
+  }
 
   std::map<std::string, Variable> labels;
-  for (auto &&[name, label] : a.labels())
-    if (!label.dims().contains(dim))
+  for (auto &&[name, label] : a.labels()) {
+    // Check coordinates will NOT be dropped
+    if (label.dims().inner() != dim) {
+      expectAlignedCoord(label.dims().inner(), label, dim);
       labels.emplace(name, label);
+    }
+  }
 
   std::map<std::string, Variable> attrs;
   for (auto &&[name, attr] : a.attrs())
