@@ -27,10 +27,32 @@ def test_moving_variable_into_dataset_proxies():
                                    values=np.random.random(100)))
     d.attrs['b'] = sc.detail.move(sc.Variable([Dim.Z],
                                   values=np.random.random(50)))
+    d.masks['c'] = sc.detail.move(sc.Variable([Dim.Z],
+                                  values=np.random.random(50)))
 
     assert Dim.X in d.dims
     assert Dim.Y in d.dims
     assert Dim.Z in d.dims
+
+
+def test_moving_variable_into_data_array_proxies():
+
+    d = sc.DataArray(data=sc.Variable([Dim.X],
+                                      values=np.random.random(1000)))
+    d.coords[Dim.X] = sc.detail.move(sc.Variable([Dim.X],
+                                     values=np.arange(1000.0)))
+    d.labels['a'] = sc.detail.move(sc.Variable([Dim.X],
+                                   values=np.random.random(1000)))
+    d.attrs['b'] = sc.detail.move(sc.Variable([Dim.X],
+                                  values=np.random.random(1000)))
+    d.masks['c'] = sc.detail.move(sc.Variable([Dim.X],
+                                  values=np.random.random(1000)))
+
+    assert Dim.X in d.dims
+    assert len(d.coords) == 1
+    assert len(d.labels) == 1
+    assert len(d.attrs) == 1
+    assert len(d.masks) == 1
 
 
 def test_moving_variables_to_data_array():
