@@ -17,10 +17,10 @@ def test_any():
 
 
 def test_min():
-    var = sc.Variable([Dim.X], values=[1, 2, 3])
-    assert sc.min(var, Dim.X) == sc.Variable(value=1)
+    var = sc.Variable([Dim.X], values=[1.0, 2.0, 3.0])
+    assert sc.min(var, Dim.X) == sc.Variable(value=1.0)
 
 
 def test_max():
-    var = sc.Variable([Dim.X], values=[1, 2, 3])
-    assert sc.max(var, Dim.X) == sc.Variable(value=3)
+    var = sc.Variable([Dim.X], values=[1.0, 2.0, 3.0])
+    assert sc.max(var, Dim.X) == sc.Variable(value=3.0)
