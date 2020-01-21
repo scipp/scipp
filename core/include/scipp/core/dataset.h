@@ -686,8 +686,7 @@ public:
   }
 
   template <class VarOrProxy>
-  void set(const typename Base::key_type key,
-           VarOrProxy var) const {
+  void set(const typename Base::key_type key, VarOrProxy var) const {
     if (!m_parent || !Base::m_slices.empty())
       throw std::runtime_error(
           "Cannot add coord/labels/attr field to a slice.");
