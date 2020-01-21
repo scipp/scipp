@@ -21,8 +21,10 @@ auto make_sparse() {
 } // namespace
 
 TEST(ReduceSparseTest, flatten_fail) {
-  EXPECT_THROW(flatten(make_sparse(), Dim::X), except::DimensionError);
-  EXPECT_THROW(flatten(make_sparse(), Dim::Z), except::DimensionError);
+  EXPECT_THROW(static_cast<void>(flatten(make_sparse(), Dim::X)),
+               except::DimensionError);
+  EXPECT_THROW(static_cast<void>(flatten(make_sparse(), Dim::Z)),
+               except::DimensionError);
 }
 
 TEST(ReduceSparseTest, flatten) {
