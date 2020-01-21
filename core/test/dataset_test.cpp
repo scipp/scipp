@@ -470,3 +470,36 @@ TEST(DatasetTest, erase_masks) {
   ds.setMask("masks_x", mask);
   EXPECT_EQ(ref, ds);
 }
+
+struct DatasetRenameTest : public ::testing::Test {
+  DatasetRenameTest() {
+    DatasetFactory3D factory(4, 5, 6, Dim::X);
+    factory.seed(0);
+    d = factory.make();
+    original = d;
+  }
+
+protected:
+  Dataset d;
+  Dataset original;
+};
+
+TEST_F(DatasetRenameTest, fail_duplicate_dim) {
+  ASSERT_THROW(d.rename(Dim::X, Dim::Y), except::DimensionError);
+  ASSERT_EQ(d, original);
+  ASSERT_THROW(d.rename(Dim::X, Dim::X), except::DimensionError);
+  ASSERT_EQ(d, original);
+}
+TEST_F(DatasetRenameTest, back_and_forth) {
+  d.rename(Dim::X, Dim::Row);
+  EXPECT_NE(d, original);
+  d.rename(Dim::Row, Dim::X);
+  EXPECT_EQ(d, original);
+}
+
+TEST_F(DatasetRenameTest, rename) {
+  d.rename(Dim::X, Dim::Row);
+  DatasetFactory3D factory(4, 5, 6, Dim::Row);
+  factory.seed(0);
+  EXPECT_EQ(d, factory.make());
+}
