@@ -105,12 +105,12 @@ static constexpr auto reduce_idempotent = [](const VariableProxy &out_data,
   bool first = true;
   for (const auto &slice : group) {
     const auto data_slice = data_container.slice(slice);
+    if (!data_slice.masks().empty())
+      throw std::runtime_error("This operation does not support masks yet.");
     if (first) {
       out_data.assign(data_slice.data().slice({reductionDim, 0}));
       first = false;
     }
-    if (!data_slice.masks().empty())
-      throw std::runtime_error("This operation does not support masks yet.");
     Func(out_data, data_slice.data());
   }
 };
