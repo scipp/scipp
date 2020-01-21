@@ -11,7 +11,6 @@
 #include <optional>
 #include <string>
 #include <unordered_map>
-#include <iostream>
 
 #include <boost/iterator/transform_iterator.hpp>
 
@@ -1001,7 +1000,6 @@ public:
   DataArray(std::optional<Variable> data, CoordMap coords = {},
             LabelsMap labels = {}, MasksMap masks = {}, AttrMap attrs = {},
             const std::string &name = "") {
-    std::cout << "Using this constructor which is the right one" << std::endl;
     if (data)
       m_holder.setData(name, std::move(*data));
 
@@ -1156,6 +1154,9 @@ public:
   /// Iterable view for generic code supporting Dataset and DataArray.
   DatasetProxy iterable_view() noexcept { return m_holder; }
 
+  /// Return the Dataset holder of the given DataArray, so access to private
+  /// members is possible, thus allowing moving of Variables without making
+  /// copies.
   static Dataset to_dataset(DataArray &&data) { return std::move(data.m_holder); }
 private:
   DataConstProxy get() const;
