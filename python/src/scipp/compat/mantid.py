@@ -268,13 +268,12 @@ def convert_Workspace2D_to_data_array(ws, **ignored):
                                                   len(ws.readY(0))),
                                            unit=sc.units.counts,
                                            variances=True)
-    # array = sc.DataArray(**coords_labs_data)
     array = detail.move_to_data_array(**coords_labs_data)
 
     if ws.hasAnyMaskedBins():
-        array.masks["bin"] = detail.move(make_bin_masks(common_bins, spec_dim, dim,
-                                            ws.blocksize(),
-                                            ws.getNumberHistograms()))
+        array.masks["bin"] = detail.move(
+            make_bin_masks(common_bins, spec_dim, dim, ws.blocksize(),
+                           ws.getNumberHistograms()))
         bin_masks = array.masks["bin"]
         # set all the bin masks now - they're all the same
         if common_bins:
@@ -358,7 +357,9 @@ def convert_MDHistoWorkspace_to_data_array(md_histo, **ignored):
                        variances=md_histo.getErrorSquaredArray(),
                        unit=sc.units.counts)
     nevents = sc.Variable(dims=dims_used, values=md_histo.getNumEventsArray())
-    return detail.move_to_data_array(coords=coords, data=data, attrs={'nevents': nevents})
+    return detail.move_to_data_array(coords=coords,
+                                     data=data,
+                                     attrs={'nevents': nevents})
 
 
 def convert_TableWorkspace_to_dataset(ws, error_connection=None, **ignored):
@@ -390,7 +391,6 @@ def convert_TableWorkspace_to_dataset(ws, error_connection=None, **ignored):
     # Types for which the transformation from error to variance will fail
     blacklist_variance_types = ["str"]
 
-    # variables = {}
     dataset = sc.Dataset()
     for i in range(n_columns):
         if columnTypes[i] in blacklist_types:
@@ -398,8 +398,8 @@ def convert_TableWorkspace_to_dataset(ws, error_connection=None, **ignored):
 
         data_name = columnNames[i]
         if error_connection is None:
-            dataset[data_name] = detail.move(sc.Variable([sc.Dim.Row],
-                                               values=ws.column(i)))
+            dataset[data_name] = detail.move(
+                sc.Variable([sc.Dim.Row], values=ws.column(i)))
         elif data_name in error_connection:
             # This data has error availble
             error_name = error_connection[data_name]
@@ -412,13 +412,14 @@ def convert_TableWorkspace_to_dataset(ws, error_connection=None, **ignored):
                                    "Variance: " + str(error_name) + "\n")
 
             variance = np.array(ws.column(error_name))**2
-            dataset[data_name] = detail.move(sc.Variable([sc.Dim.Row],
-                                               values=np.array(ws.column(i)),
-                                               variances=variance))
+            dataset[data_name] = detail.move(
+                sc.Variable([sc.Dim.Row],
+                            values=np.array(ws.column(i)),
+                            variances=variance))
         elif data_name not in error_connection.values():
             # This data is not an error for another dataset, and has no error
-            dataset[data_name] = detail.move(sc.Variable([sc.Dim.Row],
-                                               values=ws.column(i)))
+            dataset[data_name] = detail.move(
+                sc.Variable([sc.Dim.Row], values=ws.column(i)))
 
     return dataset
 
@@ -427,7 +428,7 @@ def from_mantid(workspace, **kwargs):
     """Convert Mantid workspace to a scipp data array or dataset
     :param workspace: Mantid workspace to convert.
     """
-    scipp_obj = None # This is either a Dataset or DataArray
+    scipp_obj = None  # This is either a Dataset or DataArray
     monitor_ws = None
     if workspace.id() == 'Workspace2D' or workspace.id() == 'RebinnedOutput':
         has_monitors = False
