@@ -7,7 +7,6 @@
 
 from ._scipp.core import *
 from ._scipp import __version__
-# from ._scipp import detail
 from . import detail
 from . import neutron
 from .show import show, make_svg

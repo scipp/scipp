@@ -314,16 +314,16 @@ void Dataset::setDataMove(const std::string &name, DataArray data) {
   auto dataset = DataArray::to_dataset(std::move(data));
 
   for (const auto &[dim, coord] : dataset.m_coords) {
-      if (const auto it = m_coords.find(dim); it != m_coords.end())
-        expect::equals(coord, it->second);
-      else
-        setCoord(dim, std::move(coord));
+    if (const auto it = m_coords.find(dim); it != m_coords.end())
+      expect::equals(coord, it->second);
+    else
+      setCoord(dim, std::move(coord));
   }
   for (const auto &[nm, labs] : dataset.m_labels) {
-      if (const auto it = m_labels.find(std::string(nm)); it != m_labels.end())
-        expect::equals(labs, it->second);
-      else
-        setLabels(std::string(nm), std::move(labs));
+    if (const auto it = m_labels.find(std::string(nm)); it != m_labels.end())
+      expect::equals(labs, it->second);
+    else
+      setLabels(std::string(nm), std::move(labs));
   }
 
   for (const auto &[nm, mask] : dataset.m_masks)
@@ -342,7 +342,6 @@ void Dataset::setDataMove(const std::string &name, DataArray data) {
     setSparseLabels(name, std::string(nm), std::move(labs));
   for (const auto &[nm, attr] : item->second.attrs)
     setAttr(name, std::string(nm), std::move(attr));
-
 }
 
 /// Set (insert or replace) data item with given name.

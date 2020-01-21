@@ -26,7 +26,14 @@ void bind_mutable_proxy(py::module &m, const std::string &name) {
   proxy.def("__len__", &T::size)
       .def("__getitem__", &T::operator[], py::return_value_policy::move,
            py::keep_alive<0, 1>())
-      .def("__setitem__", &T::set)
+      .def("__setitem__",
+           [](T &self, const typename T::key_type key, const VariableConstProxy &var) {
+             self.set(key, var);
+           })
+      .def("__setitem__",
+           [](T &self, const typename T::key_type key, MoveableVariable &mvar) {
+             self.set(key, std::move(mvar.var));
+           })
       .def("__delitem__", &T::erase, py::call_guard<py::gil_scoped_release>())
       .def("__iter__",
            [](T &self) {

@@ -12,25 +12,17 @@ namespace scipp::core {
 
 template <class T> auto copy_map(const T &map) {
   std::map<typename T::key_type, typename T::mapped_type> out;
-
   for (const auto &[key, item] : map)
     out.emplace(key, item);
-  // for (const auto &[key, item] : b) {
-  //   if (const auto it = a.find(key); it != a.end())
-  //     expect::equals(item, it->second);
-  //   else
-  //     out.emplace(key, item);
-  // }
   return out;
 }
 
-DataArray::DataArray(const DataConstProxy &proxy) : DataArray(
-  proxy.hasData() ? std::optional<Variable>(proxy.data()) : std::optional<Variable>(),
-  // proxy.data(),
-  copy_map(proxy.coords()), copy_map(proxy.labels()), copy_map(proxy.masks()),
-  copy_map(proxy.attrs()), proxy.name()) {}
-//   //m_holder.setData(proxy.name(), proxy);
-// }
+DataArray::DataArray(const DataConstProxy &proxy)
+    : DataArray(proxy.hasData() ? std::optional<Variable>(proxy.data())
+                                : std::optional<Variable>(),
+                copy_map(proxy.coords()), copy_map(proxy.labels()),
+                copy_map(proxy.masks()), copy_map(proxy.attrs()),
+                proxy.name()) {}
 
 DataArray::operator DataConstProxy() const { return get(); }
 DataArray::operator DataProxy() { return get(); }
