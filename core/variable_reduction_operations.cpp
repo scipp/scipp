@@ -262,4 +262,20 @@ Variable all(const VariableConstProxy &var, const Dim dim) {
   return reduce<operator_detail::and_equals>(var, dim);
 }
 
+/// Return the maximum along given dimension.
+///
+/// Variances are not considered when determining the maximum. If present, the
+/// variance of the maximum element is returned.
+Variable max(const VariableConstProxy &var, const Dim dim) {
+  return reduce<operator_detail::max_equals>(var, dim);
+}
+
+/// Return the minimum along given dimension.
+///
+/// Variances are not considered when determining the minimum. If present, the
+/// variance of the minimum element is returned.
+Variable min(const VariableConstProxy &var, const Dim dim) {
+  return reduce<operator_detail::min_equals>(var, dim);
+}
+
 } // namespace scipp::core

@@ -1065,6 +1065,12 @@ SCIPP_CORE_EXPORT VariableProxy atan(const VariableConstProxy &var,
 [[nodiscard]] SCIPP_CORE_EXPORT Variable all(const VariableConstProxy &var,
                                              const Dim dim);
 
+// Other reductions
+[[nodiscard]] SCIPP_CORE_EXPORT Variable max(const VariableConstProxy &var,
+                                             const Dim dim);
+[[nodiscard]] SCIPP_CORE_EXPORT Variable min(const VariableConstProxy &var,
+                                             const Dim dim);
+
 SCIPP_CORE_EXPORT Variable masks_merge_if_contains(const MasksConstProxy &masks,
                                                    const Dim dim);
 
