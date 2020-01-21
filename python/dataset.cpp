@@ -29,6 +29,8 @@ void bind_mutable_proxy(py::module &m, const std::string &name) {
       .def("__setitem__",
            [](T &self, const typename T::key_type key,
               const VariableConstProxy &var) { self.set(key, var); })
+      // This additional setitem allows us to do things like
+      // d.attrs["a"] = scipp.detail.move(scipp.Variable())
       .def("__setitem__",
            [](T &self, const typename T::key_type key, MoveableVariable &mvar) {
              self.set(key, std::move(mvar.var));
