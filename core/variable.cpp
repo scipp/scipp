@@ -9,6 +9,18 @@
 
 namespace scipp::core {
 
+std::vector<scipp::index>
+detail::reorderedShape(const scipp::span<const Dim> &order,
+                       const Dimensions &dimensions) {
+  if (order.size() != dimensions.ndim())
+    throw std::runtime_error("Cannot transpose input dimensions should be "
+                             "exactly the same but maybe in different order.");
+  std::vector<scipp::index> res(order.size());
+  std::transform(order.begin(), order.end(), res.begin(),
+                 [&dimensions](auto &a) { return dimensions[a]; });
+  return res;
+}
+
 template <class... Known>
 VariableConceptHandle_impl<Known...>::operator bool() const noexcept {
   return std::visit([](auto &&ptr) { return bool(ptr); }, m_object);
@@ -170,6 +182,39 @@ Variable VariableConstProxy::reshape(const Dimensions &dims) const {
   Variable reshaped(*this);
   reshaped.setDims(dims);
   return reshaped;
+}
+
+template <class DimContainer>
+std::vector<Dim> reverseDimOrder(const DimContainer &container) {
+  return std::vector<Dim>(container.rbegin(), container.rend());
+}
+
+VariableConstProxy Variable::transpose(const std::vector<Dim> &dims) const & {
+  return VariableConstProxy::makeTransposed(
+      *this, dims.empty() ? reverseDimOrder(this->dims().labels()) : dims);
+}
+
+VariableProxy Variable::transpose(const std::vector<Dim> &dims) & {
+  return VariableProxy::makeTransposed(
+      *this, dims.empty() ? reverseDimOrder(this->dims().labels()) : dims);
+}
+
+Variable Variable::transpose(const std::vector<Dim> &dims) && {
+  return Variable(VariableConstProxy::makeTransposed(
+      *this, dims.empty() ? reverseDimOrder(this->dims().labels()) : dims));
+}
+
+VariableConstProxy
+VariableConstProxy::transpose(const std::vector<Dim> &dims) const {
+  auto dms = this->dims();
+  return makeTransposed(*this,
+                        dims.empty() ? reverseDimOrder(dms.labels()) : dims);
+}
+
+VariableProxy VariableProxy::transpose(const std::vector<Dim> &dims) const {
+  auto dms = this->dims();
+  return makeTransposed(*this,
+                        dims.empty() ? reverseDimOrder(dms.labels()) : dims);
 }
 
 void Variable::rename(const Dim from, const Dim to) {
