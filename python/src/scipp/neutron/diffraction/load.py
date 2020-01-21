@@ -56,6 +56,10 @@ def load_calibration(filename, mantid_args={}):
     cal_data["difa"].unit = sc.units.us / sc.units.angstrom / sc.units.angstrom
     cal_data["tzero"].unit = sc.units.us
 
+    # Note that despite masking and grouping stored in separate workspaces,
+    # there is no need to handle potentially mismatching ordering: All
+    # workspaces have been created by the same algorithm, which should
+    # guarantee ordering.
     mask_ws = output.OutputMaskWorkspace
     group_ws = output.OutputGroupingWorkspace
     rows = mask_ws.getNumberHistograms()
@@ -67,7 +71,9 @@ def load_calibration(filename, mantid_args={}):
                         dtype=np.int32)
 
     # This is deliberately not stored as a mask since that would make
-    # subsequent handling, e.g., with groupby, more complicated.
+    # subsequent handling, e.g., with groupby, more complicated. The mask is
+    # conceptually not masking rows in this table, i.e., it is not marking
+    # invalid rows, but rather describes masking for other data.
     cal_data["mask"] = sc.Variable([sc.Dim.Row], values=mask)
     cal_data["group"] = sc.Variable([sc.Dim.Row], values=group)
 
