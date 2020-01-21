@@ -20,6 +20,7 @@ public:
     std::generate(data.begin(), data.end(), [this]() { return dist(mt); });
     return data;
   }
+  void seed(const uint32_t value) { mt.seed(value); }
 };
 
 class RandomBool {
@@ -33,6 +34,7 @@ public:
     std::generate(data.begin(), data.end(), [this]() { return dist(mt); });
     return data;
   }
+  void seed(const uint32_t value) { mt.seed(value); }
 };
 
 #endif // SCIPP_TEST_RANDOM_H
