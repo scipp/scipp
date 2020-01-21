@@ -322,24 +322,24 @@ VariableProxy replace_nan(const VariableConstProxy &var, double replacement,
   return out;
 }
 
-Variable replace_nan(const VariableConstProxy &var) {
-  return Variable(
-      var); // transform<double>(var, overloaded{[](const auto& x) { return x <
-            // 0.0 ? -1.0 : x; }, [](const units::Unit &u){return u;}});
-
-  /*
-    return transform<double, float>(
-        var,
-        overloaded{
-            [](const auto &a_) {
-              return static_cast<
-                         detail::element_type_t<std::decay_t<decltype(a_)>>>(1)
-    / a_;
-            },
-            [](const units::Unit &unit) {
-              return units::Unit(units::dimensionless) / unit;
-            }});
-            */
+Variable replace_nan(const VariableConstProxy &var, double replacement) {
+  return transform<double>(
+      var,
+      overloaded{
+          [&](const auto &x) {
+            if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(x)>>) {
+              const auto replace = std::isnan(x.value);
+              if (replace) {
+                using V = decltype(x);
+                return V{replacement, replacement};
+              } else {
+                return x;
+              }
+            } else {
+              return std::isnan(x) ? replacement : x;
+            }
+          },
+          [](const units::Unit &u) { return u; }});
 }
 
 } // namespace scipp::core

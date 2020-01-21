@@ -1240,19 +1240,36 @@ TEST(VariableTest, boolean_xor) {
   EXPECT_EQ(result, expected);
 }
 
-TEST(VariableTest, replace_special_inplace){
-  auto a = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1.0, double(NAN), 3.0});
+TEST(VariableTest, replace_special) {
+  auto a = makeVariable<double>(Dims{Dim::X}, Shape{3},
+                                Values{1.0, double(NAN), 3.0});
+  const double replacement_value = -1;
+  Variable b = replace_nan(a, replacement_value);
+  auto expected = makeVariable<double>(Dims{Dim::X}, Shape{3},
+                                       Values{1.0, replacement_value, 3.0});
+  EXPECT_EQ(b, expected);
+}
+
+TEST(VariableTest, replace_special_inplace) {
+  auto a = makeVariable<double>(Dims{Dim::X}, Shape{3},
+                                Values{1.0, double(NAN), 3.0});
   const double replacement_value = -1;
   VariableProxy b = replace_nan(a, replacement_value, a);
-  auto expected = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1.0, replacement_value, 3.0});
+  auto expected = makeVariable<double>(Dims{Dim::X}, Shape{3},
+                                       Values{1.0, replacement_value, 3.0});
   EXPECT_EQ(b, expected);
   EXPECT_EQ(a, expected);
 }
-TEST(VariableTest, replace_special_inplace_with_variance){
-  auto a = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1.0, double(NAN), 3.0}, Variances{1.0, 1.1, 2.2});
+
+TEST(VariableTest, replace_special_inplace_with_variance) {
+  auto a = makeVariable<double>(Dims{Dim::X}, Shape{3},
+                                Values{1.0, double(NAN), 3.0},
+                                Variances{1.0, 1.1, 2.2});
   const double replacement_value = -1;
   VariableProxy b = replace_nan(a, replacement_value, a);
-  auto expected = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1.0, replacement_value, 3.0}, Variances{1.0, replacement_value, 2.2});
+  auto expected = makeVariable<double>(Dims{Dim::X}, Shape{3},
+                                       Values{1.0, replacement_value, 3.0},
+                                       Variances{1.0, replacement_value, 2.2});
   EXPECT_EQ(b, expected);
   EXPECT_EQ(a, expected);
 }
