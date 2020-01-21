@@ -731,8 +731,16 @@ template <class... TypePairs, class Var, class Op>
 void accumulate_in_place(Var &&var, const VariableConstProxy &other, Op op) {
   expect::contains(other.dims(), var.dims());
   // Wrapped implementation to convert multiple tuples into a parameter pack.
-  in_place<false>::transform_data(std::tuple_cat(TypePairs{}...), op,
+  in_place<false>::transform_data(type_tuples<TypePairs...>(op), op,
                                   std::forward<Var>(var), other);
+}
+template <class... TypePairs, class Var, class Op>
+void accumulate_in_place(Var &&var, const VariableConstProxy &var1,
+                         const VariableConstProxy &var2, Op op) {
+  expect::contains(var1.dims(), var.dims());
+  expect::contains(var2.dims(), denseDims(var.dims()));
+  in_place<false>::transform_data(type_tuples<TypePairs...>(op), op,
+                                  std::forward<Var>(var), var1, var2);
 }
 
 namespace dry_run {

@@ -56,6 +56,25 @@ struct divide_equals {
       pair_custom_t<std::pair<double, float>, std::pair<int64_t, int32_t>,
                     std::pair<Eigen::Vector3d, double>>{}));
 };
+
+struct and_equals {
+  template <class A, class B>
+  constexpr void operator()(A &&a, const B &b) const
+      noexcept(noexcept(a &= b)) {
+    a &= b;
+  }
+  using types = pair_self_t<bool>;
+  static constexpr auto init = true;
+};
+struct or_equals {
+  template <class A, class B>
+  constexpr void operator()(A &&a, const B &b) const
+      noexcept(noexcept(a |= b)) {
+    a |= b;
+  }
+  using types = pair_self_t<bool>;
+  static constexpr auto init = false;
+};
 } // namespace operator_detail
 
 } // namespace scipp::core

@@ -1015,8 +1015,11 @@ SCIPP_CORE_EXPORT Variable reverse(Variable var, const Dim dim);
 SCIPP_CORE_EXPORT VariableProxy sqrt(const VariableConstProxy &var,
                                      const VariableProxy &out);
 
-SCIPP_CORE_EXPORT Variable flatten(const VariableConstProxy &var,
-                                   const Dim dim);
+[[nodiscard]] SCIPP_CORE_EXPORT Variable flatten(const VariableConstProxy &var,
+                                                 const Dim dim);
+[[nodiscard]] SCIPP_CORE_EXPORT Variable flatten(const VariableConstProxy &var,
+                                                 const Dim dim,
+                                                 const MasksConstProxy &masks);
 [[nodiscard]] SCIPP_CORE_EXPORT Variable sum(const VariableConstProxy &var,
                                              const Dim dim);
 SCIPP_CORE_EXPORT VariableProxy sum(const VariableConstProxy &var,
@@ -1055,6 +1058,12 @@ SCIPP_CORE_EXPORT VariableProxy acos(const VariableConstProxy &var,
 [[nodiscard]] SCIPP_CORE_EXPORT Variable atan(Variable &&var);
 SCIPP_CORE_EXPORT VariableProxy atan(const VariableConstProxy &var,
                                      const VariableProxy &out);
+
+// Logical reductions
+[[nodiscard]] SCIPP_CORE_EXPORT Variable any(const VariableConstProxy &var,
+                                             const Dim dim);
+[[nodiscard]] SCIPP_CORE_EXPORT Variable all(const VariableConstProxy &var,
+                                             const Dim dim);
 
 SCIPP_CORE_EXPORT Variable masks_merge_if_contains(const MasksConstProxy &masks,
                                                    const Dim dim);

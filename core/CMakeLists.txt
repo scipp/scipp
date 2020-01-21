@@ -43,6 +43,7 @@ set(SRC_FILES
     variable_instantiate_view_elements.cpp
     variable_logical_operations.cpp
     variable_operations.cpp
+    variable_reduction_operations.cpp
     variable_type_conversion.cpp
     view_index.cpp)
 
