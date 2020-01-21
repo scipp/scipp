@@ -5,6 +5,8 @@
 #ifndef SCIPP_CORE_VARIABLE_OPERATIONS_COMMON_H
 #define SCIPP_CORE_VARIABLE_OPERATIONS_COMMON_H
 
+#include "scipp/core/dataset.h"
+
 namespace scipp::core {
 
 void flatten_impl(const VariableProxy &summed, const VariableConstProxy &var,
@@ -12,6 +14,17 @@ void flatten_impl(const VariableProxy &summed, const VariableConstProxy &var,
 void sum_impl(const VariableProxy &summed, const VariableConstProxy &var);
 void all_impl(const VariableProxy &out, const VariableConstProxy &var);
 void any_impl(const VariableProxy &out, const VariableConstProxy &var);
+
+[[nodiscard]] Variable mean(const VariableConstProxy &var, const Dim dim,
+                            const MasksConstProxy &masks);
+VariableProxy mean(const VariableConstProxy &var, const Dim dim,
+                   const MasksConstProxy &masks, const VariableProxy &out);
+[[nodiscard]] Variable flatten(const VariableConstProxy &var, const Dim dim,
+                               const MasksConstProxy &masks);
+[[nodiscard]] Variable sum(const VariableConstProxy &var, const Dim dim,
+                           const MasksConstProxy &masks);
+VariableProxy sum(const VariableConstProxy &var, const Dim dim,
+                  const MasksConstProxy &masks, const VariableProxy &out);
 
 } // namespace scipp::core
 
