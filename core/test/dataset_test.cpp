@@ -165,6 +165,20 @@ TEST(DatasetTest, setData_with_and_without_variances) {
   ASSERT_EQ(d.size(), 2);
 }
 
+TEST(DatasetTest, setData_updates_dimensions) {
+  const auto xy = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 3});
+  const auto x = makeVariable<double>(Dims{Dim::X}, Shape{2});
+
+  Dataset d;
+  d.setData("x", xy);
+  d.setData("x", x);
+
+  const auto dims = d.dimensions();
+  ASSERT_TRUE(dims.find(Dim::X) != dims.end());
+  // Dim::Y should no longer appear in dimensions after item "x" was replaced.
+  ASSERT_TRUE(dims.find(Dim::Y) == dims.end());
+}
+
 TEST(DatasetTest, setLabels_with_name_matching_data_name) {
   Dataset d;
   d.setData("a", makeVariable<double>(Dims{Dim::X}, Shape{3}));
@@ -455,4 +469,37 @@ TEST(DatasetTest, erase_masks) {
   EXPECT_FALSE(ds.masks().contains("masks_x"));
   ds.setMask("masks_x", mask);
   EXPECT_EQ(ref, ds);
+}
+
+struct DatasetRenameTest : public ::testing::Test {
+  DatasetRenameTest() {
+    DatasetFactory3D factory(4, 5, 6, Dim::X);
+    factory.seed(0);
+    d = factory.make();
+    original = d;
+  }
+
+protected:
+  Dataset d;
+  Dataset original;
+};
+
+TEST_F(DatasetRenameTest, fail_duplicate_dim) {
+  ASSERT_THROW(d.rename(Dim::X, Dim::Y), except::DimensionError);
+  ASSERT_EQ(d, original);
+  ASSERT_THROW(d.rename(Dim::X, Dim::X), except::DimensionError);
+  ASSERT_EQ(d, original);
+}
+TEST_F(DatasetRenameTest, back_and_forth) {
+  d.rename(Dim::X, Dim::Row);
+  EXPECT_NE(d, original);
+  d.rename(Dim::Row, Dim::X);
+  EXPECT_EQ(d, original);
+}
+
+TEST_F(DatasetRenameTest, rename) {
+  d.rename(Dim::X, Dim::Row);
+  DatasetFactory3D factory(4, 5, 6, Dim::Row);
+  factory.seed(0);
+  EXPECT_EQ(d, factory.make());
 }

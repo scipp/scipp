@@ -71,6 +71,18 @@ TEST_F(RebinTest, outer_data_array) {
   ASSERT_EQ(rebin(array, Dim::Y, edges), expected);
 }
 
+TEST_F(RebinTest, outer_data_array_different_edge_dtype) {
+  auto edges = makeVariable<double>(Dims{Dim::Y}, Shape{2}, Values{1, 3});
+  DataArray expected(makeVariable<float>(Dims{Dim::Y, Dim::X}, Shape{1, 4},
+                                         units::Unit(units::counts),
+                                         Values{6, 8, 10, 12}),
+                     {{Dim::X, x}, {Dim::Y, edges}}, {});
+  DataArray array_float(astype(counts, dtype<float>),
+                        {{Dim::X, x}, {Dim::Y, y}});
+
+  ASSERT_EQ(rebin(array_float, Dim::Y, edges), expected);
+}
+
 TEST_F(RebinTest, outer_data_array_with_variances) {
   auto edges = makeVariable<double>(Dims{Dim::Y}, Shape{2}, Values{1, 3});
   DataArray expected(makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{1, 4},

@@ -17,12 +17,12 @@ bool isBinEdge(const Dim dim, Dimensions edges, const Dimensions &toMatch) {
 bool is1D(Dimensions edges) { return edges.shape().size() == 1; }
 
 template <class T> class VariableConceptT;
-template <class DataType, class CoordType>
+template <class DataType, class OldCoordType, class NewCoordType>
 // Special rebin version for rebinning inner dimension to a joint new coord.
 static void rebinInner(const Dim dim, const VariableConceptT<DataType> &oldT,
                        VariableConceptT<DataType> &newT,
-                       const VariableConceptT<CoordType> &oldCoordT,
-                       const VariableConceptT<CoordType> &newCoordT,
+                       const VariableConceptT<OldCoordType> &oldCoordT,
+                       const VariableConceptT<NewCoordType> &newCoordT,
                        bool variances = false) {
   scipp::span<const DataType> oldData;
   scipp::span<DataType> newData;
@@ -61,7 +61,8 @@ static void rebinInner(const Dim dim, const VariableConceptT<DataType> &oldT,
         iold++; /* old and new bins do not overlap */
       else {
         // delta is the overlap of the bins on the x axis
-        auto delta = std::min(xn_high, xo_high) - std::max(xn_low, xo_low);
+        auto delta = std::min<double>(xn_high, xo_high) -
+                     std::max<double>(xn_low, xo_low);
 
         auto owidth = xo_high - xo_low;
         newData[newOffset + inew] += oldData[oldOffset + iold] * delta / owidth;
@@ -104,7 +105,8 @@ void rebin_non_inner(const Dim dim, const VariableConstProxy &oldT,
       auto delta = std::min(xn_high, xo_high) - std::max(xn_low, xo_low);
 
       auto owidth = xo_high - xo_low;
-      newT.slice({dim, inew}) += oldT.slice({dim, iold}) * delta / owidth;
+      newT.slice({dim, inew}) +=
+          astype(oldT.slice({dim, iold}) * delta / owidth, newT.dtype());
       if (xn_high > xo_high) {
         iold++;
       } else {
@@ -165,13 +167,14 @@ Variable rebin(const VariableConstProxy &var, const Dim dim,
   Variable rebinned(var, dims);
   if (rebinned.dims().inner() == dim) {
     using mask_rebinning_t = std::tuple<bool, bool, double, double>;
-    apply_in_place<double, float, mask_rebinning_t>(do_rebin, rebinned, var,
-                                                    oldCoord, newCoord);
+    apply_in_place<double, float, std::tuple<float, float, double, double>,
+                   std::tuple<float, float, float, double>, mask_rebinning_t>(
+        do_rebin, rebinned, var, oldCoord, newCoord);
   } else {
     if (newCoord.dims().ndim() > 1)
       throw std::runtime_error(
           "Not inner rebin works only for 1d coordinates for now.");
-    switch (rebinned.dtype()) {
+    switch (oldCoord.dtype()) {
     case dtype<double>:
       rebin_non_inner<double>(dim, var, rebinned, oldCoord, newCoord);
       break;
