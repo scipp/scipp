@@ -239,8 +239,14 @@ void reduce_impl(const VariableProxy &out, const VariableConstProxy &var) {
   accumulate_in_place(out, var, Op{});
 }
 
+/// Reduction for idempotent operations such that op(a,a) = a.
+///
+/// The requirement for idempotency comes from the way the reduction output is
+/// initialized. It is fulfilled for operations like `or`, `and`, `min`, and
+/// `max`. Note that masking is not supported here since it would make creation
+/// of a sensible starting value difficult.
 template <class Op>
-Variable reduce(const VariableConstProxy &var, const Dim dim) {
+Variable reduce_idempotent(const VariableConstProxy &var, const Dim dim) {
   Variable out(var.slice({dim, 0}));
   reduce_impl<Op>(out, var);
   return out;
@@ -251,7 +257,7 @@ void any_impl(const VariableProxy &out, const VariableConstProxy &var) {
 }
 
 Variable any(const VariableConstProxy &var, const Dim dim) {
-  return reduce<operator_detail::or_equals>(var, dim);
+  return reduce_idempotent<operator_detail::or_equals>(var, dim);
 }
 
 void all_impl(const VariableProxy &out, const VariableConstProxy &var) {
@@ -259,7 +265,11 @@ void all_impl(const VariableProxy &out, const VariableConstProxy &var) {
 }
 
 Variable all(const VariableConstProxy &var, const Dim dim) {
-  return reduce<operator_detail::and_equals>(var, dim);
+  return reduce_idempotent<operator_detail::and_equals>(var, dim);
+}
+
+void max_impl(const VariableProxy &out, const VariableConstProxy &var) {
+  reduce_impl<operator_detail::max_equals>(out, var);
 }
 
 /// Return the maximum along given dimension.
@@ -267,7 +277,11 @@ Variable all(const VariableConstProxy &var, const Dim dim) {
 /// Variances are not considered when determining the maximum. If present, the
 /// variance of the maximum element is returned.
 Variable max(const VariableConstProxy &var, const Dim dim) {
-  return reduce<operator_detail::max_equals>(var, dim);
+  return reduce_idempotent<operator_detail::max_equals>(var, dim);
+}
+
+void min_impl(const VariableProxy &out, const VariableConstProxy &var) {
+  reduce_impl<operator_detail::min_equals>(out, var);
 }
 
 /// Return the minimum along given dimension.
@@ -275,7 +289,7 @@ Variable max(const VariableConstProxy &var, const Dim dim) {
 /// Variances are not considered when determining the minimum. If present, the
 /// variance of the minimum element is returned.
 Variable min(const VariableConstProxy &var, const Dim dim) {
-  return reduce<operator_detail::min_equals>(var, dim);
+  return reduce_idempotent<operator_detail::min_equals>(var, dim);
 }
 
 } // namespace scipp::core

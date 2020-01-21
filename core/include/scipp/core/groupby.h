@@ -49,6 +49,8 @@ public:
   T sum(const Dim reductionDim) const;
   T all(const Dim reductionDim) const;
   T any(const Dim reductionDim) const;
+  T max(const Dim reductionDim) const;
+  T min(const Dim reductionDim) const;
 
 private:
   T makeReductionOutput(const Dim reductionDim) const;
