@@ -4,7 +4,6 @@
 import operator
 import os
 import uuid
-
 from functools import partial, reduce
 from html import escape
 
@@ -123,13 +122,10 @@ def _short_data_repr_html_sparse(var, variances=False):
 
 def short_data_repr_html(var, variances=False):
     """Format "data" for DataArray and Variable."""
-    if var.dtype == sc.dtype.string:
-        data_repr = str(retrieve(var, variances, single=True))
+    if var.sparse_dim is None:
+        data_repr = _short_data_repr_html_non_sparse(var, variances)
     else:
-        if var.sparse_dim is None:
-            data_repr = _short_data_repr_html_non_sparse(var, variances)
-        else:
-            data_repr = _short_data_repr_html_sparse(var, variances)
+        data_repr = _short_data_repr_html_sparse(var, variances)
     return escape(data_repr)
 
 

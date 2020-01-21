@@ -9,6 +9,7 @@
 #include "scipp/core/variable.h"
 #include "scipp/core/variable_view.h"
 #include "scipp/units/unit.h"
+#include <numeric>
 #include <optional>
 
 namespace scipp::core {
@@ -135,6 +136,28 @@ VariableConceptHandle VariableConceptT<T>::reshape(const Dimensions &dims) {
         "Cannot reshape to dimensions with different volume");
   return std::make_unique<ViewModel<decltype(valuesReshaped(dims))>>(
       dims, valuesReshaped(dims), optionalVariancesReshaped(*this, dims));
+}
+
+template <class T>
+VariableConceptHandle
+VariableConceptT<T>::transpose(const std::vector<Dim> &tdims) const {
+  auto dms = Dimensions(std::vector<Dim>(tdims.begin(), tdims.end()),
+                        detail::reorderedShape(tdims, dims()));
+  using U = decltype(valuesView(dms));
+  return std::make_unique<ViewModel<U>>(
+      dms, valuesView(dms),
+      this->hasVariances() ? std::optional(variancesView(dms)) : std::nullopt);
+}
+
+template <class T>
+VariableConceptHandle
+VariableConceptT<T>::transpose(const std::vector<Dim> &tdims) {
+  auto dms = Dimensions(std::vector<Dim>(tdims.begin(), tdims.end()),
+                        detail::reorderedShape(tdims, dims()));
+  using U = decltype(valuesView(dms));
+  return std::make_unique<ViewModel<U>>(
+      dms, valuesView(dms),
+      this->hasVariances() ? std::optional(variancesView(dms)) : std::nullopt);
 }
 
 template <class T>

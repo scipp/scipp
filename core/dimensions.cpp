@@ -196,6 +196,17 @@ int32_t Dimensions::index(const Dim dim) const {
   throw except::DimensionNotFoundError(*this, dim);
 }
 
+/// Return the dense subspace of the given dims.
+Dimensions denseDims(const Dimensions &dims) {
+  if (!dims.sparse())
+    return dims;
+  const std::vector<Dim> labels{dims.denseLabels().begin(),
+                                dims.denseLabels().end()};
+  const std::vector<scipp::index> shape{dims.shape().begin(),
+                                        dims.shape().end()};
+  return Dimensions(labels, shape);
+}
+
 /// Return the direct sum, i.e., the combination of dimensions in a and b.
 ///
 /// Throws if there is a mismatching dimension extent.

@@ -153,6 +153,24 @@ def test_create_2D_inner_size_3():
     assert var.unit == sc.units.m
 
 
+def test_astype():
+    var = sc.Variable([sc.Dim.X],
+                      values=np.array([1, 2, 3, 4], dtype=np.int64))
+    assert var.dtype == sc.dtype.int64
+
+    var_as_float = var.astype(sc.dtype.float64)
+    assert var_as_float.dtype == sc.dtype.float64
+
+
+def test_astype_bad_conversion():
+    var = sc.Variable([sc.Dim.X],
+                      values=np.array([1, 2, 3, 4], dtype=np.int64))
+    assert var.dtype == sc.dtype.int64
+
+    with pytest.raises(RuntimeError):
+        var.astype(sc.dtype.string)
+
+
 def test_operation_with_scalar_quantity():
     reference = sc.Variable([sc.Dim.X], np.arange(4.0) * 1.5)
     reference.unit = sc.units.kg
@@ -636,6 +654,19 @@ def test_mean():
     assert sc.mean(var, Dim.Y) == expected
 
 
+def test_mean_in_place():
+    var = sc.Variable([Dim.X, Dim.Y],
+                      values=np.array([[0.1, 0.3], [0.2, 0.6]]),
+                      unit=sc.units.m)
+    out = sc.Variable([Dim.X], values=np.array([0.0, 0.0]), unit=sc.units.m)
+    expected = sc.Variable([Dim.X],
+                           values=np.array([0.2, 0.4]),
+                           unit=sc.units.m)
+    view = sc.mean(var, Dim.Y, out)
+    assert out == expected
+    assert view == out
+
+
 def test_norm():
     var = sc.Variable(dims=[Dim.X],
                       values=[[1, 0, 0], [3, 4, 0]],
@@ -673,6 +704,21 @@ def test_sum():
                            values=np.array([0.4, 0.8]),
                            unit=sc.units.m)
     assert sc.sum(var, Dim.Y) == expected
+
+
+def test_sum_in_place():
+    var = sc.Variable([Dim.X, Dim.Y],
+                      values=np.array([[0.1, 0.3], [0.2, 0.6]]),
+                      unit=sc.units.m)
+    out_var = sc.Variable([Dim.X],
+                          values=np.array([0.0, 0.0]),
+                          unit=sc.units.m)
+    expected = sc.Variable([Dim.X],
+                           values=np.array([0.4, 0.8]),
+                           unit=sc.units.m)
+    out_view = sc.sum(var, Dim.Y, out=out_var)
+    assert out_var == expected
+    assert out_view == expected
 
 
 def test_variance_acess():
@@ -944,3 +990,9 @@ def test_atan_out():
     out = sc.atan(x=var, out=var)
     assert var == expected
     assert out == expected
+
+
+def test_variable_data_array_binary_ops():
+    a = sc.DataArray(1.0 * sc.units.m)
+    var = 1.0 * sc.units.m
+    assert a / var == var / a

@@ -94,6 +94,7 @@ TEST(DataArraySparseArithmeticTest, sparse_times_histogram) {
     EXPECT_TRUE(equals(out_vals[1], expected.values<double>()));
     EXPECT_TRUE(equals(out_vars[1], expected.variances<double>()));
   }
+  EXPECT_EQ(copy(sparse) *= hist, sparse * hist);
 }
 
 TEST(DataArraySparseArithmeticTest, sparse_with_values_times_histogram) {

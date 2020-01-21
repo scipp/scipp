@@ -20,6 +20,21 @@ public:
     std::generate(data.begin(), data.end(), [this]() { return dist(mt); });
     return data;
   }
+  void seed(const uint32_t value) { mt.seed(value); }
+};
+
+class RandomBool {
+  std::mt19937 mt{std::random_device()()};
+  std::uniform_int_distribution<int32_t> dist;
+
+public:
+  RandomBool() : dist{0, 1} {}
+  std::vector<bool> operator()(const int64_t size) {
+    std::vector<bool> data(size);
+    std::generate(data.begin(), data.end(), [this]() { return dist(mt); });
+    return data;
+  }
+  void seed(const uint32_t value) { mt.seed(value); }
 };
 
 #endif // SCIPP_TEST_RANDOM_H

@@ -38,7 +38,7 @@ template <class T> T convert_with_calibration_impl(T d, Dataset cal) {
     // data.
     // We are hard-coding some information here: the existence of "spectra",
     // since we require labels named "spectrum" and a corresponding dimension.
-    // Given that this in in a branch that is access only if "detector_info" is
+    // Given that this is in a branch that is access only if "detector_info" is
     // present this should probably be ok.
     cal = groupby(cal, "spectrum", Dim::Spectrum).mean(Dim::Detector);
   } else if (!has_dim(d, cal["tzero"].dims().inner())) {
@@ -51,7 +51,7 @@ template <class T> T convert_with_calibration_impl(T d, Dataset cal) {
   }
 
   // 2. Transform coordinate
-  if (d.coords().contains(Dim::Tof)) {
+  if (d.coords().contains(Dim::Tof) && !d.coords()[Dim::Tof].dims().sparse()) {
     d.setCoord(Dim::Tof, (d.coords()[Dim::Tof] - cal["tzero"].data()) /
                              cal["difc"].data());
   }
