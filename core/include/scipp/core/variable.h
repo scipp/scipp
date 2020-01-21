@@ -500,6 +500,7 @@ private:
 // The name should be changed to makeVariable after refactoring:
 // getting rid of all other makeVariable.
 template <class T, class... Ts> Variable makeVariable(Ts &&... ts) {
+  static_assert(!std::disjunction_v<std::is_lvalue_reference<Ts>...>, "makeVariable inputs must be r-value references");
   using helper = detail::ConstructorArgumentsMatcher<Variable, Ts...>;
   constexpr bool useDimsAndShape =
       helper::template checkArgTypesValid<units::Unit, Dims, Shape>();
