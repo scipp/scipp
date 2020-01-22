@@ -362,6 +362,7 @@ public:
                Variable attr);
   void setData(const std::string &name, Variable data);
   void setData(const std::string &name, const DataConstProxy &data);
+  void setData(const std::string &name, DataArray data);
   void setSparseCoord(const std::string &name, Variable coord);
   void setSparseLabels(const std::string &name, const std::string &labelName,
                        Variable labels);
@@ -683,8 +684,8 @@ public:
     return slice(slice1, slice2).slice(slice3);
   }
 
-  void set(const typename Base::key_type key,
-           const VariableConstProxy &var) const {
+  template <class VarOrProxy>
+  void set(const typename Base::key_type key, VarOrProxy var) const {
     if (!m_parent || !Base::m_slices.empty())
       throw std::runtime_error(
           "Cannot add coord/labels/attr field to a slice.");
@@ -694,23 +695,23 @@ public:
                                  "coords of dataset items, not coords of "
                                  "dataset.");
       if constexpr (std::is_same_v<Base, CoordsConstProxy>)
-        m_parent->setSparseCoord(*m_name, var);
+        m_parent->setSparseCoord(*m_name, std::move(var));
       if constexpr (std::is_same_v<Base, LabelsConstProxy>)
-        m_parent->setSparseLabels(*m_name, key, var);
+        m_parent->setSparseLabels(*m_name, key, std::move(var));
       if constexpr (std::is_same_v<Base, AttrsConstProxy>)
         throw std::runtime_error("Attributes cannot be sparse.");
     } else {
       if constexpr (std::is_same_v<Base, CoordsConstProxy>)
-        m_parent->setCoord(key, var);
+        m_parent->setCoord(key, std::move(var));
       if constexpr (std::is_same_v<Base, LabelsConstProxy>)
-        m_parent->setLabels(key, var);
+        m_parent->setLabels(key, std::move(var));
       if constexpr (std::is_same_v<Base, MasksConstProxy>)
-        m_parent->setMask(key, var);
+        m_parent->setMask(key, std::move(var));
       if constexpr (std::is_same_v<Base, AttrsConstProxy>) {
         if (m_name)
-          m_parent->setAttr(*m_name, key, var);
+          m_parent->setAttr(*m_name, key, std::move(var));
         else
-          m_parent->setAttr(key, var);
+          m_parent->setAttr(key, std::move(var));
       }
     }
     // TODO rebuild *this?!
@@ -1147,6 +1148,13 @@ public:
   DatasetConstProxy iterable_view() const noexcept { return m_holder; }
   /// Iterable view for generic code supporting Dataset and DataArray.
   DatasetProxy iterable_view() noexcept { return m_holder; }
+
+  /// Return the Dataset holder of the given DataArray, so access to private
+  /// members is possible, thus allowing moving of Variables without making
+  /// copies.
+  static Dataset to_dataset(DataArray &&data) {
+    return std::move(data.m_holder);
+  }
 
 private:
   DataConstProxy get() const;

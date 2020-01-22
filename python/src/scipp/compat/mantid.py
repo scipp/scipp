@@ -3,6 +3,7 @@
 # @author Simon Heybrock, Neil Vaytet
 
 from .._scipp import core as sc
+from .. import detail
 import numpy as np
 from copy import deepcopy
 import re
@@ -246,7 +247,7 @@ def convert_monitors_ws(ws, converter, **ignored):
     return monitors
 
 
-def convert_Workspace2D_to_dataarray(ws, **ignored):
+def convert_Workspace2D_to_data_array(ws, **ignored):
     common_bins = ws.isCommonBins()
     dim, unit = validate_and_get_unit(ws.getAxis(0).getUnit().unitID())
     spec_dim, spec_coord = init_spec_axis(ws)
@@ -267,12 +268,12 @@ def convert_Workspace2D_to_dataarray(ws, **ignored):
                                                   len(ws.readY(0))),
                                            unit=sc.units.counts,
                                            variances=True)
-    array = sc.DataArray(**coords_labs_data)
+    array = detail.move_to_data_array(**coords_labs_data)
 
     if ws.hasAnyMaskedBins():
-        array.masks["bin"] = make_bin_masks(common_bins, spec_dim, dim,
-                                            ws.blocksize(),
-                                            ws.getNumberHistograms())
+        array.masks["bin"] = detail.move(
+            make_bin_masks(common_bins, spec_dim, dim, ws.blocksize(),
+                           ws.getNumberHistograms()))
         bin_masks = array.masks["bin"]
         # set all the bin masks now - they're all the same
         if common_bins:
@@ -295,7 +296,7 @@ def convert_Workspace2D_to_dataarray(ws, **ignored):
     return array
 
 
-def convertEventWorkspace_to_dataarray(ws, load_pulse_times=True, **ignored):
+def convert_EventWorkspace_to_data_array(ws, load_pulse_times=True, **ignored):
     from mantid.api import EventType
 
     dim, unit = validate_and_get_unit(ws.getAxis(0).getUnit().unitID())
@@ -334,10 +335,10 @@ def convertEventWorkspace_to_dataarray(ws, load_pulse_times=True, **ignored):
         coords_labs_data["labels"]["pulse_times"] = labs
     if contains_weighted_events:
         coords_labs_data["data"] = weights
-    return sc.DataArray(**coords_labs_data)
+    return detail.move_to_data_array(**coords_labs_data)
 
 
-def convertMDHistoWorkspace_to_dataset(md_histo, **ignored):
+def convert_MDHistoWorkspace_to_data_array(md_histo, **ignored):
     ndims = md_histo.getNumDims()
     coords = dict()
     dims_used = []
@@ -356,7 +357,9 @@ def convertMDHistoWorkspace_to_dataset(md_histo, **ignored):
                        variances=md_histo.getErrorSquaredArray(),
                        unit=sc.units.counts)
     nevents = sc.Variable(dims=dims_used, values=md_histo.getNumEventsArray())
-    return sc.DataArray(coords=coords, data=data, attrs={'nevents': nevents})
+    return detail.move_to_data_array(coords=coords,
+                                     data=data,
+                                     attrs={'nevents': nevents})
 
 
 def convert_TableWorkspace_to_dataset(ws, error_connection=None, **ignored):
@@ -388,15 +391,15 @@ def convert_TableWorkspace_to_dataset(ws, error_connection=None, **ignored):
     # Types for which the transformation from error to variance will fail
     blacklist_variance_types = ["str"]
 
-    variables = {}
+    dataset = sc.Dataset()
     for i in range(n_columns):
         if columnTypes[i] in blacklist_types:
             continue  # skips loading data of this type
 
         data_name = columnNames[i]
         if error_connection is None:
-            variables[data_name] = sc.Variable([sc.Dim.Row],
-                                               values=ws.column(i))
+            dataset[data_name] = detail.move(
+                sc.Variable([sc.Dim.Row], values=ws.column(i)))
         elif data_name in error_connection:
             # This data has error availble
             error_name = error_connection[data_name]
@@ -409,22 +412,23 @@ def convert_TableWorkspace_to_dataset(ws, error_connection=None, **ignored):
                                    "Variance: " + str(error_name) + "\n")
 
             variance = np.array(ws.column(error_name))**2
-            variables[data_name] = sc.Variable([sc.Dim.Row],
-                                               values=np.array(ws.column(i)),
-                                               variances=variance)
+            dataset[data_name] = detail.move(
+                sc.Variable([sc.Dim.Row],
+                            values=np.array(ws.column(i)),
+                            variances=variance))
         elif data_name not in error_connection.values():
             # This data is not an error for another dataset, and has no error
-            variables[data_name] = sc.Variable([sc.Dim.Row],
-                                               values=ws.column(i))
+            dataset[data_name] = detail.move(
+                sc.Variable([sc.Dim.Row], values=ws.column(i)))
 
-    return sc.Dataset(variables)  # Return scipp dataset with the variables
+    return dataset
 
 
 def from_mantid(workspace, **kwargs):
     """Convert Mantid workspace to a scipp data array or dataset
     :param workspace: Mantid workspace to convert.
     """
-    dataset = None
+    scipp_obj = None  # This is either a Dataset or DataArray
     monitor_ws = None
     if workspace.id() == 'Workspace2D' or workspace.id() == 'RebinnedOutput':
         has_monitors = False
@@ -436,15 +440,15 @@ def from_mantid(workspace, **kwargs):
             import mantid.simpleapi as mantid
             workspace, monitor_ws = mantid.ExtractMonitors(workspace,
                                                            StoreInADS=False)
-        dataset = convert_Workspace2D_to_dataarray(workspace, **kwargs)
+        scipp_obj = convert_Workspace2D_to_data_array(workspace, **kwargs)
     elif workspace.id() == 'EventWorkspace':
-        dataset = convertEventWorkspace_to_dataarray(workspace, **kwargs)
+        scipp_obj = convert_EventWorkspace_to_data_array(workspace, **kwargs)
     elif workspace.id() == 'TableWorkspace':
-        dataset = convert_TableWorkspace_to_dataset(workspace, **kwargs)
+        scipp_obj = convert_TableWorkspace_to_dataset(workspace, **kwargs)
     elif workspace.id() == 'MDHistoWorkspace':
-        dataset = convertMDHistoWorkspace_to_dataset(workspace, **kwargs)
+        scipp_obj = convert_MDHistoWorkspace_to_data_array(workspace, **kwargs)
 
-    if dataset is None:
+    if scipp_obj is None:
         raise RuntimeError('Unsupported workspace type {}'.format(
             workspace.id()))
 
@@ -460,15 +464,15 @@ def from_mantid(workspace, **kwargs):
 
     if monitor_ws is not None:
         if monitor_ws.id() == 'Workspace2D':
-            converter = convert_Workspace2D_to_dataarray
+            converter = convert_Workspace2D_to_data_array
         elif monitor_ws.id() == 'EventWorkspace':
-            converter = convertEventWorkspace_to_dataarray
+            converter = convert_EventWorkspace_to_data_array
 
         monitors = convert_monitors_ws(monitor_ws, converter, **kwargs)
         for name, monitor in monitors:
-            dataset.attrs[name] = sc.Variable(value=monitor)
+            scipp_obj.attrs[name] = detail.move(sc.Variable(value=monitor))
 
-    return dataset
+    return scipp_obj
 
 
 def load(filename="",
