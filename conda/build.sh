@@ -1,11 +1,12 @@
 #!/bin/bash
+
 set -x
 
 mkdir -p 'build' && cd 'build'
 
 # Perform CMake configuration
 cmake \
-  -G"$GENERATOR" \
+  -G Ninja \
   -DPYTHON_EXECUTABLE="$CONDA_PREFIX/bin/python" \
   -DCMAKE_INSTALL_PREFIX="$CONDA_PREFIX" \
   -DCMAKE_OSX_DEPLOYMENT_TARGET=$OSX_VERSION \
