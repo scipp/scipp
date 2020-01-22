@@ -294,26 +294,36 @@ Variable masks_merge_if_contained(const MasksConstProxy &masks,
   return mask_union;
 }
 
-VariableProxy nan_to_num(const VariableConstProxy &var, double replacement,
+VariableProxy nan_to_num(const VariableConstProxy &var,
+                         const VariableConstProxy &replacement,
                          const VariableProxy &out) {
 
   if (var.dtype() != out.dtype())
     throw except::TypeError("Input and output variable types do not match");
-  if (var.dtype() != dtype<decltype(replacement)>)
+  if (var.dtype() != replacement.dtype())
     throw except::TypeError("Replacement type doesn't match type of input");
 
   transform_in_place<pair_self_t<double, float>>(
       out, var,
       scipp::overloaded{
           [&](auto &x, const auto &y) {
-            if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(x)>> &&
-                          is_ValueAndVariance_v<std::decay_t<decltype(y)>>) {
-              const auto replace = std::isnan(y.value);
-              x.value = replace ? replacement : y.value;
-              x.variance = replace ? replacement
-                                   : y.variance; // Logic makes sense for counts
+            using V_OUT = std::decay_t<decltype(x)>;
+            using V_IN = std::decay_t<decltype(y)>;
+            if constexpr (is_ValueAndVariance_v<V_OUT> &&
+                          is_ValueAndVariance_v<V_IN>) {
+              if (std::isnan(y.value)) {
+                x.value = replacement.value<decltype(V_IN::value)>();
+                if (replacement.hasVariances())
+                  x.variance = replacement.variance<decltype(V_IN::value)>();
+                else
+                  x.variance = x.value;
+              } else {
+                // Assign directly to output
+                x.value = y.value;
+                x.variance = y.variance;
+              }
             } else {
-              x = std::isnan(y) ? replacement : y;
+              x = std::isnan(y) ? replacement.value<V_IN>() : y;
             }
           },
           [&](units::Unit &ua, const units::Unit &ub) {
@@ -322,21 +332,26 @@ VariableProxy nan_to_num(const VariableConstProxy &var, double replacement,
   return out;
 }
 
-Variable nan_to_num(const VariableConstProxy &var, double replacement) {
-  return transform<double>(
+Variable nan_to_num(const VariableConstProxy &var,
+                    const VariableConstProxy &replacement) {
+  return transform<double, float>(
       var,
       overloaded{
           [&](const auto &x) {
-            if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(x)>>) {
-              const auto replace = std::isnan(x.value);
-              if (replace) {
-                using V = decltype(x);
-                return V{replacement, replacement};
+            using V = std::decay_t<decltype(x)>;
+            if constexpr (is_ValueAndVariance_v<V>) {
+              if (std::isnan(x.value)) {
+                auto val = replacement.value<decltype(V::value)>();
+                if (replacement.hasVariances()) {
+                  // Use the specified variance in replacement
+                  return V{val, replacement.variance<decltype(V::variance)>()};
+                } else
+                  return V{val, val};
               } else {
-                return x;
+                return x; // Nothing to replace
               }
             } else {
-              return std::isnan(x) ? replacement : x;
+              return std::isnan(x) ? replacement.value<V>() : x;
             }
           },
           [](const units::Unit &u) { return u; }});
