@@ -313,7 +313,7 @@ void Dataset::setData(const std::string &name, Variable data) {
 /// Set (insert or replace) data from a DataArray with a given name, avoiding
 /// copies where possible by using std::move.
 ///
-void Dataset::setDataMove(const std::string &name, DataArray data) {
+void Dataset::setData(const std::string &name, DataArray data) {
   // Get the Dataset holder
   auto dataset = DataArray::to_dataset(std::move(data));
 
