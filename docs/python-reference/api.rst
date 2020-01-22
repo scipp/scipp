@@ -29,12 +29,16 @@ General
    :toctree: ../generated
 
    abs
+   all
+   any
    concatenate
    dot
    filter
    histogram
+   max
    mean
    merge
+   min
    norm
    rebin
    reciprocal
@@ -50,11 +54,19 @@ Group-by (split-apply-combine)
    :toctree: ../generated
 
    groupby
+   GroupByDataArray.all
+   GroupByDataArray.any
    GroupByDataArray.flatten
+   GroupByDataArray.max
    GroupByDataArray.mean
+   GroupByDataArray.min
    GroupByDataArray.sum
+   GroupByDataset.all
+   GroupByDataset.any
    GroupByDataset.flatten
+   GroupByDataset.max
    GroupByDataset.mean
+   GroupByDataset.min
    GroupByDataset.sum
 
 Trigonometric

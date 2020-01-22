@@ -3,7 +3,7 @@
 # @file
 # @author Igor Gudich & Neil Vaytet
 
-from .config import colors
+from . import config
 from .utils import value_to_string, name_with_unit
 from ._scipp import core as sc
 
@@ -26,13 +26,13 @@ def _make_table_section_name_header(name, section, style):
 
 def _make_table_sections(dataset, coord, base_style):
     coord_style = "{} background-color: {};text-align: center;'".format(
-        base_style, colors.scheme["coord"])
+        base_style, config.colors["coord"])
     label_style = "{} background-color: {};text-align: center;'".format(
-        base_style, colors.scheme["labels"])
+        base_style, config.colors["labels"])
     mask_style = "{} background-color: {};text-align: center;'".format(
-        base_style, colors.scheme["mask"])
+        base_style, config.colors["mask"])
     data_style = "{} background-color: {};text-align: center;'".format(
-        base_style, colors.scheme["data"])
+        base_style, config.colors["data"])
 
     colsp_coord = 0
     if coord is not None:

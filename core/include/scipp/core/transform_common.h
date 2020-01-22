@@ -73,6 +73,10 @@ using expect_no_variance_arg_t = decltype(expect_no_variance_arg<N>);
 template <int N> static constexpr auto expect_variance_arg = []() {};
 template <int N> using expect_variance_arg_t = decltype(expect_variance_arg<N>);
 
+/// Add this to overloaded operator to indicate that the in-place operation
+/// requires inputs to have a variance of the output has a variance.
+struct expect_in_variance_if_out_variance_t {};
+
 } // namespace transform_flags
 
 } // namespace scipp::core

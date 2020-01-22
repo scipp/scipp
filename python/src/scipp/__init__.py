@@ -5,6 +5,10 @@
 
 # flake8: noqa
 
+from . import runtime_config
+config = runtime_config.load()
+del runtime_config
+
 from ._scipp.core import *
 from ._scipp import __version__
 from . import detail
@@ -13,7 +17,6 @@ from .show import show, make_svg
 from .table import table
 from . import plot
 from .extend_units import *
-from . import config
 from .table_html import to_html, make_html
 
 setattr(Variable, '_repr_html_', make_html)

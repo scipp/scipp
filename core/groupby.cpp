@@ -98,15 +98,19 @@ static constexpr auto sum =
     };
 
 template <void (*Func)(const VariableProxy &, const VariableConstProxy &)>
-static constexpr auto logical = [](const VariableProxy &out_data,
-                                   const auto &data_container,
-                                   const std::vector<Slice> &group,
-                                   const Dim reductionDim) {
-  static_cast<void>(reductionDim); // Will be used for mask handling.
+static constexpr auto reduce_idempotent = [](const VariableProxy &out_data,
+                                             const auto &data_container,
+                                             const std::vector<Slice> &group,
+                                             const Dim reductionDim) {
+  bool first = true;
   for (const auto &slice : group) {
     const auto data_slice = data_container.slice(slice);
     if (!data_slice.masks().empty())
       throw std::runtime_error("This operation does not support masks yet.");
+    if (first) {
+      out_data.assign(data_slice.data().slice({reductionDim, 0}));
+      first = false;
+    }
     Func(out_data, data_slice.data());
   }
 };
@@ -119,12 +123,22 @@ template <class T> T GroupBy<T>::sum(const Dim reductionDim) const {
 
 /// Reduce each group using `all` and return combined data.
 template <class T> T GroupBy<T>::all(const Dim reductionDim) const {
-  return reduce(groupby_detail::logical<all_impl>, reductionDim);
+  return reduce(groupby_detail::reduce_idempotent<all_impl>, reductionDim);
 }
 
 /// Reduce each group using `any` and return combined data.
 template <class T> T GroupBy<T>::any(const Dim reductionDim) const {
-  return reduce(groupby_detail::logical<any_impl>, reductionDim);
+  return reduce(groupby_detail::reduce_idempotent<any_impl>, reductionDim);
+}
+
+/// Reduce each group using `max` and return combined data.
+template <class T> T GroupBy<T>::max(const Dim reductionDim) const {
+  return reduce(groupby_detail::reduce_idempotent<max_impl>, reductionDim);
+}
+
+/// Reduce each group using `min` and return combined data.
+template <class T> T GroupBy<T>::min(const Dim reductionDim) const {
+  return reduce(groupby_detail::reduce_idempotent<min_impl>, reductionDim);
 }
 
 /// Apply mean to groups and return combined data.

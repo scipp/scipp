@@ -8,6 +8,7 @@
 #include "scipp/core/transform.h"
 
 #include "dataset_operations_common.h"
+#include "variable_operations_common.h"
 
 namespace scipp::core {
 
