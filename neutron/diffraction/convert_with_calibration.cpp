@@ -71,11 +71,20 @@ template <class T> T convert_with_calibration_impl(T d, Dataset cal) {
   return d;
 }
 
+void validate_calibration(const Dataset &cal) {
+  if (cal["tzero"].unit() != scipp::units::us)
+    throw except::UnitError("tzero must have units of `us`");
+  if (cal["difc"].unit() != scipp::units::us / scipp::units::angstrom)
+    throw except::UnitError("difc must have units of `us / angstrom`");
+}
+
 DataArray convert_with_calibration(DataArray d, Dataset cal) {
+  validate_calibration(cal);
   return convert_with_calibration_impl(std::move(d), std::move(cal));
 }
 
 Dataset convert_with_calibration(Dataset d, Dataset cal) {
+  validate_calibration(cal);
   return convert_with_calibration_impl(std::move(d), std::move(cal));
 }
 
