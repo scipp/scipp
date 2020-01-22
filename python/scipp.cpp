@@ -7,6 +7,7 @@
 namespace py = pybind11;
 
 void init_dataset(py::module &);
+void init_detail(py::module &);
 void init_dimensions(py::module &);
 void init_dtype(py::module &);
 void init_counts(py::module &);
@@ -40,4 +41,5 @@ PYBIND11_MODULE(_scipp, m) {
 #endif
   init_core(m);
   init_neutron(m);
+  init_detail(m);
 }

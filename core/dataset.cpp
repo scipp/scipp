@@ -310,6 +310,47 @@ void Dataset::setData(const std::string &name, Variable data) {
     rebuildDims();
 }
 
+/// Set (insert or replace) data from a DataArray with a given name, avoiding
+/// copies where possible by using std::move.
+///
+void Dataset::setData(const std::string &name, DataArray data) {
+  // Get the Dataset holder
+  auto dataset = DataArray::to_dataset(std::move(data));
+
+  for (auto &&[dim, coord] : dataset.m_coords) {
+    if (const auto it = m_coords.find(dim); it != m_coords.end())
+      expect::equals(coord, it->second);
+    else
+      setCoord(dim, std::move(coord));
+  }
+  for (auto &&[nm, labs] : dataset.m_labels) {
+    if (const auto it = m_labels.find(std::string(nm)); it != m_labels.end())
+      expect::equals(labs, it->second);
+    else
+      setLabels(std::string(nm), std::move(labs));
+  }
+
+  for (auto &&[nm, mask] : dataset.m_masks)
+    if (const auto it = m_masks.find(std::string(nm)); it != m_masks.end())
+      expect::equals(mask, it->second);
+    else
+      setMask(std::string(nm), std::move(mask));
+
+  if (dataset.m_attrs.size() > 0)
+    throw except::SizeError("Attributes should be empty for a DataArray.");
+
+  // There can be only one DatasetData item, so get the first one with begin()
+  auto item = dataset.m_data.begin();
+  if (item->second.data)
+    setData(name, std::move(item->second.data.value()));
+  if (item->second.coord)
+    setSparseCoord(name, std::move(item->second.coord.value()));
+  for (auto &&[nm, labs] : item->second.labels)
+    setSparseLabels(name, std::string(nm), std::move(labs));
+  for (auto &&[nm, attr] : item->second.attrs)
+    setAttr(name, std::string(nm), std::move(attr));
+}
+
 /// Set (insert or replace) data item with given name.
 ///
 /// Coordinates, labels, attributes and masks of the data array are added to the
@@ -320,36 +361,7 @@ void Dataset::setData(const std::string &name, const DataConstProxy &data) {
   if (contains(name) && &m_data[name] == &data.underlying() &&
       data.slices().empty())
     return; // Self-assignment, return early.
-
-  for (const auto &[dim, coord] : data.coords()) {
-    if (coord.dims().sparse()) {
-      setSparseCoord(name, coord);
-    } else {
-      if (const auto it = m_coords.find(dim); it != m_coords.end())
-        expect::equals(coord, it->second);
-      else
-        setCoord(dim, coord);
-    }
-  }
-  for (const auto &[nm, labs] : data.labels()) {
-    if (labs.dims().sparse()) {
-      setSparseLabels(name, std::string(nm), labs);
-    } else {
-      if (const auto it = m_labels.find(std::string(nm)); it != m_labels.end())
-        expect::equals(labs, it->second);
-      else
-        setLabels(std::string(nm), labs);
-    }
-  }
-
-  for (const auto &[nm, mask] : data.masks())
-    setMask(std::string(nm), mask);
-
-  if (data.hasData())
-    setData(name, data.data());
-
-  for (const auto &[nm, attr] : data.attrs())
-    setAttr(name, std::string(nm), attr);
+  setData(name, DataArray(data));
 }
 
 /// Set (insert or replace) the sparse coordinate with given name.

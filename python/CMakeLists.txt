@@ -5,6 +5,7 @@ pybind11_add_module(_scipp
                     SYSTEM
                     counts.cpp
                     dataset.cpp
+                    detail.cpp
                     dimensions.cpp
                     dtype.cpp
                     groupby.cpp
