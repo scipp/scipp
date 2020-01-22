@@ -4,7 +4,6 @@
 /// @author Simon Heybrock
 #include "scipp/core/dataset.h"
 #include "scipp/core/except.h"
-#include <iostream>
 
 namespace scipp::core {
 
@@ -316,7 +315,6 @@ void Dataset::setData(const std::string &name, Variable data) {
 ///
 void Dataset::setData(const std::string &name, DataArray data) {
   // Get the Dataset holder
-  std::cout << "using setData with MOVE" << std::endl;
   auto dataset = DataArray::to_dataset(std::move(data));
 
   for (auto &&[dim, coord] : dataset.m_coords) {
@@ -360,7 +358,6 @@ void Dataset::setData(const std::string &name, DataArray data) {
 /// attributes. Throws if the provided data brings the dataset into an
 /// inconsistent state (mismatching dtype, unit, or dimensions).
 void Dataset::setData(const std::string &name, const DataConstProxy &data) {
-  std::cout << "using setData with COPY" << std::endl;
   if (contains(name) && &m_data[name] == &data.underlying() &&
       data.slices().empty())
     return; // Self-assignment, return early.
