@@ -224,7 +224,7 @@ void init_dataset(py::module &m) {
               const DataConstProxy &data) { self.setData(name, data); })
       .def("__setitem__",
            [](Dataset &self, const std::string &name, MoveableDataArray &mdat) {
-             self.setDataMove(name, std::move(mdat.data));
+             self.setData(name, std::move(mdat.data));
            })
       .def("__delitem__", &Dataset::erase,
            py::call_guard<py::gil_scoped_release>())

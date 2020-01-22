@@ -63,3 +63,13 @@ def test_moving_variables_to_data_array():
 
     assert array.dims == [Dim.X]
     assert array.shape == [1000]
+
+
+def test_moving_data_array_into_dataset():
+
+    var = sc.Variable([Dim.X], values=np.random.random(10000))
+    c = sc.Variable([Dim.X], values=np.arange(10000.0))
+    coords = {Dim.X: c}
+    array = sc.detail.move_to_data_array(data=var, coords=coords)
+    d = sc.Dataset()
+    d['a'] = sc.detail.move(array)

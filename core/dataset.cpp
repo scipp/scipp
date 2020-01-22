@@ -4,6 +4,7 @@
 /// @author Simon Heybrock
 #include "scipp/core/dataset.h"
 #include "scipp/core/except.h"
+#include <iostream>
 
 namespace scipp::core {
 
@@ -315,26 +316,30 @@ void Dataset::setData(const std::string &name, Variable data) {
 ///
 void Dataset::setData(const std::string &name, DataArray data) {
   // Get the Dataset holder
+  std::cout << "using setData with MOVE" << std::endl;
   auto dataset = DataArray::to_dataset(std::move(data));
 
-  for (const auto &[dim, coord] : dataset.m_coords) {
+  for (auto &&[dim, coord] : dataset.m_coords) {
     if (const auto it = m_coords.find(dim); it != m_coords.end())
       expect::equals(coord, it->second);
     else
       setCoord(dim, std::move(coord));
   }
-  for (const auto &[nm, labs] : dataset.m_labels) {
+  for (auto &&[nm, labs] : dataset.m_labels) {
     if (const auto it = m_labels.find(std::string(nm)); it != m_labels.end())
       expect::equals(labs, it->second);
     else
       setLabels(std::string(nm), std::move(labs));
   }
 
-  for (const auto &[nm, mask] : dataset.m_masks)
-    setMask(std::string(nm), std::move(mask));
+  for (auto &&[nm, mask] : dataset.m_masks)
+    if (const auto it = m_masks.find(std::string(nm)); it != m_masks.end())
+      expect::equals(mask, it->second);
+    else
+      setMask(std::string(nm), std::move(mask));
 
-  for (const auto &[nm, attr] : dataset.m_attrs)
-    setAttr(name, std::string(nm), std::move(attr));
+  if (dataset.m_attrs.size() > 0)
+    throw except::SizeError("Attributes should be empty for a DataArray.");
 
   // There can be only one DatasetData item, so get the first one with begin()
   auto item = dataset.m_data.begin();
@@ -342,9 +347,9 @@ void Dataset::setData(const std::string &name, DataArray data) {
     setData(name, std::move(item->second.data.value()));
   if (item->second.coord)
     setSparseCoord(name, std::move(item->second.coord.value()));
-  for (const auto &[nm, labs] : item->second.labels)
+  for (auto &&[nm, labs] : item->second.labels)
     setSparseLabels(name, std::string(nm), std::move(labs));
-  for (const auto &[nm, attr] : item->second.attrs)
+  for (auto &&[nm, attr] : item->second.attrs)
     setAttr(name, std::string(nm), std::move(attr));
 }
 
@@ -355,10 +360,11 @@ void Dataset::setData(const std::string &name, DataArray data) {
 /// attributes. Throws if the provided data brings the dataset into an
 /// inconsistent state (mismatching dtype, unit, or dimensions).
 void Dataset::setData(const std::string &name, const DataConstProxy &data) {
+  std::cout << "using setData with COPY" << std::endl;
   if (contains(name) && &m_data[name] == &data.underlying() &&
       data.slices().empty())
     return; // Self-assignment, return early.
-  setDataMove(name, DataArray(data));
+  setData(name, DataArray(data));
 }
 
 /// Set (insert or replace) the sparse coordinate with given name.

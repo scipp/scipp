@@ -2,8 +2,8 @@
 // Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Neil Vaytet
-#ifndef SCIPP_BIND_DETAIL_H
-#define SCIPP_BIND_DETAIL_H
+#ifndef SCIPP_PYTHON_DETAIL_H
+#define SCIPP_PYTHON_DETAIL_H
 
 #include "scipp/core/dataset.h"
 
@@ -16,4 +16,4 @@ struct MoveableDataArray {
   DataArray data;
 };
 
-#endif // SCIPP_BIND_DETAIL_H
+#endif // SCIPP_PYTHON_DETAIL_H
