@@ -42,9 +42,9 @@ def test_moving_variable_into_dataset_proxies():
     assert "b" in d.attrs
     assert "c" in d.masks
     assert d.coords[Dim.X].shape == [1000]
-    assert d.labels["a"].shape == 100
-    assert d.attrs["b"].shape == 50
-    assert d.masks["c"].shape == 50
+    assert d.labels["a"].shape == [100]
+    assert d.attrs["b"].shape == [50]
+    assert d.masks["c"].shape == [50]
 
 
 def test_moving_variable_into_data_array_proxies():
@@ -60,7 +60,7 @@ def test_moving_variable_into_data_array_proxies():
         sc.Variable([Dim.X], values=np.random.random(1000)))
 
     assert a.dims == [Dim.X]
-    assert a.shape == [10000]
+    assert a.shape == [1000]
     assert len(a.coords) == 1
     assert len(a.labels) == 1
     assert len(a.attrs) == 1
