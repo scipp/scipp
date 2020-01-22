@@ -3,9 +3,7 @@
 /// @file
 /// @author Simon Heybrock
 
-#include "scipp/units/unit.h"
-
-#include "bind_detail.h"
+#include "detail.h"
 #include "pybind11.h"
 
 using namespace scipp;

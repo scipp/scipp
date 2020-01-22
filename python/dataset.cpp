@@ -8,9 +8,9 @@
 #include "scipp/core/sort.h"
 
 #include "bind_data_access.h"
-#include "bind_detail.h"
 #include "bind_operators.h"
 #include "bind_slice_methods.h"
+#include "detail.h"
 #include "pybind11.h"
 #include "rename.h"
 
