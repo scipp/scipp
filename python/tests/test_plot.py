@@ -39,7 +39,7 @@ def make_dense_dataset(ndim=1,
         dims.append(dim_list[i])
         shapes.append(n)
     a = np.sin(np.arange(np.prod(shapes)).reshape(*shapes).astype(np.float64))
-    d["Sample"] = sc.Variable(dims, values=a)
+    d["Sample"] = sc.Variable(dims, values=a, unit=sc.units.counts)
     if variances:
         d["Sample"].variances = np.abs(np.random.normal(a * 0.1, 0.05))
     if labels:
@@ -143,12 +143,33 @@ def test_plot_1d_bin_edges_with_variances():
     plot(d)
 
 
-def test_plot_1d_two_entries():
+def test_plot_1d_two_separate_entries():
+    d = make_dense_dataset(ndim=1)
+    d["Background"] = sc.Variable([Dim.Tof],
+                                  values=2.0 * np.random.rand(50),
+                                  unit=sc.units.kg)
+    plot(d)
+
+
+def test_plot_1d_two_entries_on_same_plot():
     d = make_dense_dataset(ndim=1)
     d["Background"] = sc.Variable([Dim.Tof],
                                   values=2.0 * np.random.rand(50),
                                   unit=sc.units.counts)
     plot(d)
+
+
+def test_plot_1d_two_entries_hide_variances():
+    d = make_dense_dataset(ndim=1, variances=True)
+    d["Background"] = sc.Variable([Dim.Tof],
+                                  values=2.0 * np.random.rand(50),
+                                  unit=sc.units.counts)
+    plot(d, variances=False)
+    # When variances are not present, the plot does not fail, is silently does
+    # not show variances
+    print(d)
+    plot(d, variances={"Sample": False, "Background": True})
+    plot(d, variances=[False, False])
 
 
 def test_plot_1d_three_entries_with_labels():

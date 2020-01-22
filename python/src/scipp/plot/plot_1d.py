@@ -109,9 +109,13 @@ class Slicer1d(Slicer):
                         name] = variances and var.variances is not None
             elif isinstance(variances, dict):
                 for name, v in variances.items():
-                    self.variances[
-                        name] = variances[name] and self.scipp_obj_dict[
-                            name].variances is not None
+                    if name in self.scipp_obj_dict:
+                        self.variances[
+                            name] = variances[name] and self.scipp_obj_dict[
+                                name].variances is not None
+                    else:
+                        print("Warning: key {} was not found in list of "
+                              "entries to plot and will be ignored.".format(name))
             elif isinstance(variances, list):
                 keys = list(sorted(self.scipp_obj_dict.keys()))
                 for i, v in enumerate(variances):
