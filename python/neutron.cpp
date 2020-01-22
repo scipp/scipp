@@ -107,7 +107,8 @@ template <class T> void bind_convert_with_calibration(py::module &m) {
   m.def("convert_with_calibration",
         py::overload_cast<T, core::Dataset>(
             diffraction::convert_with_calibration),
-        py::arg("data"), py::arg("calibration"), R"(
+        py::arg("data"), py::arg("calibration"),
+        py::call_guard<py::gil_scoped_release>(), R"(
     Convert unit of powder-diffraction data based on calibration.
 
     :param data: Input data with time-of-flight dimension (Dim.Tof)
