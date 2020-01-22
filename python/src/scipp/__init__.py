@@ -6,6 +6,7 @@
 # flake8: noqa
 
 from . import runtime_config
+user_configuration_filename = runtime_config.config_filename
 config = runtime_config.load()
 del runtime_config
 
