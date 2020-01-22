@@ -144,7 +144,7 @@ public:
 };
 
 SCIPP_UNITS_DECLARE_DIMENSIONS(Detector, DSpacing, Energy, EnergyTransfer,
-                               Position, Q, QSquared, Qx, Qy, Qz, Row,
+                               Group, Position, Q, QSquared, Qx, Qy, Qz, Row,
                                ScatteringAngle, Spectrum, Temperature, Time,
                                Tof, Wavelength, X, Y, Z)
 
