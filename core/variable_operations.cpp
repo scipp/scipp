@@ -294,8 +294,8 @@ Variable masks_merge_if_contained(const MasksConstProxy &masks,
   return mask_union;
 }
 
-VariableProxy replace_nan(const VariableConstProxy &var, double replacement,
-                          const VariableProxy &out) {
+VariableProxy nan_to_num(const VariableConstProxy &var, double replacement,
+                         const VariableProxy &out) {
 
   if (var.dtype() != out.dtype())
     throw except::TypeError("Input and output variable types do not match");
@@ -322,7 +322,7 @@ VariableProxy replace_nan(const VariableConstProxy &var, double replacement,
   return out;
 }
 
-Variable replace_nan(const VariableConstProxy &var, double replacement) {
+Variable nan_to_num(const VariableConstProxy &var, double replacement) {
   return transform<double>(
       var,
       overloaded{

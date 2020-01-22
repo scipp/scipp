@@ -1240,36 +1240,55 @@ TEST(VariableTest, boolean_xor) {
   EXPECT_EQ(result, expected);
 }
 
-TEST(VariableTest, replace_special) {
+TEST(VariableTest, nan_to_num_with_variance) {
   auto a = makeVariable<double>(Dims{Dim::X}, Shape{3},
                                 Values{1.0, double(NAN), 3.0});
   const double replacement_value = -1;
-  Variable b = replace_nan(a, replacement_value);
+  Variable b = nan_to_num(a, replacement_value);
   auto expected = makeVariable<double>(Dims{Dim::X}, Shape{3},
                                        Values{1.0, replacement_value, 3.0});
   EXPECT_EQ(b, expected);
 }
 
-TEST(VariableTest, replace_special_inplace) {
+TEST(VariableTest, nan_to_num) {
+  auto a = makeVariable<double>(Dims{Dim::X}, Shape{3},
+                                Values{1.0, double(NAN), 3.0},
+                                Variances{0.1, 0.2, 0.3});
+  double replacement_value = 0; // Expected default replacement value
+  Variable b = nan_to_num(a);
+  auto expected = makeVariable<double>(Dims{Dim::X}, Shape{3},
+                                       Values{1.0, replacement_value, 3.0},
+                                       Variances{0.1, replacement_value, 0.3});
+  EXPECT_EQ(b, expected);
+
+  replacement_value = -2;
+  b = nan_to_num(a, replacement_value);
+  expected = makeVariable<double>(Dims{Dim::X}, Shape{3},
+                                  Values{1.0, replacement_value, 3.0},
+                                  Variances{0.1, replacement_value, 0.3});
+  EXPECT_EQ(b, expected);
+}
+
+TEST(VariableTest, nan_to_num_inplace) {
   auto a = makeVariable<double>(Dims{Dim::X}, Shape{3},
                                 Values{1.0, double(NAN), 3.0});
   const double replacement_value = -1;
-  VariableProxy b = replace_nan(a, replacement_value, a);
+  VariableProxy b = nan_to_num(a, replacement_value, a);
   auto expected = makeVariable<double>(Dims{Dim::X}, Shape{3},
                                        Values{1.0, replacement_value, 3.0});
   EXPECT_EQ(b, expected);
   EXPECT_EQ(a, expected);
 }
 
-TEST(VariableTest, replace_special_inplace_with_variance) {
+TEST(VariableTest, nan_to_num_inplace_with_variance) {
   auto a = makeVariable<double>(Dims{Dim::X}, Shape{3},
                                 Values{1.0, double(NAN), 3.0},
-                                Variances{1.0, 1.1, 2.2});
+                                Variances{0.1, 0.2, 0.3});
   const double replacement_value = -1;
-  VariableProxy b = replace_nan(a, replacement_value, a);
+  VariableProxy b = nan_to_num(a, replacement_value, a);
   auto expected = makeVariable<double>(Dims{Dim::X}, Shape{3},
                                        Values{1.0, replacement_value, 3.0},
-                                       Variances{1.0, replacement_value, 2.2});
+                                       Variances{0.1, replacement_value, 0.3});
   EXPECT_EQ(b, expected);
   EXPECT_EQ(a, expected);
 }
