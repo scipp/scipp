@@ -3,7 +3,7 @@
 # @author Neil Vaytet
 
 # Scipp imports
-from ..config import plot as config
+from .. import config
 from .render import render_plot
 from .sparse import visit_sparse_data
 from .tools import parse_params
@@ -87,11 +87,12 @@ def plot_sparse(scipp_obj_dict,
                 # Case where only a single axis is given
                 ax["ax"] = mpl_axes
         else:
-            fig, ax["ax"] = plt.subplots(1,
-                                         1,
-                                         figsize=(config.width / config.dpi,
-                                                  config.height / config.dpi),
-                                         dpi=config.dpi)
+            fig, ax["ax"] = plt.subplots(
+                1,
+                1,
+                figsize=(config.plot.width / config.plot.dpi,
+                         config.plot.height / config.plot.dpi),
+                dpi=config.plot.dpi)
 
         members.update(ax)
 
@@ -140,8 +141,8 @@ def plot_sparse(scipp_obj_dict,
 
         import ipyvolume as ipv
 
-        widg = ipv.figure(width=config.width,
-                          height=config.height,
+        widg = ipv.figure(width=config.plot.width,
+                          height=config.plot.height,
                           animation=0)
 
         # Map mpl scatter markers to ipyvolume scatter markers
@@ -150,7 +151,7 @@ def plot_sparse(scipp_obj_dict,
             "triangle_2d", "circle_2d"
         ]
         markers = {}
-        for i, m in enumerate(config.marker):
+        for i, m in enumerate(config.plot.marker):
             if i < len(ipvmarkers):
                 markers[m] = ipvmarkers[i]
             else:

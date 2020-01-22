@@ -6,6 +6,7 @@ set -x
 conda-build \
   --user 'scipp' \
   --token "$ANACONDA_TOKEN" \
+  --channel conda-forge \
   --no-remove-work-dir \
   $@ \
   ./conda

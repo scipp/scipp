@@ -3,7 +3,7 @@
 # @author Neil Vaytet
 
 # Scipp imports
-from ..config import plot as config
+from .. import config
 
 # Other imports
 import numpy as np
@@ -15,7 +15,7 @@ def get_line_param(name=None, index=None):
     Get the default line parameter from the config.
     If an index is supplied, return the i-th item in the list.
     """
-    param = getattr(config, name)
+    param = getattr(config.plot, name)
     return param[index % len(param)]
 
 
@@ -38,7 +38,7 @@ def parse_params(params=None, defaults=None, globs=None, array=None):
     """
     Construct the colorbar settings using default and input values
     """
-    parsed = config.params.copy()
+    parsed = dict(config.plot.params)
     if defaults is not None:
         for key, val in defaults.items():
             parsed[key] = val

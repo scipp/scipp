@@ -3,7 +3,7 @@
 # @author Neil Vaytet
 
 # Scipp imports
-from ..config import plot as config
+from .. import config
 from .render import render_plot
 from .slicer import Slicer
 from ..utils import name_with_unit
@@ -100,8 +100,8 @@ class Slicer3d(Slicer):
         })
 
         # Initialise Figure and VBox objects
-        self.fig = ipv.figure(width=config.width,
-                              height=config.height,
+        self.fig = ipv.figure(width=config.plot.width,
+                              height=config.plot.height,
                               animation=0)
         self.scalar_map = dict()
 
