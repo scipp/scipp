@@ -306,24 +306,38 @@ VariableProxy nan_to_num(const VariableConstProxy &var,
   transform_in_place<pair_self_t<double, float>>(
       out, var,
       scipp::overloaded{
-          [&](auto &x, const auto &y) {
-            using V_OUT = std::decay_t<decltype(x)>;
-            using V_IN = std::decay_t<decltype(y)>;
-            if constexpr (is_ValueAndVariance_v<V_OUT> &&
-                          is_ValueAndVariance_v<V_IN>) {
-              if (std::isnan(y.value)) {
-                x.value = replacement.value<decltype(V_IN::value)>();
-                if (replacement.hasVariances())
-                  x.variance = replacement.variance<decltype(V_IN::value)>();
-                else
-                  x.variance = x.value;
+          [&](auto &out_v, const auto &in_v) {
+            using V_OUT = std::decay_t<decltype(out_v)>;
+            using V_IN = std::decay_t<decltype(in_v)>;
+            if constexpr (is_ValueAndVariance_v<V_OUT>) {
+              if constexpr (is_ValueAndVariance_v<V_IN>) {
+                if (std::isnan(in_v.value)) {
+                  out_v.value = replacement.value<decltype(V_IN::value)>();
+                  if (replacement.hasVariances())
+                    out_v.variance =
+                        replacement.variance<decltype(V_IN::value)>();
+                  else
+                    out_v.variance = out_v.value;
+                } else {
+                  // Assign directly to output
+                  out_v.value = in_v.value;
+                  out_v.variance = in_v.variance;
+                }
               } else {
-                // Assign directly to output
-                x.value = y.value;
-                x.variance = y.variance;
+                if (std::isnan(in_v)) {
+                  out_v.value = replacement.value<V_IN>();
+                  if (replacement.hasVariances())
+                    out_v.variance = replacement.variance<V_IN>();
+                  else
+                    out_v.variance = out_v.value;
+                } else {
+                  // Assign directly to output
+                  out_v.value = in_v;
+                  out_v.variance = in_v;
+                }
               }
             } else {
-              x = std::isnan(y) ? replacement.value<V_IN>() : y;
+              out_v = std::isnan(in_v) ? replacement.value<V_IN>() : in_v;
             }
           },
           [&](units::Unit &ua, const units::Unit &ub) {
