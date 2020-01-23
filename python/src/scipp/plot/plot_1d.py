@@ -40,13 +40,13 @@ def plot_1d(scipp_obj_dict=None,
 
     """
 
-    # Get the first entry in the dict of scipp objects
-    _, data_array = next(iter(scipp_obj_dict.items()))
-    if axes is None:
-        axes = data_array.dims
+    # # Get the first entry in the dict of scipp objects
+    # _, data_array = next(iter(scipp_obj_dict.items()))
+    # if axes is None:
+    #     axes = data_array.dims
 
     sv = Slicer1d(scipp_obj_dict=scipp_obj_dict,
-                  data_array=data_array,
+                  # data_array=data_array,
                   axes=axes,
                   values=values,
                   variances=variances,
@@ -68,7 +68,7 @@ def plot_1d(scipp_obj_dict=None,
 class Slicer1d(Slicer):
     def __init__(self,
                  scipp_obj_dict=None,
-                 data_array=None,
+                 # data_array=None,
                  axes=None,
                  values=None,
                  variances=None,
@@ -79,7 +79,7 @@ class Slicer1d(Slicer):
                  logy=False):
 
         super().__init__(scipp_obj_dict=scipp_obj_dict,
-                         data_array=data_array,
+                         # data_array=data_array,
                          axes=axes,
                          values=values,
                          variances=variances,
@@ -249,13 +249,13 @@ class Slicer1d(Slicer):
                 "masks": {}
             })
 
-        if self.params["masks"]["show"]:
-            mslice = self.slice_masks()
+        # if self.params["masks"]["show"]:
+        #     mslice = self.slice_masks()
 
         xmin = np.Inf
         xmax = np.NINF
         for name, var in self.scipp_obj_dict.items():
-            new_x = var.coords[dim].values
+            new_x = self.slider_x[name][dim].values
             xmin = min(new_x[0], xmin)
             xmax = max(new_x[-1], xmax)
 
@@ -274,7 +274,8 @@ class Slicer1d(Slicer):
                                       for key in ["color", "linewidth"]
                                   })
                 # Add masks if any
-                if self.params["masks"]["show"]:
+                if self.params["masks"][name]["show"]:
+                    mslice = self.slice_masks()
                     me = np.concatenate(([False], mslice.values))
                     [self.members["masks"][name]] = self.ax.step(
                         new_x,
@@ -296,7 +297,7 @@ class Slicer1d(Slicer):
                                       for key in self.mpl_line_params.keys()
                                   })
                 # Add masks if any
-                if self.params["masks"]["show"]:
+                if self.params["masks"][name]["show"]:
                     [self.members["masks"][name]] = self.ax.plot(
                         new_x,
                         self.mask_to_float(mslice.values, vslice.values),
@@ -334,8 +335,8 @@ class Slicer1d(Slicer):
                 warnings.filterwarnings("ignore", category=UserWarning)
                 self.ax.set_xlim([xmin - deltax, xmax + deltax])
         self.ax.set_xlabel(
-            name_with_unit(self.slider_x[dim], name=self.slider_labels[dim]))
-        if self.slider_ticks[dim] is not None:
+            name_with_unit(self.slider_x[self.name][dim], name=self.slider_labels[self.name][dim]))
+        if self.slider_ticks[self.name][dim] is not None:
             self.ax.set_xticklabels(self.get_custom_ticks(self.ax, dim))
         return
 
@@ -345,7 +346,7 @@ class Slicer1d(Slicer):
         for dim, val in self.slider.items():
             if not val.disabled:
                 self.lab[dim].value = self.make_slider_label(
-                    self.slider_x[dim], val.value)
+                    self.slider_x[self.name][dim], val.value)
                 vslice = vslice[val.dim, val.value]
         return vslice
 

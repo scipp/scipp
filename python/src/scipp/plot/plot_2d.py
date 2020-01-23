@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 import warnings
 
 
-def plot_2d(data_array=None,
+def plot_2d(scipp_obj_dict=None,
             output=None,
             axes=None,
             values=None,
@@ -40,7 +40,7 @@ def plot_2d(data_array=None,
     particular dimension.
     """
 
-    sv = Slicer2d(data_array=data_array,
+    sv = Slicer2d(scipp_obj_dict=scipp_obj_dict,
                   axes=axes,
                   values=values,
                   variances=variances,
@@ -66,7 +66,7 @@ def plot_2d(data_array=None,
 
 class Slicer2d(Slicer):
     def __init__(self,
-                 data_array=None,
+                 scipp_obj_dict=None,
                  axes=None,
                  values=None,
                  variances=None,
@@ -81,7 +81,7 @@ class Slicer2d(Slicer):
                  logx=False,
                  logy=False):
 
-        super().__init__(data_array=data_array,
+        super().__init__(scipp_obj_dict=scipp_obj_dict,
                          axes=axes,
                          values=values,
                          variances=variances,
