@@ -10,11 +10,12 @@
 using namespace scipp;
 using namespace scipp::core;
 
+template <class T>
 auto make_2d_sparse_coord_only(const scipp::index size,
                                const scipp::index count) {
-  auto var = makeVariable<double>(Dims{Dim::X, Dim::Y},
-                                  Shape{size, Dimensions::Sparse});
-  auto vals = var.sparseValues<double>();
+  Variable var =
+      makeVariable<T>(Dims{Dim::X, Dim::Y}, Shape{size, Dimensions::Sparse});
+  auto vals = var.sparseValues<T>();
   for (scipp::index i = 0; i < size; ++i)
     vals[i].resize(count);
   // Not using initializer_list to init coord map to avoid distortion of
@@ -27,17 +28,18 @@ auto make_2d_sparse_coord_only(const scipp::index size,
   return sparse;
 }
 
+template <class T>
 auto make_2d_sparse(const scipp::index size, const scipp::index count) {
-  auto var = makeVariable<double>(Dims{Dim::X, Dim::Y},
-                                  Shape{size, Dimensions::Sparse}, Values{},
-                                  Variances{});
-  auto vals = var.sparseValues<double>();
-  auto vars = var.sparseVariances<double>();
+  Variable var =
+      makeVariable<T>(Dims{Dim::X, Dim::Y}, Shape{size, Dimensions::Sparse},
+                      Values{}, Variances{});
+  auto vals = var.sparseValues<T>();
+  auto vars = var.sparseVariances<T>();
   for (scipp::index i = 0; i < size; ++i) {
     vals[i].resize(count);
     vars[i].resize(count);
   }
-  auto sparse = make_2d_sparse_coord_only(size, count);
+  auto sparse = make_2d_sparse_coord_only<T>(size, count);
   sparse.setData(std::move(var));
   // Replacing this line by `copy(sparse)` yields more than 2x higher
   // performance. It is not clear whether this is just due to improved
@@ -46,13 +48,13 @@ auto make_2d_sparse(const scipp::index size, const scipp::index count) {
   return sparse;
 }
 
-static void BM_groupby_flatten(benchmark::State &state) {
+template <class T> static void BM_groupby_flatten(benchmark::State &state) {
   const scipp::index nEvent = 1e8;
   const scipp::index nHist = state.range(0);
   const scipp::index nGroup = state.range(1);
   const bool coord_only = state.range(2);
-  auto sparse = coord_only ? make_2d_sparse_coord_only(nHist, nEvent / nHist)
-                           : make_2d_sparse(nHist, nEvent / nHist);
+  auto sparse = coord_only ? make_2d_sparse_coord_only<T>(nHist, nEvent / nHist)
+                           : make_2d_sparse<T>(nHist, nEvent / nHist);
   std::vector<int64_t> group_(nHist);
   std::iota(group_.begin(), group_.end(), 0);
   auto group = makeVariable<int64_t>(Dims{Dim::X}, Shape{nHist},
@@ -69,7 +71,7 @@ static void BM_groupby_flatten(benchmark::State &state) {
   // (read event, write to output).
   int64_t data_factor = coord_only ? 1 : 3;
   state.SetBytesProcessed(state.iterations() * (2 * nEvent * data_factor) *
-                          sizeof(double));
+                          sizeof(T));
   state.counters["coord-only"] = coord_only;
   state.counters["groups"] = nGroup;
   state.counters["inputs"] = nHist;
@@ -77,10 +79,14 @@ static void BM_groupby_flatten(benchmark::State &state) {
 // Params are:
 // - nHist
 // - nGroup
+// - coord_only
 // Also note the special case nHist = nGroup, which should effectively just make
 // a copy of the input with reshuffling events.
-BENCHMARK(BM_groupby_flatten)
+BENCHMARK_TEMPLATE(BM_groupby_flatten, float)
     ->RangeMultiplier(4)
-    ->Ranges({{64, 2 << 19}, {1, 64}, {true, false}});
+    ->Ranges({{64, 2 << 19}, {1, 64}, {false, true}});
+BENCHMARK_TEMPLATE(BM_groupby_flatten, double)
+    ->RangeMultiplier(4)
+    ->Ranges({{64, 2 << 19}, {1, 64}, {false, true}});
 
 BENCHMARK_MAIN();
