@@ -41,8 +41,8 @@ auto make_2d_sparse(const scipp::index size, const scipp::index count) {
   }
   auto sparse = make_2d_sparse_coord_only<T>(size, count);
   sparse.setData(std::move(var));
-  // Replacing this line by `copy(sparse)` yields more than 2x higher
-  // performance. It is not clear whether this is just due to improved
+  // Replacing the line below by `return copy(sparse);` yields more than 2x
+  // higher performance. It is not clear whether this is just due to improved
   // "re"-allocation performance in the benchmark loop (compared to fresh
   // allocations) or something else.
   return sparse;
