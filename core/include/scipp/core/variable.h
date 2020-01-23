@@ -647,7 +647,6 @@ public:
                      const scipp::index begin, const scipp::index end = -1)
       : m_variable(&variable),
         m_view(variable.data().makeView(dim, begin, end)) {}
-  VariableConstProxy(const VariableConstProxy &other) = default;
   VariableConstProxy(const VariableConstProxy &slice, const Dim dim,
                      const scipp::index begin, const scipp::index end = -1)
       : m_variable(slice.m_variable),
@@ -769,7 +768,6 @@ public:
       : VariableConstProxy(variable), m_mutableVariable(&variable) {
     m_view = variable.data().reshape(dims);
   }
-  VariableProxy(const VariableProxy &other) = default;
   VariableProxy(Variable &variable, const Dim dim, const scipp::index begin,
                 const scipp::index end = -1)
       : VariableConstProxy(variable), m_mutableVariable(&variable) {
