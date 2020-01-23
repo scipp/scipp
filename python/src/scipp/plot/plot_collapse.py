@@ -72,10 +72,10 @@ def plot_collapse(data_array, name=None, dim=None, filename=None, **kwargs):
                             (volume, len(slice_dims), 2))
 
     mpl_line_params = {
-        "color": [],
-        "marker": [],
-        "linestyle": [],
-        "linewidth": []
+        "color": {},
+        "marker": {},
+        "linestyle": {},
+        "linewidth": {}
     }
     # Extract each entry from the slice_list, make temporary dataset and add to
     # input dictionary for plot_1d
@@ -87,7 +87,7 @@ def plot_collapse(data_array, name=None, dim=None, filename=None, **kwargs):
             key += "{}-{}-".format(str(s[0]), s[1])
         all_slices[key] = vslice
         for p in mpl_line_params.keys():
-            mpl_line_params[p].append(get_line_param(name=p, index=i))
+            mpl_line_params[p][key] = get_line_param(name=p, index=i)
 
     # Send the newly created dictionary of DataProxy to the plot_1d function
     return dispatch(scipp_obj_dict=all_slices,

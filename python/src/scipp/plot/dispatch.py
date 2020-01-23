@@ -31,7 +31,7 @@ def dispatch(scipp_obj_dict,
     if sparse_dim is not None and bins is not None:
         sparse_dict = {}
         for key, obj in scipp_obj_dict.items():
-            sparse_dict[name] = histogram_sparse_data(obj, sparse_dim, bins)
+            sparse_dict[key] = histogram_sparse_data(obj, sparse_dim, bins)
         scipp_obj_dict = sparse_dict
 
     if projection is None:

@@ -99,6 +99,28 @@ class Slicer1d(Slicer):
                          config.plot.height / config.plot.dpi),
                 dpi=config.plot.dpi)
 
+        # Determine whether error bars should be plotted or not
+        self.variances = {}
+        for name, var in self.scipp_obj_dict.items():
+            self.variances[name] = var.variances is not None
+        if variances is not None:
+            if isinstance(variances, bool):
+                for name, var in self.scipp_obj_dict.items():
+                    self.variances[name] &= variances
+            elif isinstance(variances, dict):
+                for name, v in variances.items():
+                    if name in self.scipp_obj_dict:
+                        self.variances[
+                            name] = variances[name] and self.scipp_obj_dict[
+                                name].variances is not None
+                    else:
+                        print("Warning: key {} was not found in list of "
+                              "entries to plot and will be ignored.".format(
+                                  name))
+            else:
+                raise TypeError("Unsupported type for argument "
+                                "'variances': {}".format(type(variances)))
+
         # Initialise container for returning matplotlib objects
         self.members.update({
             "lines": {},
@@ -114,7 +136,7 @@ class Slicer1d(Slicer):
         ymax = -1.0e30
         for i, (name, var) in enumerate(sorted(self.scipp_obj_dict.items())):
             self.names.append(name)
-            if var.variances is not None:
+            if self.variances[name]:
                 err = np.sqrt(var.variances)
             else:
                 err = 0.0
@@ -233,7 +255,7 @@ class Slicer1d(Slicer):
         if self.params["masks"]["show"]:
             mslice = self.slice_masks()
 
-        for i, (name, var) in enumerate(sorted(self.scipp_obj_dict.items())):
+        for name, var in self.scipp_obj_dict.items():
             vslice = self.slice_data(var)
 
             # If this is a histogram, plot a step function
@@ -245,7 +267,7 @@ class Slicer1d(Slicer):
                                   label=name,
                                   zorder=10,
                                   **{
-                                      key: self.mpl_line_params[key][i]
+                                      key: self.mpl_line_params[key][name]
                                       for key in ["color", "linewidth"]
                                   })
                 # Add masks if any
@@ -254,7 +276,7 @@ class Slicer1d(Slicer):
                     [self.members["masks"][name]] = self.ax.step(
                         new_x,
                         self.mask_to_float(me, ye),
-                        linewidth=self.mpl_line_params["linewidth"][i] * 3,
+                        linewidth=self.mpl_line_params["linewidth"][name] * 3,
                         color=self.params["masks"]["color"],
                         zorder=9)
 
@@ -267,7 +289,7 @@ class Slicer1d(Slicer):
                                   label=name,
                                   zorder=10,
                                   **{
-                                      key: self.mpl_line_params[key][i]
+                                      key: self.mpl_line_params[key][name]
                                       for key in self.mpl_line_params.keys()
                                   })
                 # Add masks if any
@@ -280,18 +302,18 @@ class Slicer1d(Slicer):
                         mew=3,
                         linestyle="none",
                         **{
-                            key: self.mpl_line_params[key][i]
+                            key: self.mpl_line_params[key][name]
                             for key in ["color", "marker"]
                         })
 
             # Add error bars
-            if var.variances is not None:
+            if self.variances[name]:
                 if self.histograms[name][dim]:
                     self.members["error_y"][name] = self.ax.errorbar(
                         xc,
                         vslice.values,
                         yerr=np.sqrt(vslice.variances),
-                        color=self.mpl_line_params["color"][i],
+                        color=self.mpl_line_params["color"][name],
                         zorder=10,
                         fmt="none")
                 else:
@@ -299,7 +321,7 @@ class Slicer1d(Slicer):
                         new_x,
                         vslice.values,
                         yerr=np.sqrt(vslice.variances),
-                        color=self.mpl_line_params["color"][i],
+                        color=self.mpl_line_params["color"][name],
                         zorder=10,
                         fmt="none")
 
@@ -348,7 +370,7 @@ class Slicer1d(Slicer):
                     msk = np.concatenate(([False], msk))
                 self.members["masks"][name].set_ydata(
                     self.mask_to_float(msk, vals))
-            if var.variances is not None:
+            if self.variances[name]:
                 coll = self.members["error_y"][name].get_children()[0]
                 coll.set_segments(
                     self.change_segments_y(coll.get_segments(), vslice.values,
@@ -372,7 +394,7 @@ class Slicer1d(Slicer):
             self.ax.lines[-1].set_color(self.keep_buttons[owner.id][2].value)
             self.ax.lines[-1].set_url(owner.id)
             self.ax.lines[-1].set_zorder(1)
-        if self.scipp_obj_dict[lab].variances is not None:
+        if self.variances[lab]:
             err = self.members["error_y"][lab].get_children()
             self.ax.collections.append(cp.copy(err[0]))
             self.ax.collections[-1].set_color(
