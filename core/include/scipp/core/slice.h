@@ -20,12 +20,12 @@ public:
   Slice(const Dim dim_, const scipp::index begin_, const scipp::index end_);
   Slice(const Dim dim_, const scipp::index begin_);
   Slice &operator=(const Slice &) = default;
-  bool operator==(const Slice &other) const;
-  bool operator!=(const Slice &other) const;
-  scipp::index begin() const;
-  scipp::index end() const;
-  Dim dim() const;
-  bool isRange() const;
+  bool operator==(const Slice &other) const noexcept;
+  bool operator!=(const Slice &other) const noexcept;
+  scipp::index begin() const noexcept { return m_begin; };
+  scipp::index end() const noexcept { return m_end; };
+  Dim dim() const noexcept { return m_dim; };
+  bool isRange() const noexcept { return m_end != -1; };
 
 private:
   Dim m_dim;
