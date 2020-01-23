@@ -106,8 +106,7 @@ class Slicer1d(Slicer):
         if variances is not None:
             if isinstance(variances, bool):
                 for name, var in self.scipp_obj_dict.items():
-                    self.variances[
-                        name] = variances and var.variances is not None
+                    self.variances[name] &= variances
             elif isinstance(variances, dict):
                 for name, v in variances.items():
                     if name in self.scipp_obj_dict:
