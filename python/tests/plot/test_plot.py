@@ -484,3 +484,23 @@ def test_plot_string_and_vector_axis_labels_2d():
                               values=np.random.random([M, N]),
                               unit=sc.units.counts)
     plot(d)
+
+
+def test_plot_2d_with_dimension_of_size_1():
+    N = 10
+    M = 1
+    x = np.arange(N, dtype=np.float64)
+    y = np.arange(M, dtype=np.float64)
+    z = np.arange(M + 1, dtype=np.float64)
+    d = sc.Dataset()
+    d.coords[Dim.X] = sc.Variable([Dim.X], values=x, unit=sc.units.m)
+    d.coords[Dim.Y] = sc.Variable([Dim.Y], values=y, unit=sc.units.m)
+    d.coords[Dim.Z] = sc.Variable([Dim.Z], values=z, unit=sc.units.m)
+    d["a"] = sc.Variable([Dim.Y, Dim.X],
+                         values=np.random.random([M, N]),
+                         unit=sc.units.counts)
+    d["b"] = sc.Variable([Dim.Z, Dim.X],
+                         values=np.random.random([M, N]),
+                         unit=sc.units.counts)
+    plot(d["a"])
+    plot(d["b"])
