@@ -132,8 +132,8 @@ class Slicer1d(Slicer):
         self.mpl_line_params = mpl_line_params
 
         self.names = []
-        ymin = 1.0e30
-        ymax = -1.0e30
+        ymin = np.Inf
+        ymax = np.NINF
         for i, (name, var) in enumerate(sorted(self.scipp_obj_dict.items())):
             self.names.append(name)
             if self.variances[name]:
@@ -249,13 +249,16 @@ class Slicer1d(Slicer):
                 "masks": {}
             })
 
-        new_x = self.slider_x[dim].values
-        xc = edges_to_centers(new_x)
-
         if self.params["masks"]["show"]:
             mslice = self.slice_masks()
 
+        xmin = np.Inf
+        xmax = np.NINF
         for name, var in self.scipp_obj_dict.items():
+            new_x = var.coords[dim].values
+            xmin = min(new_x[0], xmin)
+            xmax = max(new_x[-1], xmax)
+
             vslice = self.slice_data(var)
 
             # If this is a histogram, plot a step function
@@ -310,7 +313,7 @@ class Slicer1d(Slicer):
             if self.variances[name]:
                 if self.histograms[name][dim]:
                     self.members["error_y"][name] = self.ax.errorbar(
-                        xc,
+                        edges_to_centers(new_x),
                         vslice.values,
                         yerr=np.sqrt(vslice.variances),
                         color=self.mpl_line_params["color"][name],
@@ -326,10 +329,10 @@ class Slicer1d(Slicer):
                         fmt="none")
 
         if self.mpl_axes is None:
-            deltax = 0.05 * (new_x[-1] - new_x[0])
+            deltax = 0.05 * (xmax - xmin)
             with warnings.catch_warnings():
                 warnings.filterwarnings("ignore", category=UserWarning)
-                self.ax.set_xlim([new_x[0] - deltax, new_x[-1] + deltax])
+                self.ax.set_xlim([xmin - deltax, xmax + deltax])
         self.ax.set_xlabel(
             name_with_unit(self.slider_x[dim], name=self.slider_labels[dim]))
         if self.slider_ticks[dim] is not None:
