@@ -217,8 +217,12 @@ class Slicer2d(Slicer):
                 but_val = button.value.lower()
                 if not self.histograms[self.data_array.name][dim]:
                     xc = self.slider_x[dim].values
-                    xmin = 1.5 * xc[0] - 0.5 * xc[1]
-                    xmax = 1.5 * xc[-1] - 0.5 * xc[-2]
+                    if self.slider_nx[dim] < 2:
+                        xmin = xc[0] - 0.5
+                        xmax = xc[0] + 0.5
+                    else:
+                        xmin = 1.5 * xc[0] - 0.5 * xc[1]
+                        xmax = 1.5 * xc[-1] - 0.5 * xc[-2]
                     self.extent[but_val] = [xmin, xmax]
                 else:
                     self.extent[but_val] = self.slider_x[dim].values[[0, -1]]
