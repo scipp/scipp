@@ -96,11 +96,11 @@ def plot_sparse(scipp_obj_dict,
 
         members.update(ax)
 
-        for i, (key, data_array) in enumerate(scipp_obj_dict.items()):
+        for key, data_array in scipp_obj_dict.items():
             params = dict(label=data_array.name,
                           edgecolors="#ffffff",
-                          c=mpl_scatter_params["color"][i],
-                          marker=mpl_scatter_params["marker"][i])
+                          c=mpl_scatter_params["color"][key],
+                          marker=mpl_scatter_params["marker"][key])
             xs = sparse_data[key]["data"][sparse_data[key]["ndims"] - 1]
             ys = sparse_data[key]["data"][sparse_data[key]["ndims"] - 2]
             if sparse_data[key]["has_weights"]:
@@ -161,9 +161,9 @@ def plot_sparse(scipp_obj_dict,
             scalar_map = cm.ScalarMappable(norm=cbar["norm"],
                                            cmap=cbar["cmap"])
 
-        for i, (key, data_array) in enumerate(scipp_obj_dict.items()):
-            params = dict(color=mpl_scatter_params["color"][i],
-                          marker=markers[mpl_scatter_params["marker"][i]])
+        for key, data_array in scipp_obj_dict.items():
+            params = dict(color=mpl_scatter_params["color"][key],
+                          marker=markers[mpl_scatter_params["marker"][key]])
             if sparse_data[key]["has_weights"]:
                 params["color"] = scalar_map.to_rgba(
                     sparse_data[key]["data"][-1])

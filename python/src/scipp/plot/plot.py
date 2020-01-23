@@ -102,17 +102,19 @@ def plot(scipp_obj,
             mpl_line_params = {}
             for n, p in line_params.items():
                 if p is None:
-                    mpl_line_params[n] = get_line_param(name=n,
-                                                        index=line_count)
+                    mpl_line_params[n] = line_count
                 elif isinstance(p, list):
                     mpl_line_params[n] = p[line_count]
-                    if isinstance(mpl_line_params[n], int):
-                        mpl_line_params[n] = get_line_param(
-                            name=n, index=mpl_line_params[n])
-                elif isinstance(p, int):
-                    mpl_line_params[n] = get_line_param(name=n, index=p)
+                elif isinstance(p, dict):
+                    if name in p:
+                        mpl_line_params[n] = p[name]
+                    else:
+                        mpl_line_params[n] = line_count
                 else:
                     mpl_line_params[n] = p
+                if isinstance(mpl_line_params[n], int):
+                    mpl_line_params[n] = get_line_param(
+                        name=n, index=mpl_line_params[n])
 
             if key not in tobeplotted.keys():
                 tobeplotted[key] = dict(ndims=ndims,
@@ -120,10 +122,10 @@ def plot(scipp_obj,
                                         axes=ax,
                                         mpl_line_params=dict())
                 for n in mpl_line_params.keys():
-                    tobeplotted[key]["mpl_line_params"][n] = []
+                    tobeplotted[key]["mpl_line_params"][n] = {}
             tobeplotted[key]["scipp_obj_dict"][name] = inventory[name]
             for n, p in mpl_line_params.items():
-                tobeplotted[key]["mpl_line_params"][n].append(p)
+                tobeplotted[key]["mpl_line_params"][n][name] = p
             sparse_dim[key] = sp_dim
 
     # Plot all the subsets

@@ -82,6 +82,7 @@ class Slicer1d(Slicer):
                          data_array=data_array,
                          axes=axes,
                          values=values,
+                         variances=variances,
                          masks=masks,
                          button_options=['X'])
 
@@ -117,15 +118,9 @@ class Slicer1d(Slicer):
                         print("Warning: key {} was not found in list of "
                               "entries to plot and will be ignored.".format(
                                   name))
-            elif isinstance(variances, list):
-                keys = list(sorted(self.scipp_obj_dict.keys()))
-                for i, v in enumerate(variances):
-                    self.variances[
-                        keys[i]] = variances[i] and self.scipp_obj_dict[
-                            keys[i]].variances is not None
             else:
-                raise RuntimeError("Unsupported type for argument "
-                                   "'variances': {}".format(type(variances)))
+                raise TypeError("Unsupported type for argument "
+                                "'variances': {}".format(type(variances)))
 
         # Initialise container for returning matplotlib objects
         self.members.update({
@@ -261,7 +256,7 @@ class Slicer1d(Slicer):
         if self.params["masks"]["show"]:
             mslice = self.slice_masks()
 
-        for i, (name, var) in enumerate(sorted(self.scipp_obj_dict.items())):
+        for name, var in self.scipp_obj_dict.items():
             vslice = self.slice_data(var)
 
             # If this is a histogram, plot a step function
@@ -273,7 +268,7 @@ class Slicer1d(Slicer):
                                   label=name,
                                   zorder=10,
                                   **{
-                                      key: self.mpl_line_params[key][i]
+                                      key: self.mpl_line_params[key][name]
                                       for key in ["color", "linewidth"]
                                   })
                 # Add masks if any
@@ -282,7 +277,7 @@ class Slicer1d(Slicer):
                     [self.members["masks"][name]] = self.ax.step(
                         new_x,
                         self.mask_to_float(me, ye),
-                        linewidth=self.mpl_line_params["linewidth"][i] * 3,
+                        linewidth=self.mpl_line_params["linewidth"][name] * 3,
                         color=self.params["masks"]["color"],
                         zorder=9)
 
@@ -295,7 +290,7 @@ class Slicer1d(Slicer):
                                   label=name,
                                   zorder=10,
                                   **{
-                                      key: self.mpl_line_params[key][i]
+                                      key: self.mpl_line_params[key][name]
                                       for key in self.mpl_line_params.keys()
                                   })
                 # Add masks if any
@@ -308,7 +303,7 @@ class Slicer1d(Slicer):
                         mew=3,
                         linestyle="none",
                         **{
-                            key: self.mpl_line_params[key][i]
+                            key: self.mpl_line_params[key][name]
                             for key in ["color", "marker"]
                         })
 
@@ -319,7 +314,7 @@ class Slicer1d(Slicer):
                         xc,
                         vslice.values,
                         yerr=np.sqrt(vslice.variances),
-                        color=self.mpl_line_params["color"][i],
+                        color=self.mpl_line_params["color"][name],
                         zorder=10,
                         fmt="none")
                 else:
@@ -327,7 +322,7 @@ class Slicer1d(Slicer):
                         new_x,
                         vslice.values,
                         yerr=np.sqrt(vslice.variances),
-                        color=self.mpl_line_params["color"][i],
+                        color=self.mpl_line_params["color"][name],
                         zorder=10,
                         fmt="none")
 
