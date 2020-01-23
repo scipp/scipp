@@ -89,4 +89,32 @@ BENCHMARK_TEMPLATE(BM_groupby_flatten, double)
     ->RangeMultiplier(4)
     ->Ranges({{64, 2 << 19}, {1, 64}, {false, true}});
 
+static void BM_groupby_large_table(benchmark::State &state) {
+  const scipp::index nCol = 3;
+  const scipp::index nRow = 2 << 20;
+  const scipp::index nGroup = state.range(0);
+  std::vector<int64_t> group_(nRow);
+  std::iota(group_.begin(), group_.end(), 0);
+  Dataset d;
+  const auto column = makeVariable<double>(Dims{Dim::X}, Shape{nRow});
+  d.setData("a", column);
+  d.setData("b", column);
+  d.setData("c", column);
+  auto group = makeVariable<int64_t>(Dims{Dim::X}, Shape{nRow},
+                                     Values(group_.begin(), group_.end()));
+  d.labels().set("group", group / (nRow / nGroup));
+  for (auto _ : state) {
+    auto grouped = groupby(d, "group", Dim::Y).sum(Dim::X);
+    state.PauseTiming();
+    grouped = Dataset();
+    state.ResumeTiming();
+  }
+  state.SetItemsProcessed(state.iterations() * nRow);
+  state.SetBytesProcessed(state.iterations() * (nCol + 1) * (nRow + nGroup) *
+                          sizeof(double));
+  state.counters["groups"] = nGroup;
+}
+
+BENCHMARK(BM_groupby_large_table)->RangeMultiplier(2)->Range(64, 2 << 20);
+
 BENCHMARK_MAIN();
