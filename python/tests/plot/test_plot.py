@@ -7,8 +7,6 @@ import scipp as sc
 from scipp import Dim
 from scipp.plot import plot
 import numpy as np
-import io
-from contextlib import redirect_stdout
 from itertools import product
 import pytest
 
@@ -169,7 +167,6 @@ def test_plot_1d_two_entries_hide_variances():
     # not show variances
     print(d)
     plot(d, variances={"Sample": False, "Background": True})
-    plot(d, variances=[False, False])
 
 
 def test_plot_1d_three_entries_with_labels():
@@ -306,11 +303,10 @@ def test_plot_volume():
 
 def test_plot_convenience_methods():
     d = make_dense_dataset(ndim=3)
-    with io.StringIO() as buf, redirect_stdout(buf):
-        sc.plot.image(d)
-        sc.plot.threeslice(d)
-        # sc.plot.volume(d)
-        sc.plot.superplot(d)
+    sc.plot.image(d)
+    sc.plot.threeslice(d)
+    # sc.plot.volume(d)
+    sc.plot.superplot(d)
 
 
 def test_plot_1d_sparse_data():
