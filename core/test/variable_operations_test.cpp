@@ -1246,7 +1246,8 @@ TEST(VariableTest, nan_to_num_throws_when_replacment_not_single_value) {
   // Replacement has 2 values
   const auto replacement_value =
       makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{-1, -1});
-  EXPECT_THROW(nan_to_num(a, replacement_value), except::SizeError);
+  EXPECT_THROW(auto replaced = nan_to_num(a, replacement_value),
+               except::SizeError);
 }
 
 TEST(VariableTest, nan_to_num_throws_when_input_and_replace_types_differ) {
@@ -1254,7 +1255,8 @@ TEST(VariableTest, nan_to_num_throws_when_input_and_replace_types_differ) {
       makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.0, double(NAN)});
   // Replacement type not same as input
   const auto replacement_value = makeVariable<int>(Values{-1});
-  EXPECT_THROW(nan_to_num(a, replacement_value), except::TypeError);
+  EXPECT_THROW(auto replaced = nan_to_num(a, replacement_value),
+               except::TypeError);
 }
 
 TEST(VariableTest, nan_to_num) {
