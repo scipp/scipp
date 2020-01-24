@@ -41,8 +41,8 @@ struct DatasetData {
 
 using dataset_item_map = std::unordered_map<std::string, DatasetData>;
 
-using slice_list =
-    boost::container::small_vector<std::pair<Slice, scipp::index>, 2>;
+// TODO segfault when using small_vector, why?
+using slice_list = std::vector<std::pair<Slice, scipp::index>>;
 
 template <class Var> auto makeSlice(Var &var, const slice_list &slices) {
   std::conditional_t<std::is_const_v<Var>, VariableConstProxy, VariableProxy>
