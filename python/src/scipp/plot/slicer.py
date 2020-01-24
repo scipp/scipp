@@ -15,7 +15,6 @@ import matplotlib.ticker as ticker
 class Slicer:
     def __init__(self,
                  scipp_obj_dict=None,
-                 # data_array=None,
                  axes=None,
                  values=None,
                  variances=None,
@@ -32,11 +31,6 @@ class Slicer:
         import ipywidgets as widgets
 
         self.scipp_obj_dict = scipp_obj_dict
-        # if self.scipp_obj_dict is None:
-        #     self.scipp_obj_dict = {data_array.name: data_array}
-        # if len(self.scipp_obj_dict) == 1:
-        #     self.name = list(self.scipp_obj_dict.keys())[0]
-        #     self.data_array = self.scipp_obj_dict[self.name]
 
         # Member container for dict output
         self.members = dict(widgets=dict(sliders=dict(),
@@ -46,11 +40,7 @@ class Slicer:
                                          labels=dict()))
 
         # Parse parameters for values, variances and masks
-        self.params = {
-            "values": {},
-            "variances": {},
-            "masks": {}
-        }
+        self.params = {"values": {}, "variances": {}, "masks": {}}
         globs = {
             "cmap": cmap,
             "log": log,
@@ -59,29 +49,20 @@ class Slicer:
             "color": color
         }
 
-        # # Process axes dimensions
-        # if axes is None:
-        #     axes = self.scipp_obj_dict.dims
-        # # Protect against duplicate entries in axes
-        # if len(axes) != len(set(axes)):
-        #     raise RuntimeError("Duplicate entry in axes: {}".format(axes))
-        # self.ndim = len(axes)
-
         # Save aspect ratio setting
         self.aspect = aspect
         if self.aspect is None:
             self.aspect = config.plot.aspect
 
-        # # Containers
-        # self.labels = self.scipp_obj_dict.labels
-        # self.shapes = dict(zip(self.scipp_obj_dict.dims, self.scipp_obj_dict.shape))
-        # self.masks = None
+        # Containers: need one per entry in the dict of scipp
+        # objects (=DataArray)
 
-
+        # Labels for each entry
         self.labels = {}
+        # Shape of entry
         self.shapes = {}
-        self.masks = {}
-
+        # Masks are global and are combined into a single mask
+        self.masks = None
         # Size of the slider coordinate arrays
         self.slider_nx = {}
         # Store coordinates of dimensions that will be in sliders
@@ -93,16 +74,14 @@ class Slicer:
         # Record which variables are histograms along which dimension
         self.histograms = {}
 
-
         for name, array in self.scipp_obj_dict.items():
 
             self.data_array = array
             self.name = name
 
-
             self.params["values"][name] = parse_params(params=values,
-                                                 globs=globs,
-                                                 array=array.values)
+                                                       globs=globs,
+                                                       array=array.values)
 
             self.params["variances"][name] = {"show": False}
             if array.variances is not None:
@@ -113,24 +92,19 @@ class Slicer:
                                  array=np.sqrt(array.variances)))
 
             self.params["masks"][name] = parse_params(params=masks,
-                                                defaults={
-                                                    "cmap": "gray",
-                                                    "cbar": False
-                                                },
-                                                globs=globs)
-            self.params["masks"][name]["show"] = (self.params["masks"][name]["show"]
-                                            and len(array.masks) > 0)
-            if self.params["masks"][name]["show"]:
-                self.masks = combine_masks(array.masks,
-                                           array.dims,
+                                                      defaults={
+                                                          "cmap": "gray",
+                                                          "cbar": False
+                                                      },
+                                                      globs=globs)
+            self.params["masks"][name]["show"] = (
+                self.params["masks"][name]["show"] and len(array.masks) > 0)
+            if self.params["masks"][name]["show"] and self.masks is None:
+                self.masks = combine_masks(array.masks, array.dims,
                                            array.shape)
 
             self.labels[name] = array.labels
             self.shapes[name] = dict(zip(array.dims, array.shape))
-            # # # Save aspect ratio setting
-            # # self.aspect = aspect
-            # # if self.aspect is None:
-            # #     self.aspect = config.plot.aspect
 
             # Size of the slider coordinate arrays
             self.slider_nx[name] = {}
@@ -153,21 +127,20 @@ class Slicer:
             for ax in axes:
                 dim, lab, var, ticks = self.axis_label_and_ticks(ax, array)
                 if (lab is not None) and (dim in axes):
-                    raise RuntimeError("The dimension of the labels cannot also "
-                                       "be specified as another axis.")
+                    raise RuntimeError(
+                        "The dimension of the labels cannot also "
+                        "be specified as another axis.")
                 self.slider_labels[name][dim] = lab
                 self.slider_x[name][dim] = var
                 self.slider_ticks[name][dim] = ticks
                 self.slider_nx[name][dim] = self.shapes[name][dim]
-            # self.ndim = len(self.slider_nx)
 
-        # Save information on histograms
-        # self.histograms = dict()
-        # for name, var in self.scipp_obj_dict.items():
+            # Save information on histograms
             self.histograms[name] = {}
             for dim, x in self.slider_x[name].items():
                 indx = array.dims.index(dim)
-                self.histograms[name][dim] = array.shape[indx] == x.shape[0] - 1
+                self.histograms[name][dim] = array.shape[
+                    indx] == x.shape[0] - 1
 
         # Initialise list for VBox container
         self.vbox = []
@@ -204,7 +177,8 @@ class Slicer:
                 readout=False,
                 disabled=((i >= self.ndim - len(button_options))
                           and ((len(button_options) < 3) or volume)))
-            labvalue = self.make_slider_label(self.slider_x[self.name][dim], indx)
+            labvalue = self.make_slider_label(self.slider_x[self.name][dim],
+                                              indx)
             if self.ndim == len(button_options):
                 self.slider[dim].layout.display = 'none'
                 labvalue = descr
@@ -262,11 +236,11 @@ class Slicer:
             self.members["widgets"]["togglebuttons"][key] = self.buttons[dim]
             self.members["widgets"]["labels"][key] = self.lab[dim]
 
-        if self.params["masks"][self.name]["show"]:
+        if self.masks is not None:
             self.masks_button = widgets.ToggleButton(
-                value=self.params["masks"]["show"],
+                value=self.params["masks"][self.name]["show"],
                 description="Hide masks"
-                if self.params["masks"]["show"] else "Show masks",
+                if self.params["masks"][self.name]["show"] else "Show masks",
                 disabled=False,
                 button_style="")
             self.masks_button.observe(self.toggle_masks, names="value")
