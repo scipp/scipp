@@ -41,9 +41,10 @@ struct DatasetData {
 
 using dataset_item_map = std::unordered_map<std::string, DatasetData>;
 
-template <class Var>
-auto makeSlice(Var &var,
-               const std::vector<std::pair<Slice, scipp::index>> &slices) {
+using slice_list =
+    boost::container::small_vector<std::pair<Slice, scipp::index>, 2>;
+
+template <class Var> auto makeSlice(Var &var, const slice_list &slices) {
   std::conditional_t<std::is_const_v<Var>, VariableConstProxy, VariableProxy>
       slice(var);
   for (const auto [params, extent] : slices) {
@@ -66,7 +67,7 @@ class SCIPP_CORE_EXPORT DataConstProxy {
 public:
   DataConstProxy(const Dataset &dataset,
                  const detail::dataset_item_map::value_type &data,
-                 const std::vector<std::pair<Slice, scipp::index>> &slices = {})
+                 const detail::slice_list &slices = {})
       : m_dataset(&dataset), m_data(&data), m_slices(slices) {
     if (hasData())
       m_view.emplace(detail::makeSlice(*m_data->second.data, this->slices()));
@@ -120,9 +121,7 @@ public:
     return slice(slice1, slice2).slice(slice3);
   }
 
-  const std::vector<std::pair<Slice, scipp::index>> &slices() const noexcept {
-    return m_slices;
-  }
+  const detail::slice_list &slices() const noexcept { return m_slices; }
 
   auto &underlying() const { return m_data->second; }
 
@@ -133,7 +132,7 @@ private:
   std::optional<VariableConstProxy> m_view;
   const Dataset *m_dataset;
   const detail::dataset_item_map::value_type *m_data;
-  std::vector<std::pair<Slice, scipp::index>> m_slices;
+  detail::slice_list m_slices;
 };
 
 SCIPP_CORE_EXPORT bool operator==(const DataConstProxy &a,
@@ -149,7 +148,7 @@ class Dataset;
 class SCIPP_CORE_EXPORT DataProxy : public DataConstProxy {
 public:
   DataProxy(Dataset &dataset, detail::dataset_item_map::value_type &data,
-            const std::vector<std::pair<Slice, scipp::index>> &slices = {})
+            const detail::slice_list &slices = {})
       : DataConstProxy(dataset, data, slices), m_mutableDataset(&dataset),
         m_mutableData(&data) {
     if (hasData())
@@ -256,8 +255,7 @@ template <> struct is_const<DatasetConstProxy> : std::true_type {};
 template <class D> struct make_item {
   D *dataset;
   using P = std::conditional_t<is_const<D>::value, DataConstProxy, DataProxy>;
-  template <class T>
-  std::pair<const std::string &, P> operator()(T &item) const {
+  template <class T> std::pair<std::string, P> operator()(T &item) const {
     if constexpr (std::is_same_v<std::remove_const_t<D>, Dataset>)
       return {item.first, P(*dataset, item)};
     else
@@ -518,7 +516,7 @@ public:
 
   ConstProxy(
       std::unordered_map<Key, std::pair<const Variable *, Variable *>> &&items,
-      const std::vector<std::pair<Slice, scipp::index>> &slices = {})
+      const detail::slice_list &slices = {})
       : m_items(std::move(items)), m_slices(slices) {
     // TODO This is very similar to the code in makeProxyItems(), provided that
     // we can give a good definion of the `dims` argument (roughly the space
@@ -628,7 +626,7 @@ public:
 
 protected:
   std::unordered_map<Key, std::pair<const Variable *, Variable *>> m_items;
-  std::vector<std::pair<Slice, scipp::index>> m_slices;
+  detail::slice_list m_slices;
 };
 
 /// Common functionality for other proxy classes.
@@ -653,7 +651,7 @@ public:
       Dataset *parent, const std::string *name,
       std::unordered_map<typename Base::key_type,
                          std::pair<const Variable *, Variable *>> &&items,
-      const std::vector<std::pair<Slice, scipp::index>> &slices = {})
+      const detail::slice_list &slices = {})
       : Base(std::move(items), slices), m_parent(parent), m_name(name) {}
 
   /// Return a proxy to the coordinate for given dimension.
@@ -850,11 +848,12 @@ public:
 
 private:
   const Dataset *m_dataset;
-  std::vector<std::pair<std::string, DataConstProxy>> m_items;
+  boost::container::small_vector<std::pair<std::string, DataConstProxy>, 8>
+      m_items;
 
 protected:
   void expectValidKey(const std::string &name) const;
-  std::vector<std::pair<Slice, scipp::index>> m_slices;
+  detail::slice_list m_slices;
 };
 
 /// Proxy for Dataset, implementing slicing and item selection.
@@ -945,7 +944,8 @@ public:
 
 private:
   Dataset *m_mutableDataset;
-  std::vector<std::pair<std::string, DataProxy>> m_mutableItems;
+  boost::container::small_vector<std::pair<std::string, DataProxy>, 8>
+      m_mutableItems;
 };
 
 SCIPP_CORE_EXPORT DataArray copy(const DataConstProxy &array);
