@@ -814,7 +814,7 @@ public:
 
   bool contains(const std::string &name) const noexcept;
 
-  DataConstProxy operator[](const std::string &name) const;
+  const DataConstProxy &operator[](const std::string &name) const;
 
   auto begin() const && = delete;
   auto begin() const &noexcept { return m_items.begin(); }
@@ -871,7 +871,7 @@ public:
   AttrsProxy attrs() const noexcept;
   MasksProxy masks() const noexcept;
 
-  DataProxy operator[](const std::string &name) const;
+  const DataProxy &operator[](const std::string &name) const;
 
   auto begin() const && = delete;
   auto begin() const &noexcept { return m_mutableItems.begin(); }

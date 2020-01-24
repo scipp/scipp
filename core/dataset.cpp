@@ -722,9 +722,10 @@ DatasetConstProxy::DatasetConstProxy(const Dataset &dataset)
 
 DatasetProxy::DatasetProxy(DatasetConstProxy &&base, Dataset *dataset)
     : DatasetConstProxy(std::move(base)), m_mutableDataset(dataset) {
-  m_mutableItems.reserve(dataset->size());
+  m_mutableItems.reserve(size());
   for (auto &item : dataset->m_data)
-    m_mutableItems.emplace_back(detail::make_item{this}(item));
+    if (contains(item.first))
+      m_mutableItems.emplace_back(detail::make_item{this}(item));
 }
 
 /// Return a const proxy to all coordinates of the dataset slice.
@@ -791,7 +792,7 @@ bool DatasetConstProxy::contains(const std::string &name) const noexcept {
 }
 
 namespace {
-template <class T> auto getitem(const T &view, const std::string &name) {
+template <class T> const auto &getitem(const T &view, const std::string &name) {
   if (auto it = view.find(name); it != view.end())
     return it->second;
   throw except::NotFoundError("Expected " + to_string(view) + " to contain " +
@@ -800,12 +801,13 @@ template <class T> auto getitem(const T &view, const std::string &name) {
 } // namespace
 
 /// Return a const proxy to data and coordinates with given name.
-DataConstProxy DatasetConstProxy::operator[](const std::string &name) const {
+const DataConstProxy &DatasetConstProxy::
+operator[](const std::string &name) const {
   return getitem(*this, name);
 }
 
 /// Return a proxy to data and coordinates with given name.
-DataProxy DatasetProxy::operator[](const std::string &name) const {
+const DataProxy &DatasetProxy::operator[](const std::string &name) const {
   return getitem(*this, name);
 }
 
@@ -819,10 +821,13 @@ DatasetConstProxy DatasetConstProxy::slice(const Slice slice1) const {
   DatasetConstProxy sliced;
   sliced.m_dataset = m_dataset;
   sliced.m_slices = m_slices;
-  std::remove_copy_if(begin(), end(), std::back_inserter(sliced.m_items),
+  auto &items = sliced.m_items;
+  std::remove_copy_if(begin(), end(), std::back_inserter(items),
                       [&slice1](const auto &item) {
-                        return item.second.dims().contains(slice1.dim());
+                        return !item.second.dims().contains(slice1.dim());
                       });
+  for (auto &item : items)
+    item.second = item.second.slice(slice1);
   // The dimension extent is either given by the coordinate, or by data, which
   // can be 1 shorter in case of a bin-edge coordinate.
   scipp::index extent = currentDims.at(slice1.dim());
