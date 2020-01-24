@@ -822,12 +822,9 @@ DatasetConstProxy DatasetConstProxy::slice(const Slice slice1) const {
   sliced.m_dataset = m_dataset;
   sliced.m_slices = m_slices;
   auto &items = sliced.m_items;
-  std::remove_copy_if(begin(), end(), std::back_inserter(items),
-                      [&slice1](const auto &item) {
-                        return !item.second.dims().contains(slice1.dim());
-                      });
-  for (auto &item : items)
-    item.second = item.second.slice(slice1);
+  for (const auto &item : *this)
+    if (item.second.dims().contains(slice1.dim()))
+      items.emplace_back(item.first, item.second.slice(slice1));
   // The dimension extent is either given by the coordinate, or by data, which
   // can be 1 shorter in case of a bin-edge coordinate.
   scipp::index extent = currentDims.at(slice1.dim());
