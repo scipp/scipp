@@ -255,11 +255,12 @@ template <> struct is_const<DatasetConstProxy> : std::true_type {};
 template <class D> struct make_item {
   D *dataset;
   using P = std::conditional_t<is_const<D>::value, DataConstProxy, DataProxy>;
-  template <class T> std::pair<std::string, P> operator()(T &item) const {
+  template <class T> auto operator()(T &item) const {
     if constexpr (std::is_same_v<std::remove_const_t<D>, Dataset>)
-      return {item.first, P(*dataset, item)};
+      return std::pair<const std::string &, P>{item.first, P(*dataset, item)};
     else
-      return {item.first, P(dataset->dataset(), item, dataset->slices())};
+      return std::pair<std::string, P>{
+          item.first, P(dataset->dataset(), item, dataset->slices())};
   }
 };
 template <class D> make_item(D *)->make_item<D>;
