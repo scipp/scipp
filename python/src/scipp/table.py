@@ -6,6 +6,7 @@
 from . import config
 from .utils import value_to_string, name_with_unit
 from ._scipp import core as sc
+import ipywidgets as widgets
 
 
 def _make_table_section_name_header(name, section, style):
@@ -119,11 +120,46 @@ def _make_trailing_cells(section, coord, index, size, base_style, edge_style):
     return "".join(html)
 
 
+def _make_row(coord, dataset, index, size, base_style, edge_style, hover_style):
+
+    html = '<tr {}>'.format(hover_style)
+    # Add coordinates
+    if coord is not None:
+        text = value_to_string(coord.values[index])
+        html += "<td rowspan='2' {}>{}</td>".format(base_style, text)
+        if coord.variances is not None:
+            text = value_to_string(coord.variances[i])
+            html += "<td rowspan='2' {}>{}</td>".format(
+                base_style, text)
+
+    html += _make_value_rows(dataset.labels, coord, index, base_style,
+                             edge_style)
+    html += _make_value_rows(dataset.masks, coord, index, base_style,
+                             edge_style)
+    html += _make_value_rows(dataset, coord, index, base_style, edge_style)
+
+    html += "</tr><tr {}>".format(hover_style)
+    # If there are bin edges, we need to add trailing cells for data
+    # and labels
+    if coord is not None:
+        html += _make_trailing_cells(dataset.labels, coord, index, size,
+                                     base_style, edge_style)
+        html += _make_trailing_cells(dataset.masks, coord, index, size,
+                                     base_style, edge_style)
+        html += _make_trailing_cells(dataset, coord, index, size,
+                                     base_style, edge_style)
+    html += "</tr>"
+    return html
+
+
 def table_from_dataset(dataset, is_hist=False, headers=2):
     base_style = "style='border: 1px solid black;"
 
     mstyle = base_style + "text-align: center;'"
     edge_style = "style='border: 0px solid white;background-color: #ffffff;'"
+    hover_style = ("onMouseOver=\"this.style.backgroundColor='" +
+                   config.colors["hover"] +
+                   "'\" onMouseOut=\"this.style.backgroundColor='#ffffff'\"")
 
     # Declare table
     html = "<table style='border-collapse: collapse;'>"
@@ -176,34 +212,47 @@ def table_from_dataset(dataset, is_hist=False, headers=2):
                                                 value_to_string(val.variance))
         html += "</tr>"
     else:
-        for i in range(size):
-            html += '<tr>'
-            # Add coordinates
-            if coord is not None:
-                text = value_to_string(coord.values[i])
-                html += "<td rowspan='2' {}>{}</td>".format(base_style, text)
-                if coord.variances is not None:
-                    text = value_to_string(coord.variances[i])
-                    html += "<td rowspan='2' {}>{}</td>".format(
-                        base_style, text)
+        # print(size, config.table_max_size)
+        for i in range(max(size, config.table_max_size)):
+        # if size > config.table_max_size:
+            # for i in range(config.table_max_size // 2):
+            html += _make_row(coord, dataset, i, size, base_style, edge_style, hover_style)
+        #     for i in range(size - config.table_max_size // 2, size):
+        #         html += _make_row(coord, dataset, i, size, base_style, edge_style)
+        # else:
+        #     for i in range(size):
+        #         html += _make_row(coord, dataset, i, size, base_style, edge_style)
 
-            html += _make_value_rows(dataset.labels, coord, i, base_style,
-                                     edge_style)
-            html += _make_value_rows(dataset.masks, coord, i, base_style,
-                                     edge_style)
-            html += _make_value_rows(dataset, coord, i, base_style, edge_style)
 
-            html += "</tr><tr>"
-            # If there are bin edges, we need to add trailing cells for data
-            # and labels
-            if coord is not None:
-                html += _make_trailing_cells(dataset.labels, coord, i, size,
-                                             base_style, edge_style)
-                html += _make_trailing_cells(dataset.masks, coord, i, size,
-                                             base_style, edge_style)
-                html += _make_trailing_cells(dataset, coord, i, size,
-                                             base_style, edge_style)
-            html += "</tr>"
+        # for i in range(size):
+        #     # html += '<tr>'
+        #     # # Add coordinates
+        #     # if coord is not None:
+        #     #     text = value_to_string(coord.values[i])
+        #     #     html += "<td rowspan='2' {}>{}</td>".format(base_style, text)
+        #     #     if coord.variances is not None:
+        #     #         text = value_to_string(coord.variances[i])
+        #     #         html += "<td rowspan='2' {}>{}</td>".format(
+        #     #             base_style, text)
+
+        #     # html += _make_value_rows(dataset.labels, coord, i, base_style,
+        #     #                          edge_style)
+        #     # html += _make_value_rows(dataset.masks, coord, i, base_style,
+        #     #                          edge_style)
+        #     # html += _make_value_rows(dataset, coord, i, base_style, edge_style)
+
+        #     # html += "</tr><tr>"
+        #     # # If there are bin edges, we need to add trailing cells for data
+        #     # # and labels
+        #     # if coord is not None:
+        #     #     html += _make_trailing_cells(dataset.labels, coord, i, size,
+        #     #                                  base_style, edge_style)
+        #     #     html += _make_trailing_cells(dataset.masks, coord, i, size,
+        #     #                                  base_style, edge_style)
+        #     #     html += _make_trailing_cells(dataset, coord, i, size,
+        #     #                                  base_style, edge_style)
+        #     # html += "</tr>"
+        #     html += _make_row(coord, dataset, i, size, base_style, edge_style)
 
     html += "</table>"
     return html
@@ -337,4 +386,5 @@ def table(dataset):
         output += "</td></tr>"
     output += "</table>"
 
-    display(HTML(output))
+    display(widgets.HTML(value=output))
+    # display(HTML(output))
