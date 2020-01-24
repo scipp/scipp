@@ -104,18 +104,32 @@ template <class T> void bind_convert(py::module &m) {
 }
 
 template <class T> void bind_convert_with_calibration(py::module &m) {
-  m.def("convert_with_calibration",
-        py::overload_cast<T, core::Dataset>(
-            diffraction::convert_with_calibration),
-        py::arg("data"), py::arg("calibration"), R"(
+  const char *doc = R"(
     Convert unit of powder-diffraction data based on calibration.
 
     :param data: Input data with time-of-flight dimension (Dim.Tof)
     :param calibration: Table of calibration constants
+    :param out: Optional output container
     :return: New data array or dataset with time-of-flight converted to d-spacing (Dim.DSpacing)
     :rtype: DataArray or Dataset
 
-    .. seealso:: Use :py:func:`scipp.neutron.convert` for unit conversion based on beamline-geometry information instead of calibration information.)");
+    .. seealso:: Use :py:func:`scipp.neutron.convert` for unit conversion based on beamline-geometry information instead of calibration information.)";
+  m.def("convert_with_calibration",
+        py::overload_cast<T, core::Dataset>(
+            diffraction::convert_with_calibration),
+        py::arg("data"), py::arg("calibration"),
+        py::call_guard<py::gil_scoped_release>(), doc);
+  m.def("convert_with_calibration",
+        [](py::object &obj, const core::Dataset &calibration, const T &out) {
+          auto &data = obj.cast<T &>();
+          if (&data != &out)
+            throw std::runtime_error("Currently only out=<input> is supported");
+          data = diffraction::convert_with_calibration(std::move(data),
+                                                       calibration);
+          return obj;
+        },
+        py::arg("data"), py::arg("calibration"), py::arg("out"),
+        py::call_guard<py::gil_scoped_release>(), doc);
 }
 
 void bind_diffraction(py::module &m) {

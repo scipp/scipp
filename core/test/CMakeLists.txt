@@ -28,6 +28,7 @@ add_executable(${TARGET_NAME} EXCLUDE_FROM_ALL
                rebin_test.cpp
                reduce_logical_test.cpp
                reduce_sparse_test.cpp
+               reduce_various_test.cpp
                self_assignment_test.cpp
                slice_test.cpp
                sort_test.cpp

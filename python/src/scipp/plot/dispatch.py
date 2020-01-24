@@ -31,7 +31,7 @@ def dispatch(scipp_obj_dict,
     if sparse_dim is not None and bins is not None:
         sparse_dict = {}
         for key, obj in scipp_obj_dict.items():
-            sparse_dict[name] = histogram_sparse_data(obj, sparse_dim, bins)
+            sparse_dict[key] = histogram_sparse_data(obj, sparse_dim, bins)
         scipp_obj_dict = sparse_dict
 
     if projection is None:
@@ -60,9 +60,9 @@ def dispatch(scipp_obj_dict,
                        mpl_line_params=mpl_line_params,
                        **kwargs)
     elif projection == "2d":
-        return plot_2d(scipp_obj_dict[name], output=output, **kwargs)
+        return plot_2d(scipp_obj_dict, output=output, **kwargs)
     elif projection == "3d":
-        return plot_3d(scipp_obj_dict[name], output=output, **kwargs)
+        return plot_3d(scipp_obj_dict, output=output, **kwargs)
     else:
         raise RuntimeError("Wrong projection type. Expected either '2d' "
                            "or '3d', got {}.".format(projection))

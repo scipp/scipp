@@ -5,6 +5,8 @@
 #ifndef SCIPP_CORE_OPERATORS_H
 #define SCIPP_CORE_OPERATORS_H
 
+#include <algorithm>
+
 #include <Eigen/Dense>
 
 #include "scipp/core/transform_common.h"
@@ -64,7 +66,6 @@ struct and_equals {
     a &= b;
   }
   using types = pair_self_t<bool>;
-  static constexpr auto init = true;
 };
 struct or_equals {
   template <class A, class B>
@@ -73,7 +74,25 @@ struct or_equals {
     a |= b;
   }
   using types = pair_self_t<bool>;
-  static constexpr auto init = false;
+};
+
+struct max_equals
+    : public transform_flags::expect_in_variance_if_out_variance_t {
+  template <class A, class B>
+  constexpr void operator()(A &&a, const B &b) const noexcept {
+    using std::max;
+    a = max(a, b);
+  }
+  using types = pair_self_t<double, float, int64_t, int32_t>;
+};
+struct min_equals
+    : public transform_flags::expect_in_variance_if_out_variance_t {
+  template <class A, class B>
+  constexpr void operator()(A &&a, const B &b) const noexcept {
+    using std::min;
+    a = min(a, b);
+  }
+  using types = pair_self_t<double, float, int64_t, int32_t>;
 };
 } // namespace operator_detail
 

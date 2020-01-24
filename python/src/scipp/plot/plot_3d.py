@@ -3,7 +3,7 @@
 # @author Neil Vaytet
 
 # Scipp imports
-from ..config import plot as config
+from .. import config
 from .render import render_plot
 from .slicer import Slicer
 from ..utils import name_with_unit
@@ -20,7 +20,7 @@ except ImportError:
     ipv = None
 
 
-def plot_3d(data_array=None,
+def plot_3d(scipp_obj_dict=None,
             output=None,
             axes=None,
             values=None,
@@ -47,7 +47,7 @@ def plot_3d(data_array=None,
                            "and ipyevents to be installed. Use conda/pip "
                            "install ipyvolume ipyevents.")
 
-    sv = Slicer3d(data_array=data_array,
+    sv = Slicer3d(scipp_obj_dict=scipp_obj_dict,
                   axes=axes,
                   values=values,
                   variances=variances,
@@ -66,7 +66,7 @@ def plot_3d(data_array=None,
 
 class Slicer3d(Slicer):
     def __init__(self,
-                 data_array=None,
+                 scipp_obj_dict=None,
                  axes=None,
                  values=None,
                  variances=None,
@@ -78,7 +78,7 @@ class Slicer3d(Slicer):
                  color=None,
                  aspect=None):
 
-        super().__init__(data_array=data_array,
+        super().__init__(scipp_obj_dict=scipp_obj_dict,
                          axes=axes,
                          values=values,
                          variances=variances,
@@ -92,26 +92,22 @@ class Slicer3d(Slicer):
                          button_options=['X', 'Y', 'Z'])
 
         self.cube = None
-        self.members.update({
-            "surfaces": {},
-            "wireframes": {},
-            "outlines": {},
-            "fig": {}
-        })
+        self.members.update({"surfaces": {}, "wireframes": {}, "fig": {}})
 
         # Initialise Figure and VBox objects
-        self.fig = ipv.figure(width=config.width,
-                              height=config.height,
+        self.fig = ipv.figure(width=config.plot.width,
+                              height=config.plot.height,
                               animation=0)
         self.scalar_map = dict()
 
         panels = ["values"]
-        if self.params["variances"]["show"]:
+        if self.params["variances"][self.name]["show"]:
             panels.append("variances")
 
         for key in panels:
             self.scalar_map[key] = cm.ScalarMappable(
-                norm=self.params[key]["norm"], cmap=self.params[key]["cmap"])
+                norm=self.params[key][self.name]["norm"],
+                cmap=self.params[key][self.name]["cmap"])
             self.members["surfaces"][key] = {}
             self.members["wireframes"][key] = {}
 
@@ -119,14 +115,10 @@ class Slicer3d(Slicer):
 
         # Store min/max for each dimension for invisible scatter
         self.xminmax = dict()
-        for dim, var in self.slider_x.items():
+        for dim, var in self.slider_x[self.name].items():
             self.xminmax[dim] = [var.values[0], var.values[-1]]
-        outl_x, outl_y, outl_z = self.get_box()
+        self.set_axes_range()
 
-        self.outline = ipv.plot_wireframe(outl_x,
-                                          outl_y,
-                                          outl_z,
-                                          color="black")
         self.wireframes = dict()
         self.surfaces = dict()
 
@@ -166,7 +158,6 @@ class Slicer3d(Slicer):
         self.box = widgets.VBox(self.box)
         self.box.layout.align_items = 'center'
 
-        self.members["outlines"]["values"] = self.outline
         self.members["fig"]["values"] = self.fig
 
         return
@@ -196,18 +187,7 @@ class Slicer3d(Slicer):
                 self.button_axis_to_dim[ax_dim] = dim
 
         self.fig.meshes = []
-        # Update the outline
-        outl_x, outl_y, outl_z = self.get_box()
-        outl_x = outl_x.flatten()
-        outl_y = outl_y.flatten()
-        outl_z = outl_z.flatten()
-        self.outline.x = outl_x
-        self.outline.y = outl_y
-        self.outline.z = outl_z
-        self.fig.xlim = list(outl_x[[0, -1]])
-        self.fig.ylim = list(outl_y[[0, -1]])
-        self.fig.zlim = list(outl_z[[0, -1]])
-
+        self.set_axes_range()
         self.update_axes()
         # self.box.children = tuple([ipv.gcc()] + self.vbox)
 
@@ -220,7 +200,8 @@ class Slicer3d(Slicer):
         for dim, button in self.buttons.items():
             if button.value is not None:
                 titles[button.value.lower()] = name_with_unit(
-                    self.slider_x[dim], name=self.slider_labels[dim])
+                    self.slider_x[self.name][dim],
+                    name=self.slider_labels[self.name][dim])
                 # buttons_dims[button.value.lower()] = button.dim
                 buttons_dims[button.value.lower()] = dim
 
@@ -242,7 +223,7 @@ class Slicer3d(Slicer):
         for dim, val in self.slider.items():
             if self.buttons[dim].value is None:
                 self.lab[dim].value = self.make_slider_label(
-                    self.slider_x[dim], val.value)
+                    self.slider_x[self.name][dim], val.value)
                 self.cube = self.cube[dim, val.value]
 
         # The dimensions to be sliced have been saved in slider_dims
@@ -254,10 +235,10 @@ class Slicer3d(Slicer):
                 s = self.buttons[dim].value.lower()
                 button_dim[s] = dim
                 self.lab[dim].value = self.make_slider_label(
-                    self.slider_x[dim], val.value)
+                    self.slider_x[self.name][dim], val.value)
                 vslices[s] = {
                     "slice": self.cube[dim, val.value],
-                    "loc": self.slider_x[dim].values[val.value]
+                    "loc": self.slider_x[self.name][dim].values[val.value]
                 }
 
         # Now make 3 slices
@@ -303,7 +284,7 @@ class Slicer3d(Slicer):
             # slice_indices = {"x": 0, "y": 1, "z": 2}
             dim = change["owner"].dim
             self.lab[dim].value = self.make_slider_label(
-                self.slider_x[dim], change["new"])
+                self.slider_x[self.name][dim], change["new"])
 
             # Now move slice
             ax_dim = self.buttons[dim].value.lower()
@@ -311,7 +292,7 @@ class Slicer3d(Slicer):
             setattr(
                 self.wireframes[ax_dim], ax_dim,
                 getattr(self.wireframes[ax_dim], ax_dim) * 0.0 +
-                self.slider_x[dim].values[change["new"]])
+                self.slider_x[self.name][dim].values[change["new"]])
 
             self.last_changed_slider_dim = dim
         return
@@ -329,7 +310,7 @@ class Slicer3d(Slicer):
             setattr(
                 self.surfaces[ax_dim], ax_dim,
                 getattr(self.surfaces[ax_dim], ax_dim) * 0.0 +
-                self.slider_x[dim].values[index])
+                self.slider_x[self.name][dim].values[index])
 
             self.surfaces[self.buttons[dim].value.lower()].color = \
                 self.scalar_map["values"].to_rgba(
@@ -372,12 +353,14 @@ class Slicer3d(Slicer):
         for key, val in self.permutations.items():
             meshes[key] = dict()
             meshes[key][val[0]], meshes[key][val[1]] = np.meshgrid(
-                self.slider_x[self.button_axis_to_dim[val[0]]].values,
-                self.slider_x[self.button_axis_to_dim[val[1]]].values,
+                self.slider_x[self.name][self.button_axis_to_dim[
+                    val[0]]].values,
+                self.slider_x[self.name][self.button_axis_to_dim[
+                    val[1]]].values,
                 indexing="ij")
         return meshes
 
-    def get_box(self):
+    def set_axes_range(self):
         if self.aspect == "equal":
             max_size = 0.0
             dx = {"x": 0, "y": 0, "z": 0}
@@ -392,14 +375,20 @@ class Slicer3d(Slicer):
                     self.xminmax[self.button_axis_to_dim[ax]][1] + 0.5 * diff
                 ]
 
-            return np.meshgrid(arrays["x"],
-                               arrays["y"],
-                               arrays["z"],
-                               indexing="ij")
+            outl_x, outl_y, outl_z = np.meshgrid(arrays["x"],
+                                                 arrays["y"],
+                                                 arrays["z"],
+                                                 indexing="ij")
         elif self.aspect == "auto":
-            return np.meshgrid(self.xminmax[self.button_axis_to_dim["x"]],
-                               self.xminmax[self.button_axis_to_dim["y"]],
-                               self.xminmax[self.button_axis_to_dim["z"]],
-                               indexing="ij")
+            outl_x, outl_y, outl_z = np.meshgrid(
+                self.xminmax[self.button_axis_to_dim["x"]],
+                self.xminmax[self.button_axis_to_dim["y"]],
+                self.xminmax[self.button_axis_to_dim["z"]],
+                indexing="ij")
         else:
             raise RuntimeError("Unknown aspect ratio: {}".format(self.aspect))
+
+        self.fig.xlim = list(outl_x.flatten()[[0, -1]])
+        self.fig.ylim = list(outl_y.flatten()[[0, -1]])
+        self.fig.zlim = list(outl_z.flatten()[[0, -1]])
+        return

@@ -43,8 +43,10 @@ Dataset makeCalTable() {
   cal.setData("tzero",
               makeVariable<double>(Dims{Dim::Spectrum}, Shape{2},
                                    units::Unit(units::us), Values{1.1, 2.2}));
-  cal.setData("difc", makeVariable<double>(Dims{Dim::Spectrum}, Shape{2},
-                                           Values{3.3, 4.4}));
+  cal.setData("difc",
+              makeVariable<double>(Dims{Dim::Spectrum}, Shape{2},
+                                   units::Unit{units::us / units::angstrom},
+                                   Values{3.3, 4.4}));
   return cal;
 }
 } // namespace
@@ -53,14 +55,19 @@ TEST(ConvertWithCaliabrationDataArray, data_array) {
   const auto tof = makeTofDataForUnitConversion();
   const auto cal = makeCalTable();
 
-  for (const auto &item : tof)
-    EXPECT_NO_THROW(
-        diffraction::convert_with_calibration(copy(item.second), cal));
+  for (const auto &item : tof) {
+    const auto dspacing =
+        diffraction::convert_with_calibration(copy(item.second), cal);
+    ASSERT_TRUE(dspacing.coords().contains(Dim::DSpacing));
+    ASSERT_EQ(dspacing.coords()[Dim::DSpacing].unit(), scipp::units::angstrom);
+  }
 }
 
 TEST(ConvertWithCaliabrationDataArray, dataset) {
   const auto tof = makeTofDataForUnitConversion();
   const auto cal = makeCalTable();
 
-  EXPECT_NO_THROW(diffraction::convert_with_calibration(tof, cal));
+  const auto dspacing = diffraction::convert_with_calibration(tof, cal);
+  ASSERT_TRUE(dspacing.coords().contains(Dim::DSpacing));
+  ASSERT_EQ(dspacing.coords()[Dim::DSpacing].unit(), scipp::units::angstrom);
 }

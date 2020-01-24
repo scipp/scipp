@@ -649,7 +649,6 @@ public:
                      const scipp::index begin, const scipp::index end = -1)
       : m_variable(&variable),
         m_view(variable.data().makeView(dim, begin, end)) {}
-  VariableConstProxy(const VariableConstProxy &other) = default;
   VariableConstProxy(const VariableConstProxy &slice, const Dim dim,
                      const scipp::index begin, const scipp::index end = -1)
       : m_variable(slice.m_variable),
@@ -771,7 +770,6 @@ public:
       : VariableConstProxy(variable), m_mutableVariable(&variable) {
     m_view = variable.data().reshape(dims);
   }
-  VariableProxy(const VariableProxy &other) = default;
   VariableProxy(Variable &variable, const Dim dim, const scipp::index begin,
                 const scipp::index end = -1)
       : VariableConstProxy(variable), m_mutableVariable(&variable) {
@@ -996,13 +994,6 @@ SCIPP_CORE_EXPORT Variable filter(const Variable &var, const Variable &filter);
                                               const Dim dim);
 SCIPP_CORE_EXPORT VariableProxy mean(const VariableConstProxy &var,
                                      const Dim dim, const VariableProxy &out);
-[[nodiscard]] SCIPP_CORE_EXPORT Variable mean(const VariableConstProxy &var,
-                                              const Dim dim,
-                                              const MasksConstProxy &masks);
-SCIPP_CORE_EXPORT VariableProxy mean(const VariableConstProxy &var,
-                                     const Dim dim,
-                                     const MasksConstProxy &masks,
-                                     const VariableProxy &out);
 SCIPP_CORE_EXPORT Variable norm(const VariableConstProxy &var);
 SCIPP_CORE_EXPORT Variable permute(const Variable &var, const Dim dim,
                                    const std::vector<scipp::index> &indices);
@@ -1019,19 +1010,10 @@ SCIPP_CORE_EXPORT VariableProxy sqrt(const VariableConstProxy &var,
 
 [[nodiscard]] SCIPP_CORE_EXPORT Variable flatten(const VariableConstProxy &var,
                                                  const Dim dim);
-[[nodiscard]] SCIPP_CORE_EXPORT Variable flatten(const VariableConstProxy &var,
-                                                 const Dim dim,
-                                                 const MasksConstProxy &masks);
 [[nodiscard]] SCIPP_CORE_EXPORT Variable sum(const VariableConstProxy &var,
                                              const Dim dim);
 SCIPP_CORE_EXPORT VariableProxy sum(const VariableConstProxy &var,
                                     const Dim dim, const VariableProxy &out);
-[[nodiscard]] SCIPP_CORE_EXPORT Variable sum(const VariableConstProxy &var,
-                                             const Dim dim,
-                                             const MasksConstProxy &masks);
-SCIPP_CORE_EXPORT VariableProxy sum(const VariableConstProxy &var,
-                                    const Dim dim, const MasksConstProxy &masks,
-                                    const VariableProxy &out);
 
 SCIPP_CORE_EXPORT Variable copy(const VariableConstProxy &var);
 
@@ -1065,6 +1047,12 @@ SCIPP_CORE_EXPORT VariableProxy atan(const VariableConstProxy &var,
 [[nodiscard]] SCIPP_CORE_EXPORT Variable any(const VariableConstProxy &var,
                                              const Dim dim);
 [[nodiscard]] SCIPP_CORE_EXPORT Variable all(const VariableConstProxy &var,
+                                             const Dim dim);
+
+// Other reductions
+[[nodiscard]] SCIPP_CORE_EXPORT Variable max(const VariableConstProxy &var,
+                                             const Dim dim);
+[[nodiscard]] SCIPP_CORE_EXPORT Variable min(const VariableConstProxy &var,
                                              const Dim dim);
 
 SCIPP_CORE_EXPORT Variable masks_merge_if_contains(const MasksConstProxy &masks,

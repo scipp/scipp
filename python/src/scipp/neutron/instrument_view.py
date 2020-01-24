@@ -3,7 +3,7 @@
 # @author Neil Vaytet
 
 # Scipp imports
-from ..config import plot as config
+from .. import config
 from ..plot.render import render_plot
 from ..plot.sciplot import SciPlot
 from ..plot.sparse import histogram_sparse_data, make_bins
@@ -341,8 +341,8 @@ class InstrumentView:
     def projection_3d(self):
         # Initialise Figure
         if not self.figure3d:
-            self.fig3d = ipv.figure(width=config.width,
-                                    height=config.height,
+            self.fig3d = ipv.figure(width=config.plot.width,
+                                    height=config.plot.height,
                                     animation=0,
                                     lighting=False)
             max_size = 0.0
@@ -397,8 +397,8 @@ class InstrumentView:
             self.fig2d, self.ax = plt.subplots(
                 1,
                 1,
-                figsize=(config.width / config.dpi,
-                         config.height / config.dpi))
+                figsize=(config.plot.width / config.plot.dpi,
+                         config.plot.height / config.plot.dpi))
 
         if update_children:
             with self.figurewidget:

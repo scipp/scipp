@@ -7,8 +7,6 @@ import scipp as sc
 from scipp import Dim
 from scipp.plot import plot
 import numpy as np
-import io
-from contextlib import redirect_stdout
 from itertools import product
 import pytest
 
@@ -39,7 +37,7 @@ def make_dense_dataset(ndim=1,
         dims.append(dim_list[i])
         shapes.append(n)
     a = np.sin(np.arange(np.prod(shapes)).reshape(*shapes).astype(np.float64))
-    d["Sample"] = sc.Variable(dims, values=a)
+    d["Sample"] = sc.Variable(dims, values=a, unit=sc.units.counts)
     if variances:
         d["Sample"].variances = np.abs(np.random.normal(a * 0.1, 0.05))
     if labels:
@@ -143,12 +141,32 @@ def test_plot_1d_bin_edges_with_variances():
     plot(d)
 
 
-def test_plot_1d_two_entries():
+def test_plot_1d_two_separate_entries():
+    d = make_dense_dataset(ndim=1)
+    d["Background"] = sc.Variable([Dim.Tof],
+                                  values=2.0 * np.random.rand(50),
+                                  unit=sc.units.kg)
+    plot(d)
+
+
+def test_plot_1d_two_entries_on_same_plot():
     d = make_dense_dataset(ndim=1)
     d["Background"] = sc.Variable([Dim.Tof],
                                   values=2.0 * np.random.rand(50),
                                   unit=sc.units.counts)
     plot(d)
+
+
+def test_plot_1d_two_entries_hide_variances():
+    d = make_dense_dataset(ndim=1, variances=True)
+    d["Background"] = sc.Variable([Dim.Tof],
+                                  values=2.0 * np.random.rand(50),
+                                  unit=sc.units.counts)
+    plot(d, variances=False)
+    # When variances are not present, the plot does not fail, is silently does
+    # not show variances
+    print(d)
+    plot(d, variances={"Sample": False, "Background": True})
 
 
 def test_plot_1d_three_entries_with_labels():
@@ -285,11 +303,10 @@ def test_plot_volume():
 
 def test_plot_convenience_methods():
     d = make_dense_dataset(ndim=3)
-    with io.StringIO() as buf, redirect_stdout(buf):
-        sc.plot.image(d)
-        sc.plot.threeslice(d)
-        # sc.plot.volume(d)
-        sc.plot.superplot(d)
+    sc.plot.image(d)
+    sc.plot.threeslice(d)
+    # sc.plot.volume(d)
+    sc.plot.superplot(d)
 
 
 def test_plot_1d_sparse_data():
@@ -467,3 +484,42 @@ def test_plot_string_and_vector_axis_labels_2d():
                               values=np.random.random([M, N]),
                               unit=sc.units.counts)
     plot(d)
+
+
+def test_plot_2d_with_dimension_of_size_1():
+    N = 10
+    M = 1
+    x = np.arange(N, dtype=np.float64)
+    y = np.arange(M, dtype=np.float64)
+    z = np.arange(M + 1, dtype=np.float64)
+    d = sc.Dataset()
+    d.coords[Dim.X] = sc.Variable([Dim.X], values=x, unit=sc.units.m)
+    d.coords[Dim.Y] = sc.Variable([Dim.Y], values=y, unit=sc.units.m)
+    d.coords[Dim.Z] = sc.Variable([Dim.Z], values=z, unit=sc.units.m)
+    d["a"] = sc.Variable([Dim.Y, Dim.X],
+                         values=np.random.random([M, N]),
+                         unit=sc.units.counts)
+    d["b"] = sc.Variable([Dim.Z, Dim.X],
+                         values=np.random.random([M, N]),
+                         unit=sc.units.counts)
+    plot(d["a"])
+    plot(d["b"])
+
+
+def test_sparse_data_slice_with_on_the_fly_histogram():
+    N = 50
+    M = 10
+    var = sc.Variable(dims=[Dim.X, Dim.Tof],
+                      shape=[M, sc.Dimensions.Sparse],
+                      unit=sc.units.us)
+    for i in range(M):
+        v = np.random.normal(50.0, scale=20.0, size=int(np.random.rand() * N))
+        var[Dim.X, i].values = v
+
+    d = sc.Dataset()
+    d.coords[Dim.X] = sc.Variable([Dim.X],
+                                  values=np.arange(M),
+                                  unit=sc.units.m)
+    d['a'] = sc.DataArray(coords={Dim.Tof: var})
+    d['b'] = sc.DataArray(coords={Dim.Tof: var * 1.1})
+    plot(d[Dim.X, 4], bins=100)

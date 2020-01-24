@@ -34,16 +34,6 @@ TEST(ReduceSparseTest, flatten) {
   EXPECT_EQ(flatten(make_sparse(), Dim::Y), expected);
 }
 
-TEST(ReduceSparseTest, flatten_with_mask) {
-  Dataset d;
-  d.setMask("y", makeVariable<bool>(Dims{Dim::Y}, Shape{3},
-                                    Values{false, true, false}));
-  auto expected =
-      makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse},
-                           Values{sparse_container<double>{1, 2, 3, 6, 7}});
-  EXPECT_EQ(flatten(make_sparse(), Dim::Y, d.masks()), expected);
-}
-
 TEST(ReduceSparseTest, flatten_dataset_with_mask) {
   Dataset d;
   d.setMask("y", makeVariable<bool>(Dims{Dim::Y}, Shape{3},

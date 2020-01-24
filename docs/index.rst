@@ -83,6 +83,7 @@ Documentation
    python-reference/dtype
    python-reference/units
    python-reference/error-propagation
+   python-reference/runtime-configuration
 
 .. toctree::
    :caption: Neutron-scattering

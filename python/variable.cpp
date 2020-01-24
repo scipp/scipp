@@ -492,8 +492,8 @@ void init_variable(py::module &m) {
 
   m.def("reciprocal",
         [](const VariableConstProxy &self) { return reciprocal(self); },
-        py::arg("x"), py::call_guard<py::gil_scoped_release>(),
-        R"(Element-wise reciprocal.
+        py::arg("x"), py::call_guard<py::gil_scoped_release>(), R"(
+        Element-wise reciprocal.
 
         :return: Reciprocal of the input values.
         :rtype: Variable)");
@@ -504,7 +504,7 @@ void init_variable(py::module &m) {
         },
         py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>(),
         R"(
-GG        Element-wise reciprocal.
+        Element-wise reciprocal.
 
         :return: Reciprocal of the input values.
         :rtype: Variable)");
@@ -680,6 +680,58 @@ GG        Element-wise reciprocal.
 
         :raises: If the unit is dimensionless, or if the dtype has no atan, e.g., if it is an integer
         :return: atan of input values. Output unit is rad.
+        :rtype: Variable)");
+
+  m.def("all", py::overload_cast<const VariableConstProxy &, const Dim>(&all),
+        py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
+        R"(
+        Element-wise AND over the specified dimension.
+
+        :param x: Data to reduce.
+        :param dim: Dimension to reduce.
+        :raises: If the dimension does not exist, or if the dtype is not bool
+        :seealso: :py:class:`scipp.any`
+        :return: New variable containing the reduced values.
+        :rtype: Variable)");
+
+  m.def("any", py::overload_cast<const VariableConstProxy &, const Dim>(&any),
+        py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
+        R"(
+        Element-wise OR over the specified dimension.
+
+        :param x: Data to reduce.
+        :param dim: Dimension to reduce.
+        :raises: If the dimension does not exist, or if the dtype is not bool
+        :seealso: :py:class:`scipp.all`
+        :return: New variable containing the reduced values.
+        :rtype: Variable)");
+
+  m.def("min",
+        [](const VariableConstProxy &self, const Dim dim) {
+          return min(self, dim);
+        },
+        py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
+        R"(
+        Element-wise min over the specified dimension.
+
+        :param x: Data to reduce.
+        :param dim: Dimension to reduce.
+        :seealso: :py:class:`scipp.max`
+        :return: New variable containing the min values.
+        :rtype: Variable)");
+
+  m.def("max",
+        [](const VariableConstProxy &self, const Dim dim) {
+          return max(self, dim);
+        },
+        py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
+        R"(
+        Element-wise max over the specified dimension.
+
+        :param x: Data to reduce.
+        :param dim: Dimension to reduce.
+        :seealso: :py:class:`scipp.min`
+        :return: New variable containing the max values.
         :rtype: Variable)");
 
   m.def("nan_to_num",

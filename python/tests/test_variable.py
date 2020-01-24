@@ -158,8 +158,8 @@ def test_astype():
                       values=np.array([1, 2, 3, 4], dtype=np.int64))
     assert var.dtype == sc.dtype.int64
 
-    var_as_float = var.astype(sc.dtype.float64)
-    assert var_as_float.dtype == sc.dtype.float64
+    var_as_float = var.astype(sc.dtype.float32)
+    assert var_as_float.dtype == sc.dtype.float32
 
 
 def test_astype_bad_conversion():

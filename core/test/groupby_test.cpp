@@ -502,3 +502,49 @@ TEST_F(GroupbyLogicalTest, any) {
                                          units::Unit(units::m), Values{1, 3}));
   EXPECT_EQ(groupby(d, "labels2", Dim::Y).any(Dim::X), expected);
 }
+
+struct GroupbyMinMaxTest : public ::testing::Test {
+  GroupbyMinMaxTest() {
+    d.setData("a", makeVariable<double>(Dimensions{{Dim::Z, 2}, {Dim::X, 3}},
+                                        Values{1, 2, 3, 4, 5, 6}));
+    d.setLabels("labels1",
+                makeVariable<double>(Dimensions{Dim::X, 3},
+                                     units::Unit(units::m), Values{1, 2, 3}));
+    d.setLabels("labels2",
+                makeVariable<double>(Dimensions{Dim::X, 3},
+                                     units::Unit(units::m), Values{1, 1, 3}));
+  }
+  Dataset d;
+};
+
+TEST_F(GroupbyMinMaxTest, no_reduction) {
+  Dataset expected(d);
+  expected.rename(Dim::X, Dim::Y);
+  expected.setCoord(Dim::Y, expected.labels()["labels1"]);
+  expected.labels().erase("labels1");
+  expected.labels().erase("labels2");
+  EXPECT_EQ(groupby(d, "labels1", Dim::Y).min(Dim::X), expected);
+  EXPECT_EQ(groupby(d, "labels1", Dim::Y).max(Dim::X), expected);
+}
+
+TEST_F(GroupbyMinMaxTest, min) {
+  Dataset expected;
+  expected.setData("a",
+                   makeVariable<double>(Dimensions{{Dim::Z, 2}, {Dim::Y, 2}},
+                                        Values{1, 3, 4, 6}));
+  expected.setCoord(Dim::Y,
+                    makeVariable<double>(Dimensions{Dim::Y, 2},
+                                         units::Unit(units::m), Values{1, 3}));
+  EXPECT_EQ(groupby(d, "labels2", Dim::Y).min(Dim::X), expected);
+}
+
+TEST_F(GroupbyMinMaxTest, max) {
+  Dataset expected;
+  expected.setData("a",
+                   makeVariable<double>(Dimensions{{Dim::Z, 2}, {Dim::Y, 2}},
+                                        Values{2, 3, 5, 6}));
+  expected.setCoord(Dim::Y,
+                    makeVariable<double>(Dimensions{Dim::Y, 2},
+                                         units::Unit(units::m), Values{1, 3}));
+  EXPECT_EQ(groupby(d, "labels2", Dim::Y).max(Dim::X), expected);
+}

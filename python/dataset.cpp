@@ -10,6 +10,7 @@
 #include "bind_data_access.h"
 #include "bind_operators.h"
 #include "bind_slice_methods.h"
+#include "detail.h"
 #include "pybind11.h"
 #include "rename.h"
 
@@ -25,7 +26,15 @@ void bind_mutable_proxy(py::module &m, const std::string &name) {
   proxy.def("__len__", &T::size)
       .def("__getitem__", &T::operator[], py::return_value_policy::move,
            py::keep_alive<0, 1>())
-      .def("__setitem__", &T::set)
+      .def("__setitem__",
+           [](T &self, const typename T::key_type key,
+              const VariableConstProxy &var) { self.set(key, var); })
+      // This additional setitem allows us to do things like
+      // d.attrs["a"] = scipp.detail.move(scipp.Variable())
+      .def("__setitem__",
+           [](T &self, const typename T::key_type key, MoveableVariable &mvar) {
+             self.set(key, std::move(mvar.var));
+           })
       .def("__delitem__", &T::erase, py::call_guard<py::gil_scoped_release>())
       .def("__iter__",
            [](T &self) {
@@ -207,8 +216,16 @@ void init_dataset(py::module &m) {
            [](Dataset &self, const std::string &name,
               const VariableConstProxy &data) { self.setData(name, data); })
       .def("__setitem__",
+           [](Dataset &self, const std::string &name, MoveableVariable &mvar) {
+             self.setData(name, std::move(mvar.var));
+           })
+      .def("__setitem__",
            [](Dataset &self, const std::string &name,
               const DataConstProxy &data) { self.setData(name, data); })
+      .def("__setitem__",
+           [](Dataset &self, const std::string &name, MoveableDataArray &mdat) {
+             self.setData(name, std::move(mdat.data));
+           })
       .def("__delitem__", &Dataset::erase,
            py::call_guard<py::gil_scoped_release>())
       .def(

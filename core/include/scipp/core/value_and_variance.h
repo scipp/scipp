@@ -139,6 +139,17 @@ constexpr auto operator/(const T1 a, const ValueAndVariance<T2> b) noexcept {
                                            (b.value * b.value)};
 }
 
+template <class T>
+constexpr auto min(const ValueAndVariance<T> a,
+                   const ValueAndVariance<T> b) noexcept {
+  return a.value < b.value ? a : b;
+}
+template <class T>
+constexpr auto max(const ValueAndVariance<T> a,
+                   const ValueAndVariance<T> b) noexcept {
+  return a.value > b.value ? a : b;
+}
+
 /// Deduction guide for class ValueAndVariances. Using decltype to deal with
 /// potential mixed-type val and var arguments arising in binary operations
 /// between, e.g., double and float.
