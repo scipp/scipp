@@ -298,8 +298,6 @@ VariableProxy nan_to_num(const VariableConstProxy &var,
                          const VariableConstProxy &replacement,
                          const VariableProxy &out) {
 
-  if (var.dtype() != out.dtype())
-    throw except::TypeError("Input and output variable types do not match");
   if (var.dtype() != replacement.dtype())
     throw except::TypeError("Replacement type doesn't match type of input");
 

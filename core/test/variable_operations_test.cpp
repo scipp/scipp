@@ -1240,6 +1240,14 @@ TEST(VariableTest, boolean_xor) {
   EXPECT_EQ(result, expected);
 }
 
+TEST(VariableTest, nan_to_num_throws_when_input_and_replace_types_differ) {
+  auto a =
+      makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.0, double(NAN)});
+  // Replacement type not same as input
+  const auto replacement_value = makeVariable<int>(Values{-1});
+  EXPECT_THROW(nan_to_num(a, replacement_value), except::TypeError);
+}
+
 TEST(VariableTest, nan_to_num) {
   auto a =
       makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.0, double(NAN)});
@@ -1274,14 +1282,32 @@ TEST(VariableTest, nan_to_num_with_variance_and_variance_on_replacement) {
   EXPECT_EQ(b, expected);
 }
 
+TEST(VariableTest,
+     nan_to_num_inplace_throws_when_input_and_replace_types_differ) {
+  auto a =
+      makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.0, double(NAN)});
+  // Replacement type not same as input
+  const auto replacement_value = makeVariable<int>(Values{-1});
+  EXPECT_THROW(nan_to_num(a, replacement_value, a), except::TypeError);
+}
+
+TEST(VariableTest,
+     nan_to_num_inplace_throws_when_input_and_output_types_differ) {
+  auto a =
+      makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.0, double(NAN)});
+  // Output type not same as input.
+  auto out = makeVariable<float>(Dims{Dim::X}, Shape{2}, Values{1.0, 1.0});
+  const auto replacement_value = makeVariable<double>(Values{-1});
+  EXPECT_THROW(nan_to_num(a, replacement_value, out), except::TypeError);
+}
+
 TEST(VariableTest, nan_to_num_inplace) {
-  auto a = makeVariable<double>(Dims{Dim::X}, Shape{3},
-                                Values{1.0, double(NAN), 3.0});
+  auto a =
+      makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.0, double(NAN)});
   const auto replacement_value = makeVariable<double>(Values{-1});
   VariableProxy b = nan_to_num(a, replacement_value, a);
-  auto expected =
-      makeVariable<double>(Dims{Dim::X}, Shape{3},
-                           Values{1.0, replacement_value.value<double>(), 3.0});
+  auto expected = makeVariable<double>(
+      Dims{Dim::X}, Shape{2}, Values{1.0, replacement_value.value<double>()});
   EXPECT_EQ(b, expected);
   EXPECT_EQ(a, expected);
 }
