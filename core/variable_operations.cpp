@@ -294,14 +294,21 @@ Variable masks_merge_if_contained(const MasksConstProxy &masks,
   return mask_union;
 }
 
-VariableProxy nan_to_num(const VariableConstProxy &var,
-                         const VariableConstProxy &replacement,
-                         const VariableProxy &out) {
-
+namespace {
+void validate_inputs_for_replacement(const VariableConstProxy &var,
+                                     const VariableConstProxy &replacement) {
   if (var.dtype() != replacement.dtype())
     throw except::TypeError("Replacement type doesn't match type of input");
   if (replacement.data().size() != 1)
     throw except::SizeError("Single value expected for replacement");
+}
+} // namespace
+
+VariableProxy nan_to_num(const VariableConstProxy &var,
+                         const VariableConstProxy &replacement,
+                         const VariableProxy &out) {
+
+  validate_inputs_for_replacement(var, replacement);
 
   transform_in_place<pair_self_t<double, float>>(
       out, var,
@@ -347,10 +354,7 @@ VariableProxy nan_to_num(const VariableConstProxy &var,
 
 Variable nan_to_num(const VariableConstProxy &var,
                     const VariableConstProxy &replacement) {
-  if (var.dtype() != replacement.dtype())
-    throw except::TypeError("Replacement type doesn't match type of input");
-  if (replacement.data().size() != 1)
-    throw except::SizeError("Single value expected for replacement");
+  validate_inputs_for_replacement(var, replacement);
 
   return transform<pair_custom_t<double, float>>(
       var, replacement,
