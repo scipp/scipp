@@ -241,7 +241,6 @@ class Slicer1d(Slicer):
                 "masks": {}
             })
 
-        # if self.params["masks"]["show"]:
         if self.masks is not None:
             mslice = self.slice_masks()
 
