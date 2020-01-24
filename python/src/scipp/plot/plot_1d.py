@@ -40,11 +40,6 @@ def plot_1d(scipp_obj_dict=None,
 
     """
 
-    # # Get the first entry in the dict of scipp objects
-    # _, data_array = next(iter(scipp_obj_dict.items()))
-    # if axes is None:
-    #     axes = data_array.dims
-
     sv = Slicer1d(scipp_obj_dict=scipp_obj_dict,
                   axes=axes,
                   values=values,
@@ -131,7 +126,7 @@ class Slicer1d(Slicer):
         self.names = []
         ymin = np.Inf
         ymax = np.NINF
-        for i, (name, var) in enumerate(sorted(self.scipp_obj_dict.items())):
+        for name, var in self.scipp_obj_dict.items():
             self.names.append(name)
             if self.variances[name]:
                 err = np.sqrt(var.variances)
@@ -359,7 +354,7 @@ class Slicer1d(Slicer):
     def update_slice(self, change):
         if self.masks is not None:
             mslice = self.slice_masks()
-        for i, (name, var) in enumerate(sorted(self.scipp_obj_dict.items())):
+        for name, var in self.scipp_obj_dict.items():
             vslice = self.slice_data(var)
             vals = vslice.values
             if self.histograms[name][self.button_axis_to_dim["x"]]:

@@ -125,7 +125,8 @@ class Slicer:
 
             # Iterate through axes and collect dimensions
             for ax in axes:
-                dim, lab, var, ticks = self.axis_label_and_ticks(ax, array)
+                dim, lab, var, ticks = self.axis_label_and_ticks(
+                    ax, array, name)
                 if (lab is not None) and (dim in axes):
                     raise RuntimeError(
                         "The dimension of the labels cannot also "
@@ -256,7 +257,7 @@ class Slicer:
     def mask_to_float(self, mask, var):
         return np.where(mask, var, None).astype(np.float)
 
-    def axis_label_and_ticks(self, axis, data_array):
+    def axis_label_and_ticks(self, axis, data_array, name):
         """
         Get dimensions and label (if present) from requested axis
         """
@@ -285,7 +286,7 @@ class Slicer:
                     fake_unit = data_array.coords[dim].unit
                     ticks["coord"] = data_array.coords[dim]
             if make_fake_coord:
-                args = {"values": np.arange(self.shapes[dim])}
+                args = {"values": np.arange(self.shapes[name][dim])}
                 if fake_unit is not None:
                     args["unit"] = fake_unit
                 var = Variable([dim], **args)

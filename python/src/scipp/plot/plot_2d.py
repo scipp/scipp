@@ -153,7 +153,7 @@ class Slicer2d(Slicer):
                     aspect=self.aspect,
                     interpolation="nearest",
                     cmap=self.params[key][self.name]["cmap"])
-                self.ax[key].set_title(self.data_array.name if key ==
+                self.ax[key].set_title(self.name if key ==
                                        "values" else "std dev.")
                 if self.params[key][self.name]["cbar"]:
                     self.cbar[key] = plt.colorbar(self.im[key],
@@ -215,7 +215,7 @@ class Slicer2d(Slicer):
         for dim, button in self.buttons.items():
             if self.slider[dim].disabled:
                 but_val = button.value.lower()
-                if not self.histograms[self.data_array.name][dim]:
+                if not self.histograms[self.name][dim]:
                     xc = self.slider_x[self.name][dim].values
                     if self.slider_nx[self.name][dim] < 2:
                         xmin = xc[0] - 0.5
