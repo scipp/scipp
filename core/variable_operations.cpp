@@ -300,6 +300,8 @@ VariableProxy nan_to_num(const VariableConstProxy &var,
 
   if (var.dtype() != replacement.dtype())
     throw except::TypeError("Replacement type doesn't match type of input");
+  if (replacement.data().size() != 1)
+    throw except::SizeError("Single value expected for replacement");
 
   transform_in_place<pair_self_t<double, float>>(
       out, var,
@@ -345,6 +347,11 @@ VariableProxy nan_to_num(const VariableConstProxy &var,
 
 Variable nan_to_num(const VariableConstProxy &var,
                     const VariableConstProxy &replacement) {
+  if (var.dtype() != replacement.dtype())
+    throw except::TypeError("Replacement type doesn't match type of input");
+  if (replacement.data().size() != 1)
+    throw except::SizeError("Single value expected for replacement");
+
   return transform<pair_custom_t<double, float>>(
       var, replacement,
       overloaded{[&](const auto &x, const auto &repl) {
