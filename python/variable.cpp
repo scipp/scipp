@@ -492,8 +492,8 @@ void init_variable(py::module &m) {
 
   m.def("reciprocal",
         [](const VariableConstProxy &self) { return reciprocal(self); },
-        py::arg("x"), py::call_guard<py::gil_scoped_release>(), R"(
-        Element-wise reciprocal.
+        py::arg("x"), py::call_guard<py::gil_scoped_release>(),
+        R"(Element-wise reciprocal.
 
         :return: Reciprocal of the input values.
         :rtype: Variable)");
@@ -504,7 +504,7 @@ void init_variable(py::module &m) {
         },
         py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>(),
         R"(
-        Element-wise reciprocal.
+GG        Element-wise reciprocal.
 
         :return: Reciprocal of the input values.
         :rtype: Variable)");
@@ -681,4 +681,37 @@ void init_variable(py::module &m) {
         :raises: If the unit is dimensionless, or if the dtype has no atan, e.g., if it is an integer
         :return: atan of input values. Output unit is rad.
         :rtype: Variable)");
+
+  m.def("nan_to_num",
+        [](const VariableConstProxy &self,
+           const VariableConstProxy &replacement) {
+          return nan_to_num(self, replacement);
+        },
+        py::call_guard<py::gil_scoped_release>(),
+        R"(Element-wise nan replacement
+
+       All elements in the output are identical to input except in the presence of a nan
+       If the replacement is value-only and the input has variances,
+       the variance at the element(s) containing nan are also replaced with the nan replacement value.
+       If the replacement has a variance and the input has variances,
+       the variance at the element(s) containing nan are also replaced with the nan replacement variance.
+       :raises: If the types of input and replacement do not match.
+       :return: Input elements are replaced in output with specified replacement if nan.
+       :rtype: Variable)");
+
+  m.def("nan_to_num",
+        [](const VariableConstProxy &self,
+           const VariableConstProxy &replacement,
+           VariableProxy &out) { return nan_to_num(self, replacement, out); },
+        py::call_guard<py::gil_scoped_release>(),
+        R"(Element-wise nan replacement
+
+       All elements in the output are identical to input except in the presence of a nan
+       If the replacement is value-only and the input has variances,
+       the variance at the element(s) containing nan are also replaced with the nan replacement value.
+       If the replacement has a variance and the input has variances,
+       the variance at the element(s) containing nan are also replaced with the nan replacement variance.
+       :raises: If the types of input and replacement do not match.
+       :return: Input elements are replaced in output with specified replacement if nan.
+       :rtype: Variable)");
 }

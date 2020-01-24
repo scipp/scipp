@@ -996,3 +996,20 @@ def test_variable_data_array_binary_ops():
     a = sc.DataArray(1.0 * sc.units.m)
     var = 1.0 * sc.units.m
     assert a / var == var / a
+
+
+def test_num_to_nan():
+    a = sc.Variable(dims=[Dim.X], values=np.array([1, np.nan]))
+    replace = sc.Variable(value=0.0)
+    b = sc.nan_to_num(a, replace)
+    expected = sc.Variable(dims=[Dim.X], values=np.array([1, replace.value]))
+    assert b == expected
+
+
+def test_num_to_nan_out():
+    a = sc.Variable(dims=[Dim.X], values=np.array([1, np.nan]))
+    out = sc.Variable(dims=[Dim.X], values=np.zeros(2))
+    replace = sc.Variable(value=0.0)
+    sc.nan_to_num(a, replace, out)
+    expected = sc.Variable(dims=[Dim.X], values=np.array([1, replace.value]))
+    assert out == expected
