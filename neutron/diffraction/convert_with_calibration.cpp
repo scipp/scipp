@@ -33,6 +33,11 @@ template <class T> T convert_with_calibration_impl(T d, Dataset cal) {
     const auto &detector_info =
         d.labels()["detector_info"].template value<Dataset>();
     cal = merge(detector_info, cal);
+    // Masking and grouping information in the calibration table interferes with
+    // `groupby.mean`, dropping.
+    for (const auto &name : {"mask", "group"})
+      if (cal.contains(name))
+        cal.erase(name);
 
     // 1b. Translate detector-based calibration information into coordinates of
     // data.
@@ -60,10 +65,8 @@ template <class T> T convert_with_calibration_impl(T d, Dataset cal) {
   for (const auto &[name, data] : iter(d)) {
     static_cast<void>(name);
     if (data.coords()[Dim::Tof].dims().sparse()) {
-      data.coords()[Dim::Tof].assign(data.coords()[Dim::Tof] -
-                                     cal["tzero"].data());
-      data.coords()[Dim::Tof].assign(data.coords()[Dim::Tof] /
-                                     cal["difc"].data());
+      data.coords()[Dim::Tof] -= cal["tzero"].data();
+      data.coords()[Dim::Tof] /= cal["difc"].data();
     }
   }
 
