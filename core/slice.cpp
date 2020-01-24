@@ -41,16 +41,13 @@ Slice::Slice(const Dim dim_, const index begin_)
     : m_dim(dim_), m_begin(begin_), m_end(-1) {
   validate_begin(begin_);
 }
-scipp::index Slice::begin() const { return m_begin; }
-scipp::index Slice::end() const { return m_end; }
-Dim Slice::dim() const { return m_dim; }
 
-bool Slice::isRange() const { return m_end != -1; }
-
-bool Slice::operator==(const Slice &other) const {
+bool Slice::operator==(const Slice &other) const noexcept {
   return m_dim == other.dim() && m_begin == other.m_begin &&
          m_end == other.m_end;
 }
-bool Slice::operator!=(const Slice &other) const { return !(*this == other); }
+bool Slice::operator!=(const Slice &other) const noexcept {
+  return !(*this == other);
+}
 
 } // namespace scipp::core
