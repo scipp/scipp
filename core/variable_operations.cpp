@@ -311,11 +311,10 @@ VariableProxy nan_to_num(const VariableConstProxy &var,
               if constexpr (is_ValueAndVariance_v<V_IN>) {
                 if (std::isnan(in_v.value)) {
                   out_v.value = replacement.value<decltype(V_IN::value)>();
-                  if (replacement.hasVariances())
-                    out_v.variance =
-                        replacement.variance<decltype(V_IN::value)>();
-                  else
-                    out_v.variance = out_v.value;
+                  out_v.variance =
+                      replacement.hasVariances()
+                          ? replacement.variance<decltype(V_IN::value)>()
+                          : out_v.variance = out_v.value;
                 } else {
                   // Assign directly to output
                   out_v.value = in_v.value;
@@ -324,10 +323,9 @@ VariableProxy nan_to_num(const VariableConstProxy &var,
               } else {
                 if (std::isnan(in_v)) {
                   out_v.value = replacement.value<V_IN>();
-                  if (replacement.hasVariances())
-                    out_v.variance = replacement.variance<V_IN>();
-                  else
-                    out_v.variance = out_v.value;
+                  out_v.variance = replacement.hasVariances()
+                                       ? replacement.variance<V_IN>()
+                                       : out_v.value;
                 } else {
                   // Assign directly to output
                   out_v.value = in_v;
