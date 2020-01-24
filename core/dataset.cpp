@@ -713,6 +713,20 @@ DatasetProxy DatasetProxy::assign(const DatasetConstProxy &other) const {
   return *this;
 }
 
+DatasetConstProxy::DatasetConstProxy(const Dataset &dataset)
+    : m_dataset(&dataset) {
+  m_items.reserve(dataset.size());
+  for (const auto &item : dataset.m_data)
+    m_items.emplace_back(detail::make_item{this}(item));
+}
+
+DatasetProxy::DatasetProxy(DatasetConstProxy &&base, Dataset *dataset)
+    : DatasetConstProxy(std::move(base)), m_mutableDataset(dataset) {
+  m_mutableItems.reserve(dataset->size());
+  for (auto &item : dataset->m_data)
+    m_mutableItems.emplace_back(detail::make_item{this}(item));
+}
+
 /// Return a const proxy to all coordinates of the dataset slice.
 ///
 /// This proxy includes only "dimension-coordinates". To access
@@ -773,19 +787,53 @@ MasksProxy DatasetProxy::masks() const noexcept {
 }
 
 bool DatasetConstProxy::contains(const std::string &name) const noexcept {
-  return std::find(m_indices.begin(), m_indices.end(), name) != m_indices.end();
+  return find(name) != end();
 }
+
+namespace {
+template <class T> auto getitem(const T &view, const std::string &name) {
+  if (auto it = view.find(name); it != view.end())
+    return it->second;
+  throw except::NotFoundError("Expected " + to_string(view) + " to contain " +
+                              name + ".");
+}
+} // namespace
 
 /// Return a const proxy to data and coordinates with given name.
 DataConstProxy DatasetConstProxy::operator[](const std::string &name) const {
-  expect::contains(*this, name);
-  return {*m_dataset, *(*m_dataset).m_data.find(name), slices()};
+  return getitem(*this, name);
 }
 
 /// Return a proxy to data and coordinates with given name.
 DataProxy DatasetProxy::operator[](const std::string &name) const {
-  expect::contains(*this, name);
-  return {*m_mutableDataset, *(*m_mutableDataset).m_data.find(name), slices()};
+  return getitem(*this, name);
+}
+
+/// Return a slice of the dataset proxy.
+///
+/// The returned proxy will not contain references to data items that do not
+/// depend on the sliced dimension.
+DatasetConstProxy DatasetConstProxy::slice(const Slice slice1) const {
+  const auto currentDims = dimensions();
+  expect::validSlice(currentDims, slice1);
+  DatasetConstProxy sliced;
+  sliced.m_dataset = m_dataset;
+  sliced.m_slices = m_slices;
+  std::remove_copy_if(begin(), end(), std::back_inserter(sliced.m_items),
+                      [&slice1](const auto &item) {
+                        return item.second.dims().contains(slice1.dim());
+                      });
+  // The dimension extent is either given by the coordinate, or by data, which
+  // can be 1 shorter in case of a bin-edge coordinate.
+  scipp::index extent = currentDims.at(slice1.dim());
+  for (const auto &item : *this)
+    if (item.second.dims().contains(slice1.dim()) &&
+        item.second.dims()[slice1.dim()] == extent - 1) {
+      --extent;
+      break;
+    }
+  sliced.m_slices.emplace_back(slice1, extent);
+  return sliced;
 }
 
 /// Return true if the dataset proxies have identical content.
