@@ -6,7 +6,6 @@
 from . import config
 from .utils import value_to_string, name_with_unit
 from ._scipp import core as sc
-import ipywidgets as widgets
 
 
 def _make_table_section_name_header(name, section, style):
@@ -71,12 +70,10 @@ def _make_table_subsections(section, text_style):
     Adds Value | Variance columns for the section.
     """
     html = []
-
     for key, val in section:
         html.append("<th {}>Values</th>".format(text_style))
         if val.variances is not None:
             html.append("<th {}>Variances</th>".format(text_style))
-
     return "".join(html)
 
 
@@ -255,136 +252,190 @@ def table_from_dataset(dataset, is_hist=False, headers=2):
         #     html += _make_row(coord, dataset, i, size, base_style, edge_style)
 
     html += "</table>"
-    return html
+    return html, size
 
 
 def table(dataset):
 
     from IPython.display import display, HTML
 
-    tabledict = {
-        "default": sc.Dataset(),
-        "0D Variables": sc.Dataset(),
-        "1D Variables": {}
-    }
-    is_histogram = {}
-    headers = 0
-    is_empty = {}
+    tv = TableViewer(dataset)
 
-    tp = type(dataset)
+    display(tv.box)
+    # display(HTML(output))
 
-    if (tp is sc.Dataset) or (tp is sc.DatasetProxy):
 
-        headers = 2
+class TableViewer:
 
-        # First add one entry per dimension
-        for dim in dataset.dims:
-            key = str(dim)
-            tabledict["1D Variables"][key] = sc.Dataset()
-            is_empty[key] = True
-            is_histogram[key] = False
+    def __init__(self, dataset):
 
-        # Next add the variables
-        for name, var in dataset:
-            if len(var.dims) == 1:
-                dim = var.dims[0]
+        # from IPython.display import display, HTML
+
+        import ipywidgets as widgets
+
+        tabledict = {
+            "default": sc.Dataset(),
+            "0D Variables": sc.Dataset(),
+            "1D Variables": {}
+        }
+        is_histogram = {}
+        headers = 0
+        is_empty = {}
+
+        tp = type(dataset)
+
+        if (tp is sc.Dataset) or (tp is sc.DatasetProxy):
+
+            headers = 2
+
+            # First add one entry per dimension
+            for dim in dataset.dims:
                 key = str(dim)
-                if len(var.coords) > 0:
-                    if len(var.coords[dim].values) == len(var.values) + 1:
-                        is_histogram[key] = True
-                    tabledict["1D Variables"][key].coords[dim] = \
-                        var.coords[dim]
-                tabledict["1D Variables"][key][name] = var.data
-                is_empty[key] = False
+                tabledict["1D Variables"][key] = sc.Dataset()
+                is_empty[key] = True
+                is_histogram[key] = False
 
-            elif len(var.dims) == 0:
-                tabledict["0D Variables"][name] = var
-
-        # Next add only the 1D coordinates
-        for dim, var in dataset.coords:
-            if len(var.dims) == 1:
-                key = str(dim)
-                if dim not in tabledict["1D Variables"][key].coords:
-                    tabledict["1D Variables"][key].coords[dim] = var
+            # Next add the variables
+            for name, var in dataset:
+                if len(var.dims) == 1:
+                    dim = var.dims[0]
+                    key = str(dim)
+                    if len(var.coords) > 0:
+                        if len(var.coords[dim].values) == len(var.values) + 1:
+                            is_histogram[key] = True
+                        tabledict["1D Variables"][key].coords[dim] = \
+                            var.coords[dim]
+                    tabledict["1D Variables"][key][name] = var.data
                     is_empty[key] = False
 
-        # Next add the labels
-        for name, lab in dataset.labels:
-            if len(lab.dims) == 1:
-                dim = lab.dims[0]
-                key = str(dim)
-                if len(dataset.coords) > 0:
-                    if len(dataset.coords[dim].values) == len(lab.values) + 1:
-                        is_histogram[key] = True
-                    tabledict["1D Variables"][key].coords[dim] = \
-                        dataset.coords[dim]
-                tabledict["1D Variables"][key].labels[name] = lab
-                is_empty[key] = False
+                elif len(var.dims) == 0:
+                    tabledict["0D Variables"][name] = var
 
-        # Next add the masks
-        for name, mask in dataset.masks:
-            if len(mask.dims) == 1:
-                dim = mask.dims[0]
-                key = str(dim)
-                if len(dataset.coords) > 0:
-                    if len(dataset.coords[dim].values) == len(mask.values) + 1:
-                        is_histogram[key] = True
-                    tabledict["1D Variables"][key].coords[dim] = \
-                        dataset.coords[dim]
-                tabledict["1D Variables"][key].masks[name] = mask
-                is_empty[key] = False
+            # Next add only the 1D coordinates
+            for dim, var in dataset.coords:
+                if len(var.dims) == 1:
+                    key = str(dim)
+                    if dim not in tabledict["1D Variables"][key].coords:
+                        tabledict["1D Variables"][key].coords[dim] = var
+                        is_empty[key] = False
 
-        # Now purge out the empty entries
-        for key, val in is_empty.items():
-            if val:
-                del (tabledict["1D Variables"][key])
+            # Next add the labels
+            for name, lab in dataset.labels:
+                if len(lab.dims) == 1:
+                    dim = lab.dims[0]
+                    key = str(dim)
+                    if len(dataset.coords) > 0:
+                        if len(dataset.coords[dim].values) == len(lab.values) + 1:
+                            is_histogram[key] = True
+                        tabledict["1D Variables"][key].coords[dim] = \
+                            dataset.coords[dim]
+                    tabledict["1D Variables"][key].labels[name] = lab
+                    is_empty[key] = False
 
-    elif (tp is sc.DataArray) or (tp is sc.DataProxy):
-        headers = 2
-        key = dataset.name
-        tabledict["default"][key] = dataset.data
-        if len(dataset.coords) > 0:
-            dim = dataset.dims[0]
-            tabledict["default"][key].coords[dim] = dataset.coords[dim]
-    elif (tp is sc.Variable) or (tp is sc.VariableProxy):
-        headers = 1
-        key = str(dataset.dims[0])
-        tabledict["default"][key] = dataset
-    else:
-        tabledict["default"][""] = sc.Variable([sc.Dim.Row], values=dataset)
-        headers = 0
+            # Next add the masks
+            for name, mask in dataset.masks:
+                if len(mask.dims) == 1:
+                    dim = mask.dims[0]
+                    key = str(dim)
+                    if len(dataset.coords) > 0:
+                        if len(dataset.coords[dim].values) == len(mask.values) + 1:
+                            is_histogram[key] = True
+                        tabledict["1D Variables"][key].coords[dim] = \
+                            dataset.coords[dim]
+                    tabledict["1D Variables"][key].masks[name] = mask
+                    is_empty[key] = False
 
-    subtitle = "<tr><td style='font-weight:normal;color:grey;"
-    subtitle += "font-style:italic;background-color:#ffffff;"
-    subtitle += "text-align:left;font-size:1.2em;padding: 1px;'>"
-    subtitle += "&nbsp;{}</td></tr>"
-    whitetd = "<tr><td style='background-color:#ffffff;'>"
-    title = str(type(dataset)).replace("<class 'scipp._scipp.core.",
-                                       "").replace("'>", "")
-    output = "<table style='border: 1px solid black;'><tr>"
-    output += "<td style='font-weight:bold;font-size:1.5em;padding:1px;"
-    output += "text-align:center;background-color:#ffffff;'>"
-    output += "{}</td></tr>".format(title)
+            # Now purge out the empty entries
+            for key, val in is_empty.items():
+                if val:
+                    del (tabledict["1D Variables"][key])
 
-    if len(tabledict["default"]) > 0:
-        output += whitetd
-        output += table_from_dataset(tabledict["default"], headers=headers)
-        output += "</td></tr>"
-    if len(tabledict["0D Variables"]) > 0:
-        output += subtitle.format("0D Variables")
-        output += whitetd
-        output += table_from_dataset(tabledict["0D Variables"],
-                                     headers=headers)
-        output += "</td></tr>"
-    if len(tabledict["1D Variables"].keys()) > 0:
-        output += subtitle.format("1D Variables")
-        output += whitetd
-        for key, val in sorted(tabledict["1D Variables"].items()):
-            output += table_from_dataset(val,
-                                         is_hist=is_histogram[key],
+        elif (tp is sc.DataArray) or (tp is sc.DataProxy):
+            headers = 2
+            key = dataset.name
+            tabledict["default"][key] = dataset.data
+            if len(dataset.coords) > 0:
+                dim = dataset.dims[0]
+                tabledict["default"][key].coords[dim] = dataset.coords[dim]
+        elif (tp is sc.Variable) or (tp is sc.VariableProxy):
+            headers = 1
+            key = str(dataset.dims[0])
+            tabledict["default"][key] = dataset
+        else:
+            tabledict["default"][""] = sc.Variable([sc.Dim.Row], values=dataset)
+            headers = 0
+
+        subtitle = "<tr><td style='font-weight:normal;color:grey;"
+        subtitle += "font-style:italic;background-color:#ffffff;"
+        subtitle += "text-align:left;font-size:1.2em;padding: 1px;'>"
+        subtitle += "&nbsp;{}</td></tr>"
+        whitetd = "<tr><td style='background-color:#ffffff;'>"
+        title = str(type(dataset)).replace("<class 'scipp._scipp.core.",
+                                           "").replace("'>", "")
+        output = "<table style='border: 1px solid black;'><tr>"
+        output += "<td style='font-weight:bold;font-size:1.5em;padding:1px;"
+        output += "text-align:center;background-color:#ffffff;'>"
+        output += "{}</td></tr>".format(title)
+
+        self.box = []
+        self.tables = {}
+        self.sliders = {}
+
+        if len(tabledict["default"]) > 0:
+            # output += whitetd
+            html, size = table_from_dataset(tabledict["default"], headers=headers)
+            self.tables["default"] = widgets.HTML(value=html)
+            hbox = self.tables["default"]
+            if size is not None:
+                if size > config.table_max_size:
+                    self.sliders["default"] = widgets.IntSlider(
+                        value=0, min=0, max=size-config.table_max_size, step=1,
+                        description="Row", continuous_update=False)
+                    hbox = widgets.HBox([hbox, self.sliders["default"]])
+            self.box.append(hbox)
+            # output += "</td></tr>"
+        if len(tabledict["0D Variables"]) > 0:
+            output = "<table style='border: 1px solid black;'><tr>"
+            output += subtitle.format("0D Variables")
+            output += whitetd
+            html, size = table_from_dataset(tabledict["0D Variables"],
                                          headers=headers)
-        output += "</td></tr>"
-    output += "</table>"
+            output += html
+            output += "</td></tr>"
+            self.tables["0D Variables"] = widgets.HTML(value=output)
+            hbox = self.tables["0D Variables"]
+            if size is not None:
+                if size > config.table_max_size:
+                    self.sliders["0D Variables"] = widgets.IntSlider(
+                        value=0, min=0, max=size-config.table_max_size, step=1,
+                        description="Row", continuous_update=False)
+                    hbox = widgets.HBox([hbox, self.sliders["0D Variables"]])
+            self.box.append(hbox)
 
-    display(widgets.HTML(value=output))
-    # display(HTML(output))
+            # box.append(widgets.HTML(value=output))
+        if len(tabledict["1D Variables"].keys()) > 0:
+            output = "<table style='border: 1px solid black;'><tr>"
+            output += subtitle.format("1D Variables")
+            output += whitetd
+            for key, val in sorted(tabledict["1D Variables"].items()):
+                html, size = table_from_dataset(val,
+                                             is_hist=is_histogram[key],
+                                             headers=headers)
+                output += html
+            output += "</td></tr>"
+            self.tables["1D Variables"] = widgets.HTML(value=output)
+            hbox = self.tables["1D Variables"]
+            if size is not None:
+                if size > config.table_max_size:
+                    self.sliders["1D Variables"] = widgets.IntSlider(
+                        value=0, min=0, max=size-config.table_max_size, step=1,
+                        description="Row", continuous_update=False)
+                    hbox = widgets.HBox([hbox, self.sliders["1D Variables"]])
+            self.box.append(hbox)
+
+            # box.append(widgets.HTML(value=output))
+        # output += "</table>"
+        self.box = widgets.VBox(self.box)
+        return
+
+
