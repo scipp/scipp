@@ -849,10 +849,10 @@ public:
 
 private:
   const Dataset *m_dataset;
-  boost::container::small_vector<std::pair<std::string, DataConstProxy>, 8>
-      m_items;
 
 protected:
+  boost::container::small_vector<std::pair<std::string, DataConstProxy>, 8>
+      m_items;
   void expectValidKey(const std::string &name) const;
   detail::slice_list m_slices;
 };
@@ -863,8 +863,7 @@ private:
   DatasetProxy(DatasetConstProxy &&base, Dataset *dataset);
 
 public:
-  DatasetProxy(Dataset &dataset)
-      : DatasetProxy(DatasetConstProxy(dataset), &dataset) {}
+  DatasetProxy(Dataset &dataset);
 
   CoordsProxy coords() const noexcept;
   LabelsProxy labels() const noexcept;

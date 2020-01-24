@@ -720,6 +720,19 @@ DatasetConstProxy::DatasetConstProxy(const Dataset &dataset)
     m_items.emplace_back(detail::make_item{this}(item));
 }
 
+DatasetProxy::DatasetProxy(Dataset &dataset)
+    : DatasetConstProxy(DatasetConstProxy::makeProxyWithEmptyIndexes(dataset)),
+      m_mutableDataset(&dataset) {
+  // Reusing the constructor from `DatasetConstProxy &&, Dataset *` would avoid
+  // code duplication, but this gives 1.7x speedup.
+  m_mutableItems.reserve(size());
+  for (auto &item : dataset.m_data)
+    m_mutableItems.emplace_back(detail::make_item{this}(item));
+  m_items.reserve(size());
+  for (const auto &[name, view] : m_mutableItems)
+    m_items.emplace_back(name, view);
+}
+
 DatasetProxy::DatasetProxy(DatasetConstProxy &&base, Dataset *dataset)
     : DatasetConstProxy(std::move(base)), m_mutableDataset(dataset) {
   m_mutableItems.reserve(size());
