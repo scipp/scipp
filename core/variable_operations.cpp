@@ -319,7 +319,7 @@ VariableProxy nan_to_num(const VariableConstProxy &var,
             using V_IN = std::decay_t<decltype(in_v)>;
             if constexpr (is_ValueAndVariance_v<V_OUT>) {
               if constexpr (is_ValueAndVariance_v<V_IN>) {
-                using R_V = std::decay_t<decltype(V_IN::value)>;
+                using R_V = std::decay_t<decltype(in_v::value)>;
                 if (isnan(in_v)) {
                   out_v.value = replacement.value<R_V>();
                   out_v.variance = replacement.hasVariances()
