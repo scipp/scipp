@@ -112,11 +112,12 @@ void bind_mutable_proxy(py::module &m, const std::string &name) {
            },
            py::keep_alive<0, 1>())
       .def("keys", [](T &self) { return keys_view(self); },
-           py::keep_alive<0, 1>())
+           py::keep_alive<0, 1>(), R"(view on self's keys)")
       .def("values", [](T &self) { return values_view(self); },
-           py::keep_alive<0, 1>())
+           py::keep_alive<0, 1>(), R"(view on self's values)")
       .def("items", [](T &self) { return items_view(self); },
-           py::return_value_policy::move, py::keep_alive<0, 1>())
+           py::return_value_policy::move, py::keep_alive<0, 1>(),
+           R"(view on self's items)")
       .def("__contains__", &T::contains);
   bind_comparison<T>(proxy);
 }
@@ -165,11 +166,14 @@ void bind_dataset_proxy_methods(py::class_<T, Ignored...> &c) {
         },
         py::return_value_policy::move, py::keep_alive<0, 1>());
   c.def("keys", [](T &self) { return keys_view(self); },
-        py::return_value_policy::move, py::keep_alive<0, 1>());
+        py::return_value_policy::move, py::keep_alive<0, 1>(),
+        R"(view on self's keys)");
   c.def("values", [](T &self) { return values_view(self); },
-        py::return_value_policy::move, py::keep_alive<0, 1>());
+        py::return_value_policy::move, py::keep_alive<0, 1>(),
+        R"(view on self's values)");
   c.def("items", [](T &self) { return items_view(self); },
-        py::return_value_policy::move, py::keep_alive<0, 1>());
+        py::return_value_policy::move, py::keep_alive<0, 1>(),
+        R"(view on self's items)");
   c.def("__getitem__",
         [](T &self, const std::string &name) { return self[name]; },
         py::keep_alive<0, 1>());
@@ -237,11 +241,6 @@ void bind_data_array_properties(py::class_<T, Ignored...> &c) {
 void init_dataset(py::module &m) {
   py::class_<Slice>(m, "Slice");
 
-  bind_mutable_proxy<CoordsProxy, CoordsConstProxy>(m, "Coords");
-  bind_mutable_proxy<LabelsProxy, LabelsConstProxy>(m, "Labels");
-  bind_mutable_proxy<MasksProxy, MasksConstProxy>(m, "Masks");
-  bind_mutable_proxy<AttrsProxy, AttrsConstProxy>(m, "Attrs");
-
   bind_helper_view<items_view, Dataset>(m, "Dataset");
   bind_helper_view<items_view, DatasetProxy>(m, "DatasetProxy");
   bind_helper_view<items_view, CoordsProxy>(m, "CoordsProxy");
@@ -260,6 +259,11 @@ void init_dataset(py::module &m) {
   bind_helper_view<values_view, LabelsProxy>(m, "LabelsProxy");
   bind_helper_view<values_view, MasksProxy>(m, "MasksProxy");
   bind_helper_view<values_view, AttrsProxy>(m, "AttrsProxy");
+
+  bind_mutable_proxy<CoordsProxy, CoordsConstProxy>(m, "Coords");
+  bind_mutable_proxy<LabelsProxy, LabelsConstProxy>(m, "Labels");
+  bind_mutable_proxy<MasksProxy, MasksConstProxy>(m, "Masks");
+  bind_mutable_proxy<AttrsProxy, AttrsConstProxy>(m, "Attrs");
 
   py::class_<DataArray> dataArray(m, "DataArray", R"(
     Named variable with associated coords, labels, and attributes.)");
