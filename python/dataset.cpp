@@ -19,6 +19,75 @@ using namespace scipp::core;
 
 namespace py = pybind11;
 
+/// Helper to provide equivalent of the `items()` method of a Python dict.
+template <class T> class items_view {
+public:
+  items_view(T &obj) : m_obj(&obj) {}
+  auto size() const noexcept { return m_obj->size(); }
+  auto begin() const { return m_obj->items_begin(); }
+  auto end() const { return m_obj->items_end(); }
+
+private:
+  T *m_obj;
+};
+template <class T> items_view(T &)->items_view<T>;
+
+/// Helper to provide equivalent of the `values()` method of a Python dict.
+template <class T> class values_view {
+public:
+  values_view(T &obj) : m_obj(&obj) {}
+  auto size() const noexcept { return m_obj->size(); }
+  auto begin() const {
+    if constexpr (std::is_same_v<typename T::mapped_type, DataArray>)
+      return m_obj->begin();
+    else
+      return m_obj->values_begin();
+  }
+  auto end() const {
+    if constexpr (std::is_same_v<typename T::mapped_type, DataArray>)
+      return m_obj->end();
+    else
+      return m_obj->values_end();
+  }
+
+private:
+  T *m_obj;
+};
+template <class T> values_view(T &)->values_view<T>;
+
+/// Helper to provide equivalent of the `keys()` method of a Python dict.
+template <class T> class keys_view {
+public:
+  keys_view(T &obj) : m_obj(&obj) {}
+  auto size() const noexcept { return m_obj->size(); }
+  auto begin() const { return m_obj->keys_begin(); }
+  auto end() const { return m_obj->keys_end(); }
+
+private:
+  T *m_obj;
+};
+template <class T> keys_view(T &)->keys_view<T>;
+
+template <template <class> class View, class T>
+void bind_helper_view(py::module &m, const std::string &name) {
+  std::string suffix;
+  if (std::is_same_v<View<T>, items_view<T>>)
+    suffix = "_items_view";
+  if (std::is_same_v<View<T>, values_view<T>>)
+    suffix = "_values_view";
+  if (std::is_same_v<View<T>, keys_view<T>>)
+    suffix = "_keys_view";
+  py::class_<View<T>>(m, (name + suffix).c_str())
+      .def(py::init([](T &obj) { return View{obj}; }))
+      .def("__len__", &View<T>::size)
+      .def("__iter__",
+           [](View<T> &self) {
+             return py::make_iterator(self.begin(), self.end(),
+                                      py::return_value_policy::move);
+           },
+           py::return_value_policy::move, py::keep_alive<0, 1>());
+}
+
 template <class T, class ConstT>
 void bind_mutable_proxy(py::module &m, const std::string &name) {
   py::class_<ConstT>(m, (name + "ConstProxy").c_str());
@@ -38,12 +107,16 @@ void bind_mutable_proxy(py::module &m, const std::string &name) {
       .def("__delitem__", &T::erase, py::call_guard<py::gil_scoped_release>())
       .def("__iter__",
            [](T &self) {
-             return py::make_iterator(self.begin(), self.end(),
+             return py::make_iterator(self.keys_begin(), self.keys_end(),
                                       py::return_value_policy::move);
            },
            py::keep_alive<0, 1>())
-      .def("__contains__", &T::contains)
-      .def("keys", &T::keys);
+      .def("keys", &T::keys)
+      .def("values", [](T &self) { return values_view(self); },
+           py::keep_alive<0, 1>())
+      .def("items", [](T &self) { return items_view(self); },
+           py::return_value_policy::move, py::keep_alive<0, 1>())
+      .def("__contains__", &T::contains);
   bind_comparison<T>(proxy);
 }
 
@@ -85,10 +158,15 @@ void bind_dataset_proxy_methods(py::class_<T, Ignored...> &c) {
   c.def("__len__", &T::size);
   c.def("__repr__", [](const T &self) { return to_string(self); });
   c.def("__iter__",
-        [](T &self) {
-          return py::make_iterator(self.begin(), self.end(),
+        [](const T &self) {
+          return py::make_iterator(self.keys_begin(), self.keys_end(),
                                    py::return_value_policy::move);
         },
+        py::return_value_policy::move, py::keep_alive<0, 1>());
+  c.def("keys", &T::keys);
+  c.def("values", [](T &self) { return values_view(self); },
+        py::return_value_policy::move, py::keep_alive<0, 1>());
+  c.def("items", [](T &self) { return items_view(self); },
         py::return_value_policy::move, py::keep_alive<0, 1>());
   c.def("__getitem__",
         [](T &self, const std::string &name) { return self[name]; },
@@ -161,6 +239,19 @@ void init_dataset(py::module &m) {
   bind_mutable_proxy<LabelsProxy, LabelsConstProxy>(m, "Labels");
   bind_mutable_proxy<MasksProxy, MasksConstProxy>(m, "Masks");
   bind_mutable_proxy<AttrsProxy, AttrsConstProxy>(m, "Attrs");
+
+  bind_helper_view<items_view, Dataset>(m, "Dataset");
+  bind_helper_view<items_view, DatasetProxy>(m, "DatasetProxy");
+  bind_helper_view<items_view, CoordsProxy>(m, "CoordsProxy");
+  bind_helper_view<items_view, LabelsProxy>(m, "LabelsProxy");
+  bind_helper_view<items_view, MasksProxy>(m, "MasksProxy");
+  bind_helper_view<items_view, AttrsProxy>(m, "AttrsProxy");
+  bind_helper_view<values_view, Dataset>(m, "Dataset");
+  bind_helper_view<values_view, DatasetProxy>(m, "DatasetProxy");
+  bind_helper_view<values_view, CoordsProxy>(m, "CoordsProxy");
+  bind_helper_view<values_view, LabelsProxy>(m, "LabelsProxy");
+  bind_helper_view<values_view, MasksProxy>(m, "MasksProxy");
+  bind_helper_view<values_view, AttrsProxy>(m, "AttrsProxy");
 
   py::class_<DataArray> dataArray(m, "DataArray", R"(
     Named variable with associated coords, labels, and attributes.)");

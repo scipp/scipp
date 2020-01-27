@@ -322,7 +322,7 @@ class DatasetDrawer():
             dims = self._dataset.dims
         else:
             dims = []
-            for name, item in self._dataset:
+            for item in self._dataset.values():
                 if item.sparse_dim is not None:
                     dims = item.dims
                     break
@@ -372,8 +372,8 @@ class DatasetDrawer():
         else:
             # Render highest-dimension items last so coords are optically
             # aligned
-            for name, data in self._dataset:
-                item = (name, data, config.colors['data'])
+            for data in self._dataset.values():
+                item = (data.name(), data, config.colors['data'])
                 # Using only x and 0d areas for 1-D dataset
                 if len(dims) == 1 or data.dims != dims:
                     if len(data.dims) == 0:

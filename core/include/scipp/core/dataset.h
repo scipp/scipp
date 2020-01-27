@@ -243,6 +243,27 @@ template <class D> struct make_item {
   }
 };
 template <class D> make_item(D *)->make_item<D>;
+
+static constexpr auto make_key_value = [](auto &&view) {
+  using In = decltype(view);
+  using View =
+      std::conditional_t<std::is_rvalue_reference_v<In>, std::decay_t<In>, In>;
+  return std::pair<const std::string &, View>(
+      view.name(), std::forward<decltype(view)>(view));
+};
+
+static constexpr auto make_key = [](auto &&view) -> decltype(auto) {
+  using T = std::decay_t<decltype(view)>;
+  if constexpr (std::is_base_of_v<DataConstProxy, T>)
+    return view.name();
+  else
+    return view.first;
+};
+
+static constexpr auto make_value = [](auto &&view) -> decltype(auto) {
+  return view.second;
+};
+
 } // namespace detail
 
 /// Collection of data arrays.
@@ -345,6 +366,44 @@ public:
     return boost::make_transform_iterator(m_data.end(),
                                           detail::make_item{this});
   }
+
+  auto items_begin() const && = delete;
+  auto items_begin() && = delete;
+  auto items_begin() const &noexcept {
+    return boost::make_transform_iterator(begin(), detail::make_key_value);
+  }
+  auto items_begin() & noexcept {
+    return boost::make_transform_iterator(begin(), detail::make_key_value);
+  }
+  auto items_end() const && = delete;
+  auto items_end() && = delete;
+  auto items_end() const &noexcept {
+    return boost::make_transform_iterator(end(), detail::make_key_value);
+  }
+
+  auto items_end() & noexcept {
+    return boost::make_transform_iterator(end(), detail::make_key_value);
+  }
+
+  auto keys_begin() const && = delete;
+  auto keys_begin() && = delete;
+  auto keys_begin() const &noexcept {
+    return boost::make_transform_iterator(m_data.begin(), detail::make_key);
+  }
+  auto keys_begin() & noexcept {
+    return boost::make_transform_iterator(m_data.begin(), detail::make_key);
+  }
+  auto keys_end() const && = delete;
+  auto keys_end() && = delete;
+  auto keys_end() const &noexcept {
+    return boost::make_transform_iterator(m_data.end(), detail::make_key);
+  }
+
+  auto keys_end() & noexcept {
+    return boost::make_transform_iterator(m_data.end(), detail::make_key);
+  }
+
+  std::vector<std::string> keys() const;
 
   void setCoord(const Dim dim, Variable coord);
   void setLabels(const std::string &labelName, Variable labels);
@@ -570,6 +629,35 @@ public:
     return boost::make_transform_iterator(m_items.end(), make_item{this});
   }
 
+  auto items_begin() const && = delete;
+  /// Return const iterator to the beginning of all items.
+  auto items_begin() const &noexcept { return begin(); }
+  auto items_end() const && = delete;
+  /// Return const iterator to the end of all items.
+  auto items_end() const &noexcept { return end(); }
+
+  auto keys_begin() const && = delete;
+  /// Return const iterator to the beginning of all keys.
+  auto keys_begin() const &noexcept {
+    return boost::make_transform_iterator(begin(), detail::make_key);
+  }
+  auto keys_end() const && = delete;
+  /// Return const iterator to the end of all keys.
+  auto keys_end() const &noexcept {
+    return boost::make_transform_iterator(end(), detail::make_key);
+  }
+
+  auto values_begin() const && = delete;
+  /// Return const iterator to the beginning of all values.
+  auto values_begin() const &noexcept {
+    return boost::make_transform_iterator(begin(), detail::make_value);
+  }
+  auto values_end() const && = delete;
+  /// Return const iterator to the end of all values.
+  auto values_end() const &noexcept {
+    return boost::make_transform_iterator(end(), detail::make_value);
+  }
+
   ConstProxy slice(const Slice slice1) const {
     auto slices = m_slices;
     if constexpr (std::is_same_v<Key, Dim>) {
@@ -660,6 +748,24 @@ public:
   /// Return iterator to the end of all items.
   auto end() const &noexcept {
     return boost::make_transform_iterator(Base::items().end(), make_item{this});
+  }
+
+  auto items_begin() const && = delete;
+  /// Return iterator to the beginning of all items.
+  auto items_begin() const &noexcept { return begin(); }
+  auto items_end() const && = delete;
+  /// Return iterator to the end of all items.
+  auto items_end() const &noexcept { return end(); }
+
+  auto values_begin() const && = delete;
+  /// Return iterator to the beginning of all values.
+  auto values_begin() const &noexcept {
+    return boost::make_transform_iterator(begin(), detail::make_value);
+  }
+  auto values_end() const && = delete;
+  /// Return iterator to the end of all values.
+  auto values_end() const &noexcept {
+    return boost::make_transform_iterator(end(), detail::make_value);
   }
 
   MutableProxy slice(const Slice slice1) const {
@@ -797,6 +903,8 @@ public:
 
   bool contains(const std::string &name) const noexcept;
 
+  std::vector<std::string> keys() const;
+
   const DataConstProxy &operator[](const std::string &name) const;
 
   auto begin() const && = delete;
@@ -806,6 +914,26 @@ public:
   auto end() const && = delete;
   auto end() const &noexcept {
     return boost::make_transform_iterator(m_items.end(), make_const_view);
+  }
+
+  auto items_begin() const && = delete;
+  auto items_begin() const &noexcept {
+    return boost::make_transform_iterator(begin(), detail::make_key_value);
+  }
+  auto items_end() const && = delete;
+  auto items_end() const &noexcept {
+    return boost::make_transform_iterator(end(), detail::make_key_value);
+  }
+
+  auto keys_begin() const && = delete;
+  /// Return const iterator to the beginning of all keys.
+  auto keys_begin() const &noexcept {
+    return boost::make_transform_iterator(begin(), detail::make_key);
+  }
+  auto keys_end() const && = delete;
+  /// Return const iterator to the end of all keys.
+  auto keys_end() const &noexcept {
+    return boost::make_transform_iterator(end(), detail::make_key);
   }
 
   auto find(const std::string &name) const && = delete;
@@ -861,6 +989,15 @@ public:
   auto begin() const &noexcept { return m_items.begin(); }
   auto end() const && = delete;
   auto end() const &noexcept { return m_items.end(); }
+
+  auto items_begin() const && = delete;
+  auto items_begin() const &noexcept {
+    return boost::make_transform_iterator(begin(), detail::make_key_value);
+  }
+  auto items_end() const && = delete;
+  auto items_end() const &noexcept {
+    return boost::make_transform_iterator(end(), detail::make_key_value);
+  }
 
   auto find(const std::string &name) const && = delete;
   auto find(const std::string &name) const &noexcept {
