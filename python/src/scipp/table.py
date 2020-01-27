@@ -420,8 +420,8 @@ class TableViewer:
         if len(self.tabledict["default"]) > 0:
             # output += whitetd
             html, size = table_from_dataset(self.tabledict["default"], headers=self.headers, max_rows=config.table_max_size)
-            self.tables["default"] = widgets.HTML(value=html)
-            hbox = self.make_hbox("default", size)
+            self.tables["default"] = {" ": widgets.HTML(value=html)}
+            hbox = self.make_hbox("default", " ", size)
 
             # hbox = self.tables["default"]
 
@@ -431,9 +431,11 @@ class TableViewer:
             #             value=0, min=0, max=size-config.table_max_size, step=1,
             #             description="Row", orientation='vertical', continuous_update=False)
             #         hbox = widgets.HBox([hbox, self.sliders["default"]])
+            # self.box.append(hbox)
             self.box.append(hbox)
             # output += "</td></tr>"
         if len(self.tabledict["0D Variables"]) > 0:
+            self.tables["0D Variables"] = {}
             # output = "<table style='border: 1px solid black;'><tr>"
             output = subtitle.format("0D Variables")
             # output += whitetd
@@ -441,7 +443,7 @@ class TableViewer:
                                          headers=self.headers, max_rows=config.table_max_size)
             # output += html
             # output += "</td></tr>"
-            self.tables["0D Variables"] = widgets.HTML(value=output)
+            self.tables["0D Variables"][" "] = widgets.HTML(value=html)
             # hbox = self.tables["0D Variables"]
             # if size is not None:
             #     if size > config.table_max_size:
@@ -449,11 +451,11 @@ class TableViewer:
             #             value=0, min=0, max=size-config.table_max_size, step=1,
             #             description="Row", orientation='vertical', continuous_update=False)
             #         hbox = widgets.HBox([hbox, self.sliders["0D Variables"]])
-            hbox = self.make_hbox("0D Variables", size)
-            self.box.append(hbox)
+            hbox = self.make_hbox("0D Variables", " ", size)
+            self.box.append(widgets.VBox([widgets.HTML(value=output), hbox]))
 
             # box.append(widgets.HTML(value=output))
-        if len(self.tabledict["1D Variables"].keys()) > 0:
+        if len(self.tabledict["1D Variables"]) > 0:
             self.tables["1D Variables"] = {}
             # output = "<table style='border: 1px solid black;'><tr>"
             output = subtitle.format("1D Variables")
@@ -461,7 +463,7 @@ class TableViewer:
             self.tabs = widgets.Tab()
             children = []
             for key, val in sorted(self.tabledict["1D Variables"].items()):
-                print(key)
+                # print(key)
                 # children.append(key)
                 html, size = table_from_dataset(val,
                                              is_hist=is_histogram[key],
