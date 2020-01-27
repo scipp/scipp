@@ -247,22 +247,6 @@ void Dataset::rebuildDims() {
   }
 }
 
-std::vector<std::string> Dataset::keys() const {
-  std::vector<std::string> keys;
-  keys.reserve(size());
-  for (const auto &item : m_data)
-    keys.push_back(item.first);
-  return keys;
-}
-
-std::vector<std::string> DatasetConstProxy::keys() const {
-  std::vector<std::string> keys;
-  keys.reserve(size());
-  for (const auto &item : *this)
-    keys.push_back(item.name());
-  return keys;
-}
-
 /// Set (insert or replace) the coordinate for the given dimension.
 void Dataset::setCoord(const Dim dim, Variable coord) {
   expect::notSparse(coord);

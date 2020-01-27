@@ -403,8 +403,6 @@ public:
     return boost::make_transform_iterator(m_data.end(), detail::make_key);
   }
 
-  std::vector<std::string> keys() const;
-
   void setCoord(const Dim dim, Variable coord);
   void setLabels(const std::string &labelName, Variable labels);
   void setMask(const std::string &masksName, Variable masks);
@@ -596,15 +594,6 @@ public:
   /// Returns whether a given key is present in the proxy.
   bool contains(const Key &k) const {
     return m_items.find(k) != m_items.cend();
-  }
-
-  std::vector<Key> keys() {
-    std::vector<Key> keys;
-    keys.reserve(m_items.size());
-    for (const auto &p : m_items) {
-      keys.push_back(p.first);
-    }
-    return keys;
   }
 
   /// Return a const proxy to the coordinate for given dimension.
@@ -902,8 +891,6 @@ public:
   MasksConstProxy masks() const noexcept;
 
   bool contains(const std::string &name) const noexcept;
-
-  std::vector<std::string> keys() const;
 
   const DataConstProxy &operator[](const std::string &name) const;
 
