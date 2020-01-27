@@ -23,7 +23,9 @@ TEST_F(AttributesTest, dataset_attrs) {
   ASSERT_EQ(d.attrs().size(), 2);
   ASSERT_TRUE(d.attrs().contains("scalar"));
   ASSERT_TRUE(d.attrs().contains("x"));
-  ASSERT_EQ(d.attrs().keys(), (std::vector<std::string>{"scalar", "x"}));
+  const auto attrs = d.attrs();
+  ASSERT_EQ(std::set(attrs.keys_begin(), attrs.keys_end()),
+            (std::set<std::string>{"scalar", "x"}));
   ASSERT_EQ(d.dimensions(),
             (std::unordered_map<Dim, scipp::index>{{Dim::X, 2}}));
   d.eraseAttr("scalar");
