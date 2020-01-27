@@ -717,28 +717,15 @@ DatasetConstProxy::DatasetConstProxy(const Dataset &dataset)
     : m_dataset(&dataset) {
   m_items.reserve(dataset.size());
   for (const auto &item : dataset.m_data)
-    m_items.emplace_back(detail::make_item{this}(item));
+    m_items.emplace_back(DataProxy(detail::make_item{this}(item)));
 }
 
 DatasetProxy::DatasetProxy(Dataset &dataset)
     : DatasetConstProxy(DatasetConstProxy::makeProxyWithEmptyIndexes(dataset)),
       m_mutableDataset(&dataset) {
-  // Reusing the constructor from `DatasetConstProxy &&, Dataset *` would avoid
-  // code duplication, but this gives 1.7x speedup.
-  m_mutableItems.reserve(size());
-  for (auto &item : dataset.m_data)
-    m_mutableItems.emplace_back(detail::make_item{this}(item));
   m_items.reserve(size());
-  for (const auto &view : m_mutableItems)
-    m_items.emplace_back(view);
-}
-
-DatasetProxy::DatasetProxy(DatasetConstProxy &&base, Dataset *dataset)
-    : DatasetConstProxy(std::move(base)), m_mutableDataset(dataset) {
-  m_mutableItems.reserve(size());
-  for (auto &item : dataset->m_data)
-    if (contains(item.first))
-      m_mutableItems.emplace_back(detail::make_item{this}(item));
+  for (auto &item : dataset.m_data)
+    m_items.emplace_back(detail::make_item{this}(item));
 }
 
 /// Return a const proxy to all coordinates of the dataset slice.
@@ -833,6 +820,30 @@ DatasetConstProxy DatasetConstProxy::slice(const Slice slice1) const {
   expect::validSlice(currentDims, slice1);
   DatasetConstProxy sliced;
   sliced.m_dataset = m_dataset;
+  sliced.m_slices = m_slices;
+  auto &items = sliced.m_items;
+  for (const auto &item : *this)
+    if (item.dims().contains(slice1.dim()))
+      items.emplace_back(DataProxy(item.slice(slice1)));
+  // The dimension extent is either given by the coordinate, or by data, which
+  // can be 1 shorter in case of a bin-edge coordinate.
+  scipp::index extent = currentDims.at(slice1.dim());
+  for (const auto &item : *this)
+    if (item.dims().contains(slice1.dim()) &&
+        item.dims()[slice1.dim()] == extent - 1) {
+      --extent;
+      break;
+    }
+  sliced.m_slices.emplace_back(slice1, extent);
+  return sliced;
+}
+
+DatasetProxy DatasetProxy::slice(const Slice slice1) const {
+  const auto currentDims = dimensions();
+  expect::validSlice(currentDims, slice1);
+  DatasetProxy sliced;
+  sliced.m_dataset = m_dataset;
+  sliced.m_mutableDataset = m_mutableDataset;
   sliced.m_slices = m_slices;
   auto &items = sliced.m_items;
   for (const auto &item : *this)

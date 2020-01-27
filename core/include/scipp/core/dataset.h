@@ -241,6 +241,10 @@ public:
   }
 
 private:
+  friend class DatasetConstProxy;
+  DataProxy(DataConstProxy &&base)
+      : DataConstProxy(std::move(base)), m_mutableDataset{nullptr},
+        m_mutableData{nullptr} {}
   Dataset *m_mutableDataset;
   detail::dataset_item_map::value_type *m_mutableData;
 };
@@ -795,7 +799,8 @@ template <class T1, class T2> auto union_(const T1 &a, const T2 &b) {
 
 /// Const proxy for Dataset, implementing slicing and item selection.
 class SCIPP_CORE_EXPORT DatasetConstProxy {
-  explicit DatasetConstProxy() : m_dataset(nullptr) {}
+  static constexpr auto make_const_view =
+      [](const DataProxy &view) -> const DataConstProxy & { return view; };
 
 public:
   using key_type = std::string;
@@ -822,9 +827,13 @@ public:
   const DataConstProxy &operator[](const std::string &name) const;
 
   auto begin() const && = delete;
-  auto begin() const &noexcept { return m_items.begin(); }
+  auto begin() const &noexcept {
+    return boost::make_transform_iterator(m_items.begin(), make_const_view);
+  }
   auto end() const && = delete;
-  auto end() const &noexcept { return m_items.end(); }
+  auto end() const &noexcept {
+    return boost::make_transform_iterator(m_items.end(), make_const_view);
+  }
 
   auto find(const std::string &name) const && = delete;
   auto find(const std::string &name) const &noexcept {
@@ -853,19 +862,17 @@ public:
   bool operator!=(const DatasetConstProxy &other) const;
   std::unordered_map<Dim, scipp::index> dimensions() const;
 
-private:
-  const Dataset *m_dataset;
-
 protected:
-  boost::container::small_vector<DataConstProxy, 8> m_items;
+  explicit DatasetConstProxy() : m_dataset(nullptr) {}
+  const Dataset *m_dataset;
+  boost::container::small_vector<DataProxy, 8> m_items;
   void expectValidKey(const std::string &name) const;
   detail::slice_list m_slices;
 };
 
 /// Proxy for Dataset, implementing slicing and item selection.
 class SCIPP_CORE_EXPORT DatasetProxy : public DatasetConstProxy {
-private:
-  DatasetProxy(DatasetConstProxy &&base, Dataset *dataset);
+  explicit DatasetProxy() : DatasetConstProxy(), m_mutableDataset(nullptr) {}
 
 public:
   DatasetProxy(Dataset &dataset);
@@ -878,9 +885,9 @@ public:
   const DataProxy &operator[](const std::string &name) const;
 
   auto begin() const && = delete;
-  auto begin() const &noexcept { return m_mutableItems.begin(); }
+  auto begin() const &noexcept { return m_items.begin(); }
   auto end() const && = delete;
-  auto end() const &noexcept { return m_mutableItems.end(); }
+  auto end() const &noexcept { return m_items.end(); }
 
   auto find(const std::string &name) const && = delete;
   auto find(const std::string &name) const &noexcept {
@@ -889,9 +896,7 @@ public:
     });
   }
 
-  DatasetProxy slice(const Slice slice1) const {
-    return {DatasetConstProxy::slice(slice1), m_mutableDataset};
-  }
+  DatasetProxy slice(const Slice slice1) const;
 
   DatasetProxy slice(const Slice slice1, const Slice slice2) const {
     return slice(slice1).slice(slice2);
@@ -949,7 +954,6 @@ public:
 
 private:
   Dataset *m_mutableDataset;
-  boost::container::small_vector<DataProxy, 8> m_mutableItems;
 };
 
 SCIPP_CORE_EXPORT DataArray copy(const DataConstProxy &array);
