@@ -10,6 +10,7 @@ from ._scipp import core as sc
 import ipywidgets as widgets
 import numpy as np
 
+
 def _make_table_section_name_header(name, section, style):
     """
     Adds a first row of the table that contains the names of the sections
@@ -119,52 +120,25 @@ def _make_trailing_cells(section, coord, index, size, base_style, edge_style):
     return "".join(html)
 
 
-# def _make_row(coord, dataset, index, size, base_style, edge_style, hover_style):
-
-#     html = '<tr {}>'.format(hover_style)
-#     # Add coordinates
-#     if coord is not None:
-#         text = value_to_string(coord.values[index])
-#         html += "<td rowspan='2' {}>{}</td>".format(base_style, text)
-#         if coord.variances is not None:
-#             text = value_to_string(coord.variances[i])
-#             html += "<td rowspan='2' {}>{}</td>".format(
-#                 base_style, text)
-
-#     html += _make_value_rows(dataset.labels, coord, index, base_style,
-#                              edge_style)
-#     html += _make_value_rows(dataset.masks, coord, index, base_style,
-#                              edge_style)
-#     html += _make_value_rows(dataset, coord, index, base_style, edge_style)
-
-#     html += "</tr><tr {}>".format(hover_style)
-#     # If there are bin edges, we need to add trailing cells for data
-#     # and labels
-#     if coord is not None:
-#         html += _make_trailing_cells(dataset.labels, coord, index, size,
-#                                      base_style, edge_style)
-#         html += _make_trailing_cells(dataset.masks, coord, index, size,
-#                                      base_style, edge_style)
-#         html += _make_trailing_cells(dataset, coord, index, size,
-#                                      base_style, edge_style)
-#     html += "</tr>"
-#     return html
-
-
-def table_from_dataset(dataset, is_hist=False, headers=2, row_start=0, max_rows=None):
-    base_style = "style='border: 1px solid black; padding: 0px 5px 0px 5px; text-align: right;"
+def table_from_dataset(dataset,
+                       is_hist=False,
+                       headers=2,
+                       row_start=0,
+                       max_rows=None):
+    base_style = ("style='border: 1px solid black; padding: 0px 5px 0px 5px; "
+                  "text-align: right;")
 
     mstyle = base_style + "text-align: center;"
     vstyle = mstyle + "background-color: #f0f0f0;'"
     mstyle += "'"
-    # edge_style = "style='border: 3px solid red;background-color: #ffffff; font-size: xx-small; padding: 0px; height:10px;'"
-    edge_style = "style='border: 0px solid white;background-color: #ffffff; height:1.2em;'"
+    edge_style = ("style='border: 0px solid white;background-color: #ffffff; "
+                  "height:1.2em;'")
     hover_style = ("onMouseOver=\"this.style.backgroundColor='" +
                    config.colors["hover"] +
                    "'\" onMouseOut=\"this.style.backgroundColor='#ffffff'\"")
 
     # Declare table
-    html = "<table>" # style='border-collapse: collapse;'>"
+    html = "<table style='border-collapse: collapse;'>"
     dims = dataset.dims
     size = coord = None
     if len(dims) > 0:
@@ -214,11 +188,8 @@ def table_from_dataset(dataset, is_hist=False, headers=2, row_start=0, max_rows=
                                                 value_to_string(val.variance))
         html += "</tr>"
     else:
-        # print(size, config.table_max_size)
         row_end = min(size, row_start + max_rows)
         for i in range(row_start, row_end):
-        # if size > config.table_max_size:
-            # for i in range(config.table_max_size // 2):
             html += "<tr {}>".format(hover_style)
             # Add coordinates
             if coord is not None:
@@ -233,7 +204,8 @@ def table_from_dataset(dataset, is_hist=False, headers=2, row_start=0, max_rows=
                                      edge_style, row_start)
             html += _make_value_rows(dataset.masks, coord, i, base_style,
                                      edge_style, row_start)
-            html += _make_value_rows(dataset, coord, i, base_style, edge_style, row_start)
+            html += _make_value_rows(dataset, coord, i, base_style, edge_style,
+                                     row_start)
 
             html += "</tr><tr {}>".format(hover_style)
             # If there are bin edges, we need to add trailing cells for data
@@ -246,43 +218,6 @@ def table_from_dataset(dataset, is_hist=False, headers=2, row_start=0, max_rows=
                 html += _make_trailing_cells(dataset, coord, i, row_end,
                                              base_style, edge_style)
             html += "</tr>"
-            # html += _make_row(coord, dataset, i, size, base_style, edge_style, hover_style)
-        #     for i in range(size - config.table_max_size // 2, size):
-        #         html += _make_row(coord, dataset, i, size, base_style, edge_style)
-        # else:
-        #     for i in range(size):
-        #         html += _make_row(coord, dataset, i, size, base_style, edge_style)
-
-
-        # for i in range(size):
-        #     # html += '<tr>'
-        #     # # Add coordinates
-        #     # if coord is not None:
-        #     #     text = value_to_string(coord.values[i])
-        #     #     html += "<td rowspan='2' {}>{}</td>".format(base_style, text)
-        #     #     if coord.variances is not None:
-        #     #         text = value_to_string(coord.variances[i])
-        #     #         html += "<td rowspan='2' {}>{}</td>".format(
-        #     #             base_style, text)
-
-        #     # html += _make_value_rows(dataset.labels, coord, i, base_style,
-        #     #                          edge_style)
-        #     # html += _make_value_rows(dataset.masks, coord, i, base_style,
-        #     #                          edge_style)
-        #     # html += _make_value_rows(dataset, coord, i, base_style, edge_style)
-
-        #     # html += "</tr><tr>"
-        #     # # If there are bin edges, we need to add trailing cells for data
-        #     # # and labels
-        #     # if coord is not None:
-        #     #     html += _make_trailing_cells(dataset.labels, coord, i, size,
-        #     #                                  base_style, edge_style)
-        #     #     html += _make_trailing_cells(dataset.masks, coord, i, size,
-        #     #                                  base_style, edge_style)
-        #     #     html += _make_trailing_cells(dataset, coord, i, size,
-        #     #                                  base_style, edge_style)
-        #     # html += "</tr>"
-        #     html += _make_row(coord, dataset, i, size, base_style, edge_style)
 
     html += "</table>"
     return html, size
@@ -290,21 +225,15 @@ def table_from_dataset(dataset, is_hist=False, headers=2, row_start=0, max_rows=
 
 def table(dataset):
 
-    from IPython.display import display, HTML
+    from IPython.display import display
 
     tv = TableViewer(dataset)
 
     display(tv.box)
-    # display(HTML(output))
 
 
 class TableViewer:
-
     def __init__(self, dataset):
-
-        # from IPython.display import display, HTML
-
-        # import ipywidgets as widgets
 
         self.tabledict = {
             "default": sc.Dataset(),
@@ -358,7 +287,8 @@ class TableViewer:
                     dim = lab.dims[0]
                     key = str(dim)
                     if len(dataset.coords) > 0:
-                        if len(dataset.coords[dim].values) == len(lab.values) + 1:
+                        if len(dataset.coords[dim].values) == len(
+                                lab.values) + 1:
                             is_histogram[key] = True
                         self.tabledict["1D Variables"][key].coords[dim] = \
                             dataset.coords[dim]
@@ -371,7 +301,8 @@ class TableViewer:
                     dim = mask.dims[0]
                     key = str(dim)
                     if len(dataset.coords) > 0:
-                        if len(dataset.coords[dim].values) == len(mask.values) + 1:
+                        if len(dataset.coords[dim].values) == len(
+                                mask.values) + 1:
                             is_histogram[key] = True
                         self.tabledict["1D Variables"][key].coords[dim] = \
                             dataset.coords[dim]
@@ -389,111 +320,76 @@ class TableViewer:
             self.tabledict["default"][key] = dataset.data
             if len(dataset.coords) > 0:
                 dim = dataset.dims[0]
-                self.tabledict["default"][key].coords[dim] = dataset.coords[dim]
+                self.tabledict["default"][key].coords[dim] = dataset.coords[
+                    dim]
         elif (tp is sc.Variable) or (tp is sc.VariableProxy):
             self.headers = 1
             key = str(dataset.dims[0])
             self.tabledict["default"][key] = dataset
         else:
-            self.tabledict["default"][""] = sc.Variable([sc.Dim.Row], values=dataset)
+            self.tabledict["default"][""] = sc.Variable([sc.Dim.Row],
+                                                        values=dataset)
             self.headers = 0
 
-        # subtitle = "<tr><td style='font-weight:normal;color:grey;"
         subtitle = "<span style='font-weight:normal;color:grey;"
         subtitle += "font-style:italic;background-color:#ffffff;"
         subtitle += "text-align:left;font-size:1.2em;padding: 1px;'>"
         subtitle += "{}</span>"
-        whitetd = "<tr><td style='background-color:#ffffff;'>"
         title = str(type(dataset)).replace("<class 'scipp._scipp.core.",
                                            "").replace("'>", "")
-        output = "<table style='border: 1px solid black;'><tr>"
-        output += "<td style='font-weight:bold;font-size:1.5em;padding:1px;"
-        output += "text-align:center;background-color:#ffffff;'>"
-        output += "{}</td></tr>".format(title)
 
-        self.box = [widgets.HTML(value="<span style='font-weight:bold;font-size:1.5em;'>{}</span>".format(title))]
+        self.box = [
+            widgets.HTML(
+                value="<span style='font-weight:bold;"
+                      "font-size:1.5em;'>{}</span>".format(title))
+        ]
         self.tables = {}
         self.sliders = {}
         self.label = widgets.Label(value="rows")
         self.nrows = {}
 
         if len(self.tabledict["default"]) > 0:
-            # output += whitetd
-            html, size = table_from_dataset(self.tabledict["default"], headers=self.headers, max_rows=config.table_max_size)
+            html, size = table_from_dataset(self.tabledict["default"],
+                                            headers=self.headers,
+                                            max_rows=config.table_max_size)
             self.tables["default"] = {" ": widgets.HTML(value=html)}
             hbox = self.make_hbox("default", " ", size)
-
-            # hbox = self.tables["default"]
-
-            # if size is not None:
-            #     if size > config.table_max_size:
-            #         self.sliders["default"] = widgets.IntSlider(
-            #             value=0, min=0, max=size-config.table_max_size, step=1,
-            #             description="Row", orientation='vertical', continuous_update=False)
-            #         hbox = widgets.HBox([hbox, self.sliders["default"]])
-            # self.box.append(hbox)
             self.box.append(hbox)
-            # output += "</td></tr>"
         if len(self.tabledict["0D Variables"]) > 0:
             self.tables["0D Variables"] = {}
-            # output = "<table style='border: 1px solid black;'><tr>"
             output = subtitle.format("0D Variables")
-            # output += whitetd
             html, size = table_from_dataset(self.tabledict["0D Variables"],
-                                         headers=self.headers, max_rows=config.table_max_size)
-            # output += html
-            # output += "</td></tr>"
+                                            headers=self.headers,
+                                            max_rows=config.table_max_size)
             self.tables["0D Variables"][" "] = widgets.HTML(value=html)
-            # hbox = self.tables["0D Variables"]
-            # if size is not None:
-            #     if size > config.table_max_size:
-            #         self.sliders["0D Variables"] = widgets.IntSlider(
-            #             value=0, min=0, max=size-config.table_max_size, step=1,
-            #             description="Row", orientation='vertical', continuous_update=False)
-            #         hbox = widgets.HBox([hbox, self.sliders["0D Variables"]])
             hbox = self.make_hbox("0D Variables", " ", size)
             self.box.append(widgets.VBox([widgets.HTML(value=output), hbox]))
-
-            # box.append(widgets.HTML(value=output))
         if len(self.tabledict["1D Variables"]) > 0:
             self.tables["1D Variables"] = {}
-            # output = "<table style='border: 1px solid black;'><tr>"
             output = subtitle.format("1D Variables")
-            # output += whitetd
-            self.tabs = widgets.Tab()
+            self.tabs = widgets.Tab(layout=widgets.Layout(width="initial"))
             children = []
             for key, val in sorted(self.tabledict["1D Variables"].items()):
-                # print(key)
-                # children.append(key)
                 html, size = table_from_dataset(val,
-                                             is_hist=is_histogram[key],
-                                             headers=self.headers, max_rows=config.table_max_size)
-
-                # output += html
+                                                is_hist=is_histogram[key],
+                                                headers=self.headers,
+                                                max_rows=config.table_max_size)
                 self.tables["1D Variables"][key] = widgets.HTML(value=html)
                 hbox = self.make_hbox("1D Variables", key, size)
                 children.append(hbox)
 
-
-            # output += "</td></tr>"
             self.tabs.children = children
-            for i, key in enumerate(sorted(self.tabledict["1D Variables"].keys())):
+            for i, key in enumerate(
+                    sorted(self.tabledict["1D Variables"].keys())):
                 self.tabs.set_title(i, key)
-            # self.tables["1D Variables"] = widgets.HTML(value=output)
-            # hbox = self.tables["1D Variables"]
-            # if size is not None:
-            #     if size > config.table_max_size:
-            #         self.sliders["1D Variables"] = widgets.IntSlider(
-            #             value=0, min=0, max=size-config.table_max_size, step=1,
-            #             description="Row", orientation='vertical', continuous_update=False)
-            #         hbox = widgets.HBox([hbox, self.sliders["1D Variables"]])
-            # hbox = self.make_hbox("1D Variables", size)
-            print(output)
-            self.box.append(widgets.VBox([widgets.HTML(value=output), self.tabs]))
+            self.box.append(
+                widgets.VBox([widgets.HTML(value=output), self.tabs]))
 
-            # box.append(widgets.HTML(value=output))
-        # output += "</table>"
-        self.box = widgets.VBox(self.box, layout=widgets.Layout(border="solid 1px", width="auto", display='flex'))
+        self.box = widgets.VBox(self.box,
+                                layout=widgets.Layout(border="solid 1px",
+                                                      width="auto",
+                                                      display='flex',
+                                                      flex_flow='column'))
         return
 
     def make_hbox(self, group, key, size):
@@ -501,45 +397,41 @@ class TableViewer:
         if size is not None:
             if size > config.table_max_size:
                 self.nrows[key] = widgets.BoundedIntText(
-    value=config.table_max_size,
-    min=1,
-    max=size,
-    step=1,
-    description='Show',
-    disabled=False, continuous_update=True, layout=widgets.Layout(width='150px')
-)
+                    value=config.table_max_size,
+                    min=1,
+                    max=size,
+                    step=1,
+                    description='Show',
+                    disabled=False,
+                    continuous_update=True,
+                    layout=widgets.Layout(width='150px'))
                 self.nrows[key].observe(self.update_table, names="value")
                 self.sliders[key] = widgets.SelectionSlider(
-                    options=np.arange(size-config.table_max_size + 1)[::-1],
+                    options=np.arange(size - config.table_max_size + 1)[::-1],
                     value=0,
-                    description="Row", orientation='vertical', continuous_update=False,
+                    description="Row",
+                    orientation='vertical',
+                    continuous_update=False,
                     layout=widgets.Layout(height='400px'))
                 setattr(self.sliders[key], "key", key)
                 setattr(self.nrows[key], "key", key)
                 setattr(self.sliders[key], "group", group)
                 setattr(self.nrows[key], "group", group)
                 self.sliders[key].observe(self.update_table, names="value")
-                hbox = widgets.HBox([hbox, widgets.VBox([widgets.HBox([self.nrows[key], self.label]), self.sliders[key]])])
+                hbox = widgets.HBox([
+                    hbox,
+                    widgets.VBox([
+                        widgets.HBox([self.nrows[key], self.label]),
+                        self.sliders[key]
+                    ])
+                ])
         return hbox
-
-    # def update_nrows(self, change):
-    #     key = change["owner"].key
-    #     self.update_table()
-
 
     def update_table(self, change):
         key = change["owner"].key
         group = change["owner"].group
-        
-        # tp = type(dataset)
-        output = "<table style='border: 1px solid black;'><tr>"
-        # if isinstance(self.tabledict[key], dict):
-        #     html = ""
-        #     for name, var in sorted(self.tabledict[key].items()):
-        #         html, size = table_from_dataset(var,
-        #                                  headers=self.headers, row_start=self.sliders[key].value, max_rows=self.nrows[key].value)
-        # else:
         html, size = table_from_dataset(self.tabledict[group][key],
-                                     headers=self.headers, row_start=self.sliders[key].value, max_rows=self.nrows[key].value)
+                                        headers=self.headers,
+                                        row_start=self.sliders[key].value,
+                                        max_rows=self.nrows[key].value)
         self.tables[group][key].value = html
-
