@@ -816,19 +816,18 @@ template <class T> auto slice_items(const T &view, const Slice slice) {
   expect::validSlice(currentDims, slice);
   auto slices = view.slices();
   boost::container::small_vector<DataProxy, 8> items;
-  for (const auto &item : view)
-    if (item.dims().contains(slice.dim()))
+  bool edges = false;
+  const scipp::index extent = currentDims.at(slice.dim());
+  for (const auto &item : view) {
+    const auto &dims = item.dims();
+    if (dims.contains(slice.dim())) {
       items.emplace_back(DataProxy(item.slice(slice)));
-  // The dimension extent is either given by the coordinate, or by data, which
-  // can be 1 shorter in case of a bin-edge coordinate.
-  scipp::index extent = currentDims.at(slice.dim());
-  for (const auto &item : view)
-    if (item.dims().contains(slice.dim()) &&
-        item.dims()[slice.dim()] == extent - 1) {
-      --extent;
-      break;
+      // The dimension extent is either given by the coordinate, or by data,
+      // which can be 1 shorter in case of a bin-edge coordinate.
+      edges = dims[slice.dim()] == extent - 1;
     }
-  slices.emplace_back(slice, extent);
+  }
+  slices.emplace_back(slice, edges ? extent - 1 : extent);
   return std::pair{std::move(items), std::move(slices)};
 }
 
