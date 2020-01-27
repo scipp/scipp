@@ -35,7 +35,25 @@ static void BM_dataset_slice(benchmark::State &state) {
   state.SetItemsProcessed(state.iterations());
 }
 
+static void BM_dataset_slice_item(benchmark::State &state) {
+  auto d = make_table();
+  for (auto _ : state) {
+    d.slice({Dim::X, 1})["b"];
+  }
+  state.SetItemsProcessed(state.iterations());
+}
+
+static void BM_dataset_slice_item_dims(benchmark::State &state) {
+  auto d = make_table();
+  for (auto _ : state) {
+    d.slice({Dim::X, 1})["b"].dims();
+  }
+  state.SetItemsProcessed(state.iterations());
+}
+
 BENCHMARK(BM_dataset_create_view);
 BENCHMARK(BM_dataset_slice);
+BENCHMARK(BM_dataset_slice_item);
+BENCHMARK(BM_dataset_slice_item_dims);
 
 BENCHMARK_MAIN();
