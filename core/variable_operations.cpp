@@ -356,7 +356,7 @@ Variable nan_to_num(const VariableConstProxy &var,
                     const VariableConstProxy &replacement) {
   validate_inputs_for_replacement(var, replacement);
 
-  return transform<pair_custom_t<double, float>>(
+  return transform<pair_self_t<double, float>>(
       var, replacement,
       overloaded{[&](const auto &x, const auto &repl) {
                    using std::isnan;
