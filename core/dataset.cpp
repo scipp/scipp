@@ -811,54 +811,43 @@ const DataProxy &DatasetProxy::operator[](const std::string &name) const {
   return getitem(*this, name);
 }
 
+template <class T> auto slice_items(const T &view, const Slice slice) {
+  const auto currentDims = view.dimensions();
+  expect::validSlice(currentDims, slice);
+  auto slices = view.slices();
+  boost::container::small_vector<DataProxy, 8> items;
+  for (const auto &item : view)
+    if (item.dims().contains(slice.dim()))
+      items.emplace_back(DataProxy(item.slice(slice)));
+  // The dimension extent is either given by the coordinate, or by data, which
+  // can be 1 shorter in case of a bin-edge coordinate.
+  scipp::index extent = currentDims.at(slice.dim());
+  for (const auto &item : view)
+    if (item.dims().contains(slice.dim()) &&
+        item.dims()[slice.dim()] == extent - 1) {
+      --extent;
+      break;
+    }
+  slices.emplace_back(slice, extent);
+  return std::pair{std::move(items), std::move(slices)};
+}
+
 /// Return a slice of the dataset proxy.
 ///
 /// The returned proxy will not contain references to data items that do not
 /// depend on the sliced dimension.
 DatasetConstProxy DatasetConstProxy::slice(const Slice slice1) const {
-  const auto currentDims = dimensions();
-  expect::validSlice(currentDims, slice1);
   DatasetConstProxy sliced;
   sliced.m_dataset = m_dataset;
-  sliced.m_slices = m_slices;
-  auto &items = sliced.m_items;
-  for (const auto &item : *this)
-    if (item.dims().contains(slice1.dim()))
-      items.emplace_back(DataProxy(item.slice(slice1)));
-  // The dimension extent is either given by the coordinate, or by data, which
-  // can be 1 shorter in case of a bin-edge coordinate.
-  scipp::index extent = currentDims.at(slice1.dim());
-  for (const auto &item : *this)
-    if (item.dims().contains(slice1.dim()) &&
-        item.dims()[slice1.dim()] == extent - 1) {
-      --extent;
-      break;
-    }
-  sliced.m_slices.emplace_back(slice1, extent);
+  std::tie(sliced.m_items, sliced.m_slices) = slice_items(*this, slice1);
   return sliced;
 }
 
 DatasetProxy DatasetProxy::slice(const Slice slice1) const {
-  const auto currentDims = dimensions();
-  expect::validSlice(currentDims, slice1);
   DatasetProxy sliced;
   sliced.m_dataset = m_dataset;
   sliced.m_mutableDataset = m_mutableDataset;
-  sliced.m_slices = m_slices;
-  auto &items = sliced.m_items;
-  for (const auto &item : *this)
-    if (item.dims().contains(slice1.dim()))
-      items.emplace_back(item.slice(slice1));
-  // The dimension extent is either given by the coordinate, or by data, which
-  // can be 1 shorter in case of a bin-edge coordinate.
-  scipp::index extent = currentDims.at(slice1.dim());
-  for (const auto &item : *this)
-    if (item.dims().contains(slice1.dim()) &&
-        item.dims()[slice1.dim()] == extent - 1) {
-      --extent;
-      break;
-    }
-  sliced.m_slices.emplace_back(slice1, extent);
+  std::tie(sliced.m_items, sliced.m_slices) = slice_items(*this, slice1);
   return sliced;
 }
 

@@ -160,6 +160,10 @@ public:
                            : std::optional<VariableProxy>{}),
         m_mutableDataset(&dataset), m_mutableData(&data) {}
 
+  explicit DataProxy(DataConstProxy &&base)
+      : DataConstProxy(std::move(base)), m_mutableDataset{nullptr},
+        m_mutableData{nullptr} {}
+
   CoordsProxy coords() const noexcept;
   LabelsProxy labels() const noexcept;
   MasksProxy masks() const noexcept;
@@ -241,10 +245,6 @@ public:
   }
 
 private:
-  friend class DatasetConstProxy;
-  DataProxy(DataConstProxy &&base)
-      : DataConstProxy(std::move(base)), m_mutableDataset{nullptr},
-        m_mutableData{nullptr} {}
   Dataset *m_mutableDataset;
   detail::dataset_item_map::value_type *m_mutableData;
 };
