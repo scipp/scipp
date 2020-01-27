@@ -105,11 +105,11 @@ TYPED_TEST(DataProxyBinaryEqualsOpTest, other_data_unchanged) {
     const auto original_a(dataset_a);
     auto target = dataset_a["data_zyx"];
 
-    ASSERT_NO_THROW(TestFixture::op(target, item.second));
+    ASSERT_NO_THROW(TestFixture::op(target, item));
 
-    for (const auto &[name, data] : dataset_a) {
-      if (name != "data_zyx") {
-        EXPECT_EQ(data, original_a[name]);
+    for (const auto &data : dataset_a) {
+      if (data.name() != "data_zyx") {
+        EXPECT_EQ(data, original_a[data.name()]);
       }
     }
   }
@@ -125,11 +125,11 @@ TYPED_TEST(DataProxyBinaryEqualsOpTest, lhs_with_variance) {
     auto data_array = copy(target);
 
     Variable reference(target.data());
-    TestFixture::op(reference, item.second.data());
+    TestFixture::op(reference, item.data());
 
-    ASSERT_NO_THROW(target = TestFixture::op(target, item.second));
+    ASSERT_NO_THROW(target = TestFixture::op(target, item));
     EXPECT_EQ(target.data(), reference);
-    EXPECT_EQ(TestFixture::op(data_array, item.second), target);
+    EXPECT_EQ(TestFixture::op(data_array, item), target);
   }
 }
 
@@ -142,16 +142,16 @@ TYPED_TEST(DataProxyBinaryEqualsOpTest, lhs_without_variance) {
     auto target = dataset_a["data_xyz"];
     auto data_array = copy(target);
 
-    if (item.second.hasVariances()) {
-      ASSERT_ANY_THROW(TestFixture::op(target, item.second));
+    if (item.hasVariances()) {
+      ASSERT_ANY_THROW(TestFixture::op(target, item));
     } else {
       Variable reference(target.data());
-      TestFixture::op(reference, item.second.data());
+      TestFixture::op(reference, item.data());
 
-      ASSERT_NO_THROW(target = TestFixture::op(target, item.second));
+      ASSERT_NO_THROW(target = TestFixture::op(target, item));
       EXPECT_EQ(target.data(), reference);
       EXPECT_FALSE(target.hasVariances());
-      EXPECT_EQ(TestFixture::op(data_array, item.second), target);
+      EXPECT_EQ(TestFixture::op(data_array, item), target);
     }
   }
 }
@@ -163,19 +163,19 @@ TYPED_TEST(DataProxyBinaryEqualsOpTest, slice_lhs_with_variance) {
     const bool randomMasks = true;
     auto dataset_a = datasetFactory.make(randomMasks);
     auto target = dataset_a["data_zyx"];
-    const auto &dims = item.second.dims();
+    const auto &dims = item.dims();
 
     for (const Dim dim : dims.labels()) {
       Variable reference(target.data());
-      TestFixture::op(reference, item.second.data().slice({dim, 2}));
+      TestFixture::op(reference, item.data().slice({dim, 2}));
 
       // Fails if any *other* multi-dimensional coord/label also depends on the
       // slicing dimension, since it will have mismatching values. Note that
       // this behavior is intended and important. It is crucial for preventing
       // operations between misaligned data in case a coordinate is
       // multi-dimensional.
-      const auto coords = item.second.coords();
-      const auto labels = item.second.labels();
+      const auto coords = item.coords();
+      const auto labels = item.labels();
       if (std::all_of(coords.begin(), coords.end(),
                       [dim](const auto &coord) {
                         return coord.first == dim ||
@@ -185,10 +185,10 @@ TYPED_TEST(DataProxyBinaryEqualsOpTest, slice_lhs_with_variance) {
             return labels_.second.dims().inner() == dim ||
                    !labels_.second.dims().contains(dim);
           })) {
-        ASSERT_NO_THROW(TestFixture::op(target, item.second.slice({dim, 2})));
+        ASSERT_NO_THROW(TestFixture::op(target, item.slice({dim, 2})));
         EXPECT_EQ(target.data(), reference);
       } else {
-        ASSERT_ANY_THROW(TestFixture::op(target, item.second.slice({dim, 2})));
+        ASSERT_ANY_THROW(TestFixture::op(target, item.slice({dim, 2})));
       }
     }
   }
@@ -242,8 +242,9 @@ TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_DataProxy_self_overlap) {
   auto reference(dataset);
 
   ASSERT_NO_THROW(TestFixture::op(dataset, dataset["data_scalar"]));
-  for (const auto [name, item] : dataset) {
-    EXPECT_EQ(item, TestFixture::op(reference[name], original["data_scalar"]));
+  for (const auto &item : dataset) {
+    EXPECT_EQ(item,
+              TestFixture::op(reference[item.name()], original["data_scalar"]));
   }
 }
 
@@ -253,9 +254,9 @@ TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_Variable_self_overlap) {
   auto reference(dataset);
 
   ASSERT_NO_THROW(TestFixture::op(dataset, dataset["data_scalar"].data()));
-  for (const auto [name, item] : dataset) {
-    EXPECT_EQ(item,
-              TestFixture::op(reference[name], original["data_scalar"].data()));
+  for (const auto &item : dataset) {
+    EXPECT_EQ(item, TestFixture::op(reference[item.name()],
+                                    original["data_scalar"].data()));
   }
 }
 
@@ -266,8 +267,8 @@ TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_DataProxy_self_overlap_slice) {
 
   ASSERT_NO_THROW(
       TestFixture::op(dataset, dataset["values_x"].slice({Dim::X, 1})));
-  for (const auto [name, item] : dataset) {
-    EXPECT_EQ(item, TestFixture::op(reference[name],
+  for (const auto &item : dataset) {
+    EXPECT_EQ(item, TestFixture::op(reference[item.name()],
                                     original["values_x"].slice({Dim::X, 1})));
   }
 }
@@ -278,8 +279,8 @@ TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_Dataset) {
   auto reference(a);
 
   ASSERT_NO_THROW(TestFixture::op(a, b));
-  for (const auto [name, item] : a) {
-    EXPECT_EQ(item, TestFixture::op(reference[name], b[name]));
+  for (const auto &item : a) {
+    EXPECT_EQ(item, TestFixture::op(reference[item.name()], b[item.name()]));
   }
 }
 
@@ -298,11 +299,11 @@ TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_Dataset_with_missing_items) {
   auto reference(a);
 
   ASSERT_NO_THROW(TestFixture::op(a, b));
-  for (const auto [name, item] : a) {
-    if (name == "extra") {
-      EXPECT_EQ(item, reference[name]);
+  for (const auto &item : a) {
+    if (item.name() == "extra") {
+      EXPECT_EQ(item, reference[item.name()]);
     } else {
-      EXPECT_EQ(item, TestFixture::op(reference[name], b[name]));
+      EXPECT_EQ(item, TestFixture::op(reference[item.name()], b[item.name()]));
     }
   }
 }
@@ -321,13 +322,14 @@ TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_DatasetProxy_self_overlap) {
   auto reference(dataset);
 
   ASSERT_NO_THROW(TestFixture::op(dataset, slice));
-  for (const auto [name, item] : dataset) {
+  for (const auto &item : dataset) {
     // Items independent of Z are removed when creating `slice`.
     if (item.dims().contains(Dim::Z)) {
-      EXPECT_EQ(item, TestFixture::op(reference[name],
-                                      reference[name].slice({Dim::Z, 3})));
+      EXPECT_EQ(item,
+                TestFixture::op(reference[item.name()],
+                                reference[item.name()].slice({Dim::Z, 3})));
     } else {
-      EXPECT_EQ(item, reference[name]);
+      EXPECT_EQ(item, reference[item.name()]);
     }
   }
 }
@@ -486,16 +488,16 @@ TYPED_TEST(DatasetProxyBinaryEqualsOpTest, rhs_DataProxy_self_overlap) {
   TestFixture::op(reference, dataset["data_scalar"]);
 
   for (scipp::index z = 0; z < dataset.coords()[Dim::Z].dims()[Dim::Z]; ++z) {
-    for (const auto &[name, item] : dataset)
+    for (const auto &item : dataset)
       if (item.dims().contains(Dim::Z)) {
-        EXPECT_NE(item, reference[name]);
+        EXPECT_NE(item, reference[item.name()]);
       }
     ASSERT_NO_THROW(
         TestFixture::op(dataset.slice({Dim::Z, z}), dataset["data_scalar"]));
   }
-  for (const auto &[name, item] : dataset)
+  for (const auto &item : dataset)
     if (item.dims().contains(Dim::Z)) {
-      EXPECT_EQ(item, reference[name]);
+      EXPECT_EQ(item, reference[item.name()]);
     }
 }
 
@@ -505,16 +507,16 @@ TYPED_TEST(DatasetProxyBinaryEqualsOpTest, rhs_DataProxy_self_overlap_slice) {
   TestFixture::op(reference, dataset["values_x"].slice({Dim::X, 1}));
 
   for (scipp::index z = 0; z < dataset.coords()[Dim::Z].dims()[Dim::Z]; ++z) {
-    for (const auto &[name, item] : dataset)
+    for (const auto &item : dataset)
       if (item.dims().contains(Dim::Z)) {
-        EXPECT_NE(item, reference[name]);
+        EXPECT_NE(item, reference[item.name()]);
       }
     ASSERT_NO_THROW(TestFixture::op(dataset.slice({Dim::Z, z}),
                                     dataset["values_x"].slice({Dim::X, 1})));
   }
-  for (const auto &[name, item] : dataset)
+  for (const auto &item : dataset)
     if (item.dims().contains(Dim::Z)) {
-      EXPECT_EQ(item, reference[name]);
+      EXPECT_EQ(item, reference[item.name()]);
     }
 }
 
@@ -533,11 +535,11 @@ TYPED_TEST(DatasetProxyBinaryEqualsOpTest, rhs_Dataset_with_missing_items) {
   auto reference(a);
 
   ASSERT_NO_THROW(TestFixture::op(DatasetProxy(a), b));
-  for (const auto [name, item] : a) {
-    if (name == "extra") {
-      EXPECT_EQ(item, reference[name]);
+  for (const auto &item : a) {
+    if (item.name() == "extra") {
+      EXPECT_EQ(item, reference[item.name()]);
     } else {
-      EXPECT_EQ(item, TestFixture::op(reference[name], b[name]));
+      EXPECT_EQ(item, TestFixture::op(reference[item.name()], b[item.name()]));
     }
   }
 }
@@ -557,13 +559,14 @@ TYPED_TEST(DatasetProxyBinaryEqualsOpTest, rhs_DatasetProxy_self_overlap) {
 
   ASSERT_NO_THROW(TestFixture::op(dataset.slice({Dim::Z, 0, 3}), slice));
   ASSERT_NO_THROW(TestFixture::op(dataset.slice({Dim::Z, 3, 6}), slice));
-  for (const auto [name, item] : dataset) {
+  for (const auto &item : dataset) {
     // Items independent of Z are removed when creating `slice`.
     if (item.dims().contains(Dim::Z)) {
-      EXPECT_EQ(item, TestFixture::op(reference[name],
-                                      reference[name].slice({Dim::Z, 3})));
+      EXPECT_EQ(item,
+                TestFixture::op(reference[item.name()],
+                                reference[item.name()].slice({Dim::Z, 3})));
     } else {
-      EXPECT_EQ(item, reference[name]);
+      EXPECT_EQ(item, reference[item.name()]);
     }
   }
 }
@@ -579,13 +582,14 @@ TYPED_TEST(DatasetProxyBinaryEqualsOpTest,
   // detect and prevent this.
   ASSERT_NO_THROW(TestFixture::op(dataset.slice({Dim::Z, 3, 6}), slice));
   ASSERT_NO_THROW(TestFixture::op(dataset.slice({Dim::Z, 0, 3}), slice));
-  for (const auto [name, item] : dataset) {
+  for (const auto &item : dataset) {
     // Items independent of Z are removed when creating `slice`.
     if (item.dims().contains(Dim::Z)) {
-      EXPECT_NE(item, TestFixture::op(reference[name],
-                                      reference[name].slice({Dim::Z, 3})));
+      EXPECT_NE(item,
+                TestFixture::op(reference[item.name()],
+                                reference[item.name()].slice({Dim::Z, 3})));
     } else {
-      EXPECT_EQ(item, reference[name]);
+      EXPECT_EQ(item, reference[item.name()]);
     }
   }
 }
@@ -866,9 +870,9 @@ TYPED_TEST(DatasetBinaryOpTest, dataset_lhs_datasetconstproxy_rhs) {
   DatasetConstProxy dataset_b_proxy(dataset_b);
   const auto res = TestFixture::op(dataset_a, dataset_b_proxy);
 
-  for (const auto &[name, item] : res) {
-    const auto reference =
-        TestFixture::op(dataset_a[name].data(), dataset_b[name].data());
+  for (const auto &item : res) {
+    const auto reference = TestFixture::op(dataset_a[item.name()].data(),
+                                           dataset_b[item.name()].data());
     EXPECT_EQ(reference, item.data());
   }
 }
@@ -893,9 +897,9 @@ TYPED_TEST(DatasetBinaryOpTest, datasetconstproxy_lhs_datasetconstproxy_rhs) {
   DatasetConstProxy dataset_b_proxy(dataset_b);
   const auto res = TestFixture::op(dataset_a_proxy, dataset_b_proxy);
 
-  for (const auto &[name, item] : res) {
-    const auto reference =
-        TestFixture::op(dataset_a[name].data(), dataset_b[name].data());
+  for (const auto &item : res) {
+    const auto reference = TestFixture::op(dataset_a[item.name()].data(),
+                                           dataset_b[item.name()].data());
     EXPECT_EQ(reference, item.data());
   }
 }
@@ -906,8 +910,8 @@ TYPED_TEST(DatasetBinaryOpTest, dataset_lhs_dataproxy_rhs) {
 
   const auto res = TestFixture::op(dataset_a, dataset_b["data_scalar"]);
 
-  for (const auto &[name, item] : res) {
-    const auto reference = TestFixture::op(dataset_a[name].data(),
+  for (const auto &item : res) {
+    const auto reference = TestFixture::op(dataset_a[item.name()].data(),
                                            dataset_b["data_scalar"].data());
     EXPECT_EQ(reference, item.data());
   }

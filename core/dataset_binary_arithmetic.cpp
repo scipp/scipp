@@ -86,10 +86,10 @@ constexpr static auto divide = [](const auto &a, const auto &b) {
 
 template <class Op, class A, class B>
 auto &apply(const Op &op, A &a, const B &b) {
-  for (const auto &[name, item] : b)
-    dry_run_op(a[name], item, op);
-  for (const auto &[name, item] : b)
-    op(a[name], item);
+  for (const auto &item : b)
+    dry_run_op(a[item.name()], item, op);
+  for (const auto &item : b)
+    op(a[item.name()], item);
   return a;
 }
 
@@ -109,15 +109,14 @@ bool have_common_underlying<DataProxy, VariableConstProxy>(
 template <class Op, class A, class B>
 decltype(auto) apply_with_delay(const Op &op, A &&a, const B &b) {
   for (const auto &item : a)
-    dry_run_op(item.second, b, op);
+    dry_run_op(item, b, op);
   // For `b` referencing data in `a` we delay operation. The alternative would
   // be to make a deep copy of `other` before starting the iteration over items.
   std::optional<DataProxy> delayed;
   // Note the inefficiency here: We are comparing some or all of the coords and
   // labels for each item. This could be improved by implementing the operations
   // for detail::DatasetData instead of DataProxy.
-  for (const auto &[name, item] : a) {
-    static_cast<void>(name);
+  for (const auto &item : a) {
     if (have_common_underlying(item, b))
       delayed = item;
     else
@@ -131,25 +130,25 @@ decltype(auto) apply_with_delay(const Op &op, A &&a, const B &b) {
 template <class Op, class A, class B>
 auto apply_with_broadcast(const Op &op, const A &a, const B &b) {
   Dataset res;
-  for (const auto &[name, item] : b)
-    if (const auto it = a.find(name); it != a.end())
-      res.setData(std::string(name), op(it->second, item));
+  for (const auto &item : b)
+    if (const auto it = a.find(item.name()); it != a.end())
+      res.setData(item.name(), op(*it, item));
   return res;
 }
 
 template <class Op, class A>
 auto apply_with_broadcast(const Op &op, const A &a, const DataConstProxy &b) {
   Dataset res;
-  for (const auto &[name, item] : a)
-    res.setData(std::string(name), op(item, b));
+  for (const auto &item : a)
+    res.setData(item.name(), op(item, b));
   return res;
 }
 
 template <class Op, class B>
 auto apply_with_broadcast(const Op &op, const DataConstProxy &a, const B &b) {
   Dataset res;
-  for (const auto &[name, item] : b)
-    res.setData(std::string(name), op(a, item));
+  for (const auto &item : b)
+    res.setData(item.name(), op(a, item));
   return res;
 }
 
@@ -157,8 +156,8 @@ template <class Op, class A>
 auto apply_with_broadcast(const Op &op, const A &a,
                           const VariableConstProxy &b) {
   Dataset res;
-  for (const auto &[name, item] : a)
-    res.setData(std::string(name), op(item, b));
+  for (const auto &item : a)
+    res.setData(item.name(), op(item, b));
   return res;
 }
 
@@ -166,8 +165,8 @@ template <class Op, class B>
 auto apply_with_broadcast(const Op &op, const VariableConstProxy &a,
                           const B &b) {
   Dataset res;
-  for (const auto &[name, item] : b)
-    res.setData(std::string(name), op(a, item));
+  for (const auto &item : b)
+    res.setData(item.name(), op(a, item));
   return res;
 }
 

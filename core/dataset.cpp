@@ -231,7 +231,7 @@ void Dataset::rebuildDims() {
   m_dims.clear();
 
   for (const auto &d : *this) {
-    setDims(d.second.dims());
+    setDims(d.dims());
   }
   for (const auto &c : m_coords) {
     setDims(c.second.dims(), c.first);
@@ -708,8 +708,8 @@ DataProxy DataProxy::assign(const VariableConstProxy &other) const {
 }
 
 DatasetProxy DatasetProxy::assign(const DatasetConstProxy &other) const {
-  for (const auto &[name, data] : other)
-    operator[](name).assign(data);
+  for (const auto &data : other)
+    operator[](data.name()).assign(data);
   return *this;
 }
 
@@ -729,8 +729,8 @@ DatasetProxy::DatasetProxy(Dataset &dataset)
   for (auto &item : dataset.m_data)
     m_mutableItems.emplace_back(detail::make_item{this}(item));
   m_items.reserve(size());
-  for (const auto &[name, view] : m_mutableItems)
-    m_items.emplace_back(name, view);
+  for (const auto &view : m_mutableItems)
+    m_items.emplace_back(view);
 }
 
 DatasetProxy::DatasetProxy(DatasetConstProxy &&base, Dataset *dataset)
@@ -807,7 +807,7 @@ bool DatasetConstProxy::contains(const std::string &name) const noexcept {
 namespace {
 template <class T> const auto &getitem(const T &view, const std::string &name) {
   if (auto it = view.find(name); it != view.end())
-    return it->second;
+    return *it;
   throw except::NotFoundError("Expected " + to_string(view) + " to contain " +
                               name + ".");
 }
@@ -836,14 +836,14 @@ DatasetConstProxy DatasetConstProxy::slice(const Slice slice1) const {
   sliced.m_slices = m_slices;
   auto &items = sliced.m_items;
   for (const auto &item : *this)
-    if (item.second.dims().contains(slice1.dim()))
-      items.emplace_back(item.first, item.second.slice(slice1));
+    if (item.dims().contains(slice1.dim()))
+      items.emplace_back(item.slice(slice1));
   // The dimension extent is either given by the coordinate, or by data, which
   // can be 1 shorter in case of a bin-edge coordinate.
   scipp::index extent = currentDims.at(slice1.dim());
   for (const auto &item : *this)
-    if (item.second.dims().contains(slice1.dim()) &&
-        item.second.dims()[slice1.dim()] == extent - 1) {
+    if (item.dims().contains(slice1.dim()) &&
+        item.dims()[slice1.dim()] == extent - 1) {
       --extent;
       break;
     }
@@ -885,9 +885,9 @@ template <class A, class B> bool dataset_equals(const A &a, const B &b) {
     return false;
   if (a.attrs() != b.attrs())
     return false;
-  for (const auto &[name, data] : a) {
+  for (const auto &data : a) {
     try {
-      if (data != b[std::string(name)])
+      if (data != b[data.name()])
         return false;
     } catch (except::NotFoundError &) {
       return false;

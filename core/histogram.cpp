@@ -142,9 +142,9 @@ DataArray histogram(const DataConstProxy &sparse, const Variable &binEdges) {
 Dataset histogram(const Dataset &dataset, const VariableConstProxy &bins) {
   auto out(Dataset(DatasetConstProxy::makeProxyWithEmptyIndexes(dataset)));
   out.setCoord(bins.dims().inner(), bins);
-  for (const auto &[name, item] : dataset) {
+  for (const auto &item : dataset) {
     if (item.dims().sparse())
-      out.setData(std::string(name), histogram(item, bins));
+      out.setData(item.name(), histogram(item, bins));
   }
   return out;
 }

@@ -21,8 +21,8 @@ template <class T> bool has_dim(const T &d, const Dim dim) {
 
 template <class T> T convert_with_calibration_impl(T d, Dataset cal) {
   for (const auto &item : iter(d))
-    if (item.second.hasData())
-      expect::notCountDensity(item.second.unit());
+    if (item.hasData())
+      expect::notCountDensity(item.unit());
 
   // 1. There may be a grouping of detectors, in which case we need to apply it
   // to the cal information first.
@@ -62,8 +62,7 @@ template <class T> T convert_with_calibration_impl(T d, Dataset cal) {
   }
 
   // 3. Transform sparse coordinates
-  for (const auto &[name, data] : iter(d)) {
-    static_cast<void>(name);
+  for (const auto &data : iter(d)) {
     if (data.coords()[Dim::Tof].dims().sparse()) {
       data.coords()[Dim::Tof] -= cal["tzero"].data();
       data.coords()[Dim::Tof] /= cal["difc"].data();

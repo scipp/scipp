@@ -257,10 +257,9 @@ template <class D> struct make_item {
   using P = std::conditional_t<is_const<D>::value, DataConstProxy, DataProxy>;
   template <class T> auto operator()(T &item) const {
     if constexpr (std::is_same_v<std::remove_const_t<D>, Dataset>)
-      return std::pair<const std::string &, P>{item.first, P(*dataset, item)};
+      return P(*dataset, item);
     else
-      return std::pair<std::string, P>{
-          item.first, P(dataset->dataset(), item, dataset->slices())};
+      return P(dataset->dataset(), item, dataset->slices());
   }
 };
 template <class D> make_item(D *)->make_item<D>;
@@ -292,8 +291,12 @@ public:
       setMask(std::string(name), std::move(mask));
     for (auto &&[name, attr] : attrs)
       setAttr(std::string(name), std::move(attr));
-    for (auto &&[name, item] : data)
-      setData(std::string(name), std::move(item));
+    if constexpr (std::is_same_v<std::decay_t<DataMap>, DatasetConstProxy>)
+      for (auto &&item : data)
+        setData(item.name(), item);
+    else
+      for (auto &&[name, item] : data)
+        setData(std::string(name), std::move(item));
   }
 
   /// Return the number of data items in the dataset.
@@ -823,7 +826,7 @@ public:
   auto find(const std::string &name) const && = delete;
   auto find(const std::string &name) const &noexcept {
     return std::find_if(begin(), end(), [&name](const auto &item) {
-      return item.second.name() == name;
+      return item.name() == name;
     });
   }
 
@@ -851,8 +854,7 @@ private:
   const Dataset *m_dataset;
 
 protected:
-  boost::container::small_vector<std::pair<std::string, DataConstProxy>, 8>
-      m_items;
+  boost::container::small_vector<DataConstProxy, 8> m_items;
   void expectValidKey(const std::string &name) const;
   detail::slice_list m_slices;
 };
@@ -880,7 +882,7 @@ public:
   auto find(const std::string &name) const && = delete;
   auto find(const std::string &name) const &noexcept {
     return std::find_if(begin(), end(), [&name](const auto &item) {
-      return item.second.name() == name;
+      return item.name() == name;
     });
   }
 
@@ -944,8 +946,7 @@ public:
 
 private:
   Dataset *m_mutableDataset;
-  boost::container::small_vector<std::pair<std::string, DataProxy>, 8>
-      m_mutableItems;
+  boost::container::small_vector<DataProxy, 8> m_mutableItems;
 };
 
 SCIPP_CORE_EXPORT DataArray copy(const DataConstProxy &array);
@@ -996,7 +997,7 @@ public:
   operator DataConstProxy() const;
   operator DataProxy();
 
-  const std::string &name() const { return m_holder.begin()->first; }
+  const std::string &name() const { return m_holder.begin()->name(); }
 
   CoordsConstProxy coords() const { return get().coords(); }
   CoordsProxy coords() { return get().coords(); }

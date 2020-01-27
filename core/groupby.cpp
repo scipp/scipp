@@ -36,8 +36,8 @@ T GroupBy<T>::reduce(Op op, const Dim reductionDim) const {
   for (scipp::index group = 0; group < size(); ++group) {
     const auto out_slice = out.slice({dim(), group});
     if constexpr (std::is_same_v<T, Dataset>) {
-      for (const auto &[name, item] : m_data) {
-        const auto out_data = out_slice[name].data();
+      for (const auto &item : m_data) {
+        const auto out_data = out_slice[item.name()].data();
         op(out_data, item, groups()[group], reductionDim);
       }
     } else {
@@ -73,8 +73,8 @@ template <class T> T GroupBy<T>::flatten(const Dim reductionDim) const {
   for (scipp::index group = 0; group < size(); ++group) {
     const auto out_slice = out.slice({dim(), group});
     if constexpr (std::is_same_v<T, Dataset>) {
-      for (const auto &[name, item] : m_data)
-        apply(out_slice[name], item, group);
+      for (const auto &item : m_data)
+        apply(out_slice[item.name()], item, group);
     } else {
       apply(out_slice, m_data, group);
     }
@@ -168,9 +168,9 @@ template <class T> T GroupBy<T>::mean(const Dim reductionDim) const {
 
   // 3. sum/N -> mean
   if constexpr (std::is_same_v<T, Dataset>) {
-    for (const auto &[name, item] : out) {
+    for (const auto &item : out) {
       if (isInt(item.data().dtype()))
-        out.setData(name, item.data() * scale);
+        out.setData(item.name(), item.data() * scale);
       else
         item *= scale;
     }
