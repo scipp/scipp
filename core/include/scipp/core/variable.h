@@ -779,6 +779,10 @@ public:
     m_view = slice.data().makeView(dim, begin, end);
   }
 
+  // For internal use in DataConstProxy. TODO make this private.
+  VariableProxy(VariableConstProxy &&base)
+      : VariableConstProxy(std::move(base)), m_mutableVariable{nullptr} {}
+
   VariableProxy slice(const Slice slice) const {
     return VariableProxy(*this, slice.dim(), slice.begin(), slice.end());
   }

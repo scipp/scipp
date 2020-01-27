@@ -67,9 +67,12 @@ class SCIPP_CORE_EXPORT DataConstProxy {
 public:
   DataConstProxy(const Dataset &dataset,
                  const detail::dataset_item_map::value_type &data,
-                 const detail::slice_list &slices = {})
+                 const detail::slice_list &slices = {},
+                 std::optional<VariableProxy> &&view = std::nullopt)
       : m_dataset(&dataset), m_data(&data), m_slices(slices) {
-    if (hasData())
+    if (view)
+      m_view = std::move(view);
+    else if (hasData())
       m_view.emplace(detail::makeSlice(*m_data->second.data, this->slices()));
   }
 
@@ -125,11 +128,13 @@ public:
 
   auto &underlying() const { return m_data->second; }
 
+protected:
+  std::optional<VariableProxy> m_view;
+
 private:
   friend class DatasetConstProxy;
   friend class DatasetProxy;
 
-  std::optional<VariableConstProxy> m_view;
   const Dataset *m_dataset;
   const detail::dataset_item_map::value_type *m_data;
   detail::slice_list m_slices;
@@ -149,12 +154,11 @@ class SCIPP_CORE_EXPORT DataProxy : public DataConstProxy {
 public:
   DataProxy(Dataset &dataset, detail::dataset_item_map::value_type &data,
             const detail::slice_list &slices = {})
-      : DataConstProxy(dataset, data, slices), m_mutableDataset(&dataset),
-        m_mutableData(&data) {
-    if (hasData())
-      m_mutableView.emplace(
-          detail::makeSlice(*m_mutableData->second.data, this->slices()));
-  }
+      : DataConstProxy(dataset, data, slices,
+                       data.second.data.has_value()
+                           ? detail::makeSlice(*data.second.data, slices)
+                           : std::optional<VariableProxy>{}),
+        m_mutableDataset(&dataset), m_mutableData(&data) {}
 
   CoordsProxy coords() const noexcept;
   LabelsProxy labels() const noexcept;
@@ -173,7 +177,7 @@ public:
   const VariableProxy &data() const {
     if (!hasData())
       throw except::SparseDataError("No data in item.");
-    return *m_mutableView;
+    return *m_view;
   }
   /// Return typed proxy for data values.
   template <class T> auto values() const { return data().template values<T>(); }
@@ -237,7 +241,6 @@ public:
   }
 
 private:
-  std::optional<VariableProxy> m_mutableView;
   Dataset *m_mutableDataset;
   detail::dataset_item_map::value_type *m_mutableData;
 };
