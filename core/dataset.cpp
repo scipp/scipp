@@ -575,6 +575,17 @@ void Dataset::rename(const Dim from, const Dim to) {
   }
 }
 
+DataConstProxy::DataConstProxy(const Dataset &dataset,
+                               const detail::dataset_item_map::value_type &data,
+                               const detail::slice_list &slices,
+                               std::optional<VariableProxy> &&view)
+    : m_dataset(&dataset), m_data(&data), m_slices(slices) {
+  if (view)
+    m_view = std::move(view);
+  else if (hasData())
+    m_view.emplace(detail::makeSlice(*m_data->second.data, this->slices()));
+}
+
 /// Return the name of the proxy.
 ///
 /// The name of the proxy is equal to the name of the item in a Dataset, or the
@@ -641,6 +652,49 @@ AttrsConstProxy DataConstProxy::attrs() const noexcept {
 MasksConstProxy DataConstProxy::masks() const noexcept {
   return MasksConstProxy(
       makeProxyItems<std::string>(dims(), m_dataset->m_masks), slices());
+}
+
+DataConstProxy DataConstProxy::slice(const Slice slice1) const {
+  const auto &dims_ = dims();
+  expect::validSlice(dims_, slice1);
+  auto tmp(m_slices);
+  tmp.emplace_back(slice1, dims_[slice1.dim()]);
+  return {*m_dataset, *m_data, std::move(tmp)};
+}
+
+DataConstProxy DataConstProxy::slice(const Slice slice1,
+                                     const Slice slice2) const {
+  return slice(slice1).slice(slice2);
+}
+
+DataConstProxy DataConstProxy::slice(const Slice slice1, const Slice slice2,
+                                     const Slice slice3) const {
+  return slice(slice1, slice2).slice(slice3);
+}
+
+DataProxy::DataProxy(Dataset &dataset,
+                     detail::dataset_item_map::value_type &data,
+                     const detail::slice_list &slices)
+    : DataConstProxy(dataset, data, slices,
+                     data.second.data.has_value()
+                         ? detail::makeSlice(*data.second.data, slices)
+                         : std::optional<VariableProxy>{}),
+      m_mutableDataset(&dataset), m_mutableData(&data) {}
+
+DataProxy DataProxy::slice(const Slice slice1) const {
+  expect::validSlice(dims(), slice1);
+  auto tmp(slices());
+  tmp.emplace_back(slice1, dims()[slice1.dim()]);
+  return {*m_mutableDataset, *m_mutableData, std::move(tmp)};
+}
+
+DataProxy DataProxy::slice(const Slice slice1, const Slice slice2) const {
+  return slice(slice1).slice(slice2);
+}
+
+DataProxy DataProxy::slice(const Slice slice1, const Slice slice2,
+                           const Slice slice3) const {
+  return slice(slice1, slice2).slice(slice3);
 }
 
 /// Return a proxy to all coordinates of the data proxy.

@@ -68,13 +68,7 @@ public:
   DataConstProxy(const Dataset &dataset,
                  const detail::dataset_item_map::value_type &data,
                  const detail::slice_list &slices = {},
-                 std::optional<VariableProxy> &&view = std::nullopt)
-      : m_dataset(&dataset), m_data(&data), m_slices(slices) {
-    if (view)
-      m_view = std::move(view);
-    else if (hasData())
-      m_view.emplace(detail::makeSlice(*m_data->second.data, this->slices()));
-  }
+                 std::optional<VariableProxy> &&view = std::nullopt);
 
   const std::string &name() const noexcept;
 
@@ -108,27 +102,22 @@ public:
     return data().template variances<T>();
   }
 
-  DataConstProxy slice(const Slice slice1) const {
-    expect::validSlice(dims(), slice1);
-    auto tmp(m_slices);
-    tmp.emplace_back(slice1, dims()[slice1.dim()]);
-    return {*m_dataset, *m_data, std::move(tmp)};
-  }
-
-  DataConstProxy slice(const Slice slice1, const Slice slice2) const {
-    return slice(slice1).slice(slice2);
-  }
-
+  DataConstProxy slice(const Slice slice1) const;
+  DataConstProxy slice(const Slice slice1, const Slice slice2) const;
   DataConstProxy slice(const Slice slice1, const Slice slice2,
-                       const Slice slice3) const {
-    return slice(slice1, slice2).slice(slice3);
-  }
+                       const Slice slice3) const;
 
   const detail::slice_list &slices() const noexcept { return m_slices; }
 
   auto &underlying() const { return m_data->second; }
 
 protected:
+  // Note that m_view is a VariableProxy, not a VariableConstProxy. In case
+  // *this (DataConstProxy) is stand-alone (not part of DataProxy), m_view is
+  // actually just a VariableConstProxy wrapped in an (invalid) VariableProxy.
+  // The interface guarantees that the invalid mutable view is not accessible.
+  // This wrapping avoids inefficient duplication of the view in the child class
+  // DataProxy.
   std::optional<VariableProxy> m_view;
 
 private:
@@ -153,12 +142,7 @@ class Dataset;
 class SCIPP_CORE_EXPORT DataProxy : public DataConstProxy {
 public:
   DataProxy(Dataset &dataset, detail::dataset_item_map::value_type &data,
-            const detail::slice_list &slices = {})
-      : DataConstProxy(dataset, data, slices,
-                       data.second.data.has_value()
-                           ? detail::makeSlice(*data.second.data, slices)
-                           : std::optional<VariableProxy>{}),
-        m_mutableDataset(&dataset), m_mutableData(&data) {}
+            const detail::slice_list &slices = {});
 
   explicit DataProxy(DataConstProxy &&base)
       : DataConstProxy(std::move(base)), m_mutableDataset{nullptr},
@@ -191,21 +175,10 @@ public:
     return data().template variances<T>();
   }
 
-  DataProxy slice(const Slice slice1) const {
-    expect::validSlice(dims(), slice1);
-    auto tmp(slices());
-    tmp.emplace_back(slice1, dims()[slice1.dim()]);
-    return {*m_mutableDataset, *m_mutableData, std::move(tmp)};
-  }
-
-  DataProxy slice(const Slice slice1, const Slice slice2) const {
-    return slice(slice1).slice(slice2);
-  }
-
+  DataProxy slice(const Slice slice1) const;
+  DataProxy slice(const Slice slice1, const Slice slice2) const;
   DataProxy slice(const Slice slice1, const Slice slice2,
-                  const Slice slice3) const {
-    return slice(slice1, slice2).slice(slice3);
-  }
+                  const Slice slice3) const;
 
   DataProxy assign(const DataConstProxy &other) const;
   DataProxy assign(const Variable &other) const;
