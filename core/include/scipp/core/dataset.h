@@ -144,10 +144,6 @@ public:
   DataProxy(Dataset &dataset, detail::dataset_item_map::value_type &data,
             const detail::slice_list &slices = {});
 
-  explicit DataProxy(DataConstProxy &&base)
-      : DataConstProxy(std::move(base)), m_mutableDataset{nullptr},
-        m_mutableData{nullptr} {}
-
   CoordsProxy coords() const noexcept;
   LabelsProxy labels() const noexcept;
   MasksProxy masks() const noexcept;
@@ -218,6 +214,12 @@ public:
   }
 
 private:
+  friend class DatasetConstProxy;
+  // For internal use in DatasetConstProxy.
+  explicit DataProxy(DataConstProxy &&base)
+      : DataConstProxy(std::move(base)), m_mutableDataset{nullptr},
+        m_mutableData{nullptr} {}
+
   Dataset *m_mutableDataset;
   detail::dataset_item_map::value_type *m_mutableData;
 };
@@ -952,6 +954,10 @@ public:
 
 protected:
   explicit DatasetConstProxy() : m_dataset(nullptr) {}
+  template <class T>
+  static std::pair<boost::container::small_vector<DataProxy, 8>,
+                   detail::slice_list>
+  slice_items(const T &view, const Slice slice);
   const Dataset *m_dataset;
   boost::container::small_vector<DataProxy, 8> m_items;
   void expectValidKey(const std::string &name) const;

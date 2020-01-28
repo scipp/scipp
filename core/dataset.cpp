@@ -583,7 +583,8 @@ DataConstProxy::DataConstProxy(const Dataset &dataset,
   if (view)
     m_view = std::move(view);
   else if (hasData())
-    m_view.emplace(detail::makeSlice(*m_data->second.data, this->slices()));
+    m_view.emplace(
+        VariableProxy(detail::makeSlice(*m_data->second.data, this->slices())));
 }
 
 /// Return the name of the proxy.
@@ -675,10 +676,11 @@ DataConstProxy DataConstProxy::slice(const Slice slice1, const Slice slice2,
 DataProxy::DataProxy(Dataset &dataset,
                      detail::dataset_item_map::value_type &data,
                      const detail::slice_list &slices)
-    : DataConstProxy(dataset, data, slices,
-                     data.second.data.has_value()
-                         ? detail::makeSlice(*data.second.data, slices)
-                         : std::optional<VariableProxy>{}),
+    : DataConstProxy(
+          dataset, data, slices,
+          data.second.data.has_value()
+              ? VariableProxy(detail::makeSlice(*data.second.data, slices))
+              : std::optional<VariableProxy>{}),
       m_mutableDataset(&dataset), m_mutableData(&data) {}
 
 DataProxy DataProxy::slice(const Slice slice1) const {
@@ -865,7 +867,10 @@ const DataProxy &DatasetProxy::operator[](const std::string &name) const {
   return getitem(*this, name);
 }
 
-template <class T> auto slice_items(const T &view, const Slice slice) {
+// This is a member so it gets access to a private constructor of DataProxy.
+template <class T>
+std::pair<boost::container::small_vector<DataProxy, 8>, detail::slice_list>
+DatasetConstProxy::slice_items(const T &view, const Slice slice) {
   const auto currentDims = view.dimensions();
   expect::validSlice(currentDims, slice);
   auto slices = view.slices();
