@@ -873,7 +873,7 @@ std::pair<boost::container::small_vector<DataProxy, 8>, detail::slice_list>
 DatasetConstProxy::slice_items(const T &view, const Slice slice) {
   auto slices = view.slices();
   boost::container::small_vector<DataProxy, 8> items;
-  scipp::index extent = INT64_MAX;
+  scipp::index extent = std::numeric_limits<scipp::index>::max();
   for (const auto &item : view) {
     const auto &dims = item.dims();
     if (dims.contains(slice.dim())) {
@@ -883,7 +883,7 @@ DatasetConstProxy::slice_items(const T &view, const Slice slice) {
       extent = std::min(extent, dims[slice.dim()]);
     }
   }
-  if (extent == INT64_MAX) {
+  if (extent == std::numeric_limits<scipp::index>::max()) {
     // Fallback: Could not determine extent from data (not data that depends on
     // slicing dimension), use `dimensions()` to also consider coords.
     const auto currentDims = view.dimensions();
