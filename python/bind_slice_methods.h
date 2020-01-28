@@ -22,8 +22,7 @@ using namespace scipp::core;
 template <class T> auto dim_extent(const T &object, const Dim dim) {
   if constexpr (std::is_same_v<T, Dataset> || std::is_same_v<T, DatasetProxy>) {
     scipp::index extent = -1;
-    for (const auto &[key, item] : object) {
-      static_cast<void>(key);
+    for (const auto &item : object) {
       if (item.dims().contains(dim)) {
         if (extent == -1)
           extent = item.dims()[dim];

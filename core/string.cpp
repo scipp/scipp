@@ -268,7 +268,7 @@ std::string do_to_string(const D &dataset, const std::string &id,
       s << "Data:\n";
     std::set<std::string> sorted_items;
     for (const auto &item : dataset)
-      sorted_items.insert(item.first);
+      sorted_items.insert(item.name());
     for (const auto &name : sorted_items)
       s << format_data_proxy(name, dataset[name], dims);
   }
@@ -281,7 +281,7 @@ template <class T> Dimensions dimensions(const T &dataset) {
   Dimensions datasetDims;
   Dim sparse = Dim::Invalid;
   for (const auto &item : dataset) {
-    const auto &dims = item.second.dims();
+    const auto &dims = item.dims();
     for (const auto dim : dims.labels()) {
       if (!datasetDims.contains(dim)) {
         if (dim == dims.sparseDim())

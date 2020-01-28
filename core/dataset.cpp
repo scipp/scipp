@@ -231,7 +231,7 @@ void Dataset::rebuildDims() {
   m_dims.clear();
 
   for (const auto &d : *this) {
-    setDims(d.second.dims());
+    setDims(d.dims());
   }
   for (const auto &c : m_coords) {
     setDims(c.second.dims(), c.first);
@@ -575,6 +575,18 @@ void Dataset::rename(const Dim from, const Dim to) {
   }
 }
 
+DataConstProxy::DataConstProxy(const Dataset &dataset,
+                               const detail::dataset_item_map::value_type &data,
+                               const detail::slice_list &slices,
+                               std::optional<VariableProxy> &&view)
+    : m_dataset(&dataset), m_data(&data), m_slices(slices) {
+  if (view)
+    m_view = std::move(view);
+  else if (hasData())
+    m_view.emplace(
+        VariableProxy(detail::makeSlice(*m_data->second.data, this->slices())));
+}
+
 /// Return the name of the proxy.
 ///
 /// The name of the proxy is equal to the name of the item in a Dataset, or the
@@ -643,6 +655,50 @@ MasksConstProxy DataConstProxy::masks() const noexcept {
       makeProxyItems<std::string>(dims(), m_dataset->m_masks), slices());
 }
 
+DataConstProxy DataConstProxy::slice(const Slice slice1) const {
+  const auto &dims_ = dims();
+  expect::validSlice(dims_, slice1);
+  auto tmp(m_slices);
+  tmp.emplace_back(slice1, dims_[slice1.dim()]);
+  return {*m_dataset, *m_data, std::move(tmp)};
+}
+
+DataConstProxy DataConstProxy::slice(const Slice slice1,
+                                     const Slice slice2) const {
+  return slice(slice1).slice(slice2);
+}
+
+DataConstProxy DataConstProxy::slice(const Slice slice1, const Slice slice2,
+                                     const Slice slice3) const {
+  return slice(slice1, slice2).slice(slice3);
+}
+
+DataProxy::DataProxy(Dataset &dataset,
+                     detail::dataset_item_map::value_type &data,
+                     const detail::slice_list &slices)
+    : DataConstProxy(
+          dataset, data, slices,
+          data.second.data.has_value()
+              ? VariableProxy(detail::makeSlice(*data.second.data, slices))
+              : std::optional<VariableProxy>{}),
+      m_mutableDataset(&dataset), m_mutableData(&data) {}
+
+DataProxy DataProxy::slice(const Slice slice1) const {
+  expect::validSlice(dims(), slice1);
+  auto tmp(slices());
+  tmp.emplace_back(slice1, dims()[slice1.dim()]);
+  return {*m_mutableDataset, *m_mutableData, std::move(tmp)};
+}
+
+DataProxy DataProxy::slice(const Slice slice1, const Slice slice2) const {
+  return slice(slice1).slice(slice2);
+}
+
+DataProxy DataProxy::slice(const Slice slice1, const Slice slice2,
+                           const Slice slice3) const {
+  return slice(slice1, slice2).slice(slice3);
+}
+
 /// Return a proxy to all coordinates of the data proxy.
 ///
 /// If the data has a sparse dimension the returned proxy will not contain any
@@ -708,9 +764,24 @@ DataProxy DataProxy::assign(const VariableConstProxy &other) const {
 }
 
 DatasetProxy DatasetProxy::assign(const DatasetConstProxy &other) const {
-  for (const auto &[name, data] : other)
-    operator[](name).assign(data);
+  for (const auto &data : other)
+    operator[](data.name()).assign(data);
   return *this;
+}
+
+DatasetConstProxy::DatasetConstProxy(const Dataset &dataset)
+    : m_dataset(&dataset) {
+  m_items.reserve(dataset.size());
+  for (const auto &item : dataset.m_data)
+    m_items.emplace_back(DataProxy(detail::make_item{this}(item)));
+}
+
+DatasetProxy::DatasetProxy(Dataset &dataset)
+    : DatasetConstProxy(DatasetConstProxy::makeProxyWithEmptyIndexes(dataset)),
+      m_mutableDataset(&dataset) {
+  m_items.reserve(size());
+  for (auto &item : dataset.m_data)
+    m_items.emplace_back(detail::make_item{this}(item));
 }
 
 /// Return a const proxy to all coordinates of the dataset slice.
@@ -773,19 +844,73 @@ MasksProxy DatasetProxy::masks() const noexcept {
 }
 
 bool DatasetConstProxy::contains(const std::string &name) const noexcept {
-  return std::find(m_indices.begin(), m_indices.end(), name) != m_indices.end();
+  return find(name) != end();
 }
 
+namespace {
+template <class T> const auto &getitem(const T &view, const std::string &name) {
+  if (auto it = view.find(name); it != view.end())
+    return *it;
+  throw except::NotFoundError("Expected " + to_string(view) + " to contain " +
+                              name + ".");
+}
+} // namespace
+
 /// Return a const proxy to data and coordinates with given name.
-DataConstProxy DatasetConstProxy::operator[](const std::string &name) const {
-  expect::contains(*this, name);
-  return {*m_dataset, *(*m_dataset).m_data.find(name), slices()};
+const DataConstProxy &DatasetConstProxy::
+operator[](const std::string &name) const {
+  return getitem(*this, name);
 }
 
 /// Return a proxy to data and coordinates with given name.
-DataProxy DatasetProxy::operator[](const std::string &name) const {
-  expect::contains(*this, name);
-  return {*m_mutableDataset, *(*m_mutableDataset).m_data.find(name), slices()};
+const DataProxy &DatasetProxy::operator[](const std::string &name) const {
+  return getitem(*this, name);
+}
+
+// This is a member so it gets access to a private constructor of DataProxy.
+template <class T>
+std::pair<boost::container::small_vector<DataProxy, 8>, detail::slice_list>
+DatasetConstProxy::slice_items(const T &view, const Slice slice) {
+  auto slices = view.slices();
+  boost::container::small_vector<DataProxy, 8> items;
+  scipp::index extent = std::numeric_limits<scipp::index>::max();
+  for (const auto &item : view) {
+    const auto &dims = item.dims();
+    if (dims.contains(slice.dim())) {
+      items.emplace_back(DataProxy(item.slice(slice)));
+      // In principle data may be on bin edges. The overall dimension is then
+      // determined by the extent of data that is *not* on the edges.
+      extent = std::min(extent, dims[slice.dim()]);
+    }
+  }
+  if (extent == std::numeric_limits<scipp::index>::max()) {
+    // Fallback: Could not determine extent from data (not data that depends on
+    // slicing dimension), use `dimensions()` to also consider coords.
+    const auto currentDims = view.dimensions();
+    expect::validSlice(currentDims, slice);
+    extent = currentDims.at(slice.dim());
+  }
+  slices.emplace_back(slice, extent);
+  return std::pair{std::move(items), std::move(slices)};
+}
+
+/// Return a slice of the dataset proxy.
+///
+/// The returned proxy will not contain references to data items that do not
+/// depend on the sliced dimension.
+DatasetConstProxy DatasetConstProxy::slice(const Slice slice1) const {
+  DatasetConstProxy sliced;
+  sliced.m_dataset = m_dataset;
+  std::tie(sliced.m_items, sliced.m_slices) = slice_items(*this, slice1);
+  return sliced;
+}
+
+DatasetProxy DatasetProxy::slice(const Slice slice1) const {
+  DatasetProxy sliced;
+  sliced.m_dataset = m_dataset;
+  sliced.m_mutableDataset = m_mutableDataset;
+  std::tie(sliced.m_items, sliced.m_slices) = slice_items(*this, slice1);
+  return sliced;
 }
 
 /// Return true if the dataset proxies have identical content.
@@ -822,9 +947,9 @@ template <class A, class B> bool dataset_equals(const A &a, const B &b) {
     return false;
   if (a.attrs() != b.attrs())
     return false;
-  for (const auto &[name, data] : a) {
+  for (const auto &data : a) {
     try {
-      if (data != b[std::string(name)])
+      if (data != b[data.name()])
         return false;
     } catch (except::NotFoundError &) {
       return false;

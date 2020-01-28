@@ -136,7 +136,7 @@ def test_coords_keys():
     d = sc.Dataset()
     d.coords[Dim.X] = sc.Variable(1.0)
     assert len(d.coords.keys()) == 1
-    assert d.coords.keys() == [Dim.X]
+    assert Dim.X in d.coords.keys()
 
 
 def test_labels_setitem():
@@ -172,7 +172,7 @@ def test_labels_keys():
     d = sc.Dataset()
     d.labels["b"] = sc.Variable(1.0)
     assert len(d.labels.keys()) == 1
-    assert d.labels.keys() == ["b"]
+    assert "b" in d.labels.keys()
 
 
 def test_masks_setitem():
@@ -231,7 +231,7 @@ def test_attrs_keys():
     d = sc.Dataset()
     d.attrs["b"] = sc.Variable(1.0)
     assert len(d.attrs.keys()) == 1
-    assert d.attrs.keys() == ["b"]
+    assert "b" in d.attrs.keys()
 
 
 def test_slice_item():

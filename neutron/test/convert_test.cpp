@@ -65,10 +65,10 @@ TEST(ConvertDataArray, from_tof) {
   for (const auto &dim : {Dim::DSpacing, Dim::Wavelength, Dim::Energy}) {
     const auto expected = convert(tof, Dim::Tof, dim);
     Dataset result;
-    for (const auto &[name, data] : tof)
-      result.setData(name, convert(data, Dim::Tof, dim));
-    for (const auto &[name, data] : result)
-      EXPECT_EQ(data, expected[name]);
+    for (const auto &data : tof)
+      result.setData(data.name(), convert(data, Dim::Tof, dim));
+    for (const auto &data : result)
+      EXPECT_EQ(data, expected[data.name()]);
   }
 }
 
@@ -78,10 +78,10 @@ TEST(ConvertDataArray, to_tof) {
     const auto input = convert(tof, Dim::Tof, dim);
     const auto expected = convert(input, dim, Dim::Tof);
     Dataset result;
-    for (const auto &[name, data] : input)
-      result.setData(name, convert(data, dim, Dim::Tof));
-    for (const auto &[name, data] : result)
-      EXPECT_EQ(data, expected[name]);
+    for (const auto &data : input)
+      result.setData(data.name(), convert(data, dim, Dim::Tof));
+    for (const auto &data : result)
+      EXPECT_EQ(data, expected[data.name()]);
   }
 }
 

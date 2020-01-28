@@ -61,7 +61,7 @@ TYPED_TEST(DatasetProxyTest, name) {
   for (const auto &name : {"a", "b", "c"})
     EXPECT_EQ(proxy[name].name(), name);
   for (const auto &name : {"a", "b", "c"})
-    EXPECT_EQ(proxy.find(name)->second.name(), name);
+    EXPECT_EQ(proxy.find(name)->name(), name);
 }
 
 TYPED_TEST(DatasetProxyTest, find_and_contains) {
@@ -72,13 +72,13 @@ TYPED_TEST(DatasetProxyTest, find_and_contains) {
   auto &&proxy = TestFixture::access(d);
 
   EXPECT_EQ(proxy.find("not a thing"), proxy.end());
-  EXPECT_EQ(proxy.find("a")->first, "a");
-  EXPECT_EQ(proxy.find("a")->second, proxy["a"]);
+  EXPECT_EQ(proxy.find("a")->name(), "a");
+  EXPECT_EQ(*proxy.find("a"), proxy["a"]);
   EXPECT_FALSE(proxy.contains("not a thing"));
   EXPECT_TRUE(proxy.contains("a"));
 
-  EXPECT_EQ(proxy.find("b")->first, "b");
-  EXPECT_EQ(proxy.find("b")->second, proxy["b"]);
+  EXPECT_EQ(proxy.find("b")->name(), "b");
+  EXPECT_EQ(*proxy.find("b"), proxy["b"]);
 }
 
 TYPED_TEST(DatasetProxyTest, find_in_slice) {
@@ -91,8 +91,8 @@ TYPED_TEST(DatasetProxyTest, find_in_slice) {
 
   const auto slice = proxy.slice({Dim::X, 1});
 
-  EXPECT_EQ(slice.find("a")->first, "a");
-  EXPECT_EQ(slice.find("a")->second, slice["a"]);
+  EXPECT_EQ(slice.find("a")->name(), "a");
+  EXPECT_EQ(*slice.find("a"), slice["a"]);
   EXPECT_EQ(slice.find("b"), slice.end());
   EXPECT_TRUE(slice.contains("a"));
   EXPECT_FALSE(slice.contains("b"));
@@ -148,15 +148,15 @@ TYPED_TEST(DatasetProxyTest, iterators) {
 
   auto it = proxy.begin();
   ASSERT_NE(it, proxy.end());
-  found.insert(it->first);
+  found.insert(it->name());
 
   ASSERT_NO_THROW(++it);
   ASSERT_NE(it, proxy.end());
-  found.insert(it->first);
+  found.insert(it->name());
 
   ASSERT_NO_THROW(++it);
   ASSERT_NE(it, proxy.end());
-  found.insert(it->first);
+  found.insert(it->name());
 
   EXPECT_EQ(found, expected);
 

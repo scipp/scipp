@@ -57,7 +57,7 @@ TEST(ConvertWithCaliabrationDataArray, data_array) {
 
   for (const auto &item : tof) {
     const auto dspacing =
-        diffraction::convert_with_calibration(copy(item.second), cal);
+        diffraction::convert_with_calibration(copy(item), cal);
     ASSERT_TRUE(dspacing.coords().contains(Dim::DSpacing));
     ASSERT_EQ(dspacing.coords()[Dim::DSpacing].unit(), scipp::units::angstrom);
   }

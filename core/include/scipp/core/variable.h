@@ -754,6 +754,8 @@ protected:
   VariableConceptHandle m_view;
 };
 
+class DataConstProxy;
+
 /** Mutable view into (a subset of) a Variable.
  *
  * By inheriting from VariableConstProxy any code that works for
@@ -870,6 +872,9 @@ public:
   scipp::index size() const { return data().size(); }
 
 private:
+  friend class Variable;
+  friend class DataConstProxy;
+
   template <class Var>
   static VariableProxy makeTransposed(Var &var,
                                       const std::vector<Dim> &dimOrder) {
@@ -878,8 +883,9 @@ private:
     return res;
   }
 
-private:
-  friend class Variable;
+  // For internal use in DataConstProxy.
+  explicit VariableProxy(VariableConstProxy &&base)
+      : VariableConstProxy(std::move(base)), m_mutableVariable{nullptr} {}
 
   template <class T> VariableView<T> cast() const;
   template <class T> VariableView<T> castVariances() const;

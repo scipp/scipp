@@ -19,7 +19,7 @@ def _make_table_section_name_header(name, section, style):
     contain Data, Labels, Masks, etc.
     """
     col_separators = 0
-    for key, sec in section:
+    for key, sec in section.items():
         col_separators += 1 + (sec.variances is not None)
     if col_separators > 0:
         return "<th {} colspan='{}'>{}</th>".format(style, col_separators,
@@ -62,7 +62,7 @@ def _make_table_unit_headers(section, text_style):
     Adds a row containing the unit of the section
     """
     html = []
-    for key, val in section:
+    for key, val in section.items():
         html.append("<th {} colspan='{}'>{}</th>".format(
             text_style, 1 + (val.variances is not None),
             name_with_unit(val, name=key)))
@@ -74,7 +74,7 @@ def _make_table_subsections(section, text_style):
     Adds Value | Variance columns for the section.
     """
     html = []
-    for key, val in section:
+    for key, val in section.items():
         html.append("<th {}>Values</th>".format(text_style))
         if val.variances is not None:
             html.append("<th {}>Variances</th>".format(text_style))
@@ -83,7 +83,7 @@ def _make_table_subsections(section, text_style):
 
 def _make_value_rows(section, coord, index, base_style, edge_style, row_start):
     html = []
-    for key, val in section:
+    for key, val in section.items():
         header_line_for_bin_edges = False
         if coord is not None:
             if len(val.values) == len(coord.values) - 1:
@@ -105,7 +105,7 @@ def _make_value_rows(section, coord, index, base_style, edge_style, row_start):
 
 def _make_trailing_cells(section, coord, index, size, base_style, edge_style):
     html = []
-    for key, val in section:
+    for key, val in section.items():
         if len(val.values) == len(coord.values) - 1:
             if index == size - 1:
                 html.append("<td {}></td>".format(edge_style))
@@ -201,7 +201,7 @@ def table_from_dataset(dataset,
 
     if size is None:  # handle 0D variable
         html += "<tr {}>".format(hover_style)
-        for key, val in dataset:
+        for key, val in dataset.items():
             html += "<td {}>{}</td>".format(base_style,
                                             value_to_string(val.value))
             if val.variances is not None:
@@ -288,7 +288,7 @@ class TableViewer:
                 self.is_histogram[key] = False
 
             # Next add the variables
-            for name, var in dataset:
+            for name, var in dataset.items():
                 if len(var.dims) == 1:
                     dim = var.dims[0]
                     key = str(dim)
@@ -304,7 +304,7 @@ class TableViewer:
                     self.tabledict["0D Variables"][name] = var
 
             # Next add only the 1D coordinates
-            for dim, var in dataset.coords:
+            for dim, var in dataset.coords.items():
                 if len(var.dims) == 1:
                     key = str(dim)
                     if dim not in self.tabledict["1D Variables"][key].coords:
@@ -312,7 +312,7 @@ class TableViewer:
                         is_empty[key] = False
 
             # Next add the labels
-            for name, lab in dataset.labels:
+            for name, lab in dataset.labels.items():
                 if len(lab.dims) == 1:
                     dim = lab.dims[0]
                     key = str(dim)
@@ -326,7 +326,7 @@ class TableViewer:
                     is_empty[key] = False
 
             # Next add the masks
-            for name, mask in dataset.masks:
+            for name, mask in dataset.masks.items():
                 if len(mask.dims) == 1:
                     dim = mask.dims[0]
                     key = str(dim)

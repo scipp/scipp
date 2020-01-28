@@ -12,6 +12,20 @@
 
 namespace scipp::core {
 
+auto union_(const DatasetConstProxy &a, const DatasetConstProxy &b) {
+  std::map<std::string, DataArray> out;
+
+  for (const auto &item : a)
+    out.emplace(item.name(), item);
+  for (const auto &item : b) {
+    if (const auto it = a.find(item.name()); it != a.end())
+      expect::equals(item, *it);
+    else
+      out.emplace(item.name(), item);
+  }
+  return out;
+}
+
 Dataset merge(const DatasetConstProxy &a, const DatasetConstProxy &b) {
   // When merging datasets the contents of the masks are not OR'ed, but
   // checked if present in both dataset with the same values with `union_`.
@@ -93,9 +107,9 @@ DataArray concatenate(const DataConstProxy &a, const DataConstProxy &b,
 Dataset concatenate(const DatasetConstProxy &a, const DatasetConstProxy &b,
                     const Dim dim) {
   Dataset result;
-  for (const auto &[name, item] : a)
-    if (b.contains(name))
-      result.setData(name, concatenate(item, b[name], dim));
+  for (const auto &item : a)
+    if (b.contains(item.name()))
+      result.setData(item.name(), concatenate(item, b[item.name()], dim));
   return result;
 }
 

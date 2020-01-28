@@ -127,8 +127,8 @@ template <class Func, class... Args>
 Dataset apply_to_items(const DatasetConstProxy &d, Func func, const Dim dim,
                        Args &&... args) {
   Dataset result;
-  for (const auto &[name, data] : d)
-    result.setData(name, func(data, dim, std::forward<Args>(args)...));
+  for (const auto &data : d)
+    result.setData(data.name(), func(data, dim, std::forward<Args>(args)...));
   for (auto &&[name, attr] : d.attrs())
     if (!attr.dims().contains(dim))
       result.setAttr(name, attr);

@@ -149,7 +149,7 @@ def format_dims(dims, sizes, coords):
 
 def summarize_attrs_simple(attrs):
     attrs_dl = "".join(f"<dt><span>{escape(name)} :</span></dt>"
-                       f"<dd>{values}</dd>" for name, values in attrs)
+                       f"<dd>{values}</dd>" for name, values in attrs.items())
 
     return f"<dl class='xr-attrs'>{attrs_dl}</dl>"
 
@@ -157,7 +157,7 @@ def summarize_attrs_simple(attrs):
 def summarize_attrs(attrs):
     attrs_li = "".join(f"<li class='xr-var-item'>\
             {summarize_variable(name, values, has_attrs=False)}</li>"
-                       for name, values in attrs)
+                       for name, values in attrs.items())
     return f"<ul class='xr-var-list'>{attrs_li}</ul>"
 
 
@@ -193,7 +193,7 @@ def find_bin_edges(var, ds):
 def summarize_coords(coords, ds=None):
     vars_li = "".join("<li class='xr-var-item'>"
                       f"{summarize_coord(dim, var, ds)}"
-                      "</span></li>" for dim, var in coords)
+                      "</span></li>" for dim, var in coords.items())
 
     return f"<ul class='xr-var-list'>{vars_li}</ul>"
 
@@ -203,7 +203,10 @@ def _extract_sparse(x):
     Returns the (key, value) pairs where value has a sparse dim
     :param x: dict-like, e.g., coords proxy or labels proxy
     """
-    return [(key, value) for key, value in x if value.sparse_dim is not None]
+    return {
+        key: value
+        for key, value in x.items() if value.sparse_dim is not None
+    }
 
 
 def _make_inline_attributes(var, has_attrs):
@@ -404,7 +407,7 @@ def summarize_data(dataset):
             var,
             has_attrs=has_attrs,
             bin_edges=find_bin_edges(var, dataset) if has_attrs else None))
-                      for name, var in dataset)
+                      for name, var in dataset.items())
     return f"<ul class='xr-var-list'>{vars_li}</ul>"
 
 
@@ -451,7 +454,7 @@ def _mapping_section(mapping,
 
 
 def dim_section(dataset):
-    coords = dataset.coords if hasattr(dataset, "coords") else []
+    coords = dataset.coords if hasattr(dataset, "coords") else dict()
     dim_list = format_dims(dataset.dims, dataset.shape, coords)
 
     return collapsible_section("Dimensions",
@@ -530,7 +533,7 @@ def dataset_repr(ds):
     if len(ds.labels) > 0:
         sections.append(label_section(ds.labels, ds))
 
-    sections.append(data_section(ds if hasattr(ds, '__len__') else [('', ds)]))
+    sections.append(data_section(ds if hasattr(ds, '__len__') else {'': ds}))
 
     if len(ds.masks) > 0:
         sections.append(mask_section(ds.masks, ds))

@@ -144,11 +144,11 @@ class VariableDrawer():
             extra_item_count += 1
         if is_data_array(self._variable):
             if self._variable.sparse_dim is not None:
-                for name, label in self._variable.labels:
+                for name, label in self._variable.labels.items():
                     if label.sparse_dim is not None:
                         extra_item_count += 1
                 sparse_dim = self._variable.sparse_dim
-                for dim, coord in self._variable.coords:
+                for dim in self._variable.coords:
                     if dim == sparse_dim:
                         extra_item_count += 1
         if self._variable.values is None:
@@ -272,7 +272,7 @@ class VariableDrawer():
                         items.append(
                             (name, mask.values, config.colors['mask']))
                 sparse_dim = self._variable.sparse_dim
-                for dim, coord in self._variable.coords:
+                for dim in self._variable.coords:
                     if dim == sparse_dim:
                         items.append((str(sparse_dim),
                                       self._variable.coords[sparse_dim].values,
@@ -322,7 +322,7 @@ class DatasetDrawer():
             dims = self._dataset.dims
         else:
             dims = []
-            for name, item in self._dataset:
+            for item in self._dataset.values():
                 if item.sparse_dim is not None:
                     dims = item.dims
                     break
@@ -372,7 +372,7 @@ class DatasetDrawer():
         else:
             # Render highest-dimension items last so coords are optically
             # aligned
-            for name, data in self._dataset:
+            for name, data in self._dataset.items():
                 item = (name, data, config.colors['data'])
                 # Using only x and 0d areas for 1-D dataset
                 if len(dims) == 1 or data.dims != dims:
@@ -393,7 +393,7 @@ class DatasetDrawer():
                 self._dataset.coords, self._dataset.labels,
                 self._dataset.masks, self._dataset.attrs
         ]):
-            for name, var in items:
+            for name, var in items.items():
                 if var.sparse_dim is not None:
                     continue
                 item = (name, var, config.colors[what])

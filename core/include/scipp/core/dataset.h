@@ -41,9 +41,10 @@ struct DatasetData {
 
 using dataset_item_map = std::unordered_map<std::string, DatasetData>;
 
-template <class Var>
-auto makeSlice(Var &var,
-               const std::vector<std::pair<Slice, scipp::index>> &slices) {
+using slice_list =
+    boost::container::small_vector<std::pair<Slice, scipp::index>, 2>;
+
+template <class Var> auto makeSlice(Var &var, const slice_list &slices) {
   std::conditional_t<std::is_const_v<Var>, VariableConstProxy, VariableProxy>
       slice(var);
   for (const auto [params, extent] : slices) {
@@ -66,8 +67,8 @@ class SCIPP_CORE_EXPORT DataConstProxy {
 public:
   DataConstProxy(const Dataset &dataset,
                  const detail::dataset_item_map::value_type &data,
-                 const std::vector<std::pair<Slice, scipp::index>> &slices = {})
-      : m_dataset(&dataset), m_data(&data), m_slices(slices) {}
+                 const detail::slice_list &slices = {},
+                 std::optional<VariableProxy> &&view = std::nullopt);
 
   const std::string &name() const noexcept;
 
@@ -88,10 +89,10 @@ public:
   }
 
   /// Return untyped const proxy for data (values and optional variances).
-  VariableConstProxy data() const {
+  const VariableConstProxy &data() const {
     if (!hasData())
       throw except::SparseDataError("No data in item.");
-    return detail::makeSlice(*m_data->second.data, slices());
+    return *m_view;
   }
   /// Return typed const proxy for data values.
   template <class T> auto values() const { return data().template values<T>(); }
@@ -101,27 +102,23 @@ public:
     return data().template variances<T>();
   }
 
-  DataConstProxy slice(const Slice slice1) const {
-    expect::validSlice(dims(), slice1);
-    auto tmp(m_slices);
-    tmp.emplace_back(slice1, dims()[slice1.dim()]);
-    return {*m_dataset, *m_data, std::move(tmp)};
-  }
-
-  DataConstProxy slice(const Slice slice1, const Slice slice2) const {
-    return slice(slice1).slice(slice2);
-  }
-
+  DataConstProxy slice(const Slice slice1) const;
+  DataConstProxy slice(const Slice slice1, const Slice slice2) const;
   DataConstProxy slice(const Slice slice1, const Slice slice2,
-                       const Slice slice3) const {
-    return slice(slice1, slice2).slice(slice3);
-  }
+                       const Slice slice3) const;
 
-  const std::vector<std::pair<Slice, scipp::index>> &slices() const noexcept {
-    return m_slices;
-  }
+  const detail::slice_list &slices() const noexcept { return m_slices; }
 
   auto &underlying() const { return m_data->second; }
+
+protected:
+  // Note that m_view is a VariableProxy, not a VariableConstProxy. In case
+  // *this (DataConstProxy) is stand-alone (not part of DataProxy), m_view is
+  // actually just a VariableConstProxy wrapped in an (invalid) VariableProxy.
+  // The interface guarantees that the invalid mutable view is not accessible.
+  // This wrapping avoids inefficient duplication of the view in the child class
+  // DataProxy.
+  std::optional<VariableProxy> m_view;
 
 private:
   friend class DatasetConstProxy;
@@ -129,7 +126,7 @@ private:
 
   const Dataset *m_dataset;
   const detail::dataset_item_map::value_type *m_data;
-  std::vector<std::pair<Slice, scipp::index>> m_slices;
+  detail::slice_list m_slices;
 };
 
 SCIPP_CORE_EXPORT bool operator==(const DataConstProxy &a,
@@ -145,9 +142,7 @@ class Dataset;
 class SCIPP_CORE_EXPORT DataProxy : public DataConstProxy {
 public:
   DataProxy(Dataset &dataset, detail::dataset_item_map::value_type &data,
-            const std::vector<std::pair<Slice, scipp::index>> &slices = {})
-      : DataConstProxy(dataset, data, slices), m_mutableDataset(&dataset),
-        m_mutableData(&data) {}
+            const detail::slice_list &slices = {});
 
   CoordsProxy coords() const noexcept;
   LabelsProxy labels() const noexcept;
@@ -163,10 +158,10 @@ public:
   }
 
   /// Return untyped proxy for data (values and optional variances).
-  VariableProxy data() const {
+  const VariableProxy &data() const {
     if (!hasData())
       throw except::SparseDataError("No data in item.");
-    return detail::makeSlice(*m_mutableData->second.data, slices());
+    return *m_view;
   }
   /// Return typed proxy for data values.
   template <class T> auto values() const { return data().template values<T>(); }
@@ -176,21 +171,10 @@ public:
     return data().template variances<T>();
   }
 
-  DataProxy slice(const Slice slice1) const {
-    expect::validSlice(dims(), slice1);
-    auto tmp(slices());
-    tmp.emplace_back(slice1, dims()[slice1.dim()]);
-    return {*m_mutableDataset, *m_mutableData, std::move(tmp)};
-  }
-
-  DataProxy slice(const Slice slice1, const Slice slice2) const {
-    return slice(slice1).slice(slice2);
-  }
-
+  DataProxy slice(const Slice slice1) const;
+  DataProxy slice(const Slice slice1, const Slice slice2) const;
   DataProxy slice(const Slice slice1, const Slice slice2,
-                  const Slice slice3) const {
-    return slice(slice1, slice2).slice(slice3);
-  }
+                  const Slice slice3) const;
 
   DataProxy assign(const DataConstProxy &other) const;
   DataProxy assign(const Variable &other) const;
@@ -230,6 +214,12 @@ public:
   }
 
 private:
+  friend class DatasetConstProxy;
+  // For internal use in DatasetConstProxy.
+  explicit DataProxy(DataConstProxy &&base)
+      : DataConstProxy(std::move(base)), m_mutableDataset{nullptr},
+        m_mutableData{nullptr} {}
+
   Dataset *m_mutableDataset;
   detail::dataset_item_map::value_type *m_mutableData;
 };
@@ -240,21 +230,42 @@ template <> struct is_const<Dataset> : std::false_type {};
 template <> struct is_const<const Dataset> : std::true_type {};
 template <> struct is_const<const DatasetProxy> : std::false_type {};
 template <> struct is_const<const DatasetConstProxy> : std::true_type {};
+template <> struct is_const<DatasetProxy> : std::false_type {};
+template <> struct is_const<DatasetConstProxy> : std::true_type {};
 
 /// Helper for creating iterators of Dataset.
 template <class D> struct make_item {
   D *dataset;
   using P = std::conditional_t<is_const<D>::value, DataConstProxy, DataProxy>;
-  template <class T>
-  std::pair<const std::string &, P> operator()(T &item) const {
+  template <class T> auto operator()(T &item) const {
     if constexpr (std::is_same_v<std::remove_const_t<D>, Dataset>)
-      return {item.first, P(*dataset, item)};
+      return P(*dataset, item);
     else
-      // TODO Using operator[] is quite inefficient, revert the logic.
-      return {item, dataset->operator[](item)};
+      return P(dataset->dataset(), item, dataset->slices());
   }
 };
 template <class D> make_item(D *)->make_item<D>;
+
+static constexpr auto make_key_value = [](auto &&view) {
+  using In = decltype(view);
+  using View =
+      std::conditional_t<std::is_rvalue_reference_v<In>, std::decay_t<In>, In>;
+  return std::pair<const std::string &, View>(
+      view.name(), std::forward<decltype(view)>(view));
+};
+
+static constexpr auto make_key = [](auto &&view) -> decltype(auto) {
+  using T = std::decay_t<decltype(view)>;
+  if constexpr (std::is_base_of_v<DataConstProxy, T>)
+    return view.name();
+  else
+    return view.first;
+};
+
+static constexpr auto make_value = [](auto &&view) -> decltype(auto) {
+  return view.second;
+};
+
 } // namespace detail
 
 /// Collection of data arrays.
@@ -283,8 +294,12 @@ public:
       setMask(std::string(name), std::move(mask));
     for (auto &&[name, attr] : attrs)
       setAttr(std::string(name), std::move(attr));
-    for (auto &&[name, item] : data)
-      setData(std::string(name), std::move(item));
+    if constexpr (std::is_same_v<std::decay_t<DataMap>, DatasetConstProxy>)
+      for (auto &&item : data)
+        setData(item.name(), item);
+    else
+      for (auto &&[name, item] : data)
+        setData(std::string(name), std::move(item));
   }
 
   /// Return the number of data items in the dataset.
@@ -352,6 +367,42 @@ public:
   auto end() & noexcept {
     return boost::make_transform_iterator(m_data.end(),
                                           detail::make_item{this});
+  }
+
+  auto items_begin() const && = delete;
+  auto items_begin() && = delete;
+  auto items_begin() const &noexcept {
+    return boost::make_transform_iterator(begin(), detail::make_key_value);
+  }
+  auto items_begin() & noexcept {
+    return boost::make_transform_iterator(begin(), detail::make_key_value);
+  }
+  auto items_end() const && = delete;
+  auto items_end() && = delete;
+  auto items_end() const &noexcept {
+    return boost::make_transform_iterator(end(), detail::make_key_value);
+  }
+
+  auto items_end() & noexcept {
+    return boost::make_transform_iterator(end(), detail::make_key_value);
+  }
+
+  auto keys_begin() const && = delete;
+  auto keys_begin() && = delete;
+  auto keys_begin() const &noexcept {
+    return boost::make_transform_iterator(m_data.begin(), detail::make_key);
+  }
+  auto keys_begin() & noexcept {
+    return boost::make_transform_iterator(m_data.begin(), detail::make_key);
+  }
+  auto keys_end() const && = delete;
+  auto keys_end() && = delete;
+  auto keys_end() const &noexcept {
+    return boost::make_transform_iterator(m_data.end(), detail::make_key);
+  }
+
+  auto keys_end() & noexcept {
+    return boost::make_transform_iterator(m_data.end(), detail::make_key);
   }
 
   void setCoord(const Dim dim, Variable coord);
@@ -508,7 +559,7 @@ public:
 
   ConstProxy(
       std::unordered_map<Key, std::pair<const Variable *, Variable *>> &&items,
-      const std::vector<std::pair<Slice, scipp::index>> &slices = {})
+      const detail::slice_list &slices = {})
       : m_items(std::move(items)), m_slices(slices) {
     // TODO This is very similar to the code in makeProxyItems(), provided that
     // we can give a good definion of the `dims` argument (roughly the space
@@ -547,15 +598,6 @@ public:
     return m_items.find(k) != m_items.cend();
   }
 
-  std::vector<Key> keys() {
-    std::vector<Key> keys;
-    keys.reserve(m_items.size());
-    for (const auto &p : m_items) {
-      keys.push_back(p.first);
-    }
-    return keys;
-  }
-
   /// Return a const proxy to the coordinate for given dimension.
   VariableConstProxy operator[](const Key key) const {
     expect::contains(*this, key);
@@ -576,6 +618,35 @@ public:
   /// Return const iterator to the end of all items.
   auto end() const &noexcept {
     return boost::make_transform_iterator(m_items.end(), make_item{this});
+  }
+
+  auto items_begin() const && = delete;
+  /// Return const iterator to the beginning of all items.
+  auto items_begin() const &noexcept { return begin(); }
+  auto items_end() const && = delete;
+  /// Return const iterator to the end of all items.
+  auto items_end() const &noexcept { return end(); }
+
+  auto keys_begin() const && = delete;
+  /// Return const iterator to the beginning of all keys.
+  auto keys_begin() const &noexcept {
+    return boost::make_transform_iterator(begin(), detail::make_key);
+  }
+  auto keys_end() const && = delete;
+  /// Return const iterator to the end of all keys.
+  auto keys_end() const &noexcept {
+    return boost::make_transform_iterator(end(), detail::make_key);
+  }
+
+  auto values_begin() const && = delete;
+  /// Return const iterator to the beginning of all values.
+  auto values_begin() const &noexcept {
+    return boost::make_transform_iterator(begin(), detail::make_value);
+  }
+  auto values_end() const && = delete;
+  /// Return const iterator to the end of all values.
+  auto values_end() const &noexcept {
+    return boost::make_transform_iterator(end(), detail::make_value);
   }
 
   ConstProxy slice(const Slice slice1) const {
@@ -618,7 +689,7 @@ public:
 
 protected:
   std::unordered_map<Key, std::pair<const Variable *, Variable *>> m_items;
-  std::vector<std::pair<Slice, scipp::index>> m_slices;
+  detail::slice_list m_slices;
 };
 
 /// Common functionality for other proxy classes.
@@ -643,7 +714,7 @@ public:
       Dataset *parent, const std::string *name,
       std::unordered_map<typename Base::key_type,
                          std::pair<const Variable *, Variable *>> &&items,
-      const std::vector<std::pair<Slice, scipp::index>> &slices = {})
+      const detail::slice_list &slices = {})
       : Base(std::move(items), slices), m_parent(parent), m_name(name) {}
 
   /// Return a proxy to the coordinate for given dimension.
@@ -668,6 +739,24 @@ public:
   /// Return iterator to the end of all items.
   auto end() const &noexcept {
     return boost::make_transform_iterator(Base::items().end(), make_item{this});
+  }
+
+  auto items_begin() const && = delete;
+  /// Return iterator to the beginning of all items.
+  auto items_begin() const &noexcept { return begin(); }
+  auto items_end() const && = delete;
+  /// Return iterator to the end of all items.
+  auto items_end() const &noexcept { return end(); }
+
+  auto values_begin() const && = delete;
+  /// Return iterator to the beginning of all values.
+  auto values_begin() const &noexcept {
+    return boost::make_transform_iterator(begin(), detail::make_value);
+  }
+  auto values_end() const && = delete;
+  /// Return iterator to the end of all values.
+  auto values_end() const &noexcept {
+    return boost::make_transform_iterator(end(), detail::make_value);
   }
 
   MutableProxy slice(const Slice slice1) const {
@@ -780,16 +869,18 @@ template <class T1, class T2> auto union_(const T1 &a, const T2 &b) {
 
 /// Const proxy for Dataset, implementing slicing and item selection.
 class SCIPP_CORE_EXPORT DatasetConstProxy {
-  explicit DatasetConstProxy() : m_dataset(nullptr) {}
+  struct make_const_view {
+    constexpr const DataConstProxy &operator()(const DataProxy &view) const
+        noexcept {
+      return view;
+    }
+  };
 
 public:
   using key_type = std::string;
   using mapped_type = DataArray;
 
-  DatasetConstProxy(const Dataset &dataset) : m_dataset(&dataset) {
-    for (const auto &item : dataset.m_data)
-      m_indices.emplace_back(item.first);
-  }
+  DatasetConstProxy(const Dataset &dataset);
 
   static DatasetConstProxy makeProxyWithEmptyIndexes(const Dataset &dataset) {
     auto res = DatasetConstProxy();
@@ -797,8 +888,8 @@ public:
     return res;
   }
 
-  index size() const noexcept { return m_indices.size(); }
-  [[nodiscard]] bool empty() const noexcept { return m_indices.empty(); }
+  index size() const noexcept { return m_items.size(); }
+  [[nodiscard]] bool empty() const noexcept { return m_items.empty(); }
 
   CoordsConstProxy coords() const noexcept;
   LabelsConstProxy labels() const noexcept;
@@ -807,53 +898,45 @@ public:
 
   bool contains(const std::string &name) const noexcept;
 
-  DataConstProxy operator[](const std::string &name) const;
-
-  auto find(const std::string &name) const && = delete;
-  auto find(const std::string &name) const &noexcept {
-    return boost::make_transform_iterator(
-        std::find(std::begin(m_indices), std::end(m_indices), name),
-        detail::make_item{this});
-  }
+  const DataConstProxy &operator[](const std::string &name) const;
 
   auto begin() const && = delete;
   auto begin() const &noexcept {
-    return boost::make_transform_iterator(m_indices.begin(),
-                                          detail::make_item{this});
+    return boost::make_transform_iterator(m_items.begin(), make_const_view{});
   }
   auto end() const && = delete;
   auto end() const &noexcept {
-    return boost::make_transform_iterator(m_indices.end(),
-                                          detail::make_item{this});
+    return boost::make_transform_iterator(m_items.end(), make_const_view{});
   }
 
-  /// Return a slice of the dataset proxy.
-  ///
-  /// The returned proxy will not contain references to data items that do not
-  /// depend on the sliced dimension.
-  DatasetConstProxy slice(const Slice slice1) const {
-    const auto currentDims = dimensions();
-    expect::validSlice(currentDims, slice1);
-    DatasetConstProxy sliced(*this);
-    auto &indices = sliced.m_indices;
-    sliced.m_indices.erase(
-        std::remove_if(indices.begin(), indices.end(),
-                       [&slice1, this](const auto &index) {
-                         return !(*this)[index].dims().contains(slice1.dim());
-                       }),
-        indices.end());
-    // The dimension extent is either given by the coordinate, or by data, which
-    // can be 1 shorter in case of a bin-edge coordinate.
-    scipp::index extent = currentDims.at(slice1.dim());
-    for (const auto item : *this)
-      if (item.second.dims().contains(slice1.dim()) &&
-          item.second.dims()[slice1.dim()] == extent - 1) {
-        --extent;
-        break;
-      }
-    sliced.m_slices.emplace_back(slice1, extent);
-    return sliced;
+  auto items_begin() const && = delete;
+  auto items_begin() const &noexcept {
+    return boost::make_transform_iterator(begin(), detail::make_key_value);
   }
+  auto items_end() const && = delete;
+  auto items_end() const &noexcept {
+    return boost::make_transform_iterator(end(), detail::make_key_value);
+  }
+
+  auto keys_begin() const && = delete;
+  /// Return const iterator to the beginning of all keys.
+  auto keys_begin() const &noexcept {
+    return boost::make_transform_iterator(begin(), detail::make_key);
+  }
+  auto keys_end() const && = delete;
+  /// Return const iterator to the end of all keys.
+  auto keys_end() const &noexcept {
+    return boost::make_transform_iterator(end(), detail::make_key);
+  }
+
+  auto find(const std::string &name) const && = delete;
+  auto find(const std::string &name) const &noexcept {
+    return std::find_if(begin(), end(), [&name](const auto &item) {
+      return item.name() == name;
+    });
+  }
+
+  DatasetConstProxy slice(const Slice slice1) const;
 
   DatasetConstProxy slice(const Slice slice1, const Slice slice2) const {
     return slice(slice1).slice(slice2);
@@ -873,53 +956,54 @@ public:
   bool operator!=(const DatasetConstProxy &other) const;
   std::unordered_map<Dim, scipp::index> dimensions() const;
 
-private:
-  const Dataset *m_dataset;
-
 protected:
+  explicit DatasetConstProxy() : m_dataset(nullptr) {}
+  template <class T>
+  static std::pair<boost::container::small_vector<DataProxy, 8>,
+                   detail::slice_list>
+  slice_items(const T &view, const Slice slice);
+  const Dataset *m_dataset;
+  boost::container::small_vector<DataProxy, 8> m_items;
   void expectValidKey(const std::string &name) const;
-  std::vector<std::string> m_indices;
-  std::vector<std::pair<Slice, scipp::index>> m_slices;
+  detail::slice_list m_slices;
 };
 
 /// Proxy for Dataset, implementing slicing and item selection.
 class SCIPP_CORE_EXPORT DatasetProxy : public DatasetConstProxy {
-private:
-  DatasetProxy(DatasetConstProxy &&base, Dataset *dataset)
-      : DatasetConstProxy(std::move(base)), m_mutableDataset(dataset) {}
+  explicit DatasetProxy() : DatasetConstProxy(), m_mutableDataset(nullptr) {}
 
 public:
-  DatasetProxy(Dataset &dataset)
-      : DatasetConstProxy(dataset), m_mutableDataset(&dataset) {}
+  DatasetProxy(Dataset &dataset);
 
   CoordsProxy coords() const noexcept;
   LabelsProxy labels() const noexcept;
   AttrsProxy attrs() const noexcept;
   MasksProxy masks() const noexcept;
 
-  DataProxy operator[](const std::string &name) const;
+  const DataProxy &operator[](const std::string &name) const;
+
+  auto begin() const && = delete;
+  auto begin() const &noexcept { return m_items.begin(); }
+  auto end() const && = delete;
+  auto end() const &noexcept { return m_items.end(); }
+
+  auto items_begin() const && = delete;
+  auto items_begin() const &noexcept {
+    return boost::make_transform_iterator(begin(), detail::make_key_value);
+  }
+  auto items_end() const && = delete;
+  auto items_end() const &noexcept {
+    return boost::make_transform_iterator(end(), detail::make_key_value);
+  }
 
   auto find(const std::string &name) const && = delete;
   auto find(const std::string &name) const &noexcept {
-    return boost::make_transform_iterator(
-        std::find(std::begin(m_indices), std::end(m_indices), name),
-        detail::make_item{this});
+    return std::find_if(begin(), end(), [&name](const auto &item) {
+      return item.name() == name;
+    });
   }
 
-  auto begin() const && = delete;
-  auto begin() const &noexcept {
-    return boost::make_transform_iterator(m_indices.begin(),
-                                          detail::make_item{this});
-  }
-  auto end() const && = delete;
-  auto end() const &noexcept {
-    return boost::make_transform_iterator(m_indices.end(),
-                                          detail::make_item{this});
-  }
-
-  DatasetProxy slice(const Slice slice1) const {
-    return {DatasetConstProxy::slice(slice1), m_mutableDataset};
-  }
+  DatasetProxy slice(const Slice slice1) const;
 
   DatasetProxy slice(const Slice slice1, const Slice slice2) const {
     return slice(slice1).slice(slice2);
@@ -973,6 +1057,8 @@ public:
 
   DatasetProxy assign(const DatasetConstProxy &other) const;
 
+  auto &dataset() const noexcept { return *m_mutableDataset; }
+
 private:
   Dataset *m_mutableDataset;
 };
@@ -1025,7 +1111,7 @@ public:
   operator DataConstProxy() const;
   operator DataProxy();
 
-  const std::string &name() const { return m_holder.begin()->first; }
+  const std::string &name() const { return m_holder.begin()->name(); }
 
   CoordsConstProxy coords() const { return get().coords(); }
   CoordsProxy coords() { return get().coords(); }

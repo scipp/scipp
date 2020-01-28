@@ -34,12 +34,12 @@ void requireValid(const DataArray &a) {
 
 DataConstProxy DataArray::get() const {
   requireValid(*this);
-  return m_holder.begin()->second;
+  return *m_holder.begin();
 }
 
 DataProxy DataArray::get() {
   requireValid(*this);
-  return m_holder.begin()->second;
+  return *m_holder.begin();
 }
 
 namespace {
