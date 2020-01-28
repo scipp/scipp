@@ -236,7 +236,7 @@ class InstrumentView:
         self.pcl = p3.Points(
             geometry=self.geometry,
             material=self.material)
-        self.axes_helper = p3.AxesHelper(5)
+        self.axes_helper = p3.AxesHelper(100)
         self.scene = p3.Scene(children=[self.pcl, self.camera, self.key_light, self.ambient_light, self.axes_helper])
         self.controller = p3.OrbitControls(controlling=self.camera)
         self.renderer = p3.Renderer(camera=self.camera, scene=self.scene, controls=[self.controller],
