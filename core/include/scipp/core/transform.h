@@ -272,6 +272,21 @@ struct TransformSparse {
   }
 };
 
+template <class Op, class... Args>
+constexpr static bool check_all_or_none_variances(const Op &,
+                                                  const Args &... args) {
+  constexpr bool force_same =
+      std::is_base_of_v<transform_flags::expect_all_or_none_have_variance_t,
+                        Op>;
+  constexpr bool all_variances =
+      force_same &&
+      (is_ValuesAndVariances_v<std::decay_t<decltype(args)>> && ...);
+  constexpr bool variances =
+      all_variances ||
+      (is_ValuesAndVariances_v<std::decay_t<decltype(args)>> || ...);
+  return force_same && !all_variances && variances;
+}
+
 /// Recursion endpoint for do_transform.
 ///
 /// Call transform_elements with or without variances for output, depending on
@@ -281,18 +296,12 @@ static void do_transform(Op op, Out &&out, Tuple &&processed) {
   auto out_val = out.values();
   std::apply(
       [&op, &out, &out_val](auto &&... args) {
-        constexpr bool force_same = std::is_base_of_v<
-            transform_flags::expect_all_or_none_have_variance_t, Op>;
-        constexpr bool all_variances =
-            force_same &&
-            (is_ValuesAndVariances_v<std::decay_t<decltype(args)>> && ...);
-        constexpr bool variances =
-            all_variances ||
-            (is_ValuesAndVariances_v<std::decay_t<decltype(args)>> || ...);
-        if constexpr (force_same && !all_variances && variances) {
+        if constexpr (check_all_or_none_variances(op, args...)) {
           throw except::VariancesError(
               "Expected either all or none of inputs to have variances.");
-        } else if constexpr (variances) {
+        } else if constexpr ((is_ValuesAndVariances_v<
+                                  std::decay_t<decltype(args)>> ||
+                              ...)) {
           auto out_var = out.variances();
           transform_elements(op, ValuesAndVariances{out_val, out_var},
                              std::forward<decltype(args)>(args)...);
@@ -520,10 +529,14 @@ template <bool dry_run> struct in_place {
               is_ValuesAndVariances_v<std::decay_t<decltype(arg)>>;
           constexpr bool args_var =
               (is_ValuesAndVariances_v<std::decay_t<decltype(args)>> || ...);
-          if constexpr ((in_var_if_out_var ? arg_var == args_var
-                                           : arg_var || !args_var) ||
-                        std::is_base_of_v<
-                            transform_flags::expect_no_variance_arg_t<0>, Op>) {
+          if constexpr (check_all_or_none_variances(op, arg, args...)) {
+            throw except::VariancesError(
+                "Expected either all or none of inputs to have variances.");
+          } else if constexpr ((in_var_if_out_var ? arg_var == args_var
+                                                  : arg_var || !args_var) ||
+                               std::is_base_of_v<
+                                   transform_flags::expect_no_variance_arg_t<0>,
+                                   Op>) {
             transform_in_place_impl(op, std::forward<decltype(arg)>(arg),
                                     std::forward<decltype(args)>(args)...);
           } else {
@@ -669,8 +682,10 @@ template <bool dry_run> struct in_place {
         visit_impl<Ts...>::apply(makeTransformInPlace(op), var.dataHandle(),
                                  other.dataHandle()...);
       } else if constexpr (sizeof...(Other) > 1) {
-        static_assert("Transform with more than 2 arguments not implemented "
-                      "yet for element-wise operation.");
+        // No sparse data supported yet in this case.
+        core::visit(std::tuple<Ts...>{})
+            .apply(makeTransformInPlace(op), var.dataHandle(),
+                   other.dataHandle()...);
       } else {
         // Note that if only one of the inputs is sparse it must be the one
         // being transformed in-place, so there are only three cases here.

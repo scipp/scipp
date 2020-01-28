@@ -294,60 +294,20 @@ Variable masks_merge_if_contained(const MasksConstProxy &masks,
   return mask_union;
 }
 
-namespace {
-void validate_inputs_for_replacement(const VariableConstProxy &var,
-                                     const VariableConstProxy &replacement) {
-  if (var.dtype() != replacement.dtype())
-    throw except::TypeError("Replacement type doesn't match type of input");
-  if (replacement.data().size() != 1)
-    throw except::SizeError("Single value expected for replacement");
-}
-} // namespace
-
 VariableProxy nan_to_num(const VariableConstProxy &var,
                          const VariableConstProxy &replacement,
                          const VariableProxy &out) {
-
-  validate_inputs_for_replacement(var, replacement);
-
-  transform_in_place<pair_self_t<double, float>>(
-      out, var,
+  using std::isnan;
+  transform_in_place<std::tuple<double, float>>(
+      out, var, replacement,
       scipp::overloaded{
-          [&](auto &out_v, const auto &in_v) {
-            using std::isnan;
-            using V_OUT = std::decay_t<decltype(out_v)>;
-            using V_IN = std::decay_t<decltype(in_v)>;
-            if constexpr (is_ValueAndVariance_v<V_OUT>) {
-              if constexpr (is_ValueAndVariance_v<V_IN>) {
-                using value_type = typename V_IN::value_type;
-                if (isnan(in_v)) {
-                  out_v.value = replacement.value<value_type>();
-                  out_v.variance = replacement.hasVariances()
-                                       ? replacement.variance<value_type>()
-                                       : out_v.value;
-                } else {
-                  // Assign directly to output
-                  out_v.value = in_v.value;
-                  out_v.variance = in_v.variance;
-                }
-              } else {
-                if (isnan(in_v)) {
-                  out_v.value = replacement.value<V_IN>();
-                  out_v.variance = replacement.hasVariances()
-                                       ? replacement.variance<V_IN>()
-                                       : out_v.value;
-                } else {
-                  // Assign directly to output
-                  out_v.value = in_v;
-                  out_v.variance = in_v;
-                }
-              }
-            } else {
-              out_v = isnan(in_v) ? replacement.value<V_IN>() : in_v;
-            }
+          transform_flags::expect_all_or_none_have_variance,
+          [](auto &a, const auto &b, const auto &repl) {
+            a = isnan(b) ? repl : a;
           },
-          [&](units::Unit &ua, const units::Unit &ub) {
-            expect::equals(ua, ub);
+          [](units::Unit &a, const units::Unit &b, const units::Unit &repl) {
+            expect::equals(b, repl);
+            a = b;
           }});
   return out;
 }
@@ -360,7 +320,10 @@ Variable nan_to_num(const VariableConstProxy &var,
       overloaded{
           transform_flags::expect_all_or_none_have_variance,
           [](const auto &x, const auto &repl) { return isnan(x) ? repl : x; },
-          [](const units::Unit &u, const units::Unit &) { return u; }});
+          [](const units::Unit &x, const units::Unit &repl) {
+            expect::equals(x, repl);
+            return x;
+          }});
 }
 
 } // namespace scipp::core
