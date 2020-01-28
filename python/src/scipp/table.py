@@ -120,6 +120,27 @@ def _make_trailing_cells(section, coord, index, size, base_style, edge_style):
     return "".join(html)
 
 
+def _make_overflow_cells(section, base_style):
+    html = []
+    print(section)
+    for key, val in section:
+        html.append("<td {}>...</td>".format(base_style))
+        if val.variances is not None:
+            html.append("<td {}>...</td>".format(base_style))
+    return "".join(html)
+
+
+def _make_overflow_row(dataset, coord, base_style, hover_style):
+    html = ["<tr {}>".format(hover_style)]
+    if coord is not None:
+        html.append(_make_overflow_cells([(" ", coord)], base_style))
+    html.append(_make_overflow_cells(dataset.labels, base_style))
+    html.append(_make_overflow_cells(dataset.masks, base_style))
+    html.append(_make_overflow_cells(dataset, base_style))
+    html.append("</tr>")
+    return "".join(html)
+
+
 def table_from_dataset(dataset,
                        is_hist=False,
                        headers=2,
@@ -189,6 +210,8 @@ def table_from_dataset(dataset,
         html += "</tr>"
     else:
         row_end = min(size, row_start + max_rows)
+        if row_start > 0:
+            html += _make_overflow_row(dataset, coord, base_style, hover_style)
         for i in range(row_start, row_end):
             html += "<tr {}>".format(hover_style)
             # Add coordinates
@@ -218,6 +241,8 @@ def table_from_dataset(dataset,
                 html += _make_trailing_cells(dataset, coord, i, row_end,
                                              base_style, edge_style)
             html += "</tr>"
+        if row_end != size:
+            html += _make_overflow_row(dataset, coord, base_style, hover_style)
 
     html += "</table>"
     return html, size
@@ -240,8 +265,9 @@ class TableViewer:
             "0D Variables": sc.Dataset(),
             "1D Variables": {}
         }
-        is_histogram = {}
+        self.is_histogram = {}
         self.headers = 0
+        self.trigger_update = True
         is_empty = {}
 
         tp = type(dataset)
@@ -255,7 +281,7 @@ class TableViewer:
                 key = str(dim)
                 self.tabledict["1D Variables"][key] = sc.Dataset()
                 is_empty[key] = True
-                is_histogram[key] = False
+                self.is_histogram[key] = False
 
             # Next add the variables
             for name, var in dataset:
@@ -264,7 +290,7 @@ class TableViewer:
                     key = str(dim)
                     if len(var.coords) > 0:
                         if len(var.coords[dim].values) == len(var.values) + 1:
-                            is_histogram[key] = True
+                            self.is_histogram[key] = True
                         self.tabledict["1D Variables"][key].coords[dim] = \
                             var.coords[dim]
                     self.tabledict["1D Variables"][key][name] = var.data
@@ -289,7 +315,7 @@ class TableViewer:
                     if len(dataset.coords) > 0:
                         if len(dataset.coords[dim].values) == len(
                                 lab.values) + 1:
-                            is_histogram[key] = True
+                            self.is_histogram[key] = True
                         self.tabledict["1D Variables"][key].coords[dim] = \
                             dataset.coords[dim]
                     self.tabledict["1D Variables"][key].labels[name] = lab
@@ -303,7 +329,7 @@ class TableViewer:
                     if len(dataset.coords) > 0:
                         if len(dataset.coords[dim].values) == len(
                                 mask.values) + 1:
-                            is_histogram[key] = True
+                            self.is_histogram[key] = True
                         self.tabledict["1D Variables"][key].coords[dim] = \
                             dataset.coords[dim]
                     self.tabledict["1D Variables"][key].masks[name] = mask
@@ -326,10 +352,13 @@ class TableViewer:
             self.headers = 1
             key = str(dataset.dims[0])
             self.tabledict["default"][key] = dataset
+            self.is_histogram[key] = False
         else:
-            self.tabledict["default"][""] = sc.Variable([sc.Dim.Row],
-                                                        values=dataset)
             self.headers = 0
+            key = " "
+            self.tabledict["default"][key] = sc.Variable([sc.Dim.Row],
+                                                         values=dataset)
+            self.is_histogram[key] = False
 
         subtitle = "<span style='font-weight:normal;color:grey;"
         subtitle += "font-style:italic;background-color:#ffffff;"
@@ -339,14 +368,14 @@ class TableViewer:
                                            "").replace("'>", "")
 
         self.box = [
-            widgets.HTML(
-                value="<span style='font-weight:bold;"
-                      "font-size:1.5em;'>{}</span>".format(title))
+            widgets.HTML(value="<span style='font-weight:bold;"
+                         "font-size:1.5em;'>{}</span>".format(title))
         ]
         self.tables = {}
         self.sliders = {}
         self.label = widgets.Label(value="rows")
         self.nrows = {}
+        self.sizes = {}
 
         if len(self.tabledict["default"]) > 0:
             html, size = table_from_dataset(self.tabledict["default"],
@@ -355,6 +384,7 @@ class TableViewer:
             self.tables["default"] = {" ": widgets.HTML(value=html)}
             hbox = self.make_hbox("default", " ", size)
             self.box.append(hbox)
+            self.sizes["default"] = {" ": size}
         if len(self.tabledict["0D Variables"]) > 0:
             self.tables["0D Variables"] = {}
             output = subtitle.format("0D Variables")
@@ -366,17 +396,19 @@ class TableViewer:
             self.box.append(widgets.VBox([widgets.HTML(value=output), hbox]))
         if len(self.tabledict["1D Variables"]) > 0:
             self.tables["1D Variables"] = {}
+            self.sizes["1D Variables"] = {}
             output = subtitle.format("1D Variables")
             self.tabs = widgets.Tab(layout=widgets.Layout(width="initial"))
             children = []
             for key, val in sorted(self.tabledict["1D Variables"].items()):
                 html, size = table_from_dataset(val,
-                                                is_hist=is_histogram[key],
+                                                is_hist=self.is_histogram[key],
                                                 headers=self.headers,
                                                 max_rows=config.table_max_size)
                 self.tables["1D Variables"][key] = widgets.HTML(value=html)
                 hbox = self.make_hbox("1D Variables", key, size)
                 children.append(hbox)
+                self.sizes["1D Variables"][key] = size
 
             self.tabs.children = children
             for i, key in enumerate(
@@ -405,11 +437,11 @@ class TableViewer:
                     disabled=False,
                     continuous_update=True,
                     layout=widgets.Layout(width='150px'))
-                self.nrows[key].observe(self.update_table, names="value")
+                self.nrows[key].observe(self.update_slider, names="value")
                 self.sliders[key] = widgets.SelectionSlider(
-                    options=np.arange(size - config.table_max_size + 1)[::-1],
+                    options=np.arange(size - self.nrows[key].value + 1)[::-1],
                     value=0,
-                    description="Row",
+                    description="Starting row",
                     orientation='vertical',
                     continuous_update=False,
                     layout=widgets.Layout(height='400px'))
@@ -427,11 +459,31 @@ class TableViewer:
                 ])
         return hbox
 
-    def update_table(self, change):
+    def update_slider(self, change):
         key = change["owner"].key
         group = change["owner"].group
-        html, size = table_from_dataset(self.tabledict[group][key],
-                                        headers=self.headers,
-                                        row_start=self.sliders[key].value,
-                                        max_rows=self.nrows[key].value)
-        self.tables[group][key].value = html
+        val = self.sliders[key].value
+        # Prevent update while options are being changed
+        self.trigger_update = False
+        self.sliders[key].options = np.arange(self.sizes[group][key] -
+                                              change["new"] + 1)[::-1]
+        # Re-enable table updating
+        self.trigger_update = True
+        self.sliders[key].value = min(val, self.sliders[key].options[0])
+
+    def update_table(self, change):
+        if self.trigger_update:
+            key = change["owner"].key
+            group = change["owner"].group
+            to_table = self.tabledict[group]
+            # This extra indexing step comes from the fact that for the
+            # default key, the tabledict is a Dataset, while for the 1D
+            # Variables it is a dict of Datasets.
+            if group != "default":
+                to_table = to_table[key]
+            html, size = table_from_dataset(to_table,
+                                            is_hist=self.is_histogram[key],
+                                            headers=self.headers,
+                                            row_start=self.sliders[key].value,
+                                            max_rows=self.nrows[key].value)
+            self.tables[group][key].value = html
