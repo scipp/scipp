@@ -9,7 +9,6 @@ using namespace scipp;
 using namespace scipp::core;
 
 auto make_table() {
-  const scipp::index nCol = 3;
   const scipp::index nRow = 10;
   Dataset d;
   const auto column = makeVariable<double>(Dims{Dim::X}, Shape{nRow});
@@ -51,9 +50,24 @@ static void BM_dataset_slice_item_dims(benchmark::State &state) {
   state.SetItemsProcessed(state.iterations());
 }
 
+// Benchmark simulating a "real" workload with access to all columns and
+// multiple API calls (`dims()` and `data()`).
+static void BM_dataset_slice_aggregate(benchmark::State &state) {
+  auto d = make_table();
+  for (auto _ : state) {
+    auto slice = d.slice({Dim::X, 1});
+    for (const auto &item : slice) {
+      if (!item.second.dims().contains(Dim::X))
+        benchmark::DoNotOptimize(item.second.data());
+    }
+  }
+  state.SetItemsProcessed(state.iterations());
+}
+
 BENCHMARK(BM_dataset_create_view);
 BENCHMARK(BM_dataset_slice);
 BENCHMARK(BM_dataset_slice_item);
 BENCHMARK(BM_dataset_slice_item_dims);
+BENCHMARK(BM_dataset_slice_aggregate);
 
 BENCHMARK_MAIN();
