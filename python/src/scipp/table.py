@@ -3,11 +3,12 @@
 # @file
 # @author Igor Gudich & Neil Vaytet
 
+# Scipp imports
 from . import config
 from .utils import value_to_string, name_with_unit
 from ._scipp import core as sc
 
-import ipywidgets as widgets
+# Other imports
 import numpy as np
 
 
@@ -248,16 +249,20 @@ def table_from_dataset(dataset,
 
 
 def table(dataset):
+    """
+    Create a html table from the contents of a Dataset (0D and 1D Variables
+    only). The entries will be grouped by dimensions/coordinates.
+    """
 
     from IPython.display import display
-
     tv = TableViewer(dataset)
-
     display(tv.box)
 
 
 class TableViewer:
     def __init__(self, dataset):
+
+        self.widgets = __import__("ipywidgets")
 
         self.tabledict = {
             "default": sc.Dataset(),
@@ -367,12 +372,12 @@ class TableViewer:
                                            "").replace("'>", "")
 
         self.box = [
-            widgets.HTML(value="<span style='font-weight:bold;"
-                         "font-size:1.5em;'>{}</span>".format(title))
+            self.widgets.HTML(value="<span style='font-weight:bold;"
+                              "font-size:1.5em;'>{}</span>".format(title))
         ]
         self.tables = {}
         self.sliders = {}
-        self.label = widgets.Label(value="rows")
+        self.label = self.widgets.Label(value="rows")
         self.nrows = {}
         self.sizes = {}
 
@@ -380,7 +385,7 @@ class TableViewer:
             html, size = table_from_dataset(self.tabledict["default"],
                                             headers=self.headers,
                                             max_rows=config.table_max_size)
-            self.tables["default"] = {" ": widgets.HTML(value=html)}
+            self.tables["default"] = {" ": self.widgets.HTML(value=html)}
             hbox = self.make_hbox("default", " ", size)
             self.box.append(hbox)
             self.sizes["default"] = {" ": size}
@@ -390,21 +395,24 @@ class TableViewer:
             html, size = table_from_dataset(self.tabledict["0D Variables"],
                                             headers=self.headers,
                                             max_rows=config.table_max_size)
-            self.tables["0D Variables"][" "] = widgets.HTML(value=html)
+            self.tables["0D Variables"][" "] = self.widgets.HTML(value=html)
             hbox = self.make_hbox("0D Variables", " ", size)
-            self.box.append(widgets.VBox([widgets.HTML(value=output), hbox]))
+            self.box.append(
+                self.widgets.VBox([self.widgets.HTML(value=output), hbox]))
         if len(self.tabledict["1D Variables"]) > 0:
             self.tables["1D Variables"] = {}
             self.sizes["1D Variables"] = {}
             output = subtitle.format("1D Variables")
-            self.tabs = widgets.Tab(layout=widgets.Layout(width="initial"))
+            self.tabs = self.widgets.Tab(layout=self.widgets.Layout(
+                width="initial"))
             children = []
             for key, val in sorted(self.tabledict["1D Variables"].items()):
                 html, size = table_from_dataset(val,
                                                 is_hist=self.is_histogram[key],
                                                 headers=self.headers,
                                                 max_rows=config.table_max_size)
-                self.tables["1D Variables"][key] = widgets.HTML(value=html)
+                self.tables["1D Variables"][key] = self.widgets.HTML(
+                    value=html)
                 hbox = self.make_hbox("1D Variables", key, size)
                 children.append(hbox)
                 self.sizes["1D Variables"][key] = size
@@ -414,20 +422,22 @@ class TableViewer:
                     sorted(self.tabledict["1D Variables"].keys())):
                 self.tabs.set_title(i, key)
             self.box.append(
-                widgets.VBox([widgets.HTML(value=output), self.tabs]))
+                self.widgets.VBox([self.widgets.HTML(value=output),
+                                   self.tabs]))
 
-        self.box = widgets.VBox(self.box,
-                                layout=widgets.Layout(border="solid 1px",
-                                                      width="auto",
-                                                      display='flex',
-                                                      flex_flow='column'))
+        self.box = self.widgets.VBox(self.box,
+                                     layout=self.widgets.Layout(
+                                         border="solid 1px",
+                                         width="auto",
+                                         display='flex',
+                                         flex_flow='column'))
         return
 
     def make_hbox(self, group, key, size):
         hbox = self.tables[group][key]
         if size is not None:
             if size > config.table_max_size:
-                self.nrows[key] = widgets.BoundedIntText(
+                self.nrows[key] = self.widgets.BoundedIntText(
                     value=config.table_max_size,
                     min=1,
                     max=size,
@@ -435,24 +445,24 @@ class TableViewer:
                     description='Show',
                     disabled=False,
                     continuous_update=True,
-                    layout=widgets.Layout(width='150px'))
+                    layout=self.widgets.Layout(width='150px'))
                 self.nrows[key].observe(self.update_slider, names="value")
-                self.sliders[key] = widgets.SelectionSlider(
+                self.sliders[key] = self.widgets.SelectionSlider(
                     options=np.arange(size - self.nrows[key].value + 1)[::-1],
                     value=0,
                     description="Starting row",
                     orientation='vertical',
                     continuous_update=False,
-                    layout=widgets.Layout(height='400px'))
+                    layout=self.widgets.Layout(height='400px'))
                 setattr(self.sliders[key], "key", key)
                 setattr(self.nrows[key], "key", key)
                 setattr(self.sliders[key], "group", group)
                 setattr(self.nrows[key], "group", group)
                 self.sliders[key].observe(self.update_table, names="value")
-                hbox = widgets.HBox([
+                hbox = self.widgets.HBox([
                     hbox,
-                    widgets.VBox([
-                        widgets.HBox([self.nrows[key], self.label]),
+                    self.widgets.VBox([
+                        self.widgets.HBox([self.nrows[key], self.label]),
                         self.sliders[key]
                     ])
                 ])
