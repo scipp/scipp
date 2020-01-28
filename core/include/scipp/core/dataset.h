@@ -869,8 +869,12 @@ template <class T1, class T2> auto union_(const T1 &a, const T2 &b) {
 
 /// Const proxy for Dataset, implementing slicing and item selection.
 class SCIPP_CORE_EXPORT DatasetConstProxy {
-  static constexpr auto make_const_view =
-      [](const DataProxy &view) -> const DataConstProxy & { return view; };
+  struct make_const_view {
+    constexpr const DataConstProxy &operator()(const DataProxy &view) const
+        noexcept {
+      return view;
+    }
+  };
 
 public:
   using key_type = std::string;
@@ -898,11 +902,11 @@ public:
 
   auto begin() const && = delete;
   auto begin() const &noexcept {
-    return boost::make_transform_iterator(m_items.begin(), make_const_view);
+    return boost::make_transform_iterator(m_items.begin(), make_const_view{});
   }
   auto end() const && = delete;
   auto end() const &noexcept {
-    return boost::make_transform_iterator(m_items.end(), make_const_view);
+    return boost::make_transform_iterator(m_items.end(), make_const_view{});
   }
 
   auto items_begin() const && = delete;
