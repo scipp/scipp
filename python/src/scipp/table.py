@@ -122,7 +122,6 @@ def _make_trailing_cells(section, coord, index, size, base_style, edge_style):
 
 def _make_overflow_cells(section, base_style):
     html = []
-    print(section)
     for key, val in section:
         html.append("<td {}>...</td>".format(base_style))
         if val.variances is not None:
