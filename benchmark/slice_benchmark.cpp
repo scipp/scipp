@@ -57,8 +57,8 @@ static void BM_dataset_slice_aggregate(benchmark::State &state) {
   for (auto _ : state) {
     auto slice = d.slice({Dim::X, 1});
     for (const auto &item : slice) {
-      if (!item.second.dims().contains(Dim::X))
-        benchmark::DoNotOptimize(item.second.data());
+      if (!item.dims().contains(Dim::X))
+        benchmark::DoNotOptimize(item.data());
     }
   }
   state.SetItemsProcessed(state.iterations());
