@@ -65,7 +65,7 @@ template <class T> T convert_with_calibration_impl(T d, Dataset cal) {
   for (const auto &data : iter(d)) {
     if (data.coords()[Dim::Tof].dims().sparse()) {
       data.coords()[Dim::Tof] -= cal["tzero"].data();
-      data.coords()[Dim::Tof] /= cal["difc"].data();
+      data.coords()[Dim::Tof] *= reciprocal(cal["difc"].data());
     }
   }
 
