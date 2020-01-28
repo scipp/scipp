@@ -871,22 +871,26 @@ const DataProxy &DatasetProxy::operator[](const std::string &name) const {
 template <class T>
 std::pair<boost::container::small_vector<DataProxy, 8>, detail::slice_list>
 DatasetConstProxy::slice_items(const T &view, const Slice slice) {
-  const auto currentDims = view.dimensions();
-  expect::validSlice(currentDims, slice);
   auto slices = view.slices();
   boost::container::small_vector<DataProxy, 8> items;
-  bool edges = false;
-  const scipp::index extent = currentDims.at(slice.dim());
+  scipp::index extent = INT64_MAX;
   for (const auto &item : view) {
     const auto &dims = item.dims();
     if (dims.contains(slice.dim())) {
       items.emplace_back(DataProxy(item.slice(slice)));
-      // The dimension extent is either given by the coordinate, or by data,
-      // which can be 1 shorter in case of a bin-edge coordinate.
-      edges = dims[slice.dim()] == extent - 1;
+      // In principle data may be on bin edges. The overall dimension is then
+      // determined by the extent of data that is *not* on the edges.
+      extent = std::min(extent, dims[slice.dim()]);
     }
   }
-  slices.emplace_back(slice, edges ? extent - 1 : extent);
+  if (extent == INT64_MAX) {
+    // Fallback: Could not determine extent from data (not data that depends on
+    // slicing dimension), use `dimensions()` to also consider coords.
+    const auto currentDims = view.dimensions();
+    expect::validSlice(currentDims, slice);
+    extent = currentDims.at(slice.dim());
+  }
+  slices.emplace_back(slice, extent);
   return std::pair{std::move(items), std::move(slices)};
 }
 
