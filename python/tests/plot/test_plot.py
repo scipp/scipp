@@ -504,3 +504,22 @@ def test_plot_2d_with_dimension_of_size_1():
                          unit=sc.units.counts)
     plot(d["a"])
     plot(d["b"])
+
+
+def test_sparse_data_slice_with_on_the_fly_histogram():
+    N = 50
+    M = 10
+    var = sc.Variable(dims=[Dim.X, Dim.Tof],
+                      shape=[M, sc.Dimensions.Sparse],
+                      unit=sc.units.us)
+    for i in range(M):
+        v = np.random.normal(50.0, scale=20.0, size=int(np.random.rand() * N))
+        var[Dim.X, i].values = v
+
+    d = sc.Dataset()
+    d.coords[Dim.X] = sc.Variable([Dim.X],
+                                  values=np.arange(M),
+                                  unit=sc.units.m)
+    d['a'] = sc.DataArray(coords={Dim.Tof: var})
+    d['b'] = sc.DataArray(coords={Dim.Tof: var * 1.1})
+    plot(d[Dim.X, 4], bins=100)
