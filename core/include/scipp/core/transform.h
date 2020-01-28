@@ -281,8 +281,18 @@ static void do_transform(Op op, Out &&out, Tuple &&processed) {
   auto out_val = out.values();
   std::apply(
       [&op, &out, &out_val](auto &&... args) {
-        if constexpr ((is_ValuesAndVariances_v<std::decay_t<decltype(args)>> ||
-                       ...)) {
+        constexpr bool force_same = std::is_base_of_v<
+            transform_flags::expect_all_or_none_have_variance_t, Op>;
+        constexpr bool all_variances =
+            force_same &&
+            (is_ValuesAndVariances_v<std::decay_t<decltype(args)>> && ...);
+        constexpr bool variances =
+            all_variances ||
+            (is_ValuesAndVariances_v<std::decay_t<decltype(args)>> || ...);
+        if constexpr (force_same && !all_variances && variances) {
+          throw except::VariancesError(
+              "Expected either all or none of inputs to have variances.");
+        } else if constexpr (variances) {
           auto out_var = out.variances();
           transform_elements(op, ValuesAndVariances{out_val, out_var},
                              std::forward<decltype(args)>(args)...);
