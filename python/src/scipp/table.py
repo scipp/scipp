@@ -3,9 +3,13 @@
 # @file
 # @author Igor Gudich & Neil Vaytet
 
+# Scipp imports
 from . import config
 from .utils import value_to_string, name_with_unit
 from ._scipp import core as sc
+
+# Other imports
+import numpy as np
 
 
 def _make_table_section_name_header(name, section, style):
@@ -70,16 +74,14 @@ def _make_table_subsections(section, text_style):
     Adds Value | Variance columns for the section.
     """
     html = []
-
     for key, val in section:
         html.append("<th {}>Values</th>".format(text_style))
         if val.variances is not None:
             html.append("<th {}>Variances</th>".format(text_style))
-
     return "".join(html)
 
 
-def _make_value_rows(section, coord, index, base_style, edge_style):
+def _make_value_rows(section, coord, index, base_style, edge_style, row_start):
     html = []
     for key, val in section:
         header_line_for_bin_edges = False
@@ -87,7 +89,7 @@ def _make_value_rows(section, coord, index, base_style, edge_style):
             if len(val.values) == len(coord.values) - 1:
                 header_line_for_bin_edges = True
         if header_line_for_bin_edges:
-            if index == 0:
+            if index == row_start:
                 html.append("<td {}></td>".format(edge_style))
                 if val.variances is not None:
                     html.append("<td {}></td>".format(edge_style))
@@ -119,11 +121,42 @@ def _make_trailing_cells(section, coord, index, size, base_style, edge_style):
     return "".join(html)
 
 
-def table_from_dataset(dataset, is_hist=False, headers=2):
-    base_style = "style='border: 1px solid black;"
+def _make_overflow_cells(section, base_style):
+    html = []
+    for key, val in section:
+        html.append("<td {}>...</td>".format(base_style))
+        if val.variances is not None:
+            html.append("<td {}>...</td>".format(base_style))
+    return "".join(html)
 
-    mstyle = base_style + "text-align: center;'"
-    edge_style = "style='border: 0px solid white;background-color: #ffffff;'"
+
+def _make_overflow_row(dataset, coord, base_style, hover_style):
+    html = ["<tr {}>".format(hover_style)]
+    if coord is not None:
+        html.append(_make_overflow_cells([(" ", coord)], base_style))
+    html.append(_make_overflow_cells(dataset.labels, base_style))
+    html.append(_make_overflow_cells(dataset.masks, base_style))
+    html.append(_make_overflow_cells(dataset, base_style))
+    html.append("</tr>")
+    return "".join(html)
+
+
+def table_from_dataset(dataset,
+                       is_hist=False,
+                       headers=2,
+                       row_start=0,
+                       max_rows=None):
+    base_style = ("style='border: 1px solid black; padding: 0px 5px 0px 5px; "
+                  "text-align: right;")
+
+    mstyle = base_style + "text-align: center;"
+    vstyle = mstyle + "background-color: #f0f0f0;'"
+    mstyle += "'"
+    edge_style = ("style='border: 0px solid white;background-color: #ffffff; "
+                  "height:1.2em;'")
+    hover_style = ("onMouseOver=\"this.style.backgroundColor='" +
+                   config.colors["hover"] +
+                   "'\" onMouseOut=\"this.style.backgroundColor='#ffffff'\"")
 
     # Declare table
     html = "<table style='border-collapse: collapse;'>"
@@ -141,7 +174,7 @@ def table_from_dataset(dataset, is_hist=False, headers=2):
         html += _make_table_sections(dataset, coord, base_style)
 
     if headers > 0:
-        html += "<tr>"
+        html += "<tr {}>".format(hover_style)
 
         if coord is not None:
             html += "<th {} colspan='{}'>{}</th>".format(
@@ -152,22 +185,22 @@ def table_from_dataset(dataset, is_hist=False, headers=2):
         html += _make_table_unit_headers(dataset.masks, mstyle)
         html += _make_table_unit_headers(dataset, mstyle)
 
-        html += "</tr><tr>"
+        html += "</tr><tr {}>".format(hover_style)
 
         if coord is not None:
-            html += "<th {}>Values</th>".format(mstyle)
+            html += "<th {}>Values</th>".format(vstyle)
             if coord.variances is not None:
-                html += "<th {}>Variances</th>".format(mstyle)
-        html += _make_table_subsections(dataset.labels, mstyle)
-        html += _make_table_subsections(dataset.masks, mstyle)
-        html += _make_table_subsections(dataset, mstyle)
+                html += "<th {}>Variances</th>".format(vstyle)
+        html += _make_table_subsections(dataset.labels, vstyle)
+        html += _make_table_subsections(dataset.masks, vstyle)
+        html += _make_table_subsections(dataset, vstyle)
         html += "</tr>"
 
     # the base style still does not have a closing quote, so we add it here
     base_style += "'"
 
     if size is None:  # handle 0D variable
-        html += "<tr>"
+        html += "<tr {}>".format(hover_style)
         for key, val in dataset:
             html += "<td {}>{}</td>".format(base_style,
                                             value_to_string(val.value))
@@ -176,8 +209,11 @@ def table_from_dataset(dataset, is_hist=False, headers=2):
                                                 value_to_string(val.variance))
         html += "</tr>"
     else:
-        for i in range(size):
-            html += '<tr>'
+        row_end = min(size, row_start + max_rows)
+        if row_start > 0:
+            html += _make_overflow_row(dataset, coord, base_style, hover_style)
+        for i in range(row_start, row_end):
+            html += "<tr {}>".format(hover_style)
             # Add coordinates
             if coord is not None:
                 text = value_to_string(coord.values[i])
@@ -188,153 +224,275 @@ def table_from_dataset(dataset, is_hist=False, headers=2):
                         base_style, text)
 
             html += _make_value_rows(dataset.labels, coord, i, base_style,
-                                     edge_style)
+                                     edge_style, row_start)
             html += _make_value_rows(dataset.masks, coord, i, base_style,
-                                     edge_style)
-            html += _make_value_rows(dataset, coord, i, base_style, edge_style)
+                                     edge_style, row_start)
+            html += _make_value_rows(dataset, coord, i, base_style, edge_style,
+                                     row_start)
 
-            html += "</tr><tr>"
+            html += "</tr><tr {}>".format(hover_style)
             # If there are bin edges, we need to add trailing cells for data
             # and labels
             if coord is not None:
-                html += _make_trailing_cells(dataset.labels, coord, i, size,
+                html += _make_trailing_cells(dataset.labels, coord, i, row_end,
                                              base_style, edge_style)
-                html += _make_trailing_cells(dataset.masks, coord, i, size,
+                html += _make_trailing_cells(dataset.masks, coord, i, row_end,
                                              base_style, edge_style)
-                html += _make_trailing_cells(dataset, coord, i, size,
+                html += _make_trailing_cells(dataset, coord, i, row_end,
                                              base_style, edge_style)
             html += "</tr>"
+        if row_end != size:
+            html += _make_overflow_row(dataset, coord, base_style, hover_style)
 
     html += "</table>"
-    return html
+    return html, size
 
 
 def table(dataset):
+    """
+    Create a html table from the contents of a Dataset (0D and 1D Variables
+    only). The entries will be grouped by dimensions/coordinates.
+    """
 
-    from IPython.display import display, HTML
+    from IPython.display import display
+    tv = TableViewer(dataset)
+    display(tv.box)
 
-    tabledict = {
-        "default": sc.Dataset(),
-        "0D Variables": sc.Dataset(),
-        "1D Variables": {}
-    }
-    is_histogram = {}
-    headers = 0
-    is_empty = {}
 
-    tp = type(dataset)
+class TableViewer:
+    def __init__(self, dataset):
 
-    if (tp is sc.Dataset) or (tp is sc.DatasetProxy):
+        self.widgets = __import__("ipywidgets")
 
-        headers = 2
+        self.tabledict = {
+            "default": sc.Dataset(),
+            "0D Variables": sc.Dataset(),
+            "1D Variables": {}
+        }
+        self.is_histogram = {}
+        self.headers = 0
+        self.trigger_update = True
+        is_empty = {}
 
-        # First add one entry per dimension
-        for dim in dataset.dims:
-            key = str(dim)
-            tabledict["1D Variables"][key] = sc.Dataset()
-            is_empty[key] = True
-            is_histogram[key] = False
+        tp = type(dataset)
 
-        # Next add the variables
-        for name, var in dataset:
-            if len(var.dims) == 1:
-                dim = var.dims[0]
+        if (tp is sc.Dataset) or (tp is sc.DatasetProxy):
+
+            self.headers = 2
+
+            # First add one entry per dimension
+            for dim in dataset.dims:
                 key = str(dim)
-                if len(var.coords) > 0:
-                    if len(var.coords[dim].values) == len(var.values) + 1:
-                        is_histogram[key] = True
-                    tabledict["1D Variables"][key].coords[dim] = \
-                        var.coords[dim]
-                tabledict["1D Variables"][key][name] = var.data
-                is_empty[key] = False
+                self.tabledict["1D Variables"][key] = sc.Dataset()
+                is_empty[key] = True
+                self.is_histogram[key] = False
 
-            elif len(var.dims) == 0:
-                tabledict["0D Variables"][name] = var
-
-        # Next add only the 1D coordinates
-        for dim, var in dataset.coords:
-            if len(var.dims) == 1:
-                key = str(dim)
-                if dim not in tabledict["1D Variables"][key].coords:
-                    tabledict["1D Variables"][key].coords[dim] = var
+            # Next add the variables
+            for name, var in dataset:
+                if len(var.dims) == 1:
+                    dim = var.dims[0]
+                    key = str(dim)
+                    if len(var.coords) > 0:
+                        if len(var.coords[dim].values) == len(var.values) + 1:
+                            self.is_histogram[key] = True
+                        self.tabledict["1D Variables"][key].coords[dim] = \
+                            var.coords[dim]
+                    self.tabledict["1D Variables"][key][name] = var.data
                     is_empty[key] = False
 
-        # Next add the labels
-        for name, lab in dataset.labels:
-            if len(lab.dims) == 1:
-                dim = lab.dims[0]
-                key = str(dim)
-                if len(dataset.coords) > 0:
-                    if len(dataset.coords[dim].values) == len(lab.values) + 1:
-                        is_histogram[key] = True
-                    tabledict["1D Variables"][key].coords[dim] = \
-                        dataset.coords[dim]
-                tabledict["1D Variables"][key].labels[name] = lab
-                is_empty[key] = False
+                elif len(var.dims) == 0:
+                    self.tabledict["0D Variables"][name] = var
 
-        # Next add the masks
-        for name, mask in dataset.masks:
-            if len(mask.dims) == 1:
-                dim = mask.dims[0]
-                key = str(dim)
-                if len(dataset.coords) > 0:
-                    if len(dataset.coords[dim].values) == len(mask.values) + 1:
-                        is_histogram[key] = True
-                    tabledict["1D Variables"][key].coords[dim] = \
-                        dataset.coords[dim]
-                tabledict["1D Variables"][key].masks[name] = mask
-                is_empty[key] = False
+            # Next add only the 1D coordinates
+            for dim, var in dataset.coords:
+                if len(var.dims) == 1:
+                    key = str(dim)
+                    if dim not in self.tabledict["1D Variables"][key].coords:
+                        self.tabledict["1D Variables"][key].coords[dim] = var
+                        is_empty[key] = False
 
-        # Now purge out the empty entries
-        for key, val in is_empty.items():
-            if val:
-                del (tabledict["1D Variables"][key])
+            # Next add the labels
+            for name, lab in dataset.labels:
+                if len(lab.dims) == 1:
+                    dim = lab.dims[0]
+                    key = str(dim)
+                    if len(dataset.coords) > 0:
+                        if len(dataset.coords[dim].values) == len(
+                                lab.values) + 1:
+                            self.is_histogram[key] = True
+                        self.tabledict["1D Variables"][key].coords[dim] = \
+                            dataset.coords[dim]
+                    self.tabledict["1D Variables"][key].labels[name] = lab
+                    is_empty[key] = False
 
-    elif (tp is sc.DataArray) or (tp is sc.DataProxy):
-        headers = 2
-        key = dataset.name
-        tabledict["default"][key] = dataset.data
-        if len(dataset.coords) > 0:
-            dim = dataset.dims[0]
-            tabledict["default"][key].coords[dim] = dataset.coords[dim]
-    elif (tp is sc.Variable) or (tp is sc.VariableProxy):
-        headers = 1
-        key = str(dataset.dims[0])
-        tabledict["default"][key] = dataset
-    else:
-        tabledict["default"][""] = sc.Variable([sc.Dim.Row], values=dataset)
-        headers = 0
+            # Next add the masks
+            for name, mask in dataset.masks:
+                if len(mask.dims) == 1:
+                    dim = mask.dims[0]
+                    key = str(dim)
+                    if len(dataset.coords) > 0:
+                        if len(dataset.coords[dim].values) == len(
+                                mask.values) + 1:
+                            self.is_histogram[key] = True
+                        self.tabledict["1D Variables"][key].coords[dim] = \
+                            dataset.coords[dim]
+                    self.tabledict["1D Variables"][key].masks[name] = mask
+                    is_empty[key] = False
 
-    subtitle = "<tr><td style='font-weight:normal;color:grey;"
-    subtitle += "font-style:italic;background-color:#ffffff;"
-    subtitle += "text-align:left;font-size:1.2em;padding: 1px;'>"
-    subtitle += "&nbsp;{}</td></tr>"
-    whitetd = "<tr><td style='background-color:#ffffff;'>"
-    title = str(type(dataset)).replace("<class 'scipp._scipp.core.",
-                                       "").replace("'>", "")
-    output = "<table style='border: 1px solid black;'><tr>"
-    output += "<td style='font-weight:bold;font-size:1.5em;padding:1px;"
-    output += "text-align:center;background-color:#ffffff;'>"
-    output += "{}</td></tr>".format(title)
+            # Now purge out the empty entries
+            for key, val in is_empty.items():
+                if val:
+                    del (self.tabledict["1D Variables"][key])
 
-    if len(tabledict["default"]) > 0:
-        output += whitetd
-        output += table_from_dataset(tabledict["default"], headers=headers)
-        output += "</td></tr>"
-    if len(tabledict["0D Variables"]) > 0:
-        output += subtitle.format("0D Variables")
-        output += whitetd
-        output += table_from_dataset(tabledict["0D Variables"],
-                                     headers=headers)
-        output += "</td></tr>"
-    if len(tabledict["1D Variables"].keys()) > 0:
-        output += subtitle.format("1D Variables")
-        output += whitetd
-        for key, val in sorted(tabledict["1D Variables"].items()):
-            output += table_from_dataset(val,
-                                         is_hist=is_histogram[key],
-                                         headers=headers)
-        output += "</td></tr>"
-    output += "</table>"
+        elif (tp is sc.DataArray) or (tp is sc.DataProxy):
+            self.headers = 2
+            key = dataset.name
+            self.tabledict["default"][key] = dataset.data
+            if len(dataset.coords) > 0:
+                dim = dataset.dims[0]
+                self.tabledict["default"][key].coords[dim] = dataset.coords[
+                    dim]
+        elif (tp is sc.Variable) or (tp is sc.VariableProxy):
+            self.headers = 1
+            key = str(dataset.dims[0])
+            self.tabledict["default"][key] = dataset
+            self.is_histogram[key] = False
+        else:
+            self.headers = 0
+            key = " "
+            self.tabledict["default"][key] = sc.Variable([sc.Dim.Row],
+                                                         values=dataset)
+            self.is_histogram[key] = False
 
-    display(HTML(output))
+        subtitle = "<span style='font-weight:normal;color:grey;"
+        subtitle += "font-style:italic;background-color:#ffffff;"
+        subtitle += "text-align:left;font-size:1.2em;padding: 1px;'>"
+        subtitle += "{}</span>"
+        title = str(type(dataset)).replace("<class 'scipp._scipp.core.",
+                                           "").replace("'>", "")
+
+        self.box = [
+            self.widgets.HTML(value="<span style='font-weight:bold;"
+                              "font-size:1.5em;'>{}</span>".format(title))
+        ]
+        self.tables = {}
+        self.sliders = {}
+        self.label = self.widgets.Label(value="rows")
+        self.nrows = {}
+        self.sizes = {}
+
+        if len(self.tabledict["default"]) > 0:
+            html, size = table_from_dataset(self.tabledict["default"],
+                                            headers=self.headers,
+                                            max_rows=config.table_max_size)
+            self.tables["default"] = {" ": self.widgets.HTML(value=html)}
+            hbox = self.make_hbox("default", " ", size)
+            self.box.append(hbox)
+            self.sizes["default"] = {" ": size}
+        if len(self.tabledict["0D Variables"]) > 0:
+            self.tables["0D Variables"] = {}
+            output = subtitle.format("0D Variables")
+            html, size = table_from_dataset(self.tabledict["0D Variables"],
+                                            headers=self.headers,
+                                            max_rows=config.table_max_size)
+            self.tables["0D Variables"][" "] = self.widgets.HTML(value=html)
+            hbox = self.make_hbox("0D Variables", " ", size)
+            self.box.append(
+                self.widgets.VBox([self.widgets.HTML(value=output), hbox]))
+        if len(self.tabledict["1D Variables"]) > 0:
+            self.tables["1D Variables"] = {}
+            self.sizes["1D Variables"] = {}
+            output = subtitle.format("1D Variables")
+            self.tabs = self.widgets.Tab(layout=self.widgets.Layout(
+                width="initial"))
+            children = []
+            for key, val in sorted(self.tabledict["1D Variables"].items()):
+                html, size = table_from_dataset(val,
+                                                is_hist=self.is_histogram[key],
+                                                headers=self.headers,
+                                                max_rows=config.table_max_size)
+                self.tables["1D Variables"][key] = self.widgets.HTML(
+                    value=html)
+                hbox = self.make_hbox("1D Variables", key, size)
+                children.append(hbox)
+                self.sizes["1D Variables"][key] = size
+
+            self.tabs.children = children
+            for i, key in enumerate(
+                    sorted(self.tabledict["1D Variables"].keys())):
+                self.tabs.set_title(i, key)
+            self.box.append(
+                self.widgets.VBox([self.widgets.HTML(value=output),
+                                   self.tabs]))
+
+        self.box = self.widgets.VBox(self.box,
+                                     layout=self.widgets.Layout(
+                                         border="solid 1px",
+                                         width="auto",
+                                         display='flex',
+                                         flex_flow='column'))
+        return
+
+    def make_hbox(self, group, key, size):
+        hbox = self.tables[group][key]
+        if size is not None:
+            if size > config.table_max_size:
+                self.nrows[key] = self.widgets.BoundedIntText(
+                    value=config.table_max_size,
+                    min=1,
+                    max=size,
+                    step=1,
+                    description='Show',
+                    disabled=False,
+                    continuous_update=True,
+                    layout=self.widgets.Layout(width='150px'))
+                self.nrows[key].observe(self.update_slider, names="value")
+                self.sliders[key] = self.widgets.SelectionSlider(
+                    options=np.arange(size - self.nrows[key].value + 1)[::-1],
+                    value=0,
+                    description="Starting row",
+                    orientation='vertical',
+                    continuous_update=False,
+                    layout=self.widgets.Layout(height='400px'))
+                setattr(self.sliders[key], "key", key)
+                setattr(self.nrows[key], "key", key)
+                setattr(self.sliders[key], "group", group)
+                setattr(self.nrows[key], "group", group)
+                self.sliders[key].observe(self.update_table, names="value")
+                hbox = self.widgets.HBox([
+                    hbox,
+                    self.widgets.VBox([
+                        self.widgets.HBox([self.nrows[key], self.label]),
+                        self.sliders[key]
+                    ])
+                ])
+        return hbox
+
+    def update_slider(self, change):
+        key = change["owner"].key
+        group = change["owner"].group
+        val = self.sliders[key].value
+        # Prevent update while options are being changed
+        self.trigger_update = False
+        self.sliders[key].options = np.arange(self.sizes[group][key] -
+                                              change["new"] + 1)[::-1]
+        # Re-enable table updating
+        self.trigger_update = True
+        self.sliders[key].value = min(val, self.sliders[key].options[0])
+
+    def update_table(self, change):
+        if self.trigger_update:
+            key = change["owner"].key
+            group = change["owner"].group
+            to_table = self.tabledict[group]
+            # This extra indexing step comes from the fact that for the
+            # default key, the tabledict is a Dataset, while for the 1D
+            # Variables it is a dict of Datasets.
+            if group != "default":
+                to_table = to_table[key]
+            html, size = table_from_dataset(to_table,
+                                            is_hist=self.is_histogram[key],
+                                            headers=self.headers,
+                                            row_start=self.sliders[key].value,
+                                            max_rows=self.nrows[key].value)
+            self.tables[group][key].value = html

@@ -82,7 +82,9 @@ defaults = {
         "labels": "#afdde9",
         "attr": "#ff8080",
         "mask": "#cccccc",
+        "hover": "#d6eaf8",
     },
+    "table_max_size": 50,
 }
 
 config_directory = appdirs.user_config_dir('scipp')
