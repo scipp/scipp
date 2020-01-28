@@ -80,29 +80,6 @@ def test_del_item_missing():
         del d['not an item']
 
 
-def make_dataset_abc():
-    d = sc.Dataset()
-    d['a'] = 1.0 * sc.units.m
-    d['b'] = 2.0 * sc.units.m
-    d['c'] = 3.0 * sc.units.m
-    return d
-
-
-def test_iter():
-    d = make_dataset_abc()
-    keys = d.keys()
-    assert len(keys) == 3
-    for key in ['a', 'b', 'c']:
-        assert key in keys
-
-
-def test_items():
-    d = make_dataset_abc()
-    assert len(d.items()) == 3
-    for name, value in d.items():
-        assert name == value.name
-
-
 def test_coord_setitem():
     var = sc.Variable([Dim.X], values=np.arange(4))
     d = sc.Dataset({'a': var}, coords={Dim.X: var})
