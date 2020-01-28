@@ -1269,16 +1269,13 @@ TEST(VariableTest, nan_to_num) {
   EXPECT_EQ(b, expected);
 }
 
-TEST(VariableTest, nan_to_num_with_variance) {
+TEST(VariableTest,
+     nan_to_num_with_variance_throws_if_replacement_has_no_variance) {
   auto a = makeVariable<double>(Dims{Dim::X}, Shape{2},
                                 Values{1.0, double(NAN)}, Variances{0.1, 0.2});
 
   const auto replacement_value = makeVariable<double>(Values{-1});
-  Variable b = nan_to_num(a, replacement_value);
-  auto expected = makeVariable<double>(
-      Dims{Dim::X}, Shape{2}, Values{1.0, replacement_value.value<double>()},
-      Variances{0.1, replacement_value.value<double>()});
-  EXPECT_EQ(b, expected);
+  EXPECT_THROW(nan_to_num(a, replacement_value), except::VariancesError);
 }
 
 TEST(VariableTest, nan_to_num_with_variance_and_variance_on_replacement) {

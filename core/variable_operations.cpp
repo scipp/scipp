@@ -354,28 +354,13 @@ VariableProxy nan_to_num(const VariableConstProxy &var,
 
 Variable nan_to_num(const VariableConstProxy &var,
                     const VariableConstProxy &replacement) {
-  validate_inputs_for_replacement(var, replacement);
-
-  return transform<pair_custom_t<double, float>>(
+  using std::isnan;
+  return transform<std::tuple<double, float>>(
       var, replacement,
-      overloaded{[&](const auto &x, const auto &repl) {
-                   using std::isnan;
-                   using V = std::decay_t<decltype(x)>;
-                   using R = std::decay_t<decltype(repl)>;
-
-                   if constexpr (is_ValueAndVariance_v<V>) {
-                     if constexpr (is_ValueAndVariance_v<R>)
-                       return isnan(x) ? repl : x;
-                     else
-                       return isnan(x) ? V{repl, repl} : x;
-                   } else {
-                     if constexpr (is_ValueAndVariance_v<R>)
-                       return isnan(x) ? repl.value : x;
-                     else
-                       return isnan(x) ? repl : x;
-                   }
-                 },
-                 [](const units::Unit &u, const units::Unit &) { return u; }});
+      overloaded{
+          transform_flags::expect_all_or_none_have_variance,
+          [](const auto &x, const auto &repl) { return isnan(x) ? repl : x; },
+          [](const units::Unit &u, const units::Unit &) { return u; }});
 }
 
 } // namespace scipp::core
