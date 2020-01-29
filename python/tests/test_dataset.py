@@ -770,76 +770,25 @@ def test_sparse_dim_has_none_shape(dims, lengths):
     assert ds["data"].shape[-1] is None
 
 
-# def test_delitem(self):
-#    dataset = sc.Dataset()
-#    dataset[sc.Data.Value, "data"] = ([sc.Dim.Z, sc.Dim.Y, sc.Dim.X],
-#                                      (1, 2, 3))
-#    dataset[sc.Data.Value, "aux"] = ([], ())
-#    self.assertTrue((sc.Data.Value, "data") in dataset)
-#    self.assertEqual(len(dataset.dimensions), 3)
-#    del dataset[sc.Data.Value, "data"]
-#    self.assertFalse((sc.Data.Value, "data") in dataset)
-#    self.assertEqual(len(dataset.dimensions), 0)
-#
-#    dataset[sc.Data.Value, "data"] = ([sc.Dim.Z, sc.Dim.Y, sc.Dim.X],
-#                                      (1, 2, 3))
-#    dataset[sc.Coord.X] = ([sc.Dim.X], np.arange(3))
-#    del dataset[sc.Data.Value, "data"]
-#    self.assertFalse((sc.Data.Value, "data") in dataset)
-#    self.assertEqual(len(dataset.dimensions), 1)
-#    del dataset[sc.Coord.X]
-#    self.assertFalse(sc.Coord.X in dataset)
-#    self.assertEqual(len(dataset.dimensions), 0)
-#
-# def test_insert_default_init(self):
-#    d = sc.Dataset()
-#    d[sc.Data.Value, "data1"] = ((sc.Dim.Z, sc.Dim.Y, sc.Dim.X), (4, 3, 2))
-#    self.assertEqual(len(d), 1)
-#    np.testing.assert_array_equal(
-#        d[sc.Data.Value, "data1"].numpy, np.zeros(shape=(4, 3, 2)))
-#
-# def test_insert(self):
-#    d = sc.Dataset()
-#    d[sc.Data.Value, "data1"] = (
-#        [sc.Dim.Z, sc.Dim.Y, sc.Dim.X], np.arange(24).reshape(4, 3, 2))
-#    self.assertEqual(len(d), 1)
-#    np.testing.assert_array_equal(
-#        d[sc.Data.Value, "data1"].numpy, self.reference_data1)
-#
-#    self.assertRaisesRegex(
-#        RuntimeError,
-#        "Cannot insert variable into Dataset: Dimensions do not match.",
-#        d.__setitem__,
-#        (sc.Data.Value,
-#         "data2"),
-#        ([
-#            sc.Dim.Z,
-#            sc.Dim.Y,
-#            sc.Dim.X],
-#            np.arange(24).reshape(
-#            4,
-#            2,
-#            3)))
-#
-# def test_replace(self):
-#    d = sc.Dataset()
-#    d[sc.Data.Value, "data1"] = (
-#        [sc.Dim.Z, sc.Dim.Y, sc.Dim.X], np.zeros(24).reshape(4, 3, 2))
-#    d[sc.Data.Value, "data1"] = (
-#        [sc.Dim.Z, sc.Dim.Y, sc.Dim.X], np.arange(24).reshape(4, 3, 2))
-#    self.assertEqual(len(d), 1)
-#    np.testing.assert_array_equal(
-#        d[sc.Data.Value, "data1"].numpy, self.reference_data1)
-#
-# def test_insert_Variable(self):
-#    d = sc.Dataset()
-#    d[sc.Data.Value, "data1"] = (
-#        [sc.Dim.Z, sc.Dim.Y, sc.Dim.X], np.arange(24).reshape(4, 3, 2))
-#
-#    var = sc.Variable([sc.Dim.X], np.arange(2))
-#    d[sc.Data.Value, "data2"] = var
-#    d[sc.Data.Variance, "data2"] = var
-#    self.assertEqual(len(d), 3)
+def test_replace():
+    v1 = sc.Variable([Dim.X], values=np.array([1, 2, 3]))
+    d = sc.Dataset({'a': v1})
+    assert d['a'].data == v1
+    v2 = sc.Variable([Dim.X], values=np.array([4, 5, 6]))
+    d['a'] = v2
+    assert d['a'].data == v2
+
+
+# test_delitem - tested elsewhere
+# test_insert_default_init - not relevant
+# test_insert - equivalent tested elsewhere
+# test_replace - refactored
+# test_insert_Variable - tested elsewhere
+# test_demo_int_to_float_issue - not relevant?
+# test_binary_dataset_rhs_operations - tested elsewhere
+# test_binary_variable_rhs_operations - tested elsewhere
+# test_binary_float_operations - tested elsewhere
+# test_equal_not_equal - tested elsewhere
 #
 # def test_insert_variable_slice(self):
 #    d = sc.Dataset()
@@ -849,22 +798,6 @@ def test_sparse_dim_has_none_shape(dims, lengths):
 #    d[sc.Data.Value, "data2"] = d[sc.Data.Value, "data1"]
 #    d[sc.Data.Variance, "data2"] = d[sc.Data.Value, "data1"]
 #    self.assertEqual(len(d), 3)
-#
-# This characterises existing broken behaviour. Will need to be fixed.
-# def test_demo_int_to_float_issue(self):
-#    # Demo bug
-#    d = sc.Dataset()
-#    # Variable containing int array data
-#    d[sc.Data.Value, "v1"] = ([sc.Dim.X, sc.Dim.Y], np.ndarray.tolist(
-#        np.arange(0, 10).reshape(2, 5)))
-#    # Correct behaviour should be int64
-#    self.assertEqual(d[sc.Data.Value, "v1"].numpy.dtype, 'float64')
-#
-#    # Demo working 1D
-#    d = sc.Dataset()
-#    d[sc.Data.Value, "v2"] = ([sc.Dim.X], np.ndarray.tolist(
-#        np.arange(0, 10)))  # Variable containing int array data
-#    self.assertEqual(d[sc.Data.Value, "v2"].numpy.dtype, 'int64')
 #
 # def test_set_data(self):
 #    d = sc.Dataset()
@@ -1113,138 +1046,6 @@ def test_sparse_dim_has_none_shape(dims, lengths):
 #    op(a, b)
 #    # Desired nan comparisons
 #    np.testing.assert_equal(a[sc.Data.Value, lh_var_name].numpy, data)
-#
-# def test_binary_dataset_rhs_operations(self):
-#    a = sc.Dataset()
-#    a[sc.Coord.X] = ([sc.Dim.X], np.arange(10))
-#    a[sc.Data.Value, "i"] = ([sc.Dim.X], np.arange(10, dtype='float64'))
-#    a[sc.Data.Variance, "i"] = ([sc.Dim.X], np.arange(10, dtype='float64'))
-#    b = sc.Dataset()
-#    b[sc.Data.Value, "j"] = ([sc.Dim.X], np.arange(10, dtype='float64'))
-#    b[sc.Data.Variance, "j"] = ([sc.Dim.X], np.arange(10, dtype='float64'))
-#    data = np.copy(a[sc.Data.Value, "i"].numpy)
-#    variance = np.copy(a[sc.Data.Variance, "i"].numpy)
-#
-#    c = a + b
-#    # Variables "i" and "j" added despite different names
-#    self.assertTrue(np.array_equal(c[sc.Data.Value, "i"].numpy,
-#                                   data + data))
-#    self.assertTrue(np.array_equal(
-#        c[sc.Data.Variance, "i"].numpy, variance + variance))
-#
-#    c = a - b
-#    # Variables "a" and "b" subtracted despite different names
-#    self.assertTrue(np.array_equal(c[sc.Data.Value, "i"].numpy,
-#                                   data - data))
-#    self.assertTrue(np.array_equal(
-#        c[sc.Data.Variance, "i"].numpy, variance + variance))
-#
-#    c = a * b
-#    # Variables "a" and "b" multiplied despite different names
-#    self.assertTrue(np.array_equal(c[sc.Data.Value, "i"].numpy,
-#                                   data * data))
-#    self.assertTrue(np.array_equal(
-#        c[sc.Data.Variance, "i"].numpy, variance * (data * data) * 2))
-#
-#    c = a / b
-#    # Variables "a" and "b" divided despite different names
-#    with np.errstate(invalid="ignore"):
-#        np.testing.assert_equal(c[sc.Data.Value, "i"].numpy, data / data)
-#        np.testing.assert_equal(c[sc.Data.Variance, "i"].numpy,
-#                                2 * variance / (data * data))
-#
-#    self._apply_test_op_rhs_dataset(operator.iadd, a, b, data)
-#    self._apply_test_op_rhs_dataset(operator.isub, a, b, data)
-#    self._apply_test_op_rhs_dataset(operator.imul, a, b, data)
-#    with np.errstate(invalid="ignore"):
-#        self._apply_test_op_rhs_dataset(operator.itruediv, a, b, data)
-#
-# def test_binary_variable_rhs_operations(self):
-#    data = np.ones(10, dtype='float64')
-#
-#    a = sc.Dataset()
-#    a[sc.Coord.X] = ([sc.Dim.X], np.arange(10))
-#    a[sc.Data.Value, "i"] = ([sc.Dim.X], data)
-#
-#    b_var = sc.Variable([sc.Dim.X], data)
-#
-#    c = a + b_var
-#    self.assertTrue(np.array_equal(c[sc.Data.Value, "i"].numpy,
-#                                   data + data))
-#    c = a - b_var
-#    self.assertTrue(np.array_equal(c[sc.Data.Value, "i"].numpy,
-#                                   data - data))
-#    c = a * b_var
-#    self.assertTrue(np.array_equal(c[sc.Data.Value, "i"].numpy,
-#                                   data * data))
-#    c = a / b_var
-#    self.assertTrue(np.array_equal(c[sc.Data.Value, "i"].numpy,
-#                                   data / data))
-#
-#    self._apply_test_op_rhs_Variable(operator.iadd, a, b_var, data)
-#    self._apply_test_op_rhs_Variable(operator.isub, a, b_var, data)
-#    self._apply_test_op_rhs_Variable(operator.imul, a, b_var, data)
-#    with np.errstate(invalid="ignore"):
-#        self._apply_test_op_rhs_Variable(operator.itruediv, a, b_var, data)
-#
-# def test_binary_float_operations(self):
-#    a = sc.Dataset()
-#    a[sc.Coord.X] = ([sc.Dim.X], np.arange(10))
-#    a[sc.Data.Value, "i"] = ([sc.Dim.X], np.arange(10, dtype='float64'))
-#    b = sc.Dataset()
-#    b[sc.Data.Value, "j"] = ([sc.Dim.X], np.arange(10, dtype='float64'))
-#    data = np.copy(a[sc.Data.Value, "i"].numpy)
-#
-#    c = a + 2.0
-#    self.assertTrue(np.array_equal(c[sc.Data.Value, "i"].numpy,
-#                                   data + 2.0))
-#    c = a - b
-#    self.assertTrue(np.array_equal(c[sc.Data.Value, "i"].numpy,
-#                                   data - data))
-#    c = a - 2.0
-#    self.assertTrue(np.array_equal(c[sc.Data.Value, "i"].numpy,
-#                                   data - 2.0))
-#    c = a * 2.0
-#    self.assertTrue(np.array_equal(c[sc.Data.Value, "i"].numpy,
-#                                   data * 2.0))
-#    c = a / 2.0
-#    self.assertTrue(np.array_equal(c[sc.Data.Value, "i"].numpy,
-#                                   data / 2.0))
-#    c = 2.0 + a
-#    self.assertTrue(np.array_equal(c[sc.Data.Value, "i"].numpy,
-#                                   data + 2.0))
-#    c = 2.0 - a
-#    self.assertTrue(np.array_equal(c[sc.Data.Value, "i"].numpy,
-#                                   2.0 - data))
-#    c = 2.0 * a
-#    self.assertTrue(np.array_equal(c[sc.Data.Value, "i"].numpy,
-#                                   data * 2.0))
-#
-# def test_equal_not_equal(self):
-#    a = sc.Dataset()
-#    a[sc.Coord.X] = ([sc.Dim.X], np.arange(10))
-#    a[sc.Data.Value, "i"] = ([sc.Dim.X], np.arange(10, dtype='float64'))
-#    b = sc.Dataset()
-#    b[sc.Data.Value, "j"] = ([sc.Dim.X], np.arange(10, dtype='float64'))
-#    c = a + b
-#    d = sc.Dataset()
-#    d[sc.Coord.X] = ([sc.Dim.X], np.arange(10))
-#    d[sc.Data.Value, "i"] = ([sc.Dim.X], np.arange(10, dtype='float64'))
-#    a_slice = a[sc.Dim.X, :]
-#    d_slice = d[sc.Dim.X, :]
-#    # Equal
-#    self.assertEqual(a, d)
-#    self.assertEqual(a, a_slice)
-#    self.assertEqual(a_slice, d_slice)
-#    self.assertEqual(d, a)
-#    self.assertEqual(d_slice, a)
-#    self.assertEqual(d_slice, a_slice)
-#    # Not equal
-#    self.assertNotEqual(a, b)
-#    self.assertNotEqual(a, c)
-#    self.assertNotEqual(a_slice, c)
-#    self.assertNotEqual(c, a)
-#    self.assertNotEqual(c, a_slice)
 #
 # def test_plus_equals_slice(self):
 #    dataset = sc.Dataset()
