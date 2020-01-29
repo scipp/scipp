@@ -303,7 +303,7 @@ VariableProxy nan_to_num(const VariableConstProxy &var,
       scipp::overloaded{
           transform_flags::expect_all_or_none_have_variance,
           [](auto &a, const auto &b, const auto &repl) {
-            a = isnan(b) ? repl : a;
+            a = isnan(b) ? repl : b;
           },
           [](units::Unit &a, const units::Unit &b, const units::Unit &repl) {
             expect::equals(b, repl);
