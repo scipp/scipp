@@ -532,6 +532,9 @@ template <bool dry_run> struct in_place {
                                 std::decay_t<decltype(arg)>>,
                             is_ValuesAndVariances_v<
                                 std::decay_t<decltype(args)>>...)) {
+            (void)arg_var;
+            (void)args_var;
+            (void)in_var_if_out_var;
             throw except::VariancesError(
                 "Expected either all or none of inputs to have variances.");
           } else if constexpr ((in_var_if_out_var ? arg_var == args_var
@@ -539,6 +542,7 @@ template <bool dry_run> struct in_place {
                                std::is_base_of_v<
                                    transform_flags::expect_no_variance_arg_t<0>,
                                    Op>) {
+            (void)force_same;
             transform_in_place_impl(op, std::forward<decltype(arg)>(arg),
                                     std::forward<decltype(args)>(args)...);
           } else {
