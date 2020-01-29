@@ -86,7 +86,7 @@ template <class T> T GroupBy<T>::flatten(const Dim reductionDim) const {
 namespace groupby_detail {
 static constexpr auto sum = [](const VariableProxy &out_data,
                                const auto &data_container,
-                               const std::vector<Slice> &group,
+                               const GroupByGrouping::group &group,
                                const Dim reductionDim, const Variable &mask) {
   for (const auto &slice : group) {
     const auto data_slice = data_container.slice(slice);
@@ -98,23 +98,23 @@ static constexpr auto sum = [](const VariableProxy &out_data,
 };
 
 template <void (*Func)(const VariableProxy &, const VariableConstProxy &)>
-static constexpr auto reduce_idempotent = [](const VariableProxy &out_data,
-                                             const auto &data_container,
-                                             const std::vector<Slice> &group,
-                                             const Dim reductionDim,
-                                             const Variable &mask) {
-  bool first = true;
-  for (const auto &slice : group) {
-    const auto data_slice = data_container.slice(slice);
-    if (mask.dims().contains(reductionDim))
-      throw std::runtime_error("This operation does not support masks yet.");
-    if (first) {
-      out_data.assign(data_slice.data().slice({reductionDim, 0}));
-      first = false;
-    }
-    Func(out_data, data_slice.data());
-  }
-};
+static constexpr auto reduce_idempotent =
+    [](const VariableProxy &out_data, const auto &data_container,
+       const GroupByGrouping::group &group, const Dim reductionDim,
+       const Variable &mask) {
+      bool first = true;
+      for (const auto &slice : group) {
+        const auto data_slice = data_container.slice(slice);
+        if (mask.dims().contains(reductionDim))
+          throw std::runtime_error(
+              "This operation does not support masks yet.");
+        if (first) {
+          out_data.assign(data_slice.data().slice({reductionDim, 0}));
+          first = false;
+        }
+        Func(out_data, data_slice.data());
+      }
+    };
 } // namespace groupby_detail
 
 /// Reduce each group using `sum` and return combined data.
@@ -195,7 +195,7 @@ template <class T> struct MakeGroups {
     const auto &values = key.values<T>();
 
     const auto dim = key.dims().inner();
-    std::map<T, std::vector<Slice>> indices;
+    std::map<T, GroupByGrouping::group> indices;
     const auto end = values.end();
     scipp::index i = 0;
     for (auto it = values.begin(); it != end;) {
@@ -212,7 +212,7 @@ template <class T> struct MakeGroups {
 
     const Dimensions dims{targetDim, scipp::size(indices)};
     std::vector<T> keys;
-    std::vector<std::vector<Slice>> groups;
+    std::vector<GroupByGrouping::group> groups;
     for (auto &item : indices) {
       keys.push_back(item.first);
       groups.emplace_back(std::move(item.second));
@@ -236,7 +236,7 @@ template <class T> struct MakeBinGroups {
     expect::histogram::sorted_edges(edges);
 
     const auto dim = key.dims().inner();
-    std::vector<std::vector<Slice>> groups(edges.size() - 1);
+    std::vector<GroupByGrouping::group> groups(edges.size() - 1);
     for (scipp::index i = 0; i < scipp::size(values);) {
       // Use contiguous (thick) slices if possible to avoid overhead of slice
       // handling in follow-up "apply" steps.
