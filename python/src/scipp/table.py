@@ -263,24 +263,28 @@ class TableViewer:
             ndims = len(scipp_obj.shape)
             if ndims < 2:
                 group = "{}D Variables".format(ndims)
-            group = "default"
-            is_var = is_variable(scipp_obj)
-            self.headers = is_var
-            # self.headers = 0
-            key = " "
+                # group = "default"
+                if is_variable(scipp_obj):
+                    self.headers = 1
+                    key = str(scipp_obj.dims[0])
+                    var = scipp_obj
+                else:
+                    self.headers = 0
+                    key = " "
+                    var = sc.Variable([sc.Dim.Row], values=scipp_obj)
 
-            # self.tabledict[group][key] = {}
-            if is_var:
-                var = scipp_obj
-            else:
-                var = sc.Variable([sc.Dim.Row], values=scipp_obj)
-            self.tabledict[group][key] = {key: var}
+                # # self.tabledict[group][key] = {}
+                # if is_var:
+                #     var = scipp_obj
+                # else:
+                #     var = sc.Variable([sc.Dim.Row], values=scipp_obj)
+                self.tabledict[group][key] = {"data": {key: var}}
 
-            #     self.tabledict["default"][key][key]
-            # {key: detail.move_to_data_array(data=sc.Variable([sc.Dim.Row],
-            #                                              values=scipp_obj))}
-            self.is_bin_centers[group][key] = False
-            self.sizes[group][key] = scipp_obj.shape
+                #     self.tabledict["default"][key][key]
+                # {key: detail.move_to_data_array(data=sc.Variable([sc.Dim.Row],
+                #                                              values=scipp_obj))}
+                self.is_bin_centers[group][key] = {"data": {key: False}}
+                self.sizes[group][key] = scipp_obj.shape
 
         print(self.tabledict)
         for group in self.sizes.keys():
@@ -300,8 +304,9 @@ class TableViewer:
         subtitle += "font-style:italic;background-color:#ffffff;"
         subtitle += "text-align:left;font-size:1.2em;padding: 1px;'>"
         subtitle += "{}</span>"
-        title = str(type(scipp_obj)).replace("<class 'scipp._scipp.core.",
+        title = str(type(scipp_obj)).replace("<class '", "").replace("scipp._scipp.core.",
                                            "").replace("'>", "")
+        print("title is", title)
 
         self.box = [
             self.widgets.HTML(value="<span style='font-weight:bold;"
@@ -351,6 +356,7 @@ class TableViewer:
         #     hbox = self.make_hbox("0D Variables", " ", size)
         #     self.box.append(
         #         self.widgets.VBox([self.widgets.HTML(value=output), hbox]))
+        print(self.box)
         if len(self.tabledict["1D Variables"]) > 0:
             self.tables["1D Variables"] = {}
             # self.sizes["1D Variables"] = {}
