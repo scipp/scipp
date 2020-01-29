@@ -34,15 +34,17 @@ class TableViewer:
         self.widgets = __import__("ipywidgets")
 
         default_key = " "
-        self.tabledict = {
-            "default": {},
-            "0D Variables": {},
-            "1D Variables": {}
-        }
-        self.is_histogram = self.tabledict.copy()
-        empty_dict = {"coord": {}, "data": {}, "labels": {}, "masks": {}}
+        groups = ["default", "0D Variables", "1D Variables"]
+        self.tabledict = {}
+        self.is_bin_centers = {}
+        self.sizes = {}
+        for group in groups:
+            self.tabledict[group] = {}
+            self.is_bin_centers[group] = {}
+            self.sizes[group] = {}
+        # empty_dict = {"coord": {}, "data": {}, "labels": {}, "masks": {}}
         # for key in self.tabledict:
-        #     self.is_histogram[key] = {"data": {}, "labels": {}, "masks": {}}
+        #     self.is_bin_centers[key] = {"data": {}, "labels": {}, "masks": {}}
         self.headers = 0
         self.trigger_update = True
         is_empty = {}
@@ -60,7 +62,7 @@ class TableViewer:
             #     key = str(dim)
             #     self.tabledict["1D Variables"][key] = {}
             #     is_empty[key] = True
-            #     self.is_histogram[key] = False
+            #     self.is_bin_centers[key] = False
             # if (tp is sc.Dataset) or (tp is sc.DatasetProxy):
             if is_dataset(scipp_obj):
                 iterlist = scipp_obj.items()
@@ -72,9 +74,13 @@ class TableViewer:
                 if len(var.dims) == 1:
                     key = str(dim)
                     if key not in self.tabledict["1D Variables"]:
-                        self.tabledict["1D Variables"][key] = empty_dict.copy()
+                        self.tabledict["1D Variables"][key] = self.make_dict()
+                        self.sizes["1D Variables"][key] = []
+                        self.is_bin_centers["1D Variables"][key] = self.make_dict()
                         # self.tabledict["1D Variables"][key]["dim"] = key
+                    self.is_bin_centers[group][key]["coord"][key] = False
                     self.tabledict["1D Variables"][key]["coord"][key] = var
+                    self.sizes["1D Variables"][key].append(var.shape[0])
                         # is_empty[key] = False
 
             # Next add the labels
@@ -91,22 +97,22 @@ class TableViewer:
 
                     key = str(dim)
                     if key not in self.tabledict[group]:
-                        self.tabledict[group][key] = empty_dict.copy()
-                        self.is_histogram[group][key] = empty_dict.copy()
+                        self.tabledict[group][key] = self.make_dict()
+                        self.is_bin_centers[group][key] = self.make_dict()
+                        self.sizes[group][key] = []
                         # self.tabledict[group][key]["dim"] = key
-                    self.is_histogram[group][key]["labels"][name] = False
+                    self.is_bin_centers[group][key]["labels"][name] = False
                     if dim in scipp_obj.coords:
-                        if len(scipp_obj.coords[dim].values) == len(
-                                lab.values) + 1:
-                            self.is_histogram[group][key]["labels"][name] = True
+                        if scipp_obj.coords[dim].shape[0] == lab.shape[0] + 1:
+                            self.is_bin_centers[group][key]["labels"][name] = True
 
-                    
                     self.tabledict[group][key]["labels"][name] = lab
+                    self.sizes[group][key].append(lab.shape[0] if ndims > 0 else None)
 
                 # if dim in scipp_obj.coords:
                 #     if len(scipp_obj.coords[dim].values) == len(
                 #             lab.values) + 1:
-                #         self.is_histogram["1D Variables"][key]["labels"][name] = True
+                #         self.is_bin_centers["1D Variables"][key]["labels"][name] = True
                 #     # self.tabledict["1D Variables"][key].coords[dim] = \
                 #     #     dataset.coords[dim]
                 # # self.tabledict["1D Variables"][key].labels[name] = lab
@@ -122,15 +128,18 @@ class TableViewer:
 
                     key = str(dim)
                     if key not in self.tabledict[group]:
-                        self.tabledict[group][key] = empty_dict.copy()
-                        self.is_histogram[group][key] = empty_dict.copy()
+                        self.tabledict[group][key] = self.make_dict()
+                        self.is_bin_centers[group][key] = self.make_dict()
+                        self.sizes[group][key] = []
                         # self.tabledict[group][key]["dim"] = key
-                    self.is_histogram[group][key]["masks"][name] = False
+                    self.is_bin_centers[group][key]["masks"][name] = False
                     if dim in scipp_obj.coords:
-                        if len(scipp_obj.coords[dim].values) == len(
-                                mask.values) + 1:
-                            self.is_histogram[group][key]["masks"][name] = True
+                        if scipp_obj.coords[dim].shape[0] == mask.shape[0] + 1:
+                        # if len(scipp_obj.coords[dim].values) == len(
+                        #         mask.values) + 1:
+                            self.is_bin_centers[group][key]["masks"][name] = True
                     self.tabledict[group][key]["masks"][name] = mask
+                    self.sizes[group][key].append(mask.shape[0] if ndims > 0 else None)
 
 
 
@@ -143,17 +152,22 @@ class TableViewer:
 
                     key = str(dim)
                     # print(name, key)
-                    # print(self.is_histogram)
+                    # print(self.is_bin_centers)
                     if key not in self.tabledict[group]:
-                        self.tabledict[group][key] = empty_dict.copy()
-                        self.is_histogram[group][key] = empty_dict.copy()
+                        self.tabledict[group][key] = self.make_dict()
+                        self.is_bin_centers[group][key] = self.make_dict()
+                        self.sizes[group][key] = []
                         # self.tabledict[group][key]["dim"] = key
-                    self.is_histogram[group][key]["data"][name] = False
+                    # print(self.is_bin_centers)
+                    self.is_bin_centers[group][key]["data"][name] = False
                     if dim in scipp_obj.coords:
-                        if len(scipp_obj.coords[dim].values) == len(
-                                var.values) + 1:
-                            self.is_histogram[group][key]["data"][name] = True
+                        if scipp_obj.coords[dim].shape[0] == var.shape[0] + 1:
+                        # if len(scipp_obj.coords[dim].values) == len(
+                        #         var.values) + 1:
+                            self.is_bin_centers[group][key]["data"][name] = True
                     self.tabledict[group][key]["data"][name] = var.data
+                    self.sizes[group][key].append(var.shape[0] if ndims > 0 else None)
+
 
 
 
@@ -174,7 +188,7 @@ class TableViewer:
 
         #             if len(var.coords) > 0:
         #                 if len(var.coords[dim].values) == len(var.values) + 1:
-        #                     self.is_histogram["1D Variables"][key] = True
+        #                     self.is_bin_centers["1D Variables"][key] = True
         #                 # self.tabledict["1D Variables"][key]["coord"][key] = \
         #                 #     var.coords[dim]
         #             self.tabledict["1D Variables"][key]["data"][name] = var.data
@@ -203,7 +217,7 @@ class TableViewer:
         #             if len(dataset.coords) > 0:
         #                 if len(dataset.coords[dim].values) == len(
         #                         lab.values) + 1:
-        #                     self.is_histogram[key] = True
+        #                     self.is_bin_centers[key] = True
         #                 self.tabledict["1D Variables"][key].coords[dim] = \
         #                     dataset.coords[dim]
         #             self.tabledict["1D Variables"][key].labels[name] = lab
@@ -217,7 +231,7 @@ class TableViewer:
         #     #         if len(dataset.coords) > 0:
         #     #             if len(dataset.coords[dim].values) == len(
         #     #                     mask.values) + 1:
-        #     #                 self.is_histogram[key] = True
+        #     #                 self.is_bin_centers[key] = True
         #     #             self.tabledict["1D Variables"][key].coords[dim] = \
         #     #                 dataset.coords[dim]
         #     #         self.tabledict["1D Variables"][key].masks[name] = mask
@@ -236,20 +250,51 @@ class TableViewer:
         # #     #     dim = dataset.dims[0]
         # #     #     self.tabledict["default"][key].coords[dim] = dataset.coords[
         # #     #         dim]
-        elif is_variable(scipp_obj):
-            self.headers = 1
-            key = str(scipp_obj.dims[0])
-            # TODO: does moving here invalidate the input?
-            self.tabledict["default"][row_key] = {key: detail.move_to_data_array(data=scipp_obj)}
-            self.is_histogram[key] = False
+
+
+        # elif is_variable(scipp_obj):
+        #     self.headers = 1
+        #     key = str(scipp_obj.dims[0])
+        #     # TODO: does moving here invalidate the input?
+        #     self.tabledict["default"][key] = {key: detail.move_to_data_array(data=scipp_obj)}
+        #     self.is_bin_centers[key] = False
+
         else:
-            self.headers = 0
+            ndims = len(scipp_obj.shape)
+            if ndims < 2:
+                group = "{}D Variables".format(ndims)
+            group = "default"
+            is_var = is_variable(scipp_obj)
+            self.headers = is_var
+            # self.headers = 0
             key = " "
-            self.tabledict["default"][row_key] = {key: detail.move_to_data_array(data=sc.Variable([sc.Dim.Row],
-                                                         values=scipp_obj))}
-            self.is_histogram[key] = False
+
+            # self.tabledict[group][key] = {}
+            if is_var:
+                var = scipp_obj
+            else:
+                var = sc.Variable([sc.Dim.Row], values=scipp_obj)
+            self.tabledict[group][key] = {key: var}
+
+            #     self.tabledict["default"][key][key]
+            # {key: detail.move_to_data_array(data=sc.Variable([sc.Dim.Row],
+            #                                              values=scipp_obj))}
+            self.is_bin_centers[group][key] = False
+            self.sizes[group][key] = scipp_obj.shape
 
         print(self.tabledict)
+        for group in self.sizes.keys():
+            for key in self.sizes[group].keys():
+                max_size = 0
+                size_is_defined = False
+                for s in self.sizes[group][key]:
+                    if s is not None:
+                        max_size = max(max_size, s)
+                        size_is_defined = True
+                self.sizes[group][key] = max_size if size_is_defined else None
+        print(self.sizes)
+        print(self.is_bin_centers)
+
 
         subtitle = "<span style='font-weight:normal;color:grey;"
         subtitle += "font-style:italic;background-color:#ffffff;"
@@ -266,18 +311,38 @@ class TableViewer:
         self.sliders = {}
         self.label = self.widgets.Label(value="rows")
         self.nrows = {}
-        self.sizes = {}
+        # self.sizes = {}
 
-        # if len(self.tabledict["default"]) > 0:
-        #     html, size = table_from_dataset(self.tabledict["default"],
-        #                                     headers=self.headers,
-        #                                     max_rows=config.table_max_size)
-        #     self.tables["default"] = {" ": self.widgets.HTML(value=html)}
-        #     hbox = self.make_hbox("default", " ", size)
-        #     self.box.append(hbox)
-        #     self.sizes["default"] = {" ": size}
+        other_variables = {"default": None, "0D Variables": subtitle.format("0D Variables")}
+        for group, output in other_variables.items():
+            if len(self.tabledict[group]) > 0:
+                for key, val in self.tabledict[group].items():
+                    html = self.table_from_dict_of_variables(val,
+                                                is_bin_centers=self.is_bin_centers[group][key],
+                                                size=self.sizes[group][key],
+                                                headers=self.headers,
+                                                max_rows=config.table_max_size)
+
+                # html = table_from_dict_of_variables(self.tabledict["0D Variables"],
+                #                                 headers=self.headers,
+                #                                 max_rows=config.table_max_size)
+                self.tables[group] = {" ": self.widgets.HTML(value=html)}
+                hbox = self.make_hbox(group, " ", self.sizes[group][key])
+                if output is not None:
+                    hbox = [self.widgets.HTML(value=output), hbox]
+                self.box.append(self.widgets.VBox(hbox))
+        
+
+        # # if len(self.tabledict["default"]) > 0:
+        # #     html, size = table_from_dataset(self.tabledict["default"],
+        # #                                     headers=self.headers,
+        # #                                     max_rows=config.table_max_size)
+        # #     self.tables["default"] = {" ": self.widgets.HTML(value=html)}
+        # #     hbox = self.make_hbox("default", " ", size)
+        # #     self.box.append(hbox)
+        # #     self.sizes["default"] = {" ": size}
         # if len(self.tabledict["0D Variables"]) > 0:
-        #     self.tables["0D Variables"] = {}
+        #     # self.tables["0D Variables"] = {}
         #     output = subtitle.format("0D Variables")
         #     html, size = table_from_dataset(self.tabledict["0D Variables"],
         #                                     headers=self.headers,
@@ -288,22 +353,23 @@ class TableViewer:
         #         self.widgets.VBox([self.widgets.HTML(value=output), hbox]))
         if len(self.tabledict["1D Variables"]) > 0:
             self.tables["1D Variables"] = {}
-            self.sizes["1D Variables"] = {}
+            # self.sizes["1D Variables"] = {}
             output = subtitle.format("1D Variables")
             self.tabs = self.widgets.Tab(layout=self.widgets.Layout(
                 width="initial"))
             children = []
             for key, val in sorted(self.tabledict["1D Variables"].items()):
-                html, size = self.table_from_dict_of_variables(val,
-                                                dim_key=key,
-                                                # is_hist=self.is_histogram[key],
+                html = self.table_from_dict_of_variables(val,
+                                                # dim_key=key,
+                                                is_bin_centers=self.is_bin_centers["1D Variables"][key],
+                                                size=self.sizes["1D Variables"][key],
                                                 headers=self.headers,
                                                 max_rows=config.table_max_size)
                 self.tables["1D Variables"][key] = self.widgets.HTML(
                     value=html)
-                hbox = self.make_hbox("1D Variables", key, size)
+                hbox = self.make_hbox("1D Variables", key, self.sizes["1D Variables"][key])
                 children.append(hbox)
-                self.sizes["1D Variables"][key] = size
+                # self.sizes["1D Variables"][key] = size
 
             self.tabs.children = children
             for i, key in enumerate(
@@ -320,6 +386,9 @@ class TableViewer:
                                          display='flex',
                                          flex_flow='column'))
         return
+
+    def make_dict(self):
+        return {"coord": {}, "data": {}, "labels": {}, "masks": {}}
 
     def make_hbox(self, group, key, size):
         hbox = self.tables[group][key]
@@ -455,36 +524,24 @@ class TableViewer:
         return "".join(html)
 
 
-    def make_value_rows(self, section, coord, index, base_style, edge_style, row_start):
+    # def make_value_rows(self, section, coord, index, base_style, edge_style, row_start):
+    def make_value_rows(self, dict_of_variables, is_bin_centers, index, base_style, edge_style, row_start):
+        # print("========================================")
+        # print(dict_of_variables)
         html = []
-        for key, val in section.items():
-            header_line_for_bin_edges = False
-            if coord is not None:
-                if len(val.values) == len(coord.values) - 1:
-                    header_line_for_bin_edges = True
-            if header_line_for_bin_edges:
-                if index == row_start:
-                    html.append("<td {}></td>".format(edge_style))
-                    if val.variances is not None:
+        for key, section in dict_of_variables.items():
+            for name, val in section.items():
+                # print(key, name)
+                # header_line_for_bin_edges = False
+                # if coord is not None:
+                #     if len(val.values) == len(coord.values) - 1:
+                #         header_line_for_bin_edges = True
+                # if header_line_for_bin_edges:
+                if is_bin_centers[key][name]:
+                    if index == row_start:
                         html.append("<td {}></td>".format(edge_style))
-            else:
-                html.append("<td rowspan='2' {}>{}</td>".format(
-                    base_style, value_to_string(val.values[index])))
-                if val.variances is not None:
-                    html.append("<td rowspan='2' {}>{}</td>".format(
-                        base_style, value_to_string(val.variances[index])))
-
-        return "".join(html)
-
-
-    def make_trailing_cells(self, section, coord, index, size, base_style, edge_style):
-        html = []
-        for key, val in section.items():
-            if len(val.values) == len(coord.values) - 1:
-                if index == size - 1:
-                    html.append("<td {}></td>".format(edge_style))
-                    if val.variances is not None:
-                        html.append("<td {}></td>".format(edge_style))
+                        if val.variances is not None:
+                            html.append("<td {}></td>".format(edge_style))
                 else:
                     html.append("<td rowspan='2' {}>{}</td>".format(
                         base_style, value_to_string(val.values[index])))
@@ -495,29 +552,56 @@ class TableViewer:
         return "".join(html)
 
 
-    def make_overflow_cells(self, section, base_style):
+    def make_trailing_cells(self, dict_of_variables, is_bin_centers, index, size, base_style, edge_style):
         html = []
-        for key, val in section.items():
-            html.append("<td {}>...</td>".format(base_style))
-            if val.variances is not None:
-                html.append("<td {}>...</td>".format(base_style))
+        for key, section in dict_of_variables.items():
+            for name, val in section.items():
+                if is_bin_centers[key][name]:
+                # if len(val.values) == len(coord.values) - 1:
+                    if index == size - 1:
+                        html.append("<td {}></td>".format(edge_style))
+                        if val.variances is not None:
+                            html.append("<td {}></td>".format(edge_style))
+                    else:
+                        html.append("<td rowspan='2' {}>{}</td>".format(
+                            base_style, value_to_string(val.values[index])))
+                        if val.variances is not None:
+                            html.append("<td rowspan='2' {}>{}</td>".format(
+                                base_style, value_to_string(val.variances[index])))
+
         return "".join(html)
 
 
-    def make_overflow_row(self, dict_of_data_arrays, coord, labels, masks, base_style, hover_style):
+    # def make_overflow_cells(self, section, base_style):
+    #     html = []
+    #     for key, val in section.items():
+    #         html.append("<td {}>...</td>".format(base_style))
+    #         if val.variances is not None:
+    #             html.append("<td {}>...</td>".format(base_style))
+    #     return "".join(html)
+
+
+    def make_overflow_row(self, dict_of_variables, base_style, hover_style):
         html = ["<tr {}>".format(hover_style)]
-        if coord is not None:
-            html.append(self.make_overflow_cells({" ": coord}, base_style))
-        html.append(self.make_overflow_cells(labels, base_style))
-        html.append(self.make_overflow_cells(masks, base_style))
-        html.append(self.make_overflow_cells(dict_of_data_arrays, base_style))
+        for key, section in dict_of_variables.items():
+            for name, val in section.items():
+                html.append("<td {}>...</td>".format(base_style))
+                if val.variances is not None:
+                    html.append("<td {}>...</td>".format(base_style))
+
+        # if coord is not None:
+        #     html.append(self.make_overflow_cells({" ": coord}, base_style))
+        # html.append(self.make_overflow_cells(labels, base_style))
+        # html.append(self.make_overflow_cells(masks, base_style))
+        # html.append(self.make_overflow_cells(dict_of_data_arrays, base_style))
         html.append("</tr>")
         return "".join(html)
 
 
     def table_from_dict_of_variables(self, dict_of_variables,
-                           # is_hist=False,
-                           dim_key=None,
+                           is_bin_centers=None,
+                           # dim_key=None,
+                           size=None,
                            headers=2,
                            row_start=0,
                            max_rows=None):
@@ -542,18 +626,18 @@ class TableViewer:
         # labels = data_array.labels
         # masks = data_array.masks
 
-        # dims = data_array.dims
-        coord = None
-        # if len(dims) > 0:
-        #     # DataArray should contain only one dim, so get the first in list
-        #     size = data_array.shape[0]
-        #     if len(data_array.coords) > 0:
-        #         coord = data_array.coords[dims[0]]
-        #         if is_hist:
-        #             size += 1
+        # # dims = data_array.dims
+        # coord = None
+        # # if len(dims) > 0:
+        # #     # DataArray should contain only one dim, so get the first in list
+        # #     size = data_array.shape[0]
+        # #     if len(data_array.coords) > 0:
+        # #         coord = data_array.coords[dims[0]]
+        # #         if is_hist:
+        # #             size += 1
 
-        if len(dict_of_variables["coord"]) > 0:
-            coord = dict_of_variables["coord"][dim_key]
+        # if len(dict_of_variables["coord"]) > 0:
+        #     coord = dict_of_variables["coord"][dim_key]
 
         if headers > 1:
             html += self.make_table_sections(dict_of_variables, base_style)
@@ -584,59 +668,71 @@ class TableViewer:
             # html += self.make_table_subsections(dict_of_data_arrays, vstyle)
             html += "</tr>"
 
-        html += "</table>"
-        return html, 1
+        # html += "</table>"
+        # return html, 1
 
         # the base style still does not have a closing quote, so we add it here
         base_style += "'"
 
+        print(dict_of_variables)
+
         if size is None:  # handle 0D variable
             html += "<tr {}>".format(hover_style)
-            for key, val in dict_of_data_arrays.items():
-                html += "<td {}>{}</td>".format(base_style,
-                                                value_to_string(val.value))
-                if val.variances is not None:
+            # for key, val in dict_of_variables.items():
+            for key, section in dict_of_variables.items():
+                for name, val in section.items():
                     html += "<td {}>{}</td>".format(base_style,
-                                                    value_to_string(val.variance))
+                                                    value_to_string(val.value))
+                    if val.variances is not None:
+                        html += "<td {}>{}</td>".format(base_style,
+                                                        value_to_string(val.variance))
             html += "</tr>"
         else:
             row_end = min(size, row_start + max_rows)
             if row_start > 0:
-                html += self.make_overflow_row(dict_of_data_arrays, coord, labels, masks, base_style, hover_style)
+                html += self.make_overflow_row(dict_of_variables, base_style, hover_style)
             for i in range(row_start, row_end):
                 html += "<tr {}>".format(hover_style)
                 # Add coordinates
-                if coord is not None:
-                    text = value_to_string(coord.values[i])
-                    html += "<td rowspan='2' {}>{}</td>".format(base_style, text)
-                    if coord.variances is not None:
-                        text = value_to_string(coord.variances[i])
-                        html += "<td rowspan='2' {}>{}</td>".format(
-                            base_style, text)
 
-                html += self.make_value_rows(labels, coord, i, base_style,
+                html += self.make_value_rows(dict_of_variables, is_bin_centers, i, base_style,
                                          edge_style, row_start)
-                html += self.make_value_rows(masks, coord, i, base_style,
-                                         edge_style, row_start)
-                html += self.make_value_rows(dict_of_data_arrays, coord, i, base_style, edge_style,
-                                         row_start)
+
+
+
+                # if coord is not None:
+                #     text = value_to_string(coord.values[i])
+                #     html += "<td rowspan='2' {}>{}</td>".format(base_style, text)
+                #     if coord.variances is not None:
+                #         text = value_to_string(coord.variances[i])
+                #         html += "<td rowspan='2' {}>{}</td>".format(
+                #             base_style, text)
+
+                # html += self.make_value_rows(labels, coord, i, base_style,
+                #                          edge_style, row_start)
+                # html += self.make_value_rows(masks, coord, i, base_style,
+                #                          edge_style, row_start)
+                # html += self.make_value_rows(dict_of_data_arrays, coord, i, base_style, edge_style,
+                #                          row_start)
 
                 html += "</tr><tr {}>".format(hover_style)
                 # If there are bin edges, we need to add trailing cells for data
                 # and labels
-                if coord is not None:
-                    html += self.make_trailing_cells(labels, coord, i, row_end,
+                html += self.make_trailing_cells(dict_of_variables, is_bin_centers, i, row_end,
                                                  base_style, edge_style)
-                    html += self.make_trailing_cells(masks, coord, i, row_end,
-                                                 base_style, edge_style)
-                    html += self.make_trailing_cells(dict_of_data_arrays, coord, i, row_end,
-                                                 base_style, edge_style)
+                # if coord is not None:
+                #     html += self.make_trailing_cells(labels, coord, i, row_end,
+                #                                  base_style, edge_style)
+                #     html += self.make_trailing_cells(masks, coord, i, row_end,
+                #                                  base_style, edge_style)
+                #     html += self.make_trailing_cells(dict_of_data_arrays, coord, i, row_end,
+                #                                  base_style, edge_style)
                 html += "</tr>"
             if row_end != size:
-                html += self.make_overflow_row(dict_of_data_arrays, coord, labels, masks, base_style, hover_style)
+                html += self.make_overflow_row(dict_of_variables, base_style, hover_style)
 
         html += "</table>"
-        return html, size
+        return html
 
 
 
@@ -670,9 +766,16 @@ class TableViewer:
             # # Variables it is a dict of Datasets.
             # if group != "default":
             #     to_table = to_table[key]
-            html, size = table_from_dict_of_data_arrays(self.tabledict[group][key],
-                                            is_hist=self.is_histogram[key],
-                                            headers=self.headers,
-                                            row_start=self.sliders[key].value,
-                                            max_rows=self.nrows[key].value)
+            # html, size = table_from_dict_of_data_arrays(self.tabledict[group][key],
+            #                                 is_hist=self.is_bin_centers[key],
+            #                                 headers=self.headers,
+            #                                 row_start=self.sliders[key].value,
+            #                                 max_rows=self.nrows[key].value)
+            html = self.table_from_dict_of_variables(self.tabledict[group][key],
+                                                # dim_key=key,
+                                                is_bin_centers=self.is_bin_centers[group][key],
+                                                size=self.sizes[group][key],
+                                                headers=self.headers,
+                                                row_start=self.sliders[key].value,
+                                                max_rows=self.nrows[key].value)
             self.tables[group][key].value = html
