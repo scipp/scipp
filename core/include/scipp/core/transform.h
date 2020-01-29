@@ -278,11 +278,7 @@ check_all_or_none_variances(const Op &, const Args &... valAndVariances) {
   constexpr bool force_same =
       std::is_base_of_v<transform_flags::expect_all_or_none_have_variance_t,
                         Op>;
-  return force_same && !(force_same && (valAndVariances && ...)) &&
-         ((force_same && (valAndVariances && ...)) || (valAndVariances || ...));
-
-  // return force_same && !((valAndVariances && ...) ^ (!valAndVariances &&
-  // ...));
+  return force_same && !((valAndVariances && ...) ^ (!valAndVariances && ...));
 }
 
 /// Recursion endpoint for do_transform.
@@ -296,7 +292,7 @@ static void do_transform(Op op, Out &&out, Tuple &&processed) {
       [&op, &out, &out_val](auto &&... args) {
         if constexpr (check_all_or_none_variances(
                           op, is_ValuesAndVariances_v<
-                                  std::decay<decltype(args)>>...)) {
+                                  std::decay_t<decltype(args)>>...)) {
           throw except::VariancesError(
               "Expected either all or none of inputs to have variances.");
         } else if constexpr ((is_ValuesAndVariances_v<
