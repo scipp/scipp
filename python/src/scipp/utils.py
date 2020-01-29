@@ -4,7 +4,8 @@
 # @author Neil Vaytet
 
 from ._scipp.core.units import dimensionless
-from ._scipp.core import Variable, VariableProxy, Dataset, DatasetProxy, DataArray, DataProxy
+from ._scipp.core import (Variable, VariableProxy, Dataset, DatasetProxy,
+                          DataArray, DataProxy)
 
 
 def name_with_unit(var=None, name=None, log=False, replace_dim=True):

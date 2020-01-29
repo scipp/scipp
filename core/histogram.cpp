@@ -108,7 +108,8 @@ DataArray histogram(const DataConstProxy &sparse,
           return transform_subspan<
               std::tuple<args<double, double, double, double>,
                          args<double, float, double, double>,
-                         args<double, float, double, float>>>(
+                         args<double, float, double, float>,
+                         args<double, double, float, double>>>(
               dim_, binEdges_.dims()[dim_] - 1, sparse_.coords()[dim_],
               sparse_.data(), binEdges_,
               overloaded{make_histogram_from_weighted,
