@@ -58,9 +58,9 @@ Dim dim_of_coord_or_labels(const T &dict, const Key &key) {
 }
 
 namespace {
-template <class T1, class T2>
-auto concat(const T1 &a, const T2 &b, const Dim dim, const Dimensions &dimsA,
-            const Dimensions &dimsB) {
+template <class T1, class T2, class DimT>
+auto concat(const T1 &a, const T2 &b, const Dim dim, const DimT &dimsA,
+            const DimT &dimsB) {
   std::map<typename T1::key_type, typename T1::mapped_type> out;
   for (const auto &[key, a_] : a) {
     if (dim_of_coord_or_labels(a, key) == dim) {
@@ -70,11 +70,11 @@ auto concat(const T1 &a, const T2 &b, const Dim dim, const Dimensions &dimsA,
         else
           throw except::SparseDataError("Either both or neither of the inputs "
                                         "must be sparse in given dim.");
-      } else if ((a_.dims()[dim] == dimsA[dim]) !=
-                 (b[key].dims()[dim] == dimsB[dim])) {
+      } else if ((a_.dims()[dim] == dimsA.at(dim)) !=
+                 (b[key].dims()[dim] == dimsB.at(dim))) {
         throw except::BinEdgeError(
             "Either both or neither of the inputs must be bin edges.");
-      } else if (a_.dims()[dim] == dimsA[dim]) {
+      } else if (a_.dims()[dim] == dimsA.at(dim)) {
         out.emplace(key, concatenate(a_, b[key], dim));
       } else {
         out.emplace(key, join_edges(a_, b[key], dim));
@@ -106,7 +106,12 @@ DataArray concatenate(const DataConstProxy &a, const DataConstProxy &b,
 
 Dataset concatenate(const DatasetConstProxy &a, const DatasetConstProxy &b,
                     const Dim dim) {
-  Dataset result;
+  Dataset result(
+      std::map<std::string, Variable>(),
+      concat(a.coords(), b.coords(), dim, a.dimensions(), b.dimensions()),
+      concat(a.labels(), b.labels(), dim, a.dimensions(), b.dimensions()),
+      concat(a.masks(), b.masks(), dim, a.dimensions(), b.dimensions()),
+      std::map<std::string, Variable>());
   for (const auto &item : a)
     if (b.contains(item.name()))
       result.setData(item.name(), concatenate(item, b[item.name()], dim));
