@@ -123,7 +123,7 @@ def _make_trailing_cells(section, coord, index, size, base_style, edge_style):
 
 def _make_overflow_cells(section, base_style):
     html = []
-    for key, val in section:
+    for key, val in section.items():
         html.append("<td {}>...</td>".format(base_style))
         if val.variances is not None:
             html.append("<td {}>...</td>".format(base_style))
@@ -133,7 +133,7 @@ def _make_overflow_cells(section, base_style):
 def _make_overflow_row(dataset, coord, base_style, hover_style):
     html = ["<tr {}>".format(hover_style)]
     if coord is not None:
-        html.append(_make_overflow_cells([(" ", coord)], base_style))
+        html.append(_make_overflow_cells({" ": coord}, base_style))
     html.append(_make_overflow_cells(dataset.labels, base_style))
     html.append(_make_overflow_cells(dataset.masks, base_style))
     html.append(_make_overflow_cells(dataset, base_style))
