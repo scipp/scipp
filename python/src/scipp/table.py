@@ -33,8 +33,8 @@ class TableViewer:
 
         self.widgets = __import__("ipywidgets")
 
-        default_key = " "
-        groups = ["default", "0D Variables", "1D Variables"]
+        # default_key = " "
+        groups = ["0D Variables", "1D Variables"]
         self.tabledict = {}
         self.is_bin_centers = {}
         self.sizes = {}
@@ -318,72 +318,88 @@ class TableViewer:
         self.nrows = {}
         # self.sizes = {}
 
-        other_variables = {"default": None, "0D Variables": subtitle.format("0D Variables")}
-        for group, output in other_variables.items():
-            if len(self.tabledict[group]) > 0:
-                for key, val in self.tabledict[group].items():
-                    html = self.table_from_dict_of_variables(val,
-                                                is_bin_centers=self.is_bin_centers[group][key],
-                                                size=self.sizes[group][key],
-                                                headers=self.headers,
-                                                max_rows=config.table_max_size)
+        # other_variables = {"default": None, "0D Variables": subtitle.format("0D Variables")}
+        # for group, output in other_variables.items():
 
-                # html = table_from_dict_of_variables(self.tabledict["0D Variables"],
-                #                                 headers=self.headers,
-                #                                 max_rows=config.table_max_size)
-                self.tables[group] = {" ": self.widgets.HTML(value=html)}
-                hbox = self.make_hbox(group, " ", self.sizes[group][key])
-                if output is not None:
-                    hbox = [self.widgets.HTML(value=output), hbox]
-                self.box.append(self.widgets.VBox(hbox))
+
+
+        # for group in self.tabledict.keys():
+        #     if len(self.tabledict[group]) > 0:
+        #         for key, val in self.tabledict[group].items():
+        #             html = self.table_from_dict_of_variables(val,
+        #                                         is_bin_centers=self.is_bin_centers[group][key],
+        #                                         size=self.sizes[group][key],
+        #                                         headers=self.headers,
+        #                                         max_rows=config.table_max_size)
+
+        #         # html = table_from_dict_of_variables(self.tabledict["0D Variables"],
+        #         #                                 headers=self.headers,
+        #         #                                 max_rows=config.table_max_size)
+        #         self.tables[group] = {" ": self.widgets.HTML(value=html)}
+        #         hbox = self.make_hbox(group, " ", self.sizes[group][key])
+        #         if output is not None:
+        #             hbox = [self.widgets.HTML(value=output), hbox]
+        #         self.box.append(self.widgets.VBox(hbox))
         
 
-        # # if len(self.tabledict["default"]) > 0:
-        # #     html, size = table_from_dataset(self.tabledict["default"],
+        # # # if len(self.tabledict["default"]) > 0:
+        # # #     html, size = table_from_dataset(self.tabledict["default"],
+        # # #                                     headers=self.headers,
+        # # #                                     max_rows=config.table_max_size)
+        # # #     self.tables["default"] = {" ": self.widgets.HTML(value=html)}
+        # # #     hbox = self.make_hbox("default", " ", size)
+        # # #     self.box.append(hbox)
+        # # #     self.sizes["default"] = {" ": size}
+        # # if len(self.tabledict["0D Variables"]) > 0:
+        # #     # self.tables["0D Variables"] = {}
+        # #     output = subtitle.format("0D Variables")
+        # #     html, size = table_from_dataset(self.tabledict["0D Variables"],
         # #                                     headers=self.headers,
         # #                                     max_rows=config.table_max_size)
-        # #     self.tables["default"] = {" ": self.widgets.HTML(value=html)}
-        # #     hbox = self.make_hbox("default", " ", size)
-        # #     self.box.append(hbox)
-        # #     self.sizes["default"] = {" ": size}
-        # if len(self.tabledict["0D Variables"]) > 0:
-        #     # self.tables["0D Variables"] = {}
-        #     output = subtitle.format("0D Variables")
-        #     html, size = table_from_dataset(self.tabledict["0D Variables"],
-        #                                     headers=self.headers,
-        #                                     max_rows=config.table_max_size)
-        #     self.tables["0D Variables"][" "] = self.widgets.HTML(value=html)
-        #     hbox = self.make_hbox("0D Variables", " ", size)
-        #     self.box.append(
-        #         self.widgets.VBox([self.widgets.HTML(value=output), hbox]))
-        print(self.box)
-        if len(self.tabledict["1D Variables"]) > 0:
-            self.tables["1D Variables"] = {}
-            # self.sizes["1D Variables"] = {}
-            output = subtitle.format("1D Variables")
-            self.tabs = self.widgets.Tab(layout=self.widgets.Layout(
-                width="initial"))
-            children = []
-            for key, val in sorted(self.tabledict["1D Variables"].items()):
-                html = self.table_from_dict_of_variables(val,
-                                                # dim_key=key,
-                                                is_bin_centers=self.is_bin_centers["1D Variables"][key],
-                                                size=self.sizes["1D Variables"][key],
-                                                headers=self.headers,
-                                                max_rows=config.table_max_size)
-                self.tables["1D Variables"][key] = self.widgets.HTML(
-                    value=html)
-                hbox = self.make_hbox("1D Variables", key, self.sizes["1D Variables"][key])
-                children.append(hbox)
-                # self.sizes["1D Variables"][key] = size
+        # #     self.tables["0D Variables"][" "] = self.widgets.HTML(value=html)
+        # #     hbox = self.make_hbox("0D Variables", " ", size)
+        # #     self.box.append(
+        # #         self.widgets.VBox([self.widgets.HTML(value=output), hbox]))
+        # # print(self.box)
 
-            self.tabs.children = children
-            for i, key in enumerate(
-                    sorted(self.tabledict["1D Variables"].keys())):
-                self.tabs.set_title(i, key)
-            self.box.append(
-                self.widgets.VBox([self.widgets.HTML(value=output),
-                                   self.tabs]))
+        for group in self.tabledict.keys():
+
+            if len(self.tabledict[group]) > 0:
+                self.tables[group] = {}
+                # self.sizes["1D Variables"] = {}
+                output = subtitle.format(group)
+
+                # self.tabs = self.widgets.Tab(layout=self.widgets.Layout(
+                #     width="initial"))
+                children = []
+                for key, val in sorted(self.tabledict[group].items()):
+                    html = self.table_from_dict_of_variables(val,
+                                                    # dim_key=key,
+                                                    is_bin_centers=self.is_bin_centers[group][key],
+                                                    size=self.sizes[group][key],
+                                                    headers=self.headers,
+                                                    max_rows=config.table_max_size)
+                    self.tables[group][key] = self.widgets.HTML(
+                        value=html)
+                    hbox = self.make_hbox(group, key, self.sizes[group][key])
+                    children.append(hbox)
+
+                    # self.sizes["1D Variables"][key] = size
+                vbox = [self.widgets.HTML(value=output)]
+
+                if group == "1D Variables":
+                    self.tabs = self.widgets.Tab(layout=self.widgets.Layout(
+                        width="initial"))
+                    self.tabs.children = children
+                    for i, key in enumerate(
+                            sorted(self.tabledict[group].keys())):
+                        self.tabs.set_title(i, key)
+                    vbox.append(self.tabs)
+                else:
+                    vbox.append(hbox)
+
+                self.box.append(self.widgets.VBox(vbox))
+
 
         self.box = self.widgets.VBox(self.box,
                                      layout=self.widgets.Layout(
@@ -410,8 +426,16 @@ class TableViewer:
                     continuous_update=True,
                     layout=self.widgets.Layout(width='150px'))
                 self.nrows[key].observe(self.update_slider, names="value")
-                self.sliders[key] = self.widgets.SelectionSlider(
-                    options=np.arange(size - self.nrows[key].value + 1)[::-1],
+                # self.sliders[key] = self.widgets.SelectionSlider(
+                #     options=np.arange(size - self.nrows[key].value + 1)[::-1],
+                #     value=0,
+                #     description="Starting row",
+                #     orientation='vertical',
+                #     continuous_update=False,
+                #     layout=self.widgets.Layout(height='400px'))
+                self.sliders[key] = self.widgets.IntSlider(
+                    min=0,
+                    max=size - self.nrows[key].value + 1,
                     value=0,
                     description="Starting row",
                     orientation='vertical',
@@ -755,33 +779,35 @@ class TableViewer:
         group = change["owner"].group
         val = self.sliders[key].value
         # Prevent update while options are being changed
-        self.trigger_update = False
-        self.sliders[key].options = np.arange(self.sizes[group][key] -
-                                              change["new"] + 1)[::-1]
-        # Re-enable table updating
-        self.trigger_update = True
-        self.sliders[key].value = min(val, self.sliders[key].options[0])
+        # self.trigger_update = False
+        # self.sliders[key].options = np.arange(self.sizes[group][key] -
+        #                                       change["new"] + 1)[::-1]
+        self.sliders[key].max = self.sizes[group][key] - change["new"] + 1
+        # # Re-enable table updating
+        # self.trigger_update = True
+        # self.sliders[key].value = min(val, self.sliders[key].max)
 
     def update_table(self, change):
-        if self.trigger_update:
-            key = change["owner"].key
-            group = change["owner"].group
-            # to_table = self.tabledict[group]
-            # # This extra indexing step comes from the fact that for the
-            # # default key, the tabledict is a Dataset, while for the 1D
-            # # Variables it is a dict of Datasets.
-            # if group != "default":
-            #     to_table = to_table[key]
-            # html, size = table_from_dict_of_data_arrays(self.tabledict[group][key],
-            #                                 is_hist=self.is_bin_centers[key],
-            #                                 headers=self.headers,
-            #                                 row_start=self.sliders[key].value,
-            #                                 max_rows=self.nrows[key].value)
-            html = self.table_from_dict_of_variables(self.tabledict[group][key],
-                                                # dim_key=key,
-                                                is_bin_centers=self.is_bin_centers[group][key],
-                                                size=self.sizes[group][key],
-                                                headers=self.headers,
-                                                row_start=self.sliders[key].value,
-                                                max_rows=self.nrows[key].value)
-            self.tables[group][key].value = html
+        # if self.trigger_update:
+        print("fired")
+        key = change["owner"].key
+        group = change["owner"].group
+        # to_table = self.tabledict[group]
+        # # This extra indexing step comes from the fact that for the
+        # # default key, the tabledict is a Dataset, while for the 1D
+        # # Variables it is a dict of Datasets.
+        # if group != "default":
+        #     to_table = to_table[key]
+        # html, size = table_from_dict_of_data_arrays(self.tabledict[group][key],
+        #                                 is_hist=self.is_bin_centers[key],
+        #                                 headers=self.headers,
+        #                                 row_start=self.sliders[key].value,
+        #                                 max_rows=self.nrows[key].value)
+        html = self.table_from_dict_of_variables(self.tabledict[group][key],
+                                            # dim_key=key,
+                                            is_bin_centers=self.is_bin_centers[group][key],
+                                            size=self.sizes[group][key],
+                                            headers=self.headers,
+                                            row_start=self.sliders[key].value,
+                                            max_rows=self.nrows[key].value)
+        self.tables[group][key].value = html
