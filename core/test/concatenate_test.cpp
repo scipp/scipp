@@ -211,3 +211,43 @@ TEST(ConcatenateTest, concatenate_sparse_no_data) {
   EXPECT_EQ(y.coords()[Dim::X], concatenate(var1, var2, Dim::Y));
   EXPECT_EQ(y.labels()["labs"], concatenate(var1, var2, Dim::Y));
 }
+
+TEST(ConcatenateTest, dataset_with_no_data_items) {
+  Dataset a, b;
+  a.setCoord(Dim::X,
+             makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1, 2}));
+  a.setLabels("points",
+              makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{.1, .2}));
+  b.setCoord(Dim::X,
+             makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{3, 4}));
+  b.setLabels("points",
+              makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{.3, .4}));
+
+  const auto res = concatenate(a, b, Dim::X);
+
+  EXPECT_EQ(res.coords()[Dim::X],
+            makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4}));
+  EXPECT_EQ(
+      res.labels()["points"],
+      makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{.1, .2, .3, .4}));
+}
+
+TEST(ConcatenateTest, dataset_with_no_data_items_histogram) {
+  Dataset a, b;
+  a.setCoord(Dim::X,
+             makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3}));
+  a.setLabels("histogram",
+              makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{.1, .2}));
+  b.setCoord(Dim::X,
+             makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{3, 4, 5}));
+  b.setLabels("histogram",
+              makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{.3, .4}));
+
+  const auto res = concatenate(a, b, Dim::X);
+
+  EXPECT_EQ(res.coords()[Dim::X], makeVariable<double>(Dims{Dim::X}, Shape{5},
+                                                       Values{1, 2, 3, 4, 5}));
+  EXPECT_EQ(
+      res.labels()["histogram"],
+      makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{.1, .2, .3, .4}));
+}
