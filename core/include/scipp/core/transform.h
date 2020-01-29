@@ -278,7 +278,7 @@ check_all_or_none_variances(const Op &, const Args &... valAndVariances) {
   constexpr bool force_same =
       std::is_base_of_v<transform_flags::expect_all_or_none_have_variance_t,
                         Op>;
-  return force_same && !((valAndVariances && ...) ^ (!valAndVariances && ...));
+  return force_same && !((valAndVariances && ...) || (!valAndVariances && ...));
 }
 
 /// Recursion endpoint for do_transform.
