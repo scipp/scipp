@@ -5,15 +5,9 @@
 
 # Scipp imports
 from . import config
-from . import detail
-from .utils import value_to_string, name_with_unit, is_dataset_or_array, is_dataset, is_variable
+from .utils import (value_to_string, name_with_unit, is_dataset_or_array,
+                    is_dataset, is_variable)
 from ._scipp import core as sc
-
-# Other imports
-import numpy as np
-
-
-
 
 
 def table(scipp_obj):
@@ -31,9 +25,9 @@ def table(scipp_obj):
 class TableViewer:
     def __init__(self, scipp_obj):
 
+        # Delayed import
         self.widgets = __import__("ipywidgets")
 
-        # default_key = " "
         groups = ["0D Variables", "1D Variables"]
         self.tabledict = {}
         self.is_bin_centers = {}
@@ -61,9 +55,10 @@ class TableViewer:
                     if key not in self.tabledict["1D Variables"]:
                         self.tabledict["1D Variables"][key] = self.make_dict()
                         self.sizes["1D Variables"][key] = []
-                        self.is_bin_centers["1D Variables"][key] = self.make_dict()
-                    self.is_bin_centers[group][key]["coord"][key] = False
-                    self.tabledict["1D Variables"][key]["coord"][key] = var
+                        self.is_bin_centers["1D Variables"][
+                            key] = self.make_dict()
+                    self.is_bin_centers[group][key]["coords"][key] = False
+                    self.tabledict["1D Variables"][key]["coords"][key] = var
                     self.sizes["1D Variables"][key].append(var.shape[0])
 
             # Next add the labels
@@ -80,10 +75,12 @@ class TableViewer:
                     self.is_bin_centers[group][key]["labels"][name] = False
                     if dim in scipp_obj.coords:
                         if scipp_obj.coords[dim].shape[0] == lab.shape[0] + 1:
-                            self.is_bin_centers[group][key]["labels"][name] = True
+                            self.is_bin_centers[group][key]["labels"][
+                                name] = True
 
                     self.tabledict[group][key]["labels"][name] = lab
-                    self.sizes[group][key].append(lab.shape[0] if ndims > 0 else None)
+                    self.sizes[group][key].append(
+                        lab.shape[0] if ndims > 0 else None)
 
             # Next add the masks
             for name, mask in scipp_obj.masks.items():
@@ -99,9 +96,11 @@ class TableViewer:
                     self.is_bin_centers[group][key]["masks"][name] = False
                     if dim in scipp_obj.coords:
                         if scipp_obj.coords[dim].shape[0] == mask.shape[0] + 1:
-                            self.is_bin_centers[group][key]["masks"][name] = True
+                            self.is_bin_centers[group][key]["masks"][
+                                name] = True
                     self.tabledict[group][key]["masks"][name] = mask
-                    self.sizes[group][key].append(mask.shape[0] if ndims > 0 else None)
+                    self.sizes[group][key].append(
+                        mask.shape[0] if ndims > 0 else None)
 
             # Next add the data
             for name, var in iterlist:
@@ -117,9 +116,11 @@ class TableViewer:
                     self.is_bin_centers[group][key]["data"][name] = False
                     if dim in scipp_obj.coords:
                         if scipp_obj.coords[dim].shape[0] == var.shape[0] + 1:
-                            self.is_bin_centers[group][key]["data"][name] = True
+                            self.is_bin_centers[group][key]["data"][
+                                name] = True
                     self.tabledict[group][key]["data"][name] = var.data
-                    self.sizes[group][key].append(var.shape[0] if ndims > 0 else None)
+                    self.sizes[group][key].append(
+                        var.shape[0] if ndims > 0 else None)
 
         else:
 
@@ -154,8 +155,8 @@ class TableViewer:
         subtitle += "font-style:italic;background-color:#ffffff;"
         subtitle += "text-align:left;font-size:1.2em;padding: 1px;'>"
         subtitle += "{}</span>"
-        title = str(type(scipp_obj)).replace("<class '", "").replace("scipp._scipp.core.",
-                                           "").replace("'>", "")
+        title = str(type(scipp_obj)).replace("<class '", "").replace(
+            "scipp._scipp.core.", "").replace("'>", "")
 
         self.box = [
             self.widgets.HTML(value="<span style='font-weight:bold;"
@@ -163,6 +164,7 @@ class TableViewer:
         ]
         self.tables = {}
         self.sliders = {}
+        self.readouts = {}
         self.label = self.widgets.Label(value="rows")
         self.nrows = {}
 
@@ -175,13 +177,13 @@ class TableViewer:
 
                 children = []
                 for key, val in sorted(self.tabledict[group].items()):
-                    html = self.table_from_dict_of_variables(val,
-                                                    is_bin_centers=self.is_bin_centers[group][key],
-                                                    size=self.sizes[group][key],
-                                                    headers=self.headers,
-                                                    max_rows=config.table_max_size)
-                    self.tables[group][key] = self.widgets.HTML(
-                        value=html)
+                    html = self.table_from_dict_of_variables(
+                        val,
+                        is_bin_centers=self.is_bin_centers[group][key],
+                        size=self.sizes[group][key],
+                        headers=self.headers,
+                        max_rows=config.table_max_size)
+                    self.tables[group][key] = self.widgets.HTML(value=html)
                     hbox = self.make_hbox(group, key, self.sizes[group][key])
                     children.append(hbox)
 
@@ -200,7 +202,6 @@ class TableViewer:
 
                 self.box.append(self.widgets.VBox(vbox))
 
-
         self.box = self.widgets.VBox(self.box,
                                      layout=self.widgets.Layout(
                                          border="solid 1px",
@@ -210,7 +211,7 @@ class TableViewer:
         return
 
     def make_dict(self):
-        return {"coord": {}, "data": {}, "labels": {}, "masks": {}}
+        return {"coords": {}, "data": {}, "labels": {}, "masks": {}}
 
     def make_hbox(self, group, key, size):
         hbox = self.tables[group][key]
@@ -226,21 +227,18 @@ class TableViewer:
                     continuous_update=True,
                     layout=self.widgets.Layout(width='150px'))
                 self.nrows[key].observe(self.update_slider, names="value")
-                # self.sliders[key] = self.widgets.SelectionSlider(
-                #     options=np.arange(size - self.nrows[key].value + 1)[::-1],
-                #     value=0,
-                #     description="Starting row",
-                #     orientation='vertical',
-                #     continuous_update=False,
-                #     layout=self.widgets.Layout(height='400px'))
+                slider_max = size - self.nrows[key].value + 1
                 self.sliders[key] = self.widgets.IntSlider(
                     min=0,
-                    max=size - self.nrows[key].value + 1,
-                    value=0,
+                    max=slider_max,
+                    value=slider_max,
                     description="Starting row",
                     orientation='vertical',
-                    continuous_update=False,
+                    continuous_update=True,
+                    readout=False,
                     layout=self.widgets.Layout(height='400px'))
+                self.readouts[key] = self.widgets.Label(
+                    value=str(self.sliders[key].max - self.sliders[key].value))
                 setattr(self.sliders[key], "key", key)
                 setattr(self.nrows[key], "key", key)
                 setattr(self.sliders[key], "group", group)
@@ -248,10 +246,12 @@ class TableViewer:
                 self.sliders[key].observe(self.update_table, names="value")
                 hbox = self.widgets.HBox([
                     hbox,
-                    self.widgets.VBox([
-                        self.widgets.HBox([self.nrows[key], self.label]),
-                        self.sliders[key]
-                    ])
+                    self.widgets.VBox(
+                        [
+                            self.widgets.HBox([self.nrows[key], self.label]),
+                            self.sliders[key], self.readouts[key]
+                        ],
+                        layout=self.widgets.Layout(align_items="center"))
                 ])
         return hbox
 
@@ -264,14 +264,14 @@ class TableViewer:
             for var in section.values():
                 col_separators += 1 + (var.variances is not None)
             if col_separators > 0:
-                style = "{} background-color: {};text-align: center;'".format(base_style, config.colors[key])
-                html.append("<th {} colspan='{}'>{}</th>".format(style, col_separators,
-                                                            key))
+                style = "{} background-color: {};text-align: center;'".format(
+                    base_style, config.colors[key])
+                html.append("<th {} colspan='{}'>{}</th>".format(
+                    style, col_separators, key))
 
         html.append("</tr>")
 
         return "".join(html)
-
 
     def make_table_unit_headers(self, dict_of_variables, text_style):
         """
@@ -285,7 +285,6 @@ class TableViewer:
                     name_with_unit(val, name=name)))
         return "".join(html)
 
-
     def make_table_subsections(self, dict_of_variables, text_style):
         """
         Adds Value | Variance columns for the section.
@@ -298,8 +297,8 @@ class TableViewer:
                     html.append("<th {}>Variances</th>".format(text_style))
         return "".join(html)
 
-
-    def make_value_rows(self, dict_of_variables, is_bin_centers, index, base_style, edge_style, row_start):
+    def make_value_rows(self, dict_of_variables, is_bin_centers, index,
+                        base_style, edge_style, row_start):
         html = []
         for key, section in dict_of_variables.items():
             for name, val in section.items():
@@ -317,8 +316,8 @@ class TableViewer:
 
         return "".join(html)
 
-
-    def make_trailing_cells(self, dict_of_variables, is_bin_centers, index, size, base_style, edge_style):
+    def make_trailing_cells(self, dict_of_variables, is_bin_centers, index,
+                            size, base_style, edge_style):
         html = []
         for key, section in dict_of_variables.items():
             for name, val in section.items():
@@ -332,7 +331,8 @@ class TableViewer:
                             base_style, value_to_string(val.values[index])))
                         if val.variances is not None:
                             html.append("<td rowspan='2' {}>{}</td>".format(
-                                base_style, value_to_string(val.variances[index])))
+                                base_style,
+                                value_to_string(val.variances[index])))
 
         return "".join(html)
 
@@ -347,24 +347,29 @@ class TableViewer:
         html.append("</tr>")
         return "".join(html)
 
-    def table_from_dict_of_variables(self, dict_of_variables,
-                           is_bin_centers=None,
-                           # dim_key=None,
-                           size=None,
-                           headers=2,
-                           row_start=0,
-                           max_rows=None):
-        base_style = ("style='border: 1px solid black; padding: 0px 5px 0px 5px; "
-                      "text-align: right;")
+    def table_from_dict_of_variables(
+            self,
+            dict_of_variables,
+            is_bin_centers=None,
+            # dim_key=None,
+            size=None,
+            headers=2,
+            row_start=0,
+            max_rows=None):
+        base_style = (
+            "style='border: 1px solid black; padding: 0px 5px 0px 5px; "
+            "text-align: right;")
 
         mstyle = base_style + "text-align: center;"
         vstyle = mstyle + "background-color: #f0f0f0;'"
         mstyle += "'"
-        edge_style = ("style='border: 0px solid white;background-color: #ffffff; "
-                      "height:1.2em;'")
-        hover_style = ("onMouseOver=\"this.style.backgroundColor='" +
-                       config.colors["hover"] +
-                       "'\" onMouseOut=\"this.style.backgroundColor='#ffffff'\"")
+        edge_style = (
+            "style='border: 0px solid white;background-color: #ffffff; "
+            "height:1.2em;'")
+        hover_style = (
+            "onMouseOver=\"this.style.backgroundColor='" +
+            config.colors["hover"] +
+            "'\" onMouseOut=\"this.style.backgroundColor='#ffffff'\"")
 
         # Declare table
         html = "<table style='border-collapse: collapse;'>"
@@ -388,25 +393,30 @@ class TableViewer:
                     html += "<td {}>{}</td>".format(base_style,
                                                     value_to_string(val.value))
                     if val.variances is not None:
-                        html += "<td {}>{}</td>".format(base_style,
-                                                        value_to_string(val.variance))
+                        html += "<td {}>{}</td>".format(
+                            base_style, value_to_string(val.variance))
             html += "</tr>"
         else:
             row_end = min(size, row_start + max_rows)
+            # If we are not starting at the first row, add overflow
             if row_start > 0:
-                html += self.make_overflow_row(dict_of_variables, base_style, hover_style)
+                html += self.make_overflow_row(dict_of_variables, base_style,
+                                               hover_style)
             for i in range(row_start, row_end):
                 html += "<tr {}>".format(hover_style)
-                html += self.make_value_rows(dict_of_variables, is_bin_centers, i, base_style,
-                                         edge_style, row_start)
+                html += self.make_value_rows(dict_of_variables, is_bin_centers,
+                                             i, base_style, edge_style,
+                                             row_start)
                 html += "</tr><tr {}>".format(hover_style)
-                # If there are bin edges, we need to add trailing cells for data
-                # and labels
-                html += self.make_trailing_cells(dict_of_variables, is_bin_centers, i, row_end,
+                # If there are bin edges, we need to add trailing cells
+                html += self.make_trailing_cells(dict_of_variables,
+                                                 is_bin_centers, i, row_end,
                                                  base_style, edge_style)
                 html += "</tr>"
+            # If we are not ending at the last row, add overflow
             if row_end != size:
-                html += self.make_overflow_row(dict_of_variables, base_style, hover_style)
+                html += self.make_overflow_row(dict_of_variables, base_style,
+                                               hover_style)
 
         html += "</table>"
         return html
@@ -414,24 +424,19 @@ class TableViewer:
     def update_slider(self, change):
         key = change["owner"].key
         group = change["owner"].group
-        val = self.sliders[key].value
-        # Prevent update while options are being changed
-        # self.trigger_update = False
-        # self.sliders[key].options = np.arange(self.sizes[group][key] -
-        #                                       change["new"] + 1)[::-1]
         self.sliders[key].max = self.sizes[group][key] - change["new"] + 1
-        # # Re-enable table updating
-        # self.trigger_update = True
-        # self.sliders[key].value = min(val, self.sliders[key].max)
+        self.update_table(change)
 
     def update_table(self, change):
-        # if self.trigger_update:
         key = change["owner"].key
         group = change["owner"].group
-        html = self.table_from_dict_of_variables(self.tabledict[group][key],
-                                            is_bin_centers=self.is_bin_centers[group][key],
-                                            size=self.sizes[group][key],
-                                            headers=self.headers,
-                                            row_start=self.sliders[key].value,
-                                            max_rows=self.nrows[key].value)
+        index = self.sliders[key].max - self.sliders[key].value
+        self.readouts[key].value = str(index)
+        html = self.table_from_dict_of_variables(
+            self.tabledict[group][key],
+            is_bin_centers=self.is_bin_centers[group][key],
+            size=self.sizes[group][key],
+            headers=self.headers,
+            row_start=index,
+            max_rows=self.nrows[key].value)
         self.tables[group][key].value = html

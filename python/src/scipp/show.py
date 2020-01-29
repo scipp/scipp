@@ -270,13 +270,13 @@ class VariableDrawer():
                 for name, mask in self._variable.masks:
                     if label.sparse_dim is not None:
                         items.append(
-                            (name, mask.values, config.colors['mask']))
+                            (name, mask.values, config.colors['masks']))
                 sparse_dim = self._variable.sparse_dim
                 for dim in self._variable.coords:
                     if dim == sparse_dim:
                         items.append((str(sparse_dim),
                                       self._variable.coords[sparse_dim].values,
-                                      config.colors['coord']))
+                                      config.colors['coords']))
 
         for i, (name, data, color) in enumerate(items):
             svg += '<g>'
@@ -389,7 +389,7 @@ class DatasetDrawer():
                 else:
                     area_xy.append(item)
 
-        for what, items in zip(['coord', 'labels', 'mask', 'attr'], [
+        for what, items in zip(['coords', 'labels', 'masks', 'attrs'], [
                 self._dataset.coords, self._dataset.labels,
                 self._dataset.masks, self._dataset.attrs
         ]):
