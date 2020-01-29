@@ -307,4 +307,9 @@ DataArray operator/(const VariableConstProxy &a, const DataConstProxy &b) {
   return DataArray(a / b.data(), b.coords(), b.labels(), b.masks(), b.attrs());
 }
 
+DataArray reciprocal(const DataConstProxy &a) {
+  return DataArray(reciprocal(a.data()), a.coords(), a.labels(), a.masks(),
+                   a.attrs());
+}
+
 } // namespace scipp::core

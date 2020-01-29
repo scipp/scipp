@@ -34,6 +34,13 @@ TEST(DataArrayTest, sum_dataset_columns_via_DataArray) {
   EXPECT_EQ(sum, dataset["data_zyx"]);
 }
 
+TEST(DataArrayTest, reciprocal) {
+  DatasetFactory3D factory;
+  const auto dataset = factory.make();
+  DataArray array(dataset["data_zyx"]);
+  EXPECT_EQ(reciprocal(array).data(), reciprocal(array.data()));
+}
+
 auto make_sparse() {
   auto var =
       makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2l, Dimensions::Sparse});
