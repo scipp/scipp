@@ -1265,7 +1265,8 @@ TEST(VariableTest,
                                 Values{1.0, double(NAN)}, Variances{0.1, 0.2});
 
   const auto replacement_value = makeVariable<double>(Values{-1});
-  EXPECT_THROW(nan_to_num(a, replacement_value), except::VariancesError);
+  EXPECT_THROW(auto replaced = nan_to_num(a, replacement_value),
+               except::VariancesError);
 }
 
 TEST(VariableTest, nan_to_num_with_variance_and_variance_on_replacement) {
