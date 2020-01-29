@@ -202,7 +202,7 @@ template <class T> struct MakeGroups {
       // Use contiguous (thick) slices if possible to avoid overhead of slice
       // handling in follow-up "apply" steps.
       const auto begin = i;
-      const auto value = *it;
+      const auto &value = *it;
       while (it != end && *it == value) {
         ++it;
         ++i;
@@ -214,7 +214,7 @@ template <class T> struct MakeGroups {
     std::vector<T> keys;
     std::vector<GroupByGrouping::group> groups;
     for (auto &item : indices) {
-      keys.push_back(item.first);
+      keys.emplace_back(std::move(item.first));
       groups.emplace_back(std::move(item.second));
     }
     auto keys_ = makeVariable<T>(Dimensions{dims}, Values(std::move(keys)));
