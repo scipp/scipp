@@ -196,13 +196,17 @@ template <class T> struct MakeGroups {
 
     const auto dim = key.dims().inner();
     std::map<T, std::vector<Slice>> indices;
-    for (scipp::index i = 0; i < scipp::size(values);) {
+    const auto end = values.end();
+    scipp::index i = 0;
+    for (auto it = values.begin(); it != end;) {
       // Use contiguous (thick) slices if possible to avoid overhead of slice
       // handling in follow-up "apply" steps.
       const auto begin = i;
-      const auto value = values[i];
-      while (i < scipp::size(values) && values[i] == value)
+      const auto value = *it;
+      while (it != end && *it == value) {
+        ++it;
         ++i;
+      }
       indices[value].emplace_back(dim, begin, i);
     }
 
