@@ -1240,16 +1240,6 @@ TEST(VariableTest, boolean_xor) {
   EXPECT_EQ(result, expected);
 }
 
-TEST(VariableTest, nan_to_num_throws_when_replacment_not_single_value) {
-  auto a =
-      makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.0, double(NAN)});
-  // Replacement has 2 values
-  const auto replacement_value =
-      makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{-1, -1});
-  EXPECT_THROW(auto replaced = nan_to_num(a, replacement_value),
-               except::SizeError);
-}
-
 TEST(VariableTest, nan_to_num_throws_when_input_and_replace_types_differ) {
   auto a =
       makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.0, double(NAN)});
@@ -1269,16 +1259,14 @@ TEST(VariableTest, nan_to_num) {
   EXPECT_EQ(b, expected);
 }
 
-TEST(VariableTest, nan_to_num_with_variance) {
+TEST(VariableTest,
+     nan_to_num_with_variance_throws_if_replacement_has_no_variance) {
   auto a = makeVariable<double>(Dims{Dim::X}, Shape{2},
                                 Values{1.0, double(NAN)}, Variances{0.1, 0.2});
 
   const auto replacement_value = makeVariable<double>(Values{-1});
-  Variable b = nan_to_num(a, replacement_value);
-  auto expected = makeVariable<double>(
-      Dims{Dim::X}, Shape{2}, Values{1.0, replacement_value.value<double>()},
-      Variances{0.1, replacement_value.value<double>()});
-  EXPECT_EQ(b, expected);
+  EXPECT_THROW(auto replaced = nan_to_num(a, replacement_value),
+               except::VariancesError);
 }
 
 TEST(VariableTest, nan_to_num_with_variance_and_variance_on_replacement) {
@@ -1323,18 +1311,13 @@ TEST(VariableTest, nan_to_num_inplace) {
   EXPECT_EQ(a, expected);
 }
 
-TEST(VariableTest, nan_to_num_inplace_with_variance) {
+TEST(VariableTest,
+     nan_to_num_inplace_with_variance_throws_if_replacement_has_no_variance) {
   auto a = makeVariable<double>(Dims{Dim::X}, Shape{3},
                                 Values{1.0, double(NAN), 3.0},
                                 Variances{0.1, 0.2, 0.3});
   const auto replacement_value = makeVariable<double>(Values{-1});
-  VariableProxy b = nan_to_num(a, replacement_value, a);
-  auto expected = makeVariable<double>(
-      Dims{Dim::X}, Shape{3},
-      Values{1.0, replacement_value.value<double>(), 3.0},
-      Variances{0.1, replacement_value.value<double>(), 0.3});
-  EXPECT_EQ(b, expected);
-  EXPECT_EQ(a, expected);
+  EXPECT_THROW(nan_to_num(a, replacement_value, a), except::VariancesError);
 }
 
 TEST(VariableTest, nan_to_num_inplace_out_has_no_variances) {
@@ -1345,12 +1328,7 @@ TEST(VariableTest, nan_to_num_inplace_out_has_no_variances) {
   auto out = makeVariable<double>(
       Dims{Dim::X}, Shape{2}, Values{1.0, double(NAN)}, Variances{0.1, 0.2});
 
-  VariableProxy b = nan_to_num(a, replacement_value, out);
-  auto expected = makeVariable<double>(
-      Dims{Dim::X}, Shape{2}, Values{1.0, replacement_value.value<double>()},
-      Variances{1.0, replacement_value.value<double>()});
-  EXPECT_EQ(b, expected);
-  EXPECT_EQ(out, expected);
+  EXPECT_THROW(nan_to_num(a, replacement_value, out), except::VariancesError);
 }
 
 TEST(VariableTest,
