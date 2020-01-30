@@ -31,7 +31,8 @@ class TestMantidConversion(unittest.TestCase):
         # pick up the name from the class variable name
         cls.base_event_ws = mantid.LoadEventNexus(
             MantidDataHelper.find_file(filename),
-            OutputWorkspace="test_ws{}".format(__file__))
+            OutputWorkspace="test_ws{}".format(__file__),
+            StoreInADS=False)
 
     def test_Workspace2D(self):
         import mantid.simpleapi as mantid
@@ -265,16 +266,25 @@ class TestMantidConversion(unittest.TestCase):
         self.assertEqual(4, len(histo_data_array.dims))
 
     def test_load_component_info(self):
+        from mantid.simpleapi import mtd
+        mtd.clear()
+
         ds = sc.Dataset()
 
-        sc.compat.mantid.load_component_info_from_instrument_file(
+        sc.compat.mantid.load_component_info(
             ds, MantidDataHelper.find_file("iris26176_graphite002_sqw.nxs"))
+
+        # check that no workspaces have been leaked in the ADS
+        assert len(mtd) == 0, f"Workspaces present: {mtd.getObjectNames()}"
 
         self.assertTrue("source_position" in ds.labels)
         self.assertTrue("sample_position" in ds.labels)
         self.assertTrue("position" in ds.labels)
 
     def test_to_workspace_2d_no_error(self):
+        from mantid.simpleapi import mtd
+        mtd.clear()
+
         # All Dims for which support is expected are
         # tested in the parametrized test.
         # Just set this one to a working one to avoid
@@ -300,6 +310,8 @@ class TestMantidConversion(unittest.TestCase):
 
         assert len(ws.readX(0)) == expected_bins
         assert ws.getNumberHistograms() == expected_number_spectra
+        # check that no workspaces have been leaked in the ADS
+        assert len(mtd) == 0, f"Workspaces present: {mtd.getObjectNames()}"
 
         for i in range(expected_number_spectra):
             np.testing.assert_array_equal(ws.readX(i), x[Dim.Spectrum, i])
@@ -312,12 +324,17 @@ class TestMantidConversion(unittest.TestCase):
         Tests that the fit executes, and the outputs
         are moved into the dataset. Does not check the fit values.
         """
-        from mantid.simpleapi import Load
+        from mantid.simpleapi import Load, mtd
+        mtd.clear()
 
-        ws = Load(MantidDataHelper.find_file("iris26176_graphite002_sqw.nxs"))
+        ws = Load(MantidDataHelper.find_file("iris26176_graphite002_sqw.nxs"),
+                  StoreInADS=False)
 
         fit_ds = sc.compat.mantid.fit(ws, 'name=LinearBackground,A0=0,A1=1', 0,
                                       0, 3)
+
+        # check that no workspaces have been leaked in the ADS
+        self.assertEqual(len(mtd), 0, mtd.getObjectNames())
         self.assertTrue("workspace" in fit_ds)
         self.assertTrue("normalised_covariance_matrix" in fit_ds)
         self.assertTrue("parameters" in fit_ds)
@@ -333,6 +350,9 @@ class TestMantidConversion(unittest.TestCase):
                          (Dim.Tof, Dim.Wavelength, Dim.Energy, Dim.DSpacing,
                           Dim.Q, Dim.QSquared, Dim.EnergyTransfer))
 def test_to_workspace_2d(param_dim):
+    from mantid.simpleapi import mtd
+    mtd.clear()
+
     data_len = 2
     expected_bins = data_len + 1
     expected_number_spectra = 10
@@ -353,6 +373,8 @@ def test_to_workspace_2d(param_dim):
 
     assert len(ws.readX(0)) == expected_bins
     assert ws.getNumberHistograms() == expected_number_spectra
+    # check that no workspaces have been leaked in the ADS
+    assert len(mtd) == 0, f"Workspaces present: {mtd.getObjectNames()}"
 
     for i in range(expected_number_spectra):
         np.testing.assert_array_equal(ws.readX(i), x[Dim.Spectrum, i])
