@@ -81,7 +81,7 @@ defaults = {
         "data": "#ffe680",
         "labels": "#afdde9",
         "attrs": "#ff8080",
-        "masks": "#d2b4de",
+        "masks": "#cccccc",
         "hover": "#d6eaf8",
     },
     "table_max_size": 50,
