@@ -80,6 +80,15 @@ struct is_ValuesAndVariances<ValuesAndVariances<T>> : std::true_type {};
 template <class T>
 inline constexpr bool is_ValuesAndVariances_v = is_ValuesAndVariances<T>::value;
 
+template <class... Ts> struct is_AllOrNoneValuesAndVariances {
+  static const bool value =
+      !(std::conjunction_v<is_ValuesAndVariances<Ts>...> ||
+        std::conjunction_v<std::negation<is_ValuesAndVariances<Ts>>...>);
+};
+template <class... Ts>
+inline constexpr bool is_AllOrNoneValuesAndVariances_v =
+    is_AllOrNoneValuesAndVariances<Ts...>::value;
+
 } // namespace detail
 
 } // namespace scipp::core

@@ -272,11 +272,15 @@ struct TransformSparse {
   }
 };
 
-template <class... Args>
-constexpr static bool
-check_all_or_none_variances(const Args &... valAndVariances) {
-  return !((valAndVariances && ...) || (!valAndVariances && ...));
-}
+template <class Op, class... Args> struct check_all_or_none_variances {
+  static const bool value =
+      std::is_base_of_v<transform_flags::expect_all_or_none_have_variance_t,
+                        Op> &&
+      is_AllOrNoneValuesAndVariances_v<Args...>;
+};
+template <class... Ts>
+inline constexpr bool check_all_or_none_variances_v =
+    check_all_or_none_variances<Ts...>::value;
 
 /// Recursion endpoint for do_transform.
 ///
@@ -287,15 +291,12 @@ static void do_transform(Op op, Out &&out, Tuple &&processed) {
   auto out_val = out.values();
   std::apply(
       [&op, &out, &out_val](auto &&... args) {
-        constexpr bool force_same = std::is_base_of_v<
-            transform_flags::expect_all_or_none_have_variance_t, Op>;
-        if constexpr (force_same && check_all_or_none_variances(
-                                        is_ValuesAndVariances_v<
-                                            std::decay_t<decltype(args)>>...)) {
+        if constexpr (check_all_or_none_variances_v<
+                          Op, std::decay_t<decltype(args)>...>) {
           throw except::VariancesError(
               "Expected either all or none of inputs to have variances.");
         } else if constexpr ((is_ValuesAndVariances_v<
-                                  std::decay_t<decltype(args)>> ||
+                                  std::decay_t<std::decay_t<decltype(args)>>> ||
                               ...)) {
           auto out_var = out.variances();
           transform_elements(op, ValuesAndVariances{out_val, out_var},
@@ -524,17 +525,9 @@ template <bool dry_run> struct in_place {
               is_ValuesAndVariances_v<std::decay_t<decltype(arg)>>;
           constexpr bool args_var =
               (is_ValuesAndVariances_v<std::decay_t<decltype(args)>> || ...);
-          constexpr bool force_same = std::is_base_of_v<
-              transform_flags::expect_all_or_none_have_variance_t, Op>;
-          if constexpr (force_same &&
-                        check_all_or_none_variances(
-                            is_ValuesAndVariances_v<
-                                std::decay_t<decltype(arg)>>,
-                            is_ValuesAndVariances_v<
-                                std::decay_t<decltype(args)>>...)) {
-            (void)arg_var;
-            (void)args_var;
-            (void)in_var_if_out_var;
+          if constexpr (check_all_or_none_variances_v<
+                            Op, std::decay_t<decltype(arg)>,
+                            std::decay_t<decltype(args)>...>) {
             throw except::VariancesError(
                 "Expected either all or none of inputs to have variances.");
           } else if constexpr ((in_var_if_out_var ? arg_var == args_var
@@ -542,7 +535,6 @@ template <bool dry_run> struct in_place {
                                std::is_base_of_v<
                                    transform_flags::expect_no_variance_arg_t<0>,
                                    Op>) {
-            (void)force_same;
             transform_in_place_impl(op, std::forward<decltype(arg)>(arg),
                                     std::forward<decltype(args)>(args)...);
           } else {
