@@ -242,6 +242,19 @@ void bind_data_array_properties(py::class_<T, Ignored...> &c) {
   bind_binary<VariableConstProxy>(c);
 }
 
+template <class T, class... Ignored>
+void bind_astype(py::class_<T, Ignored...> &c) {
+  c.def("astype",
+        [](const T &self, const DType type) { return astype(self, type); },
+        py::call_guard<py::gil_scoped_release>(),
+        R"(
+        Converts a DataArray to a different type.
+
+        :raises: If the variable cannot be converted to the requested dtype.
+        :return: New array with specified dtype.
+        :rtype: DataArray)");
+}
+
 void init_dataset(py::module &m) {
   py::class_<Slice>(m, "Slice");
 
@@ -642,6 +655,9 @@ void init_dataset(py::module &m) {
 
         :return: Reciprocal of the input values.
         :rtype: DataArray)");
+
+  bind_astype(dataArray);
+  bind_astype(dataProxy);
 
   py::implicitly_convertible<DataArray, DataConstProxy>();
   py::implicitly_convertible<DataArray, DataProxy>();

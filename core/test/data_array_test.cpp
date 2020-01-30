@@ -70,6 +70,15 @@ auto make_histogram_no_variance() {
   return DataArray(data, {{Dim::X, edges}});
 }
 
+TEST(DataArrayTest, astype) {
+  DataArray a(
+      makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3}),
+      {{Dim::X, makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{4, 5, 6})}});
+  const auto x = astype(a, DType::Double);
+  EXPECT_EQ(x.data(),
+            makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1., 2., 3.}));
+}
+
 TEST(DataArraySparseArithmeticTest, fail_sparse_op_non_histogram) {
   const auto sparse = make_sparse();
   auto coord = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
