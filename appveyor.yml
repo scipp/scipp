@@ -21,10 +21,7 @@ cache: C:\Users\appveyor\clcache -> appveyor.yml
 init:
 # For branches not associated with a PR - we exit appveyor
 - echo pr title %APPVEYOR_PULL_REQUEST_TITLE%
-- echo %APPVEYOR_PULL_REQUEST_NUMBER%
-- echo %APPVEYOR_PULL_REQUEST_TITLE%
-- echo %APPVEYOR_PULL_REQUEST_HEAD_REPO_NAME%
-- echo %APPVEYOR_PULL_REQUEST_HEAD_REPO_BRANCH%
+- echo %APPVEYOR_REPO_BRANCH%
 - ps: if (!$env:APPVEYOR_PULL_REQUEST_TITLE) {Exit-AppveyorBuild}
 
 install:
