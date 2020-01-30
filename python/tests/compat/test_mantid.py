@@ -213,9 +213,12 @@ class TestMantidConversion(unittest.TestCase):
         histo_data_array = mantidcompat.convert_MDHistoWorkspace_to_data_array(
             md_histo)
 
-        self.assertEqual(histo_data_array.coords[sc.Dim.Qx].values.shape, (4, ))
-        self.assertEqual(histo_data_array.coords[sc.Dim.Qy].values.shape, (3, ))
-        self.assertEqual(histo_data_array.coords[sc.Dim.Qz].values.shape, (5, ))
+        self.assertEqual(histo_data_array.coords[sc.Dim.Qx].values.shape,
+                         (4, ))
+        self.assertEqual(histo_data_array.coords[sc.Dim.Qy].values.shape,
+                         (3, ))
+        self.assertEqual(histo_data_array.coords[sc.Dim.Qz].values.shape,
+                         (5, ))
         self.assertEqual(histo_data_array.coords[sc.Dim.Qx].unit,
                          sc.units.dimensionless / sc.units.angstrom)
         self.assertEqual(histo_data_array.coords[sc.Dim.Qy].unit,
