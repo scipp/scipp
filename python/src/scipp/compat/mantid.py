@@ -718,7 +718,7 @@ def fit(ws, function, workspace_index, start_x, end_x):
                      CreateOutput=True)
     return sc.Dataset(data={
         'workspace':
-        sc.Variable(convert_Workspace2D_to_dataarray(fit.OutputWorkspace)),
+        sc.Variable(convert_Workspace2D_to_data_array(fit.OutputWorkspace)),
         'parameters':
         sc.Variable(convert_TableWorkspace_to_dataset(fit.OutputParameters)),
         'normalised_covariance_matrix':
