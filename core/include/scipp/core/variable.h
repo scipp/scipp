@@ -496,9 +496,6 @@ private:
 /// in certain classes.
 /// Example: makeVariable<float>(units::Unit(units::kg),
 /// Shape{1, 2}, Dims{Dim::X, Dim::Y}, Values({3, 4})).
-
-// The name should be changed to makeVariable after refactoring:
-// getting rid of all other makeVariable.
 template <class T, class... Ts> Variable makeVariable(Ts &&... ts) {
   using helper = detail::ConstructorArgumentsMatcher<Variable, Ts...>;
   constexpr bool useDimsAndShape =
