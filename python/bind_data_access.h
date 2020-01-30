@@ -394,8 +394,8 @@ void bind_data_properties(pybind11::class_<T, Ignored...> &c) {
                             for (auto extent : dims.shape()) {
                               list.append(extent);
                             }
-                            // Add None to represent sparse dimension. The can
-                            // be only one.
+                            // Add None to represent sparse dimension.
+                            // There can be only one.
                             if (dims.sparse()) {
                               list.append(py::none());
                             }
