@@ -15,16 +15,14 @@ def _make_table_sections(dict_of_variables, base_style):
     html = ["<tr>"]
     for key, section in dict_of_variables.items():
         heading = key[0].upper() + key[1:]
-
         col_separators = 0
         for var in section.values():
             col_separators += 1 + (var.variances is not None)
         if col_separators > 0:
             style = "{} background-color: {};text-align: center;'".format(
-                base_style, config.colors[key.lower()])
+                base_style, config.colors[key])
             html.append("<th {} colspan='{}'>{}</th>".format(
                 style, col_separators, heading))
-
     html.append("</tr>")
 
     return "".join(html)
@@ -43,16 +41,20 @@ def _make_table_unit_headers(dict_of_variables, text_style):
     return "".join(html)
 
 
-def _make_table_subsections(dict_of_variables, text_style):
+def _make_table_subsections(dict_of_variables, text_style, plural):
     """
     Adds Value | Variance columns for the section.
     """
+    if plural:
+        s = "s"
+    else:
+        s = ""
     html = []
     for key, section in dict_of_variables.items():
         for name, val in section.items():
-            html.append("<th {}>Values</th>".format(text_style))
+            html.append("<th {}>Value{}</th>".format(text_style, s))
             if val.variances is not None:
-                html.append("<th {}>Variances</th>".format(text_style))
+                html.append("<th {}>Variance{}</th>".format(text_style, s))
     return "".join(html)
 
 
@@ -113,7 +115,8 @@ def _table_from_dict_of_variables(dict_of_variables,
                                   size=None,
                                   headers=2,
                                   row_start=0,
-                                  max_rows=None):
+                                  max_rows=None,
+                                  group=None):
     base_style = ("style='border: 1px solid black; padding: 0px 5px 0px 5px; "
                   "text-align: right;")
 
@@ -135,7 +138,8 @@ def _table_from_dict_of_variables(dict_of_variables,
         html += "<tr {}>".format(hover_style)
         html += _make_table_unit_headers(dict_of_variables, mstyle)
         html += "</tr><tr {}>".format(hover_style)
-        html += _make_table_subsections(dict_of_variables, vstyle)
+        html += _make_table_subsections(dict_of_variables, vstyle,
+                                        group == "1D Variables")
         html += "</tr>"
 
     # the base style still does not have a closing quote, so we add it here
@@ -207,17 +211,14 @@ class TableViewer:
         if is_dataset_or_array(scipp_obj):
             self.headers = 2
             if is_dataset(scipp_obj):
-                iterlist = scipp_obj.items()
+                iterlist = scipp_obj
             else:
-                iterlist = [(scipp_obj.name, scipp_obj)]
-            # Note that capital 'D' is intentional on 'Data' to avoid the
-            # '.data' attribute of a DataArray being picked up
-            for field in ["coords", "labels", "masks", "Data"]:
-                if hasattr(scipp_obj, field):
-                    iter_items = getattr(scipp_obj, field).items()
-                else:
-                    iter_items = iterlist
-                for name, var in iter_items:
+                iterlist = {scipp_obj.name: scipp_obj}
+            for tag, field in zip(["coords", "labels", "masks", "data"], [
+                    scipp_obj.coords, scipp_obj.labels, scipp_obj.masks,
+                    iterlist
+            ]):
+                for name, var in field.items():
                     ndims = len(var.dims)
                     name_str = str(name)
                     if ndims < 2:
@@ -228,14 +229,13 @@ class TableViewer:
                             self.tabledict[group][key] = self.make_dict()
                             self.is_bin_centers[group][key] = self.make_dict()
                             self.sizes[group][key] = []
-                        self.is_bin_centers[group][key][field][
-                            name_str] = False
+                        self.is_bin_centers[group][key][tag][name_str] = False
                         if dim in scipp_obj.coords:
                             if scipp_obj.coords[dim].shape[
                                     0] == var.shape[0] + 1:
-                                self.is_bin_centers[group][key][field][
+                                self.is_bin_centers[group][key][tag][
                                     name_str] = True
-                        self.tabledict[group][key][field][name_str] = var
+                        self.tabledict[group][key][tag][name_str] = var
                         self.sizes[group][key].append(
                             var.shape[0] if ndims > 0 else None)
 
@@ -253,8 +253,8 @@ class TableViewer:
                     key = " "
                     var = sc.Variable([sc.Dim.Row], values=scipp_obj)
 
-                self.tabledict[group][key] = {"Data": {key: var}}
-                self.is_bin_centers[group][key] = {"Data": {key: False}}
+                self.tabledict[group][key] = {"data": {key: var}}
+                self.is_bin_centers[group][key] = {"data": {key: False}}
                 self.sizes[group][key] = scipp_obj.shape
 
         # Get max size for each dim
@@ -299,7 +299,8 @@ class TableViewer:
                         is_bin_centers=self.is_bin_centers[group][key],
                         size=self.sizes[group][key],
                         headers=self.headers,
-                        max_rows=config.table_max_size)
+                        max_rows=config.table_max_size,
+                        group=group)
                     self.tables[group][key] = self.widgets.HTML(value=html)
                     hbox = self.make_hbox(group, key, self.sizes[group][key])
                     children.append(hbox)
@@ -328,7 +329,7 @@ class TableViewer:
         return
 
     def make_dict(self):
-        return {"coords": {}, "Data": {}, "labels": {}, "masks": {}}
+        return {"coords": {}, "data": {}, "labels": {}, "masks": {}}
 
     def make_hbox(self, group, key, size):
         hbox = self.tables[group][key]
@@ -389,5 +390,6 @@ class TableViewer:
             size=self.sizes[group][key],
             headers=self.headers,
             row_start=index,
-            max_rows=self.nrows[key].value)
+            max_rows=self.nrows[key].value,
+            group=group)
         self.tables[group][key].value = html
