@@ -116,26 +116,29 @@ auto apply_op_sparse_dense(Op op, const Coord &coord, const Data &data,
 }
 
 namespace sparse_dense_op_impl_detail {
-template <class CoordT, class EdgeT, class WeightT>
-using args = std::tuple<sparse_container<CoordT>, span<const WeightT>,
-                        span<const EdgeT>, span<const WeightT>>;
+// Note that currently we require Data = Weight.
+template <class Coord, class Data, class Edge, class Weight>
+using args = std::tuple<sparse_container<Coord>, span<const Data>,
+                        span<const Edge>, span<const Weight>>;
 }
 
-template <int Variance, class Op>
+template <int ImplicitData, class Op>
 Variable sparse_dense_op_impl(Op op, const VariableConstProxy &sparseCoord_,
                               const VariableConstProxy &edges_,
                               const VariableConstProxy &weights_) {
   using namespace sparse_dense_op_impl_detail;
   const Dim dim = sparseCoord_.dims().sparseDim();
-  // Sparse data without values has an implicit value of 1 count.
+  // Sparse data without values has an implicit value of 1 count. If
+  // `ImplicitData` is 0 we simply use this function to generate intermediate
+  // sparse data that can be multiplied with the existing data by the caller.
   const Variable implicit_data =
-      Variance ? Variable(weights_.dtype(), Dims{dim}, Shape{1}, Values{1.0},
-                          Variances{1.0}, units::Unit(units::counts))
-               : Variable(weights_.dtype(), Dims{dim}, Shape{1}, Values{1.0},
-                          units::Unit(units::counts));
-  return transform<
-      std::tuple<args<double, double, double>, args<float, double, double>,
-                 args<float, float, float>, args<double, float, float>>>(
+      ImplicitData
+          ? Variable(weights_.dtype(), Dims{dim}, Shape{1}, Values{1.0},
+                     Variances{1.0}, units::Unit(units::counts))
+          : Variable(weights_.dtype(), Dims{dim}, Shape{1}, Values{1.0});
+  return transform<std::tuple<
+      args<double, double, double, double>, args<float, double, double, double>,
+      args<float, float, float, float>, args<double, float, float, float>>>(
       sparseCoord_, subspan_view(implicit_data, dim), subspan_view(edges_, dim),
       subspan_view(weights_, dim),
       overloaded{
@@ -177,11 +180,10 @@ DataArray &sparse_dense_op_inplace(Op op, DataArray &a,
     expect::coordsAndLabelsAreSuperset(a, b.slice({dim, 0}));
     union_or_in_place(a.masks(), b.masks());
     if (a.hasData()) {
-      auto out = sparse_dense_op_impl<0>(op, a.coords()[dim], b.coords()[dim],
-                                         b.data());
-      // Undo implicit factor of counts added by sparse_dense_op_impl
-      out.setUnit(out.unit() / units::Unit(units::counts));
-      a.data() *= out;
+      // Note the inefficiency here: Always creating temporary sparse data.
+      // Could easily avoided, but requires significant code duplication.
+      a.data() *= sparse_dense_op_impl<0>(op, a.coords()[dim], b.coords()[dim],
+                                          b.data());
     } else {
       a.setData(sparse_dense_op_impl<1>(op, a.coords()[dim], b.coords()[dim],
                                         b.data()));
@@ -239,11 +241,10 @@ auto sparse_dense_op(Op op, const DataConstProxy &a, const DataConstProxy &b) {
   if (a.dims().sparse()) {
     const Dim dim = a.dims().sparseDim();
     if (a.hasData()) {
-      auto out = sparse_dense_op_impl<0>(op, a.coords()[dim], b.coords()[dim],
-                                         b.data());
-      // Undo implicit factor of counts added by sparse_dense_op_impl
-      out.setUnit(out.unit() / units::Unit(units::counts));
-      return out * a.data(); // not in-place so type promotion can happen
+      // not in-place so type promotion can happen
+      return sparse_dense_op_impl<0>(op, a.coords()[dim], b.coords()[dim],
+                                     b.data()) *
+             a.data();
     } else {
       return sparse_dense_op_impl<1>(op, a.coords()[dim], b.coords()[dim],
                                      b.data());

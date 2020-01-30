@@ -83,6 +83,7 @@ TEST(DataArraySparseArithmeticTest, sparse_times_histogram) {
   for (const auto result : {sparse * hist, hist * sparse}) {
     EXPECT_EQ(result.coords()[Dim::X], sparse.coords()[Dim::X]);
     EXPECT_TRUE(result.hasVariances());
+    EXPECT_EQ(result.unit(), units::counts);
 
     const auto out_vals = result.data().sparseValues<double>();
     const auto out_vars = result.data().sparseVariances<double>();
@@ -113,6 +114,7 @@ TEST(DataArraySparseArithmeticTest, sparse_times_histogram_without_variances) {
   for (const auto result : {sparse * hist, hist * sparse}) {
     EXPECT_EQ(result.coords()[Dim::X], sparse.coords()[Dim::X]);
     EXPECT_TRUE(result.hasVariances());
+    EXPECT_EQ(result.unit(), units::counts);
 
     const auto out_vals = result.data().sparseValues<double>();
     const auto out_vars = result.data().sparseVariances<double>();
@@ -146,6 +148,7 @@ TEST(DataArraySparseArithmeticTest, sparse_with_values_times_histogram) {
   for (const auto result : {sparse * hist, hist * sparse}) {
     EXPECT_EQ(result.coords()[Dim::X], sparse.coords()[Dim::X]);
     EXPECT_TRUE(result.hasVariances());
+    EXPECT_EQ(result.unit(), units::counts);
     const auto out_vals = result.data().sparseValues<double>();
     const auto out_vars = result.data().sparseVariances<double>();
 
@@ -174,6 +177,7 @@ TEST(DataArraySparseArithmeticTest, sparse_over_histogram) {
   const auto result = sparse / hist;
   EXPECT_EQ(result.coords()[Dim::X], sparse.coords()[Dim::X]);
   EXPECT_TRUE(result.hasVariances());
+  EXPECT_EQ(result.unit(), units::counts);
   const auto out_vals = result.data().sparseValues<double>();
   const auto out_vars = result.data().sparseVariances<double>();
 
