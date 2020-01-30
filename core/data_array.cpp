@@ -75,14 +75,13 @@ auto apply_op_sparse_dense(Op op, const Coord &coord, const Data &data,
                            const Edges &edges, const Weights &weights) {
   using D = std::decay_t<decltype(data)>;
   using W = std::decay_t<decltype(weights)>;
-  constexpr bool data_variance = is_ValueAndVariance_v<D>;
-  constexpr bool weights_variance = is_ValueAndVariance_v<W>;
+  constexpr bool vars = is_ValueAndVariance_v<D> || is_ValueAndVariance_v<W>;
   using ElemT = typename core::detail::element_type_t<W>::value_type;
   using T = sparse_container<ElemT>;
   T out_vals;
   T out_vars;
   out_vals.reserve(coord.size());
-  if constexpr (data_variance || weights_variance)
+  if constexpr (vars)
     out_vars.reserve(coord.size());
   constexpr auto get = [](const auto &x, const scipp::index i) {
     if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(x)>>)
@@ -96,9 +95,9 @@ auto apply_op_sparse_dense(Op op, const Coord &coord, const Data &data,
     for (const auto c : coord) {
       const auto bin = (c - offset) * scale;
       auto w = get(weights, bin);
-      if (!(bin >= 0.0 && bin < nbin))
+      if (bin < 0.0 || bin >= nbin)
         w = 0.0;
-      if constexpr (data_variance || weights_variance) {
+      if constexpr (vars) {
         const auto [val, var] = op(d, w);
         out_vals.emplace_back(val);
         out_vars.emplace_back(var);
@@ -110,7 +109,7 @@ auto apply_op_sparse_dense(Op op, const Coord &coord, const Data &data,
     expect::histogram::sorted_edges(edges);
     throw std::runtime_error("Non-constant bin width not supported yet.");
   }
-  if constexpr (data_variance || weights_variance)
+  if constexpr (vars)
     return std::pair(std::move(out_vals), std::move(out_vars));
   else
     return out_vals;
