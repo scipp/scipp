@@ -70,51 +70,56 @@ bool is_sparse_and_histogram(const DataConstProxy &a, const DataConstProxy &b) {
          (b.dims().sparse() && is_histogram(a, b.dims().sparseDim()));
 }
 
-template <int Variance, class Op, class Coord, class Edges, class Weights>
-auto apply_op_sparse_dense(Op op, const Coord &coord, const Edges &edges,
-                           const Weights &weights) {
+template <class Op, class Coord, class Data, class Edges, class Weights>
+auto apply_op_sparse_dense(Op op, const Coord &coord, const Data &data,
+                           const Edges &edges, const Weights &weights) {
+  using D = std::decay_t<decltype(data)>;
   using W = std::decay_t<decltype(weights)>;
-  constexpr bool have_variance = is_ValueAndVariance_v<W>;
+  constexpr bool data_variance = is_ValueAndVariance_v<D>;
+  constexpr bool weights_variance = is_ValueAndVariance_v<W>;
   using ElemT = typename core::detail::element_type_t<W>::value_type;
   using T = sparse_container<ElemT>;
   T out_vals;
   T out_vars;
   out_vals.reserve(coord.size());
-  if constexpr (have_variance)
+  if constexpr (data_variance || weights_variance)
     out_vars.reserve(coord.size());
+  constexpr auto get = [](const auto &x, const scipp::index i) {
+    if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(x)>>)
+      return ValueAndVariance{x.value[i], x.variance[i]};
+    else
+      return x[i];
+  };
+  const auto d = get(data, 0);
   if (scipp::numeric::is_linspace(edges)) {
     const auto [offset, nbin, scale] = linear_edge_params(edges);
     for (const auto c : coord) {
-      constexpr auto event_weight = 1.0;
       const auto bin = (c - offset) * scale;
-      if constexpr (have_variance) {
-        const auto [val, var] =
-            op(ValueAndVariance<ElemT>(event_weight, Variance),
-               bin >= 0.0 && bin < nbin
-                   ? ValueAndVariance{weights.value[bin], weights.variance[bin]}
-                   : ValueAndVariance<ElemT>{0.0, 0.0});
+      auto w = get(weights, bin);
+      if (!(bin >= 0.0 && bin < nbin))
+        w = 0.0;
+      if constexpr (data_variance || weights_variance) {
+        const auto [val, var] = op(d, w);
         out_vals.emplace_back(val);
         out_vars.emplace_back(var);
       } else {
-        out_vals.emplace_back(
-            op(event_weight, bin >= 0.0 && bin < nbin ? weights[bin] : 0.0));
+        out_vals.emplace_back(op(d, w));
       }
     }
   } else {
     expect::histogram::sorted_edges(edges);
     throw std::runtime_error("Non-constant bin width not supported yet.");
   }
-  if constexpr (have_variance) {
+  if constexpr (data_variance || weights_variance)
     return std::pair(std::move(out_vals), std::move(out_vars));
-  } else {
+  else
     return out_vals;
-  }
 }
 
 namespace sparse_dense_op_impl_detail {
 template <class CoordT, class EdgeT, class WeightT>
-using args = std::tuple<sparse_container<CoordT>, span<const EdgeT>,
-                        span<const WeightT>>;
+using args = std::tuple<sparse_container<CoordT>, span<const WeightT>,
+                        span<const EdgeT>, span<const WeightT>>;
 }
 
 template <int Variance, class Op>
@@ -123,22 +128,26 @@ Variable sparse_dense_op_impl(Op op, const VariableConstProxy &sparseCoord_,
                               const VariableConstProxy &weights_) {
   using namespace sparse_dense_op_impl_detail;
   const Dim dim = sparseCoord_.dims().sparseDim();
+  // Sparse data without values has an implicit value of 1 count.
+  const Variable implicit_data =
+      Variance ? Variable(weights_.dtype(), Dims{dim}, Shape{1}, Values{1.0},
+                          Variances{1.0}, units::Unit(units::counts))
+               : Variable(weights_.dtype(), Dims{dim}, Shape{1}, Values{1.0},
+                          units::Unit(units::counts));
   return transform<
       std::tuple<args<double, double, double>, args<float, double, double>,
                  args<float, float, float>, args<double, float, float>>>(
-      sparseCoord_, subspan_view(edges_, dim), subspan_view(weights_, dim),
-      overloaded{[op](const auto &... a) {
-                   return apply_op_sparse_dense<Variance>(op, a...);
-                 },
-                 transform_flags::expect_no_variance_arg<0>,
-                 transform_flags::expect_no_variance_arg<1>,
-                 [op](const units::Unit &sparse, const units::Unit &edges,
-                      const units::Unit &weights) {
-                   expect::equals(sparse, edges);
-                   // Sparse data without values has an implicit value of 1
-                   // count.
-                   return op(units::Unit(units::counts), weights);
-                 }});
+      sparseCoord_, subspan_view(implicit_data, dim), subspan_view(edges_, dim),
+      subspan_view(weights_, dim),
+      overloaded{
+          [op](const auto &... a) { return apply_op_sparse_dense(op, a...); },
+          transform_flags::expect_no_variance_arg<0>,
+          transform_flags::expect_no_variance_arg<2>,
+          [op](const units::Unit &sparse, const units::Unit &data,
+               const units::Unit &edges, const units::Unit &weights) {
+            expect::equals(sparse, edges);
+            return op(data, weights);
+          }});
 }
 
 DataArray &DataArray::operator+=(const DataConstProxy &other) {
