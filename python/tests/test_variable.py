@@ -2,12 +2,13 @@
 # Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Simon Heybrock
+import math
+
+import numpy as np
 import pytest
 
-import math
 import scipp as sc
 from scipp import Dim
-import numpy as np
 
 
 def make_variables():
@@ -992,7 +993,37 @@ def test_atan_out():
     assert out == expected
 
 
+@pytest.mark.parametrize("dims, lengths",
+                         (([Dim.X], (sc.Dimensions.Sparse, )),
+                          ([Dim.X, Dim.Y], (10, sc.Dimensions.Sparse)),
+                          ([Dim.X, Dim.Y, Dim.Z],
+                           (10, 10, sc.Dimensions.Sparse)),
+                          ([Dim.X, Dim.Y, Dim.Z, Dim.Spectrum],
+                           (10, 10, 10, sc.Dimensions.Sparse))))
+def test_sparse_dim_has_none_shape(dims, lengths):
+    data = sc.Variable(dims, shape=lengths)
+
+    assert data.shape[-1] is None
+
+
 def test_variable_data_array_binary_ops():
     a = sc.DataArray(1.0 * sc.units.m)
     var = 1.0 * sc.units.m
     assert a / var == var / a
+
+
+def test_num_to_nan():
+    a = sc.Variable(dims=[Dim.X], values=np.array([1, np.nan]))
+    replace = sc.Variable(value=0.0)
+    b = sc.nan_to_num(a, replace)
+    expected = sc.Variable(dims=[Dim.X], values=np.array([1, replace.value]))
+    assert b == expected
+
+
+def test_num_to_nan_out():
+    a = sc.Variable(dims=[Dim.X], values=np.array([1, np.nan]))
+    out = sc.Variable(dims=[Dim.X], values=np.zeros(2))
+    replace = sc.Variable(value=0.0)
+    sc.nan_to_num(a, replace, out)
+    expected = sc.Variable(dims=[Dim.X], values=np.array([1, replace.value]))
+    assert out == expected

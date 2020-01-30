@@ -7,3 +7,4 @@ python-configuration
 pyyaml
 ipyvolume
 ipyevents
+bs4

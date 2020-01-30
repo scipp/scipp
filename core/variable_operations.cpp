@@ -294,4 +294,36 @@ Variable masks_merge_if_contained(const MasksConstProxy &masks,
   return mask_union;
 }
 
+VariableProxy nan_to_num(const VariableConstProxy &var,
+                         const VariableConstProxy &replacement,
+                         const VariableProxy &out) {
+  using std::isnan;
+  transform_in_place<std::tuple<double, float>>(
+      out, var, replacement,
+      scipp::overloaded{
+          transform_flags::expect_all_or_none_have_variance,
+          [](auto &a, const auto &b, const auto &repl) {
+            a = isnan(b) ? repl : b;
+          },
+          [](units::Unit &a, const units::Unit &b, const units::Unit &repl) {
+            expect::equals(b, repl);
+            a = b;
+          }});
+  return out;
+}
+
+Variable nan_to_num(const VariableConstProxy &var,
+                    const VariableConstProxy &replacement) {
+  using std::isnan;
+  return transform<std::tuple<double, float>>(
+      var, replacement,
+      overloaded{
+          transform_flags::expect_all_or_none_have_variance,
+          [](const auto &x, const auto &repl) { return isnan(x) ? repl : x; },
+          [](const units::Unit &x, const units::Unit &repl) {
+            expect::equals(x, repl);
+            return x;
+          }});
+}
+
 } // namespace scipp::core

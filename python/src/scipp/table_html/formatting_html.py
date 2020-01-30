@@ -19,6 +19,11 @@ ICONS_SVG_PATH = f"{os.path.dirname(__file__)}/icons-svg-inline.html"
 with open(ICONS_SVG_PATH, 'r') as f:
     ICONS_SVG = "".join(f.readlines())
 
+SPARSE_LABEL = "[sparse]"
+BIN_EDGE_LABEL = "[bin-edge]"
+VARIANCE_PREFIX = "σ² = "
+SPARSE_PREFIX = "len={}"
+
 
 def _is_dataset(x):
     return isinstance(x, sc.Dataset) or isinstance(x, sc.DatasetProxy)
@@ -57,19 +62,31 @@ def _format_non_sparse(var, has_variances):
         data = data.ravel()
     s = _format_array(data, size, ellipsis_after=2)
     if has_variances:
-        s = 'σ² = ' + s
+        s = f'{VARIANCE_PREFIX}{s}'
     return _make_row(s)
 
 
 def _get_sparse(var, variances, ellipsis_after, summary=False):
     if hasattr(var, "data") and var.data is None:
-        return ["no data, implicitly 1"]
-    single = len(var.shape) == 0
-    size = 1 if single else var.shape[0]
+        return ["No data, implicitly 1"]
+
+    if var.shape[0] is None:
+        # handles a 1D Variable with only a sparse dimension
+        size = len(var.values)
+        if summary:
+            return [SPARSE_PREFIX.format(size)]
+        else:
+            return [
+                _format_array(var.values, size, ellipsis_after, size > 1000)
+            ]
+    else:
+        # Handles 2D and higher Variables with a sparse dimension
+        size = var.shape[0]
+
     i = 0
     s = []
 
-    do_ellide = single or summary or size > 1000 or sum([
+    do_ellide = summary or size > 1000 or sum([
         len(retrieve(var, variances=variances)[i])
         for i in range(min(size, 1000))
     ]) > 1000
@@ -79,9 +96,9 @@ def _get_sparse(var, variances, ellipsis_after, summary=False):
         if i == ellipsis_after and do_ellide and size > 2 * ellipsis_after + 1:
             s.append("...")
             i = size - ellipsis_after
-        item = data if single else data[i]
+        item = data[i]
         if summary:
-            s.append(f'len={len(item)}')
+            s.append(SPARSE_PREFIX.format(len(item)))
         else:
             s.append('sparse({})'.format(
                 _format_array(item, len(item), ellipsis_after, do_ellide)))
@@ -138,11 +155,11 @@ def format_dims(dims, sizes, coords):
         for dim in dims
     }
 
-    dims_li = "".join(
-        f"<li><span{dim_css_map[dim]}>"
-        f"{escape(str(dim))}</span>: "
-        f"{size if size != sc.Dimensions.Sparse else 'Sparse' }</li>"
-        for dim, size in zip(dims, sizes))
+    print("Dims and sizes:", dims, sizes)
+    dims_li = "".join(f"<li><span{dim_css_map[dim]}>"
+                      f"{escape(str(dim))}</span>: "
+                      f"{size if size is not None else 'Sparse' }</li>"
+                      for dim, size in zip(dims, sizes))
 
     return f"<ul class='xr-dim-list'>{dims_li}</ul>"
 
@@ -231,8 +248,9 @@ def _make_inline_attributes(var, has_attrs):
             disabled = ""
 
     if len(attrs_sections) > 0:
-        attrs_sections = "".join(f"<li class='xr-section-item'>{s}</li>"
-                                 for s in attrs_sections)
+        attrs_sections = "".join(
+            f"<li class='xr-section-item sc-subsection'>{s}</li>"
+            for s in attrs_sections)
         attrs_ul = "<div class='xr-wrap'>"\
             f"<ul class='xr-sections'>{attrs_sections}</ul>"\
             "</div>"
@@ -245,26 +263,18 @@ def _make_dim_labels(dim, size, bin_edges=None):
     # there is a trailing whitespace when no dimension
     # label has been added
     if bin_edges and dim in bin_edges:
-        return " [bin-edge]"
+        return f" {BIN_EDGE_LABEL}"
     elif size is None:
-        return " [sparse]"
+        return f" {SPARSE_LABEL}"
     else:
         return ""
 
 
 def _make_dim_str(var, bin_edges, add_dim_size=False):
-    dim_sizes = []
-    for idx, dim in enumerate(var.dims):
-        try:
-            shape = var.shape[idx]
-        except IndexError:
-            shape = None
-        dim_sizes.append((dim, shape))
-
     dims_text = ', '.join('{}{}{}'.format(
         str(dim), _make_dim_labels(dim, size, bin_edges),
         f': {size}' if add_dim_size and size is not None else '')
-                          for dim, size in dim_sizes)
+                          for dim, size in zip(var.dims, var.shape))
     return dims_text
 
 
