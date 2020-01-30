@@ -45,10 +45,7 @@ def _make_table_subsections(dict_of_variables, text_style, plural):
     """
     Adds Value | Variance columns for the section.
     """
-    if plural:
-        s = "s"
-    else:
-        s = ""
+    s = "s" if plural else ""
     html = []
     for key, section in dict_of_variables.items():
         for name, val in section.items():
