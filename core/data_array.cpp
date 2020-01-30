@@ -120,7 +120,7 @@ namespace sparse_dense_op_impl_detail {
 template <class Coord, class Data, class Edge, class Weight>
 using args = std::tuple<sparse_container<Coord>, span<const Data>,
                         span<const Edge>, span<const Weight>>;
-}
+} // namespace sparse_dense_op_impl_detail
 
 template <int ImplicitData, class Op>
 Variable sparse_dense_op_impl(Op op, const VariableConstProxy &sparseCoord_,
