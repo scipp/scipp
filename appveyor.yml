@@ -19,6 +19,17 @@ environment:
 cache: C:\Users\appveyor\clcache -> appveyor.yml
 
 install:
+# For feature branches not associated with a PR - we exit appveyor
+- git config --add remote.origin.fetch +refs/pull/*/head:refs/remotes/origin/pull/*
+- git fetch --quiet origin
+- ps: '$env:pr = git branch --remote --contains HEAD'
+# Count PRs associated with this branch.
+- ps: $env:pr_count=($env:pr | select-string -pattern "origin/pull/*").length
+- ps: Write-Output $env:pr_count 
+# Would ideally cancel build rather than erroring
+- ps: if ($env:pr_count -lt 1){throw 'No Pr associated. Build Cancelled.'}
+
+before_build:
 - echo install started %time%
 - cd %APPVEYOR_BUILD_FOLDER%
 - git submodule update --init
@@ -55,6 +66,9 @@ for:
   branches:
       only:
          - master
+
+  install:
+  - echo skipping pre-install checks
   
   build_script:
   # Build step would take too long
