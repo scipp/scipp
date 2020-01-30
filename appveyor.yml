@@ -18,6 +18,10 @@ environment:
   
 cache: C:\Users\appveyor\clcache -> appveyor.yml
 
+init:
+# For branches not associated with a PR - we exit appveyor
+- ps: if (!$env:APPVEYOR_PULL_REQUEST_TITLE) {Exit-AppveyorBuild}
+
 install:
 - echo install started %time%
 - cd %APPVEYOR_BUILD_FOLDER%
@@ -55,6 +59,9 @@ for:
   branches:
       only:
          - master
+
+  init:
+  - echo skipping init checks
   
   build_script:
   # Build step would take too long
