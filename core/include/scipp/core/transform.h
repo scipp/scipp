@@ -291,8 +291,7 @@ static void do_transform(Op op, Out &&out, Tuple &&processed) {
   auto out_val = out.values();
   std::apply(
       [&op, &out, &out_val](auto &&... args) {
-        if constexpr (check_all_or_none_variances_v<
-                          Op, std::decay_t<decltype(args)>...>) {
+        if constexpr (check_all_or_none_variances_v<Op, decltype(args)...>) {
           throw except::VariancesError(
               "Expected either all or none of inputs to have variances.");
         } else if constexpr ((is_ValuesAndVariances_v<
@@ -525,9 +524,8 @@ template <bool dry_run> struct in_place {
               is_ValuesAndVariances_v<std::decay_t<decltype(arg)>>;
           constexpr bool args_var =
               (is_ValuesAndVariances_v<std::decay_t<decltype(args)>> || ...);
-          if constexpr (check_all_or_none_variances_v<
-                            Op, std::decay_t<decltype(arg)>,
-                            std::decay_t<decltype(args)>...>) {
+          if constexpr (check_all_or_none_variances_v<Op, decltype(arg),
+                                                      decltype(args)...>) {
             throw except::VariancesError(
                 "Expected either all or none of inputs to have variances.");
           } else if constexpr ((in_var_if_out_var ? arg_var == args_var
