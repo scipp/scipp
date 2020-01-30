@@ -518,26 +518,28 @@ template <bool dry_run> struct in_place {
     using namespace detail;
     std::apply(
         [&op](auto &&arg, auto &&... args) {
-          constexpr bool in_var_if_out_var = std::is_base_of_v<
-              transform_flags::expect_in_variance_if_out_variance_t, Op>;
-          constexpr bool arg_var =
-              is_ValuesAndVariances_v<std::decay_t<decltype(arg)>>;
-          constexpr bool args_var =
-              (is_ValuesAndVariances_v<std::decay_t<decltype(args)>> || ...);
           if constexpr (check_all_or_none_variances_v<Op, decltype(arg),
                                                       decltype(args)...>) {
             throw except::VariancesError(
                 "Expected either all or none of inputs to have variances.");
-          } else if constexpr ((in_var_if_out_var ? arg_var == args_var
-                                                  : arg_var || !args_var) ||
-                               std::is_base_of_v<
-                                   transform_flags::expect_no_variance_arg_t<0>,
-                                   Op>) {
-            transform_in_place_impl(op, std::forward<decltype(arg)>(arg),
-                                    std::forward<decltype(args)>(args)...);
           } else {
-            throw except::VariancesError(
-                "Output has no variance but at least one input does.");
+            constexpr bool in_var_if_out_var = std::is_base_of_v<
+                transform_flags::expect_in_variance_if_out_variance_t, Op>;
+            constexpr bool arg_var =
+                is_ValuesAndVariances_v<std::decay_t<decltype(arg)>>;
+            constexpr bool args_var =
+                (is_ValuesAndVariances_v<std::decay_t<decltype(args)>> || ...);
+            if constexpr ((in_var_if_out_var ? arg_var == args_var
+                                             : arg_var || !args_var) ||
+                          std::is_base_of_v<
+                              transform_flags::expect_no_variance_arg_t<0>,
+                              Op>) {
+              transform_in_place_impl(op, std::forward<decltype(arg)>(arg),
+                                      std::forward<decltype(args)>(args)...);
+            } else {
+              throw except::VariancesError(
+                  "Output has no variance but at least one input does.");
+            }
           }
         },
         std::forward<Tuple>(processed));
