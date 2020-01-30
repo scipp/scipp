@@ -108,13 +108,12 @@ def _make_overflow_row(dict_of_variables, base_style, hover_style):
     return "".join(html)
 
 
-def _table_from_dict_of_variables(
-    dict_of_variables,
-    is_bin_centers=None,
-    size=None,
-    headers=2,
-    row_start=0,
-    max_rows=None):
+def _table_from_dict_of_variables(dict_of_variables,
+                                  is_bin_centers=None,
+                                  size=None,
+                                  headers=2,
+                                  row_start=0,
+                                  max_rows=None):
     base_style = ("style='border: 1px solid black; padding: 0px 5px 0px 5px; "
                   "text-align: right;")
 
