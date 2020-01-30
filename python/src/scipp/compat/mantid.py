@@ -187,7 +187,7 @@ def _get_dtype_from_values(values):
             if dtype is str:
                 dtype = sc.dtype.string
             elif dtype is int:
-                dtype = sc.dtype.int32
+                dtype = sc.dtype.int64
             elif dtype is float:
                 dtype = sc.dtype.float64
             else:
