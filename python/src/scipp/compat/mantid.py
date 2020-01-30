@@ -603,7 +603,8 @@ def load_component_info(ds, file):
             "Mantid Python API was not found, please install Mantid framework "
             "as detailed in the installation instructions (https://scipp."
             "readthedocs.io/en/latest/getting-started/installation.html)")
-    ws = mantid.Load(file)
+
+    ws = mantid.Load(file, StoreInADS=False)
 
     source_pos, sample_pos = make_component_info(ws)
 
@@ -715,8 +716,10 @@ def fit(ws, function, workspace_index, start_x, end_x):
                      WorkspaceIndex=workspace_index,
                      StartX=start_x,
                      EndX=end_x,
-                     CreateOutput=True)
-    return sc.Dataset(data={
+                     CreateOutput=True,
+                     StoreinADS=False)
+
+    ds = sc.Dataset(data={
         'workspace':
         sc.Variable(convert_Workspace2D_to_data_array(fit.OutputWorkspace)),
         'parameters':
@@ -726,9 +729,16 @@ def fit(ws, function, workspace_index, start_x, end_x):
             convert_TableWorkspace_to_dataset(
                 fit.OutputNormalisedCovarianceMatrix)),
     },
-                      attrs={
-                          'status': sc.Variable(fit.OutputStatus),
-                          'chi2_over_DoF': sc.Variable(fit.OutputChi2overDoF),
-                          'function': sc.Variable(str(fit.Function)),
-                          'cost_function': sc.Variable(fit.CostFunction)
-                      })
+                    attrs={
+                        'status': sc.Variable(fit.OutputStatus),
+                        'chi2_over_DoF': sc.Variable(fit.OutputChi2overDoF),
+                        'function': sc.Variable(str(fit.Function)),
+                        'cost_function': sc.Variable(fit.CostFunction)
+                    })
+
+    # clean up leftover workspaces in the ADS
+    mantid.DeleteWorkspace(fit.OutputWorkspace)
+    mantid.DeleteWorkspace(fit.OutputParameters)
+    mantid.DeleteWorkspace(fit.OutputNormalisedCovarianceMatrix)
+
+    return ds
