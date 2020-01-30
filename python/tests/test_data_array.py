@@ -2,6 +2,8 @@
 # Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
 import numpy as np
+import pytest
+
 import scipp as sc
 from scipp import Dim
 
@@ -73,3 +75,16 @@ def test_setitem_works_for_view_and_array():
     a = make_dataarray(Dim.X, Dim.Y, seed=0)
     a[Dim.X, :][Dim.X, 0] = a[Dim.X, 1]
     a[Dim.X, 0] = a[Dim.X, 1]
+
+
+@pytest.mark.parametrize("dims, lengths",
+                         (([Dim.X], (sc.Dimensions.Sparse, )),
+                          ([Dim.X, Dim.Y], (10, sc.Dimensions.Sparse)),
+                          ([Dim.X, Dim.Y, Dim.Z],
+                           (10, 10, sc.Dimensions.Sparse)),
+                          ([Dim.X, Dim.Y, Dim.Z, Dim.Spectrum],
+                           (10, 10, 10, sc.Dimensions.Sparse))))
+def test_sparse_dim_has_none_shape(dims, lengths):
+    da = sc.DataArray(sc.Variable(dims, shape=lengths))
+
+    assert da.shape[-1] is None
