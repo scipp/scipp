@@ -36,7 +36,7 @@ class TestMantidConversion(unittest.TestCase):
         import mantid.simpleapi as mantid
         eventWS = mantid.CloneWorkspace(self.base_event_ws)
         ws = mantid.Rebin(eventWS, 10000, PreserveEvents=False)
-        d = mantidcompat.convert_Workspace2D_to_dataarray(ws)
+        d = mantidcompat.convert_Workspace2D_to_data_array(ws)
         self.assertEqual(
             d.attrs["run"].value.getProperty("run_start").value,
             "2012-05-21T15:14:56.279289666",
@@ -47,10 +47,10 @@ class TestMantidConversion(unittest.TestCase):
         eventWS = mantid.CloneWorkspace(self.base_event_ws)
         ws = mantid.Rebin(eventWS, 10000)
 
-        binned_mantid = mantidcompat.convert_Workspace2D_to_dataarray(ws)
+        binned_mantid = mantidcompat.convert_Workspace2D_to_data_array(ws)
 
         target_tof = binned_mantid.coords[sc.Dim.Tof]
-        d = mantidcompat.convertEventWorkspace_to_dataarray(eventWS, False)
+        d = mantidcompat.convert_EventWorkspace_to_data_array(eventWS, False)
         binned = sc.histogram(d, target_tof)
 
         delta = sc.sum(binned_mantid - binned, sc.Dim.Spectrum)
@@ -61,14 +61,14 @@ class TestMantidConversion(unittest.TestCase):
         import mantid.simpleapi as mantid
         eventWS = mantid.CloneWorkspace(self.base_event_ws)
         ws = mantid.Rebin(eventWS, 10000, PreserveEvents=False)
-        tmp = mantidcompat.convert_Workspace2D_to_dataarray(ws)
+        tmp = mantidcompat.convert_Workspace2D_to_data_array(ws)
         target_tof = tmp.coords[sc.Dim.Tof]
         ws = mantid.ConvertUnits(InputWorkspace=ws,
                                  Target="Wavelength",
                                  EMode="Elastic")
-        converted_mantid = mantidcompat.convert_Workspace2D_to_dataarray(ws)
+        converted_mantid = mantidcompat.convert_Workspace2D_to_data_array(ws)
 
-        da = mantidcompat.convertEventWorkspace_to_dataarray(eventWS, False)
+        da = mantidcompat.convert_EventWorkspace_to_data_array(eventWS, False)
         da = sc.histogram(da, target_tof)
         d = sc.Dataset(da)
         converted = sc.neutron.convert(d, sc.Dim.Tof, sc.Dim.Wavelength)
@@ -108,7 +108,7 @@ class TestMantidConversion(unittest.TestCase):
 
         self.assertTrue(masked_ws.isCommonBins())
 
-        ds = mantidcompat.convert_Workspace2D_to_dataarray(masked_ws)
+        ds = mantidcompat.convert_Workspace2D_to_data_array(masked_ws)
 
         np.testing.assert_array_equal(ds.masks["bin"].values[0:3],
                                       [True, True, True])
@@ -130,7 +130,7 @@ class TestMantidConversion(unittest.TestCase):
 
         self.assertFalse(masked_ws.isCommonBins())
 
-        ds = mantidcompat.convert_Workspace2D_to_dataarray(masked_ws)
+        ds = mantidcompat.convert_Workspace2D_to_data_array(masked_ws)
 
         # bin with 3 masks
         np.testing.assert_array_equal(ds.masks["bin"].values[0],
@@ -210,23 +210,23 @@ class TestMantidConversion(unittest.TestCase):
                          AlignedDim2='Q_z,-10,10,5',
                          StoreInADS=False)
 
-        histo_dataarray = mantidcompat.convertMDHistoWorkspace_to_dataset(
+        histo_data_array = mantidcompat.convert_MDHistoWorkspace_to_data_array(
             md_histo)
 
-        self.assertEqual(histo_dataarray.coords[sc.Dim.Qx].values.shape, (4, ))
-        self.assertEqual(histo_dataarray.coords[sc.Dim.Qy].values.shape, (3, ))
-        self.assertEqual(histo_dataarray.coords[sc.Dim.Qz].values.shape, (5, ))
-        self.assertEqual(histo_dataarray.coords[sc.Dim.Qx].unit,
+        self.assertEqual(histo_data_array.coords[sc.Dim.Qx].values.shape, (4, ))
+        self.assertEqual(histo_data_array.coords[sc.Dim.Qy].values.shape, (3, ))
+        self.assertEqual(histo_data_array.coords[sc.Dim.Qz].values.shape, (5, ))
+        self.assertEqual(histo_data_array.coords[sc.Dim.Qx].unit,
                          sc.units.dimensionless / sc.units.angstrom)
-        self.assertEqual(histo_dataarray.coords[sc.Dim.Qy].unit,
+        self.assertEqual(histo_data_array.coords[sc.Dim.Qy].unit,
                          sc.units.dimensionless / sc.units.angstrom)
-        self.assertEqual(histo_dataarray.coords[sc.Dim.Qz].unit,
+        self.assertEqual(histo_data_array.coords[sc.Dim.Qz].unit,
                          sc.units.dimensionless / sc.units.angstrom)
 
-        self.assertEquals(histo_dataarray.values.shape, (3, 4, 5))
+        self.assertEquals(histo_data_array.values.shape, (3, 4, 5))
 
         # Sum over 2 dimensions to simplify finding max.
-        max_1d = sc.sum(sc.sum(histo_dataarray, dim=sc.Dim.Qy),
+        max_1d = sc.sum(sc.sum(histo_data_array, dim=sc.Dim.Qy),
                         dim=sc.Dim.Qx).values
         max_index = np.argmax(max_1d)
         # Check position of max 'peak'
@@ -234,7 +234,7 @@ class TestMantidConversion(unittest.TestCase):
         # All events in central 'peak'
         self.assertEqual(100000, max_1d[max_index])
 
-        self.assertTrue('nevents' in histo_dataarray.attrs)
+        self.assertTrue('nevents' in histo_data_array.attrs)
 
     def test_mdhisto_workspace_many_dims(self):
         from mantid.simpleapi import (CreateMDWorkspace, FakeMDEventData,
@@ -256,9 +256,9 @@ class TestMantidConversion(unittest.TestCase):
                          AlignedDim3='T,-10,10,7',
                          StoreInADS=False)
 
-        histo_dataarray = mantidcompat.convertMDHistoWorkspace_to_dataset(
+        histo_data_array = mantidcompat.convert_MDHistoWorkspace_to_data_array(
             md_histo)
-        self.assertEqual(4, len(histo_dataarray.dims))
+        self.assertEqual(4, len(histo_data_array.dims))
 
 
 if __name__ == "__main__":
