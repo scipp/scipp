@@ -23,8 +23,8 @@ install:
 # For branches not associated with a PR - we exit appveyor
 - git config --add remote.origin.fetch +refs/pull/*/head:refs/remotes/origin/pull/*
 - git fetch origin
-- ps: $has_pr = "git branch --remote --contains HEAD | find 'origin/pull'"
-- ps: Write-Host "has_pr : " $has_pr 
+- ps: $env:has_pr = "git branch --remote --contains HEAD | find 'origin/pull'"
+- ps: Write-Host "has_pr : " $env:has_pr 
 - ps: if (!$has_pr) {Exit-AppveyorBuild}
 - echo install started %time%
 - cd %APPVEYOR_BUILD_FOLDER%
