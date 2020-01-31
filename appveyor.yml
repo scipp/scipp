@@ -20,8 +20,9 @@ cache: C:\Users\appveyor\clcache -> appveyor.yml
 
 init:
 # For branches not associated with a PR - we exit appveyor
-- echo pr title %APPVEYOR_PULL_REQUEST_TITLE%
-- echo %APPVEYOR_REPO_BRANCH%
+- git config --add remote.origin.fetch +refs/pull/*/head:refs/remotes/origin/pull/*
+- git fetch origin
+- git branch --remote --contains HEAD | FIND /C "origin/pull"
 - ps: if (!$env:APPVEYOR_PULL_REQUEST_TITLE) {Exit-AppveyorBuild}
 
 install:
