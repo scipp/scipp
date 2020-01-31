@@ -158,7 +158,8 @@ def _assert_section_multiple(section,
         f"Expected: {len(name)}"
 
     for n in name:
-        assert str(n) in name_html[0].text
+        assert str(n) in name_html[
+            0].text, f"Did not find {str(n)} in {name_html[0].text}"
 
     dims_html = section.find_all(class_=DIMS_CSS_CLASS)
     for dim, sparse, bin_edges in zip(dims, has_sparse, has_bin_edges):
