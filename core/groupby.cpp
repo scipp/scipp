@@ -4,6 +4,8 @@
 /// @author Simon Heybrock
 #include <numeric>
 
+#include "tbb/parallel_for.h"
+
 #include "scipp/core/except.h"
 #include "scipp/core/groupby.h"
 #include "scipp/core/histogram.h"
@@ -71,15 +73,19 @@ template <class T> T GroupBy<T>::flatten(const Dim reductionDim) const {
     }
   };
   // Apply to each group, storing result in output slice
-  for (scipp::index group = 0; group < size(); ++group) {
-    const auto out_slice = out.slice({dim(), group});
-    if constexpr (std::is_same_v<T, Dataset>) {
-      for (const auto &item : m_data)
-        apply(out_slice[item.name()], item, group);
-    } else {
-      apply(out_slice, m_data, group);
+  const auto process_groups = [&](const auto &range) {
+    for (scipp::index group = range.begin(); group != range.end(); ++group) {
+      const auto out_slice = out.slice({dim(), group});
+      if constexpr (std::is_same_v<T, Dataset>) {
+        for (const auto &item : m_data)
+          apply(out_slice[item.name()], item, group);
+      } else {
+        apply(out_slice, m_data, group);
+      }
     }
-  }
+  };
+  tbb::parallel_for(tbb::blocked_range<scipp::index>(0, size()),
+                    process_groups);
   return out;
 }
 
