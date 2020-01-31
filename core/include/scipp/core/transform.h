@@ -23,6 +23,8 @@
 #ifndef SCIPP_CORE_TRANSFORM_H
 #define SCIPP_CORE_TRANSFORM_H
 
+#include "tbb/parallel_for.h"
+
 #include "scipp/common/overloaded.h"
 #include "scipp/core/except.h"
 #include "scipp/core/transform_common.h"
@@ -115,6 +117,24 @@ template <class T> static constexpr void increment(T &indices) noexcept {
   increment_impl(indices, std::make_index_sequence<std::tuple_size_v<T>>{});
 }
 
+template <class T, size_t... I>
+static constexpr void advance_impl(T &&indices, const scipp::index distance,
+                                   std::index_sequence<I...>) noexcept {
+  auto inc = [distance](auto &&i) {
+    if constexpr (std::is_same_v<std::decay_t<decltype(i)>, ViewIndex>)
+      i.setIndex(i.index() + distance);
+    else
+      i += distance;
+  };
+  (inc(std::get<I>(indices)), ...);
+}
+template <class T>
+static constexpr void advance(T &indices,
+                              const scipp::index distance) noexcept {
+  advance_impl(indices, distance,
+               std::make_index_sequence<std::tuple_size_v<T>>{});
+}
+
 template <class T> static constexpr auto begin_index(T &&iterable) noexcept {
   if constexpr (is_VariableView_v<std::decay_t<T>>)
     return iterable.begin_index();
@@ -201,11 +221,24 @@ static constexpr void call_in_place(Op &&op, const Indices &indices, Arg &&arg,
 
 template <class Op, class Out, class... Ts>
 static void transform_elements(Op op, Out &&out, Ts &&... other) {
-  auto indices =
-      std::tuple{iter::begin_index(out), iter::begin_index(other)...};
-  const auto end = iter::end_index(out);
-  for (; std::get<0>(indices) != end; iter::increment(indices))
-    call(op, indices, out, other...);
+  auto run = [&](auto indices, const auto &end) {
+    for (; std::get<0>(indices) != end; iter::increment(indices))
+      call(op, indices, out, other...);
+  };
+  auto begin = std::tuple{iter::begin_index(out), iter::begin_index(other)...};
+  if constexpr (transform_detail::is_sparse_v<std::decay_t<Out>>) {
+    run(begin, iter::end_index(out));
+  } else {
+    auto run_parallel = [&](const auto &range) {
+      auto indices = begin;
+      iter::advance(indices, range.begin());
+      auto end = std::tuple{iter::begin_index(out)};
+      iter::advance(end, range.end());
+      run(indices, std::get<0>(end));
+    };
+    tbb::parallel_for(tbb::blocked_range<scipp::index>(0, out.size()),
+                      run_parallel);
+  }
 }
 
 template <class T> struct element_type<ValueAndVariance<T>> { using type = T; };
