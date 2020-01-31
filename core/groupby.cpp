@@ -36,16 +36,20 @@ T GroupBy<T>::reduce(Op op, const Dim reductionDim) const {
   auto out = makeReductionOutput(reductionDim);
   const auto mask = ~masks_merge_if_contains(m_data.masks(), reductionDim);
   // Apply to each group, storing result in output slice
-  for (scipp::index group = 0; group < size(); ++group) {
-    const auto out_slice = out.slice({dim(), group});
-    if constexpr (std::is_same_v<T, Dataset>) {
-      for (const auto &item : m_data) {
-        op(out_slice[item.name()], item, groups()[group], reductionDim, mask);
+  const auto process_groups = [&](const auto &range) {
+    for (scipp::index group = range.begin(); group != range.end(); ++group) {
+      const auto out_slice = out.slice({dim(), group});
+      if constexpr (std::is_same_v<T, Dataset>) {
+        for (const auto &item : m_data) {
+          op(out_slice[item.name()], item, groups()[group], reductionDim, mask);
+        }
+      } else {
+        op(out_slice, m_data, groups()[group], reductionDim, mask);
       }
-    } else {
-      op(out_slice, m_data, groups()[group], reductionDim, mask);
     }
-  }
+  };
+  tbb::parallel_for(tbb::blocked_range<scipp::index>(0, size()),
+                    process_groups);
   return out;
 }
 
