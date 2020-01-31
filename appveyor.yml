@@ -24,7 +24,6 @@ install:
 - git config --add remote.origin.fetch +refs/pull/*/head:refs/remotes/origin/pull/*
 - git fetch origin
 - ps: '$env:has_pr = git branch --remote --contains HEAD | find /c """origin/pull"""'
-- ps: $env:has_pr = $env:has_pr -as [int]
 - ps: Write-Output $env:has_pr 
 - ps: if ($env:has_pr -lt 1) {Exit-AppveyorBuild}
 - echo install started %time%
