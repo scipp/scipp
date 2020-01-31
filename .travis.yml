@@ -44,7 +44,7 @@ jobs:
     - os: osx
       name: "apple clang"
       if: type = pull_request
-      osx_image: xcode10.2
+      osx_image: xcode11.1
       before_install: brew install ccache ninja
       env:
         - PYTHON_EXECUTABLE="/usr/local/bin/python3"
@@ -63,7 +63,7 @@ jobs:
         - .travis/trigger_readthedocs_build.sh
     - stage: "Deploy"
       os: osx
-      osx_image: xcode10.2
+      osx_image: xcode11.1
       name: "conda osx"
       before_install: brew install ccache ninja
       if: NOT type = cron AND branch = master AND NOT type = pull_request
@@ -73,7 +73,7 @@ jobs:
         - PATH="$HOME/miniconda/bin:$PATH"
         - CC=/usr/bin/clang
         - CXX=/usr/bin/clang++
-        - OSX_VERSION=10.14
+        - OSX_VERSION=10.15
       install:
         - .travis/install_conda.sh "Miniconda3-latest-MacOSX-x86_64.sh"
       script: travis_wait 40 .travis/conda_build_and_deploy.sh --label 'dev'
@@ -100,7 +100,7 @@ jobs:
         - travis_wait 40 .travis/conda_build_and_deploy.sh --python 3.6
     - stage: "Deploy"
       os: osx
-      osx_image: xcode10.2
+      osx_image: xcode11.1
       before_install: brew install ccache ninja
       name: "release conda osx"
       if: NOT type = cron AND NOT type = pull_request AND tag =~ /^\d+(\.\d+)*/
@@ -110,7 +110,7 @@ jobs:
         - PATH="$HOME/miniconda/bin:$PATH"
         - CC=/usr/bin/clang
         - CXX=/usr/bin/clang++
-        - OSX_VERSION=10.14
+        - OSX_VERSION=10.15
       install:
         - .travis/install_conda.sh "Miniconda3-latest-MacOSX-x86_64.sh"
       script: travis_wait 40 .travis/conda_build_and_deploy.sh
