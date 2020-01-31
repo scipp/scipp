@@ -26,7 +26,7 @@ install:
 - ps: '$env:has_pr = git branch --remote --contains HEAD | find /c """origin/pull"""'
 - ps: $env:has_pr = $env:has_pr -as [int]
 - ps: Write-Output $env:has_pr 
-- ps: if ($has_pr -lt 1) {Exit-AppveyorBuild}
+- ps: if ($env:has_pr -lt 1) {Exit-AppveyorBuild}
 - echo install started %time%
 - cd %APPVEYOR_BUILD_FOLDER%
 - git submodule update --init
