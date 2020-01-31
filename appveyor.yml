@@ -23,8 +23,8 @@ install:
 # For branches not associated with a PR - we exit appveyor
 - git config --add remote.origin.fetch +refs/pull/*/head:refs/remotes/origin/pull/*
 - git fetch origin
-- git branch --remote --contains HEAD | FIND /C "origin/pull"
-- ps: if (!$env:APPVEYOR_PULL_REQUEST_TITLE) {Exit-AppveyorBuild}
+- ps: $has_pr = (git branch --remote --contains HEAD | FIND /C "origin/pull")
+- ps: if (!$has_pr) {Exit-AppveyorBuild}
 - echo install started %time%
 - cd %APPVEYOR_BUILD_FOLDER%
 - git submodule update --init
