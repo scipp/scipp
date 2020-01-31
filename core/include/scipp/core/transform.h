@@ -160,6 +160,14 @@ template <class T> static constexpr auto get(const T &index) noexcept {
     return index.get();
 }
 
+template <class T>
+static constexpr auto has_stride_zero(const T &index) noexcept {
+  if constexpr (std::is_integral_v<T>)
+    return false;
+  else
+    return index.has_stride_zero();
+}
+
 } // namespace iter
 
 template <class Op, class Indices, class... Args, size_t... I>
@@ -225,7 +233,8 @@ static void transform_elements(Op op, Out &&out, Ts &&... other) {
     for (; std::get<0>(indices) != end; iter::increment(indices))
       call(op, indices, out, other...);
   };
-  auto begin = std::tuple{iter::begin_index(out), iter::begin_index(other)...};
+  const auto begin =
+      std::tuple{iter::begin_index(out), iter::begin_index(other)...};
   if constexpr (transform_detail::is_sparse_v<std::decay_t<Out>>) {
     run(begin, iter::end_index(out));
   } else {
@@ -514,15 +523,15 @@ template <bool dry_run> struct in_place {
   template <class Op, class T, class... Ts>
   static void transform_in_place_impl(Op op, T &&arg, Ts &&... other) {
     using namespace detail;
-    auto indices =
+    const auto begin =
         std::tuple{iter::begin_index(arg), iter::begin_index(other)...};
-    const auto end = iter::end_index(arg);
-    // For sparse data we can fail for any subitem if the sizes to not match. To
-    // avoid partially modifying (and thus corrupting) data in an in-place
+    // For sparse data we can fail for any subitem if the sizes to not match.
+    // To avoid partially modifying (and thus corrupting) data in an in-place
     // operation we need to do the checks before any modification happens.
     if constexpr (is_sparse_v<typename std::decay_t<T>::value_type> ||
                   (is_sparse_v<typename std::decay_t<Ts>::value_type> || ...)) {
-      for (auto i = indices; std::get<0>(i) != end; iter::increment(i)) {
+      const auto end = iter::end_index(arg);
+      for (auto i = begin; std::get<0>(i) != end; iter::increment(i)) {
         call_in_place(
             [](auto &&... args) {
               if constexpr (std::is_base_of_v<SparseFlag, Op>)
@@ -533,10 +542,32 @@ template <bool dry_run> struct in_place {
     }
     if constexpr (dry_run)
       return;
-    // WARNING: Do not parallelize this loop in all cases! The output may have a
-    // dimension with stride zero so parallelization must be done with care.
-    for (; std::get<0>(indices) != end; iter::increment(indices))
-      call_in_place(op, indices, arg, other...);
+    auto run = [&](auto indices, const auto &end) {
+      // WARNING: Do not parallelize this loop in all cases! The output may
+      // have a dimension with stride zero so parallelization must be done
+      // with care.
+      for (; std::get<0>(indices) != end; iter::increment(indices))
+        call_in_place(op, indices, arg, other...);
+    };
+
+    if constexpr (transform_detail::is_sparse_v<std::decay_t<T>> ||
+                  (transform_detail::is_sparse_v<std::decay_t<Ts>> || ...)) {
+      run(begin, iter::end_index(arg));
+    } else {
+      if (iter::has_stride_zero(std::get<0>(begin))) {
+        run(begin, iter::end_index(arg));
+      } else {
+        auto run_parallel = [&](const auto &range) {
+          auto indices = begin;
+          iter::advance(indices, range.begin());
+          auto end = std::tuple{iter::begin_index(arg)};
+          iter::advance(end, range.end());
+          run(indices, std::get<0>(end));
+        };
+        tbb::parallel_for(tbb::blocked_range<scipp::index>(0, arg.size()),
+                          run_parallel);
+      }
+    }
   }
 
   /// Recursion endpoint for do_transform_in_place.
