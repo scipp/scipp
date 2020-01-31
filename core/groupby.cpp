@@ -40,12 +40,10 @@ T GroupBy<T>::reduce(Op op, const Dim reductionDim) const {
     const auto out_slice = out.slice({dim(), group});
     if constexpr (std::is_same_v<T, Dataset>) {
       for (const auto &item : m_data) {
-        const auto out_data = out_slice[item.name()].data();
-        op(out_data, item, groups()[group], reductionDim, mask);
+        op(out_slice[item.name()], item, groups()[group], reductionDim, mask);
       }
     } else {
-      const auto out_data = out_slice.data();
-      op(out_data, m_data, groups()[group], reductionDim, mask);
+      op(out_slice, m_data, groups()[group], reductionDim, mask);
     }
   }
   return out;
@@ -90,22 +88,21 @@ template <class T> T GroupBy<T>::flatten(const Dim reductionDim) const {
 }
 
 namespace groupby_detail {
-static constexpr auto sum = [](const VariableProxy &out_data,
-                               const auto &data_container,
+static constexpr auto sum = [](const DataProxy &out, const auto &data_container,
                                const GroupByGrouping::group &group,
                                const Dim reductionDim, const Variable &mask) {
   for (const auto &slice : group) {
     const auto data_slice = data_container.slice(slice);
     if (mask.dims().contains(reductionDim))
-      sum_impl(out_data, data_slice.data() * mask.slice(slice));
+      sum_impl(out.data(), data_slice.data() * mask.slice(slice));
     else
-      sum_impl(out_data, data_slice.data());
+      sum_impl(out.data(), data_slice.data());
   }
 };
 
 template <void (*Func)(const VariableProxy &, const VariableConstProxy &)>
 static constexpr auto reduce_idempotent =
-    [](const VariableProxy &out_data, const auto &data_container,
+    [](const DataProxy &out, const auto &data_container,
        const GroupByGrouping::group &group, const Dim reductionDim,
        const Variable &mask) {
       bool first = true;
@@ -115,10 +112,10 @@ static constexpr auto reduce_idempotent =
           throw std::runtime_error(
               "This operation does not support masks yet.");
         if (first) {
-          out_data.assign(data_slice.data().slice({reductionDim, 0}));
+          out.data().assign(data_slice.data().slice({reductionDim, 0}));
           first = false;
         }
-        Func(out_data, data_slice.data());
+        Func(out.data(), data_slice.data());
       }
     };
 } // namespace groupby_detail
