@@ -1,13 +1,14 @@
 # Tests in this file work only with a working Mantid installation available in
 # PYTHONPATH.
 import unittest
+
+import numpy as np
 import pytest
 
 import scipp as sc
-import scipp.compat.mantid as mantidcompat
-import numpy as np
-
 from mantid_data_helper import MantidDataHelper
+from scipp import Dim
+from scipp.compat import mantid as mantidcompat
 
 
 def mantid_is_available():
@@ -30,7 +31,8 @@ class TestMantidConversion(unittest.TestCase):
         # pick up the name from the class variable name
         cls.base_event_ws = mantid.LoadEventNexus(
             MantidDataHelper.find_file(filename),
-            OutputWorkspace="test_ws{}".format(__file__))
+            OutputWorkspace="test_ws{}".format(__file__),
+            StoreInADS=False)
 
     def test_Workspace2D(self):
         import mantid.simpleapi as mantid
@@ -262,6 +264,123 @@ class TestMantidConversion(unittest.TestCase):
         histo_data_array = mantidcompat.convert_MDHistoWorkspace_to_data_array(
             md_histo)
         self.assertEqual(4, len(histo_data_array.dims))
+
+    def test_load_component_info(self):
+        from mantid.simpleapi import mtd
+        mtd.clear()
+
+        ds = sc.Dataset()
+
+        sc.compat.mantid.load_component_info(
+            ds, MantidDataHelper.find_file("iris26176_graphite002_sqw.nxs"))
+
+        # check that no workspaces have been leaked in the ADS
+        assert len(mtd) == 0, f"Workspaces present: {mtd.getObjectNames()}"
+
+        self.assertTrue("source_position" in ds.labels)
+        self.assertTrue("sample_position" in ds.labels)
+        self.assertTrue("position" in ds.labels)
+
+    def test_to_workspace_2d_no_error(self):
+        from mantid.simpleapi import mtd
+        mtd.clear()
+
+        # All Dims for which support is expected are
+        # tested in the parametrized test.
+        # Just set this one to a working one to avoid
+        # generating many repetitive tests.
+        param_dim = Dim.Tof
+
+        data_len = 2
+        expected_bins = data_len + 1
+        expected_number_spectra = 10
+
+        y = sc.Variable([Dim.Spectrum, param_dim],
+                        values=np.random.rand(expected_number_spectra,
+                                              data_len))
+
+        x = sc.Variable([Dim.Spectrum, param_dim],
+                        values=np.arange(
+                            expected_number_spectra * expected_bins,
+                            dtype=np.float64).reshape(
+                                (expected_number_spectra, expected_bins)))
+
+        ws = sc.compat.mantid.to_workspace_2d(x.values, y.values, None,
+                                              param_dim)
+
+        assert len(ws.readX(0)) == expected_bins
+        assert ws.getNumberHistograms() == expected_number_spectra
+        # check that no workspaces have been leaked in the ADS
+        assert len(mtd) == 0, f"Workspaces present: {mtd.getObjectNames()}"
+
+        for i in range(expected_number_spectra):
+            np.testing.assert_array_equal(ws.readX(i), x[Dim.Spectrum, i])
+            np.testing.assert_array_equal(ws.readY(i), y[Dim.Spectrum, i])
+            np.testing.assert_array_equal(ws.readE(i),
+                                          np.sqrt(y[Dim.Spectrum, i].values))
+
+    def test_fit_executes(self):
+        """
+        Tests that the fit executes, and the outputs
+        are moved into the dataset. Does not check the fit values.
+        """
+        from mantid.simpleapi import Load, mtd
+        mtd.clear()
+
+        ws = Load(MantidDataHelper.find_file("iris26176_graphite002_sqw.nxs"),
+                  StoreInADS=False)
+
+        fit_ds = sc.compat.mantid.fit(ws, 'name=LinearBackground,A0=0,A1=1', 0,
+                                      0, 3)
+
+        # check that no workspaces have been leaked in the ADS
+        self.assertEqual(len(mtd), 0, mtd.getObjectNames())
+        self.assertTrue("workspace" in fit_ds)
+        self.assertTrue("normalised_covariance_matrix" in fit_ds)
+        self.assertTrue("parameters" in fit_ds)
+        self.assertTrue("cost_function" in fit_ds.attrs)
+        self.assertTrue("function" in fit_ds.attrs)
+        self.assertTrue("status" in fit_ds.attrs)
+        self.assertTrue("chi2_over_DoF" in fit_ds.attrs)
+
+
+@pytest.mark.skipif(not mantid_is_available(),
+                    reason='Mantid framework is unavailable')
+@pytest.mark.parametrize("param_dim",
+                         (Dim.Tof, Dim.Wavelength, Dim.Energy, Dim.DSpacing,
+                          Dim.Q, Dim.QSquared, Dim.EnergyTransfer))
+def test_to_workspace_2d(param_dim):
+    from mantid.simpleapi import mtd
+    mtd.clear()
+
+    data_len = 2
+    expected_bins = data_len + 1
+    expected_number_spectra = 10
+
+    y = sc.Variable([Dim.Spectrum, param_dim],
+                    values=np.random.rand(expected_number_spectra, data_len),
+                    variances=np.random.rand(expected_number_spectra,
+                                             data_len))
+
+    x = sc.Variable([Dim.Spectrum, param_dim],
+                    values=np.arange(expected_number_spectra * expected_bins,
+                                     dtype=np.float64).reshape(
+                                         (expected_number_spectra,
+                                          expected_bins)))
+
+    ws = sc.compat.mantid.to_workspace_2d(x.values, y.values, y.variances,
+                                          param_dim)
+
+    assert len(ws.readX(0)) == expected_bins
+    assert ws.getNumberHistograms() == expected_number_spectra
+    # check that no workspaces have been leaked in the ADS
+    assert len(mtd) == 0, f"Workspaces present: {mtd.getObjectNames()}"
+
+    for i in range(expected_number_spectra):
+        np.testing.assert_array_equal(ws.readX(i), x[Dim.Spectrum, i])
+        np.testing.assert_array_equal(ws.readY(i), y[Dim.Spectrum, i])
+        np.testing.assert_array_equal(ws.readE(i), y[Dim.Spectrum,
+                                                     i].variances)
 
 
 if __name__ == "__main__":
