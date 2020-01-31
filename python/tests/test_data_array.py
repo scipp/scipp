@@ -88,3 +88,9 @@ def test_sparse_dim_has_none_shape(dims, lengths):
     da = sc.DataArray(sc.Variable(dims, shape=lengths))
 
     assert da.shape[-1] is None
+
+
+def test_reciprocal():
+    a = sc.DataArray(data=sc.Variable([Dim.X], values=np.array([5.0])))
+    r = sc.reciprocal(a)
+    assert r.values[0] == 1.0 / 5.0
