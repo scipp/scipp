@@ -5,112 +5,66 @@
 
 # Scipp imports
 from . import config
-from .utils import value_to_string, name_with_unit
+from .utils import (value_to_string, name_with_unit, is_dataset_or_array,
+                    is_dataset, is_variable)
 from ._scipp import core as sc
 
-# Other imports
-import numpy as np
 
+def _make_table_sections(dict_of_variables, base_style):
 
-def _make_table_section_name_header(name, section, style):
-    """
-    Adds a first row of the table that contains the names of the sections
-    being displayed in the table. This is usually the first row and will
-    contain Data, Labels, Masks, etc.
-    """
-    col_separators = 0
-    for key, sec in section.items():
-        col_separators += 1 + (sec.variances is not None)
-    if col_separators > 0:
-        return "<th {} colspan='{}'>{}</th>".format(style, col_separators,
-                                                    name)
-    else:
-        return ""
-
-
-def _make_table_sections(dataset, coord, base_style):
-    coord_style = "{} background-color: {};text-align: center;'".format(
-        base_style, config.colors["coord"])
-    label_style = "{} background-color: {};text-align: center;'".format(
-        base_style, config.colors["labels"])
-    mask_style = "{} background-color: {};text-align: center;'".format(
-        base_style, config.colors["mask"])
-    data_style = "{} background-color: {};text-align: center;'".format(
-        base_style, config.colors["data"])
-
-    colsp_coord = 0
-    if coord is not None:
-        colsp_coord = 1 + (coord.variances is not None)
     html = ["<tr>"]
-
-    if colsp_coord > 0:
-        html.append("<th {} colspan='{}'>Coordinate</th>".format(
-            coord_style, colsp_coord))
-    html.append(
-        _make_table_section_name_header("Labels", dataset.labels, label_style))
-    html.append(
-        _make_table_section_name_header("Masks", dataset.masks, mask_style))
-    html.append(_make_table_section_name_header("Data", dataset, data_style))
-
+    for key, section in dict_of_variables.items():
+        heading = key[0].upper() + key[1:]
+        col_separators = 0
+        for var in section.values():
+            col_separators += 1 + (var.variances is not None)
+        if col_separators > 0:
+            style = "{} background-color: {};text-align: center;'".format(
+                base_style, config.colors[key])
+            html.append("<th {} colspan='{}'>{}</th>".format(
+                style, col_separators, heading))
     html.append("</tr>")
 
     return "".join(html)
 
 
-def _make_table_unit_headers(section, text_style):
+def _make_table_unit_headers(dict_of_variables, text_style):
     """
     Adds a row containing the unit of the section
     """
     html = []
-    for key, val in section.items():
-        html.append("<th {} colspan='{}'>{}</th>".format(
-            text_style, 1 + (val.variances is not None),
-            name_with_unit(val, name=key)))
+    for key, section in dict_of_variables.items():
+        for name, val in section.items():
+            html.append("<th {} colspan='{}'>{}</th>".format(
+                text_style, 1 + (val.variances is not None),
+                name_with_unit(val, name=name)))
     return "".join(html)
 
 
-def _make_table_subsections(section, text_style):
+def _make_table_subsections(dict_of_variables, text_style, plural):
     """
     Adds Value | Variance columns for the section.
     """
+    s = "s" if plural else ""
     html = []
-    for key, val in section.items():
-        html.append("<th {}>Values</th>".format(text_style))
-        if val.variances is not None:
-            html.append("<th {}>Variances</th>".format(text_style))
-    return "".join(html)
-
-
-def _make_value_rows(section, coord, index, base_style, edge_style, row_start):
-    html = []
-    for key, val in section.items():
-        header_line_for_bin_edges = False
-        if coord is not None:
-            if len(val.values) == len(coord.values) - 1:
-                header_line_for_bin_edges = True
-        if header_line_for_bin_edges:
-            if index == row_start:
-                html.append("<td {}></td>".format(edge_style))
-                if val.variances is not None:
-                    html.append("<td {}></td>".format(edge_style))
-        else:
-            html.append("<td rowspan='2' {}>{}</td>".format(
-                base_style, value_to_string(val.values[index])))
+    for key, section in dict_of_variables.items():
+        for name, val in section.items():
+            html.append("<th {}>Value{}</th>".format(text_style, s))
             if val.variances is not None:
-                html.append("<td rowspan='2' {}>{}</td>".format(
-                    base_style, value_to_string(val.variances[index])))
-
+                html.append("<th {}>Variance{}</th>".format(text_style, s))
     return "".join(html)
 
 
-def _make_trailing_cells(section, coord, index, size, base_style, edge_style):
+def _make_value_rows(dict_of_variables, is_bin_centers, index, base_style,
+                     edge_style, row_start):
     html = []
-    for key, val in section.items():
-        if len(val.values) == len(coord.values) - 1:
-            if index == size - 1:
-                html.append("<td {}></td>".format(edge_style))
-                if val.variances is not None:
+    for key, section in dict_of_variables.items():
+        for name, val in section.items():
+            if is_bin_centers[key][name]:
+                if index == row_start:
                     html.append("<td {}></td>".format(edge_style))
+                    if val.variances is not None:
+                        html.append("<td {}></td>".format(edge_style))
             else:
                 html.append("<td rowspan='2' {}>{}</td>".format(
                     base_style, value_to_string(val.values[index])))
@@ -121,31 +75,45 @@ def _make_trailing_cells(section, coord, index, size, base_style, edge_style):
     return "".join(html)
 
 
-def _make_overflow_cells(section, base_style):
+def _make_trailing_cells(dict_of_variables, is_bin_centers, index, size,
+                         base_style, edge_style):
     html = []
-    for key, val in section.items():
-        html.append("<td {}>...</td>".format(base_style))
-        if val.variances is not None:
-            html.append("<td {}>...</td>".format(base_style))
+    for key, section in dict_of_variables.items():
+        for name, val in section.items():
+            if is_bin_centers[key][name]:
+                if index == size - 1:
+                    html.append("<td {}></td>".format(edge_style))
+                    if val.variances is not None:
+                        html.append("<td {}></td>".format(edge_style))
+                else:
+                    html.append("<td rowspan='2' {}>{}</td>".format(
+                        base_style, value_to_string(val.values[index])))
+                    if val.variances is not None:
+                        html.append("<td rowspan='2' {}>{}</td>".format(
+                            base_style, value_to_string(val.variances[index])))
+
     return "".join(html)
 
 
-def _make_overflow_row(dataset, coord, base_style, hover_style):
+def _make_overflow_row(dict_of_variables, base_style, hover_style):
     html = ["<tr {}>".format(hover_style)]
-    if coord is not None:
-        html.append(_make_overflow_cells({" ": coord}, base_style))
-    html.append(_make_overflow_cells(dataset.labels, base_style))
-    html.append(_make_overflow_cells(dataset.masks, base_style))
-    html.append(_make_overflow_cells(dataset, base_style))
+    for key, section in dict_of_variables.items():
+        for name, val in section.items():
+            html.append("<td {}>...</td>".format(base_style))
+            if val.variances is not None:
+                html.append("<td {}>...</td>".format(base_style))
+
     html.append("</tr>")
     return "".join(html)
 
 
-def table_from_dataset(dataset,
-                       is_hist=False,
-                       headers=2,
-                       row_start=0,
-                       max_rows=None):
+def _table_from_dict_of_variables(dict_of_variables,
+                                  is_bin_centers=None,
+                                  size=None,
+                                  headers=2,
+                                  row_start=0,
+                                  max_rows=None,
+                                  group=None):
     base_style = ("style='border: 1px solid black; padding: 0px 5px 0px 5px; "
                   "text-align: right;")
 
@@ -160,40 +128,15 @@ def table_from_dataset(dataset,
 
     # Declare table
     html = "<table style='border-collapse: collapse;'>"
-    dims = dataset.dims
-    size = coord = None
-    if len(dims) > 0:
-        # Dataset should contain only one dim, so get the first in list
-        size = dataset.shape[0]
-        if len(dataset.coords) > 0:
-            coord = dataset.coords[dims[0]]
-            if is_hist:
-                size += 1
 
     if headers > 1:
-        html += _make_table_sections(dataset, coord, base_style)
-
+        html += _make_table_sections(dict_of_variables, base_style)
     if headers > 0:
         html += "<tr {}>".format(hover_style)
-
-        if coord is not None:
-            html += "<th {} colspan='{}'>{}</th>".format(
-                mstyle, 1 + (coord.variances is not None),
-                name_with_unit(coord, replace_dim=False))
-
-        html += _make_table_unit_headers(dataset.labels, mstyle)
-        html += _make_table_unit_headers(dataset.masks, mstyle)
-        html += _make_table_unit_headers(dataset, mstyle)
-
+        html += _make_table_unit_headers(dict_of_variables, mstyle)
         html += "</tr><tr {}>".format(hover_style)
-
-        if coord is not None:
-            html += "<th {}>Values</th>".format(vstyle)
-            if coord.variances is not None:
-                html += "<th {}>Variances</th>".format(vstyle)
-        html += _make_table_subsections(dataset.labels, vstyle)
-        html += _make_table_subsections(dataset.masks, vstyle)
-        html += _make_table_subsections(dataset, vstyle)
+        html += _make_table_subsections(dict_of_variables, vstyle,
+                                        group == "1D Variables")
         html += "</tr>"
 
     # the base style still does not have a closing quote, so we add it here
@@ -201,175 +144,133 @@ def table_from_dataset(dataset,
 
     if size is None:  # handle 0D variable
         html += "<tr {}>".format(hover_style)
-        for key, val in dataset.items():
-            html += "<td {}>{}</td>".format(base_style,
-                                            value_to_string(val.value))
-            if val.variances is not None:
+        for key, section in dict_of_variables.items():
+            for name, val in section.items():
                 html += "<td {}>{}</td>".format(base_style,
-                                                value_to_string(val.variance))
+                                                value_to_string(val.value))
+                if val.variances is not None:
+                    html += "<td {}>{}</td>".format(
+                        base_style, value_to_string(val.variance))
         html += "</tr>"
     else:
         row_end = min(size, row_start + max_rows)
+        # If we are not starting at the first row, add overflow
         if row_start > 0:
-            html += _make_overflow_row(dataset, coord, base_style, hover_style)
+            html += _make_overflow_row(dict_of_variables, base_style,
+                                       hover_style)
         for i in range(row_start, row_end):
             html += "<tr {}>".format(hover_style)
-            # Add coordinates
-            if coord is not None:
-                text = value_to_string(coord.values[i])
-                html += "<td rowspan='2' {}>{}</td>".format(base_style, text)
-                if coord.variances is not None:
-                    text = value_to_string(coord.variances[i])
-                    html += "<td rowspan='2' {}>{}</td>".format(
-                        base_style, text)
-
-            html += _make_value_rows(dataset.labels, coord, i, base_style,
-                                     edge_style, row_start)
-            html += _make_value_rows(dataset.masks, coord, i, base_style,
-                                     edge_style, row_start)
-            html += _make_value_rows(dataset, coord, i, base_style, edge_style,
-                                     row_start)
-
+            html += _make_value_rows(dict_of_variables, is_bin_centers, i,
+                                     base_style, edge_style, row_start)
             html += "</tr><tr {}>".format(hover_style)
-            # If there are bin edges, we need to add trailing cells for data
-            # and labels
-            if coord is not None:
-                html += _make_trailing_cells(dataset.labels, coord, i, row_end,
-                                             base_style, edge_style)
-                html += _make_trailing_cells(dataset.masks, coord, i, row_end,
-                                             base_style, edge_style)
-                html += _make_trailing_cells(dataset, coord, i, row_end,
-                                             base_style, edge_style)
+            # If there are bin edges, we need to add trailing cells
+            html += _make_trailing_cells(dict_of_variables, is_bin_centers, i,
+                                         row_end, base_style, edge_style)
             html += "</tr>"
+        # If we are not ending at the last row, add overflow
         if row_end != size:
-            html += _make_overflow_row(dataset, coord, base_style, hover_style)
+            html += _make_overflow_row(dict_of_variables, base_style,
+                                       hover_style)
 
     html += "</table>"
-    return html, size
+    return html
 
 
-def table(dataset):
+def table(scipp_obj):
     """
     Create a html table from the contents of a Dataset (0D and 1D Variables
-    only). The entries will be grouped by dimensions/coordinates.
+    only), DataArray, Variable or raw numpy array.
+    The entries will be grouped by dimensions/coordinates.
     """
 
     from IPython.display import display
-    tv = TableViewer(dataset)
+    tv = TableViewer(scipp_obj)
     display(tv.box)
 
 
 class TableViewer:
-    def __init__(self, dataset):
+    def __init__(self, scipp_obj):
 
+        # Delayed import
         self.widgets = __import__("ipywidgets")
 
-        self.tabledict = {
-            "default": sc.Dataset(),
-            "0D Variables": sc.Dataset(),
-            "1D Variables": {}
-        }
-        self.is_histogram = {}
+        groups = ["0D Variables", "1D Variables"]
+        self.tabledict = {}
+        self.is_bin_centers = {}
+        self.sizes = {}
+        for group in groups:
+            self.tabledict[group] = {}
+            self.is_bin_centers[group] = {}
+            self.sizes[group] = {}
         self.headers = 0
         self.trigger_update = True
-        is_empty = {}
 
-        tp = type(dataset)
-
-        if (tp is sc.Dataset) or (tp is sc.DatasetProxy):
-
+        if is_dataset_or_array(scipp_obj):
             self.headers = 2
+            if is_dataset(scipp_obj):
+                iterlist = scipp_obj
+            else:
+                iterlist = {scipp_obj.name: scipp_obj}
+            for tag, field in zip(["coords", "labels", "masks", "data"], [
+                    scipp_obj.coords, scipp_obj.labels, scipp_obj.masks,
+                    iterlist
+            ]):
+                for name, var in field.items():
+                    ndims = len(var.dims)
+                    name_str = str(name)
+                    if ndims < 2:
+                        group = "{}D Variables".format(ndims)
+                        dim = var.dims[0] if ndims == 1 else sc.Dim.Invalid
+                        key = str(dim)
+                        if key not in self.tabledict[group]:
+                            self.tabledict[group][key] = self.make_dict()
+                            self.is_bin_centers[group][key] = self.make_dict()
+                            self.sizes[group][key] = []
+                        self.is_bin_centers[group][key][tag][name_str] = False
+                        if dim in scipp_obj.coords:
+                            if scipp_obj.coords[dim].shape[
+                                    0] == var.shape[0] + 1:
+                                self.is_bin_centers[group][key][tag][
+                                    name_str] = True
+                        self.tabledict[group][key][tag][name_str] = var
+                        self.sizes[group][key].append(
+                            var.shape[0] if ndims > 0 else None)
 
-            # First add one entry per dimension
-            for dim in dataset.dims:
-                key = str(dim)
-                self.tabledict["1D Variables"][key] = sc.Dataset()
-                is_empty[key] = True
-                self.is_histogram[key] = False
-
-            # Next add the variables
-            for name, var in dataset.items():
-                if len(var.dims) == 1:
-                    dim = var.dims[0]
-                    key = str(dim)
-                    if len(var.coords) > 0:
-                        if len(var.coords[dim].values) == len(var.values) + 1:
-                            self.is_histogram[key] = True
-                        self.tabledict["1D Variables"][key].coords[dim] = \
-                            var.coords[dim]
-                    self.tabledict["1D Variables"][key][name] = var.data
-                    is_empty[key] = False
-
-                elif len(var.dims) == 0:
-                    self.tabledict["0D Variables"][name] = var
-
-            # Next add only the 1D coordinates
-            for dim, var in dataset.coords.items():
-                if len(var.dims) == 1:
-                    key = str(dim)
-                    if dim not in self.tabledict["1D Variables"][key].coords:
-                        self.tabledict["1D Variables"][key].coords[dim] = var
-                        is_empty[key] = False
-
-            # Next add the labels
-            for name, lab in dataset.labels.items():
-                if len(lab.dims) == 1:
-                    dim = lab.dims[0]
-                    key = str(dim)
-                    if len(dataset.coords) > 0:
-                        if len(dataset.coords[dim].values) == len(
-                                lab.values) + 1:
-                            self.is_histogram[key] = True
-                        self.tabledict["1D Variables"][key].coords[dim] = \
-                            dataset.coords[dim]
-                    self.tabledict["1D Variables"][key].labels[name] = lab
-                    is_empty[key] = False
-
-            # Next add the masks
-            for name, mask in dataset.masks.items():
-                if len(mask.dims) == 1:
-                    dim = mask.dims[0]
-                    key = str(dim)
-                    if len(dataset.coords) > 0:
-                        if len(dataset.coords[dim].values) == len(
-                                mask.values) + 1:
-                            self.is_histogram[key] = True
-                        self.tabledict["1D Variables"][key].coords[dim] = \
-                            dataset.coords[dim]
-                    self.tabledict["1D Variables"][key].masks[name] = mask
-                    is_empty[key] = False
-
-            # Now purge out the empty entries
-            for key, val in is_empty.items():
-                if val:
-                    del (self.tabledict["1D Variables"][key])
-
-        elif (tp is sc.DataArray) or (tp is sc.DataProxy):
-            self.headers = 2
-            key = dataset.name
-            self.tabledict["default"][key] = dataset.data
-            if len(dataset.coords) > 0:
-                dim = dataset.dims[0]
-                self.tabledict["default"][key].coords[dim] = dataset.coords[
-                    dim]
-        elif (tp is sc.Variable) or (tp is sc.VariableProxy):
-            self.headers = 1
-            key = str(dataset.dims[0])
-            self.tabledict["default"][key] = dataset
-            self.is_histogram[key] = False
         else:
-            self.headers = 0
-            key = " "
-            self.tabledict["default"][key] = sc.Variable([sc.Dim.Row],
-                                                         values=dataset)
-            self.is_histogram[key] = False
+
+            ndims = len(scipp_obj.shape)
+            if ndims < 2:
+                group = "{}D Variables".format(ndims)
+                if is_variable(scipp_obj):
+                    self.headers = 1
+                    key = str(scipp_obj.dims[0])
+                    var = scipp_obj
+                else:
+                    self.headers = 0
+                    key = " "
+                    var = sc.Variable([sc.Dim.Row], values=scipp_obj)
+
+                self.tabledict[group][key] = {"data": {key: var}}
+                self.is_bin_centers[group][key] = {"data": {key: False}}
+                self.sizes[group][key] = scipp_obj.shape
+
+        # Get max size for each dim
+        for group in self.sizes.keys():
+            for key in self.sizes[group].keys():
+                max_size = 0
+                size_is_defined = False
+                for s in self.sizes[group][key]:
+                    if s is not None:
+                        max_size = max(max_size, s)
+                        size_is_defined = True
+                self.sizes[group][key] = max_size if size_is_defined else None
 
         subtitle = "<span style='font-weight:normal;color:grey;"
         subtitle += "font-style:italic;background-color:#ffffff;"
         subtitle += "text-align:left;font-size:1.2em;padding: 1px;'>"
         subtitle += "{}</span>"
-        title = str(type(dataset)).replace("<class 'scipp._scipp.core.",
-                                           "").replace("'>", "")
+        title = str(type(scipp_obj)).replace("<class '", "").replace(
+            "scipp._scipp.core.", "").replace("'>", "")
 
         self.box = [
             self.widgets.HTML(value="<span style='font-weight:bold;"
@@ -377,53 +278,44 @@ class TableViewer:
         ]
         self.tables = {}
         self.sliders = {}
+        self.readouts = {}
         self.label = self.widgets.Label(value="rows")
         self.nrows = {}
-        self.sizes = {}
 
-        if len(self.tabledict["default"]) > 0:
-            html, size = table_from_dataset(self.tabledict["default"],
-                                            headers=self.headers,
-                                            max_rows=config.table_max_size)
-            self.tables["default"] = {" ": self.widgets.HTML(value=html)}
-            hbox = self.make_hbox("default", " ", size)
-            self.box.append(hbox)
-            self.sizes["default"] = {" ": size}
-        if len(self.tabledict["0D Variables"]) > 0:
-            self.tables["0D Variables"] = {}
-            output = subtitle.format("0D Variables")
-            html, size = table_from_dataset(self.tabledict["0D Variables"],
-                                            headers=self.headers,
-                                            max_rows=config.table_max_size)
-            self.tables["0D Variables"][" "] = self.widgets.HTML(value=html)
-            hbox = self.make_hbox("0D Variables", " ", size)
-            self.box.append(
-                self.widgets.VBox([self.widgets.HTML(value=output), hbox]))
-        if len(self.tabledict["1D Variables"]) > 0:
-            self.tables["1D Variables"] = {}
-            self.sizes["1D Variables"] = {}
-            output = subtitle.format("1D Variables")
-            self.tabs = self.widgets.Tab(layout=self.widgets.Layout(
-                width="initial"))
-            children = []
-            for key, val in sorted(self.tabledict["1D Variables"].items()):
-                html, size = table_from_dataset(val,
-                                                is_hist=self.is_histogram[key],
-                                                headers=self.headers,
-                                                max_rows=config.table_max_size)
-                self.tables["1D Variables"][key] = self.widgets.HTML(
-                    value=html)
-                hbox = self.make_hbox("1D Variables", key, size)
-                children.append(hbox)
-                self.sizes["1D Variables"][key] = size
+        # Generate 0D and 1D tables
+        for group in self.tabledict.keys():
 
-            self.tabs.children = children
-            for i, key in enumerate(
-                    sorted(self.tabledict["1D Variables"].keys())):
-                self.tabs.set_title(i, key)
-            self.box.append(
-                self.widgets.VBox([self.widgets.HTML(value=output),
-                                   self.tabs]))
+            if len(self.tabledict[group]) > 0:
+                self.tables[group] = {}
+                output = subtitle.format(group)
+
+                children = []
+                for key, val in sorted(self.tabledict[group].items()):
+                    html = _table_from_dict_of_variables(
+                        val,
+                        is_bin_centers=self.is_bin_centers[group][key],
+                        size=self.sizes[group][key],
+                        headers=self.headers,
+                        max_rows=config.table_max_size,
+                        group=group)
+                    self.tables[group][key] = self.widgets.HTML(value=html)
+                    hbox = self.make_hbox(group, key, self.sizes[group][key])
+                    children.append(hbox)
+
+                vbox = [self.widgets.HTML(value=output)]
+
+                if group == "1D Variables":
+                    self.tabs = self.widgets.Tab(layout=self.widgets.Layout(
+                        width="initial"))
+                    self.tabs.children = children
+                    for i, key in enumerate(
+                            sorted(self.tabledict[group].keys())):
+                        self.tabs.set_title(i, key)
+                    vbox.append(self.tabs)
+                else:
+                    vbox.append(hbox)
+
+                self.box.append(self.widgets.VBox(vbox))
 
         self.box = self.widgets.VBox(self.box,
                                      layout=self.widgets.Layout(
@@ -432,6 +324,9 @@ class TableViewer:
                                          display='flex',
                                          flex_flow='column'))
         return
+
+    def make_dict(self):
+        return {"coords": {}, "data": {}, "labels": {}, "masks": {}}
 
     def make_hbox(self, group, key, size):
         hbox = self.tables[group][key]
@@ -447,13 +342,18 @@ class TableViewer:
                     continuous_update=True,
                     layout=self.widgets.Layout(width='150px'))
                 self.nrows[key].observe(self.update_slider, names="value")
-                self.sliders[key] = self.widgets.SelectionSlider(
-                    options=np.arange(size - self.nrows[key].value + 1)[::-1],
-                    value=0,
+                slider_max = size - self.nrows[key].value + 1
+                self.sliders[key] = self.widgets.IntSlider(
+                    min=0,
+                    max=slider_max,
+                    value=slider_max,
                     description="Starting row",
                     orientation='vertical',
-                    continuous_update=False,
+                    continuous_update=True,
+                    readout=False,
                     layout=self.widgets.Layout(height='400px'))
+                self.readouts[key] = self.widgets.Label(
+                    value=str(self.sliders[key].max - self.sliders[key].value))
                 setattr(self.sliders[key], "key", key)
                 setattr(self.nrows[key], "key", key)
                 setattr(self.sliders[key], "group", group)
@@ -461,38 +361,32 @@ class TableViewer:
                 self.sliders[key].observe(self.update_table, names="value")
                 hbox = self.widgets.HBox([
                     hbox,
-                    self.widgets.VBox([
-                        self.widgets.HBox([self.nrows[key], self.label]),
-                        self.sliders[key]
-                    ])
+                    self.widgets.VBox(
+                        [
+                            self.widgets.HBox([self.nrows[key], self.label]),
+                            self.sliders[key], self.readouts[key]
+                        ],
+                        layout=self.widgets.Layout(align_items="center"))
                 ])
         return hbox
 
     def update_slider(self, change):
         key = change["owner"].key
         group = change["owner"].group
-        val = self.sliders[key].value
-        # Prevent update while options are being changed
-        self.trigger_update = False
-        self.sliders[key].options = np.arange(self.sizes[group][key] -
-                                              change["new"] + 1)[::-1]
-        # Re-enable table updating
-        self.trigger_update = True
-        self.sliders[key].value = min(val, self.sliders[key].options[0])
+        self.sliders[key].max = self.sizes[group][key] - change["new"] + 1
+        self.update_table(change)
 
     def update_table(self, change):
-        if self.trigger_update:
-            key = change["owner"].key
-            group = change["owner"].group
-            to_table = self.tabledict[group]
-            # This extra indexing step comes from the fact that for the
-            # default key, the tabledict is a Dataset, while for the 1D
-            # Variables it is a dict of Datasets.
-            if group != "default":
-                to_table = to_table[key]
-            html, size = table_from_dataset(to_table,
-                                            is_hist=self.is_histogram[key],
-                                            headers=self.headers,
-                                            row_start=self.sliders[key].value,
-                                            max_rows=self.nrows[key].value)
-            self.tables[group][key].value = html
+        key = change["owner"].key
+        group = change["owner"].group
+        index = self.sliders[key].max - self.sliders[key].value
+        self.readouts[key].value = str(index)
+        html = _table_from_dict_of_variables(
+            self.tabledict[group][key],
+            is_bin_centers=self.is_bin_centers[group][key],
+            size=self.sizes[group][key],
+            headers=self.headers,
+            row_start=index,
+            max_rows=self.nrows[key].value,
+            group=group)
+        self.tables[group][key].value = html

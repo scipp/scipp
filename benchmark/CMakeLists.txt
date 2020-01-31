@@ -19,6 +19,14 @@ target_link_libraries(histogram_benchmark
                       scipp-core
                       scipp_test_helpers)
 
+add_executable(sparse_histogram_op_benchmark EXCLUDE_FROM_ALL sparse_histogram_op_benchmark.cpp)
+add_dependencies(all-benchmarks sparse_histogram_op_benchmark)
+target_link_libraries(sparse_histogram_op_benchmark
+                      LINK_PRIVATE
+                      benchmark
+                      scipp-core
+                      scipp_test_helpers)
+
 add_executable(neutron_convert_benchmark EXCLUDE_FROM_ALL neutron_convert_benchmark.cpp)
 add_dependencies(all-benchmarks neutron_convert_benchmark)
 target_link_libraries(neutron_convert_benchmark

@@ -155,7 +155,6 @@ def format_dims(dims, sizes, coords):
         for dim in dims
     }
 
-    print("Dims and sizes:", dims, sizes)
     dims_li = "".join(f"<li><span{dim_css_map[dim]}>"
                       f"{escape(str(dim))}</span>: "
                       f"{size if size is not None else 'Sparse' }</li>"

@@ -157,8 +157,11 @@ def _assert_section_multiple(section,
         f"Unexpected number of name tags found: {len(name_html)}."\
         f"Expected: {len(name)}"
 
+    names = [html.text for html in name_html]
+
+    # assert that the name is present in the currently visible variables
     for n in name:
-        assert str(n) in name_html[0].text
+        assert str(n) in names
 
     dims_html = section.find_all(class_=DIMS_CSS_CLASS)
     for dim, sparse, bin_edges in zip(dims, has_sparse, has_bin_edges):

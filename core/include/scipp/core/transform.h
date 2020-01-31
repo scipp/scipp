@@ -833,6 +833,16 @@ template <class... TypeTuples, class Op>
                                var3);
     }
 
+/// Transform the data elements of four variables and return a new Variable.
+template <class... TypeTuples, class Op>
+[[nodiscard]] Variable
+    transform(const VariableConstProxy &var1, const VariableConstProxy &var2,
+              const VariableConstProxy &var3, const VariableConstProxy &var4,
+              Op op) {
+      return detail::transform(std::tuple_cat(TypeTuples{}...), op, var1, var2,
+                               var3, var4);
+    }
+
 } // namespace scipp::core
 
 #endif // SCIPP_CORE_TRANSFORM_H

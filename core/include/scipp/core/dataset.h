@@ -1444,6 +1444,8 @@ SCIPP_CORE_EXPORT DataArray resize(const DataConstProxy &a, const Dim dim,
 SCIPP_CORE_EXPORT Dataset resize(const DatasetConstProxy &d, const Dim dim,
                                  const scipp::index size);
 
+[[nodiscard]] SCIPP_CORE_EXPORT DataArray reciprocal(const DataConstProxy &a);
+
 SCIPP_CORE_EXPORT VariableConstProxy same(const VariableConstProxy &a,
                                           const VariableConstProxy &b);
 

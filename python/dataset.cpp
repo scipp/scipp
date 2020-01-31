@@ -635,6 +635,14 @@ void init_dataset(py::module &m) {
         :return: A new variable that contains the union of all masks.
         :rtype: Variable)");
 
+  m.def("reciprocal",
+        [](const DataConstProxy &self) { return reciprocal(self); },
+        py::arg("x"), py::call_guard<py::gil_scoped_release>(), R"(
+        Element-wise reciprocal.
+
+        :return: Reciprocal of the input values.
+        :rtype: DataArray)");
+
   py::implicitly_convertible<DataArray, DataConstProxy>();
   py::implicitly_convertible<DataArray, DataProxy>();
   py::implicitly_convertible<Dataset, DatasetConstProxy>();
