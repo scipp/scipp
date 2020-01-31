@@ -55,7 +55,7 @@ endif(DYNAMIC_LIB)
 add_library(${TARGET_NAME} ${LINK_TYPE} ${INC_FILES} ${SRC_FILES})
 generate_export_header(${TARGET_NAME})
 target_link_libraries(${TARGET_NAME}
-                      PUBLIC scipp-common scipp-units Boost::boost)
+                      PUBLIC scipp-common scipp-units Boost::boost TBB::tbb)
 # Include tcb/span as system header to avoid compiler warnings.
 target_include_directories(
   ${TARGET_NAME} SYSTEM
