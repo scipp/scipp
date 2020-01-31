@@ -389,7 +389,7 @@ def test_to_workspace_2d(param_dim):
         d.attrs["run"].value.addProperty("test_property", 1, True)
         # before
         self.assertFalse(target.run().hasProperty("test_property"))
-        mantidcompat.extract_run_to_workspace(d, target)
+        target.setRun(d.attrs["run"].value)
         # after
         self.assertTrue(target.run().hasProperty("test_property"))
 
@@ -400,7 +400,7 @@ def test_to_workspace_2d(param_dim):
         d.attrs["sample"].value.setThickness(3)
         # before
         self.assertNotEqual(3, target.sample().getThickness())
-        mantidcompat.extract_sample_to_workspace(d, target)
+        target.setSample(d.attrs["sample"].value)
         # after
         self.assertEqual(3, target.sample().getThickness())
 
