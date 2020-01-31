@@ -272,15 +272,12 @@ struct TransformSparse {
   }
 };
 
-template <class Op, class... Args> struct check_all_or_none_variances {
-  static const bool value =
-      std::is_base_of_v<transform_flags::expect_all_or_none_have_variance_t,
-                        Op> &&
-      is_AllOrNoneValuesAndVariances_v<Args...>;
-};
-template <class... Ts>
-inline constexpr bool check_all_or_none_variances_v =
-    check_all_or_none_variances<Ts...>::value;
+template <class Op, class... Args>
+constexpr bool check_all_or_none_variances =
+    std::is_base_of_v<transform_flags::expect_all_or_none_have_variance_t,
+                      Op> &&
+    !std::conjunction_v<is_ValuesAndVariances<std::decay_t<Args>>...> &&
+    std::disjunction_v<is_ValuesAndVariances<std::decay_t<Args>>...>;
 
 /// Recursion endpoint for do_transform.
 ///
@@ -291,7 +288,7 @@ static void do_transform(Op op, Out &&out, Tuple &&processed) {
   auto out_val = out.values();
   std::apply(
       [&op, &out, &out_val](auto &&... args) {
-        if constexpr (check_all_or_none_variances_v<Op, decltype(args)...>) {
+        if constexpr (check_all_or_none_variances<Op, decltype(args)...>) {
           throw except::VariancesError(
               "Expected either all or none of inputs to have variances.");
         } else if constexpr ((is_ValuesAndVariances_v<
@@ -518,8 +515,8 @@ template <bool dry_run> struct in_place {
     using namespace detail;
     std::apply(
         [&op](auto &&arg, auto &&... args) {
-          if constexpr (check_all_or_none_variances_v<Op, decltype(arg),
-                                                      decltype(args)...>) {
+          if constexpr (check_all_or_none_variances<Op, decltype(arg),
+                                                    decltype(args)...>) {
             throw except::VariancesError(
                 "Expected either all or none of inputs to have variances.");
           } else {
