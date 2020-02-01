@@ -21,7 +21,7 @@ cache: C:\Users\appveyor\clcache -> appveyor.yml
 install:
 # For feature branches not associated with a PR - we exit appveyor
 - git config --add remote.origin.fetch +refs/pull/*/head:refs/remotes/origin/pull/*
-- git fetch --quiet origin
+- git fetch --quiet --prune origin
 - ps: '$env:pr = git branch --remote --contains HEAD'
 # Count PRs associated with this branch.
 - ps: $env:pr_count=($env:pr | select-string -pattern "origin/pull/*").length
