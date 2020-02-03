@@ -12,8 +12,8 @@
 /// Wrappers for multi-threading using TBB.
 namespace scipp::core::parallel {
 
-auto blocked_range(const scipp::index begin, const scipp::index end,
-                   const scipp::index grainsize = -1) {
+inline auto blocked_range(const scipp::index begin, const scipp::index end,
+                          const scipp::index grainsize = -1) {
   // TBB's default grain-size is 1, which is probably quite inefficient in
   // some cases, in particular given the slow random-access of ViewIndex. A
   // good default value is not known right now. In practice this should also
