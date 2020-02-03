@@ -105,9 +105,10 @@ class VariableDrawer():
         max_extent = _cubes_in_full_width // 2
         for dim in self._target_dims:
             if dim in d:
-                e.append(min(d[dim], max_extent))
-            elif dim in dims:
-                e.append(self._sparse_flag)
+                if d[dim] is None:
+                    e.append(self._sparse_flag)
+                else:
+                    e.append(min(d[dim], max_extent))
             else:
                 e.append(1)
         return [1] * (3 - len(e)) + e
