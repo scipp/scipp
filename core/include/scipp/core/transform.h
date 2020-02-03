@@ -542,9 +542,6 @@ template <bool dry_run> struct in_place {
     if constexpr (dry_run)
       return;
     auto run = [&](auto indices, const auto &end) {
-      // WARNING: Do not parallelize this loop in all cases! The output may
-      // have a dimension with stride zero so parallelization must be done
-      // with care.
       for (; std::get<0>(indices) != end; iter::increment(indices))
         call_in_place(op, indices, arg, other...);
     };
@@ -554,6 +551,10 @@ template <bool dry_run> struct in_place {
       run(begin, iter::end_index(arg));
     } else {
       if (iter::has_stride_zero(std::get<0>(begin))) {
+        // The output has a dimension with stride zero so parallelization must
+        // be done differently. Explicit and precise control of chunking is
+        // required to avoid multiple threads writing to the same output. Not
+        // implemented for now.
         run(begin, iter::end_index(arg));
       } else {
         auto run_parallel = [&](const auto &range) {
