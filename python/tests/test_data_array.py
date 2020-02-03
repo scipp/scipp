@@ -90,6 +90,26 @@ def test_sparse_dim_has_none_shape(dims, lengths):
     assert da.shape[-1] is None
 
 
+def test_astype():
+    a = sc.DataArray(
+        data=sc.Variable([Dim.X], values=np.arange(10.0, dtype=np.int64)),
+        coords={Dim.X: sc.Variable([Dim.X], values=np.arange(10.0))})
+    assert a.dtype == sc.dtype.int64
+
+    a_as_float = a.astype(sc.dtype.float32)
+    assert a_as_float.dtype == sc.dtype.float32
+
+
+def test_astype_bad_conversion():
+    a = sc.DataArray(
+        data=sc.Variable([Dim.X], values=np.arange(10.0, dtype=np.int64)),
+        coords={Dim.X: sc.Variable([Dim.X], values=np.arange(10.0))})
+    assert a.dtype == sc.dtype.int64
+
+    with pytest.raises(RuntimeError):
+        a.astype(sc.dtype.string)
+
+
 def test_reciprocal():
     a = sc.DataArray(data=sc.Variable([Dim.X], values=np.array([5.0])))
     r = sc.reciprocal(a)

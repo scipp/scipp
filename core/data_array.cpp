@@ -316,6 +316,11 @@ DataArray operator/(const VariableConstProxy &a, const DataConstProxy &b) {
   return DataArray(a / b.data(), b.coords(), b.labels(), b.masks(), b.attrs());
 }
 
+DataArray astype(const DataConstProxy &var, const DType type) {
+  return DataArray(astype(var.data(), type), var.coords(), var.labels(),
+                   var.masks(), var.attrs());
+}
+
 DataArray reciprocal(const DataConstProxy &a) {
   return DataArray(reciprocal(a.data()), a.coords(), a.labels(), a.masks(),
                    a.attrs());
