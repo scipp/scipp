@@ -115,15 +115,7 @@ public:
   ///
   /// Unlike std::vector::resize, this does *not* preserve existing element
   /// values.
-  void resize(const scipp::index new_size) {
-    if (new_size == 0) {
-      m_data.reset();
-      m_size = 0;
-    } else {
-      m_data = std::make_unique<T[]>(new_size);
-      m_size = new_size;
-    }
-  }
+  void resize(const scipp::index new_size) { *this = element_array(new_size); }
 
   /// Resize with default-initialized elements. Use with care.
   void resize(const scipp::index new_size, const default_init_elements_t &) {
