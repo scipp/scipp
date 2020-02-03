@@ -5,17 +5,28 @@
 #ifndef SCIPP_CORE_PARALLEL_H
 #define SCIPP_CORE_PARALLEL_H
 
-#include <tbb/parallel_for.h>
-
 #include "scipp/common/index.h"
 
-/// Wrappers for multi-threading using TBB.
+/// Fallback wrappers without actual threading, in case TBB is not available.
 namespace scipp::core::parallel {
 
-using blocked_range = tbb::blocked_range<scipp::index>;
+class blocked_range {
+public:
+  constexpr blocked_range(const scipp::index begin, const scipp::index end,
+                          const scipp::index grainsize = 1) noexcept
+      : m_begin(begin), m_end(end) {
+    static_cast<void>(grainsize);
+  }
+  constexpr scipp::index begin() const noexcept { return m_begin; }
+  constexpr scipp::index end() const noexcept { return m_end; }
 
-template <class... Args> void parallel_for(Args &&... args) {
-  tbb::parallel_for(std::forward<Args>(args)...);
+private:
+  scipp::index m_begin;
+  scipp::index m_end;
+};
+
+template <class Op> void parallel_for(const blocked_range &range, Op &&op) {
+  op(range);
 }
 
 } // namespace scipp::core::parallel
