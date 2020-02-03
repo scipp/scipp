@@ -4,12 +4,11 @@
 /// @author Simon Heybrock
 #include <numeric>
 
-#include "tbb/parallel_for.h"
-
 #include "scipp/core/except.h"
 #include "scipp/core/groupby.h"
 #include "scipp/core/histogram.h"
 #include "scipp/core/indexed_slice_view.h"
+#include "scipp/core/parallel.h"
 #include "scipp/core/tag_util.h"
 
 #include "dataset_operations_common.h"
@@ -48,8 +47,7 @@ T GroupBy<T>::reduce(Op op, const Dim reductionDim) const {
       }
     }
   };
-  tbb::parallel_for(tbb::blocked_range<scipp::index>(0, size()),
-                    process_groups);
+  parallel::parallel_for(parallel::blocked_range(0, size()), process_groups);
   return out;
 }
 

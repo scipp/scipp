@@ -23,10 +23,9 @@
 #ifndef SCIPP_CORE_TRANSFORM_H
 #define SCIPP_CORE_TRANSFORM_H
 
-#include "tbb/parallel_for.h"
-
 #include "scipp/common/overloaded.h"
 #include "scipp/core/except.h"
+#include "scipp/core/parallel.h"
 #include "scipp/core/transform_common.h"
 #include "scipp/core/value_and_variance.h"
 #include "scipp/core/values_and_variances.h"
@@ -245,8 +244,8 @@ static void transform_elements(Op op, Out &&out, Ts &&... other) {
       iter::advance(end, range.end());
       run(indices, std::get<0>(end));
     };
-    tbb::parallel_for(tbb::blocked_range<scipp::index>(0, out.size()),
-                      run_parallel);
+    parallel::parallel_for(parallel::blocked_range(0, out.size()),
+                           run_parallel);
   }
 }
 
@@ -564,8 +563,8 @@ template <bool dry_run> struct in_place {
           iter::advance(end, range.end());
           run(indices, std::get<0>(end));
         };
-        tbb::parallel_for(tbb::blocked_range<scipp::index>(0, arg.size()),
-                          run_parallel);
+        parallel::parallel_for(parallel::blocked_range(0, arg.size()),
+                               run_parallel);
       }
     }
   }

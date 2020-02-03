@@ -55,7 +55,11 @@ endif(DYNAMIC_LIB)
 add_library(${TARGET_NAME} ${LINK_TYPE} ${INC_FILES} ${SRC_FILES})
 generate_export_header(${TARGET_NAME})
 target_link_libraries(${TARGET_NAME}
-                      PUBLIC scipp-common scipp-units Boost::boost TBB::tbb)
+                      PUBLIC scipp-common scipp-units Boost::boost)
+if(TBB_FOUND)
+  target_link_libraries(${TARGET_NAME} PUBLIC TBB::tbb)
+endif()
+
 # Include tcb/span as system header to avoid compiler warnings.
 target_include_directories(
   ${TARGET_NAME} SYSTEM
@@ -67,6 +71,7 @@ target_include_directories(
   ${TARGET_NAME}
   PUBLIC $<INSTALL_INTERFACE:include>
          $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+         $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
          ${CMAKE_CURRENT_BINARY_DIR})
 target_include_directories(${TARGET_NAME} SYSTEM
                            PUBLIC ${CMAKE_BINARY_DIR}/Eigen-src)
