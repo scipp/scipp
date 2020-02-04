@@ -64,6 +64,7 @@ endif()
 
 option(WITH_CTEST "Enable ctest integration of tests" ON)
 option(DYNAMIC_LIB "Build shared libraries" OFF)
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 include(CheckIPOSupported)
 check_ipo_supported(RESULT result OUTPUT output)
