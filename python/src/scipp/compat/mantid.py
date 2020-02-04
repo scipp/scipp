@@ -4,11 +4,40 @@
 
 import re
 from copy import deepcopy
+from contextlib import contextmanager
 
 import numpy as np
 
 from .. import detail
 from .._scipp import core as sc
+
+
+@contextmanager
+def run_mantid_alg(alg, *args, **kwargs):
+    try:
+        from mantid import simpleapi as mantid
+        from mantid.api import Workspace
+    except ImportError:
+        raise ImportError(
+            "Mantid Python API was not found, please install Mantid framework "
+            "as detailed in the installation instructions (https://scipp."
+            "readthedocs.io/en/latest/getting-started/installation.html)")
+    run_mantid_alg.workspace_id += 1
+    ws = getattr(mantid, alg)(
+        OutputWorkspace=f'scipp.run_mantid_alg.{run_mantid_alg.workspace_id}',
+        *args,
+        **kwargs)
+    try:
+        yield ws
+    finally:
+        if isinstance(ws, Workspace):
+            mantid.DeleteWorkspace(ws)
+        else:
+            for w in ws:
+                mantid.DeleteWorkspace(w)
+
+
+run_mantid_alg.workspace_id = 0
 
 
 def get_pos(pos):
@@ -253,7 +282,6 @@ def _convert_MatrixWorkspace_info(ws):
 
 
 def convert_monitors_ws(ws, converter, **ignored):
-    import mantid.simpleapi as mantid
     dim, unit = validate_and_get_unit(ws.getAxis(0).getUnit().unitID())
     spec_dim, spec_coord = init_spec_axis(ws)
     spec_info = spec_info = ws.spectrumInfo()
@@ -269,10 +297,10 @@ def convert_monitors_ws(ws, converter, **ignored):
         # We only ExtractSpectra for compability with
         # exising convert_Workspace2D_to_dataarray. This could instead be
         # refactored if found to be slow
-        monitor_ws = mantid.ExtractSpectra(InputWorkspace=ws,
-                                           WorkspaceIndexList=[index],
-                                           StoreInADS=False)
-        single_monitor = converter(monitor_ws)
+        with run_mantid_alg('ExtractSpectra',
+                            InputWorkspace=ws,
+                            WorkspaceIndexList=[index]) as monitor_ws:
+            single_monitor = converter(monitor_ws)
         # Remove redundant information that is duplicated from workspace
         # We get this extra information from the generic converter reuse
         del single_monitor.labels['sample_position']
@@ -466,6 +494,7 @@ def from_mantid(workspace, **kwargs):
     """
     scipp_obj = None  # This is either a Dataset or DataArray
     monitor_ws = None
+    workspaces_to_delete = []
     if workspace.id() == 'Workspace2D' or workspace.id() == 'RebinnedOutput':
         has_monitors = False
         for spec in workspace.spectrumInfo():
@@ -474,8 +503,9 @@ def from_mantid(workspace, **kwargs):
                 break
         if has_monitors:
             import mantid.simpleapi as mantid
-            workspace, monitor_ws = mantid.ExtractMonitors(workspace,
-                                                           StoreInADS=False)
+            workspace, monitor_ws = mantid.ExtractMonitors(workspace)
+            workspaces_to_delete.append(workspace)
+            workspaces_to_delete.append(monitor_ws)
         scipp_obj = convert_Workspace2D_to_data_array(workspace, **kwargs)
     elif workspace.id() == 'EventWorkspace':
         scipp_obj = convert_EventWorkspace_to_data_array(workspace, **kwargs)
@@ -507,6 +537,8 @@ def from_mantid(workspace, **kwargs):
         monitors = convert_monitors_ws(monitor_ws, converter, **kwargs)
         for name, monitor in monitors:
             scipp_obj.attrs[name] = detail.move(sc.Variable(value=monitor))
+    for ws in workspaces_to_delete:
+        mantid.DeleteWorkspace(ws)
 
     return scipp_obj
 
@@ -552,36 +584,28 @@ def load(filename="",
     :rtype: Dataset
     """
 
-    try:
-        import mantid.simpleapi as mantid
-        from mantid.api import Workspace
-    except ImportError:
-        raise ImportError(
-            "Mantid Python API was not found, please install Mantid framework "
-            "as detailed in the installation instructions (https://scipp."
-            "readthedocs.io/en/latest/getting-started/installation.html)")
-
     if mantid_args is None:
         mantid_args = {}
 
-    loaded = mantid.Load(filename, StoreInADS=False, **mantid_args)
+    with run_mantid_alg('Load', filename, **mantid_args) as loaded:
+        # Determine what Load has provided us
+        from mantid.api import Workspace
+        if isinstance(loaded, Workspace):
+            # A single workspace
+            data_ws = loaded
+        else:
+            # Seperate data and monitor workspaces
+            data_ws = loaded.OutputWorkspace
 
-    # Determine what Load has provided us
-    if isinstance(loaded, Workspace):
-        # A single workspace
-        data_ws = loaded
-    else:
-        # Seperate data and monitor workspaces
-        data_ws = loaded.OutputWorkspace
+        if instrument_filename is not None:
+            import mantid.simpleapi as mantid
+            mantid.LoadInstrument(data_ws,
+                                  FileName=instrument_filename,
+                                  RewriteSpectraMap=True)
 
-    if instrument_filename is not None:
-        mantid.LoadInstrument(data_ws,
-                              FileName=instrument_filename,
-                              RewriteSpectraMap=True)
-
-    return from_mantid(data_ws,
-                       load_pulse_times=load_pulse_times,
-                       error_connection=error_connection)
+        return from_mantid(data_ws,
+                           load_pulse_times=load_pulse_times,
+                           error_connection=error_connection)
 
 
 def load_component_info(ds, file):
@@ -596,21 +620,12 @@ def load_component_info(ds, file):
     :param file: File from which the IDF will be loaded.
                  This can be anything that mantid.Load can load.
     """
-    try:
-        import mantid.simpleapi as mantid
-    except ImportError:
-        raise ImportError(
-            "Mantid Python API was not found, please install Mantid framework "
-            "as detailed in the installation instructions (https://scipp."
-            "readthedocs.io/en/latest/getting-started/installation.html)")
+    with run_mantid_alg('Load', file) as ws:
+        source_pos, sample_pos = make_component_info(ws)
 
-    ws = mantid.Load(file, StoreInADS=False)
-
-    source_pos, sample_pos = make_component_info(ws)
-
-    ds.labels["source_position"] = source_pos
-    ds.labels["sample_position"] = sample_pos
-    ds.labels["position"] = init_pos(ws)
+        ds.labels["source_position"] = source_pos
+        ds.labels["sample_position"] = sample_pos
+        ds.labels["position"] = init_pos(ws)
 
 
 def validate_dim_and_get_mantid_string(unit_dim):
@@ -703,42 +718,31 @@ def fit(ws, function, workspace_index, start_x, end_x):
     :param end_x: End X for the fit
     :returns: Dataset containing all of Fit's outputs
     """
-    try:
-        import mantid.simpleapi as mantid
-    except ImportError:
-        raise ImportError(
-            "Mantid Python API was not found, please install Mantid framework "
-            "as detailed in the installation instructions (https://scipp."
-            "readthedocs.io/en/latest/getting-started/installation.html)")
-
-    fit = mantid.Fit(Function=function,
-                     InputWorkspace=ws,
-                     WorkspaceIndex=workspace_index,
-                     StartX=start_x,
-                     EndX=end_x,
-                     CreateOutput=True,
-                     StoreinADS=False)
-
-    ds = sc.Dataset(data={
-        'workspace':
-        sc.Variable(convert_Workspace2D_to_data_array(fit.OutputWorkspace)),
-        'parameters':
-        sc.Variable(convert_TableWorkspace_to_dataset(fit.OutputParameters)),
-        'normalised_covariance_matrix':
-        sc.Variable(
-            convert_TableWorkspace_to_dataset(
-                fit.OutputNormalisedCovarianceMatrix)),
-    },
-                    attrs={
-                        'status': sc.Variable(fit.OutputStatus),
-                        'chi2_over_DoF': sc.Variable(fit.OutputChi2overDoF),
-                        'function': sc.Variable(str(fit.Function)),
-                        'cost_function': sc.Variable(fit.CostFunction)
-                    })
-
-    # clean up leftover workspaces in the ADS
-    mantid.DeleteWorkspace(fit.OutputWorkspace)
-    mantid.DeleteWorkspace(fit.OutputParameters)
-    mantid.DeleteWorkspace(fit.OutputNormalisedCovarianceMatrix)
+    with run_mantid_alg('Fit',
+                        Function=function,
+                        InputWorkspace=ws,
+                        WorkspaceIndex=workspace_index,
+                        StartX=start_x,
+                        EndX=end_x,
+                        CreateOutput=True) as fit:
+        ds = sc.Dataset(data={
+            'workspace':
+            sc.Variable(convert_Workspace2D_to_data_array(
+                fit.OutputWorkspace)),
+            'parameters':
+            sc.Variable(convert_TableWorkspace_to_dataset(
+                fit.OutputParameters)),
+            'normalised_covariance_matrix':
+            sc.Variable(
+                convert_TableWorkspace_to_dataset(
+                    fit.OutputNormalisedCovarianceMatrix)),
+        },
+                        attrs={
+                            'status': sc.Variable(fit.OutputStatus),
+                            'chi2_over_DoF':
+                            sc.Variable(fit.OutputChi2overDoF),
+                            'function': sc.Variable(str(fit.Function)),
+                            'cost_function': sc.Variable(fit.CostFunction)
+                        })
 
     return ds
