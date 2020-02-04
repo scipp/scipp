@@ -41,7 +41,8 @@ def load_calibration(filename, mantid_args={}):
     if "WorkspaceName" not in mantid_args:
         mantid_args["WorkspaceName"] = "cal_output"
 
-    with run_mantid_alg('LoadDiffCal', Filename=filename, **mantid_args) as output:
+    with run_mantid_alg('LoadDiffCal', Filename=filename,
+                        **mantid_args) as output:
         cal_ws = output.OutputCalWorkspace
         cal_data = convert_TableWorkspace_to_dataset(cal_ws)
 
@@ -66,9 +67,9 @@ def load_calibration(filename, mantid_args={}):
                             dtype=np.int32)
 
         # This is deliberately not stored as a mask since that would make
-        # subsequent handling, e.g., with groupby, more complicated. The mask is
-        # conceptually not masking rows in this table, i.e., it is not marking
-        # invalid rows, but rather describes masking for other data.
+        # subsequent handling, e.g., with groupby, more complicated. The mask
+        # is conceptually not masking rows in this table, i.e., it is not
+        # marking invalid rows, but rather describes masking for other data.
         cal_data["mask"] = sc.Variable([sc.Dim.Row], values=mask)
         cal_data["group"] = sc.Variable([sc.Dim.Row], values=group)
 

@@ -146,9 +146,12 @@ class TestMantidConversion(unittest.TestCase):
                                       [True, True, True])
 
     def test_Workspace2D_with_separate_monitors(self):
+        from mantid.simpleapi import mtd
+        mtd.clear()
         filename = MantidDataHelper.find_file("WISH00016748.raw")
         ds = mantidcompat.load(filename,
                                mantid_args={"LoadMonitors": "Separate"})
+        self.assertEqual(len(mtd), 0, mtd.getObjectNames())
         attrs = ds.attrs.keys()
         expected_monitor_attrs = set(
             ["monitor1", "monitor2", "monitor3", "monitor4", "monitor5"])
@@ -160,9 +163,12 @@ class TestMantidConversion(unittest.TestCase):
             assert monitors.shape == [4471]
 
     def test_Workspace2D_with_include_monitors(self):
+        from mantid.simpleapi import mtd
+        mtd.clear()
         filename = MantidDataHelper.find_file("WISH00016748.raw")
         ds = mantidcompat.load(filename,
                                mantid_args={"LoadMonitors": "Include"})
+        self.assertEqual(len(mtd), 0, mtd.getObjectNames())
         attrs = ds.attrs.keys()
         expected_monitor_attrs = set(
             ["monitor1", "monitor2", "monitor3", "monitor4", "monitor5"])
@@ -173,8 +179,11 @@ class TestMantidConversion(unittest.TestCase):
             assert monitors.shape == [4471]
 
     def test_EventWorkspace_with_monitors(self):
+        from mantid.simpleapi import mtd
+        mtd.clear()
         filename = MantidDataHelper.find_file("CNCS_51936_event.nxs")
         ds = mantidcompat.load(filename, mantid_args={"LoadMonitors": True})
+        self.assertEqual(len(mtd), 0, mtd.getObjectNames())
         attrs = ds.attrs.keys()
         expected_monitor_attrs = set(["monitor2", "monitor3"])
         assert expected_monitor_attrs.issubset(attrs)
