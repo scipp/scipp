@@ -29,6 +29,8 @@ def run_mantid_alg(alg, *args, **kwargs):
     # Deal with non-standard ways to define the prefix of output workspaces
     if alg == 'Fit':
         kwargs['Output'] = ws_name
+    elif alg == 'LoadDiffCal':
+        kwargs['WorkspaceName'] = ws_name
     else:
         kwargs['OutputWorkspace'] = ws_name
     ws = getattr(mantid, alg)(*args, **kwargs)
