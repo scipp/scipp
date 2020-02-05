@@ -23,10 +23,17 @@ requirements:
 test:
   import:
     - scipp
+  requires:
+    - beautifulsoup4
+    - ipyevents
+    - ipyvolume
+    - ipywidgets
+    - matplotlib
+    - pytest
+  source_files:
+    - python/tests
   commands:
-    # Run  Python tests from external source directory
-    - python -m pip install -r {{ environ.get('SRC_DIR') }}/python/requirements.txt
-    - python -m pytest -v {{ environ.get('SRC_DIR') }}/python
+    - python -m pytest -v python
 
 build:
   # Build number is number of Git commits since last tag, if that fails use 0
@@ -36,7 +43,6 @@ build:
     - CXX
     - OSX_VERSION
     - MINICONDA
-    - SRC_DIR
 
 about:
   home: https://scipp.readthedocs.io/en/latest/
