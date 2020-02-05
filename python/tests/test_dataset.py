@@ -650,6 +650,8 @@ def test_dataset_proxy_set_variance():
     d["a"].variances = variances
     assert d["a"].variances is not None
     np.testing.assert_array_equal(d["a"].variances, variances)
+    d["a"].variances = None
+    assert d["a"].variances == None
 
 
 def test_sort():
