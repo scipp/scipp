@@ -45,6 +45,7 @@ set(SRC_FILES
     variable_operations.cpp
     variable_reduction_operations.cpp
     variable_type_conversion.cpp
+    variable_view.cpp
     view_index.cpp)
 
 set(LINK_TYPE "STATIC")

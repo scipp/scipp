@@ -2,13 +2,12 @@
 // Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#include "scipp/core/dataset.h"
 #include "scipp/core/dtype.h"
 #include "scipp/core/except.h"
+#include "scipp/core/proxy_decl.h"
 #include "scipp/core/transform.h"
 #include "scipp/core/variable.h"
 
-#include "dataset_operations_common.h"
 #include "operators.h"
 #include "variable_operations_common.h"
 

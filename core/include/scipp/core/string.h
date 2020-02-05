@@ -10,7 +10,6 @@
 #include "scipp-core_export.h"
 #include "scipp/common/index.h"
 #include "scipp/core/dtype.h"
-#include "scipp/core/proxy_decl.h"
 #include "scipp/units/unit.h"
 
 namespace scipp::core {
@@ -26,6 +25,8 @@ class Variable;
 class VariableProxy;
 class VariableConstProxy;
 class Slice;
+template <class Id, class Data> class ConstProxy;
+template <class T> class MutableProxy;
 
 SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os, const Dim dim);
 SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,

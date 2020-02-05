@@ -221,4 +221,19 @@ void Variable::rename(const Dim from, const Dim to) {
     data().m_dimensions.relabel(dims().index(from), to);
 }
 
+namespace detail {
+void throw_variance_without_value() {
+  throw except::VariancesError("Can't have variance without values");
+}
+
+void throw_keyword_arg_constructor_bad_dtype(const DType dtype) {
+  throw except::TypeError("Can't create the Variable with type " +
+                          to_string(dtype) +
+                          " with such values and/or variances.");
+}
+
+void expect0D(const Dimensions &dims) { expect::equals(dims, Dimensions()); }
+
+} // namespace detail
+
 } // namespace scipp::core

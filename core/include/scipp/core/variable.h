@@ -19,9 +19,7 @@
 #include "scipp/core/dimensions.h"
 #include "scipp/core/dtype.h"
 #include "scipp/core/element_array.h"
-#include "scipp/core/except.h"
 #include "scipp/core/slice.h"
-#include "scipp/core/string.h"
 #include "scipp/core/tag_util.h"
 #include "scipp/core/variable_keyword_arg_constructor.h"
 #include "scipp/core/variable_view.h"
@@ -39,6 +37,7 @@ template <class T> using element_type_t = typename element_type<T>::type;
 
 std::vector<scipp::index> reorderedShape(const scipp::span<const Dim> &order,
                                          const Dimensions &dimensions);
+void expect0D(const Dimensions &dims);
 } // namespace detail
 
 template <class T> struct is_sparse_container : std::false_type {};
@@ -375,19 +374,19 @@ public:
     return scipp::span(cast<sparse_container<T>>(true));
   }
   template <class T> const auto &value() const {
-    expect::equals(dims(), Dimensions());
+    detail::expect0D(dims());
     return values<T>()[0];
   }
   template <class T> const auto &variance() const {
-    expect::equals(dims(), Dimensions());
+    detail::expect0D(dims());
     return variances<T>()[0];
   }
   template <class T> auto &value() {
-    expect::equals(dims(), Dimensions());
+    detail::expect0D(dims());
     return values<T>()[0];
   }
   template <class T> auto &variance() {
-    expect::equals(dims(), Dimensions());
+    detail::expect0D(dims());
     return variances<T>()[0];
   }
 
@@ -480,7 +479,6 @@ private:
     static Variable make(Ts &&... args, DType type);
   };
 
-private:
   template <class T>
   const detail::element_array<T> &cast(const bool variances = false) const;
   template <class T>
@@ -559,6 +557,7 @@ Variable from_dimensions_and_unit_with_variances(const Dimensions &dms,
                     element_array<T>(volume, detail::default_init<T>::value()),
                     element_array<T>(volume, detail::default_init<T>::value()));
 }
+void throw_variance_without_value();
 } // namespace detail
 
 /// This function covers the cases of construction Variables from keyword
@@ -593,9 +592,8 @@ Variable Variable::create(units::Unit &&u, Dimensions &&d,
   }
 
   if (var)
-    throw except::VariancesError("Can't have variance without values");
-  else
-    return detail::from_dimensions_and_unit<T>(dms, u);
+    detail::throw_variance_without_value();
+  return detail::from_dimensions_and_unit<T>(dms, u);
 }
 
 template <class T>
@@ -720,11 +718,11 @@ public:
     return castVariances<sparse_container<T>>();
   }
   template <class T> const auto &value() const {
-    expect::equals(dims(), Dimensions());
+    detail::expect0D(dims());
     return values<T>()[0];
   }
   template <class T> const auto &variance() const {
-    expect::equals(dims(), Dimensions());
+    detail::expect0D(dims());
     return variances<T>()[0];
   }
 
@@ -812,11 +810,11 @@ public:
     return castVariances<sparse_container<T>>();
   }
   template <class T> auto &value() const {
-    expect::equals(dims(), Dimensions());
+    detail::expect0D(dims());
     return values<T>()[0];
   }
   template <class T> auto &variance() const {
-    expect::equals(dims(), Dimensions());
+    detail::expect0D(dims());
     return variances<T>()[0];
   }
 

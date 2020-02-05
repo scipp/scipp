@@ -147,12 +147,6 @@ VariableProxy mean(const VariableConstProxy &var, const Dim dim,
 VariableProxy sum(const VariableConstProxy &var, const Dim dim,
                   const MasksConstProxy &masks, const VariableProxy &out);
 
-SCIPP_CORE_EXPORT Variable masks_merge_if_contains(const MasksConstProxy &masks,
-                                                   const Dim dim);
-
-SCIPP_CORE_EXPORT Variable
-masks_merge_if_contained(const MasksConstProxy &masks, const Dimensions &dims);
-
 } // namespace scipp::core
 
 #endif // SCIPP_CORE_DATASET_OPERATIONS_COMMON_H

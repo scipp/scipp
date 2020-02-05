@@ -3,6 +3,7 @@
 /// @file
 /// @author Simon Heybrock
 #include "scipp/core/subspan_view.h"
+#include "scipp/core/except.h"
 
 namespace scipp::core {
 
