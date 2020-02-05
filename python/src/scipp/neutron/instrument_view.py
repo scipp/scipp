@@ -16,6 +16,10 @@ import numpy as np
 import ipywidgets as widgets
 # import matplotlib.pyplot as plt
 from matplotlib import cm
+from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+from matplotlib.figure import Figure
+import matplotlib as mpl
+
 # try:
 #     import ipyvolume as ipv
 # except ImportError:
@@ -124,6 +128,7 @@ class InstrumentView:
 
         self.globs = {"cmap": cmap, "log": log, "vmin": vmin, "vmax": vmax}
         self.params = {}
+        self.cmap = {}
         self.hist_data_array = {}
         self.scalar_map = {}
         self.minmax = {}
@@ -237,30 +242,55 @@ class InstrumentView:
             geometry=self.geometry,
             material=self.material)
         self.axes_helper = p3.AxesHelper(100)
-        self.grid = p3.GridHelper(size=10, divisions=10, colorCenterLine="#444444", colorGrid="#888888")
+        # self.grid = p3.GridHelper(size=10, divisions=10, colorCenterLine="#444444", colorGrid="#888888")
 
-        # data = np.random.random([10, 50, 4])
-        # data[:, :, :4] *= 255.0
-        arr = np.zeros([1, 128])
-        arr[0, :] = np.linspace(self.params[self.key]["vmin"], self.params[self.key]["vmax"], 128, dtype=np.float32)
-        data = self.scalar_map[self.key].to_rgba(arr).astype(np.float32)
-        texture = p3.DataTexture(data=data, format="RGBAFormat", type="FloatType")
+        # # data = np.random.random([10, 50, 4])
+        # # data[:, :, :4] *= 255.0
+        # arr = np.zeros([1, 128])
+        # arr[0, :] = np.linspace(self.params[self.key]["vmin"], self.params[self.key]["vmax"], 128, dtype=np.float32)
+        # data = self.scalar_map[self.key].to_rgba(arr).astype(np.float32)
+        # texture = p3.DataTexture(data=data, format="RGBAFormat", type="FloatType")
 
-        self.sprite = p3.Sprite(material=p3.SpriteMaterial(map=texture))
-        self.sprite.scale = (0.2, 1, 1)
+        # self.sprite = p3.Sprite(material=p3.SpriteMaterial(map=texture))
+        # self.sprite.scale = (0.2, 1, 1)
 
-        self.scene = p3.Scene(children=[self.pcl, self.camera, self.key_light, self.ambient_light, self.axes_helper, self.grid])
+        self.scene = p3.Scene(children=[self.pcl, self.camera, self.key_light, self.ambient_light, self.axes_helper])
         self.controller = p3.OrbitControls(controlling=self.camera)
 
 
-        self.cbar_camera = p3.PerspectiveCamera(position=[0.5, 0, 1.5], aspect=1.0)
-        self.cbar_scene = p3.Scene(children=[self.cbar_camera, self.key_light, self.ambient_light, self.sprite])
-        self.cbar_renderer = p3.Renderer(camera=self.cbar_camera, scene=self.cbar_scene,
-                            width=config.plot.height * 0.3, height=config.plot.height)
+        # self.cbar_camera = p3.PerspectiveCamera(position=[0.5, 0, 1.5], aspect=1.0)
+        # self.cbar_scene = p3.Scene(children=[self.cbar_camera, self.key_light, self.ambient_light, self.sprite])
+        # self.cbar_renderer = p3.Renderer(camera=self.cbar_camera, scene=self.cbar_scene,
+        #                     width=config.plot.height * 0.3, height=config.plot.height)
+        
+        # from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+        # from matplotlib.figure import Figure
+        # import matplotlib as mpl
+
+        height_inches = config.plot.height / config.plot.dpi
+        fig = Figure(figsize=(height_inches * 0.2, height_inches), dpi=config.plot.dpi)
+        canvas = FigureCanvas(fig)
+        ax = fig.add_axes([0.05, 0.02, 0.25, 0.96])
+
+        # cmap = mpl.cm.cool
+        # norm = mpl.colors.Normalize(vmin=5, vmax=10)
+        # print(self.params[self.key])
+        cb1 = mpl.colorbar.ColorbarBase(ax, cmap=self.cmap[self.key],
+                                        norm=self.params[self.key]["norm"])
+        cb1.set_label('Some Units')
+        canvas.draw()       # draw the canvas, cache the renderer
+
+        image = np.fromstring(canvas.tostring_rgb(), dtype='uint8')
+        from PIL import Image
+        shp = list(fig.canvas.get_width_height())[::-1] + [3]
+        im = Image.fromarray(image.reshape(shp))
+
+
+        self.cbar_output = widgets.Image(value=im._repr_png_())
 
         self.renderer = p3.Renderer(camera=self.camera, scene=self.scene, controls=[self.controller],
                             width=config.plot.width, height=config.plot.height)
-        self.box = widgets.VBox([widgets.HBox([self.renderer, self.cbar_renderer]), self.vbox])
+        self.box = widgets.VBox([widgets.HBox([self.renderer, self.cbar_output]), self.vbox])
         # self.box = widgets.VBox([widgets.HBox([self.renderer, texture]), self.vbox])
         # self.box = self.vbox
         self.box.layout.align_items = "center"
@@ -309,10 +339,10 @@ class InstrumentView:
             # Parse input parameters for colorbar
             self.params[key] = parse_params(
                 globs=self.globs, array=self.hist_data_array[key].values)
-            cmap = cm.get_cmap(self.params[key]["cmap"])
-            cmap.set_bad(color=self.nan_color)
+            self.cmap[key] = cm.get_cmap(self.params[key]["cmap"])
+            self.cmap[key].set_bad(color=self.nan_color)
             self.scalar_map[key] = cm.ScalarMappable(
-                cmap=cmap, norm=self.params[key]["norm"])
+                cmap=self.cmap[key], norm=self.params[key]["norm"])
         return
 
     def update_colors(self, change):
