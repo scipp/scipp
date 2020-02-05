@@ -56,7 +56,7 @@ using args = std::tuple<sparse_container<T>, sparse_container<T>, bool>;
 }
 
 void flatten_impl(const VariableProxy &summed, const VariableConstProxy &var,
-                  const Variable &mask) {
+                  const VariableConstProxy &mask) {
   // Note that mask may often be "empty" (0-D false). Benchmarks show no
   // significant penalty from handling it anyway. We thus avoid two separate
   // code branches here.
@@ -65,7 +65,7 @@ void flatten_impl(const VariableProxy &summed, const VariableConstProxy &var,
                                  "use `sum` for dense data.");
   // 1. Reserve space in output. This yields approx. 3x speedup.
   auto summed_counts = sparse::counts(summed);
-  sum_impl(summed_counts, sparse::counts(var) * ~mask);
+  sum_impl(summed_counts, sparse::counts(var) * mask);
   sparse::reserve(summed, summed_counts);
 
   // 2. Flatten dimension(s) by concatenating along sparse dim.
@@ -75,7 +75,7 @@ void flatten_impl(const VariableProxy &summed, const VariableConstProxy &var,
       summed, var, mask,
       overloaded{
           [](auto &a, const auto &b, const auto &mask_) {
-            if (!mask_)
+            if (mask_)
               a.insert(a.end(), b.begin(), b.end());
           },
           [](units::Unit &a, const units::Unit &b, const units::Unit &mask_) {
@@ -92,7 +92,7 @@ Variable flatten(const VariableConstProxy &var, const Dim dim) {
   auto dims = var.dims();
   dims.erase(dim);
   Variable flattened(var, dims);
-  flatten_impl(flattened, var);
+  flatten_impl(flattened, var, makeVariable<bool>(Values{true}));
   return flattened;
 }
 
@@ -102,7 +102,7 @@ Variable flatten(const VariableConstProxy &var, const Dim dim,
   auto dims = var.dims();
   dims.erase(dim);
   Variable flattened(var, dims);
-  const auto mask = masks_merge_if_contains(masks, dim);
+  const auto mask = ~masks_merge_if_contains(masks, dim);
   flatten_impl(flattened, var, mask);
   return flattened;
 }

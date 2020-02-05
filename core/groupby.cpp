@@ -8,6 +8,7 @@
 #include "scipp/core/groupby.h"
 #include "scipp/core/histogram.h"
 #include "scipp/core/indexed_slice_view.h"
+#include "scipp/core/parallel.h"
 #include "scipp/core/tag_util.h"
 
 #include "dataset_operations_common.h"
@@ -34,72 +35,58 @@ T GroupBy<T>::reduce(Op op, const Dim reductionDim) const {
   auto out = makeReductionOutput(reductionDim);
   const auto mask = ~masks_merge_if_contains(m_data.masks(), reductionDim);
   // Apply to each group, storing result in output slice
-  for (scipp::index group = 0; group < size(); ++group) {
-    const auto out_slice = out.slice({dim(), group});
-    if constexpr (std::is_same_v<T, Dataset>) {
-      for (const auto &item : m_data) {
-        const auto out_data = out_slice[item.name()].data();
-        op(out_data, item, groups()[group], reductionDim, mask);
-      }
-    } else {
-      const auto out_data = out_slice.data();
-      op(out_data, m_data, groups()[group], reductionDim, mask);
-    }
-  }
-  return out;
-}
-
-/// Flatten provided dimension in each group and return combined data.
-///
-/// This only supports sparse data.
-template <class T> T GroupBy<T>::flatten(const Dim reductionDim) const {
-  auto out = makeReductionOutput(reductionDim);
-  const auto apply = [&](const auto &out_, const auto &in,
-                         const scipp::index group_) {
-    const Dim sparseDim = in.dims().sparseDim();
-    for (const auto &slice : groups()[group_]) {
-      const auto &array = in.slice(slice);
-      const auto masks = array.masks();
-      const auto mask = masks_merge_if_contains(masks, reductionDim);
-      flatten_impl(out_.coords()[sparseDim], array.coords()[sparseDim], mask);
-      if (in.hasData())
-        flatten_impl(out_.data(), array.data(), mask);
-      for (auto &&[label_name, label] : out_.labels()) {
-        if (label.dims().sparse())
-          flatten_impl(label, array.labels()[label_name], mask);
+  const auto process_groups = [&](const auto &range) {
+    for (scipp::index group = range.begin(); group != range.end(); ++group) {
+      const auto out_slice = out.slice({dim(), group});
+      if constexpr (std::is_same_v<T, Dataset>) {
+        for (const auto &item : m_data) {
+          op(out_slice[item.name()], item, groups()[group], reductionDim, mask);
+        }
+      } else {
+        op(out_slice, m_data, groups()[group], reductionDim, mask);
       }
     }
   };
-  // Apply to each group, storing result in output slice
-  for (scipp::index group = 0; group < size(); ++group) {
-    const auto out_slice = out.slice({dim(), group});
-    if constexpr (std::is_same_v<T, Dataset>) {
-      for (const auto &item : m_data)
-        apply(out_slice[item.name()], item, group);
-    } else {
-      apply(out_slice, m_data, group);
-    }
-  }
+  parallel::parallel_for(parallel::blocked_range(0, size()), process_groups);
   return out;
 }
 
 namespace groupby_detail {
-static constexpr auto sum = [](const VariableProxy &out_data,
-                               const auto &data_container,
+static constexpr auto flatten = [](const DataProxy &out, const auto &in,
+                                   const GroupByGrouping::group &group,
+                                   const Dim reductionDim,
+                                   const Variable &mask_) {
+  const Dim sparseDim = in.dims().sparseDim();
+  const auto no_mask = makeVariable<bool>(Values{true});
+  for (const auto &slice : group) {
+    auto mask =
+        mask_.dims().contains(reductionDim) ? mask_.slice(slice) : no_mask;
+    const auto &array = in.slice(slice);
+    flatten_impl(out.coords()[sparseDim], array.coords()[sparseDim], mask);
+    if (in.hasData())
+      flatten_impl(out.data(), array.data(), mask);
+    for (auto &&[label_name, label] : out.labels()) {
+      if (label.dims().sparse())
+        flatten_impl(label, array.labels()[label_name], mask);
+    }
+  }
+};
+
+static constexpr auto sum = [](const DataProxy &out, const auto &data_container,
                                const GroupByGrouping::group &group,
                                const Dim reductionDim, const Variable &mask) {
   for (const auto &slice : group) {
     const auto data_slice = data_container.slice(slice);
     if (mask.dims().contains(reductionDim))
-      sum_impl(out_data, data_slice.data() * mask.slice(slice));
+      sum_impl(out.data(), data_slice.data() * mask.slice(slice));
     else
-      sum_impl(out_data, data_slice.data());
+      sum_impl(out.data(), data_slice.data());
   }
 };
 
 template <void (*Func)(const VariableProxy &, const VariableConstProxy &)>
 static constexpr auto reduce_idempotent =
-    [](const VariableProxy &out_data, const auto &data_container,
+    [](const DataProxy &out, const auto &data_container,
        const GroupByGrouping::group &group, const Dim reductionDim,
        const Variable &mask) {
       bool first = true;
@@ -109,13 +96,20 @@ static constexpr auto reduce_idempotent =
           throw std::runtime_error(
               "This operation does not support masks yet.");
         if (first) {
-          out_data.assign(data_slice.data().slice({reductionDim, 0}));
+          out.data().assign(data_slice.data().slice({reductionDim, 0}));
           first = false;
         }
-        Func(out_data, data_slice.data());
+        Func(out.data(), data_slice.data());
       }
     };
 } // namespace groupby_detail
+
+/// Flatten provided dimension in each group and return combined data.
+///
+/// This only supports sparse data.
+template <class T> T GroupBy<T>::flatten(const Dim reductionDim) const {
+  return reduce(groupby_detail::flatten, reductionDim);
+}
 
 /// Reduce each group using `sum` and return combined data.
 template <class T> T GroupBy<T>::sum(const Dim reductionDim) const {

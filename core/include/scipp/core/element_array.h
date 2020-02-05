@@ -9,6 +9,7 @@
 #include <memory>
 
 #include "scipp/common/index.h"
+#include "scipp/core/parallel.h"
 
 namespace scipp::core::detail {
 
@@ -41,7 +42,10 @@ public:
 
   explicit element_array(const scipp::index new_size, const T &value = T()) {
     resize(new_size, default_init_elements);
-    std::fill(data(), data() + size(), value);
+    parallel::parallel_for(
+        parallel::blocked_range(0, size()), [&](const auto &range) {
+          std::fill(data() + range.begin(), data() + range.end(), value);
+        });
   }
 
   /// Construct with default-initialized elements. Use with care.
@@ -54,8 +58,13 @@ public:
       std::enable_if_t<
           std::is_assignable<T &, decltype(*std::declval<Iter>())>{}, int> = 0>
   element_array(Iter first, Iter last) {
-    resize(std::distance(first, last), default_init_elements);
-    std::copy(first, last, data());
+    const scipp::index size = std::distance(first, last);
+    resize(size, default_init_elements);
+    parallel::parallel_for(
+        parallel::blocked_range(0, size), [&](const auto &range) {
+          std::copy(first + range.begin(), first + range.end(),
+                    data() + range.begin());
+        });
   }
 
   template <
@@ -106,15 +115,7 @@ public:
   ///
   /// Unlike std::vector::resize, this does *not* preserve existing element
   /// values.
-  void resize(const scipp::index new_size) {
-    if (new_size == 0) {
-      m_data.reset();
-      m_size = 0;
-    } else {
-      m_data = std::make_unique<T[]>(new_size);
-      m_size = new_size;
-    }
-  }
+  void resize(const scipp::index new_size) { *this = element_array(new_size); }
 
   /// Resize with default-initialized elements. Use with care.
   void resize(const scipp::index new_size, const default_init_elements_t &) {
