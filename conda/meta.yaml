@@ -27,7 +27,7 @@ test:
   import:
     - scipp
   commands:
-    # Note that the following is fetching source again and using master
+    # Run  Python tests from external source directory
     - python -m pip install -r {{ environ.get('SRC_DIR') }}/python/requirements.txt
     - python -m pytest -v {{ environ.get('SRC_DIR') }}/python
 
@@ -40,6 +40,7 @@ build:
     - OSX_VERSION
     - MINICONDA
     - SRC_DIR
+
 about:
   home: https://scipp.readthedocs.io/en/latest/
   license: GPLv3
