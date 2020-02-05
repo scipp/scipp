@@ -6,7 +6,6 @@
 #ifndef SCIPP_VARIABLE_KEYWORD_ARG_CONSTRUCTOR_H
 #define SCIPP_VARIABLE_KEYWORD_ARG_CONSTRUCTOR_H
 
-#include "scipp/core/except.h"
 #include <type_traits>
 
 namespace scipp::core {
@@ -123,6 +122,8 @@ public:
   }
 };
 
+void throw_keyword_arg_constructor_bad_dtype(const DType dtype);
+
 template <class VarT, class... Ts> class ConstructorArgumentsMatcher {
 public:
   template <class... NonDataTypes> constexpr static bool checkArgTypesValid() {
@@ -153,11 +154,10 @@ public:
     constexpr bool constrVar =
         std::is_constructible_v<detail::element_array<ElemT>, VarArgs...>;
 
-    if constexpr ((hasVal && !constrVal) || (hasVar && !constrVar))
-      throw except::TypeError("Can't create the Variable with type " +
-                              to_string(core::dtype<ElemT>) +
-                              " with such values and/or variances.");
-    else {
+    if constexpr ((hasVal && !constrVal) || (hasVar && !constrVar)) {
+      throw_keyword_arg_constructor_bad_dtype(core::dtype<ElemT>);
+      return VarT{}; // unreachable
+    } else {
       std::optional<detail::element_array<ElemT>> values;
       if (hasVal)
         values = std::make_from_tuple<detail::element_array<ElemT>>(

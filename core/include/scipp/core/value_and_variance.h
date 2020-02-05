@@ -4,7 +4,9 @@
 #ifndef SCIPP_CORE_VALUE_AND_VARIANCE_H
 #define SCIPP_CORE_VALUE_AND_VARIANCE_H
 
-#include "scipp/core/variable.h"
+#include <cmath>
+
+#include "scipp/common/span.h"
 
 namespace scipp::core {
 

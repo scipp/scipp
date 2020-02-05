@@ -5,7 +5,6 @@
 #include <cmath>
 
 #include "scipp/core/apply.h"
-#include "scipp/core/counts.h"
 #include "scipp/core/dtype.h"
 #include "scipp/core/except.h"
 #include "scipp/core/transform.h"
@@ -269,30 +268,6 @@ Variable reverse(Variable var, const Dim dim) {
 
 /// Return a deep copy of a Variable or of a VariableProxy.
 Variable copy(const VariableConstProxy &var) { return Variable(var); }
-
-/// Merges all masks contained in the MasksConstProxy that have the supplied
-//  dimension in their dimensions into a single Variable
-Variable masks_merge_if_contains(const MasksConstProxy &masks, const Dim dim) {
-  auto mask_union = makeVariable<bool>(Values{false});
-  for (const auto &mask : masks) {
-    if (mask.second.dims().contains(dim)) {
-      mask_union = mask_union | mask.second;
-    }
-  }
-  return mask_union;
-}
-
-/// Merges all the masks that have all their dimensions found in the given set
-//  of dimensions.
-Variable masks_merge_if_contained(const MasksConstProxy &masks,
-                                  const Dimensions &dims) {
-  auto mask_union = makeVariable<bool>(Values{false});
-  for (const auto &mask : masks) {
-    if (dims.contains(mask.second.dims()))
-      mask_union = mask_union | mask.second;
-  }
-  return mask_union;
-}
 
 VariableProxy nan_to_num(const VariableConstProxy &var,
                          const VariableConstProxy &replacement,

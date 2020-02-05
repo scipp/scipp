@@ -5,7 +5,7 @@
 #ifndef SCIPP_CORE_VARIABLE_OPERATIONS_COMMON_H
 #define SCIPP_CORE_VARIABLE_OPERATIONS_COMMON_H
 
-#include "scipp/core/dataset.h"
+#include "scipp/core/variable.h"
 
 namespace scipp::core {
 
@@ -17,18 +17,6 @@ void all_impl(const VariableProxy &out, const VariableConstProxy &var);
 void any_impl(const VariableProxy &out, const VariableConstProxy &var);
 void max_impl(const VariableProxy &out, const VariableConstProxy &var);
 void min_impl(const VariableProxy &out, const VariableConstProxy &var);
-
-// Helpers for reductions for DataArray and Dataset, which include masks.
-[[nodiscard]] Variable mean(const VariableConstProxy &var, const Dim dim,
-                            const MasksConstProxy &masks);
-VariableProxy mean(const VariableConstProxy &var, const Dim dim,
-                   const MasksConstProxy &masks, const VariableProxy &out);
-[[nodiscard]] Variable flatten(const VariableConstProxy &var, const Dim dim,
-                               const MasksConstProxy &masks);
-[[nodiscard]] Variable sum(const VariableConstProxy &var, const Dim dim,
-                           const MasksConstProxy &masks);
-VariableProxy sum(const VariableConstProxy &var, const Dim dim,
-                  const MasksConstProxy &masks, const VariableProxy &out);
 
 } // namespace scipp::core
 

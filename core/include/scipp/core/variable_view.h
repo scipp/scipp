@@ -10,10 +10,12 @@
 #include <boost/iterator/iterator_facade.hpp>
 
 #include "scipp/core/dimensions.h"
-#include "scipp/core/except.h"
 #include "scipp/core/view_index.h"
 
 namespace scipp::core {
+
+void expectCanBroadcastFromTo(const Dimensions &source,
+                              const Dimensions &target);
 
 /// A view into multi-dimensional data, supporting slicing, index reordering,
 /// and broadcasting.
@@ -172,15 +174,6 @@ private:
   scipp::index m_offset{0};
   Dimensions m_targetDimensions;
   Dimensions m_dimensions;
-
-  void expectCanBroadcastFromTo(const Dimensions &source,
-                                const Dimensions &target) const {
-    for (const auto dim : target.denseLabels())
-      if (source.denseContains(dim) && (source[dim] < target[dim]))
-        throw except::DimensionError("Cannot broadcast/slice dimension since "
-                                     "data has mismatching but smaller "
-                                     "dimension extent.");
-  }
 };
 
 template <class T>

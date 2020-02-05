@@ -5,7 +5,6 @@
 #include "scipp/common/numeric.h"
 #include "scipp/core/dataset.h"
 #include "scipp/core/except.h"
-#include "scipp/core/transform.h"
 
 #include "dataset_operations_common.h"
 #include "variable_operations_common.h"

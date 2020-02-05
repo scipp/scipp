@@ -4,6 +4,7 @@
 
 #include "test_macros.h"
 
+#include "scipp/core/except.h"
 #include "scipp/core/subspan_view.h"
 
 using namespace scipp;
