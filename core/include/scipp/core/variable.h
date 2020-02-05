@@ -99,6 +99,8 @@ public:
                     const scipp::index offset, const scipp::index otherBegin,
                     const scipp::index otherEnd) = 0;
 
+  virtual void setVariances(Variable &&variances) = 0;
+
   const Dimensions &dims() const { return m_dimensions; }
 
   friend class Variable;
@@ -140,8 +142,6 @@ public:
     std::terminate();
   }
   static DType static_dtype() noexcept { return scipp::core::dtype<T>; }
-
-  virtual void setVariances(detail::element_array<T> &&v) = 0;
 
   virtual scipp::span<T> values() = 0;
   virtual scipp::span<T> values(const Dim dim, const scipp::index begin,
@@ -470,7 +470,7 @@ public:
   const auto &dataHandle() && = delete;
   const auto &dataHandle() & { return m_object.mutableVariant(); }
 
-  template <class T> void setVariances(detail::element_array<T> &&v);
+  void setVariances(Variable variances);
 
 private:
   template <class... Ts> struct ConstructVariable {
@@ -862,7 +862,7 @@ public:
   VariableProxy operator&=(const VariableConstProxy &other) const;
   VariableProxy operator^=(const VariableConstProxy &other) const;
 
-  template <class T> void setVariances(detail::element_array<T> &&v) const;
+  void setVariances(Variable variances) const;
 
   void setUnit(const units::Unit &unit) const;
   void expectCanSetUnit(const units::Unit &unit) const;

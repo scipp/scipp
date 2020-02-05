@@ -221,6 +221,20 @@ void Variable::rename(const Dim from, const Dim to) {
     data().m_dimensions.relabel(dims().index(from), to);
 }
 
+void Variable::setVariances(Variable variances) {
+  data().setVariances(std::move(variances));
+}
+
+void VariableProxy::setVariances(Variable variances) const {
+  // If the proxy wraps the whole variable (common case: iterating a dataset)
+  // m_view is not set. A more complex check would be to verify dimensions,
+  // shape, and strides, but this should be sufficient for now.
+  if (m_view)
+    throw except::VariancesError(
+        "Cannot add variances via sliced or reshaped view of Variable.");
+  m_mutableVariable->setVariances(std::move(variances));
+}
+
 namespace detail {
 void throw_variance_without_value() {
   throw except::VariancesError("Can't have variance without values");

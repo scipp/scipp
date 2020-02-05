@@ -130,12 +130,6 @@ public:
 
   void setUnit(const units::Unit unit) const;
 
-  /// Set variances for the data. If the data has no variances array, it is
-  /// created.
-  template <class T> void setVariances(detail::element_array<T> &&v) const {
-    data().setVariances(std::move(v));
-  }
-
   /// Return untyped proxy for data (values and optional variances).
   const VariableProxy &data() const {
     if (!hasData())
@@ -939,10 +933,6 @@ public:
   units::Unit unit() const { return get().unit(); }
 
   void setUnit(const units::Unit unit) { get().setUnit(unit); }
-
-  template <class T> void setVariances(detail::element_array<T> &&v) {
-    get().setVariances(std::move(v));
-  }
 
   /// Return true if the data array contains data values.
   bool hasData() const { return get().hasData(); }

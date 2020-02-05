@@ -13,10 +13,6 @@
 
 namespace scipp::core {
 
-#ifdef _WIN32
-#define __PRETTY_FUNCTION__ __FUNCSIG__
-#endif
-
 template <class T, class C> auto &requireT(C &concept) {
   try {
     return dynamic_cast<T &>(concept);
@@ -267,13 +263,14 @@ public:
                                "volume given by dimension extents");
   }
 
-  void setVariances(detail::element_array<value_type> &&v) override {
+  void setVariances(Variable &&variances) override {
     if (!canHaveVariances<value_type>())
       throw except::VariancesError("This data type cannot have variances.");
-    if (v.size() != m_values.size())
-      throw except::SizeError(std::string("Sizes should match in ") +
-                              __PRETTY_FUNCTION__);
-    m_variances.emplace(std::move(v));
+    if(!variances)
+      m_variances.reset();
+    expect::equals(this->dims(), variances.dims());
+    m_variances.emplace(
+        std::move(requireT<DataModel>(variances.data()).m_values));
   }
 
   scipp::span<value_type> values() override {
@@ -626,9 +623,8 @@ public:
   std::optional<T> m_variances;
 
 private:
-  void setVariances(detail::element_array<value_type> &&) override {
-    throw std::logic_error(std::string("This shouldn't be called: ") +
-                           __PRETTY_FUNCTION__);
+  void setVariances(Variable &&) override {
+    throw std::logic_error("This shouldn't be called");
   }
 };
 
@@ -714,35 +710,6 @@ template <class T> VariableView<T> VariableProxy::castVariances() const {
       dims());
 }
 
-template <class T> void Variable::setVariances(detail::element_array<T> &&v) {
-  auto lmb = [v = std::forward<decltype(v)>(v)](auto &&model) mutable {
-    using TT = T;
-    // Handle, e.g., float input if Variable dtype is double.
-    using TTT = typename std::decay_t<decltype(*model)>::value_type;
-    if constexpr (std::is_same_v<TTT, T> && std::is_same_v<T, TT>)
-      model->setVariances(std::move(v));
-    else
-      model->setVariances(detail::element_array<TTT>(v.begin(), v.end()));
-  };
-  try {
-    apply_in_place<double, float, int64_t, int32_t>(lmb, *this);
-  } catch (std::bad_variant_access &) {
-    throw except::TypeError(std::string("Can't set variance for the type: ") +
-                            to_string(dtype()));
-  }
-}
-
-template <class T>
-void VariableProxy::setVariances(detail::element_array<T> &&v) const {
-  // If the proxy wraps the whole variable (common case: iterating a dataset)
-  // m_view is not set. A more complex check would be to verify dimensions,
-  // shape, and strides, but this should be sufficient for now.
-  if (m_view)
-    throw except::VariancesError(
-        "Cannot add variances via sliced or reshaped view of Variable.");
-  m_mutableVariable->setVariances(std::move(v));
-}
-
 /**
   Support explicit instantiations for templates for generic Variable and
   VariableConstProxy
@@ -765,11 +732,5 @@ using scipp::core::detail::element_array;
   template VariableView<__VA_ARGS__> VariableProxy::cast<__VA_ARGS__>() const; \
   template VariableView<__VA_ARGS__>                                           \
   VariableProxy::castVariances<__VA_ARGS__>() const;
-
-#define INSTANTIATE_SET_VARIANCES(...)                                         \
-  template void Variable::setVariances<__VA_ARGS__>(                           \
-      element_array<__VA_ARGS__> &&);                                          \
-  template void VariableProxy::setVariances<__VA_ARGS__>(                      \
-      element_array<__VA_ARGS__> &&) const;
 
 } // namespace scipp::core
