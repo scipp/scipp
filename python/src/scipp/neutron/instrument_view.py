@@ -237,11 +237,31 @@ class InstrumentView:
             geometry=self.geometry,
             material=self.material)
         self.axes_helper = p3.AxesHelper(100)
-        self.scene = p3.Scene(children=[self.pcl, self.camera, self.key_light, self.ambient_light, self.axes_helper])
+        self.grid = p3.GridHelper(size=10, divisions=10, colorCenterLine="#444444", colorGrid="#888888")
+
+        # data = np.random.random([10, 50, 4])
+        # data[:, :, :4] *= 255.0
+        arr = np.zeros([1, 128])
+        arr[0, :] = np.linspace(self.params[self.key]["vmin"], self.params[self.key]["vmax"], 128, dtype=np.float32)
+        data = self.scalar_map[self.key].to_rgba(arr).astype(np.float32)
+        texture = p3.DataTexture(data=data, format="RGBAFormat", type="FloatType")
+
+        self.sprite = p3.Sprite(material=p3.SpriteMaterial(map=texture))
+        self.sprite.scale = (0.2, 1, 1)
+
+        self.scene = p3.Scene(children=[self.pcl, self.camera, self.key_light, self.ambient_light, self.axes_helper, self.grid])
         self.controller = p3.OrbitControls(controlling=self.camera)
+
+
+        self.cbar_camera = p3.PerspectiveCamera(position=[0.5, 0, 1.5], aspect=1.0)
+        self.cbar_scene = p3.Scene(children=[self.cbar_camera, self.key_light, self.ambient_light, self.sprite])
+        self.cbar_renderer = p3.Renderer(camera=self.cbar_camera, scene=self.cbar_scene,
+                            width=config.plot.height * 0.3, height=config.plot.height)
+
         self.renderer = p3.Renderer(camera=self.camera, scene=self.scene, controls=[self.controller],
                             width=config.plot.width, height=config.plot.height)
-        self.box = widgets.VBox([self.renderer, self.vbox])
+        self.box = widgets.VBox([widgets.HBox([self.renderer, self.cbar_renderer]), self.vbox])
+        # self.box = widgets.VBox([widgets.HBox([self.renderer, texture]), self.vbox])
         # self.box = self.vbox
         self.box.layout.align_items = "center"
         self.change_projection(self.buttons[projection])
