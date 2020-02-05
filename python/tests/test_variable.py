@@ -762,6 +762,17 @@ def test_copy_variance():
     assert var == expected
 
 
+def test_remove_variance():
+    values = np.random.rand(2, 3)
+    variances = np.random.rand(2, 3)
+    var = sc.Variable(dims=[Dim.X, Dim.Y], values=values, variances=variances)
+    expected = sc.Variable(dims=[Dim.X, Dim.Y], values=values)
+    assert var.variances is not None
+    var.variances = None
+    assert var.variances is None
+    assert var == expected
+
+
 def test_set_variance_convert_dtype():
     values = np.random.rand(2, 3)
     variances = np.arange(6).reshape(2, 3)
