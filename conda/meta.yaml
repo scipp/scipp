@@ -11,17 +11,14 @@ requirements:
     - cmake
     - gxx_linux-64 7.3.* [linux64]
     - git
-    - ninja
     - python {{ python }}
-    - tbb
-    - tbb-devel
+    - ninja
   run:
     - numpy {{ numpy }}
     - python {{ python }}
     - appdirs
     - python-configuration
     - pyyaml
-    - tbb
 
 test:
   import:
