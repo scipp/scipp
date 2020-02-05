@@ -470,7 +470,7 @@ public:
   const auto &dataHandle() && = delete;
   const auto &dataHandle() & { return m_object.mutableVariant(); }
 
-  void setVariances(Variable variances);
+  void setVariances(Variable v);
 
 private:
   template <class... Ts> struct ConstructVariable {
@@ -862,7 +862,7 @@ public:
   VariableProxy operator&=(const VariableConstProxy &other) const;
   VariableProxy operator^=(const VariableConstProxy &other) const;
 
-  void setVariances(Variable variances) const;
+  void setVariances(Variable v) const;
 
   void setUnit(const units::Unit &unit) const;
   void expectCanSetUnit(const units::Unit &unit) const;
