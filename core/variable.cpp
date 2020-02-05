@@ -222,7 +222,8 @@ void Variable::rename(const Dim from, const Dim to) {
 }
 
 void Variable::setVariances(Variable variances) {
-  expect::equals(unit(), variances.unit());
+  if (variances)
+    expect::equals(unit(), variances.unit());
   data().setVariances(std::move(variances));
 }
 

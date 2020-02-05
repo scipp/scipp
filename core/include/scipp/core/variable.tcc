@@ -266,8 +266,8 @@ public:
   void setVariances(Variable &&variances) override {
     if (!canHaveVariances<value_type>())
       throw except::VariancesError("This data type cannot have variances.");
-    if(!variances)
-      m_variances.reset();
+    if (!variances)
+      return m_variances.reset();
     expect::equals(this->dims(), variances.dims());
     m_variances.emplace(
         std::move(requireT<DataModel>(variances.data()).m_values));
