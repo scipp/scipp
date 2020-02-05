@@ -21,20 +21,19 @@ namespace py = pybind11;
 using namespace scipp;
 using namespace scipp::core;
 
-template <class Var> struct VarianceSetter {
-  template <class T> struct SetVariances {
-    static void apply(Var &var) {
-      var.setVariances(
-          scipp::core::detail::element_array<T>(var.data().size()));
-    }
-  };
+template <class T> void remove_variances(T &obj) {
+  if constexpr (std::is_same_v<T, DataArray> || std::is_same_v<T, DataProxy>)
+    obj.data().setVariances(Variable());
+  else
+    obj.setVariances(Variable());
+}
 
-  static void initVariances(Var &var) {
-    const auto dtypeTag = var.dtype();
-    return CallDType<double, float, int64_t, int32_t>::apply<SetVariances>(
-        dtypeTag, var);
-  }
-};
+template <class T> void init_variances(T &obj) {
+  if constexpr (std::is_same_v<T, DataArray> || std::is_same_v<T, DataProxy>)
+    obj.data().setVariances(Variable(obj.data()));
+  else
+    obj.setVariances(Variable(obj));
+}
 
 /// Add element size as factor to strides.
 template <class T>
@@ -284,8 +283,10 @@ public:
 
   template <class Var>
   static void set_variances(Var &view, const py::object &obj) {
+    if (obj.is_none())
+      return remove_variances(view);
     if (!view.hasVariances())
-      VarianceSetter<Var>::initVariances(view);
+      init_variances(view);
     set(view.dims(), get<get_variances>(view), obj);
   }
 
@@ -346,8 +347,10 @@ public:
   template <class Var>
   static void set_variance(Var &view, const py::object &o) {
     expect::equals(Dimensions(), view.dims());
+    if (o.is_none())
+      return remove_variances(view);
     if (!view.hasVariances())
-      VarianceSetter<Var>::initVariances(view);
+      init_variances(view);
 
     std::visit(
         [&o](const auto &data) {
