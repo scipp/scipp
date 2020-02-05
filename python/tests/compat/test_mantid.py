@@ -391,6 +391,28 @@ def test_to_workspace_2d(param_dim):
         np.testing.assert_array_equal(ws.readE(i), y[Dim.Spectrum,
                                                      i].variances)
 
+    def test_set_run(self):
+        import mantid.simpleapi as mantid
+        target = mantid.CloneWorkspace(self.base_event_ws)
+        d = mantidcompat.convert_EventWorkspace_to_data_array(target, False)
+        d.attrs["run"].value.addProperty("test_property", 1, True)
+        # before
+        self.assertFalse(target.run().hasProperty("test_property"))
+        target.setRun(d.attrs["run"].value)
+        # after
+        self.assertTrue(target.run().hasProperty("test_property"))
+
+    def test_set_sample(self):
+        import mantid.simpleapi as mantid
+        target = mantid.CloneWorkspace(self.base_event_ws)
+        d = mantidcompat.convert_EventWorkspace_to_data_array(target, False)
+        d.attrs["sample"].value.setThickness(3)
+        # before
+        self.assertNotEqual(3, target.sample().getThickness())
+        target.setSample(d.attrs["sample"].value)
+        # after
+        self.assertEqual(3, target.sample().getThickness())
+
 
 if __name__ == "__main__":
     unittest.main()
