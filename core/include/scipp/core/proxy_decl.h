@@ -5,6 +5,8 @@
 #ifndef SCIPP_CORE_PROXY_DECL_H
 #define SCIPP_CORE_PROXY_DECL_H
 
+#include <boost/iterator/transform_iterator.hpp>
+
 #include "scipp/core/except.h"
 #include "scipp/core/slice.h"
 #include "scipp/core/variable.h"
