@@ -5,6 +5,7 @@
 #ifndef SCIPP_CORE_PARALLEL_H
 #define SCIPP_CORE_PARALLEL_H
 
+#include <algorithm>
 #include <tbb/parallel_for.h>
 
 #include "scipp/common/index.h"
