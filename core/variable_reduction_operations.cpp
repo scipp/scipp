@@ -35,6 +35,10 @@ Variable counts(const VariableConstProxy &var) {
 }
 
 /// Reserve memory in all sparse containers in `sparse`, based on `capacity`.
+///
+/// To avoid pessimizing reserves, this does nothing if the new capacity is less
+/// than the typical logarithmic growth. This yields a 5x speedup in some cases,
+/// without apparent negative effect on the other cases.
 void reserve(const VariableProxy &sparse, const VariableConstProxy &capacity) {
   transform_in_place<
       pair_custom_t<std::pair<sparse_container<double>, scipp::index>>,
@@ -43,7 +47,8 @@ void reserve(const VariableProxy &sparse, const VariableConstProxy &capacity) {
       pair_custom_t<std::pair<sparse_container<int32_t>, scipp::index>>>(
       sparse, capacity,
       overloaded{[](auto &&sparse_, const scipp::index capacity_) {
-                   return sparse_.reserve(capacity_);
+                   if (capacity_ > 2 * scipp::size(sparse_))
+                     return sparse_.reserve(capacity_);
                  },
                  transform_flags::expect_no_variance_arg<1>,
                  [](const units::Unit &, const units::Unit &) {}});
