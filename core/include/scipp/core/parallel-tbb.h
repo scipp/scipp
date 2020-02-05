@@ -22,7 +22,8 @@ inline auto blocked_range(const scipp::index begin, const scipp::index end,
   // or something large like `sparse_container<double>`.
   return tbb::blocked_range<scipp::index>(
       begin, end,
-      grainsize == -1 ? std::max(1l, (end - begin) / 24) : grainsize);
+      grainsize == -1 ? std::max(scipp::index(1), (end - begin) / 24)
+                      : grainsize);
 }
 
 template <class... Args> void parallel_for(Args &&... args) {
