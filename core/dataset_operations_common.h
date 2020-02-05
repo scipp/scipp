@@ -135,6 +135,24 @@ Dataset apply_to_items(const DatasetConstProxy &d, Func func, const Dim dim,
   return result;
 }
 
+// Helpers for reductions for DataArray and Dataset, which include masks.
+[[nodiscard]] Variable mean(const VariableConstProxy &var, const Dim dim,
+                            const MasksConstProxy &masks);
+VariableProxy mean(const VariableConstProxy &var, const Dim dim,
+                   const MasksConstProxy &masks, const VariableProxy &out);
+[[nodiscard]] Variable flatten(const VariableConstProxy &var, const Dim dim,
+                               const MasksConstProxy &masks);
+[[nodiscard]] Variable sum(const VariableConstProxy &var, const Dim dim,
+                           const MasksConstProxy &masks);
+VariableProxy sum(const VariableConstProxy &var, const Dim dim,
+                  const MasksConstProxy &masks, const VariableProxy &out);
+
+SCIPP_CORE_EXPORT Variable masks_merge_if_contains(const MasksConstProxy &masks,
+                                                   const Dim dim);
+
+SCIPP_CORE_EXPORT Variable
+masks_merge_if_contained(const MasksConstProxy &masks, const Dimensions &dims);
+
 } // namespace scipp::core
 
 #endif // SCIPP_CORE_DATASET_OPERATIONS_COMMON_H

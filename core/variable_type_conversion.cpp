@@ -4,7 +4,6 @@
 /// @author Igor Gudich
 #include <cmath>
 
-#include "scipp/core/dataset.h"
 #include "scipp/core/except.h"
 #include "scipp/core/tag_util.h"
 #include "scipp/core/transform.h"
