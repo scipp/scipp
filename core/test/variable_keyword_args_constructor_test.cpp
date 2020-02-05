@@ -5,6 +5,7 @@
 
 #include "test_macros.h"
 
+#include "scipp/core/except.h"
 #include "scipp/core/variable.h"
 
 using namespace scipp;

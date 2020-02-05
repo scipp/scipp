@@ -2,6 +2,7 @@
 // Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
+#include "scipp/core/except.h"
 #include "scipp/core/variable.h"
 
 using namespace scipp;
