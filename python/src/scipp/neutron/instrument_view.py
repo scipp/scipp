@@ -91,7 +91,7 @@ class InstrumentView:
                  vmin=None,
                  vmax=None,
                  aspect=None,
-                 size=1,
+                 size=None,
                  projection=None,
                  nan_color=None,
                  # filename=None,
@@ -103,7 +103,6 @@ class InstrumentView:
         self.scatter2d = None
         self.scatter3d = None
         self.outline = None
-        self.size = size
         self.aspect = aspect
         self.do_update = None
         self.figurewidget = widgets.Output()
@@ -114,6 +113,12 @@ class InstrumentView:
         self.current_projection = None
         self.dim = dim
         self.cbar_image = widgets.Image()
+
+        if len(np.shape(size)) == 0:
+            self.size = [size, size]
+        else:
+            self.size = size
+
 
         self.data_arrays = {}
         tp = type(scipp_obj)
@@ -235,13 +240,27 @@ class InstrumentView:
                 np.amax(self.det_pos[:, i])
             ]
 
+        # Create texture for scatter points to represent detector shapes
+        det_aspect_ratio = max(self.size) / min(self.size)
+        nx = int(det_aspect_ratio) + 1
+        det_aspect_ratio = int(round(nx * 0.5 / det_aspect_ratio))
+        print(nx, det_aspect_ratio)
+        texture_array = np.zeros([nx, nx, 4], dtype=np.float32)
+        nc = (nx - 1) // 2
+        if np.argmin(self.size) == 0:
+            texture_array[:, nc-det_aspect_ratio:nc+det_aspect_ratio , :] = 1.0
+        else:
+            texture_array[nc-det_aspect_ratio:nc+det_aspect_ratio, :, :] = 1.0
+        texture = p3.DataTexture(data=texture_array, format="RGBAFormat", type="FloatType")
+
         self.camera = p3.PerspectiveCamera(position=[0, 0, 10], aspect=config.plot.width/config.plot.height)
         self.key_light = p3.DirectionalLight(position=[0, 10, 10])
         self.ambient_light = p3.AmbientLight()
         self.pts = p3.BufferAttribute(array=self.det_pos)
         self.colors = p3.BufferAttribute(array=np.random.random([np.shape(self.det_pos)[0], 4]).astype(np.float32))
         self.geometry = p3.BufferGeometry(attributes={'position': self.pts, 'color': self.colors})
-        self.material = p3.PointsMaterial(vertexColors='VertexColors', size=0.15)
+        self.material = p3.PointsMaterial(vertexColors='VertexColors', size=max(self.size), map=texture,
+                          depthTest=False, transparent=True)
         self.pcl = p3.Points(
             geometry=self.geometry,
             material=self.material)
