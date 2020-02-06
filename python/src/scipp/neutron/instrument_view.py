@@ -19,6 +19,8 @@ from matplotlib import cm
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from matplotlib.figure import Figure
 import matplotlib as mpl
+from PIL import Image
+
 
 # try:
 #     import ipyvolume as ipv
@@ -107,11 +109,11 @@ class InstrumentView:
         self.figurewidget = widgets.Output()
         self.figure2d = False
         self.figure3d = False
-        self.image = None
         self.nan_color = nan_color
         self.log = log
         self.current_projection = None
         self.dim = dim
+        self.cbar_image = widgets.Image()
 
         self.data_arrays = {}
         tp = type(scipp_obj)
@@ -152,6 +154,8 @@ class InstrumentView:
             self.minmax["tof"][0] = min(self.minmax["tof"][0], var.values[0])
             self.minmax["tof"][1] = max(self.minmax["tof"][1], var.values[-1])
             self.minmax["tof"][2] = var.shape[0]
+
+        
 
         # Rebin all DataArrays to common Tof axis
         self.rebin_data(np.linspace(*self.minmax["tof"]))
@@ -267,33 +271,18 @@ class InstrumentView:
         # from matplotlib.figure import Figure
         # import matplotlib as mpl
 
-        height_inches = config.plot.height / config.plot.dpi
-        fig = Figure(figsize=(height_inches * 0.2, height_inches), dpi=config.plot.dpi)
-        canvas = FigureCanvas(fig)
-        ax = fig.add_axes([0.05, 0.02, 0.25, 0.96])
-
-        # cmap = mpl.cm.cool
-        # norm = mpl.colors.Normalize(vmin=5, vmax=10)
-        # print(self.params[self.key])
-        cb1 = mpl.colorbar.ColorbarBase(ax, cmap=self.cmap[self.key],
-                                        norm=self.params[self.key]["norm"])
-        cb1.set_label('Some Units')
-        canvas.draw()       # draw the canvas, cache the renderer
-
-        image = np.fromstring(canvas.tostring_rgb(), dtype='uint8')
-        from PIL import Image
-        shp = list(fig.canvas.get_width_height())[::-1] + [3]
-        im = Image.fromarray(image.reshape(shp))
+        
 
 
-        self.cbar_output = widgets.Image(value=im._repr_png_())
+        # self.cbar_output = widgets.Image(value=self.cbar_image._repr_png_())
 
         self.renderer = p3.Renderer(camera=self.camera, scene=self.scene, controls=[self.controller],
                             width=config.plot.width, height=config.plot.height)
-        self.box = widgets.VBox([widgets.HBox([self.renderer, self.cbar_output]), self.vbox])
+        self.box = widgets.VBox([widgets.HBox([self.renderer, self.cbar_image]), self.vbox])
         # self.box = widgets.VBox([widgets.HBox([self.renderer, texture]), self.vbox])
         # self.box = self.vbox
         self.box.layout.align_items = "center"
+        self.update_colorbar()
         self.change_projection(self.buttons[projection])
 
         # Create members object
@@ -344,6 +333,19 @@ class InstrumentView:
             self.scalar_map[key] = cm.ScalarMappable(
                 cmap=self.cmap[key], norm=self.params[key]["norm"])
         return
+
+    def update_colorbar(self):
+        height_inches = config.plot.height / config.plot.dpi
+        fig = Figure(figsize=(height_inches * 0.2, height_inches), dpi=config.plot.dpi)
+        canvas = FigureCanvas(fig)
+        ax = fig.add_axes([0.05, 0.02, 0.25, 0.96])
+        cb1 = mpl.colorbar.ColorbarBase(ax, cmap=self.cmap[self.key],
+                                        norm=self.params[self.key]["norm"])
+        cb1.set_label(name_with_unit(var=self.hist_data_array[self.key], name=""))
+        canvas.draw()
+        image = np.fromstring(canvas.tostring_rgb(), dtype='uint8')
+        shp = list(fig.canvas.get_width_height())[::-1] + [3]
+        self.cbar_image.value = Image.fromarray(image.reshape(shp))._repr_png_()
 
     def update_colors(self, change):
         arr = self.hist_data_array[self.key][self.dim, change["new"]].values
@@ -441,7 +443,9 @@ class InstrumentView:
         else:
             self.slider.value = new_pos
             self.slider.max = nbins
+        self.update_colorbar()
 
     def change_data_array(self, change):
         self.key = change["new"]
+        self.update_colorbar()
         self.update_colors({"new": self.slider.value})
