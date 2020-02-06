@@ -13,27 +13,9 @@
 using namespace scipp;
 using namespace scipp::core;
 
-std::vector<bool> make_bools(const scipp::index size, std::initializer_list<bool> pattern);
+std::vector<bool> make_bools(const scipp::index size,
+                             std::initializer_list<bool> pattern);
 std::vector<bool> make_bools(const size_t size, bool pattern);
-#undef FALSE
-#undef TRUE
-enum BoolsGeneratorType { ALTERNATING, FALSE, TRUE, EVERY_THIRD };
-
-template <BoolsGeneratorType type = BoolsGeneratorType::ALTERNATING>
-std::vector<bool> makeBools(const scipp::index size) {
-  std::vector<bool> data(size);
-  for (scipp::index i = 0; i < size; ++i)
-    if constexpr (type == BoolsGeneratorType::ALTERNATING) {
-      data[i] = i % 2;
-    } else if constexpr (type == BoolsGeneratorType::EVERY_THIRD) {
-      data[i] = i % 3 == 0;
-    } else if constexpr (type == BoolsGeneratorType::FALSE) {
-      data[i] = false;
-    } else {
-      data[i] = true;
-    }
-  return data;
-}
 
 Variable makeRandom(const Dimensions &dims);
 
