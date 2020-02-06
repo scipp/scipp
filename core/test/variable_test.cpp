@@ -1035,13 +1035,23 @@ TEST(VariableTest, values_variances) {
 }
 
 template <typename Var> void test_set_variances(Var &var) {
-  var.template setVariances<double>({5.0, 6.0, 7.0});
-  ASSERT_TRUE(equals(var.template variances<double>(), {5.0, 6.0, 7.0}));
-  var.template setVariances<double>({1.0, 2.0, 3.0});
+  const auto v = var * 2.0;
+  var.setVariances(Variable(var));
   ASSERT_TRUE(equals(var.template variances<double>(), {1.0, 2.0, 3.0}));
-  EXPECT_THROW(var.template setVariances<double>({1.0, 2.0, 3.0, 4.0}),
-               except::SizeError);
-  EXPECT_NO_THROW(var.template setVariances<float>({1.0, 2.0, 3.0}));
+  // Fail because `var` has variances (setVariances uses only the values)
+  EXPECT_THROW(var.setVariances(var * 2.0), except::VariancesError);
+  var.setVariances(v);
+  ASSERT_TRUE(equals(var.template variances<double>(), {2.0, 4.0, 6.0}));
+
+  Variable bad_dims(v);
+  bad_dims.rename(Dim::X, Dim::Y);
+  EXPECT_THROW(var.setVariances(bad_dims), except::DimensionError);
+
+  Variable bad_unit(v);
+  bad_unit.setUnit(units::s);
+  EXPECT_THROW(var.setVariances(bad_unit), except::UnitError);
+
+  EXPECT_THROW(var.setVariances(astype(v, dtype<float>)), except::TypeError);
 }
 
 TEST(VariableTest, set_variances) {
@@ -1050,11 +1060,37 @@ TEST(VariableTest, set_variances) {
   test_set_variances(var);
 }
 
+TEST(VariableTest, set_variances_moves) {
+  Variable var = makeVariable<double>(Dims{Dim::X}, Shape{3});
+  Variable variances(var);
+  const auto ptr = variances.values<double>().data();
+  var.setVariances(std::move(variances));
+  EXPECT_EQ(var.variances<double>().data(), ptr);
+}
+
+TEST(VariableTest, set_variances_remove) {
+  Variable var =
+      makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{}, Variances{});
+  EXPECT_TRUE(var.hasVariances());
+  EXPECT_NO_THROW(var.setVariances(Variable()));
+  EXPECT_FALSE(var.hasVariances());
+}
+
 TEST(VariableProxyTest, set_variances) {
   Variable var = makeVariable<double>(
       Dims{Dim::X}, Shape{3}, units::Unit(units::m), Values{1.0, 2.0, 3.0});
   auto proxy = VariableProxy(var);
   test_set_variances(proxy);
+  EXPECT_THROW(
+      var.slice({Dim::X, 0}).setVariances(Variable(var.slice({Dim::X, 0}))),
+      except::VariancesError);
+}
+
+TEST(VariableProxyTest, set_variances_slice_fail) {
+  Variable var = makeVariable<double>(Dims{Dim::X}, Shape{3});
+  EXPECT_THROW(
+      var.slice({Dim::X, 0}).setVariances(Variable(var.slice({Dim::X, 0}))),
+      except::VariancesError);
 }
 
 TEST(VariableProxyTest, create_with_variance) {

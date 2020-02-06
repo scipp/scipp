@@ -55,10 +55,10 @@ TEST(SparseDataOperationsConsistencyTest, multiply) {
   ab = histogram(sparse * hist, edges);
   ba = histogram(sparse, edges) * hist;
 
-  // Case 2: Multiple events per bin => uncertainties differ, set to 0 before
+  // Case 2: Multiple events per bin => uncertainties differ, remove before
   // comparison.
-  ab.setVariances<double>({0, 0, 0, 0});
-  ba.setVariances<double>({0, 0, 0, 0});
+  ab.data().setVariances(Variable());
+  ba.data().setVariances(Variable());
   EXPECT_EQ(ab, ba);
 }
 
@@ -94,11 +94,11 @@ TEST(SparseDataOperationsConsistencyTest, flatten_multiply_sum) {
   // ... except that summing last also leads to smaller variances
   EXPECT_NE(mhf, smh);
 
-  // Cross-group: Uncertainties differ due to multiple events per bin, set to 0.
-  hfm.setVariances<double>({0, 0});
-  mhf.setVariances<double>({0, 0});
-  msh.setVariances<double>({0, 0});
-  smh.setVariances<double>({0, 0});
+  // Cross-group: Uncertainties differ due to multiple events per bin, remove.
+  hfm.data().setVariances(Variable());
+  mhf.data().setVariances(Variable());
+  msh.data().setVariances(Variable());
+  smh.data().setVariances(Variable());
   EXPECT_EQ(hfm, mhf);
   EXPECT_EQ(hfm, msh);
   EXPECT_EQ(hfm, smh);

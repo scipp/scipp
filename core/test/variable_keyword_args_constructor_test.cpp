@@ -79,7 +79,7 @@ TEST(VariableUniversalConstructorTest, dimensions_unit_basic) {
   EXPECT_EQ(oneMore, variable);
 }
 
-TEST(VariableUniversalConstructorTest, type_construcors_mix) {
+TEST(VariableUniversalConstructorTest, type_constructors_mix) {
   auto flt = std::vector{1.5f, 3.6f};
   auto v1 = Variable(dtype<float>, Dims{Dim::X, Dim::Y}, Shape{2, 1},
                      Values(flt.begin(), flt.end()), Variances({2.0, 3.0}));
@@ -87,7 +87,8 @@ TEST(VariableUniversalConstructorTest, type_construcors_mix) {
                      Values({1.5, 3.6}), Variances({2, 3}));
   auto v3 = Variable(dtype<float>, units::Unit(), Dims{Dim::X, Dim::Y},
                      Shape{2, 1}, Values({1.5f, 3.6f}));
-  v3.setVariances<float>({2, 3});
+  v3.setVariances(
+      makeVariable<float>(Dims{Dim::X, Dim::Y}, Shape{2, 1}, Values{2, 3}));
   EXPECT_EQ(v1, v2);
   EXPECT_EQ(v1, v3);
 
