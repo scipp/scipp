@@ -6,13 +6,16 @@
 
 std::vector<bool> make_bools(const scipp::index size,
                              std::initializer_list<bool> pattern) {
-  if (size % pattern.size() != 0)
-    throw std::runtime_error("Pattern cannot repeat exactly");
   std::vector<bool> result;
-  const auto iterations = size / pattern.size();
   result.reserve(size);
+  if (size < 1)
+    return result;
+  const auto iterations = (size / pattern.size());
   for (size_t i = 0; i < iterations; ++i) {
     result.insert(result.end(), pattern.begin(), pattern.end());
+  }
+  for (size_t i = 0; i < size % pattern.size(); ++i) {
+    result.push_back(pattern.begin() + i);
   }
   return result;
 }
