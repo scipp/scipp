@@ -4,13 +4,14 @@
 
 #include "dataset_test_common.h"
 
-std::vector<bool> make_bools(const scipp::index size, std::initializer_list<bool> pattern){
-  if(size % pattern.size() != 0)
+std::vector<bool> make_bools(const scipp::index size,
+                             std::initializer_list<bool> pattern) {
+  if (size % pattern.size() != 0)
     throw std::runtime_error("Pattern cannot repeat exactly");
   std::vector<bool> result;
   const auto iterations = size / pattern.size();
   result.reserve(size);
-  for (size_t i = 0; i < iterations; ++i){
+  for (size_t i = 0; i < iterations; ++i) {
     result.insert(result.end(), pattern.begin(), pattern.end());
   }
   return result;
@@ -50,18 +51,14 @@ void DatasetFactory3D::init() {
                                                   Values(rand(lz))));
 
   base.setMask("masks_x",
-               makeVariable<bool>(
-                   Dimensions{m_dim, lx},
-                   Values(makeBools<BoolsGeneratorType::ALTERNATING>(lx))));
-  base.setMask(
-      "masks_xy",
-      makeVariable<bool>(
-          Dimensions{{m_dim, lx}, {Dim::Y, ly}},
-          Values(makeBools<BoolsGeneratorType::ALTERNATING>(lx * ly))));
+               makeVariable<bool>(Dimensions{m_dim, lx},
+                                  Values(make_bools(lx, {false, true}))));
+  base.setMask("masks_xy",
+               makeVariable<bool>(Dimensions{{m_dim, lx}, {Dim::Y, ly}},
+                                  Values(make_bools(lx * ly, {false, true}))));
   base.setMask("masks_z",
-               makeVariable<bool>(
-                   Dimensions{Dim::Z, lz},
-                   Values(makeBools<BoolsGeneratorType::ALTERNATING>(lz))));
+               makeVariable<bool>(Dimensions{Dim::Z, lz},
+                                  Values(make_bools(lz, {false, true}))));
 
   base.setAttr("attr_scalar", makeVariable<double>(Values{rand(1).front()}));
   base.setAttr("attr_x",
@@ -165,8 +162,7 @@ Dataset make_1d_masked() {
   ds.setData("data_x",
              makeVariable<double>(Dimensions{Dim::X, 10}, Values(random(10))));
   ds.setMask("masks_x",
-             makeVariable<bool>(
-                 Dimensions{Dim::X, 10},
-                 Values(makeBools<BoolsGeneratorType::ALTERNATING>(10))));
+             makeVariable<bool>(Dimensions{Dim::X, 10},
+                                Values(make_bools(10, {false, true}))));
   return ds;
 }
