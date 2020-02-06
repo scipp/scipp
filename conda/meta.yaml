@@ -42,7 +42,6 @@ build:
     - CC
     - CXX
     - OSX_VERSION
-    - MINICONDA
 
 about:
   home: https://scipp.readthedocs.io/en/latest/

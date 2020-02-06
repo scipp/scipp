@@ -1,0 +1,103 @@
+trigger:
+  branches:
+    exclude:
+      - "*"
+
+pr:
+  autoCancel: true
+  branches:
+    include:
+      - master
+
+stages:
+  - stage: 'code_quality'
+    displayName: 'Code Quality Checks'
+
+    jobs:
+      - job: 'cpp_checks'
+        displayName: 'C++ Checks'
+        pool:
+          vmImage: 'ubuntu-18.04'
+        steps:
+          - script: |
+              sudo apt-get remove --yes clang libllvm6.0
+              sudo add-apt-repository --yes 'deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic main'
+              sudo apt-get update
+              sudo apt-get install --yes clang-format-6.0
+            displayName: 'Install tooling'
+          - script: ./.travis/check_clang_format.sh
+            displayName: 'Run clang-format'
+
+      - job: 'python_checks'
+        displayName: 'Python Checks'
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - task: UsePythonVersion@0
+            inputs:
+              versionSpec: '3.x'
+              addToPath: true
+              architecture: 'x64'
+          - script: pip install flake8 yapf==0.29.0
+            displayName: 'Install tooling'
+          - script: ./.travis/check_flake8.sh
+            displayName: 'Run flake8'
+          - script: yapf --diff --recursive 'python'
+            displayName: 'Run yapf'
+
+  - stage: 'build_and_test'
+    displayName: 'Conda Package Build and Unit Tests'
+
+    jobs:
+      - job: 'linux'
+        displayName: 'Linux'
+        pool:
+          vmImage: 'ubuntu-18.04'
+        steps:
+          - checkout: self
+            submodules: true
+          - bash: echo "##vso[task.prependpath]$CONDA/bin"
+            displayName: Add Conda to PATH
+          - script: |
+              conda --version
+              conda install --yes conda-build
+            displayName: 'Conda configuration'
+          - script: |
+              conda build -c conda-forge ./conda
+            displayName: 'Package build'
+
+      - job: 'mac'
+        displayName: 'Mac OS'
+        pool:
+          vmImage: 'macOS-10.14'
+        steps:
+          - checkout: self
+            submodules: true
+          - bash: echo "##vso[task.prependpath]$CONDA/bin"
+            displayName: Add Conda to PATH
+          - bash: sudo chown -R $USER $CONDA
+            displayName: Take ownership of Conda installation
+          - script: |
+              conda --version
+              conda install --yes conda-build
+            displayName: 'Conda configuration'
+          - script: |
+              OSX_VERSION=10.15 conda build -c conda-forge ./conda
+            displayName: 'Package build'
+
+      - job: 'windows'
+        displayName: 'Windows'
+        pool:
+          vmImage: 'windows-latest'
+        steps:
+          - checkout: self
+            submodules: true
+          - powershell: Write-Host "##vso[task.prependpath]$env:CONDA\Scripts"
+            displayName: Add Conda to PATH
+          - script: |
+              conda --version
+              conda install --yes conda-build
+            displayName: 'Conda configuration'
+          - script: |
+              conda build -c conda-forge ./conda
+            displayName: 'Package build'

@@ -7,9 +7,8 @@ CLANG_FORMAT_EXE=clang-format-6.0
 if [ -z "$(which $CLANG_FORMAT_EXE)" ]; then
   echo "Cannot find ${CLANG_FORMAT_EXE} executable"
   exit 1
-else
-  ${CLANG_FORMAT_EXE} --version
 fi
+${CLANG_FORMAT_EXE} --version
 
 # Perform formatting
 git diff origin/master --name-only -- '*.cpp' '*.h' | xargs ${CLANG_FORMAT_EXE} -i -style=file;

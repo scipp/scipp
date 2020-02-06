@@ -2,9 +2,8 @@ mkdir build
 
 cd build
 
-call %MINICONDA%\Scripts\clcache.exe -s
 echo building in %cd%
-cmake -G"Visual Studio 16 2019" -A x64 -DCMAKE_INSTALL_PREFIX=%CONDA_PREFIX% -DPYTHON_EXECUTABLE=%CONDA_PREFIX%\python -DWITH_CXX_TEST=OFF -DCLCACHE_PATH=%MINICONDA%\Scripts ..
+cmake -G"Visual Studio 16 2019" -A x64 -DCMAKE_INSTALL_PREFIX=%CONDA_PREFIX% -DPYTHON_EXECUTABLE=%CONDA_PREFIX%\python -DWITH_CXX_TEST=OFF ..
 
 :: Show cmake settings
 cmake -B . -S .. -LA
@@ -20,5 +19,3 @@ cmake --build . --target install --config Release || echo ERROR && exit /b
 
 ::  Build, install and move scipp Python library to site packages location
 move %CONDA_PREFIX%\scipp %CONDA_PREFIX%\lib\
-
-call %MINICONDA%\Scripts\clcache.exe -s
