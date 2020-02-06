@@ -13,20 +13,23 @@
 using namespace scipp;
 using namespace scipp::core;
 
-enum BoolsGeneratorType { ALTERNATING, FALSE, TRUE };
-
-template <BoolsGeneratorType type = BoolsGeneratorType::ALTERNATING>
-std::vector<bool> makeBools(const scipp::index size) {
-  std::vector<bool> data(size);
-  for (scipp::index i = 0; i < size; ++i)
-    if constexpr (type == BoolsGeneratorType::ALTERNATING) {
-      data[i] = i % 2;
-    } else if constexpr (type == BoolsGeneratorType::FALSE) {
-      data[i] = false;
-    } else {
-      data[i] = true;
-    }
-  return data;
+std::vector<bool> make_bools(const scipp::index size,
+                             std::initializer_list<bool> pattern) {
+  std::vector<bool> result;
+  result.reserve(size);
+  if (size < 1)
+    return result;
+  const auto iterations = (size / pattern.size());
+  for (size_t i = 0; i < iterations; ++i) {
+    result.insert(result.end(), pattern.begin(), pattern.end());
+  }
+  for (size_t i = 0; i < size % pattern.size(); ++i) {
+    result.push_back(pattern.begin() + i);
+  }
+  return result;
+}
+std::vector<bool> make_bools(const size_t size, bool pattern) {
+  return make_bools(size, std::initializer_list<bool>{pattern});
 }
 
 template <typename DType> Variable makeData(const Dimensions &dims) {
@@ -40,7 +43,7 @@ struct Generate {
     Dataset d;
     d.setData("a", makeData<double>({Dim::X, axisLength}));
     for (int i = 0; i < num_masks; ++i) {
-      auto bools = makeBools<BoolsGeneratorType::ALTERNATING>(axisLength);
+      auto bools = make_bools(axisLength, {false, true});
       d.setMask(std::string(1, ('a' + i)),
                 makeVariable<bool>(Dims{Dim::X}, Shape{axisLength},
                                    Values(bools.begin(), bools.end())));
@@ -54,8 +57,7 @@ struct Generate_2D_data {
     Dataset d;
     d.setData("a",
               makeData<double>({{Dim::X, axisLength}, {Dim::Y, axisLength}}));
-    auto bools =
-        makeBools<BoolsGeneratorType::ALTERNATING>(axisLength * axisLength);
+    auto bools = make_bools(axisLength * axisLength, {false, true});
     for (int i = 0; i < num_masks; ++i) {
       d.setMask(std::string(1, ('a' + i)),
                 makeVariable<bool>(Dims{Dim::X, Dim::Y},
@@ -72,8 +74,8 @@ struct Generate_3D_data {
     d.setData("a", makeData<double>({{Dim::X, axisLength},
                                      {Dim::Y, axisLength},
                                      {Dim::Z, axisLength}}));
-    auto bools = makeBools<BoolsGeneratorType::ALTERNATING>(
-        axisLength * axisLength * axisLength);
+    auto bools =
+        make_bools(axisLength * axisLength * axisLength, {false, true});
     for (int i = 0; i < num_masks; ++i) {
       d.setMask(std::string(1, ('a' + i)),
                 makeVariable<bool>(Dims{Dim::X, Dim::Y, Dim::Z},
