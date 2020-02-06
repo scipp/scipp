@@ -15,7 +15,7 @@ using namespace scipp::core;
 
 std::vector<bool> make_bools(const scipp::index size,
                              std::initializer_list<bool> pattern);
-std::vector<bool> make_bools(const size_t size, bool pattern);
+std::vector<bool> make_bools(const scipp::index size, bool pattern);
 
 Variable makeRandom(const Dimensions &dims);
 
