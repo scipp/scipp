@@ -4,6 +4,20 @@
 
 #include "dataset_test_common.h"
 
+std::vector<bool> make_bools(const scipp::index size, std::initializer_list<bool> pattern){
+  if(size % pattern.size() != 0)
+    throw std::runtime_error("Pattern cannot repeat exactly");
+  std::vector<bool> result;
+  const auto iterations = size / pattern.size();
+  result.reserve(size);
+  for (size_t i = 0; i < iterations; ++i){
+    result.insert(result.end(), pattern.begin(), pattern.end());
+  }
+  return result;
+}
+std::vector<bool> make_bools(const size_t size, bool pattern) {
+  return make_bools(size, std::initializer_list<bool>{pattern});
+}
 Variable makeRandom(const Dimensions &dims) {
   Random rand;
   return makeVariable<double>(Dimensions{dims}, Values(rand(dims.volume())));

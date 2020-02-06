@@ -13,6 +13,10 @@
 using namespace scipp;
 using namespace scipp::core;
 
+std::vector<bool> make_bools(const scipp::index size, std::initializer_list<bool> pattern);
+std::vector<bool> make_bools(const size_t size, bool pattern);
+#undef FALSE
+#undef TRUE
 enum BoolsGeneratorType { ALTERNATING, FALSE, TRUE, EVERY_THIRD };
 
 template <BoolsGeneratorType type = BoolsGeneratorType::ALTERNATING>
