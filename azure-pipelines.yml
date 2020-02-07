@@ -9,7 +9,7 @@ stages:
       - job: "cpp_checks"
         displayName: "C++ Checks"
         pool:
-          vmImage: 'ubuntu-bionic'
+          vmImage: 'ubuntu-18.04'
         steps:
           - task: UsePythonVersion@0
             inputs:
@@ -47,7 +47,7 @@ stages:
       - job: "conda_build_and_upload"
         displayName: "Conda Package Builds"
         pool:
-          vmImage: 'ubuntu-latest'
+          vmImage: 'ubuntu-18.04'
         steps:
           - script: |
               conda --version
