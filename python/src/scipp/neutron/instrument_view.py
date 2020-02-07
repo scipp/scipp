@@ -13,23 +13,24 @@ from .._scipp import core as sc, neutron as sn
 
 # Other imports
 import numpy as np
-import ipywidgets as widgets
-# import matplotlib.pyplot as plt
-from matplotlib import cm
-from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
-from matplotlib.figure import Figure
-import matplotlib as mpl
-from PIL import Image
+import importlib
+# import ipywidgets as widgets
+# # import matplotlib.pyplot as plt
+# from matplotlib import cm
+# from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+# from matplotlib.figure import Figure
+# import matplotlib as mpl
+# from PIL import Image
 
 
-# try:
-#     import ipyvolume as ipv
-# except ImportError:
-#     ipv = None
-import IPython.display as disp
-# from matplotlib.collections import PatchCollection
-# from matplotlib.patches import Rectangle
-import pythreejs as p3
+# # try:
+# #     import ipyvolume as ipv
+# # except ImportError:
+# #     ipv = None
+# import IPython.display as disp
+# # from matplotlib.collections import PatchCollection
+# # from matplotlib.patches import Rectangle
+# import pythreejs as p3
 
 
 def instrument_view(scipp_obj=None,
@@ -72,7 +73,6 @@ def instrument_view(scipp_obj=None,
                         size=size,
                         projection=projection,
                         nan_color=nan_color,
-                        # filename=filename,
                         continuous_update=continuous_update,
                         dim=dim)
 
@@ -94,31 +94,32 @@ class InstrumentView:
                  size=None,
                  projection=None,
                  nan_color=None,
-                 # filename=None,
                  continuous_update=None,
                  dim=None):
 
-        self.fig2d = None
-        self.fig3d = None
-        self.scatter2d = None
-        self.scatter3d = None
-        self.outline = None
+self.widgets = __import__("ipywidgets")
+
+        # Delayed imports to avoid hard dependencies
+        self.widgets = importlib.import_module("ipywidgets")
+        self.cm = importlib.import_module("matplotlib.cm")
+        self.FigureCanvas = importlib.import_module("matplotlib.backends.backend_agg.FigureCanvasAgg")
+        self.Figure = importlib.import_module("matplotlib.figure")
+        self.ColorbarBase = importlib.import_module("matplotlib.colorbar.ColorbarBase")
+        self.Image = importlib.import_module("PIL.Image")
+        self.p3 = importlib.import_module("pythreejs")
+
+        self.fig = None
         self.aspect = aspect
-        self.do_update = None
-        self.figurewidget = widgets.Output()
-        self.figure2d = False
-        self.figure3d = False
         self.nan_color = nan_color
         self.log = log
         self.current_projection = None
         self.dim = dim
-        self.cbar_image = widgets.Image()
+        self.cbar_image = self.widgets.Image()
 
         if len(np.shape(size)) == 0:
             self.size = [size, size]
         else:
             self.size = size
-
 
         self.data_arrays = {}
         tp = type(scipp_obj)
