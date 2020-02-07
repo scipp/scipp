@@ -38,12 +38,36 @@ stages:
             displayName: 'Run yapf'
 
   - stage: "build_and_test"
-    displayName: "Build and Unit Tests"
+    displayName: "Conda Package Build and Unit Tests"
+
     jobs:
-      - job: "conda_build_and_upload"
-        displayName: "Conda Package Builds"
+      - job: "linux"
+        displayName: "Linux"
         pool:
           vmImage: 'ubuntu-18.04'
+        steps:
+          - script: |
+              conda --version
+              conda install --yes conda-build
+            displayName: "Conda configuration"
+          - script: |
+              conda build -c conda-forge ./conda
+            displayName: "Package build"
+
+      - job: "mac"
+        displayName: "Mac OS"
+        pool:
+          vmImage: 'macOS-10.14'
+        steps:
+          - script: |
+              conda --version
+              conda install --yes conda-build
+            displayName: "Conda configuration"
+
+      - job: "windows"
+        displayName: "Windows"
+        pool:
+          vmImage: 'windows-latest'
         steps:
           - script: |
               conda --version
