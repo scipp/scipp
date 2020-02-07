@@ -14,23 +14,6 @@ from .._scipp import core as sc, neutron as sn
 # Other imports
 import numpy as np
 import importlib
-# import ipywidgets as widgets
-# # import matplotlib.pyplot as plt
-# from matplotlib import cm
-# from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
-# from matplotlib.figure import Figure
-# import matplotlib as mpl
-# from PIL import Image
-
-
-# # try:
-# #     import ipyvolume as ipv
-# # except ImportError:
-# #     ipv = None
-# import IPython.display as disp
-# # from matplotlib.collections import PatchCollection
-# # from matplotlib.patches import Rectangle
-# import pythreejs as p3
 
 
 def instrument_view(scipp_obj=None,
@@ -97,15 +80,10 @@ class InstrumentView:
                  continuous_update=None,
                  dim=None):
 
-self.widgets = __import__("ipywidgets")
-
         # Delayed imports to avoid hard dependencies
         self.widgets = importlib.import_module("ipywidgets")
-        self.cm = importlib.import_module("matplotlib.cm")
-        self.FigureCanvas = importlib.import_module("matplotlib.backends.backend_agg.FigureCanvasAgg")
-        self.Figure = importlib.import_module("matplotlib.figure")
-        self.ColorbarBase = importlib.import_module("matplotlib.colorbar.ColorbarBase")
-        self.Image = importlib.import_module("PIL.Image")
+        self.mpl = importlib.import_module("matplotlib")
+        self.pil = importlib.import_module("PIL")
         self.p3 = importlib.import_module("pythreejs")
 
         self.fig = None
@@ -161,16 +139,14 @@ self.widgets = __import__("ipywidgets")
             self.minmax["tof"][1] = max(self.minmax["tof"][1], var.values[-1])
             self.minmax["tof"][2] = var.shape[0]
 
-        
-
         # Rebin all DataArrays to common Tof axis
         self.rebin_data(np.linspace(*self.minmax["tof"]))
 
         # Create dropdown menu to select the DataArray
         keys = list(self.hist_data_array.keys())
-        self.dropdown = widgets.Dropdown(options=keys,
-                                         description="Select entry:",
-                                         layout={"width": "initial"})
+        self.dropdown = self.widgets.Dropdown(options=keys,
+                                              description="Select entry:",
+                                              layout={"width": "initial"})
         self.dropdown.observe(self.change_data_array, names="value")
 
         # Store current active data entry (DataArray)
@@ -178,7 +154,7 @@ self.widgets = __import__("ipywidgets")
 
         # Create a Tof slider and its label
         self.tof_dim_indx = self.hist_data_array[self.key].dims.index(self.dim)
-        self.slider = widgets.IntSlider(
+        self.slider = self.widgets.IntSlider(
             value=0,
             min=0,
             step=1,
@@ -187,18 +163,19 @@ self.widgets = __import__("ipywidgets")
             continuous_update=continuous_update,
             readout=False)
         self.slider.observe(self.update_colors, names="value")
-        self.label = widgets.Label()
+        self.label = self.widgets.Label()
 
         # Add text boxes to change number of bins/bin size
-        self.nbins = widgets.Text(value=str(
+        self.nbins = self.widgets.Text(value=str(
             self.hist_data_array[self.key].shape[self.tof_dim_indx]),
-                                  description="Number of bins:",
-                                  style={"description_width": "initial"})
+                                       description="Number of bins:",
+                                       style={"description_width": "initial"})
         self.nbins.on_submit(self.update_nbins)
 
         tof_values = self.hist_data_array[self.key].coords[self.dim].values
-        self.bin_size = widgets.Text(value=str(tof_values[1] - tof_values[0]),
-                                     description="Bin size:")
+        self.bin_size = self.widgets.Text(value=str(tof_values[1] -
+                                                    tof_values[0]),
+                                          description="Bin size:")
         self.bin_size.on_submit(self.update_bin_size)
 
         projections = [
@@ -209,7 +186,7 @@ self.widgets = __import__("ipywidgets")
         # Create toggle buttons to change projection
         self.buttons = {}
         for p in projections:
-            self.buttons[p] = widgets.Button(
+            self.buttons[p] = self.widgets.Button(
                 description=p,
                 disabled=False,
                 button_style=("info" if (p == projection) else ""))
@@ -219,21 +196,23 @@ self.widgets = __import__("ipywidgets")
             items.append(self.buttons["Cylindrical {}".format(x)])
             items.append(self.buttons["Spherical {}".format(x)])
             if x != "Z":
-                items.append(widgets.Label())
+                items.append(self.widgets.Label())
 
-        self.togglebuttons = widgets.GridBox(
+        self.togglebuttons = self.widgets.GridBox(
             items,
-            layout=widgets.Layout(grid_template_columns="repeat(3, 150px)"))
+            layout=self.widgets.Layout(
+                grid_template_columns="repeat(3, 150px)"))
 
         # Place widgets in boxes
-        self.vbox = widgets.VBox([
-            widgets.HBox([self.dropdown, self.slider, self.label]),
-            widgets.HBox([self.nbins, self.bin_size]), self.togglebuttons
+        self.vbox = self.widgets.VBox([
+            self.widgets.HBox([self.dropdown, self.slider, self.label]),
+            self.widgets.HBox([self.nbins, self.bin_size]), self.togglebuttons
         ])
 
         # Get detector positions
-        self.det_pos = np.array(
-            sn.position(self.hist_data_array[self.key]).values, dtype=np.float32)
+        self.det_pos = np.array(sn.position(
+            self.hist_data_array[self.key]).values,
+                                dtype=np.float32)
         # Find extents of the detectors
         for i, x in enumerate("xyz"):
             self.minmax[x] = [
@@ -242,66 +221,67 @@ self.widgets = __import__("ipywidgets")
             ]
 
         # Create texture for scatter points to represent detector shapes
-        det_aspect_ratio = max(self.size) / min(self.size)
-        nx = int(det_aspect_ratio) + 1
-        det_aspect_ratio = int(round(nx * 0.5 / det_aspect_ratio))
-        print(nx, det_aspect_ratio)
-        texture_array = np.zeros([nx, nx, 4], dtype=np.float32)
-        nc = (nx - 1) // 2
-        if np.argmin(self.size) == 0:
-            texture_array[:, nc-det_aspect_ratio:nc+det_aspect_ratio , :] = 1.0
+        nx = 32
+        det_aspect_ratio = int(round(nx * min(self.size) / max(self.size)))
+        if det_aspect_ratio % 2 == 0:
+            half_width = det_aspect_ratio // 2
+            istart = nx // 2 - half_width
+            iend = nx // 2 + half_width
         else:
-            texture_array[nc-det_aspect_ratio:nc+det_aspect_ratio, :, :] = 1.0
-        texture = p3.DataTexture(data=texture_array, format="RGBAFormat", type="FloatType")
+            half_width = (det_aspect_ratio - 1) // 2
+            istart = nx // 2 - 1 - half_width
+            iend = nx // 2 + half_width
+            nx -= 1
+        texture_array = np.zeros([nx, nx, 4], dtype=np.float32)
+        if np.argmin(self.size) == 0:
+            texture_array[:, istart:iend, :] = 1.0
+        else:
+            texture_array[istart:iend, :, :] = 1.0
+        texture = self.p3.DataTexture(data=texture_array,
+                                      format="RGBAFormat",
+                                      type="FloatType")
 
-        self.camera = p3.PerspectiveCamera(position=[0, 0, 10], aspect=config.plot.width/config.plot.height)
-        self.key_light = p3.DirectionalLight(position=[0, 10, 10])
-        self.ambient_light = p3.AmbientLight()
-        self.pts = p3.BufferAttribute(array=self.det_pos)
-        self.colors = p3.BufferAttribute(array=np.random.random([np.shape(self.det_pos)[0], 4]).astype(np.float32))
-        self.geometry = p3.BufferGeometry(attributes={'position': self.pts, 'color': self.colors})
-        self.material = p3.PointsMaterial(vertexColors='VertexColors', size=max(self.size), map=texture,
-                          depthTest=False, transparent=True)
-        self.pcl = p3.Points(
-            geometry=self.geometry,
-            material=self.material)
-        self.axes_helper = p3.AxesHelper(100)
-        # self.grid = p3.GridHelper(size=10, divisions=10, colorCenterLine="#444444", colorGrid="#888888")
+        # The point cloud and its properties
+        self.pts = self.p3.BufferAttribute(array=self.det_pos)
+        self.colors = self.p3.BufferAttribute(array=np.random.random(
+            [np.shape(self.det_pos)[0], 4]).astype(np.float32))
+        self.geometry = self.p3.BufferGeometry(attributes={
+            'position': self.pts,
+            'color': self.colors
+        })
+        self.material = self.p3.PointsMaterial(vertexColors='VertexColors',
+                                               size=max(self.size),
+                                               map=texture,
+                                               depthTest=False,
+                                               transparent=True)
+        self.pcl = self.p3.Points(geometry=self.geometry,
+                                  material=self.material)
+        # Add the red green blue axes helper
+        self.axes_helper = self.p3.AxesHelper(100)
 
-        # # data = np.random.random([10, 50, 4])
-        # # data[:, :, :4] *= 255.0
-        # arr = np.zeros([1, 128])
-        # arr[0, :] = np.linspace(self.params[self.key]["vmin"], self.params[self.key]["vmax"], 128, dtype=np.float32)
-        # data = self.scalar_map[self.key].to_rgba(arr).astype(np.float32)
-        # texture = p3.DataTexture(data=data, format="RGBAFormat", type="FloatType")
+        # Create the threejs scene with ambient light and camera
+        self.camera = self.p3.PerspectiveCamera(position=[0, 0, 10],
+                                                aspect=config.plot.width /
+                                                config.plot.height)
+        self.key_light = self.p3.DirectionalLight(position=[0, 10, 10])
+        self.ambient_light = self.p3.AmbientLight()
+        self.scene = self.p3.Scene(children=[
+            self.pcl, self.camera, self.key_light, self.ambient_light,
+            self.axes_helper
+        ])
+        self.controller = self.p3.OrbitControls(controlling=self.camera)
 
-        # self.sprite = p3.Sprite(material=p3.SpriteMaterial(map=texture))
-        # self.sprite.scale = (0.2, 1, 1)
-
-        self.scene = p3.Scene(children=[self.pcl, self.camera, self.key_light, self.ambient_light, self.axes_helper])
-        self.controller = p3.OrbitControls(controlling=self.camera)
-
-
-        # self.cbar_camera = p3.PerspectiveCamera(position=[0.5, 0, 1.5], aspect=1.0)
-        # self.cbar_scene = p3.Scene(children=[self.cbar_camera, self.key_light, self.ambient_light, self.sprite])
-        # self.cbar_renderer = p3.Renderer(camera=self.cbar_camera, scene=self.cbar_scene,
-        #                     width=config.plot.height * 0.3, height=config.plot.height)
-        
-        # from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
-        # from matplotlib.figure import Figure
-        # import matplotlib as mpl
-
-        
-
-
-        # self.cbar_output = widgets.Image(value=self.cbar_image._repr_png_())
-
-        self.renderer = p3.Renderer(camera=self.camera, scene=self.scene, controls=[self.controller],
-                            width=config.plot.width, height=config.plot.height)
-        self.box = widgets.VBox([widgets.HBox([self.renderer, self.cbar_image]), self.vbox])
-        # self.box = widgets.VBox([widgets.HBox([self.renderer, texture]), self.vbox])
-        # self.box = self.vbox
+        # Render the scene into a widget
+        self.renderer = self.p3.Renderer(camera=self.camera,
+                                         scene=self.scene,
+                                         controls=[self.controller],
+                                         width=config.plot.width,
+                                         height=config.plot.height)
+        self.box = self.widgets.VBox(
+            [self.widgets.HBox([self.renderer, self.cbar_image]), self.vbox])
         self.box.layout.align_items = "center"
+
+        # Update the plot elements
         self.update_colorbar()
         self.change_projection(self.buttons[projection])
 
@@ -316,11 +296,10 @@ self.widgets = __import__("ipywidgets")
                 },
                 "dropdown": self.dropdown
             },
-            # "fig2d": self.fig2d,
-            # "fig3d": self.fig3d,
-            # "scatter2d": self.scatter2d,
-            # "scatter3d": self.scatter3d,
-            # "outline": self.outline
+            "points": self.pcl,
+            "camera": self.camera,
+            "scene": self.scene,
+            "renderer": self.renderer
         }
 
         return
@@ -348,30 +327,35 @@ self.widgets = __import__("ipywidgets")
             # Parse input parameters for colorbar
             self.params[key] = parse_params(
                 globs=self.globs, array=self.hist_data_array[key].values)
-            self.cmap[key] = cm.get_cmap(self.params[key]["cmap"])
+            self.cmap[key] = self.mpl.cm.get_cmap(self.params[key]["cmap"])
             self.cmap[key].set_bad(color=self.nan_color)
-            self.scalar_map[key] = cm.ScalarMappable(
+            self.scalar_map[key] = self.mpl.cm.ScalarMappable(
                 cmap=self.cmap[key], norm=self.params[key]["norm"])
         return
 
     def update_colorbar(self):
         height_inches = config.plot.height / config.plot.dpi
-        fig = Figure(figsize=(height_inches * 0.2, height_inches), dpi=config.plot.dpi)
-        canvas = FigureCanvas(fig)
+        fig = self.mpl.figure.Figure(figsize=(height_inches * 0.2,
+                                              height_inches),
+                                     dpi=config.plot.dpi)
+        canvas = self.mpl.backends.backend_agg.FigureCanvasAgg(fig)
         ax = fig.add_axes([0.05, 0.02, 0.25, 0.96])
-        cb1 = mpl.colorbar.ColorbarBase(ax, cmap=self.cmap[self.key],
-                                        norm=self.params[self.key]["norm"])
-        cb1.set_label(name_with_unit(var=self.hist_data_array[self.key], name=""))
+        cb1 = self.mpl.colorbar.ColorbarBase(
+            ax, cmap=self.cmap[self.key], norm=self.params[self.key]["norm"])
+        cb1.set_label(
+            name_with_unit(var=self.hist_data_array[self.key], name=""))
         canvas.draw()
         image = np.fromstring(canvas.tostring_rgb(), dtype='uint8')
         shp = list(fig.canvas.get_width_height())[::-1] + [3]
-        self.cbar_image.value = Image.fromarray(image.reshape(shp))._repr_png_()
+        self.cbar_image.value = self.pil.Image.fromarray(
+            image.reshape(shp))._repr_png_()
 
     def update_colors(self, change):
         arr = self.hist_data_array[self.key][self.dim, change["new"]].values
         if self.log:
             arr = np.ma.masked_where(arr <= 0, arr)
-        self.geometry.attributes["color"].array = self.scalar_map[self.key].to_rgba(arr).astype(np.float32)
+        self.geometry.attributes["color"].array = self.scalar_map[
+            self.key].to_rgba(arr).astype(np.float32)
 
         self.label.value = name_with_unit(
             var=self.hist_data_array[self.key].coords[self.dim],
@@ -393,7 +377,6 @@ self.widgets = __import__("ipywidgets")
         permutations = {"X": [0, 2, 1], "Y": [1, 0, 2], "Z": [2, 1, 0]}
         axis = projection[-1]
 
-
         if projection == "3D":
             xyz = self.det_pos
         else:
@@ -407,9 +390,12 @@ self.widgets = __import__("ipywidgets")
                     self.det_pos[:, permutations[axis][0]] /
                     np.sqrt(self.det_pos[:, 0]**2 + self.det_pos[:, 1]**2 +
                             self.det_pos[:, 2]**2))
-        self.axes_helper.visible = projection=="3D"
+        self.axes_helper.visible = projection == "3D"
         self.camera.position = [0, 0, 5]
-        self.renderer.controls = [p3.OrbitControls(controlling=self.camera, enableRotate=projection=="3D")]
+        self.renderer.controls = [
+            self.p3.OrbitControls(controlling=self.camera,
+                                  enableRotate=projection == "3D")
+        ]
         self.geometry.attributes["position"].array = xyz
 
         self.update_colors({"new": self.slider.value})
