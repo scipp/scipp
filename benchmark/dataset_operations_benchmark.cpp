@@ -16,22 +16,13 @@ using namespace scipp::core;
 std::vector<bool> make_bools(const scipp::index size,
                              std::initializer_list<bool> pattern) {
 
-  using T = std::decay_t<decltype(pattern)>;
-  struct cycle_over {
-    T m_sequence;
-    typename T::iterator m_current;
-    cycle_over(T sequence) : m_sequence(sequence) {
-      m_current = m_sequence.begin();
-    };
-    typename T::value_type operator()() {
-      if (m_current == m_sequence.end())
-        m_current = m_sequence.begin();
-      return *(m_current++);
-    }
-  };
-
   std::vector<bool> result(size);
-  std::generate(result.begin(), result.end(), cycle_over(pattern));
+  auto it = pattern.begin();
+  for (auto itm : result) {
+    if (it == pattern.end())
+      it = pattern.begin();
+    itm = *(it++);
+  }
   return result;
 }
 std::vector<bool> make_bools(const scipp::index size, bool pattern) {
