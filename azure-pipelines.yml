@@ -1,43 +1,55 @@
 trigger:
-- master
+  - master
 
-jobs:
-  - job: "code_quality"
+stages:
+  - stage: "code_quality"
     displayName: "Code Quality Checks"
 
-    pool:
-      vmImage: 'ubuntu-latest'
+    jobs:
+      - job: "cpp_checks"
+        displayName: "C++ Checks"
+        pool:
+          vmImage: 'ubuntu-bionic'
+        steps:
+          - task: UsePythonVersion@0
+            inputs:
+              versionSpec: '3.x'
+              addToPath: true
+              architecture: 'x64'
+          - script: |
+              sudo add-apt-repository -y 'deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic main'
+              sudo apt-get install -y clang-format-6.0
+              pip install flake8 yapf==0.29.0
+            displayName: 'Install tooling'
+          - script: ./.travis/check_clang_format.sh
+            displayName: 'Run clang-format'
 
-    steps:
-      - task: UsePythonVersion@0
-        inputs:
-          versionSpec: '3.x'
-          addToPath: true
-          architecture: 'x64'
-      
-      - script: |
-          sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
-          sudo apt-get install -y clang-format-6.0
-          pip install flake8 yapf==0.29.0
-        displayName: 'Install tooling'
+      - job: "python_checks"
+        displayName: "Python CHecks"
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - task: UsePythonVersion@0
+            inputs:
+              versionSpec: '3.x'
+              addToPath: true
+              architecture: 'x64'
+          - script: pip install flake8 yapf==0.29.0
+            displayName: 'Install tooling"
+          - script: ./.travis/check_flake8.sh
+            displayName: 'Run flake8'
+          - script: yapf --diff --recursive 'python'
+            displayName: 'Run yapf'
 
-      - script: ./.travis/check_clang_format.sh
-        displayName: 'Run clang-format'
-
-      - script: ./.travis/check_flake8.sh
-        displayName: 'Run flake8'
-
-      - script: yapf --diff --recursive 'python'
-        displayName: 'Run yapf'
-
-  - job: "conda_build_and_upload"
-    displayName: "Conda Package Builds"
-
-    pool:
-      vmImage: 'ubuntu-latest'
-
-    steps:
-      - script: |
-          conda --version
-          conda install conda-build
-        displayName: "Conda configuration"
+  - stage: "build_and_test"
+    displayName: "Build and Unit Tests"
+    jobs:
+      - job: "conda_build_and_upload"
+        displayName: "Conda Package Builds"
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - script: |
+              conda --version
+              conda install conda-build
+            displayName: "Conda configuration"
