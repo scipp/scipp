@@ -48,6 +48,8 @@ stages:
         steps:
           - checkout: self
             submodules: true
+          - bash: echo "##vso[task.prependpath]$CONDA/bin"
+            displayName: Add Conda to PATH
           - script: |
               conda --version
               conda install --yes conda-build
@@ -63,10 +65,17 @@ stages:
         steps:
           - checkout: self
             submodules: true
+          - bash: echo "##vso[task.prependpath]$CONDA/bin"
+            displayName: Add conda to PATH
+          - bash: sudo chown -R $USER $CONDA
+            displayName: Take ownership of Conda installation
           - script: |
               conda --version
               conda install --yes conda-build
             displayName: "Conda configuration"
+          - script: |
+              conda build -c conda-forge ./conda
+            displayName: "Package build"
 
       - job: "windows"
         displayName: "Windows"
@@ -75,7 +84,12 @@ stages:
         steps:
           - checkout: self
             submodules: true
+          - powershell: Write-Host "##vso[task.prependpath]$env:CONDA\Scripts"
+            displayName: Add Conda to PATH
           - script: |
               conda --version
               conda install --yes conda-build
             displayName: "Conda configuration"
+          - script: |
+              conda build -c conda-forge ./conda
+            displayName: "Package build"
