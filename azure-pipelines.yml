@@ -25,7 +25,7 @@ stages:
             displayName: 'Run clang-format'
 
       - job: "python_checks"
-        displayName: "Python CHecks"
+        displayName: "Python Checks"
         pool:
           vmImage: 'ubuntu-latest'
         steps:
@@ -35,7 +35,7 @@ stages:
               addToPath: true
               architecture: 'x64'
           - script: pip install flake8 yapf==0.29.0
-            displayName: 'Install tooling"
+            displayName: 'Install tooling'
           - script: ./.travis/check_flake8.sh
             displayName: 'Run flake8'
           - script: yapf --diff --recursive 'python'
