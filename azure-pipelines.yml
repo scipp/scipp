@@ -46,6 +46,8 @@ stages:
         pool:
           vmImage: 'ubuntu-18.04'
         steps:
+          - checkout: self
+            submodules: true
           - script: |
               conda --version
               conda install --yes conda-build
@@ -59,6 +61,8 @@ stages:
         pool:
           vmImage: 'macOS-10.14'
         steps:
+          - checkout: self
+            submodules: true
           - script: |
               conda --version
               conda install --yes conda-build
@@ -69,6 +73,8 @@ stages:
         pool:
           vmImage: 'windows-latest'
         steps:
+          - checkout: self
+            submodules: true
           - script: |
               conda --version
               conda install --yes conda-build
