@@ -83,6 +83,10 @@ class InstrumentView:
         # Delayed imports to avoid hard dependencies
         self.widgets = importlib.import_module("ipywidgets")
         self.mpl = importlib.import_module("matplotlib")
+        self.mpl_cm = importlib.import_module("matplotlib.cm")
+        self.mpl_figure = importlib.import_module("matplotlib.figure")
+        self.mpl_backend_agg = importlib.import_module(
+            "matplotlib.backends.backend_agg")
         self.pil = importlib.import_module("PIL")
         self.p3 = importlib.import_module("pythreejs")
 
@@ -327,18 +331,18 @@ class InstrumentView:
             # Parse input parameters for colorbar
             self.params[key] = parse_params(
                 globs=self.globs, array=self.hist_data_array[key].values)
-            self.cmap[key] = self.mpl.cm.get_cmap(self.params[key]["cmap"])
+            self.cmap[key] = self.mpl_cm.get_cmap(self.params[key]["cmap"])
             self.cmap[key].set_bad(color=self.nan_color)
-            self.scalar_map[key] = self.mpl.cm.ScalarMappable(
+            self.scalar_map[key] = self.mpl_cm.ScalarMappable(
                 cmap=self.cmap[key], norm=self.params[key]["norm"])
         return
 
     def update_colorbar(self):
         height_inches = config.plot.height / config.plot.dpi
-        fig = self.mpl.figure.Figure(figsize=(height_inches * 0.2,
+        fig = self.mpl_figure.Figure(figsize=(height_inches * 0.2,
                                               height_inches),
                                      dpi=config.plot.dpi)
-        canvas = self.mpl.backends.backend_agg.FigureCanvasAgg(fig)
+        canvas = self.mpl_backend_agg.FigureCanvasAgg(fig)
         ax = fig.add_axes([0.05, 0.02, 0.25, 0.96])
         cb1 = self.mpl.colorbar.ColorbarBase(
             ax, cmap=self.cmap[self.key], norm=self.params[self.key]["norm"])
