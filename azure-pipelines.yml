@@ -17,7 +17,7 @@ stages:
               addToPath: true
               architecture: 'x64'
           - script: |
-              sudo apt-get install -y clang-format
+              sudo apt-get install -y clang-format-6.0
               pip install flake8 yapf==0.29.0
             displayName: 'Install tooling'
           - script: ./.travis/check_clang_format.sh
