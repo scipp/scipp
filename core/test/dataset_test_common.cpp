@@ -8,7 +8,7 @@ std::vector<bool> make_bools(const scipp::index size,
                              std::initializer_list<bool> pattern) {
   std::vector<bool> result(size);
   auto it = pattern.begin();
-  for (auto itm : result) {
+  for (auto &&itm : result) {
     if (it == pattern.end())
       it = pattern.begin();
     itm = *(it++);
