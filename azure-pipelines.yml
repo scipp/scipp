@@ -74,7 +74,7 @@ stages:
               conda install --yes conda-build
             displayName: "Conda configuration"
           - script: |
-              conda build -c conda-forge ./conda
+              OSX_VERSION=10.15 conda build -c conda-forge ./conda
             displayName: "Package build"
 
       - job: "windows"
