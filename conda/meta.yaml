@@ -41,8 +41,8 @@ build:
   script_env:
     - CC
     - CXX
+    - CONDA
     - OSX_VERSION
-    - MINICONDA
 
 about:
   home: https://scipp.readthedocs.io/en/latest/
