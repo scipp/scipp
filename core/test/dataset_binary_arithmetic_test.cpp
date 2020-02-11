@@ -58,8 +58,8 @@ std::tuple<Dataset, Dataset> generateBinaryOpTestCase() {
   const auto coordY = rand(ly);
   const auto labelT =
       makeVariable<double>(Dimensions{Dim::Y, ly}, Values(rand(ly)));
-  const auto masks =
-      makeVariable<bool>(Dimensions{Dim::Y, ly}, Values(makeBools(ly)));
+  const auto masks = makeVariable<bool>(Dimensions{Dim::Y, ly},
+                                        Values(make_bools(ly, {false, true})));
 
   Dataset a;
   {
@@ -405,9 +405,9 @@ TYPED_TEST(DatasetBinaryEqualsOpTest,
 TYPED_TEST(DatasetBinaryEqualsOpTest, masks_propagate) {
   auto a = datasetFactory.make();
   auto b = datasetFactory.make();
-  const auto expectedMasks = makeVariable<bool>(
-      Dimensions{Dim::X, datasetFactory.lx},
-      Values(makeBools<BoolsGeneratorType::TRUE>(datasetFactory.lx)));
+  const auto expectedMasks =
+      makeVariable<bool>(Dimensions{Dim::X, datasetFactory.lx},
+                         Values(make_bools(datasetFactory.lx, true)));
 
   b.setMask("masks_x", expectedMasks);
 
@@ -421,8 +421,8 @@ TYPED_TEST_SUITE(DatasetMaskSlicingBinaryOpTest, Binary);
 TYPED_TEST(DatasetMaskSlicingBinaryOpTest, binary_op_on_sliced_masks) {
   auto a = make_1d_masked();
 
-  const auto expectedMasks = makeVariable<bool>(
-      Dimensions{Dim::X, 3}, Values(makeBools<BoolsGeneratorType::TRUE>(3)));
+  const auto expectedMasks =
+      makeVariable<bool>(Dimensions{Dim::X, 3}, Values(make_bools(3, true)));
 
   // these are conveniently 0 1 0 and 1 0 1
   const auto slice1 = a.slice({Dim::X, 0, 3});
@@ -921,9 +921,9 @@ TYPED_TEST(DatasetBinaryOpTest, masks_propagate) {
   auto a = datasetFactory.make();
   auto b = datasetFactory.make();
 
-  const auto expectedMasks = makeVariable<bool>(
-      Dimensions{Dim::X, datasetFactory.lx},
-      Values(makeBools<BoolsGeneratorType::TRUE>(datasetFactory.lx)));
+  const auto expectedMasks =
+      makeVariable<bool>(Dimensions{Dim::X, datasetFactory.lx},
+                         Values(make_bools(datasetFactory.lx, true)));
 
   b.setMask("masks_x", expectedMasks);
 
