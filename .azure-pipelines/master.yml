@@ -1,6 +1,8 @@
 trigger:
   - master
 
+pr: none
+
 stages:
   - stage: "code_quality"
     displayName: "Code Quality Checks"
