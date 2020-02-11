@@ -41,7 +41,6 @@ build:
   script_env:
     - CC
     - CXX
-    - CONDA
     - OSX_VERSION
 
 about:
