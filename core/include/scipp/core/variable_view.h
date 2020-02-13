@@ -19,35 +19,35 @@ void expectCanBroadcastFromTo(const Dimensions &source,
 
 /// A view into multi-dimensional data, supporting slicing, index reordering,
 /// and broadcasting.
-template <class T> class SCIPP_CORE_EXPORT VariableView {
+template <class T> class SCIPP_CORE_EXPORT ElementArrayView {
 public:
   using element_type = T;
   using value_type = std::remove_cv_t<T>;
 
-  /// Construct a VariableView.
+  /// Construct a ElementArrayView.
   ///
   /// @param variable Pointer to data array.
   /// @param offset Start offset from beginning of data array.
-  /// @param targetDimensions Dimensions of the constructed VariableView.
+  /// @param targetDimensions Dimensions of the constructed ElementArrayView.
   /// @param dimensions Dimensions of the data array.
   ///
   /// The parameter `targetDimensions` can be used to remove, slice, broadcast,
   /// or transpose dimensions of the input data array.
-  VariableView(T *variable, const scipp::index offset,
+  ElementArrayView(T *variable, const scipp::index offset,
                const Dimensions &targetDimensions, const Dimensions &dimensions)
       : m_variable(variable), m_offset(offset),
         m_targetDimensions(targetDimensions), m_dimensions(dimensions) {
     expectCanBroadcastFromTo(m_dimensions, m_targetDimensions);
   }
 
-  /// Construct a VariableView from another VariableView, with different target
+  /// Construct a ElementArrayView from another ElementArrayView, with different target
   /// dimensions.
   ///
   /// A good way to think of this is of a non-contiguous underlying data array,
   /// e.g., since the other view may represent a slice. This also supports
   /// broadcasting the slice.
   template <class Other>
-  VariableView(const Other &other, const Dimensions &targetDimensions)
+  ElementArrayView(const Other &other, const Dimensions &targetDimensions)
       : m_variable(other.m_variable), m_offset(other.m_offset),
         m_targetDimensions(targetDimensions) {
     expectCanBroadcastFromTo(other.m_targetDimensions, m_targetDimensions);
@@ -59,14 +59,14 @@ public:
         m_dimensions.relabel(m_dimensions.index(label), Dim::Invalid);
   }
 
-  /// Construct a VariableView from another VariableView, with different target
+  /// Construct a ElementArrayView from another ElementArrayView, with different target
   /// dimensions and offset derived from `dim` and `begin`.
   ///
-  /// This is essentially performing a slice of a VariableView, creating a new
+  /// This is essentially performing a slice of a ElementArrayView, creating a new
   /// view which may at the same time also perform other manipulations such as
   /// broadcasting and transposing.
   template <class Other>
-  VariableView(const Other &other, const Dimensions &targetDimensions,
+  ElementArrayView(const Other &other, const Dimensions &targetDimensions,
                const Dim dim, const scipp::index begin)
       : m_variable(other.m_variable), m_offset(other.m_offset),
         m_targetDimensions(targetDimensions) {
@@ -81,14 +81,14 @@ public:
         m_dimensions.relabel(m_dimensions.index(label), Dim::Invalid);
   }
 
-  VariableView<std::remove_const_t<T>>
+  ElementArrayView<std::remove_const_t<T>>
   createMutable(std::remove_const_t<T> *variable) const {
-    return VariableView<std::remove_const_t<T>>(
+    return ElementArrayView<std::remove_const_t<T>>(
         variable, m_offset, m_targetDimensions, m_dimensions);
   }
 
-  friend class VariableView<std::remove_const_t<T>>;
-  friend class VariableView<const T>;
+  friend class ElementArrayView<std::remove_const_t<T>>;
+  friend class ElementArrayView<const T>;
 
   class iterator
       : public boost::iterator_facade<iterator, T,
@@ -144,20 +144,20 @@ public:
 
   scipp::index size() const { return m_targetDimensions.volume(); }
 
-  bool operator==(const VariableView<T> &other) const {
+  bool operator==(const ElementArrayView<T> &other) const {
     if (m_targetDimensions != other.m_targetDimensions)
       return false;
     return std::equal(begin(), end(), other.begin());
   }
 
   /// Return true if *this and other are two equivalent views of the same data.
-  bool isSame(const VariableView<T> &other) const {
+  bool isSame(const ElementArrayView<T> &other) const {
     return (m_variable == other.m_variable) && (m_offset == other.m_offset) &&
            (m_dimensions == other.m_dimensions) &&
            (m_targetDimensions == other.m_targetDimensions);
   }
 
-  template <class T2> bool overlaps(const VariableView<T2> &other) const {
+  template <class T2> bool overlaps(const ElementArrayView<T2> &other) const {
     // TODO We could be less restrictive here and use a more sophisticated check
     // based on offsets and dimensions, if there is a performance issue due to
     // this current stricter requirement.
@@ -177,16 +177,16 @@ private:
 };
 
 template <class T>
-VariableView<T> makeVariableView(T *variable, const scipp::index offset,
+ElementArrayView<T> makeElementArrayView(T *variable, const scipp::index offset,
                                  const Dimensions &targetDimensions,
                                  const Dimensions &dimensions) {
-  return VariableView<T>(variable, offset, targetDimensions, dimensions);
+  return ElementArrayView<T>(variable, offset, targetDimensions, dimensions);
 }
 
-template <class T> struct is_VariableView : std::false_type {};
-template <class T> struct is_VariableView<VariableView<T>> : std::true_type {};
+template <class T> struct is_ElementArrayView : std::false_type {};
+template <class T> struct is_ElementArrayView<ElementArrayView<T>> : std::true_type {};
 template <class T>
-inline constexpr bool is_VariableView_v = is_VariableView<T>::value;
+inline constexpr bool is_ElementArrayView_v = is_ElementArrayView<T>::value;
 
 } // namespace scipp::core
 

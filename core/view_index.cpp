@@ -12,7 +12,7 @@ ViewIndex::ViewIndex(const Dimensions &targetDimensions,
     m_extent[d] = targetDimensions.size(m_dims - 1 - d);
   scipp::index factor{1};
   for (scipp::index i = dataDimensions.shape().size() - 1; i >= 0; --i) {
-    // Note the hidden behavior here: VariableView may be relabeling certain
+    // Note the hidden behavior here: ElementArrayView may be relabeling certain
     // dimensions to Dim::Invalid. Dimensions::contains then returns false,
     // effectively slicing out this dimensions from the data.
     const auto dimension = dataDimensions.label(i);

@@ -12,7 +12,7 @@ static void BM_ViewIndex(benchmark::State &state) {
 
   Dimensions dims({{Dim::Y, state.range(0)}, {Dim::X, 2000}});
   std::vector<double> variable(dims.volume());
-  VariableView<double> view(variable.data(), 0, dims, dims);
+  ElementArrayView<double> view(variable.data(), 0, dims, dims);
 
   for (auto _ : state) {
     double sum = 0.0;

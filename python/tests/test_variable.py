@@ -294,7 +294,7 @@ def test_sparse_setitem():
     # __setitem__ of span
     var.values[1] = np.arange(3)
     assert len(var[Dim.X, 1].values) == 3
-    # __setitem__ of VariableView
+    # __setitem__ of ElementArrayView
     var[Dim.X, :].values[2] = np.arange(2)
     assert len(var[Dim.X, 2].values) == 2
 

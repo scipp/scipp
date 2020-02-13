@@ -47,22 +47,22 @@ template <class T> void declare_span(py::module &m, const std::string &suffix) {
 }
 
 template <class T>
-void declare_VariableView(py::module &m, const std::string &suffix) {
-  py::class_<VariableView<T>> view(
-      m, (std::string("VariableView_") + suffix).c_str());
+void declare_ElementArrayView(py::module &m, const std::string &suffix) {
+  py::class_<ElementArrayView<T>> view(
+      m, (std::string("ElementArrayView_") + suffix).c_str());
   view.def("__repr__",
-           [](const VariableView<T> &self) { return array_to_string(self); })
-      .def("__getitem__", &VariableView<T>::operator[],
+           [](const ElementArrayView<T> &self) { return array_to_string(self); })
+      .def("__getitem__", &ElementArrayView<T>::operator[],
            py::return_value_policy::reference)
-      .def("__setitem__", [](VariableView<T> &self, const scipp::index i,
+      .def("__setitem__", [](ElementArrayView<T> &self, const scipp::index i,
                              const T value) { self[i] = value; })
-      .def("__len__", &VariableView<T>::size)
-      .def("__iter__", [](const VariableView<T> &self) {
+      .def("__len__", &ElementArrayView<T>::size)
+      .def("__iter__", [](const ElementArrayView<T> &self) {
         return py::make_iterator(self.begin(), self.end());
       });
   if constexpr (is_sparse_v<T>)
     view.def("__setitem__",
-             [](const VariableView<T> &self, const scipp::index i,
+             [](const ElementArrayView<T> &self, const scipp::index i,
                 const std::vector<typename T::value_type> &value) {
                self[i].assign(value.begin(), value.end());
              });
@@ -85,16 +85,16 @@ void init_variable_view(py::module &m) {
   declare_span<sparse_container<float>>(m, "sparse_float");
   declare_span<sparse_container<int64_t>>(m, "sparse_int64_t");
 
-  declare_VariableView<double>(m, "double");
-  declare_VariableView<float>(m, "float");
-  declare_VariableView<int64_t>(m, "int64");
-  declare_VariableView<int32_t>(m, "int32");
-  declare_VariableView<std::string>(m, "string");
-  declare_VariableView<bool>(m, "bool");
-  declare_VariableView<sparse_container<double>>(m, "sparse_double");
-  declare_VariableView<sparse_container<float>>(m, "sparse_float");
-  declare_VariableView<sparse_container<int64_t>>(m, "sparse_int64_t");
-  declare_VariableView<DataArray>(m, "DataArray");
-  declare_VariableView<Dataset>(m, "Dataset");
-  declare_VariableView<Eigen::Vector3d>(m, "Eigen_Vector3d");
+  declare_ElementArrayView<double>(m, "double");
+  declare_ElementArrayView<float>(m, "float");
+  declare_ElementArrayView<int64_t>(m, "int64");
+  declare_ElementArrayView<int32_t>(m, "int32");
+  declare_ElementArrayView<std::string>(m, "string");
+  declare_ElementArrayView<bool>(m, "bool");
+  declare_ElementArrayView<sparse_container<double>>(m, "sparse_double");
+  declare_ElementArrayView<sparse_container<float>>(m, "sparse_float");
+  declare_ElementArrayView<sparse_container<int64_t>>(m, "sparse_int64_t");
+  declare_ElementArrayView<DataArray>(m, "DataArray");
+  declare_ElementArrayView<Dataset>(m, "Dataset");
+  declare_ElementArrayView<Eigen::Vector3d>(m, "Eigen_Vector3d");
 }

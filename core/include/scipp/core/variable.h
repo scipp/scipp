@@ -156,26 +156,26 @@ public:
   virtual scipp::span<const T> variances(const Dim dim,
                                          const scipp::index begin,
                                          const scipp::index end) const = 0;
-  virtual VariableView<T> valuesView(const Dimensions &dims) = 0;
-  virtual VariableView<T> valuesView(const Dimensions &dims, const Dim dim,
+  virtual ElementArrayView<T> valuesView(const Dimensions &dims) = 0;
+  virtual ElementArrayView<T> valuesView(const Dimensions &dims, const Dim dim,
                                      const scipp::index begin) = 0;
-  virtual VariableView<const T> valuesView(const Dimensions &dims) const = 0;
-  virtual VariableView<const T> valuesView(const Dimensions &dims,
+  virtual ElementArrayView<const T> valuesView(const Dimensions &dims) const = 0;
+  virtual ElementArrayView<const T> valuesView(const Dimensions &dims,
                                            const Dim dim,
                                            const scipp::index begin) const = 0;
-  virtual VariableView<T> variancesView(const Dimensions &dims) = 0;
-  virtual VariableView<T> variancesView(const Dimensions &dims, const Dim dim,
+  virtual ElementArrayView<T> variancesView(const Dimensions &dims) = 0;
+  virtual ElementArrayView<T> variancesView(const Dimensions &dims, const Dim dim,
                                         const scipp::index begin) = 0;
-  virtual VariableView<const T> variancesView(const Dimensions &dims) const = 0;
-  virtual VariableView<const T>
+  virtual ElementArrayView<const T> variancesView(const Dimensions &dims) const = 0;
+  virtual ElementArrayView<const T>
   variancesView(const Dimensions &dims, const Dim dim,
                 const scipp::index begin) const = 0;
-  virtual VariableView<const T>
+  virtual ElementArrayView<const T>
   valuesReshaped(const Dimensions &dims) const = 0;
-  virtual VariableView<T> valuesReshaped(const Dimensions &dims) = 0;
-  virtual VariableView<const T>
+  virtual ElementArrayView<T> valuesReshaped(const Dimensions &dims) = 0;
+  virtual ElementArrayView<const T>
   variancesReshaped(const Dimensions &dims) const = 0;
-  virtual VariableView<T> variancesReshaped(const Dimensions &dims) = 0;
+  virtual ElementArrayView<T> variancesReshaped(const Dimensions &dims) = 0;
 
   virtual std::unique_ptr<VariableConceptT> copyT() const = 0;
 
@@ -704,7 +704,7 @@ public:
 
   bool hasVariances() const noexcept { return m_variable->hasVariances(); }
 
-  // Note: This return a proxy object (a VariableView) that does reference
+  // Note: This return a proxy object (a ElementArrayView) that does reference
   // members owner by *this. Therefore we can support this even for
   // temporaries and we do not need to delete the rvalue overload, unlike for
   // many other methods. The data is owned by the underlying variable so it
@@ -744,8 +744,8 @@ private:
 protected:
   friend class Variable;
 
-  template <class T> const VariableView<const T> cast() const;
-  template <class T> const VariableView<const T> castVariances() const;
+  template <class T> const ElementArrayView<const T> cast() const;
+  template <class T> const ElementArrayView<const T> castVariances() const;
 
   const Variable *m_variable;
   VariableConceptHandle m_view;
@@ -884,8 +884,8 @@ private:
   explicit VariableProxy(VariableConstProxy &&base)
       : VariableConstProxy(std::move(base)), m_mutableVariable{nullptr} {}
 
-  template <class T> VariableView<T> cast() const;
-  template <class T> VariableView<T> castVariances() const;
+  template <class T> ElementArrayView<T> cast() const;
+  template <class T> ElementArrayView<T> castVariances() const;
 
   Variable *m_mutableVariable;
 };

@@ -19,7 +19,7 @@ auto make_subspans(const span<T> &data, const scipp::index span_len) {
 }
 
 template <class T>
-auto make_subspans(const VariableView<T> &data, const scipp::index span_len) {
+auto make_subspans(const ElementArrayView<T> &data, const scipp::index span_len) {
   return make_subspans(scipp::span(data.data(), data.data() + data.size()),
                        span_len);
 }
