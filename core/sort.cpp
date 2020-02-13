@@ -40,18 +40,18 @@ Variable sort(const VariableConstProxy &var, const VariableConstProxy &key) {
 }
 
 /// Return a DataArray sorted based on key.
-DataArray sort(const DataConstProxy &array, const VariableConstProxy &key) {
+DataArray sort(const DataArrayConstView &array, const VariableConstProxy &key) {
   return concatenate(
       IndexedSliceView{array, key.dims().inner(), makePermutation(key)});
 }
 
 /// Return a DataArray sorted based on coordinate.
-DataArray sort(const DataConstProxy &array, const Dim &key) {
+DataArray sort(const DataArrayConstView &array, const Dim &key) {
   return sort(array, array.coords()[key]);
 }
 
 /// Return a DataArray sorted based on labels.
-DataArray sort(const DataConstProxy &array, const std::string &key) {
+DataArray sort(const DataArrayConstView &array, const std::string &key) {
   return sort(array, array.labels()[key]);
 }
 

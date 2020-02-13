@@ -14,10 +14,10 @@ namespace scipp::core {
 
 SCIPP_CORE_EXPORT Variable sort(const VariableConstProxy &var,
                                 const VariableConstProxy &key);
-SCIPP_CORE_EXPORT DataArray sort(const DataConstProxy &array,
+SCIPP_CORE_EXPORT DataArray sort(const DataArrayConstView &array,
                                  const VariableConstProxy &key);
-SCIPP_CORE_EXPORT DataArray sort(const DataConstProxy &array, const Dim &key);
-SCIPP_CORE_EXPORT DataArray sort(const DataConstProxy &array,
+SCIPP_CORE_EXPORT DataArray sort(const DataArrayConstView &array, const Dim &key);
+SCIPP_CORE_EXPORT DataArray sort(const DataArrayConstView &array,
                                  const std::string &key);
 SCIPP_CORE_EXPORT Dataset sort(const DatasetConstProxy &dataset,
                                const VariableConstProxy &key);

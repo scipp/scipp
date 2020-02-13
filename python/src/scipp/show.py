@@ -23,7 +23,8 @@ _smaller_font = round(0.6 * _svg_em, 2)
 
 
 def is_data_array(obj):
-    return isinstance(obj, sc.DataArray) or isinstance(obj, sc.DataConstProxy)
+    return isinstance(obj, sc.DataArray) or isinstance(obj,
+                                                       sc.DataArrayConstView)
 
 
 def _hex_to_rgb(hex_color):

@@ -254,14 +254,14 @@ TEST(DatasetTest, setSparseLabels) {
 
 TEST(DatasetTest, iterators_return_types) {
   Dataset d;
-  ASSERT_TRUE((std::is_same_v<decltype(*d.begin()), DataProxy>));
-  ASSERT_TRUE((std::is_same_v<decltype(*d.end()), DataProxy>));
+  ASSERT_TRUE((std::is_same_v<decltype(*d.begin()), DataArrayView>));
+  ASSERT_TRUE((std::is_same_v<decltype(*d.end()), DataArrayView>));
 }
 
 TEST(DatasetTest, const_iterators_return_types) {
   const Dataset d;
-  ASSERT_TRUE((std::is_same_v<decltype(*d.begin()), DataConstProxy>));
-  ASSERT_TRUE((std::is_same_v<decltype(*d.end()), DataConstProxy>));
+  ASSERT_TRUE((std::is_same_v<decltype(*d.begin()), DataArrayConstView>));
+  ASSERT_TRUE((std::is_same_v<decltype(*d.end()), DataArrayConstView>));
 }
 
 TEST(DatasetTest, set_dense_data_with_sparse_coord) {

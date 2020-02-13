@@ -95,13 +95,13 @@ using args = std::tuple<span<Out>, sparse_container<Coord>,
                         sparse_container<Weight>, span<const Edge>>;
 }
 
-DataArray histogram(const DataConstProxy &sparse,
+DataArray histogram(const DataArrayConstView &sparse,
                     const VariableConstProxy &binEdges) {
   auto dim = binEdges.dims().inner();
 
   auto result = apply_and_drop_dim(
       sparse,
-      [](const DataConstProxy &sparse_, const Dim dim_,
+      [](const DataArrayConstView &sparse_, const Dim dim_,
          const VariableConstProxy &binEdges_) {
         if (sparse_.hasData()) {
           using namespace histogram_weighted_detail;
@@ -136,7 +136,8 @@ DataArray histogram(const DataConstProxy &sparse,
   return result;
 }
 
-DataArray histogram(const DataConstProxy &sparse, const Variable &binEdges) {
+DataArray histogram(const DataArrayConstView &sparse,
+                    const Variable &binEdges) {
   return histogram(sparse, VariableConstProxy(binEdges));
 }
 
@@ -160,7 +161,7 @@ Dataset histogram(const Dataset &dataset, const Dim &dim) {
 }
 
 /// Return true if the data array respresents a histogram for given dim.
-bool is_histogram(const DataConstProxy &a, const Dim dim) {
+bool is_histogram(const DataArrayConstView &a, const Dim dim) {
   const auto dims = a.dims();
   const auto coords = a.coords();
   return !dims.sparse() && dims.contains(dim) && coords.contains(dim) &&

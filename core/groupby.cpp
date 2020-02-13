@@ -52,7 +52,7 @@ T GroupBy<T>::reduce(Op op, const Dim reductionDim) const {
 }
 
 namespace groupby_detail {
-static constexpr auto flatten = [](const DataProxy &out, const auto &in,
+static constexpr auto flatten = [](const DataArrayView &out, const auto &in,
                                    const GroupByGrouping::group &group,
                                    const Dim reductionDim,
                                    const Variable &mask_) {
@@ -72,7 +72,8 @@ static constexpr auto flatten = [](const DataProxy &out, const auto &in,
   }
 };
 
-static constexpr auto sum = [](const DataProxy &out, const auto &data_container,
+static constexpr auto sum = [](const DataArrayView &out,
+                               const auto &data_container,
                                const GroupByGrouping::group &group,
                                const Dim reductionDim, const Variable &mask) {
   for (const auto &slice : group) {
@@ -86,7 +87,7 @@ static constexpr auto sum = [](const DataProxy &out, const auto &data_container,
 
 template <void (*Func)(const VariableProxy &, const VariableConstProxy &)>
 static constexpr auto reduce_idempotent =
-    [](const DataProxy &out, const auto &data_container,
+    [](const DataArrayView &out, const auto &data_container,
        const GroupByGrouping::group &group, const Dim reductionDim,
        const Variable &mask) {
       bool first = true;
@@ -254,7 +255,7 @@ template <class T> struct MakeBinGroups {
 /// Groups the slices of `array` according to values in given by `labels`.
 /// Grouping of labels will create a new coordinate for `targetDim` in a later
 /// apply/combine step.
-GroupBy<DataArray> groupby(const DataConstProxy &array,
+GroupBy<DataArray> groupby(const DataArrayConstView &array,
                            const std::string &labels, const Dim targetDim) {
   const auto &key = array.labels()[labels];
   return {array, CallDType<double, float, int64_t, int32_t, bool,
@@ -267,7 +268,7 @@ GroupBy<DataArray> groupby(const DataConstProxy &array,
 /// Groups the slices of `array` according to values in given by `labels`.
 /// Grouping of labels is according to given `bins`, which will be added as a
 /// new coordinate to the output in a later apply/combine step.
-GroupBy<DataArray> groupby(const DataConstProxy &array,
+GroupBy<DataArray> groupby(const DataArrayConstView &array,
                            const std::string &labels,
                            const VariableConstProxy &bins) {
   const auto &key = array.labels()[labels];

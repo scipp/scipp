@@ -14,8 +14,8 @@
 
 namespace scipp::core {
 
-class DataProxy;
-class DataConstProxy;
+class DataArrayView;
+class DataArrayConstView;
 class DatasetProxy;
 class DatasetConstProxy;
 class Dataset;
@@ -36,9 +36,9 @@ SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
 SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
                                            const Variable &variable);
 SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
-                                           const DataConstProxy &data);
+                                           const DataArrayConstView &data);
 SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
-                                           const DataProxy &data);
+                                           const DataArrayView &data);
 SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
                                            const DataArray &data);
 SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
@@ -55,7 +55,7 @@ SCIPP_CORE_EXPORT std::string to_string(const Slice &slice);
 SCIPP_CORE_EXPORT std::string to_string(const Variable &variable);
 SCIPP_CORE_EXPORT std::string to_string(const VariableConstProxy &variable);
 SCIPP_CORE_EXPORT std::string to_string(const DataArray &data);
-SCIPP_CORE_EXPORT std::string to_string(const DataConstProxy &data);
+SCIPP_CORE_EXPORT std::string to_string(const DataArrayConstView &data);
 SCIPP_CORE_EXPORT std::string to_string(const Dataset &dataset);
 SCIPP_CORE_EXPORT std::string to_string(const DatasetConstProxy &dataset);
 

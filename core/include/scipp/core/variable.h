@@ -269,14 +269,14 @@ class DatasetConstProxy;
 class DatasetProxy;
 class Dataset;
 class DataArray;
-class DataProxy;
+class DataArrayView;
 
 template <class T> constexpr bool is_container_or_proxy() {
   return std::is_same_v<T, Dataset> || std::is_same_v<T, DatasetProxy> ||
          std::is_same_v<T, DatasetConstProxy> || std::is_same_v<T, Variable> ||
          std::is_same_v<T, VariableProxy> ||
          std::is_same_v<T, VariableConstProxy> ||
-         std::is_same_v<T, DataArray> || std::is_same_v<T, DataProxy>;
+         std::is_same_v<T, DataArray> || std::is_same_v<T, DataArrayView>;
 }
 
 namespace detail {
@@ -751,7 +751,7 @@ protected:
   VariableConceptHandle m_view;
 };
 
-class DataConstProxy;
+class DataArrayConstView;
 
 /** Mutable view into (a subset of) a Variable.
  *
@@ -870,7 +870,7 @@ public:
 
 private:
   friend class Variable;
-  friend class DataConstProxy;
+  friend class DataArrayConstView;
 
   template <class Var>
   static VariableProxy makeTransposed(Var &var,
@@ -880,7 +880,7 @@ private:
     return res;
   }
 
-  // For internal use in DataConstProxy.
+  // For internal use in DataArrayConstView.
   explicit VariableProxy(VariableConstProxy &&base)
       : VariableConstProxy(std::move(base)), m_mutableVariable{nullptr} {}
 

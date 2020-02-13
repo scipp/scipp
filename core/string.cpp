@@ -28,16 +28,16 @@ std::ostream &operator<<(std::ostream &os, const Variable &variable) {
   return os << VariableConstProxy(variable);
 }
 
-std::ostream &operator<<(std::ostream &os, const DataConstProxy &data) {
+std::ostream &operator<<(std::ostream &os, const DataArrayConstView &data) {
   return os << to_string(data);
 }
 
-std::ostream &operator<<(std::ostream &os, const DataProxy &data) {
-  return os << DataConstProxy(data);
+std::ostream &operator<<(std::ostream &os, const DataArrayView &data) {
+  return os << DataArrayConstView(data);
 }
 
 std::ostream &operator<<(std::ostream &os, const DataArray &data) {
-  return os << DataConstProxy(data);
+  return os << DataArrayConstView(data);
 }
 
 std::ostream &operator<<(std::ostream &os, const DatasetConstProxy &dataset) {
@@ -187,7 +187,7 @@ auto format_variable(const Key &key, const Var &variable,
 }
 
 template <class Key>
-auto format_data_proxy(const Key &name, const DataConstProxy &data,
+auto format_data_proxy(const Key &name, const DataArrayConstView &data,
                        const Dimensions &datasetDims = Dimensions()) {
   std::stringstream s;
   if (data.hasData())
@@ -261,7 +261,7 @@ std::string do_to_string(const D &dataset, const std::string &id,
   }
 
   if constexpr (std::is_same_v<D, DataArray> ||
-                std::is_same_v<D, DataConstProxy>) {
+                std::is_same_v<D, DataArrayConstView>) {
     s << "Data:\n" << format_data_proxy(dataset.name(), dataset);
   } else {
     if (!dataset.empty())
@@ -312,8 +312,8 @@ std::string to_string(const DataArray &data) {
   return do_to_string(data, "<scipp.DataArray>", data.dims());
 }
 
-std::string to_string(const DataConstProxy &data) {
-  return do_to_string(data, "<scipp.DataProxy>", data.dims());
+std::string to_string(const DataArrayConstView &data) {
+  return do_to_string(data, "<scipp.DataArrayView>", data.dims());
 }
 
 std::string to_string(const Dataset &dataset) {

@@ -18,7 +18,7 @@ def test_setitem_required_for_inplace_ops():
     a = sc.DataArray(data=var)
     a *= 1.5  # not setitem, just assigns python variable
     a[Dim.X, 1:] *= 1.5  # DataArray.__setitem__
-    a[Dim.X, 1:][Dim.Y, 1:] *= 1.5  # DataProxy.__setitem__
+    a[Dim.X, 1:][Dim.Y, 1:] *= 1.5  # DataArrayView.__setitem__
 
     d = sc.Dataset(data={'a': var})
     d *= 1.5  # not setitem, just assigns python variable

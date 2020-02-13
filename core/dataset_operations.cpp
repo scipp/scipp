@@ -91,7 +91,7 @@ auto concat(const T1 &a, const T2 &b, const Dim dim, const DimT &dimsA,
 }
 } // namespace
 
-DataArray concatenate(const DataConstProxy &a, const DataConstProxy &b,
+DataArray concatenate(const DataArrayConstView &a, const DataArrayConstView &b,
                       const Dim dim) {
   if (!a.dims().contains(dim) && a == b)
     return DataArray{a};
@@ -117,7 +117,7 @@ Dataset concatenate(const DatasetConstProxy &a, const DatasetConstProxy &b,
   return result;
 }
 
-DataArray flatten(const DataConstProxy &a, const Dim dim) {
+DataArray flatten(const DataArrayConstView &a, const Dim dim) {
   return apply_or_copy_dim(a, [](auto &&... _) { return flatten(_...); }, dim,
                            a.masks());
 }
@@ -126,7 +126,7 @@ Dataset flatten(const DatasetConstProxy &d, const Dim dim) {
   return apply_to_items(d, [](auto &&... _) { return flatten(_...); }, dim);
 }
 
-DataArray sum(const DataConstProxy &a, const Dim dim) {
+DataArray sum(const DataArrayConstView &a, const Dim dim) {
   return apply_to_data_and_drop_dim(a, [](auto &&... _) { return sum(_...); },
                                     dim, a.masks());
 }
@@ -139,7 +139,7 @@ Dataset sum(const DatasetConstProxy &d, const Dim dim) {
   return apply_to_items(d, [](auto &&... _) { return sum(_...); }, dim);
 }
 
-DataArray mean(const DataConstProxy &a, const Dim dim) {
+DataArray mean(const DataArrayConstView &a, const Dim dim) {
   return apply_to_data_and_drop_dim(a, [](auto &&... _) { return mean(_...); },
                                     dim, a.masks());
 }
@@ -148,7 +148,7 @@ Dataset mean(const DatasetConstProxy &d, const Dim dim) {
   return apply_to_items(d, [](auto &&... _) { return mean(_...); }, dim);
 }
 
-DataArray rebin(const DataConstProxy &a, const Dim dim,
+DataArray rebin(const DataArrayConstView &a, const Dim dim,
                 const VariableConstProxy &coord) {
   auto rebinned = apply_to_data_and_drop_dim(
       a, [](auto &&... _) { return rebin(_...); }, dim, a.coords()[dim], coord);
@@ -168,7 +168,7 @@ Dataset rebin(const DatasetConstProxy &d, const Dim dim,
                         coord);
 }
 
-DataArray resize(const DataConstProxy &a, const Dim dim,
+DataArray resize(const DataArrayConstView &a, const Dim dim,
                  const scipp::index size) {
   if (a.dims().sparse()) {
     const auto resize_if_sparse = [dim, size](const auto &var) {
@@ -218,8 +218,8 @@ VariableConstProxy same(const VariableConstProxy &a,
   return a;
 }
 
-/// Return a deep copy of a DataArray or of a DataProxy.
-DataArray copy(const DataConstProxy &array) { return DataArray(array); }
+/// Return a deep copy of a DataArray or of a DataArrayView.
+DataArray copy(const DataArrayConstView &array) { return DataArray(array); }
 
 /// Return a deep copy of a Dataset or of a DatasetProxy.
 Dataset copy(const DatasetConstProxy &dataset) { return Dataset(dataset); }

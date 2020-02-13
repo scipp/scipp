@@ -285,7 +285,7 @@ DataArray convert(DataArray d, const Dim from, const Dim to) {
                                            from, to);
 }
 
-DataArray convert(const DataConstProxy &d, const Dim from, const Dim to) {
+DataArray convert(const DataArrayConstView &d, const Dim from, const Dim to) {
   return convert(DataArray(d), from, to);
 }
 

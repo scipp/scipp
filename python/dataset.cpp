@@ -232,14 +232,14 @@ void bind_data_array_properties(py::class_<T, Ignored...> &c) {
       [](T &self, const VariableConstProxy &data) { self.data().assign(data); },
       R"(Underlying data item.)");
   bind_coord_properties(c);
-  bind_comparison<DataConstProxy>(c);
+  bind_comparison<DataArrayConstView>(c);
   bind_data_properties(c);
   bind_slice_methods(c);
-  bind_in_place_binary<DataProxy>(c);
+  bind_in_place_binary<DataArrayView>(c);
   bind_in_place_binary<VariableConstProxy>(c);
   bind_binary<Dataset>(c);
   bind_binary<DatasetProxy>(c);
-  bind_binary<DataProxy>(c);
+  bind_binary<DataArrayView>(c);
   bind_binary<VariableConstProxy>(c);
 }
 
@@ -285,7 +285,7 @@ void init_dataset(py::module &m) {
 
   py::class_<DataArray> dataArray(m, "DataArray", R"(
     Named variable with associated coords, labels, and attributes.)");
-  dataArray.def(py::init<const DataConstProxy &>());
+  dataArray.def(py::init<const DataArrayConstView &>());
   dataArray.def(
       py::init<std::optional<Variable>, std::map<Dim, Variable>,
                std::map<std::string, Variable>, std::map<std::string, Variable>,
@@ -296,16 +296,16 @@ void init_dataset(py::module &m) {
       py::arg("masks") = std::map<std::string, Variable>{},
       py::arg("attrs") = std::map<std::string, Variable>{});
 
-  py::class_<DataConstProxy>(m, "DataConstProxy")
+  py::class_<DataArrayConstView>(m, "DataArrayConstView")
       .def(py::init<const DataArray &>());
 
-  py::class_<DataProxy, DataConstProxy> dataProxy(m, "DataProxy", R"(
+  py::class_<DataArrayView, DataArrayConstView> dataArrayView(m, "DataArrayView", R"(
         Proxy for DataArray, representing a sliced view onto a DataArray, or an item of a Dataset;
         Mostly equivalent to DataArray, see there for details.)");
-  dataProxy.def(py::init<DataArray &>());
+  dataArrayView.def(py::init<DataArray &>());
 
   bind_data_array_properties(dataArray);
-  bind_data_array_properties(dataProxy);
+  bind_data_array_properties(dataArrayView);
 
   py::class_<DatasetConstProxy>(m, "DatasetConstProxy")
       .def(py::init<const Dataset &>());
@@ -318,8 +318,8 @@ void init_dataset(py::module &m) {
   py::class_<Dataset> dataset(m, "Dataset", R"(
     Dict of data arrays with aligned dimensions.)");
 
-  dataset.def(py::init<const std::map<std::string, DataConstProxy> &>())
-      .def(py::init<const DataConstProxy &>())
+  dataset.def(py::init<const std::map<std::string, DataArrayConstView> &>())
+      .def(py::init<const DataArrayConstView &>())
       .def(py::init([](const std::map<std::string, VariableConstProxy> &data,
                        const std::map<Dim, VariableConstProxy> &coords,
                        const std::map<std::string, VariableConstProxy> &labels,
@@ -342,7 +342,7 @@ void init_dataset(py::module &m) {
            })
       .def("__setitem__",
            [](Dataset &self, const std::string &name,
-              const DataConstProxy &data) { self.setData(name, data); })
+              const DataArrayConstView &data) { self.setData(name, data); })
       .def("__setitem__",
            [](Dataset &self, const std::string &name, MoveableDataArray &mdat) {
              self.setData(name, std::move(mdat.data));
@@ -354,7 +354,7 @@ void init_dataset(py::module &m) {
           R"(Removes all data (preserving coordinates, attributes, labels and masks.).)");
   datasetProxy.def("__setitem__",
                    [](const DatasetProxy &self, const std::string &name,
-                      const DataConstProxy &data) { self[name].assign(data); });
+                      const DataArrayConstView &data) { self[name].assign(data); });
 
   bind_dataset_proxy_methods(dataset);
   bind_dataset_proxy_methods(datasetProxy);
@@ -372,24 +372,24 @@ void init_dataset(py::module &m) {
 
   bind_in_place_binary<Dataset>(dataset);
   bind_in_place_binary<DatasetProxy>(dataset);
-  bind_in_place_binary<DataProxy>(dataset);
+  bind_in_place_binary<DataArrayView>(dataset);
   bind_in_place_binary<VariableConstProxy>(dataset);
   bind_in_place_binary<Dataset>(datasetProxy);
   bind_in_place_binary<DatasetProxy>(datasetProxy);
   bind_in_place_binary<VariableConstProxy>(datasetProxy);
-  bind_in_place_binary<DataProxy>(datasetProxy);
+  bind_in_place_binary<DataArrayView>(datasetProxy);
   bind_in_place_binary_scalars(dataset);
   bind_in_place_binary_scalars(datasetProxy);
   bind_in_place_binary_scalars(dataArray);
-  bind_in_place_binary_scalars(dataProxy);
+  bind_in_place_binary_scalars(dataArrayView);
 
   bind_binary<Dataset>(dataset);
   bind_binary<DatasetProxy>(dataset);
-  bind_binary<DataProxy>(dataset);
+  bind_binary<DataArrayView>(dataset);
   bind_binary<VariableConstProxy>(dataset);
   bind_binary<Dataset>(datasetProxy);
   bind_binary<DatasetProxy>(datasetProxy);
-  bind_binary<DataProxy>(datasetProxy);
+  bind_binary<DataArrayView>(datasetProxy);
   bind_binary<VariableConstProxy>(datasetProxy);
 
   dataArray.def("rename_dims", &rename_dims<DataArray>, py::arg("dims_dict"),
@@ -398,7 +398,7 @@ void init_dataset(py::module &m) {
               "Rename dimensions.");
 
   m.def("concatenate",
-        py::overload_cast<const DataConstProxy &, const DataConstProxy &,
+        py::overload_cast<const DataArrayConstView &, const DataArrayConstView &,
                           const Dim>(&concatenate),
         py::arg("x"), py::arg("y"), py::arg("dim"),
         py::call_guard<py::gil_scoped_release>(), R"(
@@ -432,7 +432,7 @@ void init_dataset(py::module &m) {
         :rtype: Dataset)");
 
   m.def("histogram",
-        [](const DataConstProxy &ds, const Variable &bins) {
+        [](const DataArrayConstView &ds, const Variable &bins) {
           return core::histogram(ds, bins);
         },
         py::arg("x"), py::arg("bins"), py::call_guard<py::gil_scoped_release>(),
@@ -444,7 +444,7 @@ void init_dataset(py::module &m) {
         :rtype: DataArray)");
 
   m.def("histogram",
-        [](const DataConstProxy &ds, const VariableConstProxy &bins) {
+        [](const DataArrayConstView &ds, const VariableConstProxy &bins) {
           return core::histogram(ds, bins);
         },
         py::arg("x"), py::arg("bins"), py::call_guard<py::gil_scoped_release>(),
@@ -493,7 +493,7 @@ void init_dataset(py::module &m) {
         :return: A new dataset that contains the union of all data items, coords, labels, masks and attributes.
         :rtype: Dataset)");
 
-  m.def("sum", py::overload_cast<const DataConstProxy &, const Dim>(&sum),
+  m.def("sum", py::overload_cast<const DataArrayConstView &, const Dim>(&sum),
         py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
         R"(
         Element-wise sum over the specified dimension.
@@ -517,7 +517,7 @@ void init_dataset(py::module &m) {
         :return: New dataset containing the sum for each data item.
         :rtype: Dataset)");
 
-  m.def("mean", py::overload_cast<const DataConstProxy &, const Dim>(&mean),
+  m.def("mean", py::overload_cast<const DataArrayConstView &, const Dim>(&mean),
         py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
         R"(
         Element-wise mean over the specified dimension, if variances are present, the new variance is computated as standard-deviation of the mean.
@@ -546,7 +546,7 @@ void init_dataset(py::module &m) {
         :rtype: Dataset)");
 
   m.def("rebin",
-        py::overload_cast<const DataConstProxy &, const Dim,
+        py::overload_cast<const DataArrayConstView &, const Dim,
                           const VariableConstProxy &>(&rebin),
         py::arg("x"), py::arg("dim"), py::arg("bins"),
         py::call_guard<py::gil_scoped_release>(), R"(
@@ -574,7 +574,7 @@ void init_dataset(py::module &m) {
         :rtype: Dataset)");
 
   m.def("sort",
-        py::overload_cast<const DataConstProxy &, const VariableConstProxy &>(
+        py::overload_cast<const DataArrayConstView &, const VariableConstProxy &>(
             &sort),
         py::arg("x"), py::arg("key"), py::call_guard<py::gil_scoped_release>(),
         R"(Sort data array along a dimension by a sort key.
@@ -584,7 +584,7 @@ void init_dataset(py::module &m) {
         :rtype: DataArray)");
 
   m.def(
-      "sort", py::overload_cast<const DataConstProxy &, const Dim &>(&sort),
+      "sort", py::overload_cast<const DataArrayConstView &, const Dim &>(&sort),
       py::arg("x"), py::arg("key"), py::call_guard<py::gil_scoped_release>(),
       R"(Sort data array along a dimension by the coordinate values for that dimension.
 
@@ -594,7 +594,7 @@ void init_dataset(py::module &m) {
 
   m.def(
       "sort",
-      py::overload_cast<const DataConstProxy &, const std::string &>(&sort),
+      py::overload_cast<const DataArrayConstView &, const std::string &>(&sort),
       py::arg("x"), py::arg("key"), py::call_guard<py::gil_scoped_release>(),
       R"(Sort data array along a dimension by the label values for the given key.
 
@@ -650,7 +650,7 @@ void init_dataset(py::module &m) {
         :rtype: Variable)");
 
   m.def("reciprocal",
-        [](const DataConstProxy &self) { return reciprocal(self); },
+        [](const DataArrayConstView &self) { return reciprocal(self); },
         py::arg("x"), py::call_guard<py::gil_scoped_release>(), R"(
         Element-wise reciprocal.
 
@@ -658,9 +658,9 @@ void init_dataset(py::module &m) {
         :rtype: DataArray)");
 
   bind_astype(dataArray);
-  bind_astype(dataProxy);
+  bind_astype(dataArrayView);
 
-  py::implicitly_convertible<DataArray, DataConstProxy>();
-  py::implicitly_convertible<DataArray, DataProxy>();
+  py::implicitly_convertible<DataArray, DataArrayConstView>();
+  py::implicitly_convertible<DataArray, DataArrayView>();
   py::implicitly_convertible<Dataset, DatasetConstProxy>();
 }

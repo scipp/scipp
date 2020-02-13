@@ -11,7 +11,7 @@
 
 namespace scipp::core {
 
-SCIPP_CORE_EXPORT bool is_histogram(const DataConstProxy &a, const Dim dim);
+SCIPP_CORE_EXPORT bool is_histogram(const DataArrayConstView &a, const Dim dim);
 
 /// Return params for computing bin index for linear edges (constant bin width).
 constexpr static auto linear_edge_params = [](const auto &edges) {

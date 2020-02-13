@@ -111,37 +111,37 @@ core::Variable two_theta(const core::DatasetConstProxy &d) {
   return beamline_impl::two_theta(d);
 }
 
-core::VariableConstProxy position(const core::DataConstProxy &d) {
+core::VariableConstProxy position(const core::DataArrayConstView &d) {
   return beamline_impl::position(d);
 }
-core::VariableConstProxy source_position(const core::DataConstProxy &d) {
+core::VariableConstProxy source_position(const core::DataArrayConstView &d) {
   return beamline_impl::source_position(d);
 }
-core::VariableConstProxy sample_position(const core::DataConstProxy &d) {
+core::VariableConstProxy sample_position(const core::DataArrayConstView &d) {
   return beamline_impl::sample_position(d);
 }
-core::VariableProxy position(const core::DataProxy &d) {
+core::VariableProxy position(const core::DataArrayView &d) {
   return beamline_impl::position(d);
 }
-core::VariableProxy source_position(const core::DataProxy &d) {
+core::VariableProxy source_position(const core::DataArrayView &d) {
   return beamline_impl::source_position(d);
 }
-core::VariableProxy sample_position(const core::DataProxy &d) {
+core::VariableProxy sample_position(const core::DataArrayView &d) {
   return beamline_impl::sample_position(d);
 }
-core::Variable flight_path_length(const core::DataConstProxy &d) {
+core::Variable flight_path_length(const core::DataArrayConstView &d) {
   return beamline_impl::flight_path_length(d);
 }
-core::Variable l1(const core::DataConstProxy &d) {
+core::Variable l1(const core::DataArrayConstView &d) {
   return beamline_impl::l1(d);
 }
-core::Variable l2(const core::DataConstProxy &d) {
+core::Variable l2(const core::DataArrayConstView &d) {
   return beamline_impl::l2(d);
 }
-core::Variable scattering_angle(const core::DataConstProxy &d) {
+core::Variable scattering_angle(const core::DataArrayConstView &d) {
   return beamline_impl::scattering_angle(d);
 }
-core::Variable two_theta(const core::DataConstProxy &d) {
+core::Variable two_theta(const core::DataArrayConstView &d) {
   return beamline_impl::two_theta(d);
 }
 

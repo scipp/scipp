@@ -11,7 +11,7 @@ Classes
    Variable
    VariableProxy
    DataArray
-   DataProxy
+   DataArrayView
    Dataset
    DatasetProxy
    GroupByDataArray
@@ -81,7 +81,7 @@ Trigonometric
    asin
    acos
    atan
-   
+
 Counts
 ~~~~~~
 

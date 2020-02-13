@@ -11,17 +11,18 @@
 using namespace scipp;
 using namespace scipp::core;
 
-// Using typed tests for common functionality of DataProxy and DataConstProxy.
-template <typename T> class DataProxyTest : public ::testing::Test {
+// Using typed tests for common functionality of DataArrayView and
+// DataArrayConstView.
+template <typename T> class DataArrayViewTest : public ::testing::Test {
 protected:
-  using dataset_type =
-      std::conditional_t<std::is_same_v<T, DataProxy>, Dataset, const Dataset>;
+  using dataset_type = std::conditional_t<std::is_same_v<T, DataArrayView>,
+                                          Dataset, const Dataset>;
 };
 
-using DataProxyTypes = ::testing::Types<DataProxy, DataConstProxy>;
-TYPED_TEST_SUITE(DataProxyTest, DataProxyTypes);
+using DataArrayViewTypes = ::testing::Types<DataArrayView, DataArrayConstView>;
+TYPED_TEST_SUITE(DataArrayViewTest, DataArrayViewTypes);
 
-TYPED_TEST(DataProxyTest, name_ignored_in_comparison) {
+TYPED_TEST(DataArrayViewTest, name_ignored_in_comparison) {
   const auto var = makeVariable<double>(Values{1.0});
   Dataset d;
   d.setData("a", var);
@@ -30,7 +31,7 @@ TYPED_TEST(DataProxyTest, name_ignored_in_comparison) {
   EXPECT_EQ(d_ref["a"], d_ref["b"]);
 }
 
-TYPED_TEST(DataProxyTest, sparse_sparseDim) {
+TYPED_TEST(DataArrayViewTest, sparse_sparseDim) {
   Dataset d;
   typename TestFixture::dataset_type &d_ref(d);
 
@@ -50,7 +51,7 @@ TYPED_TEST(DataProxyTest, sparse_sparseDim) {
   ASSERT_EQ(d_ref["sparse_coord"].dims().sparseDim(), Dim::X);
 }
 
-TYPED_TEST(DataProxyTest, dims) {
+TYPED_TEST(DataArrayViewTest, dims) {
   Dataset d;
   const auto dense = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{1, 2});
   const auto sparse = makeVariable<double>(Dims{Dim::X, Dim::Y, Dim::Z},
@@ -67,7 +68,7 @@ TYPED_TEST(DataProxyTest, dims) {
   ASSERT_EQ(d_ref["sparse_coord"].dims(), sparse.dims());
 }
 
-TYPED_TEST(DataProxyTest, dims_with_extra_coords) {
+TYPED_TEST(DataArrayViewTest, dims_with_extra_coords) {
   Dataset d;
   typename TestFixture::dataset_type &d_ref(d);
   const auto x = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
@@ -80,7 +81,7 @@ TYPED_TEST(DataProxyTest, dims_with_extra_coords) {
   ASSERT_EQ(d_ref["a"].dims(), var.dims());
 }
 
-TYPED_TEST(DataProxyTest, unit) {
+TYPED_TEST(DataArrayViewTest, unit) {
   Dataset d;
   typename TestFixture::dataset_type &d_ref(d);
 
@@ -88,7 +89,7 @@ TYPED_TEST(DataProxyTest, unit) {
   EXPECT_EQ(d_ref["dense"].unit(), units::dimensionless);
 }
 
-TYPED_TEST(DataProxyTest, unit_access_fails_without_values) {
+TYPED_TEST(DataArrayViewTest, unit_access_fails_without_values) {
   Dataset d;
   typename TestFixture::dataset_type &d_ref(d);
   d.setSparseCoord(
@@ -96,7 +97,7 @@ TYPED_TEST(DataProxyTest, unit_access_fails_without_values) {
   EXPECT_THROW(d_ref["sparse"].unit(), except::SparseDataError);
 }
 
-TYPED_TEST(DataProxyTest, coords) {
+TYPED_TEST(DataArrayViewTest, coords) {
   Dataset d;
   typename TestFixture::dataset_type &d_ref(d);
   const auto var = makeVariable<double>(Dims{Dim::X}, Shape{3});
@@ -107,7 +108,7 @@ TYPED_TEST(DataProxyTest, coords) {
   ASSERT_EQ(d_ref["a"].coords(), d.coords());
 }
 
-TYPED_TEST(DataProxyTest, coords_sparse) {
+TYPED_TEST(DataArrayViewTest, coords_sparse) {
   Dataset d;
   typename TestFixture::dataset_type &d_ref(d);
   const auto var =
@@ -121,7 +122,7 @@ TYPED_TEST(DataProxyTest, coords_sparse) {
   ASSERT_EQ(d_ref["a"].coords()[Dim::Y], var);
 }
 
-TYPED_TEST(DataProxyTest, coords_sparse_shadow) {
+TYPED_TEST(DataArrayViewTest, coords_sparse_shadow) {
   Dataset d;
   typename TestFixture::dataset_type &d_ref(d);
   const auto x = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
@@ -142,7 +143,7 @@ TYPED_TEST(DataProxyTest, coords_sparse_shadow) {
   ASSERT_EQ(d_ref["a"].coords()[Dim::Y], sparse);
 }
 
-TYPED_TEST(DataProxyTest, coords_sparse_shadow_even_if_no_coord) {
+TYPED_TEST(DataArrayViewTest, coords_sparse_shadow_even_if_no_coord) {
   Dataset d;
   typename TestFixture::dataset_type &d_ref(d);
   const auto x = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
@@ -163,7 +164,7 @@ TYPED_TEST(DataProxyTest, coords_sparse_shadow_even_if_no_coord) {
   ASSERT_EQ(d_ref["a"].coords()[Dim::X], x);
 }
 
-TYPED_TEST(DataProxyTest, coords_contains_only_relevant) {
+TYPED_TEST(DataArrayViewTest, coords_contains_only_relevant) {
   Dataset d;
   typename TestFixture::dataset_type &d_ref(d);
   const auto x = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
@@ -180,7 +181,7 @@ TYPED_TEST(DataProxyTest, coords_contains_only_relevant) {
   ASSERT_EQ(coords[Dim::X], x);
 }
 
-TYPED_TEST(DataProxyTest, coords_contains_only_relevant_2d_dropped) {
+TYPED_TEST(DataArrayViewTest, coords_contains_only_relevant_2d_dropped) {
   Dataset d;
   typename TestFixture::dataset_type &d_ref(d);
   const auto x = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
@@ -197,7 +198,7 @@ TYPED_TEST(DataProxyTest, coords_contains_only_relevant_2d_dropped) {
   ASSERT_EQ(coords[Dim::X], x);
 }
 
-TYPED_TEST(DataProxyTest,
+TYPED_TEST(DataArrayViewTest,
            coords_contains_only_relevant_2d_not_dropped_inconsistency) {
   Dataset d;
   typename TestFixture::dataset_type &d_ref(d);
@@ -220,7 +221,7 @@ TYPED_TEST(DataProxyTest,
   ASSERT_EQ(coords[Dim::X], x);
 }
 
-TYPED_TEST(DataProxyTest, hasData_hasVariances) {
+TYPED_TEST(DataArrayViewTest, hasData_hasVariances) {
   Dataset d;
   typename TestFixture::dataset_type &d_ref(d);
 
@@ -234,7 +235,7 @@ TYPED_TEST(DataProxyTest, hasData_hasVariances) {
   ASSERT_TRUE(d_ref["b"].hasVariances());
 }
 
-TYPED_TEST(DataProxyTest, values_variances) {
+TYPED_TEST(DataArrayViewTest, values_variances) {
   Dataset d;
   typename TestFixture::dataset_type &d_ref(d);
   const auto var = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1, 2},
@@ -248,7 +249,7 @@ TYPED_TEST(DataProxyTest, values_variances) {
   ASSERT_ANY_THROW(d_ref["a"].template variances<float>());
 }
 
-TYPED_TEST(DataProxyTest, sparse_with_no_data) {
+TYPED_TEST(DataArrayViewTest, sparse_with_no_data) {
   Dataset d;
   typename TestFixture::dataset_type &d_ref(d);
   d.setSparseCoord(

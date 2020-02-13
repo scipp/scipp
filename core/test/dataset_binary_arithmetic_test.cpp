@@ -19,8 +19,9 @@ using namespace scipp::core;
 DatasetFactory3D datasetFactory;
 
 template <class Op>
-class DataProxyBinaryEqualsOpTest : public ::testing::Test,
-                                    public ::testing::WithParamInterface<Op> {
+class DataArrayViewBinaryEqualsOpTest
+    : public ::testing::Test,
+      public ::testing::WithParamInterface<Op> {
 protected:
   Op op;
 };
@@ -93,11 +94,11 @@ std::tuple<Dataset, Dataset> generateBinaryOpTestCase() {
   return std::make_tuple(a, b);
 }
 
-TYPED_TEST_SUITE(DataProxyBinaryEqualsOpTest, BinaryEquals);
+TYPED_TEST_SUITE(DataArrayViewBinaryEqualsOpTest, BinaryEquals);
 TYPED_TEST_SUITE(DatasetBinaryEqualsOpTest, BinaryEquals);
 TYPED_TEST_SUITE(DatasetProxyBinaryEqualsOpTest, BinaryEquals);
 
-TYPED_TEST(DataProxyBinaryEqualsOpTest, other_data_unchanged) {
+TYPED_TEST(DataArrayViewBinaryEqualsOpTest, other_data_unchanged) {
   const auto dataset_b = datasetFactory.make();
 
   for (const auto &item : dataset_b) {
@@ -115,7 +116,7 @@ TYPED_TEST(DataProxyBinaryEqualsOpTest, other_data_unchanged) {
   }
 }
 
-TYPED_TEST(DataProxyBinaryEqualsOpTest, lhs_with_variance) {
+TYPED_TEST(DataArrayViewBinaryEqualsOpTest, lhs_with_variance) {
   const auto dataset_b = datasetFactory.make();
 
   for (const auto &item : dataset_b) {
@@ -133,7 +134,7 @@ TYPED_TEST(DataProxyBinaryEqualsOpTest, lhs_with_variance) {
   }
 }
 
-TYPED_TEST(DataProxyBinaryEqualsOpTest, lhs_without_variance) {
+TYPED_TEST(DataArrayViewBinaryEqualsOpTest, lhs_without_variance) {
   const auto dataset_b = datasetFactory.make();
 
   for (const auto &item : dataset_b) {
@@ -156,7 +157,7 @@ TYPED_TEST(DataProxyBinaryEqualsOpTest, lhs_without_variance) {
   }
 }
 
-TYPED_TEST(DataProxyBinaryEqualsOpTest, slice_lhs_with_variance) {
+TYPED_TEST(DataArrayViewBinaryEqualsOpTest, slice_lhs_with_variance) {
   const auto dataset_b = datasetFactory.make();
 
   for (const auto &item : dataset_b) {
@@ -194,8 +195,8 @@ TYPED_TEST(DataProxyBinaryEqualsOpTest, slice_lhs_with_variance) {
   }
 }
 
-// DataProxyBinaryEqualsOpTest ensures correctness of operations between
-// DataProxy with itself, so we can rely on that for building the reference.
+// DataArrayViewBinaryEqualsOpTest ensures correctness of operations between
+// DataArrayView with itself, so we can rely on that for building the reference.
 TYPED_TEST(DatasetBinaryEqualsOpTest, return_value) {
   auto a = datasetFactory.make();
   auto b = datasetFactory.make();
@@ -236,7 +237,7 @@ TYPED_TEST(DatasetBinaryEqualsOpTest, return_value) {
   }
 }
 
-TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_DataProxy_self_overlap) {
+TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_DataArrayView_self_overlap) {
   auto dataset = datasetFactory.make();
   auto original(dataset);
   auto reference(dataset);
@@ -260,7 +261,7 @@ TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_Variable_self_overlap) {
   }
 }
 
-TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_DataProxy_self_overlap_slice) {
+TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_DataArrayView_self_overlap_slice) {
   auto dataset = datasetFactory.make();
   auto original(dataset);
   auto reference(dataset);
@@ -482,7 +483,7 @@ TYPED_TEST(DatasetProxyBinaryEqualsOpTest, return_value) {
   }
 }
 
-TYPED_TEST(DatasetProxyBinaryEqualsOpTest, rhs_DataProxy_self_overlap) {
+TYPED_TEST(DatasetProxyBinaryEqualsOpTest, rhs_DataArrayView_self_overlap) {
   auto dataset = datasetFactory.make();
   auto reference(dataset);
   TestFixture::op(reference, dataset["data_scalar"]);
@@ -501,7 +502,8 @@ TYPED_TEST(DatasetProxyBinaryEqualsOpTest, rhs_DataProxy_self_overlap) {
     }
 }
 
-TYPED_TEST(DatasetProxyBinaryEqualsOpTest, rhs_DataProxy_self_overlap_slice) {
+TYPED_TEST(DatasetProxyBinaryEqualsOpTest,
+           rhs_DataArrayView_self_overlap_slice) {
   auto dataset = datasetFactory.make();
   auto reference(dataset);
   TestFixture::op(reference, dataset["values_x"].slice({Dim::X, 1}));
@@ -735,7 +737,7 @@ TYPED_TEST(DatasetBinaryOpTest, dataset_sparse_lhs_dataset_sparse_rhs) {
   EXPECT_EQ(dataset_a["sparse"].coords(), res["sparse"].coords());
 }
 
-TYPED_TEST(DatasetBinaryOpTest, dataset_sparse_lhs_dataconstproxy_sparse_rhs) {
+TYPED_TEST(DatasetBinaryOpTest, dataset_sparse_lhs_dataarrayconstview_sparse_rhs) {
   const auto dataset_a =
       make_sparse_with_coords_and_labels({1.1, 2.2}, {1.0, 2.0});
   const auto dataset_b =
@@ -785,7 +787,7 @@ TYPED_TEST(DatasetBinaryOpTest, dense_with_sparse) {
             TestFixture::op(dense["a"].data(), sparse["a"].data()));
 }
 
-TYPED_TEST(DatasetBinaryOpTest, dataconstproxy_sparse_lhs_dataset_sparse_rhs) {
+TYPED_TEST(DatasetBinaryOpTest, dataarrayconstview_sparse_lhs_dataset_sparse_rhs) {
   const auto dataset_a =
       make_sparse_with_coords_and_labels({1.1, 2.2}, {1.0, 2.0});
   const auto dataset_b =
@@ -796,7 +798,7 @@ TYPED_TEST(DatasetBinaryOpTest, dataconstproxy_sparse_lhs_dataset_sparse_rhs) {
   EXPECT_EQ(res, TestFixture::op(dataset_a, dataset_b));
 }
 
-TYPED_TEST(DatasetBinaryOpTest, sparse_dataconstproxy_coord_mismatch) {
+TYPED_TEST(DatasetBinaryOpTest, sparse_dataarrayconstview_coord_mismatch) {
   const auto dataset_a =
       make_sparse_with_coords_and_labels({1.1, 2.2}, {1.0, 2.0});
   const auto dataset_b =
@@ -904,7 +906,7 @@ TYPED_TEST(DatasetBinaryOpTest, datasetconstproxy_lhs_datasetconstproxy_rhs) {
   }
 }
 
-TYPED_TEST(DatasetBinaryOpTest, dataset_lhs_dataproxy_rhs) {
+TYPED_TEST(DatasetBinaryOpTest, dataset_lhs_dataarrayview_rhs) {
   auto dataset_a = datasetFactory.make();
   auto dataset_b = datasetFactory.make();
 

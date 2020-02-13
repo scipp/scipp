@@ -24,7 +24,7 @@ static inline void expectAlignedCoord(const Dim coord_dim,
 }
 
 template <bool ApplyToData, class Func, class... Args>
-DataArray apply_and_drop_dim_impl(const DataConstProxy &a, Func func,
+DataArray apply_and_drop_dim_impl(const DataArrayConstView &a, Func func,
                                   const Dim dim, Args &&... args) {
   std::map<Dim, Variable> coords;
   for (auto &&[d, coord] : a.coords()) {
@@ -67,8 +67,8 @@ DataArray apply_and_drop_dim_impl(const DataConstProxy &a, Func func,
 /// Create new data array by applying Func to everything depending on dim, copy
 /// otherwise.
 template <class Func, class... Args>
-DataArray apply_or_copy_dim(const DataConstProxy &a, Func func, const Dim dim,
-                            Args &&... args) {
+DataArray apply_or_copy_dim(const DataArrayConstView &a, Func func,
+                            const Dim dim, Args &&... args) {
   Dimensions drop({dim, a.dims()[dim]});
   std::map<Dim, Variable> coords;
   // Note the `copy` call, ensuring that the return value of the ternary
@@ -105,21 +105,22 @@ DataArray apply_or_copy_dim(const DataConstProxy &a, Func func, const Dim dim,
 }
 
 template <class Func, class... Args>
-DataArray apply_to_data_and_drop_dim(const DataConstProxy &a, Func func,
+DataArray apply_to_data_and_drop_dim(const DataArrayConstView &a, Func func,
                                      const Dim dim, Args &&... args) {
   return apply_and_drop_dim_impl<true>(a, func, dim,
                                        std::forward<Args>(args)...);
 }
 
 template <class Func, class... Args>
-DataArray apply_and_drop_dim(const DataConstProxy &a, Func func, const Dim dim,
-                             Args &&... args) {
+DataArray apply_and_drop_dim(const DataArrayConstView &a, Func func,
+                             const Dim dim, Args &&... args) {
   return apply_and_drop_dim_impl<false>(a, func, dim,
                                         std::forward<Args>(args)...);
 }
 
 template <class Func, class... Args>
-DataArray apply_to_items(const DataConstProxy &d, Func func, Args &&... args) {
+DataArray apply_to_items(const DataArrayConstView &d, Func func,
+                         Args &&... args) {
   return func(d, std::forward<Args>(args)...);
 }
 

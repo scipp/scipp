@@ -17,27 +17,27 @@ template <class T> auto copy_map(const T &map) {
   return out;
 }
 
-DataArray::DataArray(const DataConstProxy &proxy)
+DataArray::DataArray(const DataArrayConstView &proxy)
     : DataArray(proxy.hasData() ? std::optional<Variable>(proxy.data())
                                 : std::optional<Variable>(),
                 copy_map(proxy.coords()), copy_map(proxy.labels()),
                 copy_map(proxy.masks()), copy_map(proxy.attrs()),
                 proxy.name()) {}
 
-DataArray::operator DataConstProxy() const { return get(); }
-DataArray::operator DataProxy() { return get(); }
+DataArray::operator DataArrayConstView() const { return get(); }
+DataArray::operator DataArrayView() { return get(); }
 
 void requireValid(const DataArray &a) {
   if (!a)
     throw std::runtime_error("Invalid DataArray.");
 }
 
-DataConstProxy DataArray::get() const {
+DataArrayConstView DataArray::get() const {
   requireValid(*this);
   return *m_holder.begin();
 }
 
-DataProxy DataArray::get() {
+DataArrayView DataArray::get() {
   requireValid(*this);
   return *m_holder.begin();
 }
@@ -65,7 +65,7 @@ struct Divide {
 };
 } // namespace
 
-bool is_sparse_and_histogram(const DataConstProxy &a, const DataConstProxy &b) {
+bool is_sparse_and_histogram(const DataArrayConstView &a, const DataArrayConstView &b) {
   return (a.dims().sparse() && is_histogram(b, a.dims().sparseDim())) ||
          (b.dims().sparse() && is_histogram(a, b.dims().sparseDim()));
 }
@@ -152,14 +152,14 @@ Variable sparse_dense_op_impl(Op op, const VariableConstProxy &sparseCoord_,
           }});
 }
 
-DataArray &DataArray::operator+=(const DataConstProxy &other) {
+DataArray &DataArray::operator+=(const DataArrayConstView &other) {
   expect::coordsAndLabelsAreSuperset(*this, other);
   union_or_in_place(masks(), other.masks());
   data() += other.data();
   return *this;
 }
 
-DataArray &DataArray::operator-=(const DataConstProxy &other) {
+DataArray &DataArray::operator-=(const DataArrayConstView &other) {
   expect::coordsAndLabelsAreSuperset(*this, other);
   union_or_in_place(masks(), other.masks());
   data() -= other.data();
@@ -168,7 +168,7 @@ DataArray &DataArray::operator-=(const DataConstProxy &other) {
 
 template <class Op>
 DataArray &sparse_dense_op_inplace(Op op, DataArray &a,
-                                   const DataConstProxy &b) {
+                                   const DataArrayConstView &b) {
   if (!is_sparse_and_histogram(a, b)) {
     expect::coordsAndLabelsAreSuperset(a, b);
     union_or_in_place(a.masks(), b.masks());
@@ -195,11 +195,11 @@ DataArray &sparse_dense_op_inplace(Op op, DataArray &a,
   return a;
 }
 
-DataArray &DataArray::operator*=(const DataConstProxy &other) {
+DataArray &DataArray::operator*=(const DataArrayConstView &other) {
   return sparse_dense_op_inplace(Times{}, *this, other);
 }
 
-DataArray &DataArray::operator/=(const DataConstProxy &other) {
+DataArray &DataArray::operator/=(const DataArrayConstView &other) {
   return sparse_dense_op_inplace(Divide{}, *this, other);
 }
 
@@ -223,19 +223,19 @@ DataArray &DataArray::operator/=(const VariableConstProxy &other) {
   return *this;
 }
 
-DataArray operator+(const DataConstProxy &a, const DataConstProxy &b) {
+DataArray operator+(const DataArrayConstView &a, const DataArrayConstView &b) {
   return DataArray(a.data() + b.data(), union_(a.coords(), b.coords()),
                    union_(a.labels(), b.labels()),
                    union_or(a.masks(), b.masks()));
 }
 
-DataArray operator-(const DataConstProxy &a, const DataConstProxy &b) {
+DataArray operator-(const DataArrayConstView &a, const DataArrayConstView &b) {
   return {a.data() - b.data(), union_(a.coords(), b.coords()),
           union_(a.labels(), b.labels()), union_or(a.masks(), b.masks())};
 }
 
 template <class Op>
-auto sparse_dense_op(Op op, const DataConstProxy &a, const DataConstProxy &b) {
+auto sparse_dense_op(Op op, const DataArrayConstView &a, const DataArrayConstView &b) {
   if (!is_sparse_and_histogram(a, b))
     return op(a.data(), b.data());
   if (a.dims().sparse()) {
@@ -259,8 +259,8 @@ auto sparse_dense_op(Op op, const DataConstProxy &a, const DataConstProxy &b) {
                                 "data in binary arithmetic operation.");
 }
 
-auto sparse_dense_coord_union(const DataConstProxy &a,
-                              const DataConstProxy &b) {
+auto sparse_dense_coord_union(const DataArrayConstView &a,
+                              const DataArrayConstView &b) {
   if (!is_sparse_and_histogram(a, b))
     return union_(a.coords(), b.coords());
   // Use slice to remove dense coord, since output will be sparse.
@@ -270,58 +270,58 @@ auto sparse_dense_coord_union(const DataConstProxy &a,
     return union_(a.slice({b.dims().sparseDim(), 0}).coords(), b.coords());
 }
 
-DataArray operator*(const DataConstProxy &a, const DataConstProxy &b) {
+DataArray operator*(const DataArrayConstView &a, const DataArrayConstView &b) {
   const auto data = sparse_dense_op(Times{}, a, b);
   const auto coords = sparse_dense_coord_union(a, b);
   return {std::move(data), std::move(coords), union_(a.labels(), b.labels()),
           union_or(a.masks(), b.masks())};
 }
 
-DataArray operator/(const DataConstProxy &a, const DataConstProxy &b) {
+DataArray operator/(const DataArrayConstView &a, const DataArrayConstView &b) {
   const auto data = sparse_dense_op(Divide{}, a, b);
   const auto coords = sparse_dense_coord_union(a, b);
   return {std::move(data), std::move(coords), union_(a.labels(), b.labels()),
           union_or(a.masks(), b.masks())};
 }
 
-DataArray operator+(const DataConstProxy &a, const VariableConstProxy &b) {
+DataArray operator+(const DataArrayConstView &a, const VariableConstProxy &b) {
   return DataArray(a.data() + b, a.coords(), a.labels(), a.masks(), a.attrs());
 }
 
-DataArray operator-(const DataConstProxy &a, const VariableConstProxy &b) {
+DataArray operator-(const DataArrayConstView &a, const VariableConstProxy &b) {
   return DataArray(a.data() - b, a.coords(), a.labels(), a.masks(), a.attrs());
 }
 
-DataArray operator*(const DataConstProxy &a, const VariableConstProxy &b) {
+DataArray operator*(const DataArrayConstView &a, const VariableConstProxy &b) {
   return DataArray(a.data() * b, a.coords(), a.labels(), a.masks(), a.attrs());
 }
 
-DataArray operator/(const DataConstProxy &a, const VariableConstProxy &b) {
+DataArray operator/(const DataArrayConstView &a, const VariableConstProxy &b) {
   return DataArray(a.data() / b, a.coords(), a.labels(), a.masks(), a.attrs());
 }
 
-DataArray operator+(const VariableConstProxy &a, const DataConstProxy &b) {
+DataArray operator+(const VariableConstProxy &a, const DataArrayConstView &b) {
   return DataArray(a + b.data(), b.coords(), b.labels(), b.masks(), b.attrs());
 }
 
-DataArray operator-(const VariableConstProxy &a, const DataConstProxy &b) {
+DataArray operator-(const VariableConstProxy &a, const DataArrayConstView &b) {
   return DataArray(a - b.data(), b.coords(), b.labels(), b.masks(), b.attrs());
 }
 
-DataArray operator*(const VariableConstProxy &a, const DataConstProxy &b) {
+DataArray operator*(const VariableConstProxy &a, const DataArrayConstView &b) {
   return DataArray(a * b.data(), b.coords(), b.labels(), b.masks(), b.attrs());
 }
 
-DataArray operator/(const VariableConstProxy &a, const DataConstProxy &b) {
+DataArray operator/(const VariableConstProxy &a, const DataArrayConstView &b) {
   return DataArray(a / b.data(), b.coords(), b.labels(), b.masks(), b.attrs());
 }
 
-DataArray astype(const DataConstProxy &var, const DType type) {
+DataArray astype(const DataArrayConstView &var, const DType type) {
   return DataArray(astype(var.data(), type), var.coords(), var.labels(),
                    var.masks(), var.attrs());
 }
 
-DataArray reciprocal(const DataConstProxy &a) {
+DataArray reciprocal(const DataArrayConstView &a) {
   return DataArray(reciprocal(a.data()), a.coords(), a.labels(), a.masks(),
                    a.attrs());
 }

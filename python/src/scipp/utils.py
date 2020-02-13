@@ -5,7 +5,7 @@
 
 from ._scipp.core.units import dimensionless
 from ._scipp.core import (Variable, VariableProxy, Dataset, DatasetProxy,
-                          DataArray, DataProxy)
+                          DataArray, DataArrayView)
 
 
 def name_with_unit(var=None, name=None, log=False, replace_dim=True):
@@ -62,7 +62,7 @@ def is_data_array(obj):
     """
     Return True if the input is of type scipp.core.Variable.
     """
-    return isinstance(obj, DataArray) or isinstance(obj, DataProxy)
+    return isinstance(obj, DataArray) or isinstance(obj, DataArrayView)
 
 
 def is_dataset_or_array(obj):

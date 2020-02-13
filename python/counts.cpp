@@ -26,7 +26,7 @@ void init_counts(py::module &m) {
         :rtype: Dataset)");
 
   m.def("counts_to_density",
-        [](const DataConstProxy &d, const Dim dim) {
+        [](const DataArrayConstView &d, const Dim dim) {
           return counts::toDensity(DataArray(d), dim);
         },
         py::arg("x"), py::arg("dim"),
@@ -52,7 +52,7 @@ void init_counts(py::module &m) {
         :rtype: Dataset)");
 
   m.def("density_to_counts",
-        [](const DataConstProxy &d, const Dim dim) {
+        [](const DataArrayConstView &d, const Dim dim) {
           return counts::fromDensity(DataArray(d), dim);
         },
         py::arg("x"), py::arg("dim"),

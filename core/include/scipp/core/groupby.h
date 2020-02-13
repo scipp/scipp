@@ -60,10 +60,10 @@ private:
   GroupByGrouping m_grouping;
 };
 
-SCIPP_CORE_EXPORT GroupBy<DataArray> groupby(const DataConstProxy &dataset,
+SCIPP_CORE_EXPORT GroupBy<DataArray> groupby(const DataArrayConstView &dataset,
                                              const std::string &labels,
                                              const Dim targetDim);
-SCIPP_CORE_EXPORT GroupBy<DataArray> groupby(const DataConstProxy &dataset,
+SCIPP_CORE_EXPORT GroupBy<DataArray> groupby(const DataArrayConstView &dataset,
                                              const std::string &labels,
                                              const VariableConstProxy &bins);
 

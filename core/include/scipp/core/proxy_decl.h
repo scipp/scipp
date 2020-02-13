@@ -45,7 +45,7 @@ static constexpr auto make_key_value = [](auto &&view) {
 
 static constexpr auto make_key = [](auto &&view) -> decltype(auto) {
   using T = std::decay_t<decltype(view)>;
-  if constexpr (std::is_base_of_v<DataConstProxy, T>)
+  if constexpr (std::is_base_of_v<DataArrayConstView, T>)
     return view.name();
   else
     return view.first;
@@ -66,21 +66,21 @@ class Masks;
 template <class Id, class Key> class ConstProxy;
 template <class Base> class MutableProxy;
 
-/// Proxy for accessing coordinates of const Dataset and DataConstProxy.
+/// Proxy for accessing coordinates of const Dataset and DataArrayConstView.
 using CoordsConstProxy = ConstProxy<ProxyId::Coords, Dim>;
-/// Proxy for accessing coordinates of Dataset and DataProxy.
+/// Proxy for accessing coordinates of Dataset and DataArrayView.
 using CoordsProxy = MutableProxy<CoordsConstProxy>;
-/// Proxy for accessing labels of const Dataset and DataConstProxy.
+/// Proxy for accessing labels of const Dataset and DataArrayConstView.
 using LabelsConstProxy = ConstProxy<ProxyId::Labels, std::string>;
-/// Proxy for accessing labels of Dataset and DataProxy.
+/// Proxy for accessing labels of Dataset and DataArrayView.
 using LabelsProxy = MutableProxy<LabelsConstProxy>;
-/// Proxy for accessing attributes of const Dataset and DataConstProxy.
+/// Proxy for accessing attributes of const Dataset and DataArrayConstView.
 using AttrsConstProxy = ConstProxy<ProxyId::Attrs, std::string>;
-/// Proxy for accessing attributes of Dataset and DataProxy.
+/// Proxy for accessing attributes of Dataset and DataArrayView.
 using AttrsProxy = MutableProxy<AttrsConstProxy>;
-/// Proxy for accessing masks of const Dataset and DataConstProxy
+/// Proxy for accessing masks of const Dataset and DataArrayConstView
 using MasksConstProxy = ConstProxy<ProxyId::Masks, std::string>;
-/// Proxy for accessing masks of Dataset and DataProxy
+/// Proxy for accessing masks of Dataset and DataArrayView
 using MasksProxy = MutableProxy<MasksConstProxy>;
 
 /// Common functionality for other const-proxy classes.
