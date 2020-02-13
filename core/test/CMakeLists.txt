@@ -46,7 +46,7 @@ add_executable(${TARGET_NAME} EXCLUDE_FROM_ALL
                variable_scalar_accessors_test.cpp
                variable_test.cpp
                variable_trigonometry_test.cpp
-               variable_view_test.cpp
+               element_array_view_test.cpp
                view_index_test.cpp
         variable_keyword_args_constructor_test.cpp)
 include_directories(SYSTEM ${GMOCK_INCLUDE_DIR} ${GTEST_INCLUDE_DIR})

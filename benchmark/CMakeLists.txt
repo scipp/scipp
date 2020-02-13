@@ -64,7 +64,7 @@ add_executable(multi_index_benchmark EXCLUDE_FROM_ALL multi_index_benchmark.cpp)
 # add_dependencies(all-benchmarks multi_index_benchmark)
 target_link_libraries(multi_index_benchmark LINK_PRIVATE scipp-core benchmark)
 
-add_executable(variable_view_benchmark EXCLUDE_FROM_ALL
-               variable_view_benchmark.cpp)
-# add_dependencies(all-benchmarks variable_view_benchmark)
-target_link_libraries(variable_view_benchmark LINK_PRIVATE scipp-core benchmark)
+add_executable(element_array_view_benchmark EXCLUDE_FROM_ALL
+               element_array_view_benchmark.cpp)
+# add_dependencies(all-benchmarks element_array_view_benchmark)
+target_link_libraries(element_array_view_benchmark LINK_PRIVATE scipp-core benchmark)

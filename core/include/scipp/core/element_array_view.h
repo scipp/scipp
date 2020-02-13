@@ -2,8 +2,8 @@
 // Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#ifndef SCIPP_CORE_VARIABLE_VIEW_H
-#define SCIPP_CORE_VARIABLE_VIEW_H
+#ifndef SCIPP_CORE_ELEMENT_ARRAY_VIEW_H
+#define SCIPP_CORE_ELEMENT_ARRAY_VIEW_H
 
 #include <algorithm>
 
@@ -34,14 +34,15 @@ public:
   /// The parameter `targetDimensions` can be used to remove, slice, broadcast,
   /// or transpose dimensions of the input data array.
   ElementArrayView(T *variable, const scipp::index offset,
-               const Dimensions &targetDimensions, const Dimensions &dimensions)
+                   const Dimensions &targetDimensions,
+                   const Dimensions &dimensions)
       : m_variable(variable), m_offset(offset),
         m_targetDimensions(targetDimensions), m_dimensions(dimensions) {
     expectCanBroadcastFromTo(m_dimensions, m_targetDimensions);
   }
 
-  /// Construct a ElementArrayView from another ElementArrayView, with different target
-  /// dimensions.
+  /// Construct a ElementArrayView from another ElementArrayView, with different
+  /// target dimensions.
   ///
   /// A good way to think of this is of a non-contiguous underlying data array,
   /// e.g., since the other view may represent a slice. This also supports
@@ -59,15 +60,15 @@ public:
         m_dimensions.relabel(m_dimensions.index(label), Dim::Invalid);
   }
 
-  /// Construct a ElementArrayView from another ElementArrayView, with different target
-  /// dimensions and offset derived from `dim` and `begin`.
+  /// Construct a ElementArrayView from another ElementArrayView, with different
+  /// target dimensions and offset derived from `dim` and `begin`.
   ///
-  /// This is essentially performing a slice of a ElementArrayView, creating a new
-  /// view which may at the same time also perform other manipulations such as
-  /// broadcasting and transposing.
+  /// This is essentially performing a slice of a ElementArrayView, creating a
+  /// new view which may at the same time also perform other manipulations such
+  /// as broadcasting and transposing.
   template <class Other>
   ElementArrayView(const Other &other, const Dimensions &targetDimensions,
-               const Dim dim, const scipp::index begin)
+                   const Dim dim, const scipp::index begin)
       : m_variable(other.m_variable), m_offset(other.m_offset),
         m_targetDimensions(targetDimensions) {
     expectCanBroadcastFromTo(other.m_targetDimensions, m_targetDimensions);
@@ -178,16 +179,17 @@ private:
 
 template <class T>
 ElementArrayView<T> makeElementArrayView(T *variable, const scipp::index offset,
-                                 const Dimensions &targetDimensions,
-                                 const Dimensions &dimensions) {
+                                         const Dimensions &targetDimensions,
+                                         const Dimensions &dimensions) {
   return ElementArrayView<T>(variable, offset, targetDimensions, dimensions);
 }
 
 template <class T> struct is_ElementArrayView : std::false_type {};
-template <class T> struct is_ElementArrayView<ElementArrayView<T>> : std::true_type {};
+template <class T>
+struct is_ElementArrayView<ElementArrayView<T>> : std::true_type {};
 template <class T>
 inline constexpr bool is_ElementArrayView_v = is_ElementArrayView<T>::value;
 
 } // namespace scipp::core
 
-#endif // SCIPP_CORE_VARIABLE_VIEW_H
+#endif // SCIPP_CORE_ELEMENT_ARRAY_VIEW_H

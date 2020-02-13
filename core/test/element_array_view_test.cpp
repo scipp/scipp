@@ -7,8 +7,8 @@
 
 #include "test_macros.h"
 
+#include "scipp/core/element_array_view.h"
 #include "scipp/core/except.h"
-#include "scipp/core/variable_view.h"
 
 using namespace scipp;
 using namespace scipp::core;
@@ -223,14 +223,15 @@ TEST(ElementArrayViewTest, collapse_inner_and_outer) {
 TEST(ElementArrayViewTest, collapse_inner_two) {
   Dimensions dims{{Dim::X, Dim::Y, Dim::Z}, {2, 3, 4}};
   Dimensions target(Dim::X, 2);
-  EXPECT_TRUE(equals(ElementArrayView(range(24).data(), 0, target, dims), {0, 12}));
+  EXPECT_TRUE(
+      equals(ElementArrayView(range(24).data(), 0, target, dims), {0, 12}));
 }
 
 TEST(ElementArrayViewTest, collapse_outer_two) {
   Dimensions dims{{Dim::X, Dim::Y, Dim::Z}, {2, 3, 4}};
   Dimensions target(Dim::Z, 4);
-  EXPECT_TRUE(
-      equals(ElementArrayView(range(24).data(), 0, target, dims), {0, 1, 2, 3}));
+  EXPECT_TRUE(equals(ElementArrayView(range(24).data(), 0, target, dims),
+                     {0, 1, 2, 3}));
 }
 
 TEST(ElementArrayViewTest, collapse_all) {
@@ -276,14 +277,15 @@ TEST(ElementArrayViewTest, slice_inner_and_outer) {
 TEST(ElementArrayViewTest, slice_inner_two) {
   Dimensions dims{{Dim::X, Dim::Y, Dim::Z}, {2, 3, 4}};
   Dimensions target({Dim::X, Dim::Y, Dim::Z}, {2, 1, 1});
-  EXPECT_TRUE(equals(ElementArrayView(range(24).data(), 0, target, dims), {0, 12}));
+  EXPECT_TRUE(
+      equals(ElementArrayView(range(24).data(), 0, target, dims), {0, 12}));
 }
 
 TEST(ElementArrayViewTest, slice_outer_two) {
   Dimensions dims{{Dim::X, Dim::Y, Dim::Z}, {2, 3, 4}};
   Dimensions target({Dim::X, Dim::Y, Dim::Z}, {1, 1, 4});
-  EXPECT_TRUE(
-      equals(ElementArrayView(range(24).data(), 0, target, dims), {0, 1, 2, 3}));
+  EXPECT_TRUE(equals(ElementArrayView(range(24).data(), 0, target, dims),
+                     {0, 1, 2, 3}));
 }
 
 TEST(ElementArrayViewTest, slice_all) {
@@ -330,8 +332,8 @@ TEST(ElementArrayViewTest, slice_range_outer_two) {
 TEST(ElementArrayViewTest, slice_range_all) {
   Dimensions dims{{Dim::X, Dim::Y, Dim::Z}, {2, 3, 4}};
   Dimensions target{{Dim::X, Dim::Y, Dim::Z}, {1, 2, 2}};
-  EXPECT_TRUE(
-      equals(ElementArrayView(range(24).data(), 0, target, dims), {0, 1, 4, 5}));
+  EXPECT_TRUE(equals(ElementArrayView(range(24).data(), 0, target, dims),
+                     {0, 1, 4, 5}));
 }
 
 TEST(ElementArrayViewTest, broadcast_transpose_slice_3d) {
@@ -370,7 +372,8 @@ TEST(ElementArrayViewTest, view_of_view_bad_broadcast) {
   const auto data = range(6);
   // Base view with sliced Y
   ElementArrayView base(data.data(), 0, target, dims);
-  EXPECT_THROW(ElementArrayView<const int32_t>(base, dims), except::DimensionError);
+  EXPECT_THROW(ElementArrayView<const int32_t>(base, dims),
+               except::DimensionError);
 }
 
 TEST(ElementArrayViewTest, slicing_view_of_view_collapse_and_broadcast) {

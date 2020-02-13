@@ -158,7 +158,7 @@ TEST(Dataset, mixed_type_operations_fails_currently) {
   EXPECT_ANY_THROW(d1 += d2);
 }
 
-TEST(Dataset, get_variable_view) {
+TEST(Dataset, get_element_array_view) {
   Dataset d;
   d.insert(Data::Value, "", {});
   d.insert(Data::Value, "name", {});

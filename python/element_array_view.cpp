@@ -2,7 +2,7 @@
 // Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#include "scipp/core/variable_view.h"
+#include "scipp/core/element_array_view.h"
 #include "scipp/core/dataset.h"
 #include "scipp/core/dtype.h"
 #include "scipp/core/except.h"
@@ -68,7 +68,7 @@ void declare_ElementArrayView(py::module &m, const std::string &suffix) {
              });
 }
 
-void init_variable_view(py::module &m) {
+void init_element_array_view(py::module &m) {
   declare_span<double>(m, "double");
   declare_span<float>(m, "float");
   declare_span<bool>(m, "bool");

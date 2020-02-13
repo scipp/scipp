@@ -6,7 +6,7 @@
 #include "scipp/core/apply.h"
 #include "scipp/core/dimensions.h"
 #include "scipp/core/variable.h"
-#include "scipp/core/variable_view.h"
+#include "scipp/core/element_array_view.h"
 #include "scipp/units/unit.h"
 #include <numeric>
 #include <optional>
@@ -313,11 +313,12 @@ public:
     return makeElementArrayView(m_values.data(), 0, dims, this->dims());
   }
   ElementArrayView<value_type> valuesView(const Dimensions &dims, const Dim dim,
-                                      const scipp::index begin) override {
+                                          const scipp::index begin) override {
     scipp::index beginOffset = this->dims().contains(dim)
                                    ? begin * this->dims().offset(dim)
                                    : begin * this->dims().volume();
-    return makeElementArrayView(m_values.data(), beginOffset, dims, this->dims());
+    return makeElementArrayView(m_values.data(), beginOffset, dims,
+                                this->dims());
   }
 
   ElementArrayView<const value_type>
@@ -330,19 +331,21 @@ public:
     scipp::index beginOffset = this->dims().contains(dim)
                                    ? begin * this->dims().offset(dim)
                                    : begin * this->dims().volume();
-    return makeElementArrayView(m_values.data(), beginOffset, dims, this->dims());
+    return makeElementArrayView(m_values.data(), beginOffset, dims,
+                                this->dims());
   }
 
   ElementArrayView<value_type> variancesView(const Dimensions &dims) override {
     return makeElementArrayView(m_variances->data(), 0, dims, this->dims());
   }
-  ElementArrayView<value_type> variancesView(const Dimensions &dims, const Dim dim,
-                                         const scipp::index begin) override {
+  ElementArrayView<value_type>
+  variancesView(const Dimensions &dims, const Dim dim,
+                const scipp::index begin) override {
     scipp::index beginOffset = this->dims().contains(dim)
                                    ? begin * this->dims().offset(dim)
                                    : begin * this->dims().volume();
     return makeElementArrayView(m_variances->data(), beginOffset, dims,
-                            this->dims());
+                                this->dims());
   }
 
   ElementArrayView<const value_type>
@@ -356,7 +359,7 @@ public:
                                    ? begin * this->dims().offset(dim)
                                    : begin * this->dims().volume();
     return makeElementArrayView(m_variances->data(), beginOffset, dims,
-                            this->dims());
+                                this->dims());
   }
 
   ElementArrayView<const value_type>
@@ -371,7 +374,8 @@ public:
   variancesReshaped(const Dimensions &dims) const override {
     return makeElementArrayView(m_variances->data(), 0, dims, dims);
   }
-  ElementArrayView<value_type> variancesReshaped(const Dimensions &dims) override {
+  ElementArrayView<value_type>
+  variancesReshaped(const Dimensions &dims) override {
     return makeElementArrayView(m_variances->data(), 0, dims, dims);
   }
 
@@ -502,7 +506,7 @@ public:
     }
   }
   ElementArrayView<value_type> valuesView(const Dimensions &dims, const Dim dim,
-                                      const scipp::index begin) override {
+                                          const scipp::index begin) override {
     requireMutable();
     if constexpr (std::is_const<typename T::element_type>::value) {
       static_cast<void>(dim);
@@ -532,8 +536,9 @@ public:
       return {*m_variances, dims};
     }
   }
-  ElementArrayView<value_type> variancesView(const Dimensions &dims, const Dim dim,
-                                         const scipp::index begin) override {
+  ElementArrayView<value_type>
+  variancesView(const Dimensions &dims, const Dim dim,
+                const scipp::index begin) override {
     requireMutable();
     if constexpr (std::is_const<typename T::element_type>::value) {
       static_cast<void>(dim);
@@ -572,7 +577,8 @@ public:
   variancesReshaped(const Dimensions &dims) const override {
     return {*m_variances, dims};
   }
-  ElementArrayView<value_type> variancesReshaped(const Dimensions &dims) override {
+  ElementArrayView<value_type>
+  variancesReshaped(const Dimensions &dims) override {
     requireMutable();
     if constexpr (std::is_const<typename T::element_type>::value) {
       static_cast<void>(dims);
@@ -676,9 +682,11 @@ const ElementArrayView<const T> VariableConstProxy::cast() const {
     return requireT<const DataModel<detail::element_array<TT>>>(data())
         .valuesView(dims());
   if (m_view->isConstView())
-    return requireT<const ViewModel<ElementArrayView<const TT>>>(data()).m_values;
+    return requireT<const ViewModel<ElementArrayView<const TT>>>(data())
+        .m_values;
   // Make a const view from the mutable one.
-  return {requireT<const ViewModel<ElementArrayView<TT>>>(data()).m_values, dims()};
+  return {requireT<const ViewModel<ElementArrayView<TT>>>(data()).m_values,
+          dims()};
 }
 
 template <class T>
@@ -728,12 +736,13 @@ using scipp::core::detail::element_array;
       const bool);                                                             \
   template const element_array<__VA_ARGS__> &Variable::cast<__VA_ARGS__>(      \
       const bool) const;                                                       \
-  template const ElementArrayView<const __VA_ARGS__>                               \
+  template const ElementArrayView<const __VA_ARGS__>                           \
   VariableConstProxy::cast<__VA_ARGS__>() const;                               \
-  template const ElementArrayView<const __VA_ARGS__>                               \
+  template const ElementArrayView<const __VA_ARGS__>                           \
   VariableConstProxy::castVariances<__VA_ARGS__>() const;                      \
-  template ElementArrayView<__VA_ARGS__> VariableProxy::cast<__VA_ARGS__>() const; \
-  template ElementArrayView<__VA_ARGS__>                                           \
+  template ElementArrayView<__VA_ARGS__> VariableProxy::cast<__VA_ARGS__>()    \
+      const;                                                                   \
+  template ElementArrayView<__VA_ARGS__>                                       \
   VariableProxy::castVariances<__VA_ARGS__>() const;
 
 } // namespace scipp::core

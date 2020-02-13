@@ -17,7 +17,7 @@ pybind11_add_module(_scipp
                     units_neutron.cpp
                     variable.cpp
                     variable_instantiate_py_object.cpp
-                    variable_view.cpp)
+                    element_array_view.cpp)
 target_link_libraries(_scipp LINK_PRIVATE scipp-core scipp-neutron)
 
 # Set symbol visibility to hidden to reduce binary size, as recommended in pybind11 FAQ.

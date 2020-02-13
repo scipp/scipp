@@ -17,7 +17,7 @@ void init_operations(py::module &);
 void init_sparse_container(py::module &);
 void init_units_neutron(py::module &);
 void init_variable(py::module &);
-void init_variable_view(py::module &);
+void init_element_array_view(py::module &);
 
 void init_core(py::module &m) {
   auto core = m.def_submodule("core");
@@ -30,7 +30,7 @@ void init_core(py::module &m) {
   init_operations(core);
   init_sparse_container(core);
   init_variable(core);
-  init_variable_view(core);
+  init_element_array_view(core);
 }
 
 PYBIND11_MODULE(_scipp, m) {
