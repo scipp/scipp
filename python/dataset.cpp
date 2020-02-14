@@ -90,10 +90,10 @@ void bind_helper_view(py::module &m, const std::string &name) {
 }
 
 template <class T, class ConstT>
-void bind_mutable_proxy(py::module &m, const std::string &name) {
+void bind_mutable_view(py::module &m, const std::string &name) {
   py::class_<ConstT>(m, (name + "ConstView").c_str());
-  py::class_<T, ConstT> proxy(m, (name + "View").c_str());
-  proxy.def("__len__", &T::size)
+  py::class_<T, ConstT> view(m, (name + "View").c_str());
+  view.def("__len__", &T::size)
       .def("__getitem__", &T::operator[], py::return_value_policy::move,
            py::keep_alive<0, 1>())
       .def("__setitem__",
@@ -120,7 +120,7 @@ void bind_mutable_proxy(py::module &m, const std::string &name) {
            py::return_value_policy::move, py::keep_alive<0, 1>(),
            R"(view on self's items)")
       .def("__contains__", &T::contains);
-  bind_comparison<T>(proxy);
+  bind_comparison<T>(view);
 }
 
 template <class T, class... Ignored>
@@ -157,7 +157,7 @@ void bind_coord_properties(py::class_<T, Ignored...> &c) {
 }
 
 template <class T, class... Ignored>
-void bind_dataset_proxy_methods(py::class_<T, Ignored...> &c) {
+void bind_dataset_view_methods(py::class_<T, Ignored...> &c) {
   c.def("__len__", &T::size);
   c.def("__repr__", [](const T &self) { return to_string(self); });
   c.def("__iter__",
@@ -278,10 +278,10 @@ void init_dataset(py::module &m) {
   bind_helper_view<values_view, MasksView>(m, "MasksView");
   bind_helper_view<values_view, AttrsView>(m, "AttrsView");
 
-  bind_mutable_proxy<CoordsView, CoordsConstView>(m, "Coords");
-  bind_mutable_proxy<LabelsView, LabelsConstView>(m, "Labels");
-  bind_mutable_proxy<MasksView, MasksConstView>(m, "Masks");
-  bind_mutable_proxy<AttrsView, AttrsConstView>(m, "Attrs");
+  bind_mutable_view<CoordsView, CoordsConstView>(m, "Coords");
+  bind_mutable_view<LabelsView, LabelsConstView>(m, "Labels");
+  bind_mutable_view<MasksView, MasksConstView>(m, "Masks");
+  bind_mutable_view<AttrsView, AttrsConstView>(m, "Attrs");
 
   py::class_<DataArray> dataArray(m, "DataArray", R"(
     Named variable with associated coords, labels, and attributes.)");
@@ -356,8 +356,8 @@ void init_dataset(py::module &m) {
                    [](const DatasetView &self, const std::string &name,
                       const DataArrayConstView &data) { self[name].assign(data); });
 
-  bind_dataset_proxy_methods(dataset);
-  bind_dataset_proxy_methods(datasetView);
+  bind_dataset_view_methods(dataset);
+  bind_dataset_view_methods(datasetView);
 
   bind_coord_properties(dataset);
   bind_coord_properties(datasetView);
@@ -640,10 +640,10 @@ void init_dataset(py::module &m) {
         },
         py::call_guard<py::gil_scoped_release>(), R"(
         Combine all masks into a single one following the OR operation.
-        This requires a masks proxy as an input, followed by the dimension
+        This requires a masks view as an input, followed by the dimension
         labels and shape of the Variable/DataArray. The labels and the shape
         are used to create a Dimensions object. The function then iterates
-        through the masks proxy and combines only the masks that have all
+        through the masks view and combines only the masks that have all
         their dimensions contained in the Variable/DataArray Dimensions.
 
         :return: A new variable that contains the union of all masks.

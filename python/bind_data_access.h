@@ -91,23 +91,23 @@ class DataAccessHelper {
   }
 
   struct get_values {
-    template <class T, class View> static constexpr auto get(View &proxy) {
-      return proxy.template values<T>();
+    template <class T, class View> static constexpr auto get(View &view) {
+      return view.template values<T>();
     }
 
     template <class View> static bool valid(py::object &obj) {
-      auto &proxy = obj.cast<View &>();
+      auto &view = obj.cast<View &>();
       if constexpr (std::is_same_v<DataArray, View> ||
                     std::is_base_of_v<DataArrayConstView, View>)
-        return proxy.hasData() && bool(proxy.data());
+        return view.hasData() && bool(view.data());
       else
-        return bool(proxy);
+        return bool(view);
     }
   };
 
   struct get_variances {
-    template <class T, class View> static constexpr auto get(View &proxy) {
-      return proxy.template variances<T>();
+    template <class T, class View> static constexpr auto get(View &view) {
+      return view.template variances<T>();
     }
 
     template <class View> static bool valid(py::object &obj) {
@@ -126,52 +126,52 @@ template <class... Ts> class as_ElementArrayViewImpl {
                          ElementArrayView<Ts>>...>;
 
   template <class Getter, class View>
-  static outVariant_t<View> get(View &proxy) {
-    DType type = proxy.data().dtype();
+  static outVariant_t<View> get(View &view) {
+    DType type = view.data().dtype();
     if constexpr (std::is_same_v<DataArray, View> ||
                   std::is_base_of_v<DataArrayConstView, View>) {
-      const auto &view = proxy.data();
-      type = view.data().dtype();
+      const auto &v = view.data();
+      type = v.data().dtype();
     }
     switch (type) {
     case dtype<double>:
-      return {Getter::template get<double>(proxy)};
+      return {Getter::template get<double>(view)};
     case dtype<float>:
-      return {Getter::template get<float>(proxy)};
+      return {Getter::template get<float>(view)};
     case dtype<int64_t>:
-      return {Getter::template get<int64_t>(proxy)};
+      return {Getter::template get<int64_t>(view)};
     case dtype<int32_t>:
-      return {Getter::template get<int32_t>(proxy)};
+      return {Getter::template get<int32_t>(view)};
     case dtype<bool>:
-      return {Getter::template get<bool>(proxy)};
+      return {Getter::template get<bool>(view)};
     case dtype<std::string>:
-      return {Getter::template get<std::string>(proxy)};
+      return {Getter::template get<std::string>(view)};
     case dtype<sparse_container<double>>:
-      return {Getter::template get<sparse_container<double>>(proxy)};
+      return {Getter::template get<sparse_container<double>>(view)};
     case dtype<sparse_container<float>>:
-      return {Getter::template get<sparse_container<float>>(proxy)};
+      return {Getter::template get<sparse_container<float>>(view)};
     case dtype<sparse_container<int64_t>>:
-      return {Getter::template get<sparse_container<int64_t>>(proxy)};
+      return {Getter::template get<sparse_container<int64_t>>(view)};
     case dtype<DataArray>:
-      return {Getter::template get<DataArray>(proxy)};
+      return {Getter::template get<DataArray>(view)};
     case dtype<Dataset>:
-      return {Getter::template get<Dataset>(proxy)};
+      return {Getter::template get<Dataset>(view)};
     case dtype<Eigen::Vector3d>:
-      return {Getter::template get<Eigen::Vector3d>(proxy)};
+      return {Getter::template get<Eigen::Vector3d>(view)};
     case dtype<scipp::python::PyObject>:
-      return {Getter::template get<scipp::python::PyObject>(proxy)};
+      return {Getter::template get<scipp::python::PyObject>(view)};
     default:
       throw std::runtime_error("not implemented for this type.");
     }
   }
 
   template <class View>
-  static void set(const Dimensions &dims, const View &proxy,
+  static void set(const Dimensions &dims, const View &view,
                   const py::object &obj) {
     std::visit(
-        [&dims, &obj](const auto &proxy_) {
+        [&dims, &obj](const auto &view_) {
           using T =
-              typename std::remove_reference_t<decltype(proxy_)>::value_type;
+              typename std::remove_reference_t<decltype(view_)>::value_type;
           if constexpr (std::is_trivial_v<T>) {
             auto &data = obj.cast<const py::array_t<T>>();
             bool except = (dims.shape().size() != data.ndim());
@@ -181,7 +181,7 @@ template <class... Ts> class as_ElementArrayViewImpl {
               throw except::DimensionError("The shape of the provided data "
                                            "does not match the existing "
                                            "object.");
-            copy_flattened<T>(data, proxy_);
+            copy_flattened<T>(data, view_);
           } else if constexpr (is_sparse_v<T>) {
             auto &data = obj.cast<const py::array_t<typename T::value_type>>();
             // Sparse data can be set from an array only for a single item.
@@ -193,44 +193,44 @@ template <class... Ts> class as_ElementArrayViewImpl {
             if (data.ndim() != 1)
               throw except::DimensionError("Expected 1-D data.");
             auto r = data.unchecked();
-            proxy_[0].clear();
+            view_[0].clear();
             for (ssize_t i = 0; i < r.shape(0); ++i)
-              proxy_[0].emplace_back(r(i));
+              view_[0].emplace_back(r(i));
           } else {
             const auto &data = obj.cast<const std::vector<T>>();
             // TODO Related to #290, we should properly support
             // multi-dimensional input, and ignore bad shapes.
-            expect::sizeMatches(proxy_, data);
-            std::copy(data.begin(), data.end(), proxy_.begin());
+            expect::sizeMatches(view_, data);
+            std::copy(data.begin(), data.end(), view_.begin());
           }
         },
-        proxy);
+        view);
   }
 
   template <class Getter, class View>
   static py::object get_py_array_t(py::object &obj) {
-    auto &proxy = obj.cast<View &>();
-    DType type = proxy.data().dtype();
+    auto &view = obj.cast<View &>();
+    DType type = view.data().dtype();
     if constexpr (std::is_same_v<DataArray, View> ||
                   std::is_base_of_v<DataArrayConstView, View>) {
-      const auto &view = proxy.data();
-      type = view.data().dtype();
+      const auto &v = view.data();
+      type = v.data().dtype();
     }
     switch (type) {
     case dtype<double>:
-      return DataAccessHelper::as_py_array_t_impl<Getter, double>(obj, proxy);
+      return DataAccessHelper::as_py_array_t_impl<Getter, double>(obj, view);
     case dtype<float>:
-      return DataAccessHelper::as_py_array_t_impl<Getter, float>(obj, proxy);
+      return DataAccessHelper::as_py_array_t_impl<Getter, float>(obj, view);
     case dtype<int64_t>:
-      return DataAccessHelper::as_py_array_t_impl<Getter, int64_t>(obj, proxy);
+      return DataAccessHelper::as_py_array_t_impl<Getter, int64_t>(obj, view);
     case dtype<int32_t>:
-      return DataAccessHelper::as_py_array_t_impl<Getter, int32_t>(obj, proxy);
+      return DataAccessHelper::as_py_array_t_impl<Getter, int32_t>(obj, view);
     case dtype<bool>:
-      return DataAccessHelper::as_py_array_t_impl<Getter, bool>(obj, proxy);
+      return DataAccessHelper::as_py_array_t_impl<Getter, bool>(obj, view);
     default:
       return std::visit(
-          [&proxy, &obj](const auto &data) {
-            const auto &dims = proxy.dims();
+          [&view, &obj](const auto &data) {
+            const auto &dims = view.dims();
             // We return an individual item in two cases:
             // 1. For 0-D data (consistent with numpy behavior, e.g., when
             //    slicing a 1-D array).
@@ -262,7 +262,7 @@ template <class... Ts> class as_ElementArrayViewImpl {
               return ret;
             }
           },
-          get<Getter>(proxy));
+          get<Getter>(view));
     }
   }
 
