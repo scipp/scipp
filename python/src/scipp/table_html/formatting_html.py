@@ -217,7 +217,7 @@ def summarize_coords(coords, ds=None):
 def _extract_sparse(x):
     """
     Returns the (key, value) pairs where value has a sparse dim
-    :param x: dict-like, e.g., coords proxy or labels proxy
+    :param x: dict-like, e.g., coords view or labels view
     """
     return {
         key: value

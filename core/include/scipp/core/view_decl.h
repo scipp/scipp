@@ -2,8 +2,8 @@
 // Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Dimitar Tasev
-#ifndef SCIPP_CORE_PROXY_DECL_H
-#define SCIPP_CORE_PROXY_DECL_H
+#ifndef SCIPP_CORE_VIEW_DECL_H
+#define SCIPP_CORE_VIEW_DECL_H
 
 #include <boost/iterator/transform_iterator.hpp>
 
@@ -240,4 +240,4 @@ SCIPP_CORE_EXPORT Variable masks_merge_if_contained(const MasksConstView &masks,
                                                     const Dimensions &dims);
 
 } // namespace scipp::core
-#endif // SCIPP_CORE_PROXY_DECL_H
+#endif // SCIPP_CORE_VIEW_DECL_H

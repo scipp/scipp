@@ -415,7 +415,7 @@ def test_plot_variable():
     plot(v3d)
 
 
-def test_plot_dataset_proxy():
+def test_plot_dataset_view():
     d = make_dense_dataset(ndim=2)
     plot(d[Dim.X, 0])
 
