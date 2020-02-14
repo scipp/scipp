@@ -15,8 +15,8 @@
 #include <boost/iterator/transform_iterator.hpp>
 
 #include "scipp/core/except.h"
-#include "scipp/core/view_decl.h"
 #include "scipp/core/variable.h"
+#include "scipp/core/view_decl.h"
 
 namespace scipp::core {
 
@@ -162,26 +162,22 @@ public:
   DataArrayView operator*=(const VariableConstView &other) const;
   DataArrayView operator/=(const VariableConstView &other) const;
 
-  template <typename T,
-            typename = std::enable_if_t<!is_container_or_view<T>()>>
+  template <typename T, typename = std::enable_if_t<!is_container_or_view<T>()>>
   DataArrayView operator+=(const T value) const {
     return *this += makeVariable<T>(Values{value});
   }
 
-  template <typename T,
-            typename = std::enable_if_t<!is_container_or_view<T>()>>
+  template <typename T, typename = std::enable_if_t<!is_container_or_view<T>()>>
   DataArrayView operator-=(const T value) const {
     return *this -= makeVariable<T>(Values{value});
   }
 
-  template <typename T,
-            typename = std::enable_if_t<!is_container_or_view<T>()>>
+  template <typename T, typename = std::enable_if_t<!is_container_or_view<T>()>>
   DataArrayView operator*=(const T value) const {
     return *this *= makeVariable<T>(Values{value});
   }
 
-  template <typename T,
-            typename = std::enable_if_t<!is_container_or_view<T>()>>
+  template <typename T, typename = std::enable_if_t<!is_container_or_view<T>()>>
   DataArrayView operator/=(const T value) const {
     return *this /= makeVariable<T>(Values{value});
   }
@@ -415,7 +411,7 @@ public:
   DatasetView slice(const Slice slice1) &;
   DatasetView slice(const Slice slice1, const Slice slice2) &;
   DatasetView slice(const Slice slice1, const Slice slice2,
-                     const Slice slice3) &;
+                    const Slice slice3) &;
   Dataset slice(const Slice slice1) const &&;
   Dataset slice(const Slice slice1, const Slice slice2) const &&;
   Dataset slice(const Slice slice1, const Slice slice2,
@@ -445,26 +441,22 @@ public:
   Dataset &operator*=(const Dataset &other);
   Dataset &operator/=(const Dataset &other);
 
-  template <typename T,
-            typename = std::enable_if_t<!is_container_or_view<T>()>>
+  template <typename T, typename = std::enable_if_t<!is_container_or_view<T>()>>
   Dataset &operator+=(const T value) {
     return *this += makeVariable<T>(Values{value});
   }
 
-  template <typename T,
-            typename = std::enable_if_t<!is_container_or_view<T>()>>
+  template <typename T, typename = std::enable_if_t<!is_container_or_view<T>()>>
   Dataset &operator-=(const T value) {
     return *this -= makeVariable<T>(Values{value});
   }
 
-  template <typename T,
-            typename = std::enable_if_t<!is_container_or_view<T>()>>
+  template <typename T, typename = std::enable_if_t<!is_container_or_view<T>()>>
   Dataset &operator*=(const T value) {
     return *this *= makeVariable<T>(Values{value});
   }
 
-  template <typename T,
-            typename = std::enable_if_t<!is_container_or_view<T>()>>
+  template <typename T, typename = std::enable_if_t<!is_container_or_view<T>()>>
   Dataset &operator/=(const T value) {
     return *this /= makeVariable<T>(Values{value});
   }
@@ -813,7 +805,7 @@ public:
   }
 
   DatasetView slice(const Slice slice1, const Slice slice2,
-                     const Slice slice3) const {
+                    const Slice slice3) const {
     return slice(slice1, slice2).slice(slice3);
   }
 
@@ -834,26 +826,22 @@ public:
   DatasetView operator*=(const Dataset &other) const;
   DatasetView operator/=(const Dataset &other) const;
 
-  template <typename T,
-            typename = std::enable_if_t<!is_container_or_view<T>()>>
+  template <typename T, typename = std::enable_if_t<!is_container_or_view<T>()>>
   DatasetView operator+=(const T value) const {
     return *this += makeVariable<T>(Values{value});
   }
 
-  template <typename T,
-            typename = std::enable_if_t<!is_container_or_view<T>()>>
+  template <typename T, typename = std::enable_if_t<!is_container_or_view<T>()>>
   DatasetView operator-=(const T value) const {
     return *this -= makeVariable<T>(Values{value});
   }
 
-  template <typename T,
-            typename = std::enable_if_t<!is_container_or_view<T>()>>
+  template <typename T, typename = std::enable_if_t<!is_container_or_view<T>()>>
   DatasetView operator*=(const T value) const {
     return *this *= makeVariable<T>(Values{value});
   }
 
-  template <typename T,
-            typename = std::enable_if_t<!is_container_or_view<T>()>>
+  template <typename T, typename = std::enable_if_t<!is_container_or_view<T>()>>
   DatasetView operator/=(const T value) const {
     return *this /= makeVariable<T>(Values{value});
   }
@@ -965,26 +953,22 @@ public:
   DataArray &operator*=(const VariableConstView &other);
   DataArray &operator/=(const VariableConstView &other);
 
-  template <typename T,
-            typename = std::enable_if_t<!is_container_or_view<T>()>>
+  template <typename T, typename = std::enable_if_t<!is_container_or_view<T>()>>
   DataArray &operator+=(const T value) {
     return *this += makeVariable<T>(Values{value});
   }
 
-  template <typename T,
-            typename = std::enable_if_t<!is_container_or_view<T>()>>
+  template <typename T, typename = std::enable_if_t<!is_container_or_view<T>()>>
   DataArray &operator-=(const T value) {
     return *this -= makeVariable<T>(Values{value});
   }
 
-  template <typename T,
-            typename = std::enable_if_t<!is_container_or_view<T>()>>
+  template <typename T, typename = std::enable_if_t<!is_container_or_view<T>()>>
   DataArray &operator*=(const T value) {
     return *this *= makeVariable<T>(Values{value});
   }
 
-  template <typename T,
-            typename = std::enable_if_t<!is_container_or_view<T>()>>
+  template <typename T, typename = std::enable_if_t<!is_container_or_view<T>()>>
   DataArray &operator/=(const T value) {
     return *this /= makeVariable<T>(Values{value});
   }

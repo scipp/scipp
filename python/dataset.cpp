@@ -5,8 +5,8 @@
 
 #include "scipp/core/dataset.h"
 #include "scipp/core/except.h"
-#include "scipp/core/view_decl.h"
 #include "scipp/core/sort.h"
+#include "scipp/core/view_decl.h"
 
 #include "bind_data_access.h"
 #include "bind_operators.h"
@@ -299,7 +299,8 @@ void init_dataset(py::module &m) {
   py::class_<DataArrayConstView>(m, "DataArrayConstView")
       .def(py::init<const DataArray &>());
 
-  py::class_<DataArrayView, DataArrayConstView> dataArrayView(m, "DataArrayView", R"(
+  py::class_<DataArrayView, DataArrayConstView> dataArrayView(
+      m, "DataArrayView", R"(
         View for DataArray, representing a sliced view onto a DataArray, or an item of a Dataset;
         Mostly equivalent to DataArray, see there for details.)");
   dataArrayView.def(py::init<DataArray &>());
@@ -310,7 +311,7 @@ void init_dataset(py::module &m) {
   py::class_<DatasetConstView>(m, "DatasetConstView")
       .def(py::init<const Dataset &>());
   py::class_<DatasetView, DatasetConstView> datasetView(m, "DatasetView",
-                                                           R"(
+                                                        R"(
         View for Dataset, representing a sliced view onto a Dataset;
         Mostly equivalent to Dataset, see there for details.)");
   datasetView.def(py::init<Dataset &>());
@@ -352,9 +353,10 @@ void init_dataset(py::module &m) {
       .def(
           "clear", &Dataset::clear,
           R"(Removes all data (preserving coordinates, attributes, labels and masks.).)");
-  datasetView.def("__setitem__",
-                   [](const DatasetView &self, const std::string &name,
-                      const DataArrayConstView &data) { self[name].assign(data); });
+  datasetView.def(
+      "__setitem__",
+      [](const DatasetView &self, const std::string &name,
+         const DataArrayConstView &data) { self[name].assign(data); });
 
   bind_dataset_view_methods(dataset);
   bind_dataset_view_methods(datasetView);
@@ -398,8 +400,8 @@ void init_dataset(py::module &m) {
               "Rename dimensions.");
 
   m.def("concatenate",
-        py::overload_cast<const DataArrayConstView &, const DataArrayConstView &,
-                          const Dim>(&concatenate),
+        py::overload_cast<const DataArrayConstView &,
+                          const DataArrayConstView &, const Dim>(&concatenate),
         py::arg("x"), py::arg("y"), py::arg("dim"),
         py::call_guard<py::gil_scoped_release>(), R"(
         Concatenate input data array along the given dimension.
@@ -573,11 +575,12 @@ void init_dataset(py::module &m) {
         :return: A new dataset with data rebinned according to the new coordinate.
         :rtype: Dataset)");
 
-  m.def("sort",
-        py::overload_cast<const DataArrayConstView &, const VariableConstView &>(
-            &sort),
-        py::arg("x"), py::arg("key"), py::call_guard<py::gil_scoped_release>(),
-        R"(Sort data array along a dimension by a sort key.
+  m.def(
+      "sort",
+      py::overload_cast<const DataArrayConstView &, const VariableConstView &>(
+          &sort),
+      py::arg("x"), py::arg("key"), py::call_guard<py::gil_scoped_release>(),
+      R"(Sort data array along a dimension by a sort key.
 
         :raises: If the key is invalid, e.g., if it has not exactly one dimension, or if its dtype is not sortable.
         :return: New sorted data array.
@@ -602,12 +605,11 @@ void init_dataset(py::module &m) {
       :return: New sorted data array.
       :rtype: DataArray)");
 
-  m.def(
-      "sort",
-      py::overload_cast<const DatasetConstView &, const VariableConstView &>(
-          &sort),
-      py::arg("x"), py::arg("key"), py::call_guard<py::gil_scoped_release>(),
-      R"(Sort dataset along a dimension by a sort key.
+  m.def("sort",
+        py::overload_cast<const DatasetConstView &, const VariableConstView &>(
+            &sort),
+        py::arg("x"), py::arg("key"), py::call_guard<py::gil_scoped_release>(),
+        R"(Sort dataset along a dimension by a sort key.
 
         :raises: If the key is invalid, e.g., if it has not exactly one dimension, or if its dtype is not sortable.
         :return: New sorted dataset.
@@ -622,11 +624,10 @@ void init_dataset(py::module &m) {
       :return: New sorted dataset.
       :rtype: Dataset)");
 
-  m.def(
-      "sort",
-      py::overload_cast<const DatasetConstView &, const std::string &>(&sort),
-      py::arg("x"), py::arg("key"), py::call_guard<py::gil_scoped_release>(),
-      R"(Sort dataset along a dimension by the label values for the given key.
+  m.def("sort",
+        py::overload_cast<const DatasetConstView &, const std::string &>(&sort),
+        py::arg("x"), py::arg("key"), py::call_guard<py::gil_scoped_release>(),
+        R"(Sort dataset along a dimension by the label values for the given key.
 
       :raises: If the key is invalid, e.g., if it has not exactly one dimension, or if its dtype is not sortable.
       :return: New sorted dataset.

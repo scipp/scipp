@@ -10,8 +10,7 @@
 namespace scipp::core {
 
 SCIPP_CORE_EXPORT Variable subspan_view(Variable &var, const Dim dim);
-SCIPP_CORE_EXPORT Variable subspan_view(const VariableView &var,
-                                        const Dim dim);
+SCIPP_CORE_EXPORT Variable subspan_view(const VariableView &var, const Dim dim);
 SCIPP_CORE_EXPORT Variable subspan_view(const VariableConstView &var,
                                         const Dim dim);
 

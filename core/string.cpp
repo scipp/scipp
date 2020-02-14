@@ -188,7 +188,7 @@ auto format_variable(const Key &key, const Var &variable,
 
 template <class Key>
 auto format_data_view(const Key &name, const DataArrayConstView &data,
-                       const Dimensions &datasetDims = Dimensions()) {
+                      const Dimensions &datasetDims = Dimensions()) {
   std::stringstream s;
   if (data.hasData())
     s << format_variable(name, data.data(), datasetDims);

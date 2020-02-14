@@ -50,8 +50,9 @@ template <class T>
 void declare_ElementArrayView(py::module &m, const std::string &suffix) {
   py::class_<ElementArrayView<T>> view(
       m, (std::string("ElementArrayView_") + suffix).c_str());
-  view.def("__repr__",
-           [](const ElementArrayView<T> &self) { return array_to_string(self); })
+  view.def(
+          "__repr__",
+          [](const ElementArrayView<T> &self) { return array_to_string(self); })
       .def("__getitem__", &ElementArrayView<T>::operator[],
            py::return_value_policy::reference)
       .def("__setitem__", [](ElementArrayView<T> &self, const scipp::index i,

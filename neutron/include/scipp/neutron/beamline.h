@@ -47,7 +47,8 @@ SCIPP_NEUTRON_EXPORT core::Variable l1(const core::DataArrayConstView &d);
 SCIPP_NEUTRON_EXPORT core::Variable l2(const core::DataArrayConstView &d);
 SCIPP_NEUTRON_EXPORT core::Variable
 scattering_angle(const core::DataArrayConstView &d);
-SCIPP_NEUTRON_EXPORT core::Variable two_theta(const core::DataArrayConstView &d);
+SCIPP_NEUTRON_EXPORT core::Variable
+two_theta(const core::DataArrayConstView &d);
 
 } // namespace scipp::neutron
 

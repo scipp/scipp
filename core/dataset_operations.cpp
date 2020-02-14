@@ -212,8 +212,7 @@ Dataset resize(const DatasetConstView &d, const Dim dim,
 }
 
 /// Return one of the inputs if they are the same, throw otherwise.
-VariableConstView same(const VariableConstView &a,
-                        const VariableConstView &b) {
+VariableConstView same(const VariableConstView &a, const VariableConstView &b) {
   expect::equals(a, b);
   return a;
 }

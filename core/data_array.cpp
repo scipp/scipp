@@ -19,10 +19,9 @@ template <class T> auto copy_map(const T &map) {
 
 DataArray::DataArray(const DataArrayConstView &view)
     : DataArray(view.hasData() ? std::optional<Variable>(view.data())
-                                : std::optional<Variable>(),
+                               : std::optional<Variable>(),
                 copy_map(view.coords()), copy_map(view.labels()),
-                copy_map(view.masks()), copy_map(view.attrs()),
-                view.name()) {}
+                copy_map(view.masks()), copy_map(view.attrs()), view.name()) {}
 
 DataArray::operator DataArrayConstView() const { return get(); }
 DataArray::operator DataArrayView() { return get(); }
@@ -65,7 +64,8 @@ struct Divide {
 };
 } // namespace
 
-bool is_sparse_and_histogram(const DataArrayConstView &a, const DataArrayConstView &b) {
+bool is_sparse_and_histogram(const DataArrayConstView &a,
+                             const DataArrayConstView &b) {
   return (a.dims().sparse() && is_histogram(b, a.dims().sparseDim())) ||
          (b.dims().sparse() && is_histogram(a, b.dims().sparseDim()));
 }
@@ -235,7 +235,8 @@ DataArray operator-(const DataArrayConstView &a, const DataArrayConstView &b) {
 }
 
 template <class Op>
-auto sparse_dense_op(Op op, const DataArrayConstView &a, const DataArrayConstView &b) {
+auto sparse_dense_op(Op op, const DataArrayConstView &a,
+                     const DataArrayConstView &b) {
   if (!is_sparse_and_histogram(a, b))
     return op(a.data(), b.data());
   if (a.dims().sparse()) {

@@ -34,9 +34,8 @@ protected:
 };
 
 template <class Op>
-class DatasetViewBinaryEqualsOpTest
-    : public ::testing::Test,
-      public ::testing::WithParamInterface<Op> {
+class DatasetViewBinaryEqualsOpTest : public ::testing::Test,
+                                      public ::testing::WithParamInterface<Op> {
 protected:
   Op op;
 };
@@ -439,9 +438,8 @@ TYPED_TEST(DatasetViewBinaryEqualsOpTest, return_value) {
   auto b = datasetFactory.make();
   DatasetView view(a);
 
-  ASSERT_TRUE(
-      (std::is_same_v<decltype(TestFixture::op(view, b["data_scalar"])),
-                      DatasetView>));
+  ASSERT_TRUE((std::is_same_v<decltype(TestFixture::op(view, b["data_scalar"])),
+                              DatasetView>));
   {
     const auto &result = TestFixture::op(view, b["data_scalar"]);
     EXPECT_EQ(&result["data_scalar"].template values<double>()[0],
@@ -737,7 +735,8 @@ TYPED_TEST(DatasetBinaryOpTest, dataset_sparse_lhs_dataset_sparse_rhs) {
   EXPECT_EQ(dataset_a["sparse"].coords(), res["sparse"].coords());
 }
 
-TYPED_TEST(DatasetBinaryOpTest, dataset_sparse_lhs_dataarrayconstview_sparse_rhs) {
+TYPED_TEST(DatasetBinaryOpTest,
+           dataset_sparse_lhs_dataarrayconstview_sparse_rhs) {
   const auto dataset_a =
       make_sparse_with_coords_and_labels({1.1, 2.2}, {1.0, 2.0});
   const auto dataset_b =
@@ -787,7 +786,8 @@ TYPED_TEST(DatasetBinaryOpTest, dense_with_sparse) {
             TestFixture::op(dense["a"].data(), sparse["a"].data()));
 }
 
-TYPED_TEST(DatasetBinaryOpTest, dataarrayconstview_sparse_lhs_dataset_sparse_rhs) {
+TYPED_TEST(DatasetBinaryOpTest,
+           dataarrayconstview_sparse_lhs_dataset_sparse_rhs) {
   const auto dataset_a =
       make_sparse_with_coords_and_labels({1.1, 2.2}, {1.0, 2.0});
   const auto dataset_b =

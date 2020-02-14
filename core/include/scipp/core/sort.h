@@ -16,13 +16,13 @@ SCIPP_CORE_EXPORT Variable sort(const VariableConstView &var,
                                 const VariableConstView &key);
 SCIPP_CORE_EXPORT DataArray sort(const DataArrayConstView &array,
                                  const VariableConstView &key);
-SCIPP_CORE_EXPORT DataArray sort(const DataArrayConstView &array, const Dim &key);
+SCIPP_CORE_EXPORT DataArray sort(const DataArrayConstView &array,
+                                 const Dim &key);
 SCIPP_CORE_EXPORT DataArray sort(const DataArrayConstView &array,
                                  const std::string &key);
 SCIPP_CORE_EXPORT Dataset sort(const DatasetConstView &dataset,
                                const VariableConstView &key);
-SCIPP_CORE_EXPORT Dataset sort(const DatasetConstView &dataset,
-                               const Dim &key);
+SCIPP_CORE_EXPORT Dataset sort(const DatasetConstView &dataset, const Dim &key);
 SCIPP_CORE_EXPORT Dataset sort(const DatasetConstView &dataset,
                                const std::string &key);
 

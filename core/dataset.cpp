@@ -59,8 +59,7 @@ auto makeViewItems(const Dimensions &dims, T1 &coords, T2 *sparse = nullptr) {
 }
 
 Dataset::Dataset(const DatasetConstView &view)
-    : Dataset(view, view.coords(), view.labels(), view.masks(),
-              view.attrs()) {}
+    : Dataset(view, view.coords(), view.labels(), view.masks(), view.attrs()) {}
 
 Dataset::Dataset(const DataArrayConstView &data) { setData(data.name(), data); }
 
@@ -507,7 +506,7 @@ DatasetView Dataset::slice(const Slice slice1, const Slice slice2) & {
 ///
 /// This does not make a copy of the data. Instead of view object is returned.
 DatasetView Dataset::slice(const Slice slice1, const Slice slice2,
-                            const Slice slice3) & {
+                           const Slice slice3) & {
   return DatasetView(*this).slice(slice1, slice2, slice3);
 }
 
@@ -625,9 +624,9 @@ void DataArrayView::setUnit(const units::Unit unit) const {
 /// of the dataset's coordinates that depends on the sparse dimension.
 CoordsConstView DataArrayConstView::coords() const noexcept {
   return CoordsConstView(makeViewItems<Dim>(dims(), m_dataset->m_coords,
-                                             m_data->second.coord
-                                                 ? &*m_data->second.coord
-                                                 : nullptr),
+                                            m_data->second.coord
+                                                ? &*m_data->second.coord
+                                                : nullptr),
                          slices());
 }
 
@@ -636,9 +635,8 @@ CoordsConstView DataArrayConstView::coords() const noexcept {
 /// If the data has a sparse dimension the returned view will not contain any
 /// of the dataset's labels that depends on the sparse dimension.
 LabelsConstView DataArrayConstView::labels() const noexcept {
-  return LabelsConstView(makeViewItems<std::string>(dims(),
-                                                     m_dataset->m_labels,
-                                                     &m_data->second.labels),
+  return LabelsConstView(makeViewItems<std::string>(dims(), m_dataset->m_labels,
+                                                    &m_data->second.labels),
                          slices());
 }
 
@@ -706,11 +704,11 @@ DataArrayView DataArrayView::slice(const Slice slice1, const Slice slice2,
 /// of the dataset's coordinates that depends on the sparse dimension.
 CoordsView DataArrayView::coords() const noexcept {
   return CoordsView(m_mutableDataset, &name(),
-                     makeViewItems<Dim>(dims(), m_mutableDataset->m_coords,
-                                         m_mutableData->second.coord
-                                             ? &*m_mutableData->second.coord
-                                             : nullptr),
-                     slices());
+                    makeViewItems<Dim>(dims(), m_mutableDataset->m_coords,
+                                       m_mutableData->second.coord
+                                           ? &*m_mutableData->second.coord
+                                           : nullptr),
+                    slices());
 }
 
 /// Return a view to all labels of the data view.
@@ -720,8 +718,8 @@ CoordsView DataArrayView::coords() const noexcept {
 LabelsView DataArrayView::labels() const noexcept {
   return LabelsView(m_mutableDataset, &name(),
                     makeViewItems<std::string>(dims(),
-                                                m_mutableDataset->m_labels,
-                                                &m_mutableData->second.labels),
+                                               m_mutableDataset->m_labels,
+                                               &m_mutableData->second.labels),
                     slices());
 }
 
@@ -800,7 +798,7 @@ CoordsConstView DatasetConstView::coords() const noexcept {
 CoordsView DatasetView::coords() const noexcept {
   auto *parent = slices().empty() ? m_mutableDataset : nullptr;
   return CoordsView(parent, nullptr,
-                     makeViewItems<Dim>(m_mutableDataset->m_coords), slices());
+                    makeViewItems<Dim>(m_mutableDataset->m_coords), slices());
 }
 
 /// Return a const view to all labels of the dataset slice.
@@ -827,8 +825,8 @@ AttrsConstView DatasetConstView::attrs() const noexcept {
 AttrsView DatasetView::attrs() const noexcept {
   auto *parent = slices().empty() ? m_mutableDataset : nullptr;
   return AttrsView(parent, nullptr,
-                    makeViewItems<std::string>(m_mutableDataset->m_attrs),
-                    slices());
+                   makeViewItems<std::string>(m_mutableDataset->m_attrs),
+                   slices());
 }
 /// Return a const view to all masks of the dataset slice.
 MasksConstView DatasetConstView::masks() const noexcept {
@@ -840,8 +838,8 @@ MasksConstView DatasetConstView::masks() const noexcept {
 MasksView DatasetView::masks() const noexcept {
   auto *parent = slices().empty() ? m_mutableDataset : nullptr;
   return MasksView(parent, nullptr,
-                    makeViewItems<std::string>(m_mutableDataset->m_masks),
-                    slices());
+                   makeViewItems<std::string>(m_mutableDataset->m_masks),
+                   slices());
 }
 
 bool DatasetConstView::contains(const std::string &name) const noexcept {

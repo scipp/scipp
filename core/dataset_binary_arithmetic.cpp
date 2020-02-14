@@ -137,7 +137,8 @@ auto apply_with_broadcast(const Op &op, const A &a, const B &b) {
 }
 
 template <class Op, class A>
-auto apply_with_broadcast(const Op &op, const A &a, const DataArrayConstView &b) {
+auto apply_with_broadcast(const Op &op, const A &a,
+                          const DataArrayConstView &b) {
   Dataset res;
   for (const auto &item : a)
     res.setData(item.name(), op(item, b));
@@ -145,7 +146,8 @@ auto apply_with_broadcast(const Op &op, const A &a, const DataArrayConstView &b)
 }
 
 template <class Op, class B>
-auto apply_with_broadcast(const Op &op, const DataArrayConstView &a, const B &b) {
+auto apply_with_broadcast(const Op &op, const DataArrayConstView &a,
+                          const B &b) {
   Dataset res;
   for (const auto &item : b)
     res.setData(item.name(), op(a, item));
