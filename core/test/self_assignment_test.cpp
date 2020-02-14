@@ -2,7 +2,7 @@
 // Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 //
 // The test in this file ensure that comparison operators for Dataset and
-// DatasetConstProxy are correct. More complex tests should build on the
+// DatasetConstView are correct. More complex tests should build on the
 // assumption that comparison operators are correct.
 #include "test_macros.h"
 #include <gtest/gtest.h>

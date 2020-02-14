@@ -49,7 +49,7 @@ std::vector<scipp::index> numpy_strides(const std::vector<scipp::index> &s) {
 }
 
 template <class T> struct MakePyBufferInfoT {
-  static py::buffer_info apply(VariableProxy &view) {
+  static py::buffer_info apply(VariableView &view) {
     const auto &dims = view.dims();
     return py::buffer_info(
         view.template values<T>().data(), /* Pointer to buffer */
@@ -64,7 +64,7 @@ template <class T> struct MakePyBufferInfoT {
   }
 };
 
-inline py::buffer_info make_py_buffer_info(VariableProxy &view) {
+inline py::buffer_info make_py_buffer_info(VariableView &view) {
   return CallDType<double, float, int64_t, int32_t,
                    bool>::apply<MakePyBufferInfoT>(view.dtype(), view);
 }
@@ -79,9 +79,9 @@ class DataAccessHelper {
     std::vector<scipp::index> strides;
     if constexpr (std::is_same_v<Var, DataArray> ||
                   std::is_same_v<Var, DataArrayView>) {
-      strides = VariableProxy(view.data()).strides();
+      strides = VariableView(view.data()).strides();
     } else {
-      strides = VariableProxy(view).strides();
+      strides = VariableView(view).strides();
     }
     const auto &dims = view.dims();
     using py_T = std::conditional_t<std::is_same_v<T, bool>, bool, T>;

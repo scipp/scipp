@@ -15,7 +15,7 @@ namespace scipp::core {
 
 struct MakeVariableWithType {
   template <class T> struct Maker {
-    static Variable apply(const VariableConstProxy &parent) {
+    static Variable apply(const VariableConstView &parent) {
       return transform<double, float, int64_t, int32_t, bool>(
           parent,
           overloaded{
@@ -29,13 +29,13 @@ struct MakeVariableWithType {
               }});
     }
   };
-  static Variable make(const VariableConstProxy &var, DType type) {
+  static Variable make(const VariableConstView &var, DType type) {
     return CallDType<double, float, int64_t, int32_t, bool>::apply<Maker>(type,
                                                                           var);
   }
 };
 
-Variable astype(const VariableConstProxy &var, DType type) {
+Variable astype(const VariableConstView &var, DType type) {
   return type == var.dtype() ? Variable(var)
                              : MakeVariableWithType::make(var, type);
 }

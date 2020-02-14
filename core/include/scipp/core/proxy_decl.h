@@ -19,7 +19,7 @@ using slice_list =
     boost::container::small_vector<std::pair<Slice, scipp::index>, 2>;
 
 template <class Var> auto makeSlice(Var &var, const slice_list &slices) {
-  std::conditional_t<std::is_const_v<Var>, VariableConstProxy, VariableProxy>
+  std::conditional_t<std::is_const_v<Var>, VariableConstView, VariableView>
       slice(var);
   for (const auto [params, extent] : slices) {
     if (slice.dims().contains(params.dim())) {
@@ -63,33 +63,33 @@ class Coords;
 class Labels;
 class Masks;
 } // namespace ProxyId
-template <class Id, class Key> class ConstProxy;
+template <class Id, class Key> class ConstView;
 template <class Base> class MutableProxy;
 
 /// Proxy for accessing coordinates of const Dataset and DataArrayConstView.
-using CoordsConstProxy = ConstProxy<ProxyId::Coords, Dim>;
+using CoordsConstView = ConstView<ProxyId::Coords, Dim>;
 /// Proxy for accessing coordinates of Dataset and DataArrayView.
-using CoordsProxy = MutableProxy<CoordsConstProxy>;
+using CoordsProxy = MutableProxy<CoordsConstView>;
 /// Proxy for accessing labels of const Dataset and DataArrayConstView.
-using LabelsConstProxy = ConstProxy<ProxyId::Labels, std::string>;
+using LabelsConstView = ConstView<ProxyId::Labels, std::string>;
 /// Proxy for accessing labels of Dataset and DataArrayView.
-using LabelsProxy = MutableProxy<LabelsConstProxy>;
+using LabelsProxy = MutableProxy<LabelsConstView>;
 /// Proxy for accessing attributes of const Dataset and DataArrayConstView.
-using AttrsConstProxy = ConstProxy<ProxyId::Attrs, std::string>;
+using AttrsConstView = ConstView<ProxyId::Attrs, std::string>;
 /// Proxy for accessing attributes of Dataset and DataArrayView.
-using AttrsProxy = MutableProxy<AttrsConstProxy>;
+using AttrsProxy = MutableProxy<AttrsConstView>;
 /// Proxy for accessing masks of const Dataset and DataArrayConstView
-using MasksConstProxy = ConstProxy<ProxyId::Masks, std::string>;
+using MasksConstView = ConstView<ProxyId::Masks, std::string>;
 /// Proxy for accessing masks of Dataset and DataArrayView
-using MasksProxy = MutableProxy<MasksConstProxy>;
+using MasksProxy = MutableProxy<MasksConstView>;
 
 /// Common functionality for other const-proxy classes.
-template <class Id, class Key> class ConstProxy {
+template <class Id, class Key> class ConstView {
 private:
   struct make_item {
-    const ConstProxy *proxy;
+    const ConstView *proxy;
     template <class T> auto operator()(const T &item) const {
-      return std::pair<Key, VariableConstProxy>(
+      return std::pair<Key, VariableConstView>(
           item.first, detail::makeSlice(*item.second.first, proxy->slices()));
     }
   };
@@ -98,7 +98,7 @@ public:
   using key_type = Key;
   using mapped_type = Variable;
 
-  ConstProxy(
+  ConstView(
       std::unordered_map<Key, std::pair<const Variable *, Variable *>> &&items,
       const detail::slice_list &slices = {})
       : m_items(std::move(items)), m_slices(slices) {
@@ -140,7 +140,7 @@ public:
   }
 
   /// Return a const proxy to the coordinate for given dimension.
-  VariableConstProxy operator[](const Key key) const {
+  VariableConstView operator[](const Key key) const {
     expect::contains(*this, key);
     return detail::makeSlice(*m_items.at(key).first, m_slices);
   }
@@ -190,7 +190,7 @@ public:
     return boost::make_transform_iterator(end(), detail::make_value);
   }
 
-  ConstProxy slice(const Slice slice1) const {
+  ConstView slice(const Slice slice1) const {
     auto slices = m_slices;
     if constexpr (std::is_same_v<Key, Dim>) {
       const auto &coord = *m_items.at(slice1.dim()).first;
@@ -199,18 +199,18 @@ public:
       throw std::runtime_error("TODO");
     }
     auto items = m_items;
-    return ConstProxy(std::move(items), slices);
+    return ConstView(std::move(items), slices);
   }
 
-  ConstProxy slice(const Slice slice1, const Slice slice2) const {
+  ConstView slice(const Slice slice1, const Slice slice2) const {
     return slice(slice1).slice(slice2);
   }
-  ConstProxy slice(const Slice slice1, const Slice slice2,
+  ConstView slice(const Slice slice1, const Slice slice2,
                    const Slice slice3) const {
     return slice(slice1, slice2).slice(slice3);
   }
 
-  bool operator==(const ConstProxy &other) const {
+  bool operator==(const ConstView &other) const {
     if (size() != other.size())
       return false;
     for (const auto &[name, data] : *this) {
@@ -223,7 +223,7 @@ public:
     }
     return true;
   }
-  bool operator!=(const ConstProxy &other) const { return !operator==(other); }
+  bool operator!=(const ConstView &other) const { return !operator==(other); }
 
   const auto &items() const noexcept { return m_items; }
   const auto &slices() const noexcept { return m_slices; }
@@ -233,11 +233,11 @@ protected:
   detail::slice_list m_slices;
 };
 
-SCIPP_CORE_EXPORT Variable masks_merge_if_contains(const MasksConstProxy &masks,
+SCIPP_CORE_EXPORT Variable masks_merge_if_contains(const MasksConstView &masks,
                                                    const Dim dim);
 
 SCIPP_CORE_EXPORT Variable
-masks_merge_if_contained(const MasksConstProxy &masks, const Dimensions &dims);
+masks_merge_if_contained(const MasksConstView &masks, const Dimensions &dims);
 
 } // namespace scipp::core
 #endif // SCIPP_CORE_PROXY_DECL_H

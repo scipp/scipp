@@ -8,7 +8,7 @@
 namespace scipp::core {
 
 static inline void expectAlignedCoord(const Dim coord_dim,
-                                      const VariableConstProxy &var,
+                                      const VariableConstView &var,
                                       const Dim operation_dim) {
   // Coordinate is 2D, but the dimension associated with the coordinate is
   // different from that of the operation. Note we do not account for the
@@ -16,7 +16,7 @@ static inline void expectAlignedCoord(const Dim coord_dim,
   // dimension.
   if (var.dims().ndim() > 1)
     throw except::CoordMismatchError(
-        "VariableConstProxy Coord/Label has more than one dimension "
+        "VariableConstView Coord/Label has more than one dimension "
         "associated with " +
         to_string(coord_dim) +
         " and will not be reduced by the operation dimension " +
@@ -125,7 +125,7 @@ DataArray apply_to_items(const DataArrayConstView &d, Func func,
 }
 
 template <class Func, class... Args>
-Dataset apply_to_items(const DatasetConstProxy &d, Func func, const Dim dim,
+Dataset apply_to_items(const DatasetConstView &d, Func func, const Dim dim,
                        Args &&... args) {
   Dataset result;
   for (const auto &data : d)
@@ -137,16 +137,16 @@ Dataset apply_to_items(const DatasetConstProxy &d, Func func, const Dim dim,
 }
 
 // Helpers for reductions for DataArray and Dataset, which include masks.
-[[nodiscard]] Variable mean(const VariableConstProxy &var, const Dim dim,
-                            const MasksConstProxy &masks);
-VariableProxy mean(const VariableConstProxy &var, const Dim dim,
-                   const MasksConstProxy &masks, const VariableProxy &out);
-[[nodiscard]] Variable flatten(const VariableConstProxy &var, const Dim dim,
-                               const MasksConstProxy &masks);
-[[nodiscard]] Variable sum(const VariableConstProxy &var, const Dim dim,
-                           const MasksConstProxy &masks);
-VariableProxy sum(const VariableConstProxy &var, const Dim dim,
-                  const MasksConstProxy &masks, const VariableProxy &out);
+[[nodiscard]] Variable mean(const VariableConstView &var, const Dim dim,
+                            const MasksConstView &masks);
+VariableView mean(const VariableConstView &var, const Dim dim,
+                  const MasksConstView &masks, const VariableView &out);
+[[nodiscard]] Variable flatten(const VariableConstView &var, const Dim dim,
+                               const MasksConstView &masks);
+[[nodiscard]] Variable sum(const VariableConstView &var, const Dim dim,
+                           const MasksConstView &masks);
+VariableView sum(const VariableConstView &var, const Dim dim,
+                 const MasksConstView &masks, const VariableView &out);
 
 } // namespace scipp::core
 

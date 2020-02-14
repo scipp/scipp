@@ -21,12 +21,12 @@
 namespace scipp::core {
 
 class DataArrayConstView;
-class DatasetConstProxy;
+class DatasetConstView;
 class Dataset;
 class DataArray;
 class Dimensions;
 class Variable;
-class VariableConstProxy;
+class VariableConstView;
 class Slice;
 
 } // namespace scipp::core
@@ -55,10 +55,10 @@ using DimensionMismatchError = MismatchError<core::Dimensions>;
 using VariableMismatchError = MismatchError<core::Variable>;
 
 template <class T>
-MismatchError(const core::VariableConstProxy &, const T &)
+MismatchError(const core::VariableConstView &, const T &)
     ->MismatchError<core::Variable>;
 template <class T>
-MismatchError(const core::DatasetConstProxy &, const T &)
+MismatchError(const core::DatasetConstView &, const T &)
     ->MismatchError<core::Dataset>;
 template <class T>
 MismatchError(const core::DataArrayConstView &, const T &)

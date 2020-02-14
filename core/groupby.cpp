@@ -85,7 +85,7 @@ static constexpr auto sum = [](const DataArrayView &out,
   }
 };
 
-template <void (*Func)(const VariableProxy &, const VariableConstProxy &)>
+template <void (*Func)(const VariableView &, const VariableConstView &)>
 static constexpr auto reduce_idempotent =
     [](const DataArrayView &out, const auto &data_container,
        const GroupByGrouping::group &group, const Dim reductionDim,
@@ -177,7 +177,7 @@ template <class T> T GroupBy<T>::mean(const Dim reductionDim) const {
   return out;
 }
 
-static void expectValidGroupbyKey(const VariableConstProxy &key) {
+static void expectValidGroupbyKey(const VariableConstView &key) {
   if (key.dims().ndim() != 1)
     throw except::DimensionError("Group-by key must be 1-dimensional");
   if (key.hasVariances())
@@ -185,7 +185,7 @@ static void expectValidGroupbyKey(const VariableConstProxy &key) {
 }
 
 template <class T> struct MakeGroups {
-  static auto apply(const VariableConstProxy &key, const Dim targetDim) {
+  static auto apply(const VariableConstView &key, const Dim targetDim) {
     expectValidGroupbyKey(key);
     const auto &values = key.values<T>();
 
@@ -219,8 +219,8 @@ template <class T> struct MakeGroups {
 };
 
 template <class T> struct MakeBinGroups {
-  static auto apply(const VariableConstProxy &key,
-                    const VariableConstProxy &bins) {
+  static auto apply(const VariableConstView &key,
+                    const VariableConstView &bins) {
     expectValidGroupbyKey(key);
     if (bins.dims().ndim() != 1)
       throw except::DimensionError("Group-by bins must be 1-dimensional");
@@ -270,7 +270,7 @@ GroupBy<DataArray> groupby(const DataArrayConstView &array,
 /// new coordinate to the output in a later apply/combine step.
 GroupBy<DataArray> groupby(const DataArrayConstView &array,
                            const std::string &labels,
-                           const VariableConstProxy &bins) {
+                           const VariableConstView &bins) {
   const auto &key = array.labels()[labels];
   return {array,
           CallDType<double, float, int64_t, int32_t>::apply<MakeBinGroups>(
@@ -282,7 +282,7 @@ GroupBy<DataArray> groupby(const DataArrayConstView &array,
 /// Groups the slices of `dataset` according to values in given by `labels`.
 /// Grouping of labels will create a new coordinate for `targetDim` in a later
 /// apply/combine step.
-GroupBy<Dataset> groupby(const DatasetConstProxy &dataset,
+GroupBy<Dataset> groupby(const DatasetConstView &dataset,
                          const std::string &labels, const Dim targetDim) {
   const auto &key = dataset.labels()[labels];
   return {dataset, CallDType<double, float, int64_t, int32_t, bool,
@@ -295,9 +295,9 @@ GroupBy<Dataset> groupby(const DatasetConstProxy &dataset,
 /// Groups the slices of `dataset` according to values in given by `labels`.
 /// Grouping of labels is according to given `bins`, which will be added as a
 /// new coordinate to the output in a later apply/combine step.
-GroupBy<Dataset> groupby(const DatasetConstProxy &dataset,
+GroupBy<Dataset> groupby(const DatasetConstView &dataset,
                          const std::string &labels,
-                         const VariableConstProxy &bins) {
+                         const VariableConstView &bins) {
   const auto &key = dataset.labels()[labels];
   return {dataset,
           CallDType<double, float, int64_t, int32_t>::apply<MakeBinGroups>(

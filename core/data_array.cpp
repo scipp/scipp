@@ -123,9 +123,9 @@ using args = std::tuple<sparse_container<Coord>, span<const Data>,
 } // namespace sparse_dense_op_impl_detail
 
 template <int ImplicitData, class Op>
-Variable sparse_dense_op_impl(Op op, const VariableConstProxy &sparseCoord_,
-                              const VariableConstProxy &edges_,
-                              const VariableConstProxy &weights_) {
+Variable sparse_dense_op_impl(Op op, const VariableConstView &sparseCoord_,
+                              const VariableConstView &edges_,
+                              const VariableConstView &weights_) {
   using namespace sparse_dense_op_impl_detail;
   const Dim dim = sparseCoord_.dims().sparseDim();
   // Sparse data without values has an implicit value of 1 count. If
@@ -203,22 +203,22 @@ DataArray &DataArray::operator/=(const DataArrayConstView &other) {
   return sparse_dense_op_inplace(Divide{}, *this, other);
 }
 
-DataArray &DataArray::operator+=(const VariableConstProxy &other) {
+DataArray &DataArray::operator+=(const VariableConstView &other) {
   data() += other;
   return *this;
 }
 
-DataArray &DataArray::operator-=(const VariableConstProxy &other) {
+DataArray &DataArray::operator-=(const VariableConstView &other) {
   data() -= other;
   return *this;
 }
 
-DataArray &DataArray::operator*=(const VariableConstProxy &other) {
+DataArray &DataArray::operator*=(const VariableConstView &other) {
   data() *= other;
   return *this;
 }
 
-DataArray &DataArray::operator/=(const VariableConstProxy &other) {
+DataArray &DataArray::operator/=(const VariableConstView &other) {
   data() /= other;
   return *this;
 }
@@ -284,35 +284,35 @@ DataArray operator/(const DataArrayConstView &a, const DataArrayConstView &b) {
           union_or(a.masks(), b.masks())};
 }
 
-DataArray operator+(const DataArrayConstView &a, const VariableConstProxy &b) {
+DataArray operator+(const DataArrayConstView &a, const VariableConstView &b) {
   return DataArray(a.data() + b, a.coords(), a.labels(), a.masks(), a.attrs());
 }
 
-DataArray operator-(const DataArrayConstView &a, const VariableConstProxy &b) {
+DataArray operator-(const DataArrayConstView &a, const VariableConstView &b) {
   return DataArray(a.data() - b, a.coords(), a.labels(), a.masks(), a.attrs());
 }
 
-DataArray operator*(const DataArrayConstView &a, const VariableConstProxy &b) {
+DataArray operator*(const DataArrayConstView &a, const VariableConstView &b) {
   return DataArray(a.data() * b, a.coords(), a.labels(), a.masks(), a.attrs());
 }
 
-DataArray operator/(const DataArrayConstView &a, const VariableConstProxy &b) {
+DataArray operator/(const DataArrayConstView &a, const VariableConstView &b) {
   return DataArray(a.data() / b, a.coords(), a.labels(), a.masks(), a.attrs());
 }
 
-DataArray operator+(const VariableConstProxy &a, const DataArrayConstView &b) {
+DataArray operator+(const VariableConstView &a, const DataArrayConstView &b) {
   return DataArray(a + b.data(), b.coords(), b.labels(), b.masks(), b.attrs());
 }
 
-DataArray operator-(const VariableConstProxy &a, const DataArrayConstView &b) {
+DataArray operator-(const VariableConstView &a, const DataArrayConstView &b) {
   return DataArray(a - b.data(), b.coords(), b.labels(), b.masks(), b.attrs());
 }
 
-DataArray operator*(const VariableConstProxy &a, const DataArrayConstView &b) {
+DataArray operator*(const VariableConstView &a, const DataArrayConstView &b) {
   return DataArray(a * b.data(), b.coords(), b.labels(), b.masks(), b.attrs());
 }
 
-DataArray operator/(const VariableConstProxy &a, const DataArrayConstView &b) {
+DataArray operator/(const VariableConstView &a, const DataArrayConstView &b) {
   return DataArray(a / b.data(), b.coords(), b.labels(), b.masks(), b.attrs());
 }
 

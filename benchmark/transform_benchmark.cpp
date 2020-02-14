@@ -56,8 +56,8 @@ static void BM_transform_in_place(benchmark::State &state) {
 static void BM_transform_in_place_proxy(benchmark::State &state) {
   run<true>(state,
             [](auto &state_, auto &a, auto &b, auto &op) {
-              VariableProxy a_proxy(a);
-              VariableConstProxy b_proxy(b);
+              VariableView a_proxy(a);
+              VariableConstView b_proxy(b);
               for ([[maybe_unused]] auto _ : state_) {
                 transform_in_place<Types>(a_proxy, b_proxy, op);
               }
@@ -106,8 +106,8 @@ static void BM_transform(benchmark::State &state) {
 static void BM_transform_proxy(benchmark::State &state) {
   run<false>(state,
              [](auto &state_, auto &a, auto &b, auto &op) {
-               VariableProxy a_proxy(a);
-               VariableConstProxy b_proxy(b);
+               VariableView a_proxy(a);
+               VariableConstView b_proxy(b);
                for ([[maybe_unused]] auto _ : state_) {
                  auto out = transform<Types>(a_proxy, b_proxy, op);
                  state_.PauseTiming();

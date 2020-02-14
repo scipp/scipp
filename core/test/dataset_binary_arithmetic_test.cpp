@@ -869,7 +869,7 @@ TYPED_TEST(DatasetBinaryOpTest, dataset_lhs_datasetconstproxy_rhs) {
   auto dataset_a = datasetFactory.make();
   auto dataset_b = datasetFactory.make();
 
-  DatasetConstProxy dataset_b_proxy(dataset_b);
+  DatasetConstView dataset_b_proxy(dataset_b);
   const auto res = TestFixture::op(dataset_a, dataset_b_proxy);
 
   for (const auto &item : res) {
@@ -883,7 +883,7 @@ TYPED_TEST(DatasetBinaryOpTest, datasetconstproxy_lhs_dataset_rhs) {
   const auto dataset_a = datasetFactory.make();
   const auto dataset_b = datasetFactory.make().slice({Dim::X, 1});
 
-  DatasetConstProxy dataset_a_proxy = dataset_a.slice({Dim::X, 1});
+  DatasetConstView dataset_a_proxy = dataset_a.slice({Dim::X, 1});
   const auto res = TestFixture::op(dataset_a_proxy, dataset_b);
 
   Dataset dataset_a_slice(dataset_a_proxy);
@@ -895,8 +895,8 @@ TYPED_TEST(DatasetBinaryOpTest, datasetconstproxy_lhs_datasetconstproxy_rhs) {
   auto dataset_a = datasetFactory.make();
   auto dataset_b = datasetFactory.make();
 
-  DatasetConstProxy dataset_a_proxy(dataset_a);
-  DatasetConstProxy dataset_b_proxy(dataset_b);
+  DatasetConstView dataset_a_proxy(dataset_a);
+  DatasetConstView dataset_b_proxy(dataset_b);
   const auto res = TestFixture::op(dataset_a_proxy, dataset_b_proxy);
 
   for (const auto &item : res) {

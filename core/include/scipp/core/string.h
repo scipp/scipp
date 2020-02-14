@@ -17,22 +17,22 @@ namespace scipp::core {
 class DataArrayView;
 class DataArrayConstView;
 class DatasetProxy;
-class DatasetConstProxy;
+class DatasetConstView;
 class Dataset;
 class DataArray;
 class Dimensions;
 class Variable;
-class VariableProxy;
-class VariableConstProxy;
+class VariableView;
+class VariableConstView;
 class Slice;
-template <class Id, class Data> class ConstProxy;
+template <class Id, class Data> class ConstView;
 template <class T> class MutableProxy;
 
 SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os, const Dim dim);
 SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
-                                           const VariableConstProxy &variable);
+                                           const VariableConstView &variable);
 SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
-                                           const VariableProxy &variable);
+                                           const VariableView &variable);
 SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
                                            const Variable &variable);
 SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
@@ -42,7 +42,7 @@ SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
 SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
                                            const DataArray &data);
 SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
-                                           const DatasetConstProxy &dataset);
+                                           const DatasetConstView &dataset);
 SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
                                            const DatasetProxy &dataset);
 SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
@@ -53,18 +53,18 @@ SCIPP_CORE_EXPORT std::string to_string(const DType dtype);
 SCIPP_CORE_EXPORT std::string to_string(const Dimensions &dims);
 SCIPP_CORE_EXPORT std::string to_string(const Slice &slice);
 SCIPP_CORE_EXPORT std::string to_string(const Variable &variable);
-SCIPP_CORE_EXPORT std::string to_string(const VariableConstProxy &variable);
+SCIPP_CORE_EXPORT std::string to_string(const VariableConstView &variable);
 SCIPP_CORE_EXPORT std::string to_string(const DataArray &data);
 SCIPP_CORE_EXPORT std::string to_string(const DataArrayConstView &data);
 SCIPP_CORE_EXPORT std::string to_string(const Dataset &dataset);
-SCIPP_CORE_EXPORT std::string to_string(const DatasetConstProxy &dataset);
+SCIPP_CORE_EXPORT std::string to_string(const DatasetConstView &dataset);
 
 template <class Id, class Data>
-std::string to_string(const ConstProxy<Id, Data> &proxy) {
+std::string to_string(const ConstView<Id, Data> &proxy) {
   std::stringstream ss;
 
   for (const auto &[key, item] : proxy) {
-    ss << "<scipp.ConstProxy> (" << key << "):\n" << to_string(item);
+    ss << "<scipp.ConstView> (" << key << "):\n" << to_string(item);
   }
   return ss.str();
 }

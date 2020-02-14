@@ -10,13 +10,13 @@
 namespace scipp::core {
 
 // Helpers for in-place reductions and reductions with groupby.
-void flatten_impl(const VariableProxy &summed, const VariableConstProxy &var,
-                  const VariableConstProxy &mask);
-void sum_impl(const VariableProxy &summed, const VariableConstProxy &var);
-void all_impl(const VariableProxy &out, const VariableConstProxy &var);
-void any_impl(const VariableProxy &out, const VariableConstProxy &var);
-void max_impl(const VariableProxy &out, const VariableConstProxy &var);
-void min_impl(const VariableProxy &out, const VariableConstProxy &var);
+void flatten_impl(const VariableView &summed, const VariableConstView &var,
+                  const VariableConstView &mask);
+void sum_impl(const VariableView &summed, const VariableConstView &var);
+void all_impl(const VariableView &out, const VariableConstView &var);
+void any_impl(const VariableView &out, const VariableConstView &var);
+void max_impl(const VariableView &out, const VariableConstView &var);
+void min_impl(const VariableView &out, const VariableConstView &var);
 
 } // namespace scipp::core
 

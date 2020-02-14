@@ -354,7 +354,7 @@ def test_get_slice():
 def test_slicing():
     var = sc.Variable([sc.Dim.X], values=np.arange(0, 3))
     var_slice = var[(sc.Dim.X, slice(0, 2))]
-    assert isinstance(var_slice, sc.VariableProxy)
+    assert isinstance(var_slice, sc.VariableView)
     assert len(var_slice.values) == 2
     assert np.array_equal(var_slice.values, np.array([0, 1]))
 

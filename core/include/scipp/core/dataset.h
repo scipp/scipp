@@ -22,7 +22,7 @@ namespace scipp::core {
 
 class DataArray;
 class Dataset;
-class DatasetConstProxy;
+class DatasetConstView;
 class DatasetProxy;
 
 namespace detail {
@@ -45,9 +45,9 @@ using dataset_item_map = std::unordered_map<std::string, DatasetData>;
 class SCIPP_CORE_EXPORT DataArrayConstView {
 public:
   DataArrayConstView(const Dataset &dataset,
-                 const detail::dataset_item_map::value_type &data,
-                 const detail::slice_list &slices = {},
-                 std::optional<VariableProxy> &&view = std::nullopt);
+                     const detail::dataset_item_map::value_type &data,
+                     const detail::slice_list &slices = {},
+                     std::optional<VariableView> &&view = std::nullopt);
 
   const std::string &name() const noexcept;
 
@@ -55,10 +55,10 @@ public:
   DType dtype() const;
   units::Unit unit() const;
 
-  CoordsConstProxy coords() const noexcept;
-  LabelsConstProxy labels() const noexcept;
-  AttrsConstProxy attrs() const noexcept;
-  MasksConstProxy masks() const noexcept;
+  CoordsConstView coords() const noexcept;
+  LabelsConstView labels() const noexcept;
+  AttrsConstView attrs() const noexcept;
+  MasksConstView masks() const noexcept;
 
   /// Return true if the proxy contains data values.
   bool hasData() const noexcept { return m_data->second.data.has_value(); }
@@ -68,7 +68,7 @@ public:
   }
 
   /// Return untyped const proxy for data (values and optional variances).
-  const VariableConstProxy &data() const {
+  const VariableConstView &data() const {
     if (!hasData())
       throw except::SparseDataError("No data in item.");
     return *m_view;
@@ -84,23 +84,23 @@ public:
   DataArrayConstView slice(const Slice slice1) const;
   DataArrayConstView slice(const Slice slice1, const Slice slice2) const;
   DataArrayConstView slice(const Slice slice1, const Slice slice2,
-                       const Slice slice3) const;
+                           const Slice slice3) const;
 
   const detail::slice_list &slices() const noexcept { return m_slices; }
 
   auto &underlying() const { return m_data->second; }
 
 protected:
-  // Note that m_view is a VariableProxy, not a VariableConstProxy. In case
-  // *this (DataArrayConstView) is stand-alone (not part of DataArrayView), m_view is
-  // actually just a VariableConstProxy wrapped in an (invalid) VariableProxy.
-  // The interface guarantees that the invalid mutable view is not accessible.
-  // This wrapping avoids inefficient duplication of the view in the child class
-  // DataArrayView.
-  std::optional<VariableProxy> m_view;
+  // Note that m_view is a VariableView, not a VariableConstView. In case
+  // *this (DataArrayConstView) is stand-alone (not part of DataArrayView),
+  // m_view is actually just a VariableConstView wrapped in an (invalid)
+  // VariableView. The interface guarantees that the invalid mutable view is
+  // not accessible. This wrapping avoids inefficient duplication of the view in
+  // the child class DataArrayView.
+  std::optional<VariableView> m_view;
 
 private:
-  friend class DatasetConstProxy;
+  friend class DatasetConstView;
   friend class DatasetProxy;
 
   const Dataset *m_dataset;
@@ -113,7 +113,7 @@ SCIPP_CORE_EXPORT bool operator==(const DataArrayConstView &a,
 SCIPP_CORE_EXPORT bool operator!=(const DataArrayConstView &a,
                                   const DataArrayConstView &b);
 
-class DatasetConstProxy;
+class DatasetConstView;
 class DatasetProxy;
 class Dataset;
 
@@ -121,7 +121,7 @@ class Dataset;
 class SCIPP_CORE_EXPORT DataArrayView : public DataArrayConstView {
 public:
   DataArrayView(Dataset &dataset, detail::dataset_item_map::value_type &data,
-            const detail::slice_list &slices = {});
+                const detail::slice_list &slices = {});
 
   CoordsProxy coords() const noexcept;
   LabelsProxy labels() const noexcept;
@@ -131,7 +131,7 @@ public:
   void setUnit(const units::Unit unit) const;
 
   /// Return untyped proxy for data (values and optional variances).
-  const VariableProxy &data() const {
+  const VariableView &data() const {
     if (!hasData())
       throw except::SparseDataError("No data in item.");
     return *m_view;
@@ -147,20 +147,20 @@ public:
   DataArrayView slice(const Slice slice1) const;
   DataArrayView slice(const Slice slice1, const Slice slice2) const;
   DataArrayView slice(const Slice slice1, const Slice slice2,
-                  const Slice slice3) const;
+                      const Slice slice3) const;
 
   DataArrayView assign(const DataArrayConstView &other) const;
   DataArrayView assign(const Variable &other) const;
-  DataArrayView assign(const VariableConstProxy &other) const;
+  DataArrayView assign(const VariableConstView &other) const;
 
   DataArrayView operator+=(const DataArrayConstView &other) const;
   DataArrayView operator-=(const DataArrayConstView &other) const;
   DataArrayView operator*=(const DataArrayConstView &other) const;
   DataArrayView operator/=(const DataArrayConstView &other) const;
-  DataArrayView operator+=(const VariableConstProxy &other) const;
-  DataArrayView operator-=(const VariableConstProxy &other) const;
-  DataArrayView operator*=(const VariableConstProxy &other) const;
-  DataArrayView operator/=(const VariableConstProxy &other) const;
+  DataArrayView operator+=(const VariableConstView &other) const;
+  DataArrayView operator-=(const VariableConstView &other) const;
+  DataArrayView operator*=(const VariableConstView &other) const;
+  DataArrayView operator/=(const VariableConstView &other) const;
 
   template <typename T,
             typename = std::enable_if_t<!is_container_or_proxy<T>()>>
@@ -187,8 +187,8 @@ public:
   }
 
 private:
-  friend class DatasetConstProxy;
-  // For internal use in DatasetConstProxy.
+  friend class DatasetConstView;
+  // For internal use in DatasetConstView.
   explicit DataArrayView(DataArrayConstView &&base)
       : DataArrayConstView(std::move(base)), m_mutableDataset{nullptr},
         m_mutableData{nullptr} {}
@@ -202,14 +202,15 @@ template <class T> struct is_const;
 template <> struct is_const<Dataset> : std::false_type {};
 template <> struct is_const<const Dataset> : std::true_type {};
 template <> struct is_const<const DatasetProxy> : std::false_type {};
-template <> struct is_const<const DatasetConstProxy> : std::true_type {};
+template <> struct is_const<const DatasetConstView> : std::true_type {};
 template <> struct is_const<DatasetProxy> : std::false_type {};
-template <> struct is_const<DatasetConstProxy> : std::true_type {};
+template <> struct is_const<DatasetConstView> : std::true_type {};
 
 /// Helper for creating iterators of Dataset.
 template <class D> struct make_item {
   D *dataset;
-  using P = std::conditional_t<is_const<D>::value, DataArrayConstView, DataArrayView>;
+  using P =
+      std::conditional_t<is_const<D>::value, DataArrayConstView, DataArrayView>;
   template <class T> auto operator()(T &item) const {
     if constexpr (std::is_same_v<std::remove_const_t<D>, Dataset>)
       return P(*dataset, item);
@@ -227,11 +228,11 @@ public:
   using key_type = std::string;
   using mapped_type = DataArray;
   using value_type = std::pair<const std::string &, DataArrayConstView>;
-  using const_view_type = DatasetConstProxy;
+  using const_view_type = DatasetConstView;
   using view_type = DatasetProxy;
 
   Dataset() = default;
-  explicit Dataset(const DatasetConstProxy &proxy);
+  explicit Dataset(const DatasetConstView &proxy);
   explicit Dataset(const DataArrayConstView &data);
   explicit Dataset(const std::map<std::string, DataArrayConstView> &data);
 
@@ -247,7 +248,7 @@ public:
       setMask(std::string(name), std::move(mask));
     for (auto &&[name, attr] : attrs)
       setAttr(std::string(name), std::move(attr));
-    if constexpr (std::is_same_v<std::decay_t<DataMap>, DatasetConstProxy>)
+    if constexpr (std::is_same_v<std::decay_t<DataMap>, DatasetConstView>)
       for (auto &&item : data)
         setData(item.name(), item);
     else
@@ -266,16 +267,16 @@ public:
 
   void clear();
 
-  CoordsConstProxy coords() const noexcept;
+  CoordsConstView coords() const noexcept;
   CoordsProxy coords() noexcept;
 
-  LabelsConstProxy labels() const noexcept;
+  LabelsConstView labels() const noexcept;
   LabelsProxy labels() noexcept;
 
-  AttrsConstProxy attrs() const noexcept;
+  AttrsConstView attrs() const noexcept;
   AttrsProxy attrs() noexcept;
 
-  MasksConstProxy masks() const noexcept;
+  MasksConstView masks() const noexcept;
   MasksProxy masks() noexcept;
 
   bool contains(const std::string &name) const noexcept;
@@ -371,32 +372,31 @@ public:
   void setSparseLabels(const std::string &name, const std::string &labelName,
                        Variable labels);
 
-  void setCoord(const Dim dim, const VariableConstProxy &coord) {
+  void setCoord(const Dim dim, const VariableConstView &coord) {
     setCoord(dim, Variable(coord));
   }
   void setLabels(const std::string &labelName,
-                 const VariableConstProxy &labels) {
+                 const VariableConstView &labels) {
     setLabels(labelName, Variable(labels));
   }
-  void setMask(const std::string &masksName, const VariableConstProxy &mask) {
+  void setMask(const std::string &masksName, const VariableConstView &mask) {
     setMask(masksName, Variable(mask));
   }
-  void setAttr(const std::string &attrName, const VariableConstProxy &attr) {
+  void setAttr(const std::string &attrName, const VariableConstView &attr) {
     setAttr(attrName, Variable(attr));
   }
   void setAttr(const std::string &name, const std::string &attrName,
-               const VariableConstProxy &attr) {
+               const VariableConstView &attr) {
     setAttr(name, attrName, Variable(attr));
   }
-  void setData(const std::string &name, const VariableConstProxy &data) {
+  void setData(const std::string &name, const VariableConstView &data) {
     setData(name, Variable(data));
   }
-  void setSparseCoord(const std::string &name,
-                      const VariableConstProxy &coord) {
+  void setSparseCoord(const std::string &name, const VariableConstView &coord) {
     setSparseCoord(name, Variable(coord));
   }
   void setSparseLabels(const std::string &name, const std::string &labelName,
-                       const VariableConstProxy &labels) {
+                       const VariableConstView &labels) {
     setSparseLabels(name, labelName, Variable(labels));
   }
 
@@ -408,10 +408,10 @@ public:
   void eraseSparseCoord(const std::string &name);
   void eraseSparseLabels(const std::string &name, const std::string &labelName);
 
-  DatasetConstProxy slice(const Slice slice1) const &;
-  DatasetConstProxy slice(const Slice slice1, const Slice slice2) const &;
-  DatasetConstProxy slice(const Slice slice1, const Slice slice2,
-                          const Slice slice3) const &;
+  DatasetConstView slice(const Slice slice1) const &;
+  DatasetConstView slice(const Slice slice1, const Slice slice2) const &;
+  DatasetConstView slice(const Slice slice1, const Slice slice2,
+                         const Slice slice3) const &;
   DatasetProxy slice(const Slice slice1) &;
   DatasetProxy slice(const Slice slice1, const Slice slice2) &;
   DatasetProxy slice(const Slice slice1, const Slice slice2,
@@ -424,22 +424,22 @@ public:
   void rename(const Dim from, const Dim to);
 
   bool operator==(const Dataset &other) const;
-  bool operator==(const DatasetConstProxy &other) const;
+  bool operator==(const DatasetConstView &other) const;
   bool operator!=(const Dataset &other) const;
-  bool operator!=(const DatasetConstProxy &other) const;
+  bool operator!=(const DatasetConstView &other) const;
 
   Dataset &operator+=(const DataArrayConstView &other);
   Dataset &operator-=(const DataArrayConstView &other);
   Dataset &operator*=(const DataArrayConstView &other);
   Dataset &operator/=(const DataArrayConstView &other);
-  Dataset &operator+=(const VariableConstProxy &other);
-  Dataset &operator-=(const VariableConstProxy &other);
-  Dataset &operator*=(const VariableConstProxy &other);
-  Dataset &operator/=(const VariableConstProxy &other);
-  Dataset &operator+=(const DatasetConstProxy &other);
-  Dataset &operator-=(const DatasetConstProxy &other);
-  Dataset &operator*=(const DatasetConstProxy &other);
-  Dataset &operator/=(const DatasetConstProxy &other);
+  Dataset &operator+=(const VariableConstView &other);
+  Dataset &operator-=(const VariableConstView &other);
+  Dataset &operator*=(const VariableConstView &other);
+  Dataset &operator/=(const VariableConstView &other);
+  Dataset &operator+=(const DatasetConstView &other);
+  Dataset &operator-=(const DatasetConstView &other);
+  Dataset &operator*=(const DatasetConstView &other);
+  Dataset &operator/=(const DatasetConstView &other);
   Dataset &operator+=(const Dataset &other);
   Dataset &operator-=(const Dataset &other);
   Dataset &operator*=(const Dataset &other);
@@ -472,7 +472,7 @@ public:
   std::unordered_map<Dim, scipp::index> dimensions() const;
 
 private:
-  friend class DatasetConstProxy;
+  friend class DatasetConstView;
   friend class DatasetProxy;
   friend class DataArrayConstView;
   friend class DataArrayView;
@@ -501,7 +501,7 @@ private:
   struct make_item {
     const MutableProxy<Base> *proxy;
     template <class T> auto operator()(const T &item) const {
-      return std::pair<typename Base::key_type, VariableProxy>(
+      return std::pair<typename Base::key_type, VariableView>(
           item.first, detail::makeSlice(*item.second.second, proxy->slices()));
     }
   };
@@ -521,7 +521,7 @@ public:
       : Base(std::move(items), slices), m_parent(parent), m_name(name) {}
 
   /// Return a proxy to the coordinate for given dimension.
-  VariableProxy operator[](const typename Base::key_type key) const {
+  VariableView operator[](const typename Base::key_type key) const {
     expect::contains(*this, key);
     return detail::makeSlice(*Base::items().at(key).second, Base::slices());
   }
@@ -586,20 +586,20 @@ public:
         throw std::runtime_error("Sparse coord/labels/attr must be added to "
                                  "coords of dataset items, not coords of "
                                  "dataset.");
-      if constexpr (std::is_same_v<Base, CoordsConstProxy>)
+      if constexpr (std::is_same_v<Base, CoordsConstView>)
         m_parent->setSparseCoord(*m_name, std::move(var));
-      if constexpr (std::is_same_v<Base, LabelsConstProxy>)
+      if constexpr (std::is_same_v<Base, LabelsConstView>)
         m_parent->setSparseLabels(*m_name, key, std::move(var));
-      if constexpr (std::is_same_v<Base, AttrsConstProxy>)
+      if constexpr (std::is_same_v<Base, AttrsConstView>)
         throw std::runtime_error("Attributes cannot be sparse.");
     } else {
-      if constexpr (std::is_same_v<Base, CoordsConstProxy>)
+      if constexpr (std::is_same_v<Base, CoordsConstView>)
         m_parent->setCoord(key, std::move(var));
-      if constexpr (std::is_same_v<Base, LabelsConstProxy>)
+      if constexpr (std::is_same_v<Base, LabelsConstView>)
         m_parent->setLabels(key, std::move(var));
-      if constexpr (std::is_same_v<Base, MasksConstProxy>)
+      if constexpr (std::is_same_v<Base, MasksConstView>)
         m_parent->setMask(key, std::move(var));
-      if constexpr (std::is_same_v<Base, AttrsConstProxy>) {
+      if constexpr (std::is_same_v<Base, AttrsConstView>) {
         if (m_name)
           m_parent->setAttr(*m_name, key, std::move(var));
         else
@@ -619,20 +619,20 @@ public:
       sparse &= (*m_parent)[*m_name].dims().sparse();
 
     if (!sparse) {
-      if constexpr (std::is_same_v<Base, CoordsConstProxy>)
+      if constexpr (std::is_same_v<Base, CoordsConstView>)
         m_parent->eraseCoord(key);
-      if constexpr (std::is_same_v<Base, LabelsConstProxy>)
+      if constexpr (std::is_same_v<Base, LabelsConstView>)
         m_parent->eraseLabels(key);
-      if constexpr (std::is_same_v<Base, AttrsConstProxy>) {
+      if constexpr (std::is_same_v<Base, AttrsConstView>) {
         if (m_name)
           m_parent->eraseAttr(*m_name, key);
         else
           m_parent->eraseAttr(key);
       }
-      if constexpr (std::is_same_v<Base, MasksConstProxy>)
+      if constexpr (std::is_same_v<Base, MasksConstView>)
         m_parent->eraseMask(key);
     } else {
-      if constexpr (std::is_same_v<Base, CoordsConstProxy>) {
+      if constexpr (std::is_same_v<Base, CoordsConstView>) {
         if (Base::m_items.count(key) == 0) {
           std::string suffix =
               Base::m_items.empty()
@@ -643,12 +643,12 @@ public:
                                         to_string(key) + " found," + suffix);
         }
         m_parent->eraseSparseCoord(*m_name);
-      } else if constexpr (std::is_same_v<Base, LabelsConstProxy>) {
+      } else if constexpr (std::is_same_v<Base, LabelsConstView>) {
         if (this->operator[](key).dims().sparse())
           m_parent->eraseSparseLabels(*m_name, key);
         else
           m_parent->eraseLabels(key);
-      } else if constexpr (std::is_same_v<Base, AttrsConstProxy>)
+      } else if constexpr (std::is_same_v<Base, AttrsConstView>)
         m_parent->eraseAttr(*m_name, key);
       else
         throw std::runtime_error("The instance cannot be sparse.");
@@ -671,10 +671,10 @@ template <class T1, class T2> auto union_(const T1 &a, const T2 &b) {
 }
 
 /// Const proxy for Dataset, implementing slicing and item selection.
-class SCIPP_CORE_EXPORT DatasetConstProxy {
+class SCIPP_CORE_EXPORT DatasetConstView {
   struct make_const_view {
-    constexpr const DataArrayConstView &operator()(const DataArrayView &view) const
-        noexcept {
+    constexpr const DataArrayConstView &
+    operator()(const DataArrayView &view) const noexcept {
       return view;
     }
   };
@@ -683,10 +683,10 @@ public:
   using key_type = std::string;
   using mapped_type = DataArray;
 
-  DatasetConstProxy(const Dataset &dataset);
+  DatasetConstView(const Dataset &dataset);
 
-  static DatasetConstProxy makeProxyWithEmptyIndexes(const Dataset &dataset) {
-    auto res = DatasetConstProxy();
+  static DatasetConstView makeProxyWithEmptyIndexes(const Dataset &dataset) {
+    auto res = DatasetConstView();
     res.m_dataset = &dataset;
     return res;
   }
@@ -694,10 +694,10 @@ public:
   index size() const noexcept { return m_items.size(); }
   [[nodiscard]] bool empty() const noexcept { return m_items.empty(); }
 
-  CoordsConstProxy coords() const noexcept;
-  LabelsConstProxy labels() const noexcept;
-  AttrsConstProxy attrs() const noexcept;
-  MasksConstProxy masks() const noexcept;
+  CoordsConstView coords() const noexcept;
+  LabelsConstView labels() const noexcept;
+  AttrsConstView attrs() const noexcept;
+  MasksConstView masks() const noexcept;
 
   bool contains(const std::string &name) const noexcept;
 
@@ -739,14 +739,14 @@ public:
     });
   }
 
-  DatasetConstProxy slice(const Slice slice1) const;
+  DatasetConstView slice(const Slice slice1) const;
 
-  DatasetConstProxy slice(const Slice slice1, const Slice slice2) const {
+  DatasetConstView slice(const Slice slice1, const Slice slice2) const {
     return slice(slice1).slice(slice2);
   }
 
-  DatasetConstProxy slice(const Slice slice1, const Slice slice2,
-                          const Slice slice3) const {
+  DatasetConstView slice(const Slice slice1, const Slice slice2,
+                         const Slice slice3) const {
     return slice(slice1, slice2).slice(slice3);
   }
 
@@ -754,13 +754,13 @@ public:
   const auto &dataset() const noexcept { return *m_dataset; }
 
   bool operator==(const Dataset &other) const;
-  bool operator==(const DatasetConstProxy &other) const;
+  bool operator==(const DatasetConstView &other) const;
   bool operator!=(const Dataset &other) const;
-  bool operator!=(const DatasetConstProxy &other) const;
+  bool operator!=(const DatasetConstView &other) const;
   std::unordered_map<Dim, scipp::index> dimensions() const;
 
 protected:
-  explicit DatasetConstProxy() : m_dataset(nullptr) {}
+  explicit DatasetConstView() : m_dataset(nullptr) {}
   template <class T>
   static std::pair<boost::container::small_vector<DataArrayView, 8>,
                    detail::slice_list>
@@ -772,8 +772,8 @@ protected:
 };
 
 /// Proxy for Dataset, implementing slicing and item selection.
-class SCIPP_CORE_EXPORT DatasetProxy : public DatasetConstProxy {
-  explicit DatasetProxy() : DatasetConstProxy(), m_mutableDataset(nullptr) {}
+class SCIPP_CORE_EXPORT DatasetProxy : public DatasetConstView {
+  explicit DatasetProxy() : DatasetConstView(), m_mutableDataset(nullptr) {}
 
 public:
   DatasetProxy(Dataset &dataset);
@@ -821,14 +821,14 @@ public:
   DatasetProxy operator-=(const DataArrayConstView &other) const;
   DatasetProxy operator*=(const DataArrayConstView &other) const;
   DatasetProxy operator/=(const DataArrayConstView &other) const;
-  DatasetProxy operator+=(const VariableConstProxy &other) const;
-  DatasetProxy operator-=(const VariableConstProxy &other) const;
-  DatasetProxy operator*=(const VariableConstProxy &other) const;
-  DatasetProxy operator/=(const VariableConstProxy &other) const;
-  DatasetProxy operator+=(const DatasetConstProxy &other) const;
-  DatasetProxy operator-=(const DatasetConstProxy &other) const;
-  DatasetProxy operator*=(const DatasetConstProxy &other) const;
-  DatasetProxy operator/=(const DatasetConstProxy &other) const;
+  DatasetProxy operator+=(const VariableConstView &other) const;
+  DatasetProxy operator-=(const VariableConstView &other) const;
+  DatasetProxy operator*=(const VariableConstView &other) const;
+  DatasetProxy operator/=(const VariableConstView &other) const;
+  DatasetProxy operator+=(const DatasetConstView &other) const;
+  DatasetProxy operator-=(const DatasetConstView &other) const;
+  DatasetProxy operator*=(const DatasetConstView &other) const;
+  DatasetProxy operator/=(const DatasetConstView &other) const;
   DatasetProxy operator+=(const Dataset &other) const;
   DatasetProxy operator-=(const Dataset &other) const;
   DatasetProxy operator*=(const Dataset &other) const;
@@ -858,7 +858,7 @@ public:
     return *this /= makeVariable<T>(Values{value});
   }
 
-  DatasetProxy assign(const DatasetConstProxy &other) const;
+  DatasetProxy assign(const DatasetConstView &other) const;
 
   auto &dataset() const noexcept { return *m_mutableDataset; }
 
@@ -867,7 +867,7 @@ private:
 };
 
 SCIPP_CORE_EXPORT DataArray copy(const DataArrayConstView &array);
-SCIPP_CORE_EXPORT Dataset copy(const DatasetConstProxy &dataset);
+SCIPP_CORE_EXPORT Dataset copy(const DatasetConstView &dataset);
 
 /// Data array, a variable with coordinates, labels, and attributes.
 class SCIPP_CORE_EXPORT DataArray {
@@ -916,16 +916,16 @@ public:
 
   const std::string &name() const { return m_holder.begin()->name(); }
 
-  CoordsConstProxy coords() const { return get().coords(); }
+  CoordsConstView coords() const { return get().coords(); }
   CoordsProxy coords() { return get().coords(); }
 
-  LabelsConstProxy labels() const { return get().labels(); }
+  LabelsConstView labels() const { return get().labels(); }
   LabelsProxy labels() { return get().labels(); }
 
-  AttrsConstProxy attrs() const { return get().attrs(); }
+  AttrsConstView attrs() const { return get().attrs(); }
   AttrsProxy attrs() { return get().attrs(); }
 
-  MasksConstProxy masks() const { return get().masks(); }
+  MasksConstView masks() const { return get().masks(); }
   MasksProxy masks() { return get().masks(); }
 
   Dimensions dims() const { return get().dims(); }
@@ -940,9 +940,9 @@ public:
   bool hasVariances() const { return get().hasVariances(); }
 
   /// Return untyped const proxy for data (values and optional variances).
-  VariableConstProxy data() const { return get().data(); }
+  VariableConstView data() const { return get().data(); }
   /// Return untyped proxy for data (values and optional variances).
-  VariableProxy data() { return get().data(); }
+  VariableView data() { return get().data(); }
 
   /// Return typed const proxy for data values.
   template <class T> auto values() const { return get().values<T>(); }
@@ -960,10 +960,10 @@ public:
   DataArray &operator-=(const DataArrayConstView &other);
   DataArray &operator*=(const DataArrayConstView &other);
   DataArray &operator/=(const DataArrayConstView &other);
-  DataArray &operator+=(const VariableConstProxy &other);
-  DataArray &operator-=(const VariableConstProxy &other);
-  DataArray &operator*=(const VariableConstProxy &other);
-  DataArray &operator/=(const VariableConstProxy &other);
+  DataArray &operator+=(const VariableConstView &other);
+  DataArray &operator-=(const VariableConstView &other);
+  DataArray &operator*=(const VariableConstView &other);
+  DataArray &operator/=(const VariableConstView &other);
 
   template <typename T,
             typename = std::enable_if_t<!is_container_or_proxy<T>()>>
@@ -996,7 +996,7 @@ public:
   void setCoord(const Dim dim, Variable coord) {
     m_holder.setCoord(dim, std::move(coord));
   }
-  void setCoord(const Dim dim, const VariableConstProxy &coord) {
+  void setCoord(const Dim dim, const VariableConstView &coord) {
     setCoord(dim, Variable(coord));
   }
 
@@ -1007,7 +1007,7 @@ public:
     return get().slice(slice1, slice2);
   }
   DataArrayConstView slice(const Slice slice1, const Slice slice2,
-                       const Slice slice3) const & {
+                           const Slice slice3) const & {
     return get().slice(slice1, slice2, slice3);
   }
   DataArrayView slice(const Slice slice1) & { return get().slice(slice1); }
@@ -1015,7 +1015,7 @@ public:
     return get().slice(slice1, slice2);
   }
   DataArrayView slice(const Slice slice1, const Slice slice2,
-                  const Slice slice3) & {
+                      const Slice slice3) & {
     return get().slice(slice1, slice2, slice3);
   }
   DataArray slice(const Slice slice1) const && {
@@ -1030,7 +1030,7 @@ public:
   }
 
   /// Iterable const view for generic code supporting Dataset and DataArray.
-  DatasetConstProxy iterable_view() const noexcept { return m_holder; }
+  DatasetConstView iterable_view() const noexcept { return m_holder; }
   /// Iterable view for generic code supporting Dataset and DataArray.
   DatasetProxy iterable_view() noexcept { return m_holder; }
 
@@ -1058,211 +1058,212 @@ SCIPP_CORE_EXPORT DataArray operator/(const DataArrayConstView &a,
                                       const DataArrayConstView &b);
 
 SCIPP_CORE_EXPORT DataArray operator+(const DataArrayConstView &a,
-                                      const VariableConstProxy &b);
+                                      const VariableConstView &b);
 SCIPP_CORE_EXPORT DataArray operator-(const DataArrayConstView &a,
-                                      const VariableConstProxy &b);
+                                      const VariableConstView &b);
 SCIPP_CORE_EXPORT DataArray operator*(const DataArrayConstView &a,
-                                      const VariableConstProxy &b);
+                                      const VariableConstView &b);
 SCIPP_CORE_EXPORT DataArray operator/(const DataArrayConstView &a,
-                                      const VariableConstProxy &b);
+                                      const VariableConstView &b);
 
-SCIPP_CORE_EXPORT DataArray operator+(const VariableConstProxy &a,
+SCIPP_CORE_EXPORT DataArray operator+(const VariableConstView &a,
                                       const DataArrayConstView &b);
-SCIPP_CORE_EXPORT DataArray operator-(const VariableConstProxy &a,
+SCIPP_CORE_EXPORT DataArray operator-(const VariableConstView &a,
                                       const DataArrayConstView &b);
-SCIPP_CORE_EXPORT DataArray operator*(const VariableConstProxy &a,
+SCIPP_CORE_EXPORT DataArray operator*(const VariableConstView &a,
                                       const DataArrayConstView &b);
-SCIPP_CORE_EXPORT DataArray operator/(const VariableConstProxy &a,
+SCIPP_CORE_EXPORT DataArray operator/(const VariableConstView &a,
                                       const DataArrayConstView &b);
 
 SCIPP_CORE_EXPORT Dataset operator+(const Dataset &lhs, const Dataset &rhs);
 SCIPP_CORE_EXPORT Dataset operator+(const Dataset &lhs,
-                                    const DatasetConstProxy &rhs);
+                                    const DatasetConstView &rhs);
 SCIPP_CORE_EXPORT Dataset operator+(const Dataset &lhs,
                                     const DataArrayConstView &rhs);
-SCIPP_CORE_EXPORT Dataset operator+(const DatasetConstProxy &lhs,
+SCIPP_CORE_EXPORT Dataset operator+(const DatasetConstView &lhs,
                                     const Dataset &rhs);
-SCIPP_CORE_EXPORT Dataset operator+(const DatasetConstProxy &lhs,
-                                    const DatasetConstProxy &rhs);
-SCIPP_CORE_EXPORT Dataset operator+(const DatasetConstProxy &lhs,
+SCIPP_CORE_EXPORT Dataset operator+(const DatasetConstView &lhs,
+                                    const DatasetConstView &rhs);
+SCIPP_CORE_EXPORT Dataset operator+(const DatasetConstView &lhs,
                                     const DataArrayConstView &rhs);
 SCIPP_CORE_EXPORT Dataset operator+(const DataArrayConstView &lhs,
                                     const Dataset &rhs);
 SCIPP_CORE_EXPORT Dataset operator+(const DataArrayConstView &lhs,
-                                    const DatasetConstProxy &rhs);
+                                    const DatasetConstView &rhs);
 SCIPP_CORE_EXPORT Dataset operator+(const Dataset &lhs,
-                                    const VariableConstProxy &rhs);
-SCIPP_CORE_EXPORT Dataset operator+(const VariableConstProxy &lhs,
+                                    const VariableConstView &rhs);
+SCIPP_CORE_EXPORT Dataset operator+(const VariableConstView &lhs,
                                     const Dataset &rhs);
-SCIPP_CORE_EXPORT Dataset operator+(const DatasetConstProxy &lhs,
-                                    const VariableConstProxy &rhs);
-SCIPP_CORE_EXPORT Dataset operator+(const VariableConstProxy &lhs,
-                                    const DatasetConstProxy &rhs);
+SCIPP_CORE_EXPORT Dataset operator+(const DatasetConstView &lhs,
+                                    const VariableConstView &rhs);
+SCIPP_CORE_EXPORT Dataset operator+(const VariableConstView &lhs,
+                                    const DatasetConstView &rhs);
 
 SCIPP_CORE_EXPORT Dataset operator-(const Dataset &lhs, const Dataset &rhs);
 SCIPP_CORE_EXPORT Dataset operator-(const Dataset &lhs,
-                                    const DatasetConstProxy &rhs);
+                                    const DatasetConstView &rhs);
 SCIPP_CORE_EXPORT Dataset operator-(const Dataset &lhs,
                                     const DataArrayConstView &rhs);
-SCIPP_CORE_EXPORT Dataset operator-(const DatasetConstProxy &lhs,
+SCIPP_CORE_EXPORT Dataset operator-(const DatasetConstView &lhs,
                                     const Dataset &rhs);
-SCIPP_CORE_EXPORT Dataset operator-(const DatasetConstProxy &lhs,
-                                    const DatasetConstProxy &rhs);
-SCIPP_CORE_EXPORT Dataset operator-(const DatasetConstProxy &lhs,
+SCIPP_CORE_EXPORT Dataset operator-(const DatasetConstView &lhs,
+                                    const DatasetConstView &rhs);
+SCIPP_CORE_EXPORT Dataset operator-(const DatasetConstView &lhs,
                                     const DataArrayConstView &rhs);
 SCIPP_CORE_EXPORT Dataset operator-(const DataArrayConstView &lhs,
                                     const Dataset &rhs);
 SCIPP_CORE_EXPORT Dataset operator-(const DataArrayConstView &lhs,
-                                    const DatasetConstProxy &rhs);
+                                    const DatasetConstView &rhs);
 SCIPP_CORE_EXPORT Dataset operator-(const Dataset &lhs,
-                                    const VariableConstProxy &rhs);
-SCIPP_CORE_EXPORT Dataset operator-(const VariableConstProxy &lhs,
+                                    const VariableConstView &rhs);
+SCIPP_CORE_EXPORT Dataset operator-(const VariableConstView &lhs,
                                     const Dataset &rhs);
-SCIPP_CORE_EXPORT Dataset operator-(const DatasetConstProxy &lhs,
-                                    const VariableConstProxy &rhs);
-SCIPP_CORE_EXPORT Dataset operator-(const VariableConstProxy &lhs,
-                                    const DatasetConstProxy &rhs);
+SCIPP_CORE_EXPORT Dataset operator-(const DatasetConstView &lhs,
+                                    const VariableConstView &rhs);
+SCIPP_CORE_EXPORT Dataset operator-(const VariableConstView &lhs,
+                                    const DatasetConstView &rhs);
 
 SCIPP_CORE_EXPORT Dataset operator*(const Dataset &lhs, const Dataset &rhs);
 SCIPP_CORE_EXPORT Dataset operator*(const Dataset &lhs,
-                                    const DatasetConstProxy &rhs);
+                                    const DatasetConstView &rhs);
 SCIPP_CORE_EXPORT Dataset operator*(const Dataset &lhs,
                                     const DataArrayConstView &rhs);
-SCIPP_CORE_EXPORT Dataset operator*(const DatasetConstProxy &lhs,
+SCIPP_CORE_EXPORT Dataset operator*(const DatasetConstView &lhs,
                                     const Dataset &rhs);
-SCIPP_CORE_EXPORT Dataset operator*(const DatasetConstProxy &lhs,
-                                    const DatasetConstProxy &rhs);
-SCIPP_CORE_EXPORT Dataset operator*(const DatasetConstProxy &lhs,
+SCIPP_CORE_EXPORT Dataset operator*(const DatasetConstView &lhs,
+                                    const DatasetConstView &rhs);
+SCIPP_CORE_EXPORT Dataset operator*(const DatasetConstView &lhs,
                                     const DataArrayConstView &rhs);
 SCIPP_CORE_EXPORT Dataset operator*(const DataArrayConstView &lhs,
                                     const Dataset &rhs);
 SCIPP_CORE_EXPORT Dataset operator*(const DataArrayConstView &lhs,
-                                    const DatasetConstProxy &rhs);
+                                    const DatasetConstView &rhs);
 SCIPP_CORE_EXPORT Dataset operator*(const Dataset &lhs,
-                                    const VariableConstProxy &rhs);
-SCIPP_CORE_EXPORT Dataset operator*(const VariableConstProxy &lhs,
+                                    const VariableConstView &rhs);
+SCIPP_CORE_EXPORT Dataset operator*(const VariableConstView &lhs,
                                     const Dataset &rhs);
-SCIPP_CORE_EXPORT Dataset operator*(const DatasetConstProxy &lhs,
-                                    const VariableConstProxy &rhs);
-SCIPP_CORE_EXPORT Dataset operator*(const VariableConstProxy &lhs,
-                                    const DatasetConstProxy &rhs);
+SCIPP_CORE_EXPORT Dataset operator*(const DatasetConstView &lhs,
+                                    const VariableConstView &rhs);
+SCIPP_CORE_EXPORT Dataset operator*(const VariableConstView &lhs,
+                                    const DatasetConstView &rhs);
 
 SCIPP_CORE_EXPORT Dataset operator/(const Dataset &lhs,
-                                    const DatasetConstProxy &rhs);
+                                    const DatasetConstView &rhs);
 SCIPP_CORE_EXPORT Dataset operator/(const Dataset &lhs, const Dataset &rhs);
 SCIPP_CORE_EXPORT Dataset operator/(const Dataset &lhs,
                                     const DataArrayConstView &rhs);
-SCIPP_CORE_EXPORT Dataset operator/(const DatasetConstProxy &lhs,
+SCIPP_CORE_EXPORT Dataset operator/(const DatasetConstView &lhs,
                                     const Dataset &rhs);
-SCIPP_CORE_EXPORT Dataset operator/(const DatasetConstProxy &lhs,
-                                    const DatasetConstProxy &rhs);
-SCIPP_CORE_EXPORT Dataset operator/(const DatasetConstProxy &lhs,
+SCIPP_CORE_EXPORT Dataset operator/(const DatasetConstView &lhs,
+                                    const DatasetConstView &rhs);
+SCIPP_CORE_EXPORT Dataset operator/(const DatasetConstView &lhs,
                                     const DataArrayConstView &rhs);
 SCIPP_CORE_EXPORT Dataset operator/(const DataArrayConstView &lhs,
                                     const Dataset &rhs);
 SCIPP_CORE_EXPORT Dataset operator/(const DataArrayConstView &lhs,
-                                    const DatasetConstProxy &rhs);
+                                    const DatasetConstView &rhs);
 SCIPP_CORE_EXPORT Dataset operator/(const Dataset &lhs,
-                                    const VariableConstProxy &rhs);
-SCIPP_CORE_EXPORT Dataset operator/(const VariableConstProxy &lhs,
+                                    const VariableConstView &rhs);
+SCIPP_CORE_EXPORT Dataset operator/(const VariableConstView &lhs,
                                     const Dataset &rhs);
-SCIPP_CORE_EXPORT Dataset operator/(const DatasetConstProxy &lhs,
-                                    const VariableConstProxy &rhs);
-SCIPP_CORE_EXPORT Dataset operator/(const VariableConstProxy &lhs,
-                                    const DatasetConstProxy &rhs);
+SCIPP_CORE_EXPORT Dataset operator/(const DatasetConstView &lhs,
+                                    const VariableConstView &rhs);
+SCIPP_CORE_EXPORT Dataset operator/(const VariableConstView &lhs,
+                                    const DatasetConstView &rhs);
 
 template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
-Dataset operator+(const T value, const DatasetConstProxy &a) {
+Dataset operator+(const T value, const DatasetConstView &a) {
   return makeVariable<T>(Values{value}) + a;
 }
 template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
-Dataset operator-(const T value, const DatasetConstProxy &a) {
+Dataset operator-(const T value, const DatasetConstView &a) {
   return makeVariable<T>(Values{value}) - a;
 }
 template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
-Dataset operator*(const T value, const DatasetConstProxy &a) {
+Dataset operator*(const T value, const DatasetConstView &a) {
   return makeVariable<T>(Values{value}) * a;
 }
 template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
-Dataset operator/(const T value, const DatasetConstProxy &a) {
+Dataset operator/(const T value, const DatasetConstView &a) {
   return makeVariable<T>(Values{value}) / a;
 }
 
 template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
-Dataset operator+(const DatasetConstProxy &a, const T value) {
+Dataset operator+(const DatasetConstView &a, const T value) {
   return a + makeVariable<T>(Values{value});
 }
 template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
-Dataset operator-(const DatasetConstProxy &a, const T value) {
+Dataset operator-(const DatasetConstView &a, const T value) {
   return a - makeVariable<T>(Values{value});
 }
 template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
-Dataset operator*(const DatasetConstProxy &a, const T value) {
+Dataset operator*(const DatasetConstView &a, const T value) {
   return a * makeVariable<T>(Values{value});
 }
 template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
-Dataset operator/(const DatasetConstProxy &a, const T value) {
+Dataset operator/(const DatasetConstView &a, const T value) {
   return a / makeVariable<T>(Values{value});
 }
 
-SCIPP_CORE_EXPORT DataArray astype(const DataArrayConstView &var, const DType type);
+SCIPP_CORE_EXPORT DataArray astype(const DataArrayConstView &var,
+                                   const DType type);
 
 SCIPP_CORE_EXPORT DataArray histogram(const DataArrayConstView &sparse,
                                       const Variable &binEdges);
 SCIPP_CORE_EXPORT DataArray histogram(const DataArrayConstView &sparse,
-                                      const VariableConstProxy &binEdges);
+                                      const VariableConstView &binEdges);
 SCIPP_CORE_EXPORT Dataset histogram(const Dataset &dataset,
-                                    const VariableConstProxy &bins);
+                                    const VariableConstView &bins);
 SCIPP_CORE_EXPORT Dataset histogram(const Dataset &dataset,
                                     const Variable &bins);
 SCIPP_CORE_EXPORT Dataset histogram(const Dataset &dataset, const Dim &dim);
 
-SCIPP_CORE_EXPORT Dataset merge(const DatasetConstProxy &a,
-                                const DatasetConstProxy &b);
+SCIPP_CORE_EXPORT Dataset merge(const DatasetConstView &a,
+                                const DatasetConstView &b);
 
 SCIPP_CORE_EXPORT DataArray flatten(const DataArrayConstView &a, const Dim dim);
-SCIPP_CORE_EXPORT Dataset flatten(const DatasetConstProxy &d, const Dim dim);
+SCIPP_CORE_EXPORT Dataset flatten(const DatasetConstView &d, const Dim dim);
 
 SCIPP_CORE_EXPORT DataArray sum(const DataArrayConstView &a, const Dim dim);
-SCIPP_CORE_EXPORT Dataset sum(const DatasetConstProxy &d, const Dim dim);
+SCIPP_CORE_EXPORT Dataset sum(const DatasetConstView &d, const Dim dim);
 
 SCIPP_CORE_EXPORT DataArray mean(const DataArrayConstView &a, const Dim dim);
-SCIPP_CORE_EXPORT Dataset mean(const DatasetConstProxy &d, const Dim dim);
+SCIPP_CORE_EXPORT Dataset mean(const DatasetConstView &d, const Dim dim);
 
 SCIPP_CORE_EXPORT DataArray concatenate(const DataArrayConstView &a,
-                                        const DataArrayConstView &b, const Dim dim);
-SCIPP_CORE_EXPORT Dataset concatenate(const DatasetConstProxy &a,
-                                      const DatasetConstProxy &b,
-                                      const Dim dim);
+                                        const DataArrayConstView &b,
+                                        const Dim dim);
+SCIPP_CORE_EXPORT Dataset concatenate(const DatasetConstView &a,
+                                      const DatasetConstView &b, const Dim dim);
 
 SCIPP_CORE_EXPORT DataArray rebin(const DataArrayConstView &a, const Dim dim,
-                                  const VariableConstProxy &coord);
-SCIPP_CORE_EXPORT Dataset rebin(const DatasetConstProxy &d, const Dim dim,
-                                const VariableConstProxy &coord);
+                                  const VariableConstView &coord);
+SCIPP_CORE_EXPORT Dataset rebin(const DatasetConstView &d, const Dim dim,
+                                const VariableConstView &coord);
 
 SCIPP_CORE_EXPORT DataArray resize(const DataArrayConstView &a, const Dim dim,
                                    const scipp::index size);
-SCIPP_CORE_EXPORT Dataset resize(const DatasetConstProxy &d, const Dim dim,
+SCIPP_CORE_EXPORT Dataset resize(const DatasetConstView &d, const Dim dim,
                                  const scipp::index size);
 
-[[nodiscard]] SCIPP_CORE_EXPORT DataArray reciprocal(const DataArrayConstView &a);
+[[nodiscard]] SCIPP_CORE_EXPORT DataArray
+reciprocal(const DataArrayConstView &a);
 
-SCIPP_CORE_EXPORT VariableConstProxy same(const VariableConstProxy &a,
-                                          const VariableConstProxy &b);
+SCIPP_CORE_EXPORT VariableConstView same(const VariableConstView &a,
+                                         const VariableConstView &b);
 
 /// Union the masks of the two proxies.
 /// If any of the masks repeat they are OR'ed.
 /// The result is stored in a new map
-SCIPP_CORE_EXPORT std::map<typename MasksConstProxy::key_type,
-                           typename MasksConstProxy::mapped_type>
-union_or(const MasksConstProxy &currentMasks,
-         const MasksConstProxy &otherMasks);
+SCIPP_CORE_EXPORT std::map<typename MasksConstView::key_type,
+                           typename MasksConstView::mapped_type>
+union_or(const MasksConstView &currentMasks, const MasksConstView &otherMasks);
 
 /// Union the masks of the two proxies.
 /// If any of the masks repeat they are OR'ed.
 /// The result is stored in the first proxy.
 SCIPP_CORE_EXPORT void union_or_in_place(const MasksProxy &currentMasks,
-                                         const MasksConstProxy &otherMasks);
+                                         const MasksConstView &otherMasks);
 
 } // namespace scipp::core
 

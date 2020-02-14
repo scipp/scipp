@@ -9,7 +9,7 @@ Classes
    Dim
    Unit
    Variable
-   VariableProxy
+   VariableView
    DataArray
    DataArrayView
    Dataset

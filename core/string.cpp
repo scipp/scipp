@@ -16,16 +16,16 @@ std::ostream &operator<<(std::ostream &os, const Dim dim) {
   return os << to_string(dim);
 }
 
-std::ostream &operator<<(std::ostream &os, const VariableConstProxy &variable) {
+std::ostream &operator<<(std::ostream &os, const VariableConstView &variable) {
   return os << to_string(variable);
 }
 
-std::ostream &operator<<(std::ostream &os, const VariableProxy &variable) {
-  return os << VariableConstProxy(variable);
+std::ostream &operator<<(std::ostream &os, const VariableView &variable) {
+  return os << VariableConstView(variable);
 }
 
 std::ostream &operator<<(std::ostream &os, const Variable &variable) {
-  return os << VariableConstProxy(variable);
+  return os << VariableConstView(variable);
 }
 
 std::ostream &operator<<(std::ostream &os, const DataArrayConstView &data) {
@@ -40,16 +40,16 @@ std::ostream &operator<<(std::ostream &os, const DataArray &data) {
   return os << DataArrayConstView(data);
 }
 
-std::ostream &operator<<(std::ostream &os, const DatasetConstProxy &dataset) {
+std::ostream &operator<<(std::ostream &os, const DatasetConstView &dataset) {
   return os << to_string(dataset);
 }
 
 std::ostream &operator<<(std::ostream &os, const DatasetProxy &dataset) {
-  return os << DatasetConstProxy(dataset);
+  return os << DatasetConstView(dataset);
 }
 
 std::ostream &operator<<(std::ostream &os, const Dataset &dataset) {
-  return os << DatasetConstProxy(dataset);
+  return os << DatasetConstView(dataset);
 }
 
 constexpr const char *tab = "    ";
@@ -113,7 +113,7 @@ std::string to_string(const Slice &slice) {
          std::to_string(slice.begin()) + end + ")\n";
 }
 
-std::string make_dims_labels(const VariableConstProxy &variable,
+std::string make_dims_labels(const VariableConstView &variable,
                              const Dimensions &datasetDims) {
   const auto &dims = variable.dims();
   if (dims.empty())
@@ -140,12 +140,12 @@ auto to_string(const std::string_view s) { return s; }
 auto to_string(const char *s) { return std::string(s); }
 
 template <class T> struct ValuesToString {
-  static auto apply(const VariableConstProxy &var) {
+  static auto apply(const VariableConstView &var) {
     return array_to_string(var.template values<T>());
   }
 };
 template <class T> struct VariancesToString {
-  static auto apply(const VariableConstProxy &var) {
+  static auto apply(const VariableConstView &var) {
     return array_to_string(var.template variances<T>());
   }
 };
@@ -177,11 +177,11 @@ auto format_variable(const Key &key, const Var &variable,
     s << "[PyObject]";
   else
     s << apply<ValuesToString>(variable.data().dtype(),
-                               VariableConstProxy(variable));
+                               VariableConstView(variable));
   if (variable.hasVariances())
     s << colSep
       << apply<VariancesToString>(variable.data().dtype(),
-                                  VariableConstProxy(variable));
+                                  VariableConstView(variable));
   s << '\n';
   return s.str();
 }
@@ -224,8 +224,8 @@ std::string to_string(const Variable &variable) {
   return format_variable("<scipp.Variable>", variable);
 }
 
-std::string to_string(const VariableConstProxy &variable) {
-  return format_variable("<scipp.VariableProxy>", variable);
+std::string to_string(const VariableConstView &variable) {
+  return format_variable("<scipp.VariableView>", variable);
 }
 
 template <class D>
@@ -320,7 +320,7 @@ std::string to_string(const Dataset &dataset) {
   return do_to_string(dataset, "<scipp.Dataset>", dimensions(dataset));
 }
 
-std::string to_string(const DatasetConstProxy &dataset) {
+std::string to_string(const DatasetConstView &dataset) {
   return do_to_string(dataset, "<scipp.DatasetProxy>", dimensions(dataset));
 }
 } // namespace scipp::core

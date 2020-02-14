@@ -109,14 +109,14 @@ private:
 
 protected:
   void expect_eq(const Variable &a, const Variable &b) const {
-    expect_eq_impl(a, VariableConstProxy(b));
-    expect_eq_impl(VariableConstProxy(a), b);
-    expect_eq_impl(VariableConstProxy(a), VariableConstProxy(b));
+    expect_eq_impl(a, VariableConstView(b));
+    expect_eq_impl(VariableConstView(a), b);
+    expect_eq_impl(VariableConstView(a), VariableConstView(b));
   }
   void expect_ne(const Variable &a, const Variable &b) const {
-    expect_ne_impl(a, VariableConstProxy(b));
-    expect_ne_impl(VariableConstProxy(a), b);
-    expect_ne_impl(VariableConstProxy(a), VariableConstProxy(b));
+    expect_ne_impl(a, VariableConstView(b));
+    expect_ne_impl(VariableConstView(a), b);
+    expect_ne_impl(VariableConstView(a), VariableConstView(b));
   }
 };
 
@@ -290,7 +290,7 @@ TEST(VariableTest, copy_and_move) {
   const auto copy(var);
   EXPECT_EQ(copy, reference);
 
-  const Variable copy_via_slice{VariableConstProxy(var)};
+  const Variable copy_via_slice{VariableConstView(var)};
   EXPECT_EQ(copy_via_slice, reference);
 
   const auto moved(std::move(var));
@@ -553,22 +553,22 @@ TEST(Variable, broadcast_fail) {
                    "got Dim.X with mismatching length 3.");
 }
 
-TEST(VariableProxy, full_const_view) {
+TEST(VariableView, full_const_view) {
   const auto var =
       makeVariable<double>(Dimensions{Dim::X, 3}, Values{}, Variances{});
-  VariableConstProxy view(var);
+  VariableConstView view(var);
   EXPECT_EQ(&var.values<double>()[0], &view.values<double>()[0]);
   EXPECT_EQ(&var.variances<double>()[0], &view.variances<double>()[0]);
 }
 
-TEST(VariableProxy, full_mutable_view) {
+TEST(VariableView, full_mutable_view) {
   auto var = makeVariable<double>(Dimensions{Dim::X, 3}, Values{}, Variances{});
-  VariableProxy view(var);
+  VariableView view(var);
   EXPECT_EQ(&var.values<double>()[0], &view.values<double>()[0]);
   EXPECT_EQ(&var.variances<double>()[0], &view.variances<double>()[0]);
 }
 
-TEST(VariableProxy, strides) {
+TEST(VariableView, strides) {
   auto var = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{3, 3});
   EXPECT_EQ(var.slice({Dim::X, 0}).strides(), (std::vector<scipp::index>{3}));
   EXPECT_EQ(var.slice({Dim::X, 1}).strides(), (std::vector<scipp::index>{3}));
@@ -600,7 +600,7 @@ TEST(VariableProxy, strides) {
             (std::vector<scipp::index>{6, 2, 1}));
 }
 
-TEST(VariableProxy, values_and_variances) {
+TEST(VariableView, values_and_variances) {
   const auto var = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3},
                                         Variances{4, 5, 6});
   const auto proxy = var.slice({Dim::X, 1, 2});
@@ -610,14 +610,14 @@ TEST(VariableProxy, values_and_variances) {
   EXPECT_EQ(proxy.variances<double>()[0], 5.0);
 }
 
-TEST(VariableProxy, slicing_does_not_transpose) {
+TEST(VariableView, slicing_does_not_transpose) {
   auto var = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{3, 3});
   Dimensions expected{{Dim::X, 1}, {Dim::Y, 1}};
   EXPECT_EQ(var.slice({Dim::X, 1, 2}).slice({Dim::Y, 1, 2}).dims(), expected);
   EXPECT_EQ(var.slice({Dim::Y, 1, 2}).slice({Dim::X, 1, 2}).dims(), expected);
 }
 
-TEST(VariableProxy, variable_copy_from_slice) {
+TEST(VariableView, variable_copy_from_slice) {
   const auto source = makeVariable<double>(
       Dims{Dim::Y, Dim::X}, Shape{3, 3}, units::Unit(units::m),
       Values{11, 12, 13, 21, 22, 23, 31, 32, 33},
@@ -645,7 +645,7 @@ TEST(VariableProxy, variable_copy_from_slice) {
                                  Variances{55, 56, 65, 66}));
 }
 
-TEST(VariableProxy, variable_assign_from_slice) {
+TEST(VariableView, variable_assign_from_slice) {
   const Dimensions dims({{Dim::Y, 2}, {Dim::X, 2}});
   // Unit is dimensionless and no variance
   auto target = makeVariable<double>(Dimensions(dims), Values{1, 2, 3, 4});
@@ -675,7 +675,7 @@ TEST(VariableProxy, variable_assign_from_slice) {
                         Values{22, 23, 32, 33}, Variances{55, 56, 65, 66}));
 }
 
-TEST(VariableProxy, variable_assign_from_slice_clears_variances) {
+TEST(VariableView, variable_assign_from_slice_clears_variances) {
   const Dimensions dims({{Dim::Y, 2}, {Dim::X, 2}});
   auto target = makeVariable<double>(Dimensions(dims), Values{1, 2, 3, 4},
                                      Variances{5, 6, 7, 8});
@@ -689,7 +689,7 @@ TEST(VariableProxy, variable_assign_from_slice_clears_variances) {
                                  Values{11, 12, 21, 22}));
 }
 
-TEST(VariableProxy, variable_self_assign_via_slice) {
+TEST(VariableView, variable_self_assign_via_slice) {
   auto target =
       makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{3, 3},
                            Values{11, 12, 13, 21, 22, 23, 31, 32, 33},
@@ -703,7 +703,7 @@ TEST(VariableProxy, variable_self_assign_via_slice) {
                                          Variances{55, 56, 65, 66}));
 }
 
-TEST(VariableProxy, slice_assign_from_variable_unit_fail) {
+TEST(VariableView, slice_assign_from_variable_unit_fail) {
   const auto source =
       makeVariable<double>(Dims{Dim::X}, Shape{1}, units::Unit(units::m));
   auto target = makeVariable<double>(Dims{Dim::X}, Shape{2});
@@ -712,7 +712,7 @@ TEST(VariableProxy, slice_assign_from_variable_unit_fail) {
   EXPECT_NO_THROW(target.slice({Dim::X, 1, 2}).assign(source));
 }
 
-TEST(VariableProxy, slice_assign_from_variable_full_slice_can_change_unit) {
+TEST(VariableView, slice_assign_from_variable_full_slice_can_change_unit) {
   const auto source =
       makeVariable<double>(Dims{Dim::X}, Shape{2}, units::Unit(units::m));
   auto target = makeVariable<double>(Dims{Dim::X}, Shape{2});
@@ -720,7 +720,7 @@ TEST(VariableProxy, slice_assign_from_variable_full_slice_can_change_unit) {
   EXPECT_NO_THROW(target.slice({Dim::X, 0, 2}).assign(source));
 }
 
-TEST(VariableProxy, slice_assign_from_variable_variance_fail) {
+TEST(VariableView, slice_assign_from_variable_variance_fail) {
   const auto vals = makeVariable<double>(Dims{Dim::X}, Shape{1});
   const auto vals_vars =
       makeVariable<double>(Dimensions{Dim::X, 1}, Values{}, Variances{});
@@ -736,7 +736,7 @@ TEST(VariableProxy, slice_assign_from_variable_variance_fail) {
   EXPECT_NO_THROW(target.slice({Dim::X, 1, 2}).assign(vals_vars));
 }
 
-TEST(VariableProxy, slice_assign_from_variable) {
+TEST(VariableView, slice_assign_from_variable) {
   const auto source =
       makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
                            Values{11, 12, 21, 22}, Variances{33, 34, 43, 44});
@@ -811,7 +811,7 @@ TEST(VariableTest, reshape_temporary) {
 
   // This is not a temporary, we get a view into `var`.
   EXPECT_EQ(typeid(decltype(std::move(var).reshape({}))),
-            typeid(VariableConstProxy));
+            typeid(VariableConstView));
 }
 
 TEST(VariableTest, reshape_fail) {
@@ -1076,24 +1076,24 @@ TEST(VariableTest, set_variances_remove) {
   EXPECT_FALSE(var.hasVariances());
 }
 
-TEST(VariableProxyTest, set_variances) {
+TEST(VariableViewTest, set_variances) {
   Variable var = makeVariable<double>(
       Dims{Dim::X}, Shape{3}, units::Unit(units::m), Values{1.0, 2.0, 3.0});
-  auto proxy = VariableProxy(var);
+  auto proxy = VariableView(var);
   test_set_variances(proxy);
   EXPECT_THROW(
       var.slice({Dim::X, 0}).setVariances(Variable(var.slice({Dim::X, 0}))),
       except::VariancesError);
 }
 
-TEST(VariableProxyTest, set_variances_slice_fail) {
+TEST(VariableViewTest, set_variances_slice_fail) {
   Variable var = makeVariable<double>(Dims{Dim::X}, Shape{3});
   EXPECT_THROW(
       var.slice({Dim::X, 0}).setVariances(Variable(var.slice({Dim::X, 0}))),
       except::VariancesError);
 }
 
-TEST(VariableProxyTest, create_with_variance) {
+TEST(VariableViewTest, create_with_variance) {
   const auto var = makeVariable<double>(Dims{Dim::X}, Shape{2},
                                         Values{1.0, 2.0}, Variances{0.1, 0.2});
   ASSERT_NO_THROW(var.slice({Dim::X, 1, 2}));
@@ -1204,15 +1204,15 @@ TEST(TransposeTest, different_api) {
   auto tvar = var.transpose();
   auto tconstVar = constVar.transpose();
   static_assert(
-      std::is_same_v<VariableConstProxy, std::decay_t<decltype(tconstVar)>>);
-  static_assert(std::is_same_v<VariableProxy, decltype(tvar)>);
+      std::is_same_v<VariableConstView, std::decay_t<decltype(tconstVar)>>);
+  static_assert(std::is_same_v<VariableView, decltype(tvar)>);
   EXPECT_EQ(tvar, ref);
   EXPECT_EQ(tconstVar, ref);
-  auto tproxy = VariableProxy(var).transpose();
-  auto tconstProxy = VariableConstProxy(constVar).transpose();
+  auto tproxy = VariableView(var).transpose();
+  auto tconstProxy = VariableConstView(constVar).transpose();
   static_assert(
-      std::is_same_v<VariableConstProxy, std::decay_t<decltype(tconstProxy)>>);
-  static_assert(std::is_same_v<VariableProxy, decltype(tproxy)>);
+      std::is_same_v<VariableConstView, std::decay_t<decltype(tconstProxy)>>);
+  static_assert(std::is_same_v<VariableView, decltype(tproxy)>);
   EXPECT_EQ(tconstProxy, ref);
   EXPECT_EQ(tproxy, ref);
   auto v = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{3, 2},

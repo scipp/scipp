@@ -22,6 +22,6 @@ TEST(VariableCustomType, use_custom_templates) {
   auto var = Variable{{Dim::X, 2}, input_values};
   // Check for bad cast or other built-in implicit type assumptions
   EXPECT_NO_THROW(var.values<CustomType>());
-  VariableConstProxy slice = var.slice(Slice(Dim::X, 0));
+  VariableConstView slice = var.slice(Slice(Dim::X, 0));
   EXPECT_NO_THROW(slice.values<CustomType>());
 }

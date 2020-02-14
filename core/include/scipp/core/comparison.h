@@ -17,7 +17,7 @@ namespace scipp::core {
 /// Tests if the unit, values (and variances where appropriate) of two
 /// Variables are within an absolute tolerance.
 template <typename T>
-bool is_approx(const VariableConstProxy &a, const VariableConstProxy &b,
+bool is_approx(const VariableConstView &a, const VariableConstView &b,
                const T tol) {
   if (a.dtype() != b.dtype()) {
     std::string message = "is_approx. Types do not match. dtype a " +

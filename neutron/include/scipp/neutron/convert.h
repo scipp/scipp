@@ -17,7 +17,7 @@ SCIPP_NEUTRON_EXPORT core::DataArray convert(const core::DataArrayConstView &d,
                                              const Dim from, const Dim to);
 SCIPP_NEUTRON_EXPORT core::Dataset convert(core::Dataset d, const Dim from,
                                            const Dim to);
-SCIPP_NEUTRON_EXPORT core::Dataset convert(const core::DatasetConstProxy &d,
+SCIPP_NEUTRON_EXPORT core::Dataset convert(const core::DatasetConstView &d,
                                            const Dim from, const Dim to);
 
 } // namespace scipp::neutron

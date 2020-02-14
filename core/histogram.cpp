@@ -96,13 +96,13 @@ using args = std::tuple<span<Out>, sparse_container<Coord>,
 }
 
 DataArray histogram(const DataArrayConstView &sparse,
-                    const VariableConstProxy &binEdges) {
+                    const VariableConstView &binEdges) {
   auto dim = binEdges.dims().inner();
 
   auto result = apply_and_drop_dim(
       sparse,
       [](const DataArrayConstView &sparse_, const Dim dim_,
-         const VariableConstProxy &binEdges_) {
+         const VariableConstView &binEdges_) {
         if (sparse_.hasData()) {
           using namespace histogram_weighted_detail;
           return transform_subspan<
@@ -138,11 +138,11 @@ DataArray histogram(const DataArrayConstView &sparse,
 
 DataArray histogram(const DataArrayConstView &sparse,
                     const Variable &binEdges) {
-  return histogram(sparse, VariableConstProxy(binEdges));
+  return histogram(sparse, VariableConstView(binEdges));
 }
 
-Dataset histogram(const Dataset &dataset, const VariableConstProxy &bins) {
-  auto out(Dataset(DatasetConstProxy::makeProxyWithEmptyIndexes(dataset)));
+Dataset histogram(const Dataset &dataset, const VariableConstView &bins) {
+  auto out(Dataset(DatasetConstView::makeProxyWithEmptyIndexes(dataset)));
   out.setCoord(bins.dims().inner(), bins);
   for (const auto &item : dataset) {
     if (item.dims().sparse())
@@ -152,7 +152,7 @@ Dataset histogram(const Dataset &dataset, const VariableConstProxy &bins) {
 }
 
 Dataset histogram(const Dataset &dataset, const Variable &bins) {
-  return histogram(dataset, VariableConstProxy(bins));
+  return histogram(dataset, VariableConstView(bins));
 }
 
 Dataset histogram(const Dataset &dataset, const Dim &dim) {

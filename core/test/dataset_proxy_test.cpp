@@ -16,7 +16,7 @@ protected:
 };
 
 using DatasetProxyTypes = ::testing::Types<Dataset &, const Dataset &,
-                                           DatasetProxy, DatasetConstProxy>;
+                                           DatasetProxy, DatasetConstView>;
 TYPED_TEST_SUITE(DatasetProxyTest, DatasetProxyTypes);
 
 TYPED_TEST(DatasetProxyTest, empty) {

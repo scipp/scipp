@@ -676,7 +676,7 @@ detail::element_array<T> &Variable::cast(const bool variances_) {
 }
 
 template <class T>
-const ElementArrayView<const T> VariableConstProxy::cast() const {
+const ElementArrayView<const T> VariableConstView::cast() const {
   using TT = T;
   if (!m_view)
     return requireT<const DataModel<detail::element_array<TT>>>(data())
@@ -690,7 +690,7 @@ const ElementArrayView<const T> VariableConstProxy::cast() const {
 }
 
 template <class T>
-const ElementArrayView<const T> VariableConstProxy::castVariances() const {
+const ElementArrayView<const T> VariableConstView::castVariances() const {
   expect::hasVariances(*this);
   using TT = T;
   if (!m_view)
@@ -704,7 +704,7 @@ const ElementArrayView<const T> VariableConstProxy::castVariances() const {
           dims()};
 }
 
-template <class T> ElementArrayView<T> VariableProxy::cast() const {
+template <class T> ElementArrayView<T> VariableView::cast() const {
   using TT = T;
   if (m_view)
     return requireT<const ViewModel<ElementArrayView<TT>>>(data()).m_values;
@@ -712,7 +712,7 @@ template <class T> ElementArrayView<T> VariableProxy::cast() const {
       dims());
 }
 
-template <class T> ElementArrayView<T> VariableProxy::castVariances() const {
+template <class T> ElementArrayView<T> VariableView::castVariances() const {
   expect::hasVariances(*this);
   using TT = T;
   if (m_view)
@@ -723,7 +723,7 @@ template <class T> ElementArrayView<T> VariableProxy::castVariances() const {
 
 /**
   Support explicit instantiations for templates for generic Variable and
-  VariableConstProxy
+  VariableConstView
 */
 using scipp::core::detail::element_array;
 #define INSTANTIATE_VARIABLE(...)                                              \
@@ -737,12 +737,12 @@ using scipp::core::detail::element_array;
   template const element_array<__VA_ARGS__> &Variable::cast<__VA_ARGS__>(      \
       const bool) const;                                                       \
   template const ElementArrayView<const __VA_ARGS__>                           \
-  VariableConstProxy::cast<__VA_ARGS__>() const;                               \
+  VariableConstView::cast<__VA_ARGS__>() const;                               \
   template const ElementArrayView<const __VA_ARGS__>                           \
-  VariableConstProxy::castVariances<__VA_ARGS__>() const;                      \
-  template ElementArrayView<__VA_ARGS__> VariableProxy::cast<__VA_ARGS__>()    \
+  VariableConstView::castVariances<__VA_ARGS__>() const;                      \
+  template ElementArrayView<__VA_ARGS__> VariableView::cast<__VA_ARGS__>()    \
       const;                                                                   \
   template ElementArrayView<__VA_ARGS__>                                       \
-  VariableProxy::castVariances<__VA_ARGS__>() const;
+  VariableView::castVariances<__VA_ARGS__>() const;
 
 } // namespace scipp::core

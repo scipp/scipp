@@ -8,7 +8,7 @@ from .formatting_html import dataset_repr, variable_repr
 
 def make_html(container):
     if isinstance(container, sc.Variable) or isinstance(
-            container, sc.VariableProxy):
+            container, sc.VariableView):
         return variable_repr(container)
     else:
         return dataset_repr(container)

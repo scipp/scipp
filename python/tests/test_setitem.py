@@ -13,7 +13,7 @@ def test_setitem_required_for_inplace_ops():
     var = sc.Variable(dims=[Dim.X, Dim.Y], shape=[2, 3])
     var *= 1.5  # not setitem, just assigns python variable
     var[Dim.X, 1:] *= 1.5  # Variable.__setitem__
-    var[Dim.X, 1:][Dim.Y, 1:] *= 1.5  # VariableProxy.__setitem__
+    var[Dim.X, 1:][Dim.Y, 1:] *= 1.5  # VariableView.__setitem__
 
     a = sc.DataArray(data=var)
     a *= 1.5  # not setitem, just assigns python variable

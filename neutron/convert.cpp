@@ -294,7 +294,7 @@ Dataset convert(Dataset d, const Dim from, const Dim to) {
                                            from, to);
 }
 
-Dataset convert(const DatasetConstProxy &d, const Dim from, const Dim to) {
+Dataset convert(const DatasetConstView &d, const Dim from, const Dim to) {
   return convert(Dataset(d), from, to);
 }
 

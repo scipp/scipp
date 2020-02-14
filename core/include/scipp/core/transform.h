@@ -792,14 +792,14 @@ void transform_in_place(Var &&var, Op op) {
 /// output range identical to the secound input range, but avoids potentially
 /// costly element copies.
 template <class... TypePairs, class Var, class Op>
-void transform_in_place(Var &&var, const VariableConstProxy &other, Op op) {
+void transform_in_place(Var &&var, const VariableConstView &other, Op op) {
   in_place<false>::transform<TypePairs...>(op, std::forward<Var>(var), other);
 }
 
 /// Transform the data elements of a variable in-place.
 template <class... TypePairs, class Var, class Op>
-void transform_in_place(Var &&var, const VariableConstProxy &var1,
-                        const VariableConstProxy &var2, Op op) {
+void transform_in_place(Var &&var, const VariableConstView &var1,
+                        const VariableConstView &var2, Op op) {
   in_place<false>::transform<TypePairs...>(op, std::forward<Var>(var), var1,
                                            var2);
 }
@@ -816,15 +816,15 @@ void transform_in_place(Var &&var, const VariableConstProxy &var1,
 /// the unit, since it would be hard to track, e.g., in multiplication
 /// operations.
 template <class... TypePairs, class Var, class Op>
-void accumulate_in_place(Var &&var, const VariableConstProxy &other, Op op) {
+void accumulate_in_place(Var &&var, const VariableConstView &other, Op op) {
   expect::contains(other.dims(), var.dims());
   // Wrapped implementation to convert multiple tuples into a parameter pack.
   in_place<false>::transform_data(type_tuples<TypePairs...>(op), op,
                                   std::forward<Var>(var), other);
 }
 template <class... TypePairs, class Var, class Op>
-void accumulate_in_place(Var &&var, const VariableConstProxy &var1,
-                         const VariableConstProxy &var2, Op op) {
+void accumulate_in_place(Var &&var, const VariableConstView &var1,
+                         const VariableConstView &var2, Op op) {
   expect::contains(var1.dims(), var.dims());
   expect::contains(var2.dims(), denseDims(var.dims()));
   in_place<false>::transform_data(type_tuples<TypePairs...>(op), op,
@@ -837,7 +837,7 @@ void transform_in_place(Var &&var, Op op) {
   in_place<true>::transform<Ts...>(op, std::forward<Var>(var));
 }
 template <class... TypePairs, class Var, class Op>
-void transform_in_place(Var &&var, const VariableConstProxy &other, Op op) {
+void transform_in_place(Var &&var, const VariableConstView &other, Op op) {
   in_place<true>::transform<TypePairs...>(op, std::forward<Var>(var), other);
 }
 } // namespace dry_run
@@ -873,7 +873,7 @@ Variable transform(std::tuple<Ts...> &&, Op op, const Vars &... vars) {
 /// avoids the need to manually create a new variable for the output and the
 /// need for, e.g., std::back_inserter.
 template <class... Ts, class Op>
-[[nodiscard]] Variable transform(const VariableConstProxy &var, Op op) {
+[[nodiscard]] Variable transform(const VariableConstView &var, Op op) {
   return detail::transform(std::tuple<Ts...>{}, op, var);
 }
 
@@ -883,16 +883,16 @@ template <class... Ts, class Op>
 /// avoids the need to manually create a new variable for the output and the
 /// need for, e.g., std::back_inserter.
 template <class... TypePairs, class Op>
-[[nodiscard]] Variable transform(const VariableConstProxy &var1,
-                                 const VariableConstProxy &var2, Op op) {
+[[nodiscard]] Variable transform(const VariableConstView &var1,
+                                 const VariableConstView &var2, Op op) {
   return detail::transform(std::tuple_cat(TypePairs{}...), op, var1, var2);
 }
 
 /// Transform the data elements of three variables and return a new Variable.
 template <class... TypeTuples, class Op>
 [[nodiscard]] Variable
-    transform(const VariableConstProxy &var1, const VariableConstProxy &var2,
-              const VariableConstProxy &var3, Op op) {
+    transform(const VariableConstView &var1, const VariableConstView &var2,
+              const VariableConstView &var3, Op op) {
       return detail::transform(std::tuple_cat(TypeTuples{}...), op, var1, var2,
                                var3);
     }
@@ -900,8 +900,8 @@ template <class... TypeTuples, class Op>
 /// Transform the data elements of four variables and return a new Variable.
 template <class... TypeTuples, class Op>
 [[nodiscard]] Variable
-    transform(const VariableConstProxy &var1, const VariableConstProxy &var2,
-              const VariableConstProxy &var3, const VariableConstProxy &var4,
+    transform(const VariableConstView &var1, const VariableConstView &var2,
+              const VariableConstView &var3, const VariableConstView &var4,
               Op op) {
       return detail::transform(std::tuple_cat(TypeTuples{}...), op, var1, var2,
                                var3, var4);

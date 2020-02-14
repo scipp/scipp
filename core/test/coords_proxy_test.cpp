@@ -22,7 +22,7 @@ protected:
   }
 };
 
-using CoordsProxyTypes = ::testing::Types<CoordsProxy, CoordsConstProxy>;
+using CoordsProxyTypes = ::testing::Types<CoordsProxy, CoordsConstView>;
 TYPED_TEST_SUITE(CoordsProxyTest, CoordsProxyTypes);
 
 TYPED_TEST(CoordsProxyTest, empty) {
@@ -202,10 +202,10 @@ TYPED_TEST(CoordsProxyTest, slice_of_slice_range) {
   check_slice_of_slice_range(d, cs.slice({Dim::Y, 1, 2}, {Dim::X, 1, 3}));
 }
 
-TEST(CoordsConstProxy, slice_return_type) {
+TEST(CoordsConstView, slice_return_type) {
   const Dataset d;
   ASSERT_TRUE((std::is_same_v<decltype(d.coords().slice({Dim::X, 0})),
-                              CoordsConstProxy>));
+                              CoordsConstView>));
 }
 
 TEST(CoordsProxy, slice_return_type) {
@@ -245,7 +245,7 @@ TEST(CoordsProxy, modify_slice) {
   EXPECT_EQ(d.coords()[Dim::X], reference);
 }
 
-TEST(CoordsConstProxy, slice_bin_edges_with_2D_coord) {
+TEST(CoordsConstView, slice_bin_edges_with_2D_coord) {
   Dataset d;
   const auto x = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
                                       Values{1, 2, 3, 4});

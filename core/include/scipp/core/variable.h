@@ -19,10 +19,10 @@
 #include "scipp/core/dimensions.h"
 #include "scipp/core/dtype.h"
 #include "scipp/core/element_array.h"
+#include "scipp/core/element_array_view.h"
 #include "scipp/core/slice.h"
 #include "scipp/core/tag_util.h"
 #include "scipp/core/variable_keyword_arg_constructor.h"
-#include "scipp/core/element_array_view.h"
 #include "scipp/units/unit.h"
 
 namespace scipp::core {
@@ -56,7 +56,7 @@ template <class... Known> class VariableConceptHandle_impl;
 using VariableConceptHandle = VariableConceptHandle_impl<KNOWN>;
 
 /// Abstract base class for any data that can be held by Variable. Also used to
-/// hold views to data by (Const)VariableProxy. This is using so-called
+/// hold views to data by (Const)VariableView. This is using so-called
 /// concept-based polymorphism, see talks by Sean Parent.
 ///
 /// This is the most generic representation for a multi-dimensional array of
@@ -158,15 +158,18 @@ public:
                                          const scipp::index end) const = 0;
   virtual ElementArrayView<T> valuesView(const Dimensions &dims) = 0;
   virtual ElementArrayView<T> valuesView(const Dimensions &dims, const Dim dim,
-                                     const scipp::index begin) = 0;
-  virtual ElementArrayView<const T> valuesView(const Dimensions &dims) const = 0;
-  virtual ElementArrayView<const T> valuesView(const Dimensions &dims,
-                                           const Dim dim,
-                                           const scipp::index begin) const = 0;
+                                         const scipp::index begin) = 0;
+  virtual ElementArrayView<const T>
+  valuesView(const Dimensions &dims) const = 0;
+  virtual ElementArrayView<const T>
+  valuesView(const Dimensions &dims, const Dim dim,
+             const scipp::index begin) const = 0;
   virtual ElementArrayView<T> variancesView(const Dimensions &dims) = 0;
-  virtual ElementArrayView<T> variancesView(const Dimensions &dims, const Dim dim,
-                                        const scipp::index begin) = 0;
-  virtual ElementArrayView<const T> variancesView(const Dimensions &dims) const = 0;
+  virtual ElementArrayView<T> variancesView(const Dimensions &dims,
+                                            const Dim dim,
+                                            const scipp::index begin) = 0;
+  virtual ElementArrayView<const T>
+  variancesView(const Dimensions &dims) const = 0;
   virtual ElementArrayView<const T>
   variancesView(const Dimensions &dims, const Dim dim,
                 const scipp::index begin) const = 0;
@@ -257,15 +260,15 @@ private:
       m_object;
 };
 
-class VariableConstProxy;
-class VariableProxy;
+class VariableConstView;
+class VariableView;
 
 template <class T> constexpr bool is_variable_or_proxy() {
-  return std::is_same_v<T, Variable> || std::is_same_v<T, VariableConstProxy> ||
-         std::is_same_v<T, VariableProxy>;
+  return std::is_same_v<T, Variable> || std::is_same_v<T, VariableConstView> ||
+         std::is_same_v<T, VariableView>;
 }
 
-class DatasetConstProxy;
+class DatasetConstView;
 class DatasetProxy;
 class Dataset;
 class DataArray;
@@ -273,10 +276,10 @@ class DataArrayView;
 
 template <class T> constexpr bool is_container_or_proxy() {
   return std::is_same_v<T, Dataset> || std::is_same_v<T, DatasetProxy> ||
-         std::is_same_v<T, DatasetConstProxy> || std::is_same_v<T, Variable> ||
-         std::is_same_v<T, VariableProxy> ||
-         std::is_same_v<T, VariableConstProxy> ||
-         std::is_same_v<T, DataArray> || std::is_same_v<T, DataArrayView>;
+         std::is_same_v<T, DatasetConstView> || std::is_same_v<T, Variable> ||
+         std::is_same_v<T, VariableView> ||
+         std::is_same_v<T, VariableConstView> || std::is_same_v<T, DataArray> ||
+         std::is_same_v<T, DataArrayView>;
 }
 
 namespace detail {
@@ -300,16 +303,16 @@ template <class T, class... Ts> Variable makeVariable(Ts &&... ts);
 /// dimensions.
 class SCIPP_CORE_EXPORT Variable {
 public:
-  using const_view_type = VariableConstProxy;
-  using view_type = VariableProxy;
+  using const_view_type = VariableConstView;
+  using view_type = VariableView;
 
   Variable() = default;
   // Having this non-explicit is convenient when passing (potential)
   // variable slices to functions that do not support slices, but implicit
   // conversion may introduce risks, so there is a trade-of here.
-  explicit Variable(const VariableConstProxy &slice);
+  explicit Variable(const VariableConstView &slice);
   Variable(const Variable &parent, const Dimensions &dims);
-  Variable(const VariableConstProxy &parent, const Dimensions &dims);
+  Variable(const VariableConstView &parent, const Dimensions &dims);
   Variable(const Variable &parent, VariableConceptHandle data);
   template <class T>
   Variable(const units::Unit unit, const Dimensions &dimensions, T object);
@@ -391,15 +394,15 @@ public:
   }
 
   // ATTENTION: It is really important to avoid any function returning a
-  // (Const)VariableProxy for rvalue Variable. Otherwise the resulting slice
+  // (Const)VariableView for rvalue Variable. Otherwise the resulting slice
   // will point to free'ed memory.
-  VariableConstProxy slice(const Slice slice) const &;
+  VariableConstView slice(const Slice slice) const &;
   Variable slice(const Slice slice) const &&;
-  VariableProxy slice(const Slice slice) &;
+  VariableView slice(const Slice slice) &;
   Variable slice(const Slice slice) &&;
 
-  VariableConstProxy reshape(const Dimensions &dims) const &;
-  VariableProxy reshape(const Dimensions &dims) &;
+  VariableConstView reshape(const Dimensions &dims) const &;
+  VariableView reshape(const Dimensions &dims) &;
   // Note: Do we have to delete the `const &&` version? Consider
   //   const Variable var;
   //   std::move(var).reshape({});
@@ -408,29 +411,29 @@ public:
   // expects the reshaped view to be still valid).
   Variable reshape(const Dimensions &dims) &&;
 
-  VariableConstProxy transpose(const std::vector<Dim> &dims = {}) const &;
-  VariableProxy transpose(const std::vector<Dim> &dims = {}) &;
+  VariableConstView transpose(const std::vector<Dim> &dims = {}) const &;
+  VariableView transpose(const std::vector<Dim> &dims = {}) &;
   // Note: the same issue as for reshape above
   Variable transpose(const std::vector<Dim> &dims = {}) &&;
   void rename(const Dim from, const Dim to);
 
-  bool operator==(const VariableConstProxy &other) const;
-  bool operator!=(const VariableConstProxy &other) const;
+  bool operator==(const VariableConstView &other) const;
+  bool operator!=(const VariableConstView &other) const;
   Variable operator-() const;
 
-  Variable &operator+=(const VariableConstProxy &other) &;
+  Variable &operator+=(const VariableConstView &other) &;
   template <typename T, typename = std::enable_if_t<!is_variable_or_proxy<T>()>>
   Variable &operator+=(const T v) & {
     return *this += makeVariable<T>(Values{v});
   }
 
-  Variable &operator-=(const VariableConstProxy &other) &;
+  Variable &operator-=(const VariableConstView &other) &;
   template <typename T, typename = std::enable_if_t<!is_variable_or_proxy<T>()>>
   Variable &operator-=(const T v) & {
     return *this -= makeVariable<T>(Values{v});
   }
 
-  Variable &operator*=(const VariableConstProxy &other) &;
+  Variable &operator*=(const VariableConstView &other) &;
   template <typename T, typename = std::enable_if_t<!is_variable_or_proxy<T>()>>
   Variable &operator*=(const T v) & {
     return *this *= makeVariable<T>(Values{v});
@@ -441,7 +444,7 @@ public:
     return *this *= quantity.value();
   }
 
-  Variable &operator/=(const VariableConstProxy &other) &;
+  Variable &operator/=(const VariableConstView &other) &;
   template <typename T, typename = std::enable_if_t<!is_variable_or_proxy<T>()>>
   Variable &operator/=(const T v) & {
     return *this /= makeVariable<T>(Values{v});
@@ -452,9 +455,9 @@ public:
     return *this /= quantity.value();
   }
 
-  Variable &operator|=(const VariableConstProxy &other) &;
-  Variable &operator&=(const VariableConstProxy &other) &;
-  Variable &operator^=(const VariableConstProxy &other) &;
+  Variable &operator|=(const VariableConstView &other) &;
+  Variable &operator&=(const VariableConstView &other) &;
+  Variable &operator^=(const VariableConstView &other) &;
 
   const VariableConcept &data() const && = delete;
   const VariableConcept &data() const & { return *m_object; }
@@ -635,17 +638,17 @@ using nth_t = decltype(std::get<I>(std::declval<std::tuple<Ts...>>()));
 } // namespace detail
 
 /// Non-mutable view into (a subset of) a Variable.
-class SCIPP_CORE_EXPORT VariableConstProxy {
+class SCIPP_CORE_EXPORT VariableConstView {
 public:
-  VariableConstProxy(const Variable &variable) : m_variable(&variable) {}
-  VariableConstProxy(const Variable &variable, const Dimensions &dims)
+  VariableConstView(const Variable &variable) : m_variable(&variable) {}
+  VariableConstView(const Variable &variable, const Dimensions &dims)
       : m_variable(&variable), m_view(variable.data().reshape(dims)) {}
-  VariableConstProxy(const Variable &variable, const Dim dim,
-                     const scipp::index begin, const scipp::index end = -1)
+  VariableConstView(const Variable &variable, const Dim dim,
+                    const scipp::index begin, const scipp::index end = -1)
       : m_variable(&variable),
         m_view(variable.data().makeView(dim, begin, end)) {}
-  VariableConstProxy(const VariableConstProxy &slice, const Dim dim,
-                     const scipp::index begin, const scipp::index end = -1)
+  VariableConstView(const VariableConstView &slice, const Dim dim,
+                    const scipp::index begin, const scipp::index end = -1)
       : m_variable(slice.m_variable),
         m_view(slice.data().makeView(dim, begin, end)) {}
 
@@ -655,11 +658,11 @@ public:
 
   auto operator~() const { return m_variable->operator~(); }
 
-  VariableConstProxy slice(const Slice slice) const {
-    return VariableConstProxy(*this, slice.dim(), slice.begin(), slice.end());
+  VariableConstView slice(const Slice slice) const {
+    return VariableConstView(*this, slice.dim(), slice.begin(), slice.end());
   }
 
-  VariableConstProxy transpose(const std::vector<Dim> &dims = {}) const;
+  VariableConstView transpose(const std::vector<Dim> &dims = {}) const;
   // Note the return type. Reshaping a non-contiguous slice cannot return a
   // slice in general so we must return a copy of the data.
   Variable reshape(const Dimensions &dims) const;
@@ -667,7 +670,7 @@ public:
   units::Unit unit() const { return m_variable->unit(); }
 
   // Note: Returning by value to avoid issues with referencing a temporary
-  // (VariableProxy is returned by-value from DatasetSlice).
+  // (VariableView is returned by-value from DatasetSlice).
   Dimensions dims() const {
     if (m_view)
       return m_view->dims();
@@ -726,17 +729,17 @@ public:
     return variances<T>()[0];
   }
 
-  bool operator==(const VariableConstProxy &other) const;
-  bool operator!=(const VariableConstProxy &other) const;
+  bool operator==(const VariableConstView &other) const;
+  bool operator!=(const VariableConstView &other) const;
   Variable operator-() const;
 
   auto &underlying() const { return *m_variable; }
 
 private:
   template <class Var>
-  static VariableConstProxy makeTransposed(Var &var,
-                                           const std::vector<Dim> &dimOrder) {
-    auto res = VariableConstProxy(var);
+  static VariableConstView makeTransposed(Var &var,
+                                          const std::vector<Dim> &dimOrder) {
+    auto res = VariableConstView(var);
     res.m_view = res.data().transpose(dimOrder);
     return res;
   }
@@ -755,36 +758,36 @@ class DataArrayConstView;
 
 /** Mutable view into (a subset of) a Variable.
  *
- * By inheriting from VariableConstProxy any code that works for
- * VariableConstProxy will automatically work also for this mutable variant.*/
-class SCIPP_CORE_EXPORT VariableProxy : public VariableConstProxy {
+ * By inheriting from VariableConstView any code that works for
+ * VariableConstView will automatically work also for this mutable variant.*/
+class SCIPP_CORE_EXPORT VariableView : public VariableConstView {
 public:
-  VariableProxy(Variable &variable)
-      : VariableConstProxy(variable), m_mutableVariable(&variable) {}
-  // Note that we use the basic constructor of VariableConstProxy to avoid
+  VariableView(Variable &variable)
+      : VariableConstView(variable), m_mutableVariable(&variable) {}
+  // Note that we use the basic constructor of VariableConstView to avoid
   // creation of a const m_view, which would be overwritten immediately.
-  VariableProxy(Variable &variable, const Dimensions &dims)
-      : VariableConstProxy(variable), m_mutableVariable(&variable) {
+  VariableView(Variable &variable, const Dimensions &dims)
+      : VariableConstView(variable), m_mutableVariable(&variable) {
     m_view = variable.data().reshape(dims);
   }
-  VariableProxy(Variable &variable, const Dim dim, const scipp::index begin,
-                const scipp::index end = -1)
-      : VariableConstProxy(variable), m_mutableVariable(&variable) {
+  VariableView(Variable &variable, const Dim dim, const scipp::index begin,
+               const scipp::index end = -1)
+      : VariableConstView(variable), m_mutableVariable(&variable) {
     m_view = variable.data().makeView(dim, begin, end);
   }
-  VariableProxy(const VariableProxy &slice, const Dim dim,
-                const scipp::index begin, const scipp::index end = -1)
-      : VariableConstProxy(slice), m_mutableVariable(slice.m_mutableVariable) {
+  VariableView(const VariableView &slice, const Dim dim,
+               const scipp::index begin, const scipp::index end = -1)
+      : VariableConstView(slice), m_mutableVariable(slice.m_mutableVariable) {
     m_view = slice.data().makeView(dim, begin, end);
   }
 
-  VariableProxy slice(const Slice slice) const {
-    return VariableProxy(*this, slice.dim(), slice.begin(), slice.end());
+  VariableView slice(const Slice slice) const {
+    return VariableView(*this, slice.dim(), slice.begin(), slice.end());
   }
 
-  VariableProxy transpose(const std::vector<Dim> &dims = {}) const;
+  VariableView transpose(const std::vector<Dim> &dims = {}) const;
 
-  using VariableConstProxy::data;
+  using VariableConstView::data;
 
   VariableConcept &data() const && = delete;
   VariableConcept &data() const & {
@@ -800,7 +803,7 @@ public:
     return m_view.mutableVariant();
   }
 
-  // Note: No need to delete rvalue overloads here, see VariableConstProxy.
+  // Note: No need to delete rvalue overloads here, see VariableConstView.
   template <class T> auto values() const { return cast<T>(); }
   template <class T> auto variances() const { return castVariances<T>(); }
   template <class T> auto sparseValues() const {
@@ -820,7 +823,7 @@ public:
 
   // Note: We want to support things like `var(Dim::X, 0) += var2`, i.e., when
   // the left-hand-side is a temporary. This is ok since data is modified in
-  // underlying Variable. However, we do not return the typical `VariableProxy
+  // underlying Variable. However, we do not return the typical `VariableView
   // &` from these operations since that could reference a temporary. Due to the
   // way Python implements things like __iadd__ we must return an object
   // referencing the data though. We therefore return by value (this is not for
@@ -832,35 +835,35 @@ public:
   // the Python exports to return `a` after calling `a += b` instead of
   // returning `a += b` but I am not sure how Pybind11 handles object lifetimes
   // (would this suffer from the same issue?).
-  template <class T> VariableProxy assign(const T &other) const;
+  template <class T> VariableView assign(const T &other) const;
 
-  VariableProxy operator+=(const VariableConstProxy &other) const;
+  VariableView operator+=(const VariableConstView &other) const;
   template <typename T, typename = std::enable_if_t<!is_variable_or_proxy<T>()>>
-  VariableProxy operator+=(const T v) const {
+  VariableView operator+=(const T v) const {
     return *this += makeVariable<T>(Values{v});
   }
 
-  VariableProxy operator-=(const VariableConstProxy &other) const;
+  VariableView operator-=(const VariableConstView &other) const;
   template <typename T, typename = std::enable_if_t<!is_variable_or_proxy<T>()>>
-  VariableProxy operator-=(const T v) const {
+  VariableView operator-=(const T v) const {
     return *this -= makeVariable<T>(Values{v});
   }
 
-  VariableProxy operator*=(const VariableConstProxy &other) const;
+  VariableView operator*=(const VariableConstView &other) const;
   template <typename T, typename = std::enable_if_t<!is_variable_or_proxy<T>()>>
-  VariableProxy operator*=(const T v) const {
+  VariableView operator*=(const T v) const {
     return *this *= makeVariable<T>(Values{v});
   }
 
-  VariableProxy operator/=(const VariableConstProxy &other) const;
+  VariableView operator/=(const VariableConstView &other) const;
   template <typename T, typename = std::enable_if_t<!is_variable_or_proxy<T>()>>
-  VariableProxy operator/=(const T v) const {
+  VariableView operator/=(const T v) const {
     return *this /= makeVariable<T>(Values{v});
   }
 
-  VariableProxy operator|=(const VariableConstProxy &other) const;
-  VariableProxy operator&=(const VariableConstProxy &other) const;
-  VariableProxy operator^=(const VariableConstProxy &other) const;
+  VariableView operator|=(const VariableConstView &other) const;
+  VariableView operator&=(const VariableConstView &other) const;
+  VariableView operator^=(const VariableConstView &other) const;
 
   void setVariances(Variable v) const;
 
@@ -873,16 +876,16 @@ private:
   friend class DataArrayConstView;
 
   template <class Var>
-  static VariableProxy makeTransposed(Var &var,
-                                      const std::vector<Dim> &dimOrder) {
-    auto res = VariableProxy(var);
+  static VariableView makeTransposed(Var &var,
+                                     const std::vector<Dim> &dimOrder) {
+    auto res = VariableView(var);
     res.m_view = res.data().transpose(dimOrder);
     return res;
   }
 
   // For internal use in DataArrayConstView.
-  explicit VariableProxy(VariableConstProxy &&base)
-      : VariableConstProxy(std::move(base)), m_mutableVariable{nullptr} {}
+  explicit VariableView(VariableConstView &&base)
+      : VariableConstView(std::move(base)), m_mutableVariable{nullptr} {}
 
   template <class T> ElementArrayView<T> cast() const;
   template <class T> ElementArrayView<T> castVariances() const;
@@ -890,53 +893,53 @@ private:
   Variable *m_mutableVariable;
 };
 
-SCIPP_CORE_EXPORT Variable operator+(const VariableConstProxy &a,
-                                     const VariableConstProxy &b);
-SCIPP_CORE_EXPORT Variable operator-(const VariableConstProxy &a,
-                                     const VariableConstProxy &b);
-SCIPP_CORE_EXPORT Variable operator*(const VariableConstProxy &a,
-                                     const VariableConstProxy &b);
-SCIPP_CORE_EXPORT Variable operator/(const VariableConstProxy &a,
-                                     const VariableConstProxy &b);
-SCIPP_CORE_EXPORT Variable operator|(const VariableConstProxy &a,
-                                     const VariableConstProxy &b);
-SCIPP_CORE_EXPORT Variable operator&(const VariableConstProxy &a,
-                                     const VariableConstProxy &b);
-SCIPP_CORE_EXPORT Variable operator^(const VariableConstProxy &a,
-                                     const VariableConstProxy &b);
-// Note: If the left-hand-side in an addition is a VariableProxy this simply
+SCIPP_CORE_EXPORT Variable operator+(const VariableConstView &a,
+                                     const VariableConstView &b);
+SCIPP_CORE_EXPORT Variable operator-(const VariableConstView &a,
+                                     const VariableConstView &b);
+SCIPP_CORE_EXPORT Variable operator*(const VariableConstView &a,
+                                     const VariableConstView &b);
+SCIPP_CORE_EXPORT Variable operator/(const VariableConstView &a,
+                                     const VariableConstView &b);
+SCIPP_CORE_EXPORT Variable operator|(const VariableConstView &a,
+                                     const VariableConstView &b);
+SCIPP_CORE_EXPORT Variable operator&(const VariableConstView &a,
+                                     const VariableConstView &b);
+SCIPP_CORE_EXPORT Variable operator^(const VariableConstView &a,
+                                     const VariableConstView &b);
+// Note: If the left-hand-side in an addition is a VariableView this simply
 // implicitly converts it to a Variable. A copy for the return value is required
 // anyway so this is a convenient way to avoid defining more overloads.
 template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
-Variable operator+(const T value, const VariableConstProxy &a) {
+Variable operator+(const T value, const VariableConstView &a) {
   return makeVariable<T>(Values{value}) + a;
 }
 template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
-Variable operator-(const T value, const VariableConstProxy &a) {
+Variable operator-(const T value, const VariableConstView &a) {
   return makeVariable<T>(Values{value}) - a;
 }
 template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
-Variable operator*(const T value, const VariableConstProxy &a) {
+Variable operator*(const T value, const VariableConstView &a) {
   return makeVariable<T>(Values{value}) * a;
 }
 template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
-Variable operator/(const T value, const VariableConstProxy &a) {
+Variable operator/(const T value, const VariableConstView &a) {
   return makeVariable<T>(Values{value}) / a;
 }
 template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
-Variable operator+(const VariableConstProxy &a, const T value) {
+Variable operator+(const VariableConstView &a, const T value) {
   return a + makeVariable<T>(Values{value});
 }
 template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
-Variable operator-(const VariableConstProxy &a, const T value) {
+Variable operator-(const VariableConstView &a, const T value) {
   return a - makeVariable<T>(Values{value});
 }
 template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
-Variable operator*(const VariableConstProxy &a, const T value) {
+Variable operator*(const VariableConstView &a, const T value) {
   return a * makeVariable<T>(Values{value});
 }
 template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
-Variable operator/(const VariableConstProxy &a, const T value) {
+Variable operator/(const VariableConstView &a, const T value) {
   return a / makeVariable<T>(Values{value});
 }
 
@@ -968,104 +971,104 @@ operator/(T v, const units::Unit &unit) {
                          Values{v});
 }
 
-SCIPP_CORE_EXPORT Variable astype(const VariableConstProxy &var,
+SCIPP_CORE_EXPORT Variable astype(const VariableConstView &var,
                                   const DType type);
 
 [[nodiscard]] SCIPP_CORE_EXPORT Variable
-reciprocal(const VariableConstProxy &var);
+reciprocal(const VariableConstView &var);
 [[nodiscard]] SCIPP_CORE_EXPORT Variable reciprocal(Variable &&var);
-SCIPP_CORE_EXPORT VariableProxy reciprocal(const VariableConstProxy &var,
-                                           const VariableProxy &out);
+SCIPP_CORE_EXPORT VariableView reciprocal(const VariableConstView &var,
+                                          const VariableView &out);
 
 SCIPP_CORE_EXPORT std::vector<Variable>
 split(const Variable &var, const Dim dim,
       const std::vector<scipp::index> &indices);
-[[nodiscard]] SCIPP_CORE_EXPORT Variable abs(const VariableConstProxy &var);
+[[nodiscard]] SCIPP_CORE_EXPORT Variable abs(const VariableConstView &var);
 [[nodiscard]] SCIPP_CORE_EXPORT Variable abs(Variable &&var);
-SCIPP_CORE_EXPORT VariableProxy abs(const VariableConstProxy &var,
-                                    const VariableProxy &out);
-SCIPP_CORE_EXPORT Variable broadcast(const VariableConstProxy &var,
+SCIPP_CORE_EXPORT VariableView abs(const VariableConstView &var,
+                                   const VariableView &out);
+SCIPP_CORE_EXPORT Variable broadcast(const VariableConstView &var,
                                      const Dimensions &dims);
-SCIPP_CORE_EXPORT Variable concatenate(const VariableConstProxy &a1,
-                                       const VariableConstProxy &a2,
+SCIPP_CORE_EXPORT Variable concatenate(const VariableConstView &a1,
+                                       const VariableConstView &a2,
                                        const Dim dim);
 SCIPP_CORE_EXPORT Variable dot(const Variable &a, const Variable &b);
 SCIPP_CORE_EXPORT Variable filter(const Variable &var, const Variable &filter);
-[[nodiscard]] SCIPP_CORE_EXPORT Variable mean(const VariableConstProxy &var,
+[[nodiscard]] SCIPP_CORE_EXPORT Variable mean(const VariableConstView &var,
                                               const Dim dim);
-SCIPP_CORE_EXPORT VariableProxy mean(const VariableConstProxy &var,
-                                     const Dim dim, const VariableProxy &out);
-SCIPP_CORE_EXPORT Variable norm(const VariableConstProxy &var);
+SCIPP_CORE_EXPORT VariableView mean(const VariableConstView &var, const Dim dim,
+                                    const VariableView &out);
+SCIPP_CORE_EXPORT Variable norm(const VariableConstView &var);
 SCIPP_CORE_EXPORT Variable permute(const Variable &var, const Dim dim,
                                    const std::vector<scipp::index> &indices);
-SCIPP_CORE_EXPORT Variable rebin(const VariableConstProxy &var, const Dim dim,
-                                 const VariableConstProxy &oldCoord,
-                                 const VariableConstProxy &newCoord);
-SCIPP_CORE_EXPORT Variable resize(const VariableConstProxy &var, const Dim dim,
+SCIPP_CORE_EXPORT Variable rebin(const VariableConstView &var, const Dim dim,
+                                 const VariableConstView &oldCoord,
+                                 const VariableConstView &newCoord);
+SCIPP_CORE_EXPORT Variable resize(const VariableConstView &var, const Dim dim,
                                   const scipp::index size);
 SCIPP_CORE_EXPORT Variable reverse(Variable var, const Dim dim);
-[[nodiscard]] SCIPP_CORE_EXPORT Variable sqrt(const VariableConstProxy &var);
+[[nodiscard]] SCIPP_CORE_EXPORT Variable sqrt(const VariableConstView &var);
 [[nodiscard]] SCIPP_CORE_EXPORT Variable sqrt(Variable &&var);
-SCIPP_CORE_EXPORT VariableProxy sqrt(const VariableConstProxy &var,
-                                     const VariableProxy &out);
+SCIPP_CORE_EXPORT VariableView sqrt(const VariableConstView &var,
+                                    const VariableView &out);
 
-[[nodiscard]] SCIPP_CORE_EXPORT Variable flatten(const VariableConstProxy &var,
+[[nodiscard]] SCIPP_CORE_EXPORT Variable flatten(const VariableConstView &var,
                                                  const Dim dim);
-[[nodiscard]] SCIPP_CORE_EXPORT Variable sum(const VariableConstProxy &var,
+[[nodiscard]] SCIPP_CORE_EXPORT Variable sum(const VariableConstView &var,
                                              const Dim dim);
-SCIPP_CORE_EXPORT VariableProxy sum(const VariableConstProxy &var,
-                                    const Dim dim, const VariableProxy &out);
+SCIPP_CORE_EXPORT VariableView sum(const VariableConstView &var, const Dim dim,
+                                   const VariableView &out);
 
-SCIPP_CORE_EXPORT Variable copy(const VariableConstProxy &var);
+SCIPP_CORE_EXPORT Variable copy(const VariableConstView &var);
 
 // Trigonometrics
-[[nodiscard]] SCIPP_CORE_EXPORT Variable sin(const VariableConstProxy &var);
+[[nodiscard]] SCIPP_CORE_EXPORT Variable sin(const VariableConstView &var);
 [[nodiscard]] SCIPP_CORE_EXPORT Variable sin(Variable &&var);
-SCIPP_CORE_EXPORT VariableProxy sin(const VariableConstProxy &var,
-                                    const VariableProxy &out);
-[[nodiscard]] SCIPP_CORE_EXPORT Variable cos(const VariableConstProxy &var);
+SCIPP_CORE_EXPORT VariableView sin(const VariableConstView &var,
+                                   const VariableView &out);
+[[nodiscard]] SCIPP_CORE_EXPORT Variable cos(const VariableConstView &var);
 [[nodiscard]] SCIPP_CORE_EXPORT Variable cos(Variable &&var);
-SCIPP_CORE_EXPORT VariableProxy cos(const VariableConstProxy &var,
-                                    const VariableProxy &out);
-[[nodiscard]] SCIPP_CORE_EXPORT Variable tan(const VariableConstProxy &var);
+SCIPP_CORE_EXPORT VariableView cos(const VariableConstView &var,
+                                   const VariableView &out);
+[[nodiscard]] SCIPP_CORE_EXPORT Variable tan(const VariableConstView &var);
 [[nodiscard]] SCIPP_CORE_EXPORT Variable tan(Variable &&var);
-SCIPP_CORE_EXPORT VariableProxy tan(const VariableConstProxy &var,
-                                    const VariableProxy &out);
-[[nodiscard]] SCIPP_CORE_EXPORT Variable asin(const VariableConstProxy &var);
+SCIPP_CORE_EXPORT VariableView tan(const VariableConstView &var,
+                                   const VariableView &out);
+[[nodiscard]] SCIPP_CORE_EXPORT Variable asin(const VariableConstView &var);
 [[nodiscard]] SCIPP_CORE_EXPORT Variable asin(Variable &&var);
-SCIPP_CORE_EXPORT VariableProxy asin(const VariableConstProxy &var,
-                                     const VariableProxy &out);
-[[nodiscard]] SCIPP_CORE_EXPORT Variable acos(const VariableConstProxy &var);
+SCIPP_CORE_EXPORT VariableView asin(const VariableConstView &var,
+                                    const VariableView &out);
+[[nodiscard]] SCIPP_CORE_EXPORT Variable acos(const VariableConstView &var);
 [[nodiscard]] SCIPP_CORE_EXPORT Variable acos(Variable &&var);
-SCIPP_CORE_EXPORT VariableProxy acos(const VariableConstProxy &var,
-                                     const VariableProxy &out);
-[[nodiscard]] SCIPP_CORE_EXPORT Variable atan(const VariableConstProxy &var);
+SCIPP_CORE_EXPORT VariableView acos(const VariableConstView &var,
+                                    const VariableView &out);
+[[nodiscard]] SCIPP_CORE_EXPORT Variable atan(const VariableConstView &var);
 [[nodiscard]] SCIPP_CORE_EXPORT Variable atan(Variable &&var);
-SCIPP_CORE_EXPORT VariableProxy atan(const VariableConstProxy &var,
-                                     const VariableProxy &out);
+SCIPP_CORE_EXPORT VariableView atan(const VariableConstView &var,
+                                    const VariableView &out);
 
 // Logical reductions
-[[nodiscard]] SCIPP_CORE_EXPORT Variable any(const VariableConstProxy &var,
+[[nodiscard]] SCIPP_CORE_EXPORT Variable any(const VariableConstView &var,
                                              const Dim dim);
-[[nodiscard]] SCIPP_CORE_EXPORT Variable all(const VariableConstProxy &var,
+[[nodiscard]] SCIPP_CORE_EXPORT Variable all(const VariableConstView &var,
                                              const Dim dim);
 
 // Other reductions
-[[nodiscard]] SCIPP_CORE_EXPORT Variable max(const VariableConstProxy &var,
+[[nodiscard]] SCIPP_CORE_EXPORT Variable max(const VariableConstView &var,
                                              const Dim dim);
-[[nodiscard]] SCIPP_CORE_EXPORT Variable min(const VariableConstProxy &var,
+[[nodiscard]] SCIPP_CORE_EXPORT Variable min(const VariableConstView &var,
                                              const Dim dim);
 
-SCIPP_CORE_EXPORT VariableProxy
-nan_to_num(const VariableConstProxy &var, const VariableConstProxy &replacement,
-           const VariableProxy &out);
-[[nodiscard]] SCIPP_CORE_EXPORT Variable nan_to_num(
-    const VariableConstProxy &var, const VariableConstProxy &replacement);
+SCIPP_CORE_EXPORT VariableView nan_to_num(const VariableConstView &var,
+                                          const VariableConstView &replacement,
+                                          const VariableView &out);
+[[nodiscard]] SCIPP_CORE_EXPORT Variable
+nan_to_num(const VariableConstView &var, const VariableConstView &replacement);
 
 namespace sparse {
-SCIPP_CORE_EXPORT Variable counts(const VariableConstProxy &var);
-SCIPP_CORE_EXPORT void reserve(const VariableProxy &sparse,
-                               const VariableConstProxy &capacity);
+SCIPP_CORE_EXPORT Variable counts(const VariableConstView &var);
+SCIPP_CORE_EXPORT void reserve(const VariableView &sparse,
+                               const VariableConstView &capacity);
 } // namespace sparse
 
 } // namespace scipp::core

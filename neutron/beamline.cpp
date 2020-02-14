@@ -77,56 +77,56 @@ template <class T> static Variable two_theta(const T &d) {
 }
 } // namespace beamline_impl
 
-core::VariableConstProxy position(const core::DatasetConstProxy &d) {
+core::VariableConstView position(const core::DatasetConstView &d) {
   return beamline_impl::position(d);
 }
-core::VariableConstProxy source_position(const core::DatasetConstProxy &d) {
+core::VariableConstView source_position(const core::DatasetConstView &d) {
   return beamline_impl::source_position(d);
 }
-core::VariableConstProxy sample_position(const core::DatasetConstProxy &d) {
+core::VariableConstView sample_position(const core::DatasetConstView &d) {
   return beamline_impl::sample_position(d);
 }
-core::VariableProxy position(const core::DatasetProxy &d) {
+core::VariableView position(const core::DatasetProxy &d) {
   return beamline_impl::position(d);
 }
-core::VariableProxy source_position(const core::DatasetProxy &d) {
+core::VariableView source_position(const core::DatasetProxy &d) {
   return beamline_impl::source_position(d);
 }
-core::VariableProxy sample_position(const core::DatasetProxy &d) {
+core::VariableView sample_position(const core::DatasetProxy &d) {
   return beamline_impl::sample_position(d);
 }
-core::Variable flight_path_length(const core::DatasetConstProxy &d) {
+core::Variable flight_path_length(const core::DatasetConstView &d) {
   return beamline_impl::flight_path_length(d);
 }
-core::Variable l1(const core::DatasetConstProxy &d) {
+core::Variable l1(const core::DatasetConstView &d) {
   return beamline_impl::l1(d);
 }
-core::Variable l2(const core::DatasetConstProxy &d) {
+core::Variable l2(const core::DatasetConstView &d) {
   return beamline_impl::l2(d);
 }
-core::Variable scattering_angle(const core::DatasetConstProxy &d) {
+core::Variable scattering_angle(const core::DatasetConstView &d) {
   return beamline_impl::scattering_angle(d);
 }
-core::Variable two_theta(const core::DatasetConstProxy &d) {
+core::Variable two_theta(const core::DatasetConstView &d) {
   return beamline_impl::two_theta(d);
 }
 
-core::VariableConstProxy position(const core::DataArrayConstView &d) {
+core::VariableConstView position(const core::DataArrayConstView &d) {
   return beamline_impl::position(d);
 }
-core::VariableConstProxy source_position(const core::DataArrayConstView &d) {
+core::VariableConstView source_position(const core::DataArrayConstView &d) {
   return beamline_impl::source_position(d);
 }
-core::VariableConstProxy sample_position(const core::DataArrayConstView &d) {
+core::VariableConstView sample_position(const core::DataArrayConstView &d) {
   return beamline_impl::sample_position(d);
 }
-core::VariableProxy position(const core::DataArrayView &d) {
+core::VariableView position(const core::DataArrayView &d) {
   return beamline_impl::position(d);
 }
-core::VariableProxy source_position(const core::DataArrayView &d) {
+core::VariableView source_position(const core::DataArrayView &d) {
   return beamline_impl::source_position(d);
 }
-core::VariableProxy sample_position(const core::DataArrayView &d) {
+core::VariableView sample_position(const core::DataArrayView &d) {
   return beamline_impl::sample_position(d);
 }
 core::Variable flight_path_length(const core::DataArrayConstView &d) {

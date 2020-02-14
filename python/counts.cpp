@@ -13,7 +13,7 @@ namespace py = pybind11;
 
 void init_counts(py::module &m) {
   m.def("counts_to_density",
-        [](const DatasetConstProxy &d, const Dim dim) {
+        [](const DatasetConstView &d, const Dim dim) {
           return counts::toDensity(Dataset(d), dim);
         },
         py::arg("x"), py::arg("dim"),
@@ -39,7 +39,7 @@ void init_counts(py::module &m) {
         :rtype: DataArray)");
 
   m.def("density_to_counts",
-        [](const DatasetConstProxy &d, const Dim dim) {
+        [](const DatasetConstView &d, const Dim dim) {
           return counts::fromDensity(Dataset(d), dim);
         },
         py::arg("x"), py::arg("dim"),

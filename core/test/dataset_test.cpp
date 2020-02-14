@@ -285,7 +285,7 @@ TEST(DatasetTest, set_dense_data_with_sparse_coord) {
 TEST(DatasetTest, construct_from_proxy) {
   DatasetFactory3D factory;
   const auto dataset = factory.make();
-  const DatasetConstProxy proxy(dataset);
+  const DatasetConstView proxy(dataset);
   Dataset from_proxy(proxy);
   ASSERT_EQ(from_proxy, dataset);
 }
@@ -318,7 +318,7 @@ TEST(DatasetTest, slice_validation_simple) {
   do_test_slice_validation(dataset);
 
   // Make sure correct via const proxies
-  DatasetConstProxy constproxy(dataset);
+  DatasetConstView constproxy(dataset);
   do_test_slice_validation(constproxy);
 
   // Make sure correct via proxies

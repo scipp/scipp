@@ -12,7 +12,7 @@
 namespace scipp::core {
 
 template <class T> struct MakePermutation {
-  static auto apply(const VariableConstProxy &key) {
+  static auto apply(const VariableConstView &key) {
     if (key.dims().ndim() != 1)
       throw except::DimensionError("Sort key must be 1-dimensional");
 
@@ -28,19 +28,19 @@ template <class T> struct MakePermutation {
   }
 };
 
-static auto makePermutation(const VariableConstProxy &key) {
+static auto makePermutation(const VariableConstView &key) {
   return CallDType<double, float, int64_t, int32_t, bool,
                    std::string>::apply<MakePermutation>(key.dtype(), key);
 }
 
 /// Return a Variable sorted based on key.
-Variable sort(const VariableConstProxy &var, const VariableConstProxy &key) {
+Variable sort(const VariableConstView &var, const VariableConstView &key) {
   return concatenate(
       IndexedSliceView{var, key.dims().inner(), makePermutation(key)});
 }
 
 /// Return a DataArray sorted based on key.
-DataArray sort(const DataArrayConstView &array, const VariableConstProxy &key) {
+DataArray sort(const DataArrayConstView &array, const VariableConstView &key) {
   return concatenate(
       IndexedSliceView{array, key.dims().inner(), makePermutation(key)});
 }
@@ -56,18 +56,18 @@ DataArray sort(const DataArrayConstView &array, const std::string &key) {
 }
 
 /// Return a Dataset sorted based on key.
-Dataset sort(const DatasetConstProxy &dataset, const VariableConstProxy &key) {
+Dataset sort(const DatasetConstView &dataset, const VariableConstView &key) {
   return concatenate(
       IndexedSliceView{dataset, key.dims().inner(), makePermutation(key)});
 }
 
 /// Return a Dataset sorted based on coordinate.
-Dataset sort(const DatasetConstProxy &dataset, const Dim &key) {
+Dataset sort(const DatasetConstView &dataset, const Dim &key) {
   return sort(dataset, dataset.coords()[key]);
 }
 
 /// Return a Dataset sorted based on labels.
-Dataset sort(const DatasetConstProxy &dataset, const std::string &key) {
+Dataset sort(const DatasetConstView &dataset, const std::string &key) {
   return sort(dataset, dataset.labels()[key]);
 }
 
