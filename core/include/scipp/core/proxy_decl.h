@@ -57,29 +57,29 @@ static constexpr auto make_value = [](auto &&view) -> decltype(auto) {
 
 } // namespace detail
 
-namespace ProxyId {
+namespace ViewId {
 class Attrs;
 class Coords;
 class Labels;
 class Masks;
-} // namespace ProxyId
+} // namespace ViewId
 template <class Id, class Key> class ConstView;
 template <class Base> class MutableView;
 
 /// View for accessing coordinates of const Dataset and DataArrayConstView.
-using CoordsConstView = ConstView<ProxyId::Coords, Dim>;
+using CoordsConstView = ConstView<ViewId::Coords, Dim>;
 /// View for accessing coordinates of Dataset and DataArrayView.
 using CoordsView = MutableView<CoordsConstView>;
 /// View for accessing labels of const Dataset and DataArrayConstView.
-using LabelsConstView = ConstView<ProxyId::Labels, std::string>;
+using LabelsConstView = ConstView<ViewId::Labels, std::string>;
 /// View for accessing labels of Dataset and DataArrayView.
 using LabelsView = MutableView<LabelsConstView>;
 /// View for accessing attributes of const Dataset and DataArrayConstView.
-using AttrsConstView = ConstView<ProxyId::Attrs, std::string>;
+using AttrsConstView = ConstView<ViewId::Attrs, std::string>;
 /// View for accessing attributes of Dataset and DataArrayView.
 using AttrsView = MutableView<AttrsConstView>;
 /// View for accessing masks of const Dataset and DataArrayConstView
-using MasksConstView = ConstView<ProxyId::Masks, std::string>;
+using MasksConstView = ConstView<ViewId::Masks, std::string>;
 /// View for accessing masks of Dataset and DataArrayView
 using MasksView = MutableView<MasksConstView>;
 
@@ -102,7 +102,7 @@ public:
       std::unordered_map<Key, std::pair<const Variable *, Variable *>> &&items,
       const detail::slice_list &slices = {})
       : m_items(std::move(items)), m_slices(slices) {
-    // TODO This is very similar to the code in makeProxyItems(), provided that
+    // TODO This is very similar to the code in makeViewItems(), provided that
     // we can give a good definion of the `dims` argument (roughly the space
     // spanned by all coords, excluding the dimensions that are sliced away).
     // Remove any items for a non-range sliced dimension. Identified via the

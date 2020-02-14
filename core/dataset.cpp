@@ -778,7 +778,7 @@ DatasetConstView::DatasetConstView(const Dataset &dataset)
 }
 
 DatasetView::DatasetView(Dataset &dataset)
-    : DatasetConstView(DatasetConstView::makeProxyWithEmptyIndexes(dataset)),
+    : DatasetConstView(DatasetConstView::makeViewWithEmptyIndexes(dataset)),
       m_mutableDataset(&dataset) {
   m_items.reserve(size());
   for (auto &item : dataset.m_data)

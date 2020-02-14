@@ -142,7 +142,7 @@ DataArray histogram(const DataArrayConstView &sparse,
 }
 
 Dataset histogram(const Dataset &dataset, const VariableConstView &bins) {
-  auto out(Dataset(DatasetConstView::makeProxyWithEmptyIndexes(dataset)));
+  auto out(Dataset(DatasetConstView::makeViewWithEmptyIndexes(dataset)));
   out.setCoord(bins.dims().inner(), bins);
   for (const auto &item : dataset) {
     if (item.dims().sparse())

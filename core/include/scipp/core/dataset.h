@@ -576,8 +576,8 @@ public:
     return slice(slice1, slice2).slice(slice3);
   }
 
-  template <class VarOrProxy>
-  void set(const typename Base::key_type key, VarOrProxy var) const {
+  template <class VarOrView>
+  void set(const typename Base::key_type key, VarOrView var) const {
     if (!m_parent || !Base::m_slices.empty())
       throw std::runtime_error(
           "Cannot add coord/labels/attr field to a slice.");
@@ -685,7 +685,7 @@ public:
 
   DatasetConstView(const Dataset &dataset);
 
-  static DatasetConstView makeProxyWithEmptyIndexes(const Dataset &dataset) {
+  static DatasetConstView makeViewWithEmptyIndexes(const Dataset &dataset) {
     auto res = DatasetConstView();
     res.m_dataset = &dataset;
     return res;

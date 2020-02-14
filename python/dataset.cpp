@@ -309,11 +309,11 @@ void init_dataset(py::module &m) {
 
   py::class_<DatasetConstView>(m, "DatasetConstView")
       .def(py::init<const Dataset &>());
-  py::class_<DatasetView, DatasetConstView> datasetProxy(m, "DatasetView",
+  py::class_<DatasetView, DatasetConstView> datasetView(m, "DatasetView",
                                                            R"(
         View for Dataset, representing a sliced view onto a Dataset;
         Mostly equivalent to Dataset, see there for details.)");
-  datasetProxy.def(py::init<Dataset &>());
+  datasetView.def(py::init<Dataset &>());
 
   py::class_<Dataset> dataset(m, "Dataset", R"(
     Dict of data arrays with aligned dimensions.)");
@@ -352,34 +352,34 @@ void init_dataset(py::module &m) {
       .def(
           "clear", &Dataset::clear,
           R"(Removes all data (preserving coordinates, attributes, labels and masks.).)");
-  datasetProxy.def("__setitem__",
+  datasetView.def("__setitem__",
                    [](const DatasetView &self, const std::string &name,
                       const DataArrayConstView &data) { self[name].assign(data); });
 
   bind_dataset_proxy_methods(dataset);
-  bind_dataset_proxy_methods(datasetProxy);
+  bind_dataset_proxy_methods(datasetView);
 
   bind_coord_properties(dataset);
-  bind_coord_properties(datasetProxy);
+  bind_coord_properties(datasetView);
 
   bind_slice_methods(dataset);
-  bind_slice_methods(datasetProxy);
+  bind_slice_methods(datasetView);
 
   bind_comparison<Dataset>(dataset);
   bind_comparison<DatasetView>(dataset);
-  bind_comparison<Dataset>(datasetProxy);
-  bind_comparison<DatasetView>(datasetProxy);
+  bind_comparison<Dataset>(datasetView);
+  bind_comparison<DatasetView>(datasetView);
 
   bind_in_place_binary<Dataset>(dataset);
   bind_in_place_binary<DatasetView>(dataset);
   bind_in_place_binary<DataArrayView>(dataset);
   bind_in_place_binary<VariableConstView>(dataset);
-  bind_in_place_binary<Dataset>(datasetProxy);
-  bind_in_place_binary<DatasetView>(datasetProxy);
-  bind_in_place_binary<VariableConstView>(datasetProxy);
-  bind_in_place_binary<DataArrayView>(datasetProxy);
+  bind_in_place_binary<Dataset>(datasetView);
+  bind_in_place_binary<DatasetView>(datasetView);
+  bind_in_place_binary<VariableConstView>(datasetView);
+  bind_in_place_binary<DataArrayView>(datasetView);
   bind_in_place_binary_scalars(dataset);
-  bind_in_place_binary_scalars(datasetProxy);
+  bind_in_place_binary_scalars(datasetView);
   bind_in_place_binary_scalars(dataArray);
   bind_in_place_binary_scalars(dataArrayView);
 
@@ -387,10 +387,10 @@ void init_dataset(py::module &m) {
   bind_binary<DatasetView>(dataset);
   bind_binary<DataArrayView>(dataset);
   bind_binary<VariableConstView>(dataset);
-  bind_binary<Dataset>(datasetProxy);
-  bind_binary<DatasetView>(datasetProxy);
-  bind_binary<DataArrayView>(datasetProxy);
-  bind_binary<VariableConstView>(datasetProxy);
+  bind_binary<Dataset>(datasetView);
+  bind_binary<DatasetView>(datasetView);
+  bind_binary<DataArrayView>(datasetView);
+  bind_binary<VariableConstView>(datasetView);
 
   dataArray.def("rename_dims", &rename_dims<DataArray>, py::arg("dims_dict"),
                 "Rename dimensions.");

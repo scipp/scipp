@@ -1209,11 +1209,11 @@ TEST(TransposeTest, different_api) {
   EXPECT_EQ(tvar, ref);
   EXPECT_EQ(tconstVar, ref);
   auto tproxy = VariableView(var).transpose();
-  auto tconstProxy = VariableConstView(constVar).transpose();
+  auto tconstView = VariableConstView(constVar).transpose();
   static_assert(
-      std::is_same_v<VariableConstView, std::decay_t<decltype(tconstProxy)>>);
+      std::is_same_v<VariableConstView, std::decay_t<decltype(tconstView)>>);
   static_assert(std::is_same_v<VariableView, decltype(tproxy)>);
-  EXPECT_EQ(tconstProxy, ref);
+  EXPECT_EQ(tconstView, ref);
   EXPECT_EQ(tproxy, ref);
   auto v = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{3, 2},
                                 Values{1, 2, 3, 4, 5, 6},

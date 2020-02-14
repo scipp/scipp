@@ -69,10 +69,10 @@ std::string to_string(const ConstView<Id, Data> &proxy) {
   return ss.str();
 }
 
-template <class T> std::string to_string(const MutableView<T> &mutableProxy) {
+template <class T> std::string to_string(const MutableView<T> &mutableView) {
   std::stringstream ss;
 
-  for (const auto &[key, item] : mutableProxy) {
+  for (const auto &[key, item] : mutableView) {
     ss << "<scipp.MutableView> (" << key << "):\n" << to_string(item);
   }
   return ss.str();
