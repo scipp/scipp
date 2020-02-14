@@ -21,34 +21,34 @@ TYPED_TEST_SUITE(DatasetViewTest, DatasetViewTypes);
 
 TYPED_TEST(DatasetViewTest, empty) {
   Dataset d;
-  auto &&proxy = TestFixture::access(d);
-  ASSERT_TRUE(proxy.empty());
-  ASSERT_EQ(proxy.size(), 0);
+  auto &&view = TestFixture::access(d);
+  ASSERT_TRUE(view.empty());
+  ASSERT_EQ(view.size(), 0);
 }
 
 TYPED_TEST(DatasetViewTest, coords) {
   Dataset d;
-  auto &&proxy = TestFixture::access(d);
-  ASSERT_NO_THROW(proxy.coords());
+  auto &&view = TestFixture::access(d);
+  ASSERT_NO_THROW(view.coords());
 }
 
 TYPED_TEST(DatasetViewTest, labels) {
   Dataset d;
-  auto &&proxy = TestFixture::access(d);
-  ASSERT_NO_THROW(proxy.labels());
+  auto &&view = TestFixture::access(d);
+  ASSERT_NO_THROW(view.labels());
 }
 
 TYPED_TEST(DatasetViewTest, attrs) {
   Dataset d;
-  auto &&proxy = TestFixture::access(d);
-  ASSERT_NO_THROW(proxy.attrs());
+  auto &&view = TestFixture::access(d);
+  ASSERT_NO_THROW(view.attrs());
 }
 
 TYPED_TEST(DatasetViewTest, bad_item_access) {
   Dataset d;
-  auto &&proxy = TestFixture::access(d);
-  ASSERT_ANY_THROW(proxy[""]);
-  ASSERT_ANY_THROW(proxy["abc"]);
+  auto &&view = TestFixture::access(d);
+  ASSERT_ANY_THROW(view[""]);
+  ASSERT_ANY_THROW(view["abc"]);
 }
 
 TYPED_TEST(DatasetViewTest, name) {
@@ -56,12 +56,12 @@ TYPED_TEST(DatasetViewTest, name) {
   d.setData("a", makeVariable<double>(Values{double{}}));
   d.setData("b", makeVariable<float>(Values{float{}}));
   d.setData("c", makeVariable<int64_t>(Values{int64_t{}}));
-  auto &&proxy = TestFixture::access(d);
+  auto &&view = TestFixture::access(d);
 
   for (const auto &name : {"a", "b", "c"})
-    EXPECT_EQ(proxy[name].name(), name);
+    EXPECT_EQ(view[name].name(), name);
   for (const auto &name : {"a", "b", "c"})
-    EXPECT_EQ(proxy.find(name)->name(), name);
+    EXPECT_EQ(view.find(name)->name(), name);
 }
 
 TYPED_TEST(DatasetViewTest, find_and_contains) {
@@ -69,16 +69,16 @@ TYPED_TEST(DatasetViewTest, find_and_contains) {
   d.setData("a", makeVariable<double>(Values{double{}}));
   d.setData("b", makeVariable<float>(Values{float{}}));
   d.setData("c", makeVariable<int64_t>(Values{int64_t{}}));
-  auto &&proxy = TestFixture::access(d);
+  auto &&view = TestFixture::access(d);
 
-  EXPECT_EQ(proxy.find("not a thing"), proxy.end());
-  EXPECT_EQ(proxy.find("a")->name(), "a");
-  EXPECT_EQ(*proxy.find("a"), proxy["a"]);
-  EXPECT_FALSE(proxy.contains("not a thing"));
-  EXPECT_TRUE(proxy.contains("a"));
+  EXPECT_EQ(view.find("not a thing"), view.end());
+  EXPECT_EQ(view.find("a")->name(), "a");
+  EXPECT_EQ(*view.find("a"), view["a"]);
+  EXPECT_FALSE(view.contains("not a thing"));
+  EXPECT_TRUE(view.contains("a"));
 
-  EXPECT_EQ(proxy.find("b")->name(), "b");
-  EXPECT_EQ(*proxy.find("b"), proxy["b"]);
+  EXPECT_EQ(view.find("b")->name(), "b");
+  EXPECT_EQ(*view.find("b"), view["b"]);
 }
 
 TYPED_TEST(DatasetViewTest, find_in_slice) {
@@ -87,9 +87,9 @@ TYPED_TEST(DatasetViewTest, find_in_slice) {
   d.setCoord(Dim::Y, makeVariable<double>(Dims{Dim::Y}, Shape{2}));
   d.setData("a", makeVariable<double>(Dims{Dim::X}, Shape{2}));
   d.setData("b", makeVariable<float>(Dims{Dim::Y}, Shape{2}));
-  auto &&proxy = TestFixture::access(d);
+  auto &&view = TestFixture::access(d);
 
-  const auto slice = proxy.slice({Dim::X, 1});
+  const auto slice = view.slice({Dim::X, 1});
 
   EXPECT_EQ(slice.find("a")->name(), "a");
   EXPECT_EQ(*slice.find("a"), slice["a"]);
@@ -100,37 +100,37 @@ TYPED_TEST(DatasetViewTest, find_in_slice) {
 
 TYPED_TEST(DatasetViewTest, iterators_empty_dataset) {
   Dataset d;
-  auto &&proxy = TestFixture::access(d);
-  ASSERT_NO_THROW(proxy.begin());
-  ASSERT_NO_THROW(proxy.end());
-  EXPECT_EQ(proxy.begin(), proxy.end());
+  auto &&view = TestFixture::access(d);
+  ASSERT_NO_THROW(view.begin());
+  ASSERT_NO_THROW(view.end());
+  EXPECT_EQ(view.begin(), view.end());
 }
 
 TYPED_TEST(DatasetViewTest, iterators_only_coords) {
   Dataset d;
   d.setCoord(Dim::X, makeVariable<double>(Values{double{}}));
-  auto &&proxy = TestFixture::access(d);
-  ASSERT_NO_THROW(proxy.begin());
-  ASSERT_NO_THROW(proxy.end());
-  EXPECT_EQ(proxy.begin(), proxy.end());
+  auto &&view = TestFixture::access(d);
+  ASSERT_NO_THROW(view.begin());
+  ASSERT_NO_THROW(view.end());
+  EXPECT_EQ(view.begin(), view.end());
 }
 
 TYPED_TEST(DatasetViewTest, iterators_only_labels) {
   Dataset d;
   d.setLabels("a", makeVariable<double>(Values{double{}}));
-  auto &&proxy = TestFixture::access(d);
-  ASSERT_NO_THROW(proxy.begin());
-  ASSERT_NO_THROW(proxy.end());
-  EXPECT_EQ(proxy.begin(), proxy.end());
+  auto &&view = TestFixture::access(d);
+  ASSERT_NO_THROW(view.begin());
+  ASSERT_NO_THROW(view.end());
+  EXPECT_EQ(view.begin(), view.end());
 }
 
 TYPED_TEST(DatasetViewTest, iterators_only_attrs) {
   Dataset d;
   d.setAttr("a", makeVariable<double>(Values{double{}}));
-  auto &&proxy = TestFixture::access(d);
-  ASSERT_NO_THROW(proxy.begin());
-  ASSERT_NO_THROW(proxy.end());
-  EXPECT_EQ(proxy.begin(), proxy.end());
+  auto &&view = TestFixture::access(d);
+  ASSERT_NO_THROW(view.begin());
+  ASSERT_NO_THROW(view.end());
+  EXPECT_EQ(view.begin(), view.end());
 }
 
 TYPED_TEST(DatasetViewTest, iterators) {
@@ -138,28 +138,28 @@ TYPED_TEST(DatasetViewTest, iterators) {
   d.setData("a", makeVariable<double>(Values{double{}}));
   d.setData("b", makeVariable<float>(Values{float{}}));
   d.setData("c", makeVariable<int64_t>(Values{int64_t{}}));
-  auto &&proxy = TestFixture::access(d);
+  auto &&view = TestFixture::access(d);
 
-  ASSERT_NO_THROW(proxy.begin());
-  ASSERT_NO_THROW(proxy.end());
+  ASSERT_NO_THROW(view.begin());
+  ASSERT_NO_THROW(view.end());
 
   std::set<std::string> found;
   std::set<std::string> expected{"a", "b", "c"};
 
-  auto it = proxy.begin();
-  ASSERT_NE(it, proxy.end());
+  auto it = view.begin();
+  ASSERT_NE(it, view.end());
   found.insert(it->name());
 
   ASSERT_NO_THROW(++it);
-  ASSERT_NE(it, proxy.end());
+  ASSERT_NE(it, view.end());
   found.insert(it->name());
 
   ASSERT_NO_THROW(++it);
-  ASSERT_NE(it, proxy.end());
+  ASSERT_NE(it, view.end());
   found.insert(it->name());
 
   EXPECT_EQ(found, expected);
 
   ASSERT_NO_THROW(++it);
-  ASSERT_EQ(it, proxy.end());
+  ASSERT_EQ(it, view.end());
 }

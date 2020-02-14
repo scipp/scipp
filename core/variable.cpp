@@ -228,7 +228,7 @@ void Variable::setVariances(Variable v) {
 }
 
 void VariableView::setVariances(Variable v) const {
-  // If the proxy wraps the whole variable (common case: iterating a dataset)
+  // If the view wraps the whole variable (common case: iterating a dataset)
   // m_view is not set. A more complex check would be to verify dimensions,
   // shape, and strides, but this should be sufficient for now.
   if (m_view)

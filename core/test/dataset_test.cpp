@@ -15,7 +15,7 @@ using namespace scipp;
 using namespace scipp::core;
 
 // Any dataset functionality that is also available for Dataset(Const)View is
-// to be tested in dataset_proxy_test.cpp, not here!
+// to be tested in dataset_view_test.cpp, not here!
 
 TEST(DatasetTest, construct_default) { ASSERT_NO_THROW(Dataset d); }
 
@@ -282,12 +282,12 @@ TEST(DatasetTest, set_dense_data_with_sparse_coord) {
                except::DimensionError);
 }
 
-TEST(DatasetTest, construct_from_proxy) {
+TEST(DatasetTest, construct_from_view) {
   DatasetFactory3D factory;
   const auto dataset = factory.make();
-  const DatasetConstView proxy(dataset);
-  Dataset from_proxy(proxy);
-  ASSERT_EQ(from_proxy, dataset);
+  const DatasetConstView view(dataset);
+  Dataset from_view(view);
+  ASSERT_EQ(from_view, dataset);
 }
 
 TEST(DatasetTest, construct_from_slice) {
@@ -318,12 +318,12 @@ TEST(DatasetTest, slice_validation_simple) {
   do_test_slice_validation(dataset);
 
   // Make sure correct via const proxies
-  DatasetConstView constproxy(dataset);
-  do_test_slice_validation(constproxy);
+  DatasetConstView constview(dataset);
+  do_test_slice_validation(constview);
 
   // Make sure correct via proxies
-  DatasetView proxy(dataset);
-  do_test_slice_validation(proxy);
+  DatasetView view(dataset);
+  do_test_slice_validation(view);
 }
 
 TEST(DatasetTest, slice_with_no_coords) {

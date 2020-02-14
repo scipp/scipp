@@ -437,47 +437,47 @@ TYPED_TEST(DatasetMaskSlicingBinaryOpTest, binary_op_on_sliced_masks) {
 TYPED_TEST(DatasetViewBinaryEqualsOpTest, return_value) {
   auto a = datasetFactory.make();
   auto b = datasetFactory.make();
-  DatasetView proxy(a);
+  DatasetView view(a);
 
   ASSERT_TRUE(
-      (std::is_same_v<decltype(TestFixture::op(proxy, b["data_scalar"])),
+      (std::is_same_v<decltype(TestFixture::op(view, b["data_scalar"])),
                       DatasetView>));
   {
-    const auto &result = TestFixture::op(proxy, b["data_scalar"]);
+    const auto &result = TestFixture::op(view, b["data_scalar"]);
     EXPECT_EQ(&result["data_scalar"].template values<double>()[0],
               &a["data_scalar"].template values<double>()[0]);
   }
 
   ASSERT_TRUE(
-      (std::is_same_v<decltype(TestFixture::op(proxy, b)), DatasetView>));
+      (std::is_same_v<decltype(TestFixture::op(view, b)), DatasetView>));
   {
-    const auto &result = TestFixture::op(proxy, b);
+    const auto &result = TestFixture::op(view, b);
     EXPECT_EQ(&result["data_scalar"].template values<double>()[0],
               &a["data_scalar"].template values<double>()[0]);
   }
 
   ASSERT_TRUE(
-      (std::is_same_v<decltype(TestFixture::op(proxy, b.slice({Dim::Z, 3}))),
+      (std::is_same_v<decltype(TestFixture::op(view, b.slice({Dim::Z, 3}))),
                       DatasetView>));
   {
-    const auto &result = TestFixture::op(proxy, b.slice({Dim::Z, 3}));
+    const auto &result = TestFixture::op(view, b.slice({Dim::Z, 3}));
     EXPECT_EQ(&result["data_scalar"].template values<double>()[0],
               &a["data_scalar"].template values<double>()[0]);
   }
 
   ASSERT_TRUE(
-      (std::is_same_v<decltype(TestFixture::op(proxy, b["data_scalar"].data())),
+      (std::is_same_v<decltype(TestFixture::op(view, b["data_scalar"].data())),
                       DatasetView>));
   {
-    const auto &result = TestFixture::op(proxy, b["data_scalar"].data());
+    const auto &result = TestFixture::op(view, b["data_scalar"].data());
     EXPECT_EQ(&result["data_scalar"].template values<double>()[0],
               &a["data_scalar"].template values<double>()[0]);
   }
 
   ASSERT_TRUE(
-      (std::is_same_v<decltype(TestFixture::op(proxy, 5.0)), DatasetView>));
+      (std::is_same_v<decltype(TestFixture::op(view, 5.0)), DatasetView>));
   {
-    const auto &result = TestFixture::op(proxy, 5.0);
+    const auto &result = TestFixture::op(view, 5.0);
     EXPECT_EQ(&result["data_scalar"].template values<double>()[0],
               &a["data_scalar"].template values<double>()[0]);
   }
@@ -598,19 +598,19 @@ TYPED_TEST(DatasetViewBinaryEqualsOpTest,
 
 TYPED_TEST(DatasetViewBinaryEqualsOpTest, rhs_DatasetView_coord_mismatch) {
   auto dataset = datasetFactory.make();
-  const DatasetView proxy(dataset);
+  const DatasetView view(dataset);
 
   // Non-range sliced throws for X and Y due to multi-dimensional coords.
-  ASSERT_THROW(TestFixture::op(proxy, dataset.slice({Dim::X, 3})),
+  ASSERT_THROW(TestFixture::op(view, dataset.slice({Dim::X, 3})),
                except::CoordMismatchError);
-  ASSERT_THROW(TestFixture::op(proxy, dataset.slice({Dim::Y, 3})),
+  ASSERT_THROW(TestFixture::op(view, dataset.slice({Dim::Y, 3})),
                except::CoordMismatchError);
 
-  ASSERT_THROW(TestFixture::op(proxy, dataset.slice({Dim::X, 3, 4})),
+  ASSERT_THROW(TestFixture::op(view, dataset.slice({Dim::X, 3, 4})),
                except::CoordMismatchError);
-  ASSERT_THROW(TestFixture::op(proxy, dataset.slice({Dim::Y, 3, 4})),
+  ASSERT_THROW(TestFixture::op(view, dataset.slice({Dim::Y, 3, 4})),
                except::CoordMismatchError);
-  ASSERT_THROW(TestFixture::op(proxy, dataset.slice({Dim::Z, 3, 4})),
+  ASSERT_THROW(TestFixture::op(view, dataset.slice({Dim::Z, 3, 4})),
                except::CoordMismatchError);
 }
 
@@ -645,7 +645,7 @@ TYPED_TEST(DatasetBinaryOpTest, dataset_lhs_dataset_rhs) {
   EXPECT_EQ(res.masks(), dataset_a.masks());
 }
 
-TYPED_TEST(DatasetBinaryOpTest, dataset_lhs_variableconstproxy_rhs) {
+TYPED_TEST(DatasetBinaryOpTest, dataset_lhs_variableconstview_rhs) {
   const auto [dataset_a, dataset_b] = generateBinaryOpTestCase();
 
   const auto res = TestFixture::op(dataset_a, dataset_b["data_a"].data());
@@ -655,7 +655,7 @@ TYPED_TEST(DatasetBinaryOpTest, dataset_lhs_variableconstproxy_rhs) {
   EXPECT_EQ(reference, res["data_a"].data());
 }
 
-TYPED_TEST(DatasetBinaryOpTest, variableconstproxy_lhs_dataset_rhs) {
+TYPED_TEST(DatasetBinaryOpTest, variableconstview_lhs_dataset_rhs) {
   const auto [dataset_a, dataset_b] = generateBinaryOpTestCase();
 
   const auto res = TestFixture::op(dataset_a["data_a"].data(), dataset_b);
@@ -865,12 +865,12 @@ TYPED_TEST(DatasetBinaryOpTest,
                except::VariableMismatchError);
 }
 
-TYPED_TEST(DatasetBinaryOpTest, dataset_lhs_datasetconstproxy_rhs) {
+TYPED_TEST(DatasetBinaryOpTest, dataset_lhs_datasetconstview_rhs) {
   auto dataset_a = datasetFactory.make();
   auto dataset_b = datasetFactory.make();
 
-  DatasetConstView dataset_b_proxy(dataset_b);
-  const auto res = TestFixture::op(dataset_a, dataset_b_proxy);
+  DatasetConstView dataset_b_view(dataset_b);
+  const auto res = TestFixture::op(dataset_a, dataset_b_view);
 
   for (const auto &item : res) {
     const auto reference = TestFixture::op(dataset_a[item.name()].data(),
@@ -879,25 +879,25 @@ TYPED_TEST(DatasetBinaryOpTest, dataset_lhs_datasetconstproxy_rhs) {
   }
 }
 
-TYPED_TEST(DatasetBinaryOpTest, datasetconstproxy_lhs_dataset_rhs) {
+TYPED_TEST(DatasetBinaryOpTest, datasetconstview_lhs_dataset_rhs) {
   const auto dataset_a = datasetFactory.make();
   const auto dataset_b = datasetFactory.make().slice({Dim::X, 1});
 
-  DatasetConstView dataset_a_proxy = dataset_a.slice({Dim::X, 1});
-  const auto res = TestFixture::op(dataset_a_proxy, dataset_b);
+  DatasetConstView dataset_a_view = dataset_a.slice({Dim::X, 1});
+  const auto res = TestFixture::op(dataset_a_view, dataset_b);
 
-  Dataset dataset_a_slice(dataset_a_proxy);
+  Dataset dataset_a_slice(dataset_a_view);
   const auto reference = TestFixture::op(dataset_a_slice, dataset_b);
   EXPECT_EQ(res, reference);
 }
 
-TYPED_TEST(DatasetBinaryOpTest, datasetconstproxy_lhs_datasetconstproxy_rhs) {
+TYPED_TEST(DatasetBinaryOpTest, datasetconstview_lhs_datasetconstview_rhs) {
   auto dataset_a = datasetFactory.make();
   auto dataset_b = datasetFactory.make();
 
-  DatasetConstView dataset_a_proxy(dataset_a);
-  DatasetConstView dataset_b_proxy(dataset_b);
-  const auto res = TestFixture::op(dataset_a_proxy, dataset_b_proxy);
+  DatasetConstView dataset_a_view(dataset_a);
+  DatasetConstView dataset_b_view(dataset_b);
+  const auto res = TestFixture::op(dataset_a_view, dataset_b_view);
 
   for (const auto &item : res) {
     const auto reference = TestFixture::op(dataset_a[item.name()].data(),

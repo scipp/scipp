@@ -603,11 +603,11 @@ TEST(VariableView, strides) {
 TEST(VariableView, values_and_variances) {
   const auto var = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3},
                                         Variances{4, 5, 6});
-  const auto proxy = var.slice({Dim::X, 1, 2});
-  EXPECT_EQ(proxy.values<double>().size(), 1);
-  EXPECT_EQ(proxy.values<double>()[0], 2.0);
-  EXPECT_EQ(proxy.variances<double>().size(), 1);
-  EXPECT_EQ(proxy.variances<double>()[0], 5.0);
+  const auto view = var.slice({Dim::X, 1, 2});
+  EXPECT_EQ(view.values<double>().size(), 1);
+  EXPECT_EQ(view.values<double>()[0], 2.0);
+  EXPECT_EQ(view.variances<double>().size(), 1);
+  EXPECT_EQ(view.variances<double>()[0], 5.0);
 }
 
 TEST(VariableView, slicing_does_not_transpose) {
@@ -1079,8 +1079,8 @@ TEST(VariableTest, set_variances_remove) {
 TEST(VariableViewTest, set_variances) {
   Variable var = makeVariable<double>(
       Dims{Dim::X}, Shape{3}, units::Unit(units::m), Values{1.0, 2.0, 3.0});
-  auto proxy = VariableView(var);
-  test_set_variances(proxy);
+  auto view = VariableView(var);
+  test_set_variances(view);
   EXPECT_THROW(
       var.slice({Dim::X, 0}).setVariances(Variable(var.slice({Dim::X, 0}))),
       except::VariancesError);
@@ -1114,7 +1114,7 @@ TEST(VariableTest, variances_unsupported_type_fail) {
                except::VariancesError);
 }
 
-TEST(VariableTest, construct_proxy_dims) {
+TEST(VariableTest, construct_view_dims) {
   auto var = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2l, 3l});
   Variable vv(var.slice({Dim::X, 0, 2}));
   ASSERT_NO_THROW(Variable(var.slice({Dim::X, 0, 2}), Dimensions(Dim::Y, 2)));
@@ -1208,13 +1208,13 @@ TEST(TransposeTest, different_api) {
   static_assert(std::is_same_v<VariableView, decltype(tvar)>);
   EXPECT_EQ(tvar, ref);
   EXPECT_EQ(tconstVar, ref);
-  auto tproxy = VariableView(var).transpose();
+  auto tview = VariableView(var).transpose();
   auto tconstView = VariableConstView(constVar).transpose();
   static_assert(
       std::is_same_v<VariableConstView, std::decay_t<decltype(tconstView)>>);
-  static_assert(std::is_same_v<VariableView, decltype(tproxy)>);
+  static_assert(std::is_same_v<VariableView, decltype(tview)>);
   EXPECT_EQ(tconstView, ref);
-  EXPECT_EQ(tproxy, ref);
+  EXPECT_EQ(tview, ref);
   auto v = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{3, 2},
                                 Values{1, 2, 3, 4, 5, 6},
                                 Variances{11, 12, 13, 14, 15, 16})

@@ -8,4 +8,4 @@ Key classes and proxies in `scipp::core`:
 - [DataArrayConstView](@ref scipp::core::DataArrayConstView)
 - [Variable](@ref scipp::core::Variable)
 - [VariableView](@ref scipp::core::VariableView)
-- [VariableConstproxy](@ref scipp::core::VariableConstView)
+- [VariableConstView](@ref scipp::core::VariableConstView)

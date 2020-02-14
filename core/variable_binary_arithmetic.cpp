@@ -88,8 +88,8 @@ Variable operator*(const double a, const VariableConstView &b_) {
   Variable b(b_);
   return b *= a;
 }
-Variable operator/(const double a, const VariableConstView &b_proxy) {
-  Variable b(b_proxy);
+Variable operator/(const double a, const VariableConstView &b_view) {
+  Variable b(b_view);
   transform_in_place<double, float>(
       b,
       overloaded{
