@@ -66,21 +66,21 @@ class Masks;
 template <class Id, class Key> class ConstView;
 template <class Base> class MutableView;
 
-/// Proxy for accessing coordinates of const Dataset and DataArrayConstView.
+/// View for accessing coordinates of const Dataset and DataArrayConstView.
 using CoordsConstView = ConstView<ProxyId::Coords, Dim>;
-/// Proxy for accessing coordinates of Dataset and DataArrayView.
+/// View for accessing coordinates of Dataset and DataArrayView.
 using CoordsView = MutableView<CoordsConstView>;
-/// Proxy for accessing labels of const Dataset and DataArrayConstView.
+/// View for accessing labels of const Dataset and DataArrayConstView.
 using LabelsConstView = ConstView<ProxyId::Labels, std::string>;
-/// Proxy for accessing labels of Dataset and DataArrayView.
+/// View for accessing labels of Dataset and DataArrayView.
 using LabelsView = MutableView<LabelsConstView>;
-/// Proxy for accessing attributes of const Dataset and DataArrayConstView.
+/// View for accessing attributes of const Dataset and DataArrayConstView.
 using AttrsConstView = ConstView<ProxyId::Attrs, std::string>;
-/// Proxy for accessing attributes of Dataset and DataArrayView.
+/// View for accessing attributes of Dataset and DataArrayView.
 using AttrsView = MutableView<AttrsConstView>;
-/// Proxy for accessing masks of const Dataset and DataArrayConstView
+/// View for accessing masks of const Dataset and DataArrayConstView
 using MasksConstView = ConstView<ProxyId::Masks, std::string>;
-/// Proxy for accessing masks of Dataset and DataArrayView
+/// View for accessing masks of Dataset and DataArrayView
 using MasksView = MutableView<MasksConstView>;
 
 /// Common functionality for other const-proxy classes.

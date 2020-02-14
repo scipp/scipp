@@ -91,14 +91,14 @@ class DataAccessHelper {
   }
 
   struct get_values {
-    template <class T, class Proxy> static constexpr auto get(Proxy &proxy) {
+    template <class T, class View> static constexpr auto get(View &proxy) {
       return proxy.template values<T>();
     }
 
-    template <class Proxy> static bool valid(py::object &obj) {
-      auto &proxy = obj.cast<Proxy &>();
-      if constexpr (std::is_same_v<DataArray, Proxy> ||
-                    std::is_base_of_v<DataArrayConstView, Proxy>)
+    template <class View> static bool valid(py::object &obj) {
+      auto &proxy = obj.cast<View &>();
+      if constexpr (std::is_same_v<DataArray, View> ||
+                    std::is_base_of_v<DataArrayConstView, View>)
         return proxy.hasData() && bool(proxy.data());
       else
         return bool(proxy);
@@ -106,12 +106,12 @@ class DataAccessHelper {
   };
 
   struct get_variances {
-    template <class T, class Proxy> static constexpr auto get(Proxy &proxy) {
+    template <class T, class View> static constexpr auto get(View &proxy) {
       return proxy.template variances<T>();
     }
 
-    template <class Proxy> static bool valid(py::object &obj) {
-      return obj.cast<Proxy &>().hasVariances();
+    template <class View> static bool valid(py::object &obj) {
+      return obj.cast<View &>().hasVariances();
     }
   };
 };
@@ -120,16 +120,16 @@ template <class... Ts> class as_ElementArrayViewImpl {
   using get_values = DataAccessHelper::get_values;
   using get_variances = DataAccessHelper::get_variances;
 
-  template <class Proxy>
+  template <class View>
   using outVariant_t = std::variant<
-      std::conditional_t<std::is_same_v<Proxy, Variable>, scipp::span<Ts>,
+      std::conditional_t<std::is_same_v<View, Variable>, scipp::span<Ts>,
                          ElementArrayView<Ts>>...>;
 
-  template <class Getter, class Proxy>
-  static outVariant_t<Proxy> get(Proxy &proxy) {
+  template <class Getter, class View>
+  static outVariant_t<View> get(View &proxy) {
     DType type = proxy.data().dtype();
-    if constexpr (std::is_same_v<DataArray, Proxy> ||
-                  std::is_base_of_v<DataArrayConstView, Proxy>) {
+    if constexpr (std::is_same_v<DataArray, View> ||
+                  std::is_base_of_v<DataArrayConstView, View>) {
       const auto &view = proxy.data();
       type = view.data().dtype();
     }
@@ -165,8 +165,8 @@ template <class... Ts> class as_ElementArrayViewImpl {
     }
   }
 
-  template <class Proxy>
-  static void set(const Dimensions &dims, const Proxy &proxy,
+  template <class View>
+  static void set(const Dimensions &dims, const View &proxy,
                   const py::object &obj) {
     std::visit(
         [&dims, &obj](const auto &proxy_) {
@@ -207,12 +207,12 @@ template <class... Ts> class as_ElementArrayViewImpl {
         proxy);
   }
 
-  template <class Getter, class Proxy>
+  template <class Getter, class View>
   static py::object get_py_array_t(py::object &obj) {
-    auto &proxy = obj.cast<Proxy &>();
+    auto &proxy = obj.cast<View &>();
     DType type = proxy.data().dtype();
-    if constexpr (std::is_same_v<DataArray, Proxy> ||
-                  std::is_base_of_v<DataArrayConstView, Proxy>) {
+    if constexpr (std::is_same_v<DataArray, View> ||
+                  std::is_base_of_v<DataArrayConstView, View>) {
       const auto &view = proxy.data();
       type = view.data().dtype();
     }

@@ -117,7 +117,7 @@ class DatasetConstView;
 class DatasetView;
 class Dataset;
 
-/// Proxy for a data item and related coordinates of Dataset.
+/// View for a data item and related coordinates of Dataset.
 class SCIPP_CORE_EXPORT DataArrayView : public DataArrayConstView {
 public:
   DataArrayView(Dataset &dataset, detail::dataset_item_map::value_type &data,
@@ -771,7 +771,7 @@ protected:
   detail::slice_list m_slices;
 };
 
-/// Proxy for Dataset, implementing slicing and item selection.
+/// View for Dataset, implementing slicing and item selection.
 class SCIPP_CORE_EXPORT DatasetView : public DatasetConstView {
   explicit DatasetView() : DatasetConstView(), m_mutableDataset(nullptr) {}
 

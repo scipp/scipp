@@ -49,9 +49,9 @@ auto from_py_slice(const T &source,
   return Slice(dim, start, stop);
 }
 
-template <class Proxy> struct SetData {
+template <class View> struct SetData {
   template <class T> struct Impl {
-    static void apply(Proxy &slice, const py::array &data) {
+    static void apply(View &slice, const py::array &data) {
       if (slice.hasVariances())
         throw std::runtime_error("Data object contains variances, to set data "
                                  "values use the `values` property or provide "

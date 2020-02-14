@@ -13,23 +13,23 @@ namespace py = pybind11;
 using namespace scipp;
 using namespace scipp::core;
 
-template <class T, class Proxy>
-void copy_flattened_0d(const py::array_t<T> &data, Proxy &&proxy) {
+template <class T, class View>
+void copy_flattened_0d(const py::array_t<T> &data, View &&proxy) {
   auto r = data.unchecked();
   auto it = proxy.begin();
   *it = r();
 }
 
-template <class T, class Proxy>
-void copy_flattened_1d(const py::array_t<T> &data, Proxy &&proxy) {
+template <class T, class View>
+void copy_flattened_1d(const py::array_t<T> &data, View &&proxy) {
   auto r = data.unchecked();
   auto it = proxy.begin();
   for (ssize_t i = 0; i < r.shape(0); ++i, ++it)
     *it = r(i);
 }
 
-template <class T, class Proxy>
-void copy_flattened_2d(const py::array_t<T> &data, Proxy &&proxy) {
+template <class T, class View>
+void copy_flattened_2d(const py::array_t<T> &data, View &&proxy) {
   auto r = data.unchecked();
   auto it = proxy.begin();
   for (ssize_t i = 0; i < r.shape(0); ++i)
@@ -37,8 +37,8 @@ void copy_flattened_2d(const py::array_t<T> &data, Proxy &&proxy) {
       *it = r(i, j);
 }
 
-template <class T, class Proxy>
-void copy_flattened_3d(const py::array_t<T> &data, Proxy &&proxy) {
+template <class T, class View>
+void copy_flattened_3d(const py::array_t<T> &data, View &&proxy) {
   auto r = data.unchecked();
   auto it = proxy.begin();
   for (ssize_t i = 0; i < r.shape(0); ++i)
@@ -47,8 +47,8 @@ void copy_flattened_3d(const py::array_t<T> &data, Proxy &&proxy) {
         *it = r(i, j, k);
 }
 
-template <class T, class Proxy>
-void copy_flattened_4d(const py::array_t<T> &data, Proxy &&proxy) {
+template <class T, class View>
+void copy_flattened_4d(const py::array_t<T> &data, View &&proxy) {
   auto r = data.unchecked();
   auto it = proxy.begin();
   for (ssize_t i = 0; i < r.shape(0); ++i)
@@ -58,8 +58,8 @@ void copy_flattened_4d(const py::array_t<T> &data, Proxy &&proxy) {
           *it = r(i, j, k, l);
 }
 
-template <class T, class Proxy>
-void copy_flattened(const py::array_t<T> &data, Proxy &&proxy) {
+template <class T, class View>
+void copy_flattened(const py::array_t<T> &data, View &&proxy) {
   if (scipp::size(proxy) != data.size())
     throw std::runtime_error(
         "Numpy data size does not match size of target object.");

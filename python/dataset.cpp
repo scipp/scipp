@@ -92,7 +92,7 @@ void bind_helper_view(py::module &m, const std::string &name) {
 template <class T, class ConstT>
 void bind_mutable_proxy(py::module &m, const std::string &name) {
   py::class_<ConstT>(m, (name + "ConstView").c_str());
-  py::class_<T, ConstT> proxy(m, (name + "Proxy").c_str());
+  py::class_<T, ConstT> proxy(m, (name + "View").c_str());
   proxy.def("__len__", &T::size)
       .def("__getitem__", &T::operator[], py::return_value_policy::move,
            py::keep_alive<0, 1>())
@@ -300,7 +300,7 @@ void init_dataset(py::module &m) {
       .def(py::init<const DataArray &>());
 
   py::class_<DataArrayView, DataArrayConstView> dataArrayView(m, "DataArrayView", R"(
-        Proxy for DataArray, representing a sliced view onto a DataArray, or an item of a Dataset;
+        View for DataArray, representing a sliced view onto a DataArray, or an item of a Dataset;
         Mostly equivalent to DataArray, see there for details.)");
   dataArrayView.def(py::init<DataArray &>());
 
@@ -311,7 +311,7 @@ void init_dataset(py::module &m) {
       .def(py::init<const Dataset &>());
   py::class_<DatasetView, DatasetConstView> datasetProxy(m, "DatasetView",
                                                            R"(
-        Proxy for Dataset, representing a sliced view onto a Dataset;
+        View for Dataset, representing a sliced view onto a Dataset;
         Mostly equivalent to Dataset, see there for details.)");
   datasetProxy.def(py::init<Dataset &>());
 

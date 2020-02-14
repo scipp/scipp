@@ -306,7 +306,7 @@ void init_variable(py::module &m) {
 
   py::class_<VariableView, VariableConstView> variableView(
       m, "VariableView", py::buffer_protocol(), R"(
-        Proxy for Variable, representing a sliced or transposed view onto a variable;
+        View for Variable, representing a sliced or transposed view onto a variable;
         Mostly equivalent to Variable, see there for details.)");
   variableView.def_buffer(&make_py_buffer_info);
   variableView.def(py::init<Variable &>())

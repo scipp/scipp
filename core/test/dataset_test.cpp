@@ -14,7 +14,7 @@
 using namespace scipp;
 using namespace scipp::core;
 
-// Any dataset functionality that is also available for Dataset(Const)Proxy is
+// Any dataset functionality that is also available for Dataset(Const)View is
 // to be tested in dataset_proxy_test.cpp, not here!
 
 TEST(DatasetTest, construct_default) { ASSERT_NO_THROW(Dataset d); }
