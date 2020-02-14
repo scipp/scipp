@@ -83,14 +83,14 @@ using MasksConstView = ConstView<ViewId::Masks, std::string>;
 /// View for accessing masks of Dataset and DataArrayView
 using MasksView = MutableView<MasksConstView>;
 
-/// Common functionality for other const-proxy classes.
+/// Common functionality for other const-view classes.
 template <class Id, class Key> class ConstView {
 private:
   struct make_item {
-    const ConstView *proxy;
+    const ConstView *view;
     template <class T> auto operator()(const T &item) const {
       return std::pair<Key, VariableConstView>(
-          item.first, detail::makeSlice(*item.second.first, proxy->slices()));
+          item.first, detail::makeSlice(*item.second.first, view->slices()));
     }
   };
 
@@ -129,17 +129,17 @@ public:
     }
   }
 
-  /// Return the number of coordinates in the proxy.
+  /// Return the number of coordinates in the view.
   index size() const noexcept { return scipp::size(m_items); }
-  /// Return true if there are 0 coordinates in the proxy.
+  /// Return true if there are 0 coordinates in the view.
   [[nodiscard]] bool empty() const noexcept { return size() == 0; }
 
-  /// Returns whether a given key is present in the proxy.
+  /// Returns whether a given key is present in the view.
   bool contains(const Key &k) const {
     return m_items.find(k) != m_items.cend();
   }
 
-  /// Return a const proxy to the coordinate for given dimension.
+  /// Return a const view to the coordinate for given dimension.
   VariableConstView operator[](const Key key) const {
     expect::contains(*this, key);
     return detail::makeSlice(*m_items.at(key).first, m_slices);

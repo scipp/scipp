@@ -263,7 +263,7 @@ private:
 class VariableConstView;
 class VariableView;
 
-template <class T> constexpr bool is_variable_or_proxy() {
+template <class T> constexpr bool is_variable_or_view() {
   return std::is_same_v<T, Variable> || std::is_same_v<T, VariableConstView> ||
          std::is_same_v<T, VariableView>;
 }
@@ -422,19 +422,19 @@ public:
   Variable operator-() const;
 
   Variable &operator+=(const VariableConstView &other) &;
-  template <typename T, typename = std::enable_if_t<!is_variable_or_proxy<T>()>>
+  template <typename T, typename = std::enable_if_t<!is_variable_or_view<T>()>>
   Variable &operator+=(const T v) & {
     return *this += makeVariable<T>(Values{v});
   }
 
   Variable &operator-=(const VariableConstView &other) &;
-  template <typename T, typename = std::enable_if_t<!is_variable_or_proxy<T>()>>
+  template <typename T, typename = std::enable_if_t<!is_variable_or_view<T>()>>
   Variable &operator-=(const T v) & {
     return *this -= makeVariable<T>(Values{v});
   }
 
   Variable &operator*=(const VariableConstView &other) &;
-  template <typename T, typename = std::enable_if_t<!is_variable_or_proxy<T>()>>
+  template <typename T, typename = std::enable_if_t<!is_variable_or_view<T>()>>
   Variable &operator*=(const T v) & {
     return *this *= makeVariable<T>(Values{v});
   }
@@ -445,7 +445,7 @@ public:
   }
 
   Variable &operator/=(const VariableConstView &other) &;
-  template <typename T, typename = std::enable_if_t<!is_variable_or_proxy<T>()>>
+  template <typename T, typename = std::enable_if_t<!is_variable_or_view<T>()>>
   Variable &operator/=(const T v) & {
     return *this /= makeVariable<T>(Values{v});
   }
@@ -707,7 +707,7 @@ public:
 
   bool hasVariances() const noexcept { return m_variable->hasVariances(); }
 
-  // Note: This return a proxy object (a ElementArrayView) that does reference
+  // Note: This return a view object (a ElementArrayView) that does reference
   // members owner by *this. Therefore we can support this even for
   // temporaries and we do not need to delete the rvalue overload, unlike for
   // many other methods. The data is owned by the underlying variable so it
@@ -838,25 +838,25 @@ public:
   template <class T> VariableView assign(const T &other) const;
 
   VariableView operator+=(const VariableConstView &other) const;
-  template <typename T, typename = std::enable_if_t<!is_variable_or_proxy<T>()>>
+  template <typename T, typename = std::enable_if_t<!is_variable_or_view<T>()>>
   VariableView operator+=(const T v) const {
     return *this += makeVariable<T>(Values{v});
   }
 
   VariableView operator-=(const VariableConstView &other) const;
-  template <typename T, typename = std::enable_if_t<!is_variable_or_proxy<T>()>>
+  template <typename T, typename = std::enable_if_t<!is_variable_or_view<T>()>>
   VariableView operator-=(const T v) const {
     return *this -= makeVariable<T>(Values{v});
   }
 
   VariableView operator*=(const VariableConstView &other) const;
-  template <typename T, typename = std::enable_if_t<!is_variable_or_proxy<T>()>>
+  template <typename T, typename = std::enable_if_t<!is_variable_or_view<T>()>>
   VariableView operator*=(const T v) const {
     return *this *= makeVariable<T>(Values{v});
   }
 
   VariableView operator/=(const VariableConstView &other) const;
-  template <typename T, typename = std::enable_if_t<!is_variable_or_proxy<T>()>>
+  template <typename T, typename = std::enable_if_t<!is_variable_or_view<T>()>>
   VariableView operator/=(const T v) const {
     return *this /= makeVariable<T>(Values{v});
   }

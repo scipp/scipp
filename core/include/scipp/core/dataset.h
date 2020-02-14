@@ -41,7 +41,7 @@ struct DatasetData {
 using dataset_item_map = std::unordered_map<std::string, DatasetData>;
 } // namespace detail
 
-/// Const proxy for a data item and related coordinates of Dataset.
+/// Const view for a data item and related coordinates of Dataset.
 class SCIPP_CORE_EXPORT DataArrayConstView {
 public:
   DataArrayConstView(const Dataset &dataset,
@@ -60,23 +60,23 @@ public:
   AttrsConstView attrs() const noexcept;
   MasksConstView masks() const noexcept;
 
-  /// Return true if the proxy contains data values.
+  /// Return true if the view contains data values.
   bool hasData() const noexcept { return m_data->second.data.has_value(); }
-  /// Return true if the proxy contains data variances.
+  /// Return true if the view contains data variances.
   bool hasVariances() const noexcept {
     return hasData() && m_data->second.data->hasVariances();
   }
 
-  /// Return untyped const proxy for data (values and optional variances).
+  /// Return untyped const view for data (values and optional variances).
   const VariableConstView &data() const {
     if (!hasData())
       throw except::SparseDataError("No data in item.");
     return *m_view;
   }
-  /// Return typed const proxy for data values.
+  /// Return typed const view for data values.
   template <class T> auto values() const { return data().template values<T>(); }
 
-  /// Return typed const proxy for data variances.
+  /// Return typed const view for data variances.
   template <class T> auto variances() const {
     return data().template variances<T>();
   }
@@ -130,16 +130,16 @@ public:
 
   void setUnit(const units::Unit unit) const;
 
-  /// Return untyped proxy for data (values and optional variances).
+  /// Return untyped view for data (values and optional variances).
   const VariableView &data() const {
     if (!hasData())
       throw except::SparseDataError("No data in item.");
     return *m_view;
   }
-  /// Return typed proxy for data values.
+  /// Return typed view for data values.
   template <class T> auto values() const { return data().template values<T>(); }
 
-  /// Return typed proxy for data variances.
+  /// Return typed view for data variances.
   template <class T> auto variances() const {
     return data().template variances<T>();
   }
@@ -232,7 +232,7 @@ public:
   using view_type = DatasetView;
 
   Dataset() = default;
-  explicit Dataset(const DatasetConstView &proxy);
+  explicit Dataset(const DatasetConstView &view);
   explicit Dataset(const DataArrayConstView &data);
   explicit Dataset(const std::map<std::string, DataArrayConstView> &data);
 
@@ -495,14 +495,14 @@ private:
   detail::dataset_item_map m_data;
 };
 
-/// Common functionality for other proxy classes.
+/// Common functionality for other view classes.
 template <class Base> class MutableView : public Base {
 private:
   struct make_item {
-    const MutableView<Base> *proxy;
+    const MutableView<Base> *view;
     template <class T> auto operator()(const T &item) const {
       return std::pair<typename Base::key_type, VariableView>(
-          item.first, detail::makeSlice(*item.second.second, proxy->slices()));
+          item.first, detail::makeSlice(*item.second.second, view->slices()));
     }
   };
 
@@ -520,7 +520,7 @@ public:
       const detail::slice_list &slices = {})
       : Base(std::move(items), slices), m_parent(parent), m_name(name) {}
 
-  /// Return a proxy to the coordinate for given dimension.
+  /// Return a view to the coordinate for given dimension.
   VariableView operator[](const typename Base::key_type key) const {
     expect::contains(*this, key);
     return detail::makeSlice(*Base::items().at(key).second, Base::slices());
@@ -614,7 +614,7 @@ public:
       throw std::runtime_error(
           "Cannot remove coord/labels/attr field from a slice.");
 
-    bool sparse = m_name; // Does proxy point on sparse data or not
+    bool sparse = m_name; // Does view point on sparse data or not
     if (sparse)
       sparse &= (*m_parent)[*m_name].dims().sparse();
 
@@ -670,7 +670,7 @@ template <class T1, class T2> auto union_(const T1 &a, const T2 &b) {
   return out;
 }
 
-/// Const proxy for Dataset, implementing slicing and item selection.
+/// Const view for Dataset, implementing slicing and item selection.
 class SCIPP_CORE_EXPORT DatasetConstView {
   struct make_const_view {
     constexpr const DataArrayConstView &
@@ -876,7 +876,7 @@ public:
   using view_type = DataArrayView;
 
   DataArray() = default;
-  explicit DataArray(const DataArrayConstView &proxy);
+  explicit DataArray(const DataArrayConstView &view);
   template <class CoordMap = std::map<Dim, Variable>,
             class LabelsMap = std::map<std::string, Variable>,
             class MasksMap = std::map<std::string, Variable>,
@@ -939,19 +939,19 @@ public:
   /// Return true if the data array contains data variances.
   bool hasVariances() const { return get().hasVariances(); }
 
-  /// Return untyped const proxy for data (values and optional variances).
+  /// Return untyped const view for data (values and optional variances).
   VariableConstView data() const { return get().data(); }
-  /// Return untyped proxy for data (values and optional variances).
+  /// Return untyped view for data (values and optional variances).
   VariableView data() { return get().data(); }
 
-  /// Return typed const proxy for data values.
+  /// Return typed const view for data values.
   template <class T> auto values() const { return get().values<T>(); }
-  /// Return typed proxy for data values.
+  /// Return typed view for data values.
   template <class T> auto values() { return get().values<T>(); }
 
-  /// Return typed const proxy for data variances.
+  /// Return typed const view for data variances.
   template <class T> auto variances() const { return get().variances<T>(); }
-  /// Return typed proxy for data variances.
+  /// Return typed view for data variances.
   template <class T> auto variances() { return get().variances<T>(); }
 
   void rename(const Dim from, const Dim to) { m_holder.rename(from, to); }
@@ -1261,7 +1261,7 @@ union_or(const MasksConstView &currentMasks, const MasksConstView &otherMasks);
 
 /// Union the masks of the two proxies.
 /// If any of the masks repeat they are OR'ed.
-/// The result is stored in the first proxy.
+/// The result is stored in the first view.
 SCIPP_CORE_EXPORT void union_or_in_place(const MasksView &currentMasks,
                                          const MasksConstView &otherMasks);
 

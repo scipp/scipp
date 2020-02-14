@@ -60,10 +60,10 @@ SCIPP_CORE_EXPORT std::string to_string(const Dataset &dataset);
 SCIPP_CORE_EXPORT std::string to_string(const DatasetConstView &dataset);
 
 template <class Id, class Data>
-std::string to_string(const ConstView<Id, Data> &proxy) {
+std::string to_string(const ConstView<Id, Data> &view) {
   std::stringstream ss;
 
-  for (const auto &[key, item] : proxy) {
+  for (const auto &[key, item] : view) {
     ss << "<scipp.ConstView> (" << key << "):\n" << to_string(item);
   }
   return ss.str();

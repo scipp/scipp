@@ -187,7 +187,7 @@ auto format_variable(const Key &key, const Var &variable,
 }
 
 template <class Key>
-auto format_data_proxy(const Key &name, const DataArrayConstView &data,
+auto format_data_view(const Key &name, const DataArrayConstView &data,
                        const Dimensions &datasetDims = Dimensions()) {
   std::stringstream s;
   if (data.hasData())
@@ -262,7 +262,7 @@ std::string do_to_string(const D &dataset, const std::string &id,
 
   if constexpr (std::is_same_v<D, DataArray> ||
                 std::is_same_v<D, DataArrayConstView>) {
-    s << "Data:\n" << format_data_proxy(dataset.name(), dataset);
+    s << "Data:\n" << format_data_view(dataset.name(), dataset);
   } else {
     if (!dataset.empty())
       s << "Data:\n";
@@ -270,7 +270,7 @@ std::string do_to_string(const D &dataset, const std::string &id,
     for (const auto &item : dataset)
       sorted_items.insert(item.name());
     for (const auto &name : sorted_items)
-      s << format_data_proxy(name, dataset[name], dims);
+      s << format_data_view(name, dataset[name], dims);
   }
 
   s << '\n';
