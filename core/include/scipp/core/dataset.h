@@ -15,7 +15,7 @@
 #include <boost/iterator/transform_iterator.hpp>
 
 #include "scipp/core/except.h"
-#include "scipp/core/proxy_decl.h"
+#include "scipp/core/view_decl.h"
 #include "scipp/core/variable.h"
 
 namespace scipp::core {

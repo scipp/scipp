@@ -4,7 +4,7 @@
 /// @author Simon Heybrock
 #include "scipp/core/dtype.h"
 #include "scipp/core/except.h"
-#include "scipp/core/proxy_decl.h"
+#include "scipp/core/view_decl.h"
 #include "scipp/core/transform.h"
 #include "scipp/core/variable.h"
 

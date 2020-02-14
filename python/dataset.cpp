@@ -5,7 +5,7 @@
 
 #include "scipp/core/dataset.h"
 #include "scipp/core/except.h"
-#include "scipp/core/proxy_decl.h"
+#include "scipp/core/view_decl.h"
 #include "scipp/core/sort.h"
 
 #include "bind_data_access.h"
