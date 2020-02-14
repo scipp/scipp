@@ -238,7 +238,7 @@ void bind_data_array_properties(py::class_<T, Ignored...> &c) {
   bind_in_place_binary<DataArrayView>(c);
   bind_in_place_binary<VariableConstView>(c);
   bind_binary<Dataset>(c);
-  bind_binary<DatasetProxy>(c);
+  bind_binary<DatasetView>(c);
   bind_binary<DataArrayView>(c);
   bind_binary<VariableConstView>(c);
 }
@@ -260,19 +260,19 @@ void init_dataset(py::module &m) {
   py::class_<Slice>(m, "Slice");
 
   bind_helper_view<items_view, Dataset>(m, "Dataset");
-  bind_helper_view<items_view, DatasetProxy>(m, "DatasetProxy");
+  bind_helper_view<items_view, DatasetView>(m, "DatasetView");
   bind_helper_view<items_view, CoordsView>(m, "CoordsView");
   bind_helper_view<items_view, LabelsView>(m, "LabelsView");
   bind_helper_view<items_view, MasksView>(m, "MasksView");
   bind_helper_view<items_view, AttrsView>(m, "AttrsView");
   bind_helper_view<keys_view, Dataset>(m, "Dataset");
-  bind_helper_view<keys_view, DatasetProxy>(m, "DatasetProxy");
+  bind_helper_view<keys_view, DatasetView>(m, "DatasetView");
   bind_helper_view<keys_view, CoordsView>(m, "CoordsView");
   bind_helper_view<keys_view, LabelsView>(m, "LabelsView");
   bind_helper_view<keys_view, MasksView>(m, "MasksView");
   bind_helper_view<keys_view, AttrsView>(m, "AttrsView");
   bind_helper_view<values_view, Dataset>(m, "Dataset");
-  bind_helper_view<values_view, DatasetProxy>(m, "DatasetProxy");
+  bind_helper_view<values_view, DatasetView>(m, "DatasetView");
   bind_helper_view<values_view, CoordsView>(m, "CoordsView");
   bind_helper_view<values_view, LabelsView>(m, "LabelsView");
   bind_helper_view<values_view, MasksView>(m, "MasksView");
@@ -309,7 +309,7 @@ void init_dataset(py::module &m) {
 
   py::class_<DatasetConstView>(m, "DatasetConstView")
       .def(py::init<const Dataset &>());
-  py::class_<DatasetProxy, DatasetConstView> datasetProxy(m, "DatasetProxy",
+  py::class_<DatasetView, DatasetConstView> datasetProxy(m, "DatasetView",
                                                            R"(
         Proxy for Dataset, representing a sliced view onto a Dataset;
         Mostly equivalent to Dataset, see there for details.)");
@@ -332,7 +332,7 @@ void init_dataset(py::module &m) {
            py::arg("labels") = std::map<std::string, VariableConstView>{},
            py::arg("masks") = std::map<std::string, VariableConstView>{},
            py::arg("attrs") = std::map<std::string, VariableConstView>{})
-      .def(py::init([](const DatasetProxy &other) { return Dataset{other}; }))
+      .def(py::init([](const DatasetView &other) { return Dataset{other}; }))
       .def("__setitem__",
            [](Dataset &self, const std::string &name,
               const VariableConstView &data) { self.setData(name, data); })
@@ -353,7 +353,7 @@ void init_dataset(py::module &m) {
           "clear", &Dataset::clear,
           R"(Removes all data (preserving coordinates, attributes, labels and masks.).)");
   datasetProxy.def("__setitem__",
-                   [](const DatasetProxy &self, const std::string &name,
+                   [](const DatasetView &self, const std::string &name,
                       const DataArrayConstView &data) { self[name].assign(data); });
 
   bind_dataset_proxy_methods(dataset);
@@ -366,16 +366,16 @@ void init_dataset(py::module &m) {
   bind_slice_methods(datasetProxy);
 
   bind_comparison<Dataset>(dataset);
-  bind_comparison<DatasetProxy>(dataset);
+  bind_comparison<DatasetView>(dataset);
   bind_comparison<Dataset>(datasetProxy);
-  bind_comparison<DatasetProxy>(datasetProxy);
+  bind_comparison<DatasetView>(datasetProxy);
 
   bind_in_place_binary<Dataset>(dataset);
-  bind_in_place_binary<DatasetProxy>(dataset);
+  bind_in_place_binary<DatasetView>(dataset);
   bind_in_place_binary<DataArrayView>(dataset);
   bind_in_place_binary<VariableConstView>(dataset);
   bind_in_place_binary<Dataset>(datasetProxy);
-  bind_in_place_binary<DatasetProxy>(datasetProxy);
+  bind_in_place_binary<DatasetView>(datasetProxy);
   bind_in_place_binary<VariableConstView>(datasetProxy);
   bind_in_place_binary<DataArrayView>(datasetProxy);
   bind_in_place_binary_scalars(dataset);
@@ -384,11 +384,11 @@ void init_dataset(py::module &m) {
   bind_in_place_binary_scalars(dataArrayView);
 
   bind_binary<Dataset>(dataset);
-  bind_binary<DatasetProxy>(dataset);
+  bind_binary<DatasetView>(dataset);
   bind_binary<DataArrayView>(dataset);
   bind_binary<VariableConstView>(dataset);
   bind_binary<Dataset>(datasetProxy);
-  bind_binary<DatasetProxy>(datasetProxy);
+  bind_binary<DatasetView>(datasetProxy);
   bind_binary<DataArrayView>(datasetProxy);
   bind_binary<VariableConstView>(datasetProxy);
 

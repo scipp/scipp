@@ -221,7 +221,7 @@ VariableConstView same(const VariableConstView &a,
 /// Return a deep copy of a DataArray or of a DataArrayView.
 DataArray copy(const DataArrayConstView &array) { return DataArray(array); }
 
-/// Return a deep copy of a Dataset or of a DatasetProxy.
+/// Return a deep copy of a Dataset or of a DatasetView.
 Dataset copy(const DatasetConstView &dataset) { return Dataset(dataset); }
 
 } // namespace scipp::core

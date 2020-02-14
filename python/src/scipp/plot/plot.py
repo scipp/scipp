@@ -36,7 +36,7 @@ def plot(scipp_obj,
 
     inventory = dict()
     tp = type(scipp_obj)
-    if tp is sc.Dataset or tp is sc.DatasetProxy:
+    if tp is sc.Dataset or tp is sc.DatasetView:
         for name in sorted(scipp_obj.keys()):
             inventory[name] = scipp_obj[name]
     elif tp is sc.Variable or tp is sc.VariableView:

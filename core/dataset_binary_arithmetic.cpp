@@ -234,67 +234,67 @@ Dataset &Dataset::operator/=(const Dataset &other) {
   return apply(operator_detail::divide_equals{}, *this, other);
 }
 
-DatasetProxy DatasetProxy::operator+=(const DataArrayConstView &other) const {
+DatasetView DatasetView::operator+=(const DataArrayConstView &other) const {
   return apply_with_delay(operator_detail::plus_equals{}, *this, other);
 }
 
-DatasetProxy DatasetProxy::operator-=(const DataArrayConstView &other) const {
+DatasetView DatasetView::operator-=(const DataArrayConstView &other) const {
   return apply_with_delay(operator_detail::minus_equals{}, *this, other);
 }
 
-DatasetProxy DatasetProxy::operator*=(const DataArrayConstView &other) const {
+DatasetView DatasetView::operator*=(const DataArrayConstView &other) const {
   return apply_with_delay(operator_detail::times_equals{}, *this, other);
 }
 
-DatasetProxy DatasetProxy::operator/=(const DataArrayConstView &other) const {
+DatasetView DatasetView::operator/=(const DataArrayConstView &other) const {
   return apply_with_delay(operator_detail::divide_equals{}, *this, other);
 }
 
-DatasetProxy DatasetProxy::operator+=(const VariableConstView &other) const {
+DatasetView DatasetView::operator+=(const VariableConstView &other) const {
   return apply_with_delay(operator_detail::plus_equals{}, *this, other);
 }
 
-DatasetProxy DatasetProxy::operator-=(const VariableConstView &other) const {
+DatasetView DatasetView::operator-=(const VariableConstView &other) const {
   return apply_with_delay(operator_detail::minus_equals{}, *this, other);
 }
 
-DatasetProxy DatasetProxy::operator*=(const VariableConstView &other) const {
+DatasetView DatasetView::operator*=(const VariableConstView &other) const {
   return apply_with_delay(operator_detail::times_equals{}, *this, other);
 }
 
-DatasetProxy DatasetProxy::operator/=(const VariableConstView &other) const {
+DatasetView DatasetView::operator/=(const VariableConstView &other) const {
   return apply_with_delay(operator_detail::divide_equals{}, *this, other);
 }
 
-DatasetProxy DatasetProxy::operator+=(const DatasetConstView &other) const {
+DatasetView DatasetView::operator+=(const DatasetConstView &other) const {
   return apply(operator_detail::plus_equals{}, *this, other);
 }
 
-DatasetProxy DatasetProxy::operator-=(const DatasetConstView &other) const {
+DatasetView DatasetView::operator-=(const DatasetConstView &other) const {
   return apply(operator_detail::minus_equals{}, *this, other);
 }
 
-DatasetProxy DatasetProxy::operator*=(const DatasetConstView &other) const {
+DatasetView DatasetView::operator*=(const DatasetConstView &other) const {
   return apply(operator_detail::times_equals{}, *this, other);
 }
 
-DatasetProxy DatasetProxy::operator/=(const DatasetConstView &other) const {
+DatasetView DatasetView::operator/=(const DatasetConstView &other) const {
   return apply(operator_detail::divide_equals{}, *this, other);
 }
 
-DatasetProxy DatasetProxy::operator+=(const Dataset &other) const {
+DatasetView DatasetView::operator+=(const Dataset &other) const {
   return apply(operator_detail::plus_equals{}, *this, other);
 }
 
-DatasetProxy DatasetProxy::operator-=(const Dataset &other) const {
+DatasetView DatasetView::operator-=(const Dataset &other) const {
   return apply(operator_detail::minus_equals{}, *this, other);
 }
 
-DatasetProxy DatasetProxy::operator*=(const Dataset &other) const {
+DatasetView DatasetView::operator*=(const Dataset &other) const {
   return apply(operator_detail::times_equals{}, *this, other);
 }
 
-DatasetProxy DatasetProxy::operator/=(const Dataset &other) const {
+DatasetView DatasetView::operator/=(const Dataset &other) const {
   return apply(operator_detail::divide_equals{}, *this, other);
 }
 

@@ -23,7 +23,7 @@ namespace scipp::core {
 class DataArray;
 class Dataset;
 class DatasetConstView;
-class DatasetProxy;
+class DatasetView;
 
 namespace detail {
 /// Helper for holding data items in Dataset.
@@ -101,7 +101,7 @@ protected:
 
 private:
   friend class DatasetConstView;
-  friend class DatasetProxy;
+  friend class DatasetView;
 
   const Dataset *m_dataset;
   const detail::dataset_item_map::value_type *m_data;
@@ -114,7 +114,7 @@ SCIPP_CORE_EXPORT bool operator!=(const DataArrayConstView &a,
                                   const DataArrayConstView &b);
 
 class DatasetConstView;
-class DatasetProxy;
+class DatasetView;
 class Dataset;
 
 /// Proxy for a data item and related coordinates of Dataset.
@@ -201,9 +201,9 @@ namespace detail {
 template <class T> struct is_const;
 template <> struct is_const<Dataset> : std::false_type {};
 template <> struct is_const<const Dataset> : std::true_type {};
-template <> struct is_const<const DatasetProxy> : std::false_type {};
+template <> struct is_const<const DatasetView> : std::false_type {};
 template <> struct is_const<const DatasetConstView> : std::true_type {};
-template <> struct is_const<DatasetProxy> : std::false_type {};
+template <> struct is_const<DatasetView> : std::false_type {};
 template <> struct is_const<DatasetConstView> : std::true_type {};
 
 /// Helper for creating iterators of Dataset.
@@ -229,7 +229,7 @@ public:
   using mapped_type = DataArray;
   using value_type = std::pair<const std::string &, DataArrayConstView>;
   using const_view_type = DatasetConstView;
-  using view_type = DatasetProxy;
+  using view_type = DatasetView;
 
   Dataset() = default;
   explicit Dataset(const DatasetConstView &proxy);
@@ -412,9 +412,9 @@ public:
   DatasetConstView slice(const Slice slice1, const Slice slice2) const &;
   DatasetConstView slice(const Slice slice1, const Slice slice2,
                          const Slice slice3) const &;
-  DatasetProxy slice(const Slice slice1) &;
-  DatasetProxy slice(const Slice slice1, const Slice slice2) &;
-  DatasetProxy slice(const Slice slice1, const Slice slice2,
+  DatasetView slice(const Slice slice1) &;
+  DatasetView slice(const Slice slice1, const Slice slice2) &;
+  DatasetView slice(const Slice slice1, const Slice slice2,
                      const Slice slice3) &;
   Dataset slice(const Slice slice1) const &&;
   Dataset slice(const Slice slice1, const Slice slice2) const &&;
@@ -473,7 +473,7 @@ public:
 
 private:
   friend class DatasetConstView;
-  friend class DatasetProxy;
+  friend class DatasetView;
   friend class DataArrayConstView;
   friend class DataArrayView;
 
@@ -772,11 +772,11 @@ protected:
 };
 
 /// Proxy for Dataset, implementing slicing and item selection.
-class SCIPP_CORE_EXPORT DatasetProxy : public DatasetConstView {
-  explicit DatasetProxy() : DatasetConstView(), m_mutableDataset(nullptr) {}
+class SCIPP_CORE_EXPORT DatasetView : public DatasetConstView {
+  explicit DatasetView() : DatasetConstView(), m_mutableDataset(nullptr) {}
 
 public:
-  DatasetProxy(Dataset &dataset);
+  DatasetView(Dataset &dataset);
 
   CoordsView coords() const noexcept;
   LabelsView labels() const noexcept;
@@ -806,59 +806,59 @@ public:
     });
   }
 
-  DatasetProxy slice(const Slice slice1) const;
+  DatasetView slice(const Slice slice1) const;
 
-  DatasetProxy slice(const Slice slice1, const Slice slice2) const {
+  DatasetView slice(const Slice slice1, const Slice slice2) const {
     return slice(slice1).slice(slice2);
   }
 
-  DatasetProxy slice(const Slice slice1, const Slice slice2,
+  DatasetView slice(const Slice slice1, const Slice slice2,
                      const Slice slice3) const {
     return slice(slice1, slice2).slice(slice3);
   }
 
-  DatasetProxy operator+=(const DataArrayConstView &other) const;
-  DatasetProxy operator-=(const DataArrayConstView &other) const;
-  DatasetProxy operator*=(const DataArrayConstView &other) const;
-  DatasetProxy operator/=(const DataArrayConstView &other) const;
-  DatasetProxy operator+=(const VariableConstView &other) const;
-  DatasetProxy operator-=(const VariableConstView &other) const;
-  DatasetProxy operator*=(const VariableConstView &other) const;
-  DatasetProxy operator/=(const VariableConstView &other) const;
-  DatasetProxy operator+=(const DatasetConstView &other) const;
-  DatasetProxy operator-=(const DatasetConstView &other) const;
-  DatasetProxy operator*=(const DatasetConstView &other) const;
-  DatasetProxy operator/=(const DatasetConstView &other) const;
-  DatasetProxy operator+=(const Dataset &other) const;
-  DatasetProxy operator-=(const Dataset &other) const;
-  DatasetProxy operator*=(const Dataset &other) const;
-  DatasetProxy operator/=(const Dataset &other) const;
+  DatasetView operator+=(const DataArrayConstView &other) const;
+  DatasetView operator-=(const DataArrayConstView &other) const;
+  DatasetView operator*=(const DataArrayConstView &other) const;
+  DatasetView operator/=(const DataArrayConstView &other) const;
+  DatasetView operator+=(const VariableConstView &other) const;
+  DatasetView operator-=(const VariableConstView &other) const;
+  DatasetView operator*=(const VariableConstView &other) const;
+  DatasetView operator/=(const VariableConstView &other) const;
+  DatasetView operator+=(const DatasetConstView &other) const;
+  DatasetView operator-=(const DatasetConstView &other) const;
+  DatasetView operator*=(const DatasetConstView &other) const;
+  DatasetView operator/=(const DatasetConstView &other) const;
+  DatasetView operator+=(const Dataset &other) const;
+  DatasetView operator-=(const Dataset &other) const;
+  DatasetView operator*=(const Dataset &other) const;
+  DatasetView operator/=(const Dataset &other) const;
 
   template <typename T,
             typename = std::enable_if_t<!is_container_or_proxy<T>()>>
-  DatasetProxy operator+=(const T value) const {
+  DatasetView operator+=(const T value) const {
     return *this += makeVariable<T>(Values{value});
   }
 
   template <typename T,
             typename = std::enable_if_t<!is_container_or_proxy<T>()>>
-  DatasetProxy operator-=(const T value) const {
+  DatasetView operator-=(const T value) const {
     return *this -= makeVariable<T>(Values{value});
   }
 
   template <typename T,
             typename = std::enable_if_t<!is_container_or_proxy<T>()>>
-  DatasetProxy operator*=(const T value) const {
+  DatasetView operator*=(const T value) const {
     return *this *= makeVariable<T>(Values{value});
   }
 
   template <typename T,
             typename = std::enable_if_t<!is_container_or_proxy<T>()>>
-  DatasetProxy operator/=(const T value) const {
+  DatasetView operator/=(const T value) const {
     return *this /= makeVariable<T>(Values{value});
   }
 
-  DatasetProxy assign(const DatasetConstView &other) const;
+  DatasetView assign(const DatasetConstView &other) const;
 
   auto &dataset() const noexcept { return *m_mutableDataset; }
 
@@ -1032,7 +1032,7 @@ public:
   /// Iterable const view for generic code supporting Dataset and DataArray.
   DatasetConstView iterable_view() const noexcept { return m_holder; }
   /// Iterable view for generic code supporting Dataset and DataArray.
-  DatasetProxy iterable_view() noexcept { return m_holder; }
+  DatasetView iterable_view() noexcept { return m_holder; }
 
   /// Return the Dataset holder of the given DataArray, so access to private
   /// members is possible, thus allowing moving of Variables without making

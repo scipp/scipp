@@ -24,6 +24,6 @@ def test_setitem_required_for_inplace_ops():
     d *= 1.5  # not setitem, just assigns python variable
     d['a'] *= 1.5  # Dataset.__setitem__(string)
     d[Dim.X, 1:] *= 1.5  # Dataset.__setitem__(slice)
-    d[Dim.X, 1:]['a'] *= 1.5  # DatasetProxy.__setitem__(string)
-    d['a'][Dim.X, 1:] *= 1.5  # DatasetProxy.__setitem__(slice)
-    d[Dim.X, 1:][Dim.Y, 1:] *= 1.5  # DatasetProxy.__setitem__(slice)
+    d[Dim.X, 1:]['a'] *= 1.5  # DatasetView.__setitem__(string)
+    d['a'][Dim.X, 1:] *= 1.5  # DatasetView.__setitem__(slice)
+    d[Dim.X, 1:][Dim.Y, 1:] *= 1.5  # DatasetView.__setitem__(slice)

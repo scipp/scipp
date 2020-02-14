@@ -8,7 +8,7 @@ import scipp as sc
 from scipp import Dim
 
 
-@pytest.fixture(params=['Dataset', 'DatasetProxy'])
+@pytest.fixture(params=['Dataset', 'DatasetView'])
 def dataset_abc(request):
     d = sc.Dataset()
     d['a'] = sc.Variable([Dim.X], values=[1, 2])

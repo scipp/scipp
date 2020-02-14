@@ -269,13 +269,13 @@ template <class T> constexpr bool is_variable_or_proxy() {
 }
 
 class DatasetConstView;
-class DatasetProxy;
+class DatasetView;
 class Dataset;
 class DataArray;
 class DataArrayView;
 
 template <class T> constexpr bool is_container_or_proxy() {
-  return std::is_same_v<T, Dataset> || std::is_same_v<T, DatasetProxy> ||
+  return std::is_same_v<T, Dataset> || std::is_same_v<T, DatasetView> ||
          std::is_same_v<T, DatasetConstView> || std::is_same_v<T, Variable> ||
          std::is_same_v<T, VariableView> ||
          std::is_same_v<T, VariableConstView> || std::is_same_v<T, DataArray> ||

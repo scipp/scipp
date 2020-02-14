@@ -10,48 +10,48 @@
 using namespace scipp;
 using namespace scipp::core;
 
-template <typename T> class DatasetProxyTest : public ::testing::Test {
+template <typename T> class DatasetViewTest : public ::testing::Test {
 protected:
   template <class D> T access(D &dataset) { return dataset; }
 };
 
-using DatasetProxyTypes = ::testing::Types<Dataset &, const Dataset &,
-                                           DatasetProxy, DatasetConstView>;
-TYPED_TEST_SUITE(DatasetProxyTest, DatasetProxyTypes);
+using DatasetViewTypes = ::testing::Types<Dataset &, const Dataset &,
+                                           DatasetView, DatasetConstView>;
+TYPED_TEST_SUITE(DatasetViewTest, DatasetViewTypes);
 
-TYPED_TEST(DatasetProxyTest, empty) {
+TYPED_TEST(DatasetViewTest, empty) {
   Dataset d;
   auto &&proxy = TestFixture::access(d);
   ASSERT_TRUE(proxy.empty());
   ASSERT_EQ(proxy.size(), 0);
 }
 
-TYPED_TEST(DatasetProxyTest, coords) {
+TYPED_TEST(DatasetViewTest, coords) {
   Dataset d;
   auto &&proxy = TestFixture::access(d);
   ASSERT_NO_THROW(proxy.coords());
 }
 
-TYPED_TEST(DatasetProxyTest, labels) {
+TYPED_TEST(DatasetViewTest, labels) {
   Dataset d;
   auto &&proxy = TestFixture::access(d);
   ASSERT_NO_THROW(proxy.labels());
 }
 
-TYPED_TEST(DatasetProxyTest, attrs) {
+TYPED_TEST(DatasetViewTest, attrs) {
   Dataset d;
   auto &&proxy = TestFixture::access(d);
   ASSERT_NO_THROW(proxy.attrs());
 }
 
-TYPED_TEST(DatasetProxyTest, bad_item_access) {
+TYPED_TEST(DatasetViewTest, bad_item_access) {
   Dataset d;
   auto &&proxy = TestFixture::access(d);
   ASSERT_ANY_THROW(proxy[""]);
   ASSERT_ANY_THROW(proxy["abc"]);
 }
 
-TYPED_TEST(DatasetProxyTest, name) {
+TYPED_TEST(DatasetViewTest, name) {
   Dataset d;
   d.setData("a", makeVariable<double>(Values{double{}}));
   d.setData("b", makeVariable<float>(Values{float{}}));
@@ -64,7 +64,7 @@ TYPED_TEST(DatasetProxyTest, name) {
     EXPECT_EQ(proxy.find(name)->name(), name);
 }
 
-TYPED_TEST(DatasetProxyTest, find_and_contains) {
+TYPED_TEST(DatasetViewTest, find_and_contains) {
   Dataset d;
   d.setData("a", makeVariable<double>(Values{double{}}));
   d.setData("b", makeVariable<float>(Values{float{}}));
@@ -81,7 +81,7 @@ TYPED_TEST(DatasetProxyTest, find_and_contains) {
   EXPECT_EQ(*proxy.find("b"), proxy["b"]);
 }
 
-TYPED_TEST(DatasetProxyTest, find_in_slice) {
+TYPED_TEST(DatasetViewTest, find_in_slice) {
   Dataset d;
   d.setCoord(Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{2}));
   d.setCoord(Dim::Y, makeVariable<double>(Dims{Dim::Y}, Shape{2}));
@@ -98,7 +98,7 @@ TYPED_TEST(DatasetProxyTest, find_in_slice) {
   EXPECT_FALSE(slice.contains("b"));
 }
 
-TYPED_TEST(DatasetProxyTest, iterators_empty_dataset) {
+TYPED_TEST(DatasetViewTest, iterators_empty_dataset) {
   Dataset d;
   auto &&proxy = TestFixture::access(d);
   ASSERT_NO_THROW(proxy.begin());
@@ -106,7 +106,7 @@ TYPED_TEST(DatasetProxyTest, iterators_empty_dataset) {
   EXPECT_EQ(proxy.begin(), proxy.end());
 }
 
-TYPED_TEST(DatasetProxyTest, iterators_only_coords) {
+TYPED_TEST(DatasetViewTest, iterators_only_coords) {
   Dataset d;
   d.setCoord(Dim::X, makeVariable<double>(Values{double{}}));
   auto &&proxy = TestFixture::access(d);
@@ -115,7 +115,7 @@ TYPED_TEST(DatasetProxyTest, iterators_only_coords) {
   EXPECT_EQ(proxy.begin(), proxy.end());
 }
 
-TYPED_TEST(DatasetProxyTest, iterators_only_labels) {
+TYPED_TEST(DatasetViewTest, iterators_only_labels) {
   Dataset d;
   d.setLabels("a", makeVariable<double>(Values{double{}}));
   auto &&proxy = TestFixture::access(d);
@@ -124,7 +124,7 @@ TYPED_TEST(DatasetProxyTest, iterators_only_labels) {
   EXPECT_EQ(proxy.begin(), proxy.end());
 }
 
-TYPED_TEST(DatasetProxyTest, iterators_only_attrs) {
+TYPED_TEST(DatasetViewTest, iterators_only_attrs) {
   Dataset d;
   d.setAttr("a", makeVariable<double>(Values{double{}}));
   auto &&proxy = TestFixture::access(d);
@@ -133,7 +133,7 @@ TYPED_TEST(DatasetProxyTest, iterators_only_attrs) {
   EXPECT_EQ(proxy.begin(), proxy.end());
 }
 
-TYPED_TEST(DatasetProxyTest, iterators) {
+TYPED_TEST(DatasetViewTest, iterators) {
   Dataset d;
   d.setData("a", makeVariable<double>(Values{double{}}));
   d.setData("b", makeVariable<float>(Values{float{}}));

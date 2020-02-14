@@ -16,7 +16,7 @@ namespace scipp::core {
 
 class DataArrayView;
 class DataArrayConstView;
-class DatasetProxy;
+class DatasetView;
 class DatasetConstView;
 class Dataset;
 class DataArray;
@@ -44,7 +44,7 @@ SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
 SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
                                            const DatasetConstView &dataset);
 SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
-                                           const DatasetProxy &dataset);
+                                           const DatasetView &dataset);
 SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
                                            const Dataset &dataset);
 

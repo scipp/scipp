@@ -492,23 +492,23 @@ DatasetConstView Dataset::slice(const Slice slice1, const Slice slice2,
 /// Return slice of the dataset along given dimension with given extents.
 ///
 /// This does not make a copy of the data. Instead of proxy object is returned.
-DatasetProxy Dataset::slice(const Slice slice1) & {
-  return DatasetProxy(*this).slice(slice1);
+DatasetView Dataset::slice(const Slice slice1) & {
+  return DatasetView(*this).slice(slice1);
 }
 
 /// Return slice of the dataset, sliced in two dimensions.
 ///
 /// This does not make a copy of the data. Instead of proxy object is returned.
-DatasetProxy Dataset::slice(const Slice slice1, const Slice slice2) & {
-  return DatasetProxy(*this).slice(slice1, slice2);
+DatasetView Dataset::slice(const Slice slice1, const Slice slice2) & {
+  return DatasetView(*this).slice(slice1, slice2);
 }
 
 /// Return slice of the dataset, sliced in three dimensions.
 ///
 /// This does not make a copy of the data. Instead of proxy object is returned.
-DatasetProxy Dataset::slice(const Slice slice1, const Slice slice2,
+DatasetView Dataset::slice(const Slice slice1, const Slice slice2,
                             const Slice slice3) & {
-  return DatasetProxy(*this).slice(slice1, slice2, slice3);
+  return DatasetView(*this).slice(slice1, slice2, slice3);
 }
 
 /// Return const slice of the dataset along given dimension with given extents.
@@ -764,7 +764,7 @@ DataArrayView DataArrayView::assign(const VariableConstView &other) const {
   return *this;
 }
 
-DatasetProxy DatasetProxy::assign(const DatasetConstView &other) const {
+DatasetView DatasetView::assign(const DatasetConstView &other) const {
   for (const auto &data : other)
     operator[](data.name()).assign(data);
   return *this;
@@ -777,7 +777,7 @@ DatasetConstView::DatasetConstView(const Dataset &dataset)
     m_items.emplace_back(DataArrayView(detail::make_item{this}(item)));
 }
 
-DatasetProxy::DatasetProxy(Dataset &dataset)
+DatasetView::DatasetView(Dataset &dataset)
     : DatasetConstView(DatasetConstView::makeProxyWithEmptyIndexes(dataset)),
       m_mutableDataset(&dataset) {
   m_items.reserve(size());
@@ -797,7 +797,7 @@ CoordsConstView DatasetConstView::coords() const noexcept {
 ///
 /// This proxy includes only "dimension-coordinates". To access
 /// non-dimension-coordinates" see labels().
-CoordsView DatasetProxy::coords() const noexcept {
+CoordsView DatasetView::coords() const noexcept {
   auto *parent = slices().empty() ? m_mutableDataset : nullptr;
   return CoordsView(parent, nullptr,
                      makeProxyItems<Dim>(m_mutableDataset->m_coords), slices());
@@ -810,7 +810,7 @@ LabelsConstView DatasetConstView::labels() const noexcept {
 }
 
 /// Return a proxy to all labels of the dataset slice.
-LabelsView DatasetProxy::labels() const noexcept {
+LabelsView DatasetView::labels() const noexcept {
   auto *parent = slices().empty() ? m_mutableDataset : nullptr;
   return LabelsView(parent, nullptr,
                     makeProxyItems<std::string>(m_mutableDataset->m_labels),
@@ -824,7 +824,7 @@ AttrsConstView DatasetConstView::attrs() const noexcept {
 }
 
 /// Return a proxy to all attributes of the dataset slice.
-AttrsView DatasetProxy::attrs() const noexcept {
+AttrsView DatasetView::attrs() const noexcept {
   auto *parent = slices().empty() ? m_mutableDataset : nullptr;
   return AttrsView(parent, nullptr,
                     makeProxyItems<std::string>(m_mutableDataset->m_attrs),
@@ -837,7 +837,7 @@ MasksConstView DatasetConstView::masks() const noexcept {
 }
 
 /// Return a proxy to all masks of the dataset slice.
-MasksView DatasetProxy::masks() const noexcept {
+MasksView DatasetView::masks() const noexcept {
   auto *parent = slices().empty() ? m_mutableDataset : nullptr;
   return MasksView(parent, nullptr,
                     makeProxyItems<std::string>(m_mutableDataset->m_masks),
@@ -864,7 +864,7 @@ operator[](const std::string &name) const {
 }
 
 /// Return a proxy to data and coordinates with given name.
-const DataArrayView &DatasetProxy::operator[](const std::string &name) const {
+const DataArrayView &DatasetView::operator[](const std::string &name) const {
   return getitem(*this, name);
 }
 
@@ -906,8 +906,8 @@ DatasetConstView DatasetConstView::slice(const Slice slice1) const {
   return sliced;
 }
 
-DatasetProxy DatasetProxy::slice(const Slice slice1) const {
-  DatasetProxy sliced;
+DatasetView DatasetView::slice(const Slice slice1) const {
+  DatasetView sliced;
   sliced.m_dataset = m_dataset;
   sliced.m_mutableDataset = m_mutableDataset;
   std::tie(sliced.m_items, sliced.m_slices) = slice_items(*this, slice1);

@@ -609,7 +609,7 @@ TYPED_TEST(DataArrayView3DTest, slice) {
 TYPED_TEST(DataArrayView3DTest, slice_slice_range) {
   auto &d = TestFixture::dataset();
   const auto slice = d.slice({Dim::X, 2, 4});
-  // Slice proxy created from DatasetProxy as opposed to directly from Dataset.
+  // Slice proxy created from DatasetView as opposed to directly from Dataset.
   for (const auto &item : slice) {
     for (const auto dim : {Dim::X, Dim::Y, Dim::Z}) {
       if (item.dims().contains(dim)) {

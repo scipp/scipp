@@ -322,7 +322,7 @@ TEST(DatasetTest, slice_validation_simple) {
   do_test_slice_validation(constproxy);
 
   // Make sure correct via proxies
-  DatasetProxy proxy(dataset);
+  DatasetView proxy(dataset);
   do_test_slice_validation(proxy);
 }
 

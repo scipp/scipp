@@ -86,13 +86,13 @@ core::VariableConstView source_position(const core::DatasetConstView &d) {
 core::VariableConstView sample_position(const core::DatasetConstView &d) {
   return beamline_impl::sample_position(d);
 }
-core::VariableView position(const core::DatasetProxy &d) {
+core::VariableView position(const core::DatasetView &d) {
   return beamline_impl::position(d);
 }
-core::VariableView source_position(const core::DatasetProxy &d) {
+core::VariableView source_position(const core::DatasetView &d) {
   return beamline_impl::source_position(d);
 }
-core::VariableView sample_position(const core::DatasetProxy &d) {
+core::VariableView sample_position(const core::DatasetView &d) {
   return beamline_impl::sample_position(d);
 }
 core::Variable flight_path_length(const core::DatasetConstView &d) {

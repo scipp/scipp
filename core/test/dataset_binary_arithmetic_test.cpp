@@ -34,7 +34,7 @@ protected:
 };
 
 template <class Op>
-class DatasetProxyBinaryEqualsOpTest
+class DatasetViewBinaryEqualsOpTest
     : public ::testing::Test,
       public ::testing::WithParamInterface<Op> {
 protected:
@@ -96,7 +96,7 @@ std::tuple<Dataset, Dataset> generateBinaryOpTestCase() {
 
 TYPED_TEST_SUITE(DataArrayViewBinaryEqualsOpTest, BinaryEquals);
 TYPED_TEST_SUITE(DatasetBinaryEqualsOpTest, BinaryEquals);
-TYPED_TEST_SUITE(DatasetProxyBinaryEqualsOpTest, BinaryEquals);
+TYPED_TEST_SUITE(DatasetViewBinaryEqualsOpTest, BinaryEquals);
 
 TYPED_TEST(DataArrayViewBinaryEqualsOpTest, other_data_unchanged) {
   const auto dataset_b = datasetFactory.make();
@@ -317,7 +317,7 @@ TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_Dataset_with_extra_items) {
   ASSERT_ANY_THROW(TestFixture::op(a, b));
 }
 
-TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_DatasetProxy_self_overlap) {
+TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_DatasetView_self_overlap) {
   auto dataset = datasetFactory.make();
   const auto slice = dataset.slice({Dim::Z, 3});
   auto reference(dataset);
@@ -335,7 +335,7 @@ TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_DatasetProxy_self_overlap) {
   }
 }
 
-TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_DatasetProxy_coord_mismatch) {
+TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_DatasetView_coord_mismatch) {
   auto dataset = datasetFactory.make();
 
   // Non-range sliced throws for X and Y due to multi-dimensional coords.
@@ -434,14 +434,14 @@ TYPED_TEST(DatasetMaskSlicingBinaryOpTest, binary_op_on_sliced_masks) {
   EXPECT_EQ(slice3.masks()["masks_x"], expectedMasks);
 }
 
-TYPED_TEST(DatasetProxyBinaryEqualsOpTest, return_value) {
+TYPED_TEST(DatasetViewBinaryEqualsOpTest, return_value) {
   auto a = datasetFactory.make();
   auto b = datasetFactory.make();
-  DatasetProxy proxy(a);
+  DatasetView proxy(a);
 
   ASSERT_TRUE(
       (std::is_same_v<decltype(TestFixture::op(proxy, b["data_scalar"])),
-                      DatasetProxy>));
+                      DatasetView>));
   {
     const auto &result = TestFixture::op(proxy, b["data_scalar"]);
     EXPECT_EQ(&result["data_scalar"].template values<double>()[0],
@@ -449,7 +449,7 @@ TYPED_TEST(DatasetProxyBinaryEqualsOpTest, return_value) {
   }
 
   ASSERT_TRUE(
-      (std::is_same_v<decltype(TestFixture::op(proxy, b)), DatasetProxy>));
+      (std::is_same_v<decltype(TestFixture::op(proxy, b)), DatasetView>));
   {
     const auto &result = TestFixture::op(proxy, b);
     EXPECT_EQ(&result["data_scalar"].template values<double>()[0],
@@ -458,7 +458,7 @@ TYPED_TEST(DatasetProxyBinaryEqualsOpTest, return_value) {
 
   ASSERT_TRUE(
       (std::is_same_v<decltype(TestFixture::op(proxy, b.slice({Dim::Z, 3}))),
-                      DatasetProxy>));
+                      DatasetView>));
   {
     const auto &result = TestFixture::op(proxy, b.slice({Dim::Z, 3}));
     EXPECT_EQ(&result["data_scalar"].template values<double>()[0],
@@ -467,7 +467,7 @@ TYPED_TEST(DatasetProxyBinaryEqualsOpTest, return_value) {
 
   ASSERT_TRUE(
       (std::is_same_v<decltype(TestFixture::op(proxy, b["data_scalar"].data())),
-                      DatasetProxy>));
+                      DatasetView>));
   {
     const auto &result = TestFixture::op(proxy, b["data_scalar"].data());
     EXPECT_EQ(&result["data_scalar"].template values<double>()[0],
@@ -475,7 +475,7 @@ TYPED_TEST(DatasetProxyBinaryEqualsOpTest, return_value) {
   }
 
   ASSERT_TRUE(
-      (std::is_same_v<decltype(TestFixture::op(proxy, 5.0)), DatasetProxy>));
+      (std::is_same_v<decltype(TestFixture::op(proxy, 5.0)), DatasetView>));
   {
     const auto &result = TestFixture::op(proxy, 5.0);
     EXPECT_EQ(&result["data_scalar"].template values<double>()[0],
@@ -483,7 +483,7 @@ TYPED_TEST(DatasetProxyBinaryEqualsOpTest, return_value) {
   }
 }
 
-TYPED_TEST(DatasetProxyBinaryEqualsOpTest, rhs_DataArrayView_self_overlap) {
+TYPED_TEST(DatasetViewBinaryEqualsOpTest, rhs_DataArrayView_self_overlap) {
   auto dataset = datasetFactory.make();
   auto reference(dataset);
   TestFixture::op(reference, dataset["data_scalar"]);
@@ -502,7 +502,7 @@ TYPED_TEST(DatasetProxyBinaryEqualsOpTest, rhs_DataArrayView_self_overlap) {
     }
 }
 
-TYPED_TEST(DatasetProxyBinaryEqualsOpTest,
+TYPED_TEST(DatasetViewBinaryEqualsOpTest,
            rhs_DataArrayView_self_overlap_slice) {
   auto dataset = datasetFactory.make();
   auto reference(dataset);
@@ -522,21 +522,21 @@ TYPED_TEST(DatasetProxyBinaryEqualsOpTest,
     }
 }
 
-TYPED_TEST(DatasetProxyBinaryEqualsOpTest, rhs_Dataset_coord_mismatch) {
+TYPED_TEST(DatasetViewBinaryEqualsOpTest, rhs_Dataset_coord_mismatch) {
   DatasetFactory3D otherCoordsFactory;
   auto a = otherCoordsFactory.make();
   auto b = datasetFactory.make();
 
-  ASSERT_THROW(TestFixture::op(DatasetProxy(a), b), except::CoordMismatchError);
+  ASSERT_THROW(TestFixture::op(DatasetView(a), b), except::CoordMismatchError);
 }
 
-TYPED_TEST(DatasetProxyBinaryEqualsOpTest, rhs_Dataset_with_missing_items) {
+TYPED_TEST(DatasetViewBinaryEqualsOpTest, rhs_Dataset_with_missing_items) {
   auto a = datasetFactory.make();
   a.setData("extra", makeVariable<double>(Values{double{}}));
   auto b = datasetFactory.make();
   auto reference(a);
 
-  ASSERT_NO_THROW(TestFixture::op(DatasetProxy(a), b));
+  ASSERT_NO_THROW(TestFixture::op(DatasetView(a), b));
   for (const auto &item : a) {
     if (item.name() == "extra") {
       EXPECT_EQ(item, reference[item.name()]);
@@ -546,15 +546,15 @@ TYPED_TEST(DatasetProxyBinaryEqualsOpTest, rhs_Dataset_with_missing_items) {
   }
 }
 
-TYPED_TEST(DatasetProxyBinaryEqualsOpTest, rhs_Dataset_with_extra_items) {
+TYPED_TEST(DatasetViewBinaryEqualsOpTest, rhs_Dataset_with_extra_items) {
   auto a = datasetFactory.make();
   auto b = datasetFactory.make();
   b.setData("extra", makeVariable<double>(Values{double{}}));
 
-  ASSERT_ANY_THROW(TestFixture::op(DatasetProxy(a), b));
+  ASSERT_ANY_THROW(TestFixture::op(DatasetView(a), b));
 }
 
-TYPED_TEST(DatasetProxyBinaryEqualsOpTest, rhs_DatasetProxy_self_overlap) {
+TYPED_TEST(DatasetViewBinaryEqualsOpTest, rhs_DatasetView_self_overlap) {
   auto dataset = datasetFactory.make();
   const auto slice = dataset.slice({Dim::Z, 3});
   auto reference(dataset);
@@ -573,13 +573,13 @@ TYPED_TEST(DatasetProxyBinaryEqualsOpTest, rhs_DatasetProxy_self_overlap) {
   }
 }
 
-TYPED_TEST(DatasetProxyBinaryEqualsOpTest,
-           rhs_DatasetProxy_self_overlap_undetectable) {
+TYPED_TEST(DatasetViewBinaryEqualsOpTest,
+           rhs_DatasetView_self_overlap_undetectable) {
   auto dataset = datasetFactory.make();
   const auto slice = dataset.slice({Dim::Z, 3});
   auto reference(dataset);
 
-  // Same as `rhs_DatasetProxy_self_overlap` above, but reverse slice order.
+  // Same as `rhs_DatasetView_self_overlap` above, but reverse slice order.
   // The second line will see the updated slice 3, and there is no way to
   // detect and prevent this.
   ASSERT_NO_THROW(TestFixture::op(dataset.slice({Dim::Z, 3, 6}), slice));
@@ -596,9 +596,9 @@ TYPED_TEST(DatasetProxyBinaryEqualsOpTest,
   }
 }
 
-TYPED_TEST(DatasetProxyBinaryEqualsOpTest, rhs_DatasetProxy_coord_mismatch) {
+TYPED_TEST(DatasetViewBinaryEqualsOpTest, rhs_DatasetView_coord_mismatch) {
   auto dataset = datasetFactory.make();
-  const DatasetProxy proxy(dataset);
+  const DatasetView proxy(dataset);
 
   // Non-range sliced throws for X and Y due to multi-dimensional coords.
   ASSERT_THROW(TestFixture::op(proxy, dataset.slice({Dim::X, 3})),

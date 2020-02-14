@@ -26,7 +26,7 @@ SPARSE_PREFIX = "len={}"
 
 
 def _is_dataset(x):
-    return isinstance(x, sc.Dataset) or isinstance(x, sc.DatasetProxy)
+    return isinstance(x, sc.Dataset) or isinstance(x, sc.DatasetView)
 
 
 def _format_array(data, size, ellipsis_after, do_ellide=True):

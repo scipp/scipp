@@ -4,7 +4,7 @@
 # @author Neil Vaytet
 
 from ._scipp.core.units import dimensionless
-from ._scipp.core import (Variable, VariableView, Dataset, DatasetProxy,
+from ._scipp.core import (Variable, VariableView, Dataset, DatasetView,
                           DataArray, DataArrayView)
 
 
@@ -55,7 +55,7 @@ def is_dataset(obj):
     """
     Return True if the input is of type scipp.core.Variable.
     """
-    return isinstance(obj, Dataset) or isinstance(obj, DatasetProxy)
+    return isinstance(obj, Dataset) or isinstance(obj, DatasetView)
 
 
 def is_data_array(obj):

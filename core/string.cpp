@@ -44,7 +44,7 @@ std::ostream &operator<<(std::ostream &os, const DatasetConstView &dataset) {
   return os << to_string(dataset);
 }
 
-std::ostream &operator<<(std::ostream &os, const DatasetProxy &dataset) {
+std::ostream &operator<<(std::ostream &os, const DatasetView &dataset) {
   return os << DatasetConstView(dataset);
 }
 
@@ -321,6 +321,6 @@ std::string to_string(const Dataset &dataset) {
 }
 
 std::string to_string(const DatasetConstView &dataset) {
-  return do_to_string(dataset, "<scipp.DatasetProxy>", dimensions(dataset));
+  return do_to_string(dataset, "<scipp.DatasetView>", dimensions(dataset));
 }
 } // namespace scipp::core

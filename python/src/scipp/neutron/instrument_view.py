@@ -108,7 +108,7 @@ class InstrumentView:
 
         self.data_arrays = {}
         tp = type(scipp_obj)
-        if tp is sc.Dataset or tp is sc.DatasetProxy:
+        if tp is sc.Dataset or tp is sc.DatasetView:
             for key in sorted(scipp_obj.keys()):
                 var = scipp_obj[key]
                 if self.dim in var.dims:

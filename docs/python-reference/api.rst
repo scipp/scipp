@@ -13,7 +13,7 @@ Classes
    DataArray
    DataArrayView
    Dataset
-   DatasetProxy
+   DatasetView
    GroupByDataArray
    GroupByDataset
 

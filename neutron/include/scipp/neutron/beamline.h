@@ -17,11 +17,11 @@ SCIPP_NEUTRON_EXPORT core::VariableConstView
 source_position(const core::DatasetConstView &d);
 SCIPP_NEUTRON_EXPORT core::VariableConstView
 sample_position(const core::DatasetConstView &d);
-SCIPP_NEUTRON_EXPORT core::VariableView position(const core::DatasetProxy &d);
+SCIPP_NEUTRON_EXPORT core::VariableView position(const core::DatasetView &d);
 SCIPP_NEUTRON_EXPORT core::VariableView
-source_position(const core::DatasetProxy &d);
+source_position(const core::DatasetView &d);
 SCIPP_NEUTRON_EXPORT core::VariableView
-sample_position(const core::DatasetProxy &d);
+sample_position(const core::DatasetView &d);
 SCIPP_NEUTRON_EXPORT core::Variable
 flight_path_length(const core::DatasetConstView &d);
 SCIPP_NEUTRON_EXPORT core::Variable l1(const core::DatasetConstView &d);

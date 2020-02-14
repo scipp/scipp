@@ -20,7 +20,7 @@ using namespace scipp::core;
 // TODO We really need a way to get the dimension labels and extents from
 // Dataset (not using class Dimensions).
 template <class T> auto dim_extent(const T &object, const Dim dim) {
-  if constexpr (std::is_same_v<T, Dataset> || std::is_same_v<T, DatasetProxy>) {
+  if constexpr (std::is_same_v<T, Dataset> || std::is_same_v<T, DatasetView>) {
     scipp::index extent = -1;
     for (const auto &item : object) {
       if (item.dims().contains(dim)) {
@@ -131,7 +131,7 @@ void bind_slice_methods(pybind11::class_<T, Ignored...> &c) {
   c.def("__getitem__", &slicer<T>::get, py::keep_alive<0, 1>());
   c.def("__getitem__", &slicer<T>::get_range, py::keep_alive<0, 1>());
   if constexpr (!std::is_same_v<T, Dataset> &&
-                !std::is_same_v<T, DatasetProxy>) {
+                !std::is_same_v<T, DatasetView>) {
     c.def("__setitem__", &slicer<T>::set_from_numpy);
     c.def("__setitem__", &slicer<T>::set_range_from_numpy);
     c.def("__setitem__", &slicer<T>::template set<Variable>);
@@ -143,9 +143,9 @@ void bind_slice_methods(pybind11::class_<T, Ignored...> &c) {
     c.def("__setitem__", &slicer<T>::template set<DataArrayView>);
     c.def("__setitem__", &slicer<T>::template set_range<DataArrayView>);
   }
-  if constexpr (std::is_same_v<T, Dataset> || std::is_same_v<T, DatasetProxy>) {
-    c.def("__setitem__", &slicer<T>::template set<DatasetProxy>);
-    c.def("__setitem__", &slicer<T>::template set_range<DatasetProxy>);
+  if constexpr (std::is_same_v<T, Dataset> || std::is_same_v<T, DatasetView>) {
+    c.def("__setitem__", &slicer<T>::template set<DatasetView>);
+    c.def("__setitem__", &slicer<T>::template set_range<DatasetView>);
   }
 }
 
