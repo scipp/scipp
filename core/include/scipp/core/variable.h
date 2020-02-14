@@ -274,7 +274,7 @@ class Dataset;
 class DataArray;
 class DataArrayView;
 
-template <class T> constexpr bool is_container_or_proxy() {
+template <class T> constexpr bool is_container_or_view() {
   return std::is_same_v<T, Dataset> || std::is_same_v<T, DatasetView> ||
          std::is_same_v<T, DatasetConstView> || std::is_same_v<T, Variable> ||
          std::is_same_v<T, VariableView> ||
@@ -910,35 +910,35 @@ SCIPP_CORE_EXPORT Variable operator^(const VariableConstView &a,
 // Note: If the left-hand-side in an addition is a VariableView this simply
 // implicitly converts it to a Variable. A copy for the return value is required
 // anyway so this is a convenient way to avoid defining more overloads.
-template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
+template <typename T, typename = std::enable_if_t<!is_container_or_view<T>()>>
 Variable operator+(const T value, const VariableConstView &a) {
   return makeVariable<T>(Values{value}) + a;
 }
-template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
+template <typename T, typename = std::enable_if_t<!is_container_or_view<T>()>>
 Variable operator-(const T value, const VariableConstView &a) {
   return makeVariable<T>(Values{value}) - a;
 }
-template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
+template <typename T, typename = std::enable_if_t<!is_container_or_view<T>()>>
 Variable operator*(const T value, const VariableConstView &a) {
   return makeVariable<T>(Values{value}) * a;
 }
-template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
+template <typename T, typename = std::enable_if_t<!is_container_or_view<T>()>>
 Variable operator/(const T value, const VariableConstView &a) {
   return makeVariable<T>(Values{value}) / a;
 }
-template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
+template <typename T, typename = std::enable_if_t<!is_container_or_view<T>()>>
 Variable operator+(const VariableConstView &a, const T value) {
   return a + makeVariable<T>(Values{value});
 }
-template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
+template <typename T, typename = std::enable_if_t<!is_container_or_view<T>()>>
 Variable operator-(const VariableConstView &a, const T value) {
   return a - makeVariable<T>(Values{value});
 }
-template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
+template <typename T, typename = std::enable_if_t<!is_container_or_view<T>()>>
 Variable operator*(const VariableConstView &a, const T value) {
   return a * makeVariable<T>(Values{value});
 }
-template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
+template <typename T, typename = std::enable_if_t<!is_container_or_view<T>()>>
 Variable operator/(const VariableConstView &a, const T value) {
   return a / makeVariable<T>(Values{value});
 }

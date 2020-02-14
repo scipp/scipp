@@ -58,9 +58,9 @@ auto makeViewItems(const Dimensions &dims, T1 &coords, T2 *sparse = nullptr) {
   return items;
 }
 
-Dataset::Dataset(const DatasetConstView &proxy)
-    : Dataset(proxy, proxy.coords(), proxy.labels(), proxy.masks(),
-              proxy.attrs()) {}
+Dataset::Dataset(const DatasetConstView &view)
+    : Dataset(view, view.coords(), view.labels(), view.masks(),
+              view.attrs()) {}
 
 Dataset::Dataset(const DataArrayConstView &data) { setData(data.name(), data); }
 
@@ -72,54 +72,54 @@ Dataset::Dataset(const std::map<std::string, DataArrayConstView> &data) {
 /// Removes all data items from the Dataset.
 ///
 /// Coordinates, labels, attributes and masks are not modified.
-/// This operation invalidates any proxy objects creeated from this dataset.
+/// This operation invalidates any view objects creeated from this dataset.
 void Dataset::clear() {
   m_data.clear();
   rebuildDims();
 }
 
-/// Return a const proxy to all coordinates of the dataset.
+/// Return a const view to all coordinates of the dataset.
 ///
-/// This proxy includes only "dimension-coordinates". To access
+/// This view includes only "dimension-coordinates". To access
 /// non-dimension-coordinates" see labels().
 CoordsConstView Dataset::coords() const noexcept {
   return CoordsConstView(makeViewItems<Dim>(m_coords));
 }
 
-/// Return a proxy to all coordinates of the dataset.
+/// Return a view to all coordinates of the dataset.
 ///
-/// This proxy includes only "dimension-coordinates". To access
+/// This view includes only "dimension-coordinates". To access
 /// non-dimension-coordinates" see labels().
 CoordsView Dataset::coords() noexcept {
   return CoordsView(this, nullptr, makeViewItems<Dim>(m_coords));
 }
 
-/// Return a const proxy to all labels of the dataset.
+/// Return a const view to all labels of the dataset.
 LabelsConstView Dataset::labels() const noexcept {
   return LabelsConstView(makeViewItems<std::string>(m_labels));
 }
 
-/// Return a proxy to all labels of the dataset.
+/// Return a view to all labels of the dataset.
 LabelsView Dataset::labels() noexcept {
   return LabelsView(this, nullptr, makeViewItems<std::string>(m_labels));
 }
 
-/// Return a const proxy to all attributes of the dataset.
+/// Return a const view to all attributes of the dataset.
 AttrsConstView Dataset::attrs() const noexcept {
   return AttrsConstView(makeViewItems<std::string>(m_attrs));
 }
 
-/// Return a proxy to all attributes of the dataset.
+/// Return a view to all attributes of the dataset.
 AttrsView Dataset::attrs() noexcept {
   return AttrsView(this, nullptr, makeViewItems<std::string>(m_attrs));
 }
 
-/// Return a const proxy to all masks of the dataset.
+/// Return a const view to all masks of the dataset.
 MasksConstView Dataset::masks() const noexcept {
   return MasksConstView(makeViewItems<std::string>(m_masks));
 }
 
-/// Return a proxy to all masks of the dataset.
+/// Return a view to all masks of the dataset.
 MasksView Dataset::masks() noexcept {
   return MasksView(this, nullptr, makeViewItems<std::string>(m_masks));
 }
@@ -131,7 +131,7 @@ bool Dataset::contains(const std::string &name) const noexcept {
 /// Removes a data item from the Dataset
 ///
 /// Coordinates, labels and attributes are not modified.
-/// This operation invalidates any proxy objects creeated from this dataset.
+/// This operation invalidates any view objects creeated from this dataset.
 void Dataset::erase(const std::string_view name) {
   if (m_data.erase(std::string(name)) == 0) {
     throw except::DatasetError(*this, "Could not find data with name " +
@@ -140,13 +140,13 @@ void Dataset::erase(const std::string_view name) {
   rebuildDims();
 }
 
-/// Return a const proxy to data and coordinates with given name.
+/// Return a const view to data and coordinates with given name.
 DataArrayConstView Dataset::operator[](const std::string &name) const {
   expect::contains(*this, name);
   return DataArrayConstView(*this, *m_data.find(name));
 }
 
-/// Return a proxy to data and coordinates with given name.
+/// Return a view to data and coordinates with given name.
 DataArrayView Dataset::operator[](const std::string &name) {
   expect::contains(*this, name);
   return DataArrayView(*this, *m_data.find(name));
@@ -468,14 +468,14 @@ void Dataset::eraseSparseLabels(const std::string &name,
 
 /// Return const slice of the dataset along given dimension with given extents.
 ///
-/// This does not make a copy of the data. Instead of proxy object is returned.
+/// This does not make a copy of the data. Instead of view object is returned.
 DatasetConstView Dataset::slice(const Slice slice1) const & {
   return DatasetConstView(*this).slice(slice1);
 }
 
 /// Return const slice of the dataset, sliced in two dimensions.
 ///
-/// This does not make a copy of the data. Instead of proxy object is returned.
+/// This does not make a copy of the data. Instead of view object is returned.
 DatasetConstView Dataset::slice(const Slice slice1,
                                 const Slice slice2) const & {
   return DatasetConstView(*this).slice(slice1, slice2);
@@ -483,7 +483,7 @@ DatasetConstView Dataset::slice(const Slice slice1,
 
 /// Return const slice of the dataset, sliced in three dimensions.
 ///
-/// This does not make a copy of the data. Instead of proxy object is returned.
+/// This does not make a copy of the data. Instead of view object is returned.
 DatasetConstView Dataset::slice(const Slice slice1, const Slice slice2,
                                 const Slice slice3) const & {
   return DatasetConstView(*this).slice(slice1, slice2, slice3);
@@ -491,21 +491,21 @@ DatasetConstView Dataset::slice(const Slice slice1, const Slice slice2,
 
 /// Return slice of the dataset along given dimension with given extents.
 ///
-/// This does not make a copy of the data. Instead of proxy object is returned.
+/// This does not make a copy of the data. Instead of view object is returned.
 DatasetView Dataset::slice(const Slice slice1) & {
   return DatasetView(*this).slice(slice1);
 }
 
 /// Return slice of the dataset, sliced in two dimensions.
 ///
-/// This does not make a copy of the data. Instead of proxy object is returned.
+/// This does not make a copy of the data. Instead of view object is returned.
 DatasetView Dataset::slice(const Slice slice1, const Slice slice2) & {
   return DatasetView(*this).slice(slice1, slice2);
 }
 
 /// Return slice of the dataset, sliced in three dimensions.
 ///
-/// This does not make a copy of the data. Instead of proxy object is returned.
+/// This does not make a copy of the data. Instead of view object is returned.
 DatasetView Dataset::slice(const Slice slice1, const Slice slice2,
                             const Slice slice3) & {
   return DatasetView(*this).slice(slice1, slice2, slice3);
@@ -513,7 +513,7 @@ DatasetView Dataset::slice(const Slice slice1, const Slice slice2,
 
 /// Return const slice of the dataset along given dimension with given extents.
 ///
-/// This overload for rvalue reference *this avoids returning a proxy
+/// This overload for rvalue reference *this avoids returning a view
 /// referencing data that is about to go out of scope and returns a new dataset
 /// instead.
 Dataset Dataset::slice(const Slice slice1) const && {
@@ -522,7 +522,7 @@ Dataset Dataset::slice(const Slice slice1) const && {
 
 /// Return const slice of the dataset, sliced in two dimensions.
 ///
-/// This overload for rvalue reference *this avoids returning a proxy
+/// This overload for rvalue reference *this avoids returning a view
 /// referencing data that is about to go out of scope and returns a new dataset
 /// instead.
 Dataset Dataset::slice(const Slice slice1, const Slice slice2) const && {
@@ -531,7 +531,7 @@ Dataset Dataset::slice(const Slice slice1, const Slice slice2) const && {
 
 /// Return const slice of the dataset, sliced in three dimensions.
 ///
-/// This overload for rvalue reference *this avoids returning a proxy
+/// This overload for rvalue reference *this avoids returning a view
 /// referencing data that is about to go out of scope and returns a new dataset
 /// instead.
 Dataset Dataset::slice(const Slice slice1, const Slice slice2,
@@ -586,9 +586,9 @@ DataArrayConstView::DataArrayConstView(
         VariableView(detail::makeSlice(*m_data->second.data, this->slices())));
 }
 
-/// Return the name of the proxy.
+/// Return the name of the view.
 ///
-/// The name of the proxy is equal to the name of the item in a Dataset, or the
+/// The name of the view is equal to the name of the item in a Dataset, or the
 /// name of a DataArray. Note that comparison operations ignore the name.
 const std::string &DataArrayConstView::name() const noexcept {
   return m_data->first;
@@ -619,9 +619,9 @@ void DataArrayView::setUnit(const units::Unit unit) const {
   throw std::runtime_error("Data without values, cannot set unit.");
 }
 
-/// Return a const proxy to all coordinates of the data proxy.
+/// Return a const view to all coordinates of the data view.
 ///
-/// If the data has a sparse dimension the returned proxy will not contain any
+/// If the data has a sparse dimension the returned view will not contain any
 /// of the dataset's coordinates that depends on the sparse dimension.
 CoordsConstView DataArrayConstView::coords() const noexcept {
   return CoordsConstView(makeViewItems<Dim>(dims(), m_dataset->m_coords,
@@ -631,9 +631,9 @@ CoordsConstView DataArrayConstView::coords() const noexcept {
                          slices());
 }
 
-/// Return a const proxy to all labels of the data proxy.
+/// Return a const view to all labels of the data view.
 ///
-/// If the data has a sparse dimension the returned proxy will not contain any
+/// If the data has a sparse dimension the returned view will not contain any
 /// of the dataset's labels that depends on the sparse dimension.
 LabelsConstView DataArrayConstView::labels() const noexcept {
   return LabelsConstView(makeViewItems<std::string>(dims(),
@@ -642,13 +642,13 @@ LabelsConstView DataArrayConstView::labels() const noexcept {
                          slices());
 }
 
-/// Return a const proxy to all attributes of the data proxy.
+/// Return a const view to all attributes of the data view.
 AttrsConstView DataArrayConstView::attrs() const noexcept {
   return AttrsConstView(
       makeViewItems<std::string>(dims(), m_data->second.attrs), slices());
 }
 
-/// Return a const proxy to all masks of the data proxy.
+/// Return a const view to all masks of the data view.
 MasksConstView DataArrayConstView::masks() const noexcept {
   return MasksConstView(makeViewItems<std::string>(dims(), m_dataset->m_masks),
                         slices());
@@ -700,9 +700,9 @@ DataArrayView DataArrayView::slice(const Slice slice1, const Slice slice2,
   return slice(slice1, slice2).slice(slice3);
 }
 
-/// Return a proxy to all coordinates of the data proxy.
+/// Return a view to all coordinates of the data view.
 ///
-/// If the data has a sparse dimension the returned proxy will not contain any
+/// If the data has a sparse dimension the returned view will not contain any
 /// of the dataset's coordinates that depends on the sparse dimension.
 CoordsView DataArrayView::coords() const noexcept {
   return CoordsView(m_mutableDataset, &name(),
@@ -713,9 +713,9 @@ CoordsView DataArrayView::coords() const noexcept {
                      slices());
 }
 
-/// Return a proxy to all labels of the data proxy.
+/// Return a view to all labels of the data view.
 ///
-/// If the data has a sparse dimension the returned proxy will not contain any
+/// If the data has a sparse dimension the returned view will not contain any
 /// of the dataset's labels that depends on the sparse dimension.
 LabelsView DataArrayView::labels() const noexcept {
   return LabelsView(m_mutableDataset, &name(),
@@ -725,7 +725,7 @@ LabelsView DataArrayView::labels() const noexcept {
                     slices());
 }
 
-/// Return a const proxy to all attributes of the data proxy.
+/// Return a const view to all attributes of the data view.
 AttrsView DataArrayView::attrs() const noexcept {
   return AttrsView(
       m_mutableDataset, &name(),
@@ -733,7 +733,7 @@ AttrsView DataArrayView::attrs() const noexcept {
       slices());
 }
 
-/// Return a proxy to all masks of the data proxy.
+/// Return a view to all masks of the data view.
 MasksView DataArrayView::masks() const noexcept {
   return MasksView(
       m_mutableDataset, &name(),
@@ -785,17 +785,17 @@ DatasetView::DatasetView(Dataset &dataset)
     m_items.emplace_back(detail::make_item{this}(item));
 }
 
-/// Return a const proxy to all coordinates of the dataset slice.
+/// Return a const view to all coordinates of the dataset slice.
 ///
-/// This proxy includes only "dimension-coordinates". To access
+/// This view includes only "dimension-coordinates". To access
 /// non-dimension-coordinates" see labels().
 CoordsConstView DatasetConstView::coords() const noexcept {
   return CoordsConstView(makeViewItems<Dim>(m_dataset->m_coords), slices());
 }
 
-/// Return a proxy to all coordinates of the dataset slice.
+/// Return a view to all coordinates of the dataset slice.
 ///
-/// This proxy includes only "dimension-coordinates". To access
+/// This view includes only "dimension-coordinates". To access
 /// non-dimension-coordinates" see labels().
 CoordsView DatasetView::coords() const noexcept {
   auto *parent = slices().empty() ? m_mutableDataset : nullptr;
@@ -803,13 +803,13 @@ CoordsView DatasetView::coords() const noexcept {
                      makeViewItems<Dim>(m_mutableDataset->m_coords), slices());
 }
 
-/// Return a const proxy to all labels of the dataset slice.
+/// Return a const view to all labels of the dataset slice.
 LabelsConstView DatasetConstView::labels() const noexcept {
   return LabelsConstView(makeViewItems<std::string>(m_dataset->m_labels),
                          slices());
 }
 
-/// Return a proxy to all labels of the dataset slice.
+/// Return a view to all labels of the dataset slice.
 LabelsView DatasetView::labels() const noexcept {
   auto *parent = slices().empty() ? m_mutableDataset : nullptr;
   return LabelsView(parent, nullptr,
@@ -817,26 +817,26 @@ LabelsView DatasetView::labels() const noexcept {
                     slices());
 }
 
-/// Return a const proxy to all attributes of the dataset slice.
+/// Return a const view to all attributes of the dataset slice.
 AttrsConstView DatasetConstView::attrs() const noexcept {
   return AttrsConstView(makeViewItems<std::string>(m_dataset->m_attrs),
                         slices());
 }
 
-/// Return a proxy to all attributes of the dataset slice.
+/// Return a view to all attributes of the dataset slice.
 AttrsView DatasetView::attrs() const noexcept {
   auto *parent = slices().empty() ? m_mutableDataset : nullptr;
   return AttrsView(parent, nullptr,
                     makeViewItems<std::string>(m_mutableDataset->m_attrs),
                     slices());
 }
-/// Return a const proxy to all masks of the dataset slice.
+/// Return a const view to all masks of the dataset slice.
 MasksConstView DatasetConstView::masks() const noexcept {
   return MasksConstView(makeViewItems<std::string>(m_dataset->m_masks),
                         slices());
 }
 
-/// Return a proxy to all masks of the dataset slice.
+/// Return a view to all masks of the dataset slice.
 MasksView DatasetView::masks() const noexcept {
   auto *parent = slices().empty() ? m_mutableDataset : nullptr;
   return MasksView(parent, nullptr,
@@ -857,13 +857,13 @@ template <class T> const auto &getitem(const T &view, const std::string &name) {
 }
 } // namespace
 
-/// Return a const proxy to data and coordinates with given name.
+/// Return a const view to data and coordinates with given name.
 const DataArrayConstView &DatasetConstView::
 operator[](const std::string &name) const {
   return getitem(*this, name);
 }
 
-/// Return a proxy to data and coordinates with given name.
+/// Return a view to data and coordinates with given name.
 const DataArrayView &DatasetView::operator[](const std::string &name) const {
   return getitem(*this, name);
 }
@@ -895,9 +895,9 @@ DatasetConstView::slice_items(const T &view, const Slice slice) {
   return std::pair{std::move(items), std::move(slices)};
 }
 
-/// Return a slice of the dataset proxy.
+/// Return a slice of the dataset view.
 ///
-/// The returned proxy will not contain references to data items that do not
+/// The returned view will not contain references to data items that do not
 /// depend on the sliced dimension.
 DatasetConstView DatasetConstView::slice(const Slice slice1) const {
   DatasetConstView sliced;

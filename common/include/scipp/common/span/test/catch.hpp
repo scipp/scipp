@@ -4757,7 +4757,7 @@ namespace Catch {
 
 // start catch_fatal_condition.h
 
-// start catch_windows_h_proxy.h
+// start catch_windows_h_view.h
 
 
 #if defined(CATCH_PLATFORM_WINDOWS)
@@ -4786,7 +4786,7 @@ namespace Catch {
 
 #endif // defined(CATCH_PLATFORM_WINDOWS)
 
-// end catch_windows_h_proxy.h
+// end catch_windows_h_view.h
 #if defined( CATCH_CONFIG_WINDOWS_SEH )
 
 namespace Catch {

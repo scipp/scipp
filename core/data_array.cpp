@@ -17,12 +17,12 @@ template <class T> auto copy_map(const T &map) {
   return out;
 }
 
-DataArray::DataArray(const DataArrayConstView &proxy)
-    : DataArray(proxy.hasData() ? std::optional<Variable>(proxy.data())
+DataArray::DataArray(const DataArrayConstView &view)
+    : DataArray(view.hasData() ? std::optional<Variable>(view.data())
                                 : std::optional<Variable>(),
-                copy_map(proxy.coords()), copy_map(proxy.labels()),
-                copy_map(proxy.masks()), copy_map(proxy.attrs()),
-                proxy.name()) {}
+                copy_map(view.coords()), copy_map(view.labels()),
+                copy_map(view.masks()), copy_map(view.attrs()),
+                view.name()) {}
 
 DataArray::operator DataArrayConstView() const { return get(); }
 DataArray::operator DataArrayView() { return get(); }

@@ -163,25 +163,25 @@ public:
   DataArrayView operator/=(const VariableConstView &other) const;
 
   template <typename T,
-            typename = std::enable_if_t<!is_container_or_proxy<T>()>>
+            typename = std::enable_if_t<!is_container_or_view<T>()>>
   DataArrayView operator+=(const T value) const {
     return *this += makeVariable<T>(Values{value});
   }
 
   template <typename T,
-            typename = std::enable_if_t<!is_container_or_proxy<T>()>>
+            typename = std::enable_if_t<!is_container_or_view<T>()>>
   DataArrayView operator-=(const T value) const {
     return *this -= makeVariable<T>(Values{value});
   }
 
   template <typename T,
-            typename = std::enable_if_t<!is_container_or_proxy<T>()>>
+            typename = std::enable_if_t<!is_container_or_view<T>()>>
   DataArrayView operator*=(const T value) const {
     return *this *= makeVariable<T>(Values{value});
   }
 
   template <typename T,
-            typename = std::enable_if_t<!is_container_or_proxy<T>()>>
+            typename = std::enable_if_t<!is_container_or_view<T>()>>
   DataArrayView operator/=(const T value) const {
     return *this /= makeVariable<T>(Values{value});
   }
@@ -446,25 +446,25 @@ public:
   Dataset &operator/=(const Dataset &other);
 
   template <typename T,
-            typename = std::enable_if_t<!is_container_or_proxy<T>()>>
+            typename = std::enable_if_t<!is_container_or_view<T>()>>
   Dataset &operator+=(const T value) {
     return *this += makeVariable<T>(Values{value});
   }
 
   template <typename T,
-            typename = std::enable_if_t<!is_container_or_proxy<T>()>>
+            typename = std::enable_if_t<!is_container_or_view<T>()>>
   Dataset &operator-=(const T value) {
     return *this -= makeVariable<T>(Values{value});
   }
 
   template <typename T,
-            typename = std::enable_if_t<!is_container_or_proxy<T>()>>
+            typename = std::enable_if_t<!is_container_or_view<T>()>>
   Dataset &operator*=(const T value) {
     return *this *= makeVariable<T>(Values{value});
   }
 
   template <typename T,
-            typename = std::enable_if_t<!is_container_or_proxy<T>()>>
+            typename = std::enable_if_t<!is_container_or_view<T>()>>
   Dataset &operator/=(const T value) {
     return *this /= makeVariable<T>(Values{value});
   }
@@ -835,25 +835,25 @@ public:
   DatasetView operator/=(const Dataset &other) const;
 
   template <typename T,
-            typename = std::enable_if_t<!is_container_or_proxy<T>()>>
+            typename = std::enable_if_t<!is_container_or_view<T>()>>
   DatasetView operator+=(const T value) const {
     return *this += makeVariable<T>(Values{value});
   }
 
   template <typename T,
-            typename = std::enable_if_t<!is_container_or_proxy<T>()>>
+            typename = std::enable_if_t<!is_container_or_view<T>()>>
   DatasetView operator-=(const T value) const {
     return *this -= makeVariable<T>(Values{value});
   }
 
   template <typename T,
-            typename = std::enable_if_t<!is_container_or_proxy<T>()>>
+            typename = std::enable_if_t<!is_container_or_view<T>()>>
   DatasetView operator*=(const T value) const {
     return *this *= makeVariable<T>(Values{value});
   }
 
   template <typename T,
-            typename = std::enable_if_t<!is_container_or_proxy<T>()>>
+            typename = std::enable_if_t<!is_container_or_view<T>()>>
   DatasetView operator/=(const T value) const {
     return *this /= makeVariable<T>(Values{value});
   }
@@ -966,25 +966,25 @@ public:
   DataArray &operator/=(const VariableConstView &other);
 
   template <typename T,
-            typename = std::enable_if_t<!is_container_or_proxy<T>()>>
+            typename = std::enable_if_t<!is_container_or_view<T>()>>
   DataArray &operator+=(const T value) {
     return *this += makeVariable<T>(Values{value});
   }
 
   template <typename T,
-            typename = std::enable_if_t<!is_container_or_proxy<T>()>>
+            typename = std::enable_if_t<!is_container_or_view<T>()>>
   DataArray &operator-=(const T value) {
     return *this -= makeVariable<T>(Values{value});
   }
 
   template <typename T,
-            typename = std::enable_if_t<!is_container_or_proxy<T>()>>
+            typename = std::enable_if_t<!is_container_or_view<T>()>>
   DataArray &operator*=(const T value) {
     return *this *= makeVariable<T>(Values{value});
   }
 
   template <typename T,
-            typename = std::enable_if_t<!is_container_or_proxy<T>()>>
+            typename = std::enable_if_t<!is_container_or_view<T>()>>
   DataArray &operator/=(const T value) {
     return *this /= makeVariable<T>(Values{value});
   }
@@ -1171,36 +1171,36 @@ SCIPP_CORE_EXPORT Dataset operator/(const DatasetConstView &lhs,
 SCIPP_CORE_EXPORT Dataset operator/(const VariableConstView &lhs,
                                     const DatasetConstView &rhs);
 
-template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
+template <typename T, typename = std::enable_if_t<!is_container_or_view<T>()>>
 Dataset operator+(const T value, const DatasetConstView &a) {
   return makeVariable<T>(Values{value}) + a;
 }
-template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
+template <typename T, typename = std::enable_if_t<!is_container_or_view<T>()>>
 Dataset operator-(const T value, const DatasetConstView &a) {
   return makeVariable<T>(Values{value}) - a;
 }
-template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
+template <typename T, typename = std::enable_if_t<!is_container_or_view<T>()>>
 Dataset operator*(const T value, const DatasetConstView &a) {
   return makeVariable<T>(Values{value}) * a;
 }
-template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
+template <typename T, typename = std::enable_if_t<!is_container_or_view<T>()>>
 Dataset operator/(const T value, const DatasetConstView &a) {
   return makeVariable<T>(Values{value}) / a;
 }
 
-template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
+template <typename T, typename = std::enable_if_t<!is_container_or_view<T>()>>
 Dataset operator+(const DatasetConstView &a, const T value) {
   return a + makeVariable<T>(Values{value});
 }
-template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
+template <typename T, typename = std::enable_if_t<!is_container_or_view<T>()>>
 Dataset operator-(const DatasetConstView &a, const T value) {
   return a - makeVariable<T>(Values{value});
 }
-template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
+template <typename T, typename = std::enable_if_t<!is_container_or_view<T>()>>
 Dataset operator*(const DatasetConstView &a, const T value) {
   return a * makeVariable<T>(Values{value});
 }
-template <typename T, typename = std::enable_if_t<!is_container_or_proxy<T>()>>
+template <typename T, typename = std::enable_if_t<!is_container_or_view<T>()>>
 Dataset operator/(const DatasetConstView &a, const T value) {
   return a / makeVariable<T>(Values{value});
 }
