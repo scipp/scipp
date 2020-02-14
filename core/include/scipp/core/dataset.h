@@ -123,10 +123,10 @@ public:
   DataArrayView(Dataset &dataset, detail::dataset_item_map::value_type &data,
                 const detail::slice_list &slices = {});
 
-  CoordsProxy coords() const noexcept;
-  LabelsProxy labels() const noexcept;
-  MasksProxy masks() const noexcept;
-  AttrsProxy attrs() const noexcept;
+  CoordsView coords() const noexcept;
+  LabelsView labels() const noexcept;
+  MasksView masks() const noexcept;
+  AttrsView attrs() const noexcept;
 
   void setUnit(const units::Unit unit) const;
 
@@ -268,16 +268,16 @@ public:
   void clear();
 
   CoordsConstView coords() const noexcept;
-  CoordsProxy coords() noexcept;
+  CoordsView coords() noexcept;
 
   LabelsConstView labels() const noexcept;
-  LabelsProxy labels() noexcept;
+  LabelsView labels() noexcept;
 
   AttrsConstView attrs() const noexcept;
-  AttrsProxy attrs() noexcept;
+  AttrsView attrs() noexcept;
 
   MasksConstView masks() const noexcept;
-  MasksProxy masks() noexcept;
+  MasksView masks() noexcept;
 
   bool contains(const std::string &name) const noexcept;
 
@@ -496,24 +496,24 @@ private:
 };
 
 /// Common functionality for other proxy classes.
-template <class Base> class MutableProxy : public Base {
+template <class Base> class MutableView : public Base {
 private:
   struct make_item {
-    const MutableProxy<Base> *proxy;
+    const MutableView<Base> *proxy;
     template <class T> auto operator()(const T &item) const {
       return std::pair<typename Base::key_type, VariableView>(
           item.first, detail::makeSlice(*item.second.second, proxy->slices()));
     }
   };
 
-  MutableProxy(Dataset *parent, const std::string *name, Base &&base)
+  MutableView(Dataset *parent, const std::string *name, Base &&base)
       : Base(std::move(base)), m_parent(parent), m_name(name) {}
 
   Dataset *m_parent;
   const std::string *m_name;
 
 public:
-  MutableProxy(
+  MutableView(
       Dataset *parent, const std::string *name,
       std::unordered_map<typename Base::key_type,
                          std::pair<const Variable *, Variable *>> &&items,
@@ -562,17 +562,17 @@ public:
     return boost::make_transform_iterator(end(), detail::make_value);
   }
 
-  MutableProxy slice(const Slice slice1) const {
+  MutableView slice(const Slice slice1) const {
     // parent = nullptr since adding coords via slice is not supported.
-    return MutableProxy(nullptr, m_name, Base::slice(slice1));
+    return MutableView(nullptr, m_name, Base::slice(slice1));
   }
 
-  MutableProxy slice(const Slice slice1, const Slice slice2) const {
+  MutableView slice(const Slice slice1, const Slice slice2) const {
     return slice(slice1).slice(slice2);
   }
 
-  MutableProxy slice(const Slice slice1, const Slice slice2,
-                     const Slice slice3) const {
+  MutableView slice(const Slice slice1, const Slice slice2,
+                    const Slice slice3) const {
     return slice(slice1, slice2).slice(slice3);
   }
 
@@ -778,10 +778,10 @@ class SCIPP_CORE_EXPORT DatasetProxy : public DatasetConstView {
 public:
   DatasetProxy(Dataset &dataset);
 
-  CoordsProxy coords() const noexcept;
-  LabelsProxy labels() const noexcept;
-  AttrsProxy attrs() const noexcept;
-  MasksProxy masks() const noexcept;
+  CoordsView coords() const noexcept;
+  LabelsView labels() const noexcept;
+  AttrsView attrs() const noexcept;
+  MasksView masks() const noexcept;
 
   const DataArrayView &operator[](const std::string &name) const;
 
@@ -917,16 +917,16 @@ public:
   const std::string &name() const { return m_holder.begin()->name(); }
 
   CoordsConstView coords() const { return get().coords(); }
-  CoordsProxy coords() { return get().coords(); }
+  CoordsView coords() { return get().coords(); }
 
   LabelsConstView labels() const { return get().labels(); }
-  LabelsProxy labels() { return get().labels(); }
+  LabelsView labels() { return get().labels(); }
 
   AttrsConstView attrs() const { return get().attrs(); }
-  AttrsProxy attrs() { return get().attrs(); }
+  AttrsView attrs() { return get().attrs(); }
 
   MasksConstView masks() const { return get().masks(); }
-  MasksProxy masks() { return get().masks(); }
+  MasksView masks() { return get().masks(); }
 
   Dimensions dims() const { return get().dims(); }
   DType dtype() const { return get().dtype(); }
@@ -1262,7 +1262,7 @@ union_or(const MasksConstView &currentMasks, const MasksConstView &otherMasks);
 /// Union the masks of the two proxies.
 /// If any of the masks repeat they are OR'ed.
 /// The result is stored in the first proxy.
-SCIPP_CORE_EXPORT void union_or_in_place(const MasksProxy &currentMasks,
+SCIPP_CORE_EXPORT void union_or_in_place(const MasksView &currentMasks,
                                          const MasksConstView &otherMasks);
 
 } // namespace scipp::core

@@ -64,24 +64,24 @@ class Labels;
 class Masks;
 } // namespace ProxyId
 template <class Id, class Key> class ConstView;
-template <class Base> class MutableProxy;
+template <class Base> class MutableView;
 
 /// Proxy for accessing coordinates of const Dataset and DataArrayConstView.
 using CoordsConstView = ConstView<ProxyId::Coords, Dim>;
 /// Proxy for accessing coordinates of Dataset and DataArrayView.
-using CoordsProxy = MutableProxy<CoordsConstView>;
+using CoordsView = MutableView<CoordsConstView>;
 /// Proxy for accessing labels of const Dataset and DataArrayConstView.
 using LabelsConstView = ConstView<ProxyId::Labels, std::string>;
 /// Proxy for accessing labels of Dataset and DataArrayView.
-using LabelsProxy = MutableProxy<LabelsConstView>;
+using LabelsView = MutableView<LabelsConstView>;
 /// Proxy for accessing attributes of const Dataset and DataArrayConstView.
 using AttrsConstView = ConstView<ProxyId::Attrs, std::string>;
 /// Proxy for accessing attributes of Dataset and DataArrayView.
-using AttrsProxy = MutableProxy<AttrsConstView>;
+using AttrsView = MutableView<AttrsConstView>;
 /// Proxy for accessing masks of const Dataset and DataArrayConstView
 using MasksConstView = ConstView<ProxyId::Masks, std::string>;
 /// Proxy for accessing masks of Dataset and DataArrayView
-using MasksProxy = MutableProxy<MasksConstView>;
+using MasksView = MutableView<MasksConstView>;
 
 /// Common functionality for other const-proxy classes.
 template <class Id, class Key> class ConstView {
@@ -206,7 +206,7 @@ public:
     return slice(slice1).slice(slice2);
   }
   ConstView slice(const Slice slice1, const Slice slice2,
-                   const Slice slice3) const {
+                  const Slice slice3) const {
     return slice(slice1, slice2).slice(slice3);
   }
 
@@ -236,8 +236,8 @@ protected:
 SCIPP_CORE_EXPORT Variable masks_merge_if_contains(const MasksConstView &masks,
                                                    const Dim dim);
 
-SCIPP_CORE_EXPORT Variable
-masks_merge_if_contained(const MasksConstView &masks, const Dimensions &dims);
+SCIPP_CORE_EXPORT Variable masks_merge_if_contained(const MasksConstView &masks,
+                                                    const Dimensions &dims);
 
 } // namespace scipp::core
 #endif // SCIPP_CORE_PROXY_DECL_H

@@ -261,27 +261,27 @@ void init_dataset(py::module &m) {
 
   bind_helper_view<items_view, Dataset>(m, "Dataset");
   bind_helper_view<items_view, DatasetProxy>(m, "DatasetProxy");
-  bind_helper_view<items_view, CoordsProxy>(m, "CoordsProxy");
-  bind_helper_view<items_view, LabelsProxy>(m, "LabelsProxy");
-  bind_helper_view<items_view, MasksProxy>(m, "MasksProxy");
-  bind_helper_view<items_view, AttrsProxy>(m, "AttrsProxy");
+  bind_helper_view<items_view, CoordsView>(m, "CoordsView");
+  bind_helper_view<items_view, LabelsView>(m, "LabelsView");
+  bind_helper_view<items_view, MasksView>(m, "MasksView");
+  bind_helper_view<items_view, AttrsView>(m, "AttrsView");
   bind_helper_view<keys_view, Dataset>(m, "Dataset");
   bind_helper_view<keys_view, DatasetProxy>(m, "DatasetProxy");
-  bind_helper_view<keys_view, CoordsProxy>(m, "CoordsProxy");
-  bind_helper_view<keys_view, LabelsProxy>(m, "LabelsProxy");
-  bind_helper_view<keys_view, MasksProxy>(m, "MasksProxy");
-  bind_helper_view<keys_view, AttrsProxy>(m, "AttrsProxy");
+  bind_helper_view<keys_view, CoordsView>(m, "CoordsView");
+  bind_helper_view<keys_view, LabelsView>(m, "LabelsView");
+  bind_helper_view<keys_view, MasksView>(m, "MasksView");
+  bind_helper_view<keys_view, AttrsView>(m, "AttrsView");
   bind_helper_view<values_view, Dataset>(m, "Dataset");
   bind_helper_view<values_view, DatasetProxy>(m, "DatasetProxy");
-  bind_helper_view<values_view, CoordsProxy>(m, "CoordsProxy");
-  bind_helper_view<values_view, LabelsProxy>(m, "LabelsProxy");
-  bind_helper_view<values_view, MasksProxy>(m, "MasksProxy");
-  bind_helper_view<values_view, AttrsProxy>(m, "AttrsProxy");
+  bind_helper_view<values_view, CoordsView>(m, "CoordsView");
+  bind_helper_view<values_view, LabelsView>(m, "LabelsView");
+  bind_helper_view<values_view, MasksView>(m, "MasksView");
+  bind_helper_view<values_view, AttrsView>(m, "AttrsView");
 
-  bind_mutable_proxy<CoordsProxy, CoordsConstView>(m, "Coords");
-  bind_mutable_proxy<LabelsProxy, LabelsConstView>(m, "Labels");
-  bind_mutable_proxy<MasksProxy, MasksConstView>(m, "Masks");
-  bind_mutable_proxy<AttrsProxy, AttrsConstView>(m, "Attrs");
+  bind_mutable_proxy<CoordsView, CoordsConstView>(m, "Coords");
+  bind_mutable_proxy<LabelsView, LabelsConstView>(m, "Labels");
+  bind_mutable_proxy<MasksView, MasksConstView>(m, "Masks");
+  bind_mutable_proxy<AttrsView, AttrsConstView>(m, "Attrs");
 
   py::class_<DataArray> dataArray(m, "DataArray", R"(
     Named variable with associated coords, labels, and attributes.)");
