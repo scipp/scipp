@@ -64,9 +64,9 @@ VariableConceptHandle_impl<KNOWN>::variant() const noexcept;
 VariableConcept::VariableConcept(const Dimensions &dimensions)
     : m_dimensions(dimensions) {}
 
-Variable::Variable(const VariableConstProxy &slice)
+Variable::Variable(const VariableConstView &slice)
     : Variable(slice, slice.dims()) {
-  // There is a bug in the implementation of MultiIndex used in VariableView
+  // There is a bug in the implementation of MultiIndex used in ElementArrayView
   // in case one of the dimensions has extent 0.
   if (dims().volume() != 0)
     data().copy(slice.data(), Dim::Invalid, 0, 0, 1);
@@ -76,7 +76,7 @@ Variable::Variable(const Variable &parent, const Dimensions &dims)
     : m_unit(parent.unit()),
       m_object(parent.m_object->makeDefaultFromParent(dims)) {}
 
-Variable::Variable(const VariableConstProxy &parent, const Dimensions &dims)
+Variable::Variable(const VariableConstView &parent, const Dimensions &dims)
     : m_unit(parent.unit()),
       m_object(parent.data().makeDefaultFromParent(dims)) {}
 
@@ -100,15 +100,15 @@ template <class T1, class T2> bool equals(const T1 &a, const T2 &b) {
   return a.data() == b.data();
 }
 
-bool Variable::operator==(const VariableConstProxy &other) const {
+bool Variable::operator==(const VariableConstView &other) const {
   return equals(*this, other);
 }
 
-bool Variable::operator!=(const VariableConstProxy &other) const {
+bool Variable::operator!=(const VariableConstView &other) const {
   return !(*this == other);
 }
 
-template <class T> VariableProxy VariableProxy::assign(const T &other) const {
+template <class T> VariableView VariableView::assign(const T &other) const {
   if (data().isSame(other.data()))
     return *this; // Self-assignment, return early.
   setUnit(other.unit());
@@ -117,35 +117,35 @@ template <class T> VariableProxy VariableProxy::assign(const T &other) const {
   return *this;
 }
 
-template SCIPP_CORE_EXPORT VariableProxy
-VariableProxy::assign(const Variable &) const;
-template SCIPP_CORE_EXPORT VariableProxy
-VariableProxy::assign(const VariableConstProxy &) const;
-template SCIPP_CORE_EXPORT VariableProxy
-VariableProxy::assign(const VariableProxy &) const;
+template SCIPP_CORE_EXPORT VariableView
+VariableView::assign(const Variable &) const;
+template SCIPP_CORE_EXPORT VariableView
+VariableView::assign(const VariableConstView &) const;
+template SCIPP_CORE_EXPORT VariableView
+VariableView::assign(const VariableView &) const;
 
-bool VariableConstProxy::operator==(const VariableConstProxy &other) const {
+bool VariableConstView::operator==(const VariableConstView &other) const {
   // Always use deep comparison (pointer comparison does not make sense since we
   // may be looking at a different section).
   return equals(*this, other);
 }
 
-bool VariableConstProxy::operator!=(const VariableConstProxy &other) const {
+bool VariableConstView::operator!=(const VariableConstView &other) const {
   return !(*this == other);
 }
 
-void VariableProxy::setUnit(const units::Unit &unit) const {
+void VariableView::setUnit(const units::Unit &unit) const {
   expectCanSetUnit(unit);
   m_mutableVariable->setUnit(unit);
 }
 
-void VariableProxy::expectCanSetUnit(const units::Unit &unit) const {
+void VariableView::expectCanSetUnit(const units::Unit &unit) const {
   if ((this->unit() != unit) && (dims() != m_mutableVariable->dims()))
     throw except::UnitError("Partial view on data of variable cannot be used "
                             "to change the unit.");
 }
 
-VariableConstProxy Variable::slice(const Slice slice) const & {
+VariableConstView Variable::slice(const Slice slice) const & {
   return {*this, slice.dim(), slice.begin(), slice.end()};
 }
 
@@ -153,7 +153,7 @@ Variable Variable::slice(const Slice slice) const && {
   return Variable{this->slice(slice)};
 }
 
-VariableProxy Variable::slice(const Slice slice) & {
+VariableView Variable::slice(const Slice slice) & {
   return {*this, slice.dim(), slice.begin(), slice.end()};
 }
 
@@ -161,11 +161,11 @@ Variable Variable::slice(const Slice slice) && {
   return Variable{this->slice(slice)};
 }
 
-VariableConstProxy Variable::reshape(const Dimensions &dims) const & {
+VariableConstView Variable::reshape(const Dimensions &dims) const & {
   return {*this, dims};
 }
 
-VariableProxy Variable::reshape(const Dimensions &dims) & {
+VariableView Variable::reshape(const Dimensions &dims) & {
   return {*this, dims};
 }
 
@@ -175,7 +175,7 @@ Variable Variable::reshape(const Dimensions &dims) && {
   return reshaped;
 }
 
-Variable VariableConstProxy::reshape(const Dimensions &dims) const {
+Variable VariableConstView::reshape(const Dimensions &dims) const {
   // In general a variable slice is not contiguous. Therefore we cannot reshape
   // without making a copy (except for special cases).
   Variable reshaped(*this);
@@ -188,29 +188,29 @@ std::vector<Dim> reverseDimOrder(const DimContainer &container) {
   return std::vector<Dim>(container.rbegin(), container.rend());
 }
 
-VariableConstProxy Variable::transpose(const std::vector<Dim> &dims) const & {
-  return VariableConstProxy::makeTransposed(
+VariableConstView Variable::transpose(const std::vector<Dim> &dims) const & {
+  return VariableConstView::makeTransposed(
       *this, dims.empty() ? reverseDimOrder(this->dims().labels()) : dims);
 }
 
-VariableProxy Variable::transpose(const std::vector<Dim> &dims) & {
-  return VariableProxy::makeTransposed(
+VariableView Variable::transpose(const std::vector<Dim> &dims) & {
+  return VariableView::makeTransposed(
       *this, dims.empty() ? reverseDimOrder(this->dims().labels()) : dims);
 }
 
 Variable Variable::transpose(const std::vector<Dim> &dims) && {
-  return Variable(VariableConstProxy::makeTransposed(
+  return Variable(VariableConstView::makeTransposed(
       *this, dims.empty() ? reverseDimOrder(this->dims().labels()) : dims));
 }
 
-VariableConstProxy
-VariableConstProxy::transpose(const std::vector<Dim> &dims) const {
+VariableConstView
+VariableConstView::transpose(const std::vector<Dim> &dims) const {
   auto dms = this->dims();
   return makeTransposed(*this,
                         dims.empty() ? reverseDimOrder(dms.labels()) : dims);
 }
 
-VariableProxy VariableProxy::transpose(const std::vector<Dim> &dims) const {
+VariableView VariableView::transpose(const std::vector<Dim> &dims) const {
   auto dms = this->dims();
   return makeTransposed(*this,
                         dims.empty() ? reverseDimOrder(dms.labels()) : dims);
@@ -227,8 +227,8 @@ void Variable::setVariances(Variable v) {
   data().setVariances(std::move(v));
 }
 
-void VariableProxy::setVariances(Variable v) const {
-  // If the proxy wraps the whole variable (common case: iterating a dataset)
+void VariableView::setVariances(Variable v) const {
+  // If the view wraps the whole variable (common case: iterating a dataset)
   // m_view is not set. A more complex check would be to verify dimensions,
   // shape, and strides, but this should be sufficient for now.
   if (m_view)

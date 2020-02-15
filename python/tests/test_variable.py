@@ -294,7 +294,7 @@ def test_sparse_setitem():
     # __setitem__ of span
     var.values[1] = np.arange(3)
     assert len(var[Dim.X, 1].values) == 3
-    # __setitem__ of VariableView
+    # __setitem__ of ElementArrayView
     var[Dim.X, :].values[2] = np.arange(2)
     assert len(var[Dim.X, 2].values) == 2
 
@@ -354,7 +354,7 @@ def test_get_slice():
 def test_slicing():
     var = sc.Variable([sc.Dim.X], values=np.arange(0, 3))
     var_slice = var[(sc.Dim.X, slice(0, 2))]
-    assert isinstance(var_slice, sc.VariableProxy)
+    assert isinstance(var_slice, sc.VariableView)
     assert len(var_slice.values) == 2
     assert np.array_equal(var_slice.values, np.array([0, 1]))
 

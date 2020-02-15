@@ -23,7 +23,8 @@ _smaller_font = round(0.6 * _svg_em, 2)
 
 
 def is_data_array(obj):
-    return isinstance(obj, sc.DataArray) or isinstance(obj, sc.DataConstProxy)
+    return isinstance(obj, sc.DataArray) or isinstance(obj,
+                                                       sc.DataArrayConstView)
 
 
 def _hex_to_rgb(hex_color):
@@ -465,7 +466,7 @@ def make_svg(container):
     Return a svg representation of a variable or dataset.
     """
     if isinstance(container, sc.Variable) or isinstance(
-            container, sc.VariableProxy):
+            container, sc.VariableView):
         draw = VariableDrawer(container)
     else:
         draw = DatasetDrawer(container)

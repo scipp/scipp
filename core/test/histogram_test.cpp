@@ -116,7 +116,7 @@ TEST(HistogramTest, above) {
   EXPECT_EQ(hist, expected);
 }
 
-TEST(HistogramTest, data_proxy) {
+TEST(HistogramTest, data_view) {
   auto sparse = make_2d_sparse_coord_only("sparse");
   std::vector<double> ref{1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 2, 3, 0, 3, 0};
   auto edges =

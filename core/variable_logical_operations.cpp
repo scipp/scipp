@@ -63,40 +63,40 @@ template <class T1, class T2> Variable xor_op(const T1 &a, const T2 &b) {
   return transform<pair_self_t<bool>>(a, b, xor_op_);
 }
 
-Variable &Variable::operator|=(const VariableConstProxy &other) & {
-  VariableProxy(*this) |= other;
+Variable &Variable::operator|=(const VariableConstView &other) & {
+  VariableView(*this) |= other;
   return *this;
 }
 
-Variable &Variable::operator&=(const VariableConstProxy &other) & {
-  VariableProxy(*this) &= other;
+Variable &Variable::operator&=(const VariableConstView &other) & {
+  VariableView(*this) &= other;
   return *this;
 }
 
-Variable &Variable::operator^=(const VariableConstProxy &other) & {
-  VariableProxy(*this) ^= other;
+Variable &Variable::operator^=(const VariableConstView &other) & {
+  VariableView(*this) ^= other;
   return *this;
 }
 
-VariableProxy VariableProxy::operator|=(const VariableConstProxy &other) const {
+VariableView VariableView::operator|=(const VariableConstView &other) const {
   return or_equals(*this, other);
 }
 
-VariableProxy VariableProxy::operator&=(const VariableConstProxy &other) const {
+VariableView VariableView::operator&=(const VariableConstView &other) const {
   return and_equals(*this, other);
 }
 
-VariableProxy VariableProxy::operator^=(const VariableConstProxy &other) const {
+VariableView VariableView::operator^=(const VariableConstView &other) const {
   return xor_equals(*this, other);
 }
 
-Variable operator|(const VariableConstProxy &a, const VariableConstProxy &b) {
+Variable operator|(const VariableConstView &a, const VariableConstView &b) {
   return or_op(a, b);
 }
-Variable operator&(const VariableConstProxy &a, const VariableConstProxy &b) {
+Variable operator&(const VariableConstView &a, const VariableConstView &b) {
   return and_op(a, b);
 }
-Variable operator^(const VariableConstProxy &a, const VariableConstProxy &b) {
+Variable operator^(const VariableConstView &a, const VariableConstView &b) {
   return xor_op(a, b);
 }
 

@@ -20,13 +20,13 @@
 
 namespace scipp::core {
 
-class DataConstProxy;
-class DatasetConstProxy;
+class DataArrayConstView;
+class DatasetConstView;
 class Dataset;
 class DataArray;
 class Dimensions;
 class Variable;
-class VariableConstProxy;
+class VariableConstView;
 class Slice;
 
 } // namespace scipp::core
@@ -55,13 +55,13 @@ using DimensionMismatchError = MismatchError<core::Dimensions>;
 using VariableMismatchError = MismatchError<core::Variable>;
 
 template <class T>
-MismatchError(const core::VariableConstProxy &, const T &)
+MismatchError(const core::VariableConstView &, const T &)
     ->MismatchError<core::Variable>;
 template <class T>
-MismatchError(const core::DatasetConstProxy &, const T &)
+MismatchError(const core::DatasetConstView &, const T &)
     ->MismatchError<core::Dataset>;
 template <class T>
-MismatchError(const core::DataConstProxy &, const T &)
+MismatchError(const core::DataArrayConstView &, const T &)
     ->MismatchError<core::DataArray>;
 template <class T>
 MismatchError(const core::Dimensions &, const T &)
@@ -169,8 +169,8 @@ void SCIPP_CORE_EXPORT validSlice(const Dimensions &dims, const Slice &slice);
 void SCIPP_CORE_EXPORT validSlice(
     const std::unordered_map<Dim, scipp::index> &dims, const Slice &slice);
 
-void SCIPP_CORE_EXPORT coordsAndLabelsAreSuperset(const DataConstProxy &a,
-                                                  const DataConstProxy &b);
+void SCIPP_CORE_EXPORT coordsAndLabelsAreSuperset(const DataArrayConstView &a,
+                                                  const DataArrayConstView &b);
 void SCIPP_CORE_EXPORT notCountDensity(const units::Unit &unit);
 void SCIPP_CORE_EXPORT notSparse(const Dimensions &dims);
 template <class T> void notSparse(const T &object) { notSparse(object.dims()); }

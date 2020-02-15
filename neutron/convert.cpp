@@ -285,7 +285,7 @@ DataArray convert(DataArray d, const Dim from, const Dim to) {
                                            from, to);
 }
 
-DataArray convert(const DataConstProxy &d, const Dim from, const Dim to) {
+DataArray convert(const DataArrayConstView &d, const Dim from, const Dim to) {
   return convert(DataArray(d), from, to);
 }
 
@@ -294,7 +294,7 @@ Dataset convert(Dataset d, const Dim from, const Dim to) {
                                            from, to);
 }
 
-Dataset convert(const DatasetConstProxy &d, const Dim from, const Dim to) {
+Dataset convert(const DatasetConstView &d, const Dim from, const Dim to) {
   return convert(Dataset(d), from, to);
 }
 

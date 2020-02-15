@@ -16,7 +16,7 @@ using UnitError = Error<units::Unit>;
 using UnitMismatchError = MismatchError<units::Unit>;
 
 // We need deduction guides such that, e.g., the exception for a Variable
-// mismatch and VariableProxy mismatch are the same type.
+// mismatch and VariableView mismatch are the same type.
 template <class T>
 MismatchError(const units::Unit &, const T &)->MismatchError<units::Unit>;
 

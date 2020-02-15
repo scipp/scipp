@@ -29,7 +29,7 @@ std::vector<Variable> split(const Variable &var, const Dim dim,
   return vars;
 }
 
-Variable concatenate(const VariableConstProxy &a1, const VariableConstProxy &a2,
+Variable concatenate(const VariableConstView &a1, const VariableConstView &a2,
                      const Dim dim) {
   if (a1.dtype() != a2.dtype())
     throw std::runtime_error(
@@ -137,7 +137,7 @@ Variable filter(const Variable &var, const Variable &filter) {
   return out;
 }
 
-Variable reciprocal(const VariableConstProxy &var) {
+Variable reciprocal(const VariableConstView &var) {
   return transform<double, float>(
       var,
       overloaded{
@@ -157,8 +157,7 @@ Variable reciprocal(Variable &&var) {
   return out;
 }
 
-VariableProxy reciprocal(const VariableConstProxy &var,
-                         const VariableProxy &out) {
+VariableView reciprocal(const VariableConstView &var, const VariableView &out) {
   transform_in_place<pair_self_t<double, float>>(
       out, var,
       overloaded{
@@ -173,7 +172,7 @@ VariableProxy reciprocal(const VariableConstProxy &var,
   return out;
 }
 
-Variable abs(const VariableConstProxy &var) {
+Variable abs(const VariableConstView &var) {
   using std::abs;
   return transform<double, float>(var, [](const auto x) { return abs(x); });
 }
@@ -185,20 +184,20 @@ Variable abs(Variable &&var) {
   return out;
 }
 
-VariableProxy abs(const VariableConstProxy &var, const VariableProxy &out) {
+VariableView abs(const VariableConstView &var, const VariableView &out) {
   using std::abs;
   transform_in_place<pair_self_t<double, float>>(
       out, var, [](auto &x, const auto &y) { x = abs(y); });
   return out;
 }
 
-Variable norm(const VariableConstProxy &var) {
+Variable norm(const VariableConstView &var) {
   return transform<Eigen::Vector3d>(
       var, overloaded{[](const auto &x) { return x.norm(); },
                       [](const units::Unit &x) { return x; }});
 }
 
-Variable sqrt(const VariableConstProxy &var) {
+Variable sqrt(const VariableConstView &var) {
   using std::sqrt;
   return transform<double, float>(var, [](const auto x) { return sqrt(x); });
 }
@@ -210,7 +209,7 @@ Variable sqrt(Variable &&var) {
   return out;
 }
 
-VariableProxy sqrt(const VariableConstProxy &var, const VariableProxy &out) {
+VariableView sqrt(const VariableConstView &var, const VariableView &out) {
   using std::sqrt;
   transform_in_place<pair_self_t<double, float>>(
       out, var, [](auto &x, const auto &y) { x = sqrt(y); });
@@ -226,7 +225,7 @@ Variable dot(const Variable &a, const Variable &b) {
                  }});
 }
 
-Variable broadcast(const VariableConstProxy &var, const Dimensions &dims) {
+Variable broadcast(const VariableConstView &var, const Dimensions &dims) {
   if (var.dims().contains(dims))
     return Variable{var};
   auto newDims = var.dims();
@@ -252,7 +251,7 @@ void swap(Variable &var, const Dim dim, const scipp::index a,
   var.slice({dim, b}).assign(tmp);
 }
 
-Variable resize(const VariableConstProxy &var, const Dim dim,
+Variable resize(const VariableConstView &var, const Dim dim,
                 const scipp::index size) {
   auto dims = var.dims();
   dims.resize(dim, size);
@@ -266,12 +265,12 @@ Variable reverse(Variable var, const Dim dim) {
   return var;
 }
 
-/// Return a deep copy of a Variable or of a VariableProxy.
-Variable copy(const VariableConstProxy &var) { return Variable(var); }
+/// Return a deep copy of a Variable or of a VariableView.
+Variable copy(const VariableConstView &var) { return Variable(var); }
 
-VariableProxy nan_to_num(const VariableConstProxy &var,
-                         const VariableConstProxy &replacement,
-                         const VariableProxy &out) {
+VariableView nan_to_num(const VariableConstView &var,
+                        const VariableConstView &replacement,
+                        const VariableView &out) {
   using std::isnan;
   transform_in_place<std::tuple<double, float>>(
       out, var, replacement,
@@ -287,8 +286,8 @@ VariableProxy nan_to_num(const VariableConstProxy &var,
   return out;
 }
 
-Variable nan_to_num(const VariableConstProxy &var,
-                    const VariableConstProxy &replacement) {
+Variable nan_to_num(const VariableConstView &var,
+                    const VariableConstView &replacement) {
   using std::isnan;
   return transform<std::tuple<double, float>>(
       var, replacement,

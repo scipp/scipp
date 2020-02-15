@@ -11,43 +11,44 @@
 
 namespace scipp::neutron {
 
-SCIPP_NEUTRON_EXPORT core::VariableConstProxy
-position(const core::DatasetConstProxy &d);
-SCIPP_NEUTRON_EXPORT core::VariableConstProxy
-source_position(const core::DatasetConstProxy &d);
-SCIPP_NEUTRON_EXPORT core::VariableConstProxy
-sample_position(const core::DatasetConstProxy &d);
-SCIPP_NEUTRON_EXPORT core::VariableProxy position(const core::DatasetProxy &d);
-SCIPP_NEUTRON_EXPORT core::VariableProxy
-source_position(const core::DatasetProxy &d);
-SCIPP_NEUTRON_EXPORT core::VariableProxy
-sample_position(const core::DatasetProxy &d);
+SCIPP_NEUTRON_EXPORT core::VariableConstView
+position(const core::DatasetConstView &d);
+SCIPP_NEUTRON_EXPORT core::VariableConstView
+source_position(const core::DatasetConstView &d);
+SCIPP_NEUTRON_EXPORT core::VariableConstView
+sample_position(const core::DatasetConstView &d);
+SCIPP_NEUTRON_EXPORT core::VariableView position(const core::DatasetView &d);
+SCIPP_NEUTRON_EXPORT core::VariableView
+source_position(const core::DatasetView &d);
+SCIPP_NEUTRON_EXPORT core::VariableView
+sample_position(const core::DatasetView &d);
 SCIPP_NEUTRON_EXPORT core::Variable
-flight_path_length(const core::DatasetConstProxy &d);
-SCIPP_NEUTRON_EXPORT core::Variable l1(const core::DatasetConstProxy &d);
-SCIPP_NEUTRON_EXPORT core::Variable l2(const core::DatasetConstProxy &d);
+flight_path_length(const core::DatasetConstView &d);
+SCIPP_NEUTRON_EXPORT core::Variable l1(const core::DatasetConstView &d);
+SCIPP_NEUTRON_EXPORT core::Variable l2(const core::DatasetConstView &d);
 SCIPP_NEUTRON_EXPORT core::Variable
-scattering_angle(const core::DatasetConstProxy &d);
-SCIPP_NEUTRON_EXPORT core::Variable two_theta(const core::DatasetConstProxy &d);
+scattering_angle(const core::DatasetConstView &d);
+SCIPP_NEUTRON_EXPORT core::Variable two_theta(const core::DatasetConstView &d);
 
-SCIPP_NEUTRON_EXPORT core::VariableConstProxy
-position(const core::DataConstProxy &d);
-SCIPP_NEUTRON_EXPORT core::VariableConstProxy
-source_position(const core::DataConstProxy &d);
-SCIPP_NEUTRON_EXPORT core::VariableConstProxy
-sample_position(const core::DataConstProxy &d);
-SCIPP_NEUTRON_EXPORT core::VariableProxy position(const core::DataProxy &d);
-SCIPP_NEUTRON_EXPORT core::VariableProxy
-source_position(const core::DataProxy &d);
-SCIPP_NEUTRON_EXPORT core::VariableProxy
-sample_position(const core::DataProxy &d);
+SCIPP_NEUTRON_EXPORT core::VariableConstView
+position(const core::DataArrayConstView &d);
+SCIPP_NEUTRON_EXPORT core::VariableConstView
+source_position(const core::DataArrayConstView &d);
+SCIPP_NEUTRON_EXPORT core::VariableConstView
+sample_position(const core::DataArrayConstView &d);
+SCIPP_NEUTRON_EXPORT core::VariableView position(const core::DataArrayView &d);
+SCIPP_NEUTRON_EXPORT core::VariableView
+source_position(const core::DataArrayView &d);
+SCIPP_NEUTRON_EXPORT core::VariableView
+sample_position(const core::DataArrayView &d);
 SCIPP_NEUTRON_EXPORT core::Variable
-flight_path_length(const core::DataConstProxy &d);
-SCIPP_NEUTRON_EXPORT core::Variable l1(const core::DataConstProxy &d);
-SCIPP_NEUTRON_EXPORT core::Variable l2(const core::DataConstProxy &d);
+flight_path_length(const core::DataArrayConstView &d);
+SCIPP_NEUTRON_EXPORT core::Variable l1(const core::DataArrayConstView &d);
+SCIPP_NEUTRON_EXPORT core::Variable l2(const core::DataArrayConstView &d);
 SCIPP_NEUTRON_EXPORT core::Variable
-scattering_angle(const core::DataConstProxy &d);
-SCIPP_NEUTRON_EXPORT core::Variable two_theta(const core::DataConstProxy &d);
+scattering_angle(const core::DataArrayConstView &d);
+SCIPP_NEUTRON_EXPORT core::Variable
+two_theta(const core::DataArrayConstView &d);
 
 } // namespace scipp::neutron
 

@@ -6,15 +6,15 @@ add_executable(${TARGET_NAME} EXCLUDE_FROM_ALL
                attributes_test.cpp
                comparison_test.cpp
                concatenate_test.cpp
-               coords_proxy_test.cpp
+               coords_view_test.cpp
                counts_test.cpp
                data_array_comparison_test.cpp
                data_array_test.cpp
-               data_proxy_test.cpp
+               data_view_test.cpp
                dataset_comparison_test.cpp
                dataset_binary_arithmetic_test.cpp
                dataset_operations_test.cpp
-               dataset_proxy_test.cpp
+               dataset_view_test.cpp
                dataset_test_common.cpp
                dataset_test.cpp
                dimensions_test.cpp
@@ -46,7 +46,7 @@ add_executable(${TARGET_NAME} EXCLUDE_FROM_ALL
                variable_scalar_accessors_test.cpp
                variable_test.cpp
                variable_trigonometry_test.cpp
-               variable_view_test.cpp
+               element_array_view_test.cpp
                view_index_test.cpp
         variable_keyword_args_constructor_test.cpp)
 include_directories(SYSTEM ${GMOCK_INCLUDE_DIR} ${GTEST_INCLUDE_DIR})

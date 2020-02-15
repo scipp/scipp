@@ -21,7 +21,7 @@ auto make_table() {
 static void BM_dataset_create_view(benchmark::State &state) {
   auto d = make_table();
   for (auto _ : state) {
-    DatasetProxy view(d);
+    DatasetView view(d);
   }
   state.SetItemsProcessed(state.iterations());
 }

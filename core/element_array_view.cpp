@@ -2,7 +2,7 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#include "scipp/core/variable_view.h"
+#include "scipp/core/element_array_view.h"
 #include "scipp/core/except.h"
 
 namespace scipp::core {

@@ -4,8 +4,8 @@
 # @author Neil Vaytet
 
 from ._scipp.core.units import dimensionless
-from ._scipp.core import (Variable, VariableProxy, Dataset, DatasetProxy,
-                          DataArray, DataProxy)
+from ._scipp.core import (Variable, VariableView, Dataset, DatasetView,
+                          DataArray, DataArrayView)
 
 
 def name_with_unit(var=None, name=None, log=False, replace_dim=True):
@@ -48,21 +48,21 @@ def is_variable(obj):
     """
     Return True if the input is of type scipp.core.Variable.
     """
-    return isinstance(obj, Variable) or isinstance(obj, VariableProxy)
+    return isinstance(obj, Variable) or isinstance(obj, VariableView)
 
 
 def is_dataset(obj):
     """
     Return True if the input is of type scipp.core.Variable.
     """
-    return isinstance(obj, Dataset) or isinstance(obj, DatasetProxy)
+    return isinstance(obj, Dataset) or isinstance(obj, DatasetView)
 
 
 def is_data_array(obj):
     """
     Return True if the input is of type scipp.core.Variable.
     """
-    return isinstance(obj, DataArray) or isinstance(obj, DataProxy)
+    return isinstance(obj, DataArray) or isinstance(obj, DataArrayView)
 
 
 def is_dataset_or_array(obj):

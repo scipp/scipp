@@ -2,7 +2,7 @@
 // Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 //
 // The test in this file ensure that comparison operators for Dataset and
-// DatasetConstProxy are correct. More complex tests should build on the
+// DatasetConstView are correct. More complex tests should build on the
 // assumption that comparison operators are correct.
 #include "test_macros.h"
 #include <gtest/gtest.h>
@@ -40,7 +40,7 @@ TEST_F(SelfAssignmentTest, dataset_item) {
   EXPECT_NE(dataset["a"].values<double>().data(), expected_ptr);
 }
 
-TEST_F(SelfAssignmentTest, data_proxy_assign) {
+TEST_F(SelfAssignmentTest, data_view_assign) {
   const DataArray expected(dataset["a"]);
   const auto *expected_ptr = dataset["a"].values<double>().data();
   dataset["a"].assign(dataset["a"]);
@@ -54,11 +54,11 @@ TEST_F(SelfAssignmentTest, data_proxy_assign) {
   EXPECT_EQ(dataset["a"].values<double>().data(), expected_ptr);
 }
 
-TEST_F(SelfAssignmentTest, variable_proxy_assign) {
+TEST_F(SelfAssignmentTest, variable_view_assign) {
   const Variable expected(dataset["a"].data());
   const auto *expected_ptr = dataset["a"].values<double>().data();
 
-  // Without slices the proxy just forward to the data in the underlying
+  // Without slices the view just forward to the data in the underlying
   // variable, so we test 2 cases here, without and with slice.
   dataset["a"].data().assign(dataset["a"].data());
   EXPECT_EQ(dataset["a"].data(), expected);

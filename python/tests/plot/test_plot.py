@@ -3,12 +3,14 @@
 # @file
 # @author Neil Vaytet
 
+from itertools import product
+
+import numpy as np
+import pytest
+
 import scipp as sc
 from scipp import Dim
 from scipp.plot import plot
-import numpy as np
-from itertools import product
-import pytest
 
 # TODO: For now we are just checking that the plot does not throw any errors.
 # In the future it would be nice to check the output by either comparing
@@ -415,7 +417,7 @@ def test_plot_variable():
     plot(v3d)
 
 
-def test_plot_dataset_proxy():
+def test_plot_dataset_view():
     d = make_dense_dataset(ndim=2)
     plot(d[Dim.X, 0])
 

@@ -12,7 +12,7 @@ set(INC_FILES
     include/scipp/core/counts.h
     include/scipp/core/slice.h
     include/scipp/core/sort.h
-    include/scipp/core/variable_view.h
+    include/scipp/core/element_array_view.h
     include/scipp/core/variable.h
     include/scipp/core/variable.tcc
     include/scipp/core/view_index.h
@@ -45,7 +45,7 @@ set(SRC_FILES
     variable_operations.cpp
     variable_reduction_operations.cpp
     variable_type_conversion.cpp
-    variable_view.cpp
+    element_array_view.cpp
     view_index.cpp)
 
 set(LINK_TYPE "STATIC")

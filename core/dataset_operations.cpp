@@ -11,7 +11,7 @@
 
 namespace scipp::core {
 
-auto union_(const DatasetConstProxy &a, const DatasetConstProxy &b) {
+auto union_(const DatasetConstView &a, const DatasetConstView &b) {
   std::map<std::string, DataArray> out;
 
   for (const auto &item : a)
@@ -25,7 +25,7 @@ auto union_(const DatasetConstProxy &a, const DatasetConstProxy &b) {
   return out;
 }
 
-Dataset merge(const DatasetConstProxy &a, const DatasetConstProxy &b) {
+Dataset merge(const DatasetConstView &a, const DatasetConstView &b) {
   // When merging datasets the contents of the masks are not OR'ed, but
   // checked if present in both dataset with the same values with `union_`.
   // If the values are different the merge will fail.
@@ -38,7 +38,7 @@ Dataset merge(const DatasetConstProxy &a, const DatasetConstProxy &b) {
 ///
 /// Checks that the last edges in `a` match the first edges in `b`. The
 /// Concatenates the input edges, removing duplicate bin edges.
-Variable join_edges(const VariableConstProxy &a, const VariableConstProxy &b,
+Variable join_edges(const VariableConstView &a, const VariableConstView &b,
                     const Dim dim) {
   expect::equals(a.slice({dim, a.dims()[dim] - 1}), b.slice({dim, 0}));
   return concatenate(a.slice({dim, 0, a.dims()[dim] - 1}), b, dim);
@@ -91,7 +91,7 @@ auto concat(const T1 &a, const T2 &b, const Dim dim, const DimT &dimsA,
 }
 } // namespace
 
-DataArray concatenate(const DataConstProxy &a, const DataConstProxy &b,
+DataArray concatenate(const DataArrayConstView &a, const DataArrayConstView &b,
                       const Dim dim) {
   if (!a.dims().contains(dim) && a == b)
     return DataArray{a};
@@ -103,7 +103,7 @@ DataArray concatenate(const DataConstProxy &a, const DataConstProxy &b,
                    concat(a.masks(), b.masks(), dim, a.dims(), b.dims()));
 }
 
-Dataset concatenate(const DatasetConstProxy &a, const DatasetConstProxy &b,
+Dataset concatenate(const DatasetConstView &a, const DatasetConstView &b,
                     const Dim dim) {
   Dataset result(
       std::map<std::string, Variable>(),
@@ -117,21 +117,21 @@ Dataset concatenate(const DatasetConstProxy &a, const DatasetConstProxy &b,
   return result;
 }
 
-DataArray flatten(const DataConstProxy &a, const Dim dim) {
+DataArray flatten(const DataArrayConstView &a, const Dim dim) {
   return apply_or_copy_dim(a, [](auto &&... _) { return flatten(_...); }, dim,
                            a.masks());
 }
 
-Dataset flatten(const DatasetConstProxy &d, const Dim dim) {
+Dataset flatten(const DatasetConstView &d, const Dim dim) {
   return apply_to_items(d, [](auto &&... _) { return flatten(_...); }, dim);
 }
 
-DataArray sum(const DataConstProxy &a, const Dim dim) {
+DataArray sum(const DataArrayConstView &a, const Dim dim) {
   return apply_to_data_and_drop_dim(a, [](auto &&... _) { return sum(_...); },
                                     dim, a.masks());
 }
 
-Dataset sum(const DatasetConstProxy &d, const Dim dim) {
+Dataset sum(const DatasetConstView &d, const Dim dim) {
   // Currently not supporting sum/mean of dataset if one or more items do not
   // depend on the input dimension. The definition is ambiguous (return
   // unchanged, vs. compute sum of broadcast) so it is better to avoid this for
@@ -139,17 +139,17 @@ Dataset sum(const DatasetConstProxy &d, const Dim dim) {
   return apply_to_items(d, [](auto &&... _) { return sum(_...); }, dim);
 }
 
-DataArray mean(const DataConstProxy &a, const Dim dim) {
+DataArray mean(const DataArrayConstView &a, const Dim dim) {
   return apply_to_data_and_drop_dim(a, [](auto &&... _) { return mean(_...); },
                                     dim, a.masks());
 }
 
-Dataset mean(const DatasetConstProxy &d, const Dim dim) {
+Dataset mean(const DatasetConstView &d, const Dim dim) {
   return apply_to_items(d, [](auto &&... _) { return mean(_...); }, dim);
 }
 
-DataArray rebin(const DataConstProxy &a, const Dim dim,
-                const VariableConstProxy &coord) {
+DataArray rebin(const DataArrayConstView &a, const Dim dim,
+                const VariableConstView &coord) {
   auto rebinned = apply_to_data_and_drop_dim(
       a, [](auto &&... _) { return rebin(_...); }, dim, a.coords()[dim], coord);
 
@@ -162,13 +162,13 @@ DataArray rebin(const DataConstProxy &a, const Dim dim,
   return rebinned;
 }
 
-Dataset rebin(const DatasetConstProxy &d, const Dim dim,
-              const VariableConstProxy &coord) {
+Dataset rebin(const DatasetConstView &d, const Dim dim,
+              const VariableConstView &coord) {
   return apply_to_items(d, [](auto &&... _) { return rebin(_...); }, dim,
                         coord);
 }
 
-DataArray resize(const DataConstProxy &a, const Dim dim,
+DataArray resize(const DataArrayConstView &a, const Dim dim,
                  const scipp::index size) {
   if (a.dims().sparse()) {
     const auto resize_if_sparse = [dim, size](const auto &var) {
@@ -205,23 +205,22 @@ DataArray resize(const DataConstProxy &a, const Dim dim,
   }
 }
 
-Dataset resize(const DatasetConstProxy &d, const Dim dim,
+Dataset resize(const DatasetConstView &d, const Dim dim,
                const scipp::index size) {
   return apply_to_items(d, [](auto &&... _) { return resize(_...); }, dim,
                         size);
 }
 
 /// Return one of the inputs if they are the same, throw otherwise.
-VariableConstProxy same(const VariableConstProxy &a,
-                        const VariableConstProxy &b) {
+VariableConstView same(const VariableConstView &a, const VariableConstView &b) {
   expect::equals(a, b);
   return a;
 }
 
-/// Return a deep copy of a DataArray or of a DataProxy.
-DataArray copy(const DataConstProxy &array) { return DataArray(array); }
+/// Return a deep copy of a DataArray or of a DataArrayView.
+DataArray copy(const DataArrayConstView &array) { return DataArray(array); }
 
-/// Return a deep copy of a Dataset or of a DatasetProxy.
-Dataset copy(const DatasetConstProxy &dataset) { return Dataset(dataset); }
+/// Return a deep copy of a Dataset or of a DatasetView.
+Dataset copy(const DatasetConstView &dataset) { return Dataset(dataset); }
 
 } // namespace scipp::core

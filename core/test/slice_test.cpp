@@ -521,22 +521,22 @@ TEST_F(Dataset3DTest, commutative_slice_range) {
             dataset.slice({Dim::Z, 3, 4}, {Dim::X, 1, 3}, {Dim::Y, 2, 4}));
 }
 
-using DataProxyTypes = ::testing::Types<DataProxy, DataConstProxy>;
+using DataArrayViewTypes = ::testing::Types<DataArrayView, DataArrayConstView>;
 
-template <typename T> class DataProxy3DTest : public Dataset3DTest {
+template <typename T> class DataArrayView3DTest : public Dataset3DTest {
 protected:
-  using dataset_type =
-      std::conditional_t<std::is_same_v<T, DataProxy>, Dataset, const Dataset>;
+  using dataset_type = std::conditional_t<std::is_same_v<T, DataArrayView>,
+                                          Dataset, const Dataset>;
 
   dataset_type &dataset() { return Dataset3DTest::dataset; }
 };
 
-TYPED_TEST_SUITE(DataProxy3DTest, DataProxyTypes);
+TYPED_TEST_SUITE(DataArrayView3DTest, DataArrayViewTypes);
 
 // We have tests that ensure that Dataset::slice is correct (and its item access
 // returns the correct data), so we rely on that for verifying the results of
-// slicing DataProxy.
-TYPED_TEST(DataProxy3DTest, slice_single) {
+// slicing DataArrayView.
+TYPED_TEST(DataArrayView3DTest, slice_single) {
   auto &d = TestFixture::dataset();
   for (const auto &item : d) {
     for (const auto dim : {Dim::X, Dim::Y, Dim::Z}) {
@@ -552,7 +552,7 @@ TYPED_TEST(DataProxy3DTest, slice_single) {
   }
 }
 
-TYPED_TEST(DataProxy3DTest, slice_length_0) {
+TYPED_TEST(DataArrayView3DTest, slice_length_0) {
   auto &d = TestFixture::dataset();
   for (const auto &item : d) {
     for (const auto dim : {Dim::X, Dim::Y, Dim::Z}) {
@@ -570,7 +570,7 @@ TYPED_TEST(DataProxy3DTest, slice_length_0) {
   }
 }
 
-TYPED_TEST(DataProxy3DTest, slice_length_1) {
+TYPED_TEST(DataArrayView3DTest, slice_length_1) {
   auto &d = TestFixture::dataset();
   for (const auto &item : d) {
     for (const auto dim : {Dim::X, Dim::Y, Dim::Z}) {
@@ -588,7 +588,7 @@ TYPED_TEST(DataProxy3DTest, slice_length_1) {
   }
 }
 
-TYPED_TEST(DataProxy3DTest, slice) {
+TYPED_TEST(DataArrayView3DTest, slice) {
   auto &d = TestFixture::dataset();
   for (const auto &item : d) {
     for (const auto dim : {Dim::X, Dim::Y, Dim::Z}) {
@@ -606,10 +606,10 @@ TYPED_TEST(DataProxy3DTest, slice) {
   }
 }
 
-TYPED_TEST(DataProxy3DTest, slice_slice_range) {
+TYPED_TEST(DataArrayView3DTest, slice_slice_range) {
   auto &d = TestFixture::dataset();
   const auto slice = d.slice({Dim::X, 2, 4});
-  // Slice proxy created from DatasetProxy as opposed to directly from Dataset.
+  // Slice view created from DatasetView as opposed to directly from Dataset.
   for (const auto &item : slice) {
     for (const auto dim : {Dim::X, Dim::Y, Dim::Z}) {
       if (item.dims().contains(dim)) {
@@ -625,7 +625,7 @@ TYPED_TEST(DataProxy3DTest, slice_slice_range) {
   }
 }
 
-TYPED_TEST(DataProxy3DTest, slice_single_with_edges) {
+TYPED_TEST(DataArrayView3DTest, slice_single_with_edges) {
   auto x = {Dim::X};
   auto xy = {Dim::X, Dim::Y};
   auto yz = {Dim::Y, Dim::Z};
@@ -648,7 +648,7 @@ TYPED_TEST(DataProxy3DTest, slice_single_with_edges) {
   }
 }
 
-TYPED_TEST(DataProxy3DTest, slice_length_0_with_edges) {
+TYPED_TEST(DataArrayView3DTest, slice_length_0_with_edges) {
   auto x = {Dim::X};
   auto xy = {Dim::X, Dim::Y};
   auto yz = {Dim::Y, Dim::Z};
@@ -677,7 +677,7 @@ TYPED_TEST(DataProxy3DTest, slice_length_0_with_edges) {
   }
 }
 
-TYPED_TEST(DataProxy3DTest, slice_length_1_with_edges) {
+TYPED_TEST(DataArrayView3DTest, slice_length_1_with_edges) {
   auto x = {Dim::X};
   auto xy = {Dim::X, Dim::Y};
   auto yz = {Dim::Y, Dim::Z};
@@ -706,7 +706,7 @@ TYPED_TEST(DataProxy3DTest, slice_length_1_with_edges) {
   }
 }
 
-TYPED_TEST(DataProxy3DTest, slice_with_edges) {
+TYPED_TEST(DataArrayView3DTest, slice_with_edges) {
   auto x = {Dim::X};
   auto xy = {Dim::X, Dim::Y};
   auto yz = {Dim::Y, Dim::Z};

@@ -53,13 +53,13 @@ static void BM_transform_in_place(benchmark::State &state) {
             state.range(1));
 }
 
-static void BM_transform_in_place_proxy(benchmark::State &state) {
+static void BM_transform_in_place_view(benchmark::State &state) {
   run<true>(state,
             [](auto &state_, auto &a, auto &b, auto &op) {
-              VariableProxy a_proxy(a);
-              VariableConstProxy b_proxy(b);
+              VariableView a_view(a);
+              VariableConstView b_view(b);
               for ([[maybe_unused]] auto _ : state_) {
-                transform_in_place<Types>(a_proxy, b_proxy, op);
+                transform_in_place<Types>(a_view, b_view, op);
               }
             },
             state.range(1));
@@ -83,7 +83,7 @@ static void BM_transform_in_place_slice(benchmark::State &state) {
 BENCHMARK(BM_transform_in_place)
     ->RangeMultiplier(2)
     ->Ranges({{1, 2 << 18}, {false, true}});
-BENCHMARK(BM_transform_in_place_proxy)
+BENCHMARK(BM_transform_in_place_view)
     ->RangeMultiplier(2)
     ->Ranges({{1, 2 << 18}, {false, true}});
 BENCHMARK(BM_transform_in_place_slice)
@@ -103,13 +103,13 @@ static void BM_transform(benchmark::State &state) {
              state.range(1));
 }
 
-static void BM_transform_proxy(benchmark::State &state) {
+static void BM_transform_view(benchmark::State &state) {
   run<false>(state,
              [](auto &state_, auto &a, auto &b, auto &op) {
-               VariableProxy a_proxy(a);
-               VariableConstProxy b_proxy(b);
+               VariableView a_view(a);
+               VariableConstView b_view(b);
                for ([[maybe_unused]] auto _ : state_) {
-                 auto out = transform<Types>(a_proxy, b_proxy, op);
+                 auto out = transform<Types>(a_view, b_view, op);
                  state_.PauseTiming();
                  out = Variable();
                  state_.ResumeTiming();
@@ -139,7 +139,7 @@ static void BM_transform_slice(benchmark::State &state) {
 BENCHMARK(BM_transform)
     ->RangeMultiplier(2)
     ->Ranges({{1, 2 << 18}, {false, true}});
-BENCHMARK(BM_transform_proxy)
+BENCHMARK(BM_transform_view)
     ->RangeMultiplier(2)
     ->Ranges({{1, 2 << 18}, {false, true}});
 BENCHMARK(BM_transform_slice)

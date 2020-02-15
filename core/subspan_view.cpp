@@ -19,7 +19,8 @@ auto make_subspans(const span<T> &data, const scipp::index span_len) {
 }
 
 template <class T>
-auto make_subspans(const VariableView<T> &data, const scipp::index span_len) {
+auto make_subspans(const ElementArrayView<T> &data,
+                   const scipp::index span_len) {
   return make_subspans(scipp::span(data.data(), data.data() + data.size()),
                        span_len);
 }
@@ -80,11 +81,11 @@ Variable subspan_view(Variable &var, const Dim dim) {
   return subspan_view_impl(var, dim);
 }
 /// Return Variable containing mutable spans over given dimension as elements.
-Variable subspan_view(const VariableProxy &var, const Dim dim) {
+Variable subspan_view(const VariableView &var, const Dim dim) {
   return subspan_view_impl(var, dim);
 }
 /// Return Variable containing const spans over given dimension as elements.
-Variable subspan_view(const VariableConstProxy &var, const Dim dim) {
+Variable subspan_view(const VariableConstView &var, const Dim dim) {
   return subspan_view_impl(var, dim);
 }
 

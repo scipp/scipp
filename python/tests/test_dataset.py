@@ -337,7 +337,7 @@ def test_chained_slicing():
     assert d[Dim.X, 1][Dim.Z, 5] == expected
 
 
-def test_coords_proxy_comparison_operators():
+def test_coords_view_comparison_operators():
     d = sc.Dataset(
         {
             'a': sc.Variable([Dim.X], values=np.arange(10.0)),
@@ -591,7 +591,7 @@ def test_in_place_binary_with_scalar():
     assert d == copy
 
 
-def test_proxy_in_place_binary_with_scalar():
+def test_view_in_place_binary_with_scalar():
     d = sc.Dataset({'data': sc.Variable([Dim.X], values=[10])},
                    coords={Dim.X: sc.Variable([Dim.X], values=[10])})
     copy = d.copy()
@@ -643,7 +643,7 @@ def make_simple_dataset(dim1=Dim.X, dim2=Dim.Y, seed=None):
         labels={'aux': sc.Variable([dim2], values=np.random.rand(3))})
 
 
-def test_dataset_proxy_set_variance():
+def test_dataset_view_set_variance():
     d = make_simple_dataset()
     variances = np.arange(6).reshape(2, 3)
     assert d["a"].variances is None
