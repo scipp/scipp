@@ -13,16 +13,7 @@ from .._scipp import core as sc, neutron as sn
 
 # Other imports
 import numpy as np
-import ipywidgets as widgets
-import matplotlib.pyplot as plt
-from matplotlib import cm
-try:
-    import ipyvolume as ipv
-except ImportError:
-    ipv = None
-import IPython.display as disp
-from matplotlib.collections import PatchCollection
-from matplotlib.patches import Rectangle
+import importlib
 
 
 def instrument_view(scipp_obj=None,
@@ -65,9 +56,10 @@ def instrument_view(scipp_obj=None,
                         size=size,
                         projection=projection,
                         nan_color=nan_color,
-                        filename=filename,
                         continuous_update=continuous_update,
                         dim=dim)
+
+    render_plot(widgets=iv.box, filename=filename)
 
     return SciPlot(iv.members)
 
@@ -82,29 +74,34 @@ class InstrumentView:
                  vmin=None,
                  vmax=None,
                  aspect=None,
-                 size=1,
+                 size=None,
                  projection=None,
                  nan_color=None,
-                 filename=None,
                  continuous_update=None,
                  dim=None):
 
-        self.fig2d = None
-        self.fig3d = None
-        self.scatter2d = None
-        self.scatter3d = None
-        self.outline = None
-        self.size = size
+        # Delayed imports to avoid hard dependencies
+        self.widgets = importlib.import_module("ipywidgets")
+        self.mpl = importlib.import_module("matplotlib")
+        self.mpl_cm = importlib.import_module("matplotlib.cm")
+        self.mpl_figure = importlib.import_module("matplotlib.figure")
+        self.mpl_backend_agg = importlib.import_module(
+            "matplotlib.backends.backend_agg")
+        self.pil = importlib.import_module("PIL")
+        self.p3 = importlib.import_module("pythreejs")
+
+        self.fig = None
         self.aspect = aspect
-        self.do_update = None
-        self.figurewidget = widgets.Output()
-        self.figure2d = False
-        self.figure3d = False
-        self.image = None
         self.nan_color = nan_color
         self.log = log
         self.current_projection = None
         self.dim = dim
+        self.cbar_image = self.widgets.Image()
+
+        if len(np.shape(size)) == 0:
+            self.size = [size, size]
+        else:
+            self.size = size
 
         self.data_arrays = {}
         tp = type(scipp_obj)
@@ -122,6 +119,7 @@ class InstrumentView:
 
         self.globs = {"cmap": cmap, "log": log, "vmin": vmin, "vmax": vmax}
         self.params = {}
+        self.cmap = {}
         self.hist_data_array = {}
         self.scalar_map = {}
         self.minmax = {}
@@ -151,9 +149,9 @@ class InstrumentView:
 
         # Create dropdown menu to select the DataArray
         keys = list(self.hist_data_array.keys())
-        self.dropdown = widgets.Dropdown(options=keys,
-                                         description="Select entry:",
-                                         layout={"width": "initial"})
+        self.dropdown = self.widgets.Dropdown(options=keys,
+                                              description="Select entry:",
+                                              layout={"width": "initial"})
         self.dropdown.observe(self.change_data_array, names="value")
 
         # Store current active data entry (DataArray)
@@ -161,7 +159,7 @@ class InstrumentView:
 
         # Create a Tof slider and its label
         self.tof_dim_indx = self.hist_data_array[self.key].dims.index(self.dim)
-        self.slider = widgets.IntSlider(
+        self.slider = self.widgets.IntSlider(
             value=0,
             min=0,
             step=1,
@@ -170,18 +168,19 @@ class InstrumentView:
             continuous_update=continuous_update,
             readout=False)
         self.slider.observe(self.update_colors, names="value")
-        self.label = widgets.Label()
+        self.label = self.widgets.Label()
 
         # Add text boxes to change number of bins/bin size
-        self.nbins = widgets.Text(value=str(
+        self.nbins = self.widgets.Text(value=str(
             self.hist_data_array[self.key].shape[self.tof_dim_indx]),
-                                  description="Number of bins:",
-                                  style={"description_width": "initial"})
+                                       description="Number of bins:",
+                                       style={"description_width": "initial"})
         self.nbins.on_submit(self.update_nbins)
 
         tof_values = self.hist_data_array[self.key].coords[self.dim].values
-        self.bin_size = widgets.Text(value=str(tof_values[1] - tof_values[0]),
-                                     description="Bin size:")
+        self.bin_size = self.widgets.Text(value=str(tof_values[1] -
+                                                    tof_values[0]),
+                                          description="Bin size:")
         self.bin_size.on_submit(self.update_bin_size)
 
         projections = [
@@ -192,7 +191,7 @@ class InstrumentView:
         # Create toggle buttons to change projection
         self.buttons = {}
         for p in projections:
-            self.buttons[p] = widgets.Button(
+            self.buttons[p] = self.widgets.Button(
                 description=p,
                 disabled=False,
                 button_style=("info" if (p == projection) else ""))
@@ -202,38 +201,23 @@ class InstrumentView:
             items.append(self.buttons["Cylindrical {}".format(x)])
             items.append(self.buttons["Spherical {}".format(x)])
             if x != "Z":
-                items.append(widgets.Label())
+                items.append(self.widgets.Label())
 
-        self.togglebuttons = widgets.GridBox(
+        self.togglebuttons = self.widgets.GridBox(
             items,
-            layout=widgets.Layout(grid_template_columns="repeat(3, 150px)"))
+            layout=self.widgets.Layout(
+                grid_template_columns="repeat(3, 150px)"))
 
         # Place widgets in boxes
-        self.vbox = widgets.VBox([
-            widgets.HBox([self.dropdown, self.slider, self.label]),
-            widgets.HBox([self.nbins, self.bin_size]), self.togglebuttons
+        self.vbox = self.widgets.VBox([
+            self.widgets.HBox([self.dropdown, self.slider, self.label]),
+            self.widgets.HBox([self.nbins, self.bin_size]), self.togglebuttons
         ])
-        self.box = widgets.VBox([self.figurewidget, self.vbox])
-        self.box.layout.align_items = "center"
-
-        # Protect against uninstalled ipyvolume
-        if ipv is None and projection == "3D":
-            print("Warning: 3D projection requires ipyvolume to be "
-                  "installed. Use conda/pip install ipyvolume. Reverting to "
-                  "2D projection.")
-            self.buttons[projections[1]].button_style = "info"
-            self.buttons["3D"].button_style = ""
-            self.buttons["3D"].disabled = True
-
-        # Render the plot here instead of at the top level because to capture
-        # the matplotlib output (if a 2D projection is requested to begin with,
-        # the output widget needs to be displayed first, before any mpl figure
-        # is displayed.
-        render_plot(widgets=self.box, filename=filename, ipv=ipv)
 
         # Get detector positions
-        self.det_pos = np.array(
-            sn.position(self.hist_data_array[self.key]).values)
+        self.det_pos = np.array(sn.position(
+            self.hist_data_array[self.key]).values,
+                                dtype=np.float32)
         # Find extents of the detectors
         for i, x in enumerate("xyz"):
             self.minmax[x] = [
@@ -241,7 +225,69 @@ class InstrumentView:
                 np.amax(self.det_pos[:, i])
             ]
 
-        # Update the figure
+        # Create texture for scatter points to represent detector shapes
+        nx = 32
+        det_aspect_ratio = int(round(nx * min(self.size) / max(self.size)))
+        if det_aspect_ratio % 2 == 0:
+            half_width = det_aspect_ratio // 2
+            istart = nx // 2 - half_width
+            iend = nx // 2 + half_width
+        else:
+            half_width = (det_aspect_ratio - 1) // 2
+            istart = nx // 2 - 1 - half_width
+            iend = nx // 2 + half_width
+            nx -= 1
+        texture_array = np.zeros([nx, nx, 4], dtype=np.float32)
+        if np.argmin(self.size) == 0:
+            texture_array[:, istart:iend, :] = 1.0
+        else:
+            texture_array[istart:iend, :, :] = 1.0
+        texture = self.p3.DataTexture(data=texture_array,
+                                      format="RGBAFormat",
+                                      type="FloatType")
+
+        # The point cloud and its properties
+        self.pts = self.p3.BufferAttribute(array=self.det_pos)
+        self.colors = self.p3.BufferAttribute(array=np.random.random(
+            [np.shape(self.det_pos)[0], 4]).astype(np.float32))
+        self.geometry = self.p3.BufferGeometry(attributes={
+            'position': self.pts,
+            'color': self.colors
+        })
+        self.material = self.p3.PointsMaterial(vertexColors='VertexColors',
+                                               size=max(self.size),
+                                               map=texture,
+                                               depthTest=False,
+                                               transparent=True)
+        self.pcl = self.p3.Points(geometry=self.geometry,
+                                  material=self.material)
+        # Add the red green blue axes helper
+        self.axes_helper = self.p3.AxesHelper(100)
+
+        # Create the threejs scene with ambient light and camera
+        self.camera = self.p3.PerspectiveCamera(position=[0, 0, 10],
+                                                aspect=config.plot.width /
+                                                config.plot.height)
+        self.key_light = self.p3.DirectionalLight(position=[0, 10, 10])
+        self.ambient_light = self.p3.AmbientLight()
+        self.scene = self.p3.Scene(children=[
+            self.pcl, self.camera, self.key_light, self.ambient_light,
+            self.axes_helper
+        ])
+        self.controller = self.p3.OrbitControls(controlling=self.camera)
+
+        # Render the scene into a widget
+        self.renderer = self.p3.Renderer(camera=self.camera,
+                                         scene=self.scene,
+                                         controls=[self.controller],
+                                         width=config.plot.width,
+                                         height=config.plot.height)
+        self.box = self.widgets.VBox(
+            [self.widgets.HBox([self.renderer, self.cbar_image]), self.vbox])
+        self.box.layout.align_items = "center"
+
+        # Update the plot elements
+        self.update_colorbar()
         self.change_projection(self.buttons[projection])
 
         # Create members object
@@ -255,11 +301,10 @@ class InstrumentView:
                 },
                 "dropdown": self.dropdown
             },
-            "fig2d": self.fig2d,
-            "fig3d": self.fig3d,
-            "scatter2d": self.scatter2d,
-            "scatter3d": self.scatter3d,
-            "outline": self.outline
+            "points": self.pcl,
+            "camera": self.camera,
+            "scene": self.scene,
+            "renderer": self.renderer
         }
 
         return
@@ -287,14 +332,36 @@ class InstrumentView:
             # Parse input parameters for colorbar
             self.params[key] = parse_params(
                 globs=self.globs, array=self.hist_data_array[key].values)
-            cmap = cm.get_cmap(self.params[key]["cmap"])
-            cmap.set_bad(color=self.nan_color)
-            self.scalar_map[key] = cm.ScalarMappable(
-                cmap=cmap, norm=self.params[key]["norm"])
+            self.cmap[key] = self.mpl_cm.get_cmap(self.params[key]["cmap"])
+            self.cmap[key].set_bad(color=self.nan_color)
+            self.scalar_map[key] = self.mpl_cm.ScalarMappable(
+                cmap=self.cmap[key], norm=self.params[key]["norm"])
         return
 
+    def update_colorbar(self):
+        height_inches = config.plot.height / config.plot.dpi
+        fig = self.mpl_figure.Figure(figsize=(height_inches * 0.2,
+                                              height_inches),
+                                     dpi=config.plot.dpi)
+        canvas = self.mpl_backend_agg.FigureCanvasAgg(fig)
+        ax = fig.add_axes([0.05, 0.02, 0.25, 0.96])
+        cb1 = self.mpl.colorbar.ColorbarBase(
+            ax, cmap=self.cmap[self.key], norm=self.params[self.key]["norm"])
+        cb1.set_label(
+            name_with_unit(var=self.hist_data_array[self.key], name=""))
+        canvas.draw()
+        image = np.fromstring(canvas.tostring_rgb(), dtype='uint8')
+        shp = list(fig.canvas.get_width_height())[::-1] + [3]
+        self.cbar_image.value = self.pil.Image.fromarray(
+            image.reshape(shp))._repr_png_()
+
     def update_colors(self, change):
-        self.do_update(change)
+        arr = self.hist_data_array[self.key][self.dim, change["new"]].values
+        if self.log:
+            arr = np.ma.masked_where(arr <= 0, arr)
+        self.geometry.attributes["color"].array = self.scalar_map[
+            self.key].to_rgba(arr).astype(np.float32)
+
         self.label.value = name_with_unit(
             var=self.hist_data_array[self.key].coords[self.dim],
             name=value_to_string(self.hist_data_array[self.key].coords[
@@ -309,155 +376,38 @@ class InstrumentView:
         if self.current_projection is not None:
             self.buttons[self.current_projection].button_style = ""
 
-        # Temporarily disable automatic plotting in notebook
-        if plt.isinteractive():
-            plt.ioff()
-            re_enable_interactive = True
-        else:
-            re_enable_interactive = False
+        projection = owner.description
 
-        update_children = False
+        # Compute cylindrical or spherical projections
+        permutations = {"X": [0, 2, 1], "Y": [1, 0, 2], "Z": [2, 1, 0]}
+        axis = projection[-1]
 
-        if owner.description == "3D":
-            self.projection_3d()
-            self.do_update = self.update_colors_3d
+        if projection == "3D":
+            xyz = self.det_pos
         else:
-            if self.current_projection == "3D" or \
-               self.current_projection is None:
-                update_children = True
-            self.projection_2d(owner.description, update_children)
-            self.do_update = self.update_colors_2d
+            xyz = np.zeros_like(self.det_pos)
+            xyz[:, 0] = np.arctan2(self.det_pos[:, permutations[axis][2]],
+                                   self.det_pos[:, permutations[axis][1]])
+            if projection.startswith("Cylindrical"):
+                xyz[:, 1] = self.det_pos[:, permutations[axis][0]]
+            elif projection.startswith("Spherical"):
+                xyz[:, 1] = np.arcsin(
+                    self.det_pos[:, permutations[axis][0]] /
+                    np.sqrt(self.det_pos[:, 0]**2 + self.det_pos[:, 1]**2 +
+                            self.det_pos[:, 2]**2))
+        self.axes_helper.visible = projection == "3D"
+        self.camera.position = [0, 0, 5]
+        self.renderer.controls = [
+            self.p3.OrbitControls(controlling=self.camera,
+                                  enableRotate=projection == "3D")
+        ]
+        self.geometry.attributes["position"].array = xyz
 
         self.update_colors({"new": self.slider.value})
 
         self.current_projection = owner.description
         self.buttons[owner.description].button_style = "info"
 
-        # Re-enable automatic plotting in notebook
-        if re_enable_interactive:
-            plt.ion()
-
-        return
-
-    def projection_3d(self):
-        # Initialise Figure
-        if not self.figure3d:
-            self.fig3d = ipv.figure(width=config.plot.width,
-                                    height=config.plot.height,
-                                    animation=0,
-                                    lighting=False)
-            max_size = 0.0
-            dx = {"x": 0, "y": 0, "z": 0}
-            for ax in dx.keys():
-                dx[ax] = np.ediff1d(self.minmax[ax])
-            max_size = np.amax(list(dx.values()))
-            # Make plot outline if aspect ratio is to be conserved
-            if self.aspect == "equal":
-                arrays = dict()
-                for ax, s in dx.items():
-                    diff = max_size - s
-                    arrays[ax] = [
-                        self.minmax[ax][0] - 0.5 * diff,
-                        self.minmax[ax][1] + 0.5 * diff
-                    ]
-
-                outl_x, outl_y, outl_z = np.meshgrid(arrays["x"],
-                                                     arrays["y"],
-                                                     arrays["z"],
-                                                     indexing="ij")
-                self.outline = ipv.plot_wireframe(outl_x,
-                                                  outl_y,
-                                                  outl_z,
-                                                  color="black")
-            # Try to guess marker size
-            perc_size = 100.0 * self.size / max_size
-            self.scatter3d = ipv.scatter(x=self.det_pos[:, 0],
-                                         y=self.det_pos[:, 1],
-                                         z=self.det_pos[:, 2],
-                                         marker="square_2d",
-                                         size=perc_size)
-            self.figure3d = True
-
-        self.figurewidget.clear_output()
-        self.box.children = tuple([self.figurewidget, ipv.gcc(), self.vbox])
-        return
-
-    def update_colors_3d(self, change):
-        arr = self.hist_data_array[self.key][self.dim, change["new"]].values
-        if self.log:
-            arr = np.ma.masked_where(arr <= 0, arr)
-        self.scatter3d.color = self.scalar_map[self.key].to_rgba(arr)
-        return
-
-    def projection_2d(self, projection, update_children):
-        # Initialise figure if we switched from 3D view, if not re-use current
-        # figure.
-        if update_children:
-            self.box.children = tuple([self.figurewidget, self.vbox])
-        if not self.figure2d:
-            self.fig2d, self.ax = plt.subplots(
-                1,
-                1,
-                figsize=(config.plot.width / config.plot.dpi,
-                         config.plot.height / config.plot.dpi))
-
-        if update_children:
-            with self.figurewidget:
-                disp.display(self.fig2d)
-
-        # Compute cylindrical or spherical projections
-        permutations = {"X": [0, 2, 1], "Y": [1, 0, 2], "Z": [2, 1, 0]}
-        axis = projection[-1]
-
-        theta = np.arctan2(self.det_pos[:, permutations[axis][2]],
-                           self.det_pos[:, permutations[axis][1]])
-        if projection.startswith("Cylindrical"):
-            z_or_phi = self.det_pos[:, permutations[axis][0]]
-        elif projection.startswith("Spherical"):
-            z_or_phi = np.arcsin(
-                self.det_pos[:, permutations[axis][0]] /
-                np.sqrt(self.det_pos[:, 0]**2 + self.det_pos[:, 1]**2 +
-                        self.det_pos[:, 2]**2))
-
-        # Create the scatter
-        if not self.figure2d:
-            patches = []
-            for x, y in zip(theta, z_or_phi):
-                patches.append(
-                    Rectangle((x - 0.5 * self.size, y - 0.5 * self.size),
-                              self.size, self.size))
-
-            self.scatter2d = PatchCollection(
-                patches,
-                cmap=self.params[self.key]["cmap"],
-                norm=self.params[self.key]["norm"],
-                array=self.hist_data_array[self.key][self.dim,
-                                                     self.slider.value].values)
-            self.ax.add_collection(self.scatter2d)
-            self.save_xy = np.array([theta, z_or_phi]).T
-            if self.params[self.key]["cbar"]:
-                self.cbar = plt.colorbar(self.scatter2d, ax=self.ax)
-                self.cbar.ax.set_ylabel(
-                    name_with_unit(var=self.hist_data_array[self.key],
-                                   name=""))
-                self.cbar.ax.yaxis.set_label_coords(-1.1, 0.5)
-            self.figure2d = True
-        else:
-            self.scatter2d.set_offset_position("data")
-            self.scatter2d.set_offsets(
-                np.array([theta, z_or_phi]).T - self.save_xy)
-        self.ax.set_xlim(
-            [np.amin(theta) - self.size,
-             np.amax(theta) + self.size])
-        self.ax.set_ylim(
-            [np.amin(z_or_phi) - self.size,
-             np.amax(z_or_phi) + self.size])
-        return
-
-    def update_colors_2d(self, change):
-        self.scatter2d.set_array(
-            self.hist_data_array[self.key][self.dim, change["new"]].values)
-        self.fig2d.canvas.draw_idle()
         return
 
     def update_nbins(self, owner):
@@ -467,14 +417,12 @@ class InstrumentView:
             print("Warning: could not convert value: {} to an "
                   "integer.".format(owner.value))
             return
-        # self.rebin_data(nbins, from_nbins_text)
         self.rebin_data(
             np.linspace(self.minmax["tof"][0], self.minmax["tof"][1],
                         nbins + 1))
         x = self.hist_data_array[self.key].coords[self.dim].values
         self.bin_size.value = str(x[1] - x[0])
         self.update_slider()
-        return
 
     def update_bin_size(self, owner):
         try:
@@ -488,7 +436,6 @@ class InstrumentView:
         self.nbins.value = str(
             self.hist_data_array[self.key].shape[self.tof_dim_indx])
         self.update_slider()
-        return
 
     def update_slider(self):
         """
@@ -498,7 +445,7 @@ class InstrumentView:
         # Compute percentage position
         perc_pos = self.slider.value / self.slider.max
         # Compute new position
-        nbins = int(self.nbins.value)
+        nbins = int(self.nbins.value) - 1
         new_pos = int(perc_pos * nbins)
         # Either place new upper boundary first, or change slider value first
         if new_pos > self.slider.max:
@@ -507,17 +454,9 @@ class InstrumentView:
         else:
             self.slider.value = new_pos
             self.slider.max = nbins
-        return
+        self.update_colorbar()
 
     def change_data_array(self, change):
         self.key = change["new"]
-        if self.scatter2d is not None:
-            # Apparently, you have to set norm, clim on PatchCollection and
-            # clim on the colorbar to get this working. Only setting norm
-            # seems to work only on the first change.
-            self.scatter2d.set_norm(self.params[self.key]["norm"])
-            self.scatter2d.set_clim(vmin=self.params[self.key]["vmin"],
-                                    vmax=self.params[self.key]["vmax"])
-            self.cbar.set_clim(vmin=self.params[self.key]["vmin"],
-                               vmax=self.params[self.key]["vmax"])
+        self.update_colorbar()
         self.update_colors({"new": self.slider.value})

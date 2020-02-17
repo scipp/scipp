@@ -17,7 +17,6 @@ import warnings
 
 
 def plot_2d(scipp_obj_dict=None,
-            output=None,
             axes=None,
             values=None,
             variances=None,
@@ -56,10 +55,7 @@ def plot_2d(scipp_obj_dict=None,
                   logy=logy or logxy)
 
     if mpl_axes is None:
-        render_plot(figure=sv.fig,
-                    widgets=sv.vbox,
-                    filename=filename,
-                    output=output)
+        render_plot(figure=sv.fig, widgets=sv.vbox, filename=filename)
 
     return sv.members
 

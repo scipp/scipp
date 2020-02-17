@@ -16,7 +16,6 @@ from matplotlib import cm
 
 
 def plot_sparse(scipp_obj_dict,
-                output=None,
                 ndim=0,
                 sparse_dim=None,
                 logx=False,
@@ -185,11 +184,7 @@ def plot_sparse(scipp_obj_dict,
         raise RuntimeError("Scatter plots for sparse data support at most "
                            "3 dimensions.")
 
-    render_plot(figure=fig,
-                widgets=widg,
-                filename=filename,
-                ipv=ipv,
-                output=output)
+    render_plot(figure=fig, widgets=widg, filename=filename, ipv=ipv)
 
     members.update({"fig": fig, "widgets": widg})
 

@@ -21,7 +21,6 @@ except ImportError:
 
 
 def plot_3d(scipp_obj_dict=None,
-            output=None,
             axes=None,
             values=None,
             variances=None,
@@ -59,7 +58,7 @@ def plot_3d(scipp_obj_dict=None,
                   color=color,
                   aspect=aspect)
 
-    render_plot(widgets=sv.box, filename=filename, ipv=ipv, output=output)
+    render_plot(widgets=sv.box, filename=filename, ipv=ipv)
 
     return sv.members
 
