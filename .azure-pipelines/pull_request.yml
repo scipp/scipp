@@ -51,6 +51,7 @@ stages:
     jobs:
       - job: 'linux'
         displayName: 'Linux'
+        timeoutInMinutes: 60
         pool:
           vmImage: 'ubuntu-18.04'
         steps:
@@ -68,6 +69,7 @@ stages:
 
       - job: 'mac'
         displayName: 'Mac OS'
+        timeoutInMinutes: 80
         pool:
           vmImage: 'macOS-10.14'
         steps:
@@ -87,6 +89,7 @@ stages:
 
       - job: 'windows'
         displayName: 'Windows'
+        timeoutInMinutes: 60
         pool:
           vmImage: 'windows-latest'
         steps:

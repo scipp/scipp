@@ -45,6 +45,7 @@ stages:
     jobs:
       - job: 'linux'
         displayName: 'Linux'
+        timeoutInMinutes: 60
         strategy:
           matrix:
             Python36:
@@ -71,6 +72,7 @@ stages:
 
       - job: 'mac'
         displayName: 'Mac OS'
+        timeoutInMinutes: 80
         pool:
           vmImage: 'macOS-10.14'
         variables:
@@ -95,6 +97,7 @@ stages:
 
       - job: 'windows'
         displayName: 'Windows'
+        timeoutInMinutes: 60
         pool:
           vmImage: 'windows-latest'
         steps:
@@ -130,6 +133,7 @@ stages:
 
       - job: 'docker'
         displayName: 'Docker'
+        timeoutInMinutes: 30
         pool:
           vmImage: 'ubuntu-latest'
         steps:
