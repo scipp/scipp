@@ -140,7 +140,7 @@ stages:
           - task: Docker@2
             inputs:
               containerRegistry: 'DockerHub'
-              repository: 'scipp/scipp'
+              repository: 'scipp/scipp-jupyter-demo'
               command: 'buildAndPush'
               Dockerfile: '**/Dockerfile'
               tags: 'latest'
