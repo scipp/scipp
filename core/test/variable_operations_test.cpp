@@ -54,7 +54,7 @@ TEST(Variable, operator_unary_minus) {
   EXPECT_EQ(b, expected);
 }
 
-TEST(VariableProxy, unary_minus) {
+TEST(VariableView, unary_minus) {
   const auto a = makeVariable<double>(Dims{Dim::X}, Shape{2},
                                       units::Unit(units::m), Values{1.1, 2.2});
   const auto expected = makeVariable<double>(
@@ -618,7 +618,7 @@ TEST(Variable, sum_in_place_bool_incorrect_out_type) {
   EXPECT_THROW(sum(var, Dim::X, out), except::UnitError);
 }
 
-TEST(VariableConstProxy, sum) {
+TEST(VariableConstView, sum) {
   const auto var =
       makeVariable<float>(Dims{Dim::X}, Shape{4}, Values{1.0, 2.0, 3.0, 4.0});
   EXPECT_EQ(sum(var.slice({Dim::X, 0, 2}), Dim::X),
@@ -744,7 +744,7 @@ TEST(VariableSqrtOutArg, partial) {
   EXPECT_EQ(view.underlying(), out);
 }
 
-TEST(VariableProxy, minus_equals_failures) {
+TEST(VariableView, minus_equals_failures) {
   auto var = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 2},
                                   Values{1.0, 2.0, 3.0, 4.0});
 
@@ -753,7 +753,7 @@ TEST(VariableProxy, minus_equals_failures) {
                    "1}, {Dim.Y, 2}}.");
 }
 
-TEST(VariableProxy, self_overlapping_view_operation) {
+TEST(VariableView, self_overlapping_view_operation) {
   auto var = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
                                   Values{1.0, 2.0, 3.0, 4.0});
 
@@ -768,7 +768,7 @@ TEST(VariableProxy, self_overlapping_view_operation) {
   EXPECT_EQ(data[3], 2.0);
 }
 
-TEST(VariableProxy, minus_equals_slice_const_outer) {
+TEST(VariableView, minus_equals_slice_const_outer) {
   auto var = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
                                   Values{1.0, 2.0, 3.0, 4.0});
   const auto copy(var);
@@ -786,7 +786,7 @@ TEST(VariableProxy, minus_equals_slice_const_outer) {
   EXPECT_EQ(data[3], -2.0);
 }
 
-TEST(VariableProxy, minus_equals_slice_outer) {
+TEST(VariableView, minus_equals_slice_outer) {
   auto var = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
                                   Values{1.0, 2.0, 3.0, 4.0});
   auto copy(var);
@@ -804,7 +804,7 @@ TEST(VariableProxy, minus_equals_slice_outer) {
   EXPECT_EQ(data[3], -2.0);
 }
 
-TEST(VariableProxy, minus_equals_slice_inner) {
+TEST(VariableView, minus_equals_slice_inner) {
   auto var = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
                                   Values{1.0, 2.0, 3.0, 4.0});
   auto copy(var);
@@ -822,7 +822,7 @@ TEST(VariableProxy, minus_equals_slice_inner) {
   EXPECT_EQ(data[3], -3.0);
 }
 
-TEST(VariableProxy, minus_equals_slice_of_slice) {
+TEST(VariableView, minus_equals_slice_of_slice) {
   auto var = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
                                   Values{1.0, 2.0, 3.0, 4.0});
   auto copy(var);
@@ -835,7 +835,7 @@ TEST(VariableProxy, minus_equals_slice_of_slice) {
   EXPECT_EQ(data[3], 0.0);
 }
 
-TEST(VariableProxy, minus_equals_nontrivial_slices) {
+TEST(VariableView, minus_equals_nontrivial_slices) {
   auto source = makeVariable<double>(
       Dims{Dim::Y, Dim::X}, Shape{3, 3},
       Values{11.0, 12.0, 13.0, 21.0, 22.0, 23.0, 31.0, 32.0, 33.0});
@@ -877,7 +877,7 @@ TEST(VariableProxy, minus_equals_nontrivial_slices) {
   }
 }
 
-TEST(VariableProxy, slice_inner_minus_equals) {
+TEST(VariableView, slice_inner_minus_equals) {
   auto var = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
                                   Values{1.0, 2.0, 3.0, 4.0});
 
@@ -889,7 +889,7 @@ TEST(VariableProxy, slice_inner_minus_equals) {
   EXPECT_EQ(data[3], 4.0);
 }
 
-TEST(VariableProxy, slice_outer_minus_equals) {
+TEST(VariableView, slice_outer_minus_equals) {
   auto var = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
                                   Values{1.0, 2.0, 3.0, 4.0});
 
@@ -901,7 +901,7 @@ TEST(VariableProxy, slice_outer_minus_equals) {
   EXPECT_EQ(data[3], 4.0);
 }
 
-TEST(VariableProxy, nontrivial_slice_minus_equals) {
+TEST(VariableView, nontrivial_slice_minus_equals) {
   {
     auto target = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{3, 3});
     auto source = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
@@ -968,7 +968,7 @@ TEST(VariableProxy, nontrivial_slice_minus_equals) {
   }
 }
 
-TEST(VariableProxy, nontrivial_slice_minus_equals_slice) {
+TEST(VariableView, nontrivial_slice_minus_equals_slice) {
   {
     auto target = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{3, 3});
     auto source =
@@ -1043,7 +1043,7 @@ TEST(VariableProxy, nontrivial_slice_minus_equals_slice) {
   }
 }
 
-TEST(VariableProxy, slice_minus_lower_dimensional) {
+TEST(VariableView, slice_minus_lower_dimensional) {
   auto target = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2});
   auto source = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.0, 2.0});
   EXPECT_EQ(target.slice({Dim::Y, 1, 2}).dims(),
@@ -1058,7 +1058,7 @@ TEST(VariableProxy, slice_minus_lower_dimensional) {
   EXPECT_EQ(data[3], -2.0);
 }
 
-TEST(VariableProxy, slice_binary_operations) {
+TEST(VariableView, slice_binary_operations) {
   auto v = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
                                 Values{1, 2, 3, 4});
   // Note: There does not seem to be a way to test whether this is using the
@@ -1111,7 +1111,7 @@ TEST(Variable, non_in_place_scalar_operations) {
   EXPECT_TRUE(equals(ratio.values<double>(), {3.0, 1.5}));
 }
 
-TEST(VariableProxy, scalar_operations) {
+TEST(VariableView, scalar_operations) {
   auto var = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 3},
                                   Values{11, 12, 13, 21, 22, 23});
 
@@ -1238,6 +1238,111 @@ TEST(VariableTest, boolean_xor) {
   const auto result = a ^ b;
 
   EXPECT_EQ(result, expected);
+}
+
+TEST(VariableTest, nan_to_num_throws_when_input_and_replace_types_differ) {
+  auto a =
+      makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.0, double(NAN)});
+  // Replacement type not same as input
+  const auto replacement_value = makeVariable<int>(Values{-1});
+  EXPECT_THROW(auto replaced = nan_to_num(a, replacement_value),
+               except::TypeError);
+}
+
+TEST(VariableTest, nan_to_num) {
+  auto a =
+      makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.0, double(NAN)});
+  auto replacement_value = makeVariable<double>(Values{-1});
+  Variable b = nan_to_num(a, replacement_value);
+  auto expected = makeVariable<double>(
+      Dims{Dim::X}, Shape{2}, Values{1.0, replacement_value.value<double>()});
+  EXPECT_EQ(b, expected);
+}
+
+TEST(VariableTest,
+     nan_to_num_with_variance_throws_if_replacement_has_no_variance) {
+  auto a = makeVariable<double>(Dims{Dim::X}, Shape{2},
+                                Values{1.0, double(NAN)}, Variances{0.1, 0.2});
+
+  const auto replacement_value = makeVariable<double>(Values{-1});
+  EXPECT_THROW(auto replaced = nan_to_num(a, replacement_value),
+               except::VariancesError);
+}
+
+TEST(VariableTest, nan_to_num_with_variance_and_variance_on_replacement) {
+  auto a = makeVariable<double>(Dims{Dim::X}, Shape{2},
+                                Values{1.0, double(NAN)}, Variances{0.1, 0.2});
+
+  const auto replacement = makeVariable<double>(Values{-1}, Variances{0.1});
+  Variable b = nan_to_num(a, replacement);
+  auto expected = makeVariable<double>(
+      Dims{Dim::X}, Shape{2}, Values{1.0, replacement.value<double>()},
+      Variances{0.1, replacement.variance<double>()});
+  EXPECT_EQ(b, expected);
+}
+
+TEST(VariableTest,
+     nan_to_num_inplace_throws_when_input_and_replace_types_differ) {
+  auto a =
+      makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.0, double(NAN)});
+  // Replacement type not same as input
+  const auto replacement_value = makeVariable<int>(Values{-1});
+  EXPECT_THROW(nan_to_num(a, replacement_value, a), except::TypeError);
+}
+
+TEST(VariableTest,
+     nan_to_num_inplace_throws_when_input_and_output_types_differ) {
+  auto a =
+      makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.0, double(NAN)});
+  // Output type not same as input.
+  auto out = makeVariable<float>(Dims{Dim::X}, Shape{2}, Values{1.0, 1.0});
+  const auto replacement_value = makeVariable<double>(Values{-1});
+  EXPECT_THROW(nan_to_num(a, replacement_value, out), except::TypeError);
+}
+
+TEST(VariableTest, nan_to_num_inplace) {
+  auto a =
+      makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.0, double(NAN)});
+  const auto replacement_value = makeVariable<double>(Values{-1});
+  VariableView b = nan_to_num(a, replacement_value, a);
+  auto expected = makeVariable<double>(
+      Dims{Dim::X}, Shape{2}, Values{1.0, replacement_value.value<double>()});
+  EXPECT_EQ(b, expected);
+  EXPECT_EQ(a, expected);
+}
+
+TEST(VariableTest,
+     nan_to_num_inplace_with_variance_throws_if_replacement_has_no_variance) {
+  auto a = makeVariable<double>(Dims{Dim::X}, Shape{3},
+                                Values{1.0, double(NAN), 3.0},
+                                Variances{0.1, 0.2, 0.3});
+  const auto replacement_value = makeVariable<double>(Values{-1});
+  EXPECT_THROW(nan_to_num(a, replacement_value, a), except::VariancesError);
+}
+
+TEST(VariableTest, nan_to_num_inplace_out_has_no_variances) {
+  auto a =
+      makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.0, double(NAN)});
+  const auto replacement_value = makeVariable<double>(Values{-1});
+
+  auto out = makeVariable<double>(
+      Dims{Dim::X}, Shape{2}, Values{1.0, double(NAN)}, Variances{0.1, 0.2});
+
+  EXPECT_THROW(nan_to_num(a, replacement_value, out), except::VariancesError);
+}
+
+TEST(VariableTest,
+     nan_to_num_inplace_with_variance_and_variance_on_replacement) {
+  auto a = makeVariable<double>(Dims{Dim::X}, Shape{2},
+                                Values{1.0, double(NAN)}, Variances{0.1, 0.2});
+  const auto replacement_value =
+      makeVariable<double>(Values{-1}, Variances{0.1});
+  VariableView b = nan_to_num(a, replacement_value, a);
+  auto expected = makeVariable<double>(
+      Dims{Dim::X}, Shape{2}, Values{1.0, replacement_value.value<double>()},
+      Variances{0.1, replacement_value.variance<double>()});
+  EXPECT_EQ(b, expected);
+  EXPECT_EQ(a, expected);
 }
 
 template <class T> class ReciprocalTest : public ::testing::Test {};

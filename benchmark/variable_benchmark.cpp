@@ -116,13 +116,13 @@ static void BM_Variable_trivial_slice(benchmark::State &state) {
       makeVariable<double>(Dims{Dim::Z, Dim::Y, Dim::X}, Shape{10, 20, 30});
 
   for (auto _ : state) {
-    VariableProxy view(var);
+    VariableView view(var);
     Variable copy(view);
   }
 }
 BENCHMARK(BM_Variable_trivial_slice);
 
-// The following two benchmarks "prove" that operator+ with a VariableProxy is
+// The following two benchmarks "prove" that operator+ with a VariableView is
 // not unintentionally converting the second argument to a temporary Variable.
 static void BM_Variable_binary_with_Variable(benchmark::State &state) {
   auto var =
@@ -134,7 +134,7 @@ static void BM_Variable_binary_with_Variable(benchmark::State &state) {
     auto sum = a + b;
   }
 }
-static void BM_Variable_binary_with_VariableProxy(benchmark::State &state) {
+static void BM_Variable_binary_with_VariableView(benchmark::State &state) {
   auto b =
       makeVariable<double>(Dims{Dim::Z, Dim::Y, Dim::X}, Shape{10, 20, 30});
   Variable a(b.slice({Dim::Z, 0, 8}));
@@ -144,7 +144,7 @@ static void BM_Variable_binary_with_VariableProxy(benchmark::State &state) {
   }
 }
 BENCHMARK(BM_Variable_binary_with_Variable);
-BENCHMARK(BM_Variable_binary_with_VariableProxy);
+BENCHMARK(BM_Variable_binary_with_VariableView);
 
 static void BM_Variable_assign_1d(benchmark::State &state) {
   const auto size = state.range(0);
@@ -168,12 +168,12 @@ BENCHMARK(BM_Variable_assign_1d)
     ->Arg(1e8)
     ->Arg(1e9);
 
-static void BM_VariableProxy_assign_1d(benchmark::State &state) {
+static void BM_VariableView_assign_1d(benchmark::State &state) {
   const auto size = state.range(0);
 
   const auto a = makeVariable<double>(Dims{Dim::X}, Shape{size});
   auto b = makeVariable<double>(Dims{Dim::X}, Shape{size});
-  VariableProxy bb(b);
+  VariableView bb(b);
 
   for (auto _ : state) {
     bb.assign(a);
@@ -186,7 +186,7 @@ static void BM_VariableProxy_assign_1d(benchmark::State &state) {
   state.counters["SizeBytes"] = sizeof(double) * size;
 }
 
-BENCHMARK(BM_VariableProxy_assign_1d)
+BENCHMARK(BM_VariableView_assign_1d)
     ->Unit(benchmark::kMillisecond)
     ->Arg(1e7)
     ->Arg(1e8)

@@ -101,6 +101,7 @@ public:
   }
 
   scipp::index operator[](const Dim dim) const;
+  scipp::index at(const Dim dim) const;
 
   Dim inner() const noexcept;
 

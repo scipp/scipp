@@ -15,12 +15,12 @@ static constexpr auto erase = [](Dimensions dims, const Dim dim) {
   dims.erase(dim);
   return dims;
 };
-static constexpr auto need_subspan = [](const VariableConstProxy &var,
+static constexpr auto need_subspan = [](const VariableConstView &var,
                                         const Dim dim) {
   return !var.dims().sparse() && var.dims().contains(dim);
 };
 
-static constexpr auto maybe_subspan = [](VariableConstProxy &var,
+static constexpr auto maybe_subspan = [](VariableConstView &var,
                                          const Dim dim) {
   auto ret = std::make_unique<Variable>();
   if (need_subspan(var, dim)) {
@@ -77,21 +77,19 @@ template <class Types, class Op, class... Var>
 /// 5. Use the flag transform_flags::expect_variance_arg<0> to control whether
 ///    the output should have variances or not.
 template <class Types, class Op>
-[[nodiscard]] Variable
-    transform_subspan(const Dim dim, const scipp::index size,
-                      const VariableConstProxy &var1,
-                      const VariableConstProxy &var2, Op op) {
-      return transform_subspan_impl<Types>(dim, size, op, var1, var2);
-    }
+[[nodiscard]] Variable transform_subspan(const Dim dim, const scipp::index size,
+                                         const VariableConstView &var1,
+                                         const VariableConstView &var2, Op op) {
+  return transform_subspan_impl<Types>(dim, size, op, var1, var2);
+}
 
 template <class Types, class Op>
-[[nodiscard]] Variable
-    transform_subspan(const Dim dim, const scipp::index size,
-                      const VariableConstProxy &var1,
-                      const VariableConstProxy &var2,
-                      const VariableConstProxy &var3, Op op) {
-      return transform_subspan_impl<Types>(dim, size, op, var1, var2, var3);
-    }
+[[nodiscard]] Variable transform_subspan(const Dim dim, const scipp::index size,
+                                         const VariableConstView &var1,
+                                         const VariableConstView &var2,
+                                         const VariableConstView &var3, Op op) {
+  return transform_subspan_impl<Types>(dim, size, op, var1, var2, var3);
+}
 
 } // namespace scipp::core
 

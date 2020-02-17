@@ -14,9 +14,9 @@ protected:
 };
 
 TEST_F(VariableConceptTest, isSame_no_slice) {
-  const VariableConstProxy a_view(a);
-  const VariableConstProxy a_view2(a);
-  const VariableConstProxy b_view(b);
+  const VariableConstView a_view(a);
+  const VariableConstView a_view2(a);
+  const VariableConstView b_view(b);
 
   EXPECT_TRUE(a.data().isSame(a.data()));
   EXPECT_FALSE(a.data().isSame(b.data()));
@@ -30,9 +30,9 @@ TEST_F(VariableConceptTest, isSame_no_slice) {
 }
 
 TEST_F(VariableConceptTest, isSame_same_slice) {
-  const VariableConstProxy a_view = a.slice({Dim::X, 0, 2});
-  const VariableConstProxy a_view2 = a.slice({Dim::X, 0, 2});
-  const VariableConstProxy b_view = b.slice({Dim::X, 0, 2});
+  const VariableConstView a_view = a.slice({Dim::X, 0, 2});
+  const VariableConstView a_view2 = a.slice({Dim::X, 0, 2});
+  const VariableConstView b_view = b.slice({Dim::X, 0, 2});
 
   EXPECT_TRUE(a.data().isSame(a.data()));
   EXPECT_FALSE(a.data().isSame(b.data()));
@@ -50,8 +50,8 @@ TEST_F(VariableConceptTest, isSame_same_slice) {
 }
 
 TEST_F(VariableConceptTest, isSame_different_slice) {
-  const VariableConstProxy a_view1 = a.slice({Dim::X, 0, 1});
-  const VariableConstProxy a_view2 = a.slice({Dim::X, 1, 2});
+  const VariableConstView a_view1 = a.slice({Dim::X, 0, 1});
+  const VariableConstView a_view2 = a.slice({Dim::X, 1, 2});
 
   EXPECT_FALSE(a_view1.data().isSame(a_view2.data()));
 }

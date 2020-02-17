@@ -14,8 +14,8 @@
 using namespace scipp;
 using namespace scipp::core;
 
-// Any dataset functionality that is also available for Dataset(Const)Proxy is
-// to be tested in dataset_proxy_test.cpp, not here!
+// Any dataset functionality that is also available for Dataset(Const)View is
+// to be tested in dataset_view_test.cpp, not here!
 
 TEST(DatasetTest, construct_default) { ASSERT_NO_THROW(Dataset d); }
 
@@ -254,14 +254,14 @@ TEST(DatasetTest, setSparseLabels) {
 
 TEST(DatasetTest, iterators_return_types) {
   Dataset d;
-  ASSERT_TRUE((std::is_same_v<decltype(d.begin()->second), DataProxy>));
-  ASSERT_TRUE((std::is_same_v<decltype(d.end()->second), DataProxy>));
+  ASSERT_TRUE((std::is_same_v<decltype(*d.begin()), DataArrayView>));
+  ASSERT_TRUE((std::is_same_v<decltype(*d.end()), DataArrayView>));
 }
 
 TEST(DatasetTest, const_iterators_return_types) {
   const Dataset d;
-  ASSERT_TRUE((std::is_same_v<decltype(d.begin()->second), DataConstProxy>));
-  ASSERT_TRUE((std::is_same_v<decltype(d.end()->second), DataConstProxy>));
+  ASSERT_TRUE((std::is_same_v<decltype(*d.begin()), DataArrayConstView>));
+  ASSERT_TRUE((std::is_same_v<decltype(*d.end()), DataArrayConstView>));
 }
 
 TEST(DatasetTest, set_dense_data_with_sparse_coord) {
@@ -282,12 +282,12 @@ TEST(DatasetTest, set_dense_data_with_sparse_coord) {
                except::DimensionError);
 }
 
-TEST(DatasetTest, construct_from_proxy) {
+TEST(DatasetTest, construct_from_view) {
   DatasetFactory3D factory;
   const auto dataset = factory.make();
-  const DatasetConstProxy proxy(dataset);
-  Dataset from_proxy(proxy);
-  ASSERT_EQ(from_proxy, dataset);
+  const DatasetConstView view(dataset);
+  Dataset from_view(view);
+  ASSERT_EQ(from_view, dataset);
 }
 
 TEST(DatasetTest, construct_from_slice) {
@@ -318,12 +318,12 @@ TEST(DatasetTest, slice_validation_simple) {
   do_test_slice_validation(dataset);
 
   // Make sure correct via const proxies
-  DatasetConstProxy constproxy(dataset);
-  do_test_slice_validation(constproxy);
+  DatasetConstView constview(dataset);
+  do_test_slice_validation(constview);
 
   // Make sure correct via proxies
-  DatasetProxy proxy(dataset);
-  do_test_slice_validation(proxy);
+  DatasetView view(dataset);
+  do_test_slice_validation(view);
 }
 
 TEST(DatasetTest, slice_with_no_coords) {
@@ -349,17 +349,6 @@ TEST(DatasetTest, slice_validation_complex) {
   // Reverse order. Invalid slice creation should be caught up front.
   EXPECT_THROW(ds.slice(Slice{Dim::X, 1, 2}, Slice{Dim::X, 0, 3}),
                except::SliceError);
-}
-
-TEST(DataProxyTest, set_variances) {
-  auto d = make_1_values<bool>("a", {Dim::X, 3}, units::m, {true, false, true});
-  EXPECT_THROW(d["a"].setVariances<double>({1, 2, 3}), except::TypeError);
-
-  auto dd = make_1_values<double>("a", {Dim::X, 3}, units::m, {1.0, 1.0, 1.0});
-  EXPECT_ANY_THROW(dd["a"].setVariances<double>({2.0, 2.0, 2.0, 2.0}));
-  dd["a"].setVariances<double>({3.0, 3.0, 3.0});
-  EXPECT_EQ(equals(dd["a"].variances<double>(), std::vector{3.0, 3.0, 3.0}),
-            true);
 }
 
 TEST(DatasetTest, sum_and_mean) {

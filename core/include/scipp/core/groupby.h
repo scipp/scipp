@@ -5,6 +5,7 @@
 #ifndef SCIPP_CORE_GROUPBY_H
 #define SCIPP_CORE_GROUPBY_H
 
+#include <boost/container/small_vector.hpp>
 #include <vector>
 
 #include <scipp/core/dataset.h>
@@ -16,19 +17,18 @@ namespace scipp::core {
 /// Stores the actual grouping details, independent of the container type.
 class SCIPP_CORE_EXPORT GroupByGrouping {
 public:
-  GroupByGrouping(Variable &&key, std::vector<std::vector<Slice>> &&groups)
+  using group = boost::container::small_vector<Slice, 4>;
+  GroupByGrouping(Variable &&key, std::vector<group> &&groups)
       : m_key(std::move(key)), m_groups(std::move(groups)) {}
 
   scipp::index size() const noexcept { return scipp::size(m_groups); }
   Dim dim() const noexcept { return m_key.dims().inner(); }
   const Variable &key() const noexcept { return m_key; }
-  const std::vector<std::vector<Slice>> &groups() const noexcept {
-    return m_groups;
-  }
+  const std::vector<group> &groups() const noexcept { return m_groups; }
 
 private:
   Variable m_key;
-  std::vector<std::vector<Slice>> m_groups;
+  std::vector<group> m_groups;
 };
 
 /// Helper class for implementing "split-apply-combine" functionality.
@@ -40,7 +40,7 @@ public:
   scipp::index size() const noexcept { return m_grouping.size(); }
   Dim dim() const noexcept { return m_grouping.dim(); }
   const Variable &key() const noexcept { return m_grouping.key(); }
-  const std::vector<std::vector<Slice>> &groups() const noexcept {
+  const std::vector<GroupByGrouping::group> &groups() const noexcept {
     return m_grouping.groups();
   }
 
@@ -60,19 +60,19 @@ private:
   GroupByGrouping m_grouping;
 };
 
-SCIPP_CORE_EXPORT GroupBy<DataArray> groupby(const DataConstProxy &dataset,
+SCIPP_CORE_EXPORT GroupBy<DataArray> groupby(const DataArrayConstView &dataset,
                                              const std::string &labels,
                                              const Dim targetDim);
-SCIPP_CORE_EXPORT GroupBy<DataArray> groupby(const DataConstProxy &dataset,
+SCIPP_CORE_EXPORT GroupBy<DataArray> groupby(const DataArrayConstView &dataset,
                                              const std::string &labels,
-                                             const VariableConstProxy &bins);
+                                             const VariableConstView &bins);
 
-SCIPP_CORE_EXPORT GroupBy<Dataset> groupby(const DatasetConstProxy &dataset,
+SCIPP_CORE_EXPORT GroupBy<Dataset> groupby(const DatasetConstView &dataset,
                                            const std::string &labels,
                                            const Dim targetDim);
-SCIPP_CORE_EXPORT GroupBy<Dataset> groupby(const DatasetConstProxy &dataset,
+SCIPP_CORE_EXPORT GroupBy<Dataset> groupby(const DatasetConstView &dataset,
                                            const std::string &labels,
-                                           const VariableConstProxy &bins);
+                                           const VariableConstView &bins);
 
 } // namespace scipp::core
 

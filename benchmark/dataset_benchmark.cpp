@@ -150,7 +150,7 @@ BENCHMARK_TEMPLATE(BM_Dataset_labels_slice, Generate6D<LONG_STRING_LENGTH>,
 template <class Gen>
 static void BM_Dataset_item_access(benchmark::State &state) {
   const auto d = std::get<0>(Gen()());
-  const auto name = d.begin()->second.name();
+  const auto name = d.begin()->name();
   for (auto _ : state) {
     d[name];
   }
@@ -165,8 +165,7 @@ static void BM_Dataset_iterate_items(benchmark::State &state) {
   const auto itemCount = state.range(0);
   const auto d = std::get<0>(Gen()(itemCount));
   for (auto _ : state) {
-    for (const auto &[name, item] : d) {
-      benchmark::DoNotOptimize(name);
+    for (const auto &item : d) {
       benchmark::DoNotOptimize(item);
     }
   }
@@ -186,8 +185,7 @@ static void BM_Dataset_iterate_slice_items(benchmark::State &state) {
   const auto d = std::get<0>(Gen()(itemCount));
   const auto s = Slice()(d);
   for (auto _ : state) {
-    for (const auto &[name, item] : s) {
-      benchmark::DoNotOptimize(name);
+    for (const auto &item : s) {
       benchmark::DoNotOptimize(item);
     }
   }

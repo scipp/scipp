@@ -254,7 +254,7 @@ void init_variable(py::module &m) {
   bind_init_0D<Dataset>(variable);
   bind_init_0D<std::string>(variable);
   bind_init_0D<Eigen::Vector3d>(variable);
-  variable.def(py::init<const VariableProxy &>())
+  variable.def(py::init<const VariableView &>())
       .def(py::init(&makeVariableDefaultInit),
            py::arg("dims") = std::vector<Dim>{},
            py::arg("shape") = std::vector<scipp::index>{},
@@ -293,73 +293,72 @@ void init_variable(py::module &m) {
   bind_init_0D<py::object>(variable);
   //------------------------------------
 
-  py::class_<VariableConstProxy>(m, "VariableConstProxy")
+  py::class_<VariableConstView>(m, "VariableConstView")
       .def(py::init<const Variable &>())
-      .def("copy",
-           [](const VariableConstProxy &self) { return Variable(self); },
+      .def("copy", [](const VariableConstView &self) { return Variable(self); },
            "Return a (deep) copy.")
       .def("__copy__",
-           [](const VariableConstProxy &self) { return Variable(self); })
+           [](const VariableConstView &self) { return Variable(self); })
       .def("__deepcopy__",
-           [](VariableProxy &self, py::dict) { return Variable(self); })
+           [](VariableView &self, py::dict) { return Variable(self); })
       .def("__repr__",
-           [](const VariableConstProxy &self) { return to_string(self); });
+           [](const VariableConstView &self) { return to_string(self); });
 
-  py::class_<VariableProxy, VariableConstProxy> variableProxy(
-      m, "VariableProxy", py::buffer_protocol(), R"(
-        Proxy for Variable, representing a sliced or transposed view onto a variable;
+  py::class_<VariableView, VariableConstView> variableView(
+      m, "VariableView", py::buffer_protocol(), R"(
+        View for Variable, representing a sliced or transposed view onto a variable;
         Mostly equivalent to Variable, see there for details.)");
-  variableProxy.def_buffer(&make_py_buffer_info);
-  variableProxy.def(py::init<Variable &>())
-      .def("__radd__", [](VariableProxy &a, double &b) { return a + b; },
+  variableView.def_buffer(&make_py_buffer_info);
+  variableView.def(py::init<Variable &>())
+      .def("__radd__", [](VariableView &a, double &b) { return a + b; },
            py::is_operator())
-      .def("__rsub__", [](VariableProxy &a, double &b) { return b - a; },
+      .def("__rsub__", [](VariableView &a, double &b) { return b - a; },
            py::is_operator())
-      .def("__rmul__", [](VariableProxy &a, double &b) { return a * b; },
+      .def("__rmul__", [](VariableView &a, double &b) { return a * b; },
            py::is_operator());
 
   bind_astype(variable);
-  bind_astype(variableProxy);
+  bind_astype(variableView);
 
   bind_slice_methods(variable);
-  bind_slice_methods(variableProxy);
+  bind_slice_methods(variableView);
 
   bind_comparison<Variable>(variable);
-  bind_comparison<VariableConstProxy>(variable);
-  bind_comparison<Variable>(variableProxy);
-  bind_comparison<VariableConstProxy>(variableProxy);
+  bind_comparison<VariableConstView>(variable);
+  bind_comparison<Variable>(variableView);
+  bind_comparison<VariableConstView>(variableView);
 
   bind_in_place_binary<Variable>(variable);
-  bind_in_place_binary<VariableConstProxy>(variable);
-  bind_in_place_binary<Variable>(variableProxy);
-  bind_in_place_binary<VariableConstProxy>(variableProxy);
+  bind_in_place_binary<VariableConstView>(variable);
+  bind_in_place_binary<Variable>(variableView);
+  bind_in_place_binary<VariableConstView>(variableView);
   bind_in_place_binary_scalars(variable);
-  bind_in_place_binary_scalars(variableProxy);
+  bind_in_place_binary_scalars(variableView);
 
   bind_binary<Variable>(variable);
-  bind_binary<VariableConstProxy>(variable);
-  bind_binary<DataProxy>(variable);
-  bind_binary<Variable>(variableProxy);
-  bind_binary<VariableConstProxy>(variableProxy);
-  bind_binary<DataProxy>(variableProxy);
+  bind_binary<VariableConstView>(variable);
+  bind_binary<DataArrayView>(variable);
+  bind_binary<Variable>(variableView);
+  bind_binary<VariableConstView>(variableView);
+  bind_binary<DataArrayView>(variableView);
   bind_binary_scalars(variable);
-  bind_binary_scalars(variableProxy);
+  bind_binary_scalars(variableView);
 
   bind_boolean_unary(variable);
-  bind_boolean_unary(variableProxy);
+  bind_boolean_unary(variableView);
   bind_boolean_operators<Variable>(variable);
-  bind_boolean_operators<VariableConstProxy>(variable);
-  bind_boolean_operators<Variable>(variableProxy);
-  bind_boolean_operators<VariableConstProxy>(variableProxy);
+  bind_boolean_operators<VariableConstView>(variable);
+  bind_boolean_operators<Variable>(variableView);
+  bind_boolean_operators<VariableConstView>(variableView);
 
   bind_data_properties(variable);
-  bind_data_properties(variableProxy);
+  bind_data_properties(variableView);
 
-  py::implicitly_convertible<Variable, VariableConstProxy>();
-  py::implicitly_convertible<Variable, VariableProxy>();
+  py::implicitly_convertible<Variable, VariableConstView>();
+  py::implicitly_convertible<Variable, VariableView>();
 
   m.def("reshape",
-        [](const VariableProxy &self, const std::vector<Dim> &labels,
+        [](const VariableView &self, const std::vector<Dim> &labels,
            const py::tuple &shape) {
           Dimensions dims(labels, shape.cast<std::vector<scipp::index>>());
           return self.reshape(dims);
@@ -374,7 +373,7 @@ void init_variable(py::module &m) {
         :return: New variable with requested dimension labels and shape.
         :rtype: Variable)");
 
-  m.def("abs", [](const VariableConstProxy &self) { return abs(self); },
+  m.def("abs", [](const VariableConstView &self) { return abs(self); },
         py::arg("x"), py::call_guard<py::gil_scoped_release>(), R"(
         Element-wise absolute value.
 
@@ -384,7 +383,7 @@ void init_variable(py::module &m) {
         :rtype: Variable)");
 
   m.def("abs",
-        [](const VariableConstProxy &self, const VariableProxy &out) {
+        [](const VariableConstView &self, const VariableView &out) {
           return abs(self, out);
         },
         py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>(),
@@ -406,8 +405,8 @@ void init_variable(py::module &m) {
         :rtype: Variable)");
 
   m.def("concatenate",
-        py::overload_cast<const VariableConstProxy &,
-                          const VariableConstProxy &, const Dim>(&concatenate),
+        py::overload_cast<const VariableConstView &, const VariableConstView &,
+                          const Dim>(&concatenate),
         py::arg("x"), py::arg("y"), py::arg("dim"),
         py::call_guard<py::gil_scoped_release>(), R"(
         Concatenate input variables along the given dimension.
@@ -437,7 +436,7 @@ void init_variable(py::module &m) {
         :return: New variable containing the data selected by the filter
         :rtype: Variable)");
 
-  m.def("mean", py::overload_cast<const VariableConstProxy &, const Dim>(&mean),
+  m.def("mean", py::overload_cast<const VariableConstView &, const Dim>(&mean),
         py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
         R"(
         Element-wise mean over the specified dimension, if variances are present, the new variance is computated as standard-deviation of the mean.
@@ -453,8 +452,9 @@ void init_variable(py::module &m) {
         :rtype: Variable)");
 
   m.def("mean",
-        [](const VariableConstProxy &x, const Dim dim,
-           const VariableProxy &out) { return mean(x, dim, out); },
+        [](const VariableConstView &x, const Dim dim, const VariableView &out) {
+          return mean(x, dim, out);
+        },
         py::arg("x"), py::arg("dim"), py::arg("out"),
         py::call_guard<py::gil_scoped_release>(),
         R"(
@@ -470,7 +470,7 @@ void init_variable(py::module &m) {
         :return: Variable containing the mean.
         :rtype: Variable)");
 
-  m.def("norm", py::overload_cast<const VariableConstProxy &>(&norm),
+  m.def("norm", py::overload_cast<const VariableConstView &>(&norm),
         py::arg("x"), py::call_guard<py::gil_scoped_release>(), R"(
         Element-wise norm.
 
@@ -479,19 +479,19 @@ void init_variable(py::module &m) {
         :return: New variable with scalar elements computed as the norm values if the input elements.
         :rtype: Variable)");
 
-  m.def(
-      "sort",
-      py::overload_cast<const VariableConstProxy &, const VariableConstProxy &>(
-          &sort),
-      py::arg("data"), py::arg("key"), py::call_guard<py::gil_scoped_release>(),
-      R"(Sort variable along a dimension by a sort key.
+  m.def("sort",
+        py::overload_cast<const VariableConstView &, const VariableConstView &>(
+            &sort),
+        py::arg("data"), py::arg("key"),
+        py::call_guard<py::gil_scoped_release>(),
+        R"(Sort variable along a dimension by a sort key.
 
       :raises: If the key is invalid, e.g., if it has not exactly one dimension, or if its dtype is not sortable.
       :return: New sorted variable.
       :rtype: Variable)");
 
   m.def("reciprocal",
-        [](const VariableConstProxy &self) { return reciprocal(self); },
+        [](const VariableConstView &self) { return reciprocal(self); },
         py::arg("x"), py::call_guard<py::gil_scoped_release>(), R"(
         Element-wise reciprocal.
 
@@ -499,7 +499,7 @@ void init_variable(py::module &m) {
         :rtype: Variable)");
 
   m.def("reciprocal",
-        [](const VariableConstProxy &self, const VariableProxy &out) {
+        [](const VariableConstView &self, const VariableView &out) {
           return reciprocal(self, out);
         },
         py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>(),
@@ -515,7 +515,7 @@ void init_variable(py::module &m) {
         py::call_guard<py::gil_scoped_release>(),
         "Split a Variable along a given Dimension.");
 
-  m.def("sqrt", [](const VariableConstProxy &self) { return sqrt(self); },
+  m.def("sqrt", [](const VariableConstView &self) { return sqrt(self); },
         py::arg("x"), py::call_guard<py::gil_scoped_release>(), R"(
         Element-wise square-root.
 
@@ -524,7 +524,7 @@ void init_variable(py::module &m) {
         :rtype: Variable)");
 
   m.def("sqrt",
-        [](const VariableConstProxy &self, const VariableProxy &out) {
+        [](const VariableConstView &self, const VariableView &out) {
           return sqrt(self, out);
         },
         py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>(),
@@ -535,7 +535,7 @@ void init_variable(py::module &m) {
         :return: Copy of the input with values replaced by the square-root.
         :rtype: Variable)");
 
-  m.def("sum", py::overload_cast<const VariableConstProxy &, const Dim>(&sum),
+  m.def("sum", py::overload_cast<const VariableConstView &, const Dim>(&sum),
         py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
         R"(
         Element-wise sum over the specified dimension.
@@ -548,8 +548,8 @@ void init_variable(py::module &m) {
         :rtype: Variable)");
 
   m.def("sum",
-        [](const VariableConstProxy &self, const Dim dim,
-           const VariableProxy &out) { return sum(self, dim, out); },
+        [](const VariableConstView &self, const Dim dim,
+           const VariableView &out) { return sum(self, dim, out); },
         py::arg("x"), py::arg("dim"), py::arg("out"),
         py::call_guard<py::gil_scoped_release>(),
         R"(
@@ -562,7 +562,7 @@ void init_variable(py::module &m) {
         :return: Variable containing the sum.
         :rtype: Variable)");
 
-  m.def("sin", [](const VariableConstProxy &self) { return sin(self); },
+  m.def("sin", [](const VariableConstView &self) { return sin(self); },
         py::arg("x"), py::call_guard<py::gil_scoped_release>(), R"(
         Element-wise sin.
 
@@ -571,7 +571,7 @@ void init_variable(py::module &m) {
         :rtype: Variable)");
 
   m.def("sin",
-        [](const VariableConstProxy &self, const VariableProxy &out) {
+        [](const VariableConstView &self, const VariableView &out) {
           return sin(self, out);
         },
         py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>(),
@@ -591,7 +591,7 @@ void init_variable(py::module &m) {
         :rtype: Variable)");
 
   m.def("cos",
-        [](const VariableConstProxy &self, const VariableProxy &out) {
+        [](const VariableConstView &self, const VariableView &out) {
           return cos(self, out);
         },
         py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>(),
@@ -611,7 +611,7 @@ void init_variable(py::module &m) {
         :rtype: Variable)");
 
   m.def("tan",
-        [](const VariableConstProxy &self, const VariableProxy &out) {
+        [](const VariableConstView &self, const VariableView &out) {
           return tan(self, out);
         },
         py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>(),
@@ -631,7 +631,7 @@ void init_variable(py::module &m) {
         :rtype: Variable)");
 
   m.def("asin",
-        [](const VariableConstProxy &self, const VariableProxy &out) {
+        [](const VariableConstView &self, const VariableView &out) {
           return asin(self, out);
         },
         py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>(),
@@ -651,7 +651,7 @@ void init_variable(py::module &m) {
         :rtype: Variable)");
 
   m.def("acos",
-        [](const VariableConstProxy &self, const VariableProxy &out) {
+        [](const VariableConstView &self, const VariableView &out) {
           return acos(self, out);
         },
         py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>(),
@@ -671,7 +671,7 @@ void init_variable(py::module &m) {
         :rtype: Variable)");
 
   m.def("atan",
-        [](const VariableConstProxy &self, const VariableProxy &out) {
+        [](const VariableConstView &self, const VariableView &out) {
           return atan(self, out);
         },
         py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>(),
@@ -682,7 +682,7 @@ void init_variable(py::module &m) {
         :return: atan of input values. Output unit is rad.
         :rtype: Variable)");
 
-  m.def("all", py::overload_cast<const VariableConstProxy &, const Dim>(&all),
+  m.def("all", py::overload_cast<const VariableConstView &, const Dim>(&all),
         py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
         R"(
         Element-wise AND over the specified dimension.
@@ -694,7 +694,7 @@ void init_variable(py::module &m) {
         :return: New variable containing the reduced values.
         :rtype: Variable)");
 
-  m.def("any", py::overload_cast<const VariableConstProxy &, const Dim>(&any),
+  m.def("any", py::overload_cast<const VariableConstView &, const Dim>(&any),
         py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
         R"(
         Element-wise OR over the specified dimension.
@@ -707,7 +707,7 @@ void init_variable(py::module &m) {
         :rtype: Variable)");
 
   m.def("min",
-        [](const VariableConstProxy &self, const Dim dim) {
+        [](const VariableConstView &self, const Dim dim) {
           return min(self, dim);
         },
         py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
@@ -721,7 +721,7 @@ void init_variable(py::module &m) {
         :rtype: Variable)");
 
   m.def("max",
-        [](const VariableConstProxy &self, const Dim dim) {
+        [](const VariableConstView &self, const Dim dim) {
           return max(self, dim);
         },
         py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
@@ -733,4 +733,36 @@ void init_variable(py::module &m) {
         :seealso: :py:class:`scipp.min`
         :return: New variable containing the max values.
         :rtype: Variable)");
+
+  m.def(
+      "nan_to_num",
+      [](const VariableConstView &self, const VariableConstView &replacement) {
+        return nan_to_num(self, replacement);
+      },
+      py::call_guard<py::gil_scoped_release>(),
+      R"(Element-wise nan replacement
+
+       All elements in the output are identical to input except in the presence of a nan
+       If the replacement is value-only and the input has variances,
+       the variance at the element(s) containing nan are also replaced with the nan replacement value.
+       If the replacement has a variance and the input has variances,
+       the variance at the element(s) containing nan are also replaced with the nan replacement variance.
+       :raises: If the types of input and replacement do not match.
+       :return: Input elements are replaced in output with specified replacement if nan.
+       :rtype: Variable)");
+
+  m.def("nan_to_num",
+        [](const VariableConstView &self, const VariableConstView &replacement,
+           VariableView &out) { return nan_to_num(self, replacement, out); },
+        py::call_guard<py::gil_scoped_release>(),
+        R"(Element-wise nan replacement
+
+       All elements in the output are identical to input except in the presence of a nan
+       If the replacement is value-only and the input has variances,
+       the variance at the element(s) containing nan are also replaced with the nan replacement value.
+       If the replacement has a variance and the input has variances,
+       the variance at the element(s) containing nan are also replaced with the nan replacement variance.
+       :raises: If the types of input and replacement do not match.
+       :return: Input elements are replaced in output with specified replacement if nan.
+       :rtype: Variable)");
 }

@@ -19,10 +19,10 @@ protected:
   template <class V> T access(V &variable) { return variable; }
 };
 
-using VariableTypesMutable = ::testing::Types<Variable &, VariableProxy>;
+using VariableTypesMutable = ::testing::Types<Variable &, VariableView>;
 
 using VariableTypes = ::testing::Types<Variable &, const Variable &,
-                                       VariableProxy, VariableConstProxy>;
+                                       VariableView, VariableConstView>;
 
 TYPED_TEST_SUITE(Variable_scalar_accessors_mutate, VariableTypesMutable);
 TYPED_TEST_SUITE(Variable_scalar_accessors, VariableTypes);

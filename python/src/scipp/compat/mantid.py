@@ -2,11 +2,47 @@
 # Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock, Neil Vaytet
 
-from .._scipp import core as sc
-from .. import detail
-import numpy as np
-from copy import deepcopy
 import re
+from copy import deepcopy
+from contextlib import contextmanager
+
+import numpy as np
+
+from .. import detail
+from .._scipp import core as sc
+
+
+@contextmanager
+def run_mantid_alg(alg, *args, **kwargs):
+    try:
+        from mantid import simpleapi as mantid
+        from mantid.api import AnalysisDataService
+    except ImportError:
+        raise ImportError(
+            "Mantid Python API was not found, please install Mantid framework "
+            "as detailed in the installation instructions (https://scipp."
+            "readthedocs.io/en/latest/getting-started/installation.html)")
+    # Deal with multiple calls to this function, which may have conflicting
+    # names in the global AnalysisDataService.
+    run_mantid_alg.workspace_id += 1
+    ws_name = f'scipp.run_mantid_alg.{run_mantid_alg.workspace_id}'
+    # Deal with non-standard ways to define the prefix of output workspaces
+    if alg == 'Fit':
+        kwargs['Output'] = ws_name
+    elif alg == 'LoadDiffCal':
+        kwargs['WorkspaceName'] = ws_name
+    else:
+        kwargs['OutputWorkspace'] = ws_name
+    ws = getattr(mantid, alg)(*args, **kwargs)
+    try:
+        yield ws
+    finally:
+        for name in AnalysisDataService.Instance().getObjectNames():
+            if name.startswith(ws_name):
+                mantid.DeleteWorkspace(name)
+
+
+run_mantid_alg.workspace_id = 0
 
 
 def get_pos(pos):
@@ -31,10 +67,21 @@ def make_bin_masks(common_bins, spec_dim, dim, num_bins, num_spectra):
 
 
 def make_component_info(ws):
-    sourcePos = ws.componentInfo().sourcePosition()
-    samplePos = ws.componentInfo().samplePosition()
+    component_info = ws.componentInfo()
+
+    if component_info.hasSource():
+        sourcePos = component_info.sourcePosition()
+    else:
+        sourcePos = None
+
+    if component_info.hasSample():
+        samplePos = component_info.samplePosition()
+    else:
+        samplePos = None
 
     def as_var(pos):
+        if pos is None:
+            return pos
         return sc.Variable(value=np.array(get_pos(pos)),
                            dtype=sc.dtype.vector_3_float64,
                            unit=sc.units.m)
@@ -136,6 +183,7 @@ def validate_and_get_unit(unit):
             sc.units.dimensionless / (sc.units.angstrom * sc.units.angstrom)
         ],
         "Label": [sc.Dim.Spectrum, sc.units.dimensionless],
+        "Empty": [sc.Dim.Spectrum, sc.units.dimensionless]
     }
 
     if unit not in known_units.keys():
@@ -164,14 +212,33 @@ def init_pos(ws):
                        dtype=sc.dtype.vector_3_float64)
 
 
+def _get_dtype_from_values(values):
+    if hasattr(values, 'dtype'):
+        dtype = values.dtype
+    else:
+        if len(values) > 0:
+            dtype = type(values[0])
+            if dtype is str:
+                dtype = sc.dtype.string
+            elif dtype is int:
+                dtype = sc.dtype.int64
+            elif dtype is float:
+                dtype = sc.dtype.float64
+            else:
+                raise RuntimeError("Cannot handle the dtype that this "
+                                   "workspace has on Axis 1.")
+        else:
+            raise RuntimeError("Axis 1 of this workspace has no values. "
+                               "Cannot determine dtype.")
+    return dtype
+
+
 def init_spec_axis(ws):
     axis = ws.getAxis(1)
     dim, unit = validate_and_get_unit(axis.getUnit().unitID())
-    dtype = sc.dtype.int32 if dim == sc.Dim.Spectrum else None
-    return dim, sc.Variable([dim],
-                            values=axis.extractValues(),
-                            unit=unit,
-                            dtype=dtype)
+    values = axis.extractValues()
+    dtype = _get_dtype_from_values(values)
+    return dim, sc.Variable([dim], values=values, unit=unit, dtype=dtype)
 
 
 def set_common_bins_masks(bin_masks, dim, masked_bins):
@@ -196,8 +263,6 @@ def _convert_MatrixWorkspace_info(ws):
         },
         "labels": {
             "position": pos,
-            "source_position": source_pos,
-            "sample_position": sample_pos,
             "detector_info": det_info
         },
         "masks": {},
@@ -206,6 +271,11 @@ def _convert_MatrixWorkspace_info(ws):
             "sample": make_sample(ws)
         },
     }
+    if source_pos is not None:
+        info["labels"]["source_position"] = source_pos
+
+    if sample_pos is not None:
+        info["labels"]["sample_position"] = sample_pos
 
     if ws.detectorInfo().hasMaskedDetectors():
         spectrum_info = ws.spectrumInfo()
@@ -217,7 +287,6 @@ def _convert_MatrixWorkspace_info(ws):
 
 
 def convert_monitors_ws(ws, converter, **ignored):
-    import mantid.simpleapi as mantid
     dim, unit = validate_and_get_unit(ws.getAxis(0).getUnit().unitID())
     spec_dim, spec_coord = init_spec_axis(ws)
     spec_info = spec_info = ws.spectrumInfo()
@@ -233,10 +302,10 @@ def convert_monitors_ws(ws, converter, **ignored):
         # We only ExtractSpectra for compability with
         # exising convert_Workspace2D_to_dataarray. This could instead be
         # refactored if found to be slow
-        monitor_ws = mantid.ExtractSpectra(InputWorkspace=ws,
-                                           WorkspaceIndexList=[index],
-                                           StoreInADS=False)
-        single_monitor = converter(monitor_ws)
+        with run_mantid_alg('ExtractSpectra',
+                            InputWorkspace=ws,
+                            WorkspaceIndexList=[index]) as monitor_ws:
+            single_monitor = converter(monitor_ws)
         # Remove redundant information that is duplicated from workspace
         # We get this extra information from the generic converter reuse
         del single_monitor.labels['sample_position']
@@ -430,6 +499,7 @@ def from_mantid(workspace, **kwargs):
     """
     scipp_obj = None  # This is either a Dataset or DataArray
     monitor_ws = None
+    workspaces_to_delete = []
     if workspace.id() == 'Workspace2D' or workspace.id() == 'RebinnedOutput':
         has_monitors = False
         for spec in workspace.spectrumInfo():
@@ -438,8 +508,9 @@ def from_mantid(workspace, **kwargs):
                 break
         if has_monitors:
             import mantid.simpleapi as mantid
-            workspace, monitor_ws = mantid.ExtractMonitors(workspace,
-                                                           StoreInADS=False)
+            workspace, monitor_ws = mantid.ExtractMonitors(workspace)
+            workspaces_to_delete.append(workspace)
+            workspaces_to_delete.append(monitor_ws)
         scipp_obj = convert_Workspace2D_to_data_array(workspace, **kwargs)
     elif workspace.id() == 'EventWorkspace':
         scipp_obj = convert_EventWorkspace_to_data_array(workspace, **kwargs)
@@ -471,6 +542,8 @@ def from_mantid(workspace, **kwargs):
         monitors = convert_monitors_ws(monitor_ws, converter, **kwargs)
         for name, monitor in monitors:
             scipp_obj.attrs[name] = detail.move(sc.Variable(value=monitor))
+    for ws in workspaces_to_delete:
+        mantid.DeleteWorkspace(ws)
 
     return scipp_obj
 
@@ -516,33 +589,165 @@ def load(filename="",
     :rtype: Dataset
     """
 
+    if mantid_args is None:
+        mantid_args = {}
+
+    with run_mantid_alg('Load', filename, **mantid_args) as loaded:
+        # Determine what Load has provided us
+        from mantid.api import Workspace
+        if isinstance(loaded, Workspace):
+            # A single workspace
+            data_ws = loaded
+        else:
+            # Seperate data and monitor workspaces
+            data_ws = loaded.OutputWorkspace
+
+        if instrument_filename is not None:
+            import mantid.simpleapi as mantid
+            mantid.LoadInstrument(data_ws,
+                                  FileName=instrument_filename,
+                                  RewriteSpectraMap=True)
+
+        return from_mantid(data_ws,
+                           load_pulse_times=load_pulse_times,
+                           error_connection=error_connection)
+
+
+def load_component_info(ds, file):
+    """
+    Adds the component info labels into the dataset. The following are added:
+
+    - source_position
+    - sample_position
+    - position
+
+    :param ds: Dataset on which the component info will be added as labels.
+    :param file: File from which the IDF will be loaded.
+                 This can be anything that mantid.Load can load.
+    """
+    with run_mantid_alg('Load', file) as ws:
+        source_pos, sample_pos = make_component_info(ws)
+
+        ds.labels["source_position"] = source_pos
+        ds.labels["sample_position"] = sample_pos
+        ds.labels["position"] = init_pos(ws)
+
+
+def validate_dim_and_get_mantid_string(unit_dim):
+    known_units = {
+        sc.Dim.EnergyTransfer: "DeltaE",
+        sc.Dim.Tof: "TOF",
+        sc.Dim.Wavelength: "Wavelength",
+        sc.Dim.Energy: "Energy",
+        sc.Dim.DSpacing: "dSpacing",
+        sc.Dim.Q: "MomentumTransfer",
+        sc.Dim.QSquared: "QSquared",
+    }
+
+    if unit_dim not in known_units.keys():
+        raise RuntimeError("Axis unit not currently supported."
+                           "Possible values are: {}, "
+                           "got '{}'. ".format([k for k in known_units.keys()],
+                                               unit_dim))
+    else:
+        return known_units[unit_dim]
+
+
+def to_workspace_2d(x, y, e, coord_dim, instrument_file=None):
+    """
+    Use the values provided to create a Mantid workspace.
+
+    The Mantid layout expect the spectra to be the Outer-most dimension,
+    i.e. y.shape[0]. If that is not the case you might have to transpose
+    your data to fit that, otherwise it will not be aligned correctly in the
+    Mantid workspace.
+
+    :param x: Data to be used as X for the Mantid workspace.
+    :param y: Data to be used as Y for the Mantid workspace.
+    :param e: Data to be used as error for the Mantid workspace.
+              If `None` the np.sqrt of y will be used.
+    :param coord_dim: Dim of the coordinate, to be set as the equivalent
+                      UnitX on the Mantid workspace.
+    :param instrument_file: Instrument file that will be
+                            loaded into the workspace
+    :returns: Workspace2D containing the data for X, Y and E
+    """
     try:
         import mantid.simpleapi as mantid
-        from mantid.api import Workspace
     except ImportError:
         raise ImportError(
             "Mantid Python API was not found, please install Mantid framework "
             "as detailed in the installation instructions (https://scipp."
             "readthedocs.io/en/latest/getting-started/installation.html)")
 
-    if mantid_args is None:
-        mantid_args = {}
+    assert len(y.shape) == 2, "Currently can only handle 2D data."
 
-    loaded = mantid.Load(filename, StoreInADS=False, **mantid_args)
+    e = e if e is not None else np.sqrt(y)
 
-    # Determine what Load has provided us
-    if isinstance(loaded, Workspace):
-        # A single workspace
-        data_ws = loaded
-    else:
-        # Seperate data and monitor workspaces
-        data_ws = loaded.OutputWorkspace
+    unitX = validate_dim_and_get_mantid_string(coord_dim)
 
-    if instrument_filename is not None:
-        mantid.LoadInstrument(data_ws,
-                              FileName=instrument_filename,
+    nspec = y.shape[0]
+    nbins = x.shape[1]
+    nitems = y.shape[1]
+
+    ws = mantid.WorkspaceFactory.create("Workspace2D",
+                                        NVectors=nspec,
+                                        XLength=nbins,
+                                        YLength=nitems)
+
+    for i in range(nspec):
+        ws.setX(i, x[i])
+        ws.setY(i, y[i])
+        ws.setE(i, e[i])
+
+    # Set X-Axis unit
+    ws.getAxis(0).setUnit(unitX)
+
+    if instrument_file is not None:
+        mantid.LoadInstrument(ws,
+                              FileName=instrument_file,
                               RewriteSpectraMap=True)
 
-    return from_mantid(data_ws,
-                       load_pulse_times=load_pulse_times,
-                       error_connection=error_connection)
+    return ws
+
+
+def fit(ws, function, workspace_index, start_x, end_x):
+    """
+    Performs a fit on the workspace.
+
+    :param ws: The workspace on which the fit will be performed
+    :param function: The function used for the fit. This is anything
+                     that mantid.Fit's Function parameter can handle.
+    :param workspace_index: Workspace index which will be fitted.
+    :param start_x: Start X for the fit
+    :param end_x: End X for the fit
+    :returns: Dataset containing all of Fit's outputs
+    """
+    with run_mantid_alg('Fit',
+                        Function=function,
+                        InputWorkspace=ws,
+                        WorkspaceIndex=workspace_index,
+                        StartX=start_x,
+                        EndX=end_x,
+                        CreateOutput=True) as fit:
+        ds = sc.Dataset(data={
+            'workspace':
+            sc.Variable(convert_Workspace2D_to_data_array(
+                fit.OutputWorkspace)),
+            'parameters':
+            sc.Variable(convert_TableWorkspace_to_dataset(
+                fit.OutputParameters)),
+            'normalised_covariance_matrix':
+            sc.Variable(
+                convert_TableWorkspace_to_dataset(
+                    fit.OutputNormalisedCovarianceMatrix)),
+        },
+                        attrs={
+                            'status': sc.Variable(fit.OutputStatus),
+                            'chi2_over_DoF':
+                            sc.Variable(fit.OutputChi2overDoF),
+                            'function': sc.Variable(str(fit.Function)),
+                            'cost_function': sc.Variable(fit.CostFunction)
+                        })
+
+        return ds

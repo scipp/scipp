@@ -43,53 +43,53 @@ template <class T1, class T2> Variable divide(const T1 &a, const T2 &b) {
   return transform<arithmetic_type_pairs>(a, b, divide_);
 }
 
-Variable VariableConstProxy::operator-() const {
+Variable VariableConstView::operator-() const {
   Variable copy(*this);
   return -copy;
 }
 
-Variable operator+(const VariableConstProxy &a, const VariableConstProxy &b) {
+Variable operator+(const VariableConstView &a, const VariableConstView &b) {
   return plus(a, b);
 }
-Variable operator-(const VariableConstProxy &a, const VariableConstProxy &b) {
+Variable operator-(const VariableConstView &a, const VariableConstView &b) {
   return minus(a, b);
 }
-Variable operator*(const VariableConstProxy &a, const VariableConstProxy &b) {
+Variable operator*(const VariableConstView &a, const VariableConstView &b) {
   return times(a, b);
 }
-Variable operator/(const VariableConstProxy &a, const VariableConstProxy &b) {
+Variable operator/(const VariableConstView &a, const VariableConstView &b) {
   return divide(a, b);
 }
-Variable operator+(const VariableConstProxy &a_, const double b) {
+Variable operator+(const VariableConstView &a_, const double b) {
   Variable a(a_);
   return a += b;
 }
-Variable operator-(const VariableConstProxy &a_, const double b) {
+Variable operator-(const VariableConstView &a_, const double b) {
   Variable a(a_);
   return a -= b;
 }
-Variable operator*(const VariableConstProxy &a_, const double b) {
+Variable operator*(const VariableConstView &a_, const double b) {
   Variable a(a_);
   return a *= b;
 }
-Variable operator/(const VariableConstProxy &a_, const double b) {
+Variable operator/(const VariableConstView &a_, const double b) {
   Variable a(a_);
   return a /= b;
 }
-Variable operator+(const double a, const VariableConstProxy &b_) {
+Variable operator+(const double a, const VariableConstView &b_) {
   Variable b(b_);
   return b += a;
 }
-Variable operator-(const double a, const VariableConstProxy &b_) {
+Variable operator-(const double a, const VariableConstView &b_) {
   Variable b(b_);
   return -(b -= a);
 }
-Variable operator*(const double a, const VariableConstProxy &b_) {
+Variable operator*(const double a, const VariableConstView &b_) {
   Variable b(b_);
   return b *= a;
 }
-Variable operator/(const double a, const VariableConstProxy &b_proxy) {
-  Variable b(b_proxy);
+Variable operator/(const double a, const VariableConstView &b_view) {
+  Variable b(b_view);
   transform_in_place<double, float>(
       b,
       overloaded{

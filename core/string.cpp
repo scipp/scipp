@@ -16,40 +16,40 @@ std::ostream &operator<<(std::ostream &os, const Dim dim) {
   return os << to_string(dim);
 }
 
-std::ostream &operator<<(std::ostream &os, const VariableConstProxy &variable) {
+std::ostream &operator<<(std::ostream &os, const VariableConstView &variable) {
   return os << to_string(variable);
 }
 
-std::ostream &operator<<(std::ostream &os, const VariableProxy &variable) {
-  return os << VariableConstProxy(variable);
+std::ostream &operator<<(std::ostream &os, const VariableView &variable) {
+  return os << VariableConstView(variable);
 }
 
 std::ostream &operator<<(std::ostream &os, const Variable &variable) {
-  return os << VariableConstProxy(variable);
+  return os << VariableConstView(variable);
 }
 
-std::ostream &operator<<(std::ostream &os, const DataConstProxy &data) {
+std::ostream &operator<<(std::ostream &os, const DataArrayConstView &data) {
   return os << to_string(data);
 }
 
-std::ostream &operator<<(std::ostream &os, const DataProxy &data) {
-  return os << DataConstProxy(data);
+std::ostream &operator<<(std::ostream &os, const DataArrayView &data) {
+  return os << DataArrayConstView(data);
 }
 
 std::ostream &operator<<(std::ostream &os, const DataArray &data) {
-  return os << DataConstProxy(data);
+  return os << DataArrayConstView(data);
 }
 
-std::ostream &operator<<(std::ostream &os, const DatasetConstProxy &dataset) {
+std::ostream &operator<<(std::ostream &os, const DatasetConstView &dataset) {
   return os << to_string(dataset);
 }
 
-std::ostream &operator<<(std::ostream &os, const DatasetProxy &dataset) {
-  return os << DatasetConstProxy(dataset);
+std::ostream &operator<<(std::ostream &os, const DatasetView &dataset) {
+  return os << DatasetConstView(dataset);
 }
 
 std::ostream &operator<<(std::ostream &os, const Dataset &dataset) {
-  return os << DatasetConstProxy(dataset);
+  return os << DatasetConstView(dataset);
 }
 
 constexpr const char *tab = "    ";
@@ -113,7 +113,7 @@ std::string to_string(const Slice &slice) {
          std::to_string(slice.begin()) + end + ")\n";
 }
 
-std::string make_dims_labels(const VariableConstProxy &variable,
+std::string make_dims_labels(const VariableConstView &variable,
                              const Dimensions &datasetDims) {
   const auto &dims = variable.dims();
   if (dims.empty())
@@ -140,12 +140,12 @@ auto to_string(const std::string_view s) { return s; }
 auto to_string(const char *s) { return std::string(s); }
 
 template <class T> struct ValuesToString {
-  static auto apply(const VariableConstProxy &var) {
+  static auto apply(const VariableConstView &var) {
     return array_to_string(var.template values<T>());
   }
 };
 template <class T> struct VariancesToString {
-  static auto apply(const VariableConstProxy &var) {
+  static auto apply(const VariableConstView &var) {
     return array_to_string(var.template variances<T>());
   }
 };
@@ -177,18 +177,18 @@ auto format_variable(const Key &key, const Var &variable,
     s << "[PyObject]";
   else
     s << apply<ValuesToString>(variable.data().dtype(),
-                               VariableConstProxy(variable));
+                               VariableConstView(variable));
   if (variable.hasVariances())
     s << colSep
       << apply<VariancesToString>(variable.data().dtype(),
-                                  VariableConstProxy(variable));
+                                  VariableConstView(variable));
   s << '\n';
   return s.str();
 }
 
 template <class Key>
-auto format_data_proxy(const Key &name, const DataConstProxy &data,
-                       const Dimensions &datasetDims = Dimensions()) {
+auto format_data_view(const Key &name, const DataArrayConstView &data,
+                      const Dimensions &datasetDims = Dimensions()) {
   std::stringstream s;
   if (data.hasData())
     s << format_variable(name, data.data(), datasetDims);
@@ -224,8 +224,8 @@ std::string to_string(const Variable &variable) {
   return format_variable("<scipp.Variable>", variable);
 }
 
-std::string to_string(const VariableConstProxy &variable) {
-  return format_variable("<scipp.VariableProxy>", variable);
+std::string to_string(const VariableConstView &variable) {
+  return format_variable("<scipp.VariableView>", variable);
 }
 
 template <class D>
@@ -261,16 +261,16 @@ std::string do_to_string(const D &dataset, const std::string &id,
   }
 
   if constexpr (std::is_same_v<D, DataArray> ||
-                std::is_same_v<D, DataConstProxy>) {
-    s << "Data:\n" << format_data_proxy(dataset.name(), dataset);
+                std::is_same_v<D, DataArrayConstView>) {
+    s << "Data:\n" << format_data_view(dataset.name(), dataset);
   } else {
     if (!dataset.empty())
       s << "Data:\n";
     std::set<std::string> sorted_items;
     for (const auto &item : dataset)
-      sorted_items.insert(item.first);
+      sorted_items.insert(item.name());
     for (const auto &name : sorted_items)
-      s << format_data_proxy(name, dataset[name], dims);
+      s << format_data_view(name, dataset[name], dims);
   }
 
   s << '\n';
@@ -281,7 +281,7 @@ template <class T> Dimensions dimensions(const T &dataset) {
   Dimensions datasetDims;
   Dim sparse = Dim::Invalid;
   for (const auto &item : dataset) {
-    const auto &dims = item.second.dims();
+    const auto &dims = item.dims();
     for (const auto dim : dims.labels()) {
       if (!datasetDims.contains(dim)) {
         if (dim == dims.sparseDim())
@@ -312,15 +312,15 @@ std::string to_string(const DataArray &data) {
   return do_to_string(data, "<scipp.DataArray>", data.dims());
 }
 
-std::string to_string(const DataConstProxy &data) {
-  return do_to_string(data, "<scipp.DataProxy>", data.dims());
+std::string to_string(const DataArrayConstView &data) {
+  return do_to_string(data, "<scipp.DataArrayView>", data.dims());
 }
 
 std::string to_string(const Dataset &dataset) {
   return do_to_string(dataset, "<scipp.Dataset>", dimensions(dataset));
 }
 
-std::string to_string(const DatasetConstProxy &dataset) {
-  return do_to_string(dataset, "<scipp.DatasetProxy>", dimensions(dataset));
+std::string to_string(const DatasetConstView &dataset) {
+  return do_to_string(dataset, "<scipp.DatasetView>", dimensions(dataset));
 }
 } // namespace scipp::core

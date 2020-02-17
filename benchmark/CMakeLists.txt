@@ -7,9 +7,21 @@ add_executable(groupby_benchmark EXCLUDE_FROM_ALL groupby_benchmark.cpp)
 add_dependencies(all-benchmarks groupby_benchmark)
 target_link_libraries(groupby_benchmark LINK_PRIVATE scipp-core benchmark)
 
+add_executable(slice_benchmark EXCLUDE_FROM_ALL slice_benchmark.cpp)
+add_dependencies(all-benchmarks slice_benchmark)
+target_link_libraries(slice_benchmark LINK_PRIVATE scipp-core benchmark)
+
 add_executable(histogram_benchmark EXCLUDE_FROM_ALL histogram_benchmark.cpp)
 add_dependencies(all-benchmarks histogram_benchmark)
 target_link_libraries(histogram_benchmark
+                      LINK_PRIVATE
+                      benchmark
+                      scipp-core
+                      scipp_test_helpers)
+
+add_executable(sparse_histogram_op_benchmark EXCLUDE_FROM_ALL sparse_histogram_op_benchmark.cpp)
+add_dependencies(all-benchmarks sparse_histogram_op_benchmark)
+target_link_libraries(sparse_histogram_op_benchmark
                       LINK_PRIVATE
                       benchmark
                       scipp-core
@@ -52,7 +64,7 @@ add_executable(multi_index_benchmark EXCLUDE_FROM_ALL multi_index_benchmark.cpp)
 # add_dependencies(all-benchmarks multi_index_benchmark)
 target_link_libraries(multi_index_benchmark LINK_PRIVATE scipp-core benchmark)
 
-add_executable(variable_view_benchmark EXCLUDE_FROM_ALL
-               variable_view_benchmark.cpp)
-# add_dependencies(all-benchmarks variable_view_benchmark)
-target_link_libraries(variable_view_benchmark LINK_PRIVATE scipp-core benchmark)
+add_executable(element_array_view_benchmark EXCLUDE_FROM_ALL
+               element_array_view_benchmark.cpp)
+# add_dependencies(all-benchmarks element_array_view_benchmark)
+target_link_libraries(element_array_view_benchmark LINK_PRIVATE scipp-core benchmark)

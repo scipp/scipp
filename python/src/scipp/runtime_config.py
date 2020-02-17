@@ -77,11 +77,11 @@ defaults = {
     },
     # The colors for each dataset member used in table and show functions
     "colors": {
-        "coord": "#dde9af",
+        "coords": "#dde9af",
         "data": "#ffe680",
         "labels": "#afdde9",
-        "attr": "#ff8080",
-        "mask": "#cccccc",
+        "attrs": "#ff8080",
+        "masks": "#cccccc",
         "hover": "#d6eaf8",
     },
     "table_max_size": 50,

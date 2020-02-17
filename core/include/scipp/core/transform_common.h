@@ -77,6 +77,10 @@ template <int N> using expect_variance_arg_t = decltype(expect_variance_arg<N>);
 /// requires inputs to have a variance of the output has a variance.
 struct expect_in_variance_if_out_variance_t {};
 
+static constexpr auto expect_all_or_none_have_variance = []() {};
+using expect_all_or_none_have_variance_t =
+    decltype(expect_all_or_none_have_variance);
+
 } // namespace transform_flags
 
 } // namespace scipp::core

@@ -4,6 +4,8 @@
 # @author Neil Vaytet
 
 from ._scipp.core.units import dimensionless
+from ._scipp.core import (Variable, VariableView, Dataset, DatasetView,
+                          DataArray, DataArrayView)
 
 
 def name_with_unit(var=None, name=None, log=False, replace_dim=True):
@@ -40,3 +42,31 @@ def value_to_string(val, precision=3):
         if len(text) > precision + 2 + (text[0] == '-'):
             text = "{val:.{prec}f}".format(val=val, prec=precision)
     return text
+
+
+def is_variable(obj):
+    """
+    Return True if the input is of type scipp.core.Variable.
+    """
+    return isinstance(obj, Variable) or isinstance(obj, VariableView)
+
+
+def is_dataset(obj):
+    """
+    Return True if the input is of type scipp.core.Variable.
+    """
+    return isinstance(obj, Dataset) or isinstance(obj, DatasetView)
+
+
+def is_data_array(obj):
+    """
+    Return True if the input is of type scipp.core.Variable.
+    """
+    return isinstance(obj, DataArray) or isinstance(obj, DataArrayView)
+
+
+def is_dataset_or_array(obj):
+    """
+    Return True if the input object is either a Dataset or DataArray.
+    """
+    return is_dataset(obj) or is_data_array(obj)

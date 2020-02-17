@@ -19,9 +19,14 @@ ICONS_SVG_PATH = f"{os.path.dirname(__file__)}/icons-svg-inline.html"
 with open(ICONS_SVG_PATH, 'r') as f:
     ICONS_SVG = "".join(f.readlines())
 
+SPARSE_LABEL = "[sparse]"
+BIN_EDGE_LABEL = "[bin-edge]"
+VARIANCE_PREFIX = "σ² = "
+SPARSE_PREFIX = "len={}"
+
 
 def _is_dataset(x):
-    return isinstance(x, sc.Dataset) or isinstance(x, sc.DatasetProxy)
+    return isinstance(x, sc.Dataset) or isinstance(x, sc.DatasetView)
 
 
 def _format_array(data, size, ellipsis_after, do_ellide=True):
@@ -57,19 +62,31 @@ def _format_non_sparse(var, has_variances):
         data = data.ravel()
     s = _format_array(data, size, ellipsis_after=2)
     if has_variances:
-        s = 'σ² = ' + s
+        s = f'{VARIANCE_PREFIX}{s}'
     return _make_row(s)
 
 
 def _get_sparse(var, variances, ellipsis_after, summary=False):
     if hasattr(var, "data") and var.data is None:
-        return ["no data, implicitly 1"]
-    single = len(var.shape) == 0
-    size = 1 if single else var.shape[0]
+        return ["No data, implicitly 1"]
+
+    if var.shape[0] is None:
+        # handles a 1D Variable with only a sparse dimension
+        size = len(var.values)
+        if summary:
+            return [SPARSE_PREFIX.format(size)]
+        else:
+            return [
+                _format_array(var.values, size, ellipsis_after, size > 1000)
+            ]
+    else:
+        # Handles 2D and higher Variables with a sparse dimension
+        size = var.shape[0]
+
     i = 0
     s = []
 
-    do_ellide = single or summary or size > 1000 or sum([
+    do_ellide = summary or size > 1000 or sum([
         len(retrieve(var, variances=variances)[i])
         for i in range(min(size, 1000))
     ]) > 1000
@@ -79,9 +96,9 @@ def _get_sparse(var, variances, ellipsis_after, summary=False):
         if i == ellipsis_after and do_ellide and size > 2 * ellipsis_after + 1:
             s.append("...")
             i = size - ellipsis_after
-        item = data if single else data[i]
+        item = data[i]
         if summary:
-            s.append(f'len={len(item)}')
+            s.append(SPARSE_PREFIX.format(len(item)))
         else:
             s.append('sparse({})'.format(
                 _format_array(item, len(item), ellipsis_after, do_ellide)))
@@ -138,18 +155,17 @@ def format_dims(dims, sizes, coords):
         for dim in dims
     }
 
-    dims_li = "".join(
-        f"<li><span{dim_css_map[dim]}>"
-        f"{escape(str(dim))}</span>: "
-        f"{size if size != sc.Dimensions.Sparse else 'Sparse' }</li>"
-        for dim, size in zip(dims, sizes))
+    dims_li = "".join(f"<li><span{dim_css_map[dim]}>"
+                      f"{escape(str(dim))}</span>: "
+                      f"{size if size is not None else 'Sparse' }</li>"
+                      for dim, size in zip(dims, sizes))
 
     return f"<ul class='xr-dim-list'>{dims_li}</ul>"
 
 
 def summarize_attrs_simple(attrs):
     attrs_dl = "".join(f"<dt><span>{escape(name)} :</span></dt>"
-                       f"<dd>{values}</dd>" for name, values in attrs)
+                       f"<dd>{values}</dd>" for name, values in attrs.items())
 
     return f"<dl class='xr-attrs'>{attrs_dl}</dl>"
 
@@ -157,7 +173,7 @@ def summarize_attrs_simple(attrs):
 def summarize_attrs(attrs):
     attrs_li = "".join(f"<li class='xr-var-item'>\
             {summarize_variable(name, values, has_attrs=False)}</li>"
-                       for name, values in attrs)
+                       for name, values in attrs.items())
     return f"<ul class='xr-var-list'>{attrs_li}</ul>"
 
 
@@ -193,7 +209,7 @@ def find_bin_edges(var, ds):
 def summarize_coords(coords, ds=None):
     vars_li = "".join("<li class='xr-var-item'>"
                       f"{summarize_coord(dim, var, ds)}"
-                      "</span></li>" for dim, var in coords)
+                      "</span></li>" for dim, var in coords.items())
 
     return f"<ul class='xr-var-list'>{vars_li}</ul>"
 
@@ -201,9 +217,12 @@ def summarize_coords(coords, ds=None):
 def _extract_sparse(x):
     """
     Returns the (key, value) pairs where value has a sparse dim
-    :param x: dict-like, e.g., coords proxy or labels proxy
+    :param x: dict-like, e.g., coords view or labels view
     """
-    return [(key, value) for key, value in x if value.sparse_dim is not None]
+    return {
+        key: value
+        for key, value in x.items() if value.sparse_dim is not None
+    }
 
 
 def _make_inline_attributes(var, has_attrs):
@@ -228,8 +247,9 @@ def _make_inline_attributes(var, has_attrs):
             disabled = ""
 
     if len(attrs_sections) > 0:
-        attrs_sections = "".join(f"<li class='xr-section-item'>{s}</li>"
-                                 for s in attrs_sections)
+        attrs_sections = "".join(
+            f"<li class='xr-section-item sc-subsection'>{s}</li>"
+            for s in attrs_sections)
         attrs_ul = "<div class='xr-wrap'>"\
             f"<ul class='xr-sections'>{attrs_sections}</ul>"\
             "</div>"
@@ -242,26 +262,18 @@ def _make_dim_labels(dim, size, bin_edges=None):
     # there is a trailing whitespace when no dimension
     # label has been added
     if bin_edges and dim in bin_edges:
-        return " [bin-edge]"
+        return f" {BIN_EDGE_LABEL}"
     elif size is None:
-        return " [sparse]"
+        return f" {SPARSE_LABEL}"
     else:
         return ""
 
 
 def _make_dim_str(var, bin_edges, add_dim_size=False):
-    dim_sizes = []
-    for idx, dim in enumerate(var.dims):
-        try:
-            shape = var.shape[idx]
-        except IndexError:
-            shape = None
-        dim_sizes.append((dim, shape))
-
     dims_text = ', '.join('{}{}{}'.format(
         str(dim), _make_dim_labels(dim, size, bin_edges),
         f': {size}' if add_dim_size and size is not None else '')
-                          for dim, size in dim_sizes)
+                          for dim, size in zip(var.dims, var.shape))
     return dims_text
 
 
@@ -404,7 +416,7 @@ def summarize_data(dataset):
             var,
             has_attrs=has_attrs,
             bin_edges=find_bin_edges(var, dataset) if has_attrs else None))
-                      for name, var in dataset)
+                      for name, var in dataset.items())
     return f"<ul class='xr-var-list'>{vars_li}</ul>"
 
 
@@ -451,7 +463,7 @@ def _mapping_section(mapping,
 
 
 def dim_section(dataset):
-    coords = dataset.coords if hasattr(dataset, "coords") else []
+    coords = dataset.coords if hasattr(dataset, "coords") else dict()
     dim_list = format_dims(dataset.dims, dataset.shape, coords)
 
     return collapsible_section("Dimensions",
@@ -530,7 +542,7 @@ def dataset_repr(ds):
     if len(ds.labels) > 0:
         sections.append(label_section(ds.labels, ds))
 
-    sections.append(data_section(ds if hasattr(ds, '__len__') else [('', ds)]))
+    sections.append(data_section(ds if hasattr(ds, '__len__') else {'': ds}))
 
     if len(ds.masks) > 0:
         sections.append(mask_section(ds.masks, ds))

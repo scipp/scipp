@@ -2,12 +2,12 @@
 # Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
+# Other imports
+import numpy as np
+
 # Scipp imports
 from .dispatch import dispatch
 from .tools import get_line_param
-
-# Other imports
-import numpy as np
 
 
 def plot_collapse(data_array, name=None, dim=None, filename=None, **kwargs):
@@ -89,7 +89,8 @@ def plot_collapse(data_array, name=None, dim=None, filename=None, **kwargs):
         for p in mpl_line_params.keys():
             mpl_line_params[p][key] = get_line_param(name=p, index=i)
 
-    # Send the newly created dictionary of DataProxy to the plot_1d function
+    # Send the newly created dictionary of
+    # DataArrayView to the plot_1d function
     return dispatch(scipp_obj_dict=all_slices,
                     ndim=1,
                     mpl_line_params=mpl_line_params,

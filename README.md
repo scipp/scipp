@@ -21,6 +21,13 @@ See [installation](https://scipp.readthedocs.io/en/latest/getting-started/instal
 
 ### Prerequisites
 
+#### TBB
+
+Scipp uses TBB for multi-threading.
+This is an optional dependency.
+We have found that TBB from `conda-forge` works best in terms of `cmake` integration.
+You need `tbb` and `tbb-devel`.
+
 #### XCode
 XCode 10.2 or greater provides a `clang++` implementation with sufficient language support for `scipp`.
 

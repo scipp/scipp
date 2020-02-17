@@ -2,8 +2,8 @@
 // Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 //
 // The test in this file ensure that comparison operators for DataArray and
-// DataConstProxy are correct. More complex tests should build on the assumption
-// that comparison operators are correct.
+// DataArrayConstView are correct. More complex tests should build on the
+// assumption that comparison operators are correct.
 #include "test_macros.h"
 #include <gtest/gtest.h>
 
@@ -43,13 +43,15 @@ protected:
     dataset.setAttr("sparse_coord_and_val", "attr",
                     makeVariable<int>(Values{int{}}));
   }
-  void expect_eq(const DataConstProxy &a, const DataConstProxy &b) const {
+  void expect_eq(const DataArrayConstView &a,
+                 const DataArrayConstView &b) const {
     EXPECT_TRUE(a == b);
     EXPECT_TRUE(b == a);
     EXPECT_FALSE(a != b);
     EXPECT_FALSE(b != a);
   }
-  void expect_ne(const DataConstProxy &a, const DataConstProxy &b) const {
+  void expect_ne(const DataArrayConstView &a,
+                 const DataArrayConstView &b) const {
     EXPECT_TRUE(a != b);
     EXPECT_TRUE(b != a);
     EXPECT_FALSE(a == b);
@@ -223,44 +225,44 @@ TEST_F(DataArray_comparison_operators, single_values_and_variances) {
 
 TEST_F(DataArray_comparison_operators, self) {
   for (const auto item : dataset) {
-    DataArray a(item.second);
+    DataArray a(item);
     expect_eq(a, a);
   }
 }
 
 TEST_F(DataArray_comparison_operators, copy) {
   auto copy = dataset;
-  for (const auto [name, a] : copy) {
-    expect_eq(a, dataset[name]);
+  for (const auto &a : copy) {
+    expect_eq(a, dataset[a.name()]);
   }
 }
 
 TEST_F(DataArray_comparison_operators, extra_coord) {
   auto extra = dataset;
   extra.setCoord(Dim::Z, makeVariable<double>(Values{0.0}));
-  for (const auto [name, a] : extra)
-    expect_ne(a, dataset[name]);
+  for (const auto &a : extra)
+    expect_ne(a, dataset[a.name()]);
 }
 
 TEST_F(DataArray_comparison_operators, extra_labels) {
   auto extra = dataset;
   extra.setLabels("extra", makeVariable<double>(Values{0.0}));
-  for (const auto [name, a] : extra)
-    expect_ne(a, dataset[name]);
+  for (const auto &a : extra)
+    expect_ne(a, dataset[a.name()]);
 }
 
 TEST_F(DataArray_comparison_operators, extra_mask) {
   auto extra = dataset;
   extra.setMask("extra", makeVariable<bool>(Values{false}));
-  for (const auto [name, a] : extra)
-    expect_ne(a, dataset[name]);
+  for (const auto &a : extra)
+    expect_ne(a, dataset[a.name()]);
 }
 
 TEST_F(DataArray_comparison_operators, extra_attr) {
   auto extra = dataset;
-  for (const auto [name, a] : extra) {
-    extra.setAttr(name, "extra", makeVariable<double>(Values{0.0}));
-    expect_ne(a, dataset[name]);
+  for (const auto &a : extra) {
+    extra.setAttr(a.name(), "extra", makeVariable<double>(Values{0.0}));
+    expect_ne(a, dataset[a.name()]);
   }
 }
 
@@ -290,8 +292,8 @@ TEST_F(DataArray_comparison_operators, different_coord_insertion_order) {
   a.setCoord(Dim::Y, dataset.coords()[Dim::Y]);
   b.setCoord(Dim::Y, dataset.coords()[Dim::Y]);
   b.setCoord(Dim::X, dataset.coords()[Dim::X]);
-  for (const auto [name, a_] : a)
-    expect_ne(a_, b[name]);
+  for (const auto &a_ : a)
+    expect_ne(a_, b[a_.name()]);
 }
 
 TEST_F(DataArray_comparison_operators, different_label_insertion_order) {
@@ -301,8 +303,8 @@ TEST_F(DataArray_comparison_operators, different_label_insertion_order) {
   a.setLabels("y", dataset.coords()[Dim::Y]);
   b.setLabels("y", dataset.coords()[Dim::Y]);
   b.setLabels("x", dataset.coords()[Dim::X]);
-  for (const auto [name, a_] : a)
-    expect_ne(a_, b[name]);
+  for (const auto &a_ : a)
+    expect_ne(a_, b[a_.name()]);
 }
 
 TEST_F(DataArray_comparison_operators, different_attr_insertion_order) {
@@ -312,8 +314,8 @@ TEST_F(DataArray_comparison_operators, different_attr_insertion_order) {
   a.setAttr("y", dataset.coords()[Dim::Y]);
   b.setAttr("y", dataset.coords()[Dim::Y]);
   b.setAttr("x", dataset.coords()[Dim::X]);
-  for (const auto [name, a_] : a)
-    expect_ne(a_, b[name]);
+  for (const auto &a_ : a)
+    expect_ne(a_, b[a_.name()]);
 }
 
 TEST_F(DataArray_comparison_operators, with_sparse_dimension_data) {

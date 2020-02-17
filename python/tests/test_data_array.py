@@ -2,6 +2,8 @@
 # Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
 import numpy as np
+import pytest
+
 import scipp as sc
 from scipp import Dim
 
@@ -73,3 +75,42 @@ def test_setitem_works_for_view_and_array():
     a = make_dataarray(Dim.X, Dim.Y, seed=0)
     a[Dim.X, :][Dim.X, 0] = a[Dim.X, 1]
     a[Dim.X, 0] = a[Dim.X, 1]
+
+
+@pytest.mark.parametrize("dims, lengths",
+                         (([Dim.X], (sc.Dimensions.Sparse, )),
+                          ([Dim.X, Dim.Y], (10, sc.Dimensions.Sparse)),
+                          ([Dim.X, Dim.Y, Dim.Z],
+                           (10, 10, sc.Dimensions.Sparse)),
+                          ([Dim.X, Dim.Y, Dim.Z, Dim.Spectrum],
+                           (10, 10, 10, sc.Dimensions.Sparse))))
+def test_sparse_dim_has_none_shape(dims, lengths):
+    da = sc.DataArray(sc.Variable(dims, shape=lengths))
+
+    assert da.shape[-1] is None
+
+
+def test_astype():
+    a = sc.DataArray(
+        data=sc.Variable([Dim.X], values=np.arange(10.0, dtype=np.int64)),
+        coords={Dim.X: sc.Variable([Dim.X], values=np.arange(10.0))})
+    assert a.dtype == sc.dtype.int64
+
+    a_as_float = a.astype(sc.dtype.float32)
+    assert a_as_float.dtype == sc.dtype.float32
+
+
+def test_astype_bad_conversion():
+    a = sc.DataArray(
+        data=sc.Variable([Dim.X], values=np.arange(10.0, dtype=np.int64)),
+        coords={Dim.X: sc.Variable([Dim.X], values=np.arange(10.0))})
+    assert a.dtype == sc.dtype.int64
+
+    with pytest.raises(RuntimeError):
+        a.astype(sc.dtype.string)
+
+
+def test_reciprocal():
+    a = sc.DataArray(data=sc.Variable([Dim.X], values=np.array([5.0])))
+    r = sc.reciprocal(a)
+    assert r.values[0] == 1.0 / 5.0

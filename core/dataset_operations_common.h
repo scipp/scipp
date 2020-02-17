@@ -8,7 +8,7 @@
 namespace scipp::core {
 
 static inline void expectAlignedCoord(const Dim coord_dim,
-                                      const VariableConstProxy &var,
+                                      const VariableConstView &var,
                                       const Dim operation_dim) {
   // Coordinate is 2D, but the dimension associated with the coordinate is
   // different from that of the operation. Note we do not account for the
@@ -16,7 +16,7 @@ static inline void expectAlignedCoord(const Dim coord_dim,
   // dimension.
   if (var.dims().ndim() > 1)
     throw except::CoordMismatchError(
-        "VariableConstProxy Coord/Label has more than one dimension "
+        "VariableConstView Coord/Label has more than one dimension "
         "associated with " +
         to_string(coord_dim) +
         " and will not be reduced by the operation dimension " +
@@ -24,7 +24,7 @@ static inline void expectAlignedCoord(const Dim coord_dim,
 }
 
 template <bool ApplyToData, class Func, class... Args>
-DataArray apply_and_drop_dim_impl(const DataConstProxy &a, Func func,
+DataArray apply_and_drop_dim_impl(const DataArrayConstView &a, Func func,
                                   const Dim dim, Args &&... args) {
   std::map<Dim, Variable> coords;
   for (auto &&[d, coord] : a.coords()) {
@@ -67,8 +67,8 @@ DataArray apply_and_drop_dim_impl(const DataConstProxy &a, Func func,
 /// Create new data array by applying Func to everything depending on dim, copy
 /// otherwise.
 template <class Func, class... Args>
-DataArray apply_or_copy_dim(const DataConstProxy &a, Func func, const Dim dim,
-                            Args &&... args) {
+DataArray apply_or_copy_dim(const DataArrayConstView &a, Func func,
+                            const Dim dim, Args &&... args) {
   Dimensions drop({dim, a.dims()[dim]});
   std::map<Dim, Variable> coords;
   // Note the `copy` call, ensuring that the return value of the ternary
@@ -105,35 +105,48 @@ DataArray apply_or_copy_dim(const DataConstProxy &a, Func func, const Dim dim,
 }
 
 template <class Func, class... Args>
-DataArray apply_to_data_and_drop_dim(const DataConstProxy &a, Func func,
+DataArray apply_to_data_and_drop_dim(const DataArrayConstView &a, Func func,
                                      const Dim dim, Args &&... args) {
   return apply_and_drop_dim_impl<true>(a, func, dim,
                                        std::forward<Args>(args)...);
 }
 
 template <class Func, class... Args>
-DataArray apply_and_drop_dim(const DataConstProxy &a, Func func, const Dim dim,
-                             Args &&... args) {
+DataArray apply_and_drop_dim(const DataArrayConstView &a, Func func,
+                             const Dim dim, Args &&... args) {
   return apply_and_drop_dim_impl<false>(a, func, dim,
                                         std::forward<Args>(args)...);
 }
 
 template <class Func, class... Args>
-DataArray apply_to_items(const DataConstProxy &d, Func func, Args &&... args) {
+DataArray apply_to_items(const DataArrayConstView &d, Func func,
+                         Args &&... args) {
   return func(d, std::forward<Args>(args)...);
 }
 
 template <class Func, class... Args>
-Dataset apply_to_items(const DatasetConstProxy &d, Func func, const Dim dim,
+Dataset apply_to_items(const DatasetConstView &d, Func func, const Dim dim,
                        Args &&... args) {
   Dataset result;
-  for (const auto &[name, data] : d)
-    result.setData(name, func(data, dim, std::forward<Args>(args)...));
+  for (const auto &data : d)
+    result.setData(data.name(), func(data, dim, std::forward<Args>(args)...));
   for (auto &&[name, attr] : d.attrs())
     if (!attr.dims().contains(dim))
       result.setAttr(name, attr);
   return result;
 }
+
+// Helpers for reductions for DataArray and Dataset, which include masks.
+[[nodiscard]] Variable mean(const VariableConstView &var, const Dim dim,
+                            const MasksConstView &masks);
+VariableView mean(const VariableConstView &var, const Dim dim,
+                  const MasksConstView &masks, const VariableView &out);
+[[nodiscard]] Variable flatten(const VariableConstView &var, const Dim dim,
+                               const MasksConstView &masks);
+[[nodiscard]] Variable sum(const VariableConstView &var, const Dim dim,
+                           const MasksConstView &masks);
+VariableView sum(const VariableConstView &var, const Dim dim,
+                 const MasksConstView &masks, const VariableView &out);
 
 } // namespace scipp::core
 

@@ -41,8 +41,7 @@ static T convert_with_factor(T &&d, const Dim from, const Dim to,
   }
 
   // 2. Transform sparse coordinates
-  for (const auto &[name, data] : iter(d)) {
-    static_cast<void>(name);
+  for (const auto &data : iter(d)) {
     if (data.dims().sparse()) {
       data.coords()[from] *= factor;
     }
@@ -102,8 +101,7 @@ template <class T> T tofToEnergy(T &&d) {
   }
 
   // 3. Transform sparse coordinates
-  for (const auto &[name, data] : iter(d)) {
-    static_cast<void>(name);
+  for (const auto &data : iter(d)) {
     if (data.coords()[Dim::Tof].dims().sparse()) {
       transform_in_place<pair_self_t<double, float>>(
           data.coords()[Dim::Tof], conversionFactor,
@@ -130,8 +128,7 @@ template <class T> T energyToTof(T &&d) {
   }
 
   // 3. Transform sparse coordinates
-  for (const auto &[name, data] : iter(d)) {
-    static_cast<void>(name);
+  for (const auto &data : iter(d)) {
     if (data.coords()[Dim::Energy].dims().sparse()) {
       transform_in_place<pair_self_t<double, float>>(
           data.coords()[Dim::Energy], conversionFactor,
@@ -219,8 +216,8 @@ Dataset tofToDeltaE(const Dataset &d) {
 
 template <class T> T convert_impl(T d, const Dim from, const Dim to) {
   for (const auto &item : iter(d))
-    if (item.second.hasData())
-      expect::notCountDensity(item.second.unit());
+    if (item.hasData())
+      expect::notCountDensity(item.unit());
   if ((from == Dim::Tof) && (to == Dim::DSpacing))
     return convert_with_factor(std::move(d), from, to, tofToDSpacing(d));
   if ((from == Dim::DSpacing) && (to == Dim::Tof))
@@ -259,7 +256,7 @@ T swap_tof_related_labels_and_attrs(T &&x, const Dim from, const Dim to) {
         // handle attributes so this can be avoided.
         if constexpr (std::is_same_v<std::decay_t<T>, Dataset>)
           for (const auto &item : iter(x))
-            item.second.attrs().set(field, x.labels()[field]);
+            item.attrs().set(field, x.labels()[field]);
         x.attrs().set(field, x.labels()[field]);
         x.labels().erase(field);
       }
@@ -272,8 +269,8 @@ T swap_tof_related_labels_and_attrs(T &&x, const Dim from, const Dim to) {
         x.attrs().erase(field);
         if constexpr (std::is_same_v<std::decay_t<T>, Dataset>) {
           for (const auto &item : iter(x)) {
-            expect::equals(x.labels()[field], item.second.attrs()[field]);
-            item.second.attrs().erase(field);
+            expect::equals(x.labels()[field], item.attrs()[field]);
+            item.attrs().erase(field);
           }
         }
       }
@@ -288,7 +285,7 @@ DataArray convert(DataArray d, const Dim from, const Dim to) {
                                            from, to);
 }
 
-DataArray convert(const DataConstProxy &d, const Dim from, const Dim to) {
+DataArray convert(const DataArrayConstView &d, const Dim from, const Dim to) {
   return convert(DataArray(d), from, to);
 }
 
@@ -297,7 +294,7 @@ Dataset convert(Dataset d, const Dim from, const Dim to) {
                                            from, to);
 }
 
-Dataset convert(const DatasetConstProxy &d, const Dim from, const Dim to) {
+Dataset convert(const DatasetConstView &d, const Dim from, const Dim to) {
   return convert(Dataset(d), from, to);
 }
 

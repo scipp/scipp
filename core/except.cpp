@@ -55,8 +55,8 @@ void validSlice(const std::unordered_map<Dim, scipp::index> &dims,
         " to be in dimensions."); // TODO to_string for map needed
 }
 
-void coordsAndLabelsAreSuperset(const DataConstProxy &a,
-                                const DataConstProxy &b) {
+void coordsAndLabelsAreSuperset(const DataArrayConstView &a,
+                                const DataArrayConstView &b) {
   for (const auto &[dim, coord] : b.coords())
     if (a.coords()[dim] != coord)
       throw except::CoordMismatchError("Expected coords to match.");

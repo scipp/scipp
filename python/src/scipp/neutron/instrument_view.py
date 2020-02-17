@@ -105,11 +105,12 @@ class InstrumentView:
 
         self.data_arrays = {}
         tp = type(scipp_obj)
-        if tp is sc.Dataset or tp is sc.DatasetProxy:
-            for key, var in sorted(scipp_obj):
+        if tp is sc.Dataset or tp is sc.DatasetView:
+            for key in sorted(scipp_obj.keys()):
+                var = scipp_obj[key]
                 if self.dim in var.dims:
                     self.data_arrays[key] = var
-        elif tp is sc.DataArray or tp is sc.DataProxy:
+        elif tp is sc.DataArray or tp is sc.DataArrayView:
             self.data_arrays[scipp_obj.name] = scipp_obj
         else:
             raise RuntimeError("Unknown input type: {}. Allowed inputs "

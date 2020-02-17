@@ -44,20 +44,20 @@ def test_lifetime_coords_of_temporary():
     assert (d + d).labels['aux'].values[-1] == 9
 
 
-def test_lifetime_iter():
+def test_lifetime_items_iter():
     var = sc.Variable(dims=[Dim.X], values=np.arange(10))
     d = sc.Dataset({'a': var}, coords={Dim.X: var}, labels={'aux': var})
-    for name, item in d + d:
+    for key, item in (d + d).items():
         assert item.data == var + var
-    for dim, coord in (d + d).coords:
+    for dim, coord in (d + d).coords.items():
         assert coord == var
-    for name, item in d[Dim.X, 1:5]:
+    for key, item in d[Dim.X, 1:5].items():
         assert item.data == var[Dim.X, 1:5]
-    for dim, coord in d[Dim.X, 1:5].coords:
+    for dim, coord in d[Dim.X, 1:5].coords.items():
         assert coord == var[Dim.X, 1:5]
-    for name, item in (d + d)[Dim.X, 1:5]:
+    for key, item in (d + d)[Dim.X, 1:5].items():
         assert item.data == (var + var)[Dim.X, 1:5]
-    for dim, coord in (d + d)[Dim.X, 1:5].coords:
+    for dim, coord in (d + d)[Dim.X, 1:5].coords.items():
         assert coord == var[Dim.X, 1:5]
 
 

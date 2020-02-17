@@ -3,6 +3,7 @@
 #include <gtest/gtest.h>
 
 #include "scipp/common/constants.h"
+#include "scipp/core/except.h"
 #include "scipp/core/variable.h"
 
 using namespace scipp;

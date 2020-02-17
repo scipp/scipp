@@ -78,9 +78,9 @@ static void rebinInner(const Dim dim, const VariableConceptT<DataType> &oldT,
 }
 
 template <typename T>
-void rebin_non_inner(const Dim dim, const VariableConstProxy &oldT,
-                     Variable &newT, const VariableConstProxy &oldCoordT,
-                     const VariableConstProxy &newCoordT) {
+void rebin_non_inner(const Dim dim, const VariableConstView &oldT,
+                     Variable &newT, const VariableConstView &oldCoordT,
+                     const VariableConstView &newCoordT) {
   const auto oldSize = oldT.dims()[dim];
   const auto newSize = newT.dims()[dim];
 
@@ -116,9 +116,9 @@ void rebin_non_inner(const Dim dim, const VariableConstProxy &oldT,
   }
 }
 
-Variable rebin(const VariableConstProxy &var, const Dim dim,
-               const VariableConstProxy &oldCoord,
-               const VariableConstProxy &newCoord) {
+Variable rebin(const VariableConstView &var, const Dim dim,
+               const VariableConstView &oldCoord,
+               const VariableConstView &newCoord) {
   expect::notSparse(var);
   expect::notSparse(oldCoord);
   expect::notSparse(newCoord);

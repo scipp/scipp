@@ -2,7 +2,7 @@
 // Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 //
 // The test in this file ensure that comparison operators for Dataset and
-// DatasetConstProxy are correct. More complex tests should build on the
+// DatasetConstView are correct. More complex tests should build on the
 // assumption that comparison operators are correct.
 #include "test_macros.h"
 #include <gtest/gtest.h>
@@ -55,14 +55,14 @@ protected:
     dataset.setSparseCoord("sparse_coord_and_val", sparse_variable);
   }
   void expect_eq(const Dataset &a, const Dataset &b) const {
-    expect_eq_impl(a, DatasetConstProxy(b));
-    expect_eq_impl(DatasetConstProxy(a), b);
-    expect_eq_impl(DatasetConstProxy(a), DatasetConstProxy(b));
+    expect_eq_impl(a, DatasetConstView(b));
+    expect_eq_impl(DatasetConstView(a), b);
+    expect_eq_impl(DatasetConstView(a), DatasetConstView(b));
   }
   void expect_ne(const Dataset &a, const Dataset &b) const {
-    expect_ne_impl(a, DatasetConstProxy(b));
-    expect_ne_impl(DatasetConstProxy(a), b);
-    expect_ne_impl(DatasetConstProxy(a), DatasetConstProxy(b));
+    expect_ne_impl(a, DatasetConstView(b));
+    expect_ne_impl(DatasetConstView(a), b);
+    expect_ne_impl(DatasetConstView(a), DatasetConstView(b));
   }
 
   Dataset dataset;

@@ -5,8 +5,8 @@
 import numpy as np
 
 from ..._scipp import core as sc
+from ...compat.mantid import run_mantid_alg
 from ...compat.mantid import convert_TableWorkspace_to_dataset
-from .. import exceptions
 
 
 def load_calibration(filename, mantid_args={}):
@@ -38,54 +38,45 @@ def load_calibration(filename, mantid_args={}):
     :rtype: Dataset
     """
 
-    try:
-        import mantid.simpleapi as mantid
-    except ImportError as e:
-        raise exceptions.MantidNotFoundError from e
-
     if "WorkspaceName" not in mantid_args:
         mantid_args["WorkspaceName"] = "cal_output"
 
-    output = mantid.LoadDiffCal(Filename=filename, **mantid_args)
+    with run_mantid_alg('LoadDiffCal', Filename=filename,
+                        **mantid_args) as output:
+        cal_ws = output.OutputCalWorkspace
+        cal_data = convert_TableWorkspace_to_dataset(cal_ws)
 
-    cal_ws = output.OutputCalWorkspace
-    cal_data = convert_TableWorkspace_to_dataset(cal_ws)
+        # Modify units of cal_data
+        cal_data["difc"].unit = sc.units.us / sc.units.angstrom
+        cal_data[
+            "difa"].unit = sc.units.us / sc.units.angstrom / sc.units.angstrom
+        cal_data["tzero"].unit = sc.units.us
 
-    # Modify units of cal_data
-    cal_data["difc"].unit = sc.units.us / sc.units.angstrom
-    cal_data["difa"].unit = sc.units.us / sc.units.angstrom / sc.units.angstrom
-    cal_data["tzero"].unit = sc.units.us
+        # Note that despite masking and grouping stored in separate workspaces,
+        # there is no need to handle potentially mismatching ordering: All
+        # workspaces have been created by the same algorithm, which should
+        # guarantee ordering.
+        mask_ws = output.OutputMaskWorkspace
+        group_ws = output.OutputGroupingWorkspace
+        rows = mask_ws.getNumberHistograms()
+        mask = np.fromiter((mask_ws.readY(i)[0] for i in range(rows)),
+                           count=rows,
+                           dtype=np.bool)
+        group = np.fromiter((group_ws.readY(i)[0] for i in range(rows)),
+                            count=rows,
+                            dtype=np.int32)
 
-    # Note that despite masking and grouping stored in separate workspaces,
-    # there is no need to handle potentially mismatching ordering: All
-    # workspaces have been created by the same algorithm, which should
-    # guarantee ordering.
-    mask_ws = output.OutputMaskWorkspace
-    group_ws = output.OutputGroupingWorkspace
-    rows = mask_ws.getNumberHistograms()
-    mask = np.fromiter((mask_ws.readY(i)[0] for i in range(rows)),
-                       count=rows,
-                       dtype=np.bool)
-    group = np.fromiter((group_ws.readY(i)[0] for i in range(rows)),
-                        count=rows,
-                        dtype=np.int32)
+        # This is deliberately not stored as a mask since that would make
+        # subsequent handling, e.g., with groupby, more complicated. The mask
+        # is conceptually not masking rows in this table, i.e., it is not
+        # marking invalid rows, but rather describes masking for other data.
+        cal_data["mask"] = sc.Variable([sc.Dim.Row], values=mask)
+        cal_data["group"] = sc.Variable([sc.Dim.Row], values=group)
 
-    # This is deliberately not stored as a mask since that would make
-    # subsequent handling, e.g., with groupby, more complicated. The mask is
-    # conceptually not masking rows in this table, i.e., it is not marking
-    # invalid rows, but rather describes masking for other data.
-    cal_data["mask"] = sc.Variable([sc.Dim.Row], values=mask)
-    cal_data["group"] = sc.Variable([sc.Dim.Row], values=group)
+        cal_data.rename_dims({sc.Dim.Row: sc.Dim.Detector})
+        cal_data.coords[sc.Dim.Detector] = sc.Variable(
+            [sc.Dim.Detector],
+            values=cal_data['detid'].values.astype(np.int32))
+        del cal_data['detid']
 
-    cal_data.rename_dims({sc.Dim.Row: sc.Dim.Detector})
-    cal_data.coords[sc.Dim.Detector] = sc.Variable(
-        [sc.Dim.Detector], values=cal_data['detid'].values.astype(np.int32))
-    del cal_data['detid']
-
-    # Delete generated mantid workspaces
-    base_name = mantid_args["WorkspaceName"]
-    mantid.mtd.remove(base_name + "_cal")
-    mantid.mtd.remove(base_name + "_group")
-    mantid.mtd.remove(base_name + "_mask")
-
-    return cal_data
+        return cal_data

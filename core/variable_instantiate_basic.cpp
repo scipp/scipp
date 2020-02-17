@@ -27,9 +27,4 @@ INSTANTIATE_VARIABLE(sparse_container<std::string>)
 INSTANTIATE_VARIABLE(sparse_container<bool>)
 INSTANTIATE_VARIABLE(sparse_container<Eigen::Vector3d>)
 
-INSTANTIATE_SET_VARIANCES(double)
-INSTANTIATE_SET_VARIANCES(float)
-INSTANTIATE_SET_VARIANCES(int64_t)
-INSTANTIATE_SET_VARIANCES(int32_t)
-
 } // namespace scipp::core

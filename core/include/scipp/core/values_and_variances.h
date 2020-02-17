@@ -44,7 +44,7 @@ template <class T> struct ValuesAndVariances {
   // support sparse data via a plain container such as std::vector, e.g., for
   // concatenation using a.insert(a.end(), b.begin(), b.end()). We are
   // supporting this here by simply working with pairs of iterators. This
-  // approach is not an actual proxy iterator and will not compile if client
+  // approach is not an actual view iterator and will not compile if client
   // code attempts to increment the iterators. We could support `next` and
   // `advance` easily, so client code can simply use something like:
   //   using std::next;

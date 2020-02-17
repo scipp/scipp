@@ -25,6 +25,7 @@
 
 #include "scipp/common/overloaded.h"
 #include "scipp/core/except.h"
+#include "scipp/core/parallel.h"
 #include "scipp/core/transform_common.h"
 #include "scipp/core/value_and_variance.h"
 #include "scipp/core/values_and_variances.h"
@@ -115,8 +116,26 @@ template <class T> static constexpr void increment(T &indices) noexcept {
   increment_impl(indices, std::make_index_sequence<std::tuple_size_v<T>>{});
 }
 
+template <class T, size_t... I>
+static constexpr void advance_impl(T &&indices, const scipp::index distance,
+                                   std::index_sequence<I...>) noexcept {
+  auto inc = [distance](auto &&i) {
+    if constexpr (std::is_same_v<std::decay_t<decltype(i)>, ViewIndex>)
+      i.setIndex(i.index() + distance);
+    else
+      i += distance;
+  };
+  (inc(std::get<I>(indices)), ...);
+}
+template <class T>
+static constexpr void advance(T &indices,
+                              const scipp::index distance) noexcept {
+  advance_impl(indices, distance,
+               std::make_index_sequence<std::tuple_size_v<T>>{});
+}
+
 template <class T> static constexpr auto begin_index(T &&iterable) noexcept {
-  if constexpr (is_VariableView_v<std::decay_t<T>>)
+  if constexpr (is_ElementArrayView_v<std::decay_t<T>>)
     return iterable.begin_index();
   else if constexpr (detail::is_ValuesAndVariances_v<std::decay_t<T>>)
     return begin_index(iterable.values);
@@ -125,7 +144,7 @@ template <class T> static constexpr auto begin_index(T &&iterable) noexcept {
 }
 
 template <class T> static constexpr auto end_index(T &&iterable) noexcept {
-  if constexpr (is_VariableView_v<std::decay_t<T>>)
+  if constexpr (is_ElementArrayView_v<std::decay_t<T>>)
     return iterable.end_index();
   else if constexpr (detail::is_ValuesAndVariances_v<std::decay_t<T>>)
     return end_index(iterable.values);
@@ -138,6 +157,14 @@ template <class T> static constexpr auto get(const T &index) noexcept {
     return index;
   else
     return index.get();
+}
+
+template <class T>
+static constexpr auto has_stride_zero(const T &index) noexcept {
+  if constexpr (std::is_integral_v<T>)
+    return false;
+  else
+    return index.has_stride_zero();
 }
 
 } // namespace iter
@@ -201,11 +228,25 @@ static constexpr void call_in_place(Op &&op, const Indices &indices, Arg &&arg,
 
 template <class Op, class Out, class... Ts>
 static void transform_elements(Op op, Out &&out, Ts &&... other) {
-  auto indices =
+  auto run = [&](auto indices, const auto &end) {
+    for (; std::get<0>(indices) != end; iter::increment(indices))
+      call(op, indices, out, other...);
+  };
+  const auto begin =
       std::tuple{iter::begin_index(out), iter::begin_index(other)...};
-  const auto end = iter::end_index(out);
-  for (; std::get<0>(indices) != end; iter::increment(indices))
-    call(op, indices, out, other...);
+  if constexpr (transform_detail::is_sparse_v<std::decay_t<Out>>) {
+    run(begin, iter::end_index(out));
+  } else {
+    auto run_parallel = [&](const auto &range) {
+      auto indices = begin;
+      iter::advance(indices, range.begin());
+      auto end = std::tuple{iter::begin_index(out)};
+      iter::advance(end, range.end());
+      run(indices, std::get<0>(end));
+    };
+    parallel::parallel_for(parallel::blocked_range(0, out.size()),
+                           run_parallel);
+  }
 }
 
 template <class T> struct element_type<ValueAndVariance<T>> { using type = T; };
@@ -272,6 +313,13 @@ struct TransformSparse {
   }
 };
 
+template <class Op, class... Args>
+constexpr bool check_all_or_none_variances =
+    std::is_base_of_v<transform_flags::expect_all_or_none_have_variance_t,
+                      Op> &&
+    !std::conjunction_v<is_ValuesAndVariances<std::decay_t<Args>>...> &&
+    std::disjunction_v<is_ValuesAndVariances<std::decay_t<Args>>...>;
+
 /// Recursion endpoint for do_transform.
 ///
 /// Call transform_elements with or without variances for output, depending on
@@ -281,8 +329,12 @@ static void do_transform(Op op, Out &&out, Tuple &&processed) {
   auto out_val = out.values();
   std::apply(
       [&op, &out, &out_val](auto &&... args) {
-        if constexpr ((is_ValuesAndVariances_v<std::decay_t<decltype(args)>> ||
-                       ...)) {
+        if constexpr (check_all_or_none_variances<Op, decltype(args)...>) {
+          throw except::VariancesError(
+              "Expected either all or none of inputs to have variances.");
+        } else if constexpr ((is_ValuesAndVariances_v<
+                                  std::decay_t<std::decay_t<decltype(args)>>> ||
+                              ...)) {
           auto out_var = out.variances();
           transform_elements(op, ValuesAndVariances{out_val, out_var},
                              std::forward<decltype(args)>(args)...);
@@ -470,15 +522,15 @@ template <bool dry_run> struct in_place {
   template <class Op, class T, class... Ts>
   static void transform_in_place_impl(Op op, T &&arg, Ts &&... other) {
     using namespace detail;
-    auto indices =
+    const auto begin =
         std::tuple{iter::begin_index(arg), iter::begin_index(other)...};
-    const auto end = iter::end_index(arg);
-    // For sparse data we can fail for any subitem if the sizes to not match. To
-    // avoid partially modifying (and thus corrupting) data in an in-place
+    // For sparse data we can fail for any subitem if the sizes to not match.
+    // To avoid partially modifying (and thus corrupting) data in an in-place
     // operation we need to do the checks before any modification happens.
     if constexpr (is_sparse_v<typename std::decay_t<T>::value_type> ||
                   (is_sparse_v<typename std::decay_t<Ts>::value_type> || ...)) {
-      for (auto i = indices; std::get<0>(i) != end; iter::increment(i)) {
+      const auto end = iter::end_index(arg);
+      for (auto i = begin; std::get<0>(i) != end; iter::increment(i)) {
         call_in_place(
             [](auto &&... args) {
               if constexpr (std::is_base_of_v<SparseFlag, Op>)
@@ -489,10 +541,33 @@ template <bool dry_run> struct in_place {
     }
     if constexpr (dry_run)
       return;
-    // WARNING: Do not parallelize this loop in all cases! The output may have a
-    // dimension with stride zero so parallelization must be done with care.
-    for (; std::get<0>(indices) != end; iter::increment(indices))
-      call_in_place(op, indices, arg, other...);
+    auto run = [&](auto indices, const auto &end) {
+      for (; std::get<0>(indices) != end; iter::increment(indices))
+        call_in_place(op, indices, arg, other...);
+    };
+
+    if constexpr (transform_detail::is_sparse_v<std::decay_t<T>> ||
+                  (transform_detail::is_sparse_v<std::decay_t<Ts>> || ...)) {
+      run(begin, iter::end_index(arg));
+    } else {
+      if (iter::has_stride_zero(std::get<0>(begin))) {
+        // The output has a dimension with stride zero so parallelization must
+        // be done differently. Explicit and precise control of chunking is
+        // required to avoid multiple threads writing to the same output. Not
+        // implemented for now.
+        run(begin, iter::end_index(arg));
+      } else {
+        auto run_parallel = [&](const auto &range) {
+          auto indices = begin;
+          iter::advance(indices, range.begin());
+          auto end = std::tuple{iter::begin_index(arg)};
+          iter::advance(end, range.end());
+          run(indices, std::get<0>(end));
+        };
+        parallel::parallel_for(parallel::blocked_range(0, arg.size()),
+                               run_parallel);
+      }
+    }
   }
 
   /// Recursion endpoint for do_transform_in_place.
@@ -504,21 +579,28 @@ template <bool dry_run> struct in_place {
     using namespace detail;
     std::apply(
         [&op](auto &&arg, auto &&... args) {
-          constexpr bool in_var_if_out_var = std::is_base_of_v<
-              transform_flags::expect_in_variance_if_out_variance_t, Op>;
-          constexpr bool arg_var =
-              is_ValuesAndVariances_v<std::decay_t<decltype(arg)>>;
-          constexpr bool args_var =
-              (is_ValuesAndVariances_v<std::decay_t<decltype(args)>> || ...);
-          if constexpr ((in_var_if_out_var ? arg_var == args_var
-                                           : arg_var || !args_var) ||
-                        std::is_base_of_v<
-                            transform_flags::expect_no_variance_arg_t<0>, Op>) {
-            transform_in_place_impl(op, std::forward<decltype(arg)>(arg),
-                                    std::forward<decltype(args)>(args)...);
-          } else {
+          if constexpr (check_all_or_none_variances<Op, decltype(arg),
+                                                    decltype(args)...>) {
             throw except::VariancesError(
-                "Output has no variance but at least one input does.");
+                "Expected either all or none of inputs to have variances.");
+          } else {
+            constexpr bool in_var_if_out_var = std::is_base_of_v<
+                transform_flags::expect_in_variance_if_out_variance_t, Op>;
+            constexpr bool arg_var =
+                is_ValuesAndVariances_v<std::decay_t<decltype(arg)>>;
+            constexpr bool args_var =
+                (is_ValuesAndVariances_v<std::decay_t<decltype(args)>> || ...);
+            if constexpr ((in_var_if_out_var ? arg_var == args_var
+                                             : arg_var || !args_var) ||
+                          std::is_base_of_v<
+                              transform_flags::expect_no_variance_arg_t<0>,
+                              Op>) {
+              transform_in_place_impl(op, std::forward<decltype(arg)>(arg),
+                                      std::forward<decltype(args)>(args)...);
+            } else {
+              throw except::VariancesError(
+                  "Output has no variance but at least one input does.");
+            }
           }
         },
         std::forward<Tuple>(processed));
@@ -659,8 +741,10 @@ template <bool dry_run> struct in_place {
         visit_impl<Ts...>::apply(makeTransformInPlace(op), var.dataHandle(),
                                  other.dataHandle()...);
       } else if constexpr (sizeof...(Other) > 1) {
-        static_assert("Transform with more than 2 arguments not implemented "
-                      "yet for element-wise operation.");
+        // No sparse data supported yet in this case.
+        core::visit(std::tuple<Ts...>{})
+            .apply(makeTransformInPlace(op), var.dataHandle(),
+                   other.dataHandle()...);
       } else {
         // Note that if only one of the inputs is sparse it must be the one
         // being transformed in-place, so there are only three cases here.
@@ -708,14 +792,14 @@ void transform_in_place(Var &&var, Op op) {
 /// output range identical to the secound input range, but avoids potentially
 /// costly element copies.
 template <class... TypePairs, class Var, class Op>
-void transform_in_place(Var &&var, const VariableConstProxy &other, Op op) {
+void transform_in_place(Var &&var, const VariableConstView &other, Op op) {
   in_place<false>::transform<TypePairs...>(op, std::forward<Var>(var), other);
 }
 
 /// Transform the data elements of a variable in-place.
 template <class... TypePairs, class Var, class Op>
-void transform_in_place(Var &&var, const VariableConstProxy &var1,
-                        const VariableConstProxy &var2, Op op) {
+void transform_in_place(Var &&var, const VariableConstView &var1,
+                        const VariableConstView &var2, Op op) {
   in_place<false>::transform<TypePairs...>(op, std::forward<Var>(var), var1,
                                            var2);
 }
@@ -732,15 +816,15 @@ void transform_in_place(Var &&var, const VariableConstProxy &var1,
 /// the unit, since it would be hard to track, e.g., in multiplication
 /// operations.
 template <class... TypePairs, class Var, class Op>
-void accumulate_in_place(Var &&var, const VariableConstProxy &other, Op op) {
+void accumulate_in_place(Var &&var, const VariableConstView &other, Op op) {
   expect::contains(other.dims(), var.dims());
   // Wrapped implementation to convert multiple tuples into a parameter pack.
   in_place<false>::transform_data(type_tuples<TypePairs...>(op), op,
                                   std::forward<Var>(var), other);
 }
 template <class... TypePairs, class Var, class Op>
-void accumulate_in_place(Var &&var, const VariableConstProxy &var1,
-                         const VariableConstProxy &var2, Op op) {
+void accumulate_in_place(Var &&var, const VariableConstView &var1,
+                         const VariableConstView &var2, Op op) {
   expect::contains(var1.dims(), var.dims());
   expect::contains(var2.dims(), denseDims(var.dims()));
   in_place<false>::transform_data(type_tuples<TypePairs...>(op), op,
@@ -753,7 +837,7 @@ void transform_in_place(Var &&var, Op op) {
   in_place<true>::transform<Ts...>(op, std::forward<Var>(var));
 }
 template <class... TypePairs, class Var, class Op>
-void transform_in_place(Var &&var, const VariableConstProxy &other, Op op) {
+void transform_in_place(Var &&var, const VariableConstView &other, Op op) {
   in_place<true>::transform<TypePairs...>(op, std::forward<Var>(var), other);
 }
 } // namespace dry_run
@@ -789,7 +873,7 @@ Variable transform(std::tuple<Ts...> &&, Op op, const Vars &... vars) {
 /// avoids the need to manually create a new variable for the output and the
 /// need for, e.g., std::back_inserter.
 template <class... Ts, class Op>
-[[nodiscard]] Variable transform(const VariableConstProxy &var, Op op) {
+[[nodiscard]] Variable transform(const VariableConstView &var, Op op) {
   return detail::transform(std::tuple<Ts...>{}, op, var);
 }
 
@@ -799,18 +883,28 @@ template <class... Ts, class Op>
 /// avoids the need to manually create a new variable for the output and the
 /// need for, e.g., std::back_inserter.
 template <class... TypePairs, class Op>
-[[nodiscard]] Variable transform(const VariableConstProxy &var1,
-                                 const VariableConstProxy &var2, Op op) {
+[[nodiscard]] Variable transform(const VariableConstView &var1,
+                                 const VariableConstView &var2, Op op) {
   return detail::transform(std::tuple_cat(TypePairs{}...), op, var1, var2);
 }
 
 /// Transform the data elements of three variables and return a new Variable.
 template <class... TypeTuples, class Op>
 [[nodiscard]] Variable
-    transform(const VariableConstProxy &var1, const VariableConstProxy &var2,
-              const VariableConstProxy &var3, Op op) {
+    transform(const VariableConstView &var1, const VariableConstView &var2,
+              const VariableConstView &var3, Op op) {
       return detail::transform(std::tuple_cat(TypeTuples{}...), op, var1, var2,
                                var3);
+    }
+
+/// Transform the data elements of four variables and return a new Variable.
+template <class... TypeTuples, class Op>
+[[nodiscard]] Variable
+    transform(const VariableConstView &var1, const VariableConstView &var2,
+              const VariableConstView &var3, const VariableConstView &var4,
+              Op op) {
+      return detail::transform(std::tuple_cat(TypeTuples{}...), op, var1, var2,
+                               var3, var4);
     }
 
 } // namespace scipp::core

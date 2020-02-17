@@ -4,7 +4,7 @@
 /// @author Neil Vaytet
 #include <benchmark/benchmark.h>
 
-#include "scipp/core/variable_view.h"
+#include "scipp/core/element_array_view.h"
 
 using namespace scipp::core;
 
@@ -12,7 +12,7 @@ static void BM_ViewIndex(benchmark::State &state) {
 
   Dimensions dims({{Dim::Y, state.range(0)}, {Dim::X, 2000}});
   std::vector<double> variable(dims.volume());
-  VariableView<double> view(variable.data(), 0, dims, dims);
+  ElementArrayView<double> view(variable.data(), 0, dims, dims);
 
   for (auto _ : state) {
     double sum = 0.0;

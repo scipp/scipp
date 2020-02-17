@@ -61,7 +61,7 @@ std::tuple<Dataset, Dataset> makeDatasets() {
   return std::make_tuple(a, b);
 }
 
-TEST(StringFormattingTest, to_string_MutableProxy) {
+TEST(StringFormattingTest, to_string_MutableView) {
   auto [a, b] = makeDatasets();
 
   EXPECT_EQ(to_string(a.coords()), to_string(b.coords()));
@@ -69,7 +69,7 @@ TEST(StringFormattingTest, to_string_MutableProxy) {
   EXPECT_EQ(to_string(a.attrs()), to_string(b.attrs()));
 }
 
-TEST(StringFormattingTest, to_string_ConstProxy) {
+TEST(StringFormattingTest, to_string_ConstView) {
   const auto [a, b] = makeDatasets();
 
   EXPECT_EQ(to_string(a.coords()), to_string(b.coords()));

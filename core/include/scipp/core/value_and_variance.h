@@ -4,7 +4,9 @@
 #ifndef SCIPP_CORE_VALUE_AND_VARIANCE_H
 #define SCIPP_CORE_VALUE_AND_VARIANCE_H
 
-#include "scipp/core/variable.h"
+#include <cmath>
+
+#include "scipp/common/span.h"
 
 namespace scipp::core {
 
@@ -71,6 +73,11 @@ template <class T> constexpr auto sqrt(const ValueAndVariance<T> a) noexcept {
 template <class T> constexpr auto abs(const ValueAndVariance<T> a) noexcept {
   using std::abs;
   return ValueAndVariance{abs(a.value), a.variance};
+}
+
+template <class T> constexpr auto isnan(const ValueAndVariance<T> a) noexcept {
+  using std::isnan;
+  return isnan(a.value);
 }
 
 template <class T1, class T2>

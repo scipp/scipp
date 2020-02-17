@@ -5,30 +5,18 @@
 #ifndef SCIPP_CORE_VARIABLE_OPERATIONS_COMMON_H
 #define SCIPP_CORE_VARIABLE_OPERATIONS_COMMON_H
 
-#include "scipp/core/dataset.h"
+#include "scipp/core/variable.h"
 
 namespace scipp::core {
 
 // Helpers for in-place reductions and reductions with groupby.
-void flatten_impl(const VariableProxy &summed, const VariableConstProxy &var,
-                  const Variable &mask = makeVariable<bool>(Values{false}));
-void sum_impl(const VariableProxy &summed, const VariableConstProxy &var);
-void all_impl(const VariableProxy &out, const VariableConstProxy &var);
-void any_impl(const VariableProxy &out, const VariableConstProxy &var);
-void max_impl(const VariableProxy &out, const VariableConstProxy &var);
-void min_impl(const VariableProxy &out, const VariableConstProxy &var);
-
-// Helpers for reductions for DataArray and Dataset, which include masks.
-[[nodiscard]] Variable mean(const VariableConstProxy &var, const Dim dim,
-                            const MasksConstProxy &masks);
-VariableProxy mean(const VariableConstProxy &var, const Dim dim,
-                   const MasksConstProxy &masks, const VariableProxy &out);
-[[nodiscard]] Variable flatten(const VariableConstProxy &var, const Dim dim,
-                               const MasksConstProxy &masks);
-[[nodiscard]] Variable sum(const VariableConstProxy &var, const Dim dim,
-                           const MasksConstProxy &masks);
-VariableProxy sum(const VariableConstProxy &var, const Dim dim,
-                  const MasksConstProxy &masks, const VariableProxy &out);
+void flatten_impl(const VariableView &summed, const VariableConstView &var,
+                  const VariableConstView &mask);
+void sum_impl(const VariableView &summed, const VariableConstView &var);
+void all_impl(const VariableView &out, const VariableConstView &var);
+void any_impl(const VariableView &out, const VariableConstView &var);
+void max_impl(const VariableView &out, const VariableConstView &var);
+void min_impl(const VariableView &out, const VariableConstView &var);
 
 } // namespace scipp::core
 

@@ -95,20 +95,21 @@ using args = std::tuple<span<Out>, sparse_container<Coord>,
                         sparse_container<Weight>, span<const Edge>>;
 }
 
-DataArray histogram(const DataConstProxy &sparse,
-                    const VariableConstProxy &binEdges) {
+DataArray histogram(const DataArrayConstView &sparse,
+                    const VariableConstView &binEdges) {
   auto dim = binEdges.dims().inner();
 
   auto result = apply_and_drop_dim(
       sparse,
-      [](const DataConstProxy &sparse_, const Dim dim_,
-         const VariableConstProxy &binEdges_) {
+      [](const DataArrayConstView &sparse_, const Dim dim_,
+         const VariableConstView &binEdges_) {
         if (sparse_.hasData()) {
           using namespace histogram_weighted_detail;
           return transform_subspan<
               std::tuple<args<double, double, double, double>,
                          args<double, float, double, double>,
-                         args<double, float, double, float>>>(
+                         args<double, float, double, float>,
+                         args<double, double, float, double>>>(
               dim_, binEdges_.dims()[dim_] - 1, sparse_.coords()[dim_],
               sparse_.data(), binEdges_,
               overloaded{make_histogram_from_weighted,
@@ -135,22 +136,23 @@ DataArray histogram(const DataConstProxy &sparse,
   return result;
 }
 
-DataArray histogram(const DataConstProxy &sparse, const Variable &binEdges) {
-  return histogram(sparse, VariableConstProxy(binEdges));
+DataArray histogram(const DataArrayConstView &sparse,
+                    const Variable &binEdges) {
+  return histogram(sparse, VariableConstView(binEdges));
 }
 
-Dataset histogram(const Dataset &dataset, const VariableConstProxy &bins) {
-  auto out(Dataset(DatasetConstProxy::makeProxyWithEmptyIndexes(dataset)));
+Dataset histogram(const Dataset &dataset, const VariableConstView &bins) {
+  auto out(Dataset(DatasetConstView::makeViewWithEmptyIndexes(dataset)));
   out.setCoord(bins.dims().inner(), bins);
-  for (const auto &[name, item] : dataset) {
+  for (const auto &item : dataset) {
     if (item.dims().sparse())
-      out.setData(std::string(name), histogram(item, bins));
+      out.setData(item.name(), histogram(item, bins));
   }
   return out;
 }
 
 Dataset histogram(const Dataset &dataset, const Variable &bins) {
-  return histogram(dataset, VariableConstProxy(bins));
+  return histogram(dataset, VariableConstView(bins));
 }
 
 Dataset histogram(const Dataset &dataset, const Dim &dim) {
@@ -159,7 +161,7 @@ Dataset histogram(const Dataset &dataset, const Dim &dim) {
 }
 
 /// Return true if the data array respresents a histogram for given dim.
-bool is_histogram(const DataConstProxy &a, const Dim dim) {
+bool is_histogram(const DataArrayConstView &a, const Dim dim) {
   const auto dims = a.dims();
   const auto coords = a.coords();
   return !dims.sparse() && dims.contains(dim) && coords.contains(dim) &&

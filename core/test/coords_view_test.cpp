@@ -13,32 +13,32 @@
 using namespace scipp;
 using namespace scipp::core;
 
-template <typename T> class CoordsProxyTest : public ::testing::Test {
+template <typename T> class CoordsViewTest : public ::testing::Test {
 protected:
   template <class D>
-  std::conditional_t<std::is_same_v<T, CoordsProxy>, Dataset, const Dataset> &
+  std::conditional_t<std::is_same_v<T, CoordsView>, Dataset, const Dataset> &
   access(D &dataset) {
     return dataset;
   }
 };
 
-using CoordsProxyTypes = ::testing::Types<CoordsProxy, CoordsConstProxy>;
-TYPED_TEST_SUITE(CoordsProxyTest, CoordsProxyTypes);
+using CoordsViewTypes = ::testing::Types<CoordsView, CoordsConstView>;
+TYPED_TEST_SUITE(CoordsViewTest, CoordsViewTypes);
 
-TYPED_TEST(CoordsProxyTest, empty) {
+TYPED_TEST(CoordsViewTest, empty) {
   Dataset d;
   const auto coords = TestFixture::access(d).coords();
   ASSERT_TRUE(coords.empty());
   ASSERT_EQ(coords.size(), 0);
 }
 
-TYPED_TEST(CoordsProxyTest, bad_item_access) {
+TYPED_TEST(CoordsViewTest, bad_item_access) {
   Dataset d;
   const auto coords = TestFixture::access(d).coords();
   ASSERT_ANY_THROW(coords[Dim::X]);
 }
 
-TYPED_TEST(CoordsProxyTest, item_access) {
+TYPED_TEST(CoordsViewTest, item_access) {
   Dataset d;
   const auto x = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
   const auto y = makeVariable<double>(Dims{Dim::Y}, Shape{2}, Values{4, 5});
@@ -50,7 +50,7 @@ TYPED_TEST(CoordsProxyTest, item_access) {
   ASSERT_EQ(coords[Dim::Y], y);
 }
 
-TYPED_TEST(CoordsProxyTest, sparse_coords_values_and_coords) {
+TYPED_TEST(CoordsViewTest, sparse_coords_values_and_coords) {
   Dataset d;
   auto data = makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse});
   data.sparseValues<double>()[0] = {1, 2, 3};
@@ -64,7 +64,7 @@ TYPED_TEST(CoordsProxyTest, sparse_coords_values_and_coords) {
   ASSERT_EQ(scipp::core::sparse_container<double>({4, 5, 6}), sparseX);
 }
 
-TYPED_TEST(CoordsProxyTest, iterators_empty_coords) {
+TYPED_TEST(CoordsViewTest, iterators_empty_coords) {
   Dataset d;
   const auto coords = TestFixture::access(d).coords();
 
@@ -73,7 +73,7 @@ TYPED_TEST(CoordsProxyTest, iterators_empty_coords) {
   EXPECT_EQ(coords.begin(), coords.end());
 }
 
-TYPED_TEST(CoordsProxyTest, iterators) {
+TYPED_TEST(CoordsViewTest, iterators) {
   Dataset d;
   const auto x = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
   const auto y = makeVariable<double>(Dims{Dim::Y}, Shape{2}, Values{4, 5});
@@ -98,7 +98,7 @@ TYPED_TEST(CoordsProxyTest, iterators) {
   ASSERT_EQ(it, coords.end());
 }
 
-TYPED_TEST(CoordsProxyTest, slice) {
+TYPED_TEST(CoordsViewTest, slice) {
   Dataset d;
   const auto x = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
   const auto y = makeVariable<double>(Dims{Dim::Y}, Shape{2}, Values{1, 2});
@@ -123,7 +123,7 @@ TYPED_TEST(CoordsProxyTest, slice) {
   EXPECT_EQ(sliceDY[Dim::Y], y.slice({Dim::Y, 1, 2}));
 }
 
-TYPED_TEST(CoordsProxyTest, find_and_contains) {
+TYPED_TEST(CoordsViewTest, find_and_contains) {
   DatasetFactory3D factory;
   auto dataset = factory.make();
   const auto coords = TestFixture::access(dataset).coords();
@@ -148,7 +148,7 @@ auto make_dataset_2d_coord_x_1d_coord_y() {
   return d;
 }
 
-TYPED_TEST(CoordsProxyTest, slice_2D_coord) {
+TYPED_TEST(CoordsViewTest, slice_2D_coord) {
   auto d = make_dataset_2d_coord_x_1d_coord_y();
   const auto coords = TestFixture::access(d).coords();
 
@@ -175,7 +175,7 @@ auto check_slice_of_slice = [](const auto &dataset, const auto slice) {
   EXPECT_ANY_THROW(slice[Dim::Y]);
 };
 
-TYPED_TEST(CoordsProxyTest, slice_of_slice) {
+TYPED_TEST(CoordsViewTest, slice_of_slice) {
   auto d = make_dataset_2d_coord_x_1d_coord_y();
   const auto cs = TestFixture::access(d).coords();
 
@@ -192,7 +192,7 @@ auto check_slice_of_slice_range = [](const auto &dataset, const auto slice) {
   EXPECT_EQ(slice[Dim::Y], dataset.coords()[Dim::Y].slice({Dim::Y, 1, 2}));
 };
 
-TYPED_TEST(CoordsProxyTest, slice_of_slice_range) {
+TYPED_TEST(CoordsViewTest, slice_of_slice_range) {
   auto d = make_dataset_2d_coord_x_1d_coord_y();
   const auto cs = TestFixture::access(d).coords();
 
@@ -202,19 +202,19 @@ TYPED_TEST(CoordsProxyTest, slice_of_slice_range) {
   check_slice_of_slice_range(d, cs.slice({Dim::Y, 1, 2}, {Dim::X, 1, 3}));
 }
 
-TEST(CoordsConstProxy, slice_return_type) {
+TEST(CoordsConstView, slice_return_type) {
   const Dataset d;
   ASSERT_TRUE((std::is_same_v<decltype(d.coords().slice({Dim::X, 0})),
-                              CoordsConstProxy>));
+                              CoordsConstView>));
 }
 
-TEST(CoordsProxy, slice_return_type) {
+TEST(CoordsView, slice_return_type) {
   Dataset d;
   ASSERT_TRUE(
-      (std::is_same_v<decltype(d.coords().slice({Dim::X, 0})), CoordsProxy>));
+      (std::is_same_v<decltype(d.coords().slice({Dim::X, 0})), CoordsView>));
 }
 
-TEST(MutableCoordsProxyTest, item_write) {
+TEST(MutableCoordsViewTest, item_write) {
   Dataset d;
   const auto x = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
   const auto y = makeVariable<double>(Dims{Dim::Y}, Shape{2}, Values{4, 5});
@@ -232,7 +232,7 @@ TEST(MutableCoordsProxyTest, item_write) {
   ASSERT_EQ(coords[Dim::Y], y_reference);
 }
 
-TEST(CoordsProxy, modify_slice) {
+TEST(CoordsView, modify_slice) {
   auto d = make_dataset_2d_coord_x_1d_coord_y();
   const auto coords = d.coords();
 
@@ -245,7 +245,7 @@ TEST(CoordsProxy, modify_slice) {
   EXPECT_EQ(d.coords()[Dim::X], reference);
 }
 
-TEST(CoordsConstProxy, slice_bin_edges_with_2D_coord) {
+TEST(CoordsConstView, slice_bin_edges_with_2D_coord) {
   Dataset d;
   const auto x = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
                                       Values{1, 2, 3, 4});

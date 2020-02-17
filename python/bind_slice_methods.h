@@ -20,10 +20,9 @@ using namespace scipp::core;
 // TODO We really need a way to get the dimension labels and extents from
 // Dataset (not using class Dimensions).
 template <class T> auto dim_extent(const T &object, const Dim dim) {
-  if constexpr (std::is_same_v<T, Dataset> || std::is_same_v<T, DatasetProxy>) {
+  if constexpr (std::is_same_v<T, Dataset> || std::is_same_v<T, DatasetView>) {
     scipp::index extent = -1;
-    for (const auto &[key, item] : object) {
-      static_cast<void>(key);
+    for (const auto &item : object) {
       if (item.dims().contains(dim)) {
         if (extent == -1)
           extent = item.dims()[dim];
@@ -50,9 +49,9 @@ auto from_py_slice(const T &source,
   return Slice(dim, start, stop);
 }
 
-template <class Proxy> struct SetData {
+template <class View> struct SetData {
   template <class T> struct Impl {
-    static void apply(Proxy &slice, const py::array &data) {
+    static void apply(View &slice, const py::array &data) {
       if (slice.hasVariances())
         throw std::runtime_error("Data object contains variances, to set data "
                                  "values use the `values` property or provide "
@@ -132,21 +131,22 @@ void bind_slice_methods(pybind11::class_<T, Ignored...> &c) {
   c.def("__getitem__", &slicer<T>::get, py::keep_alive<0, 1>());
   c.def("__getitem__", &slicer<T>::get_range, py::keep_alive<0, 1>());
   if constexpr (!std::is_same_v<T, Dataset> &&
-                !std::is_same_v<T, DatasetProxy>) {
+                !std::is_same_v<T, DatasetView>) {
     c.def("__setitem__", &slicer<T>::set_from_numpy);
     c.def("__setitem__", &slicer<T>::set_range_from_numpy);
     c.def("__setitem__", &slicer<T>::template set<Variable>);
-    c.def("__setitem__", &slicer<T>::template set<VariableProxy>);
+    c.def("__setitem__", &slicer<T>::template set<VariableView>);
     c.def("__setitem__", &slicer<T>::template set_range<Variable>);
-    c.def("__setitem__", &slicer<T>::template set_range<VariableProxy>);
+    c.def("__setitem__", &slicer<T>::template set_range<VariableView>);
   }
-  if constexpr (std::is_same_v<T, DataArray> || std::is_same_v<T, DataProxy>) {
-    c.def("__setitem__", &slicer<T>::template set<DataProxy>);
-    c.def("__setitem__", &slicer<T>::template set_range<DataProxy>);
+  if constexpr (std::is_same_v<T, DataArray> ||
+                std::is_same_v<T, DataArrayView>) {
+    c.def("__setitem__", &slicer<T>::template set<DataArrayView>);
+    c.def("__setitem__", &slicer<T>::template set_range<DataArrayView>);
   }
-  if constexpr (std::is_same_v<T, Dataset> || std::is_same_v<T, DatasetProxy>) {
-    c.def("__setitem__", &slicer<T>::template set<DatasetProxy>);
-    c.def("__setitem__", &slicer<T>::template set_range<DatasetProxy>);
+  if constexpr (std::is_same_v<T, Dataset> || std::is_same_v<T, DatasetView>) {
+    c.def("__setitem__", &slicer<T>::template set<DatasetView>);
+    c.def("__setitem__", &slicer<T>::template set_range<DatasetView>);
   }
 }
 

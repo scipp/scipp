@@ -28,12 +28,12 @@ def plot(scipp_obj,
 
     inventory = dict()
     tp = type(scipp_obj)
-    if tp is sc.Dataset or tp is sc.DatasetProxy:
-        for name, var in sorted(scipp_obj):
-            inventory[name] = var
-    elif tp is sc.Variable or tp is sc.VariableProxy:
+    if tp is sc.Dataset or tp is sc.DatasetView:
+        for name in sorted(scipp_obj.keys()):
+            inventory[name] = scipp_obj[name]
+    elif tp is sc.Variable or tp is sc.VariableView:
         inventory[str(tp)] = sc.DataArray(data=scipp_obj)
-    elif tp is sc.DataArray or tp is sc.DataProxy:
+    elif tp is sc.DataArray or tp is sc.DataArrayView:
         inventory[scipp_obj.name] = scipp_obj
     elif tp is dict:
         inventory = scipp_obj

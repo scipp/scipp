@@ -69,7 +69,7 @@ TEST(EventWorkspace, basics) {
   d.insert(Coord::Tof, Dimensions(Dim::Tof, 1001), 1001);
 
   // EventList using Dataset. There are probably better solutions so this likely
-  // to change, e.g., to use a proxy object.
+  // to change, e.g., to use a view object.
   Dataset e;
   e.insert(Data::Tof, "", {Dim::Event, 0}, 0);
   e.insert(Data::PulseTime, "", {Dim::Event, 0}, 0);

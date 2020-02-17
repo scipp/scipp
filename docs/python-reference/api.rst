@@ -9,11 +9,11 @@ Classes
    Dim
    Unit
    Variable
-   VariableProxy
+   VariableView
    DataArray
-   DataProxy
+   DataArrayView
    Dataset
-   DatasetProxy
+   DatasetView
    GroupByDataArray
    GroupByDataset
 
@@ -81,7 +81,7 @@ Trigonometric
    asin
    acos
    atan
-   
+
 Counts
 ~~~~~~
 

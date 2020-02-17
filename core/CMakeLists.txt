@@ -12,11 +12,11 @@ set(INC_FILES
     include/scipp/core/counts.h
     include/scipp/core/slice.h
     include/scipp/core/sort.h
-    include/scipp/core/variable_view.h
+    include/scipp/core/element_array_view.h
     include/scipp/core/variable.h
     include/scipp/core/variable.tcc
-        include/scipp/core/view_index.h
-        include/scipp/core/variable_keyword_arg_constructor.h)
+    include/scipp/core/view_index.h
+    include/scipp/core/variable_keyword_arg_constructor.h)
 
 set(SRC_FILES
     counts.cpp
@@ -45,6 +45,7 @@ set(SRC_FILES
     variable_operations.cpp
     variable_reduction_operations.cpp
     variable_type_conversion.cpp
+    element_array_view.cpp
     view_index.cpp)
 
 set(LINK_TYPE "STATIC")
@@ -56,6 +57,10 @@ add_library(${TARGET_NAME} ${LINK_TYPE} ${INC_FILES} ${SRC_FILES})
 generate_export_header(${TARGET_NAME})
 target_link_libraries(${TARGET_NAME}
                       PUBLIC scipp-common scipp-units Boost::boost)
+if(TBB_FOUND)
+  target_link_libraries(${TARGET_NAME} PUBLIC TBB::tbb)
+endif()
+
 # Include tcb/span as system header to avoid compiler warnings.
 target_include_directories(
   ${TARGET_NAME} SYSTEM
@@ -67,6 +72,7 @@ target_include_directories(
   ${TARGET_NAME}
   PUBLIC $<INSTALL_INTERFACE:include>
          $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+         $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
          ${CMAKE_CURRENT_BINARY_DIR})
 target_include_directories(${TARGET_NAME} SYSTEM
                            PUBLIC ${CMAKE_BINARY_DIR}/Eigen-src)

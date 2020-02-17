@@ -10,40 +10,41 @@
 #include "scipp-core_export.h"
 #include "scipp/common/index.h"
 #include "scipp/core/dtype.h"
-#include "scipp/core/proxy_decl.h"
 #include "scipp/units/unit.h"
 
 namespace scipp::core {
 
-class DataProxy;
-class DataConstProxy;
-class DatasetProxy;
-class DatasetConstProxy;
+class DataArrayView;
+class DataArrayConstView;
+class DatasetView;
+class DatasetConstView;
 class Dataset;
 class DataArray;
 class Dimensions;
 class Variable;
-class VariableProxy;
-class VariableConstProxy;
+class VariableView;
+class VariableConstView;
 class Slice;
+template <class Id, class Data> class ConstView;
+template <class T> class MutableView;
 
 SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os, const Dim dim);
 SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
-                                           const VariableConstProxy &variable);
+                                           const VariableConstView &variable);
 SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
-                                           const VariableProxy &variable);
+                                           const VariableView &variable);
 SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
                                            const Variable &variable);
 SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
-                                           const DataConstProxy &data);
+                                           const DataArrayConstView &data);
 SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
-                                           const DataProxy &data);
+                                           const DataArrayView &data);
 SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
                                            const DataArray &data);
 SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
-                                           const DatasetConstProxy &dataset);
+                                           const DatasetConstView &dataset);
 SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
-                                           const DatasetProxy &dataset);
+                                           const DatasetView &dataset);
 SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
                                            const Dataset &dataset);
 
@@ -52,27 +53,27 @@ SCIPP_CORE_EXPORT std::string to_string(const DType dtype);
 SCIPP_CORE_EXPORT std::string to_string(const Dimensions &dims);
 SCIPP_CORE_EXPORT std::string to_string(const Slice &slice);
 SCIPP_CORE_EXPORT std::string to_string(const Variable &variable);
-SCIPP_CORE_EXPORT std::string to_string(const VariableConstProxy &variable);
+SCIPP_CORE_EXPORT std::string to_string(const VariableConstView &variable);
 SCIPP_CORE_EXPORT std::string to_string(const DataArray &data);
-SCIPP_CORE_EXPORT std::string to_string(const DataConstProxy &data);
+SCIPP_CORE_EXPORT std::string to_string(const DataArrayConstView &data);
 SCIPP_CORE_EXPORT std::string to_string(const Dataset &dataset);
-SCIPP_CORE_EXPORT std::string to_string(const DatasetConstProxy &dataset);
+SCIPP_CORE_EXPORT std::string to_string(const DatasetConstView &dataset);
 
 template <class Id, class Data>
-std::string to_string(const ConstProxy<Id, Data> &proxy) {
+std::string to_string(const ConstView<Id, Data> &view) {
   std::stringstream ss;
 
-  for (const auto &[key, item] : proxy) {
-    ss << "<scipp.ConstProxy> (" << key << "):\n" << to_string(item);
+  for (const auto &[key, item] : view) {
+    ss << "<scipp.ConstView> (" << key << "):\n" << to_string(item);
   }
   return ss.str();
 }
 
-template <class T> std::string to_string(const MutableProxy<T> &mutableProxy) {
+template <class T> std::string to_string(const MutableView<T> &mutableView) {
   std::stringstream ss;
 
-  for (const auto &[key, item] : mutableProxy) {
-    ss << "<scipp.MutableProxy> (" << key << "):\n" << to_string(item);
+  for (const auto &[key, item] : mutableView) {
+    ss << "<scipp.MutableView> (" << key << "):\n" << to_string(item);
   }
   return ss.str();
 }

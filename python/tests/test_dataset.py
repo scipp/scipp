@@ -2,9 +2,9 @@
 # Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Simon Heybrock
+import numpy as np
 import pytest
 
-import numpy as np
 import scipp as sc
 from scipp import Dim
 
@@ -136,7 +136,7 @@ def test_coords_keys():
     d = sc.Dataset()
     d.coords[Dim.X] = sc.Variable(1.0)
     assert len(d.coords.keys()) == 1
-    assert d.coords.keys() == [Dim.X]
+    assert Dim.X in d.coords.keys()
 
 
 def test_labels_setitem():
@@ -172,7 +172,7 @@ def test_labels_keys():
     d = sc.Dataset()
     d.labels["b"] = sc.Variable(1.0)
     assert len(d.labels.keys()) == 1
-    assert d.labels.keys() == ["b"]
+    assert "b" in d.labels.keys()
 
 
 def test_masks_setitem():
@@ -231,7 +231,7 @@ def test_attrs_keys():
     d = sc.Dataset()
     d.attrs["b"] = sc.Variable(1.0)
     assert len(d.attrs.keys()) == 1
-    assert d.attrs.keys() == ["b"]
+    assert "b" in d.attrs.keys()
 
 
 def test_slice_item():
@@ -337,7 +337,7 @@ def test_chained_slicing():
     assert d[Dim.X, 1][Dim.Z, 5] == expected
 
 
-def test_coords_proxy_comparison_operators():
+def test_coords_view_comparison_operators():
     d = sc.Dataset(
         {
             'a': sc.Variable([Dim.X], values=np.arange(10.0)),
@@ -591,7 +591,7 @@ def test_in_place_binary_with_scalar():
     assert d == copy
 
 
-def test_proxy_in_place_binary_with_scalar():
+def test_view_in_place_binary_with_scalar():
     d = sc.Dataset({'data': sc.Variable([Dim.X], values=[10])},
                    coords={Dim.X: sc.Variable([Dim.X], values=[10])})
     copy = d.copy()
@@ -643,13 +643,15 @@ def make_simple_dataset(dim1=Dim.X, dim2=Dim.Y, seed=None):
         labels={'aux': sc.Variable([dim2], values=np.random.rand(3))})
 
 
-def test_dataset_proxy_set_variance():
+def test_dataset_view_set_variance():
     d = make_simple_dataset()
     variances = np.arange(6).reshape(2, 3)
     assert d["a"].variances is None
     d["a"].variances = variances
     assert d["a"].variances is not None
     np.testing.assert_array_equal(d["a"].variances, variances)
+    d["a"].variances = None
+    assert d["a"].variances is None
 
 
 def test_sort():
@@ -752,6 +754,20 @@ def test_masks_delitem():
     assert d != dref
     del d.masks['masks']
     assert d == dref
+
+
+@pytest.mark.parametrize("dims, lengths",
+                         (([Dim.X], (sc.Dimensions.Sparse, )),
+                          ([Dim.X, Dim.Y], (10, sc.Dimensions.Sparse)),
+                          ([Dim.X, Dim.Y, Dim.Z],
+                           (10, 10, sc.Dimensions.Sparse)),
+                          ([Dim.X, Dim.Y, Dim.Z, Dim.Spectrum],
+                           (10, 10, 10, sc.Dimensions.Sparse))))
+def test_sparse_dim_has_none_shape(dims, lengths):
+    ds = sc.Dataset(data={"data": sc.Variable(dims, shape=lengths)})
+
+    assert None in ds.shape
+    assert ds["data"].shape[-1] is None
 
 
 # def test_delitem(self):
