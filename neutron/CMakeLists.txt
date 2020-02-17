@@ -1,5 +1,5 @@
-# SPDX-License-Identifier: GPL-3.0-or-later
-# Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
+# SPDX-License-Identifier: GPL-3.0-or-later Copyright (c) 2019 Scipp
+# contributors (https://github.com/scipp)
 set(TARGET_NAME "scipp-neutron")
 set(INC_FILES include/scipp/neutron/convert.h)
 set(INC_FILES include/scipp/neutron/diffraction/convert_with_calibration.h)
@@ -18,9 +18,11 @@ target_include_directories(
   ${TARGET_NAME}
   PUBLIC $<INSTALL_INTERFACE:include>
          $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-         ${CMAKE_CURRENT_BINARY_DIR})
-target_include_directories(${TARGET_NAME} SYSTEM
-                           PUBLIC ${CMAKE_BINARY_DIR}/Eigen-src)
+         ${CMAKE_CURRENT_BINARY_DIR}
+)
+target_include_directories(
+  ${TARGET_NAME} SYSTEM PUBLIC ${CMAKE_BINARY_DIR}/Eigen-src
+)
 
 set_target_properties(${TARGET_NAME} PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 
