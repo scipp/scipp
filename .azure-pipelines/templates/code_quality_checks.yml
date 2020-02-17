@@ -29,7 +29,9 @@ stages:
               architecture: 'x64'
           - script: pip install cmake_format==0.6.9
             displayName: 'Install tooling'
-          - script: find . -type f -name CMakeLists.txt -or -name '*.cmake' | xargs cmake-format --check
+          - script: |
+              cmake-format --version
+              find . -type f -name CMakeLists.txt -or -name '*.cmake' | xargs cmake-format --check
             displayName: 'Run cmake-format'
 
       - job: 'python_checks'
@@ -46,5 +48,7 @@ stages:
             displayName: 'Install tooling'
           - script: ./.travis/check_flake8.sh
             displayName: 'Run flake8'
-          - script: yapf --diff --recursive 'python'
+          - script: |
+              yapf --version
+              yapf --diff --recursive 'python'
             displayName: 'Run yapf'
