@@ -24,7 +24,7 @@ See [installation](https://scipp.readthedocs.io/en/latest/getting-started/instal
 #### TBB
 
 Scipp uses TBB for multi-threading.
-This is an optional dependencie.
+This is an optional dependency.
 We have found that TBB from `conda-forge` works best in terms of `cmake` integration.
 You need `tbb` and `tbb-devel`.
 
