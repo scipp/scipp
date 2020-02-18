@@ -17,6 +17,10 @@ public:
   constexpr static auto X = DimId::X;
   constexpr static auto Y = DimId::Y;
   constexpr static auto Z = DimId::Z;
+  constexpr static auto Tof = DimId::Tof;
+  constexpr static auto Q = DimId::Q;
+  constexpr static auto Time = DimId::Time;
+  constexpr static auto Row = DimId::Row;
 
   constexpr Dim(const DimId id) : m_id(id) {}
   explicit Dim(const std::string &label) {
