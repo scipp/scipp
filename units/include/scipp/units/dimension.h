@@ -15,14 +15,14 @@
 /// is a reserved name and is automatically added to the list. This also defines
 /// a `to_string` function for the defined enum.
 #define SCIPP_UNITS_DECLARE_DIMENSIONS(...)                                    \
-  enum class SCIPP_UNITS_EXPORT Dim : uint16_t { __VA_ARGS__, Invalid };       \
+  enum class SCIPP_UNITS_EXPORT DimId : uint16_t { __VA_ARGS__, Invalid };     \
                                                                                \
   namespace detail2 {                                                          \
   constexpr const char *names = #__VA_ARGS__;                                  \
-  constexpr auto ndim = static_cast<size_t>(Dim::Invalid);                     \
+  constexpr auto ndim = static_cast<size_t>(DimId::Invalid);                   \
   }                                                                            \
                                                                                \
-  SCIPP_UNITS_EXPORT std::string to_string(const Dim dim);
+  SCIPP_UNITS_EXPORT std::string to_string(const DimId dim);
 
 /// Macro to define dimension labels.
 ///
@@ -67,8 +67,8 @@
       make_dim_names(std::make_index_sequence<MODULE::detail2::ndim>());       \
   }                                                                            \
                                                                                \
-  std::string MODULE::to_string(const Dim dim) {                               \
-    if (dim == Dim::Invalid)                                                   \
+  std::string MODULE::to_string(const DimId dim) {                             \
+    if (dim == DimId::Invalid)                                                 \
       return std::string("Dim.Invalid");                                       \
     return "Dim." + std::string(dim_names[static_cast<uint16_t>(dim)]);        \
   }

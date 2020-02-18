@@ -4,7 +4,7 @@
 
 #include "scipp/units/dim.h"
 
-using namespace scipp::units::next;
+using namespace scipp::units;
 
 TEST(DimTest, basics) {
   EXPECT_EQ(Dim(Dim::X), Dim(Dim::X));

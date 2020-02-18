@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @author Simon Heybrock
-#ifndef SCIPP_UNITS_DUMMY_H
-#define SCIPP_UNITS_DUMMY_H
+#ifndef SCIPP_UNITS_DIM_H
+#define SCIPP_UNITS_DIM_H
 
-#include "scipp/units/unit.h"
+#include <unordered_map>
+
+#include "scipp/units/dummy.h"
+#include "scipp/units/neutron.h"
 
 namespace scipp::units {
-namespace next {
-using DimId = scipp::units::Dim;
-
 class Dim {
 public:
   constexpr static auto Invalid = DimId::Invalid;
@@ -46,16 +46,10 @@ public:
 private:
   DimId m_id;
   static std::unordered_map<std::string, DimId> custom_ids;
-  static int32_t custom_count;
 };
 
-std::unordered_map<std::string, DimId> Dim::custom_ids;
-int32_t Dim::custom_count{0};
-
-std::string to_string(const Dim dim) { return dim.name(); }
-
-} // namespace next
+std::string to_string(const Dim dim);
 
 } // namespace scipp::units
 
-#endif // SCIPP_UNITS_DUMMY_H
+#endif // SCIPP_UNITS_DIM_H
