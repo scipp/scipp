@@ -20,6 +20,7 @@ add_executable(
   dataset_test.cpp
   dimensions_test.cpp
   element_array_test.cpp
+  element_unary_operations_test.cpp
   except_test.cpp
   groupby_test.cpp
   histogram_test.cpp
