@@ -2,17 +2,25 @@ name: scipp-docs
 
 channels:
   - conda-forge
-  - scipp/label/dev
 
+# Note that since the scipp package is installed after this environment is created (and Conda is a pain) this list must include the dependencies of the Scipp package also.
+# This is essentially everything in the "run" section of conda/meta.yml.
 dependencies:
-  - python>=3
+  - appdirs
+  - doxygen
   - ipython=7.2.0
-  - sphinx>=1.6
   - pip
-  - scipp
+  - pandoc
+  - python>=3
+  - python-configuration
+  - pyyaml
+  - sphinx>=1.6
+  - sphinx_rtd_theme
+  - tbb
+  - numpy
   - pip:
-    - nbsphinx
-    - matplotlib
-    - ipywidgets
-    - ipyvolume
     - ipyevents
+    - ipyvolume
+    - ipywidgets
+    - matplotlib
+    - nbsphinx

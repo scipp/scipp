@@ -1,0 +1,42 @@
+jobs:
+  - job: 'documentation'
+    displayName: 'Documentation'
+    pool:
+      vmImage: 'ubuntu-18.04'
+    variables:
+      packages_dir: '$(Build.StagingDirectory)/packages'
+      docs_dir: '$(Build.StagingDirectory)/docs'
+    steps:
+      - bash: |
+          set -ex
+          mkdir -p "$(packages_dir)"
+          mkdir -p "$(docs_dir)"
+        displayName: 'Make directories'
+      - task: DownloadBuildArtifacts@0
+        inputs:
+          buildType: 'current'
+          specificBuildWithTriggering: true
+          downloadType: 'single'
+          artifactName: 'linux-64'
+          downloadPath: '$(packages_dir)'
+        displayName: 'Download previously build Conda package'
+      - bash: echo "##vso[task.prependpath]$CONDA/bin"
+        displayName: Add Conda to PATH
+      - bash: conda env create -n scipp_docs -f docs/environment.yml
+        displayName: 'Create Conda environment'
+      - bash: |
+          set -ex
+          source activate scipp_docs
+          conda install "$(packages_dir)/linux-64/"scipp-*.tar.bz2
+        displayName: 'Install Scipp package'
+      - bash: |
+          set -ex
+          cd docs
+          source activate scipp_docs
+          sphinx-build . "$(docs_dir)"
+        displayName: 'Build documentation'
+      - task: PublishBuildArtifacts@1
+        inputs:
+          PathtoPublish: '$(docs_dir)'
+          ArtifactName: 'documentation'
+        displayName: 'Publish documentation artifacts'
