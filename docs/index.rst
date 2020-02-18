@@ -96,13 +96,13 @@ Documentation
    scipp-neutron/instrument-view
 
 .. toctree::
-   :caption: C++ Reference
+   :caption: Developer Documentation
    :maxdepth: 3
 
-   cpp-reference/api
-   cpp-reference/customizing
-   cpp-reference/transform
-   cpp-reference/constructing_variables
+   developer/api
+   developer/customizing
+   developer/transform
+   developer/constructing_variables
 
 .. toctree::
    :caption: About
