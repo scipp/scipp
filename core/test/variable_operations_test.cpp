@@ -10,6 +10,8 @@
 #include "scipp/core/except.h"
 #include "scipp/core/variable.h"
 
+#include "../element_unary_operations.h"
+
 using namespace scipp;
 using namespace scipp::core;
 
@@ -646,22 +648,11 @@ TEST(Variable, norm_of_vector) {
   EXPECT_EQ(norm(var), reference);
 }
 
-TEST(Variable, sqrt_double) {
-  // TODO Currently comparisons of variables do not provide special handling of
-  // NaN, so sqrt of negative values will yield variables that are never equal.
-  auto reference = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1, 2});
-  reference.setUnit(units::m);
-  auto var = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1, 4});
-  var.setUnit(units::m * units::m);
-  EXPECT_EQ(sqrt(var), reference);
-}
-
-TEST(Variable, sqrt_float) {
-  auto reference = makeVariable<float>(Dims{Dim::X}, Shape{2}, Values{1, 2});
-  reference.setUnit(units::m);
-  auto var = makeVariable<float>(Dims{Dim::X}, Shape{2}, Values{1, 4});
-  var.setUnit(units::m * units::m);
-  EXPECT_EQ(sqrt(var), reference);
+TEST(Variable, sqrt) {
+  EXPECT_EQ(sqrt(makeVariable<double>(Values{1.23})),
+            makeVariable<double>(Values{element::sqrt(1.23)}));
+  EXPECT_EQ(sqrt(makeVariable<float>(Values{1.23456789})),
+            makeVariable<float>(Values{element::sqrt(1.23456789f)}));
 }
 
 TEST(VariableReciprocalOutArg, full_in_place) {

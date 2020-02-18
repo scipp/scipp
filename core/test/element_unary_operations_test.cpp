@@ -17,7 +17,7 @@ TEST(ElementSqrtTest, unit) {
 
 TEST(ElementSqrtTest, value) {
   EXPECT_EQ(element::sqrt(1.23), std::sqrt(1.23));
-  EXPECT_EQ(element::sqrt(1.23f), std::sqrt(1.23f));
+  EXPECT_EQ(element::sqrt(1.23456789f), std::sqrt(1.23456789f));
 }
 
 TEST(ElementSqrtTest, value_and_variance) {
