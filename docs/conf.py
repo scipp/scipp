@@ -22,7 +22,9 @@
 
 # -- Doxygen build configuration
 
+import os
 import subprocess
+
 subprocess.call('cd ..; doxygen docs/Doxyfile', shell=True)
 
 html_extra_path = ['./doxygen']
@@ -30,7 +32,7 @@ html_show_sourcelink = False
 nbsphinx_prolog = """`Download this Jupyter notebook <https://raw.githubusercontent.com/scipp/scipp/master/docs/{{ env.doc2path(env.docname, base=None) }}>`_
 
 ----
-"""
+"""  # noqa: E501
 
 # -- General configuration ------------------------------------------------
 
@@ -56,8 +58,8 @@ intersphinx_mapping = {
     'xarray': ('https://xarray.pydata.org/en/stable/', None)
 }
 
-# autodocs includes everything, even irrelevant API internals. autosummary looks
-# more suitable in the long run when the API grows.
+# autodocs includes everything, even irrelevant API internals. autosummary
+# looks more suitable in the long run when the API grows.
 # For a nice example see how xarray handles its API documentation.
 autosummary_generate = True
 
@@ -112,7 +114,6 @@ todo_include_todos = False
 # a list of builtin themes.
 #
 
-import os
 on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 
 if not on_rtd:  # only import and set the theme if we're building docs locally
