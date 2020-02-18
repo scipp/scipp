@@ -26,12 +26,13 @@ stages:
             submodules: true
           - bash: echo "##vso[task.prependpath]$CONDA/bin"
             displayName: Add Conda to PATH
-          - script: |
+          - bash: |
+              set -ex
               conda --version
               conda install --yes anaconda-client conda-build
               conda config --set always_yes yes --set changeps1 no
             displayName: 'Conda configuration'
-          - script: |
+          - bash: |
               conda build --user scipp --token "$ANACONDA_TOKEN" --channel conda-forge --label dev --python="$PYTHON_VERSION" ./conda
             env:
               ANACONDA_TOKEN: $(anaconda_token_secret)
@@ -51,12 +52,13 @@ stages:
             displayName: Add Conda to PATH
           - bash: sudo chown -R $USER $CONDA
             displayName: Take ownership of Conda installation
-          - script: |
+          - bash: |
+              set -ex
               conda --version
               conda install --yes anaconda-client conda-build
               conda config --set always_yes yes --set changeps1 no
             displayName: 'Conda configuration'
-          - script: |
+          - bash: |
               conda build --user scipp --token "$ANACONDA_TOKEN" --channel conda-forge --label dev ./conda
             env:
               ANACONDA_TOKEN: $(anaconda_token_secret)

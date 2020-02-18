@@ -26,11 +26,12 @@ stages:
             submodules: true
           - bash: echo "##vso[task.prependpath]$CONDA/bin"
             displayName: Add Conda to PATH
-          - script: |
+          - bash: |
+              set -ex
               conda --version
               conda install --yes conda-build
             displayName: 'Conda configuration'
-          - script: |
+          - bash: |
               conda build -c conda-forge ./conda
             displayName: 'Package build'
 
@@ -46,11 +47,12 @@ stages:
             displayName: Add Conda to PATH
           - bash: sudo chown -R $USER $CONDA
             displayName: Take ownership of Conda installation
-          - script: |
+          - bash: |
+              set -ex
               conda --version
               conda install --yes conda-build
             displayName: 'Conda configuration'
-          - script: |
+          - bash: |
               OSX_VERSION=10.15 conda build -c conda-forge ./conda
             displayName: 'Package build'
 

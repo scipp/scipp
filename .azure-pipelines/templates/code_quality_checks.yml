@@ -8,13 +8,19 @@ stages:
         pool:
           vmImage: 'ubuntu-18.04'
         steps:
-          - script: |
+          - bash: |
+              set -ex
               sudo apt-get remove --yes clang libllvm6.0
               sudo add-apt-repository --yes 'deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic main'
               sudo apt-get update
               sudo apt-get install --yes clang-format-6.0
             displayName: 'Install tooling'
-          - script: ./.travis/check_clang_format.sh
+          - bash: |
+              set -ex
+              clang-format-6.0 --version
+              find . -type f -regex '.*\.\(c\|cpp\|h\|hpp\)' -not -path './common/include/scipp/common/span/*' | xargs clang-format-6.0 -i
+              git diff
+              git diff --quiet
             displayName: 'Run clang-format'
 
       - job: 'cmake_checks'
@@ -29,7 +35,8 @@ stages:
               architecture: 'x64'
           - script: pip install cmake_format==0.6.9
             displayName: 'Install tooling'
-          - script: |
+          - bash: |
+              set -ex
               cmake-format --version
               find . -type f -name CMakeLists.txt -or -name '*.cmake' | xargs cmake-format --check
             displayName: 'Run cmake-format'
@@ -46,9 +53,13 @@ stages:
               architecture: 'x64'
           - script: pip install flake8 yapf==0.29.0
             displayName: 'Install tooling'
-          - script: ./.travis/check_flake8.sh
+          - bash: |
+              set -ex
+              flake8 --version
+              find . -type f -name '*.py' | xargs flake8
             displayName: 'Run flake8'
-          - script: |
+          - bash: |
+              set -ex
               yapf --version
               yapf --diff --recursive 'python'
             displayName: 'Run yapf'
