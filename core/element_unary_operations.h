@@ -9,11 +9,18 @@
 
 namespace scipp::core {
 
+/// Operators to be used with transform and transform_in_place to implement
+/// operations for Variable.
 namespace element {
 
-constexpr auto sqrt = [](const auto x) {
+constexpr auto sqrt = [](const auto x) noexcept {
   using std::sqrt;
   return sqrt(x);
+};
+
+constexpr auto sqrt_out_arg = [](auto &x, const auto y) noexcept {
+  using std::sqrt;
+  x = sqrt(y);
 };
 
 } // namespace element

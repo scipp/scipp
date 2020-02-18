@@ -203,16 +203,14 @@ Variable sqrt(const VariableConstView &var) {
 }
 
 Variable sqrt(Variable &&var) {
-  using std::sqrt;
   auto out(std::move(var));
   sqrt(out, out);
   return out;
 }
 
 VariableView sqrt(const VariableConstView &var, const VariableView &out) {
-  using std::sqrt;
-  transform_in_place<pair_self_t<double, float>>(
-      out, var, [](auto &x, const auto &y) { x = sqrt(y); });
+  transform_in_place<pair_self_t<double, float>>(out, var,
+                                                 element::sqrt_out_arg);
   return out;
 }
 

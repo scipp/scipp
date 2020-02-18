@@ -11,7 +11,7 @@ using namespace scipp;
 using namespace scipp::core;
 
 TEST(ElementSqrtTest, unit) {
-  units::Unit m2(units::m * units::m);
+  const units::Unit m2(units::m * units::m);
   EXPECT_EQ(element::sqrt(m2), units::sqrt(m2));
 }
 
@@ -21,6 +21,32 @@ TEST(ElementSqrtTest, value) {
 }
 
 TEST(ElementSqrtTest, value_and_variance) {
-  ValueAndVariance x(2.0, 1.0);
+  const ValueAndVariance x(2.0, 1.0);
   EXPECT_EQ(element::sqrt(x), sqrt(x));
+}
+
+TEST(ElementSqrtOutArgTest, unit) {
+  const units::Unit m2(units::m * units::m);
+  units::Unit out(units::dimensionless);
+  element::sqrt_out_arg(out, m2);
+  EXPECT_EQ(out, units::sqrt(m2));
+}
+
+TEST(ElementSqrtOutArgTest, value_double) {
+  double out;
+  element::sqrt_out_arg(out, 1.23);
+  EXPECT_EQ(out, std::sqrt(1.23));
+}
+
+TEST(ElementSqrtOutArgTest, value_float) {
+  float out;
+  element::sqrt_out_arg(out, 1.23456789f);
+  EXPECT_EQ(out, std::sqrt(1.23456789f));
+}
+
+TEST(ElementSqrtOutArgTest, value_and_variance) {
+  const ValueAndVariance x(2.0, 1.0);
+  ValueAndVariance out(x);
+  element::sqrt_out_arg(out, x);
+  EXPECT_EQ(out, sqrt(x));
 }
