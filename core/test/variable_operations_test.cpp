@@ -649,10 +649,18 @@ TEST(Variable, norm_of_vector) {
 }
 
 TEST(Variable, sqrt) {
-  EXPECT_EQ(sqrt(makeVariable<double>(Values{1.23})),
-            makeVariable<double>(Values{element::sqrt(1.23)}));
-  EXPECT_EQ(sqrt(makeVariable<float>(Values{1.23456789})),
-            makeVariable<float>(Values{element::sqrt(1.23456789f)}));
+  const auto f64 = makeVariable<double>(Values{1.23});
+  EXPECT_EQ(sqrt(f64), makeVariable<double>(Values{element::sqrt(1.23)}));
+  const auto f32 = makeVariable<float>(Values{1.23456789});
+  EXPECT_EQ(sqrt(f32), makeVariable<float>(Values{element::sqrt(1.23456789f)}));
+}
+
+TEST(Variable, sqrt_move) {
+  auto var = makeVariable<double>(Values{1.23});
+  const auto ptr = var.values<double>().data();
+  auto out = sqrt(std::move(var));
+  EXPECT_EQ(out, makeVariable<double>(Values{element::sqrt(1.23)}));
+  EXPECT_EQ(out.values<double>().data(), ptr);
 }
 
 TEST(Variable, sqrt_out_arg) {

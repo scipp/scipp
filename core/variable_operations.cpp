@@ -203,9 +203,8 @@ Variable sqrt(const VariableConstView &var) {
 }
 
 Variable sqrt(Variable &&var) {
-  auto out(std::move(var));
-  sqrt(out, out);
-  return out;
+  sqrt(var, var);
+  return std::move(var);
 }
 
 VariableView sqrt(const VariableConstView &var, const VariableView &out) {
