@@ -50,3 +50,9 @@ TEST(ElementSqrtOutArgTest, value_and_variance) {
   element::sqrt_out_arg(out, x);
   EXPECT_EQ(out, sqrt(x));
 }
+
+TEST(ElementSqrtOutArgTest, supported_types) {
+  auto supported = decltype(element::sqrt_out_arg)::types{};
+  std::get<double>(supported);
+  std::get<float>(supported);
+}

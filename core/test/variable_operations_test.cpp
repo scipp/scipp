@@ -655,6 +655,17 @@ TEST(Variable, sqrt) {
             makeVariable<float>(Values{element::sqrt(1.23456789f)}));
 }
 
+TEST(Variable, sqrt_out_arg) {
+  auto x = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.23, 0.0});
+  auto out = x.slice({Dim::X, 1});
+  auto view = sqrt(x.slice({Dim::X, 0}), out);
+
+  EXPECT_EQ(x, makeVariable<double>(Dims{Dim::X}, Shape{2},
+                                    Values{1.23, element::sqrt(1.23)}));
+  EXPECT_EQ(view, out);
+  EXPECT_EQ(view.underlying(), x);
+}
+
 TEST(VariableReciprocalOutArg, full_in_place) {
   auto var = makeVariable<double>(Dims{Dim::X}, Shape{3}, units::Unit(units::m),
                                   Values{1, 4, 9});
@@ -699,38 +710,6 @@ TEST(VariableAbsOutArg, partial) {
   auto view = abs(var.slice({Dim::X, 1, 3}), out);
   EXPECT_EQ(out, makeVariable<double>(Dims{Dim::X}, Shape{2},
                                       units::Unit(units::m), Values{4, 9}));
-  EXPECT_EQ(view, out);
-  EXPECT_EQ(view.underlying(), out);
-}
-
-TEST(VariableSqrtOutArg, unit_fail) {
-  auto var =
-      makeVariable<double>(Dims{Dim::X}, Shape{3},
-                           units::Unit(units::m * units::m), Values{1, 4, 9});
-  EXPECT_THROW(sqrt(var.slice({Dim::X, 0, 2}), var.slice({Dim::X, 0, 2})),
-               except::UnitError);
-}
-
-TEST(VariableSqrtOutArg, full_in_place) {
-  auto var =
-      makeVariable<double>(Dims{Dim::X}, Shape{3},
-                           units::Unit(units::m * units::m), Values{1, 4, 9});
-  auto view = sqrt(var, var);
-  EXPECT_EQ(var, makeVariable<double>(Dims{Dim::X}, Shape{3},
-                                      units::Unit(units::m), Values{1, 2, 3}));
-  EXPECT_EQ(view, var);
-  EXPECT_EQ(view.underlying(), var);
-}
-
-TEST(VariableSqrtOutArg, partial) {
-  const auto var =
-      makeVariable<double>(Dims{Dim::X}, Shape{3},
-                           units::Unit(units::m * units::m), Values{1, 4, 9});
-  auto out =
-      makeVariable<double>(Dims{Dim::X}, Shape{2}, units::Unit(units::m));
-  auto view = sqrt(var.slice({Dim::X, 1, 3}), out);
-  EXPECT_EQ(out, makeVariable<double>(Dims{Dim::X}, Shape{2},
-                                      units::Unit(units::m), Values{2, 3}));
   EXPECT_EQ(view, out);
   EXPECT_EQ(view.underlying(), out);
 }
