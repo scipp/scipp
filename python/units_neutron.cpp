@@ -52,6 +52,8 @@ void init_units_neutron(py::module &m) {
       .def(py::init<const std::string &>())
       .def(py::self == py::self)
       .def(py::self != py::self)
+      .def(hash(py::self))
+      .def("__repr__", [](const Dim &dim) { return dim.name(); })
       // Pre-defined labels are temporarily useful for refactoring and may be
       // removed later.
       .def_property_readonly_static(
