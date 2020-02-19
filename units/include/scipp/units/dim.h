@@ -13,15 +13,29 @@
 namespace scipp::units {
 class Dim {
 public:
+  constexpr static auto Detector = DimId::Detector;
+  constexpr static auto DSpacing = DimId::DSpacing;
+  constexpr static auto Energy = DimId::Energy;
+  constexpr static auto EnergyTransfer = DimId::EnergyTransfer;
+  constexpr static auto Group = DimId::Row;
   constexpr static auto Invalid = DimId::Invalid;
+  constexpr static auto Position = DimId::Position;
+  constexpr static auto Q = DimId::Q;
+  constexpr static auto Qx = DimId::Qx;
+  constexpr static auto Qy = DimId::Qy;
+  constexpr static auto Qz = DimId::Qz;
+  constexpr static auto Row = DimId::Row;
+  constexpr static auto ScatteringAngle = DimId::ScatteringAngle;
+  constexpr static auto Spectrum = DimId::Spectrum;
+  constexpr static auto Temperature = DimId::Temperature;
+  constexpr static auto Time = DimId::Time;
+  constexpr static auto Tof = DimId::Tof;
+  constexpr static auto Wavelength = DimId::Wavelength;
   constexpr static auto X = DimId::X;
   constexpr static auto Y = DimId::Y;
   constexpr static auto Z = DimId::Z;
-  constexpr static auto Tof = DimId::Tof;
-  constexpr static auto Q = DimId::Q;
-  constexpr static auto Time = DimId::Time;
-  constexpr static auto Row = DimId::Row;
 
+  constexpr Dim() : m_id(DimId::Invalid) {}
   constexpr Dim(const DimId id) : m_id(id) {}
   explicit Dim(const std::string &label) {
     if (const auto it = custom_ids.find(label); it != custom_ids.end())
