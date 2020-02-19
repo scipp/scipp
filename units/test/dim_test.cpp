@@ -2,6 +2,8 @@
 // Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
+#include <set>
+
 #include "scipp/units/dim.h"
 
 using namespace scipp::units;
@@ -26,4 +28,12 @@ TEST(DimTest, id) {
   EXPECT_EQ(static_cast<int64_t>(Dim("b").id()), base + 1);
   EXPECT_EQ(static_cast<int64_t>(Dim("c").id()), base + 2);
   EXPECT_EQ(static_cast<int64_t>(Dim("a").id()), base);
+}
+
+TEST(DimTest, unique_builtin_name) {
+  std::set<std::string> names;
+  const auto expected = static_cast<int64_t>(DimId::Invalid);
+  for (int64_t i = 0; i < expected; ++i)
+    names.emplace(Dim(static_cast<DimId>(i)).name());
+  EXPECT_EQ(names.size(), expected);
 }
