@@ -549,8 +549,8 @@ TEST(Variable, broadcast_fail) {
   auto var = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
                                   Values{1, 2, 3, 4});
   EXPECT_THROW_MSG(broadcast(var, {Dim::X, 3}), except::DimensionLengthError,
-                   "Expected dimension to be in {{Dim.Y, 2}, {Dim.X, 2}}, "
-                   "got Dim.X with mismatching length 3.");
+                   "Expected dimension to be in {{y, 2}, {x, 2}}, "
+                   "got x with mismatching length 3.");
 }
 
 TEST(VariableView, full_const_view) {
