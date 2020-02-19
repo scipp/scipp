@@ -8,6 +8,5 @@
 namespace scipp::units {
 
 INSTANTIATE(dummy::Unit)
-SCIPP_UNITS_DEFINE_DIMENSIONS(dummy)
 
 } // namespace scipp::units
