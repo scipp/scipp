@@ -2,7 +2,9 @@
 # contributors (https://github.com/scipp)
 set(TARGET_NAME "scipp-units-test")
 add_dependencies(all-tests ${TARGET_NAME})
-add_executable(${TARGET_NAME} EXCLUDE_FROM_ALL dim_test.cpp dimension_test.cpp unit_test.cpp)
+add_executable(
+  ${TARGET_NAME} EXCLUDE_FROM_ALL dim_test.cpp dimension_test.cpp unit_test.cpp
+)
 target_link_libraries(
   ${TARGET_NAME}
   LINK_PRIVATE
