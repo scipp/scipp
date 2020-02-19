@@ -123,9 +123,12 @@ stages:
               set -ex
               cd "$(packages_dir)"
               wget 'https://anaconda.org/scipp/scipp/0.2/download/linux-64/scipp-0.2-py37_631.tar.bz2'
+          - bash: |
+              echo "##vso[task.prependpath]$CONDA/bin"
+            displayName: Add Conda to PATH
           - bash: echo "##vso[task.prependpath]$CONDA/bin"
             displayName: Add Conda to PATH
-          - bash: conda env create -n scipp_docs docs/environment.yml
+          - bash: conda env create -n scipp_docs -f docs/environment.yml
             displayName: 'Create Conda environment'
           - bash: conda activate scipp_docs
             displayName: 'Activate Conda environment'
