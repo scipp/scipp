@@ -12,11 +12,11 @@ TEST(DimTest, basics) {
   EXPECT_NE(Dim(Dim::X), Dim(Dim::Y));
   EXPECT_EQ(Dim("abc"), Dim("abc"));
   EXPECT_NE(Dim("abc"), Dim("def"));
-  EXPECT_EQ(Dim(Dim::X).name(), "Dim.X");
+  EXPECT_EQ(Dim(Dim::X).name(), "x");
   EXPECT_EQ(Dim("abc").name(), "abc");
 }
 
-TEST(DimTest, builtin_from_string) { EXPECT_EQ(Dim(Dim::X), Dim("Dim.X")); }
+TEST(DimTest, builtin_from_string) { EXPECT_EQ(Dim(Dim::X), Dim("x")); }
 
 TEST(DimTest, id) {
   const auto max_builtin = Dim(Dim::Invalid).id();

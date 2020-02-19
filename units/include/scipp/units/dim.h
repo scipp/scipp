@@ -53,7 +53,9 @@ public:
 
   std::string name() const {
     if (static_cast<int64_t>(m_id) < 1000)
-      return to_string(m_id);
+      for (const auto &item : builtin_ids)
+        if (item.second == m_id)
+          return item.first;
     for (const auto &item : custom_ids)
       if (item.second == m_id)
         return item.first;
