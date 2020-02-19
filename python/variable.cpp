@@ -354,6 +354,7 @@ void init_variable(py::module &m) {
   bind_data_properties(variable);
   bind_data_properties(variableView);
 
+  py::implicitly_convertible<std::string, Dim>();
   py::implicitly_convertible<Variable, VariableConstView>();
   py::implicitly_convertible<Variable, VariableView>();
 

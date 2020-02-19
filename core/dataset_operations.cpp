@@ -44,25 +44,13 @@ Variable join_edges(const VariableConstView &a, const VariableConstView &b,
   return concatenate(a.slice({dim, 0, a.dims()[dim] - 1}), b, dim);
 }
 
-/// Return the dimension for given coord or labels.
-///
-/// For coords, this is the same as the key, for labels we adopt the convention
-/// that labels are "labelling" their inner dimension.
-template <class T, class Key>
-Dim dim_of_coord_or_labels(const T &dict, const Key &key) {
-  if constexpr (std::is_same_v<Key, Dim>)
-    return key;
-  else
-    return dict[key].dims().inner();
-}
-
 namespace {
 template <class T1, class T2, class DimT>
 auto concat(const T1 &a, const T2 &b, const Dim dim, const DimT &dimsA,
             const DimT &dimsB) {
   std::map<typename T1::key_type, typename T1::mapped_type> out;
   for (const auto &[key, a_] : a) {
-    if (dim_of_coord_or_labels(a, key) == dim) {
+    if (dim_of_coord_or_labels(a_, key) == dim) {
       if (a_.dims().sparseDim() == dim) {
         if (b[key].dims().sparseDim() == dim)
           out.emplace(key, concatenate(a_, b[key], dim));
@@ -177,7 +165,7 @@ DataArray resize(const DataArrayConstView &a, const Dim dim,
 
     std::map<Dim, Variable> coords;
     for (auto &&[d, coord] : a.coords())
-      if (d != dim)
+      if (dim_of_coord_or_labels(coord, d) != dim)
         coords.emplace(d, resize_if_sparse(coord));
 
     std::map<std::string, Variable> labels;

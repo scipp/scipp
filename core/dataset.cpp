@@ -35,9 +35,12 @@ auto makeViewItems(const Dimensions &dims, T1 &coords, T2 *sparse = nullptr) {
     // for multi-dimensional coordinates.
     auto contained = [&dims](const auto &item2) {
       const auto &coordDims = item2.second.dims();
-      if constexpr (std::is_same_v<Key, Dim>)
-        return coordDims.empty() || dims.contains(item2.first);
-      else
+      if constexpr (std::is_same_v<Key, Dim>) {
+        const bool is_dimension_coord = coordDims.contains(item2.first);
+        return coordDims.empty() ||
+               (is_dimension_coord ? dims.contains(item2.first)
+                                   : dims.contains(coordDims.inner()));
+      } else
         return coordDims.empty() || dims.contains(coordDims.inner());
     };
     if (contained(item)) {
