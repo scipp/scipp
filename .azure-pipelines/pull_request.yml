@@ -127,13 +127,15 @@ stages:
             displayName: Add Conda to PATH
           - bash: conda env create -n scipp_docs -f docs/environment.yml
             displayName: 'Create Conda environment'
-          - bash: source activate scipp_docs
-            displayName: 'Activate Conda environment'
-          - bash: conda install "$(packages_dir)/"scipp-*.tar.bz2
+          - bash: |
+              set -ex
+              source activate scipp_docs
+              conda install "$(packages_dir)/"scipp-*.tar.bz2
             displayName: 'Install Scipp package'
           - bash: |
               set -ex
               cd docs
+              source activate scipp_docs
               sphinx-build . "$(docs_dir)"
             displayName: 'Build documentation'
           - task: PublishBuildArtifacts@1
