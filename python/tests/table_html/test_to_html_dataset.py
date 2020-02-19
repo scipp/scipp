@@ -109,5 +109,5 @@ def test_sparse_does_not_repeat_dense_coords():
     variables = html.find_all(class_="xr-var-name")
 
     # check that each dim is only present once
-    assert ["Dim.Z" in var.text for var in variables].count(True) == 1
-    assert ["Dim.Y" in var.text for var in variables].count(True) == 1
+    assert ["z" in var.text for var in variables].count(True) == 1
+    assert ["y" in var.text for var in variables].count(True) == 1

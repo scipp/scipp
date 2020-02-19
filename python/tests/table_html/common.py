@@ -27,10 +27,6 @@ def assert_obj_type(expected, actual):
 
 
 def assert_dims(dims, text, has_sparse=False, has_bin_edges=False):
-    # this will probably backfire if the "Dim." is changed
-    # but it is a good sanity check for now...
-    assert len(dims) == text.count("Dim"),\
-        f"Expected: {len(dims)}, actual: {text.count('Dim')}"
     for d in dims:
         assert str(d) in text
 
