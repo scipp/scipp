@@ -9,6 +9,7 @@ dependencies:
   - appdirs
   - ipython=7.2.0
   - pip
+  - pandoc
   - python>=3
   - python-configuration
   - pyyaml
