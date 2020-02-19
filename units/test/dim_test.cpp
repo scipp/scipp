@@ -16,6 +16,8 @@ TEST(DimTest, basics) {
   EXPECT_EQ(Dim("abc").name(), "abc");
 }
 
+TEST(DimTest, builtin_from_string) { EXPECT_EQ(Dim(Dim::X), Dim("Dim.X")); }
+
 TEST(DimTest, id) {
   const auto max_builtin = Dim(Dim::Invalid).id();
   const auto first_custom = Dim("a").id();

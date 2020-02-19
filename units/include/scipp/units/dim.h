@@ -40,12 +40,13 @@ public:
   constexpr Dim(const DimId id) : m_id(id) {}
   explicit Dim(const std::string &label) {
     // Note that this is not thread-safe yet.
-    if (const auto it = custom_ids.find(label); it != custom_ids.end())
-      m_id = it->second;
-    else {
-      m_id = static_cast<DimId>(1000 + custom_ids.size());
-      custom_ids[label] = m_id;
-    }
+    for (const auto &ids : {builtin_ids, custom_ids})
+      if (const auto it = ids.find(label); it != ids.end()) {
+        m_id = it->second;
+        return;
+      }
+    m_id = static_cast<DimId>(1000 + custom_ids.size());
+    custom_ids[label] = m_id;
   }
 
   constexpr DimId id() const noexcept { return m_id; }
@@ -71,6 +72,7 @@ public:
 
 private:
   DimId m_id;
+  static std::unordered_map<std::string, DimId> builtin_ids;
   static std::unordered_map<std::string, DimId> custom_ids;
 };
 

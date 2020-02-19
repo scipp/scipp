@@ -6,6 +6,8 @@
 
 namespace scipp::units {
 
+std::unordered_map<std::string, DimId> Dim::builtin_ids{
+    {Dim(Dim::X).name(), Dim::X}};
 std::unordered_map<std::string, DimId> Dim::custom_ids;
 
 std::string to_string(const Dim dim) { return dim.name(); }
