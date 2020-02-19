@@ -48,7 +48,59 @@ scipp::core::Variable doDivScalarUnit(const units::Unit &unit,
 }
 
 void init_units_neutron(py::module &m) {
-  bind_enum(m, "Dim", Dim::Invalid, 4);
+  py::class_<units::Dim>(m, "Dim", "Dimension label")
+      .def(py::init<const std::string &>())
+      .def(py::self == py::self)
+      .def(py::self != py::self)
+      // Pre-defined labels are temporarily useful for refactoring and may be
+      // removed later.
+      .def_property_readonly_static(
+          "Detector", [](const py::object &) { return Dim(Dim::Detector); })
+      .def_property_readonly_static(
+          "DSpacing", [](const py::object &) { return Dim(Dim::DSpacing); })
+      .def_property_readonly_static(
+          "Energy", [](const py::object &) { return Dim(Dim::Energy); })
+      .def_property_readonly_static(
+          "EnergyTransfer",
+          [](const py::object &) { return Dim(Dim::EnergyTransfer); })
+      .def_property_readonly_static(
+          "Group", [](const py::object &) { return Dim(Dim::Group); })
+      .def_property_readonly_static(
+          "Invalid", [](const py::object &) { return Dim(Dim::Invalid); })
+      .def_property_readonly_static(
+          "Position", [](const py::object &) { return Dim(Dim::Position); })
+      .def_property_readonly_static(
+          "Q", [](const py::object &) { return Dim(Dim::Q); })
+      .def_property_readonly_static(
+          "Qx", [](const py::object &) { return Dim(Dim::Qx); })
+      .def_property_readonly_static(
+          "Qy", [](const py::object &) { return Dim(Dim::Qy); })
+      .def_property_readonly_static(
+          "Qz", [](const py::object &) { return Dim(Dim::Qz); })
+      .def_property_readonly_static(
+          "QSquared", [](const py::object &) { return Dim(Dim::QSquared); })
+      .def_property_readonly_static(
+          "Row", [](const py::object &) { return Dim(Dim::Row); })
+      .def_property_readonly_static(
+          "ScatteringAngle",
+          [](const py::object &) { return Dim(Dim::ScatteringAngle); })
+      .def_property_readonly_static(
+          "Spectrum", [](const py::object &) { return Dim(Dim::Spectrum); })
+      .def_property_readonly_static(
+          "Temperature",
+          [](const py::object &) { return Dim(Dim::Temperature); })
+      .def_property_readonly_static(
+          "Time", [](const py::object &) { return Dim(Dim::Time); })
+      .def_property_readonly_static(
+          "Tof", [](const py::object &) { return Dim(Dim::Tof); })
+      .def_property_readonly_static(
+          "Wavelength", [](const py::object &) { return Dim(Dim::Wavelength); })
+      .def_property_readonly_static(
+          "X", [](const py::object &) { return Dim(Dim::X); })
+      .def_property_readonly_static(
+          "Y", [](const py::object &) { return Dim(Dim::Y); })
+      .def_property_readonly_static(
+          "Z", [](const py::object &) { return Dim(Dim::Z); });
 
   py::class_<units::Unit>(m, "Unit", "A physical unit.")
       .def(py::init())

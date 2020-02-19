@@ -24,6 +24,7 @@ public:
   constexpr static auto Qx = DimId::Qx;
   constexpr static auto Qy = DimId::Qy;
   constexpr static auto Qz = DimId::Qz;
+  constexpr static auto QSquared = DimId::QSquared;
   constexpr static auto Row = DimId::Row;
   constexpr static auto ScatteringAngle = DimId::ScatteringAngle;
   constexpr static auto Spectrum = DimId::Spectrum;
@@ -38,6 +39,7 @@ public:
   constexpr Dim() : m_id(DimId::Invalid) {}
   constexpr Dim(const DimId id) : m_id(id) {}
   explicit Dim(const std::string &label) {
+    // Note that this is not thread-safe yet.
     if (const auto it = custom_ids.find(label); it != custom_ids.end())
       m_id = it->second;
     else {
