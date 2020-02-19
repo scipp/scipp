@@ -10,6 +10,8 @@
 #include "scipp/core/except.h"
 #include "scipp/core/variable.h"
 
+#include "../element_unary_operations.h"
+
 using namespace scipp;
 using namespace scipp::core;
 
@@ -646,22 +648,30 @@ TEST(Variable, norm_of_vector) {
   EXPECT_EQ(norm(var), reference);
 }
 
-TEST(Variable, sqrt_double) {
-  // TODO Currently comparisons of variables do not provide special handling of
-  // NaN, so sqrt of negative values will yield variables that are never equal.
-  auto reference = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1, 2});
-  reference.setUnit(units::m);
-  auto var = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1, 4});
-  var.setUnit(units::m * units::m);
-  EXPECT_EQ(sqrt(var), reference);
+TEST(Variable, sqrt) {
+  const auto f64 = makeVariable<double>(Values{1.23});
+  EXPECT_EQ(sqrt(f64), makeVariable<double>(Values{element::sqrt(1.23)}));
+  const auto f32 = makeVariable<float>(Values{1.23456789});
+  EXPECT_EQ(sqrt(f32), makeVariable<float>(Values{element::sqrt(1.23456789f)}));
 }
 
-TEST(Variable, sqrt_float) {
-  auto reference = makeVariable<float>(Dims{Dim::X}, Shape{2}, Values{1, 2});
-  reference.setUnit(units::m);
-  auto var = makeVariable<float>(Dims{Dim::X}, Shape{2}, Values{1, 4});
-  var.setUnit(units::m * units::m);
-  EXPECT_EQ(sqrt(var), reference);
+TEST(Variable, sqrt_move) {
+  auto var = makeVariable<double>(Values{1.23});
+  const auto ptr = var.values<double>().data();
+  auto out = sqrt(std::move(var));
+  EXPECT_EQ(out, makeVariable<double>(Values{element::sqrt(1.23)}));
+  EXPECT_EQ(out.values<double>().data(), ptr);
+}
+
+TEST(Variable, sqrt_out_arg) {
+  auto x = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.23, 0.0});
+  auto out = x.slice({Dim::X, 1});
+  auto view = sqrt(x.slice({Dim::X, 0}), out);
+
+  EXPECT_EQ(x, makeVariable<double>(Dims{Dim::X}, Shape{2},
+                                    Values{1.23, element::sqrt(1.23)}));
+  EXPECT_EQ(view, out);
+  EXPECT_EQ(view.underlying(), x);
 }
 
 TEST(VariableReciprocalOutArg, full_in_place) {
@@ -708,38 +718,6 @@ TEST(VariableAbsOutArg, partial) {
   auto view = abs(var.slice({Dim::X, 1, 3}), out);
   EXPECT_EQ(out, makeVariable<double>(Dims{Dim::X}, Shape{2},
                                       units::Unit(units::m), Values{4, 9}));
-  EXPECT_EQ(view, out);
-  EXPECT_EQ(view.underlying(), out);
-}
-
-TEST(VariableSqrtOutArg, unit_fail) {
-  auto var =
-      makeVariable<double>(Dims{Dim::X}, Shape{3},
-                           units::Unit(units::m * units::m), Values{1, 4, 9});
-  EXPECT_THROW(sqrt(var.slice({Dim::X, 0, 2}), var.slice({Dim::X, 0, 2})),
-               except::UnitError);
-}
-
-TEST(VariableSqrtOutArg, full_in_place) {
-  auto var =
-      makeVariable<double>(Dims{Dim::X}, Shape{3},
-                           units::Unit(units::m * units::m), Values{1, 4, 9});
-  auto view = sqrt(var, var);
-  EXPECT_EQ(var, makeVariable<double>(Dims{Dim::X}, Shape{3},
-                                      units::Unit(units::m), Values{1, 2, 3}));
-  EXPECT_EQ(view, var);
-  EXPECT_EQ(view.underlying(), var);
-}
-
-TEST(VariableSqrtOutArg, partial) {
-  const auto var =
-      makeVariable<double>(Dims{Dim::X}, Shape{3},
-                           units::Unit(units::m * units::m), Values{1, 4, 9});
-  auto out =
-      makeVariable<double>(Dims{Dim::X}, Shape{2}, units::Unit(units::m));
-  auto view = sqrt(var.slice({Dim::X, 1, 3}), out);
-  EXPECT_EQ(out, makeVariable<double>(Dims{Dim::X}, Shape{2},
-                                      units::Unit(units::m), Values{2, 3}));
   EXPECT_EQ(view, out);
   EXPECT_EQ(view.underlying(), out);
 }

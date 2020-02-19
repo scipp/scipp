@@ -10,6 +10,7 @@
 #include "scipp/core/transform.h"
 #include "scipp/core/variable.h"
 
+#include "element_unary_operations.h"
 #include "operators.h"
 #include "variable_operations_common.h"
 
@@ -198,21 +199,16 @@ Variable norm(const VariableConstView &var) {
 }
 
 Variable sqrt(const VariableConstView &var) {
-  using std::sqrt;
-  return transform<double, float>(var, [](const auto x) { return sqrt(x); });
+  return transform<double, float>(var, element::sqrt);
 }
 
 Variable sqrt(Variable &&var) {
-  using std::sqrt;
-  auto out(std::move(var));
-  sqrt(out, out);
-  return out;
+  sqrt(var, var);
+  return std::move(var);
 }
 
 VariableView sqrt(const VariableConstView &var, const VariableView &out) {
-  using std::sqrt;
-  transform_in_place<pair_self_t<double, float>>(
-      out, var, [](auto &x, const auto &y) { x = sqrt(y); });
+  transform_in_place(out, var, element::sqrt_out_arg);
   return out;
 }
 

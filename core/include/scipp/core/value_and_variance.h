@@ -142,6 +142,17 @@ constexpr auto operator/(const T1 a, const ValueAndVariance<T2> b) noexcept {
 }
 
 template <class T>
+constexpr auto operator==(const ValueAndVariance<T> a,
+                          const ValueAndVariance<T> b) noexcept {
+  return a.value == b.value && a.variance == b.variance;
+}
+template <class T>
+constexpr auto operator!=(const ValueAndVariance<T> a,
+                          const ValueAndVariance<T> b) noexcept {
+  return !(a == b);
+}
+
+template <class T>
 constexpr auto min(const ValueAndVariance<T> a,
                    const ValueAndVariance<T> b) noexcept {
   return a.value < b.value ? a : b;
