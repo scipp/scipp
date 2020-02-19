@@ -20,7 +20,7 @@ template <class... Ts> struct arg_list_t {
   constexpr void operator()() const noexcept;
   using types = std::tuple<Ts...>;
 };
-template <class... Ts> constexpr arg_list_t<Ts...> arg_list;
+template <class... Ts> constexpr arg_list_t<Ts...> arg_list{};
 
 constexpr auto sqrt = [](const auto x) noexcept {
   using std::sqrt;
