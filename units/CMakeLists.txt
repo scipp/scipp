@@ -7,7 +7,7 @@ set(INC_FILES
     include/scipp/units/unit.tcc include/scipp/units/neutron.h
 )
 
-set(SRC_FILES dummy.cpp except.cpp neutron.cpp string.cpp)
+set(SRC_FILES dim.cpp dummy.cpp except.cpp neutron.cpp string.cpp)
 
 # For now we just enable "neutron" units by default. In the future we may want
 # to build separate libraries with separate units.
