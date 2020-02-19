@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -x
+set -ex
 
 mkdir -p 'build' && cd 'build'
 
@@ -14,20 +14,17 @@ cmake \
   -DWITH_CTEST=OFF \
   ..
 
-# Catch errors in CMake configuration step
-rc=$?
-if [ $rc -ne 0 ]; then
-  exit $rc
-fi
 # Show cmake settings
 cmake -B . -S .. -LA
 
-# C++ tests
-cmake --build . --target all-tests -- -v
+# Build C++ tests and install Python package
+ninja -v all-tests install
+
+# Run C++ tests
 ./common/test/scipp-common-test
 ./units/test/scipp-units-test
 ./core/test/scipp-core-test
 ./neutron/test/scipp-neutron-test
 
-# Build, install and move scipp Python library to site packages location
-cmake --build . --target install -- -v && mv "$CONDA_PREFIX/scipp" "$CONDA_PREFIX"/lib/python*/
+# Move scipp Python library to site packages location
+mv "$CONDA_PREFIX/scipp" "$CONDA_PREFIX"/lib/python*/
