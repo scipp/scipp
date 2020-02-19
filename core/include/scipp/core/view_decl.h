@@ -113,14 +113,23 @@ public:
       if (!slice.isRange()) { // The slice represents a point not a range.
                               // Dimension removed.
         for (auto it = m_items.begin(); it != m_items.end();) {
-          auto erase = [slice](const auto it2) {
-            if constexpr (std::is_same_v<Key, Dim>)
-              return (it2->first == slice.dim());
-            else
-              return !it2->second.first->dims().empty() &&
-                     (it2->second.first->dims().inner() == slice.dim());
+          auto erase = [slice](const auto &it2) {
+            if constexpr (std::is_same_v<Key, Dim>) {
+              // Remove dimension-coords for given dim, or non-dimension coords
+              // if their inner dim is the given dim.
+              constexpr auto is_dimension_coord = [](const auto &_) {
+                return _.second.first->dims().contains(_.first);
+              };
+              return is_dimension_coord(it2)
+                         ? it2.first == slice.dim()
+                         : (!it2.second.first->dims().empty() &&
+                            (it2.second.first->dims().inner() == slice.dim()));
+            } else {
+              return !it2.second.first->dims().empty() &&
+                     (it2.second.first->dims().inner() == slice.dim());
+            }
           };
-          if (erase(it))
+          if (erase(*it))
             it = m_items.erase(it);
           else
             ++it;

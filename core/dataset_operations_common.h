@@ -7,6 +7,20 @@
 
 namespace scipp::core {
 
+/// Return the dimension for given coord or labels.
+///
+/// For dimension-coords, this is the same as the key, for non-dimension-coords
+/// (labels) we adopt the convention that labels are "labelling" their inner
+/// dimension.
+template <class T, class Key>
+Dim dim_of_coord_or_labels(const T &var, const Key &key) {
+  if constexpr (std::is_same_v<Key, Dim>) {
+    const bool is_dimension_coord = var.dims().contains(key);
+    return is_dimension_coord ? key : var.dims().inner();
+  } else
+    return var.dims().inner();
+}
+
 static inline void expectAlignedCoord(const Dim coord_dim,
                                       const VariableConstView &var,
                                       const Dim operation_dim) {
@@ -29,7 +43,7 @@ DataArray apply_and_drop_dim_impl(const DataArrayConstView &a, Func func,
   std::map<Dim, Variable> coords;
   for (auto &&[d, coord] : a.coords()) {
     // Check coordinates will NOT be dropped
-    if (d != dim) {
+    if (dim_of_coord_or_labels(coord, d) != dim) {
       expectAlignedCoord(d, coord, dim);
       coords.emplace(d, coord);
     }
