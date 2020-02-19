@@ -85,6 +85,8 @@ stages:
               ANACONDA_TOKEN: $(anaconda_token_secret)
             displayName: 'Package build'
 
+  - template: templates/documentation_build.yml
+
   - stage: 'deploy'
     displayName: 'Deployment'
 
