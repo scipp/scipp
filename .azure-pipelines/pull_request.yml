@@ -12,35 +12,35 @@ pr:
 stages:
   - template: templates/code_quality_checks.yml
 
-  - stage: 'build_and_test'
-    displayName: 'Conda Package Build and Unit Tests'
+#   - stage: 'build_and_test'
+#     displayName: 'Conda Package Build and Unit Tests'
 
-    jobs:
-      - job: 'linux'
-        displayName: 'Linux'
-        timeoutInMinutes: 60
-        pool:
-          vmImage: 'ubuntu-18.04'
-        steps:
-          - checkout: self
-            submodules: true
-          - bash: |
-              echo "##vso[task.prependpath]$CONDA/bin"
-              echo "##vso[task.setvariable variable=conda_dir]$CONDA"
-            displayName: Configure Conda directories
-          - bash: |
-              set -ex
-              conda --version
-              conda install --yes conda-build
-            displayName: 'Conda configuration'
-          - bash: |
-              conda build -c conda-forge ./conda
-            displayName: 'Package build'
-          - task: PublishBuildArtifacts@1
-            inputs:
-              PathtoPublish: "$(conda_dir)/conda-bld/linux-64"
-              ArtifactName: 'linux-64'
-            displayName: 'Publish Conda package artefacts'
+#     jobs:
+#       - job: 'linux'
+#         displayName: 'Linux'
+#         timeoutInMinutes: 60
+#         pool:
+#           vmImage: 'ubuntu-18.04'
+#         steps:
+#           - checkout: self
+#             submodules: true
+#           - bash: |
+#               echo "##vso[task.prependpath]$CONDA/bin"
+#               echo "##vso[task.setvariable variable=conda_dir]$CONDA"
+#             displayName: Configure Conda directories
+#           - bash: |
+#               set -ex
+#               conda --version
+#               conda install --yes conda-build
+#             displayName: 'Conda configuration'
+#           - bash: |
+#               conda build -c conda-forge ./conda
+#             displayName: 'Package build'
+#           - task: PublishBuildArtifacts@1
+#             inputs:
+#               PathtoPublish: "$(conda_dir)/conda-bld/linux-64"
+#               ArtifactName: 'linux-64'
+#             displayName: 'Publish Conda package artefacts'
 
       # - job: 'mac'
       #   displayName: 'Mac OS'
@@ -112,16 +112,20 @@ stages:
               mkdir -p "$(packages_dir)"
               mkdir -p "$(docs_dir)"
             displayName: 'Make directories'
-          - task: DownloadBuildArtifacts@0
-            inputs:
-              buildType: 'current'
-              specificBuildWithTriggering: true
-              downloadType: 'single'
-              artifactName: 'linux-64'
-              downloadPath: '$(packages_dir)'
+          # - task: DownloadBuildArtifacts@0
+          #   inputs:
+          #     buildType: 'current'
+          #     specificBuildWithTriggering: true
+          #     downloadType: 'single'
+          #     artifactName: 'linux-64'
+          #     downloadPath: '$(packages_dir)'
+          - bash: |
+              set -ex
+              cd "$(packages_dir)"
+              wget 'https://anaconda.org/scipp/scipp/0.2/download/linux-64/scipp-0.2-py37_631.tar.bz2'
           - bash: echo "##vso[task.prependpath]$CONDA/bin"
             displayName: Add Conda to PATH
-          - bash: conda env create -n scipp_docs -f environment.yml
+          - bash: conda env create -n scipp_docs docs/environment.yml
             displayName: 'Create Conda environment'
           - bash: conda activate scipp_docs
             displayName: 'Activate Conda environment'
