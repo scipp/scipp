@@ -5,6 +5,7 @@
 #define SCIPP_UNITS_DIM_H
 
 #include <functional>
+#include <mutex>
 #include <unordered_map>
 
 #include "scipp/units/dummy.h"
@@ -40,11 +41,15 @@ public:
   constexpr Dim(const DimId id) : m_id(id) {}
   explicit Dim(const std::string &label) {
     // Note that this is not thread-safe yet.
-    for (const auto &ids : {builtin_ids, custom_ids})
-      if (const auto it = ids.find(label); it != ids.end()) {
-        m_id = it->second;
-        return;
-      }
+    if (const auto it = builtin_ids.find(label); it != builtin_ids.end()) {
+      m_id = it->second;
+      return;
+    }
+    const std::lock_guard lock(mutex);
+    if (const auto it = custom_ids.find(label); it != custom_ids.end()) {
+      m_id = it->second;
+      return;
+    }
     m_id = static_cast<DimId>(1000 + custom_ids.size());
     custom_ids[label] = m_id;
   }
@@ -56,6 +61,7 @@ public:
       for (const auto &item : builtin_ids)
         if (item.second == m_id)
           return item.first;
+    const std::lock_guard lock(mutex);
     for (const auto &item : custom_ids)
       if (item.second == m_id)
         return item.first;
@@ -76,6 +82,7 @@ private:
   DimId m_id;
   static std::unordered_map<std::string, DimId> builtin_ids;
   static std::unordered_map<std::string, DimId> custom_ids;
+  static std::mutex mutex;
 };
 
 std::string to_string(const Dim dim);

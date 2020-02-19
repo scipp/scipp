@@ -31,6 +31,7 @@ std::unordered_map<std::string, DimId> Dim::builtin_ids{
     {"z", Dim::Z}};
 
 std::unordered_map<std::string, DimId> Dim::custom_ids;
+std::mutex Dim::mutex;
 
 std::string to_string(const Dim dim) { return dim.name(); }
 
