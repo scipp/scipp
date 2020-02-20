@@ -41,6 +41,18 @@ stages:
               find . -type f -name CMakeLists.txt -or -name '*.cmake' | xargs cmake-format --check
             displayName: 'Run cmake-format'
 
+      - job: 'copyright_year'
+        displayName: 'Copyright Year'
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - bash: |
+              set -ex
+              find . -type f -not -path '.git/*' -exec sed -ri "s/[0-9]* (Scipp contributors)/$(date +%Y) \1/g" {} +
+              git diff
+              git diff --quiet
+            displayName: 'Check Copyright years are up to date'
+
       - job: 'python_checks'
         displayName: 'Python Checks'
         pool:
