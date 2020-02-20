@@ -554,7 +554,6 @@ CoordsConstView DataArrayConstView::coords() const noexcept {
       slices());
 }
 
-
 /// Return a const view to all attributes of the data view.
 AttrsConstView DataArrayConstView::attrs() const noexcept {
   return AttrsConstView(
