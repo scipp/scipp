@@ -5,6 +5,7 @@
 #define SCIPP_UNITS_DIM_H
 
 #include <functional>
+#include <mutex>
 #include <unordered_map>
 
 #include "scipp/units/dummy.h"
@@ -38,29 +39,11 @@ public:
 
   constexpr Dim() : m_id(DimId::Invalid) {}
   constexpr Dim(const DimId id) : m_id(id) {}
-  explicit Dim(const std::string &label) {
-    // Note that this is not thread-safe yet.
-    for (const auto &ids : {builtin_ids, custom_ids})
-      if (const auto it = ids.find(label); it != ids.end()) {
-        m_id = it->second;
-        return;
-      }
-    m_id = static_cast<DimId>(1000 + custom_ids.size());
-    custom_ids[label] = m_id;
-  }
+  explicit Dim(const std::string &label);
 
   constexpr DimId id() const noexcept { return m_id; }
 
-  std::string name() const {
-    if (static_cast<int64_t>(m_id) < 1000)
-      for (const auto &item : builtin_ids)
-        if (item.second == m_id)
-          return item.first;
-    for (const auto &item : custom_ids)
-      if (item.second == m_id)
-        return item.first;
-    return "unreachable"; // throw or terminate?
-  }
+  std::string name() const;
 
   constexpr bool operator==(const Dim &other) const noexcept {
     return m_id == other.m_id;
@@ -76,6 +59,7 @@ private:
   DimId m_id;
   static std::unordered_map<std::string, DimId> builtin_ids;
   static std::unordered_map<std::string, DimId> custom_ids;
+  static std::mutex mutex;
 };
 
 std::string to_string(const Dim dim);

@@ -2,6 +2,8 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
+#include <limits>
+
 #include "scipp/units/dim.h"
 
 namespace scipp::units {
@@ -31,6 +33,37 @@ std::unordered_map<std::string, DimId> Dim::builtin_ids{
     {"z", Dim::Z}};
 
 std::unordered_map<std::string, DimId> Dim::custom_ids;
+std::mutex Dim::mutex;
+
+Dim::Dim(const std::string &label) {
+  if (const auto it = builtin_ids.find(label); it != builtin_ids.end()) {
+    m_id = it->second;
+    return;
+  }
+  const std::lock_guard lock(mutex);
+  if (const auto it = custom_ids.find(label); it != custom_ids.end()) {
+    m_id = it->second;
+    return;
+  }
+  const auto id = scipp::size(custom_ids) + 1000;
+  if (id > std::numeric_limits<std::underlying_type<DimId>::type>::max())
+    throw std::runtime_error(
+        "Exceeded maximum number of different dimension labels.");
+  m_id = static_cast<DimId>(id);
+  custom_ids[label] = m_id;
+}
+
+std::string Dim::name() const {
+  if (static_cast<int64_t>(m_id) < 1000)
+    for (const auto &item : builtin_ids)
+      if (item.second == m_id)
+        return item.first;
+  const std::lock_guard lock(mutex);
+  for (const auto &item : custom_ids)
+    if (item.second == m_id)
+      return item.first;
+  return "unreachable"; // throw or terminate?
+}
 
 std::string to_string(const Dim dim) { return dim.name(); }
 

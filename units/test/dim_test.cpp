@@ -2,7 +2,9 @@
 // Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
+#include <limits>
 #include <set>
+#include <thread>
 
 #include "scipp/units/dim.h"
 
@@ -36,4 +38,36 @@ TEST(DimTest, unique_builtin_name) {
   for (int64_t i = 0; i < expected; ++i)
     names.emplace(Dim(static_cast<DimId>(i)).name());
   EXPECT_EQ(names.size(), expected);
+}
+
+void add_dims() {
+  for (int64_t i = 0; i < 128; ++i)
+    for (scipp::index repeat = 0; repeat < 16; ++repeat)
+      static_cast<void>(Dim("custom" + std::to_string(i)).name());
+}
+
+TEST(DimTest, thread_safe) {
+  std::vector<std::thread> threads;
+  threads.reserve(100);
+  for (auto i = 0; i < 100; ++i)
+    threads.emplace_back(add_dims);
+  for (auto &t : threads)
+    t.join();
+}
+
+// This tests works, but is in conflict with the thread-safety test, since there
+// is no way of resetting the static map of known custom labels. It can be run
+// separately though.
+TEST(DimTest, DISABLED_label_count_overflow) {
+  // Note that the id of "first" is not necessarily the value coded in the
+  // implementation but rather depends on which tests have run before.
+  const auto end =
+      std::numeric_limits<std::underlying_type<DimId>::type>::max();
+  const auto count = end - static_cast<int64_t>(Dim("first").id());
+  for (int64_t i = 0; i < count; ++i)
+    Dim("custom" + std::to_string(i));
+  EXPECT_EQ(
+      static_cast<int64_t>(Dim("custom" + std::to_string(count - 1)).id()),
+      end);
+  EXPECT_THROW(Dim("overflow"), std::runtime_error);
 }
