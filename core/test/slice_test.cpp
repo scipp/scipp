@@ -84,7 +84,7 @@ TEST(DatasetTest, simple_sparse_slice_and_sparse_coords) {
       makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, Dimensions::Sparse});
   sparseCoord.sparseValues<double>()[0] = {1, 2, 3};
   sparseCoord.sparseValues<double>()[1] = {4, 5, 6};
-  dataset.setSparseCoord("data", sparseCoord);
+  dataset.setSparseCoord("data", Dim::X, sparseCoord);
 
   auto sliced = dataset.slice({Dim::Y, 1, 2});
   EXPECT_EQ(sliced["data"].data(), var.slice({Dim::Y, 1, 2}));
@@ -158,38 +158,37 @@ TEST_F(Dataset3DTest, data_check_upon_setting_sparse_coordinates) {
   coords_var.sparseValues<double>()[0] = {1, 2, 3};
   sparse.setData("sparse_x", data_var);
   // The following should be OK. Data is sparse
-  sparse.setSparseCoord("sparse_x", coords_var);
+  sparse.setSparseCoord("sparse_x", Dim::X, coords_var);
 
   // Check with dense data
-  ASSERT_THROW(dataset.setSparseCoord(
-                   "data_x", makeVariable<double>(Dims{Dim::X},
-                                                  Shape{Dimensions::Sparse})),
-               std::runtime_error);
+  ASSERT_THROW(
+      dataset.setSparseCoord(
+          "data_x", Dim::X,
+          makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse})),
+      std::runtime_error);
 }
 
 TEST_F(Dataset3DTest, dimension_extent_check_labels_dimension_fail) {
   // We cannot have labels on edges unless the coords are also edges. Note the
-  // slight inconsistency though: Labels are typically though of as being for
-  // a
-  // particular dimension (the inner one), but we can have labels on edges
-  // also
+  // slight inconsistency though: Labels are typically though of as being for a
+  // particular dimension (the inner one), but we can have labels on edges also
   // for the other dimensions (x in this case), just like data.
-  ASSERT_ANY_THROW(
-      dataset.setLabels("bad_labels", makeRandom({{Dim::X, 4}, {Dim::Y, 6}})));
-  ASSERT_ANY_THROW(
-      dataset.setLabels("bad_labels", makeRandom({{Dim::X, 5}, {Dim::Y, 5}})));
+  ASSERT_ANY_THROW(dataset.setCoord(Dim("bad_labels"),
+                                    makeRandom({{Dim::X, 4}, {Dim::Y, 6}})));
+  ASSERT_ANY_THROW(dataset.setCoord(Dim("bad_labels"),
+                                    makeRandom({{Dim::X, 5}, {Dim::Y, 5}})));
   dataset.setCoord(Dim::Y, makeRandom({{Dim::X, 4}, {Dim::Y, 6}}));
-  ASSERT_ANY_THROW(
-      dataset.setLabels("bad_labels", makeRandom({{Dim::X, 5}, {Dim::Y, 5}})));
+  ASSERT_ANY_THROW(dataset.setCoord(Dim("bad_labels"),
+                                    makeRandom({{Dim::X, 5}, {Dim::Y, 5}})));
   dataset.setCoord(Dim::X, makeRandom({Dim::X, 5}));
-  ASSERT_NO_THROW(
-      dataset.setLabels("good_labels", makeRandom({{Dim::X, 5}, {Dim::Y, 5}})));
-  ASSERT_NO_THROW(
-      dataset.setLabels("good_labels", makeRandom({{Dim::X, 5}, {Dim::Y, 6}})));
-  ASSERT_NO_THROW(
-      dataset.setLabels("good_labels", makeRandom({{Dim::X, 4}, {Dim::Y, 6}})));
-  ASSERT_NO_THROW(
-      dataset.setLabels("good_labels", makeRandom({{Dim::X, 4}, {Dim::Y, 5}})));
+  ASSERT_NO_THROW(dataset.setCoord(Dim("good_labels"),
+                                   makeRandom({{Dim::X, 5}, {Dim::Y, 5}})));
+  ASSERT_NO_THROW(dataset.setCoord(Dim("good_labels"),
+                                   makeRandom({{Dim::X, 5}, {Dim::Y, 6}})));
+  ASSERT_NO_THROW(dataset.setCoord(Dim("good_labels"),
+                                   makeRandom({{Dim::X, 4}, {Dim::Y, 6}})));
+  ASSERT_NO_THROW(dataset.setCoord(Dim("good_labels"),
+                                   makeRandom({{Dim::X, 4}, {Dim::Y, 5}})));
 }
 
 class Dataset3DTest_slice_x : public Dataset3DTest,
@@ -200,9 +199,9 @@ protected:
     d.setCoord(Dim::Time, dataset.coords()[Dim::Time]);
     d.setCoord(Dim::Y, dataset.coords()[Dim::Y]);
     d.setCoord(Dim::Z, dataset.coords()[Dim::Z].slice({Dim::X, pos}));
-    d.setLabels("labels_xy",
-                dataset.labels()["labels_xy"].slice({Dim::X, pos}));
-    d.setLabels("labels_z", dataset.labels()["labels_z"]);
+    d.setCoord(Dim("labels_xy"),
+               dataset.coords()[Dim("labels_xy")].slice({Dim::X, pos}));
+    d.setCoord(Dim("labels_z"), dataset.coords()[Dim("labels_z")]);
     d.setMask("masks_xy", dataset.masks()["masks_xy"].slice({Dim::X, pos}));
     d.setMask("masks_z", dataset.masks()["masks_z"]);
     d.setAttr("attr_scalar", dataset.attrs()["attr_scalar"]);
@@ -235,10 +234,10 @@ protected:
     d.setCoord(Dim::X, dataset.coords()[Dim::X]);
     d.setCoord(Dim::Y, dataset.coords()[Dim::Y].slice({Dim::Y, begin, end}));
     d.setCoord(Dim::Z, dataset.coords()[Dim::Z].slice({Dim::Y, begin, end}));
-    d.setLabels("labels_x", dataset.labels()["labels_x"]);
-    d.setLabels("labels_xy",
-                dataset.labels()["labels_xy"].slice({Dim::Y, begin, end}));
-    d.setLabels("labels_z", dataset.labels()["labels_z"]);
+    d.setCoord(Dim("labels_x"), dataset.coords()[Dim("labels_x")]);
+    d.setCoord(Dim("labels_xy"),
+               dataset.coords()[Dim("labels_xy")].slice({Dim::Y, begin, end}));
+    d.setCoord(Dim("labels_z"), dataset.coords()[Dim("labels_z")]);
 
     d.setMask("masks_x", dataset.masks()["masks_x"]);
     d.setMask("masks_xy",
@@ -265,10 +264,10 @@ protected:
     d.setCoord(Dim::X, dataset.coords()[Dim::X]);
     d.setCoord(Dim::Y, dataset.coords()[Dim::Y]);
     d.setCoord(Dim::Z, dataset.coords()[Dim::Z].slice({Dim::Z, begin, end}));
-    d.setLabels("labels_x", dataset.labels()["labels_x"]);
-    d.setLabels("labels_xy", dataset.labels()["labels_xy"]);
-    d.setLabels("labels_z",
-                dataset.labels()["labels_z"].slice({Dim::Z, begin, end}));
+    d.setCoord(Dim("labels_x"), dataset.coords()[Dim("labels_x")]);
+    d.setCoord(Dim("labels_xy"), dataset.coords()[Dim("labels_xy")]);
+    d.setCoord(Dim("labels_z"),
+               dataset.coords()[Dim("labels_z")].slice({Dim::Z, begin, end}));
     d.setMask("masks_x", dataset.masks()["masks_x"]);
     d.setMask("masks_xy", dataset.masks()["masks_xy"]);
     d.setMask("masks_z",
@@ -364,8 +363,8 @@ TEST_P(Dataset3DTest_slice_y, slice) {
   reference.setCoord(Dim::Time, dataset.coords()[Dim::Time]);
   reference.setCoord(Dim::X, dataset.coords()[Dim::X]);
   reference.setCoord(Dim::Z, dataset.coords()[Dim::Z].slice({Dim::Y, pos}));
-  reference.setLabels("labels_x", dataset.labels()["labels_x"]);
-  reference.setLabels("labels_z", dataset.labels()["labels_z"]);
+  reference.setCoord(Dim("labels_x"), dataset.coords()[Dim("labels_x")]);
+  reference.setCoord(Dim("labels_z"), dataset.coords()[Dim("labels_z")]);
   reference.setMask("masks_x", dataset.masks()["masks_x"]);
   reference.setMask("masks_z", dataset.masks()["masks_z"]);
   reference.setAttr("attr_scalar", dataset.attrs()["attr_scalar"]);
@@ -385,8 +384,8 @@ TEST_P(Dataset3DTest_slice_z, slice) {
   reference.setCoord(Dim::Time, dataset.coords()[Dim::Time]);
   reference.setCoord(Dim::X, dataset.coords()[Dim::X]);
   reference.setCoord(Dim::Y, dataset.coords()[Dim::Y]);
-  reference.setLabels("labels_x", dataset.labels()["labels_x"]);
-  reference.setLabels("labels_xy", dataset.labels()["labels_xy"]);
+  reference.setCoord(Dim("labels_x"), dataset.coords()[Dim("labels_x")]);
+  reference.setCoord(Dim("labels_xy"), dataset.coords()[Dim("labels_xy")]);
   reference.setMask("masks_x", dataset.masks()["masks_x"]);
   reference.setMask("masks_xy", dataset.masks()["masks_xy"]);
   reference.setAttr("attr_scalar", dataset.attrs()["attr_scalar"]);
@@ -408,11 +407,11 @@ TEST_P(Dataset3DTest_slice_range_x, slice) {
   reference.setCoord(Dim::Y, dataset.coords()[Dim::Y]);
   reference.setCoord(Dim::Z,
                      dataset.coords()[Dim::Z].slice({Dim::X, begin, end}));
-  reference.setLabels("labels_x",
-                      dataset.labels()["labels_x"].slice({Dim::X, begin, end}));
-  reference.setLabels(
-      "labels_xy", dataset.labels()["labels_xy"].slice({Dim::X, begin, end}));
-  reference.setLabels("labels_z", dataset.labels()["labels_z"]);
+  reference.setCoord(Dim("labels_x"), dataset.coords()[Dim("labels_x")].slice(
+                                          {Dim::X, begin, end}));
+  reference.setCoord(Dim("labels_xy"), dataset.coords()[Dim("labels_xy")].slice(
+                                           {Dim::X, begin, end}));
+  reference.setCoord(Dim("labels_z"), dataset.coords()[Dim("labels_z")]);
   reference.setMask("masks_x",
                     dataset.masks()["masks_x"].slice({Dim::X, begin, end}));
   reference.setMask("masks_xy",

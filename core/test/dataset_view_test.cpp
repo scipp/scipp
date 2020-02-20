@@ -32,12 +32,6 @@ TYPED_TEST(DatasetViewTest, coords) {
   ASSERT_NO_THROW(view.coords());
 }
 
-TYPED_TEST(DatasetViewTest, labels) {
-  Dataset d;
-  auto &&view = TestFixture::access(d);
-  ASSERT_NO_THROW(view.labels());
-}
-
 TYPED_TEST(DatasetViewTest, attrs) {
   Dataset d;
   auto &&view = TestFixture::access(d);
@@ -117,7 +111,7 @@ TYPED_TEST(DatasetViewTest, iterators_only_coords) {
 
 TYPED_TEST(DatasetViewTest, iterators_only_labels) {
   Dataset d;
-  d.setLabels("a", makeVariable<double>(Values{double{}}));
+  d.setCoord(Dim("a"), makeVariable<double>(Values{double{}}));
   auto &&view = TestFixture::access(d);
   ASSERT_NO_THROW(view.begin());
   ASSERT_NO_THROW(view.end());

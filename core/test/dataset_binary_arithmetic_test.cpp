@@ -10,6 +10,7 @@
 #include "scipp/core/dimensions.h"
 #include "test_macros.h"
 
+#include "../dataset_operations_common.h"
 #include "dataset_test_common.h"
 #include "make_sparse.h"
 
@@ -68,7 +69,7 @@ std::tuple<Dataset, Dataset> generateBinaryOpTestCase() {
     a.setCoord(Dim::Y,
                makeVariable<double>(Dims{Dim::Y}, Shape{ly}, Values(coordY)));
 
-    a.setLabels("t", labelT);
+    a.setCoord(Dim("t"), labelT);
     a.setMask("mask", masks);
     a.setData("data_a",
               makeVariable<double>(Dimensions{Dim::X, lx}, Values(rand(lx))));
@@ -83,7 +84,7 @@ std::tuple<Dataset, Dataset> generateBinaryOpTestCase() {
     b.setCoord(Dim::Y,
                makeVariable<double>(Dims{Dim::Y}, Shape{ly}, Values(coordY)));
 
-    b.setLabels("t", labelT);
+    b.setCoord(Dim("t"), labelT);
     b.setMask("mask", masks);
 
     b.setData("data_a",
@@ -169,21 +170,15 @@ TYPED_TEST(DataArrayViewBinaryEqualsOpTest, slice_lhs_with_variance) {
       Variable reference(target.data());
       TestFixture::op(reference, item.data().slice({dim, 2}));
 
-      // Fails if any *other* multi-dimensional coord/label also depends on the
+      // Fails if any *other* multi-dimensional coord also depends on the
       // slicing dimension, since it will have mismatching values. Note that
       // this behavior is intended and important. It is crucial for preventing
       // operations between misaligned data in case a coordinate is
       // multi-dimensional.
       const auto coords = item.coords();
-      const auto labels = item.labels();
-      if (std::all_of(coords.begin(), coords.end(),
-                      [dim](const auto &coord) {
-                        return coord.first == dim ||
-                               !coord.second.dims().contains(dim);
-                      }) &&
-          std::all_of(labels.begin(), labels.end(), [dim](const auto &labels_) {
-            return labels_.second.dims().inner() == dim ||
-                   !labels_.second.dims().contains(dim);
+      if (std::all_of(coords.begin(), coords.end(), [dim](const auto &coord) {
+            return dim_of_coord_or_labels(coord.second, coord.first) == dim ||
+                   !coord.second.dims().contains(dim);
           })) {
         ASSERT_NO_THROW(TestFixture::op(target, item.slice({dim, 2})));
         EXPECT_EQ(target.data(), reference);
@@ -355,7 +350,7 @@ TYPED_TEST(DatasetBinaryEqualsOpTest, coord_only_sparse_fails) {
   auto var =
       makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, Dimensions::Sparse});
   Dataset d;
-  d.setSparseCoord("a", var);
+  d.setSparseCoord("a", Dim::Y, var);
   ASSERT_THROW(TestFixture::op(d, d), except::SparseDataError);
 }
 
@@ -637,9 +632,8 @@ TYPED_TEST(DatasetBinaryOpTest, dataset_lhs_dataset_rhs) {
       TestFixture::op(dataset_a["data_a"].data(), dataset_b["data_a"].data());
   EXPECT_EQ(reference, res["data_a"].data());
 
-  /* Expect coordinates and labels to be copied to the result dataset */
+  /* Expect coordinates to be copied to the result dataset */
   EXPECT_EQ(res.coords(), dataset_a.coords());
-  EXPECT_EQ(res.labels(), dataset_a.labels());
   EXPECT_EQ(res.masks(), dataset_a.masks());
 }
 
@@ -691,9 +685,8 @@ TYPED_TEST(DatasetBinaryOpTest, dataset_lhs_scalar_rhs) {
   const auto reference = TestFixture::op(dataset["data_a"].data(), scalar);
   EXPECT_EQ(reference, res["data_a"].data());
 
-  /* Expect coordinates and labels to be copied to the result dataset */
+  /* Expect coordinates to be copied to the result dataset */
   EXPECT_EQ(res.coords(), dataset.coords());
-  EXPECT_EQ(res.labels(), dataset.labels());
 }
 
 TYPED_TEST(DatasetBinaryOpTest, scalar_lhs_dataset_rhs) {
@@ -708,9 +701,8 @@ TYPED_TEST(DatasetBinaryOpTest, scalar_lhs_dataset_rhs) {
   const auto reference = TestFixture::op(scalar, dataset["data_a"].data());
   EXPECT_EQ(reference, res["data_a"].data());
 
-  /* Expect coordinates and labels to be copied to the result dataset */
+  /* Expect coordinatesto be copied to the result dataset */
   EXPECT_EQ(res.coords(), dataset.coords());
-  EXPECT_EQ(res.labels(), dataset.labels());
 }
 
 TYPED_TEST(DatasetBinaryOpTest, dataset_sparse_lhs_dataset_sparse_rhs) {
@@ -813,7 +805,8 @@ TYPED_TEST(DatasetBinaryOpTest, sparse_dataarrayconstview_coord_mismatch) {
 TYPED_TEST(DatasetBinaryOpTest, sparse_data_presense_mismatch) {
   Dataset a;
   a.setSparseCoord(
-      "sparse", makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse}));
+      "sparse", Dim::X,
+      makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse}));
   auto b(a);
   a.setData("sparse",
             makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse}));
@@ -831,13 +824,13 @@ TYPED_TEST(DatasetBinaryOpTest,
   {
     auto var = makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse});
     var.sparseValues<double>()[0] = {0.5, 1.0};
-    dataset_a.setSparseCoord("sparse", var);
+    dataset_a.setSparseCoord("sparse", Dim::X, var);
   }
 
   {
     auto var = makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse});
     var.sparseValues<double>()[0] = {0.5, 1.5};
-    dataset_b.setSparseCoord("sparse", var);
+    dataset_b.setSparseCoord("sparse", Dim::X, var);
   }
 
   EXPECT_THROW(TestFixture::op(dataset_a, dataset_b),
@@ -852,13 +845,13 @@ TYPED_TEST(DatasetBinaryOpTest,
   {
     auto var = makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse});
     var.sparseValues<double>()[0] = {0.5, 1.0};
-    dataset_a.setSparseLabels("sparse", "l", var);
+    dataset_a.setSparseCoord("sparse", Dim("l"), var);
   }
 
   {
     auto var = makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse});
     var.sparseValues<double>()[0] = {0.5, 1.5};
-    dataset_b.setSparseLabels("sparse", "l", var);
+    dataset_b.setSparseCoord("sparse", Dim("l"), var);
   }
 
   EXPECT_THROW(TestFixture::op(dataset_a, dataset_b),
@@ -949,7 +942,7 @@ Dataset non_trivial_2d_sparse(std::string_view name) {
   dvar.sparseValues<double>()[2] = {1, 1, 1, 1, 1, 100, 1, 1, 1, 1, 1, 1};
   dvar.sparseValues<double>()[3] = {1};
   sparse.setData(std::string(name), dvar);
-  sparse.setSparseCoord(std::string(name), var);
+  sparse.setSparseCoord(std::string(name), Dim::Y, var);
   return sparse;
 }
 
@@ -965,12 +958,12 @@ TEST(DatasetSetData, sparse_to_dense) {
   auto base = non_trivial_2d_sparse("base");
   auto var = makeVariable<double>(Dims{Dim::Y}, Shape{Dimensions::Sparse});
   var.sparseValues<double>()[0] = {1, 2, 3};
-  base.setSparseLabels("base", "l", var);
+  base.setSparseCoord("base", Dim("l"), var);
 
   auto dense = datasetFactory.make();
   dense.setData("sparse", base["base"]);
   EXPECT_EQ(base["base"].data(), dense["sparse"].data());
-  EXPECT_EQ(dense["sparse"].labels().items().count("l"), 1);
+  EXPECT_EQ(dense["sparse"].coords().items().count(Dim("l")), 1);
 }
 
 TEST(DatasetSetData, dense_to_dense) {
@@ -993,17 +986,17 @@ TEST(DatasetSetData, dense_to_empty) {
 
 TEST(DatasetSetData, labels) {
   auto dense = datasetFactory.make();
-  dense.setLabels(
-      "l",
+  dense.setCoord(
+      Dim("l"),
       makeVariable<double>(
           Dims{Dim::X}, Shape{dense.coords()[Dim::X].values<double>().size()}));
   auto d = Dataset(dense.slice({Dim::Y, 0}));
   dense.setData("data_x_1", dense["data_x"]);
   EXPECT_EQ(dense["data_x"], dense["data_x_1"]);
 
-  d.setLabels("l1", makeVariable<double>(
-                        Dims{Dim::X},
-                        Shape{d.coords()[Dim::X].values<double>().size()}));
+  d.setCoord(Dim("l1"), makeVariable<double>(
+                            Dims{Dim::X},
+                            Shape{d.coords()[Dim::X].values<double>().size()}));
   EXPECT_THROW(dense.setData("data_x_2", d["data_x"]), except::NotFoundError);
 }
 
