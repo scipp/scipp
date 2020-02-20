@@ -129,6 +129,7 @@ stages:
             inputs:
               containerRegistry: 'DockerHub'
               command: 'login'
+            displayName: 'Login to DockerHub'
           - task: Docker@2
             inputs:
               containerRegistry: 'DockerHub'
@@ -136,7 +137,9 @@ stages:
               command: 'buildAndPush'
               Dockerfile: '**/Dockerfile'
               tags: 'latest'
+            displayName: 'Build image and push to DockerHub'
           - task: Docker@2
             inputs:
               containerRegistry: 'DockerHub'
               command: 'logout'
+            displayName: 'Logout of DockerHub'
