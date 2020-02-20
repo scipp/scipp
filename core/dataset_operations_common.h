@@ -49,15 +49,6 @@ DataArray apply_and_drop_dim_impl(const DataArrayConstView &a, Func func,
     }
   }
 
-  std::map<std::string, Variable> labels;
-  for (auto &&[name, label] : a.labels()) {
-    // Check coordinates will NOT be dropped
-    if (label.dims().inner() != dim) {
-      expectAlignedCoord(label.dims().inner(), label, dim);
-      labels.emplace(name, label);
-    }
-  }
-
   std::map<std::string, Variable> attrs;
   for (auto &&[name, attr] : a.attrs())
     if (!attr.dims().contains(dim))
@@ -70,12 +61,12 @@ DataArray apply_and_drop_dim_impl(const DataArrayConstView &a, Func func,
 
   if constexpr (ApplyToData)
     return DataArray(func(a.data(), dim, std::forward<Args>(args)...),
-                     std::move(coords), std::move(labels), std::move(masks),
-                     std::move(attrs), a.name());
+                     std::move(coords), std::move(masks), std::move(attrs),
+                     a.name());
   else
     return DataArray(func(a, dim, std::forward<Args>(args)...),
-                     std::move(coords), std::move(labels), std::move(masks),
-                     std::move(attrs), a.name());
+                     std::move(coords), std::move(masks), std::move(attrs),
+                     a.name());
 }
 
 /// Create new data array by applying Func to everything depending on dim, copy
@@ -93,13 +84,6 @@ DataArray apply_or_copy_dim(const DataArrayConstView &a, Func func,
       coords.emplace(d, coord.dims().contains(dim) ? func(coord, dim, args...)
                                                    : copy(coord));
 
-  std::map<std::string, Variable> labels;
-  for (auto &&[name, label] : a.labels())
-    if (label.dims() != drop)
-      labels.emplace(name, label.dims().contains(dim)
-                               ? func(label, dim, args...)
-                               : copy(label));
-
   std::map<std::string, Variable> attrs;
   for (auto &&[name, attr] : a.attrs())
     if (attr.dims() != drop)
@@ -112,10 +96,9 @@ DataArray apply_or_copy_dim(const DataArrayConstView &a, Func func,
       masks.emplace(name, mask.dims().contains(dim) ? func(mask, dim, args...)
                                                     : copy(mask));
 
-  return DataArray(a.hasData() ? func(a.data(), dim, args...)
-                               : std::optional<Variable>(),
-                   std::move(coords), std::move(labels), std::move(masks),
-                   std::move(attrs), a.name());
+  return DataArray(
+      a.hasData() ? func(a.data(), dim, args...) : std::optional<Variable>(),
+      std::move(coords), std::move(masks), std::move(attrs), a.name());
 }
 
 template <class Func, class... Args>

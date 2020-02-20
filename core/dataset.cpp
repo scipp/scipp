@@ -49,20 +49,16 @@ auto makeViewItems(const Dimensions &dims, T1 &coords, T2 *sparse = nullptr) {
         items.emplace(item.first, makeViewItem(&item.second));
     }
   }
-  if (sparse) {
-    if constexpr (std::is_same_v<T2, const Variable> ||
-                  std::is_same_v<T2, Variable>) {
-      items.emplace(sparseDim, makeViewItem(sparse));
-    } else if constexpr (!std::is_same_v<T2, void>) {
-      for (auto &item : *sparse)
-        items.emplace(item.first, makeViewItem(&item.second));
-    }
-  }
+  if constexpr (std::is_same_v<T2, void>)
+    static_cast<void>(sparse);
+  else
+    for (auto &item : *sparse)
+      items.emplace(item.first, makeViewItem(&item.second));
   return items;
 }
 
 Dataset::Dataset(const DatasetConstView &view)
-    : Dataset(view, view.coords(), view.labels(), view.masks(), view.attrs()) {}
+    : Dataset(view, view.coords(), view.masks(), view.attrs()) {}
 
 Dataset::Dataset(const DataArrayConstView &data) { setData(data.name(), data); }
 
@@ -73,7 +69,7 @@ Dataset::Dataset(const std::map<std::string, DataArrayConstView> &data) {
 
 /// Removes all data items from the Dataset.
 ///
-/// Coordinates, labels, attributes and masks are not modified.
+/// Coordinates, masks, and attributes are not modified.
 /// This operation invalidates any view objects creeated from this dataset.
 void Dataset::clear() {
   m_data.clear();
@@ -82,28 +78,18 @@ void Dataset::clear() {
 
 /// Return a const view to all coordinates of the dataset.
 ///
-/// This view includes only "dimension-coordinates". To access
-/// non-dimension-coordinates" see labels().
+/// This view includes "dimension-coordinates" as well as
+/// "non-dimension-coordinates" ("labels").
 CoordsConstView Dataset::coords() const noexcept {
   return CoordsConstView(makeViewItems<Dim>(m_coords));
 }
 
 /// Return a view to all coordinates of the dataset.
 ///
-/// This view includes only "dimension-coordinates". To access
-/// non-dimension-coordinates" see labels().
+/// This view includes "dimension-coordinates" as well as
+/// "non-dimension-coordinates" ("labels").
 CoordsView Dataset::coords() noexcept {
   return CoordsView(this, nullptr, makeViewItems<Dim>(m_coords));
-}
-
-/// Return a const view to all labels of the dataset.
-LabelsConstView Dataset::labels() const noexcept {
-  return LabelsConstView(makeViewItems<std::string>(m_labels));
-}
-
-/// Return a view to all labels of the dataset.
-LabelsView Dataset::labels() noexcept {
-  return LabelsView(this, nullptr, makeViewItems<std::string>(m_labels));
 }
 
 /// Return a const view to all attributes of the dataset.
@@ -132,7 +118,7 @@ bool Dataset::contains(const std::string &name) const noexcept {
 
 /// Removes a data item from the Dataset
 ///
-/// Coordinates, labels and attributes are not modified.
+/// Coordinates, masks, and attributes are not modified.
 /// This operation invalidates any view objects creeated from this dataset.
 void Dataset::erase(const std::string_view name) {
   if (m_data.erase(std::string(name)) == 0) {
@@ -238,9 +224,6 @@ void Dataset::rebuildDims() {
   for (const auto &c : m_coords) {
     setDims(c.second.dims(), c.first);
   }
-  for (const auto &l : m_labels) {
-    setDims(l.second.dims());
-  }
   for (const auto &m : m_masks) {
     setDims(m.second.dims());
   }
@@ -254,15 +237,6 @@ void Dataset::setCoord(const Dim dim, Variable coord) {
   expect::notSparse(coord);
   setDims(coord.dims(), dim);
   m_coords.insert_or_assign(dim, std::move(coord));
-}
-
-/// Set (insert or replace) the labels for the given label name.
-///
-/// Note that the label name has no relation to names of data items.
-void Dataset::setLabels(const std::string &labelName, Variable labels) {
-  expect::notSparse(labels);
-  setDims(labels.dims());
-  m_labels.insert_or_assign(labelName, std::move(labels));
 }
 
 /// Set (insert or replace) an attribute for the given attribute name.
@@ -325,12 +299,6 @@ void Dataset::setData(const std::string &name, DataArray data) {
     else
       setCoord(dim, std::move(coord));
   }
-  for (auto &&[nm, labs] : dataset.m_labels) {
-    if (const auto it = m_labels.find(std::string(nm)); it != m_labels.end())
-      expect::equals(labs, it->second);
-    else
-      setLabels(std::string(nm), std::move(labs));
-  }
 
   for (auto &&[nm, mask] : dataset.m_masks)
     if (const auto it = m_masks.find(std::string(nm)); it != m_masks.end())
@@ -345,18 +313,16 @@ void Dataset::setData(const std::string &name, DataArray data) {
   auto item = dataset.m_data.begin();
   if (item->second.data)
     setData(name, std::move(item->second.data.value()));
-  if (item->second.coord)
-    setSparseCoord(name, std::move(item->second.coord.value()));
-  for (auto &&[nm, labs] : item->second.labels)
-    setSparseLabels(name, std::string(nm), std::move(labs));
+  for (auto &&[dim, coord] : item->second.coords)
+    setSparseCoord(name, dim, std::move(coord));
   for (auto &&[nm, attr] : item->second.attrs)
     setAttr(name, std::string(nm), std::move(attr));
 }
 
 /// Set (insert or replace) data item with given name.
 ///
-/// Coordinates, labels, attributes and masks of the data array are added to the
-/// dataset. Throws if there are existing but mismatching coords, labels, or
+/// Coordinates, masks, and attributes of the data array are added to the
+/// dataset. Throws if there are existing but mismatching coords, masks, or
 /// attributes. Throws if the provided data brings the dataset into an
 /// inconsistent state (mismatching dtype, unit, or dimensions).
 void Dataset::setData(const std::string &name, const DataArrayConstView &data) {
@@ -366,60 +332,25 @@ void Dataset::setData(const std::string &name, const DataArrayConstView &data) {
   setData(name, DataArray(data));
 }
 
-/// Set (insert or replace) the sparse coordinate with given name.
+/// Set (insert or replace) a sparse coordinate with given name.
 ///
 /// Sparse coordinates can exist even without corresponding data.
-void Dataset::setSparseCoord(const std::string &name, Variable coord) {
+void Dataset::setSparseCoord(const std::string &name, const Dim dim,
+                             Variable coord) {
   if (!coord.dims().sparse())
-    throw except::DimensionError(
+    throw except::SparseDataError(
         "Variable passed to Dataset::setSparseCoord does "
         "not contain sparse data.");
-  if (m_data.count(name)) {
-    const auto &data = m_data.at(name);
-    if ((data.data &&
-         (data.data->dims().sparseDim() != coord.dims().sparseDim())) ||
-        (!data.labels.empty() &&
-         (data.labels.begin()->second.dims().sparseDim() !=
-          coord.dims().sparseDim())))
-      throw except::DimensionError("Cannot set sparse coordinate if values or "
-                                   "variances are not sparse.");
-  }
+  if (contains(name) && operator[](name).dims().sparseDim() !=
+                            coord.dims().sparseDim())
+    throw std::runtime_error("Cannot set sparse coord if values or "
+                             "variances are not sparse.");
   setDims(coord.dims());
-  m_data[name].coord = std::move(coord);
-}
-
-/// Set (insert or replace) the sparse labels with given name and label name.
-void Dataset::setSparseLabels(const std::string &name,
-                              const std::string &labelName, Variable labels) {
-  if (!labels.dims().sparse())
-    throw std::runtime_error("Variable passed to Dataset::setSparseLabels does "
-                             "not contain sparse data.");
-  if (m_data.count(name)) {
-    const auto &data = m_data.at(name);
-    if ((data.data &&
-         (data.data->dims().sparseDim() != labels.dims().sparseDim())) ||
-        (data.coord &&
-         (data.coord->dims().sparseDim() != labels.dims().sparseDim())))
-      throw std::runtime_error("Cannot set sparse labels if values or "
-                               "variances are not sparse.");
-  }
-
-  const auto &data = m_data.at(name);
-  if (!data.data && !data.coord)
-    throw std::runtime_error(
-        "Cannot set sparse labels: Require either values or a sparse coord.");
-
-  setDims(labels.dims());
-  m_data[name].labels.insert_or_assign(labelName, std::move(labels));
+  m_data[name].coords.insert_or_assign(dim, std::move(coord));
 }
 
 /// Removes the coordinate for the given dimension.
 void Dataset::eraseCoord(const Dim dim) { erase_from_map(m_coords, dim); }
-
-/// Removes the labels for the given label name.
-void Dataset::eraseLabels(const std::string &labelName) {
-  erase_from_map(m_labels, labelName);
-}
 
 /// Removes an attribute for the given attribute name.
 void Dataset::eraseAttr(const std::string &attrName) {
@@ -440,32 +371,22 @@ void Dataset::eraseMask(const std::string &maskName) {
 /// Remove the sparse coordinate with given name.
 ///
 /// Sparse coordinates can exist even without corresponding data.
-void Dataset::eraseSparseCoord(const std::string &name) {
+void Dataset::eraseSparseCoord(const std::string &name, const Dim dim) {
   auto iter = m_data.find(name);
   if (iter == m_data.end())
-    throw scipp::except::SparseDataError("No sparse data with name " + name +
-                                         " found.");
+    throw except::SparseDataError("No sparse data with name " + name +
+                                  " found.");
 
   auto &data = iter->second;
-  !data.data ? [this, &iter]() { m_data.erase(iter); }() : data.coord.reset();
+  auto coord = data.coords.find(dim);
+  if (coord == data.coords.end())
+    throw except::SparseDataError("No coord with name " + to_string(dim) +
+                                  " found.");
+
+  data.coords.erase(coord);
+  if (!data.data && data.coords.empty())
+    m_data.erase(iter);
   rebuildDims();
-}
-
-/// Remove the sparse labels with given name and label name.
-void Dataset::eraseSparseLabels(const std::string &name,
-                                const std::string &labelName) {
-  auto iter = m_data.find(name);
-  if (iter == m_data.end())
-    throw std::runtime_error("No sparse data with name " + name + " found.");
-
-  auto &data = iter->second;
-  auto liter = data.labels.find(labelName);
-  if (liter == data.labels.end())
-    throw scipp::except::SparseDataError("No sparse data with name " + name +
-                                         " found.");
-
-  data.labels.size() == 1 ? data.labels.clear()
-                          : [this, &iter]() { m_data.erase(iter); }();
 }
 
 /// Return const slice of the dataset along given dimension with given extents.
@@ -558,8 +479,6 @@ void Dataset::rename(const Dim from, const Dim to) {
     relabel(m_coords);
   for (auto &item : m_coords)
     item.second.rename(from, to);
-  for (auto &item : m_labels)
-    item.second.rename(from, to);
   for (auto &item : m_masks)
     item.second.rename(from, to);
   for (auto &item : m_attrs)
@@ -568,10 +487,8 @@ void Dataset::rename(const Dim from, const Dim to) {
     auto &value = item.second;
     if (value.data)
       value.data->rename(from, to);
-    if (value.coord)
-      value.coord->rename(from, to);
-    for (auto &labels : value.labels)
-      labels.second.rename(from, to);
+    if (value.coords.count(from))
+      relabel(value.coords);
     for (auto &attr : value.attrs)
       attr.second.rename(from, to);
   }
@@ -601,7 +518,8 @@ const std::string &DataArrayConstView::name() const noexcept {
 Dimensions DataArrayConstView::dims() const noexcept {
   if (hasData())
     return data().dims();
-  return detail::makeSlice(*m_data->second.coord, slices()).dims();
+  return detail::makeSlice(m_data->second.coords.begin()->second, slices())
+      .dims();
 }
 
 /// Return the dtype of the data. Throws if there is no data.
@@ -626,22 +544,11 @@ void DataArrayView::setUnit(const units::Unit unit) const {
 /// If the data has a sparse dimension the returned view will not contain any
 /// of the dataset's coordinates that depends on the sparse dimension.
 CoordsConstView DataArrayConstView::coords() const noexcept {
-  return CoordsConstView(makeViewItems<Dim>(dims(), m_dataset->m_coords,
-                                            m_data->second.coord
-                                                ? &*m_data->second.coord
-                                                : nullptr),
-                         slices());
+  return CoordsConstView(
+      makeViewItems<Dim>(dims(), m_dataset->m_coords, &m_data->second.coords),
+      slices());
 }
 
-/// Return a const view to all labels of the data view.
-///
-/// If the data has a sparse dimension the returned view will not contain any
-/// of the dataset's labels that depends on the sparse dimension.
-LabelsConstView DataArrayConstView::labels() const noexcept {
-  return LabelsConstView(makeViewItems<std::string>(dims(), m_dataset->m_labels,
-                                                    &m_data->second.labels),
-                         slices());
-}
 
 /// Return a const view to all attributes of the data view.
 AttrsConstView DataArrayConstView::attrs() const noexcept {
@@ -708,21 +615,7 @@ DataArrayView DataArrayView::slice(const Slice slice1, const Slice slice2,
 CoordsView DataArrayView::coords() const noexcept {
   return CoordsView(m_mutableDataset, &name(),
                     makeViewItems<Dim>(dims(), m_mutableDataset->m_coords,
-                                       m_mutableData->second.coord
-                                           ? &*m_mutableData->second.coord
-                                           : nullptr),
-                    slices());
-}
-
-/// Return a view to all labels of the data view.
-///
-/// If the data has a sparse dimension the returned view will not contain any
-/// of the dataset's labels that depends on the sparse dimension.
-LabelsView DataArrayView::labels() const noexcept {
-  return LabelsView(m_mutableDataset, &name(),
-                    makeViewItems<std::string>(dims(),
-                                               m_mutableDataset->m_labels,
-                                               &m_mutableData->second.labels),
+                                       &m_mutableData->second.coords),
                     slices());
 }
 
@@ -745,7 +638,7 @@ DataArrayView DataArrayView::assign(const DataArrayConstView &other) const {
   if (&underlying() == &other.underlying() && slices() == other.slices())
     return *this; // Self-assignment, return early.
 
-  expect::coordsAndLabelsAreSuperset(*this, other);
+  expect::coordsAreSuperset(*this, other);
   // TODO here and below: If other has data, we should either fail, or create
   // data.
   if (hasData())
@@ -788,34 +681,20 @@ DatasetView::DatasetView(Dataset &dataset)
 
 /// Return a const view to all coordinates of the dataset slice.
 ///
-/// This view includes only "dimension-coordinates". To access
-/// non-dimension-coordinates" see labels().
+/// This view includes "dimension-coordinates" as well as
+/// "non-dimension-coordinates" ("labels").
 CoordsConstView DatasetConstView::coords() const noexcept {
   return CoordsConstView(makeViewItems<Dim>(m_dataset->m_coords), slices());
 }
 
 /// Return a view to all coordinates of the dataset slice.
 ///
-/// This view includes only "dimension-coordinates". To access
-/// non-dimension-coordinates" see labels().
+/// This view includes "dimension-coordinates" as well as
+/// "non-dimension-coordinates" ("labels").
 CoordsView DatasetView::coords() const noexcept {
   auto *parent = slices().empty() ? m_mutableDataset : nullptr;
   return CoordsView(parent, nullptr,
                     makeViewItems<Dim>(m_mutableDataset->m_coords), slices());
-}
-
-/// Return a const view to all labels of the dataset slice.
-LabelsConstView DatasetConstView::labels() const noexcept {
-  return LabelsConstView(makeViewItems<std::string>(m_dataset->m_labels),
-                         slices());
-}
-
-/// Return a view to all labels of the dataset slice.
-LabelsView DatasetView::labels() const noexcept {
-  auto *parent = slices().empty() ? m_mutableDataset : nullptr;
-  return LabelsView(parent, nullptr,
-                    makeViewItems<std::string>(m_mutableDataset->m_labels),
-                    slices());
 }
 
 /// Return a const view to all attributes of the dataset slice.
@@ -923,8 +802,6 @@ bool operator==(const DataArrayConstView &a, const DataArrayConstView &b) {
     return false;
   if (a.coords() != b.coords())
     return false;
-  if (a.labels() != b.labels())
-    return false;
   if (a.masks() != b.masks())
     return false;
   if (a.attrs() != b.attrs())
@@ -942,8 +819,6 @@ template <class A, class B> bool dataset_equals(const A &a, const B &b) {
   if (a.size() != b.size())
     return false;
   if (a.coords() != b.coords())
-    return false;
-  if (a.labels() != b.labels())
     return false;
   if (a.masks() != b.masks())
     return false;

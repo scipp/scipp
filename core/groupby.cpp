@@ -56,19 +56,16 @@ static constexpr auto flatten = [](const DataArrayView &out, const auto &in,
                                    const GroupByGrouping::group &group,
                                    const Dim reductionDim,
                                    const Variable &mask_) {
-  const Dim sparseDim = in.dims().sparseDim();
   const auto no_mask = makeVariable<bool>(Values{true});
   for (const auto &slice : group) {
     auto mask =
         mask_.dims().contains(reductionDim) ? mask_.slice(slice) : no_mask;
     const auto &array = in.slice(slice);
-    flatten_impl(out.coords()[sparseDim], array.coords()[sparseDim], mask);
     if (in.hasData())
       flatten_impl(out.data(), array.data(), mask);
-    for (auto &&[label_name, label] : out.labels()) {
-      if (label.dims().sparse())
-        flatten_impl(label, array.labels()[label_name], mask);
-    }
+    for (auto &&[dim, coord] : out.coords())
+      if (coord.dims().sparse())
+        flatten_impl(coord, array.coords()[dim], mask);
   }
 };
 
@@ -185,8 +182,9 @@ static void expectValidGroupbyKey(const VariableConstView &key) {
 }
 
 template <class T> struct MakeGroups {
-  static auto apply(const VariableConstView &key, const Dim targetDim) {
+  static auto apply(const VariableConstView &key) {
     expectValidGroupbyKey(key);
+    const Dim targetDim = key.dims().inner();
     const auto &values = key.values<T>();
 
     const auto dim = key.dims().inner();
@@ -252,26 +250,23 @@ template <class T> struct MakeBinGroups {
 
 /// Create GroupBy<DataArray> object as part of "split-apply-combine" mechanism.
 ///
-/// Groups the slices of `array` according to values in given by `labels`.
-/// Grouping of labels will create a new coordinate for `targetDim` in a later
-/// apply/combine step.
-GroupBy<DataArray> groupby(const DataArrayConstView &array,
-                           const std::string &labels, const Dim targetDim) {
-  const auto &key = array.labels()[labels];
+/// Groups the slices of `array` according to values in given by a coord.
+/// Grouping will create a new coordinate for the dimension of the grouping
+/// coord in a later apply/combine step.
+GroupBy<DataArray> groupby(const DataArrayConstView &array, const Dim dim) {
+  const auto &key = array.coords()[dim];
   return {array, CallDType<double, float, int64_t, int32_t, bool,
-                           std::string>::apply<MakeGroups>(key.dtype(), key,
-                                                           targetDim)};
+                           std::string>::apply<MakeGroups>(key.dtype(), key)};
 }
 
 /// Create GroupBy<DataArray> object as part of "split-apply-combine" mechanism.
 ///
-/// Groups the slices of `array` according to values in given by `labels`.
-/// Grouping of labels is according to given `bins`, which will be added as a
+/// Groups the slices of `array` according to values in given by a coord.
+/// Grouping of a coord is according to given `bins`, which will be added as a
 /// new coordinate to the output in a later apply/combine step.
-GroupBy<DataArray> groupby(const DataArrayConstView &array,
-                           const std::string &labels,
+GroupBy<DataArray> groupby(const DataArrayConstView &array, const Dim dim,
                            const VariableConstView &bins) {
-  const auto &key = array.labels()[labels];
+  const auto &key = array.coords()[dim];
   return {array,
           CallDType<double, float, int64_t, int32_t>::apply<MakeBinGroups>(
               key.dtype(), key, bins)};
@@ -279,26 +274,23 @@ GroupBy<DataArray> groupby(const DataArrayConstView &array,
 
 /// Create GroupBy<Dataset> object as part of "split-apply-combine" mechanism.
 ///
-/// Groups the slices of `dataset` according to values in given by `labels`.
-/// Grouping of labels will create a new coordinate for `targetDim` in a later
-/// apply/combine step.
-GroupBy<Dataset> groupby(const DatasetConstView &dataset,
-                         const std::string &labels, const Dim targetDim) {
-  const auto &key = dataset.labels()[labels];
+/// Groups the slices of `dataset` according to values in given by a coord.
+/// Grouping will create a new coordinate for the dimension of the grouping
+/// coord in a later apply/combine step.
+GroupBy<Dataset> groupby(const DatasetConstView &dataset, const Dim dim) {
+  const auto &key = dataset.coords()[dim];
   return {dataset, CallDType<double, float, int64_t, int32_t, bool,
-                             std::string>::apply<MakeGroups>(key.dtype(), key,
-                                                             targetDim)};
+                             std::string>::apply<MakeGroups>(key.dtype(), key)};
 }
 
 /// Create GroupBy<Dataset> object as part of "split-apply-combine" mechanism.
 ///
-/// Groups the slices of `dataset` according to values in given by `labels`.
-/// Grouping of labels is according to given `bins`, which will be added as a
+/// Groups the slices of `dataset` according to values in given by a coord.
+/// Grouping of a coord is according to given `bins`, which will be added as a
 /// new coordinate to the output in a later apply/combine step.
-GroupBy<Dataset> groupby(const DatasetConstView &dataset,
-                         const std::string &labels,
+GroupBy<Dataset> groupby(const DatasetConstView &dataset, const Dim dim,
                          const VariableConstView &bins) {
-  const auto &key = dataset.labels()[labels];
+  const auto &key = dataset.coords()[dim];
   return {dataset,
           CallDType<double, float, int64_t, int32_t>::apply<MakeBinGroups>(
               key.dtype(), key, bins)};
