@@ -196,10 +196,10 @@ TEST(ConcatenateTest, concatenate_sparse_no_data) {
   var1_[1] = {1, 2};
   const auto var2 = concatenate(var1, var1, Dim::X);
 
-  const auto a =
-      DataArray(std::optional<Variable>(), {{Dim::X, var1}}, {{"labs", var1}});
-  const auto b =
-      DataArray(std::optional<Variable>(), {{Dim::X, var2}}, {{"labs", var2}});
+  const auto a = DataArray(std::optional<Variable>(),
+                           {{Dim::X, var1}, {Dim("labs"), var1}});
+  const auto b = DataArray(std::optional<Variable>(),
+                           {{Dim::X, var2}, {Dim("labs"), var2}});
 
   const auto x = concatenate(a, b, Dim::X);
   const auto y = concatenate(a, b, Dim::Y);

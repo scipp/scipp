@@ -215,14 +215,13 @@ void Dataset::setDims(const Dimensions &dims, const Dim coordDim) {
 }
 
 void Dataset::rebuildDims() {
-  /* Clear old extents */
   m_dims.clear();
 
   for (const auto &d : *this) {
     setDims(d.dims());
   }
   for (const auto &c : m_coords) {
-    setDims(c.second.dims(), c.first);
+    setDims(c.second.dims(), dim_of_coord(c.second, c.first));
   }
   for (const auto &m : m_masks) {
     setDims(m.second.dims());
@@ -338,13 +337,17 @@ void Dataset::setData(const std::string &name, const DataArrayConstView &data) {
 void Dataset::setSparseCoord(const std::string &name, const Dim dim,
                              Variable coord) {
   if (!coord.dims().sparse())
-    throw except::SparseDataError(
+    throw except::DimensionError(
         "Variable passed to Dataset::setSparseCoord does "
         "not contain sparse data.");
   if (contains(name) && operator[](name).dims().sparseDim() !=
                             coord.dims().sparseDim())
-    throw std::runtime_error("Cannot set sparse coord if values or "
-                             "variances are not sparse.");
+    throw except::DimensionError("Cannot set sparse coord if values or "
+                                 "variances are not sparse.");
+  if (!contains(name) && coord.dims().sparseDim() != dim)
+    throw except::SparseDataError(
+        "Cannot set sparse non-dimension-coord without "
+        "sparse dimension-coord.");
   setDims(coord.dims());
   m_data[name].coords.insert_or_assign(dim, std::move(coord));
 }
@@ -489,6 +492,8 @@ void Dataset::rename(const Dim from, const Dim to) {
       value.data->rename(from, to);
     if (value.coords.count(from))
       relabel(value.coords);
+    for (auto &coord : value.coords)
+      coord.second.rename(from, to);
     for (auto &attr : value.attrs)
       attr.second.rename(from, to);
   }
