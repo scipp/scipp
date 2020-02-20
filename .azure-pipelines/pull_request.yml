@@ -47,6 +47,8 @@ stages:
         timeoutInMinutes: 80
         pool:
           vmImage: 'macOS-10.14'
+        variables:
+          OSX_VERSION: '10.15'
         steps:
           - checkout: self
             submodules: true
@@ -54,7 +56,8 @@ stages:
               echo "##vso[task.prependpath]$CONDA/bin"
               echo "##vso[task.setvariable variable=conda_dir]$CONDA"
             displayName: Configure Conda directories
-          - bash: sudo chown -R $USER $CONDA
+          - bash: |
+              sudo chown -R $USER $CONDA
             displayName: Take ownership of Conda installation
           - bash: |
               set -ex
@@ -62,7 +65,7 @@ stages:
               conda install --yes conda-build
             displayName: 'Conda configuration'
           - bash: |
-              OSX_VERSION=10.15 conda build -c conda-forge ./conda
+              conda build -c conda-forge ./conda
             displayName: 'Package build'
           - task: PublishBuildArtifacts@1
             inputs:

@@ -13,16 +13,16 @@ jobs:
           sshPublicKey: 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQD1k29WMh5uvP5TRihav1ilNbm3Z/KXvoBA9q3YmNkSKFOubvb/y+Tc2S6vqVWxpUDC0CWFyFdUp+WUGy9Cx2aQ0DzmJWUoXJz5woS48e2o/091HpSyvSfYXikBVpTpxJFOYB4lCDclsz4jG1HfuHlf763ajp0EBoTeJspT2kiIdXD47nSpHt/vl47PxwVLgTPVYT1fbwBXwmPNldupph0PkP+fV3uw+DJkXzIR5Uo+3iJu7wrZTKx4W4E4r1bInHjLd4/XP/MbaX0ds47Il27yACZSdrSBZg2Q4E8nVkZUO1VA1sWrcpI39V4Zh7e+Ab9MeUtLa6hR5pSp54Eg0HxnHwDkKpyQsCApueUw7FJ9vZiIKZRqRRhK6mEpQQ+jl+a5pyPH8/20un7C20FUu5CqUFOrY1gncsoyiYevsLumCRu7Nh99oFbAQzxydiNbtpXXsDA6ZWO5BLLA+rvftoQqFPjvnM7nrArg3ATYyZXlK904OmUwWcAs5BPJlG8Rv1c/wrJzAW0RsZqanNmvsgOVrHTLUHhDTxKmWBzQwAomOqOddx86scCU0Bqr3UPRhf8deSIajIa30wADbVRLrwkp0BHBdY5lukzhwc3swBIfu4aiikIHe+Mj99oh17F5X5za7Iyu2+Gv5oSf7gZR43bzSz0dW6XTfcCrRR9H6OHXew=='
           sshKeySecureFile: 'gh_pages_deploy_key'
         displayName: 'Add GitHub Pages deploy key'
-      - script: |
+      - bash: |
           set -ex
           git config --global user.name 'The Great Documentation Generation Entity'
           git config --global user.email 'nobody@localhost'
         displayName: 'Git config'
-      - script: |
+      - bash: |
           set -ex
           git clone git@github.com:scipp/scipp.github.io "$(documentation_repo_path)"
         displayName: 'Clone exsisting documentation'
-      - script: |
+      - bash: |
           set -ex
           cd "$(documentation_repo_path)"
           git rm -rf .
@@ -36,7 +36,7 @@ jobs:
           artifactName: 'documentation'
           downloadPath: '$(Build.StagingDirectory)'
         displayName: 'Retrieve updated documentation'
-      - script: |
+      - bash: |
           set -ex
           cd "$(documentation_repo_path)"
           touch .nojekyll
