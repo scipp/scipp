@@ -7,5 +7,4 @@
 
 namespace scipp::units {
 INSTANTIATE(neutron::Unit)
-SCIPP_UNITS_DEFINE_DIMENSIONS(neutron)
 } // namespace scipp::units
