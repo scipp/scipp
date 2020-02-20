@@ -49,7 +49,7 @@ auto concat(const T1 &a, const T2 &b, const Dim dim, const DimT &dimsA,
             const DimT &dimsB) {
   std::map<typename T1::key_type, typename T1::mapped_type> out;
   for (const auto &[key, a_] : a) {
-    if (dim_of_coord_or_labels(a_, key) == dim) {
+    if (dim_of_coord(a_, key) == dim) {
       if (a_.dims().sparseDim() == dim) {
         if (b[key].dims().sparseDim() == dim)
           out.emplace(key, concatenate(a_, b[key], dim));
@@ -162,7 +162,7 @@ DataArray resize(const DataArrayConstView &a, const Dim dim,
 
     std::map<Dim, Variable> coords;
     for (auto &&[d, coord] : a.coords())
-      if (dim_of_coord_or_labels(coord, d) != dim)
+      if (dim_of_coord(coord, d) != dim)
         coords.emplace(d, resize_if_sparse(coord));
 
     std::map<std::string, Variable> attrs;

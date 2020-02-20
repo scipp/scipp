@@ -182,9 +182,8 @@ static void expectValidGroupbyKey(const VariableConstView &key) {
 }
 
 template <class T> struct MakeGroups {
-  static auto apply(const VariableConstView &key) {
+  static auto apply(const VariableConstView &key, const Dim targetDim) {
     expectValidGroupbyKey(key);
-    const Dim targetDim = key.dims().inner();
     const auto &values = key.values<T>();
 
     const auto dim = key.dims().inner();
@@ -255,8 +254,9 @@ template <class T> struct MakeBinGroups {
 /// coord in a later apply/combine step.
 GroupBy<DataArray> groupby(const DataArrayConstView &array, const Dim dim) {
   const auto &key = array.coords()[dim];
-  return {array, CallDType<double, float, int64_t, int32_t, bool,
-                           std::string>::apply<MakeGroups>(key.dtype(), key)};
+  return {array,
+          CallDType<double, float, int64_t, int32_t, bool,
+                    std::string>::apply<MakeGroups>(key.dtype(), key, dim)};
 }
 
 /// Create GroupBy<DataArray> object as part of "split-apply-combine" mechanism.
@@ -279,8 +279,9 @@ GroupBy<DataArray> groupby(const DataArrayConstView &array, const Dim dim,
 /// coord in a later apply/combine step.
 GroupBy<Dataset> groupby(const DatasetConstView &dataset, const Dim dim) {
   const auto &key = dataset.coords()[dim];
-  return {dataset, CallDType<double, float, int64_t, int32_t, bool,
-                             std::string>::apply<MakeGroups>(key.dtype(), key)};
+  return {dataset,
+          CallDType<double, float, int64_t, int32_t, bool,
+                    std::string>::apply<MakeGroups>(key.dtype(), key, dim)};
 }
 
 /// Create GroupBy<Dataset> object as part of "split-apply-combine" mechanism.

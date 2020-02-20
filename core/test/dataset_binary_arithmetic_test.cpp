@@ -10,7 +10,6 @@
 #include "scipp/core/dimensions.h"
 #include "test_macros.h"
 
-#include "../dataset_operations_common.h"
 #include "dataset_test_common.h"
 #include "make_sparse.h"
 
@@ -177,7 +176,7 @@ TYPED_TEST(DataArrayViewBinaryEqualsOpTest, slice_lhs_with_variance) {
       // multi-dimensional.
       const auto coords = item.coords();
       if (std::all_of(coords.begin(), coords.end(), [dim](const auto &coord) {
-            return dim_of_coord_or_labels(coord.second, coord.first) == dim ||
+            return dim_of_coord(coord.second, coord.first) == dim ||
                    !coord.second.dims().contains(dim);
           })) {
         ASSERT_NO_THROW(TestFixture::op(target, item.slice({dim, 2})));

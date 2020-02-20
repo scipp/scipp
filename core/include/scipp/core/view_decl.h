@@ -79,6 +79,21 @@ using MasksConstView = ConstView<ViewId::Masks, std::string>;
 /// View for accessing masks of Dataset and DataArrayView
 using MasksView = MutableView<MasksConstView>;
 
+/// Return the dimension for given coord.
+/// @param var Coordinate variable
+/// @param key Key of the coordinate in a coord dict
+///
+/// For dimension-coords, this is the same as the key, for non-dimension-coords
+/// (labels) we adopt the convention that they are "label" their inner
+/// dimension.
+template <class T, class Key> Dim dim_of_coord(const T &var, const Key &key) {
+  if constexpr (std::is_same_v<Key, Dim>) {
+    const bool is_dimension_coord = var.dims().contains(key);
+    return is_dimension_coord ? key : var.dims().inner();
+  } else
+    return var.dims().inner();
+}
+
 /// Common functionality for other const-view classes.
 template <class Id, class Key> class ConstView {
 private:
