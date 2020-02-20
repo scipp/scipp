@@ -36,7 +36,7 @@ std::tuple<Dataset, Dataset> makeDatasets() {
   a.setCoord(Dim("label_2"),
              makeVariable<int>(Dims{Dim::Y}, Shape{3}, Values{21, 22, 23}));
   a.setCoord(Dim("label_3"),
-              makeVariable<int>(Dims{Dim::Z}, Shape{3}, Values{21, 22, 23}));
+             makeVariable<int>(Dims{Dim::Z}, Shape{3}, Values{21, 22, 23}));
   a.setData("a", makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3}));
   a.setData("b", makeVariable<int>(Dims{Dim::Y}, Shape{3}, Values{1, 2, 3}));
   a.setData("c", makeVariable<int>(Dims{Dim::Z}, Shape{3}, Values{1, 2, 3}));
@@ -53,7 +53,7 @@ std::tuple<Dataset, Dataset> makeDatasets() {
   b.setCoord(Dim("label_2"),
              makeVariable<int>(Dims{Dim::Y}, Shape{3}, Values{21, 22, 23}));
   b.setCoord(Dim("label_3"),
-              makeVariable<int>(Dims{Dim::Z}, Shape{3}, Values{21, 22, 23}));
+             makeVariable<int>(Dims{Dim::Z}, Shape{3}, Values{21, 22, 23}));
   b.setData("a", makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3}));
   b.setData("b", makeVariable<int>(Dims{Dim::Y}, Shape{3}, Values{1, 2, 3}));
   b.setData("c", makeVariable<int>(Dims{Dim::Z}, Shape{3}, Values{1, 2, 3}));
