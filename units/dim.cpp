@@ -2,6 +2,8 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
+#include <limits>
+
 #include "scipp/units/dim.h"
 
 namespace scipp::units {
@@ -43,7 +45,11 @@ Dim::Dim(const std::string &label) {
     m_id = it->second;
     return;
   }
-  m_id = static_cast<DimId>(1000 + custom_ids.size());
+  const auto id = scipp::size(custom_ids) + 1000;
+  if (id > std::numeric_limits<std::underlying_type<DimId>::type>::max())
+    throw std::runtime_error(
+        "Exceeded maximum number of different dimension labels.");
+  m_id = static_cast<DimId>(id);
   custom_ids[label] = m_id;
 }
 
