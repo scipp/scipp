@@ -30,10 +30,8 @@ namespace detail {
 struct DatasetData {
   /// Optional data values (with optional variances).
   std::optional<Variable> data;
-  /// Dimension coord for the sparse dimension (there can be only 1).
-  std::optional<Variable> coord;
-  /// Potential labels for the sparse dimension.
-  std::unordered_map<std::string, Variable> labels;
+  /// Potential sparse coords.
+  std::unordered_map<Dim, Variable> coords;
   /// Attributes for data.
   std::unordered_map<std::string, Variable> attrs;
 };
@@ -56,7 +54,6 @@ public:
   units::Unit unit() const;
 
   CoordsConstView coords() const noexcept;
-  LabelsConstView labels() const noexcept;
   AttrsConstView attrs() const noexcept;
   MasksConstView masks() const noexcept;
 
@@ -124,7 +121,6 @@ public:
                 const detail::slice_list &slices = {});
 
   CoordsView coords() const noexcept;
-  LabelsView labels() const noexcept;
   MasksView masks() const noexcept;
   AttrsView attrs() const noexcept;
 
@@ -232,14 +228,10 @@ public:
   explicit Dataset(const DataArrayConstView &data);
   explicit Dataset(const std::map<std::string, DataArrayConstView> &data);
 
-  template <class DataMap, class CoordMap, class LabelsMap, class MasksMap,
-            class AttrMap>
-  Dataset(DataMap data, CoordMap coords, LabelsMap labels, MasksMap masks,
-          AttrMap attrs) {
+  template <class DataMap, class CoordMap, class MasksMap, class AttrMap>
+  Dataset(DataMap data, CoordMap coords, MasksMap masks, AttrMap attrs) {
     for (auto &&[dim, coord] : coords)
       setCoord(dim, std::move(coord));
-    for (auto &&[name, labs] : labels)
-      setLabels(std::string(name), std::move(labs));
     for (auto &&[name, mask] : masks)
       setMask(std::string(name), std::move(mask));
     for (auto &&[name, attr] : attrs)
@@ -265,9 +257,6 @@ public:
 
   CoordsConstView coords() const noexcept;
   CoordsView coords() noexcept;
-
-  LabelsConstView labels() const noexcept;
-  LabelsView labels() noexcept;
 
   AttrsConstView attrs() const noexcept;
   AttrsView attrs() noexcept;
@@ -356,7 +345,6 @@ public:
   }
 
   void setCoord(const Dim dim, Variable coord);
-  void setLabels(const std::string &labelName, Variable labels);
   void setMask(const std::string &masksName, Variable masks);
   void setAttr(const std::string &attrName, Variable attr);
   void setAttr(const std::string &name, const std::string &attrName,
@@ -364,16 +352,10 @@ public:
   void setData(const std::string &name, Variable data);
   void setData(const std::string &name, const DataArrayConstView &data);
   void setData(const std::string &name, DataArray data);
-  void setSparseCoord(const std::string &name, Variable coord);
-  void setSparseLabels(const std::string &name, const std::string &labelName,
-                       Variable labels);
+  void setSparseCoord(const std::string &name, const Dim dim, Variable coord);
 
   void setCoord(const Dim dim, const VariableConstView &coord) {
     setCoord(dim, Variable(coord));
-  }
-  void setLabels(const std::string &labelName,
-                 const VariableConstView &labels) {
-    setLabels(labelName, Variable(labels));
   }
   void setMask(const std::string &masksName, const VariableConstView &mask) {
     setMask(masksName, Variable(mask));
@@ -388,21 +370,16 @@ public:
   void setData(const std::string &name, const VariableConstView &data) {
     setData(name, Variable(data));
   }
-  void setSparseCoord(const std::string &name, const VariableConstView &coord) {
-    setSparseCoord(name, Variable(coord));
-  }
-  void setSparseLabels(const std::string &name, const std::string &labelName,
-                       const VariableConstView &labels) {
-    setSparseLabels(name, labelName, Variable(labels));
+  void setSparseCoord(const std::string &name, const Dim dim,
+                      const VariableConstView &coord) {
+    setSparseCoord(name, dim, Variable(coord));
   }
 
   void eraseCoord(const Dim dim);
-  void eraseLabels(const std::string &labelName);
   void eraseAttr(const std::string &attrName);
   void eraseAttr(const std::string &name, const std::string &attrName);
   void eraseMask(const std::string &maskName);
-  void eraseSparseCoord(const std::string &name);
-  void eraseSparseLabels(const std::string &name, const std::string &labelName);
+  void eraseSparseCoord(const std::string &name, const Dim dim);
 
   DatasetConstView slice(const Slice slice1) const &;
   DatasetConstView slice(const Slice slice1, const Slice slice2) const &;
@@ -481,7 +458,6 @@ private:
 
   std::unordered_map<Dim, scipp::index> m_dims;
   std::unordered_map<Dim, Variable> m_coords;
-  std::unordered_map<std::string, Variable> m_labels;
   std::unordered_map<std::string, Variable> m_attrs;
   std::unordered_map<std::string, Variable> m_masks;
   detail::dataset_item_map m_data;
@@ -571,24 +547,19 @@ public:
   template <class VarOrView>
   void set(const typename Base::key_type key, VarOrView var) const {
     if (!m_parent || !Base::m_slices.empty())
-      throw std::runtime_error(
-          "Cannot add coord/labels/attr field to a slice.");
+      throw std::runtime_error("Cannot add coord/lmask/attr field to a slice.");
     if (var.dims().sparse()) {
       if (!m_name)
-        throw std::runtime_error("Sparse coord/labels/attr must be added to "
+        throw std::runtime_error("Sparse coord/mask/attr must be added to "
                                  "coords of dataset items, not coords of "
                                  "dataset.");
       if constexpr (std::is_same_v<Base, CoordsConstView>)
-        m_parent->setSparseCoord(*m_name, std::move(var));
-      if constexpr (std::is_same_v<Base, LabelsConstView>)
-        m_parent->setSparseLabels(*m_name, key, std::move(var));
+        m_parent->setSparseCoord(*m_name, key, std::move(var));
       if constexpr (std::is_same_v<Base, AttrsConstView>)
         throw std::runtime_error("Attributes cannot be sparse.");
     } else {
       if constexpr (std::is_same_v<Base, CoordsConstView>)
         m_parent->setCoord(key, std::move(var));
-      if constexpr (std::is_same_v<Base, LabelsConstView>)
-        m_parent->setLabels(key, std::move(var));
       if constexpr (std::is_same_v<Base, MasksConstView>)
         m_parent->setMask(key, std::move(var));
       if constexpr (std::is_same_v<Base, AttrsConstView>) {
@@ -604,7 +575,7 @@ public:
   void erase(const typename Base::key_type key) {
     if (!m_parent || !Base::m_slices.empty())
       throw std::runtime_error(
-          "Cannot remove coord/labels/attr field from a slice.");
+          "Cannot remove coord/mask/attr field from a slice.");
 
     bool sparse = m_name; // Does view point on sparse data or not
     if (sparse)
@@ -613,8 +584,6 @@ public:
     if (!sparse) {
       if constexpr (std::is_same_v<Base, CoordsConstView>)
         m_parent->eraseCoord(key);
-      if constexpr (std::is_same_v<Base, LabelsConstView>)
-        m_parent->eraseLabels(key);
       if constexpr (std::is_same_v<Base, AttrsConstView>) {
         if (m_name)
           m_parent->eraseAttr(*m_name, key);
@@ -634,12 +603,7 @@ public:
           throw except::SparseDataError("No coordinate with dim " +
                                         to_string(key) + " found," + suffix);
         }
-        m_parent->eraseSparseCoord(*m_name);
-      } else if constexpr (std::is_same_v<Base, LabelsConstView>) {
-        if (this->operator[](key).dims().sparse())
-          m_parent->eraseSparseLabels(*m_name, key);
-        else
-          m_parent->eraseLabels(key);
+        m_parent->eraseSparseCoord(*m_name, key);
       } else if constexpr (std::is_same_v<Base, AttrsConstView>)
         m_parent->eraseAttr(*m_name, key);
       else
@@ -687,7 +651,6 @@ public:
   [[nodiscard]] bool empty() const noexcept { return m_items.empty(); }
 
   CoordsConstView coords() const noexcept;
-  LabelsConstView labels() const noexcept;
   AttrsConstView attrs() const noexcept;
   MasksConstView masks() const noexcept;
 
@@ -771,7 +734,6 @@ public:
   DatasetView(Dataset &dataset);
 
   CoordsView coords() const noexcept;
-  LabelsView labels() const noexcept;
   AttrsView attrs() const noexcept;
   MasksView masks() const noexcept;
 
@@ -857,7 +819,7 @@ private:
 SCIPP_CORE_EXPORT DataArray copy(const DataArrayConstView &array);
 SCIPP_CORE_EXPORT Dataset copy(const DatasetConstView &dataset);
 
-/// Data array, a variable with coordinates, labels, and attributes.
+/// Data array, a variable with coordinates, masks, and attributes.
 class SCIPP_CORE_EXPORT DataArray {
 public:
   using const_view_type = DataArrayConstView;
@@ -866,26 +828,19 @@ public:
   DataArray() = default;
   explicit DataArray(const DataArrayConstView &view);
   template <class CoordMap = std::map<Dim, Variable>,
-            class LabelsMap = std::map<std::string, Variable>,
             class MasksMap = std::map<std::string, Variable>,
             class AttrMap = std::map<std::string, Variable>>
   DataArray(std::optional<Variable> data, CoordMap coords = {},
-            LabelsMap labels = {}, MasksMap masks = {}, AttrMap attrs = {},
+            MasksMap masks = {}, AttrMap attrs = {},
             const std::string &name = "") {
     if (data)
       m_holder.setData(name, std::move(*data));
 
     for (auto &&[dim, c] : coords)
       if (c.dims().sparse())
-        m_holder.setSparseCoord(name, std::move(c));
+        m_holder.setSparseCoord(name, dim, std::move(c));
       else
         m_holder.setCoord(dim, std::move(c));
-
-    for (auto &&[label_name, l] : labels)
-      if (l.dims().sparse())
-        m_holder.setSparseLabels(name, std::string(label_name), std::move(l));
-      else
-        m_holder.setLabels(std::string(label_name), std::move(l));
 
     for (auto &&[mask_name, m] : masks)
       m_holder.setMask(std::string(mask_name), std::move(m));
@@ -906,9 +861,6 @@ public:
 
   CoordsConstView coords() const { return get().coords(); }
   CoordsView coords() { return get().coords(); }
-
-  LabelsConstView labels() const { return get().labels(); }
-  LabelsView labels() { return get().labels(); }
 
   AttrsConstView attrs() const { return get().attrs(); }
   AttrsView attrs() { return get().attrs(); }

@@ -169,8 +169,8 @@ void SCIPP_CORE_EXPORT validSlice(const Dimensions &dims, const Slice &slice);
 void SCIPP_CORE_EXPORT validSlice(
     const std::unordered_map<Dim, scipp::index> &dims, const Slice &slice);
 
-void SCIPP_CORE_EXPORT coordsAndLabelsAreSuperset(const DataArrayConstView &a,
-                                                  const DataArrayConstView &b);
+void SCIPP_CORE_EXPORT coordsAreSuperset(const DataArrayConstView &a,
+                                         const DataArrayConstView &b);
 void SCIPP_CORE_EXPORT notCountDensity(const units::Unit &unit);
 void SCIPP_CORE_EXPORT notSparse(const Dimensions &dims);
 template <class T> void notSparse(const T &object) { notSparse(object.dims()); }

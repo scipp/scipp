@@ -70,10 +70,6 @@ template <class Base> class MutableView;
 using CoordsConstView = ConstView<ViewId::Coords, Dim>;
 /// View for accessing coordinates of Dataset and DataArrayView.
 using CoordsView = MutableView<CoordsConstView>;
-/// View for accessing labels of const Dataset and DataArrayConstView.
-using LabelsConstView = ConstView<ViewId::Labels, std::string>;
-/// View for accessing labels of Dataset and DataArrayView.
-using LabelsView = MutableView<LabelsConstView>;
 /// View for accessing attributes of const Dataset and DataArrayConstView.
 using AttrsConstView = ConstView<ViewId::Attrs, std::string>;
 /// View for accessing attributes of Dataset and DataArrayView.
