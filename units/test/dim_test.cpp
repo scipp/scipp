@@ -42,9 +42,8 @@ TEST(DimTest, unique_builtin_name) {
 
 void add_dims() {
   for (int64_t i = 0; i < 128; ++i)
-    for (scipp::index repeat = 0; repeat < 16; ++repeat) {
+    for (scipp::index repeat = 0; repeat < 16; ++repeat)
       static_cast<void>(Dim("custom" + std::to_string(i)).name());
-    }
 }
 
 TEST(DimTest, thread_safe) {
@@ -60,10 +59,6 @@ TEST(DimTest, thread_safe) {
 // is no way of resetting the static map of known custom labels. It can be run
 // separately though.
 TEST(DimTest, DISABLED_label_count_overflow) {
-  // Prime the custom labels with those used in other tests. Otherwise other
-  // tests running after this will fail due to overflow.
-  for (const auto &name : {"abc", "def", "a", "b", "c"})
-    static_cast<void>(Dim(name));
   // Note that the id of "first" is not necessarily the value coded in the
   // implementation but rather depends on which tests have run before.
   const auto end =
