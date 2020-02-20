@@ -603,7 +603,10 @@ public:
           throw except::SparseDataError("No coordinate with dim " +
                                         to_string(key) + " found," + suffix);
         }
-        m_parent->eraseSparseCoord(*m_name, key);
+        if (this->operator[](key).dims().sparse())
+          m_parent->eraseSparseCoord(*m_name, key);
+        else
+          m_parent->eraseCoord(key);
       } else if constexpr (std::is_same_v<Base, AttrsConstView>)
         m_parent->eraseAttr(*m_name, key);
       else
