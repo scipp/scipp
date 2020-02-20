@@ -24,8 +24,10 @@ stages:
         steps:
           - checkout: self
             submodules: true
-          - bash: echo "##vso[task.prependpath]$CONDA/bin"
-            displayName: Add Conda to PATH
+          - bash: |
+              echo "##vso[task.prependpath]$CONDA/bin"
+              echo "##vso[task.setvariable variable=conda_dir]$CONDA"
+            displayName: Configure Conda directories
           - bash: |
               set -ex
               conda --version
@@ -34,6 +36,11 @@ stages:
           - bash: |
               conda build -c conda-forge ./conda
             displayName: 'Package build'
+          - task: PublishBuildArtifacts@1
+            inputs:
+              PathtoPublish: "$(conda_dir)/conda-bld/linux-64"
+              ArtifactName: 'linux-64'
+            displayName: 'Publish Conda package artefacts'
 
       - job: 'mac'
         displayName: 'Mac OS'
@@ -43,8 +50,10 @@ stages:
         steps:
           - checkout: self
             submodules: true
-          - bash: echo "##vso[task.prependpath]$CONDA/bin"
-            displayName: Add Conda to PATH
+          - bash: |
+              echo "##vso[task.prependpath]$CONDA/bin"
+              echo "##vso[task.setvariable variable=conda_dir]$CONDA"
+            displayName: Configure Conda directories
           - bash: sudo chown -R $USER $CONDA
             displayName: Take ownership of Conda installation
           - bash: |
@@ -55,6 +64,11 @@ stages:
           - bash: |
               OSX_VERSION=10.15 conda build -c conda-forge ./conda
             displayName: 'Package build'
+          - task: PublishBuildArtifacts@1
+            inputs:
+              PathtoPublish: '$(conda_dir)/conda-bld/osx-64'
+              ArtifactName: 'osx-64'
+            displayName: 'Publish Conda package artefacts'
 
       - job: 'windows'
         displayName: 'Windows'
@@ -64,8 +78,10 @@ stages:
         steps:
           - checkout: self
             submodules: true
-          - powershell: Write-Host "##vso[task.prependpath]$env:CONDA\Scripts"
-            displayName: Add Conda to PATH
+          - powershell: |
+              Write-Host "##vso[task.prependpath]$env:CONDA\Scripts"
+              Write-Host "##vso[task.setvariable variable=conda_dir]$env:CONDA"
+            displayName: Configure Conda directories
           - script: |
               conda --version
               conda install --yes conda-build
@@ -73,3 +89,14 @@ stages:
           - script: |
               conda build -c conda-forge ./conda
             displayName: 'Package build'
+          - task: PublishBuildArtifacts@1
+            inputs:
+              PathtoPublish: '$(conda_dir)/conda-bld/win-64'
+              ArtifactName: 'win-64'
+            displayName: 'Publish Conda package artefacts'
+
+  - stage: 'post_build_checks'
+    displayName: 'Post Build Checks'
+
+    jobs:
+      - template: templates/documentation_build.yml

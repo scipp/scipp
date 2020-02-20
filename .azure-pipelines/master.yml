@@ -85,20 +85,17 @@ stages:
               ANACONDA_TOKEN: $(anaconda_token_secret)
             displayName: 'Package build'
 
+  - stage: 'post_build_checks'
+    displayName: 'Post Build Checks'
+
+    jobs:
+      - template: templates/documentation_build.yml
+
   - stage: 'deploy'
     displayName: 'Deployment'
 
     jobs:
-      - job: 'documentation'
-        displayName: 'Documentation'
-        pool:
-          vmImage: 'ubuntu-latest'
-        steps:
-          - script: |
-              curl --request POST --data 'branches=master' --data "token=$READTHEDOCS_TOKEN" 'https://readthedocs.org/api/v2/webhook/scipp/94775/'
-            env:
-              READTHEDOCS_TOKEN: $(readthedocs_token_secret)
-            displayName: 'Trigger RTD build'
+      - template: templates/documentation_deploy.yml
 
       - job: 'docker'
         displayName: 'Docker'
