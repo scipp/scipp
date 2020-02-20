@@ -27,7 +27,7 @@ jobs:
       - bash: |
           set -ex
           source activate scipp_docs
-          conda install "$(packages_dir)/linux-64/"scipp-*.tar.bz2
+          conda install "$(packages_dir)/linux-64/"scipp-*-py37_*.tar.bz2
         displayName: 'Install Scipp package'
       - bash: |
           set -ex
