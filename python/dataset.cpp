@@ -258,39 +258,33 @@ void init_dataset(py::module &m) {
   bind_helper_view<items_view, Dataset>(m, "Dataset");
   bind_helper_view<items_view, DatasetView>(m, "DatasetView");
   bind_helper_view<items_view, CoordsView>(m, "CoordsView");
-  bind_helper_view<items_view, LabelsView>(m, "LabelsView");
   bind_helper_view<items_view, MasksView>(m, "MasksView");
   bind_helper_view<items_view, AttrsView>(m, "AttrsView");
   bind_helper_view<keys_view, Dataset>(m, "Dataset");
   bind_helper_view<keys_view, DatasetView>(m, "DatasetView");
   bind_helper_view<keys_view, CoordsView>(m, "CoordsView");
-  bind_helper_view<keys_view, LabelsView>(m, "LabelsView");
   bind_helper_view<keys_view, MasksView>(m, "MasksView");
   bind_helper_view<keys_view, AttrsView>(m, "AttrsView");
   bind_helper_view<values_view, Dataset>(m, "Dataset");
   bind_helper_view<values_view, DatasetView>(m, "DatasetView");
   bind_helper_view<values_view, CoordsView>(m, "CoordsView");
-  bind_helper_view<values_view, LabelsView>(m, "LabelsView");
   bind_helper_view<values_view, MasksView>(m, "MasksView");
   bind_helper_view<values_view, AttrsView>(m, "AttrsView");
 
   bind_mutable_view<CoordsView, CoordsConstView>(m, "Coords");
-  bind_mutable_view<LabelsView, LabelsConstView>(m, "Labels");
   bind_mutable_view<MasksView, MasksConstView>(m, "Masks");
   bind_mutable_view<AttrsView, AttrsConstView>(m, "Attrs");
 
   py::class_<DataArray> dataArray(m, "DataArray", R"(
     Named variable with associated coords, masks, and attributes.)");
   dataArray.def(py::init<const DataArrayConstView &>());
-  dataArray.def(
-      py::init<std::optional<Variable>, std::map<Dim, Variable>,
-               std::map<std::string, Variable>, std::map<std::string, Variable>,
-               std::map<std::string, Variable>>(),
-      py::arg("data") = std::nullopt,
-      py::arg("coords") = std::map<Dim, Variable>{},
-      py::arg("labels") = std::map<std::string, Variable>{},
-      py::arg("masks") = std::map<std::string, Variable>{},
-      py::arg("attrs") = std::map<std::string, Variable>{});
+  dataArray.def(py::init<std::optional<Variable>, std::map<Dim, Variable>,
+                         std::map<std::string, Variable>,
+                         std::map<std::string, Variable>>(),
+                py::arg("data") = std::nullopt,
+                py::arg("coords") = std::map<Dim, Variable>{},
+                py::arg("masks") = std::map<std::string, Variable>{},
+                py::arg("attrs") = std::map<std::string, Variable>{});
 
   py::class_<DataArrayConstView>(m, "DataArrayConstView")
       .def(py::init<const DataArray &>());
@@ -319,17 +313,12 @@ void init_dataset(py::module &m) {
       .def(py::init<const DataArrayConstView &>())
       .def(py::init([](const std::map<std::string, VariableConstView> &data,
                        const std::map<Dim, VariableConstView> &coords,
-                       const std::map<std::string, VariableConstView> &labels,
                        const std::map<std::string, VariableConstView> &masks,
                        const std::map<std::string, VariableConstView> &attrs) {
-             auto merged_coords(coords);
-             for (const auto &[name, coord] : labels)
-               merged_coords.emplace_back(Dim(name), coord);
              return Dataset(data, coords, masks, attrs);
            }),
            py::arg("data") = std::map<std::string, VariableConstView>{},
            py::arg("coords") = std::map<Dim, VariableConstView>{},
-           py::arg("labels") = std::map<std::string, VariableConstView>{},
            py::arg("masks") = std::map<std::string, VariableConstView>{},
            py::arg("attrs") = std::map<std::string, VariableConstView>{})
       .def(py::init([](const DatasetView &other) { return Dataset{other}; }))
@@ -405,14 +394,14 @@ void init_dataset(py::module &m) {
         py::call_guard<py::gil_scoped_release>(), R"(
         Concatenate input data array along the given dimension.
 
-        Concatenates the data, coords, labels and masks of the data array.
-        Coords, labels and masks for any but the given dimension are required to match and are copied to the output without changes.
+        Concatenates the data, coords, and masks of the data array.
+        Coords, and masks for any but the given dimension are required to match and are copied to the output without changes.
 
         :param x: First DataArray.
         :param y: Second DataArray.
         :param dim: Dimension along which to concatenate.
         :raises: If the dtype or unit does not match, or if the dimensions and shapes are incompatible.
-        :return: New data array containing all data, coords, labels, and masks of the input arrays.
+        :return: New data array containing all data, coords, and masks of the input arrays.
         :rtype: DataArray)");
 
   m.def("concatenate",
@@ -491,7 +480,7 @@ void init_dataset(py::module &m) {
         :param lhs: First Dataset.
         :param rhs: Second Dataset.
         :raises: If there are conflicting items with different content.
-        :return: A new dataset that contains the union of all data items, coords, labels, masks and attributes.
+        :return: A new dataset that contains the union of all data items, coords, masks and attributes.
         :rtype: Dataset)");
 
   m.def("sum", py::overload_cast<const DataArrayConstView &, const Dim>(&sum),
@@ -594,16 +583,6 @@ void init_dataset(py::module &m) {
       :return: New sorted data array.
       :rtype: DataArray)");
 
-  m.def(
-      "sort",
-      py::overload_cast<const DataArrayConstView &, const std::string &>(&sort),
-      py::arg("x"), py::arg("key"), py::call_guard<py::gil_scoped_release>(),
-      R"(Sort data array along a dimension by the label values for the given key.
-
-      :raises: If the key is invalid, e.g., if it has not exactly one dimension, or if its dtype is not sortable.
-      :return: New sorted data array.
-      :rtype: DataArray)");
-
   m.def("sort",
         py::overload_cast<const DatasetConstView &, const VariableConstView &>(
             &sort),
@@ -618,15 +597,6 @@ void init_dataset(py::module &m) {
       "sort", py::overload_cast<const DatasetConstView &, const Dim &>(&sort),
       py::arg("x"), py::arg("key"), py::call_guard<py::gil_scoped_release>(),
       R"(Sort dataset along a dimension by the coordinate values for that dimension.
-
-      :raises: If the key is invalid, e.g., if it has not exactly one dimension, or if its dtype is not sortable.
-      :return: New sorted dataset.
-      :rtype: Dataset)");
-
-  m.def("sort",
-        py::overload_cast<const DatasetConstView &, const std::string &>(&sort),
-        py::arg("x"), py::arg("key"), py::call_guard<py::gil_scoped_release>(),
-        R"(Sort dataset along a dimension by the label values for the given key.
 
       :raises: If the key is invalid, e.g., if it has not exactly one dimension, or if its dtype is not sortable.
       :return: New sorted dataset.
