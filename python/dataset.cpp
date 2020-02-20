@@ -135,13 +135,9 @@ void bind_coord_properties(py::class_<T, Ignored...> &c) {
       Dict of coordinates.)");
   c.def_property_readonly(
       "labels",
-      py::cpp_function([](T &self) { return self.labels(); },
+      py::cpp_function([](T &self) { return self.coords(); },
                        py::return_value_policy::move, py::keep_alive<0, 1>()),
-      R"(
-      Dict of labels.
-
-      Labels are very similar to coordinates, except that they are identified
-      using custom names instead of dimension labels.)");
+      R"(Decprecated, alias for `coords`.)");
   c.def_property_readonly("masks",
                           py::cpp_function([](T &self) { return self.masks(); },
                                            py::return_value_policy::move,
@@ -284,7 +280,7 @@ void init_dataset(py::module &m) {
   bind_mutable_view<AttrsView, AttrsConstView>(m, "Attrs");
 
   py::class_<DataArray> dataArray(m, "DataArray", R"(
-    Named variable with associated coords, labels, and attributes.)");
+    Named variable with associated coords, masks, and attributes.)");
   dataArray.def(py::init<const DataArrayConstView &>());
   dataArray.def(
       py::init<std::optional<Variable>, std::map<Dim, Variable>,
@@ -326,7 +322,10 @@ void init_dataset(py::module &m) {
                        const std::map<std::string, VariableConstView> &labels,
                        const std::map<std::string, VariableConstView> &masks,
                        const std::map<std::string, VariableConstView> &attrs) {
-             return Dataset(data, coords, labels, masks, attrs);
+             auto merged_coords(coords);
+             for (const auto &[name, coord] : labels)
+               merged_coords.emplace_back(Dim(name), coord);
+             return Dataset(data, coords, masks, attrs);
            }),
            py::arg("data") = std::map<std::string, VariableConstView>{},
            py::arg("coords") = std::map<Dim, VariableConstView>{},
@@ -352,7 +351,7 @@ void init_dataset(py::module &m) {
            py::call_guard<py::gil_scoped_release>())
       .def(
           "clear", &Dataset::clear,
-          R"(Removes all data (preserving coordinates, attributes, labels and masks.).)");
+          R"(Removes all data (preserving coordinates, attributes, and masks.).)");
   datasetView.def(
       "__setitem__",
       [](const DatasetView &self, const std::string &name,

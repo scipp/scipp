@@ -22,18 +22,18 @@ Dataset makeTofDataForUnitConversion(const bool dense_coord = true) {
 
   static const auto source_pos = Eigen::Vector3d{0.0, 0.0, -10.0};
   static const auto sample_pos = Eigen::Vector3d{0.0, 0.0, 0.0};
-  tof.setLabels(
-      "source_position",
+  tof.setCoord(
+      Dim("source_position"),
       makeVariable<Eigen::Vector3d>(units::Unit(units::m), Values{source_pos}));
-  tof.setLabels(
-      "sample_position",
+  tof.setCoord(
+      Dim("sample_position"),
       makeVariable<Eigen::Vector3d>(units::Unit(units::m), Values{sample_pos}));
 
-  tof.setLabels("position",
-                makeVariable<Eigen::Vector3d>(
-                    Dims{Dim::Spectrum}, Shape{2}, units::Unit(units::m),
-                    Values{Eigen::Vector3d{1.0, 0.0, 0.0},
-                           Eigen::Vector3d{0.1, 0.0, 1.0}}));
+  tof.setCoord(Dim("position"),
+               makeVariable<Eigen::Vector3d>(
+                   Dims{Dim::Spectrum}, Shape{2}, units::Unit(units::m),
+                   Values{Eigen::Vector3d{1.0, 0.0, 0.0},
+                          Eigen::Vector3d{0.1, 0.0, 1.0}}));
 
   tof.setData("counts",
               makeVariable<double>(Dims{Dim::Spectrum, Dim::Tof}, Shape{2, 3},
@@ -46,8 +46,8 @@ Dataset makeTofDataForUnitConversion(const bool dense_coord = true) {
   auto eventLists = events.sparseValues<double>();
   eventLists[0] = {1000, 3000, 2000, 4000};
   eventLists[1] = {5000, 6000, 3000};
-  tof.setSparseCoord("events", events);
-  tof.setSparseLabels("events", "aux", events);
+  tof.setSparseCoord("events", Dim::Tof, events);
+  tof.setSparseCoord("events", Dim("aux"), events);
 
   return tof;
 }
@@ -171,11 +171,11 @@ TEST(Convert, Tof_to_DSpacing) {
   EXPECT_NEAR(d1[2], 3956.0 / (1e6 * 11.0 / tof1[2]) * lambda_to_d,
               d1[2] * 1e-3);
 
-  ASSERT_EQ(dspacing.attrs()["position"], tof.labels()["position"]);
+  ASSERT_EQ(dspacing.attrs()["position"], tof.coords()[Dim("position")]);
   ASSERT_EQ(dspacing.attrs()["source_position"],
-            tof.labels()["source_position"]);
+            tof.coords()[Dim("source_position")]);
   ASSERT_EQ(dspacing.attrs()["sample_position"],
-            tof.labels()["sample_position"]);
+            tof.coords()[Dim("sample_position")]);
 }
 
 TEST(Convert, converts_sparse_labels) {
@@ -184,7 +184,7 @@ TEST(Convert, converts_sparse_labels) {
   Dataset dspacing = convert(tof, Dim::Tof, Dim::DSpacing);
   Dimensions expected({Dim::Spectrum, Dim::DSpacing}, {2, Dimensions::Sparse});
   EXPECT_EQ(dspacing["events"].coords()[Dim::DSpacing].dims(), expected);
-  EXPECT_EQ(dspacing["events"].labels()["aux"].dims(), expected);
+  EXPECT_EQ(dspacing["events"].coords()[Dim("aux")].dims(), expected);
 }
 
 TEST(Convert, Tof_to_DSpacing_no_dense_coord) {
@@ -237,11 +237,12 @@ TEST(Convert, DSpacing_to_Tof) {
   EXPECT_TRUE(equals(events[0], events_original[0], 1e-15));
   EXPECT_TRUE(equals(events[1], events_original[1], 1e-12));
 
-  ASSERT_EQ(tof.labels()["position"], tof_original.labels()["position"]);
-  ASSERT_EQ(tof.labels()["source_position"],
-            tof_original.labels()["source_position"]);
-  ASSERT_EQ(tof.labels()["sample_position"],
-            tof_original.labels()["sample_position"]);
+  ASSERT_EQ(tof.coords()[Dim("position")],
+            tof_original.coords()[Dim("position")]);
+  ASSERT_EQ(tof.coords()[Dim("source_position")],
+            tof_original.coords()[Dim("source_position")]);
+  ASSERT_EQ(tof.coords()[Dim("sample_position")],
+            tof_original.coords()[Dim("sample_position")]);
 }
 
 TEST(Convert, Tof_to_Wavelength) {
@@ -303,11 +304,11 @@ TEST(Convert, Tof_to_Wavelength) {
   EXPECT_NEAR(d1[1], 3956.0 / (1e6 * 11.0 / tof1[1]), d1[1] * 1e-3);
   EXPECT_NEAR(d1[2], 3956.0 / (1e6 * 11.0 / tof1[2]), d1[2] * 1e-3);
 
-  ASSERT_EQ(wavelength.attrs()["position"], tof.labels()["position"]);
+  ASSERT_EQ(wavelength.attrs()["position"], tof.coords()[Dim("position")]);
   ASSERT_EQ(wavelength.attrs()["source_position"],
-            tof.labels()["source_position"]);
+            tof.coords()[Dim("source_position")]);
   ASSERT_EQ(wavelength.attrs()["sample_position"],
-            tof.labels()["sample_position"]);
+            tof.coords()[Dim("sample_position")]);
 }
 
 TEST(Convert, Wavelength_to_Tof) {
@@ -333,11 +334,12 @@ TEST(Convert, Wavelength_to_Tof) {
   EXPECT_TRUE(equals(events[0], events_original[0], 1e-15));
   EXPECT_TRUE(equals(events[1], events_original[1], 1e-12));
 
-  ASSERT_EQ(tof.labels()["position"], tof_original.labels()["position"]);
-  ASSERT_EQ(tof.labels()["source_position"],
-            tof_original.labels()["source_position"]);
-  ASSERT_EQ(tof.labels()["sample_position"],
-            tof_original.labels()["sample_position"]);
+  ASSERT_EQ(tof.coords()[Dim("position")],
+            tof_original.coords()[Dim("position")]);
+  ASSERT_EQ(tof.coords()[Dim("source_position")],
+            tof_original.coords()[Dim("source_position")]);
+  ASSERT_EQ(tof.coords()[Dim("sample_position")],
+            tof_original.coords()[Dim("sample_position")]);
 }
 
 TEST(Convert, Tof_to_Energy_Elastic) {
@@ -436,9 +438,11 @@ TEST(Convert, Tof_to_Energy_Elastic) {
       e1[2], joule_to_mev * 0.5 * neutron_mass * std::pow(1e6 * L / tof1[2], 2),
       e1[2] * 1e-3);
 
-  ASSERT_EQ(energy.attrs()["position"], tof.labels()["position"]);
-  ASSERT_EQ(energy.attrs()["source_position"], tof.labels()["source_position"]);
-  ASSERT_EQ(energy.attrs()["sample_position"], tof.labels()["sample_position"]);
+  ASSERT_EQ(energy.attrs()["position"], tof.coords()[Dim("position")]);
+  ASSERT_EQ(energy.attrs()["source_position"],
+            tof.coords()[Dim("source_position")]);
+  ASSERT_EQ(energy.attrs()["sample_position"],
+            tof.coords()[Dim("sample_position")]);
 }
 
 TEST(Convert, Energy_to_Tof_Elastic) {
@@ -468,11 +472,12 @@ TEST(Convert, Energy_to_Tof_Elastic) {
   EXPECT_TRUE(equals(events[0], events_original[0], 1e-15));
   EXPECT_TRUE(equals(events[1], events_original[1], 1e-15));
 
-  ASSERT_EQ(tof.labels()["position"], tof_original.labels()["position"]);
-  ASSERT_EQ(tof.labels()["source_position"],
-            tof_original.labels()["source_position"]);
-  ASSERT_EQ(tof.labels()["sample_position"],
-            tof_original.labels()["sample_position"]);
+  ASSERT_EQ(tof.coords()[Dim("position")],
+            tof_original.coords()[Dim("position")]);
+  ASSERT_EQ(tof.coords()[Dim("source_position")],
+            tof_original.coords()[Dim("source_position")]);
+  ASSERT_EQ(tof.coords()[Dim("sample_position")],
+            tof_original.coords()[Dim("sample_position")]);
 }
 
 TEST(Convert, convert_with_factor_type_promotion) {
