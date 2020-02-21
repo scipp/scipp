@@ -261,7 +261,7 @@ class VariableDrawer():
             items.append(('values', self._variable.values, color))
         if is_data_array(self._variable):
             if self._variable.sparse_dim is not None:
-                for name, coord in self._variable.coords:
+                for name, coord in self._variable.coords.items():
                     if coord.sparse_dim is not None:
                         items.append(
                             (name, coord.values, config.colors['coords']))
