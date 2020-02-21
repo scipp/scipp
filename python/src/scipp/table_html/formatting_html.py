@@ -217,7 +217,7 @@ def summarize_coords(coords, ds=None):
 def _extract_sparse(x):
     """
     Returns the (key, value) pairs where value has a sparse dim
-    :param x: dict-like, e.g., coords view or labels view
+    :param x: dict-like, e.g., coords view or masks view
     """
     return {
         key: value
@@ -235,11 +235,6 @@ def _make_inline_attributes(var, has_attrs):
         sparse_coords = _extract_sparse(var.coords)
         if sparse_coords:
             attrs_sections.append(coord_section(sparse_coords))
-            disabled = ""
-    if hasattr(var, "labels"):
-        sparse_labels = _extract_sparse(var.labels)
-        if sparse_labels:
-            attrs_sections.append(label_section(sparse_labels))
             disabled = ""
     if hasattr(var, "attrs"):
         if len(var.attrs) > 0:
@@ -539,8 +534,6 @@ def dataset_repr(ds):
 
     if len(ds.coords) > 0:
         sections.append(coord_section(ds.coords, ds))
-    if len(ds.labels) > 0:
-        sections.append(label_section(ds.labels, ds))
 
     sections.append(data_section(ds if hasattr(ds, '__len__') else {'': ds}))
 

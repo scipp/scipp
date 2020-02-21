@@ -7,7 +7,6 @@ import pytest
 
 import scipp as sc
 from mantid_data_helper import MantidDataHelper
-from scipp import Dim
 from scipp.compat import mantid as mantidcompat
 
 
@@ -51,12 +50,12 @@ class TestMantidConversion(unittest.TestCase):
 
         binned_mantid = mantidcompat.convert_Workspace2D_to_data_array(ws)
 
-        target_tof = binned_mantid.coords[sc.Dim.Tof]
+        target_tof = binned_mantid.coords['tof']
         d = mantidcompat.convert_EventWorkspace_to_data_array(eventWS, False)
         binned = sc.histogram(d, target_tof)
 
-        delta = sc.sum(binned_mantid - binned, sc.Dim.Spectrum)
-        delta = sc.sum(delta, sc.Dim.Tof)
+        delta = sc.sum(binned_mantid - binned, 'spectrum')
+        delta = sc.sum(delta, 'tof')
         self.assertLess(np.abs(delta.value), 1e-5)
 
     def test_unit_conversion(self):
@@ -64,7 +63,7 @@ class TestMantidConversion(unittest.TestCase):
         eventWS = mantid.CloneWorkspace(self.base_event_ws)
         ws = mantid.Rebin(eventWS, 10000, PreserveEvents=False)
         tmp = mantidcompat.convert_Workspace2D_to_data_array(ws)
-        target_tof = tmp.coords[sc.Dim.Tof]
+        target_tof = tmp.coords['tof']
         ws = mantid.ConvertUnits(InputWorkspace=ws,
                                  Target="Wavelength",
                                  EMode="Elastic")
@@ -73,17 +72,17 @@ class TestMantidConversion(unittest.TestCase):
         da = mantidcompat.convert_EventWorkspace_to_data_array(eventWS, False)
         da = sc.histogram(da, target_tof)
         d = sc.Dataset(da)
-        converted = sc.neutron.convert(d, sc.Dim.Tof, sc.Dim.Wavelength)
+        converted = sc.neutron.convert(d, 'tof', 'wavelength')
 
         self.assertTrue(
             np.all(np.isclose(converted_mantid.values, converted[""].values)))
         self.assertTrue(
             np.all(
                 np.isclose(
-                    converted_mantid.coords[sc.Dim.Wavelength].values,
-                    converted.coords[sc.Dim.Wavelength].values,
+                    converted_mantid.coords['wavelength'].values,
+                    converted.coords['wavelength'].values,
                 )))
-        # delta = sc.sum(converted_mantid - converted, sc.Dim.Spectrum)
+        # delta = sc.sum(converted_mantid - converted, 'spectrum')
 
     @staticmethod
     def _mask_bins_and_spectra(ws, xmin, xmax, num_spectra):
@@ -191,14 +190,14 @@ class TestMantidConversion(unittest.TestCase):
             monitor = ds.attrs[monitor_name].value
             assert isinstance(monitor, sc.DataArray)
             assert monitor.shape == [200001]
-            assert 'position' in monitor.labels
-            assert 'source_position' in monitor.labels
+            assert 'position' in monitor.coords
+            assert 'source_position' in monitor.coords
             # This is essential, otherwise unit conversion assumes scattering
             # from sample:
-            assert 'sample_position' not in monitor.labels
+            assert 'sample_position' not in monitor.coords
             # Absence of the following is not crucial, but currently there is
             # no need for these, and it avoid duplication:
-            assert 'detector_info' not in monitor.labels
+            assert 'detector_info' not in monitor.coords
             assert 'run' not in monitor.attrs
             assert 'sample' not in monitor.attrs
 
@@ -224,24 +223,20 @@ class TestMantidConversion(unittest.TestCase):
         histo_data_array = mantidcompat.convert_MDHistoWorkspace_to_data_array(
             md_histo)
 
-        self.assertEqual(histo_data_array.coords[sc.Dim.Qx].values.shape,
-                         (4, ))
-        self.assertEqual(histo_data_array.coords[sc.Dim.Qy].values.shape,
-                         (3, ))
-        self.assertEqual(histo_data_array.coords[sc.Dim.Qz].values.shape,
-                         (5, ))
-        self.assertEqual(histo_data_array.coords[sc.Dim.Qx].unit,
+        self.assertEqual(histo_data_array.coords['Q_x'].values.shape, (4, ))
+        self.assertEqual(histo_data_array.coords['Q_y'].values.shape, (3, ))
+        self.assertEqual(histo_data_array.coords['Q_z'].values.shape, (5, ))
+        self.assertEqual(histo_data_array.coords['Q_x'].unit,
                          sc.units.dimensionless / sc.units.angstrom)
-        self.assertEqual(histo_data_array.coords[sc.Dim.Qy].unit,
+        self.assertEqual(histo_data_array.coords['Q_y'].unit,
                          sc.units.dimensionless / sc.units.angstrom)
-        self.assertEqual(histo_data_array.coords[sc.Dim.Qz].unit,
+        self.assertEqual(histo_data_array.coords['Q_z'].unit,
                          sc.units.dimensionless / sc.units.angstrom)
 
         self.assertEquals(histo_data_array.values.shape, (3, 4, 5))
 
         # Sum over 2 dimensions to simplify finding max.
-        max_1d = sc.sum(sc.sum(histo_data_array, dim=sc.Dim.Qy),
-                        dim=sc.Dim.Qx).values
+        max_1d = sc.sum(sc.sum(histo_data_array, dim='Q_y'), dim='Q_x').values
         max_index = np.argmax(max_1d)
         # Check position of max 'peak'
         self.assertEqual(np.floor(len(max_1d) / 2), max_index)
@@ -286,9 +281,9 @@ class TestMantidConversion(unittest.TestCase):
         # check that no workspaces have been leaked in the ADS
         assert len(mtd) == 0, f"Workspaces present: {mtd.getObjectNames()}"
 
-        self.assertTrue("source_position" in ds.labels)
-        self.assertTrue("sample_position" in ds.labels)
-        self.assertTrue("position" in ds.labels)
+        self.assertTrue("source_position" in ds.coords)
+        self.assertTrue("sample_position" in ds.coords)
+        self.assertTrue("position" in ds.coords)
 
     def test_to_workspace_2d_no_error(self):
         from mantid.simpleapi import mtd
@@ -298,17 +293,16 @@ class TestMantidConversion(unittest.TestCase):
         # tested in the parametrized test.
         # Just set this one to a working one to avoid
         # generating many repetitive tests.
-        param_dim = Dim.Tof
-
+        param_dim = 'tof'
         data_len = 2
         expected_bins = data_len + 1
         expected_number_spectra = 10
 
-        y = sc.Variable([Dim.Spectrum, param_dim],
+        y = sc.Variable(['spectrum', param_dim],
                         values=np.random.rand(expected_number_spectra,
                                               data_len))
 
-        x = sc.Variable([Dim.Spectrum, param_dim],
+        x = sc.Variable(['spectrum', param_dim],
                         values=np.arange(
                             expected_number_spectra * expected_bins,
                             dtype=np.float64).reshape(
@@ -323,10 +317,10 @@ class TestMantidConversion(unittest.TestCase):
         assert len(mtd) == 0, f"Workspaces present: {mtd.getObjectNames()}"
 
         for i in range(expected_number_spectra):
-            np.testing.assert_array_equal(ws.readX(i), x[Dim.Spectrum, i])
-            np.testing.assert_array_equal(ws.readY(i), y[Dim.Spectrum, i])
+            np.testing.assert_array_equal(ws.readX(i), x['spectrum', i])
+            np.testing.assert_array_equal(ws.readY(i), y['spectrum', i])
             np.testing.assert_array_equal(ws.readE(i),
-                                          np.sqrt(y[Dim.Spectrum, i].values))
+                                          np.sqrt(y['spectrum', i].values))
 
     def test_fit_executes(self):
         """
@@ -355,9 +349,9 @@ class TestMantidConversion(unittest.TestCase):
 
 @pytest.mark.skipif(not mantid_is_available(),
                     reason='Mantid framework is unavailable')
-@pytest.mark.parametrize("param_dim",
-                         (Dim.Tof, Dim.Wavelength, Dim.Energy, Dim.DSpacing,
-                          Dim.Q, Dim.QSquared, Dim.EnergyTransfer))
+@pytest.mark.parametrize(
+    "param_dim",
+    ('tof', 'wavelength', 'E', 'd-spacing', 'Q', 'Q^2', 'Delta-E'))
 def test_to_workspace_2d(param_dim):
     from mantid.simpleapi import mtd
     mtd.clear()
@@ -366,12 +360,12 @@ def test_to_workspace_2d(param_dim):
     expected_bins = data_len + 1
     expected_number_spectra = 10
 
-    y = sc.Variable([Dim.Spectrum, param_dim],
+    y = sc.Variable(['spectrum', param_dim],
                     values=np.random.rand(expected_number_spectra, data_len),
                     variances=np.random.rand(expected_number_spectra,
                                              data_len))
 
-    x = sc.Variable([Dim.Spectrum, param_dim],
+    x = sc.Variable(['spectrum', param_dim],
                     values=np.arange(expected_number_spectra * expected_bins,
                                      dtype=np.float64).reshape(
                                          (expected_number_spectra,
@@ -386,10 +380,9 @@ def test_to_workspace_2d(param_dim):
     assert len(mtd) == 0, f"Workspaces present: {mtd.getObjectNames()}"
 
     for i in range(expected_number_spectra):
-        np.testing.assert_array_equal(ws.readX(i), x[Dim.Spectrum, i])
-        np.testing.assert_array_equal(ws.readY(i), y[Dim.Spectrum, i])
-        np.testing.assert_array_equal(ws.readE(i), y[Dim.Spectrum,
-                                                     i].variances)
+        np.testing.assert_array_equal(ws.readX(i), x['spectrum', i])
+        np.testing.assert_array_equal(ws.readY(i), y['spectrum', i])
+        np.testing.assert_array_equal(ws.readE(i), y['spectrum', i].variances)
 
     def test_set_run(self):
         import mantid.simpleapi as mantid
