@@ -70,13 +70,12 @@ def load_calibration(filename, mantid_args={}):
         # subsequent handling, e.g., with groupby, more complicated. The mask
         # is conceptually not masking rows in this table, i.e., it is not
         # marking invalid rows, but rather describes masking for other data.
-        cal_data["mask"] = sc.Variable([sc.Dim.Row], values=mask)
-        cal_data["group"] = sc.Variable([sc.Dim.Row], values=group)
+        cal_data["mask"] = sc.Variable(['row'], values=mask)
+        cal_data["group"] = sc.Variable(['row'], values=group)
 
-        cal_data.rename_dims({sc.Dim.Row: sc.Dim.Detector})
-        cal_data.coords[sc.Dim.Detector] = sc.Variable(
-            [sc.Dim.Detector],
-            values=cal_data['detid'].values.astype(np.int32))
+        cal_data.rename_dims({'row': 'detector'})
+        cal_data.coords['detector'] = sc.Variable(
+            ['detector'], values=cal_data['detid'].values.astype(np.int32))
         del cal_data['detid']
 
         return cal_data
