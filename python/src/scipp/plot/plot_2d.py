@@ -225,8 +225,8 @@ class Slicer2d(Slicer):
                         self.name][dim].values[[0, -1]]
 
                 axparams[but_val]["labels"] = name_with_unit(
-                    self.slider_x[self.name][dim],
-                    name=self.slider_labels[self.name][dim])
+                    self.slider_x[self.name][dim])
+                    # name=self.slider_labels[self.name][dim])
                 axparams[but_val]["dim"] = dim
 
         extent_array = np.array(list(self.extent.values())).flatten()

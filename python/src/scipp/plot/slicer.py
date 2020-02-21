@@ -57,8 +57,8 @@ class Slicer:
         # Containers: need one per entry in the dict of scipp
         # objects (=DataArray)
 
-        # Labels for each entry
-        self.labels = {}
+        # # Labels for each entry
+        # self.labels = {}
         # Shape of entry
         self.shapes = {}
         # Masks are global and are combined into a single mask
@@ -103,8 +103,15 @@ class Slicer:
                 self.masks = combine_masks(array.masks, array.dims,
                                            array.shape)
 
-            self.labels[name] = array.labels
+            # self.labels[name] = array.labels
+            # TODO: 2D coordinates will not be supported by this
             self.shapes[name] = dict(zip(array.dims, array.shape))
+            print(array.dims)
+            print(self.shapes)
+            for n, c in array.coords.items():
+                if n not in self.shapes[name]:
+                    self.shapes[name][n] = c.shape[0]
+            print(self.shapes)
 
             # Size of the slider coordinate arrays
             self.slider_nx[name] = {}
@@ -125,16 +132,16 @@ class Slicer:
 
             # Iterate through axes and collect dimensions
             for ax in axes:
-                dim, lab, var, ticks = self.axis_label_and_ticks(
-                    ax, array, name)
-                if (lab is not None) and (dim in axes):
-                    raise RuntimeError(
-                        "The dimension of the labels cannot also "
-                        "be specified as another axis.")
-                self.slider_labels[name][dim] = lab
+                dim, var, ticks = self.axis_label_and_ticks(ax, array, name)
+                # if (lab is not None) and (dim in axes):
+                #     raise RuntimeError(
+                #         "The dimension of the labels cannot also "
+                #         "be specified as another axis.")
+                # self.slider_labels[name][dim] = lab
                 self.slider_x[name][dim] = var
                 self.slider_ticks[name][dim] = ticks
                 self.slider_nx[name][dim] = self.shapes[name][dim]
+                # self.slider_nx[name][dim] = var.shape
 
             # Save information on histograms
             self.histograms[name] = {}
@@ -162,17 +169,17 @@ class Slicer:
             # If this is a 3d projection, place slices half-way
             if len(button_options) == 3 and (not volume):
                 indx = (self.slider_nx[self.name][dim] - 1) // 2
-            if self.slider_labels[self.name][dim] is not None:
-                descr = self.slider_labels[self.name][dim]
-            else:
-                descr = str(dim)
+            # if self.slider_labels[self.name][dim] is not None:
+            #     descr = self.slider_labels[self.name][dim]
+            # else:
+            #     descr = str(dim)
             # Add an IntSlider to slide along the z dimension of the array
             self.slider[dim] = widgets.IntSlider(
                 value=indx,
                 min=0,
                 max=self.slider_nx[self.name][dim] - 1,
                 step=1,
-                description=descr,
+                description=dim,
                 continuous_update=True,
                 readout=False,
                 disabled=((i >= self.ndim - len(button_options))
@@ -181,7 +188,7 @@ class Slicer:
                                               indx)
             if self.ndim == len(button_options):
                 self.slider[dim].layout.display = 'none'
-                labvalue = descr
+                labvalue = dim
             # Add a label widget to display the value of the z coordinate
             self.lab[dim] = widgets.Label(value=labvalue)
             # Add one set of buttons per dimension
@@ -267,7 +274,7 @@ class Slicer:
         #     var = data_array.labels[lab]
         # else:
         dim = axis
-        lab = None
+        # lab = None
         make_fake_coord = False
         fake_unit = None
         if not data_array.coords.__contains__(dim):
@@ -295,7 +302,7 @@ class Slicer:
             var = Variable([dim], **args)
         else:
             var = data_array.coords[dim]
-        return dim, lab, var, ticks
+        return dim, var, ticks
 
     def get_custom_ticks(self, ax, dim, xy="x"):
         """
