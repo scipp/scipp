@@ -77,14 +77,14 @@ def plot(scipp_obj,
                         key = axes[var.dims[0]]
                         ax = [key]
                     else:
-                        key = "{}.".format(str(axes))
+                        key = ".".join(axes)
                 else:
-                    key = "{}.".format(str(var.dims))
+                    key = ".".join(var.dims)
                 # Add unit to key
                 if sp_dim is not None:
-                    key = "{}{}".format(key, str(var.coords[sp_dim].unit))
+                    key = "{}.{}".format(key, str(var.coords[sp_dim].unit))
                 else:
-                    key = "{}{}".format(key, str(var.unit))
+                    key = "{}.{}".format(key, str(var.unit))
                 line_count += 1
             else:
                 key = name

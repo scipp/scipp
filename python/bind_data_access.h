@@ -388,8 +388,11 @@ void bind_data_properties(pybind11::class_<T, Ignored...> &c) {
   c.def_property_readonly("dims",
                           [](const T &self) {
                             const auto &dims = self.dims();
-                            return std::vector<Dim>(dims.labels().begin(),
-                                                    dims.labels().end());
+                            py::list list;
+                            for (auto dim : dims.labels()) {
+                              list.append(dim.name());
+                            }
+                            return list;
                           },
                           "Dimension labels of the data (read-only).",
                           py::return_value_policy::move);

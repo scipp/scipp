@@ -68,7 +68,7 @@ def plot_collapse(data_array, name=None, dim=None, filename=None, **kwargs):
     #   [[Dim.Y, 3], [Dim.Z, 1]],
     # ...
     # ]
-    slice_list = np.reshape(np.transpose(slice_list),
+    slice_list = np.reshape(np.transpose(np.array(slice_list, dtype=np.dtype('O'))),
                             (volume, len(slice_dims), 2))
 
     mpl_line_params = {
