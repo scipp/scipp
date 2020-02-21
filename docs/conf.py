@@ -23,11 +23,8 @@
 # -- Doxygen build configuration
 
 import os
-import subprocess
 
-subprocess.call('cd ..; doxygen docs/Doxyfile', shell=True)
 
-html_extra_path = ['./doxygen']
 html_show_sourcelink = True
 nbsphinx_prolog = """`Download this Jupyter notebook <https://raw.githubusercontent.com/scipp/scipp/master/docs/{{ env.doc2path(env.docname, base=None) }}>`_
 

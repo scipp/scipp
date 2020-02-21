@@ -7,7 +7,6 @@ channels:
 # This is essentially everything in the "run" section of conda/meta.yml.
 dependencies:
   - appdirs
-  - doxygen
   - ipython=7.2.0
   - pip
   - pandoc
