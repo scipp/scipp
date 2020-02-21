@@ -46,9 +46,9 @@ build:
     - OSX_VERSION
 
 about:
-  home: https://scipp.readthedocs.io/en/latest/
+  home: https://scipp.github.io/
   license: GPLv3
   summary: Multi-dimensional data arrays with labeled dimensions
   description: Multi-dimensional data arrays with labeled dimensions
   dev_url: https://github.com/scipp/scipp
-  doc_url: https://scipp.readthedocs.io/en/latest/
+  doc_url: https://scipp.github.io/
