@@ -1,12 +1,26 @@
+parameters:
+  - name: releaseName
+    type: string
+    default: ''
+
 jobs:
   - job: 'documentation'
     displayName: 'Documentation'
     pool:
       vmImage: 'ubuntu-latest'
     variables:
-      documentation_repo_path: '$(Build.StagingDirectory)/documentation'
+      documentation_artefact_path: '$(Build.StagingDirectory)/documentation'
+      documentation_repo_path: '$(Build.StagingDirectory)/git'
     steps:
       - checkout: none
+      - task: DownloadBuildArtifacts@0
+        inputs:
+          buildType: 'current'
+          specificBuildWithTriggering: true
+          downloadType: 'single'
+          artifactName: 'documentation'
+          downloadPath: '$(Build.StagingDirectory)'
+        displayName: 'Retrieve updated documentation'
       - task: InstallSSHKey@0
         inputs:
           knownHostsEntry: '|1|RUYRgOQOM1Elf2P4avx8YNBvtI8=|QKQU0rsDA0sdvfZeayvuQ3l7XjE= ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAq2A7hRGmdnm9tUDbO9IDSwBK6TbQa+PXYPCPy6rbTrTtw7PHkccKrpp0yVhp5HdEIcKr6pLlVDBfOLX9QUsyCOV0wzfjIJNlGEYsdlLJizHhbn2mUjvSAHQqZETYP81eFzLQNnPHt4EVVUh7VfDESU84KezmD5QlWpXLmvU31/yMf+Se8xhHTvKSCZIFImWwoG6mbUoWf9nzpIoaSjB+weqqUUmpaaasXVal72J+UX2B+2RPW3RcT0eOzQgqlJL3RKrTJvdsjE3JEAvGq3lGHSZXy28G3skua2SmVi/w4yCE6gbODqnTWlg7+wC604ydGXA8VJiS5ap43JXiUFFAaQ=='
@@ -21,29 +35,38 @@ jobs:
       - bash: |
           set -ex
           git clone git@github.com:scipp/scipp.github.io "$(documentation_repo_path)"
-        displayName: 'Clone exsisting documentation'
+        displayName: 'Clone documentation repository'
       - bash: |
           set -ex
           cd "$(documentation_repo_path)"
           git rm -rf .
           git status
-        displayName: 'Remove old documentation'
-      - task: DownloadBuildArtifacts@0
-        inputs:
-          buildType: 'current'
-          specificBuildWithTriggering: true
-          downloadType: 'single'
-          artifactName: 'documentation'
-          downloadPath: '$(Build.StagingDirectory)'
-        displayName: 'Retrieve updated documentation'
+          git reset -- release || true
+          git checkout -- release || true
+          git status
+        displayName: 'Remove old documentation, keeping releases'
       - bash: |
           set -ex
           cd "$(documentation_repo_path)"
           touch .nojekyll
+          rsync -av "$(documentation_artefact_path)/" .
           git add .
           git status
-          git commit --message='Auto commit from CI'
+        displayName: 'Copy new documentation'
+      - bash: |
+          set -ex
+          cd "$(documentation_repo_path)"
+          mkdir -p 'release/${{ parameters.releaseName }}'
+          rsync -av "$(documentation_artefact_path)/" './release/${{ parameters.releaseName }}'
+          git add .
           git status
-          git push
+        condition: and(succeeded(), ne('${{ parameters.releaseName }}', ''))
+        displayName: 'Copy new documentation for release'
+      - bash: |
+          set -ex
+          cd "$(documentation_repo_path)"
+          git commit --amend --date="$(date)" --message='Auto commit from CI'
           git status
-        displayName: 'Push updated documentation to GitHub Pages'
+          git push --force-with-lease
+          git status
+        displayName: 'Push to GitHub Pages'
