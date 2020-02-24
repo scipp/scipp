@@ -22,6 +22,17 @@ template <class... Ts> struct arg_list_t {
 };
 template <class... Ts> constexpr arg_list_t<Ts...> arg_list{};
 
+constexpr auto abs = [](const auto x) noexcept {
+  using std::abs;
+  return abs(x);
+};
+
+constexpr auto abs_out_arg =
+    overloaded{arg_list<double, float>, [](auto &x, const auto y) {
+                 using std::abs;
+                 x = abs(y);
+               }};
+
 constexpr auto sqrt = [](const auto x) noexcept {
   using std::sqrt;
   return sqrt(x);
