@@ -79,7 +79,7 @@ def plot(scipp_obj,
                     else:
                         key = ".".join(axes)
                 else:
-                    key = ".".join(var.dims)
+                    key = ".".join([str(dim) for dim in var.dims])
                 # Add unit to key
                 if sp_dim is not None:
                     key = "{}.{}".format(key, str(var.coords[sp_dim].unit))

@@ -186,9 +186,11 @@ void bind_dataset_view_methods(py::class_<T, Ignored...> &c) {
         py::call_guard<py::gil_scoped_release>(), "Return a (deep) copy.");
   c.def_property_readonly("dims",
                           [](const T &self) {
-                            py::list dims;
+                            // py::list dims;
+                            std::vector<Dim> dims;
                             for (const auto &dim : self.dimensions()) {
-                              dims.append(dim.first.name());
+                              dims.push_back(dim.first);
+                              // dims.append(dim.first.name());
                             }
                             return dims;
                           },

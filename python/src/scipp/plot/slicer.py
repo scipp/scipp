@@ -140,6 +140,8 @@ class Slicer:
                 # self.slider_labels[name][dim] = lab
                 self.slider_x[name][dim] = var
                 self.slider_ticks[name][dim] = ticks
+                print(self.slider_nx)
+                print(self.shapes)
                 self.slider_nx[name][dim] = self.shapes[name][dim]
                 # self.slider_nx[name][dim] = var.shape
 
@@ -173,13 +175,14 @@ class Slicer:
             #     descr = self.slider_labels[self.name][dim]
             # else:
             #     descr = str(dim)
+            dim_str = str(dim)
             # Add an IntSlider to slide along the z dimension of the array
             self.slider[dim] = widgets.IntSlider(
                 value=indx,
                 min=0,
                 max=self.slider_nx[self.name][dim] - 1,
                 step=1,
-                description=dim,
+                description=dim_str,
                 continuous_update=True,
                 readout=False,
                 disabled=((i >= self.ndim - len(button_options))
@@ -188,7 +191,7 @@ class Slicer:
                                               indx)
             if self.ndim == len(button_options):
                 self.slider[dim].layout.display = 'none'
-                labvalue = dim
+                labvalue = dim_str
             # Add a label widget to display the value of the z coordinate
             self.lab[dim] = widgets.Label(value=labvalue)
             # Add one set of buttons per dimension
@@ -239,9 +242,9 @@ class Slicer:
             self.vbox.append(widgets.HBox(row))
 
             # Construct members object
-            self.members["widgets"]["sliders"][dim] = self.slider[dim]
-            self.members["widgets"]["togglebuttons"][dim] = self.buttons[dim]
-            self.members["widgets"]["labels"][dim] = self.lab[dim]
+            self.members["widgets"]["sliders"][dim_str] = self.slider[dim]
+            self.members["widgets"]["togglebuttons"][dim_str] = self.buttons[dim]
+            self.members["widgets"]["labels"][dim_str] = self.lab[dim]
 
         if self.masks is not None:
             self.masks_button = widgets.ToggleButton(
