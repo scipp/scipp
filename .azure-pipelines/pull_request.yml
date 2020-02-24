@@ -2,6 +2,8 @@ trigger:
   branches:
     exclude:
       - "*"
+  paths:
+    template: templates/exclude_paths.yml
 
 pr:
   autoCancel: true

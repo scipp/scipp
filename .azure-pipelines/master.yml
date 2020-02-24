@@ -1,5 +1,9 @@
 trigger:
-  - master
+  branches:
+    include:
+      - master
+  paths:
+    template: templates/exclude_paths.yml
 
 pr: none
 
