@@ -1059,14 +1059,22 @@ SCIPP_CORE_EXPORT VariableView atan(const VariableConstView &var,
 [[nodiscard]] SCIPP_CORE_EXPORT Variable min(const VariableConstView &var,
                                              const Dim dim);
 
+SCIPP_CORE_EXPORT VariableView nan_to_num(const VariableConstView &var,
+                                          const VariableConstView &replacement,
+                                          const VariableView &out);
 SCIPP_CORE_EXPORT VariableView
-nan_to_num(const VariableConstView &var, const VariableView &out,
-           const std::optional<VariableConstView> &nan =
-               std::optional<VariableConstView>(),
-           const std::optional<VariableConstView> &posinf =
-               std::optional<VariableConstView>());
-[[nodiscard]] SCIPP_CORE_EXPORT Variable nan_to_num(
-    const VariableConstView &var, const std::optional<VariableConstView> &nan);
+pos_inf_to_num(const VariableConstView &var,
+               const VariableConstView &replacement, const VariableView &out);
+SCIPP_CORE_EXPORT VariableView
+neg_inf_to_num(const VariableConstView &var,
+               const VariableConstView &replacement, const VariableView &out);
+
+[[nodiscard]] SCIPP_CORE_EXPORT Variable
+nan_to_num(const VariableConstView &var, const VariableConstView &replacement);
+[[nodiscard]] SCIPP_CORE_EXPORT Variable pos_inf_to_num(
+    const VariableConstView &var, const VariableConstView &replacement);
+[[nodiscard]] SCIPP_CORE_EXPORT Variable neg_inf_to_num(
+    const VariableConstView &var, const VariableConstView &replacement);
 
 namespace sparse {
 SCIPP_CORE_EXPORT Variable counts(const VariableConstView &var);
