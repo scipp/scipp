@@ -169,29 +169,31 @@ DataArray &DataArray::operator-=(const DataArrayConstView &other) {
 template <class Op>
 DataArray &sparse_dense_op_inplace(Op op, DataArray &a,
                                    const DataArrayConstView &b) {
-  if (!is_sparse_and_histogram(a, b)) {
-    expect::coordsAreSuperset(a, b);
-    union_or_in_place(a.masks(), b.masks());
-    op.inplace(a.data(), b.data());
-  } else if (a.dims().sparse()) {
-    const Dim dim = a.dims().sparseDim();
-    // Coord for `dim` in `b` is mismatching that in `a` by definition. Use
-    // slice to exclude this from comparison.
-    expect::coordsAreSuperset(a, b.slice({dim, 0}));
-    union_or_in_place(a.masks(), b.masks());
-    if (a.hasData()) {
-      // Note the inefficiency here: Always creating temporary sparse data.
-      // Could easily avoided, but requires significant code duplication.
-      a.data() *= sparse_dense_op_impl<0>(op, a.coords()[dim], b.coords()[dim],
-                                          b.data());
-    } else {
-      a.setData(sparse_dense_op_impl<1>(op, a.coords()[dim], b.coords()[dim],
-                                        b.data()));
-    }
+  // if (!is_sparse_and_histogram(a, b)) {
+  expect::coordsAreSuperset(a, b);
+  union_or_in_place(a.masks(), b.masks());
+  op.inplace(a.data(), b.data());
+  /*
+} else if (a.dims().sparse()) {
+  const Dim dim = a.dims().sparseDim();
+  // Coord for `dim` in `b` is mismatching that in `a` by definition. Use
+  // slice to exclude this from comparison.
+  expect::coordsAreSuperset(a, b.slice({dim, 0}));
+  union_or_in_place(a.masks(), b.masks());
+  if (a.hasData()) {
+    // Note the inefficiency here: Always creating temporary sparse data.
+    // Could easily avoided, but requires significant code duplication.
+    a.data() *= sparse_dense_op_impl<0>(op, a.coords()[dim], b.coords()[dim],
+                                        b.data());
   } else {
-    throw except::SparseDataError("Unsupported combination of sparse and dense "
-                                  "data in binary arithmetic operation.");
+    a.setData(sparse_dense_op_impl<1>(op, a.coords()[dim], b.coords()[dim],
+                                      b.data()));
   }
+} else {
+  throw except::SparseDataError("Unsupported combination of sparse and dense "
+                                "data in binary arithmetic operation.");
+}
+*/
   return a;
 }
 
@@ -236,27 +238,29 @@ DataArray operator-(const DataArrayConstView &a, const DataArrayConstView &b) {
 template <class Op>
 auto sparse_dense_op(Op op, const DataArrayConstView &a,
                      const DataArrayConstView &b) {
-  if (!is_sparse_and_histogram(a, b))
-    return op(a.data(), b.data());
-  if (a.dims().sparse()) {
-    const Dim dim = a.dims().sparseDim();
-    if (a.hasData()) {
-      // not in-place so type promotion can happen
-      return sparse_dense_op_impl<0>(op, a.coords()[dim], b.coords()[dim],
-                                     b.data()) *
-             a.data();
-    } else {
-      return sparse_dense_op_impl<1>(op, a.coords()[dim], b.coords()[dim],
-                                     b.data());
-    }
+  // if (!is_sparse_and_histogram(a, b))
+  return op(a.data(), b.data());
+  /*
+if (a.dims().sparse()) {
+  const Dim dim = a.dims().sparseDim();
+  if (a.hasData()) {
+    // not in-place so type promotion can happen
+    return sparse_dense_op_impl<0>(op, a.coords()[dim], b.coords()[dim],
+                                   b.data()) *
+           a.data();
+  } else {
+    return sparse_dense_op_impl<1>(op, a.coords()[dim], b.coords()[dim],
+                                   b.data());
   }
-  // histogram divided by sparse not supported, would typically result in unit
-  // 1/counts which is meaningless
-  if constexpr (std::is_same_v<Op, Times>)
-    return sparse_dense_op(op, b, a);
+}
+// histogram divided by sparse not supported, would typically result in unit
+// 1/counts which is meaningless
+if constexpr (std::is_same_v<Op, Times>)
+  return sparse_dense_op(op, b, a);
 
-  throw except::SparseDataError("Unsupported combination of sparse and dense "
-                                "data in binary arithmetic operation.");
+throw except::SparseDataError("Unsupported combination of sparse and dense "
+                              "data in binary arithmetic operation.");
+                              */
 }
 
 auto sparse_dense_coord_union(const DataArrayConstView &a,

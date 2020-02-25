@@ -37,8 +37,9 @@ Dataset merge(const DatasetConstView &a, const DatasetConstView &b) {
 ///
 /// Checks that the last edges in `a` match the first edges in `b`. The
 /// Concatenates the input edges, removing duplicate bin edges.
-Variable join_edges(const VariableConstView &a, const VariableConstView &b,
-                    const Dim dim) {
+template <class View>
+typename View::value_type join_edges(const View &a, const View &b,
+                                     const Dim dim) {
   expect::equals(a.slice({dim, a.dims()[dim] - 1}), b.slice({dim, 0}));
   return concatenate(a.slice({dim, 0, a.dims()[dim] - 1}), b, dim);
 }
@@ -135,12 +136,14 @@ Dataset mean(const DatasetConstView &d, const Dim dim) {
 
 DataArray rebin(const DataArrayConstView &a, const Dim dim,
                 const VariableConstView &coord) {
-  auto rebinned = apply_to_data_and_drop_dim(
-      a, [](auto &&... _) { return rebin(_...); }, dim, a.coords()[dim], coord);
+  auto rebinned =
+      apply_to_data_and_drop_dim(a, [](auto &&... _) { return rebin(_...); },
+                                 dim, a.coords()[dim].data(), coord);
 
   for (auto &&[name, mask] : a.masks()) {
     if (mask.dims().contains(dim))
-      rebinned.masks().set(name, rebin(mask, dim, a.coords()[dim], coord));
+      rebinned.masks().set(name,
+                           rebin(mask, dim, a.coords()[dim].data(), coord));
   }
 
   rebinned.setCoord(dim, coord);
@@ -157,10 +160,12 @@ DataArray resize(const DataArrayConstView &a, const Dim dim,
                  const scipp::index size) {
   if (a.dims().sparse()) {
     const auto resize_if_sparse = [dim, size](const auto &var) {
-      return var.dims().sparse() ? resize(var, dim, size) : Variable{var};
+      return var.dims().sparse()
+                 ? resize(var, dim, size)
+                 : typename std::decay_t<decltype(var)>::value_type{var};
     };
 
-    std::map<Dim, Variable> coords;
+    std::map<Dim, DatasetAxis> coords;
     for (auto &&[d, coord] : a.coords())
       if (dim_of_coord(coord, d) != dim)
         coords.emplace(d, resize_if_sparse(coord));
@@ -188,6 +193,13 @@ Dataset resize(const DatasetConstView &d, const Dim dim,
                const scipp::index size) {
   return apply_to_items(d, [](auto &&... _) { return resize(_...); }, dim,
                         size);
+}
+
+/// Return one of the inputs if they are the same, throw otherwise.
+DatasetAxisConstView same(const DatasetAxisConstView &a,
+                          const DatasetAxisConstView &b) {
+  expect::equals(a, b);
+  return a;
 }
 
 /// Return one of the inputs if they are the same, throw otherwise.

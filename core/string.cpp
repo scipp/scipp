@@ -202,7 +202,7 @@ auto format_data_view(const Key &name, const DataArrayConstView &data,
         sparseCoords = true;
       }
       s << format_variable(std::string(tab) + std::string(tab) + to_string(dim),
-                           coord, datasetDims);
+                           coord.data(), datasetDims);
     }
 
   if (!data.attrs().empty()) {
@@ -234,7 +234,7 @@ std::string do_to_string(const D &dataset, const std::string &id,
       /* Only print the dense coordinates here (sparse coordinates will appear
        * with their corresponding data item) */
       if (var.dims().sparseDim() == Dim::Invalid)
-        s << format_variable(dim, var, dims);
+        s << format_variable(dim, var.data(), dims);
     }
   }
   if (!dataset.attrs().empty()) {

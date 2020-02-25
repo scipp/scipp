@@ -31,8 +31,6 @@ namespace detail {
 struct DatasetData {
   /// Optional data values (with optional variances).
   std::optional<Variable> data;
-  /// Potential sparse coords.
-  std::unordered_map<Dim, Variable> coords;
   /// Attributes for data.
   std::unordered_map<std::string, Variable> attrs;
 };
@@ -345,6 +343,7 @@ public:
     return boost::make_transform_iterator(m_data.end(), detail::make_key);
   }
 
+  void setCoord(const Dim dim, DatasetAxis coord);
   void setCoord(const Dim dim, Variable coord);
   void setMask(const std::string &masksName, Variable masks);
   void setAttr(const std::string &attrName, Variable attr);
@@ -353,10 +352,12 @@ public:
   void setData(const std::string &name, Variable data);
   void setData(const std::string &name, const DataArrayConstView &data);
   void setData(const std::string &name, DataArray data);
-  void setSparseCoord(const std::string &name, const Dim dim, Variable coord);
 
   void setCoord(const Dim dim, const VariableConstView &coord) {
     setCoord(dim, Variable(coord));
+  }
+  void setCoord(const Dim dim, const DatasetAxisConstView &coord) {
+    setCoord(dim, DatasetAxis(coord));
   }
   void setMask(const std::string &masksName, const VariableConstView &mask) {
     setMask(masksName, Variable(mask));
@@ -371,16 +372,11 @@ public:
   void setData(const std::string &name, const VariableConstView &data) {
     setData(name, Variable(data));
   }
-  void setSparseCoord(const std::string &name, const Dim dim,
-                      const VariableConstView &coord) {
-    setSparseCoord(name, dim, Variable(coord));
-  }
 
   void eraseCoord(const Dim dim);
   void eraseAttr(const std::string &attrName);
   void eraseAttr(const std::string &name, const std::string &attrName);
   void eraseMask(const std::string &maskName);
-  void eraseSparseCoord(const std::string &name, const Dim dim);
 
   DatasetConstView slice(const Slice slice1) const &;
   DatasetConstView slice(const Slice slice1, const Slice slice2) const &;
@@ -458,7 +454,7 @@ private:
   }
 
   std::unordered_map<Dim, scipp::index> m_dims;
-  std::unordered_map<Dim, Variable> m_coords;
+  std::unordered_map<Dim, DatasetAxis> m_coords;
   std::unordered_map<std::string, Variable> m_attrs;
   std::unordered_map<std::string, Variable> m_masks;
   detail::dataset_item_map m_data;
@@ -689,10 +685,10 @@ public:
       m_holder.setData(name, std::move(*data));
 
     for (auto &&[dim, c] : coords)
-      if (c.dims().sparse())
-        m_holder.setSparseCoord(name, dim, std::move(c));
-      else
-        m_holder.setCoord(dim, std::move(c));
+      // if (c.dims().sparse())
+      //  m_holder.setSparseCoord(name, dim, DatasetAxis(std::move(c)));
+      // else
+      m_holder.setCoord(dim, std::move(c));
 
     for (auto &&[mask_name, m] : masks)
       m_holder.setMask(std::string(mask_name), std::move(m));
@@ -1037,6 +1033,8 @@ SCIPP_CORE_EXPORT Dataset resize(const DatasetConstView &d, const Dim dim,
 [[nodiscard]] SCIPP_CORE_EXPORT DataArray
 reciprocal(const DataArrayConstView &a);
 
+SCIPP_CORE_EXPORT DatasetAxisConstView same(const DatasetAxisConstView &a,
+                                            const DatasetAxisConstView &b);
 SCIPP_CORE_EXPORT VariableConstView same(const VariableConstView &a,
                                          const VariableConstView &b);
 

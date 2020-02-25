@@ -640,6 +640,8 @@ using nth_t = decltype(std::get<I>(std::declval<std::tuple<Ts...>>()));
 /// Non-mutable view into (a subset of) a Variable.
 class SCIPP_CORE_EXPORT VariableConstView {
 public:
+  using value_type = Variable;
+
   VariableConstView(const Variable &variable) : m_variable(&variable) {}
   VariableConstView(const Variable &variable, const Dimensions &dims)
       : m_variable(&variable), m_view(variable.data().reshape(dims)) {}

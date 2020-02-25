@@ -14,7 +14,7 @@ std::vector<Variable> getBinWidths(const CoordsConstView &c,
                                    const std::vector<Dim> &dims) {
   std::vector<Variable> binWidths;
   for (const auto dim : dims) {
-    const auto &coord = c[dim];
+    const auto &coord = c[dim].data();
     if (coord.unit() == units::dimensionless)
       throw std::runtime_error("Dimensionless axis cannot be used for "
                                "conversion from or to density");

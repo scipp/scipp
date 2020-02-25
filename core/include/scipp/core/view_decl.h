@@ -7,6 +7,7 @@
 
 #include <boost/iterator/transform_iterator.hpp>
 
+#include "scipp/core/axis.h"
 #include "scipp/core/dataset_access.h"
 #include "scipp/core/except.h"
 #include "scipp/core/slice.h"
@@ -20,7 +21,8 @@ using slice_list =
     boost::container::small_vector<std::pair<Slice, scipp::index>, 2>;
 
 template <class Var> auto makeSlice(Var &var, const slice_list &slices) {
-  std::conditional_t<std::is_const_v<Var>, VariableConstView, VariableView>
+  std::conditional_t<std::is_const_v<Var>, typename Var::const_view_type,
+                     typename Var::view_type>
       slice(var);
   for (const auto [params, extent] : slices) {
     if (slice.dims().contains(params.dim())) {
@@ -68,7 +70,7 @@ template <class Id, class Key, class Value> class ConstView;
 template <class Base, class Access> class MutableView;
 
 /// View for accessing coordinates of const Dataset and DataArrayConstView.
-using CoordsConstView = ConstView<ViewId::Coords, Dim, Variable>;
+using CoordsConstView = ConstView<ViewId::Coords, Dim, DatasetAxis>;
 /// View for accessing coordinates of Dataset and DataArrayView.
 using CoordsView = MutableView<CoordsConstView, CoordAccess>;
 /// View for accessing attributes of const Dataset and DataArrayConstView.

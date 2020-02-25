@@ -8,24 +8,25 @@
 namespace scipp::core {
 
 template <class T>
-std::pair<const Variable *, Variable *> makeViewItem(T *variable) {
+std::pair<const std::decay_t<T> *, std::decay_t<T> *>
+makeViewItem(T *variable) {
   if constexpr (std::is_const_v<T>)
     return {variable, nullptr};
   else
     return {variable, variable};
 }
 
-template <class Key, class T1> auto makeViewItems(T1 &coords) {
-  std::unordered_map<Key, std::pair<const Variable *, Variable *>> items;
+template <class View, class T1> auto makeViewItems(T1 &coords) {
+  typename View::holder_type items;
   for (auto &item : coords)
     items.emplace(item.first, makeViewItem(&item.second));
   return items;
 }
 
-template <class Key, class T1, class T2 = void>
+template <class View, class T1, class T2 = void>
 auto makeViewItems(const Dimensions &dims, T1 &coords, T2 *sparse = nullptr) {
   const Dim sparseDim = dims.sparseDim();
-  std::unordered_map<Key, std::pair<const Variable *, Variable *>> items;
+  typename View::holder_type items;
   for (auto &item : coords) {
     // We preserve only items that are part of the space spanned by the
     // provided parent dimensions. Note the use of std::any_of (not
@@ -35,7 +36,7 @@ auto makeViewItems(const Dimensions &dims, T1 &coords, T2 *sparse = nullptr) {
     // for multi-dimensional coordinates.
     auto contained = [&dims](const auto &item2) {
       const auto &coordDims = item2.second.dims();
-      if constexpr (std::is_same_v<Key, Dim>) {
+      if constexpr (std::is_same_v<typename View::key_type, Dim>) {
         const bool is_dimension_coord = coordDims.contains(item2.first);
         return coordDims.empty() ||
                (is_dimension_coord ? dims.contains(item2.first)
@@ -81,7 +82,7 @@ void Dataset::clear() {
 /// This view includes "dimension-coordinates" as well as
 /// "non-dimension-coordinates" ("labels").
 CoordsConstView Dataset::coords() const noexcept {
-  return CoordsConstView(makeViewItems<Dim>(m_coords));
+  return CoordsConstView(makeViewItems<CoordsConstView>(m_coords));
 }
 
 /// Return a view to all coordinates of the dataset.
@@ -89,27 +90,28 @@ CoordsConstView Dataset::coords() const noexcept {
 /// This view includes "dimension-coordinates" as well as
 /// "non-dimension-coordinates" ("labels").
 CoordsView Dataset::coords() noexcept {
-  return CoordsView(CoordAccess(this), makeViewItems<Dim>(m_coords));
+  return CoordsView(CoordAccess(this),
+                    makeViewItems<CoordsConstView>(m_coords));
 }
 
 /// Return a const view to all attributes of the dataset.
 AttrsConstView Dataset::attrs() const noexcept {
-  return AttrsConstView(makeViewItems<std::string>(m_attrs));
+  return AttrsConstView(makeViewItems<AttrsConstView>(m_attrs));
 }
 
 /// Return a view to all attributes of the dataset.
 AttrsView Dataset::attrs() noexcept {
-  return AttrsView(AttrAccess(this), makeViewItems<std::string>(m_attrs));
+  return AttrsView(AttrAccess(this), makeViewItems<AttrsConstView>(m_attrs));
 }
 
 /// Return a const view to all masks of the dataset.
 MasksConstView Dataset::masks() const noexcept {
-  return MasksConstView(makeViewItems<std::string>(m_masks));
+  return MasksConstView(makeViewItems<MasksConstView>(m_masks));
 }
 
 /// Return a view to all masks of the dataset.
 MasksView Dataset::masks() noexcept {
-  return MasksView(MaskAccess(this), makeViewItems<std::string>(m_masks));
+  return MasksView(MaskAccess(this), makeViewItems<MasksConstView>(m_masks));
 }
 
 bool Dataset::contains(const std::string &name) const noexcept {
@@ -233,6 +235,11 @@ void Dataset::rebuildDims() {
 
 /// Set (insert or replace) the coordinate for the given dimension.
 void Dataset::setCoord(const Dim dim, Variable coord) {
+  setCoord(dim, DatasetAxis(std::move(coord)));
+}
+
+/// Set (insert or replace) the coordinate for the given dimension.
+void Dataset::setCoord(const Dim dim, DatasetAxis coord) {
   expect::notSparse(coord);
   setDims(coord.dims(), dim);
   m_coords.insert_or_assign(dim, std::move(coord));
@@ -312,8 +319,8 @@ void Dataset::setData(const std::string &name, DataArray data) {
   auto item = dataset.m_data.begin();
   if (item->second.data)
     setData(name, std::move(item->second.data.value()));
-  for (auto &&[dim, coord] : item->second.coords)
-    setSparseCoord(name, dim, std::move(coord));
+  // for (auto &&[dim, coord] : item->second.coords)
+  //  setSparseCoord(name, dim, std::move(coord));
   for (auto &&[nm, attr] : item->second.attrs)
     setAttr(name, std::string(nm), std::move(attr));
 }
@@ -334,6 +341,7 @@ void Dataset::setData(const std::string &name, const DataArrayConstView &data) {
 /// Set (insert or replace) a sparse coordinate with given name.
 ///
 /// Sparse coordinates can exist even without corresponding data.
+/*
 void Dataset::setSparseCoord(const std::string &name, const Dim dim,
                              Variable coord) {
   if (!coord.dims().sparse())
@@ -347,6 +355,7 @@ void Dataset::setSparseCoord(const std::string &name, const Dim dim,
   setDims(coord.dims());
   m_data[name].coords.insert_or_assign(dim, std::move(coord));
 }
+*/
 
 /// Removes the coordinate for the given dimension.
 void Dataset::eraseCoord(const Dim dim) { erase_from_map(m_coords, dim); }
@@ -365,27 +374,6 @@ void Dataset::eraseAttr(const std::string &name, const std::string &attrName) {
 /// Removes an attribute for the given attribute name.
 void Dataset::eraseMask(const std::string &maskName) {
   erase_from_map(m_masks, maskName);
-}
-
-/// Remove the sparse coordinate with given name.
-///
-/// Sparse coordinates can exist even without corresponding data.
-void Dataset::eraseSparseCoord(const std::string &name, const Dim dim) {
-  auto iter = m_data.find(name);
-  if (iter == m_data.end())
-    throw except::SparseDataError("No sparse data with name " + name +
-                                  " found.");
-
-  auto &data = iter->second;
-  auto coord = data.coords.find(dim);
-  if (coord == data.coords.end())
-    throw except::SparseDataError("No coord with name " + to_string(dim) +
-                                  " found.");
-
-  data.coords.erase(coord);
-  if (!data.data && data.coords.empty())
-    m_data.erase(iter);
-  rebuildDims();
 }
 
 /// Return const slice of the dataset along given dimension with given extents.
@@ -486,10 +474,6 @@ void Dataset::rename(const Dim from, const Dim to) {
     auto &value = item.second;
     if (value.data)
       value.data->rename(from, to);
-    if (value.coords.count(from))
-      relabel(value.coords);
-    for (auto &coord : value.coords)
-      coord.second.rename(from, to);
     for (auto &attr : value.attrs)
       attr.second.rename(from, to);
   }
@@ -517,10 +501,11 @@ const std::string &DataArrayConstView::name() const noexcept {
 /// Return an ordered mapping of dimension labels to extents, excluding a
 /// potentialy sparse dimensions.
 Dimensions DataArrayConstView::dims() const noexcept {
-  if (hasData())
-    return data().dims();
-  return detail::makeSlice(m_data->second.coords.begin()->second, slices())
-      .dims();
+  // TODO
+  // if (hasData())
+  return data().dims();
+  // return detail::makeSlice(m_data->second.coords.begin()->second, slices())
+  //    .dims();
 }
 
 /// Return the dtype of the data. Throws if there is no data.
@@ -545,21 +530,21 @@ void DataArrayView::setUnit(const units::Unit unit) const {
 /// If the data has a sparse dimension the returned view will not contain any
 /// of the dataset's coordinates that depends on the sparse dimension.
 CoordsConstView DataArrayConstView::coords() const noexcept {
+  // TODO mapping
   return CoordsConstView(
-      makeViewItems<Dim>(dims(), m_dataset->m_coords, &m_data->second.coords),
-      slices());
+      makeViewItems<CoordsConstView>(dims(), m_dataset->m_coords), slices());
 }
 
 /// Return a const view to all attributes of the data view.
 AttrsConstView DataArrayConstView::attrs() const noexcept {
   return AttrsConstView(
-      makeViewItems<std::string>(dims(), m_data->second.attrs), slices());
+      makeViewItems<AttrsConstView>(dims(), m_data->second.attrs), slices());
 }
 
 /// Return a const view to all masks of the data view.
 MasksConstView DataArrayConstView::masks() const noexcept {
-  return MasksConstView(makeViewItems<std::string>(dims(), m_dataset->m_masks),
-                        slices());
+  return MasksConstView(
+      makeViewItems<MasksConstView>(dims(), m_dataset->m_masks), slices());
 }
 
 DataArrayConstView DataArrayConstView::slice(const Slice slice1) const {
@@ -613,17 +598,18 @@ DataArrayView DataArrayView::slice(const Slice slice1, const Slice slice2,
 /// If the data has a sparse dimension the returned view will not contain any
 /// of the dataset's coordinates that depends on the sparse dimension.
 CoordsView DataArrayView::coords() const noexcept {
-  return CoordsView(CoordAccess(m_mutableDataset),
-                    makeViewItems<Dim>(dims(), m_mutableDataset->m_coords,
-                                       &m_mutableData->second.coords),
-                    slices());
+  // TODO mapping
+  return CoordsView(
+      CoordAccess(m_mutableDataset),
+      makeViewItems<CoordsConstView>(dims(), m_mutableDataset->m_coords),
+      slices());
 }
 
 /// Return a const view to all attributes of the data view.
 AttrsView DataArrayView::attrs() const noexcept {
   return AttrsView(
       AttrAccess(m_mutableDataset),
-      makeViewItems<std::string>(dims(), m_mutableData->second.attrs),
+      makeViewItems<AttrsConstView>(dims(), m_mutableData->second.attrs),
       slices());
 }
 
@@ -631,7 +617,8 @@ AttrsView DataArrayView::attrs() const noexcept {
 MasksView DataArrayView::masks() const noexcept {
   return MasksView(
       MaskAccess(m_mutableDataset),
-      makeViewItems<std::string>(dims(), m_mutableDataset->m_masks), slices());
+      makeViewItems<MasksConstView>(dims(), m_mutableDataset->m_masks),
+      slices());
 }
 
 DataArrayView DataArrayView::assign(const DataArrayConstView &other) const {
@@ -684,7 +671,8 @@ DatasetView::DatasetView(Dataset &dataset)
 /// This view includes "dimension-coordinates" as well as
 /// "non-dimension-coordinates" ("labels").
 CoordsConstView DatasetConstView::coords() const noexcept {
-  return CoordsConstView(makeViewItems<Dim>(m_dataset->m_coords), slices());
+  return CoordsConstView(makeViewItems<CoordsConstView>(m_dataset->m_coords),
+                         slices());
 }
 
 /// Return a view to all coordinates of the dataset slice.
@@ -695,12 +683,13 @@ CoordsView DatasetView::coords() const noexcept {
   // TODO
   // auto *parent = slices().empty() ? m_mutableDataset : nullptr;
   return CoordsView(CoordAccess(m_mutableDataset),
-                    makeViewItems<Dim>(m_mutableDataset->m_coords), slices());
+                    makeViewItems<CoordsConstView>(m_mutableDataset->m_coords),
+                    slices());
 }
 
 /// Return a const view to all attributes of the dataset slice.
 AttrsConstView DatasetConstView::attrs() const noexcept {
-  return AttrsConstView(makeViewItems<std::string>(m_dataset->m_attrs),
+  return AttrsConstView(makeViewItems<AttrsConstView>(m_dataset->m_attrs),
                         slices());
 }
 
@@ -709,12 +698,12 @@ AttrsView DatasetView::attrs() const noexcept {
   // TODO
   // auto *parent = slices().empty() ? m_mutableDataset : nullptr;
   return AttrsView(AttrAccess(m_mutableDataset),
-                   makeViewItems<std::string>(m_mutableDataset->m_attrs),
+                   makeViewItems<AttrsConstView>(m_mutableDataset->m_attrs),
                    slices());
 }
 /// Return a const view to all masks of the dataset slice.
 MasksConstView DatasetConstView::masks() const noexcept {
-  return MasksConstView(makeViewItems<std::string>(m_dataset->m_masks),
+  return MasksConstView(makeViewItems<MasksConstView>(m_dataset->m_masks),
                         slices());
 }
 
@@ -723,7 +712,7 @@ MasksView DatasetView::masks() const noexcept {
   // TODO
   // auto *parent = slices().empty() ? m_mutableDataset : nullptr;
   return MasksView(MaskAccess(m_mutableDataset),
-                   makeViewItems<std::string>(m_mutableDataset->m_masks),
+                   makeViewItems<MasksConstView>(m_mutableDataset->m_masks),
                    slices());
 }
 

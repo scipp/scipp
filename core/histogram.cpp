@@ -110,7 +110,7 @@ DataArray histogram(const DataArrayConstView &sparse,
                          args<double, float, double, double>,
                          args<double, float, double, float>,
                          args<double, double, float, double>>>(
-              dim_, binEdges_.dims()[dim_] - 1, sparse_.coords()[dim_],
+              dim_, binEdges_.dims()[dim_] - 1, sparse_.coords()[dim_].data(),
               sparse_.data(), binEdges_,
               overloaded{make_histogram_from_weighted,
                          make_histogram_unit_from_weighted,
@@ -123,7 +123,7 @@ DataArray histogram(const DataArrayConstView &sparse,
           return transform_subspan<std::tuple<args<double, double, double>,
                                               args<double, float, double>,
                                               args<double, float, float>>>(
-              dim_, binEdges_.dims()[dim_] - 1, sparse_.coords()[dim_],
+              dim_, binEdges_.dims()[dim_] - 1, sparse_.coords()[dim_].data(),
               binEdges_,
               overloaded{make_histogram, make_histogram_unit,
                          transform_flags::expect_variance_arg<0>,
@@ -156,7 +156,7 @@ Dataset histogram(const Dataset &dataset, const Variable &bins) {
 }
 
 Dataset histogram(const Dataset &dataset, const Dim &dim) {
-  auto bins = dataset.coords()[dim];
+  auto bins = dataset.coords()[dim].data();
   return histogram(dataset, bins);
 }
 

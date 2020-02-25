@@ -24,6 +24,7 @@ class Dimensions;
 class Variable;
 class VariableView;
 class VariableConstView;
+class DatasetAxisConstView;
 class Slice;
 template <class Id, class Key, class Value> class ConstView;
 template <class T, class U> class MutableView;
@@ -58,6 +59,7 @@ SCIPP_CORE_EXPORT std::string to_string(const DataArray &data);
 SCIPP_CORE_EXPORT std::string to_string(const DataArrayConstView &data);
 SCIPP_CORE_EXPORT std::string to_string(const Dataset &dataset);
 SCIPP_CORE_EXPORT std::string to_string(const DatasetConstView &dataset);
+SCIPP_CORE_EXPORT std::string to_string(const DatasetAxisConstView &axis);
 
 template <class Id, class Key, class Value>
 std::string to_string(const ConstView<Id, Key, Value> &view) {

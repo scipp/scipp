@@ -5,6 +5,7 @@
 #ifndef SCIPP_CORE_VARIABLE_OPERATIONS_COMMON_H
 #define SCIPP_CORE_VARIABLE_OPERATIONS_COMMON_H
 
+#include "scipp/core/axis.h"
 #include "scipp/core/variable.h"
 
 namespace scipp::core {
@@ -17,6 +18,15 @@ void all_impl(const VariableView &out, const VariableConstView &var);
 void any_impl(const VariableView &out, const VariableConstView &var);
 void max_impl(const VariableView &out, const VariableConstView &var);
 void min_impl(const VariableView &out, const VariableConstView &var);
+
+void flatten_impl(const DatasetAxisView &summed,
+                  const DatasetAxisConstView &var,
+                  const VariableConstView &mask);
+void sum_impl(const DatasetAxisView &summed, const DatasetAxisConstView &var);
+void all_impl(const DatasetAxisView &out, const DatasetAxisConstView &var);
+void any_impl(const DatasetAxisView &out, const DatasetAxisConstView &var);
+void max_impl(const DatasetAxisView &out, const DatasetAxisConstView &var);
+void min_impl(const DatasetAxisView &out, const DatasetAxisConstView &var);
 
 } // namespace scipp::core
 
