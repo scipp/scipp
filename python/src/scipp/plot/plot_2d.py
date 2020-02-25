@@ -241,7 +241,6 @@ class Slicer2d(Slicer):
                     else:
                         new_x = edges_to_centers(self.slider_x[self.name][dim].values)
                     axparams[but_val]["lims"][0] = new_x[np.searchsorted(new_x, 0)]
-                    self.slider_x[self.name][dim]))
                 axparams[but_val]["labels"] = name_with_unit(
                     self.slider_x[self.name][dim],
                     name=str(dim))

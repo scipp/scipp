@@ -74,7 +74,7 @@ def plot(scipp_obj,
                     # Check if we are dealing with a dict mapping dimensions to
                     # labels
                     if isinstance(axes, dict):
-                        key = axes[var.dims[0]]
+                        key = axes[str(var.dims[0])]
                         ax = [key]
                     else:
                         key = ".".join(axes)
