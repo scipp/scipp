@@ -264,117 +264,110 @@ Variable reverse(Variable var, const Dim dim) {
 /// Return a deep copy of a Variable or of a VariableView.
 Variable copy(const VariableConstView &var) { return Variable(var); }
 
-VariableView nan_to_num(const VariableConstView &var,
-                        const VariableConstView &replacement,
-                        const VariableView &out) {
+namespace {
+template <typename Op>
+VariableView replace_in_place(const VariableConstView &var,
+                              const VariableConstView &replacement, Op op,
+                              const VariableView &out) {
+
   transform_in_place<std::tuple<double, float>>(
       out, var, replacement,
       scipp::overloaded{
           transform_flags::expect_all_or_none_have_variance,
-          [](auto &a, const auto &b, const auto &repl) {
-            if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(b)>>)
-              a = isnan(b) ? repl : b;
-            else
-              a = std::isnan(b) ? repl : b;
-          },
+          [&op](auto &a, const auto &b, const auto &repl) { op(a, b, repl); },
           [](units::Unit &a, const units::Unit &b, const units::Unit &repl) {
             expect::equals(b, repl);
             a = b;
           }});
   return out;
+}
+
+template <typename Op>
+Variable replace(const VariableConstView &var,
+                 const VariableConstView &replacement, Op op) {
+  return transform<std::tuple<double, float>>(
+      var, replacement,
+      overloaded{transform_flags::expect_all_or_none_have_variance,
+                 [&op](const auto &x, const auto &repl) { return op(x, repl); },
+                 [](const units::Unit &x, const units::Unit &repl) {
+                   expect::equals(x, repl);
+                   return x;
+                 }});
+}
+} // namespace
+
+VariableView nan_to_num(const VariableConstView &var,
+                        const VariableConstView &replacement,
+                        const VariableView &out) {
+
+  auto op = [](auto &a, const auto &b, const auto &repl) {
+    if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(b)>>)
+      a = isnan(b) ? repl : b;
+    else
+      a = std::isnan(b) ? repl : b;
+  };
+
+  return replace_in_place(var, replacement, op, out);
 }
 
 VariableView pos_inf_to_num(const VariableConstView &var,
                             const VariableConstView &replacement,
                             const VariableView &out) {
-  transform_in_place<std::tuple<double, float>>(
-      out, var, replacement,
-      scipp::overloaded{
-          transform_flags::expect_all_or_none_have_variance,
-          [](auto &a, const auto &b, const auto &repl) {
-            if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(b)>>)
-              a = isinf(b) && b.value > 0 ? repl : b;
-            else
-              a = std::isinf(b) && b > 0 ? repl : b;
-          },
-          [](units::Unit &a, const units::Unit &b, const units::Unit &repl) {
-            expect::equals(b, repl);
-            a = b;
-          }});
-  return out;
+  auto op = [](auto &a, const auto &b, const auto &repl) {
+    if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(b)>>)
+      a = isinf(b) && b.value > 0 ? repl : b;
+    else
+      a = std::isinf(b) && b > 0 ? repl : b;
+  };
+
+  return replace_in_place(var, replacement, op, out);
 }
 VariableView neg_inf_to_num(const VariableConstView &var,
                             const VariableConstView &replacement,
                             const VariableView &out) {
-  transform_in_place<std::tuple<double, float>>(
-      out, var, replacement,
-      scipp::overloaded{
-          transform_flags::expect_all_or_none_have_variance,
-          [](auto &a, const auto &b, const auto &repl) {
-            if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(b)>>)
-              a = isinf(b) && b.value < 0 ? repl : b;
-            else
-              a = std::isinf(b) && b < 0 ? repl : b;
-          },
-          [](units::Unit &a, const units::Unit &b, const units::Unit &repl) {
-            expect::equals(b, repl);
-            a = b;
-          }});
-  return out;
+  auto op = [](auto &a, const auto &b, const auto &repl) {
+    if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(b)>>)
+      a = isinf(b) && b.value < 0 ? repl : b;
+    else
+      a = std::isinf(b) && b < 0 ? repl : b;
+  };
+
+  return replace_in_place(var, replacement, op, out);
 }
 
 Variable nan_to_num(const VariableConstView &var,
                     const VariableConstView &replacement) {
-  return transform<std::tuple<double, float>>(
-      var, replacement,
-      overloaded{
-          transform_flags::expect_all_or_none_have_variance,
-          [](const auto &x, const auto &repl) {
-            if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(x)>>)
-              return isnan(x) ? repl : x;
-            else
-              return std::isnan(x) ? repl : x;
-          },
-          [](const units::Unit &x, const units::Unit &repl) {
-            expect::equals(x, repl);
-            return x;
-          }});
-  }
 
-  Variable pos_inf_to_num(const VariableConstView &var,
-                          const VariableConstView &replacement) {
-    return transform<std::tuple<double, float>>(
-        var, replacement,
-        overloaded{
-            transform_flags::expect_all_or_none_have_variance,
-            [](const auto &x, const auto &repl) {
-              if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(x)>>)
-                return isinf(x) && x.value > 0 ? repl : x;
-              else
-                return std::isinf(x) && x > 0 ? repl : x;
-            },
-            [](const units::Unit &x, const units::Unit &repl) {
-              expect::equals(x, repl);
-              return x;
-            }});
-  }
+  auto op = [](const auto &x, const auto &repl) {
+    if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(x)>>)
+      return isnan(x) ? repl : x;
+    else
+      return std::isnan(x) ? repl : x;
+  };
+  return replace(var, replacement, op);
+}
 
-  Variable neg_inf_to_num(const VariableConstView &var,
-                          const VariableConstView &replacement) {
-    return transform<std::tuple<double, float>>(
-        var, replacement,
-        overloaded{
-            transform_flags::expect_all_or_none_have_variance,
-            [](const auto &x, const auto &repl) {
-              if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(x)>>)
-                return isinf(x) && x.value < 0 ? repl : x;
-              else
-                return std::isinf(x) && x < 0 ? repl : x;
-            },
-            [](const units::Unit &x, const units::Unit &repl) {
-              expect::equals(x, repl);
-              return x;
-            }});
-  }
+Variable pos_inf_to_num(const VariableConstView &var,
+                        const VariableConstView &replacement) {
+
+  auto op = [](const auto &x, const auto &repl) {
+    if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(x)>>)
+      return isinf(x) && x.value > 0 ? repl : x;
+    else
+      return std::isinf(x) && x > 0 ? repl : x;
+  };
+  return replace(var, replacement, op);
+}
+
+Variable neg_inf_to_num(const VariableConstView &var,
+                        const VariableConstView &replacement) {
+  auto op = [](const auto &x, const auto &repl) {
+    if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(x)>>)
+      return isinf(x) && x.value < 0 ? repl : x;
+    else
+      return std::isinf(x) && x < 0 ? repl : x;
+  };
+  return replace(var, replacement, op);
+}
 
 } // namespace scipp::core
