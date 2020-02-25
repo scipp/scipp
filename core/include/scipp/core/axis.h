@@ -99,10 +99,10 @@ public:
   /// Return typed view for data variances.
   template <class T> auto variances() { return data().template variances<T>(); }
 
-  // Axis &operator+=(const AxisConstView<T> &other);
-  // Axis &operator-=(const AxisConstView<T> &other);
-  // Axis &operator*=(const AxisConstView<T> &other);
-  // Axis &operator/=(const AxisConstView<T> &other);
+  DatasetAxis &operator+=(const DatasetAxisConstView &other);
+  DatasetAxis &operator-=(const DatasetAxisConstView &other);
+  DatasetAxis &operator*=(const DatasetAxisConstView &other);
+  DatasetAxis &operator/=(const DatasetAxisConstView &other);
 
   void rename(const Dim from, const Dim to);
 
@@ -177,41 +177,13 @@ public:
   }
 
   DatasetAxisView slice(const Slice) const { return *this; }
+
+  DatasetAxisView operator+=(const DatasetAxisConstView &other) const;
+  DatasetAxisView operator-=(const DatasetAxisConstView &other) const;
+  DatasetAxisView operator*=(const DatasetAxisConstView &other) const;
+  DatasetAxisView operator/=(const DatasetAxisConstView &other) const;
 };
 
-
-// DataArrayView slice(const Slice slice1) const;
-//
-// DataArrayView assign(const DataArrayConstView &other) const;
-// DataArrayView assign(const Variable &other) const;
-// DataArrayView assign(const VariableConstView &other) const;
-
-#if 0
-void CoordAccess::set(const Dim &key, Variable var) const {
-  // No restrictions on dimension of unaligned? Do we need to ensure
-  // unaligned does not depend on dimension of parent?
-  // TODO enforce same unit?
-  m_coords->emplace(key, std::move(var));
-}
-
-void CoordAccess::erase(const Dim &key) const {
-  m_coords->erase(m_coords->find(key));
-}
-
-auto coords(const Dataset &dataset) {
-  typename CoordsConstView::holder_type items;
-  for (const auto &[key, value] : dataset.coords)
-    items.emplace(key, std::pair{&value, nullptr});
-  return CoordsConstView{std::move(items)};
-}
-auto coords(Dataset &dataset) {
-  typename CoordsView::holder_type items;
-  for (auto &&[key, value] : dataset.coords)
-    items.emplace(key, std::pair{&value, &value});
-
-  return CoordsView{CoordAccess(&dataset, &dataset.coords), std::move(items)};
-}
-#endif
 
 SCIPP_CORE_EXPORT bool operator==(const DatasetAxisConstView &,
                                   const DatasetAxisConstView &);
