@@ -89,7 +89,7 @@ CoordsConstView Dataset::coords() const noexcept {
 /// This view includes "dimension-coordinates" as well as
 /// "non-dimension-coordinates" ("labels").
 CoordsView Dataset::coords() noexcept {
-  return CoordsView(this, nullptr, makeViewItems<Dim>(m_coords));
+  return CoordsView(CoordAccess(this), makeViewItems<Dim>(m_coords));
 }
 
 /// Return a const view to all attributes of the dataset.
@@ -99,7 +99,7 @@ AttrsConstView Dataset::attrs() const noexcept {
 
 /// Return a view to all attributes of the dataset.
 AttrsView Dataset::attrs() noexcept {
-  return AttrsView(this, nullptr, makeViewItems<std::string>(m_attrs));
+  return AttrsView(AttrAccess(this), makeViewItems<std::string>(m_attrs));
 }
 
 /// Return a const view to all masks of the dataset.
@@ -109,7 +109,7 @@ MasksConstView Dataset::masks() const noexcept {
 
 /// Return a view to all masks of the dataset.
 MasksView Dataset::masks() noexcept {
-  return MasksView(this, nullptr, makeViewItems<std::string>(m_masks));
+  return MasksView(MaskAccess(this), makeViewItems<std::string>(m_masks));
 }
 
 bool Dataset::contains(const std::string &name) const noexcept {
@@ -613,7 +613,7 @@ DataArrayView DataArrayView::slice(const Slice slice1, const Slice slice2,
 /// If the data has a sparse dimension the returned view will not contain any
 /// of the dataset's coordinates that depends on the sparse dimension.
 CoordsView DataArrayView::coords() const noexcept {
-  return CoordsView(m_mutableDataset, &name(),
+  return CoordsView(CoordAccess(m_mutableDataset),
                     makeViewItems<Dim>(dims(), m_mutableDataset->m_coords,
                                        &m_mutableData->second.coords),
                     slices());
@@ -622,7 +622,7 @@ CoordsView DataArrayView::coords() const noexcept {
 /// Return a const view to all attributes of the data view.
 AttrsView DataArrayView::attrs() const noexcept {
   return AttrsView(
-      m_mutableDataset, &name(),
+      AttrAccess(m_mutableDataset),
       makeViewItems<std::string>(dims(), m_mutableData->second.attrs),
       slices());
 }
@@ -630,7 +630,7 @@ AttrsView DataArrayView::attrs() const noexcept {
 /// Return a view to all masks of the data view.
 MasksView DataArrayView::masks() const noexcept {
   return MasksView(
-      m_mutableDataset, &name(),
+      MaskAccess(m_mutableDataset),
       makeViewItems<std::string>(dims(), m_mutableDataset->m_masks), slices());
 }
 
@@ -692,8 +692,9 @@ CoordsConstView DatasetConstView::coords() const noexcept {
 /// This view includes "dimension-coordinates" as well as
 /// "non-dimension-coordinates" ("labels").
 CoordsView DatasetView::coords() const noexcept {
-  auto *parent = slices().empty() ? m_mutableDataset : nullptr;
-  return CoordsView(parent, nullptr,
+  // TODO
+  // auto *parent = slices().empty() ? m_mutableDataset : nullptr;
+  return CoordsView(CoordAccess(m_mutableDataset),
                     makeViewItems<Dim>(m_mutableDataset->m_coords), slices());
 }
 
@@ -705,8 +706,9 @@ AttrsConstView DatasetConstView::attrs() const noexcept {
 
 /// Return a view to all attributes of the dataset slice.
 AttrsView DatasetView::attrs() const noexcept {
-  auto *parent = slices().empty() ? m_mutableDataset : nullptr;
-  return AttrsView(parent, nullptr,
+  // TODO
+  // auto *parent = slices().empty() ? m_mutableDataset : nullptr;
+  return AttrsView(AttrAccess(m_mutableDataset),
                    makeViewItems<std::string>(m_mutableDataset->m_attrs),
                    slices());
 }
@@ -718,8 +720,9 @@ MasksConstView DatasetConstView::masks() const noexcept {
 
 /// Return a view to all masks of the dataset slice.
 MasksView DatasetView::masks() const noexcept {
-  auto *parent = slices().empty() ? m_mutableDataset : nullptr;
-  return MasksView(parent, nullptr,
+  // TODO
+  // auto *parent = slices().empty() ? m_mutableDataset : nullptr;
+  return MasksView(MaskAccess(m_mutableDataset),
                    makeViewItems<std::string>(m_mutableDataset->m_masks),
                    slices());
 }

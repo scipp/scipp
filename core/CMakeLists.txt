@@ -23,6 +23,7 @@ set(SRC_FILES
     counts.cpp
     data_array.cpp
     dataset.cpp
+    dataset_access.cpp
     dataset_binary_arithmetic.cpp
     dataset_operations.cpp
     dimensions.cpp

@@ -26,7 +26,7 @@ class VariableView;
 class VariableConstView;
 class Slice;
 template <class Id, class Data> class ConstView;
-template <class T> class MutableView;
+template <class T, class U> class MutableView;
 
 SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os, const Dim dim);
 SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
@@ -69,7 +69,8 @@ std::string to_string(const ConstView<Id, Data> &view) {
   return ss.str();
 }
 
-template <class T> std::string to_string(const MutableView<T> &mutableView) {
+template <class T, class U>
+std::string to_string(const MutableView<T, U> &mutableView) {
   std::stringstream ss;
 
   for (const auto &[key, item] : mutableView) {

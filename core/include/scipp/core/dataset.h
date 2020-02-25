@@ -14,6 +14,7 @@
 
 #include <boost/iterator/transform_iterator.hpp>
 
+#include "scipp/core/dataset_access.h"
 #include "scipp/core/except.h"
 #include "scipp/core/variable.h"
 #include "scipp/core/view_decl.h"
@@ -464,29 +465,28 @@ private:
 };
 
 /// Common functionality for other view classes.
-template <class Base> class MutableView : public Base {
+template <class Base, class Access> class MutableView : public Base {
 private:
   struct make_item {
-    const MutableView<Base> *view;
+    const MutableView<Base, Access> *view;
     template <class T> auto operator()(const T &item) const {
       return std::pair<typename Base::key_type, VariableView>(
           item.first, detail::makeSlice(*item.second.second, view->slices()));
     }
   };
 
-  MutableView(Dataset *parent, const std::string *name, Base &&base)
-      : Base(std::move(base)), m_parent(parent), m_name(name) {}
+  MutableView(const Access &access, Base &&base)
+      : Base(std::move(base)), m_access(access) {}
 
-  Dataset *m_parent;
-  const std::string *m_name;
+  Access m_access;
 
 public:
   MutableView(
-      Dataset *parent, const std::string *name,
+      const Access &access,
       std::unordered_map<typename Base::key_type,
                          std::pair<const Variable *, Variable *>> &&items,
       const detail::slice_list &slices = {})
-      : Base(std::move(items), slices), m_parent(parent), m_name(name) {}
+      : Base(std::move(items), slices), m_access(access) {}
 
   /// Return a view to the coordinate for given dimension.
   VariableView operator[](const typename Base::key_type key) const {
@@ -532,7 +532,8 @@ public:
 
   MutableView slice(const Slice slice1) const {
     // parent = nullptr since adding coords via slice is not supported.
-    return MutableView(nullptr, m_name, Base::slice(slice1));
+    // TODO
+    return MutableView(m_access, Base::slice(slice1));
   }
 
   MutableView slice(const Slice slice1, const Slice slice2) const {
@@ -546,73 +547,10 @@ public:
 
   template <class VarOrView>
   void set(const typename Base::key_type key, VarOrView var) const {
-    if (!m_parent || !Base::m_slices.empty())
-      throw std::runtime_error("Cannot add coord/lmask/attr field to a slice.");
-    if (var.dims().sparse()) {
-      if (!m_name)
-        throw std::runtime_error("Sparse coord/mask/attr must be added to "
-                                 "coords of dataset items, not coords of "
-                                 "dataset.");
-      if constexpr (std::is_same_v<Base, CoordsConstView>)
-        m_parent->setSparseCoord(*m_name, key, std::move(var));
-      if constexpr (std::is_same_v<Base, AttrsConstView>)
-        throw std::runtime_error("Attributes cannot be sparse.");
-    } else {
-      if constexpr (std::is_same_v<Base, CoordsConstView>)
-        m_parent->setCoord(key, std::move(var));
-      if constexpr (std::is_same_v<Base, MasksConstView>)
-        m_parent->setMask(key, std::move(var));
-      if constexpr (std::is_same_v<Base, AttrsConstView>) {
-        if (m_name)
-          m_parent->setAttr(*m_name, key, std::move(var));
-        else
-          m_parent->setAttr(key, std::move(var));
-      }
-    }
-    // TODO rebuild *this?!
+    m_access.set(key, Variable(std::move(var)));
   }
 
-  void erase(const typename Base::key_type key) {
-    if (!m_parent || !Base::m_slices.empty())
-      throw std::runtime_error(
-          "Cannot remove coord/mask/attr field from a slice.");
-
-    bool sparse = m_name; // Does view point on sparse data or not
-    if (sparse)
-      sparse &= (*m_parent)[*m_name].dims().sparse();
-
-    if (!sparse) {
-      if constexpr (std::is_same_v<Base, CoordsConstView>)
-        m_parent->eraseCoord(key);
-      if constexpr (std::is_same_v<Base, AttrsConstView>) {
-        if (m_name)
-          m_parent->eraseAttr(*m_name, key);
-        else
-          m_parent->eraseAttr(key);
-      }
-      if constexpr (std::is_same_v<Base, MasksConstView>)
-        m_parent->eraseMask(key);
-    } else {
-      if constexpr (std::is_same_v<Base, CoordsConstView>) {
-        if (Base::m_items.count(key) == 0) {
-          std::string suffix =
-              Base::m_items.empty()
-                  ? "no sparse coordinate defined "
-                  : " sparse coordinate is defined for dim " +
-                        to_string(Base::m_items.begin()->first);
-          throw except::SparseDataError("No coordinate with dim " +
-                                        to_string(key) + " found," + suffix);
-        }
-        if (this->operator[](key).dims().sparse())
-          m_parent->eraseSparseCoord(*m_name, key);
-        else
-          m_parent->eraseCoord(key);
-      } else if constexpr (std::is_same_v<Base, AttrsConstView>)
-        m_parent->eraseAttr(*m_name, key);
-      else
-        throw std::runtime_error("The instance cannot be sparse.");
-    }
-  }
+  void erase(const typename Base::key_type key) { m_access.erase(key); }
 };
 
 template <class T1, class T2> auto union_(const T1 &a, const T2 &b) {

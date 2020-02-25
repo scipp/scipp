@@ -7,8 +7,6 @@
 
 #include <boost/iterator/transform_iterator.hpp>
 
-#include "scipp/core/data_interface.h"
-#include "scipp/core/map.h"
 #include "scipp/core/variable.h"
 
 namespace scipp::core {
@@ -28,25 +26,18 @@ namespace next {
 // d['a'].attrs
 // d['a'].unaligned.attrs
 
-template <class T> class AxisConstView;
-template <class T> class AxisView;
+class DatasetAxisConstView;
+class DatasetAxisView;
 
-template <class T> class Axis : public DataInterface<Axis<T>> {
+class DatasetAxis {
 public:
-  using const_view_type = AxisConstView<T>;
-  using view_type = AxisView<T>;
-  using unaligned_type =
-      std::conditional_t<std::is_same_v<T, AxisId::Dataset>,
-                         std::unordered_map<std::string, Variable>, Variable>;
-  using unaligned_const_view_type =
-      std::conditional_t<std::is_same_v<T, AxisId::Dataset>, UnalignedConstView,
-                         VariableConstView>;
-  using unaligned_view_type =
-      std::conditional_t<std::is_same_v<T, AxisId::Dataset>, UnalignedView,
-                         VariableView>;
+  using const_view_type = DatasetAxisConstView;
+  using view_type = DatasetAxisView;
+  using unaligned_type = std::unordered_map<std::string, Variable>;
+  using unaligned_const_view_type = UnalignedConstView;
+  using unaligned_view_type = UnalignedView;
 
-  explicit Axis(Variable data) : m_data(std::move(data)) {}
-
+  explicit DatasetAxis(Variable data) : m_data(std::move(data)) {}
 
   auto unaligned() const noexcept {
     std::unordered_map<std::string, std::pair<const Variable *, Variable *>>
@@ -65,61 +56,80 @@ public:
                                std::move(items)};
   }
 
+  /// Return true if the data array contains data values.
+  bool hasData() const noexcept { return static_cast<bool>(m_data); }
+  /// Return untyped const view for data (values and optional variances).
+  VariableConstView data() const {
+    if (hasData())
+      return m_data;
+    throw except::SparseDataError("No data in item.");
+  }
+
+  // TODO only return empty if there is unaligned? just throw?
+  // actually need to look at coords in case of unaligned data to determine dims
+  Dimensions dims() const { return hasData() ? data().dims() : Dimensions(); }
+  DType dtype() const { return data().dtype(); }
+  units::Unit unit() const { return data().unit(); }
+
+  /// Return true if the data array contains data variances.
+  bool hasVariances() const { return data().hasVariances(); }
+
+  /// Return typed const view for data values.
+  template <class T> auto values() const { return data().template values<T>(); }
+
+  /// Return typed const view for data variances.
+  template <class T> auto variances() const {
+    return data().template variances<T>();
+  }
+
+  /// Return untyped view for data (values and optional variances).
+  VariableView data() {
+    if (static_cast<Derived *>(this)->m_data)
+      return static_cast<Derived *>(this)->m_data;
+    throw except::SparseDataError("No data in item.");
+  }
+
+  void setUnit(const units::Unit unit) { data().setUnit(unit); }
+
+  /// Return typed view for data values.
+  template <class T> auto values() { return data().template values<T>(); }
+
+  /// Return typed view for data variances.
+  template <class T> auto variances() { return data().template variances<T>(); }
+
   // Axis &operator+=(const AxisConstView<T> &other);
   // Axis &operator-=(const AxisConstView<T> &other);
   // Axis &operator*=(const AxisConstView<T> &other);
   // Axis &operator/=(const AxisConstView<T> &other);
 
+private:
   Variable m_data;
   unaligned_type m_unaligned;
 };
 
-template <class T> class DataViewInterface;
-
-template <class T>
-class AxisConstView : public DataConstInterface<AxisConstView<T>> {
+class DatasetAxisConstView {
 public:
-  AxisConstView(const Axis<T> &axis) : m_data(axis.data()) {
+  DatasetAxisConstView(const DatasetAxis &axis) : m_data(axis.data()) {
     auto u = axis.unaligned();
     m_unaligned.insert(u.begin(), u.end());
   }
   // Implicit conversion from VariableConstView useful for operators.
-  AxisConstView(const VariableConstView &data) : m_data(data) {}
+  DatasetAxisConstView(const VariableConstView &data) : m_data(data) {}
 
-  AxisConstView slice(const Slice slice) const { return *this; }
+  DatasetAxisConstView slice(const Slice slice) const { return *this; }
 
-  // Need two different interfaces:
-  // For coord of dataset
-  // const UnalignedConstView unaligned() const noexcept { return m_unaligned; }
-  // const UnalignedView unaligned() noexcept { return m_unaligned; }
-  // For coord of data array or data of dataset item or data array
-  // const VarialeConstView unaligned() const noexcept { return m_unaligned; }
-  // const VarialeView unaligned() noexcept { return m_unaligned; }
-
+private:
   VariableView m_data;
   std::unordered_map<std::string, VariableView> m_unaligned;
 };
 
-template <class T>
-class AxisView : public AxisConstView<T>,
-                 public DataViewInterface<AxisView<T>> {
+class DatasetAxisView : public DatasetAxisConstView {
 public:
-  AxisView(Axis<T> &data) : AxisConstView<T>(data) {}
+  DatasetAxisView(DatasetAxis &data) : DatasetAxisConstView(data) {}
 
-  AxisView slice(const Slice slice) const { return *this; }
-
-  using DataViewInterface<AxisView<T>>::data;
-
-  // AxisView operator+=(const AxisConstView &other) const;
-  // AxisView operator-=(const AxisConstView &other) const;
-  // AxisView operator*=(const AxisConstView &other) const;
-  // AxisView operator/=(const AxisConstView &other) const;
+  DatasetAxisView slice(const Slice slice) const { return *this; }
 };
 
-struct Dataset {
-  std::unordered_map<std::string, Variable> items;
-  std::unordered_map<Dim, Axis<AxisId::Dataset>> coords;
-};
 
 // DataArrayView slice(const Slice slice1) const;
 //
@@ -127,6 +137,7 @@ struct Dataset {
 // DataArrayView assign(const Variable &other) const;
 // DataArrayView assign(const VariableConstView &other) const;
 
+#if 0
 void CoordAccess::set(const Dim &key, Variable var) const {
   // No restrictions on dimension of unaligned? Do we need to ensure
   // unaligned does not depend on dimension of parent?
@@ -151,6 +162,7 @@ auto coords(Dataset &dataset) {
 
   return CoordsView{CoordAccess(&dataset, &dataset.coords), std::move(items)};
 }
+#endif
 
 } // namespace next
 } // namespace scipp::core

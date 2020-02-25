@@ -7,6 +7,7 @@
 
 #include <boost/iterator/transform_iterator.hpp>
 
+#include "scipp/core/dataset_access.h"
 #include "scipp/core/except.h"
 #include "scipp/core/slice.h"
 #include "scipp/core/variable.h"
@@ -64,20 +65,20 @@ class Labels;
 class Masks;
 } // namespace ViewId
 template <class Id, class Key> class ConstView;
-template <class Base> class MutableView;
+template <class Base, class Access> class MutableView;
 
 /// View for accessing coordinates of const Dataset and DataArrayConstView.
 using CoordsConstView = ConstView<ViewId::Coords, Dim>;
 /// View for accessing coordinates of Dataset and DataArrayView.
-using CoordsView = MutableView<CoordsConstView>;
+using CoordsView = MutableView<CoordsConstView, CoordAccess>;
 /// View for accessing attributes of const Dataset and DataArrayConstView.
 using AttrsConstView = ConstView<ViewId::Attrs, std::string>;
 /// View for accessing attributes of Dataset and DataArrayView.
-using AttrsView = MutableView<AttrsConstView>;
+using AttrsView = MutableView<AttrsConstView, AttrAccess>;
 /// View for accessing masks of const Dataset and DataArrayConstView
 using MasksConstView = ConstView<ViewId::Masks, std::string>;
 /// View for accessing masks of Dataset and DataArrayView
-using MasksView = MutableView<MasksConstView>;
+using MasksView = MutableView<MasksConstView, MaskAccess>;
 
 /// Return the dimension for given coord.
 /// @param var Coordinate variable
@@ -108,6 +109,9 @@ private:
 public:
   using key_type = Key;
   using mapped_type = Variable;
+  using holder_type =
+      std::unordered_map<key_type,
+                         std::pair<const mapped_type *, mapped_type *>>;
 
   ConstView(
       std::unordered_map<Key, std::pair<const Variable *, Variable *>> &&items,
@@ -249,7 +253,7 @@ public:
   const auto &slices() const noexcept { return m_slices; }
 
 protected:
-  std::unordered_map<Key, std::pair<const Variable *, Variable *>> m_items;
+  holder_type m_items;
   detail::slice_list m_slices;
 };
 

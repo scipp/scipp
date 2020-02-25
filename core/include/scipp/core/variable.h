@@ -755,6 +755,8 @@ protected:
 };
 
 class DataArrayConstView;
+class DatasetAxisConstView;
+class DataArrayAxisConstView;
 
 /** Mutable view into (a subset of) a Variable.
  *
@@ -874,6 +876,8 @@ public:
 private:
   friend class Variable;
   friend class DataArrayConstView;
+  friend class DatasetAxisConstView;
+  friend class DataArrayAxisConstView;
 
   template <class Var>
   static VariableView makeTransposed(Var &var,
