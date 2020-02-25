@@ -30,7 +30,8 @@ namespace detail {
 /// Helper for holding data items in Dataset.
 struct DatasetData {
   /// Optional data values (with optional variances).
-  std::optional<Variable> data;
+  Variable data;
+  Variable unaligned;
   /// Attributes for data.
   std::unordered_map<std::string, Variable> attrs;
 };
@@ -57,10 +58,12 @@ public:
   MasksConstView masks() const noexcept;
 
   /// Return true if the view contains data values.
-  bool hasData() const noexcept { return m_data->second.data.has_value(); }
+  bool hasData() const noexcept {
+    return static_cast<bool>(m_data->second.data);
+  }
   /// Return true if the view contains data variances.
   bool hasVariances() const noexcept {
-    return hasData() && m_data->second.data->hasVariances();
+    return hasData() && m_data->second.data.hasVariances();
   }
 
   /// Return untyped const view for data (values and optional variances).

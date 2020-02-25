@@ -8,6 +8,8 @@
 #include "scipp-core_export.h"
 #include "scipp/core/except.h"
 #include "scipp/core/variable.h"
+#include "scipp/core/view_forward.h"
+#include "scipp/units/dim.h"
 
 namespace scipp::core {
 
@@ -33,30 +35,14 @@ public:
   using const_view_type = DatasetAxisConstView;
   using view_type = DatasetAxisView;
   using unaligned_type = std::unordered_map<std::string, Variable>;
-  // using unaligned_const_view_type = UnalignedConstView;
-  // using unaligned_view_type = UnalignedView;
+  using unaligned_const_view_type = UnalignedConstView;
+  using unaligned_view_type = UnalignedView;
 
   explicit DatasetAxis(Variable data) : m_data(std::move(data)) {}
   explicit DatasetAxis(const DatasetAxisConstView &data);
 
-  /*
-  auto unaligned() const noexcept {
-    std::unordered_map<std::string, std::pair<const Variable *, Variable *>>
-        items;
-    for (const auto &[key, value] : m_unaligned)
-      items.emplace(key, std::pair{&value, nullptr});
-    return unaligned_const_view_type{std::move(items)};
-  }
-  auto unaligned() noexcept {
-    std::unordered_map<std::string, std::pair<const Variable *, Variable *>>
-        items;
-    for (auto &&[key, value] : m_unaligned)
-      items.emplace(key, std::pair{&value, &value});
-
-    return unaligned_view_type{UnalignedAccess(this, &m_unaligned),
-                               std::move(items)};
-  }
-  */
+  UnalignedConstView unaligned() const;
+  UnalignedView unaligned();
 
   /// Return true if the data array contains data values.
   bool hasData() const noexcept { return static_cast<bool>(m_data); }
@@ -116,6 +102,7 @@ public:
   using value_type = DatasetAxis;
 
   DatasetAxisConstView(const DatasetAxis &axis) : m_data(axis.data()) {
+    // TODO
     // auto u = axis.unaligned();
     // m_unaligned.insert(u.begin(), u.end());
   }
@@ -182,6 +169,20 @@ public:
   DatasetAxisView operator-=(const DatasetAxisConstView &other) const;
   DatasetAxisView operator*=(const DatasetAxisConstView &other) const;
   DatasetAxisView operator/=(const DatasetAxisConstView &other) const;
+};
+
+class SCIPP_CORE_EXPORT UnalignedAccess {
+public:
+  UnalignedAccess(DatasetAxis *parent,
+                  typename DatasetAxis::unaligned_type *unaligned)
+      : m_parent(parent), m_unaligned(unaligned) {}
+
+  void set(const std::string &key, Variable var) const;
+  void erase(const std::string &key) const;
+
+private:
+  DatasetAxis *m_parent;
+  typename DatasetAxis::unaligned_type *m_unaligned;
 };
 
 

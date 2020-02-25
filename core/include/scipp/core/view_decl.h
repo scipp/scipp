@@ -12,6 +12,8 @@
 #include "scipp/core/except.h"
 #include "scipp/core/slice.h"
 #include "scipp/core/variable.h"
+#include "scipp/core/view_forward.h"
+#include "scipp/units/dim.h"
 #include "scipp/units/unit.h"
 
 namespace scipp::core {
@@ -59,28 +61,6 @@ static constexpr auto make_value = [](auto &&view) -> decltype(auto) {
 };
 
 } // namespace detail
-
-namespace ViewId {
-class Attrs;
-class Coords;
-class Labels;
-class Masks;
-} // namespace ViewId
-template <class Id, class Key, class Value> class ConstView;
-template <class Base, class Access> class MutableView;
-
-/// View for accessing coordinates of const Dataset and DataArrayConstView.
-using CoordsConstView = ConstView<ViewId::Coords, Dim, DatasetAxis>;
-/// View for accessing coordinates of Dataset and DataArrayView.
-using CoordsView = MutableView<CoordsConstView, CoordAccess>;
-/// View for accessing attributes of const Dataset and DataArrayConstView.
-using AttrsConstView = ConstView<ViewId::Attrs, std::string, Variable>;
-/// View for accessing attributes of Dataset and DataArrayView.
-using AttrsView = MutableView<AttrsConstView, AttrAccess>;
-/// View for accessing masks of const Dataset and DataArrayConstView
-using MasksConstView = ConstView<ViewId::Masks, std::string, Variable>;
-/// View for accessing masks of Dataset and DataArrayView
-using MasksView = MutableView<MasksConstView, MaskAccess>;
 
 /// Return the dimension for given coord.
 /// @param var Coordinate variable

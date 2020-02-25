@@ -318,7 +318,7 @@ void Dataset::setData(const std::string &name, DataArray data) {
   // There can be only one DatasetData item, so get the first one with begin()
   auto item = dataset.m_data.begin();
   if (item->second.data)
-    setData(name, std::move(item->second.data.value()));
+    setData(name, std::move(item->second.data));
   // for (auto &&[dim, coord] : item->second.coords)
   //  setSparseCoord(name, dim, std::move(coord));
   for (auto &&[nm, attr] : item->second.attrs)
@@ -473,7 +473,7 @@ void Dataset::rename(const Dim from, const Dim to) {
   for (auto &item : m_data) {
     auto &value = item.second;
     if (value.data)
-      value.data->rename(from, to);
+      value.data.rename(from, to);
     for (auto &attr : value.attrs)
       attr.second.rename(from, to);
   }
@@ -487,7 +487,7 @@ DataArrayConstView::DataArrayConstView(
     m_view = std::move(view);
   else if (hasData())
     m_view.emplace(
-        VariableView(detail::makeSlice(*m_data->second.data, this->slices())));
+        VariableView(detail::makeSlice(m_data->second.data, this->slices())));
 }
 
 /// Return the name of the view.
@@ -569,11 +569,10 @@ DataArrayConstView DataArrayConstView::slice(const Slice slice1,
 DataArrayView::DataArrayView(Dataset &dataset,
                              detail::dataset_item_map::value_type &data,
                              const detail::slice_list &slices)
-    : DataArrayConstView(
-          dataset, data, slices,
-          data.second.data.has_value()
-              ? VariableView(detail::makeSlice(*data.second.data, slices))
-              : std::optional<VariableView>{}),
+    : DataArrayConstView(dataset, data, slices,
+                         data.second.data ? VariableView(detail::makeSlice(
+                                                data.second.data, slices))
+                                          : std::optional<VariableView>{}),
       m_mutableDataset(&dataset), m_mutableData(&data) {}
 
 DataArrayView DataArrayView::slice(const Slice slice1) const {
