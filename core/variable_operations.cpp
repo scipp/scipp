@@ -265,35 +265,42 @@ Variable reverse(Variable var, const Dim dim) {
 Variable copy(const VariableConstView &var) { return Variable(var); }
 
 VariableView nan_to_num(const VariableConstView &var,
-                        const VariableConstView &replacement,
-                        const VariableView &out) {
-  using std::isnan;
-  transform_in_place<std::tuple<double, float>>(
-      out, var, replacement,
-      scipp::overloaded{
-          transform_flags::expect_all_or_none_have_variance,
-          [](auto &a, const auto &b, const auto &repl) {
-            a = isnan(b) ? repl : b;
-          },
-          [](units::Unit &a, const units::Unit &b, const units::Unit &repl) {
-            expect::equals(b, repl);
-            a = b;
-          }});
+  const VariableView &out,
+  const std::optional<VariableConstView> &nan,
+  const std::optional<VariableConstView> &posinf)
+  {
+  if(nan) {
+    using std::isnan;
+    transform_in_place<std::tuple<double, float>>(
+        out, var, *nan,
+        scipp::overloaded{
+            transform_flags::expect_all_or_none_have_variance,
+            [](auto &a, const auto &b, const auto &nanr) {
+              a = isnan(b) ? nanr : b;
+            },
+            [](units::Unit &a, const units::Unit &b, const units::Unit &repl) {
+              expect::equals(b, repl);
+              a = b;
+            }});
+  }
   return out;
 }
 
 Variable nan_to_num(const VariableConstView &var,
-                    const VariableConstView &replacement) {
+                    const std::optional<VariableConstView> &nan) {
   using std::isnan;
-  return transform<std::tuple<double, float>>(
-      var, replacement,
-      overloaded{
-          transform_flags::expect_all_or_none_have_variance,
-          [](const auto &x, const auto &repl) { return isnan(x) ? repl : x; },
-          [](const units::Unit &x, const units::Unit &repl) {
-            expect::equals(x, repl);
-            return x;
-          }});
+  if(nan) {
+    return transform<std::tuple<double, float>>(
+        var, *nan,
+        overloaded{
+            transform_flags::expect_all_or_none_have_variance,
+            [](const auto &x, const auto &nanr) { return isnan(x) ? nanr : x; },
+            [](const units::Unit &x, const units::Unit &repl) {
+              expect::equals(x, repl);
+              return x;
+            }});
+  }
+  return Variable(var);
 }
 
 } // namespace scipp::core
