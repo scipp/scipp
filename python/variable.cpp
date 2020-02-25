@@ -750,15 +750,17 @@ void init_variable(py::module &m) {
           return out;
         },
         py::call_guard<py::gil_scoped_release>(),
-        R"(Element-wise nan replacement
+        R"(Element-wise special value replacement
 
-       All elements in the output are identical to input except in the presence of a nan
+       All elements in the output are identical to input except in the presence of a nan, inf or -inf.
+       The function allows replacements to be separately specified for nan, inf or -inf values.
+       You can choose to replace a subset of those special values by providing just the required key word arguments.
        If the replacement is value-only and the input has variances,
-       the variance at the element(s) containing nan are also replaced with the nan replacement value.
+       the variance at the element(s) undergoing replacement are also replaced with the replacement value.
        If the replacement has a variance and the input has variances,
-       the variance at the element(s) containing nan are also replaced with the nan replacement variance.
+       the variance at the element(s) undergoing replacement are also replaced with the replacement variance.
        :raises: If the types of input and replacement do not match.
-       :return: Input elements are replaced in output with specified replacement if nan.
+       :return: Input elements are replaced in output with specified subsitutions.
        :rtype: Variable)",
         py::arg("x"), py::arg("nan") = std::optional<VariableConstView>(),
         py::arg("posinf") = std::optional<VariableConstView>(),
@@ -778,15 +780,17 @@ void init_variable(py::module &m) {
           return out;
         },
         py::call_guard<py::gil_scoped_release>(),
-        R"(Element-wise nan replacement
+        R"(Element-wise special value replacement
 
-       All elements in the output are identical to input except in the presence of a nan
+       All elements in the output are identical to input except in the presence of a nan, inf or -inf.
+       The function allows replacements to be separately specified for nan, inf or -inf values.
+       You can choose to replace a subset of those special values by providing just the required key word arguments.
        If the replacement is value-only and the input has variances,
-       the variance at the element(s) containing nan are also replaced with the nan replacement value.
+       the variance at the element(s) undergoing replacement are also replaced with the replacement value.
        If the replacement has a variance and the input has variances,
-       the variance at the element(s) containing nan are also replaced with the nan replacement variance.
+       the variance at the element(s) undergoing replacement are also replaced with the replacement variance.
        :raises: If the types of input and replacement do not match.
-       :return: Input elements are replaced in output with specified replacement if nan.
+       :return: Input elements are replaced in output with specified subsitutions.
        :rtype: Variable)",
         py::arg("x"), py::arg("nan") = std::optional<VariableConstView>(),
         py::arg("posinf") = std::optional<VariableConstView>(),
