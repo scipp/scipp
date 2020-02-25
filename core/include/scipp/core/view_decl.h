@@ -257,6 +257,95 @@ protected:
   detail::slice_list m_slices;
 };
 
+/// Common functionality for other view classes.
+template <class Base, class Access> class MutableView : public Base {
+private:
+  struct make_item {
+    const MutableView<Base, Access> *view;
+    template <class T> auto operator()(const T &item) const {
+      return std::pair<typename Base::key_type, VariableView>(
+          item.first, detail::makeSlice(*item.second.second, view->slices()));
+    }
+  };
+
+  MutableView(const Access &access, Base &&base)
+      : Base(std::move(base)), m_access(access) {}
+
+  Access m_access;
+
+public:
+  MutableView(
+      const Access &access,
+      std::unordered_map<typename Base::key_type,
+                         std::pair<const Variable *, Variable *>> &&items,
+      const detail::slice_list &slices = {})
+      : Base(std::move(items), slices), m_access(access) {}
+
+  /// Return a view to the coordinate for given dimension.
+  VariableView operator[](const typename Base::key_type key) const {
+    expect::contains(*this, key);
+    return detail::makeSlice(*Base::items().at(key).second, Base::slices());
+  }
+
+  template <class T> auto find(const T k) const && = delete;
+  template <class T> auto find(const T k) const &noexcept {
+    return boost::make_transform_iterator(Base::items().find(k),
+                                          make_item{this});
+  }
+
+  auto begin() const && = delete;
+  /// Return iterator to the beginning of all items.
+  auto begin() const &noexcept {
+    return boost::make_transform_iterator(Base::items().begin(),
+                                          make_item{this});
+  }
+  auto end() const && = delete;
+  /// Return iterator to the end of all items.
+  auto end() const &noexcept {
+    return boost::make_transform_iterator(Base::items().end(), make_item{this});
+  }
+
+  auto items_begin() const && = delete;
+  /// Return iterator to the beginning of all items.
+  auto items_begin() const &noexcept { return begin(); }
+  auto items_end() const && = delete;
+  /// Return iterator to the end of all items.
+  auto items_end() const &noexcept { return end(); }
+
+  auto values_begin() const && = delete;
+  /// Return iterator to the beginning of all values.
+  auto values_begin() const &noexcept {
+    return boost::make_transform_iterator(begin(), detail::make_value);
+  }
+  auto values_end() const && = delete;
+  /// Return iterator to the end of all values.
+  auto values_end() const &noexcept {
+    return boost::make_transform_iterator(end(), detail::make_value);
+  }
+
+  MutableView slice(const Slice slice1) const {
+    // parent = nullptr since adding coords via slice is not supported.
+    // TODO
+    return MutableView(m_access, Base::slice(slice1));
+  }
+
+  MutableView slice(const Slice slice1, const Slice slice2) const {
+    return slice(slice1).slice(slice2);
+  }
+
+  MutableView slice(const Slice slice1, const Slice slice2,
+                    const Slice slice3) const {
+    return slice(slice1, slice2).slice(slice3);
+  }
+
+  template <class VarOrView>
+  void set(const typename Base::key_type key, VarOrView var) const {
+    m_access.set(key, Variable(std::move(var)));
+  }
+
+  void erase(const typename Base::key_type key) { m_access.erase(key); }
+};
+
 SCIPP_CORE_EXPORT Variable masks_merge_if_contains(const MasksConstView &masks,
                                                    const Dim dim);
 
