@@ -735,26 +735,20 @@ void init_variable(py::module &m) {
         :return: New variable containing the max values.
         :rtype: Variable)");
 
-  m.def(
-      "nan_to_num",
-      [](const VariableConstView &self, const VariableConstView &replacement) {
-        return nan_to_num(self, replacement);
-      },
-      py::call_guard<py::gil_scoped_release>(),
-      R"(Element-wise nan replacement
-
-       All elements in the output are identical to input except in the presence of a nan
-       If the replacement is value-only and the input has variances,
-       the variance at the element(s) containing nan are also replaced with the nan replacement value.
-       If the replacement has a variance and the input has variances,
-       the variance at the element(s) containing nan are also replaced with the nan replacement variance.
-       :raises: If the types of input and replacement do not match.
-       :return: Input elements are replaced in output with specified replacement if nan.
-       :rtype: Variable)");
-
   m.def("nan_to_num",
-        [](const VariableConstView &self, const VariableConstView &replacement,
-           VariableView &out) { return nan_to_num(self, replacement, out); },
+        [](const VariableConstView &self,
+           const std::optional<VariableConstView> &nan,
+           const std::optional<VariableConstView> &posinf,
+           const std::optional<VariableConstView> &neginf) {
+          Variable out(self);
+          if (nan)
+            nan_to_num(out, *nan, out);
+          if (posinf)
+            pos_inf_to_num(out, *posinf, out);
+          if (neginf)
+            neg_inf_to_num(out, *neginf, out);
+          return out;
+        },
         py::call_guard<py::gil_scoped_release>(),
         R"(Element-wise nan replacement
 
@@ -765,5 +759,36 @@ void init_variable(py::module &m) {
        the variance at the element(s) containing nan are also replaced with the nan replacement variance.
        :raises: If the types of input and replacement do not match.
        :return: Input elements are replaced in output with specified replacement if nan.
-       :rtype: Variable)");
+       :rtype: Variable)",
+        py::arg("x"), py::arg("nan") = std::optional<VariableConstView>(),
+        py::arg("posinf") = std::optional<VariableConstView>(),
+        py::arg("neginf") = std::optional<VariableConstView>());
+
+  m.def("nan_to_num",
+        [](const VariableConstView &self,
+           const std::optional<VariableConstView> &nan,
+           const std::optional<VariableConstView> &posinf,
+           const std::optional<VariableConstView> &neginf, VariableView &out) {
+          if (nan)
+            nan_to_num(self, *nan, out);
+          if (posinf)
+            pos_inf_to_num(self, *posinf, out);
+          if (neginf)
+            neg_inf_to_num(self, *neginf, out);
+          return out;
+        },
+        py::call_guard<py::gil_scoped_release>(),
+        R"(Element-wise nan replacement
+
+       All elements in the output are identical to input except in the presence of a nan
+       If the replacement is value-only and the input has variances,
+       the variance at the element(s) containing nan are also replaced with the nan replacement value.
+       If the replacement has a variance and the input has variances,
+       the variance at the element(s) containing nan are also replaced with the nan replacement variance.
+       :raises: If the types of input and replacement do not match.
+       :return: Input elements are replaced in output with specified replacement if nan.
+       :rtype: Variable)",
+        py::arg("x"), py::arg("nan") = std::optional<VariableConstView>(),
+        py::arg("posinf") = std::optional<VariableConstView>(),
+        py::arg("neginf") = std::optional<VariableConstView>(), py::arg("out"));
 }
