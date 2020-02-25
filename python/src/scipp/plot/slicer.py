@@ -106,10 +106,8 @@ class Slicer:
             # self.labels[name] = array.labels
             # TODO: 2D coordinates will not be supported by this
             self.shapes[name] = dict(zip(array.dims, array.shape))
-            # print(array.dims)
-            # print(self.shapes)
             for n, c in array.coords.items():
-                if n not in self.shapes[name]:
+                if n not in self.shapes[name] and len(c.shape) > 0:
                     self.shapes[name][n] = c.shape[0]
             # print(self.shapes)
 
