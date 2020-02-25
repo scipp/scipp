@@ -106,12 +106,12 @@ class Slicer:
             # self.labels[name] = array.labels
             # TODO: 2D coordinates will not be supported by this
             self.shapes[name] = dict(zip(array.dims, array.shape))
-            print(array.dims)
-            print(self.shapes)
+            # print(array.dims)
+            # print(self.shapes)
             for n, c in array.coords.items():
                 if n not in self.shapes[name]:
                     self.shapes[name][n] = c.shape[0]
-            print(self.shapes)
+            # print(self.shapes)
 
             # Size of the slider coordinate arrays
             self.slider_nx[name] = {}
@@ -140,17 +140,21 @@ class Slicer:
                 # self.slider_labels[name][dim] = lab
                 self.slider_x[name][dim] = var
                 self.slider_ticks[name][dim] = ticks
-                print(self.slider_nx)
-                print(self.shapes)
+                # print(self.slider_nx)
+                # print(self.shapes)
+                # print()
                 self.slider_nx[name][dim] = self.shapes[name][dim]
                 # self.slider_nx[name][dim] = var.shape
 
             # Save information on histograms
             self.histograms[name] = {}
             for dim, x in self.slider_x[name].items():
-                indx = array.dims.index(dim)
-                self.histograms[name][dim] = array.shape[
-                    indx] == x.shape[0] - 1
+                # print(array.dims)
+                # print(self.slider_nx)
+                # print(x)
+                # print(x.shape)
+                # indx = array.dims.index(dim)
+                self.histograms[name][dim] = self.slider_nx[name][dim] == x.shape[0] - 1
 
         # Initialise list for VBox container
         self.vbox = []
@@ -277,6 +281,9 @@ class Slicer:
         #     var = data_array.labels[lab]
         # else:
         dim = axis
+        # Convert to Dim object?
+        if isinstance(dim, str):
+            dim = Dim(dim)
         # lab = None
         make_fake_coord = False
         fake_unit = None
