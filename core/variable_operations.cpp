@@ -267,13 +267,15 @@ Variable copy(const VariableConstView &var) { return Variable(var); }
 VariableView nan_to_num(const VariableConstView &var,
                         const VariableConstView &replacement,
                         const VariableView &out) {
-  using std::isnan;
   transform_in_place<std::tuple<double, float>>(
       out, var, replacement,
       scipp::overloaded{
           transform_flags::expect_all_or_none_have_variance,
           [](auto &a, const auto &b, const auto &repl) {
-            a = isnan(b) ? repl : b;
+            if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(b)>>)
+              a = isnan(b) ? repl : b;
+            else
+              a = std::isnan(b) ? repl : b;
           },
           [](units::Unit &a, const units::Unit &b, const units::Unit &repl) {
             expect::equals(b, repl);
@@ -285,7 +287,6 @@ VariableView nan_to_num(const VariableConstView &var,
 VariableView pos_inf_to_num(const VariableConstView &var,
                             const VariableConstView &replacement,
                             const VariableView &out) {
-  using std::isinf;
   transform_in_place<std::tuple<double, float>>(
       out, var, replacement,
       scipp::overloaded{
@@ -294,7 +295,7 @@ VariableView pos_inf_to_num(const VariableConstView &var,
             if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(b)>>)
               a = isinf(b) && b.value > 0 ? repl : b;
             else
-              a = isinf(b) && b > 0 ? repl : b;
+              a = std::isinf(b) && b > 0 ? repl : b;
           },
           [](units::Unit &a, const units::Unit &b, const units::Unit &repl) {
             expect::equals(b, repl);
@@ -305,7 +306,6 @@ VariableView pos_inf_to_num(const VariableConstView &var,
 VariableView neg_inf_to_num(const VariableConstView &var,
                             const VariableConstView &replacement,
                             const VariableView &out) {
-  using std::isinf;
   transform_in_place<std::tuple<double, float>>(
       out, var, replacement,
       scipp::overloaded{
@@ -314,7 +314,7 @@ VariableView neg_inf_to_num(const VariableConstView &var,
             if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(b)>>)
               a = isinf(b) && b.value < 0 ? repl : b;
             else
-              a = isinf(b) && b < 0 ? repl : b;
+              a = std::isinf(b) && b < 0 ? repl : b;
           },
           [](units::Unit &a, const units::Unit &b, const units::Unit &repl) {
             expect::equals(b, repl);
@@ -325,12 +325,16 @@ VariableView neg_inf_to_num(const VariableConstView &var,
 
 Variable nan_to_num(const VariableConstView &var,
                     const VariableConstView &replacement) {
-  using std::isnan;
   return transform<std::tuple<double, float>>(
       var, replacement,
       overloaded{
           transform_flags::expect_all_or_none_have_variance,
-          [](const auto &x, const auto &repl) { return isnan(x) ? repl : x; },
+          [](const auto &x, const auto &repl) {
+            if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(x)>>)
+              return isnan(x) ? repl : x;
+            else
+              return std::isnan(x) ? repl : x;
+          },
           [](const units::Unit &x, const units::Unit &repl) {
             expect::equals(x, repl);
             return x;
@@ -339,7 +343,6 @@ Variable nan_to_num(const VariableConstView &var,
 
   Variable pos_inf_to_num(const VariableConstView &var,
                           const VariableConstView &replacement) {
-    using std::isinf;
     return transform<std::tuple<double, float>>(
         var, replacement,
         overloaded{
@@ -348,7 +351,7 @@ Variable nan_to_num(const VariableConstView &var,
               if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(x)>>)
                 return isinf(x) && x.value > 0 ? repl : x;
               else
-                return isinf(x) && x > 0 ? repl : x;
+                return std::isinf(x) && x > 0 ? repl : x;
             },
             [](const units::Unit &x, const units::Unit &repl) {
               expect::equals(x, repl);
@@ -358,7 +361,6 @@ Variable nan_to_num(const VariableConstView &var,
 
   Variable neg_inf_to_num(const VariableConstView &var,
                           const VariableConstView &replacement) {
-    using std::isinf;
     return transform<std::tuple<double, float>>(
         var, replacement,
         overloaded{
@@ -367,7 +369,7 @@ Variable nan_to_num(const VariableConstView &var,
               if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(x)>>)
                 return isinf(x) && x.value < 0 ? repl : x;
               else
-                return isinf(x) && x < 0 ? repl : x;
+                return std::isinf(x) && x < 0 ? repl : x;
             },
             [](const units::Unit &x, const units::Unit &repl) {
               expect::equals(x, repl);
