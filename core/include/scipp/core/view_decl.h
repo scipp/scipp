@@ -64,19 +64,19 @@ class Coords;
 class Labels;
 class Masks;
 } // namespace ViewId
-template <class Id, class Key> class ConstView;
+template <class Id, class Key, class Value> class ConstView;
 template <class Base, class Access> class MutableView;
 
 /// View for accessing coordinates of const Dataset and DataArrayConstView.
-using CoordsConstView = ConstView<ViewId::Coords, Dim>;
+using CoordsConstView = ConstView<ViewId::Coords, Dim, Variable>;
 /// View for accessing coordinates of Dataset and DataArrayView.
 using CoordsView = MutableView<CoordsConstView, CoordAccess>;
 /// View for accessing attributes of const Dataset and DataArrayConstView.
-using AttrsConstView = ConstView<ViewId::Attrs, std::string>;
+using AttrsConstView = ConstView<ViewId::Attrs, std::string, Variable>;
 /// View for accessing attributes of Dataset and DataArrayView.
 using AttrsView = MutableView<AttrsConstView, AttrAccess>;
 /// View for accessing masks of const Dataset and DataArrayConstView
-using MasksConstView = ConstView<ViewId::Masks, std::string>;
+using MasksConstView = ConstView<ViewId::Masks, std::string, Variable>;
 /// View for accessing masks of Dataset and DataArrayView
 using MasksView = MutableView<MasksConstView, MaskAccess>;
 
@@ -96,26 +96,24 @@ template <class T, class Key> Dim dim_of_coord(const T &var, const Key &key) {
 }
 
 /// Common functionality for other const-view classes.
-template <class Id, class Key> class ConstView {
+template <class Id, class Key, class Value> class ConstView {
 private:
   struct make_item {
     const ConstView *view;
     template <class T> auto operator()(const T &item) const {
-      return std::pair<Key, VariableConstView>(
+      return std::pair<Key, typename ConstView::mapped_type::const_view_type>(
           item.first, detail::makeSlice(*item.second.first, view->slices()));
     }
   };
 
 public:
   using key_type = Key;
-  using mapped_type = Variable;
+  using mapped_type = Value;
   using holder_type =
       std::unordered_map<key_type,
                          std::pair<const mapped_type *, mapped_type *>>;
 
-  ConstView(
-      std::unordered_map<Key, std::pair<const Variable *, Variable *>> &&items,
-      const detail::slice_list &slices = {})
+  ConstView(holder_type &&items, const detail::slice_list &slices = {})
       : m_items(std::move(items)), m_slices(slices) {
     // TODO This is very similar to the code in makeViewItems(), provided that
     // we can give a good definion of the `dims` argument (roughly the space
@@ -164,7 +162,7 @@ public:
   }
 
   /// Return a const view to the coordinate for given dimension.
-  VariableConstView operator[](const Key key) const {
+  typename mapped_type::const_view_type operator[](const Key key) const {
     expect::contains(*this, key);
     return detail::makeSlice(*m_items.at(key).first, m_slices);
   }
@@ -263,7 +261,8 @@ private:
   struct make_item {
     const MutableView<Base, Access> *view;
     template <class T> auto operator()(const T &item) const {
-      return std::pair<typename Base::key_type, VariableView>(
+      return std::pair<typename Base::key_type,
+                       typename Base::mapped_type::view_type>(
           item.first, detail::makeSlice(*item.second.second, view->slices()));
     }
   };
@@ -274,15 +273,13 @@ private:
   Access m_access;
 
 public:
-  MutableView(
-      const Access &access,
-      std::unordered_map<typename Base::key_type,
-                         std::pair<const Variable *, Variable *>> &&items,
-      const detail::slice_list &slices = {})
+  MutableView(const Access &access, typename Base::holder_type &&items,
+              const detail::slice_list &slices = {})
       : Base(std::move(items), slices), m_access(access) {}
 
   /// Return a view to the coordinate for given dimension.
-  VariableView operator[](const typename Base::key_type key) const {
+  typename Base::mapped_type::view_type
+  operator[](const typename Base::key_type key) const {
     expect::contains(*this, key);
     return detail::makeSlice(*Base::items().at(key).second, Base::slices());
   }
@@ -340,7 +337,7 @@ public:
 
   template <class VarOrView>
   void set(const typename Base::key_type key, VarOrView var) const {
-    m_access.set(key, Variable(std::move(var)));
+    m_access.set(key, typename Base::mapped_type(std::move(var)));
   }
 
   void erase(const typename Base::key_type key) { m_access.erase(key); }
