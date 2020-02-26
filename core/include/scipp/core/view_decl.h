@@ -325,7 +325,7 @@ public:
     m_access.set(key, typename Base::mapped_type(std::move(var)));
   }
 
-  void erase(const typename Base::key_type key) { m_access.erase(key); }
+  void erase(const typename Base::key_type key) const { m_access.erase(key); }
 };
 
 SCIPP_CORE_EXPORT Variable masks_merge_if_contains(const MasksConstView &masks,

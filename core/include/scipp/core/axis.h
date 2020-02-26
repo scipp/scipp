@@ -38,6 +38,7 @@ public:
   using unaligned_const_view_type = UnalignedConstView;
   using unaligned_view_type = UnalignedView;
 
+  DatasetAxis() = default;
   explicit DatasetAxis(Variable data) : m_data(std::move(data)) {}
   explicit DatasetAxis(const DatasetAxisConstView &data);
 
@@ -107,7 +108,10 @@ public:
   DatasetAxisConstView(const DatasetAxis &axis, UnalignedView &&view)
       : m_data(axis.data()), m_unaligned(std::move(view)) {}
   // Implicit conversion from VariableConstView useful for operators.
-  // DatasetAxisConstView(const VariableConstView &data) : m_data(data) {}
+  DatasetAxisConstView(VariableConstView &&data)
+      : m_data(std::move(data)),
+        m_unaligned(UnalignedAccess{},
+                    typename UnalignedConstView::holder_type{}) {}
 
   const UnalignedConstView &unaligned() const noexcept;
 
@@ -170,6 +174,10 @@ public:
 
   DatasetAxisView slice(const Slice) const { return *this; }
 
+  DatasetAxisView operator+=(const VariableConstView &other) const;
+  DatasetAxisView operator-=(const VariableConstView &other) const;
+  DatasetAxisView operator*=(const VariableConstView &other) const;
+  DatasetAxisView operator/=(const VariableConstView &other) const;
   DatasetAxisView operator+=(const DatasetAxisConstView &other) const;
   DatasetAxisView operator-=(const DatasetAxisConstView &other) const;
   DatasetAxisView operator*=(const DatasetAxisConstView &other) const;
@@ -179,6 +187,14 @@ public:
 SCIPP_CORE_EXPORT bool operator==(const DatasetAxisConstView &,
                                   const DatasetAxisConstView &);
 SCIPP_CORE_EXPORT bool operator!=(const DatasetAxisConstView &a,
+                                  const DatasetAxisConstView &b);
+SCIPP_CORE_EXPORT bool operator==(const DatasetAxisConstView &,
+                                  const VariableConstView &);
+SCIPP_CORE_EXPORT bool operator!=(const DatasetAxisConstView &a,
+                                  const VariableConstView &b);
+SCIPP_CORE_EXPORT bool operator==(const VariableConstView &,
+                                  const DatasetAxisConstView &);
+SCIPP_CORE_EXPORT bool operator!=(const VariableConstView &a,
                                   const DatasetAxisConstView &b);
 
 SCIPP_CORE_EXPORT DatasetAxis operator+(const DatasetAxisConstView &a,

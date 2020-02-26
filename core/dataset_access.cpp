@@ -3,12 +3,16 @@
 /// @file
 /// @author Simon Heybrock
 #include "scipp/core/dataset_access.h"
+#include "scipp/core/axis.h"
 #include "scipp/core/dataset.h"
 
 namespace scipp::core {
 
 void CoordAccess::set(const Dim &key, Variable var) const {
   m_parent->setCoord(key, std::move(var));
+}
+void CoordAccess::set(const Dim &key, DatasetAxis axis) const {
+  m_parent->setCoord(key, std::move(axis));
 }
 void CoordAccess::erase(const Dim &key) const { m_parent->eraseCoord(key); }
 

@@ -38,9 +38,13 @@ TEST(ReduceSparseTest, flatten_dataset_with_mask) {
   Dataset d;
   d.setMask("y", makeVariable<bool>(Dims{Dim::Y}, Shape{3},
                                     Values{false, true, false}));
-  d.setSparseCoord("a", Dim::X, make_sparse());
-  d.setSparseCoord("b", Dim::X, make_sparse());
-  d.setSparseCoord("b", Dim("label"), make_sparse());
+  DatasetAxis x;
+  x.unaligned().set("a", make_sparse());
+  x.unaligned().set("b", make_sparse());
+  d.coords().set(Dim::X, x);
+  DatasetAxis label;
+  label.unaligned().set("b", make_sparse());
+  d.coords().set(Dim("label"), label);
   d.setData("b", make_sparse());
   auto expected =
       makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse},

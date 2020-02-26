@@ -181,40 +181,29 @@ TEST(DatasetTest, setters_reject_sparse) {
   ASSERT_THROW(d.setAttr("a", var), except::DimensionError);
 }
 
-TEST(DatasetTest, setSparseCoord_not_sparse_fail) {
-  Dataset d;
-  const auto var = makeVariable<double>(Dims{Dim::X}, Shape{3});
-
-  ASSERT_ANY_THROW(d.setSparseCoord("a", Dim::X, var));
-}
-
 TEST(DatasetTest, setSparseCoord) {
   Dataset d;
   const auto var =
       makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{3l, Dimensions::Sparse});
+  DatasetAxis y;
+  y.unaligned().set("a", var);
 
-  ASSERT_NO_THROW(d.setSparseCoord("a", Dim::Y, var));
+  ASSERT_NO_THROW(d.coords().set(Dim::Y, y));
   ASSERT_EQ(d.size(), 1);
   ASSERT_NO_THROW(d["a"]);
-}
-
-TEST(DatasetTest, setSparseLabels_not_sparse_fail) {
-  Dataset d;
-  const auto dense = makeVariable<double>(Values{double{}});
-  const auto sparse =
-      makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse});
-
-  d.setSparseCoord("a", Dim::X, sparse);
-  ASSERT_ANY_THROW(d.setSparseCoord("a", Dim("label"), dense));
 }
 
 TEST(DatasetTest, setSparseLabels) {
   Dataset d;
   const auto sparse =
       makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse});
-  d.setSparseCoord("a", Dim::X, sparse);
+  DatasetAxis x;
+  x.unaligned().set("a", sparse);
+  d.coords().set(Dim::X, x);
+  DatasetAxis label;
+  label.unaligned().set("a", sparse);
 
-  ASSERT_NO_THROW(d.setSparseCoord("a", Dim("label"), sparse));
+  ASSERT_NO_THROW(d.coords().set(Dim("label"), label));
   ASSERT_EQ(d.size(), 1);
   ASSERT_NO_THROW(d["a"]);
   ASSERT_EQ(d["a"].coords().size(), 2);
@@ -240,13 +229,13 @@ TEST(DatasetTest, set_dense_data_with_sparse_coord) {
 
   Dataset a;
   a.setData("sparse_coord_and_val", dense_variable);
-  ASSERT_THROW(
-      a.setSparseCoord("sparse_coord_and_val", Dim::X, sparse_variable),
-      except::DimensionError);
+  DatasetAxis x;
+  x.unaligned().set("sparse_coord_and_val", sparse_variable);
+  ASSERT_THROW(a.coords().set(Dim::X, x), except::DimensionError);
 
   // Setting coords first yields same response.
   Dataset b;
-  b.setSparseCoord("sparse_coord_and_val", Dim::X, sparse_variable);
+  b.coords().set(Dim::X, x);
   ASSERT_THROW(b.setData("sparse_coord_and_val", dense_variable),
                except::DimensionError);
 }
@@ -341,7 +330,7 @@ TEST(DatasetTest, erase_coord) {
   DatasetFactory3D factory;
   const auto ref = factory.make();
   Dataset ds(ref);
-  auto coord = Variable(ds.coords()[Dim::X]);
+  auto coord = Variable(ds.coords()[Dim::X].data());
   ds.eraseCoord(Dim::X);
   EXPECT_FALSE(ds.coords().contains(Dim::X));
   ds.setCoord(Dim::X, coord);
@@ -354,12 +343,14 @@ TEST(DatasetTest, erase_coord) {
 
   const auto var =
       makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{4l, Dimensions::Sparse});
-  ds.setSparseCoord("newCoord", Dim::X, var);
+  DatasetAxis x;
+  x.unaligned().set("newCoord", var);
+  ds.coords().set(Dim::X, x);
   EXPECT_TRUE(ds["newCoord"].coords().contains(Dim::X));
-  ds.eraseSparseCoord("newCoord", Dim::X);
+  ds.coords()[Dim::X].unaligned().erase("newCoord");
   EXPECT_EQ(ref, ds);
 
-  ds.setSparseCoord("newCoord", Dim::X, var);
+  ds.coords().set(Dim::X, x);
   ds.setData("newCoord",
              makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse}));
   EXPECT_TRUE(ds["newCoord"].coords().contains(Dim::X));
@@ -372,7 +363,7 @@ TEST(DatasetTest, erase_labels) {
   DatasetFactory3D factory;
   const auto ref = factory.make();
   Dataset ds(ref);
-  auto labels = Variable(ds.coords()[Dim("labels_x")]);
+  auto labels = Variable(ds.coords()[Dim("labels_x")].data());
   ds.eraseCoord(Dim("labels_x"));
   EXPECT_FALSE(ds.coords().contains(Dim("labels_x")));
   ds.setCoord(Dim("labels_x"), labels);
@@ -385,13 +376,17 @@ TEST(DatasetTest, erase_labels) {
 
   const auto var =
       makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{5l, Dimensions::Sparse});
-  ds.setSparseCoord("newCoord", Dim::X, var);
-  ds.setSparseCoord("newCoord", Dim("labels_sparse"), var);
+  DatasetAxis x;
+  x.unaligned().set("newCoord", var);
+  ds.coords().set(Dim::X, x);
+  DatasetAxis labels_sparse;
+  labels_sparse.unaligned().set("newCoord", var);
+  ds.coords().set(Dim("labels_sparse"), labels_sparse);
   EXPECT_TRUE(ds["newCoord"].coords().contains(Dim("labels_sparse")));
-  ds.eraseSparseCoord("newCoord", Dim("labels_sparse"));
+  ds.coords()[Dim("labels_sparse")].unaligned().erase("newCoord");
   EXPECT_FALSE(ds["newCoord"].coords().contains(Dim("labels_sparse")));
 
-  ds.setSparseCoord("newCoord", Dim("labels_sparse"), var);
+  ds.coords().set(Dim("labels_sparse"), labels_sparse);
   EXPECT_TRUE(ds["newCoord"].coords().contains(Dim("labels_sparse")));
   ds["newCoord"].coords().erase(Dim("labels_sparse"));
   EXPECT_FALSE(ds["newCoord"].coords().contains(Dim("labels_sparse")));

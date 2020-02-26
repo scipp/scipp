@@ -155,7 +155,7 @@ TEST(DataArraySparseArithmeticTest, sparse_times_histogram_without_variances) {
 TEST(DataArraySparseArithmeticTest, sparse_with_values_times_histogram) {
   auto sparse = make_sparse();
   const auto hist = make_histogram();
-  Variable data(sparse.coords()[Dim::X]);
+  Variable data(sparse.coords()[Dim::X].unaligned().begin()->second);
   data.setUnit(units::counts);
   data *= 0.0;
   data += 2.0 * units::Unit(units::counts);

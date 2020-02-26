@@ -56,19 +56,21 @@ TEST(MergeTest, simple) {
 TEST(MergeTest, sparse) {
   auto sparseCoord = makeVariable<int>(Dims{Dim::X}, Shape{Dimensions::Sparse});
   sparseCoord.sparseValues<int>()[0] = {1, 2, 3, 4};
+  DatasetAxis x;
+  x.unaligned().set("sparse", sparseCoord);
 
   Dataset a;
   {
     a.setData("sparse",
               makeVariable<int>(Dims{Dim::X}, Shape{Dimensions::Sparse}));
-    a.setSparseCoord("sparse", Dim::X, sparseCoord);
+    a.coords().set(Dim::X, x);
   }
 
   Dataset b;
   {
     b.setData("sparse",
               makeVariable<int>(Dims{Dim::X}, Shape{Dimensions::Sparse}));
-    b.setSparseCoord("sparse", Dim::X, sparseCoord);
+    b.coords().set(Dim::X, x);
   }
 
   const auto d = merge(a, b);
@@ -123,7 +125,9 @@ TEST(MergeTest, non_matching_sparse_coords) {
     auto coord =
         makeVariable<int>(Dims{Dim::X, Dim::Y}, Shape{1l, Dimensions::Sparse});
     coord.sparseValues<int>()[0] = {2, 3};
-    a.setSparseCoord("sparse", Dim::Y, coord);
+    DatasetAxis y;
+    y.unaligned().set("sparse", coord);
+    a.coords().set(Dim::Y, y);
   }
 
   Dataset b;
@@ -131,7 +135,9 @@ TEST(MergeTest, non_matching_sparse_coords) {
     auto coord =
         makeVariable<int>(Dims{Dim::X, Dim::Y}, Shape{1l, Dimensions::Sparse});
     coord.sparseValues<int>()[0] = {1, 2};
-    b.setSparseCoord("sparse", Dim::Y, coord);
+    DatasetAxis y;
+    y.unaligned().set("sparse", coord);
+    b.coords().set(Dim::Y, y);
   }
 
   EXPECT_THROW(auto d = merge(a, b), std::runtime_error);
@@ -157,8 +163,12 @@ TEST(MergeTest, non_matching_sparse_labels) {
     auto label =
         makeVariable<int>(Dims{Dim::X, Dim::Y}, Shape{1l, Dimensions::Sparse});
     label.sparseValues<int>()[0] = {2, 3};
-    a.setSparseCoord("sparse", Dim::Y, coord);
-    a.setSparseCoord("sparse", Dim("l"), label);
+    DatasetAxis y;
+    y.unaligned().set("sparse", coord);
+    DatasetAxis l;
+    l.unaligned().set("sparse", label);
+    a.coords().set(Dim::Y, y);
+    a.coords().set(Dim("l"), l);
   }
 
   Dataset b;
@@ -166,8 +176,12 @@ TEST(MergeTest, non_matching_sparse_labels) {
     auto label =
         makeVariable<int>(Dims{Dim::X, Dim::Y}, Shape{1l, Dimensions::Sparse});
     label.sparseValues<int>()[0] = {1, 2};
-    b.setSparseCoord("sparse", Dim::Y, coord);
-    b.setSparseCoord("sparse", Dim("l"), label);
+    DatasetAxis y;
+    y.unaligned().set("sparse", coord);
+    DatasetAxis l;
+    l.unaligned().set("sparse", label);
+    b.coords().set(Dim::Y, y);
+    b.coords().set(Dim("l"), l);
   }
 
   EXPECT_THROW(auto d = merge(a, b), std::runtime_error);

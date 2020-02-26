@@ -10,12 +10,14 @@
 namespace scipp::core {
 
 class Dataset;
+class DatasetAxis;
 
 class CoordAccess {
 public:
   CoordAccess(Dataset *parent) : m_parent(parent) {}
 
   void set(const Dim &key, Variable var) const;
+  void set(const Dim &key, DatasetAxis axis) const;
   void erase(const Dim &key) const;
 
 private:

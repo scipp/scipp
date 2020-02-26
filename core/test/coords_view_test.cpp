@@ -57,9 +57,13 @@ TYPED_TEST(CoordsViewTest, sparse_coords_values_and_coords) {
   auto s_coords = makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse});
   s_coords.sparseValues<double>()[0] = {4, 5, 6};
   d.setData("test", data);
-  d.setSparseCoord("test", Dim::X, s_coords);
+  DatasetAxis x(Variable{});
+  x.unaligned().set("test", s_coords);
+  d.coords().set(Dim::X, x);
   ASSERT_EQ(1, d["test"].coords().size());
-  auto sparseX = d["test"].coords()[Dim::X].sparseValues<double>()[0];
+  // TODO The second "test" will disappear once we support DataArrayAxis
+  auto sparseX =
+      d["test"].coords()[Dim::X].unaligned()["test"].sparseValues<double>()[0];
   ASSERT_EQ(3, sparseX.size());
   ASSERT_EQ(scipp::core::sparse_container<double>({4, 5, 6}), sparseX);
 }

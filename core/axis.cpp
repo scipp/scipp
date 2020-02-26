@@ -44,10 +44,22 @@ void DatasetAxis::rename(const Dim from, const Dim to) {
   m_data.rename(from, to);
 }
 
-bool operator==(const DatasetAxisConstView &, const DatasetAxisConstView &) {
-  return true;
+bool operator==(const DatasetAxisConstView &a, const DatasetAxisConstView &b) {
+  return a.data() == b.data() && a.unaligned() == b.unaligned();
 }
 bool operator!=(const DatasetAxisConstView &a, const DatasetAxisConstView &b) {
+  return !(a == b);
+}
+bool operator==(const VariableConstView &a, const DatasetAxisConstView &b) {
+  return a == b.data() && b.unaligned().empty();
+}
+bool operator!=(const VariableConstView &a, const DatasetAxisConstView &b) {
+  return !(a == b);
+}
+bool operator==(const DatasetAxisConstView &a, const VariableConstView &b) {
+  return b == a;
+}
+bool operator!=(const DatasetAxisConstView &a, const VariableConstView &b) {
   return !(a == b);
 }
 

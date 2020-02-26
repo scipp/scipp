@@ -51,7 +51,7 @@ TEST(SparseDataOperationsConsistencyTest, multiply) {
   EXPECT_EQ(ab, ba);
 
   hist = make_histogram();
-  edges = Variable(hist.coords()[Dim::X]);
+  edges = Variable(hist.coords()[Dim::X].data());
   ab = histogram(sparse * hist, edges);
   ba = histogram(sparse, edges) * hist;
 

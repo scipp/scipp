@@ -84,7 +84,9 @@ TEST(DatasetTest, simple_sparse_slice_and_sparse_coords) {
       makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, Dimensions::Sparse});
   sparseCoord.sparseValues<double>()[0] = {1, 2, 3};
   sparseCoord.sparseValues<double>()[1] = {4, 5, 6};
-  dataset.setSparseCoord("data", Dim::X, sparseCoord);
+  DatasetAxis x;
+  x.unaligned().set("data", sparseCoord);
+  dataset.coords().set(Dim::X, x);
 
   auto sliced = dataset.slice({Dim::Y, 1, 2});
   EXPECT_EQ(sliced["data"].data(), var.slice({Dim::Y, 1, 2}));
@@ -158,14 +160,9 @@ TEST_F(Dataset3DTest, data_check_upon_setting_sparse_coordinates) {
   coords_var.sparseValues<double>()[0] = {1, 2, 3};
   sparse.setData("sparse_x", data_var);
   // The following should be OK. Data is sparse
-  sparse.setSparseCoord("sparse_x", Dim::X, coords_var);
-
-  // Check with dense data
-  ASSERT_THROW(
-      dataset.setSparseCoord(
-          "data_x", Dim::X,
-          makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse})),
-      std::runtime_error);
+  DatasetAxis x;
+  x.unaligned().set("sparse_x", coords_var);
+  sparse.coords().set(Dim::X, x);
 }
 
 TEST_F(Dataset3DTest, dimension_extent_check_labels_dimension_fail) {

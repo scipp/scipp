@@ -50,9 +50,11 @@ protected:
 
     dataset.setData("val", makeVariable<double>(Dims{Dim::X}, Shape{4}));
 
-    dataset.setSparseCoord("sparse_coord", Dim::X, sparse_variable);
+    DatasetAxis x;
+    x.unaligned().set("sparse_coord", sparse_variable);
+    x.unaligned().set("sparse_coord_and_val", sparse_variable);
+    dataset.coords().set(Dim::X, x);
     dataset.setData("sparse_coord_and_val", sparse_variable);
-    dataset.setSparseCoord("sparse_coord_and_val", Dim::X, sparse_variable);
   }
   void expect_eq(const Dataset &a, const Dataset &b) const {
     expect_eq_impl(a, DatasetConstView(b));
@@ -193,7 +195,9 @@ TEST_F(Dataset_comparison_operators, extra_sparse_values) {
 
 TEST_F(Dataset_comparison_operators, extra_sparse_label) {
   auto extra = dataset;
-  extra.setSparseCoord("sparse_coord_and_val", Dim("extra"), sparse_variable);
+  DatasetAxis coord;
+  coord.unaligned().set("sparse_coord_and_val", sparse_variable);
+  extra.coords().set(Dim("extra"), coord);
   expect_ne(extra, dataset);
 }
 
@@ -220,20 +224,20 @@ TEST_F(Dataset_comparison_operators, different_label_insertion_order) {
 TEST_F(Dataset_comparison_operators, different_attr_insertion_order) {
   auto a = make_empty();
   auto b = make_empty();
-  a.setAttr("x", dataset.coords()[Dim::X]);
-  a.setAttr("y", dataset.coords()[Dim::Y]);
-  b.setAttr("y", dataset.coords()[Dim::Y]);
-  b.setAttr("x", dataset.coords()[Dim::X]);
+  a.setAttr("x", dataset.coords()[Dim::X].data());
+  a.setAttr("y", dataset.coords()[Dim::Y].data());
+  b.setAttr("y", dataset.coords()[Dim::Y].data());
+  b.setAttr("x", dataset.coords()[Dim::X].data());
   expect_eq(a, b);
 }
 
 TEST_F(Dataset_comparison_operators, different_data_insertion_order) {
   auto a = make_empty();
   auto b = make_empty();
-  a.setData("x", dataset.coords()[Dim::X]);
-  a.setData("y", dataset.coords()[Dim::Y]);
-  b.setData("y", dataset.coords()[Dim::Y]);
-  b.setData("x", dataset.coords()[Dim::X]);
+  a.setData("x", dataset.coords()[Dim::X].data());
+  a.setData("y", dataset.coords()[Dim::Y].data());
+  b.setData("y", dataset.coords()[Dim::Y].data());
+  b.setData("x", dataset.coords()[Dim::X].data());
   expect_eq(a, b);
 }
 

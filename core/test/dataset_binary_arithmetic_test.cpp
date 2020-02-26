@@ -352,7 +352,9 @@ TYPED_TEST(DatasetBinaryEqualsOpTest, coord_only_sparse_fails) {
   auto var =
       makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, Dimensions::Sparse});
   Dataset d;
-  d.setSparseCoord("a", Dim::Y, var);
+  DatasetAxis y;
+  y.unaligned().set("a", var);
+  d.coords().set(Dim::Y, y);
   ASSERT_THROW(TestFixture::op(d, d), except::SparseDataError);
 }
 
@@ -806,9 +808,10 @@ TYPED_TEST(DatasetBinaryOpTest, sparse_dataarrayconstview_coord_mismatch) {
 
 TYPED_TEST(DatasetBinaryOpTest, sparse_data_presense_mismatch) {
   Dataset a;
-  a.setSparseCoord(
-      "sparse", Dim::X,
-      makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse}));
+  DatasetAxis x;
+  x.unaligned().set(
+      "sparse", makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse}));
+  a.coords().set(Dim::X, x);
   auto b(a);
   a.setData("sparse",
             makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse}));
@@ -826,13 +829,17 @@ TYPED_TEST(DatasetBinaryOpTest,
   {
     auto var = makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse});
     var.sparseValues<double>()[0] = {0.5, 1.0};
-    dataset_a.setSparseCoord("sparse", Dim::X, var);
+    DatasetAxis x;
+    x.unaligned().set("sparse", var);
+    dataset_a.coords().set(Dim::X, x);
   }
 
   {
     auto var = makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse});
     var.sparseValues<double>()[0] = {0.5, 1.5};
-    dataset_b.setSparseCoord("sparse", Dim::X, var);
+    DatasetAxis x;
+    x.unaligned().set("sparse", var);
+    dataset_b.coords().set(Dim::X, x);
   }
 
   EXPECT_THROW(TestFixture::op(dataset_a, dataset_b),
@@ -847,13 +854,17 @@ TYPED_TEST(DatasetBinaryOpTest,
   {
     auto var = makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse});
     var.sparseValues<double>()[0] = {0.5, 1.0};
-    dataset_a.setSparseCoord("sparse", Dim("l"), var);
+    DatasetAxis l;
+    l.unaligned().set("sparse", var);
+    dataset_a.coords().set(Dim("l"), l);
   }
 
   {
     auto var = makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse});
     var.sparseValues<double>()[0] = {0.5, 1.5};
-    dataset_b.setSparseCoord("sparse", Dim("l"), var);
+    DatasetAxis l;
+    l.unaligned().set("sparse", var);
+    dataset_b.coords().set(Dim("l"), l);
   }
 
   EXPECT_THROW(TestFixture::op(dataset_a, dataset_b),
@@ -944,7 +955,9 @@ Dataset non_trivial_2d_sparse(std::string_view name) {
   dvar.sparseValues<double>()[2] = {1, 1, 1, 1, 1, 100, 1, 1, 1, 1, 1, 1};
   dvar.sparseValues<double>()[3] = {1};
   sparse.setData(std::string(name), dvar);
-  sparse.setSparseCoord(std::string(name), Dim::Y, var);
+  DatasetAxis y;
+  y.unaligned().set(std::string(name), var);
+  sparse.coords().set(Dim::Y, y);
   return sparse;
 }
 
@@ -960,7 +973,9 @@ TEST(DatasetSetData, sparse_to_dense) {
   auto base = non_trivial_2d_sparse("base");
   auto var = makeVariable<double>(Dims{Dim::Y}, Shape{Dimensions::Sparse});
   var.sparseValues<double>()[0] = {1, 2, 3};
-  base.setSparseCoord("base", Dim("l"), var);
+  DatasetAxis l;
+  l.unaligned().set("base", var);
+  base.coords().set(Dim("l"), l);
 
   auto dense = datasetFactory().make();
   dense.setData("sparse", base["base"]);
