@@ -195,15 +195,37 @@ def validate_and_get_unit(unit):
         return known_units[unit]
 
 
-def init_pos(ws):
-    nHist = ws.getNumberHistograms()
-    pos = np.zeros([nHist, 3])
+def _to_spherical(x, y, z):
+    r = np.sqrt((x * x) + (y * y) + (z * z))
+    theta = np.arccos(z / r)
+    phi = np.arctan2(y, x)
+    return r, theta, phi
 
+
+def _to_cartesian(r, theta, phi):
+    x = r * np.sin(theta) * np.cos(phi)
+    y = r * np.sin(theta) * np.sin(phi)
+    z = r * np.cos(theta)
+    return x, y, z
+
+
+def init_pos(ws):
+    import numpy as np
     spec_info = ws.spectrumInfo()
-    for i in range(nHist):
+    det_info = ws.detectorInfo()
+    pos = np.zeros([len(spec_info), 3])
+    for i in range(len(spec_info)):
         if spec_info.hasDetectors(i):
-            p = spec_info.position(i)
-            pos[i, :] = [p.X(), p.Y(), p.Z()]
+            definition = spec_info.getSpectrumDefinition(i)
+            theta, phi, r = 0.0, 0.0, 0.0
+            l = len(definition)
+            for j in range(l):
+                p = det_info.position(definition[j][0])
+                r_j, theta_j, phi_j = _to_spherical(p.X(), p.Y(), p.Z())
+                r += r_j
+                theta += theta_j
+                phi += phi_j
+            pos[i, :] = tuple([p / l for p in _to_cartesian(r, theta, phi)])
         else:
             pos[i, :] = [np.nan, np.nan, np.nan]
     return sc.Variable([sc.Dim.Spectrum],
