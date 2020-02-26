@@ -11,6 +11,12 @@
 #include "scipp/core/view_decl.h"
 #include "scipp/units/dim.h"
 
+namespace scipp::except {
+struct SCIPP_CORE_EXPORT UnalignedError : public std::runtime_error {
+  using std::runtime_error::runtime_error;
+};
+} // namespace scipp::except
+
 namespace scipp::core {
 
 // d.coords
@@ -62,7 +68,7 @@ public:
 
   // TODO only return empty if there is unaligned? just throw?
   // actually need to look at coords in case of unaligned data to determine dims
-  Dimensions dims() const { return hasData() ? data().dims() : Dimensions(); }
+  Dimensions dims() const { return hasData() ? m_data.dims() : Dimensions(); }
   DType dtype() const { return data().dtype(); }
   units::Unit unit() const { return data().unit(); }
 

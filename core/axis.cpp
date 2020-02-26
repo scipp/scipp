@@ -3,7 +3,6 @@
 /// @file
 /// @author Simon Heybrock
 #include "scipp/core/axis.h"
-#include "scipp/core/view_decl.h"
 
 namespace scipp::core {
 
@@ -14,8 +13,11 @@ void UnalignedAccess::erase(const std::string &key) const {
   m_unaligned->erase(m_unaligned->find(key));
 }
 
-DatasetAxis::DatasetAxis(const DatasetAxisConstView &data)
-    : m_data(Variable(data.data())) {}
+DatasetAxis::DatasetAxis(const DatasetAxisConstView &view)
+    : m_data(Variable(view.data())) {
+  for (const auto &item : view.unaligned())
+    m_unaligned.emplace(item.first, Variable(item.second));
+}
 
 UnalignedConstView DatasetAxis::unaligned() const {
   typename UnalignedConstView::holder_type items;
@@ -41,7 +43,10 @@ const UnalignedView &DatasetAxisView::unaligned() const noexcept {
 }
 
 void DatasetAxis::rename(const Dim from, const Dim to) {
-  m_data.rename(from, to);
+  if (hasData())
+    m_data.rename(from, to);
+  for (auto &item : m_unaligned)
+    item.second.rename(from, to);
 }
 
 bool operator==(const DatasetAxisConstView &a, const DatasetAxisConstView &b) {
@@ -108,21 +113,25 @@ operator/=(const DatasetAxisConstView &) const {
   throw std::runtime_error("Operations between axes not supported yet.");
 }
 
-DatasetAxis resize(const DatasetAxisConstView &var, const Dim dim,
+DatasetAxis resize(const DatasetAxisConstView &axis, const Dim dim,
                    const scipp::index size) {
-  return DatasetAxis(resize(var.data(), dim, size));
+  if (!axis.unaligned().empty())
+    throw except::UnalignedError("Cannot resize with unaligned data.");
+  return DatasetAxis(resize(axis.data(), dim, size));
 }
 DatasetAxis concatenate(const DatasetAxisConstView &a,
                         const DatasetAxisConstView &b, const Dim dim) {
-  return DatasetAxis(concatenate(a.data(), b.data(), dim));
-}
-
-DatasetAxis copy(const DatasetAxisConstView &axis) {
-  DatasetAxis out(Variable(axis.data()));
-  for (const auto &item : axis.unaligned())
-    out.unaligned().set(item.first, Variable(item.second));
+  if (a.unaligned().size() != b.unaligned().size())
+    throw except::UnalignedError("Mismatch of unaligned content.");
+  DatasetAxis out(concatenate(a.data(), b.data(), dim));
+  // TODO Name mismatches should be allowed in case of DataArray -> need
+  // DataArrayAxis.
+  for (const auto &[key, val] : a.unaligned())
+    out.unaligned().set(key, concatenate(val, b.unaligned()[key], dim));
   return out;
 }
+
+DatasetAxis copy(const DatasetAxisConstView &axis) { return DatasetAxis(axis); }
 
 DatasetAxis flatten(const DatasetAxisConstView &, const Dim) {
   throw std::runtime_error("flatten not supported yet.");
