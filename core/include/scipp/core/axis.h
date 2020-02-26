@@ -8,7 +8,7 @@
 #include "scipp-core_export.h"
 #include "scipp/core/except.h"
 #include "scipp/core/variable.h"
-#include "scipp/core/view_forward.h"
+#include "scipp/core/view_decl.h"
 #include "scipp/units/dim.h"
 
 namespace scipp::core {
@@ -101,18 +101,20 @@ class SCIPP_CORE_EXPORT DatasetAxisConstView {
 public:
   using value_type = DatasetAxis;
 
-  DatasetAxisConstView(const DatasetAxis &axis) : m_data(axis.data()) {
-    // TODO
-    // auto u = axis.unaligned();
-    // m_unaligned.insert(u.begin(), u.end());
-  }
+  DatasetAxisConstView(const DatasetAxis &axis)
+      : m_data(axis.data()), m_unaligned(UnalignedAccess{}, axis.unaligned()) {}
+  /// Constructor used by DatasetAxisView
+  DatasetAxisConstView(const DatasetAxis &axis, UnalignedView &&view)
+      : m_data(axis.data()), m_unaligned(std::move(view)) {}
   // Implicit conversion from VariableConstView useful for operators.
   // DatasetAxisConstView(const VariableConstView &data) : m_data(data) {}
+
+  const UnalignedConstView &unaligned() const noexcept;
 
   /// Return true if the data array contains data values.
   bool hasData() const noexcept { return static_cast<bool>(m_data); }
   /// Return untyped const view for data (values and optional variances).
-  VariableConstView data() const {
+  const VariableConstView &data() const {
     if (hasData())
       return m_data;
     throw except::SparseDataError("No data in item.");
@@ -139,15 +141,18 @@ public:
 
 protected:
   VariableView m_data;
-  std::unordered_map<std::string, VariableView> m_unaligned;
+  UnalignedView m_unaligned;
 };
 
 class SCIPP_CORE_EXPORT DatasetAxisView : public DatasetAxisConstView {
 public:
-  DatasetAxisView(DatasetAxis &data) : DatasetAxisConstView(data) {}
+  DatasetAxisView(DatasetAxis &data)
+      : DatasetAxisConstView(data, data.unaligned()) {}
+
+  const UnalignedView &unaligned() const noexcept;
 
   /// Return untyped view for data (values and optional variances).
-  VariableView data() const {
+  const VariableView &data() const {
     if (hasData())
       return m_data;
     throw except::SparseDataError("No data in item.");
@@ -170,21 +175,6 @@ public:
   DatasetAxisView operator*=(const DatasetAxisConstView &other) const;
   DatasetAxisView operator/=(const DatasetAxisConstView &other) const;
 };
-
-class SCIPP_CORE_EXPORT UnalignedAccess {
-public:
-  UnalignedAccess(DatasetAxis *parent,
-                  typename DatasetAxis::unaligned_type *unaligned)
-      : m_parent(parent), m_unaligned(unaligned) {}
-
-  void set(const std::string &key, Variable var) const;
-  void erase(const std::string &key) const;
-
-private:
-  DatasetAxis *m_parent;
-  typename DatasetAxis::unaligned_type *m_unaligned;
-};
-
 
 SCIPP_CORE_EXPORT bool operator==(const DatasetAxisConstView &,
                                   const DatasetAxisConstView &);

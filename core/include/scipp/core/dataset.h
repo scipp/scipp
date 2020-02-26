@@ -14,6 +14,7 @@
 
 #include <boost/iterator/transform_iterator.hpp>
 
+#include "scipp/core/axis.h"
 #include "scipp/core/dataset_access.h"
 #include "scipp/core/except.h"
 #include "scipp/core/variable.h"
@@ -30,6 +31,12 @@ namespace detail {
 /// Helper for holding data items in Dataset.
 struct DatasetData {
   /// Optional data values (with optional variances).
+  // TODO would there be any point in using DatasetAxis here?
+  // Are the provided operators useful?
+  // Do we need joint handling with unaligned coords, or can data be done
+  // independently, e.g., concat when adding data?
+  // How to distinguish cases of concatenation (events) from addition (position
+  // data)? Does it just depend in the dtype?
   Variable data;
   Variable unaligned;
   /// Attributes for data.

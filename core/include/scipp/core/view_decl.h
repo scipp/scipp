@@ -7,10 +7,10 @@
 
 #include <boost/iterator/transform_iterator.hpp>
 
-#include "scipp/core/axis.h"
 #include "scipp/core/dataset_access.h"
 #include "scipp/core/except.h"
 #include "scipp/core/slice.h"
+#include "scipp/core/unaligned_access.h"
 #include "scipp/core/variable.h"
 #include "scipp/core/view_forward.h"
 #include "scipp/units/dim.h"
@@ -237,6 +237,7 @@ protected:
   detail::slice_list m_slices;
 };
 
+// TODO can we use these as base classes for DatasetConstView and DatasetView?
 /// Common functionality for other view classes.
 template <class Base, class Access> class MutableView : public Base {
 private:
@@ -249,8 +250,6 @@ private:
     }
   };
 
-  MutableView(const Access &access, Base &&base)
-      : Base(std::move(base)), m_access(access) {}
 
   Access m_access;
 
@@ -258,6 +257,10 @@ public:
   MutableView(const Access &access, typename Base::holder_type &&items,
               const detail::slice_list &slices = {})
       : Base(std::move(items), slices), m_access(access) {}
+  /// Constructor for internal use (slicing and holding const view in mutable
+  /// view)
+  MutableView(const Access &access, Base &&base)
+      : Base(std::move(base)), m_access(access) {}
 
   /// Return a view to the coordinate for given dimension.
   typename Base::mapped_type::view_type
