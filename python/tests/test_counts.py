@@ -5,20 +5,20 @@ from scipp import Dim
 
 
 def test_round_trip_dataset():
-    data = sc.Variable([Dim.Tof], values=[10., 10.], unit=sc.units.counts)
-    tof = sc.Variable([Dim.Tof], values=[1., 2., 3.], unit=sc.units.us)
+    data = sc.Variable(['tof'], values=[10., 10.], unit=sc.units.counts)
+    tof = sc.Variable(['tof'], values=[1., 2., 3.], unit=sc.units.us)
 
-    d = sc.Dataset({'data': data}, coords={Dim.Tof: tof})
+    d = sc.Dataset({'data': data}, coords={'tof': tof})
 
-    dd = sc.density_to_counts(sc.counts_to_density(d, Dim.Tof), Dim.Tof)
+    dd = sc.density_to_counts(sc.counts_to_density(d, 'tof'), 'tof')
     assert dd == d
 
 
 def test_round_trip_dataarray():
-    data = sc.Variable([Dim.Tof], values=[10., 10.], unit=sc.units.counts)
-    tof = sc.Variable([Dim.Tof], values=[1., 2., 3.], unit=sc.units.us)
+    data = sc.Variable(['tof'], values=[10., 10.], unit=sc.units.counts)
+    tof = sc.Variable(['tof'], values=[1., 2., 3.], unit=sc.units.us)
 
-    d = sc.DataArray(data, coords={Dim.Tof: tof})
+    d = sc.DataArray(data, coords={'tof': tof})
 
-    dd = sc.density_to_counts(sc.counts_to_density(d, Dim.Tof), Dim.Tof)
+    dd = sc.density_to_counts(sc.counts_to_density(d, 'tof'), 'tof')
     assert dd == d

@@ -7,20 +7,20 @@ from scipp import Dim
 
 
 def test_all():
-    var = sc.Variable([Dim.X], values=[True, False, True])
-    assert sc.all(var, Dim.X) == sc.Variable(value=False)
+    var = sc.Variable(['x'], values=[True, False, True])
+    assert sc.all(var, 'x') == sc.Variable(value=False)
 
 
 def test_any():
-    var = sc.Variable([Dim.X], values=[True, False, True])
-    assert sc.any(var, Dim.X) == sc.Variable(value=True)
+    var = sc.Variable(['x'], values=[True, False, True])
+    assert sc.any(var, 'x') == sc.Variable(value=True)
 
 
 def test_min():
-    var = sc.Variable([Dim.X], values=[1.0, 2.0, 3.0])
-    assert sc.min(var, Dim.X) == sc.Variable(value=1.0)
+    var = sc.Variable(['x'], values=[1.0, 2.0, 3.0])
+    assert sc.min(var, 'x') == sc.Variable(value=1.0)
 
 
 def test_max():
-    var = sc.Variable([Dim.X], values=[1.0, 2.0, 3.0])
-    assert sc.max(var, Dim.X) == sc.Variable(value=3.0)
+    var = sc.Variable(['x'], values=[1.0, 2.0, 3.0])
+    assert sc.max(var, 'x') == sc.Variable(value=3.0)

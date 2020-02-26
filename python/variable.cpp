@@ -182,16 +182,17 @@ void bind_init_0D_numpy_types(py::class_<Variable> &c) {
   c.def(py::init([](py::buffer &b, const std::optional<py::buffer> &v,
                     const units::Unit &unit, py::object &dtype) {
           py::buffer_info info = b.request();
-          if (info.ndim == 0) {
-            auto arr = py::array(b);
-            auto varr = v ? std::optional{py::array(*v)} : std::nullopt;
-            return doMakeVariable({}, arr, varr, unit, dtype);
-          } else if (info.ndim == 1 &&
-                     scipp_dtype(dtype) == core::dtype<Eigen::Vector3d>) {
-            return do_init_0D<Eigen::Vector3d>(
-                b.cast<Eigen::Vector3d>(),
-                v ? std::optional(v->cast<Eigen::Vector3d>()) : std::nullopt,
-                unit);
+          if (info.ndim == 1) {
+            if (scipp_dtype(dtype) == core::dtype<Eigen::Vector3d>) {
+              return do_init_0D<Eigen::Vector3d>(
+                  b.cast<Eigen::Vector3d>(),
+                  v ? std::optional(v->cast<Eigen::Vector3d>()) : std::nullopt,
+                  unit);
+            } else {
+              auto arr = py::array(b);
+              auto varr = v ? std::optional{py::array(*v)} : std::nullopt;
+              return doMakeVariable({}, arr, varr, unit, dtype);
+            }
           } else {
             throw scipp::except::VariableError(
                 "Wrong overload for making 0D variable.");

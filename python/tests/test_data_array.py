@@ -8,40 +8,37 @@ import scipp as sc
 from scipp import Dim
 
 
-def make_dataarray(dim1=Dim.X, dim2=Dim.Y, seed=None):
+def make_dataarray(dim1='x', dim2='y', seed=None):
     if seed is not None:
         np.random.seed(seed)
     return sc.DataArray(
         data=sc.Variable(dims=[dim1, dim2], values=np.random.rand(2, 3)),
         coords={
             dim1: sc.Variable([dim1], values=np.arange(2.0), unit=sc.units.m),
-            dim2: sc.Variable([dim2], values=np.arange(3.0), unit=sc.units.m)
-        },
-        labels={'aux': sc.Variable([dim2], values=np.random.rand(3))},
+            dim2: sc.Variable([dim2], values=np.arange(3.0), unit=sc.units.m),
+            'aux': sc.Variable([dim2], values=np.random.rand(3))},
         attrs={'meta': sc.Variable([dim2], values=np.arange(3))})
 
 
 def test_init():
     d = sc.DataArray(
-        data=sc.Variable(dims=[sc.Dim.X], values=np.arange(3)),
+        data=sc.Variable(dims=['x'], values=np.arange(3)),
         coords={
-            sc.Dim.X:
-            sc.Variable([sc.Dim.X], values=np.arange(3), unit=sc.units.m),
-        },
-        labels={'lib1': sc.Variable([sc.Dim.X], values=np.random.rand(3))},
-        attrs={'met1': sc.Variable([sc.Dim.X], values=np.arange(3))},
+            'x': sc.Variable(['x'], values=np.arange(3), unit=sc.units.m),
+            'lib1': sc.Variable(['x'], values=np.random.rand(3))},
+        attrs={'met1': sc.Variable(['x'], values=np.arange(3))},
         masks={
-            'mask1': sc.Variable([sc.Dim.X], values=np.ones(3, dtype=np.bool))
+            'mask1': sc.Variable(['x'], values=np.ones(3, dtype=np.bool))
         })
     assert len(d.attrs) == 1
-    assert len(d.labels) == 1
+    assert len(d.coords) == 2
     assert len(d.masks) == 1
 
 
 def test_in_place_binary_with_variable():
     a = sc.DataArray(
-        data=sc.Variable([Dim.X], values=np.arange(10.0)),
-        coords={Dim.X: sc.Variable([Dim.X], values=np.arange(10.0))})
+        data=sc.Variable(['x'], values=np.arange(10.0)),
+        coords={'x': sc.Variable(['x'], values=np.arange(10.0))})
     copy = a.copy()
 
     a += 2.0 * sc.units.dimensionless
@@ -52,8 +49,8 @@ def test_in_place_binary_with_variable():
 
 
 def test_in_place_binary_with_scalar():
-    a = sc.DataArray(data=sc.Variable([Dim.X], values=[10]),
-                     coords={Dim.X: sc.Variable([Dim.X], values=[10])})
+    a = sc.DataArray(data=sc.Variable(['x'], values=[10]),
+                     coords={'x': sc.Variable(['x'], values=[10])})
     copy = a.copy()
 
     a += 2
@@ -64,25 +61,25 @@ def test_in_place_binary_with_scalar():
 
 
 def test_rename_dims():
-    d = make_dataarray(Dim.X, Dim.Y, seed=0)
-    d.rename_dims({Dim.Y: Dim.Z})
-    assert d == make_dataarray(Dim.X, Dim.Z, seed=0)
-    d.rename_dims(dims_dict={Dim.X: Dim.Y, Dim.Z: Dim.X})
-    assert d == make_dataarray(Dim.Y, Dim.X, seed=0)
+    d = make_dataarray('x', 'y', seed=0)
+    d.rename_dims({'y': 'z'})
+    assert d == make_dataarray('x', 'z', seed=0)
+    d.rename_dims(dims_dict={'x': 'y', 'z': 'x'})
+    assert d == make_dataarray('y', 'x', seed=0)
 
 
 def test_setitem_works_for_view_and_array():
-    a = make_dataarray(Dim.X, Dim.Y, seed=0)
-    a[Dim.X, :][Dim.X, 0] = a[Dim.X, 1]
-    a[Dim.X, 0] = a[Dim.X, 1]
+    a = make_dataarray('x', 'y', seed=0)
+    a['x', :]['x', 0] = a['x', 1]
+    a['x', 0] = a['x', 1]
 
 
 @pytest.mark.parametrize("dims, lengths",
-                         (([Dim.X], (sc.Dimensions.Sparse, )),
-                          ([Dim.X, Dim.Y], (10, sc.Dimensions.Sparse)),
-                          ([Dim.X, Dim.Y, Dim.Z],
+                         ((['x'], (sc.Dimensions.Sparse, )),
+                          (['x', 'y'], (10, sc.Dimensions.Sparse)),
+                          (['x', 'y', 'z'],
                            (10, 10, sc.Dimensions.Sparse)),
-                          ([Dim.X, Dim.Y, Dim.Z, Dim.Spectrum],
+                          (['x', 'y', 'z', 'spectrum'],
                            (10, 10, 10, sc.Dimensions.Sparse))))
 def test_sparse_dim_has_none_shape(dims, lengths):
     da = sc.DataArray(sc.Variable(dims, shape=lengths))
@@ -92,8 +89,8 @@ def test_sparse_dim_has_none_shape(dims, lengths):
 
 def test_astype():
     a = sc.DataArray(
-        data=sc.Variable([Dim.X], values=np.arange(10.0, dtype=np.int64)),
-        coords={Dim.X: sc.Variable([Dim.X], values=np.arange(10.0))})
+        data=sc.Variable(['x'], values=np.arange(10.0, dtype=np.int64)),
+        coords={'x': sc.Variable(['x'], values=np.arange(10.0))})
     assert a.dtype == sc.dtype.int64
 
     a_as_float = a.astype(sc.dtype.float32)
@@ -102,8 +99,8 @@ def test_astype():
 
 def test_astype_bad_conversion():
     a = sc.DataArray(
-        data=sc.Variable([Dim.X], values=np.arange(10.0, dtype=np.int64)),
-        coords={Dim.X: sc.Variable([Dim.X], values=np.arange(10.0))})
+        data=sc.Variable(['x'], values=np.arange(10.0, dtype=np.int64)),
+        coords={'x': sc.Variable(['x'], values=np.arange(10.0))})
     assert a.dtype == sc.dtype.int64
 
     with pytest.raises(RuntimeError):
@@ -111,6 +108,6 @@ def test_astype_bad_conversion():
 
 
 def test_reciprocal():
-    a = sc.DataArray(data=sc.Variable([Dim.X], values=np.array([5.0])))
+    a = sc.DataArray(data=sc.Variable(['x'], values=np.array([5.0])))
     r = sc.reciprocal(a)
     assert r.values[0] == 1.0 / 5.0
