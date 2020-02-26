@@ -121,6 +121,7 @@ def _assert_section_single(section,
     assert 0 < len(name_html) < 2, \
         f"Unexpected number of name tags found: {len(name_html)}."\
         "Expected: 1."
+    print(str(name), name_html[0], name_html[0].text)
     assert str(name) == name_html[0].text
 
     dims_html = section.find_all(class_=DIMS_CSS_CLASS)
@@ -149,6 +150,8 @@ def _assert_section_multiple(section,
                              has_bin_edges=[]):
     name_html = section.find_all(class_=DATASET_NAME_CSS_CLASS)
 
+    print(name_html)
+    print(name)
     assert len(name_html) == len(name),\
         f"Unexpected number of name tags found: {len(name_html)}."\
         f"Expected: {len(name)}"
