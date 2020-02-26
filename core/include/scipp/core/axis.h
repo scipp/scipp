@@ -118,7 +118,7 @@ public:
   /// Return true if the data array contains data values.
   bool hasData() const noexcept { return static_cast<bool>(m_data); }
   /// Return untyped const view for data (values and optional variances).
-  const VariableConstView &data() const {
+  VariableConstView data() const {
     if (hasData())
       return m_data;
     throw except::SparseDataError("No data in item.");
@@ -156,7 +156,7 @@ public:
   const UnalignedView &unaligned() const noexcept;
 
   /// Return untyped view for data (values and optional variances).
-  const VariableView &data() const {
+  VariableView data() const {
     if (hasData())
       return m_data;
     throw except::SparseDataError("No data in item.");
