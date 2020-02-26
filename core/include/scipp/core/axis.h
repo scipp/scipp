@@ -53,6 +53,12 @@ public:
       return m_data;
     throw except::SparseDataError("No data in item.");
   }
+  /// Return untyped view for data (values and optional variances).
+  VariableView data() {
+    if (hasData())
+      return m_data;
+    throw except::SparseDataError("No data in item.");
+  }
 
   // TODO only return empty if there is unaligned? just throw?
   // actually need to look at coords in case of unaligned data to determine dims
@@ -71,13 +77,6 @@ public:
     return data().template variances<T>();
   }
 
-  /// Return untyped view for data (values and optional variances).
-  VariableView data() {
-    if (hasData())
-      return m_data;
-    throw except::SparseDataError("No data in item.");
-  }
-
   void setUnit(const units::Unit unit) { data().setUnit(unit); }
 
   /// Return typed view for data values.
@@ -94,6 +93,7 @@ public:
   void rename(const Dim from, const Dim to);
 
 private:
+  friend class DatasetAxisConstView;
   Variable m_data;
   unaligned_type m_unaligned;
 };
@@ -103,10 +103,10 @@ public:
   using value_type = DatasetAxis;
 
   DatasetAxisConstView(const DatasetAxis &axis)
-      : m_data(axis.data()), m_unaligned(UnalignedAccess{}, axis.unaligned()) {}
+      : m_data(axis.m_data), m_unaligned(UnalignedAccess{}, axis.unaligned()) {}
   /// Constructor used by DatasetAxisView
-  DatasetAxisConstView(const DatasetAxis &axis, UnalignedView &&view)
-      : m_data(axis.data()), m_unaligned(std::move(view)) {}
+  DatasetAxisConstView(VariableView &&data, UnalignedView &&view)
+      : m_data(std::move(data)), m_unaligned(std::move(view)) {}
   // Implicit conversion from VariableConstView useful for operators.
   DatasetAxisConstView(VariableConstView &&data)
       : m_data(std::move(data)),
@@ -151,7 +151,7 @@ protected:
 class SCIPP_CORE_EXPORT DatasetAxisView : public DatasetAxisConstView {
 public:
   DatasetAxisView(DatasetAxis &data)
-      : DatasetAxisConstView(data, data.unaligned()) {}
+      : DatasetAxisConstView(data.data(), data.unaligned()) {}
 
   const UnalignedView &unaligned() const noexcept;
 
