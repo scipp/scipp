@@ -1062,12 +1062,12 @@ SCIPP_CORE_EXPORT VariableView atan(const VariableConstView &var,
 SCIPP_CORE_EXPORT VariableView nan_to_num(const VariableConstView &var,
                                           const VariableConstView &replacement,
                                           const VariableView &out);
-SCIPP_CORE_EXPORT VariableView
-pos_inf_to_num(const VariableConstView &var,
-               const VariableConstView &replacement, const VariableView &out);
-SCIPP_CORE_EXPORT VariableView
-neg_inf_to_num(const VariableConstView &var,
-               const VariableConstView &replacement, const VariableView &out);
+SCIPP_CORE_EXPORT VariableView positive_inf_to_num(
+    const VariableConstView &var, const VariableConstView &replacement,
+    const VariableView &out);
+SCIPP_CORE_EXPORT VariableView negative_inf_to_num(
+    const VariableConstView &var, const VariableConstView &replacement,
+    const VariableView &out);
 
 [[nodiscard]] SCIPP_CORE_EXPORT Variable
 nan_to_num(const VariableConstView &var, const VariableConstView &replacement);

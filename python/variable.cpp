@@ -744,9 +744,9 @@ void init_variable(py::module &m) {
           if (nan)
             nan_to_num(out, *nan, out);
           if (posinf)
-            pos_inf_to_num(out, *posinf, out);
+            positive_inf_to_num(out, *posinf, out);
           if (neginf)
-            neg_inf_to_num(out, *neginf, out);
+            negative_inf_to_num(out, *neginf, out);
           return out;
         },
         py::call_guard<py::gil_scoped_release>(),
@@ -774,9 +774,9 @@ void init_variable(py::module &m) {
           if (nan)
             nan_to_num(self, *nan, out);
           if (posinf)
-            pos_inf_to_num(self, *posinf, out);
+            positive_inf_to_num(self, *posinf, out);
           if (neginf)
-            neg_inf_to_num(self, *neginf, out);
+            negative_inf_to_num(self, *neginf, out);
           return out;
         },
         py::call_guard<py::gil_scoped_release>(),

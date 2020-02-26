@@ -310,9 +310,9 @@ VariableView nan_to_num(const VariableConstView &var,
   return replace_in_place(var, replacement, op, out);
 }
 
-VariableView pos_inf_to_num(const VariableConstView &var,
-                            const VariableConstView &replacement,
-                            const VariableView &out) {
+VariableView positive_inf_to_num(const VariableConstView &var,
+                                 const VariableConstView &replacement,
+                                 const VariableView &out) {
   auto op = [](auto &a, const auto &b, const auto &repl) {
     if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(b)>>)
       a = isinf(b) && b.value > 0 ? repl : b;
@@ -322,9 +322,9 @@ VariableView pos_inf_to_num(const VariableConstView &var,
 
   return replace_in_place(var, replacement, op, out);
 }
-VariableView neg_inf_to_num(const VariableConstView &var,
-                            const VariableConstView &replacement,
-                            const VariableView &out) {
+VariableView negative_inf_to_num(const VariableConstView &var,
+                                 const VariableConstView &replacement,
+                                 const VariableView &out) {
   auto op = [](auto &a, const auto &b, const auto &repl) {
     if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(b)>>)
       a = isinf(b) && b.value < 0 ? repl : b;

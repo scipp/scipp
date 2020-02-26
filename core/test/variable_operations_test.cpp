@@ -1239,7 +1239,7 @@ TEST(VariableTest, nan_to_num) {
   EXPECT_EQ(b, expected);
 }
 
-TEST(VariableTest, pos_inf_to_num) {
+TEST(VariableTest, positive_inf_to_num) {
   auto a = makeVariable<double>(
       Dims{Dim::X}, Shape{3}, Values{1.0, double(INFINITY), double(-INFINITY)});
   auto replacement_value = makeVariable<double>(Values{-1});
@@ -1250,7 +1250,7 @@ TEST(VariableTest, pos_inf_to_num) {
   EXPECT_EQ(b, expected);
 }
 
-TEST(VariableTest, neg_inf_to_num) {
+TEST(VariableTest, negative_inf_to_num) {
   auto a = makeVariable<double>(
       Dims{Dim::X}, Shape{3}, Values{1.0, double(INFINITY), double(-INFINITY)});
   auto replacement_value = makeVariable<double>(Values{-1});
