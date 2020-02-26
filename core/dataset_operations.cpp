@@ -112,6 +112,11 @@ Dataset flatten(const DatasetConstView &d, const Dim dim) {
   return apply_to_items(d, [](auto &&... _) { return flatten(_...); }, dim);
 }
 
+DatasetAxis flatten(const DatasetAxisConstView &var, const Dim dim,
+                    const MasksConstView &masks) {
+  throw std::runtime_error("flatten not implemented");
+}
+
 DataArray sum(const DataArrayConstView &a, const Dim dim) {
   return apply_to_data_and_drop_dim(a, [](auto &&... _) { return sum(_...); },
                                     dim, a.masks());

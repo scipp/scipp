@@ -266,7 +266,7 @@ SCIPP_CORE_EXPORT DatasetAxisView sum(const DatasetAxisConstView &var,
                                       const Dim dim,
                                       const DatasetAxisView &out);
 
-SCIPP_CORE_EXPORT DatasetAxis copy(const DatasetAxisConstView &var);
+SCIPP_CORE_EXPORT DatasetAxis copy(const DatasetAxisConstView &axis);
 
 // Trigonometrics
 [[nodiscard]] SCIPP_CORE_EXPORT DatasetAxis

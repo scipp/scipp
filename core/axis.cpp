@@ -63,6 +63,51 @@ bool operator!=(const DatasetAxisConstView &a, const VariableConstView &b) {
   return !(a == b);
 }
 
+DatasetAxisView DatasetAxisView::
+operator+=(const VariableConstView &other) const {
+  data() += other;
+  for (const auto &item : unaligned())
+    item.second += other;
+  return *this;
+}
+DatasetAxisView DatasetAxisView::
+operator-=(const VariableConstView &other) const {
+  data() -= other;
+  for (const auto &item : unaligned())
+    item.second -= other;
+  return *this;
+}
+DatasetAxisView DatasetAxisView::
+operator*=(const VariableConstView &other) const {
+  data() *= other;
+  for (const auto &item : unaligned())
+    item.second *= other;
+  return *this;
+}
+DatasetAxisView DatasetAxisView::
+operator/=(const VariableConstView &other) const {
+  data() /= other;
+  for (const auto &item : unaligned())
+    item.second /= other;
+  return *this;
+}
+DatasetAxisView DatasetAxisView::
+operator+=(const DatasetAxisConstView &) const {
+  throw std::runtime_error("Operations between axes not supported yet.");
+}
+DatasetAxisView DatasetAxisView::
+operator-=(const DatasetAxisConstView &) const {
+  throw std::runtime_error("Operations between axes not supported yet.");
+}
+DatasetAxisView DatasetAxisView::
+operator*=(const DatasetAxisConstView &) const {
+  throw std::runtime_error("Operations between axes not supported yet.");
+}
+DatasetAxisView DatasetAxisView::
+operator/=(const DatasetAxisConstView &) const {
+  throw std::runtime_error("Operations between axes not supported yet.");
+}
+
 DatasetAxis resize(const DatasetAxisConstView &var, const Dim dim,
                    const scipp::index size) {
   return DatasetAxis(resize(var.data(), dim, size));
@@ -70,6 +115,17 @@ DatasetAxis resize(const DatasetAxisConstView &var, const Dim dim,
 DatasetAxis concatenate(const DatasetAxisConstView &a,
                         const DatasetAxisConstView &b, const Dim dim) {
   return DatasetAxis(concatenate(a.data(), b.data(), dim));
+}
+
+DatasetAxis copy(const DatasetAxisConstView &axis) {
+  DatasetAxis out(Variable(axis.data()));
+  for (const auto &item : axis.unaligned())
+    out.unaligned().set(item.first, Variable(item.second));
+  return out;
+}
+
+DatasetAxis flatten(const DatasetAxisConstView &, const Dim) {
+  throw std::runtime_error("flatten not supported yet.");
 }
 
 } // namespace scipp::core

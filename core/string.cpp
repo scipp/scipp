@@ -305,4 +305,8 @@ std::string to_string(const Dataset &dataset) {
 std::string to_string(const DatasetConstView &dataset) {
   return do_to_string(dataset, "<scipp.DatasetView>", dimensions(dataset));
 }
+
+std::string to_string(const DatasetAxisConstView &axis) {
+  return "<scipp.DatasetAxisView>" + to_string(axis.data());
+}
 } // namespace scipp::core
