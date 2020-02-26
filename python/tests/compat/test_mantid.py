@@ -352,6 +352,52 @@ class TestMantidConversion(unittest.TestCase):
         self.assertTrue("status" in fit_ds.attrs)
         self.assertTrue("chi2_over_DoF" in fit_ds.attrs)
 
+    def test_set_run(self):
+        import mantid.simpleapi as mantid
+        target = mantid.CloneWorkspace(self.base_event_ws)
+        d = mantidcompat.convert_EventWorkspace_to_data_array(target, False)
+        d.attrs["run"].value.addProperty("test_property", 1, True)
+        # before
+        self.assertFalse(target.run().hasProperty("test_property"))
+        target.setRun(d.attrs["run"].value)
+        # after
+        self.assertTrue(target.run().hasProperty("test_property"))
+
+    def test_set_sample(self):
+        import mantid.simpleapi as mantid
+        target = mantid.CloneWorkspace(self.base_event_ws)
+        d = mantidcompat.convert_EventWorkspace_to_data_array(target, False)
+        d.attrs["sample"].value.setThickness(3)
+        # before
+        self.assertNotEqual(3, target.sample().getThickness())
+        target.setSample(d.attrs["sample"].value)
+        # after
+        self.assertEqual(3, target.sample().getThickness())
+
+    def _do_test_point(self, point):
+        x, y, z = point
+        r, theta, phi = mantidcompat._to_spherical(x, y, z)
+        x_b, y_b, z_b = mantidcompat._to_cartesian(r, theta, phi)
+        self.assertAlmostEqual(x, x_b)
+        self.assertAlmostEqual(y, y_b)
+        self.assertAlmostEqual(z, z_b)
+
+    def test_spherical_averaging(self):
+        x, y, z = 1.0, 1.0, 1.0
+        r, theta, phi = mantidcompat._to_spherical(x, y, z)
+        self.assertEqual(r, np.sqrt(3.0))
+        self.assertEqual(phi, np.arccos(np.sqrt(1.0 / 2.0)))
+
+        self._do_test_point((1.0, 1.0, 1.0))
+        self._do_test_point((1.0, 0.0, 0.0))
+        self._do_test_point((0.0, 1.0, 0.0))
+        self._do_test_point((0.0, 0.0, 1.0))
+
+        self._do_test_point((-1.0, -1.0, -1.0))
+        self._do_test_point((-1.0, 0.0, 0.0))
+        self._do_test_point((0.0, -1.0, 0.0))
+        self._do_test_point((0.0, 0.0, -1.0))
+
 
 @pytest.mark.skipif(not mantid_is_available(),
                     reason='Mantid framework is unavailable')
@@ -390,28 +436,6 @@ def test_to_workspace_2d(param_dim):
         np.testing.assert_array_equal(ws.readY(i), y[Dim.Spectrum, i])
         np.testing.assert_array_equal(ws.readE(i), y[Dim.Spectrum,
                                                      i].variances)
-
-    def test_set_run(self):
-        import mantid.simpleapi as mantid
-        target = mantid.CloneWorkspace(self.base_event_ws)
-        d = mantidcompat.convert_EventWorkspace_to_data_array(target, False)
-        d.attrs["run"].value.addProperty("test_property", 1, True)
-        # before
-        self.assertFalse(target.run().hasProperty("test_property"))
-        target.setRun(d.attrs["run"].value)
-        # after
-        self.assertTrue(target.run().hasProperty("test_property"))
-
-    def test_set_sample(self):
-        import mantid.simpleapi as mantid
-        target = mantid.CloneWorkspace(self.base_event_ws)
-        d = mantidcompat.convert_EventWorkspace_to_data_array(target, False)
-        d.attrs["sample"].value.setThickness(3)
-        # before
-        self.assertNotEqual(3, target.sample().getThickness())
-        target.setSample(d.attrs["sample"].value)
-        # after
-        self.assertEqual(3, target.sample().getThickness())
 
 
 if __name__ == "__main__":
