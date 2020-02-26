@@ -219,11 +219,13 @@ class InstrumentView:
             self.hist_data_array[self.key]).values,
                                 dtype=np.float32)
         # Find extents of the detectors
+        self.camera_pos = np.NINF
         for i, x in enumerate("xyz"):
             self.minmax[x] = [
                 np.amin(self.det_pos[:, i]),
                 np.amax(self.det_pos[:, i])
             ]
+            self.camera_pos = max(self.camera_pos, np.amax(np.abs(self.minmax[x])))
 
         # Create texture for scatter points to represent detector shapes
         nx = 32
@@ -265,7 +267,7 @@ class InstrumentView:
         self.axes_helper = self.p3.AxesHelper(100)
 
         # Create the threejs scene with ambient light and camera
-        self.camera = self.p3.PerspectiveCamera(position=[0, 0, 10],
+        self.camera = self.p3.PerspectiveCamera(position=[self.camera_pos] * 3,
                                                 aspect=config.plot.width /
                                                 config.plot.height)
         self.key_light = self.p3.DirectionalLight(position=[0, 10, 10])
@@ -395,8 +397,13 @@ class InstrumentView:
                     self.det_pos[:, permutations[axis][0]] /
                     np.sqrt(self.det_pos[:, 0]**2 + self.det_pos[:, 1]**2 +
                             self.det_pos[:, 2]**2))
-        self.axes_helper.visible = projection == "3D"
-        self.camera.position = [0, 0, 5]
+
+        if projection == "3D":
+            self.axes_helper.visible = True
+            self.camera.position = [self.camera_pos] * 3
+        else:
+            self.axes_helper.visible = False
+            self.camera.position = [0, 0, self.camera_pos]
         self.renderer.controls = [
             self.p3.OrbitControls(controlling=self.camera,
                                   enableRotate=projection == "3D")
