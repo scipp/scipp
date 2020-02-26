@@ -218,14 +218,15 @@ def init_pos(ws):
         if spec_info.hasDetectors(i):
             definition = spec_info.getSpectrumDefinition(i)
             theta, phi, r = 0.0, 0.0, 0.0
-            l = len(definition)
-            for j in range(l):
+            n_dets = len(definition)
+            for j in range(n_dets):
                 p = det_info.position(definition[j][0])
                 r_j, theta_j, phi_j = _to_spherical(p.X(), p.Y(), p.Z())
                 r += r_j
                 theta += theta_j
                 phi += phi_j
-            pos[i, :] = tuple([p / l for p in _to_cartesian(r, theta, phi)])
+            pos[i, :] = tuple(
+                [p / n_dets for p in _to_cartesian(r, theta, phi)])
         else:
             pos[i, :] = [np.nan, np.nan, np.nan]
     return sc.Variable([sc.Dim.Spectrum],
