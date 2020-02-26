@@ -209,7 +209,7 @@ def _to_cartesian(r, theta, phi):
     return x, y, z
 
 
-def init_pos(ws):
+def init_pos(ws, sample_pos):
     import numpy as np
     spec_info = ws.spectrumInfo()
     det_info = ws.detectorInfo()
@@ -221,12 +221,15 @@ def init_pos(ws):
             n_dets = len(definition)
             for j in range(n_dets):
                 p = det_info.position(definition[j][0])
-                r_j, theta_j, phi_j = _to_spherical(p.X(), p.Y(), p.Z())
+                x, y, z = np.array(p) - sample_pos.values
+                r_j, theta_j, phi_j = _to_spherical(x, y, z)
                 r += r_j
                 theta += theta_j
                 phi += phi_j
-            pos[i, :] = tuple(
-                [p / n_dets for p in _to_cartesian(r, theta, phi)])
+                av_pos = np.array([
+                    p / n_dets for p in _to_cartesian(r, theta, phi)
+                ]) + sample_pos.values
+            pos[i, :] = av_pos
         else:
             pos[i, :] = [np.nan, np.nan, np.nan]
     return sc.Variable([sc.Dim.Spectrum],
@@ -277,7 +280,7 @@ def set_bin_masks(bin_masks, dim, index, masked_bins):
 def _convert_MatrixWorkspace_info(ws):
     source_pos, sample_pos = make_component_info(ws)
     det_info = make_detector_info(ws)
-    pos = init_pos(ws)
+    pos = init_pos(ws, sample_pos)
     spec_dim, spec_coord = init_spec_axis(ws)
 
     info = {
@@ -653,7 +656,7 @@ def load_component_info(ds, file):
 
         ds.labels["source_position"] = source_pos
         ds.labels["sample_position"] = sample_pos
-        ds.labels["position"] = init_pos(ws)
+        ds.labels["position"] = init_pos(ws, sample_pos)
 
 
 def validate_dim_and_get_mantid_string(unit_dim):
