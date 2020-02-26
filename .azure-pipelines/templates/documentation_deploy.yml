@@ -1,7 +1,7 @@
 parameters:
-  - name: releaseName
-    type: string
-    default: ''
+  - name: release
+    type: boolean
+    default: False
 
 jobs:
   - job: 'documentation'
@@ -12,7 +12,6 @@ jobs:
       documentation_artefact_path: '$(Build.StagingDirectory)/documentation'
       documentation_repo_path: '$(Build.StagingDirectory)/git'
     steps:
-      - checkout: none
       - task: DownloadBuildArtifacts@0
         inputs:
           buildType: 'current'
@@ -55,12 +54,13 @@ jobs:
         displayName: 'Copy new documentation'
       - bash: |
           set -ex
+          release_docs_dir="release/$(git describe --tags)"
           cd "$(documentation_repo_path)"
-          mkdir -p 'release/${{ parameters.releaseName }}'
-          rsync -av "$(documentation_artefact_path)/" './release/${{ parameters.releaseName }}'
+          mkdir -p "$release_docs_dir"
+          rsync -av "$(documentation_artefact_path)/" "$release_docs_dir"
           git add .
           git status
-        condition: and(succeeded(), ne('${{ parameters.releaseName }}', ''))
+        condition: and(succeeded(), ${{ parameters.release }})
         displayName: 'Copy new documentation for release'
       - bash: |
           set -ex
