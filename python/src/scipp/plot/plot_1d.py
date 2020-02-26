@@ -163,7 +163,8 @@ class Slicer1d(Slicer):
         self.update_axes(list(self.slider.keys())[-1])
 
         self.ax.set_ylabel(ylab)
-        self.ax.legend()
+        if len(self.ax.get_legend_handles_labels()[0]) > 0:
+            self.ax.legend()
 
         self.keep_buttons = dict()
         if self.ndim > 1:
