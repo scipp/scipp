@@ -22,7 +22,14 @@ using dataset_unaligned_type = std::unordered_map<std::string, Variable>;
 }
 
 template <class T, class U> class Axis;
+template <class T> class AxisConstView;
+template <class T> class AxisView;
+using DataArrayAxis = Axis<AxisId::DataArray, Variable>;
 using DatasetAxis = Axis<AxisId::Dataset, axis::dataset_unaligned_type>;
+using DataArrayAxisConstView = AxisConstView<DataArrayAxis>;
+using DatasetAxisConstView = AxisConstView<DatasetAxis>;
+using DataArrayAxisView = AxisView<DataArrayAxis>;
+using DatasetAxisView = AxisView<DatasetAxis>;
 
 } // namespace scipp::core
 

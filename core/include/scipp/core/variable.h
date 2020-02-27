@@ -16,6 +16,7 @@
 #include "scipp-core_export.h"
 #include "scipp/common/index.h"
 #include "scipp/common/span.h"
+#include "scipp/core/axis_forward.h"
 #include "scipp/core/dimensions.h"
 #include "scipp/core/dtype.h"
 #include "scipp/core/element_array.h"
@@ -642,6 +643,7 @@ class SCIPP_CORE_EXPORT VariableConstView {
 public:
   using value_type = Variable;
 
+  VariableConstView() = default;
   VariableConstView(const Variable &variable) : m_variable(&variable) {}
   VariableConstView(const Variable &variable, const Dimensions &dims)
       : m_variable(&variable), m_view(variable.data().reshape(dims)) {}
@@ -655,7 +657,7 @@ public:
         m_view(slice.data().makeView(dim, begin, end)) {}
 
   explicit operator bool() const noexcept {
-    return m_variable->operator bool();
+    return m_variable && m_variable->operator bool();
   }
 
   auto operator~() const { return m_variable->operator~(); }
@@ -752,13 +754,11 @@ protected:
   template <class T> const ElementArrayView<const T> cast() const;
   template <class T> const ElementArrayView<const T> castVariances() const;
 
-  const Variable *m_variable;
+  const Variable *m_variable{nullptr};
   VariableConceptHandle m_view;
 };
 
 class DataArrayConstView;
-class DatasetAxisConstView;
-class DataArrayAxisConstView;
 
 /** Mutable view into (a subset of) a Variable.
  *
@@ -766,6 +766,7 @@ class DataArrayAxisConstView;
  * VariableConstView will automatically work also for this mutable variant.*/
 class SCIPP_CORE_EXPORT VariableView : public VariableConstView {
 public:
+  VariableView() = default;
   VariableView(Variable &variable)
       : VariableConstView(variable), m_mutableVariable(&variable) {}
   // Note that we use the basic constructor of VariableConstView to avoid
@@ -878,8 +879,7 @@ public:
 private:
   friend class Variable;
   friend class DataArrayConstView;
-  friend class DatasetAxisConstView;
-  friend class DataArrayAxisConstView;
+  template <class T> friend class AxisConstView;
 
   template <class Var>
   static VariableView makeTransposed(Var &var,
@@ -896,7 +896,7 @@ private:
   template <class T> ElementArrayView<T> cast() const;
   template <class T> ElementArrayView<T> castVariances() const;
 
-  Variable *m_mutableVariable;
+  Variable *m_mutableVariable{nullptr};
 };
 
 SCIPP_CORE_EXPORT Variable operator+(const VariableConstView &a,

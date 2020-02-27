@@ -24,7 +24,6 @@ namespace scipp::core {
 class DataArrayConstView;
 class DatasetConstView;
 class Dataset;
-class DatasetAxisConstView;
 class DataArray;
 class Dimensions;
 class Variable;

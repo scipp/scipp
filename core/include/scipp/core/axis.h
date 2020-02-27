@@ -34,11 +34,6 @@ namespace scipp::core {
 // d['a'].attrs
 // d['a'].unaligned.attrs
 
-class DataArrayAxisConstView;
-class DataArrayAxisView;
-class DatasetAxisConstView;
-class DatasetAxisView;
-
 namespace axis_detail {
 template <class T> struct const_view;
 template <> struct const_view<Variable> {
@@ -60,10 +55,8 @@ template <class T> using view_t = typename view<T>::type;
 
 template <class Id, class UnalignedType> class Axis {
 public:
-  // using const_view_type = AxisConstView<T>;
-  // using view_type = AxisView<T>;
-  using const_view_type = DatasetAxisConstView;
-  using view_type = DatasetAxisView;
+  using const_view_type = AxisConstView<Axis>;
+  using view_type = AxisView<Axis>;
   using unaligned_type = UnalignedType;
   using unaligned_const_view_type = axis_detail::const_view_t<unaligned_type>;
   using unaligned_view_type = axis_detail::view_t<unaligned_type>;
@@ -123,36 +116,28 @@ public:
   void rename(const Dim from, const Dim to);
 
 private:
-  friend class DatasetAxisConstView;
+  friend class AxisConstView<Axis>;
   Variable m_data;
   unaligned_type m_unaligned;
 };
 
-class SCIPP_CORE_EXPORT DatasetAxisConstView {
+template <class Axis> class AxisConstView {
 public:
-  using value_type = DatasetAxis;
+  using value_type = Axis;
+  using unaligned_type = typename value_type::unaligned_type;
+  using unaligned_const_view_type =
+      typename value_type::unaligned_const_view_type;
+  using unaligned_view_type = typename value_type::unaligned_view_type;
 
-  DatasetAxisConstView(const DatasetAxis &axis)
-      : m_data(axis.m_data), m_unaligned(UnalignedAccess{}, axis.unaligned()) {}
-  /// Constructor used by DatasetAxisView
-  DatasetAxisConstView(VariableView &&data, UnalignedView &&view)
-      : m_data(std::move(data)), m_unaligned(std::move(view)) {}
-  // Implicit conversion from VariableConstView useful for operators.
-  DatasetAxisConstView(VariableConstView &&data)
-      : m_data(std::move(data)),
-        m_unaligned(UnalignedAccess{},
-                    typename UnalignedConstView::holder_type{}) {}
+  AxisConstView(const value_type &axis);
+  AxisConstView(VariableView &&data, unaligned_view_type &&view);
+  AxisConstView(VariableConstView &&data);
 
-  const UnalignedConstView &unaligned() const noexcept;
+  const unaligned_const_view_type &unaligned() const noexcept;
 
   /// Return true if the data array contains data values.
   bool hasData() const noexcept { return static_cast<bool>(m_data); }
-  /// Return untyped const view for data (values and optional variances).
-  VariableConstView data() const {
-    if (hasData())
-      return m_data;
-    throw except::SparseDataError("No data in item.");
-  }
+  VariableConstView data() const;
 
   // TODO only return empty if there is unaligned? just throw?
   // actually need to look at coords in case of unaligned data to determine dims
@@ -171,26 +156,29 @@ public:
     return data().template variances<T>();
   }
 
-  DatasetAxisConstView slice(const Slice) const { return *this; }
+  AxisConstView slice(const Slice) const { return *this; }
 
 protected:
+  // Note: Not const views to avoid duplicate view creation
   VariableView m_data;
-  UnalignedView m_unaligned;
+  unaligned_view_type m_unaligned;
+
+private:
+  unaligned_view_type
+  make_unaligned(unaligned_const_view_type const_view) const;
+  unaligned_view_type make_empty_unaligned() const;
 };
 
-class SCIPP_CORE_EXPORT DatasetAxisView : public DatasetAxisConstView {
+template <class Axis> class AxisView : public AxisConstView<Axis> {
 public:
-  DatasetAxisView(DatasetAxis &data)
-      : DatasetAxisConstView(data.data(), data.unaligned()) {}
+  using value_type = Axis;
+  using unaligned_type = typename value_type::unaligned_type;
+  using unaligned_view_type = typename value_type::unaligned_view_type;
 
-  const UnalignedView &unaligned() const noexcept;
+  AxisView(Axis &data) : AxisConstView<Axis>(data.data(), data.unaligned()) {}
 
-  /// Return untyped view for data (values and optional variances).
-  VariableView data() const {
-    if (hasData())
-      return m_data;
-    throw except::SparseDataError("No data in item.");
-  }
+  const unaligned_view_type &unaligned() const noexcept;
+  VariableView data() const;
 
   void setUnit(const units::Unit unit) const { data().setUnit(unit); }
 
@@ -202,16 +190,16 @@ public:
     return data().template variances<T>();
   }
 
-  DatasetAxisView slice(const Slice) const { return *this; }
+  AxisView slice(const Slice) const { return *this; }
 
-  DatasetAxisView operator+=(const VariableConstView &other) const;
-  DatasetAxisView operator-=(const VariableConstView &other) const;
-  DatasetAxisView operator*=(const VariableConstView &other) const;
-  DatasetAxisView operator/=(const VariableConstView &other) const;
-  DatasetAxisView operator+=(const DatasetAxisConstView &other) const;
-  DatasetAxisView operator-=(const DatasetAxisConstView &other) const;
-  DatasetAxisView operator*=(const DatasetAxisConstView &other) const;
-  DatasetAxisView operator/=(const DatasetAxisConstView &other) const;
+  AxisView operator+=(const VariableConstView &other) const;
+  AxisView operator-=(const VariableConstView &other) const;
+  AxisView operator*=(const VariableConstView &other) const;
+  AxisView operator/=(const VariableConstView &other) const;
+  AxisView operator+=(const AxisConstView<Axis> &other) const;
+  AxisView operator-=(const AxisConstView<Axis> &other) const;
+  AxisView operator*=(const AxisConstView<Axis> &other) const;
+  AxisView operator/=(const AxisConstView<Axis> &other) const;
 };
 
 SCIPP_CORE_EXPORT bool operator==(const DatasetAxisConstView &,

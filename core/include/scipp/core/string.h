@@ -9,6 +9,7 @@
 
 #include "scipp-core_export.h"
 #include "scipp/common/index.h"
+#include "scipp/core/axis_forward.h"
 #include "scipp/core/dtype.h"
 #include "scipp/units/unit.h"
 
@@ -24,7 +25,6 @@ class Dimensions;
 class Variable;
 class VariableView;
 class VariableConstView;
-class DatasetAxisConstView;
 class Slice;
 template <class Id, class Key, class Value> class ConstView;
 template <class T, class U> class MutableView;
