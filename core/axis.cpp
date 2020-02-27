@@ -123,6 +123,14 @@ void Axis<Id, UnalignedType>::rename(const Dim from, const Dim to) {
   }
 }
 
+bool operator==(const DataArrayAxisConstView &a,
+                const DataArrayAxisConstView &b) {
+  return a.data() == b.data() && a.unaligned() == b.unaligned();
+}
+bool operator!=(const DataArrayAxisConstView &a,
+                const DataArrayAxisConstView &b) {
+  return !(a == b);
+}
 bool operator==(const DatasetAxisConstView &a, const DatasetAxisConstView &b) {
   return a.data() == b.data() && a.unaligned() == b.unaligned();
 }

@@ -47,12 +47,14 @@ struct SCIPP_CORE_EXPORT TypeError : public std::runtime_error {
 
 using DataArrayError = Error<core::DataArray>;
 using DatasetError = Error<core::Dataset>;
+using DataArrayAxisError = Error<core::DatasetAxis>;
 using DatasetAxisError = Error<core::DatasetAxis>;
 using DimensionError = Error<core::Dimensions>;
 using VariableError = Error<core::Variable>;
 
 using DataArrayMismatchError = MismatchError<core::DataArray>;
 using DatasetMismatchError = MismatchError<core::Dataset>;
+using DataArrayAxisMismatchError = MismatchError<core::DataArrayAxis>;
 using DatasetAxisMismatchError = MismatchError<core::DatasetAxis>;
 using DimensionMismatchError = MismatchError<core::Dimensions>;
 using VariableMismatchError = MismatchError<core::Variable>;
@@ -63,6 +65,9 @@ MismatchError(const core::VariableConstView &, const T &)
 template <class T>
 MismatchError(const core::DatasetConstView &, const T &)
     ->MismatchError<core::Dataset>;
+template <class T>
+MismatchError(const core::DataArrayAxisConstView &, const T &)
+    ->MismatchError<core::DataArrayAxis>;
 template <class T>
 MismatchError(const core::DatasetAxisConstView &, const T &)
     ->MismatchError<core::DatasetAxis>;

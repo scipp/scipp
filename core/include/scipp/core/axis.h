@@ -115,6 +115,20 @@ public:
 
   void rename(const Dim from, const Dim to);
 
+  static DatasetAxis to_DatasetAxis(DataArrayAxis &&axis,
+                                    const std::string &key) {
+    if constexpr (std::is_same_v<Id, AxisId::DataArray>) {
+      DatasetAxis out(std::move(axis.m_data));
+      if (axis.m_unaligned)
+        out.unaligned().set(key, std::move(axis.m_unaligned));
+      return out;
+    } else {
+      static_cast<void>(axis);
+      static_cast<void>(key);
+      throw std::logic_error("");
+    }
+  }
+
 private:
   friend class AxisConstView<Axis>;
   Variable m_data;
@@ -202,16 +216,20 @@ public:
   AxisView operator/=(const AxisConstView<Axis> &other) const;
 };
 
-SCIPP_CORE_EXPORT bool operator==(const DatasetAxisConstView &,
-                                  const DatasetAxisConstView &);
+SCIPP_CORE_EXPORT bool operator==(const DataArrayAxisConstView &a,
+                                  const DataArrayAxisConstView &b);
+SCIPP_CORE_EXPORT bool operator!=(const DataArrayAxisConstView &a,
+                                  const DataArrayAxisConstView &b);
+SCIPP_CORE_EXPORT bool operator==(const DatasetAxisConstView &a,
+                                  const DatasetAxisConstView &b);
 SCIPP_CORE_EXPORT bool operator!=(const DatasetAxisConstView &a,
                                   const DatasetAxisConstView &b);
-SCIPP_CORE_EXPORT bool operator==(const DatasetAxisConstView &,
-                                  const VariableConstView &);
+SCIPP_CORE_EXPORT bool operator==(const DatasetAxisConstView &a,
+                                  const VariableConstView &b);
 SCIPP_CORE_EXPORT bool operator!=(const DatasetAxisConstView &a,
                                   const VariableConstView &b);
-SCIPP_CORE_EXPORT bool operator==(const VariableConstView &,
-                                  const DatasetAxisConstView &);
+SCIPP_CORE_EXPORT bool operator==(const VariableConstView &a,
+                                  const DatasetAxisConstView &b);
 SCIPP_CORE_EXPORT bool operator!=(const VariableConstView &a,
                                   const DatasetAxisConstView &b);
 

@@ -363,11 +363,11 @@ public:
   void setData(const std::string &name, const DataArrayConstView &data);
   void setData(const std::string &name, DataArray data);
 
-  void setCoord(const Dim dim, const VariableConstView &coord) {
-    setCoord(dim, Variable(coord));
-  }
   void setCoord(const Dim dim, const DatasetAxisConstView &coord) {
     setCoord(dim, DatasetAxis(coord));
+  }
+  void setCoord(const Dim dim, const VariableConstView &coord) {
+    setCoord(dim, Variable(coord));
   }
   void setMask(const std::string &masksName, const VariableConstView &mask) {
     setMask(masksName, Variable(mask));
@@ -694,11 +694,15 @@ public:
     if (data)
       m_holder.setData(name, std::move(*data));
 
-    for (auto &&[dim, c] : coords)
-      // if (c.dims().sparse())
-      //  m_holder.setSparseCoord(name, dim, DatasetAxis(std::move(c)));
-      // else
-      m_holder.setCoord(dim, std::move(c));
+    for (auto &&[dim, c] : coords) {
+      if constexpr (std::is_same_v<typename CoordMap::mapped_type,
+                                   DataArrayAxis>) {
+        m_holder.setCoord(dim, DataArrayAxis::to_DatasetAxis(
+                                   DataArrayAxis(std::move(c)), name));
+      } else {
+        m_holder.setCoord(dim, std::move(c));
+      }
+    }
 
     for (auto &&[mask_name, m] : masks)
       m_holder.setMask(std::string(mask_name), std::move(m));

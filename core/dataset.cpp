@@ -235,15 +235,15 @@ void Dataset::rebuildDims() {
 }
 
 /// Set (insert or replace) the coordinate for the given dimension.
-void Dataset::setCoord(const Dim dim, Variable coord) {
-  setCoord(dim, DatasetAxis(std::move(coord)));
-}
-
-/// Set (insert or replace) the coordinate for the given dimension.
 void Dataset::setCoord(const Dim dim, DatasetAxis coord) {
   expect::notSparse(coord);
   setDims(coord.dims(), dim);
   m_coords.insert_or_assign(dim, std::move(coord));
+}
+
+/// Set (insert or replace) the coordinate for the given dimension.
+void Dataset::setCoord(const Dim dim, Variable coord) {
+  setCoord(dim, DatasetAxis(std::move(coord)));
 }
 
 /// Set (insert or replace) an attribute for the given attribute name.
