@@ -1,0 +1,124 @@
+trigger:
+  tags:
+    include:
+      - '*.*.*'
+
+pr: none
+
+stages:
+  - template: templates/code_quality_checks.yml
+
+  - stage: 'build_and_test'
+    displayName: 'Conda Package Build and Unit Tests'
+
+    jobs:
+      - job: 'linux'
+        displayName: 'Linux'
+        timeoutInMinutes: 60
+        strategy:
+          matrix:
+            Python36:
+              PYTHON_VERSION: '3.6'
+            Python37:
+              PYTHON_VERSION: '3.7'
+        pool:
+          vmImage: 'ubuntu-18.04'
+        steps:
+          - checkout: self
+            submodules: true
+          - bash: |
+              echo "##vso[task.prependpath]$CONDA/bin"
+              echo "##vso[task.setvariable variable=conda_dir]$CONDA"
+            displayName: Configure Conda directories
+          - bash: |
+              set -ex
+              conda --version
+              conda install --yes anaconda-client conda-build
+              conda config --set always_yes yes --set changeps1 no
+            displayName: 'Conda configuration'
+          - bash: |
+              conda build --user scipp --token "$ANACONDA_TOKEN" --channel conda-forge --python="$PYTHON_VERSION" ./conda
+            env:
+              ANACONDA_TOKEN: $(anaconda_token_secret)
+            displayName: 'Package build'
+          - task: PublishBuildArtifacts@1
+            inputs:
+              PathtoPublish: "$(conda_dir)/conda-bld/linux-64"
+              ArtifactName: 'linux-64'
+            displayName: 'Publish Conda package artefacts'
+
+      - job: 'mac'
+        displayName: 'Mac OS'
+        timeoutInMinutes: 80
+        pool:
+          vmImage: 'macOS-10.14'
+        variables:
+          OSX_VERSION: '10.15'
+        steps:
+          - checkout: self
+            submodules: true
+          - bash: |
+              echo "##vso[task.prependpath]$CONDA/bin"
+              echo "##vso[task.setvariable variable=conda_dir]$CONDA"
+            displayName: Configure Conda directories
+          - bash: |
+              sudo chown -R $USER $CONDA
+            displayName: Take ownership of Conda installation
+          - bash: |
+              set -ex
+              conda --version
+              conda install --yes anaconda-client conda-build
+              conda config --set always_yes yes --set changeps1 no
+            displayName: 'Conda configuration'
+          - bash: |
+              conda build --user scipp --token "$ANACONDA_TOKEN" --channel conda-forge ./conda
+            env:
+              ANACONDA_TOKEN: $(anaconda_token_secret)
+            displayName: 'Package build'
+          - task: PublishBuildArtifacts@1
+            inputs:
+              PathtoPublish: '$(conda_dir)/conda-bld/osx-64'
+              ArtifactName: 'osx-64'
+            displayName: 'Publish Conda package artefacts'
+
+      - job: 'windows'
+        displayName: 'Windows'
+        timeoutInMinutes: 60
+        pool:
+          vmImage: 'windows-latest'
+        steps:
+          - checkout: self
+            submodules: true
+          - powershell: |
+              Write-Host "##vso[task.prependpath]$env:CONDA\Scripts"
+              Write-Host "##vso[task.setvariable variable=conda_dir]$env:CONDA"
+            displayName: Configure Conda directories
+          - script: |
+              conda --version
+              conda install --yes anaconda-client conda-build
+              conda config --set always_yes yes --set changeps1 no
+            displayName: 'Conda configuration'
+          - script: |
+              conda build --user scipp --token "%ANACONDA_TOKEN%" --channel conda-forge ./conda
+            env:
+              ANACONDA_TOKEN: $(anaconda_token_secret)
+            displayName: 'Package build'
+          - task: PublishBuildArtifacts@1
+            inputs:
+              PathtoPublish: '$(conda_dir)/conda-bld/win-64'
+              ArtifactName: 'win-64'
+            displayName: 'Publish Conda package artefacts'
+
+  - stage: 'post_build_checks'
+    displayName: 'Post Build Checks'
+
+    jobs:
+      - template: templates/documentation_build.yml
+
+  - stage: 'deploy'
+    displayName: 'Deployment'
+
+    jobs:
+      - template: templates/documentation_deploy.yml
+        parameters:
+          release: True
