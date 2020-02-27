@@ -301,10 +301,8 @@ VariableView nan_to_num(const VariableConstView &var,
                         const VariableView &out) {
 
   auto op = [](auto &a, const auto &b, const auto &repl) {
-    if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(b)>>)
-      a = isnan(b) ? repl : b;
-    else
-      a = std::isnan(b) ? repl : b;
+    using std::isnan;
+    a = isnan(b) ? repl : b;
   };
 
   return replace_in_place(var, replacement, op, out);
