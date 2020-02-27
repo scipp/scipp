@@ -209,8 +209,35 @@ def _to_cartesian(r, theta, phi):
     return x, y, z
 
 
-def init_pos(ws, sample_pos):
+def rotation_matrix_from_vectors(source, target):
+    """ Find the rotation matrix that aligns vec1 to vec2
+    :param source: A 3d "source" vector
+    :param target: A 3d "destination" vector
+    :return mat: A transform matrix (3x3) which when applied to vec1, aligns it with vec2.
+    """
+    a, b = (source / np.linalg.norm(source)).reshape(3), (
+        target / np.linalg.norm(target)).reshape(3)
+    v = np.cross(a, b)
+    c = np.dot(a, b)  # cos
+    s = np.linalg.norm(v)  # sin
+    if s == 0:
+        return np.eye(3)
+    kmat = np.array([[0, -v[2], v[1]], [v[2], 0, -v[0]], [-v[1], v[0], 0]])
+    rotation_matrix = np.eye(3) + kmat + kmat.dot(kmat) * ((1 - c) / (s**2))
+    return rotation_matrix
+
+
+def init_pos(ws, source_pos, sample_pos):
     import numpy as np
+
+    if sample_pos and source_pos:
+        act_beam = (sample_pos - source_pos).values
+        rot = rotation_matrix_from_vectors(act_beam, [0, 0, 1])
+        inv_rot = rot.transpose()
+    else:
+        rot = np.eye(3)
+        inv_rot = rot
+
     spec_info = ws.spectrumInfo()
     det_info = ws.detectorInfo()
     pos = np.zeros([len(spec_info), 3])
@@ -220,8 +247,9 @@ def init_pos(ws, sample_pos):
             theta, phi, r = 0.0, 0.0, 0.0
             n_dets = len(definition)
             for j in range(n_dets):
-                p = det_info.position(definition[j][0])
-                x, y, z = np.array(p) - sample_pos.values
+                p = np.array(det_info.position(definition[j][0]))
+                p = rot.dot(p)
+                x, y, z = p - sample_pos.values
                 r_j, theta_j, phi_j = _to_spherical(x, y, z)
                 r += r_j
                 theta += theta_j
@@ -229,6 +257,7 @@ def init_pos(ws, sample_pos):
                 av_pos = np.array([
                     p / n_dets for p in _to_cartesian(r, theta, phi)
                 ]) + sample_pos.values
+                av_pos = inv_rot.dot(av_pos)
             pos[i, :] = av_pos
         else:
             pos[i, :] = [np.nan, np.nan, np.nan]
@@ -280,7 +309,7 @@ def set_bin_masks(bin_masks, dim, index, masked_bins):
 def _convert_MatrixWorkspace_info(ws):
     source_pos, sample_pos = make_component_info(ws)
     det_info = make_detector_info(ws)
-    pos = init_pos(ws, sample_pos)
+    pos = init_pos(ws, source_pos, sample_pos)
     spec_dim, spec_coord = init_spec_axis(ws)
 
     info = {
@@ -656,7 +685,7 @@ def load_component_info(ds, file):
 
         ds.labels["source_position"] = source_pos
         ds.labels["sample_position"] = sample_pos
-        ds.labels["position"] = init_pos(ws, sample_pos)
+        ds.labels["position"] = init_pos(ws, source_pos, sample_pos)
 
 
 def validate_dim_and_get_mantid_string(unit_dim):

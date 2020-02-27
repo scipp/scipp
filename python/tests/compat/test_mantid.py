@@ -398,6 +398,24 @@ class TestMantidConversion(unittest.TestCase):
         self._do_test_point((0.0, -1.0, 0.0))
         self._do_test_point((0.0, 0.0, -1.0))
 
+    def test_detector_positions(self):
+        import mantid.simpleapi as mantid
+        from mantid.kernel import V3D
+        eventWS = mantid.CloneWorkspace(self.base_event_ws)
+        comp_info = eventWS.componentInfo()
+        small_offset = V3D(0.01, 0.01, 0.01)
+        comp_info.setPosition(comp_info.source(),
+                              comp_info.samplePosition() + small_offset)
+        moved = mantidcompat.convert_Workspace2D_to_data_array(eventWS)
+        moved_det_position = moved.labels["position"]
+        unmoved = mantidcompat.convert_Workspace2D_to_data_array(eventWS)
+        unmoved_det_positions = unmoved.labels["position"]
+        # Moving the sample accounted for in position calculations but should not yield change to final detector positions
+        self.assertTrue(
+            np.all(
+                np.isclose(moved_det_position.values,
+                           unmoved_det_positions.values)))
+
 
 @pytest.mark.skipif(not mantid_is_available(),
                     reason='Mantid framework is unavailable')
