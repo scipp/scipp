@@ -323,8 +323,7 @@ class Slicer1d(Slicer):
                 warnings.filterwarnings("ignore", category=UserWarning)
                 self.ax.set_xlim([xmin - deltax, xmax + deltax])
         self.ax.set_xlabel(
-            name_with_unit(self.slider_x[self.name][dim],
-                           name=str(dim)))
+            name_with_unit(self.slider_x[self.name][dim], name=str(dim)))
         if self.slider_ticks[self.name][dim] is not None:
             self.ax.set_xticklabels(self.get_custom_ticks(self.ax, dim))
         return

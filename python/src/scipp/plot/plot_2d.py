@@ -234,16 +234,17 @@ class Slicer2d(Slicer):
                         self.name][dim].values[[0, -1]].astype(np.float)
 
                 axparams[but_val]["lims"] = self.extent[but_val].copy()
-                if getattr(self, "log" + but_val) and (
-                    self.extent[but_val][0] <= 0):
+                if getattr(self,
+                           "log" + but_val) and (self.extent[but_val][0] <= 0):
                     if not self.histograms[self.name][dim]:
                         new_x = centers_to_edges(xc)
                     else:
-                        new_x = edges_to_centers(self.slider_x[self.name][dim].values)
-                    axparams[but_val]["lims"][0] = new_x[np.searchsorted(new_x, 0)]
+                        new_x = edges_to_centers(
+                            self.slider_x[self.name][dim].values)
+                    axparams[but_val]["lims"][0] = new_x[np.searchsorted(
+                        new_x, 0)]
                 axparams[but_val]["labels"] = name_with_unit(
-                    self.slider_x[self.name][dim],
-                    name=str(dim))
+                    self.slider_x[self.name][dim], name=str(dim))
                 axparams[but_val]["dim"] = dim
 
         extent_array = np.array(list(self.extent.values())).flatten()

@@ -225,7 +225,8 @@ class InstrumentView:
                 np.amin(self.det_pos[:, i]),
                 np.amax(self.det_pos[:, i])
             ]
-            self.camera_pos = max(self.camera_pos, np.amax(np.abs(self.minmax[x])))
+            self.camera_pos = max(self.camera_pos,
+                                  np.amax(np.abs(self.minmax[x])))
 
         # Create texture for scatter points to represent detector shapes
         nx = 32

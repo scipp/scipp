@@ -152,7 +152,8 @@ class Slicer:
                 # print(x)
                 # print(x.shape)
                 # indx = array.dims.index(dim)
-                self.histograms[name][dim] = self.slider_nx[name][dim] == x.shape[0] - 1
+                self.histograms[name][dim] = self.slider_nx[name][
+                    dim] == x.shape[0] - 1
 
         # Initialise list for VBox container
         self.vbox = []
@@ -245,7 +246,8 @@ class Slicer:
 
             # Construct members object
             self.members["widgets"]["sliders"][dim_str] = self.slider[dim]
-            self.members["widgets"]["togglebuttons"][dim_str] = self.buttons[dim]
+            self.members["widgets"]["togglebuttons"][dim_str] = self.buttons[
+                dim]
             self.members["widgets"]["labels"][dim_str] = self.lab[dim]
 
         if self.masks is not None:
