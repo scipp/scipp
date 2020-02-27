@@ -203,126 +203,16 @@ SCIPP_CORE_EXPORT bool operator==(const VariableConstView &,
 SCIPP_CORE_EXPORT bool operator!=(const VariableConstView &a,
                                   const DatasetAxisConstView &b);
 
-SCIPP_CORE_EXPORT DatasetAxis operator+(const DatasetAxisConstView &a,
-                                        const DatasetAxisConstView &b);
-SCIPP_CORE_EXPORT DatasetAxis operator-(const DatasetAxisConstView &a,
-                                        const DatasetAxisConstView &b);
-SCIPP_CORE_EXPORT DatasetAxis operator*(const DatasetAxisConstView &a,
-                                        const DatasetAxisConstView &b);
-SCIPP_CORE_EXPORT DatasetAxis operator/(const DatasetAxisConstView &a,
-                                        const DatasetAxisConstView &b);
-SCIPP_CORE_EXPORT DatasetAxis operator|(const DatasetAxisConstView &a,
-                                        const DatasetAxisConstView &b);
-SCIPP_CORE_EXPORT DatasetAxis operator&(const DatasetAxisConstView &a,
-                                        const DatasetAxisConstView &b);
-SCIPP_CORE_EXPORT DatasetAxis operator^(const DatasetAxisConstView &a,
-                                        const DatasetAxisConstView &b);
-
-SCIPP_CORE_EXPORT DatasetAxis astype(const DatasetAxisConstView &var,
-                                     const DType type);
-
-[[nodiscard]] SCIPP_CORE_EXPORT DatasetAxis
-reciprocal(const DatasetAxisConstView &var);
-[[nodiscard]] SCIPP_CORE_EXPORT DatasetAxis reciprocal(DatasetAxis &&var);
-SCIPP_CORE_EXPORT DatasetAxisView reciprocal(const DatasetAxisConstView &var,
-                                             const DatasetAxisView &out);
-
-SCIPP_CORE_EXPORT std::vector<DatasetAxis>
-split(const DatasetAxis &var, const Dim dim,
-      const std::vector<scipp::index> &indices);
-[[nodiscard]] SCIPP_CORE_EXPORT DatasetAxis
-abs(const DatasetAxisConstView &var);
-[[nodiscard]] SCIPP_CORE_EXPORT DatasetAxis abs(DatasetAxis &&var);
-SCIPP_CORE_EXPORT DatasetAxisView abs(const DatasetAxisConstView &var,
-                                      const DatasetAxisView &out);
-SCIPP_CORE_EXPORT DatasetAxis broadcast(const DatasetAxisConstView &var,
-                                        const Dimensions &dims);
 SCIPP_CORE_EXPORT DatasetAxis concatenate(const DatasetAxisConstView &a1,
                                           const DatasetAxisConstView &a2,
                                           const Dim dim);
-SCIPP_CORE_EXPORT DatasetAxis dot(const DatasetAxis &a, const DatasetAxis &b);
-SCIPP_CORE_EXPORT DatasetAxis filter(const DatasetAxis &var,
-                                     const DatasetAxis &filter);
-[[nodiscard]] SCIPP_CORE_EXPORT DatasetAxis
-mean(const DatasetAxisConstView &var, const Dim dim);
-SCIPP_CORE_EXPORT DatasetAxisView mean(const DatasetAxisConstView &var,
-                                       const Dim dim,
-                                       const DatasetAxisView &out);
-SCIPP_CORE_EXPORT DatasetAxis norm(const DatasetAxisConstView &var);
-SCIPP_CORE_EXPORT DatasetAxis permute(const DatasetAxis &var, const Dim dim,
-                                      const std::vector<scipp::index> &indices);
-SCIPP_CORE_EXPORT DatasetAxis rebin(const DatasetAxisConstView &var,
-                                    const Dim dim,
-                                    const VariableConstView &oldCoord,
-                                    const VariableConstView &newCoord);
 SCIPP_CORE_EXPORT DatasetAxis resize(const DatasetAxisConstView &var,
                                      const Dim dim, const scipp::index size);
-SCIPP_CORE_EXPORT DatasetAxis reverse(DatasetAxis var, const Dim dim);
-[[nodiscard]] SCIPP_CORE_EXPORT DatasetAxis
-sqrt(const DatasetAxisConstView &var);
-[[nodiscard]] SCIPP_CORE_EXPORT DatasetAxis sqrt(DatasetAxis &&var);
-SCIPP_CORE_EXPORT DatasetAxisView sqrt(const DatasetAxisConstView &var,
-                                       const DatasetAxisView &out);
 
 [[nodiscard]] SCIPP_CORE_EXPORT DatasetAxis
 flatten(const DatasetAxisConstView &var, const Dim dim);
-[[nodiscard]] SCIPP_CORE_EXPORT DatasetAxis sum(const DatasetAxisConstView &var,
-                                                const Dim dim);
-SCIPP_CORE_EXPORT DatasetAxisView sum(const DatasetAxisConstView &var,
-                                      const Dim dim,
-                                      const DatasetAxisView &out);
 
 SCIPP_CORE_EXPORT DatasetAxis copy(const DatasetAxisConstView &axis);
-
-// Trigonometrics
-[[nodiscard]] SCIPP_CORE_EXPORT DatasetAxis
-sin(const DatasetAxisConstView &var);
-[[nodiscard]] SCIPP_CORE_EXPORT DatasetAxis sin(DatasetAxis &&var);
-SCIPP_CORE_EXPORT DatasetAxisView sin(const DatasetAxisConstView &var,
-                                      const DatasetAxisView &out);
-[[nodiscard]] SCIPP_CORE_EXPORT DatasetAxis
-cos(const DatasetAxisConstView &var);
-[[nodiscard]] SCIPP_CORE_EXPORT DatasetAxis cos(DatasetAxis &&var);
-SCIPP_CORE_EXPORT DatasetAxisView cos(const DatasetAxisConstView &var,
-                                      const DatasetAxisView &out);
-[[nodiscard]] SCIPP_CORE_EXPORT DatasetAxis
-tan(const DatasetAxisConstView &var);
-[[nodiscard]] SCIPP_CORE_EXPORT DatasetAxis tan(DatasetAxis &&var);
-SCIPP_CORE_EXPORT DatasetAxisView tan(const DatasetAxisConstView &var,
-                                      const DatasetAxisView &out);
-[[nodiscard]] SCIPP_CORE_EXPORT DatasetAxis
-asin(const DatasetAxisConstView &var);
-[[nodiscard]] SCIPP_CORE_EXPORT DatasetAxis asin(DatasetAxis &&var);
-SCIPP_CORE_EXPORT DatasetAxisView asin(const DatasetAxisConstView &var,
-                                       const DatasetAxisView &out);
-[[nodiscard]] SCIPP_CORE_EXPORT DatasetAxis
-acos(const DatasetAxisConstView &var);
-[[nodiscard]] SCIPP_CORE_EXPORT DatasetAxis acos(DatasetAxis &&var);
-SCIPP_CORE_EXPORT DatasetAxisView acos(const DatasetAxisConstView &var,
-                                       const DatasetAxisView &out);
-[[nodiscard]] SCIPP_CORE_EXPORT DatasetAxis
-atan(const DatasetAxisConstView &var);
-[[nodiscard]] SCIPP_CORE_EXPORT DatasetAxis atan(DatasetAxis &&var);
-SCIPP_CORE_EXPORT DatasetAxisView atan(const DatasetAxisConstView &var,
-                                       const DatasetAxisView &out);
-
-// Logical reductions
-[[nodiscard]] SCIPP_CORE_EXPORT DatasetAxis any(const DatasetAxisConstView &var,
-                                                const Dim dim);
-[[nodiscard]] SCIPP_CORE_EXPORT DatasetAxis all(const DatasetAxisConstView &var,
-                                                const Dim dim);
-
-// Other reductions
-[[nodiscard]] SCIPP_CORE_EXPORT DatasetAxis max(const DatasetAxisConstView &var,
-                                                const Dim dim);
-[[nodiscard]] SCIPP_CORE_EXPORT DatasetAxis min(const DatasetAxisConstView &var,
-                                                const Dim dim);
-
-SCIPP_CORE_EXPORT DatasetAxisView
-nan_to_num(const DatasetAxisConstView &var,
-           const DatasetAxisConstView &replacement, const DatasetAxisView &out);
-[[nodiscard]] SCIPP_CORE_EXPORT DatasetAxis nan_to_num(
-    const DatasetAxisConstView &var, const DatasetAxisConstView &replacement);
 
 } // namespace scipp::core
 
