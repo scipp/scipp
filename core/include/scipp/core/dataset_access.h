@@ -5,12 +5,12 @@
 #ifndef SCIPP_CORE_DATASET_ACCESS_H
 #define SCIPP_CORE_DATASET_ACCESS_H
 
+#include "scipp/core/axis_forward.h"
 #include "scipp/core/variable.h"
 
 namespace scipp::core {
 
 class Dataset;
-class DatasetAxis;
 
 class CoordAccess {
 public:

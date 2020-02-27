@@ -13,21 +13,26 @@ void UnalignedAccess::erase(const std::string &key) const {
   m_unaligned->erase(m_unaligned->find(key));
 }
 
-DatasetAxis::DatasetAxis(const DatasetAxisConstView &view)
+template <class Id, class UnalignedType>
+Axis<Id, UnalignedType>::Axis(const const_view_type &view)
     : m_data(Variable(view.data())) {
   for (const auto &item : view.unaligned())
     m_unaligned.emplace(item.first, Variable(item.second));
 }
 
-UnalignedConstView DatasetAxis::unaligned() const {
-  typename UnalignedConstView::holder_type items;
+template <class Id, class UnalignedType>
+typename Axis<Id, UnalignedType>::unaligned_const_view_type
+Axis<Id, UnalignedType>::unaligned() const {
+  typename unaligned_const_view_type::holder_type items;
   for (const auto &[key, value] : m_unaligned)
     items.emplace(key, std::pair{&value, nullptr});
   return unaligned_const_view_type{std::move(items)};
 }
 
-UnalignedView DatasetAxis::unaligned() {
-  typename UnalignedConstView::holder_type items;
+template <class Id, class UnalignedType>
+typename Axis<Id, UnalignedType>::unaligned_view_type
+Axis<Id, UnalignedType>::unaligned() {
+  typename unaligned_const_view_type::holder_type items;
   for (auto &&[key, value] : m_unaligned)
     items.emplace(key, std::pair{&value, &value});
   return unaligned_view_type{UnalignedAccess(this, &m_unaligned),
@@ -42,7 +47,8 @@ const UnalignedView &DatasetAxisView::unaligned() const noexcept {
   return m_unaligned;
 }
 
-void DatasetAxis::rename(const Dim from, const Dim to) {
+template <class Id, class UnalignedType>
+void Axis<Id, UnalignedType>::rename(const Dim from, const Dim to) {
   if (hasData())
     m_data.rename(from, to);
   for (auto &item : m_unaligned)

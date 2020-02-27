@@ -13,6 +13,7 @@
 #include "scipp-core_export.h"
 #include "scipp/common/except.h"
 #include "scipp/common/index.h"
+#include "scipp/core/axis_forward.h"
 #include "scipp/core/dtype.h"
 #include "scipp/core/string.h"
 #include "scipp/units/except.h"
@@ -23,7 +24,6 @@ namespace scipp::core {
 class DataArrayConstView;
 class DatasetConstView;
 class Dataset;
-class DatasetAxis;
 class DatasetAxisConstView;
 class DataArray;
 class Dimensions;

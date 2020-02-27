@@ -6,6 +6,7 @@
 #define SCIPP_CORE_AXIS_H
 
 #include "scipp-core_export.h"
+#include "scipp/core/axis_forward.h"
 #include "scipp/core/except.h"
 #include "scipp/core/variable.h"
 #include "scipp/core/view_decl.h"
@@ -33,23 +34,46 @@ namespace scipp::core {
 // d['a'].attrs
 // d['a'].unaligned.attrs
 
+class DataArrayAxisConstView;
+class DataArrayAxisView;
 class DatasetAxisConstView;
 class DatasetAxisView;
 
-class SCIPP_CORE_EXPORT DatasetAxis {
+namespace axis_detail {
+template <class T> struct const_view;
+template <> struct const_view<Variable> {
+  using type = typename Variable::const_view_type;
+};
+template <> struct const_view<axis::dataset_unaligned_type> {
+  using type = UnalignedConstView;
+};
+template <class T> struct view;
+template <> struct view<Variable> {
+  using type = typename Variable::view_type;
+};
+template <> struct view<axis::dataset_unaligned_type> {
+  using type = UnalignedView;
+};
+template <class T> using const_view_t = typename const_view<T>::type;
+template <class T> using view_t = typename view<T>::type;
+} // namespace axis_detail
+
+template <class Id, class UnalignedType> class Axis {
 public:
+  // using const_view_type = AxisConstView<T>;
+  // using view_type = AxisView<T>;
   using const_view_type = DatasetAxisConstView;
   using view_type = DatasetAxisView;
-  using unaligned_type = std::unordered_map<std::string, Variable>;
-  using unaligned_const_view_type = UnalignedConstView;
-  using unaligned_view_type = UnalignedView;
+  using unaligned_type = UnalignedType;
+  using unaligned_const_view_type = axis_detail::const_view_t<unaligned_type>;
+  using unaligned_view_type = axis_detail::view_t<unaligned_type>;
 
-  DatasetAxis() = default;
-  explicit DatasetAxis(Variable data) : m_data(std::move(data)) {}
-  explicit DatasetAxis(const DatasetAxisConstView &data);
+  Axis() = default;
+  explicit Axis(Variable data) : m_data(std::move(data)) {}
+  explicit Axis(const const_view_type &data);
 
-  UnalignedConstView unaligned() const;
-  UnalignedView unaligned();
+  unaligned_const_view_type unaligned() const;
+  unaligned_view_type unaligned();
 
   /// Return true if the data array contains data values.
   bool hasData() const noexcept { return static_cast<bool>(m_data); }
@@ -91,10 +115,10 @@ public:
   /// Return typed view for data variances.
   template <class T> auto variances() { return data().template variances<T>(); }
 
-  DatasetAxis &operator+=(const DatasetAxisConstView &other);
-  DatasetAxis &operator-=(const DatasetAxisConstView &other);
-  DatasetAxis &operator*=(const DatasetAxisConstView &other);
-  DatasetAxis &operator/=(const DatasetAxisConstView &other);
+  Axis &operator+=(const const_view_type &other);
+  Axis &operator-=(const const_view_type &other);
+  Axis &operator*=(const const_view_type &other);
+  Axis &operator/=(const const_view_type &other);
 
   void rename(const Dim from, const Dim to);
 

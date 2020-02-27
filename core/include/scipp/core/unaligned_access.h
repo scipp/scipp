@@ -6,11 +6,10 @@
 #define SCIPP_CORE_UNALIGNED_ACCESS_H
 
 #include "scipp-core_export.h"
+#include "scipp/core/axis_forward.h"
 #include "scipp/core/variable.h"
 
 namespace scipp::core {
-
-class DatasetAxis;
 
 class SCIPP_CORE_EXPORT UnalignedAccess {
 public:

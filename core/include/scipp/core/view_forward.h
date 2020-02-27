@@ -5,13 +5,13 @@
 #ifndef SCIPP_CORE_VIEW_FORWARD_H
 #define SCIPP_CORE_VIEW_FORWARD_H
 
+#include "scipp/core/axis_forward.h"
 #include "scipp/core/dataset_access.h"
 #include "scipp/units/dim.h"
 
 namespace scipp::core {
 
 class Variable;
-class DatasetAxis;
 class UnalignedAccess;
 
 namespace ViewId {
