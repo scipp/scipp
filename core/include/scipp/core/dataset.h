@@ -60,7 +60,7 @@ public:
   DType dtype() const;
   units::Unit unit() const;
 
-  CoordsConstView coords() const noexcept;
+  DataArrayCoordsConstView coords() const noexcept;
   AttrsConstView attrs() const noexcept;
   MasksConstView masks() const noexcept;
 
@@ -129,7 +129,7 @@ public:
   DataArrayView(Dataset &dataset, detail::dataset_item_map::value_type &data,
                 const detail::slice_list &slices = {});
 
-  CoordsView coords() const noexcept;
+  DataArrayCoordsView coords() const noexcept;
   MasksView masks() const noexcept;
   AttrsView attrs() const noexcept;
 
@@ -264,8 +264,8 @@ public:
 
   void clear();
 
-  CoordsConstView coords() const noexcept;
-  CoordsView coords() noexcept;
+  DatasetCoordsConstView coords() const noexcept;
+  DatasetCoordsView coords() noexcept;
 
   AttrsConstView attrs() const noexcept;
   AttrsView attrs() noexcept;
@@ -508,7 +508,7 @@ public:
   index size() const noexcept { return m_items.size(); }
   [[nodiscard]] bool empty() const noexcept { return m_items.empty(); }
 
-  CoordsConstView coords() const noexcept;
+  DatasetCoordsConstView coords() const noexcept;
   AttrsConstView attrs() const noexcept;
   MasksConstView masks() const noexcept;
 
@@ -591,7 +591,7 @@ class SCIPP_CORE_EXPORT DatasetView : public DatasetConstView {
 public:
   DatasetView(Dataset &dataset);
 
-  CoordsView coords() const noexcept;
+  DatasetCoordsView coords() const noexcept;
   AttrsView attrs() const noexcept;
   MasksView masks() const noexcept;
 
@@ -717,8 +717,8 @@ public:
 
   const std::string &name() const { return m_holder.begin()->name(); }
 
-  CoordsConstView coords() const { return get().coords(); }
-  CoordsView coords() { return get().coords(); }
+  DataArrayCoordsConstView coords() const;
+  DataArrayCoordsView coords();
 
   AttrsConstView attrs() const { return get().attrs(); }
   AttrsView attrs() { return get().attrs(); }

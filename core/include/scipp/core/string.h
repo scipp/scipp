@@ -57,6 +57,7 @@ SCIPP_CORE_EXPORT std::string to_string(const Variable &variable);
 SCIPP_CORE_EXPORT std::string to_string(const VariableConstView &variable);
 SCIPP_CORE_EXPORT std::string to_string(const DataArray &data);
 SCIPP_CORE_EXPORT std::string to_string(const DataArrayConstView &data);
+SCIPP_CORE_EXPORT std::string to_string(const DataArrayAxisConstView &data);
 SCIPP_CORE_EXPORT std::string to_string(const Dataset &dataset);
 SCIPP_CORE_EXPORT std::string to_string(const DatasetConstView &dataset);
 SCIPP_CORE_EXPORT std::string to_string(const DatasetAxisConstView &axis);

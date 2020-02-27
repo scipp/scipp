@@ -10,6 +10,7 @@ namespace scipp::core {
 
 namespace counts {
 
+template <class CoordsConstView>
 std::vector<Variable> getBinWidths(const CoordsConstView &c,
                                    const std::vector<Dim> &dims) {
   std::vector<Variable> binWidths;

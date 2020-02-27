@@ -298,6 +298,10 @@ std::string to_string(const DataArrayConstView &data) {
   return do_to_string(data, "<scipp.DataArrayView>", data.dims());
 }
 
+std::string to_string(const DataArrayAxisConstView &axis) {
+  return "<scipp.DataArrayAxisView>" + to_string(axis.data());
+}
+
 std::string to_string(const Dataset &dataset) {
   return do_to_string(dataset, "<scipp.Dataset>", dimensions(dataset));
 }

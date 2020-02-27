@@ -10,11 +10,24 @@
 
 namespace scipp::core {
 
+class DataArray;
 class Dataset;
 
-class CoordAccess {
+class DataArrayCoordAccess {
 public:
-  CoordAccess(Dataset *parent) : m_parent(parent) {}
+  DataArrayCoordAccess(DataArray *parent) : m_parent(parent) {}
+
+  void set(const Dim &key, Variable var) const;
+  void set(const Dim &key, DataArrayAxis axis) const;
+  void erase(const Dim &key) const;
+
+private:
+  DataArray *m_parent;
+};
+
+class DatasetCoordAccess {
+public:
+  DatasetCoordAccess(Dataset *parent) : m_parent(parent) {}
 
   void set(const Dim &key, Variable var) const;
   void set(const Dim &key, DatasetAxis axis) const;

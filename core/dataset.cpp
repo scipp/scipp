@@ -81,17 +81,18 @@ void Dataset::clear() {
 ///
 /// This view includes "dimension-coordinates" as well as
 /// "non-dimension-coordinates" ("labels").
-CoordsConstView Dataset::coords() const noexcept {
-  return CoordsConstView(makeViewItems<CoordsConstView>(m_coords));
+DatasetCoordsConstView Dataset::coords() const noexcept {
+  return DatasetCoordsConstView(
+      makeViewItems<DatasetCoordsConstView>(m_coords));
 }
 
 /// Return a view to all coordinates of the dataset.
 ///
 /// This view includes "dimension-coordinates" as well as
 /// "non-dimension-coordinates" ("labels").
-CoordsView Dataset::coords() noexcept {
-  return CoordsView(CoordAccess(this),
-                    makeViewItems<CoordsConstView>(m_coords));
+DatasetCoordsView Dataset::coords() noexcept {
+  return DatasetCoordsView(DatasetCoordAccess(this),
+                           makeViewItems<DatasetCoordsConstView>(m_coords));
 }
 
 /// Return a const view to all attributes of the dataset.
@@ -529,10 +530,11 @@ void DataArrayView::setUnit(const units::Unit unit) const {
 ///
 /// If the data has a sparse dimension the returned view will not contain any
 /// of the dataset's coordinates that depends on the sparse dimension.
-CoordsConstView DataArrayConstView::coords() const noexcept {
+DataArrayCoordsConstView DataArrayConstView::coords() const noexcept {
   // TODO mapping
-  return CoordsConstView(
-      makeViewItems<CoordsConstView>(dims(), m_dataset->m_coords), slices());
+  return DataArrayCoordsConstView(
+      makeViewItems<DataArrayCoordsConstView>(dims(), m_dataset->m_coords),
+      slices());
 }
 
 /// Return a const view to all attributes of the data view.
@@ -596,13 +598,16 @@ DataArrayView DataArrayView::slice(const Slice slice1, const Slice slice2,
 ///
 /// If the data has a sparse dimension the returned view will not contain any
 /// of the dataset's coordinates that depends on the sparse dimension.
-CoordsView DataArrayView::coords() const noexcept {
+DataArrayCoordsView DataArrayView::coords() const noexcept {
   // TODO mapping
-  return CoordsView(
-      CoordAccess(m_mutableDataset),
-      makeViewItems<CoordsConstView>(dims(), m_mutableDataset->m_coords),
-      slices());
+  return DataArrayCoordsView(DataArrayCoordAccess(m_mutableDataset),
+                             makeViewItems<DataArrayCoordsConstView>(
+                                 dims(), m_mutableDataset->m_coords),
+                             slices());
 }
+
+DataArrayCoordsConstView DataArray::coords() const { return get().coords(); }
+DataArrayCoordsView DataArray::coords() { return get().coords(); }
 
 /// Return a const view to all attributes of the data view.
 AttrsView DataArrayView::attrs() const noexcept {
@@ -669,21 +674,22 @@ DatasetView::DatasetView(Dataset &dataset)
 ///
 /// This view includes "dimension-coordinates" as well as
 /// "non-dimension-coordinates" ("labels").
-CoordsConstView DatasetConstView::coords() const noexcept {
-  return CoordsConstView(makeViewItems<CoordsConstView>(m_dataset->m_coords),
-                         slices());
+DatasetCoordsConstView DatasetConstView::coords() const noexcept {
+  return DatasetCoordsConstView(
+      makeViewItems<DatasetCoordsConstView>(m_dataset->m_coords), slices());
 }
 
 /// Return a view to all coordinates of the dataset slice.
 ///
 /// This view includes "dimension-coordinates" as well as
 /// "non-dimension-coordinates" ("labels").
-CoordsView DatasetView::coords() const noexcept {
+DatasetCoordsView DatasetView::coords() const noexcept {
   // TODO
   // auto *parent = slices().empty() ? m_mutableDataset : nullptr;
-  return CoordsView(CoordAccess(m_mutableDataset),
-                    makeViewItems<CoordsConstView>(m_mutableDataset->m_coords),
-                    slices());
+  return DatasetCoordsView(
+      DatasetCoordAccess(m_mutableDataset),
+      makeViewItems<DatasetCoordsConstView>(m_mutableDataset->m_coords),
+      slices());
 }
 
 /// Return a const view to all attributes of the dataset slice.

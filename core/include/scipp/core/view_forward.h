@@ -16,7 +16,8 @@ class UnalignedAccess;
 
 namespace ViewId {
 class Attrs;
-class Coords;
+class DataArrayCoords;
+class DatasetCoords;
 class Labels;
 class Masks;
 class Unaligned;
@@ -24,10 +25,20 @@ class Unaligned;
 template <class Id, class Key, class Value> class ConstView;
 template <class Base, class Access> class MutableView;
 
-/// View for accessing coordinates of const Dataset and DataArrayConstView.
-using CoordsConstView = ConstView<ViewId::Coords, Dim, DatasetAxis>;
-/// View for accessing coordinates of Dataset and DataArrayView.
-using CoordsView = MutableView<CoordsConstView, CoordAccess>;
+/// View for accessing coordinates of DataArrayConstView.
+using DataArrayCoordsConstView =
+    ConstView<ViewId::DataArrayCoords, Dim, DataArrayAxis>;
+/// View for accessing coordinates of DataArrayView.
+using DataArrayCoordsView =
+    MutableView<DataArrayCoordsConstView, DataArrayCoordAccess>;
+
+/// View for accessing coordinates of const Dataset
+using DatasetCoordsConstView =
+    ConstView<ViewId::DatasetCoords, Dim, DatasetAxis>;
+/// View for accessing coordinates of Dataset
+using DatasetCoordsView =
+    MutableView<DatasetCoordsConstView, DatasetCoordAccess>;
+
 /// View for accessing attributes of const Dataset and DataArrayConstView.
 using AttrsConstView = ConstView<ViewId::Attrs, std::string, Variable>;
 /// View for accessing attributes of Dataset and DataArrayView.
