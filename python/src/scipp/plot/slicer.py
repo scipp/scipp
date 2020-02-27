@@ -57,8 +57,6 @@ class Slicer:
         # Containers: need one per entry in the dict of scipp
         # objects (=DataArray)
 
-        # # Labels for each entry
-        # self.labels = {}
         # Shape of entry
         self.shapes = {}
         # Masks are global and are combined into a single mask
@@ -103,13 +101,11 @@ class Slicer:
                 self.masks = combine_masks(array.masks, array.dims,
                                            array.shape)
 
-            # self.labels[name] = array.labels
             # TODO: 2D coordinates will not be supported by this
             self.shapes[name] = dict(zip(array.dims, array.shape))
             for n, c in array.coords.items():
                 if n not in self.shapes[name] and len(c.shape) > 0:
                     self.shapes[name][n] = c.shape[0]
-            # print(self.shapes)
 
             # Size of the slider coordinate arrays
             self.slider_nx[name] = {}
@@ -131,27 +127,13 @@ class Slicer:
             # Iterate through axes and collect dimensions
             for ax in axes:
                 dim, var, ticks = self.axis_label_and_ticks(ax, array, name)
-                # if (lab is not None) and (dim in axes):
-                #     raise RuntimeError(
-                #         "The dimension of the labels cannot also "
-                #         "be specified as another axis.")
-                # self.slider_labels[name][dim] = lab
                 self.slider_x[name][dim] = var
                 self.slider_ticks[name][dim] = ticks
-                # print(self.slider_nx)
-                # print(self.shapes)
-                # print()
                 self.slider_nx[name][dim] = self.shapes[name][dim]
-                # self.slider_nx[name][dim] = var.shape
 
             # Save information on histograms
             self.histograms[name] = {}
             for dim, x in self.slider_x[name].items():
-                # print(array.dims)
-                # print(self.slider_nx)
-                # print(x)
-                # print(x.shape)
-                # indx = array.dims.index(dim)
                 self.histograms[name][dim] = self.slider_nx[name][
                     dim] == x.shape[0] - 1
 
@@ -174,10 +156,6 @@ class Slicer:
             # If this is a 3d projection, place slices half-way
             if len(button_options) == 3 and (not volume):
                 indx = (self.slider_nx[self.name][dim] - 1) // 2
-            # if self.slider_labels[self.name][dim] is not None:
-            #     descr = self.slider_labels[self.name][dim]
-            # else:
-            #     descr = str(dim)
             dim_str = str(dim)
             # Add an IntSlider to slide along the z dimension of the array
             self.slider[dim] = widgets.IntSlider(
@@ -275,16 +253,10 @@ class Slicer:
         Get dimensions and label (if present) from requested axis
         """
         ticks = None
-        # if axis in data_array.labels.keys():
-        #     dim = data_array.labels[axis].dims[-1]
-        #     lab = axis
-        #     var = data_array.labels[lab]
-        # else:
         dim = axis
         # Convert to Dim object?
         if isinstance(dim, str):
             dim = Dim(dim)
-        # lab = None
         make_fake_coord = False
         fake_unit = None
         if not data_array.coords.__contains__(dim):
