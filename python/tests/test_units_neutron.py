@@ -9,10 +9,10 @@ from scipp import Dim
 
 
 def test_dims():
-    assert 'x' == 'x'
-    assert 'x' != 'y'
-    assert 'y' != 'x'
-    assert 'y' == 'y'
+    assert Dim.X == Dim.X
+    assert Dim.X != Dim.Y
+    assert Dim.Y != Dim.X
+    assert Dim.Y == Dim.Y
 
 
 def test_default_unit():
