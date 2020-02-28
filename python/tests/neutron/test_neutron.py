@@ -8,10 +8,7 @@ import numpy as np
 
 def make_dataset_with_beamline():
     d = sc.Dataset(
-        {
-            'a': sc.Variable(['position', 'tof'],
-                             values=np.random.rand(4, 9))
-        },
+        {'a': sc.Variable(['position', 'tof'], values=np.random.rand(4, 9))},
         coords={
             'tof':
             sc.Variable(['tof'],

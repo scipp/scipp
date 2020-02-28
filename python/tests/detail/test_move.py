@@ -20,8 +20,8 @@ def test_moving_variable_into_dataset():
 def test_moving_variable_into_dataset_proxies():
 
     d = sc.Dataset()
-    d.coords['x'] = sc.detail.move(
-        sc.Variable(['x'], values=np.arange(1000.0)))
+    d.coords['x'] = sc.detail.move(sc.Variable(['x'],
+                                               values=np.arange(1000.0)))
     d.attrs["b"] = sc.detail.move(
         sc.Variable(['y'], values=np.random.random(50)))
     d.masks["c"] = sc.detail.move(
@@ -44,8 +44,8 @@ def test_moving_variable_into_dataset_proxies():
 def test_moving_variable_into_data_array_proxies():
 
     a = sc.DataArray(data=sc.Variable(['x'], values=np.random.random(1000)))
-    a.coords['x'] = sc.detail.move(
-        sc.Variable(['x'], values=np.arange(1000.0)))
+    a.coords['x'] = sc.detail.move(sc.Variable(['x'],
+                                               values=np.arange(1000.0)))
     a.attrs["b"] = sc.detail.move(
         sc.Variable(['x'], values=np.random.random(1000)))
     a.masks["c"] = sc.detail.move(
