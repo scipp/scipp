@@ -16,13 +16,15 @@ using namespace scipp::core;
 template <typename T> class CoordsViewTest : public ::testing::Test {
 protected:
   template <class D>
-  std::conditional_t<std::is_same_v<T, CoordsView>, Dataset, const Dataset> &
+  std::conditional_t<std::is_same_v<T, DatasetCoordsView>, Dataset,
+                     const Dataset> &
   access(D &dataset) {
     return dataset;
   }
 };
 
-using CoordsViewTypes = ::testing::Types<CoordsView, CoordsConstView>;
+using CoordsViewTypes =
+    ::testing::Types<DatasetCoordsView, DatasetCoordsConstView>;
 TYPED_TEST_SUITE(CoordsViewTest, CoordsViewTypes);
 
 TYPED_TEST(CoordsViewTest, empty) {
@@ -61,9 +63,8 @@ TYPED_TEST(CoordsViewTest, sparse_coords_values_and_coords) {
   x.unaligned().set("test", s_coords);
   d.coords().set(Dim::X, x);
   ASSERT_EQ(1, d["test"].coords().size());
-  // TODO The second "test" will disappear once we support DataArrayAxis
   auto sparseX =
-      d["test"].coords()[Dim::X].unaligned()["test"].sparseValues<double>()[0];
+      d["test"].coords()[Dim::X].unaligned().sparseValues<double>()[0];
   ASSERT_EQ(3, sparseX.size());
   ASSERT_EQ(scipp::core::sparse_container<double>({4, 5, 6}), sparseX);
 }
@@ -209,13 +210,13 @@ TYPED_TEST(CoordsViewTest, slice_of_slice_range) {
 TEST(CoordsConstView, slice_return_type) {
   const Dataset d;
   ASSERT_TRUE((std::is_same_v<decltype(d.coords().slice({Dim::X, 0})),
-                              CoordsConstView>));
+                              DatasetCoordsConstView>));
 }
 
 TEST(CoordsView, slice_return_type) {
   Dataset d;
-  ASSERT_TRUE(
-      (std::is_same_v<decltype(d.coords().slice({Dim::X, 0})), CoordsView>));
+  ASSERT_TRUE((std::is_same_v<decltype(d.coords().slice({Dim::X, 0})),
+                              DatasetCoordsView>));
 }
 
 TEST(MutableCoordsViewTest, item_write) {

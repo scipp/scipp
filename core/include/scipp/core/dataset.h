@@ -1047,10 +1047,11 @@ SCIPP_CORE_EXPORT Dataset resize(const DatasetConstView &d, const Dim dim,
 [[nodiscard]] SCIPP_CORE_EXPORT DataArray
 reciprocal(const DataArrayConstView &a);
 
-SCIPP_CORE_EXPORT DatasetAxisConstView same(const DatasetAxisConstView &a,
-                                            const DatasetAxisConstView &b);
-SCIPP_CORE_EXPORT VariableConstView same(const VariableConstView &a,
-                                         const VariableConstView &b);
+/// Return one of the inputs if they are the same, throw otherwise.
+template <class T> T same(const T &a, const T &b) {
+  expect::equals(a, b);
+  return a;
+}
 
 /// Union the masks of the two proxies.
 /// If any of the masks repeat they are OR'ed.

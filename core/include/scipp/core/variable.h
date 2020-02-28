@@ -876,9 +876,14 @@ public:
   void expectCanSetUnit(const units::Unit &unit) const;
   scipp::index size() const { return data().size(); }
 
+  // For internal use in DataArrayConstView.
+  explicit VariableView(VariableConstView &&base)
+      : VariableConstView(std::move(base)), m_mutableVariable{nullptr} {}
+
 private:
   friend class Variable;
   friend class DataArrayConstView;
+  template <class T, class U> friend class Axis;
   template <class T> friend class AxisConstView;
 
   template <class Var>
@@ -888,10 +893,6 @@ private:
     res.m_view = res.data().transpose(dimOrder);
     return res;
   }
-
-  // For internal use in DataArrayConstView.
-  explicit VariableView(VariableConstView &&base)
-      : VariableConstView(std::move(base)), m_mutableVariable{nullptr} {}
 
   template <class T> ElementArrayView<T> cast() const;
   template <class T> ElementArrayView<T> castVariances() const;

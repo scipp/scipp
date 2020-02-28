@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
-/// @author Simon Heybrock
+/// @author Dimitar Tasev
 #ifndef SCIPP_CORE_VIEW_FORWARD_H
 #define SCIPP_CORE_VIEW_FORWARD_H
 

@@ -112,8 +112,8 @@ Dataset flatten(const DatasetConstView &d, const Dim dim) {
   return apply_to_items(d, [](auto &&... _) { return flatten(_...); }, dim);
 }
 
-DatasetAxis flatten(const DatasetAxisConstView &var, const Dim dim,
-                    const MasksConstView &masks) {
+DataArrayAxis flatten(const DataArrayAxisConstView &var, const Dim dim,
+                      const MasksConstView &masks) {
   throw std::runtime_error("flatten not implemented");
 }
 
@@ -170,7 +170,7 @@ DataArray resize(const DataArrayConstView &a, const Dim dim,
                  : typename std::decay_t<decltype(var)>::value_type{var};
     };
 
-    std::map<Dim, DatasetAxis> coords;
+    std::map<Dim, DataArrayAxis> coords;
     for (auto &&[d, coord] : a.coords())
       if (dim_of_coord(coord, d) != dim)
         coords.emplace(d, resize_if_sparse(coord));
@@ -198,19 +198,6 @@ Dataset resize(const DatasetConstView &d, const Dim dim,
                const scipp::index size) {
   return apply_to_items(d, [](auto &&... _) { return resize(_...); }, dim,
                         size);
-}
-
-/// Return one of the inputs if they are the same, throw otherwise.
-DatasetAxisConstView same(const DatasetAxisConstView &a,
-                          const DatasetAxisConstView &b) {
-  expect::equals(a, b);
-  return a;
-}
-
-/// Return one of the inputs if they are the same, throw otherwise.
-VariableConstView same(const VariableConstView &a, const VariableConstView &b) {
-  expect::equals(a, b);
-  return a;
 }
 
 /// Return a deep copy of a DataArray or of a DataArrayView.

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
-/// @author Dimitar Tasev
+/// @author Simon Heybrock
 #ifndef SCIPP_CORE_VIEW_DECL_H
 #define SCIPP_CORE_VIEW_DECL_H
 
@@ -22,10 +22,7 @@ namespace detail {
 using slice_list =
     boost::container::small_vector<std::pair<Slice, scipp::index>, 2>;
 
-template <class Var> auto makeSlice(Var &var, const slice_list &slices) {
-  std::conditional_t<std::is_const_v<Var>, typename Var::const_view_type,
-                     typename Var::view_type>
-      slice(var);
+template <class T> void do_make_slice(T &slice, const slice_list &slices) {
   for (const auto [params, extent] : slices) {
     if (slice.dims().contains(params.dim())) {
       const auto new_end = params.end() + slice.dims()[params.dim()] - extent;
@@ -37,6 +34,13 @@ template <class Var> auto makeSlice(Var &var, const slice_list &slices) {
       }
     }
   }
+}
+
+template <class Var> auto makeSlice(Var &var, const slice_list &slices) {
+  std::conditional_t<std::is_const_v<Var>, typename Var::const_view_type,
+                     typename Var::view_type>
+      slice(var);
+  do_make_slice(slice, slices);
   return slice;
 }
 
@@ -79,22 +83,29 @@ template <class T, class Key> Dim dim_of_coord(const T &var, const Key &key) {
 
 /// Common functionality for other const-view classes.
 template <class Id, class Key, class Value> class ConstView {
-private:
-  struct make_item {
-    const ConstView *view;
-    template <class T> auto operator()(const T &item) const {
-      return std::pair<Key, typename ConstView::mapped_type::const_view_type>(
-          item.first, detail::makeSlice(*item.second.first, view->slices()));
-    }
-  };
-
 public:
   using key_type = Key;
   using mapped_type = Value;
   using holder_type =
-      std::unordered_map<key_type,
-                         std::pair<const mapped_type *, mapped_type *>>;
+      std::unordered_map<key_type, typename mapped_type::view_type>;
 
+private:
+  static auto make_slice(typename mapped_type::const_view_type view,
+                         const detail::slice_list &slices) {
+    detail::do_make_slice(view, slices);
+    return view;
+  };
+
+  struct make_item {
+    const ConstView *view;
+    template <class T> auto operator()(const T &item) const {
+      return std::pair<Key, typename ConstView::mapped_type::const_view_type>(
+          item.first, make_slice(item.second, view->slices()));
+    }
+  };
+
+public:
+  ConstView() = default;
   ConstView(holder_type &&items, const detail::slice_list &slices = {})
       : m_items(std::move(items)), m_slices(slices) {
     // TODO This is very similar to the code in makeViewItems(), provided that
@@ -113,15 +124,15 @@ public:
               // Remove dimension-coords for given dim, or non-dimension coords
               // if their inner dim is the given dim.
               constexpr auto is_dimension_coord = [](const auto &_) {
-                return _.second.first->dims().contains(_.first);
+                return _.second.dims().contains(_.first);
               };
               return is_dimension_coord(it2)
                          ? it2.first == slice.dim()
-                         : (!it2.second.first->dims().empty() &&
-                            (it2.second.first->dims().inner() == slice.dim()));
+                         : (!it2.second.dims().empty() &&
+                            (it2.second.dims().inner() == slice.dim()));
             } else {
-              return !it2.second.first->dims().empty() &&
-                     (it2.second.first->dims().inner() == slice.dim());
+              return !it2.second.dims().empty() &&
+                     (it2.second.dims().inner() == slice.dim());
             }
           };
           if (erase(*it))
@@ -146,7 +157,7 @@ public:
   /// Return a const view to the coordinate for given dimension.
   typename mapped_type::const_view_type operator[](const Key key) const {
     expect::contains(*this, key);
-    return detail::makeSlice(*m_items.at(key).first, m_slices);
+    return make_slice(m_items.at(key), m_slices);
   }
 
   auto find(const Key k) const && = delete;
@@ -197,7 +208,7 @@ public:
   ConstView slice(const Slice slice1) const {
     auto slices = m_slices;
     if constexpr (std::is_same_v<Key, Dim>) {
-      const auto &coord = *m_items.at(slice1.dim()).first;
+      const auto &coord = m_items.at(slice1.dim());
       slices.emplace_back(slice1, coord.dims()[slice1.dim()]);
     } else {
       throw std::runtime_error("TODO");
@@ -241,12 +252,17 @@ protected:
 /// Common functionality for other view classes.
 template <class Base, class Access> class MutableView : public Base {
 private:
+  static auto make_slice(typename Base::mapped_type::view_type view,
+                         const detail::slice_list &slices) {
+    detail::do_make_slice(view, slices);
+    return view;
+  };
   struct make_item {
     const MutableView<Base, Access> *view;
     template <class T> auto operator()(const T &item) const {
       return std::pair<typename Base::key_type,
                        typename Base::mapped_type::view_type>(
-          item.first, detail::makeSlice(*item.second.second, view->slices()));
+          item.first, make_slice(item.second, view->slices()));
     }
   };
 
@@ -254,6 +270,7 @@ private:
   Access m_access;
 
 public:
+  MutableView() = default;
   MutableView(const Access &access, typename Base::holder_type &&items,
               const detail::slice_list &slices = {})
       : Base(std::move(items), slices), m_access(access) {}
@@ -266,7 +283,7 @@ public:
   typename Base::mapped_type::view_type
   operator[](const typename Base::key_type key) const {
     expect::contains(*this, key);
-    return detail::makeSlice(*Base::items().at(key).second, Base::slices());
+    return make_slice(Base::items().at(key), Base::slices());
   }
 
   template <class T> auto find(const T k) const && = delete;

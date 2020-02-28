@@ -19,14 +19,9 @@ void any_impl(const VariableView &out, const VariableConstView &var);
 void max_impl(const VariableView &out, const VariableConstView &var);
 void min_impl(const VariableView &out, const VariableConstView &var);
 
-void flatten_impl(const DatasetAxisView &summed,
-                  const DatasetAxisConstView &var,
+void flatten_impl(const DataArrayAxisView &summed,
+                  const DataArrayAxisConstView &var,
                   const VariableConstView &mask);
-void sum_impl(const DatasetAxisView &summed, const DatasetAxisConstView &var);
-void all_impl(const DatasetAxisView &out, const DatasetAxisConstView &var);
-void any_impl(const DatasetAxisView &out, const DatasetAxisConstView &var);
-void max_impl(const DatasetAxisView &out, const DatasetAxisConstView &var);
-void min_impl(const DatasetAxisView &out, const DatasetAxisConstView &var);
 
 } // namespace scipp::core
 

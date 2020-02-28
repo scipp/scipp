@@ -111,7 +111,8 @@ TYPED_TEST(DataArrayViewTest, coords) {
   d.setData("a", var);
 
   ASSERT_NO_THROW(d_ref["a"].coords());
-  ASSERT_EQ(d_ref["a"].coords(), d.coords());
+  // TODO Would it be sensible to define such a comparison?
+  // ASSERT_EQ(d_ref["a"].coords(), d.coords());
 }
 
 TYPED_TEST(DataArrayViewTest, coords_sparse) {
@@ -124,7 +125,8 @@ TYPED_TEST(DataArrayViewTest, coords_sparse) {
   d.coords().set(Dim::Y, y);
 
   ASSERT_NO_THROW(d_ref["a"].coords());
-  ASSERT_NE(d_ref["a"].coords(), d.coords());
+  // TODO Would it be sensible to define such a comparison?
+  // ASSERT_NE(d_ref["a"].coords(), d.coords());
   ASSERT_EQ(d_ref["a"].coords().size(), 1);
   ASSERT_NO_THROW(d_ref["a"].coords()[Dim::Y]);
   ASSERT_EQ(d_ref["a"].coords()[Dim::Y], var);
@@ -144,7 +146,8 @@ TYPED_TEST(DataArrayViewTest, coords_sparse_shadow) {
   d.coords().set(Dim::Y, y_axis);
 
   ASSERT_NO_THROW(d_ref["a"].coords());
-  ASSERT_NE(d_ref["a"].coords(), d.coords());
+  // TODO Would it be sensible to define such a comparison?
+  // ASSERT_NE(d_ref["a"].coords(), d.coords());
   ASSERT_EQ(d_ref["a"].coords().size(), 2);
   ASSERT_NO_THROW(d_ref["a"].coords()[Dim::X]);
   ASSERT_NO_THROW(d_ref["a"].coords()[Dim::Y]);
@@ -167,7 +170,8 @@ TYPED_TEST(DataArrayViewTest, coords_sparse_shadow_even_if_no_coord) {
   ASSERT_NO_THROW(d_ref["a"].coords());
   // Dim::Y is sparse, so the global (non-sparse) Y coordinate does not make
   // sense and is thus hidden.
-  ASSERT_NE(d_ref["a"].coords(), d.coords());
+  // TODO Would it be sensible to define such a comparison?
+  // ASSERT_NE(d_ref["a"].coords(), d.coords());
   ASSERT_EQ(d_ref["a"].coords().size(), 1);
   ASSERT_NO_THROW(d_ref["a"].coords()[Dim::X]);
   ASSERT_ANY_THROW(d_ref["a"].coords()[Dim::Y]);
@@ -185,7 +189,8 @@ TYPED_TEST(DataArrayViewTest, coords_contains_only_relevant) {
   d.setData("a", var);
   const auto coords = d_ref["a"].coords();
 
-  ASSERT_NE(coords, d.coords());
+  // TODO Would it be sensible to define such a comparison?
+  // ASSERT_NE(coords, d.coords());
   ASSERT_EQ(coords.size(), 1);
   ASSERT_NO_THROW(coords[Dim::X]);
   ASSERT_EQ(coords[Dim::X], x);
@@ -202,7 +207,8 @@ TYPED_TEST(DataArrayViewTest, coords_contains_only_relevant_2d_dropped) {
   d.setData("a", var);
   const auto coords = d_ref["a"].coords();
 
-  ASSERT_NE(coords, d.coords());
+  // TODO Would it be sensible to define such a comparison?
+  // ASSERT_NE(coords, d.coords());
   ASSERT_EQ(coords.size(), 1);
   ASSERT_NO_THROW(coords[Dim::X]);
   ASSERT_EQ(coords[Dim::X], x);
@@ -225,7 +231,8 @@ TYPED_TEST(DataArrayViewTest,
   // not, it implies that the coordinate cannot be for this data item, so it
   // should be dropped... HOWEVER, the current implementation DOES NOT DROP IT.
   // Should that be changed?
-  ASSERT_NE(coords, d.coords());
+  // TODO Would it be sensible to define such a comparison?
+  // ASSERT_NE(coords, d.coords());
   ASSERT_EQ(coords.size(), 1);
   ASSERT_NO_THROW(coords[Dim::X]);
   ASSERT_EQ(coords[Dim::X], x);

@@ -31,7 +31,7 @@ Axis<Id, UnalignedType>::unaligned() const {
   } else {
     typename unaligned_const_view_type::holder_type items;
     for (const auto &[key, value] : m_unaligned)
-      items.emplace(key, std::pair{&value, nullptr});
+      items.emplace(key, VariableView(VariableConstView(value)));
     return unaligned_const_view_type{std::move(items)};
   }
 }
@@ -44,7 +44,7 @@ Axis<Id, UnalignedType>::unaligned() {
   } else {
     typename unaligned_const_view_type::holder_type items;
     for (auto &&[key, value] : m_unaligned)
-      items.emplace(key, std::pair{&value, &value});
+      items.emplace(key, VariableView(value));
     return unaligned_view_type{UnalignedAccess(this, &m_unaligned),
                                std::move(items)};
   }
@@ -125,19 +125,43 @@ void Axis<Id, UnalignedType>::rename(const Dim from, const Dim to) {
 
 bool operator==(const DataArrayAxisConstView &a,
                 const DataArrayAxisConstView &b) {
-  return a.data() == b.data() && a.unaligned() == b.unaligned();
+  if (a.hasData() != b.hasData() || a.hasUnaligned() != b.hasUnaligned())
+    return false;
+  return (!a.hasData() || a.data() == b.data()) &&
+         (!a.hasUnaligned() || a.unaligned() == b.unaligned());
 }
 bool operator!=(const DataArrayAxisConstView &a,
                 const DataArrayAxisConstView &b) {
   return !(a == b);
 }
 bool operator==(const DatasetAxisConstView &a, const DatasetAxisConstView &b) {
-  return a.data() == b.data() && a.unaligned() == b.unaligned();
+  if (a.hasData() != b.hasData() || a.hasUnaligned() != b.hasUnaligned())
+    return false;
+  return (!a.hasData() || a.data() == b.data()) &&
+         (!a.hasUnaligned() || a.unaligned() == b.unaligned());
 }
 bool operator!=(const DatasetAxisConstView &a, const DatasetAxisConstView &b) {
   return !(a == b);
 }
+
+bool operator==(const VariableConstView &a, const DataArrayAxisConstView &b) {
+  if (!b.hasData())
+    return false;
+  return a == b.data() && !b.hasUnaligned();
+}
+bool operator!=(const VariableConstView &a, const DataArrayAxisConstView &b) {
+  return !(a == b);
+}
+bool operator==(const DataArrayAxisConstView &a, const VariableConstView &b) {
+  return b == a;
+}
+bool operator!=(const DataArrayAxisConstView &a, const VariableConstView &b) {
+  return !(a == b);
+}
+
 bool operator==(const VariableConstView &a, const DatasetAxisConstView &b) {
+  if (!b.hasData())
+    return false;
   return a == b.data() && b.unaligned().empty();
 }
 bool operator!=(const VariableConstView &a, const DatasetAxisConstView &b) {
@@ -211,24 +235,45 @@ AxisView<Axis> AxisView<Axis>::operator/=(const AxisConstView<Axis> &) const {
   throw std::runtime_error("Operations between axes not supported yet.");
 }
 
+DataArrayAxis resize(const DataArrayAxisConstView &axis, const Dim dim,
+                     const scipp::index size) {
+  if (axis.hasUnaligned())
+    throw except::UnalignedError("Cannot resize with unaligned data.");
+  return DataArrayAxis(resize(axis.data(), dim, size));
+}
+
 DatasetAxis resize(const DatasetAxisConstView &axis, const Dim dim,
                    const scipp::index size) {
-  if (!axis.unaligned().empty())
+  if (axis.hasUnaligned())
     throw except::UnalignedError("Cannot resize with unaligned data.");
   return DatasetAxis(resize(axis.data(), dim, size));
 }
+
+DataArrayAxis concatenate(const DataArrayAxisConstView &a,
+                          const DataArrayAxisConstView &b, const Dim dim) {
+  return DataArrayAxis(a);
+  if (static_cast<bool>(a.unaligned()) != static_cast<bool>(b.unaligned()))
+    throw except::UnalignedError("Mismatch of unaligned content.");
+  if(a.unaligned())
+    return {concatenate(a.data(), b.data(), dim),
+            concatenate(a.unaligned(), b.unaligned(), dim)};
+  else
+    return DataArrayAxis{concatenate(a.data(), b.data(), dim)};
+}
 DatasetAxis concatenate(const DatasetAxisConstView &a,
                         const DatasetAxisConstView &b, const Dim dim) {
+  return DatasetAxis(a);
   if (a.unaligned().size() != b.unaligned().size())
     throw except::UnalignedError("Mismatch of unaligned content.");
   DatasetAxis out(concatenate(a.data(), b.data(), dim));
-  // TODO Name mismatches should be allowed in case of DataArray -> need
-  // DataArrayAxis.
   for (const auto &[key, val] : a.unaligned())
     out.unaligned().set(key, concatenate(val, b.unaligned()[key], dim));
   return out;
 }
 
+DataArrayAxis copy(const DataArrayAxisConstView &axis) {
+  return DataArrayAxis(axis);
+}
 DatasetAxis copy(const DatasetAxisConstView &axis) { return DatasetAxis(axis); }
 
 DatasetAxis flatten(const DatasetAxisConstView &, const Dim) {

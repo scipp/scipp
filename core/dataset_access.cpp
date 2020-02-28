@@ -9,13 +9,14 @@
 namespace scipp::core {
 
 void DataArrayCoordAccess::set(const Dim &key, Variable var) const {
-  m_parent->setCoord(key, std::move(var));
+  m_holder->setCoord(key, std::move(var));
 }
 void DataArrayCoordAccess::set(const Dim &key, DataArrayAxis axis) const {
-  m_parent->setCoord(key, std::move(axis));
+  m_holder->setCoord(key,
+                     DataArrayAxis::to_DatasetAxis(std::move(axis), m_name));
 }
 void DataArrayCoordAccess::erase(const Dim &key) const {
-  m_parent->eraseCoord(key);
+  m_holder->eraseCoord(key);
 }
 
 void DatasetCoordAccess::set(const Dim &key, Variable var) const {

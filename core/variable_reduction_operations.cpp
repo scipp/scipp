@@ -89,8 +89,8 @@ void flatten_impl(const VariableView &summed, const VariableConstView &var,
           }});
 }
 
-void flatten_impl(const DatasetAxisView &summed,
-                  const DatasetAxisConstView &var,
+void flatten_impl(const DataArrayAxisView &summed,
+                  const DataArrayAxisConstView &var,
                   const VariableConstView &mask) {
   throw std::runtime_error("flatten not implemented");
 }

@@ -63,13 +63,38 @@ public:
 
   Axis() = default;
   explicit Axis(Variable data) : m_data(std::move(data)) {}
+  Axis(Variable data, unaligned_type unaligned)
+      : m_data(std::move(data)), m_unaligned(std::move(unaligned)) {}
   explicit Axis(const const_view_type &data);
 
   unaligned_const_view_type unaligned() const;
   unaligned_view_type unaligned();
 
-  /// Return true if the data array contains data values.
+  template <typename T = AxisId::Dataset>
+  std::enable_if_t<std::is_same_v<T, AxisId::Dataset>, DataArrayAxisView>
+  operator[](const std::string &name) {
+    return m_unaligned.count(name)
+               ? DataArrayAxisView(m_data, m_unaligned.at(name))
+               : DataArrayAxisView(m_data);
+  }
+  template <typename T = AxisId::Dataset>
+  std::enable_if_t<std::is_same_v<T, AxisId::Dataset>, DataArrayAxisConstView>
+  operator[](const std::string &name) const {
+    return m_unaligned.count(name)
+               ? DataArrayAxisConstView(VariableView(m_data),
+                                        VariableView(m_unaligned.at(name)))
+               : DataArrayAxisConstView(m_data);
+  }
+
+  /// Return true if the axis contains data values.
   bool hasData() const noexcept { return static_cast<bool>(m_data); }
+  /// Return true if the axis contains unaligned data values.
+  bool hasUnaligned() const noexcept {
+    if constexpr (std::is_same_v<Id, AxisId::DataArray>)
+      return static_cast<bool>(m_unaligned);
+    else
+      return m_unaligned.empty();
+  }
   /// Return untyped const view for data (values and optional variances).
   VariableConstView data() const {
     if (hasData())
@@ -144,13 +169,20 @@ public:
   using unaligned_view_type = typename value_type::unaligned_view_type;
 
   AxisConstView(const value_type &axis);
-  AxisConstView(VariableView &&data, unaligned_view_type &&view);
+  AxisConstView(VariableView &&data, unaligned_view_type &&unaligned);
   AxisConstView(VariableConstView &&data);
 
   const unaligned_const_view_type &unaligned() const noexcept;
 
-  /// Return true if the data array contains data values.
+  /// Return true if the axis contains data values.
   bool hasData() const noexcept { return static_cast<bool>(m_data); }
+  /// Return true if the axis contains unaligned data values.
+  bool hasUnaligned() const noexcept {
+    if constexpr (std::is_same_v<Axis, DataArrayAxis>)
+      return static_cast<bool>(m_unaligned);
+    else
+      return m_unaligned.empty();
+  }
   VariableConstView data() const;
 
   // TODO only return empty if there is unaligned? just throw?
@@ -189,7 +221,15 @@ public:
   using unaligned_type = typename value_type::unaligned_type;
   using unaligned_view_type = typename value_type::unaligned_view_type;
 
-  AxisView(Axis &data) : AxisConstView<Axis>(data.data(), data.unaligned()) {}
+  AxisView(Variable &data) : AxisConstView<Axis>(VariableView(data)) {}
+  AxisView(Axis &data)
+      : AxisConstView<Axis>(data.hasData() ? data.data() : VariableView{},
+                            data.hasUnaligned() ? data.unaligned()
+                                                : unaligned_view_type{}) {}
+  // TODO this should be private
+  AxisView(AxisConstView<Axis> &&base) : AxisConstView<Axis>(std::move(base)) {}
+  AxisView(VariableView &&data, unaligned_view_type &&unaligned)
+      : AxisConstView<Axis>(std::move(data), std::move(unaligned)) {}
 
   const unaligned_view_type &unaligned() const noexcept;
   VariableView data() const;
@@ -224,6 +264,16 @@ SCIPP_CORE_EXPORT bool operator==(const DatasetAxisConstView &a,
                                   const DatasetAxisConstView &b);
 SCIPP_CORE_EXPORT bool operator!=(const DatasetAxisConstView &a,
                                   const DatasetAxisConstView &b);
+
+SCIPP_CORE_EXPORT bool operator==(const DataArrayAxisConstView &a,
+                                  const VariableConstView &b);
+SCIPP_CORE_EXPORT bool operator!=(const DataArrayAxisConstView &a,
+                                  const VariableConstView &b);
+SCIPP_CORE_EXPORT bool operator==(const VariableConstView &a,
+                                  const DataArrayAxisConstView &b);
+SCIPP_CORE_EXPORT bool operator!=(const VariableConstView &a,
+                                  const DataArrayAxisConstView &b);
+
 SCIPP_CORE_EXPORT bool operator==(const DatasetAxisConstView &a,
                                   const VariableConstView &b);
 SCIPP_CORE_EXPORT bool operator!=(const DatasetAxisConstView &a,
@@ -233,15 +283,21 @@ SCIPP_CORE_EXPORT bool operator==(const VariableConstView &a,
 SCIPP_CORE_EXPORT bool operator!=(const VariableConstView &a,
                                   const DatasetAxisConstView &b);
 
+SCIPP_CORE_EXPORT DataArrayAxis concatenate(const DataArrayAxisConstView &a1,
+                                            const DataArrayAxisConstView &a2,
+                                            const Dim dim);
 SCIPP_CORE_EXPORT DatasetAxis concatenate(const DatasetAxisConstView &a1,
                                           const DatasetAxisConstView &a2,
                                           const Dim dim);
+SCIPP_CORE_EXPORT DataArrayAxis resize(const DataArrayAxisConstView &var,
+                                       const Dim dim, const scipp::index size);
 SCIPP_CORE_EXPORT DatasetAxis resize(const DatasetAxisConstView &var,
                                      const Dim dim, const scipp::index size);
 
 [[nodiscard]] SCIPP_CORE_EXPORT DatasetAxis
 flatten(const DatasetAxisConstView &var, const Dim dim);
 
+SCIPP_CORE_EXPORT DataArrayAxis copy(const DataArrayAxisConstView &axis);
 SCIPP_CORE_EXPORT DatasetAxis copy(const DatasetAxisConstView &axis);
 
 } // namespace scipp::core

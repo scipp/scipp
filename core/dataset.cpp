@@ -7,25 +7,28 @@
 
 namespace scipp::core {
 
-template <class T>
-std::pair<const std::decay_t<T> *, std::decay_t<T> *>
-makeViewItem(T *variable) {
-  if constexpr (std::is_const_v<T>)
-    return {variable, nullptr};
-  else
-    return {variable, variable};
+template <class T, class Name = void>
+auto makeViewItem(T &variable, Name *name = nullptr) {
+  if constexpr (std::is_same_v<Name, void>) {
+    static_cast<void>(name);
+    if constexpr (std::is_const_v<T>)
+      return typename T::view_type(typename T::const_view_type(variable));
+    else
+      return typename T::view_type(variable);
+  } else {
+    return (variable)[*name];
+  }
 }
 
 template <class View, class T1> auto makeViewItems(T1 &coords) {
   typename View::holder_type items;
   for (auto &item : coords)
-    items.emplace(item.first, makeViewItem(&item.second));
+    items.emplace(item.first, makeViewItem(item.second));
   return items;
 }
 
-template <class View, class T1, class T2 = void>
-auto makeViewItems(const Dimensions &dims, T1 &coords, T2 *sparse = nullptr) {
-  const Dim sparseDim = dims.sparseDim();
+template <class View, class T1, class Name = void>
+auto makeViewItems(const Dimensions &dims, T1 &coords, Name *name = nullptr) {
   typename View::holder_type items;
   for (auto &item : coords) {
     // We preserve only items that are part of the space spanned by the
@@ -45,16 +48,9 @@ auto makeViewItems(const Dimensions &dims, T1 &coords, T2 *sparse = nullptr) {
         return coordDims.empty() || dims.contains(coordDims.inner());
     };
     if (contained(item)) {
-      // Shadow all global coordinates that depend on the sparse dimension.
-      if ((!dims.sparse()) || (!item.second.dims().contains(sparseDim)))
-        items.emplace(item.first, makeViewItem(&item.second));
+      items.emplace(item.first, makeViewItem(item.second, name));
     }
   }
-  if constexpr (std::is_same_v<T2, void>)
-    static_cast<void>(sparse);
-  else
-    for (auto &item : *sparse)
-      items.emplace(item.first, makeViewItem(&item.second));
   return items;
 }
 
@@ -532,9 +528,9 @@ void DataArrayView::setUnit(const units::Unit unit) const {
 /// of the dataset's coordinates that depends on the sparse dimension.
 DataArrayCoordsConstView DataArrayConstView::coords() const noexcept {
   // TODO mapping
-  return DataArrayCoordsConstView(
-      makeViewItems<DataArrayCoordsConstView>(dims(), m_dataset->m_coords),
-      slices());
+  return DataArrayCoordsConstView(makeViewItems<DataArrayCoordsConstView>(
+                                      dims(), m_dataset->m_coords, &name()),
+                                  slices());
 }
 
 /// Return a const view to all attributes of the data view.
@@ -599,10 +595,9 @@ DataArrayView DataArrayView::slice(const Slice slice1, const Slice slice2,
 /// If the data has a sparse dimension the returned view will not contain any
 /// of the dataset's coordinates that depends on the sparse dimension.
 DataArrayCoordsView DataArrayView::coords() const noexcept {
-  // TODO mapping
-  return DataArrayCoordsView(DataArrayCoordAccess(m_mutableDataset),
+  return DataArrayCoordsView(DataArrayCoordAccess(name(), m_mutableDataset),
                              makeViewItems<DataArrayCoordsConstView>(
-                                 dims(), m_mutableDataset->m_coords),
+                                 dims(), m_mutableDataset->m_coords, &name()),
                              slices());
 }
 

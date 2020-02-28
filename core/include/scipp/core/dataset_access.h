@@ -15,14 +15,16 @@ class Dataset;
 
 class DataArrayCoordAccess {
 public:
-  DataArrayCoordAccess(DataArray *parent) : m_parent(parent) {}
+  DataArrayCoordAccess(const std::string &name, Dataset *holder)
+      : m_name(name), m_holder(holder) {}
 
   void set(const Dim &key, Variable var) const;
   void set(const Dim &key, DataArrayAxis axis) const;
   void erase(const Dim &key) const;
 
 private:
-  DataArray *m_parent;
+  std::string m_name;
+  Dataset *m_holder;
 };
 
 class DatasetCoordAccess {
