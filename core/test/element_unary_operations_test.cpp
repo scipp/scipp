@@ -62,15 +62,30 @@ template <typename T> class ElementNanToNumTest : public ::testing::Test {};
 using ElementReplacementTestTypes = ::testing::Types<double, float>;
 TYPED_TEST_SUITE(ElementNanToNumTest, ElementReplacementTestTypes);
 
+template <typename T, typename Op>
+void targetted_replacement_test(Op op, const T &replaceable,
+                                const T &nonreplaceable, const T &replacement) {
+  EXPECT_EQ(replacement, op(replaceable, replacement));
+  EXPECT_EQ(nonreplaceable, op(nonreplaceable,
+                               replacement)); // No replacement expected
+}
+template <typename T, typename Op>
+void targetted_replacement_out_arg_test(Op op, T &out, const T &replaceable,
+                                        const T &nonreplaceable,
+                                        const T &replacement) {
+  op(out, replaceable, replacement);
+  EXPECT_EQ(replacement, out);
+  op(out, nonreplaceable, replacement);
+  EXPECT_EQ(nonreplaceable, out);
+}
+
 TYPED_TEST(ElementNanToNumTest, value) {
   using T = TypeParam;
   const T replaceable = NAN;
   const T replacement = 1.0;
   const T nonreplaceable = 2.0;
-  EXPECT_EQ(replacement, element::nan_to_num(replaceable, replacement));
-  EXPECT_EQ(nonreplaceable,
-            element::nan_to_num(nonreplaceable,
-                                replacement)); // No replacement expected
+  targetted_replacement_test(element::nan_to_num, replaceable, nonreplaceable,
+                             replacement);
 }
 
 TYPED_TEST(ElementNanToNumTest, value_and_variance) {
@@ -78,23 +93,18 @@ TYPED_TEST(ElementNanToNumTest, value_and_variance) {
   const ValueAndVariance<T> replaceable(NAN, 0.1);
   const ValueAndVariance<T> replacement(1, 1);
   const ValueAndVariance<T> nonreplaceable(2, 2);
-  EXPECT_EQ(replacement, element::nan_to_num(replaceable, replacement));
-  EXPECT_EQ(nonreplaceable,
-            element::nan_to_num(nonreplaceable,
-                                replacement)); // No replacement expected
+  targetted_replacement_test(element::nan_to_num, replaceable, nonreplaceable,
+                             replacement);
 }
 
 TYPED_TEST(ElementNanToNumTest, value_out) {
   using T = TypeParam;
-  T out = -1;
   const T replaceable = NAN;
   const T replacement = 1;
   const T nonreplaceable = 2;
-  element::nan_to_num_out_arg(out, replaceable, replacement);
-  EXPECT_EQ(replacement, out);
-  out = -1;
-  element::nan_to_num_out_arg(out, nonreplaceable, replacement);
-  EXPECT_EQ(nonreplaceable, out);
+  T out = -1;
+  targetted_replacement_out_arg_test(element::nan_to_num_out_arg, out,
+                                     replaceable, nonreplaceable, replacement);
 }
 TYPED_TEST(ElementNanToNumTest, value_and_variance_out) {
   using T = TypeParam;
@@ -102,10 +112,8 @@ TYPED_TEST(ElementNanToNumTest, value_and_variance_out) {
   const ValueAndVariance<T> nonreplaceable(3, 3);
   ValueAndVariance<T> out(-1, -1);
   const ValueAndVariance<T> replacement(1, 1);
-  element::nan_to_num_out_arg(out, replaceable, replacement);
-  EXPECT_EQ(replacement, out);
-  element::nan_to_num_out_arg(out, nonreplaceable, replacement);
-  EXPECT_EQ(nonreplaceable, out);
+  targetted_replacement_out_arg_test(element::nan_to_num_out_arg, out,
+                                     replaceable, nonreplaceable, replacement);
 }
 
 template <typename T>
@@ -117,11 +125,8 @@ TYPED_TEST(ElementPositiveInfToNumTest, value) {
   const T replacement = 1.0;
   const T replaceable = INFINITY;
   const T nonreplaceable = -INFINITY;
-  EXPECT_EQ(replacement,
-            element::positive_inf_to_num(replaceable, replacement));
-  EXPECT_EQ(nonreplaceable,
-            element::positive_inf_to_num(
-                nonreplaceable, replacement)); // No replacement expected
+  targetted_replacement_test(element::positive_inf_to_num, replaceable,
+                             nonreplaceable, replacement);
 }
 
 TYPED_TEST(ElementPositiveInfToNumTest, value_and_variance) {
@@ -129,11 +134,8 @@ TYPED_TEST(ElementPositiveInfToNumTest, value_and_variance) {
   const ValueAndVariance<T> replaceable(INFINITY, 1);
   const ValueAndVariance<T> replacement(1, 1);
   const ValueAndVariance<T> nonreplaceable(-INFINITY, 1);
-  EXPECT_EQ(replacement,
-            element::positive_inf_to_num(replaceable, replacement));
-  EXPECT_EQ(nonreplaceable,
-            element::positive_inf_to_num(
-                nonreplaceable, replacement)); // No replacement expected
+  targetted_replacement_test(element::positive_inf_to_num, replaceable,
+                             nonreplaceable, replacement);
 }
 TYPED_TEST(ElementPositiveInfToNumTest, value_out) {
   using T = TypeParam;
@@ -141,11 +143,8 @@ TYPED_TEST(ElementPositiveInfToNumTest, value_out) {
   const T replaceable = INFINITY;
   const T replacement = 1;
   const T nonreplaceable = -INFINITY;
-  element::positive_inf_to_num_out_arg(out, replaceable, replacement);
-  EXPECT_EQ(replacement, out);
-  out = -1;
-  element::positive_inf_to_num_out_arg(out, nonreplaceable, replacement);
-  EXPECT_EQ(nonreplaceable, out);
+  targetted_replacement_out_arg_test(element::positive_inf_to_num_out_arg, out,
+                                     replaceable, nonreplaceable, replacement);
 }
 TYPED_TEST(ElementPositiveInfToNumTest, value_and_variance_out) {
   using T = TypeParam;
@@ -153,10 +152,8 @@ TYPED_TEST(ElementPositiveInfToNumTest, value_and_variance_out) {
   const ValueAndVariance<T> nonreplaceable(-INFINITY, 3);
   ValueAndVariance<T> out(-1, -1);
   const ValueAndVariance<T> replacement(1, 1);
-  element::positive_inf_to_num_out_arg(out, replaceable, replacement);
-  EXPECT_EQ(replacement, out);
-  element::positive_inf_to_num_out_arg(out, nonreplaceable, replacement);
-  EXPECT_EQ(nonreplaceable, out);
+  targetted_replacement_out_arg_test(element::positive_inf_to_num_out_arg, out,
+                                     replaceable, nonreplaceable, replacement);
 }
 
 template <typename T>
@@ -168,11 +165,8 @@ TYPED_TEST(ElementNegativeInfToNumTest, value) {
   const T replacement = 1.0;
   const T replaceable = -INFINITY;
   const T nonreplaceable = INFINITY;
-  EXPECT_EQ(replacement,
-            element::negative_inf_to_num(replaceable, replacement));
-  EXPECT_EQ(nonreplaceable,
-            element::negative_inf_to_num(
-                nonreplaceable, replacement)); // No replacement expected
+  targetted_replacement_test(element::negative_inf_to_num, replaceable,
+                             nonreplaceable, replacement);
 }
 
 TYPED_TEST(ElementNegativeInfToNumTest, value_and_variance) {
@@ -180,11 +174,8 @@ TYPED_TEST(ElementNegativeInfToNumTest, value_and_variance) {
   const ValueAndVariance<T> replaceable(-INFINITY, 1);
   const ValueAndVariance<T> replacement(1, 1);
   const ValueAndVariance<T> nonreplaceable(INFINITY, 1);
-  EXPECT_EQ(replacement,
-            element::negative_inf_to_num(replaceable, replacement));
-  EXPECT_EQ(nonreplaceable,
-            element::negative_inf_to_num(
-                nonreplaceable, replacement)); // No replacement expected
+  targetted_replacement_test(element::negative_inf_to_num, replaceable,
+                             nonreplaceable, replacement);
 }
 
 TYPED_TEST(ElementNegativeInfToNumTest, value_out) {
@@ -193,11 +184,8 @@ TYPED_TEST(ElementNegativeInfToNumTest, value_out) {
   const T replaceable = -INFINITY;
   const T replacement = 1;
   const T nonreplaceable = INFINITY;
-  element::negative_inf_to_num_out_arg(out, replaceable, replacement);
-  EXPECT_EQ(replacement, out);
-  out = -1;
-  element::negative_inf_to_num_out_arg(out, nonreplaceable, replacement);
-  EXPECT_EQ(nonreplaceable, out);
+  targetted_replacement_out_arg_test(element::negative_inf_to_num_out_arg, out,
+                                     replaceable, nonreplaceable, replacement);
 }
 TYPED_TEST(ElementNegativeInfToNumTest, value_and_variance_out) {
   using T = TypeParam;
@@ -205,8 +193,6 @@ TYPED_TEST(ElementNegativeInfToNumTest, value_and_variance_out) {
   const ValueAndVariance<T> nonreplaceable(INFINITY, 3);
   ValueAndVariance<T> out(-1, -1);
   const ValueAndVariance<T> replacement(1, 1);
-  element::negative_inf_to_num_out_arg(out, replaceable, replacement);
-  EXPECT_EQ(replacement, out);
-  element::negative_inf_to_num_out_arg(out, nonreplaceable, replacement);
-  EXPECT_EQ(nonreplaceable, out);
+  targetted_replacement_out_arg_test(element::negative_inf_to_num_out_arg, out,
+                                     replaceable, nonreplaceable, replacement);
 }
