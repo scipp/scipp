@@ -1,7 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 import scipp as sc
-from scipp import Dim
 
 
 def test_round_trip_dataset():

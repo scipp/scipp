@@ -25,9 +25,8 @@ def test_lifetime_values_of_item():
 
 
 def test_lifetime_values_of_item_of_temporary():
-    d = sc.Dataset(
-        {'a': sc.Variable(['x'], values=np.arange(3))},
-        coords={'x': sc.Variable(['x'], values=["aa", "bb", "cc"])})
+    d = sc.Dataset({'a': sc.Variable(['x'], values=np.arange(3))},
+                   coords={'x': sc.Variable(['x'], values=["aa", "bb", "cc"])})
     vals = (d + d).coords['x'].values
     d + d  # do something allocating memory to trigger potential segfault
     assert vals[2] == "cc"

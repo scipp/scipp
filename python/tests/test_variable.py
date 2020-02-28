@@ -311,14 +311,16 @@ def test_sparse_setitem_shape_fail():
 
 
 def test_sparse_setitem_float():
-    var = sc.Variable(dims=['x', 'y'], shape=[4, sc.Dimensions.Sparse],
+    var = sc.Variable(dims=['x', 'y'],
+                      shape=[4, sc.Dimensions.Sparse],
                       dtype=sc.dtype.float32)
     var['x', 0].values = np.arange(4)
     assert len(var['x', 0].values) == 4
 
 
 def test_sparse_setitem_int64_t():
-    var = sc.Variable(dims=['x', 'y'], shape=[4, sc.Dimensions.Sparse],
+    var = sc.Variable(dims=['x', 'y'],
+                      shape=[4, sc.Dimensions.Sparse],
                       dtype=sc.dtype.int64)
     var['x', 0].values = np.arange(4)
     assert len(var['x', 0].values) == 4
@@ -604,7 +606,9 @@ def test_binary_not_equal():
 
 
 def test_abs():
-    var = sc.Variable(dims=['x'], values=np.array([0.1, -0.2]), unit=sc.units.m)
+    var = sc.Variable(dims=['x'],
+                      values=np.array([0.1, -0.2]),
+                      unit=sc.units.m)
     expected = sc.Variable(dims=['x'],
                            values=np.array([0.1, 0.2]),
                            unit=sc.units.m)
@@ -612,7 +616,9 @@ def test_abs():
 
 
 def test_abs_out():
-    var = sc.Variable(dims=['x'], values=np.array([0.1, -0.2]), unit=sc.units.m)
+    var = sc.Variable(dims=['x'],
+                      values=np.array([0.1, -0.2]),
+                      unit=sc.units.m)
     expected = sc.Variable(dims=['x'],
                            values=np.array([0.1, 0.2]),
                            unit=sc.units.m)
@@ -679,7 +685,9 @@ def test_norm():
 
 
 def test_sqrt():
-    var = sc.Variable(dims=['x'], values=np.array([4.0, 9.0]), unit=sc.units.m**2)
+    var = sc.Variable(dims=['x'],
+                      values=np.array([4.0, 9.0]),
+                      unit=sc.units.m**2)
     expected = sc.Variable(dims=['x'],
                            values=np.array([2.0, 3.0]),
                            unit=sc.units.m)
@@ -687,7 +695,9 @@ def test_sqrt():
 
 
 def test_sqrt_out():
-    var = sc.Variable(dims=['x'], values=np.array([4.0, 9.0]), unit=sc.units.m**2)
+    var = sc.Variable(dims=['x'],
+                      values=np.array([4.0, 9.0]),
+                      unit=sc.units.m**2)
     expected = sc.Variable(dims=['x'],
                            values=np.array([2.0, 3.0]),
                            unit=sc.units.m)
@@ -731,9 +741,7 @@ def test_set_variance():
     values = np.random.rand(2, 3)
     variances = np.random.rand(2, 3)
     var = sc.Variable(dims=['x', 'y'], values=values)
-    expected = sc.Variable(dims=['x', 'y'],
-                           values=values,
-                           variances=variances)
+    expected = sc.Variable(dims=['x', 'y'], values=values, variances=variances)
 
     assert var.variances is None
     assert var != expected
@@ -748,9 +756,7 @@ def test_copy_variance():
     values = np.random.rand(2, 3)
     variances = np.random.rand(2, 3)
     var = sc.Variable(dims=['x', 'y'], values=values)
-    expected = sc.Variable(dims=['x', 'y'],
-                           values=values,
-                           variances=variances)
+    expected = sc.Variable(dims=['x', 'y'], values=values, variances=variances)
 
     assert var.variances is None
     assert var != expected
@@ -777,9 +783,7 @@ def test_set_variance_convert_dtype():
     variances = np.arange(6).reshape(2, 3)
     assert variances.dtype == np.int
     var = sc.Variable(dims=['x', 'y'], values=values)
-    expected = sc.Variable(dims=['x', 'y'],
-                           values=values,
-                           variances=variances)
+    expected = sc.Variable(dims=['x', 'y'], values=values, variances=variances)
 
     assert var.variances is None
     assert var != expected
@@ -851,7 +855,8 @@ def test_create_1d_with_strings():
 
 
 def test_bool_variable_repr():
-    a = sc.Variable(dims=['x'], values=np.array([False, True, True, False, True]))
+    a = sc.Variable(dims=['x'],
+                    values=np.array([False, True, True, False, True]))
     assert [expected in repr(a) for expected in ["True", "False", "..."]]
 
 
@@ -1006,8 +1011,7 @@ def test_atan_out():
 @pytest.mark.parametrize("dims, lengths",
                          ((['x'], (sc.Dimensions.Sparse, )),
                           (['x', 'y'], (10, sc.Dimensions.Sparse)),
-                          (['x', 'y', 'z'],
-                           (10, 10, sc.Dimensions.Sparse)),
+                          (['x', 'y', 'z'], (10, 10, sc.Dimensions.Sparse)),
                           (['x', 'y', 'z', 'spectrum'],
                            (10, 10, 10, sc.Dimensions.Sparse))))
 def test_sparse_dim_has_none_shape(dims, lengths):

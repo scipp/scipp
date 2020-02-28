@@ -11,9 +11,8 @@ from .common import (ATTR_NAME, LABEL_NAME, MASK_NAME, assert_dims_section,
 
 @pytest.mark.parametrize("dims, lengths",
                          ((['x'], (10, )), (['x', 'y'], (10, 10)),
-                          (['x', 'y', 'z'],
-                           (10, 10, 10)), (['x', 'y', 'z', 'spectrum'],
-                                           (10, 10, 10, 10))))
+                          (['x', 'y', 'z'], (10, 10, 10)),
+                          (['x', 'y', 'z', 'spectrum'], (10, 10, 10, 10))))
 def test_basic(dims, lengths):
     in_unit = sc.units.m
     in_dtype = sc.dtype.float32
@@ -24,7 +23,10 @@ def test_basic(dims, lengths):
                        variances=np.random.rand(*lengths))
 
     data_array = sc.DataArray(data,
-                              coords={dims[0]: data, LABEL_NAME: data},
+                              coords={
+                                  dims[0]: data,
+                                  LABEL_NAME: data
+                              },
                               attrs={ATTR_NAME: data},
                               masks={MASK_NAME: data})
 
@@ -54,8 +56,7 @@ def test_basic(dims, lengths):
 
 @pytest.mark.parametrize("dims, lengths",
                          ((['x', 'y'], (10, sc.Dimensions.Sparse)),
-                          (['x', 'y', 'z'],
-                           (10, 10, sc.Dimensions.Sparse)),
+                          (['x', 'y', 'z'], (10, 10, sc.Dimensions.Sparse)),
                           (['x', 'y', 'z', 'spectrum'],
                            (10, 10, 10, sc.Dimensions.Sparse))))
 def test_sparse(dims, lengths):
@@ -71,7 +72,10 @@ def test_sparse(dims, lengths):
                        values=np.random.rand(lengths[0]))
 
     data_array = sc.DataArray(data,
-                              coords={dims[0]: data, LABEL_NAME: attr},
+                              coords={
+                                  dims[0]: data,
+                                  LABEL_NAME: attr
+                              },
                               attrs={ATTR_NAME: attr},
                               masks={MASK_NAME: attr})
     html = BeautifulSoup(make_html(data_array), features="html.parser")
@@ -106,10 +110,10 @@ def test_sparse(dims, lengths):
         assert_section(section, name, in_attr_dims, in_dtype, in_unit)
 
 
-@pytest.mark.parametrize(
-    "dims, lengths", ((['x'], [10]), (['x', 'y'], [10, 10]),
-                      (['x', 'y', 'z'], [10, 10, 10]),
-                      (['x', 'y', 'z', 'spectrum'], [10, 10, 10, 10])))
+@pytest.mark.parametrize("dims, lengths",
+                         ((['x'], [10]), (['x', 'y'], [10, 10]),
+                          (['x', 'y', 'z'], [10, 10, 10]),
+                          (['x', 'y', 'z', 'spectrum'], [10, 10, 10, 10])))
 def test_bin_edge(dims, lengths):
     in_unit = sc.units.m
     in_dtype = sc.dtype.float32
@@ -126,7 +130,10 @@ def test_bin_edge(dims, lengths):
                         values=np.random.rand(*lengths))
 
     data_array = sc.DataArray(data,
-                              coords={dims[0]: edges, LABEL_NAME: edges},
+                              coords={
+                                  dims[0]: edges,
+                                  LABEL_NAME: edges
+                              },
                               attrs={ATTR_NAME: data},
                               masks={MASK_NAME: edges})
 
@@ -163,8 +170,7 @@ def test_bin_edge(dims, lengths):
     "dims, lengths",
     ((['x', 'y'], [10, sc.Dimensions.Sparse]),
      (['x', 'y', 'z'], [10, 10, sc.Dimensions.Sparse]),
-     (['x', 'y', 'z', 'spectrum'], [10, 10, 10, sc.Dimensions.Sparse]))
-)
+     (['x', 'y', 'z', 'spectrum'], [10, 10, 10, sc.Dimensions.Sparse])))
 def test_bin_edge_and_sparse(dims, lengths):
     in_unit = sc.units.m
     in_dtype = sc.dtype.float32
@@ -186,7 +192,10 @@ def test_bin_edge_and_sparse(dims, lengths):
                                        dtype=in_dtype)
 
     data_array = sc.DataArray(data,
-                              coords={dims[0]: non_sparse_bin_edges, LABEL_NAME: non_sparse_bin_edges},
+                              coords={
+                                  dims[0]: non_sparse_bin_edges,
+                                  LABEL_NAME: non_sparse_bin_edges
+                              },
                               attrs={ATTR_NAME: non_sparse_data},
                               masks={MASK_NAME: non_sparse_bin_edges})
 

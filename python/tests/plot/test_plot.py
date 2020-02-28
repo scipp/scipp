@@ -32,9 +32,9 @@ def make_dense_dataset(ndim=1,
     dims = []
     for i in range(ndim):
         n = N - (i * M)
-        d.coords[dim_list[i]] = sc.Variable(dims=[dim_list[i]],
-                                            values=np.arange(n + binedges).astype(
-                                                np.float64))
+        d.coords[dim_list[i]] = sc.Variable(
+            dims=[dim_list[i]],
+            values=np.arange(n + binedges).astype(np.float64))
         dims.append(dim_list[i])
         shapes.append(n)
     a = np.sin(np.arange(np.prod(shapes)).reshape(*shapes).astype(np.float64))
@@ -177,8 +177,8 @@ def test_plot_1d_three_entries_with_labels():
                                   values=2.0 * np.random.rand(N),
                                   unit=sc.units.counts)
     d.coords['x'] = sc.Variable(['x'],
-                                  values=np.arange(N).astype(np.float64),
-                                  unit=sc.units.m)
+                                values=np.arange(N).astype(np.float64),
+                                unit=sc.units.m)
     d["Sample2"] = sc.Variable(['x'],
                                values=10.0 * np.random.rand(N),
                                unit=sc.units.counts)
@@ -274,7 +274,7 @@ def test_plot_sliceviewer_with_3d_projection_with_variances():
 
 
 @pytest.mark.skip(reason="3D plotting with labels is currently broken after"
-                         "dims API refactor.")
+                  "dims API refactor.")
 def test_plot_sliceviewer_with_3d_projection_with_labels():
     d = make_dense_dataset(ndim=3, labels=True)
     plot(d, projection="3d", axes=['x', 'y', "somelabels"])
@@ -396,9 +396,7 @@ def test_plot_3d_sparse_data_with_Variable_bins():
 
 def test_plot_variable():
     N = 50
-    v1d = sc.Variable(['tof'],
-                      values=np.random.rand(N),
-                      unit=sc.units.counts)
+    v1d = sc.Variable(['tof'], values=np.random.rand(N), unit=sc.units.counts)
     v2d = sc.Variable(['tof', 'x'],
                       values=np.random.rand(N, N),
                       unit=sc.units.K)
@@ -427,9 +425,9 @@ def test_plot_vector_axis_labels_1d():
     for i in range(N):
         vecs.append(np.random.random(3))
     d.coords['x'] = sc.Variable(['x'],
-                                  values=vecs,
-                                  unit=sc.units.m,
-                                  dtype=sc.dtype.vector_3_float64)
+                                values=vecs,
+                                unit=sc.units.m,
+                                dtype=sc.dtype.vector_3_float64)
     d["Sample"] = sc.Variable(['x'],
                               values=np.random.rand(N),
                               unit=sc.units.counts)
@@ -453,8 +451,8 @@ def test_plot_string_axis_labels_1d_short():
     d = sc.Dataset()
     N = 5
     d.coords['x'] = sc.Variable(dims=['x'],
-                                  values=["a", "b", "c", "d", "e"],
-                                  unit=sc.units.m)
+                                values=["a", "b", "c", "d", "e"],
+                                unit=sc.units.m)
     d["Sample"] = sc.Variable(['x'],
                               values=np.random.rand(N),
                               unit=sc.units.counts)
@@ -469,12 +467,12 @@ def test_plot_string_and_vector_axis_labels_2d():
         vecs.append(np.random.random(3))
     d = sc.Dataset()
     d.coords['x'] = sc.Variable(['x'],
-                                  values=vecs,
-                                  unit=sc.units.m,
-                                  dtype=sc.dtype.vector_3_float64)
+                                values=vecs,
+                                unit=sc.units.m,
+                                dtype=sc.dtype.vector_3_float64)
     d.coords['y'] = sc.Variable(['y'],
-                                  values=["a", "b", "c", "d", "e"],
-                                  unit=sc.units.m)
+                                values=["a", "b", "c", "d", "e"],
+                                unit=sc.units.m)
     d["Signal"] = sc.Variable(['y', 'x'],
                               values=np.random.random([M, N]),
                               unit=sc.units.counts)
@@ -512,9 +510,7 @@ def test_sparse_data_slice_with_on_the_fly_histogram():
         var['x', i].values = v
 
     d = sc.Dataset()
-    d.coords['x'] = sc.Variable(['x'],
-                                  values=np.arange(M),
-                                  unit=sc.units.m)
+    d.coords['x'] = sc.Variable(['x'], values=np.arange(M), unit=sc.units.m)
     d['a'] = sc.DataArray(coords={'tof': var})
     d['b'] = sc.DataArray(coords={'tof': var * 1.1})
     plot(d['x', 4], bins=100)

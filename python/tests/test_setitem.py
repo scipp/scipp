@@ -3,7 +3,6 @@
 # @file
 # @author Simon Heybrock
 import scipp as sc
-from scipp import Dim
 
 
 def test_setitem_required_for_inplace_ops():

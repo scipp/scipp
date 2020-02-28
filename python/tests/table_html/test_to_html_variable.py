@@ -3,7 +3,6 @@ import pytest
 from bs4 import BeautifulSoup
 
 import scipp as sc
-from scipp import Dim
 from scipp.table_html import make_html
 from scipp.table_html.formatting_html import VARIANCE_PREFIX
 
@@ -13,9 +12,8 @@ from .common import (UNIT_CSS_CLASS, VALUE_CSS_CLASS, VAR_NAME_CSS_CLASS,
 
 @pytest.mark.parametrize("dims, lengths",
                          ((['x'], (10, )), (['x', 'y'], (10, 10)),
-                          (['x', 'y', 'z'],
-                           (10, 10, 10)), (['x', 'y', 'z', 'spectrum'],
-                                           (10, 10, 10, 10))))
+                          (['x', 'y', 'z'], (10, 10, 10)),
+                          (['x', 'y', 'z', 'spectrum'], (10, 10, 10, 10))))
 def test_basic(dims, lengths):
     in_unit = sc.units.m
     in_dtype = sc.dtype.float32
@@ -113,8 +111,7 @@ def test_sparse_1d_variable():
 
 @pytest.mark.parametrize("dims, lengths",
                          ((['x', 'y'], (10, sc.Dimensions.Sparse)),
-                          (['x', 'y', 'z'],
-                           (10, 10, sc.Dimensions.Sparse)),
+                          (['x', 'y', 'z'], (10, 10, sc.Dimensions.Sparse)),
                           (['x', 'y', 'z', 'spectrum'],
                            (10, 10, 10, sc.Dimensions.Sparse))))
 def test_sparse(dims, lengths):

@@ -241,8 +241,7 @@ class TestDatasetSlice(unittest.TestCase):
         a2 = d.subset["a"]
         d3 = sc.Dataset()
         d3[sc.Coord.X] = (['x'], np.arange(10))
-        d3[sc.Data.Value, "a"] = (['x'], np.arange(1, 11,
-                                                        dtype='float64'))
+        d3[sc.Data.Value, "a"] = (['x'], np.arange(1, 11, dtype='float64'))
         a3 = d3.subset["a"]
         self.assertEqual(d, d2)
         self.assertEqual(d2, d)

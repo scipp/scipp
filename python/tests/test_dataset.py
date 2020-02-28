@@ -35,11 +35,7 @@ def test_create_from_data_array():
 def test_create_from_data_arrays():
     var1 = sc.Variable(dims=['x'], values=np.arange(4))
     var2 = sc.Variable(dims=['x'], values=np.ones(4))
-    base = sc.Dataset({
-        'a': var1,
-        'b': var2
-    },
-                      coords={'x': var1, 'aux': var1})
+    base = sc.Dataset({'a': var1, 'b': var2}, coords={'x': var1, 'aux': var1})
     d = sc.Dataset({'a': base['a'], 'b': base['b']})
     assert d == base
     swapped = sc.Dataset({'a': base['b'], 'b': base['a']})
@@ -201,10 +197,9 @@ def test_slice_item():
         coords={'x': sc.Variable(dims=['x'], values=np.arange(4, 8))})
     d['a'] = sc.Variable(dims=['x'], values=np.arange(4))
     assert d['a']['x', 2:4].data == sc.Variable(dims=['x'],
-                                                  values=np.arange(2, 4))
-    assert d['a']['x',
-                  2:4].coords['x'] == sc.Variable(dims=['x'],
-                                                    values=np.arange(6, 8))
+                                                values=np.arange(2, 4))
+    assert d['a']['x', 2:4].coords['x'] == sc.Variable(dims=['x'],
+                                                       values=np.arange(6, 8))
 
 
 def test_set_item_slice_from_numpy():
@@ -212,13 +207,16 @@ def test_set_item_slice_from_numpy():
         coords={'x': sc.Variable(dims=['x'], values=np.arange(4, 8))})
     d['a'] = sc.Variable(dims=['x'], values=np.arange(4))
     d['a']['x', 2:4] = np.arange(2)
-    assert d['a'].data == sc.Variable(dims=['x'], values=np.array([0, 1, 0, 1]))
+    assert d['a'].data == sc.Variable(dims=['x'],
+                                      values=np.array([0, 1, 0, 1]))
 
 
 def test_set_item_slice_with_variances_from_numpy():
     d = sc.Dataset(
         coords={'x': sc.Variable(dims=['x'], values=np.arange(4, 8))})
-    d['a'] = sc.Variable(dims=['x'], values=np.arange(4), variances=np.arange(4))
+    d['a'] = sc.Variable(dims=['x'],
+                         values=np.arange(4),
+                         variances=np.arange(4))
     d['a']['x', 2:4].values = np.arange(2)
     d['a']['x', 2:4].variances = np.arange(2, 4)
     assert np.array_equal(d['a'].values, np.array([0.0, 1.0, 0.0, 1.0]))
@@ -237,7 +235,8 @@ def test_iadd_slice():
         coords={'x': sc.Variable(dims=['x'], values=np.arange(4, 8))})
     d['a'] = sc.Variable(dims=['x'], values=np.arange(4))
     d['a']['x', 1] += d['a']['x', 2]
-    assert d['a'].data == sc.Variable(dims=['x'], values=np.array([0, 3, 2, 3]))
+    assert d['a'].data == sc.Variable(dims=['x'],
+                                      values=np.array([0, 3, 2, 3]))
 
 
 def test_iadd_range():
@@ -247,7 +246,8 @@ def test_iadd_range():
     with pytest.raises(RuntimeError):
         d['a']['x', 2:4] += d['a']['x', 1:3]
     d['a']['x', 2:4] += d['a']['x', 2:4]
-    assert d['a'].data == sc.Variable(dims=['x'], values=np.array([0, 1, 4, 6]))
+    assert d['a'].data == sc.Variable(dims=['x'],
+                                      values=np.array([0, 1, 4, 6]))
 
 
 def test_contains():
@@ -293,7 +293,8 @@ def test_chained_slicing():
 
     expected = sc.Dataset()
     expected.coords['y'] = sc.Variable(dims=['y'], values=np.arange(11.0))
-    expected['a'] = sc.Variable(dims=['y'], values=np.arange(501.0, 600.0, 10.0))
+    expected['a'] = sc.Variable(dims=['y'],
+                                values=np.arange(501.0, 600.0, 10.0))
     expected['b'] = sc.Variable(1.5)
 
     assert d['x', 1]['z', 5] == expected
@@ -326,8 +327,10 @@ def test_sum_mean():
             sc.Variable(dims=['y'], values=np.arange(3, dtype=np.int64))
         },
         coords={
-            'x': sc.Variable(dims=['x'], values=np.arange(2, dtype=np.int64)),
-            'y': sc.Variable(dims=['y'], values=np.arange(3, dtype=np.int64)),
+            'x':
+            sc.Variable(dims=['x'], values=np.arange(2, dtype=np.int64)),
+            'y':
+            sc.Variable(dims=['y'], values=np.arange(3, dtype=np.int64)),
             'l1':
             sc.Variable(dims=['x', 'y'],
                         values=np.arange(6, dtype=np.int64).reshape(2, 3)),
@@ -336,8 +339,8 @@ def test_sum_mean():
         })
     d_ref = sc.Dataset(
         {
-            'a': sc.Variable(dims=['x'], values=np.array([3, 12],
-                                                      dtype=np.int64)),
+            'a': sc.Variable(dims=['x'],
+                             values=np.array([3, 12], dtype=np.int64)),
             'b': sc.Variable(3)
         },
         coords={
@@ -461,10 +464,14 @@ def test_dataset_set_data():
             'b': sc.Variable(1.0)
         },
         coords={
-            'x': sc.Variable(dims=['x'], values=np.arange(2.0),
-                               unit=sc.units.m),
-            'y': sc.Variable(dims=['y'], values=np.arange(3.0), unit=sc.units.m),
-            'aux': sc.Variable(dims=['y'], values=np.arange(3))})
+            'x': sc.Variable(dims=['x'],
+                             values=np.arange(2.0),
+                             unit=sc.units.m),
+            'y': sc.Variable(dims=['y'],
+                             values=np.arange(3.0),
+                             unit=sc.units.m),
+            'aux': sc.Variable(dims=['y'], values=np.arange(3))
+        })
 
     d2 = sc.Dataset(
         {
@@ -472,10 +479,14 @@ def test_dataset_set_data():
             'b': sc.Variable(1.0)
         },
         coords={
-            'x': sc.Variable(dims=['x'], values=np.arange(2.0),
-                               unit=sc.units.m),
-            'y': sc.Variable(dims=['y'], values=np.arange(3.0), unit=sc.units.m),
-            'aux': sc.Variable(dims=['y'], values=np.arange(3))})
+            'x': sc.Variable(dims=['x'],
+                             values=np.arange(2.0),
+                             unit=sc.units.m),
+            'y': sc.Variable(dims=['y'],
+                             values=np.arange(3.0),
+                             unit=sc.units.m),
+            'aux': sc.Variable(dims=['y'], values=np.arange(3))
+        })
 
     d3 = sc.Dataset()
     d3['b'] = d1['a']
@@ -493,8 +504,7 @@ def test_dataset_set_data():
                          variances=np.arange(10.0))
     d['b'] = sc.Variable(dims=['row'], values=np.arange(10.0, 20.0))
     d1 = d['row', 0:1]
-    d2 = sc.Dataset({'a': d1['a'].data},
-                    coords={'row': d1['a'].coords['row']})
+    d2 = sc.Dataset({'a': d1['a'].data}, coords={'row': d1['a'].coords['row']})
     d2['b'] = d1['b']
     expected = sc.Dataset()
     expected.coords['row'] = sc.Variable(dims=['row'], values=np.arange(1.0))
@@ -593,9 +603,14 @@ def make_simple_dataset(dim1='x', dim2='y', seed=None):
             'b': sc.Variable(1.0)
         },
         coords={
-            dim1: sc.Variable(dims=[dim1], values=np.arange(2.0), unit=sc.units.m),
-            dim2: sc.Variable(dims=[dim2], values=np.arange(3.0), unit=sc.units.m),
-            'aux': sc.Variable(dims=[dim2], values=np.random.rand(3))})
+            dim1: sc.Variable(dims=[dim1],
+                              values=np.arange(2.0),
+                              unit=sc.units.m),
+            dim2: sc.Variable(dims=[dim2],
+                              values=np.arange(3.0),
+                              unit=sc.units.m),
+            'aux': sc.Variable(dims=[dim2], values=np.random.rand(3))
+        })
 
 
 def test_dataset_view_set_variance():
@@ -612,17 +627,19 @@ def test_dataset_view_set_variance():
 def test_sort():
     d = sc.Dataset(
         {
-            'a':
-            sc.Variable(dims=['x', 'y'], values=np.arange(6).reshape(2,
-                                                                         3)),
-            'b':
-            sc.Variable(dims=['x'], values=['b', 'a'])
+            'a': sc.Variable(dims=['x', 'y'],
+                             values=np.arange(6).reshape(2, 3)),
+            'b': sc.Variable(dims=['x'], values=['b', 'a'])
         },
         coords={
-            'x': sc.Variable(dims=['x'], values=np.arange(2.0),
-                               unit=sc.units.m),
-            'y': sc.Variable(dims=['y'], values=np.arange(3.0), unit=sc.units.m),
-            'aux': sc.Variable(dims=['x'], values=np.arange(2.0))})
+            'x': sc.Variable(dims=['x'],
+                             values=np.arange(2.0),
+                             unit=sc.units.m),
+            'y': sc.Variable(dims=['y'],
+                             values=np.arange(3.0),
+                             unit=sc.units.m),
+            'aux': sc.Variable(dims=['x'], values=np.arange(2.0))
+        })
     expected = sc.Dataset(
         {
             'a':
@@ -633,8 +650,11 @@ def test_sort():
         },
         coords={
             'x': sc.Variable(dims=['x'], values=[1.0, 0.0], unit=sc.units.m),
-            'y': sc.Variable(dims=['y'], values=np.arange(3.0), unit=sc.units.m),
-            'aux': sc.Variable(dims=['x'], values=[1.0, 0.0])})
+            'y': sc.Variable(dims=['y'],
+                             values=np.arange(3.0),
+                             unit=sc.units.m),
+            'aux': sc.Variable(dims=['x'], values=[1.0, 0.0])
+        })
     assert sc.sort(d, d['b'].data) == expected
 
 
@@ -691,8 +711,7 @@ def test_masks_delitem():
 @pytest.mark.parametrize('dims, lengths',
                          ((['x'], (sc.Dimensions.Sparse, )),
                           (['x', 'y'], (10, sc.Dimensions.Sparse)),
-                          (['x', 'y', 'z'],
-                           (10, 10, sc.Dimensions.Sparse)),
+                          (['x', 'y', 'z'], (10, 10, sc.Dimensions.Sparse)),
                           (['x', 'y', 'z', 'spectrum'],
                            (10, 10, 10, sc.Dimensions.Sparse))))
 def test_sparse_dim_has_none_shape(dims, lengths):

@@ -8,8 +8,8 @@ import operator
 
 
 def test_type():
-    variable_slice = sc.Variable(dims=['x'], values=np.arange(1, 10,
-                                                    dtype=float))['x', :]
+    variable_slice = sc.Variable(dims=['x'],
+                                 values=np.arange(1, 10, dtype=float))['x', :]
     assert type(variable_slice) == sc.VariableView
 
 

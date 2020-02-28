@@ -3,17 +3,15 @@ import pytest
 from bs4 import BeautifulSoup
 
 import scipp as sc
-from scipp import Dim
 from scipp.table_html import make_html
 
-from .common import (ATTR_NAME, LABEL_NAME, MASK_NAME, assert_dims_section,
-                     assert_section)
+from .common import ATTR_NAME, MASK_NAME, assert_dims_section, assert_section
 
 
-@pytest.mark.parametrize(
-    "dims, lengths", ((['x'], [10]), (['x', 'y'], [10, 10]),
-                      (['x', 'y', 'z'], [10, 10, 10]),
-                      (['x', 'y', 'z', 'spectrum'], [10, 10, 10, 10])))
+@pytest.mark.parametrize("dims, lengths",
+                         ((['x'], [10]), (['x', 'y'], [10, 10]),
+                          (['x', 'y', 'z'], [10, 10, 10]),
+                          (['x', 'y', 'z', 'spectrum'], [10, 10, 10, 10])))
 def test_basic(dims, lengths):
     in_unit = sc.units.m
     in_dtype = sc.dtype.float32
@@ -74,9 +72,10 @@ def test_basic(dims, lengths):
                        in_unit,
                        has_bin_edges=True)
 
+
 @pytest.mark.skip(reason="This test is currently broken after dims API "
-                         "refactor. It gives a Length mismatch on insertion "
-                         "error.")
+                  "refactor. It gives a Length mismatch on insertion "
+                  "error.")
 def test_sparse_does_not_repeat_dense_coords():
     sparse = sc.Variable(['y', 'z'], shape=(3, sc.Dimensions.Sparse))
 
@@ -85,15 +84,14 @@ def test_sparse_does_not_repeat_dense_coords():
     sparse.values[1].extend(np.arange(0))
 
     d = sc.Dataset()
-    d['a'] = sc.Variable(['y', 'x', 'z'],
-                         shape=(3, 2, 4),
-                         variances=True)
+    d['a'] = sc.Variable(['y', 'x', 'z'], shape=(3, 2, 4), variances=True)
     d['b'] = sc.DataArray(
         sparse,
         coords={
             'y': sc.Variable(['y'], values=np.arange(4)),
             'z': sc.Variable(['z'], shape=(sc.Dimensions.Sparse, )),
-            "binedge": sc.Variable(['y'], values=np.random.rand(4))},
+            "binedge": sc.Variable(['y'], values=np.random.rand(4))
+        },
         attrs={"attr": sc.Variable(['y'], values=np.random.rand(3))})
 
     html = BeautifulSoup(make_html(d), features="html.parser")
