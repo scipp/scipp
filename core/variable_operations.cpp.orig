@@ -300,7 +300,16 @@ VariableView nan_to_num(const VariableConstView &var,
                         const VariableConstView &replacement,
                         const VariableView &out) {
 
+<<<<<<< HEAD
   return replace_in_place(var, replacement, element::nan_to_num_out_arg, out);
+=======
+  auto op = [](auto &a, const auto &b, const auto &repl) {
+    using std::isnan;
+    a = isnan(b) ? repl : b;
+  };
+
+  return replace_in_place(var, replacement, op, out);
+>>>>>>> 8ee210397ce4609dcbc857595e3ef8f59a20f251
 }
 
 VariableView positive_inf_to_num(const VariableConstView &var,
@@ -326,7 +335,7 @@ Variable nan_to_num(const VariableConstView &var,
 
 Variable pos_inf_to_num(const VariableConstView &var,
                         const VariableConstView &replacement) {
-  return replace(var, replacement, element::positive_inf_to_num);
+  return replace(var, replacement, element::postive_inf_to_num);
 }
 
 Variable neg_inf_to_num(const VariableConstView &var,

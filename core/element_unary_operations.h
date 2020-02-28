@@ -45,7 +45,7 @@ constexpr auto nan_to_num_out_arg = [](auto &x, const auto y,
   x = isnan(y) ? repl : y;
 };
 
-constexpr auto postive_inf_to_num = [](const auto &x, const auto &repl) {
+constexpr auto positive_inf_to_num = [](const auto &x, const auto &repl) {
   if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(x)>>)
     return isinf(x) && x.value > 0 ? repl : x;
   else
