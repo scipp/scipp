@@ -6,9 +6,9 @@
 
 # Scipp
 
-See https://scipp.readthedocs.io for project context and how to use and install the **scipp** Python module.
+See https://scipp.github.io/ for project context and how to use and install the **scipp** Python module.
 
 See [here](https://github.com/scipp/scipp/issues?utf8=%E2%9C%93&q=label%3Aquestion) for a list of frequently asked questions on how to use scipp.
 This is also the place to ask new questions that have not been answered yet, by [opening](https://github.com/scipp/scipp/issues/new?assignees=&labels=question&template=question.md&title=) a new **Question** issue.
 
-If you are interested in developing Scipp, please see the [developer getting started guide](https://scipp.readthedocs.io/en/latest/developer/getting-started.html).
+If you are interested in developing Scipp, please see the [developer getting started guide](https://scipp.github.io/developer/getting-started.html).

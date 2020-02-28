@@ -21,7 +21,7 @@ def run_mantid_alg(alg, *args, **kwargs):
         raise ImportError(
             "Mantid Python API was not found, please install Mantid framework "
             "as detailed in the installation instructions (https://scipp."
-            "readthedocs.io/en/latest/getting-started/installation.html)")
+            "github.io/getting-started/installation.html)")
     # Deal with multiple calls to this function, which may have conflicting
     # names in the global AnalysisDataService.
     run_mantid_alg.workspace_id += 1
@@ -674,7 +674,7 @@ def to_workspace_2d(x, y, e, coord_dim, instrument_file=None):
         raise ImportError(
             "Mantid Python API was not found, please install Mantid framework "
             "as detailed in the installation instructions (https://scipp."
-            "readthedocs.io/en/latest/getting-started/installation.html)")
+            "github.io/getting-started/installation.html)")
 
     assert len(y.shape) == 2, "Currently can only handle 2D data."
 

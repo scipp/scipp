@@ -1,13 +1,9 @@
 trigger:
-  branches:
-    exclude:
-      - '*'
-
-pr:
-  autoCancel: true
-  branches:
+  tags:
     include:
-      - '*'
+      - '*.*.*'
+
+pr: none
 
 stages:
   - template: templates/code_quality_checks.yml
@@ -19,6 +15,12 @@ stages:
       - job: 'linux'
         displayName: 'Linux'
         timeoutInMinutes: 60
+        strategy:
+          matrix:
+            Python36:
+              PYTHON_VERSION: '3.6'
+            Python37:
+              PYTHON_VERSION: '3.7'
         pool:
           vmImage: 'ubuntu-18.04'
         steps:
@@ -31,10 +33,13 @@ stages:
           - bash: |
               set -ex
               conda --version
-              conda install --yes conda-build
+              conda install --yes anaconda-client conda-build
+              conda config --set always_yes yes --set changeps1 no
             displayName: 'Conda configuration'
           - bash: |
-              conda build -c conda-forge ./conda
+              conda build --user scipp --token "$ANACONDA_TOKEN" --channel conda-forge --python="$PYTHON_VERSION" ./conda
+            env:
+              ANACONDA_TOKEN: $(anaconda_token_secret)
             displayName: 'Package build'
           - task: PublishBuildArtifacts@1
             inputs:
@@ -62,10 +67,13 @@ stages:
           - bash: |
               set -ex
               conda --version
-              conda install --yes conda-build
+              conda install --yes anaconda-client conda-build
+              conda config --set always_yes yes --set changeps1 no
             displayName: 'Conda configuration'
           - bash: |
-              conda build -c conda-forge ./conda
+              conda build --user scipp --token "$ANACONDA_TOKEN" --channel conda-forge ./conda
+            env:
+              ANACONDA_TOKEN: $(anaconda_token_secret)
             displayName: 'Package build'
           - task: PublishBuildArtifacts@1
             inputs:
@@ -87,10 +95,13 @@ stages:
             displayName: Configure Conda directories
           - script: |
               conda --version
-              conda install --yes conda-build
+              conda install --yes anaconda-client conda-build
+              conda config --set always_yes yes --set changeps1 no
             displayName: 'Conda configuration'
           - script: |
-              conda build -c conda-forge ./conda
+              conda build --user scipp --token "%ANACONDA_TOKEN%" --channel conda-forge ./conda
+            env:
+              ANACONDA_TOKEN: $(anaconda_token_secret)
             displayName: 'Package build'
           - task: PublishBuildArtifacts@1
             inputs:
@@ -103,3 +114,11 @@ stages:
 
     jobs:
       - template: templates/documentation_build.yml
+
+  - stage: 'deploy'
+    displayName: 'Deployment'
+
+    jobs:
+      - template: templates/documentation_deploy.yml
+        parameters:
+          release: True

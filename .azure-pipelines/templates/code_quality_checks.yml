@@ -18,7 +18,7 @@ stages:
           - bash: |
               set -ex
               clang-format-6.0 --version
-              find . -type f -regex '.*\.\(c\|cpp\|h\|hpp\)' -not -path './common/include/scipp/common/span/*' | xargs clang-format-6.0 -i
+              find . -type f -regex '.*\.\(c\|cpp\|h\|hpp\)' -not -path './common/include/scipp/common/span/*' -exec clang-format-6.0 -i {} +
               git diff
               git diff --quiet
             displayName: 'Run clang-format'
@@ -33,7 +33,7 @@ stages:
               versionSpec: '3.x'
               addToPath: true
               architecture: 'x64'
-          - script: pip install cmake_format==0.6.9
+          - bash: pip install cmake_format==0.6.9
             displayName: 'Install tooling'
           - bash: |
               set -ex
@@ -63,7 +63,7 @@ stages:
               versionSpec: '3.x'
               addToPath: true
               architecture: 'x64'
-          - script: pip install flake8 yapf==0.29.0
+          - bash: pip install flake8 yapf==0.29.0
             displayName: 'Install tooling'
           - bash: |
               set -ex
