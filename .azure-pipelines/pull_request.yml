@@ -1,13 +1,13 @@
 trigger:
   branches:
     exclude:
-      - "*"
+      - '*'
 
 pr:
   autoCancel: true
   branches:
     include:
-      - master
+      - '*'
 
 stages:
   - template: templates/code_quality_checks.yml
