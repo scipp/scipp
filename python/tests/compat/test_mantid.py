@@ -410,7 +410,8 @@ class TestMantidConversion(unittest.TestCase):
         moved_det_position = moved.labels["position"]
         unmoved = mantidcompat.convert_Workspace2D_to_data_array(eventWS)
         unmoved_det_positions = unmoved.labels["position"]
-        # Moving the sample accounted for in position calculations but should not yield change to final detector positions
+        # Moving the sample accounted for in position calculations
+        # but should not yield change to final detector positions
         self.assertTrue(
             np.all(
                 np.isclose(moved_det_position.values,
