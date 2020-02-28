@@ -300,74 +300,38 @@ VariableView nan_to_num(const VariableConstView &var,
                         const VariableConstView &replacement,
                         const VariableView &out) {
 
-  auto op = [](auto &a, const auto &b, const auto &repl) {
-    if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(b)>>)
-      a = isnan(b) ? repl : b;
-    else
-      a = std::isnan(b) ? repl : b;
-  };
-
-  return replace_in_place(var, replacement, op, out);
+  return replace_in_place(var, replacement, element::nan_to_num_out_arg, out);
 }
 
 VariableView positive_inf_to_num(const VariableConstView &var,
                                  const VariableConstView &replacement,
                                  const VariableView &out) {
-  auto op = [](auto &a, const auto &b, const auto &repl) {
-    if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(b)>>)
-      a = isinf(b) && b.value > 0 ? repl : b;
-    else
-      a = std::isinf(b) && b > 0 ? repl : b;
-  };
 
-  return replace_in_place(var, replacement, op, out);
+  return replace_in_place(var, replacement,
+                          element::positive_inf_to_num_out_arg, out);
 }
 VariableView negative_inf_to_num(const VariableConstView &var,
                                  const VariableConstView &replacement,
                                  const VariableView &out) {
-  auto op = [](auto &a, const auto &b, const auto &repl) {
-    if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(b)>>)
-      a = isinf(b) && b.value < 0 ? repl : b;
-    else
-      a = std::isinf(b) && b < 0 ? repl : b;
-  };
 
-  return replace_in_place(var, replacement, op, out);
+  return replace_in_place(var, replacement,
+                          element::negative_inf_to_num_out_arg, out);
 }
 
 Variable nan_to_num(const VariableConstView &var,
                     const VariableConstView &replacement) {
 
-  auto op = [](const auto &x, const auto &repl) {
-    if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(x)>>)
-      return isnan(x) ? repl : x;
-    else
-      return std::isnan(x) ? repl : x;
-  };
-  return replace(var, replacement, op);
+  return replace(var, replacement, element::nan_to_num);
 }
 
 Variable pos_inf_to_num(const VariableConstView &var,
                         const VariableConstView &replacement) {
-
-  auto op = [](const auto &x, const auto &repl) {
-    if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(x)>>)
-      return isinf(x) && x.value > 0 ? repl : x;
-    else
-      return std::isinf(x) && x > 0 ? repl : x;
-  };
-  return replace(var, replacement, op);
+  return replace(var, replacement, element::postive_inf_to_num);
 }
 
 Variable neg_inf_to_num(const VariableConstView &var,
                         const VariableConstView &replacement) {
-  auto op = [](const auto &x, const auto &repl) {
-    if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(x)>>)
-      return isinf(x) && x.value < 0 ? repl : x;
-    else
-      return std::isinf(x) && x < 0 ? repl : x;
-  };
-  return replace(var, replacement, op);
+  return replace(var, replacement, element::negative_inf_to_num);
 }
 
 } // namespace scipp::core
