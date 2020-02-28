@@ -210,10 +210,10 @@ def _to_cartesian(r, theta, phi):
 
 
 def rotation_matrix_from_vectors(source, target):
-    """ Find the rotation matrix that aligns vec1 to vec2
+    """ Find the rotation matrix that aligns source to target
     :param source: A 3d "source" vector
     :param target: A 3d "destination" vector
-    :return mat: A transform matrix (3x3) which when applied to vec1, aligns it with vec2.
+    :return mat: A  matrix (3x3) to transform source to target.
     """
     a, b = (source / np.linalg.norm(source)).reshape(3), (
         target / np.linalg.norm(target)).reshape(3)
@@ -410,7 +410,6 @@ def convert_Workspace2D_to_data_array(ws, **ignored):
 
         if not common_bins and ws.hasMaskedBins(i):
             set_bin_masks(bin_masks, dim, i, ws.maskedBinsIndices(i))
-
     # Avoid creating dimensions that are not required since this mostly an
     # artifact of inflexible data structures and gets in the way when working
     # with scipp.
