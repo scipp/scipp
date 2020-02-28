@@ -8,7 +8,7 @@
 #include <cmath>
 
 #include "scipp/common/overloaded.h"
-#include "scipp/core/value_and_variance.h"
+#include "scipp/core/transform.h"
 
 namespace scipp::core {
 
@@ -23,6 +23,17 @@ template <class... Ts> struct arg_list_t {
 };
 template <class... Ts> constexpr arg_list_t<Ts...> arg_list{};
 
+constexpr auto abs = [](const auto x) noexcept {
+  using std::abs;
+  return abs(x);
+};
+
+constexpr auto abs_out_arg =
+    overloaded{arg_list<double, float>, [](auto &x, const auto y) {
+                 using std::abs;
+                 x = abs(y);
+               }};
+
 constexpr auto sqrt = [](const auto x) noexcept {
   using std::sqrt;
   return sqrt(x);
@@ -33,6 +44,66 @@ constexpr auto sqrt_out_arg =
                  using std::sqrt;
                  x = sqrt(y);
                }};
+
+constexpr auto sin_out_arg = overloaded{
+    arg_list<double, float>, transform_flags::expect_no_variance_arg<0>,
+    transform_flags::expect_no_variance_arg<1>, [](auto &x, const auto y) {
+      using std::sin;
+      x = sin(y);
+    }};
+
+constexpr auto cos_out_arg = overloaded{
+    arg_list<double, float>, transform_flags::expect_no_variance_arg<0>,
+    transform_flags::expect_no_variance_arg<1>, [](auto &x, const auto y) {
+      using std::cos;
+      x = cos(y);
+    }};
+
+constexpr auto tan_out_arg = overloaded{
+    arg_list<double, float>, transform_flags::expect_no_variance_arg<0>,
+    transform_flags::expect_no_variance_arg<1>, [](auto &x, const auto y) {
+      using std::tan;
+      x = tan(y);
+    }};
+
+constexpr auto asin =
+    overloaded{transform_flags::expect_no_variance_arg<0>, [](const auto x) {
+                 using std::asin;
+                 return asin(x);
+               }};
+
+constexpr auto asin_out_arg = overloaded{
+    arg_list<double, float>, transform_flags::expect_no_variance_arg<0>,
+    transform_flags::expect_no_variance_arg<1>, [](auto &x, const auto y) {
+      using std::asin;
+      x = asin(y);
+    }};
+
+constexpr auto acos =
+    overloaded{transform_flags::expect_no_variance_arg<0>, [](const auto x) {
+                 using std::acos;
+                 return acos(x);
+               }};
+
+constexpr auto acos_out_arg = overloaded{
+    arg_list<double, float>, transform_flags::expect_no_variance_arg<0>,
+    transform_flags::expect_no_variance_arg<1>, [](auto &x, const auto y) {
+      using std::acos;
+      x = acos(y);
+    }};
+
+constexpr auto atan =
+    overloaded{transform_flags::expect_no_variance_arg<0>, [](const auto x) {
+                 using std::atan;
+                 return atan(x);
+               }};
+
+constexpr auto atan_out_arg = overloaded{
+    arg_list<double, float>, transform_flags::expect_no_variance_arg<0>,
+    transform_flags::expect_no_variance_arg<1>, [](auto &x, const auto y) {
+      using std::atan;
+      x = atan(y);
+    }};
 
 constexpr auto nan_to_num = [](const auto x, const auto &repl) noexcept {
   using std::isnan;

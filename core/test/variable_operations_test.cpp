@@ -628,13 +628,29 @@ TEST(VariableConstView, sum) {
 }
 
 TEST(Variable, abs) {
-  auto reference =
-      makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
-                           units::Unit(units::m), Values{1, 2, 3, 4});
-  auto var =
-      makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
-                           units::Unit(units::m), Values{1.0, -2.0, -3.0, 4.0});
-  EXPECT_EQ(abs(var), reference);
+  const auto f64 = makeVariable<double>(Values{-1.23});
+  EXPECT_EQ(abs(f64), makeVariable<double>(Values{element::abs(-1.23)}));
+  const auto f32 = makeVariable<float>(Values{-1.23456789});
+  EXPECT_EQ(abs(f32), makeVariable<float>(Values{element::abs(-1.23456789f)}));
+}
+
+TEST(Variable, abs_move) {
+  auto var = makeVariable<double>(Values{-1.23});
+  const auto ptr = var.values<double>().data();
+  auto out = abs(std::move(var));
+  EXPECT_EQ(out, makeVariable<double>(Values{element::abs(-1.23)}));
+  EXPECT_EQ(out.values<double>().data(), ptr);
+}
+
+TEST(Variable, abs_out_arg) {
+  auto x = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{-1.23, 0.0});
+  auto out = x.slice({Dim::X, 1});
+  auto view = abs(x.slice({Dim::X, 0}), out);
+
+  EXPECT_EQ(x, makeVariable<double>(Dims{Dim::X}, Shape{2},
+                                    Values{-1.23, element::abs(-1.23)}));
+  EXPECT_EQ(view, out);
+  EXPECT_EQ(view.underlying(), x);
 }
 
 TEST(Variable, norm_of_vector) {
@@ -696,28 +712,6 @@ TEST(VariableReciprocalOutArg, partial) {
             makeVariable<double>(Dims{Dim::X}, Shape{2},
                                  units::Unit(units::dimensionless / units::m),
                                  Values{1. / 4., 1. / 9.}));
-  EXPECT_EQ(view, out);
-  EXPECT_EQ(view.underlying(), out);
-}
-
-TEST(VariableAbsOutArg, full_in_place) {
-  auto var = makeVariable<double>(Dims{Dim::X}, Shape{3}, units::Unit(units::m),
-                                  Values{1, -4, -9});
-  auto view = abs(var, var);
-  EXPECT_EQ(var, makeVariable<double>(Dims{Dim::X}, Shape{3},
-                                      units::Unit(units::m), Values{1, 4, 9}));
-  EXPECT_EQ(view, var);
-  EXPECT_EQ(view.underlying(), var);
-}
-
-TEST(VariableAbsOutArg, partial) {
-  const auto var = makeVariable<double>(
-      Dims{Dim::X}, Shape{3}, units::Unit(units::m), Values{1, -4, -9});
-  auto out =
-      makeVariable<double>(Dims{Dim::X}, Shape{2}, units::Unit(units::m));
-  auto view = abs(var.slice({Dim::X, 1, 3}), out);
-  EXPECT_EQ(out, makeVariable<double>(Dims{Dim::X}, Shape{2},
-                                      units::Unit(units::m), Values{4, 9}));
   EXPECT_EQ(view, out);
   EXPECT_EQ(view.underlying(), out);
 }

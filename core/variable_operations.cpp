@@ -174,21 +174,16 @@ VariableView reciprocal(const VariableConstView &var, const VariableView &out) {
 }
 
 Variable abs(const VariableConstView &var) {
-  using std::abs;
-  return transform<double, float>(var, [](const auto x) { return abs(x); });
+  return transform<double, float>(var, element::abs);
 }
 
 Variable abs(Variable &&var) {
-  using std::abs;
-  auto out(std::move(var));
-  abs(out, out);
-  return out;
+  abs(var, var);
+  return std::move(var);
 }
 
 VariableView abs(const VariableConstView &var, const VariableView &out) {
-  using std::abs;
-  transform_in_place<pair_self_t<double, float>>(
-      out, var, [](auto &x, const auto &y) { x = abs(y); });
+  transform_in_place(out, var, element::abs_out_arg);
   return out;
 }
 

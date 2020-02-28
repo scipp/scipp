@@ -3,6 +3,12 @@ Tooling
 
 This is a list of the tooling (i.e. compilers, static analysis, etc.) that are used in scipp and their corresponding versions.
 
+Misc
+~~~~
+
+- CMake
+- Conda
+
 Compilers
 ~~~~~~~~~
 
