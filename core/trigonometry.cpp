@@ -30,6 +30,7 @@ Variable sin(Variable &&var) {
 }
 
 VariableView sin(const VariableConstView &var, const VariableView &out) {
+  expect::unit_any_of(var, {units::rad, units::deg});
   out.assign(var);
   if (var.unit() == units::deg)
     out *= deg_to_rad;
@@ -50,6 +51,7 @@ Variable cos(Variable &&var) {
 }
 
 VariableView cos(const VariableConstView &var, const VariableView &out) {
+  expect::unit_any_of(var, {units::rad, units::deg});
   out.assign(var);
   if (var.unit() == units::deg)
     out *= deg_to_rad;
@@ -70,6 +72,7 @@ Variable tan(Variable &&var) {
 }
 
 VariableView tan(const VariableConstView &var, const VariableView &out) {
+  expect::unit_any_of(var, {units::rad, units::deg});
   out.assign(var);
   if (var.unit() == units::deg)
     out *= deg_to_rad;

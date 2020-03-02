@@ -2,12 +2,13 @@
 # Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Simon Heybrock
-import math
 
 import numpy as np
 import pytest
 
 import scipp as sc
+
+from .common import assert_export
 
 
 def make_variables():
@@ -606,104 +607,42 @@ def test_binary_not_equal():
 
 
 def test_abs():
-    var = sc.Variable(dims=['x'],
-                      values=np.array([0.1, -0.2]),
-                      unit=sc.units.m)
-    expected = sc.Variable(dims=['x'],
-                           values=np.array([0.1, 0.2]),
-                           unit=sc.units.m)
-    assert sc.abs(var) == expected
+    assert_export(sc.abs, sc.Variable())
 
 
 def test_abs_out():
-    var = sc.Variable(dims=['x'],
-                      values=np.array([0.1, -0.2]),
-                      unit=sc.units.m)
-    expected = sc.Variable(dims=['x'],
-                           values=np.array([0.1, 0.2]),
-                           unit=sc.units.m)
-    out = sc.abs(x=var, out=var)
-    assert var == expected
-    assert out == expected
+    var = sc.Variable()
+    assert_export(sc.abs, var, out=var)
 
 
 def test_dot():
-    a = sc.Variable(dims=['x'],
-                    values=[[1, 0, 0], [0, 1, 0]],
-                    unit=sc.units.m,
-                    dtype=sc.dtype.vector_3_float64)
-    b = sc.Variable(dims=['x'],
-                    values=[[1, 0, 0], [1, 0, 0]],
-                    unit=sc.units.m,
-                    dtype=sc.dtype.vector_3_float64)
-    expected = sc.Variable(dims=['x'],
-                           values=np.array([1.0, 0.0]),
-                           unit=sc.units.m**2)
-    assert sc.dot(a, b) == expected
+    assert_export(sc.dot, sc.Variable(), sc.Variable())
 
 
 def test_concatenate():
-    var = sc.Variable(dims=['x'], values=np.array([0.1, 0.2]), unit=sc.units.m)
-    expected = sc.Variable(dims=['x'],
-                           values=np.array([0.1, 0.2, 0.1, 0.2]),
-                           unit=sc.units.m)
-    assert sc.concatenate(var, var, 'x') == expected
+    assert_export(sc.concatenate, sc.Variable(), sc.Variable(), 'x')
 
 
 def test_mean():
-    var = sc.Variable(dims=['x', 'y'],
-                      values=np.array([[0.1, 0.3], [0.2, 0.6]]),
-                      unit=sc.units.m)
-    expected = sc.Variable(dims=['x'],
-                           values=np.array([0.2, 0.4]),
-                           unit=sc.units.m)
-    assert sc.mean(var, 'y') == expected
+    assert_export(sc.mean, sc.Variable(), 'x')
 
 
 def test_mean_in_place():
-    var = sc.Variable(dims=['x', 'y'],
-                      values=np.array([[0.1, 0.3], [0.2, 0.6]]),
-                      unit=sc.units.m)
-    out = sc.Variable(dims=['x'], values=np.array([0.0, 0.0]), unit=sc.units.m)
-    expected = sc.Variable(dims=['x'],
-                           values=np.array([0.2, 0.4]),
-                           unit=sc.units.m)
-    view = sc.mean(var, 'y', out)
-    assert out == expected
-    assert view == out
+    var = sc.Variable()
+    assert_export(sc.mean, sc.Variable(), 'x', var)
 
 
 def test_norm():
-    var = sc.Variable(dims=['x'],
-                      values=[[1, 0, 0], [3, 4, 0]],
-                      unit=sc.units.m,
-                      dtype=sc.dtype.vector_3_float64)
-    expected = sc.Variable(dims=['x'],
-                           values=np.array([1.0, 5.0]),
-                           unit=sc.units.m)
-    assert sc.norm(var) == expected
+    assert_export(sc.norm, sc.Variable())
 
 
 def test_sqrt():
-    var = sc.Variable(dims=['x'],
-                      values=np.array([4.0, 9.0]),
-                      unit=sc.units.m**2)
-    expected = sc.Variable(dims=['x'],
-                           values=np.array([2.0, 3.0]),
-                           unit=sc.units.m)
-    assert sc.sqrt(var) == expected
+    assert_export(sc.sqrt, sc.Variable())
 
 
 def test_sqrt_out():
-    var = sc.Variable(dims=['x'],
-                      values=np.array([4.0, 9.0]),
-                      unit=sc.units.m**2)
-    expected = sc.Variable(dims=['x'],
-                           values=np.array([2.0, 3.0]),
-                           unit=sc.units.m)
-    out = sc.sqrt(x=var, out=var)
-    assert var == expected
-    assert out == expected
+    var = sc.Variable()
+    assert_export(sc.sqrt, var, var)
 
 
 def test_sum():
@@ -861,151 +800,66 @@ def test_bool_variable_repr():
 
 
 def test_reciprocal():
-    var = sc.Variable(dims=['x'], values=np.array([1.0, 2.0]))
-    expected = sc.Variable(dims=['x'], values=np.array([1.0 / 1.0, 1.0 / 2.0]))
-    assert sc.reciprocal(var) == expected
+    assert_export(sc.reciprocal, sc.Variable())
 
 
 def test_reciprocal_out():
-    var = sc.Variable(dims=['x'], values=np.array([1.0, 2.0]))
-    expected = sc.Variable(dims=['x'], values=np.array([1.0 / 1.0, 1.0 / 2.0]))
-    out = sc.reciprocal(x=var, out=var)
-    assert var == expected
-    assert out == expected
+    var = sc.Variable()
+    assert_export(sc.reciprocal, var, var)
 
 
 def test_sin():
-    var = sc.Variable(dims=['x'],
-                      values=np.array([0.0, math.pi]),
-                      unit=sc.units.rad)
-    expected = sc.Variable(dims=['x'],
-                           values=np.array([math.sin(0.0),
-                                            math.sin(math.pi)]),
-                           unit=sc.units.dimensionless)
-    assert sc.sin(var) == expected
+    assert_export(sc.sin, sc.Variable())
 
 
 def test_sin_out():
-    var = sc.Variable(dims=['x'],
-                      values=np.array([0.0, math.pi]),
-                      unit=sc.units.rad)
-    expected = sc.Variable(dims=['x'],
-                           values=np.array([math.sin(0.0),
-                                            math.sin(math.pi)]),
-                           unit=sc.units.dimensionless)
-    out = sc.sin(x=var, out=var)
-    assert var == expected
-    assert out == expected
+    var = sc.Variable()
+    assert_export(sc.sin, var, out=var)
 
 
 def test_cos():
-    var = sc.Variable(dims=['x'],
-                      values=np.array([0.0, math.pi]),
-                      unit=sc.units.rad)
-    expected = sc.Variable(dims=['x'],
-                           values=np.array([math.cos(0.0),
-                                            math.cos(math.pi)]),
-                           unit=sc.units.dimensionless)
-    assert sc.cos(var) == expected
+    assert_export(sc.cos, sc.Variable())
 
 
 def test_cos_out():
-    var = sc.Variable(dims=['x'],
-                      values=np.array([0.0, math.pi]),
-                      unit=sc.units.rad)
-    expected = sc.Variable(dims=['x'],
-                           values=np.array([math.cos(0.0),
-                                            math.cos(math.pi)]),
-                           unit=sc.units.dimensionless)
-    out = sc.cos(x=var, out=var)
-    assert var == expected
-    assert out == expected
+    var = sc.Variable()
+    assert_export(sc.cos, var, out=var)
 
 
 def test_tan():
-    var = sc.Variable(dims=['x'],
-                      values=np.array([0.0, math.pi / 2.]),
-                      unit=sc.units.rad)
-    expected = sc.Variable(dims=['x'],
-                           values=np.array(
-                               [math.tan(0.0),
-                                math.tan(math.pi / 2.)]),
-                           unit=sc.units.dimensionless)
-    assert sc.tan(var) == expected
+    assert_export(sc.tan, sc.Variable())
 
 
 def test_tan_out():
-    var = sc.Variable(dims=['x'],
-                      values=np.array([0.0, math.pi / 2.]),
-                      unit=sc.units.rad)
-    expected = sc.Variable(dims=['x'],
-                           values=np.array(
-                               [math.tan(0.0),
-                                math.tan(math.pi / 2.)]),
-                           unit=sc.units.dimensionless)
-    out = sc.tan(x=var, out=var)
-    assert var == expected
-    assert out == expected
+    var = sc.Variable()
+    assert_export(sc.tan, var, out=var)
 
 
 def test_asin():
-    var = sc.Variable(dims=['x'], values=np.array([0.0, 0.5]))
-    expected = sc.Variable(dims=['x'],
-                           values=np.array([math.asin(0.0),
-                                            math.asin(0.5)]),
-                           unit=sc.units.rad)
-    assert sc.asin(var) == expected
+    assert_export(sc.asin, sc.Variable())
 
 
 def test_asin_out():
-    var = sc.Variable(dims=['x'], values=np.array([0.0, 0.5]))
-    expected = sc.Variable(dims=['x'],
-                           values=np.array([math.asin(0.0),
-                                            math.asin(0.5)]),
-                           unit=sc.units.rad)
-    out = sc.asin(x=var, out=var)
-    assert var == expected
-    assert out == expected
+    var = sc.Variable()
+    assert_export(sc.asin, var, out=var)
 
 
 def test_acos():
-    var = sc.Variable(dims=['x'], values=np.array([0.0, 0.5]))
-    expected = sc.Variable(dims=['x'],
-                           values=np.array([math.acos(0.0),
-                                            math.acos(0.5)]),
-                           unit=sc.units.rad)
-    assert sc.acos(var) == expected
+    assert_export(sc.acos, sc.Variable())
 
 
 def test_acos_out():
-    var = sc.Variable(dims=['x'], values=np.array([0.0, 0.5]))
-    expected = sc.Variable(dims=['x'],
-                           values=np.array([math.acos(0.0),
-                                            math.acos(0.5)]),
-                           unit=sc.units.rad)
-    out = sc.acos(x=var, out=var)
-    assert var == expected
-    assert out == expected
+    var = sc.Variable()
+    assert_export(sc.acos, var, out=var)
 
 
 def test_atan():
-    var = sc.Variable(dims=['x'], values=np.array([0.0, 0.5]))
-    expected = sc.Variable(dims=['x'],
-                           values=np.array([math.atan(0.0),
-                                            math.atan(0.5)]),
-                           unit=sc.units.rad)
-    assert sc.atan(var) == expected
+    assert_export(sc.atan, sc.Variable())
 
 
 def test_atan_out():
-    var = sc.Variable(dims=['x'], values=np.array([0.0, 0.5]))
-    expected = sc.Variable(dims=['x'],
-                           values=np.array([math.atan(0.0),
-                                            math.atan(0.5)]),
-                           unit=sc.units.rad)
-    out = sc.atan(x=var, out=var)
-    assert var == expected
-    assert out == expected
+    var = sc.Variable()
+    assert_export(sc.atan, var, out=var)
 
 
 @pytest.mark.parametrize("dims, lengths",
