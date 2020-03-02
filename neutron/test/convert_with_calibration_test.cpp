@@ -32,8 +32,8 @@ Dataset makeTofDataForUnitConversion(const bool dense_coord = true) {
   auto eventLists = events.sparseValues<double>();
   eventLists[0] = {1000, 3000, 2000, 4000};
   eventLists[1] = {5000, 6000, 3000};
-  tof.setSparseCoord("events", events);
-  tof.setSparseLabels("events", "aux", events);
+  tof.setSparseCoord("events", Dim::Tof, events);
+  tof.setSparseCoord("events", Dim("aux"), events);
 
   return tof;
 }

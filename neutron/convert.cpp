@@ -245,7 +245,7 @@ T swap_tof_related_labels_and_attrs(T &&x, const Dim from, const Dim to) {
   // TODO Add `extract` methods to do this in one step and avoid copies?
   if (from == Dim::Tof) {
     for (const auto &field : fields) {
-      if (x.labels().contains(field)) {
+      if (x.coords().contains(Dim(field))) {
         // TODO This is an unfortunate duplication of attributes. It is
         // (currently?) required due to a limitation of handling attributes of
         // Dataset and its items *independently* (no mapping of dataset
@@ -256,20 +256,20 @@ T swap_tof_related_labels_and_attrs(T &&x, const Dim from, const Dim to) {
         // handle attributes so this can be avoided.
         if constexpr (std::is_same_v<std::decay_t<T>, Dataset>)
           for (const auto &item : iter(x))
-            item.attrs().set(field, x.labels()[field]);
-        x.attrs().set(field, x.labels()[field]);
-        x.labels().erase(field);
+            item.attrs().set(field, x.coords()[Dim(field)]);
+        x.attrs().set(field, x.coords()[Dim(field)]);
+        x.coords().erase(Dim(field));
       }
     }
   }
   if (to == Dim::Tof) {
     for (const auto &field : fields) {
       if (x.attrs().contains(field)) {
-        x.labels().set(field, x.attrs()[field]);
+        x.coords().set(Dim(field), x.attrs()[field]);
         x.attrs().erase(field);
         if constexpr (std::is_same_v<std::decay_t<T>, Dataset>) {
           for (const auto &item : iter(x)) {
-            expect::equals(x.labels()[field], item.attrs()[field]);
+            expect::equals(x.coords()[Dim(field)], item.attrs()[field]);
             item.attrs().erase(field);
           }
         }

@@ -62,10 +62,10 @@ TEST_F(Sum2dCoordTest, data_array_2d_coord) {
 }
 
 TEST_F(Sum2dCoordTest, data_array_2d_labels) {
-  DataArray a(var, {}, {{"xlabels", var}});
+  DataArray a(var, {{Dim("xlabels"), var}});
   // Labels are for summed dimension -> drop. Note that associated dimension for
   // labels is their inner dim, X in this case.
-  EXPECT_FALSE(sum(a, Dim::X).labels().contains("xlabels"));
+  EXPECT_FALSE(sum(a, Dim::X).coords().contains(Dim("xlabels")));
 }
 
 TEST_F(Sum2dCoordTest, data_array_bad_2d_coord_fail) {
@@ -75,7 +75,7 @@ TEST_F(Sum2dCoordTest, data_array_bad_2d_coord_fail) {
 }
 
 TEST_F(Sum2dCoordTest, data_array_bad_2d_labels_fail) {
-  DataArray a(var, {}, {{"xlabels", var}});
+  DataArray a(var, {{Dim("xlabels"), var}});
   // Values being summed have different x labels -> fail.
   EXPECT_THROW(sum(a, Dim::Y), except::CoordMismatchError);
 }

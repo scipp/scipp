@@ -5,8 +5,8 @@ from scipp import Dim
 
 
 def test_dim():
-    assert Dim.X == Dim.X
-    assert Dim.X != Dim.Y
+    assert Dim.X == 'x'
+    assert Dim.X != 'y'
 
 
 def test_dim_from_string():
@@ -22,5 +22,5 @@ def test_dim_from_string():
 def test_dim_builtin_from_string():
     x = Dim('x')
     assert str(x) == 'x'
-    assert x == Dim.X
-    assert x != Dim.Y
+    assert x == 'x'
+    assert x != 'y'

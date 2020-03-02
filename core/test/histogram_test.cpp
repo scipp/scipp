@@ -52,7 +52,7 @@ Dataset make_2d_sparse_coord_only(const std::string &name) {
   var.sparseValues<double>()[0] = {1.5, 2.5, 3.5, 4.5, 5.5};
   var.sparseValues<double>()[1] = {3.5, 4.5, 5.5, 6.5, 7.5};
   var.sparseValues<double>()[2] = {-1, 0, 0, 1, 1, 2, 2, 2, 4, 4, 4, 6};
-  sparse.setSparseCoord(name, var);
+  sparse.setSparseCoord(name, Dim::Y, var);
   return sparse;
 }
 
@@ -67,7 +67,8 @@ TEST(HistogramTest, fail_edges_not_sorted) {
 auto make_single_sparse() {
   Dataset sparse;
   sparse.setSparseCoord(
-      "sparse", makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse}));
+      "sparse", Dim::X,
+      makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse}));
   sparse["sparse"].coords()[Dim::X].sparseValues<double>()[0] = {0, 1, 1, 2, 3};
   return sparse;
 }
@@ -75,7 +76,7 @@ auto make_single_sparse() {
 DataArray make_expected(const Variable &var, const Variable &edges) {
   auto dim = var.dims().inner();
   std::map<Dim, Variable> coords = {{dim, edges}};
-  auto expected = DataArray(var, coords, {}, {}, {}, "sparse");
+  auto expected = DataArray(var, coords, {}, {}, "sparse");
   return expected;
 }
 

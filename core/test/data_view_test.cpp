@@ -45,7 +45,7 @@ TYPED_TEST(DataArrayViewTest, sparse_sparseDim) {
   ASSERT_EQ(d_ref["sparse_data"].dims().sparseDim(), Dim::X);
 
   d.setSparseCoord(
-      "sparse_coord",
+      "sparse_coord", Dim::X,
       makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse}));
   ASSERT_TRUE(d_ref["sparse_coord"].dims().sparse());
   ASSERT_EQ(d_ref["sparse_coord"].dims().sparseDim(), Dim::X);
@@ -64,7 +64,7 @@ TYPED_TEST(DataArrayViewTest, dims) {
   d.setData("sparse_data", sparse);
   ASSERT_EQ(d_ref["sparse_data"].dims(), sparse.dims());
 
-  d.setSparseCoord("sparse_coord", sparse);
+  d.setSparseCoord("sparse_coord", Dim::Z, sparse);
   ASSERT_EQ(d_ref["sparse_coord"].dims(), sparse.dims());
 }
 
@@ -93,7 +93,8 @@ TYPED_TEST(DataArrayViewTest, unit_access_fails_without_values) {
   Dataset d;
   typename TestFixture::dataset_type &d_ref(d);
   d.setSparseCoord(
-      "sparse", makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse}));
+      "sparse", Dim::X,
+      makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse}));
   EXPECT_THROW(d_ref["sparse"].unit(), except::SparseDataError);
 }
 
@@ -113,7 +114,7 @@ TYPED_TEST(DataArrayViewTest, coords_sparse) {
   typename TestFixture::dataset_type &d_ref(d);
   const auto var =
       makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{3l, Dimensions::Sparse});
-  d.setSparseCoord("a", var);
+  d.setSparseCoord("a", Dim::Y, var);
 
   ASSERT_NO_THROW(d_ref["a"].coords());
   ASSERT_NE(d_ref["a"].coords(), d.coords());
@@ -131,7 +132,7 @@ TYPED_TEST(DataArrayViewTest, coords_sparse_shadow) {
       makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{3l, Dimensions::Sparse});
   d.setCoord(Dim::X, x);
   d.setCoord(Dim::Y, y);
-  d.setSparseCoord("a", sparse);
+  d.setSparseCoord("a", Dim::Y, sparse);
 
   ASSERT_NO_THROW(d_ref["a"].coords());
   ASSERT_NE(d_ref["a"].coords(), d.coords());
@@ -253,7 +254,8 @@ TYPED_TEST(DataArrayViewTest, sparse_with_no_data) {
   Dataset d;
   typename TestFixture::dataset_type &d_ref(d);
   d.setSparseCoord(
-      "a", makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse}));
+      "a", Dim::X,
+      makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse}));
 
   EXPECT_ANY_THROW(d_ref["a"].data());
   ASSERT_FALSE(d_ref["a"].hasData());

@@ -110,14 +110,15 @@ TEST_F(RebinTest, outer_data_array_unaligned_edges) {
 TEST_F(RebinTest, keeps_unrelated_labels_but_drops_others) {
   const auto labels_x = makeVariable<double>(Dims{Dim::X}, Shape{4});
   const auto labels_y = makeVariable<double>(Dims{Dim::Y}, Shape{2});
-  const DataArray a(counts, {{Dim::X, x}, {Dim::Y, y}},
-                    {{"x", labels_x}, {"y", labels_y}});
+  const DataArray a(
+      counts,
+      {{Dim::X, x}, {Dim::Y, y}, {Dim("x"), labels_x}, {Dim("y"), labels_y}});
   const auto edges =
       makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 3, 5});
   DataArray expected(makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
                                           units::Unit(units::counts),
                                           Values{3, 7, 11, 15}),
-                     {{Dim::X, edges}, {Dim::Y, y}}, {{"y", labels_y}});
+                     {{Dim::X, edges}, {Dim::Y, y}, {Dim("y"), labels_y}});
 
   ASSERT_EQ(rebin(a, Dim::X, edges), expected);
 }
