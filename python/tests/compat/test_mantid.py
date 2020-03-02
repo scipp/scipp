@@ -58,6 +58,11 @@ class TestMantidConversion(unittest.TestCase):
         delta = sc.sum(delta, 'tof')
         self.assertLess(np.abs(delta.value), 1e-5)
 
+    def test_from_mantid_LoadEmptyInstrument(self):
+        import mantid.simpleapi as mantid
+        ws = mantid.LoadEmptyInstrument(InstrumentName='PG3')
+        a = mantidcompat.from_mantid(ws)
+
     def test_unit_conversion(self):
         import mantid.simpleapi as mantid
         eventWS = mantid.CloneWorkspace(self.base_event_ws)
