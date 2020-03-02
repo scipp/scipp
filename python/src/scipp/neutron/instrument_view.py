@@ -30,7 +30,7 @@ def instrument_view(scipp_obj=None,
                     projection="3D",
                     nan_color="#d3d3d3",
                     continuous_update=True,
-                    dim=sc.Dim.Tof):
+                    dim="tof"):
     """
     Plot a 2D or 3D view of the instrument.
     A slider is also generated to navigate the dimension (dim) given as an
@@ -123,6 +123,11 @@ class InstrumentView:
         self.hist_data_array = {}
         self.scalar_map = {}
         self.minmax = {}
+        self.masks = masks
+        self.masks_variables = {}
+        self.masks_params = {}
+        self.masks_cmap = {}
+        self.masks_scalar_map = {}
 
         # Find the min/max time-of-flight limits and store them
         self.minmax["tof"] = [np.Inf, np.NINF, 1]
@@ -143,6 +148,21 @@ class InstrumentView:
             self.minmax["tof"][0] = min(self.minmax["tof"][0], var.values[0])
             self.minmax["tof"][1] = max(self.minmax["tof"][1], var.values[-1])
             self.minmax["tof"][2] = var.shape[0]
+
+            # # Parse mask parameters and combine masks into one
+            # self.mask_params[key] = parse_params(params=masks,
+            #                                           defaults={
+            #                                               "cmap": "gray",
+            #                                               "cbar": False
+            #                                           })
+            # self.mask_params[key]["show"] = (
+            #     self.mask_params[key]["show"] and len(data_array.masks) > 0)
+            # if self.mask_params[key]["show"] and (key not in self.masks):
+            #     self.masks[key] = sc.combine_masks(data_array.masks, data_array.dims,
+            #                                data_array.shape)
+
+
+
 
         # Rebin all DataArrays to common Tof axis
         self.rebin_data(np.linspace(*self.minmax["tof"]))
@@ -208,11 +228,18 @@ class InstrumentView:
             layout=self.widgets.Layout(
                 grid_template_columns="repeat(3, 150px)"))
 
+        # Create control section for masks
+        self.masks_showhide = self.widgets.ToggleButton(
+                value=True,
+                description="Hide masks",
+                button_style="")
+        self.masks_showhide.observe(self.toggle_masks, names="value")
+
         # Place widgets in boxes
         self.vbox = self.widgets.VBox([
             self.widgets.HBox([self.dropdown, self.slider, self.label]),
-            self.widgets.HBox([self.nbins, self.bin_size]), self.togglebuttons
-        ])
+            self.widgets.HBox([self.nbins, self.bin_size]), self.togglebuttons,
+            self.widgets.HBox([self.masks_showhide])])
 
         # Get detector positions
         self.det_pos = np.array(sn.position(
@@ -251,8 +278,8 @@ class InstrumentView:
 
         # The point cloud and its properties
         self.pts = self.p3.BufferAttribute(array=self.det_pos)
-        self.colors = self.p3.BufferAttribute(array=np.random.random(
-            [np.shape(self.det_pos)[0], 4]).astype(np.float32))
+        self.colors = self.p3.BufferAttribute(array=np.zeros(
+            [np.shape(self.det_pos)[0], 4], dtype=np.float32))
         self.geometry = self.p3.BufferGeometry(attributes={
             'position': self.pts,
             'color': self.colors
@@ -339,6 +366,22 @@ class InstrumentView:
             self.cmap[key].set_bad(color=self.nan_color)
             self.scalar_map[key] = self.mpl_cm.ScalarMappable(
                 cmap=self.cmap[key], norm=self.params[key]["norm"])
+
+            # Parse mask parameters and combine masks into one
+            self.masks_params[key] = parse_params(params=self.masks,
+                                                      defaults={
+                                                          "cmap": "gray",
+                                                          "cbar": False
+                                                      })
+            self.masks_params[key]["show"] = (
+                self.masks_params[key]["show"] and len(self.hist_data_array[key].masks) > 0)
+            if self.masks_params[key]["show"] and (key not in self.masks_variables):
+                self.masks_variables[key] = sc.combine_masks(self.hist_data_array[key].masks, self.hist_data_array[key].dims,
+                                           self.hist_data_array[key].shape)
+            self.masks_cmap[key] = self.mpl_cm.get_cmap(self.masks_params[key]["cmap"])
+            self.masks_scalar_map[key] = self.mpl_cm.ScalarMappable(
+                cmap=self.masks_cmap[key], norm=self.params[key]["norm"])
+
         return
 
     def update_colorbar(self):
@@ -360,10 +403,17 @@ class InstrumentView:
 
     def update_colors(self, change):
         arr = self.hist_data_array[self.key][self.dim, change["new"]].values
-        if self.log:
-            arr = np.ma.masked_where(arr <= 0, arr)
-        self.geometry.attributes["color"].array = self.scalar_map[
-            self.key].to_rgba(arr).astype(np.float32)
+        # if self.log:
+        #     arr = np.ma.masked_where(arr <= 0, arr)
+        colors = self.scalar_map[self.key].to_rgba(arr).astype(np.float32)
+        # print(colors)
+        # print(np.shape(colors))
+        if self.key in self.masks_variables and self.masks_params[self.key]["show"]:
+            masks_colors = self.masks_scalar_map[self.key].to_rgba(arr).astype(np.float32)
+            masks_inds = np.where(self.masks_variables[self.key].values)
+            colors[masks_inds] = masks_colors[masks_inds]
+
+        self.geometry.attributes["color"].array = colors
 
         self.label.value = name_with_unit(
             var=self.hist_data_array[self.key].coords[self.dim],
@@ -467,4 +517,10 @@ class InstrumentView:
     def change_data_array(self, change):
         self.key = change["new"]
         self.update_colorbar()
+        self.update_colors({"new": self.slider.value})
+
+    def toggle_masks(self, change):
+        self.masks_params[self.key]["show"] = change["new"]
+        change["owner"].description = "Hide masks" if change["new"] else \
+            "Show masks"
         self.update_colors({"new": self.slider.value})
