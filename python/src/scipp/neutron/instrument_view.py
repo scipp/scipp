@@ -235,11 +235,35 @@ class InstrumentView:
                 button_style="")
         self.masks_showhide.observe(self.toggle_masks, names="value")
 
+        self.masks_cmap_or_color = self.widgets.RadioButtons(
+            options=['colormap', 'solid color'],
+            description='Mask color:',
+            layout={'width': "250px"})
+        # self.masks_cmap_or_color.observe(self.toggle_color_selection, names="value")
+
+        self.masks_colormap = self.widgets.Dropdown(
+                options=sorted(m for m in self.mpl_cm.datad if not m.endswith("_r"))
+                value=self.masks_params[self.key]["cmap"],
+                description="",
+                disabled = not self.masks_cmap_or_color.value == "colormap",
+                layout={'width': "100px"})
+        self.masks_colormap.on_submit(self.update_masks_colormap)
+
+        self.masks_solid_color = self.widgets.ColorPicker(concise=False,
+                                  description='',
+                                  value='#%02X%02X%02X' %
+                                  (tuple(np.random.randint(0, 255, 3))),
+                                  disabled=not self.masks_cmap_or_color.value == "solid color",
+            layout={'width': "100px"})
+        # self.masks_solid_color.observe(self.update_masks_solid_color, names="value")
+
+
+
         # Place widgets in boxes
         self.vbox = self.widgets.VBox([
             self.widgets.HBox([self.dropdown, self.slider, self.label]),
             self.widgets.HBox([self.nbins, self.bin_size]), self.togglebuttons,
-            self.widgets.HBox([self.masks_showhide])])
+            self.widgets.HBox([self.masks_showhide, self.masks_cmap_or_color, self.masks_colormap, self.masks_solid_color])])
 
         # Get detector positions
         self.det_pos = np.array(sn.position(
@@ -524,3 +548,25 @@ class InstrumentView:
         change["owner"].description = "Hide masks" if change["new"] else \
             "Show masks"
         self.update_colors({"new": self.slider.value})
+
+    def update_masks_colormap(self, owner):
+        self.masks_params[self.key]["cmap"] = owner.value
+        self.masks_cmap[self.key] = self.mpl_cm.get_cmap(self.masks_params[self.key]["cmap"])
+        self.masks_scalar_map[self.key] = self.mpl_cm.ScalarMappable(
+                cmap=self.masks_cmap[self.key], norm=self.params[self.key]["norm"])
+        self.update_colors({"new": self.slider.value})
+
+
+# self.masks_params[key] = parse_params(params=self.masks,
+#                                                       defaults={
+#                                                           "cmap": "gray",
+#                                                           "cbar": False
+#                                                       })
+
+
+    # def get_colormap(self, key):
+    #     self.cmap[key] = self.mpl_cm.get_cmap(self.params[key]["cmap"])
+    #     self.cmap[key].set_bad(color=self.nan_color)
+
+
+
