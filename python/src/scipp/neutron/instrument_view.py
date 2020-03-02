@@ -242,12 +242,12 @@ class InstrumentView:
         # self.masks_cmap_or_color.observe(self.toggle_color_selection, names="value")
 
         self.masks_colormap = self.widgets.Dropdown(
-                options=sorted(m for m in self.mpl_cm.datad if not m.endswith("_r"))
+                options=sorted(m for m in self.mpl_cm.datad if not m.endswith("_r")),
                 value=self.masks_params[self.key]["cmap"],
                 description="",
                 disabled = not self.masks_cmap_or_color.value == "colormap",
                 layout={'width': "100px"})
-        self.masks_colormap.on_submit(self.update_masks_colormap)
+        self.masks_colormap.observe(self.update_masks_colormap, names="value")
 
         self.masks_solid_color = self.widgets.ColorPicker(concise=False,
                                   description='',
@@ -549,8 +549,8 @@ class InstrumentView:
             "Show masks"
         self.update_colors({"new": self.slider.value})
 
-    def update_masks_colormap(self, owner):
-        self.masks_params[self.key]["cmap"] = owner.value
+    def update_masks_colormap(self, change):
+        self.masks_params[self.key]["cmap"] = change["new"]
         self.masks_cmap[self.key] = self.mpl_cm.get_cmap(self.masks_params[self.key]["cmap"])
         self.masks_scalar_map[self.key] = self.mpl_cm.ScalarMappable(
                 cmap=self.masks_cmap[self.key], norm=self.params[self.key]["norm"])
