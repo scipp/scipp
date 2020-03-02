@@ -93,11 +93,8 @@ def make_detector_info(ws):
     det_info = ws.detectorInfo()
     # det -> spec mapping
     nDet = det_info.size()
-    spectrum = sc.Variable([sc.Dim.Detector],
-                           shape=(nDet, ),
-                           dtype=sc.dtype.int32)
-    has_spectrum = sc.Variable([sc.Dim.Detector],
-                               values=np.full((nDet, ), False))
+    spectrum = sc.Variable(['detector'], shape=(nDet, ), dtype=sc.dtype.int32)
+    has_spectrum = sc.Variable(['detector'], values=np.full((nDet, ), False))
     spectrum_ = spectrum.values
     has_spectrum_ = has_spectrum.values
     spec_info = ws.spectrumInfo()
@@ -111,7 +108,7 @@ def make_detector_info(ws):
                     "not supported yet.")
             spectrum_[det] = i
             has_spectrum_[det] = True
-    detector = sc.Variable([sc.Dim.Detector], values=det_info.detectorIDs())
+    detector = sc.Variable(['detector'], values=det_info.detectorIDs())
 
     # Remove any information about detectors without data (a spectrum). This
     # mostly just gets in the way and including it in the default converter
@@ -121,14 +118,16 @@ def make_detector_info(ws):
 
     # May want to include more information here, such as detector positions,
     # but for now this is not necessary.
-    return sc.Variable(value=sc.Dataset(coords={sc.Dim.Detector: detector},
-                                        labels={'spectrum': spectrum}))
+    return sc.Variable(value=sc.Dataset(coords={
+        'detector': detector,
+        'spectrum': spectrum
+    }))
 
 
 def md_dimension(mantid_dim, index):
     # Look for q dimensions
     patterns = ["^q.*{0}$".format(coord) for coord in ['x', 'y', 'z']]
-    q_dims = [sc.Dim.Qx, sc.Dim.Qy, sc.Dim.Qz]
+    q_dims = ['Q_x', 'Q_y', 'Q_z']
     pattern_result = zip(patterns, q_dims)
     if mantid_dim.getMDFrame().isQ():
         for pattern, result in pattern_result:
@@ -137,7 +136,7 @@ def md_dimension(mantid_dim, index):
 
     # Look for common/known mantid dimensions
     patterns = ["DeltaE", "T"]
-    dims = [sc.Dim.EnergyTransfer, sc.Dim.Temperature]
+    dims = ['Delta-E', 'temperature']
     pattern_result = zip(patterns, dims)
     for pattern, result in pattern_result:
         if re.search(pattern, mantid_dim.name, re.IGNORECASE):
@@ -145,7 +144,7 @@ def md_dimension(mantid_dim, index):
 
     # Look for common spacial dimensions
     patterns = ["^{0}$".format(coord) for coord in ['x', 'y', 'z']]
-    dims = [sc.Dim.X, sc.Dim.Y, sc.Dim.Z]
+    dims = ['x', 'y', 'z']
     pattern_result = zip(patterns, dims)
     for pattern, result in pattern_result:
         if re.search(pattern, mantid_dim.name, re.IGNORECASE):
@@ -171,19 +170,18 @@ def md_unit(frame):
 
 def validate_and_get_unit(unit):
     known_units = {
-        "DeltaE": [sc.Dim.EnergyTransfer, sc.units.meV],
-        "TOF": [sc.Dim.Tof, sc.units.us],
-        "Wavelength": [sc.Dim.Wavelength, sc.units.angstrom],
-        "Energy": [sc.Dim.Energy, sc.units.meV],
-        "dSpacing": [sc.Dim.DSpacing, sc.units.angstrom],
-        "MomentumTransfer":
-        [sc.Dim.Q, sc.units.dimensionless / sc.units.angstrom],
+        "DeltaE": ['Delta-E', sc.units.meV],
+        "TOF": ['tof', sc.units.us],
+        "Wavelength": ['wavelength', sc.units.angstrom],
+        "Energy": ['E', sc.units.meV],
+        "dSpacing": ['d-spacing', sc.units.angstrom],
+        "MomentumTransfer": ['Q', sc.units.dimensionless / sc.units.angstrom],
         "QSquared": [
-            sc.Dim.QSquared,
+            'Q^2',
             sc.units.dimensionless / (sc.units.angstrom * sc.units.angstrom)
         ],
-        "Label": [sc.Dim.Spectrum, sc.units.dimensionless],
-        "Empty": [sc.Dim.Spectrum, sc.units.dimensionless]
+        "Label": ['spectrum', sc.units.dimensionless],
+        "Empty": ['spectrum', sc.units.dimensionless]
     }
 
     if unit not in known_units.keys():
@@ -206,7 +204,7 @@ def init_pos(ws):
             pos[i, :] = [p.X(), p.Y(), p.Z()]
         else:
             pos[i, :] = [np.nan, np.nan, np.nan]
-    return sc.Variable([sc.Dim.Spectrum],
+    return sc.Variable(['spectrum'],
                        values=pos,
                        unit=sc.units.m,
                        dtype=sc.dtype.vector_3_float64)
@@ -248,7 +246,7 @@ def set_common_bins_masks(bin_masks, dim, masked_bins):
 
 def set_bin_masks(bin_masks, dim, index, masked_bins):
     for masked_bin in masked_bins:
-        bin_masks[sc.Dim.Spectrum, index][dim, masked_bin].value = True
+        bin_masks['spectrum', index][dim, masked_bin].value = True
 
 
 def _convert_MatrixWorkspace_info(ws):
@@ -259,9 +257,7 @@ def _convert_MatrixWorkspace_info(ws):
 
     info = {
         "coords": {
-            spec_dim: spec_coord
-        },
-        "labels": {
+            spec_dim: spec_coord,
             "position": pos,
             "detector_info": det_info
         },
@@ -272,10 +268,10 @@ def _convert_MatrixWorkspace_info(ws):
         },
     }
     if source_pos is not None:
-        info["labels"]["source_position"] = source_pos
+        info["coords"]["source_position"] = source_pos
 
     if sample_pos is not None:
-        info["labels"]["sample_position"] = sample_pos
+        info["coords"]["sample_position"] = sample_pos
 
     if ws.detectorInfo().hasMaskedDetectors():
         spectrum_info = ws.spectrumInfo()
@@ -308,8 +304,8 @@ def convert_monitors_ws(ws, converter, **ignored):
             single_monitor = converter(monitor_ws)
         # Remove redundant information that is duplicated from workspace
         # We get this extra information from the generic converter reuse
-        del single_monitor.labels['sample_position']
-        del single_monitor.labels['detector_info']
+        del single_monitor.coords['sample_position']
+        del single_monitor.coords['detector_info']
         del single_monitor.attrs['run']
         del single_monitor.attrs['sample']
         monitors.append((comp_info.name(det_index), single_monitor))
@@ -360,7 +356,7 @@ def convert_Workspace2D_to_data_array(ws, **ignored):
     # artifact of inflexible data structures and gets in the way when working
     # with scipp.
     if len(spec_coord.values) == 1:
-        array.labels['position'] = array.labels['position'][spec_dim, 0]
+        array.coords['position'] = array.coords['position'][spec_dim, 0]
         array = array[spec_dim, 0].copy()
     return array
 
@@ -401,7 +397,7 @@ def convert_EventWorkspace_to_data_array(ws, load_pulse_times=True, **ignored):
     coords_labs_data["coords"][dim] = coord
 
     if load_pulse_times:
-        coords_labs_data["labels"]["pulse_times"] = labs
+        coords_labs_data["coords"]["pulse_times"] = labs
     if contains_weighted_events:
         coords_labs_data["data"] = weights
     return detail.move_to_data_array(**coords_labs_data)
@@ -468,7 +464,7 @@ def convert_TableWorkspace_to_dataset(ws, error_connection=None, **ignored):
         data_name = columnNames[i]
         if error_connection is None:
             dataset[data_name] = detail.move(
-                sc.Variable([sc.Dim.Row], values=ws.column(i)))
+                sc.Variable(['row'], values=ws.column(i)))
         elif data_name in error_connection:
             # This data has error availble
             error_name = error_connection[data_name]
@@ -482,13 +478,13 @@ def convert_TableWorkspace_to_dataset(ws, error_connection=None, **ignored):
 
             variance = np.array(ws.column(error_name))**2
             dataset[data_name] = detail.move(
-                sc.Variable([sc.Dim.Row],
+                sc.Variable(['row'],
                             values=np.array(ws.column(i)),
                             variances=variance))
         elif data_name not in error_connection.values():
             # This data is not an error for another dataset, and has no error
             dataset[data_name] = detail.move(
-                sc.Variable([sc.Dim.Row], values=ws.column(i)))
+                sc.Variable(['row'], values=ws.column(i)))
 
     return dataset
 
@@ -615,33 +611,33 @@ def load(filename="",
 
 def load_component_info(ds, file):
     """
-    Adds the component info labels into the dataset. The following are added:
+    Adds the component info coord into the dataset. The following are added:
 
     - source_position
     - sample_position
     - position
 
-    :param ds: Dataset on which the component info will be added as labels.
+    :param ds: Dataset on which the component info will be added as coords.
     :param file: File from which the IDF will be loaded.
                  This can be anything that mantid.Load can load.
     """
     with run_mantid_alg('Load', file) as ws:
         source_pos, sample_pos = make_component_info(ws)
 
-        ds.labels["source_position"] = source_pos
-        ds.labels["sample_position"] = sample_pos
-        ds.labels["position"] = init_pos(ws)
+        ds.coords["source_position"] = source_pos
+        ds.coords["sample_position"] = sample_pos
+        ds.coords["position"] = init_pos(ws)
 
 
 def validate_dim_and_get_mantid_string(unit_dim):
     known_units = {
-        sc.Dim.EnergyTransfer: "DeltaE",
-        sc.Dim.Tof: "TOF",
-        sc.Dim.Wavelength: "Wavelength",
-        sc.Dim.Energy: "Energy",
-        sc.Dim.DSpacing: "dSpacing",
-        sc.Dim.Q: "MomentumTransfer",
-        sc.Dim.QSquared: "QSquared",
+        'Delta-E': "DeltaE",
+        'tof': "TOF",
+        'wavelength': "Wavelength",
+        'E': "Energy",
+        'd-spacing': "dSpacing",
+        'Q': "MomentumTransfer",
+        'Q^2': "QSquared",
     }
 
     if unit_dim not in known_units.keys():

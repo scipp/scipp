@@ -17,8 +17,8 @@ TEST(MergeTest, simple) {
              makeVariable<int>(Dims{Dim::Y}, Shape{3}, Values{6, 7, 8}));
   a.setData("data_1",
             makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{15, 16, 17}));
-  a.setLabels("label_1",
-              makeVariable<int>(Dims{Dim::Y}, Shape{3}, Values{9, 8, 7}));
+  a.setCoord(Dim("label_1"),
+             makeVariable<int>(Dims{Dim::Y}, Shape{3}, Values{9, 8, 7}));
   a.setMask("masks_1", makeVariable<bool>(Dims{Dim::X}, Shape{3},
                                           Values{false, true, false}));
   a.setAttr("attr_1", makeVariable<int>(Values{42}));
@@ -29,8 +29,8 @@ TEST(MergeTest, simple) {
              makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3}));
   b.setData("data_2",
             makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{11, 12, 13}));
-  b.setLabels("label_2",
-              makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{9, 8, 9}));
+  b.setCoord(Dim("label_2"),
+             makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{9, 8, 9}));
   b.setMask("masks_2", makeVariable<bool>(Dims{Dim::X}, Shape{3},
                                           Values{false, true, false}));
   b.setAttr("attr_2", makeVariable<int>(Values{495}));
@@ -43,8 +43,8 @@ TEST(MergeTest, simple) {
   EXPECT_EQ(a["data_1"].data(), d["data_1"].data());
   EXPECT_EQ(b["data_2"].data(), d["data_2"].data());
 
-  EXPECT_EQ(a.labels()["label_1"], d.labels()["label_1"]);
-  EXPECT_EQ(b.labels()["label_2"], d.labels()["label_2"]);
+  EXPECT_EQ(a.coords()[Dim("label_1")], d.coords()[Dim("label_1")]);
+  EXPECT_EQ(b.coords()[Dim("label_2")], d.coords()[Dim("label_2")]);
 
   EXPECT_EQ(a.masks()["masks_1"], d.masks()["masks_1"]);
   EXPECT_EQ(b.masks()["masks_2"], d.masks()["masks_2"]);
@@ -61,14 +61,14 @@ TEST(MergeTest, sparse) {
   {
     a.setData("sparse",
               makeVariable<int>(Dims{Dim::X}, Shape{Dimensions::Sparse}));
-    a.setSparseCoord("sparse", sparseCoord);
+    a.setSparseCoord("sparse", Dim::X, sparseCoord);
   }
 
   Dataset b;
   {
     b.setData("sparse",
               makeVariable<int>(Dims{Dim::X}, Shape{Dimensions::Sparse}));
-    b.setSparseCoord("sparse", sparseCoord);
+    b.setSparseCoord("sparse", Dim::X, sparseCoord);
   }
 
   const auto d = merge(a, b);
@@ -123,7 +123,7 @@ TEST(MergeTest, non_matching_sparse_coords) {
     auto coord =
         makeVariable<int>(Dims{Dim::X, Dim::Y}, Shape{1l, Dimensions::Sparse});
     coord.sparseValues<int>()[0] = {2, 3};
-    a.setSparseCoord("sparse", coord);
+    a.setSparseCoord("sparse", Dim::Y, coord);
   }
 
   Dataset b;
@@ -131,7 +131,7 @@ TEST(MergeTest, non_matching_sparse_coords) {
     auto coord =
         makeVariable<int>(Dims{Dim::X, Dim::Y}, Shape{1l, Dimensions::Sparse});
     coord.sparseValues<int>()[0] = {1, 2};
-    b.setSparseCoord("sparse", coord);
+    b.setSparseCoord("sparse", Dim::Y, coord);
   }
 
   EXPECT_THROW(auto d = merge(a, b), std::runtime_error);
@@ -140,10 +140,10 @@ TEST(MergeTest, non_matching_sparse_coords) {
 TEST(MergeTest, non_matching_dense_labels) {
   Dataset a;
   Dataset b;
-  a.setLabels("l",
-              makeVariable<int>(Dims{Dim::X}, Shape{5}, Values{1, 2, 3, 4, 5}));
-  b.setLabels("l",
-              makeVariable<int>(Dims{Dim::X}, Shape{5}, Values{2, 3, 4, 5, 6}));
+  a.setCoord(Dim("l"),
+             makeVariable<int>(Dims{Dim::X}, Shape{5}, Values{1, 2, 3, 4, 5}));
+  b.setCoord(Dim("l"),
+             makeVariable<int>(Dims{Dim::X}, Shape{5}, Values{2, 3, 4, 5, 6}));
   EXPECT_THROW(auto d = merge(a, b), std::runtime_error);
 }
 
@@ -157,8 +157,8 @@ TEST(MergeTest, non_matching_sparse_labels) {
     auto label =
         makeVariable<int>(Dims{Dim::X, Dim::Y}, Shape{1l, Dimensions::Sparse});
     label.sparseValues<int>()[0] = {2, 3};
-    a.setSparseCoord("sparse", coord);
-    a.setSparseLabels("sparse", "l", label);
+    a.setSparseCoord("sparse", Dim::Y, coord);
+    a.setSparseCoord("sparse", Dim("l"), label);
   }
 
   Dataset b;
@@ -166,8 +166,8 @@ TEST(MergeTest, non_matching_sparse_labels) {
     auto label =
         makeVariable<int>(Dims{Dim::X, Dim::Y}, Shape{1l, Dimensions::Sparse});
     label.sparseValues<int>()[0] = {1, 2};
-    b.setSparseCoord("sparse", coord);
-    b.setSparseLabels("sparse", "l", label);
+    b.setSparseCoord("sparse", Dim::Y, coord);
+    b.setSparseCoord("sparse", Dim("l"), label);
   }
 
   EXPECT_THROW(auto d = merge(a, b), std::runtime_error);

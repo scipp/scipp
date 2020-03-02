@@ -41,13 +41,13 @@ void DatasetFactory3D::init() {
                             Dimensions{{m_dim, lx}, {Dim::Y, ly}, {Dim::Z, lz}},
                             Values(rand(lx * ly * lz))));
 
-  base.setLabels("labels_x",
-                 makeVariable<double>(Dimensions{m_dim, lx}, Values(rand(lx))));
-  base.setLabels("labels_xy",
-                 makeVariable<double>(Dimensions{{m_dim, lx}, {Dim::Y, ly}},
-                                      Values(rand(lx * ly))));
-  base.setLabels("labels_z", makeVariable<double>(Dimensions{Dim::Z, lz},
-                                                  Values(rand(lz))));
+  base.setCoord(Dim("labels_x"),
+                makeVariable<double>(Dimensions{m_dim, lx}, Values(rand(lx))));
+  base.setCoord(Dim("labels_xy"),
+                makeVariable<double>(Dimensions{{m_dim, lx}, {Dim::Y, ly}},
+                                     Values(rand(lx * ly))));
+  base.setCoord(Dim("labels_z"),
+                makeVariable<double>(Dimensions{Dim::Z, lz}, Values(rand(lz))));
 
   base.setMask("masks_x",
                makeVariable<bool>(Dimensions{m_dim, lx},
@@ -133,13 +133,13 @@ Dataset make_sparse_with_coords_and_labels(
   {
     auto var = makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse});
     var.sparseValues<double>()[0] = coords_and_labels;
-    ds.setSparseCoord(key, var);
+    ds.setSparseCoord(key, Dim::X, var);
   }
 
   {
     auto var = makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse});
     var.sparseValues<double>()[0] = coords_and_labels;
-    ds.setSparseLabels(key, "l", var);
+    ds.setSparseCoord(key, Dim("l"), var);
   }
 
   return ds;

@@ -199,8 +199,7 @@ class Slicer3d(Slicer):
         for dim, button in self.buttons.items():
             if button.value is not None:
                 titles[button.value.lower()] = name_with_unit(
-                    self.slider_x[self.name][dim],
-                    name=self.slider_labels[self.name][dim])
+                    self.slider_x[self.name][dim], name=str(dim))
                 # buttons_dims[button.value.lower()] = button.dim
                 buttons_dims[button.value.lower()] = dim
 

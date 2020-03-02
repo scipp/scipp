@@ -16,7 +16,10 @@
 using namespace scipp;
 using namespace scipp::core;
 
-DatasetFactory3D datasetFactory;
+DatasetFactory3D datasetFactory() {
+  static DatasetFactory3D factory;
+  return factory;
+}
 
 template <class Op>
 class DataArrayViewBinaryEqualsOpTest
@@ -68,7 +71,7 @@ std::tuple<Dataset, Dataset> generateBinaryOpTestCase() {
     a.setCoord(Dim::Y,
                makeVariable<double>(Dims{Dim::Y}, Shape{ly}, Values(coordY)));
 
-    a.setLabels("t", labelT);
+    a.setCoord(Dim("t"), labelT);
     a.setMask("mask", masks);
     a.setData("data_a",
               makeVariable<double>(Dimensions{Dim::X, lx}, Values(rand(lx))));
@@ -83,7 +86,7 @@ std::tuple<Dataset, Dataset> generateBinaryOpTestCase() {
     b.setCoord(Dim::Y,
                makeVariable<double>(Dims{Dim::Y}, Shape{ly}, Values(coordY)));
 
-    b.setLabels("t", labelT);
+    b.setCoord(Dim("t"), labelT);
     b.setMask("mask", masks);
 
     b.setData("data_a",
@@ -98,10 +101,10 @@ TYPED_TEST_SUITE(DatasetBinaryEqualsOpTest, BinaryEquals);
 TYPED_TEST_SUITE(DatasetViewBinaryEqualsOpTest, BinaryEquals);
 
 TYPED_TEST(DataArrayViewBinaryEqualsOpTest, other_data_unchanged) {
-  const auto dataset_b = datasetFactory.make();
+  const auto dataset_b = datasetFactory().make();
 
   for (const auto &item : dataset_b) {
-    auto dataset_a = datasetFactory.make();
+    auto dataset_a = datasetFactory().make();
     const auto original_a(dataset_a);
     auto target = dataset_a["data_zyx"];
 
@@ -116,11 +119,11 @@ TYPED_TEST(DataArrayViewBinaryEqualsOpTest, other_data_unchanged) {
 }
 
 TYPED_TEST(DataArrayViewBinaryEqualsOpTest, lhs_with_variance) {
-  const auto dataset_b = datasetFactory.make();
+  const auto dataset_b = datasetFactory().make();
 
   for (const auto &item : dataset_b) {
     const bool randomMasks = true;
-    auto dataset_a = datasetFactory.make(randomMasks);
+    auto dataset_a = datasetFactory().make(randomMasks);
     auto target = dataset_a["data_zyx"];
     auto data_array = copy(target);
 
@@ -134,11 +137,11 @@ TYPED_TEST(DataArrayViewBinaryEqualsOpTest, lhs_with_variance) {
 }
 
 TYPED_TEST(DataArrayViewBinaryEqualsOpTest, lhs_without_variance) {
-  const auto dataset_b = datasetFactory.make();
+  const auto dataset_b = datasetFactory().make();
 
   for (const auto &item : dataset_b) {
     const bool randomMasks = true;
-    auto dataset_a = datasetFactory.make(randomMasks);
+    auto dataset_a = datasetFactory().make(randomMasks);
     auto target = dataset_a["data_xyz"];
     auto data_array = copy(target);
 
@@ -157,11 +160,11 @@ TYPED_TEST(DataArrayViewBinaryEqualsOpTest, lhs_without_variance) {
 }
 
 TYPED_TEST(DataArrayViewBinaryEqualsOpTest, slice_lhs_with_variance) {
-  const auto dataset_b = datasetFactory.make();
+  const auto dataset_b = datasetFactory().make();
 
   for (const auto &item : dataset_b) {
     const bool randomMasks = true;
-    auto dataset_a = datasetFactory.make(randomMasks);
+    auto dataset_a = datasetFactory().make(randomMasks);
     auto target = dataset_a["data_zyx"];
     const auto &dims = item.dims();
 
@@ -169,21 +172,15 @@ TYPED_TEST(DataArrayViewBinaryEqualsOpTest, slice_lhs_with_variance) {
       Variable reference(target.data());
       TestFixture::op(reference, item.data().slice({dim, 2}));
 
-      // Fails if any *other* multi-dimensional coord/label also depends on the
+      // Fails if any *other* multi-dimensional coord also depends on the
       // slicing dimension, since it will have mismatching values. Note that
       // this behavior is intended and important. It is crucial for preventing
       // operations between misaligned data in case a coordinate is
       // multi-dimensional.
       const auto coords = item.coords();
-      const auto labels = item.labels();
-      if (std::all_of(coords.begin(), coords.end(),
-                      [dim](const auto &coord) {
-                        return coord.first == dim ||
-                               !coord.second.dims().contains(dim);
-                      }) &&
-          std::all_of(labels.begin(), labels.end(), [dim](const auto &labels_) {
-            return labels_.second.dims().inner() == dim ||
-                   !labels_.second.dims().contains(dim);
+      if (std::all_of(coords.begin(), coords.end(), [dim](const auto &coord) {
+            return dim_of_coord(coord.second, coord.first) == dim ||
+                   !coord.second.dims().contains(dim);
           })) {
         ASSERT_NO_THROW(TestFixture::op(target, item.slice({dim, 2})));
         EXPECT_EQ(target.data(), reference);
@@ -197,8 +194,8 @@ TYPED_TEST(DataArrayViewBinaryEqualsOpTest, slice_lhs_with_variance) {
 // DataArrayViewBinaryEqualsOpTest ensures correctness of operations between
 // DataArrayView with itself, so we can rely on that for building the reference.
 TYPED_TEST(DatasetBinaryEqualsOpTest, return_value) {
-  auto a = datasetFactory.make();
-  auto b = datasetFactory.make();
+  auto a = datasetFactory().make();
+  auto b = datasetFactory().make();
 
   ASSERT_TRUE(
       (std::is_same_v<decltype(TestFixture::op(a, b["data_scalar"].data())),
@@ -237,7 +234,7 @@ TYPED_TEST(DatasetBinaryEqualsOpTest, return_value) {
 }
 
 TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_DataArrayView_self_overlap) {
-  auto dataset = datasetFactory.make();
+  auto dataset = datasetFactory().make();
   auto original(dataset);
   auto reference(dataset);
 
@@ -249,7 +246,7 @@ TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_DataArrayView_self_overlap) {
 }
 
 TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_Variable_self_overlap) {
-  auto dataset = datasetFactory.make();
+  auto dataset = datasetFactory().make();
   auto original(dataset);
   auto reference(dataset);
 
@@ -261,7 +258,7 @@ TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_Variable_self_overlap) {
 }
 
 TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_DataArrayView_self_overlap_slice) {
-  auto dataset = datasetFactory.make();
+  auto dataset = datasetFactory().make();
   auto original(dataset);
   auto reference(dataset);
 
@@ -274,8 +271,8 @@ TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_DataArrayView_self_overlap_slice) {
 }
 
 TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_Dataset) {
-  auto a = datasetFactory.make();
-  auto b = datasetFactory.make();
+  auto a = datasetFactory().make();
+  auto b = datasetFactory().make();
   auto reference(a);
 
   ASSERT_NO_THROW(TestFixture::op(a, b));
@@ -285,7 +282,7 @@ TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_Dataset) {
 }
 
 TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_Dataset_coord_mismatch) {
-  auto a = datasetFactory.make();
+  auto a = datasetFactory().make();
   DatasetFactory3D otherCoordsFactory;
   auto b = otherCoordsFactory.make();
 
@@ -293,9 +290,9 @@ TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_Dataset_coord_mismatch) {
 }
 
 TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_Dataset_with_missing_items) {
-  auto a = datasetFactory.make();
+  auto a = datasetFactory().make();
   a.setData("extra", makeVariable<double>(Values{double{}}));
-  auto b = datasetFactory.make();
+  auto b = datasetFactory().make();
   auto reference(a);
 
   ASSERT_NO_THROW(TestFixture::op(a, b));
@@ -309,15 +306,15 @@ TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_Dataset_with_missing_items) {
 }
 
 TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_Dataset_with_extra_items) {
-  auto a = datasetFactory.make();
-  auto b = datasetFactory.make();
+  auto a = datasetFactory().make();
+  auto b = datasetFactory().make();
   b.setData("extra", makeVariable<double>(Values{double{}}));
 
   ASSERT_ANY_THROW(TestFixture::op(a, b));
 }
 
 TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_DatasetView_self_overlap) {
-  auto dataset = datasetFactory.make();
+  auto dataset = datasetFactory().make();
   const auto slice = dataset.slice({Dim::Z, 3});
   auto reference(dataset);
 
@@ -335,7 +332,7 @@ TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_DatasetView_self_overlap) {
 }
 
 TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_DatasetView_coord_mismatch) {
-  auto dataset = datasetFactory.make();
+  auto dataset = datasetFactory().make();
 
   // Non-range sliced throws for X and Y due to multi-dimensional coords.
   ASSERT_THROW(TestFixture::op(dataset, dataset.slice({Dim::X, 3})),
@@ -355,7 +352,7 @@ TYPED_TEST(DatasetBinaryEqualsOpTest, coord_only_sparse_fails) {
   auto var =
       makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, Dimensions::Sparse});
   Dataset d;
-  d.setSparseCoord("a", var);
+  d.setSparseCoord("a", Dim::Y, var);
   ASSERT_THROW(TestFixture::op(d, d), except::SparseDataError);
 }
 
@@ -403,11 +400,11 @@ TYPED_TEST(DatasetBinaryEqualsOpTest,
 }
 
 TYPED_TEST(DatasetBinaryEqualsOpTest, masks_propagate) {
-  auto a = datasetFactory.make();
-  auto b = datasetFactory.make();
+  auto a = datasetFactory().make();
+  auto b = datasetFactory().make();
   const auto expectedMasks =
-      makeVariable<bool>(Dimensions{Dim::X, datasetFactory.lx},
-                         Values(make_bools(datasetFactory.lx, true)));
+      makeVariable<bool>(Dimensions{Dim::X, datasetFactory().lx},
+                         Values(make_bools(datasetFactory().lx, true)));
 
   b.setMask("masks_x", expectedMasks);
 
@@ -434,8 +431,8 @@ TYPED_TEST(DatasetMaskSlicingBinaryOpTest, binary_op_on_sliced_masks) {
 }
 
 TYPED_TEST(DatasetViewBinaryEqualsOpTest, return_value) {
-  auto a = datasetFactory.make();
-  auto b = datasetFactory.make();
+  auto a = datasetFactory().make();
+  auto b = datasetFactory().make();
   DatasetView view(a);
 
   ASSERT_TRUE((std::is_same_v<decltype(TestFixture::op(view, b["data_scalar"])),
@@ -482,7 +479,7 @@ TYPED_TEST(DatasetViewBinaryEqualsOpTest, return_value) {
 }
 
 TYPED_TEST(DatasetViewBinaryEqualsOpTest, rhs_DataArrayView_self_overlap) {
-  auto dataset = datasetFactory.make();
+  auto dataset = datasetFactory().make();
   auto reference(dataset);
   TestFixture::op(reference, dataset["data_scalar"]);
 
@@ -502,7 +499,7 @@ TYPED_TEST(DatasetViewBinaryEqualsOpTest, rhs_DataArrayView_self_overlap) {
 
 TYPED_TEST(DatasetViewBinaryEqualsOpTest,
            rhs_DataArrayView_self_overlap_slice) {
-  auto dataset = datasetFactory.make();
+  auto dataset = datasetFactory().make();
   auto reference(dataset);
   TestFixture::op(reference, dataset["values_x"].slice({Dim::X, 1}));
 
@@ -523,15 +520,15 @@ TYPED_TEST(DatasetViewBinaryEqualsOpTest,
 TYPED_TEST(DatasetViewBinaryEqualsOpTest, rhs_Dataset_coord_mismatch) {
   DatasetFactory3D otherCoordsFactory;
   auto a = otherCoordsFactory.make();
-  auto b = datasetFactory.make();
+  auto b = datasetFactory().make();
 
   ASSERT_THROW(TestFixture::op(DatasetView(a), b), except::CoordMismatchError);
 }
 
 TYPED_TEST(DatasetViewBinaryEqualsOpTest, rhs_Dataset_with_missing_items) {
-  auto a = datasetFactory.make();
+  auto a = datasetFactory().make();
   a.setData("extra", makeVariable<double>(Values{double{}}));
-  auto b = datasetFactory.make();
+  auto b = datasetFactory().make();
   auto reference(a);
 
   ASSERT_NO_THROW(TestFixture::op(DatasetView(a), b));
@@ -545,15 +542,15 @@ TYPED_TEST(DatasetViewBinaryEqualsOpTest, rhs_Dataset_with_missing_items) {
 }
 
 TYPED_TEST(DatasetViewBinaryEqualsOpTest, rhs_Dataset_with_extra_items) {
-  auto a = datasetFactory.make();
-  auto b = datasetFactory.make();
+  auto a = datasetFactory().make();
+  auto b = datasetFactory().make();
   b.setData("extra", makeVariable<double>(Values{double{}}));
 
   ASSERT_ANY_THROW(TestFixture::op(DatasetView(a), b));
 }
 
 TYPED_TEST(DatasetViewBinaryEqualsOpTest, rhs_DatasetView_self_overlap) {
-  auto dataset = datasetFactory.make();
+  auto dataset = datasetFactory().make();
   const auto slice = dataset.slice({Dim::Z, 3});
   auto reference(dataset);
 
@@ -573,7 +570,7 @@ TYPED_TEST(DatasetViewBinaryEqualsOpTest, rhs_DatasetView_self_overlap) {
 
 TYPED_TEST(DatasetViewBinaryEqualsOpTest,
            rhs_DatasetView_self_overlap_undetectable) {
-  auto dataset = datasetFactory.make();
+  auto dataset = datasetFactory().make();
   const auto slice = dataset.slice({Dim::Z, 3});
   auto reference(dataset);
 
@@ -595,7 +592,7 @@ TYPED_TEST(DatasetViewBinaryEqualsOpTest,
 }
 
 TYPED_TEST(DatasetViewBinaryEqualsOpTest, rhs_DatasetView_coord_mismatch) {
-  auto dataset = datasetFactory.make();
+  auto dataset = datasetFactory().make();
   const DatasetView view(dataset);
 
   // Non-range sliced throws for X and Y due to multi-dimensional coords.
@@ -637,9 +634,8 @@ TYPED_TEST(DatasetBinaryOpTest, dataset_lhs_dataset_rhs) {
       TestFixture::op(dataset_a["data_a"].data(), dataset_b["data_a"].data());
   EXPECT_EQ(reference, res["data_a"].data());
 
-  /* Expect coordinates and labels to be copied to the result dataset */
+  /* Expect coordinates to be copied to the result dataset */
   EXPECT_EQ(res.coords(), dataset_a.coords());
-  EXPECT_EQ(res.labels(), dataset_a.labels());
   EXPECT_EQ(res.masks(), dataset_a.masks());
 }
 
@@ -691,9 +687,8 @@ TYPED_TEST(DatasetBinaryOpTest, dataset_lhs_scalar_rhs) {
   const auto reference = TestFixture::op(dataset["data_a"].data(), scalar);
   EXPECT_EQ(reference, res["data_a"].data());
 
-  /* Expect coordinates and labels to be copied to the result dataset */
+  /* Expect coordinates to be copied to the result dataset */
   EXPECT_EQ(res.coords(), dataset.coords());
-  EXPECT_EQ(res.labels(), dataset.labels());
 }
 
 TYPED_TEST(DatasetBinaryOpTest, scalar_lhs_dataset_rhs) {
@@ -708,9 +703,8 @@ TYPED_TEST(DatasetBinaryOpTest, scalar_lhs_dataset_rhs) {
   const auto reference = TestFixture::op(scalar, dataset["data_a"].data());
   EXPECT_EQ(reference, res["data_a"].data());
 
-  /* Expect coordinates and labels to be copied to the result dataset */
+  /* Expect coordinatesto be copied to the result dataset */
   EXPECT_EQ(res.coords(), dataset.coords());
-  EXPECT_EQ(res.labels(), dataset.labels());
 }
 
 TYPED_TEST(DatasetBinaryOpTest, dataset_sparse_lhs_dataset_sparse_rhs) {
@@ -813,7 +807,8 @@ TYPED_TEST(DatasetBinaryOpTest, sparse_dataarrayconstview_coord_mismatch) {
 TYPED_TEST(DatasetBinaryOpTest, sparse_data_presense_mismatch) {
   Dataset a;
   a.setSparseCoord(
-      "sparse", makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse}));
+      "sparse", Dim::X,
+      makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse}));
   auto b(a);
   a.setData("sparse",
             makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse}));
@@ -831,13 +826,13 @@ TYPED_TEST(DatasetBinaryOpTest,
   {
     auto var = makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse});
     var.sparseValues<double>()[0] = {0.5, 1.0};
-    dataset_a.setSparseCoord("sparse", var);
+    dataset_a.setSparseCoord("sparse", Dim::X, var);
   }
 
   {
     auto var = makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse});
     var.sparseValues<double>()[0] = {0.5, 1.5};
-    dataset_b.setSparseCoord("sparse", var);
+    dataset_b.setSparseCoord("sparse", Dim::X, var);
   }
 
   EXPECT_THROW(TestFixture::op(dataset_a, dataset_b),
@@ -852,13 +847,13 @@ TYPED_TEST(DatasetBinaryOpTest,
   {
     auto var = makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse});
     var.sparseValues<double>()[0] = {0.5, 1.0};
-    dataset_a.setSparseLabels("sparse", "l", var);
+    dataset_a.setSparseCoord("sparse", Dim("l"), var);
   }
 
   {
     auto var = makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse});
     var.sparseValues<double>()[0] = {0.5, 1.5};
-    dataset_b.setSparseLabels("sparse", "l", var);
+    dataset_b.setSparseCoord("sparse", Dim("l"), var);
   }
 
   EXPECT_THROW(TestFixture::op(dataset_a, dataset_b),
@@ -866,8 +861,8 @@ TYPED_TEST(DatasetBinaryOpTest,
 }
 
 TYPED_TEST(DatasetBinaryOpTest, dataset_lhs_datasetconstview_rhs) {
-  auto dataset_a = datasetFactory.make();
-  auto dataset_b = datasetFactory.make();
+  auto dataset_a = datasetFactory().make();
+  auto dataset_b = datasetFactory().make();
 
   DatasetConstView dataset_b_view(dataset_b);
   const auto res = TestFixture::op(dataset_a, dataset_b_view);
@@ -880,8 +875,8 @@ TYPED_TEST(DatasetBinaryOpTest, dataset_lhs_datasetconstview_rhs) {
 }
 
 TYPED_TEST(DatasetBinaryOpTest, datasetconstview_lhs_dataset_rhs) {
-  const auto dataset_a = datasetFactory.make();
-  const auto dataset_b = datasetFactory.make().slice({Dim::X, 1});
+  const auto dataset_a = datasetFactory().make();
+  const auto dataset_b = datasetFactory().make().slice({Dim::X, 1});
 
   DatasetConstView dataset_a_view = dataset_a.slice({Dim::X, 1});
   const auto res = TestFixture::op(dataset_a_view, dataset_b);
@@ -892,8 +887,8 @@ TYPED_TEST(DatasetBinaryOpTest, datasetconstview_lhs_dataset_rhs) {
 }
 
 TYPED_TEST(DatasetBinaryOpTest, datasetconstview_lhs_datasetconstview_rhs) {
-  auto dataset_a = datasetFactory.make();
-  auto dataset_b = datasetFactory.make();
+  auto dataset_a = datasetFactory().make();
+  auto dataset_b = datasetFactory().make();
 
   DatasetConstView dataset_a_view(dataset_a);
   DatasetConstView dataset_b_view(dataset_b);
@@ -907,8 +902,8 @@ TYPED_TEST(DatasetBinaryOpTest, datasetconstview_lhs_datasetconstview_rhs) {
 }
 
 TYPED_TEST(DatasetBinaryOpTest, dataset_lhs_dataarrayview_rhs) {
-  auto dataset_a = datasetFactory.make();
-  auto dataset_b = datasetFactory.make();
+  auto dataset_a = datasetFactory().make();
+  auto dataset_b = datasetFactory().make();
 
   const auto res = TestFixture::op(dataset_a, dataset_b["data_scalar"]);
 
@@ -920,12 +915,12 @@ TYPED_TEST(DatasetBinaryOpTest, dataset_lhs_dataarrayview_rhs) {
 }
 
 TYPED_TEST(DatasetBinaryOpTest, masks_propagate) {
-  auto a = datasetFactory.make();
-  auto b = datasetFactory.make();
+  auto a = datasetFactory().make();
+  auto b = datasetFactory().make();
 
   const auto expectedMasks =
-      makeVariable<bool>(Dimensions{Dim::X, datasetFactory.lx},
-                         Values(make_bools(datasetFactory.lx, true)));
+      makeVariable<bool>(Dimensions{Dim::X, datasetFactory().lx},
+                         Values(make_bools(datasetFactory().lx, true)));
 
   b.setMask("masks_x", expectedMasks);
 
@@ -949,7 +944,7 @@ Dataset non_trivial_2d_sparse(std::string_view name) {
   dvar.sparseValues<double>()[2] = {1, 1, 1, 1, 1, 100, 1, 1, 1, 1, 1, 1};
   dvar.sparseValues<double>()[3] = {1};
   sparse.setData(std::string(name), dvar);
-  sparse.setSparseCoord(std::string(name), var);
+  sparse.setSparseCoord(std::string(name), Dim::Y, var);
   return sparse;
 }
 
@@ -965,16 +960,16 @@ TEST(DatasetSetData, sparse_to_dense) {
   auto base = non_trivial_2d_sparse("base");
   auto var = makeVariable<double>(Dims{Dim::Y}, Shape{Dimensions::Sparse});
   var.sparseValues<double>()[0] = {1, 2, 3};
-  base.setSparseLabels("base", "l", var);
+  base.setSparseCoord("base", Dim("l"), var);
 
-  auto dense = datasetFactory.make();
+  auto dense = datasetFactory().make();
   dense.setData("sparse", base["base"]);
   EXPECT_EQ(base["base"].data(), dense["sparse"].data());
-  EXPECT_EQ(dense["sparse"].labels().items().count("l"), 1);
+  EXPECT_EQ(dense["sparse"].coords().items().count(Dim("l")), 1);
 }
 
 TEST(DatasetSetData, dense_to_dense) {
-  auto dense = datasetFactory.make();
+  auto dense = datasetFactory().make();
   auto d = Dataset(dense.slice({Dim::X, 0, 2}));
   dense.setData("data_x_1", dense["data_x"]);
   EXPECT_EQ(dense["data_x"], dense["data_x_1"]);
@@ -985,25 +980,25 @@ TEST(DatasetSetData, dense_to_dense) {
 
 TEST(DatasetSetData, dense_to_empty) {
   auto ds = Dataset();
-  auto dense = datasetFactory.make();
+  auto dense = datasetFactory().make();
   ds.setData("data_x", dense["data_x"]);
   EXPECT_EQ(dense["data_x"].coords(), ds["data_x"].coords());
   EXPECT_EQ(dense["data_x"].data(), ds["data_x"].data());
 }
 
 TEST(DatasetSetData, labels) {
-  auto dense = datasetFactory.make();
-  dense.setLabels(
-      "l",
+  auto dense = datasetFactory().make();
+  dense.setCoord(
+      Dim("l"),
       makeVariable<double>(
           Dims{Dim::X}, Shape{dense.coords()[Dim::X].values<double>().size()}));
   auto d = Dataset(dense.slice({Dim::Y, 0}));
   dense.setData("data_x_1", dense["data_x"]);
   EXPECT_EQ(dense["data_x"], dense["data_x_1"]);
 
-  d.setLabels("l1", makeVariable<double>(
-                        Dims{Dim::X},
-                        Shape{d.coords()[Dim::X].values<double>().size()}));
+  d.setCoord(Dim("l1"), makeVariable<double>(
+                            Dims{Dim::X},
+                            Shape{d.coords()[Dim::X].values<double>().size()}));
   EXPECT_THROW(dense.setData("data_x_2", d["data_x"]), except::NotFoundError);
 }
 

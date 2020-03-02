@@ -11,14 +11,14 @@ from scipp import Dim
 @pytest.fixture(params=['Dataset', 'DatasetView'])
 def dataset_abc(request):
     d = sc.Dataset()
-    d['a'] = sc.Variable([Dim.X], values=[1, 2])
-    d['b'] = sc.Variable([Dim.X], values=[3, 4])
-    d['c'] = sc.Variable([Dim.X], values=[5, 6])
+    d['a'] = sc.Variable(['x'], values=[1, 2])
+    d['b'] = sc.Variable(['x'], values=[3, 4])
+    d['c'] = sc.Variable(['x'], values=[5, 6])
     # Using yield so `d` does not go out of scope when returning slice
     if request.param == 'Dataset':
         yield d
     else:
-        yield d[Dim.X, 0]
+        yield d['x', 0]
 
 
 def test_dataset_iter(dataset_abc):
@@ -50,9 +50,9 @@ def test_dataset_items(dataset_abc):
 
 def make_coords_xyz():
     d = sc.Dataset()
-    d.coords[Dim.X] = 1.0 * sc.units.m
-    d.coords[Dim.Y] = 2.0 * sc.units.m
-    d.coords[Dim.Z] = 3.0 * sc.units.m
+    d.coords['x'] = 1.0 * sc.units.m
+    d.coords['y'] = 2.0 * sc.units.m
+    d.coords['z'] = 3.0 * sc.units.m
     return d
 
 
@@ -60,13 +60,13 @@ def test_dataset_coords_iter():
     d = make_coords_xyz()
     found = set()
     for key in d.coords:
-        found.add(key)
-    assert found == set([Dim.X, Dim.Y, Dim.Z])
+        found.add(str(key))
+    assert found == set(['x', 'y', 'z'])
 
 
 def test_dataset_coords_keys():
     d = make_coords_xyz()
-    assert set(d.coords.keys()) == set([Dim.X, Dim.Y, Dim.Z])
+    assert set(d.coords.keys()) == set([Dim('x'), Dim('y'), Dim('z')])
 
 
 def test_dataset_coords_values():
@@ -82,5 +82,5 @@ def test_dataset_coords_items():
     assert len(d.coords.items()) == 3
     found = set()
     for dim, value in d.coords.items():
-        found.add(dim)
-    assert found == set([Dim.X, Dim.Y, Dim.Z])
+        found.add(str(dim))
+    assert found == set(['x', 'y', 'z'])

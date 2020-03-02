@@ -3,21 +3,20 @@
 # @file
 # @author Simon Heybrock
 import scipp as sc
-from scipp import Dim
 import numpy as np
 import operator
 
 
 def test_type():
-    variable_slice = sc.Variable([Dim.X], np.arange(1, 10,
-                                                    dtype=float))[Dim.X, :]
+    variable_slice = sc.Variable(dims=['x'],
+                                 values=np.arange(1, 10, dtype=float))['x', :]
     assert type(variable_slice) == sc.VariableView
 
 
 def test_astype():
-    variable_slice = sc.Variable([Dim.X],
+    variable_slice = sc.Variable(dims=['x'],
                                  values=np.arange(1, 10,
-                                                  dtype=np.int64))[Dim.X, :]
+                                                  dtype=np.int64))['x', :]
     assert variable_slice.dtype == sc.dtype.int64
 
     var_as_float = variable_slice.astype(sc.dtype.float32)
@@ -32,10 +31,10 @@ def apply_test_op(op, a, b, data):
 
 
 def test_binary_operations():
-    _a = sc.Variable([Dim.X], np.arange(1, 10, dtype=float))
-    _b = sc.Variable([Dim.X], np.arange(1, 10, dtype=float))
-    a = _a[Dim.X, :]
-    b = _b[Dim.X, :]
+    _a = sc.Variable(dims=['x'], values=np.arange(1, 10, dtype=float))
+    _b = sc.Variable(dims=['x'], values=np.arange(1, 10, dtype=float))
+    a = _a['x', :]
+    b = _b['x', :]
 
     data = np.copy(a.values)
     c = a + b
@@ -55,8 +54,8 @@ def test_binary_operations():
 
 
 def test_binary_float_operations():
-    _a = sc.Variable([Dim.X], np.arange(1, 10, dtype=float))
-    a = _a[Dim.X, :]
+    _a = sc.Variable(dims=['x'], values=np.arange(1, 10, dtype=float))
+    a = _a['x', :]
     data = np.copy(a.values)
     c = a + 2.0
     assert np.array_equal(c.values, data + 2.0)
@@ -75,10 +74,10 @@ def test_binary_float_operations():
 
 
 def test_equal_not_equal():
-    _a = sc.Variable([Dim.X], np.arange(1, 10, dtype=float))
-    _b = sc.Variable([Dim.X], np.arange(1, 10, dtype=float))
-    a = _a[Dim.X, :]
-    b = _b[Dim.X, :]
+    _a = sc.Variable(dims=['x'], values=np.arange(1, 10, dtype=float))
+    _b = sc.Variable(dims=['x'], values=np.arange(1, 10, dtype=float))
+    a = _a['x', :]
+    b = _b['x', :]
     c = a + 2.0
     assert a == b
     assert b == a
@@ -87,8 +86,8 @@ def test_equal_not_equal():
 
 
 def test_correct_temporaries():
-    v = sc.Variable([Dim.X], values=np.arange(100.0))
-    b = sc.sqrt(v)[Dim.X, 0:10]
+    v = sc.Variable(dims=['x'], values=np.arange(100.0))
+    b = sc.sqrt(v)['x', 0:10]
     assert len(b.values) == 10
-    b = b[Dim.X, 2:5]
+    b = b['x', 2:5]
     assert len(b.values) == 3

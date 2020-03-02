@@ -6,6 +6,7 @@
 from .. import config
 from .render import render_plot
 from .slicer import Slicer
+from .tools import centers_to_edges, edges_to_centers
 from ..utils import name_with_unit
 from .._scipp.core import Variable
 
@@ -91,7 +92,9 @@ class Slicer2d(Slicer):
                          button_options=['X', 'Y'])
 
         self.members.update({"images": {}, "colorbars": {}})
-        self.extent = {"x": [0, 1], "y": [0, 1]}
+        self.extent = {"x": [1, 2], "y": [1, 2]}
+        self.logx = logx
+        self.logy = logy
 
         # Get or create matplotlib axes
         self.fig = None
@@ -170,9 +173,9 @@ class Slicer2d(Slicer):
                         interpolation="nearest",
                         aspect=self.aspect,
                         cmap=self.params["masks"][self.name]["cmap"])
-                if logx:
+                if self.logx:
                     self.ax[key].set_xscale("log")
-                if logy:
+                if self.logy:
                     self.ax[key].set_yscale("log")
 
         # Call update_slice once to make the initial image
@@ -211,22 +214,37 @@ class Slicer2d(Slicer):
         for dim, button in self.buttons.items():
             if self.slider[dim].disabled:
                 but_val = button.value.lower()
+                # xc = self.slider_x[self.name][dim].values
                 if not self.histograms[self.name][dim]:
                     xc = self.slider_x[self.name][dim].values
                     if self.slider_nx[self.name][dim] < 2:
-                        xmin = xc[0] - 0.5
-                        xmax = xc[0] + 0.5
+                        dx = 0.5 * abs(xc[0])
+                        if dx == 0.0:
+                            dx = 0.5
+                        xmin = xc[0] - dx
+                        xmax = xc[0] + dx
+                        axparams[but_val]["xmin"] = xmin
+                        axparams[but_val]["xmax"] = xmax
                     else:
                         xmin = 1.5 * xc[0] - 0.5 * xc[1]
                         xmax = 1.5 * xc[-1] - 0.5 * xc[-2]
                     self.extent[but_val] = [xmin, xmax]
                 else:
                     self.extent[but_val] = self.slider_x[
-                        self.name][dim].values[[0, -1]]
+                        self.name][dim].values[[0, -1]].astype(np.float)
 
+                axparams[but_val]["lims"] = self.extent[but_val].copy()
+                if getattr(self,
+                           "log" + but_val) and (self.extent[but_val][0] <= 0):
+                    if not self.histograms[self.name][dim]:
+                        new_x = centers_to_edges(xc)
+                    else:
+                        new_x = edges_to_centers(
+                            self.slider_x[self.name][dim].values)
+                    axparams[but_val]["lims"][0] = new_x[np.searchsorted(
+                        new_x, 0)]
                 axparams[but_val]["labels"] = name_with_unit(
-                    self.slider_x[self.name][dim],
-                    name=self.slider_labels[self.name][dim])
+                    self.slider_x[self.name][dim], name=str(dim))
                 axparams[but_val]["dim"] = dim
 
         extent_array = np.array(list(self.extent.values())).flatten()
@@ -236,8 +254,8 @@ class Slicer2d(Slicer):
                 self.im[key].set_extent(extent_array)
                 if self.params["masks"][self.name]["show"]:
                     self.im[self.get_mask_key(key)].set_extent(extent_array)
-                self.ax[key].set_xlim(self.extent["x"])
-                self.ax[key].set_ylim(self.extent["y"])
+                self.ax[key].set_xlim(axparams["x"]["lims"])
+                self.ax[key].set_ylim(axparams["y"]["lims"])
             self.ax[key].set_xlabel(axparams["x"]["labels"])
             self.ax[key].set_ylabel(axparams["y"]["labels"])
             for xy, param in axparams.items():

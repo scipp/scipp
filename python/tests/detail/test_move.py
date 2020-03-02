@@ -3,17 +3,16 @@
 # @file
 # @author Neil Vaytet
 import scipp as sc
-from scipp import Dim
 import numpy as np
 
 
 def test_moving_variable_into_dataset():
 
     d = sc.Dataset()
-    var = sc.Variable([Dim.X], values=np.arange(10000.0))
+    var = sc.Variable(['x'], values=np.arange(10000.0))
     d["a"] = sc.detail.move(var)
 
-    assert d.dims == [Dim.X]
+    assert d.dims == ['x']
     assert d.shape == [10000]
     assert "a" in d
 
@@ -21,78 +20,69 @@ def test_moving_variable_into_dataset():
 def test_moving_variable_into_dataset_proxies():
 
     d = sc.Dataset()
-    d.coords[Dim.X] = sc.detail.move(
-        sc.Variable([Dim.X], values=np.arange(1000.0)))
-    d.labels["a"] = sc.detail.move(
-        sc.Variable([Dim.Y], values=np.random.random(100)))
+    d.coords['x'] = sc.detail.move(sc.Variable(['x'],
+                                               values=np.arange(1000.0)))
     d.attrs["b"] = sc.detail.move(
-        sc.Variable([Dim.Z], values=np.random.random(50)))
+        sc.Variable(['y'], values=np.random.random(50)))
     d.masks["c"] = sc.detail.move(
-        sc.Variable([Dim.Z], values=np.random.random(50)))
+        sc.Variable(['z'], values=np.random.random(50)))
 
-    assert Dim.X in d.dims
-    assert Dim.Y in d.dims
-    assert Dim.Z in d.dims
+    assert 'x' in d.dims
+    assert 'y' in d.dims
+    assert 'z' in d.dims
     assert len(d.coords) == 1
-    assert len(d.labels) == 1
     assert len(d.attrs) == 1
     assert len(d.masks) == 1
-    assert Dim.X in d.coords
-    assert "a" in d.labels
+    assert 'x' in d.coords
     assert "b" in d.attrs
     assert "c" in d.masks
-    assert d.coords[Dim.X].shape == [1000]
-    assert d.labels["a"].shape == [100]
+    assert d.coords['x'].shape == [1000]
     assert d.attrs["b"].shape == [50]
     assert d.masks["c"].shape == [50]
 
 
 def test_moving_variable_into_data_array_proxies():
 
-    a = sc.DataArray(data=sc.Variable([Dim.X], values=np.random.random(1000)))
-    a.coords[Dim.X] = sc.detail.move(
-        sc.Variable([Dim.X], values=np.arange(1000.0)))
-    a.labels["a"] = sc.detail.move(
-        sc.Variable([Dim.X], values=np.random.random(1000)))
+    a = sc.DataArray(data=sc.Variable(['x'], values=np.random.random(1000)))
+    a.coords['x'] = sc.detail.move(sc.Variable(['x'],
+                                               values=np.arange(1000.0)))
     a.attrs["b"] = sc.detail.move(
-        sc.Variable([Dim.X], values=np.random.random(1000)))
+        sc.Variable(['x'], values=np.random.random(1000)))
     a.masks["c"] = sc.detail.move(
-        sc.Variable([Dim.X], values=np.random.random(1000)))
+        sc.Variable(['x'], values=np.random.random(1000)))
 
-    assert a.dims == [Dim.X]
+    assert a.dims == ['x']
     assert a.shape == [1000]
     assert len(a.coords) == 1
-    assert len(a.labels) == 1
     assert len(a.attrs) == 1
     assert len(a.masks) == 1
-    assert Dim.X in a.coords
-    assert "a" in a.labels
+    assert 'x' in a.coords
     assert "b" in a.attrs
     assert "c" in a.masks
 
 
 def test_moving_variables_to_data_array():
 
-    var = sc.Variable([Dim.X], values=np.random.random(1000))
-    c = sc.Variable([Dim.X], values=np.arange(1000.0))
-    coords = {Dim.X: c}
+    var = sc.Variable(['x'], values=np.random.random(1000))
+    c = sc.Variable(['x'], values=np.arange(1000.0))
+    coords = {'x': c}
     a = sc.detail.move_to_data_array(data=var, coords=coords)
 
-    assert a.dims == [Dim.X]
+    assert a.dims == ['x']
     assert a.shape == [1000]
-    assert Dim.X in a.coords
+    assert 'x' in a.coords
 
 
 def test_moving_data_array_into_dataset():
 
-    var = sc.Variable([Dim.X], values=np.random.random(10000))
-    c = sc.Variable([Dim.X], values=np.arange(10000.0))
-    coords = {Dim.X: c}
+    var = sc.Variable(['x'], values=np.random.random(10000))
+    c = sc.Variable(['x'], values=np.arange(10000.0))
+    coords = {'x': c}
     a = sc.detail.move_to_data_array(data=var, coords=coords)
     d = sc.Dataset()
     d["a"] = sc.detail.move(a)
 
-    assert d.dims == [Dim.X]
+    assert d.dims == ['x']
     assert d.shape == [10000]
     assert "a" in d
-    assert Dim.X in d.coords
+    assert 'x' in d.coords

@@ -30,8 +30,7 @@ Dataset merge(const DatasetConstView &a, const DatasetConstView &b) {
   // checked if present in both dataset with the same values with `union_`.
   // If the values are different the merge will fail.
   return Dataset(union_(a, b), union_(a.coords(), b.coords()),
-                 union_(a.labels(), b.labels()), union_(a.masks(), b.masks()),
-                 union_(a.attrs(), b.attrs()));
+                 union_(a.masks(), b.masks()), union_(a.attrs(), b.attrs()));
 }
 
 /// Concatenate a and b, assuming that a and b contain bin edges.
@@ -50,7 +49,7 @@ auto concat(const T1 &a, const T2 &b, const Dim dim, const DimT &dimsA,
             const DimT &dimsB) {
   std::map<typename T1::key_type, typename T1::mapped_type> out;
   for (const auto &[key, a_] : a) {
-    if (dim_of_coord_or_labels(a_, key) == dim) {
+    if (dim_of_coord(a_, key) == dim) {
       if (a_.dims().sparseDim() == dim) {
         if (b[key].dims().sparseDim() == dim)
           out.emplace(key, concatenate(a_, b[key], dim));
@@ -87,7 +86,6 @@ DataArray concatenate(const DataArrayConstView &a, const DataArrayConstView &b,
                        ? concatenate(a.data(), b.data(), dim)
                        : std::optional<Variable>(),
                    concat(a.coords(), b.coords(), dim, a.dims(), b.dims()),
-                   concat(a.labels(), b.labels(), dim, a.dims(), b.dims()),
                    concat(a.masks(), b.masks(), dim, a.dims(), b.dims()));
 }
 
@@ -96,7 +94,6 @@ Dataset concatenate(const DatasetConstView &a, const DatasetConstView &b,
   Dataset result(
       std::map<std::string, Variable>(),
       concat(a.coords(), b.coords(), dim, a.dimensions(), b.dimensions()),
-      concat(a.labels(), b.labels(), dim, a.dimensions(), b.dimensions()),
       concat(a.masks(), b.masks(), dim, a.dimensions(), b.dimensions()),
       std::map<std::string, Variable>());
   for (const auto &item : a)
@@ -165,13 +162,8 @@ DataArray resize(const DataArrayConstView &a, const Dim dim,
 
     std::map<Dim, Variable> coords;
     for (auto &&[d, coord] : a.coords())
-      if (dim_of_coord_or_labels(coord, d) != dim)
+      if (dim_of_coord(coord, d) != dim)
         coords.emplace(d, resize_if_sparse(coord));
-
-    std::map<std::string, Variable> labels;
-    for (auto &&[name, label] : a.labels())
-      if (label.dims().inner() != dim)
-        labels.emplace(name, resize_if_sparse(label));
 
     std::map<std::string, Variable> attrs;
     for (auto &&[name, attr] : a.attrs())
@@ -185,8 +177,7 @@ DataArray resize(const DataArrayConstView &a, const Dim dim,
 
     return DataArray{a.hasData() ? resize(a.data(), dim, size)
                                  : std::optional<Variable>{},
-                     std::move(coords), std::move(labels), std::move(masks),
-                     std::move(attrs)};
+                     std::move(coords), std::move(masks), std::move(attrs)};
   } else {
     return apply_to_data_and_drop_dim(
         a, [](auto &&... _) { return resize(_...); }, dim, size);
