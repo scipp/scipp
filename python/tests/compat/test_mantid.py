@@ -58,6 +58,21 @@ class TestMantidConversion(unittest.TestCase):
         delta = sc.sum(delta, 'tof')
         self.assertLess(np.abs(delta.value), 1e-5)
 
+    def test_from_mantid_LoadEmptyInstrument(self):
+        import mantid.simpleapi as mantid
+        ws = mantid.LoadEmptyInstrument(InstrumentName='PG3')
+        mantidcompat.from_mantid(ws)
+
+    def test_from_mantid_CreateWorkspace(self):
+        import mantid.simpleapi as mantid
+        dataX = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+        dataY = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+        ws = mantid.CreateWorkspace(DataX=dataX,
+                                    DataY=dataY,
+                                    NSpec=4,
+                                    UnitX="Wavelength")
+        mantidcompat.from_mantid(ws)
+
     def test_unit_conversion(self):
         import mantid.simpleapi as mantid
         eventWS = mantid.CloneWorkspace(self.base_event_ws)

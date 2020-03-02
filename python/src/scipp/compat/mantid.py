@@ -181,7 +181,7 @@ def validate_and_get_unit(unit):
             sc.units.dimensionless / (sc.units.angstrom * sc.units.angstrom)
         ],
         "Label": ['spectrum', sc.units.dimensionless],
-        "Empty": ['spectrum', sc.units.dimensionless]
+        "Empty": ['empty', sc.units.dimensionless]
     }
 
     if unit not in known_units.keys():
@@ -498,8 +498,10 @@ def from_mantid(workspace, **kwargs):
     workspaces_to_delete = []
     if workspace.id() == 'Workspace2D' or workspace.id() == 'RebinnedOutput':
         has_monitors = False
-        for spec in workspace.spectrumInfo():
-            has_monitors |= spec.isMonitor
+        spec_info = workspace.spectrumInfo()
+        for i in range(len(spec_info)):
+            if spec_info.hasDetectors(i):
+                has_monitors |= spec_info.isMonitor(i)
             if has_monitors:
                 break
         if has_monitors:
