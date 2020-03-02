@@ -79,6 +79,10 @@ template <class Axis>
 AxisConstView<Axis>::AxisConstView(VariableView &&data,
                                    unaligned_view_type &&view)
     : m_data(std::move(data)), m_unaligned(std::move(view)) {}
+/// Constructor used by DatasetAxisView
+template <class Axis>
+AxisConstView<Axis>::AxisConstView(VariableView &&data)
+    : m_data(std::move(data)), m_unaligned(make_empty_unaligned()) {}
 
 // Implicit conversion from VariableConstView useful for operators.
 template <class Axis>
@@ -109,6 +113,22 @@ template <class Axis> VariableView AxisView<Axis>::data() const {
   if (AxisConstView<Axis>::hasData())
     return AxisConstView<Axis>::m_data;
   throw except::SparseDataError("No data in item.");
+}
+
+template <class Axis>
+AxisConstView<Axis> AxisConstView<Axis>::slice(const Slice s) const {
+  if (hasUnaligned())
+    throw except::UnalignedError(
+        "Slicing unaligned coordinates not supported yet.");
+  return AxisConstView(data().slice(s));
+}
+
+template <class Axis>
+AxisView<Axis> AxisView<Axis>::slice(const Slice s) const {
+  if (AxisConstView<Axis>::hasUnaligned())
+    throw except::UnalignedError(
+        "Slicing unaligned coordinates not supported yet.");
+  return AxisView(data().slice(s));
 }
 
 template <class Id, class UnalignedType>

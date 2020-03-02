@@ -170,6 +170,7 @@ public:
 
   AxisConstView(const value_type &axis);
   AxisConstView(VariableView &&data, unaligned_view_type &&unaligned);
+  AxisConstView(VariableView &&data);
   AxisConstView(VariableConstView &&data);
 
   const unaligned_const_view_type &unaligned() const noexcept;
@@ -202,7 +203,7 @@ public:
     return data().template variances<T>();
   }
 
-  AxisConstView slice(const Slice) const { return *this; }
+  AxisConstView slice(const Slice s) const;
 
 protected:
   // Note: Not const views to avoid duplicate view creation
@@ -221,7 +222,7 @@ public:
   using unaligned_type = typename value_type::unaligned_type;
   using unaligned_view_type = typename value_type::unaligned_view_type;
 
-  AxisView(Variable &data) : AxisConstView<Axis>(VariableView(data)) {}
+  AxisView(VariableView data) : AxisConstView<Axis>(std::move(data)) {}
   AxisView(Axis &data)
       : AxisConstView<Axis>(data.hasData() ? data.data() : VariableView{},
                             data.hasUnaligned() ? data.unaligned()
@@ -244,7 +245,7 @@ public:
     return data().template variances<T>();
   }
 
-  AxisView slice(const Slice) const { return *this; }
+  AxisView slice(const Slice s) const;
 
   AxisView operator+=(const VariableConstView &other) const;
   AxisView operator-=(const VariableConstView &other) const;
