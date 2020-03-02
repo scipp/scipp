@@ -163,7 +163,8 @@ class Slicer1d(Slicer):
         self.update_axes(list(self.slider.keys())[-1])
 
         self.ax.set_ylabel(ylab)
-        self.ax.legend()
+        if len(self.ax.get_legend_handles_labels()[0]) > 0:
+            self.ax.legend()
 
         self.keep_buttons = dict()
         if self.ndim > 1:
@@ -322,8 +323,7 @@ class Slicer1d(Slicer):
                 warnings.filterwarnings("ignore", category=UserWarning)
                 self.ax.set_xlim([xmin - deltax, xmax + deltax])
         self.ax.set_xlabel(
-            name_with_unit(self.slider_x[self.name][dim],
-                           name=self.slider_labels[self.name][dim]))
+            name_with_unit(self.slider_x[self.name][dim], name=str(dim)))
         if self.slider_ticks[self.name][dim] is not None:
             self.ax.set_xticklabels(self.get_custom_ticks(self.ax, dim))
         return

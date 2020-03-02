@@ -94,9 +94,9 @@ auto apply_op_sparse_dense(Op op, const Coord &coord, const Data &data,
     const auto [offset, nbin, scale] = linear_edge_params(edges);
     for (const auto c : coord) {
       const auto bin = (c - offset) * scale;
-      auto w = get(weights, bin);
-      if (bin < 0.0 || bin >= nbin)
-        w = 0.0;
+      using w_type = decltype(get(weights, bin));
+      constexpr w_type out_of_bounds(0.0);
+      w_type w = bin < 0.0 || bin >= nbin ? out_of_bounds : get(weights, bin);
       if constexpr (vars) {
         const auto [val, var] = op(d, w);
         out_vals.emplace_back(val);

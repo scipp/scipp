@@ -344,10 +344,6 @@ void Dataset::setSparseCoord(const std::string &name, const Dim dim,
                             coord.dims().sparseDim())
     throw except::DimensionError("Cannot set sparse coord if values or "
                                  "variances are not sparse.");
-  if (!contains(name) && coord.dims().sparseDim() != dim)
-    throw except::SparseDataError(
-        "Cannot set sparse non-dimension-coord without "
-        "sparse dimension-coord.");
   setDims(coord.dims());
   m_data[name].coords.insert_or_assign(dim, std::move(coord));
 }

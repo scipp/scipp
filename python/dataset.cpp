@@ -135,8 +135,10 @@ void bind_coord_properties(py::class_<T, Ignored...> &c) {
       Dict of coordinates.)");
   c.def_property_readonly(
       "labels",
-      py::cpp_function([](T &self) { return self.coords(); },
-                       py::return_value_policy::move, py::keep_alive<0, 1>()),
+      []([[maybe_unused]] T &self) {
+        throw std::runtime_error(
+            "Property `labels` is deprecated. Use `coords` instead.");
+      },
       R"(Decprecated, alias for `coords`.)");
   c.def_property_readonly("masks",
                           py::cpp_function([](T &self) { return self.masks(); },

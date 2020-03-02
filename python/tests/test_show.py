@@ -9,20 +9,20 @@ import pytest
 
 def test_large_variable():
     for n in [10, 100, 1000, 10000]:
-        var = sc.Variable([Dim.X, Dim.Y], shape=(n, n))
+        var = sc.Variable(['x', 'y'], shape=(n, n))
     assert len(sc.make_svg(var)) < 100000
 
 
 def test_too_many_variable_dimensions():
-    var = sc.Variable([Dim.X, Dim.Y, Dim.Z, Dim.Time], shape=(1, 1, 1, 1))
+    var = sc.Variable(['x', 'y', 'z', Dim.Time], shape=(1, 1, 1, 1))
     with pytest.raises(RuntimeError):
         sc.make_svg(var)
 
 
 def test_too_many_dataset_dimensions():
     d = sc.Dataset({
-        'xy': sc.Variable([Dim.X, Dim.Y], shape=(1, 1)),
-        'zt': sc.Variable([Dim.Z, Dim.Time], shape=(1, 1))
+        'xy': sc.Variable(['x', 'y'], shape=(1, 1)),
+        'zt': sc.Variable(['z', Dim.Time], shape=(1, 1))
     })
     with pytest.raises(RuntimeError):
         sc.make_svg(d)

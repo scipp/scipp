@@ -3,7 +3,6 @@ import pytest
 from bs4 import BeautifulSoup
 
 import scipp as sc
-from scipp import Dim
 from scipp.table_html import make_html
 
 from .common import (ATTR_NAME, LABEL_NAME, MASK_NAME, assert_dims_section,
@@ -11,10 +10,9 @@ from .common import (ATTR_NAME, LABEL_NAME, MASK_NAME, assert_dims_section,
 
 
 @pytest.mark.parametrize("dims, lengths",
-                         (([Dim.X], (10, )), ([Dim.X, Dim.Y], (10, 10)),
-                          ([Dim.X, Dim.Y, Dim.Z],
-                           (10, 10, 10)), ([Dim.X, Dim.Y, Dim.Z, Dim.Spectrum],
-                                           (10, 10, 10, 10))))
+                         ((['x'], (10, )), (['x', 'y'], (10, 10)),
+                          (['x', 'y', 'z'], (10, 10, 10)),
+                          (['x', 'y', 'z', 'spectrum'], (10, 10, 10, 10))))
 def test_basic(dims, lengths):
     in_unit = sc.units.m
     in_dtype = sc.dtype.float32
@@ -25,16 +23,18 @@ def test_basic(dims, lengths):
                        variances=np.random.rand(*lengths))
 
     data_array = sc.DataArray(data,
-                              coords={dims[0]: data},
+                              coords={
+                                  dims[0]: data,
+                                  LABEL_NAME: data
+                              },
                               attrs={ATTR_NAME: data},
-                              labels={LABEL_NAME: data},
                               masks={MASK_NAME: data})
 
     html = BeautifulSoup(make_html(data_array), features="html.parser")
     sections = html.find_all(class_="xr-section-item")
-    assert len(sections) == 6
+    assert len(sections) == 5
     expected_sections = [
-        "Dimensions", "Coordinates", "Labels", "Data", "Masks", "Attributes"
+        "Dimensions", "Coordinates", "Data", "Masks", "Attributes"
     ]
     for actual_section, expected_section in zip(sections, expected_sections):
         assert expected_section in actual_section.text
@@ -44,7 +44,6 @@ def test_basic(dims, lengths):
 
     data_names = [
         dims[0],
-        LABEL_NAME,
         "",  # dataarray does not have a data name
         MASK_NAME,
         ATTR_NAME
@@ -56,10 +55,9 @@ def test_basic(dims, lengths):
 
 
 @pytest.mark.parametrize("dims, lengths",
-                         (([Dim.X, Dim.Y], (10, sc.Dimensions.Sparse)),
-                          ([Dim.X, Dim.Y, Dim.Z],
-                           (10, 10, sc.Dimensions.Sparse)),
-                          ([Dim.X, Dim.Y, Dim.Z, Dim.Spectrum],
+                         ((['x', 'y'], (10, sc.Dimensions.Sparse)),
+                          (['x', 'y', 'z'], (10, 10, sc.Dimensions.Sparse)),
+                          (['x', 'y', 'z', 'spectrum'],
                            (10, 10, 10, sc.Dimensions.Sparse))))
 def test_sparse(dims, lengths):
     in_unit = sc.units.m
@@ -74,21 +72,23 @@ def test_sparse(dims, lengths):
                        values=np.random.rand(lengths[0]))
 
     data_array = sc.DataArray(data,
-                              coords={dims[0]: data},
+                              coords={
+                                  dims[0]: data,
+                                  LABEL_NAME: attr
+                              },
                               attrs={ATTR_NAME: attr},
-                              labels={LABEL_NAME: attr},
                               masks={MASK_NAME: attr})
     html = BeautifulSoup(make_html(data_array), features="html.parser")
     sections = html.find_all(class_="xr-section-item")
 
-    assert len(sections) == 6
+    assert len(sections) == 5
     expected_sections = [
-        "Dimensions", "Coordinates", "Labels", "Data", "Masks", "Attributes"
+        "Dimensions", "Coordinates", "Data", "Masks", "Attributes"
     ]
     for actual_section, expected_section in zip(sections, expected_sections):
         assert expected_section in actual_section.text
 
-    data_section = sections.pop(3)
+    data_section = sections.pop(2)
     assert_section(data_section, "", dims, in_dtype, in_unit, has_sparse=True)
 
     dim_section = sections.pop(0)
@@ -98,22 +98,22 @@ def test_sparse(dims, lengths):
     # the original dim used as a label (dim[0]) is not shown,
     # instead the sparse dim is shown
     assert_section(coord_section,
-                   dims[-1],
+                   dims[0],
                    dims,
                    in_dtype,
                    in_unit,
                    has_sparse=True)
 
-    data_names = [LABEL_NAME, MASK_NAME, ATTR_NAME]
+    data_names = [MASK_NAME, ATTR_NAME]
 
     for section, name in zip(sections, data_names):
         assert_section(section, name, in_attr_dims, in_dtype, in_unit)
 
 
-@pytest.mark.parametrize(
-    "dims, lengths", (([Dim.X], [10]), ([Dim.X, Dim.Y], [10, 10]),
-                      ([Dim.X, Dim.Y, Dim.Z], [10, 10, 10]),
-                      ([Dim.X, Dim.Y, Dim.Z, Dim.Spectrum], [10, 10, 10, 10])))
+@pytest.mark.parametrize("dims, lengths",
+                         ((['x'], [10]), (['x', 'y'], [10, 10]),
+                          (['x', 'y', 'z'], [10, 10, 10]),
+                          (['x', 'y', 'z', 'spectrum'], [10, 10, 10, 10])))
 def test_bin_edge(dims, lengths):
     in_unit = sc.units.m
     in_dtype = sc.dtype.float32
@@ -130,16 +130,18 @@ def test_bin_edge(dims, lengths):
                         values=np.random.rand(*lengths))
 
     data_array = sc.DataArray(data,
-                              coords={dims[0]: edges},
+                              coords={
+                                  dims[0]: edges,
+                                  LABEL_NAME: edges
+                              },
                               attrs={ATTR_NAME: data},
-                              labels={LABEL_NAME: edges},
                               masks={MASK_NAME: edges})
 
     html = BeautifulSoup(make_html(data_array), features="html.parser")
     sections = html.find_all(class_="xr-section-item")
-    assert len(sections) == 6
+    assert len(sections) == 5
     expected_sections = [
-        "Dimensions", "Coordinates", "Labels", "Data", "Masks", "Attributes"
+        "Dimensions", "Coordinates", "Data", "Masks", "Attributes"
     ]
     for actual_section, expected_section in zip(sections, expected_sections):
         assert expected_section in actual_section.text
@@ -147,13 +149,13 @@ def test_bin_edge(dims, lengths):
     attr_section = sections.pop(len(sections) - 1)
     assert_section(attr_section, ATTR_NAME, dims, in_dtype, in_unit)
 
-    data_section = sections.pop(3)
+    data_section = sections.pop(2)
     assert_section(data_section, "", dims, in_dtype, in_unit)
 
     dim_section = sections.pop(0)
     assert_dims_section(data, dim_section)
 
-    data_names = [dims[0], LABEL_NAME, MASK_NAME]
+    data_names = [dims[0], MASK_NAME]
 
     for section, name in zip(sections, data_names):
         assert_section(section,
@@ -166,10 +168,9 @@ def test_bin_edge(dims, lengths):
 
 @pytest.mark.parametrize(
     "dims, lengths",
-    (([Dim.X, Dim.Y], [10, sc.Dimensions.Sparse]),
-     ([Dim.X, Dim.Y, Dim.Z], [10, 10, sc.Dimensions.Sparse]),
-     ([Dim.X, Dim.Y, Dim.Z, Dim.Spectrum], [10, 10, 10, sc.Dimensions.Sparse]))
-)
+    ((['x', 'y'], [10, sc.Dimensions.Sparse]),
+     (['x', 'y', 'z'], [10, 10, sc.Dimensions.Sparse]),
+     (['x', 'y', 'z', 'spectrum'], [10, 10, 10, sc.Dimensions.Sparse])))
 def test_bin_edge_and_sparse(dims, lengths):
     in_unit = sc.units.m
     in_dtype = sc.dtype.float32
@@ -191,31 +192,33 @@ def test_bin_edge_and_sparse(dims, lengths):
                                        dtype=in_dtype)
 
     data_array = sc.DataArray(data,
-                              coords={dims[0]: non_sparse_bin_edges},
+                              coords={
+                                  dims[0]: non_sparse_bin_edges,
+                                  LABEL_NAME: non_sparse_bin_edges
+                              },
                               attrs={ATTR_NAME: non_sparse_data},
-                              labels={LABEL_NAME: non_sparse_bin_edges},
                               masks={MASK_NAME: non_sparse_bin_edges})
 
     html = BeautifulSoup(make_html(data_array), features="html.parser")
     sections = html.find_all(class_="xr-section-item")
 
     expected_sections = [
-        "Dimensions", "Coordinates", "Labels", "Data", "Masks", "Attributes"
+        "Dimensions", "Coordinates", "Data", "Masks", "Attributes"
     ]
-    assert len(sections) == 6
+    assert len(sections) == 5
     for actual_section, expected_section in zip(sections, expected_sections):
         assert expected_section in actual_section.text
 
     attr_section = sections.pop(len(sections) - 1)
     assert_section(attr_section, ATTR_NAME, non_sparse_dims, in_dtype, in_unit)
 
-    data_section = sections.pop(3)
+    data_section = sections.pop(2)
     assert_section(data_section, "", dims, in_dtype, in_unit, has_sparse=True)
 
     dim_section = sections.pop(0)
     assert_dims_section(data, dim_section)
 
-    data_names = [dims[0], LABEL_NAME, MASK_NAME]
+    data_names = [dims[0], MASK_NAME]
 
     for section, name in zip(sections, data_names):
         assert_section(section,

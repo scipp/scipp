@@ -198,16 +198,6 @@ TEST(DatasetTest, setSparseCoord) {
   ASSERT_NO_THROW(d["a"]);
 }
 
-TEST(DatasetTest, setSparseLabels_missing_values_or_coord) {
-  Dataset d;
-  const auto sparse =
-      makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse});
-
-  ASSERT_ANY_THROW(d.setSparseCoord("a", Dim("label"), sparse));
-  d.setSparseCoord("a", Dim::X, sparse);
-  ASSERT_NO_THROW(d.setSparseCoord("a", Dim("label"), sparse));
-}
-
 TEST(DatasetTest, setSparseLabels_not_sparse_fail) {
   Dataset d;
   const auto dense = makeVariable<double>(Values{double{}});
