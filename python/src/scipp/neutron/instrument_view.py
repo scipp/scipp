@@ -555,7 +555,11 @@ class InstrumentView:
     def change_data_array(self, change):
         self.key = change["new"]
         self.update_colorbar()
-        self.update_colors({"new": self.slider.value})
+        if self.masks_cmap_or_color.value == "colormap":
+            self.update_masks_colormap({"new": self.masks_colormap.value})
+        else:
+            self.update_masks_solid_color({"new": self.masks_solid_color.value})
+        # self.update_colors({"new": self.slider.value})
 
     def update_colormap(self, change):
         self.params[self.key]["cmap"] = change["new"]
