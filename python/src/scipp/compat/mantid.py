@@ -181,7 +181,7 @@ def validate_and_get_unit(unit):
             sc.units.dimensionless / (sc.units.angstrom * sc.units.angstrom)
         ],
         "Label": ['spectrum', sc.units.dimensionless],
-        "Empty": ['spectrum', sc.units.dimensionless]
+        "Empty": ['empty', sc.units.dimensionless]
     }
 
     if unit not in known_units.keys():
