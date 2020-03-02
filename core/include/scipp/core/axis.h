@@ -93,7 +93,7 @@ public:
     if constexpr (std::is_same_v<Id, AxisId::DataArray>)
       return static_cast<bool>(m_unaligned);
     else
-      return m_unaligned.empty();
+      return !m_unaligned.empty();
   }
   /// Return untyped const view for data (values and optional variances).
   VariableConstView data() const {
@@ -182,7 +182,7 @@ public:
     if constexpr (std::is_same_v<Axis, DataArrayAxis>)
       return static_cast<bool>(m_unaligned);
     else
-      return m_unaligned.empty();
+      return !m_unaligned.empty();
   }
   VariableConstView data() const;
 
