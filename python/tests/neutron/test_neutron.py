@@ -91,3 +91,11 @@ def test_neutron_instrument_view_with_dataset():
     d['b'] = sc.Variable(['position', 'tof'],
                          values=np.arange(36.).reshape(4, 9))
     sc.neutron.instrument_view(d)
+
+
+def test_neutron_instrument_view_with_masks():
+    d = make_dataset_with_beamline()
+    x = np.transpose(d.coords['position'].values)[0, :]
+    d['a'].masks['amask'] = sc.Variable(dims=['position'],
+                                        values=np.less(np.abs(x), 0.5))
+    sc.neutron.instrument_view(d["a"])
