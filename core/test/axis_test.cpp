@@ -7,20 +7,6 @@
 using namespace scipp;
 using namespace scipp::core;
 
-TEST(DataArrayAxisTest, construct_default) {
-  DataArrayAxis axis;
-  EXPECT_FALSE(axis.hasData());
-  EXPECT_FALSE(axis.hasUnaligned());
-  EXPECT_FALSE(axis.unaligned());
-}
-
-TEST(DatasetAxisTest, construct_default) {
-  DatasetAxis axis;
-  EXPECT_FALSE(axis.hasData());
-  EXPECT_FALSE(axis.hasUnaligned());
-  EXPECT_TRUE(axis.unaligned().empty());
-}
-
 class DataArrayAxis_comparison_operators : public ::testing::Test {
 protected:
   DataArrayAxis_comparison_operators()
@@ -137,6 +123,61 @@ TEST_F(DatasetAxis_comparison_operators, data_and_unaligned) {
   expect_ne(a, DatasetAxis(var1, {{"a", var1}}));
   expect_ne(a, DatasetAxis(var1, {{"b", var2}}));
   expect_ne(a, DatasetAxis(var1, {{"a", var2}, {"b", var2}}));
+}
+
+TEST(DataArrayAxisTest, construct_default) {
+  DataArrayAxis axis;
+  EXPECT_FALSE(axis.hasData());
+  EXPECT_FALSE(axis.hasUnaligned());
+  EXPECT_FALSE(axis.unaligned());
+}
+
+TEST(DatasetAxisTest, construct_default) {
+  DatasetAxis axis;
+  EXPECT_FALSE(axis.hasData());
+  EXPECT_FALSE(axis.hasUnaligned());
+  EXPECT_TRUE(axis.unaligned().empty());
+}
+
+class AxisTest : public ::testing::Test {
+protected:
+  AxisTest()
+      : var1(makeVariable<double>(Values{1})),
+        var2(makeVariable<double>(Values{2})),
+        var3(makeVariable<double>(Values{3})), axis_a(var1, var2),
+        axis_b(var1, var3), axis(var1, {{"a", var2}, {"b", var3}})
+  {}
+
+  Variable var1;
+  Variable var2;
+  Variable var3;
+  DataArrayAxis axis_a;
+  DataArrayAxis axis_b;
+  DatasetAxis axis;
+};
+
+TEST_F(AxisTest, fixture) {
+  EXPECT_NE(var1, var2);
+  EXPECT_NE(var1, var3);
+  EXPECT_NE(var2, var3);
+  EXPECT_NE(axis_a, axis_b);
+}
+
+TEST_F(AxisTest, DataArrayAxis_construct_from_view) {
+  DataArrayAxisConstView const_view(axis_a);
+  DataArrayAxis copy(const_view);
+  EXPECT_EQ(copy, axis_a);
+}
+
+TEST_F(AxisTest, DatasetAxis_construct_from_view) {
+  DatasetAxisConstView const_view(axis);
+  DatasetAxis copy(const_view);
+  EXPECT_EQ(copy, axis);
+}
+
+TEST_F(AxisTest, DataArrayAxis_construct_from_dataset_view) {
+  EXPECT_EQ(DataArrayAxis(axis["a"]), axis_a);
+  EXPECT_EQ(DataArrayAxis(axis["b"]), axis_b);
 }
 
 TEST(DatasetAxisTest, hasUnaligned) {
