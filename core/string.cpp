@@ -194,22 +194,15 @@ auto format_data_view(const Key &name, const DataArrayConstView &data,
     s << format_variable(name, data.data(), datasetDims);
   else
     s << tab << name << '\n';
+  bool sparseCoords = false;
   for (const auto &[dim, coord] : data.coords())
     if (coord.dims().sparse()) {
-      s << tab << tab << "Sparse coordinate:\n";
+      if (!sparseCoords) {
+        s << tab << tab << "Sparse coords:\n";
+        sparseCoords = true;
+      }
       s << format_variable(std::string(tab) + std::string(tab) + to_string(dim),
                            coord, datasetDims);
-    }
-  bool sparseLabels = false;
-  for (const auto &[label_name, labels] : data.labels())
-    if (labels.dims().sparse()) {
-      if (!sparseLabels) {
-        s << tab << tab << "Sparse labels:\n";
-        sparseLabels = true;
-      }
-      s << format_variable(std::string(tab) + std::string(tab) +
-                               std::string(label_name),
-                           labels, datasetDims);
     }
 
   if (!data.attrs().empty()) {
@@ -243,11 +236,6 @@ std::string do_to_string(const D &dataset, const std::string &id,
       if (var.dims().sparseDim() == Dim::Invalid)
         s << format_variable(dim, var, dims);
     }
-  }
-  if (!dataset.labels().empty()) {
-    s << "Labels:\n";
-    for (const auto &[name, var] : dataset.labels())
-      s << format_variable(name, var, dims);
   }
   if (!dataset.attrs().empty()) {
     s << "Attributes:\n";
@@ -293,12 +281,6 @@ template <class T> Dimensions dimensions(const T &dataset) {
   }
   for (const auto &coord : dataset.coords()) {
     const auto &dims = coord.second.dims();
-    for (const auto dim : dims.labels())
-      if (!datasetDims.contains(dim))
-        datasetDims.add(dim, dims[dim]);
-  }
-  for (const auto &labels : dataset.labels()) {
-    const auto &dims = labels.second.dims();
     for (const auto dim : dims.labels())
       if (!datasetDims.contains(dim))
         datasetDims.add(dim, dims[dim]);

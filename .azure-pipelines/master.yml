@@ -122,6 +122,7 @@ stages:
       - job: 'docker'
         displayName: 'Docker'
         timeoutInMinutes: 30
+        condition: false
         pool:
           vmImage: 'ubuntu-latest'
         steps:

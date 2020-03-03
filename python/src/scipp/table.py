@@ -211,11 +211,9 @@ class TableViewer:
                 iterlist = scipp_obj
             else:
                 iterlist = {scipp_obj.name: scipp_obj}
-            for tag, field in zip(["coords", "labels", "masks", "data"], [
-                    scipp_obj.coords, scipp_obj.labels, scipp_obj.masks,
-                    iterlist
-            ]):
-                for name, var in field.items():
+            for tag, cat in zip(["coords", "masks", "data"],
+                                [scipp_obj.coords, scipp_obj.masks, iterlist]):
+                for name, var in cat.items():
                     ndims = len(var.dims)
                     name_str = str(name)
                     if ndims < 2:
@@ -326,7 +324,7 @@ class TableViewer:
         return
 
     def make_dict(self):
-        return {"coords": {}, "data": {}, "labels": {}, "masks": {}}
+        return {"coords": {}, "data": {}, "masks": {}}
 
     def make_hbox(self, group, key, size):
         hbox = self.tables[group][key]

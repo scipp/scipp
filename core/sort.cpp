@@ -50,11 +50,6 @@ DataArray sort(const DataArrayConstView &array, const Dim &key) {
   return sort(array, array.coords()[key]);
 }
 
-/// Return a DataArray sorted based on labels.
-DataArray sort(const DataArrayConstView &array, const std::string &key) {
-  return sort(array, array.labels()[key]);
-}
-
 /// Return a Dataset sorted based on key.
 Dataset sort(const DatasetConstView &dataset, const VariableConstView &key) {
   return concatenate(
@@ -64,11 +59,6 @@ Dataset sort(const DatasetConstView &dataset, const VariableConstView &key) {
 /// Return a Dataset sorted based on coordinate.
 Dataset sort(const DatasetConstView &dataset, const Dim &key) {
   return sort(dataset, dataset.coords()[key]);
-}
-
-/// Return a Dataset sorted based on labels.
-Dataset sort(const DatasetConstView &dataset, const std::string &key) {
-  return sort(dataset, dataset.labels()[key]);
 }
 
 } // namespace scipp::core

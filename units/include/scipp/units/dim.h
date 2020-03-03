@@ -18,7 +18,7 @@ public:
   constexpr static auto DSpacing = DimId::DSpacing;
   constexpr static auto Energy = DimId::Energy;
   constexpr static auto EnergyTransfer = DimId::EnergyTransfer;
-  constexpr static auto Group = DimId::Row;
+  constexpr static auto Group = DimId::Group;
   constexpr static auto Invalid = DimId::Invalid;
   constexpr static auto Position = DimId::Position;
   constexpr static auto Q = DimId::Q;

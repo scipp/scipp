@@ -20,8 +20,8 @@ std::vector<bool> make_bools(const scipp::index size, bool pattern);
 Variable makeRandom(const Dimensions &dims);
 
 /// Factory for creating datasets for testing. For a given instance, `make()`
-/// will return datasets with identical coords and labels, such that they are
-/// compatible in binary operations.
+/// will return datasets with identical coords, such that they are compatible in
+/// binary operations.
 class DatasetFactory3D {
 public:
   DatasetFactory3D(const scipp::index lx = 4, const scipp::index ly = 5,
@@ -59,8 +59,8 @@ auto make_1_labels(const std::string &name, const Dimensions &dims,
                    const units::Unit unit,
                    const std::initializer_list<T2> &data) {
   auto d = make_empty();
-  d.setLabels(
-      name, makeVariable<T>(Dimensions(dims), units::Unit(unit), Values(data)));
+  d.setCoord(Dim(name), makeVariable<T>(Dimensions(dims), units::Unit(unit),
+                                        Values(data)));
   return d;
 }
 

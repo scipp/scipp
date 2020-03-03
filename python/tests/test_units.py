@@ -14,7 +14,7 @@ class TestUnits(unittest.TestCase):
         self.assertEqual(repr(u), "\u212B")
 
     def test_variable_unit_repr(self):
-        var1 = sc.Variable([sc.Dim.X], values=np.arange(4))
+        var1 = sc.Variable(['x'], values=np.arange(4))
         u = sc.units.angstrom
         var1.unit = u
         self.assertEqual(repr(var1.unit), "\u212B")

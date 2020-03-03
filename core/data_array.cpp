@@ -20,8 +20,8 @@ template <class T> auto copy_map(const T &map) {
 DataArray::DataArray(const DataArrayConstView &view)
     : DataArray(view.hasData() ? std::optional<Variable>(view.data())
                                : std::optional<Variable>(),
-                copy_map(view.coords()), copy_map(view.labels()),
-                copy_map(view.masks()), copy_map(view.attrs()), view.name()) {}
+                copy_map(view.coords()), copy_map(view.masks()),
+                copy_map(view.attrs()), view.name()) {}
 
 DataArray::operator DataArrayConstView() const { return get(); }
 DataArray::operator DataArrayView() { return get(); }
@@ -94,9 +94,9 @@ auto apply_op_sparse_dense(Op op, const Coord &coord, const Data &data,
     const auto [offset, nbin, scale] = linear_edge_params(edges);
     for (const auto c : coord) {
       const auto bin = (c - offset) * scale;
-      auto w = get(weights, bin);
-      if (bin < 0.0 || bin >= nbin)
-        w = 0.0;
+      using w_type = decltype(get(weights, bin));
+      constexpr w_type out_of_bounds(0.0);
+      w_type w = bin < 0.0 || bin >= nbin ? out_of_bounds : get(weights, bin);
       if constexpr (vars) {
         const auto [val, var] = op(d, w);
         out_vals.emplace_back(val);
@@ -153,14 +153,14 @@ Variable sparse_dense_op_impl(Op op, const VariableConstView &sparseCoord_,
 }
 
 DataArray &DataArray::operator+=(const DataArrayConstView &other) {
-  expect::coordsAndLabelsAreSuperset(*this, other);
+  expect::coordsAreSuperset(*this, other);
   union_or_in_place(masks(), other.masks());
   data() += other.data();
   return *this;
 }
 
 DataArray &DataArray::operator-=(const DataArrayConstView &other) {
-  expect::coordsAndLabelsAreSuperset(*this, other);
+  expect::coordsAreSuperset(*this, other);
   union_or_in_place(masks(), other.masks());
   data() -= other.data();
   return *this;
@@ -170,14 +170,14 @@ template <class Op>
 DataArray &sparse_dense_op_inplace(Op op, DataArray &a,
                                    const DataArrayConstView &b) {
   if (!is_sparse_and_histogram(a, b)) {
-    expect::coordsAndLabelsAreSuperset(a, b);
+    expect::coordsAreSuperset(a, b);
     union_or_in_place(a.masks(), b.masks());
     op.inplace(a.data(), b.data());
   } else if (a.dims().sparse()) {
     const Dim dim = a.dims().sparseDim();
     // Coord for `dim` in `b` is mismatching that in `a` by definition. Use
     // slice to exclude this from comparison.
-    expect::coordsAndLabelsAreSuperset(a, b.slice({dim, 0}));
+    expect::coordsAreSuperset(a, b.slice({dim, 0}));
     union_or_in_place(a.masks(), b.masks());
     if (a.hasData()) {
       // Note the inefficiency here: Always creating temporary sparse data.
@@ -225,13 +225,12 @@ DataArray &DataArray::operator/=(const VariableConstView &other) {
 
 DataArray operator+(const DataArrayConstView &a, const DataArrayConstView &b) {
   return DataArray(a.data() + b.data(), union_(a.coords(), b.coords()),
-                   union_(a.labels(), b.labels()),
                    union_or(a.masks(), b.masks()));
 }
 
 DataArray operator-(const DataArrayConstView &a, const DataArrayConstView &b) {
   return {a.data() - b.data(), union_(a.coords(), b.coords()),
-          union_(a.labels(), b.labels()), union_or(a.masks(), b.masks())};
+          union_or(a.masks(), b.masks())};
 }
 
 template <class Op>
@@ -274,57 +273,54 @@ auto sparse_dense_coord_union(const DataArrayConstView &a,
 DataArray operator*(const DataArrayConstView &a, const DataArrayConstView &b) {
   const auto data = sparse_dense_op(Times{}, a, b);
   const auto coords = sparse_dense_coord_union(a, b);
-  return {std::move(data), std::move(coords), union_(a.labels(), b.labels()),
-          union_or(a.masks(), b.masks())};
+  return {std::move(data), std::move(coords), union_or(a.masks(), b.masks())};
 }
 
 DataArray operator/(const DataArrayConstView &a, const DataArrayConstView &b) {
   const auto data = sparse_dense_op(Divide{}, a, b);
   const auto coords = sparse_dense_coord_union(a, b);
-  return {std::move(data), std::move(coords), union_(a.labels(), b.labels()),
-          union_or(a.masks(), b.masks())};
+  return {std::move(data), std::move(coords), union_or(a.masks(), b.masks())};
 }
 
 DataArray operator+(const DataArrayConstView &a, const VariableConstView &b) {
-  return DataArray(a.data() + b, a.coords(), a.labels(), a.masks(), a.attrs());
+  return DataArray(a.data() + b, a.coords(), a.masks(), a.attrs());
 }
 
 DataArray operator-(const DataArrayConstView &a, const VariableConstView &b) {
-  return DataArray(a.data() - b, a.coords(), a.labels(), a.masks(), a.attrs());
+  return DataArray(a.data() - b, a.coords(), a.masks(), a.attrs());
 }
 
 DataArray operator*(const DataArrayConstView &a, const VariableConstView &b) {
-  return DataArray(a.data() * b, a.coords(), a.labels(), a.masks(), a.attrs());
+  return DataArray(a.data() * b, a.coords(), a.masks(), a.attrs());
 }
 
 DataArray operator/(const DataArrayConstView &a, const VariableConstView &b) {
-  return DataArray(a.data() / b, a.coords(), a.labels(), a.masks(), a.attrs());
+  return DataArray(a.data() / b, a.coords(), a.masks(), a.attrs());
 }
 
 DataArray operator+(const VariableConstView &a, const DataArrayConstView &b) {
-  return DataArray(a + b.data(), b.coords(), b.labels(), b.masks(), b.attrs());
+  return DataArray(a + b.data(), b.coords(), b.masks(), b.attrs());
 }
 
 DataArray operator-(const VariableConstView &a, const DataArrayConstView &b) {
-  return DataArray(a - b.data(), b.coords(), b.labels(), b.masks(), b.attrs());
+  return DataArray(a - b.data(), b.coords(), b.masks(), b.attrs());
 }
 
 DataArray operator*(const VariableConstView &a, const DataArrayConstView &b) {
-  return DataArray(a * b.data(), b.coords(), b.labels(), b.masks(), b.attrs());
+  return DataArray(a * b.data(), b.coords(), b.masks(), b.attrs());
 }
 
 DataArray operator/(const VariableConstView &a, const DataArrayConstView &b) {
-  return DataArray(a / b.data(), b.coords(), b.labels(), b.masks(), b.attrs());
+  return DataArray(a / b.data(), b.coords(), b.masks(), b.attrs());
 }
 
 DataArray astype(const DataArrayConstView &var, const DType type) {
-  return DataArray(astype(var.data(), type), var.coords(), var.labels(),
-                   var.masks(), var.attrs());
+  return DataArray(astype(var.data(), type), var.coords(), var.masks(),
+                   var.attrs());
 }
 
 DataArray reciprocal(const DataArrayConstView &a) {
-  return DataArray(reciprocal(a.data()), a.coords(), a.labels(), a.masks(),
-                   a.attrs());
+  return DataArray(reciprocal(a.data()), a.coords(), a.masks(), a.attrs());
 }
 
 } // namespace scipp::core
