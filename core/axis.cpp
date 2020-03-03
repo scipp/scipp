@@ -15,7 +15,7 @@ void UnalignedAccess::erase(const std::string &key) const {
 
 template <class Id, class UnalignedType>
 Axis<Id, UnalignedType>::Axis(const const_view_type &view)
-    : m_data(Variable(view.data())) {
+    : m_data(view.hasData() ? Variable(view.data()) : Variable()) {
   if constexpr (std::is_same_v<unaligned_type, Variable>)
     m_unaligned = Variable(view.unaligned());
   else
