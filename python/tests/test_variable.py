@@ -905,8 +905,7 @@ def test_nan_to_nan_with_neg_inf():
 
 
 def test_nan_to_nan_with_multiple_special_replacements():
-    a = sc.Variable(dims=['x'],
-                    values=np.array([1, np.nan, np.inf, -np.inf]))
+    a = sc.Variable(dims=['x'], values=np.array([1, np.nan, np.inf, -np.inf]))
     replace_nan = sc.Variable(value=-1.0)
     replace_pos_inf = sc.Variable(value=-2.0)
     replace_neg_inf = sc.Variable(value=-3.0)
@@ -934,8 +933,7 @@ def test_num_to_nan_out():
 
 
 def test_num_to_nan_out_with_multiple_special_replacements():
-    a = sc.Variable(dims=['x'],
-                    values=np.array([1, np.inf, -np.inf, np.nan]))
+    a = sc.Variable(dims=['x'], values=np.array([1, np.inf, -np.inf, np.nan]))
     out = sc.Variable(dims=['x'], values=np.zeros(4))
     replace = sc.Variable(value=0.0)
     # just replace nans
