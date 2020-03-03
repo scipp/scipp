@@ -67,7 +67,7 @@ public:
   VariableConcept(const Dimensions &dimensions);
   virtual ~VariableConcept() = default;
 
-  virtual DType dtype(bool sparse = false) const noexcept = 0;
+  virtual DType dtype() const noexcept = 0;
   virtual VariableConceptHandle clone() const = 0;
   virtual VariableConceptHandle
   makeDefaultFromParent(const Dimensions &dims) const = 0;
@@ -135,13 +135,7 @@ public:
   VariableConceptT(const Dimensions &dimensions)
       : VariableConcept(dimensions) {}
 
-  DType dtype(bool sparse = false) const noexcept override {
-    if (!sparse)
-      return scipp::core::dtype<T>;
-    if constexpr (is_sparse_container<T>::value)
-      return scipp::core::dtype<typename T::value_type>;
-    std::terminate();
-  }
+  DType dtype() const noexcept override { return scipp::core::dtype<T>; }
   static DType static_dtype() noexcept { return scipp::core::dtype<T>; }
 
   virtual scipp::span<T> values() = 0;
@@ -599,7 +593,7 @@ Variable Variable::create(units::Unit &&u, Dims &&d, Shape &&s,
 template <class... Ts>
 template <class T>
 Variable Variable::ConstructVariable<Ts...>::Maker<T>::apply(Ts &&... ts) {
-  return makeVariable<detail::element_type_t<T>>(std::forward<Ts>(ts)...);
+  return makeVariable<T>(std::forward<Ts>(ts)...);
 }
 
 template <class... Ts>

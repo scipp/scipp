@@ -198,9 +198,10 @@ template <class Axis>
 AxisView<Axis> AxisView<Axis>::
 operator+=(const VariableConstView &other) const {
   data() += other;
-  if constexpr (std::is_same_v<unaligned_type, Variable>)
-    unaligned() += other;
-  else
+  if constexpr (std::is_same_v<unaligned_type, Variable>) {
+    if (this->hasUnaligned())
+      unaligned() += other;
+  } else
     for (const auto &item : unaligned())
       item.second += other;
   return *this;
@@ -209,9 +210,10 @@ template <class Axis>
 AxisView<Axis> AxisView<Axis>::
 operator-=(const VariableConstView &other) const {
   data() -= other;
-  if constexpr (std::is_same_v<unaligned_type, Variable>)
-    unaligned() -= other;
-  else
+  if constexpr (std::is_same_v<unaligned_type, Variable>) {
+    if (this->hasUnaligned())
+      unaligned() -= other;
+  } else
     for (const auto &item : unaligned())
       item.second -= other;
   return *this;
@@ -220,9 +222,10 @@ template <class Axis>
 AxisView<Axis> AxisView<Axis>::
 operator*=(const VariableConstView &other) const {
   data() *= other;
-  if constexpr (std::is_same_v<unaligned_type, Variable>)
-    unaligned() *= other;
-  else
+  if constexpr (std::is_same_v<unaligned_type, Variable>) {
+    if (this->hasUnaligned())
+      unaligned() *= other;
+  } else
     for (const auto &item : unaligned())
       item.second *= other;
   return *this;
@@ -231,9 +234,10 @@ template <class Axis>
 AxisView<Axis> AxisView<Axis>::
 operator/=(const VariableConstView &other) const {
   data() /= other;
-  if constexpr (std::is_same_v<unaligned_type, Variable>)
-    unaligned() /= other;
-  else
+  if constexpr (std::is_same_v<unaligned_type, Variable>) {
+    if (this->hasUnaligned())
+      unaligned() /= other;
+  } else
     for (const auto &item : unaligned())
       item.second /= other;
   return *this;

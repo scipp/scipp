@@ -392,11 +392,11 @@ template <class Op> struct Transform {
     auto volume = dims.volume();
     Variable out =
         (handles->hasVariances() || ...)
-            ? makeVariable<element_type_t<Out>>(
-                  Dimensions{dims}, Values(volume, default_init_elements),
-                  Variances(volume, default_init_elements))
-            : makeVariable<element_type_t<Out>>(
-                  Dimensions{dims}, Values(volume, default_init_elements));
+            ? makeVariable<Out>(Dimensions{dims},
+                                Values(volume, default_init_elements),
+                                Variances(volume, default_init_elements))
+            : makeVariable<Out>(Dimensions{dims},
+                                Values(volume, default_init_elements));
     auto &outT = static_cast<VariableConceptT<Out> &>(out.data());
     do_transform(op, outT, std::tuple<>(), as_view{*handles, dims}...);
     return out;
