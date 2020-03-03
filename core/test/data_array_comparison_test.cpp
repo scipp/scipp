@@ -18,7 +18,10 @@ using namespace scipp::core;
 class DataArray_comparison_operators : public ::testing::Test {
 protected:
   DataArray_comparison_operators()
-      : sparse_variable(makeVariable<double>(
+      : default_event_weights(makeVariable<double>(
+            Dims{Dim::Y, Dim::Z}, Shape{3l, 2l}, Values{1, 1, 1, 1, 1, 1},
+            Variances{1, 1, 1, 1, 1, 1})),
+        sparse_variable(makeVariable<double>(
             Dims{Dim::Y, Dim::Z, Dim::X}, Shape{3l, 2l, Dimensions::Sparse})) {
     dataset.setCoord(Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{4}));
     dataset.setCoord(Dim::Y, makeVariable<double>(Dims{Dim::Y}, Shape{3}));
@@ -40,6 +43,7 @@ protected:
     x.unaligned().set("sparse_coord", sparse_variable);
     x.unaligned().set("sparse_coord_and_val", sparse_variable);
     dataset.coords().set(Dim::X, x);
+    dataset.setData("sparse_coord", default_event_weights);
     dataset.setAttr("sparse_coord", "attr", makeVariable<int>(Values{int{}}));
     dataset.setData("sparse_coord_and_val", sparse_variable);
     dataset.setAttr("sparse_coord_and_val", "attr",
@@ -61,6 +65,7 @@ protected:
   }
 
   Dataset dataset;
+  Variable default_event_weights;
   Variable sparse_variable;
 };
 
