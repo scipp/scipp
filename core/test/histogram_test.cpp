@@ -45,25 +45,25 @@ TEST(HistogramTest, is_histogram) {
   EXPECT_FALSE(is_histogram(DataArray(sparse, {{Dim::X, coordX}}), Dim::X));
 }
 
-Dataset make_2d_sparse_coord_only(const std::string &name) {
-  Dataset sparse;
+DataArray make_1d_events_default_weights() {
+  DataArray events(makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 1, 1},
+                                        Variances{1, 1, 1}));
   auto var =
       makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{3l, Dimensions::Sparse});
   var.sparseValues<double>()[0] = {1.5, 2.5, 3.5, 4.5, 5.5};
   var.sparseValues<double>()[1] = {3.5, 4.5, 5.5, 6.5, 7.5};
   var.sparseValues<double>()[2] = {-1, 0, 0, 1, 1, 2, 2, 2, 4, 4, 4, 6};
-  DatasetAxis y(Variable{});
-  y.unaligned().set(name, var);
-  sparse.coords().set(Dim::Y, y);
-  return sparse;
+
+  events.coords().set(Dim::Y, var);
+  return events;
 }
 
 TEST(HistogramTest, fail_edges_not_sorted) {
-  auto sparse = make_2d_sparse_coord_only("sparse");
-  ASSERT_THROW(core::histogram(sparse["sparse"],
-                               makeVariable<double>(Dims{Dim::Y}, Shape{6},
-                                                    Values{1, 3, 2, 4, 5, 6})),
-               except::BinEdgeError);
+  auto events = make_1d_events_default_weights();
+  ASSERT_THROW(
+      core::histogram(events, makeVariable<double>(Dims{Dim::Y}, Shape{6},
+                                                   Values{1, 3, 2, 4, 5, 6})),
+      except::BinEdgeError);
 }
 
 auto make_single_sparse() {
@@ -121,11 +121,11 @@ TEST(HistogramTest, above) {
 }
 
 TEST(HistogramTest, data_view) {
-  auto sparse = make_2d_sparse_coord_only("sparse");
+  auto events = make_1d_events_default_weights();
   std::vector<double> ref{1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 2, 3, 0, 3, 0};
   auto edges =
       makeVariable<double>(Dims{Dim::Y}, Shape{6}, Values{1, 2, 3, 4, 5, 6});
-  auto hist = core::histogram(sparse["sparse"], edges);
+  auto hist = core::histogram(events, edges);
   auto expected =
       make_expected(makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{3, 5},
                                          units::Unit(units::counts),
@@ -136,8 +136,7 @@ TEST(HistogramTest, data_view) {
   EXPECT_EQ(hist, expected);
 }
 
-TEST(HistogramTest, with_data) {
-  auto sparse = make_2d_sparse_coord_only("sparse");
+TEST(HistogramTest, weight_lists) {
   Variable data = makeVariable<double>(
       Dimensions{{Dim::X, 3}, {Dim::Y, Dimensions::Sparse}}, Values{},
       Variances{});
@@ -148,7 +147,8 @@ TEST(HistogramTest, with_data) {
   data.sparseVariances<double>()[1] = {2, 2, 2, 2, 2};
   data.sparseVariances<double>()[2] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
   data.setUnit(units::counts);
-  sparse.setData("sparse", data);
+  auto events = make_1d_events_default_weights();
+  events.setData(data);
   auto edges =
       makeVariable<double>(Dims{Dim::Y}, Shape{6}, Values{1, 2, 3, 4, 5, 6});
   std::vector<double> ref{1, 1, 1, 2, 2, 0, 0, 2, 2, 2, 2, 3, 0, 3, 0};
@@ -159,13 +159,14 @@ TEST(HistogramTest, with_data) {
                                          Variances(ref.begin(), ref.end())),
                     edges);
 
-  EXPECT_EQ(core::histogram(sparse["sparse"], edges), expected);
+  EXPECT_EQ(core::histogram(events, edges), expected);
 }
 
 TEST(HistogramTest, dataset) {
-  auto sparse = make_2d_sparse_coord_only("a");
-  sparse.setData("b", sparse["a"]);
-  sparse["b"].coords()[Dim::Y] += makeVariable<double>(Values{1.0});
+  Dataset events;
+  events.setData("a", make_1d_events_default_weights());
+  events.setData("b", events["a"]);
+  events["b"].coords()[Dim::Y] += makeVariable<double>(Values{1.0});
   std::vector<double> a{1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 2, 3, 0, 3, 0};
   std::vector<double> b{0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 2, 2, 3, 0, 3};
   const auto coord =
@@ -181,17 +182,18 @@ TEST(HistogramTest, dataset) {
                                              Values(b.begin(), b.end()),
                                              Variances(b.begin(), b.end())));
 
-  EXPECT_EQ(core::histogram(sparse, coord), expected);
+  EXPECT_EQ(core::histogram(events, coord), expected);
 }
 
 TEST(HistogramTest, dataset_own_coord) {
-  auto sparse = make_2d_sparse_coord_only("a");
-  sparse.setData("b", sparse["a"]);
-  sparse["b"].coords()[Dim::Y] += makeVariable<double>(Values{1.0});
+  Dataset events;
+  events.setData("a", make_1d_events_default_weights());
+  events.setData("b", events["a"]);
+  events["b"].coords()[Dim::Y] += makeVariable<double>(Values{1.0});
   const auto coord =
       makeVariable<double>(Dims{Dim::Y}, Shape{6}, Values{1, 2, 3, 4, 5, 6});
-  const auto expected = core::histogram(sparse, coord);
+  const auto expected = core::histogram(events, coord);
 
-  sparse.setCoord(Dim::Y, coord);
-  EXPECT_EQ(core::histogram(sparse, Dim::Y), expected);
+  events.setCoord(Dim::Y, coord);
+  EXPECT_EQ(core::histogram(events, Dim::Y), expected);
 }
