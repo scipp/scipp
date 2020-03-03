@@ -353,8 +353,7 @@ TEST_F(GroupbyWithBinsTest, two_bin) {
 }
 
 auto make_sparse_in() {
-  auto var =
-      makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{3l, Dimensions::Sparse});
+  auto var = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{3});
   const auto &var_ = var.sparseValues<double>();
   var_[0] = {1, 2, 3};
   var_[1] = {4, 5};
@@ -363,8 +362,7 @@ auto make_sparse_in() {
 }
 
 auto make_sparse_out(bool mask = false) {
-  auto var = makeVariable<double>(Dims{Dim("labels"), Dim(Dim::X)},
-                                  Shape{2l, Dimensions::Sparse});
+  auto var = makeVariable<event_list<double>>(Dims{Dim("labels")}, Shape{2});
   const auto &var_ = var.sparseValues<double>();
   if (mask)
     var_[0] = {1, 2, 3};

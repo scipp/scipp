@@ -5,6 +5,7 @@
 #ifndef SCIPP_CORE_TRANSFORM_SUBSPAN_H
 #define SCIPP_CORE_TRANSFORM_SUBSPAN_H
 
+#include "scipp/core/event.h"
 #include "scipp/core/subspan_view.h"
 #include "scipp/core/transform.h"
 
@@ -17,7 +18,7 @@ static constexpr auto erase = [](Dimensions dims, const Dim dim) {
 };
 static constexpr auto need_subspan = [](const VariableConstView &var,
                                         const Dim dim) {
-  return !var.dims().sparse() && var.dims().contains(dim);
+  return !is_events(var) && var.dims().contains(dim);
 };
 
 static constexpr auto maybe_subspan = [](VariableConstView &var,

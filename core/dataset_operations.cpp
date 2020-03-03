@@ -51,14 +51,8 @@ auto concat(const T1 &a, const T2 &b, const Dim dim, const DimT &dimsA,
   std::map<typename T1::key_type, typename T1::mapped_type> out;
   for (const auto &[key, a_] : a) {
     if (dim_of_coord(a_, key) == dim) {
-      if (a_.dims().sparseDim() == dim) {
-        if (b[key].dims().sparseDim() == dim)
-          out.emplace(key, concatenate(a_, b[key], dim));
-        else
-          throw except::SparseDataError("Either both or neither of the inputs "
-                                        "must be sparse in given dim.");
-      } else if ((a_.dims()[dim] == dimsA.at(dim)) !=
-                 (b[key].dims()[dim] == dimsB.at(dim))) {
+      if ((a_.dims()[dim] == dimsA.at(dim)) !=
+          (b[key].dims()[dim] == dimsB.at(dim))) {
         throw except::BinEdgeError(
             "Either both or neither of the inputs must be bin edges.");
       } else if (a_.dims()[dim] == dimsA.at(dim)) {
@@ -163,6 +157,9 @@ Dataset rebin(const DatasetConstView &d, const Dim dim,
 
 DataArray resize(const DataArrayConstView &a, const Dim dim,
                  const scipp::index size) {
+  // TODO Where was the sparse resize used? Now it should turn into a dtype
+  // change, dropping an event coords?
+  /*
   if (a.dims().sparse()) {
     const auto resize_if_sparse = [dim, size](const auto &var) {
       return var.dims().sparse()
@@ -188,7 +185,9 @@ DataArray resize(const DataArrayConstView &a, const Dim dim,
     return DataArray{a.hasData() ? resize(a.data(), dim, size)
                                  : std::optional<Variable>{},
                      std::move(coords), std::move(masks), std::move(attrs)};
-  } else {
+  } else
+    */
+  {
     return apply_to_data_and_drop_dim(
         a, [](auto &&... _) { return resize(_...); }, dim, size);
   }

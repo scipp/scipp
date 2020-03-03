@@ -59,8 +59,7 @@ TEST(SliceTest, test_end_valid) {
 
 TEST(DatasetTest, simple_sparse_slice) {
   Dataset dataset;
-  auto var =
-      makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, Dimensions::Sparse});
+  auto var = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2});
   var.sparseValues<double>()[0] = {4, 5, 6};
   var.sparseValues<double>()[1] = {7, 8, 9};
   dataset.setData("data", var);
@@ -73,15 +72,13 @@ TEST(DatasetTest, simple_sparse_slice) {
 
 TEST(DatasetTest, simple_sparse_slice_and_sparse_coords) {
   Dataset dataset;
-  auto var =
-      makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, Dimensions::Sparse});
+  auto var = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2});
   var.sparseValues<double>()[0] = {4, 5, 6};
   var.sparseValues<double>()[1] = {7, 8, 9};
   dataset.setData("data", var);
   dataset.setCoord(Dim::Y,
                    makeVariable<double>(Dims{Dim::Y}, Shape{2}, Values{1, 2}));
-  auto sparseCoord =
-      makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, Dimensions::Sparse});
+  auto sparseCoord = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2});
   sparseCoord.sparseValues<double>()[0] = {1, 2, 3};
   sparseCoord.sparseValues<double>()[1] = {4, 5, 6};
   DatasetAxis x;
@@ -153,10 +150,9 @@ TEST_F(Dataset3DTest, dimension_extent_check_non_coord_dimension_fail) {
 
 TEST_F(Dataset3DTest, data_check_upon_setting_sparse_coordinates) {
   Dataset sparse;
-  auto data_var = makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse});
+  auto data_var = makeVariable<event_list<double>>(Dims{}, Shape{});
   data_var.sparseValues<double>()[0] = {1, 1, 1};
-  auto coords_var =
-      makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse});
+  auto coords_var = makeVariable<event_list<double>>(Dims{}, Shape{});
   coords_var.sparseValues<double>()[0] = {1, 2, 3};
   sparse.setData("sparse_x", data_var);
   // The following should be OK. Data is sparse
@@ -322,8 +318,8 @@ TEST_P(Dataset3DTest_slice_x, slice) {
 TEST_P(Dataset3DTest_slice_sparse, slice) {
   Dataset ds;
   const auto pos = GetParam();
-  auto var = makeVariable<double>(Dims{Dim::X, Dim::Y, Dim::Z},
-                                  Shape{2l, 2l, Dimensions::Sparse});
+  auto var =
+      makeVariable<event_list<double>>(Dims{Dim::X, Dim::Y}, Shape{2, 2});
   var.sparseValues<double>()[0] = {1, 2, 3};
   var.sparseValues<double>()[1] = {4, 5, 6};
   var.sparseValues<double>()[2] = {7};

@@ -54,22 +54,20 @@ TEST(MergeTest, simple) {
 }
 
 TEST(MergeTest, sparse) {
-  auto sparseCoord = makeVariable<int>(Dims{Dim::X}, Shape{Dimensions::Sparse});
+  auto sparseCoord = makeVariable<event_list<int>>(Dims{}, Shape{});
   sparseCoord.sparseValues<int>()[0] = {1, 2, 3, 4};
   DatasetAxis x;
   x.unaligned().set("sparse", sparseCoord);
 
   Dataset a;
   {
-    a.setData("sparse",
-              makeVariable<int>(Dims{Dim::X}, Shape{Dimensions::Sparse}));
+    a.setData("sparse", makeVariable<event_list<int>>(Dims{}, Shape{}));
     a.coords().set(Dim::X, x);
   }
 
   Dataset b;
   {
-    b.setData("sparse",
-              makeVariable<int>(Dims{Dim::X}, Shape{Dimensions::Sparse}));
+    b.setData("sparse", makeVariable<event_list<int>>(Dims{}, Shape{}));
     b.coords().set(Dim::X, x);
   }
 
@@ -92,16 +90,14 @@ TEST(MergeTest, non_matching_dense_data) {
 TEST(MergeTest, non_matching_sparse_data) {
   Dataset a;
   {
-    auto data =
-        makeVariable<int>(Dims{Dim::X, Dim::Y}, Shape{1l, Dimensions::Sparse});
+    auto data = makeVariable<event_list<int>>(Dims{Dim::X}, Shape{1});
     data.sparseValues<int>()[0] = {2, 3};
     a.setData("sparse", data);
   }
 
   Dataset b;
   {
-    auto data =
-        makeVariable<int>(Dims{Dim::X, Dim::Y}, Shape{1l, Dimensions::Sparse});
+    auto data = makeVariable<event_list<int>>(Dims{Dim::X}, Shape{1});
     data.sparseValues<int>()[0] = {1, 2};
     b.setData("sparse", data);
   }
@@ -122,8 +118,7 @@ TEST(MergeTest, non_matching_dense_coords) {
 TEST(MergeTest, non_matching_sparse_coords) {
   Dataset a;
   {
-    auto coord =
-        makeVariable<int>(Dims{Dim::X, Dim::Y}, Shape{1l, Dimensions::Sparse});
+    auto coord = makeVariable<event_list<int>>(Dims{Dim::X}, Shape{1});
     coord.sparseValues<int>()[0] = {2, 3};
     DatasetAxis y;
     y.unaligned().set("sparse", coord);
@@ -132,8 +127,7 @@ TEST(MergeTest, non_matching_sparse_coords) {
 
   Dataset b;
   {
-    auto coord =
-        makeVariable<int>(Dims{Dim::X, Dim::Y}, Shape{1l, Dimensions::Sparse});
+    auto coord = makeVariable<event_list<int>>(Dims{Dim::X}, Shape{1});
     coord.sparseValues<int>()[0] = {1, 2};
     DatasetAxis y;
     y.unaligned().set("sparse", coord);
@@ -154,14 +148,12 @@ TEST(MergeTest, non_matching_dense_labels) {
 }
 
 TEST(MergeTest, non_matching_sparse_labels) {
-  auto coord =
-      makeVariable<int>(Dims{Dim::X, Dim::Y}, Shape{1l, Dimensions::Sparse});
+  auto coord = makeVariable<event_list<int>>(Dims{Dim::X}, Shape{1});
   coord.sparseValues<int>()[0] = {1, 2};
 
   Dataset a;
   {
-    auto label =
-        makeVariable<int>(Dims{Dim::X, Dim::Y}, Shape{1l, Dimensions::Sparse});
+    auto label = makeVariable<event_list<int>>(Dims{Dim::X}, Shape{1});
     label.sparseValues<int>()[0] = {2, 3};
     DatasetAxis y;
     y.unaligned().set("sparse", coord);
@@ -173,8 +165,7 @@ TEST(MergeTest, non_matching_sparse_labels) {
 
   Dataset b;
   {
-    auto label =
-        makeVariable<int>(Dims{Dim::X, Dim::Y}, Shape{1l, Dimensions::Sparse});
+    auto label = makeVariable<event_list<int>>(Dims{Dim::X}, Shape{1});
     label.sparseValues<int>()[0] = {1, 2};
     DatasetAxis y;
     y.unaligned().set("sparse", coord);

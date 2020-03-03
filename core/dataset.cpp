@@ -143,14 +143,10 @@ namespace extents {
 // Internally use negative extent -1 to indicate unknown edge state. The `-1`
 // is required for dimensions with extent 0.
 scipp::index makeUnknownEdgeState(const scipp::index extent) {
-  if (extent == Dimensions::Sparse)
-    return extent;
   return -extent - 1;
 }
 scipp::index shrink(const scipp::index extent) { return extent - 1; }
-bool isUnknownEdgeState(const scipp::index extent) {
-  return extent < 0 && extent != Dimensions::Sparse;
-}
+bool isUnknownEdgeState(const scipp::index extent) { return extent < 0; }
 scipp::index decodeExtent(const scipp::index extent) {
   if (isUnknownEdgeState(extent))
     return -extent - 1;
@@ -172,11 +168,8 @@ void setExtent(std::unordered_map<Dim, scipp::index> &dims, const Dim dim,
   // is required for dimensions with extent 0.
   if (it == dims.end()) {
     dims[dim] = extents::makeUnknownEdgeState(extent);
-  } else if (extent != Dimensions::Sparse) {
+  } else {
     auto &heldExtent = it->second;
-    if (heldExtent == Dimensions::Sparse) {
-      heldExtent = extents::makeUnknownEdgeState(extent);
-    }
     if (extents::isUnknownEdgeState(heldExtent)) {
       if (extents::isSame(extent, heldExtent)) { // Do nothing
       } else if (extents::oneLarger(extent, heldExtent) && isCoord) {
@@ -206,10 +199,8 @@ void setExtent(std::unordered_map<Dim, scipp::index> &dims, const Dim dim,
 /// be "resized" in this way.
 void Dataset::setDims(const Dimensions &dims, const Dim coordDim) {
   auto tmp = m_dims;
-  for (const auto dim : dims.denseLabels())
+  for (const auto dim : dims.labels())
     extents::setExtent(tmp, dim, dims[dim], dim == coordDim);
-  if (dims.sparse())
-    extents::setExtent(tmp, dims.sparseDim(), Dimensions::Sparse, false);
   m_dims = tmp;
 }
 

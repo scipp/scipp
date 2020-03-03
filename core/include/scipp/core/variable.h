@@ -355,7 +355,7 @@ public:
   const Dimensions &dims() const & { return m_object->dims(); }
   void setDims(const Dimensions &dimensions);
 
-  DType dtype() const noexcept { return data().dtype(dims().sparse()); }
+  DType dtype() const noexcept { return data().dtype(); }
 
   bool hasVariances() const noexcept { return data().hasVariances(); }
 
@@ -517,25 +517,14 @@ template <class T, class... Ts> Variable makeVariable(Ts &&... ts) {
     auto [valArgs, varArgs, nonData] =
         helper::template extractArguments<units::Unit, Dims, Shape>(
             std::forward<Ts>(ts)...);
-    const auto &shape = std::get<Shape>(nonData);
-    const auto &d = shape.data;
-    if (std::find(d.cbegin(), d.cend(), Dimensions::Sparse) != d.end())
-      return helper::template construct<sparse_container<T>>(
-          std::move(valArgs), std::move(varArgs), std::move(nonData));
-    else
-      return helper::template construct<T>(
-          std::move(valArgs), std::move(varArgs), std::move(nonData));
+    return helper::template construct<T>(std::move(valArgs), std::move(varArgs),
+                                         std::move(nonData));
   } else {
     auto [valArgs, varArgs, nonData] =
         helper::template extractArguments<units::Unit, Dimensions>(
             std::forward<Ts>(ts)...);
-    const auto &dimensions = std::get<Dimensions>(nonData);
-    if (dimensions.sparse())
-      return helper::template construct<sparse_container<T>>(
-          std::move(valArgs), std::move(varArgs), std::move(nonData));
-    else
-      return helper::template construct<T>(
-          std::move(valArgs), std::move(varArgs), std::move(nonData));
+    return helper::template construct<T>(std::move(valArgs), std::move(varArgs),
+                                         std::move(nonData));
   }
 }
 

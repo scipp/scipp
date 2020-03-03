@@ -19,6 +19,7 @@ class Dataset;
 
 template <class T>
 using sparse_container = boost::container::small_vector<T, 8>;
+template <class T> using event_list = sparse_container<T>;
 
 template <class T> struct is_sparse : std::false_type {};
 template <class T> struct is_sparse<sparse_container<T>> : std::true_type {};

@@ -25,8 +25,6 @@ constexpr int32_t NDIM_MAX = 6;
 /// dimension is inner dimension.
 class SCIPP_CORE_EXPORT Dimensions {
 public:
-  static constexpr auto Sparse = std::numeric_limits<scipp::index>::min();
-
   constexpr Dimensions() noexcept {}
   Dimensions(const Dim dim, const scipp::index size)
       : Dimensions({{dim, size}}) {}
@@ -46,18 +44,15 @@ public:
       if (m_dims[i] != other.m_dims[i])
         return false;
     }
-    if (m_dims[NDIM_MAX] != other.m_dims[NDIM_MAX])
-      return false;
     return true;
   }
   constexpr bool operator!=(const Dimensions &other) const noexcept {
     return !(*this == other);
   }
 
-  constexpr bool empty() const noexcept { return m_ndim == 0 && !sparse(); }
+  constexpr bool empty() const noexcept { return m_ndim == 0; }
 
-  /// Return the volume of the space defined by *this. If there is a sparse
-  /// dimension the volume of the dense subspace is returned.
+  /// Return the volume of the space defined by *this.
   constexpr scipp::index volume() const noexcept {
     scipp::index volume{1};
     for (int32_t dim = 0; dim < m_ndim; ++dim)
@@ -65,38 +60,18 @@ public:
     return volume;
   }
 
-  /// Return true if there is a sparse dimension.
-  constexpr bool sparse() const noexcept {
-    return m_dims[m_ndim] != Dim::Invalid;
-  }
-
-  /// Return the label of a potential sparse dimension, Dim::Invalid otherwise.
-  constexpr Dim sparseDim() const noexcept { return m_dims[m_ndim]; }
-
   scipp::span<const scipp::index> shape() const && = delete;
-  /// Return the shape of the space defined by *this. If there is a sparse
-  /// dimension the shape of the dense subspace is returned.
+  /// Return the shape of the space defined by *this.
   constexpr scipp::span<const scipp::index> shape() const &noexcept {
     return {m_shape, m_shape + m_ndim};
   }
 
-  /// Return number of non-sparse dims
+  /// Return number of dims
   constexpr uint16_t ndim() const noexcept { return m_ndim; }
 
   scipp::span<const Dim> labels() const && = delete;
-  /// Return the labels of the space defined by *this, including the label of a
-  /// potential sparse dimension.
+  /// Return the labels of the space defined by *this.
   constexpr scipp::span<const Dim> labels() const &noexcept {
-    if (!sparse())
-      return {m_dims, m_dims + m_ndim};
-    else
-      return {m_dims, m_dims + m_ndim + 1};
-  }
-
-  scipp::span<const Dim> denseLabels() const && = delete;
-  /// Return the labels of the space defined by *this, excluding the label of a
-  /// potential sparse dimension.
-  constexpr scipp::span<const Dim> denseLabels() const &noexcept {
     return {m_dims, m_dims + m_ndim};
   }
 
@@ -107,11 +82,6 @@ public:
 
   /// Return true if `dim` is one of the labels in *this.
   constexpr bool contains(const Dim dim) const noexcept {
-    return denseContains(dim) || (sparse() && sparseDim() == dim);
-  }
-
-  /// Return true if `dim` is one of the dense labels in *this.
-  constexpr bool denseContains(const Dim dim) const noexcept {
     for (int32_t i = 0; i < m_ndim; ++i)
       if (m_dims[i] == dim)
         return true;
@@ -148,14 +118,10 @@ private:
   // NDIM_MAX is changed?
   scipp::index m_shape[NDIM_MAX]{-1, -1, -1, -1, -1, -1};
   int16_t m_ndim{0};
-  /// Dimensions labels. This is exceeding the size of the shape by one for the
-  /// purpose of storing the sparse dimension's label.
-  Dim m_dims[NDIM_MAX + 1]{Dim::Invalid, Dim::Invalid, Dim::Invalid,
-                           Dim::Invalid, Dim::Invalid, Dim::Invalid,
-                           Dim::Invalid};
+  /// Dimensions labels.
+  Dim m_dims[NDIM_MAX]{Dim::Invalid, Dim::Invalid, Dim::Invalid,
+                       Dim::Invalid, Dim::Invalid, Dim::Invalid};
 };
-
-SCIPP_CORE_EXPORT Dimensions denseDims(const Dimensions &dims);
 
 SCIPP_CORE_EXPORT constexpr Dimensions merge(const Dimensions &a) noexcept {
   return a;

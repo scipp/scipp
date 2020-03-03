@@ -35,8 +35,8 @@ private:
 
 protected:
   Dataset_comparison_operators()
-      : sparse_variable(makeVariable<double>(
-            Dims{Dim::Y, Dim::Z, Dim::X}, Shape{3l, 2l, Dimensions::Sparse})) {
+      : sparse_variable(makeVariable<event_list<double>>(Dims{Dim::Y, Dim::Z},
+                                                         Shape{3, 2})) {
     dataset.setCoord(Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{4}));
     dataset.setCoord(Dim::Y, makeVariable<double>(Dims{Dim::Y}, Shape{3}));
 
@@ -244,7 +244,7 @@ TEST_F(Dataset_comparison_operators, different_data_insertion_order) {
 TEST_F(Dataset_comparison_operators, with_sparse_dimension_data) {
   // a and b same, c different number of sparse values
   auto a = make_empty();
-  auto data = makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse});
+  auto data = makeVariable<event_list<double>>(Dims{}, Shape{});
   const std::string var_name = "test_var";
   data.sparseValues<double>()[0] = {1, 2, 3};
   a.setData(var_name, data);

@@ -54,9 +54,9 @@ TYPED_TEST(CoordsViewTest, item_access) {
 
 TYPED_TEST(CoordsViewTest, sparse_coords_values_and_coords) {
   Dataset d;
-  auto data = makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse});
+  auto data = makeVariable<event_list<double>>(Dims{}, Shape{});
   data.sparseValues<double>()[0] = {1, 2, 3};
-  auto s_coords = makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse});
+  auto s_coords = makeVariable<event_list<double>>(Dims{}, Shape{});
   s_coords.sparseValues<double>()[0] = {4, 5, 6};
   d.setData("test", data);
   DatasetAxis x(Variable{});
@@ -66,7 +66,7 @@ TYPED_TEST(CoordsViewTest, sparse_coords_values_and_coords) {
   auto sparseX =
       d["test"].coords()[Dim::X].unaligned().sparseValues<double>()[0];
   ASSERT_EQ(3, sparseX.size());
-  ASSERT_EQ(scipp::core::sparse_container<double>({4, 5, 6}), sparseX);
+  ASSERT_EQ(scipp::core::event_list<double>({4, 5, 6}), sparseX);
 }
 
 TYPED_TEST(CoordsViewTest, iterators_empty_coords) {

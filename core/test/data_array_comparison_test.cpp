@@ -21,8 +21,8 @@ protected:
       : default_event_weights(makeVariable<double>(
             Dims{Dim::Y, Dim::Z}, Shape{3l, 2l}, Values{1, 1, 1, 1, 1, 1},
             Variances{1, 1, 1, 1, 1, 1})),
-        sparse_variable(makeVariable<double>(
-            Dims{Dim::Y, Dim::Z, Dim::X}, Shape{3l, 2l, Dimensions::Sparse})) {
+        sparse_variable(makeVariable<sparse_container<double>>(
+            Dims{Dim::Y, Dim::Z}, Shape{3, 2})) {
     dataset.setCoord(Dim::Y, makeVariable<double>(Dims{Dim::Y}, Shape{3}));
 
     dataset.setCoord(Dim("labels"), makeVariable<int>(Dims{Dim::X}, Shape{4}));
@@ -330,7 +330,7 @@ TEST_F(DataArray_comparison_operators, different_attr_insertion_order) {
 TEST_F(DataArray_comparison_operators, with_sparse_dimension_data) {
   // a and b same, c different number of sparse values
   auto a = Dataset();
-  auto data = makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse});
+  auto data = makeVariable<sparse_container<double>>(Dims{}, Shape{});
   const std::string var_name = "test_var";
   data.sparseValues<double>()[0] = {1, 2, 3};
   a.setData(var_name, data);

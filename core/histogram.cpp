@@ -145,7 +145,7 @@ Dataset histogram(const Dataset &dataset, const VariableConstView &bins) {
   auto out(Dataset(DatasetConstView::makeViewWithEmptyIndexes(dataset)));
   out.setCoord(bins.dims().inner(), bins);
   for (const auto &item : dataset) {
-    if (item.dims().sparse())
+    if (is_events(item))
       out.setData(item.name(), histogram(item, bins));
   }
   return out;
@@ -164,7 +164,7 @@ Dataset histogram(const Dataset &dataset, const Dim &dim) {
 bool is_histogram(const DataArrayConstView &a, const Dim dim) {
   const auto dims = a.dims();
   const auto coords = a.coords();
-  return !dims.sparse() && dims.contains(dim) && coords.contains(dim) &&
+  return dims.contains(dim) && coords.contains(dim) &&
          coords[dim].dims().contains(dim) &&
          coords[dim].dims()[dim] == dims[dim] + 1;
 }

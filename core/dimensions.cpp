@@ -32,11 +32,11 @@ Dimensions::Dimensions(const std::vector<Dim> &labels,
 }
 
 /// Return the extent of `dim`. Throws if the space defined by this does not
-/// contain `dim` or if `dim` is a sparse dimension label.
+/// contain `dim`.
 scipp::index Dimensions::operator[](const Dim dim) const { return at(dim); }
 
 /// Return the extent of `dim`. Throws if the space defined by this does not
-/// contain `dim` or if `dim` is a sparse dimension label.
+/// contain `dim`.
 scipp::index Dimensions::at(const Dim dim) const {
   for (int32_t i = 0; i < m_ndim; ++i)
     if (m_dims[i] == dim)
@@ -45,8 +45,7 @@ scipp::index Dimensions::at(const Dim dim) const {
 }
 
 /// Return a mutable reference to the extent of `dim`. Throws if the space
-/// defined by this does not contain `dim` or if `dim` is a sparse dimension
-/// label.
+/// defined by this does not contain `dim`.
 scipp::index &Dimensions::at(const Dim dim) {
   for (int32_t i = 0; i < m_ndim; ++i)
     if (m_dims[i] == dim)
@@ -55,20 +54,12 @@ scipp::index &Dimensions::at(const Dim dim) {
 }
 
 /// Return true if all dimensions of other contained in *this, ignoring order.
-///
-/// If a dimension in other is sparse it must also be sparse in *this, otherwise
-/// false is returned.
 bool Dimensions::contains(const Dimensions &other) const noexcept {
   if (*this == other)
     return true;
   for (const auto dim : other.labels())
-    if (!contains(dim))
+    if (!contains(dim) || other[dim] != operator[](dim))
       return false;
-  for (const auto dim : other.denseLabels())
-    if (dim == sparseDim() || other[dim] != operator[](dim))
-      return false;
-  if (other.sparse() && other.sparseDim() != sparseDim())
-    return false;
   return true;
 }
 
@@ -76,10 +67,7 @@ bool Dimensions::contains(const Dimensions &other) const noexcept {
 ///
 /// Specifically, dimensions are not transposed, missing dimensions are outer
 /// dimensions in parent, and only the outermost dimensions may be shorter than
-/// the corresponding dimension in parent. Potential sparse dimensions are
-/// ignored since they do not contribute to the shape (note that this is only a
-/// valid assumption as long as sparse data layouts are equivalent to a vector
-/// of vectors).
+/// the corresponding dimension in parent.
 bool Dimensions::isContiguousIn(const Dimensions &parent) const {
   if (parent == *this)
     return true;
@@ -126,8 +114,6 @@ scipp::index Dimensions::offset(const Dim label) const {
 
 void Dimensions::resize(const Dim label, const scipp::index size) {
   expect::validExtent(size);
-  if (sparse() && sparseDim() == label)
-    ++m_ndim;
   at(label) = size;
 }
 
@@ -136,10 +122,6 @@ void Dimensions::resize(const scipp::index i, const scipp::index size) {
 }
 
 void Dimensions::erase(const Dim label) {
-  if (sparse() && sparseDim() == label) {
-    m_dims[m_ndim] = Dim::Invalid;
-    return;
-  }
   for (int32_t i = index(label); i < m_ndim - 1; ++i) {
     m_shape[i] = m_shape[i + 1];
     m_dims[i] = m_dims[i + 1];
@@ -169,23 +151,16 @@ void Dimensions::add(const Dim label, const scipp::index size) {
 /// Add a new dimension, which will be the innermost dimension.
 void Dimensions::addInner(const Dim label, const scipp::index size) {
   expect::validDim(label);
-  expect::notSparse(*this);
   expectUnique(*this, label);
-  if (size == Dimensions::Sparse) {
-    m_dims[m_ndim] = label;
-  } else {
-    expect::validExtent(size);
-    expectExtendable(*this);
-    m_shape[m_ndim] = size;
-    m_dims[m_ndim] = label;
-    ++m_ndim;
-  }
+  expect::validExtent(size);
+  expectExtendable(*this);
+  m_shape[m_ndim] = size;
+  m_dims[m_ndim] = label;
+  ++m_ndim;
 }
 
 /// Return the innermost dimension. Throws if *this is empty.
 Dim Dimensions::inner() const noexcept {
-  if (sparse())
-    return sparseDim();
   if (m_ndim == 0)
     return Dim::Invalid;
   return m_dims[m_ndim - 1];
@@ -199,33 +174,15 @@ int32_t Dimensions::index(const Dim dim) const {
   throw except::DimensionNotFoundError(*this, dim);
 }
 
-/// Return the dense subspace of the given dims.
-Dimensions denseDims(const Dimensions &dims) {
-  if (!dims.sparse())
-    return dims;
-  const std::vector<Dim> labels{dims.denseLabels().begin(),
-                                dims.denseLabels().end()};
-  const std::vector<scipp::index> shape{dims.shape().begin(),
-                                        dims.shape().end()};
-  return Dimensions(labels, shape);
-}
-
 /// Return the direct sum, i.e., the combination of dimensions in a and b.
 ///
 /// Throws if there is a mismatching dimension extent.
 Dimensions merge(const Dimensions &a, const Dimensions &b) {
   auto out(a);
-  if (a.sparse() && b.sparse() && (a.sparseDim() != b.sparseDim()))
-    throw except::DimensionError(
-        "Cannot merge subspaces with mismatching sparse dimension.");
   if (scipp::size(a.labels()) < scipp::size(b.labels()))
     return merge(b, a);
-  for (const auto dim : b.denseLabels()) {
+  for (const auto dim : b.labels()) {
     if (a.contains(dim)) {
-      if (dim == a.sparseDim())
-        throw except::DimensionError("Cannot merge subspaces with dimension "
-                                     "that is sparse in one argument but dense "
-                                     "in another.");
       if (a[dim] != b[dim])
         throw except::DimensionError(
             "Cannot merge subspaces with mismatching extent");
@@ -233,8 +190,6 @@ Dimensions merge(const Dimensions &a, const Dimensions &b) {
       out.add(dim, b[dim]);
     }
   }
-  if (b.sparse() && (b.sparseDim() != a.sparseDim()))
-    out.addInner(b.sparseDim(), Dimensions::Sparse);
   return out;
 }
 

@@ -39,6 +39,8 @@ Variable concatenate(const VariableConstView &a1, const VariableConstView &a2,
     throw std::runtime_error(
         "Cannot concatenate Variables: Units do not match.");
 
+  // TODO This should be moved to a new operation
+  /*
   if (a1.dims().sparseDim() == dim && a2.dims().sparseDim() == dim) {
     Variable out(a1);
     transform_in_place<pair_self_t<sparse_container<double>>>(
@@ -51,17 +53,14 @@ Variable concatenate(const VariableConstView &a1, const VariableConstView &a2,
                    }});
     return out;
   }
+  */
 
   const auto &dims1 = a1.dims();
   const auto &dims2 = a2.dims();
   // TODO Many things in this function should be refactored and moved in class
   // Dimensions.
   // TODO Special handling for edge variables.
-  if (dims1.sparseDim() != dims2.sparseDim())
-    throw std::runtime_error("Cannot concatenate Variables: Either both or "
-                             "neither must be sparse, and the sparse "
-                             "dimensions must be the same.");
-  for (const auto &dim1 : dims1.denseLabels()) {
+  for (const auto &dim1 : dims1.labels()) {
     if (dim1 != dim) {
       if (!dims2.contains(dim1))
         throw std::runtime_error(

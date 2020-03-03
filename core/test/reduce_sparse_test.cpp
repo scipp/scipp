@@ -10,8 +10,7 @@ using namespace scipp::core;
 
 namespace {
 auto make_sparse() {
-  auto var =
-      makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{3l, Dimensions::Sparse});
+  auto var = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{3});
   const auto &var_ = var.sparseValues<double>();
   var_[0] = {1, 2, 3};
   var_[1] = {4, 5};
@@ -28,9 +27,8 @@ TEST(ReduceSparseTest, flatten_fail) {
 }
 
 TEST(ReduceSparseTest, flatten) {
-  auto expected = makeVariable<double>(
-      Dims{Dim::X}, Shape{Dimensions::Sparse},
-      Values{sparse_container<double>{1, 2, 3, 4, 5, 6, 7}});
+  auto expected = makeVariable<event_list<double>>(
+      Dims{}, Shape{}, Values{sparse_container<double>{1, 2, 3, 4, 5, 6, 7}});
   EXPECT_EQ(flatten(make_sparse(), Dim::Y), expected);
 }
 
@@ -46,9 +44,8 @@ TEST(ReduceSparseTest, flatten_dataset_with_mask) {
   label.unaligned().set("b", make_sparse());
   d.coords().set(Dim("label"), label);
   d.setData("b", make_sparse());
-  auto expected =
-      makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse},
-                           Values{sparse_container<double>{1, 2, 3, 6, 7}});
+  auto expected = makeVariable<event_list<double>>(
+      Dims{}, Shape{}, Values{sparse_container<double>{1, 2, 3, 6, 7}});
 
   const auto flat = flatten(d, Dim::Y);
 

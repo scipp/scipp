@@ -15,6 +15,7 @@
 #include "scipp/common/index.h"
 #include "scipp/core/axis_forward.h"
 #include "scipp/core/dtype.h"
+#include "scipp/core/event.h"
 #include "scipp/core/string.h"
 #include "scipp/units/except.h"
 #include "scipp/units/unit.h"
@@ -183,8 +184,10 @@ void SCIPP_CORE_EXPORT validSlice(
 void SCIPP_CORE_EXPORT coordsAreSuperset(const DataArrayConstView &a,
                                          const DataArrayConstView &b);
 void SCIPP_CORE_EXPORT notCountDensity(const units::Unit &unit);
-void SCIPP_CORE_EXPORT notSparse(const Dimensions &dims);
-template <class T> void notSparse(const T &object) { notSparse(object.dims()); }
+template <class T> void notSparse(const T &object) {
+  if (is_events(object))
+    throw except::TypeError("Expected dense data, got events.");
+}
 void SCIPP_CORE_EXPORT validDim(const Dim dim);
 void SCIPP_CORE_EXPORT validExtent(const scipp::index size);
 template <class T> void hasVariances(const T &variable) {

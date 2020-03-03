@@ -26,8 +26,7 @@ template <class... Args> constexpr bool has_last_arg_int64_t() {
   if constexpr (n == 0)
     return false;
   else
-    return std::is_same_v<nthDecayType<n - 1, Args...>,
-                          std::decay_t<decltype(Dimensions::Sparse)>>;
+    return std::is_same_v<nthDecayType<n - 1, Args...>, int64_t>;
 }
 
 template <class U> struct vector_like {

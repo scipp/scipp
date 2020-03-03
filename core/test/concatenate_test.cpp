@@ -189,8 +189,7 @@ TEST(ConcatenateTest, concat_2d_coord) {
 }
 
 TEST(ConcatenateTest, concatenate_sparse_no_data) {
-  auto var1 =
-      makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, Dimensions::Sparse});
+  auto var1 = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2});
   auto var1_ = var1.sparseValues<double>();
   var1_[0] = {1, 2, 3};
   var1_[1] = {1, 2};

@@ -4,6 +4,7 @@
 /// @author Simon Heybrock
 #include "scipp/common/numeric.h"
 #include "scipp/core/dataset.h"
+#include "scipp/core/event.h"
 #include "scipp/core/histogram.h"
 #include "scipp/core/subspan_view.h"
 #include "scipp/core/transform.h"
@@ -66,8 +67,13 @@ struct Divide {
 
 bool is_sparse_and_histogram(const DataArrayConstView &a,
                              const DataArrayConstView &b) {
-  return (a.dims().sparse() && is_histogram(b, a.dims().sparseDim())) ||
-         (b.dims().sparse() && is_histogram(a, b.dims().sparseDim()));
+  // TODO Such an indirect check should not be necessary any more. Operations
+  // mixing dense and event data are probably only going to be handled using an
+  // aligning wrapper, so the sparse dim is known, and coord checks take place
+  // on that higher level.
+  return false;
+  // return (is_events(a) && is_histogram(b, a.dims().sparseDim())) ||
+  //       (is_events(b) && is_histogram(a, b.dims().sparseDim()));
 }
 
 template <class Op, class Coord, class Data, class Edges, class Weights>
@@ -127,7 +133,8 @@ Variable sparse_dense_op_impl(Op op, const VariableConstView &sparseCoord_,
                               const VariableConstView &edges_,
                               const VariableConstView &weights_) {
   using namespace sparse_dense_op_impl_detail;
-  const Dim dim = sparseCoord_.dims().sparseDim();
+  // TODO should this be an input param?
+  const Dim dim; // = sparseCoord_.dims().sparseDim();
   // Sparse data without values has an implicit value of 1 count. If
   // `ImplicitData` is 0 we simply use this function to generate intermediate
   // sparse data that can be multiplied with the existing data by the caller.
@@ -265,13 +272,13 @@ throw except::SparseDataError("Unsupported combination of sparse and dense "
 
 auto sparse_dense_coord_union(const DataArrayConstView &a,
                               const DataArrayConstView &b) {
-  if (!is_sparse_and_histogram(a, b))
-    return union_(a.coords(), b.coords());
+  // if (!is_sparse_and_histogram(a, b))
+  return union_(a.coords(), b.coords());
   // Use slice to remove dense coord, since output will be sparse.
-  if (a.dims().sparse())
-    return union_(a.coords(), b.slice({a.dims().sparseDim(), 0}).coords());
-  else
-    return union_(a.slice({b.dims().sparseDim(), 0}).coords(), b.coords());
+  // if (a.dims().sparse())
+  //  return union_(a.coords(), b.slice({a.dims().sparseDim(), 0}).coords());
+  // else
+  //  return union_(a.slice({b.dims().sparseDim(), 0}).coords(), b.coords());
 }
 
 DataArray operator*(const DataArrayConstView &a, const DataArrayConstView &b) {

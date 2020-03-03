@@ -4,6 +4,7 @@
 /// @author Simon Heybrock
 #include <numeric>
 
+#include "scipp/core/event.h"
 #include "scipp/core/except.h"
 #include "scipp/core/groupby.h"
 #include "scipp/core/histogram.h"
@@ -64,7 +65,7 @@ static constexpr auto flatten = [](const DataArrayView &out, const auto &in,
     if (in.hasData())
       flatten_impl(out.data(), array.data(), mask);
     for (auto &&[dim, coord] : out.coords())
-      if (coord.dims().sparse())
+      if (is_events(coord))
         flatten_impl(coord, array.coords()[dim], mask);
   }
 };

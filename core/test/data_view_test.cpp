@@ -6,6 +6,7 @@
 
 #include "scipp/core/dataset.h"
 #include "scipp/core/dimensions.h"
+#include "scipp/core/event.h"
 #include "test_macros.h"
 
 using namespace scipp;
@@ -36,28 +37,23 @@ TYPED_TEST(DataArrayViewTest, sparse_sparseDim) {
   typename TestFixture::dataset_type &d_ref(d);
 
   d.setData("dense", makeVariable<double>(Values{double{}}));
-  ASSERT_FALSE(d_ref["dense"].dims().sparse());
-  ASSERT_EQ(d_ref["dense"].dims().sparseDim(), Dim::Invalid);
+  ASSERT_FALSE(is_events(d_ref["dense"]));
 
-  d.setData("sparse_data",
-            makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse}));
-  ASSERT_TRUE(d_ref["sparse_data"].dims().sparse());
-  ASSERT_EQ(d_ref["sparse_data"].dims().sparseDim(), Dim::X);
+  d.setData("sparse_data", makeVariable<event_list<double>>(Dims{}, Shape{}));
+  ASSERT_TRUE(is_events(d_ref["sparse_data"]));
 
   DatasetAxis x;
-  x.unaligned().set(
-      "sparse_coord",
-      makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse}));
+  x.unaligned().set("sparse_coord",
+                    makeVariable<event_list<double>>(Dims{}, Shape{}));
   d.coords().set(Dim::X, x);
-  ASSERT_TRUE(d_ref["sparse_coord"].dims().sparse());
-  ASSERT_EQ(d_ref["sparse_coord"].dims().sparseDim(), Dim::X);
+  ASSERT_TRUE(is_events(d_ref["sparse_coord"]));
 }
 
 TYPED_TEST(DataArrayViewTest, dims) {
   Dataset d;
   const auto dense = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{1, 2});
-  const auto sparse = makeVariable<double>(Dims{Dim::X, Dim::Y, Dim::Z},
-                                           Shape{1l, 2l, Dimensions::Sparse});
+  const auto sparse =
+      makeVariable<event_list<double>>(Dims{Dim::X, Dim::Y}, Shape{1, 2});
   typename TestFixture::dataset_type &d_ref(d);
 
   d.setData("dense", dense);
@@ -97,8 +93,8 @@ TYPED_TEST(DataArrayViewTest, unit_access_fails_without_values) {
   Dataset d;
   typename TestFixture::dataset_type &d_ref(d);
   DatasetAxis x;
-  x.unaligned().set(
-      "sparse", makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse}));
+  x.unaligned().set("sparse",
+                    makeVariable<event_list<double>>(Dims{}, Shape{}));
   d.coords().set(Dim::X, x);
   EXPECT_THROW(d_ref["sparse"].unit(), except::SparseDataError);
 }
@@ -118,8 +114,7 @@ TYPED_TEST(DataArrayViewTest, coords) {
 TYPED_TEST(DataArrayViewTest, coords_sparse) {
   Dataset d;
   typename TestFixture::dataset_type &d_ref(d);
-  const auto var =
-      makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{3l, Dimensions::Sparse});
+  const auto var = makeVariable<event_list<double>>(Dims{Dim::X}, Shape{3});
   DatasetAxis y;
   y.unaligned().set("a", var);
   d.coords().set(Dim::Y, y);
@@ -137,8 +132,7 @@ TYPED_TEST(DataArrayViewTest, coords_sparse_shadow) {
   typename TestFixture::dataset_type &d_ref(d);
   const auto x = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
   const auto y = makeVariable<double>(Dims{Dim::Y}, Shape{3}, Values{4, 5, 6});
-  const auto sparse =
-      makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{3l, Dimensions::Sparse});
+  const auto sparse = makeVariable<event_list<double>>(Dims{Dim::X}, Shape{3});
   d.setCoord(Dim::X, x);
   d.setCoord(Dim::Y, y);
   DatasetAxis y_axis;
@@ -161,8 +155,7 @@ TYPED_TEST(DataArrayViewTest, coords_sparse_shadow_even_if_no_coord) {
   typename TestFixture::dataset_type &d_ref(d);
   const auto x = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
   const auto y = makeVariable<double>(Dims{Dim::Y}, Shape{3}, Values{4, 5, 6});
-  const auto sparse =
-      makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{3l, Dimensions::Sparse});
+  const auto sparse = makeVariable<event_list<double>>(Dims{Dim::X}, Shape{3});
   d.setCoord(Dim::X, x);
   d.setCoord(Dim::Y, y);
   d.setData("a", sparse);
@@ -270,8 +263,7 @@ TYPED_TEST(DataArrayViewTest, sparse_with_no_data) {
   Dataset d;
   typename TestFixture::dataset_type &d_ref(d);
   DatasetAxis x;
-  x.unaligned().set(
-      "a", makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse}));
+  x.unaligned().set("a", makeVariable<event_list<double>>(Dims{}, Shape{}));
   d.coords().set(Dim::X, x);
 
   EXPECT_ANY_THROW(d_ref["a"].data());

@@ -826,7 +826,7 @@ template <class... TypePairs, class Var, class Op>
 void accumulate_in_place(Var &&var, const VariableConstView &var1,
                          const VariableConstView &var2, Op op) {
   expect::contains(var1.dims(), var.dims());
-  expect::contains(var2.dims(), denseDims(var.dims()));
+  expect::contains(var2.dims(), var.dims());
   in_place<false>::transform_data(type_tuples<TypePairs...>(op), op,
                                   std::forward<Var>(var), var1, var2);
 }

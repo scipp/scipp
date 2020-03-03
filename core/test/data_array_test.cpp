@@ -42,8 +42,7 @@ TEST(DataArrayTest, reciprocal) {
 }
 
 auto make_sparse() {
-  auto var =
-      makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2l, Dimensions::Sparse});
+  auto var = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2});
   var.setUnit(units::us);
   auto vals = var.sparseValues<double>();
   vals[0] = {1.1, 2.2, 3.3};

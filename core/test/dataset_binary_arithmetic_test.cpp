@@ -349,8 +349,7 @@ TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_DatasetView_coord_mismatch) {
 }
 
 TYPED_TEST(DatasetBinaryEqualsOpTest, coord_only_sparse_fails) {
-  auto var =
-      makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, Dimensions::Sparse});
+  auto var = makeVariable<event_list<double>>(Dims{Dim::X}, Shape{2});
   Dataset d;
   DatasetAxis y;
   y.unaligned().set("a", var);
@@ -748,8 +747,7 @@ TYPED_TEST(DatasetBinaryOpTest, sparse_with_dense_fail) {
   dense.setData("a",
                 makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1, 2}));
   Dataset sparse;
-  sparse.setData("a",
-                 makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse}));
+  sparse.setData("a", makeVariable<event_list<double>>(Dims{}, Shape{}));
 
   ASSERT_THROW(TestFixture::op(sparse, dense), except::DimensionError);
 }
@@ -809,12 +807,11 @@ TYPED_TEST(DatasetBinaryOpTest, sparse_dataarrayconstview_coord_mismatch) {
 TYPED_TEST(DatasetBinaryOpTest, sparse_data_presense_mismatch) {
   Dataset a;
   DatasetAxis x;
-  x.unaligned().set(
-      "sparse", makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse}));
+  x.unaligned().set("sparse",
+                    makeVariable<event_list<double>>(Dims{}, Shape{}));
   a.coords().set(Dim::X, x);
   auto b(a);
-  a.setData("sparse",
-            makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse}));
+  a.setData("sparse", makeVariable<event_list<double>>(Dims{}, Shape{}));
 
   EXPECT_THROW(TestFixture::op(a, b), except::SparseDataError);
   EXPECT_THROW(TestFixture::op(a, b["sparse"]), except::SparseDataError);
@@ -827,7 +824,7 @@ TYPED_TEST(DatasetBinaryOpTest,
   auto dataset_b = make_simple_sparse({3.3, 4.4});
 
   {
-    auto var = makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse});
+    auto var = makeVariable<event_list<double>>(Dims{}, Shape{});
     var.sparseValues<double>()[0] = {0.5, 1.0};
     DatasetAxis x;
     x.unaligned().set("sparse", var);
@@ -835,7 +832,7 @@ TYPED_TEST(DatasetBinaryOpTest,
   }
 
   {
-    auto var = makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse});
+    auto var = makeVariable<event_list<double>>(Dims{}, Shape{});
     var.sparseValues<double>()[0] = {0.5, 1.5};
     DatasetAxis x;
     x.unaligned().set("sparse", var);
@@ -852,7 +849,7 @@ TYPED_TEST(DatasetBinaryOpTest,
   auto dataset_b = make_simple_sparse({3.3, 4.4});
 
   {
-    auto var = makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse});
+    auto var = makeVariable<event_list<double>>(Dims{}, Shape{});
     var.sparseValues<double>()[0] = {0.5, 1.0};
     DatasetAxis l;
     l.unaligned().set("sparse", var);
@@ -860,7 +857,7 @@ TYPED_TEST(DatasetBinaryOpTest,
   }
 
   {
-    auto var = makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse});
+    auto var = makeVariable<event_list<double>>(Dims{}, Shape{});
     var.sparseValues<double>()[0] = {0.5, 1.5};
     DatasetAxis l;
     l.unaligned().set("sparse", var);
@@ -942,14 +939,12 @@ TYPED_TEST(DatasetBinaryOpTest, masks_propagate) {
 
 Dataset non_trivial_2d_sparse(std::string_view name) {
   Dataset sparse;
-  auto var =
-      makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{4, Dimensions::Sparse});
+  auto var = makeVariable<event_list<double>>(Dims{Dim::X}, Shape{4});
   var.sparseValues<double>()[0] = {1.5, 2.5, 3.5, 4.5, 5.5};
   var.sparseValues<double>()[1] = {3.5, 4.5, 5.5, 6.5, 7.5};
   var.sparseValues<double>()[2] = {-1, 0, 0, 1, 1, 2, 2, 2, 4, 4, 4, 6};
   var.sparseValues<double>()[3] = {1};
-  auto dvar =
-      makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{4, Dimensions::Sparse});
+  auto dvar = makeVariable<event_list<double>>(Dims{Dim::X}, Shape{4});
   dvar.sparseValues<double>()[0] = {1, 2, 3, 4, 5};
   dvar.sparseValues<double>()[1] = {3, 4, 5, 6, 7};
   dvar.sparseValues<double>()[2] = {1, 1, 1, 1, 1, 100, 1, 1, 1, 1, 1, 1};
@@ -971,7 +966,7 @@ TEST(DatasetSetData, sparse_to_sparse) {
 
 TEST(DatasetSetData, sparse_to_dense) {
   auto base = non_trivial_2d_sparse("base");
-  auto var = makeVariable<double>(Dims{Dim::Y}, Shape{Dimensions::Sparse});
+  auto var = makeVariable<event_list<double>>(Dims{}, Shape{});
   var.sparseValues<double>()[0] = {1, 2, 3};
   DatasetAxis l;
   l.unaligned().set("base", var);

@@ -174,7 +174,7 @@ TEST(DatasetTest, setCoord_with_name_matching_data_name) {
 
 TEST(DatasetTest, setters_reject_sparse) {
   Dataset d;
-  const auto var = makeVariable<int>(Dims{Dim::X}, Shape{Dimensions::Sparse});
+  const auto var = makeVariable<event_list<int>>(Dims{}, Shape{});
   ASSERT_THROW(d.setCoord(Dim::X, var), except::DimensionError);
   ASSERT_THROW(d.setCoord(Dim("a"), var), except::DimensionError);
   ASSERT_THROW(d.setMask("a", var), except::DimensionError);
@@ -183,8 +183,7 @@ TEST(DatasetTest, setters_reject_sparse) {
 
 TEST(DatasetTest, setSparseCoord) {
   Dataset d;
-  const auto var =
-      makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{3l, Dimensions::Sparse});
+  const auto var = makeVariable<event_list<double>>(Dims{Dim::X}, Shape{3});
   DatasetAxis y;
   y.unaligned().set("a", var);
 
@@ -195,8 +194,7 @@ TEST(DatasetTest, setSparseCoord) {
 
 TEST(DatasetTest, setSparseLabels) {
   Dataset d;
-  const auto sparse =
-      makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse});
+  const auto sparse = makeVariable<event_list<double>>(Dims{}, Shape{});
   DatasetAxis x;
   x.unaligned().set("a", sparse);
   d.coords().set(Dim::X, x);
@@ -223,7 +221,7 @@ TEST(DatasetTest, const_iterators_return_types) {
 
 TEST(DatasetTest, set_dense_data_with_sparse_coord) {
   auto sparse_variable =
-      makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2l, Dimensions::Sparse});
+      makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2});
   auto dense_variable =
       makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2l, 2l});
 
@@ -341,8 +339,7 @@ TEST(DatasetTest, erase_coord) {
   ds.setCoord(Dim::X, coord);
   EXPECT_EQ(ref, ds);
 
-  const auto var =
-      makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{4l, Dimensions::Sparse});
+  const auto var = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{4});
   DatasetAxis x;
   x.unaligned().set("newCoord", var);
   ds.coords().set(Dim::X, x);
@@ -351,8 +348,7 @@ TEST(DatasetTest, erase_coord) {
   EXPECT_EQ(ref, ds);
 
   ds.coords().set(Dim::X, x);
-  ds.setData("newCoord",
-             makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse}));
+  ds.setData("newCoord", makeVariable<event_list<double>>(Dims{}, Shape{}));
   EXPECT_TRUE(ds["newCoord"].coords().contains(Dim::X));
   EXPECT_THROW(ds["newCoord"].coords().erase(Dim::Z), except::SparseDataError);
   ds["newCoord"].coords().erase(Dim::X);
@@ -374,8 +370,7 @@ TEST(DatasetTest, erase_labels) {
   ds.setCoord(Dim("labels_x"), labels);
   EXPECT_EQ(ref, ds);
 
-  const auto var =
-      makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{5l, Dimensions::Sparse});
+  const auto var = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{5});
   DatasetAxis x;
   x.unaligned().set("newCoord", var);
   ds.coords().set(Dim::X, x);
