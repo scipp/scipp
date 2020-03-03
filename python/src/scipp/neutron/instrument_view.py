@@ -84,6 +84,7 @@ class InstrumentView:
         self.widgets = importlib.import_module("ipywidgets")
         self.mpl = importlib.import_module("matplotlib")
         self.mpl_cm = importlib.import_module("matplotlib.cm")
+        self.mpl_plt = importlib.import_module("matplotlib.pyplot")
         self.mpl_figure = importlib.import_module("matplotlib.figure")
         self.mpl_colors = importlib.import_module("matplotlib.colors")
         self.mpl_backend_agg = importlib.import_module(
@@ -155,7 +156,7 @@ class InstrumentView:
             self.minmax["tof"][1] = max(self.minmax["tof"][1], var.values[-1])
             self.minmax["tof"][2] = var.shape[0]
 
-        available_cmaps = sorted(m for m in self.mpl.pyplot.colormaps()
+        available_cmaps = sorted(m for m in self.mpl_plt.colormaps()
                                  if not m.endswith("_r"))
 
         # Store current active data entry (DataArray)
@@ -449,7 +450,7 @@ class InstrumentView:
         cb1.set_label(
             name_with_unit(var=self.hist_data_array[self.key], name=""))
         canvas.draw()
-        image = np.fromstring(canvas.tostring_rgb(), dtype='uint8')
+        image = np.frombuffer(canvas.tostring_rgb(), dtype='uint8')
         shp = list(fig.canvas.get_width_height())[::-1] + [3]
         self.cbar_image.value = self.pil.Image.fromarray(
             image.reshape(shp))._repr_png_()
