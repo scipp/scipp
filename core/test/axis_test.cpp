@@ -7,7 +7,139 @@
 using namespace scipp;
 using namespace scipp::core;
 
-TEST(AxisTest, hasUnaligned) {
+TEST(DataArrayAxisTest, construct_default) {
+  DataArrayAxis axis;
+  EXPECT_FALSE(axis.hasData());
+  EXPECT_FALSE(axis.hasUnaligned());
+  EXPECT_FALSE(axis.unaligned());
+}
+
+TEST(DatasetAxisTest, construct_default) {
+  DatasetAxis axis;
+  EXPECT_FALSE(axis.hasData());
+  EXPECT_FALSE(axis.hasUnaligned());
+  EXPECT_TRUE(axis.unaligned().empty());
+}
+
+class DataArrayAxis_comparison_operators : public ::testing::Test {
+protected:
+  DataArrayAxis_comparison_operators()
+      : var1(makeVariable<double>(Values{1})),
+        var2(makeVariable<double>(Values{2})) {}
+  void expect_eq(const DataArrayAxisConstView &a,
+                 const DataArrayAxisConstView &b) const {
+    EXPECT_TRUE(a == b);
+    EXPECT_TRUE(b == a);
+    EXPECT_FALSE(a != b);
+    EXPECT_FALSE(b != a);
+  }
+  void expect_ne(const DataArrayAxisConstView &a,
+                 const DataArrayAxisConstView &b) const {
+    EXPECT_TRUE(a != b);
+    EXPECT_TRUE(b != a);
+    EXPECT_FALSE(a == b);
+    EXPECT_FALSE(b == a);
+  }
+
+  Variable var1;
+  Variable var2;
+};
+
+TEST_F(DataArrayAxis_comparison_operators, data_only) {
+  DataArrayAxis a(var1);
+  expect_eq(a, a);
+  expect_eq(a, DataArrayAxis(var1));
+  expect_ne(a, DataArrayAxis());
+  expect_ne(a, DataArrayAxis(var2));
+  expect_ne(a, DataArrayAxis(var1, var2));
+  expect_ne(a, DataArrayAxis(Variable{}, var2));
+}
+
+TEST_F(DataArrayAxis_comparison_operators, unaligned_only) {
+  DataArrayAxis a(Variable{}, var2);
+  expect_eq(a, a);
+  expect_eq(a, DataArrayAxis(Variable{}, var2));
+  expect_ne(a, DataArrayAxis());
+  expect_ne(a, DataArrayAxis(var2));
+  expect_ne(a, DataArrayAxis(var1, var2));
+  expect_ne(a, DataArrayAxis(Variable{}, var1));
+}
+
+TEST_F(DataArrayAxis_comparison_operators, data_and_unaligned) {
+  DataArrayAxis a(var1, var2);
+  expect_eq(a, a);
+  expect_eq(a, DataArrayAxis(var1, var2));
+  expect_ne(a, DataArrayAxis());
+  expect_ne(a, DataArrayAxis(var1));
+  expect_ne(a, DataArrayAxis(Variable{}, var2));
+  expect_ne(a, DataArrayAxis(var1, var1));
+  expect_ne(a, DataArrayAxis(var2, var2));
+}
+
+class DatasetAxis_comparison_operators : public ::testing::Test {
+protected:
+  DatasetAxis_comparison_operators()
+      : var1(makeVariable<double>(Values{1})),
+        var2(makeVariable<double>(Values{2})),
+        var3(makeVariable<double>(Values{3})) {}
+  void expect_eq(const DatasetAxisConstView &a,
+                 const DatasetAxisConstView &b) const {
+    EXPECT_TRUE(a == b);
+    EXPECT_TRUE(b == a);
+    EXPECT_FALSE(a != b);
+    EXPECT_FALSE(b != a);
+  }
+  void expect_ne(const DatasetAxisConstView &a,
+                 const DatasetAxisConstView &b) const {
+    EXPECT_TRUE(a != b);
+    EXPECT_TRUE(b != a);
+    EXPECT_FALSE(a == b);
+    EXPECT_FALSE(b == a);
+  }
+
+  Variable var1;
+  Variable var2;
+  Variable var3;
+};
+
+TEST_F(DatasetAxis_comparison_operators, data_only) {
+  DatasetAxis a(var1);
+  expect_eq(a, a);
+  expect_eq(a, DatasetAxis(var1));
+  expect_ne(a, DatasetAxis());
+  expect_ne(a, DatasetAxis(var2));
+  expect_ne(a, DatasetAxis(var1, {{"a", var2}}));
+  expect_ne(a, DatasetAxis(Variable{}, {{"a", var2}}));
+}
+
+TEST_F(DatasetAxis_comparison_operators, unaligned_only) {
+  DatasetAxis a(Variable{}, {{"a", var2}});
+  expect_eq(a, a);
+  expect_eq(a, DatasetAxis(Variable{}, {{"a", var2}}));
+  expect_ne(a, DatasetAxis());
+  expect_ne(a, DatasetAxis(var2));
+  expect_ne(a, DatasetAxis(var1, {{"a", var2}}));
+  expect_ne(a, DatasetAxis(Variable{}, {{"a", var1}}));
+  expect_ne(a, DatasetAxis(Variable{}, {{"b", var2}}));
+  expect_ne(a, DatasetAxis(Variable{}, {{"a", var2}, {"b", var2}}));
+}
+
+TEST_F(DatasetAxis_comparison_operators, data_and_unaligned) {
+  DatasetAxis a(var1, {{"a", var2}});
+  expect_eq(a, a);
+  expect_eq(a, DatasetAxis(var1, {{"a", var2}}));
+  expect_ne(a, DatasetAxis());
+  expect_ne(a, DatasetAxis(var1));
+
+  expect_ne(a, DatasetAxis(Variable{}, {{"a", var2}}));
+  expect_ne(a, DatasetAxis(var2, {{"a", var2}}));
+
+  expect_ne(a, DatasetAxis(var1, {{"a", var1}}));
+  expect_ne(a, DatasetAxis(var1, {{"b", var2}}));
+  expect_ne(a, DatasetAxis(var1, {{"a", var2}, {"b", var2}}));
+}
+
+TEST(DatasetAxisTest, hasUnaligned) {
   const auto var = makeVariable<double>(Dims{Dim::X}, Shape{4});
   DatasetAxis axis(var);
   EXPECT_FALSE(axis.hasUnaligned());
