@@ -180,6 +180,11 @@ TEST_F(AxisTest, DataArrayAxis_construct_from_dataset_view) {
   EXPECT_EQ(DataArrayAxis(axis["b"]), axis_b);
 }
 
+TEST_F(AxisTest, to_DatasetAxis) {
+  const auto ax = DataArrayAxis::to_DatasetAxis(DataArrayAxis(axis_a), "c");
+  EXPECT_EQ(ax["c"], axis_a);
+}
+
 TEST(DatasetAxisTest, hasUnaligned) {
   const auto var = makeVariable<double>(Dims{Dim::X}, Shape{4});
   DatasetAxis axis(var);
@@ -191,4 +196,14 @@ TEST(DatasetAxisTest, hasUnaligned) {
   EXPECT_TRUE(axis["a"].hasUnaligned());
   EXPECT_FALSE(axis["b"].hasUnaligned());
   EXPECT_TRUE(DatasetAxisConstView(axis).hasUnaligned());
+}
+
+TEST(DatasetAxisTest, concatenate) {
+  const auto var1 = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1, 2});
+  const auto var2 = makeVariable<double>(Dims{Dim::X}, Shape{1}, Values{3});
+  DatasetAxis axis1(var1);
+  DatasetAxis axis2(var2);
+
+  DatasetAxis expected(concatenate(var1, var2, Dim::X));
+  EXPECT_EQ(concatenate(axis1, axis2, Dim::X), expected);
 }

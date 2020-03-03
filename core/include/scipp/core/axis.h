@@ -170,7 +170,7 @@ public:
 
   AxisConstView(const value_type &axis);
   AxisConstView(VariableView &&data, unaligned_view_type &&unaligned);
-  AxisConstView(VariableView &&data);
+  explicit AxisConstView(VariableView &&data);
   AxisConstView(VariableConstView &&data);
 
   const unaligned_const_view_type &unaligned() const noexcept;

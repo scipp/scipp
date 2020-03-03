@@ -38,7 +38,6 @@ struct DatasetData {
   // How to distinguish cases of concatenation (events) from addition (position
   // data)? Does it just depend in the dtype?
   Variable data;
-  Variable unaligned;
   /// Attributes for data.
   std::unordered_map<std::string, Variable> attrs;
 };

@@ -52,6 +52,22 @@ std::ostream &operator<<(std::ostream &os, const Dataset &dataset) {
   return os << DatasetConstView(dataset);
 }
 
+std::ostream &operator<<(std::ostream &os, const DatasetAxisConstView &axis) {
+  return os << to_string(axis);
+}
+
+std::ostream &operator<<(std::ostream &os, const DatasetAxis &axis) {
+  return os << DatasetAxisConstView(axis);
+}
+
+std::ostream &operator<<(std::ostream &os, const DataArrayAxisConstView &axis) {
+  return os << to_string(axis);
+}
+
+std::ostream &operator<<(std::ostream &os, const DataArrayAxis &axis) {
+  return os << DataArrayAxisConstView(axis);
+}
+
 constexpr const char *tab = "    ";
 
 std::string to_string(const Dimensions &dims) {
@@ -299,7 +315,10 @@ std::string to_string(const DataArrayConstView &data) {
 }
 
 std::string to_string(const DataArrayAxisConstView &axis) {
-  return "<scipp.DataArrayAxisView>" + to_string(axis.data());
+  return "<scipp.DataArrayAxisView>" + '\n' +
+         (axis.hasData() ? to_string(axis.data()) : "<empty data>") + '\n' +
+         (axis.hasUnaligned() ? to_string(axis.unaligned())
+                              : "<empty unaligned>");
 }
 
 std::string to_string(const Dataset &dataset) {

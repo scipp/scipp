@@ -271,7 +271,6 @@ DatasetAxis resize(const DatasetAxisConstView &axis, const Dim dim,
 
 DataArrayAxis concatenate(const DataArrayAxisConstView &a,
                           const DataArrayAxisConstView &b, const Dim dim) {
-  return DataArrayAxis(a);
   if (static_cast<bool>(a.unaligned()) != static_cast<bool>(b.unaligned()))
     throw except::UnalignedError("Mismatch of unaligned content.");
   if(a.unaligned())
@@ -282,7 +281,6 @@ DataArrayAxis concatenate(const DataArrayAxisConstView &a,
 }
 DatasetAxis concatenate(const DatasetAxisConstView &a,
                         const DatasetAxisConstView &b, const Dim dim) {
-  return DatasetAxis(a);
   if (a.unaligned().size() != b.unaligned().size())
     throw except::UnalignedError("Mismatch of unaligned content.");
   DatasetAxis out(concatenate(a.data(), b.data(), dim));
