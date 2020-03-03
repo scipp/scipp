@@ -929,8 +929,6 @@ def test_num_to_nan_out():
     replace = sc.Variable(value=0.0)
     sc.nan_to_num(a, nan=replace, out=out)
     expected = sc.Variable(dims=['x'], values=np.array([1, replace.value]))
-    print(out)
-    print(expected)
     assert out == expected
 
 
