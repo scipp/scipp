@@ -23,7 +23,6 @@ protected:
             Variances{1, 1, 1, 1, 1, 1})),
         sparse_variable(makeVariable<double>(
             Dims{Dim::Y, Dim::Z, Dim::X}, Shape{3l, 2l, Dimensions::Sparse})) {
-    dataset.setCoord(Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{4}));
     dataset.setCoord(Dim::Y, makeVariable<double>(Dims{Dim::Y}, Shape{3}));
 
     dataset.setCoord(Dim("labels"), makeVariable<int>(Dims{Dim::X}, Shape{4}));
@@ -39,7 +38,7 @@ protected:
     dataset.setData("val", makeVariable<double>(Dims{Dim::X}, Shape{4}));
     dataset.setAttr("val", "attr", makeVariable<int>(Values{int{}}));
 
-    DatasetAxis x;
+    DatasetAxis x(makeVariable<double>(Dims{Dim::X}, Shape{4}));
     x.unaligned().set("sparse_coord", sparse_variable);
     x.unaligned().set("sparse_coord_and_val", sparse_variable);
     dataset.coords().set(Dim::X, x);
@@ -282,6 +281,7 @@ TEST_F(DataArray_comparison_operators, extra_variance) {
 
 TEST_F(DataArray_comparison_operators, extra_sparse_values) {
   auto extra = dataset;
+  // dataset has default weights, not sparse
   extra.setData("sparse_coord", sparse_variable);
   expect_ne(extra["sparse_coord"], dataset["sparse_coord"]);
 }

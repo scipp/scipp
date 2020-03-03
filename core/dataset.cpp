@@ -277,12 +277,6 @@ void Dataset::setMask(const std::string &masksName, Variable mask) {
 /// (mismatching dtype, unit, or dimensions).
 void Dataset::setData(const std::string &name, Variable data) {
   setDims(data.dims());
-  const bool sparseData = data.dims().sparse();
-
-  if (contains(name) && operator[](name).dims().sparse() != sparseData)
-    throw except::DimensionError("Cannot set dense values or variances if "
-                                 "coordinates sparse or vice versa");
-
   const auto rebuild_dims = contains(name);
   m_data[name].data = std::move(data);
   if (rebuild_dims)
