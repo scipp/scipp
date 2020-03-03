@@ -259,74 +259,48 @@ Variable reverse(Variable var, const Dim dim) {
 /// Return a deep copy of a Variable or of a VariableView.
 Variable copy(const VariableConstView &var) { return Variable(var); }
 
-namespace {
-template <typename Op>
-VariableView replace_in_place(const VariableConstView &var,
-                              const VariableConstView &replacement, Op op,
-                              const VariableView &out) {
-
-  transform_in_place<std::tuple<double, float>>(
-      out, var, replacement,
-      scipp::overloaded{
-          transform_flags::expect_all_or_none_have_variance,
-          [&op](auto &a, const auto &b, const auto &repl) { op(a, b, repl); },
-          [](units::Unit &a, const units::Unit &b, const units::Unit &repl) {
-            expect::equals(b, repl);
-            a = b;
-          }});
-  return out;
-}
-
-template <typename Op>
-Variable replace(const VariableConstView &var,
-                 const VariableConstView &replacement, Op op) {
-  return transform<std::tuple<double, float>>(
-      var, replacement,
-      overloaded{transform_flags::expect_all_or_none_have_variance,
-                 [&op](const auto &x, const auto &repl) { return op(x, repl); },
-                 [](const units::Unit &x, const units::Unit &repl) {
-                   expect::equals(x, repl);
-                   return x;
-                 }});
-}
-} // namespace
-
 VariableView nan_to_num(const VariableConstView &var,
                         const VariableConstView &replacement,
                         const VariableView &out) {
-
-  return replace_in_place(var, replacement, element::nan_to_num_out_arg, out);
+  transform_in_place<std::tuple<double, float>>(out, var, replacement,
+                                                element::nan_to_num_out_arg);
+  return out;
 }
 
 VariableView positive_inf_to_num(const VariableConstView &var,
                                  const VariableConstView &replacement,
                                  const VariableView &out) {
-
-  return replace_in_place(var, replacement,
-                          element::positive_inf_to_num_out_arg, out);
+  transform_in_place<std::tuple<double, float>>(
+      out, var, replacement, element::positive_inf_to_num_out_arg);
+  return out;
 }
 VariableView negative_inf_to_num(const VariableConstView &var,
                                  const VariableConstView &replacement,
                                  const VariableView &out) {
+  transform_in_place<std::tuple<double, float>>(
+      out, var, replacement, element::negative_inf_to_num_out_arg);
 
-  return replace_in_place(var, replacement,
-                          element::negative_inf_to_num_out_arg, out);
+  return out;
 }
 
 Variable nan_to_num(const VariableConstView &var,
                     const VariableConstView &replacement) {
 
-  return replace(var, replacement, element::nan_to_num);
+  return transform<std::tuple<double, float>>(var, replacement,
+                                              element::nan_to_num);
 }
 
 Variable pos_inf_to_num(const VariableConstView &var,
                         const VariableConstView &replacement) {
-  return replace(var, replacement, element::positive_inf_to_num);
+
+  return transform<std::tuple<double, float>>(var, replacement,
+                                              element::positive_inf_to_num);
 }
 
 Variable neg_inf_to_num(const VariableConstView &var,
                         const VariableConstView &replacement) {
-  return replace(var, replacement, element::negative_inf_to_num);
+  return transform<std::tuple<double, float>>(var, replacement,
+                                              element::negative_inf_to_num);
 }
 
 } // namespace scipp::core
