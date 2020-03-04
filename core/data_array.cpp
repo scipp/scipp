@@ -63,25 +63,38 @@ struct Divide {
     a /= b;
   }
 };
-} // namespace
+
+// This is a temporary helper that will be removed. Once we have proper support
+// for unaligned data arrays, direct operations between event data and
+// histograms will not be supported any more. Instead, the aligned wrapper of
+// the unaligned event data will provide the dimension information.
+Dim guess_histogram_dim(const DataArrayConstView &a,
+                        const DataArrayConstView &b) {
+  Dim hist(Dim::Invalid);
+  for (const auto &[dim, coord] : a.coords())
+    if (is_events(coord))
+      hist = dim;
+  for (const auto &[dim, coord] : b.coords())
+    if (is_events(coord))
+      hist = dim;
+  return hist;
+}
 
 bool is_sparse_and_histogram(const DataArrayConstView &a,
-                             const DataArrayConstView &b) {
+                             const DataArrayConstView &b, const Dim dim) {
   // TODO Such an indirect check should not be necessary any more. Operations
   // mixing dense and event data are probably only going to be handled using an
   // aligning wrapper, so the sparse dim is known, and coord checks take place
   // on that higher level.
-  return false;
-  // return (is_events(a) && is_histogram(b, a.dims().sparseDim())) ||
-  //       (is_events(b) && is_histogram(a, b.dims().sparseDim()));
+  return dim != Dim::Invalid && (is_histogram(a, dim) || is_histogram(b, dim));
 }
+} // namespace
 
-template <class Op, class Coord, class Data, class Edges, class Weights>
-auto apply_op_sparse_dense(Op op, const Coord &coord, const Data &data,
-                           const Edges &edges, const Weights &weights) {
-  using D = std::decay_t<decltype(data)>;
+template <class Coord, class Edges, class Weights>
+auto apply_op_sparse_dense(const Coord &coord, const Edges &edges,
+                           const Weights &weights) {
   using W = std::decay_t<decltype(weights)>;
-  constexpr bool vars = is_ValueAndVariance_v<D> || is_ValueAndVariance_v<W>;
+  constexpr bool vars = is_ValueAndVariance_v<W>;
   using ElemT = typename core::detail::element_type_t<W>::value_type;
   using T = sparse_container<ElemT>;
   T out_vals;
@@ -95,7 +108,6 @@ auto apply_op_sparse_dense(Op op, const Coord &coord, const Data &data,
     else
       return x[i];
   };
-  const auto d = get(data, 0);
   if (scipp::numeric::is_linspace(edges)) {
     const auto [offset, nbin, scale] = linear_edge_params(edges);
     for (const auto c : coord) {
@@ -104,11 +116,10 @@ auto apply_op_sparse_dense(Op op, const Coord &coord, const Data &data,
       constexpr w_type out_of_bounds(0.0);
       w_type w = bin < 0.0 || bin >= nbin ? out_of_bounds : get(weights, bin);
       if constexpr (vars) {
-        const auto [val, var] = op(d, w);
-        out_vals.emplace_back(val);
-        out_vars.emplace_back(var);
+        out_vals.emplace_back(w.value);
+        out_vars.emplace_back(w.variance);
       } else {
-        out_vals.emplace_back(op(d, w));
+        out_vals.emplace_back(w);
       }
     }
   } else {
@@ -122,41 +133,28 @@ auto apply_op_sparse_dense(Op op, const Coord &coord, const Data &data,
 }
 
 namespace sparse_dense_op_impl_detail {
-// Note that currently we require Data = Weight.
-template <class Coord, class Data, class Edge, class Weight>
-using args = std::tuple<sparse_container<Coord>, span<const Data>,
-                        span<const Edge>, span<const Weight>>;
+template <class Coord, class Edge, class Weight>
+using args =
+    std::tuple<sparse_container<Coord>, span<const Edge>, span<const Weight>>;
 } // namespace sparse_dense_op_impl_detail
 
-template <int ImplicitData, class Op>
-Variable sparse_dense_op_impl(Op op, const VariableConstView &sparseCoord_,
+Variable sparse_dense_op_impl(const VariableConstView &sparseCoord_,
                               const VariableConstView &edges_,
-                              const VariableConstView &weights_) {
+                              const VariableConstView &weights_,
+                              const Dim dim) {
   using namespace sparse_dense_op_impl_detail;
-  // TODO should this be an input param?
-  const Dim dim; // = sparseCoord_.dims().sparseDim();
-  // Sparse data without values has an implicit value of 1 count. If
-  // `ImplicitData` is 0 we simply use this function to generate intermediate
-  // sparse data that can be multiplied with the existing data by the caller.
-  const Variable implicit_data =
-      ImplicitData
-          ? Variable(weights_.dtype(), Dims{dim}, Shape{1}, Values{1.0},
-                     Variances{1.0}, units::Unit(units::counts))
-          : Variable(weights_.dtype(), Dims{dim}, Shape{1}, Values{1.0});
-  return transform<std::tuple<
-      args<double, double, double, double>, args<float, double, double, double>,
-      args<float, float, float, float>, args<double, float, float, float>>>(
-      sparseCoord_, subspan_view(implicit_data, dim), subspan_view(edges_, dim),
-      subspan_view(weights_, dim),
-      overloaded{
-          [op](const auto &... a) { return apply_op_sparse_dense(op, a...); },
-          transform_flags::expect_no_variance_arg<0>,
-          transform_flags::expect_no_variance_arg<2>,
-          [op](const units::Unit &sparse, const units::Unit &data,
-               const units::Unit &edges, const units::Unit &weights) {
-            expect::equals(sparse, edges);
-            return op(data, weights);
-          }});
+  return transform<
+      std::tuple<args<double, double, double>, args<float, double, double>,
+                 args<float, float, float>, args<double, float, float>>>(
+      sparseCoord_, subspan_view(edges_, dim), subspan_view(weights_, dim),
+      overloaded{[](const auto &... a) { return apply_op_sparse_dense(a...); },
+                 transform_flags::expect_no_variance_arg<0>,
+                 transform_flags::expect_no_variance_arg<1>,
+                 [](const units::Unit &sparse, const units::Unit &edges,
+                    const units::Unit &weights) {
+                   expect::equals(sparse, edges);
+                   return weights;
+                 }});
 }
 
 DataArray &DataArray::operator+=(const DataArrayConstView &other) {
@@ -175,41 +173,42 @@ DataArray &DataArray::operator-=(const DataArrayConstView &other) {
 
 template <class Op>
 DataArray &sparse_dense_op_inplace(Op op, DataArray &a,
-                                   const DataArrayConstView &b) {
-  // if (!is_sparse_and_histogram(a, b)) {
-  expect::coordsAreSuperset(a, b);
-  union_or_in_place(a.masks(), b.masks());
-  op.inplace(a.data(), b.data());
-  /*
-} else if (a.dims().sparse()) {
-  const Dim dim = a.dims().sparseDim();
-  // Coord for `dim` in `b` is mismatching that in `a` by definition. Use
-  // slice to exclude this from comparison.
-  expect::coordsAreSuperset(a, b.slice({dim, 0}));
-  union_or_in_place(a.masks(), b.masks());
-  if (a.hasData()) {
-    // Note the inefficiency here: Always creating temporary sparse data.
-    // Could easily avoided, but requires significant code duplication.
-    a.data() *= sparse_dense_op_impl<0>(op, a.coords()[dim], b.coords()[dim],
-                                        b.data());
+                                   const DataArrayConstView &b, const Dim dim) {
+  if (!is_sparse_and_histogram(a, b, dim)) {
+    expect::coordsAreSuperset(a, b);
+    union_or_in_place(a.masks(), b.masks());
+    op.inplace(a.data(), b.data());
+  } else if (is_histogram(b, dim)) {
+    // Coord for `dim` in `b` is mismatching that in `a` by definition. Use
+    // slice to exclude this from comparison.
+    expect::coordsAreSuperset(a, b.slice({dim, 0}));
+    union_or_in_place(a.masks(), b.masks());
+    if (is_events(a)) {
+      // Note the inefficiency here: Always creating temporary sparse data.
+      // Could easily avoided, but requires significant code duplication.
+      op.inplace(a.data(),
+                 sparse_dense_op_impl(a.coords()[dim].data(),
+                                      b.coords()[dim].data(), b.data(), dim));
+    } else {
+      a.setData(op(a.data(), sparse_dense_op_impl(a.coords()[dim].data(),
+                                                  b.coords()[dim].data(),
+                                                  b.data(), dim)));
+    }
   } else {
-    a.setData(sparse_dense_op_impl<1>(op, a.coords()[dim], b.coords()[dim],
-                                      b.data()));
+    throw except::SparseDataError("Unsupported combination of sparse and dense "
+                                  "data in binary arithmetic operation.");
   }
-} else {
-  throw except::SparseDataError("Unsupported combination of sparse and dense "
-                                "data in binary arithmetic operation.");
-}
-*/
   return a;
 }
 
 DataArray &DataArray::operator*=(const DataArrayConstView &other) {
-  return sparse_dense_op_inplace(Times{}, *this, other);
+  const auto dim = guess_histogram_dim(*this, other);
+  return sparse_dense_op_inplace(Times{}, *this, other, dim);
 }
 
 DataArray &DataArray::operator/=(const DataArrayConstView &other) {
-  return sparse_dense_op_inplace(Divide{}, *this, other);
+  const auto dim = guess_histogram_dim(*this, other);
+  return sparse_dense_op_inplace(Divide{}, *this, other, dim);
 }
 
 DataArray &DataArray::operator+=(const VariableConstView &other) {
@@ -244,52 +243,46 @@ DataArray operator-(const DataArrayConstView &a, const DataArrayConstView &b) {
 
 template <class Op>
 auto sparse_dense_op(Op op, const DataArrayConstView &a,
-                     const DataArrayConstView &b) {
-  // if (!is_sparse_and_histogram(a, b))
-  return op(a.data(), b.data());
-  /*
-if (a.dims().sparse()) {
-  const Dim dim = a.dims().sparseDim();
-  if (a.hasData()) {
+                     const DataArrayConstView &b, const Dim dim) {
+  if (!is_sparse_and_histogram(a, b, dim))
+    return op(a.data(), b.data());
+  if (is_histogram(b, dim)) {
     // not in-place so type promotion can happen
-    return sparse_dense_op_impl<0>(op, a.coords()[dim], b.coords()[dim],
-                                   b.data()) *
-           a.data();
-  } else {
-    return sparse_dense_op_impl<1>(op, a.coords()[dim], b.coords()[dim],
-                                   b.data());
+    return op(a.data(),
+              sparse_dense_op_impl(a.coords()[dim].data(),
+                                   b.coords()[dim].data(), b.data(), dim));
   }
-}
-// histogram divided by sparse not supported, would typically result in unit
-// 1/counts which is meaningless
-if constexpr (std::is_same_v<Op, Times>)
-  return sparse_dense_op(op, b, a);
+  // histogram divided by sparse not supported, would typically result in unit
+  // 1/counts which is meaningless
+  if constexpr (std::is_same_v<Op, Times>)
+    return sparse_dense_op(op, b, a, dim);
 
-throw except::SparseDataError("Unsupported combination of sparse and dense "
-                              "data in binary arithmetic operation.");
-                              */
+  throw except::SparseDataError("Unsupported combination of sparse and dense "
+                                "data in binary arithmetic operation.");
 }
 
 auto sparse_dense_coord_union(const DataArrayConstView &a,
-                              const DataArrayConstView &b) {
-  // if (!is_sparse_and_histogram(a, b))
-  return union_(a.coords(), b.coords());
+                              const DataArrayConstView &b, const Dim dim) {
+  if (!is_sparse_and_histogram(a, b, dim))
+    return union_(a.coords(), b.coords());
   // Use slice to remove dense coord, since output will be sparse.
-  // if (a.dims().sparse())
-  //  return union_(a.coords(), b.slice({a.dims().sparseDim(), 0}).coords());
-  // else
-  //  return union_(a.slice({b.dims().sparseDim(), 0}).coords(), b.coords());
+  if (is_histogram(b, dim))
+    return union_(a.coords(), b.slice({dim, 0}).coords());
+  else
+    return union_(a.slice({dim, 0}).coords(), b.coords());
 }
 
 DataArray operator*(const DataArrayConstView &a, const DataArrayConstView &b) {
-  const auto data = sparse_dense_op(Times{}, a, b);
-  const auto coords = sparse_dense_coord_union(a, b);
+  const auto dim = guess_histogram_dim(a, b);
+  const auto data = sparse_dense_op(Times{}, a, b, dim);
+  const auto coords = sparse_dense_coord_union(a, b, dim);
   return {std::move(data), std::move(coords), union_or(a.masks(), b.masks())};
 }
 
 DataArray operator/(const DataArrayConstView &a, const DataArrayConstView &b) {
-  const auto data = sparse_dense_op(Divide{}, a, b);
-  const auto coords = sparse_dense_coord_union(a, b);
+  const auto dim = guess_histogram_dim(a, b);
+  const auto data = sparse_dense_op(Divide{}, a, b, dim);
+  const auto coords = sparse_dense_coord_union(a, b, dim);
   return {std::move(data), std::move(coords), union_or(a.masks(), b.masks())};
 }
 

@@ -47,7 +47,10 @@ auto make_sparse() {
   auto vals = var.sparseValues<double>();
   vals[0] = {1.1, 2.2, 3.3};
   vals[1] = {1.1, 2.2, 3.3, 5.5};
-  return DataArray(std::optional<Variable>(), {{Dim::X, var}});
+  return DataArray(makeVariable<double>(Dims{Dim::Y}, Shape{2},
+                                        units::Unit(units::counts),
+                                        Values{1, 1}, Variances{1, 1}),
+                   {{Dim::X, var}});
 }
 
 auto make_histogram() {
@@ -86,9 +89,9 @@ TEST(DataArraySparseArithmeticTest, fail_sparse_op_non_histogram) {
                                    Variances{0.3, 0.4});
   DataArray not_hist(data, {{Dim::X, coord}});
 
-  EXPECT_THROW(sparse * not_hist, except::SparseDataError);
-  EXPECT_THROW(not_hist * sparse, except::SparseDataError);
-  EXPECT_THROW(sparse / not_hist, except::SparseDataError);
+  EXPECT_THROW(sparse * not_hist, except::MismatchError<DataArrayAxis>);
+  EXPECT_THROW(not_hist * sparse, except::MismatchError<DataArrayAxis>);
+  EXPECT_THROW(sparse / not_hist, except::MismatchError<DataArrayAxis>);
 }
 
 TEST(DataArraySparseArithmeticTest, sparse_times_histogram) {
@@ -154,7 +157,7 @@ TEST(DataArraySparseArithmeticTest, sparse_times_histogram_without_variances) {
 TEST(DataArraySparseArithmeticTest, sparse_with_values_times_histogram) {
   auto sparse = make_sparse();
   const auto hist = make_histogram();
-  Variable data(sparse.coords()[Dim::X].unaligned());
+  Variable data(sparse.coords()[Dim::X].data());
   data.setUnit(units::counts);
   data *= 0.0;
   data += 2.0 * units::Unit(units::counts);
