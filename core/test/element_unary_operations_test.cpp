@@ -307,11 +307,29 @@ TEST(ElementAtanOutArgTest, value_float) {
   EXPECT_EQ(out, std::atan(1.0f));
 }
 
-TEST(ElementAtanOutArgTest, supported_types) {
-  auto supported = decltype(element::atan_out_arg)::types{};
-  std::get<double>(supported);
-  std::get<float>(supported);
+template <typename T> class ElementAtan2Test : public ::testing::Test {};
+using ElementAtan2TestTypes = ::testing::Types<double, float>;
+TYPED_TEST_SUITE(ElementAtan2Test, ElementAtan2TestTypes);
+
+TYPED_TEST(ElementAtan2Test, unit) {
+  const units::Unit m(units::m);
+  EXPECT_EQ(element::atan2(m, m), units::atan2(m, m));
+  const units::Unit rad(units::rad);
+  EXPECT_THROW(element::atan2(rad, m), except::UnitError);
 }
+
+TYPED_TEST(ElementAtan2Test, value) {
+  using T = TypeParam;
+  T a = 1;
+  T b = 2;
+  EXPECT_EQ(element::atan2(a, b), std::atan2(a, b));
+}
+
+TEST(ElementAtan2OutArgTest, unit) {}
+
+TEST(ElementAtan2OutArgTest, value_double) {}
+
+TEST(ElementAtan2OutArgTest, value_float) {}
 
 template <typename T> class ElementNanToNumTest : public ::testing::Test {};
 using ElementReplacementTestTypes = ::testing::Types<double, float>;

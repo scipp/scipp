@@ -199,6 +199,10 @@ Variable dot(const Variable &a, const Variable &b) {
                  }});
 }
 
+Variable atan2(const Variable &a, const Variable &b) {
+  return transform<pair_self_t<double, float>>(a, b, element::atan2);
+}
+
 Variable broadcast(const VariableConstView &var, const Dimensions &dims) {
   if (var.dims().contains(dims))
     return Variable{var};

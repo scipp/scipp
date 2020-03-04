@@ -193,6 +193,16 @@ Derived inverse_trigonometric(const Unit_impl<Derived> &a) {
       a.name() + ".");
 }
 
+template <class Derived>
+Derived inverse_trigonometric_binary(const Unit_impl<Derived> &a, const Unit_impl<Derived> &b) {
+  if ( a == b )
+    // This should just resolve into units::rad
+    return {typename decltype(asin(1.0 * units::dimensionless) )::unit_type{}};
+  throw except::UnitError(
+      "Binary inverse trigonometric function requires matching units for input, got " +
+      a.name() + " b " + b.name() +".");
+}
+
 template <class Derived> Derived sin(const Unit_impl<Derived> &a) {
   return trigonometric(a);
 }
@@ -210,6 +220,9 @@ template <class Derived> Derived acos(const Unit_impl<Derived> &a) {
 }
 template <class Derived> Derived atan(const Unit_impl<Derived> &a) {
   return inverse_trigonometric(a);
+}
+template <class Derived> Derived atan2(const Unit_impl<Derived> &y, const Unit_impl<Derived> &x) {
+  return inverse_trigonometric_binary(y, x);
 }
 
 #define INSTANTIATE(Derived)                                                   \
@@ -244,6 +257,7 @@ template <class Derived> Derived atan(const Unit_impl<Derived> &a) {
   template SCIPP_UNITS_EXPORT Derived tan(const Unit_impl<Derived> &a);        \
   template SCIPP_UNITS_EXPORT Derived asin(const Unit_impl<Derived> &a);       \
   template SCIPP_UNITS_EXPORT Derived acos(const Unit_impl<Derived> &a);       \
-  template SCIPP_UNITS_EXPORT Derived atan(const Unit_impl<Derived> &a);
+  template SCIPP_UNITS_EXPORT Derived atan(const Unit_impl<Derived> &a);       \
+  template SCIPP_UNITS_EXPORT Derived atan2(const Unit_impl<Derived> &y, const Unit_impl<Derived> &x);
 
 } // namespace scipp::units

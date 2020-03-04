@@ -1279,6 +1279,16 @@ TEST(VariableTest,
   EXPECT_EQ(a, expected);
 }
 
+TEST(ATan2Test, atan2) {
+  auto x = makeVariable<double>(Dims{Dim::X}, Shape{2}, units::Unit(units::m),
+                                Values{1.0, 2.0});
+  auto y = x;
+  auto expected =
+      makeVariable<double>(Dims{Dim::X}, Shape{2}, units::Unit(units::rad),
+                           Values{M_PI / 4, M_PI / 4});
+  EXPECT_EQ(atan2(y, x), expected);
+}
+
 template <class T> class ReciprocalTest : public ::testing::Test {};
 
 using test_types = ::testing::Types<float, double>;

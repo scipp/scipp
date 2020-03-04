@@ -1035,6 +1035,7 @@ SCIPP_CORE_EXPORT VariableView acos(const VariableConstView &var,
 [[nodiscard]] SCIPP_CORE_EXPORT Variable atan(Variable &&var);
 SCIPP_CORE_EXPORT VariableView atan(const VariableConstView &var,
                                     const VariableView &out);
+SCIPP_CORE_EXPORT Variable atan2(const Variable &a, const Variable &b);
 
 // Logical reductions
 [[nodiscard]] SCIPP_CORE_EXPORT Variable any(const VariableConstView &var,
