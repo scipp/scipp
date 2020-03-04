@@ -922,9 +922,7 @@ Dataset non_trivial_2d_sparse(std::string_view name) {
   dvar.sparseValues<double>()[2] = {1, 1, 1, 1, 1, 100, 1, 1, 1, 1, 1, 1};
   dvar.sparseValues<double>()[3] = {1};
   sparse.setData(std::string(name), dvar);
-  DatasetAxis y;
-  y.unaligned().set(std::string(name), var);
-  sparse.coords().set(Dim::Y, y);
+  sparse.coords().set(Dim::Y, var);
   return sparse;
 }
 
@@ -940,12 +938,14 @@ TEST(DatasetSetData, sparse_to_dense) {
   auto base = non_trivial_2d_sparse("base");
   auto var = makeVariable<event_list<double>>(Dims{}, Shape{});
   var.sparseValues<double>()[0] = {1, 2, 3};
-  DatasetAxis l;
-  l.unaligned().set("base", var);
-  base.coords().set(Dim("l"), l);
+  base.coords().set(Dim("l"), var);
 
   auto dense = datasetFactory().make();
+  // Remove event coord. To keep this coord we would need to set data as
+  // unaligned instead.
+  base.eraseCoord(Dim::Y);
   dense.setData("sparse", base["base"]);
+
   EXPECT_EQ(base["base"].data(), dense["sparse"].data());
   EXPECT_EQ(dense["sparse"].coords().items().count(Dim("l")), 1);
 }
@@ -957,7 +957,7 @@ TEST(DatasetSetData, dense_to_dense) {
   EXPECT_EQ(dense["data_x"], dense["data_x_1"]);
 
   EXPECT_THROW(dense.setData("data_x_2", d["data_x"]),
-               except::VariableMismatchError);
+               except::DatasetAxisMismatchError);
 }
 
 TEST(DatasetSetData, dense_to_empty) {
