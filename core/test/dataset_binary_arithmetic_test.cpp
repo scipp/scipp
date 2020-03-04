@@ -348,15 +348,6 @@ TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_DatasetView_coord_mismatch) {
                except::CoordMismatchError);
 }
 
-TYPED_TEST(DatasetBinaryEqualsOpTest, coord_only_sparse_fails) {
-  auto var = makeVariable<event_list<double>>(Dims{Dim::X}, Shape{2});
-  Dataset d;
-  DatasetAxis y;
-  y.unaligned().set("a", var);
-  d.coords().set(Dim::Y, y);
-  ASSERT_THROW(TestFixture::op(d, d), except::SparseDataError);
-}
-
 TYPED_TEST(DatasetBinaryEqualsOpTest,
            with_single_var_with_single_sparse_dimensions_sized_same) {
   Dataset a = make_simple_sparse({1.1, 2.2});
@@ -742,14 +733,17 @@ TYPED_TEST(DatasetBinaryOpTest,
   EXPECT_EQ(res, TestFixture::op(dataset_a, dataset_b));
 }
 
-TYPED_TEST(DatasetBinaryOpTest, sparse_with_dense_fail) {
+TYPED_TEST(DatasetBinaryOpTest, sparse_with_dense_broadcast) {
   Dataset dense;
   dense.setData("a",
                 makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1, 2}));
   Dataset sparse;
   sparse.setData("a", makeVariable<event_list<double>>(Dims{}, Shape{}));
 
-  ASSERT_THROW(TestFixture::op(sparse, dense), except::DimensionError);
+  // Note: In the old way of handling event data, the sparse dim would result in
+  // a failure here. Now we just get a broadcast, since `dense` has no coord
+  // that would prevent this.
+  ASSERT_NO_THROW(TestFixture::op(sparse, dense));
 }
 
 TYPED_TEST(DatasetBinaryOpTest, sparse_with_dense) {
@@ -799,23 +793,9 @@ TYPED_TEST(DatasetBinaryOpTest, sparse_dataarrayconstview_coord_mismatch) {
       make_sparse_with_coords_and_labels({3.3, 4.4}, {1.0, 2.1});
 
   ASSERT_THROW(TestFixture::op(dataset_a, dataset_b["sparse"]),
-               except::VariableMismatchError);
+               except::DataArrayAxisMismatchError);
   ASSERT_THROW(TestFixture::op(dataset_a["sparse"], dataset_b),
-               except::VariableMismatchError);
-}
-
-TYPED_TEST(DatasetBinaryOpTest, sparse_data_presense_mismatch) {
-  Dataset a;
-  DatasetAxis x;
-  x.unaligned().set("sparse",
-                    makeVariable<event_list<double>>(Dims{}, Shape{}));
-  a.coords().set(Dim::X, x);
-  auto b(a);
-  a.setData("sparse", makeVariable<event_list<double>>(Dims{}, Shape{}));
-
-  EXPECT_THROW(TestFixture::op(a, b), except::SparseDataError);
-  EXPECT_THROW(TestFixture::op(a, b["sparse"]), except::SparseDataError);
-  EXPECT_THROW(TestFixture::op(a["sparse"], b), except::SparseDataError);
+               except::DataArrayAxisMismatchError);
 }
 
 TYPED_TEST(DatasetBinaryOpTest,
@@ -826,21 +806,17 @@ TYPED_TEST(DatasetBinaryOpTest,
   {
     auto var = makeVariable<event_list<double>>(Dims{}, Shape{});
     var.sparseValues<double>()[0] = {0.5, 1.0};
-    DatasetAxis x;
-    x.unaligned().set("sparse", var);
-    dataset_a.coords().set(Dim::X, x);
+    dataset_a.coords().set(Dim::X, var);
   }
 
   {
     auto var = makeVariable<event_list<double>>(Dims{}, Shape{});
     var.sparseValues<double>()[0] = {0.5, 1.5};
-    DatasetAxis x;
-    x.unaligned().set("sparse", var);
-    dataset_b.coords().set(Dim::X, x);
+    dataset_b.coords().set(Dim::X, var);
   }
 
   EXPECT_THROW(TestFixture::op(dataset_a, dataset_b),
-               except::VariableMismatchError);
+               except::DataArrayAxisMismatchError);
 }
 
 TYPED_TEST(DatasetBinaryOpTest,
@@ -851,21 +827,17 @@ TYPED_TEST(DatasetBinaryOpTest,
   {
     auto var = makeVariable<event_list<double>>(Dims{}, Shape{});
     var.sparseValues<double>()[0] = {0.5, 1.0};
-    DatasetAxis l;
-    l.unaligned().set("sparse", var);
-    dataset_a.coords().set(Dim("l"), l);
+    dataset_a.coords().set(Dim("l"), var);
   }
 
   {
     auto var = makeVariable<event_list<double>>(Dims{}, Shape{});
     var.sparseValues<double>()[0] = {0.5, 1.5};
-    DatasetAxis l;
-    l.unaligned().set("sparse", var);
-    dataset_b.coords().set(Dim("l"), l);
+    dataset_b.coords().set(Dim("l"), var);
   }
 
   EXPECT_THROW(TestFixture::op(dataset_a, dataset_b),
-               except::VariableMismatchError);
+               except::DataArrayAxisMismatchError);
 }
 
 TYPED_TEST(DatasetBinaryOpTest, dataset_lhs_datasetconstview_rhs) {

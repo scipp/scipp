@@ -42,11 +42,8 @@ TYPED_TEST(DataArrayViewTest, sparse_sparseDim) {
   d.setData("sparse_data", makeVariable<event_list<double>>(Dims{}, Shape{}));
   ASSERT_TRUE(is_events(d_ref["sparse_data"]));
 
-  DatasetAxis x;
-  x.unaligned().set("sparse_coord",
-                    makeVariable<event_list<double>>(Dims{}, Shape{}));
-  d.coords().set(Dim::X, x);
-  ASSERT_TRUE(is_events(d_ref["sparse_coord"]));
+  // TODO Event data can have non-list data (only coords would be event_list),
+  // what should is_events return in that case?
 }
 
 TYPED_TEST(DataArrayViewTest, dims) {
@@ -61,11 +58,6 @@ TYPED_TEST(DataArrayViewTest, dims) {
 
   d.setData("sparse_data", sparse);
   ASSERT_EQ(d_ref["sparse_data"].dims(), sparse.dims());
-
-  DatasetAxis z;
-  z.unaligned().set("sparse_coord", sparse);
-  d.coords().set(Dim::Z, z);
-  ASSERT_EQ(d_ref["sparse_coord"].dims(), sparse.dims());
 }
 
 TYPED_TEST(DataArrayViewTest, dims_with_extra_coords) {
@@ -89,45 +81,51 @@ TYPED_TEST(DataArrayViewTest, unit) {
   EXPECT_EQ(d_ref["dense"].unit(), units::dimensionless);
 }
 
-TYPED_TEST(DataArrayViewTest, unit_access_fails_without_values) {
+// Reenable this test when proper unaligned support available
+TYPED_TEST(DataArrayViewTest, DISABLED_unit_access_fails_without_values) {
   Dataset d;
   typename TestFixture::dataset_type &d_ref(d);
   DatasetAxis x;
   x.unaligned().set("sparse",
                     makeVariable<event_list<double>>(Dims{}, Shape{}));
   d.coords().set(Dim::X, x);
+  // TODO Must set unaligned data, otherwise the item does not exist.
   EXPECT_THROW(d_ref["sparse"].unit(), except::SparseDataError);
 }
 
 TYPED_TEST(DataArrayViewTest, coords) {
   Dataset d;
-  typename TestFixture::dataset_type &d_ref(d);
   const auto var = makeVariable<double>(Dims{Dim::X}, Shape{3});
-  d.setCoord(Dim::X, var);
+  d.coords().set(Dim::X, var);
   d.setData("a", var);
 
+  typename TestFixture::dataset_type &d_ref(d);
   ASSERT_NO_THROW(d_ref["a"].coords());
-  // TODO Would it be sensible to define such a comparison?
-  // ASSERT_EQ(d_ref["a"].coords(), d.coords());
+  // TODO Require better means to compare DatasetCoords and DataArrayCoords
+  ASSERT_EQ(d_ref["a"].coords().size(), d.coords().size());
+  for (const auto &[dim, coord] : d_ref["a"].coords())
+    EXPECT_EQ(d.coords()[dim].data(), coord.data());
 }
 
 TYPED_TEST(DataArrayViewTest, coords_sparse) {
   Dataset d;
-  typename TestFixture::dataset_type &d_ref(d);
   const auto var = makeVariable<event_list<double>>(Dims{Dim::X}, Shape{3});
-  DatasetAxis y;
-  y.unaligned().set("a", var);
-  d.coords().set(Dim::Y, y);
+  d.coords().set(Dim::Y, var);
+  d.setData("a", var);
 
+  typename TestFixture::dataset_type &d_ref(d);
   ASSERT_NO_THROW(d_ref["a"].coords());
-  // TODO Would it be sensible to define such a comparison?
-  // ASSERT_NE(d_ref["a"].coords(), d.coords());
+  // TODO Require better means to compare DatasetCoords and DataArrayCoords
+  ASSERT_EQ(d_ref["a"].coords().size(), d.coords().size());
+  for (const auto &[dim, coord] : d_ref["a"].coords())
+    EXPECT_EQ(d.coords()[dim].data(), coord.data());
   ASSERT_EQ(d_ref["a"].coords().size(), 1);
   ASSERT_NO_THROW(d_ref["a"].coords()[Dim::Y]);
   ASSERT_EQ(d_ref["a"].coords()[Dim::Y], var);
 }
 
-TYPED_TEST(DataArrayViewTest, coords_sparse_shadow) {
+// Reenable this when proper unaligned views are implemented
+TYPED_TEST(DataArrayViewTest, DISABLED_coords_unaligned) {
   Dataset d;
   typename TestFixture::dataset_type &d_ref(d);
   const auto x = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
@@ -135,9 +133,10 @@ TYPED_TEST(DataArrayViewTest, coords_sparse_shadow) {
   const auto sparse = makeVariable<event_list<double>>(Dims{Dim::X}, Shape{3});
   d.setCoord(Dim::X, x);
   d.setCoord(Dim::Y, y);
+  d.setUnaligned("a", x);
   DatasetAxis y_axis;
   y_axis.unaligned().set("a", sparse);
-  d.coords().set(Dim::Y, y_axis);
+  d.coords().set(Dim::Y, sparse);
 
   ASSERT_NO_THROW(d_ref["a"].coords());
   // TODO Would it be sensible to define such a comparison?
@@ -259,14 +258,14 @@ TYPED_TEST(DataArrayViewTest, values_variances) {
   ASSERT_ANY_THROW(d_ref["a"].template variances<float>());
 }
 
-TYPED_TEST(DataArrayViewTest, sparse_with_no_data) {
+TYPED_TEST(DataArrayViewTest, unaligned_coord_with_no_data) {
   Dataset d;
   typename TestFixture::dataset_type &d_ref(d);
   DatasetAxis x;
   x.unaligned().set("a", makeVariable<event_list<double>>(Dims{}, Shape{}));
   d.coords().set(Dim::X, x);
 
-  EXPECT_ANY_THROW(d_ref["a"].data());
-  ASSERT_FALSE(d_ref["a"].hasData());
-  ASSERT_FALSE(d_ref["a"].hasVariances());
+  // TODO Unaligned coord does not imply creation of data item. This feels a bit
+  // weird, is there a better way to handle this?
+  EXPECT_FALSE(d_ref.contains("a"));
 }

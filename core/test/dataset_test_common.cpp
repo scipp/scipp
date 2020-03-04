@@ -133,17 +133,13 @@ Dataset make_sparse_with_coords_and_labels(
   {
     auto var = makeVariable<sparse_container<double>>(Dims{}, Shape{});
     var.sparseValues<double>()[0] = coords_and_labels;
-    DatasetAxis x(Variable{});
-    x.unaligned().set(key, var);
-    ds.coords().set(Dim::X, x);
+    ds.coords().set(Dim::X, var);
   }
 
   {
     auto var = makeVariable<sparse_container<double>>(Dims{}, Shape{});
     var.sparseValues<double>()[0] = coords_and_labels;
-    DatasetAxis l(Variable{});
-    l.unaligned().set(key, var);
-    ds.coords().set(Dim("l"), l);
+    ds.coords().set(Dim("l"), var);
   }
 
   return ds;

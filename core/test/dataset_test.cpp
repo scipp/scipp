@@ -172,24 +172,22 @@ TEST(DatasetTest, setCoord_with_name_matching_data_name) {
   ASSERT_EQ(d["b"].coords().size(), 1);
 }
 
-TEST(DatasetTest, setters_reject_sparse) {
+TEST(DatasetTest, set_event_coord) {
   Dataset d;
-  const auto var = makeVariable<event_list<int>>(Dims{}, Shape{});
-  ASSERT_THROW(d.setCoord(Dim::X, var), except::DimensionError);
-  ASSERT_THROW(d.setCoord(Dim("a"), var), except::DimensionError);
-  ASSERT_THROW(d.setMask("a", var), except::DimensionError);
-  ASSERT_THROW(d.setAttr("a", var), except::DimensionError);
+  const auto var = makeVariable<event_list<double>>(Dims{Dim::X}, Shape{3});
+
+  ASSERT_NO_THROW(d.coords().set(Dim::Y, var));
+  ASSERT_EQ(d.size(), 0);
 }
 
-TEST(DatasetTest, setSparseCoord) {
+TEST(DatasetTest, set_unaligned_coord) {
   Dataset d;
   const auto var = makeVariable<event_list<double>>(Dims{Dim::X}, Shape{3});
   DatasetAxis y;
   y.unaligned().set("a", var);
 
   ASSERT_NO_THROW(d.coords().set(Dim::Y, y));
-  ASSERT_EQ(d.size(), 1);
-  ASSERT_NO_THROW(d["a"]);
+  ASSERT_EQ(d.size(), 0);
 }
 
 TEST(DatasetTest, setSparseLabels) {

@@ -37,7 +37,6 @@ protected:
   Dataset_comparison_operators()
       : sparse_variable(makeVariable<event_list<double>>(Dims{Dim::Y, Dim::Z},
                                                          Shape{3, 2})) {
-    dataset.setCoord(Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{4}));
     dataset.setCoord(Dim::Y, makeVariable<double>(Dims{Dim::Y}, Shape{3}));
 
     dataset.setCoord(Dim("labels"), makeVariable<int>(Dims{Dim::X}, Shape{4}));
@@ -50,7 +49,7 @@ protected:
 
     dataset.setData("val", makeVariable<double>(Dims{Dim::X}, Shape{4}));
 
-    DatasetAxis x;
+    DatasetAxis x(makeVariable<double>(Dims{Dim::X}, Shape{4}));
     x.unaligned().set("sparse_coord", sparse_variable);
     x.unaligned().set("sparse_coord_and_val", sparse_variable);
     dataset.coords().set(Dim::X, x);
