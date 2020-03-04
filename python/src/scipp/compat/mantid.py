@@ -229,7 +229,9 @@ def rotation_matrix_from_vectors(source, target):
 
 def init_pos(ws, source_pos, sample_pos):
     import numpy as np
+    import time
 
+    start = time.time()
     if sample_pos and source_pos:
         act_beam = (sample_pos - source_pos).values
         rot = rotation_matrix_from_vectors(act_beam, [0, 0, 1])
@@ -248,7 +250,7 @@ def init_pos(ws, source_pos, sample_pos):
             n_dets = len(definition)
             for j in range(n_dets):
                 p = np.array(det_info.position(definition[j][0]))
-                p = rot.dot(p)
+                #p = rot.dot(p)
                 x, y, z = p - sample_pos.values
                 r_j, theta_j, phi_j = _to_spherical(x, y, z)
                 r += r_j
@@ -257,10 +259,12 @@ def init_pos(ws, source_pos, sample_pos):
                 av_pos = np.array([
                     p / n_dets for p in _to_cartesian(r, theta, phi)
                 ]) + sample_pos.values
-                av_pos = inv_rot.dot(av_pos)
+                #av_pos = inv_rot.dot(av_pos)
             pos[i, :] = av_pos
         else:
             pos[i, :] = [np.nan, np.nan, np.nan]
+    stop = time.time()
+    raise RuntimeError("Took " + str(stop - start))
     return sc.Variable([sc.Dim.Spectrum],
                        values=pos,
                        unit=sc.units.m,
