@@ -29,6 +29,7 @@ set(SRC_FILES
     dataset_operations.cpp
     dimensions.cpp
     dtype.cpp
+    event.cpp
     except.cpp
     groupby.cpp
     histogram.cpp

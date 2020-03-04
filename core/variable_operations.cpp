@@ -39,22 +39,6 @@ Variable concatenate(const VariableConstView &a1, const VariableConstView &a2,
     throw std::runtime_error(
         "Cannot concatenate Variables: Units do not match.");
 
-  // TODO This should be moved to a new operation
-  /*
-  if (a1.dims().sparseDim() == dim && a2.dims().sparseDim() == dim) {
-    Variable out(a1);
-    transform_in_place<pair_self_t<sparse_container<double>>>(
-        out, a2,
-        overloaded{[](auto &a, const auto &b) {
-                     a.insert(a.end(), b.begin(), b.end());
-                   },
-                   [](units::Unit &a, const units::Unit &b) {
-                     expect::equals(a, b);
-                   }});
-    return out;
-  }
-  */
-
   const auto &dims1 = a1.dims();
   const auto &dims2 = a2.dims();
   // TODO Many things in this function should be refactored and moved in class

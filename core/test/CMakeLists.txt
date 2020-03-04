@@ -22,6 +22,7 @@ add_executable(
   dimensions_test.cpp
   element_array_test.cpp
   element_unary_operations_test.cpp
+  event_test.cpp
   except_test.cpp
   groupby_test.cpp
   histogram_test.cpp

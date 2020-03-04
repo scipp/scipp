@@ -6,6 +6,7 @@
 #define SCIPP_CORE_EVENT_H
 
 #include "scipp/core/dtype.h"
+#include "scipp/core/variable.h"
 
 namespace scipp::core {
 
@@ -16,6 +17,11 @@ template <class T> bool is_events(const T &data) {
          type == dtype<sparse_container<float>> ||
          type == dtype<sparse_container<int64_t>> ||
          type == dtype<sparse_container<int32_t>>;
+}
+
+namespace event {
+SCIPP_CORE_EXPORT Variable concatenate(const VariableConstView &a,
+                                       const VariableConstView &b);
 }
 
 } // namespace scipp::core
