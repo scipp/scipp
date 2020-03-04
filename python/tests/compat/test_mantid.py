@@ -382,22 +382,6 @@ class TestMantidConversion(unittest.TestCase):
         self.assertAlmostEqual(y, y_b)
         self.assertAlmostEqual(z, z_b)
 
-    def test_spherical_averaging(self):
-        x, y, z = 1.0, 1.0, 1.0
-        r, theta, phi = mantidcompat._to_spherical(x, y, z)
-        self.assertEqual(r, np.sqrt(3.0))
-        self.assertEqual(phi, np.arccos(np.sqrt(1.0 / 2.0)))
-
-        self._do_test_point((1.0, 1.0, 1.0))
-        self._do_test_point((1.0, 0.0, 0.0))
-        self._do_test_point((0.0, 1.0, 0.0))
-        self._do_test_point((0.0, 0.0, 1.0))
-
-        self._do_test_point((-1.0, -1.0, -1.0))
-        self._do_test_point((-1.0, 0.0, 0.0))
-        self._do_test_point((0.0, -1.0, 0.0))
-        self._do_test_point((0.0, 0.0, -1.0))
-
     def test_detector_positions(self):
         import mantid.simpleapi as mantid
         from mantid.kernel import V3D
