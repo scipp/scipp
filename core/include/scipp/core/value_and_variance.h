@@ -81,6 +81,10 @@ template <class T> constexpr auto isnan(const ValueAndVariance<T> a) noexcept {
   using std::isnan;
   return isnan(a.value);
 }
+template <class T> constexpr auto isinf(const ValueAndVariance<T> a) noexcept {
+  using std::isinf;
+  return isinf(a.value);
+}
 
 template <class T1, class T2>
 constexpr auto operator+(const ValueAndVariance<T1> a,

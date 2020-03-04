@@ -888,10 +888,69 @@ def test_num_to_nan():
     assert b == expected
 
 
+def test_nan_to_nan_with_pos_inf():
+    a = sc.Variable(dims=['x'], values=np.array([1, np.inf]))
+    replace = sc.Variable(value=0.0)
+    b = sc.nan_to_num(a, posinf=replace)
+    expected = sc.Variable(dims=['x'], values=np.array([1, replace.value]))
+    assert b == expected
+
+
+def test_nan_to_nan_with_neg_inf():
+    a = sc.Variable(dims=['x'], values=np.array([1, -np.inf]))
+    replace = sc.Variable(value=0.0)
+    b = sc.nan_to_num(a, neginf=replace)
+    expected = sc.Variable(dims=['x'], values=np.array([1, replace.value]))
+    assert b == expected
+
+
+def test_nan_to_nan_with_multiple_special_replacements():
+    a = sc.Variable(dims=['x'], values=np.array([1, np.nan, np.inf, -np.inf]))
+    replace_nan = sc.Variable(value=-1.0)
+    replace_pos_inf = sc.Variable(value=-2.0)
+    replace_neg_inf = sc.Variable(value=-3.0)
+    b = sc.nan_to_num(a,
+                      nan=replace_nan,
+                      posinf=replace_pos_inf,
+                      neginf=replace_neg_inf)
+
+    expected = sc.Variable(
+        dims=['x'],
+        values=np.array([1] + [
+            repl.value
+            for repl in [replace_nan, replace_pos_inf, replace_neg_inf]
+        ]))
+    assert b == expected
+
+
 def test_num_to_nan_out():
     a = sc.Variable(dims=['x'], values=np.array([1, np.nan]))
     out = sc.Variable(dims=['x'], values=np.zeros(2))
     replace = sc.Variable(value=0.0)
-    sc.nan_to_num(a, replace, out)
+    sc.nan_to_num(a, nan=replace, out=out)
     expected = sc.Variable(dims=['x'], values=np.array([1, replace.value]))
+    assert out == expected
+
+
+def test_num_to_nan_out_with_multiple_special_replacements():
+    a = sc.Variable(dims=['x'], values=np.array([1, np.inf, -np.inf, np.nan]))
+    out = sc.Variable(dims=['x'], values=np.zeros(4))
+    replace = sc.Variable(value=0.0)
+    # just replace nans
+    sc.nan_to_num(a, nan=replace, out=out)
+    expected = sc.Variable(dims=['x'],
+                           values=np.array([1, np.inf, -np.inf,
+                                            replace.value]))
+    assert out == expected
+    # replace neg inf
+    sc.nan_to_num(out, neginf=replace, out=out)
+    expected = sc.Variable(dims=['x'],
+                           values=np.array(
+                               [1, np.inf, replace.value, replace.value]))
+    print(out, expected)
+    assert out == expected
+    # replace pos inf
+    sc.nan_to_num(out, posinf=replace, out=out)
+    expected = sc.Variable(dims=['x'],
+                           values=np.array([1] + [replace.value] * 3))
     assert out == expected
