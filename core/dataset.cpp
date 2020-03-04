@@ -273,12 +273,31 @@ void Dataset::setData(const std::string &name, Variable data) {
     rebuildDims();
 }
 
+/// Set (insert or replace) unaligned data (values, optional variances) with
+/// given name.
+///
+/// Throws if the provided values bring the dataset into an inconsistent state
+/// (mismatching dtype, unit, or dimensions).
+void Dataset::setUnaligned(const std::string &name, Variable data) {
+  // TODO we *DO* have to set aligned dims here! How to find out which ones are
+  // aligned?
+  // setDims(data.dims());
+  const auto rebuild_dims = contains(name);
+  m_data[name].unaligned = std::move(data);
+  if (rebuild_dims)
+    rebuildDims();
+}
+
 /// Set (insert or replace) data from a DataArray with a given name, avoiding
 /// copies where possible by using std::move.
-///
 void Dataset::setData(const std::string &name, DataArray data) {
   // Get the Dataset holder
   auto dataset = DataArray::to_dataset(std::move(data));
+  // There can be only one DatasetData item, so get the first one with begin()
+  auto item = dataset.m_data.begin();
+  if (item->second.unaligned)
+    throw except::DatasetError(
+        "Setting entry with unaligned content not implemented yet.");
 
   for (auto &&[dim, coord] : dataset.m_coords) {
     if (const auto it = m_coords.find(dim); it != m_coords.end())
@@ -296,12 +315,8 @@ void Dataset::setData(const std::string &name, DataArray data) {
   if (dataset.m_attrs.size() > 0)
     throw except::SizeError("Attributes should be empty for a DataArray.");
 
-  // There can be only one DatasetData item, so get the first one with begin()
-  auto item = dataset.m_data.begin();
   if (item->second.data)
     setData(name, std::move(item->second.data));
-  // for (auto &&[dim, coord] : item->second.coords)
-  //  setSparseCoord(name, dim, std::move(coord));
   for (auto &&[nm, attr] : item->second.attrs)
     setAttr(name, std::string(nm), std::move(attr));
 }
@@ -317,6 +332,52 @@ void Dataset::setData(const std::string &name, const DataArrayConstView &data) {
       data.slices().empty())
     return; // Self-assignment, return early.
   setData(name, DataArray(data));
+}
+
+/// Set (insert or replace) unaligned data from a DataArray with a given name,
+/// avoiding copies where possible by using std::move.
+void Dataset::setUnaligned(const std::string &name, DataArray data) {
+  // Get the Dataset holder
+  auto dataset = DataArray::to_dataset(std::move(data));
+  // There can be only one DatasetData item, so get the first one with begin()
+  auto item = dataset.m_data.begin();
+  if (!item->second.data)
+    throw except::DatasetError(
+        "Cannot set unaligned entry to data array without data.");
+
+  for (auto &&[dim, coord] : dataset.m_coords) {
+    if (const auto it = m_coords.find(dim); it != m_coords.end())
+      it->second.unaligned().set(name,
+                                 DatasetAxis::to_variable(std::move(coord)));
+    else {
+      DatasetAxis axis;
+      axis.unaligned().set(name, DatasetAxis::to_variable(std::move(coord)));
+      setCoord(dim, std::move(axis));
+    }
+  }
+
+  if (!dataset.m_masks.empty())
+    throw std::runtime_error("Unaligned masks not implemented yet.");
+  if (!dataset.m_attrs.empty())
+    throw except::SizeError("Unaligned attrs not implemented yet.");
+
+  setUnaligned(name, std::move(item->second.data));
+  for (auto &&[nm, attr] : item->second.attrs)
+    setAttr(name, std::string(nm), std::move(attr));
+}
+
+/// Set (insert or replace) unaligned data item with given name.
+///
+/// Coordinates, masks, and attributes of the data array are added to the
+/// dataset. Throws if there are existing but mismatching coords, masks, or
+/// attributes. Throws if the provided data brings the dataset into an
+/// inconsistent state (mismatching dtype, unit, or dimensions).
+void Dataset::setUnaligned(const std::string &name,
+                           const DataArrayConstView &data) {
+  if (contains(name) && &m_data[name] == &data.underlying() &&
+      data.slices().empty())
+    return; // Self-assignment, return early.
+  setUnaligned(name, DataArray(data));
 }
 
 /// Set (insert or replace) a sparse coordinate with given name.
@@ -482,11 +543,10 @@ const std::string &DataArrayConstView::name() const noexcept {
 /// Return an ordered mapping of dimension labels to extents, excluding a
 /// potentialy sparse dimensions.
 Dimensions DataArrayConstView::dims() const noexcept {
-  // TODO
+  // TODO For unaligned data we somehow need to obtain dims from all relevant
+  // aligned coords.
   // if (hasData())
   return data().dims();
-  // return detail::makeSlice(m_data->second.coords.begin()->second, slices())
-  //    .dims();
 }
 
 /// Return the dtype of the data. Throws if there is no data.

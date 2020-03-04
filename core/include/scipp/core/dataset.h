@@ -38,6 +38,7 @@ struct DatasetData {
   // How to distinguish cases of concatenation (events) from addition (position
   // data)? Does it just depend in the dtype?
   Variable data;
+  Variable unaligned;
   /// Attributes for data.
   std::unordered_map<std::string, Variable> attrs;
 };
@@ -361,6 +362,9 @@ public:
   void setData(const std::string &name, Variable data);
   void setData(const std::string &name, const DataArrayConstView &data);
   void setData(const std::string &name, DataArray data);
+  void setUnaligned(const std::string &name, Variable data);
+  void setUnaligned(const std::string &name, const DataArrayConstView &data);
+  void setUnaligned(const std::string &name, DataArray data);
 
   void setCoord(const Dim dim, const DatasetAxisConstView &coord) {
     setCoord(dim, DatasetAxis(coord));
@@ -380,6 +384,9 @@ public:
   }
   void setData(const std::string &name, const VariableConstView &data) {
     setData(name, Variable(data));
+  }
+  void setUnaligned(const std::string &name, const VariableConstView &data) {
+    setUnaligned(name, Variable(data));
   }
 
   void eraseCoord(const Dim dim);
@@ -1011,8 +1018,6 @@ SCIPP_CORE_EXPORT DataArray histogram(const DataArrayConstView &sparse,
                                       const VariableConstView &binEdges);
 SCIPP_CORE_EXPORT Dataset histogram(const Dataset &dataset,
                                     const VariableConstView &bins);
-SCIPP_CORE_EXPORT Dataset histogram(const Dataset &dataset,
-                                    const Variable &bins);
 SCIPP_CORE_EXPORT Dataset histogram(const Dataset &dataset, const Dim &dim);
 
 SCIPP_CORE_EXPORT Dataset merge(const DatasetConstView &a,

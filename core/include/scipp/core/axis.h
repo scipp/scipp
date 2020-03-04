@@ -61,6 +61,8 @@ public:
   using unaligned_const_view_type = axis_detail::const_view_t<unaligned_type>;
   using unaligned_view_type = axis_detail::view_t<unaligned_type>;
 
+  static Variable to_variable(Axis &&axis);
+
   Axis() = default;
   explicit Axis(Variable data) : m_data(std::move(data)) {}
   Axis(Variable data, unaligned_type unaligned)

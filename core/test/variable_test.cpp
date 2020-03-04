@@ -906,18 +906,13 @@ TEST(Variable, access_typed_view_edges) {
 TEST(SparseVariable, create) {
   const auto var = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2});
   EXPECT_TRUE(is_events(var));
-  // Should we return the full volume here, i.e., accumulate the extents of all
-  // the sparse subdata?
   EXPECT_EQ(var.dims().volume(), 2);
 }
 
 TEST(SparseVariable, dtype) {
   const auto var = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2});
-  // It is not clear that this is the best way of handling things.
-  // Variable::dtype() makes sense like this, but it is not so clear for
-  // VariableConcept::dtype().
-  EXPECT_EQ(var.dtype(), dtype<double>);
-  EXPECT_NE(var.data().dtype(), dtype<double>);
+  EXPECT_EQ(var.dtype(), dtype<event_list<double>>);
+  EXPECT_EQ(var.data().dtype(), dtype<event_list<double>>);
 }
 
 TEST(SparseVariable, non_sparse_access_fail) {

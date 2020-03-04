@@ -14,6 +14,14 @@ void UnalignedAccess::erase(const std::string &key) const {
 }
 
 template <class Id, class UnalignedType>
+Variable Axis<Id, UnalignedType>::to_variable(Axis &&axis) {
+  if (axis.hasUnaligned())
+    throw except::UnalignedError(
+        "Unaligned component of axis cannot have unaligned data in itself.");
+  return std::move(axis.m_data);
+}
+
+template <class Id, class UnalignedType>
 Axis<Id, UnalignedType>::Axis(const const_view_type &view)
     : m_data(view.hasData() ? Variable(view.data()) : Variable()) {
   if constexpr (std::is_same_v<unaligned_type, Variable>)

@@ -38,7 +38,8 @@ template <class Types, class Op, class... Var>
                                               Var... var) {
   using namespace transform_subspan_detail;
 
-  auto dims = merge(erase(var.dims(), dim)...);
+  auto dims =
+      merge(var.dims().contains(dim) ? erase(var.dims(), dim) : var.dims()...);
   dims.addInner(dim, size);
   // This will cause failure below unless the output type (first type in inner
   // tuple) is the same in all inner tuples.
