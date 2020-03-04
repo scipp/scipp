@@ -207,7 +207,7 @@ TEST(DimensionsTest, merge_dense) {
 TEST(DimensionsTest, merge_dense_overlapping) {
   Dimensions a({Dim::X, Dim::Y}, {2, 3});
   Dimensions b({Dim::Y, Dim::Z}, {3, 4});
-  EXPECT_EQ(merge(a, b), Dimensions({Dim::Z, Dim::X, Dim::Y}, {4, 2, 3}));
+  EXPECT_EQ(merge(a, b), Dimensions({Dim::X, Dim::Y, Dim::Z}, {2, 3, 4}));
 }
 
 TEST(DimensionsTest, merge_dense_different_order) {

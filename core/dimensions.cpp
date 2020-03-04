@@ -179,15 +179,13 @@ int32_t Dimensions::index(const Dim dim) const {
 /// Throws if there is a mismatching dimension extent.
 Dimensions merge(const Dimensions &a, const Dimensions &b) {
   auto out(a);
-  if (scipp::size(a.labels()) < scipp::size(b.labels()))
-    return merge(b, a);
   for (const auto dim : b.labels()) {
     if (a.contains(dim)) {
       if (a[dim] != b[dim])
         throw except::DimensionError(
             "Cannot merge subspaces with mismatching extent");
     } else {
-      out.add(dim, b[dim]);
+      out.addInner(dim, b[dim]);
     }
   }
   return out;

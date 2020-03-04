@@ -324,8 +324,8 @@ TEST(Variable, operator_times_can_broadcast) {
   auto b = makeVariable<double>(Dims{Dim::Y}, Shape{2}, Values{2.0, 3.0});
 
   auto ab = a * b;
-  auto reference = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
-                                        Values{1.0, 3.0, 1.5, 4.5});
+  auto reference = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 2},
+                                        Values{1.0, 1.5, 3.0, 4.5});
   EXPECT_EQ(ab, reference);
 }
 

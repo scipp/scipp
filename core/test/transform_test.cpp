@@ -738,15 +738,15 @@ TEST_F(TransformBinaryTest, broadcast_sparse_val_var_with_val) {
   const auto vals = ab.sparseValues<double>();
   const auto vars = ab.sparseVariances<double>();
   EXPECT_TRUE(equals(vals[0], expected00.values<double>()));
-  EXPECT_TRUE(equals(vals[1], expected10.values<double>()));
-  EXPECT_TRUE(equals(vals[2], expected01.values<double>()));
+  EXPECT_TRUE(equals(vals[1], expected01.values<double>()));
+  EXPECT_TRUE(equals(vals[2], expected10.values<double>()));
   EXPECT_TRUE(equals(vals[3], expected11.values<double>()));
   EXPECT_TRUE(equals(vars[0], expected00.variances<double>()));
-  EXPECT_TRUE(equals(vars[1], expected10.variances<double>()));
-  EXPECT_TRUE(equals(vars[2], expected01.variances<double>()));
+  EXPECT_TRUE(equals(vars[1], expected01.variances<double>()));
+  EXPECT_TRUE(equals(vars[2], expected10.variances<double>()));
   EXPECT_TRUE(equals(vars[3], expected11.variances<double>()));
 
-  EXPECT_EQ(ab.dims(), Dimensions({Dim::Z, Dim::Y}, {2, 2}));
+  EXPECT_EQ(ab.dims(), Dimensions({Dim::Y, Dim::Z}, {2, 2}));
 }
 
 // Currently transform_in_place supports outputs with fewer dimensions than the

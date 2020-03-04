@@ -45,8 +45,9 @@ TEST(HistogramTest, is_histogram) {
 }
 
 DataArray make_1d_events_default_weights() {
-  DataArray events(makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 1, 1},
-                                        Variances{1, 1, 1}));
+  DataArray events(makeVariable<double>(Dims{Dim::X}, Shape{3},
+                                        units::Unit(units::counts),
+                                        Values{1, 1, 1}, Variances{1, 1, 1}));
   auto var = makeVariable<event_list<double>>(Dims{Dim::X}, Shape{3});
   var.sparseValues<double>()[0] = {1.5, 2.5, 3.5, 4.5, 5.5};
   var.sparseValues<double>()[1] = {3.5, 4.5, 5.5, 6.5, 7.5};
