@@ -36,13 +36,9 @@ TEST(ReduceSparseTest, flatten_dataset_with_mask) {
   Dataset d;
   d.setMask("y", makeVariable<bool>(Dims{Dim::Y}, Shape{3},
                                     Values{false, true, false}));
-  DatasetAxis x;
-  x.unaligned().set("a", make_sparse());
-  x.unaligned().set("b", make_sparse());
-  d.coords().set(Dim::X, x);
-  DatasetAxis label;
-  label.unaligned().set("b", make_sparse());
-  d.coords().set(Dim("label"), label);
+  // Note that this is aligned event data, i.e., not useful in practice.
+  d.coords().set(Dim::X, make_sparse());
+  d.coords().set(Dim("label"), make_sparse());
   d.setData("b", make_sparse());
   auto expected = makeVariable<event_list<double>>(
       Dims{}, Shape{}, Values{sparse_container<double>{1, 2, 3, 6, 7}});

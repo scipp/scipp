@@ -100,7 +100,7 @@ DataArray histogram(const DataArrayConstView &sparse,
                        args<double, float, event_list<double>, double>,
                        args<double, float, event_list<double>, float>,
                        args<double, double, event_list<float>, double>>>(
-            dim_, binEdges_.dims()[dim_] - 1, sparse_.coords()[dim_].data(),
+            dim_, binEdges_.dims()[dim_] - 1, sparse_.coords()[dim_],
             sparse_.data(), binEdges_,
             overloaded{make_histogram, make_histogram_unit,
                        transform_flags::expect_variance_arg<0>,
@@ -130,7 +130,7 @@ Dataset histogram(const Dataset &dataset, const VariableConstView &bins) {
 }
 
 Dataset histogram(const Dataset &dataset, const Dim &dim) {
-  auto bins = dataset.coords()[dim].data();
+  auto bins = dataset.coords()[dim];
   if (is_events(bins))
     throw except::BinEdgeError("Expected bin edges, got event data.");
   return histogram(dataset, bins);

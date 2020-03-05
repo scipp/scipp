@@ -57,39 +57,6 @@ TEST(SliceTest, test_end_valid) {
                except::SliceError);
 }
 
-TEST(DatasetTest, simple_sparse_slice) {
-  Dataset dataset;
-  auto var = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2});
-  var.sparseValues<double>()[0] = {4, 5, 6};
-  var.sparseValues<double>()[1] = {7, 8, 9};
-  dataset.setData("data", var);
-  dataset.setCoord(Dim::Y,
-                   makeVariable<double>(Dims{Dim::Y}, Shape{2}, Values{1, 2}));
-
-  auto sliced = dataset.slice({Dim::Y, 1, 2});
-  EXPECT_EQ(sliced["data"].data(), var.slice({Dim::Y, 1, 2}));
-}
-
-TEST(DatasetTest, simple_sparse_slice_and_sparse_coords) {
-  Dataset dataset;
-  auto var = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2});
-  var.sparseValues<double>()[0] = {4, 5, 6};
-  var.sparseValues<double>()[1] = {7, 8, 9};
-  dataset.setData("data", var);
-  dataset.setCoord(Dim::Y,
-                   makeVariable<double>(Dims{Dim::Y}, Shape{2}, Values{1, 2}));
-  auto sparseCoord = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2});
-  sparseCoord.sparseValues<double>()[0] = {1, 2, 3};
-  sparseCoord.sparseValues<double>()[1] = {4, 5, 6};
-  DatasetAxis x;
-  x.unaligned().set("data", sparseCoord);
-  dataset.coords().set(Dim::X, x);
-
-  auto sliced = dataset.slice({Dim::Y, 1, 2});
-  EXPECT_EQ(sliced["data"].data(), var.slice({Dim::Y, 1, 2}));
-  EXPECT_EQ(sliced["data"].coords()[Dim::X], sparseCoord.slice({Dim::Y, 1, 2}));
-}
-
 class Dataset3DTest : public ::testing::Test {
 protected:
   Dataset3DTest() : dataset(factory.make()) {}
@@ -146,19 +113,6 @@ TEST_F(Dataset3DTest, dimension_extent_check_non_coord_dimension_fail) {
   // This is the Y coordinate but has extra extent in X.
   ASSERT_ANY_THROW(
       dataset.setCoord(Dim::Y, makeRandom({{Dim::X, 5}, {Dim::Y, 5}})));
-}
-
-TEST_F(Dataset3DTest, data_check_upon_setting_sparse_coordinates) {
-  Dataset sparse;
-  auto data_var = makeVariable<event_list<double>>(Dims{}, Shape{});
-  data_var.sparseValues<double>()[0] = {1, 1, 1};
-  auto coords_var = makeVariable<event_list<double>>(Dims{}, Shape{});
-  coords_var.sparseValues<double>()[0] = {1, 2, 3};
-  sparse.setData("sparse_x", data_var);
-  // The following should be OK. Data is sparse
-  DatasetAxis x;
-  x.unaligned().set("sparse_x", coords_var);
-  sparse.coords().set(Dim::X, x);
 }
 
 TEST_F(Dataset3DTest, dimension_extent_check_labels_dimension_fail) {

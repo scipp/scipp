@@ -7,17 +7,11 @@
 
 namespace scipp::core {
 
-template <class T, class Name = void>
-auto makeViewItem(T &variable, Name *name = nullptr) {
-  if constexpr (std::is_same_v<Name, void>) {
-    static_cast<void>(name);
-    if constexpr (std::is_const_v<T>)
-      return typename T::view_type(typename T::const_view_type(variable));
-    else
-      return typename T::view_type(variable);
-  } else {
-    return (variable)[*name];
-  }
+template <class T> auto makeViewItem(T &variable) {
+  if constexpr (std::is_const_v<T>)
+    return typename T::view_type(typename T::const_view_type(variable));
+  else
+    return typename T::view_type(variable);
 }
 
 template <class View, class T1> auto makeViewItems(T1 &coords) {
@@ -27,8 +21,8 @@ template <class View, class T1> auto makeViewItems(T1 &coords) {
   return items;
 }
 
-template <class View, class T1, class Name = void>
-auto makeViewItems(const Dimensions &dims, T1 &coords, Name *name = nullptr) {
+template <class View, class T1>
+auto makeViewItems(const Dimensions &dims, T1 &coords) {
   typename View::holder_type items;
   for (auto &item : coords) {
     // We preserve only items that are part of the space spanned by the
@@ -48,7 +42,7 @@ auto makeViewItems(const Dimensions &dims, T1 &coords, Name *name = nullptr) {
         return coordDims.empty() || dims.contains(coordDims.inner());
     };
     if (contained(item)) {
-      items.emplace(item.first, makeViewItem(item.second, name));
+      items.emplace(item.first, makeViewItem(item.second));
     }
   }
   return items;
@@ -77,18 +71,17 @@ void Dataset::clear() {
 ///
 /// This view includes "dimension-coordinates" as well as
 /// "non-dimension-coordinates" ("labels").
-DatasetCoordsConstView Dataset::coords() const noexcept {
-  return DatasetCoordsConstView(
-      makeViewItems<DatasetCoordsConstView>(m_coords));
+CoordsConstView Dataset::coords() const noexcept {
+  return CoordsConstView(makeViewItems<CoordsConstView>(m_coords));
 }
 
 /// Return a view to all coordinates of the dataset.
 ///
 /// This view includes "dimension-coordinates" as well as
 /// "non-dimension-coordinates" ("labels").
-DatasetCoordsView Dataset::coords() noexcept {
-  return DatasetCoordsView(DatasetCoordAccess(this),
-                           makeViewItems<DatasetCoordsConstView>(m_coords));
+CoordsView Dataset::coords() noexcept {
+  return CoordsView(CoordAccess(this),
+                    makeViewItems<CoordsConstView>(m_coords));
 }
 
 /// Return a const view to all attributes of the dataset.
@@ -222,21 +215,14 @@ void Dataset::rebuildDims() {
 }
 
 /// Set (insert or replace) the coordinate for the given dimension.
-void Dataset::setCoord(const Dim dim, DatasetAxis coord) {
-  setDims(coord.dims(), dim);
-  m_coords.insert_or_assign(dim, std::move(coord));
-}
-
-/// Set (insert or replace) the coordinate for the given dimension.
 void Dataset::setCoord(const Dim dim, Variable coord) {
-  setCoord(dim, DatasetAxis(std::move(coord)));
+  m_coords.insert_or_assign(dim, std::move(coord));
 }
 
 /// Set (insert or replace) an attribute for the given attribute name.
 ///
 /// Note that the attribute name has no relation to names of data items.
 void Dataset::setAttr(const std::string &attrName, Variable attr) {
-  expect::notSparse(attr);
   setDims(attr.dims());
   m_attrs.insert_or_assign(attrName, std::move(attr));
 }
@@ -245,7 +231,6 @@ void Dataset::setAttr(const std::string &attrName, Variable attr) {
 void Dataset::setAttr(const std::string &name, const std::string &attrName,
                       Variable attr) {
   expect::contains(*this, name);
-  expect::notSparse(attr);
   if (!operator[](name).dims().contains(attr.dims()))
     throw except::DimensionError(
         "Attribute dimensions must match and not exceed dimensions of data.");
@@ -256,7 +241,6 @@ void Dataset::setAttr(const std::string &name, const std::string &attrName,
 ///
 /// Note that the mask name has no relation to names of data items.
 void Dataset::setMask(const std::string &masksName, Variable mask) {
-  expect::notSparse(mask);
   setDims(mask.dims());
   m_masks.insert_or_assign(masksName, std::move(mask));
 }
@@ -269,21 +253,6 @@ void Dataset::setData(const std::string &name, Variable data) {
   setDims(data.dims());
   const auto rebuild_dims = contains(name);
   m_data[name].data = std::move(data);
-  if (rebuild_dims)
-    rebuildDims();
-}
-
-/// Set (insert or replace) unaligned data (values, optional variances) with
-/// given name.
-///
-/// Throws if the provided values bring the dataset into an inconsistent state
-/// (mismatching dtype, unit, or dimensions).
-void Dataset::setUnaligned(const std::string &name, Variable data) {
-  // TODO we *DO* have to set aligned dims here! How to find out which ones are
-  // aligned?
-  // setDims(data.dims());
-  const auto rebuild_dims = contains(name);
-  m_data[name].unaligned = std::move(data);
   if (rebuild_dims)
     rebuildDims();
 }
@@ -333,71 +302,6 @@ void Dataset::setData(const std::string &name, const DataArrayConstView &data) {
     return; // Self-assignment, return early.
   setData(name, DataArray(data));
 }
-
-/// Set (insert or replace) unaligned data from a DataArray with a given name,
-/// avoiding copies where possible by using std::move.
-void Dataset::setUnaligned(const std::string &name, DataArray data) {
-  // Get the Dataset holder
-  auto dataset = DataArray::to_dataset(std::move(data));
-  // There can be only one DatasetData item, so get the first one with begin()
-  auto item = dataset.m_data.begin();
-  if (!item->second.data)
-    throw except::DatasetError(
-        "Cannot set unaligned entry to data array without data.");
-
-  for (auto &&[dim, coord] : dataset.m_coords) {
-    if (const auto it = m_coords.find(dim); it != m_coords.end())
-      it->second.unaligned().set(name,
-                                 DatasetAxis::to_variable(std::move(coord)));
-    else {
-      DatasetAxis axis;
-      axis.unaligned().set(name, DatasetAxis::to_variable(std::move(coord)));
-      setCoord(dim, std::move(axis));
-    }
-  }
-
-  if (!dataset.m_masks.empty())
-    throw std::runtime_error("Unaligned masks not implemented yet.");
-  if (!dataset.m_attrs.empty())
-    throw except::SizeError("Unaligned attrs not implemented yet.");
-
-  setUnaligned(name, std::move(item->second.data));
-  for (auto &&[nm, attr] : item->second.attrs)
-    setAttr(name, std::string(nm), std::move(attr));
-}
-
-/// Set (insert or replace) unaligned data item with given name.
-///
-/// Coordinates, masks, and attributes of the data array are added to the
-/// dataset. Throws if there are existing but mismatching coords, masks, or
-/// attributes. Throws if the provided data brings the dataset into an
-/// inconsistent state (mismatching dtype, unit, or dimensions).
-void Dataset::setUnaligned(const std::string &name,
-                           const DataArrayConstView &data) {
-  if (contains(name) && &m_data[name] == &data.underlying() &&
-      data.slices().empty())
-    return; // Self-assignment, return early.
-  setUnaligned(name, DataArray(data));
-}
-
-/// Set (insert or replace) a sparse coordinate with given name.
-///
-/// Sparse coordinates can exist even without corresponding data.
-/*
-void Dataset::setSparseCoord(const std::string &name, const Dim dim,
-                             Variable coord) {
-  if (!coord.dims().sparse())
-    throw except::DimensionError(
-        "Variable passed to Dataset::setSparseCoord does "
-        "not contain sparse data.");
-  if (contains(name) && operator[](name).dims().sparseDim() !=
-                            coord.dims().sparseDim())
-    throw except::DimensionError("Cannot set sparse coord if values or "
-                                 "variances are not sparse.");
-  setDims(coord.dims());
-  m_data[name].coords.insert_or_assign(dim, std::move(coord));
-}
-*/
 
 /// Removes the coordinate for the given dimension.
 void Dataset::eraseCoord(const Dim dim) { erase_from_map(m_coords, dim); }
@@ -540,8 +444,7 @@ const std::string &DataArrayConstView::name() const noexcept {
   return m_data->first;
 }
 
-/// Return an ordered mapping of dimension labels to extents, excluding a
-/// potentialy sparse dimensions.
+/// Return an ordered mapping of dimension labels to extents.
 Dimensions DataArrayConstView::dims() const noexcept {
   // TODO For unaligned data we somehow need to obtain dims from all relevant
   // aligned coords.
@@ -567,14 +470,9 @@ void DataArrayView::setUnit(const units::Unit unit) const {
 }
 
 /// Return a const view to all coordinates of the data view.
-///
-/// If the data has a sparse dimension the returned view will not contain any
-/// of the dataset's coordinates that depends on the sparse dimension.
-DataArrayCoordsConstView DataArrayConstView::coords() const noexcept {
-  // TODO mapping
-  return DataArrayCoordsConstView(makeViewItems<DataArrayCoordsConstView>(
-                                      dims(), m_dataset->m_coords, &name()),
-                                  slices());
+CoordsConstView DataArrayConstView::coords() const noexcept {
+  return CoordsConstView(
+      makeViewItems<CoordsConstView>(dims(), m_dataset->m_coords), slices());
 }
 
 /// Return a const view to all attributes of the data view.
@@ -635,18 +533,15 @@ DataArrayView DataArrayView::slice(const Slice slice1, const Slice slice2,
 }
 
 /// Return a view to all coordinates of the data view.
-///
-/// If the data has a sparse dimension the returned view will not contain any
-/// of the dataset's coordinates that depends on the sparse dimension.
-DataArrayCoordsView DataArrayView::coords() const noexcept {
-  return DataArrayCoordsView(DataArrayCoordAccess(name(), m_mutableDataset),
-                             makeViewItems<DataArrayCoordsConstView>(
-                                 dims(), m_mutableDataset->m_coords, &name()),
-                             slices());
+CoordsView DataArrayView::coords() const noexcept {
+  return CoordsView(
+      CoordAccess(m_mutableDataset),
+      makeViewItems<CoordsConstView>(dims(), m_mutableDataset->m_coords),
+      slices());
 }
 
-DataArrayCoordsConstView DataArray::coords() const { return get().coords(); }
-DataArrayCoordsView DataArray::coords() { return get().coords(); }
+CoordsConstView DataArray::coords() const { return get().coords(); }
+CoordsView DataArray::coords() { return get().coords(); }
 
 /// Return a const view to all attributes of the data view.
 AttrsView DataArrayView::attrs() const noexcept {
@@ -713,22 +608,21 @@ DatasetView::DatasetView(Dataset &dataset)
 ///
 /// This view includes "dimension-coordinates" as well as
 /// "non-dimension-coordinates" ("labels").
-DatasetCoordsConstView DatasetConstView::coords() const noexcept {
-  return DatasetCoordsConstView(
-      makeViewItems<DatasetCoordsConstView>(m_dataset->m_coords), slices());
+CoordsConstView DatasetConstView::coords() const noexcept {
+  return CoordsConstView(makeViewItems<CoordsConstView>(m_dataset->m_coords),
+                         slices());
 }
 
 /// Return a view to all coordinates of the dataset slice.
 ///
 /// This view includes "dimension-coordinates" as well as
 /// "non-dimension-coordinates" ("labels").
-DatasetCoordsView DatasetView::coords() const noexcept {
+CoordsView DatasetView::coords() const noexcept {
   // TODO
   // auto *parent = slices().empty() ? m_mutableDataset : nullptr;
-  return DatasetCoordsView(
-      DatasetCoordAccess(m_mutableDataset),
-      makeViewItems<DatasetCoordsConstView>(m_mutableDataset->m_coords),
-      slices());
+  return CoordsView(CoordAccess(m_mutableDataset),
+                    makeViewItems<CoordsConstView>(m_mutableDataset->m_coords),
+                    slices());
 }
 
 /// Return a const view to all attributes of the dataset slice.

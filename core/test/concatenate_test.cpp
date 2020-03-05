@@ -99,7 +99,7 @@ TEST(ConcatenateTest, fail_when_histograms_have_non_overlapping_bins) {
   b.setData("data_1",
             makeVariable<int>(Dims{Dim::X}, Shape{2}, Values{13, 14}));
 
-  EXPECT_THROW(concatenate(a, b, Dim::X), except::MismatchError<DatasetAxis>);
+  EXPECT_THROW(concatenate(a, b, Dim::X), except::VariableMismatchError);
 }
 
 TEST(ConcatenateTest, fail_mixing_point_data_and_histogram) {
@@ -165,7 +165,7 @@ TEST(ConcatenateTest, concat_2d_coord) {
                                          Values{false, true, false}));
 
   Dataset b(a);
-  b.coords()[Dim::X].data() += 3;
+  b.coords()[Dim::X] += 3;
   b["data_1"].data() += 100;
 
   Dataset expected;

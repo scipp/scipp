@@ -52,22 +52,6 @@ std::ostream &operator<<(std::ostream &os, const Dataset &dataset) {
   return os << DatasetConstView(dataset);
 }
 
-std::ostream &operator<<(std::ostream &os, const DatasetAxisConstView &axis) {
-  return os << to_string(axis);
-}
-
-std::ostream &operator<<(std::ostream &os, const DatasetAxis &axis) {
-  return os << DatasetAxisConstView(axis);
-}
-
-std::ostream &operator<<(std::ostream &os, const DataArrayAxisConstView &axis) {
-  return os << to_string(axis);
-}
-
-std::ostream &operator<<(std::ostream &os, const DataArrayAxis &axis) {
-  return os << DataArrayAxisConstView(axis);
-}
-
 constexpr const char *tab = "    ";
 
 std::string to_string(const Dimensions &dims) {
@@ -243,7 +227,7 @@ std::string do_to_string(const D &dataset, const std::string &id,
   if (!dataset.coords().empty()) {
     s << "Coordinates:\n";
     for (const auto &[dim, var] : dataset.coords())
-      s << format_variable(dim, var.data(), dims);
+      s << format_variable(dim, var, dims);
   }
   if (!dataset.attrs().empty()) {
     s << "Attributes:\n";
@@ -298,13 +282,6 @@ std::string to_string(const DataArrayConstView &data) {
   return do_to_string(data, "<scipp.DataArrayView>", data.dims());
 }
 
-std::string to_string(const DataArrayAxisConstView &axis) {
-  return "<scipp.DataArrayAxisView>" + '\n' +
-         (axis.hasData() ? to_string(axis.data()) : "<empty data>") + '\n' +
-         (axis.hasUnaligned() ? to_string(axis.unaligned())
-                              : "<empty unaligned>");
-}
-
 std::string to_string(const Dataset &dataset) {
   return do_to_string(dataset, "<scipp.Dataset>", dimensions(dataset));
 }
@@ -313,7 +290,4 @@ std::string to_string(const DatasetConstView &dataset) {
   return do_to_string(dataset, "<scipp.DatasetView>", dimensions(dataset));
 }
 
-std::string to_string(const DatasetAxisConstView &axis) {
-  return "<scipp.DatasetAxisView>" + to_string(axis.data());
-}
 } // namespace scipp::core

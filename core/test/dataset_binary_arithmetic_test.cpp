@@ -793,9 +793,9 @@ TYPED_TEST(DatasetBinaryOpTest, sparse_dataarrayconstview_coord_mismatch) {
       make_sparse_with_coords_and_labels({3.3, 4.4}, {1.0, 2.1});
 
   ASSERT_THROW(TestFixture::op(dataset_a, dataset_b["sparse"]),
-               except::DataArrayAxisMismatchError);
+               except::VariableMismatchError);
   ASSERT_THROW(TestFixture::op(dataset_a["sparse"], dataset_b),
-               except::DataArrayAxisMismatchError);
+               except::VariableMismatchError);
 }
 
 TYPED_TEST(DatasetBinaryOpTest,
@@ -816,7 +816,7 @@ TYPED_TEST(DatasetBinaryOpTest,
   }
 
   EXPECT_THROW(TestFixture::op(dataset_a, dataset_b),
-               except::DataArrayAxisMismatchError);
+               except::VariableMismatchError);
 }
 
 TYPED_TEST(DatasetBinaryOpTest,
@@ -837,7 +837,7 @@ TYPED_TEST(DatasetBinaryOpTest,
   }
 
   EXPECT_THROW(TestFixture::op(dataset_a, dataset_b),
-               except::DataArrayAxisMismatchError);
+               except::VariableMismatchError);
 }
 
 TYPED_TEST(DatasetBinaryOpTest, dataset_lhs_datasetconstview_rhs) {
@@ -957,7 +957,7 @@ TEST(DatasetSetData, dense_to_dense) {
   EXPECT_EQ(dense["data_x"], dense["data_x_1"]);
 
   EXPECT_THROW(dense.setData("data_x_2", d["data_x"]),
-               except::DatasetAxisMismatchError);
+               except::VariableMismatchError);
 }
 
 TEST(DatasetSetData, dense_to_empty) {

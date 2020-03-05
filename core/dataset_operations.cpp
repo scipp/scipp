@@ -106,11 +106,6 @@ Dataset flatten(const DatasetConstView &d, const Dim dim) {
   return apply_to_items(d, [](auto &&... _) { return flatten(_...); }, dim);
 }
 
-DataArrayAxis flatten(const DataArrayAxisConstView &var, const Dim dim,
-                      const MasksConstView &masks) {
-  throw std::runtime_error("flatten not implemented");
-}
-
 DataArray sum(const DataArrayConstView &a, const Dim dim) {
   return apply_to_data_and_drop_dim(a, [](auto &&... _) { return sum(_...); },
                                     dim, a.masks());
@@ -135,14 +130,12 @@ Dataset mean(const DatasetConstView &d, const Dim dim) {
 
 DataArray rebin(const DataArrayConstView &a, const Dim dim,
                 const VariableConstView &coord) {
-  auto rebinned =
-      apply_to_data_and_drop_dim(a, [](auto &&... _) { return rebin(_...); },
-                                 dim, a.coords()[dim].data(), coord);
+  auto rebinned = apply_to_data_and_drop_dim(
+      a, [](auto &&... _) { return rebin(_...); }, dim, a.coords()[dim], coord);
 
   for (auto &&[name, mask] : a.masks()) {
     if (mask.dims().contains(dim))
-      rebinned.masks().set(name,
-                           rebin(mask, dim, a.coords()[dim].data(), coord));
+      rebinned.masks().set(name, rebin(mask, dim, a.coords()[dim], coord));
   }
 
   rebinned.setCoord(dim, coord);

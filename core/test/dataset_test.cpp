@@ -180,31 +180,6 @@ TEST(DatasetTest, set_event_coord) {
   ASSERT_EQ(d.size(), 0);
 }
 
-TEST(DatasetTest, set_unaligned_coord) {
-  Dataset d;
-  const auto var = makeVariable<event_list<double>>(Dims{Dim::X}, Shape{3});
-  DatasetAxis y;
-  y.unaligned().set("a", var);
-
-  ASSERT_NO_THROW(d.coords().set(Dim::Y, y));
-  ASSERT_EQ(d.size(), 0);
-}
-
-TEST(DatasetTest, setSparseLabels) {
-  Dataset d;
-  const auto sparse = makeVariable<event_list<double>>(Dims{}, Shape{});
-  DatasetAxis x;
-  x.unaligned().set("a", sparse);
-  d.coords().set(Dim::X, x);
-  DatasetAxis label;
-  label.unaligned().set("a", sparse);
-
-  ASSERT_NO_THROW(d.coords().set(Dim("label"), label));
-  ASSERT_EQ(d.size(), 1);
-  ASSERT_NO_THROW(d["a"]);
-  ASSERT_EQ(d["a"].coords().size(), 2);
-}
-
 TEST(DatasetTest, iterators_return_types) {
   Dataset d;
   ASSERT_TRUE((std::is_same_v<decltype(*d.begin()), DataArrayView>));
@@ -324,7 +299,7 @@ TEST(DatasetTest, erase_coord) {
   DatasetFactory3D factory;
   const auto ref = factory.make();
   Dataset ds(ref);
-  auto coord = Variable(ds.coords()[Dim::X].data());
+  auto coord = Variable(ds.coords()[Dim::X]);
   ds.eraseCoord(Dim::X);
   EXPECT_FALSE(ds.coords().contains(Dim::X));
   ds.setCoord(Dim::X, coord);
@@ -334,29 +309,13 @@ TEST(DatasetTest, erase_coord) {
   EXPECT_FALSE(ds.coords().contains(Dim::X));
   ds.setCoord(Dim::X, coord);
   EXPECT_EQ(ref, ds);
-
-  const auto var = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{4});
-  DatasetAxis x;
-  x.unaligned().set("newCoord", var);
-  ds.coords().set(Dim::X, x);
-  ds.setData("newCoord", var);
-  EXPECT_TRUE(ds["newCoord"].coords().contains(Dim::X));
-  ds.coords()[Dim::X].unaligned().erase("newCoord");
-  EXPECT_EQ(ref, ds);
-
-  ds.coords().set(Dim::X, x);
-  ds.setData("newCoord", makeVariable<event_list<double>>(Dims{}, Shape{}));
-  EXPECT_TRUE(ds["newCoord"].coords().contains(Dim::X));
-  EXPECT_THROW(ds["newCoord"].coords().erase(Dim::Z), except::SparseDataError);
-  ds["newCoord"].coords().erase(Dim::X);
-  EXPECT_FALSE(ds["newCoord"].coords().contains(Dim::X));
 }
 
 TEST(DatasetTest, erase_labels) {
   DatasetFactory3D factory;
   const auto ref = factory.make();
   Dataset ds(ref);
-  auto labels = Variable(ds.coords()[Dim("labels_x")].data());
+  auto labels = Variable(ds.coords()[Dim("labels_x")]);
   ds.eraseCoord(Dim("labels_x"));
   EXPECT_FALSE(ds.coords().contains(Dim("labels_x")));
   ds.setCoord(Dim("labels_x"), labels);
@@ -366,22 +325,6 @@ TEST(DatasetTest, erase_labels) {
   EXPECT_FALSE(ds.coords().contains(Dim("labels_x")));
   ds.setCoord(Dim("labels_x"), labels);
   EXPECT_EQ(ref, ds);
-
-  const auto var = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{5});
-  DatasetAxis x;
-  x.unaligned().set("newCoord", var);
-  ds.coords().set(Dim::X, x);
-  DatasetAxis labels_sparse;
-  labels_sparse.unaligned().set("newCoord", var);
-  ds.coords().set(Dim("labels_sparse"), labels_sparse);
-  EXPECT_TRUE(ds["newCoord"].coords().contains(Dim("labels_sparse")));
-  ds.coords()[Dim("labels_sparse")].unaligned().erase("newCoord");
-  EXPECT_FALSE(ds["newCoord"].coords().contains(Dim("labels_sparse")));
-
-  ds.coords().set(Dim("labels_sparse"), labels_sparse);
-  EXPECT_TRUE(ds["newCoord"].coords().contains(Dim("labels_sparse")));
-  ds["newCoord"].coords().erase(Dim("labels_sparse"));
-  EXPECT_FALSE(ds["newCoord"].coords().contains(Dim("labels_sparse")));
 }
 
 TEST(DatasetTest, erase_attrs) {

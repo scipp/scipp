@@ -26,7 +26,7 @@ static inline void expectAlignedCoord(const Dim coord_dim, const View &var,
 template <bool ApplyToData, class Func, class... Args>
 DataArray apply_and_drop_dim_impl(const DataArrayConstView &a, Func func,
                                   const Dim dim, Args &&... args) {
-  std::map<Dim, DataArrayAxis> coords;
+  std::map<Dim, Variable> coords;
   for (auto &&[d, coord] : a.coords()) {
     // Check coordinates will NOT be dropped
     if (dim_of_coord(coord, d) != dim) {
@@ -61,7 +61,7 @@ template <class Func, class... Args>
 DataArray apply_or_copy_dim(const DataArrayConstView &a, Func func,
                             const Dim dim, Args &&... args) {
   Dimensions drop({dim, a.dims()[dim]});
-  std::map<Dim, DataArrayAxis> coords;
+  std::map<Dim, Variable> coords;
   // Note the `copy` call, ensuring that the return value of the ternary
   // operator can be moved. Without `copy`, the result of `func` is always
   // copied.
@@ -130,9 +130,6 @@ VariableView mean(const VariableConstView &var, const Dim dim,
                            const MasksConstView &masks);
 VariableView sum(const VariableConstView &var, const Dim dim,
                  const MasksConstView &masks, const VariableView &out);
-
-[[nodiscard]] DataArrayAxis flatten(const DataArrayAxisConstView &var,
-                                    const Dim dim, const MasksConstView &masks);
 
 } // namespace scipp::core
 

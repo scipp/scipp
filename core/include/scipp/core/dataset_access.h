@@ -5,7 +5,6 @@
 #ifndef SCIPP_CORE_DATASET_ACCESS_H
 #define SCIPP_CORE_DATASET_ACCESS_H
 
-#include "scipp/core/axis_forward.h"
 #include "scipp/core/variable.h"
 
 namespace scipp::core {
@@ -13,26 +12,11 @@ namespace scipp::core {
 class DataArray;
 class Dataset;
 
-class DataArrayCoordAccess {
+class CoordAccess {
 public:
-  DataArrayCoordAccess(const std::string &name, Dataset *holder)
-      : m_name(name), m_holder(holder) {}
+  CoordAccess(Dataset *parent) : m_parent(parent) {}
 
   void set(const Dim &key, Variable var) const;
-  void set(const Dim &key, DataArrayAxis axis) const;
-  void erase(const Dim &key) const;
-
-private:
-  std::string m_name;
-  Dataset *m_holder;
-};
-
-class DatasetCoordAccess {
-public:
-  DatasetCoordAccess(Dataset *parent) : m_parent(parent) {}
-
-  void set(const Dim &key, Variable var) const;
-  void set(const Dim &key, DatasetAxis axis) const;
   void erase(const Dim &key) const;
 
 private:

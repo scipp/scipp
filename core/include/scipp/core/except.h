@@ -13,7 +13,6 @@
 #include "scipp-core_export.h"
 #include "scipp/common/except.h"
 #include "scipp/common/index.h"
-#include "scipp/core/axis_forward.h"
 #include "scipp/core/dtype.h"
 #include "scipp/core/event.h"
 #include "scipp/core/string.h"
@@ -48,15 +47,11 @@ struct SCIPP_CORE_EXPORT TypeError : public std::runtime_error {
 
 using DataArrayError = Error<core::DataArray>;
 using DatasetError = Error<core::Dataset>;
-using DataArrayAxisError = Error<core::DatasetAxis>;
-using DatasetAxisError = Error<core::DatasetAxis>;
 using DimensionError = Error<core::Dimensions>;
 using VariableError = Error<core::Variable>;
 
 using DataArrayMismatchError = MismatchError<core::DataArray>;
 using DatasetMismatchError = MismatchError<core::Dataset>;
-using DataArrayAxisMismatchError = MismatchError<core::DataArrayAxis>;
-using DatasetAxisMismatchError = MismatchError<core::DatasetAxis>;
 using DimensionMismatchError = MismatchError<core::Dimensions>;
 using VariableMismatchError = MismatchError<core::Variable>;
 
@@ -66,12 +61,6 @@ MismatchError(const core::VariableConstView &, const T &)
 template <class T>
 MismatchError(const core::DatasetConstView &, const T &)
     ->MismatchError<core::Dataset>;
-template <class T>
-MismatchError(const core::DataArrayAxisConstView &, const T &)
-    ->MismatchError<core::DataArrayAxis>;
-template <class T>
-MismatchError(const core::DatasetAxisConstView &, const T &)
-    ->MismatchError<core::DatasetAxis>;
 template <class T>
 MismatchError(const core::DataArrayConstView &, const T &)
     ->MismatchError<core::DataArray>;

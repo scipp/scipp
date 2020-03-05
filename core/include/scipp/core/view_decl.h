@@ -10,7 +10,6 @@
 #include "scipp/core/dataset_access.h"
 #include "scipp/core/except.h"
 #include "scipp/core/slice.h"
-#include "scipp/core/unaligned_access.h"
 #include "scipp/core/variable.h"
 #include "scipp/core/view_forward.h"
 #include "scipp/units/dim.h"

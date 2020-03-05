@@ -16,7 +16,6 @@
 #include "scipp-core_export.h"
 #include "scipp/common/index.h"
 #include "scipp/common/span.h"
-#include "scipp/core/axis_forward.h"
 #include "scipp/core/dimensions.h"
 #include "scipp/core/dtype.h"
 #include "scipp/core/element_array.h"
@@ -866,8 +865,6 @@ public:
 private:
   friend class Variable;
   friend class DataArrayConstView;
-  template <class T, class U> friend class Axis;
-  template <class T> friend class AxisConstView;
 
   template <class Var>
   static VariableView makeTransposed(Var &var,

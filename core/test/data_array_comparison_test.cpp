@@ -23,6 +23,7 @@ protected:
             Variances{1, 1, 1, 1, 1, 1})),
         sparse_variable(makeVariable<sparse_container<double>>(
             Dims{Dim::Y, Dim::Z}, Shape{3, 2})) {
+    dataset.setCoord(Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{4}));
     dataset.setCoord(Dim::Y, makeVariable<double>(Dims{Dim::Y}, Shape{3}));
 
     dataset.setCoord(Dim("labels"), makeVariable<int>(Dims{Dim::X}, Shape{4}));
@@ -37,16 +38,6 @@ protected:
 
     dataset.setData("val", makeVariable<double>(Dims{Dim::X}, Shape{4}));
     dataset.setAttr("val", "attr", makeVariable<int>(Values{int{}}));
-
-    DatasetAxis x(makeVariable<double>(Dims{Dim::X}, Shape{4}));
-    x.unaligned().set("sparse_coord", sparse_variable);
-    x.unaligned().set("sparse_coord_and_val", sparse_variable);
-    dataset.coords().set(Dim::X, x);
-    dataset.setData("sparse_coord", default_event_weights);
-    dataset.setAttr("sparse_coord", "attr", makeVariable<int>(Values{int{}}));
-    dataset.setData("sparse_coord_and_val", sparse_variable);
-    dataset.setAttr("sparse_coord_and_val", "attr",
-                    makeVariable<int>(Values{int{}}));
   }
   void expect_eq(const DataArrayConstView &a,
                  const DataArrayConstView &b) const {
@@ -279,21 +270,6 @@ TEST_F(DataArray_comparison_operators, extra_variance) {
   expect_ne(extra["val"], dataset["val"]);
 }
 
-TEST_F(DataArray_comparison_operators, extra_sparse_values) {
-  auto extra = dataset;
-  // dataset has default weights, not sparse
-  extra.setData("sparse_coord", sparse_variable);
-  expect_ne(extra["sparse_coord"], dataset["sparse_coord"]);
-}
-
-TEST_F(DataArray_comparison_operators, extra_sparse_label) {
-  auto extra = dataset;
-  DatasetAxis coord;
-  coord.unaligned().set("sparse_coord_and_val", sparse_variable);
-  extra.coords().set(Dim("extra"), coord);
-  expect_ne(extra["sparse_coord_and_val"], dataset["sparse_coord_and_val"]);
-}
-
 TEST_F(DataArray_comparison_operators, different_coord_insertion_order) {
   auto a = Dataset();
   auto b = Dataset();
@@ -319,10 +295,10 @@ TEST_F(DataArray_comparison_operators, different_label_insertion_order) {
 TEST_F(DataArray_comparison_operators, different_attr_insertion_order) {
   auto a = Dataset();
   auto b = Dataset();
-  a.setAttr("x", dataset.coords()[Dim::X].data());
-  a.setAttr("y", dataset.coords()[Dim::Y].data());
-  b.setAttr("y", dataset.coords()[Dim::Y].data());
-  b.setAttr("x", dataset.coords()[Dim::X].data());
+  a.setAttr("x", dataset.coords()[Dim::X]);
+  a.setAttr("y", dataset.coords()[Dim::Y]);
+  b.setAttr("y", dataset.coords()[Dim::Y]);
+  b.setAttr("x", dataset.coords()[Dim::X]);
   for (const auto &a_ : a)
     expect_ne(a_, b[a_.name()]);
 }

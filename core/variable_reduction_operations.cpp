@@ -88,12 +88,6 @@ void flatten_impl(const VariableView &summed, const VariableConstView &var,
           }});
 }
 
-void flatten_impl(const DataArrayAxisView &summed,
-                  const DataArrayAxisConstView &var,
-                  const VariableConstView &mask) {
-  throw std::runtime_error("flatten not implemented");
-}
-
 /// Flatten dimension by concatenating along sparse dimension.
 ///
 /// This is equivalent to summing dense data along a dimension, in the sense

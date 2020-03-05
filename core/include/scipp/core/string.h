@@ -9,7 +9,6 @@
 
 #include "scipp-core_export.h"
 #include "scipp/common/index.h"
-#include "scipp/core/axis_forward.h"
 #include "scipp/core/dtype.h"
 #include "scipp/units/unit.h"
 
@@ -48,14 +47,6 @@ SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
                                            const DatasetView &dataset);
 SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
                                            const Dataset &dataset);
-SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
-                                           const DatasetAxisConstView &axis);
-SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
-                                           const DatasetAxis &axis);
-SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
-                                           const DataArrayAxisConstView &axis);
-SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
-                                           const DataArrayAxis &axis);
 
 SCIPP_CORE_EXPORT std::string to_string(const bool b);
 SCIPP_CORE_EXPORT std::string to_string(const DType dtype);
@@ -65,10 +56,8 @@ SCIPP_CORE_EXPORT std::string to_string(const Variable &variable);
 SCIPP_CORE_EXPORT std::string to_string(const VariableConstView &variable);
 SCIPP_CORE_EXPORT std::string to_string(const DataArray &data);
 SCIPP_CORE_EXPORT std::string to_string(const DataArrayConstView &data);
-SCIPP_CORE_EXPORT std::string to_string(const DataArrayAxisConstView &data);
 SCIPP_CORE_EXPORT std::string to_string(const Dataset &dataset);
 SCIPP_CORE_EXPORT std::string to_string(const DatasetConstView &dataset);
-SCIPP_CORE_EXPORT std::string to_string(const DatasetAxisConstView &axis);
 
 template <class Id, class Key, class Value>
 std::string to_string(const ConstView<Id, Key, Value> &view) {

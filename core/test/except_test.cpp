@@ -77,10 +77,8 @@ TEST(StringFormattingTest, to_string_ConstView) {
 
 TEST(StringFormattingTest, to_string_sparse_Dataset) {
   Dataset a;
-  DatasetAxis x(Variable{});
-  x.unaligned().set(
-      "a", makeVariable<sparse_container<double>>(Dims{Dim::Y}, Shape{4}));
-  a.coords().set(Dim::X, x);
+  a.coords().set(
+      Dim::X, makeVariable<sparse_container<double>>(Dims{Dim::Y}, Shape{4}));
   ASSERT_NO_THROW(to_string(a));
 }
 

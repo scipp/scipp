@@ -56,25 +56,23 @@ TEST(MergeTest, simple) {
 TEST(MergeTest, sparse) {
   auto sparseCoord = makeVariable<event_list<int>>(Dims{}, Shape{});
   sparseCoord.sparseValues<int>()[0] = {1, 2, 3, 4};
-  DatasetAxis x;
-  x.unaligned().set("sparse", sparseCoord);
 
   Dataset a;
   {
     a.setData("sparse", makeVariable<event_list<int>>(Dims{}, Shape{}));
-    a.coords().set(Dim::X, x);
+    a.coords().set(Dim::X, sparseCoord);
   }
 
   Dataset b;
   {
     b.setData("sparse", makeVariable<event_list<int>>(Dims{}, Shape{}));
-    b.coords().set(Dim::X, x);
+    b.coords().set(Dim::X, sparseCoord);
   }
 
   const auto d = merge(a, b);
 
-  EXPECT_EQ(a["sparse"].data(), d["sparse"].data());
-  EXPECT_EQ(b["sparse"].data(), d["sparse"].data());
+  EXPECT_EQ(a["sparse"], d["sparse"]);
+  EXPECT_EQ(b["sparse"], d["sparse"]);
 }
 
 TEST(MergeTest, non_matching_dense_data) {
@@ -120,18 +118,14 @@ TEST(MergeTest, non_matching_sparse_coords) {
   {
     auto coord = makeVariable<event_list<int>>(Dims{Dim::X}, Shape{1});
     coord.sparseValues<int>()[0] = {2, 3};
-    DatasetAxis y;
-    y.unaligned().set("sparse", coord);
-    a.coords().set(Dim::Y, y);
+    a.coords().set(Dim::Y, coord);
   }
 
   Dataset b;
   {
     auto coord = makeVariable<event_list<int>>(Dims{Dim::X}, Shape{1});
     coord.sparseValues<int>()[0] = {1, 2};
-    DatasetAxis y;
-    y.unaligned().set("sparse", coord);
-    b.coords().set(Dim::Y, y);
+    b.coords().set(Dim::Y, coord);
   }
 
   EXPECT_THROW(auto d = merge(a, b), std::runtime_error);
@@ -155,24 +149,16 @@ TEST(MergeTest, non_matching_sparse_labels) {
   {
     auto label = makeVariable<event_list<int>>(Dims{Dim::X}, Shape{1});
     label.sparseValues<int>()[0] = {2, 3};
-    DatasetAxis y;
-    y.unaligned().set("sparse", coord);
-    DatasetAxis l;
-    l.unaligned().set("sparse", label);
-    a.coords().set(Dim::Y, y);
-    a.coords().set(Dim("l"), l);
+    a.coords().set(Dim::Y, coord);
+    a.coords().set(Dim("l"), label);
   }
 
   Dataset b;
   {
     auto label = makeVariable<event_list<int>>(Dims{Dim::X}, Shape{1});
     label.sparseValues<int>()[0] = {1, 2};
-    DatasetAxis y;
-    y.unaligned().set("sparse", coord);
-    DatasetAxis l;
-    l.unaligned().set("sparse", label);
-    b.coords().set(Dim::Y, y);
-    b.coords().set(Dim("l"), l);
+    b.coords().set(Dim::Y, coord);
+    b.coords().set(Dim("l"), label);
   }
 
   EXPECT_THROW(auto d = merge(a, b), std::runtime_error);

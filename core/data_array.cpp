@@ -187,12 +187,12 @@ DataArray &sparse_dense_op_inplace(Op op, DataArray &a,
       // Note the inefficiency here: Always creating temporary sparse data.
       // Could easily avoided, but requires significant code duplication.
       op.inplace(a.data(),
-                 sparse_dense_op_impl(a.coords()[dim].data(),
-                                      b.coords()[dim].data(), b.data(), dim));
+                 sparse_dense_op_impl(a.coords()[dim], b.coords()[dim],
+                                      b.data(), dim));
     } else {
-      a.setData(op(a.data(), sparse_dense_op_impl(a.coords()[dim].data(),
-                                                  b.coords()[dim].data(),
-                                                  b.data(), dim)));
+      a.setData(
+          op(a.data(), sparse_dense_op_impl(a.coords()[dim], b.coords()[dim],
+                                            b.data(), dim)));
     }
   } else {
     throw except::SparseDataError("Unsupported combination of sparse and dense "
@@ -248,9 +248,8 @@ auto sparse_dense_op(Op op, const DataArrayConstView &a,
     return op(a.data(), b.data());
   if (is_histogram(b, dim)) {
     // not in-place so type promotion can happen
-    return op(a.data(),
-              sparse_dense_op_impl(a.coords()[dim].data(),
-                                   b.coords()[dim].data(), b.data(), dim));
+    return op(a.data(), sparse_dense_op_impl(a.coords()[dim], b.coords()[dim],
+                                             b.data(), dim));
   }
   // histogram divided by sparse not supported, would typically result in unit
   // 1/counts which is meaningless

@@ -67,8 +67,8 @@ TEST(HistogramTest, fail_edges_not_sorted) {
 
 auto make_single_sparse() {
   Dataset sparse;
-  DatasetAxis x(makeVariable<event_list<double>>(Dims{}, Shape{}));
-  x.data().sparseValues<double>()[0] = {0, 1, 1, 2, 3};
+  auto x = makeVariable<event_list<double>>(Dims{}, Shape{});
+  x.sparseValues<double>()[0] = {0, 1, 1, 2, 3};
   sparse.coords().set(Dim::X, x);
   sparse.setData("sparse", makeVariable<double>(Dims{}, Shape{},
                                                 units::Unit(units::counts),
@@ -201,12 +201,8 @@ TEST(HistogramTest, DISABLED_dataset_aligned_axis) {
   expected.setData("a", histogram(a, bins));
   expected.setData("b", histogram(b, bins));
 
-  DatasetAxis axis(bins);
-  axis.unaligned().set("a", a.coords()[Dim::Y].data());
-  axis.unaligned().set("b", b.coords()[Dim::Y].data());
-  events.setCoord(Dim::Y, axis);
-  events.setUnaligned("a", a.data());
-  events.setUnaligned("b", b.data());
+  // events.setUnaligned("a", a);
+  // events.setUnaligned("b", b);
 
   EXPECT_EQ(core::histogram(events, Dim::Y), expected);
 }

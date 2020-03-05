@@ -16,15 +16,13 @@ using namespace scipp::core;
 template <typename T> class CoordsViewTest : public ::testing::Test {
 protected:
   template <class D>
-  std::conditional_t<std::is_same_v<T, DatasetCoordsView>, Dataset,
-                     const Dataset> &
+  std::conditional_t<std::is_same_v<T, CoordsView>, Dataset, const Dataset> &
   access(D &dataset) {
     return dataset;
   }
 };
 
-using CoordsViewTypes =
-    ::testing::Types<DatasetCoordsView, DatasetCoordsConstView>;
+using CoordsViewTypes = ::testing::Types<CoordsView, CoordsConstView>;
 TYPED_TEST_SUITE(CoordsViewTest, CoordsViewTypes);
 
 TYPED_TEST(CoordsViewTest, empty) {
@@ -59,12 +57,9 @@ TYPED_TEST(CoordsViewTest, sparse_coords_values_and_coords) {
   auto s_coords = makeVariable<event_list<double>>(Dims{}, Shape{});
   s_coords.sparseValues<double>()[0] = {4, 5, 6};
   d.setData("test", data);
-  DatasetAxis x(Variable{});
-  x.unaligned().set("test", s_coords);
-  d.coords().set(Dim::X, x);
+  d.coords().set(Dim::X, s_coords);
   ASSERT_EQ(1, d["test"].coords().size());
-  auto sparseX =
-      d["test"].coords()[Dim::X].unaligned().sparseValues<double>()[0];
+  auto sparseX = d["test"].coords()[Dim::X].sparseValues<double>()[0];
   ASSERT_EQ(3, sparseX.size());
   ASSERT_EQ(scipp::core::event_list<double>({4, 5, 6}), sparseX);
 }
@@ -210,13 +205,13 @@ TYPED_TEST(CoordsViewTest, slice_of_slice_range) {
 TEST(CoordsConstView, slice_return_type) {
   const Dataset d;
   ASSERT_TRUE((std::is_same_v<decltype(d.coords().slice({Dim::X, 0})),
-                              DatasetCoordsConstView>));
+                              CoordsConstView>));
 }
 
 TEST(CoordsView, slice_return_type) {
   Dataset d;
-  ASSERT_TRUE((std::is_same_v<decltype(d.coords().slice({Dim::X, 0})),
-                              DatasetCoordsView>));
+  ASSERT_TRUE(
+      (std::is_same_v<decltype(d.coords().slice({Dim::X, 0})), CoordsView>));
 }
 
 TEST(MutableCoordsViewTest, item_write) {

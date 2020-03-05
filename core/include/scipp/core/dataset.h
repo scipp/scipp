@@ -14,7 +14,6 @@
 
 #include <boost/iterator/transform_iterator.hpp>
 
-#include "scipp/core/axis.h"
 #include "scipp/core/dataset_access.h"
 #include "scipp/core/except.h"
 #include "scipp/core/variable.h"
@@ -60,7 +59,7 @@ public:
   DType dtype() const;
   units::Unit unit() const;
 
-  DataArrayCoordsConstView coords() const noexcept;
+  CoordsConstView coords() const noexcept;
   AttrsConstView attrs() const noexcept;
   MasksConstView masks() const noexcept;
 
@@ -129,7 +128,7 @@ public:
   DataArrayView(Dataset &dataset, detail::dataset_item_map::value_type &data,
                 const detail::slice_list &slices = {});
 
-  DataArrayCoordsView coords() const noexcept;
+  CoordsView coords() const noexcept;
   MasksView masks() const noexcept;
   AttrsView attrs() const noexcept;
 
@@ -264,8 +263,8 @@ public:
 
   void clear();
 
-  DatasetCoordsConstView coords() const noexcept;
-  DatasetCoordsView coords() noexcept;
+  CoordsConstView coords() const noexcept;
+  CoordsView coords() noexcept;
 
   AttrsConstView attrs() const noexcept;
   AttrsView attrs() noexcept;
@@ -353,7 +352,6 @@ public:
     return boost::make_transform_iterator(m_data.end(), detail::make_key);
   }
 
-  void setCoord(const Dim dim, DatasetAxis coord);
   void setCoord(const Dim dim, Variable coord);
   void setMask(const std::string &masksName, Variable masks);
   void setAttr(const std::string &attrName, Variable attr);
@@ -362,13 +360,7 @@ public:
   void setData(const std::string &name, Variable data);
   void setData(const std::string &name, const DataArrayConstView &data);
   void setData(const std::string &name, DataArray data);
-  void setUnaligned(const std::string &name, Variable data);
-  void setUnaligned(const std::string &name, const DataArrayConstView &data);
-  void setUnaligned(const std::string &name, DataArray data);
 
-  void setCoord(const Dim dim, const DatasetAxisConstView &coord) {
-    setCoord(dim, DatasetAxis(coord));
-  }
   void setCoord(const Dim dim, const VariableConstView &coord) {
     setCoord(dim, Variable(coord));
   }
@@ -384,9 +376,6 @@ public:
   }
   void setData(const std::string &name, const VariableConstView &data) {
     setData(name, Variable(data));
-  }
-  void setUnaligned(const std::string &name, const VariableConstView &data) {
-    setUnaligned(name, Variable(data));
   }
 
   void eraseCoord(const Dim dim);
@@ -470,7 +459,7 @@ private:
   }
 
   std::unordered_map<Dim, scipp::index> m_dims;
-  std::unordered_map<Dim, DatasetAxis> m_coords;
+  std::unordered_map<Dim, Variable> m_coords;
   std::unordered_map<std::string, Variable> m_attrs;
   std::unordered_map<std::string, Variable> m_masks;
   detail::dataset_item_map m_data;
@@ -514,7 +503,7 @@ public:
   index size() const noexcept { return m_items.size(); }
   [[nodiscard]] bool empty() const noexcept { return m_items.empty(); }
 
-  DatasetCoordsConstView coords() const noexcept;
+  CoordsConstView coords() const noexcept;
   AttrsConstView attrs() const noexcept;
   MasksConstView masks() const noexcept;
 
@@ -597,7 +586,7 @@ class SCIPP_CORE_EXPORT DatasetView : public DatasetConstView {
 public:
   DatasetView(Dataset &dataset);
 
-  DatasetCoordsView coords() const noexcept;
+  CoordsView coords() const noexcept;
   AttrsView attrs() const noexcept;
   MasksView masks() const noexcept;
 
@@ -700,15 +689,8 @@ public:
     if (data)
       m_holder.setData(name, std::move(*data));
 
-    for (auto &&[dim, c] : coords) {
-      if constexpr (std::is_same_v<typename CoordMap::mapped_type,
-                                   DataArrayAxis>) {
-        m_holder.setCoord(dim, DataArrayAxis::to_DatasetAxis(
-                                   DataArrayAxis(std::move(c)), name));
-      } else {
-        m_holder.setCoord(dim, std::move(c));
-      }
-    }
+    for (auto &&[dim, c] : coords)
+      m_holder.setCoord(dim, std::move(c));
 
     for (auto &&[mask_name, m] : masks)
       m_holder.setMask(std::string(mask_name), std::move(m));
@@ -727,8 +709,8 @@ public:
 
   const std::string &name() const { return m_holder.begin()->name(); }
 
-  DataArrayCoordsConstView coords() const;
-  DataArrayCoordsView coords();
+  CoordsConstView coords() const;
+  CoordsView coords();
 
   AttrsConstView attrs() const { return get().attrs(); }
   AttrsView attrs() { return get().attrs(); }

@@ -89,9 +89,9 @@ TEST(DataArraySparseArithmeticTest, fail_sparse_op_non_histogram) {
                                    Variances{0.3, 0.4});
   DataArray not_hist(data, {{Dim::X, coord}});
 
-  EXPECT_THROW(sparse * not_hist, except::MismatchError<DataArrayAxis>);
-  EXPECT_THROW(not_hist * sparse, except::MismatchError<DataArrayAxis>);
-  EXPECT_THROW(sparse / not_hist, except::MismatchError<DataArrayAxis>);
+  EXPECT_THROW(sparse * not_hist, except::VariableMismatchError);
+  EXPECT_THROW(not_hist * sparse, except::VariableMismatchError);
+  EXPECT_THROW(sparse / not_hist, except::VariableMismatchError);
 }
 
 TEST(DataArraySparseArithmeticTest, sparse_times_histogram) {
@@ -157,7 +157,7 @@ TEST(DataArraySparseArithmeticTest, sparse_times_histogram_without_variances) {
 TEST(DataArraySparseArithmeticTest, sparse_with_values_times_histogram) {
   auto sparse = make_sparse();
   const auto hist = make_histogram();
-  Variable data(sparse.coords()[Dim::X].data());
+  Variable data(sparse.coords()[Dim::X]);
   data.setUnit(units::counts);
   data *= 0.0;
   data += 2.0 * units::Unit(units::counts);

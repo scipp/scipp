@@ -254,7 +254,7 @@ template <class T> struct MakeBinGroups {
 /// Grouping will create a new coordinate for the dimension of the grouping
 /// coord in a later apply/combine step.
 GroupBy<DataArray> groupby(const DataArrayConstView &array, const Dim dim) {
-  const auto &key = array.coords()[dim].data();
+  const auto &key = array.coords()[dim];
   return {array,
           CallDType<double, float, int64_t, int32_t, bool,
                     std::string>::apply<MakeGroups>(key.dtype(), key, dim)};
@@ -267,7 +267,7 @@ GroupBy<DataArray> groupby(const DataArrayConstView &array, const Dim dim) {
 /// new coordinate to the output in a later apply/combine step.
 GroupBy<DataArray> groupby(const DataArrayConstView &array, const Dim dim,
                            const VariableConstView &bins) {
-  const auto &key = array.coords()[dim].data();
+  const auto &key = array.coords()[dim];
   return {array,
           CallDType<double, float, int64_t, int32_t>::apply<MakeBinGroups>(
               key.dtype(), key, bins)};
@@ -279,7 +279,7 @@ GroupBy<DataArray> groupby(const DataArrayConstView &array, const Dim dim,
 /// Grouping will create a new coordinate for the dimension of the grouping
 /// coord in a later apply/combine step.
 GroupBy<Dataset> groupby(const DatasetConstView &dataset, const Dim dim) {
-  const auto &key = dataset.coords()[dim].data();
+  const auto &key = dataset.coords()[dim];
   return {dataset,
           CallDType<double, float, int64_t, int32_t, bool,
                     std::string>::apply<MakeGroups>(key.dtype(), key, dim)};
@@ -292,7 +292,7 @@ GroupBy<Dataset> groupby(const DatasetConstView &dataset, const Dim dim) {
 /// new coordinate to the output in a later apply/combine step.
 GroupBy<Dataset> groupby(const DatasetConstView &dataset, const Dim dim,
                          const VariableConstView &bins) {
-  const auto &key = dataset.coords()[dim].data();
+  const auto &key = dataset.coords()[dim];
   return {dataset,
           CallDType<double, float, int64_t, int32_t>::apply<MakeBinGroups>(
               key.dtype(), key, bins)};
