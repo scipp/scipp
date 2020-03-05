@@ -225,15 +225,13 @@ TEST(DatasetTest, set_dense_data_with_sparse_coord) {
 
   Dataset a;
   a.setData("sparse_coord_and_val", dense_variable);
-  DatasetAxis x;
-  x.unaligned().set("sparse_coord_and_val", sparse_variable);
-  ASSERT_THROW(a.coords().set(Dim::X, x), except::DimensionError);
+  // Events handled via dtype, not dimension, so this is valid.
+  ASSERT_NO_THROW(a.coords().set(Dim::X, sparse_variable));
 
   // Setting coords first yields same response.
   Dataset b;
-  b.coords().set(Dim::X, x);
-  ASSERT_THROW(b.setData("sparse_coord_and_val", dense_variable),
-               except::DimensionError);
+  b.coords().set(Dim::X, sparse_variable);
+  ASSERT_NO_THROW(b.setData("sparse_coord_and_val", dense_variable));
 }
 
 TEST(DatasetTest, construct_from_view) {
@@ -341,6 +339,7 @@ TEST(DatasetTest, erase_coord) {
   DatasetAxis x;
   x.unaligned().set("newCoord", var);
   ds.coords().set(Dim::X, x);
+  ds.setData("newCoord", var);
   EXPECT_TRUE(ds["newCoord"].coords().contains(Dim::X));
   ds.coords()[Dim::X].unaligned().erase("newCoord");
   EXPECT_EQ(ref, ds);
