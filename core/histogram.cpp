@@ -60,17 +60,17 @@ static constexpr auto make_histogram =
       }
     };
 
-static constexpr auto make_histogram_unit =
-    [](const units::Unit &sparse_unit, const units::Unit &weights_unit,
-       const units::Unit &edge_unit) {
-      if (sparse_unit != edge_unit)
-        throw except::UnitError("Bin edges must have same unit as the sparse "
-                                "input coordinate.");
-      if (weights_unit != units::counts && weights_unit != units::dimensionless)
-        throw except::UnitError("Weights of sparse data must be "
-                                "`units::counts` or `units::dimensionless`.");
-      return weights_unit;
-    };
+static constexpr auto make_histogram_unit = [](const units::Unit &sparse_unit,
+                                               const units::Unit &weights_unit,
+                                               const units::Unit &edge_unit) {
+  if (sparse_unit != edge_unit)
+    throw except::UnitError("Bin edges must have same unit as the sparse "
+                            "input coordinate.");
+  if (weights_unit != units::counts && weights_unit != units::dimensionless)
+    throw except::UnitError("Weights of sparse data must be "
+                            "`units::counts` or `units::dimensionless`.");
+  return weights_unit;
+};
 
 namespace histogram_detail {
 template <class Out, class Coord, class Edge>

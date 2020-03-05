@@ -269,7 +269,6 @@ private:
     }
   };
 
-
   Access m_access;
 
 public:
