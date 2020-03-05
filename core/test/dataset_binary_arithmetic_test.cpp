@@ -909,47 +909,6 @@ TYPED_TEST(DatasetBinaryOpTest, masks_propagate) {
   EXPECT_EQ(res.masks()["masks_x"], expectedMasks);
 }
 
-Dataset non_trivial_2d_sparse(std::string_view name) {
-  Dataset sparse;
-  auto var = makeVariable<event_list<double>>(Dims{Dim::X}, Shape{4});
-  var.sparseValues<double>()[0] = {1.5, 2.5, 3.5, 4.5, 5.5};
-  var.sparseValues<double>()[1] = {3.5, 4.5, 5.5, 6.5, 7.5};
-  var.sparseValues<double>()[2] = {-1, 0, 0, 1, 1, 2, 2, 2, 4, 4, 4, 6};
-  var.sparseValues<double>()[3] = {1};
-  auto dvar = makeVariable<event_list<double>>(Dims{Dim::X}, Shape{4});
-  dvar.sparseValues<double>()[0] = {1, 2, 3, 4, 5};
-  dvar.sparseValues<double>()[1] = {3, 4, 5, 6, 7};
-  dvar.sparseValues<double>()[2] = {1, 1, 1, 1, 1, 100, 1, 1, 1, 1, 1, 1};
-  dvar.sparseValues<double>()[3] = {1};
-  sparse.setData(std::string(name), dvar);
-  sparse.coords().set(Dim::Y, var);
-  return sparse;
-}
-
-TEST(DatasetSetData, sparse_to_sparse) {
-  auto base = non_trivial_2d_sparse("base");
-  auto other = non_trivial_2d_sparse("other");
-  other["other"] *= makeVariable<double>(Values{2});
-  base.setData("other", other["other"]);
-  EXPECT_EQ(other["other"], base["other"]);
-}
-
-TEST(DatasetSetData, sparse_to_dense) {
-  auto base = non_trivial_2d_sparse("base");
-  auto var = makeVariable<event_list<double>>(Dims{}, Shape{});
-  var.sparseValues<double>()[0] = {1, 2, 3};
-  base.coords().set(Dim("l"), var);
-
-  auto dense = datasetFactory().make();
-  // Remove event coord. To keep this coord we would need to set data as
-  // unaligned instead.
-  base.eraseCoord(Dim::Y);
-  dense.setData("sparse", base["base"]);
-
-  EXPECT_EQ(base["base"].data(), dense["sparse"].data());
-  EXPECT_EQ(dense["sparse"].coords().items().count(Dim("l")), 1);
-}
-
 TEST(DatasetSetData, dense_to_dense) {
   auto dense = datasetFactory().make();
   auto d = Dataset(dense.slice({Dim::X, 0, 2}));
