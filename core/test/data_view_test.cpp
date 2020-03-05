@@ -142,27 +142,6 @@ TYPED_TEST(DataArrayViewTest, DISABLED_coords_unaligned) {
   ASSERT_EQ(d_ref["a"].coords()[Dim::Y], sparse);
 }
 
-TYPED_TEST(DataArrayViewTest, coords_sparse_shadow_even_if_no_coord) {
-  Dataset d;
-  typename TestFixture::dataset_type &d_ref(d);
-  const auto x = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
-  const auto y = makeVariable<double>(Dims{Dim::Y}, Shape{3}, Values{4, 5, 6});
-  const auto sparse = makeVariable<event_list<double>>(Dims{Dim::X}, Shape{3});
-  d.setCoord(Dim::X, x);
-  d.setCoord(Dim::Y, y);
-  d.setData("a", sparse);
-
-  ASSERT_NO_THROW(d_ref["a"].coords());
-  // Dim::Y is sparse, so the global (non-sparse) Y coordinate does not make
-  // sense and is thus hidden.
-  // TODO Would it be sensible to define such a comparison?
-  // ASSERT_NE(d_ref["a"].coords(), d.coords());
-  ASSERT_EQ(d_ref["a"].coords().size(), 1);
-  ASSERT_NO_THROW(d_ref["a"].coords()[Dim::X]);
-  ASSERT_ANY_THROW(d_ref["a"].coords()[Dim::Y]);
-  ASSERT_EQ(d_ref["a"].coords()[Dim::X], x);
-}
-
 TYPED_TEST(DataArrayViewTest, coords_contains_only_relevant) {
   Dataset d;
   typename TestFixture::dataset_type &d_ref(d);
@@ -174,8 +153,7 @@ TYPED_TEST(DataArrayViewTest, coords_contains_only_relevant) {
   d.setData("a", var);
   const auto coords = d_ref["a"].coords();
 
-  // TODO Would it be sensible to define such a comparison?
-  // ASSERT_NE(coords, d.coords());
+  ASSERT_NE(coords, d.coords());
   ASSERT_EQ(coords.size(), 1);
   ASSERT_NO_THROW(coords[Dim::X]);
   ASSERT_EQ(coords[Dim::X], x);
@@ -192,8 +170,7 @@ TYPED_TEST(DataArrayViewTest, coords_contains_only_relevant_2d_dropped) {
   d.setData("a", var);
   const auto coords = d_ref["a"].coords();
 
-  // TODO Would it be sensible to define such a comparison?
-  // ASSERT_NE(coords, d.coords());
+  ASSERT_NE(coords, d.coords());
   ASSERT_EQ(coords.size(), 1);
   ASSERT_NO_THROW(coords[Dim::X]);
   ASSERT_EQ(coords[Dim::X], x);
@@ -216,8 +193,7 @@ TYPED_TEST(DataArrayViewTest,
   // not, it implies that the coordinate cannot be for this data item, so it
   // should be dropped... HOWEVER, the current implementation DOES NOT DROP IT.
   // Should that be changed?
-  // TODO Would it be sensible to define such a comparison?
-  // ASSERT_NE(coords, d.coords());
+  ASSERT_NE(coords, d.coords());
   ASSERT_EQ(coords.size(), 1);
   ASSERT_NO_THROW(coords[Dim::X]);
   ASSERT_EQ(coords[Dim::X], x);
