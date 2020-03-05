@@ -196,13 +196,9 @@ void bind_dataset_view_methods(py::class_<T, Ignored...> &c) {
                           py::return_value_policy::move);
   c.def_property_readonly("shape",
                           [](const T &self) {
-                            auto shape = py::list();
+                            std::vector<int64_t> shape;
                             for (const auto &dim : self.dimensions()) {
-                              if (dim.second == Dimensions::Sparse) {
-                                shape.append(py::none());
-                              } else {
-                                shape.append(dim.second);
-                              }
+                              shape.push_back(dim.second);
                             }
                             return shape;
                           },

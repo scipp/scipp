@@ -396,28 +396,11 @@ void bind_data_properties(pybind11::class_<T, Ignored...> &c) {
   c.def_property_readonly("shape",
                           [](const T &self) {
                             const auto &dims = self.dims();
-                            py::list list;
-                            for (auto extent : dims.shape()) {
-                              list.append(extent);
-                            }
-                            // Add None to represent sparse dimension.
-                            // There can be only one.
-                            if (dims.sparse()) {
-                              list.append(py::none());
-                            }
-                            return list;
+                            return std::vector<int64_t>(dims.shape().begin(),
+                                                        dims.shape().end());
                           },
                           "Shape of the data (read-only).",
                           py::return_value_policy::move);
-  c.def_property_readonly("sparse_dim",
-                          [](const T &self) {
-                            return self.dims().sparse()
-                                       ? py::cast(self.dims().sparseDim())
-                                       : py::none();
-                          },
-                          "Dimension label of the sparse dimension, or None if "
-                          "the data is not sparse.",
-                          py::return_value_policy::copy);
 
   c.def_property("unit",
                  [](const T &self) {
