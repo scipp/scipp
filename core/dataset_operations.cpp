@@ -98,8 +98,13 @@ Dataset concatenate(const DatasetConstView &a, const DatasetConstView &b,
 }
 
 DataArray flatten(const DataArrayConstView &a, const Dim dim) {
-  return apply_or_copy_dim(a, [](auto &&... _) { return flatten(_...); }, dim,
-                           a.masks());
+  return apply_or_copy_dim(
+      a,
+      [](const auto &x, const Dim dim_, const auto &mask_) {
+        return is_events(x) ? flatten(x, dim_, mask_)
+                            : copy(x.slice({dim_, 0}));
+      },
+      dim, a.masks());
 }
 
 Dataset flatten(const DatasetConstView &d, const Dim dim) {
@@ -150,40 +155,8 @@ Dataset rebin(const DatasetConstView &d, const Dim dim,
 
 DataArray resize(const DataArrayConstView &a, const Dim dim,
                  const scipp::index size) {
-  // TODO Where was the sparse resize used? Now it should turn into a dtype
-  // change, dropping an event coords?
-  /*
-  if (a.dims().sparse()) {
-    const auto resize_if_sparse = [dim, size](const auto &var) {
-      return var.dims().sparse()
-                 ? resize(var, dim, size)
-                 : typename std::decay_t<decltype(var)>::value_type{var};
-    };
-
-    std::map<Dim, DataArrayAxis> coords;
-    for (auto &&[d, coord] : a.coords())
-      if (dim_of_coord(coord, d) != dim)
-        coords.emplace(d, resize_if_sparse(coord));
-
-    std::map<std::string, Variable> attrs;
-    for (auto &&[name, attr] : a.attrs())
-      if (attr.dims().inner() != dim)
-        attrs.emplace(name, resize_if_sparse(attr));
-
-    std::map<std::string, Variable> masks;
-    for (auto &&[name, mask] : a.masks())
-      if (mask.dims().inner() != dim)
-        masks.emplace(name, resize_if_sparse(mask));
-
-    return DataArray{a.hasData() ? resize(a.data(), dim, size)
-                                 : std::optional<Variable>{},
-                     std::move(coords), std::move(masks), std::move(attrs)};
-  } else
-    */
-  {
-    return apply_or_copy_dim(a, [](auto &&... _) { return resize(_...); }, dim,
-                             size);
-  }
+  return apply_or_copy_dim(a, [](auto &&... _) { return resize(_...); }, dim,
+                           size);
 }
 
 Dataset resize(const DatasetConstView &d, const Dim dim,
