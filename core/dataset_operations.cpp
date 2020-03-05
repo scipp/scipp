@@ -181,8 +181,8 @@ DataArray resize(const DataArrayConstView &a, const Dim dim,
   } else
     */
   {
-    return apply_to_data_and_drop_dim(
-        a, [](auto &&... _) { return resize(_...); }, dim, size);
+    return apply_or_copy_dim(a, [](auto &&... _) { return resize(_...); }, dim,
+                             size);
   }
 }
 

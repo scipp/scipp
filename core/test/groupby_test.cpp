@@ -372,9 +372,10 @@ auto make_sparse_out(bool mask = false) {
   return var;
 }
 
-struct GroupbyFlattenCoordOnly : public ::testing::Test {
+struct GroupbyFlattenDefaultWeight : public ::testing::Test {
   const DataArray a{
-      std::nullopt,
+      makeVariable<double>(Dims{Dim::Y}, Shape{3}, units::Unit(units::counts),
+                           Values{1, 1, 1}, Variances{1, 1, 1}),
       {{Dim::X, make_sparse_in()},
        {Dim("labels"),
         makeVariable<double>(Dims{Dim::Y}, Shape{3}, units::Unit(units::m),
@@ -386,7 +387,9 @@ struct GroupbyFlattenCoordOnly : public ::testing::Test {
       {{"scalar_attr", makeVariable<double>(Values{1.2})}}};
 
   const DataArray expected{
-      std::nullopt,
+      makeVariable<double>(Dims{Dim("labels")}, Shape{2},
+                           units::Unit(units::counts), Values{2, 1},
+                           Variances{2, 1}),
       {{Dim::X, make_sparse_out()},
        {Dim("labels"),
         makeVariable<double>(Dims{Dim("labels")}, Shape{2},
@@ -398,25 +401,29 @@ struct GroupbyFlattenCoordOnly : public ::testing::Test {
       {{"scalar_attr", makeVariable<double>(Values{1.2})}}};
 };
 
-TEST_F(GroupbyFlattenCoordOnly, flatten_coord_only) {
+TEST_F(GroupbyFlattenDefaultWeight, flatten_coord_only) {
   EXPECT_EQ(groupby(a, Dim("labels")).flatten(Dim::Y), expected);
 }
 
-TEST_F(GroupbyFlattenCoordOnly, flatten_dataset_coord_only) {
+TEST_F(GroupbyFlattenDefaultWeight, flatten_dataset_coord_only) {
   const Dataset d{{{"a", a}, {"b", a}}};
   const Dataset expected_d{{{"a", expected}, {"b", expected}}};
   EXPECT_EQ(groupby(d, Dim("labels")).flatten(Dim::Y), expected_d);
 }
 
 TEST(GroupbyFlattenTest, flatten_coord_and_labels) {
-  DataArray a{std::nullopt,
+  DataArray a{makeVariable<double>(Dims{Dim::Y}, Shape{3},
+                                   units::Unit(units::counts), Values{1, 1, 1},
+                                   Variances{1, 1, 1}),
               {{Dim::X, make_sparse_in()},
                {Dim("sparse"), make_sparse_in() * 0.3},
                {Dim("labels"),
                 makeVariable<double>(Dims{Dim::Y}, Shape{3},
                                      units::Unit(units::m), Values{1, 1, 3})}}};
 
-  DataArray expected{std::nullopt,
+  DataArray expected{makeVariable<double>(Dims{Dim("labels")}, Shape{2},
+                                          units::Unit(units::counts),
+                                          Values{2, 1}, Variances{2, 1}),
                      {{Dim::X, make_sparse_out()},
                       {Dim("labels"), makeVariable<double>(
                                           Dims{Dim("labels")}, Shape{2},
