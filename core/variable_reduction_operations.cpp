@@ -172,8 +172,6 @@ VariableView sum(const VariableConstView &var, const Dim dim,
 
 Variable mean(const VariableConstView &var, const Dim dim,
               const VariableConstView &masks_sum) {
-  // In principle we *could* support mean/sum over sparse dimension.
-  expect::notSparse(var);
   auto summed = sum(var, dim);
 
   auto scale =
@@ -188,8 +186,6 @@ Variable mean(const VariableConstView &var, const Dim dim,
 
 VariableView mean(const VariableConstView &var, const Dim dim,
                   const VariableConstView &masks_sum, const VariableView &out) {
-  // In principle we *could* support mean/sum over sparse dimension.
-  expect::notSparse(var);
   if (isInt(out.dtype()))
     throw except::UnitError(
         "Cannot calculate mean in-place when output dtype is integer");
@@ -238,7 +234,6 @@ VariableView mean(const VariableConstView &var, const Dim dim,
 
 template <class Op>
 void reduce_impl(const VariableView &out, const VariableConstView &var) {
-  expect::notSparse(var);
   accumulate_in_place(out, var, Op{});
 }
 

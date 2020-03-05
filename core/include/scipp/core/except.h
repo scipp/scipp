@@ -173,10 +173,6 @@ void SCIPP_CORE_EXPORT validSlice(
 void SCIPP_CORE_EXPORT coordsAreSuperset(const DataArrayConstView &a,
                                          const DataArrayConstView &b);
 void SCIPP_CORE_EXPORT notCountDensity(const units::Unit &unit);
-template <class T> void notSparse(const T &object) {
-  if (is_events(object))
-    throw except::TypeError("Expected dense data, got events.");
-}
 void SCIPP_CORE_EXPORT validDim(const Dim dim);
 void SCIPP_CORE_EXPORT validExtent(const scipp::index size);
 template <class T> void hasVariances(const T &variable) {

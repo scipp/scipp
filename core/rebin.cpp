@@ -119,10 +119,6 @@ void rebin_non_inner(const Dim dim, const VariableConstView &oldT,
 Variable rebin(const VariableConstView &var, const Dim dim,
                const VariableConstView &oldCoord,
                const VariableConstView &newCoord) {
-  expect::notSparse(var);
-  expect::notSparse(oldCoord);
-  expect::notSparse(newCoord);
-
   // Rebin could also implemented for count-densities. However, it may be better
   // to avoid this since it increases complexity. Instead, densities could
   // always be computed on-the-fly for visualization, if required.
