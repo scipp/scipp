@@ -546,7 +546,7 @@ CoordsView DataArray::coords() { return get().coords(); }
 /// Return a const view to all attributes of the data view.
 AttrsView DataArrayView::attrs() const noexcept {
   return AttrsView(
-      AttrAccess(m_mutableDataset),
+      AttrAccess(m_mutableDataset, &name()),
       makeViewItems<AttrsConstView>(dims(), m_mutableData->second.attrs),
       slices());
 }
