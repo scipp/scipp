@@ -36,7 +36,6 @@ TEST(ReduceSparseTest, flatten_dataset_with_mask) {
   Dataset d;
   d.setMask("y", makeVariable<bool>(Dims{Dim::Y}, Shape{3},
                                     Values{false, true, false}));
-  // Note that this is aligned event data, i.e., not useful in practice.
   d.coords().set(Dim::X, make_sparse());
   d.coords().set(Dim("label"), make_sparse());
   d.setData("b", make_sparse());
@@ -45,7 +44,6 @@ TEST(ReduceSparseTest, flatten_dataset_with_mask) {
 
   const auto flat = flatten(d, Dim::Y);
 
-  EXPECT_EQ(flat["a"].coords()[Dim::X], expected);
   EXPECT_EQ(flat["b"].coords()[Dim::X], expected);
   EXPECT_EQ(flat["b"].coords()[Dim("label")], expected);
   EXPECT_EQ(flat["b"].data(), expected);
