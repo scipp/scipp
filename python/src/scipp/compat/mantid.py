@@ -194,16 +194,20 @@ def validate_and_get_unit(unit):
     else:
         return known_units[unit]
 
+
 def _to_array(positions, idx, pos, spec_idx):
-    positions[idx,:] = np.array([spec_idx, pos.X(), pos.Y(), pos.Z()])
+    positions[idx, :] = np.array([spec_idx, pos.X(), pos.Y(), pos.Z()])
+
 
 def _to_spherical(input):
     transformed = np.ones(shape=input.shape)
-    transformed[:, 0] = input[:, 0] # copy metadata
-    transformed[:, 1] = np.sqrt(np.sum(input[:, 1:]**2, axis=1)) # r
-    transformed[:, 2] = np.arccos(input[:, 3] / transformed[:, 1]) # arccos ( z / r)
-    transformed[:, 3] = np.arctan2(input[:, 2], input[:, 1]) # arctan2(y, x)
+    transformed[:, 0] = input[:, 0]  # copy metadata
+    transformed[:, 1] = np.sqrt(np.sum(input[:, 1:]**2, axis=1))  # r
+    transformed[:, 2] = np.arccos(input[:, 3] /
+                                  transformed[:, 1])  # arccos ( z / r)
+    transformed[:, 3] = np.arctan2(input[:, 2], input[:, 1])  # arctan2(y, x)
     return transformed
+
 
 def rotation_matrix_from_vectors(vec1, vec2):
     """ Find the rotation matrix that aligns vec1 to vec2
@@ -211,16 +215,18 @@ def rotation_matrix_from_vectors(vec1, vec2):
     :param vec2: A 3d "destination" vector
     :return mat: A transform matrix (3x3) which when applied to vec1, aligns it with vec2.
     """
-    a, b = (vec1 / np.linalg.norm(vec1)).reshape(3), (vec2 / np.linalg.norm(vec2)).reshape(3)
+    a, b = (vec1 /
+            np.linalg.norm(vec1)).reshape(3), (vec2 /
+                                               np.linalg.norm(vec2)).reshape(3)
     v = np.cross(a, b)
     c = np.dot(a, b)
     s = np.linalg.norm(v)
     if s == 0:
         return np.eye(3)
     kmat = np.array([[0, -v[2], v[1]], [v[2], 0, -v[0]], [-v[1], v[0], 0]])
-    rotation_matrix = np.eye(3) + kmat + kmat.dot(kmat) * ((1 - c) / (s ** 2))
+    rotation_matrix = np.eye(3) + kmat + kmat.dot(kmat) * ((1 - c) / (s**2))
     return rotation_matrix
-    
+
 
 def init_pos(ws, source_pos, sample_pos):
     from scipp import Dim
@@ -229,7 +235,7 @@ def init_pos(ws, source_pos, sample_pos):
     det_info = ws.detectorInfo()
     total_detectors = spec_info.detectorCount()
     non_detectors = sum(not spec.hasDetectors for spec in spec_info)
-    det_pos = np.zeros([total_detectors, 3 + 1]) 
+    det_pos = np.zeros([total_detectors, 3 + 1])
     no_detector_spectrum = np.full((non_detectors, 3 + 1), np.nan)
 
     if sample_pos and source_pos:
@@ -253,41 +259,66 @@ def init_pos(ws, source_pos, sample_pos):
         else:
             no_detector_spectrum[idx_orphaned, 0] = i
             idx_orphaned += 1
-    det_pos[:,1:] = det_pos[:,1:].dot(rot)
+    det_pos[:, 1:] = det_pos[:, 1:].dot(rot)
     spherical_ = _to_spherical(det_pos)
 
     pos_d = sc.Dataset()
-    pos_d.labels["spectrum_idx"] = sc.Variable([Dim.X], values=spherical_[:,0])
-    pos_d["spectrum_idx"] = sc.Variable([Dim.X], values=spherical_[:,0])
-    pos_d["r"] = sc.Variable([Dim.X], values=spherical_[:,1], unit=sc.units.m)
-    pos_d["t"] = sc.Variable([Dim.X], values=spherical_[:,2], unit=sc.units.rad)
-    pos_d["p"] = sc.Variable([Dim.X], values=spherical_[:,3], unit=sc.units.rad)
+    pos_d.labels["spectrum_idx"] = sc.Variable([Dim.X],
+                                               values=spherical_[:, 0])
+    pos_d["spectrum_idx"] = sc.Variable([Dim.X], values=spherical_[:, 0])
+    pos_d["r"] = sc.Variable([Dim.X], values=spherical_[:, 1], unit=sc.units.m)
+    pos_d["t"] = sc.Variable([Dim.X],
+                             values=spherical_[:, 2],
+                             unit=sc.units.rad)
+    pos_d["p"] = sc.Variable([Dim.X],
+                             values=spherical_[:, 3],
+                             unit=sc.units.rad)
 
     grouping = sc.groupby(pos_d, "spectrum_idx", Dim.Y)
     averaged = grouping.mean(Dim.X)
-    spec_nos = grouping.min(Dim.X) # Keep spectrum numbers
-    averaged["spectrum_idx"] = spec_nos["spectrum_idx"] # All data averaged apart from spectrum numbers
+    spec_nos = grouping.min(Dim.X)  # Keep spectrum numbers
+    averaged["spectrum_idx"] = spec_nos[
+        "spectrum_idx"]  # All data averaged apart from spectrum numbers
 
     other = sc.Dataset()
-    other.coords[Dim.Y] =sc.Variable([Dim.Y], values=np.arange(len(no_detector_spectrum)), dtype=np.float)
-    other["spectrum_idx"] = sc.Variable([Dim.Y], values=no_detector_spectrum[:, 0])
-    other["r"] = sc.Variable([Dim.Y], values=np.array([np.nan]*len(no_detector_spectrum)), unit=sc.units.m)
-    other["t"] = sc.Variable([Dim.Y], values=np.array([np.nan]*len(no_detector_spectrum)), unit=sc.units.rad)
-    other["p"] = sc.Variable([Dim.Y], values=np.array([np.nan]*len(no_detector_spectrum)), unit=sc.units.rad)
-    
+    other.coords[Dim.Y] = sc.Variable([Dim.Y],
+                                      values=np.arange(
+                                          len(no_detector_spectrum)),
+                                      dtype=np.float)
+    other["spectrum_idx"] = sc.Variable([Dim.Y],
+                                        values=no_detector_spectrum[:, 0])
+    other["r"] = sc.Variable([Dim.Y],
+                             values=np.array([np.nan] *
+                                             len(no_detector_spectrum)),
+                             unit=sc.units.m)
+    other["t"] = sc.Variable([Dim.Y],
+                             values=np.array([np.nan] *
+                                             len(no_detector_spectrum)),
+                             unit=sc.units.rad)
+    other["p"] = sc.Variable([Dim.Y],
+                             values=np.array([np.nan] *
+                                             len(no_detector_spectrum)),
+                             unit=sc.units.rad)
+
     averaged = sc.concatenate(averaged, other, Dim.Y)
     # TODO. We should sort by spectrum_idx here. but would need to be label/coord?
-    
+
     #averaged["x"] = averaged["r"].data * sc.sin(averaged["t"].data) * sc.cos(averaged["p"].data)
     #averaged["y"] = averaged["r"].data * sc.sin(averaged["t"].data) * sc.sin(averaged["p"].data)
     #averaged["z"] = averaged["r"].data * sc.cos(averaged["t"].data)
 
     pos = np.empty(shape=(averaged.shape[0], 3))
-    pos[:,0] = averaged["r"].values * np.sin(averaged["t"].values) * np.cos(averaged["p"].values)
-    pos[:,1] = averaged["r"].values * np.sin(averaged["t"].values) * np.sin(averaged["p"].values)
-    pos[:,2] = averaged["r"].values * np.cos(averaged["t"].values)
+    pos[:, 0] = averaged["r"].values * np.sin(averaged["t"].values) * np.cos(
+        averaged["p"].values)
+    pos[:, 1] = averaged["r"].values * np.sin(averaged["t"].values) * np.sin(
+        averaged["p"].values)
+    pos[:, 2] = averaged["r"].values * np.cos(averaged["t"].values)
     pos = pos.dot(inv_rot)
-    return sc.Variable(['spectrum'], values=pos, unit=sc.units.m, dtype=sc.dtype.vector_3_float64)
+    return sc.Variable(['spectrum'],
+                       values=pos,
+                       unit=sc.units.m,
+                       dtype=sc.dtype.vector_3_float64)
+
 
 def _get_dtype_from_values(values):
     if hasattr(values, 'dtype'):
