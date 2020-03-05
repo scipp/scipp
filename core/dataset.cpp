@@ -7,7 +7,7 @@
 
 namespace scipp::core {
 
-template <class T> auto makeViewItem(T &variable) {
+template <class T> typename T::view_type makeViewItem(T &variable) {
   if constexpr (std::is_const_v<T>)
     return typename T::view_type(typename T::const_view_type(variable));
   else
