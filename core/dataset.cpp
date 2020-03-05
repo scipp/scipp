@@ -401,15 +401,14 @@ Dataset Dataset::slice(const Slice slice1, const Slice slice2,
 void Dataset::rename(const Dim from, const Dim to) {
   if (m_dims.count(to) != 0)
     throw except::DimensionError("Duplicate dimension.");
-  if (m_dims.count(from) != 1)
-    return;
 
   const auto relabel = [from, to](auto &map) {
     auto node = map.extract(from);
     node.key() = to;
     map.insert(std::move(node));
   };
-  relabel(m_dims);
+  if (m_dims.count(from) != 0)
+    relabel(m_dims);
   if (coords().contains(from))
     relabel(m_coords);
   for (auto &item : m_coords)

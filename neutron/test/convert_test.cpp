@@ -12,13 +12,8 @@ using namespace scipp;
 using namespace scipp::core;
 using namespace scipp::neutron;
 
-Dataset makeTofDataForUnitConversion(const bool dense_coord = true) {
+Dataset makeBeamline() {
   Dataset tof;
-
-  if (dense_coord)
-    tof.setCoord(Dim::Tof, makeVariable<double>(
-                               Dims{Dim::Tof}, Shape{4}, units::Unit(units::us),
-                               Values{4000, 5000, 6100, 7300}));
 
   static const auto source_pos = Eigen::Vector3d{0.0, 0.0, -10.0};
   static const auto sample_pos = Eigen::Vector3d{0.0, 0.0, 0.0};
@@ -34,20 +29,37 @@ Dataset makeTofDataForUnitConversion(const bool dense_coord = true) {
                    Dims{Dim::Spectrum}, Shape{2}, units::Unit(units::m),
                    Values{Eigen::Vector3d{1.0, 0.0, 0.0},
                           Eigen::Vector3d{0.1, 0.0, 1.0}}));
+  return tof;
+}
 
+Dataset makeTofDataset() {
+  Dataset tof = makeBeamline();
+
+  tof.setCoord(Dim::Tof, makeVariable<double>(Dims{Dim::Tof}, Shape{4},
+                                              units::Unit(units::us),
+                                              Values{4000, 5000, 6100, 7300}));
   tof.setData("counts",
               makeVariable<double>(Dims{Dim::Spectrum, Dim::Tof}, Shape{2, 3},
+                                   units::Unit(units::counts),
                                    Values{1, 2, 3, 4, 5, 6}));
-  tof["counts"].data().setUnit(units::counts);
 
-  auto events = makeVariable<double>(Dims{Dim::Spectrum, Dim::Tof},
-                                     Shape{2l, Dimensions::Sparse});
+  return tof;
+}
+
+Dataset makeTofDatasetEvents() {
+  Dataset tof = makeBeamline();
+
+  auto events = makeVariable<event_list<double>>(Dims{Dim::Spectrum}, Shape{2});
   events.setUnit(units::us);
   auto eventLists = events.sparseValues<double>();
   eventLists[0] = {1000, 3000, 2000, 4000};
   eventLists[1] = {5000, 6000, 3000};
-  tof.setSparseCoord("events", Dim::Tof, events);
-  tof.setSparseCoord("events", Dim("aux"), events);
+  tof.setCoord(Dim::Tof, events);
+  tof.setCoord(Dim("aux"), events);
+
+  tof.setData("events", makeVariable<double>(Dims{Dim::Spectrum}, Shape{2},
+                                             units::Unit(units::counts),
+                                             Values{1, 1}, Variances{1, 1}));
 
   return tof;
 }
@@ -58,10 +70,16 @@ Variable makeCountDensityData(const units::Unit &unit) {
                               Values{1, 2, 3, 4, 5, 6});
 }
 
+class ConvertTest : public testing::TestWithParam<Dataset> {};
+
+INSTANTIATE_TEST_SUITE_P(SingleEntryDataset, ConvertTest,
+                         testing::Values(makeTofDataset(),
+                                         makeTofDatasetEvents()));
+
 // Tests for DataArray (or its view) as input, comparing against conversion of
 // Dataset.
-TEST(ConvertDataArray, from_tof) {
-  Dataset tof = makeTofDataForUnitConversion();
+TEST_P(ConvertTest, DataArray_from_tof) {
+  Dataset tof = GetParam();
   for (const auto &dim : {Dim::DSpacing, Dim::Wavelength, Dim::Energy}) {
     const auto expected = convert(tof, Dim::Tof, dim);
     Dataset result;
@@ -72,8 +90,8 @@ TEST(ConvertDataArray, from_tof) {
   }
 }
 
-TEST(ConvertDataArray, to_tof) {
-  Dataset tof = makeTofDataForUnitConversion();
+TEST_P(ConvertTest, DataArray_to_tof) {
+  Dataset tof = GetParam();
   for (const auto &dim : {Dim::DSpacing, Dim::Wavelength, Dim::Energy}) {
     const auto input = convert(tof, Dim::Tof, dim);
     const auto expected = convert(input, dim, Dim::Tof);
@@ -85,8 +103,8 @@ TEST(ConvertDataArray, to_tof) {
   }
 }
 
-TEST(Convert, fail_count_density) {
-  const Dataset tof = makeTofDataForUnitConversion();
+TEST_P(ConvertTest, fail_count_density) {
+  const Dataset tof = GetParam();
   for (const Dim dim : {Dim::DSpacing, Dim::Wavelength, Dim::Energy}) {
     Dataset a = tof;
     Dataset b = convert(a, Dim::Tof, dim);
@@ -99,77 +117,89 @@ TEST(Convert, fail_count_density) {
   }
 }
 
-TEST(Convert, Tof_to_DSpacing) {
-  Dataset tof = makeTofDataForUnitConversion();
+TEST_P(ConvertTest, Tof_to_DSpacing) {
+  Dataset tof = GetParam();
 
   auto dspacing = convert(tof, Dim::Tof, Dim::DSpacing);
-
-  EXPECT_EQ(dspacing["counts"].dims(),
-            Dimensions({{Dim::Spectrum, 2}, {Dim::DSpacing, 3}}));
 
   ASSERT_FALSE(dspacing.coords().contains(Dim::Tof));
   ASSERT_TRUE(dspacing.coords().contains(Dim::DSpacing));
 
   const auto &coord = dspacing.coords()[Dim::DSpacing];
-  // Due to conversion, the coordinate now also depends on Dim::Spectrum.
-  ASSERT_EQ(coord.dims(), Dimensions({{Dim::Spectrum, 2}, {Dim::DSpacing, 4}}));
-  EXPECT_EQ(coord.unit(), units::angstrom);
 
-  const auto values = coord.values<double>();
-  // Rule of thumb (https://www.psi.ch/niag/neutron-physics):
-  // v [m/s] = 3956 / \lambda [ Angstrom ]
-  Variable tof_in_seconds = tof.coords()[Dim::Tof] * 1e-6;
-  const auto tofs = tof_in_seconds.values<double>();
-  // Spectrum 0 is 11 m from source
-  // 2d sin(theta) = n \lambda
-  // theta = 45 deg => d = lambda / (2 * 1 / sqrt(2))
-  EXPECT_NEAR(values[0], 3956.0 / (11.0 / tofs[0]) / sqrt(2.0),
-              values[0] * 1e-3);
-  EXPECT_NEAR(values[1], 3956.0 / (11.0 / tofs[1]) / sqrt(2.0),
-              values[1] * 1e-3);
-  EXPECT_NEAR(values[2], 3956.0 / (11.0 / tofs[2]) / sqrt(2.0),
-              values[2] * 1e-3);
-  EXPECT_NEAR(values[3], 3956.0 / (11.0 / tofs[3]) / sqrt(2.0),
-              values[3] * 1e-3);
   // Spectrum 1
   // sin(2 theta) = 0.1/(L-10)
   const double L = 10.0 + sqrt(1.0 * 1.0 + 0.1 * 0.1);
   const double lambda_to_d = 1.0 / (2.0 * sin(0.5 * asin(0.1 / (L - 10.0))));
-  EXPECT_NEAR(values[4], 3956.0 / (L / tofs[0]) * lambda_to_d,
-              values[4] * 1e-3);
-  EXPECT_NEAR(values[5], 3956.0 / (L / tofs[1]) * lambda_to_d,
-              values[5] * 1e-3);
-  EXPECT_NEAR(values[6], 3956.0 / (L / tofs[2]) * lambda_to_d,
-              values[6] * 1e-3);
-  EXPECT_NEAR(values[7], 3956.0 / (L / tofs[3]) * lambda_to_d,
-              values[7] * 1e-3);
 
-  ASSERT_TRUE(dspacing.contains("counts"));
-  const auto &data = dspacing["counts"];
-  ASSERT_EQ(data.dims(), Dimensions({{Dim::Spectrum, 2}, {Dim::DSpacing, 3}}));
-  EXPECT_TRUE(equals(data.values<double>(), {1, 2, 3, 4, 5, 6}));
-  EXPECT_EQ(data.unit(), units::counts);
+  ASSERT_TRUE(dspacing.contains("counts") || dspacing.contains("events"));
+  if (dspacing.contains("counts")) {
+    EXPECT_EQ(dspacing["counts"].dims(),
+              Dimensions({{Dim::Spectrum, 2}, {Dim::DSpacing, 3}}));
+    // Due to conversion, the coordinate now also depends on Dim::Spectrum.
+    ASSERT_EQ(coord.dims(),
+              Dimensions({{Dim::Spectrum, 2}, {Dim::DSpacing, 4}}));
+    EXPECT_EQ(coord.unit(), units::angstrom);
 
-  ASSERT_TRUE(dspacing.contains("events"));
-  const auto &events = dspacing["events"];
-  ASSERT_EQ(events.dims(), Dimensions({Dim::Spectrum, Dim::DSpacing},
-                                      {2, Dimensions::Sparse}));
-  const auto &tof0 = tof["events"].coords()[Dim::Tof].sparseValues<double>()[0];
-  const auto &d0 = events.coords()[Dim::DSpacing].sparseValues<double>()[0];
-  ASSERT_EQ(scipp::size(d0), 4);
-  EXPECT_NEAR(d0[0], 3956.0 / (1e6 * 11.0 / tof0[0]) / sqrt(2.0), d0[0] * 1e-3);
-  EXPECT_NEAR(d0[1], 3956.0 / (1e6 * 11.0 / tof0[1]) / sqrt(2.0), d0[1] * 1e-3);
-  EXPECT_NEAR(d0[2], 3956.0 / (1e6 * 11.0 / tof0[2]) / sqrt(2.0), d0[2] * 1e-3);
-  EXPECT_NEAR(d0[3], 3956.0 / (1e6 * 11.0 / tof0[3]) / sqrt(2.0), d0[3] * 1e-3);
-  const auto &tof1 = tof["events"].coords()[Dim::Tof].sparseValues<double>()[1];
-  const auto &d1 = events.coords()[Dim::DSpacing].sparseValues<double>()[1];
-  ASSERT_EQ(scipp::size(d1), 3);
-  EXPECT_NEAR(d1[0], 3956.0 / (1e6 * 11.0 / tof1[0]) * lambda_to_d,
-              d1[0] * 1e-3);
-  EXPECT_NEAR(d1[1], 3956.0 / (1e6 * 11.0 / tof1[1]) * lambda_to_d,
-              d1[1] * 1e-3);
-  EXPECT_NEAR(d1[2], 3956.0 / (1e6 * 11.0 / tof1[2]) * lambda_to_d,
-              d1[2] * 1e-3);
+    const auto values = coord.values<double>();
+    // Rule of thumb (https://www.psi.ch/niag/neutron-physics):
+    // v [m/s] = 3956 / \lambda [ Angstrom ]
+    Variable tof_in_seconds = tof.coords()[Dim::Tof] * 1e-6;
+    const auto tofs = tof_in_seconds.values<double>();
+    // Spectrum 0 is 11 m from source
+    // 2d sin(theta) = n \lambda
+    // theta = 45 deg => d = lambda / (2 * 1 / sqrt(2))
+    EXPECT_NEAR(values[0], 3956.0 / (11.0 / tofs[0]) / sqrt(2.0),
+                values[0] * 1e-3);
+    EXPECT_NEAR(values[1], 3956.0 / (11.0 / tofs[1]) / sqrt(2.0),
+                values[1] * 1e-3);
+    EXPECT_NEAR(values[2], 3956.0 / (11.0 / tofs[2]) / sqrt(2.0),
+                values[2] * 1e-3);
+    EXPECT_NEAR(values[3], 3956.0 / (11.0 / tofs[3]) / sqrt(2.0),
+                values[3] * 1e-3);
+    // Spectrum 1
+    EXPECT_NEAR(values[4], 3956.0 / (L / tofs[0]) * lambda_to_d,
+                values[4] * 1e-3);
+    EXPECT_NEAR(values[5], 3956.0 / (L / tofs[1]) * lambda_to_d,
+                values[5] * 1e-3);
+    EXPECT_NEAR(values[6], 3956.0 / (L / tofs[2]) * lambda_to_d,
+                values[6] * 1e-3);
+    EXPECT_NEAR(values[7], 3956.0 / (L / tofs[3]) * lambda_to_d,
+                values[7] * 1e-3);
+
+    const auto &data = dspacing["counts"];
+    ASSERT_EQ(data.dims(),
+              Dimensions({{Dim::Spectrum, 2}, {Dim::DSpacing, 3}}));
+    EXPECT_TRUE(equals(data.values<double>(), {1, 2, 3, 4, 5, 6}));
+    EXPECT_EQ(data.unit(), units::counts);
+  } else {
+
+    ASSERT_TRUE(dspacing.contains("events"));
+    const auto &events = dspacing["events"];
+    ASSERT_EQ(events.dims(), Dimensions({Dim::Spectrum}, {2}));
+    const auto &tof0 =
+        tof["events"].coords()[Dim::Tof].sparseValues<double>()[0];
+    const auto &d0 = events.coords()[Dim::DSpacing].sparseValues<double>()[0];
+    ASSERT_EQ(scipp::size(d0), 4);
+    EXPECT_NEAR(d0[0], 3956.0 / (1e6 * 11.0 / tof0[0]) / sqrt(2.0),
+                d0[0] * 1e-3);
+    EXPECT_NEAR(d0[1], 3956.0 / (1e6 * 11.0 / tof0[1]) / sqrt(2.0),
+                d0[1] * 1e-3);
+    EXPECT_NEAR(d0[2], 3956.0 / (1e6 * 11.0 / tof0[2]) / sqrt(2.0),
+                d0[2] * 1e-3);
+    EXPECT_NEAR(d0[3], 3956.0 / (1e6 * 11.0 / tof0[3]) / sqrt(2.0),
+                d0[3] * 1e-3);
+    const auto &tof1 =
+        tof["events"].coords()[Dim::Tof].sparseValues<double>()[1];
+    const auto &d1 = events.coords()[Dim::DSpacing].sparseValues<double>()[1];
+    ASSERT_EQ(scipp::size(d1), 3);
+    EXPECT_NEAR(d1[0], 3956.0 / (1e6 * 11.0 / tof1[0]) * lambda_to_d,
+                d1[0] * 1e-3);
+    EXPECT_NEAR(d1[1], 3956.0 / (1e6 * 11.0 / tof1[1]) * lambda_to_d,
+                d1[1] * 1e-3);
+    EXPECT_NEAR(d1[2], 3956.0 / (1e6 * 11.0 / tof1[2]) * lambda_to_d,
+                d1[2] * 1e-3);
+  }
 
   ASSERT_EQ(dspacing.attrs()["position"], tof.coords()[Dim("position")]);
   ASSERT_EQ(dspacing.attrs()["source_position"],
@@ -180,62 +210,38 @@ TEST(Convert, Tof_to_DSpacing) {
 
 TEST(Convert, converts_sparse_labels) {
   // label "conversion" is name change of dim
-  Dataset tof = makeTofDataForUnitConversion();
+  Dataset tof = makeTofDatasetEvents();
   Dataset dspacing = convert(tof, Dim::Tof, Dim::DSpacing);
-  Dimensions expected({Dim::Spectrum, Dim::DSpacing}, {2, Dimensions::Sparse});
+  Dimensions expected({Dim::Spectrum}, {2});
   EXPECT_EQ(dspacing["events"].coords()[Dim::DSpacing].dims(), expected);
   EXPECT_EQ(dspacing["events"].coords()[Dim("aux")].dims(), expected);
 }
 
-TEST(Convert, Tof_to_DSpacing_no_dense_coord) {
-  const bool dense_coord = false;
-  Dataset tof = makeTofDataForUnitConversion(dense_coord);
-  EXPECT_FALSE(tof.coords().contains(Dim::Tof));
-  Dataset dspacing;
-
-  EXPECT_NO_THROW(dspacing = convert(tof, Dim::Tof, Dim::DSpacing));
-  EXPECT_EQ(
-      dspacing["events"].dims(),
-      Dimensions({Dim::Spectrum, Dim::DSpacing}, {2, Dimensions::Sparse}));
-}
-
-TEST(Convert, Tof_to_DSpacing_no_dense_content) {
-  const bool dense_coord = false;
-  Dataset tof = makeTofDataForUnitConversion(dense_coord);
-  EXPECT_FALSE(tof.coords().contains(Dim::Tof));
-  tof.erase("counts");
-
-  Dataset dspacing;
-  EXPECT_NO_THROW(dspacing = convert(tof, Dim::Tof, Dim::DSpacing));
-  EXPECT_EQ(
-      dspacing["events"].dims(),
-      Dimensions({Dim::Spectrum, Dim::DSpacing}, {2, Dimensions::Sparse}));
-}
-
-TEST(Convert, DSpacing_to_Tof) {
+TEST_P(ConvertTest, DSpacing_to_Tof) {
   /* Assuming the Tof_to_DSpacing test is correct and passing we can test the
    * inverse conversion by simply comparing a round trip conversion with the
    * original data. */
 
-  const Dataset tof_original = makeTofDataForUnitConversion();
+  const Dataset tof_original = GetParam();
   const auto dspacing = convert(tof_original, Dim::Tof, Dim::DSpacing);
   const auto tof = convert(dspacing, Dim::DSpacing, Dim::Tof);
 
-  /* Test coordinates */
-  /* Broadcasting is needed as conversion introduces the dependance on
-   * Dim::Spectrum */
-  const auto expected_tofs =
-      broadcast(tof_original.coords()[Dim::Tof], tof.coords()[Dim::Tof].dims());
-  EXPECT_TRUE(equals(tof.coords()[Dim::Tof].values<double>(),
-                     expected_tofs.values<double>(), 1e-12));
-
-  /* Test sparse/event data */
-  ASSERT_TRUE(tof.contains("events"));
-  const auto events = tof["events"].coords()[Dim::Tof].sparseValues<double>();
-  const auto events_original =
-      tof_original["events"].coords()[Dim::Tof].sparseValues<double>();
-  EXPECT_TRUE(equals(events[0], events_original[0], 1e-15));
-  EXPECT_TRUE(equals(events[1], events_original[1], 1e-12));
+  ASSERT_TRUE(tof.contains("counts") || tof.contains("events"));
+  if (tof.contains("counts")) {
+    /* Broadcasting is needed as conversion introduces the dependance on
+     * Dim::Spectrum */
+    const auto expected_tofs = broadcast(tof_original.coords()[Dim::Tof],
+                                         tof.coords()[Dim::Tof].dims());
+    EXPECT_TRUE(equals(tof.coords()[Dim::Tof].values<double>(),
+                       expected_tofs.values<double>(), 1e-12));
+  } else {
+    ASSERT_TRUE(tof.contains("events"));
+    const auto events = tof["events"].coords()[Dim::Tof].sparseValues<double>();
+    const auto events_original =
+        tof_original["events"].coords()[Dim::Tof].sparseValues<double>();
+    EXPECT_TRUE(equals(events[0], events_original[0], 1e-15));
+    EXPECT_TRUE(equals(events[1], events_original[1], 1e-12));
+  }
 
   ASSERT_EQ(tof.coords()[Dim("position")],
             tof_original.coords()[Dim("position")]);
@@ -245,64 +251,68 @@ TEST(Convert, DSpacing_to_Tof) {
             tof_original.coords()[Dim("sample_position")]);
 }
 
-TEST(Convert, Tof_to_Wavelength) {
-  Dataset tof = makeTofDataForUnitConversion();
+TEST_P(ConvertTest, Tof_to_Wavelength) {
+  Dataset tof = GetParam();
 
   auto wavelength = convert(tof, Dim::Tof, Dim::Wavelength);
-
-  EXPECT_EQ(wavelength["counts"].dims(),
-            Dimensions({{Dim::Spectrum, 2}, {Dim::Wavelength, 3}}));
 
   ASSERT_FALSE(wavelength.coords().contains(Dim::Tof));
   ASSERT_TRUE(wavelength.coords().contains(Dim::Wavelength));
 
   const auto &coord = wavelength.coords()[Dim::Wavelength];
-  // Due to conversion, the coordinate now also depends on Dim::Spectrum.
-  ASSERT_EQ(coord.dims(),
-            Dimensions({{Dim::Spectrum, 2}, {Dim::Wavelength, 4}}));
-  EXPECT_EQ(coord.unit(), units::angstrom);
 
-  const auto values = coord.values<double>();
-  // Rule of thumb (https://www.psi.ch/niag/neutron-physics):
-  // v [m/s] = 3956 / \lambda [ Angstrom ]
-  Variable tof_in_seconds = tof.coords()[Dim::Tof] * 1e-6;
-  const auto tofs = tof_in_seconds.values<double>();
-  // Spectrum 0 is 11 m from source
-  EXPECT_NEAR(values[0], 3956.0 / (11.0 / tofs[0]), values[0] * 1e-3);
-  EXPECT_NEAR(values[1], 3956.0 / (11.0 / tofs[1]), values[1] * 1e-3);
-  EXPECT_NEAR(values[2], 3956.0 / (11.0 / tofs[2]), values[2] * 1e-3);
-  EXPECT_NEAR(values[3], 3956.0 / (11.0 / tofs[3]), values[3] * 1e-3);
-  // Spectrum 1
-  const double L = 10.0 + sqrt(1.0 * 1.0 + 0.1 * 0.1);
-  EXPECT_NEAR(values[4], 3956.0 / (L / tofs[0]), values[4] * 1e-3);
-  EXPECT_NEAR(values[5], 3956.0 / (L / tofs[1]), values[5] * 1e-3);
-  EXPECT_NEAR(values[6], 3956.0 / (L / tofs[2]), values[6] * 1e-3);
-  EXPECT_NEAR(values[7], 3956.0 / (L / tofs[3]), values[7] * 1e-3);
+  ASSERT_TRUE(wavelength.contains("counts") || wavelength.contains("events"));
+  if (wavelength.contains("counts")) {
+    EXPECT_EQ(wavelength["counts"].dims(),
+              Dimensions({{Dim::Spectrum, 2}, {Dim::Wavelength, 3}}));
+    // Due to conversion, the coordinate now also depends on Dim::Spectrum.
+    ASSERT_EQ(coord.dims(),
+              Dimensions({{Dim::Spectrum, 2}, {Dim::Wavelength, 4}}));
+    EXPECT_EQ(coord.unit(), units::angstrom);
 
-  ASSERT_TRUE(wavelength.contains("counts"));
-  const auto &data = wavelength["counts"];
-  ASSERT_EQ(data.dims(),
-            Dimensions({{Dim::Spectrum, 2}, {Dim::Wavelength, 3}}));
-  EXPECT_TRUE(equals(data.values<double>(), {1, 2, 3, 4, 5, 6}));
-  EXPECT_EQ(data.unit(), units::counts);
+    const auto values = coord.values<double>();
+    // Rule of thumb (https://www.psi.ch/niag/neutron-physics):
+    // v [m/s] = 3956 / \lambda [ Angstrom ]
+    Variable tof_in_seconds = tof.coords()[Dim::Tof] * 1e-6;
+    const auto tofs = tof_in_seconds.values<double>();
+    // Spectrum 0 is 11 m from source
+    EXPECT_NEAR(values[0], 3956.0 / (11.0 / tofs[0]), values[0] * 1e-3);
+    EXPECT_NEAR(values[1], 3956.0 / (11.0 / tofs[1]), values[1] * 1e-3);
+    EXPECT_NEAR(values[2], 3956.0 / (11.0 / tofs[2]), values[2] * 1e-3);
+    EXPECT_NEAR(values[3], 3956.0 / (11.0 / tofs[3]), values[3] * 1e-3);
+    // Spectrum 1
+    const double L = 10.0 + sqrt(1.0 * 1.0 + 0.1 * 0.1);
+    EXPECT_NEAR(values[4], 3956.0 / (L / tofs[0]), values[4] * 1e-3);
+    EXPECT_NEAR(values[5], 3956.0 / (L / tofs[1]), values[5] * 1e-3);
+    EXPECT_NEAR(values[6], 3956.0 / (L / tofs[2]), values[6] * 1e-3);
+    EXPECT_NEAR(values[7], 3956.0 / (L / tofs[3]), values[7] * 1e-3);
 
-  ASSERT_TRUE(wavelength.contains("events"));
-  const auto &events = wavelength["events"];
-  ASSERT_EQ(events.dims(), Dimensions({Dim::Spectrum, Dim::Wavelength},
-                                      {2, Dimensions::Sparse}));
-  const auto &tof0 = tof["events"].coords()[Dim::Tof].sparseValues<double>()[0];
-  const auto &d0 = events.coords()[Dim::Wavelength].sparseValues<double>()[0];
-  ASSERT_EQ(scipp::size(d0), 4);
-  EXPECT_NEAR(d0[0], 3956.0 / (1e6 * 11.0 / tof0[0]), d0[0] * 1e-3);
-  EXPECT_NEAR(d0[1], 3956.0 / (1e6 * 11.0 / tof0[1]), d0[1] * 1e-3);
-  EXPECT_NEAR(d0[2], 3956.0 / (1e6 * 11.0 / tof0[2]), d0[2] * 1e-3);
-  EXPECT_NEAR(d0[3], 3956.0 / (1e6 * 11.0 / tof0[3]), d0[3] * 1e-3);
-  const auto &tof1 = tof["events"].coords()[Dim::Tof].sparseValues<double>()[1];
-  const auto &d1 = events.coords()[Dim::Wavelength].sparseValues<double>()[1];
-  ASSERT_EQ(scipp::size(d1), 3);
-  EXPECT_NEAR(d1[0], 3956.0 / (1e6 * 11.0 / tof1[0]), d1[0] * 1e-3);
-  EXPECT_NEAR(d1[1], 3956.0 / (1e6 * 11.0 / tof1[1]), d1[1] * 1e-3);
-  EXPECT_NEAR(d1[2], 3956.0 / (1e6 * 11.0 / tof1[2]), d1[2] * 1e-3);
+    ASSERT_TRUE(wavelength.contains("counts"));
+    const auto &data = wavelength["counts"];
+    ASSERT_EQ(data.dims(),
+              Dimensions({{Dim::Spectrum, 2}, {Dim::Wavelength, 3}}));
+    EXPECT_TRUE(equals(data.values<double>(), {1, 2, 3, 4, 5, 6}));
+    EXPECT_EQ(data.unit(), units::counts);
+  } else {
+    ASSERT_TRUE(wavelength.contains("events"));
+    const auto &events = wavelength["events"];
+    ASSERT_EQ(events.dims(), Dimensions({Dim::Spectrum}, {2}));
+    const auto &tof0 =
+        tof["events"].coords()[Dim::Tof].sparseValues<double>()[0];
+    const auto &d0 = events.coords()[Dim::Wavelength].sparseValues<double>()[0];
+    ASSERT_EQ(scipp::size(d0), 4);
+    EXPECT_NEAR(d0[0], 3956.0 / (1e6 * 11.0 / tof0[0]), d0[0] * 1e-3);
+    EXPECT_NEAR(d0[1], 3956.0 / (1e6 * 11.0 / tof0[1]), d0[1] * 1e-3);
+    EXPECT_NEAR(d0[2], 3956.0 / (1e6 * 11.0 / tof0[2]), d0[2] * 1e-3);
+    EXPECT_NEAR(d0[3], 3956.0 / (1e6 * 11.0 / tof0[3]), d0[3] * 1e-3);
+    const auto &tof1 =
+        tof["events"].coords()[Dim::Tof].sparseValues<double>()[1];
+    const auto &d1 = events.coords()[Dim::Wavelength].sparseValues<double>()[1];
+    ASSERT_EQ(scipp::size(d1), 3);
+    EXPECT_NEAR(d1[0], 3956.0 / (1e6 * 11.0 / tof1[0]), d1[0] * 1e-3);
+    EXPECT_NEAR(d1[1], 3956.0 / (1e6 * 11.0 / tof1[1]), d1[1] * 1e-3);
+    EXPECT_NEAR(d1[2], 3956.0 / (1e6 * 11.0 / tof1[2]), d1[2] * 1e-3);
+  }
 
   ASSERT_EQ(wavelength.attrs()["position"], tof.coords()[Dim("position")]);
   ASSERT_EQ(wavelength.attrs()["source_position"],
@@ -311,28 +321,29 @@ TEST(Convert, Tof_to_Wavelength) {
             tof.coords()[Dim("sample_position")]);
 }
 
-TEST(Convert, Wavelength_to_Tof) {
+TEST_P(ConvertTest, Wavelength_to_Tof) {
   // Assuming the Tof_to_Wavelength test is correct and passing we can test the
   // inverse conversion by simply comparing a round trip conversion with the
   // original data.
 
-  const Dataset tof_original = makeTofDataForUnitConversion();
+  const Dataset tof_original = GetParam();
   const auto wavelength = convert(tof_original, Dim::Tof, Dim::Wavelength);
   const auto tof = convert(wavelength, Dim::Wavelength, Dim::Tof);
 
-  // Test coordinates
-  // Broadcasting is needed as conversion introduces the dependance on
-  // Dim::Spectrum
-  EXPECT_EQ(tof.coords()[Dim::Tof], broadcast(tof_original.coords()[Dim::Tof],
-                                              tof.coords()[Dim::Tof].dims()));
-
-  // Test sparse/event data
-  ASSERT_TRUE(tof.contains("events"));
-  const auto events = tof["events"].coords()[Dim::Tof].sparseValues<double>();
-  const auto events_original =
-      tof_original["events"].coords()[Dim::Tof].sparseValues<double>();
-  EXPECT_TRUE(equals(events[0], events_original[0], 1e-15));
-  EXPECT_TRUE(equals(events[1], events_original[1], 1e-12));
+  ASSERT_TRUE(tof.contains("counts") || tof.contains("events"));
+  if (tof.contains("counts")) {
+    // Broadcasting is needed as conversion introduces the dependance on
+    // Dim::Spectrum
+    EXPECT_EQ(tof.coords()[Dim::Tof], broadcast(tof_original.coords()[Dim::Tof],
+                                                tof.coords()[Dim::Tof].dims()));
+  } else {
+    ASSERT_TRUE(tof.contains("events"));
+    const auto events = tof["events"].coords()[Dim::Tof].sparseValues<double>();
+    const auto events_original =
+        tof_original["events"].coords()[Dim::Tof].sparseValues<double>();
+    EXPECT_TRUE(equals(events[0], events_original[0], 1e-15));
+    EXPECT_TRUE(equals(events[1], events_original[1], 1e-12));
+  }
 
   ASSERT_EQ(tof.coords()[Dim("position")],
             tof_original.coords()[Dim("position")]);
@@ -342,101 +353,111 @@ TEST(Convert, Wavelength_to_Tof) {
             tof_original.coords()[Dim("sample_position")]);
 }
 
-TEST(Convert, Tof_to_Energy_Elastic) {
-  Dataset tof = makeTofDataForUnitConversion();
+TEST_P(ConvertTest, Tof_to_Energy_Elastic) {
+  Dataset tof = GetParam();
 
   auto energy = convert(tof, Dim::Tof, Dim::Energy);
-
-  EXPECT_EQ(energy["counts"].dims(),
-            Dimensions({{Dim::Spectrum, 2}, {Dim::Energy, 3}}));
 
   ASSERT_FALSE(energy.coords().contains(Dim::Tof));
   ASSERT_TRUE(energy.coords().contains(Dim::Energy));
 
   const auto &coord = energy.coords()[Dim::Energy];
-  // Due to conversion, the coordinate now also depends on Dim::Spectrum.
-  ASSERT_EQ(coord.dims(), Dimensions({{Dim::Spectrum, 2}, {Dim::Energy, 4}}));
-  EXPECT_EQ(coord.unit(), units::meV);
-
-  const auto values = coord.values<double>();
-  Variable tof_in_seconds = tof.coords()[Dim::Tof] * 1e-6;
-  const auto tofs = tof_in_seconds.values<double>();
 
   constexpr auto joule_to_mev = 6.241509125883257e21;
   constexpr auto neutron_mass = 1.674927471e-27;
   /* e [J] = 1/2 m(n) [kg] (l [m] / tof [s])^2 */
 
-  // Spectrum 0 is 11 m from source
-  EXPECT_NEAR(values[0],
-              joule_to_mev * 0.5 * neutron_mass * std::pow(11 / tofs[0], 2),
-              values[0] * 1e-3);
-  EXPECT_NEAR(values[1],
-              joule_to_mev * 0.5 * neutron_mass * std::pow(11 / tofs[1], 2),
-              values[1] * 1e-3);
-  EXPECT_NEAR(values[2],
-              joule_to_mev * 0.5 * neutron_mass * std::pow(11 / tofs[2], 2),
-              values[2] * 1e-3);
-  EXPECT_NEAR(values[3],
-              joule_to_mev * 0.5 * neutron_mass * std::pow(11 / tofs[3], 2),
-              values[3] * 1e-3);
-
   // Spectrum 1
   // sin(2 theta) = 0.1/(L-10)
   const double L = 10.0 + sqrt(1.0 * 1.0 + 0.1 * 0.1);
-  EXPECT_NEAR(values[4],
-              joule_to_mev * 0.5 * neutron_mass * std::pow(L / tofs[0], 2),
-              values[4] * 1e-3);
-  EXPECT_NEAR(values[5],
-              joule_to_mev * 0.5 * neutron_mass * std::pow(L / tofs[1], 2),
-              values[5] * 1e-3);
-  EXPECT_NEAR(values[6],
-              joule_to_mev * 0.5 * neutron_mass * std::pow(L / tofs[2], 2),
-              values[6] * 1e-3);
-  EXPECT_NEAR(values[7],
-              joule_to_mev * 0.5 * neutron_mass * std::pow(L / tofs[3], 2),
-              values[7] * 1e-3);
 
-  ASSERT_TRUE(energy.contains("counts"));
-  const auto &data = energy["counts"];
-  ASSERT_EQ(data.dims(), Dimensions({{Dim::Spectrum, 2}, {Dim::Energy, 3}}));
-  EXPECT_TRUE(equals(data.values<double>(), {1, 2, 3, 4, 5, 6}));
-  EXPECT_EQ(data.unit(), units::counts);
+  ASSERT_TRUE(energy.contains("counts") || energy.contains("events"));
+  if (energy.contains("counts")) {
+    EXPECT_EQ(energy["counts"].dims(),
+              Dimensions({{Dim::Spectrum, 2}, {Dim::Energy, 3}}));
+    // Due to conversion, the coordinate now also depends on Dim::Spectrum.
+    ASSERT_EQ(coord.dims(), Dimensions({{Dim::Spectrum, 2}, {Dim::Energy, 4}}));
+    EXPECT_EQ(coord.unit(), units::meV);
 
-  ASSERT_TRUE(energy.contains("events"));
-  const auto &events = energy["events"];
-  ASSERT_EQ(events.dims(),
-            Dimensions({Dim::Spectrum, Dim::Energy}, {2, Dimensions::Sparse}));
-  const auto &tof0 = tof["events"].coords()[Dim::Tof].sparseValues<double>()[0];
-  const auto &e0 = events.coords()[Dim::Energy].sparseValues<double>()[0];
-  ASSERT_EQ(scipp::size(e0), 4);
-  EXPECT_NEAR(e0[0],
-              joule_to_mev * 0.5 * neutron_mass *
-                  std::pow(1e6 * 11 / tof0[0], 2),
-              e0[0] * 1e-3);
-  EXPECT_NEAR(e0[1],
-              joule_to_mev * 0.5 * neutron_mass *
-                  std::pow(1e6 * 11 / tof0[1], 2),
-              e0[1] * 1e-3);
-  EXPECT_NEAR(e0[2],
-              joule_to_mev * 0.5 * neutron_mass *
-                  std::pow(1e6 * 11 / tof0[2], 2),
-              e0[2] * 1e-3);
-  EXPECT_NEAR(e0[3],
-              joule_to_mev * 0.5 * neutron_mass *
-                  std::pow(1e6 * 11 / tof0[3], 2),
-              e0[3] * 1e-3);
-  const auto &tof1 = tof["events"].coords()[Dim::Tof].sparseValues<double>()[1];
-  const auto &e1 = events.coords()[Dim::Energy].sparseValues<double>()[1];
-  ASSERT_EQ(scipp::size(e1), 3);
-  EXPECT_NEAR(
-      e1[0], joule_to_mev * 0.5 * neutron_mass * std::pow(1e6 * L / tof1[0], 2),
-      e1[0] * 1e-3);
-  EXPECT_NEAR(
-      e1[1], joule_to_mev * 0.5 * neutron_mass * std::pow(1e6 * L / tof1[1], 2),
-      e1[1] * 1e-3);
-  EXPECT_NEAR(
-      e1[2], joule_to_mev * 0.5 * neutron_mass * std::pow(1e6 * L / tof1[2], 2),
-      e1[2] * 1e-3);
+    const auto values = coord.values<double>();
+    Variable tof_in_seconds = tof.coords()[Dim::Tof] * 1e-6;
+    const auto tofs = tof_in_seconds.values<double>();
+
+
+    // Spectrum 0 is 11 m from source
+    EXPECT_NEAR(values[0],
+                joule_to_mev * 0.5 * neutron_mass * std::pow(11 / tofs[0], 2),
+                values[0] * 1e-3);
+    EXPECT_NEAR(values[1],
+                joule_to_mev * 0.5 * neutron_mass * std::pow(11 / tofs[1], 2),
+                values[1] * 1e-3);
+    EXPECT_NEAR(values[2],
+                joule_to_mev * 0.5 * neutron_mass * std::pow(11 / tofs[2], 2),
+                values[2] * 1e-3);
+    EXPECT_NEAR(values[3],
+                joule_to_mev * 0.5 * neutron_mass * std::pow(11 / tofs[3], 2),
+                values[3] * 1e-3);
+
+    // Spectrum 1
+    EXPECT_NEAR(values[4],
+                joule_to_mev * 0.5 * neutron_mass * std::pow(L / tofs[0], 2),
+                values[4] * 1e-3);
+    EXPECT_NEAR(values[5],
+                joule_to_mev * 0.5 * neutron_mass * std::pow(L / tofs[1], 2),
+                values[5] * 1e-3);
+    EXPECT_NEAR(values[6],
+                joule_to_mev * 0.5 * neutron_mass * std::pow(L / tofs[2], 2),
+                values[6] * 1e-3);
+    EXPECT_NEAR(values[7],
+                joule_to_mev * 0.5 * neutron_mass * std::pow(L / tofs[3], 2),
+                values[7] * 1e-3);
+
+    ASSERT_TRUE(energy.contains("counts"));
+    const auto &data = energy["counts"];
+    ASSERT_EQ(data.dims(), Dimensions({{Dim::Spectrum, 2}, {Dim::Energy, 3}}));
+    EXPECT_TRUE(equals(data.values<double>(), {1, 2, 3, 4, 5, 6}));
+    EXPECT_EQ(data.unit(), units::counts);
+  } else {
+    ASSERT_TRUE(energy.contains("events"));
+    const auto &events = energy["events"];
+    ASSERT_EQ(events.dims(), Dimensions({Dim::Spectrum}, {2}));
+    const auto &tof0 =
+        tof["events"].coords()[Dim::Tof].sparseValues<double>()[0];
+    const auto &e0 = events.coords()[Dim::Energy].sparseValues<double>()[0];
+    ASSERT_EQ(scipp::size(e0), 4);
+    EXPECT_NEAR(e0[0],
+                joule_to_mev * 0.5 * neutron_mass *
+                    std::pow(1e6 * 11 / tof0[0], 2),
+                e0[0] * 1e-3);
+    EXPECT_NEAR(e0[1],
+                joule_to_mev * 0.5 * neutron_mass *
+                    std::pow(1e6 * 11 / tof0[1], 2),
+                e0[1] * 1e-3);
+    EXPECT_NEAR(e0[2],
+                joule_to_mev * 0.5 * neutron_mass *
+                    std::pow(1e6 * 11 / tof0[2], 2),
+                e0[2] * 1e-3);
+    EXPECT_NEAR(e0[3],
+                joule_to_mev * 0.5 * neutron_mass *
+                    std::pow(1e6 * 11 / tof0[3], 2),
+                e0[3] * 1e-3);
+    const auto &tof1 =
+        tof["events"].coords()[Dim::Tof].sparseValues<double>()[1];
+    const auto &e1 = events.coords()[Dim::Energy].sparseValues<double>()[1];
+    ASSERT_EQ(scipp::size(e1), 3);
+    EXPECT_NEAR(e1[0],
+                joule_to_mev * 0.5 * neutron_mass *
+                    std::pow(1e6 * L / tof1[0], 2),
+                e1[0] * 1e-3);
+    EXPECT_NEAR(e1[1],
+                joule_to_mev * 0.5 * neutron_mass *
+                    std::pow(1e6 * L / tof1[1], 2),
+                e1[1] * 1e-3);
+    EXPECT_NEAR(e1[2],
+                joule_to_mev * 0.5 * neutron_mass *
+                    std::pow(1e6 * L / tof1[2], 2),
+                e1[2] * 1e-3);
+  }
 
   ASSERT_EQ(energy.attrs()["position"], tof.coords()[Dim("position")]);
   ASSERT_EQ(energy.attrs()["source_position"],
@@ -445,32 +466,31 @@ TEST(Convert, Tof_to_Energy_Elastic) {
             tof.coords()[Dim("sample_position")]);
 }
 
-TEST(Convert, Energy_to_Tof_Elastic) {
+TEST_P(ConvertTest, Energy_to_Tof_Elastic) {
   /* Assuming the Tof_to_Energy_Elastic test is correct and passing we can test
    * the inverse conversion by simply comparing a round trip conversion with
    * the original data. */
 
-  const Dataset tof_original = makeTofDataForUnitConversion();
+  const Dataset tof_original = GetParam();
   const auto energy = convert(tof_original, Dim::Tof, Dim::Energy);
   const auto tof = convert(energy, Dim::Energy, Dim::Tof);
 
-  /* Test coordinates */
-  /* Broadcasting is needed as conversion introduces the dependance on
-   * Dim::Spectrum */
-  {
+  ASSERT_TRUE(tof.contains("counts") || tof.contains("events"));
+  if (tof.contains("counts")) {
+    /* Broadcasting is needed as conversion introduces the dependance on
+     * Dim::Spectrum */
     const auto expected = broadcast(tof_original.coords()[Dim::Tof],
                                     tof.coords()[Dim::Tof].dims());
     EXPECT_TRUE(equals(tof.coords()[Dim::Tof].values<double>(),
                        expected.values<double>(), 1e-12));
+  } else {
+    ASSERT_TRUE(tof.contains("events"));
+    const auto events = tof["events"].coords()[Dim::Tof].sparseValues<double>();
+    const auto events_original =
+        tof_original["events"].coords()[Dim::Tof].sparseValues<double>();
+    EXPECT_TRUE(equals(events[0], events_original[0], 1e-15));
+    EXPECT_TRUE(equals(events[1], events_original[1], 1e-15));
   }
-
-  /* Test sparse/event data */
-  ASSERT_TRUE(tof.contains("events"));
-  const auto events = tof["events"].coords()[Dim::Tof].sparseValues<double>();
-  const auto events_original =
-      tof_original["events"].coords()[Dim::Tof].sparseValues<double>();
-  EXPECT_TRUE(equals(events[0], events_original[0], 1e-15));
-  EXPECT_TRUE(equals(events[1], events_original[1], 1e-15));
 
   ASSERT_EQ(tof.coords()[Dim("position")],
             tof_original.coords()[Dim("position")]);
@@ -480,8 +500,8 @@ TEST(Convert, Energy_to_Tof_Elastic) {
             tof_original.coords()[Dim("sample_position")]);
 }
 
-TEST(Convert, convert_with_factor_type_promotion) {
-  Dataset tof = makeTofDataForUnitConversion();
+TEST_P(ConvertTest, convert_with_factor_type_promotion) {
+  Dataset tof = GetParam();
   tof.setCoord(Dim::Tof, makeVariable<float>(Dims{Dim::Tof}, Shape{4},
                                              units::Unit(units::us),
                                              Values{4000, 5000, 6100, 7300}));
