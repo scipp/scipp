@@ -65,8 +65,8 @@ void flatten_impl(const VariableView &summed, const VariableConstView &var,
   // significant penalty from handling it anyway. We thus avoid two separate
   // code branches here.
   if (!is_events(var))
-    throw except::DimensionError("`flatten` can only be used for event data, "
-                                 "use `sum` for dense data.");
+    throw except::TypeError("`flatten` can only be used for event data, "
+                            "use `sum` for dense data.");
   // 1. Reserve space in output. This yields approx. 3x speedup.
   auto summed_counts = sparse::counts(summed);
   sum_impl(summed_counts, sparse::counts(var) * mask);
@@ -113,8 +113,8 @@ Variable flatten(const VariableConstView &var, const Dim dim,
 
 void sum_impl(const VariableView &summed, const VariableConstView &var) {
   if (is_events(var))
-    throw except::DimensionError("`sum` can only be used for dense data, use "
-                                 "`flatten` for event data.");
+    throw except::TypeError("`sum` can only be used for dense data, use "
+                            "`flatten` for event data.");
   accumulate_in_place<
       pair_self_t<double, float, int64_t, int32_t, Eigen::Vector3d>,
       pair_custom_t<std::pair<int64_t, bool>>>(
