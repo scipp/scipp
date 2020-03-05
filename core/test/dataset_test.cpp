@@ -292,7 +292,7 @@ TEST(DatasetTest, sum_and_mean) {
             makeVariable<float>(Values{1.5}, Variances{6.75}));
 
   EXPECT_THROW(core::sum(make_sparse_2d({1, 2, 3, 4}, {0, 0}), Dim::X),
-               except::DimensionError);
+               except::TypeError);
 }
 
 TEST(DatasetTest, erase_coord) {
