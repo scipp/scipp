@@ -7,8 +7,8 @@
 
 namespace scipp::core {
 
-template <class View>
-static inline void expectAlignedCoord(const Dim coord_dim, const View &var,
+static inline void expectAlignedCoord(const Dim coord_dim,
+                                      const VariableConstView &var,
                                       const Dim operation_dim) {
   // Coordinate is 2D, but the dimension associated with the coordinate is
   // different from that of the operation. Note we do not account for the
