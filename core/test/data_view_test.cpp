@@ -106,20 +106,6 @@ TYPED_TEST(DataArrayViewTest, coords) {
   ASSERT_EQ(d_ref["a"].coords(), d.coords());
 }
 
-TYPED_TEST(DataArrayViewTest, coords_sparse) {
-  Dataset d;
-  const auto var = makeVariable<event_list<double>>(Dims{Dim::X}, Shape{3});
-  d.coords().set(Dim::Y, var);
-  d.setData("a", var);
-
-  typename TestFixture::dataset_type &d_ref(d);
-  ASSERT_NO_THROW(d_ref["a"].coords());
-  ASSERT_EQ(d_ref["a"].coords(), d.coords());
-  ASSERT_EQ(d_ref["a"].coords().size(), 1);
-  ASSERT_NO_THROW(d_ref["a"].coords()[Dim::Y]);
-  ASSERT_EQ(d_ref["a"].coords()[Dim::Y], var);
-}
-
 // Reenable this when proper unaligned views are implemented
 TYPED_TEST(DataArrayViewTest, DISABLED_coords_unaligned) {
   Dataset d;
