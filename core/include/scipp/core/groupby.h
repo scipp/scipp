@@ -61,17 +61,15 @@ private:
 };
 
 SCIPP_CORE_EXPORT GroupBy<DataArray> groupby(const DataArrayConstView &dataset,
-                                             const std::string &labels,
-                                             const Dim targetDim);
+                                             const Dim dim);
 SCIPP_CORE_EXPORT GroupBy<DataArray> groupby(const DataArrayConstView &dataset,
-                                             const std::string &labels,
+                                             const Dim dim,
                                              const VariableConstView &bins);
 
 SCIPP_CORE_EXPORT GroupBy<Dataset> groupby(const DatasetConstView &dataset,
-                                           const std::string &labels,
-                                           const Dim targetDim);
+                                           const Dim dim);
 SCIPP_CORE_EXPORT GroupBy<Dataset> groupby(const DatasetConstView &dataset,
-                                           const std::string &labels,
+                                           const Dim dim,
                                            const VariableConstView &bins);
 
 } // namespace scipp::core

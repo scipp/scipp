@@ -102,6 +102,7 @@ Documentation
    developer/getting-started
    developer/api
    developer/customizing
+   developer/how-to
    developer/tooling
    developer/transform
    developer/constructing_variables

@@ -18,33 +18,33 @@ void dry_run_op(const DataArrayView &a, const VariableConstView &b, Op op) {
 
 template <class Op>
 void dry_run_op(const DataArrayView &a, const DataArrayConstView &b, Op op) {
-  expect::coordsAndLabelsAreSuperset(a, b);
+  expect::coordsAreSuperset(a, b);
   dry_run_op(a, b.data(), op);
 }
 
 DataArrayView DataArrayView::operator+=(const DataArrayConstView &other) const {
-  expect::coordsAndLabelsAreSuperset(*this, other);
+  expect::coordsAreSuperset(*this, other);
   union_or_in_place(masks(), other.masks());
   data() += other.data();
   return *this;
 }
 
 DataArrayView DataArrayView::operator-=(const DataArrayConstView &other) const {
-  expect::coordsAndLabelsAreSuperset(*this, other);
+  expect::coordsAreSuperset(*this, other);
   union_or_in_place(masks(), other.masks());
   data() -= other.data();
   return *this;
 }
 
 DataArrayView DataArrayView::operator*=(const DataArrayConstView &other) const {
-  expect::coordsAndLabelsAreSuperset(*this, other);
+  expect::coordsAreSuperset(*this, other);
   union_or_in_place(masks(), other.masks());
   data() *= other.data();
   return *this;
 }
 
 DataArrayView DataArrayView::operator/=(const DataArrayConstView &other) const {
-  expect::coordsAndLabelsAreSuperset(*this, other);
+  expect::coordsAreSuperset(*this, other);
   union_or_in_place(masks(), other.masks());
   data() /= other.data();
   return *this;
@@ -113,9 +113,9 @@ decltype(auto) apply_with_delay(const Op &op, A &&a, const B &b) {
   // For `b` referencing data in `a` we delay operation. The alternative would
   // be to make a deep copy of `other` before starting the iteration over items.
   std::optional<DataArrayView> delayed;
-  // Note the inefficiency here: We are comparing some or all of the coords and
-  // labels for each item. This could be improved by implementing the operations
-  // for detail::DatasetData instead of DataArrayView.
+  // Note the inefficiency here: We are comparing some or all of the coords for
+  // each item. This could be improved by implementing the operations for
+  // detail::DatasetData instead of DataArrayView.
   for (const auto &item : a) {
     if (have_common_underlying(item, b))
       delayed = item;

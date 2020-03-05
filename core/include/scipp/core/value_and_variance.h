@@ -24,6 +24,8 @@ template <class T> struct ValueAndVariance {
   /// types in initializer lists used below
   template <class T1, class T2>
   constexpr ValueAndVariance(T1 t1, T2 t2) noexcept : value(t1), variance(t2) {}
+  constexpr ValueAndVariance(const double val) noexcept
+      : value(val), variance(0.0) {}
   T value;
   T variance;
 
@@ -78,6 +80,10 @@ template <class T> constexpr auto abs(const ValueAndVariance<T> a) noexcept {
 template <class T> constexpr auto isnan(const ValueAndVariance<T> a) noexcept {
   using std::isnan;
   return isnan(a.value);
+}
+template <class T> constexpr auto isinf(const ValueAndVariance<T> a) noexcept {
+  using std::isinf;
+  return isinf(a.value);
 }
 
 template <class T1, class T2>

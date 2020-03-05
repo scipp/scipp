@@ -57,7 +57,7 @@ TYPED_TEST(CoordsViewTest, sparse_coords_values_and_coords) {
   auto s_coords = makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse});
   s_coords.sparseValues<double>()[0] = {4, 5, 6};
   d.setData("test", data);
-  d.setSparseCoord("test", s_coords);
+  d.setSparseCoord("test", Dim::X, s_coords);
   ASSERT_EQ(1, d["test"].coords().size());
   auto sparseX = d["test"].coords()[Dim::X].sparseValues<double>()[0];
   ASSERT_EQ(3, sparseX.size());

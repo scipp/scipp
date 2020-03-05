@@ -23,7 +23,7 @@ protected:
     dataset.setCoord(Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{4}));
     dataset.setCoord(Dim::Y, makeVariable<double>(Dims{Dim::Y}, Shape{3}));
 
-    dataset.setLabels("labels", makeVariable<int>(Dims{Dim::X}, Shape{4}));
+    dataset.setCoord(Dim("labels"), makeVariable<int>(Dims{Dim::X}, Shape{4}));
     dataset.setMask("mask", makeVariable<bool>(Dims{Dim::X}, Shape{4}));
 
     dataset.setAttr("global_attr", makeVariable<int>(Values{int{}}));
@@ -36,10 +36,10 @@ protected:
     dataset.setData("val", makeVariable<double>(Dims{Dim::X}, Shape{4}));
     dataset.setAttr("val", "attr", makeVariable<int>(Values{int{}}));
 
-    dataset.setSparseCoord("sparse_coord", sparse_variable);
+    dataset.setSparseCoord("sparse_coord", Dim::X, sparse_variable);
     dataset.setAttr("sparse_coord", "attr", makeVariable<int>(Values{int{}}));
     dataset.setData("sparse_coord_and_val", sparse_variable);
-    dataset.setSparseCoord("sparse_coord_and_val", sparse_variable);
+    dataset.setSparseCoord("sparse_coord_and_val", Dim::X, sparse_variable);
     dataset.setAttr("sparse_coord_and_val", "attr",
                     makeVariable<int>(Values{int{}}));
   }
@@ -83,8 +83,8 @@ auto make_1_labels(const std::string &name, const Dimensions &dims,
                    const units::Unit unit,
                    const std::initializer_list<T2> &data) {
   Dataset d;
-  d.setLabels(
-      name, makeVariable<T>(Dimensions(dims), units::Unit(unit), Values(data)));
+  d.setCoord(Dim(name), makeVariable<T>(Dimensions(dims), units::Unit(unit),
+                                        Values(data)));
   d.setData("", makeVariable<T>(Dimensions(dims)));
   return DataArray(d[""]);
 }
@@ -246,7 +246,7 @@ TEST_F(DataArray_comparison_operators, extra_coord) {
 
 TEST_F(DataArray_comparison_operators, extra_labels) {
   auto extra = dataset;
-  extra.setLabels("extra", makeVariable<double>(Values{0.0}));
+  extra.setCoord(Dim("extra"), makeVariable<double>(Values{0.0}));
   for (const auto &a : extra)
     expect_ne(a, dataset[a.name()]);
 }
@@ -281,7 +281,7 @@ TEST_F(DataArray_comparison_operators, extra_sparse_values) {
 
 TEST_F(DataArray_comparison_operators, extra_sparse_label) {
   auto extra = dataset;
-  extra.setSparseLabels("sparse_coord_and_val", "extra", sparse_variable);
+  extra.setSparseCoord("sparse_coord_and_val", Dim("extra"), sparse_variable);
   expect_ne(extra["sparse_coord_and_val"], dataset["sparse_coord_and_val"]);
 }
 
@@ -299,10 +299,10 @@ TEST_F(DataArray_comparison_operators, different_coord_insertion_order) {
 TEST_F(DataArray_comparison_operators, different_label_insertion_order) {
   auto a = Dataset();
   auto b = Dataset();
-  a.setLabels("x", dataset.coords()[Dim::X]);
-  a.setLabels("y", dataset.coords()[Dim::Y]);
-  b.setLabels("y", dataset.coords()[Dim::Y]);
-  b.setLabels("x", dataset.coords()[Dim::X]);
+  a.setCoord(Dim("x"), dataset.coords()[Dim::X]);
+  a.setCoord(Dim("y"), dataset.coords()[Dim::Y]);
+  b.setCoord(Dim("y"), dataset.coords()[Dim::Y]);
+  b.setCoord(Dim("x"), dataset.coords()[Dim::X]);
   for (const auto &a_ : a)
     expect_ne(a_, b[a_.name()]);
 }

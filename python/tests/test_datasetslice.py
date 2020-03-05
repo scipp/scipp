@@ -12,9 +12,9 @@ import operator
 class TestDatasetSlice(unittest.TestCase):
     def setUp(self):
         d = sc.Dataset()
-        d[sc.Coord.X] = ([sc.Dim.X], np.arange(10))
-        d[sc.Data.Value, "a"] = ([sc.Dim.X], np.arange(10))
-        d[sc.Data.Value, "b"] = ([sc.Dim.X], np.arange(10))
+        d[sc.Coord.X] = (['x'], np.arange(10))
+        d[sc.Data.Value, "a"] = (['x'], np.arange(10))
+        d[sc.Data.Value, "b"] = (['x'], np.arange(10))
         self._d = d
 
     def test_type(self):
@@ -33,36 +33,36 @@ class TestDatasetSlice(unittest.TestCase):
         self.assertEqual(2, len(ds_slice))
 
     def test_slice_back_ommit_range(self):
-        sl = self._d[sc.Dim.X, 1:-1][sc.Data.Value, "a"].numpy
+        sl = self._d['x', 1:-1][sc.Data.Value, "a"].numpy
         ref = np.array([1, 2, 3, 4, 5, 6, 7, 8], dtype=np.int64)
         self.assertEqual(ref.shape, sl.shape)
         self.assertEqual(np.allclose(sl, ref), True)
         # omitting range end
-        sl = self._d[sc.Dim.X, 1:][sc.Data.Value, "b"].numpy
+        sl = self._d['x', 1:][sc.Data.Value, "b"].numpy
         ref = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9], dtype=np.int64)
         self.assertEqual(ref.shape, sl.shape)
         self.assertEqual(np.allclose(sl, ref), True)
         # omitting range begin
-        sl = self._d[sc.Dim.X, :-1][sc.Data.Value, "a"].numpy
+        sl = self._d['x', :-1][sc.Data.Value, "a"].numpy
         ref = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8], dtype=np.int64)
         self.assertEqual(ref.shape, sl.shape)
         self.assertEqual(np.allclose(sl, ref), True)
         # omitting range both begin and end
-        sl = self._d[sc.Dim.X, :][sc.Data.Value, "b"].numpy
+        sl = self._d['x', :][sc.Data.Value, "b"].numpy
         ref = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9], dtype=np.int64)
         self.assertEqual(ref.shape, sl.shape)
         self.assertEqual(np.allclose(sl, ref), True)
 
     def test_slice_single_index(self):
-        self.assertEqual(self._d[sc.Dim.X, -4][sc.Data.Value, "a"].numpy,
-                         self._d[sc.Dim.X, 6][sc.Data.Value, "a"].numpy)
-        self.assertEqual(self._d[sc.Data.Value, "a"][sc.Dim.X, -3].numpy,
-                         self._d[sc.Data.Value, "a"][sc.Dim.X, 7].numpy)
+        self.assertEqual(self._d['x', -4][sc.Data.Value, "a"].numpy,
+                         self._d['x', 6][sc.Data.Value, "a"].numpy)
+        self.assertEqual(self._d[sc.Data.Value, "a"]['x', -3].numpy,
+                         self._d[sc.Data.Value, "a"]['x', 7].numpy)
 
     def test_range_based_slice(self):
         subset = slice(1, 4, 1)
         # Create slice
-        ds_slice = self._d[sc.Dim.X, subset]
+        ds_slice = self._d['x', subset]
         # Test via variable_slice
         self.assertEqual(len(ds_slice[sc.Coord.X]),
                          len(range(subset.start, subset.stop, subset.step)))
@@ -72,11 +72,11 @@ class TestDatasetSlice(unittest.TestCase):
         N = 6
         M = 4
         d1 = sc.Dataset()
-        d1[sc.Coord.X] = ([sc.Dim.X], np.arange(N + 1).astype(np.float64))
-        d1[sc.Coord.Y] = ([sc.Dim.Y], np.arange(M + 1).astype(np.float64))
+        d1[sc.Coord.X] = (['x'], np.arange(N + 1).astype(np.float64))
+        d1[sc.Coord.Y] = (['y'], np.arange(M + 1).astype(np.float64))
         arr1 = np.arange(N * M).reshape(N, M).astype(np.float64) + 1
-        d1[sc.Data.Value, "A"] = ([sc.Dim.X, sc.Dim.Y], arr1)
-        s1 = d1[sc.Dim.X, 2:]
+        d1[sc.Data.Value, "A"] = (['x', 'y'], arr1)
+        s1 = d1['x', 2:]
         s2 = copy.copy(s1)
         s3 = copy.deepcopy(s2)
         self.assertEqual(s1, s2)
@@ -114,11 +114,11 @@ class TestDatasetSlice(unittest.TestCase):
 
     def test_binary_slice_rhs_operations(self):
         d = sc.Dataset()
-        d[sc.Coord.X] = ([sc.Dim.X], np.arange(10))
-        d[sc.Data.Value, "a"] = ([sc.Dim.X], np.arange(10, dtype='float64'))
-        d[sc.Data.Variance, "a"] = ([sc.Dim.X], np.arange(10, dtype='float64'))
-        d[sc.Data.Value, "b"] = ([sc.Dim.X], np.arange(10, dtype='float64'))
-        d[sc.Data.Variance, "b"] = ([sc.Dim.X], np.arange(10, dtype='float64'))
+        d[sc.Coord.X] = (['x'], np.arange(10))
+        d[sc.Data.Value, "a"] = (['x'], np.arange(10, dtype='float64'))
+        d[sc.Data.Variance, "a"] = (['x'], np.arange(10, dtype='float64'))
+        d[sc.Data.Value, "b"] = (['x'], np.arange(10, dtype='float64'))
+        d[sc.Data.Variance, "b"] = (['x'], np.arange(10, dtype='float64'))
         a = d.subset["a"]
         b = d.subset["b"]
         data = np.copy(a[sc.Data.Value, "a"].numpy)
@@ -163,10 +163,10 @@ class TestDatasetSlice(unittest.TestCase):
     def test_binary_variable_rhs_operations(self):
         data = np.ones(10, dtype='float64')
         d = sc.Dataset()
-        d[sc.Data.Value, "a"] = ([sc.Dim.X], data)
-        d[sc.Data.Variance, "a"] = ([sc.Dim.X], data)
+        d[sc.Data.Value, "a"] = (['x'], data)
+        d[sc.Data.Variance, "a"] = (['x'], data)
         a = d.subset[sc.Data.Value, "a"]
-        b_var = sc.Variable([sc.Dim.X], data)
+        b_var = sc.Variable(['x'], data)
 
         c = a + b_var
         self.assertTrue(
@@ -191,9 +191,9 @@ class TestDatasetSlice(unittest.TestCase):
 
     def test_binary_float_operations(self):
         d = sc.Dataset()
-        d[sc.Coord.X] = ([sc.Dim.X], np.arange(10))
-        d[sc.Data.Value, "a"] = ([sc.Dim.X], np.arange(10, dtype='float64'))
-        d[sc.Data.Value, "b"] = ([sc.Dim.X], np.arange(10, dtype='float64'))
+        d[sc.Coord.X] = (['x'], np.arange(10))
+        d[sc.Data.Value, "a"] = (['x'], np.arange(10, dtype='float64'))
+        d[sc.Data.Value, "b"] = (['x'], np.arange(10, dtype='float64'))
         a = d.subset["a"]
         b = d.subset["b"]
         data = np.copy(a[sc.Data.Value, "a"].numpy)
@@ -230,19 +230,18 @@ class TestDatasetSlice(unittest.TestCase):
 
     def test_equal_not_equal(self):
         d = sc.Dataset()
-        d[sc.Coord.X] = ([sc.Dim.X], np.arange(10))
-        d[sc.Data.Value, "a"] = ([sc.Dim.X], np.arange(10, dtype='float64'))
-        d[sc.Data.Value, "b"] = ([sc.Dim.X], np.arange(10, dtype='float64'))
+        d[sc.Coord.X] = (['x'], np.arange(10))
+        d[sc.Data.Value, "a"] = (['x'], np.arange(10, dtype='float64'))
+        d[sc.Data.Value, "b"] = (['x'], np.arange(10, dtype='float64'))
         a = d.subset["a"]
         b = d.subset["b"]
         c = a + b
         d2 = np.copy(a[sc.Data.Value, "a"].numpy)
-        d2 = d[sc.Dim.X, :]
+        d2 = d['x', :]
         a2 = d.subset["a"]
         d3 = sc.Dataset()
-        d3[sc.Coord.X] = ([sc.Dim.X], np.arange(10))
-        d3[sc.Data.Value, "a"] = ([sc.Dim.X], np.arange(1, 11,
-                                                        dtype='float64'))
+        d3[sc.Coord.X] = (['x'], np.arange(10))
+        d3[sc.Data.Value, "a"] = (['x'], np.arange(1, 11, dtype='float64'))
         a3 = d3.subset["a"]
         self.assertEqual(d, d2)
         self.assertEqual(d2, d)
@@ -254,9 +253,9 @@ class TestDatasetSlice(unittest.TestCase):
 
     def test_binary_ops_with_variable(self):
         d = sc.Dataset()
-        d[sc.Coord.X] = ([sc.Dim.X], np.arange(10))
-        d[sc.Data.Value, "a"] = ([sc.Dim.X], np.arange(10))
-        d[sc.Data.Variance, "a"] = ([sc.Dim.X], np.arange(10))
+        d[sc.Coord.X] = (['x'], np.arange(10))
+        d[sc.Data.Value, "a"] = (['x'], np.arange(10))
+        d[sc.Data.Variance, "a"] = (['x'], np.arange(10))
 
         d += sc.Variable(2)
 
@@ -264,22 +263,22 @@ class TestDatasetSlice(unittest.TestCase):
         N = 6
         M = 4
         d1 = sc.Dataset()
-        d1[sc.Coord.X] = ([sc.Dim.X], np.arange(N + 1).astype(np.float64))
-        d1[sc.Coord.Y] = ([sc.Dim.Y], np.arange(M + 1).astype(np.float64))
+        d1[sc.Coord.X] = (['x'], np.arange(N + 1).astype(np.float64))
+        d1[sc.Coord.Y] = (['y'], np.arange(M + 1).astype(np.float64))
         arr1 = np.arange(N * M).reshape(N, M).astype(np.float64) + 1
-        d1[sc.Data.Value, "A"] = ([sc.Dim.X, sc.Dim.Y], arr1)
-        d1 = d1[sc.Dim.X, 1:2]
+        d1[sc.Data.Value, "A"] = (['x', 'y'], arr1)
+        d1 = d1['x', 1:2]
         self.assertEqual(list(d1[sc.Data.Value, "A"].data),
                          [5.0, 6.0, 7.0, 8.0])
 
     def test_set_dataset_slice_items(self):
         d = self._d.copy()
-        d[sc.Data.Value, "a"][sc.Dim.X, 0:2] += \
-            d[sc.Data.Value, "b"][sc.Dim.X, 1:3]
+        d[sc.Data.Value, "a"]['x', 0:2] += \
+            d[sc.Data.Value, "b"]['x', 1:3]
         self.assertEqual(list(d[sc.Data.Value, "a"].data),
                          [1, 3, 2, 3, 4, 5, 6, 7, 8, 9])
-        d[sc.Data.Value, "a"][sc.Dim.X, 6] += \
-            d[sc.Data.Value, "b"][sc.Dim.X, 8]
+        d[sc.Data.Value, "a"]['x', 6] += \
+            d[sc.Data.Value, "b"]['x', 8]
         self.assertEqual(list(d[sc.Data.Value, "a"].data),
                          [1, 3, 2, 3, 4, 5, 14, 7, 8, 9])
 

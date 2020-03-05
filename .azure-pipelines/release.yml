@@ -1,5 +1,7 @@
 trigger:
-  - master
+  tags:
+    include:
+      - '*.*.*'
 
 pr: none
 
@@ -35,7 +37,7 @@ stages:
               conda config --set always_yes yes --set changeps1 no
             displayName: 'Conda configuration'
           - bash: |
-              conda build --user scipp --token "$ANACONDA_TOKEN" --channel conda-forge --label dev --python="$PYTHON_VERSION" ./conda
+              conda build --user scipp --token "$ANACONDA_TOKEN" --channel conda-forge --python="$PYTHON_VERSION" ./conda
             env:
               ANACONDA_TOKEN: $(anaconda_token_secret)
             displayName: 'Package build'
@@ -69,7 +71,7 @@ stages:
               conda config --set always_yes yes --set changeps1 no
             displayName: 'Conda configuration'
           - bash: |
-              conda build --user scipp --token "$ANACONDA_TOKEN" --channel conda-forge --label dev ./conda
+              conda build --user scipp --token "$ANACONDA_TOKEN" --channel conda-forge ./conda
             env:
               ANACONDA_TOKEN: $(anaconda_token_secret)
             displayName: 'Package build'
@@ -97,7 +99,7 @@ stages:
               conda config --set always_yes yes --set changeps1 no
             displayName: 'Conda configuration'
           - script: |
-              conda build --user scipp --token "%ANACONDA_TOKEN%" --channel conda-forge --label dev ./conda
+              conda build --user scipp --token "%ANACONDA_TOKEN%" --channel conda-forge ./conda
             env:
               ANACONDA_TOKEN: $(anaconda_token_secret)
             displayName: 'Package build'
@@ -118,29 +120,5 @@ stages:
 
     jobs:
       - template: templates/documentation_deploy.yml
-
-      - job: 'docker'
-        displayName: 'Docker'
-        timeoutInMinutes: 30
-        condition: false
-        pool:
-          vmImage: 'ubuntu-latest'
-        steps:
-          - task: Docker@2
-            inputs:
-              containerRegistry: 'DockerHub'
-              command: 'login'
-            displayName: 'Login to DockerHub'
-          - task: Docker@2
-            inputs:
-              containerRegistry: 'DockerHub'
-              repository: 'scipp/scipp-jupyter-demo'
-              command: 'buildAndPush'
-              Dockerfile: '**/Dockerfile'
-              tags: 'latest'
-            displayName: 'Build image and push to DockerHub'
-          - task: Docker@2
-            inputs:
-              containerRegistry: 'DockerHub'
-              command: 'logout'
-            displayName: 'Logout of DockerHub'
+        parameters:
+          release: True

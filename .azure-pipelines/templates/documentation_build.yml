@@ -20,9 +20,11 @@ jobs:
           artifactName: 'linux-64'
           downloadPath: '$(packages_dir)'
         displayName: 'Download previously build Conda package'
-      - bash: echo "##vso[task.prependpath]$CONDA/bin"
+      - bash: |
+          echo "##vso[task.prependpath]$CONDA/bin"
         displayName: Add Conda to PATH
-      - bash: conda env create -n scipp_docs -f docs/environment.yml
+      - bash: |
+          conda env create -n scipp_docs -f docs/environment.yml
         displayName: 'Create Conda environment'
       - bash: |
           set -ex

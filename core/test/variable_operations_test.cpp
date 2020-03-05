@@ -1221,12 +1221,37 @@ TEST(VariableTest, nan_to_num_throws_when_input_and_replace_types_differ) {
 }
 
 TEST(VariableTest, nan_to_num) {
-  auto a =
-      makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.0, double(NAN)});
+  auto a = makeVariable<double>(
+      Dims{Dim::X}, Shape{4},
+      Values{1.0, double(NAN), double(INFINITY), double(-INFINITY)});
   auto replacement_value = makeVariable<double>(Values{-1});
   Variable b = nan_to_num(a, replacement_value);
+  auto expected =
+      makeVariable<double>(Dims{Dim::X}, Shape{4},
+                           Values{1.0, replacement_value.value<double>(),
+                                  double(INFINITY), double(-INFINITY)});
+  EXPECT_EQ(b, expected);
+}
+
+TEST(VariableTest, positive_inf_to_num) {
+  auto a = makeVariable<double>(
+      Dims{Dim::X}, Shape{3}, Values{1.0, double(INFINITY), double(-INFINITY)});
+  auto replacement_value = makeVariable<double>(Values{-1});
+  Variable b = pos_inf_to_num(a, replacement_value);
   auto expected = makeVariable<double>(
-      Dims{Dim::X}, Shape{2}, Values{1.0, replacement_value.value<double>()});
+      Dims{Dim::X}, Shape{3},
+      Values{1.0, replacement_value.value<double>(), double(-INFINITY)});
+  EXPECT_EQ(b, expected);
+}
+
+TEST(VariableTest, negative_inf_to_num) {
+  auto a = makeVariable<double>(
+      Dims{Dim::X}, Shape{3}, Values{1.0, double(INFINITY), double(-INFINITY)});
+  auto replacement_value = makeVariable<double>(Values{-1});
+  Variable b = neg_inf_to_num(a, replacement_value);
+  auto expected = makeVariable<double>(
+      Dims{Dim::X}, Shape{3},
+      Values{1.0, double(INFINITY), replacement_value.value<double>()});
   EXPECT_EQ(b, expected);
 }
 

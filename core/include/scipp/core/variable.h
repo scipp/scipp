@@ -1062,8 +1062,19 @@ SCIPP_CORE_EXPORT VariableView atan(const VariableConstView &var,
 SCIPP_CORE_EXPORT VariableView nan_to_num(const VariableConstView &var,
                                           const VariableConstView &replacement,
                                           const VariableView &out);
+SCIPP_CORE_EXPORT VariableView positive_inf_to_num(
+    const VariableConstView &var, const VariableConstView &replacement,
+    const VariableView &out);
+SCIPP_CORE_EXPORT VariableView negative_inf_to_num(
+    const VariableConstView &var, const VariableConstView &replacement,
+    const VariableView &out);
+
 [[nodiscard]] SCIPP_CORE_EXPORT Variable
 nan_to_num(const VariableConstView &var, const VariableConstView &replacement);
+[[nodiscard]] SCIPP_CORE_EXPORT Variable pos_inf_to_num(
+    const VariableConstView &var, const VariableConstView &replacement);
+[[nodiscard]] SCIPP_CORE_EXPORT Variable neg_inf_to_num(
+    const VariableConstView &var, const VariableConstView &replacement);
 
 namespace sparse {
 SCIPP_CORE_EXPORT Variable counts(const VariableConstView &var);

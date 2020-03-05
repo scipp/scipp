@@ -25,7 +25,6 @@ TEST(DatasetTest, clear) {
 
   ASSERT_FALSE(dataset.empty());
   ASSERT_FALSE(dataset.coords().empty());
-  ASSERT_FALSE(dataset.labels().empty());
   ASSERT_FALSE(dataset.attrs().empty());
   ASSERT_FALSE(dataset.masks().empty());
 
@@ -33,7 +32,6 @@ TEST(DatasetTest, clear) {
 
   ASSERT_TRUE(dataset.empty());
   ASSERT_FALSE(dataset.coords().empty());
-  ASSERT_FALSE(dataset.labels().empty());
   ASSERT_FALSE(dataset.attrs().empty());
   ASSERT_FALSE(dataset.masks().empty());
 }
@@ -82,26 +80,6 @@ TEST(DatasetTest, setCoord) {
   ASSERT_NO_THROW(d.setCoord(Dim::X, var));
   ASSERT_EQ(d.size(), 0);
   ASSERT_EQ(d.coords().size(), 2);
-}
-
-TEST(DatasetTest, setLabels) {
-  Dataset d;
-  const auto var = makeVariable<double>(Dims{Dim::X}, Shape{3});
-
-  ASSERT_EQ(d.size(), 0);
-  ASSERT_EQ(d.labels().size(), 0);
-
-  ASSERT_NO_THROW(d.setLabels("a", var));
-  ASSERT_EQ(d.size(), 0);
-  ASSERT_EQ(d.labels().size(), 1);
-
-  ASSERT_NO_THROW(d.setLabels("b", var));
-  ASSERT_EQ(d.size(), 0);
-  ASSERT_EQ(d.labels().size(), 2);
-
-  ASSERT_NO_THROW(d.setLabels("a", var));
-  ASSERT_EQ(d.size(), 0);
-  ASSERT_EQ(d.labels().size(), 2);
 }
 
 TEST(DatasetTest, setAttr) {
@@ -179,7 +157,7 @@ TEST(DatasetTest, setData_updates_dimensions) {
   ASSERT_TRUE(dims.find(Dim::Y) == dims.end());
 }
 
-TEST(DatasetTest, setLabels_with_name_matching_data_name) {
+TEST(DatasetTest, setCoord_with_name_matching_data_name) {
   Dataset d;
   d.setData("a", makeVariable<double>(Dims{Dim::X}, Shape{3}));
   d.setData("b", makeVariable<double>(Dims{Dim::X}, Shape{3}));
@@ -187,18 +165,18 @@ TEST(DatasetTest, setLabels_with_name_matching_data_name) {
   // It is possible to set labels with a name matching data. However, there is
   // no special meaning attached to this. In particular it is *not* linking the
   // labels to that data item.
-  ASSERT_NO_THROW(d.setLabels("a", makeVariable<double>(Values{double{}})));
+  ASSERT_NO_THROW(d.setCoord(Dim("a"), makeVariable<double>(Values{double{}})));
   ASSERT_EQ(d.size(), 2);
-  ASSERT_EQ(d.labels().size(), 1);
-  ASSERT_EQ(d["a"].labels().size(), 1);
-  ASSERT_EQ(d["b"].labels().size(), 1);
+  ASSERT_EQ(d.coords().size(), 1);
+  ASSERT_EQ(d["a"].coords().size(), 1);
+  ASSERT_EQ(d["b"].coords().size(), 1);
 }
 
 TEST(DatasetTest, setters_reject_sparse) {
   Dataset d;
   const auto var = makeVariable<int>(Dims{Dim::X}, Shape{Dimensions::Sparse});
   ASSERT_THROW(d.setCoord(Dim::X, var), except::DimensionError);
-  ASSERT_THROW(d.setLabels("a", var), except::DimensionError);
+  ASSERT_THROW(d.setCoord(Dim("a"), var), except::DimensionError);
   ASSERT_THROW(d.setMask("a", var), except::DimensionError);
   ASSERT_THROW(d.setAttr("a", var), except::DimensionError);
 }
@@ -207,7 +185,7 @@ TEST(DatasetTest, setSparseCoord_not_sparse_fail) {
   Dataset d;
   const auto var = makeVariable<double>(Dims{Dim::X}, Shape{3});
 
-  ASSERT_ANY_THROW(d.setSparseCoord("a", var));
+  ASSERT_ANY_THROW(d.setSparseCoord("a", Dim::X, var));
 }
 
 TEST(DatasetTest, setSparseCoord) {
@@ -215,19 +193,9 @@ TEST(DatasetTest, setSparseCoord) {
   const auto var =
       makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{3l, Dimensions::Sparse});
 
-  ASSERT_NO_THROW(d.setSparseCoord("a", var));
+  ASSERT_NO_THROW(d.setSparseCoord("a", Dim::Y, var));
   ASSERT_EQ(d.size(), 1);
   ASSERT_NO_THROW(d["a"]);
-}
-
-TEST(DatasetTest, setSparseLabels_missing_values_or_coord) {
-  Dataset d;
-  const auto sparse =
-      makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse});
-
-  ASSERT_ANY_THROW(d.setSparseLabels("a", "x", sparse));
-  d.setSparseCoord("a", sparse);
-  ASSERT_NO_THROW(d.setSparseLabels("a", "x", sparse));
 }
 
 TEST(DatasetTest, setSparseLabels_not_sparse_fail) {
@@ -236,20 +204,20 @@ TEST(DatasetTest, setSparseLabels_not_sparse_fail) {
   const auto sparse =
       makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse});
 
-  d.setSparseCoord("a", sparse);
-  ASSERT_ANY_THROW(d.setSparseLabels("a", "x", dense));
+  d.setSparseCoord("a", Dim::X, sparse);
+  ASSERT_ANY_THROW(d.setSparseCoord("a", Dim("label"), dense));
 }
 
 TEST(DatasetTest, setSparseLabels) {
   Dataset d;
   const auto sparse =
       makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse});
-  d.setSparseCoord("a", sparse);
+  d.setSparseCoord("a", Dim::X, sparse);
 
-  ASSERT_NO_THROW(d.setSparseLabels("a", "x", sparse));
+  ASSERT_NO_THROW(d.setSparseCoord("a", Dim("label"), sparse));
   ASSERT_EQ(d.size(), 1);
   ASSERT_NO_THROW(d["a"]);
-  ASSERT_EQ(d["a"].labels().size(), 1);
+  ASSERT_EQ(d["a"].coords().size(), 2);
 }
 
 TEST(DatasetTest, iterators_return_types) {
@@ -272,12 +240,13 @@ TEST(DatasetTest, set_dense_data_with_sparse_coord) {
 
   Dataset a;
   a.setData("sparse_coord_and_val", dense_variable);
-  ASSERT_THROW(a.setSparseCoord("sparse_coord_and_val", sparse_variable),
-               except::DimensionError);
+  ASSERT_THROW(
+      a.setSparseCoord("sparse_coord_and_val", Dim::X, sparse_variable),
+      except::DimensionError);
 
   // Setting coords first yields same response.
   Dataset b;
-  b.setSparseCoord("sparse_coord_and_val", sparse_variable);
+  b.setSparseCoord("sparse_coord_and_val", Dim::X, sparse_variable);
   ASSERT_THROW(b.setData("sparse_coord_and_val", dense_variable),
                except::DimensionError);
 }
@@ -384,13 +353,13 @@ TEST(DatasetTest, erase_coord) {
   EXPECT_EQ(ref, ds);
 
   const auto var =
-      makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{3l, Dimensions::Sparse});
-  ds.setSparseCoord("newCoord", var);
+      makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{4l, Dimensions::Sparse});
+  ds.setSparseCoord("newCoord", Dim::X, var);
   EXPECT_TRUE(ds["newCoord"].coords().contains(Dim::X));
-  ds.eraseSparseCoord("newCoord");
+  ds.eraseSparseCoord("newCoord", Dim::X);
   EXPECT_EQ(ref, ds);
 
-  ds.setSparseCoord("newCoord", var);
+  ds.setSparseCoord("newCoord", Dim::X, var);
   ds.setData("newCoord",
              makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse}));
   EXPECT_TRUE(ds["newCoord"].coords().contains(Dim::X));
@@ -403,29 +372,29 @@ TEST(DatasetTest, erase_labels) {
   DatasetFactory3D factory;
   const auto ref = factory.make();
   Dataset ds(ref);
-  auto labels = Variable(ds.labels()["labels_x"]);
-  ds.eraseLabels("labels_x");
-  EXPECT_FALSE(ds.labels().contains("labels_x"));
-  ds.setLabels("labels_x", labels);
+  auto labels = Variable(ds.coords()[Dim("labels_x")]);
+  ds.eraseCoord(Dim("labels_x"));
+  EXPECT_FALSE(ds.coords().contains(Dim("labels_x")));
+  ds.setCoord(Dim("labels_x"), labels);
   EXPECT_EQ(ref, ds);
 
-  ds.labels().erase("labels_x");
-  EXPECT_FALSE(ds.labels().contains("labels_x"));
-  ds.setLabels("labels_x", labels);
+  ds.coords().erase(Dim("labels_x"));
+  EXPECT_FALSE(ds.coords().contains(Dim("labels_x")));
+  ds.setCoord(Dim("labels_x"), labels);
   EXPECT_EQ(ref, ds);
 
   const auto var =
-      makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{3l, Dimensions::Sparse});
-  ds.setSparseCoord("newCoord", var);
-  ds.setSparseLabels("newCoord", "labels_sparse", var);
-  EXPECT_TRUE(ds["newCoord"].labels().contains("labels_sparse"));
-  ds.eraseSparseLabels("newCoord", "labels_sparse");
-  EXPECT_FALSE(ds["newCoord"].labels().contains("labels_sparse"));
+      makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{5l, Dimensions::Sparse});
+  ds.setSparseCoord("newCoord", Dim::X, var);
+  ds.setSparseCoord("newCoord", Dim("labels_sparse"), var);
+  EXPECT_TRUE(ds["newCoord"].coords().contains(Dim("labels_sparse")));
+  ds.eraseSparseCoord("newCoord", Dim("labels_sparse"));
+  EXPECT_FALSE(ds["newCoord"].coords().contains(Dim("labels_sparse")));
 
-  ds.setSparseLabels("newCoord", "labels_sparse", var);
-  EXPECT_TRUE(ds["newCoord"].labels().contains("labels_sparse"));
-  ds["newCoord"].labels().erase("labels_sparse");
-  EXPECT_FALSE(ds["newCoord"].labels().contains("labels_sparse"));
+  ds.setSparseCoord("newCoord", Dim("labels_sparse"), var);
+  EXPECT_TRUE(ds["newCoord"].coords().contains(Dim("labels_sparse")));
+  ds["newCoord"].coords().erase(Dim("labels_sparse"));
+  EXPECT_FALSE(ds["newCoord"].coords().contains(Dim("labels_sparse")));
 }
 
 TEST(DatasetTest, erase_attrs) {

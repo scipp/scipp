@@ -57,8 +57,6 @@ class Slicer:
         # Containers: need one per entry in the dict of scipp
         # objects (=DataArray)
 
-        # Labels for each entry
-        self.labels = {}
         # Shape of entry
         self.shapes = {}
         # Masks are global and are combined into a single mask
@@ -103,8 +101,11 @@ class Slicer:
                 self.masks = combine_masks(array.masks, array.dims,
                                            array.shape)
 
-            self.labels[name] = array.labels
+            # TODO: 2D coordinates will not be supported by this
             self.shapes[name] = dict(zip(array.dims, array.shape))
+            for n, c in array.coords.items():
+                if n not in self.shapes[name] and len(c.shape) > 0:
+                    self.shapes[name][n] = c.shape[0]
 
             # Size of the slider coordinate arrays
             self.slider_nx[name] = {}
@@ -125,13 +126,7 @@ class Slicer:
 
             # Iterate through axes and collect dimensions
             for ax in axes:
-                dim, lab, var, ticks = self.axis_label_and_ticks(
-                    ax, array, name)
-                if (lab is not None) and (dim in axes):
-                    raise RuntimeError(
-                        "The dimension of the labels cannot also "
-                        "be specified as another axis.")
-                self.slider_labels[name][dim] = lab
+                dim, var, ticks = self.axis_label_and_ticks(ax, array, name)
                 self.slider_x[name][dim] = var
                 self.slider_ticks[name][dim] = ticks
                 self.slider_nx[name][dim] = self.shapes[name][dim]
@@ -139,9 +134,8 @@ class Slicer:
             # Save information on histograms
             self.histograms[name] = {}
             for dim, x in self.slider_x[name].items():
-                indx = array.dims.index(dim)
-                self.histograms[name][dim] = array.shape[
-                    indx] == x.shape[0] - 1
+                self.histograms[name][dim] = self.slider_nx[name][
+                    dim] == x.shape[0] - 1
 
         # Initialise list for VBox container
         self.vbox = []
@@ -159,21 +153,17 @@ class Slicer:
         button_values = [None] * (self.ndim - len(button_options)) + \
             button_options[::-1]
         for i, dim in enumerate(self.slider_x[self.name].keys()):
-            key = str(dim)
             # If this is a 3d projection, place slices half-way
             if len(button_options) == 3 and (not volume):
                 indx = (self.slider_nx[self.name][dim] - 1) // 2
-            if self.slider_labels[self.name][dim] is not None:
-                descr = self.slider_labels[self.name][dim]
-            else:
-                descr = str(dim)
+            dim_str = str(dim)
             # Add an IntSlider to slide along the z dimension of the array
             self.slider[dim] = widgets.IntSlider(
                 value=indx,
                 min=0,
                 max=self.slider_nx[self.name][dim] - 1,
                 step=1,
-                description=descr,
+                description=dim_str,
                 continuous_update=True,
                 readout=False,
                 disabled=((i >= self.ndim - len(button_options))
@@ -182,7 +172,7 @@ class Slicer:
                                               indx)
             if self.ndim == len(button_options):
                 self.slider[dim].layout.display = 'none'
-                labvalue = descr
+                labvalue = dim_str
             # Add a label widget to display the value of the z coordinate
             self.lab[dim] = widgets.Label(value=labvalue)
             # Add one set of buttons per dimension
@@ -217,7 +207,7 @@ class Slicer:
                         button_values[i] is not None)
                 # Add observer to show/hide buttons
                 self.showhide[dim].on_click(self.update_showhide)
-                self.members["widgets"]["buttons"][key] = self.showhide[dim]
+                self.members["widgets"]["buttons"][dim] = self.showhide[dim]
 
             # Add observer to buttons
             self.buttons[dim].on_msg(self.update_buttons)
@@ -233,9 +223,10 @@ class Slicer:
             self.vbox.append(widgets.HBox(row))
 
             # Construct members object
-            self.members["widgets"]["sliders"][key] = self.slider[dim]
-            self.members["widgets"]["togglebuttons"][key] = self.buttons[dim]
-            self.members["widgets"]["labels"][key] = self.lab[dim]
+            self.members["widgets"]["sliders"][dim_str] = self.slider[dim]
+            self.members["widgets"]["togglebuttons"][dim_str] = self.buttons[
+                dim]
+            self.members["widgets"]["labels"][dim_str] = self.lab[dim]
 
         if self.masks is not None:
             self.masks_button = widgets.ToggleButton(
@@ -262,48 +253,38 @@ class Slicer:
         Get dimensions and label (if present) from requested axis
         """
         ticks = None
-        if isinstance(axis, Dim):
-            dim = axis
-            lab = None
-            make_fake_coord = False
-            fake_unit = None
-            if not data_array.coords.__contains__(dim):
-                make_fake_coord = True
-            else:
-                tp = data_array.coords[dim].dtype
-                if tp == dtype.vector_3_float64:
-                    make_fake_coord = True
-                    ticks = {
-                        "formatter":
-                        lambda x: "(" + ",".join(
-                            [value_to_string(item, precision=2)
-                             for item in x]) + ")"
-                    }
-                elif tp == dtype.string:
-                    make_fake_coord = True
-                    ticks = {"formatter": lambda x: x}
-                if make_fake_coord:
-                    fake_unit = data_array.coords[dim].unit
-                    ticks["coord"] = data_array.coords[dim]
-            if make_fake_coord:
-                args = {"values": np.arange(self.shapes[name][dim])}
-                if fake_unit is not None:
-                    args["unit"] = fake_unit
-                var = Variable([dim], **args)
-            else:
-                var = data_array.coords[dim]
-        elif isinstance(axis, str):
-            # By convention, the last dim of the labels is the inner dimension,
-            # but note that for now two-dimensional labels are not supported in
-            # the plotting.
-            dim = data_array.labels[axis].dims[-1]
-            lab = axis
-            var = data_array.labels[lab]
+        dim = axis
+        # Convert to Dim object?
+        if isinstance(dim, str):
+            dim = Dim(dim)
+        make_fake_coord = False
+        fake_unit = None
+        if not data_array.coords.__contains__(dim):
+            make_fake_coord = True
         else:
-            raise RuntimeError("Unsupported axis found in 'axes': {}. This "
-                               "must be either a Scipp dimension "
-                               "or a string.".format(axis))
-        return dim, lab, var, ticks
+            tp = data_array.coords[dim].dtype
+            if tp == dtype.vector_3_float64:
+                make_fake_coord = True
+                ticks = {
+                    "formatter":
+                    lambda x: "(" + ",".join(
+                        [value_to_string(item, precision=2)
+                         for item in x]) + ")"
+                }
+            elif tp == dtype.string:
+                make_fake_coord = True
+                ticks = {"formatter": lambda x: x}
+            if make_fake_coord:
+                fake_unit = data_array.coords[dim].unit
+                ticks["coord"] = data_array.coords[dim]
+        if make_fake_coord:
+            args = {"values": np.arange(self.shapes[name][dim])}
+            if fake_unit is not None:
+                args["unit"] = fake_unit
+            var = Variable([dim], **args)
+        else:
+            var = data_array.coords[dim]
+        return dim, var, ticks
 
     def get_custom_ticks(self, ax, dim, xy="x"):
         """
