@@ -303,16 +303,16 @@ def init_pos(ws, source_pos, sample_pos):
     averaged = sc.concatenate(averaged, other, Dim.Y)
     # TODO. We should sort by spectrum_idx here. but would need to be label/coord?
 
-    #averaged["x"] = averaged["r"].data * sc.sin(averaged["t"].data) * sc.cos(averaged["p"].data)
-    #averaged["y"] = averaged["r"].data * sc.sin(averaged["t"].data) * sc.sin(averaged["p"].data)
-    #averaged["z"] = averaged["r"].data * sc.cos(averaged["t"].data)
+    averaged["x"] = averaged["r"].data * sc.sin(averaged["t"].data) * sc.cos(
+        averaged["p"].data)
+    averaged["y"] = averaged["r"].data * sc.sin(averaged["t"].data) * sc.sin(
+        averaged["p"].data)
+    averaged["z"] = averaged["r"].data * sc.cos(averaged["t"].data)
 
     pos = np.empty(shape=(averaged.shape[0], 3))
-    pos[:, 0] = averaged["r"].values * np.sin(averaged["t"].values) * np.cos(
-        averaged["p"].values)
-    pos[:, 1] = averaged["r"].values * np.sin(averaged["t"].values) * np.sin(
-        averaged["p"].values)
-    pos[:, 2] = averaged["r"].values * np.cos(averaged["t"].values)
+    pos[:, 0] = averaged["x"].values
+    pos[:, 1] = averaged["y"].values
+    pos[:, 2] = averaged["z"].values
     pos = pos.dot(inv_rot)
     return sc.Variable(['spectrum'],
                        values=pos,
