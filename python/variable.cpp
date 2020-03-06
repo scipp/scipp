@@ -799,4 +799,7 @@ void init_variable(py::module &m) {
   m.def("is_events",
         [](const VariableConstView &self) { return is_events(self); },
         R"(Return true if the variable contains event data.)");
+  m.def("is_events",
+        [](const DataArrayConstView &self) { return is_events(self); },
+        R"(Return true if the data array contains event data.)");
 }
