@@ -795,4 +795,8 @@ void init_variable(py::module &m) {
         py::arg("x"), py::arg("nan") = std::optional<VariableConstView>(),
         py::arg("posinf") = std::optional<VariableConstView>(),
         py::arg("neginf") = std::optional<VariableConstView>(), py::arg("out"));
+
+  m.def("is_events",
+        [](const VariableConstView &self) { return is_events(self); },
+        R"(Return true if the variable contains event data.)");
 }

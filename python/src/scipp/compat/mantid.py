@@ -368,21 +368,24 @@ def convert_EventWorkspace_to_data_array(ws, load_pulse_times=True, **ignored):
     spec_dim, spec_coord = init_spec_axis(ws)
     nHist = ws.getNumberHistograms()
 
-    coord = sc.Variable([spec_dim, dim],
-                        shape=[nHist, sc.Dimensions.Sparse],
-                        unit=unit)
+    coord = sc.Variable([spec_dim],
+                        shape=[nHist],
+                        unit=unit,
+                        dtype=sc.dtype.event_list_float64)
     if load_pulse_times:
-        labs = sc.Variable([spec_dim, dim],
-                           shape=[nHist, sc.Dimensions.Sparse],
-                           dtype=sc.dtype.int64)
+        labs = sc.Variable([spec_dim],
+                           shape=[nHist],
+                           dtype=sc.dtype.event_list_int64)
 
     # Check for weighted events
     evtp = ws.getSpectrum(0).getEventType()
     contains_weighted_events = ((evtp == EventType.WEIGHTED)
                                 or (evtp == EventType.WEIGHTED_NOTIME))
     if contains_weighted_events:
-        weights = sc.Variable([spec_dim, dim],
-                              shape=[nHist, sc.Dimensions.Sparse])
+        weights = sc.Variable([spec_dim],
+                              shape=[nHist],
+                              dtype=sc.dtype.event_list_float32,
+                              variances=True)
 
     for i in range(nHist):
         sp = ws.getSpectrum(i)
