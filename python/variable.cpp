@@ -799,7 +799,13 @@ void init_variable(py::module &m) {
   m.def("is_events",
         [](const VariableConstView &self) { return is_events(self); },
         R"(Return true if the variable contains event data.)");
-  m.def("is_events",
-        [](const DataArrayConstView &self) { return is_events(self); },
-        R"(Return true if the data array contains event data.)");
+  m.def(
+      "is_events",
+      [](const DataArrayConstView &self) {
+        bool events = is_events(self);
+        for (const auto &item : self.coords())
+          events |= is_events(item.second);
+        return events;
+      },
+      R"(Return true if the data array contains event data. Note that data may be stored as a scalar, but this returns true if any coord contains events.)");
 }
