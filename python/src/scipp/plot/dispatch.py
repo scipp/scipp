@@ -5,19 +5,19 @@
 from .plot_1d import plot_1d
 from .plot_2d import plot_2d
 from .plot_3d import plot_3d
-from .plot_sparse import plot_sparse
 from .sparse import histogram_sparse_data
 
 
-def dispatch(scipp_obj_dict,
-             ndim=0,
-             name=None,
-             collapse=None,
-             # sparse_dim=None,
-             bins=None,
-             projection=None,
-             mpl_line_params=None,
-             **kwargs):
+def dispatch(
+        scipp_obj_dict,
+        ndim=0,
+        name=None,
+        collapse=None,
+        # sparse_dim=None,
+        bins=None,
+        projection=None,
+        mpl_line_params=None,
+        **kwargs):
     """
     Function to automatically dispatch the dict of scipp objects to the
     appropriate plotting function depending on its dimensions.
@@ -33,7 +33,8 @@ def dispatch(scipp_obj_dict,
         for key, obj in scipp_obj_dict.items():
             sparse_dict[key] = obj
             for dim, bn in bins.items():
-                sparse_dict[key] = histogram_sparse_data(sparse_dict[key], dim, bn)
+                sparse_dict[key] = histogram_sparse_data(
+                    sparse_dict[key], dim, bn)
         scipp_obj_dict = sparse_dict
 
     if projection is None:
