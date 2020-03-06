@@ -8,16 +8,14 @@ from .plot_3d import plot_3d
 from .sparse import histogram_sparse_data
 
 
-def dispatch(
-        scipp_obj_dict,
-        ndim=0,
-        name=None,
-        collapse=None,
-        # sparse_dim=None,
-        bins=None,
-        projection=None,
-        mpl_line_params=None,
-        **kwargs):
+def dispatch(scipp_obj_dict,
+             ndim=0,
+             name=None,
+             collapse=None,
+             bins=None,
+             projection=None,
+             mpl_line_params=None,
+             **kwargs):
     """
     Function to automatically dispatch the dict of scipp objects to the
     appropriate plotting function depending on its dimensions.
@@ -27,7 +25,6 @@ def dispatch(
         raise RuntimeError("Invalid number of dimensions for "
                            "plotting: {}".format(ndim))
 
-    # if sparse_dim is not None and bins is not None:
     if bins is not None:
         sparse_dict = {}
         for key, obj in scipp_obj_dict.items():

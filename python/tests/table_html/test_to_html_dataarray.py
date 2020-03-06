@@ -167,11 +167,9 @@ def test_bin_edge(dims, lengths):
                        has_bin_edges=True)
 
 
-@pytest.mark.parametrize(
-    "dims, lengths",
-    ((['x'], [10]),
-     (['x', 'y'], [10, 10]),
-     (['x', 'y', 'z'], [10, 10, 10])))
+@pytest.mark.parametrize("dims, lengths",
+                         ((['x'], [10]), (['x', 'y'], [10, 10]),
+                          (['x', 'y', 'z'], [10, 10, 10])))
 def test_bin_edge_and_sparse(dims, lengths):
     in_unit = sc.units.m
     in_dtype = sc.dtype.event_list_float32
