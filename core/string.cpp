@@ -87,13 +87,13 @@ std::string to_string(const DType dtype) {
   case DType::Int64:
     return "int64";
   case DType::SparseFloat:
-    return "events_float32";
+    return "event_list_float32";
   case DType::SparseDouble:
-    return "events_float64";
+    return "event_list_float64";
   case DType::SparseInt64:
-    return "events_int64";
+    return "event_list_int64";
   case DType::SparseInt32:
-    return "events_int32";
+    return "event_list_int32";
   case DType::EigenVector3d:
     return "vector_3_float64";
   case DType::PyObject:
