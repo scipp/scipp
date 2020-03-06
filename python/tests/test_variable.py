@@ -23,7 +23,6 @@ def make_variables():
 def test_create_default():
     var = sc.Variable()
     assert var.dims == []
-    assert var.sparse_dim is None
     assert var.dtype == sc.dtype.float64
     assert var.unit == sc.units.dimensionless
     assert var.value == 0.0
@@ -58,10 +57,9 @@ def test_create_with_shape_and_variances():
         sc.Variable(dims=['x'], shape=[2], variances=np.arange(2))
 
 
-def test_create_sparse():
-    var = sc.Variable(dims=['x', 'y'], shape=[4, sc.Dimensions.Sparse])
-    assert var.dtype == sc.dtype.float64
-    assert var.sparse_dim == 'y'
+def test_create_events():
+    var = sc.Variable(dims=['x'], shape=[4], dtype=sc.dtype.event_list_float64)
+    assert var.dtype == sc.dtype.event_list_float64
     assert len(var.values) == 4
     for vals in var.values:
         assert len(vals) == 0
@@ -279,7 +277,7 @@ def test_2D_access_variances():
 
 
 def test_sparse_slice():
-    var = sc.Variable(dims=['x', 'y'], shape=[4, sc.Dimensions.Sparse])
+    var = sc.Variable(dims=['x'], shape=[4], dtype=sc.dtype.event_list_float64)
     vals0 = var['x', 0].values
     assert len(vals0) == 0
     vals0.append(1.2)
@@ -287,7 +285,7 @@ def test_sparse_slice():
 
 
 def test_sparse_setitem():
-    var = sc.Variable(dims=['x', 'y'], shape=[4, sc.Dimensions.Sparse])
+    var = sc.Variable(dims=['x'], shape=[4], dtype=sc.dtype.event_list_float64)
     # __setitem__ of vector
     var['x', 0].values = np.arange(4)
     assert len(var['x', 0].values) == 4
@@ -300,29 +298,25 @@ def test_sparse_setitem():
 
 
 def test_sparse_setitem_sparse_fail():
-    var = sc.Variable(dims=['x', 'y'], shape=[4, sc.Dimensions.Sparse])
+    var = sc.Variable(dims=['x'], shape=[4], dtype=sc.dtype.event_list_float64)
     with pytest.raises(RuntimeError):
         var.values = np.arange(3)
 
 
 def test_sparse_setitem_shape_fail():
-    var = sc.Variable(dims=['x', 'y'], shape=[4, sc.Dimensions.Sparse])
+    var = sc.Variable(dims=['x'], shape=[4], dtype=sc.dtype.event_list_float64)
     with pytest.raises(RuntimeError):
         var['x', 0].values = np.ones(shape=(3, 2))
 
 
 def test_sparse_setitem_float():
-    var = sc.Variable(dims=['x', 'y'],
-                      shape=[4, sc.Dimensions.Sparse],
-                      dtype=sc.dtype.float32)
+    var = sc.Variable(dims=['x'], shape=[4], dtype=sc.dtype.event_list_float32)
     var['x', 0].values = np.arange(4)
     assert len(var['x', 0].values) == 4
 
 
 def test_sparse_setitem_int64_t():
-    var = sc.Variable(dims=['x', 'y'],
-                      shape=[4, sc.Dimensions.Sparse],
-                      dtype=sc.dtype.int64)
+    var = sc.Variable(dims=['x'], shape=[4], dtype=sc.dtype.event_list_int64)
     var['x', 0].values = np.arange(4)
     assert len(var['x', 0].values) == 4
 
@@ -860,18 +854,6 @@ def test_atan():
 def test_atan_out():
     var = sc.Variable()
     assert_export(sc.atan, var, out=var)
-
-
-@pytest.mark.parametrize("dims, lengths",
-                         ((['x'], (sc.Dimensions.Sparse, )),
-                          (['x', 'y'], (10, sc.Dimensions.Sparse)),
-                          (['x', 'y', 'z'], (10, 10, sc.Dimensions.Sparse)),
-                          (['x', 'y', 'z', 'spectrum'],
-                           (10, 10, 10, sc.Dimensions.Sparse))))
-def test_sparse_dim_has_none_shape(dims, lengths):
-    data = sc.Variable(dims, shape=lengths)
-
-    assert data.shape[-1] is None
 
 
 def test_variable_data_array_binary_ops():

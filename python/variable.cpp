@@ -142,11 +142,11 @@ Variable makeVariableDefaultInit(const std::vector<Dim> &labels,
                                  const std::vector<scipp::index> &shape,
                                  const units::Unit unit, py::object &dtype,
                                  const bool variances) {
-  return CallDType<
-      double, float, int64_t, int32_t, bool, DataArray, Dataset,
-      Eigen::Vector3d>::apply<MakeVariableDefaultInit>(scipp_dtype(dtype),
-                                                       labels, shape, unit,
-                                                       variances);
+  return CallDType<double, float, int64_t, int32_t, bool, event_list<double>,
+                   event_list<float>, event_list<int64_t>, event_list<int32_t>,
+                   DataArray, Dataset, Eigen::Vector3d>::
+      apply<MakeVariableDefaultInit>(scipp_dtype(dtype), labels, shape, unit,
+                                     variances);
 }
 
 template <class T> void bind_init_0D(py::class_<Variable> &c) {

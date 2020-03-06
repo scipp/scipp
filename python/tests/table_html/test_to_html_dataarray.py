@@ -169,12 +169,12 @@ def test_bin_edge(dims, lengths):
 
 @pytest.mark.parametrize(
     "dims, lengths",
-    ((['x', 'y'], [10, sc.Dimensions.Sparse]),
-     (['x', 'y', 'z'], [10, 10, sc.Dimensions.Sparse]),
-     (['x', 'y', 'z', 'spectrum'], [10, 10, 10, sc.Dimensions.Sparse])))
+    ((['x'], [10]),
+     (['x', 'y'], [10, 10]),
+     (['x', 'y', 'z'], [10, 10, 10])))
 def test_bin_edge_and_sparse(dims, lengths):
     in_unit = sc.units.m
-    in_dtype = sc.dtype.float32
+    in_dtype = sc.dtype.event_list_float32
 
     data = sc.Variable(dims, lengths, unit=in_unit, dtype=in_dtype)
 
