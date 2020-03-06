@@ -242,7 +242,7 @@ def init_pos(ws, source_pos, sample_pos):
         rot = np.eye(3)
         inv_rot = rot
 
-    idx, idx_orphaned = 0, 0
+    idx = 0
     for i, spec in enumerate(spec_info):
         if spec.hasDetectors:
             definition = spec_info.getSpectrumDefinition(i)
