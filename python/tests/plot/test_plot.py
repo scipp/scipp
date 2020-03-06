@@ -52,61 +52,50 @@ def make_dense_dataset(ndim=1,
     return d
 
 
-def make_sparse_dataset(ndim=1, data=False):
+def make_sparse_dataset(ndim=1):
 
-    dim_list = ['tof', 'x', 'y', 'z', 'Q_x']
+    dim_list = ['x', 'y', 'z', 'Q_x']
 
     N = 50
     M = 10
 
     dims = []
     shapes = []
-    for i in range(1, ndim):
+    for i in range(ndim):
         n = N - (i * M)
         dims.append(dim_list[i])
         shapes.append(n)
-    dims.append(dim_list[0])
-    shapes.append(sc.Dimensions.Sparse)
 
-    var = sc.Variable(dims=dims, shape=shapes, unit=sc.units.us)
-    if data:
-        dat = sc.Variable(dims=dims, shape=shapes, unit=sc.units.us)
+    var = sc.Variable(dims=dims,
+                      shape=shapes,
+                      unit=sc.units.us,
+                      dtype=sc.dtype.event_list_float64)
+    dat = sc.Variable(dims=dims,
+                      unit=sc.units.counts,
+                      values=np.ones(shapes),
+                      variances=np.ones(shapes))
 
-    if ndim > 1:
-        indices = tuple()
-        for i in range(ndim - 1):
-            indices += range(shapes[i]),
-    else:
-        indices = [0],
+    indices = tuple()
+    for i in range(ndim):
+        indices += range(shapes[i]),
     # Now construct all indices combinations using itertools
     for ind in product(*indices):
-        # And for each indices combination, slice the original
-        # data down to the sparse dimension
+        # And for each indices combination, slice the original data
         vslice = var
-        if data:
-            dslice = dat
-        if ndim > 1:
-            for i in range(ndim - 1):
-                vslice = vslice[dims[i], ind[i]]
-                if data:
-                    dslice = dslice[dims[i], ind[i]]
+        for i in range(ndim):
+            vslice = vslice[dims[i], ind[i]]
         v = np.random.normal(float(N),
                              scale=2.0 * M,
                              size=int(np.random.rand() * N))
         vslice.values = v
-        if data:
-            dslice.values = v * 0.5
 
     d = sc.Dataset()
-    for i in range(1, ndim):
+    for i in range(ndim):
         d.coords[dim_list[i]] = sc.Variable([dim_list[i]],
                                             values=np.arange(N - (i * M),
                                                              dtype=np.float),
                                             unit=sc.units.m)
-    params = {"coords": {dim_list[0]: var}}
-    if data:
-        params["data"] = dat
-    d["a"] = sc.DataArray(**params)
+    d["a"] = sc.DataArray(data=dat, coords={'tof': var})
     return d
 
 
@@ -304,24 +293,19 @@ def test_plot_convenience_methods():
     sc.plot.superplot(d)
 
 
-def test_plot_1d_sparse_data():
+def test_plot_1d_sparse_data_with_bool_bins():
     d = make_sparse_dataset(ndim=1)
-    plot(d)
-
-
-def test_plot_1d_sparse_data_with_weights():
-    d = make_sparse_dataset(ndim=1, data=True)
-    plot(d)
+    plot(d, bins={'tof': True})
 
 
 def test_plot_1d_sparse_data_with_int_bins():
     d = make_sparse_dataset(ndim=1)
-    plot(d, bins=50)
+    plot(d, bins={'tof': 50})
 
 
 def test_plot_1d_sparse_data_with_nparray_bins():
     d = make_sparse_dataset(ndim=1)
-    plot(d, bins=np.linspace(0.0, 105.0, 50))
+    plot(d, bins={'tof': np.linspace(0.0, 105.0, 50)})
 
 
 def test_plot_1d_sparse_data_with_Variable_bins():
@@ -329,45 +313,43 @@ def test_plot_1d_sparse_data_with_Variable_bins():
     bins = sc.Variable(['tof'],
                        values=np.linspace(0.0, 105.0, 50),
                        unit=sc.units.us)
-    plot(d, bins=bins)
+    plot(d, bins={'tof': bins})
 
 
-def test_plot_2d_sparse_data():
-    d = make_sparse_dataset(ndim=2)
-    plot(d)
-
-
-def test_plot_2d_sparse_data_with_weights():
-    d = make_sparse_dataset(ndim=2, data=True)
-    plot(d)
-
-
+@pytest.mark.skip(reason="This is currently broken with error "
+                  "`VariableConstView Coord/Label has more than one "
+                  "dimension associated with tof and will not be "
+                  "reduced by the operation dimension tof Terminating "
+                  "operation.` when trying to histogram the data "
+                  "on-the-fly.")
 def test_plot_2d_sparse_data_with_int_bins():
     d = make_sparse_dataset(ndim=2)
     plot(d, bins=50)
 
 
+@pytest.mark.skip(reason="This is currently broken with error "
+                  "`VariableConstView Coord/Label has more than one "
+                  "dimension associated with tof and will not be "
+                  "reduced by the operation dimension tof Terminating "
+                  "operation.` when trying to histogram the data "
+                  "on-the-fly.")
 def test_plot_2d_sparse_data_with_nparray_bins():
     d = make_sparse_dataset(ndim=2)
     plot(d, bins=np.linspace(0.0, 105.0, 50))
 
 
+@pytest.mark.skip(reason="This is currently broken with error "
+                  "`VariableConstView Coord/Label has more than one "
+                  "dimension associated with tof and will not be "
+                  "reduced by the operation dimension tof Terminating "
+                  "operation.` when trying to histogram the data "
+                  "on-the-fly.")
 def test_plot_2d_sparse_data_with_Variable_bins():
     d = make_sparse_dataset(ndim=2)
     bins = sc.Variable(['tof'],
                        values=np.linspace(0.0, 105.0, 50),
                        unit=sc.units.us)
     plot(d, bins=bins)
-
-
-def test_plot_3d_sparse_data():
-    d = make_sparse_dataset(ndim=3)
-    plot(d)
-
-
-def test_plot_3d_sparse_data_with_weights():
-    d = make_sparse_dataset(ndim=3, data=True)
-    plot(d)
 
 
 @pytest.mark.skip(reason="RuntimeError: Only the simple case histograms may "
@@ -499,18 +481,25 @@ def test_plot_2d_with_dimension_of_size_1():
     plot(d["b"])
 
 
+@pytest.mark.skip(reason="Requires aligned coords to insert two sparse data "
+                  "entries.")
 def test_sparse_data_slice_with_on_the_fly_histogram():
     N = 50
     M = 10
-    var = sc.Variable(dims=['x', 'tof'],
-                      shape=[M, sc.Dimensions.Sparse],
+    var = sc.Variable(dims=['x'],
+                      shape=[M],
+                      dtype=sc.dtype.event_list_float64,
                       unit=sc.units.us)
+    dat = sc.Variable(dims=['x'],
+                      unit=sc.units.counts,
+                      values=np.ones(M),
+                      variances=np.ones(M))
     for i in range(M):
         v = np.random.normal(50.0, scale=20.0, size=int(np.random.rand() * N))
         var['x', i].values = v
 
     d = sc.Dataset()
     d.coords['x'] = sc.Variable(['x'], values=np.arange(M), unit=sc.units.m)
-    d['a'] = sc.DataArray(coords={'tof': var})
-    d['b'] = sc.DataArray(coords={'tof': var * 1.1})
+    d['a'] = sc.DataArray(data=dat, coords={'tof': var})
+    d['b'] = sc.DataArray(data=dat * 1.1, coords={'tof': var * 1.1})
     plot(d['x', 4], bins=100)

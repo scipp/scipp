@@ -3,7 +3,7 @@ from typing import List
 import bs4
 
 import scipp as sc
-from scipp.table_html.formatting_html import BIN_EDGE_LABEL, SPARSE_LABEL
+from scipp.table_html.formatting_html import BIN_EDGE_LABEL
 
 VARIABLE_OBJECT_TYPE = "scipp.Variable"
 OBJ_TYPE_CSS_CLASS = "xr-obj-type"
@@ -32,20 +32,20 @@ def assert_dims(dims, text, has_sparse=False, has_bin_edges=False):
 
     if has_sparse and not has_bin_edges:
         # only sparse
-        assert SPARSE_LABEL in text, "Could not find SPARSE"
+        # assert SPARSE_LABEL in text, "Could not find SPARSE"
         assert BIN_EDGE_LABEL not in text, "Unexpected bin-edge label"
     elif not has_sparse and has_bin_edges:
         # only bin edges
         assert BIN_EDGE_LABEL in text, "Could not find BIN-EDGE"
-        assert SPARSE_LABEL not in text, "Unexpected sparse label"
+        # assert SPARSE_LABEL not in text, "Unexpected sparse label"
     elif has_sparse and has_bin_edges:
         # both sparse and bin edges present
         assert BIN_EDGE_LABEL in text, "Could not find BIN-EDGE"
-        assert SPARSE_LABEL in text, "Could not find SPARSE"
+        # assert SPARSE_LABEL in text, "Could not find SPARSE"
     elif not has_sparse and not has_bin_edges:
         # none present
         assert BIN_EDGE_LABEL not in text, "Unexpected bin-edge label"
-        assert SPARSE_LABEL not in text, "Unexpected sparse label"
+        # assert SPARSE_LABEL not in text, "Unexpected sparse label"
 
 
 def assert_lengths(lengths, text):
