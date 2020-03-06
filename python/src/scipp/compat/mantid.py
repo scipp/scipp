@@ -403,6 +403,12 @@ def convert_EventWorkspace_to_data_array(ws, load_pulse_times=True, **ignored):
         coords_labs_data["coords"]["pulse_times"] = labs
     if contains_weighted_events:
         coords_labs_data["data"] = weights
+    else:
+        coords_labs_data["data"] = sc.Variable(dims=[spec_dim],
+                                               values=np.ones(nHist),
+                                               variances=np.ones(nHist),
+                                               unit=sc.units.counts,
+                                               dtype=sc.dtype.float32)
     return detail.move_to_data_array(**coords_labs_data)
 
 
