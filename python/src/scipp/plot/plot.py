@@ -63,7 +63,7 @@ def plot(scipp_obj,
     tobeplotted = dict()
     for name, var in sorted(inventory.items()):
 
-        if sc.is_events(var) and bins is not None:
+        if sc.is_events(var) and bins is None:
             raise RuntimeError("The `bins` argument must be specified when "
                                "plotting event data.")
 
