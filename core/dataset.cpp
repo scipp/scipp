@@ -488,6 +488,13 @@ MasksConstView DataArrayConstView::masks() const noexcept {
       makeViewItems<MasksConstView>(dims(), m_dataset->m_masks), slices());
 }
 
+/// Return a const view to all coordinates of the data array.
+CoordsConstView DataArray::coords() const { return get().coords(); }
+/// Return a const view to all attributes of the data array.
+AttrsConstView DataArray::attrs() const { return get().attrs(); }
+/// Return a const view to all masks of the data array.
+MasksConstView DataArray::masks() const { return get().masks(); }
+
 DataArrayConstView DataArrayConstView::slice(const Slice slice1) const {
   const auto &dims_ = dims();
   expect::validSlice(dims_, slice1);
@@ -535,29 +542,50 @@ DataArrayView DataArrayView::slice(const Slice slice1, const Slice slice2,
 
 /// Return a view to all coordinates of the data view.
 CoordsView DataArrayView::coords() const noexcept {
+  // CoordAccess disabled with nullptr since views of dataset items or slices of
+  // data arrays may not set or erase coords.
   return CoordsView(
-      CoordAccess(m_mutableDataset),
+      CoordAccess(nullptr),
       makeViewItems<CoordsConstView>(dims(), m_mutableDataset->m_coords),
       slices());
 }
 
-CoordsConstView DataArray::coords() const { return get().coords(); }
-CoordsView DataArray::coords() { return get().coords(); }
+/// Return a view to all coordinates of the data array.
+CoordsView DataArray::coords() {
+  return CoordsView(CoordAccess(&m_holder),
+                    makeViewItems<CoordsConstView>(dims(), m_holder.m_coords));
+}
 
 /// Return a const view to all attributes of the data view.
 AttrsView DataArrayView::attrs() const noexcept {
+  // Note: Unlike for CoordAccess and MaskAccess this is *not* unconditionally
+  // disabled with nullptr it sets/erase attributes of the *item*.
   return AttrsView(
-      AttrAccess(m_mutableDataset, &name()),
+      AttrAccess(slices().empty() ? m_mutableDataset : nullptr, &name()),
       makeViewItems<AttrsConstView>(dims(), m_mutableData->second.attrs),
       slices());
 }
 
+/// Return a view to all attributes of the data array.
+AttrsView DataArray::attrs() {
+  return AttrsView(AttrAccess(&m_holder),
+                   makeViewItems<AttrsConstView>(dims(), m_holder.m_attrs));
+}
+
 /// Return a view to all masks of the data view.
 MasksView DataArrayView::masks() const noexcept {
+  // MaskAccess disabled with nullptr since views of dataset items or slices of
+  // data arrays may not set or erase masks.
   return MasksView(
-      MaskAccess(m_mutableDataset),
+      MaskAccess(nullptr),
       makeViewItems<MasksConstView>(dims(), m_mutableDataset->m_masks),
       slices());
+}
+
+/// Return a view to all masks of the data array.
+MasksView DataArray::masks() {
+  return MasksView(MaskAccess(&m_holder),
+                   makeViewItems<MasksConstView>(dims(), m_holder.m_masks));
 }
 
 DataArrayView DataArrayView::assign(const DataArrayConstView &other) const {

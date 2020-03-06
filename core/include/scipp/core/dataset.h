@@ -447,6 +447,7 @@ private:
   friend class DatasetView;
   friend class DataArrayConstView;
   friend class DataArrayView;
+  friend class DataArray;
 
   void setExtent(const Dim dim, const scipp::index extent, const bool isCoord);
   void setDims(const Dimensions &dims, const Dim coordDim = Dim::Invalid);
@@ -711,11 +712,11 @@ public:
   CoordsConstView coords() const;
   CoordsView coords();
 
-  AttrsConstView attrs() const { return get().attrs(); }
-  AttrsView attrs() { return get().attrs(); }
+  AttrsConstView attrs() const;
+  AttrsView attrs();
 
-  MasksConstView masks() const { return get().masks(); }
-  MasksView masks() { return get().masks(); }
+  MasksConstView masks() const;
+  MasksView masks();
 
   Dimensions dims() const { return get().dims(); }
   DType dtype() const { return get().dtype(); }
