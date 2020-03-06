@@ -227,14 +227,12 @@ def rotation_matrix_from_vectors(vec1, vec2):
 
 
 def init_pos(ws, source_pos, sample_pos):
-    from scipp import Dim
     import numpy as np
     spec_info = ws.spectrumInfo()
     det_info = ws.detectorInfo()
     total_detectors = spec_info.detectorCount()
     non_detectors = sum(not spec.hasDetectors for spec in spec_info)
-    det_pos = np.zeros([total_detectors, 3 + 1])
-    no_detector_spectrum = np.full((non_detectors, 3 + 1), np.nan)
+    det_pos = np.zeros([total_detectors + non_detectors, 3 + 1])
 
     if sample_pos and source_pos:
         act_beam = (sample_pos - source_pos).values
@@ -255,45 +253,18 @@ def init_pos(ws, source_pos, sample_pos):
                 _to_array(det_pos, idx, p, i)
                 idx += 1
         else:
-            no_detector_spectrum[idx_orphaned, 0] = i
-            idx_orphaned += 1
+            det_pos[idx, :] = np.array([i, np.nan, np.nan, np.nan])
+            idx += 1
     det_pos[:, 1:] = det_pos[:, 1:].dot(rot)
     spherical_ = _to_spherical(det_pos)
 
     pos_d = sc.Dataset()
-    pos_d.coords["spectrum_idx"] = sc.Variable([Dim.X],
-                                               values=spherical_[:, 0])
-    pos_d["r"] = sc.Variable([Dim.X], values=spherical_[:, 1], unit=sc.units.m)
-    pos_d["t"] = sc.Variable([Dim.X],
-                             values=spherical_[:, 2],
-                             unit=sc.units.rad)
-    pos_d["p"] = sc.Variable([Dim.X],
-                             values=spherical_[:, 3],
-                             unit=sc.units.rad)
+    pos_d.coords["spectrum_idx"] = sc.Variable(["x"], values=spherical_[:, 0])
+    pos_d["r"] = sc.Variable(["x"], values=spherical_[:, 1], unit=sc.units.m)
+    pos_d["t"] = sc.Variable(["x"], values=spherical_[:, 2], unit=sc.units.rad)
+    pos_d["p"] = sc.Variable(["x"], values=spherical_[:, 3], unit=sc.units.rad)
 
-    averaged = sc.groupby(pos_d, "spectrum_idx").mean(Dim.X)
-
-    no_detector_ds = sc.Dataset()
-    no_detector_ds.coords["spectrum_idx"] = sc.Variable(
-        ["spectrum_idx"],
-        values=np.arange(len(no_detector_spectrum)),
-        dtype=np.float)
-    no_detector_ds["r"] = sc.Variable(
-        ["spectrum_idx"],
-        values=np.array([np.nan] * len(no_detector_spectrum)),
-        unit=sc.units.m)
-    no_detector_ds["t"] = sc.Variable(
-        ["spectrum_idx"],
-        values=np.array([np.nan] * len(no_detector_spectrum)),
-        unit=sc.units.rad)
-    no_detector_ds["p"] = sc.Variable(
-        ["spectrum_idx"],
-        values=np.array([np.nan] * len(no_detector_spectrum)),
-        unit=sc.units.rad)
-
-    averaged = sc.concatenate(averaged, no_detector_ds, "spectrum_idx")
-    if no_detector_ds.shape[0] > 0 and pos_d.shape[0] > 0:
-        averaged = sc.sort(averaged, "spectrum_idx")
+    averaged = sc.groupby(pos_d, "spectrum_idx").mean("x")
 
     averaged["x"] = averaged["r"].data * sc.sin(averaged["t"].data) * sc.cos(
         averaged["p"].data)
