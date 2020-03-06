@@ -567,10 +567,7 @@ AttrsView DataArrayView::attrs() const noexcept {
 }
 
 /// Return a view to all attributes of the data array.
-AttrsView DataArray::attrs() {
-  return AttrsView(AttrAccess(&m_holder),
-                   makeViewItems<AttrsConstView>(dims(), m_holder.m_attrs));
-}
+AttrsView DataArray::attrs() { return get().attrs(); }
 
 /// Return a view to all masks of the data view.
 MasksView DataArrayView::masks() const noexcept {
