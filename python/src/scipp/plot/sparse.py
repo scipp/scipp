@@ -123,7 +123,6 @@ def make_bins(data_array=None,
                                unit=data_array.coords[bin_dim].unit)
         else:
             raise RuntimeError("Unknown bins type: {}".format(bins))
-    print(bins)
     return bins
 
 
