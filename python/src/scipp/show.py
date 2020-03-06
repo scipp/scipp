@@ -144,11 +144,6 @@ class VariableDrawer():
         extra_item_count = 0
         if self._variable.variances is not None:
             extra_item_count += 1
-        if is_data_array(self._variable):
-            if self._variable.sparse_dim is not None:
-                for name, coord in self._variable.coords.items():
-                    if coord.sparse_dim is not None:
-                        extra_item_count += 1
         if self._variable.values is None:
             # No data
             extra_item_count -= 1
@@ -259,12 +254,6 @@ class VariableDrawer():
             items.append(('variances', self._variable.variances, color))
         if self._variable.values is not None:
             items.append(('values', self._variable.values, color))
-        if is_data_array(self._variable):
-            if self._variable.sparse_dim is not None:
-                for name, coord in self._variable.coords.items():
-                    if coord.sparse_dim is not None:
-                        items.append(
-                            (name, coord.values, config.colors['coords']))
 
         for i, (name, data, color) in enumerate(items):
             svg += '<g>'
@@ -311,9 +300,6 @@ class DatasetDrawer():
         else:
             dims = []
             for item in self._dataset.values():
-                if item.sparse_dim is not None:
-                    dims = item.dims
-                    break
                 if len(item.dims) > len(dims):
                     dims = item.dims
             for dim in self._dataset.dims:
@@ -381,8 +367,6 @@ class DatasetDrawer():
         for what, items in zip(['coords', 'masks', 'attrs'],
                                [ds.coords, ds.masks, ds.attrs]):
             for name, var in items.items():
-                if var.sparse_dim is not None:
-                    continue
                 item = (name, var, config.colors[what])
                 if len(var.dims) == 0:
                     area_0d.append(item)
