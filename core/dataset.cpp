@@ -619,9 +619,7 @@ CoordsConstView DatasetConstView::coords() const noexcept {
 /// This view includes "dimension-coordinates" as well as
 /// "non-dimension-coordinates" ("labels").
 CoordsView DatasetView::coords() const noexcept {
-  // TODO
-  // auto *parent = slices().empty() ? m_mutableDataset : nullptr;
-  return CoordsView(CoordAccess(m_mutableDataset),
+  return CoordsView(CoordAccess(slices().empty() ? m_mutableDataset : nullptr),
                     makeViewItems<CoordsConstView>(m_mutableDataset->m_coords),
                     slices());
 }
@@ -634,9 +632,7 @@ AttrsConstView DatasetConstView::attrs() const noexcept {
 
 /// Return a view to all attributes of the dataset slice.
 AttrsView DatasetView::attrs() const noexcept {
-  // TODO
-  // auto *parent = slices().empty() ? m_mutableDataset : nullptr;
-  return AttrsView(AttrAccess(m_mutableDataset),
+  return AttrsView(AttrAccess(slices().empty() ? m_mutableDataset : nullptr),
                    makeViewItems<AttrsConstView>(m_mutableDataset->m_attrs),
                    slices());
 }
@@ -648,9 +644,7 @@ MasksConstView DatasetConstView::masks() const noexcept {
 
 /// Return a view to all masks of the dataset slice.
 MasksView DatasetView::masks() const noexcept {
-  // TODO
-  // auto *parent = slices().empty() ? m_mutableDataset : nullptr;
-  return MasksView(MaskAccess(m_mutableDataset),
+  return MasksView(MaskAccess(slices().empty() ? m_mutableDataset : nullptr),
                    makeViewItems<MasksConstView>(m_mutableDataset->m_masks),
                    slices());
 }
