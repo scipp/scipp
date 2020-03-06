@@ -19,7 +19,6 @@ ICONS_SVG_PATH = f"{os.path.dirname(__file__)}/icons-svg-inline.html"
 with open(ICONS_SVG_PATH, 'r') as f:
     ICONS_SVG = "".join(f.readlines())
 
-SPARSE_LABEL = "[sparse]"
 BIN_EDGE_LABEL = "[bin-edge]"
 VARIANCE_PREFIX = "σ² = "
 SPARSE_PREFIX = "len={}"
@@ -112,10 +111,10 @@ def _format_sparse(var, has_variances):
 
 
 def inline_variable_repr(var, has_variances=False):
-    if var.sparse_dim is None:
-        return _format_non_sparse(var, has_variances)
-    else:
+    if sc.is_events(var):
         return _format_sparse(var, has_variances)
+    else:
+        return _format_non_sparse(var, has_variances)
 
 
 def retrieve(var, variances=False, single=False):
@@ -139,10 +138,10 @@ def _short_data_repr_html_sparse(var, variances=False):
 
 def short_data_repr_html(var, variances=False):
     """Format "data" for DataArray and Variable."""
-    if var.sparse_dim is None:
-        data_repr = _short_data_repr_html_non_sparse(var, variances)
-    else:
+    if sc.is_events(var):
         data_repr = _short_data_repr_html_sparse(var, variances)
+    else:
+        data_repr = _short_data_repr_html_non_sparse(var, variances)
     return escape(data_repr)
 
 
@@ -196,10 +195,8 @@ def find_bin_edges(var, ds):
     Checks if the coordinate contains bin-edges.
     """
     bin_edges = []
-    non_sparse_dims = [dim for dim in var.dims if dim != var.sparse_dim
-                       ] if var.sparse_dim else var.dims
 
-    for idx, dim in enumerate(non_sparse_dims):
+    for idx, dim in enumerate(var.dims):
         len = var.shape[idx]
         if dim in ds.dims and ds.shape[ds.dims.index(dim)] + 1 == len:
             bin_edges.append(dim)
@@ -221,7 +218,7 @@ def _extract_sparse(x):
     """
     return {
         key: value
-        for key, value in x.items() if value.sparse_dim is not None
+        for key, value in x.items() if sc.is_events(value)
     }
 
 
@@ -258,8 +255,6 @@ def _make_dim_labels(dim, size, bin_edges=None):
     # label has been added
     if bin_edges and dim in bin_edges:
         return f" {BIN_EDGE_LABEL}"
-    elif size is None:
-        return f" {SPARSE_LABEL}"
     else:
         return ""
 
