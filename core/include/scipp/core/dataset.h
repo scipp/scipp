@@ -686,8 +686,11 @@ public:
   DataArray(std::optional<Variable> data, CoordMap coords = {},
             MasksMap masks = {}, AttrMap attrs = {},
             const std::string &name = "") {
-    if (data)
-      m_holder.setData(name, std::move(*data));
+    // This check will be changed once we can have unaligned content instead.
+    if (!data)
+      throw std::runtime_error("DataArray must have data.");
+
+    m_holder.setData(name, std::move(*data));
 
     for (auto &&[dim, c] : coords)
       m_holder.setCoord(dim, std::move(c));
@@ -697,10 +700,6 @@ public:
 
     for (auto &&[attr_name, a] : attrs)
       m_holder.setAttr(name, std::string(attr_name), std::move(a));
-
-    if (m_holder.size() != 1)
-      throw std::runtime_error(
-          "DataArray must have either data or a sparse coordinate.");
   }
 
   explicit operator bool() const noexcept { return !m_holder.empty(); }
