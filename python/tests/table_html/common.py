@@ -2,7 +2,6 @@ from typing import List
 
 import bs4
 
-import scipp as sc
 from scipp.table_html.formatting_html import BIN_EDGE_LABEL
 
 VARIABLE_OBJECT_TYPE = "scipp.Variable"
