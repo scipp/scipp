@@ -37,8 +37,9 @@ Dataset merge(const DatasetConstView &a, const DatasetConstView &b) {
 ///
 /// Checks that the last edges in `a` match the first edges in `b`. The
 /// Concatenates the input edges, removing duplicate bin edges.
-Variable join_edges(const VariableConstView &a, const VariableConstView &b,
-                    const Dim dim) {
+template <class View>
+typename View::value_type join_edges(const View &a, const View &b,
+                                     const Dim dim) {
   expect::equals(a.slice({dim, a.dims()[dim] - 1}), b.slice({dim, 0}));
   return concatenate(a.slice({dim, 0, a.dims()[dim] - 1}), b, dim);
 }
@@ -50,14 +51,8 @@ auto concat(const T1 &a, const T2 &b, const Dim dim, const DimT &dimsA,
   std::map<typename T1::key_type, typename T1::mapped_type> out;
   for (const auto &[key, a_] : a) {
     if (dim_of_coord(a_, key) == dim) {
-      if (a_.dims().sparseDim() == dim) {
-        if (b[key].dims().sparseDim() == dim)
-          out.emplace(key, concatenate(a_, b[key], dim));
-        else
-          throw except::SparseDataError("Either both or neither of the inputs "
-                                        "must be sparse in given dim.");
-      } else if ((a_.dims()[dim] == dimsA.at(dim)) !=
-                 (b[key].dims()[dim] == dimsB.at(dim))) {
+      if ((a_.dims()[dim] == dimsA.at(dim)) !=
+          (b[key].dims()[dim] == dimsB.at(dim))) {
         throw except::BinEdgeError(
             "Either both or neither of the inputs must be bin edges.");
       } else if (a_.dims()[dim] == dimsA.at(dim)) {
@@ -103,8 +98,13 @@ Dataset concatenate(const DatasetConstView &a, const DatasetConstView &b,
 }
 
 DataArray flatten(const DataArrayConstView &a, const Dim dim) {
-  return apply_or_copy_dim(a, [](auto &&... _) { return flatten(_...); }, dim,
-                           a.masks());
+  return apply_or_copy_dim(
+      a,
+      [](const auto &x, const Dim dim_, const auto &mask_) {
+        return is_events(x) ? flatten(x, dim_, mask_)
+                            : copy(x.slice({dim_, 0}));
+      },
+      dim, a.masks());
 }
 
 Dataset flatten(const DatasetConstView &d, const Dim dim) {
@@ -155,45 +155,14 @@ Dataset rebin(const DatasetConstView &d, const Dim dim,
 
 DataArray resize(const DataArrayConstView &a, const Dim dim,
                  const scipp::index size) {
-  if (a.dims().sparse()) {
-    const auto resize_if_sparse = [dim, size](const auto &var) {
-      return var.dims().sparse() ? resize(var, dim, size) : Variable{var};
-    };
-
-    std::map<Dim, Variable> coords;
-    for (auto &&[d, coord] : a.coords())
-      if (dim_of_coord(coord, d) != dim)
-        coords.emplace(d, resize_if_sparse(coord));
-
-    std::map<std::string, Variable> attrs;
-    for (auto &&[name, attr] : a.attrs())
-      if (attr.dims().inner() != dim)
-        attrs.emplace(name, resize_if_sparse(attr));
-
-    std::map<std::string, Variable> masks;
-    for (auto &&[name, mask] : a.masks())
-      if (mask.dims().inner() != dim)
-        masks.emplace(name, resize_if_sparse(mask));
-
-    return DataArray{a.hasData() ? resize(a.data(), dim, size)
-                                 : std::optional<Variable>{},
-                     std::move(coords), std::move(masks), std::move(attrs)};
-  } else {
-    return apply_to_data_and_drop_dim(
-        a, [](auto &&... _) { return resize(_...); }, dim, size);
-  }
+  return apply_or_copy_dim(a, [](auto &&... _) { return resize(_...); }, dim,
+                           size);
 }
 
 Dataset resize(const DatasetConstView &d, const Dim dim,
                const scipp::index size) {
   return apply_to_items(d, [](auto &&... _) { return resize(_...); }, dim,
                         size);
-}
-
-/// Return one of the inputs if they are the same, throw otherwise.
-VariableConstView same(const VariableConstView &a, const VariableConstView &b) {
-  expect::equals(a, b);
-  return a;
 }
 
 /// Return a deep copy of a DataArray or of a DataArrayView.

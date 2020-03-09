@@ -8,6 +8,7 @@
 
 #include "scipp/core/dataset.h"
 #include "scipp/core/dataset_util.h"
+#include "scipp/core/event.h"
 #include "scipp/core/transform.h"
 #include "scipp/neutron/beamline.h"
 #include "scipp/neutron/convert.h"
@@ -34,18 +35,20 @@ template <class T>
 static T convert_with_factor(T &&d, const Dim from, const Dim to,
                              const Variable &factor) {
   // 1. Transform coordinate
-  // Cannot use *= since often a broadcast into Dim::Spectrum is required.
-  if (d.coords().contains(from) && !d.coords()[from].dims().sparse()) {
-    const auto &coords = d.coords()[from];
-    d.setCoord(from, coords * astype(factor, coords.dtype()));
-  }
-
-  // 2. Transform sparse coordinates
-  for (const auto &data : iter(d)) {
-    if (data.dims().sparse()) {
-      data.coords()[from] *= factor;
+  if (d.coords().contains(from)) {
+    if (is_events(d.coords()[from])) {
+      d.coords()[from] *= factor;
+    } else {
+      // Cannot use *= since often a broadcast into Dim::Spectrum is required.
+      const auto &coord = d.coords()[from];
+      d.setCoord(from, astype(factor, coord.dtype()) * coord);
     }
   }
+
+  // 2. Transform unaligned coordinates
+  // for (const auto & : iter(d)) {
+  // No unaligned support in Dataset yet.
+  //}
   d.rename(from, to);
   return std::move(d);
 }
@@ -94,22 +97,23 @@ template <class T> T tofToEnergy(T &&d) {
   const auto conversionFactor = tofToEnergyConversionFactor(d);
 
   // 2. Transform coordinate
-  if (d.coords().contains(Dim::Tof) && !d.coords()[Dim::Tof].dims().sparse()) {
-    const auto &coordSq = d.coords()[Dim::Tof] * d.coords()[Dim::Tof];
-    d.setCoord(Dim::Tof, (reciprocal(coordSq) *
-                          astype(conversionFactor, coordSq.dtype())));
-  }
-
-  // 3. Transform sparse coordinates
-  for (const auto &data : iter(d)) {
-    if (data.coords()[Dim::Tof].dims().sparse()) {
+  if (d.coords().contains(Dim::Tof)) {
+    if (is_events(d.coords()[Dim::Tof])) {
       transform_in_place<pair_self_t<double, float>>(
-          data.coords()[Dim::Tof], conversionFactor,
+          d.coords()[Dim::Tof], conversionFactor,
           [](auto &coord_, const auto &factor) {
             coord_ = factor / (coord_ * coord_);
           });
+    } else {
+      const auto &coordSq = d.coords()[Dim::Tof] * d.coords()[Dim::Tof];
+      d.setCoord(Dim::Tof, astype(conversionFactor, coordSq.dtype()) / coordSq);
     }
   }
+
+  // 3. Transform unaligned coordinates
+  // for (const auto & : iter(d)) {
+  // No unaligned support in Dataset yet.
+  //}
 
   d.rename(Dim::Tof, Dim::Energy);
   return std::move(d);
@@ -120,23 +124,24 @@ template <class T> T energyToTof(T &&d) {
   const auto conversionFactor = tofToEnergyConversionFactor(d);
 
   // 2. Transform coordinate
-  if (d.coords().contains(Dim::Energy) &&
-      !d.coords()[Dim::Energy].dims().sparse()) {
-    const auto &coordSqrt = d.coords()[Dim::Energy];
-    d.setCoord(Dim::Energy,
-               sqrt(astype(conversionFactor, coordSqrt.dtype()) / coordSqrt));
-  }
-
-  // 3. Transform sparse coordinates
-  for (const auto &data : iter(d)) {
-    if (data.coords()[Dim::Energy].dims().sparse()) {
+  if (d.coords().contains(Dim::Energy)) {
+    if (is_events(d.coords()[Dim::Energy])) {
       transform_in_place<pair_self_t<double, float>>(
-          data.coords()[Dim::Energy], conversionFactor,
+          d.coords()[Dim::Energy], conversionFactor,
           [](auto &coord_, const auto &factor) {
             coord_ = sqrt(factor / coord_);
           });
+    } else {
+      const auto &coordSqrt = d.coords()[Dim::Energy];
+      d.setCoord(Dim::Energy,
+                 sqrt(astype(conversionFactor, coordSqrt.dtype()) / coordSqrt));
     }
   }
+
+  // 3. Transform unaligned coordinates
+  // for (const auto & : iter(d)) {
+  // No unaligned support in Dataset yet.
+  //}
 
   d.rename(Dim::Energy, Dim::Tof);
   return std::move(d);

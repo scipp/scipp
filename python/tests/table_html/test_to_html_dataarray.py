@@ -167,28 +167,22 @@ def test_bin_edge(dims, lengths):
                        has_bin_edges=True)
 
 
-@pytest.mark.parametrize(
-    "dims, lengths",
-    ((['x', 'y'], [10, sc.Dimensions.Sparse]),
-     (['x', 'y', 'z'], [10, 10, sc.Dimensions.Sparse]),
-     (['x', 'y', 'z', 'spectrum'], [10, 10, 10, sc.Dimensions.Sparse])))
+@pytest.mark.parametrize("dims, lengths",
+                         ((['x'], [10]), (['x', 'y'], [10, 10]),
+                          (['x', 'y', 'z'], [10, 10, 10])))
 def test_bin_edge_and_sparse(dims, lengths):
     in_unit = sc.units.m
-    in_dtype = sc.dtype.float32
+    in_dtype = sc.dtype.event_list_float32
 
     data = sc.Variable(dims, lengths, unit=in_unit, dtype=in_dtype)
 
     # attribute data without the sparse dimension
-    non_sparse_dims = dims[:-1]
-    non_sparse_data = sc.Variable(non_sparse_dims,
-                                  lengths[:-1],
-                                  unit=in_unit,
-                                  dtype=in_dtype)
+    non_sparse_data = sc.Variable(dims, lengths, unit=in_unit, dtype=in_dtype)
 
     # makes the first dimension be bin-edges
     lengths[0] += 1
-    non_sparse_bin_edges = sc.Variable(non_sparse_dims,
-                                       lengths[:-1],
+    non_sparse_bin_edges = sc.Variable(dims,
+                                       lengths,
                                        unit=in_unit,
                                        dtype=in_dtype)
 
@@ -211,7 +205,7 @@ def test_bin_edge_and_sparse(dims, lengths):
         assert expected_section in actual_section.text
 
     attr_section = sections.pop(len(sections) - 1)
-    assert_section(attr_section, ATTR_NAME, non_sparse_dims, in_dtype, in_unit)
+    assert_section(attr_section, ATTR_NAME, dims, in_dtype, in_unit)
 
     data_section = sections.pop(2)
     assert_section(data_section, "", dims, in_dtype, in_unit, has_sparse=True)
@@ -224,7 +218,7 @@ def test_bin_edge_and_sparse(dims, lengths):
     for section, name in zip(sections, data_names):
         assert_section(section,
                        name,
-                       non_sparse_dims,
+                       dims,
                        in_dtype,
                        in_unit,
                        has_bin_edges=True)

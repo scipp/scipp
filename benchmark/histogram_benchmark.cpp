@@ -13,8 +13,7 @@ using namespace scipp;
 using namespace scipp::core;
 
 auto make_2d_sparse_coord(const scipp::index size, const scipp::index count) {
-  auto var = makeVariable<double>(Dims{Dim::X, Dim::Y},
-                                  Shape{size, Dimensions::Sparse});
+  auto var = makeVariable<double>(Dims{Dim::X}, Shape{size});
   auto vals = var.sparseValues<double>();
   Random rand(0.0, 1000.0);
   for (scipp::index i = 0; i < size; ++i) {
@@ -24,12 +23,15 @@ auto make_2d_sparse_coord(const scipp::index size, const scipp::index count) {
   return var;
 }
 
-auto make_2d_sparse_coord_only(const scipp::index size,
-                               const scipp::index count) {
-  return DataArray(std::nullopt, {{Dim::Y, make_2d_sparse_coord(size, count)}});
+auto make_2d_events_default_weights(const scipp::index size,
+                                    const scipp::index count) {
+  auto weights =
+      makeVariable<double>(Dims{Dim::X}, Shape{size},
+                           units::Unit(units::counts), Values{}, Variances{});
+  return DataArray(weights, {{Dim::Y, make_2d_sparse_coord(size, count)}});
 }
 
-auto make_2d_sparse(const scipp::index size, const scipp::index count) {
+auto make_2d_events(const scipp::index size, const scipp::index count) {
   auto coord = make_2d_sparse_coord(size, count);
   auto data =
       makeVariable<double>(Dims{}, Shape{}, Values{0.0}, Variances{0.0}) *
@@ -44,8 +46,8 @@ static void BM_histogram(benchmark::State &state) {
   const scipp::index nHist = 1e7 / nEvent;
   const bool linear = state.range(2);
   const bool data = state.range(3);
-  const auto sparse = data ? make_2d_sparse(nHist, nEvent)
-                           : make_2d_sparse_coord_only(nHist, nEvent);
+  const auto sparse = data ? make_2d_events(nHist, nEvent)
+                           : make_2d_events_default_weights(nHist, nEvent);
   std::vector<double> edges_(nEdge);
   std::iota(edges_.begin(), edges_.end(), 0.0);
   if (!linear)

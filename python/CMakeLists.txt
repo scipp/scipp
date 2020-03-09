@@ -7,7 +7,6 @@ pybind11_add_module(
   counts.cpp
   dataset.cpp
   detail.cpp
-  dimensions.cpp
   dtype.cpp
   groupby.cpp
   neutron.cpp

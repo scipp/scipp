@@ -66,7 +66,7 @@ public:
   VariableConcept(const Dimensions &dimensions);
   virtual ~VariableConcept() = default;
 
-  virtual DType dtype(bool sparse = false) const noexcept = 0;
+  virtual DType dtype() const noexcept = 0;
   virtual VariableConceptHandle clone() const = 0;
   virtual VariableConceptHandle
   makeDefaultFromParent(const Dimensions &dims) const = 0;
@@ -134,13 +134,7 @@ public:
   VariableConceptT(const Dimensions &dimensions)
       : VariableConcept(dimensions) {}
 
-  DType dtype(bool sparse = false) const noexcept override {
-    if (!sparse)
-      return scipp::core::dtype<T>;
-    if constexpr (is_sparse_container<T>::value)
-      return scipp::core::dtype<typename T::value_type>;
-    std::terminate();
-  }
+  DType dtype() const noexcept override { return scipp::core::dtype<T>; }
   static DType static_dtype() noexcept { return scipp::core::dtype<T>; }
 
   virtual scipp::span<T> values() = 0;
@@ -354,7 +348,7 @@ public:
   const Dimensions &dims() const & { return m_object->dims(); }
   void setDims(const Dimensions &dimensions);
 
-  DType dtype() const noexcept { return data().dtype(dims().sparse()); }
+  DType dtype() const noexcept { return data().dtype(); }
 
   bool hasVariances() const noexcept { return data().hasVariances(); }
 
@@ -516,25 +510,14 @@ template <class T, class... Ts> Variable makeVariable(Ts &&... ts) {
     auto [valArgs, varArgs, nonData] =
         helper::template extractArguments<units::Unit, Dims, Shape>(
             std::forward<Ts>(ts)...);
-    const auto &shape = std::get<Shape>(nonData);
-    const auto &d = shape.data;
-    if (std::find(d.cbegin(), d.cend(), Dimensions::Sparse) != d.end())
-      return helper::template construct<sparse_container<T>>(
-          std::move(valArgs), std::move(varArgs), std::move(nonData));
-    else
-      return helper::template construct<T>(
-          std::move(valArgs), std::move(varArgs), std::move(nonData));
+    return helper::template construct<T>(std::move(valArgs), std::move(varArgs),
+                                         std::move(nonData));
   } else {
     auto [valArgs, varArgs, nonData] =
         helper::template extractArguments<units::Unit, Dimensions>(
             std::forward<Ts>(ts)...);
-    const auto &dimensions = std::get<Dimensions>(nonData);
-    if (dimensions.sparse())
-      return helper::template construct<sparse_container<T>>(
-          std::move(valArgs), std::move(varArgs), std::move(nonData));
-    else
-      return helper::template construct<T>(
-          std::move(valArgs), std::move(varArgs), std::move(nonData));
+    return helper::template construct<T>(std::move(valArgs), std::move(varArgs),
+                                         std::move(nonData));
   }
 }
 
@@ -609,7 +592,7 @@ Variable Variable::create(units::Unit &&u, Dims &&d, Shape &&s,
 template <class... Ts>
 template <class T>
 Variable Variable::ConstructVariable<Ts...>::Maker<T>::apply(Ts &&... ts) {
-  return makeVariable<detail::element_type_t<T>>(std::forward<Ts>(ts)...);
+  return makeVariable<T>(std::forward<Ts>(ts)...);
 }
 
 template <class... Ts>
@@ -640,6 +623,9 @@ using nth_t = decltype(std::get<I>(std::declval<std::tuple<Ts...>>()));
 /// Non-mutable view into (a subset of) a Variable.
 class SCIPP_CORE_EXPORT VariableConstView {
 public:
+  using value_type = Variable;
+
+  VariableConstView() = default;
   VariableConstView(const Variable &variable) : m_variable(&variable) {}
   VariableConstView(const Variable &variable, const Dimensions &dims)
       : m_variable(&variable), m_view(variable.data().reshape(dims)) {}
@@ -653,7 +639,7 @@ public:
         m_view(slice.data().makeView(dim, begin, end)) {}
 
   explicit operator bool() const noexcept {
-    return m_variable->operator bool();
+    return m_variable && m_variable->operator bool();
   }
 
   auto operator~() const { return m_variable->operator~(); }
@@ -750,11 +736,12 @@ protected:
   template <class T> const ElementArrayView<const T> cast() const;
   template <class T> const ElementArrayView<const T> castVariances() const;
 
-  const Variable *m_variable;
+  const Variable *m_variable{nullptr};
   VariableConceptHandle m_view;
 };
 
 class DataArrayConstView;
+template <class T> typename T::view_type makeViewItem(T &);
 
 /** Mutable view into (a subset of) a Variable.
  *
@@ -762,6 +749,7 @@ class DataArrayConstView;
  * VariableConstView will automatically work also for this mutable variant.*/
 class SCIPP_CORE_EXPORT VariableView : public VariableConstView {
 public:
+  VariableView() = default;
   VariableView(Variable &variable)
       : VariableConstView(variable), m_mutableVariable(&variable) {}
   // Note that we use the basic constructor of VariableConstView to avoid
@@ -874,6 +862,11 @@ public:
 private:
   friend class Variable;
   friend class DataArrayConstView;
+  template <class T> friend typename T::view_type makeViewItem(T &);
+
+  // For internal use in DataArrayConstView.
+  explicit VariableView(VariableConstView &&base)
+      : VariableConstView(std::move(base)), m_mutableVariable{nullptr} {}
 
   template <class Var>
   static VariableView makeTransposed(Var &var,
@@ -883,14 +876,10 @@ private:
     return res;
   }
 
-  // For internal use in DataArrayConstView.
-  explicit VariableView(VariableConstView &&base)
-      : VariableConstView(std::move(base)), m_mutableVariable{nullptr} {}
-
   template <class T> ElementArrayView<T> cast() const;
   template <class T> ElementArrayView<T> castVariances() const;
 
-  Variable *m_mutableVariable;
+  Variable *m_mutableVariable{nullptr};
 };
 
 SCIPP_CORE_EXPORT Variable operator+(const VariableConstView &a,

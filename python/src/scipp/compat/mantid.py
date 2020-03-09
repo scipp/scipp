@@ -368,21 +368,24 @@ def convert_EventWorkspace_to_data_array(ws, load_pulse_times=True, **ignored):
     spec_dim, spec_coord = init_spec_axis(ws)
     nHist = ws.getNumberHistograms()
 
-    coord = sc.Variable([spec_dim, dim],
-                        shape=[nHist, sc.Dimensions.Sparse],
-                        unit=unit)
+    coord = sc.Variable([spec_dim],
+                        shape=[nHist],
+                        unit=unit,
+                        dtype=sc.dtype.event_list_float64)
     if load_pulse_times:
-        labs = sc.Variable([spec_dim, dim],
-                           shape=[nHist, sc.Dimensions.Sparse],
-                           dtype=sc.dtype.int64)
+        labs = sc.Variable([spec_dim],
+                           shape=[nHist],
+                           dtype=sc.dtype.event_list_int64)
 
     # Check for weighted events
     evtp = ws.getSpectrum(0).getEventType()
     contains_weighted_events = ((evtp == EventType.WEIGHTED)
                                 or (evtp == EventType.WEIGHTED_NOTIME))
     if contains_weighted_events:
-        weights = sc.Variable([spec_dim, dim],
-                              shape=[nHist, sc.Dimensions.Sparse])
+        weights = sc.Variable([spec_dim],
+                              shape=[nHist],
+                              dtype=sc.dtype.event_list_float32,
+                              variances=True)
 
     for i in range(nHist):
         sp = ws.getSpectrum(i)
@@ -400,6 +403,12 @@ def convert_EventWorkspace_to_data_array(ws, load_pulse_times=True, **ignored):
         coords_labs_data["coords"]["pulse_times"] = labs
     if contains_weighted_events:
         coords_labs_data["data"] = weights
+    else:
+        coords_labs_data["data"] = sc.Variable(dims=[spec_dim],
+                                               values=np.ones(nHist),
+                                               variances=np.ones(nHist),
+                                               unit=sc.units.counts,
+                                               dtype=sc.dtype.float32)
     return detail.move_to_data_array(**coords_labs_data)
 
 

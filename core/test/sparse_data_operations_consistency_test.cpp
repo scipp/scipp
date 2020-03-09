@@ -8,8 +8,7 @@ using namespace scipp;
 using namespace scipp::core;
 
 static auto make_sparse() {
-  auto var =
-      makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, Dimensions::Sparse});
+  auto var = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2});
   var.setUnit(units::us);
   auto vals = var.sparseValues<double>();
   vals[0] = {1.1, 2.2, 3.3};
@@ -17,8 +16,10 @@ static auto make_sparse() {
   return var;
 }
 
-static auto make_sparse_array_coord_only() {
-  return DataArray(std::optional<Variable>(),
+static auto make_sparse_array_default_weights() {
+  return DataArray(makeVariable<double>(Dims{Dim::Y}, Shape{2},
+                                        units::Unit(units::counts),
+                                        Values{1, 1}, Variances{1, 1}),
                    {{Dim::X, make_sparse()},
                     {Dim::Y, makeVariable<double>(Dimensions{Dim::Y, 2})}});
 }
@@ -37,7 +38,7 @@ TEST(SparseDataOperationsConsistencyTest, multiply) {
   // Apart from uncertainties, the order of operations does not matter. We can
   // either first multiply and then histogram, or first histogram and then
   // multiply.
-  const auto sparse = make_sparse_array_coord_only();
+  const auto sparse = make_sparse_array_default_weights();
   auto edges = makeVariable<double>(Dimensions{Dim::X, 4},
                                     units::Unit(units::us), Values{1, 2, 3, 4});
   auto data = makeVariable<double>(Dimensions{Dim::X, 3}, Values{2.0, 3.0, 4.0},
@@ -63,7 +64,7 @@ TEST(SparseDataOperationsConsistencyTest, multiply) {
 }
 
 TEST(SparseDataOperationsConsistencyTest, flatten_sum) {
-  const auto sparse = make_sparse_array_coord_only();
+  const auto sparse = make_sparse_array_default_weights();
   auto edges = makeVariable<double>(Dimensions{Dim::X, 3},
                                     units::Unit(units::us), Values{1, 3, 6});
   EXPECT_EQ(sum(histogram(sparse, edges), Dim::Y),
@@ -71,7 +72,7 @@ TEST(SparseDataOperationsConsistencyTest, flatten_sum) {
 }
 
 TEST(SparseDataOperationsConsistencyTest, flatten_multiply_sum) {
-  const auto sparse = make_sparse_array_coord_only();
+  const auto sparse = make_sparse_array_default_weights();
   auto edges = makeVariable<double>(Dimensions{Dim::X, 3},
                                     units::Unit(units::us), Values{1, 3, 5});
   auto data = makeVariable<double>(Dimensions{Dim::X, 2}, Values{2.0, 3.0},

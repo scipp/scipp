@@ -67,19 +67,12 @@ void notCountDensity(const units::Unit &unit) {
     throw except::UnitError("Expected non-count-density unit.");
 }
 
-void notSparse(const Dimensions &dims) {
-  if (dims.sparse())
-    throw except::DimensionError("Expected non-sparse dimensions.");
-}
-
 void validDim(const Dim dim) {
   if (dim == Dim::Invalid)
     throw except::DimensionError("Dim::Invalid is not a valid dimension.");
 }
 
 void validExtent(const scipp::index size) {
-  if (size == Dimensions::Sparse)
-    throw except::DimensionError("Expected non-sparse dimension extent.");
   if (size < 0)
     throw except::DimensionError("Dimension size cannot be negative.");
 }

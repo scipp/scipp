@@ -19,18 +19,13 @@ def visit_sparse_data(data_array,
     xmax = -1.0e30
     dims = data_array.dims
     shapes = data_array.shape
-    ndims = len(dims)
-    # Remove the sparse dim from dims
-    isparse = dims.index(sparse_dim)
-    dims.pop(isparse)
+    # Add an extra dim for the sparse dimension
+    ndims = len(dims) + 1
 
     # Construct tuple of ranges over dimension shapes
-    if ndims > 1:
-        indices = tuple()
-        for i in range(ndims - 1):
-            indices += range(shapes[i]),
-    else:
-        indices = [0],
+    indices = tuple()
+    for i in range(ndims - 1):
+        indices += range(shapes[i]),
 
     # Check if weights are present
     data_exists = False
@@ -51,9 +46,8 @@ def visit_sparse_data(data_array,
         # And for each indices combination, slice the original
         # data down to the sparse dimension
         vslice = data_array
-        if ndims > 1:
-            for i in range(ndims - 1):
-                vslice = vslice[dims[i], ind[i]]
+        for i in range(ndims - 1):
+            vslice = vslice[dims[i], ind[i]]
 
         vals = vslice.coords[sparse_dim].values
         if len(vals) > 0:

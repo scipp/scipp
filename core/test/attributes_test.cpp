@@ -56,8 +56,7 @@ TEST_F(AttributesTest, dataset_item_attrs) {
 
 TEST_F(AttributesTest, dataset_sparse_item_attrs) {
   Dataset d;
-  d.setData("sparse",
-            makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse}));
+  d.setData("sparse", makeVariable<sparse_container<double>>(Dims{}, Shape{}));
   d["sparse"].attrs().set("scalar", scalar);
   d.attrs().set("dataset_attr", scalar);
 

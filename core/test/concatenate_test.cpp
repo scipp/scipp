@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
-#include "test_macros.h"
 #include <gtest/gtest.h>
 
 #include "scipp/core/dataset.h"
@@ -99,7 +98,7 @@ TEST(ConcatenateTest, fail_when_histograms_have_non_overlapping_bins) {
   b.setData("data_1",
             makeVariable<int>(Dims{Dim::X}, Shape{2}, Values{13, 14}));
 
-  EXPECT_THROW(concatenate(a, b, Dim::X), except::MismatchError<Variable>);
+  EXPECT_THROW(concatenate(a, b, Dim::X), except::VariableMismatchError);
 }
 
 TEST(ConcatenateTest, fail_mixing_point_data_and_histogram) {
@@ -186,30 +185,6 @@ TEST(ConcatenateTest, concat_2d_coord) {
   const auto abba = concatenate(ab, ba, Dim::Y);
 
   EXPECT_EQ(abba, expected);
-}
-
-TEST(ConcatenateTest, concatenate_sparse_no_data) {
-  auto var1 =
-      makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, Dimensions::Sparse});
-  auto var1_ = var1.sparseValues<double>();
-  var1_[0] = {1, 2, 3};
-  var1_[1] = {1, 2};
-  const auto var2 = concatenate(var1, var1, Dim::X);
-
-  const auto a = DataArray(std::optional<Variable>(),
-                           {{Dim::X, var1}, {Dim("labs"), var1}});
-  const auto b = DataArray(std::optional<Variable>(),
-                           {{Dim::X, var2}, {Dim("labs"), var2}});
-
-  const auto x = concatenate(a, b, Dim::X);
-  const auto y = concatenate(a, b, Dim::Y);
-
-  EXPECT_FALSE(x.hasData());
-  EXPECT_FALSE(y.hasData());
-  EXPECT_EQ(x.coords()[Dim::X], concatenate(var1, var2, Dim::X));
-  EXPECT_EQ(x.coords()[Dim("labs")], concatenate(var1, var2, Dim::X));
-  EXPECT_EQ(y.coords()[Dim::X], concatenate(var1, var2, Dim::Y));
-  EXPECT_EQ(y.coords()[Dim("labs")], concatenate(var1, var2, Dim::Y));
 }
 
 TEST(ConcatenateTest, dataset_with_no_data_items) {

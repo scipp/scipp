@@ -348,14 +348,6 @@ TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_DatasetView_coord_mismatch) {
                except::CoordMismatchError);
 }
 
-TYPED_TEST(DatasetBinaryEqualsOpTest, coord_only_sparse_fails) {
-  auto var =
-      makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, Dimensions::Sparse});
-  Dataset d;
-  d.setSparseCoord("a", Dim::Y, var);
-  ASSERT_THROW(TestFixture::op(d, d), except::SparseDataError);
-}
-
 TYPED_TEST(DatasetBinaryEqualsOpTest,
            with_single_var_with_single_sparse_dimensions_sized_same) {
   Dataset a = make_simple_sparse({1.1, 2.2});
@@ -741,15 +733,17 @@ TYPED_TEST(DatasetBinaryOpTest,
   EXPECT_EQ(res, TestFixture::op(dataset_a, dataset_b));
 }
 
-TYPED_TEST(DatasetBinaryOpTest, sparse_with_dense_fail) {
+TYPED_TEST(DatasetBinaryOpTest, sparse_with_dense_broadcast) {
   Dataset dense;
   dense.setData("a",
                 makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1, 2}));
   Dataset sparse;
-  sparse.setData("a",
-                 makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse}));
+  sparse.setData("a", makeVariable<event_list<double>>(Dims{}, Shape{}));
 
-  ASSERT_THROW(TestFixture::op(sparse, dense), except::DimensionError);
+  // Note: In the old way of handling event data, the sparse dim would result in
+  // a failure here. Now we just get a broadcast, since `dense` has no coord
+  // that would prevent this.
+  ASSERT_NO_THROW(TestFixture::op(sparse, dense));
 }
 
 TYPED_TEST(DatasetBinaryOpTest, sparse_with_dense) {
@@ -804,35 +798,21 @@ TYPED_TEST(DatasetBinaryOpTest, sparse_dataarrayconstview_coord_mismatch) {
                except::VariableMismatchError);
 }
 
-TYPED_TEST(DatasetBinaryOpTest, sparse_data_presense_mismatch) {
-  Dataset a;
-  a.setSparseCoord(
-      "sparse", Dim::X,
-      makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse}));
-  auto b(a);
-  a.setData("sparse",
-            makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse}));
-
-  EXPECT_THROW(TestFixture::op(a, b), except::SparseDataError);
-  EXPECT_THROW(TestFixture::op(a, b["sparse"]), except::SparseDataError);
-  EXPECT_THROW(TestFixture::op(a["sparse"], b), except::SparseDataError);
-}
-
 TYPED_TEST(DatasetBinaryOpTest,
            dataset_sparse_lhs_dataset_sparse_rhs_fail_when_coords_mismatch) {
   auto dataset_a = make_simple_sparse({1.1, 2.2});
   auto dataset_b = make_simple_sparse({3.3, 4.4});
 
   {
-    auto var = makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse});
+    auto var = makeVariable<event_list<double>>(Dims{}, Shape{});
     var.sparseValues<double>()[0] = {0.5, 1.0};
-    dataset_a.setSparseCoord("sparse", Dim::X, var);
+    dataset_a.coords().set(Dim::X, var);
   }
 
   {
-    auto var = makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse});
+    auto var = makeVariable<event_list<double>>(Dims{}, Shape{});
     var.sparseValues<double>()[0] = {0.5, 1.5};
-    dataset_b.setSparseCoord("sparse", Dim::X, var);
+    dataset_b.coords().set(Dim::X, var);
   }
 
   EXPECT_THROW(TestFixture::op(dataset_a, dataset_b),
@@ -845,15 +825,15 @@ TYPED_TEST(DatasetBinaryOpTest,
   auto dataset_b = make_simple_sparse({3.3, 4.4});
 
   {
-    auto var = makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse});
+    auto var = makeVariable<event_list<double>>(Dims{}, Shape{});
     var.sparseValues<double>()[0] = {0.5, 1.0};
-    dataset_a.setSparseCoord("sparse", Dim("l"), var);
+    dataset_a.coords().set(Dim("l"), var);
   }
 
   {
-    auto var = makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse});
+    auto var = makeVariable<event_list<double>>(Dims{}, Shape{});
     var.sparseValues<double>()[0] = {0.5, 1.5};
-    dataset_b.setSparseCoord("sparse", Dim("l"), var);
+    dataset_b.coords().set(Dim("l"), var);
   }
 
   EXPECT_THROW(TestFixture::op(dataset_a, dataset_b),
@@ -927,45 +907,6 @@ TYPED_TEST(DatasetBinaryOpTest, masks_propagate) {
   const auto res = TestFixture::op(a, b);
 
   EXPECT_EQ(res.masks()["masks_x"], expectedMasks);
-}
-
-Dataset non_trivial_2d_sparse(std::string_view name) {
-  Dataset sparse;
-  auto var =
-      makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{4, Dimensions::Sparse});
-  var.sparseValues<double>()[0] = {1.5, 2.5, 3.5, 4.5, 5.5};
-  var.sparseValues<double>()[1] = {3.5, 4.5, 5.5, 6.5, 7.5};
-  var.sparseValues<double>()[2] = {-1, 0, 0, 1, 1, 2, 2, 2, 4, 4, 4, 6};
-  var.sparseValues<double>()[3] = {1};
-  auto dvar =
-      makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{4, Dimensions::Sparse});
-  dvar.sparseValues<double>()[0] = {1, 2, 3, 4, 5};
-  dvar.sparseValues<double>()[1] = {3, 4, 5, 6, 7};
-  dvar.sparseValues<double>()[2] = {1, 1, 1, 1, 1, 100, 1, 1, 1, 1, 1, 1};
-  dvar.sparseValues<double>()[3] = {1};
-  sparse.setData(std::string(name), dvar);
-  sparse.setSparseCoord(std::string(name), Dim::Y, var);
-  return sparse;
-}
-
-TEST(DatasetSetData, sparse_to_sparse) {
-  auto base = non_trivial_2d_sparse("base");
-  auto other = non_trivial_2d_sparse("other");
-  other["other"] *= makeVariable<double>(Values{2});
-  base.setData("other", other["other"]);
-  EXPECT_EQ(other["other"], base["other"]);
-}
-
-TEST(DatasetSetData, sparse_to_dense) {
-  auto base = non_trivial_2d_sparse("base");
-  auto var = makeVariable<double>(Dims{Dim::Y}, Shape{Dimensions::Sparse});
-  var.sparseValues<double>()[0] = {1, 2, 3};
-  base.setSparseCoord("base", Dim("l"), var);
-
-  auto dense = datasetFactory().make();
-  dense.setData("sparse", base["base"]);
-  EXPECT_EQ(base["base"].data(), dense["sparse"].data());
-  EXPECT_EQ(dense["sparse"].coords().items().count(Dim("l")), 1);
 }
 
 TEST(DatasetSetData, dense_to_dense) {

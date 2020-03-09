@@ -6,6 +6,7 @@
 #include "test_macros.h"
 
 #include "scipp/core/dimensions.h"
+#include "scipp/core/event.h"
 #include "scipp/core/except.h"
 #include "scipp/core/variable.h"
 
@@ -213,24 +214,20 @@ TEST_F(Variable_comparison_operators, dtype) {
 
 TEST_F(Variable_comparison_operators, dense_sparse) {
   auto dense = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2l, 0l});
-  auto sparse =
-      makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2l, Dimensions::Sparse});
+  auto sparse = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2});
   expect_ne(dense, sparse);
 }
 
 TEST_F(Variable_comparison_operators, sparse) {
-  auto a =
-      makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2l, Dimensions::Sparse});
+  auto a = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2});
   auto a_ = a.sparseValues<double>();
   a_[0] = {1, 2, 3};
   a_[1] = {1, 2};
-  auto b =
-      makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2l, Dimensions::Sparse});
+  auto b = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2});
   auto b_ = b.sparseValues<double>();
   b_[0] = {1, 2, 3};
   b_[1] = {1, 2};
-  auto c =
-      makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2l, Dimensions::Sparse});
+  auto c = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2});
   auto c_ = c.sparseValues<double>();
   c_[0] = {1, 3};
   c_[1] = {};
@@ -241,9 +238,8 @@ TEST_F(Variable_comparison_operators, sparse) {
 }
 
 auto make_sparse_var_2d_with_variances() {
-  auto var =
-      makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, Dimensions::Sparse},
-                           Values{}, Variances{});
+  auto var = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2}, Values{},
+                                              Variances{});
   auto vals = var.sparseValues<double>();
   vals[0] = {1, 2, 3};
   vals[1] = {1, 2};
@@ -256,9 +252,8 @@ auto make_sparse_var_2d_with_variances() {
 TEST_F(Variable_comparison_operators, sparse_variances) {
   const auto a = make_sparse_var_2d_with_variances();
   const auto b = make_sparse_var_2d_with_variances();
-  auto c =
-      makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, Dimensions::Sparse},
-                           Values{}, Variances{});
+  auto c = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2}, Values{},
+                                            Variances{});
   auto c_vals = c.sparseValues<double>();
   c_vals[0] = {1, 2, 3};
   c_vals[1] = {1, 2};
@@ -266,8 +261,7 @@ TEST_F(Variable_comparison_operators, sparse_variances) {
   c_vars[0] = {1, 3};
   c_vars[1] = {};
 
-  auto a_no_vars =
-      makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2l, Dimensions::Sparse});
+  auto a_no_vars = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2});
   auto a_no_vars_ = a_no_vars.sparseValues<double>();
   a_no_vars_[0] = {1, 2, 3};
   a_no_vars_[1] = {1, 2};
@@ -910,44 +904,34 @@ TEST(Variable, access_typed_view_edges) {
 }
 
 TEST(SparseVariable, create) {
-  const auto var =
-      makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2l, Dimensions::Sparse});
-  EXPECT_TRUE(var.dims().sparse());
-  EXPECT_EQ(var.dims().sparseDim(), Dim::X);
-  // Should we return the full volume here, i.e., accumulate the extents of all
-  // the sparse subdata?
+  const auto var = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2});
+  EXPECT_TRUE(is_events(var));
   EXPECT_EQ(var.dims().volume(), 2);
 }
 
 TEST(SparseVariable, dtype) {
-  const auto var =
-      makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2l, Dimensions::Sparse});
-  // It is not clear that this is the best way of handling things.
-  // Variable::dtype() makes sense like this, but it is not so clear for
-  // VariableConcept::dtype().
-  EXPECT_EQ(var.dtype(), dtype<double>);
-  EXPECT_NE(var.data().dtype(), dtype<double>);
+  const auto var = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2});
+  EXPECT_EQ(var.dtype(), dtype<event_list<double>>);
+  EXPECT_EQ(var.data().dtype(), dtype<event_list<double>>);
 }
 
 TEST(SparseVariable, non_sparse_access_fail) {
-  const auto var =
-      makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, Dimensions::Sparse},
-                           Values{}, Variances{});
+  const auto var = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2},
+                                                    Values{}, Variances{});
   ASSERT_THROW(var.values<double>(), except::TypeError);
   ASSERT_THROW(var.variances<double>(), except::TypeError);
 }
 
 TEST(SparseVariable, DISABLED_low_level_access) {
   const auto var =
-      makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2l, Dimensions::Sparse});
+      makeVariable<event_list<double>>(Dims{Dim::Y, Dim::X}, Shape{2});
   // Need to decide whether we allow this direct access or not.
   ASSERT_THROW((var.values<sparse_container<double>>()), except::TypeError);
 }
 
 TEST(SparseVariable, access) {
-  const auto var =
-      makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, Dimensions::Sparse},
-                           Values{}, Variances{});
+  const auto var = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2},
+                                                    Values{}, Variances{});
   ASSERT_NO_THROW(var.sparseValues<double>());
   ASSERT_NO_THROW(var.sparseVariances<double>());
   const auto values = var.sparseValues<double>();
@@ -961,8 +945,7 @@ TEST(SparseVariable, access) {
 }
 
 TEST(SparseVariable, resize_sparse) {
-  auto var =
-      makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2l, Dimensions::Sparse});
+  auto var = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2});
   auto data = var.sparseValues<double>();
   data[1] = {1, 2, 3};
 }
@@ -983,16 +966,14 @@ TEST(SparseVariable, move) {
 }
 
 TEST(SparseVariable, slice) {
-  auto var =
-      makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{4l, Dimensions::Sparse});
+  auto var = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{4});
   auto data = var.sparseValues<double>();
   data[0] = {1, 2, 3};
   data[1] = {1, 2};
   data[2] = {1};
   data[3] = {};
   auto slice = var.slice({Dim::Y, 1, 3});
-  EXPECT_TRUE(slice.dims().sparse());
-  EXPECT_EQ(slice.dims().sparseDim(), Dim::X);
+  EXPECT_TRUE(is_events(slice));
   EXPECT_EQ(slice.dims().volume(), 2);
   auto slice_data = slice.sparseValues<double>();
   EXPECT_TRUE(equals(slice_data[0], {1, 2}));
@@ -1000,8 +981,7 @@ TEST(SparseVariable, slice) {
 }
 
 TEST(SparseVariable, slice_fail) {
-  auto var =
-      makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{4l, Dimensions::Sparse});
+  auto var = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{4});
   auto data = var.sparseValues<double>();
   data[0] = {1, 2, 3};
   data[1] = {1, 2};

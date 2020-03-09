@@ -86,37 +86,23 @@ def test_coord_setitem():
 
 
 def test_coord_setitem_sparse():
-    var = sc.Variable(dims=['x'], values=np.arange(4))
-    sparse = sc.Variable(dims=['x'], shape=[sc.Dimensions.Sparse])
-    d = sc.Dataset({'a': sparse}, coords={'x': var})
-    with pytest.raises(RuntimeError):
-        d.coords['x'] = sparse
-    with pytest.raises(RuntimeError):
-        d['x', 2:3].coords['x'] = sparse
-    # This is a slightly weird case with sparse data before coord is set.
-    # Currently there is no way to set a sparse coord from a sparse variable
-    # in this way, since otherwise 'a' would not exist in d.
-    d['a'].coords['x'] = sparse
+    events = sc.Variable(dims=[], shape=[], dtype=sc.dtype.event_list_float64)
+    d = sc.Dataset({'a': events})
+    d.coords['x'] = events
     assert len(d.coords) == 1
     assert len(d['a'].coords) == 1
-    assert d['a'].coords['x'] == sparse
-    assert d['a'].coords['x'] != var
-    assert d['a'].coords['x'] != d.coords['x']
-    # This would not work:
-    with pytest.raises(RuntimeError):
-        d['b'].coords['x'] = sparse
+    assert d['a'].coords['x'] == events
+    assert d['a'].coords['x'] == d.coords['x']
 
 
 def test_create_sparse_via_DataArray():
-    var = sc.Variable(dims=['x'], values=np.arange(4))
-    d = sc.Dataset(coords={'x': var})
-    sparse = sc.Variable(dims=['x'], shape=[sc.Dimensions.Sparse])
-    d['a'] = sc.DataArray(coords={'x': sparse})
+    d = sc.Dataset()
+    sparse = sc.Variable(dims=[], shape=[], dtype=sc.dtype.event_list_float64)
+    d['a'] = sc.DataArray(data=sparse, coords={'x': sparse})
     assert len(d.coords) == 1
     assert len(d['a'].coords) == 1
     assert d['a'].coords['x'] == sparse
-    assert d['a'].coords['x'] != var
-    assert d['a'].coords['x'] != d.coords['x']
+    assert d['a'].coords['x'] == d.coords['x']
 
 
 def test_contains_coord():
@@ -167,15 +153,10 @@ def test_attrs_setitem():
 
 def test_attrs_setitem_sparse():
     var = sc.Variable(dims=['x'], values=np.arange(4))
-    sparse = sc.Variable(dims=['x'], shape=[sc.Dimensions.Sparse])
+    sparse = sc.Variable(dims=[], shape=[], dtype=sc.dtype.event_list_float64)
     d = sc.Dataset({'a': sparse}, coords={'x': var})
-    with pytest.raises(RuntimeError):
-        d.attrs['attr'] = sparse
-    with pytest.raises(RuntimeError):
-        d['x', 2:3].attrs['attr'] = sparse
-    # Attributes cannot be sparse
-    with pytest.raises(RuntimeError):
-        d['a'].attrs['attr'] = sparse
+    d.attrs['attr'] = sparse
+    d['a'].attrs['attr'] = sparse
 
 
 def test_contains_attrs():
@@ -224,8 +205,10 @@ def test_set_item_slice_with_variances_from_numpy():
 
 
 def test_sparse_setitem():
-    d = sc.Dataset(
-        {'a': sc.Variable(dims=['x', 'y'], shape=[4, sc.Dimensions.Sparse])})
+    d = sc.Dataset({
+        'a':
+        sc.Variable(dims=['x'], shape=[4], dtype=sc.dtype.event_list_float64)
+    })
     d['a']['x', 0].values = np.arange(4)
     assert len(d['a']['x', 0].values) == 4
 
@@ -385,13 +368,16 @@ def test_mean_masked():
 
 
 def test_variable_histogram():
-    var = sc.Variable(dims=['x', 'y'], shape=[2, sc.Dimensions.Sparse])
+    var = sc.Variable(dims=['x'], shape=[2], dtype=sc.dtype.event_list_float64)
     var['x', 0].values = np.arange(3)
     var['x', 0].values.append(42)
     var['x', 0].values.extend(np.ones(3))
     var['x', 1].values = np.ones(6)
     ds = sc.Dataset()
-    ds['sparse'] = sc.DataArray(coords={'y': var})
+    ds['sparse'] = sc.DataArray(data=sc.Variable(dims=['x'],
+                                                 values=np.ones(2),
+                                                 variances=np.ones(2)),
+                                coords={'y': var})
     hist = sc.histogram(
         ds['sparse'],
         sc.Variable(values=np.arange(5, dtype=np.float64), dims=['y']))
@@ -399,15 +385,22 @@ def test_variable_histogram():
         hist.values, np.array([[1.0, 4.0, 1.0, 0.0], [0.0, 6.0, 0.0, 0.0]]))
 
 
+@pytest.mark.skip(reason="Requires unaligned dataset items")
 def test_dataset_histogram():
-    var = sc.Variable(dims=['x', 'y'], shape=[2, sc.Dimensions.Sparse])
+    var = sc.Variable(dims=['x'], shape=[2], dtype=sc.dtype.event_list_float64)
     var['x', 0].values = np.arange(3)
     var['x', 0].values.append(42)
     var['x', 0].values.extend(np.ones(3))
     var['x', 1].values = np.ones(6)
     ds = sc.Dataset()
-    ds['s'] = sc.DataArray(coords={'y': var})
-    ds['s1'] = sc.DataArray(coords={'y': var * 5.0})
+    ds['s'] = sc.DataArray(data=sc.Variable(dims=['x'],
+                                            values=np.ones(2),
+                                            variances=np.ones(2)),
+                           coords={'y': var})
+    ds['s1'] = sc.DataArray(data=sc.Variable(dims=['x'],
+                                             values=np.ones(2),
+                                             variances=np.ones(2)),
+                            coords={'y': var * 5.0})
     h = sc.histogram(
         ds, sc.Variable(values=np.arange(5, dtype=np.float64), dims=['y']))
     assert np.array_equal(
@@ -417,21 +410,25 @@ def test_dataset_histogram():
 
 
 def test_histogram_and_setitem():
-    var = sc.Variable(dims=['x', 'tof'],
-                      shape=[2, sc.Dimensions.Sparse],
+    var = sc.Variable(dims=['x'],
+                      shape=[2],
+                      dtype=sc.dtype.event_list_float64,
                       unit=sc.units.us)
     var['x', 0].values = np.arange(3)
     var['x', 0].values.append(42)
     var['x', 0].values.extend(np.ones(3))
     var['x', 1].values = np.ones(6)
     ds = sc.Dataset()
-    ds['s'] = sc.DataArray(coords={'tof': var})
-    assert 'tof' not in ds.coords
+    ds['s'] = sc.DataArray(data=sc.Variable(dims=['x'],
+                                            values=np.ones(2),
+                                            variances=np.ones(2)),
+                           coords={'tof': var})
+    assert 'tof' in ds.coords
     assert 'tof' in ds['s'].coords
     edges = sc.Variable(dims=['tof'], values=np.arange(5.0), unit=sc.units.us)
-    ds['h'] = sc.histogram(ds['s'], edges)
+    h = sc.histogram(ds['s'], edges)
     assert np.array_equal(
-        ds['h'].values, np.array([[1.0, 4.0, 1.0, 0.0], [0.0, 6.0, 0.0, 0.0]]))
+        h.values, np.array([[1.0, 4.0, 1.0, 0.0], [0.0, 6.0, 0.0, 0.0]]))
     assert 'tof' in ds.coords
 
 
@@ -516,10 +513,13 @@ def test_dataset_set_data():
 
 
 def test_dataset_data_access():
-    var = sc.Variable(dims=['x', 'y'], shape=[2, sc.Dimensions.Sparse])
+    var = sc.Variable(dims=['x'], shape=[2], dtype=sc.dtype.event_list_float64)
     ds = sc.Dataset()
-    ds['sparse'] = sc.DataArray(coords={'y': var})
-    assert ds['sparse'].values is None
+    ds['sparse'] = sc.DataArray(data=sc.Variable(dims=['x'],
+                                                 values=np.ones(2),
+                                                 variances=np.ones(2)),
+                                coords={'y': var})
+    assert ds['sparse'].values is not None
 
 
 def test_binary_with_broadcast():
@@ -676,9 +676,10 @@ def test_coord_delitem():
     assert dref == d
 
 
+@pytest.mark.skip(reason="Requires unaligned dataset items")
 def test_coords_delitem_sparse():
     var = sc.Variable(dims=['x'], values=np.arange(4))
-    sparse = sc.Variable(dims=['x'], shape=[sc.Dimensions.Sparse])
+    sparse = sc.Variable(dims=[], shape=[], dtype=sc.dtype.event_list_float64)
     d = sc.Dataset({'a': sparse}, coords={'x': var})
     d['a'].coords['x'] = sparse
     with pytest.raises(RuntimeError):
@@ -706,19 +707,6 @@ def test_masks_delitem():
     assert d != dref
     del d.masks['masks']
     assert d == dref
-
-
-@pytest.mark.parametrize('dims, lengths',
-                         ((['x'], (sc.Dimensions.Sparse, )),
-                          (['x', 'y'], (10, sc.Dimensions.Sparse)),
-                          (['x', 'y', 'z'], (10, 10, sc.Dimensions.Sparse)),
-                          (['x', 'y', 'z', 'spectrum'],
-                           (10, 10, 10, sc.Dimensions.Sparse))))
-def test_sparse_dim_has_none_shape(dims, lengths):
-    ds = sc.Dataset(data={'data': sc.Variable(dims, shape=lengths)})
-
-    assert None in ds.shape
-    assert ds['data'].shape[-1] is None
 
 
 # def test_delitem(self):

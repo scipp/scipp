@@ -72,18 +72,6 @@ def test_setitem_works_for_view_and_array():
     a['x', 0] = a['x', 1]
 
 
-@pytest.mark.parametrize("dims, lengths",
-                         ((['x'], (sc.Dimensions.Sparse, )),
-                          (['x', 'y'], (10, sc.Dimensions.Sparse)),
-                          (['x', 'y', 'z'], (10, 10, sc.Dimensions.Sparse)),
-                          (['x', 'y', 'z', 'spectrum'],
-                           (10, 10, 10, sc.Dimensions.Sparse))))
-def test_sparse_dim_has_none_shape(dims, lengths):
-    da = sc.DataArray(sc.Variable(dims, shape=lengths))
-
-    assert da.shape[-1] is None
-
-
 def test_astype():
     a = sc.DataArray(data=sc.Variable(['x'],
                                       values=np.arange(10.0, dtype=np.int64)),

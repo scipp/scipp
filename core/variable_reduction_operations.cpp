@@ -3,6 +3,7 @@
 /// @file
 /// @author Simon Heybrock
 #include "scipp/core/dtype.h"
+#include "scipp/core/event.h"
 #include "scipp/core/except.h"
 #include "scipp/core/transform.h"
 #include "scipp/core/variable.h"
@@ -19,10 +20,8 @@ Variable counts(const VariableConstView &var) {
   // To simplify this we would like to use `transform`, but this is currently
   // not possible since the current implementation expects outputs with
   // variances if any of the inputs has variances.
-  auto dims = var.dims();
-  dims.erase(dims.sparseDim());
   auto counts =
-      makeVariable<scipp::index>(Dimensions(dims), units::Unit(units::counts));
+      makeVariable<scipp::index>(var.dims(), units::Unit(units::counts));
   accumulate_in_place<
       pair_custom_t<std::pair<scipp::index, sparse_container<double>>>,
       pair_custom_t<std::pair<scipp::index, sparse_container<float>>>,
@@ -65,9 +64,9 @@ void flatten_impl(const VariableView &summed, const VariableConstView &var,
   // Note that mask may often be "empty" (0-D false). Benchmarks show no
   // significant penalty from handling it anyway. We thus avoid two separate
   // code branches here.
-  if (!var.dims().sparse())
-    throw except::DimensionError("`flatten` can only be used for sparse data, "
-                                 "use `sum` for dense data.");
+  if (!is_events(var))
+    throw except::TypeError("`flatten` can only be used for event data, "
+                            "use `sum` for dense data.");
   // 1. Reserve space in output. This yields approx. 3x speedup.
   auto summed_counts = sparse::counts(summed);
   sum_impl(summed_counts, sparse::counts(var) * mask);
@@ -113,9 +112,9 @@ Variable flatten(const VariableConstView &var, const Dim dim,
 }
 
 void sum_impl(const VariableView &summed, const VariableConstView &var) {
-  if (var.dims().sparse())
-    throw except::DimensionError("`sum` can only be used for dense data, use "
-                                 "`flatten` for sparse data.");
+  if (is_events(var))
+    throw except::TypeError("`sum` can only be used for dense data, use "
+                            "`flatten` for event data.");
   accumulate_in_place<
       pair_self_t<double, float, int64_t, int32_t, Eigen::Vector3d>,
       pair_custom_t<std::pair<int64_t, bool>>>(
@@ -173,8 +172,6 @@ VariableView sum(const VariableConstView &var, const Dim dim,
 
 Variable mean(const VariableConstView &var, const Dim dim,
               const VariableConstView &masks_sum) {
-  // In principle we *could* support mean/sum over sparse dimension.
-  expect::notSparse(var);
   auto summed = sum(var, dim);
 
   auto scale =
@@ -189,8 +186,6 @@ Variable mean(const VariableConstView &var, const Dim dim,
 
 VariableView mean(const VariableConstView &var, const Dim dim,
                   const VariableConstView &masks_sum, const VariableView &out) {
-  // In principle we *could* support mean/sum over sparse dimension.
-  expect::notSparse(var);
   if (isInt(out.dtype()))
     throw except::UnitError(
         "Cannot calculate mean in-place when output dtype is integer");
@@ -239,7 +234,6 @@ VariableView mean(const VariableConstView &var, const Dim dim,
 
 template <class Op>
 void reduce_impl(const VariableView &out, const VariableConstView &var) {
-  expect::notSparse(var);
   accumulate_in_place(out, var, Op{});
 }
 

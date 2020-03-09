@@ -55,8 +55,7 @@ public:
     m_dimensions = other.m_dimensions;
     // See implementation of ViewIndex regarding this relabeling.
     for (const auto label : m_dimensions.labels())
-      if (label != Dim::Invalid &&
-          !other.m_targetDimensions.denseContains(label))
+      if (label != Dim::Invalid && !other.m_targetDimensions.contains(label))
         m_dimensions.relabel(m_dimensions.index(label), Dim::Invalid);
   }
 
@@ -77,8 +76,7 @@ public:
       m_offset += begin * m_dimensions.offset(dim);
     // See implementation of ViewIndex regarding this relabeling.
     for (const auto label : m_dimensions.labels())
-      if (label != Dim::Invalid &&
-          !other.m_targetDimensions.denseContains(label))
+      if (label != Dim::Invalid && !other.m_targetDimensions.contains(label))
         m_dimensions.relabel(m_dimensions.index(label), Dim::Invalid);
   }
 

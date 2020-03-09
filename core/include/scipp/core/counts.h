@@ -14,9 +14,6 @@
 namespace scipp::core {
 
 namespace counts {
-SCIPP_CORE_EXPORT std::vector<Variable>
-getBinWidths(const CoordsConstView &c, const std::vector<Dim> &dims);
-
 SCIPP_CORE_EXPORT void toDensity(const DataArrayView data,
                                  const std::vector<Variable> &binWidths);
 SCIPP_CORE_EXPORT Dataset toDensity(Dataset d, const Dim dim);

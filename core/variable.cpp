@@ -65,10 +65,10 @@ VariableConcept::VariableConcept(const Dimensions &dimensions)
     : m_dimensions(dimensions) {}
 
 Variable::Variable(const VariableConstView &slice)
-    : Variable(slice, slice.dims()) {
+    : Variable(slice ? Variable(slice, slice.dims()) : Variable()) {
   // There is a bug in the implementation of MultiIndex used in ElementArrayView
   // in case one of the dimensions has extent 0.
-  if (dims().volume() != 0)
+  if (slice && dims().volume() != 0)
     data().copy(slice.data(), Dim::Invalid, 0, 0, 1);
 }
 

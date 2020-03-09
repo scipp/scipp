@@ -18,8 +18,11 @@ using namespace scipp::core;
 class DataArray_comparison_operators : public ::testing::Test {
 protected:
   DataArray_comparison_operators()
-      : sparse_variable(makeVariable<double>(
-            Dims{Dim::Y, Dim::Z, Dim::X}, Shape{3l, 2l, Dimensions::Sparse})) {
+      : default_event_weights(makeVariable<double>(
+            Dims{Dim::Y, Dim::Z}, Shape{3l, 2l}, Values{1, 1, 1, 1, 1, 1},
+            Variances{1, 1, 1, 1, 1, 1})),
+        sparse_variable(makeVariable<sparse_container<double>>(
+            Dims{Dim::Y, Dim::Z}, Shape{3, 2})) {
     dataset.setCoord(Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{4}));
     dataset.setCoord(Dim::Y, makeVariable<double>(Dims{Dim::Y}, Shape{3}));
 
@@ -35,13 +38,6 @@ protected:
 
     dataset.setData("val", makeVariable<double>(Dims{Dim::X}, Shape{4}));
     dataset.setAttr("val", "attr", makeVariable<int>(Values{int{}}));
-
-    dataset.setSparseCoord("sparse_coord", Dim::X, sparse_variable);
-    dataset.setAttr("sparse_coord", "attr", makeVariable<int>(Values{int{}}));
-    dataset.setData("sparse_coord_and_val", sparse_variable);
-    dataset.setSparseCoord("sparse_coord_and_val", Dim::X, sparse_variable);
-    dataset.setAttr("sparse_coord_and_val", "attr",
-                    makeVariable<int>(Values{int{}}));
   }
   void expect_eq(const DataArrayConstView &a,
                  const DataArrayConstView &b) const {
@@ -59,6 +55,7 @@ protected:
   }
 
   Dataset dataset;
+  Variable default_event_weights;
   Variable sparse_variable;
 };
 
@@ -273,18 +270,6 @@ TEST_F(DataArray_comparison_operators, extra_variance) {
   expect_ne(extra["val"], dataset["val"]);
 }
 
-TEST_F(DataArray_comparison_operators, extra_sparse_values) {
-  auto extra = dataset;
-  extra.setData("sparse_coord", sparse_variable);
-  expect_ne(extra["sparse_coord"], dataset["sparse_coord"]);
-}
-
-TEST_F(DataArray_comparison_operators, extra_sparse_label) {
-  auto extra = dataset;
-  extra.setSparseCoord("sparse_coord_and_val", Dim("extra"), sparse_variable);
-  expect_ne(extra["sparse_coord_and_val"], dataset["sparse_coord_and_val"]);
-}
-
 TEST_F(DataArray_comparison_operators, different_coord_insertion_order) {
   auto a = Dataset();
   auto b = Dataset();
@@ -321,7 +306,7 @@ TEST_F(DataArray_comparison_operators, different_attr_insertion_order) {
 TEST_F(DataArray_comparison_operators, with_sparse_dimension_data) {
   // a and b same, c different number of sparse values
   auto a = Dataset();
-  auto data = makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse});
+  auto data = makeVariable<sparse_container<double>>(Dims{}, Shape{});
   const std::string var_name = "test_var";
   data.sparseValues<double>()[0] = {1, 2, 3};
   a.setData(var_name, data);

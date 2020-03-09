@@ -29,8 +29,10 @@ template <int NameLen> struct Generate2D {
     Dataset d;
     d.setCoord(Dim::X, makeCoordData({Dim::X, axisLength}));
     d.setCoord(Dim::Y, makeCoordData({Dim::Y, axisLength}));
-    d.setLabels(std::string(NameLen, 'a'), makeCoordData({Dim::X, axisLength}));
-    d.setLabels(std::string(NameLen, 'b'), makeCoordData({Dim::Y, axisLength}));
+    d.setCoord(Dim(std::string(NameLen, 'a')),
+               makeCoordData({Dim::X, axisLength}));
+    d.setCoord(Dim(std::string(NameLen, 'b')),
+               makeCoordData({Dim::Y, axisLength}));
     return d;
   }
 };
@@ -44,15 +46,18 @@ template <int NameLen> struct Generate6D {
     d.setCoord(Dim::Qx, makeCoordData({Dim::Qx, axisLength}));
     d.setCoord(Dim::Qy, makeCoordData({Dim::Qy, axisLength}));
     d.setCoord(Dim::Qz, makeCoordData({Dim::Qz, axisLength}));
-    d.setLabels(std::string(NameLen, 'a'), makeCoordData({Dim::X, axisLength}));
-    d.setLabels(std::string(NameLen, 'b'), makeCoordData({Dim::Y, axisLength}));
-    d.setLabels(std::string(NameLen, 'c'), makeCoordData({Dim::Z, axisLength}));
-    d.setLabels(std::string(NameLen, 'd'),
-                makeCoordData({Dim::Qx, axisLength}));
-    d.setLabels(std::string(NameLen, 'e'),
-                makeCoordData({Dim::Qy, axisLength}));
-    d.setLabels(std::string(NameLen, 'f'),
-                makeCoordData({Dim::Qz, axisLength}));
+    d.setCoord(Dim(std::string(NameLen, 'a')),
+               makeCoordData({Dim::X, axisLength}));
+    d.setCoord(Dim(std::string(NameLen, 'b')),
+               makeCoordData({Dim::Y, axisLength}));
+    d.setCoord(Dim(std::string(NameLen, 'c')),
+               makeCoordData({Dim::Z, axisLength}));
+    d.setCoord(Dim(std::string(NameLen, 'd')),
+               makeCoordData({Dim::Qx, axisLength}));
+    d.setCoord(Dim(std::string(NameLen, 'e')),
+               makeCoordData({Dim::Qy, axisLength}));
+    d.setCoord(Dim(std::string(NameLen, 'f')),
+               makeCoordData({Dim::Qz, axisLength}));
     return d;
   }
 };
@@ -69,7 +74,7 @@ BENCHMARK_TEMPLATE(BM_Dataset_coords, Generate6D<SHORT_STRING_LENGTH>);
 template <class Gen> static void BM_Dataset_labels(benchmark::State &state) {
   const auto d = Gen()();
   for (auto _ : state) {
-    d.labels();
+    d.coords();
   }
 }
 BENCHMARK_TEMPLATE(BM_Dataset_labels, Generate2D<SHORT_STRING_LENGTH>);
@@ -123,7 +128,7 @@ static void BM_Dataset_labels_slice(benchmark::State &state) {
   const auto d = Gen()();
   const auto s = Slice()(d);
   for (auto _ : state) {
-    s.labels();
+    s.coords();
   }
 }
 BENCHMARK_TEMPLATE(BM_Dataset_labels_slice, Generate2D<SHORT_STRING_LENGTH>,
