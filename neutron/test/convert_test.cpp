@@ -383,7 +383,6 @@ TEST_P(ConvertTest, Tof_to_Energy_Elastic) {
     Variable tof_in_seconds = tof.coords()[Dim::Tof] * 1e-6;
     const auto tofs = tof_in_seconds.values<double>();
 
-
     // Spectrum 0 is 11 m from source
     EXPECT_NEAR(values[0],
                 joule_to_mev * 0.5 * neutron_mass * std::pow(11 / tofs[0], 2),
