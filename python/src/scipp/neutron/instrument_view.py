@@ -140,16 +140,17 @@ class InstrumentView:
         self.minmax["tof"] = [np.Inf, np.NINF, 1]
         for key, data_array in self.data_arrays.items():
             bins_here = bins
-            if data_array.sparse_dim is not None and bins_here is None:
+            is_events = sc.is_events(data_array)
+            if is_events and bins_here is None:
                 bins_here = True
             if bins_here is not None:
-                dim = None if data_array.sparse_dim is not None else self.dim
-                spdim = None if data_array.sparse_dim is None else self.dim
+                dim = None if is_events else self.dim
+                spdim = None if not is_events else self.dim
                 var = make_bins(data_array=data_array,
                                 sparse_dim=spdim,
                                 dim=dim,
                                 bins=bins_here,
-                                padding=(data_array.sparse_dim is not None))
+                                padding=is_events)
             else:
                 var = data_array.coords[self.dim]
             self.minmax["tof"][0] = min(self.minmax["tof"][0], var.values[0])
@@ -388,9 +389,9 @@ class InstrumentView:
         for key, data_array in self.data_arrays.items():
 
             # Histogram the data in the Tof dimension
-            if data_array.sparse_dim is not None:
+            if sc.is_events(data_array):
                 self.hist_data_array[key] = histogram_sparse_data(
-                    data_array, data_array.sparse_dim, bins)
+                    data_array, self.dim, bins)
             else:
                 self.hist_data_array[key] = sc.rebin(
                     data_array, self.dim,
