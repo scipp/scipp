@@ -4,7 +4,6 @@
 
 import os
 import hashlib
-import sys
 import subprocess as sp
 
 
