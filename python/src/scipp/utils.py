@@ -3,7 +3,6 @@
 # @file
 # @author Neil Vaytet
 
-from ._scipp.core.units import dimensionless
 from ._scipp.core import (Variable, VariableView, Dataset, DatasetView,
                           DataArray, DataArrayView, is_events)
 
