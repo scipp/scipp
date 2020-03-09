@@ -10,6 +10,7 @@ from html import escape
 import numpy as np
 
 from .._scipp import core as sc
+from ..utils import is_data_events
 
 CSS_FILE_PATH = f"{os.path.dirname(__file__)}/style.css"
 with open(CSS_FILE_PATH, 'r') as f:
@@ -66,10 +67,7 @@ def _format_non_sparse(var, has_variances):
 
 
 def _get_sparse(var, variances, ellipsis_after, summary=False):
-    if hasattr(var, "data") and var.data is None:
-        return ["No data, implicitly 1"]
-
-    if var.shape[0] is None:
+    if len(var.dims) == 0:
         # handles a 1D Variable with only a sparse dimension
         size = len(var.values)
         if summary:
@@ -111,7 +109,7 @@ def _format_sparse(var, has_variances):
 
 
 def inline_variable_repr(var, has_variances=False):
-    if sc.is_events(var):
+    if is_data_events(var):
         return _format_sparse(var, has_variances)
     else:
         return _format_non_sparse(var, has_variances)
@@ -138,7 +136,7 @@ def _short_data_repr_html_sparse(var, variances=False):
 
 def short_data_repr_html(var, variances=False):
     """Format "data" for DataArray and Variable."""
-    if sc.is_events(var):
+    if is_data_events(var):
         data_repr = _short_data_repr_html_sparse(var, variances)
     else:
         data_repr = _short_data_repr_html_non_sparse(var, variances)
