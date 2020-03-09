@@ -15,7 +15,7 @@ If you cannot find an answer, you can ask a new question by
 `opening <https://github.com/scipp/scipp/issues/new?assignees=&labels=question&template=question.md&title=>`_
 a new |QuestionLabel|_ issue.
 
-.. |QuestionLabel| image:: images/question.png
+.. |QuestionLabel| image:: ../images/question.png
 .. _QuestionLabel: https://github.com/scipp/scipp/issues/new?assignees=&labels=question&template=question.md&title=
 
 General
