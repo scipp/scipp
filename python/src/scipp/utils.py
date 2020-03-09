@@ -23,8 +23,7 @@ def name_with_unit(var=None, name=None, log=False, replace_dim=True):
     if log:
         text = "log\u2081\u2080(" + text + ")"
     if var is not None:
-        if var.unit != dimensionless:
-            text += " [{}]".format(var.unit)
+        text += " [{}]".format(var.unit)
     return text
 
 
