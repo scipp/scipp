@@ -88,9 +88,7 @@ def assert_dims_section(data, dim_section, sparse=False):
     # checks that all dims are formatted with the their extent
     for dim, size in zip(data.dims, data.shape):
         assert str(dim) in dim_list[0].text
-        assert str(
-            size) if size != sc.Dimensions.Sparse \
-            else 'Sparse' in dim_list[0].text
+        assert str(size) in dim_list[0].text
 
 
 def assert_section(section,
