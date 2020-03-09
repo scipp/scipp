@@ -75,7 +75,7 @@ def test_empty_sparse_1d_variable():
     assert_common(html, in_dtype)
     name = html.find_all(class_=VAR_NAME_CSS_CLASS)
     assert len(name) == 1
-    assert_dims(['x'], name[0].text)
+    assert_dims([], '')
     assert_unit(in_unit, html.find_all(class_=UNIT_CSS_CLASS))
 
     value = html.find_all(class_=VALUE_CSS_CLASS)
@@ -95,7 +95,7 @@ def test_sparse_1d_variable():
 
     name = html.find_all(class_=VAR_NAME_CSS_CLASS)
     assert len(name) == 1
-    assert_dims(['x'], name[0].text)
+    assert_dims([], '')
     # This checks if the 'size' of the Sparse dim is being added
     # which would add a useless 'None'
     assert "None" not in name[0].text
@@ -110,7 +110,7 @@ def test_sparse_1d_variable():
                                                   (10, 10, 3)),
                           (['x', 'y', 'z', 'spectrum'], (10, 10, 10, 3))))
 def test_sparse(dims, lengths):
-    in_dtype = sc.dtype.float32
+    in_dtype = sc.dtype.event_list_float32
     in_unit = sc.units.deg
 
     var = sc.Variable(dims, lengths, unit=in_unit, dtype=in_dtype)
