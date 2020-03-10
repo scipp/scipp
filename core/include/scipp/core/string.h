@@ -30,6 +30,8 @@ template <class T, class U> class MutableView;
 
 SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os, const Dim dim);
 SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
+                                           const Dimensions &dims);
+SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
                                            const VariableConstView &variable);
 SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
                                            const VariableView &variable);
