@@ -1295,6 +1295,7 @@ TEST(ATan2Test, no_variance_on_args) {
   EXPECT_THROW((out = atan2(with_var, with_no_var)), except::VariancesError);
   EXPECT_THROW((out = atan2(with_no_var, with_var)), except::VariancesError);
 }
+
 TEST(ATan2Test, value_out) {
   auto x = makeVariable<double>(units::Unit(units::m), Values{1.0});
   auto y = x;
