@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
-/// @author Simon Heybrock
+/// @author Owen Arnold
 #ifndef SCIPP_CORE_ELEMENT_TRIGONOMETRY_OPERATIONS_H
 #define SCIPP_CORE_ELEMENT_TRIGONOMETRY_OPERATIONS_H
 
