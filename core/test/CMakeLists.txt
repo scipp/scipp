@@ -43,6 +43,7 @@ add_executable(
   sum_test.cpp
   transform_sparse_and_dense_test.cpp
   transform_test.cpp
+  unaligned_test.cpp
   value_and_variance_test.cpp
   variable_concept_test.cpp
   variable_custom_type_test.cpp

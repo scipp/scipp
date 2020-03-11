@@ -19,8 +19,7 @@ template <class T> auto copy_map(const T &map) {
 }
 
 DataArray::DataArray(const DataArrayConstView &view)
-    : DataArray(view.hasData() ? std::optional<Variable>(view.data())
-                               : std::optional<Variable>(),
+    : DataArray(view.hasData() ? Variable(view.data()) : Variable{},
                 copy_map(view.coords()), copy_map(view.masks()),
                 copy_map(view.attrs()), view.name()) {}
 

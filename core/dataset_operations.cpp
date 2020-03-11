@@ -79,7 +79,7 @@ DataArray concatenate(const DataArrayConstView &a, const DataArrayConstView &b,
     return DataArray{a};
   return DataArray(a.hasData() || b.hasData()
                        ? concatenate(a.data(), b.data(), dim)
-                       : std::optional<Variable>(),
+                       : Variable{},
                    concat(a.coords(), b.coords(), dim, a.dims(), b.dims()),
                    concat(a.masks(), b.masks(), dim, a.dims(), b.dims()));
 }

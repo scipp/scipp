@@ -82,9 +82,9 @@ DataArray apply_or_copy_dim(const DataArrayConstView &a, Func func,
       masks.emplace(name, mask.dims().contains(dim) ? func(mask, dim, args...)
                                                     : copy(mask));
 
-  return DataArray(
-      a.hasData() ? func(a.data(), dim, args...) : std::optional<Variable>(),
-      std::move(coords), std::move(masks), std::move(attrs), a.name());
+  return DataArray(a.hasData() ? func(a.data(), dim, args...) : Variable{},
+                   std::move(coords), std::move(masks), std::move(attrs),
+                   a.name());
 }
 
 template <class Func, class... Args>

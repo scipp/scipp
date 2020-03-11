@@ -7,6 +7,8 @@
 
 namespace scipp::core {
 
+detail::DatasetData::~DatasetData() = default;
+
 template <class T> typename T::view_type makeViewItem(T &variable) {
   if constexpr (std::is_const_v<T>)
     return typename T::view_type(typename T::const_view_type(variable));
@@ -288,6 +290,8 @@ void Dataset::setData(const std::string &name, DataArray data) {
 
   if (item->second.data)
     setData(name, std::move(item->second.data));
+  if (item->second.unaligned)
+    m_data[name].unaligned = std::move(item->second.unaligned);
   for (auto &&[nm, attr] : item->second.attrs)
     setAttr(name, std::string(nm), std::move(attr));
 }
@@ -303,6 +307,15 @@ void Dataset::setData(const std::string &name, const DataArrayConstView &data) {
       data.slices().empty())
     return; // Self-assignment, return early.
   setData(name, DataArray(data));
+}
+
+void Dataset::setUnaligned(const std::string &name, const Dimensions &dims,
+                           DataArray unaligned) {
+  if (contains(name) && m_data[name].data)
+    throw except::UnalignedError(
+        "Cannot set unaligned data for existing item with aligned content.");
+  m_data[name].dims = dims;
+  m_data[name].unaligned = std::make_unique<DataArray>(std::move(unaligned));
 }
 
 /// Removes the coordinate for the given dimension.
@@ -447,10 +460,21 @@ const std::string &DataArrayConstView::name() const noexcept {
 
 /// Return an ordered mapping of dimension labels to extents.
 Dimensions DataArrayConstView::dims() const noexcept {
-  // TODO For unaligned data we somehow need to obtain dims from all relevant
-  // aligned coords.
-  // if (hasData())
-  return data().dims();
+  if (hasData())
+    return data().dims();
+  else {
+    // TODO slicing
+    return m_data->second.dims;
+    // Dimensions dims;
+    // const auto &unalignedCoords = m_data->second.unaligned->coords();
+    // const auto &unalignedDims = m_data->second.unaligned->dims();
+    // for (const auto &[dim, coord] : m_dataset->m_coords)
+    //  if (unalignedCoords.contains(dim)) // aligning bin edges
+    //    dims.add(dim, coord.dims()[dim] - 1);
+    //  else if (unalignedDims.contains(dim)) // aligned
+    //    dims.add(dim, coord.dims()[dim]);
+    // return dims;
+  }
 }
 
 /// Return the dtype of the data. Throws if there is no data.

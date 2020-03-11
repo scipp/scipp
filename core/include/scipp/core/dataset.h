@@ -14,6 +14,7 @@
 
 #include <boost/iterator/transform_iterator.hpp>
 
+#include "scipp/common/deep_ptr.h"
 #include "scipp/core/dataset_access.h"
 #include "scipp/core/except.h"
 #include "scipp/core/variable.h"
@@ -29,15 +30,11 @@ class DatasetView;
 namespace detail {
 /// Helper for holding data items in Dataset.
 struct DatasetData {
+  ~DatasetData();
   /// Optional data values (with optional variances).
-  // TODO would there be any point in using DatasetAxis here?
-  // Are the provided operators useful?
-  // Do we need joint handling with unaligned coords, or can data be done
-  // independently, e.g., concat when adding data?
-  // How to distinguish cases of concatenation (events) from addition (position
-  // data)? Does it just depend in the dtype?
   Variable data;
-  Variable unaligned;
+  Dimensions dims;
+  deep_ptr<DataArray> unaligned;
   /// Attributes for data.
   std::unordered_map<std::string, Variable> attrs;
 };
@@ -360,6 +357,8 @@ public:
   void setData(const std::string &name, Variable data);
   void setData(const std::string &name, const DataArrayConstView &data);
   void setData(const std::string &name, DataArray data);
+  void setUnaligned(const std::string &name, const Dimensions &dims,
+                    DataArray unaligned);
 
   void setCoord(const Dim dim, const VariableConstView &coord) {
     setCoord(dim, Variable(coord));
@@ -684,14 +683,28 @@ public:
   template <class CoordMap = std::map<Dim, Variable>,
             class MasksMap = std::map<std::string, Variable>,
             class AttrMap = std::map<std::string, Variable>>
-  DataArray(std::optional<Variable> data, CoordMap coords = {},
-            MasksMap masks = {}, AttrMap attrs = {},
-            const std::string &name = "") {
+  DataArray(Variable data, CoordMap coords = {}, MasksMap masks = {},
+            AttrMap attrs = {}, const std::string &name = "",
+            std::optional<DataArray> unaligned = std::nullopt) {
     // This check will be changed once we can have unaligned content instead.
-    if (!data)
-      throw std::runtime_error("DataArray must have data.");
-
-    m_holder.setData(name, std::move(*data));
+    if (data) {
+      if (unaligned)
+        throw std::runtime_error("DataArray cannot have data and unaligned "
+                                 "content at the same time.");
+      m_holder.setData(name, std::move(data));
+    } else {
+      if (!unaligned)
+        throw std::runtime_error(
+            "DataArray must have either data or unaligned content.");
+      Dimensions dims;
+      const auto &unalignedDims = unaligned->dims();
+      for (const auto &[dim, coord] : coords)
+        if (coord.dims().contains(dim))
+          dims.addInner(dim, unalignedDims.contains(dim)
+                                 ? unalignedDims[dim]
+                                 : coord.dims()[dim] - 1);
+      m_holder.setUnaligned(name, dims, std::move(*unaligned));
+    }
 
     for (auto &&[dim, c] : coords)
       m_holder.setCoord(dim, std::move(c));
