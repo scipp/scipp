@@ -7,7 +7,6 @@ from .. import config
 
 # Other imports
 import numpy as np
-from matplotlib.colors import Normalize, LogNorm, LinearSegmentedColormap
 
 
 def get_line_param(name=None, index=None):
@@ -38,6 +37,8 @@ def parse_params(params=None, defaults=None, globs=None, array=None):
     """
     Construct the colorbar settings using default and input values
     """
+    from matplotlib.colors import Normalize, LogNorm, LinearSegmentedColormap
+
     parsed = dict(config.plot.params)
     if defaults is not None:
         for key, val in defaults.items():
