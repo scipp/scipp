@@ -8,34 +8,63 @@
 using namespace scipp;
 using namespace scipp::core;
 
-TEST(UnalignedTest, align) {
-  const Dim dim = Dim::Position;
-  const auto pos = makeVariable<Eigen::Vector3d>(
-      Dims{dim}, Shape{4},
-      Values{Eigen::Vector3d{1, 1, 1}, Eigen::Vector3d{1, 1, 2},
-             Eigen::Vector3d{1, 2, 3}, Eigen::Vector3d{1, 2, 4}});
-  const auto x = makeVariable<double>(Dims{dim}, Shape{4}, Values{1, 1, 1, 1});
-  const auto y = makeVariable<double>(Dims{dim}, Shape{4}, Values{1, 1, 2, 2});
-  const auto z = makeVariable<double>(Dims{dim}, Shape{4}, Values{1, 2, 3, 4});
-  DataArray base(makeVariable<double>(Dims{dim}, Shape{4}, Values{1, 2, 3, 4}),
-                 {{dim, pos}, {Dim::X, x}, {Dim::Y, y}, {Dim::Z, z}});
+struct RealignTest : public ::testing::Test {
+protected:
+  Variable temp = makeVariable<double>(Dims{Dim::Temperature}, Shape{2});
+  Variable xbins =
+      makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{0, 2, 4});
+  Variable ybins =
+      makeVariable<double>(Dims{Dim::Y}, Shape{3}, Values{0, 2, 4});
+  Variable zbins =
+      makeVariable<double>(Dims{Dim::Z}, Shape{3}, Values{0, 2, 4});
 
-  base = concatenate(base, base + base, Dim::Temperature);
-  EXPECT_EQ(base.dims(), Dimensions({Dim::Temperature, Dim::Position}, {2, 4}));
-  const auto temp = makeVariable<double>(Dims{Dim::Temperature}, Shape{2});
-  base.coords().set(Dim::Temperature, temp);
+  DataArray make_array() {
+    const Dim dim = Dim::Position;
+    const auto pos = makeVariable<Eigen::Vector3d>(
+        Dims{dim}, Shape{4},
+        Values{Eigen::Vector3d{1, 1, 1}, Eigen::Vector3d{1, 1, 2},
+               Eigen::Vector3d{1, 2, 3}, Eigen::Vector3d{1, 2, 4}});
+    const auto x =
+        makeVariable<double>(Dims{dim}, Shape{4}, Values{1, 1, 1, 1});
+    const auto y =
+        makeVariable<double>(Dims{dim}, Shape{4}, Values{1, 1, 2, 2});
+    const auto z =
+        makeVariable<double>(Dims{dim}, Shape{4}, Values{1, 2, 3, 4});
+    DataArray a(makeVariable<double>(Dims{dim}, Shape{4}, Values{1, 2, 3, 4}),
+                {{dim, pos}, {Dim::X, x}, {Dim::Y, y}, {Dim::Z, z}});
 
-  const auto xbins = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{0, 4});
-  const auto ybins = makeVariable<double>(Dims{Dim::Y}, Shape{2}, Values{0, 4});
-  const auto zbins = makeVariable<double>(Dims{Dim::Z}, Shape{2}, Values{0, 4});
+    a = concatenate(a, a + a, Dim::Temperature);
+    EXPECT_EQ(a.dims(), Dimensions({Dim::Temperature, Dim::Position}, {2, 4}));
+    a.coords().set(Dim::Temperature, temp);
+    return a;
+  }
 
+  DataArray make_realigned() {
+    return unaligned::realign(
+        make_array(), {{Dim::Z, zbins}, {Dim::Y, ybins}, {Dim::X, xbins}});
+  }
+
+  DataArray make_aligned() {
+    // TODO set proper values
+    return DataArray(
+        makeVariable<double>(Dims{Dim::Temperature, Dim::Z, Dim::Y, Dim::X},
+                             Shape{2, 2, 2, 2}),
+        {{Dim::Temperature, temp},
+         {Dim::Z, zbins},
+         {Dim::Y, ybins},
+         {Dim::X, xbins}});
+  }
+};
+
+TEST_F(RealignTest, basics) {
+  auto base = make_array();
   auto realigned = unaligned::realign(
       base, {{Dim::Z, zbins}, {Dim::Y, ybins}, {Dim::X, xbins}});
 
   EXPECT_FALSE(realigned.hasData());
   EXPECT_EQ(
       realigned.dims(),
-      Dimensions({Dim::Temperature, Dim::Z, Dim::Y, Dim::X}, {2, 1, 1, 1}));
+      Dimensions({Dim::Temperature, Dim::Z, Dim::Y, Dim::X}, {2, 2, 2, 2}));
   EXPECT_TRUE(realigned.coords().contains(Dim::Temperature));
   EXPECT_TRUE(realigned.coords().contains(Dim::X));
   EXPECT_TRUE(realigned.coords().contains(Dim::Y));
@@ -49,61 +78,7 @@ TEST(UnalignedTest, align) {
   EXPECT_EQ(realigned.unaligned(), base);
 }
 
-namespace {
-auto make_array() {
-  const Dim dim = Dim::Position;
-  const auto pos = makeVariable<Eigen::Vector3d>(
-      Dims{dim}, Shape{4},
-      Values{Eigen::Vector3d{1, 1, 1}, Eigen::Vector3d{1, 1, 2},
-             Eigen::Vector3d{1, 2, 3}, Eigen::Vector3d{1, 2, 4}});
-  const auto x = makeVariable<double>(Dims{dim}, Shape{4}, Values{1, 1, 1, 1});
-  const auto y = makeVariable<double>(Dims{dim}, Shape{4}, Values{1, 1, 2, 2});
-  const auto z = makeVariable<double>(Dims{dim}, Shape{4}, Values{1, 2, 3, 4});
-  DataArray a(makeVariable<double>(Dims{dim}, Shape{4}, Values{1, 2, 3, 4}),
-              {{dim, pos}, {Dim::X, x}, {Dim::Y, y}, {Dim::Z, z}});
-
-  a = concatenate(a, a + a, Dim::Temperature);
-  EXPECT_EQ(a.dims(), Dimensions({Dim::Temperature, Dim::Position}, {2, 4}));
-  const auto temp = makeVariable<double>(Dims{Dim::Temperature}, Shape{2});
-  a.coords().set(Dim::Temperature, temp);
-  return a;
-}
-
-auto make_realigned() {
-  auto a = make_array();
-
-  const auto xbins =
-      makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{0, 2, 4});
-  const auto ybins =
-      makeVariable<double>(Dims{Dim::Y}, Shape{3}, Values{0, 2, 4});
-  const auto zbins =
-      makeVariable<double>(Dims{Dim::Z}, Shape{3}, Values{0, 2, 4});
-
-  return unaligned::realign(
-      a, {{Dim::Z, zbins}, {Dim::Y, ybins}, {Dim::X, xbins}});
-}
-
-auto make_aligned() {
-  const auto temp = makeVariable<double>(Dims{Dim::Temperature}, Shape{2});
-  const auto xbins =
-      makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{0, 2, 4});
-  const auto ybins =
-      makeVariable<double>(Dims{Dim::Y}, Shape{3}, Values{0, 2, 4});
-  const auto zbins =
-      makeVariable<double>(Dims{Dim::Z}, Shape{3}, Values{0, 2, 4});
-
-  // TODO set proper values
-  return DataArray(
-      makeVariable<double>(Dims{Dim::Temperature, Dim::Z, Dim::Y, Dim::X},
-                           Shape{2, 2, 2, 2}),
-      {{Dim::Temperature, temp},
-       {Dim::Z, zbins},
-       {Dim::Y, ybins},
-       {Dim::X, xbins}});
-}
-} // namespace
-
-TEST(UnalignedTest, slice) {
+TEST_F(RealignTest, slice) {
   const auto realigned = make_realigned();
   const auto aligned = make_aligned();
 
