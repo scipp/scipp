@@ -445,7 +445,7 @@ DataArrayConstView::DataArrayConstView(
     : m_dataset(&dataset), m_data(&data), m_slices(slices) {
   if (view)
     m_view = std::move(view);
-  else if (hasData())
+  else if (m_data->second.data)
     m_view =
         VariableView(detail::makeSlice(m_data->second.data, this->slices()));
 }
@@ -484,8 +484,11 @@ DType DataArrayConstView::dtype() const { return data().dtype(); }
 units::Unit DataArrayConstView::unit() const { return data().unit(); }
 
 DataArrayConstView DataArrayConstView::unaligned() const {
-  return *m_data->second.unaligned;
-  // return {*m_dataset, *m_data, slices()};
+  // This needs to combine coords from m_dataset and from the unaligned data. We
+  // therefore construct with normal dataset and items pointers and only pass
+  // the unaligned data via a variable view.
+  return {*m_dataset, *m_data, slices(),
+          VariableView(m_data->second.unaligned->data())};
 }
 
 /// Set the unit of the data values.
@@ -499,8 +502,14 @@ void DataArrayView::setUnit(const units::Unit unit) const {
 
 /// Return a const view to all coordinates of the data view.
 CoordsConstView DataArrayConstView::coords() const noexcept {
-  return CoordsConstView(
-      makeViewItems<CoordsConstView>(dims(), m_dataset->m_coords), slices());
+  auto items = makeViewItems<CoordsConstView>(dims(), m_dataset->m_coords);
+  if (!m_data->second.data && hasData()) {
+    const DataArrayConstView unaligned = *m_data->second.unaligned;
+    auto unalignedItems = makeViewItems<CoordsConstView>(
+        unaligned.dims(), unaligned.m_dataset->m_coords);
+    items.insert(unalignedItems.begin(), unalignedItems.end());
+  }
+  return CoordsConstView(std::move(items), slices());
 }
 
 /// Return a const view to all attributes of the data view.

@@ -20,7 +20,7 @@ Dim unaligned_dim(const VariableConstView &unaligned) {
 }
 
 template <class CoordMap = std::vector<std::pair<Dim, Variable>>>
-DataArray align(DataArray unaligned, CoordMap coords) {
+DataArray realign(DataArray unaligned, CoordMap coords) {
   std::set<Dim> alignedDims;
   std::set<Dim> binnedDims;
   std::set<Dim> unalignedDims;

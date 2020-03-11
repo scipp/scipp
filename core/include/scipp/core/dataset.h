@@ -61,12 +61,10 @@ public:
   MasksConstView masks() const noexcept;
 
   /// Return true if the view contains data values.
-  bool hasData() const noexcept {
-    return static_cast<bool>(m_data->second.data);
-  }
+  bool hasData() const noexcept { return static_cast<bool>(m_view); }
   /// Return true if the view contains data variances.
   bool hasVariances() const noexcept {
-    return hasData() && m_data->second.data.hasVariances();
+    return hasData() && data().hasVariances();
   }
 
   /// Return untyped const view for data (values and optional variances).
@@ -101,7 +99,7 @@ protected:
   // VariableView. The interface guarantees that the invalid mutable view is
   // not accessible. This wrapping avoids inefficient duplication of the view in
   // the child class DataArrayView.
-  VariableView m_view; // may be empty
+  VariableView m_view; // empty if the array has no (aligned) data
 
 private:
   friend class DatasetConstView;
