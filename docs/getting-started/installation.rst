@@ -11,13 +11,13 @@ Conda
 -----
 
 The easiest way to install ``scipp`` is using `conda <https://conda.io>`_.
-Packaghes from `Anaconda Cloud <https://conda.anaconda.org/scipp>`_ are available for Linux, macOS and Windows.
+Packages from `Anaconda Cloud <https://conda.anaconda.org/scipp>`_ are available for Linux, macOS and Windows.
 
 To create a new conda environment with scipp:
 
 .. code-block:: sh
 
-   $ conda create -n env_with_scipp -c conda-forge -c scipp/label/dev scipp
+   $ conda create -n env_with_scipp -c conda-forge -c scipp scipp
 
 To add scipp to an existing conda environment:
 
@@ -25,7 +25,7 @@ To add scipp to an existing conda environment:
 
    $ conda install -c conda-forge -c scipp scipp
 
-For a more up-to-date version the `scipp/label/dev` channel can be used instead:
+For a more up-to-date version, the `scipp/label/dev` channel can be used instead:
 
 .. code-block:: sh
 
