@@ -441,13 +441,13 @@ void Dataset::rename(const Dim from, const Dim to) {
 
 DataArrayConstView::DataArrayConstView(
     const Dataset &dataset, const detail::dataset_item_map::value_type &data,
-    const detail::slice_list &slices, std::optional<VariableView> &&view)
+    const detail::slice_list &slices, VariableView &&view)
     : m_dataset(&dataset), m_data(&data), m_slices(slices) {
   if (view)
     m_view = std::move(view);
   else if (hasData())
-    m_view.emplace(
-        VariableView(detail::makeSlice(m_data->second.data, this->slices())));
+    m_view =
+        VariableView(detail::makeSlice(m_data->second.data, this->slices()));
 }
 
 /// Return the name of the view.
@@ -463,17 +463,15 @@ Dimensions DataArrayConstView::dims() const noexcept {
   if (hasData())
     return data().dims();
   else {
-    // TODO slicing
-    return m_data->second.dims;
-    // Dimensions dims;
-    // const auto &unalignedCoords = m_data->second.unaligned->coords();
-    // const auto &unalignedDims = m_data->second.unaligned->dims();
-    // for (const auto &[dim, coord] : m_dataset->m_coords)
-    //  if (unalignedCoords.contains(dim)) // aligning bin edges
-    //    dims.add(dim, coord.dims()[dim] - 1);
-    //  else if (unalignedDims.contains(dim)) // aligned
-    //    dims.add(dim, coord.dims()[dim]);
-    // return dims;
+    Dimensions sliced(m_data->second.dims);
+    for (const auto &item : slices()) {
+      const auto [dim, begin, end] = item.first;
+      if (end == -1)
+        sliced.erase(dim);
+      else
+        sliced.resize(dim, end - begin);
+    }
+    return sliced;
   }
 }
 
@@ -484,6 +482,11 @@ DType DataArrayConstView::dtype() const { return data().dtype(); }
 ///
 /// Throws if there are no data values.
 units::Unit DataArrayConstView::unit() const { return data().unit(); }
+
+DataArrayConstView DataArrayConstView::unaligned() const {
+  return *m_data->second.unaligned;
+  // return {*m_dataset, *m_data, slices()};
+}
 
 /// Set the unit of the data values.
 ///
@@ -544,7 +547,7 @@ DataArrayView::DataArrayView(Dataset &dataset,
     : DataArrayConstView(dataset, data, slices,
                          data.second.data ? VariableView(detail::makeSlice(
                                                 data.second.data, slices))
-                                          : std::optional<VariableView>{}),
+                                          : VariableView{}),
       m_mutableDataset(&dataset), m_mutableData(&data) {}
 
 DataArrayView DataArrayView::slice(const Slice slice1) const {

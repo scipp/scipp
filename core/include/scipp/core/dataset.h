@@ -48,7 +48,7 @@ public:
   DataArrayConstView(const Dataset &dataset,
                      const detail::dataset_item_map::value_type &data,
                      const detail::slice_list &slices = {},
-                     std::optional<VariableView> &&view = std::nullopt);
+                     VariableView &&view = VariableView{});
 
   const std::string &name() const noexcept;
 
@@ -73,7 +73,7 @@ public:
   const VariableConstView &data() const {
     if (!hasData())
       throw except::SparseDataError("No data in item.");
-    return *m_view;
+    return m_view;
   }
   /// Return typed const view for data values.
   template <class T> auto values() const { return data().template values<T>(); }
@@ -82,6 +82,8 @@ public:
   template <class T> auto variances() const {
     return data().template variances<T>();
   }
+
+  DataArrayConstView unaligned() const;
 
   DataArrayConstView slice(const Slice slice1) const;
   DataArrayConstView slice(const Slice slice1, const Slice slice2) const;
@@ -99,7 +101,7 @@ protected:
   // VariableView. The interface guarantees that the invalid mutable view is
   // not accessible. This wrapping avoids inefficient duplication of the view in
   // the child class DataArrayView.
-  std::optional<VariableView> m_view;
+  VariableView m_view; // may be empty
 
 private:
   friend class DatasetConstView;
@@ -135,7 +137,7 @@ public:
   const VariableView &data() const {
     if (!hasData())
       throw except::SparseDataError("No data in item.");
-    return *m_view;
+    return m_view;
   }
   /// Return typed view for data values.
   template <class T> auto values() const { return data().template values<T>(); }
@@ -734,6 +736,8 @@ public:
   Dimensions dims() const { return get().dims(); }
   DType dtype() const { return get().dtype(); }
   units::Unit unit() const { return get().unit(); }
+
+  DataArrayConstView unaligned() const { return get().unaligned(); }
 
   void setUnit(const units::Unit unit) { get().setUnit(unit); }
 
