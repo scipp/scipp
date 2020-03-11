@@ -6,6 +6,7 @@
 #include "test_macros.h"
 
 #include "fix_typed_test_suite_warnings.h"
+#include "scipp/common/constants.h"
 #include "scipp/core/dimensions.h"
 #include "scipp/core/event.h"
 #include "scipp/core/except.h"
@@ -1282,8 +1283,8 @@ TEST(VariableTest,
 TEST(ATan2Test, atan2) {
   auto x = makeVariable<double>(units::Unit(units::m), Values{1.0});
   auto y = x;
-  auto expected =
-      makeVariable<double>(units::Unit(units::rad), Values{M_PI / 4});
+  auto expected = makeVariable<double>(units::Unit(units::rad),
+                                       Values{scipp::pi<double> / 4});
   EXPECT_EQ(atan2(y, x), expected);
 }
 
@@ -1299,8 +1300,8 @@ TEST(ATan2Test, no_variance_on_args) {
 TEST(ATan2Test, value_out) {
   auto x = makeVariable<double>(units::Unit(units::m), Values{1.0});
   auto y = x;
-  auto expected =
-      makeVariable<double>(units::Unit(units::rad), Values{M_PI / 4});
+  auto expected = makeVariable<double>(units::Unit(units::rad),
+                                       Values{scipp::pi<double> / 4});
   auto out = atan2(y, x, y);
   EXPECT_EQ(out, expected);
   EXPECT_EQ(y, expected);
