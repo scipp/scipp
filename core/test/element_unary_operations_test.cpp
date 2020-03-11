@@ -320,16 +320,31 @@ TYPED_TEST(ElementAtan2Test, unit) {
 
 TYPED_TEST(ElementAtan2Test, value) {
   using T = TypeParam;
-  T a = 1;
-  T b = 2;
-  EXPECT_EQ(element::atan2(a, b), std::atan2(a, b));
+  T y = 1;
+  T x = 2;
+  EXPECT_EQ(element::atan2(y, x), std::atan2(y, x));
+  x = -1;
+  EXPECT_EQ(element::atan2(y, x), std::atan2(y, x));
 }
 
-TEST(ElementAtan2OutArgTest, unit) {}
+TYPED_TEST(ElementAtan2Test, value_out) {
+  using T = TypeParam;
+  T out = -1;
+  T y = 1;
+  T x = 2;
+  element::atan2_out_arg(out, y, x);
+  EXPECT_EQ(out, std::atan2(y, x));
+}
 
-TEST(ElementAtan2OutArgTest, value_double) {}
-
-TEST(ElementAtan2OutArgTest, value_float) {}
+TYPED_TEST(ElementAtan2Test, unit_out) {
+  const units::Unit m(units::m);
+  const units::Unit s(units::s);
+  units::Unit out(units::dimensionless);
+  element::atan2_out_arg(out, m, m);
+  EXPECT_EQ(out, units::atan2(m, m));
+  EXPECT_THROW(element::atan2_out_arg(out, m, s), except::UnitError);
+  EXPECT_THROW(element::atan2_out_arg(out, s, m), except::UnitError);
+}
 
 template <typename T> class ElementNanToNumTest : public ::testing::Test {};
 using ElementReplacementTestTypes = ::testing::Types<double, float>;

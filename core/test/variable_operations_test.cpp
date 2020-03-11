@@ -1280,13 +1280,41 @@ TEST(VariableTest,
 }
 
 TEST(ATan2Test, atan2) {
-  auto x = makeVariable<double>(Dims{Dim::X}, Shape{2}, units::Unit(units::m),
-                                Values{1.0, 2.0});
+  auto x = makeVariable<double>(units::Unit(units::m), Values{1.0});
   auto y = x;
   auto expected =
-      makeVariable<double>(Dims{Dim::X}, Shape{2}, units::Unit(units::rad),
-                           Values{M_PI / 4, M_PI / 4});
+      makeVariable<double>(units::Unit(units::rad), Values{M_PI / 4});
   EXPECT_EQ(atan2(y, x), expected);
+}
+
+TEST(ATan2Test, no_variance_on_args) {
+  auto with_no_var = makeVariable<double>(units::Unit(units::m), Values{1.0});
+  auto with_var =
+      makeVariable<double>(units::Unit(units::m), Values{1.0}, Variances{1.0});
+  Variable out;
+  EXPECT_THROW((out = atan2(with_var, with_no_var)), except::VariancesError);
+  EXPECT_THROW((out = atan2(with_no_var, with_var)), except::VariancesError);
+}
+TEST(ATan2Test, value_out) {
+  auto x = makeVariable<double>(units::Unit(units::m), Values{1.0});
+  auto y = x;
+  auto expected =
+      makeVariable<double>(units::Unit(units::rad), Values{M_PI / 4});
+  auto out = atan2(y, y, x);
+  EXPECT_EQ(out, expected);
+  EXPECT_EQ(y, expected);
+}
+
+TEST(ATan2Test, no_variance_on_args_out) {
+  auto with_no_var = makeVariable<double>(units::Unit(units::m), Values{1.0});
+  auto with_var =
+      makeVariable<double>(units::Unit(units::m), Values{1.0}, Variances{1.0});
+  EXPECT_THROW(atan2(with_var, with_no_var, with_no_var),
+               except::VariancesError); // Variance on out
+  EXPECT_THROW(atan2(with_no_var, with_var, with_no_var),
+               except::VariancesError); // Variance on x
+  EXPECT_THROW(atan2(with_no_var, with_no_var, with_var),
+               except::VariancesError); // Variance on y
 }
 
 template <class T> class ReciprocalTest : public ::testing::Test {};

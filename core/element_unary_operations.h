@@ -107,17 +107,18 @@ constexpr auto atan_out_arg = overloaded{
 
 constexpr auto atan2 = overloaded{
     arg_list<double, float>, transform_flags::expect_no_variance_arg<0>,
-    transform_flags::expect_no_variance_arg<1>, [](const auto x, const auto y) {
+    transform_flags::expect_no_variance_arg<1>, [](const auto y, const auto x) {
       using std::atan2;
-      return atan2(x, y);
+      return atan2(y, x);
     }};
 
 constexpr auto atan2_out_arg = overloaded{
     arg_list<double, float>, transform_flags::expect_no_variance_arg<0>,
     transform_flags::expect_no_variance_arg<1>,
-    [](auto &x, const auto y, const auto z) {
+    transform_flags::expect_no_variance_arg<2>,
+    [](auto &out, const auto y, const auto x) {
       using std::atan2;
-      x = atan2(y, z);
+      out = atan2(y, x);
     }};
 
 auto unit_check_and_assign = [](units::Unit &a, const units::Unit &b,
