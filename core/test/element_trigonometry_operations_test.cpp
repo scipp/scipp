@@ -212,6 +212,12 @@ TEST(ElementAtanOutArgTest, value_float) {
   EXPECT_EQ(out, std::atan(1.0f));
 }
 
+TEST(ElementAtanOutArgTest, supported_types) {
+  auto supported = decltype(element::atan_out_arg)::types{};
+  std::get<double>(supported);
+  std::get<float>(supported);
+}
+
 template <typename T> class ElementAtan2Test : public ::testing::Test {};
 using ElementAtan2TestTypes = ::testing::Types<double, float>;
 TYPED_TEST_SUITE(ElementAtan2Test, ElementAtan2TestTypes);
