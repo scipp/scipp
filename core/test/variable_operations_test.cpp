@@ -1300,7 +1300,7 @@ TEST(ATan2Test, value_out) {
   auto y = x;
   auto expected =
       makeVariable<double>(units::Unit(units::rad), Values{M_PI / 4});
-  auto out = atan2(y, y, x);
+  auto out = atan2(y, x, y);
   EXPECT_EQ(out, expected);
   EXPECT_EQ(y, expected);
 }
