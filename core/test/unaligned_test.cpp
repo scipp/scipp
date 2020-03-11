@@ -9,7 +9,7 @@ using namespace scipp;
 using namespace scipp::core;
 
 TEST(UnalignedTest, align) {
-  const Dim dim = Dim("position");
+  const Dim dim = Dim::Position;
   const auto pos = makeVariable<Eigen::Vector3d>(
       Dims{dim}, Shape{4},
       Values{Eigen::Vector3d{1, 1, 1}, Eigen::Vector3d{1, 1, 2},
@@ -22,8 +22,8 @@ TEST(UnalignedTest, align) {
 
   base = concatenate(base, base + base, Dim::Temperature);
   EXPECT_EQ(base.dims(), Dimensions({Dim::Temperature, Dim::Position}, {2, 4}));
-  base.coords().set(Dim::Temperature,
-                    makeVariable<double>(Dims{Dim::Temperature}, Shape{2}));
+  const auto temp = makeVariable<double>(Dims{Dim::Temperature}, Shape{2});
+  base.coords().set(Dim::Temperature, temp);
 
   const auto xbins = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{0, 4});
   const auto ybins = makeVariable<double>(Dims{Dim::Y}, Shape{2}, Values{0, 4});
@@ -36,11 +36,13 @@ TEST(UnalignedTest, align) {
   EXPECT_EQ(
       aligned.dims(),
       Dimensions({Dim::Temperature, Dim::Z, Dim::Y, Dim::X}, {2, 1, 1, 1}));
-  // EXPECT_TRUE(aligned.coords().contains(Dim::X));
-  // EXPECT_TRUE(aligned.coords().contains(Dim::Y));
-  // EXPECT_TRUE(aligned.coords().contains(Dim::Z));
-  // EXPECT_EQ(aligned.coords()[Dim::X], xbins);
-  // EXPECT_EQ(aligned.coords()[Dim::Y], ybins);
-  // EXPECT_EQ(aligned.coords()[Dim::Z], zbins);
+  EXPECT_TRUE(aligned.coords().contains(Dim::Temperature));
+  EXPECT_TRUE(aligned.coords().contains(Dim::X));
+  EXPECT_TRUE(aligned.coords().contains(Dim::Y));
+  EXPECT_TRUE(aligned.coords().contains(Dim::Z));
+  EXPECT_EQ(aligned.coords()[Dim::Temperature], temp);
+  EXPECT_EQ(aligned.coords()[Dim::X], xbins);
+  EXPECT_EQ(aligned.coords()[Dim::Y], ybins);
+  EXPECT_EQ(aligned.coords()[Dim::Z], zbins);
 }
 
