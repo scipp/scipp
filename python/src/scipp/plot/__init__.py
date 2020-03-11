@@ -22,10 +22,14 @@ try:
         if is_doc_build:
             ipy.run_line_magic("matplotlib", "inline")
         elif "IPKernelApp" in ipy.config:
-            ipy.run_line_magic("matplotlib", "notebook")
-            ipy.run_cell_magic(
-                "html", "", "<style>.output_wrapper "
-                ".ui-dialog-titlebar {display: none;}</style>")
+            try:
+                # Use the ipympl (matplotlib widget) backend if installed
+                ipy.run_line_magic("matplotlib", "widget")
+            except ImportError:
+                ipy.run_line_magic("matplotlib", "notebook")
+                ipy.run_cell_magic(
+                    "html", "", "<style>.output_wrapper "
+                    ".ui-dialog-titlebar {display: none;}</style>")
 except ImportError:
     pass
 
