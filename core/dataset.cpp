@@ -537,7 +537,13 @@ DataArrayConstView DataArrayConstView::slice(const Slice slice1) const {
   expect::validSlice(dims_, slice1);
   auto tmp(m_slices);
   tmp.emplace_back(slice1, dims_[slice1.dim()]);
-  return {*m_dataset, *m_data, std::move(tmp)};
+  if (!m_data->second.data && hasData()) {
+    auto view = m_data->second.unaligned->data();
+    detail::do_make_slice(view, tmp);
+    return {*m_dataset, *m_data, std::move(tmp), std::move(view)};
+  } else {
+    return {*m_dataset, *m_data, std::move(tmp)};
+  }
 }
 
 DataArrayConstView DataArrayConstView::slice(const Slice slice1,
