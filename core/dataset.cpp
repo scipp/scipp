@@ -487,8 +487,9 @@ DataArrayConstView DataArrayConstView::unaligned() const {
   // This needs to combine coords from m_dataset and from the unaligned data. We
   // therefore construct with normal dataset and items pointers and only pass
   // the unaligned data via a variable view.
-  return {*m_dataset, *m_data, slices(),
-          VariableView(m_data->second.unaligned->data())};
+  auto view = m_data->second.unaligned->data();
+  detail::do_make_slice(view, slices());
+  return {*m_dataset, *m_data, slices(), std::move(view)};
 }
 
 /// Set the unit of the data values.
@@ -578,12 +579,17 @@ DataArrayView DataArrayView::slice(const Slice slice1, const Slice slice2,
 
 /// Return a view to all coordinates of the data view.
 CoordsView DataArrayView::coords() const noexcept {
+  auto items =
+      makeViewItems<CoordsConstView>(dims(), m_mutableDataset->m_coords);
+  if (!m_mutableData->second.data && hasData()) {
+    const DataArrayView unaligned = *m_mutableData->second.unaligned;
+    auto unalignedItems = makeViewItems<CoordsConstView>(
+        unaligned.dims(), unaligned.m_mutableDataset->m_coords);
+    items.insert(unalignedItems.begin(), unalignedItems.end());
+  }
   // CoordAccess disabled with nullptr since views of dataset items or slices of
   // data arrays may not set or erase coords.
-  return CoordsView(
-      CoordAccess(nullptr),
-      makeViewItems<CoordsConstView>(dims(), m_mutableDataset->m_coords),
-      slices());
+  return CoordsView(CoordAccess(nullptr), std::move(items), slices());
 }
 
 /// Return a view to all coordinates of the data array.

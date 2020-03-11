@@ -57,24 +57,15 @@ protected:
 };
 
 TEST_F(RealignTest, basics) {
+  const auto reference = make_aligned();
   auto base = make_array();
   auto realigned = unaligned::realign(
       base, {{Dim::Z, zbins}, {Dim::Y, ybins}, {Dim::X, xbins}});
 
   EXPECT_FALSE(realigned.hasData());
-  EXPECT_EQ(
-      realigned.dims(),
-      Dimensions({Dim::Temperature, Dim::Z, Dim::Y, Dim::X}, {2, 2, 2, 2}));
-  EXPECT_TRUE(realigned.coords().contains(Dim::Temperature));
-  EXPECT_TRUE(realigned.coords().contains(Dim::X));
-  EXPECT_TRUE(realigned.coords().contains(Dim::Y));
-  EXPECT_TRUE(realigned.coords().contains(Dim::Z));
-  EXPECT_EQ(realigned.coords()[Dim::Temperature], temp);
-  EXPECT_EQ(realigned.coords()[Dim::X], xbins);
-  EXPECT_EQ(realigned.coords()[Dim::Y], ybins);
-  EXPECT_EQ(realigned.coords()[Dim::Z], zbins);
+  EXPECT_EQ(realigned.dims(), reference.dims());
+  EXPECT_EQ(realigned.coords(), reference.coords());
 
-  EXPECT_TRUE(realigned.unaligned().hasData());
   EXPECT_EQ(realigned.unaligned(), base);
 }
 
@@ -91,6 +82,40 @@ TEST_F(RealignTest, slice) {
         EXPECT_FALSE(slice.hasData());
         EXPECT_EQ(slice.dims(), reference.dims());
         EXPECT_EQ(slice.coords(), reference.coords());
+        if (dim == Dim::Temperature)
+          EXPECT_EQ(slice.unaligned(), realigned.unaligned().slice(s))
+              << s.dim().name() << s.begin() << s.end();
+        else
+          EXPECT_EQ(slice.unaligned(), realigned.unaligned())
+              << s.dim().name() << s.begin() << s.end();
     }
   }
+}
+
+TEST_F(RealignTest, unaligned_of_slice_along_aligned_dim) {
+  const auto realigned = make_realigned();
+  const auto unaligned = make_array();
+
+  // Dim::Temperature is a dim of both the wrapper and the unaligned content.
+  Slice s(Dim::Temperature, 0);
+  EXPECT_EQ(realigned.slice(s).unaligned(), unaligned.slice(s));
+}
+
+TEST_F(RealignTest, unaligned_of_slice_along_realigned_dim) {
+  const auto realigned = make_realigned();
+  const auto unaligned = make_array();
+
+  // Dim::X is a dim of the wrapper but not the unaligned content. For now
+  // slicing the wrapper returns a view on the full unaligned content, *not*
+  // filtering any "events".
+  Slice s(Dim::X, 0);
+  EXPECT_EQ(realigned.slice(s).unaligned(), unaligned);
+}
+
+TEST_F(RealignTest, slice_unaligned_view) {
+  const auto realigned = make_realigned();
+  const auto a = make_array();
+
+  Slice s(Dim::Temperature, 0);
+  EXPECT_EQ(realigned.unaligned().slice(s), a.slice(s));
 }
