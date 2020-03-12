@@ -919,6 +919,12 @@ TEST(TransformFlagsTest, variance_on_arg_throws) {
                except::VariancesError);
   EXPECT_NO_THROW(transform<std::tuple<double>>(a, b, op_arg_1_has_flags));
   EXPECT_NO_THROW(transform<std::tuple<double>>(b, b, op_arg_1_has_flags));
+  auto all_args_with_flag =
+      scipp::overloaded{transform_flags::expect_no_variance_arg<0>,
+                        transform_flags::expect_no_variance_arg<1>, binary_op};
+  EXPECT_THROW(transform<std::tuple<double>>(a, a, all_args_with_flag),
+               except::VariancesError);
+  EXPECT_NO_THROW(transform<std::tuple<double>>(b, b, all_args_with_flag));
 }
 
 TEST(TransformFlagsTest, variance_on_arg_throws_in_place) {
