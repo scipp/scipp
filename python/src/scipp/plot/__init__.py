@@ -3,33 +3,44 @@
 # @file
 # @author Neil Vaytet
 
-# flake8: noqa
+import importlib
 
 # If we are running inside a notebook, then make plot interactive by default.
 # From: https://stackoverflow.com/a/22424821
+plt = None
 try:
-    from IPython import get_ipython
-    ipy = get_ipython()
-    if ipy is not None:
-        cfg = ipy.config
-        try:
-            meta = cfg["Session"]["metadata"]
-            if hasattr(meta, "to_dict"):
-                meta = meta.to_dict()
-            is_doc_build = meta["scipp_docs_build"]
-        except KeyError:
-            is_doc_build = False
-        if is_doc_build:
-            ipy.run_line_magic("matplotlib", "inline")
-        elif "IPKernelApp" in ipy.config:
+    import matplotlib
+    try:
+        from IPython import get_ipython
+        ipy = get_ipython()
+        if ipy is not None:
+
+            cfg = ipy.config
             try:
-                # Use the ipympl (matplotlib widget) backend if installed
-                ipy.run_line_magic("matplotlib", "widget")
-            except ImportError:
-                ipy.run_line_magic("matplotlib", "notebook")
-                ipy.run_cell_magic(
-                    "html", "", "<style>.output_wrapper "
-                    ".ui-dialog-titlebar {display: none;}</style>")
+                meta = cfg["Session"]["metadata"]
+                if hasattr(meta, "to_dict"):
+                    meta = meta.to_dict()
+                is_doc_build = meta["scipp_docs_build"]
+            except KeyError:
+                is_doc_build = False
+
+            # if is_doc_build:
+            #     import matplotlib.pyplot as plt
+            #     plt.ion()
+            #     print("doc build")
+            if "IPKernelApp" in ipy.config and not is_doc_build:
+                try:
+                    _ = importlib.import_module("ipympl")
+                    matplotlib.use('module://ipympl.backend_nbagg')
+                except ImportError:
+                    matplotlib.use('nbAgg')
+                    # import matplotlib.pyplot as plt
+                    # plt.ion()
+    except ImportError:
+        pass
+    import matplotlib.pyplot as plt
+    plt.ion()
+
 except ImportError:
     pass
 
