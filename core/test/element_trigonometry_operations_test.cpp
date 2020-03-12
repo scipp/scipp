@@ -238,13 +238,14 @@ TYPED_TEST(ElementAtan2Test, value) {
   EXPECT_EQ(element::atan2(y, x), std::atan2(y, x));
 }
 
-TYPED_TEST(ElementAtan2Test, value_out) {
-  using T = TypeParam;
-  T out = -1;
-  T y = 1;
-  T x = 2;
-  element::atan2_out_arg(out, y, x);
-  EXPECT_EQ(out, std::atan2(y, x));
+template <int T, typename Op> bool is_no_variance_arg() {
+  return std::is_base_of_v<transform_flags::expect_no_variance_arg_t<T>, Op>;
+}
+
+TYPED_TEST(ElementAtan2Test, value_only_arguments) {
+  using Op = decltype(element::atan2);
+  EXPECT_TRUE((is_no_variance_arg<0, Op>())) << " y has variance ";
+  EXPECT_TRUE((is_no_variance_arg<1, Op>())) << " x has variance ";
 }
 
 TYPED_TEST(ElementAtan2Test, unit_out) {
@@ -255,4 +256,20 @@ TYPED_TEST(ElementAtan2Test, unit_out) {
   EXPECT_EQ(out, units::atan2(m, m));
   EXPECT_THROW(element::atan2_out_arg(out, m, s), except::UnitError);
   EXPECT_THROW(element::atan2_out_arg(out, s, m), except::UnitError);
+}
+
+TYPED_TEST(ElementAtan2Test, value_out) {
+  using T = TypeParam;
+  T out = -1;
+  T y = 1;
+  T x = 2;
+  element::atan2_out_arg(out, y, x);
+  EXPECT_EQ(out, std::atan2(y, x));
+}
+
+TYPED_TEST(ElementAtan2Test, value_only_arguments_out) {
+  using Op = decltype(element::atan2_out_arg);
+  EXPECT_TRUE((is_no_variance_arg<0, Op>())) << " out has variance ";
+  EXPECT_TRUE((is_no_variance_arg<1, Op>())) << " y has variance ";
+  EXPECT_TRUE((is_no_variance_arg<2, Op>())) << " x has variance ";
 }
