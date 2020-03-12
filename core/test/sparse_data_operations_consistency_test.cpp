@@ -10,7 +10,7 @@ using namespace scipp::core;
 static auto make_sparse() {
   auto var = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2});
   var.setUnit(units::us);
-  auto vals = var.sparseValues<double>();
+  auto vals = var.values<event_list<double>>();
   vals[0] = {1.1, 2.2, 3.3};
   vals[1] = {1.1, 2.2, 3.3, 5.5};
   return var;

@@ -63,7 +63,7 @@ auto make_events_default_weights(const scipp::index size,
                                  const scipp::index count) {
   auto out = make_beamline(size);
   auto var = makeVariable<event_list<double>>(Dims{Dim::Spectrum}, Shape{size});
-  auto vals = var.sparseValues<double>();
+  auto vals = var.values<event_list<double>>();
   for (scipp::index i = 0; i < size; ++i)
     vals[i].resize(count, 5000.0);
   out.setCoord(Dim::Tof, std::move(var));

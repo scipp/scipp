@@ -308,12 +308,12 @@ TEST_F(DataArray_comparison_operators, with_sparse_dimension_data) {
   auto a = Dataset();
   auto data = makeVariable<sparse_container<double>>(Dims{}, Shape{});
   const std::string var_name = "test_var";
-  data.sparseValues<double>()[0] = {1, 2, 3};
+  data.values<event_list<double>>()[0] = {1, 2, 3};
   a.setData(var_name, data);
   auto b = Dataset();
   b.setData(var_name, data);
   expect_eq(a[var_name], b[var_name]);
-  data.sparseValues<double>()[0] = {2, 3, 4};
+  data.values<event_list<double>>()[0] = {2, 3, 4};
   auto c = Dataset();
   c.setData(var_name, data);
   expect_ne(a[var_name], c[var_name]);

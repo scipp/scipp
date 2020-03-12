@@ -154,7 +154,7 @@ TEST(Variable, operator_plus) {
   auto a = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.0, 2.0},
                                 Variances{3.0, 4.0});
   auto b = makeVariable<event_list<float>>(Dims{Dim::Y}, Shape{2});
-  auto b_ = b.sparseValues<float>();
+  auto b_ = b.values<event_list<float>>();
   b_[0] = {0.1, 0.2};
   b_[1] = {0.3};
 
@@ -162,12 +162,12 @@ TEST(Variable, operator_plus) {
 
   auto expected = makeVariable<event_list<double>>(
       Dimensions{{Dim::X, 2}, {Dim::Y, 2}}, Variances{}, Values{});
-  auto vals = expected.sparseValues<double>();
+  auto vals = expected.values<event_list<double>>();
   vals[0] = {1.0 + 0.1f, 1.0 + 0.2f};
   vals[1] = {1.0 + 0.3f};
   vals[2] = {2.0 + 0.1f, 2.0 + 0.2f};
   vals[3] = {2.0 + 0.3f};
-  auto vars = expected.sparseVariances<double>();
+  auto vars = expected.variances<event_list<double>>();
   vars[0] = {3.0, 3.0};
   vars[1] = {3.0};
   vars[2] = {4.0, 4.0};
@@ -201,7 +201,7 @@ TEST(Variable, operator_plus_eigen_type) {
 
 TEST(SparseVariable, operator_plus) {
   auto sparse = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2});
-  auto sparse_ = sparse.sparseValues<double>();
+  auto sparse_ = sparse.values<event_list<double>>();
   sparse_[0] = {1, 2, 3};
   sparse_[1] = {4};
   auto dense = makeVariable<double>(Dims{Dim::Y}, Shape{2}, Values{1.5, 0.5});
@@ -247,7 +247,7 @@ TEST(Variable, operator_times_equal_unit_fail_integrity) {
 
 TEST(Variable, operator_binary_equal_data_fail_unit_integrity) {
   auto a = makeVariable<event_list<float>>(Dims{Dim::Y}, Shape{2});
-  auto a_ = a.sparseValues<float>();
+  auto a_ = a.values<event_list<float>>();
   auto b(a);
   a_[0] = {0.1, 0.2};
   a_[1] = {0.3};
@@ -262,7 +262,7 @@ TEST(Variable, operator_binary_equal_data_fail_unit_integrity) {
 
 TEST(Variable, operator_binary_equal_data_fail_data_integrity) {
   auto a = makeVariable<event_list<float>>(Dims{Dim::Y}, Shape{2});
-  auto a_ = a.sparseValues<float>();
+  auto a_ = a.values<event_list<float>>();
   a_[0] = {0.1, 0.2};
   auto b(a);
   a_[1] = {0.3};
@@ -278,8 +278,8 @@ TEST(Variable, operator_binary_equal_data_fail_data_integrity) {
 TEST(Variable, operator_binary_equal_with_variances_data_fail_data_integrity) {
   auto a = makeVariable<event_list<float>>(Dimensions{{Dim::Y, 2}}, Values{},
                                            Variances{});
-  auto a_ = a.sparseValues<float>();
-  auto a_vars = a.sparseVariances<float>();
+  auto a_ = a.values<event_list<float>>();
+  auto a_vars = a.variances<event_list<float>>();
   a_[0] = {0.1, 0.2};
   a_vars[0] = {0.1, 0.2};
   auto b(a);
@@ -308,7 +308,7 @@ TEST(Variable, operator_binary_equal_with_variances_data_fail_data_integrity) {
 
 TEST(Variable, operator_times_equal_slice_unit_fail_integrity) {
   auto a = makeVariable<event_list<float>>(Dims{Dim::Y}, Shape{2});
-  auto a_ = a.sparseValues<float>();
+  auto a_ = a.values<event_list<float>>();
   a_[0] = {0.1, 0.2};
   a_[1] = {0.3};
   auto b(a);

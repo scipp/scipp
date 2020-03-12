@@ -11,7 +11,7 @@ using namespace scipp::core;
 namespace {
 auto make_sparse() {
   auto var = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{3});
-  const auto &var_ = var.sparseValues<double>();
+  const auto &var_ = var.values<event_list<double>>();
   var_[0] = {1, 2, 3};
   var_[1] = {4, 5};
   var_[2] = {6, 7};
