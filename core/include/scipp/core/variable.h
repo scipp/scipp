@@ -358,18 +358,6 @@ public:
     return scipp::span(cast<T>(true));
   }
   template <class T> auto variances() { return scipp::span(cast<T>(true)); }
-  template <class T> auto sparseValues() const {
-    return scipp::span(cast<sparse_container<T>>());
-  }
-  template <class T> auto sparseValues() {
-    return scipp::span(cast<sparse_container<T>>());
-  }
-  template <class T> auto sparseVariances() const {
-    return scipp::span(cast<sparse_container<T>>(true));
-  }
-  template <class T> auto sparseVariances() {
-    return scipp::span(cast<sparse_container<T>>(true));
-  }
   template <class T> const auto &value() const {
     detail::expect0D(dims());
     return values<T>()[0];
@@ -700,12 +688,6 @@ public:
   // will not be deleted even if *this is a temporary and gets deleted.
   template <class T> auto values() const { return cast<T>(); }
   template <class T> auto variances() const { return castVariances<T>(); }
-  template <class T> auto sparseValues() const {
-    return cast<sparse_container<T>>();
-  }
-  template <class T> auto sparseVariances() const {
-    return castVariances<sparse_container<T>>();
-  }
   template <class T> const auto &value() const {
     detail::expect0D(dims());
     return values<T>()[0];
@@ -794,12 +776,6 @@ public:
   // Note: No need to delete rvalue overloads here, see VariableConstView.
   template <class T> auto values() const { return cast<T>(); }
   template <class T> auto variances() const { return castVariances<T>(); }
-  template <class T> auto sparseValues() const {
-    return cast<sparse_container<T>>();
-  }
-  template <class T> auto sparseVariances() const {
-    return castVariances<sparse_container<T>>();
-  }
   template <class T> auto &value() const {
     detail::expect0D(dims());
     return values<T>()[0];

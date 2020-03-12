@@ -11,7 +11,7 @@ static auto make_sparse() {
   auto var =
       makeVariable<event_list<double>>(Dims{Dim::Z, Dim::Y}, Shape{3, 2});
   scipp::index count = 0;
-  for (auto &v : var.sparseValues<double>())
+  for (auto &v : var.values<event_list<double>>())
     v.resize(count++);
   return var;
 }
@@ -20,10 +20,10 @@ static auto make_sparse_with_variances() {
   auto var = makeVariable<event_list<double>>(
       Dimensions{{Dim::Z, 3}, {Dim::Y, 2}}, Values{}, Variances{});
   scipp::index count = 0;
-  for (auto &v : var.sparseValues<double>())
+  for (auto &v : var.values<event_list<double>>())
     v.resize(count++);
   count = 0;
-  for (auto &v : var.sparseVariances<double>())
+  for (auto &v : var.variances<event_list<double>>())
     v.resize(count++);
   return var;
 }

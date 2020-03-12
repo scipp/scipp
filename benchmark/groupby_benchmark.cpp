@@ -14,7 +14,7 @@ template <class T>
 auto make_1d_events_scalar_weights(const scipp::index size,
                                    const scipp::index count) {
   Variable var = makeVariable<event_list<T>>(Dims{Dim::X}, Shape{size});
-  auto vals = var.sparseValues<T>();
+  auto vals = var.values<event_list<T>>();
   for (scipp::index i = 0; i < size; ++i)
     vals[i].resize(count);
   // Not using initializer_list to init coord map to avoid distortion of
@@ -34,8 +34,8 @@ template <class T>
 auto make_1d_events(const scipp::index size, const scipp::index count) {
   Variable var = makeVariable<event_list<T>>(Dims{Dim::X}, Shape{size},
                                              Values{}, Variances{});
-  auto vals = var.sparseValues<T>();
-  auto vars = var.sparseVariances<T>();
+  auto vals = var.values<event_list<T>>();
+  auto vars = var.variances<event_list<T>>();
   for (scipp::index i = 0; i < size; ++i) {
     vals[i].resize(count);
     vars[i].resize(count);

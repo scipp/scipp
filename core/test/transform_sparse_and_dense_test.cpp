@@ -18,7 +18,7 @@ using namespace scipp::core;
 
 TEST(TransformSparseAndDenseTest, two_args) {
   auto var = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2});
-  auto vals = var.sparseValues<double>();
+  auto vals = var.values<event_list<double>>();
   vals[0] = {1, 2, 3};
   vals[1] = {4};
 
@@ -42,7 +42,7 @@ TEST(TransformSparseAndDenseTest, two_args) {
 
 TEST(TransformSparseAndDenseTest, three_args) {
   auto var = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2});
-  auto vals = var.sparseValues<double>();
+  auto vals = var.values<event_list<double>>();
   vals[0] = {1, 2, 3};
   vals[1] = {4};
 
@@ -70,7 +70,8 @@ TEST(TransformSparseAndDenseTest, three_args) {
             return a;
           }});
   EXPECT_TRUE(out.hasVariances());
-  EXPECT_TRUE(equals(out.sparseValues<double>(), var.sparseValues<double>()));
-  EXPECT_TRUE(
-      equals(out.sparseVariances<double>(), var.sparseValues<double>()));
+  EXPECT_TRUE(equals(out.values<event_list<double>>(),
+                     var.values<event_list<double>>()));
+  EXPECT_TRUE(equals(out.variances<event_list<double>>(),
+                     var.values<event_list<double>>()));
 }

@@ -49,9 +49,9 @@ DataArray make_1d_events_default_weights() {
                                         units::Unit(units::counts),
                                         Values{1, 1, 1}, Variances{1, 1, 1}));
   auto var = makeVariable<event_list<double>>(Dims{Dim::X}, Shape{3});
-  var.sparseValues<double>()[0] = {1.5, 2.5, 3.5, 4.5, 5.5};
-  var.sparseValues<double>()[1] = {3.5, 4.5, 5.5, 6.5, 7.5};
-  var.sparseValues<double>()[2] = {-1, 0, 0, 1, 1, 2, 2, 2, 4, 4, 4, 6};
+  var.values<event_list<double>>()[0] = {1.5, 2.5, 3.5, 4.5, 5.5};
+  var.values<event_list<double>>()[1] = {3.5, 4.5, 5.5, 6.5, 7.5};
+  var.values<event_list<double>>()[2] = {-1, 0, 0, 1, 1, 2, 2, 2, 4, 4, 4, 6};
 
   events.coords().set(Dim::Y, var);
   return events;
@@ -68,7 +68,7 @@ TEST(HistogramTest, fail_edges_not_sorted) {
 auto make_single_sparse() {
   Dataset sparse;
   auto x = makeVariable<event_list<double>>(Dims{}, Shape{});
-  x.sparseValues<double>()[0] = {0, 1, 1, 2, 3};
+  x.values<event_list<double>>()[0] = {0, 1, 1, 2, 3};
   sparse.coords().set(Dim::X, x);
   sparse.setData("sparse", makeVariable<double>(Dims{}, Shape{},
                                                 units::Unit(units::counts),
@@ -139,12 +139,14 @@ TEST(HistogramTest, data_view) {
 TEST(HistogramTest, weight_lists) {
   Variable data = makeVariable<event_list<double>>(Dimensions{{Dim::X, 3}},
                                                    Values{}, Variances{});
-  data.sparseValues<double>()[0] = {1, 1, 1, 2, 2};
-  data.sparseValues<double>()[1] = {2, 2, 2, 2, 2};
-  data.sparseValues<double>()[2] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
-  data.sparseVariances<double>()[0] = {1, 1, 1, 2, 2};
-  data.sparseVariances<double>()[1] = {2, 2, 2, 2, 2};
-  data.sparseVariances<double>()[2] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+  data.values<event_list<double>>()[0] = {1, 1, 1, 2, 2};
+  data.values<event_list<double>>()[1] = {2, 2, 2, 2, 2};
+  data.values<event_list<double>>()[2] = {1, 1, 1, 1, 1, 1, 1,
+                                          1, 1, 1, 1, 1, 1};
+  data.variances<event_list<double>>()[0] = {1, 1, 1, 2, 2};
+  data.variances<event_list<double>>()[1] = {2, 2, 2, 2, 2};
+  data.variances<event_list<double>>()[2] = {1, 1, 1, 1, 1, 1, 1,
+                                             1, 1, 1, 1, 1, 1};
   data.setUnit(units::counts);
   auto events = make_1d_events_default_weights();
   events.setData(data);

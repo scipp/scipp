@@ -274,10 +274,10 @@ TEST_P(Dataset3DTest_slice_sparse, slice) {
   const auto pos = GetParam();
   auto var =
       makeVariable<event_list<double>>(Dims{Dim::X, Dim::Y}, Shape{2, 2});
-  var.sparseValues<double>()[0] = {1, 2, 3};
-  var.sparseValues<double>()[1] = {4, 5, 6};
-  var.sparseValues<double>()[2] = {7};
-  var.sparseValues<double>()[3] = {8, 9};
+  var.values<event_list<double>>()[0] = {1, 2, 3};
+  var.values<event_list<double>>()[1] = {4, 5, 6};
+  var.values<event_list<double>>()[2] = {7};
+  var.values<event_list<double>>()[3] = {8, 9};
 
   ds.setData("xyz_data", var);
   ds.setCoord(Dim::X,
@@ -286,12 +286,12 @@ TEST_P(Dataset3DTest_slice_sparse, slice) {
               makeVariable<double>(Dims{Dim::Y}, Shape{2}, Values{0, 1}));
 
   auto sliced = ds.slice({Dim::X, pos});
-  auto data = sliced["xyz_data"].data().sparseValues<double>();
+  auto data = sliced["xyz_data"].data().values<event_list<double>>();
   EXPECT_EQ(data.size(), 2);
   scipp::core::sparse_container<double> expected =
-      var.sparseValues<double>()[pos * 2];
+      var.values<event_list<double>>()[pos * 2];
   EXPECT_EQ(data[0], expected);
-  expected = var.sparseValues<double>()[pos * 2 + 1];
+  expected = var.values<event_list<double>>()[pos * 2 + 1];
   EXPECT_EQ(data[1], expected);
 }
 
