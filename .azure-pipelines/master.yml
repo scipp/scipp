@@ -118,6 +118,7 @@ stages:
 
     jobs:
       - template: templates/documentation_build.yml
+      - template: templates/test_can_install_and_import.yml
 
   - stage: 'deploy'
     displayName: 'Deployment'
