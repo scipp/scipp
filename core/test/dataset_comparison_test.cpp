@@ -35,8 +35,8 @@ private:
 
 protected:
   Dataset_comparison_operators()
-      : sparse_variable(makeVariable<double>(
-            Dims{Dim::Y, Dim::Z, Dim::X}, Shape{3l, 2l, Dimensions::Sparse})) {
+      : sparse_variable(makeVariable<event_list<double>>(Dims{Dim::Y, Dim::Z},
+                                                         Shape{3, 2})) {
     dataset.setCoord(Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{4}));
     dataset.setCoord(Dim::Y, makeVariable<double>(Dims{Dim::Y}, Shape{3}));
 
@@ -49,10 +49,6 @@ protected:
                                          Values(12), Variances(12)));
 
     dataset.setData("val", makeVariable<double>(Dims{Dim::X}, Shape{4}));
-
-    dataset.setSparseCoord("sparse_coord", Dim::X, sparse_variable);
-    dataset.setData("sparse_coord_and_val", sparse_variable);
-    dataset.setSparseCoord("sparse_coord_and_val", Dim::X, sparse_variable);
   }
   void expect_eq(const Dataset &a, const Dataset &b) const {
     expect_eq_impl(a, DatasetConstView(b));
@@ -185,18 +181,6 @@ TEST_F(Dataset_comparison_operators, extra_variance) {
   expect_ne(extra, dataset);
 }
 
-TEST_F(Dataset_comparison_operators, extra_sparse_values) {
-  auto extra = dataset;
-  extra.setData("sparse_coord", sparse_variable);
-  expect_ne(extra, dataset);
-}
-
-TEST_F(Dataset_comparison_operators, extra_sparse_label) {
-  auto extra = dataset;
-  extra.setSparseCoord("sparse_coord_and_val", Dim("extra"), sparse_variable);
-  expect_ne(extra, dataset);
-}
-
 TEST_F(Dataset_comparison_operators, different_coord_insertion_order) {
   auto a = make_empty();
   auto b = make_empty();
@@ -240,14 +224,14 @@ TEST_F(Dataset_comparison_operators, different_data_insertion_order) {
 TEST_F(Dataset_comparison_operators, with_sparse_dimension_data) {
   // a and b same, c different number of sparse values
   auto a = make_empty();
-  auto data = makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse});
+  auto data = makeVariable<event_list<double>>(Dims{}, Shape{});
   const std::string var_name = "test_var";
-  data.sparseValues<double>()[0] = {1, 2, 3};
+  data.values<event_list<double>>()[0] = {1, 2, 3};
   a.setData(var_name, data);
   auto b = make_empty();
   b.setData(var_name, data);
   expect_eq(a, b);
-  data.sparseValues<double>()[0] = {2, 3, 4};
+  data.values<event_list<double>>()[0] = {2, 3, 4};
   auto c = make_empty();
   c.setData(var_name, data);
   expect_ne(a, c);

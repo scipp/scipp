@@ -77,9 +77,8 @@ TEST(StringFormattingTest, to_string_ConstView) {
 
 TEST(StringFormattingTest, to_string_sparse_Dataset) {
   Dataset a;
-  a.setSparseCoord("a", Dim::X,
-                   makeVariable<double>(Dims{Dim::Y, Dim::X},
-                                        Shape{4l, Dimensions::Sparse}));
+  a.coords().set(
+      Dim::X, makeVariable<sparse_container<double>>(Dims{Dim::Y}, Shape{4}));
   ASSERT_NO_THROW(to_string(a));
 }
 

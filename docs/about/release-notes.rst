@@ -3,6 +3,16 @@
 Release Notes
 =============
 
+Changes since v0.2
+------------------
+
+* Many bug fixes and small additions
+* Multi-threading with TBB for many operations.
+* Performance improvements in hotspots
+* Remove ``Dim`` labels in favor of plain strings. Connected to this, the ``labels`` property for data arrays and datasets has been removed. Use ``coords`` instead.
+* Start to support ``out`` arguments (not everywhere yet)
+* ``scipp.neutron``: Instrument view added
+
 v0.2 (December 2019)
 --------------------
 

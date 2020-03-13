@@ -3,29 +3,46 @@
 # @file
 # @author Neil Vaytet
 
-# flake8: noqa
+import importlib
 
 # If we are running inside a notebook, then make plot interactive by default.
 # From: https://stackoverflow.com/a/22424821
 try:
-    from IPython import get_ipython
-    ipy = get_ipython()
-    if ipy is not None:
-        cfg = ipy.config
-        try:
-            meta = cfg["Session"]["metadata"]
-            if hasattr(meta, "to_dict"):
-                meta = meta.to_dict()
-            is_doc_build = meta["scipp_docs_build"]
-        except KeyError:
-            is_doc_build = False
-        if is_doc_build:
-            ipy.run_line_magic("matplotlib", "inline")
-        elif "IPKernelApp" in ipy.config:
-            ipy.run_line_magic("matplotlib", "notebook")
-            ipy.run_cell_magic(
-                "html", "", "<style>.output_wrapper "
-                ".ui-dialog-titlebar {display: none;}</style>")
+    import matplotlib
+    try:
+        from IPython import get_ipython
+        ipy = get_ipython()
+        if ipy is not None:
+
+            # Check if a docs build is requested in the metadata. If so,
+            # use the default Qt/inline backend.
+            cfg = ipy.config
+            try:
+                meta = cfg["Session"]["metadata"]
+                if hasattr(meta, "to_dict"):
+                    meta = meta.to_dict()
+                is_doc_build = meta["scipp_docs_build"]
+            except KeyError:
+                is_doc_build = False
+
+            # If we are in an IPython kernel, select either widget backend
+            # if installed (for JupyterLan), or notebook backend.
+            if "IPKernelApp" in ipy.config and not is_doc_build:
+                try:
+                    _ = importlib.import_module("ipympl")
+                    matplotlib.use('module://ipympl.backend_nbagg')
+                except ImportError:
+                    matplotlib.use('nbAgg')
+                    # Remove the title banner and button from figure
+                    ipy.run_cell_magic(
+                        "html", "", "<style>.output_wrapper "
+                        ".ui-dialog-titlebar {display: none;}</style>")
+    except ImportError:
+        pass
+    # Turn interactive plotting on
+    import matplotlib.pyplot as plt
+    plt.ion()
+
 except ImportError:
     pass
 

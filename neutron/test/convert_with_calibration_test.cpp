@@ -13,27 +13,34 @@ using namespace scipp::core;
 using namespace scipp::neutron;
 
 namespace {
-Dataset makeTofDataForUnitConversion(const bool dense_coord = true) {
+Dataset makeTofDataset() {
   Dataset tof;
 
-  if (dense_coord)
-    tof.setCoord(Dim::Tof, makeVariable<double>(
-                               Dims{Dim::Tof}, Shape{4}, units::Unit(units::us),
-                               Values{4000, 5000, 6100, 7300}));
+  tof.setCoord(Dim::Tof, makeVariable<double>(Dims{Dim::Tof}, Shape{4},
+                                              units::Unit(units::us),
+                                              Values{4000, 5000, 6100, 7300}));
 
   tof.setData("counts",
               makeVariable<double>(Dims{Dim::Spectrum, Dim::Tof}, Shape{2, 3},
                                    Values{1, 2, 3, 4, 5, 6}));
   tof["counts"].data().setUnit(units::counts);
 
-  auto events = makeVariable<double>(Dims{Dim::Spectrum, Dim::Tof},
-                                     Shape{2l, Dimensions::Sparse});
+  return tof;
+}
+
+Dataset makeTofDatasetEvents() {
+  Dataset tof;
+
+  tof.setData("events", makeVariable<double>(Dims{Dim::Spectrum}, Shape{2},
+                                             units::Unit(units::counts),
+                                             Values{1, 1}, Variances{1, 1}));
+  auto events = makeVariable<event_list<double>>(Dims{Dim::Spectrum}, Shape{2});
   events.setUnit(units::us);
-  auto eventLists = events.sparseValues<double>();
+  auto eventLists = events.values<event_list<double>>();
   eventLists[0] = {1000, 3000, 2000, 4000};
   eventLists[1] = {5000, 6000, 3000};
-  tof.setSparseCoord("events", Dim::Tof, events);
-  tof.setSparseCoord("events", Dim("aux"), events);
+  tof.setCoord(Dim::Tof, events);
+  tof.setCoord(Dim("aux"), events);
 
   return tof;
 }
@@ -51,8 +58,14 @@ Dataset makeCalTable() {
 }
 } // namespace
 
-TEST(ConvertWithCaliabrationDataArray, data_array) {
-  const auto tof = makeTofDataForUnitConversion();
+class ConvertWithCalibrationTest : public testing::TestWithParam<Dataset> {};
+
+INSTANTIATE_TEST_SUITE_P(SingleEntryDataset, ConvertWithCalibrationTest,
+                         testing::Values(makeTofDataset(),
+                                         makeTofDatasetEvents()));
+
+TEST_P(ConvertWithCalibrationTest, data_array) {
+  const auto tof = GetParam();
   const auto cal = makeCalTable();
 
   for (const auto &item : tof) {
@@ -63,8 +76,8 @@ TEST(ConvertWithCaliabrationDataArray, data_array) {
   }
 }
 
-TEST(ConvertWithCaliabrationDataArray, dataset) {
-  const auto tof = makeTofDataForUnitConversion();
+TEST_P(ConvertWithCalibrationTest, dataset) {
+  const auto tof = GetParam();
   const auto cal = makeCalTable();
 
   const auto dspacing = diffraction::convert_with_calibration(tof, cal);

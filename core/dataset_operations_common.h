@@ -66,7 +66,7 @@ DataArray apply_or_copy_dim(const DataArrayConstView &a, Func func,
   // operator can be moved. Without `copy`, the result of `func` is always
   // copied.
   for (auto &&[d, coord] : a.coords())
-    if (coord.dims() != drop)
+    if (is_events(coord) || coord.dims() != drop)
       coords.emplace(d, coord.dims().contains(dim) ? func(coord, dim, args...)
                                                    : copy(coord));
 

@@ -48,9 +48,8 @@ TEST_F(TransformUnaryTest, dense_with_variances) {
 }
 
 TEST_F(TransformUnaryTest, elements_of_sparse) {
-  auto var =
-      makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2l, Dimensions::Sparse});
-  auto vals = var.sparseValues<double>();
+  auto var = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2});
+  auto vals = var.values<event_list<double>>();
   vals[0] = {1, 2, 3};
   vals[1] = {4};
 
@@ -63,13 +62,12 @@ TEST_F(TransformUnaryTest, elements_of_sparse) {
 }
 
 TEST_F(TransformUnaryTest, elements_of_sparse_with_variance) {
-  auto var = makeVariable<double>(
-      Dimensions{{Dim::Y, Dim::X}, {2, Dimensions::Sparse}}, Values{},
-      Variances{});
-  auto vals = var.sparseValues<double>();
+  auto var = makeVariable<event_list<double>>(Dimensions{{Dim::Y}, {2}},
+                                              Values{}, Variances{});
+  auto vals = var.values<event_list<double>>();
   vals[0] = {1, 2, 3};
   vals[1] = {4};
-  auto vars = var.sparseVariances<double>();
+  auto vars = var.variances<event_list<double>>();
   vars[0] = {1.1, 2.2, 3.3};
   vars[1] = {4.4};
 
@@ -84,15 +82,15 @@ TEST_F(TransformUnaryTest, elements_of_sparse_with_variance) {
 }
 
 TEST_F(TransformUnaryTest, sparse_values_variances_size_fail) {
-  Dimensions dims({Dim::Y, Dim::X}, {2, Dimensions::Sparse});
-  auto a = makeVariable<double>(
+  Dimensions dims({Dim::Y}, {2});
+  auto a = makeVariable<event_list<double>>(
       Dimensions(dims),
       Values{sparse_container<double>(2), sparse_container<double>(1)},
       Variances{sparse_container<double>(2), sparse_container<double>(2)});
 
   ASSERT_THROW_NODISCARD(transform<double>(a, op), except::SizeError);
   ASSERT_THROW(transform_in_place<double>(a, op_in_place), except::SizeError);
-  a.sparseVariances<double>()[1].resize(1);
+  a.variances<event_list<double>>()[1].resize(1);
   ASSERT_NO_THROW_NODISCARD(transform<double>(a, op));
   ASSERT_NO_THROW(transform_in_place<double>(a, op_in_place));
 }
@@ -269,9 +267,8 @@ TEST_F(TransformBinaryTest, view_with_view) {
 }
 
 TEST_F(TransformBinaryTest, dense_sparse) {
-  auto sparse =
-      makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2l, Dimensions::Sparse});
-  auto sparse_ = sparse.sparseValues<double>();
+  auto sparse = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2});
+  auto sparse_ = sparse.values<event_list<double>>();
   sparse_[0] = {1, 2, 3};
   sparse_[1] = {4};
   auto dense = makeVariable<double>(Dims{Dim::Y}, Shape{2}, Values{1.5, 0.5});
@@ -287,11 +284,11 @@ TEST_F(TransformBinaryTest, dense_sparse) {
 }
 
 TEST_F(TransformBinaryTest, sparse_size_fail) {
-  Dimensions dims({Dim::Y, Dim::X}, {2, Dimensions::Sparse});
-  auto a = makeVariable<double>(
+  Dimensions dims({Dim::Y}, {2});
+  auto a = makeVariable<event_list<double>>(
       Dimensions(dims),
       Values{sparse_container<double>(2), sparse_container<double>(1)});
-  auto b = makeVariable<double>(
+  auto b = makeVariable<event_list<double>>(
       Dimensions(dims),
       Values{sparse_container<double>(2), sparse_container<double>()});
 
@@ -299,10 +296,10 @@ TEST_F(TransformBinaryTest, sparse_size_fail) {
                          except::SizeError);
   ASSERT_THROW(transform_in_place<pair_self_t<double>>(a, b, op_in_place),
                except::SizeError);
-  b.sparseValues<double>()[1].resize(1);
+  b.values<event_list<double>>()[1].resize(1);
   ASSERT_NO_THROW_NODISCARD(transform<pair_self_t<double>>(a, b, op));
   ASSERT_NO_THROW(transform_in_place<pair_self_t<double>>(a, b, op_in_place));
-  b.sparseValues<double>()[1].resize(2);
+  b.values<event_list<double>>()[1].resize(2);
   ASSERT_THROW_NODISCARD(transform<pair_self_t<double>>(a, b, op),
                          except::SizeError);
   ASSERT_THROW(transform_in_place<pair_self_t<double>>(a, b, op_in_place),
@@ -421,9 +418,8 @@ TEST(TransformTest, combined_uncertainty_propagation) {
 }
 
 TEST(TransformTest, unary_on_sparse_container) {
-  auto a =
-      makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2l, Dimensions::Sparse});
-  auto a_ = a.sparseValues<double>();
+  auto a = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2});
+  auto a_ = a.values<event_list<double>>();
   a_[0] = {1, 4, 9};
   a_[1] = {4};
 
@@ -434,15 +430,15 @@ TEST(TransformTest, unary_on_sparse_container) {
 }
 
 TEST(TransformTest, unary_on_sparse_container_with_variance) {
-  Dimensions dims({Dim::Y, Dim::X}, {2, Dimensions::Sparse});
-  auto a = makeVariable<double>(
+  Dimensions dims({Dim::Y}, {2});
+  auto a = makeVariable<event_list<double>>(
       Dimensions(dims),
       Values{sparse_container<double>(), sparse_container<double>()},
       Variances{sparse_container<double>(), sparse_container<double>()});
-  auto vals = a.sparseValues<double>();
+  auto vals = a.values<event_list<double>>();
   vals[0] = {1, 2, 3};
   vals[1] = {4};
-  auto vars = a.sparseVariances<double>();
+  auto vars = a.variances<event_list<double>>();
   vars[0] = {1.1, 2.2, 3.3};
   vars[1] = {4.4};
 
@@ -455,15 +451,15 @@ TEST(TransformTest, unary_on_sparse_container_with_variance) {
 }
 
 TEST(TransformTest, unary_on_sparse_container_with_variance_size_fail) {
-  Dimensions dims({Dim::Y, Dim::X}, {2, Dimensions::Sparse});
-  auto a = makeVariable<double>(
+  Dimensions dims({Dim::Y}, {2});
+  auto a = makeVariable<event_list<double>>(
       Dimensions(dims),
       Values{sparse_container<double>(), sparse_container<double>()},
       Variances{sparse_container<double>(), sparse_container<double>()});
-  auto vals = a.sparseValues<double>();
+  auto vals = a.values<event_list<double>>();
   vals[0] = {1, 2, 3};
   vals[1] = {4};
-  auto vars = a.sparseVariances<double>();
+  auto vars = a.variances<event_list<double>>();
   vars[0] = {1.1, 2.2, 3.3};
   vars[1] = {};
   const auto expected(a);
@@ -479,15 +475,15 @@ TEST(TransformTest, unary_on_sparse_container_with_variance_size_fail) {
 }
 
 TEST(TransformTest, binary_on_sparse_container_with_variance_size_fail) {
-  Dimensions dims({Dim::Y, Dim::X}, {2, Dimensions::Sparse});
-  auto a = makeVariable<double>(
+  Dimensions dims({Dim::Y}, {2});
+  auto a = makeVariable<event_list<double>>(
       Dimensions(dims),
       Values{sparse_container<double>(), sparse_container<double>()},
       Variances{sparse_container<double>(), sparse_container<double>()});
-  auto vals = a.sparseValues<double>();
+  auto vals = a.values<event_list<double>>();
   vals[0] = {1, 2, 3};
   vals[1] = {4};
-  auto vars = a.sparseVariances<double>();
+  auto vars = a.variances<event_list<double>>();
   vars[0] = {1.1, 2.2, 3.3};
   vars[1] = {};
   const auto expected(a);
@@ -505,14 +501,14 @@ TEST(TransformTest, binary_on_sparse_container_with_variance_size_fail) {
 
 TEST(TransformTest,
      binary_on_sparse_container_with_variance_accepts_size_mismatch) {
-  Dimensions dims({Dim::Y, Dim::X}, {2, Dimensions::Sparse});
-  auto a = makeVariable<double>(
+  Dimensions dims({Dim::Y}, {2});
+  auto a = makeVariable<event_list<double>>(
       Dimensions(dims),
       Values{sparse_container<double>(), sparse_container<double>()},
       Variances{sparse_container<double>(), sparse_container<double>()});
   const auto expected(a);
-  auto vals = a.sparseValues<double>();
-  auto vars = a.sparseVariances<double>();
+  auto vals = a.values<event_list<double>>();
+  auto vars = a.variances<event_list<double>>();
   vals[0] = {1, 2, 3};
   vars[0] = {1.1, 2.2, 3.3};
   const auto b(a);
@@ -531,13 +527,13 @@ TEST(TransformTest,
 class TransformTest_sparse_binary_values_variances_size_fail
     : public ::testing::Test {
 protected:
-  Dimensions dims{{Dim::Y, Dim::X}, {2, Dimensions::Sparse}};
-  Variable a = makeVariable<double>(
+  Dimensions dims{{Dim::Y}, {2}};
+  Variable a = makeVariable<event_list<double>>(
       Dimensions(dims),
       Values{sparse_container<double>(2), sparse_container<double>(2)},
       Variances{sparse_container<double>(2), sparse_container<double>(2)});
   Variable val_var = a;
-  Variable val = makeVariable<double>(
+  Variable val = makeVariable<event_list<double>>(
       Dimensions(dims),
       Values{sparse_container<double>(2), sparse_container<double>(2)});
   static constexpr auto op = [](const auto i, const auto j) { return i * j; };
@@ -554,7 +550,7 @@ TEST_F(TransformTest_sparse_binary_values_variances_size_fail, baseline) {
 
 TEST_F(TransformTest_sparse_binary_values_variances_size_fail,
        a_values_size_bad) {
-  a.sparseValues<double>()[1].resize(1);
+  a.values<event_list<double>>()[1].resize(1);
   ASSERT_THROW_NODISCARD(transform<pair_self_t<double>>(a, val_var, op),
                          except::SizeError);
   ASSERT_THROW_NODISCARD(transform<pair_self_t<double>>(a, val, op),
@@ -567,7 +563,7 @@ TEST_F(TransformTest_sparse_binary_values_variances_size_fail,
 
 TEST_F(TransformTest_sparse_binary_values_variances_size_fail,
        a_variances_size_bad) {
-  a.sparseVariances<double>()[1].resize(1);
+  a.variances<event_list<double>>()[1].resize(1);
   ASSERT_THROW_NODISCARD(transform<pair_self_t<double>>(a, val_var, op),
                          except::SizeError);
   ASSERT_THROW_NODISCARD(transform<pair_self_t<double>>(a, val, op),
@@ -580,7 +576,7 @@ TEST_F(TransformTest_sparse_binary_values_variances_size_fail,
 
 TEST_F(TransformTest_sparse_binary_values_variances_size_fail,
        val_var_values_size_bad) {
-  val_var.sparseValues<double>()[1].resize(1);
+  val_var.values<event_list<double>>()[1].resize(1);
   ASSERT_THROW_NODISCARD(transform<pair_self_t<double>>(a, val_var, op),
                          except::SizeError);
   ASSERT_THROW(transform_in_place<pair_self_t<double>>(a, val_var, op_in_place),
@@ -589,7 +585,7 @@ TEST_F(TransformTest_sparse_binary_values_variances_size_fail,
 
 TEST_F(TransformTest_sparse_binary_values_variances_size_fail,
        val_var_variances_size_bad) {
-  val_var.sparseVariances<double>()[1].resize(1);
+  val_var.variances<event_list<double>>()[1].resize(1);
   ASSERT_THROW_NODISCARD(transform<pair_self_t<double>>(a, val_var, op),
                          except::SizeError);
   ASSERT_THROW(transform_in_place<pair_self_t<double>>(a, val_var, op_in_place),
@@ -598,7 +594,7 @@ TEST_F(TransformTest_sparse_binary_values_variances_size_fail,
 
 TEST_F(TransformTest_sparse_binary_values_variances_size_fail,
        val_values_size_bad) {
-  val.sparseValues<double>()[1].resize(1);
+  val.values<event_list<double>>()[1].resize(1);
   ASSERT_THROW_NODISCARD(transform<pair_self_t<double>>(a, val, op),
                          except::SizeError);
   ASSERT_THROW(transform_in_place<pair_self_t<double>>(a, val, op_in_place),
@@ -628,12 +624,14 @@ TEST_F(TransformBinaryTest, sparse_val_var_with_sparse_val_var) {
       makeVariable<double>(Dims{Dim::X}, Shape{1}, Values{0.4}, Variances{0.8});
   auto expected0 = a0 * b0;
   auto expected1 = a1 * b1;
-  EXPECT_TRUE(equals(a.sparseValues<double>()[0], expected0.values<double>()));
-  EXPECT_TRUE(equals(a.sparseValues<double>()[1], expected1.values<double>()));
   EXPECT_TRUE(
-      equals(a.sparseVariances<double>()[0], expected0.variances<double>()));
+      equals(a.values<event_list<double>>()[0], expected0.values<double>()));
   EXPECT_TRUE(
-      equals(a.sparseVariances<double>()[1], expected1.variances<double>()));
+      equals(a.values<event_list<double>>()[1], expected1.values<double>()));
+  EXPECT_TRUE(equals(a.variances<event_list<double>>()[0],
+                     expected0.variances<double>()));
+  EXPECT_TRUE(equals(a.variances<event_list<double>>()[1],
+                     expected1.variances<double>()));
 
   EXPECT_EQ(ab, a);
 }
@@ -656,12 +654,14 @@ TEST_F(TransformBinaryTest, sparse_val_var_with_sparse_val) {
   auto b1 = makeVariable<double>(Dims{Dim::X}, Shape{1}, Values{0.4});
   auto expected0 = a0 * b0;
   auto expected1 = a1 * b1;
-  EXPECT_TRUE(equals(a.sparseValues<double>()[0], expected0.values<double>()));
-  EXPECT_TRUE(equals(a.sparseValues<double>()[1], expected1.values<double>()));
   EXPECT_TRUE(
-      equals(a.sparseVariances<double>()[0], expected0.variances<double>()));
+      equals(a.values<event_list<double>>()[0], expected0.values<double>()));
   EXPECT_TRUE(
-      equals(a.sparseVariances<double>()[1], expected1.variances<double>()));
+      equals(a.values<event_list<double>>()[1], expected1.values<double>()));
+  EXPECT_TRUE(equals(a.variances<event_list<double>>()[0],
+                     expected0.variances<double>()));
+  EXPECT_TRUE(equals(a.variances<event_list<double>>()[1],
+                     expected1.variances<double>()));
 
   EXPECT_EQ(ab, a);
 }
@@ -684,12 +684,14 @@ TEST_F(TransformBinaryTest, sparse_val_var_with_val_var) {
   auto b1 = makeVariable<double>(Values{1.6}, Variances{1.8});
   auto expected0 = a0 * b0;
   auto expected1 = a1 * b1;
-  EXPECT_TRUE(equals(a.sparseValues<double>()[0], expected0.values<double>()));
-  EXPECT_TRUE(equals(a.sparseValues<double>()[1], expected1.values<double>()));
   EXPECT_TRUE(
-      equals(a.sparseVariances<double>()[0], expected0.variances<double>()));
+      equals(a.values<event_list<double>>()[0], expected0.values<double>()));
   EXPECT_TRUE(
-      equals(a.sparseVariances<double>()[1], expected1.variances<double>()));
+      equals(a.values<event_list<double>>()[1], expected1.values<double>()));
+  EXPECT_TRUE(equals(a.variances<event_list<double>>()[0],
+                     expected0.variances<double>()));
+  EXPECT_TRUE(equals(a.variances<event_list<double>>()[1],
+                     expected1.variances<double>()));
 
   EXPECT_EQ(ab, a);
 }
@@ -711,12 +713,14 @@ TEST_F(TransformBinaryTest, sparse_val_var_with_val) {
   auto b1 = makeVariable<double>(Values{1.6});
   auto expected0 = a0 * b0;
   auto expected1 = a1 * b1;
-  EXPECT_TRUE(equals(a.sparseValues<double>()[0], expected0.values<double>()));
-  EXPECT_TRUE(equals(a.sparseValues<double>()[1], expected1.values<double>()));
   EXPECT_TRUE(
-      equals(a.sparseVariances<double>()[0], expected0.variances<double>()));
+      equals(a.values<event_list<double>>()[0], expected0.values<double>()));
   EXPECT_TRUE(
-      equals(a.sparseVariances<double>()[1], expected1.variances<double>()));
+      equals(a.values<event_list<double>>()[1], expected1.values<double>()));
+  EXPECT_TRUE(equals(a.variances<event_list<double>>()[0],
+                     expected0.variances<double>()));
+  EXPECT_TRUE(equals(a.variances<event_list<double>>()[1],
+                     expected1.variances<double>()));
 
   EXPECT_EQ(ab, a);
 }
@@ -739,19 +743,18 @@ TEST_F(TransformBinaryTest, broadcast_sparse_val_var_with_val) {
   auto expected01 = a0 * b1;
   auto expected10 = a1 * b0;
   auto expected11 = a1 * b1;
-  const auto vals = ab.sparseValues<double>();
-  const auto vars = ab.sparseVariances<double>();
+  const auto vals = ab.values<event_list<double>>();
+  const auto vars = ab.variances<event_list<double>>();
   EXPECT_TRUE(equals(vals[0], expected00.values<double>()));
-  EXPECT_TRUE(equals(vals[1], expected10.values<double>()));
-  EXPECT_TRUE(equals(vals[2], expected01.values<double>()));
+  EXPECT_TRUE(equals(vals[1], expected01.values<double>()));
+  EXPECT_TRUE(equals(vals[2], expected10.values<double>()));
   EXPECT_TRUE(equals(vals[3], expected11.values<double>()));
   EXPECT_TRUE(equals(vars[0], expected00.variances<double>()));
-  EXPECT_TRUE(equals(vars[1], expected10.variances<double>()));
-  EXPECT_TRUE(equals(vars[2], expected01.variances<double>()));
+  EXPECT_TRUE(equals(vars[1], expected01.variances<double>()));
+  EXPECT_TRUE(equals(vars[2], expected10.variances<double>()));
   EXPECT_TRUE(equals(vars[3], expected11.variances<double>()));
 
-  EXPECT_EQ(ab.dims(),
-            Dimensions({Dim::Z, Dim::Y, Dim::X}, {2, 2, Dimensions::Sparse}));
+  EXPECT_EQ(ab.dims(), Dimensions({Dim::Y, Dim::Z}, {2, 2}));
 }
 
 // Currently transform_in_place supports outputs with fewer dimensions than the
@@ -906,4 +909,46 @@ TEST_F(TransformInPlaceDryRunTest, unchanged_if_success) {
   EXPECT_EQ(a, original);
   dry_run::transform_in_place<pair_self_t<double>>(a, a, binary);
   EXPECT_EQ(a, original);
+}
+
+TEST(TransformFlagsTest, variance_on_arg_throws) {
+  auto a = makeVariable<double>(Values{1}, Variances{1});
+  auto b = makeVariable<double>(Values{1});
+  auto binary_op = [](auto x, auto y) { return x + y; };
+  auto op_arg_0_has_flags =
+      scipp::overloaded{transform_flags::expect_no_variance_arg<0>, binary_op};
+  EXPECT_THROW(transform<std::tuple<double>>(a, b, op_arg_0_has_flags),
+               except::VariancesError);
+  EXPECT_NO_THROW(transform<std::tuple<double>>(b, a, op_arg_0_has_flags));
+  EXPECT_NO_THROW(transform<std::tuple<double>>(b, b, op_arg_0_has_flags));
+  auto op_arg_1_has_flags =
+      scipp::overloaded{transform_flags::expect_no_variance_arg<1>, binary_op};
+  EXPECT_THROW(transform<std::tuple<double>>(b, a, op_arg_1_has_flags),
+               except::VariancesError);
+  EXPECT_NO_THROW(transform<std::tuple<double>>(a, b, op_arg_1_has_flags));
+  EXPECT_NO_THROW(transform<std::tuple<double>>(b, b, op_arg_1_has_flags));
+  auto all_args_with_flag =
+      scipp::overloaded{transform_flags::expect_no_variance_arg<0>,
+                        transform_flags::expect_no_variance_arg<1>, binary_op};
+  EXPECT_THROW(transform<std::tuple<double>>(a, a, all_args_with_flag),
+               except::VariancesError);
+  EXPECT_NO_THROW(transform<std::tuple<double>>(b, b, all_args_with_flag));
+}
+
+TEST(TransformFlagsTest, variance_on_arg_throws_in_place) {
+  auto a = makeVariable<double>(Values{1}, Variances{1});
+  auto b = makeVariable<double>(Values{1});
+  auto unary_in_place = [](auto &out, auto a) {};
+  auto op_arg_0_has_flags = scipp::overloaded{
+      transform_flags::expect_no_variance_arg<0>, unary_in_place};
+  EXPECT_THROW(transform_in_place<std::tuple<double>>(a, a, op_arg_0_has_flags),
+               except::VariancesError);
+  EXPECT_NO_THROW(
+      transform_in_place<std::tuple<double>>(b, b, op_arg_0_has_flags));
+  auto op_arg_1_has_flags = scipp::overloaded{
+      transform_flags::expect_no_variance_arg<1>, unary_in_place};
+  EXPECT_THROW(transform_in_place<std::tuple<double>>(a, a, op_arg_1_has_flags),
+               except::VariancesError);
+  EXPECT_NO_THROW(
+      transform_in_place<std::tuple<double>>(b, b, op_arg_1_has_flags));
 }

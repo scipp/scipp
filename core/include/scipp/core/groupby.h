@@ -54,7 +54,8 @@ public:
 
 private:
   T makeReductionOutput(const Dim reductionDim) const;
-  template <class Op> T reduce(Op op, const Dim reductionDim) const;
+  template <class Op, class CoordOp = void *>
+  T reduce(Op op, const Dim reductionDim, CoordOp coord_op = nullptr) const;
 
   typename T::const_view_type m_data;
   GroupByGrouping m_grouping;

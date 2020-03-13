@@ -103,7 +103,7 @@ bool have_common_underlying(const A &a, const B &b) {
 template <>
 bool have_common_underlying<DataArrayView, VariableConstView>(
     const DataArrayView &a, const VariableConstView &b) {
-  return are_same(*a.underlying().data, b.underlying());
+  return are_same(a.underlying().data, b.underlying());
 }
 
 template <class Op, class A, class B>

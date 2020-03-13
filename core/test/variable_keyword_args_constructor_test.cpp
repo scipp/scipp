@@ -50,11 +50,10 @@ TEST(CreateVariableTest, from_vector) {
 }
 
 TEST(CreateVariableTest, construct_sparse) {
-  auto var =
-      makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, Dimensions::Sparse});
+  auto var = makeVariable<event_list<double>>(Dims{Dim::X}, Shape{2});
 
-  auto dimensions = Dimensions{{Dim::X, Dim::Y}, {2, Dimensions::Sparse}};
-  makeVariable<double>(
+  auto dimensions = Dimensions{{Dim::X}, {2}};
+  makeVariable<event_list<double>>(
       Dimensions{dimensions},
       Values{sparse_container<double>(), sparse_container<double>()},
       Variances{sparse_container<double>(), sparse_container<double>()});

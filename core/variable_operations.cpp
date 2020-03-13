@@ -10,6 +10,7 @@
 #include "scipp/core/transform.h"
 #include "scipp/core/variable.h"
 
+#include "element_trigonometry_operations.h"
 #include "element_unary_operations.h"
 #include "operators.h"
 #include "variable_operations_common.h"
@@ -39,29 +40,12 @@ Variable concatenate(const VariableConstView &a1, const VariableConstView &a2,
     throw std::runtime_error(
         "Cannot concatenate Variables: Units do not match.");
 
-  if (a1.dims().sparseDim() == dim && a2.dims().sparseDim() == dim) {
-    Variable out(a1);
-    transform_in_place<pair_self_t<sparse_container<double>>>(
-        out, a2,
-        overloaded{[](auto &a, const auto &b) {
-                     a.insert(a.end(), b.begin(), b.end());
-                   },
-                   [](units::Unit &a, const units::Unit &b) {
-                     expect::equals(a, b);
-                   }});
-    return out;
-  }
-
   const auto &dims1 = a1.dims();
   const auto &dims2 = a2.dims();
   // TODO Many things in this function should be refactored and moved in class
   // Dimensions.
   // TODO Special handling for edge variables.
-  if (dims1.sparseDim() != dims2.sparseDim())
-    throw std::runtime_error("Cannot concatenate Variables: Either both or "
-                             "neither must be sparse, and the sparse "
-                             "dimensions must be the same.");
-  for (const auto &dim1 : dims1.denseLabels()) {
+  for (const auto &dim1 : dims1.labels()) {
     if (dim1 != dim) {
       if (!dims2.contains(dim1))
         throw std::runtime_error(
@@ -214,6 +198,17 @@ Variable dot(const Variable &a, const Variable &b) {
                  [](const units::Unit &a_, const units::Unit &b_) {
                    return a_ * b_;
                  }});
+}
+
+Variable atan2(const Variable &y, const Variable &x) {
+  return transform<std::tuple<double, float>>(y, x, element::atan2);
+}
+
+VariableView atan2(const VariableConstView &y, const VariableConstView &x,
+                   const VariableView &out) {
+  transform_in_place<std::tuple<double, float>>(out, y, x,
+                                                element::atan2_out_arg);
+  return out;
 }
 
 Variable broadcast(const VariableConstView &var, const Dimensions &dims) {

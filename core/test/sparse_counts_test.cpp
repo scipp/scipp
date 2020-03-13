@@ -8,23 +8,22 @@ using namespace scipp;
 using namespace scipp::core;
 
 static auto make_sparse() {
-  auto var = makeVariable<double>(Dims{Dim::Z, Dim::Y, Dim::X},
-                                  Shape{3l, 2l, Dimensions::Sparse});
+  auto var =
+      makeVariable<event_list<double>>(Dims{Dim::Z, Dim::Y}, Shape{3, 2});
   scipp::index count = 0;
-  for (auto &v : var.sparseValues<double>())
+  for (auto &v : var.values<event_list<double>>())
     v.resize(count++);
   return var;
 }
 
 static auto make_sparse_with_variances() {
-  auto var = makeVariable<double>(
-      Dimensions{{Dim::Z, 3}, {Dim::Y, 2}, {Dim::X, Dimensions::Sparse}},
-      Values{}, Variances{});
+  auto var = makeVariable<event_list<double>>(
+      Dimensions{{Dim::Z, 3}, {Dim::Y, 2}}, Values{}, Variances{});
   scipp::index count = 0;
-  for (auto &v : var.sparseValues<double>())
+  for (auto &v : var.values<event_list<double>>())
     v.resize(count++);
   count = 0;
-  for (auto &v : var.sparseVariances<double>())
+  for (auto &v : var.variances<event_list<double>>())
     v.resize(count++);
   return var;
 }

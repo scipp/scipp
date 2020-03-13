@@ -59,10 +59,8 @@ std::string to_string(const Dimensions &dims) {
     return "{}";
   std::string s = "{{";
   for (int32_t i = 0; i < dims.shape().size(); ++i)
-    s += to_string(dims.denseLabels()[i]) + ", " +
-         std::to_string(dims.shape()[i]) + "}, {";
-  if (dims.sparse())
-    s += to_string(dims.sparseDim()) + ", [sparse]}, {";
+    s += to_string(dims.labels()[i]) + ", " + std::to_string(dims.shape()[i]) +
+         "}, {";
   s.resize(s.size() - 3);
   s += "}";
   return s;
@@ -89,13 +87,13 @@ std::string to_string(const DType dtype) {
   case DType::Int64:
     return "int64";
   case DType::SparseFloat:
-    return "sparse_float32";
+    return "event_list_float32";
   case DType::SparseDouble:
-    return "sparse_float64";
+    return "event_list_float64";
   case DType::SparseInt64:
-    return "sparse_int64";
+    return "event_list_int64";
   case DType::SparseInt32:
-    return "sparse_int32";
+    return "event_list_int32";
   case DType::EigenVector3d:
     return "vector_3_float64";
   case DType::PyObject:
@@ -119,15 +117,10 @@ std::string make_dims_labels(const VariableConstView &variable,
   if (dims.empty())
     return "()";
   std::string diminfo = "(";
-  for (const auto dim : dims.denseLabels()) {
+  for (const auto dim : dims.labels()) {
     diminfo += to_string(dim);
     if (datasetDims.contains(dim) && (datasetDims[dim] + 1 == dims[dim]))
       diminfo += " [bin-edges]";
-    diminfo += ", ";
-  }
-  if (variable.dims().sparse()) {
-    diminfo += to_string(variable.dims().sparseDim());
-    diminfo += " [sparse]";
     diminfo += ", ";
   }
   diminfo.resize(diminfo.size() - 2);
@@ -194,6 +187,8 @@ auto format_data_view(const Key &name, const DataArrayConstView &data,
     s << format_variable(name, data.data(), datasetDims);
   else
     s << tab << name << '\n';
+  // TODO need something similar, but for unaligned coord content
+  /*
   bool sparseCoords = false;
   for (const auto &[dim, coord] : data.coords())
     if (coord.dims().sparse()) {
@@ -202,8 +197,9 @@ auto format_data_view(const Key &name, const DataArrayConstView &data,
         sparseCoords = true;
       }
       s << format_variable(std::string(tab) + std::string(tab) + to_string(dim),
-                           coord, datasetDims);
+                           coord.data(), datasetDims);
     }
+    */
 
   if (!data.attrs().empty()) {
     s << tab << "Attributes:\n";
@@ -230,12 +226,8 @@ std::string do_to_string(const D &dataset, const std::string &id,
 
   if (!dataset.coords().empty()) {
     s << "Coordinates:\n";
-    for (const auto &[dim, var] : dataset.coords()) {
-      /* Only print the dense coordinates here (sparse coordinates will appear
-       * with their corresponding data item) */
-      if (var.dims().sparseDim() == Dim::Invalid)
-        s << format_variable(dim, var, dims);
-    }
+    for (const auto &[dim, var] : dataset.coords())
+      s << format_variable(dim, var, dims);
   }
   if (!dataset.attrs().empty()) {
     s << "Attributes:\n";
@@ -267,17 +259,11 @@ std::string do_to_string(const D &dataset, const std::string &id,
 
 template <class T> Dimensions dimensions(const T &dataset) {
   Dimensions datasetDims;
-  Dim sparse = Dim::Invalid;
   for (const auto &item : dataset) {
     const auto &dims = item.dims();
-    for (const auto dim : dims.labels()) {
-      if (!datasetDims.contains(dim)) {
-        if (dim == dims.sparseDim())
-          sparse = dim;
-        else
-          datasetDims.add(dim, dims[dim]);
-      }
-    }
+    for (const auto dim : dims.labels())
+      if (!datasetDims.contains(dim))
+        datasetDims.add(dim, dims[dim]);
   }
   for (const auto &coord : dataset.coords()) {
     const auto &dims = coord.second.dims();
@@ -285,8 +271,6 @@ template <class T> Dimensions dimensions(const T &dataset) {
       if (!datasetDims.contains(dim))
         datasetDims.add(dim, dims[dim]);
   }
-  if (sparse != Dim::Invalid && !datasetDims.contains(sparse))
-    datasetDims.addInner(sparse, Dimensions::Sparse);
   return datasetDims;
 }
 
@@ -305,4 +289,5 @@ std::string to_string(const Dataset &dataset) {
 std::string to_string(const DatasetConstView &dataset) {
   return do_to_string(dataset, "<scipp.DatasetView>", dimensions(dataset));
 }
+
 } // namespace scipp::core

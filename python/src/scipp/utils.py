@@ -3,9 +3,8 @@
 # @file
 # @author Neil Vaytet
 
-from ._scipp.core.units import dimensionless
 from ._scipp.core import (Variable, VariableView, Dataset, DatasetView,
-                          DataArray, DataArrayView)
+                          DataArray, DataArrayView, is_events)
 
 
 def name_with_unit(var=None, name=None, log=False, replace_dim=True):
@@ -23,8 +22,7 @@ def name_with_unit(var=None, name=None, log=False, replace_dim=True):
     if log:
         text = "log\u2081\u2080(" + text + ")"
     if var is not None:
-        if var.unit != dimensionless:
-            text += " [{}]".format(var.unit)
+        text += " [{}]".format(var.unit)
     return text
 
 
@@ -70,3 +68,9 @@ def is_dataset_or_array(obj):
     Return True if the input object is either a Dataset or DataArray.
     """
     return is_dataset(obj) or is_data_array(obj)
+
+
+def is_data_events(obj):
+    if hasattr(obj, "data"):
+        return is_events(obj.data)
+    return is_events(obj)

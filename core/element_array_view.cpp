@@ -9,8 +9,8 @@ namespace scipp::core {
 
 void expectCanBroadcastFromTo(const Dimensions &source,
                               const Dimensions &target) {
-  for (const auto dim : target.denseLabels())
-    if (source.denseContains(dim) && (source[dim] < target[dim]))
+  for (const auto dim : target.labels())
+    if (source.contains(dim) && (source[dim] < target[dim]))
       throw except::DimensionError("Cannot broadcast/slice dimension since "
                                    "data has mismatching but smaller "
                                    "dimension extent.");

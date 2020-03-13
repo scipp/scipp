@@ -4,6 +4,7 @@
 /// @author Simon Heybrock
 #include <numeric>
 
+#include "scipp/core/event.h"
 #include "scipp/core/except.h"
 #include "scipp/core/groupby.h"
 #include "scipp/core/histogram.h"
@@ -30,8 +31,8 @@ T GroupBy<T>::makeReductionOutput(const Dim reductionDim) const {
 }
 
 template <class T>
-template <class Op>
-T GroupBy<T>::reduce(Op op, const Dim reductionDim) const {
+template <class Op, class CoordOp>
+T GroupBy<T>::reduce(Op op, const Dim reductionDim, CoordOp coord_op) const {
   auto out = makeReductionOutput(reductionDim);
   const auto mask = ~masks_merge_if_contains(m_data.masks(), reductionDim);
   // Apply to each group, storing result in output slice
@@ -45,6 +46,12 @@ T GroupBy<T>::reduce(Op op, const Dim reductionDim) const {
       } else {
         op(out_slice, m_data, groups()[group], reductionDim, mask);
       }
+      if constexpr (!std::is_same_v<CoordOp, void *>)
+        for (auto &&[dim, coord] : out_slice.coords())
+          coord_op(coord, m_data.coords()[dim], groups()[group], reductionDim,
+                   mask);
+      else
+        static_cast<void>(coord_op);
     }
   };
   parallel::parallel_for(parallel::blocked_range(0, size()), process_groups);
@@ -61,13 +68,28 @@ static constexpr auto flatten = [](const DataArrayView &out, const auto &in,
     auto mask =
         mask_.dims().contains(reductionDim) ? mask_.slice(slice) : no_mask;
     const auto &array = in.slice(slice);
-    if (in.hasData())
-      flatten_impl(out.data(), array.data(), mask);
-    for (auto &&[dim, coord] : out.coords())
-      if (coord.dims().sparse())
-        flatten_impl(coord, array.coords()[dim], mask);
+    if (in.hasData()) {
+      if (is_events(array.data()))
+        flatten_impl(out.data(), array.data(), mask);
+      else
+        sum_impl(out.data(), array.data() * mask);
+    }
   }
 };
+
+static constexpr auto flatten_coord =
+    [](const VariableView &out, const auto &in,
+       const GroupByGrouping::group &group, const Dim reductionDim,
+       const Variable &mask_) {
+      const auto no_mask = makeVariable<bool>(Values{true});
+      for (const auto &slice : group) {
+        auto mask =
+            mask_.dims().contains(reductionDim) ? mask_.slice(slice) : no_mask;
+        const auto &array = in.slice(slice);
+        if (is_events(out))
+          flatten_impl(out, array, mask);
+      }
+    };
 
 static constexpr auto sum = [](const DataArrayView &out,
                                const auto &data_container,
@@ -104,9 +126,10 @@ static constexpr auto reduce_idempotent =
 
 /// Flatten provided dimension in each group and return combined data.
 ///
-/// This only supports sparse data.
+/// This only supports event data.
 template <class T> T GroupBy<T>::flatten(const Dim reductionDim) const {
-  return reduce(groupby_detail::flatten, reductionDim);
+  return reduce(groupby_detail::flatten, reductionDim,
+                groupby_detail::flatten_coord);
 }
 
 /// Reduce each group using `sum` and return combined data.

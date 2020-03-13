@@ -12,18 +12,18 @@ using namespace scipp::core;
 auto make_beamline(const scipp::index size) {
   Dataset beamline;
 
-  beamline.setLabels(
-      "source_position",
+  beamline.setCoord(
+      Dim("source_position"),
       makeVariable<Eigen::Vector3d>(units::Unit(units::m),
                                     Values{Eigen::Vector3d{0.0, 0.0, -10.0}}));
-  beamline.setLabels(
-      "sample_position",
+  beamline.setCoord(
+      Dim("sample_position"),
       makeVariable<Eigen::Vector3d>(units::Unit(units::m),
                                     Values{Eigen::Vector3d{0.0, 0.0, 0.0}}));
 
-  beamline.setLabels(
-      "position", makeVariable<Eigen::Vector3d>(
-                      Dims{Dim::Spectrum}, Shape{size}, units::Unit(units::m)));
+  beamline.setCoord(Dim("position"), makeVariable<Eigen::Vector3d>(
+                                         Dims{Dim::Spectrum}, Shape{size},
+                                         units::Unit(units::m)));
   return beamline;
 }
 
@@ -59,14 +59,18 @@ static void BM_neutron_convert(benchmark::State &state, const Dim targetDim) {
   state.counters["transpose"] = transpose;
 }
 
-auto make_sparse_coord_only(const scipp::index size, const scipp::index count) {
+auto make_events_default_weights(const scipp::index size,
+                                 const scipp::index count) {
   auto out = make_beamline(size);
-  auto var = makeVariable<double>(Dims{Dim::Spectrum, Dim::Tof},
-                                  Shape{size, Dimensions::Sparse});
-  auto vals = var.sparseValues<double>();
+  auto var = makeVariable<event_list<double>>(Dims{Dim::Spectrum}, Shape{size});
+  auto vals = var.values<event_list<double>>();
   for (scipp::index i = 0; i < size; ++i)
     vals[i].resize(count, 5000.0);
-  out.setSparseCoord("", std::move(var));
+  out.setCoord(Dim::Tof, std::move(var));
+  auto weights =
+      makeVariable<double>(Dims{Dim::Spectrum}, Shape{size},
+                           units::Unit(units::counts), Values{}, Variances{});
+  out.setData("", weights);
   return out;
 }
 
@@ -74,7 +78,7 @@ static void BM_neutron_convert_sparse(benchmark::State &state,
                                       const Dim targetDim) {
   const scipp::index nEvent = state.range(0);
   const scipp::index nHist = 1e8 / nEvent;
-  const auto sparse = make_sparse_coord_only(nHist, nEvent);
+  const auto sparse = make_events_default_weights(nHist, nEvent);
   for (auto _ : state) {
     state.PauseTiming();
     Dataset data = sparse;

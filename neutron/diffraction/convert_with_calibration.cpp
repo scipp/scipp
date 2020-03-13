@@ -56,18 +56,20 @@ template <class T> T convert_with_calibration_impl(T d, Dataset cal) {
   }
 
   // 2. Transform coordinate
-  if (d.coords().contains(Dim::Tof) && !d.coords()[Dim::Tof].dims().sparse()) {
-    d.setCoord(Dim::Tof, (d.coords()[Dim::Tof] - cal["tzero"].data()) /
-                             cal["difc"].data());
-  }
-
-  // 3. Transform sparse coordinates
-  for (const auto &data : iter(d)) {
-    if (data.coords()[Dim::Tof].dims().sparse()) {
-      data.coords()[Dim::Tof] -= cal["tzero"].data();
-      data.coords()[Dim::Tof] *= reciprocal(cal["difc"].data());
+  if (d.coords().contains(Dim::Tof)) {
+    if (is_events(d.coords()[Dim::Tof])) {
+      d.coords()[Dim::Tof] -= cal["tzero"].data();
+      d.coords()[Dim::Tof] *= reciprocal(cal["difc"].data());
+    } else {
+      d.setCoord(Dim::Tof, (d.coords()[Dim::Tof] - cal["tzero"].data()) /
+                               cal["difc"].data());
     }
   }
+
+  // 3. Transform unaligned coordinates
+  // for (const auto &data : iter(d)) {
+  // No unaligned support in Dataset yet.
+  //}
 
   d.rename(Dim::Tof, Dim::DSpacing);
   return d;

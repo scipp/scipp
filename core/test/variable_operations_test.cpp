@@ -152,23 +152,21 @@ TEST(Variable, operator_plus_equal_custom_type) {
 TEST(Variable, operator_plus) {
   auto a = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.0, 2.0},
                                 Variances{3.0, 4.0});
-  auto b =
-      makeVariable<float>(Dims{Dim::Y, Dim::Z}, Shape{2, Dimensions::Sparse});
-  auto b_ = b.sparseValues<float>();
+  auto b = makeVariable<event_list<float>>(Dims{Dim::Y}, Shape{2});
+  auto b_ = b.values<event_list<float>>();
   b_[0] = {0.1, 0.2};
   b_[1] = {0.3};
 
   auto sum = a + b;
 
-  auto expected = makeVariable<double>(
-      Dimensions{{Dim::X, 2}, {Dim::Y, 2}, {Dim::Z, Dimensions::Sparse}},
-      Variances{}, Values{});
-  auto vals = expected.sparseValues<double>();
+  auto expected = makeVariable<event_list<double>>(
+      Dimensions{{Dim::X, 2}, {Dim::Y, 2}}, Variances{}, Values{});
+  auto vals = expected.values<event_list<double>>();
   vals[0] = {1.0 + 0.1f, 1.0 + 0.2f};
   vals[1] = {1.0 + 0.3f};
   vals[2] = {2.0 + 0.1f, 2.0 + 0.2f};
   vals[3] = {2.0 + 0.3f};
-  auto vars = expected.sparseVariances<double>();
+  auto vars = expected.variances<event_list<double>>();
   vars[0] = {3.0, 3.0};
   vars[1] = {3.0};
   vars[2] = {4.0, 4.0};
@@ -201,9 +199,8 @@ TEST(Variable, operator_plus_eigen_type) {
 }
 
 TEST(SparseVariable, operator_plus) {
-  auto sparse =
-      makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2l, Dimensions::Sparse});
-  auto sparse_ = sparse.sparseValues<double>();
+  auto sparse = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2});
+  auto sparse_ = sparse.values<event_list<double>>();
   sparse_[0] = {1, 2, 3};
   sparse_[1] = {4};
   auto dense = makeVariable<double>(Dims{Dim::Y}, Shape{2}, Values{1.5, 0.5});
@@ -248,9 +245,8 @@ TEST(Variable, operator_times_equal_unit_fail_integrity) {
 }
 
 TEST(Variable, operator_binary_equal_data_fail_unit_integrity) {
-  auto a =
-      makeVariable<float>(Dims{Dim::Y, Dim::Z}, Shape{2, Dimensions::Sparse});
-  auto a_ = a.sparseValues<float>();
+  auto a = makeVariable<event_list<float>>(Dims{Dim::Y}, Shape{2});
+  auto a_ = a.values<event_list<float>>();
   auto b(a);
   a_[0] = {0.1, 0.2};
   a_[1] = {0.3};
@@ -264,9 +260,8 @@ TEST(Variable, operator_binary_equal_data_fail_unit_integrity) {
 }
 
 TEST(Variable, operator_binary_equal_data_fail_data_integrity) {
-  auto a =
-      makeVariable<float>(Dims{Dim::Y, Dim::Z}, Shape{2, Dimensions::Sparse});
-  auto a_ = a.sparseValues<float>();
+  auto a = makeVariable<event_list<float>>(Dims{Dim::Y}, Shape{2});
+  auto a_ = a.values<event_list<float>>();
   a_[0] = {0.1, 0.2};
   auto b(a);
   a_[1] = {0.3};
@@ -280,11 +275,10 @@ TEST(Variable, operator_binary_equal_data_fail_data_integrity) {
 }
 
 TEST(Variable, operator_binary_equal_with_variances_data_fail_data_integrity) {
-  auto a =
-      makeVariable<float>(Dimensions{{Dim::Y, 2}, {Dim::Z, Dimensions::Sparse}},
-                          Values{}, Variances{});
-  auto a_ = a.sparseValues<float>();
-  auto a_vars = a.sparseVariances<float>();
+  auto a = makeVariable<event_list<float>>(Dimensions{{Dim::Y, 2}}, Values{},
+                                           Variances{});
+  auto a_ = a.values<event_list<float>>();
+  auto a_vars = a.variances<event_list<float>>();
   a_[0] = {0.1, 0.2};
   a_vars[0] = {0.1, 0.2};
   auto b(a);
@@ -312,9 +306,8 @@ TEST(Variable, operator_binary_equal_with_variances_data_fail_data_integrity) {
 }
 
 TEST(Variable, operator_times_equal_slice_unit_fail_integrity) {
-  auto a =
-      makeVariable<float>(Dims{Dim::Y, Dim::Z}, Shape{2, Dimensions::Sparse});
-  auto a_ = a.sparseValues<float>();
+  auto a = makeVariable<event_list<float>>(Dims{Dim::Y}, Shape{2});
+  auto a_ = a.values<event_list<float>>();
   a_[0] = {0.1, 0.2};
   a_[1] = {0.3};
   auto b(a);
@@ -330,8 +323,8 @@ TEST(Variable, operator_times_can_broadcast) {
   auto b = makeVariable<double>(Dims{Dim::Y}, Shape{2}, Values{2.0, 3.0});
 
   auto ab = a * b;
-  auto reference = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
-                                        Values{1.0, 3.0, 1.5, 4.5});
+  auto reference = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 2},
+                                        Values{1.0, 1.5, 3.0, 4.5});
   EXPECT_EQ(ab, reference);
 }
 
@@ -488,69 +481,13 @@ TEST(Variable, concatenate_unit_fail) {
 }
 
 TEST(SparseVariable, concatenate) {
-  const auto a =
-      makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, Dimensions::Sparse},
-                           Values{}, Variances{});
-  const auto b =
-      makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{3, Dimensions::Sparse},
-                           Values{}, Variances{});
+  const auto a = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2},
+                                                  Values{}, Variances{});
+  const auto b = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{3},
+                                                  Values{}, Variances{});
   auto var = concatenate(a, b, Dim::Y);
-  EXPECT_EQ(var, makeVariable<double>(Dims{Dim::Y, Dim::X},
-                                      Shape{5, Dimensions::Sparse}, Values{},
-                                      Variances{}));
-}
-
-TEST(SparseVariable, concatenate_along_sparse_dimension) {
-  auto a =
-      makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2l, Dimensions::Sparse});
-  auto a_ = a.sparseValues<double>();
-  a_[0] = {1, 2, 3};
-  a_[1] = {1, 2};
-  auto b =
-      makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2l, Dimensions::Sparse});
-  auto b_ = b.sparseValues<double>();
-  b_[0] = {1, 3};
-  b_[1] = {};
-
-  auto var = concatenate(a, b, Dim::X);
-  EXPECT_TRUE(var.dims().sparse());
-  EXPECT_EQ(var.dims().sparseDim(), Dim::X);
-  EXPECT_EQ(var.dims().volume(), 2);
-  auto data = var.sparseValues<double>();
-  EXPECT_TRUE(equals(data[0], {1, 2, 3, 1, 3}));
-  EXPECT_TRUE(equals(data[1], {1, 2}));
-}
-
-TEST(SparseVariable, concatenate_along_sparse_dimension_with_variances) {
-  auto a =
-      makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, Dimensions::Sparse},
-                           Values{}, Variances{});
-  auto a_vals = a.sparseValues<double>();
-  a_vals[0] = {1, 2, 3};
-  a_vals[1] = {1, 2};
-  auto a_vars = a.sparseVariances<double>();
-  a_vars[0] = {4, 5, 6};
-  a_vars[1] = {4, 5};
-  auto b =
-      makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, Dimensions::Sparse},
-                           Values{}, Variances{});
-  auto b_vals = b.sparseValues<double>();
-  b_vals[0] = {1, 3};
-  b_vals[1] = {};
-  auto b_vars = b.sparseVariances<double>();
-  b_vars[0] = {7, 8};
-  b_vars[1] = {};
-
-  auto var = concatenate(a, b, Dim::X);
-  EXPECT_TRUE(var.dims().sparse());
-  EXPECT_EQ(var.dims().sparseDim(), Dim::X);
-  EXPECT_EQ(var.dims().volume(), 2);
-  auto vals = var.sparseValues<double>();
-  EXPECT_TRUE(equals(vals[0], {1, 2, 3, 1, 3}));
-  EXPECT_TRUE(equals(vals[1], {1, 2}));
-  auto vars = var.sparseVariances<double>();
-  EXPECT_TRUE(equals(vars[0], {4, 5, 6, 7, 8}));
-  EXPECT_TRUE(equals(vars[1], {4, 5}));
+  EXPECT_EQ(var, makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{5},
+                                                  Values{}, Variances{}));
 }
 
 #ifdef SCIPP_UNITS_NEUTRON

@@ -14,7 +14,7 @@ template <typename T> struct GenerateSparse {
     unsigned long long size(0);
 
     /* Generate a random amount of sparse data for each point */
-    auto vals = a.template sparseValues<T>();
+    auto vals = a.template values<event_list<T>>();
     for (scipp::index i = 0; i < length; ++i) {
       const auto l = dis(gen);
       size += l;

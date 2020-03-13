@@ -11,11 +11,10 @@ using namespace scipp;
 using namespace scipp::core;
 
 template <class T>
-auto make_2d_sparse_coord_only(const scipp::index size,
-                               const scipp::index count) {
-  Variable var =
-      makeVariable<T>(Dims{Dim::X, Dim::Y}, Shape{size, Dimensions::Sparse});
-  auto vals = var.sparseValues<T>();
+auto make_1d_events_scalar_weights(const scipp::index size,
+                                   const scipp::index count) {
+  Variable var = makeVariable<event_list<T>>(Dims{Dim::X}, Shape{size});
+  auto vals = var.values<event_list<T>>();
   for (scipp::index i = 0; i < size; ++i)
     vals[i].resize(count);
   // Not using initializer_list to init coord map to avoid distortion of
@@ -24,22 +23,24 @@ auto make_2d_sparse_coord_only(const scipp::index size,
   // are not entirely understood.
   std::map<Dim, Variable> map;
   map.emplace(Dim::Y, std::move(var));
-  DataArray sparse(std::nullopt, std::move(map));
+  DataArray sparse(makeVariable<double>(Dims{Dim::X}, Shape{size},
+                                        units::Unit(units::counts), Values{},
+                                        Variances{}),
+                   std::move(map));
   return sparse;
 }
 
 template <class T>
-auto make_2d_sparse(const scipp::index size, const scipp::index count) {
-  Variable var =
-      makeVariable<T>(Dims{Dim::X, Dim::Y}, Shape{size, Dimensions::Sparse},
-                      Values{}, Variances{});
-  auto vals = var.sparseValues<T>();
-  auto vars = var.sparseVariances<T>();
+auto make_1d_events(const scipp::index size, const scipp::index count) {
+  Variable var = makeVariable<event_list<T>>(Dims{Dim::X}, Shape{size},
+                                             Values{}, Variances{});
+  auto vals = var.values<event_list<T>>();
+  auto vars = var.variances<event_list<T>>();
   for (scipp::index i = 0; i < size; ++i) {
     vals[i].resize(count);
     vars[i].resize(count);
   }
-  auto sparse = make_2d_sparse_coord_only<T>(size, count);
+  auto sparse = make_1d_events_scalar_weights<T>(size, count);
   sparse.setData(std::move(var));
   // Replacing the line below by `return copy(sparse);` yields more than 2x
   // higher performance. It is not clear whether this is just due to improved
@@ -53,15 +54,16 @@ template <class T> static void BM_groupby_flatten(benchmark::State &state) {
   const scipp::index nHist = state.range(0);
   const scipp::index nGroup = state.range(1);
   const bool coord_only = state.range(2);
-  auto sparse = coord_only ? make_2d_sparse_coord_only<T>(nHist, nEvent / nHist)
-                           : make_2d_sparse<T>(nHist, nEvent / nHist);
+  auto sparse = coord_only
+                    ? make_1d_events_scalar_weights<T>(nHist, nEvent / nHist)
+                    : make_1d_events<T>(nHist, nEvent / nHist);
   std::vector<int64_t> group_(nHist);
   std::iota(group_.begin(), group_.end(), 0);
   auto group = makeVariable<int64_t>(Dims{Dim::X}, Shape{nHist},
                                      Values(group_.begin(), group_.end()));
-  sparse.labels().set("group", group / (nHist / nGroup));
+  sparse.coords().set(Dim("group"), group / (nHist / nGroup));
   for (auto _ : state) {
-    auto flat = groupby(sparse, "group", Dim::Z).flatten(Dim::X);
+    auto flat = groupby(sparse, Dim("group")).flatten(Dim::X);
     state.PauseTiming();
     flat = DataArray();
     state.ResumeTiming();
@@ -102,9 +104,9 @@ static void BM_groupby_large_table(benchmark::State &state) {
   d.setData("c", column);
   auto group = makeVariable<int64_t>(Dims{Dim::X}, Shape{nRow},
                                      Values(group_.begin(), group_.end()));
-  d.labels().set("group", group / (nRow / nGroup));
+  d.coords().set(Dim("group"), group / (nRow / nGroup));
   for (auto _ : state) {
-    auto grouped = groupby(d, "group", Dim::Y).sum(Dim::X);
+    auto grouped = groupby(d, Dim("group")).sum(Dim::X);
     state.PauseTiming();
     grouped = Dataset();
     state.ResumeTiming();
