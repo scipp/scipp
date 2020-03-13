@@ -5,7 +5,9 @@
 
 #include "scipp/core/dataset.h"
 #include "scipp/core/except.h"
+#include "scipp/core/histogram.h"
 #include "scipp/core/sort.h"
+#include "scipp/core/unaligned.h"
 #include "scipp/core/view_decl.h"
 
 #include "bind_data_access.h"
@@ -623,6 +625,22 @@ void init_dataset(py::module &m) {
         Element-wise reciprocal.
 
         :return: Reciprocal of the input values.
+        :rtype: DataArray)");
+
+  m.def("realign",
+        [](const DataArrayConstView &a, std::map<Dim, Variable> coords) {
+          return unaligned::realign(copy(a), std::move(coords));
+        },
+        py::arg("data"), py::arg("coords"),
+        py::call_guard<py::gil_scoped_release>());
+  m.def(
+      "histogram",
+      [](const DataArrayConstView &x) { return core::histogram(x); },
+      py::arg("x"), py::call_guard<py::gil_scoped_release>(),
+      R"(Returns a new DataArray unaligned data content binned according to the realigning axes.
+
+        :param x: Realigned data to histogram.
+        :return: Histogramed data.
         :rtype: DataArray)");
 
   bind_astype(dataArray);
