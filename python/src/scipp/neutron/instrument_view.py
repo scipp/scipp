@@ -89,7 +89,7 @@ class InstrumentView:
         self.mpl_colors = importlib.import_module("matplotlib.colors")
         self.mpl_backend_agg = importlib.import_module(
             "matplotlib.backends.backend_agg")
-        self.pil = importlib.import_module("PIL")
+        self.pil_image = importlib.import_module("PIL.Image")
         self.p3 = importlib.import_module("pythreejs")
 
         self.fig = None
@@ -453,7 +453,7 @@ class InstrumentView:
         canvas.draw()
         image = np.frombuffer(canvas.tostring_rgb(), dtype='uint8')
         shp = list(fig.canvas.get_width_height())[::-1] + [3]
-        self.cbar_image.value = self.pil.Image.fromarray(
+        self.cbar_image.value = self.pil_image.fromarray(
             image.reshape(shp))._repr_png_()
 
     def update_colors(self, change):
