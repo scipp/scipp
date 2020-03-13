@@ -70,6 +70,26 @@ TEST_F(RealignTest, basics) {
   EXPECT_EQ(realigned.unaligned(), base);
 }
 
+TEST_F(RealignTest, dimension_order) {
+  auto base = make_array();
+  DataArray transposed(Variable(base.data().transpose()), base.coords());
+  auto realigned1 = unaligned::realign(
+      base, {{Dim::Z, zbins}, {Dim::Y, ybins}, {Dim::X, xbins}});
+  auto realigned2 = unaligned::realign(
+      transposed, {{Dim::Z, zbins}, {Dim::Y, ybins}, {Dim::X, xbins}});
+
+  EXPECT_FALSE(realigned1.hasData());
+  EXPECT_FALSE(realigned2.hasData());
+  EXPECT_EQ(
+      realigned1.dims(),
+      Dimensions({Dim::Temperature, Dim::Z, Dim::Y, Dim::X}, {2, 2, 2, 2}));
+  // Dim::Position is outside Dim::Temperature, when mapping position to X, Y,
+  // and Z stays the inner dim.
+  EXPECT_EQ(
+      realigned2.dims(),
+      Dimensions({Dim::Z, Dim::Y, Dim::X, Dim::Temperature}, {2, 2, 2, 2}));
+}
+
 TEST_F(RealignTest, slice) {
   const auto realigned = make_realigned();
   const auto aligned = make_aligned();
