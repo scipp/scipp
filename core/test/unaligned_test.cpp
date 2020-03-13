@@ -3,6 +3,7 @@
 #include <gtest/gtest.h>
 
 #include "scipp/core/dataset.h"
+#include "scipp/core/groupby.h"
 #include "scipp/core/unaligned.h"
 
 using namespace scipp;
@@ -45,10 +46,10 @@ protected:
   }
 
   DataArray make_aligned() {
-    // TODO set proper values
     return DataArray(
-        makeVariable<double>(Dims{Dim::Temperature, Dim::Z, Dim::Y, Dim::X},
-                             Shape{2, 2, 2, 2}),
+        makeVariable<double>(
+            Dims{Dim::Temperature, Dim::Z, Dim::Y, Dim::X}, Shape{2, 2, 2, 2},
+            Values{1, 0, 0, 0, 2, 0, 3, 0, 2, 0, 0, 0, 4, 0, 6, 0}),
         {{Dim::Temperature, temp},
          {Dim::Z, zbins},
          {Dim::Y, ybins},
@@ -118,4 +119,50 @@ TEST_F(RealignTest, slice_unaligned_view) {
 
   Slice s(Dim::Temperature, 0);
   EXPECT_EQ(realigned.unaligned().slice(s), a.slice(s));
+}
+
+auto extract_group(const GroupBy<DataArray> &grouped,
+                   const scipp::index group) {
+  const auto &slices = grouped.groups()[group];
+  scipp::index size = 0;
+  const auto &array = grouped.data();
+  for (const auto &slice : slices)
+    size += slice.end() - slice.begin();
+  const Dim dim = array.coords()[grouped.dim()].dims().inner();
+  auto out = copy(array.slice({dim, 0, size}));
+  // TODO masks
+  scipp::index current = 0;
+  for (const auto &slice : slices) {
+    const auto thickness = slice.end() - slice.begin();
+    const Slice out_slice(slice.dim(), current, current + thickness);
+    out.data().slice(out_slice).assign(array.data().slice(slice));
+    for (const auto &[d, coord] : out.coords())
+      if (coord.dims().contains(dim))
+        coord.slice(out_slice).assign(array.coords()[d].slice(slice));
+    current += thickness;
+  }
+  out.coords().erase(grouped.dim());
+  return out;
+}
+
+TEST_F(RealignTest, histogram) {
+  const auto realigned = make_realigned();
+  const auto &unaligned = realigned.unaligned();
+
+  Variable data(unaligned.data(), realigned.dims());
+
+  auto xgroups = groupby(unaligned, Dim::X, realigned.coords()[Dim::X]);
+  for (scipp::index x = 0; x < realigned.dims()[Dim::X]; ++x) {
+    auto xslice = extract_group(xgroups, x);
+
+    auto ygroups = groupby(xslice, Dim::Y, realigned.coords()[Dim::Y]);
+    for (scipp::index y = 0; y < realigned.dims()[Dim::Y]; ++y) {
+      auto xyslice = extract_group(ygroups, y);
+
+      auto hist1d = groupby(xyslice, Dim::Z, realigned.coords()[Dim::Z])
+                        .sum(Dim::Position);
+      data.slice({Dim::X, x}).slice({Dim::Y, y}).assign(hist1d.data());
+    }
+  }
+  EXPECT_EQ(data, make_aligned().data());
 }
