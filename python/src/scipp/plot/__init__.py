@@ -7,7 +7,6 @@ import importlib
 
 # If we are running inside a notebook, then make plot interactive by default.
 # From: https://stackoverflow.com/a/22424821
-plt = None
 try:
     import matplotlib
     try:
@@ -15,6 +14,8 @@ try:
         ipy = get_ipython()
         if ipy is not None:
 
+            # Check if a docs build is requested in the metadata. If so,
+            # use the default Qt/inline backend.
             cfg = ipy.config
             try:
                 meta = cfg["Session"]["metadata"]
@@ -24,20 +25,21 @@ try:
             except KeyError:
                 is_doc_build = False
 
-            # if is_doc_build:
-            #     import matplotlib.pyplot as plt
-            #     plt.ion()
-            #     print("doc build")
+            # If we are in an IPython kernel, select either widget backend
+            # if installed (for JupyterLan), or notebook backend.
             if "IPKernelApp" in ipy.config and not is_doc_build:
                 try:
                     _ = importlib.import_module("ipympl")
                     matplotlib.use('module://ipympl.backend_nbagg')
                 except ImportError:
                     matplotlib.use('nbAgg')
-                    # import matplotlib.pyplot as plt
-                    # plt.ion()
+                    # Remove the title banner and button from figure
+                    ipy.run_cell_magic(
+                        "html", "", "<style>.output_wrapper "
+                        ".ui-dialog-titlebar {display: none;}</style>")
     except ImportError:
         pass
+    # Turn interactive plotting on
     import matplotlib.pyplot as plt
     plt.ion()
 
