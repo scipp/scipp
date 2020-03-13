@@ -1049,3 +1049,41 @@ TEST(TransformFlagsTest, expect_in_variance_if_out_variance) {
   EXPECT_NO_THROW(transform_in_place<std::tuple<double>>(
       var_with_variance, var_with_variance, Op{}));
 }
+
+TEST(TransformFlagsTest, expect_all_or_none_have_variance) {
+  auto var_with_variance = makeVariable<double>(Values{1}, Variances{1});
+  auto var_no_variance = makeVariable<double>(Values{1});
+  auto binary_op = [](auto x, auto y) { return x + y; };
+  auto op_has_flags = scipp::overloaded{
+      transform_flags::expect_all_or_none_have_variance, binary_op};
+  Variable out;
+  EXPECT_THROW((out = transform<std::tuple<double>>(
+                    var_with_variance, var_no_variance, op_has_flags)),
+               except::VariancesError);
+  EXPECT_THROW((out = transform<std::tuple<double>>(
+                    var_no_variance, var_with_variance, op_has_flags)),
+               except::VariancesError);
+  EXPECT_NO_THROW((out = transform<std::tuple<double>>(
+                       var_no_variance, var_no_variance, op_has_flags)));
+  EXPECT_NO_THROW((out = transform<std::tuple<double>>(
+                       var_with_variance, var_with_variance, op_has_flags)));
+}
+
+TEST(TransformFlagsTest, expect_all_or_none_have_variance_in_place) {
+  auto var_with_variance = makeVariable<double>(Values{1}, Variances{1});
+  auto var_no_variance = makeVariable<double>(Values{1});
+  auto unary_op = [](auto &, auto) {};
+  auto op_has_flags = scipp::overloaded{
+      transform_flags::expect_all_or_none_have_variance, unary_op};
+  Variable out;
+  EXPECT_THROW(transform_in_place<std::tuple<double>>(
+                   var_with_variance, var_no_variance, op_has_flags),
+               except::VariancesError);
+  EXPECT_THROW(transform_in_place<std::tuple<double>>(
+                   var_no_variance, var_with_variance, op_has_flags),
+               except::VariancesError);
+  EXPECT_NO_THROW(transform_in_place<std::tuple<double>>(
+      var_no_variance, var_no_variance, op_has_flags));
+  EXPECT_NO_THROW(transform_in_place<std::tuple<double>>(
+      var_with_variance, var_with_variance, op_has_flags));
+}
