@@ -911,42 +911,48 @@ TEST_F(TransformInPlaceDryRunTest, unchanged_if_success) {
   EXPECT_EQ(a, original);
 }
 
-TEST(TransformFlagsTest, no_variance_on_arg_throws) {
+TEST(TransformFlagsTest, no_variance_on_arg) {
   auto var_with_variance = makeVariable<double>(Values{1}, Variances{1});
   auto var_no_variance = makeVariable<double>(Values{1});
   auto binary_op = [](auto x, auto y) { return x + y; };
   auto op_arg_0_has_flags =
       scipp::overloaded{transform_flags::expect_variance_arg<0>, binary_op};
-  EXPECT_NO_THROW(transform<std::tuple<double>>(
-      var_with_variance, var_no_variance, op_arg_0_has_flags));
-  EXPECT_THROW(transform<std::tuple<double>>(var_no_variance, var_with_variance,
-                                             op_arg_0_has_flags),
+  Variable out;
+  EXPECT_NO_THROW(
+      (out = transform<std::tuple<double>>(var_with_variance, var_no_variance,
+                                           op_arg_0_has_flags)));
+  EXPECT_THROW((out = transform<std::tuple<double>>(
+                    var_no_variance, var_with_variance, op_arg_0_has_flags)),
                except::VariancesError);
-  EXPECT_NO_THROW(transform<std::tuple<double>>(
-      var_with_variance, var_with_variance, op_arg_0_has_flags));
+  EXPECT_NO_THROW(
+      (out = transform<std::tuple<double>>(var_with_variance, var_with_variance,
+                                           op_arg_0_has_flags)));
   auto op_arg_1_has_flags =
       scipp::overloaded{transform_flags::expect_variance_arg<1>, binary_op};
-  EXPECT_THROW(transform<std::tuple<double>>(var_with_variance, var_no_variance,
-                                             op_arg_1_has_flags),
+  EXPECT_THROW((out = transform<std::tuple<double>>(
+                    var_with_variance, var_no_variance, op_arg_1_has_flags)),
                except::VariancesError);
-  EXPECT_NO_THROW(transform<std::tuple<double>>(
-      var_no_variance, var_with_variance, op_arg_1_has_flags));
-  EXPECT_NO_THROW(transform<std::tuple<double>>(
-      var_with_variance, var_with_variance, op_arg_1_has_flags));
+  EXPECT_NO_THROW(
+      (out = transform<std::tuple<double>>(var_no_variance, var_with_variance,
+                                           op_arg_1_has_flags)));
+  EXPECT_NO_THROW(
+      (out = transform<std::tuple<double>>(var_with_variance, var_with_variance,
+                                           op_arg_1_has_flags)));
   auto all_args_with_flag =
       scipp::overloaded{transform_flags::expect_variance_arg<0>,
                         transform_flags::expect_variance_arg<1>, binary_op};
-  EXPECT_THROW(transform<std::tuple<double>>(var_no_variance, var_no_variance,
-                                             all_args_with_flag),
+  EXPECT_THROW((out = transform<std::tuple<double>>(
+                    var_no_variance, var_no_variance, all_args_with_flag)),
                except::VariancesError);
-  EXPECT_NO_THROW(transform<std::tuple<double>>(
-      var_with_variance, var_with_variance, all_args_with_flag));
+  EXPECT_NO_THROW(
+      (out = transform<std::tuple<double>>(var_with_variance, var_with_variance,
+                                           all_args_with_flag)));
 }
 
-TEST(TransformFlagsTest, no_variance_on_arg_throws_in_place) {
+TEST(TransformFlagsTest, no_variance_on_arg_in_place) {
   auto var_with_variance = makeVariable<double>(Values{1}, Variances{1});
   auto var_no_variance = makeVariable<double>(Values{1});
-  auto unary_in_place = [](auto &out, auto a) {};
+  auto unary_in_place = [](auto &, auto) {};
   auto op_arg_0_has_flags = scipp::overloaded{
       transform_flags::expect_variance_arg<0>, unary_in_place};
   EXPECT_THROW(transform_in_place<std::tuple<double>>(
@@ -963,10 +969,45 @@ TEST(TransformFlagsTest, no_variance_on_arg_throws_in_place) {
       var_with_variance, var_with_variance, op_arg_1_has_flags));
 }
 
-TEST(TransformFlagsTest, variance_on_arg_throws_in_place) {
+TEST(TransformFlagsTest, variance_on_arg) {
   auto var_with_variance = makeVariable<double>(Values{1}, Variances{1});
   auto var_no_variance = makeVariable<double>(Values{1});
-  auto unary_in_place = [](auto &out, auto a) {};
+  auto binary_op = [](auto x, auto y) { return x + y; };
+  auto op_arg_0_has_flags =
+      scipp::overloaded{transform_flags::expect_no_variance_arg<0>, binary_op};
+  Variable out;
+  EXPECT_THROW((out = transform<std::tuple<double>>(
+                    var_with_variance, var_no_variance, op_arg_0_has_flags)),
+               except::VariancesError);
+  EXPECT_NO_THROW(
+      (out = transform<std::tuple<double>>(var_no_variance, var_with_variance,
+                                           op_arg_0_has_flags)));
+  EXPECT_NO_THROW((out = transform<std::tuple<double>>(
+                       var_no_variance, var_no_variance, op_arg_0_has_flags)));
+  auto op_arg_1_has_flags =
+      scipp::overloaded{transform_flags::expect_no_variance_arg<1>, binary_op};
+  EXPECT_THROW((out = transform<std::tuple<double>>(
+                    var_no_variance, var_with_variance, op_arg_1_has_flags)),
+               except::VariancesError);
+  EXPECT_NO_THROW(
+      (out = transform<std::tuple<double>>(var_with_variance, var_no_variance,
+                                           op_arg_1_has_flags)));
+  EXPECT_NO_THROW((out = transform<std::tuple<double>>(
+                       var_no_variance, var_no_variance, op_arg_1_has_flags)));
+  auto all_args_with_flag =
+      scipp::overloaded{transform_flags::expect_no_variance_arg<0>,
+                        transform_flags::expect_no_variance_arg<1>, binary_op};
+  EXPECT_THROW((out = transform<std::tuple<double>>(
+                    var_with_variance, var_with_variance, all_args_with_flag)),
+               except::VariancesError);
+  EXPECT_NO_THROW((out = transform<std::tuple<double>>(
+                       var_no_variance, var_no_variance, all_args_with_flag)));
+}
+
+TEST(TransformFlagsTest, variance_on_arg_in_place) {
+  auto var_with_variance = makeVariable<double>(Values{1}, Variances{1});
+  auto var_no_variance = makeVariable<double>(Values{1});
+  auto unary_in_place = [](auto &, auto) {};
   auto op_arg_0_has_flags = scipp::overloaded{
       transform_flags::expect_no_variance_arg<0>, unary_in_place};
   EXPECT_THROW(transform_in_place<std::tuple<double>>(
@@ -983,34 +1024,28 @@ TEST(TransformFlagsTest, variance_on_arg_throws_in_place) {
       var_no_variance, var_no_variance, op_arg_1_has_flags));
 }
 
-TEST(TransformFlagsTest, variance_on_arg_throws) {
+namespace {
+template <typename T, typename Base> struct OpInPlace : public Base {
+  template <class A, class B>
+  constexpr void operator()(A &&, const B &) const noexcept {}
+  using types = pair_self_t<T>;
+};
+} // namespace
+
+TEST(TransformFlagsTest, expect_in_variance_if_out_variance) {
+
   auto var_with_variance = makeVariable<double>(Values{1}, Variances{1});
   auto var_no_variance = makeVariable<double>(Values{1});
-  auto binary_op = [](auto x, auto y) { return x + y; };
-  auto op_arg_0_has_flags =
-      scipp::overloaded{transform_flags::expect_no_variance_arg<0>, binary_op};
-  EXPECT_THROW(transform<std::tuple<double>>(var_with_variance, var_no_variance,
-                                             op_arg_0_has_flags),
+  using Op =
+      OpInPlace<double, transform_flags::expect_in_variance_if_out_variance_t>;
+  EXPECT_THROW(transform_in_place<std::tuple<double>>(var_with_variance,
+                                                      var_no_variance, Op{}),
                except::VariancesError);
-  EXPECT_NO_THROW(transform<std::tuple<double>>(
-      var_no_variance, var_with_variance, op_arg_0_has_flags));
-  EXPECT_NO_THROW(transform<std::tuple<double>>(
-      var_no_variance, var_no_variance, op_arg_0_has_flags));
-  auto op_arg_1_has_flags =
-      scipp::overloaded{transform_flags::expect_no_variance_arg<1>, binary_op};
-  EXPECT_THROW(transform<std::tuple<double>>(var_no_variance, var_with_variance,
-                                             op_arg_1_has_flags),
+  EXPECT_THROW(transform_in_place<std::tuple<double>>(var_no_variance,
+                                                      var_with_variance, Op{}),
                except::VariancesError);
-  EXPECT_NO_THROW(transform<std::tuple<double>>(
-      var_with_variance, var_no_variance, op_arg_1_has_flags));
-  EXPECT_NO_THROW(transform<std::tuple<double>>(
-      var_no_variance, var_no_variance, op_arg_1_has_flags));
-  auto all_args_with_flag =
-      scipp::overloaded{transform_flags::expect_no_variance_arg<0>,
-                        transform_flags::expect_no_variance_arg<1>, binary_op};
-  EXPECT_THROW(transform<std::tuple<double>>(
-                   var_with_variance, var_with_variance, all_args_with_flag),
-               except::VariancesError);
-  EXPECT_NO_THROW(transform<std::tuple<double>>(
-      var_no_variance, var_no_variance, all_args_with_flag));
+  EXPECT_NO_THROW(transform_in_place<std::tuple<double>>(
+      var_no_variance, var_no_variance, Op{}));
+  EXPECT_NO_THROW(transform_in_place<std::tuple<double>>(
+      var_with_variance, var_with_variance, Op{}));
 }
