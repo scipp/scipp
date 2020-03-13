@@ -21,7 +21,6 @@ Dim unaligned_dim(const VariableConstView &unaligned) {
 
 template <class CoordMap = std::vector<std::pair<Dim, Variable>>>
 DataArray realign(DataArray unaligned, CoordMap coords) {
-  std::set<Dim> alignedDims;
   std::set<Dim> binnedDims;
   std::set<Dim> unalignedDims;
   for (const auto &item : coords)
@@ -29,29 +28,26 @@ DataArray realign(DataArray unaligned, CoordMap coords) {
   for (const auto &[dim, coord] : unaligned.coords())
     if (binnedDims.count(dim))
       unalignedDims.insert(unaligned_dim(coord));
+  if (unalignedDims.size() < 1)
+    throw except::UnalignedError("realign requires at least one unaligned "
+                                 "dimension.");
+  if (unalignedDims.size() > 1)
+    throw except::UnalignedError(
+        "realign with more than one unaligned dimension not supported yet.");
 
-  for (const auto &[dim, coord] : unaligned.coords()) {
-    bool aligned = true;
-    if (unalignedDims.count(Dim::Invalid) && is_events(coord))
-      aligned = false;
-    else {
-      for (const auto unalignedDim : unalignedDims)
-        if (coord.dims().contains(unalignedDim))
-          aligned = false;
-    }
-    if (aligned)
-      alignedDims.insert(dim);
-  }
   // TODO Some things here can be simplified and optimized by adding an
   // `extract` method to MutableView.
-  auto name = unaligned.name();
   std::vector<std::pair<Dim, Variable>> alignedCoords;
-  for (const auto dim : alignedDims) {
-    alignedCoords.emplace_back(dim, Variable(unaligned.coords()[dim]));
-    unaligned.coords().erase(dim);
+  const auto dims = unaligned.dims();
+  for (const auto &dim : dims.labels()) {
+    if (unalignedDims.count(dim)) {
+      alignedCoords.insert(alignedCoords.end(), coords.begin(), coords.end());
+    } else {
+      alignedCoords.emplace_back(dim, Variable(unaligned.coords()[dim]));
+      unaligned.coords().erase(dim);
+    }
   }
-  alignedCoords.insert(alignedCoords.end(), coords.begin(), coords.end());
-
+  auto name = unaligned.name();
   return DataArray(Variable{}, std::move(alignedCoords), {}, {},
                    std::move(name), std::move(unaligned));
 }
