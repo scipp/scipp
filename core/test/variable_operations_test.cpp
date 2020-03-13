@@ -7,7 +7,6 @@
 
 #include "fix_typed_test_suite_warnings.h"
 #include "scipp/core/dimensions.h"
-#include "scipp/core/event.h"
 #include "scipp/core/except.h"
 #include "scipp/core/variable.h"
 

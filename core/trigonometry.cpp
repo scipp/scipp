@@ -9,7 +9,7 @@
 #include "scipp/core/transform.h"
 #include "scipp/core/variable.h"
 
-#include "element_unary_operations.h"
+#include "element_trigonometry_operations.h"
 
 namespace scipp::core {
 
