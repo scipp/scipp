@@ -368,6 +368,12 @@ static void do_transform(Op op, Out &&out, Tuple &&processed, const Arg &arg,
           args...);
     }
   } else {
+    if constexpr (std::is_base_of_v<transform_flags::expect_variance_arg_t<
+                                        std::tuple_size_v<Tuple>>,
+                                    Op>)
+      throw except::VariancesError("Variances missing in argument " +
+                                   std::to_string(std::tuple_size_v<Tuple>) +
+                                   " . Must be set.");
     do_transform(op, std::forward<Out>(out),
                  std::tuple_cat(processed, std::tuple(vals)), args...);
   }
