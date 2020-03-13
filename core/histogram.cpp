@@ -6,6 +6,7 @@
 #include "scipp/common/numeric.h"
 #include "scipp/core/dataset.h"
 #include "scipp/core/except.h"
+#include "scipp/core/groupby.h"
 #include "scipp/core/transform_subspan.h"
 
 #include "dataset_operations_common.h"
@@ -143,6 +144,63 @@ bool is_histogram(const DataArrayConstView &a, const Dim dim) {
   return dims.contains(dim) && coords.contains(dim) &&
          coords[dim].dims().contains(dim) &&
          coords[dim].dims()[dim] == dims[dim] + 1;
+}
+
+auto extract_group(const GroupBy<DataArray> &grouped,
+                   const scipp::index group) {
+  const auto &slices = grouped.groups()[group];
+  scipp::index size = 0;
+  const auto &array = grouped.data();
+  for (const auto &slice : slices)
+    size += slice.end() - slice.begin();
+  const Dim dim = array.coords()[grouped.dim()].dims().inner();
+  auto out = copy(array.slice({dim, 0, size}));
+  // TODO masks
+  scipp::index current = 0;
+  for (const auto &slice : slices) {
+    const auto thickness = slice.end() - slice.begin();
+    const Slice out_slice(slice.dim(), current, current + thickness);
+    out.data().slice(out_slice).assign(array.data().slice(slice));
+    for (const auto &[d, coord] : out.coords())
+      if (coord.dims().contains(dim))
+        coord.slice(out_slice).assign(array.coords()[d].slice(slice));
+    current += thickness;
+  }
+  out.coords().erase(grouped.dim());
+  return out;
+}
+
+void histogram_md_recurse(const VariableView &data,
+                          const DataArrayConstView &unaligned,
+                          const DataArrayConstView &realigned,
+                          const scipp::index dim_index = 0) {
+  const auto &dims = realigned.dims();
+  const Dim dim = dims.labels()[dim_index];
+  const auto size = dims.shape()[dim_index];
+  if (unaligned.dims().contains(dim)) // skip over aligned dims
+    return histogram_md_recurse(data, unaligned, realigned, dim_index + 1);
+  auto groups = groupby(unaligned, dim, realigned.coords()[dim]);
+  if (dim_index == realigned.dims().ndim() - 1) {
+    auto hist1d = groups.sum(Dim::Position);
+    data.assign(hist1d.data());
+    return;
+  }
+  for (scipp::index i = 0; i < size; ++i) {
+    auto slice = extract_group(groups, i);
+    histogram_md_recurse(data.slice({dim, i}), slice, realigned, dim_index + 1);
+  }
+}
+
+DataArray histogram(const DataArrayConstView &realigned) {
+  if (realigned.hasData())
+    throw except::UnalignedError("Expected realigned data, but data appears to "
+                                 "be histogrammed already.");
+  // TODO Problem: This contains everything, but below we do not slice removed
+  // dims (range slices are ok). Should we simply prevent non-range slicing?
+  const auto unaligned = realigned.unaligned();
+  Variable data(unaligned.data(), realigned.dims());
+  histogram_md_recurse(data, unaligned, realigned);
+  return DataArray{std::move(data), realigned.coords()};
 }
 
 } // namespace scipp::core
