@@ -147,6 +147,8 @@ auto extract_group(const GroupBy<DataArray> &grouped,
 
 TEST_F(RealignTest, histogram) {
   const auto realigned = make_realigned();
+  // TODO Problem: This contains everything, but below we do not slice removed
+  // dims (range slices are ok). Should we simply prevent non-range slicing?
   const auto &unaligned = realigned.unaligned();
 
   Variable data(unaligned.data(), realigned.dims());
