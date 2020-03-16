@@ -683,6 +683,25 @@ void init_variable(py::module &m) {
         :return: atan of input values. Output unit is rad.
         :rtype: Variable)");
 
+  m.def("atan2",
+        [](const Variable &y, const Variable &x) { return atan2(y, x); },
+        py::arg("y"), py::arg("x"),
+        R"(
+        Element-wise atan2.
+        :raises: If the units of inputs are different, or if the dtype has no atan2, e.g., if it is an integer
+        :return: atan2 of input y and x. Output unit is rad.
+        :rtype: Variable)");
+
+  m.def("atan2",
+        [](const VariableConstView &y, const VariableConstView &x,
+           const VariableView &out) { return atan2(y, x, out); },
+        py::arg("y"), py::arg("x"), py::arg("out"),
+        R"(
+        Element-wise atan2 in place.
+        :raises: If the units of inputs are different, or if the dtype has no atan2, e.g., if it is an integer
+        :return: atan2 of input y and x, written to output. Output unit is rad.
+        :rtype: VariableView)");
+
   m.def("all", py::overload_cast<const VariableConstView &, const Dim>(&all),
         py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
         R"(
