@@ -173,9 +173,11 @@ DataArray histogram(const DataArrayConstView &realigned) {
   if (realigned.hasData())
     throw except::UnalignedError("Expected realigned data, but data appears to "
                                  "be histogrammed already.");
-  // TODO Problem: This contains everything, but below we do not slice removed
-  // dims (range slices are ok). Should we simply prevent non-range slicing?
   std::optional<DataArray> filtered;
+  // If `realigned` is sliced we need to copy the unaligned content to "apply"
+  // the slicing since slicing realigned dimensions does not affect the view
+  // onto the unaligned content. Note that we could in principle avoid the copy
+  // if only aligned dimensions are sliced.
   if (!realigned.slices().empty())
     filtered = DataArray(realigned);
   const auto unaligned =
