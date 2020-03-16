@@ -145,3 +145,11 @@ TEST_F(RealignTest, histogram) {
   const auto realigned = make_realigned();
   EXPECT_EQ(histogram(realigned), make_aligned());
 }
+
+TEST_F(RealignTest, histogram_transposed) {
+  auto base = make_array();
+  DataArray transposed(Variable(base.data().transpose()), base.coords());
+  auto realigned = unaligned::realign(
+      transposed, {{Dim::Z, zbins}, {Dim::Y, ybins}, {Dim::X, xbins}});
+  EXPECT_NO_THROW(histogram(realigned));
+}

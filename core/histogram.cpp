@@ -180,7 +180,7 @@ void histogram_md_recurse(const VariableView &data,
   if (unaligned.dims().contains(dim)) // skip over aligned dims
     return histogram_md_recurse(data, unaligned, realigned, dim_index + 1);
   auto groups = groupby(unaligned, dim, realigned.coords()[dim]);
-  if (dim_index == realigned.dims().ndim() - 1) {
+  if (data.dims().ndim() == unaligned.dims().ndim()) {
     const Dim unaligned_dim = unaligned.coords()[dim].dims().inner();
     auto hist1d = groups.sum(unaligned_dim);
     data.assign(hist1d.data());
