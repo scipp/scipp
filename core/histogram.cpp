@@ -185,7 +185,8 @@ DataArray histogram(const DataArrayConstView &realigned) {
 
   Variable data(unaligned.data(), realigned.dims());
   histogram_md_recurse(data, unaligned, realigned);
-  return DataArray{std::move(data), realigned.coords()};
+  return DataArray{std::move(data), realigned.coords(), realigned.masks(),
+                   realigned.attrs()};
 }
 
 } // namespace scipp::core

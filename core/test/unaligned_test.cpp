@@ -90,6 +90,41 @@ TEST_F(RealignTest, dimension_order) {
       Dimensions({Dim::Z, Dim::Y, Dim::X, Dim::Temperature}, {2, 2, 2, 2}));
 }
 
+TEST_F(RealignTest, mask_mapping) {
+  auto base = make_array();
+  base.masks().set("pos",
+                   makeVariable<bool>(Dims{Dim::Position}, Shape{4},
+                                      Values{false, false, false, true}));
+  base.masks().set("temp", makeVariable<bool>(Dims{Dim::Temperature}, Shape{2},
+                                              Values{false, true}));
+  auto realigned = unaligned::realign(
+      base, {{Dim::Z, zbins}, {Dim::Y, ybins}, {Dim::X, xbins}});
+
+  EXPECT_EQ(realigned.masks().size(), 1);
+  EXPECT_TRUE(realigned.masks().contains("temp"));
+
+  EXPECT_EQ(realigned.unaligned(), base);
+}
+
+TEST_F(RealignTest, attr_mapping) {
+  auto base = make_array();
+  base.attrs().set("0-d", makeVariable<double>(Values{1.0}));
+  base.attrs().set("pos",
+                   makeVariable<bool>(Dims{Dim::Position}, Shape{4},
+                                      Values{false, false, false, true}));
+  base.attrs().set("temp", makeVariable<bool>(Dims{Dim::Temperature}, Shape{2},
+                                              Values{false, true}));
+  auto realigned = unaligned::realign(
+      base, {{Dim::Z, zbins}, {Dim::Y, ybins}, {Dim::X, xbins}});
+
+  EXPECT_FALSE(realigned.hasData());
+  EXPECT_EQ(realigned.attrs().size(), 2);
+  EXPECT_TRUE(realigned.attrs().contains("0-d"));
+  EXPECT_TRUE(realigned.attrs().contains("temp"));
+
+  EXPECT_EQ(realigned.unaligned(), base);
+}
+
 TEST_F(RealignTest, copy_realigned) {
   const auto realigned = make_realigned();
   EXPECT_EQ(DataArray(realigned), realigned);

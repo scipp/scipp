@@ -13,6 +13,30 @@ namespace scipp::core::unaligned {
 
 Dim unaligned_dim(const VariableConstView &unaligned);
 
+namespace detail {
+template <class Map, class Dims>
+auto align(DataArray &view, const Dims &unalignedDims) {
+  std::vector<std::pair<std::string, Variable>> aligned;
+  std::set<std::string> to_align;
+  constexpr auto map = [](DataArray &v) {
+    if constexpr (std::is_same_v<Map, MasksView>)
+      return v.masks();
+    else
+      return v.attrs();
+  };
+  for (const auto &[name, item] : map(view))
+    if (std::none_of(
+            unalignedDims.begin(), unalignedDims.end(),
+            [&item](const Dim dim) { return item.dims().contains(dim); }))
+      to_align.insert(name);
+  for (const auto &name : to_align) {
+    aligned.emplace_back(name, Variable(map(view)[name]));
+    map(view).erase(name);
+  }
+  return aligned;
+}
+}
+
 template <class CoordMap = std::vector<std::pair<Dim, Variable>>>
 DataArray realign(DataArray unaligned, CoordMap coords) {
   std::set<Dim> binnedDims;
@@ -42,7 +66,10 @@ DataArray realign(DataArray unaligned, CoordMap coords) {
     }
   }
   auto name = unaligned.name();
-  return DataArray(Variable{}, std::move(alignedCoords), {}, {},
+  auto alignedMasks = detail::align<MasksView>(unaligned, unalignedDims);
+  auto alignedAttrs = detail::align<AttrsView>(unaligned, unalignedDims);
+  return DataArray(Variable{}, std::move(alignedCoords),
+                   std::move(alignedMasks), std::move(alignedAttrs),
                    std::move(name), std::move(unaligned));
 }
 

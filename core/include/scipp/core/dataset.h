@@ -125,7 +125,8 @@ class Dataset;
 class SCIPP_CORE_EXPORT DataArrayView : public DataArrayConstView {
 public:
   DataArrayView(Dataset &dataset, detail::dataset_item_map::value_type &data,
-                const detail::slice_list &slices = {});
+                const detail::slice_list &slices = {},
+                VariableView &&view = VariableView{});
 
   CoordsView coords() const noexcept;
   MasksView masks() const noexcept;
@@ -146,6 +147,8 @@ public:
   template <class T> auto variances() const {
     return data().template variances<T>();
   }
+
+  DataArrayView unaligned() const;
 
   DataArrayView slice(const Slice slice1) const;
   DataArrayView slice(const Slice slice1, const Slice slice2) const;
@@ -743,6 +746,7 @@ public:
   units::Unit unit() const { return get().unit(); }
 
   DataArrayConstView unaligned() const { return get().unaligned(); }
+  DataArrayView unaligned() { return get().unaligned(); }
 
   void setUnit(const units::Unit unit) { get().setUnit(unit); }
 

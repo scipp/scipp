@@ -492,6 +492,13 @@ DataArrayConstView DataArrayConstView::unaligned() const {
   return {*m_dataset, *m_data, slices(), std::move(view)};
 }
 
+DataArrayView DataArrayView::unaligned() const {
+  // See also DataArrayConstView::unaligned.
+  auto view = m_mutableData->second.unaligned->data();
+  detail::do_make_slice(view, slices());
+  return {*m_mutableDataset, *m_mutableData, slices(), std::move(view)};
+}
+
 /// Set the unit of the data values.
 ///
 /// Throws if there are no data values.
@@ -521,8 +528,14 @@ AttrsConstView DataArrayConstView::attrs() const noexcept {
 
 /// Return a const view to all masks of the data view.
 MasksConstView DataArrayConstView::masks() const noexcept {
-  return MasksConstView(
-      makeViewItems<MasksConstView>(dims(), m_dataset->m_masks), slices());
+  auto items = makeViewItems<MasksConstView>(dims(), m_dataset->m_masks);
+  if (!m_data->second.data && hasData()) {
+    const DataArrayConstView unaligned = *m_data->second.unaligned;
+    auto unalignedItems = makeViewItems<MasksConstView>(
+        unaligned.dims(), unaligned.m_dataset->m_masks);
+    items.insert(unalignedItems.begin(), unalignedItems.end());
+  }
+  return MasksConstView(std::move(items), slices());
 }
 
 /// Return a const view to all coordinates of the data array.
@@ -559,11 +572,12 @@ DataArrayConstView DataArrayConstView::slice(const Slice slice1,
 
 DataArrayView::DataArrayView(Dataset &dataset,
                              detail::dataset_item_map::value_type &data,
-                             const detail::slice_list &slices)
+                             const detail::slice_list &slices,
+                             VariableView &&view)
     : DataArrayConstView(dataset, data, slices,
                          data.second.data ? VariableView(detail::makeSlice(
                                                 data.second.data, slices))
-                                          : VariableView{}),
+                                          : std::move(view)),
       m_mutableDataset(&dataset), m_mutableData(&data) {}
 
 DataArrayView DataArrayView::slice(const Slice slice1) const {
@@ -619,12 +633,16 @@ AttrsView DataArray::attrs() { return get().attrs(); }
 
 /// Return a view to all masks of the data view.
 MasksView DataArrayView::masks() const noexcept {
+  auto items = makeViewItems<MasksConstView>(dims(), m_mutableDataset->m_masks);
+  if (!m_mutableData->second.data && hasData()) {
+    const DataArrayView unaligned = *m_mutableData->second.unaligned;
+    auto unalignedItems = makeViewItems<MasksConstView>(
+        unaligned.dims(), unaligned.m_mutableDataset->m_masks);
+    items.insert(unalignedItems.begin(), unalignedItems.end());
+  }
   // MaskAccess disabled with nullptr since views of dataset items or slices of
   // data arrays may not set or erase masks.
-  return MasksView(
-      MaskAccess(nullptr),
-      makeViewItems<MasksConstView>(dims(), m_mutableDataset->m_masks),
-      slices());
+  return MasksView(MaskAccess(nullptr), std::move(items), slices());
 }
 
 /// Return a view to all masks of the data array.
