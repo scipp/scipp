@@ -105,10 +105,9 @@ TEST_F(RealignTest, slice) {
         EXPECT_EQ(slice.coords(), reference.coords());
         if (dim == Dim::Temperature)
           EXPECT_EQ(slice.unaligned(), realigned.unaligned().slice(s))
-              << s.dim().name() << s.begin() << s.end();
+              << to_string(s);
         else
-          EXPECT_EQ(slice.unaligned(), realigned.unaligned())
-              << s.dim().name() << s.begin() << s.end();
+          EXPECT_EQ(slice.unaligned(), realigned.unaligned()) << to_string(s);
     }
   }
 }
@@ -133,6 +132,19 @@ TEST_F(RealignTest, unaligned_of_slice_along_realigned_dim) {
   EXPECT_EQ(realigned.slice(s).unaligned(), unaligned);
 }
 
+TEST_F(RealignTest, unaligned_slice_contains_sliced_coords) {
+  // This is implied by test `unaligned_of_slice_along_realigned_dim` but
+  // demonstrates more explicitly how coordinates (and dimensions) are
+  // preserved.
+  const auto realigned = make_realigned();
+  const auto slice = realigned.slice({Dim::X, 0});
+  EXPECT_FALSE(slice.coords().contains(Dim::X));
+  // Slicing realigned dimensions does not eagerly slice the unaligned content.
+  // Therefore, corresponding coordinates are not removed, even for a non-range
+  // slice.
+  EXPECT_TRUE(slice.unaligned().coords().contains(Dim::X));
+}
+
 TEST_F(RealignTest, slice_unaligned_view) {
   const auto realigned = make_realigned();
   const auto a = make_array();
@@ -152,4 +164,16 @@ TEST_F(RealignTest, histogram_transposed) {
   auto realigned = unaligned::realign(
       transposed, {{Dim::Z, zbins}, {Dim::Y, ybins}, {Dim::X, xbins}});
   EXPECT_NO_THROW(histogram(realigned));
+}
+
+TEST_F(RealignTest, histogram_slice) {
+  const auto realigned = make_realigned();
+  const auto aligned = make_aligned();
+  for (const auto dim : {Dim::Temperature, Dim::X, Dim::Y, Dim::Z}) {
+    for (const auto s : {Slice(dim, 0), Slice(dim, 1), Slice(dim, 0, 1),
+                         Slice(dim, 0, 2), Slice(dim, 1, 2)}) {
+      const auto slice = realigned.slice(s);
+      EXPECT_EQ(histogram(slice), aligned.slice(s)) << to_string(s);
+    }
+  }
 }
