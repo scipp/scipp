@@ -81,6 +81,8 @@ static constexpr auto flatten_coord =
     [](const VariableView &out, const auto &in,
        const GroupByGrouping::group &group, const Dim reductionDim,
        const Variable &mask_) {
+      if (!in.dims().contains(reductionDim))
+        return;
       const auto no_mask = makeVariable<bool>(Values{true});
       for (const auto &slice : group) {
         auto mask =
