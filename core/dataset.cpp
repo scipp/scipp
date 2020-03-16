@@ -520,12 +520,42 @@ template <class MapView> MapView DataArrayConstView::makeView() const {
   auto items = makeViewItems<MapView>(dims(), map_parent(*this));
   if (!m_data->second.data && hasData()) {
     // This is a view of the unaligned content of a realigned data array.
-    const DataArrayConstView unaligned = *m_data->second.unaligned;
+    const decltype(*this) unaligned = *m_data->second.unaligned;
     auto unalignedItems =
         makeViewItems<MapView>(unaligned.dims(), map_parent(unaligned));
     items.insert(unalignedItems.begin(), unalignedItems.end());
   }
   return MapView(std::move(items), slices());
+}
+
+template <class MapView> MapView DataArrayView::makeView() const {
+  auto map_parent = [](const DataArrayView &self) -> auto & {
+    if constexpr (std::is_same_v<MapView, CoordsView>)
+      return self.m_mutableDataset->m_coords;
+    else if constexpr (std::is_same_v<MapView, MasksView>)
+      return self.m_mutableDataset->m_masks;
+    else
+      return self.m_mutableData->second.attrs; // item attrs, not dataset attrs
+  };
+  auto items = makeViewItems<MapView>(dims(), map_parent(*this));
+  if (!m_mutableData->second.data && hasData()) {
+    // This is a view of the unaligned content of a realigned data array.
+    const decltype(*this) unaligned = *m_mutableData->second.unaligned;
+    auto unalignedItems =
+        makeViewItems<MapView>(unaligned.dims(), map_parent(unaligned));
+    items.insert(unalignedItems.begin(), unalignedItems.end());
+  }
+  if constexpr (std::is_same_v<MapView, AttrsView>) {
+    // Note: Unlike for CoordAccess and MaskAccess this is *not* unconditionally
+    // disabled with nullptr since it sets/erase attributes of the *item*.
+    return MapView(
+        AttrAccess(slices().empty() ? m_mutableDataset : nullptr, &name()),
+        std::move(items), slices());
+  } else {
+    // Access disabled with nullptr since views of dataset items or slices of
+    // data arrays may not set or erase coords.
+    return MapView({nullptr}, std::move(items), slices());
+  }
 }
 
 /// Return a const view to all coordinates of the data view.
@@ -604,17 +634,7 @@ DataArrayView DataArrayView::slice(const Slice slice1, const Slice slice2,
 
 /// Return a view to all coordinates of the data view.
 CoordsView DataArrayView::coords() const noexcept {
-  auto items =
-      makeViewItems<CoordsConstView>(dims(), m_mutableDataset->m_coords);
-  if (!m_mutableData->second.data && hasData()) {
-    const DataArrayView unaligned = *m_mutableData->second.unaligned;
-    auto unalignedItems = makeViewItems<CoordsConstView>(
-        unaligned.dims(), unaligned.m_mutableDataset->m_coords);
-    items.insert(unalignedItems.begin(), unalignedItems.end());
-  }
-  // CoordAccess disabled with nullptr since views of dataset items or slices of
-  // data arrays may not set or erase coords.
-  return CoordsView(CoordAccess(nullptr), std::move(items), slices());
+  return makeView<CoordsView>();
 }
 
 /// Return a view to all coordinates of the data array.
@@ -625,12 +645,7 @@ CoordsView DataArray::coords() {
 
 /// Return a const view to all attributes of the data view.
 AttrsView DataArrayView::attrs() const noexcept {
-  // Note: Unlike for CoordAccess and MaskAccess this is *not* unconditionally
-  // disabled with nullptr since it sets/erase attributes of the *item*.
-  return AttrsView(
-      AttrAccess(slices().empty() ? m_mutableDataset : nullptr, &name()),
-      makeViewItems<AttrsConstView>(dims(), m_mutableData->second.attrs),
-      slices());
+  return makeView<AttrsView>();
 }
 
 /// Return a view to all attributes of the data array.
@@ -638,16 +653,7 @@ AttrsView DataArray::attrs() { return get().attrs(); }
 
 /// Return a view to all masks of the data view.
 MasksView DataArrayView::masks() const noexcept {
-  auto items = makeViewItems<MasksConstView>(dims(), m_mutableDataset->m_masks);
-  if (!m_mutableData->second.data && hasData()) {
-    const DataArrayView unaligned = *m_mutableData->second.unaligned;
-    auto unalignedItems = makeViewItems<MasksConstView>(
-        unaligned.dims(), unaligned.m_mutableDataset->m_masks);
-    items.insert(unalignedItems.begin(), unalignedItems.end());
-  }
-  // MaskAccess disabled with nullptr since views of dataset items or slices of
-  // data arrays may not set or erase masks.
-  return MasksView(MaskAccess(nullptr), std::move(items), slices());
+  return makeView<MasksView>();
 }
 
 /// Return a view to all masks of the data array.

@@ -199,6 +199,8 @@ private:
 
   Dataset *m_mutableDataset;
   detail::dataset_item_map::value_type *m_mutableData;
+
+  template <class MapView> MapView makeView() const;
 };
 
 namespace detail {
