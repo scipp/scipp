@@ -807,7 +807,7 @@ bool operator==(const DataArrayConstView &a, const DataArrayConstView &b) {
   if (a.hasData())
     return a.data() == b.data();
   else
-    return a.unaligned() == b.unaligned();
+    return a.dims() == b.dims() && a.unaligned() == b.unaligned();
 }
 
 bool operator!=(const DataArrayConstView &a, const DataArrayConstView &b) {
