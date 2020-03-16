@@ -519,6 +519,7 @@ template <class MapView> MapView DataArrayConstView::makeView() const {
   };
   auto items = makeViewItems<MapView>(dims(), map_parent(*this));
   if (!m_data->second.data && hasData()) {
+    // This is a view of the unaligned content of a realigned data array.
     const DataArrayConstView unaligned = *m_data->second.unaligned;
     auto unalignedItems =
         makeViewItems<MapView>(unaligned.dims(), map_parent(unaligned));
@@ -625,7 +626,7 @@ CoordsView DataArray::coords() {
 /// Return a const view to all attributes of the data view.
 AttrsView DataArrayView::attrs() const noexcept {
   // Note: Unlike for CoordAccess and MaskAccess this is *not* unconditionally
-  // disabled with nullptr it sets/erase attributes of the *item*.
+  // disabled with nullptr since it sets/erase attributes of the *item*.
   return AttrsView(
       AttrAccess(slices().empty() ? m_mutableDataset : nullptr, &name()),
       makeViewItems<AttrsConstView>(dims(), m_mutableData->second.attrs),
