@@ -110,6 +110,8 @@ private:
   const Dataset *m_dataset;
   const detail::dataset_item_map::value_type *m_data;
   detail::slice_list m_slices;
+
+  template <class MapView> MapView makeView() const;
 };
 
 SCIPP_CORE_EXPORT bool operator==(const DataArrayConstView &a,

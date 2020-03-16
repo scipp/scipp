@@ -508,34 +508,38 @@ void DataArrayView::setUnit(const units::Unit unit) const {
   throw std::runtime_error("Data without values, cannot set unit.");
 }
 
-/// Return a const view to all coordinates of the data view.
-CoordsConstView DataArrayConstView::coords() const noexcept {
-  auto items = makeViewItems<CoordsConstView>(dims(), m_dataset->m_coords);
+template <class MapView> MapView DataArrayConstView::makeView() const {
+  auto map_parent = [](const DataArrayConstView &self) -> auto & {
+    if constexpr (std::is_same_v<MapView, CoordsConstView>)
+      return self.m_dataset->m_coords;
+    else if constexpr (std::is_same_v<MapView, MasksConstView>)
+      return self.m_dataset->m_masks;
+    else
+      return self.m_data->second.attrs; // item attrs, not dataset attrs
+  };
+  auto items = makeViewItems<MapView>(dims(), map_parent(*this));
   if (!m_data->second.data && hasData()) {
     const DataArrayConstView unaligned = *m_data->second.unaligned;
-    auto unalignedItems = makeViewItems<CoordsConstView>(
-        unaligned.dims(), unaligned.m_dataset->m_coords);
+    auto unalignedItems =
+        makeViewItems<MapView>(unaligned.dims(), map_parent(unaligned));
     items.insert(unalignedItems.begin(), unalignedItems.end());
   }
-  return CoordsConstView(std::move(items), slices());
+  return MapView(std::move(items), slices());
+}
+
+/// Return a const view to all coordinates of the data view.
+CoordsConstView DataArrayConstView::coords() const noexcept {
+  return makeView<CoordsConstView>();
 }
 
 /// Return a const view to all attributes of the data view.
 AttrsConstView DataArrayConstView::attrs() const noexcept {
-  return AttrsConstView(
-      makeViewItems<AttrsConstView>(dims(), m_data->second.attrs), slices());
+  return makeView<AttrsConstView>();
 }
 
 /// Return a const view to all masks of the data view.
 MasksConstView DataArrayConstView::masks() const noexcept {
-  auto items = makeViewItems<MasksConstView>(dims(), m_dataset->m_masks);
-  if (!m_data->second.data && hasData()) {
-    const DataArrayConstView unaligned = *m_data->second.unaligned;
-    auto unalignedItems = makeViewItems<MasksConstView>(
-        unaligned.dims(), unaligned.m_dataset->m_masks);
-    items.insert(unalignedItems.begin(), unalignedItems.end());
-  }
-  return MasksConstView(std::move(items), slices());
+  return makeView<MasksConstView>();
 }
 
 /// Return a const view to all coordinates of the data array.
