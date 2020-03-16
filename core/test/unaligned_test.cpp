@@ -96,6 +96,14 @@ TEST_F(RealignTest, copy_realigned) {
   EXPECT_EQ(DataArray(DataArrayConstView(realigned)), realigned);
 }
 
+TEST_F(RealignTest, copy_realigned_slice) {
+  const auto realigned = make_realigned();
+  const auto slice = realigned.slice({Dim::Z, 1});
+  // `slice` contains unfiltered unaligned content, but copy drops out-of-bounds
+  // content.
+  EXPECT_NE(DataArray(slice), slice);
+}
+
 TEST_F(RealignTest, slice) {
   const auto realigned = make_realigned();
   const auto aligned = make_aligned();

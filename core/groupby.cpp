@@ -17,6 +17,32 @@
 
 namespace scipp::core {
 
+template <class T> T GroupBy<T>::operator[](const scipp::index group) const {
+  const auto &slices = groups()[group];
+  scipp::index size = 0;
+  for (const auto &slice : slices)
+    size += slice.end() - slice.begin();
+  const Dim group_dim = m_data.coords()[dim()].dims().inner();
+  auto out = copy(m_data.slice({group_dim, 0, size}));
+  // TODO masks
+  scipp::index current = 0;
+  for (const auto &slice : slices) {
+    const auto thickness = slice.end() - slice.begin();
+    const Slice out_slice(slice.dim(), current, current + thickness);
+    if constexpr (std::is_same_v<T, DataArray>) {
+      out.data().slice(out_slice).assign(m_data.data().slice(slice));
+    } else {
+      throw std::runtime_error(
+          "Extracting groups of Dataset no implemented yet.");
+    }
+    for (const auto &[d, coord] : out.coords())
+      if (coord.dims().contains(group_dim))
+        coord.slice(out_slice).assign(m_data.coords()[d].slice(slice));
+    current += thickness;
+  }
+  return out;
+}
+
 /// Helper for creating output for "combine" step for "apply" steps that reduce
 /// a dimension.
 ///

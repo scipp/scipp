@@ -146,30 +146,6 @@ bool is_histogram(const DataArrayConstView &a, const Dim dim) {
          coords[dim].dims()[dim] == dims[dim] + 1;
 }
 
-auto extract_group(const GroupBy<DataArray> &grouped,
-                   const scipp::index group) {
-  const auto &slices = grouped.groups()[group];
-  scipp::index size = 0;
-  const auto &array = grouped.data();
-  for (const auto &slice : slices)
-    size += slice.end() - slice.begin();
-  const Dim dim = array.coords()[grouped.dim()].dims().inner();
-  auto out = copy(array.slice({dim, 0, size}));
-  // TODO masks
-  scipp::index current = 0;
-  for (const auto &slice : slices) {
-    const auto thickness = slice.end() - slice.begin();
-    const Slice out_slice(slice.dim(), current, current + thickness);
-    out.data().slice(out_slice).assign(array.data().slice(slice));
-    for (const auto &[d, coord] : out.coords())
-      if (coord.dims().contains(dim))
-        coord.slice(out_slice).assign(array.coords()[d].slice(slice));
-    current += thickness;
-  }
-  out.coords().erase(grouped.dim());
-  return out;
-}
-
 void histogram_md_recurse(const VariableView &data,
                           const DataArrayConstView &unaligned,
                           const DataArrayConstView &realigned,
@@ -187,7 +163,8 @@ void histogram_md_recurse(const VariableView &data,
     return;
   }
   for (scipp::index i = 0; i < size; ++i) {
-    auto slice = extract_group(groups, i);
+    auto slice = groups[i];
+    slice.coords().erase(dim); // avoid carry of unnecessary coords in recursion
     histogram_md_recurse(data.slice({dim, i}), slice, realigned, dim_index + 1);
   }
 }
@@ -198,7 +175,12 @@ DataArray histogram(const DataArrayConstView &realigned) {
                                  "be histogrammed already.");
   // TODO Problem: This contains everything, but below we do not slice removed
   // dims (range slices are ok). Should we simply prevent non-range slicing?
-  const auto unaligned = realigned.unaligned();
+  std::optional<DataArray> filtered;
+  if (!realigned.slices().empty())
+    filtered = DataArray(realigned);
+  const auto unaligned =
+      filtered ? filtered->unaligned() : realigned.unaligned();
+
   Variable data(unaligned.data(), realigned.dims());
   histogram_md_recurse(data, unaligned, realigned);
   return DataArray{std::move(data), realigned.coords()};

@@ -50,6 +50,8 @@ public:
                      const detail::slice_list &slices = {},
                      VariableView &&view = VariableView{});
 
+  explicit operator DataArray() const;
+
   const std::string &name() const noexcept;
 
   Dimensions dims() const noexcept;
@@ -679,7 +681,6 @@ public:
   using view_type = DataArrayView;
 
   DataArray() = default;
-  explicit DataArray(const DataArrayConstView &view);
   template <class CoordMap = std::map<Dim, Variable>,
             class MasksMap = std::map<std::string, Variable>,
             class AttrMap = std::map<std::string, Variable>>

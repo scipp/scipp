@@ -39,11 +39,11 @@ public:
 
   scipp::index size() const noexcept { return m_grouping.size(); }
   Dim dim() const noexcept { return m_grouping.dim(); }
-  typename T::const_view_type data() const noexcept { return m_data; };
   const Variable &key() const noexcept { return m_grouping.key(); }
   const std::vector<GroupByGrouping::group> &groups() const noexcept {
     return m_grouping.groups();
   }
+  T operator[](const scipp::index group) const;
 
   T flatten(const Dim reductionDim) const;
   T mean(const Dim reductionDim) const;

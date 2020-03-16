@@ -5,12 +5,14 @@
 #include "scipp/common/numeric.h"
 #include "scipp/core/dataset.h"
 #include "scipp/core/event.h"
+#include "scipp/core/groupby.h"
 #include "scipp/core/histogram.h"
 #include "scipp/core/subspan_view.h"
 #include "scipp/core/transform.h"
 
 namespace scipp::core {
 
+namespace {
 template <class T> auto copy_map(const T &map) {
   std::map<typename T::key_type, typename T::mapped_type> out;
   for (const auto &[key, item] : map)
@@ -18,12 +20,45 @@ template <class T> auto copy_map(const T &map) {
   return out;
 }
 
-DataArray::DataArray(const DataArrayConstView &view)
-    : DataArray(view.hasData() ? Variable(view.data()) : Variable{},
-                copy_map(view.coords()), copy_map(view.masks()),
-                copy_map(view.attrs()), view.name(),
-                view.hasData() ? std::nullopt
-                               : std::optional(DataArray(view.unaligned()))) {}
+DataArray
+filter_recurse(const DataArrayConstView &unaligned,
+               const scipp::span<const std::pair<Dim, Variable>> bounds) {
+  const auto &[dim, interval] = bounds[0];
+  const auto filtered = groupby(unaligned, dim, interval)[0];
+  if (bounds.size() == 1)
+    return filtered;
+  return filter_recurse(filtered, bounds.subspan(1));
+}
+} // namespace
+
+DataArrayConstView::operator DataArray() const {
+  if (hasData()) {
+    return DataArray(Variable(data()), copy_map(coords()), copy_map(masks()),
+                     copy_map(attrs()), name());
+  } else {
+    // 1. Find bounds
+    std::vector<std::pair<Dim, Variable>> bounds;
+    for (const auto &item : slices()) {
+      const auto s = item.first;
+      const auto dim = s.dim();
+      // Only process realigned dims
+      if (unaligned().dims().contains(dim) ||
+          !unaligned().coords().contains(dim))
+        continue;
+      const auto left = s.begin();
+      const auto right = s.end() == -1 ? left + 1 : s.end();
+      const auto coord = m_dataset->coords()[dim];
+      bounds.emplace_back(dim, concatenate(coord.slice({dim, left}),
+                                           coord.slice({dim, right}), dim));
+    }
+
+    // 2. Filter out-of-bounds
+    auto filtered = bounds.empty() ? copy(unaligned())
+                                   : filter_recurse(unaligned(), bounds);
+    return DataArray(Variable{}, copy_map(coords()), copy_map(masks()),
+                     copy_map(attrs()), name(), std::move(filtered));
+  }
+}
 
 DataArray::operator DataArrayConstView() const { return get(); }
 DataArray::operator DataArrayView() { return get(); }
