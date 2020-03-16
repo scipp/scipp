@@ -184,7 +184,12 @@ DataArray histogram(const DataArrayConstView &realigned) {
       filtered ? filtered->unaligned() : realigned.unaligned();
 
   Variable data(unaligned.data(), realigned.dims());
-  histogram_md_recurse(data, unaligned, realigned);
+  // TODO This copy is a hack to avoid expensive carry of attributes deep into
+  // the recursion. Can we somehow hide them in the view instead? Or change
+  // groupby::operator[] to (optionally) drop attributes?
+  DataArray no_attrs(Variable(unaligned.data()), unaligned.coords(),
+                     unaligned.masks());
+  histogram_md_recurse(data, no_attrs, realigned);
   return DataArray{std::move(data), realigned.coords(), realigned.masks(),
                    realigned.attrs()};
 }
