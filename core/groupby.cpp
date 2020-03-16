@@ -17,18 +17,20 @@
 
 namespace scipp::core {
 
+/// Extract given group as a new data array or dataset
 template <class T> T GroupBy<T>::operator[](const scipp::index group) const {
   const auto &slices = groups()[group];
   scipp::index size = 0;
   for (const auto &slice : slices)
     size += slice.end() - slice.begin();
-  const Dim group_dim = m_data.coords()[dim()].dims().inner();
-  auto out = copy(m_data.slice({group_dim, 0, size}));
+  // This is just the slicing dim, but `slices` may be empty
+  const Dim slice_dim = m_data.coords()[dim()].dims().inner();
+  auto out = copy(m_data.slice({slice_dim, 0, size}));
   // TODO masks
   scipp::index current = 0;
   for (const auto &slice : slices) {
     const auto thickness = slice.end() - slice.begin();
-    const Slice out_slice(slice.dim(), current, current + thickness);
+    const Slice out_slice(slice_dim, current, current + thickness);
     if constexpr (std::is_same_v<T, DataArray>) {
       out.data().slice(out_slice).assign(m_data.data().slice(slice));
     } else {
@@ -36,7 +38,7 @@ template <class T> T GroupBy<T>::operator[](const scipp::index group) const {
           "Extracting groups of Dataset no implemented yet.");
     }
     for (const auto &[d, coord] : out.coords())
-      if (coord.dims().contains(group_dim))
+      if (coord.dims().contains(slice_dim))
         coord.slice(out_slice).assign(m_data.coords()[d].slice(slice));
     current += thickness;
   }

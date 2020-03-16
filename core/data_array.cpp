@@ -56,7 +56,7 @@ DataArrayConstView::operator DataArray() const {
     auto filtered = bounds.empty() ? copy(unaligned())
                                    : filter_recurse(unaligned(), bounds);
     return DataArray(Variable{}, copy_map(coords()), copy_map(masks()),
-                     copy_map(attrs()), name(), std::move(filtered));
+                     copy_map(attrs()), name(), std::move(filtered), dims());
   }
 }
 

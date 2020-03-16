@@ -686,7 +686,8 @@ public:
             class AttrMap = std::map<std::string, Variable>>
   DataArray(Variable data, CoordMap coords = {}, MasksMap masks = {},
             AttrMap attrs = {}, const std::string &name = "",
-            std::optional<DataArray> unaligned = std::nullopt) {
+            std::optional<DataArray> unaligned = std::nullopt,
+            Dimensions dims = Dimensions{}) {
     // This check will be changed once we can have unaligned content instead.
     if (data) {
       if (unaligned)
@@ -697,13 +698,14 @@ public:
       if (!unaligned)
         throw std::runtime_error(
             "DataArray must have either data or unaligned content.");
-      Dimensions dims;
-      const auto &unalignedDims = unaligned->dims();
-      for (const auto &[dim, coord] : coords)
-        if (coord.dims().contains(dim))
-          dims.addInner(dim, unalignedDims.contains(dim)
-                                 ? unalignedDims[dim]
-                                 : coord.dims()[dim] - 1);
+      if (dims.empty()) {
+        const auto &unalignedDims = unaligned->dims();
+        for (const auto &[dim, coord] : coords)
+          if (coord.dims().contains(dim))
+            dims.addInner(dim, unalignedDims.contains(dim)
+                                   ? unalignedDims[dim]
+                                   : coord.dims()[dim] - 1);
+      }
       m_holder.setUnaligned(name, dims, std::move(*unaligned));
     }
 
