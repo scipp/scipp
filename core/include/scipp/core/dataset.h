@@ -671,8 +671,12 @@ private:
   Dataset *m_mutableDataset;
 };
 
-SCIPP_CORE_EXPORT DataArray copy(const DataArrayConstView &array);
-SCIPP_CORE_EXPORT Dataset copy(const DatasetConstView &dataset);
+[[nodiscard]] SCIPP_CORE_EXPORT DataArray copy(const DataArrayConstView &array);
+[[nodiscard]] SCIPP_CORE_EXPORT Dataset copy(const DatasetConstView &dataset);
+SCIPP_CORE_EXPORT DataArrayView copy(const DataArrayConstView &array,
+                                     const DataArrayView &out);
+SCIPP_CORE_EXPORT DatasetView copy(const DatasetConstView &dataset,
+                                   const DatasetView &out);
 
 /// Data array, a variable with coordinates, masks, and attributes.
 class SCIPP_CORE_EXPORT DataArray {

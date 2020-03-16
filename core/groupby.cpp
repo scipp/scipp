@@ -26,20 +26,11 @@ template <class T> T GroupBy<T>::operator[](const scipp::index group) const {
   // This is just the slicing dim, but `slices` may be empty
   const Dim slice_dim = m_data.coords()[dim()].dims().inner();
   auto out = copy(m_data.slice({slice_dim, 0, size}));
-  // TODO masks
   scipp::index current = 0;
   for (const auto &slice : slices) {
     const auto thickness = slice.end() - slice.begin();
     const Slice out_slice(slice_dim, current, current + thickness);
-    if constexpr (std::is_same_v<T, DataArray>) {
-      out.data().slice(out_slice).assign(m_data.data().slice(slice));
-    } else {
-      throw std::runtime_error(
-          "Extracting groups of Dataset no implemented yet.");
-    }
-    for (const auto &[d, coord] : out.coords())
-      if (coord.dims().contains(slice_dim))
-        coord.slice(out_slice).assign(m_data.coords()[d].slice(slice));
+    copy(m_data.slice(slice), out.slice(out_slice));
     current += thickness;
   }
   return out;
