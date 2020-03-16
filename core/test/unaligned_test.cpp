@@ -90,6 +90,12 @@ TEST_F(RealignTest, dimension_order) {
       Dimensions({Dim::Z, Dim::Y, Dim::X, Dim::Temperature}, {2, 2, 2, 2}));
 }
 
+TEST_F(RealignTest, copy_realigned) {
+  const auto realigned = make_realigned();
+  EXPECT_EQ(DataArray(realigned), realigned);
+  EXPECT_EQ(DataArray(DataArrayConstView(realigned)), realigned);
+}
+
 TEST_F(RealignTest, slice) {
   const auto realigned = make_realigned();
   const auto aligned = make_aligned();

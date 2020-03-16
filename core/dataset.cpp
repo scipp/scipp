@@ -804,9 +804,10 @@ bool operator==(const DataArrayConstView &a, const DataArrayConstView &b) {
     return false;
   if (a.attrs() != b.attrs())
     return false;
-  if (a.hasData() && a.data() != b.data())
-    return false;
-  return true;
+  if (a.hasData())
+    return a.data() == b.data();
+  else
+    return a.unaligned() == b.unaligned();
 }
 
 bool operator!=(const DataArrayConstView &a, const DataArrayConstView &b) {
