@@ -181,6 +181,11 @@ class InstrumentView:
                                               layout={"width": "initial"})
         self.dropdown.observe(self.change_data_array, names="value")
 
+        self.continuous_update = self.widgets.Checkbox(
+            value=continuous_update, description="Continuous update:",
+            indent=False)
+        self.continuous_update.observe(self.toggle_continuous_update, names="value")
+
         # Create a Tof slider and its label
         self.tof_dim_indx = self.hist_data_array[self.key].dims.index(self.dim)
         self.slider = self.widgets.IntSlider(
@@ -189,20 +194,10 @@ class InstrumentView:
             step=1,
             description=str(self.dim).replace("Dim.", ""),
             max=self.hist_data_array[self.key].shape[self.tof_dim_indx] - 1,
-            continuous_update=continuous_update,
+            continuous_update=self.continuous_update.value,
             readout=False)
         self.slider.observe(self.update_colors, names="value")
         self.label = self.widgets.Label()
-
-        # Add dropdown to change cmap
-        self.select_colormap = self.widgets.Combobox(
-            options=available_cmaps,
-            value=self.params[self.key]["cmap"],
-            description="Select colormap",
-            ensure_option=True,
-            layout={'width': "200px"},
-            style={"description_width": "initial"})
-        self.select_colormap.observe(self.update_colormap, names="value")
 
         # Add text boxes to change number of bins/bin size
         self.nbins = self.widgets.Text(value=str(
@@ -217,6 +212,15 @@ class InstrumentView:
                                           description="Bin size:")
         self.bin_size.on_submit(self.update_bin_size)
 
+        # Add dropdown to change cmap
+        self.select_colormap = self.widgets.Combobox(
+            options=available_cmaps,
+            value=self.params[self.key]["cmap"],
+            description="Select colormap",
+            ensure_option=True,
+            layout={'width': "200px"},
+            style={"description_width": "initial"})
+        self.select_colormap.observe(self.update_colormap, names="value")
 
         self.opacity_slider = self.widgets.FloatSlider(
             min=0, max=1.0, value=1.0, step=0.01, description="Opacity")
@@ -274,11 +278,10 @@ class InstrumentView:
 
         # Place widgets in boxes
         box_list = [
-            self.widgets.HBox(
-                [self.dropdown, self.slider, self.label,
-                 self.select_colormap]),
+            self.widgets.HBox([self.dropdown, self.slider, self.label, self.continuous_update]),
             self.widgets.HBox([self.nbins, self.bin_size]),
-            self.opacity_slider, self.togglebuttons
+            self.widgets.HBox([self.opacity_slider, self.select_colormap]),
+            self.togglebuttons
         ]
         # Only show mask controls if masks are present
         if masks_present:
@@ -503,24 +506,25 @@ class InstrumentView:
 
 
 
-
+        # #====================================================================
         # # The point cloud and its properties
-        # self.pts = self.p3.BufferAttribute(array=self.det_pos)
-        # self.colors = self.p3.BufferAttribute(
+        # # self.pts = self.p3.BufferAttribute(array=self.det_pos)
+        # # self.colors = self.p3.BufferAttribute(
+        # #     array=np.zeros([np.shape(self.det_pos)[0], 4], dtype=np.float32))
+        # self.points_geometry = self.p3.BufferGeometry(attributes={
+        #     'position': self.p3.BufferAttribute(array=self.det_pos),
+        #     'color': self.p3.BufferAttribute(
         #     array=np.zeros([np.shape(self.det_pos)[0], 4], dtype=np.float32))
-        # self.geometry = self.p3.BufferGeometry(attributes={
-        #     'position': self.pts,
-        #     'color': self.colors
         # })
-        # self.material = self.p3.PointsMaterial(vertexColors='VertexColors',
-        #                                        size=max(self.size),
-        #                                        map=texture,
-        #                                        depthTest=False,
-        #                                        transparent=True)
-        # self.pcl = self.p3.Points(geometry=self.geometry,
-        #                           material=self.material)
+        # self.points_material = self.p3.PointsMaterial(vertexColors='VertexColors',
+        #                                        size=max(self.size))
+        # self.points_cloud = self.p3.Points(geometry=self.points_geometry,
+        #                           material=self.points_material)
+        # #====================================================================
+
+
         # Add the red green blue axes helper
-        self.axes_helper = self.p3.AxesHelper(100)
+        self.axes_helper = self.p3.AxesHelper(self.camera_pos * 50.0)
 
         # Create the threejs scene with ambient light and camera
         self.camera = self.p3.PerspectiveCamera(position=[self.camera_pos] * 3,
@@ -820,3 +824,6 @@ class InstrumentView:
 
     def update_opacity(self, change):
         self.material.opacity = change["new"]
+
+    def toggle_continuous_update(self, change):
+        self.slider.continuous_update = change["new"]
