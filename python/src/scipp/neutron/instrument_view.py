@@ -653,10 +653,17 @@ class InstrumentView:
         colors = self.scalar_map[self.key].to_rgba(arr).astype(np.float32)
         if self.key in self.masks_variables and self.masks_params[
                 self.key]["show"]:
-            masks_colors = self.masks_scalar_map.to_rgba(arr).astype(
+            # masks_colors = self.masks_scalar_map.to_rgba(arr).astype(
+            #     np.float32)
+            # masks_inds = np.where(np.repeat(self.masks_variables[self.key].values, self.nverts, axis=0))
+            # colors[masks_inds] = masks_colors[masks_inds]
+            masks_inds = np.where(np.repeat(self.masks_variables[self.key].values, self.nverts, axis=0))
+
+            masks_colors = self.masks_scalar_map.to_rgba(arr[masks_inds]).astype(
                 np.float32)
-            masks_inds = np.where(self.masks_variables[self.key].values)
-            colors[masks_inds] = masks_colors[masks_inds]
+            # masks_inds = np.where(np.repeat(self.masks_variables[self.key].values, self.nverts, axis=0))
+            colors[masks_inds] = masks_colors
+
 
         self.geometry.attributes["color"].array = colors[:, :3]
 
