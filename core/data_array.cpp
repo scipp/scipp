@@ -51,6 +51,8 @@ template <class T> auto copy_map(const T &map) {
   return out;
 }
 
+/// Return new data array based on `unaligned` with any content outside `bounds`
+/// removed.
 DataArray
 filter_recurse(const DataArrayConstView &unaligned,
                const scipp::span<const std::pair<Dim, Variable>> bounds,
