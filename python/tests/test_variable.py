@@ -856,6 +856,12 @@ def test_atan_out():
     assert_export(sc.atan, var, out=var)
 
 
+def test_atan2():
+    var = sc.Variable()
+    assert_export(sc.atan2, y=var, x=var)
+    assert_export(sc.atan2, y=var, x=var, out=var)
+
+
 def test_variable_data_array_binary_ops():
     a = sc.DataArray(1.0 * sc.units.m)
     var = 1.0 * sc.units.m
