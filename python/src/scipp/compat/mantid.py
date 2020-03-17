@@ -196,8 +196,7 @@ def validate_and_get_unit(unit):
 def _to_array(positions, idx, pos, spec_idx):
     positions[idx, :] = np.array([spec_idx, pos.X(), pos.Y(), pos.Z()])
 
-
-def _to_spherical(input):
+def _to_spherical_old(input):
     transformed = np.ones(shape=input.shape)
     transformed[:, 0] = input[:, 0]  # copy metadata
     transformed[:, 1] = np.sqrt(np.sum(input[:, 1:]**2, axis=1))  # r
@@ -206,6 +205,11 @@ def _to_spherical(input):
     transformed[:, 3] = np.arctan2(input[:, 2], input[:, 1])  # arctan2(y, x)
     return transformed
 
+def _to_spherical(input):
+    input["r"] = sc.sqrt(input["x"].data*input["x"].data + input["y"].data*input["y"].data+input["z"].data*input["z"].data)
+    input["t"] = sc.acos(input["z"].data / input["r"].data)
+    input["p"] = input["t"].data.copy()
+    sc.atan2(input["y"].data, input["x"].data, input["p"].data)
 
 def rotation_matrix_from_vectors(vec1, vec2):
     """ Find the rotation matrix that aligns vec1 to vec2
@@ -256,13 +260,13 @@ def init_pos(ws, source_pos, sample_pos):
             det_pos[idx, :] = np.array([i, np.nan, np.nan, np.nan])
             idx += 1
     det_pos[:, 1:] = det_pos[:, 1:].dot(rot)
-    spherical_ = _to_spherical(det_pos)
-
     pos_d = sc.Dataset()
-    pos_d.coords["spectrum_idx"] = sc.Variable(["x"], values=spherical_[:, 0])
-    pos_d["r"] = sc.Variable(["x"], values=spherical_[:, 1], unit=sc.units.m)
-    pos_d["t"] = sc.Variable(["x"], values=spherical_[:, 2], unit=sc.units.rad)
-    pos_d["p"] = sc.Variable(["x"], values=spherical_[:, 3], unit=sc.units.rad)
+    pos_d["x"] = sc.Variable(["x"], values=det_pos[:, 1], unit=sc.units.m)
+    pos_d["y"] = sc.Variable(["x"], values=det_pos[:, 2], unit=sc.units.m)
+    pos_d["z"] = sc.Variable(["x"], values=det_pos[:, 3], unit=sc.units.m)
+    pos_d.coords["spectrum_idx"] = sc.Variable(["x"], values=det_pos[:, 0])
+
+    spherical_ = _to_spherical(pos_d)
 
     averaged = sc.groupby(pos_d, "spectrum_idx").mean("x")
 
