@@ -75,9 +75,9 @@ DataArray realign(DataArray unaligned,
   auto name = unaligned.name();
   auto alignedMasks = align<MasksView>(unaligned, unalignedDims);
   auto alignedAttrs = align<AttrsView>(unaligned, unalignedDims);
-  return DataArray(alignedDims, std::move(unaligned), std::move(alignedCoords),
-                   std::move(alignedMasks), std::move(alignedAttrs),
-                   std::move(name));
+  return DataArray(UnalignedData{alignedDims, std::move(unaligned)},
+                   std::move(alignedCoords), std::move(alignedMasks),
+                   std::move(alignedAttrs), std::move(name));
 }
 
 } // namespace scipp::core::unaligned

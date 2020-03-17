@@ -695,6 +695,8 @@ SCIPP_CORE_EXPORT DatasetView
 copy(const DatasetConstView &dataset, const DatasetView &out,
      const AttrPolicy attrPolicy = AttrPolicy::Keep);
 
+struct UnalignedData;
+
 /// Data array, a variable with coordinates, masks, and attributes.
 class SCIPP_CORE_EXPORT DataArray {
 public:
@@ -705,36 +707,20 @@ public:
   explicit DataArray(const DataArrayConstView &view,
                      const AttrPolicy attrPolicy = AttrPolicy::Keep);
 
-  template <class CoordMap = std::map<Dim, Variable>,
+  template <class Data, class CoordMap = std::map<Dim, Variable>,
             class MasksMap = std::map<std::string, Variable>,
-            class AttrMap = std::map<std::string, Variable>>
-  DataArray(Variable data, CoordMap coords = {}, MasksMap masks = {},
+            class AttrMap = std::map<std::string, Variable>,
+            typename = std::enable_if_t<std::is_same_v<Data, Variable> ||
+                                        std::is_same_v<Data, UnalignedData>>>
+  DataArray(Data data, CoordMap coords = {}, MasksMap masks = {},
             AttrMap attrs = {}, const std::string &name = "") {
     if (!data)
       throw std::runtime_error(
           "DataArray cannot be created with invalid content.");
-    m_holder.setData(name, std::move(data));
-
-    for (auto &&[dim, c] : coords)
-      m_holder.setCoord(dim, std::move(c));
-
-    for (auto &&[mask_name, m] : masks)
-      m_holder.setMask(std::string(mask_name), std::move(m));
-
-    for (auto &&[attr_name, a] : attrs)
-      m_holder.setAttr(name, std::string(attr_name), std::move(a));
-  }
-
-  template <class CoordMap = std::map<Dim, Variable>,
-            class MasksMap = std::map<std::string, Variable>,
-            class AttrMap = std::map<std::string, Variable>>
-  DataArray(const Dimensions &dims, DataArray unaligned, CoordMap coords = {},
-            MasksMap masks = {}, AttrMap attrs = {},
-            const std::string &name = "") {
-    if (!unaligned)
-      throw std::runtime_error(
-          "DataArray cannot be created with invalid unaligned content.");
-    m_holder.setUnaligned(name, dims, std::move(unaligned));
+    if constexpr (std::is_same_v<Data, Variable>)
+      m_holder.setData(name, std::move(data));
+    else
+      m_holder.setUnaligned(name, data.dims, std::move(data.data));
 
     for (auto &&[dim, c] : coords)
       m_holder.setCoord(dim, std::move(c));
@@ -878,6 +864,12 @@ private:
   DataArrayView get();
 
   Dataset m_holder;
+};
+
+struct UnalignedData {
+  explicit operator bool() const noexcept { return static_cast<bool>(data); }
+  Dimensions dims;
+  DataArray data;
 };
 
 SCIPP_CORE_EXPORT DataArray operator+(const DataArrayConstView &a,

@@ -81,12 +81,14 @@ auto makeDataArray(const DataArrayConstView &view, const AttrPolicy attrPolicy,
 
 DataArray::DataArray(const DataArrayConstView &view,
                      const AttrPolicy attrPolicy)
-    : DataArray(view.hasData()
-                    ? makeDataArray(view, attrPolicy, Variable(view.data()))
-                    : makeDataArray(view, attrPolicy, view.dims(),
-                                    filter_recurse(view.unaligned(),
-                                                   view.slice_bounds(),
-                                                   attrPolicy))) {}
+    : DataArray(
+          view.hasData()
+              ? makeDataArray(view, attrPolicy, Variable(view.data()))
+              : makeDataArray(view, attrPolicy,
+                              UnalignedData{view.dims(),
+                                            filter_recurse(view.unaligned(),
+                                                           view.slice_bounds(),
+                                                           attrPolicy)})) {}
 
 DataArray::operator DataArrayConstView() const { return get(); }
 DataArray::operator DataArrayView() { return get(); }
