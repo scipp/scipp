@@ -13,7 +13,8 @@
 namespace scipp::core {
 
 /// Return the bounds of all realigned dimensions.
-std::vector<std::pair<Dim, Variable>> DataArrayConstView::bounds() const {
+std::vector<std::pair<Dim, Variable>>
+DataArrayConstView::realigned_bounds() const {
   std::vector<std::pair<Dim, Variable>> bounds;
   for (const auto &item : slices()) {
     const auto s = item.first;
@@ -42,6 +43,8 @@ DataArray
 filter_recurse(const DataArrayConstView &unaligned,
                const scipp::span<const std::pair<Dim, Variable>> bounds,
                const AttrPolicy attrPolicy) {
+  if (bounds.empty())
+    return copy(unaligned, attrPolicy);
   const auto &[dim, interval] = bounds[0];
   const auto filtered = groupby(unaligned, dim, interval).copy(0, attrPolicy);
   if (bounds.size() == 1)
@@ -51,14 +54,11 @@ filter_recurse(const DataArrayConstView &unaligned,
 
 std::optional<DataArray> optional_unaligned(const DataArrayConstView &view,
                                             const AttrPolicy attrPolicy) {
-  if (view.hasData()) {
+  if (view.hasData())
     return std::nullopt;
-  } else {
-    const auto bounds = view.bounds();
-    return bounds.empty()
-               ? copy(view.unaligned(), attrPolicy)
-               : filter_recurse(view.unaligned(), bounds, attrPolicy);
-  }
+  else
+    return filter_recurse(view.unaligned(), view.realigned_bounds(),
+                          attrPolicy);
 }
 } // namespace
 
