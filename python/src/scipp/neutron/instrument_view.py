@@ -27,7 +27,7 @@ def instrument_view(scipp_obj=None,
                     vmin=None,
                     vmax=None,
                     size=0.12,
-                    projection="3D",
+                    projection="3D Z",
                     nan_color="#d3d3d3",
                     continuous_update=True,
                     dim="tof"):
@@ -217,8 +217,14 @@ class InstrumentView:
                                           description="Bin size:")
         self.bin_size.on_submit(self.update_bin_size)
 
+
+        self.opacity_slider = self.widgets.FloatSlider(
+            min=0, max=1.0, value=1.0, step=0.01, description="Opacity")
+        self.opacity_slider.observe(self.update_opacity, names="value")
+
         projections = [
-            "3D", "Cylindrical X", "Cylindrical Y", "Cylindrical Z",
+            "3D X", "3D Y", "3D Z",
+            "Cylindrical X", "Cylindrical Y", "Cylindrical Z",
             "Spherical X", "Spherical Y", "Spherical Z"
         ]
 
@@ -230,12 +236,13 @@ class InstrumentView:
                 disabled=False,
                 button_style=("info" if (p == projection) else ""))
             self.buttons[p].on_click(self.change_projection)
-        items = [self.buttons["3D"]]
+        items = []
         for x in "XYZ":
+            items.append(self.buttons["3D {}".format(x)])
             items.append(self.buttons["Cylindrical {}".format(x)])
             items.append(self.buttons["Spherical {}".format(x)])
-            if x != "Z":
-                items.append(self.widgets.Label())
+            # if x != "Z":
+            #     items.append(self.widgets.Label())
 
         self.togglebuttons = self.widgets.GridBox(
             items,
@@ -270,7 +277,8 @@ class InstrumentView:
             self.widgets.HBox(
                 [self.dropdown, self.slider, self.label,
                  self.select_colormap]),
-            self.widgets.HBox([self.nbins, self.bin_size]), self.togglebuttons
+            self.widgets.HBox([self.nbins, self.bin_size]),
+            self.opacity_slider, self.togglebuttons
         ]
         # Only show mask controls if masks are present
         if masks_present:
@@ -426,7 +434,7 @@ class InstrumentView:
 
         # print(np.repeat(self.det_pos, self.nverts, axis=0)[:100])
 
-        vertices = np.tile(detector_shape, [self.ndets, 1]) + np.repeat(self.det_pos, self.nverts, axis=0)
+        self.vertices = np.tile(detector_shape, [self.ndets, 1]) + np.repeat(self.det_pos, self.nverts, axis=0)
 
         # faces = np.arange(self.nverts * self.ndets, dtype=np.uint)
         faces = np.tile(detector_faces, [self.ndets, 1]) + np.repeat(
@@ -435,22 +443,29 @@ class InstrumentView:
         # vertexcolors = np.repeat(np.random.random([self.ndets, 3]), self.nverts, axis=0).astype(np.float32)
         vertexcolors = np.zeros([self.ndets*self.nverts, 3], dtype=np.float32)
 
-        print(vertices.shape)
-        print(faces.shape)
-        print(vertexcolors.shape)
+        # print(vertices.shape)
+        # print(faces.shape)
+        # print(vertexcolors.shape)
 
 
         self.geometry = self.p3.BufferGeometry(attributes=dict(
-            position=self.p3.BufferAttribute(vertices, normalized=False),
+            position=self.p3.BufferAttribute(self.vertices, normalized=False),
             index=self.p3.BufferAttribute(faces.ravel(), normalized=False),
             color=self.p3.BufferAttribute(vertexcolors),
         ))
 
+        self.material = self.p3.MeshBasicMaterial(vertexColors='VertexColors',
+                                                  transparent=True)
+
         self.mesh = self.p3.Mesh(
             geometry=self.geometry,
-            material=self.p3.MeshBasicMaterial(vertexColors='VertexColors'),
+            material=self.material
             # position=[-0.5, -0.5, -0.5]   # Center the cube
         )
+
+        # self.wireframe = self.p3.LineSegments(
+        #     geometry=self.p3.WireframeGeometry(self.geometry),
+        #     material=self.p3.LineBasicMaterial())
 
 
 
@@ -515,7 +530,8 @@ class InstrumentView:
         # self.ambient_light = self.p3.AmbientLight()
 
         self.scene = self.p3.Scene(children=[
-            self.mesh, self.camera, #self.key_light, self.ambient_light,
+            self.mesh, #self.wireframe,
+            self.camera, #self.key_light, self.ambient_light,
             self.axes_helper
         ], background="#DDDDDD")
         self.controller = self.p3.OrbitControls(controlling=self.camera)
@@ -532,7 +548,7 @@ class InstrumentView:
 
         # Update the plot elements
         self.update_colorbar()
-        # self.change_projection(self.buttons[projection])
+        self.change_projection(self.buttons[projection])
 
         # Create members object
         self.members = {
@@ -664,29 +680,31 @@ class InstrumentView:
         permutations = {"X": [0, 2, 1], "Y": [1, 0, 2], "Z": [2, 1, 0]}
         axis = projection[-1]
 
-        if projection == "3D":
-            xyz = self.det_pos
+        if projection.startswith("3D"):
+            xyz = self.vertices
         else:
-            xyz = np.zeros_like(self.det_pos)
-            xyz[:, 0] = np.arctan2(self.det_pos[:, permutations[axis][2]],
-                                   self.det_pos[:, permutations[axis][1]])
+            xyz = np.zeros_like(self.vertices)
+            xyz[:, 0] = np.arctan2(self.vertices[:, permutations[axis][2]],
+                                   self.vertices[:, permutations[axis][1]])
             if projection.startswith("Cylindrical"):
-                xyz[:, 1] = self.det_pos[:, permutations[axis][0]]
+                xyz[:, 1] = self.vertices[:, permutations[axis][0]]
             elif projection.startswith("Spherical"):
                 xyz[:, 1] = np.arcsin(
-                    self.det_pos[:, permutations[axis][0]] /
-                    np.sqrt(self.det_pos[:, 0]**2 + self.det_pos[:, 1]**2 +
-                            self.det_pos[:, 2]**2))
+                    self.vertices[:, permutations[axis][0]] /
+                    np.sqrt(self.vertices[:, 0]**2 + self.vertices[:, 1]**2 +
+                            self.vertices[:, 2]**2))
 
-        if projection == "3D":
+        if projection.startswith("3D"):
             self.axes_helper.visible = True
-            self.camera.position = [self.camera_pos] * 3
+            self.camera.position = [self.camera_pos * (axis=="X"),
+                                    self.camera_pos * (axis=="Y"),
+                                    self.camera_pos * (axis=="Z")]
         else:
             self.axes_helper.visible = False
             self.camera.position = [0, 0, self.camera_pos]
         self.renderer.controls = [
             self.p3.OrbitControls(controlling=self.camera,
-                                  enableRotate=projection == "3D")
+                                  enableRotate=projection.startswith("3D"))
         ]
         self.geometry.attributes["position"].array = xyz
 
@@ -792,3 +810,6 @@ class InstrumentView:
         else:
             self.update_masks_solid_color(
                 {"new": self.masks_solid_color.value})
+
+    def update_opacity(self, change):
+        self.material.opacity = change["new"]
