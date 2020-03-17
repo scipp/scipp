@@ -12,26 +12,6 @@
 
 namespace scipp::core {
 
-namespace {
-template <class T> auto copy_map(const T &map) {
-  std::map<typename T::key_type, typename T::mapped_type> out;
-  for (const auto &[key, item] : map)
-    out.emplace(key, item);
-  return out;
-}
-
-DataArray
-filter_recurse(const DataArrayConstView &unaligned,
-               const scipp::span<const std::pair<Dim, Variable>> bounds,
-               const AttrPolicy attrPolicy) {
-  const auto &[dim, interval] = bounds[0];
-  const auto filtered = groupby(unaligned, dim, interval).copy(0, attrPolicy);
-  if (bounds.size() == 1)
-    return filtered;
-  return filter_recurse(filtered, bounds.subspan(1), attrPolicy);
-}
-} // namespace
-
 /// Return the bounds of all realigned dimensions.
 std::vector<std::pair<Dim, Variable>> DataArrayConstView::bounds() const {
   std::vector<std::pair<Dim, Variable>> bounds;
@@ -51,6 +31,24 @@ std::vector<std::pair<Dim, Variable>> DataArrayConstView::bounds() const {
 }
 
 namespace {
+template <class T> auto copy_map(const T &map) {
+  std::map<typename T::key_type, typename T::mapped_type> out;
+  for (const auto &[key, item] : map)
+    out.emplace(key, item);
+  return out;
+}
+
+DataArray
+filter_recurse(const DataArrayConstView &unaligned,
+               const scipp::span<const std::pair<Dim, Variable>> bounds,
+               const AttrPolicy attrPolicy) {
+  const auto &[dim, interval] = bounds[0];
+  const auto filtered = groupby(unaligned, dim, interval).copy(0, attrPolicy);
+  if (bounds.size() == 1)
+    return filtered;
+  return filter_recurse(filtered, bounds.subspan(1), attrPolicy);
+}
+
 std::optional<DataArray> optional_unaligned(const DataArrayConstView &view,
                                             const AttrPolicy attrPolicy) {
   if (view.hasData()) {
