@@ -465,11 +465,10 @@ Dimensions DataArrayConstView::dims() const noexcept {
   else {
     Dimensions sliced(m_data->second.dims);
     for (const auto &item : slices()) {
-      const auto [dim, begin, end] = item.first;
-      if (end == -1)
-        sliced.erase(dim);
+      if (item.first.end() == -1)
+        sliced.erase(item.first.dim());
       else
-        sliced.resize(dim, end - begin);
+        sliced.resize(item.first.dim(), item.first.end() - item.first.begin());
     }
     return sliced;
   }

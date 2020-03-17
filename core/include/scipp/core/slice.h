@@ -26,7 +26,7 @@ public:
   Dim dim() const noexcept { return m_dim; };
   bool isRange() const noexcept { return m_end != -1; };
 
-  // Not private so structured bindings can be used
+private:
   Dim m_dim;
   scipp::index m_begin;
   scipp::index m_end;

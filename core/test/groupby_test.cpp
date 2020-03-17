@@ -53,6 +53,23 @@ TEST_F(GroupbyTest, fail_key_with_variances) {
   EXPECT_THROW(groupby(d["a"], Dim("variances")), except::VariancesError);
 }
 
+TEST_F(GroupbyTest, copy) {
+  auto one_group =
+      groupby(d, Dim("labels1"),
+              makeVariable<double>(Dims{Dim("labels1")}, Shape{2},
+                                   units::Unit(units::m), Values{0, 4}));
+  EXPECT_EQ(one_group.size(), 1);
+  EXPECT_EQ(one_group.copy(0), d);
+
+  auto two_groups =
+      groupby(d, Dim("labels1"),
+              makeVariable<double>(Dims{Dim("labels1")}, Shape{3},
+                                   units::Unit(units::m), Values{0, 3, 4}));
+  EXPECT_EQ(two_groups.size(), 2);
+  EXPECT_EQ(two_groups.copy(0), d.slice({Dim::X, 0, 2}));
+  EXPECT_EQ(two_groups.copy(1), d.slice({Dim::X, 2, 3}));
+}
+
 TEST_F(GroupbyTest, dataset_1d_and_2d) {
   Dataset expected;
   Dim dim("labels2");
