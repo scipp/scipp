@@ -172,7 +172,15 @@ TEST_F(RealignTest, copy_realigned_slice) {
   const auto slice = realigned.slice({Dim::Z, 1});
   // `slice` contains unfiltered unaligned content, but copy drops out-of-bounds
   // content.
-  EXPECT_NE(DataArray(slice), slice);
+  const DataArray copy(slice);
+  EXPECT_NE(copy, slice);
+  EXPECT_EQ(copy.dims(), slice.dims());
+  EXPECT_EQ(copy.coords(), slice.coords());
+  EXPECT_EQ(copy.masks(), slice.masks());
+  EXPECT_EQ(copy.attrs(), slice.attrs());
+  EXPECT_NE(copy.unaligned(), slice.unaligned());
+  EXPECT_EQ(copy.unaligned(),
+            realigned.unaligned().slice({Dim::Position, 1, 3}));
 }
 
 TEST_F(RealignTest, slice) {
