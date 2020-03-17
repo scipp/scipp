@@ -314,8 +314,8 @@ void Dataset::setUnaligned(const std::string &name, const Dimensions &dims,
   if (contains(name) && m_data[name].data)
     throw except::UnalignedError(
         "Cannot set unaligned data for existing item with aligned content.");
-  m_data[name].dims = dims;
-  m_data[name].unaligned = std::make_unique<DataArray>(std::move(unaligned));
+  m_data[name].unaligned = std::make_unique<UnalignedData>(
+      UnalignedData{dims, std::move(unaligned)});
 }
 
 /// Removes the coordinate for the given dimension.
@@ -463,7 +463,7 @@ Dimensions DataArrayConstView::dims() const noexcept {
   if (hasData())
     return data().dims();
   else {
-    Dimensions sliced(m_data->second.dims);
+    Dimensions sliced(m_data->second.unaligned->dims);
     for (const auto &item : slices()) {
       if (item.first.end() == -1)
         sliced.erase(item.first.dim());
@@ -486,14 +486,14 @@ DataArrayConstView DataArrayConstView::unaligned() const {
   // This needs to combine coords from m_dataset and from the unaligned data. We
   // therefore construct with normal dataset and items pointers and only pass
   // the unaligned data via a variable view.
-  auto view = m_data->second.unaligned->data();
+  auto view = m_data->second.unaligned->data.data();
   detail::do_make_slice(view, slices());
   return {*m_dataset, *m_data, slices(), std::move(view)};
 }
 
 DataArrayView DataArrayView::unaligned() const {
   // See also DataArrayConstView::unaligned.
-  auto view = m_mutableData->second.unaligned->data();
+  auto view = m_mutableData->second.unaligned->data.data();
   detail::do_make_slice(view, slices());
   return {*m_mutableDataset, *m_mutableData, slices(), std::move(view)};
 }
@@ -519,7 +519,7 @@ template <class MapView> MapView DataArrayConstView::makeView() const {
   auto items = makeViewItems<MapView>(dims(), map_parent(*this));
   if (!m_data->second.data && hasData()) {
     // This is a view of the unaligned content of a realigned data array.
-    const decltype(*this) unaligned = *m_data->second.unaligned;
+    const decltype(*this) unaligned = m_data->second.unaligned->data;
     auto unalignedItems =
         makeViewItems<MapView>(unaligned.dims(), map_parent(unaligned));
     items.insert(unalignedItems.begin(), unalignedItems.end());
@@ -539,7 +539,7 @@ template <class MapView> MapView DataArrayView::makeView() const {
   auto items = makeViewItems<MapView>(dims(), map_parent(*this));
   if (!m_mutableData->second.data && hasData()) {
     // This is a view of the unaligned content of a realigned data array.
-    const decltype(*this) unaligned = *m_mutableData->second.unaligned;
+    const decltype(*this) unaligned = m_mutableData->second.unaligned->data;
     auto unalignedItems =
         makeViewItems<MapView>(unaligned.dims(), map_parent(unaligned));
     items.insert(unalignedItems.begin(), unalignedItems.end());
@@ -585,7 +585,7 @@ DataArrayConstView DataArrayConstView::slice(const Slice slice1) const {
   auto tmp(m_slices);
   tmp.emplace_back(slice1, dims_[slice1.dim()]);
   if (!m_data->second.data && hasData()) {
-    auto view = m_data->second.unaligned->data();
+    auto view = m_data->second.unaligned->data.data();
     detail::do_make_slice(view, tmp);
     return {*m_dataset, *m_data, std::move(tmp), std::move(view)};
   } else {

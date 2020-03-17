@@ -26,6 +26,7 @@ class DataArray;
 class Dataset;
 class DatasetConstView;
 class DatasetView;
+struct UnalignedData;
 
 namespace detail {
 /// Helper for holding data items in Dataset.
@@ -33,8 +34,9 @@ struct DatasetData {
   ~DatasetData();
   /// Optional data values (with optional variances).
   Variable data;
-  Dimensions dims;
-  deep_ptr<DataArray> unaligned;
+  /// Unaligned data, a simple struct of aligned dimensions alongside a data
+  /// array with unaligned content.
+  deep_ptr<UnalignedData> unaligned;
   /// Attributes for data.
   std::unordered_map<std::string, Variable> attrs;
 };
@@ -694,8 +696,6 @@ copy(const DataArrayConstView &array, const DataArrayView &out,
 SCIPP_CORE_EXPORT DatasetView
 copy(const DatasetConstView &dataset, const DatasetView &out,
      const AttrPolicy attrPolicy = AttrPolicy::Keep);
-
-struct UnalignedData;
 
 /// Data array, a variable with coordinates, masks, and attributes.
 class SCIPP_CORE_EXPORT DataArray {
