@@ -859,10 +859,6 @@ def test_atan_out():
 def test_atan2():
     var = sc.Variable()
     assert_export(sc.atan2, y=var, x=var)
-
-
-def test_atan2():
-    var = sc.Variable()
     assert_export(sc.atan2, y=var, x=var, out=var)
 
 
