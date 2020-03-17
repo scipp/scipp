@@ -353,7 +353,7 @@ TYPED_TEST(DatasetBinaryEqualsOpTest,
   Dataset a = make_simple_sparse({1.1, 2.2});
   Dataset b = make_simple_sparse({3.3, 4.4});
   Dataset c = TestFixture::op(a, b);
-  auto c_data = c["sparse"].data().sparseValues<double>()[0];
+  auto c_data = c["sparse"].data().values<event_list<double>>()[0];
   ASSERT_EQ(c_data[0], TestFixture::op(1.1, 3.3));
   ASSERT_EQ(c_data[1], TestFixture::op(2.2, 4.4));
 }
@@ -363,8 +363,8 @@ TYPED_TEST(DatasetBinaryEqualsOpTest,
   Dataset a = make_sparse_2d({1.1, 2.2});
   Dataset b = make_sparse_2d({3.3, 4.4});
   Dataset c = TestFixture::op(a, b);
-  ASSERT_EQ(c["sparse"].data().sparseValues<double>().size(), 2);
-  auto c_data = c["sparse"].data().sparseValues<double>()[0];
+  ASSERT_EQ(c["sparse"].data().values<event_list<double>>().size(), 2);
+  auto c_data = c["sparse"].data().values<event_list<double>>()[0];
   ASSERT_EQ(c_data[0], TestFixture::op(1.1, 3.3));
   ASSERT_EQ(c_data[1], TestFixture::op(2.2, 4.4));
 }
@@ -376,10 +376,10 @@ TYPED_TEST(DatasetBinaryEqualsOpTest, with_multiple_variables) {
   b.setData("sparse2", b["sparse"].data());
   Dataset c = TestFixture::op(a, b);
   ASSERT_EQ(c.size(), 2);
-  auto c_data = c["sparse"].data().sparseValues<double>()[0];
+  auto c_data = c["sparse"].data().values<event_list<double>>()[0];
   ASSERT_EQ(c_data[0], TestFixture::op(1.1, 3.3));
   ASSERT_EQ(c_data[1], TestFixture::op(2.2, 4.4));
-  c_data = c["sparse2"].data().sparseValues<double>()[1];
+  c_data = c["sparse2"].data().values<event_list<double>>()[1];
   ASSERT_EQ(c_data[0], TestFixture::op(1.1, 3.3));
   ASSERT_EQ(c_data[1], TestFixture::op(2.2, 4.4));
 }
@@ -805,13 +805,13 @@ TYPED_TEST(DatasetBinaryOpTest,
 
   {
     auto var = makeVariable<event_list<double>>(Dims{}, Shape{});
-    var.sparseValues<double>()[0] = {0.5, 1.0};
+    var.values<event_list<double>>()[0] = {0.5, 1.0};
     dataset_a.coords().set(Dim::X, var);
   }
 
   {
     auto var = makeVariable<event_list<double>>(Dims{}, Shape{});
-    var.sparseValues<double>()[0] = {0.5, 1.5};
+    var.values<event_list<double>>()[0] = {0.5, 1.5};
     dataset_b.coords().set(Dim::X, var);
   }
 
@@ -826,13 +826,13 @@ TYPED_TEST(DatasetBinaryOpTest,
 
   {
     auto var = makeVariable<event_list<double>>(Dims{}, Shape{});
-    var.sparseValues<double>()[0] = {0.5, 1.0};
+    var.values<event_list<double>>()[0] = {0.5, 1.0};
     dataset_a.coords().set(Dim("l"), var);
   }
 
   {
     auto var = makeVariable<event_list<double>>(Dims{}, Shape{});
-    var.sparseValues<double>()[0] = {0.5, 1.5};
+    var.values<event_list<double>>()[0] = {0.5, 1.5};
     dataset_b.coords().set(Dim("l"), var);
   }
 

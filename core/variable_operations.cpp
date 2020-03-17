@@ -10,6 +10,7 @@
 #include "scipp/core/transform.h"
 #include "scipp/core/variable.h"
 
+#include "element_trigonometry_operations.h"
 #include "element_unary_operations.h"
 #include "operators.h"
 #include "variable_operations_common.h"
@@ -197,6 +198,17 @@ Variable dot(const Variable &a, const Variable &b) {
                  [](const units::Unit &a_, const units::Unit &b_) {
                    return a_ * b_;
                  }});
+}
+
+Variable atan2(const Variable &y, const Variable &x) {
+  return transform<std::tuple<double, float>>(y, x, element::atan2);
+}
+
+VariableView atan2(const VariableConstView &y, const VariableConstView &x,
+                   const VariableView &out) {
+  transform_in_place<std::tuple<double, float>>(out, y, x,
+                                                element::atan2_out_arg);
+  return out;
 }
 
 Variable broadcast(const VariableConstView &var, const Dimensions &dims) {

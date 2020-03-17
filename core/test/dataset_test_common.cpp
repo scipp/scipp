@@ -114,7 +114,7 @@ Dataset make_simple_sparse(std::initializer_list<double> values,
                            std::string key) {
   Dataset ds;
   auto var = makeVariable<sparse_container<double>>(Dims{}, Shape{});
-  var.sparseValues<double>()[0] = values;
+  var.values<event_list<double>>()[0] = values;
   ds.setData(key, var);
   return ds;
 }
@@ -126,19 +126,19 @@ Dataset make_sparse_with_coords_and_labels(
 
   {
     auto var = makeVariable<sparse_container<double>>(Dims{}, Shape{});
-    var.sparseValues<double>()[0] = values;
+    var.values<event_list<double>>()[0] = values;
     ds.setData(key, var);
   }
 
   {
     auto var = makeVariable<sparse_container<double>>(Dims{}, Shape{});
-    var.sparseValues<double>()[0] = coords_and_labels;
+    var.values<event_list<double>>()[0] = coords_and_labels;
     ds.coords().set(Dim::X, var);
   }
 
   {
     auto var = makeVariable<sparse_container<double>>(Dims{}, Shape{});
-    var.sparseValues<double>()[0] = coords_and_labels;
+    var.values<event_list<double>>()[0] = coords_and_labels;
     ds.coords().set(Dim("l"), var);
   }
 
@@ -148,8 +148,8 @@ Dataset make_sparse_with_coords_and_labels(
 Dataset make_sparse_2d(std::initializer_list<double> values, std::string key) {
   Dataset ds;
   auto var = makeVariable<sparse_container<double>>(Dims{Dim::X}, Shape{2});
-  var.sparseValues<double>()[0] = values;
-  var.sparseValues<double>()[1] = values;
+  var.values<event_list<double>>()[0] = values;
+  var.values<event_list<double>>()[1] = values;
   ds.setData(key, var);
   return ds;
 }

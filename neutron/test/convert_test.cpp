@@ -51,7 +51,7 @@ Dataset makeTofDatasetEvents() {
 
   auto events = makeVariable<event_list<double>>(Dims{Dim::Spectrum}, Shape{2});
   events.setUnit(units::us);
-  auto eventLists = events.sparseValues<double>();
+  auto eventLists = events.values<event_list<double>>();
   eventLists[0] = {1000, 3000, 2000, 4000};
   eventLists[1] = {5000, 6000, 3000};
   tof.setCoord(Dim::Tof, events);
@@ -178,8 +178,9 @@ TEST_P(ConvertTest, Tof_to_DSpacing) {
     const auto &events = dspacing["events"];
     ASSERT_EQ(events.dims(), Dimensions({Dim::Spectrum}, {2}));
     const auto &tof0 =
-        tof["events"].coords()[Dim::Tof].sparseValues<double>()[0];
-    const auto &d0 = events.coords()[Dim::DSpacing].sparseValues<double>()[0];
+        tof["events"].coords()[Dim::Tof].values<event_list<double>>()[0];
+    const auto &d0 =
+        events.coords()[Dim::DSpacing].values<event_list<double>>()[0];
     ASSERT_EQ(scipp::size(d0), 4);
     EXPECT_NEAR(d0[0], 3956.0 / (1e6 * 11.0 / tof0[0]) / sqrt(2.0),
                 d0[0] * 1e-3);
@@ -190,8 +191,9 @@ TEST_P(ConvertTest, Tof_to_DSpacing) {
     EXPECT_NEAR(d0[3], 3956.0 / (1e6 * 11.0 / tof0[3]) / sqrt(2.0),
                 d0[3] * 1e-3);
     const auto &tof1 =
-        tof["events"].coords()[Dim::Tof].sparseValues<double>()[1];
-    const auto &d1 = events.coords()[Dim::DSpacing].sparseValues<double>()[1];
+        tof["events"].coords()[Dim::Tof].values<event_list<double>>()[1];
+    const auto &d1 =
+        events.coords()[Dim::DSpacing].values<event_list<double>>()[1];
     ASSERT_EQ(scipp::size(d1), 3);
     EXPECT_NEAR(d1[0], 3956.0 / (1e6 * 11.0 / tof1[0]) * lambda_to_d,
                 d1[0] * 1e-3);
@@ -236,9 +238,10 @@ TEST_P(ConvertTest, DSpacing_to_Tof) {
                        expected_tofs.values<double>(), 1e-12));
   } else {
     ASSERT_TRUE(tof.contains("events"));
-    const auto events = tof["events"].coords()[Dim::Tof].sparseValues<double>();
+    const auto events =
+        tof["events"].coords()[Dim::Tof].values<event_list<double>>();
     const auto events_original =
-        tof_original["events"].coords()[Dim::Tof].sparseValues<double>();
+        tof_original["events"].coords()[Dim::Tof].values<event_list<double>>();
     EXPECT_TRUE(equals(events[0], events_original[0], 1e-15));
     EXPECT_TRUE(equals(events[1], events_original[1], 1e-12));
   }
@@ -298,16 +301,18 @@ TEST_P(ConvertTest, Tof_to_Wavelength) {
     const auto &events = wavelength["events"];
     ASSERT_EQ(events.dims(), Dimensions({Dim::Spectrum}, {2}));
     const auto &tof0 =
-        tof["events"].coords()[Dim::Tof].sparseValues<double>()[0];
-    const auto &d0 = events.coords()[Dim::Wavelength].sparseValues<double>()[0];
+        tof["events"].coords()[Dim::Tof].values<event_list<double>>()[0];
+    const auto &d0 =
+        events.coords()[Dim::Wavelength].values<event_list<double>>()[0];
     ASSERT_EQ(scipp::size(d0), 4);
     EXPECT_NEAR(d0[0], 3956.0 / (1e6 * 11.0 / tof0[0]), d0[0] * 1e-3);
     EXPECT_NEAR(d0[1], 3956.0 / (1e6 * 11.0 / tof0[1]), d0[1] * 1e-3);
     EXPECT_NEAR(d0[2], 3956.0 / (1e6 * 11.0 / tof0[2]), d0[2] * 1e-3);
     EXPECT_NEAR(d0[3], 3956.0 / (1e6 * 11.0 / tof0[3]), d0[3] * 1e-3);
     const auto &tof1 =
-        tof["events"].coords()[Dim::Tof].sparseValues<double>()[1];
-    const auto &d1 = events.coords()[Dim::Wavelength].sparseValues<double>()[1];
+        tof["events"].coords()[Dim::Tof].values<event_list<double>>()[1];
+    const auto &d1 =
+        events.coords()[Dim::Wavelength].values<event_list<double>>()[1];
     ASSERT_EQ(scipp::size(d1), 3);
     EXPECT_NEAR(d1[0], 3956.0 / (1e6 * 11.0 / tof1[0]), d1[0] * 1e-3);
     EXPECT_NEAR(d1[1], 3956.0 / (1e6 * 11.0 / tof1[1]), d1[1] * 1e-3);
@@ -338,9 +343,10 @@ TEST_P(ConvertTest, Wavelength_to_Tof) {
                                                 tof.coords()[Dim::Tof].dims()));
   } else {
     ASSERT_TRUE(tof.contains("events"));
-    const auto events = tof["events"].coords()[Dim::Tof].sparseValues<double>();
+    const auto events =
+        tof["events"].coords()[Dim::Tof].values<event_list<double>>();
     const auto events_original =
-        tof_original["events"].coords()[Dim::Tof].sparseValues<double>();
+        tof_original["events"].coords()[Dim::Tof].values<event_list<double>>();
     EXPECT_TRUE(equals(events[0], events_original[0], 1e-15));
     EXPECT_TRUE(equals(events[1], events_original[1], 1e-12));
   }
@@ -421,8 +427,9 @@ TEST_P(ConvertTest, Tof_to_Energy_Elastic) {
     const auto &events = energy["events"];
     ASSERT_EQ(events.dims(), Dimensions({Dim::Spectrum}, {2}));
     const auto &tof0 =
-        tof["events"].coords()[Dim::Tof].sparseValues<double>()[0];
-    const auto &e0 = events.coords()[Dim::Energy].sparseValues<double>()[0];
+        tof["events"].coords()[Dim::Tof].values<event_list<double>>()[0];
+    const auto &e0 =
+        events.coords()[Dim::Energy].values<event_list<double>>()[0];
     ASSERT_EQ(scipp::size(e0), 4);
     EXPECT_NEAR(e0[0],
                 joule_to_mev * 0.5 * neutron_mass *
@@ -441,8 +448,9 @@ TEST_P(ConvertTest, Tof_to_Energy_Elastic) {
                     std::pow(1e6 * 11 / tof0[3], 2),
                 e0[3] * 1e-3);
     const auto &tof1 =
-        tof["events"].coords()[Dim::Tof].sparseValues<double>()[1];
-    const auto &e1 = events.coords()[Dim::Energy].sparseValues<double>()[1];
+        tof["events"].coords()[Dim::Tof].values<event_list<double>>()[1];
+    const auto &e1 =
+        events.coords()[Dim::Energy].values<event_list<double>>()[1];
     ASSERT_EQ(scipp::size(e1), 3);
     EXPECT_NEAR(e1[0],
                 joule_to_mev * 0.5 * neutron_mass *
@@ -484,9 +492,10 @@ TEST_P(ConvertTest, Energy_to_Tof_Elastic) {
                        expected.values<double>(), 1e-12));
   } else {
     ASSERT_TRUE(tof.contains("events"));
-    const auto events = tof["events"].coords()[Dim::Tof].sparseValues<double>();
+    const auto events =
+        tof["events"].coords()[Dim::Tof].values<event_list<double>>();
     const auto events_original =
-        tof_original["events"].coords()[Dim::Tof].sparseValues<double>();
+        tof_original["events"].coords()[Dim::Tof].values<event_list<double>>();
     EXPECT_TRUE(equals(events[0], events_original[0], 1e-15));
     EXPECT_TRUE(equals(events[1], events_original[1], 1e-15));
   }

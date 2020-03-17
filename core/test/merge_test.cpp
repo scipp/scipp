@@ -55,7 +55,7 @@ TEST(MergeTest, simple) {
 
 TEST(MergeTest, sparse) {
   auto sparseCoord = makeVariable<event_list<int>>(Dims{}, Shape{});
-  sparseCoord.sparseValues<int>()[0] = {1, 2, 3, 4};
+  sparseCoord.values<event_list<int>>()[0] = {1, 2, 3, 4};
 
   Dataset a;
   {
@@ -89,14 +89,14 @@ TEST(MergeTest, non_matching_sparse_data) {
   Dataset a;
   {
     auto data = makeVariable<event_list<int>>(Dims{Dim::X}, Shape{1});
-    data.sparseValues<int>()[0] = {2, 3};
+    data.values<event_list<int>>()[0] = {2, 3};
     a.setData("sparse", data);
   }
 
   Dataset b;
   {
     auto data = makeVariable<event_list<int>>(Dims{Dim::X}, Shape{1});
-    data.sparseValues<int>()[0] = {1, 2};
+    data.values<event_list<int>>()[0] = {1, 2};
     b.setData("sparse", data);
   }
 
@@ -117,14 +117,14 @@ TEST(MergeTest, non_matching_sparse_coords) {
   Dataset a;
   {
     auto coord = makeVariable<event_list<int>>(Dims{Dim::X}, Shape{1});
-    coord.sparseValues<int>()[0] = {2, 3};
+    coord.values<event_list<int>>()[0] = {2, 3};
     a.coords().set(Dim::Y, coord);
   }
 
   Dataset b;
   {
     auto coord = makeVariable<event_list<int>>(Dims{Dim::X}, Shape{1});
-    coord.sparseValues<int>()[0] = {1, 2};
+    coord.values<event_list<int>>()[0] = {1, 2};
     b.coords().set(Dim::Y, coord);
   }
 
@@ -143,12 +143,12 @@ TEST(MergeTest, non_matching_dense_labels) {
 
 TEST(MergeTest, non_matching_sparse_labels) {
   auto coord = makeVariable<event_list<int>>(Dims{Dim::X}, Shape{1});
-  coord.sparseValues<int>()[0] = {1, 2};
+  coord.values<event_list<int>>()[0] = {1, 2};
 
   Dataset a;
   {
     auto label = makeVariable<event_list<int>>(Dims{Dim::X}, Shape{1});
-    label.sparseValues<int>()[0] = {2, 3};
+    label.values<event_list<int>>()[0] = {2, 3};
     a.coords().set(Dim::Y, coord);
     a.coords().set(Dim("l"), label);
   }
@@ -156,7 +156,7 @@ TEST(MergeTest, non_matching_sparse_labels) {
   Dataset b;
   {
     auto label = makeVariable<event_list<int>>(Dims{Dim::X}, Shape{1});
-    label.sparseValues<int>()[0] = {1, 2};
+    label.values<event_list<int>>()[0] = {1, 2};
     b.coords().set(Dim::Y, coord);
     b.coords().set(Dim("l"), label);
   }

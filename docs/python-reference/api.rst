@@ -81,6 +81,7 @@ Trigonometric
    asin
    acos
    atan
+   atan2
 
 Counts
 ~~~~~~

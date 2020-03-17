@@ -354,7 +354,7 @@ TEST_F(GroupbyWithBinsTest, two_bin) {
 
 auto make_sparse_in() {
   auto var = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{3});
-  const auto &var_ = var.sparseValues<double>();
+  const auto &var_ = var.values<event_list<double>>();
   var_[0] = {1, 2, 3};
   var_[1] = {4, 5};
   var_[2] = {6, 7};
@@ -363,7 +363,7 @@ auto make_sparse_in() {
 
 auto make_sparse_out(bool mask = false) {
   auto var = makeVariable<event_list<double>>(Dims{Dim("labels")}, Shape{2});
-  const auto &var_ = var.sparseValues<double>();
+  const auto &var_ = var.values<event_list<double>>();
   if (mask)
     var_[0] = {1, 2, 3};
   else
@@ -377,6 +377,7 @@ struct GroupbyFlattenDefaultWeight : public ::testing::Test {
       makeVariable<double>(Dims{Dim::Y}, Shape{3}, units::Unit(units::counts),
                            Values{1, 1, 1}, Variances{1, 1, 1}),
       {{Dim::X, make_sparse_in()},
+       {Dim("0-d"), makeVariable<double>(Values{1.2})},
        {Dim("labels"),
         makeVariable<double>(Dims{Dim::Y}, Shape{3}, units::Unit(units::m),
                              Values{1, 1, 3})},
@@ -391,6 +392,7 @@ struct GroupbyFlattenDefaultWeight : public ::testing::Test {
                            units::Unit(units::counts), Values{2, 1},
                            Variances{2, 1}),
       {{Dim::X, make_sparse_out()},
+       {Dim("0-d"), makeVariable<double>(Values{1.2})},
        {Dim("labels"),
         makeVariable<double>(Dims{Dim("labels")}, Shape{2},
                              units::Unit(units::m), Values{1, 3})},

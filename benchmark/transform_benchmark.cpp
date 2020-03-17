@@ -163,7 +163,7 @@ static void BM_transform_in_place_sparse(benchmark::State &state) {
   std::random_device rd;
   std::mt19937 mt(rd());
   std::uniform_int_distribution<scipp::index> dist(0, 2 * nx);
-  for (auto &elems : a.sparseValues<double>())
+  for (auto &elems : a.values<event_list<double>>())
     elems.resize(dist(mt));
 
   // sparse * dense typically occurs in unit conversion

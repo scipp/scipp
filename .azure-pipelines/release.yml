@@ -29,7 +29,7 @@ stages:
           - bash: |
               echo "##vso[task.prependpath]$CONDA/bin"
               echo "##vso[task.setvariable variable=conda_dir]$CONDA"
-            displayName: Configure Conda directories
+            displayName: 'Configure Conda directories'
           - bash: |
               set -ex
               conda --version
@@ -60,10 +60,10 @@ stages:
           - bash: |
               echo "##vso[task.prependpath]$CONDA/bin"
               echo "##vso[task.setvariable variable=conda_dir]$CONDA"
-            displayName: Configure Conda directories
+            displayName: 'Configure Conda directories'
           - bash: |
               sudo chown -R $USER $CONDA
-            displayName: Take ownership of Conda installation
+            displayName: 'Take ownership of Conda installation'
           - bash: |
               set -ex
               conda --version
@@ -92,7 +92,7 @@ stages:
           - powershell: |
               Write-Host "##vso[task.prependpath]$env:CONDA\Scripts"
               Write-Host "##vso[task.setvariable variable=conda_dir]$env:CONDA"
-            displayName: Configure Conda directories
+            displayName: 'Configure Conda directories'
           - script: |
               conda --version
               conda install --yes anaconda-client conda-build
