@@ -31,30 +31,35 @@ filter_recurse(const DataArrayConstView &unaligned,
 }
 } // namespace
 
+/// Return the bounds of all realigned dimensions.
+std::vector<std::pair<Dim, Variable>> DataArrayConstView::bounds() const {
+  std::vector<std::pair<Dim, Variable>> bounds;
+  for (const auto &item : slices()) {
+    const auto s = item.first;
+    const auto dim = s.dim();
+    // Only process realigned dims
+    if (unaligned().dims().contains(dim) || !unaligned().coords().contains(dim))
+      continue;
+    const auto left = s.begin();
+    const auto right = s.end() == -1 ? left + 1 : s.end();
+    const auto coord = m_dataset->coords()[dim];
+    bounds.emplace_back(dim, concatenate(coord.slice({dim, left}),
+                                         coord.slice({dim, right}), dim));
+  }
+  return bounds;
+}
+
 DataArrayConstView::operator DataArray() const {
   if (hasData()) {
     return DataArray(Variable(data()), copy_map(coords()), copy_map(masks()),
                      copy_map(attrs()), name());
   } else {
     // 1. Find bounds
-    std::vector<std::pair<Dim, Variable>> bounds;
-    for (const auto &item : slices()) {
-      const auto s = item.first;
-      const auto dim = s.dim();
-      // Only process realigned dims
-      if (unaligned().dims().contains(dim) ||
-          !unaligned().coords().contains(dim))
-        continue;
-      const auto left = s.begin();
-      const auto right = s.end() == -1 ? left + 1 : s.end();
-      const auto coord = m_dataset->coords()[dim];
-      bounds.emplace_back(dim, concatenate(coord.slice({dim, left}),
-                                           coord.slice({dim, right}), dim));
-    }
+    const auto bounds_ = bounds();
 
     // 2. Filter out-of-bounds
-    auto filtered = bounds.empty() ? copy(unaligned())
-                                   : filter_recurse(unaligned(), bounds);
+    auto filtered = bounds_.empty() ? copy(unaligned())
+                                    : filter_recurse(unaligned(), bounds_);
     return DataArray(Variable{}, copy_map(coords()), copy_map(masks()),
                      copy_map(attrs()), name(), std::move(filtered), dims());
   }

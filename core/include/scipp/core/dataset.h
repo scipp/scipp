@@ -94,6 +94,8 @@ public:
 
   auto &underlying() const { return m_data->second; }
 
+  std::vector<std::pair<Dim, Variable>> bounds() const;
+
 protected:
   // Note that m_view is a VariableView, not a VariableConstView. In case
   // *this (DataArrayConstView) is stand-alone (not part of DataArrayView),
