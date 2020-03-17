@@ -49,20 +49,23 @@ std::vector<std::pair<Dim, Variable>> DataArrayConstView::bounds() const {
   return bounds;
 }
 
-DataArrayConstView::operator DataArray() const {
-  if (hasData()) {
-    return DataArray(Variable(data()), copy_map(coords()), copy_map(masks()),
-                     copy_map(attrs()), name());
+namespace {
+std::optional<DataArray> optional_unaligned(const DataArrayConstView &view) {
+  if (view.hasData()) {
+    return std::nullopt;
   } else {
-    // 1. Find bounds
-    const auto bounds_ = bounds();
-
-    // 2. Filter out-of-bounds
-    auto filtered = bounds_.empty() ? copy(unaligned())
-                                    : filter_recurse(unaligned(), bounds_);
-    return DataArray(Variable{}, copy_map(coords()), copy_map(masks()),
-                     copy_map(attrs()), name(), std::move(filtered), dims());
+    const auto bounds = view.bounds();
+    return bounds.empty() ? copy(view.unaligned())
+                          : filter_recurse(view.unaligned(), bounds);
   }
+}
+} // namespace
+
+DataArray::DataArray(const DataArrayConstView &view) {
+  *this = DataArray(view.hasData() ? Variable(view.data()) : Variable{},
+                    copy_map(view.coords()), copy_map(view.masks()),
+                    copy_map(view.attrs()), view.name(),
+                    optional_unaligned(view), view.dims());
 }
 
 DataArray::operator DataArrayConstView() const { return get(); }
