@@ -179,7 +179,7 @@ DataArray histogram(const DataArrayConstView &realigned) {
   // onto the unaligned content. Note that we could in principle avoid the copy
   // if only aligned dimensions are sliced.
   if (!realigned.slices().empty())
-    filtered = DataArray(realigned);
+    filtered = DataArray(realigned, AttrPolicy::Drop);
   const auto unaligned =
       filtered ? filtered->unaligned() : realigned.unaligned();
 
