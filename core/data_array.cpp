@@ -37,6 +37,9 @@ std::vector<std::pair<Dim, Variable>> DataArrayConstView::slice_bounds() const {
     bounds.emplace_back(dim, concatenate(coord.slice({dim, left}),
                                          coord.slice({dim, right}), dim));
   }
+  // TODO As an optimization we could sort the bounds and put those that slice
+  // out the largest fraction first, to ensure that `filter_recurse` slices in a
+  // potentially faster way.
   return bounds;
 }
 

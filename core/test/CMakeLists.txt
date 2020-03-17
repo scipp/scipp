@@ -8,6 +8,7 @@ add_executable(
   comparison_test.cpp
   concatenate_test.cpp
   coords_view_test.cpp
+  copy_test.cpp
   counts_test.cpp
   data_array_comparison_test.cpp
   data_array_test.cpp
