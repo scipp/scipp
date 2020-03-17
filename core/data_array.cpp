@@ -61,12 +61,14 @@ std::optional<DataArray> optional_unaligned(const DataArrayConstView &view) {
 }
 } // namespace
 
-DataArray::DataArray(const DataArrayConstView &view) {
-  *this = DataArray(view.hasData() ? Variable(view.data()) : Variable{},
-                    copy_map(view.coords()), copy_map(view.masks()),
-                    copy_map(view.attrs()), view.name(),
-                    optional_unaligned(view), view.dims());
-}
+DataArray::DataArray(const DataArrayConstView &view,
+                     const AttrPolicy attrPolicy)
+    : DataArray(view.hasData() ? Variable(view.data()) : Variable{},
+                copy_map(view.coords()), copy_map(view.masks()),
+                attrPolicy == AttrPolicy::Keep
+                    ? copy_map(view.attrs())
+                    : std::map<std::string, Variable>{},
+                view.name(), optional_unaligned(view), view.dims()) {}
 
 DataArray::operator DataArrayConstView() const { return get(); }
 DataArray::operator DataArrayView() { return get(); }

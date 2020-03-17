@@ -692,7 +692,8 @@ public:
   using view_type = DataArrayView;
 
   DataArray() = default;
-  explicit DataArray(const DataArrayConstView &view);
+  explicit DataArray(const DataArrayConstView &view,
+                     const AttrPolicy attrPolicy = AttrPolicy::Keep);
   template <class CoordMap = std::map<Dim, Variable>,
             class MasksMap = std::map<std::string, Variable>,
             class AttrMap = std::map<std::string, Variable>>
