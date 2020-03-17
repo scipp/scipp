@@ -20,6 +20,16 @@ TEST(DataArrayTest, construct) {
   EXPECT_EQ(array.name(), "data_xyz");
 }
 
+TEST(DataArrayTest, construct_fail) {
+  // Neither data nor unaligned
+  EXPECT_THROW(DataArray(Variable{}), std::runtime_error);
+  const auto var = makeVariable<double>(Values{1.0});
+  DataArray unaligned(var);
+  EXPECT_NO_THROW(DataArray(Variable{}, {}, {}, {}, "", unaligned));
+  // Data as well as unaligned
+  EXPECT_THROW(DataArray(var, {}, {}, {}, "", unaligned), std::runtime_error);
+}
+
 TEST(DataArrayTest, sum_dataset_columns_via_DataArray) {
   DatasetFactory3D factory;
   auto dataset = factory.make();

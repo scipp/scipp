@@ -290,7 +290,7 @@ void Dataset::setData(const std::string &name, DataArray data) {
 
   if (item->second.data)
     setData(name, std::move(item->second.data));
-  if (item->second.unaligned)
+  else
     m_data[name].unaligned = std::move(item->second.unaligned);
   for (auto &&[nm, attr] : item->second.attrs)
     setAttr(name, std::string(nm), std::move(attr));
