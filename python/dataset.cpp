@@ -628,8 +628,13 @@ void init_dataset(py::module &m) {
         :rtype: DataArray)");
 
   m.def("realign",
-        [](const DataArrayConstView &a,
-           std::vector<std::pair<Dim, Variable>> coords) {
+        [](const DataArrayConstView &a, py::dict coord_dict) {
+          // Python dicts above 3.7 preserve order, but we cannot use automatic
+          // conversion by pybind11 since C++ maps do not.
+          std::vector<std::pair<Dim, Variable>> coords;
+          for (auto item : coord_dict)
+            coords.emplace_back(Dim(item.first.cast<std::string>()),
+                                item.second.cast<Variable>());
           return unaligned::realign(copy(a), std::move(coords));
         },
         py::arg("data"), py::arg("coords"),
