@@ -125,6 +125,42 @@ TEST_F(RealignTest, attr_mapping) {
   EXPECT_EQ(realigned.unaligned(), base);
 }
 
+TEST_F(RealignTest, realigned_bounds) {
+  const auto realigned = make_realigned();
+  DataArrayConstView view(realigned);
+
+  auto bounds = view.slice_bounds();
+  EXPECT_EQ(bounds.size(), 0);
+
+  view = view.slice({Dim::X, 1, 2});
+  bounds = view.slice_bounds();
+  EXPECT_EQ(bounds.size(), 1);
+  EXPECT_EQ(bounds.at(0).first, Dim::X);
+  EXPECT_EQ(bounds.at(0).second,
+            makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{2, 4}));
+
+  view = view.slice({Dim::Y, 0, 2});
+  bounds = view.slice_bounds();
+  EXPECT_EQ(bounds.size(), 2);
+  EXPECT_EQ(bounds.at(0).first, Dim::X);
+  EXPECT_EQ(bounds.at(0).second,
+            makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{2, 4}));
+  EXPECT_EQ(bounds.at(1).first, Dim::Y);
+  EXPECT_EQ(bounds.at(1).second,
+            makeVariable<double>(Dims{Dim::Y}, Shape{2}, Values{0, 4}));
+
+  // Slice again in same dimension
+  view = view.slice({Dim::X, 0});
+  bounds = view.slice_bounds();
+  EXPECT_EQ(bounds.size(), 2);
+  EXPECT_EQ(bounds.at(0).first, Dim::X);
+  EXPECT_EQ(bounds.at(0).second,
+            makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{2, 4}));
+  EXPECT_EQ(bounds.at(1).first, Dim::Y);
+  EXPECT_EQ(bounds.at(1).second,
+            makeVariable<double>(Dims{Dim::Y}, Shape{2}, Values{0, 4}));
+}
+
 TEST_F(RealignTest, copy_realigned) {
   const auto realigned = make_realigned();
   EXPECT_EQ(DataArray(realigned), realigned);

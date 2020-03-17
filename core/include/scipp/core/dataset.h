@@ -92,7 +92,7 @@ public:
 
   auto &underlying() const { return m_data->second; }
 
-  std::vector<std::pair<Dim, Variable>> realigned_bounds() const;
+  std::vector<std::pair<Dim, Variable>> slice_bounds() const;
 
 protected:
   // Note that m_view is a VariableView, not a VariableConstView. In case

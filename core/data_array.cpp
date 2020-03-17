@@ -12,10 +12,10 @@
 
 namespace scipp::core {
 
-/// Return the bounds of all realigned dimensions.
-std::vector<std::pair<Dim, Variable>>
-DataArrayConstView::realigned_bounds() const {
+/// Return the bounds of all sliced realigned dimensions.
+std::vector<std::pair<Dim, Variable>> DataArrayConstView::slice_bounds() const {
   std::vector<std::pair<Dim, Variable>> bounds;
+  std::map<Dim, std::pair<scipp::index, scipp::index>> combined_slices;
   for (const auto &item : slices()) {
     const auto s = item.first;
     const auto dim = s.dim();
@@ -24,6 +24,15 @@ DataArrayConstView::realigned_bounds() const {
       continue;
     const auto left = s.begin();
     const auto right = s.end() == -1 ? left + 1 : s.end();
+    if (combined_slices.count(dim)) {
+      combined_slices[dim].second = combined_slices[dim].first + right;
+      combined_slices[dim].first += left;
+    } else {
+      combined_slices[dim] = {left, right};
+    }
+  }
+  for (const auto [dim, interval] : combined_slices) {
+    const auto [left, right] = interval;
     const auto coord = m_dataset->coords()[dim];
     bounds.emplace_back(dim, concatenate(coord.slice({dim, left}),
                                          coord.slice({dim, right}), dim));
@@ -57,8 +66,7 @@ std::optional<DataArray> optional_unaligned(const DataArrayConstView &view,
   if (view.hasData())
     return std::nullopt;
   else
-    return filter_recurse(view.unaligned(), view.realigned_bounds(),
-                          attrPolicy);
+    return filter_recurse(view.unaligned(), view.slice_bounds(), attrPolicy);
 }
 } // namespace
 
