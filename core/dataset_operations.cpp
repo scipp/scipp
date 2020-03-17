@@ -171,44 +171,46 @@ DataArray copy(const DataArrayConstView &array) { return DataArray(array); }
 /// Return a deep copy of a Dataset or of a DatasetView.
 Dataset copy(const DatasetConstView &dataset) { return Dataset(dataset); }
 
-/// Copy data array to output data array
-DataArrayView copy(const DataArrayConstView &array, const DataArrayView &out) {
-  for (const auto &[dim, coord] : array.coords())
-    out.coords()[dim].assign(coord);
-  for (const auto &[name, mask] : array.masks())
-    out.masks()[name].assign(mask);
-  for (const auto &[name, attr] : array.attrs())
-    out.attrs()[name].assign(attr);
-
-  if (array.hasData())
-    out.data().assign(array.data());
+namespace {
+void copy_item(const DataArrayConstView &from, const DataArrayView &to) {
+  if (from.hasData())
+    to.data().assign(from.data());
   else
     throw except::UnalignedError(
         "Copying unaligned data to output not supported.");
+}
+
+template <class ConstView, class View>
+View copy_impl(const ConstView &in, const View &out) {
+  for (const auto &[dim, coord] : in.coords())
+    out.coords()[dim].assign(coord);
+  for (const auto &[name, mask] : in.masks())
+    out.masks()[name].assign(mask);
+  for (const auto &[name, attr] : in.attrs())
+    out.attrs()[name].assign(attr);
+
+  if constexpr (std::is_same_v<View, DatasetView>) {
+    for (const auto &array : in) {
+      copy_item(array, out[array.name()]);
+      for (const auto &[name, attr] : array.attrs())
+        out[array.name()].attrs()[name].assign(attr);
+    }
+  } else {
+    copy_item(in, out);
+  }
 
   return out;
+}
+} // namespace
+
+/// Copy data array to output data array
+DataArrayView copy(const DataArrayConstView &array, const DataArrayView &out) {
+  return copy_impl(array, out);
 }
 
 /// Copy dataset to output dataset
 DatasetView copy(const DatasetConstView &dataset, const DatasetView &out) {
-  for (const auto &[dim, coord] : dataset.coords())
-    out.coords()[dim].assign(coord);
-  for (const auto &[name, mask] : dataset.masks())
-    out.masks()[name].assign(mask);
-  for (const auto &[name, attr] : dataset.attrs())
-    out.attrs()[name].assign(attr);
-
-  for (const auto &array : dataset) {
-    if (array.hasData())
-      out[array.name()].data().assign(array.data());
-    else
-      throw except::UnalignedError(
-          "Copying unaligned data to output not supported.");
-    for (const auto &[name, attr] : array.attrs())
-      out[array.name()].attrs()[name].assign(attr);
-  }
-
-  return out;
+  return copy_impl(dataset, out);
 }
 
 } // namespace scipp::core
