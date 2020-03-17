@@ -704,33 +704,37 @@ public:
   DataArray() = default;
   explicit DataArray(const DataArrayConstView &view,
                      const AttrPolicy attrPolicy = AttrPolicy::Keep);
+
   template <class CoordMap = std::map<Dim, Variable>,
             class MasksMap = std::map<std::string, Variable>,
             class AttrMap = std::map<std::string, Variable>>
   DataArray(Variable data, CoordMap coords = {}, MasksMap masks = {},
-            AttrMap attrs = {}, const std::string &name = "",
-            std::optional<DataArray> unaligned = std::nullopt,
-            Dimensions dims = Dimensions{}) {
-    // This check will be changed once we can have unaligned content instead.
-    if (data) {
-      if (unaligned)
-        throw std::runtime_error("DataArray cannot have data and unaligned "
-                                 "content at the same time.");
-      m_holder.setData(name, std::move(data));
-    } else {
-      if (!unaligned)
-        throw std::runtime_error(
-            "DataArray must have either data or unaligned content.");
-      if (dims.empty()) {
-        const auto &unalignedDims = unaligned->dims();
-        for (const auto &[dim, coord] : coords)
-          if (coord.dims().contains(dim))
-            dims.addInner(dim, unalignedDims.contains(dim)
-                                   ? unalignedDims[dim]
-                                   : coord.dims()[dim] - 1);
-      }
-      m_holder.setUnaligned(name, dims, std::move(*unaligned));
-    }
+            AttrMap attrs = {}, const std::string &name = "") {
+    if (!data)
+      throw std::runtime_error(
+          "DataArray cannot be created with invalid content.");
+    m_holder.setData(name, std::move(data));
+
+    for (auto &&[dim, c] : coords)
+      m_holder.setCoord(dim, std::move(c));
+
+    for (auto &&[mask_name, m] : masks)
+      m_holder.setMask(std::string(mask_name), std::move(m));
+
+    for (auto &&[attr_name, a] : attrs)
+      m_holder.setAttr(name, std::string(attr_name), std::move(a));
+  }
+
+  template <class CoordMap = std::map<Dim, Variable>,
+            class MasksMap = std::map<std::string, Variable>,
+            class AttrMap = std::map<std::string, Variable>>
+  DataArray(const Dimensions &dims, DataArray unaligned, CoordMap coords = {},
+            MasksMap masks = {}, AttrMap attrs = {},
+            const std::string &name = "") {
+    if (!unaligned)
+      throw std::runtime_error(
+          "DataArray cannot be created with invalid unaligned content.");
+    m_holder.setUnaligned(name, dims, std::move(unaligned));
 
     for (auto &&[dim, c] : coords)
       m_holder.setCoord(dim, std::move(c));

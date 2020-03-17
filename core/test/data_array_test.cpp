@@ -21,13 +21,10 @@ TEST(DataArrayTest, construct) {
 }
 
 TEST(DataArrayTest, construct_fail) {
-  // Neither data nor unaligned
+  // Invalid data
   EXPECT_THROW(DataArray(Variable{}), std::runtime_error);
-  const auto var = makeVariable<double>(Values{1.0});
-  DataArray unaligned(var);
-  EXPECT_NO_THROW(DataArray(Variable{}, {}, {}, {}, "", unaligned));
-  // Data as well as unaligned
-  EXPECT_THROW(DataArray(var, {}, {}, {}, "", unaligned), std::runtime_error);
+  // Invalid unaligned data
+  EXPECT_THROW(DataArray(Dimensions{}, DataArray{}), std::runtime_error);
 }
 
 TEST(DataArrayTest, sum_dataset_columns_via_DataArray) {

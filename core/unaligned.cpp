@@ -57,22 +57,27 @@ DataArray realign(DataArray unaligned,
 
   // TODO Some things here can be simplified and optimized by adding an
   // `extract` method to MutableView.
+  Dimensions alignedDims;
   std::vector<std::pair<Dim, Variable>> alignedCoords;
   const auto dims = unaligned.dims();
   for (const auto &dim : dims.labels()) {
     if (unalignedDims.count(dim)) {
+      for (const auto &[d, coord] : coords)
+        alignedDims.addInner(d, coord.dims()[d] - 1);
       alignedCoords.insert(alignedCoords.end(), coords.begin(), coords.end());
     } else {
+      alignedDims.addInner(dim, unaligned.dims()[dim]);
       alignedCoords.emplace_back(dim, Variable(unaligned.coords()[dim]));
       unaligned.coords().erase(dim);
     }
   }
+
   auto name = unaligned.name();
   auto alignedMasks = align<MasksView>(unaligned, unalignedDims);
   auto alignedAttrs = align<AttrsView>(unaligned, unalignedDims);
-  return DataArray(Variable{}, std::move(alignedCoords),
+  return DataArray(alignedDims, std::move(unaligned), std::move(alignedCoords),
                    std::move(alignedMasks), std::move(alignedAttrs),
-                   std::move(name), std::move(unaligned));
+                   std::move(name));
 }
 
 } // namespace scipp::core::unaligned

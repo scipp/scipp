@@ -66,23 +66,27 @@ filter_recurse(const DataArrayConstView &unaligned,
   return filter_recurse(filtered, bounds.subspan(1), attrPolicy);
 }
 
-std::optional<DataArray> optional_unaligned(const DataArrayConstView &view,
-                                            const AttrPolicy attrPolicy) {
-  if (view.hasData())
-    return std::nullopt;
-  else
-    return filter_recurse(view.unaligned(), view.slice_bounds(), attrPolicy);
+template <class... DataArgs>
+auto makeDataArray(const DataArrayConstView &view, const AttrPolicy attrPolicy,
+                   DataArgs &&... dataArgs) {
+  return DataArray(std::forward<DataArgs>(dataArgs)..., copy_map(view.coords()),
+                   copy_map(view.masks()),
+                   attrPolicy == AttrPolicy::Keep
+                       ? copy_map(view.attrs())
+                       : std::map<std::string, Variable>{},
+                   view.name());
 }
+
 } // namespace
 
 DataArray::DataArray(const DataArrayConstView &view,
                      const AttrPolicy attrPolicy)
-    : DataArray(
-          view.hasData() ? Variable(view.data()) : Variable{},
-          copy_map(view.coords()), copy_map(view.masks()),
-          attrPolicy == AttrPolicy::Keep ? copy_map(view.attrs())
-                                         : std::map<std::string, Variable>{},
-          view.name(), optional_unaligned(view, attrPolicy), view.dims()) {}
+    : DataArray(view.hasData()
+                    ? makeDataArray(view, attrPolicy, Variable(view.data()))
+                    : makeDataArray(view, attrPolicy, view.dims(),
+                                    filter_recurse(view.unaligned(),
+                                                   view.slice_bounds(),
+                                                   attrPolicy))) {}
 
 DataArray::operator DataArrayConstView() const { return get(); }
 DataArray::operator DataArrayView() { return get(); }
