@@ -628,7 +628,8 @@ void init_dataset(py::module &m) {
         :rtype: DataArray)");
 
   m.def("realign",
-        [](const DataArrayConstView &a, std::map<Dim, Variable> coords) {
+        [](const DataArrayConstView &a,
+           std::vector<std::pair<Dim, Variable>> coords) {
           return unaligned::realign(copy(a), std::move(coords));
         },
         py::arg("data"), py::arg("coords"),

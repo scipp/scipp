@@ -2,8 +2,7 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#ifndef SCIPP_CORE_UNALIGNED_H
-#define SCIPP_CORE_UNALIGNED_H
+#pragma once
 
 #include "scipp/core/dataset.h"
 
@@ -15,5 +14,3 @@ DataArray realign(DataArray unaligned,
                   std::vector<std::pair<Dim, Variable>> coords);
 
 } // namespace scipp::core::unaligned
-
-#endif // SCIPP_CORE_EVENT_H
