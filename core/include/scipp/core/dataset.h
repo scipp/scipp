@@ -678,12 +678,22 @@ private:
   Dataset *m_mutableDataset;
 };
 
-[[nodiscard]] SCIPP_CORE_EXPORT DataArray copy(const DataArrayConstView &array);
-[[nodiscard]] SCIPP_CORE_EXPORT Dataset copy(const DatasetConstView &dataset);
-SCIPP_CORE_EXPORT DataArrayView copy(const DataArrayConstView &array,
-                                     const DataArrayView &out);
-SCIPP_CORE_EXPORT DatasetView copy(const DatasetConstView &dataset,
-                                   const DatasetView &out);
+/// Policies for attribute propagation in operations with data arrays or
+/// dataset.
+enum class AttrPolicy { Keep, Drop };
+
+[[nodiscard]] SCIPP_CORE_EXPORT DataArray
+copy(const DataArrayConstView &array,
+     const AttrPolicy attrPolicy = AttrPolicy::Keep);
+[[nodiscard]] SCIPP_CORE_EXPORT Dataset
+copy(const DatasetConstView &dataset,
+     const AttrPolicy attrPolicy = AttrPolicy::Keep);
+SCIPP_CORE_EXPORT DataArrayView
+copy(const DataArrayConstView &array, const DataArrayView &out,
+     const AttrPolicy attrPolicy = AttrPolicy::Keep);
+SCIPP_CORE_EXPORT DatasetView
+copy(const DatasetConstView &dataset, const DatasetView &out,
+     const AttrPolicy attrPolicy = AttrPolicy::Keep);
 
 /// Data array, a variable with coordinates, masks, and attributes.
 class SCIPP_CORE_EXPORT DataArray {

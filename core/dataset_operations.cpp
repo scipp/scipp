@@ -166,10 +166,17 @@ Dataset resize(const DatasetConstView &d, const Dim dim,
 }
 
 /// Return a deep copy of a DataArray or of a DataArrayView.
-DataArray copy(const DataArrayConstView &array) { return DataArray(array); }
+DataArray copy(const DataArrayConstView &array, const AttrPolicy attrPolicy) {
+  return DataArray(array, attrPolicy);
+}
 
 /// Return a deep copy of a Dataset or of a DatasetView.
-Dataset copy(const DatasetConstView &dataset) { return Dataset(dataset); }
+Dataset copy(const DatasetConstView &dataset, const AttrPolicy attrPolicy) {
+  if (attrPolicy != AttrPolicy::Keep)
+    throw std::runtime_error(
+        "Dropping attributes when copying dataset not implemented yet.");
+  return Dataset(dataset);
+}
 
 namespace {
 void copy_item(const DataArrayConstView &from, const DataArrayView &to) {
@@ -181,19 +188,22 @@ void copy_item(const DataArrayConstView &from, const DataArrayView &to) {
 }
 
 template <class ConstView, class View>
-View copy_impl(const ConstView &in, const View &out) {
+View copy_impl(const ConstView &in, const View &out,
+               const AttrPolicy attrPolicy) {
   for (const auto &[dim, coord] : in.coords())
     out.coords()[dim].assign(coord);
   for (const auto &[name, mask] : in.masks())
     out.masks()[name].assign(mask);
-  for (const auto &[name, attr] : in.attrs())
-    out.attrs()[name].assign(attr);
+  if (attrPolicy == AttrPolicy::Keep)
+    for (const auto &[name, attr] : in.attrs())
+      out.attrs()[name].assign(attr);
 
   if constexpr (std::is_same_v<View, DatasetView>) {
     for (const auto &array : in) {
       copy_item(array, out[array.name()]);
-      for (const auto &[name, attr] : array.attrs())
-        out[array.name()].attrs()[name].assign(attr);
+      if (attrPolicy == AttrPolicy::Keep)
+        for (const auto &[name, attr] : array.attrs())
+          out[array.name()].attrs()[name].assign(attr);
     }
   } else {
     copy_item(in, out);
@@ -204,13 +214,15 @@ View copy_impl(const ConstView &in, const View &out) {
 } // namespace
 
 /// Copy data array to output data array
-DataArrayView copy(const DataArrayConstView &array, const DataArrayView &out) {
-  return copy_impl(array, out);
+DataArrayView copy(const DataArrayConstView &array, const DataArrayView &out,
+                   const AttrPolicy attrPolicy) {
+  return copy_impl(array, out, attrPolicy);
 }
 
 /// Copy dataset to output dataset
-DatasetView copy(const DatasetConstView &dataset, const DatasetView &out) {
-  return copy_impl(dataset, out);
+DatasetView copy(const DatasetConstView &dataset, const DatasetView &out,
+                 const AttrPolicy attrPolicy) {
+  return copy_impl(dataset, out, attrPolicy);
 }
 
 } // namespace scipp::core

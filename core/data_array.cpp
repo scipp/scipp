@@ -22,12 +22,13 @@ template <class T> auto copy_map(const T &map) {
 
 DataArray
 filter_recurse(const DataArrayConstView &unaligned,
-               const scipp::span<const std::pair<Dim, Variable>> bounds) {
+               const scipp::span<const std::pair<Dim, Variable>> bounds,
+               const AttrPolicy attrPolicy) {
   const auto &[dim, interval] = bounds[0];
-  const auto filtered = groupby(unaligned, dim, interval)[0];
+  const auto filtered = groupby(unaligned, dim, interval).copy(0, attrPolicy);
   if (bounds.size() == 1)
     return filtered;
-  return filter_recurse(filtered, bounds.subspan(1));
+  return filter_recurse(filtered, bounds.subspan(1), attrPolicy);
 }
 } // namespace
 
@@ -50,25 +51,27 @@ std::vector<std::pair<Dim, Variable>> DataArrayConstView::bounds() const {
 }
 
 namespace {
-std::optional<DataArray> optional_unaligned(const DataArrayConstView &view) {
+std::optional<DataArray> optional_unaligned(const DataArrayConstView &view,
+                                            const AttrPolicy attrPolicy) {
   if (view.hasData()) {
     return std::nullopt;
   } else {
     const auto bounds = view.bounds();
-    return bounds.empty() ? copy(view.unaligned())
-                          : filter_recurse(view.unaligned(), bounds);
+    return bounds.empty()
+               ? copy(view.unaligned(), attrPolicy)
+               : filter_recurse(view.unaligned(), bounds, attrPolicy);
   }
 }
 } // namespace
 
 DataArray::DataArray(const DataArrayConstView &view,
                      const AttrPolicy attrPolicy)
-    : DataArray(view.hasData() ? Variable(view.data()) : Variable{},
-                copy_map(view.coords()), copy_map(view.masks()),
-                attrPolicy == AttrPolicy::Keep
-                    ? copy_map(view.attrs())
-                    : std::map<std::string, Variable>{},
-                view.name(), optional_unaligned(view), view.dims()) {}
+    : DataArray(
+          view.hasData() ? Variable(view.data()) : Variable{},
+          copy_map(view.coords()), copy_map(view.masks()),
+          attrPolicy == AttrPolicy::Keep ? copy_map(view.attrs())
+                                         : std::map<std::string, Variable>{},
+          view.name(), optional_unaligned(view, attrPolicy), view.dims()) {}
 
 DataArray::operator DataArrayConstView() const { return get(); }
 DataArray::operator DataArrayView() { return get(); }

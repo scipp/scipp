@@ -163,7 +163,7 @@ void histogram_md_recurse(const VariableView &data,
     return;
   }
   for (scipp::index i = 0; i < size; ++i) {
-    auto slice = groups[i];
+    auto slice = groups.copy(i, AttrPolicy::Drop);
     slice.coords().erase(dim); // avoid carry of unnecessary coords in recursion
     histogram_md_recurse(data.slice({dim, i}), slice, realigned, dim_index + 1);
   }
@@ -184,12 +184,7 @@ DataArray histogram(const DataArrayConstView &realigned) {
       filtered ? filtered->unaligned() : realigned.unaligned();
 
   Variable data(unaligned.data(), realigned.dims());
-  // TODO This copy is a hack to avoid expensive carry of attributes deep into
-  // the recursion. Can we somehow hide them in the view instead? Or change
-  // groupby::operator[] to (optionally) drop attributes?
-  DataArray no_attrs(Variable(unaligned.data()), unaligned.coords(),
-                     unaligned.masks());
-  histogram_md_recurse(data, no_attrs, realigned);
+  histogram_md_recurse(data, unaligned, realigned);
   return DataArray{std::move(data), realigned.coords(), realigned.masks(),
                    realigned.attrs()};
 }
