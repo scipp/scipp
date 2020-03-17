@@ -296,42 +296,214 @@ class InstrumentView:
             self.camera_pos = max(self.camera_pos,
                                   np.amax(np.abs(self.minmax[x])))
 
-        # Create texture for scatter points to represent detector shapes
-        nx = 32
-        det_aspect_ratio = int(round(nx * min(self.size) / max(self.size)))
-        if det_aspect_ratio % 2 == 0:
-            half_width = det_aspect_ratio // 2
-            istart = nx // 2 - half_width
-            iend = nx // 2 + half_width
-        else:
-            half_width = (det_aspect_ratio - 1) // 2
-            istart = nx // 2 - 1 - half_width
-            iend = nx // 2 + half_width
-            nx -= 1
-        texture_array = np.zeros([nx, nx, 4], dtype=np.float32)
-        if np.argmin(self.size) == 0:
-            texture_array[:, istart:iend, :] = 1.0
-        else:
-            texture_array[istart:iend, :, :] = 1.0
-        texture = self.p3.DataTexture(data=texture_array,
-                                      format="RGBAFormat",
-                                      type="FloatType")
+        # # Create texture for scatter points to represent detector shapes
+        # nx = 32
+        # det_aspect_ratio = int(round(nx * min(self.size) / max(self.size)))
+        # if det_aspect_ratio % 2 == 0:
+        #     half_width = det_aspect_ratio // 2
+        #     istart = nx // 2 - half_width
+        #     iend = nx // 2 + half_width
+        # else:
+        #     half_width = (det_aspect_ratio - 1) // 2
+        #     istart = nx // 2 - 1 - half_width
+        #     iend = nx // 2 + half_width
+        #     nx -= 1
+        # texture_array = np.zeros([nx, nx, 4], dtype=np.float32)
+        # if np.argmin(self.size) == 0:
+        #     texture_array[:, istart:iend, :] = 1.0
+        # else:
+        #     texture_array[istart:iend, :, :] = 1.0
+        # texture = self.p3.DataTexture(data=texture_array,
+        #                               format="RGBAFormat",
+        #                               type="FloatType")
 
-        # The point cloud and its properties
-        self.pts = self.p3.BufferAttribute(array=self.det_pos)
-        self.colors = self.p3.BufferAttribute(
-            array=np.zeros([np.shape(self.det_pos)[0], 4], dtype=np.float32))
-        self.geometry = self.p3.BufferGeometry(attributes={
-            'position': self.pts,
-            'color': self.colors
-        })
-        self.material = self.p3.PointsMaterial(vertexColors='VertexColors',
-                                               size=max(self.size),
-                                               map=texture,
-                                               depthTest=False,
-                                               transparent=True)
-        self.pcl = self.p3.Points(geometry=self.geometry,
-                                  material=self.material)
+
+        size_x = 0.007
+        size_y = 0.10
+        size_z = 0.007
+        # # size_x = 1.0
+        # # size_y = 1.0
+        # # size_z = 1.0
+        # detector_shape = np.array([[ 0.5*size_x,  0.5*size_y,  0.5*size_z],
+        #                            [ 0.5*size_x, -0.5*size_y,  0.5*size_z],
+        #                            [ 0.5*size_x,  0.5*size_y, -0.5*size_z],
+        #                            [ 0.5*size_x, -0.5*size_y,  0.5*size_z],
+        #                            [ 0.5*size_x, -0.5*size_y, -0.5*size_z],
+        #                            [ 0.5*size_x,  0.5*size_y, -0.5*size_z],
+        #                            [-0.5*size_x,  0.5*size_y, -0.5*size_z],
+        #                            [-0.5*size_x, -0.5*size_y, -0.5*size_z],
+        #                            [-0.5*size_x,  0.5*size_y,  0.5*size_z],
+        #                            [-0.5*size_x, -0.5*size_y, -0.5*size_z],
+        #                            [-0.5*size_x, -0.5*size_y,  0.5*size_z],
+        #                            [-0.5*size_x,  0.5*size_y,  0.5*size_z],
+        #                            [-0.5*size_x,  0.5*size_y, -0.5*size_z],
+        #                            [-0.5*size_x,  0.5*size_y,  0.5*size_z],
+        #                            [ 0.5*size_x,  0.5*size_y, -0.5*size_z],
+        #                            [-0.5*size_x,  0.5*size_y,  0.5*size_z],
+        #                            [ 0.5*size_x,  0.5*size_y,  0.5*size_z],
+        #                            [ 0.5*size_x,  0.5*size_y, -0.5*size_z],
+        #                            [-0.5*size_x, -0.5*size_y,  0.5*size_z],
+        #                            [-0.5*size_x, -0.5*size_y, -0.5*size_z],
+        #                            [ 0.5*size_x, -0.5*size_y,  0.5*size_z],
+        #                            [-0.5*size_x, -0.5*size_y, -0.5*size_z],
+        #                            [ 0.5*size_x, -0.5*size_y, -0.5*size_z],
+        #                            [ 0.5*size_x, -0.5*size_y,  0.5*size_z],
+        #                            [-0.5*size_x,  0.5*size_y,  0.5*size_z],
+        #                            [-0.5*size_x, -0.5*size_y,  0.5*size_z],
+        #                            [ 0.5*size_x,  0.5*size_y,  0.5*size_z],
+        #                            [-0.5*size_x, -0.5*size_y,  0.5*size_z],
+        #                            [ 0.5*size_x, -0.5*size_y,  0.5*size_z],
+        #                            [ 0.5*size_x,  0.5*size_y,  0.5*size_z],
+        #                            [ 0.5*size_x,  0.5*size_y, -0.5*size_z],
+        #                            [ 0.5*size_x, -0.5*size_y, -0.5*size_z],
+        #                            [-0.5*size_x,  0.5*size_y, -0.5*size_z],
+        #                            [ 0.5*size_x, -0.5*size_y, -0.5*size_z],
+        #                            [-0.5*size_x, -0.5*size_y, -0.5*size_z],
+        #                            [-0.5*size_x,  0.5*size_y, -0.5*size_z]], dtype=np.float32)
+
+
+        detector_shape = np.array([[-0.5*size_x, -0.5*size_y, -0.5*size_z],
+                                   [ 0.5*size_x, -0.5*size_y, -0.5*size_z],
+                                   [ 0.5*size_x,  0.5*size_y, -0.5*size_z],
+                                   [-0.5*size_x,  0.5*size_y, -0.5*size_z],
+                                   [-0.5*size_x, -0.5*size_y,  0.5*size_z],
+                                   [ 0.5*size_x, -0.5*size_y,  0.5*size_z],
+                                   [ 0.5*size_x,  0.5*size_y,  0.5*size_z],
+                                   [-0.5*size_x,  0.5*size_y,  0.5*size_z]], dtype=np.float32)
+
+        detector_faces = np.array([[0,4,3],
+                                   [3,4,7],
+                                   [1,2,6],
+                                   [1,6,5],
+                                   [0,1,5],
+                                   [0,5,4],
+                                   [2,3,7],
+                                   [2,7,6],
+                                   [0,2,1],
+                                   [0,3,2],
+                                   [4,5,7],
+                                   [5,6,7]], dtype=np.uint32)
+
+
+
+
+
+        # N = 100000
+        # M = len(detector_shape)
+        # L = len(detector_faces)
+
+        # offsets = (np.random.random([N, 3]).astype(np.float32) - 0.5) * 100.0
+
+        # # vertices = np.tile(morph.attributes["position"].array, [N, 1]) + np.repeat(offsets, M, axis=0)
+        # vertices = np.tile(detector_shape, [N, 1]) + np.repeat(offsets, M, axis=0)
+
+        # # faces = np.arange(M * N, dtype=np.uint32)
+
+        # # faces = np.tile(detector_faces, [N, 1]) + np.repeat(np.arange(N, dtype=np.uint32), L, axis=0)
+        # faces = np.tile(detector_faces, [N, 1]) + np.repeat(
+        #     np.arange(0, N*M, M, dtype=np.uint32), L*3, axis=0).reshape(L*N, 3)
+
+
+        # vertexcolors = np.repeat(np.random.random([N, 3]), M, axis=0).astype(np.float32)
+
+
+
+
+
+
+
+
+
+
+
+        self.nverts = len(detector_shape)
+        self.nfaces = len(detector_faces)
+        self.ndets = len(self.det_pos)
+
+        print(self.nverts, self.ndets, self.nfaces)
+
+        # offsets = (np.random.random([N, 3]).astype(np.float32) - 0.5) * 50.0
+
+        # print(np.repeat(self.det_pos, self.nverts, axis=0)[:100])
+
+        vertices = np.tile(detector_shape, [self.ndets, 1]) + np.repeat(self.det_pos, self.nverts, axis=0)
+
+        # faces = np.arange(self.nverts * self.ndets, dtype=np.uint)
+        faces = np.tile(detector_faces, [self.ndets, 1]) + np.repeat(
+            np.arange(0, self.ndets*self.nverts, self.nverts, dtype=np.uint32), self.nfaces*3, axis=0).reshape(self.nfaces*self.ndets, 3)
+
+        # vertexcolors = np.repeat(np.random.random([self.ndets, 3]), self.nverts, axis=0).astype(np.float32)
+        vertexcolors = np.zeros([self.ndets*self.nverts, 3], dtype=np.float32)
+
+        print(vertices.shape)
+        print(faces.shape)
+        print(vertexcolors.shape)
+
+
+        self.geometry = self.p3.BufferGeometry(attributes=dict(
+            position=self.p3.BufferAttribute(vertices, normalized=False),
+            index=self.p3.BufferAttribute(faces.ravel(), normalized=False),
+            color=self.p3.BufferAttribute(vertexcolors),
+        ))
+
+        self.mesh = self.p3.Mesh(
+            geometry=self.geometry,
+            material=self.p3.MeshBasicMaterial(vertexColors='VertexColors'),
+            # position=[-0.5, -0.5, -0.5]   # Center the cube
+        )
+
+
+
+        # self.nverts = 1000
+        # self.ndets = 36
+
+        # offsets = (np.random.random([self.nverts, 3]).astype(np.float32) - 0.5) * 50.0
+
+        # # vertices = np.tile(morph.attributes["position"].array, [N, 1]) + np.repeat(offsets, M, axis=0)
+        # vertices = np.tile(detector_shape, [self.nverts, 1]) + np.repeat(offsets, self.ndets, axis=0)
+
+        # faces = np.arange(self.ndets * self.nverts, dtype=np.uint)
+
+        # vertexcolors = np.repeat(np.random.random([self.nverts, 3]), self.ndets, axis=0).astype(np.float32)
+
+        # print(vertices.shape)
+        # print(faces.shape)
+        # print(vertexcolors.shape)
+
+        # self.geometry = self.p3.BufferGeometry(attributes=dict(
+        #     position=self.p3.BufferAttribute(vertices, normalized=False),
+        #     index=self.p3.BufferAttribute(faces, normalized=False),
+        #     color=self.p3.BufferAttribute(vertexcolors),
+        # ))
+
+        # self.mesh = self.p3.Mesh(
+        #     geometry=self.geometry,
+        #     material=self.p3.MeshBasicMaterial(vertexColors='VertexColors'),
+        # #     position=[-0.5, -0.5, -0.5]   # Center the cube
+        # )
+
+
+
+
+
+
+
+
+        # # The point cloud and its properties
+        # self.pts = self.p3.BufferAttribute(array=self.det_pos)
+        # self.colors = self.p3.BufferAttribute(
+        #     array=np.zeros([np.shape(self.det_pos)[0], 4], dtype=np.float32))
+        # self.geometry = self.p3.BufferGeometry(attributes={
+        #     'position': self.pts,
+        #     'color': self.colors
+        # })
+        # self.material = self.p3.PointsMaterial(vertexColors='VertexColors',
+        #                                        size=max(self.size),
+        #                                        map=texture,
+        #                                        depthTest=False,
+        #                                        transparent=True)
+        # self.pcl = self.p3.Points(geometry=self.geometry,
+        #                           material=self.material)
         # Add the red green blue axes helper
         self.axes_helper = self.p3.AxesHelper(100)
 
@@ -339,12 +511,13 @@ class InstrumentView:
         self.camera = self.p3.PerspectiveCamera(position=[self.camera_pos] * 3,
                                                 aspect=config.plot.width /
                                                 config.plot.height)
-        self.key_light = self.p3.DirectionalLight(position=[0, 10, 10])
-        self.ambient_light = self.p3.AmbientLight()
+        # self.key_light = self.p3.DirectionalLight(position=[0, 10, 10])
+        # self.ambient_light = self.p3.AmbientLight()
+
         self.scene = self.p3.Scene(children=[
-            self.pcl, self.camera, self.key_light, self.ambient_light,
+            self.mesh, self.camera, #self.key_light, self.ambient_light,
             self.axes_helper
-        ])
+        ], background="#DDDDDD")
         self.controller = self.p3.OrbitControls(controlling=self.camera)
 
         # Render the scene into a widget
@@ -359,7 +532,7 @@ class InstrumentView:
 
         # Update the plot elements
         self.update_colorbar()
-        self.change_projection(self.buttons[projection])
+        # self.change_projection(self.buttons[projection])
 
         # Create members object
         self.members = {
@@ -372,7 +545,7 @@ class InstrumentView:
                 },
                 "dropdown": self.dropdown
             },
-            "points": self.pcl,
+            "points": self.mesh,
             "camera": self.camera,
             "scene": self.scene,
             "renderer": self.renderer
@@ -457,7 +630,10 @@ class InstrumentView:
             image.reshape(shp))._repr_png_()
 
     def update_colors(self, change):
-        arr = self.hist_data_array[self.key][self.dim, change["new"]].values
+        # return
+        # arr = self.hist_data_array[self.key][self.dim, change["new"]].values
+        arr = np.repeat(self.hist_data_array[self.key][self.dim, change["new"]].values,
+                        self.nverts, axis=0)#.astype(np.float32)
         colors = self.scalar_map[self.key].to_rgba(arr).astype(np.float32)
         if self.key in self.masks_variables and self.masks_params[
                 self.key]["show"]:
@@ -466,7 +642,7 @@ class InstrumentView:
             masks_inds = np.where(self.masks_variables[self.key].values)
             colors[masks_inds] = masks_colors[masks_inds]
 
-        self.geometry.attributes["color"].array = colors
+        self.geometry.attributes["color"].array = colors[:, :3]
 
         self.label.value = name_with_unit(
             var=self.hist_data_array[self.key].coords[self.dim],
