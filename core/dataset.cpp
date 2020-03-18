@@ -253,11 +253,26 @@ void Dataset::setMask(const std::string &masksName, Variable mask) {
 ///
 /// Throws if the provided values bring the dataset into an inconsistent state
 /// (mismatching dtype, unit, or dimensions).
-void Dataset::setData(const std::string &name, Variable data) {
+void Dataset::setData(const std::string &name, Variable data,
+                      const AttrPolicy attrPolicy) {
   setDims(data.dims());
-  const auto rebuild_dims = contains(name);
-  m_data[name].data = std::move(data);
-  if (rebuild_dims)
+  const auto replace = contains(name);
+  if (replace && attrPolicy == AttrPolicy::Keep)
+    m_data[name] =
+        detail::DatasetData{std::move(data), {}, std::move(m_data[name].attrs)};
+  else
+    m_data[name] = detail::DatasetData{std::move(data), {}, {}};
+  if (replace)
+    rebuildDims();
+}
+
+/// Private helper for constructor of DataArray and setData
+void Dataset::setData(const std::string &name, UnalignedData &&data) {
+  setDims(data.dims);
+  const auto replace = contains(name);
+  m_data[name] = detail::DatasetData{
+      Variable{}, std::make_unique<UnalignedData>(std::move(data)), {}};
+  if (replace)
     rebuildDims();
 }
 
@@ -268,9 +283,6 @@ void Dataset::setData(const std::string &name, DataArray data) {
   auto dataset = DataArray::to_dataset(std::move(data));
   // There can be only one DatasetData item, so get the first one with begin()
   auto item = dataset.m_data.begin();
-  if (item->second.unaligned)
-    throw except::DatasetError(
-        "Setting entry with unaligned content not implemented yet.");
 
   for (auto &&[dim, coord] : dataset.m_coords) {
     if (const auto it = m_coords.find(dim); it != m_coords.end())
@@ -291,7 +303,7 @@ void Dataset::setData(const std::string &name, DataArray data) {
   if (item->second.data)
     setData(name, std::move(item->second.data));
   else
-    m_data[name].unaligned = std::move(item->second.unaligned);
+    setData(name, std::move(*item->second.unaligned));
   for (auto &&[nm, attr] : item->second.attrs)
     setAttr(name, std::string(nm), std::move(attr));
 }
@@ -307,14 +319,6 @@ void Dataset::setData(const std::string &name, const DataArrayConstView &data) {
       data.slices().empty())
     return; // Self-assignment, return early.
   setData(name, DataArray(data));
-}
-
-/// Private helper for constructor of DataArray
-void Dataset::setData(const std::string &name, UnalignedData &&data) {
-  if (!empty())
-    throw except::UnalignedError("setData with UnalignedData may only be used "
-                                 "in constructor of DataArray.");
-  m_data[name].unaligned = std::make_unique<UnalignedData>(std::move(data));
 }
 
 /// Removes the coordinate for the given dimension.

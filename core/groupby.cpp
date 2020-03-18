@@ -206,7 +206,7 @@ template <class T> T GroupBy<T>::mean(const Dim reductionDim) const {
   if constexpr (std::is_same_v<T, Dataset>) {
     for (const auto &item : out) {
       if (isInt(item.data().dtype()))
-        out.setData(item.name(), item.data() * scale);
+        out.setData(item.name(), item.data() * scale, AttrPolicy::Keep);
       else
         item *= scale;
     }

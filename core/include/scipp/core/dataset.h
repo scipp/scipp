@@ -44,6 +44,10 @@ struct DatasetData {
 using dataset_item_map = std::unordered_map<std::string, DatasetData>;
 } // namespace detail
 
+/// Policies for attribute propagation in operations with data arrays or
+/// dataset.
+enum class AttrPolicy { Keep, Drop };
+
 /// Const view for a data item and related coordinates of Dataset.
 class SCIPP_CORE_EXPORT DataArrayConstView {
 public:
@@ -365,7 +369,8 @@ public:
   void setAttr(const std::string &attrName, Variable attr);
   void setAttr(const std::string &name, const std::string &attrName,
                Variable attr);
-  void setData(const std::string &name, Variable data);
+  void setData(const std::string &name, Variable data,
+               const AttrPolicy attrPolicy = AttrPolicy::Drop);
   void setData(const std::string &name, const DataArrayConstView &data);
   void setData(const std::string &name, DataArray data);
 
@@ -382,8 +387,9 @@ public:
                const VariableConstView &attr) {
     setAttr(name, attrName, Variable(attr));
   }
-  void setData(const std::string &name, const VariableConstView &data) {
-    setData(name, Variable(data));
+  void setData(const std::string &name, const VariableConstView &data,
+               const AttrPolicy attrPolicy = AttrPolicy::Drop) {
+    setData(name, Variable(data), attrPolicy);
   }
 
   void eraseCoord(const Dim dim);
@@ -680,10 +686,6 @@ private:
   Dataset *m_mutableDataset;
 };
 
-/// Policies for attribute propagation in operations with data arrays or
-/// dataset.
-enum class AttrPolicy { Keep, Drop };
-
 [[nodiscard]] SCIPP_CORE_EXPORT DataArray
 copy(const DataArrayConstView &array,
      const AttrPolicy attrPolicy = AttrPolicy::Keep);
@@ -804,7 +806,9 @@ public:
     return *this /= makeVariable<T>(Values{value});
   }
 
-  void setData(Variable data) { m_holder.setData(name(), std::move(data)); }
+  void setData(Variable data) {
+    m_holder.setData(name(), std::move(data), AttrPolicy::Keep);
+  }
 
   // TODO need to define some details regarding handling of dense coords in case
   // the array is sparse, not exposing this to Python for now.
