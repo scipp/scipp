@@ -27,5 +27,4 @@ TEST(ElementPositionTest, unit_out) {
 
 TEST(ElementPositionTest, zip_position_values) {
   EXPECT_EQ((Eigen::Vector3d(1, 2, 3)), element::position(1.0, 2.0, 3.0));
-  EXPECT_EQ((Eigen::Vector3d(1, 2, 3)), element::position(1.0f, 2.0f, 3.0f));
 }

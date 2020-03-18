@@ -301,7 +301,7 @@ Variable neg_inf_to_num(const VariableConstView &var,
 
 Variable position(const VariableConstView &x, const VariableConstView &y,
                   const VariableConstView &z) {
-  return transform<std::tuple<double, float>>(x, y, z, element::position);
+  return transform<std::tuple<double>>(x, y, z, element::position);
 }
 
 } // namespace scipp::core
