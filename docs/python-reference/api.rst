@@ -46,6 +46,10 @@ General
    sort
    sqrt
    sum
+   position
+   x
+   y
+   z
 
 Group-by (split-apply-combine)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
