@@ -16,6 +16,8 @@ namespace scipp::core {
 
 namespace element {
 
+namespace geometry {
+
 constexpr auto position = overloaded{
     arg_list<double>,
     transform_flags::expect_no_variance_arg<0>,
@@ -31,6 +33,27 @@ constexpr auto position = overloaded{
       expect::equals(x, units::m);
       return x;
     }};
+
+namespace detail {
+auto x_value = [](const auto &pos) { return pos[0]; };
+auto y_value = [](const auto &pos) { return pos[1]; };
+auto z_value = [](const auto &pos) { return pos[2]; };
+auto unit_validate = [](const units::Unit &u) {
+  expect::equals(u, units::m);
+  return u;
+};
+} // namespace detail
+constexpr auto x = overloaded{arg_list<Eigen::Vector3d>,
+                              transform_flags::expect_no_variance_arg<0>,
+                              detail::x_value, detail::unit_validate};
+constexpr auto y = overloaded{arg_list<Eigen::Vector3d>,
+                              transform_flags::expect_no_variance_arg<0>,
+                              detail::y_value, detail::unit_validate};
+constexpr auto z = overloaded{arg_list<Eigen::Vector3d>,
+                              transform_flags::expect_no_variance_arg<0>,
+                              detail::z_value, detail::unit_validate};
+
+} // namespace geometry
 
 } // namespace element
 

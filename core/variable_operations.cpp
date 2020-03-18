@@ -301,7 +301,16 @@ Variable neg_inf_to_num(const VariableConstView &var,
 
 Variable position(const VariableConstView &x, const VariableConstView &y,
                   const VariableConstView &z) {
-  return transform<std::tuple<double>>(x, y, z, element::position);
+  return transform<std::tuple<double>>(x, y, z, element::geometry::position);
+}
+Variable x(const VariableConstView &pos) {
+  return transform<std::tuple<Eigen::Vector3d>>(pos, element::geometry::x);
+}
+Variable y(const VariableConstView &pos) {
+  return transform<std::tuple<Eigen::Vector3d>>(pos, element::geometry::y);
+}
+Variable z(const VariableConstView &pos) {
+  return transform<std::tuple<Eigen::Vector3d>>(pos, element::geometry::z);
 }
 
 } // namespace scipp::core
