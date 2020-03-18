@@ -23,17 +23,15 @@ RUN wget -O /home/$NB_USER/data/PG3_4844_event.nxs http://198.74.56.37/ftp/exter
 RUN conda install --yes \
       -c conda-forge \
       -c scipp/label/dev \
-      -c mantid/label/nightly \
-      -c mantid \
-      ipython \
-      matplotlib \
-      scipp \
-      ipywidgets \
-      ipyvolume \
+      -c dannixon \
       ipyevents \
-      mantid-framework=4 \
-      python=3.6 \
-      numpy=1.15 && \
+      ipython \
+      ipyvolume \
+      ipywidgets \
+      mantid-framework \
+      matplotlib \
+      python=3.7 \
+      scipp && \
     conda clean -afy
 
 # Avoid weird tornado AttributeError
