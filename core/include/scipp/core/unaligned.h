@@ -8,9 +8,7 @@
 
 namespace scipp::core::unaligned {
 
-Dim unaligned_dim(const VariableConstView &unaligned);
-
-DataArray realign(DataArray unaligned,
-                  std::vector<std::pair<Dim, Variable>> coords);
+SCIPP_CORE_EXPORT DataArray
+realign(DataArray unaligned, std::vector<std::pair<Dim, Variable>> coords);
 
 } // namespace scipp::core::unaligned

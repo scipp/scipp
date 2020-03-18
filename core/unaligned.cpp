@@ -29,7 +29,6 @@ auto align(DataArray &view, const Dims &unalignedDims) {
   }
   return aligned;
 }
-} // namespace
 
 Dim unaligned_dim(const VariableConstView &unaligned) {
   if (is_events(unaligned))
@@ -38,6 +37,7 @@ Dim unaligned_dim(const VariableConstView &unaligned) {
     throw except::UnalignedError("Coordinate used for alignment must be 1-D.");
   return unaligned.dims().inner();
 }
+} // namespace
 
 DataArray realign(DataArray unaligned,
                   std::vector<std::pair<Dim, Variable>> coords) {
