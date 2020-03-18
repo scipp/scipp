@@ -18,11 +18,12 @@ auto align(DataArray &view, const Dims &unalignedDims) {
     else
       return v.attrs();
   };
-  for (const auto &[name, item] : map(view))
-    if (std::none_of(
-            unalignedDims.begin(), unalignedDims.end(),
-            [&item](const Dim dim) { return item.dims().contains(dim); }))
+  for (const auto &[name, item] : map(view)) {
+    const auto &dims = item.dims();
+    if (std::none_of(unalignedDims.begin(), unalignedDims.end(),
+                     [&dims](const Dim dim) { return dims.contains(dim); }))
       to_align.insert(name);
+  }
   for (const auto &name : to_align) {
     aligned.emplace_back(name, Variable(map(view)[name]));
     map(view).erase(name);
