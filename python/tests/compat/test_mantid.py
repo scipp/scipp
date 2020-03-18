@@ -64,6 +64,8 @@ class TestMantidConversion(unittest.TestCase):
         tiny_event_ws = mantid.CreateSampleWorkspace(WorkspaceType='Event',
                                                      NumBanks=1,
                                                      NumEvents=1)
+        d = mantidcompat.convert_EventWorkspace_to_data_array(
+            tiny_event_ws, False)
         self.assertEqual(d.data.unit, sc.units.counts)
         tiny_event_ws.setYUnit('')
         d = mantidcompat.convert_EventWorkspace_to_data_array(
