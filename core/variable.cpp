@@ -112,7 +112,7 @@ template <class T> VariableView VariableView::assign(const T &other) const {
   if (data().isSame(other.data()))
     return *this; // Self-assignment, return early.
   setUnit(other.unit());
-  expect::contains(dims(), other.dims());
+  expect::equals(dims(), other.dims());
   data().copy(other.data(), Dim::Invalid, 0, 0, 1);
   return *this;
 }
