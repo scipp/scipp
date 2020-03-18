@@ -17,6 +17,7 @@ namespace scipp::core {
 namespace element {
 
 constexpr auto zip_position = overloaded{
+    arg_list<float, double>,
     transform_flags::expect_no_variance_arg<0>,
     transform_flags::expect_no_variance_arg<1>,
     transform_flags::expect_no_variance_arg<2>,

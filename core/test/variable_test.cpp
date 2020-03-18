@@ -1110,7 +1110,7 @@ TEST(VariableTest, construct_mult_dev_unit) {
   EXPECT_EQ(int32_t(1) * units::Unit(units::kg), refMult);
 }
 
-TEST(ZipPositionsTest, test_zip) {
+TEST(VariableTest, zip_positions) {
   const Variable x = makeVariable<double>(
       Dims{Dim::X}, Shape{3}, units::Unit(units::m), Values{1, 2, 3});
   auto positions = position(x, x, x);
