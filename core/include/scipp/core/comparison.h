@@ -25,7 +25,7 @@ bool is_approx(const VariableConstView &a, const VariableConstView &b,
                           to_string(b.dtype());
     throw except::TypeError(message);
   }
-  if (dtype<T> != a.dtype()) {
+  if (dtype<T> != a.dtype() && dtype<event_list<T>> != a.dtype()) {
     std::string message = "is_approx. Type of tol " + to_string(dtype<T>) +
                           " not same as type of input arguments " +
                           to_string(a.dtype());

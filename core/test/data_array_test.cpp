@@ -2,6 +2,7 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
+#include "scipp/core/comparison.h"
 #include "scipp/core/dataset.h"
 
 #include "dataset_test_common.h"
@@ -215,4 +216,11 @@ TEST(DataArraySparseArithmeticTest, sparse_over_histogram) {
   EXPECT_TRUE(equals(span<const double>(out_vars[1]).subspan(0, 3),
                      expected.slice({Dim::X, 0, 3}).variances<double>()));
   EXPECT_TRUE(std::isnan(out_vars[1][3]));
+
+  auto result_inplace = copy(sparse);
+  result_inplace /= hist;
+  EXPECT_TRUE(is_approx(result_inplace.data(), result.data(), 1e-16));
+  EXPECT_EQ(result_inplace.coords(), result.coords());
+  EXPECT_EQ(result_inplace.masks(), result.masks());
+  EXPECT_EQ(result_inplace.attrs(), result.attrs());
 }
