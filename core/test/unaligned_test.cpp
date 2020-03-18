@@ -57,6 +57,26 @@ protected:
   }
 };
 
+TEST_F(RealignTest, fail_no_unaligned) {
+  auto base = make_array();
+  EXPECT_THROW(unaligned::realign(base, {}), except::UnalignedError);
+}
+
+TEST_F(RealignTest, multiple_unaligned_no_supported_yet) {
+  auto base = make_array();
+  // Unaligned position and events not supported *yet*.
+  base.coords().set(Dim::Tof, makeVariable<event_list<double>>(
+                                  Dims{Dim::Position}, Shape{4}));
+  EXPECT_THROW(
+      unaligned::realign(
+          base, {{Dim::Z, zbins},
+                 {Dim::Y, ybins},
+                 {Dim::X, xbins},
+                 {Dim::Tof, makeVariable<double>(Dims{Dim::Tof}, Shape{2},
+                                                 Values{0, 1})}}),
+      except::UnalignedError);
+}
+
 TEST_F(RealignTest, basics) {
   const auto reference = make_aligned();
   auto base = make_array();
