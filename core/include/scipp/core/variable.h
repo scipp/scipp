@@ -1045,6 +1045,9 @@ nan_to_num(const VariableConstView &var, const VariableConstView &replacement);
     const VariableConstView &var, const VariableConstView &replacement);
 [[nodiscard]] SCIPP_CORE_EXPORT Variable neg_inf_to_num(
     const VariableConstView &var, const VariableConstView &replacement);
+[[nodiscard]] SCIPP_CORE_EXPORT Variable position(const VariableConstView &x,
+                                                  const VariableConstView &y,
+                                                  const VariableConstView &z);
 
 namespace sparse {
 SCIPP_CORE_EXPORT Variable counts(const VariableConstView &var);

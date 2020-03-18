@@ -855,11 +855,8 @@ Variable transform(std::tuple<Ts...> &&, Op op, const Vars &... vars) {
   auto unit = op(vars.unit()...);
   Variable out;
   try {
-    if constexpr ((is_any_sparse<Ts>::value || ...)) {
+    if constexpr ((is_any_sparse<Ts>::value || ...) || sizeof...(Vars) > 2) {
       out = visit_impl<Ts...>::apply(Transform{op}, vars.dataHandle()...);
-    } else if constexpr (sizeof...(Vars) > 2) {
-      static_assert("Transform with more than 2 arguments not implemented "
-                    "yet for element-wise operation.");
     } else {
       out = core::visit(augment::insert_sparse(std::tuple<Ts...>{}))
                 .apply(Transform{overloaded_sparse{op, TransformSparse{}}},

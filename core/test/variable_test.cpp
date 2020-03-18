@@ -1110,6 +1110,17 @@ TEST(VariableTest, construct_mult_dev_unit) {
   EXPECT_EQ(int32_t(1) * units::Unit(units::kg), refMult);
 }
 
+TEST(ZipPositionsTest, test_zip) {
+  const Variable x = makeVariable<double>(
+      Dims{Dim::X}, Shape{3}, units::Unit(units::m), Values{1, 2, 3});
+  auto positions = position(x, x, x);
+  auto values = positions.values<Eigen::Vector3d>();
+  EXPECT_EQ(values.size(), 3);
+  EXPECT_EQ(values[0], (Eigen::Vector3d{1, 1, 1}));
+  EXPECT_EQ(values[1], (Eigen::Vector3d{2, 2, 2}));
+  EXPECT_EQ(values[2], (Eigen::Vector3d{3, 3, 3}));
+}
+
 template <class T> class AsTypeTest : public ::testing::Test {};
 
 using type_pairs =
