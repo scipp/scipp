@@ -688,6 +688,7 @@ void init_variable(py::module &m) {
         py::arg("y"), py::arg("x"),
         R"(
         Element-wise atan2.
+
         :raises: If the units of inputs are different, or if the dtype has no atan2, e.g., if it is an integer
         :return: atan2 of input y and x. Output unit is rad.
         :rtype: Variable)");
@@ -698,6 +699,7 @@ void init_variable(py::module &m) {
         py::arg("y"), py::arg("x"), py::arg("out"),
         R"(
         Element-wise atan2 with out argument.
+
         :raises: If the units of inputs are different, or if the dtype has no atan2, e.g., if it is an integer
         :return: atan2 of input y and x, written to output. Output unit is rad.
         :rtype: VariableView)");
