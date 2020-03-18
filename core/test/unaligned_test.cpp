@@ -187,20 +187,20 @@ TEST_F(RealignTest, slice) {
   const auto realigned = make_realigned();
   const auto aligned = make_aligned();
 
-    for (const auto dim : {Dim::Temperature, Dim::X, Dim::Y, Dim::Z}) {
-      for (const auto s : {Slice(dim, 0), Slice(dim, 1), Slice(dim, 0, 1),
-                           Slice(dim, 0, 2), Slice(dim, 1, 2)}) {
-        const auto slice = realigned.slice(s);
-        const auto reference = aligned.slice(s);
-        // Same result as when slicing normal array, except for missing data
-        EXPECT_FALSE(slice.hasData());
-        EXPECT_EQ(slice.dims(), reference.dims());
-        EXPECT_EQ(slice.coords(), reference.coords());
-        if (dim == Dim::Temperature)
-          EXPECT_EQ(slice.unaligned(), realigned.unaligned().slice(s))
-              << to_string(s);
-        else
-          EXPECT_EQ(slice.unaligned(), realigned.unaligned()) << to_string(s);
+  for (const auto dim : {Dim::Temperature, Dim::X, Dim::Y, Dim::Z}) {
+    for (const auto s : {Slice(dim, 0), Slice(dim, 1), Slice(dim, 0, 1),
+                         Slice(dim, 0, 2), Slice(dim, 1, 2)}) {
+      const auto slice = realigned.slice(s);
+      const auto reference = aligned.slice(s);
+      // Same result as when slicing normal array, except for missing data
+      EXPECT_FALSE(slice.hasData());
+      EXPECT_EQ(slice.dims(), reference.dims());
+      EXPECT_EQ(slice.coords(), reference.coords());
+      if (dim == Dim::Temperature)
+        EXPECT_EQ(slice.unaligned(), realigned.unaligned().slice(s))
+            << to_string(s);
+      else
+        EXPECT_EQ(slice.unaligned(), realigned.unaligned()) << to_string(s);
     }
   }
 }
