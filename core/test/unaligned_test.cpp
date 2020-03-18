@@ -203,10 +203,8 @@ TEST_F(RealignTest, copy_realigned_slice) {
             realigned.unaligned().slice({Dim::Position, 1, 3}));
 }
 
-TEST_F(RealignTest, slice) {
-  const auto realigned = make_realigned();
-  const auto aligned = make_aligned();
-
+template <class Realigned>
+void realign_test_slice(Realigned &&realigned, const DataArray &aligned) {
   for (const auto dim : {Dim::Temperature, Dim::X, Dim::Y, Dim::Z}) {
     for (const auto s : {Slice(dim, 0), Slice(dim, 1), Slice(dim, 0, 1),
                          Slice(dim, 0, 2), Slice(dim, 1, 2)}) {
@@ -223,6 +221,14 @@ TEST_F(RealignTest, slice) {
         EXPECT_EQ(slice.unaligned(), realigned.unaligned()) << to_string(s);
     }
   }
+}
+
+TEST_F(RealignTest, slice) {
+  auto realigned = make_realigned();
+  const auto aligned = make_aligned();
+
+  realign_test_slice(static_cast<const DataArray &>(realigned), aligned);
+  realign_test_slice(realigned, aligned);
 }
 
 TEST_F(RealignTest, unaligned_of_slice_along_aligned_dim) {
