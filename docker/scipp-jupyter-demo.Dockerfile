@@ -16,8 +16,8 @@ RUN mkdir -p "/home/$NB_USER/data"
 # Add datafiles needed for neutron tutorial
 ARG PG3_4844_HASH=d5ae38871d0a09a28ae01f85d969de1e
 ARG PG3_4866_HASH=3d543bc6a646e622b3f4542bc3435e7e
-RUN wget -O /home/$NB_USER/data/PG3_4844_event.nxs http://198.74.56.37/ftp/external-data/MD5/$PG3_4844_HASH && \
-    wget -O /home/$NB_USER/data/PG3_4866_event.nxs http://198.74.56.37/ftp/external-data/MD5/$PG3_4866_HASH
+RUN wget --quiet -O "/home/$NB_USER/data/PG3_4844_event.nxs" "http://198.74.56.37/ftp/external-data/MD5/$PG3_4844_HASH" && \
+    wget --quiet -O "/home/$NB_USER/data/PG3_4866_event.nxs" "http://198.74.56.37/ftp/external-data/MD5/$PG3_4866_HASH"
 
 # Install Scipp and dependencies
 RUN conda install --yes \
