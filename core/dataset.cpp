@@ -309,13 +309,12 @@ void Dataset::setData(const std::string &name, const DataArrayConstView &data) {
   setData(name, DataArray(data));
 }
 
-void Dataset::setUnaligned(const std::string &name, const Dimensions &dims,
-                           DataArray unaligned) {
-  if (contains(name) && m_data[name].data)
-    throw except::UnalignedError(
-        "Cannot set unaligned data for existing item with aligned content.");
-  m_data[name].unaligned = std::make_unique<UnalignedData>(
-      UnalignedData{dims, std::move(unaligned)});
+/// Private helper for constructor of DataArray
+void Dataset::setData(const std::string &name, UnalignedData &&data) {
+  if (!empty())
+    throw except::UnalignedError("setData with UnalignedData may only be used "
+                                 "in constructor of DataArray.");
+  m_data[name].unaligned = std::make_unique<UnalignedData>(std::move(data));
 }
 
 /// Removes the coordinate for the given dimension.

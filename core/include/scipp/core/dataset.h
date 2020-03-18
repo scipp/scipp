@@ -368,8 +368,6 @@ public:
   void setData(const std::string &name, Variable data);
   void setData(const std::string &name, const DataArrayConstView &data);
   void setData(const std::string &name, DataArray data);
-  void setUnaligned(const std::string &name, const Dimensions &dims,
-                    DataArray unaligned);
 
   void setCoord(const Dim dim, const VariableConstView &coord) {
     setCoord(dim, Variable(coord));
@@ -458,6 +456,8 @@ private:
   friend class DataArrayConstView;
   friend class DataArrayView;
   friend class DataArray;
+
+  void setData(const std::string &name, UnalignedData &&data);
 
   void setExtent(const Dim dim, const scipp::index extent, const bool isCoord);
   void setDims(const Dimensions &dims, const Dim coordDim = Dim::Invalid);
@@ -717,10 +717,7 @@ public:
     if (!data)
       throw std::runtime_error(
           "DataArray cannot be created with invalid content.");
-    if constexpr (std::is_same_v<Data, Variable>)
-      m_holder.setData(name, std::move(data));
-    else
-      m_holder.setUnaligned(name, data.dims, std::move(data.data));
+    m_holder.setData(name, std::move(data));
 
     for (auto &&[dim, c] : coords)
       m_holder.setCoord(dim, std::move(c));
