@@ -42,6 +42,7 @@ class TestMantidConversion(unittest.TestCase):
             d.attrs["run"].value.getProperty("run_start").value,
             "2012-05-21T15:14:56.279289666",
         )
+        self.assertEqual(d.data.unit, sc.units.counts)
 
     def test_EventWorkspace(self):
         import mantid.simpleapi as mantid
@@ -58,6 +59,17 @@ class TestMantidConversion(unittest.TestCase):
         delta = sc.sum(delta, 'tof')
         self.assertLess(np.abs(delta.value), 1e-5)
 
+    def test_EventWorkspace_no_y_unit(self):
+        import mantid.simpleapi as mantid
+        tiny_event_ws = mantid.CreateSampleWorkspace(WorkspaceType='Event',
+                                                     NumBanks=1,
+                                                     NumEvents=1)
+        self.assertEqual(d.data.unit, sc.units.counts)
+        tiny_event_ws.setYUnit('')
+        d = mantidcompat.convert_EventWorkspace_to_data_array(
+            tiny_event_ws, False)
+        self.assertEqual(d.data.unit, sc.units.dimensionless)
+
     def test_from_mantid_LoadEmptyInstrument(self):
         import mantid.simpleapi as mantid
         ws = mantid.LoadEmptyInstrument(InstrumentName='PG3')
@@ -71,7 +83,8 @@ class TestMantidConversion(unittest.TestCase):
                                     DataY=dataY,
                                     NSpec=4,
                                     UnitX="Wavelength")
-        mantidcompat.from_mantid(ws)
+        d = mantidcompat.from_mantid(ws)
+        self.assertEqual(d.data.unit, sc.units.dimensionless)
 
     def test_unit_conversion(self):
         import mantid.simpleapi as mantid
