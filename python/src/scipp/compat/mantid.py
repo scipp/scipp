@@ -168,7 +168,7 @@ def md_unit(frame):
         return sc.units.dimensionless
 
 
-def validate_and_get_unit(unit):
+def validate_and_get_unit(unit, allow_empty=False):
     known_units = {
         "DeltaE": ['Delta-E', sc.units.meV],
         "TOF": ['tof', sc.units.us],
@@ -181,14 +181,18 @@ def validate_and_get_unit(unit):
             sc.units.dimensionless / (sc.units.angstrom * sc.units.angstrom)
         ],
         "Label": ['spectrum', sc.units.dimensionless],
-        "Empty": ['empty', sc.units.dimensionless]
+        "Empty": ['empty', sc.units.dimensionless],
+        "Counts": ['counts', sc.units.counts]
     }
 
     if unit not in known_units.keys():
-        raise RuntimeError("Axis unit not currently supported."
-                           "Possible values are: {}, "
-                           "got '{}'. ".format([k for k in known_units.keys()],
-                                               unit))
+        if allow_empty:
+            return ['unknown', sc.units.dimensionless]
+        else:
+            raise RuntimeError("Unit not currently supported."
+                               "Possible values are: {}, "
+                               "got '{}'. ".format(
+                                   [k for k in known_units.keys()], unit))
     else:
         return known_units[unit]
 
@@ -328,10 +332,11 @@ def convert_Workspace2D_to_data_array(ws, **ignored):
 
     coords_labs_data = _convert_MatrixWorkspace_info(ws)
     coords_labs_data["coords"][dim] = coord
+    _, data_unit = validate_and_get_unit(ws.YUnit(), allow_empty=True)
     coords_labs_data["data"] = sc.Variable([spec_dim, dim],
                                            shape=(ws.getNumberHistograms(),
                                                   len(ws.readY(0))),
-                                           unit=sc.units.counts,
+                                           unit=data_unit,
                                            variances=True)
     array = detail.move_to_data_array(**coords_labs_data)
 
@@ -404,10 +409,11 @@ def convert_EventWorkspace_to_data_array(ws, load_pulse_times=True, **ignored):
     if contains_weighted_events:
         coords_labs_data["data"] = weights
     else:
+        _, data_unit = validate_and_get_unit(ws.YUnit(), allow_empty=True)
         coords_labs_data["data"] = sc.Variable(dims=[spec_dim],
                                                values=np.ones(nHist),
                                                variances=np.ones(nHist),
-                                               unit=sc.units.counts,
+                                               unit=data_unit,
                                                dtype=sc.dtype.float32)
     return detail.move_to_data_array(**coords_labs_data)
 
