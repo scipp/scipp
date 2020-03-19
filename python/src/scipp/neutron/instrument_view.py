@@ -157,8 +157,9 @@ class InstrumentView:
             self.minmax["tof"][1] = max(self.minmax["tof"][1], var.values[-1])
             self.minmax["tof"][2] = var.shape[0]
 
-        available_cmaps = sorted(m for m in self.mpl_plt.colormaps()
-                                 if not m.endswith("_r"))
+        # available_cmaps = sorted(m for m in self.mpl_plt.colormaps()
+        #                          if not m.endswith("_r"))
+        self.available_cmaps = sorted(m for m in self.mpl_plt.colormaps())
 
         # Store current active data entry (DataArray)
         keys = list(self.data_arrays.keys())
@@ -203,24 +204,27 @@ class InstrumentView:
         self.nbins = self.widgets.Text(value=str(
             self.hist_data_array[self.key].shape[self.tof_dim_indx]),
                                        description="Number of bins:",
-                                       style={"description_width": "initial"})
-        self.nbins.on_submit(self.update_nbins)
+                                       style={"description_width": "initial"},
+                                       continuous_update=False)
+        self.nbins.observe(self.update_nbins, names="value")
 
         tof_values = self.hist_data_array[self.key].coords[self.dim].values
         self.bin_size = self.widgets.Text(value=str(tof_values[1] -
                                                     tof_values[0]),
-                                          description="Bin size:")
-        self.bin_size.on_submit(self.update_bin_size)
+                                          description="Bin size:",
+                                          continuous_update=False)
+        self.bin_size.observe(self.update_bin_size, names="value")
 
         # Add dropdown to change cmap
-        self.select_colormap = self.widgets.Combobox(
-            options=available_cmaps,
+        self.select_colormap = self.widgets.Text(
             value=self.params[self.key]["cmap"],
             description="Select colormap",
             ensure_option=True,
             layout={'width': "200px"},
-            style={"description_width": "initial"})
+            style={"description_width": "initial"},
+            continuous_update=False)
         self.select_colormap.observe(self.update_colormap, names="value")
+        self.colormap_error = self.widgets.HTML(value="")
 
         self.opacity_slider = self.widgets.FloatSlider(
             min=0, max=1.0, value=1.0, step=0.01, description="Opacity")
@@ -258,14 +262,15 @@ class InstrumentView:
             value=True, description="Hide masks", button_style="")
         self.masks_showhide.observe(self.toggle_masks, names="value")
 
-        self.masks_colormap = self.widgets.Combobox(
-            options=available_cmaps,
+        self.masks_colormap = self.widgets.Text(
             value=self.masks_params[self.key]["cmap"],
             description="",
             ensure_option=True,
             disabled=not self.masks_cmap_or_color.value == "colormap",
-            layout={'width': "100px"})
+            layout={'width': "100px"},
+            continuous_update=False)
         self.masks_colormap.observe(self.update_masks_colormap, names="value")
+        self.masks_colormap_error = self.widgets.HTML(value="")
 
         self.masks_solid_color = self.widgets.ColorPicker(
             concise=False,
@@ -280,7 +285,7 @@ class InstrumentView:
         box_list = [
             self.widgets.HBox([self.dropdown, self.slider, self.label, self.continuous_update]),
             self.widgets.HBox([self.nbins, self.bin_size]),
-            self.widgets.HBox([self.opacity_slider, self.select_colormap]),
+            self.widgets.HBox([self.opacity_slider, self.select_colormap, self.colormap_error]),
             self.togglebuttons
         ]
         # Only show mask controls if masks are present
@@ -288,7 +293,7 @@ class InstrumentView:
             box_list.append(
                 self.widgets.HBox([
                     self.masks_showhide, self.masks_cmap_or_color,
-                    self.masks_colormap, self.masks_solid_color
+                    self.masks_colormap, self.masks_colormap_error, self.masks_solid_color
                 ]))
 
         self.vbox = self.widgets.VBox(box_list)
@@ -459,6 +464,10 @@ class InstrumentView:
 
         self.material = self.p3.MeshBasicMaterial(vertexColors='VertexColors',
                                                   transparent=True)
+
+        # self.material = self.p3.MeshPhongMaterial(vertexColors='VertexColors',
+        #                                           transparent=True)
+
 
         self.mesh = self.p3.Mesh(
             geometry=self.geometry,
@@ -726,12 +735,12 @@ class InstrumentView:
 
         return
 
-    def update_nbins(self, owner):
+    def update_nbins(self, change):
         try:
-            nbins = int(owner.value)
+            nbins = int(change["new"])
         except ValueError:
             print("Warning: could not convert value: {} to an "
-                  "integer.".format(owner.value))
+                  "integer.".format(change["new"]))
             return
         self.rebin_data(
             np.linspace(self.minmax["tof"][0], self.minmax["tof"][1],
@@ -740,12 +749,12 @@ class InstrumentView:
         self.bin_size.value = str(x[1] - x[0])
         self.update_slider()
 
-    def update_bin_size(self, owner):
+    def update_bin_size(self, change):
         try:
-            binw = float(owner.value)
+            binw = float(change["new"])
         except ValueError:
             print("Warning: could not convert value: {} to a "
-                  "float.".format(owner.value))
+                  "float.".format(change["new"]))
             return
         self.rebin_data(
             np.arange(self.minmax["tof"][0], self.minmax["tof"][1], binw))
@@ -782,13 +791,17 @@ class InstrumentView:
             self.select_colormap.value = self.params[self.key]["cmap"]
 
     def update_colormap(self, change):
-        self.params[self.key]["cmap"] = change["new"]
-        self.cmap[self.key] = self.mpl_cm.get_cmap(
-            self.params[self.key]["cmap"])
-        self.scalar_map[self.key] = self.mpl_cm.ScalarMappable(
-            cmap=self.cmap[self.key], norm=self.params[self.key]["norm"])
-        self.update_colorbar()
-        self.update_colors({"new": self.slider.value})
+        if change["new"] in self.available_cmaps:
+            self.colormap_error.value = ""
+            self.params[self.key]["cmap"] = change["new"]
+            self.cmap[self.key] = self.mpl_cm.get_cmap(
+                self.params[self.key]["cmap"])
+            self.scalar_map[self.key] = self.mpl_cm.ScalarMappable(
+                cmap=self.cmap[self.key], norm=self.params[self.key]["norm"])
+            self.update_colorbar()
+            self.update_colors({"new": self.slider.value})
+        else:
+            self.colormap_error.value = '<span style="color: red;">&times</span>'
 
     def toggle_masks(self, change):
         self.masks_params[self.key]["show"] = change["new"]
@@ -797,12 +810,16 @@ class InstrumentView:
         self.update_colors({"new": self.slider.value})
 
     def update_masks_colormap(self, change):
-        self.masks_params[self.key]["cmap"] = change["new"]
-        self.masks_cmap = self.mpl_cm.get_cmap(
-            self.masks_params[self.key]["cmap"])
-        self.masks_scalar_map = self.mpl_cm.ScalarMappable(
-            cmap=self.masks_cmap, norm=self.params[self.key]["norm"])
-        self.update_colors({"new": self.slider.value})
+        if change["new"] in self.available_cmaps:
+            self.masks_colormap_error.value = ""
+            self.masks_params[self.key]["cmap"] = change["new"]
+            self.masks_cmap = self.mpl_cm.get_cmap(
+                self.masks_params[self.key]["cmap"])
+            self.masks_scalar_map = self.mpl_cm.ScalarMappable(
+                cmap=self.masks_cmap, norm=self.params[self.key]["norm"])
+            self.update_colors({"new": self.slider.value})
+        else:
+            self.masks_colormap_error.value = '<span style="color: red;">&times</span>'
 
     def update_masks_solid_color(self, change):
         self.masks_cmap = self.mpl_colors.LinearSegmentedColormap.from_list(
