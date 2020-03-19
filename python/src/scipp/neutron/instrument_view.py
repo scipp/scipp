@@ -30,7 +30,8 @@ def instrument_view(scipp_obj=None,
                     projection="3D Z",
                     nan_color="#d3d3d3",
                     continuous_update=True,
-                    dim="tof"):
+                    dim="tof",
+                    rendering="Full"):
     """
     Plot a 2D or 3D view of the instrument.
     A slider is also generated to navigate the dimension (dim) given as an
@@ -57,7 +58,8 @@ def instrument_view(scipp_obj=None,
                         projection=projection,
                         nan_color=nan_color,
                         continuous_update=continuous_update,
-                        dim=dim)
+                        dim=dim,
+                        rendering=rendering)
 
     render_plot(widgets=iv.box, filename=filename)
 
@@ -78,7 +80,8 @@ class InstrumentView:
                  projection=None,
                  nan_color=None,
                  continuous_update=None,
-                 dim=None):
+                 dim=None,
+                 rendering=None):
 
         # Delayed imports to avoid hard dependencies
         self.widgets = importlib.import_module("ipywidgets")
@@ -96,7 +99,9 @@ class InstrumentView:
         self.aspect = aspect
         self.nan_color = nan_color
         self.log = log
-        self.current_projection = None
+        self.current_projection = projection
+        self.lock_bin_inputs = False
+        self.lock_camera = False
         self.dim = dim
         self.cbar_image = self.widgets.Image()
 
@@ -230,6 +235,11 @@ class InstrumentView:
             min=0, max=1.0, value=1.0, step=0.01, description="Opacity")
         self.opacity_slider.observe(self.update_opacity, names="value")
 
+        self.select_rendering = self.widgets.Dropdown(
+            options=["Fast", "Full"], value=rendering)
+        self.select_rendering.observe(self.change_rendering, names="value")
+
+
         projections = [
             "3D X", "3D Y", "3D Z",
             "Cylindrical X", "Cylindrical Y", "Cylindrical Z",
@@ -285,7 +295,7 @@ class InstrumentView:
         box_list = [
             self.widgets.HBox([self.dropdown, self.slider, self.label, self.continuous_update]),
             self.widgets.HBox([self.nbins, self.bin_size]),
-            self.widgets.HBox([self.opacity_slider, self.select_colormap, self.colormap_error]),
+            self.widgets.HBox([self.select_rendering, self.opacity_slider, self.select_colormap, self.colormap_error]),
             self.togglebuttons
         ]
         # Only show mask controls if masks are present
@@ -456,13 +466,13 @@ class InstrumentView:
         # print(vertexcolors.shape)
 
 
-        self.geometry = self.p3.BufferGeometry(attributes=dict(
+        self.mesh_geometry = self.p3.BufferGeometry(attributes=dict(
             position=self.p3.BufferAttribute(self.vertices, normalized=False),
             index=self.p3.BufferAttribute(faces.ravel(), normalized=False),
             color=self.p3.BufferAttribute(vertexcolors),
         ))
 
-        self.material = self.p3.MeshBasicMaterial(vertexColors='VertexColors',
+        self.mesh_material = self.p3.MeshBasicMaterial(vertexColors='VertexColors',
                                                   transparent=True)
 
         # self.material = self.p3.MeshPhongMaterial(vertexColors='VertexColors',
@@ -470,8 +480,8 @@ class InstrumentView:
 
 
         self.mesh = self.p3.Mesh(
-            geometry=self.geometry,
-            material=self.material
+            geometry=self.mesh_geometry,
+            material=self.mesh_material
             # position=[-0.5, -0.5, -0.5]   # Center the cube
         )
 
@@ -516,21 +526,29 @@ class InstrumentView:
 
 
         # #====================================================================
-        # # The point cloud and its properties
-        # # self.pts = self.p3.BufferAttribute(array=self.det_pos)
-        # # self.colors = self.p3.BufferAttribute(
-        # #     array=np.zeros([np.shape(self.det_pos)[0], 4], dtype=np.float32))
-        # self.points_geometry = self.p3.BufferGeometry(attributes={
-        #     'position': self.p3.BufferAttribute(array=self.det_pos),
-        #     'color': self.p3.BufferAttribute(
+        # The point cloud and its properties
+        # self.pts = self.p3.BufferAttribute(array=self.det_pos)
+        # self.colors = self.p3.BufferAttribute(
         #     array=np.zeros([np.shape(self.det_pos)[0], 4], dtype=np.float32))
-        # })
-        # self.points_material = self.p3.PointsMaterial(vertexColors='VertexColors',
-        #                                        size=max(self.size))
-        # self.points_cloud = self.p3.Points(geometry=self.points_geometry,
-        #                           material=self.points_material)
+        self.points_geometry = self.p3.BufferGeometry(attributes={
+            'position': self.p3.BufferAttribute(array=self.det_pos),
+            'color': self.p3.BufferAttribute(
+            array=np.zeros([np.shape(self.det_pos)[0], 3], dtype=np.float32))
+        })
+        self.points_material = self.p3.PointsMaterial(vertexColors='VertexColors',
+                                               size=max(self.size),
+                                               transparent=True)
+        self.points = self.p3.Points(geometry=self.points_geometry,
+                                  material=self.points_material)
         # #====================================================================
 
+        # children = []
+        # if self.select_rendering.value == "Full":
+        #     children.append(self.mesh)
+        #     self.geometry = self.mesh_geometry
+        #     sel
+        # else:
+        #     children.append(self.points)
 
         # Add the red green blue axes helper
         self.axes_helper = self.p3.AxesHelper(self.camera_pos * 50.0)
@@ -543,10 +561,12 @@ class InstrumentView:
         # self.ambient_light = self.p3.AmbientLight()
 
         self.scene = self.p3.Scene(children=[
-            self.mesh, #self.wireframe,
             self.camera, #self.key_light, self.ambient_light,
             self.axes_helper
         ], background="#DDDDDD")
+
+        self.change_rendering({"new": rendering})
+
         self.controller = self.p3.OrbitControls(controlling=self.camera)
 
         # Render the scene into a widget
@@ -661,8 +681,9 @@ class InstrumentView:
     def update_colors(self, change):
         # return
         # arr = self.hist_data_array[self.key][self.dim, change["new"]].values
-        arr = np.repeat(self.hist_data_array[self.key][self.dim, change["new"]].values,
-                        self.nverts, axis=0)#.astype(np.float32)
+        arr = self.hist_data_array[self.key][self.dim, change["new"]].values
+        if self.select_rendering.value == "Full":
+            arr = np.repeat(arr, self.nverts, axis=0)
         colors = self.scalar_map[self.key].to_rgba(arr).astype(np.float32)
         if self.key in self.masks_variables and self.masks_params[
                 self.key]["show"]:
@@ -670,8 +691,10 @@ class InstrumentView:
             #     np.float32)
             # masks_inds = np.where(np.repeat(self.masks_variables[self.key].values, self.nverts, axis=0))
             # colors[masks_inds] = masks_colors[masks_inds]
-            masks_inds = np.where(np.repeat(self.masks_variables[self.key].values, self.nverts, axis=0))
-
+            msk = self.masks_variables[self.key].values
+            if self.select_rendering.value == "Full":
+                msk = np.repeat(msk, self.nverts, axis=0)
+            masks_inds = np.where(msk)
             masks_colors = self.masks_scalar_map.to_rgba(arr[masks_inds]).astype(
                 np.float32)
             # masks_inds = np.where(np.repeat(self.masks_variables[self.key].values, self.nverts, axis=0))
@@ -688,44 +711,60 @@ class InstrumentView:
 
     def change_projection(self, owner):
 
-        if owner.description == self.current_projection:
-            owner.button_style = "info"
-            return
-        if self.current_projection is not None:
-            self.buttons[self.current_projection].button_style = ""
-
         projection = owner.description
+        axis = projection[-1]
+
+        # # Early exit if we are just resetting the camera
+        # if owner.description == self.current_projection:
+        #     owner.button_style = "info"
+        #     if projection.startswith("3D"):
+        #         self.camera.position = [self.camera_pos * (axis=="X"),
+        #                                 self.camera_pos * (axis=="Y"),
+        #                                 self.camera_pos * (axis=="Z")]
+        #     else:
+        #         self.camera.position = [0, 0, self.camera_pos]
+        #     return
+
+        # if self.current_projection is not None:
+        # if self.current_projection in self.buttons:
+        self.buttons[self.current_projection].button_style = ""
 
         # Compute cylindrical or spherical projections
         permutations = {"X": [0, 2, 1], "Y": [1, 0, 2], "Z": [2, 1, 0]}
-        axis = projection[-1]
+
+        if self.select_rendering.value == "Full":
+            pixel_pos = self.vertices
+        else:
+            pixel_pos = self.det_pos
 
         if projection.startswith("3D"):
-            xyz = self.vertices
+            xyz = pixel_pos
         else:
-            xyz = np.zeros_like(self.vertices)
-            xyz[:, 0] = np.arctan2(self.vertices[:, permutations[axis][2]],
-                                   self.vertices[:, permutations[axis][1]])
+            xyz = np.zeros_like(pixel_pos)
+            xyz[:, 0] = np.arctan2(pixel_pos[:, permutations[axis][2]],
+                                   pixel_pos[:, permutations[axis][1]])
             if projection.startswith("Cylindrical"):
-                xyz[:, 1] = self.vertices[:, permutations[axis][0]]
+                xyz[:, 1] = pixel_pos[:, permutations[axis][0]]
             elif projection.startswith("Spherical"):
                 xyz[:, 1] = np.arcsin(
-                    self.vertices[:, permutations[axis][0]] /
-                    np.sqrt(self.vertices[:, 0]**2 + self.vertices[:, 1]**2 +
-                            self.vertices[:, 2]**2))
+                    pixel_pos[:, permutations[axis][0]] /
+                    np.sqrt(pixel_pos[:, 0]**2 + pixel_pos[:, 1]**2 +
+                            pixel_pos[:, 2]**2))
 
         if projection.startswith("3D"):
             self.axes_helper.visible = True
-            self.camera.position = [self.camera_pos * (axis=="X"),
+            new_cam_pos = [self.camera_pos * (axis=="X"),
                                     self.camera_pos * (axis=="Y"),
                                     self.camera_pos * (axis=="Z")]
         else:
             self.axes_helper.visible = False
-            self.camera.position = [0, 0, self.camera_pos]
-        self.renderer.controls = [
-            self.p3.OrbitControls(controlling=self.camera,
-                                  enableRotate=projection.startswith("3D"))
-        ]
+            new_cam_pos = [0, 0, self.camera_pos]
+        if not self.lock_camera:
+            self.camera.position = new_cam_pos
+            self.renderer.controls = [
+                self.p3.OrbitControls(controlling=self.camera,
+                                      enableRotate=projection.startswith("3D"))
+            ]
         self.geometry.attributes["position"].array = xyz
 
         self.update_colors({"new": self.slider.value})
@@ -736,6 +775,8 @@ class InstrumentView:
         return
 
     def update_nbins(self, change):
+        if self.lock_bin_inputs:
+            return
         try:
             nbins = int(change["new"])
         except ValueError:
@@ -746,10 +787,14 @@ class InstrumentView:
             np.linspace(self.minmax["tof"][0], self.minmax["tof"][1],
                         nbins + 1))
         x = self.hist_data_array[self.key].coords[self.dim].values
+        self.lock_bin_inputs = True
         self.bin_size.value = str(x[1] - x[0])
         self.update_slider()
+        self.lock_bin_inputs = False
 
     def update_bin_size(self, change):
+        if self.lock_bin_inputs:
+            return
         try:
             binw = float(change["new"])
         except ValueError:
@@ -758,9 +803,11 @@ class InstrumentView:
             return
         self.rebin_data(
             np.arange(self.minmax["tof"][0], self.minmax["tof"][1], binw))
+        self.lock_bin_inputs = True
         self.nbins.value = str(
             self.hist_data_array[self.key].shape[self.tof_dim_indx])
         self.update_slider()
+        self.lock_bin_inputs = False
 
     def update_slider(self):
         """
@@ -844,3 +891,21 @@ class InstrumentView:
 
     def toggle_continuous_update(self, change):
         self.slider.continuous_update = change["new"]
+
+    def change_rendering(self, change):
+        if change["new"] == "Full":
+            self.geometry = self.mesh_geometry
+            self.material = self.mesh_material
+            if self.points in self.scene.children:
+                self.scene.remove(self.points)
+            self.scene.add(self.mesh)
+        else:
+            self.geometry = self.points_geometry
+            self.material = self.points_material
+            if self.mesh in self.scene.children:
+                self.scene.remove(self.mesh)
+            self.scene.add(self.points)
+        if "old" in change:
+            self.lock_camera = True
+            self.change_projection(self.buttons[self.current_projection])
+            self.lock_camera = False
