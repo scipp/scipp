@@ -86,6 +86,8 @@ TEST_F(RealignTest, basics) {
   EXPECT_FALSE(realigned.hasData());
   EXPECT_EQ(realigned.dims(), reference.dims());
   EXPECT_EQ(realigned.coords(), reference.coords());
+  EXPECT_EQ(realigned.unit(), base.unit());
+  EXPECT_EQ(realigned.dtype(), base.dtype());
 
   EXPECT_EQ(realigned.unaligned(), base);
 }

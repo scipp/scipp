@@ -479,13 +479,18 @@ Dimensions DataArrayConstView::dims() const noexcept {
   }
 }
 
-/// Return the dtype of the data. Throws if there is no data.
-DType DataArrayConstView::dtype() const { return data().dtype(); }
+/// Return the dtype of the data.
+DType DataArrayConstView::dtype() const {
+  // TODO This is not true if event data is realigned (not supported yet). In
+  // that case we need to convert from, e.g., dtype<event_list<double>> to
+  // dtype<double>.
+  return hasData() ? data().dtype() : unaligned().dtype();
+}
 
 /// Return the unit of the data values.
-///
-/// Throws if there are no data values.
-units::Unit DataArrayConstView::unit() const { return data().unit(); }
+units::Unit DataArrayConstView::unit() const {
+  return hasData() ? data().unit() : unaligned().unit();
+}
 
 DataArrayConstView DataArrayConstView::unaligned() const {
   // This needs to combine coords from m_dataset and from the unaligned data. We
@@ -509,7 +514,7 @@ DataArrayView DataArrayView::unaligned() const {
 void DataArrayView::setUnit(const units::Unit unit) const {
   if (hasData())
     return data().setUnit(unit);
-  throw std::runtime_error("Data without values, cannot set unit.");
+  throw except::UnalignedError("Realigned data, cannot set unit.");
 }
 
 template <class MapView> MapView DataArrayConstView::makeView() const {
