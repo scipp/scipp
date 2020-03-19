@@ -249,31 +249,33 @@ void Dataset::setMask(const std::string &masksName, Variable mask) {
   m_masks.insert_or_assign(masksName, std::move(mask));
 }
 
-/// Set (insert or replace) data (values, optional variances) with given name.
-///
-/// Throws if the provided values bring the dataset into an inconsistent state
-/// (mismatching dtype, unit, or dimensions).
-void Dataset::setData(const std::string &name, Variable data,
-                      const AttrPolicy attrPolicy) {
-  setDims(data.dims());
+void Dataset::setData_impl(const std::string &name, detail::DatasetData &&data,
+                           const AttrPolicy attrPolicy) {
+  setDims(data.data ? data.data.dims() : data.unaligned->dims);
   const auto replace = contains(name);
   if (replace && attrPolicy == AttrPolicy::Keep)
-    m_data[name] =
-        detail::DatasetData{std::move(data), {}, std::move(m_data[name].attrs)};
-  else
-    m_data[name] = detail::DatasetData{std::move(data), {}, {}};
+    data.attrs = std::move(m_data[name].attrs);
+  m_data[name] = std::move(data);
   if (replace)
     rebuildDims();
 }
 
+/// Set (insert or replace) data (values, optional variances) with given name.
+///
+/// Throws if the provided values bring the dataset into an inconsistent state
+/// (mismatching dtype, unit, or dimensions). The default is to drop existing
+/// attributes, unless AttrPolicy::Keep is specified.
+void Dataset::setData(const std::string &name, Variable data,
+                      const AttrPolicy attrPolicy) {
+  setData_impl(name, detail::DatasetData{std::move(data), {}, {}}, attrPolicy);
+}
+
 /// Private helper for constructor of DataArray and setData
 void Dataset::setData(const std::string &name, UnalignedData &&data) {
-  setDims(data.dims);
-  const auto replace = contains(name);
-  m_data[name] = detail::DatasetData{
-      Variable{}, std::make_unique<UnalignedData>(std::move(data)), {}};
-  if (replace)
-    rebuildDims();
+  setData_impl(name,
+               detail::DatasetData{
+                   {}, std::make_unique<UnalignedData>(std::move(data)), {}},
+               AttrPolicy::Drop);
 }
 
 /// Set (insert or replace) data from a DataArray with a given name, avoiding

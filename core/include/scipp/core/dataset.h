@@ -474,6 +474,8 @@ private:
     map.erase(key);
     rebuildDims();
   }
+  void setData_impl(const std::string &name, detail::DatasetData &&data,
+                    const AttrPolicy attrPolicy);
 
   std::unordered_map<Dim, scipp::index> m_dims;
   std::unordered_map<Dim, Variable> m_coords;
