@@ -35,24 +35,18 @@ constexpr auto position = overloaded{
     }};
 
 namespace detail {
-auto x_value = [](const auto &pos) { return pos[0]; };
-auto y_value = [](const auto &pos) { return pos[1]; };
-auto z_value = [](const auto &pos) { return pos[2]; };
-auto unit_validate = [](const units::Unit &u) {
-  expect::equals(u, units::m);
-  return u;
+template <int N> struct component {
+  static constexpr auto overloads = overloaded{
+      arg_list<Eigen::Vector3d>, [](const auto &pos) { return pos[N]; },
+      [](const units::Unit &u) {
+        expect::equals(u, units::m);
+        return u;
+      }};
 };
 } // namespace detail
-constexpr auto x = overloaded{arg_list<Eigen::Vector3d>,
-                              transform_flags::expect_no_variance_arg<0>,
-                              detail::x_value, detail::unit_validate};
-constexpr auto y = overloaded{arg_list<Eigen::Vector3d>,
-                              transform_flags::expect_no_variance_arg<0>,
-                              detail::y_value, detail::unit_validate};
-constexpr auto z = overloaded{arg_list<Eigen::Vector3d>,
-                              transform_flags::expect_no_variance_arg<0>,
-                              detail::z_value, detail::unit_validate};
-
+constexpr auto x = detail::component<0>::overloads;
+constexpr auto y = detail::component<1>::overloads;
+constexpr auto z = detail::component<2>::overloads;
 } // namespace geometry
 
 } // namespace element
