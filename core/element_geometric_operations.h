@@ -42,6 +42,7 @@ template <int N> struct component {
         expect::equals(u, units::m);
         return u;
       }};
+  enum { value = N };
 };
 } // namespace detail
 constexpr auto x = detail::component<0>::overloads;

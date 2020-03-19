@@ -29,29 +29,20 @@ TEST(ElementPositionTest, zip_position_values) {
   EXPECT_EQ((Eigen::Vector3d(1, 2, 3)), geometry::position(1.0, 2.0, 3.0));
 }
 
-TEST(ElementPositionTest, unzip_position_x) {
-  Eigen::Vector3d a{1.0, 2.0, 3.0};
-  units::Unit m(units::m);
-  units::Unit K(units::K);
-  EXPECT_EQ(geometry::x(a), 1.0);
-  EXPECT_EQ(geometry::x(m), m);
-  EXPECT_THROW(geometry::x(K), except::UnitError);
-}
+template <typename T> class ElementPositionNTest : public ::testing::Test {};
 
-TEST(ElementPositionTest, unzip_position_y) {
-  Eigen::Vector3d a{1.0, 2.0, 3.0};
-  units::Unit m(units::m);
-  units::Unit K(units::K);
-  EXPECT_EQ(geometry::y(a), 2.0);
-  EXPECT_EQ(geometry::y(m), m);
-  EXPECT_THROW(geometry::y(K), except::UnitError);
-}
+template <int I> using component = geometry::detail::component<I>;
 
-TEST(ElementPositionTest, unzip_position_z) {
+using types = ::testing::Types<component<0>, component<1>, component<2>>;
+TYPED_TEST_SUITE(ElementPositionNTest, types);
+
+TYPED_TEST(ElementPositionNTest, unzip_position) {
+  using T = TypeParam;
+  constexpr auto component = T::overloads;
   Eigen::Vector3d a{1.0, 2.0, 3.0};
   units::Unit m(units::m);
   units::Unit K(units::K);
-  EXPECT_EQ(geometry::z(a), 3.0);
-  EXPECT_EQ(geometry::z(m), m);
+  EXPECT_EQ(component(a), a[T::value]);
+  EXPECT_EQ(geometry::detail::component<T::value>::overloads(m), m);
   EXPECT_THROW(geometry::z(K), except::UnitError);
 }
