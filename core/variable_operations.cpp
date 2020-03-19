@@ -299,6 +299,7 @@ Variable neg_inf_to_num(const VariableConstView &var,
                                               element::negative_inf_to_num);
 }
 
+namespace geometry {
 Variable position(const VariableConstView &x, const VariableConstView &y,
                   const VariableConstView &z) {
   return transform<std::tuple<double>>(x, y, z, element::geometry::position);
@@ -312,5 +313,6 @@ Variable y(const VariableConstView &pos) {
 Variable z(const VariableConstView &pos) {
   return transform<std::tuple<Eigen::Vector3d>>(pos, element::geometry::z);
 }
+} // namespace geometry
 
 } // namespace scipp::core

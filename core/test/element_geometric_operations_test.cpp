@@ -8,8 +8,7 @@
 #include <Eigen/Geometry>
 
 using namespace scipp;
-using namespace scipp::core;
-using namespace element;
+using namespace scipp::core::element;
 
 TEST(ElementPositionTest, unit_in_m) {
   const units::Unit m(units::m);
