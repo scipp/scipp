@@ -2,11 +2,7 @@
 # Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
 import numpy as np
-import pytest
-
 import scipp as sc
-
-from .common import assert_export
 
 
 def make_dataarray():
