@@ -3,9 +3,30 @@
 /// @file
 /// @author Simon Heybrock
 #include "scipp/core/event.h"
+#include "scipp/core/dataset.h"
 #include "scipp/core/transform.h"
 
-namespace scipp::core::event {
+namespace scipp::core {
+/// Return true if a variable contains events
+bool is_events(const VariableConstView &var) {
+  const auto type = var.dtype();
+  return type == dtype<sparse_container<double>> ||
+         type == dtype<sparse_container<float>> ||
+         type == dtype<sparse_container<int64_t>> ||
+         type == dtype<sparse_container<int32_t>>;
+}
+
+/// Return true if a data array contains events
+bool is_events(const DataArrayConstView &array) {
+  if (array.hasData() && is_events(array.data()))
+    return true;
+  for (const auto &item : array.coords())
+    if (is_events(item.second))
+      return true;
+  return false;
+}
+
+namespace event {
 
 Variable concatenate(const VariableConstView &a, const VariableConstView &b) {
   Variable out(a);
@@ -21,4 +42,5 @@ Variable concatenate(const VariableConstView &a, const VariableConstView &b) {
   return out;
 }
 
+} // namespace event
 } // namespace scipp::core::event

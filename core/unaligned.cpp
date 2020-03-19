@@ -72,6 +72,11 @@ DataArray realign(DataArray unaligned,
       unaligned.coords().erase(dim);
     }
   }
+  if (unalignedDims.count(Dim::Invalid)) {
+    for (const auto &[d, coord] : coords)
+      alignedDims.addInner(d, coord.dims()[d] - 1);
+    alignedCoords.insert(alignedCoords.end(), coords.begin(), coords.end());
+  }
 
   auto name = unaligned.name();
   auto alignedMasks = align<MasksView>(unaligned, unalignedDims);

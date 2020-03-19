@@ -297,3 +297,57 @@ TEST_F(RealignTest, histogram_slice) {
     }
   }
 }
+
+struct RealignEventsTest : public ::testing::Test {
+protected:
+  Variable pos = makeVariable<Eigen::Vector3d>(
+      Dims{Dim::Position}, Shape{4},
+      Values{Eigen::Vector3d{1, 1, 1}, Eigen::Vector3d{1, 1, 2},
+             Eigen::Vector3d{1, 2, 3}, Eigen::Vector3d{1, 2, 4}});
+  Variable tof_bins =
+      makeVariable<double>(Dims{Dim::Tof}, Shape{3}, Values{0, 2, 4});
+
+  DataArray make_array() {
+    const auto tof = makeVariable<event_list<double>>(
+        Dims{Dim::Position}, Shape{4},
+        Values{event_list<double>{1}, event_list<double>{1, 2},
+               event_list<double>{1, 2, 3}, event_list<double>{1, 2, 3, 4}});
+    return DataArray(makeVariable<double>(Dims{Dim::Position}, Shape{4},
+                                          units::Unit(units::counts),
+                                          Values{1, 1, 1, 1},
+                                          Variances{1, 1, 1, 1}),
+                     {{Dim::Position, pos}, {Dim::Tof, tof}});
+  }
+
+  DataArray make_realigned() {
+    return unaligned::realign(make_array(), {{Dim::Tof, tof_bins}});
+  }
+
+  DataArray make_aligned() {
+    return DataArray(makeVariable<double>(Dims{Dim::Position, Dim::Tof},
+                                          Shape{4, 2},
+                                          units::Unit(units::counts),
+                                          Values{1, 0, 1, 1, 1, 2, 1, 2},
+                                          Variances{1, 0, 1, 1, 1, 2, 1, 2}),
+                     {{Dim::Position, pos}, {Dim::Tof, tof_bins}});
+  }
+};
+
+TEST_F(RealignEventsTest, basics) {
+  const auto reference = make_aligned();
+  auto base = make_array();
+  auto realigned = unaligned::realign(base, {{Dim::Tof, tof_bins}});
+
+  EXPECT_FALSE(realigned.hasData());
+  EXPECT_EQ(realigned.dims(), reference.dims());
+  EXPECT_EQ(realigned.coords(), reference.coords());
+  EXPECT_EQ(realigned.unit(), base.unit());
+  EXPECT_EQ(realigned.dtype(), base.dtype());
+
+  EXPECT_EQ(realigned.unaligned(), base);
+}
+
+TEST_F(RealignEventsTest, histogram) {
+  const auto realigned = make_realigned();
+  EXPECT_EQ(histogram(realigned), make_aligned());
+}

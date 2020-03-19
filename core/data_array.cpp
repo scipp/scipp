@@ -249,7 +249,7 @@ DataArray &sparse_dense_op_inplace(Op op, DataArray &a,
     // slice to exclude this from comparison.
     expect::coordsAreSuperset(a, b.slice({dim, 0}));
     union_or_in_place(a.masks(), b.masks());
-    if (is_events(a)) {
+    if (is_events(a.data())) {
       // Note the inefficiency here: Always creating temporary sparse data.
       // Could easily avoided, but requires significant code duplication.
       op.inplace(a.data(),
