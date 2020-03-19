@@ -323,6 +323,12 @@ void Dataset::setData(const std::string &name, const DataArrayConstView &data) {
   setData(name, DataArray(data));
 }
 
+void DataArrayView::setData(Variable data) const {
+  if (!slices().empty())
+    throw except::SliceError("Cannot set data via slice.");
+  m_mutableDataset->setData(name(), std::move(data), AttrPolicy::Keep);
+}
+
 /// Removes the coordinate for the given dimension.
 void Dataset::eraseCoord(const Dim dim) { erase_from_map(m_coords, dim); }
 

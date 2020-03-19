@@ -28,18 +28,42 @@ bool is_events(const DataArrayConstView &array) {
 
 namespace event {
 
-Variable concatenate(const VariableConstView &a, const VariableConstView &b) {
-  Variable out(a);
+void append(const VariableView &a, const VariableConstView &b) {
   transform_in_place<pair_self_t<event_list<double>, event_list<float>,
                                  event_list<int64_t>, event_list<int32_t>>>(
-      out, b,
+      a, b,
       overloaded{[](auto &a_, const auto &b_) {
                    a_.insert(a_.end(), b_.begin(), b_.end());
                  },
                  [](units::Unit &a_, const units::Unit &b_) {
                    expect::equals(a_, b_);
                  }});
+}
+
+Variable concatenate(const VariableConstView &a, const VariableConstView &b) {
+  Variable out(a);
+  append(out, b);
   return out;
+}
+
+/// Broadcast dense variable to same "event shape" as `shape`.
+///
+/// The return value has the same unit as `dense`, but the dtype is changed to
+/// `event_list<input-dtype>` and each event list has the same length as given
+/// by the event lists in `shape`.
+Variable broadcast(const VariableConstView &dense,
+                   const VariableConstView &shape) {
+  Variable out = astype(dense * shape, dense.dtype());
+  out.setUnit(dense.unit());
+  return out;
+}
+
+Variable broadcast_weights(const DataArrayConstView &events) {
+  for (const auto &item : events.coords())
+    if (is_events(item.second))
+      return broadcast(events.data(), item.second);
+  throw except::EventDataError(
+      "No coord with event lists found, cannot broadcasr weights.");
 }
 
 } // namespace event

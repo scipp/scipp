@@ -196,6 +196,8 @@ public:
     return *this /= makeVariable<T>(Values{value});
   }
 
+  void setData(Variable data) const;
+
 private:
   friend class DatasetConstView;
   // For internal use in DatasetConstView.

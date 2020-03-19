@@ -226,7 +226,38 @@ Variable sparse_dense_op_impl(const VariableConstView &sparseCoord_,
 DataArray &DataArray::operator+=(const DataArrayConstView &other) {
   expect::coordsAreSuperset(*this, other);
   union_or_in_place(masks(), other.masks());
-  data() += other.data();
+  if (hasData() && other.hasData()) {
+    data() += other.data();
+  } else {
+    if (!is_events(unaligned()) || !is_events(other.unaligned()))
+      throw except::UnalignedError(
+          "Summing realigned data only implemented for event data.");
+    if (is_events(unaligned().data())) {
+      event::append(unaligned().data(),
+                    is_events(other.unaligned().data())
+                        ? other.unaligned().data()
+                        : event::broadcast_weights(other.unaligned()));
+    } else {
+      if (is_events(other.unaligned().data())) {
+        unaligned().setData(event::concatenate(
+            event::broadcast_weights(unaligned()), other.unaligned().data()));
+      } else if (unaligned().data() != other.unaligned().data()) {
+        unaligned().setData(
+            event::concatenate(event::broadcast_weights(unaligned()),
+                               event::broadcast_weights(other.unaligned())));
+      }
+    }
+    for (const auto &[dim, coord] : unaligned().coords())
+      if (is_events(coord))
+        event::append(coord, other.unaligned().coords()[dim]);
+      else
+        expect::equals(coord, other.unaligned().coords()[dim]);
+    // TODO is this working correctly? If only event are unaligned we don't have
+    // to do anything here because all masks are lifted to the aligned wrapper
+    // in `realign`. If there are also other unaligned dimension there may be
+    // masks here (otherwise this is just duplicated from the parent).
+    union_or_in_place(unaligned().masks(), other.unaligned().masks());
+  }
   return *this;
 }
 
