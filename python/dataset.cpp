@@ -227,6 +227,14 @@ void bind_data_array_properties(py::class_<T, Ignored...> &c) {
           py::return_value_policy::move, py::keep_alive<0, 1>()),
       [](T &self, const VariableConstView &data) { self.data().assign(data); },
       R"(Underlying data item.)");
+  c.def_property_readonly(
+      "unaligned",
+      py::cpp_function(
+          [](T &self) {
+            return self.hasData() ? py::none() : py::cast(self.unaligned());
+          },
+          py::return_value_policy::move, py::keep_alive<0, 1>()),
+      R"(Underlying unaligned data item.)");
   bind_coord_properties(c);
   bind_comparison<DataArrayConstView>(c);
   bind_data_properties(c);

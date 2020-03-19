@@ -60,7 +60,10 @@ def _format_non_sparse(var, has_variances):
     # ravel avoids displaying square brackets in the output
     if hasattr(data, 'ravel'):
         data = data.ravel()
-    s = _format_array(data, size, ellipsis_after=2)
+    if data is None:
+        s = "data not histogrammed yet"
+    else:
+        s = _format_array(data, size, ellipsis_after=2)
     if has_variances:
         s = f'{VARIANCE_PREFIX}{s}'
     return _make_row(s)
@@ -124,6 +127,8 @@ def retrieve(var, variances=False, single=False):
 
 def _short_data_repr_html_non_sparse(var, variances=False):
     if hasattr(var, "data"):
+        if var.data is None:
+            return "Realigned data based on unaligned content. Use `histogram` to obtain values."
         return repr(retrieve(var.data, variances))
     else:
         return repr(retrieve(var, variances))
