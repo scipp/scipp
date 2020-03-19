@@ -829,36 +829,37 @@ void init_variable(py::module &m) {
         return events;
       },
       R"(Return true if the data array contains event data. Note that data may be stored as a scalar, but this returns true if any coord contains events.)");
-  m.def("position",
-        [](const Variable &x, const Variable &y, const Variable &z) {
-          return geometry::position(x, y, z);
-        },
-        py::arg("x"), py::arg("y"), py::arg("z"),
-        R"(
+  auto geom_m = m.def_submodule("geometry");
+  geom_m.def("position",
+             [](const Variable &x, const Variable &y, const Variable &z) {
+               return geometry::position(x, y, z);
+             },
+             py::arg("x"), py::arg("y"), py::arg("z"),
+             R"(
         Element-wise zip functionality to produce a vector_3_float64 from independent input variables.
 
         :raises: If the units of inputs are not all meters, or if the dtypes of inputs are not double precision floats
         :return: zip of input x, y and z. Output unit is meters.
         :rtype: Variable)");
-  m.def("x", [](const Variable &pos) { return geometry::x(pos); },
-        py::arg("pos"),
-        R"(
+  geom_m.def("x", [](const Variable &pos) { return geometry::x(pos); },
+             py::arg("pos"),
+             R"(
         un-zip functionality to produce a Variable of the x component of a vector_3_float64.
 
         :raises: If the units of inputs are not meters, or if the dtypes of inputs are not double precision floats
         :return: Extracted x component of input pos. Units in meters.
         :rtype: Variable)");
-  m.def("y", [](const Variable &pos) { return geometry::y(pos); },
-        py::arg("pos"),
-        R"(
+  geom_m.def("y", [](const Variable &pos) { return geometry::y(pos); },
+             py::arg("pos"),
+             R"(
         un-zip functionality to produce a Variable of the y component of a vector_3_float64.
 
         :raises: If the units of inputs are not meters, or if the dtypes of inputs are not double precision floats
         :return: Extracted y component of input pos. Units in meters.
         :rtype: Variable)");
-  m.def("z", [](const Variable &pos) { return geometry::z(pos); },
-        py::arg("pos"),
-        R"(
+  geom_m.def("z", [](const Variable &pos) { return geometry::z(pos); },
+             py::arg("pos"),
+             R"(
         un-zip functionality to produce a Variable of the z component of a vector_3_float64.
 
         :raises: If the units of inputs are not meters, or if the dtypes of inputs are not double precision floats

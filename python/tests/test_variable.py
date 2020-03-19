@@ -946,19 +946,19 @@ def test_num_to_nan_out_with_multiple_special_replacements():
 
 def test_position():
     var = sc.Variable()
-    assert_export(sc.position, x=var, y=var, z=var)
+    assert_export(sc.geometry.position, x=var, y=var, z=var)
 
 
 def test_x():
     var = sc.Variable()
-    assert_export(sc.x, pos=var)
+    assert_export(sc.geometry.x, pos=var)
 
 
 def test_y():
     var = sc.Variable()
-    assert_export(sc.y, pos=var)
+    assert_export(sc.geometry.y, pos=var)
 
 
 def test_z():
     var = sc.Variable()
-    assert_export(sc.z, pos=var)
+    assert_export(sc.geometry.z, pos=var)
