@@ -187,9 +187,10 @@ class InstrumentView:
                                               layout={"width": "initial"})
         self.dropdown.observe(self.change_data_array, names="value")
 
+        checkbox_label = self.widgets.Label(value="Continuous update:")
         self.continuous_update = self.widgets.Checkbox(
-            value=continuous_update, description="Continuous update:",
-            indent=False)
+            value=continuous_update, description="",
+            indent=False, layout={"width": "initial"})
         self.continuous_update.observe(self.toggle_continuous_update, names="value")
 
         # Create a Tof slider and its label
@@ -203,7 +204,7 @@ class InstrumentView:
             continuous_update=self.continuous_update.value,
             readout=False)
         self.slider.observe(self.update_colors, names="value")
-        self.label = self.widgets.Label()
+        self.label = self.widgets.Label(layout={"width": "150px"})
 
         # Add text boxes to change number of bins/bin size
         self.nbins = self.widgets.Text(value=str(
@@ -236,7 +237,8 @@ class InstrumentView:
         self.opacity_slider.observe(self.update_opacity, names="value")
 
         self.select_rendering = self.widgets.Dropdown(
-            options=["Fast", "Full"], value=rendering)
+            options=["Fast", "Full"], value=rendering, description="Rendering:",
+            layout={"width": "initial"})
         self.select_rendering.observe(self.change_rendering, names="value")
 
 
@@ -293,7 +295,7 @@ class InstrumentView:
 
         # Place widgets in boxes
         box_list = [
-            self.widgets.HBox([self.dropdown, self.slider, self.label, self.continuous_update]),
+            self.widgets.HBox([self.dropdown, self.slider, self.label, checkbox_label, self.continuous_update]),
             self.widgets.HBox([self.nbins, self.bin_size]),
             self.widgets.HBox([self.select_rendering, self.opacity_slider, self.select_colormap, self.colormap_error]),
             self.togglebuttons
