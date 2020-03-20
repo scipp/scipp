@@ -398,6 +398,8 @@ public:
     setData(name, Variable(data), attrPolicy);
   }
 
+  void realign(std::vector<std::pair<Dim, Variable>> newCoords);
+
   void eraseCoord(const Dim dim);
   void eraseAttr(const std::string &attrName);
   void eraseAttr(const std::string &name, const std::string &attrName);
@@ -816,6 +818,10 @@ public:
 
   void setData(Variable data) {
     m_holder.setData(name(), std::move(data), AttrPolicy::Keep);
+  }
+
+  void realign(std::vector<std::pair<Dim, Variable>> newCoords) {
+    m_holder.realign(std::move(newCoords));
   }
 
   // TODO need to define some details regarding handling of dense coords in case

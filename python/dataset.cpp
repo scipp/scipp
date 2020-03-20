@@ -154,6 +154,19 @@ void bind_coord_properties(py::class_<T, Ignored...> &c) {
                                            py::keep_alive<0, 1>()),
                           R"(
       Dict of attributes.)");
+
+  if constexpr (std::is_same_v<T, DataArray> || std::is_same_v<T, Dataset>)
+    c.def("realign",
+          [](T &self, py::dict coord_dict) {
+            // Python dicts above 3.7 preserve order, but we cannot use
+            // automatic conversion by pybind11 since C++ maps do not.
+            std::vector<std::pair<Dim, Variable>> coords;
+            for (auto item : coord_dict)
+              coords.emplace_back(Dim(item.first.cast<std::string>()),
+                                  item.second.cast<Variable>());
+            self.realign(std::move(coords));
+          },
+          py::arg("coords"), py::call_guard<py::gil_scoped_release>());
 }
 
 template <class T, class... Ignored>

@@ -332,6 +332,34 @@ void DataArrayView::setData(Variable data) const {
     m_mutableDataset->setData(name(), std::move(data), AttrPolicy::Keep);
 }
 
+void Dataset::realign(std::vector<std::pair<Dim, Variable>> newCoords) {
+  for (const auto &item : newCoords)
+    if (!coords().contains(item.first))
+      // This may be supported in the future
+      throw except::RealignedDataError(
+          "Alignment change cannot add additional coords.");
+  for (const auto &item : *this)
+    if (item.hasData())
+      throw except::RealignedDataError(
+          "Cannot change alignment of already aligned data. Use `rebin`.");
+  std::map<Dim, scipp::index> newSizes;
+  for (const auto &[dim, coord] : newCoords)
+    newSizes.emplace(dim, coord.dims()[dim] - 1);
+  // TODO Check for masks first, which would prevent realign
+  // Or better: rebin masks and dense data?
+  for (const auto &item : m_data) {
+    for (const auto &[dim, size] : newSizes) {
+      auto &dims = item.second.unaligned->dims;
+      if (dims.contains(dim))
+        dims.resize(dim, size);
+    }
+  }
+  for (const auto &[dim, coord] : newCoords) {
+    eraseCoord(dim);
+    setCoord(dim, std::move(coord));
+  }
+}
+
 /// Removes the coordinate for the given dimension.
 void Dataset::eraseCoord(const Dim dim) { erase_from_map(m_coords, dim); }
 
