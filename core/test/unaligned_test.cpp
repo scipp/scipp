@@ -35,7 +35,6 @@ protected:
                 {{dim, pos}, {Dim::X, x}, {Dim::Y, y}, {Dim::Z, z}});
 
     a = concatenate(a, a + a, Dim::Temperature);
-    EXPECT_EQ(a.dims(), Dimensions({Dim::Temperature, Dim::Position}, {2, 4}));
     a.coords().set(Dim::Temperature, temp);
     return a;
   }
