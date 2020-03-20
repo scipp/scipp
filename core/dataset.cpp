@@ -448,6 +448,10 @@ void Dataset::rename(const Dim from, const Dim to) {
     auto &value = item.second;
     if (value.data)
       value.data.rename(from, to);
+    else {
+      value.unaligned->dims.relabel(value.unaligned->dims.index(from), to);
+      value.unaligned->data.rename(from, to);
+    }
     for (auto &attr : value.attrs)
       attr.second.rename(from, to);
   }

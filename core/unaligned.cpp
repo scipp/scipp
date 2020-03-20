@@ -10,10 +10,12 @@ namespace scipp::core::unaligned {
 namespace {
 template <class Map, class Dims>
 auto align(DataArray &view, const Dims &unalignedDims) {
-  std::vector<std::pair<std::string, Variable>> aligned;
-  std::set<std::string> to_align;
+  std::vector<std::pair<typename Map::key_type, Variable>> aligned;
+  std::set<typename Map::key_type> to_align;
   constexpr auto map = [](DataArray &v) {
-    if constexpr (std::is_same_v<Map, MasksView>)
+    if constexpr (std::is_same_v<Map, CoordsView>)
+      return v.coords();
+    else if constexpr (std::is_same_v<Map, MasksView>)
       return v.masks();
     else
       return v.attrs();
@@ -21,7 +23,8 @@ auto align(DataArray &view, const Dims &unalignedDims) {
   for (const auto &[name, item] : map(view)) {
     const auto &dims = item.dims();
     if (std::none_of(unalignedDims.begin(), unalignedDims.end(),
-                     [&dims](const Dim dim) { return dims.contains(dim); }))
+                     [&dims](const Dim dim) { return dims.contains(dim); }) &&
+        !(is_events(item) && unalignedDims.count(Dim::Invalid)))
       to_align.insert(name);
   }
   for (const auto &name : to_align) {
@@ -59,7 +62,7 @@ DataArray realign(DataArray unaligned,
   // TODO Some things here can be simplified and optimized by adding an
   // `extract` method to MutableView.
   Dimensions alignedDims;
-  std::vector<std::pair<Dim, Variable>> alignedCoords;
+  auto alignedCoords = align<CoordsView>(unaligned, unalignedDims);
   const auto dims = unaligned.dims();
   for (const auto &dim : dims.labels()) {
     if (unalignedDims.count(dim)) {
@@ -68,10 +71,6 @@ DataArray realign(DataArray unaligned,
       alignedCoords.insert(alignedCoords.end(), coords.begin(), coords.end());
     } else {
       alignedDims.addInner(dim, unaligned.dims()[dim]);
-      if (unaligned.coords().contains(dim)) { // aligned dim may come w/o coord
-        alignedCoords.emplace_back(dim, Variable(unaligned.coords()[dim]));
-        unaligned.coords().erase(dim);
-      }
     }
   }
   if (unalignedDims.count(Dim::Invalid)) {
