@@ -27,7 +27,7 @@ template <class T1, class T2> Variable plus(const T1 &a, const T2 &b) {
 }
 
 Variable Variable::operator-() const {
-  return transform<double, float, int64_t, Eigen::Vector3d, Eigen::Vector4d>(
+  return transform<double, float, int64_t, Eigen::Vector3d, Eigen::Quaterniond>(
       *this, [](const auto a) { return -a; });
 }
 

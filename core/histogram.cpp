@@ -14,45 +14,45 @@ namespace scipp::core {
 
 static constexpr auto make_histogram =
     [](auto &data, const auto &events, const auto &weights, const auto &edges) {
-      constexpr auto value = [](const auto &x, const scipp::index i) {
-        if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(x)>>) {
+      constexpr auto value = [](const auto &v, const scipp::index i) {
+        if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(v)>>) {
           static_cast<void>(i);
-          return x.value;
+          return v.value;
         } else
-          return x.values[i];
+          return v.values[i];
       };
-      constexpr auto variance = [](const auto &x, const scipp::index i) {
-        if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(x)>>) {
+      constexpr auto variance = [](const auto &v, const scipp::index i) {
+        if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(v)>>) {
           static_cast<void>(i);
-          return x.variance;
+          return v.variance;
         } else
-          return x.variances[i];
+          return v.variances[i];
       };
 
       // Special implementation for linear bins. Gives a 1x to 20x speedup
       // for few and many events per histogram, respectively.
       if (scipp::numeric::is_linspace(edges)) {
         const auto [offset, nbin, scale] = linear_edge_params(edges);
-        for (scipp::index i = 0; i < scipp::size(events); ++i) {
-          const auto x = events[i];
+        for (scipp::index j = 0; j < scipp::size(events); ++j) {
+          const auto x = events[j];
           const double bin = (x - offset) * scale;
           if (bin >= 0.0 && bin < nbin) {
             const auto b = static_cast<scipp::index>(bin);
-            const auto w = value(weights, i);
-            const auto e = variance(weights, i);
+            const auto w = value(weights, j);
+            const auto e = variance(weights, j);
             data.value[b] += w;
             data.variance[b] += e;
           }
         }
       } else {
         expect::histogram::sorted_edges(edges);
-        for (scipp::index i = 0; i < scipp::size(events); ++i) {
-          const auto x = events[i];
+        for (scipp::index j = 0; j < scipp::size(events); ++j) {
+          const auto x = events[j];
           auto it = std::upper_bound(edges.begin(), edges.end(), x);
           if (it != edges.end() && it != edges.begin()) {
             const auto b = --it - edges.begin();
-            const auto w = value(weights, i);
-            const auto e = variance(weights, i);
+            const auto w = value(weights, j);
+            const auto e = variance(weights, j);
             data.value[b] += w;
             data.variance[b] += e;
           }

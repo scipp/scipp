@@ -126,7 +126,7 @@ Variable doMakeVariable(const std::vector<Dim> &labels, py::array &values,
                                  values.cast<std::vector<std::string>>(), unit);
     }
 
-    if (dtypeTag == core::dtype<Eigen::Vector3d> || dtypeTag == core::dtype<Eigen::Vector4d>) {
+    if (dtypeTag == core::dtype<Eigen::Vector3d> || dtypeTag == core::dtype<Eigen::Quaterniond>) {
       std::vector<scipp::index> shape(values.shape(),
                                       values.shape() + values.ndim() - 1);
       // using VecType = std::conditional<dtypeTag == core::dtype<Eigen::Vector3d>,
@@ -136,7 +136,7 @@ Variable doMakeVariable(const std::vector<Dim> &labels, py::array &values,
             labels, shape, values.cast<std::vector<Eigen::Vector3d>>(), unit);
       else
         return init_1D_no_variance(
-            labels, shape, values.cast<std::vector<Eigen::Vector4d>>(), unit);
+            labels, shape, values.cast<std::vector<Eigen::Quaterniond>>(), unit);
     }
   }
 
@@ -150,7 +150,7 @@ Variable makeVariableDefaultInit(const std::vector<Dim> &labels,
                                  const bool variances) {
   return CallDType<double, float, int64_t, int32_t, bool, event_list<double>,
                    event_list<float>, event_list<int64_t>, event_list<int32_t>,
-                   DataArray, Dataset, Eigen::Vector3d, Eigen::Vector4d>::
+                   DataArray, Dataset, Eigen::Vector3d, Eigen::Quaterniond>::
       apply<MakeVariableDefaultInit>(scipp_dtype(dtype), labels, shape, unit,
                                      variances);
 }
@@ -199,10 +199,10 @@ void bind_init_0D_numpy_types(py::class_<Variable> &c) {
                 v ? std::optional(v->cast<Eigen::Vector3d>()) : std::nullopt,
                 unit);
           } else if (info.ndim == 1 &&
-                     scipp_dtype(dtype) == core::dtype<Eigen::Vector4d>) {
-            return do_init_0D<Eigen::Vector4d>(
-                b.cast<Eigen::Vector4d>(),
-                v ? std::optional(v->cast<Eigen::Vector4d>()) : std::nullopt,
+                     scipp_dtype(dtype) == core::dtype<Eigen::Quaterniond>) {
+            return do_init_0D<Eigen::Quaterniond>(
+                b.cast<Eigen::Quaterniond>(),
+                v ? std::optional(v->cast<Eigen::Quaterniond>()) : std::nullopt,
                 unit);
           } else {
             throw scipp::except::VariableError(
@@ -232,17 +232,17 @@ void bind_init_list(py::class_<Variable> &c) {
                   Dims{label[0]}, Shape{scipp::size(val)},
                   Values(val.begin(), val.end()), units::Unit(unit));
             return variable;
-          } else if (scipp_dtype(dtype) == core::dtype<Eigen::Vector4d>) {
-            auto val = values.cast<std::vector<Eigen::Vector4d>>();
+          } else if (scipp_dtype(dtype) == core::dtype<Eigen::Quaterniond>) {
+            auto val = values.cast<std::vector<Eigen::Quaterniond>>();
             Variable variable;
             if (variances) {
-              auto var = variances->cast<std::vector<Eigen::Vector4d>>();
-              variable = makeVariable<Eigen::Vector4d>(
+              auto var = variances->cast<std::vector<Eigen::Quaterniond>>();
+              variable = makeVariable<Eigen::Quaterniond>(
                   Dims{label[0]}, Shape{scipp::size(val)},
                   Values(val.begin(), val.end()),
                   Variances(var.begin(), var.end()), units::Unit(unit));
             } else
-              variable = makeVariable<Eigen::Vector4d>(
+              variable = makeVariable<Eigen::Quaterniond>(
                   Dims{label[0]}, Shape{scipp::size(val)},
                   Values(val.begin(), val.end()), units::Unit(unit));
             return variable;
@@ -280,7 +280,7 @@ void init_variable(py::module &m) {
   bind_init_0D<Dataset>(variable);
   bind_init_0D<std::string>(variable);
   bind_init_0D<Eigen::Vector3d>(variable);
-  bind_init_0D<Eigen::Vector4d>(variable);
+  bind_init_0D<Eigen::Quaterniond>(variable);
   variable.def(py::init<const VariableView &>())
       .def(py::init(&makeVariableDefaultInit),
            py::arg("dims") = std::vector<Dim>{},
