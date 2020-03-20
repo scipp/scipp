@@ -129,7 +129,6 @@ stages:
       - job: 'docker'
         displayName: 'Docker'
         timeoutInMinutes: 30
-        condition: false
         pool:
           vmImage: 'ubuntu-latest'
         steps:
@@ -143,7 +142,7 @@ stages:
               containerRegistry: 'DockerHub'
               repository: 'scipp/scipp-jupyter-demo'
               command: 'buildAndPush'
-              Dockerfile: '**/Dockerfile'
+              Dockerfile: 'scipp-jupyter-demo.Dockerfile'
               tags: 'latest'
             displayName: 'Build image and push to DockerHub'
           - task: Docker@2
