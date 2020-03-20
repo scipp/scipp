@@ -360,22 +360,25 @@ auto sparse_dense_op(Op op, const DataArrayConstView &a,
   }
 }
 
-DataArray operator*(const DataArrayConstView &a, const DataArrayConstView &b) {
+namespace {
+template <class Op>
+DataArray apply_mul_or_div(Op op, const DataArrayConstView &a,
+                           const DataArrayConstView &b) {
   if (unaligned::is_realigned_events(a) || unaligned::is_realigned_events(b))
-    return {sparse_dense_op(Times{}, a, b), union_(a.coords(), b.coords()),
+    return {sparse_dense_op(op, a, b), union_(a.coords(), b.coords()),
             union_or(a.masks(), b.masks())};
   else
-    return {a.data() * b.data(), union_(a.coords(), b.coords()),
+    return {op(a.data(), b.data()), union_(a.coords(), b.coords()),
             union_or(a.masks(), b.masks())};
+}
+} // namespace
+
+DataArray operator*(const DataArrayConstView &a, const DataArrayConstView &b) {
+  return apply_mul_or_div(Times{}, a, b);
 }
 
 DataArray operator/(const DataArrayConstView &a, const DataArrayConstView &b) {
-  if (unaligned::is_realigned_events(a) || unaligned::is_realigned_events(b))
-    return {sparse_dense_op(Divide{}, a, b), union_(a.coords(), b.coords()),
-            union_or(a.masks(), b.masks())};
-  else
-    return {a.data() / b.data(), union_(a.coords(), b.coords()),
-            union_or(a.masks(), b.masks())};
+  return apply_mul_or_div(Divide{}, a, b);
 }
 
 DataArray operator+(const DataArrayConstView &a, const VariableConstView &b) {
