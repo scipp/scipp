@@ -326,9 +326,6 @@ template <class Op>
 auto sparse_dense_op(Op op, const DataArrayConstView &a,
                      const DataArrayConstView &b) {
   if (unaligned::is_realigned_events(a)) {
-    const auto &events = a.unaligned();
-
-    // sparse_dense_op_inplace(op, events, b);
 
     const auto &bins = unaligned::realigned_event_coord(a);
     const Dim dim = bins.dims().inner();
@@ -336,22 +333,14 @@ auto sparse_dense_op(Op op, const DataArrayConstView &a,
       throw except::RealignedDataError(
           "Multiplication/division of realigned data requires histogram has "
           "second operand.");
-    expect::coordsAreSuperset(a, b);
-    // union_or_in_place(events.masks(), b.masks());
+    const auto &events = a.unaligned();
     auto weight_scale =
         sparse_dense_op_impl(events.coords()[dim], bins, b.data(), dim);
-    /*
-      if (is_events(events.data())) {
-        // Note the inefficiency here: Always creating temporary sparse data.
-        // Could easily avoided, but requires significant code duplication.
-        op.inplace(events.data(), weight_scale);
-      } else {
-        events.setData(op(events.data(), weight_scale));
-      }
-      */
 
-    // TODO avoid coord, mask, and attr duplication
-    return UnalignedData{a.dims(), DataArray(op(events.data(), weight_scale), events.coords(), events.masks(), events.attrs(), events.name())};
+    // need to keep event coords
+    // no event masks
+    return UnalignedData{a.dims(),
+                         DataArray(op(events.data(), std::move(weight_scale)))};
   } else {
     // histogram divided by events not supported, would typically result in unit
     // 1/counts which is meaningless
