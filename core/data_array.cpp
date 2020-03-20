@@ -337,10 +337,15 @@ auto sparse_dense_op(Op op, const DataArrayConstView &a,
     auto weight_scale =
         sparse_dense_op_impl(events.coords()[dim], bins, b.data(), dim);
 
-    // need to keep event coords
-    // no event masks
+    std::map<Dim, Variable> coords;
+    for (const auto &[d, coord] : events.coords()) {
+      if (is_events(coord))
+        coords.emplace(d, coord);
+    }
+    // Note that event masks are not supported.
     return UnalignedData{a.dims(),
-                         DataArray(op(events.data(), std::move(weight_scale)))};
+                         DataArray(op(events.data(), std::move(weight_scale)),
+                                   std::move(coords))};
   } else {
     // histogram divided by events not supported, would typically result in unit
     // 1/counts which is meaningless

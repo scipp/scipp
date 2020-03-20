@@ -105,7 +105,7 @@ TEST(DataArrayRealignedEventsArithmeticTest, fail_sparse_op_non_histogram) {
   EXPECT_THROW(sparse / not_hist, except::VariableMismatchError);
 }
 
-TEST(DataArrayRealignedEventsArithmeticTest, realigned_events_times_histogram) {
+TEST(DataArrayRealignedEventsArithmeticTest, events_times_histogram) {
   const auto sparse = make_sparse();
   const auto hist = make_histogram();
   const auto realigned = unaligned::realign(
