@@ -5,13 +5,9 @@
 #ifndef SCIPP_CORE_EVENT_H
 #define SCIPP_CORE_EVENT_H
 
-#include "scipp/core/variable.h"
+#include "scipp/core/dataset.h"
 
-namespace scipp::core {
-
-class DataArrayConstView;
-
-namespace event {
+namespace scipp::core::event {
 
 SCIPP_CORE_EXPORT void append(const VariableView &a,
                               const VariableConstView &b);
@@ -25,7 +21,6 @@ SCIPP_CORE_EXPORT Variable broadcast(const VariableConstView &dense,
                                      const VariableConstView &shape);
 SCIPP_CORE_EXPORT Variable broadcast_weights(const DataArrayConstView &events);
 
-} // namespace event
-} // namespace scipp::core
+} // namespace scipp::core::event
 
 #endif // SCIPP_CORE_EVENT_H
