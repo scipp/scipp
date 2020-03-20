@@ -1045,6 +1045,15 @@ nan_to_num(const VariableConstView &var, const VariableConstView &replacement);
     const VariableConstView &var, const VariableConstView &replacement);
 [[nodiscard]] SCIPP_CORE_EXPORT Variable neg_inf_to_num(
     const VariableConstView &var, const VariableConstView &replacement);
+namespace geometry {
+[[nodiscard]] SCIPP_CORE_EXPORT Variable position(const VariableConstView &x,
+                                                  const VariableConstView &y,
+                                                  const VariableConstView &z);
+[[nodiscard]] SCIPP_CORE_EXPORT Variable x(const VariableConstView &pos);
+[[nodiscard]] SCIPP_CORE_EXPORT Variable y(const VariableConstView &pos);
+[[nodiscard]] SCIPP_CORE_EXPORT Variable z(const VariableConstView &pos);
+
+} // namespace geometry
 
 namespace sparse {
 SCIPP_CORE_EXPORT Variable counts(const VariableConstView &var);
