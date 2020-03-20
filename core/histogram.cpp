@@ -8,6 +8,7 @@
 #include "scipp/core/except.h"
 #include "scipp/core/groupby.h"
 #include "scipp/core/transform_subspan.h"
+#include "scipp/core/unaligned.h"
 
 #include "dataset_operations_common.h"
 
@@ -170,29 +171,15 @@ void histogram_md_recurse(const VariableView &data,
     histogram_md_recurse(data.slice({dim, i}), slice, realigned, dim_index + 1);
   }
 }
-
-bool is_realigned_events(const DataArrayConstView &realigned) {
-  return !is_events(realigned) && is_events(realigned.unaligned());
-}
-
-VariableConstView realigned_event_coord(const DataArrayConstView &realigned) {
-  std::vector<Dim> realigned_dims;
-  for (const auto &[dim, coord] : realigned.unaligned().coords())
-    if (is_events(coord) && realigned.coords().contains(dim))
-      realigned_dims.push_back(dim);
-  if (realigned_dims.size() != 1)
-    throw except::UnalignedError(
-        "Multi-dimensional histogramming of event data not supported yet.");
-  return realigned.coords()[realigned_dims.front()];
-}
 } // namespace
 
 DataArray histogram(const DataArrayConstView &realigned) {
   if (realigned.hasData())
     throw except::UnalignedError("Expected realigned data, but data appears to "
                                  "be histogrammed already.");
-  if (is_realigned_events(realigned))
-    return histogram(realigned.unaligned(), realigned_event_coord(realigned));
+  if (unaligned::is_realigned_events(realigned))
+    return histogram(realigned.unaligned(),
+                     unaligned::realigned_event_coord(realigned));
   std::optional<DataArray> filtered;
   // If `realigned` is sliced we need to copy the unaligned content to "apply"
   // the slicing since slicing realigned dimensions does not affect the view

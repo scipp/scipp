@@ -326,7 +326,10 @@ void Dataset::setData(const std::string &name, const DataArrayConstView &data) {
 void DataArrayView::setData(Variable data) const {
   if (!slices().empty())
     throw except::SliceError("Cannot set data via slice.");
-  m_mutableDataset->setData(name(), std::move(data), AttrPolicy::Keep);
+  if (m_mutableData->second.unaligned)
+    m_mutableData->second.unaligned->data.setData(std::move(data));
+  else
+    m_mutableDataset->setData(name(), std::move(data), AttrPolicy::Keep);
 }
 
 /// Removes the coordinate for the given dimension.
@@ -502,6 +505,8 @@ DataArrayConstView DataArrayConstView::unaligned() const {
   // This needs to combine coords from m_dataset and from the unaligned data. We
   // therefore construct with normal dataset and items pointers and only pass
   // the unaligned data via a variable view.
+  if (hasData())
+    return DataArrayConstView{};
   auto view = m_data->second.unaligned->data.data();
   detail::do_make_slice(view, slices());
   return {*m_dataset, *m_data, slices(), std::move(view)};
@@ -509,6 +514,8 @@ DataArrayConstView DataArrayConstView::unaligned() const {
 
 DataArrayView DataArrayView::unaligned() const {
   // See also DataArrayConstView::unaligned.
+  if (hasData())
+    return DataArrayView{};
   auto view = m_mutableData->second.unaligned->data.data();
   detail::do_make_slice(view, slices());
   return {*m_mutableDataset, *m_mutableData, slices(), std::move(view)};

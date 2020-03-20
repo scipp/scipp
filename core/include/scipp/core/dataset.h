@@ -51,10 +51,13 @@ enum class AttrPolicy { Keep, Drop };
 /// Const view for a data item and related coordinates of Dataset.
 class SCIPP_CORE_EXPORT DataArrayConstView {
 public:
+  DataArrayConstView() = default;
   DataArrayConstView(const Dataset &dataset,
                      const detail::dataset_item_map::value_type &data,
                      const detail::slice_list &slices = {},
                      VariableView &&view = VariableView{});
+
+  explicit operator bool() const noexcept { return m_dataset != nullptr; }
 
   const std::string &name() const noexcept;
 
@@ -70,7 +73,7 @@ public:
   bool hasData() const noexcept { return static_cast<bool>(m_view); }
   /// Return true if the view contains data variances.
   bool hasVariances() const noexcept {
-    return hasData() && data().hasVariances();
+    return hasData() ? data().hasVariances() : unaligned().hasVariances();
   }
 
   /// Return untyped const view for data (values and optional variances).
@@ -113,8 +116,8 @@ private:
   friend class DatasetConstView;
   friend class DatasetView;
 
-  const Dataset *m_dataset;
-  const detail::dataset_item_map::value_type *m_data;
+  const Dataset *m_dataset{nullptr};
+  const detail::dataset_item_map::value_type *m_data{nullptr};
   detail::slice_list m_slices;
 
   template <class MapView> MapView makeView() const;
@@ -132,6 +135,7 @@ class Dataset;
 /// View for a data item and related coordinates of Dataset.
 class SCIPP_CORE_EXPORT DataArrayView : public DataArrayConstView {
 public:
+  DataArrayView() = default;
   DataArrayView(Dataset &dataset, detail::dataset_item_map::value_type &data,
                 const detail::slice_list &slices = {},
                 VariableView &&view = VariableView{});
@@ -205,8 +209,8 @@ private:
       : DataArrayConstView(std::move(base)), m_mutableDataset{nullptr},
         m_mutableData{nullptr} {}
 
-  Dataset *m_mutableDataset;
-  detail::dataset_item_map::value_type *m_mutableData;
+  Dataset *m_mutableDataset{nullptr};
+  detail::dataset_item_map::value_type *m_mutableData{nullptr};
 
   template <class MapView> MapView makeView() const;
 };

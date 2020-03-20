@@ -68,8 +68,10 @@ DataArray realign(DataArray unaligned,
       alignedCoords.insert(alignedCoords.end(), coords.begin(), coords.end());
     } else {
       alignedDims.addInner(dim, unaligned.dims()[dim]);
-      alignedCoords.emplace_back(dim, Variable(unaligned.coords()[dim]));
-      unaligned.coords().erase(dim);
+      if (unaligned.coords().contains(dim)) { // aligned dim may come w/o coord
+        alignedCoords.emplace_back(dim, Variable(unaligned.coords()[dim]));
+        unaligned.coords().erase(dim);
+      }
     }
   }
   if (unalignedDims.count(Dim::Invalid)) {
@@ -84,6 +86,22 @@ DataArray realign(DataArray unaligned,
   return DataArray(UnalignedData{alignedDims, std::move(unaligned)},
                    std::move(alignedCoords), std::move(alignedMasks),
                    std::move(alignedAttrs), std::move(name));
+}
+
+bool is_realigned_events(const DataArrayConstView &realigned) {
+  return !is_events(realigned) && realigned.unaligned() &&
+         is_events(realigned.unaligned());
+}
+
+VariableConstView realigned_event_coord(const DataArrayConstView &realigned) {
+  std::vector<Dim> realigned_dims;
+  for (const auto &[dim, coord] : realigned.unaligned().coords())
+    if (is_events(coord) && realigned.coords().contains(dim))
+      realigned_dims.push_back(dim);
+  if (realigned_dims.size() != 1)
+    throw except::UnalignedError(
+        "Multi-dimensional histogramming of event data not supported yet.");
+  return realigned.coords()[realigned_dims.front()];
 }
 
 } // namespace scipp::core::unaligned

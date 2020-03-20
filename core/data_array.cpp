@@ -9,6 +9,7 @@
 #include "scipp/core/histogram.h"
 #include "scipp/core/subspan_view.h"
 #include "scipp/core/transform.h"
+#include "scipp/core/unaligned.h"
 
 namespace scipp::core {
 
@@ -130,29 +131,10 @@ struct Divide {
   }
 };
 
-// This is a temporary helper that will be removed. Once we have proper support
-// for unaligned data arrays, direct operations between event data and
-// histograms will not be supported any more. Instead, the aligned wrapper of
-// the unaligned event data will provide the dimension information.
-Dim guess_histogram_dim(const DataArrayConstView &a,
-                        const DataArrayConstView &b) {
-  Dim hist(Dim::Invalid);
-  for (const auto &[dim, coord] : a.coords())
-    if (is_events(coord))
-      hist = dim;
-  for (const auto &[dim, coord] : b.coords())
-    if (is_events(coord))
-      hist = dim;
-  return hist;
-}
-
 bool is_sparse_and_histogram(const DataArrayConstView &a,
                              const DataArrayConstView &b, const Dim dim) {
-  // TODO Such an indirect check should not be necessary any more. Operations
-  // mixing dense and event data are probably only going to be handled using an
-  // aligning wrapper, so the sparse dim is known, and coord checks take place
-  // on that higher level.
-  return dim != Dim::Invalid && (is_histogram(a, dim) || is_histogram(b, dim));
+  return (is_histogram(a, dim) && !b.hasData()) ||
+         (is_histogram(b, dim) && !a.hasData());
 }
 } // namespace
 
@@ -270,42 +252,44 @@ DataArray &DataArray::operator-=(const DataArrayConstView &other) {
 
 template <class Op>
 DataArray &sparse_dense_op_inplace(Op op, DataArray &a,
-                                   const DataArrayConstView &b, const Dim dim) {
-  if (!is_sparse_and_histogram(a, b, dim)) {
+                                   const DataArrayConstView &b) {
+  if (unaligned::is_realigned_events(a)) {
+    const auto &bins = unaligned::realigned_event_coord(a);
+    const Dim dim = bins.dims().inner();
+    if (!is_histogram(b, dim))
+      throw except::RealignedDataError(
+          "Multiplication/division of realigned data requires histogram has "
+          "second operand.");
+    expect::coordsAreSuperset(a, b);
+    union_or_in_place(a.masks(), b.masks());
+    const auto &events = a.unaligned();
+    auto weight_scale =
+        sparse_dense_op_impl(events.coords()[dim], bins, b.data(), dim);
+    if (is_events(events.data())) {
+      // Note the inefficiency here: Always creating temporary sparse data.
+      // Could easily avoided, but requires significant code duplication.
+      op.inplace(events.data(), weight_scale);
+    } else {
+      events.setData(op(events.data(), weight_scale));
+    }
+  } else if (!a.hasData()) {
+    throw except::RealignedDataError(
+        "Operation between realigned data and histograms are currently only "
+        "supported for event data.");
+  } else {
     expect::coordsAreSuperset(a, b);
     union_or_in_place(a.masks(), b.masks());
     op.inplace(a.data(), b.data());
-  } else if (is_histogram(b, dim)) {
-    // Coord for `dim` in `b` is mismatching that in `a` by definition. Use
-    // slice to exclude this from comparison.
-    expect::coordsAreSuperset(a, b.slice({dim, 0}));
-    union_or_in_place(a.masks(), b.masks());
-    if (is_events(a.data())) {
-      // Note the inefficiency here: Always creating temporary sparse data.
-      // Could easily avoided, but requires significant code duplication.
-      op.inplace(a.data(),
-                 sparse_dense_op_impl(a.coords()[dim], b.coords()[dim],
-                                      b.data(), dim));
-    } else {
-      a.setData(
-          op(a.data(), sparse_dense_op_impl(a.coords()[dim], b.coords()[dim],
-                                            b.data(), dim)));
-    }
-  } else {
-    throw except::SparseDataError("Unsupported combination of sparse and dense "
-                                  "data in binary arithmetic operation.");
   }
   return a;
 }
 
 DataArray &DataArray::operator*=(const DataArrayConstView &other) {
-  const auto dim = guess_histogram_dim(*this, other);
-  return sparse_dense_op_inplace(Times{}, *this, other, dim);
+  return sparse_dense_op_inplace(Times{}, *this, other);
 }
 
 DataArray &DataArray::operator/=(const DataArrayConstView &other) {
-  const auto dim = guess_histogram_dim(*this, other);
-  return sparse_dense_op_inplace(Divide{}, *this, other, dim);
+  return sparse_dense_op_inplace(Divide{}, *this, other);
 }
 
 DataArray &DataArray::operator+=(const VariableConstView &other) {
@@ -340,46 +324,62 @@ DataArray operator-(const DataArrayConstView &a, const DataArrayConstView &b) {
 
 template <class Op>
 auto sparse_dense_op(Op op, const DataArrayConstView &a,
-                     const DataArrayConstView &b, const Dim dim) {
-  if (!is_sparse_and_histogram(a, b, dim))
-    return op(a.data(), b.data());
-  if (is_histogram(b, dim)) {
-    // not in-place so type promotion can happen
-    return op(a.data(), sparse_dense_op_impl(a.coords()[dim], b.coords()[dim],
-                                             b.data(), dim));
+                     const DataArrayConstView &b) {
+  if (unaligned::is_realigned_events(a)) {
+    const auto &events = a.unaligned();
+
+    // sparse_dense_op_inplace(op, events, b);
+
+    const auto &bins = unaligned::realigned_event_coord(a);
+    const Dim dim = bins.dims().inner();
+    if (!is_histogram(b, dim))
+      throw except::RealignedDataError(
+          "Multiplication/division of realigned data requires histogram has "
+          "second operand.");
+    expect::coordsAreSuperset(a, b);
+    // union_or_in_place(events.masks(), b.masks());
+    auto weight_scale =
+        sparse_dense_op_impl(events.coords()[dim], bins, b.data(), dim);
+    /*
+      if (is_events(events.data())) {
+        // Note the inefficiency here: Always creating temporary sparse data.
+        // Could easily avoided, but requires significant code duplication.
+        op.inplace(events.data(), weight_scale);
+      } else {
+        events.setData(op(events.data(), weight_scale));
+      }
+      */
+
+    // TODO avoid coord, mask, and attr duplication
+    return UnalignedData{a.dims(), DataArray(op(events.data(), weight_scale), events.coords(), events.masks(), events.attrs(), events.name())};
+  } else {
+    // histogram divided by events not supported, would typically result in unit
+    // 1/counts which is meaningless
+    if constexpr (std::is_same_v<Op, Times>)
+      return sparse_dense_op(op, b, a);
+
+    throw except::RealignedDataError(
+        "Unsupported combination of realigned and dense "
+        "data in binary arithmetic operation.");
   }
-  // histogram divided by sparse not supported, would typically result in unit
-  // 1/counts which is meaningless
-  if constexpr (std::is_same_v<Op, Times>)
-    return sparse_dense_op(op, b, a, dim);
-
-  throw except::SparseDataError("Unsupported combination of sparse and dense "
-                                "data in binary arithmetic operation.");
-}
-
-auto sparse_dense_coord_union(const DataArrayConstView &a,
-                              const DataArrayConstView &b, const Dim dim) {
-  if (!is_sparse_and_histogram(a, b, dim))
-    return union_(a.coords(), b.coords());
-  // Use slice to remove dense coord, since output will be sparse.
-  if (is_histogram(b, dim))
-    return union_(a.coords(), b.slice({dim, 0}).coords());
-  else
-    return union_(a.slice({dim, 0}).coords(), b.coords());
 }
 
 DataArray operator*(const DataArrayConstView &a, const DataArrayConstView &b) {
-  const auto dim = guess_histogram_dim(a, b);
-  const auto data = sparse_dense_op(Times{}, a, b, dim);
-  const auto coords = sparse_dense_coord_union(a, b, dim);
-  return {std::move(data), std::move(coords), union_or(a.masks(), b.masks())};
+  if (unaligned::is_realigned_events(a) || unaligned::is_realigned_events(b))
+    return {sparse_dense_op(Times{}, a, b), union_(a.coords(), b.coords()),
+            union_or(a.masks(), b.masks())};
+  else
+    return {a.data() * b.data(), union_(a.coords(), b.coords()),
+            union_or(a.masks(), b.masks())};
 }
 
 DataArray operator/(const DataArrayConstView &a, const DataArrayConstView &b) {
-  const auto dim = guess_histogram_dim(a, b);
-  const auto data = sparse_dense_op(Divide{}, a, b, dim);
-  const auto coords = sparse_dense_coord_union(a, b, dim);
-  return {std::move(data), std::move(coords), union_or(a.masks(), b.masks())};
+  if (unaligned::is_realigned_events(a) || unaligned::is_realigned_events(b))
+    return {sparse_dense_op(Divide{}, a, b), union_(a.coords(), b.coords()),
+            union_or(a.masks(), b.masks())};
+  else
+    return {a.data() / b.data(), union_(a.coords(), b.coords()),
+            union_or(a.masks(), b.masks())};
 }
 
 DataArray operator+(const DataArrayConstView &a, const VariableConstView &b) {
