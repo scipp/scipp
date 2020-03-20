@@ -47,9 +47,9 @@ General
    sqrt
    sum
    position
-   x
-   y
-   z
+   geometry.x
+   geometry.y
+   geometry.z
 
 Group-by (split-apply-combine)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
