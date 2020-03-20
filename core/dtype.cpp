@@ -11,7 +11,7 @@ bool scipp::core::isInt(DType tp) {
 
 bool scipp::core::isFloatingPoint(DType tp) {
   return tp == DType::Float || tp == DType::Double ||
-         tp == DType::EigenVector3d;
+         tp == DType::EigenVector3d || tp == DType::EigenVector4d;
 }
 
 bool scipp::core::isBool(DType tp) { return tp == DType::Bool; }

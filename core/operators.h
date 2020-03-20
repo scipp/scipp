@@ -21,7 +21,7 @@ struct plus_equals {
     a += b;
   }
   using types = decltype(std::tuple_cat(
-      pair_self_t<double, float, int32_t, int64_t, Eigen::Vector3d>{},
+      pair_self_t<double, float, int32_t, int64_t, Eigen::Vector3d>{}, Eigen::Vector4d>{},
       pair_custom_t<std::pair<double, float>, std::pair<int64_t, int32_t>>{}));
 };
 struct minus_equals {
@@ -31,7 +31,7 @@ struct minus_equals {
     a -= b;
   }
   using types = decltype(std::tuple_cat(
-      pair_self_t<double, float, int32_t, int64_t, Eigen::Vector3d>{},
+      pair_self_t<double, float, int32_t, int64_t, Eigen::Vector3d>{}, Eigen::Vector4d>{},
       pair_custom_t<std::pair<double, float>, std::pair<int64_t, int32_t>>{}));
 };
 struct times_equals {
@@ -45,6 +45,7 @@ struct times_equals {
       pair_custom_t<std::pair<double, float>, std::pair<float, double>,
                     std::pair<int64_t, int32_t>,
                     std::pair<Eigen::Vector3d, double>>{},
+                    std::pair<Eigen::Vector4d, double>>{},
       pair_numerical_with_t<bool>{}));
 };
 struct divide_equals {
@@ -56,7 +57,7 @@ struct divide_equals {
   using types = decltype(std::tuple_cat(
       pair_self_t<double, float, int32_t, int64_t>{},
       pair_custom_t<std::pair<double, float>, std::pair<int64_t, int32_t>,
-                    std::pair<Eigen::Vector3d, double>>{}));
+                    std::pair<Eigen::Vector3d, double>, std::pair<Eigen::Vector4d, double>>{}));
 };
 
 struct and_equals {

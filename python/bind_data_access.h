@@ -158,6 +158,8 @@ template <class... Ts> class as_ElementArrayViewImpl {
       return {Getter::template get<Dataset>(view)};
     case dtype<Eigen::Vector3d>:
       return {Getter::template get<Eigen::Vector3d>(view)};
+    case dtype<Eigen::Vector4d>:
+      return {Getter::template get<Eigen::Vector4d>(view)};
     case dtype<scipp::python::PyObject>:
       return {Getter::template get<scipp::python::PyObject>(view)};
     default:
@@ -371,7 +373,7 @@ using as_ElementArrayView =
     as_ElementArrayViewImpl<double, float, int64_t, int32_t, bool, std::string,
                             sparse_container<double>, sparse_container<float>,
                             sparse_container<int64_t>, DataArray, Dataset,
-                            Eigen::Vector3d, scipp::python::PyObject>;
+                            Eigen::Vector3d, Eigen::Vector4d, scipp::python::PyObject>;
 
 template <class T, class... Ignored>
 void bind_data_properties(pybind11::class_<T, Ignored...> &c) {

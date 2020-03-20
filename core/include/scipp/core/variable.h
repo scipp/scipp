@@ -49,7 +49,7 @@ template <class... Known> class VariableConceptHandle_impl;
 // Any item type that is listed here explicitly can be used with the templated
 // `transform`, i.e., we can pass arbitrary functors/lambdas to process data.
 #define KNOWN                                                                  \
-  double, float, int64_t, int32_t, bool, Eigen::Vector3d,                      \
+  double, float, int64_t, int32_t, bool, Eigen::Vector3d, Eigen::Vector4d,     \
       sparse_container<double>, sparse_container<float>,                       \
       sparse_container<int64_t>, sparse_container<int32_t>,                    \
       span<const double>, span<double>, span<const float>, span<float>
@@ -586,7 +586,7 @@ Variable Variable::ConstructVariable<Ts...>::Maker<T>::apply(Ts &&... ts) {
 template <class... Ts>
 Variable Variable::ConstructVariable<Ts...>::make(Ts &&... args, DType type) {
   return CallDTypeWithSparse<
-      double, float, int64_t, int32_t, bool, Eigen::Vector3d,
+      double, float, int64_t, int32_t, bool, Eigen::Vector3d, Eigen::Vector4d,
       std::string>::apply<Maker>(type, std::forward<Ts>(args)...);
 }
 
@@ -957,7 +957,17 @@ SCIPP_CORE_EXPORT Variable broadcast(const VariableConstView &var,
 SCIPP_CORE_EXPORT Variable concatenate(const VariableConstView &a1,
                                        const VariableConstView &a2,
                                        const Dim dim);
-SCIPP_CORE_EXPORT Variable dot(const Variable &a, const Variable &b);
+template <class T>
+SCIPP_CORE_EXPORT Variable dot(const Variable &a, const Variable &b) {
+  return transform<pair_self_t<T>>(
+      a, b,
+      overloaded{[](const auto &a_, const auto &b_) { return a_.dot(b_); },
+                 [](const units::Unit &a_, const units::Unit &b_) {
+                   return a_ * b_;
+                 }});
+}
+
+
 SCIPP_CORE_EXPORT Variable filter(const Variable &var, const Variable &filter);
 [[nodiscard]] SCIPP_CORE_EXPORT Variable mean(const VariableConstView &var,
                                               const Dim dim);

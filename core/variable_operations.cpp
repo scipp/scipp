@@ -191,14 +191,14 @@ VariableView sqrt(const VariableConstView &var, const VariableView &out) {
   return out;
 }
 
-Variable dot(const Variable &a, const Variable &b) {
-  return transform<pair_self_t<Eigen::Vector3d>>(
-      a, b,
-      overloaded{[](const auto &a_, const auto &b_) { return a_.dot(b_); },
-                 [](const units::Unit &a_, const units::Unit &b_) {
-                   return a_ * b_;
-                 }});
-}
+// Variable dot(const Variable &a, const Variable &b) {
+//   return transform<pair_self_t<Eigen::Vector3d>>(
+//       a, b,
+//       overloaded{[](const auto &a_, const auto &b_) { return a_.dot(b_); },
+//                  [](const units::Unit &a_, const units::Unit &b_) {
+//                    return a_ * b_;
+//                  }});
+// }
 
 Variable atan2(const Variable &y, const Variable &x) {
   return transform<std::tuple<double, float>>(y, x, element::atan2);

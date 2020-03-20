@@ -82,6 +82,7 @@ void init_element_array_view(py::module &m) {
   declare_span<DataArray>(m, "DataArray");
   declare_span<Dataset>(m, "Dataset");
   declare_span<Eigen::Vector3d>(m, "Eigen_Vector3d");
+  declare_span<Eigen::Vector4d>(m, "Eigen_Vector4d");
   declare_span<sparse_container<double>>(m, "sparse_double");
   declare_span<sparse_container<float>>(m, "sparse_float");
   declare_span<sparse_container<int64_t>>(m, "sparse_int64_t");
@@ -98,4 +99,5 @@ void init_element_array_view(py::module &m) {
   declare_ElementArrayView<DataArray>(m, "DataArray");
   declare_ElementArrayView<Dataset>(m, "Dataset");
   declare_ElementArrayView<Eigen::Vector3d>(m, "Eigen_Vector3d");
+  declare_ElementArrayView<Eigen::Vector4d>(m, "Eigen_Vector4d");
 }

@@ -96,6 +96,8 @@ std::string to_string(const DType dtype) {
     return "event_list_int32";
   case DType::EigenVector3d:
     return "vector_3_float64";
+  case DType::EigenVector4d:
+    return "vector_4_float64";
   case DType::PyObject:
     return "PyObject";
   case DType::Unknown:
@@ -149,7 +151,7 @@ auto apply(const DType dtype, Args &&... args) {
       std::tuple<double, float, int64_t, int32_t, std::string, bool,
                  sparse_container<double>, sparse_container<float>,
                  sparse_container<int64_t>, DataArray, Dataset,
-                 Eigen::Vector3d>{},
+                 Eigen::Vector3d, Eigen::Vector4d>{},
       dtype, std::forward<Args>(args)...);
 }
 
