@@ -27,7 +27,12 @@ inline auto blocked_range(const scipp::index begin, const scipp::index end,
 }
 
 template <class... Args> void parallel_for(Args &&... args) {
-  tbb::parallel_for(std::forward<Args>(args)...);
+  if (auto *thread_limit = std::getenv("SCIPP_NUM_THREADS")) {
+    tbb::task_arena limited_arena(atoi(thread_limit));
+    limited_arena.execute(
+        [&args...]() { tbb::parallel_for(std::forward<Args>(args)...); });
+  } else
+    tbb::parallel_for(std::forward<Args>(args)...);
 }
 
 } // namespace scipp::core::parallel

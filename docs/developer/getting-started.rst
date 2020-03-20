@@ -9,7 +9,7 @@ See `Tooling <tooling.html>`_ for compilers and other required tools.
 Scipp uses TBB for multi-threading.
 This is an optional dependency.
 We have found that TBB from ``conda-forge`` works best in terms of CMake integration.
-You need ``tbb`` and ``tbb-devel``.
+You need ``tbb`` and ``tbb-devel``. The number of threads can be capped via the ``SCIPP_NUM_THREADS`` environmental variable.
 
 Getting the code, building, and installing
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
