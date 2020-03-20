@@ -40,8 +40,35 @@ void append(const VariableView &a, const VariableConstView &b) {
                  }});
 }
 
+void append(const DataArrayView &a, const DataArrayConstView &b) {
+  if (!is_events(a) || !is_events(b))
+    throw except::EventDataError("Cannot concatenate non-event data.");
+
+  if (is_events(a.data())) {
+    append(a.data(), is_events(b.data()) ? b.data() : broadcast_weights(b));
+  } else if (is_events(b.data())) {
+    a.setData(concatenate(broadcast_weights(a), b.data()));
+  } else if (a.data() != b.data()) {
+    a.setData(concatenate(broadcast_weights(a), broadcast_weights(b)));
+  } else {
+    // Do nothing for identical scalar weights
+  }
+  for (const auto &[dim, coord] : a.coords())
+    if (is_events(coord))
+      append(coord, b.coords()[dim]);
+    else
+      expect::equals(coord, b.coords()[dim]);
+}
+
 Variable concatenate(const VariableConstView &a, const VariableConstView &b) {
   Variable out(a);
+  append(out, b);
+  return out;
+}
+
+DataArray concatenate(const DataArrayConstView &a,
+                      const DataArrayConstView &b) {
+  DataArray out(a);
   append(out, b);
   return out;
 }

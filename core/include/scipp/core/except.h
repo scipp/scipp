@@ -14,7 +14,6 @@
 #include "scipp/common/except.h"
 #include "scipp/common/index.h"
 #include "scipp/core/dtype.h"
-#include "scipp/core/event.h"
 #include "scipp/core/string.h"
 #include "scipp/units/except.h"
 #include "scipp/units/unit.h"
