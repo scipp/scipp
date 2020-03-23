@@ -36,16 +36,30 @@ TEST(DatasetTest, clear) {
   ASSERT_FALSE(dataset.masks().empty());
 }
 
-TEST(DatasetTest, erase_single_non_existant) {
+TEST(DatasetTest, erase_non_existant) {
   Dataset d;
-  ASSERT_THROW(d.erase("not an item"), except::DatasetError);
+  ASSERT_THROW(d.erase("not an item"), except::NotFoundError);
+  ASSERT_THROW(d.extract("not an item"), except::NotFoundError);
 }
 
-TEST(DatasetTest, erase_single) {
+TEST(DatasetTest, erase) {
   DatasetFactory3D factory;
   auto dataset = factory.make();
   ASSERT_NO_THROW(dataset.erase("data_xyz"));
   ASSERT_FALSE(dataset.contains("data_xyz"));
+}
+
+TEST(DatasetTest, extract) {
+  DatasetFactory3D factory;
+  auto dataset = factory.make();
+  Dataset reference(dataset);
+
+  auto array = dataset.extract("data_xyz");
+
+  ASSERT_FALSE(dataset.contains("data_xyz"));
+  EXPECT_EQ(array, reference["data_xyz"]);
+  reference.erase("data_xyz");
+  EXPECT_EQ(dataset, reference);
 }
 
 TEST(DatasetTest, erase_extents_rebuild) {
@@ -55,6 +69,20 @@ TEST(DatasetTest, erase_extents_rebuild) {
   ASSERT_TRUE(d.contains("a"));
 
   ASSERT_NO_THROW(d.erase("a"));
+  ASSERT_FALSE(d.contains("a"));
+
+  ASSERT_NO_THROW(
+      d.setData("a", makeVariable<double>(Dims{Dim::X}, Shape{15})));
+  ASSERT_TRUE(d.contains("a"));
+}
+
+TEST(DatasetTest, extract_extents_rebuild) {
+  Dataset d;
+
+  d.setData("a", makeVariable<double>(Dims{Dim::X}, Shape{10}));
+  ASSERT_TRUE(d.contains("a"));
+
+  ASSERT_NO_THROW(d.extract("a"));
   ASSERT_FALSE(d.contains("a"));
 
   ASSERT_NO_THROW(

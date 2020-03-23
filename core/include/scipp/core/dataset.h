@@ -292,7 +292,7 @@ public:
 
   bool contains(const std::string &name) const noexcept;
 
-  void erase(const std::string_view name);
+  void erase(const std::string &name);
   [[nodiscard]] DataArray extract(const std::string &name);
 
   auto find() const && = delete;

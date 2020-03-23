@@ -116,10 +116,10 @@ bool Dataset::contains(const std::string &name) const noexcept {
 ///
 /// Coordinates, masks, and attributes are not modified.
 /// This operation invalidates any view objects created from this dataset.
-void Dataset::erase(const std::string_view name) {
+void Dataset::erase(const std::string &name) {
   if (m_data.erase(std::string(name)) == 0) {
-    throw except::DatasetError(*this, "Could not find data with name " +
-                                          std::string(name) + ".");
+    throw except::NotFoundError("Expected " + to_string(*this) +
+                                " to contain " + name + ".");
   }
   rebuildDims();
 }
