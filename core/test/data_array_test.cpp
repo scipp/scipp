@@ -30,6 +30,15 @@ TEST(DataArrayTest, construct_fail) {
                std::runtime_error);
 }
 
+TEST(DataArrayTest, setName) {
+  DatasetFactory3D factory;
+  const auto dataset = factory.make();
+  DataArray array(dataset["data_xyz"]);
+
+  array.setName("newname");
+  EXPECT_EQ(array.name(), "newname");
+}
+
 TEST(DataArrayTest, sum_dataset_columns_via_DataArray) {
   DatasetFactory3D factory;
   auto dataset = factory.make();

@@ -745,6 +745,7 @@ public:
   operator DataArrayView();
 
   const std::string &name() const { return m_holder.begin()->name(); }
+  void setName(const std::string &name);
 
   CoordsConstView coords() const;
   CoordsView coords();

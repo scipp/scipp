@@ -500,6 +500,14 @@ const std::string &DataArrayConstView::name() const noexcept {
   return m_data->first;
 }
 
+/// Set the name of a data array.
+void DataArray::setName(const std::string &name) {
+  auto &map = m_holder.m_data;
+  auto node = map.extract(map.begin());
+  node.key() = name;
+  map.insert(std::move(node));
+}
+
 /// Return an ordered mapping of dimension labels to extents.
 Dimensions DataArrayConstView::dims() const noexcept {
   if (hasData())
