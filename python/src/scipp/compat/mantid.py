@@ -254,13 +254,25 @@ def set_bin_masks(bin_masks, dim, index, masked_bins):
 
 
 def _convert_MatrixWorkspace_info(ws):
+    common_bins = ws.isCommonBins()
+    dim, unit = validate_and_get_unit(ws.getAxis(0).getUnit().unitID())
     source_pos, sample_pos = make_component_info(ws)
     det_info = make_detector_info(ws)
     pos = init_pos(ws)
     spec_dim, spec_coord = init_spec_axis(ws)
 
+    if common_bins:
+        coord = sc.Variable([dim], values=ws.readX(0), unit=unit)
+    else:
+        coord = sc.Variable([spec_dim, dim],
+                            shape=(ws.getNumberHistograms(), len(ws.readX(0))),
+                            unit=unit)
+        for i in range(ws.getNumberHistograms()):
+            coord[spec_dim, i].values = ws.readX(i)
+
     info = {
         "coords": {
+            dim: coord,
             spec_dim: spec_coord,
             "position": pos,
             "detector_info": det_info
@@ -321,17 +333,7 @@ def convert_Workspace2D_to_data_array(ws, **ignored):
     dim, unit = validate_and_get_unit(ws.getAxis(0).getUnit().unitID())
     spec_dim, spec_coord = init_spec_axis(ws)
 
-    if common_bins:
-        coord = sc.Variable([dim], values=ws.readX(0), unit=unit)
-    else:
-        coord = sc.Variable([spec_dim, dim],
-                            shape=(ws.getNumberHistograms(), len(ws.readX(0))),
-                            unit=unit)
-        for i in range(ws.getNumberHistograms()):
-            coord[spec_dim, i].values = ws.readX(i)
-
     coords_labs_data = _convert_MatrixWorkspace_info(ws)
-    coords_labs_data["coords"][dim] = coord
     _, data_unit = validate_and_get_unit(ws.YUnit(), allow_empty=True)
     coords_labs_data["data"] = sc.Variable([spec_dim, dim],
                                            shape=(ws.getNumberHistograms(),
@@ -402,6 +404,7 @@ def convert_EventWorkspace_to_data_array(ws, load_pulse_times=True, **ignored):
             weights[spec_dim, i].variances = sp.getWeightErrors()
 
     coords_labs_data = _convert_MatrixWorkspace_info(ws)
+    bin_edges = coords_labs_data["coords"][dim]
     coords_labs_data["coords"][dim] = coord
 
     if load_pulse_times:
@@ -415,7 +418,11 @@ def convert_EventWorkspace_to_data_array(ws, load_pulse_times=True, **ignored):
                                                variances=np.ones(nHist),
                                                unit=data_unit,
                                                dtype=sc.dtype.float32)
-    return detail.move_to_data_array(**coords_labs_data)
+    array = detail.move_to_data_array(**coords_labs_data)
+    # Event data is stored as unaligned content, with realigned wrapper based
+    # on Mantid's bin edges.
+    array.realign({dim: bin_edges})
+    return array
 
 
 def convert_MDHistoWorkspace_to_data_array(md_histo, **ignored):
