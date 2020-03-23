@@ -18,6 +18,8 @@ protected:
       makeVariable<double>(Dims{Dim::Y}, Shape{3}, Values{0, 2, 4});
   Variable zbins =
       makeVariable<double>(Dims{Dim::Z}, Shape{3}, Values{0, 2, 4});
+  Variable temp_mask = makeVariable<bool>(Dims{Dim::Temperature}, Shape{2},
+                                          Values{false, false});
 
   DataArray make_array() {
     const Dim dim = Dim::Position;
@@ -31,11 +33,16 @@ protected:
         makeVariable<double>(Dims{dim}, Shape{4}, Values{1, 1, 2, 2});
     const auto z =
         makeVariable<double>(Dims{dim}, Shape{4}, Values{1, 2, 3, 4});
+    const auto pos_mask = makeVariable<bool>(
+        Dims{dim}, Shape{4}, Values{false, false, false, false});
+    const auto attr = makeVariable<double>(Values{3.14});
     DataArray a(makeVariable<double>(Dims{dim}, Shape{4}, Values{1, 2, 3, 4}),
-                {{dim, pos}, {Dim::X, x}, {Dim::Y, y}, {Dim::Z, z}});
+                {{dim, pos}, {Dim::X, x}, {Dim::Y, y}, {Dim::Z, z}},
+                {{"pos", pos_mask}}, {{"attr", attr}});
 
     a = concatenate(a, a + a, Dim::Temperature);
     a.coords().set(Dim::Temperature, temp);
+    a.masks().set("temp", temp_mask);
     return a;
   }
 
@@ -52,7 +59,8 @@ protected:
         {{Dim::Temperature, temp},
          {Dim::Z, zbins},
          {Dim::Y, ybins},
-         {Dim::X, xbins}});
+         {Dim::X, xbins}},
+        {{"temp", temp_mask}});
   }
 };
 
@@ -161,11 +169,6 @@ TEST_F(RealignTest, dimension_order) {
 
 TEST_F(RealignTest, mask_mapping) {
   auto base = make_array();
-  base.masks().set("pos",
-                   makeVariable<bool>(Dims{Dim::Position}, Shape{4},
-                                      Values{false, false, false, true}));
-  base.masks().set("temp", makeVariable<bool>(Dims{Dim::Temperature}, Shape{2},
-                                              Values{false, true}));
   auto realigned = unaligned::realign(
       base, {{Dim::Z, zbins}, {Dim::Y, ybins}, {Dim::X, xbins}});
 
