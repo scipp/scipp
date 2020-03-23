@@ -293,6 +293,7 @@ public:
   bool contains(const std::string &name) const noexcept;
 
   void erase(const std::string_view name);
+  [[nodiscard]] DataArray extract(const std::string &name);
 
   auto find() const && = delete;
   auto find() && = delete;
@@ -397,8 +398,6 @@ public:
                const AttrPolicy attrPolicy = AttrPolicy::Drop) {
     setData(name, Variable(data), attrPolicy);
   }
-
-  void realign(std::vector<std::pair<Dim, Variable>> newCoords);
 
   void eraseCoord(const Dim dim);
   void eraseAttr(const std::string &attrName);
@@ -820,10 +819,6 @@ public:
     m_holder.setData(name(), std::move(data), AttrPolicy::Keep);
   }
 
-  void realign(std::vector<std::pair<Dim, Variable>> newCoords) {
-    m_holder.realign(std::move(newCoords));
-  }
-
   // TODO need to define some details regarding handling of dense coords in case
   // the array is sparse, not exposing this to Python for now.
   void setCoord(const Dim dim, Variable coord) {
@@ -873,6 +868,8 @@ public:
   static Dataset to_dataset(DataArray &&data) {
     return std::move(data.m_holder);
   }
+
+  void drop_alignment();
 
 private:
   DataArrayConstView get() const;

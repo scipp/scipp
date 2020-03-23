@@ -3,6 +3,7 @@
 /// @file
 /// @author Simon Heybrock
 #include "scipp/core/dataset.h"
+#include "dataset_operations_common.h"
 #include "scipp/core/except.h"
 
 namespace scipp::core {
@@ -114,13 +115,36 @@ bool Dataset::contains(const std::string &name) const noexcept {
 /// Removes a data item from the Dataset
 ///
 /// Coordinates, masks, and attributes are not modified.
-/// This operation invalidates any view objects creeated from this dataset.
+/// This operation invalidates any view objects created from this dataset.
 void Dataset::erase(const std::string_view name) {
   if (m_data.erase(std::string(name)) == 0) {
     throw except::DatasetError(*this, "Could not find data with name " +
                                           std::string(name) + ".");
   }
   rebuildDims();
+}
+
+/// Extract a data item from the Dataset, returning a DataArray
+///
+/// Coordinates, masks, and attributes are not modified.
+/// This operation invalidates any view objects created from this dataset.
+DataArray Dataset::extract(const std::string &name) {
+  const auto &view = operator[](name);
+  const auto &item = m_data.find(name);
+
+  auto coords = copy_map(view.coords());
+  auto masks = copy_map(view.masks());
+  auto attrs = std::move(item->second.attrs);
+
+  DataArray extracted;
+  if (view.hasData())
+    extracted = DataArray(std::move(item->second.data), std::move(coords),
+                          std::move(masks), std::move(attrs), name);
+  else
+    extracted = DataArray(std::move(*item->second.unaligned), std::move(coords),
+                          std::move(masks), std::move(attrs), name);
+  erase(name);
+  return extracted;
 }
 
 /// Return a const view to data and coordinates with given name.
@@ -330,34 +354,6 @@ void DataArrayView::setData(Variable data) const {
     m_mutableData->second.unaligned->data.setData(std::move(data));
   else
     m_mutableDataset->setData(name(), std::move(data), AttrPolicy::Keep);
-}
-
-void Dataset::realign(std::vector<std::pair<Dim, Variable>> newCoords) {
-  for (const auto &item : newCoords)
-    if (!coords().contains(item.first))
-      // This may be supported in the future
-      throw except::RealignedDataError(
-          "Alignment change cannot add additional coords.");
-  for (const auto &item : *this)
-    if (item.hasData())
-      throw except::RealignedDataError(
-          "Cannot change alignment of already aligned data. Use `rebin`.");
-  std::map<Dim, scipp::index> newSizes;
-  for (const auto &[dim, coord] : newCoords)
-    newSizes.emplace(dim, coord.dims()[dim] - 1);
-  // TODO Check for masks first, which would prevent realign
-  // Or better: rebin masks and dense data?
-  for (const auto &item : m_data) {
-    for (const auto &[dim, size] : newSizes) {
-      auto &dims = item.second.unaligned->dims;
-      if (dims.contains(dim))
-        dims.resize(dim, size);
-    }
-  }
-  for (const auto &[dim, coord] : newCoords) {
-    eraseCoord(dim);
-    setCoord(dim, std::move(coord));
-  }
 }
 
 /// Removes the coordinate for the given dimension.

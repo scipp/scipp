@@ -164,7 +164,7 @@ void bind_coord_properties(py::class_<T, Ignored...> &c) {
             for (auto item : coord_dict)
               coords.emplace_back(Dim(item.first.cast<std::string>()),
                                   item.second.cast<Variable>());
-            self.realign(std::move(coords));
+            self = unaligned::realign(std::move(self), std::move(coords));
           },
           py::arg("coords"), py::call_guard<py::gil_scoped_release>());
 }

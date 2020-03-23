@@ -5,7 +5,19 @@
 #ifndef SCIPP_CORE_DATASET_OPERATIONS_COMMON_H
 #define SCIPP_CORE_DATASET_OPERATIONS_COMMON_H
 
+#include <map>
+
+#include "scipp/core/dataset.h"
+
 namespace scipp::core {
+
+/// Return a copy of map-like objects such as CoordView.
+template <class T> auto copy_map(const T &map) {
+  std::map<typename T::key_type, typename T::mapped_type> out;
+  for (const auto &[key, item] : map)
+    out.emplace(key, item);
+  return out;
+}
 
 static inline void expectAlignedCoord(const Dim coord_dim,
                                       const VariableConstView &var,

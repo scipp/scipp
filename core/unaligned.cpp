@@ -45,6 +45,8 @@ Dim unaligned_dim(const VariableConstView &unaligned) {
 
 DataArray realign(DataArray unaligned,
                   std::vector<std::pair<Dim, Variable>> coords) {
+  if (!unaligned.hasData())
+    unaligned.drop_alignment();
   std::set<Dim> binnedDims;
   std::set<Dim> unalignedDims;
   for (const auto &[dim, coord] : coords) {
@@ -87,6 +89,14 @@ DataArray realign(DataArray unaligned,
   return DataArray(UnalignedData{alignedDims, std::move(unaligned)},
                    std::move(alignedCoords), std::move(alignedMasks),
                    std::move(alignedAttrs), std::move(name));
+}
+
+Dataset realign(Dataset dataset,
+                std::vector<std::pair<Dim, Variable>> newCoords) {
+  Dataset out;
+  for (const auto &item : dataset)
+    out.setData(item.name(), realign(dataset.extract(item.name()), newCoords));
+  return out;
 }
 
 bool is_realigned_events(const DataArrayConstView &realigned) {

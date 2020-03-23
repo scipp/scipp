@@ -2,6 +2,7 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
+#include "dataset_operations_common.h"
 #include "scipp/common/numeric.h"
 #include "scipp/core/dataset.h"
 #include "scipp/core/event.h"
@@ -45,12 +46,6 @@ std::vector<std::pair<Dim, Variable>> DataArrayConstView::slice_bounds() const {
 }
 
 namespace {
-template <class T> auto copy_map(const T &map) {
-  std::map<typename T::key_type, typename T::mapped_type> out;
-  for (const auto &[key, item] : map)
-    out.emplace(key, item);
-  return out;
-}
 
 /// Return new data array based on `unaligned` with any content outside `bounds`
 /// removed.
@@ -107,6 +102,23 @@ DataArrayConstView DataArray::get() const {
 DataArrayView DataArray::get() {
   requireValid(*this);
   return *m_holder.begin();
+}
+
+/// Remove any coords added by realign and switch `data` to refer to previous
+/// `unaligned` content.
+void DataArray::drop_alignment() {
+  if (hasData())
+    throw except::RealignedDataError(
+        "Does not contain unaligned data, cannot drop alignment.");
+  const auto &view = unaligned();
+  auto coords = copy_map(view.coords());
+  auto masks = copy_map(view.masks());
+  auto attrs = copy_map(view.attrs());
+
+  auto &unaligned_array = m_holder.m_data.begin()->second.unaligned->data;
+  auto &data = unaligned_array.m_holder.m_data.begin()->second.data;
+  *this = DataArray(std::move(data), std::move(coords), std::move(masks),
+                    std::move(attrs), name());
 }
 
 namespace {
