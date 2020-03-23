@@ -94,8 +94,11 @@ DataArray realign(DataArray unaligned,
 Dataset realign(Dataset dataset,
                 std::vector<std::pair<Dim, Variable>> newCoords) {
   Dataset out;
-  for (const auto &item : dataset)
-    out.setData(item.name(), realign(dataset.extract(item.name()), newCoords));
+  while (!dataset.empty()) {
+    auto realigned = realign(dataset.extract(*dataset.keys_begin()), newCoords);
+    auto name = realigned.name();
+    out.setData(std::move(name), std::move(realigned));
+  }
   return out;
 }
 

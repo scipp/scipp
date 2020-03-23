@@ -105,6 +105,40 @@ TEST_F(RealignTest, basics) {
   EXPECT_EQ(realigned.unaligned(), base);
 }
 
+TEST_F(RealignTest, realigned_drop_alignment) {
+  auto a = make_realigned();
+  a.drop_alignment();
+  EXPECT_EQ(a, make_array());
+}
+
+TEST_F(RealignTest, dataset_change_alignment) {
+  auto baseA = make_array();
+  auto baseB = concatenate(baseA, baseA, Dim::Position);
+  const auto referenceA = unaligned::realign(
+      baseA, {{Dim::Z, zbins}, {Dim::Y, ybins}, {Dim::X, xbins}});
+  const auto referenceB = unaligned::realign(
+      baseB, {{Dim::Z, zbins}, {Dim::Y, ybins}, {Dim::X, xbins}});
+  Dataset dataset;
+  // Different number of coords and different values
+  dataset.setData("a", unaligned::realign(baseA, {{Dim::X, xbins + 0.5}}));
+  dataset.setData("b", unaligned::realign(baseB, {{Dim::X, xbins + 0.5}}));
+
+  const auto realigned = unaligned::realign(
+      dataset, {{Dim::Z, zbins}, {Dim::Y, ybins}, {Dim::X, xbins}});
+
+  EXPECT_EQ(realigned["a"], referenceA);
+  EXPECT_EQ(realigned["b"], referenceB);
+}
+
+TEST_F(RealignTest, rename) {
+  auto a = make_realigned();
+  a.setName("newname");
+  EXPECT_EQ(a.name(), "newname");
+  EXPECT_EQ(a.unaligned().name(), "newname");
+  a.drop_alignment();
+  EXPECT_EQ(a.name(), "newname");
+}
+
 TEST_F(RealignTest, dimension_order) {
   auto base = make_array();
   DataArray transposed(Variable(base.data().transpose()), base.coords());
