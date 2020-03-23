@@ -47,8 +47,10 @@ DataArray realign(DataArray unaligned,
                   std::vector<std::pair<Dim, Variable>> coords) {
   std::set<Dim> binnedDims;
   std::set<Dim> unalignedDims;
-  for (const auto &item : coords)
-    binnedDims.insert(item.first);
+  for (const auto &[dim, coord] : coords) {
+    expect::equals(coord.unit(), unaligned.coords()[dim].unit());
+    binnedDims.insert(dim);
+  }
   for (const auto &[dim, coord] : unaligned.coords())
     if (binnedDims.count(dim))
       unalignedDims.insert(unaligned_dim(coord));
