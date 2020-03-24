@@ -160,6 +160,8 @@ void bind_coord_properties(py::class_<T, Ignored...> &c) {
       // Python dicts above 3.7 preserve order, but we cannot use
       // automatic conversion by pybind11 since C++ maps do not.
       std::vector<std::pair<Dim, Variable>> coords;
+      // Cast to VariableView uses implicit conversion and causes segfault if
+      // GIL is released.
       for (auto item : coord_dict)
         coords.emplace_back(Dim(item.first.cast<std::string>()),
                             item.second.cast<VariableView>());
@@ -646,17 +648,6 @@ void init_dataset(py::module &m) {
         :return: Reciprocal of the input values.
         :rtype: DataArray)");
 
-  m.def("realign",
-        [](const DataArrayConstView &a, py::dict coord_dict) {
-          // Python dicts above 3.7 preserve order, but we cannot use automatic
-          // conversion by pybind11 since C++ maps do not.
-          std::vector<std::pair<Dim, Variable>> coords;
-          for (auto item : coord_dict)
-            coords.emplace_back(Dim(item.first.cast<std::string>()),
-                                item.second.cast<VariableView>());
-          return unaligned::realign(copy(a), std::move(coords));
-        },
-        py::arg("data"), py::arg("coords"));
   m.def(
       "histogram",
       [](const DataArrayConstView &x) { return core::histogram(x); },
