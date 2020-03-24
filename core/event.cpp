@@ -89,7 +89,7 @@ Variable broadcast_weights(const DataArrayConstView &events) {
     if (is_events(item.second))
       return broadcast(events.data(), item.second);
   throw except::EventDataError(
-      "No coord with event lists found, cannot broadcasr weights.");
+      "No coord with event lists found, cannot broadcast weights.");
 }
 
 } // namespace event
