@@ -406,8 +406,8 @@ struct GroupbyFlattenDefaultWeight : public ::testing::Test {
 
   const DataArray expected{
       makeVariable<double>(Dims{Dim("labels")}, Shape{2},
-                           units::Unit(units::counts), Values{2, 1},
-                           Variances{2, 1}),
+                           units::Unit(units::counts), Values{1, 1},
+                           Variances{1, 1}),
       {{Dim::X, make_sparse_out()},
        {Dim("0-d"), makeVariable<double>(Values{1.2})},
        {Dim("labels"),
@@ -449,7 +449,7 @@ TEST(GroupbyFlattenTest, flatten_coord_and_labels) {
 
   DataArray expected{makeVariable<double>(Dims{Dim("labels")}, Shape{2},
                                           units::Unit(units::counts),
-                                          Values{2, 1}, Variances{2, 1}),
+                                          Values{1, 1}, Variances{1, 1}),
                      {{Dim::X, make_sparse_out()},
                       {Dim("labels"), makeVariable<double>(
                                           Dims{Dim("labels")}, Shape{2},
