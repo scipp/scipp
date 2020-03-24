@@ -17,6 +17,27 @@
 
 namespace scipp::core {
 
+/// Extract given group as a new data array or dataset
+template <class T>
+T GroupBy<T>::copy(const scipp::index group,
+                   const AttrPolicy attrPolicy) const {
+  const auto &slices = groups()[group];
+  scipp::index size = 0;
+  for (const auto &slice : slices)
+    size += slice.end() - slice.begin();
+  // This is just the slicing dim, but `slices` may be empty
+  const Dim slice_dim = m_data.coords()[dim()].dims().inner();
+  auto out = scipp::core::copy(m_data.slice({slice_dim, 0, size}), attrPolicy);
+  scipp::index current = 0;
+  for (const auto &slice : slices) {
+    const auto thickness = slice.end() - slice.begin();
+    const Slice out_slice(slice_dim, current, current + thickness);
+    scipp::core::copy(m_data.slice(slice), out.slice(out_slice), attrPolicy);
+    current += thickness;
+  }
+  return out;
+}
+
 /// Helper for creating output for "combine" step for "apply" steps that reduce
 /// a dimension.
 ///
@@ -185,7 +206,7 @@ template <class T> T GroupBy<T>::mean(const Dim reductionDim) const {
   if constexpr (std::is_same_v<T, Dataset>) {
     for (const auto &item : out) {
       if (isInt(item.data().dtype()))
-        out.setData(item.name(), item.data() * scale);
+        out.setData(item.name(), item.data() * scale, AttrPolicy::Keep);
       else
         item *= scale;
     }

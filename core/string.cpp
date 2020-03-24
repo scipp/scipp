@@ -16,6 +16,10 @@ std::ostream &operator<<(std::ostream &os, const Dim dim) {
   return os << to_string(dim);
 }
 
+std::ostream &operator<<(std::ostream &os, const Dimensions &dims) {
+  return os << to_string(dims);
+}
+
 std::ostream &operator<<(std::ostream &os, const VariableConstView &variable) {
   return os << to_string(variable);
 }

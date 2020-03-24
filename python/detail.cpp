@@ -48,7 +48,7 @@ void init_detail(py::module &m) {
         return DataArray(std::move(data), std::move(coords), std::move(masks),
                          std::move(attrs), name);
       },
-      py::arg("data") = std::nullopt,
+      py::arg("data") = Variable{},
       py::arg("coords") = std::map<Dim, Variable>{},
       py::arg("masks") = std::map<std::string, Variable>{},
       py::arg("attrs") = std::map<std::string, Variable>{},
@@ -58,29 +58,6 @@ void init_detail(py::module &m) {
       making copies. Note that after this is called, all variables that were
       passed will be invalidated. This tool should be used with care, and is
       reserved to expert users.
-
-      :return: A DataArray.
-      :rtype: DataArray)");
-
-  // Having a std::optional<Variable> for the data prevents moving without
-  // copies, so we add a separate overload here without any data
-  detail.def("move_to_data_array",
-             [](std::map<Dim, Variable &> &coords,
-                std::map<std::string, Variable &> &masks,
-                std::map<std::string, Variable &> &attrs,
-                const std::string &name) {
-               return DataArray(std::nullopt, std::move(coords),
-                                std::move(masks), std::move(attrs), name);
-             },
-             py::arg("coords") = std::map<Dim, Variable>{},
-             py::arg("masks") = std::map<std::string, Variable>{},
-             py::arg("attrs") = std::map<std::string, Variable>{},
-             py::arg("name") = std::string{},
-             R"(This functions moves the contents of all the input Variables
-      (coordinates, masks and attributes) to a new DataArray without
-      making copies. Note that after this is called, all variables that were
-      passed will be invalidated. This tool should be used with care, and is
-      reserved to expert users. This overload is used when no data is present.
 
       :return: A DataArray.
       :rtype: DataArray)");

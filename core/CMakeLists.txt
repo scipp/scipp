@@ -38,6 +38,7 @@ set(SRC_FILES
     subspan_view.cpp
     string.cpp
     trigonometry.cpp
+    unaligned.cpp
     variable.cpp
     variable_binary_arithmetic.cpp
     variable_inplace_arithmetic.cpp

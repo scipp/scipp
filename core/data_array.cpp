@@ -5,12 +5,45 @@
 #include "scipp/common/numeric.h"
 #include "scipp/core/dataset.h"
 #include "scipp/core/event.h"
+#include "scipp/core/groupby.h"
 #include "scipp/core/histogram.h"
 #include "scipp/core/subspan_view.h"
 #include "scipp/core/transform.h"
 
 namespace scipp::core {
 
+/// Return the bounds of all sliced realigned dimensions.
+std::vector<std::pair<Dim, Variable>> DataArrayConstView::slice_bounds() const {
+  std::vector<std::pair<Dim, Variable>> bounds;
+  std::map<Dim, std::pair<scipp::index, scipp::index>> combined_slices;
+  for (const auto &item : slices()) {
+    const auto s = item.first;
+    const auto dim = s.dim();
+    // Only process realigned dims
+    if (unaligned().dims().contains(dim) || !unaligned().coords().contains(dim))
+      continue;
+    const auto left = s.begin();
+    const auto right = s.end() == -1 ? left + 1 : s.end();
+    if (combined_slices.count(dim)) {
+      combined_slices[dim].second = combined_slices[dim].first + right;
+      combined_slices[dim].first += left;
+    } else {
+      combined_slices[dim] = {left, right};
+    }
+  }
+  for (const auto [dim, interval] : combined_slices) {
+    const auto [left, right] = interval;
+    const auto coord = m_dataset->coords()[dim];
+    bounds.emplace_back(dim, concatenate(coord.slice({dim, left}),
+                                         coord.slice({dim, right}), dim));
+  }
+  // TODO As an optimization we could sort the bounds and put those that slice
+  // out the largest fraction first, to ensure that `filter_recurse` slices in a
+  // potentially faster way.
+  return bounds;
+}
+
+namespace {
 template <class T> auto copy_map(const T &map) {
   std::map<typename T::key_type, typename T::mapped_type> out;
   for (const auto &[key, item] : map)
@@ -18,11 +51,44 @@ template <class T> auto copy_map(const T &map) {
   return out;
 }
 
-DataArray::DataArray(const DataArrayConstView &view)
-    : DataArray(view.hasData() ? std::optional<Variable>(view.data())
-                               : std::optional<Variable>(),
-                copy_map(view.coords()), copy_map(view.masks()),
-                copy_map(view.attrs()), view.name()) {}
+/// Return new data array based on `unaligned` with any content outside `bounds`
+/// removed.
+DataArray
+filter_recurse(const DataArrayConstView &unaligned,
+               const scipp::span<const std::pair<Dim, Variable>> bounds,
+               const AttrPolicy attrPolicy) {
+  if (bounds.empty())
+    return copy(unaligned, attrPolicy);
+  const auto &[dim, interval] = bounds[0];
+  const auto filtered = groupby(unaligned, dim, interval).copy(0, attrPolicy);
+  if (bounds.size() == 1)
+    return filtered;
+  return filter_recurse(filtered, bounds.subspan(1), attrPolicy);
+}
+
+template <class... DataArgs>
+auto makeDataArray(const DataArrayConstView &view, const AttrPolicy attrPolicy,
+                   DataArgs &&... dataArgs) {
+  return DataArray(std::forward<DataArgs>(dataArgs)..., copy_map(view.coords()),
+                   copy_map(view.masks()),
+                   attrPolicy == AttrPolicy::Keep
+                       ? copy_map(view.attrs())
+                       : std::map<std::string, Variable>{},
+                   view.name());
+}
+
+} // namespace
+
+DataArray::DataArray(const DataArrayConstView &view,
+                     const AttrPolicy attrPolicy)
+    : DataArray(
+          view.hasData()
+              ? makeDataArray(view, attrPolicy, Variable(view.data()))
+              : makeDataArray(view, attrPolicy,
+                              UnalignedData{view.dims(),
+                                            filter_recurse(view.unaligned(),
+                                                           view.slice_bounds(),
+                                                           attrPolicy)})) {}
 
 DataArray::operator DataArrayConstView() const { return get(); }
 DataArray::operator DataArrayView() { return get(); }

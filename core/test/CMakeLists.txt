@@ -8,6 +8,7 @@ add_executable(
   comparison_test.cpp
   concatenate_test.cpp
   coords_view_test.cpp
+  copy_test.cpp
   counts_test.cpp
   data_array_comparison_test.cpp
   data_array_test.cpp
@@ -44,6 +45,7 @@ add_executable(
   sum_test.cpp
   transform_sparse_and_dense_test.cpp
   transform_test.cpp
+  unaligned_test.cpp
   value_and_variance_test.cpp
   variable_concept_test.cpp
   variable_custom_type_test.cpp

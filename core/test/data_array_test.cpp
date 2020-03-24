@@ -21,6 +21,14 @@ TEST(DataArrayTest, construct) {
   EXPECT_EQ(array.name(), "data_xyz");
 }
 
+TEST(DataArrayTest, construct_fail) {
+  // Invalid data
+  EXPECT_THROW(DataArray(Variable{}), std::runtime_error);
+  // Invalid unaligned data
+  EXPECT_THROW(DataArray(UnalignedData{Dimensions{}, DataArray{}}),
+               std::runtime_error);
+}
+
 TEST(DataArrayTest, sum_dataset_columns_via_DataArray) {
   DatasetFactory3D factory;
   auto dataset = factory.make();

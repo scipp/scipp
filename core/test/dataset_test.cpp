@@ -157,6 +157,28 @@ TEST(DatasetTest, setData_updates_dimensions) {
   ASSERT_TRUE(dims.find(Dim::Y) == dims.end());
 }
 
+TEST(DatasetTest, setData_clears_attributes) {
+  const auto var = makeVariable<double>(Values{1});
+  Dataset d;
+  d.setData("x", var);
+  d["x"].attrs().set("attr", var);
+
+  EXPECT_TRUE(d["x"].attrs().contains("attr"));
+  d.setData("x", var);
+  EXPECT_FALSE(d["x"].attrs().contains("attr"));
+}
+
+TEST(DatasetTest, setData_keep_attributes) {
+  const auto var = makeVariable<double>(Values{1});
+  Dataset d;
+  d.setData("x", var);
+  d["x"].attrs().set("attr", var);
+
+  EXPECT_TRUE(d["x"].attrs().contains("attr"));
+  d.setData("x", var, AttrPolicy::Keep);
+  EXPECT_TRUE(d["x"].attrs().contains("attr"));
+}
+
 TEST(DatasetTest, setCoord_with_name_matching_data_name) {
   Dataset d;
   d.setData("a", makeVariable<double>(Dims{Dim::X}, Shape{3}));

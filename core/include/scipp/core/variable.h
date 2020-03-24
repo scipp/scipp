@@ -232,7 +232,8 @@ public:
       auto &otherConcept = *other;
       if (!concept.isView() && !otherConcept.isView() &&
           concept.dtype() == otherConcept.dtype() &&
-          concept.dims() == otherConcept.dims()) {
+          concept.dims() == otherConcept.dims() &&
+          concept.hasVariances() == otherConcept.hasVariances()) {
         concept.copy(otherConcept, Dim::Invalid, 0, 0, 1);
         return *this;
       }
