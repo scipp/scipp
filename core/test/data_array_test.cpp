@@ -4,6 +4,8 @@
 
 #include "scipp/core/comparison.h"
 #include "scipp/core/dataset.h"
+#include "scipp/core/event.h"
+#include "scipp/core/histogram.h"
 #include "scipp/core/unaligned.h"
 
 #include "dataset_test_common.h"
@@ -265,4 +267,47 @@ TEST(DataArrayRealignedEventsArithmeticTest, events_over_histogram) {
   EXPECT_EQ(result_inplace.coords(), result.coords());
   EXPECT_EQ(result_inplace.masks(), result.masks());
   EXPECT_EQ(result_inplace.attrs(), result.attrs());
+}
+
+struct DataArrayRealignedEventsPlusMinusTest : public ::testing::Test {
+protected:
+  DataArrayRealignedEventsPlusMinusTest() {
+    eventsB = eventsA;
+    eventsB.coords()[Dim::X] += 0.01 * units::Unit(units::us);
+    event::append(eventsB, eventsA);
+    eventsB.coords()[Dim::X] += 0.02 * units::Unit(units::us);
+    a = unaligned::realign(eventsA, {{Dim::X, edges}});
+    b = unaligned::realign(eventsB, {{Dim::X, edges}});
+  }
+
+  DataArray eventsA = make_sparse();
+  DataArray eventsB;
+  Variable edges = makeVariable<double>(
+      Dims{Dim::X}, Shape{4}, units::Unit(units::us), Values{0, 2, 4, 6});
+  DataArray a;
+  DataArray b;
+};
+
+TEST_F(DataArrayRealignedEventsPlusMinusTest, plus) {
+  EXPECT_EQ(histogram(a + b), histogram(a) + histogram(b));
+}
+
+TEST_F(DataArrayRealignedEventsPlusMinusTest, minus) {
+  EXPECT_EQ(histogram(a - b), histogram(a) - histogram(b));
+}
+
+TEST_F(DataArrayRealignedEventsPlusMinusTest, plus_equals) {
+  auto out(a);
+  out += b;
+  EXPECT_EQ(out, a + b);
+  out -= b;
+  EXPECT_NE(out, a); // events not removed by "undo" of addition
+  EXPECT_NE(histogram(out), histogram(a)); // mismatching variances
+  EXPECT_EQ(out, a + b - b);
+}
+
+TEST_F(DataArrayRealignedEventsPlusMinusTest, minus_equals) {
+  auto out(a);
+  out -= b;
+  EXPECT_EQ(out, a - b);
 }

@@ -80,11 +80,8 @@ DataArray concatenate(const DataArrayConstView &a,
 /// by the event lists in `shape`.
 Variable broadcast(const VariableConstView &dense,
                    const VariableConstView &shape) {
-  Variable dense_(dense);
-  dense_.setUnit(units::dimensionless);
-  Variable out = astype(dense_ * shape, dense.dtype());
-  out.setUnit(dense.unit());
-  return out;
+  return dense +
+         astype(shape * (0.0 * (dense.unit() / shape.unit())), dense.dtype());
 }
 
 Variable broadcast_weights(const DataArrayConstView &events) {
