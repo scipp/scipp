@@ -311,3 +311,19 @@ TEST_F(DataArrayRealignedEventsPlusMinusTest, minus_equals) {
   out -= b;
   EXPECT_EQ(out, a - b);
 }
+
+TEST_F(DataArrayRealignedEventsPlusMinusTest, plus_nonscalar_weights) {
+  auto c = a - b; // subtraction yields nonscalar weights
+  EXPECT_EQ(histogram(c + a), histogram(a) - histogram(b) + histogram(a));
+  EXPECT_EQ(histogram(c + a), histogram(a + c));
+  EXPECT_EQ(histogram(c + c),
+            histogram(a) - histogram(b) + histogram(a) - histogram(b));
+}
+
+TEST_F(DataArrayRealignedEventsPlusMinusTest, minus_nonscalar_weights) {
+  auto c = a - b; // subtraction yields nonscalar weights
+  EXPECT_EQ(histogram(c - a), histogram(a) - histogram(b) - histogram(a));
+  EXPECT_EQ(histogram(a - c), histogram(a) + histogram(b) - histogram(a));
+  EXPECT_EQ(histogram(c - c),
+            histogram(a) - histogram(b) - histogram(a) + histogram(b));
+}
