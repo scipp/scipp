@@ -527,9 +527,6 @@ Dimensions DataArrayConstView::dims() const noexcept {
 
 /// Return the dtype of the data.
 DType DataArrayConstView::dtype() const {
-  // TODO This is not true if event data is realigned (not supported yet). In
-  // that case we need to convert from, e.g., dtype<event_list<double>> to
-  // dtype<double>.
   return hasData() ? data().dtype()
                    : core::unaligned::is_realigned_events(*this)
                          ? event_dtype(unaligned().dtype())
