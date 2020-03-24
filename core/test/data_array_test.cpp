@@ -261,9 +261,10 @@ TEST(DataArrayRealignedEventsArithmeticTest, events_over_histogram) {
                      expected.slice({Dim::X, 0, 3}).variances<double>()));
   EXPECT_TRUE(std::isnan(out_vars[1][3]));
 
-  auto result_inplace = copy(sparse);
+  auto result_inplace = copy(realigned);
   result_inplace /= hist;
-  EXPECT_TRUE(is_approx(result_inplace.data(), result.data(), 1e-16));
+  EXPECT_TRUE(is_approx(result_inplace.unaligned().data(),
+                        result.unaligned().data(), 1e-16));
   EXPECT_EQ(result_inplace.coords(), result.coords());
   EXPECT_EQ(result_inplace.masks(), result.masks());
   EXPECT_EQ(result_inplace.attrs(), result.attrs());
