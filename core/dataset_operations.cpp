@@ -101,6 +101,10 @@ DataArray flatten(const DataArrayConstView &a, const Dim dim) {
   return apply_or_copy_dim(
       a,
       [](const auto &x, const Dim dim_, const auto &mask_) {
+        if (!is_events(x) && min(x, dim_) != max(x, dim_))
+          throw except::EventDataError(
+              "flatten with non-constant scalar weights not "
+              "possible yet.");
         return is_events(x) ? flatten(x, dim_, mask_)
                             : copy(x.slice({dim_, 0}));
       },

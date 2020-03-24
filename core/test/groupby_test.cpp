@@ -430,6 +430,13 @@ TEST_F(GroupbyFlattenDefaultWeight, flatten_dataset_coord_only) {
   EXPECT_EQ(groupby(d, Dim("labels")).flatten(Dim::Y), expected_d);
 }
 
+TEST_F(GroupbyFlattenDefaultWeight, flatten_non_constant_scalar_weight_fail) {
+  Dataset d{{{"a", a}, {"b", a}}};
+  d["a"].values<double>()[0] += 0.1;
+  EXPECT_THROW(groupby(d, Dim("labels")).flatten(Dim::Y),
+               except::EventDataError);
+}
+
 TEST(GroupbyFlattenTest, flatten_coord_and_labels) {
   DataArray a{makeVariable<double>(Dims{Dim::Y}, Shape{3},
                                    units::Unit(units::counts), Values{1, 1, 1},
