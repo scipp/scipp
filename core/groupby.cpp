@@ -140,10 +140,12 @@ static constexpr auto sum = [](const DataArrayView &out,
         sum_impl(out.data(), data_slice.data());
     }
   } else {
+    const auto &unaligned_out = out.unaligned();
+    const auto &unaligned_in = data_container.unaligned();
     // Flatten in all cases, even if not event data? Try to sum?
-    flatten(out, data_container, group, reductionDim, mask);
-    for (auto &&[dim, coord] : out.coords())
-      flatten_coord(coord, data_container.coords()[dim], group, reductionDim,
+    flatten(unaligned_out, unaligned_in, group, reductionDim, mask);
+    for (auto &&[dim, coord] : unaligned_out.coords())
+      flatten_coord(coord, unaligned_in.coords()[dim], group, reductionDim,
                     mask);
   }
 };
