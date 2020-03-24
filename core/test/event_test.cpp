@@ -56,3 +56,30 @@ TEST(EventTest, concatenate_variable_with_variances) {
   EXPECT_TRUE(equals(vars[0], {4, 5, 6, 7, 8}));
   EXPECT_TRUE(equals(vars[1], {4, 5}));
 }
+
+struct EventBroadcastTest : public ::testing::Test {
+  Variable shape = makeVariable<event_list<double>>(
+      Dims{Dim::X}, Shape{2}, units::Unit(units::us),
+      Values{event_list<double>(3), event_list<double>(1)});
+  Variable dense =
+      makeVariable<float>(Dims{Dim::X}, Shape{2}, units::Unit(units::counts),
+                          Values{1, 2}, Variances{3, 4});
+  Variable expected = makeVariable<event_list<float>>(
+      Dims{Dim::X}, Shape{2}, units::Unit(units::counts),
+      Values{event_list<float>{1, 1, 1}, event_list<float>{2}},
+      Variances{event_list<float>{3, 3, 3}, event_list<float>{4}});
+};
+
+TEST_F(EventBroadcastTest, variable) {
+  EXPECT_EQ(event::broadcast(dense, shape), expected);
+}
+
+TEST_F(EventBroadcastTest, data_array) {
+  DataArray a(dense, {{Dim::Y, shape}});
+  EXPECT_EQ(event::broadcast_weights(a), expected);
+}
+
+TEST_F(EventBroadcastTest, data_array_fail) {
+  DataArray a(dense);
+  EXPECT_THROW(event::broadcast_weights(a), except::EventDataError);
+}

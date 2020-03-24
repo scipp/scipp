@@ -84,6 +84,7 @@ Variable broadcast(const VariableConstView &dense,
          astype(shape * (0.0 * (dense.unit() / shape.unit())), dense.dtype());
 }
 
+/// Broadcast scalar weights of data arrau containing event data.
 Variable broadcast_weights(const DataArrayConstView &events) {
   for (const auto &item : events.coords())
     if (is_events(item.second))
