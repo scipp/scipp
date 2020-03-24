@@ -358,7 +358,7 @@ protected:
   Variable tof_bins =
       makeVariable<double>(Dims{Dim::Tof}, Shape{3}, Values{0, 2, 4});
 
-  DataArray make_array() {
+  DataArray make_array_scalar_weights() {
     const auto tof = makeVariable<event_list<double>>(
         Dims{Dim::Position}, Shape{4},
         Values{event_list<double>{1}, event_list<double>{1, 2},
@@ -368,6 +368,27 @@ protected:
                                           Values{1, 1, 1, 1},
                                           Variances{1, 1, 1, 1}),
                      {{Dim::Position, pos}, {Dim::Tof, tof}});
+  }
+
+  DataArray make_array() {
+    const auto tof = makeVariable<event_list<double>>(
+        Dims{Dim::Position}, Shape{4},
+        Values{event_list<double>{1}, event_list<double>{1, 2},
+               event_list<double>{1, 2, 3}, event_list<double>{1, 2, 3, 4}});
+    return DataArray(
+        makeVariable<event_list<double>>(
+            Dims{Dim::Position}, Shape{4}, units::Unit(units::counts),
+            Values{event_list<double>{1}, event_list<double>{1, 1},
+                   event_list<double>{1, 1, 1}, event_list<double>{1, 1, 1, 1}},
+            Variances{event_list<double>{1}, event_list<double>{1, 1},
+                      event_list<double>{1, 1, 1},
+                      event_list<double>{1, 1, 1, 1}}),
+        {{Dim::Position, pos}, {Dim::Tof, tof}});
+  }
+
+  DataArray make_realigned_scalar_weights() {
+    return unaligned::realign(make_array_scalar_weights(),
+                              {{Dim::Tof, tof_bins}});
   }
 
   DataArray make_realigned() {
@@ -401,4 +422,16 @@ TEST_F(RealignEventsTest, basics) {
 TEST_F(RealignEventsTest, histogram) {
   const auto realigned = make_realigned();
   EXPECT_EQ(histogram(realigned), make_aligned());
+}
+
+TEST_F(RealignEventsTest, dtype_scalar_weights) {
+  auto realigned = make_realigned_scalar_weights();
+  EXPECT_EQ(realigned.unaligned().dtype(), dtype<double>);
+  EXPECT_EQ(realigned.dtype(), dtype<double>);
+}
+
+TEST_F(RealignEventsTest, dtype) {
+  auto realigned = make_realigned();
+  EXPECT_EQ(realigned.unaligned().dtype(), dtype<event_list<double>>);
+  EXPECT_EQ(realigned.dtype(), dtype<double>);
 }
