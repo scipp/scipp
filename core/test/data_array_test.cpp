@@ -75,7 +75,6 @@ auto make_sparse() {
 }
 
 auto make_histogram() {
-  // 2D edges on realigned not supported!?
   auto edges =
       makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 3},
                            units::Unit(units::us), Values{0, 2, 4, 1, 3, 5});
