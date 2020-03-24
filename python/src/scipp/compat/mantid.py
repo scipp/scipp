@@ -603,7 +603,8 @@ def load(filename="",
 
     :param str filename: The name of the Nexus/HDF file to be loaded.
     :param bool load_pulse_times: Read the pulse times if True.
-    :param bool realign_events: Realign event data according to "X" axis given by file.
+    :param bool realign_events: Realign event data according to "X" axis given
+                                by file.
     :param str instrument_filename: If specified, over-write the instrument
                                     definition in the final Dataset with the
                                     geometry contained in the file.
