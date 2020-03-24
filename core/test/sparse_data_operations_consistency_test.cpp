@@ -81,8 +81,16 @@ TEST(SparseDataOperationsConsistencyTest, flatten_sum_realigned) {
                                     units::Unit(units::us), Values{1, 3, 6});
   const auto realigned = unaligned::realign(sparse, {{Dim::X, edges}});
 
-  EXPECT_EQ(sum(histogram(sparse, edges), Dim::Y),
-            histogram(sum(realigned, Dim::Y)));
+  // Three equalities that all express the same concept:
+  EXPECT_EQ(histogram(sum(realigned, Dim::Y)),
+            sum(histogram(realigned), Dim::Y));
+
+  EXPECT_EQ(histogram(sum(realigned, Dim::Y)),
+            histogram(flatten(sparse, Dim::Y), edges));
+
+  const auto summed = sum(realigned, Dim::Y);
+  const auto flattened = flatten(sparse, Dim::Y);
+  EXPECT_EQ(summed.unaligned(), flattened);
 }
 
 TEST(SparseDataOperationsConsistencyTest, flatten_multiply_sum) {
