@@ -368,7 +368,10 @@ def convert_Workspace2D_to_data_array(ws, **ignored):
     return array
 
 
-def convert_EventWorkspace_to_data_array(ws, load_pulse_times=True, **ignored):
+def convert_EventWorkspace_to_data_array(ws,
+                                         load_pulse_times=True,
+                                         realign_events=False,
+                                         **ignored):
     from mantid.api import EventType
 
     dim, unit = validate_and_get_unit(ws.getAxis(0).getUnit().unitID())
@@ -419,9 +422,10 @@ def convert_EventWorkspace_to_data_array(ws, load_pulse_times=True, **ignored):
                                                unit=data_unit,
                                                dtype=sc.dtype.float32)
     array = detail.move_to_data_array(**coords_labs_data)
-    # Event data is stored as unaligned content, with realigned wrapper based
-    # on Mantid's bin edges.
-    array.realign({dim: bin_edges})
+    if realign_events:
+        # Event data is stored as unaligned content, with realigned wrapper
+        # based on Mantid's bin edges.
+        array.realign({dim: bin_edges})
     return array
 
 
@@ -570,6 +574,7 @@ def from_mantid(workspace, **kwargs):
 
 def load(filename="",
          load_pulse_times=True,
+         realign_events=False,
          instrument_filename=None,
          error_connection=None,
          mantid_args=None):
@@ -598,6 +603,7 @@ def load(filename="",
 
     :param str filename: The name of the Nexus/HDF file to be loaded.
     :param bool load_pulse_times: Read the pulse times if True.
+    :param bool realign_events: Realign event data according to "X" axis given by file.
     :param str instrument_filename: If specified, over-write the instrument
                                     definition in the final Dataset with the
                                     geometry contained in the file.
@@ -630,6 +636,7 @@ def load(filename="",
 
         return from_mantid(data_ws,
                            load_pulse_times=load_pulse_times,
+                           realign_events=realign_events,
                            error_connection=error_connection)
 
 
