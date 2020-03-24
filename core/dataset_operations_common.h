@@ -57,15 +57,24 @@ DataArray apply_and_drop_dim_impl(const DataArrayConstView &a, Func func,
     if (!mask.dims().contains(dim))
       masks.emplace(name, mask);
 
-  if constexpr (ApplyToData)
-    return DataArray(func(a.data(), dim, std::forward<Args>(args)...),
-                     std::move(coords), std::move(masks), std::move(attrs),
-                     a.name());
-  else
+  if constexpr (ApplyToData) {
+    if (a.hasData()) {
+      return DataArray(func(a.data(), dim, std::forward<Args>(args)...),
+                       std::move(coords), std::move(masks), std::move(attrs),
+                       a.name());
+    } else {
+      return DataArray(
+          func(a.dims(), a.unaligned(), dim, std::forward<Args>(args)...),
+          std::move(coords), std::move(masks), std::move(attrs), a.name());
+    }
+  } else
     return DataArray(func(a, dim, std::forward<Args>(args)...),
                      std::move(coords), std::move(masks), std::move(attrs),
                      a.name());
 }
+
+static constexpr auto no_realigned_support = []() {};
+using no_realigned_support_t = decltype(no_realigned_support);
 
 /// Create new data array by applying Func to everything depending on dim, copy
 /// otherwise.
@@ -94,9 +103,18 @@ DataArray apply_or_copy_dim(const DataArrayConstView &a, Func func,
       masks.emplace(name, mask.dims().contains(dim) ? func(mask, dim, args...)
                                                     : copy(mask));
 
-  return DataArray(a.hasData() ? func(a.data(), dim, args...) : Variable{},
-                   std::move(coords), std::move(masks), std::move(attrs),
-                   a.name());
+  if (a.hasData()) {
+    return DataArray(func(a.data(), dim, args...), std::move(coords),
+                     std::move(masks), std::move(attrs), a.name());
+  } else {
+    if constexpr (std::is_base_of_v<no_realigned_support_t, Func>)
+      throw std::logic_error("Operation cannot handle realigned data.");
+    else
+      return DataArray(UnalignedData{func(a.dims(), dim, args...),
+                                     func(a.unaligned(), dim, args...)},
+                       std::move(coords), std::move(masks), std::move(attrs),
+                       a.name());
+  }
 }
 
 template <class Func, class... Args>

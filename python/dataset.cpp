@@ -666,6 +666,14 @@ void init_dataset(py::module &m) {
         :param x: Realigned data to histogram.
         :return: Histogramed data.
         :rtype: DataArray)");
+  m.def(
+      "histogram", [](const DatasetConstView &x) { return core::histogram(x); },
+      py::arg("x"), py::call_guard<py::gil_scoped_release>(),
+      R"(Returns a new Dataset unaligned data content binned according to the realigning axes.
+
+        :param x: Realigned data to histogram.
+        :return: Histogramed data.
+        :rtype: Dataset)");
 
   bind_astype(dataArray);
   bind_astype(dataArrayView);

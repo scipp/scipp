@@ -75,6 +75,16 @@ TEST(SparseDataOperationsConsistencyTest, flatten_sum) {
             histogram(flatten(sparse, Dim::Y), edges));
 }
 
+TEST(SparseDataOperationsConsistencyTest, flatten_sum_realigned) {
+  const auto sparse = make_sparse_array_default_weights();
+  auto edges = makeVariable<double>(Dimensions{Dim::X, 3},
+                                    units::Unit(units::us), Values{1, 3, 6});
+  const auto realigned = unaligned::realign(sparse, {{Dim::X, edges}});
+
+  EXPECT_EQ(sum(histogram(sparse, edges), Dim::Y),
+            histogram(sum(realigned, Dim::Y)));
+}
+
 TEST(SparseDataOperationsConsistencyTest, flatten_multiply_sum) {
   const auto sparse = make_sparse_array_default_weights();
   auto edges = makeVariable<double>(Dimensions{Dim::X, 3},

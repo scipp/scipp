@@ -3,6 +3,7 @@
 /// @file
 /// @author Simon Heybrock
 #include "scipp/common/numeric.h"
+#include "scipp/common/overloaded.h"
 #include "scipp/core/dataset.h"
 #include "scipp/core/except.h"
 
@@ -100,20 +101,40 @@ Dataset concatenate(const DatasetConstView &a, const DatasetConstView &b,
 DataArray flatten(const DataArrayConstView &a, const Dim dim) {
   return apply_or_copy_dim(
       a,
-      [](const auto &x, const Dim dim_, const auto &mask_) {
-        if (!is_events(x) && min(x, dim_) != max(x, dim_))
-          throw except::EventDataError(
-              "flatten with non-constant scalar weights not "
-              "possible yet.");
-        return is_events(x) ? flatten(x, dim_, mask_)
-                            : copy(x.slice({dim_, 0}));
-      },
+      overloaded{no_realigned_support,
+                 [](const auto &x, const Dim dim_, const auto &mask_) {
+                   if (!is_events(x) && min(x, dim_) != max(x, dim_))
+                     throw except::EventDataError(
+                         "flatten with non-constant scalar weights not "
+                         "possible yet.");
+                   return is_events(x) ? flatten(x, dim_, mask_)
+                                       : copy(x.slice({dim_, 0}));
+                 }},
       dim, a.masks());
 }
 
 Dataset flatten(const DatasetConstView &d, const Dim dim) {
   return apply_to_items(d, [](auto &&... _) { return flatten(_...); }, dim);
 }
+
+namespace {
+UnalignedData sum(Dimensions dims, const DataArrayConstView &unaligned,
+                  const Dim dim, const MasksConstView &masks) {
+  static_cast<void>(masks); // relevant masks are part of unaligned as well
+  dims.erase(dim);
+  return {dims, flatten(unaligned, dim)};
+}
+
+UnalignedData mean(Dimensions, const DataArrayConstView &, const Dim,
+                   const MasksConstView &) {
+  throw std::runtime_error("Mean for realigned data not implemented yet.");
+}
+
+UnalignedData rebin(Dimensions, const DataArrayConstView &, const Dim,
+                    const VariableConstView &, const VariableConstView &) {
+  throw std::runtime_error("Rebin for realigned data not implemented yet.");
+}
+} // namespace
 
 DataArray sum(const DataArrayConstView &a, const Dim dim) {
   return apply_to_data_and_drop_dim(a, [](auto &&... _) { return sum(_...); },
@@ -156,6 +177,13 @@ Dataset rebin(const DatasetConstView &d, const Dim dim,
   return apply_to_items(d, [](auto &&... _) { return rebin(_...); }, dim,
                         coord);
 }
+
+namespace {
+Dimensions resize(Dimensions dims, const Dim dim, const scipp::index size) {
+  dims.resize(dim, size);
+  return dims;
+}
+} // namespace
 
 DataArray resize(const DataArrayConstView &a, const Dim dim,
                  const scipp::index size) {

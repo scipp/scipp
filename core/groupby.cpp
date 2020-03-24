@@ -131,12 +131,20 @@ static constexpr auto sum = [](const DataArrayView &out,
                                const auto &data_container,
                                const GroupByGrouping::group &group,
                                const Dim reductionDim, const Variable &mask) {
-  for (const auto &slice : group) {
-    const auto data_slice = data_container.slice(slice);
-    if (mask.dims().contains(reductionDim))
-      sum_impl(out.data(), data_slice.data() * mask.slice(slice));
-    else
-      sum_impl(out.data(), data_slice.data());
+  if (out.hasData()) {
+    for (const auto &slice : group) {
+      const auto data_slice = data_container.slice(slice);
+      if (mask.dims().contains(reductionDim))
+        sum_impl(out.data(), data_slice.data() * mask.slice(slice));
+      else
+        sum_impl(out.data(), data_slice.data());
+    }
+  } else {
+    // Flatten in all cases, even if not event data? Try to sum?
+    flatten(out, data_container, group, reductionDim, mask);
+    for (auto &&[dim, coord] : out.coords())
+      flatten_coord(coord, data_container.coords()[dim], group, reductionDim,
+                    mask);
   }
 };
 
