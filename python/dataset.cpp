@@ -125,6 +125,18 @@ void bind_mutable_view(py::module &m, const std::string &name) {
   bind_comparison<T>(view);
 }
 
+template <class T> void realign_impl(T &self, py::dict coord_dict) {
+  // Python dicts above 3.7 preserve order, but we cannot use
+  // automatic conversion by pybind11 since C++ maps do not.
+  std::vector<std::pair<Dim, Variable>> coords;
+  // Cast to VariableView uses implicit conversion and causes segfault if
+  // GIL is released.
+  for (auto item : coord_dict)
+    coords.emplace_back(Dim(item.first.cast<std::string>()),
+                        item.second.cast<VariableView>());
+  self = unaligned::realign(std::move(self), std::move(coords));
+}
+
 template <class T, class... Ignored>
 void bind_coord_properties(py::class_<T, Ignored...> &c) {
   // For some reason the return value policy and/or keep-alive policy do not
@@ -156,17 +168,7 @@ void bind_coord_properties(py::class_<T, Ignored...> &c) {
       Dict of attributes.)");
 
   if constexpr (std::is_same_v<T, DataArray> || std::is_same_v<T, Dataset>)
-    c.def("realign", [](T &self, py::dict coord_dict) {
-      // Python dicts above 3.7 preserve order, but we cannot use
-      // automatic conversion by pybind11 since C++ maps do not.
-      std::vector<std::pair<Dim, Variable>> coords;
-      // Cast to VariableView uses implicit conversion and causes segfault if
-      // GIL is released.
-      for (auto item : coord_dict)
-        coords.emplace_back(Dim(item.first.cast<std::string>()),
-                            item.second.cast<VariableView>());
-      self = unaligned::realign(std::move(self), std::move(coords));
-    });
+    c.def("realign", realign_impl<T>);
 }
 
 template <class T, class... Ignored>
@@ -648,6 +650,20 @@ void init_dataset(py::module &m) {
         :return: Reciprocal of the input values.
         :rtype: DataArray)");
 
+  m.def("realign",
+        [](const DataArrayConstView &a, py::dict coord_dict) {
+          DataArray copy(a);
+          realign_impl(copy, coord_dict);
+          return copy;
+        },
+        py::arg("data"), py::arg("coords"));
+  m.def("realign",
+        [](const DatasetConstView &a, py::dict coord_dict) {
+          Dataset copy(a);
+          realign_impl(copy, coord_dict);
+          return copy;
+        },
+        py::arg("data"), py::arg("coords"));
   m.def(
       "histogram",
       [](const DataArrayConstView &x) { return core::histogram(x); },
