@@ -8,6 +8,7 @@
 
 #include "scipp/core/dataset.h"
 #include "scipp/core/dimensions.h"
+#include "scipp/core/unaligned.h"
 
 #include "dataset_test_common.h"
 
@@ -205,6 +206,52 @@ TEST(DatasetTest, setData_keep_attributes) {
   EXPECT_TRUE(d["x"].attrs().contains("attr"));
   d.setData("x", var, AttrPolicy::Keep);
   EXPECT_TRUE(d["x"].attrs().contains("attr"));
+}
+
+TEST(DatasetTest, DataArrayView_setData) {
+  const auto var = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1, 2});
+  Dataset d;
+  d.setData("a", var);
+  d.setData("b", var);
+
+  EXPECT_THROW(d["a"].setData(makeVariable<double>(Dims{Dim::X}, Shape{4})),
+               except::DimensionError);
+  EXPECT_EQ(d["a"].data(), var);
+  EXPECT_NO_THROW(d["a"].setData(var + var));
+  EXPECT_EQ(d["a"].data(), var + var);
+}
+
+struct SetDataTest : public ::testing::Test {
+protected:
+  Variable var = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1, 2});
+  Variable y = makeVariable<double>(Dims{Dim::Y}, Shape{2}, Values{1, 2});
+  DataArray data{var, {{Dim::Y, var}}};
+  DataArray realigned = unaligned::realign(data, {{Dim::Y, y}});
+};
+
+TEST_F(SetDataTest, DataArray_unaligned) {
+  EXPECT_THROW(realigned.unaligned().setData(
+                   makeVariable<double>(Dims{Dim::X}, Shape{4})),
+               except::DimensionError);
+  EXPECT_EQ(realigned.unaligned().data(), var);
+  EXPECT_NO_THROW(realigned.unaligned().setData(var + var));
+  EXPECT_EQ(realigned.unaligned().data(), var + var);
+}
+
+TEST_F(SetDataTest, DataArray_realigned) {
+  // Set dense data on realigned, dropping unaligned content.
+  const Variable dense_data(y.slice({Dim::Y, 0, 1}));
+  EXPECT_NO_THROW(realigned.setData(dense_data));
+  EXPECT_TRUE(realigned.hasData());
+  EXPECT_FALSE(realigned.unaligned());
+}
+
+TEST_F(SetDataTest, DataArrayView_realigned) {
+  // Set dense data on realigned via view, dropping unaligned content.
+  const Variable dense_data(y.slice({Dim::Y, 0, 1}));
+  EXPECT_NO_THROW(DataArrayView(realigned).setData(dense_data));
+  EXPECT_TRUE(realigned.hasData());
+  EXPECT_FALSE(realigned.unaligned());
 }
 
 TEST(DatasetTest, setCoord_with_name_matching_data_name) {

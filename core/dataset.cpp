@@ -197,12 +197,12 @@ void setExtent(std::unordered_map<Dim, scipp::index> &dims, const Dim dim,
       } else if (extents::oneSmaller(extent, heldExtent) && !isCoord) {
         heldExtent = extent;
       } else {
-        throw std::runtime_error("Length mismatch on insertion");
+        throw except::DimensionError("Length mismatch on insertion");
       }
     } else {
       // Check for known edge state
       if ((extent != heldExtent || isCoord) && extent != heldExtent + 1)
-        throw std::runtime_error("Length mismatch on insertion");
+        throw except::DimensionError("Length mismatch on insertion");
     }
   }
 }
@@ -350,7 +350,7 @@ void Dataset::setData(const std::string &name, const DataArrayConstView &data) {
 void DataArrayView::setData(Variable data) const {
   if (!slices().empty())
     throw except::SliceError("Cannot set data via slice.");
-  if (m_mutableData->second.unaligned)
+  if (!m_mutableData->second.data && hasData())
     m_mutableData->second.unaligned->data.setData(std::move(data));
   else
     m_mutableDataset->setData(name(), std::move(data), AttrPolicy::Keep);
