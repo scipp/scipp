@@ -349,8 +349,11 @@ TEST_F(RealignTest, histogram_slice) {
   }
 }
 
-struct RealignEventsTest : public ::testing::Test {
+struct RealignEventsTest : public ::testing::Test,
+                           public ::testing::WithParamInterface<std::string> {
 protected:
+  bool scalar_weights() const { return GetParam() == "scalar_weights"; }
+
   Variable pos = makeVariable<Eigen::Vector3d>(
       Dims{Dim::Position}, Shape{4},
       Values{Eigen::Vector3d{1, 1, 1}, Eigen::Vector3d{1, 1, 2},
@@ -358,37 +361,25 @@ protected:
   Variable tof_bins =
       makeVariable<double>(Dims{Dim::Tof}, Shape{3}, Values{0, 2, 4});
 
-  DataArray make_array_scalar_weights() {
-    const auto tof = makeVariable<event_list<double>>(
-        Dims{Dim::Position}, Shape{4},
-        Values{event_list<double>{1}, event_list<double>{1, 2},
-               event_list<double>{1, 2, 3}, event_list<double>{1, 2, 3, 4}});
-    return DataArray(makeVariable<double>(Dims{Dim::Position}, Shape{4},
-                                          units::Unit(units::counts),
-                                          Values{1, 1, 1, 1},
-                                          Variances{1, 1, 1, 1}),
-                     {{Dim::Position, pos}, {Dim::Tof, tof}});
-  }
-
   DataArray make_array() {
     const auto tof = makeVariable<event_list<double>>(
         Dims{Dim::Position}, Shape{4},
         Values{event_list<double>{1}, event_list<double>{1, 2},
                event_list<double>{1, 2, 3}, event_list<double>{1, 2, 3, 4}});
     return DataArray(
-        makeVariable<event_list<double>>(
-            Dims{Dim::Position}, Shape{4}, units::Unit(units::counts),
-            Values{event_list<double>{1}, event_list<double>{1, 1},
-                   event_list<double>{1, 1, 1}, event_list<double>{1, 1, 1, 1}},
-            Variances{event_list<double>{1}, event_list<double>{1, 1},
-                      event_list<double>{1, 1, 1},
-                      event_list<double>{1, 1, 1, 1}}),
+        scalar_weights()
+            ? makeVariable<double>(Dims{Dim::Position}, Shape{4},
+                                   units::Unit(units::counts),
+                                   Values{1, 1, 1, 1}, Variances{1, 1, 1, 1})
+            : makeVariable<event_list<double>>(
+                  Dims{Dim::Position}, Shape{4}, units::Unit(units::counts),
+                  Values{event_list<double>{1}, event_list<double>{1, 1},
+                         event_list<double>{1, 1, 1},
+                         event_list<double>{1, 1, 1, 1}},
+                  Variances{event_list<double>{1}, event_list<double>{1, 1},
+                            event_list<double>{1, 1, 1},
+                            event_list<double>{1, 1, 1, 1}}),
         {{Dim::Position, pos}, {Dim::Tof, tof}});
-  }
-
-  DataArray make_realigned_scalar_weights() {
-    return unaligned::realign(make_array_scalar_weights(),
-                              {{Dim::Tof, tof_bins}});
   }
 
   DataArray make_realigned() {
@@ -405,7 +396,11 @@ protected:
   }
 };
 
-TEST_F(RealignEventsTest, basics) {
+INSTANTIATE_TEST_SUITE_P(WeightType, RealignEventsTest,
+                         testing::Values("scalar_weights",
+                                         "event_list_weights"));
+
+TEST_P(RealignEventsTest, basics) {
   const auto reference = make_aligned();
   auto base = make_array();
   auto realigned = unaligned::realign(base, {{Dim::Tof, tof_bins}});
@@ -414,24 +409,18 @@ TEST_F(RealignEventsTest, basics) {
   EXPECT_EQ(realigned.dims(), reference.dims());
   EXPECT_EQ(realigned.coords(), reference.coords());
   EXPECT_EQ(realigned.unit(), base.unit());
-  EXPECT_EQ(realigned.dtype(), base.dtype());
+  EXPECT_EQ(realigned.dtype(), reference.dtype());
 
   EXPECT_EQ(realigned.unaligned(), base);
 }
 
-TEST_F(RealignEventsTest, histogram) {
-  const auto realigned = make_realigned();
-  EXPECT_EQ(histogram(realigned), make_aligned());
+TEST_P(RealignEventsTest, histogram) {
+  EXPECT_EQ(histogram(make_realigned()), make_aligned());
 }
 
-TEST_F(RealignEventsTest, dtype_scalar_weights) {
-  auto realigned = make_realigned_scalar_weights();
-  EXPECT_EQ(realigned.unaligned().dtype(), dtype<double>);
-  EXPECT_EQ(realigned.dtype(), dtype<double>);
-}
-
-TEST_F(RealignEventsTest, dtype) {
+TEST_P(RealignEventsTest, dtype) {
   auto realigned = make_realigned();
-  EXPECT_EQ(realigned.unaligned().dtype(), dtype<event_list<double>>);
+  EXPECT_EQ(realigned.unaligned().dtype(),
+            scalar_weights() ? dtype<double> : dtype<event_list<double>>);
   EXPECT_EQ(realigned.dtype(), dtype<double>);
 }
