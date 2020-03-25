@@ -597,8 +597,8 @@ template <class MapView> MapView DataArrayView::makeView() const {
       return self.m_mutableData->second.attrs; // item attrs, not dataset attrs
   };
   auto items = makeViewItems<MapView>(dims(), map_parent(*this));
-  if (!m_mutableData->second.data && hasData()) {
-    // This is a view of the unaligned content of a realigned data array.
+  const bool is_view_of_unaligned = !m_mutableData->second.data && hasData();
+  if (is_view_of_unaligned) {
     decltype(*this) unaligned = m_mutableData->second.unaligned->data;
     auto unalignedItems =
         makeViewItems<MapView>(unaligned.dims(), map_parent(unaligned));
@@ -608,7 +608,9 @@ template <class MapView> MapView DataArrayView::makeView() const {
     // Note: Unlike for CoordAccess and MaskAccess this is *not* unconditionally
     // disabled with nullptr since it sets/erase attributes of the *item*.
     return MapView(
-        AttrAccess(slices().empty() ? m_mutableDataset : nullptr, &name()),
+        AttrAccess(slices().empty() ? m_mutableDataset : nullptr, &name(),
+                   is_view_of_unaligned ? &m_mutableData->second.unaligned->data
+                                        : nullptr),
         std::move(items), slices());
   } else {
     // Access disabled with nullptr since views of dataset items or slices of

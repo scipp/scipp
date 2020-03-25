@@ -36,8 +36,9 @@ private:
 
 class AttrAccess {
 public:
-  AttrAccess(Dataset *parent, const std::string *name = nullptr)
-      : m_parent(parent), m_name(name) {}
+  AttrAccess(Dataset *parent, const std::string *name = nullptr,
+             DataArray *unaligned = nullptr)
+      : m_parent(parent), m_name(name), m_unaligned(unaligned) {}
 
   void set(const std::string &key, Variable var) const;
   void erase(const std::string &key) const;
@@ -45,6 +46,7 @@ public:
 private:
   Dataset *m_parent;
   const std::string *m_name;
+  DataArray *m_unaligned;
 };
 
 } // namespace scipp::core
