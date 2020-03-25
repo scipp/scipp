@@ -406,8 +406,8 @@ struct GroupbyFlattenDefaultWeight : public ::testing::Test {
 
   const DataArray expected{
       makeVariable<double>(Dims{Dim("labels")}, Shape{2},
-                           units::Unit(units::counts), Values{2, 1},
-                           Variances{2, 1}),
+                           units::Unit(units::counts), Values{1, 1},
+                           Variances{1, 1}),
       {{Dim::X, make_sparse_out()},
        {Dim("0-d"), makeVariable<double>(Values{1.2})},
        {Dim("labels"),
@@ -430,6 +430,13 @@ TEST_F(GroupbyFlattenDefaultWeight, flatten_dataset_coord_only) {
   EXPECT_EQ(groupby(d, Dim("labels")).flatten(Dim::Y), expected_d);
 }
 
+TEST_F(GroupbyFlattenDefaultWeight, flatten_non_constant_scalar_weight_fail) {
+  Dataset d{{{"a", a}, {"b", a}}};
+  d["a"].values<double>()[0] += 0.1;
+  EXPECT_THROW(groupby(d, Dim("labels")).flatten(Dim::Y),
+               except::EventDataError);
+}
+
 TEST(GroupbyFlattenTest, flatten_coord_and_labels) {
   DataArray a{makeVariable<double>(Dims{Dim::Y}, Shape{3},
                                    units::Unit(units::counts), Values{1, 1, 1},
@@ -442,7 +449,7 @@ TEST(GroupbyFlattenTest, flatten_coord_and_labels) {
 
   DataArray expected{makeVariable<double>(Dims{Dim("labels")}, Shape{2},
                                           units::Unit(units::counts),
-                                          Values{2, 1}, Variances{2, 1}),
+                                          Values{1, 1}, Variances{1, 1}),
                      {{Dim::X, make_sparse_out()},
                       {Dim("labels"), makeVariable<double>(
                                           Dims{Dim("labels")}, Shape{2},

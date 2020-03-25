@@ -114,6 +114,10 @@ struct SCIPP_CORE_EXPORT UnalignedError : public std::runtime_error {
   using std::runtime_error::runtime_error;
 };
 
+struct SCIPP_CORE_EXPORT EventDataError : public std::runtime_error {
+  using std::runtime_error::runtime_error;
+};
+
 } // namespace scipp::except
 
 namespace scipp::core::expect {
