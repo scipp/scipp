@@ -276,3 +276,17 @@ TEST(CoordsConstView, slice_bin_edges_with_2D_coord) {
   EXPECT_EQ(sliceY_bin[Dim::X], coords[Dim::X].slice({Dim::Y, 1, 2}));
   EXPECT_EQ(sliceY_bin[Dim::Y], coords[Dim::Y].slice({Dim::Y, 1, 3}));
 }
+
+TEST(CoordsViewRealignedTest, set_erase) {
+  auto d = testdata::make_dataset_realigned_x_to_y();
+  // TODO It would be possible and useful to support this, but it involves
+  // rather intricate dimensionality and coords content checks to avoid breaking
+  // invariants of the realigned data.
+  EXPECT_THROW(d["a"].unaligned().coords().erase(Dim::X), except::DatasetError);
+  EXPECT_THROW(d["a"].unaligned().coords().set(
+                   Dim::Z, d["a"].unaligned().coords()[Dim::Y]),
+               except::DatasetError);
+  EXPECT_THROW(d["a"].unaligned().masks().set(
+                   "mask", d["a"].unaligned().coords()[Dim::Y]),
+               except::DatasetError);
+}
