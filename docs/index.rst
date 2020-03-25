@@ -53,6 +53,7 @@ Documentation
    user-guide/slicing
    user-guide/computation
    user-guide/masking
+   user-guide/unaligned-data
    user-guide/event-data
    user-guide/groupby
    user-guide/how_to
