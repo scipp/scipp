@@ -177,6 +177,7 @@ Dataset make_dataset_realigned_x_to_y() {
                                       Shape{3}, Values{4, 5, 6}));
   d.setData("b", makeVariable<int32_t>(Dims{dim}, units::Unit(units::s),
                                        Shape{3}, Values{7, 8, 9}));
+  d.setCoord(Dim("scalar"), 1.2 * units::Unit(units::K));
   d.setCoord(realigned_dim,
              makeVariable<double>(Dims{dim}, units::Unit(units::m), Shape{3},
                                   Values{1, 2, 3}));

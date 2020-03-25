@@ -102,26 +102,19 @@ TYPED_TEST(DataArrayViewTest, coords) {
   ASSERT_EQ(d_ref["a"].coords(), d.coords());
 }
 
-// Reenable this when proper unaligned views are implemented
-TYPED_TEST(DataArrayViewTest, DISABLED_coords_unaligned) {
-  Dataset d;
+TYPED_TEST(DataArrayViewTest, coords_realigned) {
+  Dataset d = testdata::make_dataset_realigned_x_to_y();
   typename TestFixture::dataset_type &d_ref(d);
-  const auto x = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
-  const auto y = makeVariable<double>(Dims{Dim::Y}, Shape{3}, Values{4, 5, 6});
-  const auto sparse = makeVariable<event_list<double>>(Dims{Dim::X}, Shape{3});
-  d.setCoord(Dim::X, x);
-  d.setCoord(Dim::Y, y);
-  // d.setUnaligned("a", x);
-  d.coords().set(Dim::Y, sparse);
 
   ASSERT_NO_THROW(d_ref["a"].coords());
-  ASSERT_NE(d_ref["a"].coords(), d.coords());
+  ASSERT_EQ(d_ref["a"].coords(), d.coords());
   ASSERT_EQ(d_ref["a"].coords().size(), 2);
-  ASSERT_NO_THROW(d_ref["a"].coords()[Dim::X]);
-  ASSERT_NO_THROW(d_ref["a"].coords()[Dim::Y]);
-  ASSERT_EQ(d_ref["a"].coords()[Dim::X], x);
-  ASSERT_NE(d_ref["a"].coords()[Dim::Y], y);
-  ASSERT_EQ(d_ref["a"].coords()[Dim::Y], sparse);
+  ASSERT_TRUE(d_ref["a"].coords().contains(Dim::Y));
+  ASSERT_TRUE(d_ref["a"].coords().contains(Dim("scalar")));
+
+  const auto unaligned = d_ref["a"].unaligned();
+  ASSERT_NE(unaligned.coords()[Dim::Y], d.coords()[Dim::Y]);
+  ASSERT_EQ(unaligned.coords()[Dim("scalar")], d.coords()[Dim("scalar")]);
 }
 
 TYPED_TEST(DataArrayViewTest, coords_contains_only_relevant) {
