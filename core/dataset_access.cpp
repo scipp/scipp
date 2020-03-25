@@ -23,13 +23,13 @@ void expectDimsNotContained(const Dataset *parent, const Variable &var) {
   throw except::RealignedDataError("set in realigned, not unaligned.");
 }
 
-constexpr auto clarify_exception(const auto &e) {
+auto clarify_exception(const except::NotFoundError &e) {
   return except::NotFoundError(
       std::string(e.what()) +
       " This may be because of an attempt to remove a coord/masks/attr via "
       "the `unaligned` property of realigned data. Try removing from the "
       "realigned parent.");
-};
+}
 
 } // namespace
 
