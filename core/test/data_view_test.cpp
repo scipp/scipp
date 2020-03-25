@@ -7,6 +7,9 @@
 #include "scipp/core/dataset.h"
 #include "scipp/core/dimensions.h"
 #include "scipp/core/event.h"
+#include "scipp/core/unaligned.h"
+
+#include "dataset_test_common.h"
 #include "test_macros.h"
 
 using namespace scipp;
@@ -77,22 +80,15 @@ TYPED_TEST(DataArrayViewTest, unit) {
   Dataset d;
   typename TestFixture::dataset_type &d_ref(d);
 
-  d.setData("dense", makeVariable<double>(Values{double{}}));
-  EXPECT_EQ(d_ref["dense"].unit(), units::dimensionless);
+  d.setData("a", makeVariable<double>(units::Unit(units::m), Values{double{}}));
+  EXPECT_EQ(d_ref["a"].unit(), units::m);
 }
 
-// Reenable this test when proper unaligned support available
-TYPED_TEST(DataArrayViewTest, DISABLED_unit_access_fails_without_values) {
-  /*
-  Dataset d;
+TYPED_TEST(DataArrayViewTest, unit_realigned) {
+  Dataset d = testdata::make_dataset_realigned_x_to_y();
   typename TestFixture::dataset_type &d_ref(d);
-  DatasetAxis x;
-  x.unaligned().set("sparse",
-                    makeVariable<event_list<double>>(Dims{}, Shape{}));
-  d.coords().set(Dim::X, x);
-  // TODO Must set unaligned data, otherwise the item does not exist.
-  EXPECT_THROW(d_ref["sparse"].unit(), except::SparseDataError);
-  */
+  EXPECT_EQ(d_ref["a"].unit(), units::kg);
+  EXPECT_EQ(d_ref["b"].unit(), units::s);
 }
 
 TYPED_TEST(DataArrayViewTest, coords) {
