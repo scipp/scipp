@@ -14,24 +14,28 @@ class Dataset;
 
 class CoordAccess {
 public:
-  CoordAccess(Dataset *parent) : m_parent(parent) {}
+  CoordAccess(Dataset *parent, DataArray *unaligned = nullptr)
+      : m_parent(parent), m_unaligned(unaligned) {}
 
   void set(const Dim &key, Variable var) const;
   void erase(const Dim &key) const;
 
 private:
   Dataset *m_parent;
+  DataArray *m_unaligned;
 };
 
 class MaskAccess {
 public:
-  MaskAccess(Dataset *parent) : m_parent(parent) {}
+  MaskAccess(Dataset *parent, DataArray *unaligned = nullptr)
+      : m_parent(parent), m_unaligned(unaligned) {}
 
   void set(const std::string &key, Variable var) const;
   void erase(const std::string &key) const;
 
 private:
   Dataset *m_parent;
+  DataArray *m_unaligned;
 };
 
 class AttrAccess {
