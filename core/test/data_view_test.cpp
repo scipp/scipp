@@ -76,12 +76,25 @@ TYPED_TEST(DataArrayViewTest, dims_with_extra_coords) {
   ASSERT_EQ(d_ref["a"].dims(), var.dims());
 }
 
-TYPED_TEST(DataArrayViewTest, unit) {
-  Dataset d;
+TYPED_TEST(DataArrayViewTest, dtype) {
+  Dataset d = testdata::make_dataset_x();
   typename TestFixture::dataset_type &d_ref(d);
+  EXPECT_EQ(d_ref["a"].dtype(), dtype<double>);
+  EXPECT_EQ(d_ref["b"].dtype(), dtype<int32_t>);
+}
 
-  d.setData("a", makeVariable<double>(units::Unit(units::m), Values{double{}}));
-  EXPECT_EQ(d_ref["a"].unit(), units::m);
+TYPED_TEST(DataArrayViewTest, dtype_realigned) {
+  Dataset d = testdata::make_dataset_realigned_x_to_y();
+  typename TestFixture::dataset_type &d_ref(d);
+  EXPECT_EQ(d_ref["a"].dtype(), dtype<double>);
+  EXPECT_EQ(d_ref["b"].dtype(), dtype<int32_t>);
+}
+
+TYPED_TEST(DataArrayViewTest, unit) {
+  Dataset d = testdata::make_dataset_x();
+  typename TestFixture::dataset_type &d_ref(d);
+  EXPECT_EQ(d_ref["a"].unit(), units::kg);
+  EXPECT_EQ(d_ref["b"].unit(), units::s);
 }
 
 TYPED_TEST(DataArrayViewTest, unit_realigned) {

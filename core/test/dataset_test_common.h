@@ -109,6 +109,7 @@ Dataset make_sparse_2d(std::initializer_list<double> values,
 Dataset make_1d_masked();
 
 namespace scipp::testdata {
+Dataset make_dataset_x();
 Dataset make_dataset_realigned_x_to_y();
 } // namespace scipp::testdata
 
