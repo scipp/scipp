@@ -762,7 +762,7 @@ TEST_F(TransformBinaryTest, broadcast_sparse_val_var_with_val) {
 // the same output element. This is useful, e.g., when implementing sums or
 // integrations, but may be unexpected. Should we fail and support this as a
 // separate operation instead?
-TEST_F(TransformBinaryTest, DISABLED_broadcast_sparse_val_var_with_val) {
+TEST_F(TransformBinaryTest, fail_dimension_reduction) {
   auto a = make_sparse_variable_with_variance<double>();
   set_sparse_values<double>(a, {{1, 2, 3}, {4}});
   set_sparse_variances<double>(a, {{5, 6, 7}, {8}});
@@ -770,7 +770,7 @@ TEST_F(TransformBinaryTest, DISABLED_broadcast_sparse_val_var_with_val) {
 
   EXPECT_THROW((transform_in_place<pair_custom_t<std::pair<double, float>>>(
                    a, b, op_in_place)),
-               except::SizeError);
+               except::NotFoundError);
 }
 
 // It is possible to use transform with functors that call non-built-in
