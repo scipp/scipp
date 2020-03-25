@@ -94,4 +94,4 @@ Variable broadcast_weights(const DataArrayConstView &events) {
 }
 
 } // namespace event
-} // namespace scipp::core::event
+} // namespace scipp::core
