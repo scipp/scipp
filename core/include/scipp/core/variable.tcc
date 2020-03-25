@@ -11,7 +11,23 @@
 #include <numeric>
 #include <optional>
 
+// // // namespace {
+// bool operator==(const Eigen::Quaterniond &a, const Eigen::Quaterniond &b) {
+//   return a.coeffs() == b.coeffs();
+// }
+// // // } //namespace
+
 namespace scipp::core {
+
+// namespace {
+bool operator==(const Eigen::Quaterniond &a, const Eigen::Quaterniond &b) {
+  return a.coeffs() == b.coeffs();
+// }
+}
+
+// bool operator==(const Eigen::Quaterniond &a, const Eigen::Quaterniond &b) {
+//   return a.coeffs() == b.coeffs();
+// }
 
 template <class T, class C> auto &requireT(C &concept) {
   try {

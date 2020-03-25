@@ -1052,6 +1052,14 @@ SCIPP_CORE_EXPORT void reserve(const VariableView &sparse,
                                const VariableConstView &capacity);
 } // namespace sparse
 
+bool operator==(const Eigen::Quaterniond &a, const Eigen::Quaterniond &b);
+
 } // namespace scipp::core
+
+// namespace {
+// [[maybe_unused]] bool operator==(const Eigen::Quaterniond &a, const Eigen::Quaterniond &b) {
+//   return a.coeffs() == b.coeffs();
+// }
+// } // namespace
 
 #endif // SCIPP_CORE_VARIABLE_H
