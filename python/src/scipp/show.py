@@ -311,12 +311,12 @@ class DatasetDrawer():
         # dimension count.
         if is_data_array(self._dataset):
             dims = self._dataset.dims
-            if is_data_events(self._dataset):
+            if sc.is_events(self._dataset):
                 dims.append("<event>")
         else:
             dims = []
             for item in self._dataset.values():
-                if is_data_events(item):
+                if sc.is_events(item):
                     dims = item.dims
                     dims.append("<event>")
                     break
@@ -387,8 +387,6 @@ class DatasetDrawer():
         for what, items in zip(['coords', 'masks', 'attrs'],
                                [ds.coords, ds.masks, ds.attrs]):
             for name, var in items.items():
-                if sc.is_events(var):
-                    continue
                 item = (name, var, config.colors[what])
                 if len(var.dims) == 0:
                     area_0d.append(item)
