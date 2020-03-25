@@ -922,13 +922,6 @@ TEST(SparseVariable, non_sparse_access_fail) {
   ASSERT_THROW(var.variances<double>(), except::TypeError);
 }
 
-TEST(SparseVariable, DISABLED_low_level_access) {
-  const auto var =
-      makeVariable<event_list<double>>(Dims{Dim::Y, Dim::X}, Shape{2});
-  // Need to decide whether we allow this direct access or not.
-  ASSERT_THROW((var.values<sparse_container<double>>()), except::TypeError);
-}
-
 TEST(SparseVariable, access) {
   const auto var = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2},
                                                     Values{}, Variances{});
