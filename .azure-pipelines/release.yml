@@ -55,9 +55,9 @@ stages:
         pool:
           vmImage: 'macOS-10.14'
         variables:
-          OSX_VERSION: '10.15'
-        variables:
           - group: tokens
+          - name: OSX_VERSION
+            value: '10.15'
         steps:
           - checkout: self
             submodules: true
