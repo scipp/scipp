@@ -7,7 +7,7 @@ import colorsys
 import numpy as np
 from ._scipp import core as sc
 from . import config
-from .utils import is_data_array, is_data_events
+from .utils import is_data_array
 
 # Unit is `em`. This particular value is chosen to avoid a horizontal scroll
 # bar with the readthedocs theme.
@@ -71,7 +71,7 @@ class VariableDrawer():
 
     def _dims(self):
         dims = self._variable.dims
-        if is_data_events(self._variable):
+        if sc.is_events(self._variable):
             dims.append("<event>")
         return dims
 
@@ -109,7 +109,7 @@ class VariableDrawer():
         for dim in self._target_dims:
             if dim in d:
                 e.append(min(d[dim], max_extent))
-            elif dim == "<event>" and is_data_events(self._variable):
+            elif dim == "<event>" and sc.is_events(self._variable):
                 e.append(self._sparse_flag)
             else:
                 e.append(1)
@@ -148,7 +148,7 @@ class VariableDrawer():
         if self._variable.variances is not None:
             extra_item_count += 1
         if is_data_array(self._variable):
-            if is_data_events(self._variable):
+            if sc.is_events(self._variable):
                 for name, coord in self._variable.coords.items():
                     if sc.is_events(coord):
                         extra_item_count += 1
@@ -175,13 +175,16 @@ class VariableDrawer():
                 x_scale = 1
                 sparse = False
                 if lx == self._sparse_flag:
-                    true_lx = ceil(
-                        len(data[ly - y - 1 + ly * (lz - z - 1)]) /
-                        self._x_stride)
+                    if hasattr(data[0], '__len__'):
+                        true_lx = ceil(
+                            len(data[ly - y - 1 + ly * (lz - z - 1)]) /
+                            self._x_stride)
+                        x_scale *= self._sparse_box_scale
+                    else: # special case: scalar event weights
+                        true_lx = 1
                     if true_lx == 0:
                         true_lx = 1
                         x_scale *= 0
-                    x_scale *= self._sparse_box_scale
                     sparse = True
                 for x in range(true_lx):
                     # Do not draw hidden boxes
@@ -263,7 +266,7 @@ class VariableDrawer():
         if self._variable.values is not None:
             items.append(('values', self._variable.values, color))
         if is_data_array(self._variable):
-            if is_data_events(self._variable):
+            if sc.is_events(self._variable):
                 for name, coord in self._variable.coords.items():
                     if sc.is_events(coord):
                         items.append(
@@ -372,7 +375,7 @@ class DatasetDrawer():
                 if len(dims) == 1 or data.dims != dims:
                     if len(data.dims) == 0:
                         area_0d.append(item)
-                    elif len(data.dims) != 1 or is_data_events(data):
+                    elif len(data.dims) != 1 or sc.is_events(data):
                         area_xy[-1:-1] = [item]
                     elif data.dims[0] == dims[-1]:
                         area_x.append(item)
@@ -387,6 +390,8 @@ class DatasetDrawer():
         for what, items in zip(['coords', 'masks', 'attrs'],
                                [ds.coords, ds.masks, ds.attrs]):
             for name, var in items.items():
+                if sc.is_events(var):
+                    continue
                 item = (name, var, config.colors[what])
                 if len(var.dims) == 0:
                     area_0d.append(item)
