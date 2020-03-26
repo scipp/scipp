@@ -136,6 +136,24 @@ TEST(HistogramTest, data_view) {
   EXPECT_EQ(hist, expected);
 }
 
+TEST(HistogramTest, drops_other_event_coords) {
+  auto events = make_1d_events_default_weights();
+  events.coords().set(Dim("pulse-time"), events.coords()[Dim::Y]);
+  std::vector<double> ref{1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 2, 3, 0, 3, 0};
+  auto edges =
+      makeVariable<double>(Dims{Dim::Y}, Shape{6}, Values{1, 2, 3, 4, 5, 6});
+  auto hist = core::histogram(events, edges);
+  auto expected =
+      make_expected(makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{3, 5},
+                                         units::Unit(units::counts),
+                                         Values(ref.begin(), ref.end()),
+                                         Variances(ref.begin(), ref.end())),
+                    edges);
+
+  EXPECT_FALSE(hist.coords().contains(Dim("pulse=time")));
+  EXPECT_EQ(hist, expected);
+}
+
 TEST(HistogramTest, weight_lists) {
   Variable data = makeVariable<event_list<double>>(Dimensions{{Dim::X, 3}},
                                                    Values{}, Variances{});
