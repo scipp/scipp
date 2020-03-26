@@ -23,6 +23,8 @@ stages:
               PYTHON_VERSION: '3.7'
         pool:
           vmImage: 'ubuntu-18.04'
+        variables:
+          - group: tokens
         steps:
           - checkout: self
             submodules: true
@@ -54,6 +56,8 @@ stages:
           vmImage: 'macOS-10.14'
         variables:
           OSX_VERSION: '10.15'
+        variables:
+          - group: tokens
         steps:
           - checkout: self
             submodules: true
@@ -92,6 +96,8 @@ stages:
               PYTHON_VERSION: '3.8'
         pool:
           vmImage: 'windows-latest'
+        variables:
+          - group: tokens
         steps:
           - checkout: self
             submodules: true
