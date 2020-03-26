@@ -197,10 +197,6 @@ def validate_and_get_unit(unit, allow_empty=False):
         return known_units[unit]
 
 
-def _to_array(positions, idx, pos, spec_idx):
-    positions[idx, :] = np.array([spec_idx, pos.X(), pos.Y(), pos.Z()])
-
-
 def _to_spherical_old(input):
     transformed = np.ones(shape=input.shape)
     transformed[:, 0] = input[:, 0]  # copy metadata
@@ -260,8 +256,7 @@ def init_pos(ws, source_pos, sample_pos):
     spec_info = ws.spectrumInfo()
     det_info = ws.detectorInfo()
     total_detectors = spec_info.detectorCount()
-    non_detectors = sum(not spec.hasDetectors for spec in spec_info)
-    det_pos = np.zeros([total_detectors + non_detectors, 3 + 1])
+    det_pos = np.zeros([total_detectors, 3 + 1])
 
     if sample_pos and source_pos:
         act_beam = (sample_pos - source_pos).values
@@ -279,11 +274,8 @@ def init_pos(ws, source_pos, sample_pos):
             for j in range(n_dets):
                 det_idx = definition[j][0]
                 p = det_info.position(det_idx)
-                _to_array(det_pos, idx, p, i)
+                det_pos[idx, :] = np.array([i, p.X(), p.Y(), p.Z()])
                 idx += 1
-        else:
-            det_pos[idx, :] = np.array([i, np.nan, np.nan, np.nan])
-            idx += 1
 
     det_pos[:, 1:] = det_pos[:, 1:].dot(rot)
     pos_d = sc.Dataset()
@@ -294,7 +286,13 @@ def init_pos(ws, source_pos, sample_pos):
 
     _to_spherical(pos_d)
 
-    averaged = sc.groupby(pos_d, "spectrum").mean("x")
+    averaged = sc.groupby(pos_d,
+                          "spectrum",
+                          bins=sc.Variable(["spectrum"],
+                                           values=np.arange(
+                                               -0.5,
+                                               len(spec_info) + 0.5,
+                                               1.0))).mean("x")
 
     averaged["x"] = averaged["r"].data * sc.sin(averaged["t"].data) * sc.cos(
         averaged["p"].data)
