@@ -8,11 +8,10 @@ If your use case requires one or several of the items on the following list, usi
 - Handling of physical units.
 - Propagation of uncertainties.
 - Support for histograms, i.e., bin-edge axes, which are by 1 longer than the data extent.
+- Support for unaligned data and non-destructive realignment.
 - Support for event data, a particular form of sparse data with 1-D (or N-D) arrays of random-length lists, with very small list entries.
 - Support for masks stored with data.
 - Written in C++ for better performance (for certain applications), in combination with Python bindings.
-
-Currently scipp is moving from its prototype phase into a more consolidated set of libraries.
 
 Generic functionality of scipp is provided in the core module **scipp**.
 Physical units, which are also considered core functionality, are part of the **scipp.units** module.
@@ -22,11 +21,11 @@ Currently the only example for this is **scipp.neutron** for handling data from 
 Where can I get help?
 ---------------------
 
-If you have a question about how to use **scipp**, you should first visit
-`this <https://github.com/scipp/scipp/issues?utf8=%E2%9C%93&q=label%3Aquestion>`_
-page to see if the problem you are facing has already been met/solved in the community.
+For questions not answered in the documentation
+`this page <https://github.com/scipp/scipp/issues?utf8=%E2%9C%93&q=label%3Aquestion>`_
+provides a forum with discussions on problems already met/solved in the community.
 
-If you cannot find an answer, you can ask a new question by
+New question can be asked by
 `opening <https://github.com/scipp/scipp/issues/new?assignees=&labels=question&template=question.md&title=>`_
 a new |QuestionLabel|_ issue.
 
