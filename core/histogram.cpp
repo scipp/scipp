@@ -88,8 +88,9 @@ DataArray histogram(const DataArrayConstView &sparse,
 
   auto result = apply_and_drop_dim(
       sparse,
-      [](const DataArrayConstView &sparse_, const Dim dim_,
+      [](const DataArrayConstView &sparse_, const Dim eventDim, const Dim dim_,
          const VariableConstView &binEdges_) {
+        static_cast<void>(eventDim); // This is just Dim::Invalid
         using namespace histogram_weighted_detail;
         // This supports scalar weights as well as event_list weights.
         return transform_subspan<
@@ -109,7 +110,7 @@ DataArray histogram(const DataArrayConstView &sparse,
                        transform_flags::expect_variance_arg<2>,
                        transform_flags::expect_no_variance_arg<3>});
       },
-      dim, binEdges);
+      dim_of_coord(sparse.coords()[dim], dim), dim, binEdges);
   result.setCoord(dim, binEdges);
   return result;
 }
