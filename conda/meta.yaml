@@ -32,6 +32,7 @@ test:
     - ipywidgets
     - matplotlib
     - pytest
+    - pythreejs
   source_files:
     - python/tests
   commands:
