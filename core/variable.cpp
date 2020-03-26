@@ -253,11 +253,3 @@ void expect0D(const Dimensions &dims) { expect::equals(dims, Dimensions()); }
 } // namespace detail
 
 } // namespace scipp::core
-
-// namespace {
-
-// bool operator==(const Eigen::Quaterniond &a, const Eigen::Quaterniond &b) {
-//   return a.coeffs() == b.coeffs();
-// }
-
-// } //namespace
