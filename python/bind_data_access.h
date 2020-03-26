@@ -373,7 +373,8 @@ using as_ElementArrayView =
     as_ElementArrayViewImpl<double, float, int64_t, int32_t, bool, std::string,
                             sparse_container<double>, sparse_container<float>,
                             sparse_container<int64_t>, DataArray, Dataset,
-                            Eigen::Vector3d, Eigen::Quaterniond, scipp::python::PyObject>;
+                            Eigen::Vector3d, Eigen::Quaterniond,
+                            scipp::python::PyObject>;
 
 template <class T, class... Ignored>
 void bind_data_properties(pybind11::class_<T, Ignored...> &c) {

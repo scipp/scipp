@@ -21,12 +21,6 @@ INSTANTIATE_VARIABLE(sparse_container<double>)
 INSTANTIATE_VARIABLE(sparse_container<float>)
 INSTANTIATE_VARIABLE(sparse_container<int64_t>)
 INSTANTIATE_VARIABLE(sparse_container<int32_t>)
-// Some sparse instantiations are only needed to avoid linker errors: Some
-// makeVariable overloads have a runtime branch that may instantiate a sparse
-// variable.
-INSTANTIATE_VARIABLE(sparse_container<std::string>)
 INSTANTIATE_VARIABLE(sparse_container<bool>)
-INSTANTIATE_VARIABLE(sparse_container<Eigen::Vector3d>)
-INSTANTIATE_VARIABLE(sparse_container<Eigen::Quaterniond>)
 
 } // namespace scipp::core

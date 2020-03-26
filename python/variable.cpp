@@ -126,17 +126,17 @@ Variable doMakeVariable(const std::vector<Dim> &labels, py::array &values,
                                  values.cast<std::vector<std::string>>(), unit);
     }
 
-    if (dtypeTag == core::dtype<Eigen::Vector3d> || dtypeTag == core::dtype<Eigen::Quaterniond>) {
+    if (dtypeTag == core::dtype<Eigen::Vector3d> ||
+        dtypeTag == core::dtype<Eigen::Quaterniond>) {
       std::vector<scipp::index> shape(values.shape(),
                                       values.shape() + values.ndim() - 1);
-      // using VecType = std::conditional<dtypeTag == core::dtype<Eigen::Vector3d>,
-      //                             Eigen::Vector3d, Eigen::Vector4d>::type;
       if (dtypeTag == core::dtype<Eigen::Vector3d>)
         return init_1D_no_variance(
             labels, shape, values.cast<std::vector<Eigen::Vector3d>>(), unit);
       else
         return init_1D_no_variance(
-            labels, shape, values.cast<std::vector<Eigen::Quaterniond>>(), unit);
+            labels, shape, values.cast<std::vector<Eigen::Quaterniond>>(),
+            unit);
     }
   }
 

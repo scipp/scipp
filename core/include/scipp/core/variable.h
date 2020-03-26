@@ -49,7 +49,7 @@ template <class... Known> class VariableConceptHandle_impl;
 // Any item type that is listed here explicitly can be used with the templated
 // `transform`, i.e., we can pass arbitrary functors/lambdas to process data.
 #define KNOWN                                                                  \
-  double, float, int64_t, int32_t, bool, Eigen::Vector3d, Eigen::Quaterniond,     \
+  double, float, int64_t, int32_t, bool, Eigen::Vector3d,                      \
       sparse_container<double>, sparse_container<float>,                       \
       sparse_container<int64_t>, sparse_container<int32_t>,                    \
       span<const double>, span<double>, span<const float>, span<float>
@@ -585,9 +585,11 @@ Variable Variable::ConstructVariable<Ts...>::Maker<T>::apply(Ts &&... ts) {
 
 template <class... Ts>
 Variable Variable::ConstructVariable<Ts...>::make(Ts &&... args, DType type) {
-  return CallDTypeWithSparse<
-      double, float, int64_t, int32_t, bool, Eigen::Vector3d, Eigen::Quaterniond,
-      std::string>::apply<Maker>(type, std::forward<Ts>(args)...);
+  return CallDTypeWithSparse<double, float, int64_t, int32_t, bool,
+                             Eigen::Vector3d, Eigen::Quaterniond,
+                             std::string>::apply<Maker>(type,
+                                                        std::forward<Ts>(
+                                                            args)...);
 }
 
 template <class... Ts>
@@ -1052,14 +1054,6 @@ SCIPP_CORE_EXPORT void reserve(const VariableView &sparse,
                                const VariableConstView &capacity);
 } // namespace sparse
 
-bool operator==(const Eigen::Quaterniond &a, const Eigen::Quaterniond &b);
-
 } // namespace scipp::core
-
-// namespace {
-// [[maybe_unused]] bool operator==(const Eigen::Quaterniond &a, const Eigen::Quaterniond &b) {
-//   return a.coeffs() == b.coeffs();
-// }
-// } // namespace
 
 #endif // SCIPP_CORE_VARIABLE_H
