@@ -236,6 +236,8 @@ def rotation_matrix_from_vectors(vec1, vec2):
 
 
 def matrix_mult(pos, m):
+    if not pos.shape[0]:
+        return pos
     m1 = sc.Variable(['y'],
                      values=[np.array(m[0, :])],
                      dtype=sc.dtype.vector_3_float64)
@@ -245,7 +247,8 @@ def matrix_mult(pos, m):
     m3 = sc.Variable(['y'],
                      values=[np.array(m[2, :])],
                      dtype=sc.dtype.vector_3_float64)
-    xn = sc.sum(sc.dot(m1, pos), 'y')
+    xn1 = sc.dot(m1, pos)
+    xn = sc.sum(xn1, 'y')
     yn = sc.sum(sc.dot(m2, pos), 'y')
     zn = sc.sum(sc.dot(m3, pos), 'y')
     return sc.geometry.position(xn, yn, zn)
@@ -256,7 +259,6 @@ def init_pos(ws, source_pos, sample_pos):
     spec_info = ws.spectrumInfo()
     det_info = ws.detectorInfo()
     total_detectors = spec_info.detectorCount()
-    det_pos = np.zeros([total_detectors, 3 + 1])
 
     if sample_pos and source_pos:
         act_beam = (sample_pos - source_pos).values
@@ -266,6 +268,20 @@ def init_pos(ws, source_pos, sample_pos):
         rot = np.eye(3)
         inv_rot = rot
 
+    pos_d = sc.Dataset()
+    # Create empty
+    pos_d["x"] = sc.Variable(["x"],
+                             values=np.empty(total_detectors),
+                             unit=sc.units.m)
+    pos_d["y"] = sc.Variable(["x"],
+                             values=np.empty(total_detectors),
+                             unit=sc.units.m)
+    pos_d["z"] = sc.Variable(["x"],
+                             values=np.empty(total_detectors),
+                             unit=sc.units.m)
+    pos_d.coords["spectrum"] = sc.Variable(["x"],
+                                           values=np.empty(total_detectors))
+
     idx = 0
     for i, spec in enumerate(spec_info):
         if spec.hasDetectors:
@@ -274,15 +290,18 @@ def init_pos(ws, source_pos, sample_pos):
             for j in range(n_dets):
                 det_idx = definition[j][0]
                 p = det_info.position(det_idx)
-                det_pos[idx, :] = np.array([i, p.X(), p.Y(), p.Z()])
+                pos_d.coords["spectrum"].values[idx] = i
+                pos_d["x"].values[idx] = p.X()
+                pos_d["y"].values[idx] = p.Y()
+                pos_d["z"].values[idx] = p.Z()
                 idx += 1
 
-    det_pos[:, 1:] = det_pos[:, 1:].dot(rot)
-    pos_d = sc.Dataset()
-    pos_d["x"] = sc.Variable(["x"], values=det_pos[:, 1], unit=sc.units.m)
-    pos_d["y"] = sc.Variable(["x"], values=det_pos[:, 2], unit=sc.units.m)
-    pos_d["z"] = sc.Variable(["x"], values=det_pos[:, 3], unit=sc.units.m)
-    pos_d.coords["spectrum"] = sc.Variable(["x"], values=det_pos[:, 0])
+    rot_pos = matrix_mult(
+        sc.geometry.position(pos_d["x"].data, pos_d["y"].data,
+                             pos_d["z"].data), rot)
+    pos_d["x"] = sc.geometry.x(rot_pos)
+    pos_d["y"] = sc.geometry.y(rot_pos)
+    pos_d["z"] = sc.geometry.z(rot_pos)
 
     _to_spherical(pos_d)
 
