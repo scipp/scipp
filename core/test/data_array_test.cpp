@@ -306,10 +306,22 @@ TEST_F(DataArrayRealignedEventsPlusMinusTest, plus_equals) {
   EXPECT_EQ(out, a + b - b);
 }
 
+TEST_F(DataArrayRealignedEventsPlusMinusTest, plus_equals_self) {
+  auto out(a);
+  out += out;
+  EXPECT_EQ(out, a + a);
+}
+
 TEST_F(DataArrayRealignedEventsPlusMinusTest, minus_equals) {
   auto out(a);
   out -= b;
   EXPECT_EQ(out, a - b);
+}
+
+TEST_F(DataArrayRealignedEventsPlusMinusTest, minus_equals_self) {
+  auto out(a);
+  out -= out;
+  EXPECT_EQ(out, a - a);
 }
 
 TEST_F(DataArrayRealignedEventsPlusMinusTest, plus_nonscalar_weights) {

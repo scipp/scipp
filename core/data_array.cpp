@@ -211,13 +211,22 @@ Variable sparse_dense_op_impl(const VariableConstView &sparseCoord_,
                  }});
 }
 
+namespace {
+bool is_self_append(const DataArrayConstView &a, const DataArrayConstView &b) {
+  return &a.underlying() == &b.underlying();
+}
+} // namespace
+
 DataArray &DataArray::operator+=(const DataArrayConstView &other) {
   expect::coordsAreSuperset(*this, other);
   union_or_in_place(masks(), other.masks());
   if (hasData() && other.hasData()) {
     data() += other.data();
   } else {
-    event::append(unaligned(), other.unaligned());
+    if (is_self_append(*this, other))
+      event::append(unaligned(), copy(other.unaligned()));
+    else
+      event::append(unaligned(), other.unaligned());
   }
   return *this;
 }
@@ -228,8 +237,11 @@ DataArray &DataArray::operator-=(const DataArrayConstView &other) {
   if (hasData() && other.hasData()) {
     data() -= other.data();
   } else {
+    const DataArray tmp =
+        is_self_append(*this, other) ? copy(other.unaligned()) : DataArray{};
+    auto other_unaligned = tmp ? DataArrayConstView(tmp) : other.unaligned();
     unaligned().data() *= -1.0;
-    event::append(unaligned(), other.unaligned());
+    event::append(unaligned(), other_unaligned);
     unaligned().data() *= -1.0;
   }
   return *this;
