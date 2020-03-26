@@ -46,6 +46,10 @@ General
    sort
    sqrt
    sum
+   position
+   geometry.x
+   geometry.y
+   geometry.z
 
 Group-by (split-apply-combine)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

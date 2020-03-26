@@ -16,7 +16,7 @@ requirements:
     - tbb-devel [linux64]
   run:
     - appdirs
-    - numpy {{ numpy }}
+    - numpy >=1.15.3
     - python {{ python }}
     - python-configuration
     - pyyaml
@@ -32,6 +32,7 @@ test:
     - ipywidgets
     - matplotlib
     - pytest
+    - pythreejs
   source_files:
     - python/tests
   commands:

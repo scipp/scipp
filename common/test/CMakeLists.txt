@@ -3,7 +3,8 @@
 set(TARGET_NAME "scipp-common-test")
 add_dependencies(all-tests ${TARGET_NAME})
 add_executable(
-  ${TARGET_NAME} EXCLUDE_FROM_ALL index_test.cpp is_linspace_test.cpp
+  ${TARGET_NAME} EXCLUDE_FROM_ALL deep_ptr_test.cpp index_test.cpp
+                                  is_linspace_test.cpp
 )
 include_directories(SYSTEM ${GMOCK_INCLUDE_DIR} ${GTEST_INCLUDE_DIR})
 target_link_libraries(

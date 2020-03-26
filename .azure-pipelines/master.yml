@@ -85,7 +85,13 @@ stages:
 
       - job: 'windows'
         displayName: 'Windows'
-        timeoutInMinutes: 60
+        timeoutInMinutes: 90
+        strategy:
+          matrix:
+            Python37:
+              PYTHON_VERSION: '3.7'
+            Python38:
+              PYTHON_VERSION: '3.8'
         pool:
           vmImage: 'windows-latest'
         variables:
@@ -103,7 +109,7 @@ stages:
               conda config --set always_yes yes --set changeps1 no
             displayName: 'Conda configuration'
           - script: |
-              conda build --user scipp --token "%ANACONDA_TOKEN%" --channel conda-forge --label dev ./conda
+              conda build --user scipp --token "%ANACONDA_TOKEN%" --channel conda-forge --label dev --python="%PYTHON_VERSION%" ./conda
             env:
               ANACONDA_TOKEN: $(anaconda_token_secret)
             displayName: 'Package build'

@@ -508,7 +508,8 @@ TYPED_TEST(DataArrayView3DTest, slice_length_0) {
         for (scipp::index i = 0; i < item.dims()[dim]; ++i)
           EXPECT_EQ(item.slice({dim, i, i + 0}),
                     d.slice({dim, i, i + 0})[item.name()]);
-        EXPECT_ANY_THROW(
+        // 0 thickness beyond end is ok
+        EXPECT_NO_THROW(
             item.slice({dim, item.dims()[dim], item.dims()[dim] + 0}));
       } else {
         EXPECT_ANY_THROW(item.slice({dim, 0, 0}));
@@ -614,7 +615,7 @@ TYPED_TEST(DataArrayView3DTest, slice_length_0_with_edges) {
               EXPECT_EQ(slice.coords()[dim].dims()[dim], 1);
             }
           }
-          EXPECT_ANY_THROW(
+          EXPECT_NO_THROW(
               item.slice({dim, item.dims()[dim], item.dims()[dim] + 0}));
         } else {
           EXPECT_ANY_THROW(item.slice({dim, 0, 0}));
