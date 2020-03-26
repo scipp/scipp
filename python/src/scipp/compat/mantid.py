@@ -200,6 +200,7 @@ def validate_and_get_unit(unit, allow_empty=False):
 def _to_array(positions, idx, pos, spec_idx):
     positions[idx, :] = np.array([spec_idx, pos.X(), pos.Y(), pos.Z()])
 
+
 def _to_spherical_old(input):
     transformed = np.ones(shape=input.shape)
     transformed[:, 0] = input[:, 0]  # copy metadata
@@ -209,11 +210,15 @@ def _to_spherical_old(input):
     transformed[:, 3] = np.arctan2(input[:, 2], input[:, 1])  # arctan2(y, x)
     return transformed
 
+
 def _to_spherical(input):
-    input["r"] = sc.sqrt(input["x"].data*input["x"].data + input["y"].data*input["y"].data+input["z"].data*input["z"].data)
+    input["r"] = sc.sqrt(input["x"].data * input["x"].data +
+                         input["y"].data * input["y"].data +
+                         input["z"].data * input["z"].data)
     input["t"] = sc.acos(input["z"].data / input["r"].data)
     input["p"] = input["t"].data.copy()
     sc.atan2(input["y"].data, input["x"].data, input["p"].data)
+
 
 def rotation_matrix_from_vectors(vec1, vec2):
     """ Find the rotation matrix that aligns vec1 to vec2
@@ -232,6 +237,22 @@ def rotation_matrix_from_vectors(vec1, vec2):
     kmat = np.array([[0, -v[2], v[1]], [v[2], 0, -v[0]], [-v[1], v[0], 0]])
     rotation_matrix = np.eye(3) + kmat + kmat.dot(kmat) * ((1 - c) / (s**2))
     return rotation_matrix
+
+
+def matrix_mult(pos, m):
+    m1 = sc.Variable(['y'],
+                     values=[np.array(m[0, :])],
+                     dtype=sc.dtype.vector_3_float64)
+    m2 = sc.Variable(['y'],
+                     values=[np.array(m[1, :])],
+                     dtype=sc.dtype.vector_3_float64)
+    m3 = sc.Variable(['y'],
+                     values=[np.array(m[2, :])],
+                     dtype=sc.dtype.vector_3_float64)
+    xn = sc.sum(sc.dot(m1, pos), 'y')
+    yn = sc.sum(sc.dot(m2, pos), 'y')
+    zn = sc.sum(sc.dot(m3, pos), 'y')
+    return sc.geometry.position(xn, yn, zn)
 
 
 def init_pos(ws, source_pos, sample_pos):
@@ -263,16 +284,17 @@ def init_pos(ws, source_pos, sample_pos):
         else:
             det_pos[idx, :] = np.array([i, np.nan, np.nan, np.nan])
             idx += 1
+
     det_pos[:, 1:] = det_pos[:, 1:].dot(rot)
     pos_d = sc.Dataset()
     pos_d["x"] = sc.Variable(["x"], values=det_pos[:, 1], unit=sc.units.m)
     pos_d["y"] = sc.Variable(["x"], values=det_pos[:, 2], unit=sc.units.m)
     pos_d["z"] = sc.Variable(["x"], values=det_pos[:, 3], unit=sc.units.m)
-    pos_d.coords["spectrum_idx"] = sc.Variable(["x"], values=det_pos[:, 0])
+    pos_d.coords["spectrum"] = sc.Variable(["x"], values=det_pos[:, 0])
 
-    spherical_ = _to_spherical(pos_d)
+    _to_spherical(pos_d)
 
-    averaged = sc.groupby(pos_d, "spectrum_idx").mean("x")
+    averaged = sc.groupby(pos_d, "spectrum").mean("x")
 
     averaged["x"] = averaged["r"].data * sc.sin(averaged["t"].data) * sc.cos(
         averaged["p"].data)
@@ -280,15 +302,9 @@ def init_pos(ws, source_pos, sample_pos):
         averaged["p"].data)
     averaged["z"] = averaged["r"].data * sc.cos(averaged["t"].data)
 
-    pos = np.empty(shape=(averaged.shape[0], 3))
-    pos[:, 0] = averaged["x"].values
-    pos[:, 1] = averaged["y"].values
-    pos[:, 2] = averaged["z"].values
-    pos = pos.dot(inv_rot)
-    return sc.Variable(['spectrum'],
-                       values=pos,
-                       unit=sc.units.m,
-                       dtype=sc.dtype.vector_3_float64)
+    pos = sc.geometry.position(averaged["x"].data, averaged["y"].data,
+                               averaged["z"].data)
+    return matrix_mult(pos, inv_rot)
 
 
 def _get_dtype_from_values(values):

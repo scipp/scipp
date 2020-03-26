@@ -830,12 +830,12 @@ void init_variable(py::module &m) {
       },
       R"(Return true if the data array contains event data. Note that data may be stored as a scalar, but this returns true if any coord contains events.)");
   auto geom_m = m.def_submodule("geometry");
-  geom_m.def("position",
-             [](const Variable &x, const Variable &y, const Variable &z) {
-               return geometry::position(x, y, z);
-             },
-             py::arg("x"), py::arg("y"), py::arg("z"),
-             R"(
+  geom_m.def(
+      "position",
+      [](const VariableConstView &x, const VariableConstView &y,
+         const VariableConstView &z) { return geometry::position(x, y, z); },
+      py::arg("x"), py::arg("y"), py::arg("z"),
+      R"(
         Element-wise zip functionality to produce a vector_3_float64 from independent input variables.
 
         :raises: If the units of inputs are not all meters, or if the dtypes of inputs are not double precision floats
