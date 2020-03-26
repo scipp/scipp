@@ -180,7 +180,7 @@ class VariableDrawer():
                             len(data[ly - y - 1 + ly * (lz - z - 1)]) /
                             self._x_stride)
                         x_scale *= self._sparse_box_scale
-                    else: # special case: scalar event weights
+                    else:  # special case: scalar event weights
                         true_lx = 1
                     if true_lx == 0:
                         true_lx = 1
