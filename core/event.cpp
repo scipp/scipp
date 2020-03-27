@@ -4,6 +4,7 @@
 /// @author Simon Heybrock
 #include "scipp/core/event.h"
 #include "scipp/core/dataset.h"
+#include "scipp/core/subspan_view.h"
 #include "scipp/core/transform.h"
 
 namespace scipp::core {
@@ -84,13 +85,80 @@ Variable broadcast(const VariableConstView &dense,
          astype(shape * (0.0 * (dense.unit() / shape.unit())), dense.dtype());
 }
 
-/// Broadcast scalar weights of data arrau containing event data.
+/// Broadcast scalar weights of data array containing event data.
 Variable broadcast_weights(const DataArrayConstView &events) {
   for (const auto &item : events.coords())
     if (is_events(item.second))
       return broadcast(events.data(), item.second);
   throw except::EventDataError(
       "No coord with event lists found, cannot broadcast weights.");
+}
+
+namespace filter_detail {
+template <class T>
+using make_select_args =
+    std::tuple<event_list<bool>, event_list<T>, span<const T>>;
+template <class T>
+using copy_if_args = std::tuple<event_list<T>, event_list<bool>>;
+
+constexpr auto copy_if = [](const VariableConstView &var,
+                            const VariableConstView &select) {
+  return transform<std::tuple<copy_if_args<double>, copy_if_args<float>>>(
+      var, select,
+      overloaded{
+          transform_flags::expect_no_variance_arg<0>,
+          transform_flags::expect_no_variance_arg<1>,
+          [](const auto &var_, const auto &select_) {
+            if (select_.empty())
+              return std::decay_t<decltype(var_)>(var_);
+            std::decay_t<decltype(var_)> out;
+            const auto size = scipp::size(var_);
+            for (scipp::index i = 0; i < size; ++i) {
+              if (select_[i])
+                out.push_back(var_[i]);
+            }
+            return out;
+          },
+          [](const units::Unit &var_, const units::Unit &) { return var_; }});
+};
+
+} // namespace filter_detail
+
+DataArray filter(const DataArrayConstView &array,
+                 const std::vector<std::pair<Dim, Variable>> &bounds) {
+  using namespace filter_detail;
+  auto select = makeVariable<event_list<bool>>(Dimensions{array.dims()});
+  for (const auto &[dim, interval] : bounds) {
+    transform_in_place<
+        std::tuple<make_select_args<double>, make_select_args<float>>>(
+        select, array.coords()[dim], subspan_view(interval, dim),
+        overloaded{
+            transform_flags::expect_no_variance_arg<0>,
+            transform_flags::expect_no_variance_arg<1>,
+            transform_flags::expect_no_variance_arg<2>,
+            [](auto &select_, const auto &coord_, const auto &interval_) {
+              const auto low = interval_[0];
+              const auto high = interval_[1];
+              const auto size = scipp::size(coord_);
+              for (scipp::index i = 0; i < size; ++i) {
+                if (coord_[i] < low || coord_[i] >= high) {
+                  select_.resize(i, true);
+                  select_[i] = false;
+                }
+              }
+            },
+            [](units::Unit &, const units::Unit &coord_,
+               const units::Unit &interval_) {
+              expect::equals(coord_, interval_);
+            }});
+  }
+  std::map<Dim, Variable> coords;
+  for (const auto &[d, coord] : array.coords())
+    coords.emplace(d, is_events(coord) ? copy_if(coord, select) : copy(coord));
+
+  return DataArray{is_events(array.data()) ? copy_if(array.data(), select)
+                                           : copy(array.data()),
+                   std::move(coords), array.masks(), array.attrs()};
 }
 
 } // namespace event

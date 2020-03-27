@@ -184,3 +184,21 @@ TEST_F(EventBroadcastTest, data_array_fail) {
   DataArray a(dense);
   EXPECT_THROW(event::broadcast_weights(a), except::EventDataError);
 }
+
+struct EventFilterTest : public ::testing::Test {
+  Variable data = makeVariable<event_list<float>>(
+      Dims{Dim::X}, Shape{2}, units::Unit(units::counts),
+      Values{event_list<float>{1.1, 1.2, 1.3}, event_list<float>{1.4, 1.5}}/*,
+      Variances{event_list<float>{1.1, 1.2, 1.3}, event_list<float>{1.4, 1.5}}*/);
+  Variable coord1 = makeVariable<event_list<float>>(
+      Dims{Dim::X}, Shape{2}, units::Unit(units::us),
+      Values{event_list<float>{1, 2, 3}, event_list<float>{2, 3, 4}});
+};
+
+TEST_F(EventFilterTest, all) {
+  const DataArray a(data, {{Dim::Y, coord1}});
+  std::vector<std::pair<Dim, Variable>> bounds{
+      {Dim::Y, makeVariable<float>(Dims{Dim::Y}, Shape{2},
+                                   units::Unit(units::us), Values{0, 5})}};
+  EXPECT_EQ(event::filter(a, bounds), a);
+}

@@ -52,7 +52,8 @@ template <class... Known> class VariableConceptHandle_impl;
   double, float, int64_t, int32_t, bool, Eigen::Vector3d,                      \
       sparse_container<double>, sparse_container<float>,                       \
       sparse_container<int64_t>, sparse_container<int32_t>,                    \
-      span<const double>, span<double>, span<const float>, span<float>
+      sparse_container<bool>, span<const double>, span<double>,                \
+      span<const float>, span<float>
 using VariableConceptHandle = VariableConceptHandle_impl<KNOWN>;
 
 /// Abstract base class for any data that can be held by Variable. Also used to
