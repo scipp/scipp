@@ -154,6 +154,14 @@ TEST(HistogramTest, drops_other_event_coords) {
   EXPECT_EQ(hist, expected);
 }
 
+TEST(HistogramTest, keeps_scalar_coords) {
+  auto events = make_1d_events_default_weights();
+  events.coords().set(Dim("scalar"), makeVariable<double>(Values{1.2}));
+  auto edges = makeVariable<double>(Dims{Dim::Y}, Shape{2}, Values{1, 6});
+  auto hist = core::histogram(events, edges);
+  EXPECT_TRUE(hist.coords().contains(Dim("scalar")));
+}
+
 TEST(HistogramTest, weight_lists) {
   Variable data = makeVariable<event_list<double>>(Dimensions{{Dim::X, 3}},
                                                    Values{}, Variances{});
