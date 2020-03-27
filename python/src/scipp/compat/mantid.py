@@ -193,21 +193,28 @@ def validate_and_get_unit(unit):
         return known_units[unit]
 
 
-def init_pos(ws):
+def init_pos_and_rot(ws):
     nHist = ws.getNumberHistograms()
     pos = np.zeros([nHist, 3])
+    rot = np.empty(nHist, dtype=np.object)
 
     spec_info = ws.spectrumInfo()
+    det_info = ws.detectorInfo()
     for i in range(nHist):
         if spec_info.hasDetectors(i):
             p = spec_info.position(i)
+            # r = spec_info.rotation(i)
             pos[i, :] = [p.X(), p.Y(), p.Z()]
+            rot[i] = det_info.rotation(i)
         else:
             pos[i, :] = [np.nan, np.nan, np.nan]
     return sc.Variable(['spectrum'],
                        values=pos,
                        unit=sc.units.m,
-                       dtype=sc.dtype.vector_3_float64)
+                       dtype=sc.dtype.vector_3_float64), \
+           sc.Variable(['spectrum'],
+                       values=rot,
+                       dtype=sc.dtype.PyObject)
 
 
 def _get_dtype_from_values(values):
@@ -252,7 +259,7 @@ def set_bin_masks(bin_masks, dim, index, masked_bins):
 def _convert_MatrixWorkspace_info(ws):
     source_pos, sample_pos = make_component_info(ws)
     det_info = make_detector_info(ws)
-    pos = init_pos(ws)
+    pos, rot = init_pos_and_rot(ws)
     spec_dim, spec_coord = init_spec_axis(ws)
 
     info = {
@@ -264,7 +271,8 @@ def _convert_MatrixWorkspace_info(ws):
         "masks": {},
         "attrs": {
             "run": make_run(ws),
-            "sample": make_sample(ws)
+            "sample": make_sample(ws),
+            "rotation": rot
         },
     }
     if source_pos is not None:

@@ -6,6 +6,8 @@
 #include "bind_enum.h"
 #include "pybind11.h"
 #include "scipp/core/string.h"
+#include "py_object.h"
+
 
 using namespace scipp;
 using namespace scipp::core;
@@ -32,6 +34,8 @@ scipp::core::DType scipp_dtype(const py::dtype &type) {
   if (py::str(static_cast<py::handle>(type))
           .contains("<U")) // TODO is where normal way to do that ?
     return scipp::core::dtype<std::string>;
+  // if (type.is(py::dtype::of<py::object>()))
+  //   return scipp::core::dtype<scipp::python::PyObject>;
   throw std::runtime_error("Unsupported numpy dtype.");
 }
 
