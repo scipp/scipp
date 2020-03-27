@@ -133,10 +133,15 @@ Variable doMakeVariable(const std::vector<Dim> &labels, py::array &values,
       if (dtypeTag == core::dtype<Eigen::Vector3d>)
         return init_1D_no_variance(
             labels, shape, values.cast<std::vector<Eigen::Vector3d>>(), unit);
-      else
-        return init_1D_no_variance(
-            labels, shape, values.cast<std::vector<Eigen::Quaterniond>>(),
-            unit);
+      else {
+        std::vector<Eigen::Quaterniond> qvec;
+        qvec.reserve(values.shape()[0]);
+        std::transform(values.begin(), values.end(), qvec.begin(),
+                   [](std::vector<double> v){ return Eigen::Quaterniond(v[0], v[1], v[2], v[3]); });
+        // std::vector<quaternion_wrapper<Eigen::Quaterniond, 4> > qvec;
+        // std::copy(values.begin(), values.begin() + values.shape()[0], std::back_inserter(qvec));
+        return init_1D_no_variance(labels, shape, qvec, unit);
+      }
     }
   }
 
