@@ -529,7 +529,7 @@ template <class MapView> MapView DataArrayConstView::makeView() const {
   auto items = makeViewItems<MapView>(dims(), map_parent(*this));
   if (!m_data->second.data && hasData()) {
     // This is a view of the unaligned content of a realigned data array.
-    const decltype(*this) unaligned = m_data->second.unaligned->data;
+    decltype(*this) unaligned = m_data->second.unaligned->data;
     auto unalignedItems =
         makeViewItems<MapView>(unaligned.dims(), map_parent(unaligned));
     items.insert(unalignedItems.begin(), unalignedItems.end());
@@ -549,7 +549,7 @@ template <class MapView> MapView DataArrayView::makeView() const {
   auto items = makeViewItems<MapView>(dims(), map_parent(*this));
   if (!m_mutableData->second.data && hasData()) {
     // This is a view of the unaligned content of a realigned data array.
-    const decltype(*this) unaligned = m_mutableData->second.unaligned->data;
+    decltype(*this) unaligned = m_mutableData->second.unaligned->data;
     auto unalignedItems =
         makeViewItems<MapView>(unaligned.dims(), map_parent(unaligned));
     items.insert(unalignedItems.begin(), unalignedItems.end());
