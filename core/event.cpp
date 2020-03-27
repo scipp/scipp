@@ -94,6 +94,32 @@ Variable broadcast_weights(const DataArrayConstView &events) {
       "No coord with event lists found, cannot broadcast weights.");
 }
 
+/// Return the sizes of the events lists in var
+Variable sizes(const VariableConstView &var) {
+  return transform<event_list<double>, event_list<float>>(
+      var, overloaded{transform_flags::expect_no_variance_arg<0>,
+                      [](const auto &x) { return scipp::size(x); },
+                      [](const units::Unit &) {
+                        return units::Unit(units::dimensionless);
+                      }});
+}
+
+/// Resize variable of event lists to sizes given by event list in shape array.
+void resize_to(const VariableView &var, const DataArrayConstView &shape) {
+  for (const auto &item : shape.coords())
+    if (is_events(item.second)) {
+      transform_in_place<
+          std::tuple<std::tuple<event_list<bool>, scipp::index>>>(
+          var, sizes(item.second),
+          overloaded{transform_flags::expect_no_variance_arg<1>,
+                     [](auto &x, const auto &size) { return x.resize(size); },
+                     [](units::Unit &, const units::Unit &) {}});
+      return;
+    }
+  throw except::EventDataError(
+      "No event lists found in target shape, cannot resize.");
+}
+
 namespace filter_detail {
 template <class T>
 using make_select_args =
@@ -106,16 +132,23 @@ constexpr auto copy_if = [](const VariableConstView &var,
   return transform<std::tuple<copy_if_args<double>, copy_if_args<float>>>(
       var, select,
       overloaded{
-          transform_flags::expect_no_variance_arg<0>,
           transform_flags::expect_no_variance_arg<1>,
           [](const auto &var_, const auto &select_) {
-            if (select_.empty())
-              return std::decay_t<decltype(var_)>(var_);
-            std::decay_t<decltype(var_)> out;
+            using VarT = std::decay_t<decltype(var_)>;
+            using Events = event_list<typename VarT::value_type>;
+            std::conditional_t<detail::is_ValuesAndVariances_v<VarT>,
+                               std::pair<Events, Events>, Events>
+                out;
             const auto size = scipp::size(var_);
             for (scipp::index i = 0; i < size; ++i) {
-              if (select_[i])
-                out.push_back(var_[i]);
+              if (select_[i]) {
+                if constexpr (detail::is_ValuesAndVariances_v<VarT>) {
+                  out.first.push_back(var_.values[i]);
+                  out.second.push_back(var_.variances[i]);
+                } else {
+                  out.push_back(var_[i]);
+                }
+              }
             }
             return out;
           },
@@ -127,7 +160,9 @@ constexpr auto copy_if = [](const VariableConstView &var,
 DataArray filter(const DataArrayConstView &array,
                  const std::vector<std::pair<Dim, Variable>> &bounds) {
   using namespace filter_detail;
-  auto select = makeVariable<event_list<bool>>(Dimensions{array.dims()});
+  Variable select = makeVariable<event_list<bool>>(Dimensions{array.dims()});
+  resize_to(select, array);
+  select = ~select;
   for (const auto &[dim, interval] : bounds) {
     transform_in_place<
         std::tuple<make_select_args<double>, make_select_args<float>>>(
@@ -140,12 +175,9 @@ DataArray filter(const DataArrayConstView &array,
               const auto low = interval_[0];
               const auto high = interval_[1];
               const auto size = scipp::size(coord_);
-              for (scipp::index i = 0; i < size; ++i) {
-                if (coord_[i] < low || coord_[i] >= high) {
-                  select_.resize(i, true);
+              for (scipp::index i = 0; i < size; ++i)
+                if (coord_[i] < low || coord_[i] >= high)
                   select_[i] = false;
-                }
-              }
             },
             [](units::Unit &, const units::Unit &coord_,
                const units::Unit &interval_) {

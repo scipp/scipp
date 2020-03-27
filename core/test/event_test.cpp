@@ -186,10 +186,16 @@ TEST_F(EventBroadcastTest, data_array_fail) {
 }
 
 struct EventFilterTest : public ::testing::Test {
+  Variable data_with_variances = makeVariable<event_list<float>>(
+      Dims{Dim::X}, Shape{2}, units::Unit(units::counts),
+      Values{event_list<float>{1.1, 1.2, 1.3},
+             event_list<float>{1.4, 1.5, 1.6, 1.7}},
+      Variances{event_list<float>{1.1, 1.2, 1.3},
+                event_list<float>{1.4, 1.5, 1.6, 1.7}});
   Variable data = makeVariable<event_list<float>>(
       Dims{Dim::X}, Shape{2}, units::Unit(units::counts),
-      Values{event_list<float>{1.1, 1.2, 1.3}, event_list<float>{1.4, 1.5, 1.6,1.7}}/*,
-      Variances{event_list<float>{1.1, 1.2, 1.3}, event_list<float>{1.4, 1.5}}*/);
+      Values{event_list<float>{1.1, 1.2, 1.3},
+             event_list<float>{1.4, 1.5, 1.6, 1.7}});
   Variable coord1 = makeVariable<event_list<float>>(
       Dims{Dim::X}, Shape{2}, units::Unit(units::us),
       Values{event_list<float>{3, 2, 1}, event_list<float>{2, 3, 4, 1}});
@@ -197,6 +203,14 @@ struct EventFilterTest : public ::testing::Test {
 
 TEST_F(EventFilterTest, all) {
   const DataArray a(data, {{Dim::Y, coord1}});
+  std::vector<std::pair<Dim, Variable>> bounds{
+      {Dim::Y, makeVariable<float>(Dims{Dim::Y}, Shape{2},
+                                   units::Unit(units::us), Values{0, 5})}};
+  EXPECT_EQ(event::filter(a, bounds), a);
+}
+
+TEST_F(EventFilterTest, all_with_variances) {
+  const DataArray a(data_with_variances, {{Dim::Y, coord1}});
   std::vector<std::pair<Dim, Variable>> bounds{
       {Dim::Y, makeVariable<float>(Dims{Dim::Y}, Shape{2},
                                    units::Unit(units::us), Values{0, 5})}};
@@ -220,3 +234,22 @@ TEST_F(EventFilterTest, filter_1d) {
 
   EXPECT_EQ(event::filter(a, bounds), expected);
 }
+
+TEST_F(EventFilterTest, filter_1d_with_variances) {
+  const DataArray a(data_with_variances, {{Dim::Y, coord1}});
+  std::vector<std::pair<Dim, Variable>> bounds{
+      {Dim::Y, makeVariable<float>(Dims{Dim::Y}, Shape{2},
+                                   units::Unit(units::us), Values{0.0, 2.5})}};
+
+  const DataArray expected{
+      makeVariable<event_list<float>>(
+          Dims{Dim::X}, Shape{2}, units::Unit(units::counts),
+          Values{event_list<float>{1.2, 1.3}, event_list<float>{1.4, 1.7}},
+          Variances{event_list<float>{1.2, 1.3}, event_list<float>{1.4, 1.7}}),
+      {{Dim::Y,
+        makeVariable<event_list<float>>(
+            Dims{Dim::X}, Shape{2}, units::Unit(units::us),
+            Values{event_list<float>{2, 1}, event_list<float>{2, 1}})}}};
+
+  EXPECT_EQ(event::filter(a, bounds), expected);
+  }
