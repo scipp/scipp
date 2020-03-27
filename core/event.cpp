@@ -158,7 +158,7 @@ constexpr auto copy_if = [](const VariableConstView &var,
 } // namespace filter_detail
 
 DataArray filter(const DataArrayConstView &array,
-                 const std::vector<std::pair<Dim, Variable>> &bounds) {
+                 const scipp::span<const std::pair<Dim, Variable>> &bounds) {
   using namespace filter_detail;
   Variable select = makeVariable<event_list<bool>>(Dimensions{array.dims()});
   resize_to(select, array);
