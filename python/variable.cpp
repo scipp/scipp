@@ -156,10 +156,10 @@ Variable doMakeVariable(const std::vector<Dim> &labels, py::array &values,
       else {
         std::cout << "doMakeVariable 1.5" << std::endl;
         std::vector<Eigen::Quaterniond> qvec;
-        auto r = values.mutable_unchecked<double, 2>();
-        qvec.reserve(r.shape(0));
-        for (ssize_t i = 0; i < r.shape(0); i++) {
-          qvec.push_back(Quat(r(i, 0), r(i, 1), r(i, 2), r(i, 3)));
+        auto arr = values.mutable_unchecked<double, 2>();
+        qvec.reserve(arr.shape(0));
+        for (ssize_t i = 0; i < arr.shape(0); i++) {
+          qvec.push_back(Quat(arr(i, 0), arr(i, 1), arr(i, 2), arr(i, 3)));
         }
         // for (size_t i = 0; i < values.shape()[0]; i++) {
         //   qvec[i] = Eigen::Quaterniond(values.data()[i][0], values.data()[i][1], values.data()[i][2], values.data()[i][3]);
@@ -363,18 +363,18 @@ py::class_<Quat> (m, "Quat", py::buffer_protocol())
     .def("y", [](const Quat &self) { return self.y(); })
     .def("z", [](const Quat &self) { return self.z(); })
     .def("w", [](const Quat &self) { return self.w(); })
-    .def("coeffs", [](const Quat &self) { return self.coeffs(); });
-// quaternion.def_buffer([](Quat &q) -> py::buffer_info {
-    // return py::buffer_info(
-        // q.coeffs(),                                /* Pointer to buffer */
-        // sizeof(Scalar),                          /* Size of one scalar */
-        // py::format_descriptor<Scalar>::format(), /* Python struct-style format descriptor */
-        // 1,                                       /* Number of dimensions */
-        // { 4 },                  /* Buffer dimensions */
-        // { sizeof(Scalar)}
-                                                 // /* Strides (in bytes) for each index */
-    // );
- // });
+    .def("coeffs", [](const Quat &self) { return self.coeffs(); })
+    .def_buffer([](Quat &q) -> py::buffer_info {
+    return py::buffer_info(
+        q.coeffs().data(),                                /* Pointer to buffer */
+        sizeof(Scalar),                          /* Size of one scalar */
+        py::format_descriptor<Scalar>::format(), /* Python struct-style format descriptor */
+        1,                                       /* Number of dimensions */
+        { 4 },                  /* Buffer dimensions */
+        { sizeof(Scalar)}
+                                                 /* Strides (in bytes) for each index */
+    );
+ });
 
 
 
