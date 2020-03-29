@@ -143,14 +143,8 @@ Variable doMakeVariable(const std::vector<Dim> &labels, py::array &values,
                                  values.cast<std::vector<std::string>>(), unit);
     }
     std::cout << "doMakeVariable 1.1" << std::endl;
-    // if (dtypeTag == core::dtype<scipp::python::PyObject>) {
-    //   std::cout << "doMakeVariable 1.2" << std::endl;
-    //   std::vector<scipp::index> shape(values.shape(),
-    //                                   values.shape() + values.ndim());
-    //   std::cout << "doMakeVariable 1.3" << std::endl;
-    //   return init_1D_no_variance(labels, shape,
-    //                              values.cast<std::vector<scipp::python::PyObject>>(), unit);
-    // }
+    // if (dtypeTag == 
+
 
     if (dtypeTag == core::dtype<Eigen::Vector3d> ||
         dtypeTag == core::dtype<Quat>) {
@@ -161,8 +155,12 @@ Variable doMakeVariable(const std::vector<Dim> &labels, py::array &values,
             labels, shape, values.cast<std::vector<Eigen::Vector3d>>(), unit);
       else {
         std::cout << "doMakeVariable 1.5" << std::endl;
-        // std::vector<Eigen::Quaterniond> qvec;
-        // qvec.reserve(values.shape()[0]);
+        std::vector<Eigen::Quaterniond> qvec;
+        auto r = values.mutable_unchecked<double, 2>();
+        qvec.reserve(r.shape(0));
+        for (ssize_t i = 0; i < r.shape(0); i++) {
+          qvec.push_back(Quat(r(i, 0), r(i, 1), r(i, 2), r(i, 3)));
+        }
         // for (size_t i = 0; i < values.shape()[0]; i++) {
         //   qvec[i] = Eigen::Quaterniond(values.data()[i][0], values.data()[i][1], values.data()[i][2], values.data()[i][3]);
         // }
@@ -170,9 +168,9 @@ Variable doMakeVariable(const std::vector<Dim> &labels, py::array &values,
         //            [](std::vector<double> v){ return Eigen::Quaterniond(v[0], v[1], v[2], v[3]); });
         // std::vector<quaternion_wrapper<Eigen::Quaterniond, 4> > qvec;
         // std::copy(values.begin(), values.begin() + values.shape()[0], std::back_inserter(qvec));
-        // return init_1D_no_variance(labels, shape, qvec, unit);
-        return init_1D_no_variance(
-            labels, shape, values.cast<std::vector<Quat>>(), unit);
+        return init_1D_no_variance(labels, shape, qvec, unit);
+        // return init_1D_no_variance(
+        //     labels, shape, values.cast<std::vector<Quat>>(), unit);
       }
     }
   }
