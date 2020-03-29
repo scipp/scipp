@@ -390,7 +390,7 @@ class InstrumentView:
         #                            [-0.5*size_x,  0.5*size_y, -0.5*size_z]], dtype=np.float32)
 
 
-        detector_shape = np.array([[-0.5*size_x, -0.5*size_y, -0.5*size_z],
+        self.detector_shape = np.array([[-0.5*size_x, -0.5*size_y, -0.5*size_z],
                                    [ 0.5*size_x, -0.5*size_y, -0.5*size_z],
                                    [ 0.5*size_x,  0.5*size_y, -0.5*size_z],
                                    [-0.5*size_x,  0.5*size_y, -0.5*size_z],
@@ -444,7 +444,7 @@ class InstrumentView:
 
 
 
-        self.nverts = len(detector_shape)
+        self.nverts = len(self.detector_shape)
         self.nfaces = len(detector_faces)
         self.ndets = len(self.det_pos)
 
@@ -454,7 +454,7 @@ class InstrumentView:
 
         # print(np.repeat(self.det_pos, self.nverts, axis=0)[:100])
 
-        self.vertices = np.tile(detector_shape, [self.ndets, 1]) + np.repeat(self.det_pos, self.nverts, axis=0)
+        vertices = np.tile(self.detector_shape, [self.ndets, 1]) + np.repeat(self.det_pos, self.nverts, axis=0)
 
         # faces = np.arange(self.nverts * self.ndets, dtype=np.uint)
         faces = np.tile(detector_faces, [self.ndets, 1]) + np.repeat(
@@ -469,7 +469,7 @@ class InstrumentView:
 
 
         self.mesh_geometry = self.p3.BufferGeometry(attributes=dict(
-            position=self.p3.BufferAttribute(self.vertices, normalized=False),
+            position=self.p3.BufferAttribute(vertices, normalized=False),
             index=self.p3.BufferAttribute(faces.ravel(), normalized=False),
             color=self.p3.BufferAttribute(vertexcolors),
         ))
@@ -735,7 +735,7 @@ class InstrumentView:
         permutations = {"X": [0, 2, 1], "Y": [1, 0, 2], "Z": [2, 1, 0]}
 
         if self.select_rendering.value == "Full":
-            pixel_pos = self.vertices
+            pixel_pos = np.tile(self.detector_shape, [self.ndets, 1]) + np.repeat(self.det_pos, self.nverts, axis=0)
         else:
             pixel_pos = self.det_pos
 

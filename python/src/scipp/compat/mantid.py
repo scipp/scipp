@@ -196,25 +196,27 @@ def validate_and_get_unit(unit):
 def init_pos_and_rot(ws):
     nHist = ws.getNumberHistograms()
     pos = np.zeros([nHist, 3])
-    rot = np.empty(nHist, dtype=np.object)
+    rot = np.zeros([nHist, 4])
 
     spec_info = ws.spectrumInfo()
     det_info = ws.detectorInfo()
+    print(len(spec_info), len(det_info))
     for i in range(nHist):
         if spec_info.hasDetectors(i):
             p = spec_info.position(i)
-            # r = spec_info.rotation(i)
+            r = det_info.rotation(i)
             pos[i, :] = [p.X(), p.Y(), p.Z()]
-            rot[i] = det_info.rotation(i)
+            rot[i, :] = [r.imagI(), r.imagJ(), r.imagK(), r.real()]
         else:
             pos[i, :] = [np.nan, np.nan, np.nan]
-    return sc.Variable(['spectrum'],
+            rot[i, :] = [np.nan, np.nan, np.nan, np.nan]
+    return (sc.Variable(['spectrum'],
                        values=pos,
                        unit=sc.units.m,
-                       dtype=sc.dtype.vector_3_float64), \
+                       dtype=sc.dtype.vector_3_float64),
            sc.Variable(['spectrum'],
                        values=rot,
-                       dtype=sc.dtype.PyObject)
+                       dtype=sc.dtype.quaternion_float64))
 
 
 def _get_dtype_from_values(values):
@@ -645,7 +647,8 @@ def load_component_info(ds, file):
 
         ds.coords["source_position"] = source_pos
         ds.coords["sample_position"] = sample_pos
-        ds.coords["position"] = init_pos(ws)
+        pos, rot = init_pos_and_rot(ws)
+        ds.coords["position"] = pos
 
 
 def validate_dim_and_get_mantid_string(unit_dim):
