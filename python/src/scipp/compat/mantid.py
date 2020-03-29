@@ -197,16 +197,6 @@ def validate_and_get_unit(unit, allow_empty=False):
         return known_units[unit]
 
 
-def _to_spherical_old(input):
-    transformed = np.ones(shape=input.shape)
-    transformed[:, 0] = input[:, 0]  # copy metadata
-    transformed[:, 1] = np.sqrt(np.sum(input[:, 1:]**2, axis=1))  # r
-    transformed[:, 2] = np.arccos(input[:, 3] /
-                                  transformed[:, 1])  # arccos ( z / r)
-    transformed[:, 3] = np.arctan2(input[:, 2], input[:, 1])  # arctan2(y, x)
-    return transformed
-
-
 def _to_spherical(input):
     input["r"] = sc.sqrt(input["x"].data * input["x"].data +
                          input["y"].data * input["y"].data +
@@ -247,7 +237,6 @@ def matrix_mult(pos, m):
     m3 = sc.Variable(['y'],
                      values=[np.array(m[2, :])],
                      dtype=sc.dtype.vector_3_float64)
-    xn1 = sc.dot(m1, pos)
     xn = sc.sum(xn1, 'y')
     yn = sc.sum(sc.dot(m2, pos), 'y')
     zn = sc.sum(sc.dot(m3, pos), 'y')
@@ -269,7 +258,7 @@ def init_pos(ws, source_pos, sample_pos):
         inv_rot = rot
 
     pos_d = sc.Dataset()
-    # Create empty
+    # Create empty to hold position info for all spectra detectors
     pos_d["x"] = sc.Variable(["x"],
                              values=np.empty(total_detectors),
                              unit=sc.units.m)
