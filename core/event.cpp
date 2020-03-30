@@ -122,10 +122,9 @@ void resize_to(const VariableView &var, const DataArrayConstView &shape) {
 
 namespace filter_detail {
 template <class T>
-using make_select_args =
-    std::tuple<event_list<bool>, event_list<T>, span<const T>>;
+using make_select_args = std::tuple<event_list<T>, span<const T>>;
 template <class T>
-using copy_if_args = std::tuple<event_list<T>, event_list<bool>>;
+using copy_if_args = std::tuple<event_list<T>, event_list<int32_t>>;
 
 constexpr auto copy_if = [](const VariableConstView &var,
                             const VariableConstView &select) {
@@ -136,21 +135,23 @@ constexpr auto copy_if = [](const VariableConstView &var,
           [](const auto &var_, const auto &select_) {
             using VarT = std::decay_t<decltype(var_)>;
             using Events = event_list<typename VarT::value_type>;
-            std::conditional_t<detail::is_ValuesAndVariances_v<VarT>,
-                               std::pair<Events, Events>, Events>
-                out;
-            const auto size = scipp::size(var_);
-            for (scipp::index i = 0; i < size; ++i) {
-              if (select_[i]) {
-                if constexpr (detail::is_ValuesAndVariances_v<VarT>) {
-                  out.first.push_back(var_.values[i]);
-                  out.second.push_back(var_.variances[i]);
-                } else {
-                  out.push_back(var_[i]);
-                }
+            const auto size = scipp::size(select_);
+            if constexpr (detail::is_ValuesAndVariances_v<VarT>) {
+              std::pair<Events, Events> out;
+              out.first.reserve(size);
+              out.second.reserve(size);
+              for (const auto i : select_) {
+                out.first.push_back(var_.values[i]);
+                out.second.push_back(var_.variances[i]);
               }
+              return out;
+            } else {
+              Events out;
+              out.reserve(size);
+              for (const auto i : select_)
+                out.push_back(var_[i]);
+              return out;
             }
-            return out;
           },
           [](const units::Unit &var_, const units::Unit &) { return var_; }});
 };
@@ -160,30 +161,28 @@ constexpr auto copy_if = [](const VariableConstView &var,
 DataArray filter(const DataArrayConstView &array,
                  const scipp::span<const std::pair<Dim, Variable>> &bounds) {
   using namespace filter_detail;
-  Variable select = makeVariable<event_list<bool>>(Dimensions{array.dims()});
-  resize_to(select, array);
-  select = ~select;
-  for (const auto &[dim, interval] : bounds) {
-    transform_in_place<
-        std::tuple<make_select_args<double>, make_select_args<float>>>(
-        select, array.coords()[dim], subspan_view(interval, dim),
-        overloaded{
-            transform_flags::expect_no_variance_arg<0>,
-            transform_flags::expect_no_variance_arg<1>,
-            transform_flags::expect_no_variance_arg<2>,
-            [](auto &select_, const auto &coord_, const auto &interval_) {
-              const auto low = interval_[0];
-              const auto high = interval_[1];
-              const auto size = scipp::size(coord_);
-              for (scipp::index i = 0; i < size; ++i)
-                if (coord_[i] < low || coord_[i] >= high)
-                  select_[i] = false;
-            },
-            [](units::Unit &, const units::Unit &coord_,
-               const units::Unit &interval_) {
-              expect::equals(coord_, interval_);
-            }});
-  }
+  const auto &[dim, interval] = bounds[0];
+  Variable select =
+      transform<std::tuple<make_select_args<double>, make_select_args<float>>>(
+          array.coords()[dim], subspan_view(interval, dim),
+          overloaded{
+              transform_flags::expect_no_variance_arg<0>,
+              transform_flags::expect_no_variance_arg<1>,
+              [](const auto &coord_, const auto &interval_) {
+                const auto low = interval_[0];
+                const auto high = interval_[1];
+                const auto size = scipp::size(coord_);
+                event_list<int32_t> select_;
+                for (scipp::index i = 0; i < size; ++i)
+                  if (coord_[i] >= low && coord_[i] < high)
+                    select_.push_back(i);
+                return select_;
+              },
+              [](const units::Unit &coord_, const units::Unit &interval_) {
+                expect::equals(coord_, interval_);
+                return units::Unit(units::dimensionless);
+              }});
+
   std::map<Dim, Variable> coords;
   for (const auto &[d, coord] : array.coords())
     coords.emplace(d, is_events(coord) ? copy_if(coord, select) : copy(coord));
