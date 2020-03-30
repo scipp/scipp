@@ -239,7 +239,7 @@ def init_pos(ws, source_pos, sample_pos):
     import numpy as np
     spec_info = ws.spectrumInfo()
 
-    if sample_pos and source_pos:
+    if sample_pos is not None and source_pos is not None:
         det_info = ws.detectorInfo()
         total_detectors = spec_info.detectorCount()
         act_beam = (sample_pos - source_pos).values
