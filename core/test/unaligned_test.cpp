@@ -79,8 +79,11 @@ TEST_F(RealignTest, fail_bad_bin_edge_unit) {
 TEST_F(RealignTest, fail_missing_event_positions) {
   auto base = make_array();
   // No "row" information in unaligned data
-  EXPECT_THROW(unaligned::realign(base, {{Dim::Row, xbins}}),
-               except::NotFoundError);
+  EXPECT_THROW(
+      unaligned::realign(
+          base, {{Dim::Row, makeVariable<double>(Dims{Dim::Row}, Shape{2},
+                                                 Values{0, 4})}}),
+      except::NotFoundError);
 }
 
 TEST_F(RealignTest, multiple_unaligned_no_supported_yet) {

@@ -1,6 +1,7 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
+#include <algorithm>
 #include <set>
 
 #include "scipp/core/event.h"
@@ -44,13 +45,43 @@ Dim unaligned_dim(const VariableConstView &unaligned) {
   return unaligned.dims().inner();
 }
 
-auto get_bounds(std::vector<std::pair<Dim, Variable>> coords) {
+auto get_bounds(const Dim dim, const VariableConstView &coord) {
+  const scipp::index last = coord.dims()[dim] - 1;
+  Variable interval(coord.slice({dim, 0, 2}));
+  interval.slice({dim, 1}).assign(coord.slice({dim, last}));
+  return interval;
+}
+
+auto get_bounds(const scipp::span<const std::pair<Dim, Variable>> coords) {
   std::vector<std::pair<Dim, Variable>> bounds;
-  for (const auto &[dim, coord] : coords) {
-    const scipp::index last = coord.dims()[dim] - 1;
-    Variable interval(coord.slice({dim, 0, 2}));
-    interval.slice({dim, 1}).assign(coord.slice({dim, last}));
-    bounds.emplace_back(dim, std::move(interval));
+  for (const auto &[dim, coord] : coords)
+    bounds.emplace_back(dim, get_bounds(dim, coord));
+  return bounds;
+}
+
+auto get_stricter_bounds(const DataArray &array,
+                         const std::vector<std::pair<Dim, Variable>> &coords) {
+  auto bounds = get_bounds(coords);
+  const auto looser_interval = [&array](const auto &item) {
+    const auto &[dim, interval] = item;
+    if (!array.coords().contains(dim))
+      return false;
+    const auto old_interval = get_bounds(dim, array.coords()[dim]);
+    const auto tightest_interval =
+        concatenate(max(concatenate(interval.slice({dim, 0}),
+                                    old_interval.slice({dim, 0}), dim),
+                        dim),
+                    min(concatenate(interval.slice({dim, 1}),
+                                    old_interval.slice({dim, 1}), dim),
+                        dim),
+                    dim);
+    return tightest_interval == old_interval;
+  };
+  if (!array.hasData()) { // previous realignment
+    bounds.erase(std::remove_if(bounds.begin(), bounds.end(), looser_interval),
+                 bounds.end());
+  } else {
+    // no current bounds, all new bounds are stricter
   }
   return bounds;
 }
@@ -59,6 +90,7 @@ auto get_bounds(std::vector<std::pair<Dim, Variable>> coords) {
 
 DataArray realign(DataArray unaligned,
                   std::vector<std::pair<Dim, Variable>> coords) {
+  const auto bounds = get_stricter_bounds(unaligned, coords);
   if (!unaligned.hasData())
     unaligned.drop_alignment();
   std::set<Dim> binnedDims;
@@ -77,7 +109,7 @@ DataArray realign(DataArray unaligned,
     throw except::UnalignedError(
         "realign with more than one unaligned dimension not supported yet.");
 
-  unaligned = filter_recurse(std::move(unaligned), get_bounds(coords));
+  unaligned = filter_recurse(std::move(unaligned), bounds);
 
   // TODO Some things here can be simplified and optimized by adding an
   // `extract` method to MutableView.
