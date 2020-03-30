@@ -197,13 +197,11 @@ def validate_and_get_unit(unit, allow_empty=False):
         return known_units[unit]
 
 
-def _to_spherical(input):
-    input["r"] = sc.sqrt(input["x"].data * input["x"].data +
-                         input["y"].data * input["y"].data +
-                         input["z"].data * input["z"].data)
-    input["t"] = sc.acos(input["z"].data / input["r"].data)
-    input["p"] = input["t"].data.copy()
-    sc.atan2(input["y"].data, input["x"].data, input["p"].data)
+def _to_spherical(pos, output):
+    output["r"] = sc.sqrt(sc.dot(pos, pos))
+    output["t"] = sc.acos(sc.geometry.z(pos) / output["r"].data)
+    output["p"] = output["t"].data.copy()
+    sc.atan2(sc.geometry.y(pos), sc.geometry.x(pos), output["p"].data)
 
 
 def rotation_matrix_from_vectors(vec1, vec2):
@@ -282,11 +280,8 @@ def init_pos(ws, source_pos, sample_pos):
         rot_pos = matrix_mult(
             sc.geometry.position(pos_d["x"].data, pos_d["y"].data,
                                  pos_d["z"].data), rot)
-        pos_d["x"] = sc.geometry.x(rot_pos)
-        pos_d["y"] = sc.geometry.y(rot_pos)
-        pos_d["z"] = sc.geometry.z(rot_pos)
 
-        _to_spherical(pos_d)
+        _to_spherical(rot_pos, pos_d)
 
         averaged = sc.groupby(pos_d,
                               "spectrum",
