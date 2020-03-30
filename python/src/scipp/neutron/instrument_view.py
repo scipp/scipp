@@ -88,6 +88,7 @@ class InstrumentView:
         self.mpl = importlib.import_module("matplotlib")
         self.mpl_cm = importlib.import_module("matplotlib.cm")
         self.mpl_plt = importlib.import_module("matplotlib.pyplot")
+        self.mpl_ticker = importlib.import_module("matplotlib.ticker")
         self.mpl_figure = importlib.import_module("matplotlib.figure")
         self.mpl_colors = importlib.import_module("matplotlib.colors")
         self.mpl_backend_agg = importlib.import_module(
@@ -454,7 +455,7 @@ class InstrumentView:
 
         # print(np.repeat(self.det_pos, self.nverts, axis=0)[:100])
 
-        vertices = np.tile(self.detector_shape, [self.ndets, 1]) + np.repeat(self.det_pos, self.nverts, axis=0)
+        # vertices = np.tile(self.detector_shape, [self.ndets, 1]) + np.repeat(self.det_pos, self.nverts, axis=0)
 
         # faces = np.arange(self.nverts * self.ndets, dtype=np.uint)
         faces = np.tile(detector_faces, [self.ndets, 1]) + np.repeat(
@@ -469,7 +470,7 @@ class InstrumentView:
 
 
         self.mesh_geometry = self.p3.BufferGeometry(attributes=dict(
-            position=self.p3.BufferAttribute(vertices, normalized=False),
+            position=self.p3.BufferAttribute(self.get_vertices(), normalized=False),
             index=self.p3.BufferAttribute(faces.ravel(), normalized=False),
             color=self.p3.BufferAttribute(vertexcolors),
         ))
@@ -555,6 +556,45 @@ class InstrumentView:
         # Add the red green blue axes helper
         self.axes_helper = self.p3.AxesHelper(self.camera_pos * 50.0)
 
+        # Add some ticklabels to the axes helper
+        ticker = self.mpl_ticker.MaxNLocator(20)
+        ticks = ticker.tick_values(0, self.camera_pos * 10.0)
+        nticks = len(ticks)
+        # tick_pos = np.repeat(np.identity(3), nticks, axis=0) + np.tile(ticks, 3)
+        tick_size = self.camera_pos * 0.05
+        # self.axticks = self.p3.make_text("0", position=(0, 0, 0), height=1)
+
+        # sm = p3.SpriteMaterial(map=p3.TextTexture(string="0", color='white', size=300, squareTexture=True))
+        # s = p3.Sprite(material=sm, position=[0, 0, 0], scaleToTexture=True, scale=[1, 1, 1])
+
+        self.axticks = [self.make_axis_tick("0", [0, 0, 0], size=tick_size)]
+
+        # self.axticks = [self.p3.Points(
+        #         geometry=self.p3.BufferGeometry(
+        #             attributes={'position':
+        #                 self.p3.BufferAttribute(array=np.zeros(3, dtype=np.float32))}),
+        #         material=self.p3.PointsMaterial(
+        #             map=self.p3.TextTexture(string="0", color="black"),
+        #             size=tick_size,
+        #             transparent=True))]
+
+        iden = np.identity(3, dtype=np.float32)
+        for i in range(1, nticks):
+            for j in range(3):
+               self.axticks.append(
+                self.make_axis_tick(string=str(ticks[i]),
+                                    position=(iden[j] * ticks[i]).tolist(),
+                                    size=tick_size))
+        #     self.axticks.append(self.p3.Points(
+        #         geometry=self.p3.BufferGeometry(
+        #             attributes={'position':
+        #                 self.p3.BufferAttribute(array=np.identity(3, dtype=np.float32) * ticks[i])}),
+        #         material=self.p3.PointsMaterial(
+        #             map=self.p3.TextTexture(string=str(ticks[i]), color="black"),
+        #             size=tick_size,
+        #             transparent=True)))
+
+
         # Create the threejs scene with ambient light and camera
         self.camera = self.p3.PerspectiveCamera(position=[self.camera_pos] * 3,
                                                 aspect=config.plot.width /
@@ -568,6 +608,10 @@ class InstrumentView:
         ], background="#DDDDDD")
 
         self.change_rendering({"new": rendering})
+
+        # Add the ticks after having drawn the detectors to avoid the tick
+        # background being super-imposed onto the detector pixels
+        self.scene.add(self.axticks)
 
         self.controller = self.p3.OrbitControls(controlling=self.camera)
 
@@ -603,6 +647,28 @@ class InstrumentView:
         }
 
         return
+
+    def make_axis_tick(self, string, position, color="black", size=1.0):
+        sm = self.p3.SpriteMaterial(
+            map=self.p3.TextTexture(
+                string=string, color=color, size=300, squareTexture=True),
+            transparent=True)
+        return self.p3.Sprite(material=sm,
+            position=position, scaleToTexture=True, scale=[size, size, size])
+
+    def get_vertices(self):
+        # Duplicate the detector shape to the number of detectors
+        vertices = np.tile(self.detector_shape, [self.ndets, 1])
+        # Rotate the detectors
+        for i in range(self.ndets):
+            vertices[i*self.nverts:(i+1)*self.nverts, :] = np.transpose(
+                np.dot(
+                    self.hist_data_array[self.key].attrs["rotation"].values[i].to_rotation_matrix(),
+                    vertices[i*self.nverts:(i+1)*self.nverts, :].T))
+        # self.hist_data_array[self.key]).values,
+        #                         dtype=np.float32)
+        vertices += np.repeat(self.det_pos, self.nverts, axis=0)
+        return vertices
 
     def rebin_data(self, bins):
         """
@@ -735,7 +801,8 @@ class InstrumentView:
         permutations = {"X": [0, 2, 1], "Y": [1, 0, 2], "Z": [2, 1, 0]}
 
         if self.select_rendering.value == "Full":
-            pixel_pos = np.tile(self.detector_shape, [self.ndets, 1]) + np.repeat(self.det_pos, self.nverts, axis=0)
+            # pixel_pos = np.tile(self.detector_shape, [self.ndets, 1]) + np.repeat(self.det_pos, self.nverts, axis=0)
+            pixel_pos = self.get_vertices()
         else:
             pixel_pos = self.det_pos
 

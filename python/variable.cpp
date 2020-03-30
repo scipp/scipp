@@ -364,6 +364,7 @@ py::class_<Quat> (m, "Quat", py::buffer_protocol())
     .def("z", [](const Quat &self) { return self.z(); })
     .def("w", [](const Quat &self) { return self.w(); })
     .def("coeffs", [](const Quat &self) { return self.coeffs(); })
+    .def("to_rotation_matrix", [](const Quat &self) { return self.toRotationMatrix(); })
     .def_buffer([](Quat &q) -> py::buffer_info {
     return py::buffer_info(
         q.coeffs().data(),                                /* Pointer to buffer */

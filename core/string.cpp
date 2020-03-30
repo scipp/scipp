@@ -96,7 +96,7 @@ std::string to_string(const DType dtype) {
     return "event_list_int32";
   case DType::EigenVector3d:
     return "vector_3_float64";
-  case DType::Quaterniond:
+  case DType::EigenQuaterniond:
     return "quaternion_float64";
   case DType::PyObject:
     return "PyObject";
