@@ -3,6 +3,7 @@
 /// @file
 /// @author Simon Heybrock
 #pragma once
+#include <set>
 
 #include "scipp/core/dataset.h"
 
@@ -14,7 +15,8 @@ SCIPP_CORE_EXPORT Dataset realign(Dataset unaligned,
                                   std::vector<std::pair<Dim, Variable>> coords);
 
 SCIPP_CORE_EXPORT bool is_realigned_events(const DataArrayConstView &realigned);
-SCIPP_CORE_EXPORT Dim realigned_event_dim(const DataArrayConstView &realigned);
+SCIPP_CORE_EXPORT std::set<Dim>
+realigned_event_dims(const DataArrayConstView &realigned);
 SCIPP_CORE_EXPORT VariableConstView
 realigned_event_coord(const DataArrayConstView &realigned);
 

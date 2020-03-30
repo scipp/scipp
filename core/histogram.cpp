@@ -178,13 +178,13 @@ DataArray histogram(const DataArrayConstView &realigned) {
     throw except::UnalignedError("Expected realigned data, but data appears to "
                                  "be histogrammed already.");
   if (unaligned::is_realigned_events(realigned)) {
-    const Dim dim = unaligned::realigned_event_dim(realigned);
+    const auto realigned_dims = unaligned::realigned_event_dims(realigned);
     auto bounds = realigned.slice_bounds();
-    auto it =
-        std::find_if(bounds.begin(), bounds.end(),
-                     [dim](const auto &item) { return item.first == dim; });
-    if (it != bounds.end())
-      bounds.erase(it);
+    bounds.erase(std::remove_if(bounds.begin(), bounds.end(),
+                                [&realigned_dims](const auto &item) {
+                                  return realigned_dims.count(item.first);
+                                }),
+                 bounds.end());
     if (bounds.empty())
       return histogram(realigned.unaligned(),
                        unaligned::realigned_event_coord(realigned));
