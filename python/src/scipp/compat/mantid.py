@@ -204,9 +204,9 @@ def init_pos_and_rot(ws):
     for i in range(nHist):
         if spec_info.hasDetectors(i):
             p = spec_info.position(i)
-            r = det_info.rotation(i)
+            r = det_info.rotation(i+1)
             pos[i, :] = [p.X(), p.Y(), p.Z()]
-            rot[i, :] = [r.imagI(), r.imagJ(), r.imagK(), r.real()]
+            rot[i, :] = [r.real(), r.imagI(), r.imagJ(), r.imagK()]
         else:
             pos[i, :] = [np.nan, np.nan, np.nan]
             rot[i, :] = [np.nan, np.nan, np.nan, np.nan]
