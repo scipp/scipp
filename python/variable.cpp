@@ -583,8 +583,8 @@ void init_variable(py::module &m) {
         :return: sin of input values.
         :rtype: Variable)");
 
-  m.def("cos", [](const VariableConstView &self) { return cos(self); }, py::arg("x"),
-        py::call_guard<py::gil_scoped_release>(), R"(
+  m.def("cos", [](const VariableConstView &self) { return cos(self); },
+        py::arg("x"), py::call_guard<py::gil_scoped_release>(), R"(
         Element-wise cos.
 
         :raises: If the unit is not a plane-angle unit, or if the dtype has no cos, e.g., if it is an integer
