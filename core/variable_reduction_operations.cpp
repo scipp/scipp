@@ -278,6 +278,16 @@ Variable max(const VariableConstView &var, const Dim dim) {
   return reduce_idempotent<operator_detail::max_equals>(var, dim);
 }
 
+/// Return the maximum along all dimension.
+Variable max(const VariableConstView &var) {
+  if (var.dims().empty())
+    return Variable(var);
+  Variable out = max(var, var.dims().inner());
+  while (!out.dims().empty())
+    out = max(out, out.dims().inner());
+  return out;
+}
+
 void min_impl(const VariableView &out, const VariableConstView &var) {
   reduce_impl<operator_detail::min_equals>(out, var);
 }

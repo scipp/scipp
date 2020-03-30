@@ -2,6 +2,8 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
+#include <limits>
+
 #include "scipp/core/event.h"
 #include "scipp/core/dataset.h"
 #include "scipp/core/subspan_view.h"
@@ -156,31 +158,42 @@ constexpr auto copy_if = [](const VariableConstView &var,
           [](const units::Unit &var_, const units::Unit &) { return var_; }});
 };
 
+template <class T>
+const auto make_select = [](const DataArrayConstView &array, const Dim dim,
+                            const VariableConstView &interval) {
+  return transform<
+      std::tuple<make_select_args<double>, make_select_args<float>>>(
+      array.coords()[dim], subspan_view(interval, dim),
+      overloaded{transform_flags::expect_no_variance_arg<0>,
+                 transform_flags::expect_no_variance_arg<1>,
+                 [](const auto &coord_, const auto &interval_) {
+                   const auto low = interval_[0];
+                   const auto high = interval_[1];
+                   const auto size = scipp::size(coord_);
+                   event_list<T> select_;
+                   for (scipp::index i = 0; i < size; ++i)
+                     if (coord_[i] >= low && coord_[i] < high)
+                       select_.push_back(i);
+                   return select_;
+                 },
+                 [](const units::Unit &coord_, const units::Unit &interval_) {
+                   expect::equals(coord_, interval_);
+                   return units::Unit(units::dimensionless);
+                 }});
+};
+
 } // namespace filter_detail
 
 DataArray filter(const DataArrayConstView &array, const Dim dim,
                  const VariableConstView &interval) {
   using namespace filter_detail;
-  Variable select =
-      transform<std::tuple<make_select_args<double>, make_select_args<float>>>(
-          array.coords()[dim], subspan_view(interval, dim),
-          overloaded{
-              transform_flags::expect_no_variance_arg<0>,
-              transform_flags::expect_no_variance_arg<1>,
-              [](const auto &coord_, const auto &interval_) {
-                const auto low = interval_[0];
-                const auto high = interval_[1];
-                const auto size = scipp::size(coord_);
-                event_list<int32_t> select_;
-                for (scipp::index i = 0; i < size; ++i)
-                  if (coord_[i] >= low && coord_[i] < high)
-                    select_.push_back(i);
-                return select_;
-              },
-              [](const units::Unit &coord_, const units::Unit &interval_) {
-                expect::equals(coord_, interval_);
-                return units::Unit(units::dimensionless);
-              }});
+  const auto &max_event_list_length = max(sizes(array.coords()[dim]));
+  const bool need_64bit_indices =
+      max_event_list_length.values<scipp::index>()[0] >
+      std::numeric_limits<int32_t>::max();
+  const auto select = need_64bit_indices
+                          ? make_select<int64_t>(array, dim, interval)
+                          : make_select<int32_t>(array, dim, interval);
 
   std::map<Dim, Variable> coords;
   for (const auto &[d, coord] : array.coords())

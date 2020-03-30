@@ -1026,6 +1026,7 @@ SCIPP_CORE_EXPORT VariableView atan2(const VariableConstView &y,
                                              const Dim dim);
 
 // Other reductions
+[[nodiscard]] SCIPP_CORE_EXPORT Variable max(const VariableConstView &var);
 [[nodiscard]] SCIPP_CORE_EXPORT Variable max(const VariableConstView &var,
                                              const Dim dim);
 [[nodiscard]] SCIPP_CORE_EXPORT Variable min(const VariableConstView &var,
