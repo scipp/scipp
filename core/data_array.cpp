@@ -106,12 +106,9 @@ void DataArray::drop_alignment() {
   std::vector<Dim> keep;
   std::vector<Dim> move;
   for (const auto &[dim, coord] : view.coords())
-    if (this->coords().contains(dim)) {
-      if (this->coords()[dim] != coord)
-        move.push_back(dim);
-      else
-        keep.push_back(dim);
-    } else
+    if (this->coords().contains(dim) && this->coords()[dim] == coord)
+      keep.push_back(dim);
+    else
       move.push_back(dim);
   for (const auto &dim : keep)
     coords.emplace(dim, std::move(aligned_coords[dim]));

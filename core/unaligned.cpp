@@ -59,8 +59,9 @@ auto get_bounds(const scipp::span<const std::pair<Dim, Variable>> coords) {
   return bounds;
 }
 
-auto get_stricter_bounds(const DataArray &array,
-                         const std::vector<std::pair<Dim, Variable>> &coords) {
+/// Return vector of bounds that are tighter than existing ones
+auto get_tighter_bounds(const DataArray &array,
+                        const std::vector<std::pair<Dim, Variable>> &coords) {
   auto bounds = get_bounds(coords);
   const auto looser_interval = [&array](const auto &item) {
     const auto &[dim, interval] = item;
@@ -77,11 +78,12 @@ auto get_stricter_bounds(const DataArray &array,
                     dim);
     return tightest_interval == old_interval;
   };
-  if (!array.hasData()) { // previous realignment
+  if (array.hasData()) {
+    // no current bounds, all new bounds are stricter
+  } else {
+    // previous realignment
     bounds.erase(std::remove_if(bounds.begin(), bounds.end(), looser_interval),
                  bounds.end());
-  } else {
-    // no current bounds, all new bounds are stricter
   }
   return bounds;
 }
@@ -90,7 +92,7 @@ auto get_stricter_bounds(const DataArray &array,
 
 DataArray realign(DataArray unaligned,
                   std::vector<std::pair<Dim, Variable>> coords) {
-  const auto bounds = get_stricter_bounds(unaligned, coords);
+  const auto bounds = get_tighter_bounds(unaligned, coords);
   if (!unaligned.hasData())
     unaligned.drop_alignment();
   std::set<Dim> binnedDims;
