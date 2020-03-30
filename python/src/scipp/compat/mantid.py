@@ -226,18 +226,12 @@ def rotation_matrix_from_vectors(vec1, vec2):
 def matrix_mult(pos, m):
     if not pos.shape[0]:
         return pos
-    m1 = sc.Variable(['y'],
-                     values=[np.array(m[0, :])],
-                     dtype=sc.dtype.vector_3_float64)
-    m2 = sc.Variable(['y'],
-                     values=[np.array(m[1, :])],
-                     dtype=sc.dtype.vector_3_float64)
-    m3 = sc.Variable(['y'],
-                     values=[np.array(m[2, :])],
-                     dtype=sc.dtype.vector_3_float64)
-    xn = sc.sum(sc.dot(m1, pos), 'y')
-    yn = sc.sum(sc.dot(m2, pos), 'y')
-    zn = sc.sum(sc.dot(m3, pos), 'y')
+    m1 = sc.Variable(value=m[0, :], dtype=sc.dtype.vector_3_float64)
+    m2 = sc.Variable(value=m[1, :], dtype=sc.dtype.vector_3_float64)
+    m3 = sc.Variable(value=m[2, :], dtype=sc.dtype.vector_3_float64)
+    xn = sc.dot(m1, pos)
+    yn = sc.dot(m2, pos)
+    zn = sc.dot(m3, pos)
     return sc.geometry.position(xn, yn, zn)
 
 
