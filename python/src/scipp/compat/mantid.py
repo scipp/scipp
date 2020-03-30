@@ -246,68 +246,78 @@ def matrix_mult(pos, m):
 def init_pos(ws, source_pos, sample_pos):
     import numpy as np
     spec_info = ws.spectrumInfo()
-    det_info = ws.detectorInfo()
-    total_detectors = spec_info.detectorCount()
 
     if sample_pos and source_pos:
+        det_info = ws.detectorInfo()
+        total_detectors = spec_info.detectorCount()
         act_beam = (sample_pos - source_pos).values
         rot = rotation_matrix_from_vectors(act_beam, [0, 0, 1])
         inv_rot = rot.transpose()
+
+        pos_d = sc.Dataset()
+        # Create empty to hold position info for all spectra detectors
+        pos_d["x"] = sc.Variable(["Detector"],
+                                 shape=[total_detectors],
+                                 unit=sc.units.m)
+        pos_d["y"] = pos_d["x"]
+        pos_d["z"] = pos_d["x"]
+
+        pos_d.coords["spectrum"] = sc.Variable(
+            ["Detector"], values=np.empty(total_detectors))
+
+        idx = 0
+        for i, spec in enumerate(spec_info):
+            if spec.hasDetectors:
+                definition = spec_info.getSpectrumDefinition(i)
+                n_dets = len(definition)
+                for j in range(n_dets):
+                    det_idx = definition[j][0]
+                    p = det_info.position(det_idx)
+                    pos_d.coords["spectrum"].values[idx] = i
+                    pos_d["x"].values[idx] = p.X()
+                    pos_d["y"].values[idx] = p.Y()
+                    pos_d["z"].values[idx] = p.Z()
+                    idx += 1
+
+        rot_pos = matrix_mult(
+            sc.geometry.position(pos_d["x"].data, pos_d["y"].data,
+                                 pos_d["z"].data), rot)
+        pos_d["x"] = sc.geometry.x(rot_pos)
+        pos_d["y"] = sc.geometry.y(rot_pos)
+        pos_d["z"] = sc.geometry.z(rot_pos)
+
+        _to_spherical(pos_d)
+
+        averaged = sc.groupby(pos_d,
+                              "spectrum",
+                              bins=sc.Variable(["spectrum"],
+                                               values=np.arange(
+                                                   -0.5,
+                                                   len(spec_info) + 0.5,
+                                                   1.0))).mean("Detector")
+
+        averaged["x"] = averaged["r"].data * sc.sin(
+            averaged["t"].data) * sc.cos(averaged["p"].data)
+        averaged["y"] = averaged["r"].data * sc.sin(
+            averaged["t"].data) * sc.sin(averaged["p"].data)
+        averaged["z"] = averaged["r"].data * sc.cos(averaged["t"].data)
+
+        pos = sc.geometry.position(averaged["x"].data, averaged["y"].data,
+                                   averaged["z"].data)
+        return matrix_mult(pos, inv_rot)
     else:
-        rot = np.eye(3)
-        inv_rot = rot
+        pos = np.zeros([len(spec_info), 3])
 
-    pos_d = sc.Dataset()
-    # Create empty to hold position info for all spectra detectors
-    pos_d["x"] = sc.Variable(["Detector"],
-                             shape=[total_detectors],
-                             unit=sc.units.m)
-    pos_d["y"] = pos_d["x"]
-    pos_d["z"] = pos_d["x"]
-
-    pos_d.coords["spectrum"] = sc.Variable(["Detector"],
-                                           values=np.empty(total_detectors))
-
-    idx = 0
-    for i, spec in enumerate(spec_info):
-        if spec.hasDetectors:
-            definition = spec_info.getSpectrumDefinition(i)
-            n_dets = len(definition)
-            for j in range(n_dets):
-                det_idx = definition[j][0]
-                p = det_info.position(det_idx)
-                pos_d.coords["spectrum"].values[idx] = i
-                pos_d["x"].values[idx] = p.X()
-                pos_d["y"].values[idx] = p.Y()
-                pos_d["z"].values[idx] = p.Z()
-                idx += 1
-
-    rot_pos = matrix_mult(
-        sc.geometry.position(pos_d["x"].data, pos_d["y"].data,
-                             pos_d["z"].data), rot)
-    pos_d["x"] = sc.geometry.x(rot_pos)
-    pos_d["y"] = sc.geometry.y(rot_pos)
-    pos_d["z"] = sc.geometry.z(rot_pos)
-
-    _to_spherical(pos_d)
-
-    averaged = sc.groupby(pos_d,
-                          "spectrum",
-                          bins=sc.Variable(["spectrum"],
-                                           values=np.arange(
-                                               -0.5,
-                                               len(spec_info) + 0.5,
-                                               1.0))).mean("Detector")
-
-    averaged["x"] = averaged["r"].data * sc.sin(averaged["t"].data) * sc.cos(
-        averaged["p"].data)
-    averaged["y"] = averaged["r"].data * sc.sin(averaged["t"].data) * sc.sin(
-        averaged["p"].data)
-    averaged["z"] = averaged["r"].data * sc.cos(averaged["t"].data)
-
-    pos = sc.geometry.position(averaged["x"].data, averaged["y"].data,
-                               averaged["z"].data)
-    return matrix_mult(pos, inv_rot)
+        for i, spec in enumerate(spec_info):
+            if spec.hasDetectors:
+                p = spec.position
+                pos[i, :] = [p.X(), p.Y(), p.Z()]
+            else:
+                pos[i, :] = [np.nan, np.nan, np.nan]
+        return sc.Variable(['spectrum'],
+                           values=pos,
+                           unit=sc.units.m,
+                           dtype=sc.dtype.vector_3_float64)
 
 
 def _get_dtype_from_values(values):
