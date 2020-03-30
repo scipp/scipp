@@ -158,10 +158,9 @@ constexpr auto copy_if = [](const VariableConstView &var,
 
 } // namespace filter_detail
 
-DataArray filter(const DataArrayConstView &array,
-                 const scipp::span<const std::pair<Dim, Variable>> &bounds) {
+DataArray filter(const DataArrayConstView &array, const Dim dim,
+                 const VariableConstView &interval) {
   using namespace filter_detail;
-  const auto &[dim, interval] = bounds[0];
   Variable select =
       transform<std::tuple<make_select_args<double>, make_select_args<float>>>(
           array.coords()[dim], subspan_view(interval, dim),

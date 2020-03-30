@@ -22,8 +22,8 @@ SCIPP_CORE_EXPORT Variable broadcast(const VariableConstView &dense,
 SCIPP_CORE_EXPORT Variable broadcast_weights(const DataArrayConstView &events);
 
 [[nodiscard]] SCIPP_CORE_EXPORT DataArray
-filter(const DataArrayConstView &array,
-       const scipp::span<const std::pair<Dim, Variable>> &bounds);
+filter(const DataArrayConstView &array, const Dim dim,
+       const VariableConstView &interval);
 
 } // namespace scipp::core::event
 

@@ -46,11 +46,10 @@ static void BM_event_filter(benchmark::State &state) {
   const bool data = state.range(2);
   const auto sparse = data ? make_2d_events(nHist, nEvent)
                            : make_2d_events_default_weights(nHist, nEvent);
-  std::vector<std::pair<Dim, Variable>> bounds = {
-      {Dim::Y, makeVariable<double>(Dims{Dim::Y}, Shape{2},
-                                    Values{0.0, 1000 * fraction})}};
+  const auto interval = makeVariable<double>(Dims{Dim::Y}, Shape{2},
+                                             Values{0.0, 1000 * fraction});
   for (auto _ : state) {
-    benchmark::DoNotOptimize(event::filter(sparse, bounds));
+    benchmark::DoNotOptimize(event::filter(sparse, Dim::Y, interval));
   }
   state.SetItemsProcessed(state.iterations() * nHist * nEvent);
   state.SetBytesProcessed(state.iterations() * nHist * (data ? 3 : 1) * nEvent *

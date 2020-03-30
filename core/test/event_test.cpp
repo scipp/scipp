@@ -203,25 +203,22 @@ struct EventFilterTest : public ::testing::Test {
 
 TEST_F(EventFilterTest, all) {
   const DataArray a(data, {{Dim::Y, coord1}});
-  std::vector<std::pair<Dim, Variable>> bounds{
-      {Dim::Y, makeVariable<float>(Dims{Dim::Y}, Shape{2},
-                                   units::Unit(units::us), Values{0, 5})}};
-  EXPECT_EQ(event::filter(a, bounds), a);
+  const auto interval = makeVariable<float>(
+      Dims{Dim::Y}, Shape{2}, units::Unit(units::us), Values{0, 5});
+  EXPECT_EQ(event::filter(a, Dim::Y, interval), a);
 }
 
 TEST_F(EventFilterTest, all_with_variances) {
   const DataArray a(data_with_variances, {{Dim::Y, coord1}});
-  std::vector<std::pair<Dim, Variable>> bounds{
-      {Dim::Y, makeVariable<float>(Dims{Dim::Y}, Shape{2},
-                                   units::Unit(units::us), Values{0, 5})}};
-  EXPECT_EQ(event::filter(a, bounds), a);
+  const auto interval = makeVariable<float>(
+      Dims{Dim::Y}, Shape{2}, units::Unit(units::us), Values{0, 5});
+  EXPECT_EQ(event::filter(a, Dim::Y, interval), a);
 }
 
 TEST_F(EventFilterTest, filter_1d) {
   const DataArray a(data, {{Dim::Y, coord1}});
-  std::vector<std::pair<Dim, Variable>> bounds{
-      {Dim::Y, makeVariable<float>(Dims{Dim::Y}, Shape{2},
-                                   units::Unit(units::us), Values{0.0, 2.5})}};
+  const auto interval = makeVariable<float>(
+      Dims{Dim::Y}, Shape{2}, units::Unit(units::us), Values{0.0, 2.5});
 
   const DataArray expected{
       makeVariable<event_list<float>>(
@@ -232,14 +229,13 @@ TEST_F(EventFilterTest, filter_1d) {
             Dims{Dim::X}, Shape{2}, units::Unit(units::us),
             Values{event_list<float>{2, 1}, event_list<float>{2, 1}})}}};
 
-  EXPECT_EQ(event::filter(a, bounds), expected);
+  EXPECT_EQ(event::filter(a, Dim::Y, interval), expected);
 }
 
 TEST_F(EventFilterTest, filter_1d_with_variances) {
   const DataArray a(data_with_variances, {{Dim::Y, coord1}});
-  std::vector<std::pair<Dim, Variable>> bounds{
-      {Dim::Y, makeVariable<float>(Dims{Dim::Y}, Shape{2},
-                                   units::Unit(units::us), Values{0.0, 2.5})}};
+  const auto interval = makeVariable<float>(
+      Dims{Dim::Y}, Shape{2}, units::Unit(units::us), Values{0.0, 2.5});
 
   const DataArray expected{
       makeVariable<event_list<float>>(
@@ -251,5 +247,5 @@ TEST_F(EventFilterTest, filter_1d_with_variances) {
             Dims{Dim::X}, Shape{2}, units::Unit(units::us),
             Values{event_list<float>{2, 1}, event_list<float>{2, 1}})}}};
 
-  EXPECT_EQ(event::filter(a, bounds), expected);
+  EXPECT_EQ(event::filter(a, Dim::Y, interval), expected);
   }
