@@ -256,14 +256,14 @@ def init_pos(ws, source_pos, sample_pos):
 
         pos_d = sc.Dataset()
         # Create empty to hold position info for all spectra detectors
-        pos_d["x"] = sc.Variable(["Detector"],
+        pos_d["x"] = sc.Variable(["detector"],
                                  shape=[total_detectors],
                                  unit=sc.units.m)
         pos_d["y"] = pos_d["x"]
         pos_d["z"] = pos_d["x"]
 
         pos_d.coords["spectrum"] = sc.Variable(
-            ["Detector"], values=np.empty(total_detectors))
+            ["detector"], values=np.empty(total_detectors))
 
         idx = 0
         for i, spec in enumerate(spec_info):
@@ -294,7 +294,7 @@ def init_pos(ws, source_pos, sample_pos):
                                                values=np.arange(
                                                    -0.5,
                                                    len(spec_info) + 0.5,
-                                                   1.0))).mean("Detector")
+                                                   1.0))).mean("detector")
 
         averaged["x"] = averaged["r"].data * sc.sin(
             averaged["t"].data) * sc.cos(averaged["p"].data)
