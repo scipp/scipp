@@ -185,7 +185,8 @@ const auto make_select = [](const DataArrayConstView &array, const Dim dim,
 } // namespace filter_detail
 
 DataArray filter(const DataArrayConstView &array, const Dim dim,
-                 const VariableConstView &interval) {
+                 const VariableConstView &interval,
+                 const AttrPolicy attrPolicy) {
   using namespace filter_detail;
   const auto &max_event_list_length = max(sizes(array.coords()[dim]));
   const bool need_64bit_indices =
@@ -199,9 +200,12 @@ DataArray filter(const DataArrayConstView &array, const Dim dim,
   for (const auto &[d, coord] : array.coords())
     coords.emplace(d, is_events(coord) ? copy_if(coord, select) : copy(coord));
 
+  Dataset empty;
   return DataArray{is_events(array.data()) ? copy_if(array.data(), select)
                                            : copy(array.data()),
-                   std::move(coords), array.masks(), array.attrs()};
+                   std::move(coords), array.masks(),
+                   attrPolicy == AttrPolicy::Keep ? array.attrs()
+                                                  : empty.attrs()};
 }
 
 } // namespace event

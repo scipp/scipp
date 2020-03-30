@@ -23,7 +23,8 @@ SCIPP_CORE_EXPORT Variable broadcast_weights(const DataArrayConstView &events);
 
 [[nodiscard]] SCIPP_CORE_EXPORT DataArray
 filter(const DataArrayConstView &array, const Dim dim,
-       const VariableConstView &interval);
+       const VariableConstView &interval,
+       const AttrPolicy attrPolicy = AttrPolicy::Keep);
 
 } // namespace scipp::core::event
 

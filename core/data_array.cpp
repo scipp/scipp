@@ -58,7 +58,7 @@ filter_recurse(const DataArrayConstView &unaligned,
   const auto &[dim, interval] = bounds[0];
   DataArray filtered =
       is_events(unaligned.coords()[dim])
-          ? event::filter(unaligned, dim, interval)
+          ? event::filter(unaligned, dim, interval, attrPolicy)
           : groupby(unaligned, dim, interval).copy(0, attrPolicy);
   if (bounds.size() == 1)
     return filtered;
