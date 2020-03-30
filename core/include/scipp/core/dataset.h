@@ -31,7 +31,6 @@ struct UnalignedData;
 namespace detail {
 /// Helper for holding data items in Dataset.
 struct DatasetData {
-  ~DatasetData();
   /// Optional data values (with optional variances).
   Variable data;
   /// Unaligned data, a simple struct of aligned dimensions alongside a data
