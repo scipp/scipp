@@ -9,7 +9,6 @@ See `Tooling <tooling.html>`_ for compilers and other required tools.
 Scipp uses TBB for multi-threading.
 This is an optional dependency.
 We have found that TBB from ``conda-forge`` works best in terms of CMake integration.
-You need ``tbb`` and ``tbb-devel``. The number of threads can be capped via the ``SCIPP_NUM_THREADS`` environmental variable.
 
 Getting the code, building, and installing
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -59,6 +58,7 @@ Additional build options
 ------------------------
 
 1. ``-DDYNAMIC_LIB`` forces the shared libraries building, that also decreases link time.
+2. ``-DENABLE_THREAD_LIMIT`` limits the maximum number of threads that TBB can use. This defaults to the maximum number of cores identified on your build system. You may then optionally apply an artificial limit via ``-DTHREAD_LIMIT``. 
 
 Running the unit tests
 ~~~~~~~~~~~~~~~~~~~~~~
