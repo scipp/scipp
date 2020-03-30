@@ -95,12 +95,32 @@ void DataArray::drop_alignment() {
   if (hasData())
     throw except::RealignedDataError(
         "Does not contain unaligned data, cannot drop alignment.");
+
   const auto &view = unaligned();
-  auto coords = copy_map(view.coords());
+
+  auto &aligned_coords = m_holder.m_coords;
+  auto &unaligned_array = m_holder.m_data.begin()->second.unaligned->data;
+  auto &unaligned_coords = unaligned_array.m_holder.m_coords;
+
+  std::map<Dim, Variable> coords;
+  std::vector<Dim> keep;
+  std::vector<Dim> move;
+  for (const auto &[dim, coord] : view.coords())
+    if (this->coords().contains(dim)) {
+      if (this->coords()[dim] != coord)
+        move.push_back(dim);
+      else
+        keep.push_back(dim);
+    } else
+      move.push_back(dim);
+  for (const auto &dim : keep)
+    coords.emplace(dim, std::move(aligned_coords[dim]));
+  for (const auto &dim : move)
+    coords.emplace(dim, std::move(unaligned_coords[dim]));
+
   auto masks = copy_map(view.masks());
   auto attrs = copy_map(view.attrs());
 
-  auto &unaligned_array = m_holder.m_data.begin()->second.unaligned->data;
   auto &data = unaligned_array.m_holder.m_data.begin()->second.data;
   *this = DataArray(std::move(data), std::move(coords), std::move(masks),
                     std::move(attrs), name());
