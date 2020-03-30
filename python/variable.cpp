@@ -583,7 +583,7 @@ void init_variable(py::module &m) {
         :return: sin of input values.
         :rtype: Variable)");
 
-  m.def("cos", [](const Variable &self) { return cos(self); }, py::arg("x"),
+  m.def("cos", [](const VariableConstView &self) { return cos(self); }, py::arg("x"),
         py::call_guard<py::gil_scoped_release>(), R"(
         Element-wise cos.
 

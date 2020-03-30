@@ -237,7 +237,7 @@ def matrix_mult(pos, m):
     m3 = sc.Variable(['y'],
                      values=[np.array(m[2, :])],
                      dtype=sc.dtype.vector_3_float64)
-    xn = sc.sum(xn1, 'y')
+    xn = sc.sum(sc.dot(m1, pos), 'y')
     yn = sc.sum(sc.dot(m2, pos), 'y')
     zn = sc.sum(sc.dot(m3, pos), 'y')
     return sc.geometry.position(xn, yn, zn)
@@ -259,16 +259,16 @@ def init_pos(ws, source_pos, sample_pos):
 
     pos_d = sc.Dataset()
     # Create empty to hold position info for all spectra detectors
-    pos_d["x"] = sc.Variable(["x"],
+    pos_d["x"] = sc.Variable(["Detector"],
                              values=np.empty(total_detectors),
                              unit=sc.units.m)
-    pos_d["y"] = sc.Variable(["x"],
+    pos_d["y"] = sc.Variable(["Detector"],
                              values=np.empty(total_detectors),
                              unit=sc.units.m)
-    pos_d["z"] = sc.Variable(["x"],
+    pos_d["z"] = sc.Variable(["Detector"],
                              values=np.empty(total_detectors),
                              unit=sc.units.m)
-    pos_d.coords["spectrum"] = sc.Variable(["x"],
+    pos_d.coords["spectrum"] = sc.Variable(["Detector"],
                                            values=np.empty(total_detectors))
 
     idx = 0
@@ -300,7 +300,7 @@ def init_pos(ws, source_pos, sample_pos):
                                            values=np.arange(
                                                -0.5,
                                                len(spec_info) + 0.5,
-                                               1.0))).mean("x")
+                                               1.0))).mean("Detector")
 
     averaged["x"] = averaged["r"].data * sc.sin(averaged["t"].data) * sc.cos(
         averaged["p"].data)
