@@ -98,7 +98,8 @@ Variable broadcast_weights(const DataArrayConstView &events) {
 
 /// Return the sizes of the events lists in var
 Variable sizes(const VariableConstView &var) {
-  return transform<event_list<double>, event_list<float>>(
+  return transform<event_list<double>, event_list<float>, event_list<int64_t>,
+                   event_list<int32_t>>(
       var, overloaded{transform_flags::expect_no_variance_arg<0>,
                       [](const auto &x) { return scipp::size(x); },
                       [](const units::Unit &) {
@@ -125,12 +126,16 @@ void resize_to(const VariableView &var, const DataArrayConstView &shape) {
 namespace filter_detail {
 template <class T>
 using make_select_args = std::tuple<event_list<T>, span<const T>>;
-template <class T>
-using copy_if_args = std::tuple<event_list<T>, event_list<int32_t>>;
+template <class T, class Index>
+using copy_if_args = std::tuple<event_list<T>, event_list<Index>>;
 
 constexpr auto copy_if = [](const VariableConstView &var,
                             const VariableConstView &select) {
-  return transform<std::tuple<copy_if_args<double>, copy_if_args<float>>>(
+  return transform<std::tuple<
+      copy_if_args<double, int32_t>, copy_if_args<float, int32_t>,
+      copy_if_args<int64_t, int32_t>, copy_if_args<int32_t, int32_t>,
+      copy_if_args<double, int64_t>, copy_if_args<float, int64_t>,
+      copy_if_args<int64_t, int64_t>, copy_if_args<int32_t, int64_t>>>(
       var, select,
       overloaded{
           transform_flags::expect_no_variance_arg<1>,
@@ -162,7 +167,8 @@ template <class T>
 const auto make_select = [](const DataArrayConstView &array, const Dim dim,
                             const VariableConstView &interval) {
   return transform<
-      std::tuple<make_select_args<double>, make_select_args<float>>>(
+      std::tuple<make_select_args<double>, make_select_args<float>,
+                 make_select_args<int64_t>, make_select_args<int32_t>>>(
       array.coords()[dim], subspan_view(interval, dim),
       overloaded{transform_flags::expect_no_variance_arg<0>,
                  transform_flags::expect_no_variance_arg<1>,

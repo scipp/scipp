@@ -53,7 +53,8 @@ template <class... Known> class VariableConceptHandle_impl;
       sparse_container<double>, sparse_container<float>,                       \
       sparse_container<int64_t>, sparse_container<int32_t>,                    \
       sparse_container<bool>, span<const double>, span<double>,                \
-      span<const float>, span<float>
+      span<const float>, span<float>, span<const int64_t>, span<int64_t>,      \
+      span<const int32_t>, span<int32_t>
 using VariableConceptHandle = VariableConceptHandle_impl<KNOWN>;
 
 /// Abstract base class for any data that can be held by Variable. Also used to
