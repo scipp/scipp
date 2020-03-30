@@ -17,4 +17,10 @@ SCIPP_CORE_EXPORT bool is_realigned_events(const DataArrayConstView &realigned);
 SCIPP_CORE_EXPORT VariableConstView
 realigned_event_coord(const DataArrayConstView &realigned);
 
+SCIPP_CORE_EXPORT
+DataArray
+filter_recurse(const DataArrayConstView &unaligned,
+               const scipp::span<const std::pair<Dim, Variable>> bounds,
+               const AttrPolicy attrPolicy);
+
 } // namespace scipp::core::unaligned

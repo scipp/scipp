@@ -47,24 +47,6 @@ std::vector<std::pair<Dim, Variable>> DataArrayConstView::slice_bounds() const {
 
 namespace {
 
-/// Return new data array based on `unaligned` with any content outside `bounds`
-/// removed.
-DataArray
-filter_recurse(const DataArrayConstView &unaligned,
-               const scipp::span<const std::pair<Dim, Variable>> bounds,
-               const AttrPolicy attrPolicy) {
-  if (bounds.empty())
-    return copy(unaligned, attrPolicy);
-  const auto &[dim, interval] = bounds[0];
-  DataArray filtered =
-      is_events(unaligned.coords()[dim])
-          ? event::filter(unaligned, dim, interval, attrPolicy)
-          : groupby(unaligned, dim, interval).copy(0, attrPolicy);
-  if (bounds.size() == 1)
-    return filtered;
-  return filter_recurse(filtered, bounds.subspan(1), attrPolicy);
-}
-
 template <class... DataArgs>
 auto makeDataArray(const DataArrayConstView &view, const AttrPolicy attrPolicy,
                    DataArgs &&... dataArgs) {
@@ -80,14 +62,14 @@ auto makeDataArray(const DataArrayConstView &view, const AttrPolicy attrPolicy,
 
 DataArray::DataArray(const DataArrayConstView &view,
                      const AttrPolicy attrPolicy)
-    : DataArray(
-          view.hasData()
-              ? makeDataArray(view, attrPolicy, Variable(view.data()))
-              : makeDataArray(view, attrPolicy,
-                              UnalignedData{view.dims(),
-                                            filter_recurse(view.unaligned(),
-                                                           view.slice_bounds(),
-                                                           attrPolicy)})) {}
+    : DataArray(view.hasData()
+                    ? makeDataArray(view, attrPolicy, Variable(view.data()))
+                    : makeDataArray(
+                          view, attrPolicy,
+                          UnalignedData{view.dims(), unaligned::filter_recurse(
+                                                         view.unaligned(),
+                                                         view.slice_bounds(),
+                                                         attrPolicy)})) {}
 
 DataArray::operator DataArrayConstView() const { return get(); }
 DataArray::operator DataArrayView() { return get(); }

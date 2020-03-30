@@ -3,6 +3,8 @@
 /// @author Simon Heybrock
 #include <set>
 
+#include "scipp/core/event.h"
+#include "scipp/core/groupby.h"
 #include "scipp/core/unaligned.h"
 
 namespace scipp::core::unaligned {
@@ -116,6 +118,24 @@ VariableConstView realigned_event_coord(const DataArrayConstView &realigned) {
     throw except::UnalignedError(
         "Multi-dimensional histogramming of event data not supported yet.");
   return realigned.coords()[realigned_dims.front()];
+}
+
+/// Return new data array based on `unaligned` with any content outside `bounds`
+/// removed.
+DataArray
+filter_recurse(const DataArrayConstView &unaligned,
+               const scipp::span<const std::pair<Dim, Variable>> bounds,
+               const AttrPolicy attrPolicy) {
+  if (bounds.empty())
+    return copy(unaligned, attrPolicy);
+  const auto &[dim, interval] = bounds[0];
+  DataArray filtered =
+      is_events(unaligned.coords()[dim])
+          ? event::filter(unaligned, dim, interval, attrPolicy)
+          : groupby(unaligned, dim, interval).copy(0, attrPolicy);
+  if (bounds.size() == 1)
+    return filtered;
+  return filter_recurse(filtered, bounds.subspan(1), attrPolicy);
 }
 
 } // namespace scipp::core::unaligned
