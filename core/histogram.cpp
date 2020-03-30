@@ -15,19 +15,19 @@ namespace scipp::core {
 
 static constexpr auto make_histogram =
     [](auto &data, const auto &events, const auto &weights, const auto &edges) {
-      constexpr auto value = [](const auto &x, const scipp::index i) {
-        if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(x)>>) {
-          static_cast<void>(i);
-          return x.value;
+      constexpr auto value = [](const auto &v, const scipp::index idx) {
+        if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(v)>>) {
+          static_cast<void>(idx);
+          return v.value;
         } else
-          return x.values[i];
+          return v.values[idx];
       };
-      constexpr auto variance = [](const auto &x, const scipp::index i) {
-        if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(x)>>) {
-          static_cast<void>(i);
-          return x.variance;
+      constexpr auto variance = [](const auto &v, const scipp::index idx) {
+        if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(v)>>) {
+          static_cast<void>(idx);
+          return v.variance;
         } else
-          return x.variances[i];
+          return v.variances[idx];
       };
 
       // Special implementation for linear bins. Gives a 1x to 20x speedup
