@@ -260,14 +260,11 @@ def init_pos(ws, source_pos, sample_pos):
     pos_d = sc.Dataset()
     # Create empty to hold position info for all spectra detectors
     pos_d["x"] = sc.Variable(["Detector"],
-                             values=np.empty(total_detectors),
+                             shape=[total_detectors],
                              unit=sc.units.m)
-    pos_d["y"] = sc.Variable(["Detector"],
-                             values=np.empty(total_detectors),
-                             unit=sc.units.m)
-    pos_d["z"] = sc.Variable(["Detector"],
-                             values=np.empty(total_detectors),
-                             unit=sc.units.m)
+    pos_d["y"] = pos_d["x"]
+    pos_d["z"] = pos_d["x"]
+
     pos_d.coords["spectrum"] = sc.Variable(["Detector"],
                                            values=np.empty(total_detectors))
 
