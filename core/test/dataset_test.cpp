@@ -224,7 +224,7 @@ TEST(DatasetTest, DataArrayView_setData) {
 struct SetDataTest : public ::testing::Test {
 protected:
   Variable var = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1, 2});
-  Variable y = makeVariable<double>(Dims{Dim::Y}, Shape{2}, Values{1, 2});
+  Variable y = makeVariable<double>(Dims{Dim::Y}, Shape{2}, Values{1, 3});
   DataArray data{var, {{Dim::Y, var}}};
   DataArray realigned = unaligned::realign(data, {{Dim::Y, y}});
 };

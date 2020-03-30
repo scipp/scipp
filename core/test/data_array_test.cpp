@@ -137,7 +137,8 @@ TEST(DataArrayRealignedEventsArithmeticTest, events_times_histogram) {
     EXPECT_EQ(result.unit(), units::counts);
 
     const auto unaligned = result.unaligned();
-    EXPECT_EQ(unaligned.coords()[Dim::X], sparse.coords()[Dim::X]);
+    EXPECT_EQ(unaligned.coords()[Dim::X],
+              realigned.unaligned().coords()[Dim::X]);
     const auto out_vals = unaligned.data().values<event_list<double>>();
     const auto out_vars = unaligned.data().variances<event_list<double>>();
 
@@ -148,12 +149,12 @@ TEST(DataArrayRealignedEventsArithmeticTest, events_times_histogram) {
                              Variances{0.3, 0.4, 0.4});
     EXPECT_TRUE(equals(out_vals[0], expected.values<double>()));
     EXPECT_TRUE(equals(out_vars[0], expected.variances<double>()));
-    // out of range of edges -> value set to 0, consistent with rebin behavior
+    // out of range of edges -> dropped in realign step (independent of this op)
     expected =
-        makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1, 1, 1, 1},
-                             Variances{1, 1, 1, 1}) *
-        makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{2.0, 2.0, 3.0, 0.0},
-                             Variances{0.3, 0.3, 0.4, 0.0});
+        makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 1, 1},
+                             Variances{1, 1, 1}) *
+        makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{2.0, 2.0, 3.0},
+                             Variances{0.3, 0.3, 0.4});
     EXPECT_TRUE(equals(out_vals[1], expected.values<double>()));
     EXPECT_TRUE(equals(out_vars[1], expected.variances<double>()));
   }
@@ -174,7 +175,8 @@ TEST(DataArrayRealignedEventsArithmeticTest,
     EXPECT_EQ(result.unit(), units::counts);
 
     const auto unaligned = result.unaligned();
-    EXPECT_EQ(unaligned.coords()[Dim::X], sparse.coords()[Dim::X]);
+    EXPECT_EQ(unaligned.coords()[Dim::X],
+              realigned.unaligned().coords()[Dim::X]);
     const auto out_vals = unaligned.data().values<event_list<double>>();
     const auto out_vars = unaligned.data().variances<event_list<double>>();
 
@@ -184,11 +186,11 @@ TEST(DataArrayRealignedEventsArithmeticTest,
         makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{2.0, 3.0, 3.0});
     EXPECT_TRUE(equals(out_vals[0], expected.values<double>()));
     EXPECT_TRUE(equals(out_vars[0], expected.variances<double>()));
-    // out of range of edges -> value set to 0, consistent with rebin behavior
-    expected = makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1, 1, 1, 1},
-                                    Variances{1, 1, 1, 1}) *
-               makeVariable<double>(Dims{Dim::X}, Shape{4},
-                                    Values{2.0, 2.0, 3.0, 0.0});
+    // out of range of edges -> dropped in realign step (independent of this op)
+    expected =
+        makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 1, 1},
+                             Variances{1, 1, 1}) *
+        makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{2.0, 2.0, 3.0});
     EXPECT_TRUE(equals(out_vals[1], expected.values<double>()));
     EXPECT_TRUE(equals(out_vars[1], expected.variances<double>()));
   }
@@ -214,7 +216,8 @@ TEST(DataArrayRealignedEventsArithmeticTest,
     EXPECT_EQ(result.unit(), units::counts);
 
     const auto unaligned = result.unaligned();
-    EXPECT_EQ(unaligned.coords()[Dim::X], sparse.coords()[Dim::X]);
+    EXPECT_EQ(unaligned.coords()[Dim::X],
+              realigned.unaligned().coords()[Dim::X]);
     const auto out_vals = unaligned.data().values<event_list<double>>();
     const auto out_vars = unaligned.data().variances<event_list<double>>();
 
@@ -226,11 +229,12 @@ TEST(DataArrayRealignedEventsArithmeticTest,
     EXPECT_TRUE(equals(out_vals[0], expected.values<double>()));
     EXPECT_TRUE(equals(out_vars[0], expected.variances<double>()));
     // out of range of edges -> value set to 0, consistent with rebin behavior
+    // out of range of edges -> dropped in realign step (independent of this op)
     expected =
-        makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{2, 2, 2, 2},
-                             Variances{0, 0, 0, 0}) *
-        makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{2.0, 2.0, 3.0, 0.0},
-                             Variances{0.3, 0.3, 0.4, 0.0});
+        makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{2, 2, 2},
+                             Variances{0, 0, 0}) *
+        makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{2.0, 2.0, 3.0},
+                             Variances{0.3, 0.3, 0.4});
     EXPECT_TRUE(equals(out_vals[1], expected.values<double>()));
     EXPECT_TRUE(equals(out_vars[1], expected.variances<double>()));
   }
@@ -248,7 +252,7 @@ TEST(DataArrayRealignedEventsArithmeticTest, events_over_histogram) {
   EXPECT_TRUE(result.hasVariances());
   EXPECT_EQ(result.unit(), units::counts);
   const auto unaligned = result.unaligned();
-  EXPECT_EQ(unaligned.coords()[Dim::X], sparse.coords()[Dim::X]);
+  EXPECT_EQ(unaligned.coords()[Dim::X], realigned.unaligned().coords()[Dim::X]);
   const auto out_vals = unaligned.data().values<event_list<double>>();
   const auto out_vars = unaligned.data().variances<event_list<double>>();
 
@@ -259,15 +263,14 @@ TEST(DataArrayRealignedEventsArithmeticTest, events_over_histogram) {
                            Variances{0.3, 0.4, 0.4});
   EXPECT_TRUE(equals(out_vals[0], expected.values<double>()));
   EXPECT_TRUE(equals(out_vars[0], expected.variances<double>()));
-  expected =
-      makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1, 1, 1, 1},
-                           Variances{1, 1, 1, 1}) /
-      makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{2.0, 2.0, 3.0, 0.0},
-                           Variances{0.3, 0.3, 0.4, 0.0});
+  // out of range of edges -> dropped in realign step (independent of this op)
+  expected = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 1, 1},
+                                  Variances{1, 1, 1}) /
+             makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{2.0, 2.0, 3.0},
+                                  Variances{0.3, 0.3, 0.4});
   EXPECT_TRUE(equals(out_vals[1], expected.values<double>()));
   EXPECT_TRUE(equals(span<const double>(out_vars[1]).subspan(0, 3),
                      expected.slice({Dim::X, 0, 3}).variances<double>()));
-  EXPECT_TRUE(std::isnan(out_vars[1][3]));
 
   auto result_inplace = copy(realigned);
   result_inplace /= hist;

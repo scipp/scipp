@@ -110,13 +110,14 @@ TEST_F(RealignTest, basics) {
   EXPECT_EQ(realigned.unit(), base.unit());
   EXPECT_EQ(realigned.dtype(), base.dtype());
 
-  EXPECT_EQ(realigned.unaligned(), base);
+  // Last position is at Z bound and thus excluded by binning in [low, heigh)
+  EXPECT_EQ(realigned.unaligned(), base.slice({Dim::Position, 0, 3}));
 }
 
 TEST_F(RealignTest, realigned_drop_alignment) {
   auto a = make_realigned();
   a.drop_alignment();
-  EXPECT_EQ(a, make_array());
+  EXPECT_EQ(a, make_array().slice({Dim::Position, 0, 3}));
 }
 
 TEST_F(RealignTest, dataset_change_alignment) {
@@ -175,7 +176,7 @@ TEST_F(RealignTest, mask_mapping) {
   EXPECT_EQ(realigned.masks().size(), 1);
   EXPECT_TRUE(realigned.masks().contains("temp"));
 
-  EXPECT_EQ(realigned.unaligned(), base);
+  EXPECT_EQ(realigned.unaligned(), base.slice({Dim::Position, 0, 3}));
 }
 
 TEST_F(RealignTest, attr_mapping) {
@@ -194,7 +195,7 @@ TEST_F(RealignTest, attr_mapping) {
   EXPECT_TRUE(realigned.attrs().contains("0-d"));
   EXPECT_TRUE(realigned.attrs().contains("temp"));
 
-  EXPECT_EQ(realigned.unaligned(), base);
+  EXPECT_EQ(realigned.unaligned(), base.slice({Dim::Position, 0, 3}));
 }
 
 TEST_F(RealignTest, realigned_bounds) {
@@ -289,7 +290,8 @@ TEST_F(RealignTest, unaligned_of_slice_along_aligned_dim) {
 
   // Dim::Temperature is a dim of both the wrapper and the unaligned content.
   Slice s(Dim::Temperature, 0);
-  EXPECT_EQ(realigned.slice(s).unaligned(), unaligned.slice(s));
+  EXPECT_EQ(realigned.slice(s).unaligned(),
+            unaligned.slice({Dim::Position, 0, 3}).slice(s));
 }
 
 TEST_F(RealignTest, unaligned_of_slice_along_realigned_dim) {
@@ -300,7 +302,8 @@ TEST_F(RealignTest, unaligned_of_slice_along_realigned_dim) {
   // slicing the wrapper returns a view on the full unaligned content, *not*
   // filtering any "events".
   Slice s(Dim::X, 0);
-  EXPECT_EQ(realigned.slice(s).unaligned(), unaligned);
+  EXPECT_EQ(realigned.slice(s).unaligned(),
+            unaligned.slice({Dim::Position, 0, 3}));
 }
 
 TEST_F(RealignTest, unaligned_slice_contains_sliced_coords) {
@@ -321,7 +324,8 @@ TEST_F(RealignTest, slice_unaligned_view) {
   const auto a = make_array();
 
   Slice s(Dim::Temperature, 0);
-  EXPECT_EQ(realigned.unaligned().slice(s), a.slice(s));
+  EXPECT_EQ(realigned.unaligned().slice(s),
+            a.slice({Dim::Position, 0, 3}).slice(s));
 }
 
 TEST_F(RealignTest, histogram) {
@@ -359,7 +363,7 @@ protected:
       Values{Eigen::Vector3d{1, 1, 1}, Eigen::Vector3d{1, 1, 2},
              Eigen::Vector3d{1, 2, 3}, Eigen::Vector3d{1, 2, 4}});
   Variable tof_bins =
-      makeVariable<double>(Dims{Dim::Tof}, Shape{3}, Values{0, 2, 4});
+      makeVariable<double>(Dims{Dim::Tof}, Shape{3}, Values{0, 2, 5});
 
   DataArray make_array() {
     const auto tof = makeVariable<event_list<double>>(
@@ -390,8 +394,8 @@ protected:
     return DataArray(makeVariable<double>(Dims{Dim::Position, Dim::Tof},
                                           Shape{4, 2},
                                           units::Unit(units::counts),
-                                          Values{1, 0, 1, 1, 1, 2, 1, 2},
-                                          Variances{1, 0, 1, 1, 1, 2, 1, 2}),
+                                          Values{1, 0, 1, 1, 1, 2, 1, 3},
+                                          Variances{1, 0, 1, 1, 1, 2, 1, 3}),
                      {{Dim::Position, pos}, {Dim::Tof, tof_bins}});
   }
 };

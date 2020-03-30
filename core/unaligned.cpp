@@ -43,6 +43,18 @@ Dim unaligned_dim(const VariableConstView &unaligned) {
     throw except::UnalignedError("Coordinate used for alignment must be 1-D.");
   return unaligned.dims().inner();
 }
+
+auto get_bounds(std::vector<std::pair<Dim, Variable>> coords) {
+  std::vector<std::pair<Dim, Variable>> bounds;
+  for (const auto &[dim, coord] : coords) {
+    const scipp::index last = coord.dims()[dim] - 1;
+    Variable interval(coord.slice({dim, 0, 2}));
+    interval.slice({dim, 1}).assign(coord.slice({dim, last}));
+    bounds.emplace_back(dim, std::move(interval));
+  }
+  return bounds;
+}
+
 } // namespace
 
 DataArray realign(DataArray unaligned,
@@ -64,6 +76,8 @@ DataArray realign(DataArray unaligned,
   if (unalignedDims.size() > 1)
     throw except::UnalignedError(
         "realign with more than one unaligned dimension not supported yet.");
+
+  unaligned = filter_recurse(std::move(unaligned), get_bounds(coords));
 
   // TODO Some things here can be simplified and optimized by adding an
   // `extract` method to MutableView.
@@ -118,6 +132,17 @@ VariableConstView realigned_event_coord(const DataArrayConstView &realigned) {
     throw except::UnalignedError(
         "Multi-dimensional histogramming of event data not supported yet.");
   return realigned.coords()[realigned_dims.front()];
+}
+
+DataArray
+filter_recurse(DataArray &&unaligned,
+               const scipp::span<const std::pair<Dim, Variable>> bounds) {
+  if (bounds.empty())
+    return std::move(unaligned);
+  else
+    // Could in principle do better with in-place filter.
+    return filter_recurse(DataArrayConstView(unaligned), bounds,
+                          AttrPolicy::Keep);
 }
 
 /// Return new data array based on `unaligned` with any content outside `bounds`
