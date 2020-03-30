@@ -59,24 +59,23 @@ include(GenerateExportHeader)
 find_package(Boost 1.67 REQUIRED)
 find_package(TBB CONFIG)
 if(TBB_FOUND)
-	set(ENABLE_THREAD_LIMIT 
-	    OFF
-	    CACHE 
-	    BOOL 
-	    "Limit the number TBB threads. Exact number to be specified via THREAD_LIMIT"
-	) 
-  if (ENABLE_THREAD_LIMIT)
-	  include(ProcessorCount)
-	  ProcessorCount(N)
-	  set(
-	      THREAD_LIMIT 
-	      N 
-	      CACHE 
-	      STRING 
-	      "Maximum number of TBB threads if limit enabled via ENABLE_THREAD_LIMIT"
-          )
+  set(ENABLE_THREAD_LIMIT
+      OFF
+      CACHE
+        BOOL
+        "Limit the number TBB threads. Exact number to be specified via THREAD_LIMIT"
+  )
+  if(ENABLE_THREAD_LIMIT)
+    include(ProcessorCount)
+    processorcount(N)
+    set(THREAD_LIMIT
+        N
+        CACHE
+          STRING
+          "Maximum number of TBB threads if limit enabled via ENABLE_THREAD_LIMIT"
+    )
   else()
-          unset(THREAD_LIMIT)
+    unset(THREAD_LIMIT)
   endif()
   configure_file(
     core/include/scipp/core/parallel-tbb.h core/include/scipp/core/parallel.h
