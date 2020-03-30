@@ -157,7 +157,7 @@ bool is_realigned_events(const DataArrayConstView &realigned) {
          is_events(realigned.unaligned());
 }
 
-VariableConstView realigned_event_coord(const DataArrayConstView &realigned) {
+Dim realigned_event_dim(const DataArrayConstView &realigned) {
   std::vector<Dim> realigned_dims;
   for (const auto &[dim, coord] : realigned.unaligned().coords())
     if (is_events(coord) && realigned.coords().contains(dim))
@@ -165,7 +165,11 @@ VariableConstView realigned_event_coord(const DataArrayConstView &realigned) {
   if (realigned_dims.size() != 1)
     throw except::UnalignedError(
         "Multi-dimensional histogramming of event data not supported yet.");
-  return realigned.coords()[realigned_dims.front()];
+  return realigned_dims.front();
+}
+
+VariableConstView realigned_event_coord(const DataArrayConstView &realigned) {
+  return realigned.coords()[realigned_event_dim(realigned)];
 }
 
 DataArray
