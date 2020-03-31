@@ -5,25 +5,22 @@
 #ifndef SCIPP_CORE_EVENT_H
 #define SCIPP_CORE_EVENT_H
 
-#include "scipp/core/dtype.h"
-#include "scipp/core/variable.h"
+#include "scipp/core/dataset.h"
 
-namespace scipp::core {
+namespace scipp::core::event {
 
-/// Return true if a variable or data array contains events
-template <class T> bool is_events(const T &data) {
-  const auto type = data.dtype();
-  return type == dtype<sparse_container<double>> ||
-         type == dtype<sparse_container<float>> ||
-         type == dtype<sparse_container<int64_t>> ||
-         type == dtype<sparse_container<int32_t>>;
-}
-
-namespace event {
+SCIPP_CORE_EXPORT void append(const VariableView &a,
+                              const VariableConstView &b);
+SCIPP_CORE_EXPORT void append(const DataArrayView &a,
+                              const DataArrayConstView &b);
 SCIPP_CORE_EXPORT Variable concatenate(const VariableConstView &a,
                                        const VariableConstView &b);
-}
+SCIPP_CORE_EXPORT DataArray concatenate(const DataArrayConstView &a,
+                                        const DataArrayConstView &b);
+SCIPP_CORE_EXPORT Variable broadcast(const VariableConstView &dense,
+                                     const VariableConstView &shape);
+SCIPP_CORE_EXPORT Variable broadcast_weights(const DataArrayConstView &events);
 
-} // namespace scipp::core
+} // namespace scipp::core::event
 
 #endif // SCIPP_CORE_EVENT_H

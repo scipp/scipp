@@ -18,6 +18,8 @@ protected:
       makeVariable<double>(Dims{Dim::Y}, Shape{3}, Values{0, 2, 4});
   Variable zbins =
       makeVariable<double>(Dims{Dim::Z}, Shape{3}, Values{0, 2, 4});
+  Variable temp_mask = makeVariable<bool>(Dims{Dim::Temperature}, Shape{2},
+                                          Values{false, false});
 
   DataArray make_array() {
     const Dim dim = Dim::Position;
@@ -31,11 +33,16 @@ protected:
         makeVariable<double>(Dims{dim}, Shape{4}, Values{1, 1, 2, 2});
     const auto z =
         makeVariable<double>(Dims{dim}, Shape{4}, Values{1, 2, 3, 4});
+    const auto pos_mask = makeVariable<bool>(
+        Dims{dim}, Shape{4}, Values{false, false, false, false});
+    const auto attr = makeVariable<double>(Values{3.14});
     DataArray a(makeVariable<double>(Dims{dim}, Shape{4}, Values{1, 2, 3, 4}),
-                {{dim, pos}, {Dim::X, x}, {Dim::Y, y}, {Dim::Z, z}});
+                {{dim, pos}, {Dim::X, x}, {Dim::Y, y}, {Dim::Z, z}},
+                {{"pos", pos_mask}}, {{"attr", attr}});
 
     a = concatenate(a, a + a, Dim::Temperature);
     a.coords().set(Dim::Temperature, temp);
+    a.masks().set("temp", temp_mask);
     return a;
   }
 
@@ -52,13 +59,28 @@ protected:
         {{Dim::Temperature, temp},
          {Dim::Z, zbins},
          {Dim::Y, ybins},
-         {Dim::X, xbins}});
+         {Dim::X, xbins}},
+        {{"temp", temp_mask}});
   }
 };
 
 TEST_F(RealignTest, fail_no_unaligned) {
   auto base = make_array();
   EXPECT_THROW(unaligned::realign(base, {}), except::UnalignedError);
+}
+
+TEST_F(RealignTest, fail_bad_bin_edge_unit) {
+  auto base = make_array();
+  xbins.setUnit(units::kg);
+  EXPECT_THROW(unaligned::realign(base, {{Dim::X, xbins}}),
+               except::UnitMismatchError);
+}
+
+TEST_F(RealignTest, fail_missing_event_positions) {
+  auto base = make_array();
+  // No "row" information in unaligned data
+  EXPECT_THROW(unaligned::realign(base, {{Dim::Row, xbins}}),
+               except::NotFoundError);
 }
 
 TEST_F(RealignTest, multiple_unaligned_no_supported_yet) {
@@ -91,6 +113,40 @@ TEST_F(RealignTest, basics) {
   EXPECT_EQ(realigned.unaligned(), base);
 }
 
+TEST_F(RealignTest, realigned_drop_alignment) {
+  auto a = make_realigned();
+  a.drop_alignment();
+  EXPECT_EQ(a, make_array());
+}
+
+TEST_F(RealignTest, dataset_change_alignment) {
+  auto baseA = make_array();
+  auto baseB = concatenate(baseA, baseA, Dim::Position);
+  const auto referenceA = unaligned::realign(
+      baseA, {{Dim::Z, zbins}, {Dim::Y, ybins}, {Dim::X, xbins}});
+  const auto referenceB = unaligned::realign(
+      baseB, {{Dim::Z, zbins}, {Dim::Y, ybins}, {Dim::X, xbins}});
+  Dataset dataset;
+  // Different number of coords and different values
+  dataset.setData("a", unaligned::realign(baseA, {{Dim::X, xbins + 0.5}}));
+  dataset.setData("b", unaligned::realign(baseB, {{Dim::X, xbins + 0.5}}));
+
+  const auto realigned = unaligned::realign(
+      dataset, {{Dim::Z, zbins}, {Dim::Y, ybins}, {Dim::X, xbins}});
+
+  EXPECT_EQ(realigned["a"], referenceA);
+  EXPECT_EQ(realigned["b"], referenceB);
+}
+
+TEST_F(RealignTest, rename) {
+  auto a = make_realigned();
+  a.setName("newname");
+  EXPECT_EQ(a.name(), "newname");
+  EXPECT_EQ(a.unaligned().name(), "newname");
+  a.drop_alignment();
+  EXPECT_EQ(a.name(), "newname");
+}
+
 TEST_F(RealignTest, dimension_order) {
   auto base = make_array();
   DataArray transposed(Variable(base.data().transpose()), base.coords());
@@ -113,11 +169,6 @@ TEST_F(RealignTest, dimension_order) {
 
 TEST_F(RealignTest, mask_mapping) {
   auto base = make_array();
-  base.masks().set("pos",
-                   makeVariable<bool>(Dims{Dim::Position}, Shape{4},
-                                      Values{false, false, false, true}));
-  base.masks().set("temp", makeVariable<bool>(Dims{Dim::Temperature}, Shape{2},
-                                              Values{false, true}));
   auto realigned = unaligned::realign(
       base, {{Dim::Z, zbins}, {Dim::Y, ybins}, {Dim::X, xbins}});
 
@@ -296,4 +347,80 @@ TEST_F(RealignTest, histogram_slice) {
       EXPECT_EQ(histogram(slice), aligned.slice(s)) << to_string(s);
     }
   }
+}
+
+struct RealignEventsTest : public ::testing::Test,
+                           public ::testing::WithParamInterface<std::string> {
+protected:
+  bool scalar_weights() const { return GetParam() == "scalar_weights"; }
+
+  Variable pos = makeVariable<Eigen::Vector3d>(
+      Dims{Dim::Position}, Shape{4},
+      Values{Eigen::Vector3d{1, 1, 1}, Eigen::Vector3d{1, 1, 2},
+             Eigen::Vector3d{1, 2, 3}, Eigen::Vector3d{1, 2, 4}});
+  Variable tof_bins =
+      makeVariable<double>(Dims{Dim::Tof}, Shape{3}, Values{0, 2, 4});
+
+  DataArray make_array() {
+    const auto tof = makeVariable<event_list<double>>(
+        Dims{Dim::Position}, Shape{4},
+        Values{event_list<double>{1}, event_list<double>{1, 2},
+               event_list<double>{1, 2, 3}, event_list<double>{1, 2, 3, 4}});
+    return DataArray(
+        scalar_weights()
+            ? makeVariable<double>(Dims{Dim::Position}, Shape{4},
+                                   units::Unit(units::counts),
+                                   Values{1, 1, 1, 1}, Variances{1, 1, 1, 1})
+            : makeVariable<event_list<double>>(
+                  Dims{Dim::Position}, Shape{4}, units::Unit(units::counts),
+                  Values{event_list<double>{1}, event_list<double>{1, 1},
+                         event_list<double>{1, 1, 1},
+                         event_list<double>{1, 1, 1, 1}},
+                  Variances{event_list<double>{1}, event_list<double>{1, 1},
+                            event_list<double>{1, 1, 1},
+                            event_list<double>{1, 1, 1, 1}}),
+        {{Dim::Position, pos}, {Dim::Tof, tof}});
+  }
+
+  DataArray make_realigned() {
+    return unaligned::realign(make_array(), {{Dim::Tof, tof_bins}});
+  }
+
+  DataArray make_aligned() {
+    return DataArray(makeVariable<double>(Dims{Dim::Position, Dim::Tof},
+                                          Shape{4, 2},
+                                          units::Unit(units::counts),
+                                          Values{1, 0, 1, 1, 1, 2, 1, 2},
+                                          Variances{1, 0, 1, 1, 1, 2, 1, 2}),
+                     {{Dim::Position, pos}, {Dim::Tof, tof_bins}});
+  }
+};
+
+INSTANTIATE_TEST_SUITE_P(WeightType, RealignEventsTest,
+                         testing::Values("scalar_weights",
+                                         "event_list_weights"));
+
+TEST_P(RealignEventsTest, basics) {
+  const auto reference = make_aligned();
+  auto base = make_array();
+  auto realigned = unaligned::realign(base, {{Dim::Tof, tof_bins}});
+
+  EXPECT_FALSE(realigned.hasData());
+  EXPECT_EQ(realigned.dims(), reference.dims());
+  EXPECT_EQ(realigned.coords(), reference.coords());
+  EXPECT_EQ(realigned.unit(), base.unit());
+  EXPECT_EQ(realigned.dtype(), reference.dtype());
+
+  EXPECT_EQ(realigned.unaligned(), base);
+}
+
+TEST_P(RealignEventsTest, histogram) {
+  EXPECT_EQ(histogram(make_realigned()), make_aligned());
+}
+
+TEST_P(RealignEventsTest, dtype) {
+  auto realigned = make_realigned();
+  EXPECT_EQ(realigned.unaligned().dtype(),
+            scalar_weights() ? dtype<double> : dtype<event_list<double>>);
+  EXPECT_EQ(realigned.dtype(), dtype<double>);
 }

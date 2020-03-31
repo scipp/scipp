@@ -2,6 +2,8 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 #include <algorithm>
 
+#include "scipp/core/unaligned.h"
+
 #include "dataset_test_common.h"
 
 std::vector<bool> make_bools(const scipp::index size,
@@ -164,3 +166,28 @@ Dataset make_1d_masked() {
                                 Values(make_bools(10, {false, true}))));
   return ds;
 }
+
+namespace scipp::testdata {
+
+Dataset make_dataset_x() {
+  Dataset d;
+  d.setData("a", makeVariable<double>(Dims{Dim::X}, units::Unit(units::kg),
+                                      Shape{3}, Values{4, 5, 6}));
+  d.setData("b", makeVariable<int32_t>(Dims{Dim::X}, units::Unit(units::s),
+                                       Shape{3}, Values{7, 8, 9}));
+  d.setCoord(Dim("scalar"), 1.2 * units::Unit(units::K));
+  d.setCoord(Dim::X, makeVariable<double>(Dims{Dim::X}, units::Unit(units::m),
+                                          Shape{3}, Values{1, 2, 4}));
+  d.setCoord(Dim::Y, makeVariable<double>(Dims{Dim::X}, units::Unit(units::m),
+                                          Shape{3}, Values{1, 2, 3}));
+  return d;
+}
+
+Dataset make_dataset_realigned_x_to_y() {
+  auto d = make_dataset_x();
+  const auto edges = makeVariable<double>(Dims{Dim::Y}, units::Unit(units::m),
+                                          Shape{2}, Values{0, 4});
+  return unaligned::realign(d, {{Dim::Y, edges}});
+}
+
+} // namespace scipp::testdata

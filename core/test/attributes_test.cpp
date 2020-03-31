@@ -4,6 +4,8 @@
 
 #include "scipp/core/dataset.h"
 
+#include "dataset_test_common.h"
+
 using namespace scipp;
 using namespace scipp::core;
 
@@ -165,4 +167,68 @@ TEST_F(AttributesTest, reduction_ops) {
     ASSERT_FALSE(result["a"].attrs().contains("a_attr_x"));
     EXPECT_EQ(result["a"].attrs()["a_attr"], scalar);
   }
+}
+
+TEST_F(AttributesTest, scalar_mapped_into_unaligned) {
+  auto d = testdata::make_dataset_realigned_x_to_y();
+  EXPECT_TRUE(d["a"].attrs().empty());
+  EXPECT_TRUE(d["a"].unaligned().attrs().empty());
+  d["a"].attrs().set("scalar", scalar);
+  EXPECT_TRUE(d["a"].attrs().contains("scalar"));
+  EXPECT_TRUE(d["a"].unaligned().attrs().contains("scalar"));
+  EXPECT_THROW(d["a"].unaligned().attrs().erase("scalar"),
+               except::NotFoundError);
+  d["a"].attrs().erase("scalar");
+  EXPECT_TRUE(d["a"].attrs().empty());
+  EXPECT_TRUE(d["a"].unaligned().attrs().empty());
+}
+
+TEST_F(AttributesTest, scalar_not_mapped_into_aligned) {
+  auto d = testdata::make_dataset_realigned_x_to_y();
+  EXPECT_TRUE(d["a"].attrs().empty());
+  EXPECT_TRUE(d["a"].unaligned().attrs().empty());
+  d["a"].unaligned().attrs().set("scalar", scalar);
+  // Note that based on dimensionality we *could* insert this attribute directly
+  // in item "a", but it would be confusing if it suddenly appeared on a higher
+  // level.
+  EXPECT_TRUE(d["a"].attrs().empty());
+  EXPECT_TRUE(d["a"].unaligned().attrs().contains("scalar"));
+  d["a"].unaligned().attrs().erase("scalar");
+  EXPECT_TRUE(d["a"].attrs().empty());
+  EXPECT_TRUE(d["a"].unaligned().attrs().empty());
+}
+
+TEST_F(AttributesTest, aligned_not_mapped_into_unaligned) {
+  auto d = testdata::make_dataset_realigned_x_to_y();
+  EXPECT_TRUE(d["a"].attrs().empty());
+  EXPECT_TRUE(d["a"].unaligned().attrs().empty());
+  d["a"].attrs().set("y", makeVariable<double>(Dims{Dim::Y}, Shape{1}));
+  EXPECT_TRUE(d["a"].attrs().contains("y"));
+  EXPECT_TRUE(d["a"].unaligned().attrs().empty());
+  EXPECT_THROW(d["a"].unaligned().attrs().erase("y"), except::NotFoundError);
+  d["a"].attrs().erase("y");
+  EXPECT_TRUE(d["a"].attrs().empty());
+  EXPECT_TRUE(d["a"].unaligned().attrs().empty());
+}
+
+TEST_F(AttributesTest, unaligned_not_mapped_into_aligned) {
+  auto d = testdata::make_dataset_realigned_x_to_y();
+  EXPECT_TRUE(d["a"].attrs().empty());
+  EXPECT_TRUE(d["a"].unaligned().attrs().empty());
+  d["a"].unaligned().attrs().set("x",
+                                 makeVariable<double>(Dims{Dim::X}, Shape{3}));
+  EXPECT_TRUE(d["a"].unaligned().attrs().contains("x"));
+  EXPECT_TRUE(d["a"].attrs().empty());
+  EXPECT_THROW(d["a"].attrs().erase("x"), except::NotFoundError);
+  d["a"].unaligned().attrs().erase("x");
+  EXPECT_TRUE(d["a"].attrs().empty());
+  EXPECT_TRUE(d["a"].unaligned().attrs().empty());
+}
+
+TEST_F(AttributesTest, unaligned_set_via_aligned_fails) {
+  auto d = testdata::make_dataset_realigned_x_to_y();
+  EXPECT_ANY_THROW(
+      d["a"].attrs().set("x", makeVariable<double>(Dims{Dim::X}, Shape{3})));
+  EXPECT_TRUE(d["a"].unaligned().attrs().empty());
+  EXPECT_TRUE(d["a"].attrs().empty());
 }

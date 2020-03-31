@@ -14,7 +14,6 @@
 #include "scipp/common/except.h"
 #include "scipp/common/index.h"
 #include "scipp/core/dtype.h"
-#include "scipp/core/event.h"
 #include "scipp/core/string.h"
 #include "scipp/units/except.h"
 #include "scipp/units/unit.h"
@@ -111,6 +110,10 @@ struct SCIPP_CORE_EXPORT NotFoundError : public std::runtime_error {
 };
 
 struct SCIPP_CORE_EXPORT UnalignedError : public std::runtime_error {
+  using std::runtime_error::runtime_error;
+};
+
+struct SCIPP_CORE_EXPORT RealignedDataError : public std::runtime_error {
   using std::runtime_error::runtime_error;
 };
 

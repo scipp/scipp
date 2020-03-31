@@ -1062,6 +1062,9 @@ SCIPP_CORE_EXPORT void reserve(const VariableView &sparse,
                                const VariableConstView &capacity);
 } // namespace sparse
 
+bool is_events(const VariableConstView &var);
+bool is_events(const DataArrayConstView &array);
+
 } // namespace scipp::core
 
 #endif // SCIPP_CORE_VARIABLE_H

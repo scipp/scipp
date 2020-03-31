@@ -6,6 +6,7 @@
 
 #include "scipp/core/dataset.h"
 #include "scipp/core/histogram.h"
+#include "scipp/core/unaligned.h"
 
 using namespace scipp;
 using namespace scipp::core;
@@ -189,19 +190,17 @@ TEST(HistogramTest, weight_lists) {
   EXPECT_EQ(core::histogram(events, edges), expected);
 }
 
-// Disabled because this would require events as unaligned dataset entries.
-TEST(HistogramTest, DISABLED_dataset) {
+TEST(HistogramTest, dataset_realigned) {
   Dataset events;
-  events.setData("a", make_1d_events_default_weights());
-  events.setData("b", events["a"]);
-
-  // TODO This needs to be refactored, need to change the *unaligned* component
-  // of the coord.
-  events["b"].coords()[Dim::Y] += makeVariable<double>(Values{1.0});
-  std::vector<double> a{1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 2, 3, 0, 3, 0};
-  std::vector<double> b{0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 2, 2, 3, 0, 3};
   const auto coord =
       makeVariable<double>(Dims{Dim::Y}, Shape{6}, Values{1, 2, 3, 4, 5, 6});
+  events.setData("a", unaligned::realign(make_1d_events_default_weights(),
+                                         {{Dim::Y, coord}}));
+  events.setData("b", events["a"]);
+
+  events["b"].unaligned().coords()[Dim::Y] += makeVariable<double>(Values{1.0});
+  std::vector<double> a{1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 2, 3, 0, 3, 0};
+  std::vector<double> b{0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 2, 2, 3, 0, 3};
   Dataset expected;
   expected.setCoord(Dim::Y, coord);
   expected.setData("a", makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{3, 5},
@@ -213,11 +212,11 @@ TEST(HistogramTest, DISABLED_dataset) {
                                              Values(b.begin(), b.end()),
                                              Variances(b.begin(), b.end())));
 
-  EXPECT_EQ(core::histogram(events, coord), expected);
+  EXPECT_EQ(core::histogram(events), expected);
 }
 
-// Disabled because this would require events as unaligned dataset entries.
-TEST(HistogramTest, DISABLED_dataset_aligned_axis) {
+TEST(HistogramTest, dataset_realigned2) {
+  // Similar to `dataset_realigned`, but testing vs direct histogram of items
   Dataset events;
   auto a = make_1d_events_default_weights();
   auto b = make_1d_events_default_weights();
@@ -229,8 +228,8 @@ TEST(HistogramTest, DISABLED_dataset_aligned_axis) {
   expected.setData("a", histogram(a, bins));
   expected.setData("b", histogram(b, bins));
 
-  // events.setUnaligned("a", a);
-  // events.setUnaligned("b", b);
+  events.setData("a", unaligned::realign(a, {{Dim::Y, bins}}));
+  events.setData("b", unaligned::realign(b, {{Dim::Y, bins}}));
 
-  EXPECT_EQ(core::histogram(events, Dim::Y), expected);
+  EXPECT_EQ(core::histogram(events), expected);
 }

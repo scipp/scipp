@@ -45,10 +45,11 @@ static T convert_with_factor(T &&d, const Dim from, const Dim to,
     }
   }
 
-  // 2. Transform unaligned coordinates
-  // for (const auto & : iter(d)) {
-  // No unaligned support in Dataset yet.
-  //}
+  // 2. Transform realigned items
+  for (const auto &item : iter(d))
+    if (item.unaligned() && is_events(item.unaligned()))
+      item.unaligned().coords()[from] *= factor;
+
   d.rename(from, to);
   return std::move(d);
 }
@@ -110,10 +111,14 @@ template <class T> T tofToEnergy(T &&d) {
     }
   }
 
-  // 3. Transform unaligned coordinates
-  // for (const auto & : iter(d)) {
-  // No unaligned support in Dataset yet.
-  //}
+  // 3. Transform realigned items
+  for (const auto &item : iter(d))
+    if (item.unaligned() && is_events(item.unaligned()))
+      transform_in_place<pair_self_t<double, float>>(
+          item.unaligned().coords()[Dim::Tof], conversionFactor,
+          [](auto &coord_, const auto &factor) {
+            coord_ = factor / (coord_ * coord_);
+          });
 
   d.rename(Dim::Tof, Dim::Energy);
   return std::move(d);
@@ -138,10 +143,14 @@ template <class T> T energyToTof(T &&d) {
     }
   }
 
-  // 3. Transform unaligned coordinates
-  // for (const auto & : iter(d)) {
-  // No unaligned support in Dataset yet.
-  //}
+  // 3. Transform realigned items
+  for (const auto &item : iter(d))
+    if (item.unaligned() && is_events(item.unaligned()))
+      transform_in_place<pair_self_t<double, float>>(
+          item.unaligned().coords()[Dim::Energy], conversionFactor,
+          [](auto &coord_, const auto &factor) {
+            coord_ = sqrt(factor / coord_);
+          });
 
   d.rename(Dim::Energy, Dim::Tof);
   return std::move(d);

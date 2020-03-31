@@ -3,6 +3,7 @@
 #include <gtest/gtest.h>
 
 #include "scipp/core/groupby.h"
+#include "scipp/core/unaligned.h"
 
 #include "test_macros.h"
 
@@ -422,6 +423,15 @@ struct GroupbyFlattenDefaultWeight : public ::testing::Test {
 
 TEST_F(GroupbyFlattenDefaultWeight, flatten_coord_only) {
   EXPECT_EQ(groupby(a, Dim("labels")).flatten(Dim::Y), expected);
+}
+
+TEST_F(GroupbyFlattenDefaultWeight, sum_realigned_coord_only) {
+  const auto edges =
+      makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{0, 10});
+  const auto realigned = unaligned::realign(a, {{Dim::X, edges}});
+
+  const auto summed = groupby(realigned, Dim("labels")).sum(Dim::Y);
+  EXPECT_EQ(summed.unaligned(), expected);
 }
 
 TEST_F(GroupbyFlattenDefaultWeight, flatten_dataset_coord_only) {

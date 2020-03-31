@@ -52,12 +52,39 @@ class TestMantidConversion(unittest.TestCase):
         binned_mantid = mantidcompat.convert_Workspace2D_to_data_array(ws)
 
         target_tof = binned_mantid.coords['tof']
-        d = mantidcompat.convert_EventWorkspace_to_data_array(eventWS, False)
-        binned = sc.histogram(d, target_tof)
+        d = mantidcompat.convert_EventWorkspace_to_data_array(
+            eventWS, load_pulse_times=False)
+        d.realign({'tof': target_tof})
+        binned = sc.histogram(d)
 
         delta = sc.sum(binned_mantid - binned, 'spectrum')
         delta = sc.sum(delta, 'tof')
         self.assertLess(np.abs(delta.value), 1e-5)
+
+    def test_EventWorkspace_realign_events(self):
+        import mantid.simpleapi as mantid
+        eventWS = mantid.CloneWorkspace(self.base_event_ws)
+
+        realigned = mantidcompat.convert_EventWorkspace_to_data_array(
+            eventWS, realign_events=True, load_pulse_times=False)
+
+        d = mantidcompat.convert_EventWorkspace_to_data_array(
+            eventWS, realign_events=False, load_pulse_times=False)
+        d.realign({'tof': realigned.coords['tof']})
+
+        # Removing run and sample due to missing comparison operators
+        del d.attrs['run']
+        del d.attrs['sample']
+        del realigned.attrs['run']
+        del realigned.attrs['sample']
+        assert realigned == d
+
+    @pytest.mark.skip(reason="Missing comparison for Mantid Run and Sample.")
+    def test_comparison(self):
+        a = mantidcompat.convert_EventWorkspace_to_data_array(
+            self.base_event_ws, load_pulse_times=False)
+        b = a.copy()
+        assert a == b
 
     def test_EventWorkspace_no_y_unit(self):
         import mantid.simpleapi as mantid
@@ -65,11 +92,11 @@ class TestMantidConversion(unittest.TestCase):
                                                      NumBanks=1,
                                                      NumEvents=1)
         d = mantidcompat.convert_EventWorkspace_to_data_array(
-            tiny_event_ws, False)
+            tiny_event_ws, load_pulse_times=False)
         self.assertEqual(d.data.unit, sc.units.counts)
         tiny_event_ws.setYUnit('')
         d = mantidcompat.convert_EventWorkspace_to_data_array(
-            tiny_event_ws, False)
+            tiny_event_ws, load_pulse_times=False)
         self.assertEqual(d.data.unit, sc.units.dimensionless)
 
     def test_from_mantid_LoadEmptyInstrument(self):
@@ -99,8 +126,10 @@ class TestMantidConversion(unittest.TestCase):
                                  EMode="Elastic")
         converted_mantid = mantidcompat.convert_Workspace2D_to_data_array(ws)
 
-        da = mantidcompat.convert_EventWorkspace_to_data_array(eventWS, False)
-        da = sc.histogram(da, target_tof)
+        da = mantidcompat.convert_EventWorkspace_to_data_array(
+            eventWS, load_pulse_times=False)
+        da.realign({'tof': target_tof})
+        da = sc.histogram(da)
         d = sc.Dataset(da)
         converted = sc.neutron.convert(d, 'tof', 'wavelength')
 
