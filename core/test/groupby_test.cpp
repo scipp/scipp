@@ -3,6 +3,7 @@
 #include <gtest/gtest.h>
 
 #include "scipp/core/groupby.h"
+#include "scipp/core/unaligned.h"
 
 #include "test_macros.h"
 
@@ -51,6 +52,23 @@ TEST_F(GroupbyTest, fail_key_with_variances) {
                                Values{1, 2, 3}, Variances{4, 5, 6}));
   EXPECT_THROW(groupby(d, Dim("variances")), except::VariancesError);
   EXPECT_THROW(groupby(d["a"], Dim("variances")), except::VariancesError);
+}
+
+TEST_F(GroupbyTest, copy) {
+  auto one_group =
+      groupby(d, Dim("labels1"),
+              makeVariable<double>(Dims{Dim("labels1")}, Shape{2},
+                                   units::Unit(units::m), Values{0, 4}));
+  EXPECT_EQ(one_group.size(), 1);
+  EXPECT_EQ(one_group.copy(0), d);
+
+  auto two_groups =
+      groupby(d, Dim("labels1"),
+              makeVariable<double>(Dims{Dim("labels1")}, Shape{3},
+                                   units::Unit(units::m), Values{0, 3, 4}));
+  EXPECT_EQ(two_groups.size(), 2);
+  EXPECT_EQ(two_groups.copy(0), d.slice({Dim::X, 0, 2}));
+  EXPECT_EQ(two_groups.copy(1), d.slice({Dim::X, 2, 3}));
 }
 
 TEST_F(GroupbyTest, dataset_1d_and_2d) {
@@ -389,8 +407,8 @@ struct GroupbyFlattenDefaultWeight : public ::testing::Test {
 
   const DataArray expected{
       makeVariable<double>(Dims{Dim("labels")}, Shape{2},
-                           units::Unit(units::counts), Values{2, 1},
-                           Variances{2, 1}),
+                           units::Unit(units::counts), Values{1, 1},
+                           Variances{1, 1}),
       {{Dim::X, make_sparse_out()},
        {Dim("0-d"), makeVariable<double>(Values{1.2})},
        {Dim("labels"),
@@ -407,10 +425,26 @@ TEST_F(GroupbyFlattenDefaultWeight, flatten_coord_only) {
   EXPECT_EQ(groupby(a, Dim("labels")).flatten(Dim::Y), expected);
 }
 
+TEST_F(GroupbyFlattenDefaultWeight, sum_realigned_coord_only) {
+  const auto edges =
+      makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{0, 10});
+  const auto realigned = unaligned::realign(a, {{Dim::X, edges}});
+
+  const auto summed = groupby(realigned, Dim("labels")).sum(Dim::Y);
+  EXPECT_EQ(summed.unaligned(), expected);
+}
+
 TEST_F(GroupbyFlattenDefaultWeight, flatten_dataset_coord_only) {
   const Dataset d{{{"a", a}, {"b", a}}};
   const Dataset expected_d{{{"a", expected}, {"b", expected}}};
   EXPECT_EQ(groupby(d, Dim("labels")).flatten(Dim::Y), expected_d);
+}
+
+TEST_F(GroupbyFlattenDefaultWeight, flatten_non_constant_scalar_weight_fail) {
+  Dataset d{{{"a", a}, {"b", a}}};
+  d["a"].values<double>()[0] += 0.1;
+  EXPECT_THROW(groupby(d, Dim("labels")).flatten(Dim::Y),
+               except::EventDataError);
 }
 
 TEST(GroupbyFlattenTest, flatten_coord_and_labels) {
@@ -425,7 +459,7 @@ TEST(GroupbyFlattenTest, flatten_coord_and_labels) {
 
   DataArray expected{makeVariable<double>(Dims{Dim("labels")}, Shape{2},
                                           units::Unit(units::counts),
-                                          Values{2, 1}, Variances{2, 1}),
+                                          Values{1, 1}, Variances{1, 1}),
                      {{Dim::X, make_sparse_out()},
                       {Dim("labels"), makeVariable<double>(
                                           Dims{Dim("labels")}, Shape{2},

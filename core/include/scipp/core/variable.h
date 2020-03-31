@@ -232,7 +232,8 @@ public:
       auto &otherConcept = *other;
       if (!concept.isView() && !otherConcept.isView() &&
           concept.dtype() == otherConcept.dtype() &&
-          concept.dims() == otherConcept.dims()) {
+          concept.dims() == otherConcept.dims() &&
+          concept.hasVariances() == otherConcept.hasVariances()) {
         concept.copy(otherConcept, Dim::Invalid, 0, 0, 1);
         return *this;
       }
@@ -1047,12 +1048,24 @@ nan_to_num(const VariableConstView &var, const VariableConstView &replacement);
     const VariableConstView &var, const VariableConstView &replacement);
 [[nodiscard]] SCIPP_CORE_EXPORT Variable neg_inf_to_num(
     const VariableConstView &var, const VariableConstView &replacement);
+namespace geometry {
+[[nodiscard]] SCIPP_CORE_EXPORT Variable position(const VariableConstView &x,
+                                                  const VariableConstView &y,
+                                                  const VariableConstView &z);
+[[nodiscard]] SCIPP_CORE_EXPORT Variable x(const VariableConstView &pos);
+[[nodiscard]] SCIPP_CORE_EXPORT Variable y(const VariableConstView &pos);
+[[nodiscard]] SCIPP_CORE_EXPORT Variable z(const VariableConstView &pos);
+
+} // namespace geometry
 
 namespace sparse {
 SCIPP_CORE_EXPORT Variable counts(const VariableConstView &var);
 SCIPP_CORE_EXPORT void reserve(const VariableView &sparse,
                                const VariableConstView &capacity);
 } // namespace sparse
+
+bool is_events(const VariableConstView &var);
+bool is_events(const DataArrayConstView &array);
 
 } // namespace scipp::core
 

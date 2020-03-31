@@ -43,6 +43,8 @@ public:
   const std::vector<GroupByGrouping::group> &groups() const noexcept {
     return m_grouping.groups();
   }
+  T copy(const scipp::index group,
+         const AttrPolicy attrPolicy = AttrPolicy::Keep) const;
 
   T flatten(const Dim reductionDim) const;
   T mean(const Dim reductionDim) const;

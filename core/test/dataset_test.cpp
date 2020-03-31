@@ -8,6 +8,7 @@
 
 #include "scipp/core/dataset.h"
 #include "scipp/core/dimensions.h"
+#include "scipp/core/unaligned.h"
 
 #include "dataset_test_common.h"
 
@@ -36,16 +37,30 @@ TEST(DatasetTest, clear) {
   ASSERT_FALSE(dataset.masks().empty());
 }
 
-TEST(DatasetTest, erase_single_non_existant) {
+TEST(DatasetTest, erase_non_existant) {
   Dataset d;
-  ASSERT_THROW(d.erase("not an item"), except::DatasetError);
+  ASSERT_THROW(d.erase("not an item"), except::NotFoundError);
+  ASSERT_THROW(d.extract("not an item"), except::NotFoundError);
 }
 
-TEST(DatasetTest, erase_single) {
+TEST(DatasetTest, erase) {
   DatasetFactory3D factory;
   auto dataset = factory.make();
   ASSERT_NO_THROW(dataset.erase("data_xyz"));
   ASSERT_FALSE(dataset.contains("data_xyz"));
+}
+
+TEST(DatasetTest, extract) {
+  DatasetFactory3D factory;
+  auto dataset = factory.make();
+  Dataset reference(dataset);
+
+  auto array = dataset.extract("data_xyz");
+
+  ASSERT_FALSE(dataset.contains("data_xyz"));
+  EXPECT_EQ(array, reference["data_xyz"]);
+  reference.erase("data_xyz");
+  EXPECT_EQ(dataset, reference);
 }
 
 TEST(DatasetTest, erase_extents_rebuild) {
@@ -55,6 +70,20 @@ TEST(DatasetTest, erase_extents_rebuild) {
   ASSERT_TRUE(d.contains("a"));
 
   ASSERT_NO_THROW(d.erase("a"));
+  ASSERT_FALSE(d.contains("a"));
+
+  ASSERT_NO_THROW(
+      d.setData("a", makeVariable<double>(Dims{Dim::X}, Shape{15})));
+  ASSERT_TRUE(d.contains("a"));
+}
+
+TEST(DatasetTest, extract_extents_rebuild) {
+  Dataset d;
+
+  d.setData("a", makeVariable<double>(Dims{Dim::X}, Shape{10}));
+  ASSERT_TRUE(d.contains("a"));
+
+  ASSERT_NO_THROW(d.extract("a"));
   ASSERT_FALSE(d.contains("a"));
 
   ASSERT_NO_THROW(
@@ -155,6 +184,74 @@ TEST(DatasetTest, setData_updates_dimensions) {
   ASSERT_TRUE(dims.find(Dim::X) != dims.end());
   // Dim::Y should no longer appear in dimensions after item "x" was replaced.
   ASSERT_TRUE(dims.find(Dim::Y) == dims.end());
+}
+
+TEST(DatasetTest, setData_clears_attributes) {
+  const auto var = makeVariable<double>(Values{1});
+  Dataset d;
+  d.setData("x", var);
+  d["x"].attrs().set("attr", var);
+
+  EXPECT_TRUE(d["x"].attrs().contains("attr"));
+  d.setData("x", var);
+  EXPECT_FALSE(d["x"].attrs().contains("attr"));
+}
+
+TEST(DatasetTest, setData_keep_attributes) {
+  const auto var = makeVariable<double>(Values{1});
+  Dataset d;
+  d.setData("x", var);
+  d["x"].attrs().set("attr", var);
+
+  EXPECT_TRUE(d["x"].attrs().contains("attr"));
+  d.setData("x", var, AttrPolicy::Keep);
+  EXPECT_TRUE(d["x"].attrs().contains("attr"));
+}
+
+TEST(DatasetTest, DataArrayView_setData) {
+  const auto var = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1, 2});
+  Dataset d;
+  d.setData("a", var);
+  d.setData("b", var);
+
+  EXPECT_THROW(d["a"].setData(makeVariable<double>(Dims{Dim::X}, Shape{4})),
+               except::DimensionError);
+  EXPECT_EQ(d["a"].data(), var);
+  EXPECT_NO_THROW(d["a"].setData(var + var));
+  EXPECT_EQ(d["a"].data(), var + var);
+}
+
+struct SetDataTest : public ::testing::Test {
+protected:
+  Variable var = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1, 2});
+  Variable y = makeVariable<double>(Dims{Dim::Y}, Shape{2}, Values{1, 2});
+  DataArray data{var, {{Dim::Y, var}}};
+  DataArray realigned = unaligned::realign(data, {{Dim::Y, y}});
+};
+
+TEST_F(SetDataTest, DataArray_unaligned) {
+  EXPECT_THROW(realigned.unaligned().setData(
+                   makeVariable<double>(Dims{Dim::X}, Shape{4})),
+               except::DimensionError);
+  EXPECT_EQ(realigned.unaligned().data(), var);
+  EXPECT_NO_THROW(realigned.unaligned().setData(var + var));
+  EXPECT_EQ(realigned.unaligned().data(), var + var);
+}
+
+TEST_F(SetDataTest, DataArray_realigned) {
+  // Set dense data on realigned, dropping unaligned content.
+  const Variable dense_data(y.slice({Dim::Y, 0, 1}));
+  EXPECT_NO_THROW(realigned.setData(dense_data));
+  EXPECT_TRUE(realigned.hasData());
+  EXPECT_FALSE(realigned.unaligned());
+}
+
+TEST_F(SetDataTest, DataArrayView_realigned) {
+  // Set dense data on realigned via view, dropping unaligned content.
+  const Variable dense_data(y.slice({Dim::Y, 0, 1}));
+  EXPECT_NO_THROW(DataArrayView(realigned).setData(dense_data));
+  EXPECT_TRUE(realigned.hasData());
+  EXPECT_FALSE(realigned.unaligned());
 }
 
 TEST(DatasetTest, setCoord_with_name_matching_data_name) {
@@ -390,4 +487,70 @@ TEST_F(DatasetRenameTest, rename) {
   DatasetFactory3D factory(4, 5, 6, Dim::Row);
   factory.seed(0);
   EXPECT_EQ(d, factory.make());
+}
+
+TEST(DatasetCoordsRealignedTest, set_erase) {
+  auto d = testdata::make_dataset_realigned_x_to_y();
+
+  // Add coord to unaligned
+  EXPECT_NO_THROW(d["a"].unaligned().coords().set(
+      Dim::Z, d["a"].unaligned().coords()[Dim::Y]));
+  EXPECT_FALSE(d["a"].coords().contains(Dim::Z));
+
+  // Scalar could be added to realigned -> fail
+  EXPECT_THROW(d["a"].unaligned().coords().set(Dim("scalar"),
+                                               1.3 * units::Unit(units::K)),
+               except::RealignedDataError);
+
+  // Depending only on dims of realigned -> fail
+  EXPECT_THROW(d["a"].unaligned().coords().set(Dim::Y, d.coords()[Dim::Y]),
+               except::RealignedDataError);
+
+  // Depending on dim of unaligned -> works
+  EXPECT_NO_THROW(d["a"].unaligned().coords().set(
+      Dim::Y, d["a"].unaligned().coords()[Dim::Y] * 2.0));
+
+  EXPECT_NO_THROW(d["a"].unaligned().coords().erase(Dim::Y));
+  EXPECT_TRUE(d["a"].coords().contains(Dim::Y)); // bin edges still present
+  EXPECT_FALSE(d["a"].unaligned().coords().contains(Dim::Y));
+
+  // Potentially surprising but consistent behavior: "scalar" mapped from
+  // realigned but cannot erase via unaligned.
+  EXPECT_TRUE(d["a"].unaligned().coords().contains(Dim("scalar")));
+  EXPECT_THROW(d["a"].unaligned().coords().erase(Dim("scalar")),
+               except::NotFoundError);
+}
+
+TEST(DatasetMasksRealignedTest, set_erase) {
+  auto d = testdata::make_dataset_realigned_x_to_y();
+
+  // Add mask to unaligned
+  EXPECT_NO_THROW(
+      d["a"].unaligned().masks().set("x", d["a"].unaligned().coords()[Dim::Y]));
+  EXPECT_FALSE(d["a"].masks().contains("x"));
+
+  // Scalar could be added to realigned -> fail
+  EXPECT_THROW(
+      d["a"].unaligned().masks().set("scalar", 1.3 * units::Unit(units::K)),
+      except::RealignedDataError);
+
+  // Depending only on dims of realigned -> fail
+  EXPECT_THROW(d["a"].unaligned().masks().set("y", d.coords()[Dim::Y]),
+               except::RealignedDataError);
+
+  // Depending on dim of unaligned -> works
+  EXPECT_NO_THROW(d["a"].unaligned().masks().set(
+      "mask", d["a"].unaligned().coords()[Dim::Y] * 2.0));
+  EXPECT_NO_THROW(d.masks().set("mask", d["a"].coords()[Dim::Y] * 2.0));
+
+  EXPECT_NO_THROW(d["a"].unaligned().masks().erase("mask"));
+  EXPECT_TRUE(d["a"].masks().contains("mask")); // mask of dataset still present
+  EXPECT_FALSE(d["a"].unaligned().masks().contains("mask"));
+
+  // Potentially surprising but consistent behavior: "scalar" mapped from
+  // realigned but cannot erase via unaligned.
+  d.masks().set("scalar", 1.3 * units::Unit(units::K));
+  EXPECT_TRUE(d["a"].unaligned().masks().contains("scalar"));
+  EXPECT_THROW(d["a"].unaligned().masks().erase("scalar"),
+               except::NotFoundError);
 }

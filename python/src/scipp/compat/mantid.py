@@ -168,7 +168,7 @@ def md_unit(frame):
         return sc.units.dimensionless
 
 
-def validate_and_get_unit(unit):
+def validate_and_get_unit(unit, allow_empty=False):
     known_units = {
         "DeltaE": ['Delta-E', sc.units.meV],
         "TOF": ['tof', sc.units.us],
@@ -181,14 +181,18 @@ def validate_and_get_unit(unit):
             sc.units.dimensionless / (sc.units.angstrom * sc.units.angstrom)
         ],
         "Label": ['spectrum', sc.units.dimensionless],
-        "Empty": ['empty', sc.units.dimensionless]
+        "Empty": ['empty', sc.units.dimensionless],
+        "Counts": ['counts', sc.units.counts]
     }
 
     if unit not in known_units.keys():
-        raise RuntimeError("Axis unit not currently supported."
-                           "Possible values are: {}, "
-                           "got '{}'. ".format([k for k in known_units.keys()],
-                                               unit))
+        if allow_empty:
+            return ['unknown', sc.units.dimensionless]
+        else:
+            raise RuntimeError("Unit not currently supported."
+                               "Possible values are: {}, "
+                               "got '{}'. ".format(
+                                   [k for k in known_units.keys()], unit))
     else:
         return known_units[unit]
 
@@ -259,13 +263,25 @@ def set_bin_masks(bin_masks, dim, index, masked_bins):
 
 
 def _convert_MatrixWorkspace_info(ws):
+    common_bins = ws.isCommonBins()
+    dim, unit = validate_and_get_unit(ws.getAxis(0).getUnit().unitID())
     source_pos, sample_pos = make_component_info(ws)
     det_info = make_detector_info(ws)
     pos, rot = init_pos_and_rot(ws)
     spec_dim, spec_coord = init_spec_axis(ws)
 
+    if common_bins:
+        coord = sc.Variable([dim], values=ws.readX(0), unit=unit)
+    else:
+        coord = sc.Variable([spec_dim, dim],
+                            shape=(ws.getNumberHistograms(), len(ws.readX(0))),
+                            unit=unit)
+        for i in range(ws.getNumberHistograms()):
+            coord[spec_dim, i].values = ws.readX(i)
+
     info = {
         "coords": {
+            dim: coord,
             spec_dim: spec_coord,
             "position": pos,
             "detector_info": det_info
@@ -327,21 +343,12 @@ def convert_Workspace2D_to_data_array(ws, **ignored):
     dim, unit = validate_and_get_unit(ws.getAxis(0).getUnit().unitID())
     spec_dim, spec_coord = init_spec_axis(ws)
 
-    if common_bins:
-        coord = sc.Variable([dim], values=ws.readX(0), unit=unit)
-    else:
-        coord = sc.Variable([spec_dim, dim],
-                            shape=(ws.getNumberHistograms(), len(ws.readX(0))),
-                            unit=unit)
-        for i in range(ws.getNumberHistograms()):
-            coord[spec_dim, i].values = ws.readX(i)
-
     coords_labs_data = _convert_MatrixWorkspace_info(ws)
-    coords_labs_data["coords"][dim] = coord
+    _, data_unit = validate_and_get_unit(ws.YUnit(), allow_empty=True)
     coords_labs_data["data"] = sc.Variable([spec_dim, dim],
                                            shape=(ws.getNumberHistograms(),
                                                   len(ws.readY(0))),
-                                           unit=sc.units.counts,
+                                           unit=data_unit,
                                            variances=True)
     array = detail.move_to_data_array(**coords_labs_data)
 
@@ -371,7 +378,10 @@ def convert_Workspace2D_to_data_array(ws, **ignored):
     return array
 
 
-def convert_EventWorkspace_to_data_array(ws, load_pulse_times=True, **ignored):
+def convert_EventWorkspace_to_data_array(ws,
+                                         load_pulse_times=True,
+                                         realign_events=False,
+                                         **ignored):
     from mantid.api import EventType
 
     dim, unit = validate_and_get_unit(ws.getAxis(0).getUnit().unitID())
@@ -407,6 +417,7 @@ def convert_EventWorkspace_to_data_array(ws, load_pulse_times=True, **ignored):
             weights[spec_dim, i].variances = sp.getWeightErrors()
 
     coords_labs_data = _convert_MatrixWorkspace_info(ws)
+    bin_edges = coords_labs_data["coords"][dim]
     coords_labs_data["coords"][dim] = coord
 
     if load_pulse_times:
@@ -414,12 +425,18 @@ def convert_EventWorkspace_to_data_array(ws, load_pulse_times=True, **ignored):
     if contains_weighted_events:
         coords_labs_data["data"] = weights
     else:
+        _, data_unit = validate_and_get_unit(ws.YUnit(), allow_empty=True)
         coords_labs_data["data"] = sc.Variable(dims=[spec_dim],
                                                values=np.ones(nHist),
                                                variances=np.ones(nHist),
-                                               unit=sc.units.counts,
+                                               unit=data_unit,
                                                dtype=sc.dtype.float32)
-    return detail.move_to_data_array(**coords_labs_data)
+    array = detail.move_to_data_array(**coords_labs_data)
+    if realign_events:
+        # Event data is stored as unaligned content, with realigned wrapper
+        # based on Mantid's bin edges.
+        array.realign({dim: bin_edges})
+    return array
 
 
 def convert_MDHistoWorkspace_to_data_array(md_histo, **ignored):
@@ -567,6 +584,7 @@ def from_mantid(workspace, **kwargs):
 
 def load(filename="",
          load_pulse_times=True,
+         realign_events=False,
          instrument_filename=None,
          error_connection=None,
          mantid_args=None):
@@ -595,6 +613,8 @@ def load(filename="",
 
     :param str filename: The name of the Nexus/HDF file to be loaded.
     :param bool load_pulse_times: Read the pulse times if True.
+    :param bool realign_events: Realign event data according to "X" axis given
+                                by file.
     :param str instrument_filename: If specified, over-write the instrument
                                     definition in the final Dataset with the
                                     geometry contained in the file.
@@ -627,6 +647,7 @@ def load(filename="",
 
         return from_mantid(data_ws,
                            load_pulse_times=load_pulse_times,
+                           realign_events=realign_events,
                            error_connection=error_connection)
 
 

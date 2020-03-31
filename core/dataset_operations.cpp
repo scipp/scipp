@@ -3,6 +3,7 @@
 /// @file
 /// @author Simon Heybrock
 #include "scipp/common/numeric.h"
+#include "scipp/common/overloaded.h"
 #include "scipp/core/dataset.h"
 #include "scipp/core/except.h"
 
@@ -79,7 +80,7 @@ DataArray concatenate(const DataArrayConstView &a, const DataArrayConstView &b,
     return DataArray{a};
   return DataArray(a.hasData() || b.hasData()
                        ? concatenate(a.data(), b.data(), dim)
-                       : std::optional<Variable>(),
+                       : Variable{},
                    concat(a.coords(), b.coords(), dim, a.dims(), b.dims()),
                    concat(a.masks(), b.masks(), dim, a.dims(), b.dims()));
 }
@@ -100,16 +101,40 @@ Dataset concatenate(const DatasetConstView &a, const DatasetConstView &b,
 DataArray flatten(const DataArrayConstView &a, const Dim dim) {
   return apply_or_copy_dim(
       a,
-      [](const auto &x, const Dim dim_, const auto &mask_) {
-        return is_events(x) ? flatten(x, dim_, mask_)
-                            : copy(x.slice({dim_, 0}));
-      },
+      overloaded{no_realigned_support,
+                 [](const auto &x, const Dim dim_, const auto &mask_) {
+                   if (!is_events(x) && min(x, dim_) != max(x, dim_))
+                     throw except::EventDataError(
+                         "flatten with non-constant scalar weights not "
+                         "possible yet.");
+                   return is_events(x) ? flatten(x, dim_, mask_)
+                                       : copy(x.slice({dim_, 0}));
+                 }},
       dim, a.masks());
 }
 
 Dataset flatten(const DatasetConstView &d, const Dim dim) {
   return apply_to_items(d, [](auto &&... _) { return flatten(_...); }, dim);
 }
+
+namespace {
+UnalignedData sum(Dimensions dims, const DataArrayConstView &unaligned,
+                  const Dim dim, const MasksConstView &masks) {
+  static_cast<void>(masks); // relevant masks are part of unaligned as well
+  dims.erase(dim);
+  return {dims, flatten(unaligned, dim)};
+}
+
+UnalignedData mean(Dimensions, const DataArrayConstView &, const Dim,
+                   const MasksConstView &) {
+  throw std::runtime_error("Mean for realigned data not implemented yet.");
+}
+
+UnalignedData rebin(Dimensions, const DataArrayConstView &, const Dim,
+                    const VariableConstView &, const VariableConstView &) {
+  throw std::runtime_error("Rebin for realigned data not implemented yet.");
+}
+} // namespace
 
 DataArray sum(const DataArrayConstView &a, const Dim dim) {
   return apply_to_data_and_drop_dim(a, [](auto &&... _) { return sum(_...); },
@@ -153,6 +178,13 @@ Dataset rebin(const DatasetConstView &d, const Dim dim,
                         coord);
 }
 
+namespace {
+Dimensions resize(Dimensions dims, const Dim dim, const scipp::index size) {
+  dims.resize(dim, size);
+  return dims;
+}
+} // namespace
+
 DataArray resize(const DataArrayConstView &a, const Dim dim,
                  const scipp::index size) {
   return apply_or_copy_dim(a, [](auto &&... _) { return resize(_...); }, dim,
@@ -166,9 +198,63 @@ Dataset resize(const DatasetConstView &d, const Dim dim,
 }
 
 /// Return a deep copy of a DataArray or of a DataArrayView.
-DataArray copy(const DataArrayConstView &array) { return DataArray(array); }
+DataArray copy(const DataArrayConstView &array, const AttrPolicy attrPolicy) {
+  return DataArray(array, attrPolicy);
+}
 
 /// Return a deep copy of a Dataset or of a DatasetView.
-Dataset copy(const DatasetConstView &dataset) { return Dataset(dataset); }
+Dataset copy(const DatasetConstView &dataset, const AttrPolicy attrPolicy) {
+  if (attrPolicy != AttrPolicy::Keep)
+    throw std::runtime_error(
+        "Dropping attributes when copying dataset not implemented yet.");
+  return Dataset(dataset);
+}
+
+namespace {
+void copy_item(const DataArrayConstView &from, const DataArrayView &to) {
+  if (from.hasData())
+    to.data().assign(from.data());
+  else
+    throw except::UnalignedError(
+        "Copying unaligned data to output not supported.");
+}
+
+template <class ConstView, class View>
+View copy_impl(const ConstView &in, const View &out,
+               const AttrPolicy attrPolicy) {
+  for (const auto &[dim, coord] : in.coords())
+    out.coords()[dim].assign(coord);
+  for (const auto &[name, mask] : in.masks())
+    out.masks()[name].assign(mask);
+  if (attrPolicy == AttrPolicy::Keep)
+    for (const auto &[name, attr] : in.attrs())
+      out.attrs()[name].assign(attr);
+
+  if constexpr (std::is_same_v<View, DatasetView>) {
+    for (const auto &array : in) {
+      copy_item(array, out[array.name()]);
+      if (attrPolicy == AttrPolicy::Keep)
+        for (const auto &[name, attr] : array.attrs())
+          out[array.name()].attrs()[name].assign(attr);
+    }
+  } else {
+    copy_item(in, out);
+  }
+
+  return out;
+}
+} // namespace
+
+/// Copy data array to output data array
+DataArrayView copy(const DataArrayConstView &array, const DataArrayView &out,
+                   const AttrPolicy attrPolicy) {
+  return copy_impl(array, out, attrPolicy);
+}
+
+/// Copy dataset to output dataset
+DatasetView copy(const DatasetConstView &dataset, const DatasetView &out,
+                 const AttrPolicy attrPolicy) {
+  return copy_impl(dataset, out, attrPolicy);
+}
 
 } // namespace scipp::core

@@ -6,7 +6,9 @@
 #include "scipp/common/numeric.h"
 #include "scipp/core/dataset.h"
 #include "scipp/core/except.h"
+#include "scipp/core/groupby.h"
 #include "scipp/core/transform_subspan.h"
+#include "scipp/core/unaligned.h"
 
 #include "dataset_operations_common.h"
 
@@ -14,19 +16,19 @@ namespace scipp::core {
 
 static constexpr auto make_histogram =
     [](auto &data, const auto &events, const auto &weights, const auto &edges) {
-      constexpr auto value = [](const auto &v, const scipp::index i) {
+      constexpr auto value = [](const auto &v, const scipp::index idx) {
         if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(v)>>) {
-          static_cast<void>(i);
+          static_cast<void>(idx);
           return v.value;
         } else
-          return v.values[i];
+          return v.values[idx];
       };
-      constexpr auto variance = [](const auto &v, const scipp::index i) {
+      constexpr auto variance = [](const auto &v, const scipp::index idx) {
         if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(v)>>) {
-          static_cast<void>(i);
+          static_cast<void>(idx);
           return v.variance;
         } else
-          return v.variances[i];
+          return v.variances[idx];
       };
 
       // Special implementation for linear bins. Gives a 1x to 20x speedup
@@ -87,8 +89,9 @@ DataArray histogram(const DataArrayConstView &sparse,
 
   auto result = apply_and_drop_dim(
       sparse,
-      [](const DataArrayConstView &sparse_, const Dim dim_,
+      [](const DataArrayConstView &sparse_, const Dim eventDim, const Dim dim_,
          const VariableConstView &binEdges_) {
+        static_cast<void>(eventDim); // This is just Dim::Invalid
         using namespace histogram_weighted_detail;
         // This supports scalar weights as well as event_list weights.
         return transform_subspan<
@@ -108,7 +111,7 @@ DataArray histogram(const DataArrayConstView &sparse,
                        transform_flags::expect_variance_arg<2>,
                        transform_flags::expect_no_variance_arg<3>});
       },
-      dim, binEdges);
+      dim_of_coord(sparse.coords()[dim], dim), dim, binEdges);
   result.setCoord(dim, binEdges);
   return result;
 }
@@ -143,6 +146,61 @@ bool is_histogram(const DataArrayConstView &a, const Dim dim) {
   return dims.contains(dim) && coords.contains(dim) &&
          coords[dim].dims().contains(dim) &&
          coords[dim].dims()[dim] == dims[dim] + 1;
+}
+
+namespace {
+void histogram_md_recurse(const VariableView &data,
+                          const DataArrayConstView &unaligned,
+                          const DataArrayConstView &realigned,
+                          const scipp::index dim_index = 0) {
+  const auto &dims = realigned.dims();
+  const Dim dim = dims.labels()[dim_index];
+  const auto size = dims.shape()[dim_index];
+  if (unaligned.dims().contains(dim)) // skip over aligned dims
+    return histogram_md_recurse(data, unaligned, realigned, dim_index + 1);
+  auto groups = groupby(unaligned, dim, realigned.coords()[dim]);
+  if (data.dims().ndim() == unaligned.dims().ndim()) {
+    const Dim unaligned_dim = unaligned.coords()[dim].dims().inner();
+    auto hist1d = groups.sum(unaligned_dim);
+    data.assign(hist1d.data());
+    return;
+  }
+  for (scipp::index i = 0; i < size; ++i) {
+    auto slice = groups.copy(i, AttrPolicy::Drop);
+    slice.coords().erase(dim); // avoid carry of unnecessary coords in recursion
+    histogram_md_recurse(data.slice({dim, i}), slice, realigned, dim_index + 1);
+  }
+}
+} // namespace
+
+DataArray histogram(const DataArrayConstView &realigned) {
+  if (realigned.hasData())
+    throw except::UnalignedError("Expected realigned data, but data appears to "
+                                 "be histogrammed already.");
+  if (unaligned::is_realigned_events(realigned))
+    return histogram(realigned.unaligned(),
+                     unaligned::realigned_event_coord(realigned));
+  std::optional<DataArray> filtered;
+  // If `realigned` is sliced we need to copy the unaligned content to "apply"
+  // the slicing since slicing realigned dimensions does not affect the view
+  // onto the unaligned content. Note that we could in principle avoid the copy
+  // if only aligned dimensions are sliced.
+  if (!realigned.slices().empty())
+    filtered = DataArray(realigned, AttrPolicy::Drop);
+  const auto unaligned =
+      filtered ? filtered->unaligned() : realigned.unaligned();
+
+  Variable data(unaligned.data(), realigned.dims());
+  histogram_md_recurse(data, unaligned, realigned);
+  return DataArray{std::move(data), realigned.coords(), realigned.masks(),
+                   realigned.attrs()};
+}
+
+Dataset histogram(const DatasetConstView &realigned) {
+  Dataset out;
+  for (const auto &item : realigned)
+    out.setData(item.name(), histogram(item));
+  return out;
 }
 
 } // namespace scipp::core

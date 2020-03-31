@@ -72,5 +72,7 @@ def is_dataset_or_array(obj):
 
 def is_data_events(obj):
     if hasattr(obj, "data"):
+        if obj.data is None:
+            return False
         return is_events(obj.data)
     return is_events(obj)

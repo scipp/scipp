@@ -111,7 +111,12 @@ class DataAccessHelper {
     }
 
     template <class View> static bool valid(py::object &obj) {
-      return obj.cast<View &>().hasVariances();
+      auto &view = obj.cast<View &>();
+      if constexpr (std::is_same_v<DataArray, View> ||
+                    std::is_base_of_v<DataArrayConstView, View>)
+        return view.hasData() && view.hasVariances();
+      else
+        return view.hasVariances();
     }
   };
 };
@@ -378,15 +383,7 @@ using as_ElementArrayView =
 
 template <class T, class... Ignored>
 void bind_data_properties(pybind11::class_<T, Ignored...> &c) {
-  c.def_property_readonly("dtype",
-                          [](const T &self) {
-                            if constexpr (std::is_same_v<T, DataArray> ||
-                                          std::is_same_v<T, DataArrayView>)
-                              return self.hasData() ? py::cast(self.dtype())
-                                                    : py::none();
-                            else
-                              return self.dtype();
-                          },
+  c.def_property_readonly("dtype", [](const T &self) { return self.dtype(); },
                           "Data type contained in the variable.");
   c.def_property_readonly("dims",
                           [](const T &self) {
@@ -404,15 +401,8 @@ void bind_data_properties(pybind11::class_<T, Ignored...> &c) {
       },
       "Shape of the data (read-only).", py::return_value_policy::move);
 
-  c.def_property("unit",
-                 [](const T &self) {
-                   if constexpr (std::is_same_v<T, DataArray> ||
-                                 std::is_same_v<T, DataArrayView>)
-                     return self.hasData() ? self.unit() : units::counts;
-                   else
-                     return self.unit();
-                 },
-                 &T::setUnit, "Physical unit of the data.");
+  c.def_property("unit", [](const T &self) { return self.unit(); }, &T::setUnit,
+                 "Physical unit of the data.");
 
   c.def_property("values", &as_ElementArrayView::values<T>,
                  &as_ElementArrayView::set_values<T>,

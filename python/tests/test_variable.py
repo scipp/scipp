@@ -942,3 +942,23 @@ def test_num_to_nan_out_with_multiple_special_replacements():
     expected = sc.Variable(dims=['x'],
                            values=np.array([1] + [replace.value] * 3))
     assert out == expected
+
+
+def test_position():
+    var = sc.Variable()
+    assert_export(sc.geometry.position, x=var, y=var, z=var)
+
+
+def test_x():
+    var = sc.Variable()
+    assert_export(sc.geometry.x, pos=var)
+
+
+def test_y():
+    var = sc.Variable()
+    assert_export(sc.geometry.y, pos=var)
+
+
+def test_z():
+    var = sc.Variable()
+    assert_export(sc.geometry.z, pos=var)

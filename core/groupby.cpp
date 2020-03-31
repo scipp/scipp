@@ -17,6 +17,27 @@
 
 namespace scipp::core {
 
+/// Extract given group as a new data array or dataset
+template <class T>
+T GroupBy<T>::copy(const scipp::index group,
+                   const AttrPolicy attrPolicy) const {
+  const auto &slices = groups()[group];
+  scipp::index size = 0;
+  for (const auto &slice : slices)
+    size += slice.end() - slice.begin();
+  // This is just the slicing dim, but `slices` may be empty
+  const Dim slice_dim = m_data.coords()[dim()].dims().inner();
+  auto out = scipp::core::copy(m_data.slice({slice_dim, 0, size}), attrPolicy);
+  scipp::index current = 0;
+  for (const auto &slice : slices) {
+    const auto thickness = slice.end() - slice.begin();
+    const Slice out_slice(slice_dim, current, current + thickness);
+    scipp::core::copy(m_data.slice(slice), out.slice(out_slice), attrPolicy);
+    current += thickness;
+  }
+  return out;
+}
+
 /// Helper for creating output for "combine" step for "apply" steps that reduce
 /// a dimension.
 ///
@@ -63,6 +84,16 @@ static constexpr auto flatten = [](const DataArrayView &out, const auto &in,
                                    const GroupByGrouping::group &group,
                                    const Dim reductionDim,
                                    const Variable &mask_) {
+  // Here and below: Hack to make flatten work with scalar weights. Proper
+  // solution would be to create proper output and broadcast, but this is also
+  // bad solution. Removing support for scalar weights altogether might be the
+  // way forward.
+  if (in.hasData() && !is_events(in.data())) {
+    if (min(in.data(), reductionDim) != max(in.data(), reductionDim))
+      throw except::EventDataError(
+          "flatten with non-constant scalar weights not possible yet.");
+  }
+  bool first = true;
   const auto no_mask = makeVariable<bool>(Values{true});
   for (const auto &slice : group) {
     auto mask =
@@ -71,8 +102,11 @@ static constexpr auto flatten = [](const DataArrayView &out, const auto &in,
     if (in.hasData()) {
       if (is_events(array.data()))
         flatten_impl(out.data(), array.data(), mask);
-      else
-        sum_impl(out.data(), array.data() * mask);
+      else if (first) {
+        // Note that masks can be ignored since no weights are concatenated
+        out.data().assign(array.data().slice({reductionDim, 0}));
+        first = false;
+      }
     }
   }
 };
@@ -97,12 +131,22 @@ static constexpr auto sum = [](const DataArrayView &out,
                                const auto &data_container,
                                const GroupByGrouping::group &group,
                                const Dim reductionDim, const Variable &mask) {
-  for (const auto &slice : group) {
-    const auto data_slice = data_container.slice(slice);
-    if (mask.dims().contains(reductionDim))
-      sum_impl(out.data(), data_slice.data() * mask.slice(slice));
-    else
-      sum_impl(out.data(), data_slice.data());
+  if (out.hasData()) {
+    for (const auto &slice : group) {
+      const auto data_slice = data_container.slice(slice);
+      if (mask.dims().contains(reductionDim))
+        sum_impl(out.data(), data_slice.data() * mask.slice(slice));
+      else
+        sum_impl(out.data(), data_slice.data());
+    }
+  } else {
+    const auto &unaligned_out = out.unaligned();
+    const auto &unaligned_in = data_container.unaligned();
+    // Flatten in all cases, even if not event data? Try to sum?
+    flatten(unaligned_out, unaligned_in, group, reductionDim, mask);
+    for (auto &&[dim, coord] : unaligned_out.coords())
+      flatten_coord(coord, unaligned_in.coords()[dim], group, reductionDim,
+                    mask);
   }
 };
 
@@ -185,7 +229,7 @@ template <class T> T GroupBy<T>::mean(const Dim reductionDim) const {
   if constexpr (std::is_same_v<T, Dataset>) {
     for (const auto &item : out) {
       if (isInt(item.data().dtype()))
-        out.setData(item.name(), item.data() * scale);
+        out.setData(item.name(), item.data() * scale, AttrPolicy::Keep);
       else
         item *= scale;
     }

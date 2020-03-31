@@ -5,7 +5,9 @@
 
 #include "scipp/core/dataset.h"
 #include "scipp/core/except.h"
+#include "scipp/core/histogram.h"
 #include "scipp/core/sort.h"
+#include "scipp/core/unaligned.h"
 #include "scipp/core/view_decl.h"
 
 #include "bind_data_access.h"
@@ -123,6 +125,18 @@ void bind_mutable_view(py::module &m, const std::string &name) {
   bind_comparison<T>(view);
 }
 
+template <class T> void realign_impl(T &self, py::dict coord_dict) {
+  // Python dicts above 3.7 preserve order, but we cannot use
+  // automatic conversion by pybind11 since C++ maps do not.
+  std::vector<std::pair<Dim, Variable>> coords;
+  // Cast to VariableView uses implicit conversion and causes segfault if
+  // GIL is released.
+  for (auto item : coord_dict)
+    coords.emplace_back(Dim(item.first.cast<std::string>()),
+                        item.second.cast<VariableView>());
+  self = unaligned::realign(std::move(self), std::move(coords));
+}
+
 template <class T, class... Ignored>
 void bind_coord_properties(py::class_<T, Ignored...> &c) {
   // For some reason the return value policy and/or keep-alive policy do not
@@ -152,6 +166,9 @@ void bind_coord_properties(py::class_<T, Ignored...> &c) {
                                            py::keep_alive<0, 1>()),
                           R"(
       Dict of attributes.)");
+
+  if constexpr (std::is_same_v<T, DataArray> || std::is_same_v<T, Dataset>)
+    c.def("realign", realign_impl<T>);
 }
 
 template <class T, class... Ignored>
@@ -225,6 +242,14 @@ void bind_data_array_properties(py::class_<T, Ignored...> &c) {
           py::return_value_policy::move, py::keep_alive<0, 1>()),
       [](T &self, const VariableConstView &data) { self.data().assign(data); },
       R"(Underlying data item.)");
+  c.def_property_readonly(
+      "unaligned",
+      py::cpp_function(
+          [](T &self) {
+            return self.hasData() ? py::none() : py::cast(self.unaligned());
+          },
+          py::return_value_policy::move, py::keep_alive<0, 1>()),
+      R"(Underlying unaligned data item.)");
   bind_coord_properties(c);
   bind_comparison<DataArrayConstView>(c);
   bind_data_properties(c);
@@ -276,10 +301,10 @@ void init_dataset(py::module &m) {
   py::class_<DataArray> dataArray(m, "DataArray", R"(
     Named variable with associated coords, masks, and attributes.)");
   dataArray.def(py::init<const DataArrayConstView &>());
-  dataArray.def(py::init<std::optional<Variable>, std::map<Dim, Variable>,
+  dataArray.def(py::init<Variable, std::map<Dim, Variable>,
                          std::map<std::string, Variable>,
                          std::map<std::string, Variable>>(),
-                py::arg("data") = std::nullopt,
+                py::arg("data") = Variable{},
                 py::arg("coords") = std::map<Dim, Variable>{},
                 py::arg("masks") = std::map<std::string, Variable>{},
                 py::arg("attrs") = std::map<std::string, Variable>{});
@@ -624,6 +649,38 @@ void init_dataset(py::module &m) {
 
         :return: Reciprocal of the input values.
         :rtype: DataArray)");
+
+  m.def("realign",
+        [](const DataArrayConstView &a, py::dict coord_dict) {
+          DataArray copy(a);
+          realign_impl(copy, coord_dict);
+          return copy;
+        },
+        py::arg("data"), py::arg("coords"));
+  m.def("realign",
+        [](const DatasetConstView &a, py::dict coord_dict) {
+          Dataset copy(a);
+          realign_impl(copy, coord_dict);
+          return copy;
+        },
+        py::arg("data"), py::arg("coords"));
+  m.def(
+      "histogram",
+      [](const DataArrayConstView &x) { return core::histogram(x); },
+      py::arg("x"), py::call_guard<py::gil_scoped_release>(),
+      R"(Returns a new DataArray unaligned data content binned according to the realigning axes.
+
+        :param x: Realigned data to histogram.
+        :return: Histogramed data.
+        :rtype: DataArray)");
+  m.def(
+      "histogram", [](const DatasetConstView &x) { return core::histogram(x); },
+      py::arg("x"), py::call_guard<py::gil_scoped_release>(),
+      R"(Returns a new Dataset unaligned data content binned according to the realigning axes.
+
+        :param x: Realigned data to histogram.
+        :return: Histogramed data.
+        :rtype: Dataset)");
 
   bind_astype(dataArray);
   bind_astype(dataArrayView);

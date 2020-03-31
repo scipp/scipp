@@ -48,3 +48,12 @@ TEST(ReduceSparseTest, flatten_dataset_with_mask) {
   EXPECT_EQ(flat["b"].coords()[Dim("label")], expected);
   EXPECT_EQ(flat["b"].data(), expected);
 }
+
+TEST(ReduceSparseTest, flatten_dataset_non_constant_scalar_weight_fail) {
+  Dataset d;
+  d.coords().set(Dim::X, make_sparse());
+  d.setData("b", makeVariable<double>(Dims{Dim::Y}, Shape{3}, Values{1, 2, 3}));
+  EXPECT_THROW(flatten(d, Dim::Y), except::EventDataError);
+  d.setData("b", makeVariable<double>(Dims{Dim::Y}, Shape{3}, Values{1, 1, 1}));
+  EXPECT_NO_THROW(flatten(d, Dim::Y));
+}

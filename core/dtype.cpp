@@ -1,17 +1,25 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
-/// @author Igor Gudich
 
 #include "scipp/core/dtype.h"
+#include "scipp/core/except.h"
 
-bool scipp::core::isInt(DType tp) {
-  return tp == DType::Int32 || tp == DType::Int64;
+namespace scipp::core {
+bool isInt(DType tp) { return tp == dtype<int32_t> || tp == dtype<int64_t>; }
+
+DType event_dtype(const DType type) {
+  switch (type) {
+  case dtype<event_list<double>>:
+    return dtype<double>;
+  case dtype<event_list<float>>:
+    return dtype<float>;
+  case dtype<event_list<int64_t>>:
+    return dtype<int64_t>;
+  case dtype<event_list<int32_t>>:
+    return dtype<int32_t>;
+  default:
+    return type; // event data with scalar weights
+  }
 }
-
-bool scipp::core::isFloatingPoint(DType tp) {
-  return tp == DType::Float || tp == DType::Double ||
-         tp == DType::EigenVector3d || tp == DType::EigenQuaterniond;
-}
-
-bool scipp::core::isBool(DType tp) { return tp == DType::Bool; }
+} // namespace scipp::core

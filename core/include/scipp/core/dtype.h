@@ -68,8 +68,8 @@ template <> constexpr DType dtype<Eigen::Quaterniond> = DType::EigenQuaterniond;
 template <> constexpr DType dtype<scipp::python::PyObject> = DType::PyObject;
 
 bool isInt(DType tp);
-bool isFloatingPoint(DType tp);
-bool isBool(DType tp);
+
+DType event_dtype(const DType type);
 
 } // namespace scipp::core
 

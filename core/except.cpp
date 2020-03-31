@@ -35,21 +35,15 @@ void dimensionMatches(const Dimensions &dims, const Dim dim,
 }
 
 void validSlice(const Dimensions &dims, const Slice &slice) {
-  if (!dims.contains(slice.dim()) || slice.begin() < 0 ||
-      slice.begin() >=
-          std::min(slice.end() >= 0 ? slice.end() + 1 : dims[slice.dim()],
-                   dims[slice.dim()]) ||
-      slice.end() > dims[slice.dim()])
+  const auto end = slice.end() < 0 ? slice.begin() + 1 : slice.end();
+  if (!dims.contains(slice.dim()) || end > dims[slice.dim()])
     throw except::SliceError("Expected " + to_string(slice) + " to be in " +
                              to_string(dims) + ".");
 }
 void validSlice(const std::unordered_map<Dim, scipp::index> &dims,
                 const Slice &slice) {
-  if (dims.find(slice.dim()) == dims.end() || slice.begin() < 0 ||
-      slice.begin() >=
-          std::min(slice.end() >= 0 ? slice.end() + 1 : dims.at(slice.dim()),
-                   dims.at(slice.dim())) ||
-      slice.end() > dims.at(slice.dim()))
+  const auto end = slice.end() < 0 ? slice.begin() + 1 : slice.end();
+  if (dims.find(slice.dim()) == dims.end() || end > dims.at(slice.dim()))
     throw except::SliceError(
         "Expected " + to_string(slice) +
         " to be in dimensions."); // TODO to_string for map needed
