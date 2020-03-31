@@ -29,7 +29,7 @@ DataArray apply_and_drop_dim_impl(const DataArrayConstView &a, Func func,
   std::map<Dim, Variable> coords;
   for (auto &&[d, coord] : a.coords()) {
     // Check coordinates will NOT be dropped
-    if (dim_of_coord(coord, d) != dim) {
+    if (coord.dims().ndim() == 0 || dim_of_coord(coord, d) != dim) {
       expectAlignedCoord(d, coord, dim);
       coords.emplace(d, coord);
     }
