@@ -107,22 +107,6 @@ Variable sizes(const VariableConstView &var) {
                       }});
 }
 
-/// Resize variable of event lists to sizes given by event list in shape array.
-void resize_to(const VariableView &var, const DataArrayConstView &shape) {
-  for (const auto &item : shape.coords())
-    if (is_events(item.second)) {
-      transform_in_place<
-          std::tuple<std::tuple<event_list<bool>, scipp::index>>>(
-          var, sizes(item.second),
-          overloaded{transform_flags::expect_no_variance_arg<1>,
-                     [](auto &x, const auto &size) { return x.resize(size); },
-                     [](units::Unit &, const units::Unit &) {}});
-      return;
-    }
-  throw except::EventDataError(
-      "No event lists found in target shape, cannot resize.");
-}
-
 namespace filter_detail {
 template <class T>
 using make_select_args = std::tuple<event_list<T>, span<const T>>;
