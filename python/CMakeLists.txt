@@ -8,6 +8,7 @@ pybind11_add_module(
   dataset.cpp
   detail.cpp
   dtype.cpp
+  eigen.cpp
   groupby.cpp
   neutron.cpp
   operations.cpp

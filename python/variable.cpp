@@ -27,14 +27,6 @@ using namespace scipp::core;
 
 namespace py = pybind11;
 
-/* Bind MatrixXd (or some other Eigen type) to Python */
-typedef Eigen::Quaterniond Quat;
-
-typedef Quat::Scalar Scalar;
-// constexpr bool rowMajor = Matrix::Flags & Eigen::RowMajorBit;
-
-
-
 template <class T> struct MakeVariable {
   static Variable apply(const std::vector<Dim> &labels, py::array values,
                         const std::optional<py::array> &variances,
@@ -147,7 +139,7 @@ Variable doMakeVariable(const std::vector<Dim> &labels, py::array &values,
 
 
     if (dtypeTag == core::dtype<Eigen::Vector3d> ||
-        dtypeTag == core::dtype<Quat>) {
+        dtypeTag == core::dtype<Eigen::Quaterniond>) {
       std::vector<scipp::index> shape(values.shape(),
                                       values.shape() + values.ndim() - 1);
       if (dtypeTag == core::dtype<Eigen::Vector3d>)
@@ -159,7 +151,7 @@ Variable doMakeVariable(const std::vector<Dim> &labels, py::array &values,
         auto arr = values.mutable_unchecked<double, 2>();
         qvec.reserve(arr.shape(0));
         for (ssize_t i = 0; i < arr.shape(0); i++) {
-          qvec.push_back(Quat(arr(i, 0), arr(i, 1), arr(i, 2), arr(i, 3)));
+          qvec.push_back(Eigen::Quaterniond(arr(i, 0), arr(i, 1), arr(i, 2), arr(i, 3)));
         }
         // for (size_t i = 0; i < values.shape()[0]; i++) {
         //   qvec[i] = Eigen::Quaterniond(values.data()[i][0], values.data()[i][1], values.data()[i][2], values.data()[i][3]);
@@ -188,7 +180,7 @@ Variable makeVariableDefaultInit(const std::vector<Dim> &labels,
   std::cout << "makeVariableDefaultInit" << std::endl;
   return CallDType<double, float, int64_t, int32_t, bool, event_list<double>,
                    event_list<float>, event_list<int64_t>, event_list<int32_t>,
-                   DataArray, Dataset, Eigen::Vector3d, Quat>::
+                   DataArray, Dataset, Eigen::Vector3d, Eigen::Quaterniond>::
       apply<MakeVariableDefaultInit>(scipp_dtype(dtype), labels, shape, unit,
                                      variances);
 }
@@ -237,10 +229,10 @@ void bind_init_0D_numpy_types(py::class_<Variable> &c) {
                 v ? std::optional(v->cast<Eigen::Vector3d>()) : std::nullopt,
                 unit);
           } else if (info.ndim == 1 &&
-                     scipp_dtype(dtype) == core::dtype<Quat>) {
-            return do_init_0D<Quat>(
-                b.cast<Quat>(),
-                v ? std::optional(v->cast<Quat>()) : std::nullopt,
+                     scipp_dtype(dtype) == core::dtype<Eigen::Quaterniond>) {
+            return do_init_0D<Eigen::Quaterniond>(
+                b.cast<Eigen::Quaterniond>(),
+                v ? std::optional(v->cast<Eigen::Quaterniond>()) : std::nullopt,
                 unit);
           } else {
             throw scipp::except::VariableError(
@@ -270,17 +262,17 @@ void bind_init_list(py::class_<Variable> &c) {
                   Dims{label[0]}, Shape{scipp::size(val)},
                   Values(val.begin(), val.end()), units::Unit(unit));
             return variable;
-          } else if (scipp_dtype(dtype) == core::dtype<Quat>) {
-            auto val = values.cast<std::vector<Quat>>();
+          } else if (scipp_dtype(dtype) == core::dtype<Eigen::Quaterniond>) {
+            auto val = values.cast<std::vector<Eigen::Quaterniond>>();
             Variable variable;
             if (variances) {
-              auto var = variances->cast<std::vector<Quat>>();
-              variable = makeVariable<Quat>(
+              auto var = variances->cast<std::vector<Eigen::Quaterniond>>();
+              variable = makeVariable<Eigen::Quaterniond>(
                   Dims{label[0]}, Shape{scipp::size(val)},
                   Values(val.begin(), val.end()),
                   Variances(var.begin(), var.end()), units::Unit(unit));
             } else
-              variable = makeVariable<Quat>(
+              variable = makeVariable<Eigen::Quaterniond>(
                   Dims{label[0]}, Shape{scipp::size(val)},
                   Values(val.begin(), val.end()), units::Unit(unit));
             return variable;
@@ -337,45 +329,45 @@ void bind_astype(py::class_<T, Ignored...> &c) {
 void init_variable(py::module &m) {
 
 
-py::class_<Quat> (m, "Quat", py::buffer_protocol())
-    .def(py::init([](py::buffer b) {
-        // typedef Eigen::Stride<Eigen::Dynamic> Strides;
+// py::class_<Quat> (m, "Quat", py::buffer_protocol())
+//     .def(py::init([](py::buffer b) {
+//         // typedef Eigen::Stride<Eigen::Dynamic> Strides;
 
-        /* Request a buffer descriptor from Python */
-        py::buffer_info info = b.request();
+//         /* Request a buffer descriptor from Python */
+//         py::buffer_info info = b.request();
 
-        // /* Some sanity checks ... */
-        // if (info.format != py::format_descriptor<Scalar>::format())
-        //     throw std::runtime_error("Incompatible format: expected a double array!");
+//         // /* Some sanity checks ... */
+//         // if (info.format != py::format_descriptor<Scalar>::format())
+//         //     throw std::runtime_error("Incompatible format: expected a double array!");
 
-        // if (info.ndim != 2)
-        //     throw std::runtime_error("Incompatible buffer dimension!");
+//         // if (info.ndim != 2)
+//         //     throw std::runtime_error("Incompatible buffer dimension!");
 
-        // auto strides = Strides(
-        //     info.strides[0] / (py::ssize_t)sizeof(Scalar));
+//         // auto strides = Strides(
+//         //     info.strides[0] / (py::ssize_t)sizeof(Scalar));
 
-        auto map = Eigen::Map<Quat>(
-            static_cast<Scalar *>(info.ptr));
+//         auto map = Eigen::Map<Quat>(
+//             static_cast<Scalar *>(info.ptr));
 
-        return Quat(map);
-    }))
-    .def("x", [](const Quat &self) { return self.x(); })
-    .def("y", [](const Quat &self) { return self.y(); })
-    .def("z", [](const Quat &self) { return self.z(); })
-    .def("w", [](const Quat &self) { return self.w(); })
-    .def("coeffs", [](const Quat &self) { return self.coeffs(); })
-    .def("to_rotation_matrix", [](const Quat &self) { return self.toRotationMatrix(); })
-    .def_buffer([](Quat &q) -> py::buffer_info {
-    return py::buffer_info(
-        q.coeffs().data(),                                /* Pointer to buffer */
-        sizeof(Scalar),                          /* Size of one scalar */
-        py::format_descriptor<Scalar>::format(), /* Python struct-style format descriptor */
-        1,                                       /* Number of dimensions */
-        { 4 },                  /* Buffer dimensions */
-        { sizeof(Scalar)}
-                                                 /* Strides (in bytes) for each index */
-    );
- });
+//         return Quat(map);
+//     }))
+//     .def("x", [](const Quat &self) { return self.x(); })
+//     .def("y", [](const Quat &self) { return self.y(); })
+//     .def("z", [](const Quat &self) { return self.z(); })
+//     .def("w", [](const Quat &self) { return self.w(); })
+//     .def("coeffs", [](const Quat &self) { return self.coeffs(); })
+//     .def("to_rotation_matrix", [](const Quat &self) { return self.toRotationMatrix(); })
+//     .def_buffer([](Quat &q) -> py::buffer_info {
+//     return py::buffer_info(
+//         q.coeffs().data(),                                /* Pointer to buffer */
+//         sizeof(Scalar),                          /* Size of one scalar */
+//         py::format_descriptor<Scalar>::format(), /* Python struct-style format descriptor */
+//         1,                                       /* Number of dimensions */
+//         { 4 },                  /* Buffer dimensions */
+//         { sizeof(Scalar)}
+//                                                  /* Strides (in bytes) for each index */
+//     );
+//  });
 
 
 
@@ -427,7 +419,7 @@ py::class_<Quat> (m, "Quat", py::buffer_protocol())
   bind_init_0D<Dataset>(variable);
   bind_init_0D<std::string>(variable);
   bind_init_0D<Eigen::Vector3d>(variable);
-  bind_init_0D<Quat>(variable);
+  bind_init_0D<Eigen::Quaterniond>(variable);
   variable.def(py::init<const VariableView &>())
       .def(py::init(&makeVariableDefaultInit),
            py::arg("dims") = std::vector<Dim>{},
