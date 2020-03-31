@@ -100,10 +100,8 @@ class TestMantidConversion(unittest.TestCase):
         converted_mantid = mantidcompat.convert_Workspace2D_to_data_array(ws)
 
         da = mantidcompat.convert_EventWorkspace_to_data_array(eventWS, False)
-        da_histo = sc.histogram(da, target_tof)
-        da_histo.coords['source_position'] = da.coords['source_position']
-        da_histo.coords['sample_position'] = da.coords['sample_position']
-        d = sc.Dataset(da_histo)
+        da = sc.histogram(da, target_tof)
+        d = sc.Dataset(da)
         converted = sc.neutron.convert(d, 'tof', 'wavelength')
 
         self.assertTrue(
