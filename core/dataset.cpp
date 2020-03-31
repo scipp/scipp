@@ -3,7 +3,9 @@
 /// @file
 /// @author Simon Heybrock
 #include "scipp/core/dataset.h"
+#include "dataset_operations_common.h"
 #include "scipp/core/except.h"
+#include "scipp/core/unaligned.h"
 
 namespace scipp::core {
 
@@ -114,13 +116,36 @@ bool Dataset::contains(const std::string &name) const noexcept {
 /// Removes a data item from the Dataset
 ///
 /// Coordinates, masks, and attributes are not modified.
-/// This operation invalidates any view objects creeated from this dataset.
-void Dataset::erase(const std::string_view name) {
+/// This operation invalidates any view objects created from this dataset.
+void Dataset::erase(const std::string &name) {
   if (m_data.erase(std::string(name)) == 0) {
-    throw except::DatasetError(*this, "Could not find data with name " +
-                                          std::string(name) + ".");
+    throw except::NotFoundError("Expected " + to_string(*this) +
+                                " to contain " + name + ".");
   }
   rebuildDims();
+}
+
+/// Extract a data item from the Dataset, returning a DataArray
+///
+/// Coordinates, masks, and attributes are not modified.
+/// This operation invalidates any view objects created from this dataset.
+DataArray Dataset::extract(const std::string &name) {
+  const auto &view = operator[](name);
+  const auto &item = m_data.find(name);
+
+  auto coords = copy_map(view.coords());
+  auto masks = copy_map(view.masks());
+  auto attrs = std::move(item->second.attrs);
+
+  DataArray extracted;
+  if (view.hasData())
+    extracted = DataArray(std::move(item->second.data), std::move(coords),
+                          std::move(masks), std::move(attrs), name);
+  else
+    extracted = DataArray(std::move(*item->second.unaligned), std::move(coords),
+                          std::move(masks), std::move(attrs), name);
+  erase(name);
+  return extracted;
 }
 
 /// Return a const view to data and coordinates with given name.
@@ -173,12 +198,12 @@ void setExtent(std::unordered_map<Dim, scipp::index> &dims, const Dim dim,
       } else if (extents::oneSmaller(extent, heldExtent) && !isCoord) {
         heldExtent = extent;
       } else {
-        throw std::runtime_error("Length mismatch on insertion");
+        throw except::DimensionError("Length mismatch on insertion");
       }
     } else {
       // Check for known edge state
       if ((extent != heldExtent || isCoord) && extent != heldExtent + 1)
-        throw std::runtime_error("Length mismatch on insertion");
+        throw except::DimensionError("Length mismatch on insertion");
     }
   }
 }
@@ -323,6 +348,15 @@ void Dataset::setData(const std::string &name, const DataArrayConstView &data) {
   setData(name, DataArray(data));
 }
 
+void DataArrayView::setData(Variable data) const {
+  if (!slices().empty())
+    throw except::SliceError("Cannot set data via slice.");
+  if (!m_mutableData->second.data && hasData())
+    m_mutableData->second.unaligned->data.setData(std::move(data));
+  else
+    m_mutableDataset->setData(name(), std::move(data), AttrPolicy::Keep);
+}
+
 /// Removes the coordinate for the given dimension.
 void Dataset::eraseCoord(const Dim dim) { erase_from_map(m_coords, dim); }
 
@@ -439,6 +473,10 @@ void Dataset::rename(const Dim from, const Dim to) {
     auto &value = item.second;
     if (value.data)
       value.data.rename(from, to);
+    else {
+      value.unaligned->dims.relabel(value.unaligned->dims.index(from), to);
+      value.unaligned->data.rename(from, to);
+    }
     for (auto &attr : value.attrs)
       attr.second.rename(from, to);
   }
@@ -463,6 +501,14 @@ const std::string &DataArrayConstView::name() const noexcept {
   return m_data->first;
 }
 
+/// Set the name of a data array.
+void DataArray::setName(const std::string &name) {
+  auto &map = m_holder.m_data;
+  auto node = map.extract(map.begin());
+  node.key() = name;
+  map.insert(std::move(node));
+}
+
 /// Return an ordered mapping of dimension labels to extents.
 Dimensions DataArrayConstView::dims() const noexcept {
   if (hasData())
@@ -481,10 +527,10 @@ Dimensions DataArrayConstView::dims() const noexcept {
 
 /// Return the dtype of the data.
 DType DataArrayConstView::dtype() const {
-  // TODO This is not true if event data is realigned (not supported yet). In
-  // that case we need to convert from, e.g., dtype<event_list<double>> to
-  // dtype<double>.
-  return hasData() ? data().dtype() : unaligned().dtype();
+  return hasData() ? data().dtype()
+                   : core::unaligned::is_realigned_events(*this)
+                         ? event_dtype(unaligned().dtype())
+                         : unaligned().dtype();
 }
 
 /// Return the unit of the data values.
@@ -496,6 +542,8 @@ DataArrayConstView DataArrayConstView::unaligned() const {
   // This needs to combine coords from m_dataset and from the unaligned data. We
   // therefore construct with normal dataset and items pointers and only pass
   // the unaligned data via a variable view.
+  if (hasData())
+    return DataArrayConstView{};
   auto view = m_data->second.unaligned->data.data();
   detail::do_make_slice(view, slices());
   return {*m_dataset, *m_data, slices(), std::move(view)};
@@ -503,6 +551,8 @@ DataArrayConstView DataArrayConstView::unaligned() const {
 
 DataArrayView DataArrayView::unaligned() const {
   // See also DataArrayConstView::unaligned.
+  if (hasData())
+    return DataArrayView{};
   auto view = m_mutableData->second.unaligned->data.data();
   detail::do_make_slice(view, slices());
   return {*m_mutableDataset, *m_mutableData, slices(), std::move(view)};
@@ -547,8 +597,10 @@ template <class MapView> MapView DataArrayView::makeView() const {
       return self.m_mutableData->second.attrs; // item attrs, not dataset attrs
   };
   auto items = makeViewItems<MapView>(dims(), map_parent(*this));
-  if (!m_mutableData->second.data && hasData()) {
-    // This is a view of the unaligned content of a realigned data array.
+  const bool is_view_of_unaligned = !m_mutableData->second.data && hasData();
+  DataArray *unaligned_ptr{nullptr};
+  if (is_view_of_unaligned) {
+    unaligned_ptr = &m_mutableData->second.unaligned->data;
     decltype(*this) unaligned = m_mutableData->second.unaligned->data;
     auto unalignedItems =
         makeViewItems<MapView>(unaligned.dims(), map_parent(unaligned));
@@ -557,13 +609,14 @@ template <class MapView> MapView DataArrayView::makeView() const {
   if constexpr (std::is_same_v<MapView, AttrsView>) {
     // Note: Unlike for CoordAccess and MaskAccess this is *not* unconditionally
     // disabled with nullptr since it sets/erase attributes of the *item*.
-    return MapView(
-        AttrAccess(slices().empty() ? m_mutableDataset : nullptr, &name()),
-        std::move(items), slices());
+    return MapView(AttrAccess(slices().empty() ? m_mutableDataset : nullptr,
+                              &name(), unaligned_ptr),
+                   std::move(items), slices());
   } else {
     // Access disabled with nullptr since views of dataset items or slices of
     // data arrays may not set or erase coords.
-    return MapView({nullptr}, std::move(items), slices());
+    return MapView({unaligned_ptr ? m_mutableDataset : nullptr, unaligned_ptr},
+                   std::move(items), slices());
   }
 }
 

@@ -66,10 +66,12 @@ template <class T> T convert_with_calibration_impl(T d, Dataset cal) {
     }
   }
 
-  // 3. Transform unaligned coordinates
-  // for (const auto &data : iter(d)) {
-  // No unaligned support in Dataset yet.
-  //}
+  // 3. Transform realigned items
+  for (const auto &item : iter(d))
+    if (item.unaligned() && is_events(item.unaligned())) {
+      item.unaligned().coords()[Dim::Tof] -= cal["tzero"].data();
+      item.unaligned().coords()[Dim::Tof] *= reciprocal(cal["difc"].data());
+    }
 
   d.rename(Dim::Tof, Dim::DSpacing);
   return d;

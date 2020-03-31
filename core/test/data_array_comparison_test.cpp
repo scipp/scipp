@@ -333,21 +333,21 @@ protected:
 };
 
 TEST_F(DataArray_comparison_operators_realigned, self) {
-  DataArray a(d, {{Dim::X, x}, {Dim::Y, y}});
+  DataArray a(d, {{Dim::X, x}, {Dim::Y, y}, {Dim::Z, z}});
   const auto realigned =
       unaligned::realign(a, {{Dim::Y, ybins}, {Dim::Z, zbins}});
   expect_eq(realigned, realigned);
 }
 
 TEST_F(DataArray_comparison_operators_realigned, swapped_dims) {
-  DataArray a(d, {{Dim::X, x}, {Dim::Y, y}});
+  DataArray a(d, {{Dim::X, x}, {Dim::Y, y}, {Dim::Z, z}});
   const auto zy = unaligned::realign(a, {{Dim::Y, ybins}, {Dim::Z, zbins}});
   const auto yz = unaligned::realign(a, {{Dim::Z, zbins}, {Dim::Y, ybins}});
   expect_ne(yz, zy);
 }
 
 TEST_F(DataArray_comparison_operators_realigned, different_bins) {
-  DataArray a(d, {{Dim::X, x}, {Dim::Y, y}});
+  DataArray a(d, {{Dim::X, x}, {Dim::Y, y}, {Dim::Z, z}});
   const auto yz1 = unaligned::realign(a, {{Dim::Y, ybins}, {Dim::Z, zbins}});
   const auto yz2 =
       unaligned::realign(a, {{Dim::Y, ybins}, {Dim::Z, zbins + 0.5}});
@@ -355,8 +355,8 @@ TEST_F(DataArray_comparison_operators_realigned, different_bins) {
 }
 
 TEST_F(DataArray_comparison_operators_realigned, different_unaligned_data) {
-  DataArray a1(d, {{Dim::X, x}, {Dim::Y, y}});
-  DataArray a2(d + 0.5, {{Dim::X, x}, {Dim::Y, y}});
+  DataArray a1(d, {{Dim::X, x}, {Dim::Y, y}, {Dim::Z, z}});
+  DataArray a2(d + 0.5, {{Dim::X, x}, {Dim::Y, y}, {Dim::Z, z}});
   const auto realigned1 =
       unaligned::realign(a1, {{Dim::Y, ybins}, {Dim::Z, zbins}});
   const auto realigned2 =
@@ -365,8 +365,8 @@ TEST_F(DataArray_comparison_operators_realigned, different_unaligned_data) {
 }
 
 TEST_F(DataArray_comparison_operators_realigned, different_unaligned_coord) {
-  DataArray a1(d, {{Dim::X, x}, {Dim::Y, y}});
-  DataArray a2(d, {{Dim::X, x}, {Dim::Y, y + 0.5}});
+  DataArray a1(d, {{Dim::X, x}, {Dim::Y, y}, {Dim::Z, z}});
+  DataArray a2(d, {{Dim::X, x}, {Dim::Y, y + 0.5}, {Dim::Z, z}});
   const auto realigned1 =
       unaligned::realign(a1, {{Dim::Y, ybins}, {Dim::Z, zbins}});
   const auto realigned2 =

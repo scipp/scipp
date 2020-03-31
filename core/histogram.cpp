@@ -8,6 +8,7 @@
 #include "scipp/core/except.h"
 #include "scipp/core/groupby.h"
 #include "scipp/core/transform_subspan.h"
+#include "scipp/core/unaligned.h"
 
 #include "dataset_operations_common.h"
 
@@ -147,6 +148,7 @@ bool is_histogram(const DataArrayConstView &a, const Dim dim) {
          coords[dim].dims()[dim] == dims[dim] + 1;
 }
 
+namespace {
 void histogram_md_recurse(const VariableView &data,
                           const DataArrayConstView &unaligned,
                           const DataArrayConstView &realigned,
@@ -169,11 +171,15 @@ void histogram_md_recurse(const VariableView &data,
     histogram_md_recurse(data.slice({dim, i}), slice, realigned, dim_index + 1);
   }
 }
+} // namespace
 
 DataArray histogram(const DataArrayConstView &realigned) {
   if (realigned.hasData())
     throw except::UnalignedError("Expected realigned data, but data appears to "
                                  "be histogrammed already.");
+  if (unaligned::is_realigned_events(realigned))
+    return histogram(realigned.unaligned(),
+                     unaligned::realigned_event_coord(realigned));
   std::optional<DataArray> filtered;
   // If `realigned` is sliced we need to copy the unaligned content to "apply"
   // the slicing since slicing realigned dimensions does not affect the view
@@ -188,6 +194,13 @@ DataArray histogram(const DataArrayConstView &realigned) {
   histogram_md_recurse(data, unaligned, realigned);
   return DataArray{std::move(data), realigned.coords(), realigned.masks(),
                    realigned.attrs()};
+}
+
+Dataset histogram(const DatasetConstView &realigned) {
+  Dataset out;
+  for (const auto &item : realigned)
+    out.setData(item.name(), histogram(item));
+  return out;
 }
 
 } // namespace scipp::core

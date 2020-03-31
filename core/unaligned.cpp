@@ -10,10 +10,12 @@ namespace scipp::core::unaligned {
 namespace {
 template <class Map, class Dims>
 auto align(DataArray &view, const Dims &unalignedDims) {
-  std::vector<std::pair<std::string, Variable>> aligned;
-  std::set<std::string> to_align;
+  std::vector<std::pair<typename Map::key_type, Variable>> aligned;
+  std::set<typename Map::key_type> to_align;
   constexpr auto map = [](DataArray &v) {
-    if constexpr (std::is_same_v<Map, MasksView>)
+    if constexpr (std::is_same_v<Map, CoordsView>)
+      return v.coords();
+    else if constexpr (std::is_same_v<Map, MasksView>)
       return v.masks();
     else
       return v.attrs();
@@ -21,7 +23,8 @@ auto align(DataArray &view, const Dims &unalignedDims) {
   for (const auto &[name, item] : map(view)) {
     const auto &dims = item.dims();
     if (std::none_of(unalignedDims.begin(), unalignedDims.end(),
-                     [&dims](const Dim dim) { return dims.contains(dim); }))
+                     [&dims](const Dim dim) { return dims.contains(dim); }) &&
+        !(is_events(item) && unalignedDims.count(Dim::Invalid)))
       to_align.insert(name);
   }
   for (const auto &name : to_align) {
@@ -42,10 +45,14 @@ Dim unaligned_dim(const VariableConstView &unaligned) {
 
 DataArray realign(DataArray unaligned,
                   std::vector<std::pair<Dim, Variable>> coords) {
+  if (!unaligned.hasData())
+    unaligned.drop_alignment();
   std::set<Dim> binnedDims;
   std::set<Dim> unalignedDims;
-  for (const auto &item : coords)
-    binnedDims.insert(item.first);
+  for (const auto &[dim, coord] : coords) {
+    expect::equals(coord.unit(), unaligned.coords()[dim].unit());
+    binnedDims.insert(dim);
+  }
   for (const auto &[dim, coord] : unaligned.coords())
     if (binnedDims.count(dim))
       unalignedDims.insert(unaligned_dim(coord));
@@ -59,7 +66,7 @@ DataArray realign(DataArray unaligned,
   // TODO Some things here can be simplified and optimized by adding an
   // `extract` method to MutableView.
   Dimensions alignedDims;
-  std::vector<std::pair<Dim, Variable>> alignedCoords;
+  auto alignedCoords = align<CoordsView>(unaligned, unalignedDims);
   const auto dims = unaligned.dims();
   for (const auto &dim : dims.labels()) {
     if (unalignedDims.count(dim)) {
@@ -68,9 +75,12 @@ DataArray realign(DataArray unaligned,
       alignedCoords.insert(alignedCoords.end(), coords.begin(), coords.end());
     } else {
       alignedDims.addInner(dim, unaligned.dims()[dim]);
-      alignedCoords.emplace_back(dim, Variable(unaligned.coords()[dim]));
-      unaligned.coords().erase(dim);
     }
+  }
+  if (unalignedDims.count(Dim::Invalid)) {
+    for (const auto &[d, coord] : coords)
+      alignedDims.addInner(d, coord.dims()[d] - 1);
+    alignedCoords.insert(alignedCoords.end(), coords.begin(), coords.end());
   }
 
   auto name = unaligned.name();
@@ -79,6 +89,33 @@ DataArray realign(DataArray unaligned,
   return DataArray(UnalignedData{alignedDims, std::move(unaligned)},
                    std::move(alignedCoords), std::move(alignedMasks),
                    std::move(alignedAttrs), std::move(name));
+}
+
+Dataset realign(Dataset dataset,
+                std::vector<std::pair<Dim, Variable>> newCoords) {
+  Dataset out;
+  while (!dataset.empty()) {
+    auto realigned = realign(dataset.extract(*dataset.keys_begin()), newCoords);
+    auto name = realigned.name();
+    out.setData(std::move(name), std::move(realigned));
+  }
+  return out;
+}
+
+bool is_realigned_events(const DataArrayConstView &realigned) {
+  return !is_events(realigned) && realigned.unaligned() &&
+         is_events(realigned.unaligned());
+}
+
+VariableConstView realigned_event_coord(const DataArrayConstView &realigned) {
+  std::vector<Dim> realigned_dims;
+  for (const auto &[dim, coord] : realigned.unaligned().coords())
+    if (is_events(coord) && realigned.coords().contains(dim))
+      realigned_dims.push_back(dim);
+  if (realigned_dims.size() != 1)
+    throw except::UnalignedError(
+        "Multi-dimensional histogramming of event data not supported yet.");
+  return realigned.coords()[realigned_dims.front()];
 }
 
 } // namespace scipp::core::unaligned

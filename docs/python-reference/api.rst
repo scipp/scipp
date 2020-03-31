@@ -39,6 +39,7 @@ General
    mean
    merge
    min
+   nan_to_num
    norm
    rebin
    reciprocal
@@ -46,10 +47,6 @@ General
    sort
    sqrt
    sum
-   position
-   geometry.x
-   geometry.y
-   geometry.z
 
 Group-by (split-apply-combine)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -86,6 +83,17 @@ Trigonometric
    acos
    atan
    atan2
+
+Geometric
+~~~~~~~~~
+
+.. autosummary::
+   :toctree: ../generated
+
+   geometry.position
+   geometry.x
+   geometry.y
+   geometry.z
 
 Counts
 ~~~~~~
