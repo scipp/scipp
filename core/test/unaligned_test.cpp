@@ -367,12 +367,19 @@ protected:
              Eigen::Vector3d{1, 2, 3}, Eigen::Vector3d{1, 2, 4}});
   Variable tof_bins =
       makeVariable<double>(Dims{Dim::Tof}, Shape{3}, Values{0, 2, 5});
+  Variable pulse_time_bins = makeVariable<int64_t>(
+      Dims{Dim::PulseTime}, Shape{3}, Values{100, 200, 300});
 
   DataArray make_array() {
     const auto tof = makeVariable<event_list<double>>(
         Dims{Dim::Position}, Shape{4},
         Values{event_list<double>{1}, event_list<double>{1, 2},
                event_list<double>{1, 2, 3}, event_list<double>{1, 2, 3, 4}});
+    const auto pulse_time = makeVariable<event_list<int64_t>>(
+        Dims{Dim::Position}, Shape{4},
+        Values{event_list<int64_t>{100}, event_list<int64_t>{100, 200},
+               event_list<int64_t>{100, 200, 200},
+               event_list<int64_t>{100, 100, 200, 200}});
     return DataArray(
         scalar_weights()
             ? makeVariable<double>(Dims{Dim::Position}, Shape{4},
@@ -386,7 +393,7 @@ protected:
                   Variances{event_list<double>{1}, event_list<double>{1, 1},
                             event_list<double>{1, 1, 1},
                             event_list<double>{1, 1, 1, 1}}),
-        {{Dim::Position, pos}, {Dim::Tof, tof}});
+        {{Dim::Position, pos}, {Dim::Tof, tof}, {Dim::PulseTime, pulse_time}});
   }
 
   DataArray make_realigned() {
@@ -400,6 +407,23 @@ protected:
                                           Values{1, 0, 1, 1, 1, 2, 1, 3},
                                           Variances{1, 0, 1, 1, 1, 2, 1, 3}),
                      {{Dim::Position, pos}, {Dim::Tof, tof_bins}});
+  }
+
+  DataArray make_realigned_2d() {
+    return unaligned::realign(make_array(), {{Dim::PulseTime, pulse_time_bins},
+                                             {Dim::Tof, tof_bins}});
+  }
+
+  DataArray make_aligned_2d() {
+    return DataArray(
+        makeVariable<double>(
+            Dims{Dim::Position, Dim::PulseTime, Dim::Tof}, Shape{4, 2, 2},
+            units::Unit(units::counts),
+            Values{1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 2, 1, 1, 0, 2},
+            Variances{1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 2, 1, 1, 0, 2}),
+        {{Dim::Position, pos},
+         {Dim::PulseTime, pulse_time_bins},
+         {Dim::Tof, tof_bins}});
   }
 };
 
