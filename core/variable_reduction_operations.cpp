@@ -238,16 +238,6 @@ Variable max(const VariableConstView &var, const Dim dim) {
   return reduce_idempotent<operator_detail::max_equals>(var, dim);
 }
 
-/// Return the maximum along all dimension.
-Variable max(const VariableConstView &var) {
-  if (var.dims().empty())
-    return Variable(var);
-  Variable out = max(var, var.dims().inner());
-  while (!out.dims().empty())
-    out = max(out, out.dims().inner());
-  return out;
-}
-
 void min_impl(const VariableView &out, const VariableConstView &var) {
   reduce_impl<operator_detail::min_equals>(out, var);
 }
@@ -282,6 +272,26 @@ Variable masks_merge_if_contained(const MasksConstView &masks,
       mask_union = mask_union | mask.second;
   }
   return mask_union;
+}
+
+/// Return the maximum along all dimensions.
+Variable max(const VariableConstView &var) {
+  return reduce_all_dims(var, [](auto &&... _) { return max(_...); });
+}
+
+/// Return the minimum along all dimensions.
+Variable min(const VariableConstView &var) {
+  return reduce_all_dims(var, [](auto &&... _) { return min(_...); });
+}
+
+/// Return the logical AND along all dimensions.
+Variable all(const VariableConstView &var) {
+  return reduce_all_dims(var, [](auto &&... _) { return all(_...); });
+}
+
+/// Return the logical OR along all dimensions.
+Variable any(const VariableConstView &var) {
+  return reduce_all_dims(var, [](auto &&... _) { return any(_...); });
 }
 
 } // namespace scipp::core

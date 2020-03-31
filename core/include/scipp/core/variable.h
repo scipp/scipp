@@ -1021,8 +1021,10 @@ SCIPP_CORE_EXPORT VariableView atan2(const VariableConstView &y,
                                      const VariableView &out);
 
 // Logical reductions
+[[nodiscard]] SCIPP_CORE_EXPORT Variable any(const VariableConstView &var);
 [[nodiscard]] SCIPP_CORE_EXPORT Variable any(const VariableConstView &var,
                                              const Dim dim);
+[[nodiscard]] SCIPP_CORE_EXPORT Variable all(const VariableConstView &var);
 [[nodiscard]] SCIPP_CORE_EXPORT Variable all(const VariableConstView &var,
                                              const Dim dim);
 
@@ -1030,6 +1032,7 @@ SCIPP_CORE_EXPORT VariableView atan2(const VariableConstView &y,
 [[nodiscard]] SCIPP_CORE_EXPORT Variable max(const VariableConstView &var);
 [[nodiscard]] SCIPP_CORE_EXPORT Variable max(const VariableConstView &var,
                                              const Dim dim);
+[[nodiscard]] SCIPP_CORE_EXPORT Variable min(const VariableConstView &var);
 [[nodiscard]] SCIPP_CORE_EXPORT Variable min(const VariableConstView &var,
                                              const Dim dim);
 
