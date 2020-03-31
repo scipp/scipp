@@ -660,39 +660,6 @@ class InstrumentView:
         return self.p3.Sprite(material=sm,
             position=position, scaleToTexture=True, scale=[size, size, size])
 
-    def get_vertices(self):
-        # Duplicate the detector shape to the number of detectors
-        vertices = sc.Variable(dims=["spectrum", "vertex"],
-                               shape=[self.ndets, self.nverts],
-                               unit=sc.units.m,
-                               dtype=sc.dtype.vector_3_float64)
-        for i in range(self.nverts):
-            vertices["vertex", i] = sc.Variable(
-                dims=["spectrum"],
-                values=np.tile(self.detector_shape[i], [self.ndets, 1]),
-                unit=sc.units.m,
-                dtype=sc.dtype.vector_3_float64)
-        # vertices = np.tile(self.detector_shape, [self.ndets, 1]).reshape([self.ndets, self.nverts, 3])
-# var["vertices", 0] = sc.Variable(dims=["spectrum"], values=np.tile(v[0], [4, 1]), dtype=sc.dtype.vector_3_float64)
-
-        # # Rotate the detectors
-        # for i in range(self.ndets):
-        #     vertices[i*self.nverts:(i+1)*self.nverts, :] = np.transpose(
-        #         np.dot(
-        #             self.hist_data_array[self.key].attrs["rotation"].values[i].to_rotation_matrix(),
-        #             vertices[i*self.nverts:(i+1)*self.nverts, :].T))
-        # # self.hist_data_array[self.key]).values,
-        # #                         dtype=np.float32)
-        # print(np.shape(vertices.values))
-        print(vertices)
-        rotated = sc.geometry.rotate(vertices, self.hist_data_array[self.key].attrs["rotation"])
-        # print(np.shape(rotated.values))
-        print(rotated)
-        vertices = rotated + self.det_pos
-        # print(np.shape(vertices))
-        print(vertices)
-        return vertices
-
     def rebin_data(self, bins):
         """
         Rebin the original data to Tof given some bins. This is executed both
@@ -824,10 +791,29 @@ class InstrumentView:
         permutations = {"X": [0, 2, 1], "Y": [1, 0, 2], "Z": [2, 1, 0]}
 
         if self.select_rendering.value == "Full":
-            # pixel_pos = np.tile(self.detector_shape, [self.ndets, 1]) + np.repeat(self.det_pos, self.nverts, axis=0)
-            pixel_pos = np.array(self.get_vertices().values, dtype=np.float32)
+
+            # Duplicate the detector shape to the number of detectors by creating
+            # a Variable of dims ["spectrum", "vertex"]. The rotation operation
+            # will then be applied along the "spectrum" dimension using the
+            # automatic broadcast
+            vertices = sc.Variable(dims=["spectrum", "vertex"],
+                                   shape=[self.ndets, self.nverts],
+                                   unit=sc.units.m,
+                                   dtype=sc.dtype.vector_3_float64)
+            for i in range(self.nverts):
+                vertices["vertex", i] = sc.Variable(
+                    dims=["spectrum"],
+                    values=np.tile(self.detector_shape[i], [self.ndets, 1]),
+                    unit=sc.units.m,
+                    dtype=sc.dtype.vector_3_float64)
+
+            vertices = sc.geometry.rotate(vertices, self.hist_data_array[self.key].attrs["rotation"])
+
+            # return vertices + self.det_pos
+
+            pixel_pos = np.array((vertices + self.det_pos).values, dtype=np.float32)
             pixel_pos = pixel_pos.reshape(-1, pixel_pos.shape[-1])
-            print("pixel_pos", pixel_pos)
+            # print("pixel_pos", pixel_pos)
         else:
             pixel_pos = self.det_pos.values
 
