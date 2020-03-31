@@ -288,4 +288,4 @@ TEST_F(EventFilterTest, filter_1d_with_variances) {
             Values{event_list<float>{2, 1}, event_list<float>{2, 1}})}}};
 
   EXPECT_EQ(event::filter(a, Dim::Y, interval), expected);
-  }
+}
