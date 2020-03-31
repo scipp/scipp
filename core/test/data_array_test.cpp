@@ -102,17 +102,26 @@ TEST(DataArrayTest, astype) {
             makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1., 2., 3.}));
 }
 
-TEST(DataArrayRealignedEventsArithmeticTest, fail_sparse_op_non_histogram) {
-  const auto sparse = make_sparse();
+TEST(DataArrayRealignedEventsArithmeticTest, fail_events_op_non_histogram) {
+  const auto events = make_sparse();
   auto coord = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
-                                    Values{0, 2, 1, 3});
+                                    units::Unit(units::us), Values{0, 2, 1, 3});
   auto data = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{2.0, 3.0},
                                    Variances{0.3, 0.4});
   DataArray not_hist(data, {{Dim::X, coord}});
 
-  EXPECT_THROW(sparse * not_hist, except::VariableMismatchError);
-  EXPECT_THROW(not_hist * sparse, except::VariableMismatchError);
-  EXPECT_THROW(sparse / not_hist, except::VariableMismatchError);
+  // Fail due to coord mismatch between event coord and dense coord
+  EXPECT_THROW(events * not_hist, except::VariableMismatchError);
+  EXPECT_THROW(not_hist * events, except::VariableMismatchError);
+  EXPECT_THROW(events / not_hist, except::VariableMismatchError);
+
+  const auto realigned = unaligned::realign(
+      events, {{Dim::X, Variable{not_hist.coords()[Dim::X]}}});
+
+  // Fail because non-event operand has to be a histogram
+  EXPECT_THROW(realigned * not_hist, except::RealignedDataError);
+  EXPECT_THROW(not_hist * realigned, except::RealignedDataError);
+  EXPECT_THROW(realigned / not_hist, except::RealignedDataError);
 }
 
 TEST(DataArrayRealignedEventsArithmeticTest, events_times_histogram) {
