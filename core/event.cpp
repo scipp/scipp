@@ -13,10 +13,10 @@ namespace scipp::core {
 /// Return true if a variable contains events
 bool is_events(const VariableConstView &var) {
   const auto type = var.dtype();
-  return type == dtype<sparse_container<double>> ||
-         type == dtype<sparse_container<float>> ||
-         type == dtype<sparse_container<int64_t>> ||
-         type == dtype<sparse_container<int32_t>>;
+  return type == dtype<event_list<double>> ||
+         type == dtype<event_list<float>> ||
+         type == dtype<event_list<int64_t>> ||
+         type == dtype<event_list<int32_t>>;
 }
 
 /// Return true if a data array contains events
@@ -120,10 +120,10 @@ Variable sizes(const VariableConstView &events) {
 /// without apparent negative effect on the other cases.
 void reserve(const VariableView &events, const VariableConstView &capacity) {
   transform_in_place<
-      pair_custom_t<std::pair<sparse_container<double>, scipp::index>>,
-      pair_custom_t<std::pair<sparse_container<float>, scipp::index>>,
-      pair_custom_t<std::pair<sparse_container<int64_t>, scipp::index>>,
-      pair_custom_t<std::pair<sparse_container<int32_t>, scipp::index>>>(
+      pair_custom_t<std::pair<event_list<double>, scipp::index>>,
+      pair_custom_t<std::pair<event_list<float>, scipp::index>>,
+      pair_custom_t<std::pair<event_list<int64_t>, scipp::index>>,
+      pair_custom_t<std::pair<event_list<int32_t>, scipp::index>>>(
       events, capacity,
       overloaded{[](auto &&sparse_, const scipp::index capacity_) {
                    if (capacity_ > 2 * scipp::size(sparse_))
