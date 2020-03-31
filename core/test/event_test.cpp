@@ -2,6 +2,8 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
+#include <limits>
+
 #include "test_macros.h"
 
 #include "scipp/core/event.h"
@@ -282,6 +284,38 @@ TEST_F(EventFilterTest, filter_1d_with_variances) {
           Dims{Dim::X}, Shape{2}, units::Unit(units::counts),
           Values{event_list<float>{1.2, 1.3}, event_list<float>{1.4, 1.7}},
           Variances{event_list<float>{1.2, 1.3}, event_list<float>{1.4, 1.7}}),
+      {{Dim::Y,
+        makeVariable<event_list<float>>(
+            Dims{Dim::X}, Shape{2}, units::Unit(units::us),
+            Values{event_list<float>{2, 1}, event_list<float>{2, 1}})}}};
+
+  EXPECT_EQ(event::filter(a, Dim::Y, interval), expected);
+}
+
+// Passes, but disabled since long running and using a lot of memory.
+TEST_F(EventFilterTest, DISABLED_filter_1d_64bit_indices) {
+  DataArray a(data, {{Dim::Y, coord1}});
+  const auto interval = makeVariable<float>(
+      Dims{Dim::Y}, Shape{2}, units::Unit(units::us), Values{1.0, 2.5});
+
+  const scipp::index size = std::numeric_limits<int32_t>::max();
+  auto &values = a.values<event_list<float>>()[0];
+  values.clear();
+  values.resize(size + 3);
+  values[size + 0] = 1.1;
+  values[size + 1] = 1.2;
+  values[size + 2] = 1.3;
+  auto &coord = a.coords()[Dim::Y].values<event_list<float>>()[0];
+  coord.clear();
+  coord.resize(size + 3);
+  coord[size + 0] = 3;
+  coord[size + 1] = 2;
+  coord[size + 2] = 1;
+
+  const DataArray expected{
+      makeVariable<event_list<float>>(
+          Dims{Dim::X}, Shape{2}, units::Unit(units::counts),
+          Values{event_list<float>{1.2, 1.3}, event_list<float>{1.4, 1.7}}),
       {{Dim::Y,
         makeVariable<event_list<float>>(
             Dims{Dim::X}, Shape{2}, units::Unit(units::us),
