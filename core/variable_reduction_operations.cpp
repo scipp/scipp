@@ -14,46 +14,6 @@
 
 namespace scipp::core {
 
-namespace sparse {
-/// Return array of sparse dimension extents, i.e., total counts.
-Variable counts(const VariableConstView &var) {
-  // To simplify this we would like to use `transform`, but this is currently
-  // not possible since the current implementation expects outputs with
-  // variances if any of the inputs has variances.
-  auto counts =
-      makeVariable<scipp::index>(var.dims(), units::Unit(units::counts));
-  accumulate_in_place<
-      pair_custom_t<std::pair<scipp::index, sparse_container<double>>>,
-      pair_custom_t<std::pair<scipp::index, sparse_container<float>>>,
-      pair_custom_t<std::pair<scipp::index, sparse_container<int64_t>>>,
-      pair_custom_t<std::pair<scipp::index, sparse_container<int32_t>>>>(
-      counts, var,
-      overloaded{[](scipp::index &c, const auto &sparse) { c = sparse.size(); },
-                 transform_flags::expect_no_variance_arg<0>});
-  return counts;
-}
-
-/// Reserve memory in all sparse containers in `sparse`, based on `capacity`.
-///
-/// To avoid pessimizing reserves, this does nothing if the new capacity is less
-/// than the typical logarithmic growth. This yields a 5x speedup in some cases,
-/// without apparent negative effect on the other cases.
-void reserve(const VariableView &sparse, const VariableConstView &capacity) {
-  transform_in_place<
-      pair_custom_t<std::pair<sparse_container<double>, scipp::index>>,
-      pair_custom_t<std::pair<sparse_container<float>, scipp::index>>,
-      pair_custom_t<std::pair<sparse_container<int64_t>, scipp::index>>,
-      pair_custom_t<std::pair<sparse_container<int32_t>, scipp::index>>>(
-      sparse, capacity,
-      overloaded{[](auto &&sparse_, const scipp::index capacity_) {
-                   if (capacity_ > 2 * scipp::size(sparse_))
-                     return sparse_.reserve(capacity_);
-                 },
-                 transform_flags::expect_no_variance_arg<1>,
-                 [](const units::Unit &, const units::Unit &) {}});
-}
-} // namespace sparse
-
 namespace flatten_detail {
 template <class T>
 using args = std::tuple<sparse_container<T>, sparse_container<T>, bool>;
@@ -68,9 +28,9 @@ void flatten_impl(const VariableView &summed, const VariableConstView &var,
     throw except::TypeError("`flatten` can only be used for event data, "
                             "use `sum` for dense data.");
   // 1. Reserve space in output. This yields approx. 3x speedup.
-  auto summed_counts = sparse::counts(summed);
-  sum_impl(summed_counts, sparse::counts(var) * mask);
-  sparse::reserve(summed, summed_counts);
+  auto summed_sizes = event::sizes(summed);
+  sum_impl(summed_sizes, event::sizes(var) * mask);
+  event::reserve(summed, summed_sizes);
 
   // 2. Flatten dimension(s) by concatenating along sparse dim.
   using namespace flatten_detail;

@@ -96,15 +96,41 @@ Variable broadcast_weights(const DataArrayConstView &events) {
       "No coord with event lists found, cannot broadcast weights.");
 }
 
-/// Return the sizes of the events lists in var
-Variable sizes(const VariableConstView &var) {
-  return transform<event_list<double>, event_list<float>, event_list<int64_t>,
-                   event_list<int32_t>>(
-      var, overloaded{transform_flags::expect_no_variance_arg<0>,
-                      [](const auto &x) { return scipp::size(x); },
-                      [](const units::Unit &) {
-                        return units::Unit(units::dimensionless);
-                      }});
+/// Return the sizes of the events lists in `events`
+Variable sizes(const VariableConstView &events) {
+  // To simplify this we would like to use `transform`, but this is currently
+  // not possible since the current implementation expects outputs with
+  // variances if any of the inputs has variances.
+  auto sizes = makeVariable<scipp::index>(events.dims());
+  accumulate_in_place<
+      pair_custom_t<std::pair<scipp::index, event_list<double>>>,
+      pair_custom_t<std::pair<scipp::index, event_list<float>>>,
+      pair_custom_t<std::pair<scipp::index, event_list<int64_t>>>,
+      pair_custom_t<std::pair<scipp::index, event_list<int32_t>>>>(
+      sizes, events,
+      overloaded{[](scipp::index &c, const auto &list) { c = list.size(); },
+                 transform_flags::expect_no_variance_arg<0>});
+  return sizes;
+}
+
+/// Reserve memory in all event lists in `events`, based on `capacity`.
+///
+/// To avoid pessimizing reserves, this does nothing if the new capacity is less
+/// than the typical logarithmic growth. This yields a 5x speedup in some cases,
+/// without apparent negative effect on the other cases.
+void reserve(const VariableView &events, const VariableConstView &capacity) {
+  transform_in_place<
+      pair_custom_t<std::pair<sparse_container<double>, scipp::index>>,
+      pair_custom_t<std::pair<sparse_container<float>, scipp::index>>,
+      pair_custom_t<std::pair<sparse_container<int64_t>, scipp::index>>,
+      pair_custom_t<std::pair<sparse_container<int32_t>, scipp::index>>>(
+      events, capacity,
+      overloaded{[](auto &&sparse_, const scipp::index capacity_) {
+                   if (capacity_ > 2 * scipp::size(sparse_))
+                     return sparse_.reserve(capacity_);
+                 },
+                 transform_flags::expect_no_variance_arg<1>,
+                 [](const units::Unit &, const units::Unit &) {}});
 }
 
 namespace filter_detail {

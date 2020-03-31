@@ -2,6 +2,7 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
+#include "scipp/core/event.h"
 #include "scipp/core/variable.h"
 
 using namespace scipp;
@@ -30,7 +31,7 @@ static auto make_sparse_with_variances() {
 
 TEST(SparseCountsTest, fail_dense) {
   auto bad = makeVariable<double>(Values{1.0});
-  EXPECT_ANY_THROW(sparse::counts(bad));
+  EXPECT_ANY_THROW(event::sizes(bad));
 }
 
 TEST(SparseCountsTest, no_variances) {
@@ -39,7 +40,7 @@ TEST(SparseCountsTest, no_variances) {
                                              units::Unit(units::counts),
                                              Values{0, 1, 2, 3, 4, 5});
 
-  EXPECT_EQ(sparse::counts(var), expected);
+  EXPECT_EQ(event::sizes(var), expected);
 }
 
 TEST(SparseCountsTest, variances) {
@@ -48,5 +49,5 @@ TEST(SparseCountsTest, variances) {
                                              units::Unit(units::counts),
                                              Values{0, 1, 2, 3, 4, 5});
 
-  EXPECT_EQ(sparse::counts(var), expected);
+  EXPECT_EQ(event::sizes(var), expected);
 }

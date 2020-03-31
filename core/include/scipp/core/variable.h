@@ -1059,12 +1059,6 @@ namespace geometry {
 
 } // namespace geometry
 
-namespace sparse {
-SCIPP_CORE_EXPORT Variable counts(const VariableConstView &var);
-SCIPP_CORE_EXPORT void reserve(const VariableView &sparse,
-                               const VariableConstView &capacity);
-} // namespace sparse
-
 bool is_events(const VariableConstView &var);
 bool is_events(const DataArrayConstView &array);
 
