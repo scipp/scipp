@@ -4,8 +4,8 @@
 /// @author Simon Heybrock
 #include <limits>
 
-#include "scipp/core/event.h"
 #include "scipp/core/dataset.h"
+#include "scipp/core/event.h"
 #include "scipp/core/subspan_view.h"
 #include "scipp/core/transform.h"
 
