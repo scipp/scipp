@@ -50,6 +50,7 @@ template <class... Known> class VariableConceptHandle_impl;
 // `transform`, i.e., we can pass arbitrary functors/lambdas to process data.
 #define KNOWN                                                                  \
   double, float, int64_t, int32_t, bool, Eigen::Vector3d,                      \
+      Eigen::Quaterniond,                                                      \
       sparse_container<double>, sparse_container<float>,                       \
       sparse_container<int64_t>, sparse_container<int32_t>,                    \
       span<const double>, span<double>, span<const float>, span<float>
@@ -1055,6 +1056,7 @@ namespace geometry {
 [[nodiscard]] SCIPP_CORE_EXPORT Variable x(const VariableConstView &pos);
 [[nodiscard]] SCIPP_CORE_EXPORT Variable y(const VariableConstView &pos);
 [[nodiscard]] SCIPP_CORE_EXPORT Variable z(const VariableConstView &pos);
+[[nodiscard]] SCIPP_CORE_EXPORT Variable rotate(const VariableConstView &pos, const VariableConstView &rot);
 
 } // namespace geometry
 

@@ -312,19 +312,23 @@ class InstrumentView:
         self.vbox = self.widgets.VBox(box_list)
 
         # Get detector positions
-        self.det_pos = np.array(sn.position(
-            self.hist_data_array[self.key]).values,
-                                dtype=np.float32)
+        self.det_pos = sn.position(self.hist_data_array[self.key])
         # Find extents of the detectors
         self.camera_pos = np.NINF
         for i, x in enumerate("xyz"):
-            self.minmax[x] = [
-                np.amin(self.det_pos[:, i]),
-                np.amax(self.det_pos[:, i])
-            ]
-            self.camera_pos = max(self.camera_pos,
-                                  np.amax(np.abs(self.minmax[x])))
+            # self.minmax[x] = [
+            #     np.amin(self.det_pos.values[:, i]),
+            #     np.amax(self.det_pos.values[:, i])
+            # ]
+            comp = getattr(sc.geometry, x)(self.det_pos)
+            # print(sc.min(comp, "spectrum").value)
+            # print(sc.min(comp, "spectrum").values)
+            self.camera_pos = max(
+                self.camera_pos,
+                np.amax(np.abs([sc.min(comp, "spectrum").value,
+                                sc.max(comp, "spectrum").value])))
 
+        print(self.camera_pos)
         # # Create texture for scatter points to represent detector shapes
         # nx = 32
         # det_aspect_ratio = int(round(nx * min(self.size) / max(self.size)))
@@ -447,7 +451,7 @@ class InstrumentView:
 
         self.nverts = len(self.detector_shape)
         self.nfaces = len(detector_faces)
-        self.ndets = len(self.det_pos)
+        self.ndets = self.det_pos.shape[0]
 
         print(self.nverts, self.ndets, self.nfaces)
 
@@ -470,7 +474,7 @@ class InstrumentView:
 
 
         self.mesh_geometry = self.p3.BufferGeometry(attributes=dict(
-            position=self.p3.BufferAttribute(self.get_vertices(), normalized=False),
+            position=self.p3.BufferAttribute(np.zeros([self.nverts*self.ndets, 3], dtype=np.float32), normalized=False),
             index=self.p3.BufferAttribute(faces.ravel(), normalized=False),
             color=self.p3.BufferAttribute(vertexcolors),
         ))
@@ -534,9 +538,9 @@ class InstrumentView:
         # self.colors = self.p3.BufferAttribute(
         #     array=np.zeros([np.shape(self.det_pos)[0], 4], dtype=np.float32))
         self.points_geometry = self.p3.BufferGeometry(attributes={
-            'position': self.p3.BufferAttribute(array=self.det_pos),
+            'position': self.p3.BufferAttribute(array=self.det_pos.values),
             'color': self.p3.BufferAttribute(
-            array=np.zeros([np.shape(self.det_pos)[0], 3], dtype=np.float32))
+            array=np.zeros([self.det_pos.shape[0], 3], dtype=np.float32))
         })
         self.points_material = self.p3.PointsMaterial(vertexColors='VertexColors',
                                                size=max(self.size),
@@ -658,16 +662,35 @@ class InstrumentView:
 
     def get_vertices(self):
         # Duplicate the detector shape to the number of detectors
-        vertices = np.tile(self.detector_shape, [self.ndets, 1])
-        # Rotate the detectors
-        for i in range(self.ndets):
-            vertices[i*self.nverts:(i+1)*self.nverts, :] = np.transpose(
-                np.dot(
-                    self.hist_data_array[self.key].attrs["rotation"].values[i].to_rotation_matrix(),
-                    vertices[i*self.nverts:(i+1)*self.nverts, :].T))
-        # self.hist_data_array[self.key]).values,
-        #                         dtype=np.float32)
-        vertices += np.repeat(self.det_pos, self.nverts, axis=0)
+        vertices = sc.Variable(dims=["spectrum", "vertex"],
+                               shape=[self.ndets, self.nverts],
+                               unit=sc.units.m,
+                               dtype=sc.dtype.vector_3_float64)
+        for i in range(self.nverts):
+            vertices["vertex", i] = sc.Variable(
+                dims=["spectrum"],
+                values=np.tile(self.detector_shape[i], [self.ndets, 1]),
+                unit=sc.units.m,
+                dtype=sc.dtype.vector_3_float64)
+        # vertices = np.tile(self.detector_shape, [self.ndets, 1]).reshape([self.ndets, self.nverts, 3])
+# var["vertices", 0] = sc.Variable(dims=["spectrum"], values=np.tile(v[0], [4, 1]), dtype=sc.dtype.vector_3_float64)
+
+        # # Rotate the detectors
+        # for i in range(self.ndets):
+        #     vertices[i*self.nverts:(i+1)*self.nverts, :] = np.transpose(
+        #         np.dot(
+        #             self.hist_data_array[self.key].attrs["rotation"].values[i].to_rotation_matrix(),
+        #             vertices[i*self.nverts:(i+1)*self.nverts, :].T))
+        # # self.hist_data_array[self.key]).values,
+        # #                         dtype=np.float32)
+        # print(np.shape(vertices.values))
+        print(vertices)
+        rotated = sc.geometry.rotate(vertices, self.hist_data_array[self.key].attrs["rotation"])
+        # print(np.shape(rotated.values))
+        print(rotated)
+        vertices = rotated + self.det_pos
+        # print(np.shape(vertices))
+        print(vertices)
         return vertices
 
     def rebin_data(self, bins):
@@ -802,9 +825,11 @@ class InstrumentView:
 
         if self.select_rendering.value == "Full":
             # pixel_pos = np.tile(self.detector_shape, [self.ndets, 1]) + np.repeat(self.det_pos, self.nverts, axis=0)
-            pixel_pos = self.get_vertices()
+            pixel_pos = np.array(self.get_vertices().values, dtype=np.float32)
+            pixel_pos = pixel_pos.reshape(-1, pixel_pos.shape[-1])
+            print("pixel_pos", pixel_pos)
         else:
-            pixel_pos = self.det_pos
+            pixel_pos = self.det_pos.values
 
         if projection.startswith("3D"):
             xyz = pixel_pos

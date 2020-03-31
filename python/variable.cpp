@@ -992,7 +992,7 @@ void init_variable(py::module &m) {
       R"(Return true if the data array contains event data. Note that data may be stored as a scalar, but this returns true if any coord contains events.)");
   auto geom_m = m.def_submodule("geometry");
   geom_m.def("position",
-             [](const Variable &x, const Variable &y, const Variable &z) {
+             [](const VariableConstView &x, const VariableConstView &y, const VariableConstView &z) {
                return geometry::position(x, y, z);
              },
              py::arg("x"), py::arg("y"), py::arg("z"),
@@ -1002,7 +1002,7 @@ void init_variable(py::module &m) {
         :raises: If the units of inputs are not all meters, or if the dtypes of inputs are not double precision floats
         :return: zip of input x, y and z. Output unit is meters.
         :rtype: Variable)");
-  geom_m.def("x", [](const Variable &pos) { return geometry::x(pos); },
+  geom_m.def("x", [](const VariableConstView &pos) { return geometry::x(pos); },
              py::arg("pos"),
              R"(
         un-zip functionality to produce a Variable of the x component of a vector_3_float64.
@@ -1010,7 +1010,7 @@ void init_variable(py::module &m) {
         :raises: If the units of inputs are not meters, or if the dtypes of inputs are not double precision floats
         :return: Extracted x component of input pos. Units in meters.
         :rtype: Variable)");
-  geom_m.def("y", [](const Variable &pos) { return geometry::y(pos); },
+  geom_m.def("y", [](const VariableConstView &pos) { return geometry::y(pos); },
              py::arg("pos"),
              R"(
         un-zip functionality to produce a Variable of the y component of a vector_3_float64.
@@ -1018,12 +1018,23 @@ void init_variable(py::module &m) {
         :raises: If the units of inputs are not meters, or if the dtypes of inputs are not double precision floats
         :return: Extracted y component of input pos. Units in meters.
         :rtype: Variable)");
-  geom_m.def("z", [](const Variable &pos) { return geometry::z(pos); },
+  geom_m.def("z", [](const VariableConstView &pos) { return geometry::z(pos); },
              py::arg("pos"),
              R"(
         un-zip functionality to produce a Variable of the z component of a vector_3_float64.
 
         :raises: If the units of inputs are not meters, or if the dtypes of inputs are not double precision floats
         :return: Extracted z component of input pos. Units in meters.
+        :rtype: Variable)");
+  geom_m.def("rotate",
+             [](const VariableConstView &pos, const VariableConstView &rot) {
+               return geometry::rotate(pos, rot);
+             },
+             py::arg("position"), py::arg("rotation"),
+             R"(
+        Rotate a Variable of type vector_3_float64 using a Variable of type quaternion_float64.
+
+        :raises: If the units of the inputs are not meter and dimensionless for the positions and the rotations, respectively.
+        :return: a Variable containing the rotated position vectors.
         :rtype: Variable)");
 }
