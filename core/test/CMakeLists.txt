@@ -38,7 +38,6 @@ add_executable(
   self_assignment_test.cpp
   slice_test.cpp
   sort_test.cpp
-  sparse_counts_test.cpp
   sparse_data_operations_consistency_test.cpp
   string_test.cpp
   subspan_view_test.cpp
