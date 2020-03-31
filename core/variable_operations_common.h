@@ -21,7 +21,7 @@ void min_impl(const VariableView &out, const VariableConstView &var);
 template <class Op>
 Variable reduce_all_dims(const VariableConstView &var, const Op &op) {
   if (var.dims().empty())
-    return op(var.reshape(Dimensions(Dim::X, 1)), Dim::X);
+    return Variable(var);
   Variable out = op(var, var.dims().inner());
   while (!out.dims().empty())
     out = op(out, out.dims().inner());

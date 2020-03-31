@@ -50,6 +50,8 @@ TEST(ReduceTest, min_max_all_dims) {
                                         Values{1, 2, 3, 4});
   EXPECT_EQ(min(var), makeVariable<double>(Values{1}));
   EXPECT_EQ(max(var), makeVariable<double>(Values{4}));
+  EXPECT_EQ(min(min(var)), min(var));
+  EXPECT_EQ(max(min(var)), min(var));
 }
 
 TEST(ReduceTest, all_any_all_dims) {
@@ -57,4 +59,8 @@ TEST(ReduceTest, all_any_all_dims) {
                                       Values{true, false, false, false});
   EXPECT_EQ(all(var), makeVariable<bool>(Values{false}));
   EXPECT_EQ(any(var), makeVariable<bool>(Values{true}));
+  EXPECT_EQ(all(all(var)), all(var));
+  EXPECT_EQ(any(all(var)), all(var));
+  EXPECT_EQ(all(any(var)), any(var));
+  EXPECT_EQ(any(any(var)), any(var));
 }
