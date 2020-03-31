@@ -3,6 +3,7 @@
 #include <gtest/gtest.h>
 
 #include "scipp/core/dataset.h"
+#include "scipp/core/event.h"
 #include "scipp/core/histogram.h"
 #include "scipp/core/unaligned.h"
 
@@ -445,8 +446,55 @@ TEST_P(RealignEventsTest, basics) {
   EXPECT_EQ(realigned.unaligned(), base);
 }
 
+TEST_P(RealignEventsTest, realigned_drop_alignment) {
+  auto a = make_realigned();
+  a.drop_alignment();
+  EXPECT_EQ(a, make_array());
+}
+
+TEST_P(RealignEventsTest, dimension_order) {
+  auto base = make_array();
+  auto realigned1 = unaligned::realign(
+      base, {{Dim::PulseTime, pulse_time_bins}, {Dim::Tof, tof_bins}});
+  auto realigned2 = unaligned::realign(
+      base, {{Dim::Tof, tof_bins}, {Dim::PulseTime, pulse_time_bins}});
+
+  // Dimensions derived form realigned events are always the inner dimensions
+  EXPECT_EQ(realigned1.dims(),
+            Dimensions({Dim::Position, Dim::PulseTime, Dim::Tof}, {4, 2, 2}));
+  EXPECT_EQ(realigned2.dims(),
+            Dimensions({Dim::Position, Dim::Tof, Dim::PulseTime}, {4, 2, 2}));
+}
+
+TEST_P(RealignEventsTest, copy_realigned_slice) {
+  const auto realigned = make_realigned();
+  const auto slice = realigned.slice({Dim::Tof, 1});
+  // `slice` contains unfiltered unaligned content, but copy drops out-of-bounds
+  // content.
+  const DataArray copy(slice);
+  EXPECT_NE(copy, slice);
+  EXPECT_EQ(copy.dims(), slice.dims());
+  EXPECT_EQ(copy.coords(), slice.coords());
+  EXPECT_EQ(copy.masks(), slice.masks());
+  EXPECT_EQ(copy.attrs(), slice.attrs());
+  EXPECT_NE(copy.unaligned(), slice.unaligned());
+  EXPECT_EQ(copy.unaligned(), event::filter(realigned.unaligned(), Dim::Tof,
+                                            realigned.coords()[Dim::Tof].slice(
+                                                {Dim::Tof, 1, 3})));
+}
+
 TEST_P(RealignEventsTest, histogram) {
   EXPECT_EQ(histogram(make_realigned()), make_aligned());
+}
+
+TEST_P(RealignEventsTest, histogram_slices_of_2d) {
+  // Full 2d histogram not supported yet, but we can do it slice-by-slice
+  auto realigned = make_realigned_2d();
+  const auto expected = make_aligned_2d();
+  EXPECT_EQ(histogram(realigned.slice({Dim::PulseTime, 0})),
+            expected.slice({Dim::PulseTime, 0}));
+  EXPECT_EQ(histogram(realigned.slice({Dim::PulseTime, 1})),
+            expected.slice({Dim::PulseTime, 1}));
 }
 
 TEST_P(RealignEventsTest, dtype) {
