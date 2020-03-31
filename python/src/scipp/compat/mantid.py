@@ -197,21 +197,116 @@ def validate_and_get_unit(unit, allow_empty=False):
         return known_units[unit]
 
 
-def init_pos(ws):
-    nHist = ws.getNumberHistograms()
-    pos = np.zeros([nHist, 3])
+def _to_spherical(pos, output):
+    output["r"] = sc.sqrt(sc.dot(pos, pos))
+    output["t"] = sc.acos(sc.geometry.z(pos) / output["r"].data)
+    output["p"] = output["t"].data.copy()
+    sc.atan2(sc.geometry.y(pos), sc.geometry.x(pos), output["p"].data)
 
+
+def rotation_matrix_from_vectors(vec1, vec2):
+    """ Find the rotation matrix that aligns vec1 to vec2
+    :param vec1: A 3d "source" vector
+    :param vec2: A 3d "destination" vector
+    :return mat: Tranform (3x3) which aligns it with vec2.
+    """
+    a, b = (vec1 /
+            np.linalg.norm(vec1)).reshape(3), (vec2 /
+                                               np.linalg.norm(vec2)).reshape(3)
+    v = np.cross(a, b)
+    c = np.dot(a, b)
+    s = np.linalg.norm(v)
+    if s == 0:
+        return np.eye(3)
+    kmat = np.array([[0, -v[2], v[1]], [v[2], 0, -v[0]], [-v[1], v[0], 0]])
+    rotation_matrix = np.eye(3) + kmat + kmat.dot(kmat) * ((1 - c) / (s**2))
+    return rotation_matrix
+
+
+def matrix_mult(pos, m):
+    if not pos.shape[0]:
+        return pos
+    m1 = sc.Variable(value=m[0, :], dtype=sc.dtype.vector_3_float64)
+    m2 = sc.Variable(value=m[1, :], dtype=sc.dtype.vector_3_float64)
+    m3 = sc.Variable(value=m[2, :], dtype=sc.dtype.vector_3_float64)
+    xn = sc.dot(m1, pos)
+    yn = sc.dot(m2, pos)
+    zn = sc.dot(m3, pos)
+    return sc.geometry.position(xn, yn, zn)
+
+
+def init_pos(ws, source_pos, sample_pos):
+    import numpy as np
     spec_info = ws.spectrumInfo()
-    for i in range(nHist):
-        if spec_info.hasDetectors(i):
-            p = spec_info.position(i)
-            pos[i, :] = [p.X(), p.Y(), p.Z()]
-        else:
-            pos[i, :] = [np.nan, np.nan, np.nan]
-    return sc.Variable(['spectrum'],
-                       values=pos,
-                       unit=sc.units.m,
-                       dtype=sc.dtype.vector_3_float64)
+
+    if sample_pos is not None and source_pos is not None:
+        det_info = ws.detectorInfo()
+        total_detectors = spec_info.detectorCount()
+        act_beam = (sample_pos - source_pos).values
+        rot = rotation_matrix_from_vectors(act_beam, [0, 0, 1])
+        inv_rot = rot.transpose()
+
+        pos_d = sc.Dataset()
+        # Create empty to hold position info for all spectra detectors
+        pos_d["x"] = sc.Variable(["detector"],
+                                 shape=[total_detectors],
+                                 unit=sc.units.m)
+        pos_d["y"] = pos_d["x"]
+        pos_d["z"] = pos_d["x"]
+
+        pos_d.coords["spectrum"] = sc.Variable(
+            ["detector"], values=np.empty(total_detectors))
+
+        idx = 0
+        for i, spec in enumerate(spec_info):
+            if spec.hasDetectors:
+                definition = spec_info.getSpectrumDefinition(i)
+                n_dets = len(definition)
+                for j in range(n_dets):
+                    det_idx = definition[j][0]
+                    p = det_info.position(det_idx)
+                    pos_d.coords["spectrum"].values[idx] = i
+                    pos_d["x"].values[idx] = p.X()
+                    pos_d["y"].values[idx] = p.Y()
+                    pos_d["z"].values[idx] = p.Z()
+                    idx += 1
+
+        rot_pos = matrix_mult(
+            sc.geometry.position(pos_d["x"].data, pos_d["y"].data,
+                                 pos_d["z"].data), rot)
+
+        _to_spherical(rot_pos, pos_d)
+
+        averaged = sc.groupby(pos_d,
+                              "spectrum",
+                              bins=sc.Variable(["spectrum"],
+                                               values=np.arange(
+                                                   -0.5,
+                                                   len(spec_info) + 0.5,
+                                                   1.0))).mean("detector")
+
+        averaged["x"] = averaged["r"].data * sc.sin(
+            averaged["t"].data) * sc.cos(averaged["p"].data)
+        averaged["y"] = averaged["r"].data * sc.sin(
+            averaged["t"].data) * sc.sin(averaged["p"].data)
+        averaged["z"] = averaged["r"].data * sc.cos(averaged["t"].data)
+
+        pos = sc.geometry.position(averaged["x"].data, averaged["y"].data,
+                                   averaged["z"].data)
+        return matrix_mult(pos, inv_rot)
+    else:
+        pos = np.zeros([len(spec_info), 3])
+
+        for i, spec in enumerate(spec_info):
+            if spec.hasDetectors:
+                p = spec.position
+                pos[i, :] = [p.X(), p.Y(), p.Z()]
+            else:
+                pos[i, :] = [np.nan, np.nan, np.nan]
+        return sc.Variable(['spectrum'],
+                           values=pos,
+                           unit=sc.units.m,
+                           dtype=sc.dtype.vector_3_float64)
 
 
 def _get_dtype_from_values(values):
@@ -258,7 +353,7 @@ def _convert_MatrixWorkspace_info(ws):
     dim, unit = validate_and_get_unit(ws.getAxis(0).getUnit().unitID())
     source_pos, sample_pos = make_component_info(ws)
     det_info = make_detector_info(ws)
-    pos = init_pos(ws)
+    pos = init_pos(ws, source_pos, sample_pos)
     spec_dim, spec_coord = init_spec_axis(ws)
 
     if common_bins:
@@ -358,7 +453,6 @@ def convert_Workspace2D_to_data_array(ws, **ignored):
 
         if not common_bins and ws.hasMaskedBins(i):
             set_bin_masks(bin_masks, dim, i, ws.maskedBinsIndices(i))
-
     # Avoid creating dimensions that are not required since this mostly an
     # artifact of inflexible data structures and gets in the way when working
     # with scipp.
@@ -658,7 +752,7 @@ def load_component_info(ds, file):
 
         ds.coords["source_position"] = source_pos
         ds.coords["sample_position"] = sample_pos
-        ds.coords["position"] = init_pos(ws)
+        ds.coords["position"] = init_pos(ws, source_pos, sample_pos)
 
 
 def validate_dim_and_get_mantid_string(unit_dim):
