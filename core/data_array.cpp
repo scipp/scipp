@@ -96,15 +96,16 @@ void DataArray::drop_alignment() {
     throw except::RealignedDataError(
         "Does not contain unaligned data, cannot drop alignment.");
   auto [dims, array] = std::move(*m_holder.m_data.begin()->second.unaligned);
-  const auto move_items = [&dims](auto &from, const auto &to) {
+  constexpr auto move_items = [](auto &from, const auto &to,
+                                 const Dimensions &d) {
     for (auto &[key, value] : from)
-      if (dims.contains(value.dims()))
+      if (d.contains(value.dims()))
         to.set(key, std::move(value));
   };
   array.setName(name());
-  move_items(m_holder.m_coords, array.coords());
-  move_items(m_holder.m_masks, array.masks());
-  move_items(m_holder.m_attrs, array.attrs());
+  move_items(m_holder.m_coords, array.coords(), dims);
+  move_items(m_holder.m_masks, array.masks(), dims);
+  move_items(m_holder.m_attrs, array.attrs(), dims);
   *this = std::move(array);
 }
 
