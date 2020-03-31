@@ -260,6 +260,36 @@ TEST_F(EventFilterTest, all_with_variances) {
   EXPECT_EQ(event::filter(a, Dim::Y, interval), a);
 }
 
+TEST_F(EventFilterTest, filter_1d_behavior_out_bounds) {
+  // Filtering uses interval open on the right [left, right), just as histogram
+  // events at 1,2,3 in first event list
+  const DataArray a(data, {{Dim::Y, coord1}});
+  Variable interval;
+  DataArray filtered;
+
+  interval = makeVariable<float>(Dims{Dim::Y}, Shape{2}, units::Unit(units::us),
+                                 Values{0.0, 4.0});
+  filtered = event::filter(a, Dim::Y, interval);
+  EXPECT_EQ(scipp::size(filtered.values<event_list<float>>()[0]), 3);
+
+  // left bound included
+  interval = makeVariable<float>(Dims{Dim::Y}, Shape{2}, units::Unit(units::us),
+                                 Values{1.0, 4.0});
+  filtered = event::filter(a, Dim::Y, interval);
+  EXPECT_EQ(scipp::size(filtered.values<event_list<float>>()[0]), 3);
+
+  interval = makeVariable<float>(Dims{Dim::Y}, Shape{2}, units::Unit(units::us),
+                                 Values{1.00001, 4.0});
+  filtered = event::filter(a, Dim::Y, interval);
+  EXPECT_EQ(scipp::size(filtered.values<event_list<float>>()[0]), 2);
+
+  // right bound not included
+  interval = makeVariable<float>(Dims{Dim::Y}, Shape{2}, units::Unit(units::us),
+                                 Values{1.0, 3.0});
+  filtered = event::filter(a, Dim::Y, interval);
+  EXPECT_EQ(scipp::size(filtered.values<event_list<float>>()[0]), 2);
+}
+
 TEST_F(EventFilterTest, filter_1d) {
   const DataArray a(data, {{Dim::Y, coord1}, {Dim::Z, coord2}});
   const auto interval = makeVariable<float>(
