@@ -241,6 +241,9 @@ struct EventFilterTest : public ::testing::Test {
   Variable coord1 = makeVariable<event_list<float>>(
       Dims{Dim::X}, Shape{2}, units::Unit(units::us),
       Values{event_list<float>{3, 2, 1}, event_list<float>{2, 3, 4, 1}});
+  Variable coord2 = makeVariable<event_list<int64_t>>(
+      Dims{Dim::X}, Shape{2},
+      Values{event_list<int64_t>{3, 2, 1}, event_list<int64_t>{2, 3, 4, 1}});
 };
 
 TEST_F(EventFilterTest, all) {
@@ -258,7 +261,7 @@ TEST_F(EventFilterTest, all_with_variances) {
 }
 
 TEST_F(EventFilterTest, filter_1d) {
-  const DataArray a(data, {{Dim::Y, coord1}});
+  const DataArray a(data, {{Dim::Y, coord1}, {Dim::Z, coord2}});
   const auto interval = makeVariable<float>(
       Dims{Dim::Y}, Shape{2}, units::Unit(units::us), Values{0.0, 2.5});
 
@@ -266,16 +269,19 @@ TEST_F(EventFilterTest, filter_1d) {
       makeVariable<event_list<float>>(
           Dims{Dim::X}, Shape{2}, units::Unit(units::counts),
           Values{event_list<float>{1.2, 1.3}, event_list<float>{1.4, 1.7}}),
-      {{Dim::Y,
-        makeVariable<event_list<float>>(
-            Dims{Dim::X}, Shape{2}, units::Unit(units::us),
-            Values{event_list<float>{2, 1}, event_list<float>{2, 1}})}}};
+      {{Dim::Y, makeVariable<event_list<float>>(
+                    Dims{Dim::X}, Shape{2}, units::Unit(units::us),
+                    Values{event_list<float>{2, 1}, event_list<float>{2, 1}})},
+       {Dim::Z,
+        makeVariable<event_list<int64_t>>(
+            Dims{Dim::X}, Shape{2},
+            Values{event_list<int64_t>{2, 1}, event_list<int64_t>{2, 1}})}}};
 
   EXPECT_EQ(event::filter(a, Dim::Y, interval), expected);
 }
 
 TEST_F(EventFilterTest, filter_1d_with_variances) {
-  const DataArray a(data_with_variances, {{Dim::Y, coord1}});
+  const DataArray a(data_with_variances, {{Dim::Y, coord1}, {Dim::Z, coord2}});
   const auto interval = makeVariable<float>(
       Dims{Dim::Y}, Shape{2}, units::Unit(units::us), Values{0.0, 2.5});
 
@@ -284,10 +290,13 @@ TEST_F(EventFilterTest, filter_1d_with_variances) {
           Dims{Dim::X}, Shape{2}, units::Unit(units::counts),
           Values{event_list<float>{1.2, 1.3}, event_list<float>{1.4, 1.7}},
           Variances{event_list<float>{1.2, 1.3}, event_list<float>{1.4, 1.7}}),
-      {{Dim::Y,
-        makeVariable<event_list<float>>(
-            Dims{Dim::X}, Shape{2}, units::Unit(units::us),
-            Values{event_list<float>{2, 1}, event_list<float>{2, 1}})}}};
+      {{Dim::Y, makeVariable<event_list<float>>(
+                    Dims{Dim::X}, Shape{2}, units::Unit(units::us),
+                    Values{event_list<float>{2, 1}, event_list<float>{2, 1}})},
+       {Dim::Z,
+        makeVariable<event_list<int64_t>>(
+            Dims{Dim::X}, Shape{2},
+            Values{event_list<int64_t>{2, 1}, event_list<int64_t>{2, 1}})}}};
 
   EXPECT_EQ(event::filter(a, Dim::Y, interval), expected);
 }
