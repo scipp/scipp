@@ -31,7 +31,8 @@ def instrument_view(scipp_obj=None,
                     nan_color="#d3d3d3",
                     continuous_update=True,
                     dim="tof",
-                    rendering="Full"):
+                    rendering="Full",
+                    background="#f0f0f0"):
     """
     Plot a 2D or 3D view of the instrument.
     A slider is also generated to navigate the dimension (dim) given as an
@@ -59,7 +60,8 @@ def instrument_view(scipp_obj=None,
                         nan_color=nan_color,
                         continuous_update=continuous_update,
                         dim=dim,
-                        rendering=rendering)
+                        rendering=rendering,
+                        background=background)
 
     render_plot(widgets=iv.box, filename=filename)
 
@@ -81,7 +83,8 @@ class InstrumentView:
                  nan_color=None,
                  continuous_update=None,
                  dim=None,
-                 rendering=None):
+                 rendering=None,
+                 background=None):
 
         # Delayed imports to avoid hard dependencies
         self.widgets = importlib.import_module("ipywidgets")
@@ -190,9 +193,12 @@ class InstrumentView:
 
         checkbox_label = self.widgets.Label(value="Continuous update:")
         self.continuous_update = self.widgets.Checkbox(
-            value=continuous_update, description="",
-            indent=False, layout={"width": "initial"})
-        self.continuous_update.observe(self.toggle_continuous_update, names="value")
+            value=continuous_update,
+            description="",
+            indent=False,
+            layout={"width": "initial"})
+        self.continuous_update.observe(self.toggle_continuous_update,
+                                       names="value")
 
         # Create a Tof slider and its label
         self.tof_dim_indx = self.hist_data_array[self.key].dims.index(self.dim)
@@ -233,20 +239,23 @@ class InstrumentView:
         self.select_colormap.observe(self.update_colormap, names="value")
         self.colormap_error = self.widgets.HTML(value="")
 
-        self.opacity_slider = self.widgets.FloatSlider(
-            min=0, max=1.0, value=1.0, step=0.01, description="Opacity")
+        self.opacity_slider = self.widgets.FloatSlider(min=0,
+                                                       max=1.0,
+                                                       value=1.0,
+                                                       step=0.01,
+                                                       description="Opacity")
         self.opacity_slider.observe(self.update_opacity, names="value")
 
         self.select_rendering = self.widgets.Dropdown(
-            options=["Fast", "Full"], value=rendering, description="Rendering:",
+            options=["Fast", "Full"],
+            value=rendering,
+            description="Rendering:",
             layout={"width": "initial"})
         self.select_rendering.observe(self.change_rendering, names="value")
 
-
         projections = [
-            "3D X", "3D Y", "3D Z",
-            "Cylindrical X", "Cylindrical Y", "Cylindrical Z",
-            "Spherical X", "Spherical Y", "Spherical Z"
+            "3D X", "3D Y", "3D Z", "Cylindrical X", "Cylindrical Y",
+            "Cylindrical Z", "Spherical X", "Spherical Y", "Spherical Z"
         ]
 
         # Create toggle buttons to change projection
@@ -296,17 +305,23 @@ class InstrumentView:
 
         # Place widgets in boxes
         box_list = [
-            self.widgets.HBox([self.dropdown, self.slider, self.label, checkbox_label, self.continuous_update]),
+            self.widgets.HBox([
+                self.dropdown, self.slider, self.label, checkbox_label,
+                self.continuous_update
+            ]),
             self.widgets.HBox([self.nbins, self.bin_size]),
-            self.widgets.HBox([self.select_rendering, self.opacity_slider, self.select_colormap, self.colormap_error]),
-            self.togglebuttons
+            self.widgets.HBox([
+                self.select_rendering, self.opacity_slider,
+                self.select_colormap, self.colormap_error
+            ]), self.togglebuttons
         ]
         # Only show mask controls if masks are present
         if masks_present:
             box_list.append(
                 self.widgets.HBox([
                     self.masks_showhide, self.masks_cmap_or_color,
-                    self.masks_colormap, self.masks_colormap_error, self.masks_solid_color
+                    self.masks_colormap, self.masks_colormap_error,
+                    self.masks_solid_color
                 ]))
 
         self.vbox = self.widgets.VBox(box_list)
@@ -325,8 +340,11 @@ class InstrumentView:
             # print(sc.min(comp, "spectrum").values)
             self.camera_pos = max(
                 self.camera_pos,
-                np.amax(np.abs([sc.min(comp, "spectrum").value,
-                                sc.max(comp, "spectrum").value])))
+                np.amax(
+                    np.abs([
+                        sc.min(comp, "spectrum").value,
+                        sc.max(comp, "spectrum").value
+                    ])))
 
         print(self.camera_pos)
         # # Create texture for scatter points to represent detector shapes
@@ -350,14 +368,13 @@ class InstrumentView:
         #                               format="RGBAFormat",
         #                               type="FloatType")
 
-
-        size_x = 0.007
-        size_y = 0.10
-        size_z = 0.007
-        # # size_x = 1.0
-        # # size_y = 1.0
-        # # size_z = 1.0
-        # detector_shape = np.array([[ 0.5*size_x,  0.5*size_y,  0.5*size_z],
+        # size_x = 0.007
+        # size_y = 0.10
+        # size_z = 0.007
+        # # # size_x = 1.0
+        # # # size_y = 1.0
+        # # # size_z = 1.0
+        # # detector_shape = np.array([[ 0.5*size_x,  0.5*size_y,  0.5*size_z],
         #                            [ 0.5*size_x, -0.5*size_y,  0.5*size_z],
         #                            [ 0.5*size_x,  0.5*size_y, -0.5*size_z],
         #                            [ 0.5*size_x, -0.5*size_y,  0.5*size_z],
@@ -394,32 +411,39 @@ class InstrumentView:
         #                            [-0.5*size_x, -0.5*size_y, -0.5*size_z],
         #                            [-0.5*size_x,  0.5*size_y, -0.5*size_z]], dtype=np.float32)
 
+        # self.detector_shape = np.array([[-0.5*size_x, -0.5*size_y, -0.5*size_z],
+        #                            [ 0.5*size_x, -0.5*size_y, -0.5*size_z],
+        #                            [ 0.5*size_x,  0.5*size_y, -0.5*size_z],
+        #                            [-0.5*size_x,  0.5*size_y, -0.5*size_z],
+        #                            [-0.5*size_x, -0.5*size_y,  0.5*size_z],
+        #                            [ 0.5*size_x, -0.5*size_y,  0.5*size_z],
+        #                            [ 0.5*size_x,  0.5*size_y,  0.5*size_z],
+        #                            [-0.5*size_x,  0.5*size_y,  0.5*size_z]], dtype=np.float32)
 
-        self.detector_shape = np.array([[-0.5*size_x, -0.5*size_y, -0.5*size_z],
-                                   [ 0.5*size_x, -0.5*size_y, -0.5*size_z],
-                                   [ 0.5*size_x,  0.5*size_y, -0.5*size_z],
-                                   [-0.5*size_x,  0.5*size_y, -0.5*size_z],
-                                   [-0.5*size_x, -0.5*size_y,  0.5*size_z],
-                                   [ 0.5*size_x, -0.5*size_y,  0.5*size_z],
-                                   [ 0.5*size_x,  0.5*size_y,  0.5*size_z],
-                                   [-0.5*size_x,  0.5*size_y,  0.5*size_z]], dtype=np.float32)
+        # self.detector_shape = np.array([[-0.5, -0.5, -0.5],
+        #                            [ 0.5, -0.5, -0.5],
+        #                            [ 0.5,  0.5, -0.5],
+        #                            [-0.5,  0.5, -0.5],
+        #                            [-0.5, -0.5,  0.5],
+        #                            [ 0.5, -0.5,  0.5],
+        #                            [ 0.5,  0.5,  0.5],
+        #                            [-0.5,  0.5,  0.5]], dtype=np.float32)
 
-        detector_faces = np.array([[0,4,3],
-                                   [3,4,7],
-                                   [1,2,6],
-                                   [1,6,5],
-                                   [0,1,5],
-                                   [0,5,4],
-                                   [2,3,7],
-                                   [2,7,6],
-                                   [0,2,1],
-                                   [0,3,2],
-                                   [4,5,7],
-                                   [5,6,7]], dtype=np.uint32)
+        # detector_faces = np.array([[0,4,3],
+        #                            [3,4,7],
+        #                            [1,2,6],
+        #                            [1,6,5],
+        #                            [0,1,5],
+        #                            [0,5,4],
+        #                            [2,3,7],
+        #                            [2,7,6],
+        #                            [0,2,1],
+        #                            [0,3,2],
+        #                            [4,5,7],
+        #                            [5,6,7]], dtype=np.uint32)
 
-
-
-
+        self.detector_shape, detector_faces = self.get_detector_vertices_and_faces(
+            self.data_arrays[self.key].attrs["instrument_name"].value)
 
         # N = 100000
         # M = len(detector_shape)
@@ -436,18 +460,7 @@ class InstrumentView:
         # faces = np.tile(detector_faces, [N, 1]) + np.repeat(
         #     np.arange(0, N*M, M, dtype=np.uint32), L*3, axis=0).reshape(L*N, 3)
 
-
         # vertexcolors = np.repeat(np.random.random([N, 3]), M, axis=0).astype(np.float32)
-
-
-
-
-
-
-
-
-
-
 
         self.nverts = len(self.detector_shape)
         self.nfaces = len(detector_faces)
@@ -463,28 +476,32 @@ class InstrumentView:
 
         # faces = np.arange(self.nverts * self.ndets, dtype=np.uint)
         faces = np.tile(detector_faces, [self.ndets, 1]) + np.repeat(
-            np.arange(0, self.ndets*self.nverts, self.nverts, dtype=np.uint32), self.nfaces*3, axis=0).reshape(self.nfaces*self.ndets, 3)
+            np.arange(
+                0, self.ndets * self.nverts, self.nverts, dtype=np.uint32),
+            self.nfaces * 3,
+            axis=0).reshape(self.nfaces * self.ndets, 3)
 
         # vertexcolors = np.repeat(np.random.random([self.ndets, 3]), self.nverts, axis=0).astype(np.float32)
-        vertexcolors = np.zeros([self.ndets*self.nverts, 3], dtype=np.float32)
+        vertexcolors = np.zeros([self.ndets * self.nverts, 3],
+                                dtype=np.float32)
 
         # print(vertices.shape)
         # print(faces.shape)
         # print(vertexcolors.shape)
 
-
         self.mesh_geometry = self.p3.BufferGeometry(attributes=dict(
-            position=self.p3.BufferAttribute(np.zeros([self.nverts*self.ndets, 3], dtype=np.float32), normalized=False),
+            position=self.p3.BufferAttribute(np.zeros(
+                [self.nverts * self.ndets, 3], dtype=np.float32),
+                                             normalized=False),
             index=self.p3.BufferAttribute(faces.ravel(), normalized=False),
             color=self.p3.BufferAttribute(vertexcolors),
         ))
 
-        self.mesh_material = self.p3.MeshBasicMaterial(vertexColors='VertexColors',
-                                                  transparent=True)
+        self.mesh_material = self.p3.MeshBasicMaterial(
+            vertexColors='VertexColors', transparent=True)
 
         # self.material = self.p3.MeshPhongMaterial(vertexColors='VertexColors',
         #                                           transparent=True)
-
 
         self.mesh = self.p3.Mesh(
             geometry=self.mesh_geometry,
@@ -495,8 +512,6 @@ class InstrumentView:
         # self.wireframe = self.p3.LineSegments(
         #     geometry=self.p3.WireframeGeometry(self.geometry),
         #     material=self.p3.LineBasicMaterial())
-
-
 
         # self.nverts = 1000
         # self.ndets = 36
@@ -526,27 +541,23 @@ class InstrumentView:
         # #     position=[-0.5, -0.5, -0.5]   # Center the cube
         # )
 
-
-
-
-
-
-
         # #====================================================================
         # The point cloud and its properties
         # self.pts = self.p3.BufferAttribute(array=self.det_pos)
         # self.colors = self.p3.BufferAttribute(
         #     array=np.zeros([np.shape(self.det_pos)[0], 4], dtype=np.float32))
-        self.points_geometry = self.p3.BufferGeometry(attributes={
-            'position': self.p3.BufferAttribute(array=self.det_pos.values),
-            'color': self.p3.BufferAttribute(
-            array=np.zeros([self.det_pos.shape[0], 3], dtype=np.float32))
-        })
-        self.points_material = self.p3.PointsMaterial(vertexColors='VertexColors',
-                                               size=max(self.size),
-                                               transparent=True)
+        self.points_geometry = self.p3.BufferGeometry(
+            attributes={
+                'position':
+                self.p3.BufferAttribute(array=self.det_pos.values),
+                'color':
+                self.p3.BufferAttribute(array=np.zeros(
+                    [self.det_pos.shape[0], 3], dtype=np.float32))
+            })
+        self.points_material = self.p3.PointsMaterial(
+            vertexColors='VertexColors', size=max(self.size), transparent=True)
         self.points = self.p3.Points(geometry=self.points_geometry,
-                                  material=self.points_material)
+                                     material=self.points_material)
         # #====================================================================
 
         # children = []
@@ -585,10 +596,10 @@ class InstrumentView:
         iden = np.identity(3, dtype=np.float32)
         for i in range(1, nticks):
             for j in range(3):
-               self.axticks.append(
-                self.make_axis_tick(string=str(ticks[i]),
-                                    position=(iden[j] * ticks[i]).tolist(),
-                                    size=tick_size))
+                self.axticks.append(
+                    self.make_axis_tick(string=str(ticks[i]),
+                                        position=(iden[j] * ticks[i]).tolist(),
+                                        size=tick_size))
         #     self.axticks.append(self.p3.Points(
         #         geometry=self.p3.BufferGeometry(
         #             attributes={'position':
@@ -598,7 +609,6 @@ class InstrumentView:
         #             size=tick_size,
         #             transparent=True)))
 
-
         # Create the threejs scene with ambient light and camera
         self.camera = self.p3.PerspectiveCamera(position=[self.camera_pos] * 3,
                                                 aspect=config.plot.width /
@@ -606,10 +616,12 @@ class InstrumentView:
         # self.key_light = self.p3.DirectionalLight(position=[0, 10, 10])
         # self.ambient_light = self.p3.AmbientLight()
 
-        self.scene = self.p3.Scene(children=[
-            self.camera, #self.key_light, self.ambient_light,
-            self.axes_helper
-        ], background="#DDDDDD")
+        self.scene = self.p3.Scene(
+            children=[
+                self.camera,  #self.key_light, self.ambient_light,
+                self.axes_helper
+            ],
+            background=background)
 
         self.change_rendering({"new": rendering})
 
@@ -652,13 +664,50 @@ class InstrumentView:
 
         return
 
+    def get_detector_vertices_and_faces(self, instrument_name):
+        print(instrument_name)
+        cylindrical_detectors = {"loki"}
+
+        if instrument_name.lower() in cylindrical_detectors:
+            sq2 = 0.25 * np.sqrt(2.0)
+            vertices = np.array(
+                [[0.0, 0.0, -0.5], [0.5, 0.0, -0.5], [sq2, sq2, -0.5],
+                 [0.0, 0.5, -0.5], [-sq2, sq2, -0.5], [-0.5, 0.0, -0.5],
+                 [-sq2, -sq2, -0.5], [0.0, -0.5, -0.5], [sq2, -sq2, -0.5],
+                 [0.0, 0.0, 0.5], [0.5, 0.0, 0.5], [sq2, sq2, 0.5],
+                 [0.0, 0.5, 0.5], [-sq2, sq2, 0.5], [-0.5, 0.0, 0.5],
+                 [-sq2, -sq2, 0.5], [0.0, -0.5, 0.5], [sq2, -sq2, 0.5]],
+                dtype=np.float32)
+            faces = np.array(
+                [[0, 2, 1], [0, 3, 2], [0, 4, 3], [0, 5, 4], [0, 6, 5],
+                 [0, 7, 6], [0, 8, 7], [0, 1, 8], [9, 10, 11], [9, 11, 12],
+                 [9, 12, 13], [9, 13, 14], [9, 14, 15], [9, 15, 16],
+                 [9, 16, 17], [9, 17, 10], [1, 11, 10], [1, 2, 11],
+                 [2, 12, 11], [2, 3, 12], [3, 13, 12], [3, 4, 13], [4, 14, 13],
+                 [4, 5, 14], [5, 15, 14], [5, 6, 15], [6, 16, 15], [6, 7, 16],
+                 [7, 17, 16], [7, 8, 17], [8, 10, 17], [8, 1, 10]],
+                dtype=np.uint32)
+        else:
+            vertices = np.array(
+                [[-0.5, -0.5, -0.5], [0.5, -0.5, -0.5], [0.5, 0.5, -0.5],
+                 [-0.5, 0.5, -0.5], [-0.5, -0.5, 0.5], [0.5, -0.5, 0.5],
+                 [0.5, 0.5, 0.5], [-0.5, 0.5, 0.5]],
+                dtype=np.float32)
+
+            faces = np.array([[0, 4, 3], [3, 4, 7], [1, 2, 6], [1, 6, 5],
+                              [0, 1, 5], [0, 5, 4], [2, 3, 7], [2, 7, 6],
+                              [0, 2, 1], [0, 3, 2], [4, 5, 7], [5, 6, 7]],
+                             dtype=np.uint32)
+        return vertices, faces
+
     def make_axis_tick(self, string, position, color="black", size=1.0):
-        sm = self.p3.SpriteMaterial(
-            map=self.p3.TextTexture(
-                string=string, color=color, size=300, squareTexture=True),
-            transparent=True)
+        sm = self.p3.SpriteMaterial(map=self.p3.TextTexture(
+            string=string, color=color, size=300, squareTexture=True),
+                                    transparent=True)
         return self.p3.Sprite(material=sm,
-            position=position, scaleToTexture=True, scale=[size, size, size])
+                              position=position,
+                              scaleToTexture=True,
+                              scale=[size, size, size])
 
     def rebin_data(self, bins):
         """
@@ -753,11 +802,10 @@ class InstrumentView:
             if self.select_rendering.value == "Full":
                 msk = np.repeat(msk, self.nverts, axis=0)
             masks_inds = np.where(msk)
-            masks_colors = self.masks_scalar_map.to_rgba(arr[masks_inds]).astype(
-                np.float32)
+            masks_colors = self.masks_scalar_map.to_rgba(
+                arr[masks_inds]).astype(np.float32)
             # masks_inds = np.where(np.repeat(self.masks_variables[self.key].values, self.nverts, axis=0))
             colors[masks_inds] = masks_colors
-
 
         self.geometry.attributes["color"].array = colors[:, :3]
 
@@ -800,18 +848,25 @@ class InstrumentView:
                                    shape=[self.ndets, self.nverts],
                                    unit=sc.units.m,
                                    dtype=sc.dtype.vector_3_float64)
+            # print(self.hist_data_array[self.key].attrs["detector_shape"])
+            scaling = np.array(
+                self.hist_data_array[self.key].attrs["detector_shape"].values)
             for i in range(self.nverts):
                 vertices["vertex", i] = sc.Variable(
                     dims=["spectrum"],
-                    values=np.tile(self.detector_shape[i], [self.ndets, 1]),
+                    values=np.tile(self.detector_shape[i], [self.ndets, 1]) *
+                    scaling,
                     unit=sc.units.m,
                     dtype=sc.dtype.vector_3_float64)
 
-            vertices = sc.geometry.rotate(vertices, self.hist_data_array[self.key].attrs["rotation"])
+            vertices = sc.geometry.rotate(
+                vertices,
+                self.hist_data_array[self.key].attrs["detector_rotation"])
 
             # return vertices + self.det_pos
 
-            pixel_pos = np.array((vertices + self.det_pos).values, dtype=np.float32)
+            pixel_pos = np.array((vertices + self.det_pos).values,
+                                 dtype=np.float32)
             pixel_pos = pixel_pos.reshape(-1, pixel_pos.shape[-1])
             # print("pixel_pos", pixel_pos)
         else:
@@ -833,9 +888,11 @@ class InstrumentView:
 
         if projection.startswith("3D"):
             self.axes_helper.visible = True
-            new_cam_pos = [self.camera_pos * (axis=="X"),
-                                    self.camera_pos * (axis=="Y"),
-                                    self.camera_pos * (axis=="Z")]
+            new_cam_pos = [
+                self.camera_pos * (axis == "X"),
+                self.camera_pos * (axis == "Y"),
+                self.camera_pos * (axis == "Z")
+            ]
         else:
             self.axes_helper.visible = False
             new_cam_pos = [0, 0, self.camera_pos]
