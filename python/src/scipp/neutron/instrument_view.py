@@ -138,7 +138,6 @@ class InstrumentView:
         self.cmap = {}
         self.hist_data_array = {}
         self.scalar_map = {}
-        self.minmax = {}
         self.masks = masks
         self.masks_variables = {}
         self.masks_params = {}
@@ -146,7 +145,7 @@ class InstrumentView:
         self.masks_scalar_map = {}
 
         # Find the min/max time-of-flight limits and store them
-        self.minmax["tof"] = [np.Inf, np.NINF, 1]
+        self.minmax = [np.Inf, np.NINF, 1]
         for key, data_array in self.data_arrays.items():
             bins_here = bins
             is_events = sc.is_events(data_array)
@@ -162,12 +161,10 @@ class InstrumentView:
                                 padding=is_events)
             else:
                 var = data_array.coords[self.dim]
-            self.minmax["tof"][0] = min(self.minmax["tof"][0], var.values[0])
-            self.minmax["tof"][1] = max(self.minmax["tof"][1], var.values[-1])
-            self.minmax["tof"][2] = var.shape[0]
+            self.minmax[0] = min(self.minmax[0], var.values[0])
+            self.minmax[1] = max(self.minmax[1], var.values[-1])
+            self.minmax[2] = var.shape[0]
 
-        # available_cmaps = sorted(m for m in self.mpl_plt.colormaps()
-        #                          if not m.endswith("_r"))
         self.available_cmaps = sorted(m for m in self.mpl_plt.colormaps())
 
         # Store current active data entry (DataArray)
@@ -183,7 +180,7 @@ class InstrumentView:
                                          names="value")
 
         # Rebin all DataArrays to common Tof axis
-        self.rebin_data(np.linspace(*self.minmax["tof"]))
+        self.rebin_data(np.linspace(*self.minmax))
 
         # Create dropdown menu to select the DataArray
         self.dropdown = self.widgets.Dropdown(options=keys,
@@ -271,8 +268,6 @@ class InstrumentView:
             items.append(self.buttons["3D {}".format(x)])
             items.append(self.buttons["Cylindrical {}".format(x)])
             items.append(self.buttons["Spherical {}".format(x)])
-            # if x != "Z":
-            #     items.append(self.widgets.Label())
 
         self.togglebuttons = self.widgets.GridBox(
             items,
@@ -331,13 +326,7 @@ class InstrumentView:
         # Find extents of the detectors
         self.camera_pos = np.NINF
         for i, x in enumerate("xyz"):
-            # self.minmax[x] = [
-            #     np.amin(self.det_pos.values[:, i]),
-            #     np.amax(self.det_pos.values[:, i])
-            # ]
             comp = getattr(sc.geometry, x)(self.det_pos)
-            # print(sc.min(comp, "spectrum").value)
-            # print(sc.min(comp, "spectrum").values)
             self.camera_pos = max(
                 self.camera_pos,
                 np.amax(
@@ -346,148 +335,24 @@ class InstrumentView:
                         sc.max(comp, "spectrum").value
                     ])))
 
-        print(self.camera_pos)
-        # # Create texture for scatter points to represent detector shapes
-        # nx = 32
-        # det_aspect_ratio = int(round(nx * min(self.size) / max(self.size)))
-        # if det_aspect_ratio % 2 == 0:
-        #     half_width = det_aspect_ratio // 2
-        #     istart = nx // 2 - half_width
-        #     iend = nx // 2 + half_width
-        # else:
-        #     half_width = (det_aspect_ratio - 1) // 2
-        #     istart = nx // 2 - 1 - half_width
-        #     iend = nx // 2 + half_width
-        #     nx -= 1
-        # texture_array = np.zeros([nx, nx, 4], dtype=np.float32)
-        # if np.argmin(self.size) == 0:
-        #     texture_array[:, istart:iend, :] = 1.0
-        # else:
-        #     texture_array[istart:iend, :, :] = 1.0
-        # texture = self.p3.DataTexture(data=texture_array,
-        #                               format="RGBAFormat",
-        #                               type="FloatType")
-
-        # size_x = 0.007
-        # size_y = 0.10
-        # size_z = 0.007
-        # # # size_x = 1.0
-        # # # size_y = 1.0
-        # # # size_z = 1.0
-        # # detector_shape = np.array([[ 0.5*size_x,  0.5*size_y,  0.5*size_z],
-        #                            [ 0.5*size_x, -0.5*size_y,  0.5*size_z],
-        #                            [ 0.5*size_x,  0.5*size_y, -0.5*size_z],
-        #                            [ 0.5*size_x, -0.5*size_y,  0.5*size_z],
-        #                            [ 0.5*size_x, -0.5*size_y, -0.5*size_z],
-        #                            [ 0.5*size_x,  0.5*size_y, -0.5*size_z],
-        #                            [-0.5*size_x,  0.5*size_y, -0.5*size_z],
-        #                            [-0.5*size_x, -0.5*size_y, -0.5*size_z],
-        #                            [-0.5*size_x,  0.5*size_y,  0.5*size_z],
-        #                            [-0.5*size_x, -0.5*size_y, -0.5*size_z],
-        #                            [-0.5*size_x, -0.5*size_y,  0.5*size_z],
-        #                            [-0.5*size_x,  0.5*size_y,  0.5*size_z],
-        #                            [-0.5*size_x,  0.5*size_y, -0.5*size_z],
-        #                            [-0.5*size_x,  0.5*size_y,  0.5*size_z],
-        #                            [ 0.5*size_x,  0.5*size_y, -0.5*size_z],
-        #                            [-0.5*size_x,  0.5*size_y,  0.5*size_z],
-        #                            [ 0.5*size_x,  0.5*size_y,  0.5*size_z],
-        #                            [ 0.5*size_x,  0.5*size_y, -0.5*size_z],
-        #                            [-0.5*size_x, -0.5*size_y,  0.5*size_z],
-        #                            [-0.5*size_x, -0.5*size_y, -0.5*size_z],
-        #                            [ 0.5*size_x, -0.5*size_y,  0.5*size_z],
-        #                            [-0.5*size_x, -0.5*size_y, -0.5*size_z],
-        #                            [ 0.5*size_x, -0.5*size_y, -0.5*size_z],
-        #                            [ 0.5*size_x, -0.5*size_y,  0.5*size_z],
-        #                            [-0.5*size_x,  0.5*size_y,  0.5*size_z],
-        #                            [-0.5*size_x, -0.5*size_y,  0.5*size_z],
-        #                            [ 0.5*size_x,  0.5*size_y,  0.5*size_z],
-        #                            [-0.5*size_x, -0.5*size_y,  0.5*size_z],
-        #                            [ 0.5*size_x, -0.5*size_y,  0.5*size_z],
-        #                            [ 0.5*size_x,  0.5*size_y,  0.5*size_z],
-        #                            [ 0.5*size_x,  0.5*size_y, -0.5*size_z],
-        #                            [ 0.5*size_x, -0.5*size_y, -0.5*size_z],
-        #                            [-0.5*size_x,  0.5*size_y, -0.5*size_z],
-        #                            [ 0.5*size_x, -0.5*size_y, -0.5*size_z],
-        #                            [-0.5*size_x, -0.5*size_y, -0.5*size_z],
-        #                            [-0.5*size_x,  0.5*size_y, -0.5*size_z]], dtype=np.float32)
-
-        # self.detector_shape = np.array([[-0.5*size_x, -0.5*size_y, -0.5*size_z],
-        #                            [ 0.5*size_x, -0.5*size_y, -0.5*size_z],
-        #                            [ 0.5*size_x,  0.5*size_y, -0.5*size_z],
-        #                            [-0.5*size_x,  0.5*size_y, -0.5*size_z],
-        #                            [-0.5*size_x, -0.5*size_y,  0.5*size_z],
-        #                            [ 0.5*size_x, -0.5*size_y,  0.5*size_z],
-        #                            [ 0.5*size_x,  0.5*size_y,  0.5*size_z],
-        #                            [-0.5*size_x,  0.5*size_y,  0.5*size_z]], dtype=np.float32)
-
-        # self.detector_shape = np.array([[-0.5, -0.5, -0.5],
-        #                            [ 0.5, -0.5, -0.5],
-        #                            [ 0.5,  0.5, -0.5],
-        #                            [-0.5,  0.5, -0.5],
-        #                            [-0.5, -0.5,  0.5],
-        #                            [ 0.5, -0.5,  0.5],
-        #                            [ 0.5,  0.5,  0.5],
-        #                            [-0.5,  0.5,  0.5]], dtype=np.float32)
-
-        # detector_faces = np.array([[0,4,3],
-        #                            [3,4,7],
-        #                            [1,2,6],
-        #                            [1,6,5],
-        #                            [0,1,5],
-        #                            [0,5,4],
-        #                            [2,3,7],
-        #                            [2,7,6],
-        #                            [0,2,1],
-        #                            [0,3,2],
-        #                            [4,5,7],
-        #                            [5,6,7]], dtype=np.uint32)
-
+        # Generate pixel shape from either box or cylinder for the 'Full'
+        # rendering mode
         self.detector_shape, detector_faces = self.get_detector_vertices_and_faces(
             self.data_arrays[self.key].attrs["instrument_name"].value)
 
-        # N = 100000
-        # M = len(detector_shape)
-        # L = len(detector_faces)
-
-        # offsets = (np.random.random([N, 3]).astype(np.float32) - 0.5) * 100.0
-
-        # # vertices = np.tile(morph.attributes["position"].array, [N, 1]) + np.repeat(offsets, M, axis=0)
-        # vertices = np.tile(detector_shape, [N, 1]) + np.repeat(offsets, M, axis=0)
-
-        # # faces = np.arange(M * N, dtype=np.uint32)
-
-        # # faces = np.tile(detector_faces, [N, 1]) + np.repeat(np.arange(N, dtype=np.uint32), L, axis=0)
-        # faces = np.tile(detector_faces, [N, 1]) + np.repeat(
-        #     np.arange(0, N*M, M, dtype=np.uint32), L*3, axis=0).reshape(L*N, 3)
-
-        # vertexcolors = np.repeat(np.random.random([N, 3]), M, axis=0).astype(np.float32)
-
+        # Create full geometry mesh
         self.nverts = len(self.detector_shape)
         self.nfaces = len(detector_faces)
         self.ndets = self.det_pos.shape[0]
 
-        print(self.nverts, self.ndets, self.nfaces)
-
-        # offsets = (np.random.random([N, 3]).astype(np.float32) - 0.5) * 50.0
-
-        # print(np.repeat(self.det_pos, self.nverts, axis=0)[:100])
-
-        # vertices = np.tile(self.detector_shape, [self.ndets, 1]) + np.repeat(self.det_pos, self.nverts, axis=0)
-
-        # faces = np.arange(self.nverts * self.ndets, dtype=np.uint)
         faces = np.tile(detector_faces, [self.ndets, 1]) + np.repeat(
             np.arange(
                 0, self.ndets * self.nverts, self.nverts, dtype=np.uint32),
             self.nfaces * 3,
             axis=0).reshape(self.nfaces * self.ndets, 3)
 
-        # vertexcolors = np.repeat(np.random.random([self.ndets, 3]), self.nverts, axis=0).astype(np.float32)
         vertexcolors = np.zeros([self.ndets * self.nverts, 3],
                                 dtype=np.float32)
-
-        # print(vertices.shape)
-        # print(faces.shape)
-        # print(vertexcolors.shape)
 
         self.mesh_geometry = self.p3.BufferGeometry(attributes=dict(
             position=self.p3.BufferAttribute(np.zeros(
@@ -500,52 +365,12 @@ class InstrumentView:
         self.mesh_material = self.p3.MeshBasicMaterial(
             vertexColors='VertexColors', transparent=True)
 
-        # self.material = self.p3.MeshPhongMaterial(vertexColors='VertexColors',
-        #                                           transparent=True)
-
         self.mesh = self.p3.Mesh(
             geometry=self.mesh_geometry,
             material=self.mesh_material
-            # position=[-0.5, -0.5, -0.5]   # Center the cube
         )
 
-        # self.wireframe = self.p3.LineSegments(
-        #     geometry=self.p3.WireframeGeometry(self.geometry),
-        #     material=self.p3.LineBasicMaterial())
-
-        # self.nverts = 1000
-        # self.ndets = 36
-
-        # offsets = (np.random.random([self.nverts, 3]).astype(np.float32) - 0.5) * 50.0
-
-        # # vertices = np.tile(morph.attributes["position"].array, [N, 1]) + np.repeat(offsets, M, axis=0)
-        # vertices = np.tile(detector_shape, [self.nverts, 1]) + np.repeat(offsets, self.ndets, axis=0)
-
-        # faces = np.arange(self.ndets * self.nverts, dtype=np.uint)
-
-        # vertexcolors = np.repeat(np.random.random([self.nverts, 3]), self.ndets, axis=0).astype(np.float32)
-
-        # print(vertices.shape)
-        # print(faces.shape)
-        # print(vertexcolors.shape)
-
-        # self.geometry = self.p3.BufferGeometry(attributes=dict(
-        #     position=self.p3.BufferAttribute(vertices, normalized=False),
-        #     index=self.p3.BufferAttribute(faces, normalized=False),
-        #     color=self.p3.BufferAttribute(vertexcolors),
-        # ))
-
-        # self.mesh = self.p3.Mesh(
-        #     geometry=self.geometry,
-        #     material=self.p3.MeshBasicMaterial(vertexColors='VertexColors'),
-        # #     position=[-0.5, -0.5, -0.5]   # Center the cube
-        # )
-
-        # #====================================================================
-        # The point cloud and its properties
-        # self.pts = self.p3.BufferAttribute(array=self.det_pos)
-        # self.colors = self.p3.BufferAttribute(
-        #     array=np.zeros([np.shape(self.det_pos)[0], 4], dtype=np.float32))
+        # Make a simple PointsGeometry for the 'Fast' rendering mode
         self.points_geometry = self.p3.BufferGeometry(
             attributes={
                 'position':
@@ -558,15 +383,6 @@ class InstrumentView:
             vertexColors='VertexColors', size=max(self.size), transparent=True)
         self.points = self.p3.Points(geometry=self.points_geometry,
                                      material=self.points_material)
-        # #====================================================================
-
-        # children = []
-        # if self.select_rendering.value == "Full":
-        #     children.append(self.mesh)
-        #     self.geometry = self.mesh_geometry
-        #     sel
-        # else:
-        #     children.append(self.points)
 
         # Add the red green blue axes helper
         self.axes_helper = self.p3.AxesHelper(self.camera_pos * 50.0)
@@ -575,24 +391,8 @@ class InstrumentView:
         ticker = self.mpl_ticker.MaxNLocator(20)
         ticks = ticker.tick_values(0, self.camera_pos * 10.0)
         nticks = len(ticks)
-        # tick_pos = np.repeat(np.identity(3), nticks, axis=0) + np.tile(ticks, 3)
         tick_size = self.camera_pos * 0.05
-        # self.axticks = self.p3.make_text("0", position=(0, 0, 0), height=1)
-
-        # sm = p3.SpriteMaterial(map=p3.TextTexture(string="0", color='white', size=300, squareTexture=True))
-        # s = p3.Sprite(material=sm, position=[0, 0, 0], scaleToTexture=True, scale=[1, 1, 1])
-
         self.axticks = [self.make_axis_tick("0", [0, 0, 0], size=tick_size)]
-
-        # self.axticks = [self.p3.Points(
-        #         geometry=self.p3.BufferGeometry(
-        #             attributes={'position':
-        #                 self.p3.BufferAttribute(array=np.zeros(3, dtype=np.float32))}),
-        #         material=self.p3.PointsMaterial(
-        #             map=self.p3.TextTexture(string="0", color="black"),
-        #             size=tick_size,
-        #             transparent=True))]
-
         iden = np.identity(3, dtype=np.float32)
         for i in range(1, nticks):
             for j in range(3):
@@ -600,25 +400,15 @@ class InstrumentView:
                     self.make_axis_tick(string=str(ticks[i]),
                                         position=(iden[j] * ticks[i]).tolist(),
                                         size=tick_size))
-        #     self.axticks.append(self.p3.Points(
-        #         geometry=self.p3.BufferGeometry(
-        #             attributes={'position':
-        #                 self.p3.BufferAttribute(array=np.identity(3, dtype=np.float32) * ticks[i])}),
-        #         material=self.p3.PointsMaterial(
-        #             map=self.p3.TextTexture(string=str(ticks[i]), color="black"),
-        #             size=tick_size,
-        #             transparent=True)))
 
         # Create the threejs scene with ambient light and camera
         self.camera = self.p3.PerspectiveCamera(position=[self.camera_pos] * 3,
                                                 aspect=config.plot.width /
                                                 config.plot.height)
-        # self.key_light = self.p3.DirectionalLight(position=[0, 10, 10])
-        # self.ambient_light = self.p3.AmbientLight()
 
         self.scene = self.p3.Scene(
             children=[
-                self.camera,  #self.key_light, self.ambient_light,
+                self.camera,
                 self.axes_helper
             ],
             background=background)
@@ -665,7 +455,6 @@ class InstrumentView:
         return
 
     def get_detector_vertices_and_faces(self, instrument_name):
-        print(instrument_name)
         cylindrical_detectors = {"loki"}
 
         if instrument_name.lower() in cylindrical_detectors:
@@ -786,25 +575,18 @@ class InstrumentView:
             image.reshape(shp))._repr_png_()
 
     def update_colors(self, change):
-        # return
-        # arr = self.hist_data_array[self.key][self.dim, change["new"]].values
         arr = self.hist_data_array[self.key][self.dim, change["new"]].values
         if self.select_rendering.value == "Full":
             arr = np.repeat(arr, self.nverts, axis=0)
         colors = self.scalar_map[self.key].to_rgba(arr).astype(np.float32)
         if self.key in self.masks_variables and self.masks_params[
                 self.key]["show"]:
-            # masks_colors = self.masks_scalar_map.to_rgba(arr).astype(
-            #     np.float32)
-            # masks_inds = np.where(np.repeat(self.masks_variables[self.key].values, self.nverts, axis=0))
-            # colors[masks_inds] = masks_colors[masks_inds]
             msk = self.masks_variables[self.key].values
             if self.select_rendering.value == "Full":
                 msk = np.repeat(msk, self.nverts, axis=0)
             masks_inds = np.where(msk)
             masks_colors = self.masks_scalar_map.to_rgba(
                 arr[masks_inds]).astype(np.float32)
-            # masks_inds = np.where(np.repeat(self.masks_variables[self.key].values, self.nverts, axis=0))
             colors[masks_inds] = masks_colors
 
         self.geometry.attributes["color"].array = colors[:, :3]
@@ -820,19 +602,6 @@ class InstrumentView:
         projection = owner.description
         axis = projection[-1]
 
-        # # Early exit if we are just resetting the camera
-        # if owner.description == self.current_projection:
-        #     owner.button_style = "info"
-        #     if projection.startswith("3D"):
-        #         self.camera.position = [self.camera_pos * (axis=="X"),
-        #                                 self.camera_pos * (axis=="Y"),
-        #                                 self.camera_pos * (axis=="Z")]
-        #     else:
-        #         self.camera.position = [0, 0, self.camera_pos]
-        #     return
-
-        # if self.current_projection is not None:
-        # if self.current_projection in self.buttons:
         self.buttons[self.current_projection].button_style = ""
 
         # Compute cylindrical or spherical projections
@@ -848,7 +617,6 @@ class InstrumentView:
                                    shape=[self.ndets, self.nverts],
                                    unit=sc.units.m,
                                    dtype=sc.dtype.vector_3_float64)
-            # print(self.hist_data_array[self.key].attrs["detector_shape"])
             scaling = np.array(
                 self.hist_data_array[self.key].attrs["detector_shape"].values)
             for i in range(self.nverts):
@@ -863,12 +631,9 @@ class InstrumentView:
                 vertices,
                 self.hist_data_array[self.key].attrs["detector_rotation"])
 
-            # return vertices + self.det_pos
-
             pixel_pos = np.array((vertices + self.det_pos).values,
                                  dtype=np.float32)
             pixel_pos = pixel_pos.reshape(-1, pixel_pos.shape[-1])
-            # print("pixel_pos", pixel_pos)
         else:
             pixel_pos = self.det_pos.values
 
@@ -921,7 +686,7 @@ class InstrumentView:
                   "integer.".format(change["new"]))
             return
         self.rebin_data(
-            np.linspace(self.minmax["tof"][0], self.minmax["tof"][1],
+            np.linspace(self.minmax[0], self.minmax[1],
                         nbins + 1))
         x = self.hist_data_array[self.key].coords[self.dim].values
         self.lock_bin_inputs = True
@@ -939,7 +704,7 @@ class InstrumentView:
                   "float.".format(change["new"]))
             return
         self.rebin_data(
-            np.arange(self.minmax["tof"][0], self.minmax["tof"][1], binw))
+            np.arange(self.minmax[0], self.minmax[1], binw))
         self.lock_bin_inputs = True
         self.nbins.value = str(
             self.hist_data_array[self.key].shape[self.tof_dim_indx])
