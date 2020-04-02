@@ -49,19 +49,16 @@ constexpr auto x = detail::component<0>::overloads;
 constexpr auto y = detail::component<1>::overloads;
 constexpr auto z = detail::component<2>::overloads;
 
-constexpr auto rotate =
-    overloaded{
-      arg_list<std::tuple<Eigen::Vector3d, Eigen::Quaterniond>>,
-      transform_flags::expect_no_variance_arg<0>,
-      transform_flags::expect_no_variance_arg<1>,
-      [](const auto &pos, const auto &rot) {
-                 return rot._transformVector(pos);
-               },
-      [](const units::Unit &u_pos, const units::Unit &u_rot) {
-        expect::equals(u_pos, units::m);
-        expect::equals(u_rot, units::dimensionless);
-        return u_pos;
-      }};
+constexpr auto rotate = overloaded{
+    arg_list<std::tuple<Eigen::Vector3d, Eigen::Quaterniond>>,
+    transform_flags::expect_no_variance_arg<0>,
+    transform_flags::expect_no_variance_arg<1>,
+    [](const auto &pos, const auto &rot) { return rot._transformVector(pos); },
+    [](const units::Unit &u_pos, const units::Unit &u_rot) {
+      expect::equals(u_pos, units::m);
+      expect::equals(u_rot, units::dimensionless);
+      return u_pos;
+    }};
 } // namespace geometry
 
 } // namespace element

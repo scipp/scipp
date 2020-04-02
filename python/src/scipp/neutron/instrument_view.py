@@ -634,7 +634,7 @@ class InstrumentView:
                                  dtype=np.float32)
             pixel_pos = pixel_pos.reshape(-1, pixel_pos.shape[-1])
         else:
-            pixel_pos = self.det_pos.values
+            pixel_pos = np.array(self.det_pos.values, dtype=np.float32)
 
         if projection.startswith("3D"):
             xyz = pixel_pos

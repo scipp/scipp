@@ -35,26 +35,26 @@ static constexpr auto make_histogram =
       // for few and many events per histogram, respectively.
       if (scipp::numeric::is_linspace(edges)) {
         const auto [offset, nbin, scale] = linear_edge_params(edges);
-        for (scipp::index j = 0; j < scipp::size(events); ++j) {
-          const auto x = events[j];
+        for (scipp::index i = 0; i < scipp::size(events); ++i) {
+          const auto x = events[i];
           const double bin = (x - offset) * scale;
           if (bin >= 0.0 && bin < nbin) {
             const auto b = static_cast<scipp::index>(bin);
-            const auto w = value(weights, j);
-            const auto e = variance(weights, j);
+            const auto w = value(weights, i);
+            const auto e = variance(weights, i);
             data.value[b] += w;
             data.variance[b] += e;
           }
         }
       } else {
         expect::histogram::sorted_edges(edges);
-        for (scipp::index j = 0; j < scipp::size(events); ++j) {
-          const auto x = events[j];
+        for (scipp::index i = 0; i < scipp::size(events); ++i) {
+          const auto x = events[i];
           auto it = std::upper_bound(edges.begin(), edges.end(), x);
           if (it != edges.end() && it != edges.begin()) {
             const auto b = --it - edges.begin();
-            const auto w = value(weights, j);
-            const auto e = variance(weights, j);
+            const auto w = value(weights, i);
+            const auto e = variance(weights, i);
             data.value[b] += w;
             data.variance[b] += e;
           }

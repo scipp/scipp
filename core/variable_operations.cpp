@@ -314,24 +314,9 @@ Variable z(const VariableConstView &pos) {
   return transform<std::tuple<Eigen::Vector3d>>(pos, element::geometry::z);
 }
 Variable rotate(const VariableConstView &pos, const VariableConstView &rot) {
-    return transform<std::tuple<std::tuple<Eigen::Vector3d, Eigen::Quaterniond>>>(pos, rot, element::geometry::rotate);
+  return transform<std::tuple<std::tuple<Eigen::Vector3d, Eigen::Quaterniond>>>(
+      pos, rot, element::geometry::rotate);
 }
-// Variable rotate_and_translate(const VariableConstView &pos, const VariableConstView &rot, const VariableConstView &trans) {
-//     return transform<std::tuple<std::tuple<Eigen::Vector3d, Eigen::Quaterniond>>>(pos, rot, element::geometry::rotate);
-// }
-
-
-// Variable rotate_and_translate(const VariableConstView &pos, const VariableConstView &rot, const VariableConstView &trans, const ssize_t repeat) {
-//   auto out = Variable(pos);
-//   auto nrot = rot.shape()[0];
-//   for (scipp::index irot = 0; irot < nrot; ++irot) {
-//     auto rot_matrix = rot.data()[irot].toRotationMatrix();
-//     auto pos_section = pos
-//     for (scipp::index irep = 0; irep < repeat; ++irep) {
-
-
-// }
-
 
 } // namespace geometry
 
