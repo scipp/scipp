@@ -22,7 +22,8 @@ using args =
 } // namespace map_detail
 
 constexpr auto map = overloaded{
-    element::arg_list<map_detail::args<double, double, double>,
+    element::arg_list<map_detail::args<int64_t, double, double>,
+                      map_detail::args<double, double, double>,
                       map_detail::args<float, double, double>,
                       map_detail::args<float, float, float>,
                       map_detail::args<double, float, float>>,

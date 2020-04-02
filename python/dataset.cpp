@@ -702,6 +702,16 @@ void init_dataset(py::module &m) {
         :param x: Realigned data to histogram.
         :return: Histogramed data.
         :rtype: Dataset)");
+  m.def("map", event::map, py::arg("function"), py::arg("iterable"),
+        py::call_guard<py::gil_scoped_release>(),
+        R"(Return mapped event data.
+
+        This only supports event data.
+
+        :param function: Data array serving as a descretized mapping function.
+        :param iterable: Variable with values to map, must be event data.
+        :return: Mapped event data.
+        :rtype: Variable)");
 
   bind_astype(dataArray);
   bind_astype(dataArrayView);
