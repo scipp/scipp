@@ -22,7 +22,14 @@ using args =
 } // namespace map_detail
 
 constexpr auto map = overloaded{
-    element::arg_list<map_detail::args<int64_t, double, double>,
+    element::arg_list<map_detail::args<int64_t, int64_t, double>,
+                      map_detail::args<int64_t, int64_t, float>,
+                      map_detail::args<int32_t, int32_t, double>,
+                      map_detail::args<int32_t, int32_t, float>,
+                      map_detail::args<int64_t, double, double>,
+                      map_detail::args<int64_t, double, float>,
+                      map_detail::args<int32_t, double, double>,
+                      map_detail::args<int32_t, double, float>,
                       map_detail::args<double, double, double>,
                       map_detail::args<float, double, double>,
                       map_detail::args<float, float, float>,
@@ -50,12 +57,12 @@ constexpr auto map = overloaded{
         else
           return x[i];
       };
+      using w_type = decltype(get(weights, 0));
+      constexpr w_type out_of_bounds(0.0);
       if (scipp::numeric::is_linspace(edges)) {
         const auto [offset, nbin, scale] = linear_edge_params(edges);
         for (const auto c : coord) {
           const auto bin = (c - offset) * scale;
-          using w_type = decltype(get(weights, bin));
-          constexpr w_type out_of_bounds(0.0);
           w_type w =
               bin < 0.0 || bin >= nbin ? out_of_bounds : get(weights, bin);
           if constexpr (vars) {
@@ -67,7 +74,18 @@ constexpr auto map = overloaded{
         }
       } else {
         expect::histogram::sorted_edges(edges);
-        throw std::runtime_error("Non-constant bin width not supported yet.");
+        for (const auto c : coord) {
+          auto it = std::upper_bound(edges.begin(), edges.end(), c);
+          w_type w = (it == edges.end() || it == edges.begin())
+                         ? out_of_bounds
+                         : get(weights, --it - edges.begin());
+          if constexpr (vars) {
+            out_vals.emplace_back(w.value);
+            out_vars.emplace_back(w.variance);
+          } else {
+            out_vals.emplace_back(w);
+          }
+        }
       }
       if constexpr (vars)
         return std::pair(std::move(out_vals), std::move(out_vars));
