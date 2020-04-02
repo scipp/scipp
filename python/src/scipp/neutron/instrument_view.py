@@ -26,7 +26,6 @@ def instrument_view(scipp_obj=None,
                     log=False,
                     vmin=None,
                     vmax=None,
-                    size=0.12,
                     projection="3D Z",
                     nan_color="#d3d3d3",
                     continuous_update=True,
@@ -55,7 +54,6 @@ def instrument_view(scipp_obj=None,
                         vmin=vmin,
                         vmax=vmax,
                         aspect=aspect,
-                        size=size,
                         projection=projection,
                         nan_color=nan_color,
                         continuous_update=continuous_update,
@@ -78,7 +76,6 @@ class InstrumentView:
                  vmin=None,
                  vmax=None,
                  aspect=None,
-                 size=None,
                  projection=None,
                  nan_color=None,
                  continuous_update=None,
@@ -108,11 +105,6 @@ class InstrumentView:
         self.lock_camera = False
         self.dim = dim
         self.cbar_image = self.widgets.Image()
-
-        if len(np.shape(size)) == 0:
-            self.size = [size, size]
-        else:
-            self.size = size
 
         self.data_arrays = {}
         masks_present = False
@@ -365,10 +357,8 @@ class InstrumentView:
         self.mesh_material = self.p3.MeshBasicMaterial(
             vertexColors='VertexColors', transparent=True)
 
-        self.mesh = self.p3.Mesh(
-            geometry=self.mesh_geometry,
-            material=self.mesh_material
-        )
+        self.mesh = self.p3.Mesh(geometry=self.mesh_geometry,
+                                 material=self.mesh_material)
 
         # Make a simple PointsGeometry for the 'Fast' rendering mode
         self.points_geometry = self.p3.BufferGeometry(
@@ -380,7 +370,9 @@ class InstrumentView:
                     [self.det_pos.shape[0], 3], dtype=np.float32))
             })
         self.points_material = self.p3.PointsMaterial(
-            vertexColors='VertexColors', size=max(self.size), transparent=True)
+            vertexColors='VertexColors',
+            size=self.camera_pos * 0.05,
+            transparent=True)
         self.points = self.p3.Points(geometry=self.points_geometry,
                                      material=self.points_material)
 
@@ -406,12 +398,8 @@ class InstrumentView:
                                                 aspect=config.plot.width /
                                                 config.plot.height)
 
-        self.scene = self.p3.Scene(
-            children=[
-                self.camera,
-                self.axes_helper
-            ],
-            background=background)
+        self.scene = self.p3.Scene(children=[self.camera, self.axes_helper],
+                                   background=background)
 
         self.change_rendering({"new": rendering})
 
@@ -455,9 +443,14 @@ class InstrumentView:
         return
 
     def get_detector_vertices_and_faces(self, instrument_name):
-        cylindrical_detectors = {"loki"}
-
-        if instrument_name.lower() in cylindrical_detectors:
+        cylindrical_major_axis = {"loki": "x"}
+        instrument_name = instrument_name.lower()
+        axis = None
+        for name in cylindrical_major_axis:
+            if instrument_name.startswith(name):
+                axis = cylindrical_major_axis[name]
+                break
+        if axis is not None:
             sq2 = 0.25 * np.sqrt(2.0)
             vertices = np.array(
                 [[0.0, 0.0, -0.5], [0.5, 0.0, -0.5], [sq2, sq2, -0.5],
@@ -467,6 +460,12 @@ class InstrumentView:
                  [0.0, 0.5, 0.5], [-sq2, sq2, 0.5], [-0.5, 0.0, 0.5],
                  [-sq2, -sq2, 0.5], [0.0, -0.5, 0.5], [sq2, -sq2, 0.5]],
                 dtype=np.float32)
+
+            # By default, we assume major axis of cylinder is z. If it is not
+            # for that instrument, then swap the columns
+            iswap = "xyz".find(axis)
+            vertices[:, [iswap, 2]] = vertices[:, [2, iswap]]
+
             faces = np.array(
                 [[0, 2, 1], [0, 3, 2], [0, 4, 3], [0, 5, 4], [0, 6, 5],
                  [0, 7, 6], [0, 8, 7], [0, 1, 8], [9, 10, 11], [9, 11, 12],
@@ -685,9 +684,7 @@ class InstrumentView:
             print("Warning: could not convert value: {} to an "
                   "integer.".format(change["new"]))
             return
-        self.rebin_data(
-            np.linspace(self.minmax[0], self.minmax[1],
-                        nbins + 1))
+        self.rebin_data(np.linspace(self.minmax[0], self.minmax[1], nbins + 1))
         x = self.hist_data_array[self.key].coords[self.dim].values
         self.lock_bin_inputs = True
         self.bin_size.value = str(x[1] - x[0])
@@ -703,8 +700,7 @@ class InstrumentView:
             print("Warning: could not convert value: {} to a "
                   "float.".format(change["new"]))
             return
-        self.rebin_data(
-            np.arange(self.minmax[0], self.minmax[1], binw))
+        self.rebin_data(np.arange(self.minmax[0], self.minmax[1], binw))
         self.lock_bin_inputs = True
         self.nbins.value = str(
             self.hist_data_array[self.key].shape[self.tof_dim_indx])
@@ -745,6 +741,7 @@ class InstrumentView:
             self.params[self.key]["cmap"] = change["new"]
             self.cmap[self.key] = self.mpl_cm.get_cmap(
                 self.params[self.key]["cmap"])
+            self.cmap[self.key].set_bad(color=self.nan_color)
             self.scalar_map[self.key] = self.mpl_cm.ScalarMappable(
                 cmap=self.cmap[self.key], norm=self.params[self.key]["norm"])
             self.update_colorbar()
