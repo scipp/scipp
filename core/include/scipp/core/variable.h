@@ -586,9 +586,10 @@ Variable Variable::ConstructVariable<Ts...>::Maker<T>::apply(Ts &&... ts) {
 
 template <class... Ts>
 Variable Variable::ConstructVariable<Ts...>::make(Ts &&... args, DType type) {
-  return CallDTypeWithSparse<
-      double, float, int64_t, int32_t, bool, Eigen::Vector3d,
-      std::string>::apply<Maker>(type, std::forward<Ts>(args)...);
+  return CallDType<
+      double, float, int64_t, int32_t, bool, Eigen::Vector3d, std::string,
+      event_list<double>, event_list<float>, event_list<int64_t>,
+      event_list<int32_t>>::apply<Maker>(type, std::forward<Ts>(args)...);
 }
 
 template <class... Ts>
