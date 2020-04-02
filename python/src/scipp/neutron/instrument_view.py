@@ -387,7 +387,10 @@ class InstrumentView:
         #                              material=self.points_material)
 
         # Add the red green blue axes helper
-        self.axes_helper = self.p3.AxesHelper(self.camera_pos * 50.0)
+        self.axes_3d = self.p3.AxesHelper(self.camera_pos * 50.0)
+
+        # Make 2D axes
+
 
         # # Add some ticklabels to the axes helper
         # ticker = self.mpl_ticker.MaxNLocator(20)
@@ -408,7 +411,7 @@ class InstrumentView:
                                                 aspect=config.plot.width /
                                                 config.plot.height)
 
-        self.scene = self.p3.Scene(children=[self.camera, self.axes_helper],
+        self.scene = self.p3.Scene(children=[self.camera, self.axes_3d],
                                    background=background)
 
         self.change_rendering({"new": rendering})
@@ -713,21 +716,31 @@ class InstrumentView:
                                    pixel_pos[:, permutations[axis][1]])
             if projection.startswith("Cylindrical"):
                 xyz[:, 1] = pixel_pos[:, permutations[axis][0]]
+                ylab = "$z$"
             elif projection.startswith("Spherical"):
                 xyz[:, 1] = np.arcsin(
                     pixel_pos[:, permutations[axis][0]] /
                     np.sqrt(pixel_pos[:, 0]**2 + pixel_pos[:, 1]**2 +
                             pixel_pos[:, 2]**2))
+                ylab = "$\theta$"
+
 
         if projection.startswith("3D"):
-            self.axes_helper.visible = True
+            self.axes_3d.visible = True
             new_cam_pos = [
                 self.camera_pos * (axis == "X"),
                 self.camera_pos * (axis == "Y"),
                 self.camera_pos * (axis == "Z")
             ]
         else:
-            self.axes_helper.visible = False
+            self.axes_3d.visible = False
+            axes2d = self.generate_2d_axes(np.amin(xyz[:, 0]),
+                                           np.amax(xyz[:, 0]),
+                                           np.amin(xyz[:, 1]),
+                                           np.amax(xyz[:, 1]),
+                                           "$\phi$", ylab)
+            # self.axes_2d.
+            self.axes_2d.visible = True
             new_cam_pos = [0, 0, self.camera_pos]
         if not self.lock_camera:
             self.camera.position = new_cam_pos
@@ -759,6 +772,21 @@ class InstrumentView:
                                         position=(iden[j] * ticks[i]).tolist(),
                                         size=tick_size))
         return axticks
+
+    def generate_2d_axes(self, xmin, xmax, ymin, ymax, xlabel, ylabel):
+        ax = self.mpl_plt.axes()
+        dx = 0.05*(xmax - xmin)
+        dy = 0.05*(ymax - ymin)
+        ax.set_xlim([xmin - dx, xmax + dx])
+        ax.set_ylim([ymin - dy, ymax + dy])
+        
+        geometry = p3.BufferGeometry(attributes={
+        'position': p3.BufferAttribute(array=pts),
+    })
+    material = p3.LineBasicMaterial(color=color, linewidth=linewidth)
+    line = p3.Line(geometry=geometry,
+                              material=material)
+
 
     def update_nbins(self, change):
         if self.lock_bin_inputs:
