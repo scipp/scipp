@@ -6,9 +6,12 @@
 
 #include "scipp/core/dataset.h"
 #include "scipp/core/event.h"
+#include "scipp/core/histogram.h"
 #include "scipp/core/subspan_view.h"
 #include "scipp/core/transform.h"
 #include "scipp/core/variable_operations.h"
+
+#include "element_event_operations.h"
 
 namespace scipp::core {
 /// Return true if a variable contains events
@@ -228,6 +231,12 @@ DataArray filter(const DataArrayConstView &array, const Dim dim,
                    std::move(coords), array.masks(),
                    attrPolicy == AttrPolicy::Keep ? array.attrs()
                                                   : empty.attrs()};
+}
+
+Variable map(const DataArrayConstView &function, const VariableConstView &x) {
+  const Dim dim = edge_dimension(function);
+  return transform(x, subspan_view(function.coords()[dim], dim),
+                   subspan_view(function.data(), dim), element::event::map);
 }
 
 } // namespace event

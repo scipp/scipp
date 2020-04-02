@@ -236,27 +236,14 @@ DataArray &DataArray::operator-=(const DataArrayConstView &other) {
   return *this;
 }
 
-namespace {
-void expect_hist(const DataArrayConstView &b, const Dim dim) {
-  if (!is_histogram(b, dim))
-    throw except::RealignedDataError(
-        "Multiplication/division of realigned data requires histogram has "
-        "second operand.");
-}
-} // namespace
-
 template <class Op>
 DataArray &sparse_dense_op_inplace(Op op, DataArray &a,
                                    const DataArrayConstView &b) {
   if (unaligned::is_realigned_events(a)) {
-    const auto &bins = unaligned::realigned_event_coord(a);
-    const Dim dim = bins.dims().inner();
-    expect_hist(b, dim);
     expect::coordsAreSuperset(a, b);
     union_or_in_place(a.masks(), b.masks());
     const auto &events = a.unaligned();
-    auto weight_scale =
-        sparse_dense_op_impl(events.coords()[dim], bins, b.data(), dim);
+    auto weight_scale = event::map(b, events.coords()[edge_dimension(b)]);
     if (is_events(events.data())) {
       // Note the inefficiency here: Always creating temporary sparse data.
       // Could easily avoided, but requires significant code duplication.
@@ -330,13 +317,8 @@ template <class Op>
 auto sparse_dense_op(Op op, const DataArrayConstView &a,
                      const DataArrayConstView &b) {
   if (unaligned::is_realigned_events(a)) {
-    const auto &bins = unaligned::realigned_event_coord(a);
-    const Dim dim = bins.dims().inner();
-    expect_hist(b, dim);
     const auto &events = a.unaligned();
-    auto weight_scale =
-        sparse_dense_op_impl(events.coords()[dim], bins, b.data(), dim);
-
+    auto weight_scale = event::map(b, events.coords()[edge_dimension(b)]);
     std::map<Dim, Variable> coords;
     for (const auto &[d, coord] : events.coords()) {
       if (is_events(coord))

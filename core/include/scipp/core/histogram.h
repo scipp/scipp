@@ -14,6 +14,7 @@ namespace scipp::core {
 SCIPP_CORE_EXPORT DataArray histogram(const DataArrayConstView &realigned);
 SCIPP_CORE_EXPORT Dataset histogram(const DatasetConstView &realigned);
 
+SCIPP_CORE_EXPORT Dim edge_dimension(const DataArrayConstView &a);
 SCIPP_CORE_EXPORT bool is_histogram(const DataArrayConstView &a, const Dim dim);
 
 /// Return params for computing bin index for linear edges (constant bin width).
