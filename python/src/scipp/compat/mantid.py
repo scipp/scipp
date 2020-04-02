@@ -256,9 +256,13 @@ def get_detector_properties(ws, source_pos, sample_pos):
                                  unit=sc.units.m)
         pos_d["y"] = pos_d["x"]
         pos_d["z"] = pos_d["x"]
-
         pos_d.coords["spectrum"] = sc.Variable(
             ["detector"], values=np.empty(total_detectors))
+        spectrum_values = pos_d.coords["spectrum"].values
+
+        x_values = pos_d["x"].values
+        y_values = pos_d["y"].values
+        z_values = pos_d["z"].values
 
         idx = 0
         for i, spec in enumerate(spec_info):
@@ -272,10 +276,10 @@ def get_detector_properties(ws, source_pos, sample_pos):
                     p = det_info.position(det_idx)
                     r = det_info.rotation(det_idx)
                     s = comp_info.shape(det_idx)
-                    pos_d.coords["spectrum"].values[idx] = i
-                    pos_d["x"].values[idx] = p.X()
-                    pos_d["y"].values[idx] = p.Y()
-                    pos_d["z"].values[idx] = p.Z()
+                    spectrum_values[idx] = i
+                    x_values[idx] = p.X()
+                    y_values[idx] = p.Y()
+                    z_values[idx] = p.Z()
                     idx += 1
                     quats.append([r.real(), r.imagI(), r.imagJ(), r.imagK()])
                     bboxes.append(s.getBoundingBox().width())
@@ -326,8 +330,6 @@ def get_detector_properties(ws, source_pos, sample_pos):
                     vec3s.append([p.X(), p.Y(), p.Z()])
                     quats.append([r.real(), r.imagI(), r.imagJ(), r.imagK()])
                     bboxes.append(s.getBoundingBox().width())
-                # p = spec.position
-                # pos[i, :] = [p.X(), p.Y(), p.Z()]
                 pos[i, :] = np.mean(vec3s, axis=0)
                 det_rot[i, :] = np.mean(quats, axis=0)
                 det_bbox[i, :] = np.sum(bboxes, axis=0)
