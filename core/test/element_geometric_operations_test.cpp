@@ -46,3 +46,11 @@ TYPED_TEST(ElementPositionNTest, unzip_position) {
   EXPECT_EQ(geometry::detail::component<T::value>::overloads(m), m);
   EXPECT_THROW(geometry::z(K), except::UnitError);
 }
+
+TEST(ElementRotationTest, rotate_vector) {
+  Eigen::Vector3d vec(1, 2, 3);
+  Eigen::Quaterniond rot(4, 5, 6, 7);
+  rot.normalize();
+  // Rely on correctness of Eigen
+  EXPECT_EQ(rot._transformVector(vec), geometry::rotate(vec, rot));
+}
