@@ -1337,8 +1337,7 @@ TEST(VariableTest, rotate) {
   Eigen::Vector3d vec1(1, 2, 3);
   Eigen::Vector3d vec2(4, 5, 6);
   const Variable vec = makeVariable<Eigen::Vector3d>(
-      Dims{Dim::X}, Shape{2}, units::Unit(units::m),
-      Values{vec1, vec2});
+      Dims{Dim::X}, Shape{2}, units::Unit(units::m), Values{vec1, vec2});
   Eigen::Quaterniond rot1(1.1, 2.2, 3.3, 4.4);
   Eigen::Quaterniond rot2(5.5, 6.6, 7.7, 8.8);
   rot1.normalize();
@@ -1347,8 +1346,9 @@ TEST(VariableTest, rotate) {
       Dims{Dim::X}, Shape{2}, units::Unit(units::dimensionless),
       Values{rot1, rot2});
   auto vec_new = geometry::rotate(vec, rot);
-  const auto rotated = makeVariable<double>(
-      Dims{Dim::X}, Shape{2}, units::Unit(units::m), Values{rot1._transformVector(vec1), rot2._transformVector(vec2)});
+  const auto rotated = makeVariable<Eigen::Vector3d>(
+      Dims{Dim::X}, Shape{2}, units::Unit(units::m),
+      Values{rot1._transformVector(vec1), rot2._transformVector(vec2)});
   EXPECT_EQ(vec_new, rotated);
 }
 

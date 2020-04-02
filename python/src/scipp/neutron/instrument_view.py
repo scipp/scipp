@@ -106,6 +106,16 @@ class InstrumentView:
         self.dim = dim
         self.cbar_image = self.widgets.Image()
 
+        # Initialise variables for pythreejs objects
+        self.detector_shape = None
+        self.nverts = None
+        self.nfaces = None
+        self.ndets = None
+        self.geometry = None
+        self.material = None
+        self.mesh = None
+        self.points = None
+
         self.data_arrays = {}
         masks_present = False
         tp = type(scipp_obj)
@@ -327,71 +337,71 @@ class InstrumentView:
                         sc.max(comp, "spectrum").value
                     ])))
 
-        # Generate pixel shape from either box or cylinder for the 'Full'
-        # rendering mode
-        self.detector_shape, detector_faces = self.get_detector_vertices_and_faces(
-            self.data_arrays[self.key].attrs["instrument_name"].value)
+        # # Generate pixel shape from either box or cylinder for the 'Full'
+        # # rendering mode
+        # self.detector_shape, detector_faces = self.get_detector_vertices_and_faces(
+        #     self.data_arrays[self.key].attrs["instrument_name"].value)
 
-        # Create full geometry mesh
-        self.nverts = len(self.detector_shape)
-        self.nfaces = len(detector_faces)
-        self.ndets = self.det_pos.shape[0]
+        # # Create full geometry mesh
+        # self.nverts = len(self.detector_shape)
+        # self.nfaces = len(detector_faces)
+        # self.ndets = self.det_pos.shape[0]
 
-        faces = np.tile(detector_faces, [self.ndets, 1]) + np.repeat(
-            np.arange(
-                0, self.ndets * self.nverts, self.nverts, dtype=np.uint32),
-            self.nfaces * 3,
-            axis=0).reshape(self.nfaces * self.ndets, 3)
+        # faces = np.tile(detector_faces, [self.ndets, 1]) + np.repeat(
+        #     np.arange(
+        #         0, self.ndets * self.nverts, self.nverts, dtype=np.uint32),
+        #     self.nfaces * 3,
+        #     axis=0).reshape(self.nfaces * self.ndets, 3)
 
-        vertexcolors = np.zeros([self.ndets * self.nverts, 3],
-                                dtype=np.float32)
+        # vertexcolors = np.zeros([self.ndets * self.nverts, 3],
+        #                         dtype=np.float32)
 
-        self.mesh_geometry = self.p3.BufferGeometry(attributes=dict(
-            position=self.p3.BufferAttribute(np.zeros(
-                [self.nverts * self.ndets, 3], dtype=np.float32),
-                                             normalized=False),
-            index=self.p3.BufferAttribute(faces.ravel(), normalized=False),
-            color=self.p3.BufferAttribute(vertexcolors),
-        ))
+        # self.mesh_geometry = self.p3.BufferGeometry(attributes=dict(
+        #     position=self.p3.BufferAttribute(np.zeros(
+        #         [self.nverts * self.ndets, 3], dtype=np.float32),
+        #                                      normalized=False),
+        #     index=self.p3.BufferAttribute(faces.ravel(), normalized=False),
+        #     color=self.p3.BufferAttribute(vertexcolors),
+        # ))
 
-        self.mesh_material = self.p3.MeshBasicMaterial(
-            vertexColors='VertexColors', transparent=True)
+        # self.mesh_material = self.p3.MeshBasicMaterial(
+        #     vertexColors='VertexColors', transparent=True)
 
-        self.mesh = self.p3.Mesh(geometry=self.mesh_geometry,
-                                 material=self.mesh_material)
+        # self.mesh = self.p3.Mesh(geometry=self.mesh_geometry,
+        #                          material=self.mesh_material)
 
-        # Make a simple PointsGeometry for the 'Fast' rendering mode
-        self.points_geometry = self.p3.BufferGeometry(
-            attributes={
-                'position':
-                self.p3.BufferAttribute(array=self.det_pos.values),
-                'color':
-                self.p3.BufferAttribute(array=np.zeros(
-                    [self.det_pos.shape[0], 3], dtype=np.float32))
-            })
-        self.points_material = self.p3.PointsMaterial(
-            vertexColors='VertexColors',
-            size=self.camera_pos * 0.05,
-            transparent=True)
-        self.points = self.p3.Points(geometry=self.points_geometry,
-                                     material=self.points_material)
+        # # Make a simple PointsGeometry for the 'Fast' rendering mode
+        # self.points_geometry = self.p3.BufferGeometry(
+        #     attributes={
+        #         'position':
+        #         self.p3.BufferAttribute(array=self.det_pos.values),
+        #         'color':
+        #         self.p3.BufferAttribute(array=np.zeros(
+        #             [self.det_pos.shape[0], 3], dtype=np.float32))
+        #     })
+        # self.points_material = self.p3.PointsMaterial(
+        #     vertexColors='VertexColors',
+        #     size=self.camera_pos * 0.05,
+        #     transparent=True)
+        # self.points = self.p3.Points(geometry=self.points_geometry,
+        #                              material=self.points_material)
 
         # Add the red green blue axes helper
         self.axes_helper = self.p3.AxesHelper(self.camera_pos * 50.0)
 
-        # Add some ticklabels to the axes helper
-        ticker = self.mpl_ticker.MaxNLocator(20)
-        ticks = ticker.tick_values(0, self.camera_pos * 10.0)
-        nticks = len(ticks)
-        tick_size = self.camera_pos * 0.05
-        self.axticks = [self.make_axis_tick("0", [0, 0, 0], size=tick_size)]
-        iden = np.identity(3, dtype=np.float32)
-        for i in range(1, nticks):
-            for j in range(3):
-                self.axticks.append(
-                    self.make_axis_tick(string=str(ticks[i]),
-                                        position=(iden[j] * ticks[i]).tolist(),
-                                        size=tick_size))
+        # # Add some ticklabels to the axes helper
+        # ticker = self.mpl_ticker.MaxNLocator(20)
+        # ticks = ticker.tick_values(0, self.camera_pos * 10.0)
+        # nticks = len(ticks)
+        # tick_size = self.camera_pos * 0.05
+        # self.axticks = [self.make_axis_tick("0", [0, 0, 0], size=tick_size)]
+        # iden = np.identity(3, dtype=np.float32)
+        # for i in range(1, nticks):
+        #     for j in range(3):
+        #         self.axticks.append(
+        #             self.make_axis_tick(string=str(ticks[i]),
+        #                                 position=(iden[j] * ticks[i]).tolist(),
+        #                                 size=tick_size))
 
         # Create the threejs scene with ambient light and camera
         self.camera = self.p3.PerspectiveCamera(position=[self.camera_pos] * 3,
@@ -405,7 +415,7 @@ class InstrumentView:
 
         # Add the ticks after having drawn the detectors to avoid the tick
         # background being super-imposed onto the detector pixels
-        self.scene.add(self.axticks)
+        self.scene.add(self.generate_3d_axes_ticks())
 
         self.controller = self.p3.OrbitControls(controlling=self.camera)
 
@@ -441,6 +451,65 @@ class InstrumentView:
         }
 
         return
+
+    def create_mesh_geometry(self):
+        """
+        Generate a mesh object with the full detector geometry.
+        """
+
+        # Generate pixel shape from either box or cylinder for the 'Full'
+        # rendering mode
+        self.detector_shape, detector_faces = self.get_detector_vertices_and_faces(
+            self.data_arrays[self.key].attrs["instrument_name"].value)
+
+        # Create full geometry mesh
+        self.nverts = len(self.detector_shape)
+        self.nfaces = len(detector_faces)
+        self.ndets = self.det_pos.shape[0]
+
+        faces = np.tile(detector_faces, [self.ndets, 1]) + np.repeat(
+            np.arange(
+                0, self.ndets * self.nverts, self.nverts, dtype=np.uint32),
+            self.nfaces * 3,
+            axis=0).reshape(self.nfaces * self.ndets, 3)
+
+        vertexcolors = np.zeros([self.ndets * self.nverts, 3],
+                                dtype=np.float32)
+
+        mesh_geometry = self.p3.BufferGeometry(attributes=dict(
+            position=self.p3.BufferAttribute(np.zeros(
+                [self.nverts * self.ndets, 3], dtype=np.float32),
+                                             normalized=False),
+            index=self.p3.BufferAttribute(faces.ravel(), normalized=False),
+            color=self.p3.BufferAttribute(vertexcolors),
+        ))
+
+        mesh_material = self.p3.MeshBasicMaterial(
+            vertexColors='VertexColors', transparent=True)
+
+        mesh = self.p3.Mesh(geometry=mesh_geometry, material=mesh_material)
+
+        return mesh_geometry, mesh_material, mesh
+
+    def create_points_geometry(self):
+        """
+        Make a simple PointsGeometry for the 'Fast' rendering mode
+        """
+        points_geometry = self.p3.BufferGeometry(
+            attributes={
+                'position':
+                self.p3.BufferAttribute(array=self.det_pos.values),
+                'color':
+                self.p3.BufferAttribute(array=np.zeros(
+                    [self.det_pos.shape[0], 3], dtype=np.float32))
+            })
+        points_material = self.p3.PointsMaterial(
+            vertexColors='VertexColors',
+            size=self.camera_pos * 0.05,
+            transparent=True)
+        points = self.p3.Points(geometry=points_geometry,
+                                material=points_material)
+        return points_geometry, points_material, points
 
     def get_detector_vertices_and_faces(self, instrument_name):
         cylindrical_major_axis = {"loki": "x"}
@@ -675,6 +744,22 @@ class InstrumentView:
 
         return
 
+    def generate_3d_axes_ticks(self):
+        # Add some ticklabels to the axes helper
+        ticker = self.mpl_ticker.MaxNLocator(20)
+        ticks = ticker.tick_values(0, self.camera_pos * 10.0)
+        nticks = len(ticks)
+        tick_size = self.camera_pos * 0.05
+        axticks = [self.make_axis_tick("0", [0, 0, 0], size=tick_size)]
+        iden = np.identity(3, dtype=np.float32)
+        for i in range(1, nticks):
+            for j in range(3):
+                axticks.append(
+                    self.make_axis_tick(string=str(ticks[i]),
+                                        position=(iden[j] * ticks[i]).tolist(),
+                                        size=tick_size))
+        return axticks
+
     def update_nbins(self, change):
         if self.lock_bin_inputs:
             return
@@ -793,17 +878,23 @@ class InstrumentView:
 
     def change_rendering(self, change):
         if change["new"] == "Full":
-            self.geometry = self.mesh_geometry
-            self.material = self.mesh_material
-            if self.points in self.scene.children:
+            # self.mesh_geometry
+            # self.material = self.mesh_material
+            if self.points is not None and self.points in self.scene.children:
                 self.scene.remove(self.points)
+            self.geometry, self.material, self.mesh = self.create_mesh_geometry()
             self.scene.add(self.mesh)
         else:
-            self.geometry = self.points_geometry
-            self.material = self.points_material
-            if self.mesh in self.scene.children:
+            if self.mesh is not None and self.mesh in self.scene.children:
                 self.scene.remove(self.mesh)
+            self.geometry, self.material, self.points = self.create_points_geometry()
             self.scene.add(self.points)
+
+            # self.geometry = self.points_geometry
+            # self.material = self.points_material
+            # if self.mesh in self.scene.children:
+            #     self.scene.remove(self.mesh)
+            # self.scene.add(self.points)
         if "old" in change:
             self.lock_camera = True
             self.change_projection(self.buttons[self.current_projection])
