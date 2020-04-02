@@ -139,6 +139,8 @@ using make_select_args = std::tuple<event_list<T>, span<const T>>;
 template <class T, class Index>
 using copy_if_args = std::tuple<event_list<T>, event_list<Index>>;
 
+/// Return new variable with values copied from `var` if index is included in
+/// `select`.
 constexpr auto copy_if = [](const VariableConstView &var,
                             const VariableConstView &select) {
   return transform<std::tuple<
@@ -173,6 +175,7 @@ constexpr auto copy_if = [](const VariableConstView &var,
           [](const units::Unit &var_, const units::Unit &) { return var_; }});
 };
 
+/// Return list of indices with coord values for given dim inside interval.
 template <class T>
 const auto make_select = [](const DataArrayConstView &array, const Dim dim,
                             const VariableConstView &interval) {
@@ -200,6 +203,8 @@ const auto make_select = [](const DataArrayConstView &array, const Dim dim,
 
 } // namespace filter_detail
 
+/// Return filtered event data based on excluding all events with coord values
+/// for given dim outside interval.
 DataArray filter(const DataArrayConstView &array, const Dim dim,
                  const VariableConstView &interval,
                  const AttrPolicy attrPolicy) {
