@@ -6,6 +6,7 @@
 #define SCIPP_CORE_HISTOGRAM_H
 
 #include <algorithm>
+#include <tuple>
 
 #include "scipp/core/except.h"
 
@@ -21,12 +22,9 @@ SCIPP_CORE_EXPORT bool is_histogram(const DataArrayConstView &a, const Dim dim);
 constexpr static auto linear_edge_params = [](const auto &edges) {
   auto len = scipp::size(edges) - 1;
   const auto offset = edges.front();
-  static_assert(
-      std::is_floating_point_v<decltype(offset)>,
-      "linear_bin_edges is not implement to support integer-valued bin-edges");
   const auto nbin = static_cast<decltype(offset)>(len);
-  const auto scale = nbin / (edges.back() - edges.front());
-  return std::array{offset, nbin, scale};
+  const auto scale = static_cast<double>(nbin) / (edges.back() - edges.front());
+  return std::tuple{offset, nbin, scale};
 };
 
 namespace expect::histogram {
