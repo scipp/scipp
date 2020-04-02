@@ -253,9 +253,13 @@ def init_pos(ws, source_pos, sample_pos):
                                  unit=sc.units.m)
         pos_d["y"] = pos_d["x"]
         pos_d["z"] = pos_d["x"]
-
         pos_d.coords["spectrum"] = sc.Variable(
             ["detector"], values=np.empty(total_detectors))
+        spectrum_values = pos_d.coords["spectrum"].values
+
+        x_values = pos_d["x"].values
+        y_values = pos_d["y"].values
+        z_values = pos_d["z"].values
 
         idx = 0
         for i, spec in enumerate(spec_info):
@@ -265,10 +269,10 @@ def init_pos(ws, source_pos, sample_pos):
                 for j in range(n_dets):
                     det_idx = definition[j][0]
                     p = det_info.position(det_idx)
-                    pos_d.coords["spectrum"].values[idx] = i
-                    pos_d["x"].values[idx] = p.X()
-                    pos_d["y"].values[idx] = p.Y()
-                    pos_d["z"].values[idx] = p.Z()
+                    spectrum_values[idx] = i
+                    x_values[idx] = p.X()
+                    y_values[idx] = p.Y()
+                    z_values[idx] = p.Z()
                     idx += 1
 
         rot_pos = matrix_mult(
