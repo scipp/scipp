@@ -139,8 +139,8 @@ template <class T> void realign_impl(T &self, py::dict coord_dict) {
 }
 
 template <class T>
-T filter_impl(const T &self, const Dim dim, const VariableConstView &interval,
-              bool keep_attrs) {
+T filter_impl(const typename T::const_view_type &self, const Dim dim,
+              const VariableConstView &interval, bool keep_attrs) {
   return event::filter(self, dim, interval,
                        keep_attrs ? AttrPolicy::Keep : AttrPolicy::Drop);
 }
@@ -672,8 +672,8 @@ void init_dataset(py::module &m) {
           return copy;
         },
         py::arg("data"), py::arg("coords"));
-  m.def("filter", filter_impl<DataArrayConstView>, py::arg("data"),
-        py::arg("filter"), py::arg("interval"), py::arg("keep_attrs") = true,
+  m.def("filter", filter_impl<DataArray>, py::arg("data"), py::arg("filter"),
+        py::arg("interval"), py::arg("keep_attrs") = true,
         py::call_guard<py::gil_scoped_release>(),
         R"(Return filtered event data.
 
