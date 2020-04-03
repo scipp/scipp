@@ -210,7 +210,8 @@ class InstrumentView:
                                        names="value")
 
         # Create a Tof slider and its label
-        self.tof_dim_indx = self.hist_data_array[self.key].dims.index(self.slider_dim)
+        self.tof_dim_indx = self.hist_data_array[self.key].dims.index(
+            self.slider_dim)
         self.slider = self.widgets.IntSlider(
             value=0,
             min=0,
@@ -230,7 +231,8 @@ class InstrumentView:
                                        continuous_update=False)
         self.nbins.observe(self.update_nbins, names="value")
 
-        tof_values = self.hist_data_array[self.key].coords[self.slider_dim].values
+        tof_values = self.hist_data_array[self.key].coords[
+            self.slider_dim].values
         self.bin_size = self.widgets.Text(value=str(tof_values[1] -
                                                     tof_values[0]),
                                           description="Bin size:",
@@ -261,8 +263,9 @@ class InstrumentView:
             description="Rendering:",
             layout={"width": "initial"})
         # Disable Full rendering if there are not shapes or rotations
-        if "detector_shape" not in self.data_arrays[self.key].attrs or \
-            "detector_rotation" not in self.data_arrays[self.key].attrs:
+        if "detector_shape" not in self.data_arrays[
+                self.key].attrs or "detector_rotation" not in self.data_arrays[
+                    self.key].attrs:
             self.select_rendering.value = "Fast"
             self.select_rendering.disabled = True
         self.select_rendering.observe(self.change_rendering, names="value")
@@ -352,15 +355,17 @@ class InstrumentView:
                         sc.max(comp, self.other_dim).value
                     ])))
 
-
         # Add the red green blue axes helper
         self.axes_3d = self.p3.AxesHelper(self.camera_pos * 50.0)
 
         # Add the 2D axes but don't show them yet
-        line_geom = self.p3.BufferGeometry(attributes={
-            'position': self.p3.BufferAttribute(
-                array=np.array([[0, 0, 0], [1, 0, 0], [1, 1, 0],
-                               [0, 1, 0], [0, 0, 0]], dtype=np.float32))})
+        line_geom = self.p3.BufferGeometry(
+            attributes={
+                'position':
+                self.p3.BufferAttribute(array=np.array(
+                    [[0, 0, 0], [1, 0, 0], [1, 1, 0], [0, 1, 0], [0, 0, 0]],
+                    dtype=np.float32))
+            })
         line_mat = self.p3.LineBasicMaterial(color="black", linewidth=1)
         self.axes_2d = self.p3.Line(geometry=line_geom, material=line_mat)
 
@@ -369,8 +374,9 @@ class InstrumentView:
                                                 aspect=config.plot.width /
                                                 config.plot.height)
 
-        self.scene = self.p3.Scene(children=[self.camera, self.axes_3d, self.axes_2d],
-                                   background=background)
+        self.scene = self.p3.Scene(
+            children=[self.camera, self.axes_3d, self.axes_2d],
+            background=background)
 
         # Call the rendering which will create the mesh and points objects
         self.change_rendering({"new": self.select_rendering.value})
@@ -417,7 +423,8 @@ class InstrumentView:
 
         # Generate pixel shape from either box or cylinder for the 'Full'
         # rendering mode
-        self.detector_shape, detector_faces = self.get_detector_vertices_and_faces()
+        self.detector_shape, detector_faces = \
+            self.get_detector_vertices_and_faces()
 
         # Create full geometry mesh
         self.nverts = len(self.detector_shape)
@@ -441,8 +448,8 @@ class InstrumentView:
             color=self.p3.BufferAttribute(vertexcolors),
         ))
 
-        mesh_material = self.p3.MeshBasicMaterial(
-            vertexColors='VertexColors', transparent=True)
+        mesh_material = self.p3.MeshBasicMaterial(vertexColors='VertexColors',
+                                                  transparent=True)
 
         mesh = self.p3.Mesh(geometry=mesh_geometry, material=mesh_material)
 
@@ -460,17 +467,17 @@ class InstrumentView:
                 self.p3.BufferAttribute(array=np.zeros(
                     [self.det_pos.shape[0], 3], dtype=np.float32))
             })
-        points_material = self.p3.PointsMaterial(
-            vertexColors='VertexColors',
-            size=self.camera_pos * 0.05,
-            transparent=True)
+        points_material = self.p3.PointsMaterial(vertexColors='VertexColors',
+                                                 size=self.camera_pos * 0.05,
+                                                 transparent=True)
         points = self.p3.Points(geometry=points_geometry,
                                 material=points_material)
         return points_geometry, points_material, points
 
     def get_detector_vertices_and_faces(self):
         if "instrument_name" in self.data_arrays[self.key].attrs:
-            instrument_name = self.data_arrays[self.key].attrs["instrument_name"].value
+            instrument_name = self.data_arrays[
+                self.key].attrs["instrument_name"].value
         else:
             instrument_name = ""
         cylindrical_major_axis = {"loki": "x"}
@@ -604,7 +611,8 @@ class InstrumentView:
             image.reshape(shp))._repr_png_()
 
     def update_colors(self, change):
-        arr = self.hist_data_array[self.key][self.slider_dim, change["new"]].values
+        arr = self.hist_data_array[
+            self.key][self.slider_dim, change["new"]].values
         if self.select_rendering.value == "Full":
             arr = np.repeat(arr, self.nverts, axis=0)
         colors = self.scalar_map[self.key].to_rgba(arr).astype(np.float32)
@@ -631,9 +639,9 @@ class InstrumentView:
         projection = owner.description
         axis = projection[-1]
 
-
         # Just move the camera if we are staying as a 3D projection
-        if projection.startswith("3D") and self.current_projection.startswith("3D") and (not self.lock_camera):
+        if projection.startswith("3D") and self.current_projection.startswith(
+                "3D") and (not self.lock_camera):
             new_cam_pos = [
                 self.camera_pos * (axis == "X"),
                 self.camera_pos * (axis == "Y"),
@@ -654,10 +662,10 @@ class InstrumentView:
 
         if self.select_rendering.value == "Full":
 
-            # Duplicate the detector shape to the number of detectors by creating
-            # a Variable of dims ["spectrum", "vertex"]. The rotation operation
-            # will then be applied along the "spectrum" dimension using the
-            # automatic broadcast
+            # Duplicate the detector shape to the number of detectors by
+            # creating a Variable of dims ["spectrum", "vertex"]. The rotation
+            # operation will then be applied along the "spectrum" dimension
+            # using the automatic broadcast
             vertices = sc.Variable(dims=[self.other_dim, "vertex"],
                                    shape=[self.ndets, self.nverts],
                                    unit=sc.units.m,
@@ -719,15 +727,16 @@ class InstrumentView:
                 xmax = np.amax(xyz[:, 0])
                 ymin = np.amin(xyz[:, 1])
                 ymax = np.amax(xyz[:, 1])
-                dx = 0.05*(xmax - xmin)
-                dy = 0.05*(ymax - ymin)
+                dx = 0.05 * (xmax - xmin)
+                dy = 0.05 * (ymax - ymin)
                 xmin -= dx
                 xmax += dx
                 ymin -= dy
                 ymax += dy
                 self.axes_2d.geometry.attributes["position"].array = np.array(
                     [[xmin, ymin, 0], [xmax, ymin, 0], [xmax, ymax, 0],
-                     [xmin, ymax, 0], [xmin, ymin, 0]], dtype=np.float32)
+                     [xmin, ymax, 0], [xmin, ymin, 0]],
+                    dtype=np.float32)
                 self.axes_2d.visible = True
                 if self.ticks_3d is not None:
                     self.scene.remove(self.ticks_3d)
@@ -735,7 +744,7 @@ class InstrumentView:
                 if self.ticks_2d is not None:
                     self.scene.remove(self.ticks_2d)
                 self.ticks_2d = self.generate_2d_axes_ticks(
-                    xmin, xmax, ymin , ymax, u"\u03C6", ylab)
+                    xmin, xmax, ymin, ymax, u"\u03C6", ylab)
                 self.scene.add(self.ticks_2d)
                 new_cam_pos = [0, 0, self.camera_pos]
 
@@ -752,10 +761,17 @@ class InstrumentView:
         self.current_projection = projection
         self.buttons[projection].button_style = "info"
 
-
         return
 
-    def generate_axis_ticks(self, group=None, xmin=0, xmax=1, axis=0, size=1, offset=None, nmax=20, range_start=0):
+    def generate_axis_ticks(self,
+                            group=None,
+                            xmin=0,
+                            xmax=1,
+                            axis=0,
+                            size=1,
+                            offset=None,
+                            nmax=20,
+                            range_start=0):
         ticker = self.mpl_ticker.MaxNLocator(nmax)
         ticks = ticker.tick_values(xmin, xmax)
         iden = np.identity(3, dtype=np.float32)
@@ -769,32 +785,53 @@ class InstrumentView:
                                     size=size))
         return
 
-
     def generate_3d_axes_ticks(self):
         tick_size = self.camera_pos * 0.05
         axticks = self.p3.Group()
         axticks.add(self.make_axis_tick("0", [0, 0, 0], size=tick_size))
         for i in range(3):
             self.generate_axis_ticks(group=axticks,
-                xmin=self.camera_pos * 0.1, xmax=self.camera_pos * 10.0, axis=i, size=tick_size,
-                range_start=1)
+                                     xmin=self.camera_pos * 0.1,
+                                     xmax=self.camera_pos * 10.0,
+                                     axis=i,
+                                     size=tick_size,
+                                     range_start=1)
         return axticks
 
-    def generate_2d_axes_ticks(self, xmin=0, xmax=1, ymin=0, ymax=1, xlabel="", ylabel=""):
-        tick_size = min(0.05*(xmax - xmin), 0.05*(ymax - ymin))
+    def generate_2d_axes_ticks(self,
+                               xmin=0,
+                               xmax=1,
+                               ymin=0,
+                               ymax=1,
+                               xlabel="",
+                               ylabel=""):
+        tick_size = min(0.05 * (xmax - xmin), 0.05 * (ymax - ymin))
         axticks = self.p3.Group()
         self.generate_axis_ticks(group=axticks,
-            xmin=xmin, xmax=xmax, axis=0, size=tick_size, offset=[0, ymin, 0], nmax=10)
+                                 xmin=xmin,
+                                 xmax=xmax,
+                                 axis=0,
+                                 size=tick_size,
+                                 offset=[0, ymin, 0],
+                                 nmax=10)
         self.generate_axis_ticks(group=axticks,
-            xmin=ymin, xmax=ymax, axis=1, size=tick_size, offset=[xmin, 0, 0], nmax=10)
-        axticks.add(self.make_axis_tick(string=xlabel,
-                                    position=[0.5*(xmin+xmax), ymin-0.1*(ymax-ymin), 0],
-                                    size=tick_size*1.5))
-        axticks.add(self.make_axis_tick(string=ylabel,
-                                    position=[xmin-0.1*(xmax-xmin), 0.5*(ymin+ymax), 0],
-                                    size=tick_size*1.5))
+                                 xmin=ymin,
+                                 xmax=ymax,
+                                 axis=1,
+                                 size=tick_size,
+                                 offset=[xmin, 0, 0],
+                                 nmax=10)
+        axticks.add(
+            self.make_axis_tick(
+                string=xlabel,
+                position=[0.5 * (xmin + xmax), ymin - 0.1 * (ymax - ymin), 0],
+                size=tick_size * 1.5))
+        axticks.add(
+            self.make_axis_tick(
+                string=ylabel,
+                position=[xmin - 0.1 * (xmax - xmin), 0.5 * (ymin + ymax), 0],
+                size=tick_size * 1.5))
         return axticks
-
 
     def update_nbins(self, change):
         if self.lock_bin_inputs:
@@ -868,7 +905,8 @@ class InstrumentView:
             self.update_colorbar()
             self.update_colors({"new": self.slider.value})
         else:
-            self.colormap_error.value = '<span style="color: red;">&times</span>'
+            self.colormap_error.value = ('<span style="color: red;">&times'
+                                         '</span>')
 
     def toggle_masks(self, change):
         self.masks_params[self.key]["show"] = change["new"]
@@ -886,7 +924,8 @@ class InstrumentView:
                 cmap=self.masks_cmap, norm=self.params[self.key]["norm"])
             self.update_colors({"new": self.slider.value})
         else:
-            self.masks_colormap_error.value = '<span style="color: red;">&times</span>'
+            self.masks_colormap_error.value = ('<span style="color: red;">'
+                                               '&times</span>')
 
     def update_masks_solid_color(self, change):
         self.masks_cmap = self.mpl_colors.LinearSegmentedColormap.from_list(
@@ -917,13 +956,15 @@ class InstrumentView:
             if self.points is not None and self.points in self.scene.children:
                 self.scene.remove(self.points)
                 del self.points
-            self.geometry, self.material, self.mesh = self.create_mesh_geometry()
+            self.geometry, self.material, self.mesh = \
+                self.create_mesh_geometry()
             self.scene.add(self.mesh)
         else:
             if self.mesh is not None and self.mesh in self.scene.children:
                 self.scene.remove(self.mesh)
                 del self.mesh
-            self.geometry, self.material, self.points = self.create_points_geometry()
+            self.geometry, self.material, self.points = \
+                self.create_points_geometry()
             self.scene.add(self.points)
         if "old" in change:
             self.lock_camera = True

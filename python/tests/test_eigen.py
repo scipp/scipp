@@ -4,8 +4,6 @@
 # @author Neil Vaytet
 
 import numpy as np
-import pytest
-
 import scipp as sc
 
 
@@ -43,15 +41,18 @@ def test_create_quaternion_float64():
 def test_create_variable_0D_quaternion_float64():
     quat = sc.Quat(np.arange(4.0))
     var = sc.Variable(value=quat,
-                  unit=sc.units.m, dtype=sc.dtype.quaternion_float64)
+                      unit=sc.units.m,
+                      dtype=sc.dtype.quaternion_float64)
     np.testing.assert_array_equal(var.value.coeffs(), [0, 1, 2, 3])
     assert var.dtype == sc.dtype.quaternion_float64
     assert var.unit == sc.units.m
 
 
 def test_create_variable_1D_quaternion_float64():
-    var = sc.Variable(['tof'], values=np.random.random([10, 4]),
-                  unit=sc.units.us, dtype=sc.dtype.quaternion_float64)
+    var = sc.Variable(['tof'],
+                      values=np.random.random([10, 4]),
+                      unit=sc.units.us,
+                      dtype=sc.dtype.quaternion_float64)
     assert len(var.values) == 10
     assert var.dims == ['tof']
     assert var.dtype == sc.dtype.quaternion_float64
