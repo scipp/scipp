@@ -405,6 +405,55 @@ class TestMantidConversion(unittest.TestCase):
         self.assertTrue("status" in fit_ds.attrs)
         self.assertTrue("chi2_over_DoF" in fit_ds.attrs)
 
+    def test_set_run(self):
+        import mantid.simpleapi as mantid
+        target = mantid.CloneWorkspace(self.base_event_ws)
+        d = mantidcompat.convert_EventWorkspace_to_data_array(target, False)
+        d.attrs["run"].value.addProperty("test_property", 1, True)
+        # before
+        self.assertFalse(target.run().hasProperty("test_property"))
+        target.setRun(d.attrs["run"].value)
+        # after
+        self.assertTrue(target.run().hasProperty("test_property"))
+
+    def test_set_sample(self):
+        import mantid.simpleapi as mantid
+        target = mantid.CloneWorkspace(self.base_event_ws)
+        d = mantidcompat.convert_EventWorkspace_to_data_array(target, False)
+        d.attrs["sample"].value.setThickness(3)
+        # before
+        self.assertNotEqual(3, target.sample().getThickness())
+        target.setSample(d.attrs["sample"].value)
+        # after
+        self.assertEqual(3, target.sample().getThickness())
+
+    def _do_test_point(self, point):
+        x, y, z = point
+        r, theta, phi = mantidcompat._to_spherical(x, y, z)
+        x_b, y_b, z_b = mantidcompat._to_cartesian(r, theta, phi)
+        self.assertAlmostEqual(x, x_b)
+        self.assertAlmostEqual(y, y_b)
+        self.assertAlmostEqual(z, z_b)
+
+    def test_detector_positions(self):
+        import mantid.simpleapi as mantid
+        from mantid.kernel import V3D
+        eventWS = mantid.CloneWorkspace(self.base_event_ws)
+        comp_info = eventWS.componentInfo()
+        small_offset = V3D(0.01, 0.01, 0.01)
+        comp_info.setPosition(comp_info.source(),
+                              comp_info.samplePosition() + small_offset)
+        moved = mantidcompat.convert_Workspace2D_to_data_array(eventWS)
+        moved_det_position = moved.coords["position"]
+        unmoved = mantidcompat.convert_Workspace2D_to_data_array(eventWS)
+        unmoved_det_positions = unmoved.coords["position"]
+        # Moving the sample accounted for in position calculations
+        # but should not yield change to final detector positions
+        self.assertTrue(
+            np.all(
+                np.isclose(moved_det_position.values,
+                           unmoved_det_positions.values)))
+
 
 @pytest.mark.skipif(not mantid_is_available(),
                     reason='Mantid framework is unavailable')
@@ -442,28 +491,6 @@ def test_to_workspace_2d(param_dim):
         np.testing.assert_array_equal(ws.readX(i), x['spectrum', i])
         np.testing.assert_array_equal(ws.readY(i), y['spectrum', i])
         np.testing.assert_array_equal(ws.readE(i), y['spectrum', i].variances)
-
-    def test_set_run(self):
-        import mantid.simpleapi as mantid
-        target = mantid.CloneWorkspace(self.base_event_ws)
-        d = mantidcompat.convert_EventWorkspace_to_data_array(target, False)
-        d.attrs["run"].value.addProperty("test_property", 1, True)
-        # before
-        self.assertFalse(target.run().hasProperty("test_property"))
-        target.setRun(d.attrs["run"].value)
-        # after
-        self.assertTrue(target.run().hasProperty("test_property"))
-
-    def test_set_sample(self):
-        import mantid.simpleapi as mantid
-        target = mantid.CloneWorkspace(self.base_event_ws)
-        d = mantidcompat.convert_EventWorkspace_to_data_array(target, False)
-        d.attrs["sample"].value.setThickness(3)
-        # before
-        self.assertNotEqual(3, target.sample().getThickness())
-        target.setSample(d.attrs["sample"].value)
-        # after
-        self.assertEqual(3, target.sample().getThickness())
 
 
 if __name__ == "__main__":
