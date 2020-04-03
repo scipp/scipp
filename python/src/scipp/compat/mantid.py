@@ -308,10 +308,11 @@ def get_detector_properties(ws, source_pos, sample_pos):
 
         pos = sc.geometry.position(averaged["x"].data, averaged["y"].data,
                                    averaged["z"].data)
-        return matrix_mult(pos, inv_rot), sc.Variable(
-            ['spectrum'], values=det_rot, dtype=sc.dtype.quaternion_float64), \
-            sc.Variable(
-            ['spectrum'], values=det_bbox, unit=sc.units.m, dtype=sc.dtype.vector_3_float64)
+        return (matrix_mult(pos, inv_rot),
+                sc.Variable(['spectrum'], values=det_rot,
+                            dtype=sc.dtype.quaternion_float64),
+                sc.Variable(['spectrum'], values=det_bbox, unit=sc.units.m,
+                            dtype=sc.dtype.vector_3_float64))
     else:
         pos = np.zeros([nspec, 3])
 
@@ -337,12 +338,12 @@ def get_detector_properties(ws, source_pos, sample_pos):
                 pos[i, :] = [np.nan, np.nan, np.nan]
                 det_rot[i, :] = [np.nan, np.nan, np.nan, np.nan]
                 det_bbox[i, :] = [np.nan, np.nan, np.nan]
-        return sc.Variable(
-            ['spectrum'], values=pos, unit=sc.units.m,
-            dtype=sc.dtype.vector_3_float64), sc.Variable(
-            ['spectrum'], values=det_rot, dtype=sc.dtype.quaternion_float64), \
-                        sc.Variable(
-            ['spectrum'], values=det_bbox, unit=sc.units.m, dtype=sc.dtype.vector_3_float64)
+        return (sc.Variable(['spectrum'], values=pos, unit=sc.units.m,
+                            dtype=sc.dtype.vector_3_float64),
+                sc.Variable(['spectrum'], values=det_rot,
+                            dtype=sc.dtype.quaternion_float64),
+                sc.Variable(['spectrum'], values=det_bbox, unit=sc.units.m,
+                            dtype=sc.dtype.vector_3_float64))
 
 
 def _get_dtype_from_values(values):
@@ -410,11 +411,17 @@ def _convert_MatrixWorkspace_info(ws):
         },
         "masks": {},
         "attrs": {
-            "run": make_run(ws),
-            "sample": make_sample(ws),
-            "detector_rotation": rot,
-            "detector_shape": shp,
-            "instrument_name": sc.Variable(value=ws.componentInfo().name(ws.componentInfo().root()))
+            "run":
+            make_run(ws),
+            "sample":
+            make_sample(ws),
+            "detector_rotation":
+            rot,
+            "detector_shape":
+            shp,
+            "instrument_name":
+            sc.Variable(
+                value=ws.componentInfo().name(ws.componentInfo().root()))
         },
     }
     if source_pos is not None:
@@ -797,6 +804,7 @@ def load_component_info(ds, file):
         ds.coords["position"] = pos
         ds.attrs["detector_rotation"] = rot
         ds.attrs["detector_shape"] = shp
+
 
 def validate_dim_and_get_mantid_string(unit_dim):
     known_units = {
