@@ -10,7 +10,7 @@ import scipp as sc
 
 
 def test_create_variable_0D_vector_3_float64():
-    var = sc.Variable(value=[[1, 2, 3]],
+    var = sc.Variable(value=np.array([1, 2, 3]),
                       unit=sc.units.m,
                       dtype=sc.dtype.vector_3_float64)
     np.testing.assert_array_equal(var.value, [1, 2, 3])
@@ -33,10 +33,10 @@ def test_create_variable_1D_vector_3_float64():
 
 def test_create_quaternion_float64():
     quat = sc.Quat(np.arange(4.0))
-    assert mat.x() == 0.0
-    assert mat.y() == 1.0
-    assert mat.z() == 2.0
-    assert mat.w() == 3.0
+    assert quat.x() == 0.0
+    assert quat.y() == 1.0
+    assert quat.z() == 2.0
+    assert quat.w() == 3.0
     np.testing.assert_array_equal(quat.coeffs(), [0, 1, 2, 3])
 
 

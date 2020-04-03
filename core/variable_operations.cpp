@@ -317,6 +317,13 @@ Variable rotate(const VariableConstView &pos, const VariableConstView &rot) {
   return transform<std::tuple<std::tuple<Eigen::Vector3d, Eigen::Quaterniond>>>(
       pos, rot, element::geometry::rotate);
 }
+VariableView rotate(const VariableConstView &pos, const VariableConstView &rot,
+                    const VariableView &out) {
+  transform_in_place<std::tuple<
+      std::tuple<Eigen::Vector3d, Eigen::Vector3d, Eigen::Quaterniond>>>(
+      out, pos, rot, element::geometry::rotate_out_arg);
+  return out;
+}
 
 } // namespace geometry
 

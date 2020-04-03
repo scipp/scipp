@@ -54,3 +54,12 @@ TEST(ElementRotationTest, rotate_vector) {
   // Rely on correctness of Eigen
   EXPECT_EQ(rot._transformVector(vec), geometry::rotate(vec, rot));
 }
+
+TEST(ElementRotationTest, rotate_vector_inplace) {
+  Eigen::Vector3d vec(1, 2, 3);
+  Eigen::Quaterniond rot(4, 5, 6, 7);
+  Eigen::Vector3d out(0, 0, 0);
+  rot.normalize();
+  geometry::rotate_out_arg(out, vec, rot);
+  EXPECT_EQ(rot._transformVector(vec), out);
+}
