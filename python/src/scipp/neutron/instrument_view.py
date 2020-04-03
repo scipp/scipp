@@ -611,8 +611,8 @@ class InstrumentView:
             image.reshape(shp))._repr_png_()
 
     def update_colors(self, change):
-        arr = self.hist_data_array[
-            self.key][self.slider_dim, change["new"]].values
+        arr = self.hist_data_array[self.key][self.slider_dim,
+                                             change["new"]].values
         if self.select_rendering.value == "Full":
             arr = np.repeat(arr, self.nverts, axis=0)
         colors = self.scalar_map[self.key].to_rgba(arr).astype(np.float32)
