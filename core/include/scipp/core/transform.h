@@ -514,7 +514,7 @@ static constexpr auto type_tuples(Op) noexcept {
   if constexpr (sizeof...(Ts) == 0)
     return typename Op::types{};
   else if constexpr ((visit_detail::is_tuple<Ts>::value || ...))
-    return std::tuple_cat(Ts{}...);
+    return typename detail::tuple_cat<Ts...>::type{};
   else
     return std::tuple<Ts...>{};
 }
@@ -888,7 +888,8 @@ template <class... Ts, class Op>
 template <class... TypePairs, class Op>
 [[nodiscard]] Variable transform(const VariableConstView &var1,
                                  const VariableConstView &var2, Op op) {
-  return detail::transform(std::tuple_cat(TypePairs{}...), op, var1, var2);
+  return detail::transform(typename detail::tuple_cat<TypePairs...>::type{}, op,
+                           var1, var2);
 }
 
 /// Transform the data elements of three variables and return a new Variable.
