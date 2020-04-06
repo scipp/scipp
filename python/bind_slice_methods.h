@@ -24,10 +24,40 @@ template <class T> auto dim_extent(const T &object, const Dim dim) {
     scipp::index extent = -1;
     for (const auto &item : object) {
       if (item.dims().contains(dim)) {
-        if (extent == -1)
+        if (extent == -1) {
           extent = item.dims()[dim];
-        else if (item.dims()[dim] == extent - 1)
+          return extent;
+        } else if (item.dims()[dim] == extent - 1) {
           --extent;
+          return extent;
+        }
+      }
+    }
+    for (const auto &coord : object.coords()) {
+      if (extent == -1) {
+        extent = coord.second.dims()[dim];
+        return extent;
+      } else if (coord.second.dims()[dim] == extent - 1) {
+        --extent;
+        return extent;
+      }
+    }
+    for (const auto &attr : object.attrs()) {
+      if (extent == -1) {
+        extent = attr.second.dims()[dim];
+        return extent;
+      } else if (attr.second.dims()[dim] == extent - 1) {
+        --extent;
+        return extent;
+      }
+    }
+    for (const auto &mask : object.masks()) {
+      if (extent == -1) {
+        extent = mask.second.dims()[dim];
+        return extent;
+      } else if (mask.second.dims()[dim] == extent - 1) {
+        --extent;
+        return extent;
       }
     }
     return extent;
