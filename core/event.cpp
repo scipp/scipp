@@ -147,36 +147,7 @@ using copy_if_args = std::tuple<event_list<T>, event_list<Index>>;
 /// `select`.
 constexpr auto copy_if = [](const VariableConstView &var,
                             const VariableConstView &select) {
-  return transform<std::tuple<
-      copy_if_args<double, int32_t>, copy_if_args<float, int32_t>,
-      copy_if_args<int64_t, int32_t>, copy_if_args<int32_t, int32_t>,
-      copy_if_args<double, int64_t>, copy_if_args<float, int64_t>,
-      copy_if_args<int64_t, int64_t>, copy_if_args<int32_t, int64_t>>>(
-      var, select,
-      overloaded{
-          transform_flags::expect_no_variance_arg<1>,
-          [](const auto &var_, const auto &select_) {
-            using VarT = std::decay_t<decltype(var_)>;
-            using Events = event_list<typename VarT::value_type>;
-            const auto size = scipp::size(select_);
-            if constexpr (detail::is_ValuesAndVariances_v<VarT>) {
-              std::pair<Events, Events> out;
-              out.first.reserve(size);
-              out.second.reserve(size);
-              for (const auto i : select_) {
-                out.first.push_back(var_.values[i]);
-                out.second.push_back(var_.variances[i]);
-              }
-              return out;
-            } else {
-              Events out;
-              out.reserve(size);
-              for (const auto i : select_)
-                out.push_back(var_[i]);
-              return out;
-            }
-          },
-          [](const units::Unit &var_, const units::Unit &) { return var_; }});
+  return transform(var, select, element::event::copy_if);
 };
 
 /// Return list of indices with coord values for given dim inside interval.

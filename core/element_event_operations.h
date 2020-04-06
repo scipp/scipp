@@ -17,6 +17,45 @@
 
 namespace scipp::core::element::event {
 
+namespace copy_if_detail {
+template <class T, class Index>
+using args = std::tuple<event_list<T>, event_list<Index>>;
+
+} // namespace copy_if_detail
+
+constexpr auto copy_if =
+    overloaded{element::arg_list<copy_if_detail::args<double, int32_t>,
+                                 copy_if_detail::args<float, int32_t>,
+                                 copy_if_detail::args<int64_t, int32_t>,
+                                 copy_if_detail::args<int32_t, int32_t>,
+                                 copy_if_detail::args<double, int64_t>,
+                                 copy_if_detail::args<float, int64_t>,
+                                 copy_if_detail::args<int64_t, int64_t>,
+                                 copy_if_detail::args<int32_t, int64_t>>,
+               transform_flags::expect_no_variance_arg<1>,
+               [](const units::Unit &var, const units::Unit &) { return var; },
+               [](const auto &var, const auto &select) {
+                 using VarT = std::decay_t<decltype(var)>;
+                 using Events = event_list<typename VarT::value_type>;
+                 const auto size = scipp::size(select);
+                 if constexpr (detail::is_ValuesAndVariances_v<VarT>) {
+                   std::pair<Events, Events> out;
+                   out.first.reserve(size);
+                   out.second.reserve(size);
+                   for (const auto i : select) {
+                     out.first.push_back(var.values[i]);
+                     out.second.push_back(var.variances[i]);
+                   }
+                   return out;
+                 } else {
+                   Events out;
+                   out.reserve(size);
+                   for (const auto i : select)
+                     out.push_back(var[i]);
+                   return out;
+                 }
+               }};
+
 namespace map_detail {
 template <class Coord, class Edge, class Weight>
 using args =
