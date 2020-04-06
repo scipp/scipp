@@ -7,7 +7,7 @@
 
 #include "scipp/core/dataset.h"
 #include "scipp/core/dimensions.h"
-#include "scipp/core/variable_operations.h"
+#include "scipp/core/variable_binary_arithmetic.h"
 
 #include "dataset_test_common.h"
 #include "make_sparse.h"

@@ -46,8 +46,6 @@ SCIPP_CORE_EXPORT Variable reverse(Variable var, const Dim dim);
 SCIPP_CORE_EXPORT VariableView sqrt(const VariableConstView &var,
                                     const VariableView &out);
 
-SCIPP_CORE_EXPORT Variable copy(const VariableConstView &var);
-
 SCIPP_CORE_EXPORT VariableView nan_to_num(const VariableConstView &var,
                                           const VariableConstView &replacement,
                                           const VariableView &out);

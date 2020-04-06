@@ -4,7 +4,8 @@
 /// @author Simon Heybrock, Igor Gudich
 #include "scipp/core/apply.h"
 #include "scipp/core/except.h"
-#include "scipp/core/variable_operations.h"
+#include "scipp/core/variable_binary_arithmetic.h"
+#include "scipp/core/variable_other_operations.h"
 #include "scipp/units/except.h"
 
 namespace scipp::core {

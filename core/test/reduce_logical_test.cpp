@@ -3,7 +3,7 @@
 #include <gtest/gtest.h>
 
 #include "scipp/core/except.h"
-#include "scipp/core/variable_operations.h"
+#include "scipp/core/variable_reduction.h"
 
 using namespace scipp;
 using namespace scipp::core;

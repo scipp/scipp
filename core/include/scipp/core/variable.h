@@ -859,6 +859,8 @@ private:
   Variable *m_mutableVariable{nullptr};
 };
 
+SCIPP_CORE_EXPORT Variable copy(const VariableConstView &var);
+
 bool is_events(const VariableConstView &var);
 bool is_events(const DataArrayConstView &array);
 

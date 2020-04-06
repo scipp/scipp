@@ -8,7 +8,6 @@
 #include <map>
 
 #include "scipp/core/dataset.h"
-#include "scipp/core/variable_operations.h"
 
 namespace scipp::core {
 

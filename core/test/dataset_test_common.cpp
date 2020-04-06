@@ -3,7 +3,7 @@
 #include <algorithm>
 
 #include "scipp/core/unaligned.h"
-#include "scipp/core/variable_operations.h"
+#include "scipp/core/variable_binary_arithmetic.h"
 
 #include "dataset_test_common.h"
 
