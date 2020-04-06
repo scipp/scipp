@@ -249,7 +249,6 @@ static void transform_elements(Op op, Out &&out, Ts &&... other) {
   }
 }
 
-template <class T> struct element_type<ValueAndVariance<T>> { using type = T; };
 template <class T>
 struct element_type<ValuesAndVariances<sparse_container<T>>> {
   using type = T;

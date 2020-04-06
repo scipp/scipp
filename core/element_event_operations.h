@@ -7,6 +7,8 @@
 #include "scipp/common/numeric.h"
 #include "scipp/common/overloaded.h"
 
+#include "scipp/units/unit.h"
+
 #include "scipp/core/histogram.h"
 #include "scipp/core/transform_common.h"
 #include "scipp/core/value_and_variance.h"
