@@ -12,6 +12,7 @@
 #include "scipp/core/tag_util.h"
 #include "scipp/core/transform.h"
 #include "scipp/core/variable.h"
+#include "scipp/core/variable_operations.h"
 
 #include "bind_data_access.h"
 #include "bind_operators.h"
