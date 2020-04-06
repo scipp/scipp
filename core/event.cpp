@@ -137,12 +137,7 @@ void reserve(const VariableView &events, const VariableConstView &capacity) {
                  [](const units::Unit &, const units::Unit &) {}});
 }
 
-namespace filter_detail {
-template <class T>
-using make_select_args = std::tuple<event_list<T>, span<const T>>;
-template <class T, class Index>
-using copy_if_args = std::tuple<event_list<T>, event_list<Index>>;
-
+namespace {
 /// Return new variable with values copied from `var` if index is included in
 /// `select`.
 constexpr auto copy_if = [](const VariableConstView &var,
@@ -154,36 +149,17 @@ constexpr auto copy_if = [](const VariableConstView &var,
 template <class T>
 const auto make_select = [](const DataArrayConstView &array, const Dim dim,
                             const VariableConstView &interval) {
-  return transform<
-      std::tuple<make_select_args<double>, make_select_args<float>,
-                 make_select_args<int64_t>, make_select_args<int32_t>>>(
-      array.coords()[dim], subspan_view(interval, dim),
-      overloaded{transform_flags::expect_no_variance_arg<0>,
-                 transform_flags::expect_no_variance_arg<1>,
-                 [](const auto &coord_, const auto &interval_) {
-                   const auto low = interval_[0];
-                   const auto high = interval_[1];
-                   const auto size = scipp::size(coord_);
-                   event_list<T> select_;
-                   for (scipp::index i = 0; i < size; ++i)
-                     if (coord_[i] >= low && coord_[i] < high)
-                       select_.push_back(i);
-                   return select_;
-                 },
-                 [](const units::Unit &coord_, const units::Unit &interval_) {
-                   expect::equals(coord_, interval_);
-                   return units::Unit(units::dimensionless);
-                 }});
+  return transform(array.coords()[dim], subspan_view(interval, dim),
+                   element::event::make_select<T>);
 };
 
-} // namespace filter_detail
+} // namespace
 
 /// Return filtered event data based on excluding all events with coord values
 /// for given dim outside interval.
 DataArray filter(const DataArrayConstView &array, const Dim dim,
                  const VariableConstView &interval,
                  const AttrPolicy attrPolicy) {
-  using namespace filter_detail;
   const auto &max_event_list_length = max(sizes(array.coords()[dim]));
   const bool need_64bit_indices =
       max_event_list_length.values<scipp::index>()[0] >

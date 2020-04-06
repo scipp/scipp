@@ -134,4 +134,30 @@ constexpr auto map = overloaded{
         return out_vals;
     }};
 
+namespace make_select_detail {
+template <class T> using args = std::tuple<event_list<T>, span<const T>>;
+}
+
+template <class T>
+constexpr auto make_select = overloaded{
+    element::arg_list<
+        make_select_detail::args<double>, make_select_detail::args<float>,
+        make_select_detail::args<int64_t>, make_select_detail::args<int32_t>>,
+    transform_flags::expect_no_variance_arg<0>,
+    transform_flags::expect_no_variance_arg<1>,
+    [](const units::Unit &coord, const units::Unit &interval) {
+      expect::equals(coord, interval);
+      return units::Unit(units::dimensionless);
+    },
+    [](const auto &coord, const auto &interval) {
+      const auto low = interval[0];
+      const auto high = interval[1];
+      const auto size = scipp::size(coord);
+      event_list<T> select;
+      for (scipp::index i = 0; i < size; ++i)
+        if (coord[i] >= low && coord[i] < high)
+          select.push_back(i);
+      return select;
+    }};
+
 } // namespace scipp::core::element::event
