@@ -33,7 +33,10 @@ constexpr auto copy_if =
                                  copy_if_detail::args<int64_t, int64_t>,
                                  copy_if_detail::args<int32_t, int64_t>>,
                transform_flags::expect_no_variance_arg<1>,
-               [](const units::Unit &var, const units::Unit &) { return var; },
+               [](const units::Unit &var, const units::Unit &select) {
+                 expect::equals(select, units::Unit(units::dimensionless));
+                 return var;
+               },
                [](const auto &var, const auto &select) {
                  using VarT = std::decay_t<decltype(var)>;
                  using Events = event_list<typename VarT::value_type>;

@@ -10,6 +10,45 @@
 using namespace scipp;
 using namespace scipp::core;
 
+TEST(ElementEventCopyIfTest, no_variances_allowed_in_select_arg) {
+  static_assert(!std::is_base_of_v<transform_flags::expect_no_variance_arg_t<0>,
+                                   decltype(element::event::copy_if)>);
+  static_assert(std::is_base_of_v<transform_flags::expect_no_variance_arg_t<1>,
+                                  decltype(element::event::copy_if)>);
+}
+
+template <typename T> class ElementEventCopyIfTest : public ::testing::Test {};
+using ElementEventCopyIfTestTypes =
+    ::testing::Types<double, float, int64_t, int32_t>;
+TYPED_TEST_SUITE(ElementEventCopyIfTest, ElementEventCopyIfTestTypes);
+
+TYPED_TEST(ElementEventCopyIfTest, values) {
+  event_list<TypeParam> values{10, 20, 30, 40};
+  event_list<int32_t> select{0, 2};
+  EXPECT_EQ(element::event::copy_if(values, select),
+            (event_list<TypeParam>{10, 30}));
+}
+
+TYPED_TEST(ElementEventCopyIfTest, values_and_variances) {
+  event_list<TypeParam> values{10, 20, 30, 40};
+  event_list<TypeParam> variances{11, 22, 33, 44};
+  core::detail::ValuesAndVariances data{values, variances};
+  event_list<int32_t> select{0, 2};
+  EXPECT_EQ(
+      element::event::copy_if(data, select),
+      std::pair(event_list<TypeParam>{10, 30}, event_list<TypeParam>{11, 33}));
+}
+
+TEST(ElementEventCopyIfTest, unit) {
+  units::Unit m(units::m);
+  units::Unit s(units::s);
+  units::Unit one(units::dimensionless);
+  EXPECT_EQ(element::event::copy_if(m, one), m);
+  EXPECT_EQ(element::event::copy_if(s, one), s);
+  EXPECT_THROW(element::event::copy_if(m, s), except::UnitError);
+  EXPECT_THROW(element::event::copy_if(m, m), except::UnitError);
+}
+
 TEST(ElementEventMapTest, unit) {
   units::Unit kg(units::kg);
   units::Unit m(units::m);
