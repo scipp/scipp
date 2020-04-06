@@ -13,8 +13,8 @@ using namespace scipp::core;
 struct GroupbyTest : public ::testing::Test {
   GroupbyTest() {
     d.setData("a",
-              makeVariable<int>(Dimensions{Dim::X, 3}, units::Unit(units::m),
-                                Values{1, 2, 3}, Variances{4, 5, 6}));
+              makeVariable<double>(Dimensions{Dim::X, 3}, units::Unit(units::m),
+                                   Values{1, 2, 3}, Variances{4, 5, 6}));
     d.setData("b",
               makeVariable<double>(Dimensions{Dim::X, 3}, units::Unit(units::s),
                                    Values{0.1, 0.2, 0.3}));
@@ -48,8 +48,8 @@ TEST_F(GroupbyTest, fail_key_2d) {
 
 TEST_F(GroupbyTest, fail_key_with_variances) {
   d.setCoord(Dim("variances"),
-             makeVariable<int>(Dimensions{Dim::X, 3}, units::Unit(units::m),
-                               Values{1, 2, 3}, Variances{4, 5, 6}));
+             makeVariable<double>(Dimensions{Dim::X, 3}, units::Unit(units::m),
+                                  Values{1, 2, 3}, Variances{4, 5, 6}));
   EXPECT_THROW(groupby(d, Dim("variances")), except::VariancesError);
   EXPECT_THROW(groupby(d["a"], Dim("variances")), except::VariancesError);
 }
@@ -106,9 +106,9 @@ struct GroupbyMaskedTest : public GroupbyTest {
 TEST_F(GroupbyMaskedTest, sum) {
   Dataset expected;
   const Dim dim("labels2");
-  expected.setData("a",
-                   makeVariable<int>(Dimensions{dim, 2}, units::Unit(units::m),
-                                     Values{1, 3}, Variances{4, 6}));
+  expected.setData("a", makeVariable<double>(Dimensions{dim, 2},
+                                             units::Unit(units::m),
+                                             Values{1, 3}, Variances{4, 6}));
   expected.setData("b", makeVariable<double>(Dimensions{dim, 2},
                                              units::Unit(units::s),
                                              Values{0.1, 0.3}));
@@ -129,9 +129,9 @@ TEST_F(GroupbyMaskedTest, sum) {
 TEST_F(GroupbyMaskedTest, sum_irrelvant_mask) {
   Dataset expected;
   const Dim dim("labels2");
-  expected.setData("a",
-                   makeVariable<int>(Dimensions{dim, 2}, units::Unit(units::m),
-                                     Values{3, 3}, Variances{9, 6}));
+  expected.setData("a", makeVariable<double>(Dimensions{dim, 2},
+                                             units::Unit(units::m),
+                                             Values{3, 3}, Variances{9, 6}));
   expected.setData("b", makeVariable<double>(Dimensions{dim, 2},
                                              units::Unit(units::s),
                                              Values{0.1 + 0.2, 0.3}));
