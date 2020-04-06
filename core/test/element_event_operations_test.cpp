@@ -75,6 +75,15 @@ TYPED_TEST(ElementEventMapTest, variances_variable_bin_width) {
                       event_list<float>{0, 3, 5, 5, 0, 0, 5}));
 }
 
+TEST(ElementEventMakeSelectTest, no_variances_allowed) {
+  static_assert(
+      std::is_base_of_v<transform_flags::expect_no_variance_arg_t<0>,
+                        decltype(element::event::make_select<int32_t>)>);
+  static_assert(
+      std::is_base_of_v<transform_flags::expect_no_variance_arg_t<1>,
+                        decltype(element::event::make_select<int32_t>)>);
+}
+
 TEST(ElementEventMakeSelectTest, unit) {
   units::Unit m(units::m);
   units::Unit s(units::s);
