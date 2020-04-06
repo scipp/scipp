@@ -11,6 +11,14 @@ add_executable(slice_benchmark EXCLUDE_FROM_ALL slice_benchmark.cpp)
 add_dependencies(all-benchmarks slice_benchmark)
 target_link_libraries(slice_benchmark LINK_PRIVATE scipp-core benchmark)
 
+add_executable(
+  event_filter_benchmark EXCLUDE_FROM_ALL event_filter_benchmark.cpp
+)
+add_dependencies(all-benchmarks event_filter_benchmark)
+target_link_libraries(
+  event_filter_benchmark LINK_PRIVATE benchmark scipp-core scipp_test_helpers
+)
+
 add_executable(histogram_benchmark EXCLUDE_FROM_ALL histogram_benchmark.cpp)
 add_dependencies(all-benchmarks histogram_benchmark)
 target_link_libraries(

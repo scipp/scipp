@@ -52,7 +52,9 @@ template <class... Known> class VariableConceptHandle_impl;
   double, float, int64_t, int32_t, bool, Eigen::Vector3d,                      \
       sparse_container<double>, sparse_container<float>,                       \
       sparse_container<int64_t>, sparse_container<int32_t>,                    \
-      span<const double>, span<double>, span<const float>, span<float>
+      sparse_container<bool>, span<const double>, span<double>,                \
+      span<const float>, span<float>, span<const int64_t>, span<int64_t>,      \
+      span<const int32_t>, span<int32_t>
 using VariableConceptHandle = VariableConceptHandle_impl<KNOWN>;
 
 /// Abstract base class for any data that can be held by Variable. Also used to
@@ -1017,14 +1019,18 @@ SCIPP_CORE_EXPORT VariableView atan2(const VariableConstView &y,
                                      const VariableView &out);
 
 // Logical reductions
+[[nodiscard]] SCIPP_CORE_EXPORT Variable any(const VariableConstView &var);
 [[nodiscard]] SCIPP_CORE_EXPORT Variable any(const VariableConstView &var,
                                              const Dim dim);
+[[nodiscard]] SCIPP_CORE_EXPORT Variable all(const VariableConstView &var);
 [[nodiscard]] SCIPP_CORE_EXPORT Variable all(const VariableConstView &var,
                                              const Dim dim);
 
 // Other reductions
+[[nodiscard]] SCIPP_CORE_EXPORT Variable max(const VariableConstView &var);
 [[nodiscard]] SCIPP_CORE_EXPORT Variable max(const VariableConstView &var,
                                              const Dim dim);
+[[nodiscard]] SCIPP_CORE_EXPORT Variable min(const VariableConstView &var);
 [[nodiscard]] SCIPP_CORE_EXPORT Variable min(const VariableConstView &var,
                                              const Dim dim);
 
@@ -1053,12 +1059,6 @@ namespace geometry {
 [[nodiscard]] SCIPP_CORE_EXPORT Variable z(const VariableConstView &pos);
 
 } // namespace geometry
-
-namespace sparse {
-SCIPP_CORE_EXPORT Variable counts(const VariableConstView &var);
-SCIPP_CORE_EXPORT void reserve(const VariableView &sparse,
-                               const VariableConstView &capacity);
-} // namespace sparse
 
 bool is_events(const VariableConstView &var);
 bool is_events(const DataArrayConstView &array);

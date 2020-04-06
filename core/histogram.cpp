@@ -177,9 +177,24 @@ DataArray histogram(const DataArrayConstView &realigned) {
   if (realigned.hasData())
     throw except::UnalignedError("Expected realigned data, but data appears to "
                                  "be histogrammed already.");
-  if (unaligned::is_realigned_events(realigned))
-    return histogram(realigned.unaligned(),
-                     unaligned::realigned_event_coord(realigned));
+  if (unaligned::is_realigned_events(realigned)) {
+    const auto realigned_dims = unaligned::realigned_event_dims(realigned);
+    auto bounds = realigned.slice_bounds();
+    bounds.erase(std::remove_if(bounds.begin(), bounds.end(),
+                                [&realigned_dims](const auto &item) {
+                                  return realigned_dims.count(item.first);
+                                }),
+                 bounds.end());
+    if (bounds.empty())
+      return histogram(realigned.unaligned(),
+                       unaligned::realigned_event_coord(realigned));
+    else {
+      // Copy to drop events out of slice bounds
+      DataArray sliced(realigned);
+      return histogram(sliced.unaligned(),
+                       unaligned::realigned_event_coord(realigned));
+    }
+  }
   std::optional<DataArray> filtered;
   // If `realigned` is sliced we need to copy the unaligned content to "apply"
   // the slicing since slicing realigned dimensions does not affect the view

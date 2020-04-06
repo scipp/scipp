@@ -4,6 +4,7 @@
 /// @author Simon Heybrock
 
 #include "scipp/core/dataset.h"
+#include "scipp/core/event.h"
 #include "scipp/core/except.h"
 #include "scipp/core/histogram.h"
 #include "scipp/core/sort.h"
@@ -135,6 +136,13 @@ template <class T> void realign_impl(T &self, py::dict coord_dict) {
     coords.emplace_back(Dim(item.first.cast<std::string>()),
                         item.second.cast<VariableView>());
   self = unaligned::realign(std::move(self), std::move(coords));
+}
+
+template <class T>
+T filter_impl(const T &self, const Dim dim, const VariableConstView &interval,
+              bool keep_attrs) {
+  return event::filter(self, dim, interval,
+                       keep_attrs ? AttrPolicy::Keep : AttrPolicy::Drop);
 }
 
 template <class T, class... Ignored>
@@ -664,6 +672,19 @@ void init_dataset(py::module &m) {
           return copy;
         },
         py::arg("data"), py::arg("coords"));
+  m.def("filter", filter_impl<DataArrayConstView>, py::arg("data"),
+        py::arg("filter"), py::arg("interval"), py::arg("keep_attrs") = true,
+        py::call_guard<py::gil_scoped_release>(),
+        R"(Return filtered event data.
+
+        This only supports event data.
+
+        :param data: Input event data
+        :param filter: Name of coord to use for filtering
+        :param interval: Variable defining the valid interval of coord values to include in the output
+        :param keep_attrs: If False, attributes are not copied to the output, default is True
+        :return: Filtered data.
+        :rtype: DataArray)");
   m.def(
       "histogram",
       [](const DataArrayConstView &x) { return core::histogram(x); },

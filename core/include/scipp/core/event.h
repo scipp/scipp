@@ -20,6 +20,14 @@ SCIPP_CORE_EXPORT DataArray concatenate(const DataArrayConstView &a,
 SCIPP_CORE_EXPORT Variable broadcast(const VariableConstView &dense,
                                      const VariableConstView &shape);
 SCIPP_CORE_EXPORT Variable broadcast_weights(const DataArrayConstView &events);
+SCIPP_CORE_EXPORT Variable sizes(const VariableConstView &events);
+SCIPP_CORE_EXPORT void reserve(const VariableView &events,
+                               const VariableConstView &capacity);
+
+[[nodiscard]] SCIPP_CORE_EXPORT DataArray
+filter(const DataArrayConstView &array, const Dim dim,
+       const VariableConstView &interval,
+       const AttrPolicy attrPolicy = AttrPolicy::Keep);
 
 } // namespace scipp::core::event
 

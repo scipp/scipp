@@ -47,21 +47,6 @@ std::vector<std::pair<Dim, Variable>> DataArrayConstView::slice_bounds() const {
 
 namespace {
 
-/// Return new data array based on `unaligned` with any content outside `bounds`
-/// removed.
-DataArray
-filter_recurse(const DataArrayConstView &unaligned,
-               const scipp::span<const std::pair<Dim, Variable>> bounds,
-               const AttrPolicy attrPolicy) {
-  if (bounds.empty())
-    return copy(unaligned, attrPolicy);
-  const auto &[dim, interval] = bounds[0];
-  const auto filtered = groupby(unaligned, dim, interval).copy(0, attrPolicy);
-  if (bounds.size() == 1)
-    return filtered;
-  return filter_recurse(filtered, bounds.subspan(1), attrPolicy);
-}
-
 template <class... DataArgs>
 auto makeDataArray(const DataArrayConstView &view, const AttrPolicy attrPolicy,
                    DataArgs &&... dataArgs) {
@@ -77,14 +62,14 @@ auto makeDataArray(const DataArrayConstView &view, const AttrPolicy attrPolicy,
 
 DataArray::DataArray(const DataArrayConstView &view,
                      const AttrPolicy attrPolicy)
-    : DataArray(
-          view.hasData()
-              ? makeDataArray(view, attrPolicy, Variable(view.data()))
-              : makeDataArray(view, attrPolicy,
-                              UnalignedData{view.dims(),
-                                            filter_recurse(view.unaligned(),
-                                                           view.slice_bounds(),
-                                                           attrPolicy)})) {}
+    : DataArray(view.hasData()
+                    ? makeDataArray(view, attrPolicy, Variable(view.data()))
+                    : makeDataArray(
+                          view, attrPolicy,
+                          UnalignedData{view.dims(), unaligned::filter_recurse(
+                                                         view.unaligned(),
+                                                         view.slice_bounds(),
+                                                         attrPolicy)})) {}
 
 DataArray::operator DataArrayConstView() const { return get(); }
 DataArray::operator DataArrayView() { return get(); }
@@ -110,15 +95,18 @@ void DataArray::drop_alignment() {
   if (hasData())
     throw except::RealignedDataError(
         "Does not contain unaligned data, cannot drop alignment.");
-  const auto &view = unaligned();
-  auto coords = copy_map(view.coords());
-  auto masks = copy_map(view.masks());
-  auto attrs = copy_map(view.attrs());
-
-  auto &unaligned_array = m_holder.m_data.begin()->second.unaligned->data;
-  auto &data = unaligned_array.m_holder.m_data.begin()->second.data;
-  *this = DataArray(std::move(data), std::move(coords), std::move(masks),
-                    std::move(attrs), name());
+  auto [dims, array] = std::move(*m_holder.m_data.begin()->second.unaligned);
+  constexpr auto move_items = [](auto &from, const auto &to,
+                                 const Dimensions &d) {
+    for (auto &[key, value] : from)
+      if (d.contains(value.dims()))
+        to.set(key, std::move(value));
+  };
+  array.setName(name());
+  move_items(m_holder.m_coords, array.coords(), dims);
+  move_items(m_holder.m_masks, array.masks(), dims);
+  move_items(m_holder.m_attrs, array.attrs(), dims);
+  *this = std::move(array);
 }
 
 namespace {

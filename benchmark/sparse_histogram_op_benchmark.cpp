@@ -8,6 +8,7 @@
 #include "random.h"
 
 #include "scipp/core/dataset.h"
+#include "scipp/core/unaligned.h"
 
 using namespace scipp;
 using namespace scipp::core;
@@ -23,28 +24,40 @@ auto make_2d_sparse_coord(const scipp::index size, const scipp::index count) {
   return var;
 }
 
-auto make_2d_sparse_coord_only(const scipp::index size,
-                               const scipp::index count) {
-  return DataArray(std::nullopt, {{Dim::Y, make_2d_sparse_coord(size, count)}});
-}
-
-auto make_2d_sparse(const scipp::index size, const scipp::index count) {
-  auto coord = make_2d_sparse_coord(size, count);
-  auto data = coord * makeVariable<double>(Values{0.0}, Variances{0.0}) + 1.0;
-
-  return DataArray(std::move(data), {{Dim::Y, std::move(coord)}});
-}
-
-auto make_histogram(const scipp::index nEdge) {
+auto make_edges(const scipp::index nEdge) {
   std::vector<double> edges_(nEdge);
   std::iota(edges_.begin(), edges_.end(), 0.0);
   auto edges = makeVariable<double>(Dims{Dim::Y}, Shape{nEdge},
                                     Values(edges_.begin(), edges_.end()));
   edges *= 1000.0 / nEdge; // ensure all events are in range
+  return edges;
+}
 
+auto make_2d_events_default_weights(const scipp::index size,
+                                    const scipp::index count,
+                                    const scipp::index nEdge) {
+  auto weights =
+      makeVariable<double>(Dims{Dim::X}, Shape{size},
+                           units::Unit(units::counts), Values{}, Variances{});
+  return unaligned::realign(
+      DataArray(weights, {{Dim::Y, make_2d_sparse_coord(size, count)}}),
+      {{Dim::Y, make_edges(nEdge)}});
+}
+
+auto make_2d_events(const scipp::index size, const scipp::index count,
+                    const scipp::index nEdge) {
+  auto coord = make_2d_sparse_coord(size, count);
+  auto data = coord * makeVariable<double>(Values{0.0}, Variances{0.0}) + 1.0;
+
+  return unaligned::realign(
+      DataArray(std::move(data), {{Dim::Y, std::move(coord)}}),
+      {{Dim::Y, make_edges(nEdge)}});
+}
+
+auto make_histogram(const scipp::index nEdge) {
   return DataArray(makeVariable<double>(Dims{Dim::Y}, Shape{nEdge - 1},
                                         Values{}, Variances{}),
-                   {{Dim::Y, std::move(edges)}});
+                   {{Dim::Y, make_edges(nEdge)}});
 }
 
 // For comparison: How fast could memory for events be allocated if it were in a
@@ -70,8 +83,9 @@ static void BM_sparse_histogram_op(benchmark::State &state) {
   const bool inplace = state.range(2);
   const scipp::index nHist = 2e7 / nEvent;
   const bool data = state.range(3);
-  const auto sparse = data ? make_2d_sparse(nHist, nEvent)
-                           : make_2d_sparse_coord_only(nHist, nEvent);
+  const auto sparse =
+      data ? make_2d_events(nHist, nEvent, nEdge)
+           : make_2d_events_default_weights(nHist, nEvent, nEdge);
   const auto histogram = make_histogram(nEdge);
   for (auto _ : state) {
     if (inplace) {

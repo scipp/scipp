@@ -196,9 +196,10 @@ TEST(HistogramTest, dataset_realigned) {
       makeVariable<double>(Dims{Dim::Y}, Shape{6}, Values{1, 2, 3, 4, 5, 6});
   events.setData("a", unaligned::realign(make_1d_events_default_weights(),
                                          {{Dim::Y, coord}}));
-  events.setData("b", events["a"]);
+  auto b_events = make_1d_events_default_weights();
+  b_events.coords()[Dim::Y] += makeVariable<double>(Values{1.0});
+  events.setData("b", unaligned::realign(b_events, {{Dim::Y, coord}}));
 
-  events["b"].unaligned().coords()[Dim::Y] += makeVariable<double>(Values{1.0});
   std::vector<double> a{1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 2, 3, 0, 3, 0};
   std::vector<double> b{0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 2, 2, 3, 0, 3};
   Dataset expected;

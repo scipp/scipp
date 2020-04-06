@@ -2,6 +2,8 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
+#include <limits>
+
 #include "test_macros.h"
 
 #include "scipp/core/event.h"
@@ -183,4 +185,180 @@ TEST_F(EventBroadcastTest, data_array) {
 TEST_F(EventBroadcastTest, data_array_fail) {
   DataArray a(dense);
   EXPECT_THROW(event::broadcast_weights(a), except::EventDataError);
+}
+
+static auto make_sparse() {
+  auto var = makeVariable<event_list<double>>(
+      Dims{Dim::Z, Dim::Y}, units::Unit(units::us), Shape{3, 2});
+  scipp::index count = 0;
+  for (auto &v : var.values<event_list<double>>())
+    v.resize(count++);
+  return var;
+}
+
+static auto make_sparse_with_variances() {
+  auto var = makeVariable<event_list<double>>(
+      Dimensions{{Dim::Z, 3}, {Dim::Y, 2}}, Values{}, Variances{});
+  scipp::index count = 0;
+  for (auto &v : var.values<event_list<double>>())
+    v.resize(count++);
+  count = 0;
+  for (auto &v : var.variances<event_list<double>>())
+    v.resize(count++);
+  return var;
+}
+
+TEST(EventSizesTest, fail_dense) {
+  auto bad = makeVariable<double>(Values{1.0});
+  EXPECT_ANY_THROW(event::sizes(bad));
+}
+
+TEST(EventSizesTest, no_variances) {
+  const auto var = make_sparse();
+  auto expected = makeVariable<scipp::index>(Dims{Dim::Z, Dim::Y}, Shape{3, 2},
+                                             Values{0, 1, 2, 3, 4, 5});
+  EXPECT_EQ(event::sizes(var), expected);
+}
+
+TEST(EventSizesTest, variances) {
+  const auto var = make_sparse_with_variances();
+  auto expected = makeVariable<scipp::index>(Dims{Dim::Z, Dim::Y}, Shape{3, 2},
+                                             Values{0, 1, 2, 3, 4, 5});
+  EXPECT_EQ(event::sizes(var), expected);
+}
+
+struct EventFilterTest : public ::testing::Test {
+  Variable data_with_variances = makeVariable<event_list<float>>(
+      Dims{Dim::X}, Shape{2}, units::Unit(units::counts),
+      Values{event_list<float>{1.1, 1.2, 1.3},
+             event_list<float>{1.4, 1.5, 1.6, 1.7}},
+      Variances{event_list<float>{1.1, 1.2, 1.3},
+                event_list<float>{1.4, 1.5, 1.6, 1.7}});
+  Variable data = makeVariable<event_list<float>>(
+      Dims{Dim::X}, Shape{2}, units::Unit(units::counts),
+      Values{event_list<float>{1.1, 1.2, 1.3},
+             event_list<float>{1.4, 1.5, 1.6, 1.7}});
+  Variable coord1 = makeVariable<event_list<float>>(
+      Dims{Dim::X}, Shape{2}, units::Unit(units::us),
+      Values{event_list<float>{3, 2, 1}, event_list<float>{2, 3, 4, 1}});
+  Variable coord2 = makeVariable<event_list<int64_t>>(
+      Dims{Dim::X}, Shape{2},
+      Values{event_list<int64_t>{3, 2, 1}, event_list<int64_t>{2, 3, 4, 1}});
+};
+
+TEST_F(EventFilterTest, all) {
+  const DataArray a(data, {{Dim::Y, coord1}});
+  const auto interval = makeVariable<float>(
+      Dims{Dim::Y}, Shape{2}, units::Unit(units::us), Values{0, 5});
+  EXPECT_EQ(event::filter(a, Dim::Y, interval), a);
+}
+
+TEST_F(EventFilterTest, all_with_variances) {
+  const DataArray a(data_with_variances, {{Dim::Y, coord1}});
+  const auto interval = makeVariable<float>(
+      Dims{Dim::Y}, Shape{2}, units::Unit(units::us), Values{0, 5});
+  EXPECT_EQ(event::filter(a, Dim::Y, interval), a);
+}
+
+TEST_F(EventFilterTest, filter_1d_behavior_out_bounds) {
+  // Filtering uses interval open on the right [left, right), just as histogram
+  // events at 1,2,3 in first event list
+  const DataArray a(data, {{Dim::Y, coord1}});
+  Variable interval;
+  DataArray filtered;
+
+  interval = makeVariable<float>(Dims{Dim::Y}, Shape{2}, units::Unit(units::us),
+                                 Values{0.0, 4.0});
+  filtered = event::filter(a, Dim::Y, interval);
+  EXPECT_EQ(scipp::size(filtered.values<event_list<float>>()[0]), 3);
+
+  // left bound included
+  interval = makeVariable<float>(Dims{Dim::Y}, Shape{2}, units::Unit(units::us),
+                                 Values{1.0, 4.0});
+  filtered = event::filter(a, Dim::Y, interval);
+  EXPECT_EQ(scipp::size(filtered.values<event_list<float>>()[0]), 3);
+
+  interval = makeVariable<float>(Dims{Dim::Y}, Shape{2}, units::Unit(units::us),
+                                 Values{1.00001, 4.0});
+  filtered = event::filter(a, Dim::Y, interval);
+  EXPECT_EQ(scipp::size(filtered.values<event_list<float>>()[0]), 2);
+
+  // right bound not included
+  interval = makeVariable<float>(Dims{Dim::Y}, Shape{2}, units::Unit(units::us),
+                                 Values{1.0, 3.0});
+  filtered = event::filter(a, Dim::Y, interval);
+  EXPECT_EQ(scipp::size(filtered.values<event_list<float>>()[0]), 2);
+}
+
+TEST_F(EventFilterTest, filter_1d) {
+  const DataArray a(data, {{Dim::Y, coord1}, {Dim::Z, coord2}});
+  const auto interval = makeVariable<float>(
+      Dims{Dim::Y}, Shape{2}, units::Unit(units::us), Values{0.0, 2.5});
+
+  const DataArray expected{
+      makeVariable<event_list<float>>(
+          Dims{Dim::X}, Shape{2}, units::Unit(units::counts),
+          Values{event_list<float>{1.2, 1.3}, event_list<float>{1.4, 1.7}}),
+      {{Dim::Y, makeVariable<event_list<float>>(
+                    Dims{Dim::X}, Shape{2}, units::Unit(units::us),
+                    Values{event_list<float>{2, 1}, event_list<float>{2, 1}})},
+       {Dim::Z,
+        makeVariable<event_list<int64_t>>(
+            Dims{Dim::X}, Shape{2},
+            Values{event_list<int64_t>{2, 1}, event_list<int64_t>{2, 1}})}}};
+
+  EXPECT_EQ(event::filter(a, Dim::Y, interval), expected);
+}
+
+TEST_F(EventFilterTest, filter_1d_with_variances) {
+  const DataArray a(data_with_variances, {{Dim::Y, coord1}, {Dim::Z, coord2}});
+  const auto interval = makeVariable<float>(
+      Dims{Dim::Y}, Shape{2}, units::Unit(units::us), Values{0.0, 2.5});
+
+  const DataArray expected{
+      makeVariable<event_list<float>>(
+          Dims{Dim::X}, Shape{2}, units::Unit(units::counts),
+          Values{event_list<float>{1.2, 1.3}, event_list<float>{1.4, 1.7}},
+          Variances{event_list<float>{1.2, 1.3}, event_list<float>{1.4, 1.7}}),
+      {{Dim::Y, makeVariable<event_list<float>>(
+                    Dims{Dim::X}, Shape{2}, units::Unit(units::us),
+                    Values{event_list<float>{2, 1}, event_list<float>{2, 1}})},
+       {Dim::Z,
+        makeVariable<event_list<int64_t>>(
+            Dims{Dim::X}, Shape{2},
+            Values{event_list<int64_t>{2, 1}, event_list<int64_t>{2, 1}})}}};
+
+  EXPECT_EQ(event::filter(a, Dim::Y, interval), expected);
+}
+
+// Passes, but disabled since long running and using a lot of memory.
+TEST_F(EventFilterTest, DISABLED_filter_1d_64bit_indices) {
+  DataArray a(data, {{Dim::Y, coord1}});
+  const auto interval = makeVariable<float>(
+      Dims{Dim::Y}, Shape{2}, units::Unit(units::us), Values{1.0, 2.5});
+
+  const scipp::index size = std::numeric_limits<int32_t>::max();
+  auto &values = a.values<event_list<float>>()[0];
+  values.clear();
+  values.resize(size + 3);
+  values[size + 0] = 1.1;
+  values[size + 1] = 1.2;
+  values[size + 2] = 1.3;
+  auto &coord = a.coords()[Dim::Y].values<event_list<float>>()[0];
+  coord.clear();
+  coord.resize(size + 3);
+  coord[size + 0] = 3;
+  coord[size + 1] = 2;
+  coord[size + 2] = 1;
+
+  const DataArray expected{
+      makeVariable<event_list<float>>(
+          Dims{Dim::X}, Shape{2}, units::Unit(units::counts),
+          Values{event_list<float>{1.2, 1.3}, event_list<float>{1.4, 1.7}}),
+      {{Dim::Y,
+        makeVariable<event_list<float>>(
+            Dims{Dim::X}, Shape{2}, units::Unit(units::us),
+            Values{event_list<float>{2, 1}, event_list<float>{2, 1}})}}};
+
+  EXPECT_EQ(event::filter(a, Dim::Y, interval), expected);
 }
