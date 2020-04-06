@@ -63,3 +63,10 @@ TEST(ElementRotationTest, rotate_vector_inplace) {
   geometry::rotate_out_arg(out, vec, rot);
   EXPECT_EQ(rot._transformVector(vec), out);
 }
+
+TEST(ElementRotationTest, unit_out) {
+  EXPECT_EQ(geometry::rotate(units::m, units::dimensionless), units::m);
+  units::Unit u_out(units::dimensionless);
+  geometry::rotate_out_arg(u_out, units::angstrom, units::dimensionless);
+  EXPECT_EQ(units::angstrom, u_out);
+}
