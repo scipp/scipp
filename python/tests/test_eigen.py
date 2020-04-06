@@ -49,11 +49,15 @@ def test_create_variable_0D_quaternion_float64():
 
 
 def test_create_variable_1D_quaternion_float64():
+    data = np.array([np.arange(4.0), np.arange(5.0, 9.0), np.arange(1.0, 5.0)])
     var = sc.Variable(['tof'],
-                      values=np.random.random([10, 4]),
+                      values=data,
                       unit=sc.units.us,
                       dtype=sc.dtype.quaternion_float64)
-    assert len(var.values) == 10
+    assert len(var.values) == 3
+    np.testing.assert_array_equal(var.values[0], [0, 1, 2, 3])
+    np.testing.assert_array_equal(var.values[1], [5, 6, 7, 8])
+    np.testing.assert_array_equal(var.values[2], [1, 2, 3, 4])
     assert var.dims == ['tof']
     assert var.dtype == sc.dtype.quaternion_float64
     assert var.unit == sc.units.us

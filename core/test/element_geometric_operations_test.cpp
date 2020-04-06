@@ -65,8 +65,11 @@ TEST(ElementRotationTest, rotate_vector_inplace) {
 }
 
 TEST(ElementRotationTest, unit_out) {
-  EXPECT_EQ(geometry::rotate(units::m, units::dimensionless), units::m);
+  const units::Unit m(units::m);
+  const units::Unit dimless(units::dimensionless);
+  EXPECT_EQ(geometry::rotate(m, dimless), m);
   units::Unit u_out(units::dimensionless);
-  geometry::rotate_out_arg(u_out, units::angstrom, units::dimensionless);
-  EXPECT_EQ(units::angstrom, u_out);
+  const units::Unit a(units::angstrom);
+  geometry::rotate_out_arg(u_out, a, dimless);
+  EXPECT_EQ(a, u_out);
 }

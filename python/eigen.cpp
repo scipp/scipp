@@ -11,6 +11,9 @@ namespace py = pybind11;
 void init_eigen(py::module &m) {
 
   py::class_<Eigen::Quaterniond>(m, "Quat", py::buffer_protocol())
+      // Note that when constructing a Quat from a buffer array, the order of
+      // the input coefficients is [x, y, z, w], as returned by the `coeffs()`
+      // method.
       .def(py::init([](py::buffer b) {
         // Request a buffer descriptor from Python
         py::buffer_info info = b.request();
@@ -28,10 +31,10 @@ void init_eigen(py::module &m) {
         if (info.size != 4)
           throw std::runtime_error("Incompatible array size: expected size 4.");
 
-        auto map = Eigen::Map<Eigen::Quaterniond>(
-            static_cast<Eigen::Quaterniond::Scalar *>(info.ptr));
+        // auto map = Eigen::Map<Eigen::Quaterniond>(
+        //     static_cast<Eigen::Quaterniond::Scalar *>(info.ptr));
 
-        return Eigen::Quaterniond(map);
+        return Eigen::Quaterniond(static_cast<Eigen::Quaterniond::Scalar *>(info.ptr));
       }))
       .def("x", [](const Eigen::Quaterniond &self) { return self.x(); })
       .def("y", [](const Eigen::Quaterniond &self) { return self.y(); })
@@ -44,8 +47,6 @@ void init_eigen(py::module &m) {
              return self.toRotationMatrix();
            })
       .def_buffer([](Eigen::Quaterniond &q) -> py::buffer_info {
-        // See
-        // https://pybind11.readthedocs.io/en/stable/advanced/pycpp/numpy.html#buffer-protocol
         return py::buffer_info(
             q.coeffs().data(), sizeof(Eigen::Quaterniond::Scalar),
             py::format_descriptor<Eigen::Quaterniond::Scalar>::format(), 1, {4},

@@ -1336,7 +1336,7 @@ TEST(VariableTest, zip_unzip_positions) {
 TEST(VariableTest, rotate) {
   Eigen::Vector3d vec1(1, 2, 3);
   Eigen::Vector3d vec2(4, 5, 6);
-  const Variable vec = makeVariable<Eigen::Vector3d>(
+  auto vec = makeVariable<Eigen::Vector3d>(
       Dims{Dim::X}, Shape{2}, units::Unit(units::m), Values{vec1, vec2});
   Eigen::Quaterniond rot1(1.1, 2.2, 3.3, 4.4);
   Eigen::Quaterniond rot2(5.5, 6.6, 7.7, 8.8);

@@ -423,11 +423,11 @@ def _convert_MatrixWorkspace_info(ws):
             make_run(ws),
             "sample":
             make_sample(ws),
-            "detector_rotation":
+            "rotation":
             rot,
-            "detector_shape":
+            "shape":
             shp,
-            "instrument_name":
+            "instrument-name":
             sc.Variable(
                 value=ws.componentInfo().name(ws.componentInfo().root()))
         },
@@ -810,8 +810,8 @@ def load_component_info(ds, file):
         ds.coords["sample_position"] = sample_pos
         pos, rot, shp = get_detector_properties(ws, source_pos, sample_pos)
         ds.coords["position"] = pos
-        ds.attrs["detector_rotation"] = rot
-        ds.attrs["detector_shape"] = shp
+        ds.attrs["rotation"] = rot
+        ds.attrs["shape"] = shp
 
 
 def validate_dim_and_get_mantid_string(unit_dim):

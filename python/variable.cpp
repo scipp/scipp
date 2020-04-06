@@ -135,11 +135,15 @@ Variable doMakeVariable(const std::vector<Dim> &labels, py::array &values,
             labels, shape, values.cast<std::vector<Eigen::Vector3d>>(), unit);
       else {
         std::vector<Eigen::Quaterniond> qvec;
-        auto arr = values.mutable_unchecked<double, 2>();
+        auto arr = values.unchecked<double, 2>();
         qvec.reserve(arr.shape(0));
         for (ssize_t i = 0; i < arr.shape(0); i++) {
-          qvec.push_back(
-              Eigen::Quaterniond(arr(i, 0), arr(i, 1), arr(i, 2), arr(i, 3)));
+          // Note here that the order of inputs in the Eigen::Quaternion
+          // constructor that takes in 4 doubles is [w, x, y, z], which is
+          // inconsistent with the constructor that accepts a coeffs buffer
+          // of [x, y, z, w]. To make it consistent in scipp, we use the
+          // [x, y, z, w] convention everywhere.
+          qvec.emplace_back(arr(i, 3), arr(i, 0), arr(i, 1), arr(i, 2));
         }
         return init_1D_no_variance(labels, shape, qvec, unit);
       }
@@ -178,6 +182,7 @@ void bind_init_0D_native_python_types(py::class_<Variable> &c) {
                     const units::Unit &unit, py::object &dtype) {
           static_assert(std::is_same_v<T, int64_t> ||
                         std::is_same_v<T, double> || std::is_same_v<T, bool>);
+          std::cout << "Using bind_init_0D_native_python_types" << std::endl;
           if (dtype.is_none())
             return do_init_0D(value, variance, unit);
           else {
@@ -200,15 +205,35 @@ void bind_init_0D_numpy_types(py::class_<Variable> &c) {
             return doMakeVariable({}, arr, varr, unit, dtype);
           } else if (info.ndim == 1 &&
                      scipp_dtype(dtype) == core::dtype<Eigen::Vector3d>) {
+            std::cout << "Using bind_init_0D_numpy_types Eigen::Vector3d" << std::endl;
             return do_init_0D<Eigen::Vector3d>(
                 b.cast<Eigen::Vector3d>(),
                 v ? std::optional(v->cast<Eigen::Vector3d>()) : std::nullopt,
                 unit);
           } else if (info.ndim == 1 &&
                      scipp_dtype(dtype) == core::dtype<Eigen::Quaterniond>) {
+            std::cout << "Using bind_init_0D_numpy_types Eigen::Quaterniond" << std::endl;
             return do_init_0D<Eigen::Quaterniond>(
                 b.cast<Eigen::Quaterniond>(),
                 v ? std::optional(v->cast<Eigen::Quaterniond>()) : std::nullopt,
+                unit);
+
+            // std::vector<Eigen::Quaterniond> qvec;
+            // auto arr = values.unchecked<double, 2>();
+            // qvec.reserve(arr.shape(0));
+            // for (ssize_t i = 0; i < arr.shape(0); i++) {
+            //   // Note here that the order of inputs in the Eigen::Quaternion
+            //   // constructor that takes in 4 doubles is [w, x, y, z], which is
+            //   // inconsistent with the constructor that accepts a coeffs buffer
+            //   // of [x, y, z, w]. To make it consistent in scipp, we use the
+            //   // [x, y, z, w] convention everywhere.
+            //   qvec.emplace_back(arr(i, 3), arr(i, 0), arr(i, 1), arr(i, 2));
+            // auto varr = v ? std::optional{py::array(*v)} : std::nullopt;
+            const auto  &q = Eigen::Quaterniond(static_cast<Eigen::Quaterniond::Scalar *>(info.ptr));
+
+            return do_init_0D<Eigen::Quaterniond>(
+                q,
+                v ? std::optional(Eigen::Quaterniond(static_cast<Eigen::Quaterniond::Scalar *>(v.value().request().ptr))) : std::nullopt,
                 unit);
           } else {
             throw scipp::except::VariableError(
@@ -225,6 +250,7 @@ void bind_init_list(py::class_<Variable> &c) {
                     const std::optional<py::list> &variances,
                     const units::Unit &unit, py::object &dtype) {
           if (scipp_dtype(dtype) == core::dtype<Eigen::Vector3d>) {
+            std::cout << "Using bind_init_list Eigen::Vector3d" << std::endl;
             auto val = values.cast<std::vector<Eigen::Vector3d>>();
             Variable variable;
             if (variances) {
@@ -239,6 +265,7 @@ void bind_init_list(py::class_<Variable> &c) {
                   Values(val.begin(), val.end()), units::Unit(unit));
             return variable;
           } else if (scipp_dtype(dtype) == core::dtype<Eigen::Quaterniond>) {
+            std::cout << "Using bind_init_list Eigen::Quaterniond" << std::endl;
             auto val = values.cast<std::vector<Eigen::Quaterniond>>();
             Variable variable;
             if (variances) {

@@ -263,8 +263,8 @@ class InstrumentView:
             description="Rendering:",
             layout={"width": "initial"})
         # Disable Full rendering if there are not shapes or rotations
-        if "detector_shape" not in self.data_arrays[
-                self.key].attrs or "detector_rotation" not in self.data_arrays[
+        if "shape" not in self.data_arrays[
+                self.key].attrs or "rotation" not in self.data_arrays[
                     self.key].attrs:
             self.select_rendering.value = "Fast"
             self.select_rendering.disabled = True
@@ -475,9 +475,9 @@ class InstrumentView:
         return points_geometry, points_material, points
 
     def get_detector_vertices_and_faces(self):
-        if "instrument_name" in self.data_arrays[self.key].attrs:
+        if "instrument-name" in self.data_arrays[self.key].attrs:
             instrument_name = self.data_arrays[
-                self.key].attrs["instrument_name"].value
+                self.key].attrs["instrument-name"].value
         else:
             instrument_name = ""
         cylindrical_major_axis = {"loki": "x"}
@@ -671,7 +671,7 @@ class InstrumentView:
                                    unit=sc.units.m,
                                    dtype=sc.dtype.vector_3_float64)
             scaling = np.array(
-                self.hist_data_array[self.key].attrs["detector_shape"].values)
+                self.hist_data_array[self.key].attrs["shape"].values)
             for i in range(self.nverts):
                 vertices["vertex", i] = sc.Variable(
                     dims=[self.other_dim],
@@ -682,7 +682,7 @@ class InstrumentView:
 
             vertices = sc.geometry.rotate(
                 vertices,
-                self.hist_data_array[self.key].attrs["detector_rotation"])
+                self.hist_data_array[self.key].attrs["rotation"])
 
             pixel_pos = np.array((vertices + self.det_pos).values,
                                  dtype=np.float32)
