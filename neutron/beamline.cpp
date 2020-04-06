@@ -3,9 +3,11 @@
 /// @file
 /// @author Simon Heybrock
 
-#include "scipp/neutron/beamline.h"
 #include "scipp/core/dataset.h"
 #include "scipp/core/transform.h"
+#include "scipp/core/variable_operations.h"
+
+#include "scipp/neutron/beamline.h"
 
 using namespace scipp::core;
 
