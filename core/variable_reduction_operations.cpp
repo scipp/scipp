@@ -6,7 +6,7 @@
 #include "scipp/core/event.h"
 #include "scipp/core/except.h"
 #include "scipp/core/transform.h"
-#include "scipp/core/variable.h"
+#include "scipp/core/variable_operations.h"
 #include "scipp/core/view_decl.h"
 
 #include "operators.h"

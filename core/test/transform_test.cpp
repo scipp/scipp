@@ -9,6 +9,7 @@
 #include "scipp/core/dimensions.h"
 #include "scipp/core/transform.h"
 #include "scipp/core/variable.h"
+#include "scipp/core/variable_operations.h"
 
 #include "../operators.h"
 

@@ -11,6 +11,8 @@
 
 #include <scipp/units/unit.h>
 
+#include "scipp/core/variable_operations.h"
+
 namespace scipp::core {
 
 /// Index-based view of slices of a variable, data array, or dataset.

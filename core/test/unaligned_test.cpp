@@ -6,6 +6,7 @@
 #include "scipp/core/event.h"
 #include "scipp/core/histogram.h"
 #include "scipp/core/unaligned.h"
+#include "scipp/core/variable_operations.h"
 
 using namespace scipp;
 using namespace scipp::core;

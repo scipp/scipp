@@ -2,16 +2,17 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 #include <initializer_list>
 
-#include "test_operations.h"
 #include <gtest/gtest-matchers.h>
 #include <gtest/gtest.h>
 
 #include "scipp/core/dataset.h"
 #include "scipp/core/dimensions.h"
-#include "test_macros.h"
+#include "scipp/core/variable_operations.h"
 
 #include "dataset_test_common.h"
 #include "make_sparse.h"
+#include "test_macros.h"
+#include "test_operations.h"
 
 using namespace scipp;
 using namespace scipp::core;

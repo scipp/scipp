@@ -7,6 +7,7 @@
 #include "scipp/core/event.h"
 #include "scipp/core/histogram.h"
 #include "scipp/core/unaligned.h"
+#include "scipp/core/variable_operations.h"
 
 #include "dataset_test_common.h"
 #include "test_macros.h"

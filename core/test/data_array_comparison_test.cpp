@@ -12,6 +12,7 @@
 #include "scipp/core/dataset.h"
 #include "scipp/core/dimensions.h"
 #include "scipp/core/unaligned.h"
+#include "scipp/core/variable_operations.h"
 
 using namespace scipp;
 using namespace scipp::core;

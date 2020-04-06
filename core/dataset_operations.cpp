@@ -6,6 +6,7 @@
 #include "scipp/common/overloaded.h"
 #include "scipp/core/dataset.h"
 #include "scipp/core/except.h"
+#include "scipp/core/variable_operations.h"
 
 #include "dataset_operations_common.h"
 #include "variable_operations_common.h"

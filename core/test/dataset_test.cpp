@@ -9,6 +9,7 @@
 #include "scipp/core/dataset.h"
 #include "scipp/core/dimensions.h"
 #include "scipp/core/unaligned.h"
+#include "scipp/core/variable_operations.h"
 
 #include "dataset_test_common.h"
 

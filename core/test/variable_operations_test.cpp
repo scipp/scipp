@@ -9,6 +9,7 @@
 #include "scipp/core/dimensions.h"
 #include "scipp/core/except.h"
 #include "scipp/core/variable.h"
+#include "scipp/core/variable_operations.h"
 
 #include "../element_unary_operations.h"
 
