@@ -37,7 +37,6 @@ set(SRC_FILES
     sort.cpp
     subspan_view.cpp
     string.cpp
-    trigonometry.cpp
     unaligned.cpp
     variable.cpp
     variable_binary_arithmetic.cpp
@@ -45,9 +44,10 @@ set(SRC_FILES
     variable_instantiate_basic.cpp
     variable_instantiate_dataset.cpp
     variable_instantiate_view_elements.cpp
-    variable_logical_operations.cpp
+    variable_logical.cpp
     variable_operations.cpp
-    variable_reduction_operations.cpp
+    variable_reduction.cpp
+    variable_trigonometry.cpp
     variable_type_conversion.cpp
     element_array_view.cpp
     view_index.cpp
