@@ -196,8 +196,8 @@ def test_set_item_slice_with_variances_from_numpy():
     d = sc.Dataset(
         coords={'x': sc.Variable(dims=['x'], values=np.arange(4, 8))})
     d['a'] = sc.Variable(dims=['x'],
-                         values=np.arange(4),
-                         variances=np.arange(4))
+                         values=np.arange(4.0),
+                         variances=np.arange(4.0))
     d['a']['x', 2:4].values = np.arange(2)
     d['a']['x', 2:4].variances = np.arange(2, 4)
     assert np.array_equal(d['a'].values, np.array([0.0, 1.0, 0.0, 1.0]))
