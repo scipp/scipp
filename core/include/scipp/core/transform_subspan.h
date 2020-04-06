@@ -5,7 +5,6 @@
 #ifndef SCIPP_CORE_TRANSFORM_SUBSPAN_H
 #define SCIPP_CORE_TRANSFORM_SUBSPAN_H
 
-#include "scipp/core/event.h"
 #include "scipp/core/subspan_view.h"
 #include "scipp/core/transform.h"
 
