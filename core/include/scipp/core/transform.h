@@ -514,7 +514,7 @@ static constexpr auto type_tuples(Op) noexcept {
   if constexpr (sizeof...(Ts) == 0)
     return typename Op::types{};
   else if constexpr ((visit_detail::is_tuple<Ts>::value || ...))
-    return std::tuple_cat(Ts{}...);
+    return typename detail::tuple_cat<Ts...>::type{};
   else
     return std::tuple<Ts...>{};
 }
