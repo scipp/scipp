@@ -74,3 +74,21 @@ TYPED_TEST(ElementEventMapTest, variances_variable_bin_width) {
             std::pair(event_list<float>{0, 2, 4, 4, 0, 0, 4},
                       event_list<float>{0, 3, 5, 5, 0, 0, 5}));
 }
+
+TEST(ElementEventMakeSelectTest, unit) {
+  units::Unit m(units::m);
+  units::Unit s(units::s);
+  EXPECT_EQ(element::event::make_select<int32_t>(m, m), units::dimensionless);
+  EXPECT_EQ(element::event::make_select<int32_t>(s, s), units::dimensionless);
+  EXPECT_THROW(element::event::make_select<int32_t>(m, s), except::UnitError);
+  EXPECT_THROW(element::event::make_select<int32_t>(s, m), except::UnitError);
+}
+
+TEST(ElementEventMakeSelectTest, data) {
+  event_list<double> events{1.1, 2.0, 3.3, 4.0, 5.5, 3.2};
+  std::vector<double> interval{2, 4};
+  EXPECT_EQ(element::event::make_select<int32_t>(events, interval),
+            (event_list<int32_t>{1, 2, 5}));
+  EXPECT_EQ(element::event::make_select<int64_t>(events, interval),
+            (event_list<int64_t>{1, 2, 5}));
+}
