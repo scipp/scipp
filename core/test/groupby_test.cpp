@@ -4,6 +4,7 @@
 
 #include "scipp/core/groupby.h"
 #include "scipp/core/unaligned.h"
+#include "scipp/core/variable_binary_arithmetic.h"
 
 #include "test_macros.h"
 

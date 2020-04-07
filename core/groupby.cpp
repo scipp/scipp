@@ -11,6 +11,7 @@
 #include "scipp/core/indexed_slice_view.h"
 #include "scipp/core/parallel.h"
 #include "scipp/core/tag_util.h"
+#include "scipp/core/variable_operations.h"
 
 #include "dataset_operations_common.h"
 #include "variable_operations_common.h"

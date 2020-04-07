@@ -11,6 +11,7 @@
 #include "scipp/core/subspan_view.h"
 #include "scipp/core/transform.h"
 #include "scipp/core/unaligned.h"
+#include "scipp/core/variable_operations.h"
 
 namespace scipp::core {
 

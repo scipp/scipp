@@ -7,6 +7,7 @@
 #include "scipp/core/dataset_util.h"
 #include "scipp/core/except.h"
 #include "scipp/core/groupby.h"
+#include "scipp/core/variable_operations.h"
 
 using namespace scipp::core;
 

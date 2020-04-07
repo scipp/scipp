@@ -8,7 +8,7 @@
 #include "scipp/core/dtype.h"
 #include "scipp/core/except.h"
 #include "scipp/core/transform.h"
-#include "scipp/core/variable.h"
+#include "scipp/core/variable_operations.h"
 
 #include "element_geometric_operations.h"
 #include "element_trigonometry_operations.h"

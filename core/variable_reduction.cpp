@@ -2,11 +2,12 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
+#include "scipp/core/variable_reduction.h"
 #include "scipp/core/dtype.h"
 #include "scipp/core/event.h"
 #include "scipp/core/except.h"
 #include "scipp/core/transform.h"
-#include "scipp/core/variable.h"
+#include "scipp/core/variable_binary_arithmetic.h"
 #include "scipp/core/view_decl.h"
 
 #include "operators.h"

@@ -10,6 +10,7 @@
 #include "scipp/core/dataset_util.h"
 #include "scipp/core/event.h"
 #include "scipp/core/transform.h"
+#include "scipp/core/variable_operations.h"
 #include "scipp/neutron/beamline.h"
 #include "scipp/neutron/convert.h"
 

@@ -5,6 +5,7 @@
 #include <gtest/gtest.h>
 
 #include "scipp/core/dataset.h"
+#include "scipp/core/variable_misc_operations.h"
 
 using namespace scipp;
 using namespace scipp::core;

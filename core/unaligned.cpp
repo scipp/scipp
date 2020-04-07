@@ -7,6 +7,7 @@
 #include "scipp/core/event.h"
 #include "scipp/core/groupby.h"
 #include "scipp/core/unaligned.h"
+#include "scipp/core/variable_operations.h"
 
 namespace scipp::core::unaligned {
 
