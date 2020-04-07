@@ -18,7 +18,6 @@ add_executable(
   dataset_operations_test.cpp
   dataset_view_test.cpp
   dataset_test_common.cpp
-  dataset_test.cpp
   dimensions_test.cpp
   element_array_test.cpp
   element_unary_operations_test.cpp
