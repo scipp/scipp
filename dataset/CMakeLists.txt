@@ -2,10 +2,8 @@
 # contributors (https://github.com/scipp)
 set(TARGET_NAME "scipp-dataset")
 set(INC_FILES
-    include/scipp/dataset/dataset.h
-    include/scipp/dataset/dataset_index.h
-    include/scipp/dataset/except.h
-    include/scipp/dataset/counts.h
+    include/scipp/dataset/dataset.h include/scipp/dataset/dataset_index.h
+    include/scipp/dataset/except.h include/scipp/dataset/counts.h
     include/scipp/dataset/sort.h
 )
 
