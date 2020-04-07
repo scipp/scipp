@@ -18,6 +18,7 @@ set(INC_FILES
 set(SRC_FILES
     dimensions.cpp
     dtype.cpp
+    event.cpp
     except.cpp
     rebin.cpp
     slice.cpp

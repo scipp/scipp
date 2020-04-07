@@ -8,6 +8,7 @@
 #include "scipp/core/slice.h"
 #include "scipp/core/string.h"
 #include "scipp/core/tag_util.h"
+#include "scipp/core/variable.h"
 
 namespace scipp::core {
 
