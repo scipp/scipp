@@ -99,8 +99,8 @@ VariableView sum(const VariableConstView &var, const Dim dim,
   return out;
 }
 
-Variable mean(const VariableConstView &var, const Dim dim,
-              const VariableConstView &masks_sum) {
+Variable mean_impl(const VariableConstView &var, const Dim dim,
+                   const VariableConstView &masks_sum) {
   auto summed = sum(var, dim);
 
   auto scale =
@@ -113,8 +113,9 @@ Variable mean(const VariableConstView &var, const Dim dim,
   return summed;
 }
 
-VariableView mean(const VariableConstView &var, const Dim dim,
-                  const VariableConstView &masks_sum, const VariableView &out) {
+VariableView mean_impl(const VariableConstView &var, const Dim dim,
+                       const VariableConstView &masks_sum,
+                       const VariableView &out) {
   if (isInt(out.dtype()))
     throw except::UnitError(
         "Cannot calculate mean in-place when output dtype is integer");

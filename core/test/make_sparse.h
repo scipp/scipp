@@ -2,10 +2,9 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#ifndef SCIPP_CORE_TEST_MAKE_SPARSE_H
-#define SCIPP_CORE_TEST_MAKE_SPARSE_H
+#pragma once
 
-#include "scipp/core/dataset.h"
+#include "scipp/core/variable.h"
 
 using namespace scipp;
 using namespace scipp::core;
@@ -38,5 +37,3 @@ inline void set_sparse_variances(Variable &var,
   for (scipp::index i = 0; i < scipp::size(data); ++i)
     vals[i] = data[i];
 }
-
-#endif // SCIPP_CORE_TEST_MAKE_SPARSE_H
