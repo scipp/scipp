@@ -5,14 +5,15 @@
 
 #include "scipp/units/unit.h"
 
-#include "scipp/core/dataset.h"
 #include "scipp/core/dtype.h"
 #include "scipp/core/except.h"
-#include "scipp/core/sort.h"
 #include "scipp/core/tag_util.h"
 #include "scipp/core/transform.h"
 #include "scipp/core/variable.h"
 #include "scipp/core/variable_operations.h"
+
+#include "scipp/dataset/dataset.h"
+#include "scipp/dataset/sort.h"
 
 #include "bind_data_access.h"
 #include "bind_operators.h"
@@ -44,7 +45,7 @@ template <class T> struct MakeVariable {
     if (variances) {
       py::array_t<T> variancesT(*variances);
       info = variancesT.request();
-      expect::equals(
+      core::expect::equals(
           dims, Dimensions(labels, {info.shape.begin(), info.shape.end()}));
       copy_flattened<T>(variancesT, var.template variances<T>());
     }

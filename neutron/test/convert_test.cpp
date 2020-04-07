@@ -3,10 +3,10 @@
 #include "test_macros.h"
 #include <gtest/gtest.h>
 
-#include "scipp/core/counts.h"
-#include "scipp/core/dataset.h"
 #include "scipp/core/dimensions.h"
 #include "scipp/core/variable_operations.h"
+#include "scipp/dataset/counts.h"
+#include "scipp/dataset/dataset.h"
 #include "scipp/neutron/convert.h"
 
 using namespace scipp;

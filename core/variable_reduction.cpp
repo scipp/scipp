@@ -8,7 +8,6 @@
 #include "scipp/core/except.h"
 #include "scipp/core/transform.h"
 #include "scipp/core/variable_binary_arithmetic.h"
-#include "scipp/core/view_decl.h"
 
 #include "operators.h"
 #include "variable_operations_common.h"
@@ -61,17 +60,6 @@ Variable flatten(const VariableConstView &var, const Dim dim) {
   return flattened;
 }
 
-/// Flatten with mask, skipping masked elements.
-Variable flatten(const VariableConstView &var, const Dim dim,
-                 const MasksConstView &masks) {
-  auto dims = var.dims();
-  dims.erase(dim);
-  Variable flattened(var, dims);
-  const auto mask = ~masks_merge_if_contains(masks, dim);
-  flatten_impl(flattened, var, mask);
-  return flattened;
-}
-
 void sum_impl(const VariableView &summed, const VariableConstView &var) {
   if (is_events(var))
     throw except::TypeError("`sum` can only be used for dense data, use "
@@ -111,28 +99,8 @@ VariableView sum(const VariableConstView &var, const Dim dim,
   return out;
 }
 
-Variable sum(const VariableConstView &var, const Dim dim,
-             const MasksConstView &masks) {
-  if (!masks.empty()) {
-    const auto mask_union = masks_merge_if_contains(masks, dim);
-    if (mask_union.dims().contains(dim))
-      return sum(var * ~mask_union, dim);
-  }
-  return sum(var, dim);
-}
-
-VariableView sum(const VariableConstView &var, const Dim dim,
-                 const MasksConstView &masks, const VariableView &out) {
-  if (!masks.empty()) {
-    const auto mask_union = masks_merge_if_contains(masks, dim);
-    if (mask_union.dims().contains(dim))
-      return sum(var * ~mask_union, dim, out);
-  }
-  return sum(var, dim, out);
-}
-
-Variable mean(const VariableConstView &var, const Dim dim,
-              const VariableConstView &masks_sum) {
+Variable mean_impl(const VariableConstView &var, const Dim dim,
+                   const VariableConstView &masks_sum) {
   auto summed = sum(var, dim);
 
   auto scale =
@@ -145,8 +113,9 @@ Variable mean(const VariableConstView &var, const Dim dim,
   return summed;
 }
 
-VariableView mean(const VariableConstView &var, const Dim dim,
-                  const VariableConstView &masks_sum, const VariableView &out) {
+VariableView mean_impl(const VariableConstView &var, const Dim dim,
+                       const VariableConstView &masks_sum,
+                       const VariableView &out) {
   if (isInt(out.dtype()))
     throw except::UnitError(
         "Cannot calculate mean in-place when output dtype is integer");
@@ -161,36 +130,12 @@ VariableView mean(const VariableConstView &var, const Dim dim,
 }
 
 Variable mean(const VariableConstView &var, const Dim dim) {
-  return mean(var, dim, makeVariable<int64_t>(Values{0}));
+  return mean_impl(var, dim, makeVariable<int64_t>(Values{0}));
 }
 
 VariableView mean(const VariableConstView &var, const Dim dim,
                   const VariableView &out) {
-  return mean(var, dim, makeVariable<int64_t>(Values{0}), out);
-}
-
-Variable mean(const VariableConstView &var, const Dim dim,
-              const MasksConstView &masks) {
-  if (!masks.empty()) {
-    const auto mask_union = masks_merge_if_contains(masks, dim);
-    if (mask_union.dims().contains(dim)) {
-      const auto masks_sum = sum(mask_union, dim);
-      return mean(var * ~mask_union, dim, masks_sum);
-    }
-  }
-  return mean(var, dim);
-}
-
-VariableView mean(const VariableConstView &var, const Dim dim,
-                  const MasksConstView &masks, const VariableView &out) {
-  if (!masks.empty()) {
-    const auto mask_union = masks_merge_if_contains(masks, dim);
-    if (mask_union.dims().contains(dim)) {
-      const auto masks_sum = sum(mask_union, dim);
-      return mean(var * ~mask_union, dim, masks_sum, out);
-    }
-  }
-  return mean(var, dim, out);
+  return mean_impl(var, dim, makeVariable<int64_t>(Values{0}), out);
 }
 
 template <class Op>
@@ -249,30 +194,6 @@ void min_impl(const VariableView &out, const VariableConstView &var) {
 /// variance of the minimum element is returned.
 Variable min(const VariableConstView &var, const Dim dim) {
   return reduce_idempotent<operator_detail::min_equals>(var, dim);
-}
-
-/// Merges all masks contained in the MasksConstView that have the supplied
-//  dimension in their dimensions into a single Variable
-Variable masks_merge_if_contains(const MasksConstView &masks, const Dim dim) {
-  auto mask_union = makeVariable<bool>(Values{false});
-  for (const auto &mask : masks) {
-    if (mask.second.dims().contains(dim)) {
-      mask_union = mask_union | mask.second;
-    }
-  }
-  return mask_union;
-}
-
-/// Merges all the masks that have all their dimensions found in the given set
-//  of dimensions.
-Variable masks_merge_if_contained(const MasksConstView &masks,
-                                  const Dimensions &dims) {
-  auto mask_union = makeVariable<bool>(Values{false});
-  for (const auto &mask : masks) {
-    if (dims.contains(mask.second.dims()))
-      mask_union = mask_union | mask.second;
-  }
-  return mask_union;
 }
 
 /// Return the maximum along all dimensions.

@@ -4,57 +4,27 @@ set(TARGET_NAME "scipp-core-test")
 add_dependencies(all-tests ${TARGET_NAME})
 add_executable(
   ${TARGET_NAME} EXCLUDE_FROM_ALL
-  attributes_test.cpp
   comparison_test.cpp
-  concatenate_test.cpp
-  coords_view_test.cpp
-  copy_test.cpp
-  counts_test.cpp
-  data_array_comparison_test.cpp
-  data_array_test.cpp
-  data_view_test.cpp
-  dataset_comparison_test.cpp
-  dataset_binary_arithmetic_test.cpp
-  dataset_operations_test.cpp
-  dataset_view_test.cpp
-  dataset_test_common.cpp
-  dataset_test.cpp
   dimensions_test.cpp
   element_array_test.cpp
+  element_array_view_test.cpp
   element_unary_operations_test.cpp
   element_geometric_operations_test.cpp
   element_trigonometry_operations_test.cpp
-  event_test.cpp
-  except_test.cpp
-  groupby_test.cpp
-  histogram_test.cpp
   indexed_slice_view_test.cpp
-  mean_test.cpp
-  merge_test.cpp
-  rebin_test.cpp
   reduce_logical_test.cpp
-  reduce_sparse_test.cpp
   reduce_various_test.cpp
-  self_assignment_test.cpp
-  slice_test.cpp
-  sort_test.cpp
-  sparse_data_operations_consistency_test.cpp
-  string_test.cpp
   subspan_view_test.cpp
-  sum_test.cpp
-  transform_sparse_and_dense_test.cpp
   transform_test.cpp
-  unaligned_test.cpp
   value_and_variance_test.cpp
   variable_concept_test.cpp
   variable_custom_type_test.cpp
+  variable_keyword_args_constructor_test.cpp
   variable_operations_test.cpp
   variable_scalar_accessors_test.cpp
   variable_test.cpp
   variable_trigonometry_test.cpp
-  element_array_view_test.cpp
   view_index_test.cpp
-  variable_keyword_args_constructor_test.cpp
 )
 include_directories(SYSTEM ${GMOCK_INCLUDE_DIR} ${GTEST_INCLUDE_DIR})
 target_link_libraries(

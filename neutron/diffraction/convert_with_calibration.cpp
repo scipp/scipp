@@ -3,13 +3,14 @@
 /// @file
 /// @author Mads Bertelsen
 #include "scipp/neutron/diffraction/convert_with_calibration.h"
-#include "scipp/core/counts.h"
-#include "scipp/core/dataset_util.h"
-#include "scipp/core/except.h"
-#include "scipp/core/groupby.h"
 #include "scipp/core/variable_operations.h"
+#include "scipp/dataset/counts.h"
+#include "scipp/dataset/dataset_util.h"
+#include "scipp/dataset/except.h"
+#include "scipp/dataset/groupby.h"
 
 using namespace scipp::core;
+using namespace scipp::dataset;
 
 namespace scipp::neutron::diffraction {
 
@@ -23,7 +24,7 @@ template <class T> bool has_dim(const T &d, const Dim dim) {
 template <class T> T convert_with_calibration_impl(T d, Dataset cal) {
   for (const auto &item : iter(d))
     if (item.hasData())
-      expect::notCountDensity(item.unit());
+      core::expect::notCountDensity(item.unit());
 
   // 1. There may be a grouping of detectors, in which case we need to apply it
   // to the cal information first.

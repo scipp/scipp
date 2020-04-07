@@ -3,9 +3,9 @@
 #include "test_macros.h"
 #include <gtest/gtest.h>
 
-#include "scipp/core/counts.h"
-#include "scipp/core/dataset.h"
 #include "scipp/core/dimensions.h"
+#include "scipp/dataset/counts.h"
+#include "scipp/dataset/dataset.h"
 #include "scipp/neutron/diffraction/convert_with_calibration.h"
 
 using namespace scipp;

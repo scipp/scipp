@@ -20,10 +20,6 @@
 
 namespace scipp::core {
 
-class DataArrayConstView;
-class DatasetConstView;
-class Dataset;
-class DataArray;
 class Dimensions;
 class Variable;
 class VariableConstView;
@@ -44,25 +40,15 @@ struct SCIPP_CORE_EXPORT TypeError : public std::runtime_error {
       : std::runtime_error(msg + ((to_string(vars.dtype()) + ' ') + ...)) {}
 };
 
-using DataArrayError = Error<core::DataArray>;
-using DatasetError = Error<core::Dataset>;
 using DimensionError = Error<core::Dimensions>;
 using VariableError = Error<core::Variable>;
 
-using DataArrayMismatchError = MismatchError<core::DataArray>;
-using DatasetMismatchError = MismatchError<core::Dataset>;
 using DimensionMismatchError = MismatchError<core::Dimensions>;
 using VariableMismatchError = MismatchError<core::Variable>;
 
 template <class T>
 MismatchError(const core::VariableConstView &, const T &)
     ->MismatchError<core::Variable>;
-template <class T>
-MismatchError(const core::DatasetConstView &, const T &)
-    ->MismatchError<core::Dataset>;
-template <class T>
-MismatchError(const core::DataArrayConstView &, const T &)
-    ->MismatchError<core::DataArray>;
 template <class T>
 MismatchError(const core::Dimensions &, const T &)
     ->MismatchError<core::Dimensions>;
@@ -123,6 +109,15 @@ struct SCIPP_CORE_EXPORT EventDataError : public std::runtime_error {
 
 } // namespace scipp::except
 
+namespace scipp::expect {
+template <class A, class B> void contains(const A &a, const B &b) {
+  using core::to_string;
+  if (!a.contains(b))
+    throw except::NotFoundError("Expected " + to_string(a) + " to contain " +
+                                to_string(b) + ".");
+}
+} // namespace scipp::expect
+
 namespace scipp::core::expect {
 template <class A, class B> void equals(const A &a, const B &b) {
   if (a != b)
@@ -157,11 +152,6 @@ void sizeMatches(const T &range, const Ts &... other) {
 
 inline auto to_string(const std::string &s) { return s; }
 
-template <class A, class B> void contains(const A &a, const B &b) {
-  if (!a.contains(b))
-    throw except::NotFoundError("Expected " + to_string(a) + " to contain " +
-                                to_string(b) + ".");
-}
 template <class T> void unit(const T &object, const units::Unit &unit) {
   expect::equals(object.unit(), unit);
 }
@@ -181,8 +171,6 @@ void SCIPP_CORE_EXPORT validSlice(const Dimensions &dims, const Slice &slice);
 void SCIPP_CORE_EXPORT validSlice(
     const std::unordered_map<Dim, scipp::index> &dims, const Slice &slice);
 
-void SCIPP_CORE_EXPORT coordsAreSuperset(const DataArrayConstView &a,
-                                         const DataArrayConstView &b);
 void SCIPP_CORE_EXPORT notCountDensity(const units::Unit &unit);
 void SCIPP_CORE_EXPORT validDim(const Dim dim);
 void SCIPP_CORE_EXPORT validExtent(const scipp::index size);

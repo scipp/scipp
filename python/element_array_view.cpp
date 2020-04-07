@@ -3,9 +3,9 @@
 /// @file
 /// @author Simon Heybrock
 #include "scipp/core/element_array_view.h"
-#include "scipp/core/dataset.h"
 #include "scipp/core/dtype.h"
 #include "scipp/core/except.h"
+#include "scipp/dataset/dataset.h"
 
 #include "pybind11.h"
 

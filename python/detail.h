@@ -2,18 +2,15 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Neil Vaytet
-#ifndef SCIPP_PYTHON_DETAIL_H
-#define SCIPP_PYTHON_DETAIL_H
+#pragma once
 
-#include "scipp/core/dataset.h"
+#include "scipp/dataset/dataset.h"
 
-using namespace scipp::core;
+using namespace scipp;
 
 struct MoveableVariable {
   Variable var;
 };
 struct MoveableDataArray {
-  DataArray data;
+  dataset::DataArray data;
 };
-
-#endif // SCIPP_PYTHON_DETAIL_H

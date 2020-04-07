@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
-#ifndef SCIPP_CORE_VALUE_AND_VARIANCE_H
-#define SCIPP_CORE_VALUE_AND_VARIANCE_H
+#pragma once
 
 #include <cmath>
 
@@ -187,4 +186,7 @@ inline constexpr bool is_ValueAndVariance_v = is_ValueAndVariance<T>::value;
 
 } // namespace scipp::core
 
-#endif // SCIPP_CORE_VALUE_AND_VARIANCE_H
+namespace scipp {
+using core::is_ValueAndVariance_v;
+using core::ValueAndVariance;
+} // namespace scipp

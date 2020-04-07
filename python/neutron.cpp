@@ -2,7 +2,7 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#include "scipp/core/dataset.h"
+#include "scipp/dataset/dataset.h"
 #include "scipp/neutron/beamline.h"
 #include "scipp/neutron/convert.h"
 #include "scipp/neutron/diffraction/convert_with_calibration.h"
@@ -115,12 +115,12 @@ template <class T> void bind_convert_with_calibration(py::module &m) {
 
     .. seealso:: Use :py:func:`scipp.neutron.convert` for unit conversion based on beamline-geometry information instead of calibration information.)";
   m.def("convert_with_calibration",
-        py::overload_cast<T, core::Dataset>(
+        py::overload_cast<T, dataset::Dataset>(
             diffraction::convert_with_calibration),
         py::arg("data"), py::arg("calibration"),
         py::call_guard<py::gil_scoped_release>(), doc);
   m.def("convert_with_calibration",
-        [](py::object &obj, const core::Dataset &calibration, const T &out) {
+        [](py::object &obj, const dataset::Dataset &calibration, const T &out) {
           auto &data = obj.cast<T &>();
           if (&data != &out)
             throw std::runtime_error("Currently only out=<input> is supported");
@@ -134,17 +134,17 @@ template <class T> void bind_convert_with_calibration(py::module &m) {
 
 void bind_diffraction(py::module &m) {
   auto diffraction = m.def_submodule("neutron_diffraction");
-  bind_convert_with_calibration<core::DataArray>(diffraction);
-  bind_convert_with_calibration<core::Dataset>(diffraction);
+  bind_convert_with_calibration<dataset::DataArray>(diffraction);
+  bind_convert_with_calibration<dataset::Dataset>(diffraction);
 }
 
 void init_neutron(py::module &m) {
   auto neutron = m.def_submodule("neutron");
 
-  bind_convert<core::DataArray>(neutron);
-  bind_convert<core::Dataset>(neutron);
-  bind_beamline<core::DataArray>(neutron);
-  bind_beamline<core::Dataset>(neutron);
+  bind_convert<dataset::DataArray>(neutron);
+  bind_convert<dataset::Dataset>(neutron);
+  bind_beamline<dataset::DataArray>(neutron);
+  bind_beamline<dataset::Dataset>(neutron);
 
   // This is deliberately `m` and not `neutron` due to how nested imports work
   // in Python in combination with mixed C++/Python modules.
