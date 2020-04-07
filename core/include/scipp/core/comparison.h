@@ -5,7 +5,6 @@
 #define SCIPP_CORE_COMPARISON_H
 
 #include "dtype.h"
-#include "scipp/core/dataset.h"
 #include "scipp/core/string.h"
 #include "scipp/core/transform.h"
 #include "scipp/core/variable.h"
