@@ -709,7 +709,7 @@ void init_dataset(py::module &m) {
 
         This only supports event data.
 
-        :param function: Data array serving as a descretized mapping function.
+        :param function: Data array serving as a discretized mapping function.
         :param iterable: Variable with values to map, must be event data.
         :return: Mapped event data.
         :rtype: Variable)");
