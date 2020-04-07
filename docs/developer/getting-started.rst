@@ -68,8 +68,11 @@ To run the C++ tests, run (in the ``build/`` directory):
 
 .. code-block:: bash
 
+  ./common/test/scipp-common-test
   ./units/test/scipp-units-test
   ./core/test/scipp-core-test
+  ./dataset/test/scipp-dataset-test
+  ./neutron/test/scipp-neutron-test
 
 Note that simply running ``ctest`` also works, but currently it seems to have an issue with gathering templated tests, so calling the test binaries manually is recommended (and much faster).
 
