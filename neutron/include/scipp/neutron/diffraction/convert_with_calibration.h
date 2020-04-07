@@ -6,14 +6,14 @@
 #define SCIPP_NEUTRON_CONVERT_WITH_CALIBRATION_H
 
 #include "scipp-neutron_export.h"
-#include "scipp/core/dataset.h"
+#include "scipp/dataset/dataset.h"
 
 namespace scipp::neutron::diffraction {
 
-SCIPP_NEUTRON_EXPORT core::DataArray
-convert_with_calibration(core::DataArray d, core::Dataset cal);
-SCIPP_NEUTRON_EXPORT core::Dataset convert_with_calibration(core::Dataset d,
-                                                            core::Dataset cal);
+SCIPP_NEUTRON_EXPORT dataset::DataArray
+convert_with_calibration(dataset::DataArray d, dataset::Dataset cal);
+SCIPP_NEUTRON_EXPORT dataset::Dataset
+convert_with_calibration(dataset::Dataset d, dataset::Dataset cal);
 
 } // namespace scipp::neutron::diffraction
 
