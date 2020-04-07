@@ -213,11 +213,9 @@ void bind_init_0D_numpy_types(py::class_<Variable> &c) {
           } else if (info.ndim == 1 &&
                      scipp_dtype(dtype) == core::dtype<Eigen::Quaterniond>) {
             std::cout << "Using bind_init_0D_numpy_types Eigen::Quaterniond" << std::endl;
-            auto val = Eigen::Quaterniond(static_cast<Eigen::Quaterniond::Scalar *>(info.ptr));
-            auto var = v ? std::optional(Eigen::Quaterniond(static_cast<Eigen::Quaterniond::Scalar *>(v.value().request().ptr))) : std::nullopt;
             return do_init_0D<Eigen::Quaterniond>(
-                val,
-                var,
+                Eigen::Quaterniond(b.cast<std::vector<double>>().data()),
+                v ? std::optional(Eigen::Quaterniond(v->cast<std::vector<double>>().data())) : std::nullopt,
                 unit);
           } else {
             throw scipp::except::VariableError(
