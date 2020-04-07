@@ -239,7 +239,7 @@ class Slicer1d(Slicer):
             })
 
         if self.masks is not None:
-            mslice = self.slice_masks()
+            mslice = self.slice_masks().values
 
         xmin = np.Inf
         xmax = np.NINF
@@ -249,10 +249,11 @@ class Slicer1d(Slicer):
             xmax = max(new_x[-1], xmax)
 
             vslice = self.slice_data(var)
+            ydata = vslice.values
 
             # If this is a histogram, plot a step function
             if self.histograms[name][dim]:
-                ye = np.concatenate(([0], vslice.values))
+                ye = np.concatenate((ydata[0:1], ydata))
                 [self.members["lines"][name]
                  ] = self.ax.step(new_x,
                                   ye,
@@ -264,7 +265,7 @@ class Slicer1d(Slicer):
                                   })
                 # Add masks if any
                 if self.params["masks"][name]["show"]:
-                    me = np.concatenate(([False], mslice.values))
+                    me = np.concatenate((mslice[0:1], mslice))
                     [self.members["masks"][name]] = self.ax.step(
                         new_x,
                         self.mask_to_float(me, ye),
@@ -277,7 +278,7 @@ class Slicer1d(Slicer):
                 # If this is not a histogram, just use normal plot
                 [self.members["lines"][name]
                  ] = self.ax.plot(new_x,
-                                  vslice.values,
+                                  ydata,
                                   label=name,
                                   zorder=10,
                                   **{
@@ -286,36 +287,31 @@ class Slicer1d(Slicer):
                                   })
                 # Add masks if any
                 if self.params["masks"][name]["show"]:
-                    [self.members["masks"][name]] = self.ax.plot(
-                        new_x,
-                        self.mask_to_float(mslice.values, vslice.values),
-                        zorder=10,
-                        mec=self.params["masks"][name]["color"],
-                        mew=3,
-                        linestyle="none",
-                        **{
-                            key: self.mpl_line_params[key][name]
-                            for key in ["color", "marker"]
-                        })
+                    [self.members["masks"][name]
+                     ] = self.ax.plot(new_x,
+                                      self.mask_to_float(mslice, ydata),
+                                      zorder=10,
+                                      mec=self.params["masks"][name]["color"],
+                                      mew=3,
+                                      linestyle="none",
+                                      **{
+                                          key: self.mpl_line_params[key][name]
+                                          for key in ["color", "marker"]
+                                      })
 
             # Add error bars
             if self.variances[name]:
                 if self.histograms[name][dim]:
-                    self.members["error_y"][name] = self.ax.errorbar(
-                        edges_to_centers(new_x),
-                        vslice.values,
-                        yerr=np.sqrt(vslice.variances),
-                        color=self.mpl_line_params["color"][name],
-                        zorder=10,
-                        fmt="none")
+                    err_x = edges_to_centers(new_x)
                 else:
-                    self.members["error_y"][name] = self.ax.errorbar(
-                        new_x,
-                        vslice.values,
-                        yerr=np.sqrt(vslice.variances),
-                        color=self.mpl_line_params["color"][name],
-                        zorder=10,
-                        fmt="none")
+                    err_x = new_x
+                self.members["error_y"][name] = self.ax.errorbar(
+                    err_x,
+                    ydata,
+                    yerr=np.sqrt(vslice.variances),
+                    color=self.mpl_line_params["color"][name],
+                    zorder=10,
+                    fmt="none")
 
         if self.mpl_axes is None:
             deltax = 0.05 * (xmax - xmin)
@@ -353,13 +349,13 @@ class Slicer1d(Slicer):
             vslice = self.slice_data(var)
             vals = vslice.values
             if self.histograms[name][self.button_axis_to_dim["x"]]:
-                vals = np.concatenate(([0], vals))
+                vals = np.concatenate((vals[0:1], vals))
             self.members["lines"][name].set_ydata(vals)
 
             if self.params["masks"][name]["show"]:
                 msk = mslice.values
                 if self.histograms[name][self.button_axis_to_dim["x"]]:
-                    msk = np.concatenate(([False], msk))
+                    msk = np.concatenate((msk[0:1], msk))
                 self.members["masks"][name].set_ydata(
                     self.mask_to_float(msk, vals))
             if self.variances[name]:
@@ -435,11 +431,6 @@ class Slicer1d(Slicer):
                 coll.set_color(change["new"])
         self.fig.canvas.draw_idle()
         return
-
-    def generate_new_segments(self, x, y):
-        arr1 = np.array([x, x]).T.flatten()
-        arr2 = np.array([y, y]).T.flatten()
-        return np.array([arr1, arr2]).T.flatten().reshape(len(x), 2, 2)
 
     def change_segments_y(self, s, y, e):
         # TODO: this can be optimized to substitute the y values in-place in
