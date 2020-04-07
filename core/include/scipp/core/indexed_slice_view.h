@@ -11,7 +11,7 @@
 
 #include <scipp/units/unit.h>
 
-#include "scipp/core/variable_other_operations.h"
+#include "scipp/core/variable_misc_operations.h"
 
 namespace scipp::core {
 
