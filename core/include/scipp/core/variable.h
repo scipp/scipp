@@ -883,6 +883,6 @@ using core::Variable;
 using core::VariableConstView;
 using core::VariableView;
 using core::Variances;
-}
+} // namespace scipp
 
 #endif // SCIPP_CORE_VARIABLE_H

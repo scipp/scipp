@@ -22,4 +22,4 @@ SCIPP_DATASET_EXPORT Dataset sort(const DatasetConstView &dataset,
 SCIPP_DATASET_EXPORT Dataset sort(const DatasetConstView &dataset,
                                   const Dim &key);
 
-} // namespace scipp::core
+} // namespace scipp::dataset
