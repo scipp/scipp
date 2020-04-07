@@ -17,50 +17,13 @@ namespace py = pybind11;
 using namespace scipp;
 using namespace scipp::core;
 
-template <typename T, typename Accessor>
-bool extract_extent(const T &object, const Dim dim, Accessor accessor,
-                    scipp::index &out_extent) {
-  const auto in_extent = out_extent;
-  for (const auto &item : accessor(object)) {
-    if (item.second.dims().contains(dim)) {
-      if (out_extent == -1)
-        out_extent = item.second.dims()[dim];
-      else if (item.second.dims()[dim] == out_extent - 1)
-        --out_extent;
-    }
-  }
-  return in_extent != out_extent;
-}
-
-// TODO We really need a way to get the dimension labels and extents from
-// Dataset (not using class Dimensions).
 template <class T> auto dim_extent(const T &object, const Dim dim) {
 
   if constexpr (std::is_same_v<T, Dataset> || std::is_same_v<T, DatasetView>) {
     scipp::index extent = -1;
-    for (const auto &item : object) {
-      if (item.dims().contains(dim)) {
-        if (extent == -1) {
-          extent = item.dims()[dim];
-          return extent;
-        } else if (item.dims()[dim] == extent - 1) {
-          --extent;
-          return extent;
-        }
-      }
-    }
-    if (extract_extent(object, dim,
-                       [](const auto &obj) { return obj.coords(); }, extent))
-      return extent;
-    else if (extract_extent(object, dim,
-                            [](const auto &obj) { return obj.attrs(); },
-                            extent))
-      return extent;
-    else {
-      extract_extent(object, dim, [](const auto &obj) { return obj.masks(); },
-                     extent);
-      return extent;
-    }
+    if (object.dimensions().count(dim) > 0)
+      extent = object.dimensions().at(dim);
+    return extent;
   } else {
     return object.dims()[dim];
   }
