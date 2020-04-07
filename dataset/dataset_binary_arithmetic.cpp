@@ -2,12 +2,13 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#include "scipp/core/dataset.h"
 #include "scipp/core/transform.h"
+
+#include "scipp/dataset/dataset.h"
 
 #include "operators.h"
 
-namespace scipp::core {
+namespace scipp::dataset {
 
 template <class Op>
 void dry_run_op(const DataArrayView &a, const VariableConstView &b, Op op) {
@@ -492,4 +493,4 @@ Dataset operator/(const VariableConstView &lhs, const DatasetConstView &rhs) {
   return apply_with_broadcast(divide, lhs, rhs);
 }
 
-} // namespace scipp::core
+} // namespace scipp::dataset

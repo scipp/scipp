@@ -4,15 +4,17 @@
 /// @author Simon Heybrock
 #include "scipp/common/numeric.h"
 #include "scipp/common/overloaded.h"
-#include "scipp/core/dataset.h"
-#include "scipp/core/except.h"
+
 #include "scipp/core/variable_misc_operations.h"
 #include "scipp/core/variable_reduction.h"
+
+#include "scipp/dataset/dataset.h"
+#include "scipp/dataset/except.h"
 
 #include "dataset_operations_common.h"
 #include "variable_operations_common.h"
 
-namespace scipp::core {
+namespace scipp::dataset {
 
 auto union_(const DatasetConstView &a, const DatasetConstView &b) {
   std::map<std::string, DataArray> out;
@@ -259,4 +261,4 @@ DatasetView copy(const DatasetConstView &dataset, const DatasetView &out,
   return copy_impl(dataset, out, attrPolicy);
 }
 
-} // namespace scipp::core
+} // namespace scipp::dataset

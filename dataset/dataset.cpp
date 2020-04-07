@@ -2,12 +2,13 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#include "scipp/core/dataset.h"
-#include "dataset_operations_common.h"
-#include "scipp/core/except.h"
-#include "scipp/core/unaligned.h"
+#include "scipp/dataset/dataset.h"
+#include "scipp/dataset/except.h"
+#include "scipp/dataset/unaligned.h"
 
-namespace scipp::core {
+#include "dataset_operations_common.h"
+
+namespace scipp::dataset {
 
 template <class T> typename T::view_type makeViewItem(T &variable) {
   if constexpr (std::is_const_v<T>)
@@ -1028,4 +1029,4 @@ void union_or_in_place(const MasksView &currentMasks,
     }
   }
 }
-} // namespace scipp::core
+} // namespace scipp::dataset

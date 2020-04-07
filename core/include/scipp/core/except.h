@@ -109,6 +109,14 @@ struct SCIPP_CORE_EXPORT EventDataError : public std::runtime_error {
 
 } // namespace scipp::except
 
+namespace scipp::expect {
+template <class A, class B> void contains(const A &a, const B &b) {
+  if (!a.contains(b))
+    throw except::NotFoundError("Expected " + to_string(a) + " to contain " +
+                                to_string(b) + ".");
+}
+} // namespace scipp::expect
+
 namespace scipp::core::expect {
 template <class A, class B> void equals(const A &a, const B &b) {
   if (a != b)
@@ -143,11 +151,6 @@ void sizeMatches(const T &range, const Ts &... other) {
 
 inline auto to_string(const std::string &s) { return s; }
 
-template <class A, class B> void contains(const A &a, const B &b) {
-  if (!a.contains(b))
-    throw except::NotFoundError("Expected " + to_string(a) + " to contain " +
-                                to_string(b) + ".");
-}
 template <class T> void unit(const T &object, const units::Unit &unit) {
   expect::equals(object.unit(), unit);
 }

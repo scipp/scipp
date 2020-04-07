@@ -2,19 +2,19 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#ifndef SCIPP_CORE_HISTOGRAM_H
-#define SCIPP_CORE_HISTOGRAM_H
+#pragma once
 
 #include <algorithm>
 
-#include "scipp/core/except.h"
+#include "scipp/dataset/except.h"
 
-namespace scipp::core {
+namespace scipp::dataset {
 
-SCIPP_CORE_EXPORT DataArray histogram(const DataArrayConstView &realigned);
-SCIPP_CORE_EXPORT Dataset histogram(const DatasetConstView &realigned);
+SCIPP_DATASET_EXPORT DataArray histogram(const DataArrayConstView &realigned);
+SCIPP_DATASET_EXPORT Dataset histogram(const DatasetConstView &realigned);
 
-SCIPP_CORE_EXPORT bool is_histogram(const DataArrayConstView &a, const Dim dim);
+SCIPP_DATASET_EXPORT bool is_histogram(const DataArrayConstView &a,
+                                       const Dim dim);
 
 /// Return params for computing bin index for linear edges (constant bin width).
 constexpr static auto linear_edge_params = [](const auto &edges) {
@@ -35,6 +35,4 @@ template <class T> void sorted_edges(const T &edges) {
 }
 } // namespace expect::histogram
 
-} // namespace scipp::core
-
-#endif // SCIPP_CORE_HISTOGRAM_H
+} // namespace scipp::dataset

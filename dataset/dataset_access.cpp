@@ -2,10 +2,10 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#include "scipp/core/dataset_access.h"
-#include "scipp/core/dataset.h"
+#include "scipp/dataset/dataset_access.h"
+#include "scipp/dataset/dataset.h"
 
-namespace scipp::core {
+namespace scipp::dataset {
 
 namespace {
 
@@ -94,4 +94,4 @@ void AttrAccess::erase(const std::string &key) const {
     m_parent->eraseAttr(key);
 }
 
-} // namespace scipp::core
+} // namespace scipp::dataset

@@ -40,9 +40,7 @@ MismatchError(const core::DataArrayConstView &, const T &)
 
 namespace scipp::dataset::expect {
 
-void SCIPP_CORE_EXPORT coordsAreSuperset(const DataArrayConstView &a,
-                                         const DataArrayConstView &b);
+void SCIPP_DATASET_EXPORT coordsAreSuperset(const DataArrayConstView &a,
+                                            const DataArrayConstView &b);
 
 } // namespace scipp::dataset::expect
-
-#endif // SCIPP_CORE_EXCEPT_H

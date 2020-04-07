@@ -2,12 +2,11 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#ifndef SCIPP_CORE_DATASET_UTIL_H
-#define SCIPP_CORE_DATASET_UTIL_H
+#pragma once
 
-#include "scipp/core/dataset.h"
+#include "scipp/dataset/dataset.h"
 
-namespace scipp::core {
+namespace scipp::dataset {
 
 /// Iteration helper for generic code supporting data array and dataset.
 ///
@@ -19,6 +18,5 @@ template <class T> static decltype(auto) iter(T &d) {
   else
     return d.iterable_view();
 }
-} // namespace scipp::core
 
-#endif // SCIPP_CORE_DATASET_UTIL_H
+} // namespace scipp::dataset

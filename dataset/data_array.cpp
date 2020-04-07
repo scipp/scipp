@@ -2,18 +2,21 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#include "dataset_operations_common.h"
 #include "scipp/common/numeric.h"
-#include "scipp/core/dataset.h"
-#include "scipp/core/event.h"
-#include "scipp/core/groupby.h"
-#include "scipp/core/histogram.h"
+
 #include "scipp/core/subspan_view.h"
 #include "scipp/core/transform.h"
-#include "scipp/core/unaligned.h"
 #include "scipp/core/variable_operations.h"
 
-namespace scipp::core {
+#include "scipp/dataset/dataset.h"
+#include "scipp/dataset/event.h"
+#include "scipp/dataset/groupby.h"
+#include "scipp/dataset/histogram.h"
+#include "scipp/dataset/unaligned.h"
+
+#include "dataset_operations_common.h"
+
+namespace scipp::dataset {
 
 /// Return the bounds of all sliced realigned dimensions.
 std::vector<std::pair<Dim, Variable>> DataArrayConstView::slice_bounds() const {
@@ -420,4 +423,4 @@ DataArray reciprocal(const DataArrayConstView &a) {
   return DataArray(reciprocal(a.data()), a.coords(), a.masks(), a.attrs());
 }
 
-} // namespace scipp::core
+} // namespace scipp::dataset

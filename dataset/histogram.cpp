@@ -2,17 +2,17 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#include "scipp/core/histogram.h"
+#include "scipp/dataset/histogram.h"
 #include "scipp/common/numeric.h"
-#include "scipp/core/dataset.h"
-#include "scipp/core/except.h"
-#include "scipp/core/groupby.h"
 #include "scipp/core/transform_subspan.h"
-#include "scipp/core/unaligned.h"
+#include "scipp/dataset/dataset.h"
+#include "scipp/dataset/except.h"
+#include "scipp/dataset/groupby.h"
+#include "scipp/dataset/unaligned.h"
 
 #include "dataset_operations_common.h"
 
-namespace scipp::core {
+namespace scipp::dataset {
 
 static constexpr auto make_histogram =
     [](auto &data, const auto &events, const auto &weights, const auto &edges) {
@@ -218,4 +218,4 @@ Dataset histogram(const DatasetConstView &realigned) {
   return out;
 }
 
-} // namespace scipp::core
+} // namespace scipp::dataset

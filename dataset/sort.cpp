@@ -4,12 +4,12 @@
 /// @author Simon Heybrock
 #include <numeric>
 
-#include "scipp/core/except.h"
 #include "scipp/core/indexed_slice_view.h"
-#include "scipp/core/sort.h"
 #include "scipp/core/tag_util.h"
+#include "scipp/dataset/except.h"
+#include "scipp/dataset/sort.h"
 
-namespace scipp::core {
+namespace scipp::dataset {
 
 template <class T> struct MakePermutation {
   static auto apply(const VariableConstView &key) {
@@ -61,4 +61,4 @@ Dataset sort(const DatasetConstView &dataset, const Dim &key) {
   return sort(dataset, dataset.coords()[key]);
 }
 
-} // namespace scipp::core
+} // namespace scipp::dataset

@@ -4,12 +4,12 @@
 #include <algorithm>
 #include <set>
 
-#include "scipp/core/event.h"
-#include "scipp/core/groupby.h"
-#include "scipp/core/unaligned.h"
 #include "scipp/core/variable_operations.h"
+#include "scipp/dataset/event.h"
+#include "scipp/dataset/groupby.h"
+#include "scipp/dataset/unaligned.h"
 
-namespace scipp::core::unaligned {
+namespace scipp::dataset::unaligned {
 
 namespace {
 template <class Map, class Dims>
@@ -203,4 +203,4 @@ filter_recurse(const DataArrayConstView &unaligned,
   return filter_recurse(filtered, bounds.subspan(1), attrPolicy);
 }
 
-} // namespace scipp::core::unaligned
+} // namespace scipp::dataset::unaligned

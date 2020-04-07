@@ -4,13 +4,14 @@
 /// @author Simon Heybrock
 #include <limits>
 
-#include "scipp/core/dataset.h"
-#include "scipp/core/event.h"
 #include "scipp/core/subspan_view.h"
 #include "scipp/core/transform.h"
 #include "scipp/core/variable_operations.h"
 
-namespace scipp::core {
+#include "scipp/dataset/dataset.h"
+#include "scipp/dataset/event.h"
+
+namespace scipp::dataset {
 /// Return true if a variable contains events
 bool is_events(const VariableConstView &var) {
   const auto type = var.dtype();
@@ -231,4 +232,4 @@ DataArray filter(const DataArrayConstView &array, const Dim dim,
 }
 
 } // namespace event
-} // namespace scipp::core
+} // namespace scipp::dataset

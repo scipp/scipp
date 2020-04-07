@@ -2,15 +2,16 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Dimitar Tasev
-#ifndef SCIPP_CORE_VIEW_FORWARD_H
-#define SCIPP_CORE_VIEW_FORWARD_H
+#pragma once
 
-#include "scipp/core/dataset_access.h"
+#include "scipp/dataset/dataset_access.h"
 #include "scipp/units/dim.h"
 
-namespace scipp::core {
-
+namespace scipp {
 class Variable;
+}
+
+namespace scipp::dataset {
 
 namespace ViewId {
 class Attrs;
@@ -34,6 +35,4 @@ using MasksConstView = ConstView<ViewId::Masks, std::string, Variable>;
 /// View for accessing masks of Dataset and DataArrayView
 using MasksView = MutableView<MasksConstView, MaskAccess>;
 
-} // namespace scipp::core
-
-#endif // SCIPP_CORE_VIEW_FORWARD_H
+} // namespace scipp::dataset

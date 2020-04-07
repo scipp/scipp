@@ -866,4 +866,11 @@ bool is_events(const DataArrayConstView &array);
 
 } // namespace scipp::core
 
+namespace scipp {
+using core::Slice;
+using core::Variable;
+using core::VariableConstView;
+using core::VariableView;
+}
+
 #endif // SCIPP_CORE_VARIABLE_H

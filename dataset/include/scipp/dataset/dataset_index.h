@@ -2,14 +2,13 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#ifndef SCIPP_CORE_DATASET_INDEX_H
-#define SCIPP_CORE_DATASET_INDEX_H
+#pragma once
 
 #include <unordered_map>
 
-#include "scipp/core/dataset.h"
+#include "scipp/dataset/dataset.h"
 
-namespace scipp::core {
+namespace scipp::dataset {
 
 template <class Tag> class DatasetIndex {
 public:
@@ -31,6 +30,4 @@ private:
   std::unordered_map<typename Tag::type, scipp::index> m_index;
 };
 
-} // namespace scipp::core
-
-#endif // SCIPP_CORE_DATASET_INDEX_H
+} // namespace scipp::dataset

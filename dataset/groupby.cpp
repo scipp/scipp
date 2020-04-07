@@ -4,19 +4,20 @@
 /// @author Simon Heybrock
 #include <numeric>
 
-#include "scipp/core/event.h"
-#include "scipp/core/except.h"
-#include "scipp/core/groupby.h"
-#include "scipp/core/histogram.h"
 #include "scipp/core/indexed_slice_view.h"
 #include "scipp/core/parallel.h"
 #include "scipp/core/tag_util.h"
 #include "scipp/core/variable_operations.h"
 
+#include "scipp/dataset/event.h"
+#include "scipp/dataset/except.h"
+#include "scipp/dataset/groupby.h"
+#include "scipp/dataset/histogram.h"
+
 #include "dataset_operations_common.h"
 #include "variable_operations_common.h"
 
-namespace scipp::core {
+namespace scipp::dataset {
 
 /// Extract given group as a new data array or dataset
 template <class T>
@@ -28,12 +29,13 @@ T GroupBy<T>::copy(const scipp::index group,
     size += slice.end() - slice.begin();
   // This is just the slicing dim, but `slices` may be empty
   const Dim slice_dim = m_data.coords()[dim()].dims().inner();
-  auto out = scipp::core::copy(m_data.slice({slice_dim, 0, size}), attrPolicy);
+  auto out =
+      scipp::dataset::copy(m_data.slice({slice_dim, 0, size}), attrPolicy);
   scipp::index current = 0;
   for (const auto &slice : slices) {
     const auto thickness = slice.end() - slice.begin();
     const Slice out_slice(slice_dim, current, current + thickness);
-    scipp::core::copy(m_data.slice(slice), out.slice(out_slice), attrPolicy);
+    scipp::dataset::copy(m_data.slice(slice), out.slice(out_slice), attrPolicy);
     current += thickness;
   }
   return out;
@@ -370,4 +372,4 @@ GroupBy<Dataset> groupby(const DatasetConstView &dataset, const Dim dim,
 template class GroupBy<DataArray>;
 template class GroupBy<Dataset>;
 
-} // namespace scipp::core
+} // namespace scipp::dataset

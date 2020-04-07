@@ -2,20 +2,19 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#ifndef SCIPP_CORE_VIEW_DECL_H
-#define SCIPP_CORE_VIEW_DECL_H
+#pragma once
 
 #include <boost/iterator/transform_iterator.hpp>
 
-#include "scipp/core/dataset_access.h"
-#include "scipp/core/except.h"
 #include "scipp/core/slice.h"
 #include "scipp/core/variable.h"
-#include "scipp/core/view_forward.h"
+#include "scipp/dataset/dataset_access.h"
+#include "scipp/dataset/except.h"
+#include "scipp/dataset/view_forward.h"
 #include "scipp/units/dim.h"
 #include "scipp/units/unit.h"
 
-namespace scipp::core {
+namespace scipp::dataset {
 
 namespace detail {
 using slice_list =
@@ -350,11 +349,10 @@ public:
   }
 };
 
-SCIPP_CORE_EXPORT Variable masks_merge_if_contains(const MasksConstView &masks,
-                                                   const Dim dim);
+SCIPP_DATASET_EXPORT Variable
+masks_merge_if_contains(const MasksConstView &masks, const Dim dim);
 
-SCIPP_CORE_EXPORT Variable masks_merge_if_contained(const MasksConstView &masks,
-                                                    const Dimensions &dims);
+SCIPP_DATASET_EXPORT Variable
+masks_merge_if_contained(const MasksConstView &masks, const Dimensions &dims);
 
-} // namespace scipp::core
-#endif // SCIPP_CORE_VIEW_DECL_H
+} // namespace scipp::dataset

@@ -767,7 +767,7 @@ template <bool dry_run> struct in_place {
   template <class... Ts, class Op, class Var, class... Other>
   static void transform(Op op, Var &&var, const Other &... other) {
     using namespace detail;
-    (expect::contains(var.dims(), other.dims()), ...);
+    (scipp::expect::contains(var.dims(), other.dims()), ...);
     auto unit = var.unit();
     op(unit, other.unit()...);
     // Stop early in bad cases of changing units (if `var` is a slice):
@@ -823,7 +823,7 @@ void transform_in_place(Var &&var, const VariableConstView &var1,
 /// operations.
 template <class... TypePairs, class Var, class Op>
 void accumulate_in_place(Var &&var, const VariableConstView &other, Op op) {
-  expect::contains(other.dims(), var.dims());
+  scipp::expect::contains(other.dims(), var.dims());
   // Wrapped implementation to convert multiple tuples into a parameter pack.
   in_place<false>::transform_data(type_tuples<TypePairs...>(op), op,
                                   std::forward<Var>(var), other);
@@ -831,8 +831,8 @@ void accumulate_in_place(Var &&var, const VariableConstView &other, Op op) {
 template <class... TypePairs, class Var, class Op>
 void accumulate_in_place(Var &&var, const VariableConstView &var1,
                          const VariableConstView &var2, Op op) {
-  expect::contains(var1.dims(), var.dims());
-  expect::contains(var2.dims(), var.dims());
+  scipp::expect::contains(var1.dims(), var.dims());
+  scipp::expect::contains(var2.dims(), var.dims());
   in_place<false>::transform_data(type_tuples<TypePairs...>(op), op,
                                   std::forward<Var>(var), var1, var2);
 }

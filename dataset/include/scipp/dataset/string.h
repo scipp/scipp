@@ -20,23 +20,23 @@ class DataArray;
 template <class Id, class Key, class Value> class ConstView;
 template <class T, class U> class MutableView;
 
-SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
-                                           const DataArrayConstView &data);
-SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
-                                           const DataArrayView &data);
-SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
-                                           const DataArray &data);
-SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
-                                           const DatasetConstView &dataset);
-SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
-                                           const DatasetView &dataset);
-SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
-                                           const Dataset &dataset);
+SCIPP_DATASET_EXPORT std::ostream &operator<<(std::ostream &os,
+                                              const DataArrayConstView &data);
+SCIPP_DATASET_EXPORT std::ostream &operator<<(std::ostream &os,
+                                              const DataArrayView &data);
+SCIPP_DATASET_EXPORT std::ostream &operator<<(std::ostream &os,
+                                              const DataArray &data);
+SCIPP_DATASET_EXPORT std::ostream &operator<<(std::ostream &os,
+                                              const DatasetConstView &dataset);
+SCIPP_DATASET_EXPORT std::ostream &operator<<(std::ostream &os,
+                                              const DatasetView &dataset);
+SCIPP_DATASET_EXPORT std::ostream &operator<<(std::ostream &os,
+                                              const Dataset &dataset);
 
-SCIPP_CORE_EXPORT std::string to_string(const DataArray &data);
-SCIPP_CORE_EXPORT std::string to_string(const DataArrayConstView &data);
-SCIPP_CORE_EXPORT std::string to_string(const Dataset &dataset);
-SCIPP_CORE_EXPORT std::string to_string(const DatasetConstView &dataset);
+SCIPP_DATASET_EXPORT std::string to_string(const DataArray &data);
+SCIPP_DATASET_EXPORT std::string to_string(const DataArrayConstView &data);
+SCIPP_DATASET_EXPORT std::string to_string(const Dataset &dataset);
+SCIPP_DATASET_EXPORT std::string to_string(const DatasetConstView &dataset);
 
 template <class Id, class Key, class Value>
 std::string to_string(const ConstView<Id, Key, Value> &view) {

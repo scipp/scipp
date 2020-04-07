@@ -2,12 +2,13 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#include "scipp/core/counts.h"
-#include "scipp/core/dataset.h"
-#include "scipp/core/except.h"
 #include "scipp/core/variable_operations.h"
 
-namespace scipp::core {
+#include "scipp/dataset/counts.h"
+#include "scipp/dataset/dataset.h"
+#include "scipp/dataset/except.h"
+
+namespace scipp::dataset {
 
 namespace counts {
 
@@ -98,4 +99,4 @@ DataArray fromDensity(DataArray a, const std::vector<Dim> &dims) {
 }
 
 } // namespace counts
-} // namespace scipp::core
+} // namespace scipp::dataset

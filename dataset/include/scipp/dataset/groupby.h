@@ -2,20 +2,19 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#ifndef SCIPP_CORE_GROUPBY_H
-#define SCIPP_CORE_GROUPBY_H
+#pragma once
 
 #include <boost/container/small_vector.hpp>
 #include <vector>
 
-#include <scipp/core/dataset.h>
+#include <scipp/dataset/dataset.h>
 
-namespace scipp::core {
+namespace scipp::dataset {
 
 /// Implementation detail of GroupBy.
 ///
 /// Stores the actual grouping details, independent of the container type.
-class SCIPP_CORE_EXPORT GroupByGrouping {
+class SCIPP_DATASET_EXPORT GroupByGrouping {
 public:
   using group = boost::container::small_vector<Slice, 4>;
   GroupByGrouping(Variable &&key, std::vector<group> &&groups)
@@ -32,7 +31,7 @@ private:
 };
 
 /// Helper class for implementing "split-apply-combine" functionality.
-template <class T> class SCIPP_CORE_EXPORT GroupBy {
+template <class T> class SCIPP_DATASET_EXPORT GroupBy {
 public:
   GroupBy(const typename T::const_view_type &data, GroupByGrouping &&grouping)
       : m_data(data), m_grouping(std::move(grouping)) {}
@@ -63,18 +62,16 @@ private:
   GroupByGrouping m_grouping;
 };
 
-SCIPP_CORE_EXPORT GroupBy<DataArray> groupby(const DataArrayConstView &dataset,
-                                             const Dim dim);
-SCIPP_CORE_EXPORT GroupBy<DataArray> groupby(const DataArrayConstView &dataset,
-                                             const Dim dim,
-                                             const VariableConstView &bins);
+SCIPP_DATASET_EXPORT GroupBy<DataArray>
+groupby(const DataArrayConstView &dataset, const Dim dim);
+SCIPP_DATASET_EXPORT GroupBy<DataArray>
+groupby(const DataArrayConstView &dataset, const Dim dim,
+        const VariableConstView &bins);
 
-SCIPP_CORE_EXPORT GroupBy<Dataset> groupby(const DatasetConstView &dataset,
-                                           const Dim dim);
-SCIPP_CORE_EXPORT GroupBy<Dataset> groupby(const DatasetConstView &dataset,
-                                           const Dim dim,
-                                           const VariableConstView &bins);
+SCIPP_DATASET_EXPORT GroupBy<Dataset> groupby(const DatasetConstView &dataset,
+                                              const Dim dim);
+SCIPP_DATASET_EXPORT GroupBy<Dataset> groupby(const DatasetConstView &dataset,
+                                              const Dim dim,
+                                              const VariableConstView &bins);
 
-} // namespace scipp::core
-
-#endif // SCIPP_CORE_GROUPBY_H
+} // namespace scipp::dataset

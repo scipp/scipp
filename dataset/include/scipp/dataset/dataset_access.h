@@ -2,12 +2,11 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#ifndef SCIPP_CORE_DATASET_ACCESS_H
-#define SCIPP_CORE_DATASET_ACCESS_H
+#pragma once
 
 #include "scipp/core/variable.h"
 
-namespace scipp::core {
+namespace scipp::dataset {
 
 class DataArray;
 class Dataset;
@@ -53,6 +52,4 @@ private:
   DataArray *m_unaligned;
 };
 
-} // namespace scipp::core
-
-#endif // SCIPP_CORE_DATASET_ACCESS_H
+} // namespace scipp::dataset

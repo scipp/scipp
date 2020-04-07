@@ -2,8 +2,7 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#ifndef SCIPP_DATASET_H
-#define SCIPP_DATASET_H
+#pragma once
 
 #include <functional>
 #include <iosfwd>
@@ -15,12 +14,12 @@
 #include <boost/iterator/transform_iterator.hpp>
 
 #include "scipp/common/deep_ptr.h"
-#include "scipp/core/dataset_access.h"
-#include "scipp/core/except.h"
 #include "scipp/core/variable.h"
-#include "scipp/core/view_decl.h"
+#include "scipp/dataset/dataset_access.h"
+#include "scipp/dataset/except.h"
+#include "scipp/dataset/view_decl.h"
 
-namespace scipp::core {
+namespace scipp::dataset {
 
 class DataArray;
 class Dataset;
@@ -48,7 +47,7 @@ using dataset_item_map = std::unordered_map<std::string, DatasetData>;
 enum class AttrPolicy { Keep, Drop };
 
 /// Const view for a data item and related coordinates of Dataset.
-class SCIPP_CORE_EXPORT DataArrayConstView {
+class SCIPP_DATASET_EXPORT DataArrayConstView {
 public:
   DataArrayConstView() = default;
   DataArrayConstView(const Dataset &dataset,
@@ -122,17 +121,17 @@ private:
   template <class MapView> MapView makeView() const;
 };
 
-SCIPP_CORE_EXPORT bool operator==(const DataArrayConstView &a,
-                                  const DataArrayConstView &b);
-SCIPP_CORE_EXPORT bool operator!=(const DataArrayConstView &a,
-                                  const DataArrayConstView &b);
+SCIPP_DATASET_EXPORT bool operator==(const DataArrayConstView &a,
+                                     const DataArrayConstView &b);
+SCIPP_DATASET_EXPORT bool operator!=(const DataArrayConstView &a,
+                                     const DataArrayConstView &b);
 
 class DatasetConstView;
 class DatasetView;
 class Dataset;
 
 /// View for a data item and related coordinates of Dataset.
-class SCIPP_CORE_EXPORT DataArrayView : public DataArrayConstView {
+class SCIPP_DATASET_EXPORT DataArrayView : public DataArrayConstView {
 public:
   DataArrayView() = default;
   DataArrayView(Dataset &dataset, detail::dataset_item_map::value_type &data,
@@ -240,7 +239,7 @@ template <class D> make_item(D *)->make_item<D>;
 } // namespace detail
 
 /// Collection of data arrays.
-class SCIPP_CORE_EXPORT Dataset {
+class SCIPP_DATASET_EXPORT Dataset {
 public:
   using key_type = std::string;
   using mapped_type = DataArray;
@@ -505,7 +504,7 @@ template <class T1, class T2> auto union_(const T1 &a, const T2 &b) {
 }
 
 /// Const view for Dataset, implementing slicing and item selection.
-class SCIPP_CORE_EXPORT DatasetConstView {
+class SCIPP_DATASET_EXPORT DatasetConstView {
   struct make_const_view {
     constexpr const DataArrayConstView &
     operator()(const DataArrayView &view) const noexcept {
@@ -605,7 +604,7 @@ protected:
 };
 
 /// View for Dataset, implementing slicing and item selection.
-class SCIPP_CORE_EXPORT DatasetView : public DatasetConstView {
+class SCIPP_DATASET_EXPORT DatasetView : public DatasetConstView {
   explicit DatasetView() : DatasetConstView(), m_mutableDataset(nullptr) {}
 
 public:
@@ -694,21 +693,21 @@ private:
   Dataset *m_mutableDataset;
 };
 
-[[nodiscard]] SCIPP_CORE_EXPORT DataArray
+[[nodiscard]] SCIPP_DATASET_EXPORT DataArray
 copy(const DataArrayConstView &array,
      const AttrPolicy attrPolicy = AttrPolicy::Keep);
-[[nodiscard]] SCIPP_CORE_EXPORT Dataset
+[[nodiscard]] SCIPP_DATASET_EXPORT Dataset
 copy(const DatasetConstView &dataset,
      const AttrPolicy attrPolicy = AttrPolicy::Keep);
-SCIPP_CORE_EXPORT DataArrayView
+SCIPP_DATASET_EXPORT DataArrayView
 copy(const DataArrayConstView &array, const DataArrayView &out,
      const AttrPolicy attrPolicy = AttrPolicy::Keep);
-SCIPP_CORE_EXPORT DatasetView
+SCIPP_DATASET_EXPORT DatasetView
 copy(const DatasetConstView &dataset, const DatasetView &out,
      const AttrPolicy attrPolicy = AttrPolicy::Keep);
 
 /// Data array, a variable with coordinates, masks, and attributes.
-class SCIPP_CORE_EXPORT DataArray {
+class SCIPP_DATASET_EXPORT DataArray {
 public:
   using const_view_type = DataArrayConstView;
   using view_type = DataArrayView;
@@ -884,128 +883,128 @@ struct UnalignedData {
   DataArray data;
 };
 
-SCIPP_CORE_EXPORT DataArray operator+(const DataArrayConstView &a,
-                                      const DataArrayConstView &b);
-SCIPP_CORE_EXPORT DataArray operator-(const DataArrayConstView &a,
-                                      const DataArrayConstView &b);
-SCIPP_CORE_EXPORT DataArray operator*(const DataArrayConstView &a,
-                                      const DataArrayConstView &b);
-SCIPP_CORE_EXPORT DataArray operator/(const DataArrayConstView &a,
-                                      const DataArrayConstView &b);
+SCIPP_DATASET_EXPORT DataArray operator+(const DataArrayConstView &a,
+                                         const DataArrayConstView &b);
+SCIPP_DATASET_EXPORT DataArray operator-(const DataArrayConstView &a,
+                                         const DataArrayConstView &b);
+SCIPP_DATASET_EXPORT DataArray operator*(const DataArrayConstView &a,
+                                         const DataArrayConstView &b);
+SCIPP_DATASET_EXPORT DataArray operator/(const DataArrayConstView &a,
+                                         const DataArrayConstView &b);
 
-SCIPP_CORE_EXPORT DataArray operator+(const DataArrayConstView &a,
-                                      const VariableConstView &b);
-SCIPP_CORE_EXPORT DataArray operator-(const DataArrayConstView &a,
-                                      const VariableConstView &b);
-SCIPP_CORE_EXPORT DataArray operator*(const DataArrayConstView &a,
-                                      const VariableConstView &b);
-SCIPP_CORE_EXPORT DataArray operator/(const DataArrayConstView &a,
-                                      const VariableConstView &b);
+SCIPP_DATASET_EXPORT DataArray operator+(const DataArrayConstView &a,
+                                         const VariableConstView &b);
+SCIPP_DATASET_EXPORT DataArray operator-(const DataArrayConstView &a,
+                                         const VariableConstView &b);
+SCIPP_DATASET_EXPORT DataArray operator*(const DataArrayConstView &a,
+                                         const VariableConstView &b);
+SCIPP_DATASET_EXPORT DataArray operator/(const DataArrayConstView &a,
+                                         const VariableConstView &b);
 
-SCIPP_CORE_EXPORT DataArray operator+(const VariableConstView &a,
-                                      const DataArrayConstView &b);
-SCIPP_CORE_EXPORT DataArray operator-(const VariableConstView &a,
-                                      const DataArrayConstView &b);
-SCIPP_CORE_EXPORT DataArray operator*(const VariableConstView &a,
-                                      const DataArrayConstView &b);
-SCIPP_CORE_EXPORT DataArray operator/(const VariableConstView &a,
-                                      const DataArrayConstView &b);
+SCIPP_DATASET_EXPORT DataArray operator+(const VariableConstView &a,
+                                         const DataArrayConstView &b);
+SCIPP_DATASET_EXPORT DataArray operator-(const VariableConstView &a,
+                                         const DataArrayConstView &b);
+SCIPP_DATASET_EXPORT DataArray operator*(const VariableConstView &a,
+                                         const DataArrayConstView &b);
+SCIPP_DATASET_EXPORT DataArray operator/(const VariableConstView &a,
+                                         const DataArrayConstView &b);
 
-SCIPP_CORE_EXPORT Dataset operator+(const Dataset &lhs, const Dataset &rhs);
-SCIPP_CORE_EXPORT Dataset operator+(const Dataset &lhs,
-                                    const DatasetConstView &rhs);
-SCIPP_CORE_EXPORT Dataset operator+(const Dataset &lhs,
-                                    const DataArrayConstView &rhs);
-SCIPP_CORE_EXPORT Dataset operator+(const DatasetConstView &lhs,
-                                    const Dataset &rhs);
-SCIPP_CORE_EXPORT Dataset operator+(const DatasetConstView &lhs,
-                                    const DatasetConstView &rhs);
-SCIPP_CORE_EXPORT Dataset operator+(const DatasetConstView &lhs,
-                                    const DataArrayConstView &rhs);
-SCIPP_CORE_EXPORT Dataset operator+(const DataArrayConstView &lhs,
-                                    const Dataset &rhs);
-SCIPP_CORE_EXPORT Dataset operator+(const DataArrayConstView &lhs,
-                                    const DatasetConstView &rhs);
-SCIPP_CORE_EXPORT Dataset operator+(const Dataset &lhs,
-                                    const VariableConstView &rhs);
-SCIPP_CORE_EXPORT Dataset operator+(const VariableConstView &lhs,
-                                    const Dataset &rhs);
-SCIPP_CORE_EXPORT Dataset operator+(const DatasetConstView &lhs,
-                                    const VariableConstView &rhs);
-SCIPP_CORE_EXPORT Dataset operator+(const VariableConstView &lhs,
-                                    const DatasetConstView &rhs);
+SCIPP_DATASET_EXPORT Dataset operator+(const Dataset &lhs, const Dataset &rhs);
+SCIPP_DATASET_EXPORT Dataset operator+(const Dataset &lhs,
+                                       const DatasetConstView &rhs);
+SCIPP_DATASET_EXPORT Dataset operator+(const Dataset &lhs,
+                                       const DataArrayConstView &rhs);
+SCIPP_DATASET_EXPORT Dataset operator+(const DatasetConstView &lhs,
+                                       const Dataset &rhs);
+SCIPP_DATASET_EXPORT Dataset operator+(const DatasetConstView &lhs,
+                                       const DatasetConstView &rhs);
+SCIPP_DATASET_EXPORT Dataset operator+(const DatasetConstView &lhs,
+                                       const DataArrayConstView &rhs);
+SCIPP_DATASET_EXPORT Dataset operator+(const DataArrayConstView &lhs,
+                                       const Dataset &rhs);
+SCIPP_DATASET_EXPORT Dataset operator+(const DataArrayConstView &lhs,
+                                       const DatasetConstView &rhs);
+SCIPP_DATASET_EXPORT Dataset operator+(const Dataset &lhs,
+                                       const VariableConstView &rhs);
+SCIPP_DATASET_EXPORT Dataset operator+(const VariableConstView &lhs,
+                                       const Dataset &rhs);
+SCIPP_DATASET_EXPORT Dataset operator+(const DatasetConstView &lhs,
+                                       const VariableConstView &rhs);
+SCIPP_DATASET_EXPORT Dataset operator+(const VariableConstView &lhs,
+                                       const DatasetConstView &rhs);
 
-SCIPP_CORE_EXPORT Dataset operator-(const Dataset &lhs, const Dataset &rhs);
-SCIPP_CORE_EXPORT Dataset operator-(const Dataset &lhs,
-                                    const DatasetConstView &rhs);
-SCIPP_CORE_EXPORT Dataset operator-(const Dataset &lhs,
-                                    const DataArrayConstView &rhs);
-SCIPP_CORE_EXPORT Dataset operator-(const DatasetConstView &lhs,
-                                    const Dataset &rhs);
-SCIPP_CORE_EXPORT Dataset operator-(const DatasetConstView &lhs,
-                                    const DatasetConstView &rhs);
-SCIPP_CORE_EXPORT Dataset operator-(const DatasetConstView &lhs,
-                                    const DataArrayConstView &rhs);
-SCIPP_CORE_EXPORT Dataset operator-(const DataArrayConstView &lhs,
-                                    const Dataset &rhs);
-SCIPP_CORE_EXPORT Dataset operator-(const DataArrayConstView &lhs,
-                                    const DatasetConstView &rhs);
-SCIPP_CORE_EXPORT Dataset operator-(const Dataset &lhs,
-                                    const VariableConstView &rhs);
-SCIPP_CORE_EXPORT Dataset operator-(const VariableConstView &lhs,
-                                    const Dataset &rhs);
-SCIPP_CORE_EXPORT Dataset operator-(const DatasetConstView &lhs,
-                                    const VariableConstView &rhs);
-SCIPP_CORE_EXPORT Dataset operator-(const VariableConstView &lhs,
-                                    const DatasetConstView &rhs);
+SCIPP_DATASET_EXPORT Dataset operator-(const Dataset &lhs, const Dataset &rhs);
+SCIPP_DATASET_EXPORT Dataset operator-(const Dataset &lhs,
+                                       const DatasetConstView &rhs);
+SCIPP_DATASET_EXPORT Dataset operator-(const Dataset &lhs,
+                                       const DataArrayConstView &rhs);
+SCIPP_DATASET_EXPORT Dataset operator-(const DatasetConstView &lhs,
+                                       const Dataset &rhs);
+SCIPP_DATASET_EXPORT Dataset operator-(const DatasetConstView &lhs,
+                                       const DatasetConstView &rhs);
+SCIPP_DATASET_EXPORT Dataset operator-(const DatasetConstView &lhs,
+                                       const DataArrayConstView &rhs);
+SCIPP_DATASET_EXPORT Dataset operator-(const DataArrayConstView &lhs,
+                                       const Dataset &rhs);
+SCIPP_DATASET_EXPORT Dataset operator-(const DataArrayConstView &lhs,
+                                       const DatasetConstView &rhs);
+SCIPP_DATASET_EXPORT Dataset operator-(const Dataset &lhs,
+                                       const VariableConstView &rhs);
+SCIPP_DATASET_EXPORT Dataset operator-(const VariableConstView &lhs,
+                                       const Dataset &rhs);
+SCIPP_DATASET_EXPORT Dataset operator-(const DatasetConstView &lhs,
+                                       const VariableConstView &rhs);
+SCIPP_DATASET_EXPORT Dataset operator-(const VariableConstView &lhs,
+                                       const DatasetConstView &rhs);
 
-SCIPP_CORE_EXPORT Dataset operator*(const Dataset &lhs, const Dataset &rhs);
-SCIPP_CORE_EXPORT Dataset operator*(const Dataset &lhs,
-                                    const DatasetConstView &rhs);
-SCIPP_CORE_EXPORT Dataset operator*(const Dataset &lhs,
-                                    const DataArrayConstView &rhs);
-SCIPP_CORE_EXPORT Dataset operator*(const DatasetConstView &lhs,
-                                    const Dataset &rhs);
-SCIPP_CORE_EXPORT Dataset operator*(const DatasetConstView &lhs,
-                                    const DatasetConstView &rhs);
-SCIPP_CORE_EXPORT Dataset operator*(const DatasetConstView &lhs,
-                                    const DataArrayConstView &rhs);
-SCIPP_CORE_EXPORT Dataset operator*(const DataArrayConstView &lhs,
-                                    const Dataset &rhs);
-SCIPP_CORE_EXPORT Dataset operator*(const DataArrayConstView &lhs,
-                                    const DatasetConstView &rhs);
-SCIPP_CORE_EXPORT Dataset operator*(const Dataset &lhs,
-                                    const VariableConstView &rhs);
-SCIPP_CORE_EXPORT Dataset operator*(const VariableConstView &lhs,
-                                    const Dataset &rhs);
-SCIPP_CORE_EXPORT Dataset operator*(const DatasetConstView &lhs,
-                                    const VariableConstView &rhs);
-SCIPP_CORE_EXPORT Dataset operator*(const VariableConstView &lhs,
-                                    const DatasetConstView &rhs);
+SCIPP_DATASET_EXPORT Dataset operator*(const Dataset &lhs, const Dataset &rhs);
+SCIPP_DATASET_EXPORT Dataset operator*(const Dataset &lhs,
+                                       const DatasetConstView &rhs);
+SCIPP_DATASET_EXPORT Dataset operator*(const Dataset &lhs,
+                                       const DataArrayConstView &rhs);
+SCIPP_DATASET_EXPORT Dataset operator*(const DatasetConstView &lhs,
+                                       const Dataset &rhs);
+SCIPP_DATASET_EXPORT Dataset operator*(const DatasetConstView &lhs,
+                                       const DatasetConstView &rhs);
+SCIPP_DATASET_EXPORT Dataset operator*(const DatasetConstView &lhs,
+                                       const DataArrayConstView &rhs);
+SCIPP_DATASET_EXPORT Dataset operator*(const DataArrayConstView &lhs,
+                                       const Dataset &rhs);
+SCIPP_DATASET_EXPORT Dataset operator*(const DataArrayConstView &lhs,
+                                       const DatasetConstView &rhs);
+SCIPP_DATASET_EXPORT Dataset operator*(const Dataset &lhs,
+                                       const VariableConstView &rhs);
+SCIPP_DATASET_EXPORT Dataset operator*(const VariableConstView &lhs,
+                                       const Dataset &rhs);
+SCIPP_DATASET_EXPORT Dataset operator*(const DatasetConstView &lhs,
+                                       const VariableConstView &rhs);
+SCIPP_DATASET_EXPORT Dataset operator*(const VariableConstView &lhs,
+                                       const DatasetConstView &rhs);
 
-SCIPP_CORE_EXPORT Dataset operator/(const Dataset &lhs,
-                                    const DatasetConstView &rhs);
-SCIPP_CORE_EXPORT Dataset operator/(const Dataset &lhs, const Dataset &rhs);
-SCIPP_CORE_EXPORT Dataset operator/(const Dataset &lhs,
-                                    const DataArrayConstView &rhs);
-SCIPP_CORE_EXPORT Dataset operator/(const DatasetConstView &lhs,
-                                    const Dataset &rhs);
-SCIPP_CORE_EXPORT Dataset operator/(const DatasetConstView &lhs,
-                                    const DatasetConstView &rhs);
-SCIPP_CORE_EXPORT Dataset operator/(const DatasetConstView &lhs,
-                                    const DataArrayConstView &rhs);
-SCIPP_CORE_EXPORT Dataset operator/(const DataArrayConstView &lhs,
-                                    const Dataset &rhs);
-SCIPP_CORE_EXPORT Dataset operator/(const DataArrayConstView &lhs,
-                                    const DatasetConstView &rhs);
-SCIPP_CORE_EXPORT Dataset operator/(const Dataset &lhs,
-                                    const VariableConstView &rhs);
-SCIPP_CORE_EXPORT Dataset operator/(const VariableConstView &lhs,
-                                    const Dataset &rhs);
-SCIPP_CORE_EXPORT Dataset operator/(const DatasetConstView &lhs,
-                                    const VariableConstView &rhs);
-SCIPP_CORE_EXPORT Dataset operator/(const VariableConstView &lhs,
-                                    const DatasetConstView &rhs);
+SCIPP_DATASET_EXPORT Dataset operator/(const Dataset &lhs,
+                                       const DatasetConstView &rhs);
+SCIPP_DATASET_EXPORT Dataset operator/(const Dataset &lhs, const Dataset &rhs);
+SCIPP_DATASET_EXPORT Dataset operator/(const Dataset &lhs,
+                                       const DataArrayConstView &rhs);
+SCIPP_DATASET_EXPORT Dataset operator/(const DatasetConstView &lhs,
+                                       const Dataset &rhs);
+SCIPP_DATASET_EXPORT Dataset operator/(const DatasetConstView &lhs,
+                                       const DatasetConstView &rhs);
+SCIPP_DATASET_EXPORT Dataset operator/(const DatasetConstView &lhs,
+                                       const DataArrayConstView &rhs);
+SCIPP_DATASET_EXPORT Dataset operator/(const DataArrayConstView &lhs,
+                                       const Dataset &rhs);
+SCIPP_DATASET_EXPORT Dataset operator/(const DataArrayConstView &lhs,
+                                       const DatasetConstView &rhs);
+SCIPP_DATASET_EXPORT Dataset operator/(const Dataset &lhs,
+                                       const VariableConstView &rhs);
+SCIPP_DATASET_EXPORT Dataset operator/(const VariableConstView &lhs,
+                                       const Dataset &rhs);
+SCIPP_DATASET_EXPORT Dataset operator/(const DatasetConstView &lhs,
+                                       const VariableConstView &rhs);
+SCIPP_DATASET_EXPORT Dataset operator/(const VariableConstView &lhs,
+                                       const DatasetConstView &rhs);
 
 template <typename T, typename = std::enable_if_t<!is_container_or_view<T>()>>
 Dataset operator+(const T value, const DatasetConstView &a) {
@@ -1041,46 +1040,48 @@ Dataset operator/(const DatasetConstView &a, const T value) {
   return a / makeVariable<T>(Values{value});
 }
 
-SCIPP_CORE_EXPORT DataArray astype(const DataArrayConstView &var,
-                                   const DType type);
+SCIPP_DATASET_EXPORT DataArray astype(const DataArrayConstView &var,
+                                      const DType type);
 
-SCIPP_CORE_EXPORT DataArray histogram(const DataArrayConstView &sparse,
-                                      const Variable &binEdges);
-SCIPP_CORE_EXPORT DataArray histogram(const DataArrayConstView &sparse,
-                                      const VariableConstView &binEdges);
-SCIPP_CORE_EXPORT Dataset histogram(const Dataset &dataset,
-                                    const VariableConstView &bins);
-SCIPP_CORE_EXPORT Dataset histogram(const Dataset &dataset, const Dim &dim);
+SCIPP_DATASET_EXPORT DataArray histogram(const DataArrayConstView &sparse,
+                                         const Variable &binEdges);
+SCIPP_DATASET_EXPORT DataArray histogram(const DataArrayConstView &sparse,
+                                         const VariableConstView &binEdges);
+SCIPP_DATASET_EXPORT Dataset histogram(const Dataset &dataset,
+                                       const VariableConstView &bins);
+SCIPP_DATASET_EXPORT Dataset histogram(const Dataset &dataset, const Dim &dim);
 
-SCIPP_CORE_EXPORT Dataset merge(const DatasetConstView &a,
-                                const DatasetConstView &b);
+SCIPP_DATASET_EXPORT Dataset merge(const DatasetConstView &a,
+                                   const DatasetConstView &b);
 
-SCIPP_CORE_EXPORT DataArray flatten(const DataArrayConstView &a, const Dim dim);
-SCIPP_CORE_EXPORT Dataset flatten(const DatasetConstView &d, const Dim dim);
+SCIPP_DATASET_EXPORT DataArray flatten(const DataArrayConstView &a,
+                                       const Dim dim);
+SCIPP_DATASET_EXPORT Dataset flatten(const DatasetConstView &d, const Dim dim);
 
-SCIPP_CORE_EXPORT DataArray sum(const DataArrayConstView &a, const Dim dim);
-SCIPP_CORE_EXPORT Dataset sum(const DatasetConstView &d, const Dim dim);
+SCIPP_DATASET_EXPORT DataArray sum(const DataArrayConstView &a, const Dim dim);
+SCIPP_DATASET_EXPORT Dataset sum(const DatasetConstView &d, const Dim dim);
 
-SCIPP_CORE_EXPORT DataArray mean(const DataArrayConstView &a, const Dim dim);
-SCIPP_CORE_EXPORT Dataset mean(const DatasetConstView &d, const Dim dim);
+SCIPP_DATASET_EXPORT DataArray mean(const DataArrayConstView &a, const Dim dim);
+SCIPP_DATASET_EXPORT Dataset mean(const DatasetConstView &d, const Dim dim);
 
-SCIPP_CORE_EXPORT DataArray concatenate(const DataArrayConstView &a,
-                                        const DataArrayConstView &b,
-                                        const Dim dim);
-SCIPP_CORE_EXPORT Dataset concatenate(const DatasetConstView &a,
-                                      const DatasetConstView &b, const Dim dim);
+SCIPP_DATASET_EXPORT DataArray concatenate(const DataArrayConstView &a,
+                                           const DataArrayConstView &b,
+                                           const Dim dim);
+SCIPP_DATASET_EXPORT Dataset concatenate(const DatasetConstView &a,
+                                         const DatasetConstView &b,
+                                         const Dim dim);
 
-SCIPP_CORE_EXPORT DataArray rebin(const DataArrayConstView &a, const Dim dim,
-                                  const VariableConstView &coord);
-SCIPP_CORE_EXPORT Dataset rebin(const DatasetConstView &d, const Dim dim,
-                                const VariableConstView &coord);
+SCIPP_DATASET_EXPORT DataArray rebin(const DataArrayConstView &a, const Dim dim,
+                                     const VariableConstView &coord);
+SCIPP_DATASET_EXPORT Dataset rebin(const DatasetConstView &d, const Dim dim,
+                                   const VariableConstView &coord);
 
-SCIPP_CORE_EXPORT DataArray resize(const DataArrayConstView &a, const Dim dim,
-                                   const scipp::index size);
-SCIPP_CORE_EXPORT Dataset resize(const DatasetConstView &d, const Dim dim,
-                                 const scipp::index size);
+SCIPP_DATASET_EXPORT DataArray resize(const DataArrayConstView &a,
+                                      const Dim dim, const scipp::index size);
+SCIPP_DATASET_EXPORT Dataset resize(const DatasetConstView &d, const Dim dim,
+                                    const scipp::index size);
 
-[[nodiscard]] SCIPP_CORE_EXPORT DataArray
+[[nodiscard]] SCIPP_DATASET_EXPORT DataArray
 reciprocal(const DataArrayConstView &a);
 
 /// Return one of the inputs if they are the same, throw otherwise.
@@ -1092,16 +1093,14 @@ template <class T> T same(const T &a, const T &b) {
 /// Union the masks of the two proxies.
 /// If any of the masks repeat they are OR'ed.
 /// The result is stored in a new map
-SCIPP_CORE_EXPORT std::map<typename MasksConstView::key_type,
-                           typename MasksConstView::mapped_type>
+SCIPP_DATASET_EXPORT std::map<typename MasksConstView::key_type,
+                              typename MasksConstView::mapped_type>
 union_or(const MasksConstView &currentMasks, const MasksConstView &otherMasks);
 
 /// Union the masks of the two proxies.
 /// If any of the masks repeat they are OR'ed.
 /// The result is stored in the first view.
-SCIPP_CORE_EXPORT void union_or_in_place(const MasksView &currentMasks,
-                                         const MasksConstView &otherMasks);
+SCIPP_DATASET_EXPORT void union_or_in_place(const MasksView &currentMasks,
+                                            const MasksConstView &otherMasks);
 
-} // namespace scipp::core
-
-#endif // SCIPP_DATASET_H
+} // namespace scipp::dataset
