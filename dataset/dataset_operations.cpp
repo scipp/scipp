@@ -11,8 +11,8 @@
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/except.h"
 
+#include "../core/variable_operations_common.h"
 #include "dataset_operations_common.h"
-#include "variable_operations_common.h"
 
 namespace scipp::dataset {
 
@@ -23,7 +23,7 @@ auto union_(const DatasetConstView &a, const DatasetConstView &b) {
     out.emplace(item.name(), item);
   for (const auto &item : b) {
     if (const auto it = a.find(item.name()); it != a.end())
-      expect::equals(item, *it);
+      core::expect::equals(item, *it);
     else
       out.emplace(item.name(), item);
   }
@@ -45,7 +45,7 @@ Dataset merge(const DatasetConstView &a, const DatasetConstView &b) {
 template <class View>
 typename View::value_type join_edges(const View &a, const View &b,
                                      const Dim dim) {
-  expect::equals(a.slice({dim, a.dims()[dim] - 1}), b.slice({dim, 0}));
+  core::expect::equals(a.slice({dim, a.dims()[dim] - 1}), b.slice({dim, 0}));
   return concatenate(a.slice({dim, 0, a.dims()[dim] - 1}), b, dim);
 }
 

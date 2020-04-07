@@ -25,6 +25,16 @@
 #include "scipp/core/variable_keyword_arg_constructor.h"
 #include "scipp/units/unit.h"
 
+namespace scipp::dataset {
+class DatasetConstView;
+class DatasetView;
+class Dataset;
+class DataArray;
+class DataArrayView;
+class DataArrayConstView;
+template <class T> typename T::view_type makeViewItem(T &);
+} // namespace scipp::dataset
+
 namespace scipp::core {
 
 namespace detail {
@@ -262,18 +272,15 @@ template <class T> constexpr bool is_variable_or_view() {
          std::is_same_v<T, VariableView>;
 }
 
-class DatasetConstView;
-class DatasetView;
-class Dataset;
-class DataArray;
-class DataArrayView;
-
 template <class T> constexpr bool is_container_or_view() {
-  return std::is_same_v<T, Dataset> || std::is_same_v<T, DatasetView> ||
-         std::is_same_v<T, DatasetConstView> || std::is_same_v<T, Variable> ||
-         std::is_same_v<T, VariableView> ||
-         std::is_same_v<T, VariableConstView> || std::is_same_v<T, DataArray> ||
-         std::is_same_v<T, DataArrayView>;
+  return std::is_same_v<T, dataset::Dataset> ||
+         std::is_same_v<T, dataset::DatasetView> ||
+         std::is_same_v<T, dataset::DatasetConstView> ||
+         std::is_same_v<T, Variable> || std::is_same_v<T, VariableView> ||
+         std::is_same_v<T, VariableConstView> ||
+         std::is_same_v<T, dataset::DataArray> ||
+         std::is_same_v<T, dataset::DataArrayView> ||
+         std::is_same_v<T, dataset::DataArrayConstView>;
 }
 
 namespace detail {
@@ -723,9 +730,6 @@ protected:
   VariableConceptHandle m_view;
 };
 
-class DataArrayConstView;
-template <class T> typename T::view_type makeViewItem(T &);
-
 /** Mutable view into (a subset of) a Variable.
  *
  * By inheriting from VariableConstView any code that works for
@@ -838,8 +842,8 @@ public:
 
 private:
   friend class Variable;
-  friend class DataArrayConstView;
-  template <class T> friend typename T::view_type makeViewItem(T &);
+  friend class dataset::DataArrayConstView;
+  template <class T> friend typename T::view_type dataset::makeViewItem(T &);
 
   // For internal use in DataArrayConstView.
   explicit VariableView(VariableConstView &&base)
@@ -862,15 +866,24 @@ private:
 SCIPP_CORE_EXPORT Variable copy(const VariableConstView &var);
 
 bool is_events(const VariableConstView &var);
-bool is_events(const DataArrayConstView &array);
+bool is_events(const dataset::DataArrayConstView &array);
 
 } // namespace scipp::core
 
 namespace scipp {
+using core::Dimensions;
+using core::Dims;
+using core::DType;
+using core::dtype;
+using core::event_list;
+using core::makeVariable;
+using core::Shape;
 using core::Slice;
+using core::Values;
 using core::Variable;
 using core::VariableConstView;
 using core::VariableView;
+using core::Variances;
 }
 
 #endif // SCIPP_CORE_VARIABLE_H

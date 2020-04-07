@@ -13,6 +13,8 @@
 
 namespace scipp::units {
 
+SCIPP_UNITS_EXPORT std::ostream &operator<<(std::ostream &os, const Dim dim);
+
 SCIPP_UNITS_EXPORT std::string to_string(const units::Unit &unit);
 template <class T> std::string to_string(const std::initializer_list<T> items);
 

@@ -24,6 +24,7 @@ set(SRC_FILES
     string.cpp
     unaligned.cpp
     variable_instantiate_dataset.cpp
+    variable_reduction.cpp
 )
 
 set(LINK_TYPE "STATIC")

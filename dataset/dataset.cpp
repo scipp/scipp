@@ -149,13 +149,13 @@ DataArray Dataset::extract(const std::string &name) {
 
 /// Return a const view to data and coordinates with given name.
 DataArrayConstView Dataset::operator[](const std::string &name) const {
-  expect::contains(*this, name);
+  scipp::expect::contains(*this, name);
   return DataArrayConstView(*this, *m_data.find(name));
 }
 
 /// Return a view to data and coordinates with given name.
 DataArrayView Dataset::operator[](const std::string &name) {
-  expect::contains(*this, name);
+  scipp::expect::contains(*this, name);
   return DataArrayView(*this, *m_data.find(name));
 }
 
@@ -258,7 +258,7 @@ void Dataset::setAttr(const std::string &attrName, Variable attr) {
 /// Set (insert or replace) an attribute for item with given name.
 void Dataset::setAttr(const std::string &name, const std::string &attrName,
                       Variable attr) {
-  expect::contains(*this, name);
+  scipp::expect::contains(*this, name);
   if (!operator[](name).dims().contains(attr.dims()))
     throw except::DimensionError(
         "Attribute dimensions must match and not exceed dimensions of data.");
@@ -312,14 +312,14 @@ void Dataset::setData(const std::string &name, DataArray data) {
 
   for (auto &&[dim, coord] : dataset.m_coords) {
     if (const auto it = m_coords.find(dim); it != m_coords.end())
-      expect::equals(coord, it->second);
+      core::expect::equals(coord, it->second);
     else
       setCoord(dim, std::move(coord));
   }
 
   for (auto &&[nm, mask] : dataset.m_masks)
     if (const auto it = m_masks.find(std::string(nm)); it != m_masks.end())
-      expect::equals(mask, it->second);
+      core::expect::equals(mask, it->second);
     else
       setMask(std::string(nm), std::move(mask));
 
@@ -366,7 +366,7 @@ void Dataset::eraseAttr(const std::string &attrName) {
 
 /// Removes attribute with given attribute name from the given item.
 void Dataset::eraseAttr(const std::string &name, const std::string &attrName) {
-  expect::contains(*this, name);
+  scipp::expect::contains(*this, name);
   erase_from_map(m_data[name].attrs, attrName);
 }
 
@@ -527,7 +527,7 @@ Dimensions DataArrayConstView::dims() const noexcept {
 /// Return the dtype of the data.
 DType DataArrayConstView::dtype() const {
   return hasData() ? data().dtype()
-                   : core::unaligned::is_realigned_events(*this)
+                   : dataset::unaligned::is_realigned_events(*this)
                          ? event_dtype(unaligned().dtype())
                          : unaligned().dtype();
 }
@@ -643,7 +643,7 @@ MasksConstView DataArray::masks() const { return get().masks(); }
 
 DataArrayConstView DataArrayConstView::slice(const Slice slice1) const {
   const auto &dims_ = dims();
-  expect::validSlice(dims_, slice1);
+  core::expect::validSlice(dims_, slice1);
   auto tmp(m_slices);
   tmp.emplace_back(slice1, dims_[slice1.dim()]);
   if (!m_data->second.data && hasData()) {
@@ -677,7 +677,7 @@ DataArrayView::DataArrayView(Dataset &dataset,
       m_mutableDataset(&dataset), m_mutableData(&data) {}
 
 DataArrayView DataArrayView::slice(const Slice slice1) const {
-  expect::validSlice(dims(), slice1);
+  core::expect::validSlice(dims(), slice1);
   auto tmp(slices());
   tmp.emplace_back(slice1, dims()[slice1.dim()]);
   if (!m_mutableData->second.data && hasData()) {
@@ -862,7 +862,7 @@ DatasetConstView::slice_items(const T &view, const Slice slice) {
     // Fallback: Could not determine extent from data (not data that depends on
     // slicing dimension), use `dimensions()` to also consider coords.
     const auto currentDims = view.dimensions();
-    expect::validSlice(currentDims, slice);
+    core::expect::validSlice(currentDims, slice);
     extent = currentDims.at(slice.dim());
   }
   slices.emplace_back(slice, extent);

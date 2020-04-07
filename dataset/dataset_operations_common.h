@@ -2,14 +2,13 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#ifndef SCIPP_CORE_DATASET_OPERATIONS_COMMON_H
-#define SCIPP_CORE_DATASET_OPERATIONS_COMMON_H
+#pragma once
 
 #include <map>
 
-#include "scipp/core/dataset.h"
+#include "scipp/dataset/dataset.h"
 
-namespace scipp::core {
+namespace scipp::dataset {
 
 /// Return a copy of map-like objects such as CoordView.
 template <class T> auto copy_map(const T &map) {
@@ -161,6 +160,4 @@ VariableView mean(const VariableConstView &var, const Dim dim,
 VariableView sum(const VariableConstView &var, const Dim dim,
                  const MasksConstView &masks, const VariableView &out);
 
-} // namespace scipp::core
-
-#endif // SCIPP_CORE_DATASET_OPERATIONS_COMMON_H
+} // namespace scipp::dataset

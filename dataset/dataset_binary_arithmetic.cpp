@@ -6,7 +6,9 @@
 
 #include "scipp/dataset/dataset.h"
 
-#include "operators.h"
+#include "../core/operators.h"
+
+using namespace scipp::core;
 
 namespace scipp::dataset {
 
@@ -14,7 +16,7 @@ template <class Op>
 void dry_run_op(const DataArrayView &a, const VariableConstView &b, Op op) {
   // This dry run relies on the knowledge that the implementation of operations
   // for variable simply calls transform_in_place and nothing else.
-  dry_run::transform_in_place(a.data(), b, op);
+  core::dry_run::transform_in_place(a.data(), b, op);
 }
 
 template <class Op>

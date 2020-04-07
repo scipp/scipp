@@ -14,8 +14,10 @@
 #include "scipp/dataset/groupby.h"
 #include "scipp/dataset/histogram.h"
 
+#include "../core/variable_operations_common.h"
 #include "dataset_operations_common.h"
-#include "variable_operations_common.h"
+
+using namespace scipp::core;
 
 namespace scipp::dataset {
 
@@ -78,7 +80,8 @@ T GroupBy<T>::reduce(Op op, const Dim reductionDim, CoordOp coord_op) const {
         static_cast<void>(coord_op);
     }
   };
-  parallel::parallel_for(parallel::blocked_range(0, size()), process_groups);
+  core::parallel::parallel_for(core::parallel::blocked_range(0, size()),
+                               process_groups);
   return out;
 }
 

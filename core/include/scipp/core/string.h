@@ -9,12 +9,11 @@
 
 #include "scipp-core_export.h"
 #include "scipp/common/index.h"
+#include "scipp/core/dimensions.h"
 #include "scipp/core/dtype.h"
-#include "scipp/units/unit.h"
 
 namespace scipp::core {
 
-class Dimensions;
 class Variable;
 class VariableView;
 class VariableConstView;
@@ -22,7 +21,6 @@ class Slice;
 template <class Id, class Key, class Value> class ConstView;
 template <class T, class U> class MutableView;
 
-SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os, const Dim dim);
 SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
                                            const Dimensions &dims);
 SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
@@ -32,6 +30,9 @@ SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
 SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
                                            const Variable &variable);
 
+SCIPP_CORE_EXPORT const std::string &to_string(const std::string &s);
+SCIPP_CORE_EXPORT std::string_view to_string(const std::string_view s);
+SCIPP_CORE_EXPORT std::string to_string(const char *s);
 SCIPP_CORE_EXPORT std::string to_string(const bool b);
 SCIPP_CORE_EXPORT std::string to_string(const DType dtype);
 SCIPP_CORE_EXPORT std::string to_string(const Dimensions &dims);
@@ -92,6 +93,11 @@ template <class T> std::string array_to_string(const T &arr) {
   s += "]";
   return s;
 }
+
+SCIPP_CORE_EXPORT std::string
+format_variable(const std::string &key, const VariableConstView &variable,
+                const Dimensions &datasetDims = Dimensions());
+
 } // namespace scipp::core
 
 #endif // SCIPP_CORE_STRING_H

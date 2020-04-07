@@ -7,7 +7,8 @@
 #include <string>
 
 #include "scipp-dataset_export.h"
-#include "scipp/dataset/dataset.h"
+#include "scipp/core/string.h"
+#include "scipp/dataset/view_forward.h"
 
 namespace scipp::dataset {
 

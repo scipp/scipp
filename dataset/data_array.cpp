@@ -142,7 +142,7 @@ auto apply_op_sparse_dense(const Coord &coord, const Edges &edges,
   using W = std::decay_t<decltype(weights)>;
   constexpr bool vars = is_ValueAndVariance_v<W>;
   using ElemT = typename core::detail::element_type_t<W>::value_type;
-  using T = sparse_container<ElemT>;
+  using T = event_list<ElemT>;
   T out_vals;
   T out_vars;
   out_vals.reserve(coord.size());
@@ -181,7 +181,7 @@ auto apply_op_sparse_dense(const Coord &coord, const Edges &edges,
 namespace sparse_dense_op_impl_detail {
 template <class Coord, class Edge, class Weight>
 using args =
-    std::tuple<sparse_container<Coord>, span<const Edge>, span<const Weight>>;
+    std::tuple<event_list<Coord>, span<const Edge>, span<const Weight>>;
 } // namespace sparse_dense_op_impl_detail
 
 Variable sparse_dense_op_impl(const VariableConstView &sparseCoord_,
@@ -189,16 +189,16 @@ Variable sparse_dense_op_impl(const VariableConstView &sparseCoord_,
                               const VariableConstView &weights_,
                               const Dim dim) {
   using namespace sparse_dense_op_impl_detail;
-  return transform<
+  return core::transform<
       std::tuple<args<double, double, double>, args<float, double, double>,
                  args<float, float, float>, args<double, float, float>>>(
       sparseCoord_, subspan_view(edges_, dim), subspan_view(weights_, dim),
       overloaded{[](const auto &... a) { return apply_op_sparse_dense(a...); },
-                 transform_flags::expect_no_variance_arg<0>,
-                 transform_flags::expect_no_variance_arg<1>,
+                 core::transform_flags::expect_no_variance_arg<0>,
+                 core::transform_flags::expect_no_variance_arg<1>,
                  [](const units::Unit &sparse, const units::Unit &edges,
                     const units::Unit &weights) {
-                   expect::equals(sparse, edges);
+                   core::expect::equals(sparse, edges);
                    return weights;
                  }});
 }

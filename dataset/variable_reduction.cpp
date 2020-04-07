@@ -2,12 +2,12 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
+#include "scipp/core/variable_reduction.h"
 #include "scipp/core/variable_binary_arithmetic.h"
-#include "scipp/core/view_decl.h"
-#include "scipp/dataset/event.h"
+#include "scipp/dataset/view_decl.h"
 
-#include "operators.h"
-#include "variable_operations_common.h"
+#include "../core/variable_operations_common.h"
+#include "dataset_operations_common.h"
 
 namespace scipp::dataset {
 
@@ -48,7 +48,7 @@ Variable mean(const VariableConstView &var, const Dim dim,
     const auto mask_union = masks_merge_if_contains(masks, dim);
     if (mask_union.dims().contains(dim)) {
       const auto masks_sum = sum(mask_union, dim);
-      return mean(var * ~mask_union, dim, masks_sum);
+      return mean_impl(var * ~mask_union, dim, masks_sum);
     }
   }
   return mean(var, dim);
@@ -60,7 +60,7 @@ VariableView mean(const VariableConstView &var, const Dim dim,
     const auto mask_union = masks_merge_if_contains(masks, dim);
     if (mask_union.dims().contains(dim)) {
       const auto masks_sum = sum(mask_union, dim);
-      return mean(var * ~mask_union, dim, masks_sum, out);
+      return mean_impl(var * ~mask_union, dim, masks_sum, out);
     }
   }
   return mean(var, dim, out);

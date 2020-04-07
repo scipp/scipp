@@ -17,6 +17,11 @@ void all_impl(const VariableView &out, const VariableConstView &var);
 void any_impl(const VariableView &out, const VariableConstView &var);
 void max_impl(const VariableView &out, const VariableConstView &var);
 void min_impl(const VariableView &out, const VariableConstView &var);
+Variable mean_impl(const VariableConstView &var, const Dim dim,
+                   const VariableConstView &masks_sum);
+VariableView mean_impl(const VariableConstView &var, const Dim dim,
+                       const VariableConstView &masks_sum,
+                       const VariableView &out);
 
 template <class Op>
 Variable reduce_all_dims(const VariableConstView &var, const Op &op) {

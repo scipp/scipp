@@ -5,11 +5,9 @@
 #include "scipp/core/variable.tcc"
 #include "scipp/dataset/dataset.h"
 
-namespace scipp::dataset {
+namespace scipp::core {
 
-INSTANTIATE_VARIABLE(Dataset)
-INSTANTIATE_VARIABLE(sparse_container<Dataset>)
-INSTANTIATE_VARIABLE(DataArray)
-INSTANTIATE_VARIABLE(sparse_container<DataArray>)
+INSTANTIATE_VARIABLE(scipp::dataset::Dataset)
+INSTANTIATE_VARIABLE(scipp::dataset::DataArray)
 
-} // namespace scipp::dataset
+} // namespace scipp::core

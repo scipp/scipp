@@ -74,7 +74,7 @@ std::string do_to_string(const D &dataset, const std::string &id,
   if (!dataset.coords().empty()) {
     s << "Coordinates:\n";
     for (const auto &[dim, var] : dataset.coords())
-      s << format_variable(dim, var, dims);
+      s << format_variable(dim.name(), var, dims);
   }
   if (!dataset.attrs().empty()) {
     s << "Attributes:\n";

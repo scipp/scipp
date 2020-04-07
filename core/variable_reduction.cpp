@@ -129,12 +129,12 @@ VariableView mean(const VariableConstView &var, const Dim dim,
 }
 
 Variable mean(const VariableConstView &var, const Dim dim) {
-  return mean(var, dim, makeVariable<int64_t>(Values{0}));
+  return mean_impl(var, dim, makeVariable<int64_t>(Values{0}));
 }
 
 VariableView mean(const VariableConstView &var, const Dim dim,
                   const VariableView &out) {
-  return mean(var, dim, makeVariable<int64_t>(Values{0}), out);
+  return mean_impl(var, dim, makeVariable<int64_t>(Values{0}), out);
 }
 
 template <class Op>

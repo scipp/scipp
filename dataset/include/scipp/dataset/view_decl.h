@@ -158,7 +158,7 @@ public:
 
   /// Return a const view to the coordinate for given dimension.
   typename mapped_type::const_view_type operator[](const Key key) const {
-    expect::contains(*this, key);
+    scipp::expect::contains(*this, key);
     return make_slice(m_items.at(key), m_slices);
   }
 
@@ -283,7 +283,7 @@ public:
   /// Return a view to the coordinate for given dimension.
   typename Base::mapped_type::view_type
   operator[](const typename Base::key_type key) const {
-    expect::contains(*this, key);
+    scipp::expect::contains(*this, key);
     return make_slice(Base::items().at(key), Base::slices());
   }
 
@@ -344,7 +344,7 @@ public:
   }
 
   void erase(const typename Base::key_type key) const {
-    expect::contains(*this, key);
+    scipp::expect::contains(*this, key);
     m_access.erase(key);
   }
 };

@@ -29,20 +29,20 @@ template <class T> struct MakePermutation {
 };
 
 static auto makePermutation(const VariableConstView &key) {
-  return CallDType<double, float, int64_t, int32_t, bool,
-                   std::string>::apply<MakePermutation>(key.dtype(), key);
+  return core::CallDType<double, float, int64_t, int32_t, bool,
+                         std::string>::apply<MakePermutation>(key.dtype(), key);
 }
 
 /// Return a Variable sorted based on key.
 Variable sort(const VariableConstView &var, const VariableConstView &key) {
   return concatenate(
-      IndexedSliceView{var, key.dims().inner(), makePermutation(key)});
+      core::IndexedSliceView{var, key.dims().inner(), makePermutation(key)});
 }
 
 /// Return a DataArray sorted based on key.
 DataArray sort(const DataArrayConstView &array, const VariableConstView &key) {
   return concatenate(
-      IndexedSliceView{array, key.dims().inner(), makePermutation(key)});
+      core::IndexedSliceView{array, key.dims().inner(), makePermutation(key)});
 }
 
 /// Return a DataArray sorted based on coordinate.
@@ -52,8 +52,8 @@ DataArray sort(const DataArrayConstView &array, const Dim &key) {
 
 /// Return a Dataset sorted based on key.
 Dataset sort(const DatasetConstView &dataset, const VariableConstView &key) {
-  return concatenate(
-      IndexedSliceView{dataset, key.dims().inner(), makePermutation(key)});
+  return concatenate(core::IndexedSliceView{dataset, key.dims().inner(),
+                                            makePermutation(key)});
 }
 
 /// Return a Dataset sorted based on coordinate.

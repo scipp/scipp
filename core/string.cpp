@@ -12,10 +12,6 @@
 
 namespace scipp::core {
 
-std::ostream &operator<<(std::ostream &os, const Dim dim) {
-  return os << to_string(dim);
-}
-
 std::ostream &operator<<(std::ostream &os, const Dimensions &dims) {
   return os << to_string(dims);
 }
@@ -45,6 +41,10 @@ std::string to_string(const Dimensions &dims) {
   s += "}";
   return s;
 }
+
+const std::string &to_string(const std::string &s) { return s; }
+std::string_view to_string(const std::string_view s) { return s; }
+std::string to_string(const char *s) { return std::string(s); }
 
 std::string to_string(const bool b) { return b ? "True" : "False"; }
 
@@ -108,10 +108,6 @@ std::string make_dims_labels(const VariableConstView &variable,
   return diminfo;
 }
 
-auto &to_string(const std::string &s) { return s; }
-auto to_string(const std::string_view s) { return s; }
-auto to_string(const char *s) { return std::string(s); }
-
 template <class T> struct ValuesToString {
   static auto apply(const VariableConstView &var) {
     return array_to_string(var.template values<T>());
@@ -132,15 +128,15 @@ auto apply(const DType dtype, Args &&... args) {
       dtype, std::forward<Args>(args)...);
 }
 
-template <class Key, class Var>
-auto format_variable(const Key &key, const Var &variable,
-                     const Dimensions &datasetDims = Dimensions()) {
+std::string format_variable(const std::string &key,
+                            const VariableConstView &variable,
+                            const Dimensions &datasetDims) {
   if (!variable)
     return std::string(tab) + "invalid variable\n";
   std::stringstream s;
   const auto dtype = variable.dtype();
   const std::string colSep("  ");
-  s << tab << std::left << std::setw(24) << to_string(key);
+  s << tab << std::left << std::setw(24) << key;
   s << colSep << std::setw(9) << to_string(variable.dtype());
   s << colSep << std::setw(15) << '[' + variable.unit().name() + ']';
   s << colSep << make_dims_labels(variable, datasetDims);
@@ -148,22 +144,19 @@ auto format_variable(const Key &key, const Var &variable,
   if (dtype == DType::PyObject)
     s << "[PyObject]";
   else
-    s << apply<ValuesToString>(variable.data().dtype(),
-                               VariableConstView(variable));
+    s << apply<ValuesToString>(variable.data().dtype(), variable);
   if (variable.hasVariances())
-    s << colSep
-      << apply<VariancesToString>(variable.data().dtype(),
-                                  VariableConstView(variable));
+    s << colSep << apply<VariancesToString>(variable.data().dtype(), variable);
   s << '\n';
   return s.str();
 }
 
 std::string to_string(const Variable &variable) {
-  return format_variable("<scipp.Variable>", variable);
+  return format_variable(std::string("<scipp.Variable>"), variable);
 }
 
 std::string to_string(const VariableConstView &variable) {
-  return format_variable("<scipp.VariableView>", variable);
+  return format_variable(std::string("<scipp.VariableView>"), variable);
 }
 
 } // namespace scipp::core

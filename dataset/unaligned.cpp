@@ -99,7 +99,7 @@ DataArray realign(DataArray unaligned,
   std::set<Dim> binnedDims;
   std::set<Dim> unalignedDims;
   for (const auto &[dim, coord] : coords) {
-    expect::equals(coord.unit(), unaligned.coords()[dim].unit());
+    core::expect::equals(coord.unit(), unaligned.coords()[dim].unit());
     binnedDims.insert(dim);
   }
   for (const auto &[dim, coord] : unaligned.coords())
@@ -154,6 +154,7 @@ Dataset realign(Dataset dataset,
 }
 
 bool is_realigned_events(const DataArrayConstView &realigned) {
+  using core::is_events;
   return !is_events(realigned) && realigned.unaligned() &&
          is_events(realigned.unaligned());
 }

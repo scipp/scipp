@@ -85,6 +85,7 @@ using args = std::tuple<span<Out>, event_list<Coord>, Weight, span<const Edge>>;
 
 DataArray histogram(const DataArrayConstView &sparse,
                     const VariableConstView &binEdges) {
+  using namespace scipp::core;
   auto dim = binEdges.dims().inner();
 
   auto result = apply_and_drop_dim(

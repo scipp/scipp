@@ -111,6 +111,7 @@ struct SCIPP_CORE_EXPORT EventDataError : public std::runtime_error {
 
 namespace scipp::expect {
 template <class A, class B> void contains(const A &a, const B &b) {
+  using core::to_string;
   if (!a.contains(b))
     throw except::NotFoundError("Expected " + to_string(a) + " to contain " +
                                 to_string(b) + ".");

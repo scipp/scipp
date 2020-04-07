@@ -11,6 +11,7 @@
 
 #include "scipp-dataset_export.h"
 #include "scipp/core/except.h"
+#include "scipp/dataset/string.h"
 
 namespace scipp::dataset {
 
@@ -23,18 +24,18 @@ class DataArray;
 
 namespace scipp::except {
 
-using DataArrayError = Error<core::DataArray>;
-using DatasetError = Error<core::Dataset>;
+using DataArrayError = Error<dataset::DataArray>;
+using DatasetError = Error<dataset::Dataset>;
 
-using DataArrayMismatchError = MismatchError<core::DataArray>;
-using DatasetMismatchError = MismatchError<core::Dataset>;
+using DataArrayMismatchError = MismatchError<dataset::DataArray>;
+using DatasetMismatchError = MismatchError<dataset::Dataset>;
 
 template <class T>
-MismatchError(const core::DatasetConstView &, const T &)
-    ->MismatchError<core::Dataset>;
+MismatchError(const dataset::DatasetConstView &, const T &)
+    ->MismatchError<dataset::Dataset>;
 template <class T>
-MismatchError(const core::DataArrayConstView &, const T &)
-    ->MismatchError<core::DataArray>;
+MismatchError(const dataset::DataArrayConstView &, const T &)
+    ->MismatchError<dataset::DataArray>;
 
 } // namespace scipp::except
 

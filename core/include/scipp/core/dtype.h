@@ -12,10 +12,12 @@ namespace scipp::python {
 class PyObject;
 }
 
-namespace scipp::core {
-
+namespace scipp::dataset {
 class DataArray;
 class Dataset;
+} // namespace scipp::dataset
+
+namespace scipp::core {
 
 template <class T>
 using sparse_container = boost::container::small_vector<T, 8>;
@@ -62,8 +64,8 @@ constexpr DType dtype<sparse_container<int64_t>> = DType::SparseInt64;
 template <>
 constexpr DType dtype<sparse_container<int32_t>> = DType::SparseInt32;
 template <> constexpr DType dtype<sparse_container<bool>> = DType::SparseBool;
-template <> constexpr DType dtype<DataArray> = DType::DataArray;
-template <> constexpr DType dtype<Dataset> = DType::Dataset;
+template <> constexpr DType dtype<dataset::DataArray> = DType::DataArray;
+template <> constexpr DType dtype<dataset::Dataset> = DType::Dataset;
 template <> constexpr DType dtype<Eigen::Vector3d> = DType::EigenVector3d;
 template <> constexpr DType dtype<scipp::python::PyObject> = DType::PyObject;
 
