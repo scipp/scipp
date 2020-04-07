@@ -38,13 +38,6 @@ template <class T> typename T::view_type makeViewItem(T &);
 namespace scipp::core {
 
 namespace detail {
-template <class T> struct element_type { using type = T; };
-template <class T> struct element_type<sparse_container<T>> { using type = T; };
-template <class T> struct element_type<const sparse_container<T>> {
-  using type = T;
-};
-template <class T> using element_type_t = typename element_type<T>::type;
-
 std::vector<scipp::index> reorderedShape(const scipp::span<const Dim> &order,
                                          const Dimensions &dimensions);
 void expect0D(const Dimensions &dims);

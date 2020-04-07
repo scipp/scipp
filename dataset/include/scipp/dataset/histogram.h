@@ -5,6 +5,7 @@
 #pragma once
 
 #include <algorithm>
+#include <tuple>
 
 #include "scipp/dataset/except.h"
 
@@ -13,26 +14,8 @@ namespace scipp::dataset {
 SCIPP_DATASET_EXPORT DataArray histogram(const DataArrayConstView &realigned);
 SCIPP_DATASET_EXPORT Dataset histogram(const DatasetConstView &realigned);
 
+SCIPP_DATASET_EXPORT Dim edge_dimension(const DataArrayConstView &a);
 SCIPP_DATASET_EXPORT bool is_histogram(const DataArrayConstView &a,
                                        const Dim dim);
-
-/// Return params for computing bin index for linear edges (constant bin width).
-constexpr static auto linear_edge_params = [](const auto &edges) {
-  auto len = scipp::size(edges) - 1;
-  const auto offset = edges.front();
-  static_assert(
-      std::is_floating_point_v<decltype(offset)>,
-      "linear_bin_edges is not implement to support integer-valued bin-edges");
-  const auto nbin = static_cast<decltype(offset)>(len);
-  const auto scale = nbin / (edges.back() - edges.front());
-  return std::array{offset, nbin, scale};
-};
-
-namespace expect::histogram {
-template <class T> void sorted_edges(const T &edges) {
-  if (!std::is_sorted(edges.begin(), edges.end()))
-    throw except::BinEdgeError("Bin edges of histogram must be sorted.");
-}
-} // namespace expect::histogram
 
 } // namespace scipp::dataset

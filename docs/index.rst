@@ -53,9 +53,15 @@ Documentation
    user-guide/computation
    user-guide/masking
    user-guide/unaligned-data
-   user-guide/event-data
    user-guide/groupby
    user-guide/how_to
+
+.. toctree::
+   :caption: Event data
+   :maxdepth: 3
+
+   event-data/overview
+   event-data/filtering
 
 .. toctree::
    :caption: Visualization
