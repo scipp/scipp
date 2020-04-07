@@ -3,8 +3,8 @@
 #include "test_macros.h"
 #include <gtest/gtest.h>
 
-#include "scipp/core/dataset.h"
 #include "scipp/core/variable_operations.h"
+#include "scipp/dataset/dataset.h"
 #include "scipp/neutron/beamline.h"
 
 using namespace scipp;
