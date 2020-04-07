@@ -69,10 +69,19 @@ def test_quaternion_float64_from_numpy():
     np.testing.assert_array_equal(quat.coeffs(), [0, 1, 2, 3])
 
 
+def test_quaternion_float64_eq_ne():
+    quat1 = sc.Quat([0, 1, 2, 3])
+    quat2 = sc.Quat(np.arange(4.0))
+    quat3 = sc.Quat([1, 2, 3, 4])
+    assert quat1 == quat2
+    assert quat1 != quat3
+    assert quat2 != quat3
+
+
 def test_variable_0D_quaternion_float64_from_quat():
     quat = sc.Quat(np.arange(4.0))
     var = sc.Variable(value=quat, unit=sc.units.m)
-    np.testing.assert_array_equal(var.value.coeffs(), [0, 1, 2, 3])
+    assert var.value == quat
     assert var.dtype == sc.dtype.quaternion_float64
     assert var.unit == sc.units.m
 

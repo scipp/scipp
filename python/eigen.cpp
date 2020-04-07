@@ -40,6 +40,16 @@ void init_eigen(py::module &m) {
 
         return Eigen::Quaterniond(value.cast<std::vector<double>>().data());
       }))
+      .def("__eq__",
+           [](Eigen::Quaterniond &self, Eigen::Quaterniond &other) {
+             return self.coeffs() == other.coeffs();
+           },
+           py::is_operator(), py::call_guard<py::gil_scoped_release>())
+      .def("__ne__",
+           [](Eigen::Quaterniond &self, Eigen::Quaterniond &other) {
+             return self.coeffs() != other.coeffs();
+           },
+           py::is_operator(), py::call_guard<py::gil_scoped_release>())
       .def("x", [](const Eigen::Quaterniond &self) { return self.x(); })
       .def("y", [](const Eigen::Quaterniond &self) { return self.y(); })
       .def("z", [](const Eigen::Quaterniond &self) { return self.z(); })

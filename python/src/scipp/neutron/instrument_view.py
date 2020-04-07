@@ -503,6 +503,10 @@ class InstrumentView:
             iswap = "xyz".find(axis)
             vertices[:, [iswap, 2]] = vertices[:, [2, iswap]]
 
+            # The faces array contains the indices of the vertices for each
+            # mesh triangle. In the case of cylinders, we start with the bottom
+            # face (8 triangles), then the top face (8 triangles), then the
+            # sides of the cylinder (8x2 triangles).
             faces = np.array(
                 [[0, 2, 1], [0, 3, 2], [0, 4, 3], [0, 5, 4], [0, 6, 5],
                  [0, 7, 6], [0, 8, 7], [0, 1, 8], [9, 10, 11], [9, 11, 12],
@@ -519,6 +523,10 @@ class InstrumentView:
                  [0.5, 0.5, 0.5], [-0.5, 0.5, 0.5]],
                 dtype=np.float32)
 
+            # The faces array contains the indices of the vertices for each
+            # mesh triangle. In the case of boxes, we have 2 triangles per side
+            # of the box. The order of the faces is x=0, x=1, y=0, y=1, z=1,
+            # z=1.
             faces = np.array([[0, 4, 3], [3, 4, 7], [1, 2, 6], [1, 6, 5],
                               [0, 1, 5], [0, 5, 4], [2, 3, 7], [2, 7, 6],
                               [0, 2, 1], [0, 3, 2], [4, 5, 7], [5, 6, 7]],
