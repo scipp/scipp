@@ -2,8 +2,8 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 #include <algorithm>
 
-#include "scipp/core/unaligned.h"
 #include "scipp/core/variable_binary_arithmetic.h"
+#include "scipp/dataset/unaligned.h"
 
 #include "dataset_test_common.h"
 
@@ -116,7 +116,7 @@ Dataset make_empty() { return Dataset(); }
 Dataset make_simple_sparse(std::initializer_list<double> values,
                            std::string key) {
   Dataset ds;
-  auto var = makeVariable<sparse_container<double>>(Dims{}, Shape{});
+  auto var = makeVariable<event_list<double>>(Dims{}, Shape{});
   var.values<event_list<double>>()[0] = values;
   ds.setData(key, var);
   return ds;
@@ -128,19 +128,19 @@ Dataset make_sparse_with_coords_and_labels(
   Dataset ds;
 
   {
-    auto var = makeVariable<sparse_container<double>>(Dims{}, Shape{});
+    auto var = makeVariable<event_list<double>>(Dims{}, Shape{});
     var.values<event_list<double>>()[0] = values;
     ds.setData(key, var);
   }
 
   {
-    auto var = makeVariable<sparse_container<double>>(Dims{}, Shape{});
+    auto var = makeVariable<event_list<double>>(Dims{}, Shape{});
     var.values<event_list<double>>()[0] = coords_and_labels;
     ds.coords().set(Dim::X, var);
   }
 
   {
-    auto var = makeVariable<sparse_container<double>>(Dims{}, Shape{});
+    auto var = makeVariable<event_list<double>>(Dims{}, Shape{});
     var.values<event_list<double>>()[0] = coords_and_labels;
     ds.coords().set(Dim("l"), var);
   }
@@ -150,7 +150,7 @@ Dataset make_sparse_with_coords_and_labels(
 
 Dataset make_sparse_2d(std::initializer_list<double> values, std::string key) {
   Dataset ds;
-  auto var = makeVariable<sparse_container<double>>(Dims{Dim::X}, Shape{2});
+  auto var = makeVariable<event_list<double>>(Dims{Dim::X}, Shape{2});
   var.values<event_list<double>>()[0] = values;
   var.values<event_list<double>>()[1] = values;
   ds.setData(key, var);

@@ -2,12 +2,12 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
-#include "scipp/core/dataset.h"
+#include "scipp/dataset/dataset.h"
 
 #include "dataset_test_common.h"
 
 using namespace scipp;
-using namespace scipp::core;
+using namespace scipp::dataset;
 
 class AttributesTest : public ::testing::Test {
 protected:
@@ -58,7 +58,7 @@ TEST_F(AttributesTest, dataset_item_attrs) {
 
 TEST_F(AttributesTest, dataset_sparse_item_attrs) {
   Dataset d;
-  d.setData("sparse", makeVariable<sparse_container<double>>(Dims{}, Shape{}));
+  d.setData("sparse", makeVariable<event_list<double>>(Dims{}, Shape{}));
   d["sparse"].attrs().set("scalar", scalar);
   d.attrs().set("dataset_attr", scalar);
 

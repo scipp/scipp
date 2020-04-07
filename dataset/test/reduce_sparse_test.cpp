@@ -2,12 +2,12 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
-#include "scipp/core/dataset.h"
 #include "scipp/core/variable.h"
 #include "scipp/core/variable_reduction.h"
+#include "scipp/dataset/dataset.h"
 
 using namespace scipp;
-using namespace scipp::core;
+using namespace scipp::dataset;
 
 namespace {
 auto make_sparse() {
@@ -29,7 +29,7 @@ TEST(ReduceSparseTest, flatten_fail) {
 
 TEST(ReduceSparseTest, flatten) {
   auto expected = makeVariable<event_list<double>>(
-      Dims{}, Shape{}, Values{sparse_container<double>{1, 2, 3, 4, 5, 6, 7}});
+      Dims{}, Shape{}, Values{event_list<double>{1, 2, 3, 4, 5, 6, 7}});
   EXPECT_EQ(flatten(make_sparse(), Dim::Y), expected);
 }
 
@@ -41,7 +41,7 @@ TEST(ReduceSparseTest, flatten_dataset_with_mask) {
   d.coords().set(Dim("label"), make_sparse());
   d.setData("b", make_sparse());
   auto expected = makeVariable<event_list<double>>(
-      Dims{}, Shape{}, Values{sparse_container<double>{1, 2, 3, 6, 7}});
+      Dims{}, Shape{}, Values{event_list<double>{1, 2, 3, 6, 7}});
 
   const auto flat = flatten(d, Dim::Y);
 

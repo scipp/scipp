@@ -3,17 +3,17 @@
 #include <gtest/gtest.h>
 
 #include "scipp/core/comparison.h"
-#include "scipp/core/dataset.h"
-#include "scipp/core/event.h"
-#include "scipp/core/histogram.h"
-#include "scipp/core/unaligned.h"
 #include "scipp/core/variable_operations.h"
+#include "scipp/dataset/dataset.h"
+#include "scipp/dataset/event.h"
+#include "scipp/dataset/histogram.h"
+#include "scipp/dataset/unaligned.h"
 
 #include "dataset_test_common.h"
 #include "test_macros.h"
 
 using namespace scipp;
-using namespace scipp::core;
+using namespace scipp::dataset;
 
 TEST(DataArrayTest, construct) {
   DatasetFactory3D factory;

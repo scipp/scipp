@@ -7,11 +7,11 @@
 #include "test_macros.h"
 #include <gtest/gtest.h>
 
-#include "scipp/core/dataset.h"
 #include "scipp/core/dimensions.h"
+#include "scipp/dataset/dataset.h"
 
 using namespace scipp;
-using namespace scipp::core;
+using namespace scipp::dataset;
 
 std::vector<bool> make_bools(const scipp::index size,
                              std::initializer_list<bool> pattern);

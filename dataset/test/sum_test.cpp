@@ -3,10 +3,10 @@
 #include <gtest/gtest.h>
 #include <vector>
 
-#include "scipp/core/dataset.h"
+#include "scipp/dataset/dataset.h"
 
 using namespace scipp;
-using namespace scipp::core;
+using namespace scipp::dataset;
 
 TEST(SumTest, masked_data_array) {
   const auto var =

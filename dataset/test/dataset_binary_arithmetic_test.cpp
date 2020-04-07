@@ -5,17 +5,17 @@
 #include <gtest/gtest-matchers.h>
 #include <gtest/gtest.h>
 
-#include "scipp/core/dataset.h"
 #include "scipp/core/dimensions.h"
 #include "scipp/core/variable_binary_arithmetic.h"
+#include "scipp/dataset/dataset.h"
 
+#include "../core/test/make_sparse.h"
 #include "dataset_test_common.h"
-#include "make_sparse.h"
 #include "test_macros.h"
 #include "test_operations.h"
 
 using namespace scipp;
-using namespace scipp::core;
+using namespace scipp::dataset;
 
 DatasetFactory3D datasetFactory() {
   static DatasetFactory3D factory;

@@ -5,13 +5,13 @@
 
 #include "test_macros.h"
 
-#include "scipp/core/dataset.h"
 #include "scipp/core/except.h"
 #include "scipp/core/variable.h"
 #include "scipp/core/variable_reduction.h"
+#include "scipp/dataset/dataset.h"
 
 using namespace scipp;
-using namespace scipp::core;
+using namespace scipp::dataset;
 
 TEST(MeanTest, unknown_dim_fail) {
   const auto var =

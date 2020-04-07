@@ -4,11 +4,11 @@
 
 #include <set>
 
-#include "scipp/core/dataset.h"
+#include "scipp/dataset/dataset.h"
 #include "test_macros.h"
 
 using namespace scipp;
-using namespace scipp::core;
+using namespace scipp::dataset;
 
 template <typename T> class DatasetViewTest : public ::testing::Test {
 protected:

@@ -74,6 +74,9 @@ Variable operator/(const boost::units::quantity<T> &quantity, Variable a) {
          std::move(a);
 }
 
+} // namespace scipp::core
+
+namespace scipp::units {
 template <typename T>
 std::enable_if_t<std::is_arithmetic_v<T>, Variable>
 operator*(T v, const units::Unit &unit) {
@@ -86,5 +89,4 @@ operator/(T v, const units::Unit &unit) {
   return makeVariable<T>(Dimensions{}, units::Unit(units::dimensionless) / unit,
                          Values{v});
 }
-
-} // namespace scipp::core
+} // namespace scipp::units

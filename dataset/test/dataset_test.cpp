@@ -6,15 +6,15 @@
 #include <numeric>
 #include <set>
 
-#include "scipp/core/dataset.h"
 #include "scipp/core/dimensions.h"
-#include "scipp/core/unaligned.h"
 #include "scipp/core/variable_operations.h"
+#include "scipp/dataset/dataset.h"
+#include "scipp/dataset/unaligned.h"
 
 #include "dataset_test_common.h"
 
 using namespace scipp;
-using namespace scipp::core;
+using namespace scipp::dataset;
 
 // Any dataset functionality that is also available for Dataset(Const)View is
 // to be tested in dataset_view_test.cpp, not here!
@@ -379,17 +379,17 @@ TEST(DatasetTest, slice_validation_complex) {
 TEST(DatasetTest, sum_and_mean) {
   auto ds = make_1_values_and_variances<float>(
       "a", {Dim::X, 3}, units::dimensionless, {1, 2, 3}, {12, 15, 18});
-  EXPECT_EQ(core::sum(ds, Dim::X)["a"].data(),
+  EXPECT_EQ(dataset::sum(ds, Dim::X)["a"].data(),
             makeVariable<float>(Values{6}, Variances{45}));
-  EXPECT_EQ(core::sum(ds.slice({Dim::X, 0, 2}), Dim::X)["a"].data(),
+  EXPECT_EQ(dataset::sum(ds.slice({Dim::X, 0, 2}), Dim::X)["a"].data(),
             makeVariable<float>(Values{3}, Variances{27}));
 
-  EXPECT_EQ(core::mean(ds, Dim::X)["a"].data(),
+  EXPECT_EQ(dataset::mean(ds, Dim::X)["a"].data(),
             makeVariable<float>(Values{2}, Variances{5.0}));
-  EXPECT_EQ(core::mean(ds.slice({Dim::X, 0, 2}), Dim::X)["a"].data(),
+  EXPECT_EQ(dataset::mean(ds.slice({Dim::X, 0, 2}), Dim::X)["a"].data(),
             makeVariable<float>(Values{1.5}, Variances{6.75}));
 
-  EXPECT_THROW(core::sum(make_sparse_2d({1, 2, 3, 4}, {0, 0}), Dim::X),
+  EXPECT_THROW(dataset::sum(make_sparse_2d({1, 2, 3, 4}, {0, 0}), Dim::X),
                except::TypeError);
 }
 

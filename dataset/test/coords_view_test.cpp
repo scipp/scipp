@@ -4,14 +4,14 @@
 
 #include <numeric>
 
-#include "scipp/core/dataset.h"
 #include "scipp/core/dimensions.h"
+#include "scipp/dataset/dataset.h"
 #include "test_macros.h"
 
 #include "dataset_test_common.h"
 
 using namespace scipp;
-using namespace scipp::core;
+using namespace scipp::dataset;
 
 template <typename T> class CoordsViewTest : public ::testing::Test {
 protected:
@@ -61,7 +61,7 @@ TYPED_TEST(CoordsViewTest, sparse_coords_values_and_coords) {
   ASSERT_EQ(1, d["test"].coords().size());
   auto sparseX = d["test"].coords()[Dim::X].values<event_list<double>>()[0];
   ASSERT_EQ(3, sparseX.size());
-  ASSERT_EQ(scipp::core::event_list<double>({4, 5, 6}), sparseX);
+  ASSERT_EQ(scipp::event_list<double>({4, 5, 6}), sparseX);
 }
 
 TYPED_TEST(CoordsViewTest, iterators_empty_coords) {

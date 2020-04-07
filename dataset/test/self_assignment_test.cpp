@@ -10,11 +10,11 @@
 #include <numeric>
 
 #include "dataset_test_common.h"
-#include "scipp/core/dataset.h"
 #include "scipp/core/dimensions.h"
+#include "scipp/dataset/dataset.h"
 
 using namespace scipp;
-using namespace scipp::core;
+using namespace scipp::dataset;
 
 class SelfAssignmentTest : public ::testing::Test {
 protected:

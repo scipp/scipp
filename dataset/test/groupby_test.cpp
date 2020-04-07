@@ -2,14 +2,14 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
-#include "scipp/core/groupby.h"
-#include "scipp/core/unaligned.h"
 #include "scipp/core/variable_binary_arithmetic.h"
+#include "scipp/dataset/groupby.h"
+#include "scipp/dataset/unaligned.h"
 
 #include "test_macros.h"
 
 using namespace scipp;
-using namespace scipp::core;
+using namespace scipp::dataset;
 
 struct GroupbyTest : public ::testing::Test {
   GroupbyTest() {

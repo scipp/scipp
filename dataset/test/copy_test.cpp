@@ -2,12 +2,12 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
-#include "scipp/core/dataset.h"
+#include "scipp/dataset/dataset.h"
 
 #include "dataset_test_common.h"
 
 using namespace scipp;
-using namespace scipp::core;
+using namespace scipp::dataset;
 
 struct CopyTest : public ::testing::Test {
   CopyTest() : dataset(factory.make()), array(dataset["data_xyz"]) {

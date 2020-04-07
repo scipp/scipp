@@ -2,12 +2,12 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
-#include "scipp/core/dataset.h"
-#include "scipp/core/histogram.h"
-#include "scipp/core/unaligned.h"
+#include "scipp/dataset/dataset.h"
+#include "scipp/dataset/histogram.h"
+#include "scipp/dataset/unaligned.h"
 
 using namespace scipp;
-using namespace scipp::core;
+using namespace scipp::dataset;
 
 static auto make_sparse() {
   auto var = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2});

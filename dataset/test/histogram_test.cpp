@@ -4,12 +4,12 @@
 #include <gtest/gtest-matchers.h>
 #include <gtest/gtest.h>
 
-#include "scipp/core/dataset.h"
-#include "scipp/core/histogram.h"
-#include "scipp/core/unaligned.h"
+#include "scipp/dataset/dataset.h"
+#include "scipp/dataset/histogram.h"
+#include "scipp/dataset/unaligned.h"
 
 using namespace scipp;
-using namespace scipp::core;
+using namespace scipp::dataset;
 
 TEST(HistogramTest, is_histogram) {
   const auto dataX = makeVariable<double>(Dims{Dim::X}, Shape{2});
@@ -60,10 +60,10 @@ DataArray make_1d_events_default_weights() {
 
 TEST(HistogramTest, fail_edges_not_sorted) {
   auto events = make_1d_events_default_weights();
-  ASSERT_THROW(
-      core::histogram(events, makeVariable<double>(Dims{Dim::Y}, Shape{6},
-                                                   Values{1, 3, 2, 4, 5, 6})),
-      except::BinEdgeError);
+  ASSERT_THROW(dataset::histogram(
+                   events, makeVariable<double>(Dims{Dim::Y}, Shape{6},
+                                                Values{1, 3, 2, 4, 5, 6})),
+               except::BinEdgeError);
 }
 
 auto make_single_sparse() {
@@ -88,7 +88,7 @@ TEST(HistogramTest, below) {
   const auto sparse = make_single_sparse();
   auto edges =
       makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{-2.0, -1.0, 0.0});
-  auto hist = core::histogram(sparse["sparse"], edges);
+  auto hist = dataset::histogram(sparse["sparse"], edges);
   std::map<Dim, Variable> coords = {{Dim::X, edges}};
   auto expected = make_expected(
       makeVariable<double>(Dims{Dim::X}, Shape{2}, units::Unit(units::counts),
@@ -101,7 +101,7 @@ TEST(HistogramTest, between) {
   const auto sparse = make_single_sparse();
   auto edges =
       makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1.5, 1.6, 1.7});
-  auto hist = core::histogram(sparse["sparse"], edges);
+  auto hist = dataset::histogram(sparse["sparse"], edges);
   auto expected = make_expected(
       makeVariable<double>(Dims{Dim::X}, Shape{2}, units::Unit(units::counts),
                            Values{0, 0}, Variances{0, 0}),
@@ -113,7 +113,7 @@ TEST(HistogramTest, above) {
   const auto sparse = make_single_sparse();
   auto edges =
       makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{3.5, 4.5, 5.5});
-  auto hist = core::histogram(sparse["sparse"], edges);
+  auto hist = dataset::histogram(sparse["sparse"], edges);
   auto expected = make_expected(
       makeVariable<double>(Dims{Dim::X}, Shape{2}, units::Unit(units::counts),
                            Values{0, 0}, Variances{0, 0}),
@@ -126,7 +126,7 @@ TEST(HistogramTest, data_view) {
   std::vector<double> ref{1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 2, 3, 0, 3, 0};
   auto edges =
       makeVariable<double>(Dims{Dim::Y}, Shape{6}, Values{1, 2, 3, 4, 5, 6});
-  auto hist = core::histogram(events, edges);
+  auto hist = dataset::histogram(events, edges);
   auto expected =
       make_expected(makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{3, 5},
                                          units::Unit(units::counts),
@@ -143,7 +143,7 @@ TEST(HistogramTest, drops_other_event_coords) {
   std::vector<double> ref{1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 2, 3, 0, 3, 0};
   auto edges =
       makeVariable<double>(Dims{Dim::Y}, Shape{6}, Values{1, 2, 3, 4, 5, 6});
-  auto hist = core::histogram(events, edges);
+  auto hist = dataset::histogram(events, edges);
   auto expected =
       make_expected(makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{3, 5},
                                          units::Unit(units::counts),
@@ -159,7 +159,7 @@ TEST(HistogramTest, keeps_scalar_coords) {
   auto events = make_1d_events_default_weights();
   events.coords().set(Dim("scalar"), makeVariable<double>(Values{1.2}));
   auto edges = makeVariable<double>(Dims{Dim::Y}, Shape{2}, Values{1, 6});
-  auto hist = core::histogram(events, edges);
+  auto hist = dataset::histogram(events, edges);
   EXPECT_TRUE(hist.coords().contains(Dim("scalar")));
 }
 
@@ -187,7 +187,7 @@ TEST(HistogramTest, weight_lists) {
                                          Variances(ref.begin(), ref.end())),
                     edges);
 
-  EXPECT_EQ(core::histogram(events, edges), expected);
+  EXPECT_EQ(dataset::histogram(events, edges), expected);
 }
 
 TEST(HistogramTest, dataset_realigned) {
@@ -213,7 +213,7 @@ TEST(HistogramTest, dataset_realigned) {
                                              Values(b.begin(), b.end()),
                                              Variances(b.begin(), b.end())));
 
-  EXPECT_EQ(core::histogram(events), expected);
+  EXPECT_EQ(dataset::histogram(events), expected);
 }
 
 TEST(HistogramTest, dataset_realigned2) {
@@ -232,5 +232,5 @@ TEST(HistogramTest, dataset_realigned2) {
   events.setData("a", unaligned::realign(a, {{Dim::Y, bins}}));
   events.setData("b", unaligned::realign(b, {{Dim::Y, bins}}));
 
-  EXPECT_EQ(core::histogram(events), expected);
+  EXPECT_EQ(dataset::histogram(events), expected);
 }

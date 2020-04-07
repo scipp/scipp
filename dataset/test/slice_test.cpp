@@ -5,14 +5,14 @@
 #include <numeric>
 
 #include "dataset_test_common.h"
-#include "scipp/core/dataset.h"
 #include "scipp/core/dimensions.h"
 #include "scipp/core/except.h"
 #include "scipp/core/slice.h"
+#include "scipp/dataset/dataset.h"
 #include "test_macros.h"
 
 using namespace scipp;
-using namespace scipp::core;
+using namespace scipp::dataset;
 
 TEST(SliceTest, test_construction) {
   Slice point(Dim::X, 0);
@@ -288,8 +288,7 @@ TEST_P(Dataset3DTest_slice_sparse, slice) {
   auto sliced = ds.slice({Dim::X, pos});
   auto data = sliced["xyz_data"].data().values<event_list<double>>();
   EXPECT_EQ(data.size(), 2);
-  scipp::core::sparse_container<double> expected =
-      var.values<event_list<double>>()[pos * 2];
+  event_list<double> expected = var.values<event_list<double>>()[pos * 2];
   EXPECT_EQ(data[0], expected);
   expected = var.values<event_list<double>>()[pos * 2 + 1];
   EXPECT_EQ(data[1], expected);

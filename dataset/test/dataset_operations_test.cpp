@@ -4,29 +4,29 @@
 #include <gtest/gtest.h>
 
 #include "dataset_test_common.h"
-#include "scipp/core/dataset.h"
+#include "scipp/dataset/dataset.h"
 #include "test_macros.h"
 
 using namespace scipp;
-using namespace scipp::core;
+using namespace scipp::dataset;
 
 TEST(DatasetOperationsTest, sum) {
   auto ds = make_1_values_and_variances<float>(
       "a", {Dim::X, 3}, units::dimensionless, {1, 2, 3}, {12, 15, 18});
-  EXPECT_EQ(core::sum(ds, Dim::X)["a"].data(),
+  EXPECT_EQ(dataset::sum(ds, Dim::X)["a"].data(),
             makeVariable<float>(Values{6}, Variances{45}));
-  EXPECT_EQ(core::sum(ds.slice({Dim::X, 0, 2}), Dim::X)["a"].data(),
+  EXPECT_EQ(dataset::sum(ds.slice({Dim::X, 0, 2}), Dim::X)["a"].data(),
             makeVariable<float>(Values{3}, Variances{27}));
-  EXPECT_THROW(core::sum(make_sparse_2d({1, 2, 3, 4}, {0, 0}), Dim::X),
+  EXPECT_THROW(dataset::sum(make_sparse_2d({1, 2, 3, 4}, {0, 0}), Dim::X),
                except::TypeError);
 }
 
 TEST(DatasetOperationsTest, mean) {
   auto ds = make_1_values_and_variances<float>(
       "a", {Dim::X, 3}, units::dimensionless, {1, 2, 3}, {12, 15, 18});
-  EXPECT_EQ(core::mean(ds, Dim::X)["a"].data(),
+  EXPECT_EQ(dataset::mean(ds, Dim::X)["a"].data(),
             makeVariable<float>(Values{2}, Variances{5.0}));
-  EXPECT_EQ(core::mean(ds.slice({Dim::X, 0, 2}), Dim::X)["a"].data(),
+  EXPECT_EQ(dataset::mean(ds.slice({Dim::X, 0, 2}), Dim::X)["a"].data(),
             makeVariable<float>(Values{1.5}, Variances{6.75}));
 }
 

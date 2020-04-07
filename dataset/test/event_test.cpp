@@ -8,9 +8,10 @@
 
 #include "scipp/core/event.h"
 #include "scipp/core/variable.h"
+#include "scipp/dataset/event.h"
 
 using namespace scipp;
-using namespace scipp::core;
+using namespace scipp::dataset;
 
 TEST(EventTest, concatenate_variable) {
   auto a = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2});
@@ -22,7 +23,7 @@ TEST(EventTest, concatenate_variable) {
   b_[0] = {1, 3};
   b_[1] = {};
 
-  auto var = event::concatenate(a, b);
+  auto var = core::event::concatenate(a, b);
   EXPECT_TRUE(is_events(var));
   EXPECT_EQ(var.dims().volume(), 2);
   auto data = var.values<event_list<double>>();
@@ -48,7 +49,7 @@ TEST(EventTest, concatenate_variable_with_variances) {
   b_vars[0] = {7, 8};
   b_vars[1] = {};
 
-  auto var = event::concatenate(a, b);
+  auto var = core::event::concatenate(a, b);
   EXPECT_TRUE(is_events(var));
   EXPECT_EQ(var.dims().volume(), 2);
   auto vals = var.values<event_list<double>>();
@@ -103,8 +104,8 @@ struct EventConcatenateTest : public ::testing::Test {
 
 TEST_F(EventConcatenateTest, append_variable) {
   Variable var(eventsA);
-  event::append(var, eventsB);
-  EXPECT_EQ(var, event::concatenate(eventsA, eventsB));
+  core::event::append(var, eventsB);
+  EXPECT_EQ(var, core::event::concatenate(eventsA, eventsB));
 }
 
 TEST_F(EventConcatenateTest, data_array_identical_scalar_weights) {
@@ -113,7 +114,7 @@ TEST_F(EventConcatenateTest, data_array_identical_scalar_weights) {
   const auto result = event::concatenate(a, b);
   event::append(a, b);
   EXPECT_EQ(a, result);
-  EXPECT_EQ(a.coords()[Dim::Y], event::concatenate(eventsA, eventsB));
+  EXPECT_EQ(a.coords()[Dim::Y], core::event::concatenate(eventsA, eventsB));
   EXPECT_EQ(a.data(), scalarA);
 }
 
@@ -123,9 +124,10 @@ TEST_F(EventConcatenateTest, data_array_scalar_weights) {
   const auto result = event::concatenate(a, b);
   event::append(a, b);
   EXPECT_EQ(a, result);
-  EXPECT_EQ(a.coords()[Dim::Y], event::concatenate(eventsA, eventsB));
-  EXPECT_EQ(a.data(), event::concatenate(event::broadcast(scalarA, eventsA),
-                                         event::broadcast(scalarB, eventsB)));
+  EXPECT_EQ(a.coords()[Dim::Y], core::event::concatenate(eventsA, eventsB));
+  EXPECT_EQ(a.data(),
+            core::event::concatenate(core::event::broadcast(scalarA, eventsA),
+                                     core::event::broadcast(scalarB, eventsB)));
 }
 
 TEST_F(EventConcatenateTest, data_array_scalar_weights_a) {
@@ -134,9 +136,9 @@ TEST_F(EventConcatenateTest, data_array_scalar_weights_a) {
   const auto result = event::concatenate(a, b);
   event::append(a, b);
   EXPECT_EQ(a, result);
-  EXPECT_EQ(a.coords()[Dim::Y], event::concatenate(eventsA, eventsB));
-  EXPECT_EQ(a.data(),
-            event::concatenate(event::broadcast(scalarA, eventsA), weightsB));
+  EXPECT_EQ(a.coords()[Dim::Y], core::event::concatenate(eventsA, eventsB));
+  EXPECT_EQ(a.data(), core::event::concatenate(
+                          core::event::broadcast(scalarA, eventsA), weightsB));
 }
 
 TEST_F(EventConcatenateTest, data_array_scalar_weights_b) {
@@ -145,9 +147,9 @@ TEST_F(EventConcatenateTest, data_array_scalar_weights_b) {
   const auto result = event::concatenate(a, b);
   event::append(a, b);
   EXPECT_EQ(a, result);
-  EXPECT_EQ(a.coords()[Dim::Y], event::concatenate(eventsA, eventsB));
-  EXPECT_EQ(a.data(),
-            event::concatenate(weightsA, event::broadcast(scalarB, eventsB)));
+  EXPECT_EQ(a.coords()[Dim::Y], core::event::concatenate(eventsA, eventsB));
+  EXPECT_EQ(a.data(), core::event::concatenate(
+                          weightsA, core::event::broadcast(scalarB, eventsB)));
 }
 
 TEST_F(EventConcatenateTest, data_array) {
@@ -156,8 +158,8 @@ TEST_F(EventConcatenateTest, data_array) {
   const auto result = event::concatenate(a, b);
   event::append(a, b);
   EXPECT_EQ(a, result);
-  EXPECT_EQ(a.coords()[Dim::Y], event::concatenate(eventsA, eventsB));
-  EXPECT_EQ(a.data(), event::concatenate(weightsA, weightsB));
+  EXPECT_EQ(a.coords()[Dim::Y], core::event::concatenate(eventsA, eventsB));
+  EXPECT_EQ(a.data(), core::event::concatenate(weightsA, weightsB));
 }
 
 struct EventBroadcastTest : public ::testing::Test {
@@ -174,7 +176,7 @@ struct EventBroadcastTest : public ::testing::Test {
 };
 
 TEST_F(EventBroadcastTest, variable) {
-  EXPECT_EQ(event::broadcast(dense, shape), expected);
+  EXPECT_EQ(core::event::broadcast(dense, shape), expected);
 }
 
 TEST_F(EventBroadcastTest, data_array) {
@@ -210,21 +212,21 @@ static auto make_sparse_with_variances() {
 
 TEST(EventSizesTest, fail_dense) {
   auto bad = makeVariable<double>(Values{1.0});
-  EXPECT_ANY_THROW(event::sizes(bad));
+  EXPECT_ANY_THROW(core::event::sizes(bad));
 }
 
 TEST(EventSizesTest, no_variances) {
   const auto var = make_sparse();
   auto expected = makeVariable<scipp::index>(Dims{Dim::Z, Dim::Y}, Shape{3, 2},
                                              Values{0, 1, 2, 3, 4, 5});
-  EXPECT_EQ(event::sizes(var), expected);
+  EXPECT_EQ(core::event::sizes(var), expected);
 }
 
 TEST(EventSizesTest, variances) {
   const auto var = make_sparse_with_variances();
   auto expected = makeVariable<scipp::index>(Dims{Dim::Z, Dim::Y}, Shape{3, 2},
                                              Values{0, 1, 2, 3, 4, 5});
-  EXPECT_EQ(event::sizes(var), expected);
+  EXPECT_EQ(core::event::sizes(var), expected);
 }
 
 struct EventFilterTest : public ::testing::Test {

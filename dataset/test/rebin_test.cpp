@@ -4,11 +4,11 @@
 #include <gtest/gtest-matchers.h>
 #include <gtest/gtest.h>
 
-#include "scipp/core/dataset.h"
 #include "scipp/core/variable_misc_operations.h"
+#include "scipp/dataset/dataset.h"
 
 using namespace scipp;
-using namespace scipp::core;
+using namespace scipp::dataset;
 
 class RebinTest : public ::testing::Test {
 protected:

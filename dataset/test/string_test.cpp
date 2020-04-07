@@ -6,7 +6,7 @@
 #include "scipp/core/variable.h"
 
 using namespace scipp;
-using namespace scipp::core;
+using namespace scipp::dataset;
 
 TEST(StringTest, null_variable) {
   Variable var;

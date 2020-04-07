@@ -865,8 +865,7 @@ private:
 
 SCIPP_CORE_EXPORT Variable copy(const VariableConstView &var);
 
-bool is_events(const VariableConstView &var);
-bool is_events(const dataset::DataArrayConstView &array);
+SCIPP_CORE_EXPORT bool is_events(const VariableConstView &var);
 
 } // namespace scipp::core
 

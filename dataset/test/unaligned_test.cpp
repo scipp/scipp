@@ -2,14 +2,14 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
-#include "scipp/core/dataset.h"
-#include "scipp/core/event.h"
-#include "scipp/core/histogram.h"
-#include "scipp/core/unaligned.h"
 #include "scipp/core/variable_operations.h"
+#include "scipp/dataset/dataset.h"
+#include "scipp/dataset/event.h"
+#include "scipp/dataset/histogram.h"
+#include "scipp/dataset/unaligned.h"
 
 using namespace scipp;
-using namespace scipp::core;
+using namespace scipp::dataset;
 
 struct RealignTest : public ::testing::Test {
 protected:

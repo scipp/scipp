@@ -3,10 +3,10 @@
 #include "test_macros.h"
 #include <gtest/gtest.h>
 
-#include "scipp/core/sort.h"
+#include "scipp/dataset/sort.h"
 
 using namespace scipp;
-using namespace scipp::core;
+using namespace scipp::dataset;
 
 TEST(SortTest, variable_1d) {
   const auto var =

@@ -9,13 +9,13 @@
 
 #include <numeric>
 
-#include "scipp/core/dataset.h"
 #include "scipp/core/dimensions.h"
-#include "scipp/core/unaligned.h"
 #include "scipp/core/variable_operations.h"
+#include "scipp/dataset/dataset.h"
+#include "scipp/dataset/unaligned.h"
 
 using namespace scipp;
-using namespace scipp::core;
+using namespace scipp::dataset;
 
 namespace {
 void expect_eq(const DataArrayConstView &a, const DataArrayConstView &b) {
@@ -38,8 +38,8 @@ protected:
       : default_event_weights(makeVariable<double>(
             Dims{Dim::Y, Dim::Z}, Shape{3l, 2l}, Values{1, 1, 1, 1, 1, 1},
             Variances{1, 1, 1, 1, 1, 1})),
-        sparse_variable(makeVariable<sparse_container<double>>(
-            Dims{Dim::Y, Dim::Z}, Shape{3, 2})) {
+        sparse_variable(makeVariable<event_list<double>>(Dims{Dim::Y, Dim::Z},
+                                                         Shape{3, 2})) {
     dataset.setCoord(Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{4}));
     dataset.setCoord(Dim::Y, makeVariable<double>(Dims{Dim::Y}, Shape{3}));
 
@@ -309,7 +309,7 @@ TEST_F(DataArray_comparison_operators, different_attr_insertion_order) {
 TEST_F(DataArray_comparison_operators, with_sparse_dimension_data) {
   // a and b same, c different number of sparse values
   auto a = Dataset();
-  auto data = makeVariable<sparse_container<double>>(Dims{}, Shape{});
+  auto data = makeVariable<event_list<double>>(Dims{}, Shape{});
   const std::string var_name = "test_var";
   data.values<event_list<double>>()[0] = {1, 2, 3};
   a.setData(var_name, data);

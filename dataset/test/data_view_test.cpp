@@ -4,16 +4,15 @@
 
 #include <numeric>
 
-#include "scipp/core/dataset.h"
 #include "scipp/core/dimensions.h"
-#include "scipp/core/event.h"
-#include "scipp/core/unaligned.h"
+#include "scipp/dataset/dataset.h"
+#include "scipp/dataset/unaligned.h"
 
 #include "dataset_test_common.h"
 #include "test_macros.h"
 
 using namespace scipp;
-using namespace scipp::core;
+using namespace scipp::dataset;
 
 // Using typed tests for common functionality of DataArrayView and
 // DataArrayConstView.
@@ -40,10 +39,10 @@ TYPED_TEST(DataArrayViewTest, sparse_sparseDim) {
   typename TestFixture::dataset_type &d_ref(d);
 
   d.setData("dense", makeVariable<double>(Values{double{}}));
-  ASSERT_FALSE(is_events(d_ref["dense"]));
+  ASSERT_FALSE(dataset::is_events(d_ref["dense"]));
 
   d.setData("sparse_data", makeVariable<event_list<double>>(Dims{}, Shape{}));
-  ASSERT_TRUE(is_events(d_ref["sparse_data"]));
+  ASSERT_TRUE(dataset::is_events(d_ref["sparse_data"]));
 
   // TODO Event data can have non-list data (only coords would be event_list),
   // what should is_events return in that case?

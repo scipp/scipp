@@ -4,11 +4,11 @@
 #include <gtest/gtest.h>
 
 #include "scipp/core/counts.h"
-#include "scipp/core/dataset.h"
 #include "scipp/core/dimensions.h"
+#include "scipp/dataset/dataset.h"
 
 using namespace scipp;
-using namespace scipp::core;
+using namespace scipp::dataset;
 
 TEST(Dataset, construct_empty) { ASSERT_NO_THROW(Dataset d); }
 
