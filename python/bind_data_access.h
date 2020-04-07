@@ -7,11 +7,11 @@
 
 #include <variant>
 
-#include "scipp/core/dataset.h"
 #include "scipp/core/dtype.h"
-#include "scipp/core/except.h"
 #include "scipp/core/tag_util.h"
 #include "scipp/core/variable.h"
+#include "scipp/dataset/dataset.h"
+#include "scipp/dataset/except.h"
 
 #include "numpy.h"
 #include "py_object.h"
@@ -205,7 +205,7 @@ template <class... Ts> class as_ElementArrayViewImpl {
             const auto &data = obj.cast<const std::vector<T>>();
             // TODO Related to #290, we should properly support
             // multi-dimensional input, and ignore bad shapes.
-            expect::sizeMatches(view_, data);
+            core::expect::sizeMatches(view_, data);
             std::copy(data.begin(), data.end(), view_.begin());
           }
         },
@@ -304,7 +304,7 @@ public:
     if (!get_values::valid<Var>(obj))
       return py::none();
     auto &view = obj.cast<Var &>();
-    expect::equals(Dimensions(), view.dims());
+    core::expect::equals(Dimensions(), view.dims());
     return std::visit(
         [&obj](const auto &data) {
           if constexpr (std::is_same_v<std::decay_t<decltype(data[0])>,
@@ -323,7 +323,7 @@ public:
     if (!get_variances::valid<Var>(obj))
       return py::none();
     auto &view = obj.cast<Var &>();
-    expect::equals(Dimensions(), view.dims());
+    core::expect::equals(Dimensions(), view.dims());
     return std::visit(
         [&obj](const auto &data) {
           if constexpr (std::is_same_v<std::decay_t<decltype(data[0])>,
@@ -339,7 +339,7 @@ public:
   // Set a scalar value in a variable, implicitly requiring that the
   // variable is 0-dimensional and thus has only a single item.
   template <class Var> static void set_value(Var &view, const py::object &o) {
-    expect::equals(Dimensions(), view.dims());
+    core::expect::equals(Dimensions(), view.dims());
     std::visit(
         [&o](const auto &data) {
           using T = typename std::decay_t<decltype(data)>::value_type;
@@ -354,7 +354,7 @@ public:
   // variable is 0-dimensional and thus has only a single item.
   template <class Var>
   static void set_variance(Var &view, const py::object &o) {
-    expect::equals(Dimensions(), view.dims());
+    core::expect::equals(Dimensions(), view.dims());
     if (o.is_none())
       return remove_variances(view);
     if (!view.hasVariances())

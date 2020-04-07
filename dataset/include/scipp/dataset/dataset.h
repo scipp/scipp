@@ -1130,3 +1130,12 @@ SCIPP_DATASET_EXPORT void union_or_in_place(const MasksView &currentMasks,
 SCIPP_DATASET_EXPORT bool is_events(const dataset::DataArrayConstView &array);
 
 } // namespace scipp::dataset
+
+namespace scipp {
+using dataset::DataArray;
+using dataset::DataArrayConstView;
+using dataset::DataArrayView;
+using dataset::Dataset;
+using dataset::DatasetConstView;
+using dataset::DatasetView;
+} // namespace scipp

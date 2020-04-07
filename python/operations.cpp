@@ -4,11 +4,12 @@
 /// @author Simon Heybrock
 
 #include "pybind11.h"
-#include "scipp/core/dataset.h"
 #include "scipp/core/variable_operations.h"
+#include "scipp/dataset/dataset.h"
 
 using namespace scipp;
 using namespace scipp::core;
+using namespace scipp::dataset;
 
 namespace py = pybind11;
 
