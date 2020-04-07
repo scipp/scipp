@@ -31,15 +31,14 @@ void init_eigen(py::module &m) {
         if (info.size != 4)
           throw std::runtime_error("Incompatible array size: expected size 4.");
 
-        return Eigen::Quaterniond(static_cast<Eigen::Quaterniond::Scalar *>(info.ptr));
+        return Eigen::Quaterniond(
+            static_cast<Eigen::Quaterniond::Scalar *>(info.ptr));
       }))
       .def(py::init([](py::list value) {
-
         if (value.size() != 4)
           throw std::runtime_error("Incompatible list size: expected size 4.");
 
         return Eigen::Quaterniond(value.cast<std::vector<double>>().data());
-
       }))
       .def("x", [](const Eigen::Quaterniond &self) { return self.x(); })
       .def("y", [](const Eigen::Quaterniond &self) { return self.y(); })

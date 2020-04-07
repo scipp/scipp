@@ -130,21 +130,15 @@ Variable doMakeVariable(const std::vector<Dim> &labels, py::array &values,
         dtypeTag == core::dtype<Eigen::Quaterniond>) {
       std::vector<scipp::index> shape(values.shape(),
                                       values.shape() + values.ndim() - 1);
-      if (dtypeTag == core::dtype<Eigen::Vector3d>)
+      if (dtypeTag == core::dtype<Eigen::Vector3d>) {
         return init_1D_no_variance(
             labels, shape, values.cast<std::vector<Eigen::Vector3d>>(), unit);
-      else {
+      } else {
+        const auto &arr = values.cast<std::vector<std::vector<double>>>();
         std::vector<Eigen::Quaterniond> qvec;
-        auto arr = values.unchecked<double, 2>();
-        qvec.reserve(arr.shape(0));
-        for (ssize_t i = 0; i < arr.shape(0); i++) {
-          // Note here that the order of inputs in the Eigen::Quaternion
-          // constructor that takes in 4 doubles is [w, x, y, z], which is
-          // inconsistent with the constructor that accepts a coeffs buffer
-          // of [x, y, z, w]. To make it consistent in scipp, we use the
-          // [x, y, z, w] convention everywhere.
-          qvec.emplace_back(arr(i, 3), arr(i, 0), arr(i, 1), arr(i, 2));
-        }
+        qvec.reserve(arr.size());
+        for (size_t i = 0; i < arr.size(); i++)
+          qvec.emplace_back(arr[i].data());
         return init_1D_no_variance(labels, shape, qvec, unit);
       }
     }
@@ -182,7 +176,6 @@ void bind_init_0D_native_python_types(py::class_<Variable> &c) {
                     const units::Unit &unit, py::object &dtype) {
           static_assert(std::is_same_v<T, int64_t> ||
                         std::is_same_v<T, double> || std::is_same_v<T, bool>);
-          std::cout << "Using bind_init_0D_native_python_types" << std::endl;
           if (dtype.is_none())
             return do_init_0D(value, variance, unit);
           else {
@@ -205,17 +198,17 @@ void bind_init_0D_numpy_types(py::class_<Variable> &c) {
             return doMakeVariable({}, arr, varr, unit, dtype);
           } else if (info.ndim == 1 &&
                      scipp_dtype(dtype) == core::dtype<Eigen::Vector3d>) {
-            std::cout << "Using bind_init_0D_numpy_types Eigen::Vector3d" << std::endl;
             return do_init_0D<Eigen::Vector3d>(
                 b.cast<Eigen::Vector3d>(),
                 v ? std::optional(v->cast<Eigen::Vector3d>()) : std::nullopt,
                 unit);
           } else if (info.ndim == 1 &&
                      scipp_dtype(dtype) == core::dtype<Eigen::Quaterniond>) {
-            std::cout << "Using bind_init_0D_numpy_types Eigen::Quaterniond" << std::endl;
             return do_init_0D<Eigen::Quaterniond>(
                 Eigen::Quaterniond(b.cast<std::vector<double>>().data()),
-                v ? std::optional(Eigen::Quaterniond(v->cast<std::vector<double>>().data())) : std::nullopt,
+                v ? std::optional(Eigen::Quaterniond(
+                        v->cast<std::vector<double>>().data()))
+                  : std::nullopt,
                 unit);
           } else {
             throw scipp::except::VariableError(
@@ -227,44 +220,10 @@ void bind_init_0D_numpy_types(py::class_<Variable> &c) {
         py::arg("dtype") = py::none());
 }
 
-
 void bind_init_list(py::class_<Variable> &c) {
   c.def(py::init([](const std::array<Dim, 1> &label, const py::list &values,
                     const std::optional<py::list> &variances,
                     const units::Unit &unit, py::object &dtype) {
-          if (scipp_dtype(dtype) == core::dtype<Eigen::Vector3d>) {
-            std::cout << "Using bind_init_list Eigen::Vector3d" << std::endl;
-            auto val = values.cast<std::vector<Eigen::Vector3d>>();
-            Variable variable;
-            if (variances) {
-              auto var = variances->cast<std::vector<Eigen::Vector3d>>();
-              variable = makeVariable<Eigen::Vector3d>(
-                  Dims{label[0]}, Shape{scipp::size(val)},
-                  Values(val.begin(), val.end()),
-                  Variances(var.begin(), var.end()), units::Unit(unit));
-            } else
-              variable = makeVariable<Eigen::Vector3d>(
-                  Dims{label[0]}, Shape{scipp::size(val)},
-                  Values(val.begin(), val.end()), units::Unit(unit));
-            return variable;
-          } else if (scipp_dtype(dtype) == core::dtype<Eigen::Quaterniond>) {
-            std::cout << "Using bind_init_list Eigen::Quaterniond" << std::endl;
-            auto val = values.cast<std::vector<Eigen::Quaterniond>>();
-            Variable variable;
-            if (variances) {
-              auto var = variances->cast<std::vector<Eigen::Quaterniond>>();
-              variable = makeVariable<Eigen::Quaterniond>(
-                  Dims{label[0]}, Shape{scipp::size(val)},
-                  Values(val.begin(), val.end()),
-                  Variances(var.begin(), var.end()), units::Unit(unit));
-            } else
-              variable = makeVariable<Eigen::Quaterniond>(
-                  Dims{label[0]}, Shape{scipp::size(val)},
-                  Values(val.begin(), val.end()), units::Unit(unit));
-            return variable;
-          }
-          std::cout << "Using bind_init_list other" << std::endl;
-
           auto arr = py::array(values);
           auto varr =
               variances ? std::optional(py::array(*variances)) : std::nullopt;
@@ -274,19 +233,33 @@ void bind_init_list(py::class_<Variable> &c) {
         py::arg("dims"), py::arg("values"), py::arg("variances") = std::nullopt,
         py::arg("unit") = units::Unit(units::dimensionless),
         py::arg("dtype") = py::none());
-    // Add bindings for list input for Eigen Vector3d and Quaternion
-    c.def(py::init([](const py::list &value,
+}
+
+void bind_init_list_eigen(py::class_<Variable> &c) {
+  c.def(py::init([](const py::list &value,
+                    const std::optional<py::list> &variance,
                     const units::Unit &unit, py::object &dtype) {
           if (scipp_dtype(dtype) == core::dtype<Eigen::Vector3d>) {
-            return do_init_0D<Eigen::Vector3d>(Eigen::Vector3d(value.cast<std::vector<double>>().data()), std::nullopt, unit);
+            return do_init_0D<Eigen::Vector3d>(
+                Eigen::Vector3d(value.cast<std::vector<double>>().data()),
+                variance ? std::optional(variance->cast<Eigen::Vector3d>())
+                         : std::nullopt,
+                unit);
+          } else if (scipp_dtype(dtype) == core::dtype<Eigen::Quaterniond>) {
+            return do_init_0D<Eigen::Quaterniond>(
+                Eigen::Quaterniond(value.cast<std::vector<double>>().data()),
+                variance ? std::optional(Eigen::Quaterniond(
+                               variance->cast<std::vector<double>>().data()))
+                         : std::nullopt,
+                unit);
           } else {
-            return do_init_0D<Eigen::Quaterniond>(Eigen::Quaterniond(value.cast<std::vector<double>>().data()), std::nullopt, unit);
+            throw scipp::except::VariableError(
+                "Wrong overload for making 0D Eigen variable.");
           }
-  }),
-  py::arg("value"),
-          py::arg("unit") = units::Unit(units::dimensionless),
+        }),
+        py::arg("value"), py::arg("variance") = std::nullopt,
+        py::arg("unit") = units::Unit(units::dimensionless),
         py::arg("dtype") = py::none());
-
 }
 
 template <class T, class... Ignored>
@@ -348,6 +321,7 @@ void init_variable(py::module &m) {
   bind_init_0D_native_python_types<int64_t>(variable);
   bind_init_0D_native_python_types<double>(variable);
   bind_init_0D<py::object>(variable);
+  bind_init_list_eigen(variable);
   //------------------------------------
 
   py::class_<VariableConstView>(m, "VariableConstView")

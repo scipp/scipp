@@ -281,7 +281,7 @@ def get_detector_properties(ws, source_pos, sample_pos):
                     y_values[idx] = p.Y()
                     z_values[idx] = p.Z()
                     idx += 1
-                    quats.append([r.real(), r.imagI(), r.imagJ(), r.imagK()])
+                    quats.append([r.imagI(), r.imagJ(), r.imagK(), r.real()])
                     bboxes.append(s.getBoundingBox().width())
                 det_rot[i, :] = np.mean(quats, axis=0)
                 det_bbox[i, :] = np.sum(bboxes, axis=0)
@@ -332,7 +332,7 @@ def get_detector_properties(ws, source_pos, sample_pos):
                     r = det_info.rotation(det_idx)
                     s = comp_info.shape(det_idx)
                     vec3s.append([p.X(), p.Y(), p.Z()])
-                    quats.append([r.real(), r.imagI(), r.imagJ(), r.imagK()])
+                    quats.append([r.imagI(), r.imagJ(), r.imagK(), r.real()])
                     bboxes.append(s.getBoundingBox().width())
                 pos[i, :] = np.mean(vec3s, axis=0)
                 det_rot[i, :] = np.mean(quats, axis=0)
