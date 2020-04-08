@@ -79,7 +79,6 @@ class TestMantidConversion(unittest.TestCase):
         del realigned.attrs['sample']
         assert realigned == d
 
-    @pytest.mark.skip(reason="Missing comparison for Mantid Run and Sample.")
     def test_comparison(self):
         a = mantidcompat.convert_EventWorkspace_to_data_array(
             self.base_event_ws, load_pulse_times=False)
