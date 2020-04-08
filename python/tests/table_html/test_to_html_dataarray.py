@@ -174,15 +174,18 @@ def test_bin_edge_and_sparse(dims, lengths):
     in_unit = sc.units.m
     in_dtype = sc.dtype.event_list_float32
 
-    data = sc.Variable(dims, lengths, unit=in_unit, dtype=in_dtype)
+    data = sc.Variable(dims=dims, shape=lengths, unit=in_unit, dtype=in_dtype)
 
     # attribute data without the sparse dimension
-    non_sparse_data = sc.Variable(dims, lengths, unit=in_unit, dtype=in_dtype)
+    non_sparse_data = sc.Variable(dims=dims,
+                                  shape=lengths,
+                                  unit=in_unit,
+                                  dtype=in_dtype)
 
     # makes the first dimension be bin-edges
     lengths[0] += 1
-    non_sparse_bin_edges = sc.Variable(dims,
-                                       lengths,
+    non_sparse_bin_edges = sc.Variable(dims=dims,
+                                       shape=lengths,
                                        unit=in_unit,
                                        dtype=in_dtype)
 
