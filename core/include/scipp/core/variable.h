@@ -311,42 +311,6 @@ Variable from_dimensions_and_unit_with_variances(const Dimensions &dms,
                                                  const units::Unit &u);
 } // namespace detail
 
-/// This function covers the cases of construction Variables from keyword
-/// argument. The Unit is completely arbitrary, the relations between Dims,
-/// Shape / Dimensions and actual data are following:
-/// 1. If neither Values nor Variances are provided, resulting Variable contains
-/// ONLY values of corresponding length.
-/// 2. The Variances can't be provided without any Values.
-/// 3. Non empty Values and/or Variances should be consistent with shape.
-/// 4. If empty Values and/or Variances are provided, resulting Variable
-/// contains default initialized Values and/or Variances, the way to make
-/// Variable which contains both Values and Variances given length uninitialised
-/// is:
-///       makeVariable<T>(Dims{Dim::X}, Shape{5}, Values{}, Variances{});
-template <class T>
-Variable Variable::create(const units::Unit &u, const Dimensions &d,
-                          std::optional<detail::element_array<T>> &&val,
-                          std::optional<detail::element_array<T>> &&var) {
-  if (val && var) {
-    if (val->size() < 0 && var->size() < 0)
-      return detail::from_dimensions_and_unit_with_variances<T>(d, u);
-    else
-      return Variable(u, d, std::move(*val), std::move(*var));
-  }
-
-  if (!val || val->size() < 0)
-    return detail::from_dimensions_and_unit<T>(d, u);
-  else
-    return Variable(u, d, std::move(*val));
-}
-
-template <class T>
-Variable Variable::create(const units::Unit &u, const Dims &d, const Shape &s,
-                          std::optional<detail::element_array<T>> &&val,
-                          std::optional<detail::element_array<T>> &&var) {
-  auto dms = Dimensions{d.data, s.data};
-  return create(u, dms, std::move(val), std::move(var));
-}
 template <class... Ts>
 template <class T>
 Variable Variable::ConstructVariable<Ts...>::Maker<T>::apply(Ts &&... ts) {
