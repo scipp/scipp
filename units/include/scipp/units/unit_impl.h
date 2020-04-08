@@ -115,6 +115,8 @@ template <class Derived> Derived tan(const Unit_impl<Derived> &a);
 template <class Derived> Derived asin(const Unit_impl<Derived> &a);
 template <class Derived> Derived acos(const Unit_impl<Derived> &a);
 template <class Derived> Derived atan(const Unit_impl<Derived> &a);
+template <class Derived>
+Derived atan2(const Unit_impl<Derived> &y, const Unit_impl<Derived> &x);
 
 } // namespace scipp::units
 

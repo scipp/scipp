@@ -93,11 +93,8 @@ def make_detector_info(ws):
     det_info = ws.detectorInfo()
     # det -> spec mapping
     nDet = det_info.size()
-    spectrum = sc.Variable([sc.Dim.Detector],
-                           shape=(nDet, ),
-                           dtype=sc.dtype.int32)
-    has_spectrum = sc.Variable([sc.Dim.Detector],
-                               values=np.full((nDet, ), False))
+    spectrum = sc.Variable(['detector'], shape=(nDet, ), dtype=sc.dtype.int32)
+    has_spectrum = sc.Variable(['detector'], values=np.full((nDet, ), False))
     spectrum_ = spectrum.values
     has_spectrum_ = has_spectrum.values
     spec_info = ws.spectrumInfo()
@@ -111,7 +108,7 @@ def make_detector_info(ws):
                     "not supported yet.")
             spectrum_[det] = i
             has_spectrum_[det] = True
-    detector = sc.Variable([sc.Dim.Detector], values=det_info.detectorIDs())
+    detector = sc.Variable(['detector'], values=det_info.detectorIDs())
 
     # Remove any information about detectors without data (a spectrum). This
     # mostly just gets in the way and including it in the default converter
@@ -121,14 +118,16 @@ def make_detector_info(ws):
 
     # May want to include more information here, such as detector positions,
     # but for now this is not necessary.
-    return sc.Variable(value=sc.Dataset(coords={sc.Dim.Detector: detector},
-                                        labels={'spectrum': spectrum}))
+    return sc.Variable(value=sc.Dataset(coords={
+        'detector': detector,
+        'spectrum': spectrum
+    }))
 
 
 def md_dimension(mantid_dim, index):
     # Look for q dimensions
     patterns = ["^q.*{0}$".format(coord) for coord in ['x', 'y', 'z']]
-    q_dims = [sc.Dim.Qx, sc.Dim.Qy, sc.Dim.Qz]
+    q_dims = ['Q_x', 'Q_y', 'Q_z']
     pattern_result = zip(patterns, q_dims)
     if mantid_dim.getMDFrame().isQ():
         for pattern, result in pattern_result:
@@ -137,7 +136,7 @@ def md_dimension(mantid_dim, index):
 
     # Look for common/known mantid dimensions
     patterns = ["DeltaE", "T"]
-    dims = [sc.Dim.EnergyTransfer, sc.Dim.Temperature]
+    dims = ['Delta-E', 'temperature']
     pattern_result = zip(patterns, dims)
     for pattern, result in pattern_result:
         if re.search(pattern, mantid_dim.name, re.IGNORECASE):
@@ -145,7 +144,7 @@ def md_dimension(mantid_dim, index):
 
     # Look for common spacial dimensions
     patterns = ["^{0}$".format(coord) for coord in ['x', 'y', 'z']]
-    dims = [sc.Dim.X, sc.Dim.Y, sc.Dim.Z]
+    dims = ['x', 'y', 'z']
     pattern_result = zip(patterns, dims)
     for pattern, result in pattern_result:
         if re.search(pattern, mantid_dim.name, re.IGNORECASE):
@@ -169,47 +168,149 @@ def md_unit(frame):
         return sc.units.dimensionless
 
 
-def validate_and_get_unit(unit):
+def validate_and_get_unit(unit, allow_empty=False):
     known_units = {
-        "DeltaE": [sc.Dim.EnergyTransfer, sc.units.meV],
-        "TOF": [sc.Dim.Tof, sc.units.us],
-        "Wavelength": [sc.Dim.Wavelength, sc.units.angstrom],
-        "Energy": [sc.Dim.Energy, sc.units.meV],
-        "dSpacing": [sc.Dim.DSpacing, sc.units.angstrom],
-        "MomentumTransfer":
-        [sc.Dim.Q, sc.units.dimensionless / sc.units.angstrom],
+        "DeltaE": ['Delta-E', sc.units.meV],
+        "TOF": ['tof', sc.units.us],
+        "Wavelength": ['wavelength', sc.units.angstrom],
+        "Energy": ['E', sc.units.meV],
+        "dSpacing": ['d-spacing', sc.units.angstrom],
+        "MomentumTransfer": ['Q', sc.units.dimensionless / sc.units.angstrom],
         "QSquared": [
-            sc.Dim.QSquared,
+            'Q^2',
             sc.units.dimensionless / (sc.units.angstrom * sc.units.angstrom)
         ],
-        "Label": [sc.Dim.Spectrum, sc.units.dimensionless],
-        "Empty": [sc.Dim.Spectrum, sc.units.dimensionless]
+        "Label": ['spectrum', sc.units.dimensionless],
+        "Empty": ['empty', sc.units.dimensionless],
+        "Counts": ['counts', sc.units.counts]
     }
 
     if unit not in known_units.keys():
-        raise RuntimeError("Axis unit not currently supported."
-                           "Possible values are: {}, "
-                           "got '{}'. ".format([k for k in known_units.keys()],
-                                               unit))
+        if allow_empty:
+            return ['unknown', sc.units.dimensionless]
+        else:
+            raise RuntimeError("Unit not currently supported."
+                               "Possible values are: {}, "
+                               "got '{}'. ".format(
+                                   [k for k in known_units.keys()], unit))
     else:
         return known_units[unit]
 
 
-def init_pos(ws):
-    nHist = ws.getNumberHistograms()
-    pos = np.zeros([nHist, 3])
+def _to_spherical(pos, output):
+    output["r"] = sc.sqrt(sc.dot(pos, pos))
+    output["t"] = sc.acos(sc.geometry.z(pos) / output["r"].data)
+    output["p"] = output["t"].data.copy()
+    sc.atan2(sc.geometry.y(pos), sc.geometry.x(pos), output["p"].data)
 
+
+def rotation_matrix_from_vectors(vec1, vec2):
+    """ Find the rotation matrix that aligns vec1 to vec2
+    :param vec1: A 3d "source" vector
+    :param vec2: A 3d "destination" vector
+    :return mat: Tranform (3x3) which aligns it with vec2.
+    """
+    a, b = (vec1 /
+            np.linalg.norm(vec1)).reshape(3), (vec2 /
+                                               np.linalg.norm(vec2)).reshape(3)
+    v = np.cross(a, b)
+    c = np.dot(a, b)
+    s = np.linalg.norm(v)
+    if s == 0:
+        return np.eye(3)
+    kmat = np.array([[0, -v[2], v[1]], [v[2], 0, -v[0]], [-v[1], v[0], 0]])
+    rotation_matrix = np.eye(3) + kmat + kmat.dot(kmat) * ((1 - c) / (s**2))
+    return rotation_matrix
+
+
+def matrix_mult(pos, m):
+    if not pos.shape[0]:
+        return pos
+    m1 = sc.Variable(value=m[0, :], dtype=sc.dtype.vector_3_float64)
+    m2 = sc.Variable(value=m[1, :], dtype=sc.dtype.vector_3_float64)
+    m3 = sc.Variable(value=m[2, :], dtype=sc.dtype.vector_3_float64)
+    xn = sc.dot(m1, pos)
+    yn = sc.dot(m2, pos)
+    zn = sc.dot(m3, pos)
+    return sc.geometry.position(xn, yn, zn)
+
+
+def init_pos(ws, source_pos, sample_pos):
+    import numpy as np
     spec_info = ws.spectrumInfo()
-    for i in range(nHist):
-        if spec_info.hasDetectors(i):
-            p = spec_info.position(i)
-            pos[i, :] = [p.X(), p.Y(), p.Z()]
-        else:
-            pos[i, :] = [np.nan, np.nan, np.nan]
-    return sc.Variable([sc.Dim.Spectrum],
-                       values=pos,
-                       unit=sc.units.m,
-                       dtype=sc.dtype.vector_3_float64)
+
+    if sample_pos is not None and source_pos is not None:
+        det_info = ws.detectorInfo()
+        total_detectors = spec_info.detectorCount()
+        act_beam = (sample_pos - source_pos).values
+        rot = rotation_matrix_from_vectors(act_beam, [0, 0, 1])
+        inv_rot = rot.transpose()
+
+        pos_d = sc.Dataset()
+        # Create empty to hold position info for all spectra detectors
+        pos_d["x"] = sc.Variable(["detector"],
+                                 shape=[total_detectors],
+                                 unit=sc.units.m)
+        pos_d["y"] = pos_d["x"]
+        pos_d["z"] = pos_d["x"]
+        pos_d.coords["spectrum"] = sc.Variable(
+            ["detector"], values=np.empty(total_detectors))
+        spectrum_values = pos_d.coords["spectrum"].values
+
+        x_values = pos_d["x"].values
+        y_values = pos_d["y"].values
+        z_values = pos_d["z"].values
+
+        idx = 0
+        for i, spec in enumerate(spec_info):
+            if spec.hasDetectors:
+                definition = spec_info.getSpectrumDefinition(i)
+                n_dets = len(definition)
+                for j in range(n_dets):
+                    det_idx = definition[j][0]
+                    p = det_info.position(det_idx)
+                    spectrum_values[idx] = i
+                    x_values[idx] = p.X()
+                    y_values[idx] = p.Y()
+                    z_values[idx] = p.Z()
+                    idx += 1
+
+        rot_pos = matrix_mult(
+            sc.geometry.position(pos_d["x"].data, pos_d["y"].data,
+                                 pos_d["z"].data), rot)
+
+        _to_spherical(rot_pos, pos_d)
+
+        averaged = sc.groupby(pos_d,
+                              "spectrum",
+                              bins=sc.Variable(["spectrum"],
+                                               values=np.arange(
+                                                   -0.5,
+                                                   len(spec_info) + 0.5,
+                                                   1.0))).mean("detector")
+
+        averaged["x"] = averaged["r"].data * sc.sin(
+            averaged["t"].data) * sc.cos(averaged["p"].data)
+        averaged["y"] = averaged["r"].data * sc.sin(
+            averaged["t"].data) * sc.sin(averaged["p"].data)
+        averaged["z"] = averaged["r"].data * sc.cos(averaged["t"].data)
+
+        pos = sc.geometry.position(averaged["x"].data, averaged["y"].data,
+                                   averaged["z"].data)
+        return matrix_mult(pos, inv_rot)
+    else:
+        pos = np.zeros([len(spec_info), 3])
+
+        for i, spec in enumerate(spec_info):
+            if spec.hasDetectors:
+                p = spec.position
+                pos[i, :] = [p.X(), p.Y(), p.Z()]
+            else:
+                pos[i, :] = [np.nan, np.nan, np.nan]
+        return sc.Variable(['spectrum'],
+                           values=pos,
+                           unit=sc.units.m,
+                           dtype=sc.dtype.vector_3_float64)
 
 
 def _get_dtype_from_values(values):
@@ -248,20 +349,30 @@ def set_common_bins_masks(bin_masks, dim, masked_bins):
 
 def set_bin_masks(bin_masks, dim, index, masked_bins):
     for masked_bin in masked_bins:
-        bin_masks[sc.Dim.Spectrum, index][dim, masked_bin].value = True
+        bin_masks['spectrum', index][dim, masked_bin].value = True
 
 
 def _convert_MatrixWorkspace_info(ws):
+    common_bins = ws.isCommonBins()
+    dim, unit = validate_and_get_unit(ws.getAxis(0).getUnit().unitID())
     source_pos, sample_pos = make_component_info(ws)
     det_info = make_detector_info(ws)
-    pos = init_pos(ws)
+    pos = init_pos(ws, source_pos, sample_pos)
     spec_dim, spec_coord = init_spec_axis(ws)
+
+    if common_bins:
+        coord = sc.Variable([dim], values=ws.readX(0), unit=unit)
+    else:
+        coord = sc.Variable([spec_dim, dim],
+                            shape=(ws.getNumberHistograms(), len(ws.readX(0))),
+                            unit=unit)
+        for i in range(ws.getNumberHistograms()):
+            coord[spec_dim, i].values = ws.readX(i)
 
     info = {
         "coords": {
-            spec_dim: spec_coord
-        },
-        "labels": {
+            dim: coord,
+            spec_dim: spec_coord,
             "position": pos,
             "detector_info": det_info
         },
@@ -272,10 +383,10 @@ def _convert_MatrixWorkspace_info(ws):
         },
     }
     if source_pos is not None:
-        info["labels"]["source_position"] = source_pos
+        info["coords"]["source_position"] = source_pos
 
     if sample_pos is not None:
-        info["labels"]["sample_position"] = sample_pos
+        info["coords"]["sample_position"] = sample_pos
 
     if ws.detectorInfo().hasMaskedDetectors():
         spectrum_info = ws.spectrumInfo()
@@ -308,8 +419,8 @@ def convert_monitors_ws(ws, converter, **ignored):
             single_monitor = converter(monitor_ws)
         # Remove redundant information that is duplicated from workspace
         # We get this extra information from the generic converter reuse
-        del single_monitor.labels['sample_position']
-        del single_monitor.labels['detector_info']
+        del single_monitor.coords['sample_position']
+        del single_monitor.coords['detector_info']
         del single_monitor.attrs['run']
         del single_monitor.attrs['sample']
         monitors.append((comp_info.name(det_index), single_monitor))
@@ -321,21 +432,12 @@ def convert_Workspace2D_to_data_array(ws, **ignored):
     dim, unit = validate_and_get_unit(ws.getAxis(0).getUnit().unitID())
     spec_dim, spec_coord = init_spec_axis(ws)
 
-    if common_bins:
-        coord = sc.Variable([dim], values=ws.readX(0), unit=unit)
-    else:
-        coord = sc.Variable([spec_dim, dim],
-                            shape=(ws.getNumberHistograms(), len(ws.readX(0))),
-                            unit=unit)
-        for i in range(ws.getNumberHistograms()):
-            coord[spec_dim, i].values = ws.readX(i)
-
     coords_labs_data = _convert_MatrixWorkspace_info(ws)
-    coords_labs_data["coords"][dim] = coord
+    _, data_unit = validate_and_get_unit(ws.YUnit(), allow_empty=True)
     coords_labs_data["data"] = sc.Variable([spec_dim, dim],
                                            shape=(ws.getNumberHistograms(),
                                                   len(ws.readY(0))),
-                                           unit=sc.units.counts,
+                                           unit=data_unit,
                                            variances=True)
     array = detail.move_to_data_array(**coords_labs_data)
 
@@ -355,38 +457,43 @@ def convert_Workspace2D_to_data_array(ws, **ignored):
 
         if not common_bins and ws.hasMaskedBins(i):
             set_bin_masks(bin_masks, dim, i, ws.maskedBinsIndices(i))
-
     # Avoid creating dimensions that are not required since this mostly an
     # artifact of inflexible data structures and gets in the way when working
     # with scipp.
     if len(spec_coord.values) == 1:
-        array.labels['position'] = array.labels['position'][spec_dim, 0]
+        array.coords['position'] = array.coords['position'][spec_dim, 0]
         array = array[spec_dim, 0].copy()
     return array
 
 
-def convert_EventWorkspace_to_data_array(ws, load_pulse_times=True, **ignored):
+def convert_EventWorkspace_to_data_array(ws,
+                                         load_pulse_times=True,
+                                         realign_events=False,
+                                         **ignored):
     from mantid.api import EventType
 
     dim, unit = validate_and_get_unit(ws.getAxis(0).getUnit().unitID())
     spec_dim, spec_coord = init_spec_axis(ws)
     nHist = ws.getNumberHistograms()
 
-    coord = sc.Variable([spec_dim, dim],
-                        shape=[nHist, sc.Dimensions.Sparse],
-                        unit=unit)
+    coord = sc.Variable([spec_dim],
+                        shape=[nHist],
+                        unit=unit,
+                        dtype=sc.dtype.event_list_float64)
     if load_pulse_times:
-        labs = sc.Variable([spec_dim, dim],
-                           shape=[nHist, sc.Dimensions.Sparse],
-                           dtype=sc.dtype.int64)
+        labs = sc.Variable([spec_dim],
+                           shape=[nHist],
+                           dtype=sc.dtype.event_list_int64)
 
     # Check for weighted events
     evtp = ws.getSpectrum(0).getEventType()
     contains_weighted_events = ((evtp == EventType.WEIGHTED)
                                 or (evtp == EventType.WEIGHTED_NOTIME))
     if contains_weighted_events:
-        weights = sc.Variable([spec_dim, dim],
-                              shape=[nHist, sc.Dimensions.Sparse])
+        weights = sc.Variable([spec_dim],
+                              shape=[nHist],
+                              dtype=sc.dtype.event_list_float32,
+                              variances=True)
 
     for i in range(nHist):
         sp = ws.getSpectrum(i)
@@ -398,13 +505,26 @@ def convert_EventWorkspace_to_data_array(ws, load_pulse_times=True, **ignored):
             weights[spec_dim, i].variances = sp.getWeightErrors()
 
     coords_labs_data = _convert_MatrixWorkspace_info(ws)
+    bin_edges = coords_labs_data["coords"][dim]
     coords_labs_data["coords"][dim] = coord
 
     if load_pulse_times:
-        coords_labs_data["labels"]["pulse_times"] = labs
+        coords_labs_data["coords"]["pulse_times"] = labs
     if contains_weighted_events:
         coords_labs_data["data"] = weights
-    return detail.move_to_data_array(**coords_labs_data)
+    else:
+        _, data_unit = validate_and_get_unit(ws.YUnit(), allow_empty=True)
+        coords_labs_data["data"] = sc.Variable(dims=[spec_dim],
+                                               values=np.ones(nHist),
+                                               variances=np.ones(nHist),
+                                               unit=data_unit,
+                                               dtype=sc.dtype.float32)
+    array = detail.move_to_data_array(**coords_labs_data)
+    if realign_events:
+        # Event data is stored as unaligned content, with realigned wrapper
+        # based on Mantid's bin edges.
+        array.realign({dim: bin_edges})
+    return array
 
 
 def convert_MDHistoWorkspace_to_data_array(md_histo, **ignored):
@@ -468,7 +588,7 @@ def convert_TableWorkspace_to_dataset(ws, error_connection=None, **ignored):
         data_name = columnNames[i]
         if error_connection is None:
             dataset[data_name] = detail.move(
-                sc.Variable([sc.Dim.Row], values=ws.column(i)))
+                sc.Variable(['row'], values=ws.column(i)))
         elif data_name in error_connection:
             # This data has error availble
             error_name = error_connection[data_name]
@@ -482,13 +602,13 @@ def convert_TableWorkspace_to_dataset(ws, error_connection=None, **ignored):
 
             variance = np.array(ws.column(error_name))**2
             dataset[data_name] = detail.move(
-                sc.Variable([sc.Dim.Row],
+                sc.Variable(['row'],
                             values=np.array(ws.column(i)),
                             variances=variance))
         elif data_name not in error_connection.values():
             # This data is not an error for another dataset, and has no error
             dataset[data_name] = detail.move(
-                sc.Variable([sc.Dim.Row], values=ws.column(i)))
+                sc.Variable(['row'], values=ws.column(i)))
 
     return dataset
 
@@ -502,8 +622,10 @@ def from_mantid(workspace, **kwargs):
     workspaces_to_delete = []
     if workspace.id() == 'Workspace2D' or workspace.id() == 'RebinnedOutput':
         has_monitors = False
-        for spec in workspace.spectrumInfo():
-            has_monitors |= spec.isMonitor
+        spec_info = workspace.spectrumInfo()
+        for i in range(len(spec_info)):
+            if spec_info.hasDetectors(i):
+                has_monitors |= spec_info.isMonitor(i)
             if has_monitors:
                 break
         if has_monitors:
@@ -550,6 +672,7 @@ def from_mantid(workspace, **kwargs):
 
 def load(filename="",
          load_pulse_times=True,
+         realign_events=False,
          instrument_filename=None,
          error_connection=None,
          mantid_args=None):
@@ -578,6 +701,8 @@ def load(filename="",
 
     :param str filename: The name of the Nexus/HDF file to be loaded.
     :param bool load_pulse_times: Read the pulse times if True.
+    :param bool realign_events: Realign event data according to "X" axis given
+                                by file.
     :param str instrument_filename: If specified, over-write the instrument
                                     definition in the final Dataset with the
                                     geometry contained in the file.
@@ -610,38 +735,39 @@ def load(filename="",
 
         return from_mantid(data_ws,
                            load_pulse_times=load_pulse_times,
+                           realign_events=realign_events,
                            error_connection=error_connection)
 
 
 def load_component_info(ds, file):
     """
-    Adds the component info labels into the dataset. The following are added:
+    Adds the component info coord into the dataset. The following are added:
 
     - source_position
     - sample_position
     - position
 
-    :param ds: Dataset on which the component info will be added as labels.
+    :param ds: Dataset on which the component info will be added as coords.
     :param file: File from which the IDF will be loaded.
                  This can be anything that mantid.Load can load.
     """
     with run_mantid_alg('Load', file) as ws:
         source_pos, sample_pos = make_component_info(ws)
 
-        ds.labels["source_position"] = source_pos
-        ds.labels["sample_position"] = sample_pos
-        ds.labels["position"] = init_pos(ws)
+        ds.coords["source_position"] = source_pos
+        ds.coords["sample_position"] = sample_pos
+        ds.coords["position"] = init_pos(ws, source_pos, sample_pos)
 
 
 def validate_dim_and_get_mantid_string(unit_dim):
     known_units = {
-        sc.Dim.EnergyTransfer: "DeltaE",
-        sc.Dim.Tof: "TOF",
-        sc.Dim.Wavelength: "Wavelength",
-        sc.Dim.Energy: "Energy",
-        sc.Dim.DSpacing: "dSpacing",
-        sc.Dim.Q: "MomentumTransfer",
-        sc.Dim.QSquared: "QSquared",
+        'Delta-E': "DeltaE",
+        'tof': "TOF",
+        'wavelength': "Wavelength",
+        'E': "Energy",
+        'd-spacing': "dSpacing",
+        'Q': "MomentumTransfer",
+        'Q^2': "QSquared",
     }
 
     if unit_dim not in known_units.keys():

@@ -3,9 +3,11 @@
 /// @file
 /// @author Simon Heybrock
 
-#include "scipp/neutron/beamline.h"
 #include "scipp/core/dataset.h"
 #include "scipp/core/transform.h"
+#include "scipp/core/variable_operations.h"
+
+#include "scipp/neutron/beamline.h"
 
 using namespace scipp::core;
 
@@ -16,22 +18,20 @@ namespace beamline_impl {
 template <class T> static auto position(const T &d) {
   if (d.coords().contains(Dim::Position))
     return d.coords()[Dim::Position];
-  else if (d.labels().contains("position"))
-    return d.labels()["position"];
   else
     return d.attrs()["position"];
 }
 
 template <class T> static auto source_position(const T &d) {
-  if (d.labels().contains("source_position"))
-    return d.labels()["source_position"];
+  if (d.coords().contains(Dim("source_position")))
+    return d.coords()[Dim("source_position")];
   else
     return d.attrs()["source_position"];
 }
 
 template <class T> static auto sample_position(const T &d) {
-  if (d.labels().contains("sample_position"))
-    return d.labels()["sample_position"];
+  if (d.coords().contains(Dim("sample_position")))
+    return d.coords()[Dim("sample_position")];
   else
     return d.attrs()["sample_position"];
 }
@@ -39,7 +39,7 @@ template <class T> static auto sample_position(const T &d) {
 template <class T> static Variable flight_path_length(const T &d) {
   // If there is no sample this returns the straight distance from the source,
   // as required, e.g., for monitors.
-  if (d.labels().contains("sample_position") ||
+  if (d.coords().contains(Dim("sample_position")) ||
       d.attrs().contains("sample_position"))
     return l1(d) + l2(d);
   else

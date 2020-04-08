@@ -11,7 +11,6 @@ namespace scipp::core {
 
 namespace {
 void validate_begin(const scipp::index begin_) {
-
   if (begin_ < 0)
     throw except::SliceError("begin must be >= 0. Given " +
                              std::to_string(begin_));

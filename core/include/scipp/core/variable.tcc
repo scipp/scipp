@@ -32,9 +32,9 @@ template <class T> class ViewModel;
 template <class T>
 auto makeSpan(T &model, const Dimensions &dims, const Dim dim,
               const scipp::index begin, const scipp::index end) {
-  if (!dims.denseContains(dim) && (begin != 0 || end != 1))
+  if (!dims.contains(dim) && (begin != 0 || end != 1))
     throw std::runtime_error("VariableConcept: Slice index out of range.");
-  if (!dims.denseContains(dim) || dims[dim] == end - begin) {
+  if (!dims.contains(dim) || dims[dim] == end - begin) {
     return scipp::span(model.data(), model.data() + model.size());
   }
   const scipp::index beginOffset = begin * dims.offset(dim);

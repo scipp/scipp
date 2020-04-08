@@ -16,6 +16,7 @@ std::unordered_map<std::string, DimId> Dim::builtin_ids{
     {"group", Dim::Group},
     {"<invalid>", Dim::Invalid},
     {"position", Dim::Position},
+    {"pulse-time", Dim::PulseTime},
     {"Q", Dim::Q},
     {"Q_x", Dim::Qx},
     {"Q_y", Dim::Qy},

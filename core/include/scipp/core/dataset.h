@@ -14,6 +14,8 @@
 
 #include <boost/iterator/transform_iterator.hpp>
 
+#include "scipp/common/deep_ptr.h"
+#include "scipp/core/dataset_access.h"
 #include "scipp/core/except.h"
 #include "scipp/core/variable.h"
 #include "scipp/core/view_decl.h"
@@ -24,16 +26,16 @@ class DataArray;
 class Dataset;
 class DatasetConstView;
 class DatasetView;
+struct UnalignedData;
 
 namespace detail {
 /// Helper for holding data items in Dataset.
 struct DatasetData {
   /// Optional data values (with optional variances).
-  std::optional<Variable> data;
-  /// Dimension coord for the sparse dimension (there can be only 1).
-  std::optional<Variable> coord;
-  /// Potential labels for the sparse dimension.
-  std::unordered_map<std::string, Variable> labels;
+  Variable data;
+  /// Unaligned data, a simple struct of aligned dimensions alongside a data
+  /// array with unaligned content.
+  deep_ptr<UnalignedData> unaligned;
   /// Attributes for data.
   std::unordered_map<std::string, Variable> attrs;
 };
@@ -41,13 +43,20 @@ struct DatasetData {
 using dataset_item_map = std::unordered_map<std::string, DatasetData>;
 } // namespace detail
 
+/// Policies for attribute propagation in operations with data arrays or
+/// dataset.
+enum class AttrPolicy { Keep, Drop };
+
 /// Const view for a data item and related coordinates of Dataset.
 class SCIPP_CORE_EXPORT DataArrayConstView {
 public:
+  DataArrayConstView() = default;
   DataArrayConstView(const Dataset &dataset,
                      const detail::dataset_item_map::value_type &data,
                      const detail::slice_list &slices = {},
-                     std::optional<VariableView> &&view = std::nullopt);
+                     VariableView &&view = VariableView{});
+
+  explicit operator bool() const noexcept { return m_dataset != nullptr; }
 
   const std::string &name() const noexcept;
 
@@ -56,22 +65,21 @@ public:
   units::Unit unit() const;
 
   CoordsConstView coords() const noexcept;
-  LabelsConstView labels() const noexcept;
   AttrsConstView attrs() const noexcept;
   MasksConstView masks() const noexcept;
 
   /// Return true if the view contains data values.
-  bool hasData() const noexcept { return m_data->second.data.has_value(); }
+  bool hasData() const noexcept { return static_cast<bool>(m_view); }
   /// Return true if the view contains data variances.
   bool hasVariances() const noexcept {
-    return hasData() && m_data->second.data->hasVariances();
+    return hasData() ? data().hasVariances() : unaligned().hasVariances();
   }
 
   /// Return untyped const view for data (values and optional variances).
   const VariableConstView &data() const {
     if (!hasData())
       throw except::SparseDataError("No data in item.");
-    return *m_view;
+    return m_view;
   }
   /// Return typed const view for data values.
   template <class T> auto values() const { return data().template values<T>(); }
@@ -80,6 +88,8 @@ public:
   template <class T> auto variances() const {
     return data().template variances<T>();
   }
+
+  DataArrayConstView unaligned() const;
 
   DataArrayConstView slice(const Slice slice1) const;
   DataArrayConstView slice(const Slice slice1, const Slice slice2) const;
@@ -90,6 +100,8 @@ public:
 
   auto &underlying() const { return m_data->second; }
 
+  std::vector<std::pair<Dim, Variable>> slice_bounds() const;
+
 protected:
   // Note that m_view is a VariableView, not a VariableConstView. In case
   // *this (DataArrayConstView) is stand-alone (not part of DataArrayView),
@@ -97,15 +109,17 @@ protected:
   // VariableView. The interface guarantees that the invalid mutable view is
   // not accessible. This wrapping avoids inefficient duplication of the view in
   // the child class DataArrayView.
-  std::optional<VariableView> m_view;
+  VariableView m_view; // empty if the array has no (aligned) data
 
 private:
   friend class DatasetConstView;
   friend class DatasetView;
 
-  const Dataset *m_dataset;
-  const detail::dataset_item_map::value_type *m_data;
+  const Dataset *m_dataset{nullptr};
+  const detail::dataset_item_map::value_type *m_data{nullptr};
   detail::slice_list m_slices;
+
+  template <class MapView> MapView makeView() const;
 };
 
 SCIPP_CORE_EXPORT bool operator==(const DataArrayConstView &a,
@@ -120,11 +134,12 @@ class Dataset;
 /// View for a data item and related coordinates of Dataset.
 class SCIPP_CORE_EXPORT DataArrayView : public DataArrayConstView {
 public:
+  DataArrayView() = default;
   DataArrayView(Dataset &dataset, detail::dataset_item_map::value_type &data,
-                const detail::slice_list &slices = {});
+                const detail::slice_list &slices = {},
+                VariableView &&view = VariableView{});
 
   CoordsView coords() const noexcept;
-  LabelsView labels() const noexcept;
   MasksView masks() const noexcept;
   AttrsView attrs() const noexcept;
 
@@ -134,7 +149,7 @@ public:
   const VariableView &data() const {
     if (!hasData())
       throw except::SparseDataError("No data in item.");
-    return *m_view;
+    return m_view;
   }
   /// Return typed view for data values.
   template <class T> auto values() const { return data().template values<T>(); }
@@ -143,6 +158,8 @@ public:
   template <class T> auto variances() const {
     return data().template variances<T>();
   }
+
+  DataArrayView unaligned() const;
 
   DataArrayView slice(const Slice slice1) const;
   DataArrayView slice(const Slice slice1, const Slice slice2) const;
@@ -182,6 +199,8 @@ public:
     return *this /= makeVariable<T>(Values{value});
   }
 
+  void setData(Variable data) const;
+
 private:
   friend class DatasetConstView;
   // For internal use in DatasetConstView.
@@ -189,8 +208,10 @@ private:
       : DataArrayConstView(std::move(base)), m_mutableDataset{nullptr},
         m_mutableData{nullptr} {}
 
-  Dataset *m_mutableDataset;
-  detail::dataset_item_map::value_type *m_mutableData;
+  Dataset *m_mutableDataset{nullptr};
+  detail::dataset_item_map::value_type *m_mutableData{nullptr};
+
+  template <class MapView> MapView makeView() const;
 };
 
 namespace detail {
@@ -232,14 +253,10 @@ public:
   explicit Dataset(const DataArrayConstView &data);
   explicit Dataset(const std::map<std::string, DataArrayConstView> &data);
 
-  template <class DataMap, class CoordMap, class LabelsMap, class MasksMap,
-            class AttrMap>
-  Dataset(DataMap data, CoordMap coords, LabelsMap labels, MasksMap masks,
-          AttrMap attrs) {
+  template <class DataMap, class CoordMap, class MasksMap, class AttrMap>
+  Dataset(DataMap data, CoordMap coords, MasksMap masks, AttrMap attrs) {
     for (auto &&[dim, coord] : coords)
       setCoord(dim, std::move(coord));
-    for (auto &&[name, labs] : labels)
-      setLabels(std::string(name), std::move(labs));
     for (auto &&[name, mask] : masks)
       setMask(std::string(name), std::move(mask));
     for (auto &&[name, attr] : attrs)
@@ -266,9 +283,6 @@ public:
   CoordsConstView coords() const noexcept;
   CoordsView coords() noexcept;
 
-  LabelsConstView labels() const noexcept;
-  LabelsView labels() noexcept;
-
   AttrsConstView attrs() const noexcept;
   AttrsView attrs() noexcept;
 
@@ -277,7 +291,8 @@ public:
 
   bool contains(const std::string &name) const noexcept;
 
-  void erase(const std::string_view name);
+  void erase(const std::string &name);
+  [[nodiscard]] DataArray extract(const std::string &name);
 
   auto find() const && = delete;
   auto find() && = delete;
@@ -356,24 +371,17 @@ public:
   }
 
   void setCoord(const Dim dim, Variable coord);
-  void setLabels(const std::string &labelName, Variable labels);
   void setMask(const std::string &masksName, Variable masks);
   void setAttr(const std::string &attrName, Variable attr);
   void setAttr(const std::string &name, const std::string &attrName,
                Variable attr);
-  void setData(const std::string &name, Variable data);
+  void setData(const std::string &name, Variable data,
+               const AttrPolicy attrPolicy = AttrPolicy::Drop);
   void setData(const std::string &name, const DataArrayConstView &data);
   void setData(const std::string &name, DataArray data);
-  void setSparseCoord(const std::string &name, Variable coord);
-  void setSparseLabels(const std::string &name, const std::string &labelName,
-                       Variable labels);
 
   void setCoord(const Dim dim, const VariableConstView &coord) {
     setCoord(dim, Variable(coord));
-  }
-  void setLabels(const std::string &labelName,
-                 const VariableConstView &labels) {
-    setLabels(labelName, Variable(labels));
   }
   void setMask(const std::string &masksName, const VariableConstView &mask) {
     setMask(masksName, Variable(mask));
@@ -385,24 +393,15 @@ public:
                const VariableConstView &attr) {
     setAttr(name, attrName, Variable(attr));
   }
-  void setData(const std::string &name, const VariableConstView &data) {
-    setData(name, Variable(data));
-  }
-  void setSparseCoord(const std::string &name, const VariableConstView &coord) {
-    setSparseCoord(name, Variable(coord));
-  }
-  void setSparseLabels(const std::string &name, const std::string &labelName,
-                       const VariableConstView &labels) {
-    setSparseLabels(name, labelName, Variable(labels));
+  void setData(const std::string &name, const VariableConstView &data,
+               const AttrPolicy attrPolicy = AttrPolicy::Drop) {
+    setData(name, Variable(data), attrPolicy);
   }
 
   void eraseCoord(const Dim dim);
-  void eraseLabels(const std::string &labelName);
   void eraseAttr(const std::string &attrName);
   void eraseAttr(const std::string &name, const std::string &attrName);
   void eraseMask(const std::string &maskName);
-  void eraseSparseCoord(const std::string &name);
-  void eraseSparseLabels(const std::string &name, const std::string &labelName);
 
   DatasetConstView slice(const Slice slice1) const &;
   DatasetConstView slice(const Slice slice1, const Slice slice2) const &;
@@ -468,6 +467,9 @@ private:
   friend class DatasetView;
   friend class DataArrayConstView;
   friend class DataArrayView;
+  friend class DataArray;
+
+  void setData(const std::string &name, UnalignedData &&data);
 
   void setExtent(const Dim dim, const scipp::index extent, const bool isCoord);
   void setDims(const Dimensions &dims, const Dim coordDim = Dim::Invalid);
@@ -478,174 +480,14 @@ private:
     map.erase(key);
     rebuildDims();
   }
+  void setData_impl(const std::string &name, detail::DatasetData &&data,
+                    const AttrPolicy attrPolicy);
 
   std::unordered_map<Dim, scipp::index> m_dims;
   std::unordered_map<Dim, Variable> m_coords;
-  std::unordered_map<std::string, Variable> m_labels;
   std::unordered_map<std::string, Variable> m_attrs;
   std::unordered_map<std::string, Variable> m_masks;
   detail::dataset_item_map m_data;
-};
-
-/// Common functionality for other view classes.
-template <class Base> class MutableView : public Base {
-private:
-  struct make_item {
-    const MutableView<Base> *view;
-    template <class T> auto operator()(const T &item) const {
-      return std::pair<typename Base::key_type, VariableView>(
-          item.first, detail::makeSlice(*item.second.second, view->slices()));
-    }
-  };
-
-  MutableView(Dataset *parent, const std::string *name, Base &&base)
-      : Base(std::move(base)), m_parent(parent), m_name(name) {}
-
-  Dataset *m_parent;
-  const std::string *m_name;
-
-public:
-  MutableView(
-      Dataset *parent, const std::string *name,
-      std::unordered_map<typename Base::key_type,
-                         std::pair<const Variable *, Variable *>> &&items,
-      const detail::slice_list &slices = {})
-      : Base(std::move(items), slices), m_parent(parent), m_name(name) {}
-
-  /// Return a view to the coordinate for given dimension.
-  VariableView operator[](const typename Base::key_type key) const {
-    expect::contains(*this, key);
-    return detail::makeSlice(*Base::items().at(key).second, Base::slices());
-  }
-
-  template <class T> auto find(const T k) const && = delete;
-  template <class T> auto find(const T k) const &noexcept {
-    return boost::make_transform_iterator(Base::items().find(k),
-                                          make_item{this});
-  }
-
-  auto begin() const && = delete;
-  /// Return iterator to the beginning of all items.
-  auto begin() const &noexcept {
-    return boost::make_transform_iterator(Base::items().begin(),
-                                          make_item{this});
-  }
-  auto end() const && = delete;
-  /// Return iterator to the end of all items.
-  auto end() const &noexcept {
-    return boost::make_transform_iterator(Base::items().end(), make_item{this});
-  }
-
-  auto items_begin() const && = delete;
-  /// Return iterator to the beginning of all items.
-  auto items_begin() const &noexcept { return begin(); }
-  auto items_end() const && = delete;
-  /// Return iterator to the end of all items.
-  auto items_end() const &noexcept { return end(); }
-
-  auto values_begin() const && = delete;
-  /// Return iterator to the beginning of all values.
-  auto values_begin() const &noexcept {
-    return boost::make_transform_iterator(begin(), detail::make_value);
-  }
-  auto values_end() const && = delete;
-  /// Return iterator to the end of all values.
-  auto values_end() const &noexcept {
-    return boost::make_transform_iterator(end(), detail::make_value);
-  }
-
-  MutableView slice(const Slice slice1) const {
-    // parent = nullptr since adding coords via slice is not supported.
-    return MutableView(nullptr, m_name, Base::slice(slice1));
-  }
-
-  MutableView slice(const Slice slice1, const Slice slice2) const {
-    return slice(slice1).slice(slice2);
-  }
-
-  MutableView slice(const Slice slice1, const Slice slice2,
-                    const Slice slice3) const {
-    return slice(slice1, slice2).slice(slice3);
-  }
-
-  template <class VarOrView>
-  void set(const typename Base::key_type key, VarOrView var) const {
-    if (!m_parent || !Base::m_slices.empty())
-      throw std::runtime_error(
-          "Cannot add coord/labels/attr field to a slice.");
-    if (var.dims().sparse()) {
-      if (!m_name)
-        throw std::runtime_error("Sparse coord/labels/attr must be added to "
-                                 "coords of dataset items, not coords of "
-                                 "dataset.");
-      if constexpr (std::is_same_v<Base, CoordsConstView>)
-        m_parent->setSparseCoord(*m_name, std::move(var));
-      if constexpr (std::is_same_v<Base, LabelsConstView>)
-        m_parent->setSparseLabels(*m_name, key, std::move(var));
-      if constexpr (std::is_same_v<Base, AttrsConstView>)
-        throw std::runtime_error("Attributes cannot be sparse.");
-    } else {
-      if constexpr (std::is_same_v<Base, CoordsConstView>)
-        m_parent->setCoord(key, std::move(var));
-      if constexpr (std::is_same_v<Base, LabelsConstView>)
-        m_parent->setLabels(key, std::move(var));
-      if constexpr (std::is_same_v<Base, MasksConstView>)
-        m_parent->setMask(key, std::move(var));
-      if constexpr (std::is_same_v<Base, AttrsConstView>) {
-        if (m_name)
-          m_parent->setAttr(*m_name, key, std::move(var));
-        else
-          m_parent->setAttr(key, std::move(var));
-      }
-    }
-    // TODO rebuild *this?!
-  }
-
-  void erase(const typename Base::key_type key) {
-    if (!m_parent || !Base::m_slices.empty())
-      throw std::runtime_error(
-          "Cannot remove coord/labels/attr field from a slice.");
-
-    bool sparse = m_name; // Does view point on sparse data or not
-    if (sparse)
-      sparse &= (*m_parent)[*m_name].dims().sparse();
-
-    if (!sparse) {
-      if constexpr (std::is_same_v<Base, CoordsConstView>)
-        m_parent->eraseCoord(key);
-      if constexpr (std::is_same_v<Base, LabelsConstView>)
-        m_parent->eraseLabels(key);
-      if constexpr (std::is_same_v<Base, AttrsConstView>) {
-        if (m_name)
-          m_parent->eraseAttr(*m_name, key);
-        else
-          m_parent->eraseAttr(key);
-      }
-      if constexpr (std::is_same_v<Base, MasksConstView>)
-        m_parent->eraseMask(key);
-    } else {
-      if constexpr (std::is_same_v<Base, CoordsConstView>) {
-        if (Base::m_items.count(key) == 0) {
-          std::string suffix =
-              Base::m_items.empty()
-                  ? "no sparse coordinate defined "
-                  : " sparse coordinate is defined for dim " +
-                        to_string(Base::m_items.begin()->first);
-          throw except::SparseDataError("No coordinate with dim " +
-                                        to_string(key) + " found," + suffix);
-        }
-        m_parent->eraseSparseCoord(*m_name);
-      } else if constexpr (std::is_same_v<Base, LabelsConstView>) {
-        if (this->operator[](key).dims().sparse())
-          m_parent->eraseSparseLabels(*m_name, key);
-        else
-          m_parent->eraseLabels(key);
-      } else if constexpr (std::is_same_v<Base, AttrsConstView>)
-        m_parent->eraseAttr(*m_name, key);
-      else
-        throw std::runtime_error("The instance cannot be sparse.");
-    }
-  }
 };
 
 template <class T1, class T2> auto union_(const T1 &a, const T2 &b) {
@@ -687,7 +529,6 @@ public:
   [[nodiscard]] bool empty() const noexcept { return m_items.empty(); }
 
   CoordsConstView coords() const noexcept;
-  LabelsConstView labels() const noexcept;
   AttrsConstView attrs() const noexcept;
   MasksConstView masks() const noexcept;
 
@@ -771,7 +612,6 @@ public:
   DatasetView(Dataset &dataset);
 
   CoordsView coords() const noexcept;
-  LabelsView labels() const noexcept;
   AttrsView attrs() const noexcept;
   MasksView masks() const noexcept;
 
@@ -854,48 +694,49 @@ private:
   Dataset *m_mutableDataset;
 };
 
-SCIPP_CORE_EXPORT DataArray copy(const DataArrayConstView &array);
-SCIPP_CORE_EXPORT Dataset copy(const DatasetConstView &dataset);
+[[nodiscard]] SCIPP_CORE_EXPORT DataArray
+copy(const DataArrayConstView &array,
+     const AttrPolicy attrPolicy = AttrPolicy::Keep);
+[[nodiscard]] SCIPP_CORE_EXPORT Dataset
+copy(const DatasetConstView &dataset,
+     const AttrPolicy attrPolicy = AttrPolicy::Keep);
+SCIPP_CORE_EXPORT DataArrayView
+copy(const DataArrayConstView &array, const DataArrayView &out,
+     const AttrPolicy attrPolicy = AttrPolicy::Keep);
+SCIPP_CORE_EXPORT DatasetView
+copy(const DatasetConstView &dataset, const DatasetView &out,
+     const AttrPolicy attrPolicy = AttrPolicy::Keep);
 
-/// Data array, a variable with coordinates, labels, and attributes.
+/// Data array, a variable with coordinates, masks, and attributes.
 class SCIPP_CORE_EXPORT DataArray {
 public:
   using const_view_type = DataArrayConstView;
   using view_type = DataArrayView;
 
   DataArray() = default;
-  explicit DataArray(const DataArrayConstView &view);
-  template <class CoordMap = std::map<Dim, Variable>,
-            class LabelsMap = std::map<std::string, Variable>,
+  explicit DataArray(const DataArrayConstView &view,
+                     const AttrPolicy attrPolicy = AttrPolicy::Keep);
+
+  template <class Data, class CoordMap = std::map<Dim, Variable>,
             class MasksMap = std::map<std::string, Variable>,
-            class AttrMap = std::map<std::string, Variable>>
-  DataArray(std::optional<Variable> data, CoordMap coords = {},
-            LabelsMap labels = {}, MasksMap masks = {}, AttrMap attrs = {},
-            const std::string &name = "") {
-    if (data)
-      m_holder.setData(name, std::move(*data));
+            class AttrMap = std::map<std::string, Variable>,
+            typename = std::enable_if_t<std::is_same_v<Data, Variable> ||
+                                        std::is_same_v<Data, UnalignedData>>>
+  DataArray(Data data, CoordMap coords = {}, MasksMap masks = {},
+            AttrMap attrs = {}, const std::string &name = "") {
+    if (!data)
+      throw std::runtime_error(
+          "DataArray cannot be created with invalid content.");
+    m_holder.setData(name, std::move(data));
 
     for (auto &&[dim, c] : coords)
-      if (c.dims().sparse())
-        m_holder.setSparseCoord(name, std::move(c));
-      else
-        m_holder.setCoord(dim, std::move(c));
-
-    for (auto &&[label_name, l] : labels)
-      if (l.dims().sparse())
-        m_holder.setSparseLabels(name, std::string(label_name), std::move(l));
-      else
-        m_holder.setLabels(std::string(label_name), std::move(l));
+      m_holder.setCoord(dim, std::move(c));
 
     for (auto &&[mask_name, m] : masks)
       m_holder.setMask(std::string(mask_name), std::move(m));
 
     for (auto &&[attr_name, a] : attrs)
       m_holder.setAttr(name, std::string(attr_name), std::move(a));
-
-    if (m_holder.size() != 1)
-      throw std::runtime_error(
-          "DataArray must have either data or a sparse coordinate.");
   }
 
   explicit operator bool() const noexcept { return !m_holder.empty(); }
@@ -903,22 +744,23 @@ public:
   operator DataArrayView();
 
   const std::string &name() const { return m_holder.begin()->name(); }
+  void setName(const std::string &name);
 
-  CoordsConstView coords() const { return get().coords(); }
-  CoordsView coords() { return get().coords(); }
+  CoordsConstView coords() const;
+  CoordsView coords();
 
-  LabelsConstView labels() const { return get().labels(); }
-  LabelsView labels() { return get().labels(); }
+  AttrsConstView attrs() const;
+  AttrsView attrs();
 
-  AttrsConstView attrs() const { return get().attrs(); }
-  AttrsView attrs() { return get().attrs(); }
-
-  MasksConstView masks() const { return get().masks(); }
-  MasksView masks() { return get().masks(); }
+  MasksConstView masks() const;
+  MasksView masks();
 
   Dimensions dims() const { return get().dims(); }
   DType dtype() const { return get().dtype(); }
   units::Unit unit() const { return get().unit(); }
+
+  DataArrayConstView unaligned() const { return get().unaligned(); }
+  DataArrayView unaligned() { return get().unaligned(); }
 
   void setUnit(const units::Unit unit) { get().setUnit(unit); }
 
@@ -973,7 +815,9 @@ public:
     return *this /= makeVariable<T>(Values{value});
   }
 
-  void setData(Variable data) { m_holder.setData(name(), std::move(data)); }
+  void setData(Variable data) {
+    m_holder.setData(name(), std::move(data), AttrPolicy::Keep);
+  }
 
   // TODO need to define some details regarding handling of dense coords in case
   // the array is sparse, not exposing this to Python for now.
@@ -1025,11 +869,19 @@ public:
     return std::move(data.m_holder);
   }
 
+  void drop_alignment();
+
 private:
   DataArrayConstView get() const;
   DataArrayView get();
 
   Dataset m_holder;
+};
+
+struct UnalignedData {
+  explicit operator bool() const noexcept { return static_cast<bool>(data); }
+  Dimensions dims;
+  DataArray data;
 };
 
 SCIPP_CORE_EXPORT DataArray operator+(const DataArrayConstView &a,
@@ -1198,8 +1050,6 @@ SCIPP_CORE_EXPORT DataArray histogram(const DataArrayConstView &sparse,
                                       const VariableConstView &binEdges);
 SCIPP_CORE_EXPORT Dataset histogram(const Dataset &dataset,
                                     const VariableConstView &bins);
-SCIPP_CORE_EXPORT Dataset histogram(const Dataset &dataset,
-                                    const Variable &bins);
 SCIPP_CORE_EXPORT Dataset histogram(const Dataset &dataset, const Dim &dim);
 
 SCIPP_CORE_EXPORT Dataset merge(const DatasetConstView &a,
@@ -1233,8 +1083,11 @@ SCIPP_CORE_EXPORT Dataset resize(const DatasetConstView &d, const Dim dim,
 [[nodiscard]] SCIPP_CORE_EXPORT DataArray
 reciprocal(const DataArrayConstView &a);
 
-SCIPP_CORE_EXPORT VariableConstView same(const VariableConstView &a,
-                                         const VariableConstView &b);
+/// Return one of the inputs if they are the same, throw otherwise.
+template <class T> T same(const T &a, const T &b) {
+  expect::equals(a, b);
+  return a;
+}
 
 /// Union the masks of the two proxies.
 /// If any of the masks repeat they are OR'ed.

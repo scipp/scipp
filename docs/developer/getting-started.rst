@@ -14,6 +14,9 @@ You need ``tbb`` and ``tbb-devel``.
 Getting the code, building, and installing
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+Note that Python dependencies are managed via Conda during the packaging step.
+In order to build the Python exports manually it is recommended to use a Conda environment for building and install dependencies manually from the list in `meta.yml <https://github.com/scipp/scipp/blob/master/conda/meta.yaml>`_.
+
 To build and install the library:
 
 .. code-block:: bash
@@ -24,22 +27,26 @@ To build and install the library:
   mkdir -p build/install
   cd build
 
+  conda create -n scipp python=3.7
+  conda env activate scipp
+  conda install # populate list here
+
   cmake \
     -GNinja \
-    -DPYTHON_EXECUTABLE=/usr/bin/python3 \
+    -DPYTHON_EXECUTABLE=$(command -v python3) \
     -DCMAKE_INSTALL_PREFIX=../install \
     -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=OFF \
     -DDYNAMIC_LIB=ON \
     ..
 
-  cmake --build . --target all-tests install
+  cmake --build . --target all-tests
+  cmake --build . --target install
 
 To use the ``scipp`` Python module:
 
 .. code-block:: bash
 
   cd ../python
-  python3 -m pip install -r requirements.txt
   export PYTHONPATH=$PYTHONPATH:../install
 
 In Python:
@@ -52,6 +59,7 @@ Additional build options
 ------------------------
 
 1. ``-DDYNAMIC_LIB`` forces the shared libraries building, that also decreases link time.
+2. ``-DENABLE_THREAD_LIMIT`` limits the maximum number of threads that TBB can use. This defaults to the maximum number of cores identified on your build system. You may then optionally apply an artificial limit via ``-DTHREAD_LIMIT``. 
 
 Running the unit tests
 ~~~~~~~~~~~~~~~~~~~~~~

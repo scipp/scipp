@@ -5,6 +5,7 @@
 #include "scipp/core/counts.h"
 #include "scipp/core/dataset.h"
 #include "scipp/core/except.h"
+#include "scipp/core/variable_operations.h"
 
 namespace scipp::core {
 

@@ -10,6 +10,7 @@ from html import escape
 import numpy as np
 
 from .._scipp import core as sc
+from ..utils import is_data_events
 
 CSS_FILE_PATH = f"{os.path.dirname(__file__)}/style.css"
 with open(CSS_FILE_PATH, 'r') as f:
@@ -19,7 +20,6 @@ ICONS_SVG_PATH = f"{os.path.dirname(__file__)}/icons-svg-inline.html"
 with open(ICONS_SVG_PATH, 'r') as f:
     ICONS_SVG = "".join(f.readlines())
 
-SPARSE_LABEL = "[sparse]"
 BIN_EDGE_LABEL = "[bin-edge]"
 VARIANCE_PREFIX = "σ² = "
 SPARSE_PREFIX = "len={}"
@@ -60,17 +60,17 @@ def _format_non_sparse(var, has_variances):
     # ravel avoids displaying square brackets in the output
     if hasattr(data, 'ravel'):
         data = data.ravel()
-    s = _format_array(data, size, ellipsis_after=2)
+    if data is None:
+        s = "data not histogrammed yet"
+    else:
+        s = _format_array(data, size, ellipsis_after=2)
     if has_variances:
         s = f'{VARIANCE_PREFIX}{s}'
     return _make_row(s)
 
 
 def _get_sparse(var, variances, ellipsis_after, summary=False):
-    if hasattr(var, "data") and var.data is None:
-        return ["No data, implicitly 1"]
-
-    if var.shape[0] is None:
+    if len(var.dims) == 0:
         # handles a 1D Variable with only a sparse dimension
         size = len(var.values)
         if summary:
@@ -112,10 +112,10 @@ def _format_sparse(var, has_variances):
 
 
 def inline_variable_repr(var, has_variances=False):
-    if var.sparse_dim is None:
-        return _format_non_sparse(var, has_variances)
-    else:
+    if is_data_events(var):
         return _format_sparse(var, has_variances)
+    else:
+        return _format_non_sparse(var, has_variances)
 
 
 def retrieve(var, variances=False, single=False):
@@ -127,6 +127,9 @@ def retrieve(var, variances=False, single=False):
 
 def _short_data_repr_html_non_sparse(var, variances=False):
     if hasattr(var, "data"):
+        if var.data is None:
+            return "Realigned data based on unaligned content."
+            "Use `histogram` to obtain values."
         return repr(retrieve(var.data, variances))
     else:
         return repr(retrieve(var, variances))
@@ -139,10 +142,10 @@ def _short_data_repr_html_sparse(var, variances=False):
 
 def short_data_repr_html(var, variances=False):
     """Format "data" for DataArray and Variable."""
-    if var.sparse_dim is None:
-        data_repr = _short_data_repr_html_non_sparse(var, variances)
-    else:
+    if is_data_events(var):
         data_repr = _short_data_repr_html_sparse(var, variances)
+    else:
+        data_repr = _short_data_repr_html_non_sparse(var, variances)
     return escape(data_repr)
 
 
@@ -196,10 +199,8 @@ def find_bin_edges(var, ds):
     Checks if the coordinate contains bin-edges.
     """
     bin_edges = []
-    non_sparse_dims = [dim for dim in var.dims if dim != var.sparse_dim
-                       ] if var.sparse_dim else var.dims
 
-    for idx, dim in enumerate(non_sparse_dims):
+    for idx, dim in enumerate(var.dims):
         len = var.shape[idx]
         if dim in ds.dims and ds.shape[ds.dims.index(dim)] + 1 == len:
             bin_edges.append(dim)
@@ -217,12 +218,9 @@ def summarize_coords(coords, ds=None):
 def _extract_sparse(x):
     """
     Returns the (key, value) pairs where value has a sparse dim
-    :param x: dict-like, e.g., coords view or labels view
+    :param x: dict-like, e.g., coords view or masks view
     """
-    return {
-        key: value
-        for key, value in x.items() if value.sparse_dim is not None
-    }
+    return {key: value for key, value in x.items() if sc.is_events(value)}
 
 
 def _make_inline_attributes(var, has_attrs):
@@ -235,11 +233,6 @@ def _make_inline_attributes(var, has_attrs):
         sparse_coords = _extract_sparse(var.coords)
         if sparse_coords:
             attrs_sections.append(coord_section(sparse_coords))
-            disabled = ""
-    if hasattr(var, "labels"):
-        sparse_labels = _extract_sparse(var.labels)
-        if sparse_labels:
-            attrs_sections.append(label_section(sparse_labels))
             disabled = ""
     if hasattr(var, "attrs"):
         if len(var.attrs) > 0:
@@ -263,8 +256,6 @@ def _make_dim_labels(dim, size, bin_edges=None):
     # label has been added
     if bin_edges and dim in bin_edges:
         return f" {BIN_EDGE_LABEL}"
-    elif size is None:
-        return f" {SPARSE_LABEL}"
     else:
         return ""
 
@@ -539,8 +530,6 @@ def dataset_repr(ds):
 
     if len(ds.coords) > 0:
         sections.append(coord_section(ds.coords, ds))
-    if len(ds.labels) > 0:
-        sections.append(label_section(ds.labels, ds))
 
     sections.append(data_section(ds if hasattr(ds, '__len__') else {'': ds}))
 

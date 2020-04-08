@@ -11,19 +11,39 @@
 
 #include "scipp/core/dataset.h"
 #include "scipp/core/dimensions.h"
+#include "scipp/core/unaligned.h"
+#include "scipp/core/variable_operations.h"
 
 using namespace scipp;
 using namespace scipp::core;
 
+namespace {
+void expect_eq(const DataArrayConstView &a, const DataArrayConstView &b) {
+  EXPECT_TRUE(a == b);
+  EXPECT_TRUE(b == a);
+  EXPECT_FALSE(a != b);
+  EXPECT_FALSE(b != a);
+}
+void expect_ne(const DataArrayConstView &a, const DataArrayConstView &b) {
+  EXPECT_TRUE(a != b);
+  EXPECT_TRUE(b != a);
+  EXPECT_FALSE(a == b);
+  EXPECT_FALSE(b == a);
+}
+} // namespace
+
 class DataArray_comparison_operators : public ::testing::Test {
 protected:
   DataArray_comparison_operators()
-      : sparse_variable(makeVariable<double>(
-            Dims{Dim::Y, Dim::Z, Dim::X}, Shape{3l, 2l, Dimensions::Sparse})) {
+      : default_event_weights(makeVariable<double>(
+            Dims{Dim::Y, Dim::Z}, Shape{3l, 2l}, Values{1, 1, 1, 1, 1, 1},
+            Variances{1, 1, 1, 1, 1, 1})),
+        sparse_variable(makeVariable<sparse_container<double>>(
+            Dims{Dim::Y, Dim::Z}, Shape{3, 2})) {
     dataset.setCoord(Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{4}));
     dataset.setCoord(Dim::Y, makeVariable<double>(Dims{Dim::Y}, Shape{3}));
 
-    dataset.setLabels("labels", makeVariable<int>(Dims{Dim::X}, Shape{4}));
+    dataset.setCoord(Dim("labels"), makeVariable<int>(Dims{Dim::X}, Shape{4}));
     dataset.setMask("mask", makeVariable<bool>(Dims{Dim::X}, Shape{4}));
 
     dataset.setAttr("global_attr", makeVariable<int>(Values{int{}}));
@@ -35,30 +55,10 @@ protected:
 
     dataset.setData("val", makeVariable<double>(Dims{Dim::X}, Shape{4}));
     dataset.setAttr("val", "attr", makeVariable<int>(Values{int{}}));
-
-    dataset.setSparseCoord("sparse_coord", sparse_variable);
-    dataset.setAttr("sparse_coord", "attr", makeVariable<int>(Values{int{}}));
-    dataset.setData("sparse_coord_and_val", sparse_variable);
-    dataset.setSparseCoord("sparse_coord_and_val", sparse_variable);
-    dataset.setAttr("sparse_coord_and_val", "attr",
-                    makeVariable<int>(Values{int{}}));
-  }
-  void expect_eq(const DataArrayConstView &a,
-                 const DataArrayConstView &b) const {
-    EXPECT_TRUE(a == b);
-    EXPECT_TRUE(b == a);
-    EXPECT_FALSE(a != b);
-    EXPECT_FALSE(b != a);
-  }
-  void expect_ne(const DataArrayConstView &a,
-                 const DataArrayConstView &b) const {
-    EXPECT_TRUE(a != b);
-    EXPECT_TRUE(b != a);
-    EXPECT_FALSE(a == b);
-    EXPECT_FALSE(b == a);
   }
 
   Dataset dataset;
+  Variable default_event_weights;
   Variable sparse_variable;
 };
 
@@ -83,8 +83,8 @@ auto make_1_labels(const std::string &name, const Dimensions &dims,
                    const units::Unit unit,
                    const std::initializer_list<T2> &data) {
   Dataset d;
-  d.setLabels(
-      name, makeVariable<T>(Dimensions(dims), units::Unit(unit), Values(data)));
+  d.setCoord(Dim(name), makeVariable<T>(Dimensions(dims), units::Unit(unit),
+                                        Values(data)));
   d.setData("", makeVariable<T>(Dimensions(dims)));
   return DataArray(d[""]);
 }
@@ -246,7 +246,7 @@ TEST_F(DataArray_comparison_operators, extra_coord) {
 
 TEST_F(DataArray_comparison_operators, extra_labels) {
   auto extra = dataset;
-  extra.setLabels("extra", makeVariable<double>(Values{0.0}));
+  extra.setCoord(Dim("extra"), makeVariable<double>(Values{0.0}));
   for (const auto &a : extra)
     expect_ne(a, dataset[a.name()]);
 }
@@ -273,18 +273,6 @@ TEST_F(DataArray_comparison_operators, extra_variance) {
   expect_ne(extra["val"], dataset["val"]);
 }
 
-TEST_F(DataArray_comparison_operators, extra_sparse_values) {
-  auto extra = dataset;
-  extra.setData("sparse_coord", sparse_variable);
-  expect_ne(extra["sparse_coord"], dataset["sparse_coord"]);
-}
-
-TEST_F(DataArray_comparison_operators, extra_sparse_label) {
-  auto extra = dataset;
-  extra.setSparseLabels("sparse_coord_and_val", "extra", sparse_variable);
-  expect_ne(extra["sparse_coord_and_val"], dataset["sparse_coord_and_val"]);
-}
-
 TEST_F(DataArray_comparison_operators, different_coord_insertion_order) {
   auto a = Dataset();
   auto b = Dataset();
@@ -299,10 +287,10 @@ TEST_F(DataArray_comparison_operators, different_coord_insertion_order) {
 TEST_F(DataArray_comparison_operators, different_label_insertion_order) {
   auto a = Dataset();
   auto b = Dataset();
-  a.setLabels("x", dataset.coords()[Dim::X]);
-  a.setLabels("y", dataset.coords()[Dim::Y]);
-  b.setLabels("y", dataset.coords()[Dim::Y]);
-  b.setLabels("x", dataset.coords()[Dim::X]);
+  a.setCoord(Dim("x"), dataset.coords()[Dim::X]);
+  a.setCoord(Dim("y"), dataset.coords()[Dim::Y]);
+  b.setCoord(Dim("y"), dataset.coords()[Dim::Y]);
+  b.setCoord(Dim("x"), dataset.coords()[Dim::X]);
   for (const auto &a_ : a)
     expect_ne(a_, b[a_.name()]);
 }
@@ -321,16 +309,68 @@ TEST_F(DataArray_comparison_operators, different_attr_insertion_order) {
 TEST_F(DataArray_comparison_operators, with_sparse_dimension_data) {
   // a and b same, c different number of sparse values
   auto a = Dataset();
-  auto data = makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse});
+  auto data = makeVariable<sparse_container<double>>(Dims{}, Shape{});
   const std::string var_name = "test_var";
-  data.sparseValues<double>()[0] = {1, 2, 3};
+  data.values<event_list<double>>()[0] = {1, 2, 3};
   a.setData(var_name, data);
   auto b = Dataset();
   b.setData(var_name, data);
   expect_eq(a[var_name], b[var_name]);
-  data.sparseValues<double>()[0] = {2, 3, 4};
+  data.values<event_list<double>>()[0] = {2, 3, 4};
   auto c = Dataset();
   c.setData(var_name, data);
   expect_ne(a[var_name], c[var_name]);
   expect_ne(b[var_name], c[var_name]);
+}
+
+class DataArray_comparison_operators_realigned : public ::testing::Test {
+protected:
+  Variable ybins{makeVariable<double>(Dims{Dim::Y}, Shape{3}, Values{0, 2, 4})};
+  Variable zbins{makeVariable<double>(Dims{Dim::Z}, Shape{3}, Values{0, 2, 4})};
+  Variable d{makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4})};
+  Variable x{makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4})};
+  Variable y{makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1, 1, 3, 3})};
+  Variable z{makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1, 3, 1, 3})};
+};
+
+TEST_F(DataArray_comparison_operators_realigned, self) {
+  DataArray a(d, {{Dim::X, x}, {Dim::Y, y}, {Dim::Z, z}});
+  const auto realigned =
+      unaligned::realign(a, {{Dim::Y, ybins}, {Dim::Z, zbins}});
+  expect_eq(realigned, realigned);
+}
+
+TEST_F(DataArray_comparison_operators_realigned, swapped_dims) {
+  DataArray a(d, {{Dim::X, x}, {Dim::Y, y}, {Dim::Z, z}});
+  const auto zy = unaligned::realign(a, {{Dim::Y, ybins}, {Dim::Z, zbins}});
+  const auto yz = unaligned::realign(a, {{Dim::Z, zbins}, {Dim::Y, ybins}});
+  expect_ne(yz, zy);
+}
+
+TEST_F(DataArray_comparison_operators_realigned, different_bins) {
+  DataArray a(d, {{Dim::X, x}, {Dim::Y, y}, {Dim::Z, z}});
+  const auto yz1 = unaligned::realign(a, {{Dim::Y, ybins}, {Dim::Z, zbins}});
+  const auto yz2 =
+      unaligned::realign(a, {{Dim::Y, ybins}, {Dim::Z, zbins + 0.5}});
+  expect_ne(yz1, yz2);
+}
+
+TEST_F(DataArray_comparison_operators_realigned, different_unaligned_data) {
+  DataArray a1(d, {{Dim::X, x}, {Dim::Y, y}, {Dim::Z, z}});
+  DataArray a2(d + 0.5, {{Dim::X, x}, {Dim::Y, y}, {Dim::Z, z}});
+  const auto realigned1 =
+      unaligned::realign(a1, {{Dim::Y, ybins}, {Dim::Z, zbins}});
+  const auto realigned2 =
+      unaligned::realign(a2, {{Dim::Y, ybins}, {Dim::Z, zbins}});
+  expect_ne(realigned1, realigned2);
+}
+
+TEST_F(DataArray_comparison_operators_realigned, different_unaligned_coord) {
+  DataArray a1(d, {{Dim::X, x}, {Dim::Y, y}, {Dim::Z, z}});
+  DataArray a2(d, {{Dim::X, x}, {Dim::Y, y + 0.5}, {Dim::Z, z}});
+  const auto realigned1 =
+      unaligned::realign(a1, {{Dim::Y, ybins}, {Dim::Z, zbins}});
+  const auto realigned2 =
+      unaligned::realign(a2, {{Dim::Y, ybins}, {Dim::Z, zbins}});
+  expect_ne(realigned1, realigned2);
 }

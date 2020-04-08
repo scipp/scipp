@@ -15,7 +15,6 @@ namespace core {
 /// Describes a slice to make over a dimension either as a single index or as a
 /// range
 class SCIPP_CORE_EXPORT Slice {
-
 public:
   Slice(const Dim dim_, const scipp::index begin_, const scipp::index end_);
   Slice(const Dim dim_, const scipp::index begin_);

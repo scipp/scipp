@@ -12,6 +12,7 @@
 #include "scipp/core/tag_util.h"
 #include "scipp/core/transform.h"
 #include "scipp/core/variable.h"
+#include "scipp/core/variable_operations.h"
 
 #include "bind_data_access.h"
 #include "bind_operators.h"
@@ -142,11 +143,11 @@ Variable makeVariableDefaultInit(const std::vector<Dim> &labels,
                                  const std::vector<scipp::index> &shape,
                                  const units::Unit unit, py::object &dtype,
                                  const bool variances) {
-  return CallDType<
-      double, float, int64_t, int32_t, bool, DataArray, Dataset,
-      Eigen::Vector3d>::apply<MakeVariableDefaultInit>(scipp_dtype(dtype),
-                                                       labels, shape, unit,
-                                                       variances);
+  return CallDType<double, float, int64_t, int32_t, bool, event_list<double>,
+                   event_list<float>, event_list<int64_t>, event_list<int32_t>,
+                   DataArray, Dataset, Eigen::Vector3d>::
+      apply<MakeVariableDefaultInit>(scipp_dtype(dtype), labels, shape, unit,
+                                     variances);
 }
 
 template <class T> void bind_init_0D(py::class_<Variable> &c) {
@@ -583,8 +584,8 @@ void init_variable(py::module &m) {
         :return: sin of input values.
         :rtype: Variable)");
 
-  m.def("cos", [](const Variable &self) { return cos(self); }, py::arg("x"),
-        py::call_guard<py::gil_scoped_release>(), R"(
+  m.def("cos", [](const VariableConstView &self) { return cos(self); },
+        py::arg("x"), py::call_guard<py::gil_scoped_release>(), R"(
         Element-wise cos.
 
         :raises: If the unit is not a plane-angle unit, or if the dtype has no cos, e.g., if it is an integer
@@ -683,6 +684,27 @@ void init_variable(py::module &m) {
         :return: atan of input values. Output unit is rad.
         :rtype: Variable)");
 
+  m.def("atan2",
+        [](const Variable &y, const Variable &x) { return atan2(y, x); },
+        py::arg("y"), py::arg("x"),
+        R"(
+        Element-wise atan2.
+
+        :raises: If the units of inputs are different, or if the dtype has no atan2, e.g., if it is an integer
+        :return: atan2 of input y and x. Output unit is rad.
+        :rtype: Variable)");
+
+  m.def("atan2",
+        [](const VariableConstView &y, const VariableConstView &x,
+           const VariableView &out) { return atan2(y, x, out); },
+        py::arg("y"), py::arg("x"), py::arg("out"),
+        R"(
+        Element-wise atan2 with out argument.
+
+        :raises: If the units of inputs are different, or if the dtype has no atan2, e.g., if it is an integer
+        :return: atan2 of input y and x, written to output. Output unit is rad.
+        :rtype: VariableView)");
+
   m.def("all", py::overload_cast<const VariableConstView &, const Dim>(&all),
         py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
         R"(
@@ -735,35 +757,108 @@ void init_variable(py::module &m) {
         :return: New variable containing the max values.
         :rtype: Variable)");
 
-  m.def(
-      "nan_to_num",
-      [](const VariableConstView &self, const VariableConstView &replacement) {
-        return nan_to_num(self, replacement);
-      },
-      py::call_guard<py::gil_scoped_release>(),
-      R"(Element-wise nan replacement
+  m.def("nan_to_num",
+        [](const VariableConstView &self,
+           const std::optional<VariableConstView> &nan,
+           const std::optional<VariableConstView> &posinf,
+           const std::optional<VariableConstView> &neginf) {
+          Variable out(self);
+          if (nan)
+            nan_to_num(out, *nan, out);
+          if (posinf)
+            positive_inf_to_num(out, *posinf, out);
+          if (neginf)
+            negative_inf_to_num(out, *neginf, out);
+          return out;
+        },
+        py::call_guard<py::gil_scoped_release>(),
+        R"(Element-wise special value replacement
 
-       All elements in the output are identical to input except in the presence of a nan
+       All elements in the output are identical to input except in the presence of a nan, inf or -inf.
+       The function allows replacements to be separately specified for nan, inf or -inf values.
+       You can choose to replace a subset of those special values by providing just the required key word arguments.
        If the replacement is value-only and the input has variances,
-       the variance at the element(s) containing nan are also replaced with the nan replacement value.
+       the variance at the element(s) undergoing replacement are also replaced with the replacement value.
        If the replacement has a variance and the input has variances,
-       the variance at the element(s) containing nan are also replaced with the nan replacement variance.
+       the variance at the element(s) undergoing replacement are also replaced with the replacement variance.
        :raises: If the types of input and replacement do not match.
-       :return: Input elements are replaced in output with specified replacement if nan.
-       :rtype: Variable)");
+       :return: Input elements are replaced in output with specified subsitutions.
+       :rtype: Variable)",
+        py::arg("x"), py::arg("nan") = std::optional<VariableConstView>(),
+        py::arg("posinf") = std::optional<VariableConstView>(),
+        py::arg("neginf") = std::optional<VariableConstView>());
 
   m.def("nan_to_num",
-        [](const VariableConstView &self, const VariableConstView &replacement,
-           VariableView &out) { return nan_to_num(self, replacement, out); },
+        [](const VariableConstView &self,
+           const std::optional<VariableConstView> &nan,
+           const std::optional<VariableConstView> &posinf,
+           const std::optional<VariableConstView> &neginf, VariableView &out) {
+          if (nan)
+            nan_to_num(self, *nan, out);
+          if (posinf)
+            positive_inf_to_num(self, *posinf, out);
+          if (neginf)
+            negative_inf_to_num(self, *neginf, out);
+          return out;
+        },
         py::call_guard<py::gil_scoped_release>(),
-        R"(Element-wise nan replacement
+        R"(Element-wise special value replacement
 
-       All elements in the output are identical to input except in the presence of a nan
+       All elements in the output are identical to input except in the presence of a nan, inf or -inf.
+       The function allows replacements to be separately specified for nan, inf or -inf values.
+       You can choose to replace a subset of those special values by providing just the required key word arguments.
        If the replacement is value-only and the input has variances,
-       the variance at the element(s) containing nan are also replaced with the nan replacement value.
+       the variance at the element(s) undergoing replacement are also replaced with the replacement value.
        If the replacement has a variance and the input has variances,
-       the variance at the element(s) containing nan are also replaced with the nan replacement variance.
+       the variance at the element(s) undergoing replacement are also replaced with the replacement variance.
        :raises: If the types of input and replacement do not match.
-       :return: Input elements are replaced in output with specified replacement if nan.
-       :rtype: Variable)");
+       :return: Input elements are replaced in output with specified subsitutions.
+       :rtype: Variable)",
+        py::arg("x"), py::arg("nan") = std::optional<VariableConstView>(),
+        py::arg("posinf") = std::optional<VariableConstView>(),
+        py::arg("neginf") = std::optional<VariableConstView>(), py::arg("out"));
+
+  m.def("is_events",
+        [](const VariableConstView &self) { return is_events(self); },
+        R"(Return true if the variable contains event data.)");
+  m.def(
+      "is_events",
+      [](const DataArrayConstView &self) { return is_events(self); },
+      R"(Return true if the data array contains event data. Note that data may be stored as a scalar, but this returns true if any coord contains events.)");
+  auto geom_m = m.def_submodule("geometry");
+  geom_m.def(
+      "position",
+      [](const VariableConstView &x, const VariableConstView &y,
+         const VariableConstView &z) { return geometry::position(x, y, z); },
+      py::arg("x"), py::arg("y"), py::arg("z"),
+      R"(
+        Element-wise zip functionality to produce a vector_3_float64 from independent input variables.
+
+        :raises: If the units of inputs are not all meters, or if the dtypes of inputs are not double precision floats
+        :return: zip of input x, y and z. Output unit is meters.
+        :rtype: Variable)");
+  geom_m.def("x", [](const VariableConstView &pos) { return geometry::x(pos); },
+             py::arg("pos"),
+             R"(
+        un-zip functionality to produce a Variable of the x component of a vector_3_float64.
+
+        :raises: If the units of inputs are not meters, or if the dtypes of inputs are not double precision floats
+        :return: Extracted x component of input pos. Units in meters.
+        :rtype: Variable)");
+  geom_m.def("y", [](const VariableConstView &pos) { return geometry::y(pos); },
+             py::arg("pos"),
+             R"(
+        un-zip functionality to produce a Variable of the y component of a vector_3_float64.
+
+        :raises: If the units of inputs are not meters, or if the dtypes of inputs are not double precision floats
+        :return: Extracted y component of input pos. Units in meters.
+        :rtype: Variable)");
+  geom_m.def("z", [](const VariableConstView &pos) { return geometry::z(pos); },
+             py::arg("pos"),
+             R"(
+        un-zip functionality to produce a Variable of the z component of a vector_3_float64.
+
+        :raises: If the units of inputs are not meters, or if the dtypes of inputs are not double precision floats
+        :return: Extracted z component of input pos. Units in meters.
+        :rtype: Variable)");
 }

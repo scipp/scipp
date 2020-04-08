@@ -18,7 +18,7 @@ TEST(DatasetOperationsTest, sum) {
   EXPECT_EQ(core::sum(ds.slice({Dim::X, 0, 2}), Dim::X)["a"].data(),
             makeVariable<float>(Values{3}, Variances{27}));
   EXPECT_THROW(core::sum(make_sparse_2d({1, 2, 3, 4}, {0, 0}), Dim::X),
-               except::DimensionError);
+               except::TypeError);
 }
 
 TEST(DatasetOperationsTest, mean) {

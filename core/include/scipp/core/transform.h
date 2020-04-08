@@ -368,6 +368,12 @@ static void do_transform(Op op, Out &&out, Tuple &&processed, const Arg &arg,
           args...);
     }
   } else {
+    if constexpr (std::is_base_of_v<transform_flags::expect_variance_arg_t<
+                                        std::tuple_size_v<Tuple>>,
+                                    Op>)
+      throw except::VariancesError("Variances missing in argument " +
+                                   std::to_string(std::tuple_size_v<Tuple>) +
+                                   " . Must be set.");
     do_transform(op, std::forward<Out>(out),
                  std::tuple_cat(processed, std::tuple(vals)), args...);
   }
@@ -392,11 +398,11 @@ template <class Op> struct Transform {
     auto volume = dims.volume();
     Variable out =
         (handles->hasVariances() || ...)
-            ? makeVariable<element_type_t<Out>>(
-                  Dimensions{dims}, Values(volume, default_init_elements),
-                  Variances(volume, default_init_elements))
-            : makeVariable<element_type_t<Out>>(
-                  Dimensions{dims}, Values(volume, default_init_elements));
+            ? makeVariable<Out>(Dimensions{dims},
+                                Values(volume, default_init_elements),
+                                Variances(volume, default_init_elements))
+            : makeVariable<Out>(Dimensions{dims},
+                                Values(volume, default_init_elements));
     auto &outT = static_cast<VariableConceptT<Out> &>(out.data());
     do_transform(op, outT, std::tuple<>(), as_view{*handles, dims}...);
     return out;
@@ -826,7 +832,7 @@ template <class... TypePairs, class Var, class Op>
 void accumulate_in_place(Var &&var, const VariableConstView &var1,
                          const VariableConstView &var2, Op op) {
   expect::contains(var1.dims(), var.dims());
-  expect::contains(var2.dims(), denseDims(var.dims()));
+  expect::contains(var2.dims(), var.dims());
   in_place<false>::transform_data(type_tuples<TypePairs...>(op), op,
                                   std::forward<Var>(var), var1, var2);
 }
@@ -849,11 +855,8 @@ Variable transform(std::tuple<Ts...> &&, Op op, const Vars &... vars) {
   auto unit = op(vars.unit()...);
   Variable out;
   try {
-    if constexpr ((is_any_sparse<Ts>::value || ...)) {
+    if constexpr ((is_any_sparse<Ts>::value || ...) || sizeof...(Vars) > 2) {
       out = visit_impl<Ts...>::apply(Transform{op}, vars.dataHandle()...);
-    } else if constexpr (sizeof...(Vars) > 2) {
-      static_assert("Transform with more than 2 arguments not implemented "
-                    "yet for element-wise operation.");
     } else {
       out = core::visit(augment::insert_sparse(std::tuple<Ts...>{}))
                 .apply(Transform{overloaded_sparse{op, TransformSparse{}}},

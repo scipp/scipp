@@ -50,11 +50,10 @@ TEST(CreateVariableTest, from_vector) {
 }
 
 TEST(CreateVariableTest, construct_sparse) {
-  auto var =
-      makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, Dimensions::Sparse});
+  auto var = makeVariable<event_list<double>>(Dims{Dim::X}, Shape{2});
 
-  auto dimensions = Dimensions{{Dim::X, Dim::Y}, {2, Dimensions::Sparse}};
-  makeVariable<double>(
+  auto dimensions = Dimensions{{Dim::X}, {2}};
+  makeVariable<event_list<double>>(
       Dimensions{dimensions},
       Values{sparse_container<double>(), sparse_container<double>()},
       Variances{sparse_container<double>(), sparse_container<double>()});
@@ -122,14 +121,14 @@ TEST(VariableUniversalConstructorTest, convertable_types) {
   using namespace scipp::core::detail;
   auto data = std::vector<double>{1.0, 4.5, 2.7, 5.0, 7.0, 6.7};
   auto variable =
-      Variable(dtype<int64_t>, Dims{Dim::X, Dim::Y}, Shape{2, 3}, Values(data),
+      Variable(dtype<float>, Dims{Dim::X, Dim::Y}, Shape{2, 3}, Values(data),
                units::Unit(units::kg), Variances(data));
 
-  EXPECT_EQ(variable.dtype(), dtype<int64_t>);
-  EXPECT_TRUE(equals(variable.values<int64_t>(),
-                     std::vector<int64_t>(data.begin(), data.end())));
-  EXPECT_TRUE(equals(variable.variances<int64_t>(),
-                     std::vector<int64_t>(data.begin(), data.end())));
+  EXPECT_EQ(variable.dtype(), dtype<float>);
+  EXPECT_TRUE(equals(variable.values<float>(),
+                     std::vector<float>(data.begin(), data.end())));
+  EXPECT_TRUE(equals(variable.variances<float>(),
+                     std::vector<float>(data.begin(), data.end())));
 }
 
 TEST(VariableUniversalConstructorTest, unconvertable_types) {
@@ -142,9 +141,9 @@ TEST(VariableUniversalConstructorTest, initializer_list) {
   EXPECT_EQ(Variable(dtype<int32_t>, Dims{Dim::X}, Shape{2}, Values{1.0, 1.0}),
             Variable(dtype<int32_t>, Dims{Dim::X}, Shape{2},
                      Values(std::vector<int32_t>(2, 1))));
-  EXPECT_EQ(Variable(dtype<int32_t>, Values{1.0, 1.0}, Dims{Dim::X}, Shape{2},
+  EXPECT_EQ(Variable(dtype<float>, Values{1.0, 1.0}, Dims{Dim::X}, Shape{2},
                      Variances{2.0f, 2.0f}),
-            Variable(dtype<int32_t>, Dims{Dim::X}, Shape{2},
+            Variable(dtype<float>, Dims{Dim::X}, Shape{2},
                      Values(std::vector<int32_t>(2, 1)),
                      Variances(std::vector<double>(2, 2))));
 }

@@ -27,7 +27,6 @@ auto make_subspans(const ElementArrayView<T> &data,
 
 /// Return Variable containing spans over given dimension as elements.
 template <class T, class Var> Variable subspan_view(Var &var, const Dim dim) {
-  expect::notSparse(var);
   if (dim != var.dims().inner())
     throw except::DimensionError(
         "View over subspan can only be created for inner dimension.");
@@ -73,7 +72,8 @@ auto invoke_subspan_view(const DType dtype, Args &&... args) {
 }
 
 template <class Var> Variable subspan_view_impl(Var &var, const Dim dim) {
-  return invoke_subspan_view<double, float>(var.dtype(), var, dim);
+  return invoke_subspan_view<double, float, int64_t, int32_t>(var.dtype(), var,
+                                                              dim);
 }
 
 /// Return Variable containing mutable spans over given dimension as elements.

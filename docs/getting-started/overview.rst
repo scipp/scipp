@@ -11,7 +11,7 @@ A dataset is essentially a dict-like container of multi-dimensional arrays with 
 Each item in a dataset is accessed with a name string.
 For a more detailed explanation we refer to the `documentation of Dataset <../user-guide/data-structures.html#Dataset>`_.
 
-Scipp labels dimensions and their associated coordinates using pre-defined dimension labels such as ``Dim.X``, ``Dim.Temperature``, or ``Dim.Wavelength``.
+Scipp labels dimensions and their associated coordinates with labels such as ``'x'``, ``'temperature'``, or ``'wavelength'``.
 
 Operations with datasets "align" data items based on their names, dimension labels, and coordinate values.
 Missing dimensions in the operands are automatically `broadcast <https://docs.scipy.org/doc/numpy/user/basics.broadcasting.html>`_.

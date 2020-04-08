@@ -8,8 +8,10 @@
 #include "scipp/core/dtype.h"
 #include "scipp/core/except.h"
 #include "scipp/core/transform.h"
-#include "scipp/core/variable.h"
+#include "scipp/core/variable_operations.h"
 
+#include "element_geometric_operations.h"
+#include "element_trigonometry_operations.h"
 #include "element_unary_operations.h"
 #include "operators.h"
 #include "variable_operations_common.h"
@@ -39,29 +41,12 @@ Variable concatenate(const VariableConstView &a1, const VariableConstView &a2,
     throw std::runtime_error(
         "Cannot concatenate Variables: Units do not match.");
 
-  if (a1.dims().sparseDim() == dim && a2.dims().sparseDim() == dim) {
-    Variable out(a1);
-    transform_in_place<pair_self_t<sparse_container<double>>>(
-        out, a2,
-        overloaded{[](auto &a, const auto &b) {
-                     a.insert(a.end(), b.begin(), b.end());
-                   },
-                   [](units::Unit &a, const units::Unit &b) {
-                     expect::equals(a, b);
-                   }});
-    return out;
-  }
-
   const auto &dims1 = a1.dims();
   const auto &dims2 = a2.dims();
   // TODO Many things in this function should be refactored and moved in class
   // Dimensions.
   // TODO Special handling for edge variables.
-  if (dims1.sparseDim() != dims2.sparseDim())
-    throw std::runtime_error("Cannot concatenate Variables: Either both or "
-                             "neither must be sparse, and the sparse "
-                             "dimensions must be the same.");
-  for (const auto &dim1 : dims1.denseLabels()) {
+  for (const auto &dim1 : dims1.labels()) {
     if (dim1 != dim) {
       if (!dims2.contains(dim1))
         throw std::runtime_error(
@@ -174,21 +159,16 @@ VariableView reciprocal(const VariableConstView &var, const VariableView &out) {
 }
 
 Variable abs(const VariableConstView &var) {
-  using std::abs;
-  return transform<double, float>(var, [](const auto x) { return abs(x); });
+  return transform<double, float>(var, element::abs);
 }
 
 Variable abs(Variable &&var) {
-  using std::abs;
-  auto out(std::move(var));
-  abs(out, out);
-  return out;
+  abs(var, var);
+  return std::move(var);
 }
 
 VariableView abs(const VariableConstView &var, const VariableView &out) {
-  using std::abs;
-  transform_in_place<pair_self_t<double, float>>(
-      out, var, [](auto &x, const auto &y) { x = abs(y); });
+  transform_in_place(out, var, element::abs_out_arg);
   return out;
 }
 
@@ -219,6 +199,17 @@ Variable dot(const Variable &a, const Variable &b) {
                  [](const units::Unit &a_, const units::Unit &b_) {
                    return a_ * b_;
                  }});
+}
+
+Variable atan2(const Variable &y, const Variable &x) {
+  return transform<std::tuple<double, float>>(y, x, element::atan2);
+}
+
+VariableView atan2(const VariableConstView &y, const VariableConstView &x,
+                   const VariableView &out) {
+  transform_in_place<std::tuple<double, float>>(out, y, x,
+                                                element::atan2_out_arg);
+  return out;
 }
 
 Variable broadcast(const VariableConstView &var, const Dimensions &dims) {
@@ -267,33 +258,61 @@ Variable copy(const VariableConstView &var) { return Variable(var); }
 VariableView nan_to_num(const VariableConstView &var,
                         const VariableConstView &replacement,
                         const VariableView &out) {
-  using std::isnan;
+  transform_in_place<std::tuple<double, float>>(out, var, replacement,
+                                                element::nan_to_num_out_arg);
+  return out;
+}
+
+VariableView positive_inf_to_num(const VariableConstView &var,
+                                 const VariableConstView &replacement,
+                                 const VariableView &out) {
   transform_in_place<std::tuple<double, float>>(
-      out, var, replacement,
-      scipp::overloaded{
-          transform_flags::expect_all_or_none_have_variance,
-          [](auto &a, const auto &b, const auto &repl) {
-            a = isnan(b) ? repl : b;
-          },
-          [](units::Unit &a, const units::Unit &b, const units::Unit &repl) {
-            expect::equals(b, repl);
-            a = b;
-          }});
+      out, var, replacement, element::positive_inf_to_num_out_arg);
+  return out;
+}
+VariableView negative_inf_to_num(const VariableConstView &var,
+                                 const VariableConstView &replacement,
+                                 const VariableView &out) {
+  transform_in_place<std::tuple<double, float>>(
+      out, var, replacement, element::negative_inf_to_num_out_arg);
+
   return out;
 }
 
 Variable nan_to_num(const VariableConstView &var,
                     const VariableConstView &replacement) {
-  using std::isnan;
-  return transform<std::tuple<double, float>>(
-      var, replacement,
-      overloaded{
-          transform_flags::expect_all_or_none_have_variance,
-          [](const auto &x, const auto &repl) { return isnan(x) ? repl : x; },
-          [](const units::Unit &x, const units::Unit &repl) {
-            expect::equals(x, repl);
-            return x;
-          }});
+
+  return transform<std::tuple<double, float>>(var, replacement,
+                                              element::nan_to_num);
 }
+
+Variable pos_inf_to_num(const VariableConstView &var,
+                        const VariableConstView &replacement) {
+
+  return transform<std::tuple<double, float>>(var, replacement,
+                                              element::positive_inf_to_num);
+}
+
+Variable neg_inf_to_num(const VariableConstView &var,
+                        const VariableConstView &replacement) {
+  return transform<std::tuple<double, float>>(var, replacement,
+                                              element::negative_inf_to_num);
+}
+
+namespace geometry {
+Variable position(const VariableConstView &x, const VariableConstView &y,
+                  const VariableConstView &z) {
+  return transform<std::tuple<double>>(x, y, z, element::geometry::position);
+}
+Variable x(const VariableConstView &pos) {
+  return transform<std::tuple<Eigen::Vector3d>>(pos, element::geometry::x);
+}
+Variable y(const VariableConstView &pos) {
+  return transform<std::tuple<Eigen::Vector3d>>(pos, element::geometry::y);
+}
+Variable z(const VariableConstView &pos) {
+  return transform<std::tuple<Eigen::Vector3d>>(pos, element::geometry::z);
+}
+} // namespace geometry
 
 } // namespace scipp::core

@@ -42,10 +42,6 @@ template <class... Ts> struct CallDType {
   }
 };
 
-template <class... Ts>
-struct CallDTypeWithSparse : public CallDType<Ts..., sparse_container<Ts>...> {
-};
-
 } // namespace scipp::core
 
 #endif // SCIPP_CORE_TAG_UTIL_H

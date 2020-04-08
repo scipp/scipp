@@ -19,6 +19,7 @@ class Dataset;
 
 template <class T>
 using sparse_container = boost::container::small_vector<T, 8>;
+template <class T> using event_list = sparse_container<T>;
 
 template <class T> struct is_sparse : std::false_type {};
 template <class T> struct is_sparse<sparse_container<T>> : std::true_type {};
@@ -38,6 +39,7 @@ enum class DType {
   SparseFloat,
   SparseInt64,
   SparseInt32,
+  SparseBool,
   DataArray,
   Dataset,
   EigenVector3d,
@@ -59,14 +61,15 @@ template <>
 constexpr DType dtype<sparse_container<int64_t>> = DType::SparseInt64;
 template <>
 constexpr DType dtype<sparse_container<int32_t>> = DType::SparseInt32;
+template <> constexpr DType dtype<sparse_container<bool>> = DType::SparseBool;
 template <> constexpr DType dtype<DataArray> = DType::DataArray;
 template <> constexpr DType dtype<Dataset> = DType::Dataset;
 template <> constexpr DType dtype<Eigen::Vector3d> = DType::EigenVector3d;
 template <> constexpr DType dtype<scipp::python::PyObject> = DType::PyObject;
 
 bool isInt(DType tp);
-bool isFloatingPoint(DType tp);
-bool isBool(DType tp);
+
+DType event_dtype(const DType type);
 
 } // namespace scipp::core
 

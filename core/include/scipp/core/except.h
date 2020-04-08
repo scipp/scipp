@@ -109,6 +109,18 @@ struct SCIPP_CORE_EXPORT NotFoundError : public std::runtime_error {
   using std::runtime_error::runtime_error;
 };
 
+struct SCIPP_CORE_EXPORT UnalignedError : public std::runtime_error {
+  using std::runtime_error::runtime_error;
+};
+
+struct SCIPP_CORE_EXPORT RealignedDataError : public std::runtime_error {
+  using std::runtime_error::runtime_error;
+};
+
+struct SCIPP_CORE_EXPORT EventDataError : public std::runtime_error {
+  using std::runtime_error::runtime_error;
+};
+
 } // namespace scipp::except
 
 namespace scipp::core::expect {
@@ -169,11 +181,9 @@ void SCIPP_CORE_EXPORT validSlice(const Dimensions &dims, const Slice &slice);
 void SCIPP_CORE_EXPORT validSlice(
     const std::unordered_map<Dim, scipp::index> &dims, const Slice &slice);
 
-void SCIPP_CORE_EXPORT coordsAndLabelsAreSuperset(const DataArrayConstView &a,
-                                                  const DataArrayConstView &b);
+void SCIPP_CORE_EXPORT coordsAreSuperset(const DataArrayConstView &a,
+                                         const DataArrayConstView &b);
 void SCIPP_CORE_EXPORT notCountDensity(const units::Unit &unit);
-void SCIPP_CORE_EXPORT notSparse(const Dimensions &dims);
-template <class T> void notSparse(const T &object) { notSparse(object.dims()); }
 void SCIPP_CORE_EXPORT validDim(const Dim dim);
 void SCIPP_CORE_EXPORT validExtent(const scipp::index size);
 template <class T> void hasVariances(const T &variable) {

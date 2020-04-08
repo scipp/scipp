@@ -2,6 +2,9 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 #include <algorithm>
 
+#include "scipp/core/unaligned.h"
+#include "scipp/core/variable_binary_arithmetic.h"
+
 #include "dataset_test_common.h"
 
 std::vector<bool> make_bools(const scipp::index size,
@@ -41,13 +44,13 @@ void DatasetFactory3D::init() {
                             Dimensions{{m_dim, lx}, {Dim::Y, ly}, {Dim::Z, lz}},
                             Values(rand(lx * ly * lz))));
 
-  base.setLabels("labels_x",
-                 makeVariable<double>(Dimensions{m_dim, lx}, Values(rand(lx))));
-  base.setLabels("labels_xy",
-                 makeVariable<double>(Dimensions{{m_dim, lx}, {Dim::Y, ly}},
-                                      Values(rand(lx * ly))));
-  base.setLabels("labels_z", makeVariable<double>(Dimensions{Dim::Z, lz},
-                                                  Values(rand(lz))));
+  base.setCoord(Dim("labels_x"),
+                makeVariable<double>(Dimensions{m_dim, lx}, Values(rand(lx))));
+  base.setCoord(Dim("labels_xy"),
+                makeVariable<double>(Dimensions{{m_dim, lx}, {Dim::Y, ly}},
+                                     Values(rand(lx * ly))));
+  base.setCoord(Dim("labels_z"),
+                makeVariable<double>(Dimensions{Dim::Z, lz}, Values(rand(lz))));
 
   base.setMask("masks_x",
                makeVariable<bool>(Dimensions{m_dim, lx},
@@ -113,8 +116,8 @@ Dataset make_empty() { return Dataset(); }
 Dataset make_simple_sparse(std::initializer_list<double> values,
                            std::string key) {
   Dataset ds;
-  auto var = makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse});
-  var.sparseValues<double>()[0] = values;
+  auto var = makeVariable<sparse_container<double>>(Dims{}, Shape{});
+  var.values<event_list<double>>()[0] = values;
   ds.setData(key, var);
   return ds;
 }
@@ -125,21 +128,21 @@ Dataset make_sparse_with_coords_and_labels(
   Dataset ds;
 
   {
-    auto var = makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse});
-    var.sparseValues<double>()[0] = values;
+    auto var = makeVariable<sparse_container<double>>(Dims{}, Shape{});
+    var.values<event_list<double>>()[0] = values;
     ds.setData(key, var);
   }
 
   {
-    auto var = makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse});
-    var.sparseValues<double>()[0] = coords_and_labels;
-    ds.setSparseCoord(key, var);
+    auto var = makeVariable<sparse_container<double>>(Dims{}, Shape{});
+    var.values<event_list<double>>()[0] = coords_and_labels;
+    ds.coords().set(Dim::X, var);
   }
 
   {
-    auto var = makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse});
-    var.sparseValues<double>()[0] = coords_and_labels;
-    ds.setSparseLabels(key, "l", var);
+    auto var = makeVariable<sparse_container<double>>(Dims{}, Shape{});
+    var.values<event_list<double>>()[0] = coords_and_labels;
+    ds.coords().set(Dim("l"), var);
   }
 
   return ds;
@@ -147,10 +150,9 @@ Dataset make_sparse_with_coords_and_labels(
 
 Dataset make_sparse_2d(std::initializer_list<double> values, std::string key) {
   Dataset ds;
-  auto var =
-      makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2l, Dimensions::Sparse});
-  var.sparseValues<double>()[0] = values;
-  var.sparseValues<double>()[1] = values;
+  auto var = makeVariable<sparse_container<double>>(Dims{Dim::X}, Shape{2});
+  var.values<event_list<double>>()[0] = values;
+  var.values<event_list<double>>()[1] = values;
   ds.setData(key, var);
   return ds;
 }
@@ -165,3 +167,28 @@ Dataset make_1d_masked() {
                                 Values(make_bools(10, {false, true}))));
   return ds;
 }
+
+namespace scipp::testdata {
+
+Dataset make_dataset_x() {
+  Dataset d;
+  d.setData("a", makeVariable<double>(Dims{Dim::X}, units::Unit(units::kg),
+                                      Shape{3}, Values{4, 5, 6}));
+  d.setData("b", makeVariable<int32_t>(Dims{Dim::X}, units::Unit(units::s),
+                                       Shape{3}, Values{7, 8, 9}));
+  d.setCoord(Dim("scalar"), 1.2 * units::Unit(units::K));
+  d.setCoord(Dim::X, makeVariable<double>(Dims{Dim::X}, units::Unit(units::m),
+                                          Shape{3}, Values{1, 2, 4}));
+  d.setCoord(Dim::Y, makeVariable<double>(Dims{Dim::X}, units::Unit(units::m),
+                                          Shape{3}, Values{1, 2, 3}));
+  return d;
+}
+
+Dataset make_dataset_realigned_x_to_y() {
+  auto d = make_dataset_x();
+  const auto edges = makeVariable<double>(Dims{Dim::Y}, units::Unit(units::m),
+                                          Shape{2}, Values{0, 4});
+  return unaligned::realign(d, {{Dim::Y, edges}});
+}
+
+} // namespace scipp::testdata

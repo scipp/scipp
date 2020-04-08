@@ -61,35 +61,34 @@ def plot(scipp_obj,
     # tobeplotted is a dict that holds four items:
     # {number_of_dimensions, Dataset, axes, line_parameters}.
     tobeplotted = dict()
-    sparse_dim = dict()
     for name, var in sorted(inventory.items()):
+
+        if sc.is_events(var) and bins is None:
+            raise RuntimeError("The `bins` argument must be specified when "
+                               "plotting event data.")
+
         ndims = len(var.dims)
+        if bins is not None and sc.is_events(var):
+            ndims += 1
         if ndims > 0:
-            sp_dim = var.sparse_dim
             ax = axes
-            if ndims == 1 or projection == "1d" or projection == "1D" or \
-               (sp_dim is not None and bins is None):
+            if ndims == 1 or projection == "1d" or projection == "1D":
                 # Construct a key from the dimensions
                 if axes is not None:
                     # Check if we are dealing with a dict mapping dimensions to
                     # labels
                     if isinstance(axes, dict):
-                        key = axes[var.dims[0]]
+                        key = axes[str(var.dims[0])]
                         ax = [key]
                     else:
-                        key = "{}.".format(str(axes))
+                        key = ".".join(axes)
                 else:
-                    key = "{}.".format(str(var.dims))
+                    key = ".".join([str(dim) for dim in var.dims])
                 # Add unit to key
-                if sp_dim is not None:
-                    key = "{}{}".format(key, str(var.coords[sp_dim].unit))
-                else:
-                    key = "{}{}".format(key, str(var.unit))
+                key = "{}.{}".format(key, str(var.unit))
                 line_count += 1
             else:
                 key = name
-                if sp_dim is not None:
-                    line_count += 1
 
             mpl_line_params = {}
             for n, p in line_params.items():
@@ -118,7 +117,6 @@ def plot(scipp_obj,
             tobeplotted[key]["scipp_obj_dict"][name] = inventory[name]
             for n, p in mpl_line_params.items():
                 tobeplotted[key]["mpl_line_params"][n][name] = p
-            sparse_dim[key] = sp_dim
 
     # Plot all the subsets
     output = SciPlot()
@@ -132,7 +130,6 @@ def plot(scipp_obj,
             output[key] = dispatch(scipp_obj_dict=val["scipp_obj_dict"],
                                    name=key,
                                    ndim=val["ndims"],
-                                   sparse_dim=sparse_dim[key],
                                    projection=projection,
                                    axes=val["axes"],
                                    mpl_line_params=val["mpl_line_params"],

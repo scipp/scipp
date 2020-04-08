@@ -1,15 +1,18 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
-/// @author Dimitar Tasev
+/// @author Simon Heybrock
 #ifndef SCIPP_CORE_VIEW_DECL_H
 #define SCIPP_CORE_VIEW_DECL_H
 
 #include <boost/iterator/transform_iterator.hpp>
 
+#include "scipp/core/dataset_access.h"
 #include "scipp/core/except.h"
 #include "scipp/core/slice.h"
 #include "scipp/core/variable.h"
+#include "scipp/core/view_forward.h"
+#include "scipp/units/dim.h"
 #include "scipp/units/unit.h"
 
 namespace scipp::core {
@@ -18,9 +21,7 @@ namespace detail {
 using slice_list =
     boost::container::small_vector<std::pair<Slice, scipp::index>, 2>;
 
-template <class Var> auto makeSlice(Var &var, const slice_list &slices) {
-  std::conditional_t<std::is_const_v<Var>, VariableConstView, VariableView>
-      slice(var);
+template <class T> void do_make_slice(T &slice, const slice_list &slices) {
   for (const auto [params, extent] : slices) {
     if (slice.dims().contains(params.dim())) {
       const auto new_end = params.end() + slice.dims()[params.dim()] - extent;
@@ -32,6 +33,13 @@ template <class Var> auto makeSlice(Var &var, const slice_list &slices) {
       }
     }
   }
+}
+
+template <class Var> auto makeSlice(Var &var, const slice_list &slices) {
+  std::conditional_t<std::is_const_v<Var>, typename Var::const_view_type,
+                     typename Var::view_type>
+      slice(var);
+  do_make_slice(slice, slices);
   return slice;
 }
 
@@ -57,50 +65,49 @@ static constexpr auto make_value = [](auto &&view) -> decltype(auto) {
 
 } // namespace detail
 
-namespace ViewId {
-class Attrs;
-class Coords;
-class Labels;
-class Masks;
-} // namespace ViewId
-template <class Id, class Key> class ConstView;
-template <class Base> class MutableView;
-
-/// View for accessing coordinates of const Dataset and DataArrayConstView.
-using CoordsConstView = ConstView<ViewId::Coords, Dim>;
-/// View for accessing coordinates of Dataset and DataArrayView.
-using CoordsView = MutableView<CoordsConstView>;
-/// View for accessing labels of const Dataset and DataArrayConstView.
-using LabelsConstView = ConstView<ViewId::Labels, std::string>;
-/// View for accessing labels of Dataset and DataArrayView.
-using LabelsView = MutableView<LabelsConstView>;
-/// View for accessing attributes of const Dataset and DataArrayConstView.
-using AttrsConstView = ConstView<ViewId::Attrs, std::string>;
-/// View for accessing attributes of Dataset and DataArrayView.
-using AttrsView = MutableView<AttrsConstView>;
-/// View for accessing masks of const Dataset and DataArrayConstView
-using MasksConstView = ConstView<ViewId::Masks, std::string>;
-/// View for accessing masks of Dataset and DataArrayView
-using MasksView = MutableView<MasksConstView>;
+/// Return the dimension for given coord.
+/// @param var Coordinate variable
+/// @param key Key of the coordinate in a coord dict
+///
+/// For dimension-coords, this is the same as the key, for non-dimension-coords
+/// (labels) we adopt the convention that they are "label" their inner
+/// dimension.
+template <class T, class Key> Dim dim_of_coord(const T &var, const Key &key) {
+  if (is_events(var))
+    return Dim::Invalid;
+  if constexpr (std::is_same_v<Key, Dim>) {
+    const bool is_dimension_coord = var.dims().contains(key);
+    return is_dimension_coord ? key : var.dims().inner();
+  } else
+    return var.dims().inner();
+}
 
 /// Common functionality for other const-view classes.
-template <class Id, class Key> class ConstView {
+template <class Id, class Key, class Value> class ConstView {
+public:
+  using key_type = Key;
+  using mapped_type = Value;
+  using holder_type =
+      std::unordered_map<key_type, typename mapped_type::view_type>;
+
 private:
+  static auto make_slice(typename mapped_type::const_view_type view,
+                         const detail::slice_list &slices) {
+    detail::do_make_slice(view, slices);
+    return view;
+  };
+
   struct make_item {
     const ConstView *view;
     template <class T> auto operator()(const T &item) const {
-      return std::pair<Key, VariableConstView>(
-          item.first, detail::makeSlice(*item.second.first, view->slices()));
+      return std::pair<Key, typename ConstView::mapped_type::const_view_type>(
+          item.first, make_slice(item.second, view->slices()));
     }
   };
 
 public:
-  using key_type = Key;
-  using mapped_type = Variable;
-
-  ConstView(
-      std::unordered_map<Key, std::pair<const Variable *, Variable *>> &&items,
-      const detail::slice_list &slices = {})
+  ConstView() = default;
+  ConstView(holder_type &&items, const detail::slice_list &slices = {})
       : m_items(std::move(items)), m_slices(slices) {
     // TODO This is very similar to the code in makeViewItems(), provided that
     // we can give a good definion of the `dims` argument (roughly the space
@@ -118,15 +125,17 @@ public:
               // Remove dimension-coords for given dim, or non-dimension coords
               // if their inner dim is the given dim.
               constexpr auto is_dimension_coord = [](const auto &_) {
-                return _.second.first->dims().contains(_.first);
+                return !is_events(_.second) &&
+                       _.second.dims().contains(_.first);
               };
               return is_dimension_coord(it2)
                          ? it2.first == slice.dim()
-                         : (!it2.second.first->dims().empty() &&
-                            (it2.second.first->dims().inner() == slice.dim()));
+                         : (!it2.second.dims().empty() &&
+                            !is_events(it2.second) &&
+                            (it2.second.dims().inner() == slice.dim()));
             } else {
-              return !it2.second.first->dims().empty() &&
-                     (it2.second.first->dims().inner() == slice.dim());
+              return !it2.second.dims().empty() && !is_events(it2.second) &&
+                     (it2.second.dims().inner() == slice.dim());
             }
           };
           if (erase(*it))
@@ -149,9 +158,9 @@ public:
   }
 
   /// Return a const view to the coordinate for given dimension.
-  VariableConstView operator[](const Key key) const {
+  typename mapped_type::const_view_type operator[](const Key key) const {
     expect::contains(*this, key);
-    return detail::makeSlice(*m_items.at(key).first, m_slices);
+    return make_slice(m_items.at(key), m_slices);
   }
 
   auto find(const Key k) const && = delete;
@@ -202,7 +211,7 @@ public:
   ConstView slice(const Slice slice1) const {
     auto slices = m_slices;
     if constexpr (std::is_same_v<Key, Dim>) {
-      const auto &coord = *m_items.at(slice1.dim()).first;
+      const auto &coord = m_items.at(slice1.dim());
       slices.emplace_back(slice1, coord.dims()[slice1.dim()]);
     } else {
       throw std::runtime_error("TODO");
@@ -238,8 +247,107 @@ public:
   const auto &slices() const noexcept { return m_slices; }
 
 protected:
-  std::unordered_map<Key, std::pair<const Variable *, Variable *>> m_items;
+  holder_type m_items;
   detail::slice_list m_slices;
+};
+
+// TODO can we use these as base classes for DatasetConstView and DatasetView?
+/// Common functionality for other view classes.
+template <class Base, class Access> class MutableView : public Base {
+private:
+  static auto make_slice(typename Base::mapped_type::view_type view,
+                         const detail::slice_list &slices) {
+    detail::do_make_slice(view, slices);
+    return view;
+  };
+  struct make_item {
+    const MutableView<Base, Access> *view;
+    template <class T> auto operator()(const T &item) const {
+      return std::pair<typename Base::key_type,
+                       typename Base::mapped_type::view_type>(
+          item.first, make_slice(item.second, view->slices()));
+    }
+  };
+
+  Access m_access;
+
+public:
+  MutableView() = default;
+  MutableView(const Access &access, typename Base::holder_type &&items,
+              const detail::slice_list &slices = {})
+      : Base(std::move(items), slices), m_access(access) {}
+  /// Constructor for internal use (slicing and holding const view in mutable
+  /// view)
+  MutableView(const Access &access, Base &&base)
+      : Base(std::move(base)), m_access(access) {}
+
+  /// Return a view to the coordinate for given dimension.
+  typename Base::mapped_type::view_type
+  operator[](const typename Base::key_type key) const {
+    expect::contains(*this, key);
+    return make_slice(Base::items().at(key), Base::slices());
+  }
+
+  template <class T> auto find(const T k) const && = delete;
+  template <class T> auto find(const T k) const &noexcept {
+    return boost::make_transform_iterator(Base::items().find(k),
+                                          make_item{this});
+  }
+
+  auto begin() const && = delete;
+  /// Return iterator to the beginning of all items.
+  auto begin() const &noexcept {
+    return boost::make_transform_iterator(Base::items().begin(),
+                                          make_item{this});
+  }
+  auto end() const && = delete;
+  /// Return iterator to the end of all items.
+  auto end() const &noexcept {
+    return boost::make_transform_iterator(Base::items().end(), make_item{this});
+  }
+
+  auto items_begin() const && = delete;
+  /// Return iterator to the beginning of all items.
+  auto items_begin() const &noexcept { return begin(); }
+  auto items_end() const && = delete;
+  /// Return iterator to the end of all items.
+  auto items_end() const &noexcept { return end(); }
+
+  auto values_begin() const && = delete;
+  /// Return iterator to the beginning of all values.
+  auto values_begin() const &noexcept {
+    return boost::make_transform_iterator(begin(), detail::make_value);
+  }
+  auto values_end() const && = delete;
+  /// Return iterator to the end of all values.
+  auto values_end() const &noexcept {
+    return boost::make_transform_iterator(end(), detail::make_value);
+  }
+
+  MutableView slice(const Slice slice1) const {
+    // parent = nullptr since adding coords via slice is not supported.
+    // TODO
+    return MutableView(m_access, Base::slice(slice1));
+  }
+
+  MutableView slice(const Slice slice1, const Slice slice2) const {
+    return slice(slice1).slice(slice2);
+  }
+
+  MutableView slice(const Slice slice1, const Slice slice2,
+                    const Slice slice3) const {
+    return slice(slice1, slice2).slice(slice3);
+  }
+
+  template <class VarOrView>
+  void set(const typename Base::key_type key, VarOrView var) const {
+    m_access.set(key, typename Base::mapped_type(std::move(var)));
+  }
+
+  void erase(const typename Base::key_type key) const {
+    expect::contains(*this, key);
+    m_access.erase(key);
+  }
 };
 
 SCIPP_CORE_EXPORT Variable masks_merge_if_contains(const MasksConstView &masks,

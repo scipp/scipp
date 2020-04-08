@@ -4,6 +4,7 @@
 #include <gtest/gtest.h>
 
 #include "scipp/core/dataset.h"
+#include "scipp/core/variable_operations.h"
 #include "scipp/neutron/beamline.h"
 
 using namespace scipp;
@@ -23,19 +24,19 @@ Dataset makeDatasetWithBeamline() {
                      makeVariable<Eigen::Vector3d>(
                          Dims{Dim::Row}, Shape{2}, units::Unit(units::m),
                          Values{source_pos, sample_pos}));
-  beamline.setLabels(
-      "source_position",
+  beamline.setCoord(
+      Dim("source_position"),
       makeVariable<Eigen::Vector3d>(units::Unit(units::m), Values{source_pos}));
-  beamline.setLabels(
-      "sample_position",
+  beamline.setCoord(
+      Dim("sample_position"),
       makeVariable<Eigen::Vector3d>(units::Unit(units::m), Values{sample_pos}));
   // TODO Need fuzzy comparison for variables to write a convenient test with
   // detectors away from the axes.
-  beamline.setLabels("position",
-                     makeVariable<Eigen::Vector3d>(
-                         Dims{Dim::Spectrum}, Shape{2}, units::Unit(units::m),
-                         Values{Eigen::Vector3d{1.0, 0.0, 0.01},
-                                Eigen::Vector3d{0.0, 1.0, 0.01}}));
+  beamline.setCoord(Dim("position"),
+                    makeVariable<Eigen::Vector3d>(
+                        Dims{Dim::Spectrum}, Shape{2}, units::Unit(units::m),
+                        Values{Eigen::Vector3d{1.0, 0.0, 0.01},
+                               Eigen::Vector3d{0.0, 1.0, 0.01}}));
   return beamline;
 }
 
@@ -78,7 +79,7 @@ TEST_F(BeamlineTest, scattering_angle) {
 
 TEST_F(BeamlineTest, no_sample) {
   Dataset d(dataset);
-  d.labels().erase("sample_position");
+  d.coords().erase(Dim("sample_position"));
   ASSERT_THROW(l1(d), except::NotFoundError);
   ASSERT_THROW(l2(d), except::NotFoundError);
   ASSERT_THROW(scattering_angle(d), except::NotFoundError);

@@ -52,7 +52,9 @@ template <class... Known> class VariableConceptHandle_impl;
   double, float, int64_t, int32_t, bool, Eigen::Vector3d,                      \
       sparse_container<double>, sparse_container<float>,                       \
       sparse_container<int64_t>, sparse_container<int32_t>,                    \
-      span<const double>, span<double>, span<const float>, span<float>
+      sparse_container<bool>, span<const double>, span<double>,                \
+      span<const float>, span<float>, span<const int64_t>, span<int64_t>,      \
+      span<const int32_t>, span<int32_t>
 using VariableConceptHandle = VariableConceptHandle_impl<KNOWN>;
 
 /// Abstract base class for any data that can be held by Variable. Also used to
@@ -66,7 +68,7 @@ public:
   VariableConcept(const Dimensions &dimensions);
   virtual ~VariableConcept() = default;
 
-  virtual DType dtype(bool sparse = false) const noexcept = 0;
+  virtual DType dtype() const noexcept = 0;
   virtual VariableConceptHandle clone() const = 0;
   virtual VariableConceptHandle
   makeDefaultFromParent(const Dimensions &dims) const = 0;
@@ -112,11 +114,8 @@ private:
 template <class T> constexpr bool canHaveVariances() noexcept {
   using U = std::remove_const_t<T>;
   return std::is_same_v<U, double> || std::is_same_v<U, float> ||
-         std::is_same_v<U, int64_t> || std::is_same_v<U, int32_t> ||
          std::is_same_v<U, sparse_container<double>> ||
          std::is_same_v<U, sparse_container<float>> ||
-         std::is_same_v<U, sparse_container<int64_t>> ||
-         std::is_same_v<U, sparse_container<int32_t>> ||
          std::is_same_v<U, span<const double>> ||
          std::is_same_v<U, span<const float>> ||
          std::is_same_v<U, span<double>> || std::is_same_v<U, span<float>>;
@@ -134,13 +133,7 @@ public:
   VariableConceptT(const Dimensions &dimensions)
       : VariableConcept(dimensions) {}
 
-  DType dtype(bool sparse = false) const noexcept override {
-    if (!sparse)
-      return scipp::core::dtype<T>;
-    if constexpr (is_sparse_container<T>::value)
-      return scipp::core::dtype<typename T::value_type>;
-    std::terminate();
-  }
+  DType dtype() const noexcept override { return scipp::core::dtype<T>; }
   static DType static_dtype() noexcept { return scipp::core::dtype<T>; }
 
   virtual scipp::span<T> values() = 0;
@@ -238,7 +231,8 @@ public:
       auto &otherConcept = *other;
       if (!concept.isView() && !otherConcept.isView() &&
           concept.dtype() == otherConcept.dtype() &&
-          concept.dims() == otherConcept.dims()) {
+          concept.dims() == otherConcept.dims() &&
+          concept.hasVariances() == otherConcept.hasVariances()) {
         concept.copy(otherConcept, Dim::Invalid, 0, 0, 1);
         return *this;
       }
@@ -354,7 +348,7 @@ public:
   const Dimensions &dims() const & { return m_object->dims(); }
   void setDims(const Dimensions &dimensions);
 
-  DType dtype() const noexcept { return data().dtype(dims().sparse()); }
+  DType dtype() const noexcept { return data().dtype(); }
 
   bool hasVariances() const noexcept { return data().hasVariances(); }
 
@@ -364,18 +358,6 @@ public:
     return scipp::span(cast<T>(true));
   }
   template <class T> auto variances() { return scipp::span(cast<T>(true)); }
-  template <class T> auto sparseValues() const {
-    return scipp::span(cast<sparse_container<T>>());
-  }
-  template <class T> auto sparseValues() {
-    return scipp::span(cast<sparse_container<T>>());
-  }
-  template <class T> auto sparseVariances() const {
-    return scipp::span(cast<sparse_container<T>>(true));
-  }
-  template <class T> auto sparseVariances() {
-    return scipp::span(cast<sparse_container<T>>(true));
-  }
   template <class T> const auto &value() const {
     detail::expect0D(dims());
     return values<T>()[0];
@@ -516,25 +498,14 @@ template <class T, class... Ts> Variable makeVariable(Ts &&... ts) {
     auto [valArgs, varArgs, nonData] =
         helper::template extractArguments<units::Unit, Dims, Shape>(
             std::forward<Ts>(ts)...);
-    const auto &shape = std::get<Shape>(nonData);
-    const auto &d = shape.data;
-    if (std::find(d.cbegin(), d.cend(), Dimensions::Sparse) != d.end())
-      return helper::template construct<sparse_container<T>>(
-          std::move(valArgs), std::move(varArgs), std::move(nonData));
-    else
-      return helper::template construct<T>(
-          std::move(valArgs), std::move(varArgs), std::move(nonData));
+    return helper::template construct<T>(std::move(valArgs), std::move(varArgs),
+                                         std::move(nonData));
   } else {
     auto [valArgs, varArgs, nonData] =
         helper::template extractArguments<units::Unit, Dimensions>(
             std::forward<Ts>(ts)...);
-    const auto &dimensions = std::get<Dimensions>(nonData);
-    if (dimensions.sparse())
-      return helper::template construct<sparse_container<T>>(
-          std::move(valArgs), std::move(varArgs), std::move(nonData));
-    else
-      return helper::template construct<T>(
-          std::move(valArgs), std::move(varArgs), std::move(nonData));
+    return helper::template construct<T>(std::move(valArgs), std::move(varArgs),
+                                         std::move(nonData));
   }
 }
 
@@ -609,14 +580,15 @@ Variable Variable::create(units::Unit &&u, Dims &&d, Shape &&s,
 template <class... Ts>
 template <class T>
 Variable Variable::ConstructVariable<Ts...>::Maker<T>::apply(Ts &&... ts) {
-  return makeVariable<detail::element_type_t<T>>(std::forward<Ts>(ts)...);
+  return makeVariable<T>(std::forward<Ts>(ts)...);
 }
 
 template <class... Ts>
 Variable Variable::ConstructVariable<Ts...>::make(Ts &&... args, DType type) {
-  return CallDTypeWithSparse<
-      double, float, int64_t, int32_t, bool, Eigen::Vector3d,
-      std::string>::apply<Maker>(type, std::forward<Ts>(args)...);
+  return CallDType<
+      double, float, int64_t, int32_t, bool, Eigen::Vector3d, std::string,
+      event_list<double>, event_list<float>, event_list<int64_t>,
+      event_list<int32_t>>::apply<Maker>(type, std::forward<Ts>(args)...);
 }
 
 template <class... Ts>
@@ -640,6 +612,9 @@ using nth_t = decltype(std::get<I>(std::declval<std::tuple<Ts...>>()));
 /// Non-mutable view into (a subset of) a Variable.
 class SCIPP_CORE_EXPORT VariableConstView {
 public:
+  using value_type = Variable;
+
+  VariableConstView() = default;
   VariableConstView(const Variable &variable) : m_variable(&variable) {}
   VariableConstView(const Variable &variable, const Dimensions &dims)
       : m_variable(&variable), m_view(variable.data().reshape(dims)) {}
@@ -653,7 +628,7 @@ public:
         m_view(slice.data().makeView(dim, begin, end)) {}
 
   explicit operator bool() const noexcept {
-    return m_variable->operator bool();
+    return m_variable && m_variable->operator bool();
   }
 
   auto operator~() const { return m_variable->operator~(); }
@@ -714,12 +689,6 @@ public:
   // will not be deleted even if *this is a temporary and gets deleted.
   template <class T> auto values() const { return cast<T>(); }
   template <class T> auto variances() const { return castVariances<T>(); }
-  template <class T> auto sparseValues() const {
-    return cast<sparse_container<T>>();
-  }
-  template <class T> auto sparseVariances() const {
-    return castVariances<sparse_container<T>>();
-  }
   template <class T> const auto &value() const {
     detail::expect0D(dims());
     return values<T>()[0];
@@ -750,11 +719,12 @@ protected:
   template <class T> const ElementArrayView<const T> cast() const;
   template <class T> const ElementArrayView<const T> castVariances() const;
 
-  const Variable *m_variable;
+  const Variable *m_variable{nullptr};
   VariableConceptHandle m_view;
 };
 
 class DataArrayConstView;
+template <class T> typename T::view_type makeViewItem(T &);
 
 /** Mutable view into (a subset of) a Variable.
  *
@@ -762,6 +732,7 @@ class DataArrayConstView;
  * VariableConstView will automatically work also for this mutable variant.*/
 class SCIPP_CORE_EXPORT VariableView : public VariableConstView {
 public:
+  VariableView() = default;
   VariableView(Variable &variable)
       : VariableConstView(variable), m_mutableVariable(&variable) {}
   // Note that we use the basic constructor of VariableConstView to avoid
@@ -806,12 +777,6 @@ public:
   // Note: No need to delete rvalue overloads here, see VariableConstView.
   template <class T> auto values() const { return cast<T>(); }
   template <class T> auto variances() const { return castVariances<T>(); }
-  template <class T> auto sparseValues() const {
-    return cast<sparse_container<T>>();
-  }
-  template <class T> auto sparseVariances() const {
-    return castVariances<sparse_container<T>>();
-  }
   template <class T> auto &value() const {
     detail::expect0D(dims());
     return values<T>()[0];
@@ -874,6 +839,11 @@ public:
 private:
   friend class Variable;
   friend class DataArrayConstView;
+  template <class T> friend typename T::view_type makeViewItem(T &);
+
+  // For internal use in DataArrayConstView.
+  explicit VariableView(VariableConstView &&base)
+      : VariableConstView(std::move(base)), m_mutableVariable{nullptr} {}
 
   template <class Var>
   static VariableView makeTransposed(Var &var,
@@ -883,193 +853,16 @@ private:
     return res;
   }
 
-  // For internal use in DataArrayConstView.
-  explicit VariableView(VariableConstView &&base)
-      : VariableConstView(std::move(base)), m_mutableVariable{nullptr} {}
-
   template <class T> ElementArrayView<T> cast() const;
   template <class T> ElementArrayView<T> castVariances() const;
 
-  Variable *m_mutableVariable;
+  Variable *m_mutableVariable{nullptr};
 };
-
-SCIPP_CORE_EXPORT Variable operator+(const VariableConstView &a,
-                                     const VariableConstView &b);
-SCIPP_CORE_EXPORT Variable operator-(const VariableConstView &a,
-                                     const VariableConstView &b);
-SCIPP_CORE_EXPORT Variable operator*(const VariableConstView &a,
-                                     const VariableConstView &b);
-SCIPP_CORE_EXPORT Variable operator/(const VariableConstView &a,
-                                     const VariableConstView &b);
-SCIPP_CORE_EXPORT Variable operator|(const VariableConstView &a,
-                                     const VariableConstView &b);
-SCIPP_CORE_EXPORT Variable operator&(const VariableConstView &a,
-                                     const VariableConstView &b);
-SCIPP_CORE_EXPORT Variable operator^(const VariableConstView &a,
-                                     const VariableConstView &b);
-// Note: If the left-hand-side in an addition is a VariableView this simply
-// implicitly converts it to a Variable. A copy for the return value is required
-// anyway so this is a convenient way to avoid defining more overloads.
-template <typename T, typename = std::enable_if_t<!is_container_or_view<T>()>>
-Variable operator+(const T value, const VariableConstView &a) {
-  return makeVariable<T>(Values{value}) + a;
-}
-template <typename T, typename = std::enable_if_t<!is_container_or_view<T>()>>
-Variable operator-(const T value, const VariableConstView &a) {
-  return makeVariable<T>(Values{value}) - a;
-}
-template <typename T, typename = std::enable_if_t<!is_container_or_view<T>()>>
-Variable operator*(const T value, const VariableConstView &a) {
-  return makeVariable<T>(Values{value}) * a;
-}
-template <typename T, typename = std::enable_if_t<!is_container_or_view<T>()>>
-Variable operator/(const T value, const VariableConstView &a) {
-  return makeVariable<T>(Values{value}) / a;
-}
-template <typename T, typename = std::enable_if_t<!is_container_or_view<T>()>>
-Variable operator+(const VariableConstView &a, const T value) {
-  return a + makeVariable<T>(Values{value});
-}
-template <typename T, typename = std::enable_if_t<!is_container_or_view<T>()>>
-Variable operator-(const VariableConstView &a, const T value) {
-  return a - makeVariable<T>(Values{value});
-}
-template <typename T, typename = std::enable_if_t<!is_container_or_view<T>()>>
-Variable operator*(const VariableConstView &a, const T value) {
-  return a * makeVariable<T>(Values{value});
-}
-template <typename T, typename = std::enable_if_t<!is_container_or_view<T>()>>
-Variable operator/(const VariableConstView &a, const T value) {
-  return a / makeVariable<T>(Values{value});
-}
-
-template <class T>
-Variable operator*(Variable a, const boost::units::quantity<T> &quantity) {
-  return std::move(a *= quantity);
-}
-template <class T>
-Variable operator/(Variable a, const boost::units::quantity<T> &quantity) {
-  return std::move(a /= quantity);
-}
-template <class T>
-Variable operator/(const boost::units::quantity<T> &quantity, Variable a) {
-  return makeVariable<double>(Dimensions{}, units::Unit(T{}),
-                              Values{quantity.value()}) /
-         std::move(a);
-}
-
-template <typename T>
-std::enable_if_t<std::is_arithmetic_v<T>, Variable>
-operator*(T v, const units::Unit &unit) {
-  return makeVariable<T>(Dimensions{}, units::Unit{unit}, Values{v});
-}
-
-template <typename T>
-std::enable_if_t<std::is_arithmetic_v<T>, Variable>
-operator/(T v, const units::Unit &unit) {
-  return makeVariable<T>(Dimensions{}, units::Unit(units::dimensionless) / unit,
-                         Values{v});
-}
-
-SCIPP_CORE_EXPORT Variable astype(const VariableConstView &var,
-                                  const DType type);
-
-[[nodiscard]] SCIPP_CORE_EXPORT Variable
-reciprocal(const VariableConstView &var);
-[[nodiscard]] SCIPP_CORE_EXPORT Variable reciprocal(Variable &&var);
-SCIPP_CORE_EXPORT VariableView reciprocal(const VariableConstView &var,
-                                          const VariableView &out);
-
-SCIPP_CORE_EXPORT std::vector<Variable>
-split(const Variable &var, const Dim dim,
-      const std::vector<scipp::index> &indices);
-[[nodiscard]] SCIPP_CORE_EXPORT Variable abs(const VariableConstView &var);
-[[nodiscard]] SCIPP_CORE_EXPORT Variable abs(Variable &&var);
-SCIPP_CORE_EXPORT VariableView abs(const VariableConstView &var,
-                                   const VariableView &out);
-SCIPP_CORE_EXPORT Variable broadcast(const VariableConstView &var,
-                                     const Dimensions &dims);
-SCIPP_CORE_EXPORT Variable concatenate(const VariableConstView &a1,
-                                       const VariableConstView &a2,
-                                       const Dim dim);
-SCIPP_CORE_EXPORT Variable dot(const Variable &a, const Variable &b);
-SCIPP_CORE_EXPORT Variable filter(const Variable &var, const Variable &filter);
-[[nodiscard]] SCIPP_CORE_EXPORT Variable mean(const VariableConstView &var,
-                                              const Dim dim);
-SCIPP_CORE_EXPORT VariableView mean(const VariableConstView &var, const Dim dim,
-                                    const VariableView &out);
-SCIPP_CORE_EXPORT Variable norm(const VariableConstView &var);
-SCIPP_CORE_EXPORT Variable permute(const Variable &var, const Dim dim,
-                                   const std::vector<scipp::index> &indices);
-SCIPP_CORE_EXPORT Variable rebin(const VariableConstView &var, const Dim dim,
-                                 const VariableConstView &oldCoord,
-                                 const VariableConstView &newCoord);
-SCIPP_CORE_EXPORT Variable resize(const VariableConstView &var, const Dim dim,
-                                  const scipp::index size);
-SCIPP_CORE_EXPORT Variable reverse(Variable var, const Dim dim);
-[[nodiscard]] SCIPP_CORE_EXPORT Variable sqrt(const VariableConstView &var);
-[[nodiscard]] SCIPP_CORE_EXPORT Variable sqrt(Variable &&var);
-SCIPP_CORE_EXPORT VariableView sqrt(const VariableConstView &var,
-                                    const VariableView &out);
-
-[[nodiscard]] SCIPP_CORE_EXPORT Variable flatten(const VariableConstView &var,
-                                                 const Dim dim);
-[[nodiscard]] SCIPP_CORE_EXPORT Variable sum(const VariableConstView &var,
-                                             const Dim dim);
-SCIPP_CORE_EXPORT VariableView sum(const VariableConstView &var, const Dim dim,
-                                   const VariableView &out);
 
 SCIPP_CORE_EXPORT Variable copy(const VariableConstView &var);
 
-// Trigonometrics
-[[nodiscard]] SCIPP_CORE_EXPORT Variable sin(const VariableConstView &var);
-[[nodiscard]] SCIPP_CORE_EXPORT Variable sin(Variable &&var);
-SCIPP_CORE_EXPORT VariableView sin(const VariableConstView &var,
-                                   const VariableView &out);
-[[nodiscard]] SCIPP_CORE_EXPORT Variable cos(const VariableConstView &var);
-[[nodiscard]] SCIPP_CORE_EXPORT Variable cos(Variable &&var);
-SCIPP_CORE_EXPORT VariableView cos(const VariableConstView &var,
-                                   const VariableView &out);
-[[nodiscard]] SCIPP_CORE_EXPORT Variable tan(const VariableConstView &var);
-[[nodiscard]] SCIPP_CORE_EXPORT Variable tan(Variable &&var);
-SCIPP_CORE_EXPORT VariableView tan(const VariableConstView &var,
-                                   const VariableView &out);
-[[nodiscard]] SCIPP_CORE_EXPORT Variable asin(const VariableConstView &var);
-[[nodiscard]] SCIPP_CORE_EXPORT Variable asin(Variable &&var);
-SCIPP_CORE_EXPORT VariableView asin(const VariableConstView &var,
-                                    const VariableView &out);
-[[nodiscard]] SCIPP_CORE_EXPORT Variable acos(const VariableConstView &var);
-[[nodiscard]] SCIPP_CORE_EXPORT Variable acos(Variable &&var);
-SCIPP_CORE_EXPORT VariableView acos(const VariableConstView &var,
-                                    const VariableView &out);
-[[nodiscard]] SCIPP_CORE_EXPORT Variable atan(const VariableConstView &var);
-[[nodiscard]] SCIPP_CORE_EXPORT Variable atan(Variable &&var);
-SCIPP_CORE_EXPORT VariableView atan(const VariableConstView &var,
-                                    const VariableView &out);
-
-// Logical reductions
-[[nodiscard]] SCIPP_CORE_EXPORT Variable any(const VariableConstView &var,
-                                             const Dim dim);
-[[nodiscard]] SCIPP_CORE_EXPORT Variable all(const VariableConstView &var,
-                                             const Dim dim);
-
-// Other reductions
-[[nodiscard]] SCIPP_CORE_EXPORT Variable max(const VariableConstView &var,
-                                             const Dim dim);
-[[nodiscard]] SCIPP_CORE_EXPORT Variable min(const VariableConstView &var,
-                                             const Dim dim);
-
-SCIPP_CORE_EXPORT VariableView nan_to_num(const VariableConstView &var,
-                                          const VariableConstView &replacement,
-                                          const VariableView &out);
-[[nodiscard]] SCIPP_CORE_EXPORT Variable
-nan_to_num(const VariableConstView &var, const VariableConstView &replacement);
-
-namespace sparse {
-SCIPP_CORE_EXPORT Variable counts(const VariableConstView &var);
-SCIPP_CORE_EXPORT void reserve(const VariableView &sparse,
-                               const VariableConstView &capacity);
-} // namespace sparse
+bool is_events(const VariableConstView &var);
+bool is_events(const DataArrayConstView &array);
 
 } // namespace scipp::core
 

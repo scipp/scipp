@@ -2,58 +2,18 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
+#include "scipp/core/variable_reduction.h"
 #include "scipp/core/dtype.h"
+#include "scipp/core/event.h"
 #include "scipp/core/except.h"
 #include "scipp/core/transform.h"
-#include "scipp/core/variable.h"
+#include "scipp/core/variable_binary_arithmetic.h"
 #include "scipp/core/view_decl.h"
 
 #include "operators.h"
 #include "variable_operations_common.h"
 
 namespace scipp::core {
-
-namespace sparse {
-/// Return array of sparse dimension extents, i.e., total counts.
-Variable counts(const VariableConstView &var) {
-  // To simplify this we would like to use `transform`, but this is currently
-  // not possible since the current implementation expects outputs with
-  // variances if any of the inputs has variances.
-  auto dims = var.dims();
-  dims.erase(dims.sparseDim());
-  auto counts =
-      makeVariable<scipp::index>(Dimensions(dims), units::Unit(units::counts));
-  accumulate_in_place<
-      pair_custom_t<std::pair<scipp::index, sparse_container<double>>>,
-      pair_custom_t<std::pair<scipp::index, sparse_container<float>>>,
-      pair_custom_t<std::pair<scipp::index, sparse_container<int64_t>>>,
-      pair_custom_t<std::pair<scipp::index, sparse_container<int32_t>>>>(
-      counts, var,
-      overloaded{[](scipp::index &c, const auto &sparse) { c = sparse.size(); },
-                 transform_flags::expect_no_variance_arg<0>});
-  return counts;
-}
-
-/// Reserve memory in all sparse containers in `sparse`, based on `capacity`.
-///
-/// To avoid pessimizing reserves, this does nothing if the new capacity is less
-/// than the typical logarithmic growth. This yields a 5x speedup in some cases,
-/// without apparent negative effect on the other cases.
-void reserve(const VariableView &sparse, const VariableConstView &capacity) {
-  transform_in_place<
-      pair_custom_t<std::pair<sparse_container<double>, scipp::index>>,
-      pair_custom_t<std::pair<sparse_container<float>, scipp::index>>,
-      pair_custom_t<std::pair<sparse_container<int64_t>, scipp::index>>,
-      pair_custom_t<std::pair<sparse_container<int32_t>, scipp::index>>>(
-      sparse, capacity,
-      overloaded{[](auto &&sparse_, const scipp::index capacity_) {
-                   if (capacity_ > 2 * scipp::size(sparse_))
-                     return sparse_.reserve(capacity_);
-                 },
-                 transform_flags::expect_no_variance_arg<1>,
-                 [](const units::Unit &, const units::Unit &) {}});
-}
-} // namespace sparse
 
 namespace flatten_detail {
 template <class T>
@@ -65,13 +25,13 @@ void flatten_impl(const VariableView &summed, const VariableConstView &var,
   // Note that mask may often be "empty" (0-D false). Benchmarks show no
   // significant penalty from handling it anyway. We thus avoid two separate
   // code branches here.
-  if (!var.dims().sparse())
-    throw except::DimensionError("`flatten` can only be used for sparse data, "
-                                 "use `sum` for dense data.");
+  if (!is_events(var))
+    throw except::TypeError("`flatten` can only be used for event data, "
+                            "use `sum` for dense data.");
   // 1. Reserve space in output. This yields approx. 3x speedup.
-  auto summed_counts = sparse::counts(summed);
-  sum_impl(summed_counts, sparse::counts(var) * mask);
-  sparse::reserve(summed, summed_counts);
+  auto summed_sizes = event::sizes(summed);
+  sum_impl(summed_sizes, event::sizes(var) * mask);
+  event::reserve(summed, summed_sizes);
 
   // 2. Flatten dimension(s) by concatenating along sparse dim.
   using namespace flatten_detail;
@@ -113,9 +73,9 @@ Variable flatten(const VariableConstView &var, const Dim dim,
 }
 
 void sum_impl(const VariableView &summed, const VariableConstView &var) {
-  if (var.dims().sparse())
-    throw except::DimensionError("`sum` can only be used for dense data, use "
-                                 "`flatten` for sparse data.");
+  if (is_events(var))
+    throw except::TypeError("`sum` can only be used for dense data, use "
+                            "`flatten` for event data.");
   accumulate_in_place<
       pair_self_t<double, float, int64_t, int32_t, Eigen::Vector3d>,
       pair_custom_t<std::pair<int64_t, bool>>>(
@@ -173,8 +133,6 @@ VariableView sum(const VariableConstView &var, const Dim dim,
 
 Variable mean(const VariableConstView &var, const Dim dim,
               const VariableConstView &masks_sum) {
-  // In principle we *could* support mean/sum over sparse dimension.
-  expect::notSparse(var);
   auto summed = sum(var, dim);
 
   auto scale =
@@ -189,8 +147,6 @@ Variable mean(const VariableConstView &var, const Dim dim,
 
 VariableView mean(const VariableConstView &var, const Dim dim,
                   const VariableConstView &masks_sum, const VariableView &out) {
-  // In principle we *could* support mean/sum over sparse dimension.
-  expect::notSparse(var);
   if (isInt(out.dtype()))
     throw except::UnitError(
         "Cannot calculate mean in-place when output dtype is integer");
@@ -239,7 +195,6 @@ VariableView mean(const VariableConstView &var, const Dim dim,
 
 template <class Op>
 void reduce_impl(const VariableView &out, const VariableConstView &var) {
-  expect::notSparse(var);
   accumulate_in_place(out, var, Op{});
 }
 
@@ -318,6 +273,26 @@ Variable masks_merge_if_contained(const MasksConstView &masks,
       mask_union = mask_union | mask.second;
   }
   return mask_union;
+}
+
+/// Return the maximum along all dimensions.
+Variable max(const VariableConstView &var) {
+  return reduce_all_dims(var, [](auto &&... _) { return max(_...); });
+}
+
+/// Return the minimum along all dimensions.
+Variable min(const VariableConstView &var) {
+  return reduce_all_dims(var, [](auto &&... _) { return min(_...); });
+}
+
+/// Return the logical AND along all dimensions.
+Variable all(const VariableConstView &var) {
+  return reduce_all_dims(var, [](auto &&... _) { return all(_...); });
+}
+
+/// Return the logical OR along all dimensions.
+Variable any(const VariableConstView &var) {
+  return reduce_all_dims(var, [](auto &&... _) { return any(_...); });
 }
 
 } // namespace scipp::core

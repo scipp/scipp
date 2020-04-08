@@ -43,6 +43,8 @@ public:
   const std::vector<GroupByGrouping::group> &groups() const noexcept {
     return m_grouping.groups();
   }
+  T copy(const scipp::index group,
+         const AttrPolicy attrPolicy = AttrPolicy::Keep) const;
 
   T flatten(const Dim reductionDim) const;
   T mean(const Dim reductionDim) const;
@@ -54,24 +56,23 @@ public:
 
 private:
   T makeReductionOutput(const Dim reductionDim) const;
-  template <class Op> T reduce(Op op, const Dim reductionDim) const;
+  template <class Op, class CoordOp = void *>
+  T reduce(Op op, const Dim reductionDim, CoordOp coord_op = nullptr) const;
 
   typename T::const_view_type m_data;
   GroupByGrouping m_grouping;
 };
 
 SCIPP_CORE_EXPORT GroupBy<DataArray> groupby(const DataArrayConstView &dataset,
-                                             const std::string &labels,
-                                             const Dim targetDim);
+                                             const Dim dim);
 SCIPP_CORE_EXPORT GroupBy<DataArray> groupby(const DataArrayConstView &dataset,
-                                             const std::string &labels,
+                                             const Dim dim,
                                              const VariableConstView &bins);
 
 SCIPP_CORE_EXPORT GroupBy<Dataset> groupby(const DatasetConstView &dataset,
-                                           const std::string &labels,
-                                           const Dim targetDim);
+                                           const Dim dim);
 SCIPP_CORE_EXPORT GroupBy<Dataset> groupby(const DatasetConstView &dataset,
-                                           const std::string &labels,
+                                           const Dim dim,
                                            const VariableConstView &bins);
 
 } // namespace scipp::core

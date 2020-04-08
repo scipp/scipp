@@ -39,6 +39,7 @@ General
    mean
    merge
    min
+   nan_to_num
    norm
    rebin
    reciprocal
@@ -81,6 +82,18 @@ Trigonometric
    asin
    acos
    atan
+   atan2
+
+Geometric
+~~~~~~~~~
+
+.. autosummary::
+   :toctree: ../generated
+
+   geometry.position
+   geometry.x
+   geometry.y
+   geometry.z
 
 Counts
 ~~~~~~

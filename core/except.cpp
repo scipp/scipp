@@ -35,44 +35,30 @@ void dimensionMatches(const Dimensions &dims, const Dim dim,
 }
 
 void validSlice(const Dimensions &dims, const Slice &slice) {
-  if (!dims.contains(slice.dim()) || slice.begin() < 0 ||
-      slice.begin() >=
-          std::min(slice.end() >= 0 ? slice.end() + 1 : dims[slice.dim()],
-                   dims[slice.dim()]) ||
-      slice.end() > dims[slice.dim()])
+  const auto end = slice.end() < 0 ? slice.begin() + 1 : slice.end();
+  if (!dims.contains(slice.dim()) || end > dims[slice.dim()])
     throw except::SliceError("Expected " + to_string(slice) + " to be in " +
                              to_string(dims) + ".");
 }
 void validSlice(const std::unordered_map<Dim, scipp::index> &dims,
                 const Slice &slice) {
-  if (dims.find(slice.dim()) == dims.end() || slice.begin() < 0 ||
-      slice.begin() >=
-          std::min(slice.end() >= 0 ? slice.end() + 1 : dims.at(slice.dim()),
-                   dims.at(slice.dim())) ||
-      slice.end() > dims.at(slice.dim()))
+  const auto end = slice.end() < 0 ? slice.begin() + 1 : slice.end();
+  if (dims.find(slice.dim()) == dims.end() || end > dims.at(slice.dim()))
     throw except::SliceError(
         "Expected " + to_string(slice) +
         " to be in dimensions."); // TODO to_string for map needed
 }
 
-void coordsAndLabelsAreSuperset(const DataArrayConstView &a,
-                                const DataArrayConstView &b) {
+void coordsAreSuperset(const DataArrayConstView &a,
+                       const DataArrayConstView &b) {
   for (const auto &[dim, coord] : b.coords())
     if (a.coords()[dim] != coord)
       throw except::CoordMismatchError("Expected coords to match.");
-  for (const auto &[name, labels] : b.labels())
-    if (a.labels()[name] != labels)
-      throw except::CoordMismatchError("Expected labels to match.");
 }
 
 void notCountDensity(const units::Unit &unit) {
   if (unit.isCountDensity())
     throw except::UnitError("Expected non-count-density unit.");
-}
-
-void notSparse(const Dimensions &dims) {
-  if (dims.sparse())
-    throw except::DimensionError("Expected non-sparse dimensions.");
 }
 
 void validDim(const Dim dim) {
@@ -81,8 +67,6 @@ void validDim(const Dim dim) {
 }
 
 void validExtent(const scipp::index size) {
-  if (size == Dimensions::Sparse)
-    throw except::DimensionError("Expected non-sparse dimension extent.");
   if (size < 0)
     throw except::DimensionError("Dimension size cannot be negative.");
 }

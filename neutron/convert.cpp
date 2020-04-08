@@ -8,7 +8,9 @@
 
 #include "scipp/core/dataset.h"
 #include "scipp/core/dataset_util.h"
+#include "scipp/core/event.h"
 #include "scipp/core/transform.h"
+#include "scipp/core/variable_operations.h"
 #include "scipp/neutron/beamline.h"
 #include "scipp/neutron/convert.h"
 
@@ -34,18 +36,21 @@ template <class T>
 static T convert_with_factor(T &&d, const Dim from, const Dim to,
                              const Variable &factor) {
   // 1. Transform coordinate
-  // Cannot use *= since often a broadcast into Dim::Spectrum is required.
-  if (d.coords().contains(from) && !d.coords()[from].dims().sparse()) {
-    const auto &coords = d.coords()[from];
-    d.setCoord(from, coords * astype(factor, coords.dtype()));
-  }
-
-  // 2. Transform sparse coordinates
-  for (const auto &data : iter(d)) {
-    if (data.dims().sparse()) {
-      data.coords()[from] *= factor;
+  if (d.coords().contains(from)) {
+    if (is_events(d.coords()[from])) {
+      d.coords()[from] *= factor;
+    } else {
+      // Cannot use *= since often a broadcast into Dim::Spectrum is required.
+      const auto &coord = d.coords()[from];
+      d.setCoord(from, astype(factor, coord.dtype()) * coord);
     }
   }
+
+  // 2. Transform realigned items
+  for (const auto &item : iter(d))
+    if (item.unaligned() && is_events(item.unaligned()))
+      item.unaligned().coords()[from] *= factor;
+
   d.rename(from, to);
   return std::move(d);
 }
@@ -94,22 +99,27 @@ template <class T> T tofToEnergy(T &&d) {
   const auto conversionFactor = tofToEnergyConversionFactor(d);
 
   // 2. Transform coordinate
-  if (d.coords().contains(Dim::Tof) && !d.coords()[Dim::Tof].dims().sparse()) {
-    const auto &coordSq = d.coords()[Dim::Tof] * d.coords()[Dim::Tof];
-    d.setCoord(Dim::Tof, (reciprocal(coordSq) *
-                          astype(conversionFactor, coordSq.dtype())));
-  }
-
-  // 3. Transform sparse coordinates
-  for (const auto &data : iter(d)) {
-    if (data.coords()[Dim::Tof].dims().sparse()) {
+  if (d.coords().contains(Dim::Tof)) {
+    if (is_events(d.coords()[Dim::Tof])) {
       transform_in_place<pair_self_t<double, float>>(
-          data.coords()[Dim::Tof], conversionFactor,
+          d.coords()[Dim::Tof], conversionFactor,
           [](auto &coord_, const auto &factor) {
             coord_ = factor / (coord_ * coord_);
           });
+    } else {
+      const auto &coordSq = d.coords()[Dim::Tof] * d.coords()[Dim::Tof];
+      d.setCoord(Dim::Tof, astype(conversionFactor, coordSq.dtype()) / coordSq);
     }
   }
+
+  // 3. Transform realigned items
+  for (const auto &item : iter(d))
+    if (item.unaligned() && is_events(item.unaligned()))
+      transform_in_place<pair_self_t<double, float>>(
+          item.unaligned().coords()[Dim::Tof], conversionFactor,
+          [](auto &coord_, const auto &factor) {
+            coord_ = factor / (coord_ * coord_);
+          });
 
   d.rename(Dim::Tof, Dim::Energy);
   return std::move(d);
@@ -120,23 +130,28 @@ template <class T> T energyToTof(T &&d) {
   const auto conversionFactor = tofToEnergyConversionFactor(d);
 
   // 2. Transform coordinate
-  if (d.coords().contains(Dim::Energy) &&
-      !d.coords()[Dim::Energy].dims().sparse()) {
-    const auto &coordSqrt = d.coords()[Dim::Energy];
-    d.setCoord(Dim::Energy,
-               sqrt(astype(conversionFactor, coordSqrt.dtype()) / coordSqrt));
-  }
-
-  // 3. Transform sparse coordinates
-  for (const auto &data : iter(d)) {
-    if (data.coords()[Dim::Energy].dims().sparse()) {
+  if (d.coords().contains(Dim::Energy)) {
+    if (is_events(d.coords()[Dim::Energy])) {
       transform_in_place<pair_self_t<double, float>>(
-          data.coords()[Dim::Energy], conversionFactor,
+          d.coords()[Dim::Energy], conversionFactor,
           [](auto &coord_, const auto &factor) {
             coord_ = sqrt(factor / coord_);
           });
+    } else {
+      const auto &coordSqrt = d.coords()[Dim::Energy];
+      d.setCoord(Dim::Energy,
+                 sqrt(astype(conversionFactor, coordSqrt.dtype()) / coordSqrt));
     }
   }
+
+  // 3. Transform realigned items
+  for (const auto &item : iter(d))
+    if (item.unaligned() && is_events(item.unaligned()))
+      transform_in_place<pair_self_t<double, float>>(
+          item.unaligned().coords()[Dim::Energy], conversionFactor,
+          [](auto &coord_, const auto &factor) {
+            coord_ = sqrt(factor / coord_);
+          });
 
   d.rename(Dim::Energy, Dim::Tof);
   return std::move(d);
@@ -245,7 +260,7 @@ T swap_tof_related_labels_and_attrs(T &&x, const Dim from, const Dim to) {
   // TODO Add `extract` methods to do this in one step and avoid copies?
   if (from == Dim::Tof) {
     for (const auto &field : fields) {
-      if (x.labels().contains(field)) {
+      if (x.coords().contains(Dim(field))) {
         // TODO This is an unfortunate duplication of attributes. It is
         // (currently?) required due to a limitation of handling attributes of
         // Dataset and its items *independently* (no mapping of dataset
@@ -256,20 +271,20 @@ T swap_tof_related_labels_and_attrs(T &&x, const Dim from, const Dim to) {
         // handle attributes so this can be avoided.
         if constexpr (std::is_same_v<std::decay_t<T>, Dataset>)
           for (const auto &item : iter(x))
-            item.attrs().set(field, x.labels()[field]);
-        x.attrs().set(field, x.labels()[field]);
-        x.labels().erase(field);
+            item.attrs().set(field, x.coords()[Dim(field)]);
+        x.attrs().set(field, x.coords()[Dim(field)]);
+        x.coords().erase(Dim(field));
       }
     }
   }
   if (to == Dim::Tof) {
     for (const auto &field : fields) {
       if (x.attrs().contains(field)) {
-        x.labels().set(field, x.attrs()[field]);
+        x.coords().set(Dim(field), x.attrs()[field]);
         x.attrs().erase(field);
         if constexpr (std::is_same_v<std::decay_t<T>, Dataset>) {
           for (const auto &item : iter(x)) {
-            expect::equals(x.labels()[field], item.attrs()[field]);
+            expect::equals(x.coords()[Dim(field)], item.attrs()[field]);
             item.attrs().erase(field);
           }
         }

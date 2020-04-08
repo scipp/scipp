@@ -8,7 +8,6 @@ namespace py = pybind11;
 
 void init_dataset(py::module &);
 void init_detail(py::module &);
-void init_dimensions(py::module &);
 void init_dtype(py::module &);
 void init_counts(py::module &);
 void init_groupby(py::module &);
@@ -22,14 +21,13 @@ void init_element_array_view(py::module &);
 void init_core(py::module &m) {
   auto core = m.def_submodule("core");
   init_units_neutron(core);
+  init_dtype(core);
+  init_variable(core);
   init_counts(core);
   init_dataset(core);
-  init_dimensions(core);
-  init_dtype(core);
   init_groupby(core);
   init_operations(core);
   init_sparse_container(core);
-  init_variable(core);
   init_element_array_view(core);
 }
 

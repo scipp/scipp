@@ -14,11 +14,12 @@ namespace py = pybind11;
 PYBIND11_MAKE_OPAQUE(sparse_container<double>)
 PYBIND11_MAKE_OPAQUE(sparse_container<float>)
 PYBIND11_MAKE_OPAQUE(sparse_container<int64_t>)
+PYBIND11_MAKE_OPAQUE(sparse_container<int32_t>)
 
 template <class T>
 void declare_sparse_container(py::module &m, const std::string &suffix) {
   auto s = py::bind_vector<sparse_container<T>>(
-      m, std::string("sparse_container_") + suffix, py::buffer_protocol());
+      m, std::string("event_list_") + suffix, py::buffer_protocol());
   // pybind11 currently does not find method from the base class, see
   // https://github.com/pybind/pybind11/pull/1832. We add the method manually
   // here.
@@ -26,7 +27,8 @@ void declare_sparse_container(py::module &m, const std::string &suffix) {
 }
 
 void init_sparse_container(py::module &m) {
-  declare_sparse_container<double>(m, "double");
-  declare_sparse_container<float>(m, "float");
-  declare_sparse_container<int64_t>(m, "int64_t");
+  declare_sparse_container<double>(m, "float64");
+  declare_sparse_container<float>(m, "float32");
+  declare_sparse_container<int64_t>(m, "int64");
+  declare_sparse_container<int32_t>(m, "int32");
 }

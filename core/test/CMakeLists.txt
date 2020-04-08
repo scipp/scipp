@@ -8,6 +8,7 @@ add_executable(
   comparison_test.cpp
   concatenate_test.cpp
   coords_view_test.cpp
+  copy_test.cpp
   counts_test.cpp
   data_array_comparison_test.cpp
   data_array_test.cpp
@@ -21,6 +22,9 @@ add_executable(
   dimensions_test.cpp
   element_array_test.cpp
   element_unary_operations_test.cpp
+  element_geometric_operations_test.cpp
+  element_trigonometry_operations_test.cpp
+  event_test.cpp
   except_test.cpp
   groupby_test.cpp
   histogram_test.cpp
@@ -34,13 +38,13 @@ add_executable(
   self_assignment_test.cpp
   slice_test.cpp
   sort_test.cpp
-  sparse_counts_test.cpp
   sparse_data_operations_consistency_test.cpp
   string_test.cpp
   subspan_view_test.cpp
   sum_test.cpp
   transform_sparse_and_dense_test.cpp
   transform_test.cpp
+  unaligned_test.cpp
   value_and_variance_test.cpp
   variable_concept_test.cpp
   variable_custom_type_test.cpp

@@ -154,16 +154,16 @@ static void BM_transform_in_place_sparse(benchmark::State &state) {
   const auto ny = state.range(0);
   const auto nx = state.range(1);
   const auto n = nx * ny;
-  const Dimensions dims{{Dim::Y, ny}, {Dim::X, Dimensions::Sparse}};
+  const Dimensions dims{{Dim::Y, ny}};
   bool variances = state.range(2);
-  auto a = variances
-               ? makeVariable<double>(Dimensions{dims}, Values{}, Variances{})
-               : makeVariable<double>(Dimensions(dims));
+  auto a = variances ? makeVariable<event_list<double>>(Dimensions{dims},
+                                                        Values{}, Variances{})
+                     : makeVariable<event_list<double>>(Dimensions(dims));
 
   std::random_device rd;
   std::mt19937 mt(rd());
   std::uniform_int_distribution<scipp::index> dist(0, 2 * nx);
-  for (auto &elems : a.sparseValues<double>())
+  for (auto &elems : a.values<event_list<double>>())
     elems.resize(dist(mt));
 
   // sparse * dense typically occurs in unit conversion

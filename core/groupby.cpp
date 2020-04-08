@@ -4,17 +4,40 @@
 /// @author Simon Heybrock
 #include <numeric>
 
+#include "scipp/core/event.h"
 #include "scipp/core/except.h"
 #include "scipp/core/groupby.h"
 #include "scipp/core/histogram.h"
 #include "scipp/core/indexed_slice_view.h"
 #include "scipp/core/parallel.h"
 #include "scipp/core/tag_util.h"
+#include "scipp/core/variable_operations.h"
 
 #include "dataset_operations_common.h"
 #include "variable_operations_common.h"
 
 namespace scipp::core {
+
+/// Extract given group as a new data array or dataset
+template <class T>
+T GroupBy<T>::copy(const scipp::index group,
+                   const AttrPolicy attrPolicy) const {
+  const auto &slices = groups()[group];
+  scipp::index size = 0;
+  for (const auto &slice : slices)
+    size += slice.end() - slice.begin();
+  // This is just the slicing dim, but `slices` may be empty
+  const Dim slice_dim = m_data.coords()[dim()].dims().inner();
+  auto out = scipp::core::copy(m_data.slice({slice_dim, 0, size}), attrPolicy);
+  scipp::index current = 0;
+  for (const auto &slice : slices) {
+    const auto thickness = slice.end() - slice.begin();
+    const Slice out_slice(slice_dim, current, current + thickness);
+    scipp::core::copy(m_data.slice(slice), out.slice(out_slice), attrPolicy);
+    current += thickness;
+  }
+  return out;
+}
 
 /// Helper for creating output for "combine" step for "apply" steps that reduce
 /// a dimension.
@@ -30,8 +53,8 @@ T GroupBy<T>::makeReductionOutput(const Dim reductionDim) const {
 }
 
 template <class T>
-template <class Op>
-T GroupBy<T>::reduce(Op op, const Dim reductionDim) const {
+template <class Op, class CoordOp>
+T GroupBy<T>::reduce(Op op, const Dim reductionDim, CoordOp coord_op) const {
   auto out = makeReductionOutput(reductionDim);
   const auto mask = ~masks_merge_if_contains(m_data.masks(), reductionDim);
   // Apply to each group, storing result in output slice
@@ -45,6 +68,12 @@ T GroupBy<T>::reduce(Op op, const Dim reductionDim) const {
       } else {
         op(out_slice, m_data, groups()[group], reductionDim, mask);
       }
+      if constexpr (!std::is_same_v<CoordOp, void *>)
+        for (auto &&[dim, coord] : out_slice.coords())
+          coord_op(coord, m_data.coords()[dim], groups()[group], reductionDim,
+                   mask);
+      else
+        static_cast<void>(coord_op);
     }
   };
   parallel::parallel_for(parallel::blocked_range(0, size()), process_groups);
@@ -56,32 +85,69 @@ static constexpr auto flatten = [](const DataArrayView &out, const auto &in,
                                    const GroupByGrouping::group &group,
                                    const Dim reductionDim,
                                    const Variable &mask_) {
-  const Dim sparseDim = in.dims().sparseDim();
+  // Here and below: Hack to make flatten work with scalar weights. Proper
+  // solution would be to create proper output and broadcast, but this is also
+  // bad solution. Removing support for scalar weights altogether might be the
+  // way forward.
+  if (in.hasData() && !is_events(in.data())) {
+    if (min(in.data(), reductionDim) != max(in.data(), reductionDim))
+      throw except::EventDataError(
+          "flatten with non-constant scalar weights not possible yet.");
+  }
+  bool first = true;
   const auto no_mask = makeVariable<bool>(Values{true});
   for (const auto &slice : group) {
     auto mask =
         mask_.dims().contains(reductionDim) ? mask_.slice(slice) : no_mask;
     const auto &array = in.slice(slice);
-    flatten_impl(out.coords()[sparseDim], array.coords()[sparseDim], mask);
-    if (in.hasData())
-      flatten_impl(out.data(), array.data(), mask);
-    for (auto &&[label_name, label] : out.labels()) {
-      if (label.dims().sparse())
-        flatten_impl(label, array.labels()[label_name], mask);
+    if (in.hasData()) {
+      if (is_events(array.data()))
+        flatten_impl(out.data(), array.data(), mask);
+      else if (first) {
+        // Note that masks can be ignored since no weights are concatenated
+        out.data().assign(array.data().slice({reductionDim, 0}));
+        first = false;
+      }
     }
   }
 };
+
+static constexpr auto flatten_coord =
+    [](const VariableView &out, const auto &in,
+       const GroupByGrouping::group &group, const Dim reductionDim,
+       const Variable &mask_) {
+      if (!in.dims().contains(reductionDim))
+        return;
+      const auto no_mask = makeVariable<bool>(Values{true});
+      for (const auto &slice : group) {
+        auto mask =
+            mask_.dims().contains(reductionDim) ? mask_.slice(slice) : no_mask;
+        const auto &array = in.slice(slice);
+        if (is_events(out))
+          flatten_impl(out, array, mask);
+      }
+    };
 
 static constexpr auto sum = [](const DataArrayView &out,
                                const auto &data_container,
                                const GroupByGrouping::group &group,
                                const Dim reductionDim, const Variable &mask) {
-  for (const auto &slice : group) {
-    const auto data_slice = data_container.slice(slice);
-    if (mask.dims().contains(reductionDim))
-      sum_impl(out.data(), data_slice.data() * mask.slice(slice));
-    else
-      sum_impl(out.data(), data_slice.data());
+  if (out.hasData()) {
+    for (const auto &slice : group) {
+      const auto data_slice = data_container.slice(slice);
+      if (mask.dims().contains(reductionDim))
+        sum_impl(out.data(), data_slice.data() * mask.slice(slice));
+      else
+        sum_impl(out.data(), data_slice.data());
+    }
+  } else {
+    const auto &unaligned_out = out.unaligned();
+    const auto &unaligned_in = data_container.unaligned();
+    // Flatten in all cases, even if not event data? Try to sum?
+    flatten(unaligned_out, unaligned_in, group, reductionDim, mask);
+    for (auto &&[dim, coord] : unaligned_out.coords())
+      flatten_coord(coord, unaligned_in.coords()[dim], group, reductionDim,
+                    mask);
   }
 };
 
@@ -107,9 +173,10 @@ static constexpr auto reduce_idempotent =
 
 /// Flatten provided dimension in each group and return combined data.
 ///
-/// This only supports sparse data.
+/// This only supports event data.
 template <class T> T GroupBy<T>::flatten(const Dim reductionDim) const {
-  return reduce(groupby_detail::flatten, reductionDim);
+  return reduce(groupby_detail::flatten, reductionDim,
+                groupby_detail::flatten_coord);
 }
 
 /// Reduce each group using `sum` and return combined data.
@@ -163,7 +230,7 @@ template <class T> T GroupBy<T>::mean(const Dim reductionDim) const {
   if constexpr (std::is_same_v<T, Dataset>) {
     for (const auto &item : out) {
       if (isInt(item.data().dtype()))
-        out.setData(item.name(), item.data() * scale);
+        out.setData(item.name(), item.data() * scale, AttrPolicy::Keep);
       else
         item *= scale;
     }
@@ -252,26 +319,24 @@ template <class T> struct MakeBinGroups {
 
 /// Create GroupBy<DataArray> object as part of "split-apply-combine" mechanism.
 ///
-/// Groups the slices of `array` according to values in given by `labels`.
-/// Grouping of labels will create a new coordinate for `targetDim` in a later
-/// apply/combine step.
-GroupBy<DataArray> groupby(const DataArrayConstView &array,
-                           const std::string &labels, const Dim targetDim) {
-  const auto &key = array.labels()[labels];
-  return {array, CallDType<double, float, int64_t, int32_t, bool,
-                           std::string>::apply<MakeGroups>(key.dtype(), key,
-                                                           targetDim)};
+/// Groups the slices of `array` according to values in given by a coord.
+/// Grouping will create a new coordinate for the dimension of the grouping
+/// coord in a later apply/combine step.
+GroupBy<DataArray> groupby(const DataArrayConstView &array, const Dim dim) {
+  const auto &key = array.coords()[dim];
+  return {array,
+          CallDType<double, float, int64_t, int32_t, bool,
+                    std::string>::apply<MakeGroups>(key.dtype(), key, dim)};
 }
 
 /// Create GroupBy<DataArray> object as part of "split-apply-combine" mechanism.
 ///
-/// Groups the slices of `array` according to values in given by `labels`.
-/// Grouping of labels is according to given `bins`, which will be added as a
+/// Groups the slices of `array` according to values in given by a coord.
+/// Grouping of a coord is according to given `bins`, which will be added as a
 /// new coordinate to the output in a later apply/combine step.
-GroupBy<DataArray> groupby(const DataArrayConstView &array,
-                           const std::string &labels,
+GroupBy<DataArray> groupby(const DataArrayConstView &array, const Dim dim,
                            const VariableConstView &bins) {
-  const auto &key = array.labels()[labels];
+  const auto &key = array.coords()[dim];
   return {array,
           CallDType<double, float, int64_t, int32_t>::apply<MakeBinGroups>(
               key.dtype(), key, bins)};
@@ -279,26 +344,24 @@ GroupBy<DataArray> groupby(const DataArrayConstView &array,
 
 /// Create GroupBy<Dataset> object as part of "split-apply-combine" mechanism.
 ///
-/// Groups the slices of `dataset` according to values in given by `labels`.
-/// Grouping of labels will create a new coordinate for `targetDim` in a later
-/// apply/combine step.
-GroupBy<Dataset> groupby(const DatasetConstView &dataset,
-                         const std::string &labels, const Dim targetDim) {
-  const auto &key = dataset.labels()[labels];
-  return {dataset, CallDType<double, float, int64_t, int32_t, bool,
-                             std::string>::apply<MakeGroups>(key.dtype(), key,
-                                                             targetDim)};
+/// Groups the slices of `dataset` according to values in given by a coord.
+/// Grouping will create a new coordinate for the dimension of the grouping
+/// coord in a later apply/combine step.
+GroupBy<Dataset> groupby(const DatasetConstView &dataset, const Dim dim) {
+  const auto &key = dataset.coords()[dim];
+  return {dataset,
+          CallDType<double, float, int64_t, int32_t, bool,
+                    std::string>::apply<MakeGroups>(key.dtype(), key, dim)};
 }
 
 /// Create GroupBy<Dataset> object as part of "split-apply-combine" mechanism.
 ///
-/// Groups the slices of `dataset` according to values in given by `labels`.
-/// Grouping of labels is according to given `bins`, which will be added as a
+/// Groups the slices of `dataset` according to values in given by a coord.
+/// Grouping of a coord is according to given `bins`, which will be added as a
 /// new coordinate to the output in a later apply/combine step.
-GroupBy<Dataset> groupby(const DatasetConstView &dataset,
-                         const std::string &labels,
+GroupBy<Dataset> groupby(const DatasetConstView &dataset, const Dim dim,
                          const VariableConstView &bins) {
-  const auto &key = dataset.labels()[labels];
+  const auto &key = dataset.coords()[dim];
   return {dataset,
           CallDType<double, float, int64_t, int32_t>::apply<MakeBinGroups>(
               key.dtype(), key, bins)};

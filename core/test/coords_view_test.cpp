@@ -52,16 +52,16 @@ TYPED_TEST(CoordsViewTest, item_access) {
 
 TYPED_TEST(CoordsViewTest, sparse_coords_values_and_coords) {
   Dataset d;
-  auto data = makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse});
-  data.sparseValues<double>()[0] = {1, 2, 3};
-  auto s_coords = makeVariable<double>(Dims{Dim::X}, Shape{Dimensions::Sparse});
-  s_coords.sparseValues<double>()[0] = {4, 5, 6};
+  auto data = makeVariable<event_list<double>>(Dims{}, Shape{});
+  data.values<event_list<double>>()[0] = {1, 2, 3};
+  auto s_coords = makeVariable<event_list<double>>(Dims{}, Shape{});
+  s_coords.values<event_list<double>>()[0] = {4, 5, 6};
   d.setData("test", data);
-  d.setSparseCoord("test", s_coords);
+  d.coords().set(Dim::X, s_coords);
   ASSERT_EQ(1, d["test"].coords().size());
-  auto sparseX = d["test"].coords()[Dim::X].sparseValues<double>()[0];
+  auto sparseX = d["test"].coords()[Dim::X].values<event_list<double>>()[0];
   ASSERT_EQ(3, sparseX.size());
-  ASSERT_EQ(scipp::core::sparse_container<double>({4, 5, 6}), sparseX);
+  ASSERT_EQ(scipp::core::event_list<double>({4, 5, 6}), sparseX);
 }
 
 TYPED_TEST(CoordsViewTest, iterators_empty_coords) {

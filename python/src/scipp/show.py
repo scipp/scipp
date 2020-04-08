@@ -7,6 +7,7 @@ import colorsys
 import numpy as np
 from ._scipp import core as sc
 from . import config
+from .utils import is_data_array
 
 # Unit is `em`. This particular value is chosen to avoid a horizontal scroll
 # bar with the readthedocs theme.
@@ -20,11 +21,6 @@ _svg_em = _cubes_in_full_width / _svg_width
 _normal_font = round(_svg_em, 2)
 _small_font = round(0.8 * _svg_em, 2)
 _smaller_font = round(0.6 * _svg_em, 2)
-
-
-def is_data_array(obj):
-    return isinstance(obj, sc.DataArray) or isinstance(obj,
-                                                       sc.DataArrayConstView)
 
 
 def _hex_to_rgb(hex_color):
@@ -64,14 +60,20 @@ class VariableDrawer():
         self._variable = variable
         self._target_dims = target_dims
         if self._target_dims is None:
-            self._target_dims = self._variable.dims
+            self._target_dims = self._dims()
         # special extent value indicating sparse dimension
         self._sparse_flag = -1
         self._sparse_box_scale = 0.3
         self._x_stride = 1
-        if len(self._variable.dims) > 3:
+        if len(self._dims()) > 3:
             raise RuntimeError("Cannot visualize {}-D data".format(
-                len(self._variable.dims)))
+                len(self._dims())))
+
+    def _dims(self):
+        dims = self._variable.dims
+        if sc.is_events(self._variable):
+            dims.append("<event>")
+        return dims
 
     def _draw_box(self, origin_x, origin_y, color, xlen=1):
         return " ".join([
@@ -100,16 +102,15 @@ class VariableDrawer():
     def _extents(self):
         """Compute 3D extent, remapping dimension order to target dim order"""
         shape = self._variable.shape
-        dims = self._variable.dims
+        dims = self._dims()
         d = dict(zip(dims, shape))
         e = []
         max_extent = _cubes_in_full_width // 2
         for dim in self._target_dims:
             if dim in d:
-                if d[dim] is None:
-                    e.append(self._sparse_flag)
-                else:
-                    e.append(min(d[dim], max_extent))
+                e.append(min(d[dim], max_extent))
+            elif dim == "<event>" and sc.is_events(self._variable):
+                e.append(self._sparse_flag)
             else:
                 e.append(1)
         return [1] * (3 - len(e)) + e
@@ -119,8 +120,10 @@ class VariableDrawer():
         if is_data_array(self._variable):
             # Sparse items in a dataset should always have a coord,
             # but may have not data
-            coord = self._variable.coords[self._variable.dims[-1]]
-            data = coord.values
+            # Find a sparse coord to use for determining length
+            for coord in self._variable.coords.values():
+                if sc.is_events(coord):
+                    data = coord.values
         else:
             data = self._variable.values
         for vals in data:
@@ -145,13 +148,9 @@ class VariableDrawer():
         if self._variable.variances is not None:
             extra_item_count += 1
         if is_data_array(self._variable):
-            if self._variable.sparse_dim is not None:
-                for name, label in self._variable.labels.items():
-                    if label.sparse_dim is not None:
-                        extra_item_count += 1
-                sparse_dim = self._variable.sparse_dim
-                for dim in self._variable.coords:
-                    if dim == sparse_dim:
+            if sc.is_events(self._variable):
+                for name, coord in self._variable.coords.items():
+                    if sc.is_events(coord):
                         extra_item_count += 1
         if self._variable.values is None:
             # No data
@@ -176,13 +175,16 @@ class VariableDrawer():
                 x_scale = 1
                 sparse = False
                 if lx == self._sparse_flag:
-                    true_lx = ceil(
-                        len(data[ly - y - 1 + ly * (lz - z - 1)]) /
-                        self._x_stride)
+                    if hasattr(data[0], '__len__'):
+                        true_lx = ceil(
+                            len(data[ly - y - 1 + ly * (lz - z - 1)]) /
+                            self._x_stride)
+                        x_scale *= self._sparse_box_scale
+                    else:  # special case: scalar event weights
+                        true_lx = 1
                     if true_lx == 0:
                         true_lx = 1
                         x_scale *= 0
-                    x_scale *= self._sparse_box_scale
                     sparse = True
                 for x in range(true_lx):
                     # Do not draw hidden boxes
@@ -264,21 +266,11 @@ class VariableDrawer():
         if self._variable.values is not None:
             items.append(('values', self._variable.values, color))
         if is_data_array(self._variable):
-            if self._variable.sparse_dim is not None:
-                for name, label in self._variable.labels:
-                    if label.sparse_dim is not None:
+            if sc.is_events(self._variable):
+                for name, coord in self._variable.coords.items():
+                    if sc.is_events(coord):
                         items.append(
-                            (name, label.values, config.colors['labels']))
-                for name, mask in self._variable.masks:
-                    if label.sparse_dim is not None:
-                        items.append(
-                            (name, mask.values, config.colors['masks']))
-                sparse_dim = self._variable.sparse_dim
-                for dim in self._variable.coords:
-                    if dim == sparse_dim:
-                        items.append((str(sparse_dim),
-                                      self._variable.coords[sparse_dim].values,
-                                      config.colors['coords']))
+                            (name, coord.values, config.colors['coords']))
 
         for i, (name, data, color) in enumerate(items):
             svg += '<g>'
@@ -322,11 +314,14 @@ class DatasetDrawer():
         # dimension count.
         if is_data_array(self._dataset):
             dims = self._dataset.dims
+            if sc.is_events(self._dataset):
+                dims.append("<event>")
         else:
             dims = []
             for item in self._dataset.values():
-                if item.sparse_dim is not None:
+                if sc.is_events(item):
                     dims = item.dims
+                    dims.append("<event>")
                     break
                 if len(item.dims) > len(dims):
                     dims = item.dims
@@ -380,7 +375,7 @@ class DatasetDrawer():
                 if len(dims) == 1 or data.dims != dims:
                     if len(data.dims) == 0:
                         area_0d.append(item)
-                    elif len(data.dims) != 1:
+                    elif len(data.dims) != 1 or sc.is_events(data):
                         area_xy[-1:-1] = [item]
                     elif data.dims[0] == dims[-1]:
                         area_x.append(item)
@@ -391,12 +386,11 @@ class DatasetDrawer():
                 else:
                     area_xy.append(item)
 
-        for what, items in zip(['coords', 'labels', 'masks', 'attrs'], [
-                self._dataset.coords, self._dataset.labels,
-                self._dataset.masks, self._dataset.attrs
-        ]):
+        ds = self._dataset
+        for what, items in zip(['coords', 'masks', 'attrs'],
+                               [ds.coords, ds.masks, ds.attrs]):
             for name, var in items.items():
-                if var.sparse_dim is not None:
+                if sc.is_events(var):
                     continue
                 item = (name, var, config.colors[what])
                 if len(var.dims) == 0:

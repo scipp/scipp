@@ -4,8 +4,11 @@
 /// @author Simon Heybrock
 
 #include "scipp/core/dataset.h"
+#include "scipp/core/event.h"
 #include "scipp/core/except.h"
+#include "scipp/core/histogram.h"
 #include "scipp/core/sort.h"
+#include "scipp/core/unaligned.h"
 #include "scipp/core/view_decl.h"
 
 #include "bind_data_access.h"
@@ -123,6 +126,25 @@ void bind_mutable_view(py::module &m, const std::string &name) {
   bind_comparison<T>(view);
 }
 
+template <class T> void realign_impl(T &self, py::dict coord_dict) {
+  // Python dicts above 3.7 preserve order, but we cannot use
+  // automatic conversion by pybind11 since C++ maps do not.
+  std::vector<std::pair<Dim, Variable>> coords;
+  // Cast to VariableView uses implicit conversion and causes segfault if
+  // GIL is released.
+  for (auto item : coord_dict)
+    coords.emplace_back(Dim(item.first.cast<std::string>()),
+                        item.second.cast<VariableView>());
+  self = unaligned::realign(std::move(self), std::move(coords));
+}
+
+template <class T>
+T filter_impl(const T &self, const Dim dim, const VariableConstView &interval,
+              bool keep_attrs) {
+  return event::filter(self, dim, interval,
+                       keep_attrs ? AttrPolicy::Keep : AttrPolicy::Drop);
+}
+
 template <class T, class... Ignored>
 void bind_coord_properties(py::class_<T, Ignored...> &c) {
   // For some reason the return value policy and/or keep-alive policy do not
@@ -135,13 +157,11 @@ void bind_coord_properties(py::class_<T, Ignored...> &c) {
       Dict of coordinates.)");
   c.def_property_readonly(
       "labels",
-      py::cpp_function([](T &self) { return self.labels(); },
-                       py::return_value_policy::move, py::keep_alive<0, 1>()),
-      R"(
-      Dict of labels.
-
-      Labels are very similar to coordinates, except that they are identified
-      using custom names instead of dimension labels.)");
+      []([[maybe_unused]] T &self) {
+        throw std::runtime_error(
+            "Property `labels` is deprecated. Use `coords` instead.");
+      },
+      R"(Decprecated, alias for `coords`.)");
   c.def_property_readonly("masks",
                           py::cpp_function([](T &self) { return self.masks(); },
                                            py::return_value_policy::move,
@@ -154,6 +174,9 @@ void bind_coord_properties(py::class_<T, Ignored...> &c) {
                                            py::keep_alive<0, 1>()),
                           R"(
       Dict of attributes.)");
+
+  if constexpr (std::is_same_v<T, DataArray> || std::is_same_v<T, Dataset>)
+    c.def("realign", realign_impl<T>);
 }
 
 template <class T, class... Ignored>
@@ -198,13 +221,9 @@ void bind_dataset_view_methods(py::class_<T, Ignored...> &c) {
                           py::return_value_policy::move);
   c.def_property_readonly("shape",
                           [](const T &self) {
-                            auto shape = py::list();
+                            std::vector<int64_t> shape;
                             for (const auto &dim : self.dimensions()) {
-                              if (dim.second == Dimensions::Sparse) {
-                                shape.append(py::none());
-                              } else {
-                                shape.append(dim.second);
-                              }
+                              shape.push_back(dim.second);
                             }
                             return shape;
                           },
@@ -231,6 +250,14 @@ void bind_data_array_properties(py::class_<T, Ignored...> &c) {
           py::return_value_policy::move, py::keep_alive<0, 1>()),
       [](T &self, const VariableConstView &data) { self.data().assign(data); },
       R"(Underlying data item.)");
+  c.def_property_readonly(
+      "unaligned",
+      py::cpp_function(
+          [](T &self) {
+            return self.hasData() ? py::none() : py::cast(self.unaligned());
+          },
+          py::return_value_policy::move, py::keep_alive<0, 1>()),
+      R"(Underlying unaligned data item.)");
   bind_coord_properties(c);
   bind_comparison<DataArrayConstView>(c);
   bind_data_properties(c);
@@ -262,39 +289,33 @@ void init_dataset(py::module &m) {
   bind_helper_view<items_view, Dataset>(m, "Dataset");
   bind_helper_view<items_view, DatasetView>(m, "DatasetView");
   bind_helper_view<items_view, CoordsView>(m, "CoordsView");
-  bind_helper_view<items_view, LabelsView>(m, "LabelsView");
   bind_helper_view<items_view, MasksView>(m, "MasksView");
   bind_helper_view<items_view, AttrsView>(m, "AttrsView");
   bind_helper_view<keys_view, Dataset>(m, "Dataset");
   bind_helper_view<keys_view, DatasetView>(m, "DatasetView");
   bind_helper_view<keys_view, CoordsView>(m, "CoordsView");
-  bind_helper_view<keys_view, LabelsView>(m, "LabelsView");
   bind_helper_view<keys_view, MasksView>(m, "MasksView");
   bind_helper_view<keys_view, AttrsView>(m, "AttrsView");
   bind_helper_view<values_view, Dataset>(m, "Dataset");
   bind_helper_view<values_view, DatasetView>(m, "DatasetView");
   bind_helper_view<values_view, CoordsView>(m, "CoordsView");
-  bind_helper_view<values_view, LabelsView>(m, "LabelsView");
   bind_helper_view<values_view, MasksView>(m, "MasksView");
   bind_helper_view<values_view, AttrsView>(m, "AttrsView");
 
   bind_mutable_view<CoordsView, CoordsConstView>(m, "Coords");
-  bind_mutable_view<LabelsView, LabelsConstView>(m, "Labels");
   bind_mutable_view<MasksView, MasksConstView>(m, "Masks");
   bind_mutable_view<AttrsView, AttrsConstView>(m, "Attrs");
 
   py::class_<DataArray> dataArray(m, "DataArray", R"(
-    Named variable with associated coords, labels, and attributes.)");
+    Named variable with associated coords, masks, and attributes.)");
   dataArray.def(py::init<const DataArrayConstView &>());
-  dataArray.def(
-      py::init<std::optional<Variable>, std::map<Dim, Variable>,
-               std::map<std::string, Variable>, std::map<std::string, Variable>,
-               std::map<std::string, Variable>>(),
-      py::arg("data") = std::nullopt,
-      py::arg("coords") = std::map<Dim, Variable>{},
-      py::arg("labels") = std::map<std::string, Variable>{},
-      py::arg("masks") = std::map<std::string, Variable>{},
-      py::arg("attrs") = std::map<std::string, Variable>{});
+  dataArray.def(py::init<Variable, std::map<Dim, Variable>,
+                         std::map<std::string, Variable>,
+                         std::map<std::string, Variable>>(),
+                py::arg("data") = Variable{},
+                py::arg("coords") = std::map<Dim, Variable>{},
+                py::arg("masks") = std::map<std::string, Variable>{},
+                py::arg("attrs") = std::map<std::string, Variable>{});
 
   py::class_<DataArrayConstView>(m, "DataArrayConstView")
       .def(py::init<const DataArray &>());
@@ -323,14 +344,12 @@ void init_dataset(py::module &m) {
       .def(py::init<const DataArrayConstView &>())
       .def(py::init([](const std::map<std::string, VariableConstView> &data,
                        const std::map<Dim, VariableConstView> &coords,
-                       const std::map<std::string, VariableConstView> &labels,
                        const std::map<std::string, VariableConstView> &masks,
                        const std::map<std::string, VariableConstView> &attrs) {
-             return Dataset(data, coords, labels, masks, attrs);
+             return Dataset(data, coords, masks, attrs);
            }),
            py::arg("data") = std::map<std::string, VariableConstView>{},
            py::arg("coords") = std::map<Dim, VariableConstView>{},
-           py::arg("labels") = std::map<std::string, VariableConstView>{},
            py::arg("masks") = std::map<std::string, VariableConstView>{},
            py::arg("attrs") = std::map<std::string, VariableConstView>{})
       .def(py::init([](const DatasetView &other) { return Dataset{other}; }))
@@ -352,7 +371,7 @@ void init_dataset(py::module &m) {
            py::call_guard<py::gil_scoped_release>())
       .def(
           "clear", &Dataset::clear,
-          R"(Removes all data (preserving coordinates, attributes, labels and masks.).)");
+          R"(Removes all data (preserving coordinates, attributes, and masks.).)");
   datasetView.def(
       "__setitem__",
       [](const DatasetView &self, const std::string &name,
@@ -406,14 +425,14 @@ void init_dataset(py::module &m) {
         py::call_guard<py::gil_scoped_release>(), R"(
         Concatenate input data array along the given dimension.
 
-        Concatenates the data, coords, labels and masks of the data array.
-        Coords, labels and masks for any but the given dimension are required to match and are copied to the output without changes.
+        Concatenates the data, coords, and masks of the data array.
+        Coords, and masks for any but the given dimension are required to match and are copied to the output without changes.
 
         :param x: First DataArray.
         :param y: Second DataArray.
         :param dim: Dimension along which to concatenate.
         :raises: If the dtype or unit does not match, or if the dimensions and shapes are incompatible.
-        :return: New data array containing all data, coords, labels, and masks of the input arrays.
+        :return: New data array containing all data, coords, and masks of the input arrays.
         :rtype: DataArray)");
 
   m.def("concatenate",
@@ -492,7 +511,7 @@ void init_dataset(py::module &m) {
         :param lhs: First Dataset.
         :param rhs: Second Dataset.
         :raises: If there are conflicting items with different content.
-        :return: A new dataset that contains the union of all data items, coords, labels, masks and attributes.
+        :return: A new dataset that contains the union of all data items, coords, masks and attributes.
         :rtype: Dataset)");
 
   m.def("sum", py::overload_cast<const DataArrayConstView &, const Dim>(&sum),
@@ -595,16 +614,6 @@ void init_dataset(py::module &m) {
       :return: New sorted data array.
       :rtype: DataArray)");
 
-  m.def(
-      "sort",
-      py::overload_cast<const DataArrayConstView &, const std::string &>(&sort),
-      py::arg("x"), py::arg("key"), py::call_guard<py::gil_scoped_release>(),
-      R"(Sort data array along a dimension by the label values for the given key.
-
-      :raises: If the key is invalid, e.g., if it has not exactly one dimension, or if its dtype is not sortable.
-      :return: New sorted data array.
-      :rtype: DataArray)");
-
   m.def("sort",
         py::overload_cast<const DatasetConstView &, const VariableConstView &>(
             &sort),
@@ -619,15 +628,6 @@ void init_dataset(py::module &m) {
       "sort", py::overload_cast<const DatasetConstView &, const Dim &>(&sort),
       py::arg("x"), py::arg("key"), py::call_guard<py::gil_scoped_release>(),
       R"(Sort dataset along a dimension by the coordinate values for that dimension.
-
-      :raises: If the key is invalid, e.g., if it has not exactly one dimension, or if its dtype is not sortable.
-      :return: New sorted dataset.
-      :rtype: Dataset)");
-
-  m.def("sort",
-        py::overload_cast<const DatasetConstView &, const std::string &>(&sort),
-        py::arg("x"), py::arg("key"), py::call_guard<py::gil_scoped_release>(),
-        R"(Sort dataset along a dimension by the label values for the given key.
 
       :raises: If the key is invalid, e.g., if it has not exactly one dimension, or if its dtype is not sortable.
       :return: New sorted dataset.
@@ -657,6 +657,51 @@ void init_dataset(py::module &m) {
 
         :return: Reciprocal of the input values.
         :rtype: DataArray)");
+
+  m.def("realign",
+        [](const DataArrayConstView &a, py::dict coord_dict) {
+          DataArray copy(a);
+          realign_impl(copy, coord_dict);
+          return copy;
+        },
+        py::arg("data"), py::arg("coords"));
+  m.def("realign",
+        [](const DatasetConstView &a, py::dict coord_dict) {
+          Dataset copy(a);
+          realign_impl(copy, coord_dict);
+          return copy;
+        },
+        py::arg("data"), py::arg("coords"));
+  m.def("filter", filter_impl<DataArrayConstView>, py::arg("data"),
+        py::arg("filter"), py::arg("interval"), py::arg("keep_attrs") = true,
+        py::call_guard<py::gil_scoped_release>(),
+        R"(Return filtered event data.
+
+        This only supports event data.
+
+        :param data: Input event data
+        :param filter: Name of coord to use for filtering
+        :param interval: Variable defining the valid interval of coord values to include in the output
+        :param keep_attrs: If False, attributes are not copied to the output, default is True
+        :return: Filtered data.
+        :rtype: DataArray)");
+  m.def(
+      "histogram",
+      [](const DataArrayConstView &x) { return core::histogram(x); },
+      py::arg("x"), py::call_guard<py::gil_scoped_release>(),
+      R"(Returns a new DataArray unaligned data content binned according to the realigning axes.
+
+        :param x: Realigned data to histogram.
+        :return: Histogramed data.
+        :rtype: DataArray)");
+  m.def(
+      "histogram", [](const DatasetConstView &x) { return core::histogram(x); },
+      py::arg("x"), py::call_guard<py::gil_scoped_release>(),
+      R"(Returns a new Dataset unaligned data content binned according to the realigning axes.
+
+        :param x: Realigned data to histogram.
+        :return: Histogramed data.
+        :rtype: Dataset)");
 
   bind_astype(dataArray);
   bind_astype(dataArrayView);
