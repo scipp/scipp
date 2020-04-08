@@ -11,15 +11,46 @@
 using namespace scipp;
 using namespace scipp::dataset;
 
-TEST(HistogramTest, is_histogram) {
-  const auto dataX = makeVariable<double>(Dims{Dim::X}, Shape{2});
-  const auto dataY = makeVariable<double>(Dims{Dim::Y}, Shape{2});
-  const auto dataXY = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 3});
-  const auto edgesX = makeVariable<double>(Dims{Dim::X}, Shape{3});
-  const auto edgesY = makeVariable<double>(Dims{Dim::Y}, Shape{4});
-  const auto coordX = makeVariable<double>(Dims{Dim::X}, Shape{2});
-  const auto coordY = makeVariable<double>(Dims{Dim::Y}, Shape{3});
+struct HistogramHelpersTest : public ::testing::Test {
+protected:
+  Variable dataX = makeVariable<double>(Dims{Dim::X}, Shape{2});
+  Variable dataY = makeVariable<double>(Dims{Dim::Y}, Shape{2});
+  Variable dataXY = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 3});
+  Variable edgesX = makeVariable<double>(Dims{Dim::X}, Shape{3});
+  Variable edgesY = makeVariable<double>(Dims{Dim::Y}, Shape{4});
+  Variable coordX = makeVariable<double>(Dims{Dim::X}, Shape{2});
+  Variable coordY = makeVariable<double>(Dims{Dim::Y}, Shape{3});
+};
 
+TEST_F(HistogramHelpersTest, edge_dimension) {
+  const auto histX = DataArray(dataX, {{Dim::X, edgesX}});
+  EXPECT_EQ(edge_dimension(histX), Dim::X);
+
+  const auto histX2d = DataArray(dataXY, {{Dim::X, edgesX}});
+  EXPECT_EQ(edge_dimension(histX2d), Dim::X);
+
+  const auto histY2d = DataArray(dataXY, {{Dim::X, coordX}, {Dim::Y, edgesY}});
+  EXPECT_EQ(edge_dimension(histY2d), Dim::Y);
+
+  const auto hist2d = DataArray(dataXY, {{Dim::X, edgesX}, {Dim::Y, edgesY}});
+  EXPECT_THROW(edge_dimension(hist2d), except::BinEdgeError);
+
+  EXPECT_THROW(edge_dimension(DataArray(dataX, {{Dim::X, coordX}})),
+               except::BinEdgeError);
+  EXPECT_THROW(edge_dimension(DataArray(dataX, {{Dim::X, coordY}})),
+               except::BinEdgeError);
+  EXPECT_THROW(edge_dimension(DataArray(dataX, {{Dim::Y, coordX}})),
+               except::BinEdgeError);
+  EXPECT_THROW(edge_dimension(DataArray(dataX, {{Dim::Y, coordY}})),
+               except::BinEdgeError);
+
+  // Coord length X is 2 and data does not depend on X, but this is *not*
+  // interpreted as a single-bin histogram.
+  EXPECT_THROW(edge_dimension(DataArray(dataY, {{Dim::X, coordX}})),
+               except::BinEdgeError);
+}
+
+TEST_F(HistogramHelpersTest, is_histogram) {
   const auto histX = DataArray(dataX, {{Dim::X, edgesX}});
   EXPECT_TRUE(is_histogram(histX, Dim::X));
   EXPECT_FALSE(is_histogram(histX, Dim::Y));

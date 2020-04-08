@@ -249,7 +249,6 @@ static void transform_elements(Op op, Out &&out, Ts &&... other) {
   }
 }
 
-template <class T> struct element_type<ValueAndVariance<T>> { using type = T; };
 template <class T>
 struct element_type<ValuesAndVariances<sparse_container<T>>> {
   using type = T;
@@ -877,7 +876,7 @@ Variable transform(std::tuple<Ts...> &&, Op op, const Vars &... vars) {
 /// need for, e.g., std::back_inserter.
 template <class... Ts, class Op>
 [[nodiscard]] Variable transform(const VariableConstView &var, Op op) {
-  return detail::transform(std::tuple<Ts...>{}, op, var);
+  return detail::transform(type_tuples<Ts...>(op), op, var);
 }
 
 /// Transform the data elements of two variables and return a new Variable.
@@ -885,31 +884,28 @@ template <class... Ts, class Op>
 /// This overload is equivalent to std::transform with two input ranges, but
 /// avoids the need to manually create a new variable for the output and the
 /// need for, e.g., std::back_inserter.
-template <class... TypePairs, class Op>
+template <class... Ts, class Op>
 [[nodiscard]] Variable transform(const VariableConstView &var1,
                                  const VariableConstView &var2, Op op) {
-  return detail::transform(typename detail::tuple_cat<TypePairs...>::type{}, op,
-                           var1, var2);
+  return detail::transform(type_tuples<Ts...>(op), op, var1, var2);
 }
 
 /// Transform the data elements of three variables and return a new Variable.
-template <class... TypeTuples, class Op>
+template <class... Ts, class Op>
 [[nodiscard]] Variable
     transform(const VariableConstView &var1, const VariableConstView &var2,
               const VariableConstView &var3, Op op) {
-      return detail::transform(std::tuple_cat(TypeTuples{}...), op, var1, var2,
-                               var3);
+      return detail::transform(type_tuples<Ts...>(op), op, var1, var2, var3);
     }
 
 /// Transform the data elements of four variables and return a new Variable.
-template <class... TypeTuples, class Op>
-[[nodiscard]] Variable
-    transform(const VariableConstView &var1, const VariableConstView &var2,
-              const VariableConstView &var3, const VariableConstView &var4,
-              Op op) {
-      return detail::transform(std::tuple_cat(TypeTuples{}...), op, var1, var2,
-                               var3, var4);
-    }
+template <class... Ts, class Op>
+[[nodiscard]] Variable transform(const VariableConstView &var1,
+                                 const VariableConstView &var2,
+                                 const VariableConstView &var3,
+                                 const VariableConstView &var4, Op op) {
+  return detail::transform(type_tuples<Ts...>(op), op, var1, var2, var3, var4);
+}
 
 } // namespace scipp::core
 

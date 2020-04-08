@@ -75,6 +75,15 @@ bool isInt(DType tp);
 
 DType event_dtype(const DType type);
 
+namespace detail {
+template <class T> struct element_type { using type = T; };
+template <class T> struct element_type<sparse_container<T>> { using type = T; };
+template <class T> struct element_type<const sparse_container<T>> {
+  using type = T;
+};
+template <class T> using element_type_t = typename element_type<T>::type;
+} // namespace detail
+
 } // namespace scipp::core
 
 #endif // SCIPP_CORE_DTYPE_H

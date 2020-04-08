@@ -11,6 +11,11 @@
 
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/event.h"
+#include "scipp/dataset/histogram.h"
+
+#include "../core/element_event_operations.h"
+
+using namespace scipp::core;
 
 namespace scipp::dataset {
 /// Return true if a data array contains events
@@ -63,82 +68,28 @@ Variable broadcast_weights(const DataArrayConstView &events) {
       "No coord with event lists found, cannot broadcast weights.");
 }
 
-namespace filter_detail {
-template <class T>
-using make_select_args = std::tuple<event_list<T>, span<const T>>;
-template <class T, class Index>
-using copy_if_args = std::tuple<event_list<T>, event_list<Index>>;
-
+namespace {
 /// Return new variable with values copied from `var` if index is included in
 /// `select`.
 constexpr auto copy_if = [](const VariableConstView &var,
                             const VariableConstView &select) {
-  return core::transform<std::tuple<
-      copy_if_args<double, int32_t>, copy_if_args<float, int32_t>,
-      copy_if_args<int64_t, int32_t>, copy_if_args<int32_t, int32_t>,
-      copy_if_args<double, int64_t>, copy_if_args<float, int64_t>,
-      copy_if_args<int64_t, int64_t>, copy_if_args<int32_t, int64_t>>>(
-      var, select,
-      overloaded{
-          core::transform_flags::expect_no_variance_arg<1>,
-          [](const auto &var_, const auto &select_) {
-            using VarT = std::decay_t<decltype(var_)>;
-            using Events = event_list<typename VarT::value_type>;
-            const auto size = scipp::size(select_);
-            if constexpr (core::detail::is_ValuesAndVariances_v<VarT>) {
-              std::pair<Events, Events> out;
-              out.first.reserve(size);
-              out.second.reserve(size);
-              for (const auto i : select_) {
-                out.first.push_back(var_.values[i]);
-                out.second.push_back(var_.variances[i]);
-              }
-              return out;
-            } else {
-              Events out;
-              out.reserve(size);
-              for (const auto i : select_)
-                out.push_back(var_[i]);
-              return out;
-            }
-          },
-          [](const units::Unit &var_, const units::Unit &) { return var_; }});
+  return transform(var, select, element::event::copy_if);
 };
 
 /// Return list of indices with coord values for given dim inside interval.
 template <class T>
 const auto make_select = [](const DataArrayConstView &array, const Dim dim,
                             const VariableConstView &interval) {
-  return core::transform<
-      std::tuple<make_select_args<double>, make_select_args<float>,
-                 make_select_args<int64_t>, make_select_args<int32_t>>>(
-      array.coords()[dim], subspan_view(interval, dim),
-      overloaded{core::transform_flags::expect_no_variance_arg<0>,
-                 core::transform_flags::expect_no_variance_arg<1>,
-                 [](const auto &coord_, const auto &interval_) {
-                   const auto low = interval_[0];
-                   const auto high = interval_[1];
-                   const auto size = scipp::size(coord_);
-                   event_list<T> select_;
-                   for (scipp::index i = 0; i < size; ++i)
-                     if (coord_[i] >= low && coord_[i] < high)
-                       select_.push_back(i);
-                   return select_;
-                 },
-                 [](const units::Unit &coord_, const units::Unit &interval_) {
-                   core::expect::equals(coord_, interval_);
-                   return units::Unit(units::dimensionless);
-                 }});
+  return transform(array.coords()[dim], subspan_view(interval, dim),
+                   element::event::make_select<T>);
 };
 
-} // namespace filter_detail
-
+} // namespace
 /// Return filtered event data based on excluding all events with coord values
 /// for given dim outside interval.
 DataArray filter(const DataArrayConstView &array, const Dim dim,
                  const VariableConstView &interval,
                  const AttrPolicy attrPolicy) {
-  using namespace filter_detail;
   const auto &max_event_list_length =
       max(core::event::sizes(array.coords()[dim]));
   const bool need_64bit_indices =
@@ -158,6 +109,12 @@ DataArray filter(const DataArrayConstView &array, const Dim dim,
                    std::move(coords), array.masks(),
                    attrPolicy == AttrPolicy::Keep ? array.attrs()
                                                   : empty.attrs()};
+}
+
+Variable map(const DataArrayConstView &function, const VariableConstView &x) {
+  const Dim dim = edge_dimension(function);
+  return transform(x, subspan_view(function.coords()[dim], dim),
+                   subspan_view(function.data(), dim), element::event::map);
 }
 
 } // namespace event
