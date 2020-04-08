@@ -314,26 +314,11 @@ template <class T, class... Ts> Variable makeVariable(Ts &&... ts) {
 
 namespace detail {
 template <class T>
-Variable from_dimensions_and_unit(const Dimensions &dms, const units::Unit &u) {
-  auto volume = dms.volume();
-  if constexpr (is_sparse_container<T>::value)
-    return Variable(u, dms, element_array<T>(volume));
-  else
-    return Variable(u, dms,
-                    element_array<T>(volume, detail::default_init<T>::value()));
-}
+Variable from_dimensions_and_unit(const Dimensions &dms, const units::Unit &u);
 
 template <class T>
 Variable from_dimensions_and_unit_with_variances(const Dimensions &dms,
-                                                 const units::Unit &u) {
-  auto volume = dms.volume();
-  if constexpr (is_sparse_container<T>::value)
-    return Variable(u, dms, element_array<T>(volume), element_array<T>(volume));
-  else
-    return Variable(u, dms,
-                    element_array<T>(volume, detail::default_init<T>::value()),
-                    element_array<T>(volume, detail::default_init<T>::value()));
-}
+                                                 const units::Unit &u);
 void throw_variance_without_value();
 } // namespace detail
 

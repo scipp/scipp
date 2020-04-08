@@ -726,6 +726,30 @@ template <class T> ElementArrayView<T> VariableView::castVariances() const {
       dims());
 }
 
+namespace detail {
+template <class T>
+Variable from_dimensions_and_unit(const Dimensions &dms, const units::Unit &u) {
+  auto volume = dms.volume();
+  if constexpr (is_sparse_container<T>::value)
+    return Variable(u, dms, element_array<T>(volume));
+  else
+    return Variable(u, dms,
+                    element_array<T>(volume, detail::default_init<T>::value()));
+}
+
+template <class T>
+Variable from_dimensions_and_unit_with_variances(const Dimensions &dms,
+                                                 const units::Unit &u) {
+  auto volume = dms.volume();
+  if constexpr (is_sparse_container<T>::value)
+    return Variable(u, dms, element_array<T>(volume), element_array<T>(volume));
+  else
+    return Variable(u, dms,
+                    element_array<T>(volume, detail::default_init<T>::value()),
+                    element_array<T>(volume, detail::default_init<T>::value()));
+}
+}
+
 /**
   Support explicit instantiations for templates for generic Variable and
   VariableConstView
@@ -748,6 +772,11 @@ using scipp::core::detail::element_array;
   template ElementArrayView<__VA_ARGS__> VariableView::cast<__VA_ARGS__>()     \
       const;                                                                   \
   template ElementArrayView<__VA_ARGS__>                                       \
-  VariableView::castVariances<__VA_ARGS__>() const;
+  VariableView::castVariances<__VA_ARGS__>() const;                            \
+  template Variable core::detail::from_dimensions_and_unit<__VA_ARGS__>(       \
+      const Dimensions &dms, const units::Unit &u);                            \
+  template Variable                                                            \
+  core::detail::from_dimensions_and_unit_with_variances<__VA_ARGS__>(          \
+      const Dimensions &dms, const units::Unit &u);
 
 } // namespace scipp::core
