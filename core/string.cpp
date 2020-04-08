@@ -121,10 +121,15 @@ template <class T> struct VariancesToString {
 
 template <template <class> class Callable, class... Args>
 auto apply(const DType dtype, Args &&... args) {
+  // Note that formatting via registry ignores the Callable, but custom types
+  // should typically not have variances, so Callable should always be
+  // `ValuesToString` in this case.
+  if (formatterRegistry().contains(dtype))
+    return formatterRegistry().format(dtype, args...);
   return callDType<Callable>(
       std::tuple<double, float, int64_t, int32_t, std::string, bool,
-                 sparse_container<double>, sparse_container<float>,
-                 sparse_container<int64_t>, Eigen::Vector3d>{},
+                 event_list<double>, event_list<float>, event_list<int64_t>,
+                 event_list<int32_t>, Eigen::Vector3d>{},
       dtype, std::forward<Args>(args)...);
 }
 
@@ -157,6 +162,25 @@ std::string to_string(const Variable &variable) {
 
 std::string to_string(const VariableConstView &variable) {
   return format_variable(std::string("<scipp.VariableView>"), variable);
+}
+
+void FormatterRegistry::emplace(const DType key,
+                                std::unique_ptr<AbstractFormatter> formatter) {
+  m_formatters.emplace(key, std::move(formatter));
+}
+
+bool FormatterRegistry::contains(const DType key) const noexcept {
+  return m_formatters.find(key) != m_formatters.end();
+}
+
+std::string FormatterRegistry::format(const DType key,
+                                      const VariableConstView &var) const {
+  return m_formatters.at(key)->format(var);
+}
+
+FormatterRegistry &formatterRegistry() {
+  static FormatterRegistry registry;
+  return registry;
 }
 
 } // namespace scipp::core
