@@ -30,7 +30,6 @@ constexpr auto position = overloaded{
     [](const units::Unit &x, const units::Unit &y, const units::Unit &z) {
       expect::equals(x, y);
       expect::equals(x, z);
-      expect::equals(x, units::m);
       return x;
     }};
 
@@ -38,10 +37,7 @@ namespace detail {
 template <int N> struct component {
   static constexpr auto overloads = overloaded{
       arg_list<Eigen::Vector3d>, [](const auto &pos) { return pos[N]; },
-      [](const units::Unit &u) {
-        expect::equals(u, units::m);
-        return u;
-      }};
+      [](const units::Unit &u) { return u; }};
   enum { value = N };
 };
 } // namespace detail

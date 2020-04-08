@@ -6,6 +6,7 @@
 #include "fix_typed_test_suite_warnings.h"
 #include "scipp/units/unit.h"
 #include <Eigen/Geometry>
+#include <cmath>
 
 using namespace scipp;
 using namespace scipp::core::element;
@@ -48,20 +49,31 @@ TYPED_TEST(ElementPositionNTest, unzip_position) {
 }
 
 TEST(ElementRotationTest, rotate_vector) {
+  // With human readable rotation
+  Eigen::Quaterniond rot1(Eigen::AngleAxisd(-M_PI_2, Eigen::Vector3d::UnitY()));
+  EXPECT_TRUE(geometry::rotate(Eigen::Vector3d::UnitX(), rot1)
+                  .isApprox(Eigen::Vector3d::UnitZ(),
+                            std::numeric_limits<double>::epsilon()));
+  // With arbitrary rotation: rely on correctness of Eigen
   Eigen::Vector3d vec(1, 2, 3);
-  Eigen::Quaterniond rot(4, 5, 6, 7);
-  rot.normalize();
-  // Rely on correctness of Eigen
-  EXPECT_EQ(rot._transformVector(vec), geometry::rotate(vec, rot));
+  Eigen::Quaterniond rot2(4, 5, 6, 7);
+  rot2.normalize();
+  EXPECT_EQ(rot2._transformVector(vec), geometry::rotate(vec, rot2));
 }
 
 TEST(ElementRotationTest, rotate_vector_inplace) {
-  Eigen::Vector3d vec(1, 2, 3);
-  Eigen::Quaterniond rot(4, 5, 6, 7);
+  // With human readable rotation
   Eigen::Vector3d out(0, 0, 0);
-  rot.normalize();
-  geometry::rotate_out_arg(out, vec, rot);
-  EXPECT_EQ(rot._transformVector(vec), out);
+  Eigen::Quaterniond rot1(Eigen::AngleAxisd(-M_PI_2, Eigen::Vector3d::UnitY()));
+  geometry::rotate_out_arg(out, Eigen::Vector3d::UnitX(), rot1);
+  EXPECT_TRUE(out.isApprox(Eigen::Vector3d::UnitZ(),
+                           std::numeric_limits<double>::epsilon()));
+  // With arbitrary rotation: rely on correctness of Eigen
+  Eigen::Vector3d vec(1, 2, 3);
+  Eigen::Quaterniond rot2(4, 5, 6, 7);
+  rot2.normalize();
+  geometry::rotate_out_arg(out, vec, rot2);
+  EXPECT_EQ(rot2._transformVector(vec), out);
 }
 
 TEST(ElementRotationTest, unit_out) {

@@ -902,4 +902,15 @@ void init_variable(py::module &m) {
         :raises: If the units of the inputs are not meter and dimensionless for the positions and the rotations, respectively.
         :return: a Variable containing the rotated position vectors.
         :rtype: Variable)");
+  geom_m.def(
+      "rotate",
+      [](const VariableConstView &pos, const VariableConstView &rot,
+         const VariableView &out) { return geometry::rotate(pos, rot, out); },
+      py::arg("position"), py::arg("rotation"), py::arg("out"),
+      R"(
+        Rotate a Variable of type vector_3_float64 using a Variable of type quaternion_float64, and store in the result inside the provided out argument.
+
+        :raises: If the units of the inputs are not meter and dimensionless for the positions and the rotations, respectively.
+        :return: rotated vectors are written to out.
+        :rtype: VariableView)");
 }

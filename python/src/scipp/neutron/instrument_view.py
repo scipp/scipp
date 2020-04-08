@@ -427,7 +427,7 @@ class InstrumentView:
             self.get_detector_vertices_and_faces()
 
         # Create full geometry mesh
-        self.nverts = self.detector_shape.shape[0]
+        self.nverts = len(self.detector_shape)
         self.nfaces = len(detector_faces)
         self.ndets = self.det_pos.shape[0]
 
@@ -531,7 +531,7 @@ class InstrumentView:
                               [0, 1, 5], [0, 5, 4], [2, 3, 7], [2, 7, 6],
                               [0, 2, 1], [0, 3, 2], [4, 5, 7], [5, 6, 7]],
                              dtype=np.uint32)
-        return sc.Variable(dims=["vertex"], values=vertices, dtype=sc.dtype.vector_3_float64), faces
+        return vertices, faces
 
     def make_axis_tick(self, string, position, color="black", size=1.0):
         sm = self.p3.SpriteMaterial(map=self.p3.TextTexture(
@@ -670,28 +670,23 @@ class InstrumentView:
 
         if self.select_rendering.value == "Full":
 
-#             # Duplicate the detector shape to the number of detectors by
-#             # creating a Variable of dims ["spectrum", "vertex"]. The rotation
-#             # operation will then be applied along the "spectrum" dimension
-#             # using the automatic broadcast
-#             vertices = sc.Variable(dims=[self.other_dim, "vertex"],
-#                                    shape=[self.ndets, self.nverts],
-#                                    unit=sc.units.m,
-#                                    dtype=sc.dtype.vector_3_float64)
-
-# # vertices = self.detector_shape * self.hist_data_array[self.key].attrs["detector_shape"]
-#             scaling = np.array(
-#                 self.hist_data_array[self.key].attrs["shape"].values)
-#             for i in range(self.nverts):
-#                 vertices["vertex", i] = sc.Variable(
-#                     dims=[self.other_dim],
-#                     values=np.tile(self.detector_shape[i], [self.ndets, 1]) *
-#                     scaling,
-#                     unit=sc.units.m,
-#                     dtype=sc.dtype.vector_3_float64)
-            vertices = self.detector_shape * self.hist_data_array[self.key].attrs["shape"]
-            print(vertices)
-            # print(self.detector_shape * self.hist_data_array[self.key].attrs["shape"])
+            # Duplicate the detector shape to the number of detectors by
+            # creating a Variable of dims ["spectrum", "vertex"]. The rotation
+            # operation will then be applied along the "spectrum" dimension
+            # using the automatic broadcast
+            vertices = sc.Variable(dims=[self.other_dim, "vertex"],
+                                   shape=[self.ndets, self.nverts],
+                                   unit=sc.units.m,
+                                   dtype=sc.dtype.vector_3_float64)
+            scaling = np.array(
+                self.hist_data_array[self.key].attrs["shape"].values)
+            for i in range(self.nverts):
+                vertices["vertex", i] = sc.Variable(
+                    dims=[self.other_dim],
+                    values=np.tile(self.detector_shape[i], [self.ndets, 1]) *
+                    scaling,
+                    unit=sc.units.m,
+                    dtype=sc.dtype.vector_3_float64)
 
             vertices = sc.geometry.rotate(
                 vertices, self.hist_data_array[self.key].attrs["rotation"])

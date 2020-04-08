@@ -5,6 +5,7 @@
 
 #include "numpy.h"
 #include "pybind11.h"
+#include "scipp/core/string.h"
 
 namespace py = pybind11;
 
@@ -45,11 +46,10 @@ void init_eigen(py::module &m) {
              return self.coeffs() == other.coeffs();
            },
            py::is_operator(), py::call_guard<py::gil_scoped_release>())
-      .def("__ne__",
-           [](Eigen::Quaterniond &self, Eigen::Quaterniond &other) {
-             return self.coeffs() != other.coeffs();
-           },
-           py::is_operator(), py::call_guard<py::gil_scoped_release>())
+      .def("__repr__",
+           [](const Eigen::Quaterniond &self) {
+             return scipp::core::element_to_string(self);
+           })
       .def("x", [](const Eigen::Quaterniond &self) { return self.x(); })
       .def("y", [](const Eigen::Quaterniond &self) { return self.y(); })
       .def("z", [](const Eigen::Quaterniond &self) { return self.z(); })
