@@ -20,7 +20,7 @@ pybind11_add_module(
   variable_instantiate_py_object.cpp
   element_array_view.cpp
 )
-target_link_libraries(_scipp LINK_PRIVATE scipp-core scipp-neutron)
+target_link_libraries(_scipp LINK_PRIVATE scipp-dataset scipp-neutron)
 
 # Set symbol visibility to hidden to reduce binary size, as recommended in
 # pybind11 FAQ.

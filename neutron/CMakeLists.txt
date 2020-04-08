@@ -13,7 +13,7 @@ endif(DYNAMIC_LIB)
 
 add_library(${TARGET_NAME} ${LINK_TYPE} ${INC_FILES} ${SRC_FILES})
 generate_export_header(${TARGET_NAME})
-target_link_libraries(${TARGET_NAME} PUBLIC scipp-core)
+target_link_libraries(${TARGET_NAME} PUBLIC scipp-dataset)
 target_include_directories(
   ${TARGET_NAME}
   PUBLIC $<INSTALL_INTERFACE:include>

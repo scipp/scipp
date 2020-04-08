@@ -3,12 +3,13 @@
 /// @file
 /// @author Simon Heybrock
 
-#include "scipp/core/dataset.h"
-#include "scipp/core/except.h"
-#include "scipp/core/histogram.h"
-#include "scipp/core/sort.h"
-#include "scipp/core/unaligned.h"
-#include "scipp/core/view_decl.h"
+#include "scipp/dataset/dataset.h"
+#include "scipp/dataset/event.h"
+#include "scipp/dataset/except.h"
+#include "scipp/dataset/histogram.h"
+#include "scipp/dataset/sort.h"
+#include "scipp/dataset/unaligned.h"
+#include "scipp/dataset/view_decl.h"
 
 #include "bind_data_access.h"
 #include "bind_operators.h"
@@ -18,7 +19,7 @@
 #include "rename.h"
 
 using namespace scipp;
-using namespace scipp::core;
+using namespace scipp::dataset;
 
 namespace py = pybind11;
 
@@ -135,6 +136,13 @@ template <class T> void realign_impl(T &self, py::dict coord_dict) {
     coords.emplace_back(Dim(item.first.cast<std::string>()),
                         item.second.cast<VariableView>());
   self = unaligned::realign(std::move(self), std::move(coords));
+}
+
+template <class T>
+T filter_impl(const T &self, const Dim dim, const VariableConstView &interval,
+              bool keep_attrs) {
+  return event::filter(self, dim, interval,
+                       keep_attrs ? AttrPolicy::Keep : AttrPolicy::Drop);
 }
 
 template <class T, class... Ignored>
@@ -446,7 +454,7 @@ void init_dataset(py::module &m) {
 
   m.def("histogram",
         [](const DataArrayConstView &ds, const Variable &bins) {
-          return core::histogram(ds, bins);
+          return dataset::histogram(ds, bins);
         },
         py::arg("x"), py::arg("bins"), py::call_guard<py::gil_scoped_release>(),
         R"(Returns a new DataArray with values in bins for sparse dims.
@@ -458,7 +466,7 @@ void init_dataset(py::module &m) {
 
   m.def("histogram",
         [](const DataArrayConstView &ds, const VariableConstView &bins) {
-          return core::histogram(ds, bins);
+          return dataset::histogram(ds, bins);
         },
         py::arg("x"), py::arg("bins"), py::call_guard<py::gil_scoped_release>(),
         R"(Returns a new DataArray with values in bins for sparse dims.
@@ -470,7 +478,7 @@ void init_dataset(py::module &m) {
 
   m.def("histogram",
         [](const Dataset &ds, const VariableConstView &bins) {
-          return core::histogram(ds, bins);
+          return dataset::histogram(ds, bins);
         },
         py::arg("x"), py::arg("bins"), py::call_guard<py::gil_scoped_release>(),
         R"(Returns a new Dataset with values in bins for sparse dims.
@@ -482,7 +490,7 @@ void init_dataset(py::module &m) {
 
   m.def("histogram",
         [](const Dataset &ds, const Variable &bins) {
-          return core::histogram(ds, bins);
+          return dataset::histogram(ds, bins);
         },
         py::arg("x"), py::arg("bins"), py::call_guard<py::gil_scoped_release>(),
         R"(Returns a new Dataset with values in bins for sparse dims.
@@ -494,7 +502,7 @@ void init_dataset(py::module &m) {
 
   m.def("merge",
         [](const DatasetConstView &lhs, const DatasetConstView &rhs) {
-          return core::merge(lhs, rhs);
+          return dataset::merge(lhs, rhs);
         },
         py::arg("lhs"), py::arg("rhs"),
         py::call_guard<py::gil_scoped_release>(), R"(
@@ -628,8 +636,8 @@ void init_dataset(py::module &m) {
   m.def("combine_masks",
         [](const MasksConstView &msk, const std::vector<Dim> &labels,
            const std::vector<scipp::index> &shape) {
-          return core::masks_merge_if_contained(
-              msk, core::Dimensions(labels, shape));
+          return dataset::masks_merge_if_contained(msk,
+                                                   Dimensions(labels, shape));
         },
         py::call_guard<py::gil_scoped_release>(), R"(
         Combine all masks into a single one following the OR operation.
@@ -664,9 +672,22 @@ void init_dataset(py::module &m) {
           return copy;
         },
         py::arg("data"), py::arg("coords"));
+  m.def("filter", filter_impl<DataArrayConstView>, py::arg("data"),
+        py::arg("filter"), py::arg("interval"), py::arg("keep_attrs") = true,
+        py::call_guard<py::gil_scoped_release>(),
+        R"(Return filtered event data.
+
+        This only supports event data.
+
+        :param data: Input event data
+        :param filter: Name of coord to use for filtering
+        :param interval: Variable defining the valid interval of coord values to include in the output
+        :param keep_attrs: If False, attributes are not copied to the output, default is True
+        :return: Filtered data.
+        :rtype: DataArray)");
   m.def(
       "histogram",
-      [](const DataArrayConstView &x) { return core::histogram(x); },
+      [](const DataArrayConstView &x) { return dataset::histogram(x); },
       py::arg("x"), py::call_guard<py::gil_scoped_release>(),
       R"(Returns a new DataArray unaligned data content binned according to the realigning axes.
 
@@ -674,7 +695,8 @@ void init_dataset(py::module &m) {
         :return: Histogramed data.
         :rtype: DataArray)");
   m.def(
-      "histogram", [](const DatasetConstView &x) { return core::histogram(x); },
+      "histogram",
+      [](const DatasetConstView &x) { return dataset::histogram(x); },
       py::arg("x"), py::call_guard<py::gil_scoped_release>(),
       R"(Returns a new Dataset unaligned data content binned according to the realigning axes.
 

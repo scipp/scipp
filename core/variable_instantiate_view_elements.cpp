@@ -14,5 +14,9 @@ INSTANTIATE_VARIABLE(span<const double>)
 INSTANTIATE_VARIABLE(span<const float>)
 INSTANTIATE_VARIABLE(span<double>)
 INSTANTIATE_VARIABLE(span<float>)
+INSTANTIATE_VARIABLE(span<const int64_t>)
+INSTANTIATE_VARIABLE(span<const int32_t>)
+INSTANTIATE_VARIABLE(span<int64_t>)
+INSTANTIATE_VARIABLE(span<int32_t>)
 
 } // namespace scipp::core

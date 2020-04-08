@@ -3,15 +3,11 @@
 set(TARGET_NAME "scipp-core")
 set(INC_FILES
     include/scipp/core/aligned_allocator.h
-    include/scipp/core/dataset.h
-    include/scipp/core/dataset_index.h
     include/scipp/core/dimensions.h
     include/scipp/core/except.h
     include/scipp/core/memory_pool.h
     include/scipp/core/tag_util.h
-    include/scipp/core/counts.h
     include/scipp/core/slice.h
-    include/scipp/core/sort.h
     include/scipp/core/element_array_view.h
     include/scipp/core/variable.h
     include/scipp/core/variable.tcc
@@ -20,34 +16,23 @@ set(INC_FILES
 )
 
 set(SRC_FILES
-    counts.cpp
-    data_array.cpp
-    dataset.cpp
-    dataset_access.cpp
-    dataset_binary_arithmetic.cpp
-    dataset_operations.cpp
     dimensions.cpp
     dtype.cpp
     event.cpp
     except.cpp
-    groupby.cpp
-    histogram.cpp
     rebin.cpp
     slice.cpp
-    sort.cpp
     subspan_view.cpp
     string.cpp
-    trigonometry.cpp
-    unaligned.cpp
     variable.cpp
     variable_binary_arithmetic.cpp
     variable_inplace_arithmetic.cpp
     variable_instantiate_basic.cpp
-    variable_instantiate_dataset.cpp
     variable_instantiate_view_elements.cpp
-    variable_logical_operations.cpp
+    variable_logical.cpp
     variable_operations.cpp
-    variable_reduction_operations.cpp
+    variable_reduction.cpp
+    variable_trigonometry.cpp
     variable_type_conversion.cpp
     element_array_view.cpp
     view_index.cpp

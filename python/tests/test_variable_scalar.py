@@ -5,11 +5,17 @@
 import scipp as sc
 
 
+def test_scalar_Variable_values_property_float():
+    var = sc.Variable(value=1.0, variance=2.0)
+    assert var.dtype == sc.dtype.float64
+    assert var.values == 1.0
+    assert var.variances == 2.0
+
+
 def test_scalar_Variable_values_property_int():
-    var = sc.Variable(value=1, variance=2)
+    var = sc.Variable(value=1)
     assert var.dtype == sc.dtype.int64
     assert var.values == 1
-    assert var.variances == 2
 
 
 def test_scalar_Variable_values_property_string():

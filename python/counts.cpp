@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
-#include "scipp/core/counts.h"
-#include "scipp/core/dataset.h"
+#include "scipp/dataset/counts.h"
+#include "scipp/dataset/dataset.h"
 
 #include "pybind11.h"
 
 using namespace scipp;
-using namespace scipp::core;
+using namespace scipp::dataset;
 
 namespace py = pybind11;
 

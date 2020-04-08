@@ -25,6 +25,16 @@
 #include "scipp/core/variable_keyword_arg_constructor.h"
 #include "scipp/units/unit.h"
 
+namespace scipp::dataset {
+class DatasetConstView;
+class DatasetView;
+class Dataset;
+class DataArray;
+class DataArrayView;
+class DataArrayConstView;
+template <class T> typename T::view_type makeViewItem(T &);
+} // namespace scipp::dataset
+
 namespace scipp::core {
 
 namespace detail {
@@ -52,7 +62,9 @@ template <class... Known> class VariableConceptHandle_impl;
   double, float, int64_t, int32_t, bool, Eigen::Vector3d, Eigen::Quaterniond,  \
       sparse_container<double>, sparse_container<float>,                       \
       sparse_container<int64_t>, sparse_container<int32_t>,                    \
-      span<const double>, span<double>, span<const float>, span<float>
+      sparse_container<bool>, span<const double>, span<double>,                \
+      span<const float>, span<float>, span<const int64_t>, span<int64_t>,      \
+      span<const int32_t>, span<int32_t>
 using VariableConceptHandle = VariableConceptHandle_impl<KNOWN>;
 
 /// Abstract base class for any data that can be held by Variable. Also used to
@@ -112,11 +124,8 @@ private:
 template <class T> constexpr bool canHaveVariances() noexcept {
   using U = std::remove_const_t<T>;
   return std::is_same_v<U, double> || std::is_same_v<U, float> ||
-         std::is_same_v<U, int64_t> || std::is_same_v<U, int32_t> ||
          std::is_same_v<U, sparse_container<double>> ||
          std::is_same_v<U, sparse_container<float>> ||
-         std::is_same_v<U, sparse_container<int64_t>> ||
-         std::is_same_v<U, sparse_container<int32_t>> ||
          std::is_same_v<U, span<const double>> ||
          std::is_same_v<U, span<const float>> ||
          std::is_same_v<U, span<double>> || std::is_same_v<U, span<float>>;
@@ -263,18 +272,15 @@ template <class T> constexpr bool is_variable_or_view() {
          std::is_same_v<T, VariableView>;
 }
 
-class DatasetConstView;
-class DatasetView;
-class Dataset;
-class DataArray;
-class DataArrayView;
-
 template <class T> constexpr bool is_container_or_view() {
-  return std::is_same_v<T, Dataset> || std::is_same_v<T, DatasetView> ||
-         std::is_same_v<T, DatasetConstView> || std::is_same_v<T, Variable> ||
-         std::is_same_v<T, VariableView> ||
-         std::is_same_v<T, VariableConstView> || std::is_same_v<T, DataArray> ||
-         std::is_same_v<T, DataArrayView>;
+  return std::is_same_v<T, dataset::Dataset> ||
+         std::is_same_v<T, dataset::DatasetView> ||
+         std::is_same_v<T, dataset::DatasetConstView> ||
+         std::is_same_v<T, Variable> || std::is_same_v<T, VariableView> ||
+         std::is_same_v<T, VariableConstView> ||
+         std::is_same_v<T, dataset::DataArray> ||
+         std::is_same_v<T, dataset::DataArrayView> ||
+         std::is_same_v<T, dataset::DataArrayConstView>;
 }
 
 namespace detail {
@@ -726,9 +732,6 @@ protected:
   VariableConceptHandle m_view;
 };
 
-class DataArrayConstView;
-template <class T> typename T::view_type makeViewItem(T &);
-
 /** Mutable view into (a subset of) a Variable.
  *
  * By inheriting from VariableConstView any code that works for
@@ -841,8 +844,8 @@ public:
 
 private:
   friend class Variable;
-  friend class DataArrayConstView;
-  template <class T> friend typename T::view_type makeViewItem(T &);
+  friend class dataset::DataArrayConstView;
+  template <class T> friend typename T::view_type dataset::makeViewItem(T &);
 
   // For internal use in DataArrayConstView.
   explicit VariableView(VariableConstView &&base)
@@ -862,217 +865,26 @@ private:
   Variable *m_mutableVariable{nullptr};
 };
 
-SCIPP_CORE_EXPORT Variable operator+(const VariableConstView &a,
-                                     const VariableConstView &b);
-SCIPP_CORE_EXPORT Variable operator-(const VariableConstView &a,
-                                     const VariableConstView &b);
-SCIPP_CORE_EXPORT Variable operator*(const VariableConstView &a,
-                                     const VariableConstView &b);
-SCIPP_CORE_EXPORT Variable operator/(const VariableConstView &a,
-                                     const VariableConstView &b);
-SCIPP_CORE_EXPORT Variable operator|(const VariableConstView &a,
-                                     const VariableConstView &b);
-SCIPP_CORE_EXPORT Variable operator&(const VariableConstView &a,
-                                     const VariableConstView &b);
-SCIPP_CORE_EXPORT Variable operator^(const VariableConstView &a,
-                                     const VariableConstView &b);
-// Note: If the left-hand-side in an addition is a VariableView this simply
-// implicitly converts it to a Variable. A copy for the return value is required
-// anyway so this is a convenient way to avoid defining more overloads.
-template <typename T, typename = std::enable_if_t<!is_container_or_view<T>()>>
-Variable operator+(const T value, const VariableConstView &a) {
-  return makeVariable<T>(Values{value}) + a;
-}
-template <typename T, typename = std::enable_if_t<!is_container_or_view<T>()>>
-Variable operator-(const T value, const VariableConstView &a) {
-  return makeVariable<T>(Values{value}) - a;
-}
-template <typename T, typename = std::enable_if_t<!is_container_or_view<T>()>>
-Variable operator*(const T value, const VariableConstView &a) {
-  return makeVariable<T>(Values{value}) * a;
-}
-template <typename T, typename = std::enable_if_t<!is_container_or_view<T>()>>
-Variable operator/(const T value, const VariableConstView &a) {
-  return makeVariable<T>(Values{value}) / a;
-}
-template <typename T, typename = std::enable_if_t<!is_container_or_view<T>()>>
-Variable operator+(const VariableConstView &a, const T value) {
-  return a + makeVariable<T>(Values{value});
-}
-template <typename T, typename = std::enable_if_t<!is_container_or_view<T>()>>
-Variable operator-(const VariableConstView &a, const T value) {
-  return a - makeVariable<T>(Values{value});
-}
-template <typename T, typename = std::enable_if_t<!is_container_or_view<T>()>>
-Variable operator*(const VariableConstView &a, const T value) {
-  return a * makeVariable<T>(Values{value});
-}
-template <typename T, typename = std::enable_if_t<!is_container_or_view<T>()>>
-Variable operator/(const VariableConstView &a, const T value) {
-  return a / makeVariable<T>(Values{value});
-}
-
-template <class T>
-Variable operator*(Variable a, const boost::units::quantity<T> &quantity) {
-  return std::move(a *= quantity);
-}
-template <class T>
-Variable operator/(Variable a, const boost::units::quantity<T> &quantity) {
-  return std::move(a /= quantity);
-}
-template <class T>
-Variable operator/(const boost::units::quantity<T> &quantity, Variable a) {
-  return makeVariable<double>(Dimensions{}, units::Unit(T{}),
-                              Values{quantity.value()}) /
-         std::move(a);
-}
-
-template <typename T>
-std::enable_if_t<std::is_arithmetic_v<T>, Variable>
-operator*(T v, const units::Unit &unit) {
-  return makeVariable<T>(Dimensions{}, units::Unit{unit}, Values{v});
-}
-
-template <typename T>
-std::enable_if_t<std::is_arithmetic_v<T>, Variable>
-operator/(T v, const units::Unit &unit) {
-  return makeVariable<T>(Dimensions{}, units::Unit(units::dimensionless) / unit,
-                         Values{v});
-}
-
-SCIPP_CORE_EXPORT Variable astype(const VariableConstView &var,
-                                  const DType type);
-
-[[nodiscard]] SCIPP_CORE_EXPORT Variable
-reciprocal(const VariableConstView &var);
-[[nodiscard]] SCIPP_CORE_EXPORT Variable reciprocal(Variable &&var);
-SCIPP_CORE_EXPORT VariableView reciprocal(const VariableConstView &var,
-                                          const VariableView &out);
-
-SCIPP_CORE_EXPORT std::vector<Variable>
-split(const Variable &var, const Dim dim,
-      const std::vector<scipp::index> &indices);
-[[nodiscard]] SCIPP_CORE_EXPORT Variable abs(const VariableConstView &var);
-[[nodiscard]] SCIPP_CORE_EXPORT Variable abs(Variable &&var);
-SCIPP_CORE_EXPORT VariableView abs(const VariableConstView &var,
-                                   const VariableView &out);
-SCIPP_CORE_EXPORT Variable broadcast(const VariableConstView &var,
-                                     const Dimensions &dims);
-SCIPP_CORE_EXPORT Variable concatenate(const VariableConstView &a1,
-                                       const VariableConstView &a2,
-                                       const Dim dim);
-SCIPP_CORE_EXPORT Variable dot(const Variable &a, const Variable &b);
-SCIPP_CORE_EXPORT Variable filter(const Variable &var, const Variable &filter);
-[[nodiscard]] SCIPP_CORE_EXPORT Variable mean(const VariableConstView &var,
-                                              const Dim dim);
-SCIPP_CORE_EXPORT VariableView mean(const VariableConstView &var, const Dim dim,
-                                    const VariableView &out);
-SCIPP_CORE_EXPORT Variable norm(const VariableConstView &var);
-SCIPP_CORE_EXPORT Variable permute(const Variable &var, const Dim dim,
-                                   const std::vector<scipp::index> &indices);
-SCIPP_CORE_EXPORT Variable rebin(const VariableConstView &var, const Dim dim,
-                                 const VariableConstView &oldCoord,
-                                 const VariableConstView &newCoord);
-SCIPP_CORE_EXPORT Variable resize(const VariableConstView &var, const Dim dim,
-                                  const scipp::index size);
-SCIPP_CORE_EXPORT Variable reverse(Variable var, const Dim dim);
-[[nodiscard]] SCIPP_CORE_EXPORT Variable sqrt(const VariableConstView &var);
-[[nodiscard]] SCIPP_CORE_EXPORT Variable sqrt(Variable &&var);
-SCIPP_CORE_EXPORT VariableView sqrt(const VariableConstView &var,
-                                    const VariableView &out);
-
-[[nodiscard]] SCIPP_CORE_EXPORT Variable flatten(const VariableConstView &var,
-                                                 const Dim dim);
-[[nodiscard]] SCIPP_CORE_EXPORT Variable sum(const VariableConstView &var,
-                                             const Dim dim);
-SCIPP_CORE_EXPORT VariableView sum(const VariableConstView &var, const Dim dim,
-                                   const VariableView &out);
-
 SCIPP_CORE_EXPORT Variable copy(const VariableConstView &var);
 
-// Trigonometrics
-[[nodiscard]] SCIPP_CORE_EXPORT Variable sin(const VariableConstView &var);
-[[nodiscard]] SCIPP_CORE_EXPORT Variable sin(Variable &&var);
-SCIPP_CORE_EXPORT VariableView sin(const VariableConstView &var,
-                                   const VariableView &out);
-[[nodiscard]] SCIPP_CORE_EXPORT Variable cos(const VariableConstView &var);
-[[nodiscard]] SCIPP_CORE_EXPORT Variable cos(Variable &&var);
-SCIPP_CORE_EXPORT VariableView cos(const VariableConstView &var,
-                                   const VariableView &out);
-[[nodiscard]] SCIPP_CORE_EXPORT Variable tan(const VariableConstView &var);
-[[nodiscard]] SCIPP_CORE_EXPORT Variable tan(Variable &&var);
-SCIPP_CORE_EXPORT VariableView tan(const VariableConstView &var,
-                                   const VariableView &out);
-[[nodiscard]] SCIPP_CORE_EXPORT Variable asin(const VariableConstView &var);
-[[nodiscard]] SCIPP_CORE_EXPORT Variable asin(Variable &&var);
-SCIPP_CORE_EXPORT VariableView asin(const VariableConstView &var,
-                                    const VariableView &out);
-[[nodiscard]] SCIPP_CORE_EXPORT Variable acos(const VariableConstView &var);
-[[nodiscard]] SCIPP_CORE_EXPORT Variable acos(Variable &&var);
-SCIPP_CORE_EXPORT VariableView acos(const VariableConstView &var,
-                                    const VariableView &out);
-[[nodiscard]] SCIPP_CORE_EXPORT Variable atan(const VariableConstView &var);
-[[nodiscard]] SCIPP_CORE_EXPORT Variable atan(Variable &&var);
-SCIPP_CORE_EXPORT VariableView atan(const VariableConstView &var,
-                                    const VariableView &out);
-[[nodiscard]] SCIPP_CORE_EXPORT Variable atan2(const Variable &y,
-                                               const Variable &x);
-SCIPP_CORE_EXPORT VariableView atan2(const VariableConstView &y,
-                                     const VariableConstView &x,
-                                     const VariableView &out);
-
-// Logical reductions
-[[nodiscard]] SCIPP_CORE_EXPORT Variable any(const VariableConstView &var,
-                                             const Dim dim);
-[[nodiscard]] SCIPP_CORE_EXPORT Variable all(const VariableConstView &var,
-                                             const Dim dim);
-
-// Other reductions
-[[nodiscard]] SCIPP_CORE_EXPORT Variable max(const VariableConstView &var,
-                                             const Dim dim);
-[[nodiscard]] SCIPP_CORE_EXPORT Variable min(const VariableConstView &var,
-                                             const Dim dim);
-
-SCIPP_CORE_EXPORT VariableView nan_to_num(const VariableConstView &var,
-                                          const VariableConstView &replacement,
-                                          const VariableView &out);
-SCIPP_CORE_EXPORT VariableView positive_inf_to_num(
-    const VariableConstView &var, const VariableConstView &replacement,
-    const VariableView &out);
-SCIPP_CORE_EXPORT VariableView negative_inf_to_num(
-    const VariableConstView &var, const VariableConstView &replacement,
-    const VariableView &out);
-
-[[nodiscard]] SCIPP_CORE_EXPORT Variable
-nan_to_num(const VariableConstView &var, const VariableConstView &replacement);
-[[nodiscard]] SCIPP_CORE_EXPORT Variable pos_inf_to_num(
-    const VariableConstView &var, const VariableConstView &replacement);
-[[nodiscard]] SCIPP_CORE_EXPORT Variable neg_inf_to_num(
-    const VariableConstView &var, const VariableConstView &replacement);
-namespace geometry {
-[[nodiscard]] SCIPP_CORE_EXPORT Variable position(const VariableConstView &x,
-                                                  const VariableConstView &y,
-                                                  const VariableConstView &z);
-[[nodiscard]] SCIPP_CORE_EXPORT Variable x(const VariableConstView &pos);
-[[nodiscard]] SCIPP_CORE_EXPORT Variable y(const VariableConstView &pos);
-[[nodiscard]] SCIPP_CORE_EXPORT Variable z(const VariableConstView &pos);
-[[nodiscard]] SCIPP_CORE_EXPORT Variable rotate(const VariableConstView &pos,
-                                                const VariableConstView &rot);
-SCIPP_CORE_EXPORT VariableView rotate(const VariableConstView &pos,
-                                      const VariableConstView &rot,
-                                      const VariableView &out);
-
-} // namespace geometry
-
-namespace sparse {
-SCIPP_CORE_EXPORT Variable counts(const VariableConstView &var);
-SCIPP_CORE_EXPORT void reserve(const VariableView &sparse,
-                               const VariableConstView &capacity);
-} // namespace sparse
-
-bool is_events(const VariableConstView &var);
-bool is_events(const DataArrayConstView &array);
+SCIPP_CORE_EXPORT bool is_events(const VariableConstView &var);
 
 } // namespace scipp::core
+
+namespace scipp {
+using core::Dimensions;
+using core::Dims;
+using core::DType;
+using core::dtype;
+using core::event_list;
+using core::makeVariable;
+using core::Shape;
+using core::Slice;
+using core::Values;
+using core::Variable;
+using core::VariableConstView;
+using core::VariableView;
+using core::Variances;
+} // namespace scipp
 
 #endif // SCIPP_CORE_VARIABLE_H

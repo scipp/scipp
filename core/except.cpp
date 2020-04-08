@@ -4,7 +4,6 @@
 /// @author Simon Heybrock
 #include <set>
 
-#include "scipp/core/dataset.h"
 #include "scipp/core/dimensions.h"
 #include "scipp/core/except.h"
 #include "scipp/core/slice.h"
@@ -47,13 +46,6 @@ void validSlice(const std::unordered_map<Dim, scipp::index> &dims,
     throw except::SliceError(
         "Expected " + to_string(slice) +
         " to be in dimensions."); // TODO to_string for map needed
-}
-
-void coordsAreSuperset(const DataArrayConstView &a,
-                       const DataArrayConstView &b) {
-  for (const auto &[dim, coord] : b.coords())
-    if (a.coords()[dim] != coord)
-      throw except::CoordMismatchError("Expected coords to match.");
 }
 
 void notCountDensity(const units::Unit &unit) {

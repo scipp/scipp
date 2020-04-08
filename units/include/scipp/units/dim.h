@@ -21,6 +21,7 @@ public:
   constexpr static auto Group = DimId::Group;
   constexpr static auto Invalid = DimId::Invalid;
   constexpr static auto Position = DimId::Position;
+  constexpr static auto PulseTime = DimId::PulseTime;
   constexpr static auto Q = DimId::Q;
   constexpr static auto Qx = DimId::Qx;
   constexpr static auto Qy = DimId::Qy;

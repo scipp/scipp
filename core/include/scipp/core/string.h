@@ -2,33 +2,23 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#ifndef SCIPP_CORE_STRING_H
-#define SCIPP_CORE_STRING_H
+#pragma once
 
+#include <map>
+#include <memory>
 #include <string>
 
 #include "scipp-core_export.h"
 #include "scipp/common/index.h"
+#include "scipp/core/dimensions.h"
 #include "scipp/core/dtype.h"
-#include "scipp/units/unit.h"
+#include "scipp/core/variable.h"
 
 namespace scipp::core {
 
-class DataArrayView;
-class DataArrayConstView;
-class DatasetView;
-class DatasetConstView;
-class Dataset;
-class DataArray;
-class Dimensions;
-class Variable;
-class VariableView;
-class VariableConstView;
-class Slice;
 template <class Id, class Key, class Value> class ConstView;
 template <class T, class U> class MutableView;
 
-SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os, const Dim dim);
 SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
                                            const Dimensions &dims);
 SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
@@ -37,29 +27,16 @@ SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
                                            const VariableView &variable);
 SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
                                            const Variable &variable);
-SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
-                                           const DataArrayConstView &data);
-SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
-                                           const DataArrayView &data);
-SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
-                                           const DataArray &data);
-SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
-                                           const DatasetConstView &dataset);
-SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
-                                           const DatasetView &dataset);
-SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
-                                           const Dataset &dataset);
 
+SCIPP_CORE_EXPORT const std::string &to_string(const std::string &s);
+SCIPP_CORE_EXPORT std::string_view to_string(const std::string_view s);
+SCIPP_CORE_EXPORT std::string to_string(const char *s);
 SCIPP_CORE_EXPORT std::string to_string(const bool b);
 SCIPP_CORE_EXPORT std::string to_string(const DType dtype);
 SCIPP_CORE_EXPORT std::string to_string(const Dimensions &dims);
 SCIPP_CORE_EXPORT std::string to_string(const Slice &slice);
 SCIPP_CORE_EXPORT std::string to_string(const Variable &variable);
 SCIPP_CORE_EXPORT std::string to_string(const VariableConstView &variable);
-SCIPP_CORE_EXPORT std::string to_string(const DataArray &data);
-SCIPP_CORE_EXPORT std::string to_string(const DataArrayConstView &data);
-SCIPP_CORE_EXPORT std::string to_string(const Dataset &dataset);
-SCIPP_CORE_EXPORT std::string to_string(const DatasetConstView &dataset);
 
 template <class Id, class Key, class Value>
 std::string to_string(const ConstView<Id, Key, Value> &view) {
@@ -97,10 +74,6 @@ template <class T> std::string element_to_string(const T &item) {
             to_string(item.z()) + ", " + to_string(item.w()) + "), "};
   else if constexpr (is_sparse_v<T>)
     return array_to_string(item) + ", ";
-  else if constexpr (std::is_same_v<T, DataArray>)
-    return {"DataArray, "};
-  else if constexpr (std::is_same_v<T, Dataset>)
-    return {"Dataset, "};
   else
     return to_string(item) + ", ";
 }
@@ -121,6 +94,42 @@ template <class T> std::string array_to_string(const T &arr) {
   s += "]";
   return s;
 }
-} // namespace scipp::core
 
-#endif // SCIPP_CORE_STRING_H
+SCIPP_CORE_EXPORT std::string
+format_variable(const std::string &key, const VariableConstView &variable,
+                const Dimensions &datasetDims = Dimensions());
+
+/// Abstract base class for formatters for variables with element types not in
+/// scipp-core module.
+class SCIPP_CORE_EXPORT AbstractFormatter {
+public:
+  virtual ~AbstractFormatter() = default;
+  virtual std::string format(const VariableConstView &var) const = 0;
+};
+
+/// Concrete class for formatting variables with element types not in
+/// scipp-core.
+template <class T> class Formatter : public AbstractFormatter {
+  std::string format(const VariableConstView &var) const override {
+    return array_to_string(var.template values<T>());
+  }
+};
+
+/// Registry of formatters.
+///
+/// Modules instantiating variables with custom dtype can call `emplace` to
+/// register a formatter.
+class SCIPP_CORE_EXPORT FormatterRegistry {
+public:
+  void emplace(const DType key, std::unique_ptr<AbstractFormatter> formatter);
+  bool contains(const DType key) const noexcept;
+  std::string format(const DType key, const VariableConstView &var) const;
+
+private:
+  std::map<DType, std::unique_ptr<AbstractFormatter>> m_formatters;
+};
+
+/// Return the global FormatterRegistry instrance
+SCIPP_CORE_EXPORT FormatterRegistry &formatterRegistry();
+
+} // namespace scipp::core

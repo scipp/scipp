@@ -23,8 +23,11 @@ make -j
 make -j all-tests
 make install
 export ASan_WRAPPER=${SOURCE}/CMake/sanitizers-cmake/cmake/asan-wrapper
+${ASan_WRAPPER} ${BUILD}/common/test/scipp-common-test || { exit 1; }
 ${ASan_WRAPPER} ${BUILD}/units/test/scipp-units-test || { exit 1; }
 ${ASan_WRAPPER} ${BUILD}/core/test/scipp-core-test || { exit 1; }
+${ASan_WRAPPER} ${BUILD}/dataset/test/scipp-dataset-test || { exit 1; }
+${ASan_WRAPPER} ${BUILD}/neutron/test/scipp-neutron-test || { exit 1; }
 cd ${SOURCE}/python
 export PYTHONPATH=${PYTHONPATH}:${INSTALL}
 python3 -m pytest || { exit 1; }

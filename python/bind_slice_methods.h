@@ -7,29 +7,23 @@
 
 #include "numpy.h"
 #include "pybind11.h"
-#include "scipp/core/dataset.h"
 #include "scipp/core/dtype.h"
 #include "scipp/core/slice.h"
 #include "scipp/core/tag_util.h"
 #include "scipp/core/variable.h"
+#include "scipp/dataset/dataset.h"
 
 namespace py = pybind11;
 using namespace scipp;
 using namespace scipp::core;
+using namespace scipp::dataset;
 
-// TODO We really need a way to get the dimension labels and extents from
-// Dataset (not using class Dimensions).
 template <class T> auto dim_extent(const T &object, const Dim dim) {
+
   if constexpr (std::is_same_v<T, Dataset> || std::is_same_v<T, DatasetView>) {
     scipp::index extent = -1;
-    for (const auto &item : object) {
-      if (item.dims().contains(dim)) {
-        if (extent == -1)
-          extent = item.dims()[dim];
-        else if (item.dims()[dim] == extent - 1)
-          --extent;
-      }
-    }
+    if (object.dimensions().count(dim) > 0)
+      extent = object.dimensions().at(dim);
     return extent;
   } else {
     return object.dims()[dim];

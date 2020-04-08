@@ -9,6 +9,7 @@
 #include "scipp/core/event.h"
 #include "scipp/core/except.h"
 #include "scipp/core/variable.h"
+#include "scipp/core/variable_operations.h"
 
 using namespace scipp;
 using namespace scipp::core;
@@ -1113,9 +1114,13 @@ TYPED_TEST_SUITE(AsTypeTest, type_pairs);
 TYPED_TEST(AsTypeTest, variable_astype) {
   using T1 = typename TypeParam::first_type;
   using T2 = typename TypeParam::second_type;
-  auto var1 = makeVariable<T1>(Values{1}, Variances{1});
-  auto var2 = makeVariable<T2>(Values{1}, Variances{1});
-  ASSERT_EQ(astype(var1, core::dtype<T2>), var2);
+  Variable var1;
+  Variable var2;
+  if constexpr (canHaveVariances<T1>() && canHaveVariances<T2>()) {
+    var1 = makeVariable<T1>(Values{1}, Variances{1});
+    var2 = makeVariable<T2>(Values{1}, Variances{1});
+    ASSERT_EQ(astype(var1, core::dtype<T2>), var2);
+  }
   var1 = makeVariable<T1>(Values{1});
   var2 = makeVariable<T2>(Values{1});
   ASSERT_EQ(astype(var1, core::dtype<T2>), var2);

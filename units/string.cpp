@@ -7,6 +7,10 @@
 
 namespace scipp::units {
 
+std::ostream &operator<<(std::ostream &os, const Dim dim) {
+  return os << to_string(dim);
+}
+
 std::string to_string(const units::Unit &unit) { return unit.name(); }
 
 template <class T> std::string to_string(const std::initializer_list<T> items) {

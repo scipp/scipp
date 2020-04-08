@@ -24,6 +24,7 @@ ninja -v all-tests install
 ./common/test/scipp-common-test
 ./units/test/scipp-units-test
 ./core/test/scipp-core-test
+./dataset/test/scipp-dataset-test
 ./neutron/test/scipp-neutron-test
 
 # Move scipp Python library to site packages location

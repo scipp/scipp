@@ -9,7 +9,9 @@ cmake -B . -S .. -LA
 
 :: C++ tests
 cmake --build . --target all-tests --config Release || echo ERROR && exit /b
+common\test\Release\scipp-common-test.exe || echo ERROR && exit /b
 core\test\Release\scipp-core-test.exe || echo ERROR && exit /b
+dataset\test\Release\scipp-dataset-test.exe || echo ERROR && exit /b
 neutron\test\Release\scipp-neutron-test.exe || echo ERROR && exit /b
 units\test\Release\scipp-units-test.exe || echo ERROR && exit /b
 

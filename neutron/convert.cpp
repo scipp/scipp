@@ -6,14 +6,18 @@
 #include <boost/units/systems/si/codata/neutron_constants.hpp>
 #include <boost/units/systems/si/codata/universal_constants.hpp>
 
-#include "scipp/core/dataset.h"
-#include "scipp/core/dataset_util.h"
 #include "scipp/core/event.h"
 #include "scipp/core/transform.h"
+#include "scipp/core/variable_operations.h"
+
+#include "scipp/dataset/dataset.h"
+#include "scipp/dataset/dataset_util.h"
+
 #include "scipp/neutron/beamline.h"
 #include "scipp/neutron/convert.h"
 
 using namespace scipp::core;
+using namespace scipp::dataset;
 
 namespace scipp::neutron {
 
@@ -231,7 +235,7 @@ Dataset tofToDeltaE(const Dataset &d) {
 template <class T> T convert_impl(T d, const Dim from, const Dim to) {
   for (const auto &item : iter(d))
     if (item.hasData())
-      expect::notCountDensity(item.unit());
+      core::expect::notCountDensity(item.unit());
   if ((from == Dim::Tof) && (to == Dim::DSpacing))
     return convert_with_factor(std::move(d), from, to, tofToDSpacing(d));
   if ((from == Dim::DSpacing) && (to == Dim::Tof))
@@ -283,7 +287,7 @@ T swap_tof_related_labels_and_attrs(T &&x, const Dim from, const Dim to) {
         x.attrs().erase(field);
         if constexpr (std::is_same_v<std::decay_t<T>, Dataset>) {
           for (const auto &item : iter(x)) {
-            expect::equals(x.coords()[Dim(field)], item.attrs()[field]);
+            core::expect::equals(x.coords()[Dim(field)], item.attrs()[field]);
             item.attrs().erase(field);
           }
         }

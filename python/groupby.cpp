@@ -3,13 +3,13 @@
 /// @file
 /// @author Simon Heybrock
 
-#include "scipp/core/groupby.h"
-#include "scipp/core/dataset.h"
+#include "scipp/dataset/groupby.h"
+#include "scipp/dataset/dataset.h"
 
 #include "pybind11.h"
 
 using namespace scipp;
-using namespace scipp::core;
+using namespace scipp::dataset;
 
 namespace py = pybind11;
 
