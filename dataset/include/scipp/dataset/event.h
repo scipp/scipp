@@ -20,4 +20,7 @@ filter(const DataArrayConstView &array, const Dim dim,
        const VariableConstView &interval,
        const AttrPolicy attrPolicy = AttrPolicy::Keep);
 
+[[nodiscard]] SCIPP_CORE_EXPORT Variable map(const DataArrayConstView &function,
+                                             const VariableConstView &x);
+
 } // namespace scipp::dataset::event

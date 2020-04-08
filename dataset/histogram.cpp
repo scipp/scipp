@@ -4,6 +4,7 @@
 /// @author Simon Heybrock
 #include "scipp/dataset/histogram.h"
 #include "scipp/common/numeric.h"
+#include "scipp/core/histogram.h"
 #include "scipp/core/transform_subspan.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/except.h"
@@ -34,7 +35,7 @@ static constexpr auto make_histogram =
       // Special implementation for linear bins. Gives a 1x to 20x speedup
       // for few and many events per histogram, respectively.
       if (scipp::numeric::is_linspace(edges)) {
-        const auto [offset, nbin, scale] = linear_edge_params(edges);
+        const auto [offset, nbin, scale] = core::linear_edge_params(edges);
         for (scipp::index i = 0; i < scipp::size(events); ++i) {
           const auto x = events[i];
           const double bin = (x - offset) * scale;
@@ -47,7 +48,7 @@ static constexpr auto make_histogram =
           }
         }
       } else {
-        expect::histogram::sorted_edges(edges);
+        core::expect::histogram::sorted_edges(edges);
         for (scipp::index i = 0; i < scipp::size(events); ++i) {
           const auto x = events[i];
           auto it = std::upper_bound(edges.begin(), edges.end(), x);
@@ -138,6 +139,27 @@ Dataset histogram(const Dataset &dataset, const Dim &dim) {
   if (is_events(bins))
     throw except::BinEdgeError("Expected bin edges, got event data.");
   return histogram(dataset, bins);
+}
+
+/// Return the Dim of the given data array that has an "bin edge" coordinate.
+///
+/// Throws if there is not excactly one such dimension.
+Dim edge_dimension(const DataArrayConstView &a) {
+  const auto dims = a.dims();
+  const auto coords = a.coords();
+  Dim dim = Dim::Invalid;
+  for (const auto &[d, coord] : a.coords()) {
+    if (dims.contains(d) && coord.dims().contains(d) &&
+        coord.dims()[d] == dims[d] + 1) {
+      if (dim != Dim::Invalid)
+        throw except::BinEdgeError("Expected bin edges in only one dimension.");
+      dim = d;
+    }
+  }
+  if (dim == Dim::Invalid)
+    throw except::BinEdgeError(
+        "Expected bin edges in one dimension, found none.");
+  return dim;
 }
 
 /// Return true if the data array respresents a histogram for given dim.

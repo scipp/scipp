@@ -120,9 +120,9 @@ TEST(DataArrayRealignedEventsArithmeticTest, fail_events_op_non_histogram) {
       events, {{Dim::X, Variable{not_hist.coords()[Dim::X]}}});
 
   // Fail because non-event operand has to be a histogram
-  EXPECT_THROW(realigned * not_hist, except::RealignedDataError);
-  EXPECT_THROW(not_hist * realigned, except::RealignedDataError);
-  EXPECT_THROW(realigned / not_hist, except::RealignedDataError);
+  EXPECT_THROW(realigned * not_hist, except::BinEdgeError);
+  EXPECT_THROW(not_hist * realigned, except::BinEdgeError);
+  EXPECT_THROW(realigned / not_hist, except::BinEdgeError);
 }
 
 TEST(DataArrayRealignedEventsArithmeticTest, events_times_histogram) {

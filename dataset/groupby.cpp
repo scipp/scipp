@@ -4,6 +4,7 @@
 /// @author Simon Heybrock
 #include <numeric>
 
+#include "scipp/core/histogram.h"
 #include "scipp/core/indexed_slice_view.h"
 #include "scipp/core/parallel.h"
 #include "scipp/core/tag_util.h"
@@ -12,7 +13,6 @@
 #include "scipp/dataset/event.h"
 #include "scipp/dataset/except.h"
 #include "scipp/dataset/groupby.h"
-#include "scipp/dataset/histogram.h"
 
 #include "../core/variable_operations_common.h"
 #include "dataset_operations_common.h"
@@ -300,7 +300,7 @@ template <class T> struct MakeBinGroups {
       throw except::UnitError("Group-by key must have same unit as bins");
     const auto &values = key.values<T>();
     const auto &edges = bins.values<T>();
-    expect::histogram::sorted_edges(edges);
+    core::expect::histogram::sorted_edges(edges);
 
     const auto dim = key.dims().inner();
     std::vector<GroupByGrouping::group> groups(edges.size() - 1);

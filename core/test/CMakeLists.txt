@@ -8,6 +8,7 @@ add_executable(
   dimensions_test.cpp
   element_array_test.cpp
   element_array_view_test.cpp
+  element_event_operations_test.cpp
   element_unary_operations_test.cpp
   element_geometric_operations_test.cpp
   element_trigonometry_operations_test.cpp

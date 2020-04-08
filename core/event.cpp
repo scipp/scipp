@@ -9,6 +9,8 @@
 #include "scipp/core/transform.h"
 #include "scipp/core/variable_operations.h"
 
+#include "element_event_operations.h"
+
 namespace scipp::core {
 /// Return true if a variable contains events
 bool is_events(const VariableConstView &var) {
