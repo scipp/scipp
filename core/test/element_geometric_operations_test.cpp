@@ -11,13 +11,13 @@
 using namespace scipp;
 using namespace scipp::core::element;
 
-TEST(ElementPositionTest, unit_in_m) {
+TEST(ElementPositionTest, unit_in) {
   const units::Unit m(units::m);
   const units::Unit s(units::s); // Not supported
   EXPECT_THROW(geometry::position(s, m, m), except::UnitError);
   EXPECT_THROW(geometry::position(m, s, m), except::UnitError);
   EXPECT_THROW(geometry::position(m, m, s), except::UnitError);
-  EXPECT_THROW(geometry::position(s, s, s), except::UnitError);
+  EXPECT_NO_THROW(geometry::position(s, s, s));
   EXPECT_NO_THROW(geometry::position(m, m, m));
 }
 
