@@ -302,15 +302,6 @@ template <class T, class... Ts> Variable makeVariable(Ts &&... ts) {
   }
 }
 
-namespace detail {
-template <class T>
-Variable from_dimensions_and_unit(const Dimensions &dms, const units::Unit &u);
-
-template <class T>
-Variable from_dimensions_and_unit_with_variances(const Dimensions &dms,
-                                                 const units::Unit &u);
-} // namespace detail
-
 template <class... Ts>
 template <class T>
 Variable Variable::ConstructVariable<Ts...>::Maker<T>::apply(Ts &&... ts) {
