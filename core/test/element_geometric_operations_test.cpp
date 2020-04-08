@@ -42,10 +42,8 @@ TYPED_TEST(ElementPositionNTest, unzip_position) {
   constexpr auto component = T::overloads;
   Eigen::Vector3d a{1.0, 2.0, 3.0};
   units::Unit m(units::m);
-  units::Unit K(units::K);
   EXPECT_EQ(component(a), a[T::value]);
   EXPECT_EQ(geometry::detail::component<T::value>::overloads(m), m);
-  EXPECT_THROW(geometry::z(K), except::UnitError);
 }
 
 TEST(ElementRotationTest, rotate_vector) {

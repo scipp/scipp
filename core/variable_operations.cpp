@@ -314,14 +314,11 @@ Variable z(const VariableConstView &pos) {
   return transform<std::tuple<Eigen::Vector3d>>(pos, element::geometry::z);
 }
 Variable rotate(const VariableConstView &pos, const VariableConstView &rot) {
-  return transform<std::tuple<std::tuple<Eigen::Vector3d, Eigen::Quaterniond>>>(
-      pos, rot, element::geometry::rotate);
+  return transform(pos, rot, element::geometry::rotate);
 }
 VariableView rotate(const VariableConstView &pos, const VariableConstView &rot,
                     const VariableView &out) {
-  transform_in_place<std::tuple<
-      std::tuple<Eigen::Vector3d, Eigen::Vector3d, Eigen::Quaterniond>>>(
-      out, pos, rot, element::geometry::rotate_out_arg);
+  transform_in_place(out, pos, rot, element::geometry::rotate_out_arg);
   return out;
 }
 
