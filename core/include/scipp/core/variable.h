@@ -49,16 +49,6 @@ template <class T> struct is_sparse_container : std::false_type {};
 template <class T>
 struct is_sparse_container<sparse_container<T>> : std::true_type {};
 
-template <class T> constexpr bool canHaveVariances() noexcept {
-  using U = std::remove_const_t<T>;
-  return std::is_same_v<U, double> || std::is_same_v<U, float> ||
-         std::is_same_v<U, sparse_container<double>> ||
-         std::is_same_v<U, sparse_container<float>> ||
-         std::is_same_v<U, span<const double>> ||
-         std::is_same_v<U, span<const float>> ||
-         std::is_same_v<U, span<double>> || std::is_same_v<U, span<float>>;
-}
-
 class Variable;
 class VariableConstView;
 class VariableView;
@@ -118,12 +108,12 @@ public:
            T variances);
 
   template <class T>
-  static Variable create(units::Unit &&u, Dims &&d, Shape &&s,
+  static Variable create(const units::Unit &u, const Dims &d, const Shape &s,
                          std::optional<detail::element_array<T>> &&val,
                          std::optional<detail::element_array<T>> &&var);
 
   template <class T>
-  static Variable create(units::Unit &&u, Dimensions &&d,
+  static Variable create(const units::Unit &u, const Dimensions &d,
                          std::optional<detail::element_array<T>> &&val,
                          std::optional<detail::element_array<T>> &&var);
 
@@ -319,7 +309,6 @@ Variable from_dimensions_and_unit(const Dimensions &dms, const units::Unit &u);
 template <class T>
 Variable from_dimensions_and_unit_with_variances(const Dimensions &dms,
                                                  const units::Unit &u);
-void throw_variance_without_value();
 } // namespace detail
 
 /// This function covers the cases of construction Variables from keyword
@@ -335,35 +324,28 @@ void throw_variance_without_value();
 /// is:
 ///       makeVariable<T>(Dims{Dim::X}, Shape{5}, Values{}, Variances{});
 template <class T>
-Variable Variable::create(units::Unit &&u, Dimensions &&d,
+Variable Variable::create(const units::Unit &u, const Dimensions &d,
                           std::optional<detail::element_array<T>> &&val,
                           std::optional<detail::element_array<T>> &&var) {
-  auto dms{d};
   if (val && var) {
     if (val->size() < 0 && var->size() < 0)
-      return detail::from_dimensions_and_unit_with_variances<T>(dms, u);
+      return detail::from_dimensions_and_unit_with_variances<T>(d, u);
     else
-      return Variable(u, dms, std::move(*val), std::move(*var));
+      return Variable(u, d, std::move(*val), std::move(*var));
   }
 
-  if (val) {
-    if (val->size() < 0)
-      return detail::from_dimensions_and_unit<T>(dms, u);
-    else
-      return Variable(u, dms, std::move(*val));
-  }
-
-  if (var)
-    detail::throw_variance_without_value();
-  return detail::from_dimensions_and_unit<T>(dms, u);
+  if (!val || val->size() < 0)
+    return detail::from_dimensions_and_unit<T>(d, u);
+  else
+    return Variable(u, d, std::move(*val));
 }
 
 template <class T>
-Variable Variable::create(units::Unit &&u, Dims &&d, Shape &&s,
+Variable Variable::create(const units::Unit &u, const Dims &d, const Shape &s,
                           std::optional<detail::element_array<T>> &&val,
                           std::optional<detail::element_array<T>> &&var) {
   auto dms = Dimensions{d.data, s.data};
-  return create(std::move(u), std::move(dms), std::move(val), std::move(var));
+  return create(u, dms, std::move(val), std::move(var));
 }
 template <class... Ts>
 template <class T>

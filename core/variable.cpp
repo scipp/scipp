@@ -196,10 +196,6 @@ void VariableView::setVariances(Variable v) const {
 }
 
 namespace detail {
-void throw_variance_without_value() {
-  throw except::VariancesError("Can't have variance without values");
-}
-
 void throw_keyword_arg_constructor_bad_dtype(const DType dtype) {
   throw except::TypeError("Can't create the Variable with type " +
                           to_string(dtype) +

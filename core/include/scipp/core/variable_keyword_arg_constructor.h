@@ -151,16 +151,18 @@ public:
     constexpr bool constrVar =
         std::is_constructible_v<detail::element_array<ElemT>, VarArgs...>;
 
-    if constexpr ((hasVal && !constrVal) || (hasVar && !constrVar)) {
+    if constexpr ((hasVal && !constrVal) || (hasVar && !constrVar) ||
+                  (hasVar && !hasVal) ||
+                  (hasVar && !canHaveVariances<ElemT>())) {
       throw_keyword_arg_constructor_bad_dtype(core::dtype<ElemT>);
       return VarT{}; // unreachable
     } else {
       std::optional<detail::element_array<ElemT>> values;
-      if (hasVal)
+      if constexpr (hasVal)
         values = std::make_from_tuple<detail::element_array<ElemT>>(
             std::move(valArgs));
       std::optional<detail::element_array<ElemT>> variances;
-      if (hasVar)
+      if constexpr (hasVar)
         variances = std::make_from_tuple<detail::element_array<ElemT>>(
             std::move(varArgs));
       return VarT::template create<ElemT>(
