@@ -332,19 +332,6 @@ Variable::Variable(const DType &type, Ts &&... args)
     : Variable{
           ConstructVariable<Ts...>::make(std::forward<Ts>(args)..., type)} {}
 
-namespace detail {
-template <class... N> struct is_vector : std::false_type {};
-template <class N, class A>
-struct is_vector<std::vector<N, A>> : std::true_type {};
-
-template <int I, class... Ts> decltype(auto) nth(Ts &&... ts) {
-  return std::get<I>(std::forward_as_tuple(ts...));
-}
-
-template <int I, class... Ts>
-using nth_t = decltype(std::get<I>(std::declval<std::tuple<Ts...>>()));
-} // namespace detail
-
 /// Non-mutable view into (a subset of) a Variable.
 class SCIPP_CORE_EXPORT VariableConstView {
 public:
