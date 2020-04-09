@@ -52,7 +52,7 @@ TEST(ElementRotationTest, rotate_vector) {
       Eigen::AngleAxisd(-0.5 * scipp::pi<double>, Eigen::Vector3d::UnitY()));
   EXPECT_TRUE(geometry::rotate(Eigen::Vector3d::UnitX(), rot1)
                   .isApprox(Eigen::Vector3d::UnitZ(),
-                            std::numeric_limits<double>::epsilon()));
+                            2.0 * std::numeric_limits<double>::epsilon()));
   // With arbitrary rotation: rely on correctness of Eigen
   Eigen::Vector3d vec(1, 2, 3);
   Eigen::Quaterniond rot2(4, 5, 6, 7);
@@ -67,7 +67,7 @@ TEST(ElementRotationTest, rotate_vector_inplace) {
       Eigen::AngleAxisd(-0.5 * scipp::pi<double>, Eigen::Vector3d::UnitY()));
   geometry::rotate_out_arg(out, Eigen::Vector3d::UnitX(), rot1);
   EXPECT_TRUE(out.isApprox(Eigen::Vector3d::UnitZ(),
-                           std::numeric_limits<double>::epsilon()));
+                           2.0 * std::numeric_limits<double>::epsilon()));
   // With arbitrary rotation: rely on correctness of Eigen
   Eigen::Vector3d vec(1, 2, 3);
   Eigen::Quaterniond rot2(4, 5, 6, 7);
