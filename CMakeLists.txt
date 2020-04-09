@@ -54,10 +54,16 @@ include(GTest)
 include(boost)
 include(Eigen)
 include(pybind11)
-include(GoogleBenchmark)
 include(GenerateExportHeader)
+
+option(WITH_BENCHMARKS "Enable building benchmarks" ON)
+if(WITH_BENCHMARKS)
+  include(GoogleBenchmark)
+endif()
+
 find_package(Boost 1.67 REQUIRED)
 find_package(TBB CONFIG)
+
 if(TBB_FOUND)
   set(ENABLE_THREAD_LIMIT
       OFF
@@ -181,7 +187,9 @@ enable_testing()
 # Custom target for building tests. all excludes tests by default
 add_custom_target(all-tests)
 add_subdirectory(common)
-add_subdirectory(benchmark)
+if(WITH_BENCHMARKS)
+  add_subdirectory(benchmark)
+endif()
 add_subdirectory(units)
 add_subdirectory(core)
 add_subdirectory(variable)
