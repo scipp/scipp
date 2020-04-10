@@ -45,6 +45,7 @@ enum class DType {
   DataArray,
   Dataset,
   EigenVector3d,
+  EigenQuaterniond,
   PyObject,
   Unknown
 };
@@ -67,6 +68,7 @@ template <> constexpr DType dtype<sparse_container<bool>> = DType::SparseBool;
 template <> constexpr DType dtype<dataset::DataArray> = DType::DataArray;
 template <> constexpr DType dtype<dataset::Dataset> = DType::Dataset;
 template <> constexpr DType dtype<Eigen::Vector3d> = DType::EigenVector3d;
+template <> constexpr DType dtype<Eigen::Quaterniond> = DType::EigenQuaterniond;
 template <> constexpr DType dtype<scipp::python::PyObject> = DType::PyObject;
 
 bool isInt(DType tp);

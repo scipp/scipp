@@ -9,6 +9,7 @@ namespace py = pybind11;
 void init_dataset(py::module &);
 void init_detail(py::module &);
 void init_dtype(py::module &);
+void init_eigen(py::module &);
 void init_counts(py::module &);
 void init_groupby(py::module &);
 void init_neutron(py::module &);
@@ -21,6 +22,7 @@ void init_element_array_view(py::module &);
 void init_core(py::module &m) {
   auto core = m.def_submodule("core");
   init_units_neutron(core);
+  init_eigen(core);
   init_dtype(core);
   init_variable(core);
   init_counts(core);

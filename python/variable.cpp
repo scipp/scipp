@@ -128,11 +128,21 @@ Variable doMakeVariable(const std::vector<Dim> &labels, py::array &values,
                                  values.cast<std::vector<std::string>>(), unit);
     }
 
-    if (dtypeTag == core::dtype<Eigen::Vector3d>) {
+    if (dtypeTag == core::dtype<Eigen::Vector3d> ||
+        dtypeTag == core::dtype<Eigen::Quaterniond>) {
       std::vector<scipp::index> shape(values.shape(),
                                       values.shape() + values.ndim() - 1);
-      return init_1D_no_variance(
-          labels, shape, values.cast<std::vector<Eigen::Vector3d>>(), unit);
+      if (dtypeTag == core::dtype<Eigen::Vector3d>) {
+        return init_1D_no_variance(
+            labels, shape, values.cast<std::vector<Eigen::Vector3d>>(), unit);
+      } else {
+        const auto &arr = values.cast<std::vector<std::vector<double>>>();
+        std::vector<Eigen::Quaterniond> qvec;
+        qvec.reserve(arr.size());
+        for (size_t i = 0; i < arr.size(); i++)
+          qvec.emplace_back(arr[i].data());
+        return init_1D_no_variance(labels, shape, qvec, unit);
+      }
     }
   }
 
@@ -146,7 +156,7 @@ Variable makeVariableDefaultInit(const std::vector<Dim> &labels,
                                  const bool variances) {
   return CallDType<double, float, int64_t, int32_t, bool, event_list<double>,
                    event_list<float>, event_list<int64_t>, event_list<int32_t>,
-                   DataArray, Dataset, Eigen::Vector3d>::
+                   DataArray, Dataset, Eigen::Vector3d, Eigen::Quaterniond>::
       apply<MakeVariableDefaultInit>(scipp_dtype(dtype), labels, shape, unit,
                                      variances);
 }
@@ -194,6 +204,14 @@ void bind_init_0D_numpy_types(py::class_<Variable> &c) {
                 b.cast<Eigen::Vector3d>(),
                 v ? std::optional(v->cast<Eigen::Vector3d>()) : std::nullopt,
                 unit);
+          } else if (info.ndim == 1 &&
+                     scipp_dtype(dtype) == core::dtype<Eigen::Quaterniond>) {
+            return do_init_0D<Eigen::Quaterniond>(
+                Eigen::Quaterniond(b.cast<std::vector<double>>().data()),
+                v ? std::optional(Eigen::Quaterniond(
+                        v->cast<std::vector<double>>().data()))
+                  : std::nullopt,
+                unit);
           } else {
             throw scipp::except::VariableError(
                 "Wrong overload for making 0D variable.");
@@ -208,22 +226,6 @@ void bind_init_list(py::class_<Variable> &c) {
   c.def(py::init([](const std::array<Dim, 1> &label, const py::list &values,
                     const std::optional<py::list> &variances,
                     const units::Unit &unit, py::object &dtype) {
-          if (scipp_dtype(dtype) == core::dtype<Eigen::Vector3d>) {
-            auto val = values.cast<std::vector<Eigen::Vector3d>>();
-            Variable variable;
-            if (variances) {
-              auto var = variances->cast<std::vector<Eigen::Vector3d>>();
-              variable = makeVariable<Eigen::Vector3d>(
-                  Dims{label[0]}, Shape{scipp::size(val)},
-                  Values(val.begin(), val.end()),
-                  Variances(var.begin(), var.end()), units::Unit(unit));
-            } else
-              variable = makeVariable<Eigen::Vector3d>(
-                  Dims{label[0]}, Shape{scipp::size(val)},
-                  Values(val.begin(), val.end()), units::Unit(unit));
-            return variable;
-          }
-
           auto arr = py::array(values);
           auto varr =
               variances ? std::optional(py::array(*variances)) : std::nullopt;
@@ -233,6 +235,34 @@ void bind_init_list(py::class_<Variable> &c) {
         py::arg("dims"), py::arg("values"), py::arg("variances") = std::nullopt,
         py::arg("unit") = units::Unit(units::dimensionless),
         py::arg("dtype") = py::none());
+}
+
+void bind_init_0D_list_eigen(py::class_<Variable> &c) {
+  c.def(
+      py::init([](const py::list &value,
+                  const std::optional<py::list> &variance,
+                  const units::Unit &unit, py::object &dtype) {
+        if (scipp_dtype(dtype) == core::dtype<Eigen::Vector3d>) {
+          return do_init_0D<Eigen::Vector3d>(
+              Eigen::Vector3d(value.cast<std::vector<double>>().data()),
+              variance ? std::optional(variance->cast<Eigen::Vector3d>())
+                       : std::nullopt,
+              unit);
+        } else if (scipp_dtype(dtype) == core::dtype<Eigen::Quaterniond>) {
+          return do_init_0D<Eigen::Quaterniond>(
+              Eigen::Quaterniond(value.cast<std::vector<double>>().data()),
+              variance ? std::optional(Eigen::Quaterniond(
+                             variance->cast<std::vector<double>>().data()))
+                       : std::nullopt,
+              unit);
+        } else {
+          throw scipp::except::VariableError(
+              "Cannot create 0D Variable from list of values with this dtype.");
+        }
+      }),
+      py::arg("value"), py::arg("variance") = std::nullopt,
+      py::arg("unit") = units::Unit(units::dimensionless),
+      py::arg("dtype") = py::none());
 }
 
 template <class T, class... Ignored>
@@ -256,6 +286,7 @@ void init_variable(py::module &m) {
   bind_init_0D<Dataset>(variable);
   bind_init_0D<std::string>(variable);
   bind_init_0D<Eigen::Vector3d>(variable);
+  bind_init_0D<Eigen::Quaterniond>(variable);
   variable.def(py::init<const VariableView &>())
       .def(py::init(&makeVariableDefaultInit),
            py::arg("dims") = std::vector<Dim>{},
@@ -293,6 +324,7 @@ void init_variable(py::module &m) {
   bind_init_0D_native_python_types<int64_t>(variable);
   bind_init_0D_native_python_types<double>(variable);
   bind_init_0D<py::object>(variable);
+  bind_init_0D_list_eigen(variable);
   //------------------------------------
 
   py::class_<VariableConstView>(m, "VariableConstView")
@@ -862,4 +894,26 @@ void init_variable(py::module &m) {
         :raises: If the units of inputs are not meters, or if the dtypes of inputs are not double precision floats
         :return: Extracted z component of input pos. Units in meters.
         :rtype: Variable)");
+  geom_m.def("rotate",
+             [](const VariableConstView &pos, const VariableConstView &rot) {
+               return geometry::rotate(pos, rot);
+             },
+             py::arg("position"), py::arg("rotation"),
+             R"(
+        Rotate a Variable of type vector_3_float64 using a Variable of type quaternion_float64.
+
+        :raises: If the units of the inputs are not meter and dimensionless for the positions and the rotations, respectively.
+        :return: a Variable containing the rotated position vectors.
+        :rtype: Variable)");
+  geom_m.def(
+      "rotate",
+      [](const VariableConstView &pos, const VariableConstView &rot,
+         const VariableView &out) { return geometry::rotate(pos, rot, out); },
+      py::arg("position"), py::arg("rotation"), py::arg("out"),
+      R"(
+        Rotate a Variable of type vector_3_float64 using a Variable of type quaternion_float64, and store in the result inside the provided out argument.
+
+        :raises: If the units of the inputs are not meter and dimensionless for the positions and the rotations, respectively.
+        :return: rotated vectors are written to out.
+        :rtype: VariableView)");
 }

@@ -69,6 +69,11 @@ namespace geometry {
 [[nodiscard]] SCIPP_CORE_EXPORT Variable x(const VariableConstView &pos);
 [[nodiscard]] SCIPP_CORE_EXPORT Variable y(const VariableConstView &pos);
 [[nodiscard]] SCIPP_CORE_EXPORT Variable z(const VariableConstView &pos);
+[[nodiscard]] SCIPP_CORE_EXPORT Variable rotate(const VariableConstView &pos,
+                                                const VariableConstView &rot);
+SCIPP_CORE_EXPORT VariableView rotate(const VariableConstView &pos,
+                                      const VariableConstView &rot,
+                                      const VariableView &out);
 
 } // namespace geometry
 

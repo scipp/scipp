@@ -235,12 +235,15 @@ def matrix_mult(pos, m):
     return sc.geometry.position(xn, yn, zn)
 
 
-def init_pos(ws, source_pos, sample_pos):
-    import numpy as np
+def get_detector_properties(ws, source_pos, sample_pos):
     spec_info = ws.spectrumInfo()
+    det_info = ws.detectorInfo()
+    comp_info = ws.componentInfo()
+    nspec = len(spec_info)
+    det_rot = np.zeros([nspec, 4])
+    det_bbox = np.zeros([nspec, 3])
 
     if sample_pos is not None and source_pos is not None:
-        det_info = ws.detectorInfo()
         total_detectors = spec_info.detectorCount()
         act_beam = (sample_pos - source_pos).values
         rot = rotation_matrix_from_vectors(act_beam, [0, 0, 1])
@@ -266,14 +269,22 @@ def init_pos(ws, source_pos, sample_pos):
             if spec.hasDetectors:
                 definition = spec_info.getSpectrumDefinition(i)
                 n_dets = len(definition)
+                quats = []
+                bboxes = []
                 for j in range(n_dets):
                     det_idx = definition[j][0]
                     p = det_info.position(det_idx)
+                    r = det_info.rotation(det_idx)
+                    s = comp_info.shape(det_idx)
                     spectrum_values[idx] = i
                     x_values[idx] = p.X()
                     y_values[idx] = p.Y()
                     z_values[idx] = p.Z()
                     idx += 1
+                    quats.append([r.imagI(), r.imagJ(), r.imagK(), r.real()])
+                    bboxes.append(s.getBoundingBox().width())
+                det_rot[i, :] = np.mean(quats, axis=0)
+                det_bbox[i, :] = np.sum(bboxes, axis=0)
 
         rot_pos = matrix_mult(
             sc.geometry.position(pos_d["x"].data, pos_d["y"].data,
@@ -297,20 +308,50 @@ def init_pos(ws, source_pos, sample_pos):
 
         pos = sc.geometry.position(averaged["x"].data, averaged["y"].data,
                                    averaged["z"].data)
-        return matrix_mult(pos, inv_rot)
+        return (matrix_mult(pos, inv_rot),
+                sc.Variable(['spectrum'],
+                            values=det_rot,
+                            dtype=sc.dtype.quaternion_float64),
+                sc.Variable(['spectrum'],
+                            values=det_bbox,
+                            unit=sc.units.m,
+                            dtype=sc.dtype.vector_3_float64))
     else:
-        pos = np.zeros([len(spec_info), 3])
+        pos = np.zeros([nspec, 3])
 
         for i, spec in enumerate(spec_info):
             if spec.hasDetectors:
-                p = spec.position
-                pos[i, :] = [p.X(), p.Y(), p.Z()]
+                definition = spec_info.getSpectrumDefinition(i)
+                n_dets = len(definition)
+                vec3s = []
+                quats = []
+                bboxes = []
+                for j in range(n_dets):
+                    det_idx = definition[j][0]
+                    p = det_info.position(det_idx)
+                    r = det_info.rotation(det_idx)
+                    s = comp_info.shape(det_idx)
+                    vec3s.append([p.X(), p.Y(), p.Z()])
+                    quats.append([r.imagI(), r.imagJ(), r.imagK(), r.real()])
+                    bboxes.append(s.getBoundingBox().width())
+                pos[i, :] = np.mean(vec3s, axis=0)
+                det_rot[i, :] = np.mean(quats, axis=0)
+                det_bbox[i, :] = np.sum(bboxes, axis=0)
             else:
                 pos[i, :] = [np.nan, np.nan, np.nan]
-        return sc.Variable(['spectrum'],
-                           values=pos,
-                           unit=sc.units.m,
-                           dtype=sc.dtype.vector_3_float64)
+                det_rot[i, :] = [np.nan, np.nan, np.nan, np.nan]
+                det_bbox[i, :] = [np.nan, np.nan, np.nan]
+        return (sc.Variable(['spectrum'],
+                            values=pos,
+                            unit=sc.units.m,
+                            dtype=sc.dtype.vector_3_float64),
+                sc.Variable(['spectrum'],
+                            values=det_rot,
+                            dtype=sc.dtype.quaternion_float64),
+                sc.Variable(['spectrum'],
+                            values=det_bbox,
+                            unit=sc.units.m,
+                            dtype=sc.dtype.vector_3_float64))
 
 
 def _get_dtype_from_values(values):
@@ -357,7 +398,7 @@ def _convert_MatrixWorkspace_info(ws):
     dim, unit = validate_and_get_unit(ws.getAxis(0).getUnit().unitID())
     source_pos, sample_pos = make_component_info(ws)
     det_info = make_detector_info(ws)
-    pos = init_pos(ws, source_pos, sample_pos)
+    pos, rot, shp = get_detector_properties(ws, source_pos, sample_pos)
     spec_dim, spec_coord = init_spec_axis(ws)
 
     if common_bins:
@@ -378,8 +419,17 @@ def _convert_MatrixWorkspace_info(ws):
         },
         "masks": {},
         "attrs": {
-            "run": make_run(ws),
-            "sample": make_sample(ws)
+            "run":
+            make_run(ws),
+            "sample":
+            make_sample(ws),
+            "rotation":
+            rot,
+            "shape":
+            shp,
+            "instrument-name":
+            sc.Variable(
+                value=ws.componentInfo().name(ws.componentInfo().root()))
         },
     }
     if source_pos is not None:
@@ -745,7 +795,9 @@ def load_component_info(ds, file):
 
     - source_position
     - sample_position
-    - position
+    - detector positions
+    - detector rotations
+    - detector shapes
 
     :param ds: Dataset on which the component info will be added as coords.
     :param file: File from which the IDF will be loaded.
@@ -756,7 +808,10 @@ def load_component_info(ds, file):
 
         ds.coords["source_position"] = source_pos
         ds.coords["sample_position"] = sample_pos
-        ds.coords["position"] = init_pos(ws, source_pos, sample_pos)
+        pos, rot, shp = get_detector_properties(ws, source_pos, sample_pos)
+        ds.coords["position"] = pos
+        ds.attrs["rotation"] = rot
+        ds.attrs["shape"] = shp
 
 
 def validate_dim_and_get_mantid_string(unit_dim):

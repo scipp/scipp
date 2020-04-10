@@ -1104,61 +1104,6 @@ TEST(VariableTest, construct_mult_dev_unit) {
   EXPECT_EQ(int32_t(1) * units::Unit(units::kg), refMult);
 }
 
-TEST(VariableTest, zip_positions) {
-  const Variable x = makeVariable<double>(
-      Dims{Dim::X}, Shape{3}, units::Unit(units::m), Values{1, 2, 3});
-  auto positions = geometry::position(x, x, x);
-  auto values = positions.values<Eigen::Vector3d>();
-  EXPECT_EQ(values.size(), 3);
-  EXPECT_EQ(values[0], (Eigen::Vector3d{1, 1, 1}));
-  EXPECT_EQ(values[1], (Eigen::Vector3d{2, 2, 2}));
-  EXPECT_EQ(values[2], (Eigen::Vector3d{3, 3, 3}));
-}
-TEST(VariableTest, unzip_x) {
-  const Variable pos = makeVariable<Eigen::Vector3d>(
-      Dims{Dim::X}, Shape{2}, units::Unit(units::m),
-      Values{Eigen::Vector3d{1, 2, 3}, Eigen::Vector3d{4, 5, 6}});
-  auto x_ = geometry::x(pos);
-  const auto expected_x = makeVariable<double>(
-      Dims{Dim::X}, Shape{2}, units::Unit(units::m), Values{1.0, 4.0});
-  EXPECT_EQ(x_, expected_x);
-}
-
-TEST(VariableTest, unzip_y) {
-  const Variable pos = makeVariable<Eigen::Vector3d>(
-      Dims{Dim::X}, Shape{2}, units::Unit(units::m),
-      Values{Eigen::Vector3d{1, 2, 3}, Eigen::Vector3d{4, 5, 6}});
-  auto y_ = geometry::y(pos);
-  const auto expected_y = makeVariable<double>(
-      Dims{Dim::X}, Shape{2}, units::Unit(units::m), Values{2.0, 5.0});
-  EXPECT_EQ(y_, expected_y);
-}
-
-TEST(VariableTest, unzip_z) {
-  const Variable pos = makeVariable<Eigen::Vector3d>(
-      Dims{Dim::X}, Shape{2}, units::Unit(units::m),
-      Values{Eigen::Vector3d{1, 2, 3}, Eigen::Vector3d{4, 5, 6}});
-  auto z_ = geometry::z(pos);
-  const auto expected_z = makeVariable<double>(
-      Dims{Dim::X}, Shape{2}, units::Unit(units::m), Values{3.0, 6.0});
-  EXPECT_EQ(z_, expected_z);
-}
-TEST(VariableTest, zip_unzip_positions) {
-  const Variable x_in = makeVariable<double>(
-      Dims{Dim::X}, Shape{3}, units::Unit(units::m), Values{1, 2, 3});
-  const Variable y_in = makeVariable<double>(
-      Dims{Dim::X}, Shape{3}, units::Unit(units::m), Values{4, 5, 6});
-  const Variable z_in = makeVariable<double>(
-      Dims{Dim::X}, Shape{3}, units::Unit(units::m), Values{7, 8, 9});
-  auto positions = geometry::position(x_in, y_in, z_in);
-  auto x_out = geometry::x(positions);
-  auto y_out = geometry::y(positions);
-  auto z_out = geometry::z(positions);
-  EXPECT_EQ(x_in, x_out);
-  EXPECT_EQ(y_in, y_out);
-  EXPECT_EQ(z_in, z_out);
-}
-
 template <class T> class AsTypeTest : public ::testing::Test {};
 
 using type_pairs =

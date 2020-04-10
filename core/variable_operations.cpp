@@ -313,6 +313,15 @@ Variable y(const VariableConstView &pos) {
 Variable z(const VariableConstView &pos) {
   return transform<std::tuple<Eigen::Vector3d>>(pos, element::geometry::z);
 }
+Variable rotate(const VariableConstView &pos, const VariableConstView &rot) {
+  return transform(pos, rot, element::geometry::rotate);
+}
+VariableView rotate(const VariableConstView &pos, const VariableConstView &rot,
+                    const VariableView &out) {
+  transform_in_place(out, pos, rot, element::geometry::rotate_out_arg);
+  return out;
+}
+
 } // namespace geometry
 
 } // namespace scipp::core

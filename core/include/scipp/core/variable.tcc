@@ -5,8 +5,8 @@
 
 #include "scipp/core/apply.h"
 #include "scipp/core/dimensions.h"
-#include "scipp/core/variable.h"
 #include "scipp/core/element_array_view.h"
+#include "scipp/core/variable.h"
 #include "scipp/units/unit.h"
 #include <numeric>
 #include <optional>
@@ -24,7 +24,12 @@ template <class T, class C> auto &requireT(C &concept) {
 }
 
 template <class T1, class T2> bool equal(const T1 &view1, const T2 &view2) {
-  return std::equal(view1.begin(), view1.end(), view2.begin(), view2.end());
+  if constexpr (std::is_same_v<typename T1::value_type, Eigen::Quaterniond>)
+    return std::equal(
+        view1.begin(), view1.end(), view2.begin(), view2.end(),
+        [](auto &a, auto &b) { return a.coeffs() == b.coeffs(); });
+  else
+    return std::equal(view1.begin(), view1.end(), view2.begin(), view2.end());
 }
 
 template <class T> class ViewModel;
@@ -737,10 +742,10 @@ using scipp::core::detail::element_array;
   template const element_array<__VA_ARGS__> &Variable::cast<__VA_ARGS__>(      \
       const bool) const;                                                       \
   template const ElementArrayView<const __VA_ARGS__>                           \
-  VariableConstView::cast<__VA_ARGS__>() const;                               \
+  VariableConstView::cast<__VA_ARGS__>() const;                                \
   template const ElementArrayView<const __VA_ARGS__>                           \
-  VariableConstView::castVariances<__VA_ARGS__>() const;                      \
-  template ElementArrayView<__VA_ARGS__> VariableView::cast<__VA_ARGS__>()    \
+  VariableConstView::castVariances<__VA_ARGS__>() const;                       \
+  template ElementArrayView<__VA_ARGS__> VariableView::cast<__VA_ARGS__>()     \
       const;                                                                   \
   template ElementArrayView<__VA_ARGS__>                                       \
   VariableView::castVariances<__VA_ARGS__>() const;

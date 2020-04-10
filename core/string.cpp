@@ -76,6 +76,8 @@ std::string to_string(const DType dtype) {
     return "event_list_int32";
   case DType::EigenVector3d:
     return "vector_3_float64";
+  case DType::EigenQuaterniond:
+    return "quaternion_float64";
   case DType::PyObject:
     return "PyObject";
   case DType::Unknown:
@@ -129,7 +131,7 @@ auto apply(const DType dtype, Args &&... args) {
   return callDType<Callable>(
       std::tuple<double, float, int64_t, int32_t, std::string, bool,
                  event_list<double>, event_list<float>, event_list<int64_t>,
-                 event_list<int32_t>, Eigen::Vector3d>{},
+                 event_list<int32_t>, Eigen::Vector3d, Eigen::Quaterniond>{},
       dtype, std::forward<Args>(args)...);
 }
 

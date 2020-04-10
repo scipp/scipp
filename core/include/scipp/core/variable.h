@@ -52,7 +52,7 @@ template <class... Known> class VariableConceptHandle_impl;
 // Any item type that is listed here explicitly can be used with the templated
 // `transform`, i.e., we can pass arbitrary functors/lambdas to process data.
 #define KNOWN                                                                  \
-  double, float, int64_t, int32_t, bool, Eigen::Vector3d,                      \
+  double, float, int64_t, int32_t, bool, Eigen::Vector3d, Eigen::Quaterniond,  \
       sparse_container<double>, sparse_container<float>,                       \
       sparse_container<int64_t>, sparse_container<int32_t>,                    \
       sparse_container<bool>, span<const double>, span<double>,                \
@@ -585,10 +585,12 @@ Variable Variable::ConstructVariable<Ts...>::Maker<T>::apply(Ts &&... ts) {
 
 template <class... Ts>
 Variable Variable::ConstructVariable<Ts...>::make(Ts &&... args, DType type) {
-  return CallDType<
-      double, float, int64_t, int32_t, bool, Eigen::Vector3d, std::string,
-      event_list<double>, event_list<float>, event_list<int64_t>,
-      event_list<int32_t>>::apply<Maker>(type, std::forward<Ts>(args)...);
+  return CallDType<double, float, int64_t, int32_t, bool, Eigen::Vector3d,
+                   Eigen::Quaterniond, std::string, event_list<double>,
+                   event_list<float>, event_list<int64_t>,
+                   event_list<int32_t>>::apply<Maker>(type,
+                                                      std::forward<Ts>(
+                                                          args)...);
 }
 
 template <class... Ts>
