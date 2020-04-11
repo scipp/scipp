@@ -35,6 +35,7 @@ jobs:
           set -ex
           cd docs
           source activate scipp_docs
+          python data/fetch_neutron_data.py
           sphinx-build . "$(docs_dir)"
         displayName: 'Build documentation'
       - task: PublishBuildArtifacts@1
