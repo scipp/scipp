@@ -131,7 +131,7 @@ TEST(DataArrayRealignedEventsArithmeticTest, events_times_histogram) {
   const auto realigned = unaligned::realign(
       DataArray(sparse), {{Dim::X, Variable{hist.coords()[Dim::X]}}});
 
-  for (const auto result : {realigned * hist, hist * realigned}) {
+  for (const auto &result : {realigned * hist, hist * realigned}) {
     EXPECT_EQ(result.coords(), realigned.coords());
     EXPECT_FALSE(result.hasData());
     EXPECT_TRUE(result.hasVariances());
@@ -169,7 +169,7 @@ TEST(DataArrayRealignedEventsArithmeticTest,
   const auto realigned = unaligned::realign(
       DataArray(sparse), {{Dim::X, Variable{hist.coords()[Dim::X]}}});
 
-  for (const auto result : {realigned * hist, hist * realigned}) {
+  for (const auto &result : {realigned * hist, hist * realigned}) {
     EXPECT_EQ(result.coords(), realigned.coords());
     EXPECT_FALSE(result.hasData());
     EXPECT_TRUE(result.hasVariances());
@@ -210,7 +210,7 @@ TEST(DataArrayRealignedEventsArithmeticTest,
   const auto realigned = unaligned::realign(
       DataArray(sparse), {{Dim::X, Variable{hist.coords()[Dim::X]}}});
 
-  for (const auto result : {realigned * hist, hist * realigned}) {
+  for (const auto &result : {realigned * hist, hist * realigned}) {
     EXPECT_EQ(result.coords(), realigned.coords());
     EXPECT_FALSE(result.hasData());
     EXPECT_TRUE(result.hasVariances());
