@@ -333,6 +333,7 @@ TEST_F(DataArrayRealignedEventsPlusMinusTest, minus_equals) {
 
 TEST_F(DataArrayRealignedEventsPlusMinusTest, minus_equals_self) {
   auto out(a);
+#pragma clang diagnostic ignored "-Wself-assign"
   out -= out;
   EXPECT_EQ(out, a - a);
 }
