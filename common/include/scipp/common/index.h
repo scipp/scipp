@@ -4,7 +4,7 @@
 /// @author Simon Heybrock
 #ifndef SCIPP_COMMON_INDEX_H
 #define SCIPP_COMMON_INDEX_H
-#include <cstddef>
+#include <cstdint>
 
 namespace scipp {
 /// Type to use for all container/array sizes and indices.
