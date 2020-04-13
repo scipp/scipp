@@ -10,6 +10,7 @@ set(INC_FILES
     include/scipp/core/slice.h
     include/scipp/core/element_array_view.h
     include/scipp/core/variable.h
+    include/scipp/core/variable_concept.h
     include/scipp/core/variable.tcc
     include/scipp/core/view_index.h
     include/scipp/core/variable_keyword_arg_constructor.h
@@ -25,6 +26,7 @@ set(SRC_FILES
     subspan_view.cpp
     string.cpp
     variable.cpp
+    variable_concept.cpp
     variable_binary_arithmetic.cpp
     variable_inplace_arithmetic.cpp
     variable_instantiate_basic.cpp
