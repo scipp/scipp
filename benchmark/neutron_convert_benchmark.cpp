@@ -3,11 +3,10 @@
 /// @file
 #include <benchmark/benchmark.h>
 
-#include "scipp/core/dataset.h"
+#include "scipp/dataset/dataset.h"
 #include "scipp/neutron/convert.h"
 
 using namespace scipp;
-using namespace scipp::core;
 
 auto make_beamline(const scipp::index size) {
   Dataset beamline;

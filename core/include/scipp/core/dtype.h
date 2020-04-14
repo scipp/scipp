@@ -49,6 +49,14 @@ enum class DType {
   EigenVector3d,
   EigenQuaterniond,
   PyObject,
+  SpanDouble,
+  SpanFloat,
+  SpanInt64,
+  SpanInt32,
+  SpanConstDouble,
+  SpanConstFloat,
+  SpanConstInt64,
+  SpanConstInt32,
   Unknown
 };
 
@@ -69,6 +77,18 @@ template <>
 inline constexpr DType dtype<sparse_container<int32_t>> = DType::SparseInt32;
 template <>
 inline constexpr DType dtype<sparse_container<bool>> = DType::SparseBool;
+template <> inline constexpr DType dtype<span<double>> = DType::SpanDouble;
+template <> inline constexpr DType dtype<span<float>> = DType::SpanFloat;
+template <> inline constexpr DType dtype<span<int64_t>> = DType::SpanInt64;
+template <> inline constexpr DType dtype<span<int32_t>> = DType::SpanInt32;
+template <>
+inline constexpr DType dtype<span<const double>> = DType::SpanConstDouble;
+template <>
+inline constexpr DType dtype<span<const float>> = DType::SpanConstFloat;
+template <>
+inline constexpr DType dtype<span<const int64_t>> = DType::SpanConstInt64;
+template <>
+inline constexpr DType dtype<span<const int32_t>> = DType::SpanConstInt32;
 template <> inline constexpr DType dtype<dataset::DataArray> = DType::DataArray;
 template <> inline constexpr DType dtype<dataset::Dataset> = DType::Dataset;
 template <>

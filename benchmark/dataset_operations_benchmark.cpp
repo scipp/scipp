@@ -7,8 +7,7 @@
 
 #include "common.h"
 
-#include "boost/preprocessor.hpp"
-#include "scipp/core/dataset.h"
+#include "scipp/dataset/dataset.h"
 
 using namespace scipp;
 using namespace scipp::core;

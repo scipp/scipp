@@ -7,10 +7,10 @@
 
 #include "random.h"
 
-#include "scipp/core/dataset.h"
+#include "scipp/core/variable_operations.h"
+#include "scipp/dataset/dataset.h"
 
 using namespace scipp;
-using namespace scipp::core;
 
 auto make_2d_sparse_coord(const scipp::index size, const scipp::index count) {
   auto var = makeVariable<double>(Dims{Dim::X}, Shape{size});

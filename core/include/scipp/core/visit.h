@@ -14,29 +14,18 @@ namespace scipp::core {
 template <class T> class VariableConceptT;
 
 namespace visit_detail {
-template <class Variant> struct alternatives_are_const_ptr;
-template <class T, class... Ts>
-struct alternatives_are_const_ptr<std::variant<T, Ts...>> : std::true_type {};
-template <class T, class... Ts>
-struct alternatives_are_const_ptr<std::variant<std::unique_ptr<T>, Ts...>>
-    : std::false_type {};
-
-template <class Variant, class T>
-using alternative =
-    std::conditional_t<alternatives_are_const_ptr<std::decay_t<Variant>>::value,
-                       const VariableConceptT<T> *,
-                       std::unique_ptr<VariableConceptT<T>>>;
-
 template <template <class...> class Tuple, class... T, class... V>
-static constexpr bool holds_alternatives(Tuple<T...> &&,
-                                         const V &... v) noexcept {
-  return (std::holds_alternative<alternative<V, T>>(v) && ...);
+static bool holds_alternatives(Tuple<T...> &&, const V &... v) noexcept {
+  return ((dtype<T> == v.dtype()) && ...);
 }
 
 template <template <class...> class Tuple, class... T, class... V>
-static constexpr auto get_args(Tuple<T...> &&, V &&... v) noexcept {
+static auto get_args(Tuple<T...> &&, V &&... v) noexcept {
   return std::forward_as_tuple(
-      std::get<alternative<V, T>>(std::forward<V>(v))...);
+      dynamic_cast<
+          std::conditional_t<std::is_const_v<std::remove_reference_t<V>>,
+                             const VariableConceptT<T>, VariableConceptT<T>> &>(
+          v)...);
 }
 
 template <class... Tuple, class F, class... V>

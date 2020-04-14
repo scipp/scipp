@@ -392,18 +392,18 @@ template <class T> as_view(T &data, const Dimensions &dims)->as_view<T>;
 template <class Op> struct Transform {
   Op op;
   template <class... Ts> Variable operator()(Ts &&... handles) const {
-    const auto dims = merge(handles->dims()...);
-    using Out = decltype(maybe_eval(op(handles->values()[0]...)));
+    const auto dims = merge(handles.dims()...);
+    using Out = decltype(maybe_eval(op(handles.values()[0]...)));
     auto volume = dims.volume();
     Variable out =
-        (handles->hasVariances() || ...)
+        (handles.hasVariances() || ...)
             ? makeVariable<Out>(Dimensions{dims},
                                 Values(volume, default_init_elements),
                                 Variances(volume, default_init_elements))
             : makeVariable<Out>(Dimensions{dims},
                                 Values(volume, default_init_elements));
     auto &outT = static_cast<VariableConceptT<Out> &>(out.data());
-    do_transform(op, outT, std::tuple<>(), as_view{*handles, dims}...);
+    do_transform(op, outT, std::tuple<>(), as_view{handles, dims}...);
     return out;
   }
 };
@@ -411,7 +411,7 @@ template <class Op> Transform(Op)->Transform<Op>;
 
 template <class T, class Handle> struct optional_sparse;
 template <class T, class... Known>
-struct optional_sparse<T, VariableConceptHandle_impl<Known...>> {
+struct optional_sparse<T, std::tuple<Known...>> {
   using type = std::conditional_t<std::disjunction_v<std::is_same<T, Known>...>,
                                   std::tuple<T>, std::tuple<>>;
 };
@@ -428,18 +428,22 @@ struct tuple_cat<C<Ts1...>, C<Ts2...>, Ts3...>
 
 template <class T1, class T2, class Handle> struct optional_sparse_pair;
 template <class T1, class T2, class... Known>
-struct optional_sparse_pair<T1, T2, VariableConceptHandle_impl<Known...>> {
+struct optional_sparse_pair<T1, T2, std::tuple<Known...>> {
   using type =
       std::conditional_t<std::disjunction_v<std::is_same<T1, Known>...> &&
                              std::disjunction_v<std::is_same<T2, Known>...>,
                          std::tuple<std::pair<T1, T2>>, std::tuple<>>;
 };
+using supported_event_tupes =
+    std::tuple<double, float, int64_t, int32_t, bool, event_list<double>,
+               event_list<float>, event_list<int64_t>, event_list<int32_t>,
+               event_list<bool>>;
 template <class T>
 using optional_sparse_t =
-    typename optional_sparse<T, VariableConceptHandle>::type;
+    typename optional_sparse<T, supported_event_tupes>::type;
 template <class T1, class T2>
 using optional_sparse_pair_t =
-    typename optional_sparse_pair<T1, T2, VariableConceptHandle>::type;
+    typename optional_sparse_pair<T1, T2, supported_event_tupes>::type;
 
 /// Augment a tuple of types with the corresponding sparse types, if they exist.
 struct augment {
@@ -673,47 +677,47 @@ template <bool dry_run> struct in_place {
     Op op;
     template <class T> void operator()(T &&handle) const {
       using namespace detail;
-      auto view = as_view{*handle, handle->dims()};
-      if (handle->isContiguous())
-        do_transform_in_place(op, std::tuple<>{}, *handle);
+      auto view = as_view{handle, handle.dims()};
+      if (handle.isContiguous())
+        do_transform_in_place(op, std::tuple<>{}, handle);
       else
         do_transform_in_place(op, std::tuple<>{}, view);
     }
 
     template <class A, class B> void operator()(A &&a, B &&b) const {
       using namespace detail;
-      const auto &dimsA = a->dims();
-      const auto &dimsB = b->dims();
+      const auto &dimsA = a.dims();
+      const auto &dimsB = b.dims();
       if constexpr (std::is_same_v<typename std::remove_reference_t<decltype(
-                                       *a)>::value_type,
+                                       a)>::value_type,
                                    typename std::remove_reference_t<decltype(
-                                       *b)>::value_type>) {
-        if (a->valuesView(dimsA).overlaps(b->valuesView(dimsA))) {
+                                       b)>::value_type>) {
+        if (a.valuesView(dimsA).overlaps(b.valuesView(dimsA))) {
           // If there is an overlap between lhs and rhs we copy the rhs before
           // applying the operation.
-          const auto &b_ = b->copyT();
+          const auto &b_ = b.copyT();
           // Ensuring that we call exactly same instance of operator() to avoid
           // extra template instantiations, do not remove the static_cast.
-          return operator()(std::forward<A>(a), static_cast<B>(b_.get()));
+          return operator()(std::forward<A>(a), static_cast<B>(*b_));
         }
       }
 
-      if (a->isContiguous() && dimsA.contains(dimsB)) {
-        if (b->isContiguous() && dimsA.isContiguousIn(dimsB)) {
-          do_transform_in_place(op, std::tuple<>{}, *a, *b);
+      if (a.isContiguous() && dimsA.contains(dimsB)) {
+        if (b.isContiguous() && dimsA.isContiguousIn(dimsB)) {
+          do_transform_in_place(op, std::tuple<>{}, a, b);
         } else {
-          do_transform_in_place(op, std::tuple<>{}, *a, as_view{*b, dimsA});
+          do_transform_in_place(op, std::tuple<>{}, a, as_view{b, dimsA});
         }
       } else {
         // If LHS has fewer dimensions than RHS, e.g., for computing sum the
         // view for iteration is based on dimsB.
         const auto viewDims = dimsA.contains(dimsB) ? dimsA : dimsB;
-        auto a_view = as_view{*a, viewDims};
-        if (b->isContiguous() && dimsA.isContiguousIn(dimsB)) {
-          do_transform_in_place(op, std::tuple<>{}, a_view, *b);
+        auto a_view = as_view{a, viewDims};
+        if (b.isContiguous() && dimsA.isContiguousIn(dimsB)) {
+          do_transform_in_place(op, std::tuple<>{}, a_view, b);
         } else {
           do_transform_in_place(op, std::tuple<>{}, a_view,
-                                as_view{*b, viewDims});
+                                as_view{b, viewDims});
         }
       }
     }
@@ -721,10 +725,10 @@ template <bool dry_run> struct in_place {
     template <class T, class... Ts>
     void operator()(T &&out, Ts &&... handles) const {
       using namespace detail;
-      const auto dims = merge(out->dims(), handles->dims()...);
-      auto out_view = as_view{*out, dims};
+      const auto dims = merge(out.dims(), handles.dims()...);
+      auto out_view = as_view{out, dims};
       do_transform_in_place(op, std::tuple<>{}, out_view,
-                            as_view{*handles, dims}...);
+                            as_view{handles, dims}...);
     }
   };
   // gcc cannot deal with deduction guide for nested class => helper function.
@@ -743,20 +747,19 @@ template <bool dry_run> struct in_place {
       // they are elements of dense or sparse data), so we add overloads for
       // sparse data processing.
       if constexpr ((is_any_sparse<Ts>::value || ...)) {
-        visit_impl<Ts...>::apply(makeTransformInPlace(op), var.dataHandle(),
-                                 other.dataHandle()...);
+        visit_impl<Ts...>::apply(makeTransformInPlace(op), var.data(),
+                                 other.data()...);
       } else if constexpr (sizeof...(Other) > 1) {
         // No sparse data supported yet in this case.
         core::visit(std::tuple<Ts...>{})
-            .apply(makeTransformInPlace(op), var.dataHandle(),
-                   other.dataHandle()...);
+            .apply(makeTransformInPlace(op), var.data(), other.data()...);
       } else {
         // Note that if only one of the inputs is sparse it must be the one
         // being transformed in-place, so there are only three cases here.
         core::visit(augment::insert_sparse_in_place(std::tuple<Ts...>{}))
             .apply(makeTransformInPlace(
                        overloaded_sparse{op, TransformSparseInPlace{}}),
-                   var.dataHandle(), other.dataHandle()...);
+                   var.data(), other.data()...);
       }
     } catch (const std::bad_variant_access &) {
       throw except::TypeError("Cannot apply operation to item dtypes ", var,
@@ -855,11 +858,11 @@ Variable transform(std::tuple<Ts...> &&, Op op, const Vars &... vars) {
   Variable out;
   try {
     if constexpr ((is_any_sparse<Ts>::value || ...) || sizeof...(Vars) > 2) {
-      out = visit_impl<Ts...>::apply(Transform{op}, vars.dataHandle()...);
+      out = visit_impl<Ts...>::apply(Transform{op}, vars.data()...);
     } else {
       out = core::visit(augment::insert_sparse(std::tuple<Ts...>{}))
                 .apply(Transform{overloaded_sparse{op, TransformSparse{}}},
-                       vars.dataHandle()...);
+                       vars.data()...);
     }
   } catch (const std::bad_variant_access &) {
     throw except::TypeError("Cannot apply operation to item dtypes ", vars...);
