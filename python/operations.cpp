@@ -2,13 +2,12 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-
 #include "pybind11.h"
-#include "scipp/core/variable_operations.h"
 #include "scipp/dataset/dataset.h"
+#include "scipp/variable/variable_operations.h"
 
 using namespace scipp;
-using namespace scipp::core;
+using namespace scipp::variable;
 using namespace scipp::dataset;
 
 namespace py = pybind11;
