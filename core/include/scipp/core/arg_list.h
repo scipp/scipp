@@ -5,6 +5,8 @@
 #ifndef SCIPP_CORE_ARG_LIST_H
 #define SCIPP_CORE_ARG_LIST_H
 
+#include <tuple>
+
 namespace scipp::core {
 
 namespace element {
