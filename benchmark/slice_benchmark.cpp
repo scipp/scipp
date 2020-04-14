@@ -3,10 +3,9 @@
 /// @file
 #include <benchmark/benchmark.h>
 
-#include "scipp/core/dataset.h"
+#include "scipp/dataset/dataset.h"
 
 using namespace scipp;
-using namespace scipp::core;
 
 auto make_table() {
   const scipp::index nRow = 10;

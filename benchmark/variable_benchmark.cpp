@@ -4,9 +4,10 @@
 /// @author Simon Heybrock
 #include <benchmark/benchmark.h>
 
-#include "common.h"
+#include "variable_common.h"
 
 #include "scipp/core/variable.h"
+#include "scipp/core/variable_operations.h"
 
 using namespace scipp::core;
 using namespace scipp;
