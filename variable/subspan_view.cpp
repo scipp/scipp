@@ -2,10 +2,10 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#include "scipp/core/subspan_view.h"
+#include "scipp/variable/subspan_view.h"
 #include "scipp/core/except.h"
 
-namespace scipp::core {
+namespace scipp::variable {
 
 /// Helper returning vector of subspans with given length.
 template <class T>
@@ -63,7 +63,7 @@ template <class T, class Var> Variable subspan_view(Var &var, const Dim dim) {
 template <class... Ts, class... Args>
 auto invoke_subspan_view(const DType dtype, Args &&... args) {
   Variable ret;
-  if (!((scipp::core::dtype<Ts> == dtype
+  if (!((scipp::dtype<Ts> == dtype
              ? (ret = subspan_view<Ts>(std::forward<Args>(args)...), true)
              : false) ||
         ...))
@@ -89,4 +89,4 @@ Variable subspan_view(const VariableConstView &var, const Dim dim) {
   return subspan_view_impl(var, dim);
 }
 
-} // namespace scipp::core
+} // namespace scipp::variable

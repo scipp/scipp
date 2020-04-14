@@ -20,19 +20,30 @@
 ///    client-provided overload will match.
 ///
 /// @author Simon Heybrock
-#ifndef SCIPP_CORE_TRANSFORM_H
-#define SCIPP_CORE_TRANSFORM_H
+#pragma once
 
 #include "scipp/common/overloaded.h"
-#include "scipp/core/except.h"
+
 #include "scipp/core/parallel.h"
 #include "scipp/core/transform_common.h"
 #include "scipp/core/value_and_variance.h"
 #include "scipp/core/values_and_variances.h"
-#include "scipp/core/variable.h"
-#include "scipp/core/visit.h"
 
-namespace scipp::core {
+#include "scipp/variable/except.h"
+#include "scipp/variable/variable.h"
+#include "scipp/variable/visit.h"
+
+namespace scipp::core::detail {
+template <class T> struct element_type<ValuesAndVariances<event_list<T>>> {
+  using type = T;
+};
+template <class T>
+struct element_type<ValuesAndVariances<const event_list<T>>> {
+  using type = T;
+};
+} // namespace scipp::core::detail
+
+namespace scipp::variable {
 
 namespace detail {
 
@@ -50,7 +61,7 @@ template <class T>
 static constexpr decltype(auto) value_maybe_variance(T &&range,
                                                      const scipp::index i) {
   if constexpr (has_variances_v<std::decay_t<T>>) {
-    if constexpr (is_sparse_v<decltype(range.values.data()[0])>)
+    if constexpr (core::is_sparse_v<decltype(range.values.data()[0])>)
       return ValuesAndVariances{range.values.data()[i],
                                 range.variances.data()[i]};
     else
@@ -65,19 +76,18 @@ template <class T> struct is_eigen_type : std::false_type {};
 template <class T, int Rows, int Cols>
 struct is_eigen_type<Eigen::Matrix<T, Rows, Cols>> : std::true_type {};
 template <class T, int Rows, int Cols>
-struct is_eigen_type<sparse_container<Eigen::Matrix<T, Rows, Cols>>>
+struct is_eigen_type<event_list<Eigen::Matrix<T, Rows, Cols>>>
     : std::true_type {};
 template <class T>
 inline constexpr bool is_eigen_type_v = is_eigen_type<T>::value;
 
 namespace transform_detail {
 template <class T> struct is_sparse : std::false_type {};
-template <class T> struct is_sparse<sparse_container<T>> : std::true_type {};
+template <class T> struct is_sparse<event_list<T>> : std::true_type {};
 template <class T>
-struct is_sparse<ValuesAndVariances<sparse_container<T>>> : std::true_type {};
+struct is_sparse<ValuesAndVariances<event_list<T>>> : std::true_type {};
 template <class T>
-struct is_sparse<ValuesAndVariances<const sparse_container<T>>>
-    : std::true_type {};
+struct is_sparse<ValuesAndVariances<const event_list<T>>> : std::true_type {};
 template <class T> inline constexpr bool is_sparse_v = is_sparse<T>::value;
 } // namespace transform_detail
 
@@ -89,7 +99,7 @@ template <class T1, class T2>
 static auto check_and_get_size(const T1 &a, const T2 &b) {
   if constexpr (transform_detail::is_sparse_v<T1>) {
     if constexpr (transform_detail::is_sparse_v<T2>)
-      expect::sizeMatches(a, b);
+      core::expect::sizeMatches(a, b);
     return scipp::size(a);
   } else {
     return scipp::size(b);
@@ -105,7 +115,7 @@ template <class T, size_t... I>
 static constexpr void increment_impl(T &&indices,
                                      std::index_sequence<I...>) noexcept {
   auto inc = [](auto &&i) {
-    if constexpr (std::is_same_v<std::decay_t<decltype(i)>, ViewIndex>)
+    if constexpr (std::is_same_v<std::decay_t<decltype(i)>, core::ViewIndex>)
       i.increment();
     else
       ++i;
@@ -120,7 +130,7 @@ template <class T, size_t... I>
 static constexpr void advance_impl(T &&indices, const scipp::index distance,
                                    std::index_sequence<I...>) noexcept {
   auto inc = [distance](auto &&i) {
-    if constexpr (std::is_same_v<std::decay_t<decltype(i)>, ViewIndex>)
+    if constexpr (std::is_same_v<std::decay_t<decltype(i)>, core::ViewIndex>)
       i.setIndex(i.index() + distance);
     else
       i += distance;
@@ -135,18 +145,18 @@ static constexpr void advance(T &indices,
 }
 
 template <class T> static constexpr auto begin_index(T &&iterable) noexcept {
-  if constexpr (is_ElementArrayView_v<std::decay_t<T>>)
+  if constexpr (core::is_ElementArrayView_v<std::decay_t<T>>)
     return iterable.begin_index();
-  else if constexpr (detail::is_ValuesAndVariances_v<std::decay_t<T>>)
+  else if constexpr (is_ValuesAndVariances_v<std::decay_t<T>>)
     return begin_index(iterable.values);
   else
     return scipp::index(0);
 }
 
 template <class T> static constexpr auto end_index(T &&iterable) noexcept {
-  if constexpr (is_ElementArrayView_v<std::decay_t<T>>)
+  if constexpr (core::is_ElementArrayView_v<std::decay_t<T>>)
     return iterable.end_index();
-  else if constexpr (detail::is_ValuesAndVariances_v<std::decay_t<T>>)
+  else if constexpr (is_ValuesAndVariances_v<std::decay_t<T>>)
     return end_index(iterable.values);
   else
     return scipp::size(iterable);
@@ -213,7 +223,7 @@ static constexpr void call_in_place(Op &&op, const Indices &indices, Arg &&arg,
   //    copy, so the result has to be updated after the call to `op`.
   // Note that in the case of sparse data we actually have a recursive call to
   // transform_in_place_impl for the iteration over each individual
-  // sparse_container. This then falls into case 2 and thus the recursion
+  // event_list. This then falls into case 2 and thus the recursion
   // terminates with the second level.
   auto &&arg_ = value_maybe_variance(arg, i);
   call_in_place_impl(std::forward<Op>(op), indices,
@@ -244,19 +254,10 @@ static void transform_elements(Op op, Out &&out, Ts &&... other) {
       iter::advance(end, range.end());
       run(indices, std::get<0>(end));
     };
-    parallel::parallel_for(parallel::blocked_range(0, out.size()),
-                           run_parallel);
+    core::parallel::parallel_for(core::parallel::blocked_range(0, out.size()),
+                                 run_parallel);
   }
 }
-
-template <class T>
-struct element_type<ValuesAndVariances<sparse_container<T>>> {
-  using type = T;
-};
-template <class T>
-struct element_type<ValuesAndVariances<const sparse_container<T>>> {
-  using type = T;
-};
 
 /// Broadcast a constant to arbitrary size. Helper for TransformSparse.
 ///
@@ -298,8 +299,8 @@ template <class T> static constexpr auto maybe_eval(T &&_) {
 struct TransformSparse {
   template <class Op, class... Ts>
   constexpr auto operator()(const Op &op, const Ts &... args) const {
-    sparse_container<std::invoke_result_t<Op, element_type_t<Ts>...>> vals(
-        check_and_get_size(args...));
+    event_list<std::invoke_result_t<Op, core::detail::element_type_t<Ts>...>>
+        vals(check_and_get_size(args...));
     if constexpr ((has_variances_v<Ts> || ...)) {
       auto vars(vals);
       ValuesAndVariances out{vals, vars};
@@ -314,7 +315,7 @@ struct TransformSparse {
 
 template <class Op, class... Args>
 constexpr bool check_all_or_none_variances =
-    std::is_base_of_v<transform_flags::expect_all_or_none_have_variance_t,
+    std::is_base_of_v<core::transform_flags::expect_all_or_none_have_variance_t,
                       Op> &&
     !std::conjunction_v<is_ValuesAndVariances<std::decay_t<Args>>...> &&
     std::disjunction_v<is_ValuesAndVariances<std::decay_t<Args>>...>;
@@ -353,13 +354,14 @@ static void do_transform(Op op, Out &&out, Tuple &&processed, const Arg &arg,
                          const Args &... args) {
   auto vals = arg.values();
   if (arg.hasVariances()) {
-    if constexpr (std::is_base_of_v<transform_flags::expect_no_variance_arg_t<
-                                        std::tuple_size_v<Tuple>>,
-                                    Op>) {
+    if constexpr (std::is_base_of_v<
+                      core::transform_flags::expect_no_variance_arg_t<
+                          std::tuple_size_v<Tuple>>,
+                      Op>) {
       throw except::VariancesError("Variances in argument " +
                                    std::to_string(std::tuple_size_v<Tuple>) +
                                    " not supported.");
-    } else if constexpr (canHaveVariances<typename Arg::value_type>()) {
+    } else if constexpr (core::canHaveVariances<typename Arg::value_type>()) {
       auto vars = arg.variances();
       do_transform(
           op, std::forward<Out>(out),
@@ -367,9 +369,10 @@ static void do_transform(Op op, Out &&out, Tuple &&processed, const Arg &arg,
           args...);
     }
   } else {
-    if constexpr (std::is_base_of_v<transform_flags::expect_variance_arg_t<
-                                        std::tuple_size_v<Tuple>>,
-                                    Op>)
+    if constexpr (std::is_base_of_v<
+                      core::transform_flags::expect_variance_arg_t<
+                          std::tuple_size_v<Tuple>>,
+                      Op>)
       throw except::VariancesError("Variances missing in argument " +
                                    std::to_string(std::tuple_size_v<Tuple>) +
                                    " . Must be set.");
@@ -398,10 +401,10 @@ template <class Op> struct Transform {
     Variable out =
         (handles.hasVariances() || ...)
             ? makeVariable<Out>(Dimensions{dims},
-                                Values(volume, default_init_elements),
-                                Variances(volume, default_init_elements))
+                                Values(volume, core::default_init_elements),
+                                Variances(volume, core::default_init_elements))
             : makeVariable<Out>(Dimensions{dims},
-                                Values(volume, default_init_elements));
+                                Values(volume, core::default_init_elements));
     auto &outT = static_cast<VariableConceptT<Out> &>(out.data());
     do_transform(op, outT, std::tuple<>(), as_view{handles, dims}...);
     return out;
@@ -448,9 +451,8 @@ using optional_sparse_pair_t =
 /// Augment a tuple of types with the corresponding sparse types, if they exist.
 struct augment {
   template <class... Ts> static auto insert_sparse(const std::tuple<Ts...> &) {
-    return
-        typename tuple_cat<std::tuple<Ts...>,
-                           optional_sparse_t<sparse_container<Ts>>...>::type{};
+    return typename tuple_cat<std::tuple<Ts...>,
+                              optional_sparse_t<event_list<Ts>>...>::type{};
   }
 
   template <class... Ts>
@@ -463,18 +465,16 @@ struct augment {
   insert_sparse_in_place(const std::tuple<std::pair<First, Second>...> &) {
     return std::tuple_cat(
         std::tuple<std::pair<First, Second>...>{},
-        optional_sparse_pair_t<sparse_container<First>, Second>{}...,
-        optional_sparse_pair_t<sparse_container<First>,
-                               sparse_container<Second>>{}...);
+        optional_sparse_pair_t<event_list<First>, Second>{}...,
+        optional_sparse_pair_t<event_list<First>, event_list<Second>>{}...);
   }
   template <class... First, class... Second>
   static auto insert_sparse(const std::tuple<std::pair<First, Second>...> &) {
     return std::tuple_cat(
         std::tuple<std::pair<First, Second>...>{},
-        optional_sparse_pair_t<First, sparse_container<Second>>{}...,
-        optional_sparse_pair_t<sparse_container<First>, Second>{}...,
-        optional_sparse_pair_t<sparse_container<First>,
-                               sparse_container<Second>>{}...);
+        optional_sparse_pair_t<First, event_list<Second>>{}...,
+        optional_sparse_pair_t<event_list<First>, Second>{}...,
+        optional_sparse_pair_t<event_list<First>, event_list<Second>>{}...);
   }
 };
 
@@ -498,16 +498,15 @@ template <class Op, class SparseOp> struct overloaded_sparse : Op, SparseOp {
 template <class... Ts> overloaded_sparse(Ts...)->overloaded_sparse<Ts...>;
 
 template <class T>
-struct is_any_sparse
-    : std::conditional_t<is_sparse<T>::value, std::true_type, std::false_type> {
-};
+struct is_any_sparse : std::conditional_t<core::is_sparse<T>::value,
+                                          std::true_type, std::false_type> {};
 template <class... Ts>
 struct is_any_sparse<std::pair<Ts...>>
-    : std::conditional_t<(is_sparse<Ts>::value || ...), std::true_type,
+    : std::conditional_t<(core::is_sparse<Ts>::value || ...), std::true_type,
                          std::false_type> {};
 template <class... Ts>
 struct is_any_sparse<std::tuple<Ts...>>
-    : std::conditional_t<(is_sparse<Ts>::value || ...), std::true_type,
+    : std::conditional_t<(core::is_sparse<Ts>::value || ...), std::true_type,
                          std::false_type> {};
 
 } // namespace detail
@@ -536,8 +535,9 @@ template <bool dry_run> struct in_place {
     // For sparse data we can fail for any subitem if the sizes to not match.
     // To avoid partially modifying (and thus corrupting) data in an in-place
     // operation we need to do the checks before any modification happens.
-    if constexpr (is_sparse_v<typename std::decay_t<T>::value_type> ||
-                  (is_sparse_v<typename std::decay_t<Ts>::value_type> || ...)) {
+    if constexpr (core::is_sparse_v<typename std::decay_t<T>::value_type> ||
+                  (core::is_sparse_v<typename std::decay_t<Ts>::value_type> ||
+                   ...)) {
       const auto end = iter::end_index(arg);
       for (auto i = begin; std::get<0>(i) != end; iter::increment(i)) {
         call_in_place(
@@ -573,8 +573,8 @@ template <bool dry_run> struct in_place {
           iter::advance(end, range.end());
           run(indices, std::get<0>(end));
         };
-        parallel::parallel_for(parallel::blocked_range(0, arg.size()),
-                               run_parallel);
+        core::parallel::parallel_for(
+            core::parallel::blocked_range(0, arg.size()), run_parallel);
       }
     }
   }
@@ -594,16 +594,17 @@ template <bool dry_run> struct in_place {
                 "Expected either all or none of inputs to have variances.");
           } else {
             constexpr bool in_var_if_out_var = std::is_base_of_v<
-                transform_flags::expect_in_variance_if_out_variance_t, Op>;
+                core::transform_flags::expect_in_variance_if_out_variance_t,
+                Op>;
             constexpr bool arg_var =
                 is_ValuesAndVariances_v<std::decay_t<decltype(arg)>>;
             constexpr bool args_var =
                 (is_ValuesAndVariances_v<std::decay_t<decltype(args)>> || ...);
             if constexpr ((in_var_if_out_var ? arg_var == args_var
                                              : arg_var || !args_var) ||
-                          std::is_base_of_v<
-                              transform_flags::expect_no_variance_arg_t<0>,
-                              Op>) {
+                          std::is_base_of_v<core::transform_flags::
+                                                expect_no_variance_arg_t<0>,
+                                            Op>) {
               transform_in_place_impl(op, std::forward<decltype(arg)>(arg),
                                       std::forward<decltype(args)>(args)...);
             } else {
@@ -624,13 +625,14 @@ template <bool dry_run> struct in_place {
     using namespace detail;
     auto vals = arg.values();
     if (arg.hasVariances()) {
-      if constexpr (std::is_base_of_v<transform_flags::expect_no_variance_arg_t<
-                                          std::tuple_size_v<Tuple>>,
-                                      Op>) {
+      if constexpr (std::is_base_of_v<
+                        core::transform_flags::expect_no_variance_arg_t<
+                            std::tuple_size_v<Tuple>>,
+                        Op>) {
         throw except::VariancesError("Variances in argument " +
                                      std::to_string(std::tuple_size_v<Tuple>) +
                                      " not supported.");
-      } else if constexpr (canHaveVariances<typename Arg::value_type>()) {
+      } else if constexpr (core::canHaveVariances<typename Arg::value_type>()) {
         auto vars = arg.variances();
         do_transform_in_place(
             op,
@@ -639,9 +641,10 @@ template <bool dry_run> struct in_place {
             args...);
       }
     } else {
-      if constexpr (std::is_base_of_v<transform_flags::expect_variance_arg_t<
-                                          std::tuple_size_v<Tuple>>,
-                                      Op>) {
+      if constexpr (std::is_base_of_v<
+                        core::transform_flags::expect_variance_arg_t<
+                            std::tuple_size_v<Tuple>>,
+                        Op>) {
         throw except::VariancesError("Argument " +
                                      std::to_string(std::tuple_size_v<Tuple>) +
                                      " must have variances.");
@@ -741,7 +744,7 @@ template <bool dry_run> struct in_place {
                              const Other &... other) {
     using namespace detail;
     try {
-      // If a sparse_container<T> is specified explicitly as a type we assume
+      // If a event_list<T> is specified explicitly as a type we assume
       // that the caller provides a matching overload. Otherwise we assume the
       // provided operator is for individual elements (regardless of whether
       // they are elements of dense or sparse data), so we add overloads for
@@ -751,12 +754,12 @@ template <bool dry_run> struct in_place {
                                  other.data()...);
       } else if constexpr (sizeof...(Other) > 1) {
         // No sparse data supported yet in this case.
-        core::visit(std::tuple<Ts...>{})
+        variable::visit(std::tuple<Ts...>{})
             .apply(makeTransformInPlace(op), var.data(), other.data()...);
       } else {
         // Note that if only one of the inputs is sparse it must be the one
         // being transformed in-place, so there are only three cases here.
-        core::visit(augment::insert_sparse_in_place(std::tuple<Ts...>{}))
+        variable::visit(augment::insert_sparse_in_place(std::tuple<Ts...>{}))
             .apply(makeTransformInPlace(
                        overloaded_sparse{op, TransformSparseInPlace{}}),
                    var.data(), other.data()...);
@@ -860,7 +863,7 @@ Variable transform(std::tuple<Ts...> &&, Op op, const Vars &... vars) {
     if constexpr ((is_any_sparse<Ts>::value || ...) || sizeof...(Vars) > 2) {
       out = visit_impl<Ts...>::apply(Transform{op}, vars.data()...);
     } else {
-      out = core::visit(augment::insert_sparse(std::tuple<Ts...>{}))
+      out = variable::visit(augment::insert_sparse(std::tuple<Ts...>{}))
                 .apply(Transform{overloaded_sparse{op, TransformSparse{}}},
                        vars.data()...);
     }
@@ -910,6 +913,4 @@ template <class... Ts, class Op>
   return detail::transform(type_tuples<Ts...>(op), op, var1, var2, var3, var4);
 }
 
-} // namespace scipp::core
-
-#endif // SCIPP_CORE_TRANSFORM_H
+} // namespace scipp::variable

@@ -2,12 +2,11 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#ifndef SCIPP_CORE_VARIABLE_OPERATIONS_COMMON_H
-#define SCIPP_CORE_VARIABLE_OPERATIONS_COMMON_H
+#pragma once
 
-#include "scipp/core/variable.h"
+#include "scipp/variable/variable.h"
 
-namespace scipp::core {
+namespace scipp::variable {
 
 // Helpers for in-place reductions and reductions with groupby.
 void flatten_impl(const VariableView &summed, const VariableConstView &var,
@@ -35,6 +34,4 @@ Variable reduce_all_dims(const VariableConstView &var, const Op &op) {
   return out;
 }
 
-} // namespace scipp::core
-
-#endif // SCIPP_CORE_VARIABLE_OPERATIONS_COMMON_H
+} // namespace scipp::variable

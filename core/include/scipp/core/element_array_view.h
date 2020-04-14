@@ -2,8 +2,7 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#ifndef SCIPP_CORE_ELEMENT_ARRAY_VIEW_H
-#define SCIPP_CORE_ELEMENT_ARRAY_VIEW_H
+#pragma once
 
 #include <algorithm>
 
@@ -190,4 +189,6 @@ inline constexpr bool is_ElementArrayView_v = is_ElementArrayView<T>::value;
 
 } // namespace scipp::core
 
-#endif // SCIPP_CORE_ELEMENT_ARRAY_VIEW_H
+namespace scipp {
+using core::ElementArrayView;
+}

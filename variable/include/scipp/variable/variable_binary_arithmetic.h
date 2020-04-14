@@ -4,25 +4,25 @@
 /// @author Simon Heybrock
 #pragma once
 
-#include "scipp-core_export.h"
-#include "scipp/core/variable.h"
+#include "scipp-variable_export.h"
+#include "scipp/variable/variable.h"
 
-namespace scipp::core {
+namespace scipp::variable {
 
-SCIPP_CORE_EXPORT Variable operator+(const VariableConstView &a,
-                                     const VariableConstView &b);
-SCIPP_CORE_EXPORT Variable operator-(const VariableConstView &a,
-                                     const VariableConstView &b);
-SCIPP_CORE_EXPORT Variable operator*(const VariableConstView &a,
-                                     const VariableConstView &b);
-SCIPP_CORE_EXPORT Variable operator/(const VariableConstView &a,
-                                     const VariableConstView &b);
-SCIPP_CORE_EXPORT Variable operator|(const VariableConstView &a,
-                                     const VariableConstView &b);
-SCIPP_CORE_EXPORT Variable operator&(const VariableConstView &a,
-                                     const VariableConstView &b);
-SCIPP_CORE_EXPORT Variable operator^(const VariableConstView &a,
-                                     const VariableConstView &b);
+SCIPP_VARIABLE_EXPORT Variable operator+(const VariableConstView &a,
+                                         const VariableConstView &b);
+SCIPP_VARIABLE_EXPORT Variable operator-(const VariableConstView &a,
+                                         const VariableConstView &b);
+SCIPP_VARIABLE_EXPORT Variable operator*(const VariableConstView &a,
+                                         const VariableConstView &b);
+SCIPP_VARIABLE_EXPORT Variable operator/(const VariableConstView &a,
+                                         const VariableConstView &b);
+SCIPP_VARIABLE_EXPORT Variable operator|(const VariableConstView &a,
+                                         const VariableConstView &b);
+SCIPP_VARIABLE_EXPORT Variable operator&(const VariableConstView &a,
+                                         const VariableConstView &b);
+SCIPP_VARIABLE_EXPORT Variable operator^(const VariableConstView &a,
+                                         const VariableConstView &b);
 // Note: If the left-hand-side in an addition is a VariableView this simply
 // implicitly converts it to a Variable. A copy for the return value is required
 // anyway so this is a convenient way to avoid defining more overloads.
@@ -74,7 +74,7 @@ Variable operator/(const boost::units::quantity<T> &quantity, Variable a) {
          std::move(a);
 }
 
-} // namespace scipp::core
+} // namespace scipp::variable
 
 namespace scipp::units {
 template <typename T>

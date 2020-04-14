@@ -4,14 +4,14 @@
 /// @author Igor Gudich
 #include <cmath>
 
-#include "scipp/core/except.h"
-#include "scipp/core/tag_util.h"
-#include "scipp/core/transform.h"
-#include "scipp/core/variable.h"
+#include "scipp/variable/except.h"
+#include "scipp/variable/tag_util.h"
+#include "scipp/variable/transform.h"
+#include "scipp/variable/variable.h"
 
 #include "operators.h"
 
-namespace scipp::core {
+namespace scipp::variable {
 
 struct MakeVariableWithType {
   template <class T> struct Maker {
@@ -39,4 +39,4 @@ Variable astype(const VariableConstView &var, DType type) {
   return type == var.dtype() ? Variable(var)
                              : MakeVariableWithType::make(var, type);
 }
-} // namespace scipp::core
+} // namespace scipp::variable

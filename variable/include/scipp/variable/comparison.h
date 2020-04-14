@@ -1,17 +1,17 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
-#ifndef SCIPP_CORE_COMPARISON_H
-#define SCIPP_CORE_COMPARISON_H
+#ifndef SCIPP_VARIABLE_COMPARISON_H
+#define SCIPP_VARIABLE_COMPARISON_H
 
 #include "dtype.h"
-#include "scipp/core/string.h"
-#include "scipp/core/transform.h"
-#include "scipp/core/variable.h"
+#include "scipp/variable/string.h"
+#include "scipp/variable/transform.h"
+#include "scipp/variable/variable.h"
 
 #include <atomic>
 
-namespace scipp::core {
+namespace scipp::variable {
 
 /// Tests if the unit, values (and variances where appropriate) of two
 /// Variables are within an absolute tolerance.
@@ -60,6 +60,6 @@ bool is_approx(const VariableConstView &a, const VariableConstView &b,
   return !mismatch.test_and_set();
 }
 
-} // namespace scipp::core
+} // namespace scipp::variable
 
-#endif // SCIPP_CORE_COMPARISON_H
+#endif // SCIPP_VARIABLE_COMPARISON_H

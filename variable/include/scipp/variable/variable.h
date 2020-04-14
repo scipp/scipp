@@ -2,8 +2,8 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#ifndef SCIPP_CORE_VARIABLE_H
-#define SCIPP_CORE_VARIABLE_H
+#ifndef SCIPP_VARIABLE_VARIABLE_H
+#define SCIPP_VARIABLE_VARIABLE_H
 
 #include <optional>
 #include <string>
@@ -14,17 +14,19 @@
 
 #include "variable_concept.h"
 
-#include "scipp-core_export.h"
+#include "scipp-variable_export.h"
 #include "scipp/common/index.h"
 #include "scipp/common/span.h"
+#include "scipp/units/unit.h"
+
 #include "scipp/core/dimensions.h"
 #include "scipp/core/dtype.h"
 #include "scipp/core/element_array.h"
 #include "scipp/core/element_array_view.h"
 #include "scipp/core/slice.h"
 #include "scipp/core/tag_util.h"
-#include "scipp/core/variable_keyword_arg_constructor.h"
-#include "scipp/units/unit.h"
+
+#include "scipp/variable/variable_keyword_arg_constructor.h"
 
 namespace scipp::dataset {
 class DatasetConstView;
@@ -36,7 +38,7 @@ class DataArrayConstView;
 template <class T> typename T::view_type makeViewItem(T &);
 } // namespace scipp::dataset
 
-namespace scipp::core {
+namespace scipp::variable {
 
 namespace detail {
 std::vector<scipp::index> reorderedShape(const scipp::span<const Dim> &order,
@@ -46,7 +48,7 @@ void expect0D(const Dimensions &dims);
 
 template <class T> struct is_sparse_container : std::false_type {};
 template <class T>
-struct is_sparse_container<sparse_container<T>> : std::true_type {};
+struct is_sparse_container<event_list<T>> : std::true_type {};
 
 class Variable;
 class VariableConstView;
@@ -87,7 +89,7 @@ template <class T, class... Ts> Variable makeVariable(Ts &&... ts);
 /// Variable is a type-erased handle to any data structure representing a
 /// multi-dimensional array. It has a name, a unit, and a set of named
 /// dimensions.
-class SCIPP_CORE_EXPORT Variable {
+class SCIPP_VARIABLE_EXPORT Variable {
 public:
   using const_view_type = VariableConstView;
   using view_type = VariableView;
@@ -108,18 +110,18 @@ public:
 
   template <class T>
   static Variable create(const units::Unit &u, const Dims &d, const Shape &s,
-                         std::optional<detail::element_array<T>> &&val,
-                         std::optional<detail::element_array<T>> &&var);
+                         std::optional<element_array<T>> &&val,
+                         std::optional<element_array<T>> &&var);
 
   template <class T>
   static Variable create(const units::Unit &u, const Dimensions &d,
-                         std::optional<detail::element_array<T>> &&val,
-                         std::optional<detail::element_array<T>> &&var);
+                         std::optional<element_array<T>> &&val,
+                         std::optional<element_array<T>> &&var);
 
   template <class T>
   Variable(const Dimensions &dimensions, std::initializer_list<T> values_)
       : Variable(units::dimensionless, std::move(dimensions),
-                 detail::element_array<T>(values_.begin(), values_.end())) {}
+                 element_array<T>(values_.begin(), values_.end())) {}
 
   /// This is used to provide the constructors:
   /// Variable(DType, Dims, Shape, Unit, Values<T1>, Variances<T2>)
@@ -248,9 +250,8 @@ private:
   };
 
   template <class T>
-  const detail::element_array<T> &cast(const bool variances = false) const;
-  template <class T>
-  detail::element_array<T> &cast(const bool variances = false);
+  const element_array<T> &cast(const bool variances = false) const;
+  template <class T> element_array<T> &cast(const bool variances = false);
 
   units::Unit m_unit;
   VariableConceptHandle m_object;
@@ -300,12 +301,12 @@ Variable Variable::ConstructVariable<Ts...>::Maker<T>::apply(Ts &&... ts) {
 
 template <class... Ts>
 Variable Variable::ConstructVariable<Ts...>::make(Ts &&... args, DType type) {
-  return CallDType<double, float, int64_t, int32_t, bool, Eigen::Vector3d,
-                   Eigen::Quaterniond, std::string, event_list<double>,
-                   event_list<float>, event_list<int64_t>,
-                   event_list<int32_t>>::apply<Maker>(type,
-                                                      std::forward<Ts>(
-                                                          args)...);
+  return core::CallDType<double, float, int64_t, int32_t, bool, Eigen::Vector3d,
+                         Eigen::Quaterniond, std::string, event_list<double>,
+                         event_list<float>, event_list<int64_t>,
+                         event_list<int32_t>>::apply<Maker>(type,
+                                                            std::forward<Ts>(
+                                                                args)...);
 }
 
 template <class... Ts>
@@ -314,7 +315,7 @@ Variable::Variable(const DType &type, Ts &&... args)
           ConstructVariable<Ts...>::make(std::forward<Ts>(args)..., type)} {}
 
 /// Non-mutable view into (a subset of) a Variable.
-class SCIPP_CORE_EXPORT VariableConstView {
+class SCIPP_VARIABLE_EXPORT VariableConstView {
 public:
   using value_type = Variable;
 
@@ -423,7 +424,7 @@ protected:
  *
  * By inheriting from VariableConstView any code that works for
  * VariableConstView will automatically work also for this mutable variant.*/
-class SCIPP_CORE_EXPORT VariableView : public VariableConstView {
+class SCIPP_VARIABLE_EXPORT VariableView : public VariableConstView {
 public:
   VariableView() = default;
   VariableView(Variable &variable)
@@ -545,26 +546,21 @@ private:
   Variable *m_mutableVariable{nullptr};
 };
 
-SCIPP_CORE_EXPORT Variable copy(const VariableConstView &var);
+SCIPP_VARIABLE_EXPORT Variable copy(const VariableConstView &var);
 
-SCIPP_CORE_EXPORT bool is_events(const VariableConstView &var);
+SCIPP_VARIABLE_EXPORT bool is_events(const VariableConstView &var);
 
-} // namespace scipp::core
+} // namespace scipp::variable
 
 namespace scipp {
-using core::Dimensions;
-using core::Dims;
-using core::DType;
-using core::dtype;
-using core::event_list;
-using core::makeVariable;
-using core::Shape;
-using core::Slice;
-using core::Values;
-using core::Variable;
-using core::VariableConstView;
-using core::VariableView;
-using core::Variances;
+using variable::Dims;
+using variable::makeVariable;
+using variable::Shape;
+using variable::Values;
+using variable::Variable;
+using variable::VariableConstView;
+using variable::VariableView;
+using variable::Variances;
 } // namespace scipp
 
-#endif // SCIPP_CORE_VARIABLE_H
+#endif // SCIPP_VARIABLE_VARIABLE_H

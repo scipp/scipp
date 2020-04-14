@@ -4,13 +4,13 @@
 /// @author Simon Heybrock
 #include <cmath>
 
-#include "scipp/core/except.h"
-#include "scipp/core/transform.h"
-#include "scipp/core/variable.h"
+#include "scipp/variable/except.h"
+#include "scipp/variable/transform.h"
+#include "scipp/variable/variable.h"
 
 #include "operators.h"
 
-namespace scipp::core {
+namespace scipp::variable {
 
 static constexpr auto or_op_ = overloaded{
     [](const auto &var_, const auto &other_) -> bool { return var_ | other_; },
@@ -109,4 +109,4 @@ Variable Variable::operator~() const {
                         }});
 }
 
-} // namespace scipp::core
+} // namespace scipp::variable

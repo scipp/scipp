@@ -2,17 +2,17 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#include "scipp/core/variable_reduction.h"
-#include "scipp/core/dtype.h"
-#include "scipp/core/event.h"
-#include "scipp/core/except.h"
-#include "scipp/core/transform.h"
-#include "scipp/core/variable_binary_arithmetic.h"
+#include "scipp/variable/variable_reduction.h"
+#include "scipp/variable/dtype.h"
+#include "scipp/variable/event.h"
+#include "scipp/variable/except.h"
+#include "scipp/variable/transform.h"
+#include "scipp/variable/variable_binary_arithmetic.h"
 
 #include "operators.h"
 #include "variable_operations_common.h"
 
-namespace scipp::core {
+namespace scipp::variable {
 
 namespace flatten_detail {
 template <class T>
@@ -216,4 +216,4 @@ Variable any(const VariableConstView &var) {
   return reduce_all_dims(var, [](auto &&... _) { return any(_...); });
 }
 
-} // namespace scipp::core
+} // namespace scipp::variable

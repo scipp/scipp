@@ -136,4 +136,8 @@ Dimensions merge(const Dimensions &a, const Dimensions &b,
 
 } // namespace scipp::core
 
+namespace scipp {
+using core::Dimensions;
+}
+
 #endif // SCIPP_CORE_DIMENSIONS_H

@@ -5,6 +5,10 @@
 #ifndef SCIPP_CORE_TAG_UTIL_H
 #define SCIPP_CORE_TAG_UTIL_H
 
+#include <array>
+
+#include "scipp/core/dtype.h"
+
 namespace scipp::core {
 
 /**

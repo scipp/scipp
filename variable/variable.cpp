@@ -2,13 +2,13 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#include "scipp/core/variable.h"
+#include "scipp/variable/variable.h"
 
 #include "scipp/core/dtype.h"
-#include "scipp/core/except.h"
-#include "scipp/core/variable_concept.h"
+#include "scipp/variable/except.h"
+#include "scipp/variable/variable_concept.h"
 
-namespace scipp::core {
+namespace scipp::variable {
 
 std::vector<scipp::index>
 detail::reorderedShape(const scipp::span<const Dim> &order,
@@ -75,11 +75,11 @@ template <class T> VariableView VariableView::assign(const T &other) const {
   return *this;
 }
 
-template SCIPP_CORE_EXPORT VariableView
+template SCIPP_VARIABLE_EXPORT VariableView
 VariableView::assign(const Variable &) const;
-template SCIPP_CORE_EXPORT VariableView
+template SCIPP_VARIABLE_EXPORT VariableView
 VariableView::assign(const VariableConstView &) const;
-template SCIPP_CORE_EXPORT VariableView
+template SCIPP_VARIABLE_EXPORT VariableView
 VariableView::assign(const VariableView &) const;
 
 bool VariableConstView::operator==(const VariableConstView &other) const {
@@ -206,4 +206,4 @@ void expect0D(const Dimensions &dims) { expect::equals(dims, Dimensions()); }
 
 } // namespace detail
 
-} // namespace scipp::core
+} // namespace scipp::variable

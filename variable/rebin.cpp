@@ -2,13 +2,13 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock, Igor Gudich
-#include "scipp/core/apply.h"
-#include "scipp/core/except.h"
-#include "scipp/core/variable_binary_arithmetic.h"
-#include "scipp/core/variable_misc_operations.h"
 #include "scipp/units/except.h"
+#include "scipp/variable/apply.h"
+#include "scipp/variable/except.h"
+#include "scipp/variable/variable_binary_arithmetic.h"
+#include "scipp/variable/variable_misc_operations.h"
 
-namespace scipp::core {
+namespace scipp::variable {
 
 bool isBinEdge(const Dim dim, Dimensions edges, const Dimensions &toMatch) {
   edges.resize(dim, edges[dim] - 1);
@@ -123,7 +123,8 @@ Variable rebin(const VariableConstView &var, const Dim dim,
   // Rebin could also implemented for count-densities. However, it may be better
   // to avoid this since it increases complexity. Instead, densities could
   // always be computed on-the-fly for visualization, if required.
-  expect::unit_any_of(var, {units::counts, units::Unit(units::dimensionless)});
+  core::expect::unit_any_of(var,
+                            {units::counts, units::Unit(units::dimensionless)});
 
   auto do_rebin = [dim](auto &&outT, auto &&oldT, auto &&oldCoordT,
                         auto &&newCoordT) {
@@ -182,4 +183,4 @@ Variable rebin(const VariableConstView &var, const Dim dim,
   return rebinned;
 }
 
-} // namespace scipp::core
+} // namespace scipp::variable

@@ -4,10 +4,12 @@
 /// @author Simon Heybrock
 #include <cmath>
 
-#include "scipp/core/transform.h"
-#include "scipp/core/variable.h"
+#include "scipp/variable/transform.h"
+#include "scipp/variable/variable.h"
 
-namespace scipp::core {
+using namespace scipp::core;
+
+namespace scipp::variable {
 
 static constexpr auto plus_ = [](const auto a_, const auto b_) {
   return a_ + b_;
@@ -27,7 +29,7 @@ template <class T1, class T2> Variable plus(const T1 &a, const T2 &b) {
 }
 
 Variable Variable::operator-() const {
-  return transform<double, float, int64_t, Eigen::Vector3d>(
+  return transform<double, float, int64_t, int32_t, Eigen::Vector3d>(
       *this, [](const auto a) { return -a; });
 }
 
@@ -102,4 +104,4 @@ Variable operator/(const double a, const VariableConstView &b_view) {
   return b;
 }
 
-} // namespace scipp::core
+} // namespace scipp::variable

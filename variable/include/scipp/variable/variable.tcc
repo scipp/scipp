@@ -1,17 +1,17 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
-/// @author Owen Arnold
+/// @author Simon Heybrock
 
-#include "scipp/core/apply.h"
+#include "scipp/variable/apply.h"
 #include "scipp/core/dimensions.h"
 #include "scipp/core/element_array_view.h"
-#include "scipp/core/variable.h"
+#include "scipp/variable/variable.h"
 #include "scipp/units/unit.h"
 #include <numeric>
 #include <optional>
 
-namespace scipp::core {
+namespace scipp::variable {
 
 template <class T, class C> auto &requireT(C &concept) {
   try {
@@ -821,4 +821,4 @@ using scipp::core::detail::element_array;
   template ElementArrayView<__VA_ARGS__>                                       \
   VariableView::castVariances<__VA_ARGS__>() const;
 
-} // namespace scipp::core
+} // namespace scipp::variable

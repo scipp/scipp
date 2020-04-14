@@ -4,19 +4,19 @@
 /// @author Simon Heybrock
 #include <cmath>
 
-#include "scipp/core/apply.h"
 #include "scipp/core/dtype.h"
-#include "scipp/core/except.h"
-#include "scipp/core/transform.h"
-#include "scipp/core/variable_operations.h"
+#include "scipp/core/element_geometric_operations.h"
+#include "scipp/core/element_trigonometry_operations.h"
+#include "scipp/core/element_unary_operations.h"
+#include "scipp/variable/apply.h"
+#include "scipp/variable/except.h"
+#include "scipp/variable/transform.h"
+#include "scipp/variable/variable_operations.h"
 
-#include "element_geometric_operations.h"
-#include "element_trigonometry_operations.h"
-#include "element_unary_operations.h"
 #include "operators.h"
 #include "variable_operations_common.h"
 
-namespace scipp::core {
+namespace scipp::variable {
 
 // Example of a "derived" operation: Implementation does not require adding a
 // virtual function to VariableConcept.
@@ -324,4 +324,4 @@ VariableView rotate(const VariableConstView &pos, const VariableConstView &rot,
 
 } // namespace geometry
 
-} // namespace scipp::core
+} // namespace scipp::variable

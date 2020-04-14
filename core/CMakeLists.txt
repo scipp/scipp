@@ -3,7 +3,6 @@
 set(TARGET_NAME "scipp-core")
 set(INC_FILES
     include/scipp/core/aligned_allocator.h
-    include/scipp/core/apply.h
     include/scipp/core/dimensions.h
     include/scipp/core/dtype.h
     include/scipp/core/element_array.h

@@ -5,12 +5,12 @@
 #include <cmath>
 
 #include "scipp/common/constants.h"
-#include "scipp/core/transform.h"
-#include "scipp/core/variable_trigonometry.h"
+#include "scipp/variable/transform.h"
+#include "scipp/variable/variable_trigonometry.h"
 
 #include "element_trigonometry_operations.h"
 
-namespace scipp::core {
+namespace scipp::variable {
 
 const auto deg_to_rad =
     makeVariable<double>(Dims(), Shape(), units::Unit(units::rad / units::deg),
@@ -124,4 +124,4 @@ VariableView atan(const VariableConstView &var, const VariableView &out) {
   return out;
 }
 
-} // namespace scipp::core
+} // namespace scipp::variable

@@ -4,7 +4,7 @@
 /// @author Simon Heybrock
 #pragma once
 
-#include "scipp-core_export.h"
+#include "scipp-variable_export.h"
 #include "scipp/common/deep_ptr.h"
 #include "scipp/common/index.h"
 #include "scipp/common/span.h"
@@ -17,13 +17,13 @@
 #include <memory>
 #include <vector>
 
-namespace scipp::core {
+namespace scipp::variable {
 
 class Variable;
 class VariableConcept;
 template <class T> class VariableConceptT;
 
-class SCIPP_CORE_EXPORT VariableConceptHandle
+class SCIPP_VARIABLE_EXPORT VariableConceptHandle
     : public scipp::deep_ptr<VariableConcept> {
 public:
   using scipp::deep_ptr<VariableConcept>::deep_ptr;
@@ -41,7 +41,7 @@ public:
 /// This is the most generic representation for a multi-dimensional array of
 /// data. More operations are supportd by the partially-typed
 /// VariableConceptT.
-class SCIPP_CORE_EXPORT VariableConcept {
+class SCIPP_VARIABLE_EXPORT VariableConcept {
 public:
   VariableConcept(const Dimensions &dimensions);
   virtual ~VariableConcept() = default;
@@ -101,8 +101,8 @@ public:
   VariableConceptT(const Dimensions &dimensions)
       : VariableConcept(dimensions) {}
 
-  DType dtype() const noexcept override { return scipp::core::dtype<T>; }
-  static DType static_dtype() noexcept { return scipp::core::dtype<T>; }
+  DType dtype() const noexcept override { return scipp::dtype<T>; }
+  static DType static_dtype() noexcept { return scipp::dtype<T>; }
 
   virtual scipp::span<T> values() = 0;
   virtual scipp::span<T> values(const Dim dim, const scipp::index begin,
@@ -175,4 +175,4 @@ VariableConceptHandle::VariableConceptHandle(T object)
     : VariableConceptHandle(
           std::unique_ptr<VariableConcept>(std::move(object))) {}
 
-} // namespace scipp::core
+} // namespace scipp::variable

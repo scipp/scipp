@@ -4,10 +4,10 @@
 /// @author Simon Heybrock
 #include <string>
 
-#include "scipp/core/variable.h"
-#include "scipp/core/variable.tcc"
+#include "scipp/variable/variable.h"
+#include "scipp/variable/variable.tcc"
 
-namespace scipp::core {
+namespace scipp::variable {
 
 INSTANTIATE_VARIABLE(std::string)
 INSTANTIATE_VARIABLE(double)
@@ -23,4 +23,4 @@ INSTANTIATE_VARIABLE(sparse_container<int64_t>)
 INSTANTIATE_VARIABLE(sparse_container<int32_t>)
 INSTANTIATE_VARIABLE(sparse_container<bool>)
 
-} // namespace scipp::core
+} // namespace scipp::variable

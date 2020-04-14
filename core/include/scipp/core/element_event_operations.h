@@ -9,11 +9,10 @@
 
 #include "scipp/units/unit.h"
 
+#include "scipp/core/arg_list.h"
 #include "scipp/core/histogram.h"
 #include "scipp/core/transform_common.h"
 #include "scipp/core/value_and_variance.h"
-
-#include "arg_list.h"
 
 namespace scipp::core::element::event {
 
@@ -41,7 +40,7 @@ constexpr auto copy_if =
                  using VarT = std::decay_t<decltype(var)>;
                  using Events = event_list<typename VarT::value_type>;
                  const auto size = scipp::size(select);
-                 if constexpr (detail::is_ValuesAndVariances_v<VarT>) {
+                 if constexpr (is_ValuesAndVariances_v<VarT>) {
                    std::pair<Events, Events> out;
                    out.first.reserve(size);
                    out.second.reserve(size);

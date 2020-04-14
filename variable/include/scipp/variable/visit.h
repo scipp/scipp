@@ -9,7 +9,7 @@
 #include <utility>
 #include <variant>
 
-namespace scipp::core {
+namespace scipp::variable {
 
 template <class T> class VariableConceptT;
 
@@ -87,4 +87,4 @@ template <class... Ts> auto visit(const std::tuple<Ts...> &) {
   return visit_impl<Ts...>{};
 }
 
-} // namespace scipp::core
+} // namespace scipp::variable

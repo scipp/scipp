@@ -2,13 +2,13 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#ifndef SCIPP_CORE_TRANSFORM_SUBSPAN_H
-#define SCIPP_CORE_TRANSFORM_SUBSPAN_H
+#ifndef SCIPP_VARIABLE_TRANSFORM_SUBSPAN_H
+#define SCIPP_VARIABLE_TRANSFORM_SUBSPAN_H
 
-#include "scipp/core/subspan_view.h"
-#include "scipp/core/transform.h"
+#include "scipp/variable/subspan_view.h"
+#include "scipp/variable/transform.h"
 
-namespace scipp::core {
+namespace scipp::variable {
 
 namespace transform_subspan_detail {
 static constexpr auto erase = [](Dimensions dims, const Dim dim) {
@@ -92,6 +92,6 @@ template <class Types, class Op>
   return transform_subspan_impl<Types>(dim, size, op, var1, var2, var3);
 }
 
-} // namespace scipp::core
+} // namespace scipp::variable
 
-#endif // SCIPP_CORE_TRANSFORM_SUBSPAN_H
+#endif // SCIPP_VARIABLE_TRANSFORM_SUBSPAN_H

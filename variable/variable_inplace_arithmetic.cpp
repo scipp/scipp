@@ -2,12 +2,12 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#include "scipp/core/transform.h"
-#include "scipp/core/variable.h"
+#include "scipp/variable/transform.h"
+#include "scipp/variable/variable.h"
 
 #include "operators.h"
 
-namespace scipp::core {
+namespace scipp::variable {
 
 template <class T1, class T2> T1 &plus_equals(T1 &variable, const T2 &other) {
   // Note: This will broadcast/transpose the RHS if required. We do not support
@@ -67,4 +67,4 @@ VariableView VariableView::operator/=(const VariableConstView &other) const {
   return divide_equals(*this, other);
 }
 
-} // namespace scipp::core
+} // namespace scipp::variable

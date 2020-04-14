@@ -2,8 +2,7 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#ifndef SCIPP_CORE_ELEMENT_ARRAY_H
-#define SCIPP_CORE_ELEMENT_ARRAY_H
+#pragma once
 
 #include <algorithm>
 #include <memory>
@@ -11,7 +10,7 @@
 #include "scipp/common/index.h"
 #include "scipp/core/parallel.h"
 
-namespace scipp::core::detail {
+namespace scipp::core {
 
 /// Replacement for C++20 std::make_unique_default_init
 template <class T> auto make_unique_default_init(const scipp::index size) {
@@ -142,6 +141,8 @@ private:
   std::unique_ptr<T[]> m_data;
 };
 
-} // namespace scipp::core::detail
+} // namespace scipp::core
 
-#endif // SCIPP_CORE_ELEMENT_ARRAY_H
+namespace scipp {
+using core::element_array;
+}

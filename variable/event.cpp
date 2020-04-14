@@ -4,14 +4,14 @@
 /// @author Simon Heybrock
 #include <limits>
 
-#include "scipp/core/event.h"
-#include "scipp/core/subspan_view.h"
-#include "scipp/core/transform.h"
-#include "scipp/core/variable_operations.h"
+#include "scipp/core/element_event_operations.h"
 
-#include "element_event_operations.h"
+#include "scipp/variable/event.h"
+#include "scipp/variable/subspan_view.h"
+#include "scipp/variable/transform.h"
+#include "scipp/variable/variable_operations.h"
 
-namespace scipp::core {
+namespace scipp::variable {
 /// Return true if a variable contains events
 bool is_events(const VariableConstView &var) {
   const auto type = var.dtype();
@@ -24,14 +24,15 @@ bool is_events(const VariableConstView &var) {
 namespace event {
 
 void append(const VariableView &a, const VariableConstView &b) {
-  transform_in_place<pair_self_t<event_list<double>, event_list<float>,
-                                 event_list<int64_t>, event_list<int32_t>>>(
+  transform_in_place<
+      core::pair_self_t<event_list<double>, event_list<float>,
+                        event_list<int64_t>, event_list<int32_t>>>(
       a, b,
       overloaded{[](auto &a_, const auto &b_) {
                    a_.insert(a_.end(), b_.begin(), b_.end());
                  },
                  [](units::Unit &a_, const units::Unit &b_) {
-                   expect::equals(a_, b_);
+                   core::expect::equals(a_, b_);
                  }});
 }
 
@@ -59,13 +60,13 @@ Variable sizes(const VariableConstView &events) {
   // variances if any of the inputs has variances.
   auto sizes = makeVariable<scipp::index>(events.dims());
   accumulate_in_place<
-      pair_custom_t<std::pair<scipp::index, event_list<double>>>,
-      pair_custom_t<std::pair<scipp::index, event_list<float>>>,
-      pair_custom_t<std::pair<scipp::index, event_list<int64_t>>>,
-      pair_custom_t<std::pair<scipp::index, event_list<int32_t>>>>(
+      core::pair_custom_t<std::pair<scipp::index, event_list<double>>>,
+      core::pair_custom_t<std::pair<scipp::index, event_list<float>>>,
+      core::pair_custom_t<std::pair<scipp::index, event_list<int64_t>>>,
+      core::pair_custom_t<std::pair<scipp::index, event_list<int32_t>>>>(
       sizes, events,
       overloaded{[](scipp::index &c, const auto &list) { c = list.size(); },
-                 transform_flags::expect_no_variance_arg<0>});
+                 core::transform_flags::expect_no_variance_arg<0>});
   return sizes;
 }
 
@@ -76,18 +77,18 @@ Variable sizes(const VariableConstView &events) {
 /// without apparent negative effect on the other cases.
 void reserve(const VariableView &events, const VariableConstView &capacity) {
   transform_in_place<
-      pair_custom_t<std::pair<event_list<double>, scipp::index>>,
-      pair_custom_t<std::pair<event_list<float>, scipp::index>>,
-      pair_custom_t<std::pair<event_list<int64_t>, scipp::index>>,
-      pair_custom_t<std::pair<event_list<int32_t>, scipp::index>>>(
+      core::pair_custom_t<std::pair<event_list<double>, scipp::index>>,
+      core::pair_custom_t<std::pair<event_list<float>, scipp::index>>,
+      core::pair_custom_t<std::pair<event_list<int64_t>, scipp::index>>,
+      core::pair_custom_t<std::pair<event_list<int32_t>, scipp::index>>>(
       events, capacity,
       overloaded{[](auto &&sparse_, const scipp::index capacity_) {
                    if (capacity_ > 2 * scipp::size(sparse_))
                      return sparse_.reserve(capacity_);
                  },
-                 transform_flags::expect_no_variance_arg<1>,
+                 core::transform_flags::expect_no_variance_arg<1>,
                  [](const units::Unit &, const units::Unit &) {}});
 }
 
 } // namespace event
-} // namespace scipp::core
+} // namespace scipp::variable

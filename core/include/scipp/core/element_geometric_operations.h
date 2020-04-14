@@ -5,8 +5,8 @@
 #ifndef SCIPP_CORE_ELEMENT_GEOMETRIC_OPERATIONS_H
 #define SCIPP_CORE_ELEMENT_GEOMETRIC_OPERATIONS_H
 
-#include "arg_list.h"
 #include "scipp/common/overloaded.h"
+#include "scipp/core/arg_list.h"
 #include "scipp/core/transform_common.h"
 
 namespace scipp::core {

@@ -4,16 +4,16 @@
 /// @author Simon Heybrock
 #pragma once
 
-#include "scipp-core_export.h"
-#include "scipp/core/variable.h"
+#include "scipp-variable_export.h"
+#include "scipp/variable/variable.h"
 
-namespace scipp::core {
+namespace scipp::variable {
 
-SCIPP_CORE_EXPORT Variable operator|(const VariableConstView &a,
-                                     const VariableConstView &b);
-SCIPP_CORE_EXPORT Variable operator&(const VariableConstView &a,
-                                     const VariableConstView &b);
-SCIPP_CORE_EXPORT Variable operator^(const VariableConstView &a,
-                                     const VariableConstView &b);
+SCIPP_VARIABLE_EXPORT Variable operator|(const VariableConstView &a,
+                                         const VariableConstView &b);
+SCIPP_VARIABLE_EXPORT Variable operator&(const VariableConstView &a,
+                                         const VariableConstView &b);
+SCIPP_VARIABLE_EXPORT Variable operator^(const VariableConstView &a,
+                                         const VariableConstView &b);
 
-} // namespace scipp::core
+} // namespace scipp::variable

@@ -8,7 +8,7 @@
 
 #include <type_traits>
 
-namespace scipp::core {
+namespace scipp::variable {
 
 // The structs needed for keyword-like variable constructor are introduced
 // below. Tags are used to match the corresponding arguments treating the
@@ -147,24 +147,23 @@ public:
     constexpr bool hasVal = is_tag_in_pack<ValuesTag, Ts...>();
     constexpr bool hasVar = is_tag_in_pack<VariancesTag, Ts...>();
     constexpr bool constrVal =
-        std::is_constructible_v<detail::element_array<ElemT>, ValArgs...>;
+        std::is_constructible_v<element_array<ElemT>, ValArgs...>;
     constexpr bool constrVar =
-        std::is_constructible_v<detail::element_array<ElemT>, VarArgs...>;
+        std::is_constructible_v<element_array<ElemT>, VarArgs...>;
 
     if constexpr ((hasVal && !constrVal) || (hasVar && !constrVar) ||
                   (hasVar && !hasVal) ||
-                  (hasVar && !canHaveVariances<ElemT>())) {
+                  (hasVar && !core::canHaveVariances<ElemT>())) {
       throw_keyword_arg_constructor_bad_dtype(core::dtype<ElemT>);
       return VarT{}; // unreachable
     } else {
-      std::optional<detail::element_array<ElemT>> values;
+      std::optional<element_array<ElemT>> values;
       if constexpr (hasVal)
-        values = std::make_from_tuple<detail::element_array<ElemT>>(
-            std::move(valArgs));
-      std::optional<detail::element_array<ElemT>> variances;
+        values = std::make_from_tuple<element_array<ElemT>>(std::move(valArgs));
+      std::optional<element_array<ElemT>> variances;
       if constexpr (hasVar)
-        variances = std::make_from_tuple<detail::element_array<ElemT>>(
-            std::move(varArgs));
+        variances =
+            std::make_from_tuple<element_array<ElemT>>(std::move(varArgs));
       return VarT::template create<ElemT>(
           std::move(std::get<NonDataTypes>(nonData))..., std::move(values),
           std::move(variances));
@@ -192,6 +191,6 @@ private:
 };
 
 } // namespace detail
-} // namespace scipp::core
+} // namespace scipp::variable
 
 #endif // SCIPP_VARIABLE_KEYWORD_ARG_CONSTRUCTOR_H

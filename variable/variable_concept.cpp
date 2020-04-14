@@ -1,7 +1,7 @@
-#include "scipp/core/variable_concept.h"
-#include "scipp/core/dimensions.h"
+#include "scipp/variable/variable_concept.h"
+#include "scipp/variable/dimensions.h"
 
-namespace scipp::core {
+namespace scipp::variable {
 
 VariableConceptHandle::VariableConceptHandle(const VariableConceptHandle &other)
     : VariableConceptHandle(other ? other->clone() : VariableConceptHandle()) {}
@@ -27,4 +27,4 @@ operator=(const VariableConceptHandle &other) {
 VariableConcept::VariableConcept(const Dimensions &dimensions)
     : m_dimensions(dimensions) {}
 
-} // namespace scipp::core
+} // namespace scipp::variable
