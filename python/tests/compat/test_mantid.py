@@ -19,9 +19,8 @@ def mantid_is_available():
 
 
 @pytest.mark.skip(reason='Mantid tests are skipped by default, as they '
-                         'require too many resources to run on the build '
-                         'servers. To enable them, manually comment this skip '
-                         'decorator.')
+                  'require too many resources to run on the build  servers. '
+                  'To enable them, manually comment this skip decorator.')
 class TestMantidConversion(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
