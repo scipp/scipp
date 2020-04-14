@@ -71,6 +71,7 @@ Documentation
    visualization/plotting-overview
    visualization/plotting-1d-data
    visualization/plotting-2d-data
+   visualization/plotting-nd-data
    visualization/customizing-figures
 
 .. toctree::
