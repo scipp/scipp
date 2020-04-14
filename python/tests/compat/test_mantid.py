@@ -18,8 +18,10 @@ def mantid_is_available():
         return False
 
 
-@pytest.mark.skipif(not mantid_is_available(),
-                    reason='Mantid framework is unavailable')
+@pytest.mark.skip(reason='Mantid tests are skipped by default, as they '
+                         'require too many resources to run on the build '
+                         'servers. To enable them, manually comment this skip '
+                         'decorator.')
 class TestMantidConversion(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
