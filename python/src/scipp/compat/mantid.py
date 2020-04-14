@@ -423,15 +423,14 @@ def _convert_MatrixWorkspace_info(ws):
             make_run(ws),
             "sample":
             make_sample(ws),
-            "rotation":
-            rot,
-            "shape":
-            shp,
             "instrument-name":
             sc.Variable(
                 value=ws.componentInfo().name(ws.componentInfo().root()))
         },
     }
+    if 'spectrum' in spec_coord.dims:
+        info["attrs"].update({"rotation": rot, "shape": shp})
+
     if source_pos is not None:
         info["coords"]["source_position"] = source_pos
 
