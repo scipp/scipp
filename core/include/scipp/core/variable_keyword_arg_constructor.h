@@ -98,20 +98,18 @@ Variances(std::initializer_list<T>)
                 typename std::initializer_list<T>::iterator>;
 
 namespace detail {
-template <class Tag, class T> struct has_tag : std::is_base_of<Tag, T> {};
-
 template <class T, class... Args>
 constexpr bool is_type_in_pack_v =
     std::disjunction<std::is_same<T, std::decay_t<Args>>...>::value;
 
-template <class Tag, class... Args>
-constexpr bool is_tag_in_pack_v =
-    std::disjunction<has_tag<Tag, Args>...>::value;
+template <class Tag, class... Args> constexpr bool is_tag_in_pack() {
+  return (std::is_base_of_v<Tag, Args> || ...);
+}
 
 template <class T, class... Args> class Indexer {
   template <std::size_t... IS>
   static constexpr auto indexOfCorresponding_impl(std::index_sequence<IS...>) {
-    return ((has_tag<T, Args>::value * IS) + ...);
+    return ((std::is_base_of_v<T, Args> * IS) + ...);
   }
 
 public:
@@ -128,8 +126,8 @@ public:
   template <class... NonDataTypes> constexpr static bool checkArgTypesValid() {
     constexpr int nonDataTypesCount =
         (is_type_in_pack_v<NonDataTypes, Ts...> + ...);
-    constexpr bool hasVal = is_tag_in_pack_v<ValuesTag, Ts...>;
-    constexpr bool hasVar = is_tag_in_pack_v<VariancesTag, Ts...>;
+    constexpr bool hasVal = is_tag_in_pack<ValuesTag, Ts...>();
+    constexpr bool hasVar = is_tag_in_pack<VariancesTag, Ts...>();
     return nonDataTypesCount + hasVal + hasVar == sizeof...(Ts);
   }
 
@@ -146,23 +144,25 @@ public:
   static VarT construct(std::tuple<ValArgs...> &&valArgs,
                         std::tuple<VarArgs...> &&varArgs,
                         std::tuple<NonDataTypes...> &&nonData) {
-    constexpr bool hasVal = is_tag_in_pack_v<ValuesTag, Ts...>;
-    constexpr bool hasVar = is_tag_in_pack_v<VariancesTag, Ts...>;
+    constexpr bool hasVal = is_tag_in_pack<ValuesTag, Ts...>();
+    constexpr bool hasVar = is_tag_in_pack<VariancesTag, Ts...>();
     constexpr bool constrVal =
         std::is_constructible_v<detail::element_array<ElemT>, ValArgs...>;
     constexpr bool constrVar =
         std::is_constructible_v<detail::element_array<ElemT>, VarArgs...>;
 
-    if constexpr ((hasVal && !constrVal) || (hasVar && !constrVar)) {
+    if constexpr ((hasVal && !constrVal) || (hasVar && !constrVar) ||
+                  (hasVar && !hasVal) ||
+                  (hasVar && !canHaveVariances<ElemT>())) {
       throw_keyword_arg_constructor_bad_dtype(core::dtype<ElemT>);
       return VarT{}; // unreachable
     } else {
       std::optional<detail::element_array<ElemT>> values;
-      if (hasVal)
+      if constexpr (hasVal)
         values = std::make_from_tuple<detail::element_array<ElemT>>(
             std::move(valArgs));
       std::optional<detail::element_array<ElemT>> variances;
-      if (hasVar)
+      if constexpr (hasVar)
         variances = std::make_from_tuple<detail::element_array<ElemT>>(
             std::move(varArgs));
       return VarT::template create<ElemT>(
@@ -182,7 +182,7 @@ private:
 
   template <class Tag, class... Args>
   static auto extractTagged(std::tuple<Args...> &tp) {
-    if constexpr (!is_tag_in_pack_v<Tag, Ts...>)
+    if constexpr (!is_tag_in_pack<Tag, Ts...>())
       return std::tuple{};
     else {
       constexpr auto index = Indexer<Tag, Args...>::indexOfCorresponding();

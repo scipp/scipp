@@ -1085,7 +1085,7 @@ TEST(VariableTest, variances_unsupported_type_fail) {
       makeVariable<std::string>(Dims{Dim::X}, Shape{1}, Values{"a"}));
   ASSERT_THROW(makeVariable<std::string>(Dims{Dim::X}, Shape{1}, Values{"a"},
                                          Variances{"variances"}),
-               except::VariancesError);
+               except::TypeError);
 }
 
 TEST(VariableTest, construct_view_dims) {
