@@ -29,9 +29,9 @@ static bool holds_alternatives(Tuple<T...> &&, const V &... v) noexcept {
 template <template <class...> class Tuple, class... T, class... V>
 static auto get_args(Tuple<T...> &&, V &&... v) noexcept {
   return std::forward_as_tuple(
-      dynamic_cast<std::conditional_t<
-          std::is_const_v<std::remove_reference_t<V>>,
-          const VariableConceptT<T>, VariableConceptT<std::decay_t<T>>> &>(
+      dynamic_cast<
+          std::conditional_t<std::is_const_v<std::remove_reference_t<V>>,
+                             const VariableConceptT<T>, VariableConceptT<T>> &>(
           v)...);
 }
 
