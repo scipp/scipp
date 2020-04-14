@@ -5,11 +5,11 @@
 
 #include <benchmark/benchmark.h>
 
-#include "scipp/core/variable_operations.h"
 #include "scipp/dataset/groupby.h"
+#include "scipp/variable/variable_operations.h"
 
 using namespace scipp;
-using namespace scipp::core;
+using namespace scipp::variable;
 using namespace scipp::dataset;
 
 template <class T>

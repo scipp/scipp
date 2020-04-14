@@ -2,7 +2,7 @@
 
 #include <random>
 
-#include "../core/test/make_sparse.h"
+#include "../variable/test/make_sparse.h"
 
 template <typename T> struct GenerateSparse {
   auto operator()(int length) {

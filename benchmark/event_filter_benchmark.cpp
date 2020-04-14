@@ -5,7 +5,7 @@
 
 #include "random.h"
 
-#include "scipp/core/variable_operations.h"
+#include "scipp/variable/variable_operations.h"
 
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/event.h"
