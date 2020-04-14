@@ -1,9 +1,5 @@
 #include "scipp/core/variable_concept.h"
-
 #include "scipp/core/dimensions.h"
-
-#include <utility>
-#include <variant>
 
 namespace scipp::core {
 

@@ -15,7 +15,6 @@
 #include <Eigen/Dense>
 
 #include <memory>
-#include <variant>
 #include <vector>
 
 namespace scipp::core {

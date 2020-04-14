@@ -2,12 +2,12 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#ifndef SCIPP_CORE_VISIT_H
-#define SCIPP_CORE_VISIT_H
+#pragma once
 
 #include <memory>
 #include <tuple>
 #include <utility>
+#include <variant>
 
 namespace scipp::core {
 
@@ -88,5 +88,3 @@ template <class... Ts> auto visit(const std::tuple<Ts...> &) {
 }
 
 } // namespace scipp::core
-
-#endif // SCIPP_CORE_VISIT_H
