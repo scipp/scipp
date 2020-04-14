@@ -5,9 +5,7 @@ add_custom_target(all-benchmarks)
 
 add_executable(groupby_benchmark EXCLUDE_FROM_ALL groupby_benchmark.cpp)
 add_dependencies(all-benchmarks groupby_benchmark)
-target_link_libraries(
-  groupby_benchmark LINK_PRIVATE scipp-dataset benchmark
-)
+target_link_libraries(groupby_benchmark LINK_PRIVATE scipp-dataset benchmark)
 
 add_executable(slice_benchmark EXCLUDE_FROM_ALL slice_benchmark.cpp)
 add_dependencies(all-benchmarks slice_benchmark)
@@ -18,7 +16,8 @@ add_executable(
 )
 add_dependencies(all-benchmarks event_filter_benchmark)
 target_link_libraries(
-  event_filter_benchmark LINK_PRIVATE benchmark scipp-dataset scipp_test_helpers
+  event_filter_benchmark LINK_PRIVATE benchmark scipp-dataset
+  scipp_test_helpers
 )
 
 add_executable(histogram_benchmark EXCLUDE_FROM_ALL histogram_benchmark.cpp)
