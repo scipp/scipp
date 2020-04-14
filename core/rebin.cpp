@@ -125,13 +125,9 @@ Variable rebin(const VariableConstView &var, const Dim dim,
   // always be computed on-the-fly for visualization, if required.
   expect::unit_any_of(var, {units::counts, units::Unit(units::dimensionless)});
 
-  auto do_rebin = [dim](auto &&out, auto &&old, auto &&oldCoord_,
-                        auto &&newCoord_) {
+  auto do_rebin = [dim](auto &&outT, auto &&oldT, auto &&oldCoordT,
+                        auto &&newCoordT) {
     // Dimensions of *this and old are guaranteed to be the same.
-    const auto &oldT = *old;
-    const auto &oldCoordT = *oldCoord_;
-    const auto &newCoordT = *newCoord_;
-    auto &outT = *out;
     const auto &out_dims = outT.dims();
 
     // dimension along which the data is being rebinned

@@ -239,15 +239,6 @@ public:
   VariableConcept &data() && = delete;
   VariableConcept &data() & { return *m_object; }
 
-  /// Return variant of pointers to underlying data.
-  ///
-  /// This is intended for internal use (such as implementing transform
-  /// algorithms) and should not need to be used directly by higher-level code.
-  auto dataHandle() const && = delete;
-  auto dataHandle() const & { return m_object.variant(); }
-  const auto &dataHandle() && = delete;
-  const auto &dataHandle() & { return m_object.mutableVariant(); }
-
   void setVariances(Variable v);
 
 private:
@@ -386,14 +377,6 @@ public:
       return m_variable->data();
   }
 
-  auto dataHandle() const && = delete;
-  auto dataHandle() const & {
-    if (m_view)
-      return m_view.variant();
-    else
-      return m_variable->dataHandle();
-  }
-
   bool hasVariances() const noexcept { return m_variable->hasVariances(); }
 
   // Note: This return a view object (a ElementArrayView) that does reference
@@ -476,13 +459,6 @@ public:
     if (!m_view)
       return m_mutableVariable->data();
     return *m_view;
-  }
-
-  const auto &dataHandle() const && = delete;
-  const auto &dataHandle() const & {
-    if (!m_view)
-      return m_mutableVariable->dataHandle();
-    return m_view.mutableVariant();
   }
 
   // Note: No need to delete rvalue overloads here, see VariableConstView.

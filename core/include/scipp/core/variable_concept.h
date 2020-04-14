@@ -24,71 +24,24 @@ class Variable;
 class VariableConcept;
 template <class T> class VariableConceptT;
 
-template <class... Known> class VariableConceptHandle_impl {
+class SCIPP_CORE_EXPORT VariableConceptHandle {
 public:
-  using variant_t =
-      std::variant<const VariableConcept *, const VariableConceptT<Known> *...>;
+  VariableConceptHandle() = default;
+  template <class T> VariableConceptHandle(T object);
+  VariableConceptHandle(VariableConceptHandle &&) = default;
+  VariableConceptHandle(const VariableConceptHandle &other);
+  VariableConceptHandle &operator=(VariableConceptHandle &&) = default;
+  VariableConceptHandle &operator=(const VariableConceptHandle &other);
 
-  VariableConceptHandle_impl()
-      : m_object(std::unique_ptr<VariableConcept>(nullptr)) {}
-  template <class T> VariableConceptHandle_impl(T object) {
-    using value_t = typename T::element_type::value_type;
-    if constexpr ((std::is_same_v<value_t, Known> || ...))
-      m_object = std::unique_ptr<VariableConceptT<value_t>>(std::move(object));
-    else
-      m_object = std::unique_ptr<VariableConcept>(std::move(object));
-  }
-  VariableConceptHandle_impl(VariableConceptHandle_impl &&) = default;
-  VariableConceptHandle_impl(const VariableConceptHandle_impl &other)
-      : VariableConceptHandle_impl(other ? other->clone()
-                                         : VariableConceptHandle_impl()) {}
-  VariableConceptHandle_impl &
-  operator=(VariableConceptHandle_impl &&) = default;
-  VariableConceptHandle_impl &
-  operator=(const VariableConceptHandle_impl &other) {
-    if (*this && other) {
-      // Avoid allocation of new element_array if output is of correct shape.
-      // This yields a 5x speedup in assignment operations of variables.
-      auto &concept = **this;
-      auto &otherConcept = *other;
-      if (!concept.isView() && !otherConcept.isView() &&
-          concept.dtype() == otherConcept.dtype() &&
-          concept.dims() == otherConcept.dims() &&
-          concept.hasVariances() == otherConcept.hasVariances()) {
-        concept.copy(otherConcept, Dim::Invalid, 0, 0, 1);
-        return *this;
-      }
-    }
-    return *this = other ? other->clone() : VariableConceptHandle_impl();
-  }
-
-  explicit operator bool() const noexcept;
-  VariableConcept &operator*() const;
-  VariableConcept *operator->() const;
-
-  const auto &mutableVariant() const noexcept { return m_object; }
-
-  variant_t variant() const noexcept;
+  explicit operator bool() const noexcept { return m_object.operator bool(); }
+  VariableConcept &operator*() const { return *m_object; };
+  VariableConcept *operator->() const noexcept {
+    return m_object.operator->();
+  };
 
 private:
-  std::variant<std::unique_ptr<VariableConcept>,
-               std::unique_ptr<VariableConceptT<Known>>...>
-      m_object;
+  std::unique_ptr<VariableConcept> m_object;
 };
-
-// Any item type that is listed here explicitly can be used with the templated
-// `transform`, i.e., we can pass arbitrary functors/lambdas to process data.
-#define KNOWN                                                                  \
-  double, float, int64_t, int32_t, bool, Eigen::Vector3d, Eigen::Quaterniond,  \
-      sparse_container<double>, sparse_container<float>,                       \
-      sparse_container<int64_t>, sparse_container<int32_t>,                    \
-      sparse_container<bool>, span<const double>, span<double>,                \
-      span<const float>, span<float>, span<const int64_t>, span<int64_t>,      \
-      span<const int32_t>, span<int32_t>
-
-extern template class VariableConceptHandle_impl<KNOWN>;
-
-using VariableConceptHandle = VariableConceptHandle_impl<KNOWN>;
 
 /// Abstract base class for any data that can be held by Variable. Also used
 /// to hold views to data by (Const)VariableView. This is using so-called
@@ -225,6 +178,10 @@ public:
             const scipp::index offset, const scipp::index otherBegin,
             const scipp::index otherEnd) override;
 };
+
+template <class T>
+VariableConceptHandle::VariableConceptHandle(T object)
+    : m_object(std::unique_ptr<VariableConcept>(std::move(object))) {}
 
 } // namespace scipp::core
 
