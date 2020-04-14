@@ -63,8 +63,8 @@ TEST_F(TransformUnaryTest, elements_of_sparse) {
 }
 
 TEST_F(TransformUnaryTest, elements_of_sparse_with_variance) {
-  auto var = makeVariable<event_list<double>>(Dimensions{{Dim::Y}, {2}},
-                                              Values{}, Variances{});
+  auto var = makeVariable<event_list<double>>(Dimensions{Dim::Y, 2}, Values{},
+                                              Variances{});
   auto vals = var.values<event_list<double>>();
   vals[0] = {1, 2, 3};
   vals[1] = {4};
@@ -83,7 +83,7 @@ TEST_F(TransformUnaryTest, elements_of_sparse_with_variance) {
 }
 
 TEST_F(TransformUnaryTest, sparse_values_variances_size_fail) {
-  Dimensions dims({Dim::Y}, {2});
+  Dimensions dims(Dim::Y, 2);
   auto a = makeVariable<event_list<double>>(
       Dimensions(dims),
       Values{sparse_container<double>(2), sparse_container<double>(1)},
@@ -285,7 +285,7 @@ TEST_F(TransformBinaryTest, dense_sparse) {
 }
 
 TEST_F(TransformBinaryTest, sparse_size_fail) {
-  Dimensions dims({Dim::Y}, {2});
+  Dimensions dims(Dim::Y, 2);
   auto a = makeVariable<event_list<double>>(
       Dimensions(dims),
       Values{sparse_container<double>(2), sparse_container<double>(1)});
@@ -431,7 +431,7 @@ TEST(TransformTest, unary_on_sparse_container) {
 }
 
 TEST(TransformTest, unary_on_sparse_container_with_variance) {
-  Dimensions dims({Dim::Y}, {2});
+  Dimensions dims(Dim::Y, 2);
   auto a = makeVariable<event_list<double>>(
       Dimensions(dims),
       Values{sparse_container<double>(), sparse_container<double>()},
@@ -452,7 +452,7 @@ TEST(TransformTest, unary_on_sparse_container_with_variance) {
 }
 
 TEST(TransformTest, unary_on_sparse_container_with_variance_size_fail) {
-  Dimensions dims({Dim::Y}, {2});
+  Dimensions dims(Dim::Y, 2);
   auto a = makeVariable<event_list<double>>(
       Dimensions(dims),
       Values{sparse_container<double>(), sparse_container<double>()},
@@ -476,7 +476,7 @@ TEST(TransformTest, unary_on_sparse_container_with_variance_size_fail) {
 }
 
 TEST(TransformTest, binary_on_sparse_container_with_variance_size_fail) {
-  Dimensions dims({Dim::Y}, {2});
+  Dimensions dims(Dim::Y, 2);
   auto a = makeVariable<event_list<double>>(
       Dimensions(dims),
       Values{sparse_container<double>(), sparse_container<double>()},
@@ -502,7 +502,7 @@ TEST(TransformTest, binary_on_sparse_container_with_variance_size_fail) {
 
 TEST(TransformTest,
      binary_on_sparse_container_with_variance_accepts_size_mismatch) {
-  Dimensions dims({Dim::Y}, {2});
+  Dimensions dims(Dim::Y, 2);
   auto a = makeVariable<event_list<double>>(
       Dimensions(dims),
       Values{sparse_container<double>(), sparse_container<double>()},
@@ -528,7 +528,7 @@ TEST(TransformTest,
 class TransformTest_sparse_binary_values_variances_size_fail
     : public ::testing::Test {
 protected:
-  Dimensions dims{{Dim::Y}, {2}};
+  Dimensions dims{Dim::Y, 2};
   Variable a = makeVariable<event_list<double>>(
       Dimensions(dims),
       Values{sparse_container<double>(2), sparse_container<double>(2)},

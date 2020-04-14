@@ -34,7 +34,7 @@ TEST_F(CopyTest, data_array_drop_attrs) {
 
 TEST_F(CopyTest, dataset_drop_attrs) {
   // not implemented yet
-  EXPECT_ANY_THROW(copy(dataset, AttrPolicy::Drop));
+  EXPECT_ANY_THROW(auto _ = copy(dataset, AttrPolicy::Drop));
 }
 
 struct CopyOutArgTest : public CopyTest {

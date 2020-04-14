@@ -39,7 +39,7 @@ std::vector<std::pair<Dim, Variable>> DataArrayConstView::slice_bounds() const {
       combined_slices[dim] = {left, right};
     }
   }
-  for (const auto [dim, interval] : combined_slices) {
+  for (const auto &[dim, interval] : combined_slices) {
     const auto [left, right] = interval;
     const auto coord = m_dataset->coords()[dim];
     bounds.emplace_back(dim, concatenate(coord.slice({dim, left}),
