@@ -428,7 +428,7 @@ def _convert_MatrixWorkspace_info(ws):
                 value=ws.componentInfo().name(ws.componentInfo().root()))
         },
     }
-    if 'spectrum' in spec_coord.dims:
+    if not np.all(np.isnan(pos.values)):
         info["attrs"].update({"rotation": rot, "shape": shp})
 
     if source_pos is not None:
