@@ -12,8 +12,7 @@ At this point we support compile-time customization of:
 - Available units and unit combinations
 - Dimension labels
 - The underlying container used for sparse data.
-- New or custom types that can be stored as elements in a ``Variable``.
-- The built-in types that can be support in operations and by the ``transform`` algorithms.
+- New or custom types that can be stored as elements in a ``Variable`` and by the ``transform`` algorithms.
 
 Some of these are adaptable more readily than others, which require more in-depth changes.
 
@@ -71,15 +70,3 @@ Custom types
 
 To do.
 See https://github.com/scipp/scipp/issues/265.
-
-Built-in types
---------------
-
-The helper ``VariableConceptHandle`` in the header ``core/include/scipp/core/variable.h`` is used to list all types that can be supported in calls to ``transform`` (and its in-place variants) for ``Variable``.
-Essentially adding a type here will add another alternative to the variant in ``Variable`` that is used to hold data.
-
-**Note**
-
-It is *not* required to add all types here.
-``Variable`` can also hold arbitrary other types, as long as the relevant code has been instantiated.
-What is described above is only relevant if a higher level of integration (beyond simply holding data and supporting slicing) is required.
