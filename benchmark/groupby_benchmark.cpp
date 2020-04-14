@@ -5,10 +5,12 @@
 
 #include <benchmark/benchmark.h>
 
-#include "scipp/core/groupby.h"
+#include "scipp/core/variable_operations.h"
+#include "scipp/dataset/groupby.h"
 
 using namespace scipp;
 using namespace scipp::core;
+using namespace scipp::dataset;
 
 template <class T>
 auto make_1d_events_scalar_weights(const scipp::index size,
