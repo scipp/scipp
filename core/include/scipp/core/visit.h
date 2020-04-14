@@ -14,13 +14,6 @@ namespace scipp::core {
 template <class T> class VariableConceptT;
 
 namespace visit_detail {
-template <class Variant> struct alternatives_are_const_ptr;
-template <class T, class... Ts>
-struct alternatives_are_const_ptr<std::variant<T, Ts...>> : std::true_type {};
-template <class T, class... Ts>
-struct alternatives_are_const_ptr<std::variant<std::unique_ptr<T>, Ts...>>
-    : std::false_type {};
-
 template <template <class...> class Tuple, class... T, class... V>
 static bool holds_alternatives(Tuple<T...> &&, const V &... v) noexcept {
   return ((dtype<T> == v.dtype()) && ...);
