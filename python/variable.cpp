@@ -790,6 +790,32 @@ void init_variable(py::module &m) {
         :return: New variable containing the max values.
         :rtype: Variable)");
 
+  m.def("min",
+        [](const VariableConstView &self) {
+          return min(self);
+        },
+        py::arg("x"), py::call_guard<py::gil_scoped_release>(),
+        R"(
+        Element-wise min over all of the input's dimensions.
+
+        :param x: Data to reduce.
+        :seealso: :py:class:`scipp.max`
+        :return: New variable containing the min values.
+        :rtype: Variable)");
+
+  m.def("max",
+        [](const VariableConstView &self) {
+          return max(self);
+        },
+        py::arg("x"), py::call_guard<py::gil_scoped_release>(),
+        R"(
+        Element-wise max over all of the input's dimensions.
+
+        :param x: Data to reduce.
+        :seealso: :py:class:`scipp.min`
+        :return: New variable containing the max values.
+        :rtype: Variable)");
+
   m.def("nan_to_num",
         [](const VariableConstView &self,
            const std::optional<VariableConstView> &nan,

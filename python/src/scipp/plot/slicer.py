@@ -79,7 +79,7 @@ class Slicer:
 
             self.params["values"][name] = parse_params(params=values,
                                                        globs=globs,
-                                                       array=array.values)
+                                                       array=array.data)
 
             self.params["variances"][name] = {"show": False}
             if array.variances is not None:

@@ -4,6 +4,7 @@
 
 # Scipp imports
 from .. import config
+from .._scipp import core as sc
 
 # Other imports
 import numpy as np
@@ -59,18 +60,19 @@ def parse_params(params=None, defaults=None, globs=None, array=None):
         # TODO: possibly need to add a C++ method for finding min/max of
         # Variables to avoid the creation of a large array of bools in
         # np.ma.masked_invalid
-        if parsed["log"]:
-            with np.errstate(divide="ignore", invalid="ignore"):
-                subset = np.ma.masked_invalid(np.log10(array), copy=False)
-        else:
-            subset = np.ma.masked_invalid(array, copy=False)
+        # if parsed["log"]:
+        #     with np.errstate(divide="ignore", invalid="ignore"):
+        #         subset = np.ma.masked_invalid(np.log10(array), copy=False)
+        # else:
+        #     subset = np.ma.masked_invalid(array, copy=False)
         if parsed["vmin"] is None:
-            parsed["vmin"] = subset.min()
+            parsed["vmin"] = sc.min(array).value
         if parsed["vmax"] is None:
-            parsed["vmax"] = subset.max()
+            parsed["vmax"] = sc.max(array).value
         if parsed["log"]:
-            norm = LogNorm(vmin=10.0**parsed["vmin"],
-                           vmax=10.0**parsed["vmax"])
+            norm = LogNorm(vmin=parsed["vmin"], vmax=parsed["vmax"])
+            # norm = LogNorm(vmin=10.0**parsed["vmin"],
+            #                vmax=10.0**parsed["vmax"])
         else:
             norm = Normalize(vmin=parsed["vmin"], vmax=parsed["vmax"])
         parsed["norm"] = norm

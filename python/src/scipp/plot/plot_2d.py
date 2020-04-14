@@ -141,6 +141,8 @@ class Slicer2d(Slicer):
             self.cax["variances"] = cax[1]
             panels.append("variances")
 
+        print(self.params)
+
         extent_array = np.array(list(self.extent.values())).flatten()
         for key in panels:
             if self.params[key][self.name]["show"]:
