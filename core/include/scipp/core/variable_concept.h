@@ -2,10 +2,10 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#ifndef SCIPP_VARIABLE_CONCEPT_H_
-#define SCIPP_VARIABLE_CONCEPT_H_
+#pragma once
 
 #include "scipp-core_export.h"
+#include "scipp/common/deep_ptr.h"
 #include "scipp/common/index.h"
 #include "scipp/common/span.h"
 #include "scipp/core/dimensions.h"
@@ -24,23 +24,15 @@ class Variable;
 class VariableConcept;
 template <class T> class VariableConceptT;
 
-class SCIPP_CORE_EXPORT VariableConceptHandle {
+class SCIPP_CORE_EXPORT VariableConceptHandle
+    : public scipp::deep_ptr<VariableConcept> {
 public:
-  VariableConceptHandle() = default;
+  using scipp::deep_ptr<VariableConcept>::deep_ptr;
   template <class T> VariableConceptHandle(T object);
   VariableConceptHandle(VariableConceptHandle &&) = default;
   VariableConceptHandle(const VariableConceptHandle &other);
   VariableConceptHandle &operator=(VariableConceptHandle &&) = default;
   VariableConceptHandle &operator=(const VariableConceptHandle &other);
-
-  explicit operator bool() const noexcept { return m_object.operator bool(); }
-  VariableConcept &operator*() const { return *m_object; };
-  VariableConcept *operator->() const noexcept {
-    return m_object.operator->();
-  };
-
-private:
-  std::unique_ptr<VariableConcept> m_object;
 };
 
 /// Abstract base class for any data that can be held by Variable. Also used
@@ -181,8 +173,7 @@ public:
 
 template <class T>
 VariableConceptHandle::VariableConceptHandle(T object)
-    : m_object(std::unique_ptr<VariableConcept>(std::move(object))) {}
+    : VariableConceptHandle(
+          std::unique_ptr<VariableConcept>(std::move(object))) {}
 
 } // namespace scipp::core
-
-#endif // SCIPP_VARIABLE_CONCEPT_H_
