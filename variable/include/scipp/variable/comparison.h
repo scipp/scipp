@@ -4,7 +4,7 @@
 #ifndef SCIPP_VARIABLE_COMPARISON_H
 #define SCIPP_VARIABLE_COMPARISON_H
 
-#include "dtype.h"
+#include "scipp/core/dtype.h"
 #include "scipp/variable/string.h"
 #include "scipp/variable/transform.h"
 #include "scipp/variable/variable.h"
@@ -36,7 +36,7 @@ bool is_approx(const VariableConstView &a, const VariableConstView &b,
 
   Variable aa(a);
   std::atomic_flag mismatch = ATOMIC_FLAG_INIT;
-  transform_in_place<pair_self_t<T>>(
+  transform_in_place<core::pair_self_t<T>>(
       aa, b,
       scipp::overloaded{
           [&](const auto &va, const auto &vb) {

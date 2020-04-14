@@ -5,10 +5,9 @@
 #include "test_macros.h"
 
 #include "scipp/core/except.h"
-#include "scipp/core/subspan_view.h"
+#include "scipp/variable/subspan_view.h"
 
 using namespace scipp;
-using namespace scipp::core;
 
 class SubspanViewTest : public ::testing::Test {
 protected:

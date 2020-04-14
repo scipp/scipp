@@ -6,15 +6,14 @@
 #include "test_macros.h"
 
 #include "fix_typed_test_suite_warnings.h"
-#include "scipp/core/dimensions.h"
-#include "scipp/core/except.h"
-#include "scipp/core/variable.h"
-#include "scipp/core/variable_operations.h"
-
-#include "../element_unary_operations.h"
+#include "scipp/core/element_unary_operations.h"
+#include "scipp/variable/except.h"
+#include "scipp/variable/variable.h"
+#include "scipp/variable/variable_operations.h"
 
 using namespace scipp;
 using namespace scipp::core;
+using namespace scipp::variable;
 
 template <typename T>
 class VariableScalarOperatorTest : public ::testing::Test {

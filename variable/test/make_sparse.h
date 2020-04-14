@@ -4,27 +4,26 @@
 /// @author Simon Heybrock
 #pragma once
 
-#include "scipp/core/variable.h"
+#include "scipp/variable/variable.h"
 
 using namespace scipp;
-using namespace scipp::core;
 
 template <typename T>
 inline auto make_sparse_variable_with_variance(int length = 2) {
   Dimensions dims(Dim::Y, length);
-  return makeVariable<sparse_container<T>>(
-      Dimensions(dims), Values{sparse_container<T>(), sparse_container<T>()},
-      Variances{sparse_container<T>(), sparse_container<T>()});
+  return makeVariable<event_list<T>>(
+      Dimensions(dims), Values{event_list<T>(), event_list<T>()},
+      Variances{event_list<T>(), event_list<T>()});
 }
 
 template <typename T> inline auto make_sparse_variable(int length = 2) {
   Dimensions dims(Dim::Y, length);
-  return makeVariable<sparse_container<T>>(Dimensions(dims));
+  return makeVariable<event_list<T>>(Dimensions(dims));
 }
 
 template <typename T>
 inline void set_sparse_values(Variable &var,
-                              const std::vector<sparse_container<T>> &data) {
+                              const std::vector<event_list<T>> &data) {
   auto vals = var.values<event_list<T>>();
   for (scipp::index i = 0; i < scipp::size(data); ++i)
     vals[i] = data[i];
@@ -32,7 +31,7 @@ inline void set_sparse_values(Variable &var,
 
 template <typename T>
 inline void set_sparse_variances(Variable &var,
-                                 const std::vector<sparse_container<T>> &data) {
+                                 const std::vector<event_list<T>> &data) {
   auto vals = var.variances<event_list<T>>();
   for (scipp::index i = 0; i < scipp::size(data); ++i)
     vals[i] = data[i];

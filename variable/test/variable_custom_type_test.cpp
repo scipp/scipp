@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
-#include "scipp/core/dimensions.h"
-#include "scipp/core/variable.tcc"
+#include "scipp/variable/variable.tcc"
 #include <gtest/gtest.h>
 
 using namespace scipp;
-using namespace scipp::core;
+using namespace scipp::variable;
 
 struct CustomType {
   CustomType() {}

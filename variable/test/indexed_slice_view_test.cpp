@@ -4,11 +4,11 @@
 
 #include "test_macros.h"
 
-#include "scipp/core/indexed_slice_view.h"
-#include "scipp/core/variable.h"
+#include "scipp/variable/indexed_slice_view.h"
+#include "scipp/variable/variable.h"
 
 using namespace scipp;
-using namespace scipp::core;
+using namespace scipp::variable;
 
 TEST(IndexedSliceViewTest, variable) {
   const auto var =

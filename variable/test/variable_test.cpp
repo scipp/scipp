@@ -5,14 +5,12 @@
 
 #include "test_macros.h"
 
-#include "scipp/core/dimensions.h"
-#include "scipp/core/event.h"
 #include "scipp/core/except.h"
-#include "scipp/core/variable.h"
-#include "scipp/core/variable_operations.h"
+#include "scipp/variable/event.h"
+#include "scipp/variable/variable.h"
+#include "scipp/variable/variable_operations.h"
 
 using namespace scipp;
-using namespace scipp::core;
 
 TEST(Variable, construct_default) {
   ASSERT_NO_THROW(Variable{});
@@ -869,8 +867,9 @@ TEST(VariableTest, rename) {
 TEST(Variable, access_typed_view) {
   auto var = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 3},
                                   Values{1, 2, 3, 4, 5, 6});
-  const auto values = dynamic_cast<const VariableConceptT<double> &>(var.data())
-                          .valuesView({{Dim::Y, 2}, {Dim::Z, 4}, {Dim::X, 3}});
+  const auto values =
+      dynamic_cast<const variable::VariableConceptT<double> &>(var.data())
+          .valuesView({{Dim::Y, 2}, {Dim::Z, 4}, {Dim::X, 3}});
   ASSERT_EQ(values.size(), 24);
 
   for (const auto z : {0, 1, 2, 3}) {
@@ -890,8 +889,9 @@ TEST(Variable, access_typed_view_edges) {
   // is in direction Y:
   auto var = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 3},
                                   Values{1, 2, 3, 4, 5, 6});
-  const auto values = dynamic_cast<const VariableConceptT<double> &>(var.data())
-                          .valuesView({{Dim::Y, 2}, {Dim::Z, 4}, {Dim::X, 2}});
+  const auto values =
+      dynamic_cast<const variable::VariableConceptT<double> &>(var.data())
+          .valuesView({{Dim::Y, 2}, {Dim::Z, 4}, {Dim::X, 2}});
   ASSERT_EQ(values.size(), 16);
 
   for (const auto z : {0, 1, 2, 3}) {
@@ -1116,7 +1116,7 @@ TYPED_TEST(AsTypeTest, variable_astype) {
   using T2 = typename TypeParam::second_type;
   Variable var1;
   Variable var2;
-  if constexpr (canHaveVariances<T1>() && canHaveVariances<T2>()) {
+  if constexpr (core::canHaveVariances<T1>() && core::canHaveVariances<T2>()) {
     var1 = makeVariable<T1>(Values{1}, Variances{1});
     var2 = makeVariable<T2>(Values{1}, Variances{1});
     ASSERT_EQ(astype(var1, core::dtype<T2>), var2);

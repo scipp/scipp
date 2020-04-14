@@ -3,10 +3,9 @@
 #include <gtest/gtest.h>
 
 #include "scipp/core/except.h"
-#include "scipp/core/variable_reduction.h"
+#include "scipp/variable/variable_reduction.h"
 
 using namespace scipp;
-using namespace scipp::core;
 
 TEST(ReduceLogicalTest, fails) {
   const auto bad = makeVariable<int32_t>(Dims{Dim::X}, Shape{2});

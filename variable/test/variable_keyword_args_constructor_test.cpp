@@ -6,10 +6,10 @@
 #include "test_macros.h"
 
 #include "scipp/core/except.h"
-#include "scipp/core/variable.h"
+#include "scipp/variable/variable.h"
 
 using namespace scipp;
-using namespace scipp::core;
+using namespace scipp::variable;
 
 TEST(CreateVariableTest, from_single_value) {
   auto var = makeVariable<float>(Values{0}, Variances{1});
@@ -55,8 +55,8 @@ TEST(CreateVariableTest, construct_sparse) {
   auto dimensions = Dimensions{Dim::X, 2};
   makeVariable<event_list<double>>(
       Dimensions{dimensions},
-      Values{sparse_container<double>(), sparse_container<double>()},
-      Variances{sparse_container<double>(), sparse_container<double>()});
+      Values{event_list<double>(), event_list<double>()},
+      Variances{event_list<double>(), event_list<double>()});
 }
 
 TEST(VariableUniversalConstructorTest, dimensions_unit_basic) {
@@ -97,7 +97,7 @@ TEST(VariableUniversalConstructorTest, type_constructors_mix) {
 }
 
 TEST(VariableUniversalConstructorTest, no_copy_on_matched_types) {
-  using namespace scipp::core::detail;
+  using namespace scipp::variable::detail;
   auto values = element_array<double>{1.0, 4.5, 2.7, 5.0, 7.0, 6.7};
   auto variances = element_array<double>{1.0, 4.5, 2.7, 5.0, 7.0, 6.7};
   auto valuesRef = element_array<double>(values);
@@ -118,7 +118,7 @@ TEST(VariableUniversalConstructorTest, no_copy_on_matched_types) {
 }
 
 TEST(VariableUniversalConstructorTest, convertable_types) {
-  using namespace scipp::core::detail;
+  using namespace scipp::variable::detail;
   auto data = std::vector<double>{1.0, 4.5, 2.7, 5.0, 7.0, 6.7};
   auto variable =
       Variable(dtype<float>, Dims{Dim::X, Dim::Y}, Shape{2, 3}, Values(data),

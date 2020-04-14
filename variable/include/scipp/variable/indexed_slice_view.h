@@ -2,8 +2,7 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#ifndef SCIPP_CORE_INDEXED_SLICE_VIEW_H
-#define SCIPP_CORE_INDEXED_SLICE_VIEW_H
+#pragma once
 
 #include <vector>
 
@@ -11,9 +10,9 @@
 
 #include <scipp/units/unit.h>
 
-#include "scipp/core/variable_misc_operations.h"
+#include "scipp/variable/variable_misc_operations.h"
 
-namespace scipp::core {
+namespace scipp::variable {
 
 /// Index-based view of slices of a variable, data array, or dataset.
 ///
@@ -70,6 +69,4 @@ template <class T> auto concatenate(const IndexedSliceView<T> &view) {
   return out;
 }
 
-} // namespace scipp::core
-
-#endif // SCIPP_CORE_INDEXED_SLICE_VIEW_H
+} // namespace scipp::variable

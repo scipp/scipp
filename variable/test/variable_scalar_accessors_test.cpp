@@ -3,11 +3,10 @@
 #include <gtest/gtest.h>
 
 #include "scipp/core/except.h"
-#include "scipp/core/variable.h"
+#include "scipp/variable/variable.h"
 #include "test_macros.h"
 
 using namespace scipp;
-using namespace scipp::core;
 
 template <typename T>
 class Variable_scalar_accessors_mutate : public ::testing::Test {

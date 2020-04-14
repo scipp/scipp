@@ -3,11 +3,10 @@
 #include <gtest/gtest.h>
 
 #include "scipp/core/except.h"
-#include "scipp/core/variable.h"
-#include "scipp/core/variable_reduction.h"
+#include "scipp/variable/variable.h"
+#include "scipp/variable/variable_reduction.h"
 
 using namespace scipp;
-using namespace scipp::core;
 
 TEST(ReduceTest, min_max_fails) {
   const auto bad = makeVariable<double>(Dims{Dim::X}, Shape{2});

@@ -3,10 +3,10 @@
 #include "test_macros.h"
 #include <gtest/gtest.h>
 
-#include "scipp/core/comparison.h"
+#include "scipp/variable/comparison.h"
 
 using namespace scipp;
-using namespace scipp::core;
+using namespace scipp::variable;
 using namespace scipp::units;
 
 TEST(ComparisonTest, variable_equal) {

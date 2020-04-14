@@ -3,10 +3,10 @@
 #include <gtest/gtest.h>
 
 #include "scipp/common/constants.h"
-#include "scipp/core/variable_trigonometry.h"
+#include "scipp/variable/variable_trigonometry.h"
 
 using namespace scipp;
-using namespace scipp::core;
+using namespace scipp::variable;
 using namespace scipp::units;
 
 TEST(VariableTrigonometryTest, sin_rad) {
