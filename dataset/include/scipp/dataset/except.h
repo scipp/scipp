@@ -12,6 +12,7 @@
 #include "scipp-dataset_export.h"
 #include "scipp/core/except.h"
 #include "scipp/dataset/string.h"
+#include "scipp/variable/except.h"
 
 namespace scipp::dataset {
 

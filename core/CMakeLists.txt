@@ -8,7 +8,6 @@ set(INC_FILES
     include/scipp/core/element_array.h
     include/scipp/core/element_array_view.h
     include/scipp/core/histogram.h
-    include/scipp/core/indexed_slice_view.h
     include/scipp/core/memory_pool.h
     include/scipp/core/parallel-fallback.h
     include/scipp/core/parallel-tbb.h

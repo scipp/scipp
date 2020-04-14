@@ -7,8 +7,8 @@
 #include "test_macros.h"
 
 #include "scipp/core/event.h"
-#include "scipp/core/variable.h"
 #include "scipp/dataset/event.h"
+#include "scipp/variable/variable.h"
 
 using namespace scipp;
 using namespace scipp::dataset;

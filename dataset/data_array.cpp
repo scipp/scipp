@@ -4,11 +4,12 @@
 /// @author Simon Heybrock
 #include "scipp/common/numeric.h"
 
-#include "scipp/core/event.h"
 #include "scipp/core/histogram.h"
-#include "scipp/core/subspan_view.h"
-#include "scipp/core/transform.h"
-#include "scipp/core/variable_operations.h"
+
+#include "scipp/variable/event.h"
+#include "scipp/variable/subspan_view.h"
+#include "scipp/variable/transform.h"
+#include "scipp/variable/variable_operations.h"
 
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/event.h"
@@ -191,7 +192,7 @@ Variable sparse_dense_op_impl(const VariableConstView &sparseCoord_,
                               const VariableConstView &weights_,
                               const Dim dim) {
   using namespace sparse_dense_op_impl_detail;
-  return core::transform<
+  return variable::transform<
       std::tuple<args<double, double, double>, args<float, double, double>,
                  args<float, float, float>, args<double, float, float>>>(
       sparseCoord_, subspan_view(edges_, dim), subspan_view(weights_, dim),

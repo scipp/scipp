@@ -4,10 +4,12 @@
 /// @author Simon Heybrock
 #include <numeric>
 
-#include "scipp/core/indexed_slice_view.h"
 #include "scipp/core/tag_util.h"
 #include "scipp/dataset/except.h"
 #include "scipp/dataset/sort.h"
+#include "scipp/variable/indexed_slice_view.h"
+
+using scipp::variable::IndexedSliceView;
 
 namespace scipp::dataset {
 
@@ -36,13 +38,13 @@ static auto makePermutation(const VariableConstView &key) {
 /// Return a Variable sorted based on key.
 Variable sort(const VariableConstView &var, const VariableConstView &key) {
   return concatenate(
-      core::IndexedSliceView{var, key.dims().inner(), makePermutation(key)});
+      IndexedSliceView{var, key.dims().inner(), makePermutation(key)});
 }
 
 /// Return a DataArray sorted based on key.
 DataArray sort(const DataArrayConstView &array, const VariableConstView &key) {
   return concatenate(
-      core::IndexedSliceView{array, key.dims().inner(), makePermutation(key)});
+      IndexedSliceView{array, key.dims().inner(), makePermutation(key)});
 }
 
 /// Return a DataArray sorted based on coordinate.
@@ -52,8 +54,8 @@ DataArray sort(const DataArrayConstView &array, const Dim &key) {
 
 /// Return a Dataset sorted based on key.
 Dataset sort(const DatasetConstView &dataset, const VariableConstView &key) {
-  return concatenate(core::IndexedSliceView{dataset, key.dims().inner(),
-                                            makePermutation(key)});
+  return concatenate(
+      IndexedSliceView{dataset, key.dims().inner(), makePermutation(key)});
 }
 
 /// Return a Dataset sorted based on coordinate.

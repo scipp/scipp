@@ -4,10 +4,10 @@
 #include <algorithm>
 #include <set>
 
-#include "scipp/core/variable_operations.h"
 #include "scipp/dataset/event.h"
 #include "scipp/dataset/groupby.h"
 #include "scipp/dataset/unaligned.h"
+#include "scipp/variable/variable_operations.h"
 
 namespace scipp::dataset::unaligned {
 
@@ -154,7 +154,7 @@ Dataset realign(Dataset dataset,
 }
 
 bool is_realigned_events(const DataArrayConstView &realigned) {
-  using core::is_events;
+  using variable::is_events;
   return !is_events(realigned) && realigned.unaligned() &&
          is_events(realigned.unaligned());
 }

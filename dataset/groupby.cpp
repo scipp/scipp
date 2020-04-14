@@ -5,19 +5,20 @@
 #include <numeric>
 
 #include "scipp/core/histogram.h"
-#include "scipp/core/indexed_slice_view.h"
 #include "scipp/core/parallel.h"
 #include "scipp/core/tag_util.h"
-#include "scipp/core/variable_operations.h"
+
+#include "scipp/variable/indexed_slice_view.h"
+#include "scipp/variable/variable_operations.h"
 
 #include "scipp/dataset/event.h"
 #include "scipp/dataset/except.h"
 #include "scipp/dataset/groupby.h"
 
-#include "../core/variable_operations_common.h"
+#include "../variable/variable_operations_common.h"
 #include "dataset_operations_common.h"
 
-using namespace scipp::core;
+using namespace scipp::variable;
 
 namespace scipp::dataset {
 
@@ -224,7 +225,7 @@ template <class T> T GroupBy<T>::mean(const Dim reductionDim) const {
       scaleT[group] += slice.end() - slice.begin();
       // N masks for each slice, that need to be subtracted
       if (mask.dims().contains(reductionDim)) {
-        const auto masks_sum = core::sum(mask.slice(slice), reductionDim);
+        const auto masks_sum = variable::sum(mask.slice(slice), reductionDim);
         scaleT[group] -= masks_sum.template value<int64_t>();
       }
     }
@@ -329,9 +330,9 @@ template <class T> struct MakeBinGroups {
 /// coord in a later apply/combine step.
 GroupBy<DataArray> groupby(const DataArrayConstView &array, const Dim dim) {
   const auto &key = array.coords()[dim];
-  return {array,
-          CallDType<double, float, int64_t, int32_t, bool,
-                    std::string>::apply<MakeGroups>(key.dtype(), key, dim)};
+  return {array, core::CallDType<double, float, int64_t, int32_t, bool,
+                                 std::string>::apply<MakeGroups>(key.dtype(),
+                                                                 key, dim)};
 }
 
 /// Create GroupBy<DataArray> object as part of "split-apply-combine" mechanism.
@@ -342,9 +343,10 @@ GroupBy<DataArray> groupby(const DataArrayConstView &array, const Dim dim) {
 GroupBy<DataArray> groupby(const DataArrayConstView &array, const Dim dim,
                            const VariableConstView &bins) {
   const auto &key = array.coords()[dim];
-  return {array,
-          CallDType<double, float, int64_t, int32_t>::apply<MakeBinGroups>(
-              key.dtype(), key, bins)};
+  return {
+      array,
+      core::CallDType<double, float, int64_t, int32_t>::apply<MakeBinGroups>(
+          key.dtype(), key, bins)};
 }
 
 /// Create GroupBy<Dataset> object as part of "split-apply-combine" mechanism.
@@ -354,9 +356,9 @@ GroupBy<DataArray> groupby(const DataArrayConstView &array, const Dim dim,
 /// coord in a later apply/combine step.
 GroupBy<Dataset> groupby(const DatasetConstView &dataset, const Dim dim) {
   const auto &key = dataset.coords()[dim];
-  return {dataset,
-          CallDType<double, float, int64_t, int32_t, bool,
-                    std::string>::apply<MakeGroups>(key.dtype(), key, dim)};
+  return {dataset, core::CallDType<double, float, int64_t, int32_t, bool,
+                                   std::string>::apply<MakeGroups>(key.dtype(),
+                                                                   key, dim)};
 }
 
 /// Create GroupBy<Dataset> object as part of "split-apply-combine" mechanism.
@@ -367,9 +369,10 @@ GroupBy<Dataset> groupby(const DatasetConstView &dataset, const Dim dim) {
 GroupBy<Dataset> groupby(const DatasetConstView &dataset, const Dim dim,
                          const VariableConstView &bins) {
   const auto &key = dataset.coords()[dim];
-  return {dataset,
-          CallDType<double, float, int64_t, int32_t>::apply<MakeBinGroups>(
-              key.dtype(), key, bins)};
+  return {
+      dataset,
+      core::CallDType<double, float, int64_t, int32_t>::apply<MakeBinGroups>(
+          key.dtype(), key, bins)};
 }
 
 template class GroupBy<DataArray>;

@@ -6,6 +6,7 @@ set(INC_FILES
     include/scipp/variable/comparison.h
     include/scipp/variable/event.h
     include/scipp/variable/except.h
+    include/scipp/variable/indexed_slice_view.h
     include/scipp/variable/string.h
     include/scipp/variable/subspan_view.h
     include/scipp/variable/transform.h

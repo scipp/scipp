@@ -2,11 +2,11 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#include "scipp/core/variable_reduction.h"
-#include "scipp/core/variable_binary_arithmetic.h"
+#include "scipp/variable/variable_reduction.h"
 #include "scipp/dataset/view_decl.h"
+#include "scipp/variable/variable_binary_arithmetic.h"
 
-#include "../core/variable_operations_common.h"
+#include "../variable/variable_operations_common.h"
 #include "dataset_operations_common.h"
 
 namespace scipp::dataset {

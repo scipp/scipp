@@ -46,7 +46,7 @@ template <class Types, class Op, class... Var>
       typename std::tuple_element_t<0,
                                     std::tuple_element_t<0, Types>>::value_type;
   Variable out =
-      std::is_base_of_v<transform_flags::expect_variance_arg_t<0>, Op>
+      std::is_base_of_v<core::transform_flags::expect_variance_arg_t<0>, Op>
           ? makeVariable<OutT>(Dimensions{dims}, Values{}, Variances{})
           : makeVariable<OutT>(Dimensions{dims});
 

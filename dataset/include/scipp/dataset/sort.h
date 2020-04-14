@@ -6,8 +6,8 @@
 
 #include <vector>
 
-#include <scipp/core/variable.h>
 #include <scipp/dataset/dataset.h>
+#include <scipp/variable/variable.h>
 
 namespace scipp::dataset {
 

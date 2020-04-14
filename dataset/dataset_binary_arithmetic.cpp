@@ -2,11 +2,9 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#include "scipp/core/transform.h"
-
+#include "scipp/core/operators.h"
 #include "scipp/dataset/dataset.h"
-
-#include "../core/operators.h"
+#include "scipp/variable/transform.h"
 
 using namespace scipp::core;
 
@@ -16,7 +14,7 @@ template <class Op>
 void dry_run_op(const DataArrayView &a, const VariableConstView &b, Op op) {
   // This dry run relies on the knowledge that the implementation of operations
   // for variable simply calls transform_in_place and nothing else.
-  core::dry_run::transform_in_place(a.data(), b, op);
+  variable::dry_run::transform_in_place(a.data(), b, op);
 }
 
 template <class Op>
