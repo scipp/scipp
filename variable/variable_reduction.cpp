@@ -3,20 +3,21 @@
 /// @file
 /// @author Simon Heybrock
 #include "scipp/variable/variable_reduction.h"
-#include "scipp/variable/dtype.h"
+#include "scipp/core/dtype.h"
+#include "scipp/core/operators.h"
 #include "scipp/variable/event.h"
 #include "scipp/variable/except.h"
 #include "scipp/variable/transform.h"
 #include "scipp/variable/variable_binary_arithmetic.h"
 
-#include "operators.h"
 #include "variable_operations_common.h"
+
+using namespace scipp::core;
 
 namespace scipp::variable {
 
 namespace flatten_detail {
-template <class T>
-using args = std::tuple<sparse_container<T>, sparse_container<T>, bool>;
+template <class T> using args = std::tuple<event_list<T>, event_list<T>, bool>;
 }
 
 void flatten_impl(const VariableView &summed, const VariableConstView &var,
@@ -43,8 +44,8 @@ void flatten_impl(const VariableView &summed, const VariableConstView &var,
               a.insert(a.end(), b.begin(), b.end());
           },
           [](units::Unit &a, const units::Unit &b, const units::Unit &mask_) {
-            expect::equals(mask_, units::dimensionless);
-            expect::equals(a, b);
+            core::expect::equals(mask_, units::dimensionless);
+            core::expect::equals(a, b);
           }});
 }
 

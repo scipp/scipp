@@ -5,7 +5,7 @@
 #include "scipp/variable/variable.h"
 
 #include "scipp/core/dtype.h"
-#include "scipp/variable/except.h"
+#include "scipp/core/except.h"
 #include "scipp/variable/variable_concept.h"
 
 namespace scipp::variable {
@@ -70,7 +70,7 @@ template <class T> VariableView VariableView::assign(const T &other) const {
   if (data().isSame(other.data()))
     return *this; // Self-assignment, return early.
   setUnit(other.unit());
-  expect::equals(dims(), other.dims());
+  core::expect::equals(dims(), other.dims());
   data().copy(other.data(), Dim::Invalid, 0, 0, 1);
   return *this;
 }
@@ -181,7 +181,7 @@ void Variable::rename(const Dim from, const Dim to) {
 
 void Variable::setVariances(Variable v) {
   if (v)
-    expect::equals(unit(), v.unit());
+    core::expect::equals(unit(), v.unit());
   data().setVariances(std::move(v));
 }
 
@@ -202,7 +202,9 @@ void throw_keyword_arg_constructor_bad_dtype(const DType dtype) {
                           " with such values and/or variances.");
 }
 
-void expect0D(const Dimensions &dims) { expect::equals(dims, Dimensions()); }
+void expect0D(const Dimensions &dims) {
+  core::expect::equals(dims, Dimensions());
+}
 
 } // namespace detail
 

@@ -46,9 +46,8 @@ std::vector<scipp::index> reorderedShape(const scipp::span<const Dim> &order,
 void expect0D(const Dimensions &dims);
 } // namespace detail
 
-template <class T> struct is_sparse_container : std::false_type {};
-template <class T>
-struct is_sparse_container<event_list<T>> : std::true_type {};
+template <class T> struct is_event_list : std::false_type {};
+template <class T> struct is_event_list<event_list<T>> : std::true_type {};
 
 class Variable;
 class VariableConstView;

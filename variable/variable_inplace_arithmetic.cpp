@@ -2,17 +2,16 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
+#include "scipp/core/operators.h"
 #include "scipp/variable/transform.h"
 #include "scipp/variable/variable.h"
-
-#include "operators.h"
 
 namespace scipp::variable {
 
 template <class T1, class T2> T1 &plus_equals(T1 &variable, const T2 &other) {
   // Note: This will broadcast/transpose the RHS if required. We do not support
   // changing the dimensions of the LHS though!
-  transform_in_place(variable, other, operator_detail::plus_equals{});
+  transform_in_place(variable, other, core::operator_detail::plus_equals{});
   return variable;
 }
 
@@ -22,7 +21,7 @@ Variable &Variable::operator+=(const VariableConstView &other) & {
 }
 
 template <class T1, class T2> T1 &minus_equals(T1 &variable, const T2 &other) {
-  transform_in_place(variable, other, operator_detail::minus_equals{});
+  transform_in_place(variable, other, core::operator_detail::minus_equals{});
   return variable;
 }
 
@@ -32,7 +31,7 @@ Variable &Variable::operator-=(const VariableConstView &other) & {
 }
 
 template <class T1, class T2> T1 &times_equals(T1 &variable, const T2 &other) {
-  transform_in_place(variable, other, operator_detail::times_equals{});
+  transform_in_place(variable, other, core::operator_detail::times_equals{});
   return variable;
 }
 
@@ -42,7 +41,7 @@ Variable &Variable::operator*=(const VariableConstView &other) & {
 }
 
 template <class T1, class T2> T1 &divide_equals(T1 &variable, const T2 &other) {
-  transform_in_place(variable, other, operator_detail::divide_equals{});
+  transform_in_place(variable, other, core::operator_detail::divide_equals{});
   return variable;
 }
 

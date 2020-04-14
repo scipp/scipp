@@ -2,12 +2,13 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-
-#include "scipp/variable/apply.h"
 #include "scipp/core/dimensions.h"
 #include "scipp/core/element_array_view.h"
-#include "scipp/variable/variable.h"
+#include "scipp/core/except.h"
 #include "scipp/units/unit.h"
+#include "scipp/variable/apply.h"
+#include "scipp/variable/except.h"
+#include "scipp/variable/variable.h"
 #include <numeric>
 #include <optional>
 
@@ -59,7 +60,7 @@ template <class T> class DataModel;
 template <class T>
 VariableConceptHandle
 VariableConceptT<T>::makeDefaultFromParent(const Dimensions &dims) const {
-  using TT = detail::element_array<std::decay_t<T>>;
+  using TT = element_array<std::decay_t<T>>;
   if (hasVariances())
     return std::make_unique<DataModel<TT>>(dims, TT(dims.volume()),
                                            TT(dims.volume()));
@@ -261,7 +262,7 @@ public:
             std::optional<T> variances = std::nullopt)
       : VariableConceptT<typename T::value_type>(std::move(dimensions)),
         m_values(std::move(model)), m_variances(std::move(variances)) {
-    if (m_variances && !canHaveVariances<value_type>())
+    if (m_variances && !core::canHaveVariances<value_type>())
       throw except::VariancesError("This data type cannot have variances.");
     if (this->dims().volume() != scipp::size(m_values))
       throw std::runtime_error("Creating Variable: data size does not match "
@@ -269,14 +270,14 @@ public:
   }
 
   void setVariances(Variable &&variances) override {
-    if (!canHaveVariances<value_type>())
+    if (!core::canHaveVariances<value_type>())
       throw except::VariancesError("This data type cannot have variances.");
     if (!variances)
       return m_variances.reset();
     if (variances.hasVariances())
       throw except::VariancesError(
           "Cannot set variances from variable with variances.");
-    expect::equals(this->dims(), variances.dims());
+    core::expect::equals(this->dims(), variances.dims());
     m_variances.emplace(
         std::move(requireT<DataModel>(variances.data()).m_values));
   }
@@ -596,8 +597,7 @@ public:
   std::unique_ptr<
       VariableConceptT<std::remove_const_t<typename T::element_type>>>
   copyT() const override {
-    using DataT =
-        detail::element_array<std::remove_const_t<typename T::element_type>>;
+    using DataT = element_array<std::remove_const_t<typename T::element_type>>;
     DataT values(m_values.begin(), m_values.end());
     std::optional<DataT> variances;
     if (hasVariances())
@@ -659,23 +659,22 @@ Variable::Variable(const units::Unit unit, const Dimensions &dimensions,
                                                     std::move(variances_))) {}
 
 template <class T>
-const detail::element_array<T> &Variable::cast(const bool variances_) const {
-  auto &dm = requireT<const DataModel<detail::element_array<T>>>(*m_object);
+const element_array<T> &Variable::cast(const bool variances_) const {
+  auto &dm = requireT<const DataModel<element_array<T>>>(*m_object);
   if (!variances_)
     return dm.m_values;
   else {
-    expect::hasVariances(*this);
+    core::expect::hasVariances(*this);
     return *dm.m_variances;
   }
 }
 
-template <class T>
-detail::element_array<T> &Variable::cast(const bool variances_) {
-  auto &dm = requireT<DataModel<detail::element_array<T>>>(*m_object);
+template <class T> element_array<T> &Variable::cast(const bool variances_) {
+  auto &dm = requireT<DataModel<element_array<T>>>(*m_object);
   if (!variances_)
     return dm.m_values;
   else {
-    expect::hasVariances(*this);
+    core::expect::hasVariances(*this);
     return *dm.m_variances;
   }
 }
@@ -684,8 +683,8 @@ template <class T>
 const ElementArrayView<const T> VariableConstView::cast() const {
   using TT = T;
   if (!m_view)
-    return requireT<const DataModel<detail::element_array<TT>>>(data())
-        .valuesView(dims());
+    return requireT<const DataModel<element_array<TT>>>(data()).valuesView(
+        dims());
   if (m_view->isConstView())
     return requireT<const ViewModel<ElementArrayView<const TT>>>(data())
         .m_values;
@@ -696,11 +695,11 @@ const ElementArrayView<const T> VariableConstView::cast() const {
 
 template <class T>
 const ElementArrayView<const T> VariableConstView::castVariances() const {
-  expect::hasVariances(*this);
+  core::expect::hasVariances(*this);
   using TT = T;
   if (!m_view)
-    return requireT<const DataModel<detail::element_array<TT>>>(data())
-        .variancesView(dims());
+    return requireT<const DataModel<element_array<TT>>>(data()).variancesView(
+        dims());
   if (m_view->isConstView())
     return *requireT<const ViewModel<ElementArrayView<const TT>>>(data())
                 .m_variances;
@@ -713,43 +712,38 @@ template <class T> ElementArrayView<T> VariableView::cast() const {
   using TT = T;
   if (m_view)
     return requireT<const ViewModel<ElementArrayView<TT>>>(data()).m_values;
-  return requireT<DataModel<detail::element_array<TT>>>(data()).valuesView(
-      dims());
+  return requireT<DataModel<element_array<TT>>>(data()).valuesView(dims());
 }
 
 template <class T> ElementArrayView<T> VariableView::castVariances() const {
-  expect::hasVariances(*this);
+  core::expect::hasVariances(*this);
   using TT = T;
   if (m_view)
     return *requireT<const ViewModel<ElementArrayView<TT>>>(data()).m_variances;
-  return requireT<DataModel<detail::element_array<TT>>>(data()).variancesView(
-      dims());
+  return requireT<DataModel<element_array<TT>>>(data()).variancesView(dims());
 }
 
 namespace {
 template <class T>
 Variable from_dimensions_and_unit(const Dimensions &dms, const units::Unit &u) {
   auto volume = dms.volume();
-  if constexpr (is_sparse_container<T>::value)
-    return Variable(u, dms, detail::element_array<T>(volume));
+  if constexpr (is_event_list<T>::value)
+    return Variable(u, dms, element_array<T>(volume));
   else
-    return Variable(
-        u, dms,
-        detail::element_array<T>(volume, detail::default_init<T>::value()));
+    return Variable(u, dms,
+                    element_array<T>(volume, detail::default_init<T>::value()));
 }
 
 template <class T>
 Variable from_dimensions_and_unit_with_variances(const Dimensions &dms,
                                                  const units::Unit &u) {
   auto volume = dms.volume();
-  if constexpr (is_sparse_container<T>::value)
-    return Variable(u, dms, detail::element_array<T>(volume),
-                    detail::element_array<T>(volume));
+  if constexpr (is_event_list<T>::value)
+    return Variable(u, dms, element_array<T>(volume), element_array<T>(volume));
   else
-    return Variable(
-        u, dms,
-        detail::element_array<T>(volume, detail::default_init<T>::value()),
-        detail::element_array<T>(volume, detail::default_init<T>::value()));
+    return Variable(u, dms,
+                    element_array<T>(volume, detail::default_init<T>::value()),
+                    element_array<T>(volume, detail::default_init<T>::value()));
 }
 } // namespace
 
@@ -767,8 +761,8 @@ Variable from_dimensions_and_unit_with_variances(const Dimensions &dms,
 ///       makeVariable<T>(Dims{Dim::X}, Shape{5}, Values{}, Variances{});
 template <class T>
 Variable Variable::create(const units::Unit &u, const Dimensions &d,
-                          std::optional<detail::element_array<T>> &&val,
-                          std::optional<detail::element_array<T>> &&var) {
+                          std::optional<element_array<T>> &&val,
+                          std::optional<element_array<T>> &&var) {
   if (val && var) {
     if (val->size() < 0 && var->size() < 0)
       return from_dimensions_and_unit_with_variances<T>(d, u);
@@ -783,17 +777,14 @@ Variable Variable::create(const units::Unit &u, const Dimensions &d,
 
 template <class T>
 Variable Variable::create(const units::Unit &u, const Dims &d, const Shape &s,
-                          std::optional<detail::element_array<T>> &&val,
-                          std::optional<detail::element_array<T>> &&var) {
+                          std::optional<element_array<T>> &&val,
+                          std::optional<element_array<T>> &&var) {
   auto dms = Dimensions{d.data, s.data};
   return create(u, dms, std::move(val), std::move(var));
 }
 
-/**
-  Support explicit instantiations for templates for generic Variable and
-  VariableConstView
-*/
-using scipp::core::detail::element_array;
+/// Macro for instantiating classes and functions required for support a new
+/// dtype in Variable.
 #define INSTANTIATE_VARIABLE(...)                                              \
   template Variable::Variable(const units::Unit, const Dimensions &,           \
                               element_array<__VA_ARGS__>);                     \
@@ -802,12 +793,12 @@ using scipp::core::detail::element_array;
                               element_array<__VA_ARGS__>);                     \
   template Variable Variable::create<__VA_ARGS__>(                             \
       const units::Unit &u, const Dimensions &d,                               \
-      std::optional<detail::element_array<__VA_ARGS__>> &&val,                 \
-      std::optional<detail::element_array<__VA_ARGS__>> &&var);                \
+      std::optional<element_array<__VA_ARGS__>> &&val,                         \
+      std::optional<element_array<__VA_ARGS__>> &&var);                        \
   template Variable Variable::create<__VA_ARGS__>(                             \
       const units::Unit &u, const Dims &d, const Shape &s,                     \
-      std::optional<detail::element_array<__VA_ARGS__>> &&val,                 \
-      std::optional<detail::element_array<__VA_ARGS__>> &&var);                \
+      std::optional<element_array<__VA_ARGS__>> &&val,                         \
+      std::optional<element_array<__VA_ARGS__>> &&var);                        \
   template element_array<__VA_ARGS__> &Variable::cast<__VA_ARGS__>(            \
       const bool);                                                             \
   template const element_array<__VA_ARGS__> &Variable::cast<__VA_ARGS__>(      \

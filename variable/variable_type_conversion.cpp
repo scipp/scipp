@@ -4,12 +4,11 @@
 /// @author Igor Gudich
 #include <cmath>
 
+#include "scipp/core/operators.h"
+#include "scipp/core/tag_util.h"
 #include "scipp/variable/except.h"
-#include "scipp/variable/tag_util.h"
 #include "scipp/variable/transform.h"
 #include "scipp/variable/variable.h"
-
-#include "operators.h"
 
 namespace scipp::variable {
 
@@ -30,8 +29,8 @@ struct MakeVariableWithType {
     }
   };
   static Variable make(const VariableConstView &var, DType type) {
-    return CallDType<double, float, int64_t, int32_t, bool>::apply<Maker>(type,
-                                                                          var);
+    return core::CallDType<double, float, int64_t, int32_t, bool>::apply<Maker>(
+        type, var);
   }
 };
 

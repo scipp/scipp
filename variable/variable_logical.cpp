@@ -4,11 +4,13 @@
 /// @author Simon Heybrock
 #include <cmath>
 
-#include "scipp/variable/except.h"
+#include "scipp/core/operators.h"
+
+#include "scipp/core/except.h"
 #include "scipp/variable/transform.h"
 #include "scipp/variable/variable.h"
 
-#include "operators.h"
+using namespace scipp::core;
 
 namespace scipp::variable {
 
@@ -104,7 +106,7 @@ Variable Variable::operator~() const {
   return transform<bool>(
       *this, overloaded{[](const auto &current) { return !current; },
                         [](const units::Unit &unit) -> units::Unit {
-                          expect::equals(unit, units::dimensionless);
+                          core::expect::equals(unit, units::dimensionless);
                           return unit;
                         }});
 }

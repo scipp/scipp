@@ -8,13 +8,15 @@
 #include "scipp/core/element_geometric_operations.h"
 #include "scipp/core/element_trigonometry_operations.h"
 #include "scipp/core/element_unary_operations.h"
+#include "scipp/core/operators.h"
 #include "scipp/variable/apply.h"
 #include "scipp/variable/except.h"
 #include "scipp/variable/transform.h"
 #include "scipp/variable/variable_operations.h"
 
-#include "operators.h"
 #include "variable_operations_common.h"
+
+using namespace scipp::core;
 
 namespace scipp::variable {
 
@@ -125,16 +127,14 @@ Variable filter(const Variable &var, const Variable &filter) {
 
 Variable reciprocal(const VariableConstView &var) {
   return transform<double, float>(
-      var,
-      overloaded{
-          [](const auto &a_) {
-            return static_cast<
-                       detail::element_type_t<std::decay_t<decltype(a_)>>>(1) /
-                   a_;
-          },
-          [](const units::Unit &unit) {
-            return units::Unit(units::dimensionless) / unit;
-          }});
+      var, overloaded{[](const auto &a_) {
+                        return static_cast<core::detail::element_type_t<
+                                   std::decay_t<decltype(a_)>>>(1) /
+                               a_;
+                      },
+                      [](const units::Unit &unit) {
+                        return units::Unit(units::dimensionless) / unit;
+                      }});
 }
 
 Variable reciprocal(Variable &&var) {
@@ -148,7 +148,8 @@ VariableView reciprocal(const VariableConstView &var, const VariableView &out) {
       out, var,
       overloaded{
           [](auto &x, const auto &y) {
-            x = static_cast<detail::element_type_t<std::decay_t<decltype(y)>>>(
+            x = static_cast<
+                    core::detail::element_type_t<std::decay_t<decltype(y)>>>(
                     1) /
                 y;
           },
@@ -221,7 +222,7 @@ Variable broadcast(const VariableConstView &var, const Dimensions &dims) {
     --it;
     const auto label = *it;
     if (newDims.contains(label))
-      expect::dimensionMatches(newDims, label, dims[label]);
+      core::expect::dimensionMatches(newDims, label, dims[label]);
     else
       newDims.add(label, dims[label]);
   }

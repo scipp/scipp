@@ -1,5 +1,5 @@
 #include "scipp/variable/variable_concept.h"
-#include "scipp/variable/dimensions.h"
+#include "scipp/core/dimensions.h"
 
 namespace scipp::variable {
 
