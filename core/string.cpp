@@ -82,6 +82,22 @@ std::string to_string(const DType dtype) {
     return "PyObject";
   case DType::Unknown:
     return "unknown";
+  case DType::SpanFloat: // defined after Unknown so no Python binding created
+    return "span_float32";
+  case DType::SpanDouble:
+    return "span_float64";
+  case DType::SpanInt64:
+    return "span_int64";
+  case DType::SpanInt32:
+    return "span_int32";
+  case DType::SpanConstFloat:
+    return "span_const_float32";
+  case DType::SpanConstDouble:
+    return "span_const_float64";
+  case DType::SpanConstInt64:
+    return "span_const_int64";
+  case DType::SpanConstInt32:
+    return "span_const_int32";
   default:
     return "unregistered dtype";
   };
