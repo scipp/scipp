@@ -3,14 +3,14 @@
 /// @file
 /// @author Simon Heybrock
 
-#include "scipp/core/transform.h"
-#include "scipp/core/variable_operations.h"
+#include "scipp/variable/transform.h"
+#include "scipp/variable/variable_operations.h"
 
 #include "scipp/dataset/dataset.h"
 
 #include "scipp/neutron/beamline.h"
 
-using namespace scipp::core;
+using namespace scipp::variable;
 using namespace scipp::dataset;
 
 namespace scipp::neutron {
@@ -56,7 +56,7 @@ template <class T> static Variable l2(const T &d) {
   // Use transform to avoid temporaries. For certain unit conversions this can
   // cause a speedup >50%. Short version would be:
   //   return norm(position(d) - sample_position(d));
-  return transform<pair_self_t<Eigen::Vector3d>>(
+  return transform<core::pair_self_t<Eigen::Vector3d>>(
       position(d), sample_position(d),
       overloaded{
           [](const auto &x, const auto &y) { return (x - y).norm(); },
@@ -79,71 +79,75 @@ template <class T> static Variable two_theta(const T &d) {
 }
 } // namespace beamline_impl
 
-core::VariableConstView position(const dataset::DatasetConstView &d) {
+variable::VariableConstView position(const dataset::DatasetConstView &d) {
   return beamline_impl::position(d);
 }
-core::VariableConstView source_position(const dataset::DatasetConstView &d) {
+variable::VariableConstView
+source_position(const dataset::DatasetConstView &d) {
   return beamline_impl::source_position(d);
 }
-core::VariableConstView sample_position(const dataset::DatasetConstView &d) {
+variable::VariableConstView
+sample_position(const dataset::DatasetConstView &d) {
   return beamline_impl::sample_position(d);
 }
-core::VariableView position(const dataset::DatasetView &d) {
+variable::VariableView position(const dataset::DatasetView &d) {
   return beamline_impl::position(d);
 }
-core::VariableView source_position(const dataset::DatasetView &d) {
+variable::VariableView source_position(const dataset::DatasetView &d) {
   return beamline_impl::source_position(d);
 }
-core::VariableView sample_position(const dataset::DatasetView &d) {
+variable::VariableView sample_position(const dataset::DatasetView &d) {
   return beamline_impl::sample_position(d);
 }
-core::Variable flight_path_length(const dataset::DatasetConstView &d) {
+variable::Variable flight_path_length(const dataset::DatasetConstView &d) {
   return beamline_impl::flight_path_length(d);
 }
-core::Variable l1(const dataset::DatasetConstView &d) {
+variable::Variable l1(const dataset::DatasetConstView &d) {
   return beamline_impl::l1(d);
 }
-core::Variable l2(const dataset::DatasetConstView &d) {
+variable::Variable l2(const dataset::DatasetConstView &d) {
   return beamline_impl::l2(d);
 }
-core::Variable scattering_angle(const dataset::DatasetConstView &d) {
+variable::Variable scattering_angle(const dataset::DatasetConstView &d) {
   return beamline_impl::scattering_angle(d);
 }
-core::Variable two_theta(const dataset::DatasetConstView &d) {
+variable::Variable two_theta(const dataset::DatasetConstView &d) {
   return beamline_impl::two_theta(d);
 }
 
-core::VariableConstView position(const dataset::DataArrayConstView &d) {
+variable::VariableConstView position(const dataset::DataArrayConstView &d) {
   return beamline_impl::position(d);
 }
-core::VariableConstView source_position(const dataset::DataArrayConstView &d) {
+variable::VariableConstView
+source_position(const dataset::DataArrayConstView &d) {
   return beamline_impl::source_position(d);
 }
-core::VariableConstView sample_position(const dataset::DataArrayConstView &d) {
+variable::VariableConstView
+sample_position(const dataset::DataArrayConstView &d) {
   return beamline_impl::sample_position(d);
 }
-core::VariableView position(const dataset::DataArrayView &d) {
+variable::VariableView position(const dataset::DataArrayView &d) {
   return beamline_impl::position(d);
 }
-core::VariableView source_position(const dataset::DataArrayView &d) {
+variable::VariableView source_position(const dataset::DataArrayView &d) {
   return beamline_impl::source_position(d);
 }
-core::VariableView sample_position(const dataset::DataArrayView &d) {
+variable::VariableView sample_position(const dataset::DataArrayView &d) {
   return beamline_impl::sample_position(d);
 }
-core::Variable flight_path_length(const dataset::DataArrayConstView &d) {
+variable::Variable flight_path_length(const dataset::DataArrayConstView &d) {
   return beamline_impl::flight_path_length(d);
 }
-core::Variable l1(const dataset::DataArrayConstView &d) {
+variable::Variable l1(const dataset::DataArrayConstView &d) {
   return beamline_impl::l1(d);
 }
-core::Variable l2(const dataset::DataArrayConstView &d) {
+variable::Variable l2(const dataset::DataArrayConstView &d) {
   return beamline_impl::l2(d);
 }
-core::Variable scattering_angle(const dataset::DataArrayConstView &d) {
+variable::Variable scattering_angle(const dataset::DataArrayConstView &d) {
   return beamline_impl::scattering_angle(d);
 }
-core::Variable two_theta(const dataset::DataArrayConstView &d) {
+variable::Variable two_theta(const dataset::DataArrayConstView &d) {
   return beamline_impl::two_theta(d);
 }
 
