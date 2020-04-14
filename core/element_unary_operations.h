@@ -9,7 +9,7 @@
 
 #include "arg_list.h"
 #include "scipp/common/overloaded.h"
-#include "scipp/core/transform.h"
+#include "scipp/core/transform_common.h"
 
 namespace scipp::core {
 

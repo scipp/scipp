@@ -4,7 +4,6 @@ set(TARGET_NAME "scipp-core-test")
 add_dependencies(all-tests ${TARGET_NAME})
 add_executable(
   ${TARGET_NAME} EXCLUDE_FROM_ALL
-  comparison_test.cpp
   dimensions_test.cpp
   element_array_test.cpp
   element_array_view_test.cpp
@@ -12,19 +11,7 @@ add_executable(
   element_unary_operations_test.cpp
   element_geometric_operations_test.cpp
   element_trigonometry_operations_test.cpp
-  indexed_slice_view_test.cpp
-  reduce_logical_test.cpp
-  reduce_various_test.cpp
-  subspan_view_test.cpp
-  transform_test.cpp
   value_and_variance_test.cpp
-  variable_concept_test.cpp
-  variable_custom_type_test.cpp
-  variable_keyword_args_constructor_test.cpp
-  variable_operations_test.cpp
-  variable_scalar_accessors_test.cpp
-  variable_test.cpp
-  variable_trigonometry_test.cpp
   view_index_test.cpp
 )
 include_directories(SYSTEM ${GMOCK_INCLUDE_DIR} ${GTEST_INCLUDE_DIR})
