@@ -6,11 +6,9 @@
 #include "scipp/common/index.h"
 #include "scipp/units/unit.h"
 
-#ifndef SCIPP_CORE_SLICE_H
-#define SCIPP_CORE_SLICE_H
+#pragma once
 
-namespace scipp {
-namespace core {
+namespace scipp::core {
 
 /// Describes a slice to make over a dimension either as a single index or as a
 /// range
@@ -32,7 +30,8 @@ private:
   scipp::index m_end;
 };
 
-} // namespace core
-} // namespace scipp
+} // namespace scipp::core
 
-#endif // SCIPP_CORE_SLICE_H
+namespace scipp {
+using core::Slice;
+} // namespace scipp

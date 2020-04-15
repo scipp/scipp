@@ -8,9 +8,10 @@
 #include "scipp/core/dtype.h"
 #include "scipp/core/except.h"
 #include "scipp/core/tag_util.h"
-#include "scipp/core/transform.h"
-#include "scipp/core/variable.h"
-#include "scipp/core/variable_operations.h"
+
+#include "scipp/variable/transform.h"
+#include "scipp/variable/variable.h"
+#include "scipp/variable/variable_operations.h"
 
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/sort.h"
@@ -25,7 +26,7 @@
 #include "rename.h"
 
 using namespace scipp;
-using namespace scipp::core;
+using namespace scipp::variable;
 
 namespace py = pybind11;
 
@@ -82,7 +83,7 @@ template <class ST> struct MakeODFromNativePythonTypes {
   static Variable make(const units::Unit unit, const ST &value,
                        const std::optional<ST> &variance,
                        const py::object &dtype) {
-    return CallDType<double, float, int64_t, int32_t, bool>::apply<Maker>(
+    return core::CallDType<double, float, int64_t, int32_t, bool>::apply<Maker>(
         scipp_dtype(dtype), unit, value, variance);
   }
 };
@@ -146,19 +147,22 @@ Variable doMakeVariable(const std::vector<Dim> &labels, py::array &values,
     }
   }
 
-  return CallDType<double, float, int64_t, int32_t, bool>::apply<MakeVariable>(
-      dtypeTag, labels, values, variances, unit);
+  return core::CallDType<double, float, int64_t, int32_t,
+                         bool>::apply<MakeVariable>(dtypeTag, labels, values,
+                                                    variances, unit);
 }
 
 Variable makeVariableDefaultInit(const std::vector<Dim> &labels,
                                  const std::vector<scipp::index> &shape,
                                  const units::Unit unit, py::object &dtype,
                                  const bool variances) {
-  return CallDType<double, float, int64_t, int32_t, bool, event_list<double>,
-                   event_list<float>, event_list<int64_t>, event_list<int32_t>,
-                   DataArray, Dataset, Eigen::Vector3d, Eigen::Quaterniond>::
-      apply<MakeVariableDefaultInit>(scipp_dtype(dtype), labels, shape, unit,
-                                     variances);
+  return core::CallDType<
+      double, float, int64_t, int32_t, bool, event_list<double>,
+      event_list<float>, event_list<int64_t>, event_list<int32_t>, DataArray,
+      Dataset, Eigen::Vector3d,
+      Eigen::Quaterniond>::apply<MakeVariableDefaultInit>(scipp_dtype(dtype),
+                                                          labels, shape, unit,
+                                                          variances);
 }
 
 template <class T> void bind_init_0D(py::class_<Variable> &c) {

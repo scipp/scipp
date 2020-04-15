@@ -2,12 +2,12 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
-#include "scipp/core/comparison.h"
-#include "scipp/core/variable_operations.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/event.h"
 #include "scipp/dataset/histogram.h"
 #include "scipp/dataset/unaligned.h"
+#include "scipp/variable/comparison.h"
+#include "scipp/variable/variable_operations.h"
 
 #include "dataset_test_common.h"
 #include "test_macros.h"

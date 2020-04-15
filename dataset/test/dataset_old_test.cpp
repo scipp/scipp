@@ -3,9 +3,9 @@
 #include "test_macros.h"
 #include <gtest/gtest.h>
 
-#include "scipp/core/counts.h"
 #include "scipp/core/dimensions.h"
 #include "scipp/dataset/dataset.h"
+#include "scipp/variable/counts.h"
 
 using namespace scipp;
 using namespace scipp::dataset;

@@ -123,4 +123,10 @@ template <class T> constexpr bool canHaveVariances() noexcept {
 
 } // namespace scipp::core
 
+namespace scipp {
+using core::DType;
+using core::dtype;
+using core::event_list;
+} // namespace scipp
+
 #endif // SCIPP_CORE_DTYPE_H

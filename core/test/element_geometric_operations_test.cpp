@@ -2,11 +2,13 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
-#include "../element_geometric_operations.h"
-#include "fix_typed_test_suite_warnings.h"
-#include "scipp/common/constants.h"
-#include "scipp/units/unit.h"
 #include <Eigen/Geometry>
+
+#include "scipp/common/constants.h"
+#include "scipp/core/element_geometric_operations.h"
+#include "scipp/units/unit.h"
+
+#include "fix_typed_test_suite_warnings.h"
 
 using namespace scipp;
 using namespace scipp::core::element;

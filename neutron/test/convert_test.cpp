@@ -4,13 +4,12 @@
 #include <gtest/gtest.h>
 
 #include "scipp/core/dimensions.h"
-#include "scipp/core/variable_operations.h"
 #include "scipp/dataset/counts.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/neutron/convert.h"
+#include "scipp/variable/variable_operations.h"
 
 using namespace scipp;
-using namespace scipp::core;
 using namespace scipp::neutron;
 
 Dataset makeBeamline() {

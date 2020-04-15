@@ -6,15 +6,15 @@
 #include "test_macros.h"
 
 #include "scipp/common/numeric.h"
-#include "scipp/core/subspan_view.h"
-#include "scipp/core/transform.h"
+#include "scipp/core/operators.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/histogram.h"
-
-#include "../operators.h"
+#include "scipp/variable/subspan_view.h"
+#include "scipp/variable/transform.h"
 
 using namespace scipp;
 using namespace scipp::core;
+using namespace scipp::variable;
 using namespace scipp::dataset;
 
 TEST(TransformSparseAndDenseTest, two_args) {

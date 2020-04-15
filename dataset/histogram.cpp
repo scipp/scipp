@@ -5,13 +5,16 @@
 #include "scipp/dataset/histogram.h"
 #include "scipp/common/numeric.h"
 #include "scipp/core/histogram.h"
-#include "scipp/core/transform_subspan.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/except.h"
 #include "scipp/dataset/groupby.h"
 #include "scipp/dataset/unaligned.h"
+#include "scipp/variable/transform_subspan.h"
 
 #include "dataset_operations_common.h"
+
+using namespace scipp::core;
+using namespace scipp::variable;
 
 namespace scipp::dataset {
 

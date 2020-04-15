@@ -2,10 +2,10 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
+#include "scipp/core/element_unary_operations.h"
 #include "scipp/core/value_and_variance.h"
 #include "scipp/units/unit.h"
 
-#include "../element_unary_operations.h"
 #include "fix_typed_test_suite_warnings.h"
 
 using namespace scipp;
