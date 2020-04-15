@@ -6,6 +6,8 @@
 
 #include <string>
 
+#include <Eigen/Dense>
+
 #include "scipp-core_export.h"
 #include "scipp/common/index.h"
 #include "scipp/core/dimensions.h"

@@ -33,6 +33,8 @@ std::string to_string(const char *s) { return std::string(s); }
 std::string to_string(const bool b) { return b ? "True" : "False"; }
 
 std::string to_string(const DType dtype) {
+  return "todo";
+  /*
   switch (dtype) {
   case DType::String:
     return "string";
@@ -85,6 +87,7 @@ std::string to_string(const DType dtype) {
   default:
     return "unregistered dtype";
   };
+  */
 }
 
 std::string to_string(const Slice &slice) {
