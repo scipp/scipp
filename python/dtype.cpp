@@ -12,6 +12,9 @@ using namespace scipp::core;
 namespace py = pybind11;
 
 void init_dtype(py::module &m) {
+  py::class_<DType>(m, "_DType")
+      .def(py::self == py::self)
+      .def("__repr__", [](const DType self) { return to_string(self); });
   auto dtype = m.def_submodule("dtype");
   for (const auto &[key, name] : core::dtypeNameRegistry())
     dtype.attr(name.c_str()) = key;
