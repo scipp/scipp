@@ -69,7 +69,9 @@ Documentation
 
    visualization/representations-and-tables
    visualization/plotting-overview
-   visualization/plotting-in-depth
+   visualization/plotting-1d-data
+   visualization/plotting-2d-data
+   visualization/plotting-nd-data
    visualization/customizing-figures
 
 .. toctree::
@@ -79,7 +81,6 @@ Documentation
    tutorials/introduction
    tutorials/multi-d-datasets
    tutorials/neutron-diffraction
-   tutorials/neutron-data
 
 .. toctree::
    :caption: Reference

@@ -2,6 +2,7 @@ name: scipp-docs
 
 channels:
   - conda-forge
+  - dannixon
 
 # Note that since the scipp package is installed after this environment is created (and Conda is a pain) this list must include the dependencies of the Scipp package also.
 # This is essentially everything in the "run" section of conda/meta.yml.
@@ -17,6 +18,7 @@ dependencies:
   - sphinx_rtd_theme
   - tbb
   - numpy
+  - mantid-framework
   - pip:
     - ipyevents
     - ipyvolume

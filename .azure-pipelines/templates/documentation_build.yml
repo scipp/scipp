@@ -35,6 +35,9 @@ jobs:
           set -ex
           cd docs
           source activate scipp_docs
+          python data/fetch_neutron_data.py
+          mkdir $HOME/.mantid
+          echo "usagereports.enabled=0" > $HOME/.mantid/Mantid.user.properties
           sphinx-build . "$(docs_dir)"
         displayName: 'Build documentation'
       - task: PublishBuildArtifacts@1

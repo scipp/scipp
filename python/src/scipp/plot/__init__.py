@@ -9,6 +9,7 @@ import importlib
 # From: https://stackoverflow.com/a/22424821
 try:
     import matplotlib
+    is_doc_build = False
     try:
         from IPython import get_ipython
         ipy = get_ipython()
@@ -42,6 +43,8 @@ try:
     # Turn interactive plotting on
     import matplotlib.pyplot as plt
     plt.ion()
+    if is_doc_build:
+        plt.rcParams.update({'figure.max_open_warning': 0})
 
 except ImportError:
     pass
