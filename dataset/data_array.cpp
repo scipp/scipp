@@ -2,13 +2,16 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
+#include <algorithm>
+
 #include "scipp/common/numeric.h"
 
-#include "scipp/core/event.h"
 #include "scipp/core/histogram.h"
-#include "scipp/core/subspan_view.h"
-#include "scipp/core/transform.h"
-#include "scipp/core/variable_operations.h"
+
+#include "scipp/variable/event.h"
+#include "scipp/variable/subspan_view.h"
+#include "scipp/variable/transform.h"
+#include "scipp/variable/variable_operations.h"
 
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/event.h"
@@ -191,7 +194,7 @@ Variable sparse_dense_op_impl(const VariableConstView &sparseCoord_,
                               const VariableConstView &weights_,
                               const Dim dim) {
   using namespace sparse_dense_op_impl_detail;
-  return core::transform<
+  return variable::transform<
       std::tuple<args<double, double, double>, args<float, double, double>,
                  args<float, float, float>, args<double, float, float>>>(
       sparseCoord_, subspan_view(edges_, dim), subspan_view(weights_, dim),
@@ -241,6 +244,23 @@ DataArray &DataArray::operator-=(const DataArrayConstView &other) {
   return *this;
 }
 
+namespace {
+Dim realigned_event_histogram_op_dim(const DataArrayConstView &realigned,
+                                     const DataArrayConstView &histogram) {
+  const auto event_dims = unaligned::realigned_event_dims(realigned);
+  const auto edge_dims = edge_dimensions(histogram);
+  std::set<Dim> intersect;
+  std::set_intersection(event_dims.begin(), event_dims.end(), edge_dims.begin(),
+                        edge_dims.end(),
+                        std::inserter(intersect, intersect.begin()));
+  if (intersect.size() != 1)
+    throw except::BinEdgeError(
+        "Operation between realigned event data and histogram currently only "
+        "supports one histogrammed dimension.");
+  return *intersect.begin();
+}
+} // namespace
+
 template <class Op>
 DataArray &sparse_dense_op_inplace(Op op, DataArray &a,
                                    const DataArrayConstView &b) {
@@ -248,7 +268,8 @@ DataArray &sparse_dense_op_inplace(Op op, DataArray &a,
     expect::coordsAreSuperset(a, b);
     union_or_in_place(a.masks(), b.masks());
     const auto &events = a.unaligned();
-    auto weight_scale = event::map(b, events.coords()[edge_dimension(b)]);
+    const Dim dim = realigned_event_histogram_op_dim(a, b);
+    auto weight_scale = event::map(b, events.coords()[dim], dim);
     if (is_events(events.data())) {
       // Note the inefficiency here: Always creating temporary sparse data.
       // Could easily avoided, but requires significant code duplication.
@@ -323,7 +344,8 @@ auto sparse_dense_op(Op op, const DataArrayConstView &a,
                      const DataArrayConstView &b) {
   if (unaligned::is_realigned_events(a)) {
     const auto &events = a.unaligned();
-    auto weight_scale = event::map(b, events.coords()[edge_dimension(b)]);
+    const Dim dim = realigned_event_histogram_op_dim(a, b);
+    auto weight_scale = event::map(b, events.coords()[dim], dim);
     std::map<Dim, Variable> coords;
     for (const auto &[d, coord] : events.coords()) {
       if (is_events(coord))

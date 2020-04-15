@@ -24,6 +24,7 @@ ninja -v all-tests install
 ./common/test/scipp-common-test
 ./units/test/scipp-units-test
 ./core/test/scipp-core-test
+./variable/test/scipp-variable-test
 ./dataset/test/scipp-dataset-test
 ./neutron/test/scipp-neutron-test
 

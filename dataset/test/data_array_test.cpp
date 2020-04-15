@@ -2,12 +2,12 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
-#include "scipp/core/comparison.h"
-#include "scipp/core/variable_operations.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/event.h"
 #include "scipp/dataset/histogram.h"
 #include "scipp/dataset/unaligned.h"
+#include "scipp/variable/comparison.h"
+#include "scipp/variable/variable_operations.h"
 
 #include "dataset_test_common.h"
 #include "test_macros.h"
@@ -160,6 +160,27 @@ TEST(DataArrayRealignedEventsArithmeticTest, events_times_histogram) {
     EXPECT_TRUE(equals(out_vars[1], expected.variances<double>()));
   }
   EXPECT_EQ(copy(realigned) *= hist, realigned * hist);
+}
+
+TEST(DataArrayRealignedEventsArithmeticTest,
+     events_times_histogram_fail_too_many_realigned) {
+  auto a = make_sparse();
+  auto x = make_histogram();
+  auto z(x);
+  z.rename(Dim::X, Dim::Z);
+  auto zx = z * x;
+  using unaligned::realign;
+  // Ok, one realigned dim but hist for multiple dims
+  EXPECT_NO_THROW(realign(a, {{Dim::X, Variable{zx.coords()[Dim::X]}}}) * zx);
+  a.coords().set(Dim::Z, a.coords()[Dim::X]);
+  // Ok, `a` has multiple realigned dims, but hist is only for one of them
+  EXPECT_NO_THROW(realign(a, {{Dim::X, Variable{x.coords()[Dim::X]}}}) * x);
+  EXPECT_NO_THROW(realign(a, {{Dim::Z, Variable{z.coords()[Dim::Z]}}}) * z);
+  // Multiple realigned dims and hist for multiple not implemented
+  EXPECT_THROW(realign(a, {{Dim::X, Variable{zx.coords()[Dim::X]}},
+                           {Dim::Z, Variable{zx.coords()[Dim::Z]}}}) *
+                   zx,
+               except::BinEdgeError);
 }
 
 TEST(DataArrayRealignedEventsArithmeticTest,

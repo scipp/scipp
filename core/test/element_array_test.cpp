@@ -7,8 +7,8 @@
 
 #include "scipp/core/element_array.h"
 
-using scipp::core::detail::default_init_elements;
-using scipp::core::detail::element_array;
+using scipp::core::default_init_elements;
+using scipp::core::element_array;
 
 static auto make_element_array() {
   std::vector<double> v{1.1, 2.2, 3.3};

@@ -704,6 +704,7 @@ void init_dataset(py::module &m) {
         :return: Histogramed data.
         :rtype: Dataset)");
   m.def("map", event::map, py::arg("function"), py::arg("iterable"),
+        py::arg("dim") = to_string(Dim::Invalid),
         py::call_guard<py::gil_scoped_release>(),
         R"(Return mapped event data.
 
@@ -711,6 +712,7 @@ void init_dataset(py::module &m) {
 
         :param function: Data array serving as a discretized mapping function.
         :param iterable: Variable with values to map, must be event data.
+        :param dim: Optional dimension to use for mapping, if not given, `map` will attempt to determine the dimension from the `function` argument.
         :return: Mapped event data.
         :rtype: Variable)");
 

@@ -2,8 +2,8 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 #include <algorithm>
 
-#include "scipp/core/variable_binary_arithmetic.h"
 #include "scipp/dataset/unaligned.h"
+#include "scipp/variable/variable_binary_arithmetic.h"
 
 #include "dataset_test_common.h"
 

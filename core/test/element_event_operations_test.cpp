@@ -2,9 +2,9 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
+#include "scipp/core/element_event_operations.h"
 #include "scipp/core/values_and_variances.h"
 
-#include "../element_event_operations.h"
 #include "fix_typed_test_suite_warnings.h"
 
 using namespace scipp;
@@ -32,7 +32,7 @@ TYPED_TEST(ElementEventCopyIfTest, values) {
 TYPED_TEST(ElementEventCopyIfTest, values_and_variances) {
   event_list<TypeParam> values{10, 20, 30, 40};
   event_list<TypeParam> variances{11, 22, 33, 44};
-  core::detail::ValuesAndVariances data{values, variances};
+  core::ValuesAndVariances data{values, variances};
   event_list<int32_t> select{0, 2};
   EXPECT_EQ(
       element::event::copy_if(data, select),

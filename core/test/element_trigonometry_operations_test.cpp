@@ -3,9 +3,9 @@
 #include <gtest/gtest.h>
 
 #include "scipp/common/constants.h"
+#include "scipp/core/element_trigonometry_operations.h"
 #include "scipp/units/unit.h"
 
-#include "../element_trigonometry_operations.h"
 #include "fix_typed_test_suite_warnings.h"
 
 using namespace scipp;

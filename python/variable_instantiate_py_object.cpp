@@ -2,13 +2,13 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#include "scipp/core/variable.tcc"
+#include "scipp/variable/variable.tcc"
 
 #include "py_object.h"
 #include "pybind11.h"
 
-namespace scipp::core {
+namespace scipp::variable {
 
 INSTANTIATE_VARIABLE(scipp::python::PyObject)
 
-} // namespace scipp::core
+} // namespace scipp::variable

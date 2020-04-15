@@ -5,13 +5,12 @@
 #ifndef SCIPPY_NUMPY_H
 #define SCIPPY_NUMPY_H
 
-#include "scipp/core/variable.h"
+#include "scipp/variable/variable.h"
 
 #include "pybind11.h"
 
 namespace py = pybind11;
 using namespace scipp;
-using namespace scipp::core;
 
 template <class T, class View>
 void copy_flattened_0d(const py::array_t<T> &data, View &&view) {

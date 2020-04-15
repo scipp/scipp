@@ -10,12 +10,12 @@
 #include "scipp/core/dtype.h"
 #include "scipp/core/slice.h"
 #include "scipp/core/tag_util.h"
-#include "scipp/core/variable.h"
 #include "scipp/dataset/dataset.h"
+#include "scipp/variable/variable.h"
 
 namespace py = pybind11;
 using namespace scipp;
-using namespace scipp::core;
+using namespace scipp::variable;
 using namespace scipp::dataset;
 
 template <class T> auto dim_extent(const T &object, const Dim dim) {
@@ -91,7 +91,7 @@ template <class T> struct slicer {
                              const std::tuple<Dim, scipp::index> &index,
                              const py::array &data) {
     auto slice = slicer<T>::get(self, index);
-    CallDType<double, float, int64_t, int32_t, bool>::apply<
+    core::CallDType<double, float, int64_t, int32_t, bool>::apply<
         SetData<decltype(slice)>::template Impl>(slice.data().dtype(), slice,
                                                  data);
   }
@@ -100,7 +100,7 @@ template <class T> struct slicer {
   set_range_from_numpy(T &self, const std::tuple<Dim, const py::slice> &index,
                        const py::array &data) {
     auto slice = slicer<T>::get_range(self, index);
-    CallDType<double, float, int64_t, int32_t, bool>::apply<
+    core::CallDType<double, float, int64_t, int32_t, bool>::apply<
         SetData<decltype(slice)>::template Impl>(slice.data().dtype(), slice,
                                                  data);
   }

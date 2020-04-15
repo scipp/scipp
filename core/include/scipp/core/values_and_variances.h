@@ -9,8 +9,6 @@
 
 namespace scipp::core {
 
-namespace detail {
-
 /// A values/variances pair based on references to sparse data containers.
 ///
 /// This is a helper for implementing operations for sparse container such as
@@ -80,8 +78,12 @@ struct is_ValuesAndVariances<ValuesAndVariances<T>> : std::true_type {};
 template <class T>
 inline constexpr bool is_ValuesAndVariances_v = is_ValuesAndVariances<T>::value;
 
-} // namespace detail
-
 } // namespace scipp::core
+
+namespace scipp {
+using core::is_ValuesAndVariances;
+using core::is_ValuesAndVariances_v;
+using core::ValuesAndVariances;
+} // namespace scipp
 
 #endif // SCIPP_CORE_VALUES_AND_VARIANCES_H

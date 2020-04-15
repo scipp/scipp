@@ -6,9 +6,9 @@
 #include <boost/units/systems/si/codata/neutron_constants.hpp>
 #include <boost/units/systems/si/codata/universal_constants.hpp>
 
-#include "scipp/core/event.h"
-#include "scipp/core/transform.h"
-#include "scipp/core/variable_operations.h"
+#include "scipp/variable/event.h"
+#include "scipp/variable/transform.h"
+#include "scipp/variable/variable_operations.h"
 
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/dataset_util.h"
@@ -16,7 +16,7 @@
 #include "scipp/neutron/beamline.h"
 #include "scipp/neutron/convert.h"
 
-using namespace scipp::core;
+using namespace scipp::variable;
 using namespace scipp::dataset;
 
 namespace scipp::neutron {
@@ -104,7 +104,7 @@ template <class T> T tofToEnergy(T &&d) {
   // 2. Transform coordinate
   if (d.coords().contains(Dim::Tof)) {
     if (is_events(d.coords()[Dim::Tof])) {
-      transform_in_place<pair_self_t<double, float>>(
+      transform_in_place<core::pair_self_t<double, float>>(
           d.coords()[Dim::Tof], conversionFactor,
           [](auto &coord_, const auto &factor) {
             coord_ = factor / (coord_ * coord_);
@@ -118,7 +118,7 @@ template <class T> T tofToEnergy(T &&d) {
   // 3. Transform realigned items
   for (const auto &item : iter(d))
     if (item.unaligned() && is_events(item.unaligned()))
-      transform_in_place<pair_self_t<double, float>>(
+      transform_in_place<core::pair_self_t<double, float>>(
           item.unaligned().coords()[Dim::Tof], conversionFactor,
           [](auto &coord_, const auto &factor) {
             coord_ = factor / (coord_ * coord_);
@@ -135,7 +135,7 @@ template <class T> T energyToTof(T &&d) {
   // 2. Transform coordinate
   if (d.coords().contains(Dim::Energy)) {
     if (is_events(d.coords()[Dim::Energy])) {
-      transform_in_place<pair_self_t<double, float>>(
+      transform_in_place<core::pair_self_t<double, float>>(
           d.coords()[Dim::Energy], conversionFactor,
           [](auto &coord_, const auto &factor) {
             coord_ = sqrt(factor / coord_);
@@ -150,7 +150,7 @@ template <class T> T energyToTof(T &&d) {
   // 3. Transform realigned items
   for (const auto &item : iter(d))
     if (item.unaligned() && is_events(item.unaligned()))
-      transform_in_place<pair_self_t<double, float>>(
+      transform_in_place<core::pair_self_t<double, float>>(
           item.unaligned().coords()[Dim::Energy], conversionFactor,
           [](auto &coord_, const auto &factor) {
             coord_ = sqrt(factor / coord_);

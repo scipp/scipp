@@ -4,39 +4,28 @@ set(TARGET_NAME "scipp-core")
 set(INC_FILES
     include/scipp/core/aligned_allocator.h
     include/scipp/core/dimensions.h
-    include/scipp/core/except.h
-    include/scipp/core/memory_pool.h
-    include/scipp/core/tag_util.h
-    include/scipp/core/slice.h
+    include/scipp/core/dtype.h
+    include/scipp/core/element_array.h
     include/scipp/core/element_array_view.h
-    include/scipp/core/variable.h
-    include/scipp/core/variable_concept.h
-    include/scipp/core/variable.tcc
+    include/scipp/core/histogram.h
+    include/scipp/core/memory_pool.h
+    include/scipp/core/parallel-fallback.h
+    include/scipp/core/parallel-tbb.h
+    include/scipp/core/slice.h
+    include/scipp/core/tag_util.h
+    include/scipp/core/transform_common.h
+    include/scipp/core/value_and_variance.h
+    include/scipp/core/values_and_variances.h
     include/scipp/core/view_index.h
-    include/scipp/core/variable_keyword_arg_constructor.h
 )
 
 set(SRC_FILES
     dimensions.cpp
     dtype.cpp
-    event.cpp
-    except.cpp
-    rebin.cpp
-    slice.cpp
-    subspan_view.cpp
-    string.cpp
-    variable.cpp
-    variable_concept.cpp
-    variable_binary_arithmetic.cpp
-    variable_inplace_arithmetic.cpp
-    variable_instantiate_basic.cpp
-    variable_instantiate_view_elements.cpp
-    variable_logical.cpp
-    variable_operations.cpp
-    variable_reduction.cpp
-    variable_trigonometry.cpp
-    variable_type_conversion.cpp
     element_array_view.cpp
+    except.cpp
+    slice.cpp
+    string.cpp
     view_index.cpp
 )
 

@@ -21,8 +21,6 @@
 namespace scipp::core {
 
 class Dimensions;
-class Variable;
-class VariableConstView;
 class Slice;
 
 } // namespace scipp::core
@@ -41,14 +39,9 @@ struct SCIPP_CORE_EXPORT TypeError : public std::runtime_error {
 };
 
 using DimensionError = Error<core::Dimensions>;
-using VariableError = Error<core::Variable>;
 
 using DimensionMismatchError = MismatchError<core::Dimensions>;
-using VariableMismatchError = MismatchError<core::Variable>;
 
-template <class T>
-MismatchError(const core::VariableConstView &, const T &)
-    ->MismatchError<core::Variable>;
 template <class T>
 MismatchError(const core::Dimensions &, const T &)
     ->MismatchError<core::Dimensions>;
