@@ -7,7 +7,7 @@
 
 #include "common.h"
 
-#include "scipp/core/dataset.h"
+#include "scipp/dataset/dataset.h"
 
 // Length of a string that can be stored with SSO
 constexpr auto SHORT_STRING_LENGTH = 6;
@@ -15,7 +15,6 @@ constexpr auto SHORT_STRING_LENGTH = 6;
 constexpr auto LONG_STRING_LENGTH = 32;
 
 using namespace scipp;
-using namespace scipp::core;
 
 Variable makeCoordData(const Dimensions &dims) {
   std::vector<double> data(dims.volume());

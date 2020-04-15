@@ -4,12 +4,13 @@
 /// @author Simon Heybrock
 #include <benchmark/benchmark.h>
 
-#include "common.h"
+#include "variable_common.h"
 
-#include "scipp/core/variable.h"
+#include "scipp/variable/variable.h"
+#include "scipp/variable/variable_operations.h"
 
-using namespace scipp::core;
 using namespace scipp;
+using namespace scipp::variable;
 
 template <typename T> struct Generate1D {
   auto operator()(int length) {

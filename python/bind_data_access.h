@@ -9,9 +9,9 @@
 
 #include "scipp/core/dtype.h"
 #include "scipp/core/tag_util.h"
-#include "scipp/core/variable.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/except.h"
+#include "scipp/variable/variable.h"
 
 #include "numpy.h"
 #include "py_object.h"
@@ -19,7 +19,6 @@
 
 namespace py = pybind11;
 using namespace scipp;
-using namespace scipp::core;
 
 template <class T> void remove_variances(T &obj) {
   if constexpr (std::is_same_v<T, DataArray> ||
@@ -65,8 +64,8 @@ template <class T> struct MakePyBufferInfoT {
 };
 
 inline py::buffer_info make_py_buffer_info(VariableView &view) {
-  return CallDType<double, float, int64_t, int32_t,
-                   bool>::apply<MakePyBufferInfoT>(view.dtype(), view);
+  return core::CallDType<double, float, int64_t, int32_t,
+                         bool>::apply<MakePyBufferInfoT>(view.dtype(), view);
 }
 
 template <class... Ts> class as_ElementArrayViewImpl;
@@ -151,12 +150,12 @@ template <class... Ts> class as_ElementArrayViewImpl {
       return {Getter::template get<bool>(view)};
     case dtype<std::string>:
       return {Getter::template get<std::string>(view)};
-    case dtype<sparse_container<double>>:
-      return {Getter::template get<sparse_container<double>>(view)};
-    case dtype<sparse_container<float>>:
-      return {Getter::template get<sparse_container<float>>(view)};
-    case dtype<sparse_container<int64_t>>:
-      return {Getter::template get<sparse_container<int64_t>>(view)};
+    case dtype<event_list<double>>:
+      return {Getter::template get<event_list<double>>(view)};
+    case dtype<event_list<float>>:
+      return {Getter::template get<event_list<float>>(view)};
+    case dtype<event_list<int64_t>>:
+      return {Getter::template get<event_list<int64_t>>(view)};
     case dtype<DataArray>:
       return {Getter::template get<DataArray>(view)};
     case dtype<Dataset>:
@@ -189,7 +188,7 @@ template <class... Ts> class as_ElementArrayViewImpl {
                                            "does not match the existing "
                                            "object.");
             copy_flattened<T>(data, view_);
-          } else if constexpr (is_sparse_v<T>) {
+          } else if constexpr (core::is_sparse_v<T>) {
             auto &data = obj.cast<const py::array_t<typename T::value_type>>();
             // Sparse data can be set from an array only for a single item.
             if (dims.shape().size() != 0)
@@ -374,12 +373,10 @@ public:
   }
 };
 
-using as_ElementArrayView =
-    as_ElementArrayViewImpl<double, float, int64_t, int32_t, bool, std::string,
-                            sparse_container<double>, sparse_container<float>,
-                            sparse_container<int64_t>, DataArray, Dataset,
-                            Eigen::Vector3d, Eigen::Quaterniond,
-                            scipp::python::PyObject>;
+using as_ElementArrayView = as_ElementArrayViewImpl<
+    double, float, int64_t, int32_t, bool, std::string, event_list<double>,
+    event_list<float>, event_list<int64_t>, DataArray, Dataset, Eigen::Vector3d,
+    Eigen::Quaterniond, scipp::python::PyObject>;
 
 template <class T, class... Ignored>
 void bind_data_properties(pybind11::class_<T, Ignored...> &c) {

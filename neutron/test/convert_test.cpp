@@ -4,13 +4,12 @@
 #include <gtest/gtest.h>
 
 #include "scipp/core/dimensions.h"
-#include "scipp/core/variable_operations.h"
 #include "scipp/dataset/counts.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/neutron/convert.h"
+#include "scipp/variable/variable_operations.h"
 
 using namespace scipp;
-using namespace scipp::core;
 using namespace scipp::neutron;
 
 Dataset makeBeamline() {
@@ -177,7 +176,7 @@ TEST_P(ConvertTest, Tof_to_DSpacing) {
 
     ASSERT_TRUE(dspacing.contains("events"));
     const auto &events = dspacing["events"];
-    ASSERT_EQ(events.dims(), Dimensions({Dim::Spectrum}, {2}));
+    ASSERT_EQ(events.dims(), Dimensions(Dim::Spectrum, 2));
     const auto &tof0 =
         tof["events"].coords()[Dim::Tof].values<event_list<double>>()[0];
     const auto &d0 =
@@ -215,7 +214,7 @@ TEST(Convert, converts_sparse_labels) {
   // label "conversion" is name change of dim
   Dataset tof = makeTofDatasetEvents();
   Dataset dspacing = convert(tof, Dim::Tof, Dim::DSpacing);
-  Dimensions expected({Dim::Spectrum}, {2});
+  Dimensions expected(Dim::Spectrum, 2);
   EXPECT_EQ(dspacing["events"].coords()[Dim::DSpacing].dims(), expected);
   EXPECT_EQ(dspacing["events"].coords()[Dim("aux")].dims(), expected);
 }
@@ -300,7 +299,7 @@ TEST_P(ConvertTest, Tof_to_Wavelength) {
   } else {
     ASSERT_TRUE(wavelength.contains("events"));
     const auto &events = wavelength["events"];
-    ASSERT_EQ(events.dims(), Dimensions({Dim::Spectrum}, {2}));
+    ASSERT_EQ(events.dims(), Dimensions(Dim::Spectrum, 2));
     const auto &tof0 =
         tof["events"].coords()[Dim::Tof].values<event_list<double>>()[0];
     const auto &d0 =
@@ -426,7 +425,7 @@ TEST_P(ConvertTest, Tof_to_Energy_Elastic) {
   } else {
     ASSERT_TRUE(energy.contains("events"));
     const auto &events = energy["events"];
-    ASSERT_EQ(events.dims(), Dimensions({Dim::Spectrum}, {2}));
+    ASSERT_EQ(events.dims(), Dimensions(Dim::Spectrum, 2));
     const auto &tof0 =
         tof["events"].coords()[Dim::Tof].values<event_list<double>>()[0];
     const auto &e0 =

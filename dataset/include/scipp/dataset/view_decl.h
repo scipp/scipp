@@ -7,12 +7,12 @@
 #include <boost/iterator/transform_iterator.hpp>
 
 #include "scipp/core/slice.h"
-#include "scipp/core/variable.h"
 #include "scipp/dataset/dataset_access.h"
 #include "scipp/dataset/except.h"
 #include "scipp/dataset/view_forward.h"
 #include "scipp/units/dim.h"
 #include "scipp/units/unit.h"
+#include "scipp/variable/variable.h"
 
 namespace scipp::dataset {
 
@@ -21,7 +21,7 @@ using slice_list =
     boost::container::small_vector<std::pair<Slice, scipp::index>, 2>;
 
 template <class T> void do_make_slice(T &slice, const slice_list &slices) {
-  for (const auto [params, extent] : slices) {
+  for (const auto &[params, extent] : slices) {
     if (slice.dims().contains(params.dim())) {
       const auto new_end = params.end() + slice.dims()[params.dim()] - extent;
       const auto pointSlice = (new_end == -1);

@@ -2,12 +2,12 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
-#include "scipp/core/comparison.h"
-#include "scipp/core/variable_operations.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/event.h"
 #include "scipp/dataset/histogram.h"
 #include "scipp/dataset/unaligned.h"
+#include "scipp/variable/comparison.h"
+#include "scipp/variable/variable_operations.h"
 
 #include "dataset_test_common.h"
 #include "test_macros.h"
@@ -131,7 +131,7 @@ TEST(DataArrayRealignedEventsArithmeticTest, events_times_histogram) {
   const auto realigned = unaligned::realign(
       DataArray(sparse), {{Dim::X, Variable{hist.coords()[Dim::X]}}});
 
-  for (const auto result : {realigned * hist, hist * realigned}) {
+  for (const auto &result : {realigned * hist, hist * realigned}) {
     EXPECT_EQ(result.coords(), realigned.coords());
     EXPECT_FALSE(result.hasData());
     EXPECT_TRUE(result.hasVariances());
@@ -163,13 +163,34 @@ TEST(DataArrayRealignedEventsArithmeticTest, events_times_histogram) {
 }
 
 TEST(DataArrayRealignedEventsArithmeticTest,
+     events_times_histogram_fail_too_many_realigned) {
+  auto a = make_sparse();
+  auto x = make_histogram();
+  auto z(x);
+  z.rename(Dim::X, Dim::Z);
+  auto zx = z * x;
+  using unaligned::realign;
+  // Ok, one realigned dim but hist for multiple dims
+  EXPECT_NO_THROW(realign(a, {{Dim::X, Variable{zx.coords()[Dim::X]}}}) * zx);
+  a.coords().set(Dim::Z, a.coords()[Dim::X]);
+  // Ok, `a` has multiple realigned dims, but hist is only for one of them
+  EXPECT_NO_THROW(realign(a, {{Dim::X, Variable{x.coords()[Dim::X]}}}) * x);
+  EXPECT_NO_THROW(realign(a, {{Dim::Z, Variable{z.coords()[Dim::Z]}}}) * z);
+  // Multiple realigned dims and hist for multiple not implemented
+  EXPECT_THROW(realign(a, {{Dim::X, Variable{zx.coords()[Dim::X]}},
+                           {Dim::Z, Variable{zx.coords()[Dim::Z]}}}) *
+                   zx,
+               except::BinEdgeError);
+}
+
+TEST(DataArrayRealignedEventsArithmeticTest,
      events_times_histogram_without_variances) {
   const auto sparse = make_sparse();
   auto hist = make_histogram_no_variance();
   const auto realigned = unaligned::realign(
       DataArray(sparse), {{Dim::X, Variable{hist.coords()[Dim::X]}}});
 
-  for (const auto result : {realigned * hist, hist * realigned}) {
+  for (const auto &result : {realigned * hist, hist * realigned}) {
     EXPECT_EQ(result.coords(), realigned.coords());
     EXPECT_FALSE(result.hasData());
     EXPECT_TRUE(result.hasVariances());
@@ -210,7 +231,7 @@ TEST(DataArrayRealignedEventsArithmeticTest,
   const auto realigned = unaligned::realign(
       DataArray(sparse), {{Dim::X, Variable{hist.coords()[Dim::X]}}});
 
-  for (const auto result : {realigned * hist, hist * realigned}) {
+  for (const auto &result : {realigned * hist, hist * realigned}) {
     EXPECT_EQ(result.coords(), realigned.coords());
     EXPECT_FALSE(result.hasData());
     EXPECT_TRUE(result.hasVariances());
@@ -333,6 +354,7 @@ TEST_F(DataArrayRealignedEventsPlusMinusTest, minus_equals) {
 
 TEST_F(DataArrayRealignedEventsPlusMinusTest, minus_equals_self) {
   auto out(a);
+#pragma clang diagnostic ignored "-Wself-assign"
   out -= out;
   EXPECT_EQ(out, a - a);
 }

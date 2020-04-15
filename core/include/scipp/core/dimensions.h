@@ -31,7 +31,7 @@ public:
   Dimensions(const std::vector<Dim> &labels,
              const std::vector<scipp::index> &shape);
   Dimensions(const std::initializer_list<std::pair<Dim, scipp::index>> dims) {
-    for (const auto [label, size] : dims)
+    for (const auto &[label, size] : dims)
       addInner(label, size);
   }
 
@@ -135,5 +135,9 @@ Dimensions merge(const Dimensions &a, const Dimensions &b,
 }
 
 } // namespace scipp::core
+
+namespace scipp {
+using core::Dimensions;
+}
 
 #endif // SCIPP_CORE_DIMENSIONS_H

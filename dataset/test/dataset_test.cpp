@@ -7,9 +7,9 @@
 #include <set>
 
 #include "scipp/core/dimensions.h"
-#include "scipp/core/variable_operations.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/unaligned.h"
+#include "scipp/variable/variable_operations.h"
 
 #include "dataset_test_common.h"
 
@@ -41,7 +41,7 @@ TEST(DatasetTest, clear) {
 TEST(DatasetTest, erase_non_existant) {
   Dataset d;
   ASSERT_THROW(d.erase("not an item"), except::NotFoundError);
-  ASSERT_THROW(d.extract("not an item"), except::NotFoundError);
+  ASSERT_THROW(auto _ = d.extract("not an item"), except::NotFoundError);
 }
 
 TEST(DatasetTest, erase) {
@@ -84,7 +84,7 @@ TEST(DatasetTest, extract_extents_rebuild) {
   d.setData("a", makeVariable<double>(Dims{Dim::X}, Shape{10}));
   ASSERT_TRUE(d.contains("a"));
 
-  ASSERT_NO_THROW(d.extract("a"));
+  ASSERT_NO_THROW(auto _ = d.extract("a"));
   ASSERT_FALSE(d.contains("a"));
 
   ASSERT_NO_THROW(

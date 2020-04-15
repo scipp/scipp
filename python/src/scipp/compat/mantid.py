@@ -423,15 +423,14 @@ def _convert_MatrixWorkspace_info(ws):
             make_run(ws),
             "sample":
             make_sample(ws),
-            "rotation":
-            rot,
-            "shape":
-            shp,
             "instrument-name":
             sc.Variable(
                 value=ws.componentInfo().name(ws.componentInfo().root()))
         },
     }
+    if not np.all(np.isnan(pos.values)):
+        info["attrs"].update({"rotation": rot, "shape": shp})
+
     if source_pos is not None:
         info["coords"]["source_position"] = source_pos
 

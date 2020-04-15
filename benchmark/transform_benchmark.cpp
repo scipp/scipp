@@ -6,11 +6,11 @@
 
 #include <random>
 
-#include "scipp/core/transform.h"
-#include "scipp/core/variable.h"
+#include "scipp/variable/transform.h"
+#include "scipp/variable/variable.h"
 
 using namespace scipp;
-using namespace scipp::core;
+using namespace scipp::variable;
 
 using Types = std::tuple<std::pair<double, double>>;
 

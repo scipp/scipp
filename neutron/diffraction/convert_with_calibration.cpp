@@ -3,13 +3,13 @@
 /// @file
 /// @author Mads Bertelsen
 #include "scipp/neutron/diffraction/convert_with_calibration.h"
-#include "scipp/core/variable_operations.h"
 #include "scipp/dataset/counts.h"
 #include "scipp/dataset/dataset_util.h"
 #include "scipp/dataset/except.h"
 #include "scipp/dataset/groupby.h"
+#include "scipp/variable/variable_operations.h"
 
-using namespace scipp::core;
+using namespace scipp::variable;
 using namespace scipp::dataset;
 
 namespace scipp::neutron::diffraction {

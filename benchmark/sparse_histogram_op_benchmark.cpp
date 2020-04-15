@@ -7,11 +7,11 @@
 
 #include "random.h"
 
-#include "scipp/core/dataset.h"
-#include "scipp/core/unaligned.h"
+#include "scipp/dataset/dataset.h"
+#include "scipp/dataset/unaligned.h"
+#include "scipp/variable/variable_operations.h"
 
 using namespace scipp;
-using namespace scipp::core;
 
 auto make_2d_sparse_coord(const scipp::index size, const scipp::index count) {
   auto var = makeVariable<event_list<double>>(Dims{Dim::X}, Shape{size});
@@ -39,7 +39,7 @@ auto make_2d_events_default_weights(const scipp::index size,
   auto weights =
       makeVariable<double>(Dims{Dim::X}, Shape{size},
                            units::Unit(units::counts), Values{}, Variances{});
-  return unaligned::realign(
+  return dataset::unaligned::realign(
       DataArray(weights, {{Dim::Y, make_2d_sparse_coord(size, count)}}),
       {{Dim::Y, make_edges(nEdge)}});
 }
@@ -49,7 +49,7 @@ auto make_2d_events(const scipp::index size, const scipp::index count,
   auto coord = make_2d_sparse_coord(size, count);
   auto data = coord * makeVariable<double>(Values{0.0}, Variances{0.0}) + 1.0;
 
-  return unaligned::realign(
+  return dataset::unaligned::realign(
       DataArray(std::move(data), {{Dim::Y, std::move(coord)}}),
       {{Dim::Y, make_edges(nEdge)}});
 }

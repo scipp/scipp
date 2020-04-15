@@ -6,10 +6,10 @@
 #include <gtest/gtest.h>
 
 #include "scipp/core/dimensions.h"
-#include "scipp/core/variable_binary_arithmetic.h"
 #include "scipp/dataset/dataset.h"
+#include "scipp/variable/variable_binary_arithmetic.h"
 
-#include "../core/test/make_sparse.h"
+#include "../variable/test/make_sparse.h"
 #include "dataset_test_common.h"
 #include "test_macros.h"
 #include "test_operations.h"

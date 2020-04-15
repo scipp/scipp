@@ -5,11 +5,12 @@
 
 #include "random.h"
 
-#include "scipp/core/dataset.h"
-#include "scipp/core/event.h"
+#include "scipp/variable/variable_operations.h"
+
+#include "scipp/dataset/dataset.h"
+#include "scipp/dataset/event.h"
 
 using namespace scipp;
-using namespace scipp::core;
 
 auto make_2d_sparse_coord(const scipp::index size, const scipp::index count) {
   auto var = makeVariable<event_list<double>>(Dims{Dim::X}, Shape{size});
@@ -49,7 +50,7 @@ static void BM_event_filter(benchmark::State &state) {
   const auto interval = makeVariable<double>(Dims{Dim::Y}, Shape{2},
                                              Values{0.0, 1000 * fraction});
   for (auto _ : state) {
-    benchmark::DoNotOptimize(event::filter(sparse, Dim::Y, interval));
+    benchmark::DoNotOptimize(dataset::event::filter(sparse, Dim::Y, interval));
   }
   state.SetItemsProcessed(state.iterations() * nHist * nEvent);
   state.SetBytesProcessed(state.iterations() * nHist * (data ? 3 : 1) * nEvent *

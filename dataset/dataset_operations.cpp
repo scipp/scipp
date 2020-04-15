@@ -5,13 +5,13 @@
 #include "scipp/common/numeric.h"
 #include "scipp/common/overloaded.h"
 
-#include "scipp/core/variable_misc_operations.h"
-#include "scipp/core/variable_reduction.h"
+#include "scipp/variable/variable_misc_operations.h"
+#include "scipp/variable/variable_reduction.h"
 
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/except.h"
 
-#include "../core/variable_operations_common.h"
+#include "../variable/variable_operations_common.h"
 #include "dataset_operations_common.h"
 
 namespace scipp::dataset {

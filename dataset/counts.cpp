@@ -2,7 +2,7 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#include "scipp/core/variable_operations.h"
+#include "scipp/variable/variable_operations.h"
 
 #include "scipp/dataset/counts.h"
 #include "scipp/dataset/dataset.h"

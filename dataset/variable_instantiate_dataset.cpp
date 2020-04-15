@@ -2,16 +2,16 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#include "scipp/core/string.h"
-#include "scipp/core/variable.tcc"
 #include "scipp/dataset/dataset.h"
+#include "scipp/variable/string.h"
+#include "scipp/variable/variable.tcc"
 
-namespace scipp::core {
+namespace scipp::variable {
 
 INSTANTIATE_VARIABLE(scipp::dataset::Dataset)
 INSTANTIATE_VARIABLE(scipp::dataset::DataArray)
 
-} // namespace scipp::core
+} // namespace scipp::variable
 
 namespace scipp::dataset {
 namespace {
@@ -19,10 +19,10 @@ namespace {
 // themselves do nothing, but the constructor call with comma operator does the
 // insertion.
 auto register_dataset_types(
-    (core::formatterRegistry().emplace(
-         dtype<Dataset>, std::make_unique<core::Formatter<Dataset>>()),
-     core::formatterRegistry().emplace(
-         dtype<DataArray>, std::make_unique<core::Formatter<DataArray>>()),
+    (variable::formatterRegistry().emplace(
+         dtype<Dataset>, std::make_unique<variable::Formatter<Dataset>>()),
+     variable::formatterRegistry().emplace(
+         dtype<DataArray>, std::make_unique<variable::Formatter<DataArray>>()),
      0));
 } // namespace
 } // namespace scipp::dataset
