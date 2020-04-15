@@ -73,7 +73,6 @@ std::string format_variable(const std::string &key,
   if (!variable)
     return std::string(tab) + "invalid variable\n";
   std::stringstream s;
-  const auto dtype = variable.dtype();
   const std::string colSep("  ");
   s << tab << std::left << std::setw(24) << key;
   s << colSep << std::setw(9) << to_string(variable.dtype());
