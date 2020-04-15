@@ -38,8 +38,6 @@ jobs:
           python data/fetch_neutron_data.py
           mkdir $HOME/.mantid
           echo "usagereports.enabled=0" > $HOME/.mantid/Mantid.user.properties
-          echo "UpdateInstrumentDefinitions.OnStartup=0" >> $HOME/.mantid/Mantid.user.properties
-          echo "CheckMantidVersion.OnStartup=0" >> $HOME/.mantid/Mantid.user.properties
           sphinx-build . "$(docs_dir)"
         displayName: 'Build documentation'
       - task: PublishBuildArtifacts@1
