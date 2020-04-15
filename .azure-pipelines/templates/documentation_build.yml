@@ -39,6 +39,7 @@ jobs:
           mkdir $HOME/.mantid
           echo "usagereports.enabled=0" > $HOME/.mantid/Mantid.user.properties
           sphinx-build . "$(docs_dir)"
+          rm "$(docs_dir)"/*/*.ipynb
         displayName: 'Build documentation'
       - task: PublishBuildArtifacts@1
         inputs:
