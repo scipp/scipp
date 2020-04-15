@@ -8,8 +8,8 @@
 
 namespace scipp::variable {
 
-INSTANTIATE_VARIABLE(scipp::dataset::Dataset)
-INSTANTIATE_VARIABLE(scipp::dataset::DataArray)
+INSTANTIATE_VARIABLE(Dataset, scipp::dataset::Dataset)
+INSTANTIATE_VARIABLE(DataArray, scipp::dataset::DataArray)
 
 } // namespace scipp::variable
 

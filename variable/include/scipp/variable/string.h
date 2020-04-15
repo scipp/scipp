@@ -54,7 +54,7 @@ class SCIPP_VARIABLE_EXPORT FormatterRegistry {
 public:
   void emplace(const DType key, std::unique_ptr<AbstractFormatter> formatter);
   bool contains(const DType key) const noexcept;
-  std::string format(const DType key, const VariableConstView &var) const;
+  std::string format(const VariableConstView &var) const;
 
 private:
   std::map<DType, std::unique_ptr<AbstractFormatter>> m_formatters;

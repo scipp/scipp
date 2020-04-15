@@ -59,7 +59,7 @@ auto apply(const DType dtype, Args &&... args) {
   // should typically not have variances, so Callable should always be
   // `ValuesToString` in this case.
   if (formatterRegistry().contains(dtype))
-    return formatterRegistry().format(dtype, args...);
+    return formatterRegistry().format(args...);
   return core::callDType<Callable>(
       std::tuple<double, float, int64_t, int32_t, std::string, bool,
                  event_list<double>, event_list<float>, event_list<int64_t>,
@@ -104,9 +104,8 @@ bool FormatterRegistry::contains(const DType key) const noexcept {
   return m_formatters.find(key) != m_formatters.end();
 }
 
-std::string FormatterRegistry::format(const DType key,
-                                      const VariableConstView &var) const {
-  return m_formatters.at(key)->format(var);
+std::string FormatterRegistry::format(const VariableConstView &var) const {
+  return m_formatters.at(var.dtype())->format(var);
 }
 
 FormatterRegistry &formatterRegistry() {

@@ -9,6 +9,6 @@
 
 namespace scipp::variable {
 
-INSTANTIATE_VARIABLE(scipp::python::PyObject)
+INSTANTIATE_VARIABLE(PyObject, scipp::python::PyObject)
 
 } // namespace scipp::variable

@@ -785,7 +785,11 @@ Variable Variable::create(const units::Unit &u, const Dims &d, const Shape &s,
 
 /// Macro for instantiating classes and functions required for support a new
 /// dtype in Variable.
-#define INSTANTIATE_VARIABLE(...)                                              \
+#define INSTANTIATE_VARIABLE(name, ...)                                        \
+  namespace {                                                                  \
+  auto register_dtype_name_##name(                                             \
+      (core::dtypeNameRegistry().emplace(dtype<__VA_ARGS__>, #name), 0));      \
+  }                                                                            \
   template Variable::Variable(const units::Unit, const Dimensions &,           \
                               element_array<__VA_ARGS__>);                     \
   template Variable::Variable(const units::Unit, const Dimensions &,           \

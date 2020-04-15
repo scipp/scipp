@@ -4,6 +4,7 @@
 /// @author Simon Heybrock
 #pragma once
 
+#include <map>
 #include <string>
 
 #include <Eigen/Dense>
@@ -86,5 +87,8 @@ template <class T> std::string array_to_string(const T &arr) {
   s += "]";
   return s;
 }
+
+/// Return the global dtype name registry instrance
+SCIPP_CORE_EXPORT std::map<DType, std::string> &dtypeNameRegistry();
 
 } // namespace scipp::core
