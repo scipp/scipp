@@ -453,6 +453,17 @@ class TestMantidConversion(unittest.TestCase):
                 np.isclose(moved_det_position.values,
                            unmoved_det_positions.values)))
 
+    def test_to_quat_from_vectors(self):
+        a = np.array([1, 0, 0])
+        b = np.array([0, 1, 0])
+        q_var = mantidcompat._quat_from_vectors(a, b)
+        q = q_var.value
+        self.assertTrue(np.allclose(b, q.to_rotation_matrix().dot(a)))
+        # other direction
+        q_var = mantidcompat._quat_from_vectors(b, a)
+        q = q_var.value
+        self.assertTrue(np.allclose(a, q.to_rotation_matrix().dot(b)))
+
 
 @pytest.mark.skipif(not mantid_is_available(),
                     reason='Mantid framework is unavailable')
