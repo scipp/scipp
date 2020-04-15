@@ -109,8 +109,10 @@ DataArray filter(const DataArrayConstView &array, const Dim dim,
                                                   : empty.attrs()};
 }
 
-Variable map(const DataArrayConstView &function, const VariableConstView &x) {
-  const Dim dim = edge_dimension(function);
+Variable map(const DataArrayConstView &function, const VariableConstView &x,
+             Dim dim) {
+  if (dim == Dim::Invalid)
+    dim = edge_dimension(function);
   return transform(x, subspan_view(function.coords()[dim], dim),
                    subspan_view(function.data(), dim),
                    core::element::event::map);

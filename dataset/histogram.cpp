@@ -144,25 +144,26 @@ Dataset histogram(const Dataset &dataset, const Dim &dim) {
   return histogram(dataset, bins);
 }
 
+/// Return the dimensions of the given data array that have an "bin edge"
+/// coordinate.
+std::set<Dim> edge_dimensions(const DataArrayConstView &a) {
+  const auto coords = a.coords();
+  std::set<Dim> dims;
+  for (const auto &[d, coord] : a.coords())
+    if (a.dims().contains(d) && coord.dims().contains(d) &&
+        coord.dims()[d] == a.dims()[d] + 1)
+      dims.insert(d);
+  return dims;
+}
+
 /// Return the Dim of the given data array that has an "bin edge" coordinate.
 ///
 /// Throws if there is not excactly one such dimension.
 Dim edge_dimension(const DataArrayConstView &a) {
-  const auto dims = a.dims();
-  const auto coords = a.coords();
-  Dim dim = Dim::Invalid;
-  for (const auto &[d, coord] : a.coords()) {
-    if (dims.contains(d) && coord.dims().contains(d) &&
-        coord.dims()[d] == dims[d] + 1) {
-      if (dim != Dim::Invalid)
-        throw except::BinEdgeError("Expected bin edges in only one dimension.");
-      dim = d;
-    }
-  }
-  if (dim == Dim::Invalid)
-    throw except::BinEdgeError(
-        "Expected bin edges in one dimension, found none.");
-  return dim;
+  const auto &dims = edge_dimensions(a);
+  if (dims.size() != 1)
+    throw except::BinEdgeError("Expected bin edges in only one dimension.");
+  return *dims.begin();
 }
 
 /// Return true if the data array respresents a histogram for given dim.

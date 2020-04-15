@@ -21,6 +21,7 @@ filter(const DataArrayConstView &array, const Dim dim,
        const AttrPolicy attrPolicy = AttrPolicy::Keep);
 
 [[nodiscard]] SCIPP_CORE_EXPORT Variable map(const DataArrayConstView &function,
-                                             const VariableConstView &x);
+                                             const VariableConstView &x,
+                                             Dim dim = Dim::Invalid);
 
 } // namespace scipp::dataset::event

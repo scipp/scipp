@@ -163,6 +163,27 @@ TEST(DataArrayRealignedEventsArithmeticTest, events_times_histogram) {
 }
 
 TEST(DataArrayRealignedEventsArithmeticTest,
+     events_times_histogram_fail_too_many_realigned) {
+  auto a = make_sparse();
+  auto x = make_histogram();
+  auto z(x);
+  z.rename(Dim::X, Dim::Z);
+  auto zx = z * x;
+  using unaligned::realign;
+  // Ok, one realigned dim but hist for multiple dims
+  EXPECT_NO_THROW(realign(a, {{Dim::X, Variable{zx.coords()[Dim::X]}}}) * zx);
+  a.coords().set(Dim::Z, a.coords()[Dim::X]);
+  // Ok, `a` has multiple realigned dims, but hist is only for one of them
+  EXPECT_NO_THROW(realign(a, {{Dim::X, Variable{x.coords()[Dim::X]}}}) * x);
+  EXPECT_NO_THROW(realign(a, {{Dim::Z, Variable{z.coords()[Dim::Z]}}}) * z);
+  // Multiple realigned dims and hist for multiple not implemented
+  EXPECT_THROW(realign(a, {{Dim::X, Variable{zx.coords()[Dim::X]}},
+                           {Dim::Z, Variable{zx.coords()[Dim::Z]}}}) *
+                   zx,
+               except::BinEdgeError);
+}
+
+TEST(DataArrayRealignedEventsArithmeticTest,
      events_times_histogram_without_variances) {
   const auto sparse = make_sparse();
   auto hist = make_histogram_no_variance();
