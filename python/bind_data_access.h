@@ -137,38 +137,35 @@ template <class... Ts> class as_ElementArrayViewImpl {
       const auto &v = view.data();
       type = v.data().dtype();
     }
-    switch (type) {
-    case dtype<double>:
+    if (type == dtype<double>)
       return {Getter::template get<double>(view)};
-    case dtype<float>:
+    if (type == dtype<float>)
       return {Getter::template get<float>(view)};
-    case dtype<int64_t>:
+    if (type == dtype<int64_t>)
       return {Getter::template get<int64_t>(view)};
-    case dtype<int32_t>:
+    if (type == dtype<int32_t>)
       return {Getter::template get<int32_t>(view)};
-    case dtype<bool>:
+    if (type == dtype<bool>)
       return {Getter::template get<bool>(view)};
-    case dtype<std::string>:
+    if (type == dtype<std::string>)
       return {Getter::template get<std::string>(view)};
-    case dtype<event_list<double>>:
+    if (type == dtype<event_list<double>>)
       return {Getter::template get<event_list<double>>(view)};
-    case dtype<event_list<float>>:
+    if (type == dtype<event_list<float>>)
       return {Getter::template get<event_list<float>>(view)};
-    case dtype<event_list<int64_t>>:
+    if (type == dtype<event_list<int64_t>>)
       return {Getter::template get<event_list<int64_t>>(view)};
-    case dtype<DataArray>:
+    if (type == dtype<DataArray>)
       return {Getter::template get<DataArray>(view)};
-    case dtype<Dataset>:
+    if (type == dtype<Dataset>)
       return {Getter::template get<Dataset>(view)};
-    case dtype<Eigen::Vector3d>:
+    if (type == dtype<Eigen::Vector3d>)
       return {Getter::template get<Eigen::Vector3d>(view)};
-    case dtype<Eigen::Quaterniond>:
+    if (type == dtype<Eigen::Quaterniond>)
       return {Getter::template get<Eigen::Quaterniond>(view)};
-    case dtype<scipp::python::PyObject>:
+    if (type == dtype<scipp::python::PyObject>)
       return {Getter::template get<scipp::python::PyObject>(view)};
-    default:
-      throw std::runtime_error("not implemented for this type.");
-    }
+    throw std::runtime_error("not implemented for this type.");
   }
 
   template <class View>
@@ -222,54 +219,51 @@ template <class... Ts> class as_ElementArrayViewImpl {
       const auto &v = view.data();
       type = v.data().dtype();
     }
-    switch (type) {
-    case dtype<double>:
+    if (type == dtype<double>)
       return DataAccessHelper::as_py_array_t_impl<Getter, double>(obj, view);
-    case dtype<float>:
+    if (type == dtype<float>)
       return DataAccessHelper::as_py_array_t_impl<Getter, float>(obj, view);
-    case dtype<int64_t>:
+    if (type == dtype<int64_t>)
       return DataAccessHelper::as_py_array_t_impl<Getter, int64_t>(obj, view);
-    case dtype<int32_t>:
+    if (type == dtype<int32_t>)
       return DataAccessHelper::as_py_array_t_impl<Getter, int32_t>(obj, view);
-    case dtype<bool>:
+    if (type == dtype<bool>)
       return DataAccessHelper::as_py_array_t_impl<Getter, bool>(obj, view);
-    default:
-      return std::visit(
-          [&view, &obj](const auto &data) {
-            const auto &dims = view.dims();
-            // We return an individual item in two cases:
-            // 1. For 0-D data (consistent with numpy behavior, e.g., when
-            //    slicing a 1-D array).
-            // 2. For 1-D sparse data, where the individual item is then a
-            //    vector-like object.
-            if (dims.shape().size() == 0) {
-              if constexpr (std::is_same_v<std::decay_t<decltype(data[0])>,
-                                           scipp::python::PyObject>) {
-                // Returning PyObject. This increments the reference counter of
-                // the element, so it is ok if the parent `obj` (the variable)
-                // goes out of scope.
-                return data[0].to_pybind();
-              } else {
-                // Returning reference to element in variable. Return-policy
-                // reference_internal keeps alive `obj`. Note that an attempt to
-                // pass `keep_alive` as a call policy to `def_property` failed,
-                // resulting in exception from pybind11, so we have handle it by
-                // hand here.
-                return py::cast(
-                    data[0], py::return_value_policy::reference_internal, obj);
-              }
+    return std::visit(
+        [&view, &obj](const auto &data) {
+          const auto &dims = view.dims();
+          // We return an individual item in two cases:
+          // 1. For 0-D data (consistent with numpy behavior, e.g., when slicing
+          // a 1-D array).
+          // 2. For 1-D sparse data, where the individual item is then a
+          // vector-like object.
+          if (dims.shape().size() == 0) {
+            if constexpr (std::is_same_v<std::decay_t<decltype(data[0])>,
+                                         scipp::python::PyObject>) {
+              // Returning PyObject. This increments the reference counter of
+              // the element, so it is ok if the parent `obj` (the variable)
+              // goes out of scope.
+              return data[0].to_pybind();
             } else {
-              // Returning view (span or ElementArrayView) by value. This
-              // references data in variable, so it must be kept alive. There is
-              // no policy that supports this, so we use `keep_alive_impl`
-              // manually.
-              auto ret = py::cast(data, py::return_value_policy::move);
-              pybind11::detail::keep_alive_impl(ret, obj);
-              return ret;
+              // Returning reference to element in variable. Return-policy
+              // reference_internal keeps alive `obj`. Note that an attempt to
+              // pass `keep_alive` as a call policy to `def_property` failed,
+              // resulting in exception from pybind11, so we have handle it by
+              // hand here.
+              return py::cast(data[0],
+                              py::return_value_policy::reference_internal, obj);
             }
-          },
-          get<Getter>(view));
-    }
+          } else {
+            // Returning view (span or ElementArrayView) by value. This
+            // references data in variable, so it must be kept alive. There is
+            // no policy that supports this, so we use `keep_alive_impl`
+            // manually.
+            auto ret = py::cast(data, py::return_value_policy::move);
+            pybind11::detail::keep_alive_impl(ret, obj);
+            return ret;
+          }
+        },
+        get<Getter>(view));
   }
 
 public:

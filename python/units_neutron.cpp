@@ -8,7 +8,6 @@
 #include "scipp/variable/variable.h"
 #include "scipp/variable/variable_operations.h"
 
-#include "bind_enum.h"
 #include "dtype.h"
 #include "pybind11.h"
 
