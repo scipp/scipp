@@ -3,8 +3,8 @@
 #include <gtest/gtest.h>
 #include <vector>
 
-#include "test_macros.h"
 #include "fix_typed_test_suite_warnings.h"
+#include "test_macros.h"
 
 #include "scipp/core/element/unary_operations.h"
 #include "scipp/variable/except.h"
