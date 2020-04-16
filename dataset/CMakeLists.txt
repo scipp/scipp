@@ -18,6 +18,7 @@ set(SRC_FILES
     except.cpp
     groupby.cpp
     histogram.cpp
+    map_view.cpp
     sort.cpp
     string.cpp
     unaligned.cpp
