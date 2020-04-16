@@ -193,7 +193,10 @@ Dimensions merge(const Dimensions &a, const Dimensions &b) {
 
 Dimensions transpose(const Dimensions &dims,
                      const scipp::span<const Dim> &order) {
-  if (order.size() != dims.ndim())
+  std::vector<Dim> labels{order.begin(), order.end()};
+  if (labels.empty())
+    labels.insert(labels.end(), dims.labels().rbegin(), dims.labels().rend());
+  else if (order.size() != dims.ndim())
     throw except::DimensionError("Cannot transpose: Requested new dimension "
                                  "order contains different number of labels.");
   std::vector<scipp::index> shape(order.size());

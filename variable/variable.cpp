@@ -172,37 +172,29 @@ Variable VariableConstView::reshape(const Dimensions &dims) const {
   return reshaped;
 }
 
-template <class DimContainer>
-std::vector<Dim> reverseDimOrder(const DimContainer &container) {
-  return std::vector<Dim>(container.rbegin(), container.rend());
-}
-
 VariableConstView Variable::transpose(const std::vector<Dim> &dims) const & {
-  return VariableConstView::makeTransposed(
-      *this, dims.empty() ? reverseDimOrder(this->dims().labels()) : dims);
+  return VariableConstView(*this).transpose(dims);
 }
 
 VariableView Variable::transpose(const std::vector<Dim> &dims) & {
-  return VariableView::makeTransposed(
-      *this, dims.empty() ? reverseDimOrder(this->dims().labels()) : dims);
+  return VariableView(*this).transpose(dims);
 }
 
 Variable Variable::transpose(const std::vector<Dim> &dims) && {
-  return Variable(VariableConstView::makeTransposed(
-      *this, dims.empty() ? reverseDimOrder(this->dims().labels()) : dims));
+  return Variable(VariableConstView(*this).transpose(dims));
 }
 
 VariableConstView
 VariableConstView::transpose(const std::vector<Dim> &dims) const {
-  auto dms = this->dims();
-  return makeTransposed(*this,
-                        dims.empty() ? reverseDimOrder(dms.labels()) : dims);
+  auto transposed(*this);
+  transposed.m_view = data().transpose(dims);
+  return transposed;
 }
 
 VariableView VariableView::transpose(const std::vector<Dim> &dims) const {
-  auto dms = this->dims();
-  return makeTransposed(*this,
-                        dims.empty() ? reverseDimOrder(dms.labels()) : dims);
+  auto transposed(*this);
+  transposed.m_view = data().transpose(dims);
+  return transposed;
 }
 
 std::vector<scipp::index> VariableConstView::strides() const {

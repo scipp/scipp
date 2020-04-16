@@ -376,15 +376,6 @@ public:
 
   auto &underlying() const { return *m_variable; }
 
-private:
-  template <class Var>
-  static VariableConstView makeTransposed(Var &var,
-                                          const std::vector<Dim> &dimOrder) {
-    auto res = VariableConstView(var);
-    res.m_view = res.data().transpose(dimOrder);
-    return res;
-  }
-
 protected:
   friend class Variable;
 
@@ -491,14 +482,6 @@ private:
   // For internal use in DataArrayConstView.
   explicit VariableView(VariableConstView &&base)
       : VariableConstView(std::move(base)), m_mutableVariable{nullptr} {}
-
-  template <class Var>
-  static VariableView makeTransposed(Var &var,
-                                     const std::vector<Dim> &dimOrder) {
-    auto res = VariableView(var);
-    res.m_view = res.data().transpose(dimOrder);
-    return res;
-  }
 
   template <class T> ElementArrayView<T> cast() const;
   template <class T> ElementArrayView<T> castVariances() const;
