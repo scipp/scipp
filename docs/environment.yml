@@ -17,7 +17,7 @@ dependencies:
   - sphinx>=1.6
   - sphinx_rtd_theme
   - tbb
-  - numpy
+  - numpy>=1.15.3
   - mantid-framework
   - pip:
     - ipyevents
