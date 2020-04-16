@@ -746,7 +746,7 @@ def test_replace():
 # test_numpy_interoperable : Tested in test_variable.py
 # test_concatenate: Tested above
 # test_sort: Already done
-#
+# test_filter : Exports tested elsewhere 
 #    dataset[sc.Data.Value, 'data'] = (['z', 'y', 'x'],
 #                                      (1, 2, 3))
 #    dataset[sc.Coord.X] = (['x'], np.arange(3))
@@ -1232,22 +1232,12 @@ def test_rebin():
 #                                  np.transpose(
 #                                      rd1[sc.Data.Value, 'B'].numpy))
 #
-# def test_copy(self):
-#    import copy
-#    N = 6
-#    M = 4
-#    d1 = sc.Dataset()
-#    d1[sc.Coord.X] = (['x'], np.arange(N + 1).astype(np.float64))
-#    d1[sc.Coord.Y] = (['y'], np.arange(M + 1).astype(np.float64))
-#    arr1 = np.arange(N * M).reshape(N, M).astype(np.float64) + 1
-#    d1[sc.Data.Value, 'A'] = (['x', 'y'], arr1)
-#    d2 = copy.copy(d1)
-#    d3 = copy.deepcopy(d2)
-#    self.assertEqual(d1, d2)
-#    self.assertEqual(d3, d2)
-#    d2[sc.Data.Value, 'A'] *= d2[sc.Data.Value, 'A']
-#    self.assertNotEqual(d1, d2)
-#    self.assertNotEqual(d3, d2)
+def test_copy():
+    import copy
+    a = sc.Dataset()
+    a['x'] = sc.Variable(value=1)
+    assert copy.copy(a) == a
+    assert copy.deepcopy(a) == a
 #
 # def test_correct_temporaries(self):
 #    N = 6
