@@ -8,6 +8,7 @@ from .render import render_plot
 from .slicer import Slicer
 from .tools import edges_to_centers
 from ..utils import name_with_unit
+from .._scipp.core import histogram as scipp_histogram
 
 # Other imports
 import numpy as np
@@ -90,7 +91,10 @@ class Slicer1d(Slicer):
         # Determine whether error bars should be plotted or not
         self.variances = {}
         for name, var in self.scipp_obj_dict.items():
-            self.variances[name] = var.variances is not None
+            if var.unaligned is not None:
+                self.variances[name] = var.unaligned.variances is not None
+            else:
+                self.variances[name] = var.variances is not None
         if variances is not None:
             if isinstance(variances, bool):
                 for name, var in self.scipp_obj_dict.items():
@@ -124,25 +128,28 @@ class Slicer1d(Slicer):
         ymax = np.NINF
         for name, var in self.scipp_obj_dict.items():
             self.names.append(name)
-            if self.variances[name]:
-                err = np.sqrt(var.variances)
-            else:
-                err = 0.0
+            # if self.variances[name]:
+            #     err = np.sqrt(var.variances)
+            # else:
+            #     err = 0.0
 
-            if logy:
-                with np.errstate(divide="ignore", invalid="ignore"):
-                    arr = np.log10(var.values - err)
-                    subset = np.where(np.isfinite(arr))
-                    ymin = min(ymin, np.amin(arr[subset]))
-                    arr = np.log10(var.values + err)
-                    subset = np.where(np.isfinite(arr))
-                    ymax = max(ymax, np.amax(arr[subset]))
-            else:
-                ymin = min(ymin, np.nanmin(var.values - err))
-                ymax = max(ymax, np.nanmax(var.values + err))
+            # if logy:
+            #     with np.errstate(divide="ignore", invalid="ignore"):
+            #         arr = np.log10(var.values - err)
+            #         subset = np.where(np.isfinite(arr))
+            #         ymin = min(ymin, np.amin(arr[subset]))
+            #         arr = np.log10(var.values + err)
+            #         subset = np.where(np.isfinite(arr))
+            #         ymax = max(ymax, np.amax(arr[subset]))
+            # else:
+            #     ymin = min(ymin, np.nanmin(var.values - err))
+            #     ymax = max(ymax, np.nanmax(var.values + err))
+            if var.values is not None:
+                ymin, ymax = self.get_ylim(var=var, ymin=ymin, ymax=ymax,
+                                           logy=logy, errorbars=self.variances[name])
             ylab = name_with_unit(var=var, name="")
 
-        if self.mpl_axes is None:
+        if self.mpl_axes is None and var.values is not None:
             dy = 0.05 * (ymax - ymin)
             yrange = [ymin - dy, ymax + dy]
             if logy:
@@ -183,6 +190,25 @@ class Slicer1d(Slicer):
         self.members["ax"] = self.ax
 
         return
+
+    def get_ylim(self, var=None, ymin=None, ymax=None, logy=False, errorbars=False):
+        if errorbars:
+            err = np.sqrt(var.variances)
+        else:
+            err = 0.0
+
+        if logy:
+            with np.errstate(divide="ignore", invalid="ignore"):
+                arr = np.log10(var.values - err)
+                subset = np.where(np.isfinite(arr))
+                ymin = min(ymin, np.amin(arr[subset]))
+                arr = np.log10(var.values + err)
+                subset = np.where(np.isfinite(arr))
+                ymax = max(ymax, np.amax(arr[subset]))
+        else:
+            ymin = min(ymin, np.nanmin(var.values - err))
+            ymax = max(ymax, np.nanmax(var.values + err))
+        return ymin, ymax
 
     def make_keep_button(self):
         drop = widgets.Dropdown(options=self.names,
@@ -300,6 +326,7 @@ class Slicer1d(Slicer):
                                       })
 
             # Add error bars
+            print(name, self.variances[name])
             if self.variances[name]:
                 if self.histograms[name][dim]:
                     err_x = edges_to_centers(new_x)
@@ -332,6 +359,8 @@ class Slicer1d(Slicer):
                 self.lab[dim].value = self.make_slider_label(
                     self.slider_x[self.name][dim], val.value)
                 vslice = vslice[val.dim, val.value]
+        if vslice.unaligned is not None:
+            vslice = scipp_histogram(vslice)
         return vslice
 
     def slice_masks(self):
