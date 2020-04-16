@@ -157,16 +157,16 @@ public:
       throw_keyword_arg_constructor_bad_dtype(core::dtype<ElemT>);
       return VarT{}; // unreachable
     } else {
-      std::optional<element_array<ElemT>> values;
+      element_array<ElemT> values;
       if constexpr (hasVal)
         values = std::make_from_tuple<element_array<ElemT>>(std::move(valArgs));
-      std::optional<element_array<ElemT>> variances;
       if constexpr (hasVar)
-        variances =
-            std::make_from_tuple<element_array<ElemT>>(std::move(varArgs));
-      return VarT::template create<ElemT>(
-          std::move(std::get<NonDataTypes>(nonData))..., std::move(values),
-          std::move(variances));
+        return VarT::template create<ElemT>(
+            std::move(std::get<NonDataTypes>(nonData))..., std::move(values),
+            std::make_from_tuple<element_array<ElemT>>(std::move(varArgs)));
+      else
+        return VarT::template create<ElemT>(
+            std::move(std::get<NonDataTypes>(nonData))..., std::move(values));
     }
   }
 

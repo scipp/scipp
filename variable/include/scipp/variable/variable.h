@@ -107,13 +107,16 @@ public:
 
   template <class T>
   static Variable create(const units::Unit &u, const Dims &d, const Shape &s,
-                         std::optional<element_array<T>> &&val,
-                         std::optional<element_array<T>> &&var);
-
+                         element_array<T> &&val);
   template <class T>
   static Variable create(const units::Unit &u, const Dimensions &d,
-                         std::optional<element_array<T>> &&val,
-                         std::optional<element_array<T>> &&var);
+                         element_array<T> &&val);
+  template <class T>
+  static Variable create(const units::Unit &u, const Dims &d, const Shape &s,
+                         element_array<T> &&val, element_array<T> &&var);
+  template <class T>
+  static Variable create(const units::Unit &u, const Dimensions &d,
+                         element_array<T> &&val, element_array<T> &&var);
 
   template <class T>
   Variable(const Dimensions &dimensions, std::initializer_list<T> values_)
