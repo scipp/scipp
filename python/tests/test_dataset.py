@@ -1108,50 +1108,6 @@ def test_replace():
 #    self.assertNotEqual(c, a_slice)
 #
 #
-# def test_numpy_interoperable(self):
-#    # TODO: Need also __setitem__ with view.
-#    # self.dataset[sc.Data.Value, 'data2'] =
-#    #     self.dataset[sc.Data.Value, 'data1']
-#    self.dataset[sc.Data.Value, 'data2'] = np.exp(
-#        self.dataset[sc.Data.Value, 'data1'])
-#    np.testing.assert_array_equal(
-#        self.dataset[sc.Data.Value, 'data2'].numpy,
-#        np.exp(self.reference_data1))
-#    # Restore original value.
-#    self.dataset[sc.Data.Value, 'data2'] = self.reference_data2
-#    np.testing.assert_array_equal(
-#        self.dataset[sc.Data.Value, 'data2'].numpy, self.reference_data2)
-#
-# def test_slice_numpy_interoperable(self):
-#    # Dataset subset then view single variable
-#    self.dataset.subset['data2'][sc.Data.Value, 'data2'] = np.exp(
-#        self.dataset[sc.Data.Value, 'data1'])
-#    np.testing.assert_array_equal(
-#        self.dataset[sc.Data.Value, 'data2'].numpy,
-#        np.exp(self.reference_data1))
-#    # Slice view of dataset then view single variable
-#    self.dataset['x', 0][sc.Data.Value, 'data2'] = np.exp(
-#        self.dataset['x', 1][sc.Data.Value, 'data1'])
-#    np.testing.assert_array_equal(
-#        self.dataset[sc.Data.Value, 'data2'].numpy[..., 0],
-#        np.exp(self.reference_data1[..., 1]))
-#    # View single variable then slice view
-#    self.dataset[sc.Data.Value, 'data2']['x', 1] = np.exp(
-#        self.dataset[sc.Data.Value, 'data1']['x', 0])
-#    np.testing.assert_array_equal(
-#        self.dataset[sc.Data.Value, 'data2'].numpy[..., 1],
-#        np.exp(self.reference_data1[..., 0]))
-#    # View single variable then view range of slices
-#    self.dataset[sc.Data.Value, 'data2']['y', 1:3] = np.exp(
-#        self.dataset[sc.Data.Value, 'data1']['y', 0:2])
-#    np.testing.assert_array_equal(self.dataset[sc.Data.Value,
-#                                               'data2'].numpy[:, 1:3, :],
-#                                  np.exp(self.reference_data1[:, 0:2, :]))
-#
-#    # Restore original value.
-#    self.dataset[sc.Data.Value, 'data2'] = self.reference_data2
-#    np.testing.assert_array_equal(
-#        self.dataset[sc.Data.Value, 'data2'].numpy, self.reference_data2)
 #
 # def test_concatenate(self):
 #    dataset = sc.Dataset()
