@@ -7,7 +7,7 @@
 #include "scipp/common/constants.h"
 #include "scipp/core/element_trigonometry_operations.h"
 #include "scipp/variable/transform.h"
-#include "scipp/variable/variable_trigonometry.h"
+#include "scipp/variable/trigonometry.h"
 
 using namespace scipp::core;
 

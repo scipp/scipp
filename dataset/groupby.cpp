@@ -9,13 +9,13 @@
 #include "scipp/core/tag_util.h"
 
 #include "scipp/variable/indexed_slice_view.h"
-#include "scipp/variable/variable_operations.h"
+#include "scipp/variable/operations.h"
 
 #include "scipp/dataset/event.h"
 #include "scipp/dataset/except.h"
 #include "scipp/dataset/groupby.h"
 
-#include "../variable/variable_operations_common.h"
+#include "../variable/operations_common.h"
 #include "dataset_operations_common.h"
 
 using namespace scipp::variable;

@@ -5,7 +5,7 @@
 
 #include "scipp/dataset/dataset.h"
 #include "scipp/neutron/beamline.h"
-#include "scipp/variable/variable_operations.h"
+#include "scipp/variable/operations.h"
 
 using namespace scipp;
 using namespace scipp::variable;

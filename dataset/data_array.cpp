@@ -9,9 +9,9 @@
 #include "scipp/core/histogram.h"
 
 #include "scipp/variable/event.h"
+#include "scipp/variable/operations.h"
 #include "scipp/variable/subspan_view.h"
 #include "scipp/variable/transform.h"
-#include "scipp/variable/variable_operations.h"
 
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/event.h"

@@ -11,10 +11,10 @@
 #include "scipp/core/operators.h"
 #include "scipp/variable/apply.h"
 #include "scipp/variable/except.h"
+#include "scipp/variable/misc_operations.h"
 #include "scipp/variable/transform.h"
-#include "scipp/variable/variable_operations.h"
 
-#include "variable_operations_common.h"
+#include "operations_common.h"
 
 using namespace scipp::core;
 

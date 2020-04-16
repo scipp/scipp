@@ -11,16 +11,16 @@ set(INC_FILES
     include/scipp/variable/subspan_view.h
     include/scipp/variable/transform.h
     include/scipp/variable/transform_subspan.h
-    include/scipp/variable/variable_binary_arithmetic.h
+    include/scipp/variable/binary_arithmetic.h
     include/scipp/variable/variable_concept.h
     include/scipp/variable/variable.h
     include/scipp/variable/variable.tcc
     include/scipp/variable/variable_keyword_arg_constructor.h
-    include/scipp/variable/variable_logical.h
-    include/scipp/variable/variable_misc_operations.h
-    include/scipp/variable/variable_operations.h
-    include/scipp/variable/variable_reduction.h
-    include/scipp/variable/variable_trigonometry.h
+    include/scipp/variable/logical.h
+    include/scipp/variable/misc_operations.h
+    include/scipp/variable/operations.h
+    include/scipp/variable/reduction.h
+    include/scipp/variable/trigonometry.h
     include/scipp/variable/visit.h
 )
 
@@ -30,17 +30,17 @@ set(SRC_FILES
     rebin.cpp
     string.cpp
     subspan_view.cpp
-    variable_binary_arithmetic.cpp
+    binary_arithmetic.cpp
     variable_concept.cpp
     variable.cpp
-    variable_inplace_arithmetic.cpp
+    inplace_arithmetic.cpp
     variable_instantiate_basic.cpp
     variable_instantiate_view_elements.cpp
-    variable_logical.cpp
-    variable_operations.cpp
-    variable_reduction.cpp
-    variable_trigonometry.cpp
-    variable_type_conversion.cpp
+    logical.cpp
+    operations.cpp
+    reduction.cpp
+    trigonometry.cpp
+    type_conversion.cpp
 )
 
 set(LINK_TYPE "STATIC")

@@ -4,12 +4,12 @@
 #include <vector>
 
 #include "test_macros.h"
-
 #include "make_sparse.h"
+
 #include "scipp/core/operators.h"
+#include "scipp/variable/binary_arithmetic.h"
 #include "scipp/variable/transform.h"
 #include "scipp/variable/variable.h"
-#include "scipp/variable/variable_binary_arithmetic.h"
 
 using namespace scipp;
 using namespace scipp::core;

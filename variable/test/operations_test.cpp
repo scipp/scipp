@@ -4,12 +4,12 @@
 #include <vector>
 
 #include "test_macros.h"
-
 #include "fix_typed_test_suite_warnings.h"
+
 #include "scipp/core/element_unary_operations.h"
 #include "scipp/variable/except.h"
+#include "scipp/variable/operations.h"
 #include "scipp/variable/variable.h"
-#include "scipp/variable/variable_operations.h"
 
 using namespace scipp;
 using namespace scipp::core;
