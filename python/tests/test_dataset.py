@@ -732,18 +732,19 @@ def test_replace():
     v2 = sc.Variable([sc.Dim.X], values=np.array([4, 5, 6]))
     d['a'].data == v2
 
-
-# test_realign - Not done yet
+# test_realign - done in test_realign.py 
 # test_delitem - tested elsewhere
 # test_insert_default_init - not relevant
 # test_insert - equivalent tested elsewhere
 # test_replace - refactored
 # test_insert_Variable - tested elsewhere
-# test_demo_int_to_float_issue - not relevant?
+# test_demo_int_to_float_issue - not relevant? : Indeed issue gone
 # test_binary_dataset_rhs_operations - tested elsewhere
 # test_binary_variable_rhs_operations - tested elsewhere
 # test_binary_float_operations - tested elsewhere
 # test_equal_not_equal - tested elsewhere
+# test_numpy_interoperable : Tested in test_variable.py
+# test_concatenate: Tested above
 #
 #    dataset[sc.Data.Value, 'data'] = (['z', 'y', 'x'],
 #                                      (1, 2, 3))
