@@ -41,8 +41,6 @@ template <class T> typename T::view_type makeViewItem(T &);
 namespace scipp::variable {
 
 namespace detail {
-std::vector<scipp::index> reorderedShape(const scipp::span<const Dim> &order,
-                                         const Dimensions &dimensions);
 void expect0D(const Dimensions &dims);
 } // namespace detail
 

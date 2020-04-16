@@ -124,7 +124,7 @@ template <class T>
 VariableConceptHandle
 VariableConceptT<T>::reshape(const Dimensions &dims) const {
   if (this->dims().volume() != dims.volume())
-    throw std::runtime_error(
+    throw except::DimensionError(
         "Cannot reshape to dimensions with different volume");
   return std::make_unique<ViewModel<decltype(valuesReshaped(dims))>>(
       dims, valuesReshaped(dims), optionalVariancesReshaped(*this, dims));
@@ -133,7 +133,7 @@ VariableConceptT<T>::reshape(const Dimensions &dims) const {
 template <class T>
 VariableConceptHandle VariableConceptT<T>::reshape(const Dimensions &dims) {
   if (this->dims().volume() != dims.volume())
-    throw std::runtime_error(
+    throw except::DimensionError(
         "Cannot reshape to dimensions with different volume");
   return std::make_unique<ViewModel<decltype(valuesReshaped(dims))>>(
       dims, valuesReshaped(dims), optionalVariancesReshaped(*this, dims));
@@ -142,8 +142,7 @@ VariableConceptHandle VariableConceptT<T>::reshape(const Dimensions &dims) {
 template <class T>
 VariableConceptHandle
 VariableConceptT<T>::transpose(const std::vector<Dim> &tdims) const {
-  auto dms = Dimensions(std::vector<Dim>(tdims.begin(), tdims.end()),
-                        detail::reorderedShape(tdims, dims()));
+  auto dms = core::transpose(dims(), tdims);
   using U = decltype(valuesView(dms));
   return std::make_unique<ViewModel<U>>(
       dms, valuesView(dms),
@@ -153,8 +152,7 @@ VariableConceptT<T>::transpose(const std::vector<Dim> &tdims) const {
 template <class T>
 VariableConceptHandle
 VariableConceptT<T>::transpose(const std::vector<Dim> &tdims) {
-  auto dms = Dimensions(std::vector<Dim>(tdims.begin(), tdims.end()),
-                        detail::reorderedShape(tdims, dims()));
+  auto dms = core::transpose(dims(), tdims);
   using U = decltype(valuesView(dms));
   return std::make_unique<ViewModel<U>>(
       dms, valuesView(dms),

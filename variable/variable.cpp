@@ -10,18 +10,6 @@
 
 namespace scipp::variable {
 
-std::vector<scipp::index>
-detail::reorderedShape(const scipp::span<const Dim> &order,
-                       const Dimensions &dimensions) {
-  if (order.size() != dimensions.ndim())
-    throw std::runtime_error("Cannot transpose input dimensions should be "
-                             "exactly the same but maybe in different order.");
-  std::vector<scipp::index> res(order.size());
-  std::transform(order.begin(), order.end(), res.begin(),
-                 [&dimensions](auto &a) { return dimensions[a]; });
-  return res;
-}
-
 Variable::Variable(const VariableConstView &slice)
     : Variable(slice ? Variable(slice, slice.dims()) : Variable()) {
   // There is a bug in the implementation of MultiIndex used in ElementArrayView
