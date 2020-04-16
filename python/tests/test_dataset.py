@@ -1285,18 +1285,18 @@ def test_replace():
 #    np.testing.assert_array_equal(
 #        dataset[sc.Data.Value, 'data'].numpy, np.array([0, 1, 2, 3, 0, 1]))
 #
-# def test_rebin(self):
-#    dataset = sc.Dataset()
-#    dataset[sc.Data.Value, 'data'] = (['x'], np.array(10 * [1.0]))
-#    dataset[sc.Data.Value, 'data'].unit = sc.units.counts
-#    dataset[sc.Coord.X] = (['x'], np.arange(11.0))
-#    new_coord = sc.Variable(dims=['x'], np.arange(0.0, 11, 2))
-#    dataset = sc.rebin(dataset, new_coord)
-#    np.testing.assert_array_equal(
-#        dataset[sc.Data.Value, 'data'].numpy, np.array(5 * [2]))
-#    np.testing.assert_array_equal(
-#        dataset[sc.Coord.X].numpy, np.arange(0, 11, 2))
-#
+
+def test_rebin():
+    dataset = sc.Dataset()
+    dataset['data'] = sc.Variable(['x'], values=np.array(10 * [1.0]), unit=sc.units.counts)
+    dataset.coords['x'] = sc.Variable(['x'], values=np.arange(11.0))
+    new_coord = sc.Variable(dims=['x'], values=np.arange(0.0, 11, 2))
+    dataset = sc.rebin(dataset, 'x', new_coord)
+    np.testing.assert_array_equal(
+        dataset['data'].values, np.array(5 * [2]))
+    np.testing.assert_array_equal(
+        dataset.coords['x'].values, np.arange(0, 11, 2))
+
 # def test_sort(self):
 #    dataset = sc.Dataset()
 #    dataset[sc.Data.Value, 'data'] = (['x'], np.arange(4))
