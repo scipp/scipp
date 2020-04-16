@@ -3,8 +3,8 @@
 #include <gtest/gtest.h>
 #include <vector>
 
-#include "test_macros.h"
 #include "make_sparse.h"
+#include "test_macros.h"
 
 #include "scipp/core/operators.h"
 #include "scipp/variable/binary_arithmetic.h"
