@@ -79,7 +79,7 @@ class Slicer:
 
             self.params["values"][name] = parse_params(params=values,
                                                        globs=globs,
-                                                       array=array.data)
+                                                       variable=array.data)
 
             self.params["variances"][name] = {"show": False}
             if array.variances is not None:
@@ -87,7 +87,9 @@ class Slicer:
                     parse_params(params=variances,
                                  defaults={"show": False},
                                  globs=globs,
-                                 array=np.sqrt(array.variances)))
+                                 variable=Variable(dims=array.dims,
+                                                values=np.sqrt(array.variances),
+                                                unit=array.unit)))
 
             self.params["masks"][name] = parse_params(params=masks,
                                                       defaults={

@@ -34,7 +34,7 @@ def centers_to_edges(x):
     return np.concatenate([[2.0 * x[0] - e[0]], e, [2.0 * x[-1] - e[-1]]])
 
 
-def parse_params(params=None, defaults=None, globs=None, array=None):
+def parse_params(params=None, defaults=None, globs=None, variable=None, array=None):
     """
     Construct the colorbar settings using default and input values
     """
@@ -56,7 +56,21 @@ def parse_params(params=None, defaults=None, globs=None, array=None):
         for key, val in params.items():
             parsed[key] = val
 
+    need_norm = False
+    if variable is not None:
+        if parsed["vmin"] is None:
+            parsed["vmin"] = sc.min(variable).value
+        if parsed["vmax"] is None:
+            parsed["vmax"] = sc.max(variable).value
+        need_norm = True
     if array is not None:
+        if parsed["vmin"] is None:
+            parsed["vmin"] = np.nanmin(array)
+        if parsed["vmax"] is None:
+            parsed["vmax"] = np.nanmax(array)
+        need_norm = True
+
+    if need_norm:
         # TODO: possibly need to add a C++ method for finding min/max of
         # Variables to avoid the creation of a large array of bools in
         # np.ma.masked_invalid
@@ -65,10 +79,10 @@ def parse_params(params=None, defaults=None, globs=None, array=None):
         #         subset = np.ma.masked_invalid(np.log10(array), copy=False)
         # else:
         #     subset = np.ma.masked_invalid(array, copy=False)
-        if parsed["vmin"] is None:
-            parsed["vmin"] = sc.min(array).value
-        if parsed["vmax"] is None:
-            parsed["vmax"] = sc.max(array).value
+        # if parsed["vmin"] is None:
+        #     parsed["vmin"] = sc.min(array).value
+        # if parsed["vmax"] is None:
+        #     parsed["vmax"] = sc.max(array).value
         if parsed["log"]:
             norm = LogNorm(vmin=parsed["vmin"], vmax=parsed["vmax"])
             # norm = LogNorm(vmin=10.0**parsed["vmin"],

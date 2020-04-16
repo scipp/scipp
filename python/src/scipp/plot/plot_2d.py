@@ -6,9 +6,9 @@
 from .. import config
 from .render import render_plot
 from .slicer import Slicer
-from .tools import centers_to_edges, edges_to_centers
+from .tools import centers_to_edges, edges_to_centers, parse_params
 from ..utils import name_with_unit
-from .._scipp.core import Variable
+from .._scipp.core import Variable, histogram as scipp_histogram
 
 # Other imports
 import numpy as np
@@ -95,6 +95,10 @@ class Slicer2d(Slicer):
         self.extent = {"x": [1, 2], "y": [1, 2]}
         self.logx = logx
         self.logy = logy
+        self.vminmax = {"vmin": vmin, "vmax": vmax}
+        # self.vmax = vmax
+        self.global_vmin = np.Inf
+        self.global_vmax = np.NINF
 
         # Get or create matplotlib axes
         self.fig = None
@@ -308,6 +312,12 @@ class Slicer2d(Slicer):
                            values=np.ones(shape_list, dtype=np.int32))
             msk *= Variable(mslice.dims, values=mslice.values.astype(np.int32))
 
+        # print(vslice.unaligned)
+        autoscale_cbar = False
+        if vslice.unaligned is not None:
+            vslice = scipp_histogram(vslice)
+            autoscale_cbar = True
+
         for key in self.ax.keys():
             arr = getattr(vslice, key)
             if key == "variances":
@@ -315,6 +325,9 @@ class Slicer2d(Slicer):
             if transp:
                 arr = arr.T
             self.im[key].set_data(arr)
+            if autoscale_cbar:
+                self.params[key][self.name]["norm"] = parse_params(globs=self.vminmax, array=arr)["norm"]
+                self.im[key].set_norm(self.params[key][self.name]["norm"])
             if self.params["masks"][self.name]["show"]:
                 self.im[self.get_mask_key(key)].set_data(
                     self.mask_to_float(msk.values, arr))

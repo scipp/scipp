@@ -32,6 +32,7 @@ defaults = {
             "color": None,
             "show": True,
             "cbar": True,
+            "norm": None,
         },
         # The default image height (in pixels)
         "height":
