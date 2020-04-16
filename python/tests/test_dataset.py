@@ -1107,13 +1107,6 @@ def test_replace():
 #    self.assertNotEqual(c, a)
 #    self.assertNotEqual(c, a_slice)
 #
-# def test_plus_equals_slice(self):
-#    dataset = sc.Dataset()
-#    dataset[sc.Data.Value, 'data1'] = (
-#        ['z', 'y', 'x'], self.reference_data1)
-#    a = sc.Dataset(dataset['x', 0])
-#    b = dataset['x', 1]
-#    a += b
 #
 # def test_numpy_interoperable(self):
 #    # TODO: Need also __setitem__ with view.
