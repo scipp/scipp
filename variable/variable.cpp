@@ -29,6 +29,41 @@ Variable::Variable(const VariableConstView &parent, const Dimensions &dims)
 Variable::Variable(const Variable &parent, VariableConceptHandle data)
     : m_unit(parent.unit()), m_object(std::move(data)) {}
 
+VariableConstView::VariableConstView(const Variable &variable,
+                                     const Dimensions &dims)
+    : m_variable(&variable), m_view(variable.data().reshape(dims)) {}
+
+VariableConstView::VariableConstView(const Variable &variable, const Dim dim,
+                                     const scipp::index begin,
+                                     const scipp::index end)
+    : m_variable(&variable), m_view(variable.data().makeView(dim, begin, end)) {
+}
+
+VariableConstView::VariableConstView(const VariableConstView &slice,
+                                     const Dim dim, const scipp::index begin,
+                                     const scipp::index end)
+    : m_variable(slice.m_variable),
+      m_view(slice.data().makeView(dim, begin, end)) {}
+
+// Note that we use the basic constructor of VariableConstView to avoid
+// creation of a const m_view, which would be overwritten immediately.
+VariableView::VariableView(Variable &variable, const Dimensions &dims)
+    : VariableConstView(variable), m_mutableVariable(&variable) {
+  m_view = variable.data().reshape(dims);
+}
+
+VariableView::VariableView(Variable &variable, const Dim dim,
+                           const scipp::index begin, const scipp::index end)
+    : VariableConstView(variable), m_mutableVariable(&variable) {
+  m_view = variable.data().makeView(dim, begin, end);
+}
+
+VariableView::VariableView(const VariableView &slice, const Dim dim,
+                           const scipp::index begin, const scipp::index end)
+    : VariableConstView(slice), m_mutableVariable(slice.m_mutableVariable) {
+  m_view = slice.data().makeView(dim, begin, end);
+}
+
 void Variable::setDims(const Dimensions &dimensions) {
   if (dimensions.volume() == m_object->dims().volume()) {
     if (dimensions != m_object->dims())
@@ -107,6 +142,14 @@ Variable Variable::slice(const Slice slice) && {
   return Variable{this->slice(slice)};
 }
 
+VariableConstView VariableConstView::slice(const Slice slice) const {
+  return VariableConstView(*this, slice.dim(), slice.begin(), slice.end());
+}
+
+VariableView VariableView::slice(const Slice slice) const {
+  return VariableView(*this, slice.dim(), slice.begin(), slice.end());
+}
+
 VariableConstView Variable::reshape(const Dimensions &dims) const & {
   return {*this, dims};
 }
@@ -160,6 +203,15 @@ VariableView VariableView::transpose(const std::vector<Dim> &dims) const {
   auto dms = this->dims();
   return makeTransposed(*this,
                         dims.empty() ? reverseDimOrder(dms.labels()) : dims);
+}
+
+std::vector<scipp::index> VariableConstView::strides() const {
+  const auto parent = m_variable->dims();
+  std::vector<scipp::index> strides;
+  for (const auto &label : parent.labels())
+    if (dims().contains(label))
+      strides.emplace_back(parent.offset(label));
+  return strides;
 }
 
 void Variable::rename(const Dim from, const Dim to) {

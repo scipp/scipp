@@ -318,16 +318,11 @@ public:
 
   VariableConstView() = default;
   VariableConstView(const Variable &variable) : m_variable(&variable) {}
-  VariableConstView(const Variable &variable, const Dimensions &dims)
-      : m_variable(&variable), m_view(variable.data().reshape(dims)) {}
+  VariableConstView(const Variable &variable, const Dimensions &dims);
   VariableConstView(const Variable &variable, const Dim dim,
-                    const scipp::index begin, const scipp::index end = -1)
-      : m_variable(&variable),
-        m_view(variable.data().makeView(dim, begin, end)) {}
+                    const scipp::index begin, const scipp::index end = -1);
   VariableConstView(const VariableConstView &slice, const Dim dim,
-                    const scipp::index begin, const scipp::index end = -1)
-      : m_variable(slice.m_variable),
-        m_view(slice.data().makeView(dim, begin, end)) {}
+                    const scipp::index begin, const scipp::index end = -1);
 
   explicit operator bool() const noexcept {
     return m_variable && m_variable->operator bool();
@@ -335,9 +330,7 @@ public:
 
   auto operator~() const { return m_variable->operator~(); }
 
-  VariableConstView slice(const Slice slice) const {
-    return VariableConstView(*this, slice.dim(), slice.begin(), slice.end());
-  }
+  VariableConstView slice(const Slice slice) const;
 
   VariableConstView transpose(const std::vector<Dim> &dims = {}) const;
   // Note the return type. Reshaping a non-contiguous slice cannot return a
@@ -348,30 +341,15 @@ public:
 
   // Note: Returning by value to avoid issues with referencing a temporary
   // (VariableView is returned by-value from DatasetSlice).
-  Dimensions dims() const {
-    if (m_view)
-      return m_view->dims();
-    else
-      return m_variable->dims();
-  }
+  Dimensions dims() const { return data().dims(); }
 
-  std::vector<scipp::index> strides() const {
-    const auto parent = m_variable->dims();
-    std::vector<scipp::index> strides;
-    for (const auto &label : parent.labels())
-      if (dims().contains(label))
-        strides.emplace_back(parent.offset(label));
-    return strides;
-  }
+  std::vector<scipp::index> strides() const;
 
   DType dtype() const noexcept { return m_variable->dtype(); }
 
   const VariableConcept &data() const && = delete;
   const VariableConcept &data() const & {
-    if (m_view)
-      return *m_view;
-    else
-      return m_variable->data();
+    return m_view ? *m_view : m_variable->data();
   }
 
   bool hasVariances() const noexcept { return m_variable->hasVariances(); }
@@ -426,26 +404,13 @@ public:
   VariableView() = default;
   VariableView(Variable &variable)
       : VariableConstView(variable), m_mutableVariable(&variable) {}
-  // Note that we use the basic constructor of VariableConstView to avoid
-  // creation of a const m_view, which would be overwritten immediately.
-  VariableView(Variable &variable, const Dimensions &dims)
-      : VariableConstView(variable), m_mutableVariable(&variable) {
-    m_view = variable.data().reshape(dims);
-  }
+  VariableView(Variable &variable, const Dimensions &dims);
   VariableView(Variable &variable, const Dim dim, const scipp::index begin,
-               const scipp::index end = -1)
-      : VariableConstView(variable), m_mutableVariable(&variable) {
-    m_view = variable.data().makeView(dim, begin, end);
-  }
+               const scipp::index end = -1);
   VariableView(const VariableView &slice, const Dim dim,
-               const scipp::index begin, const scipp::index end = -1)
-      : VariableConstView(slice), m_mutableVariable(slice.m_mutableVariable) {
-    m_view = slice.data().makeView(dim, begin, end);
-  }
+               const scipp::index begin, const scipp::index end = -1);
 
-  VariableView slice(const Slice slice) const {
-    return VariableView(*this, slice.dim(), slice.begin(), slice.end());
-  }
+  VariableView slice(const Slice slice) const;
 
   VariableView transpose(const std::vector<Dim> &dims = {}) const;
 
@@ -453,9 +418,7 @@ public:
 
   VariableConcept &data() const && = delete;
   VariableConcept &data() const & {
-    if (!m_view)
-      return m_mutableVariable->data();
-    return *m_view;
+    return m_view ? *m_view : m_mutableVariable->data();
   }
 
   // Note: No need to delete rvalue overloads here, see VariableConstView.
