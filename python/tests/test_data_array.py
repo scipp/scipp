@@ -34,6 +34,19 @@ def test_init():
     assert len(d.masks) == 1
 
 
+def _is_deep_copy_of(orig, copy):
+    assert orig == copy
+    assert not id(orig) == id(copy)
+
+
+def test_copy():
+    import copy
+    da = make_dataarray()
+    _is_deep_copy_of(da, da.copy())
+    _is_deep_copy_of(da, copy.copy(da))
+    _is_deep_copy_of(da, copy.deepcopy(da))
+
+
 def test_in_place_binary_with_variable():
     a = sc.DataArray(data=sc.Variable(['x'], values=np.arange(10.0)),
                      coords={'x': sc.Variable(['x'], values=np.arange(10.0))})

@@ -763,12 +763,18 @@ def test_rebin():
                                   np.arange(0, 11, 2))
 
 
+def _is_deep_copy_of(orig, copy):
+    assert orig == copy
+    assert not id(orig) == id(copy)
+
+
 def test_copy():
     import copy
     a = sc.Dataset()
     a['x'] = sc.Variable(value=1)
-    assert copy.copy(a) == a
-    assert copy.deepcopy(a) == a
+    _is_deep_copy_of(a, a.copy())
+    _is_deep_copy_of(a, copy.copy(a))
+    _is_deep_copy_of(a, copy.deepcopy(a))
 
 
 def test_correct_temporaries():
@@ -783,3 +789,11 @@ def test_correct_temporaries():
     assert d1['A'].values.tolist() == [[5.0, 6.0, 7.0, 8.0]]
     d1 = d1['y', 2:3]
     assert list(d1['A'].values) == [7]
+
+
+def test_iteration():
+    var = sc.Variable(value=1)
+    d = sc.Dataset(data={'a': var, 'b': var})
+    expected = ['a', 'b']
+    for k in d:
+        assert k in expected
