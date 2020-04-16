@@ -2,7 +2,7 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#include "scipp/dataset/view_decl.h"
+#include "scipp/dataset/map_view.h"
 
 namespace scipp::dataset {
 

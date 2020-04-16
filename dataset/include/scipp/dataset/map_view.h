@@ -9,7 +9,7 @@
 #include "scipp/core/slice.h"
 #include "scipp/dataset/dataset_access.h"
 #include "scipp/dataset/except.h"
-#include "scipp/dataset/view_forward.h"
+#include "scipp/dataset/map_view_forward.h"
 #include "scipp/units/dim.h"
 #include "scipp/units/unit.h"
 #include "scipp/variable/variable.h"
