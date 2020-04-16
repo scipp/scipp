@@ -368,7 +368,7 @@ def _prepare_variable_info(name,
     """
 
     dims_str = escape(f"({_make_dim_str(var, bin_edges, add_dim_size)})")
-    dtype = repr(var.dtype)[6:]
+    dtype = repr(var.dtype)
     unit = '' if var.unit == sc.units.dimensionless else repr(var.unit)
 
     disabled, attrs_ul = _make_inline_attributes(var, has_attrs)

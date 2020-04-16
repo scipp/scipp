@@ -168,17 +168,13 @@ Variable rebin(const VariableConstView &var, const Dim dim,
     if (newCoord.dims().ndim() > 1)
       throw std::runtime_error(
           "Not inner rebin works only for 1d coordinates for now.");
-    switch (oldCoord.dtype()) {
-    case dtype<double>:
+    if (oldCoord.dtype() == dtype<double>)
       rebin_non_inner<double>(dim, var, rebinned, oldCoord, newCoord);
-      break;
-    case dtype<float>:
+    else if (oldCoord.dtype() == dtype<float>)
       rebin_non_inner<float>(dim, var, rebinned, oldCoord, newCoord);
-      break;
-    default:
+    else
       throw std::runtime_error(
           "Rebinning is possible only for double and float types.");
-    }
   }
   return rebinned;
 }

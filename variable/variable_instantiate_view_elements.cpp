@@ -10,13 +10,13 @@ namespace scipp::variable {
 // Variable's elements are views into other variables. Used internally for
 // implementing functionality for sparse data combined with dense data using
 // transform.
-INSTANTIATE_VARIABLE(span<const double>)
-INSTANTIATE_VARIABLE(span<const float>)
-INSTANTIATE_VARIABLE(span<double>)
-INSTANTIATE_VARIABLE(span<float>)
-INSTANTIATE_VARIABLE(span<const int64_t>)
-INSTANTIATE_VARIABLE(span<const int32_t>)
-INSTANTIATE_VARIABLE(span<int64_t>)
-INSTANTIATE_VARIABLE(span<int32_t>)
+INSTANTIATE_VARIABLE(span_const_float64, span<const double>)
+INSTANTIATE_VARIABLE(span_const_float32, span<const float>)
+INSTANTIATE_VARIABLE(span_float64, span<double>)
+INSTANTIATE_VARIABLE(span_float32, span<float>)
+INSTANTIATE_VARIABLE(span_const_int64, span<const int64_t>)
+INSTANTIATE_VARIABLE(span_const_int32, span<const int32_t>)
+INSTANTIATE_VARIABLE(span_int64, span<int64_t>)
+INSTANTIATE_VARIABLE(span_int32, span<int32_t>)
 
 } // namespace scipp::variable
