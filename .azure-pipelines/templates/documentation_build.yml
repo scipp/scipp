@@ -5,13 +5,11 @@ jobs:
       vmImage: 'ubuntu-18.04'
     variables:
       packages_dir: '$(Build.StagingDirectory)/packages'
-      build_dir: '$(Build.StagingDirectory)/build'
       docs_dir: '$(Build.StagingDirectory)/docs'
     steps:
       - bash: |
           set -ex
           mkdir -p "$(packages_dir)"
-          mkdir -p "$(build_dir)"
           mkdir -p "$(docs_dir)"
         displayName: 'Make directories'
       - task: DownloadBuildArtifacts@0
@@ -35,14 +33,15 @@ jobs:
         displayName: 'Install Scipp package'
       - bash: |
           set -ex
+          cd docs
           source activate scipp_docs
-          python "$(docs_dir)"/data/fetch_neutron_data.py
+          python data/fetch_neutron_data.py
           mkdir $HOME/.mantid
           echo "usagereports.enabled=0" > $HOME/.mantid/Mantid.user.properties
-          sphinx-build "$(docs_dir)" "$(build_dir)"
+          sphinx-build . "$(docs_dir)"
         displayName: 'Build documentation'
       - task: PublishBuildArtifacts@1
         inputs:
-          PathtoPublish: '$(build_dir)'
+          PathtoPublish: '$(docs_dir)'
           ArtifactName: 'documentation'
         displayName: 'Publish documentation artifacts'
