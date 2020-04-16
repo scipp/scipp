@@ -17,6 +17,7 @@ def test_shape():
     d = sc.Dataset(data={'a': a, 'b': b})
     assert d.shape == [4, 3, 2]
 
+
 def test_create_empty():
     d = sc.Dataset()
     assert len(d) == 0
@@ -36,6 +37,7 @@ def test_create():
     assert d.coords['y'] == y
     assert d['xy'].data == xy
     assert d['x'].data == x
+    assert d.dims == ['y', 'x']
 
 
 def test_create_from_data_array():
