@@ -4,7 +4,7 @@
 /// @author Simon Heybrock
 #include <limits>
 
-#include "scipp/core/element_event_operations.h"
+#include "scipp/core/element/event_operations.h"
 
 #include "scipp/variable/event.h"
 #include "scipp/variable/operations.h"

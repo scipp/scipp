@@ -5,9 +5,9 @@
 #include <cmath>
 
 #include "scipp/core/dtype.h"
-#include "scipp/core/element_geometric_operations.h"
-#include "scipp/core/element_trigonometry_operations.h"
-#include "scipp/core/element_unary_operations.h"
+#include "scipp/core/element/geometric_operations.h"
+#include "scipp/core/element/trigonometry_operations.h"
+#include "scipp/core/element/unary_operations.h"
 #include "scipp/core/operators.h"
 #include "scipp/variable/apply.h"
 #include "scipp/variable/except.h"
