@@ -8,17 +8,17 @@ set(INC_FILES
 )
 
 set(SRC_FILES
+    binary_arithmetic.cpp
     counts.cpp
     data_array.cpp
-    dataset.cpp
     dataset_access.cpp
-    dataset_binary_arithmetic.cpp
-    dataset_operations.cpp
+    dataset.cpp
     event.cpp
     except.cpp
     groupby.cpp
     histogram.cpp
     map_view.cpp
+    operations.cpp
     sort.cpp
     string.cpp
     unaligned.cpp
