@@ -124,8 +124,8 @@ class Slicer1d(Slicer):
         self.mpl_line_params = mpl_line_params
 
         self.names = []
-        ymin = np.Inf
-        ymax = np.NINF
+        self.ylim = [np.Inf, np.NINF]
+        self.logy = logy
         for name, var in self.scipp_obj_dict.items():
             self.names.append(name)
             # if self.variances[name]:
@@ -145,22 +145,22 @@ class Slicer1d(Slicer):
             #     ymin = min(ymin, np.nanmin(var.values - err))
             #     ymax = max(ymax, np.nanmax(var.values + err))
             if var.values is not None:
-                ymin, ymax = self.get_ylim(var=var, ymin=ymin, ymax=ymax,
-                                           logy=logy, errorbars=self.variances[name])
+                self.ylim = self.get_ylim(var=var, ymin=self.ylim[0], ymax=self.ylim[1],
+                                          errorbars=self.variances[name])
             ylab = name_with_unit(var=var, name="")
 
         if self.mpl_axes is None and var.values is not None:
-            dy = 0.05 * (ymax - ymin)
-            yrange = [ymin - dy, ymax + dy]
-            if logy:
-                yrange = 10.0**np.array(yrange)
+            # dy = 0.05 * (ymax - ymin)
+            # yrange = [ymin - dy, ymax + dy]
+            # if logy:
+            #     yrange = 10.0**np.array(yrange)
             with warnings.catch_warnings():
                 warnings.filterwarnings("ignore", category=UserWarning)
-                self.ax.set_ylim(yrange)
+                self.ax.set_ylim(self.ylim)
 
         if logx:
             self.ax.set_xscale("log")
-        if logy:
+        if self.logy:
             self.ax.set_yscale("log")
 
         # Disable buttons
@@ -191,13 +191,13 @@ class Slicer1d(Slicer):
 
         return
 
-    def get_ylim(self, var=None, ymin=None, ymax=None, logy=False, errorbars=False):
+    def get_ylim(self, var=None, ymin=None, ymax=None, errorbars=False):
         if errorbars:
             err = np.sqrt(var.variances)
         else:
             err = 0.0
 
-        if logy:
+        if self.logy:
             with np.errstate(divide="ignore", invalid="ignore"):
                 arr = np.log10(var.values - err)
                 subset = np.where(np.isfinite(arr))
@@ -208,7 +208,12 @@ class Slicer1d(Slicer):
         else:
             ymin = min(ymin, np.nanmin(var.values - err))
             ymax = max(ymax, np.nanmax(var.values + err))
-        return ymin, ymax
+
+        dy = 0.05 * (ymax - ymin)
+        ylim = [ymin - dy, ymax + dy]
+        if self.logy:
+            ylim = 10.0**np.array(yrange)
+        return ylim
 
     def make_keep_button(self):
         drop = widgets.Dropdown(options=self.names,
@@ -274,7 +279,7 @@ class Slicer1d(Slicer):
             xmin = min(new_x[0], xmin)
             xmax = max(new_x[-1], xmax)
 
-            vslice = self.slice_data(var)
+            vslice = self.slice_data(var, name=name)
             ydata = vslice.values
 
             # If this is a histogram, plot a step function
@@ -351,7 +356,7 @@ class Slicer1d(Slicer):
             self.ax.set_xticklabels(self.get_custom_ticks(self.ax, dim))
         return
 
-    def slice_data(self, var):
+    def slice_data(self, var, name=None):
         vslice = var
         # Slice along dimensions with active sliders
         for dim, val in self.slider.items():
@@ -361,6 +366,8 @@ class Slicer1d(Slicer):
                 vslice = vslice[val.dim, val.value]
         if vslice.unaligned is not None:
             vslice = scipp_histogram(vslice)
+            self.ylim = self.get_ylim(var=vslice, ymin=self.ylim[0], ymax=self.ylim[1],
+                                      errorbars=self.variances[name])
         return vslice
 
     def slice_masks(self):
