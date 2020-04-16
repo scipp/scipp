@@ -191,18 +191,16 @@ Dimensions merge(const Dimensions &a, const Dimensions &b) {
   return out;
 }
 
-Dimensions transpose(const Dimensions &dims,
-                     const scipp::span<const Dim> &order) {
-  std::vector<Dim> labels{order.begin(), order.end()};
+Dimensions transpose(const Dimensions &dims, std::vector<Dim> labels) {
   if (labels.empty())
     labels.insert(labels.end(), dims.labels().rbegin(), dims.labels().rend());
-  else if (order.size() != dims.ndim())
+  else if (labels.size() != dims.ndim())
     throw except::DimensionError("Cannot transpose: Requested new dimension "
                                  "order contains different number of labels.");
-  std::vector<scipp::index> shape(order.size());
-  std::transform(order.begin(), order.end(), shape.begin(),
+  std::vector<scipp::index> shape(labels.size());
+  std::transform(labels.begin(), labels.end(), shape.begin(),
                  [&dims](auto &dim) { return dims[dim]; });
-  return {{order.begin(), order.end()}, shape};
+  return {labels, shape};
 }
 
 } // namespace scipp::core
