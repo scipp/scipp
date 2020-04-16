@@ -4,8 +4,8 @@
 /// @author Simon Heybrock
 #include "pybind11.h"
 
-#include "scipp/variable/operations.h"
 #include "scipp/dataset/dataset.h"
+#include "scipp/variable/operations.h"
 
 using namespace scipp;
 using namespace scipp::variable;
