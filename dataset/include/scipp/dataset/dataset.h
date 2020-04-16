@@ -16,7 +16,7 @@
 #include "scipp/common/deep_ptr.h"
 #include "scipp/dataset/dataset_access.h"
 #include "scipp/dataset/except.h"
-#include "scipp/dataset/view_decl.h"
+#include "scipp/dataset/map_view.h"
 #include "scipp/variable/variable.h"
 
 namespace scipp::dataset {

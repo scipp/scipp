@@ -3,8 +3,8 @@
 /// @file
 /// @author Simon Heybrock
 
+#include "scipp/variable/operations.h"
 #include "scipp/variable/transform.h"
-#include "scipp/variable/variable_operations.h"
 
 #include "scipp/dataset/dataset.h"
 

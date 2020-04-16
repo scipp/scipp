@@ -5,16 +5,16 @@
 #include <cmath>
 
 #include "scipp/core/dtype.h"
-#include "scipp/core/element_geometric_operations.h"
-#include "scipp/core/element_trigonometry_operations.h"
-#include "scipp/core/element_unary_operations.h"
+#include "scipp/core/element/geometric_operations.h"
+#include "scipp/core/element/trigonometry_operations.h"
+#include "scipp/core/element/unary_operations.h"
 #include "scipp/core/operators.h"
 #include "scipp/variable/apply.h"
 #include "scipp/variable/except.h"
+#include "scipp/variable/misc_operations.h"
 #include "scipp/variable/transform.h"
-#include "scipp/variable/variable_operations.h"
 
-#include "variable_operations_common.h"
+#include "operations_common.h"
 
 using namespace scipp::core;
 

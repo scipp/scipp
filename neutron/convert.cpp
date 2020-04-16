@@ -7,8 +7,8 @@
 #include <boost/units/systems/si/codata/universal_constants.hpp>
 
 #include "scipp/variable/event.h"
+#include "scipp/variable/operations.h"
 #include "scipp/variable/transform.h"
-#include "scipp/variable/variable_operations.h"
 
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/dataset_util.h"
