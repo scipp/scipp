@@ -78,6 +78,7 @@ class Slicer1d(Slicer):
         self.scipp_obj_dict = scipp_obj_dict
         self.fig = None
         self.mpl_axes = mpl_axes
+        self.input_contains_unaligned_data = False
         if self.mpl_axes is not None:
             self.ax = self.mpl_axes
         else:
@@ -93,6 +94,7 @@ class Slicer1d(Slicer):
         for name, var in self.scipp_obj_dict.items():
             if var.unaligned is not None:
                 self.variances[name] = var.unaligned.variances is not None
+                self.input_contains_unaligned_data = True
             else:
                 self.variances[name] = var.variances is not None
         if variances is not None:
@@ -149,7 +151,7 @@ class Slicer1d(Slicer):
                                           errorbars=self.variances[name])
             ylab = name_with_unit(var=var, name="")
 
-        if self.mpl_axes is None and var.values is not None:
+        if (self.mpl_axes is None) and (var.values is not None):
             # dy = 0.05 * (ymax - ymin)
             # yrange = [ymin - dy, ymax + dy]
             # if logy:
@@ -201,19 +203,22 @@ class Slicer1d(Slicer):
             with np.errstate(divide="ignore", invalid="ignore"):
                 arr = np.log10(var.values - err)
                 subset = np.where(np.isfinite(arr))
-                ymin = min(ymin, np.amin(arr[subset]))
+                # ymin = min(ymin, np.amin(arr[subset]))
+                ymin_new = np.amin(arr[subset])
                 arr = np.log10(var.values + err)
                 subset = np.where(np.isfinite(arr))
-                ymax = max(ymax, np.amax(arr[subset]))
+                ymax_new = np.amax(arr[subset])
         else:
-            ymin = min(ymin, np.nanmin(var.values - err))
-            ymax = max(ymax, np.nanmax(var.values + err))
+            ymin_new = np.nanmin(var.values - err)
+            ymax_new = np.nanmax(var.values + err)
 
-        dy = 0.05 * (ymax - ymin)
-        ylim = [ymin - dy, ymax + dy]
+        dy = 0.05 * (ymax_new - ymin_new)
+        ymin_new -= dy
+        ymax_new += dy
         if self.logy:
-            ylim = 10.0**np.array(yrange)
-        return ylim
+            ymin_new = 10.0**ymin_new
+            ymax_new = 10.0**ymax_new
+        return [min(ymin, ymin_new), max(ymax, ymax_new)]
 
     def make_keep_button(self):
         drop = widgets.Dropdown(options=self.names,
@@ -279,7 +284,7 @@ class Slicer1d(Slicer):
             xmin = min(new_x[0], xmin)
             xmax = max(new_x[-1], xmax)
 
-            vslice = self.slice_data(var, name=name)
+            vslice = self.slice_data(var, name)
             ydata = vslice.values
 
             # If this is a histogram, plot a step function
@@ -350,13 +355,16 @@ class Slicer1d(Slicer):
             with warnings.catch_warnings():
                 warnings.filterwarnings("ignore", category=UserWarning)
                 self.ax.set_xlim([xmin - deltax, xmax + deltax])
+                if self.input_contains_unaligned_data:
+                    self.ax.set_ylim(self.ylim)
+
         self.ax.set_xlabel(
             name_with_unit(self.slider_x[self.name][dim], name=str(dim)))
         if self.slider_ticks[self.name][dim] is not None:
             self.ax.set_xticklabels(self.get_custom_ticks(self.ax, dim))
         return
 
-    def slice_data(self, var, name=None):
+    def slice_data(self, var, name):
         vslice = var
         # Slice along dimensions with active sliders
         for dim, val in self.slider.items():
@@ -382,7 +390,7 @@ class Slicer1d(Slicer):
         if self.masks is not None:
             mslice = self.slice_masks()
         for name, var in self.scipp_obj_dict.items():
-            vslice = self.slice_data(var)
+            vslice = self.slice_data(var, name)
             vals = vslice.values
             if self.histograms[name][self.button_axis_to_dim["x"]]:
                 vals = np.concatenate((vals[0:1], vals))
@@ -399,6 +407,11 @@ class Slicer1d(Slicer):
                 coll.set_segments(
                     self.change_segments_y(coll.get_segments(), vslice.values,
                                            np.sqrt(vslice.variances)))
+        if self.input_contains_unaligned_data and (self.mpl_axes is None):
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", category=UserWarning)
+                self.ax.set_ylim(self.ylim)
+
         return
 
     def keep_remove_trace(self, owner):
