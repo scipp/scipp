@@ -8,6 +8,15 @@ import pytest
 import scipp as sc
 
 
+def test_shape():
+    a = sc.Variable(value=1)
+    d = sc.Dataset(data={'a': a})
+    assert d.shape == []
+    a = sc.Variable(['x'], shape=[2])
+    b = sc.Variable(['y', 'z'], shape=[3, 4])
+    d = sc.Dataset(data={'a': a, 'b': b})
+    assert d.shape == [4, 3, 2]
+
 def test_create_empty():
     d = sc.Dataset()
     assert len(d) == 0
@@ -391,7 +400,7 @@ def test_variable_histogram():
         hist.values, np.array([[1.0, 4.0, 1.0, 0.0], [0.0, 6.0, 0.0, 0.0]]))
 
 
-@pytest.mark.skip(reason="Requires unaligned dataset items")
+#@pytest.mark.skip(reason="Requires unaligned dataset items")
 def test_dataset_histogram():
     var = sc.Variable(dims=['x'], shape=[2], dtype=sc.dtype.event_list_float64)
     var['x', 0].values = np.arange(3)
