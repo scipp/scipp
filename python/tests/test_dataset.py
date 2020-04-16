@@ -402,7 +402,6 @@ def test_variable_histogram():
         hist.values, np.array([[1.0, 4.0, 1.0, 0.0], [0.0, 6.0, 0.0, 0.0]]))
 
 
-#@pytest.mark.skip(reason="Requires unaligned dataset items")
 def test_dataset_histogram():
     var = sc.Variable(dims=['x'], shape=[2], dtype=sc.dtype.event_list_float64)
     var['x', 0].values = np.arange(3)
@@ -410,16 +409,20 @@ def test_dataset_histogram():
     var['x', 0].values.extend(np.ones(3))
     var['x', 1].values = np.ones(6)
     ds = sc.Dataset()
-    ds['s'] = sc.DataArray(data=sc.Variable(dims=['x'],
-                                            values=np.ones(2),
-                                            variances=np.ones(2)),
-                           coords={'y': var})
-    ds['s1'] = sc.DataArray(data=sc.Variable(dims=['x'],
-                                             values=np.ones(2),
-                                             variances=np.ones(2)),
-                            coords={'y': var * 5.0})
-    h = sc.histogram(
-        ds, sc.Variable(values=np.arange(5, dtype=np.float64), dims=['y']))
+    s = sc.DataArray(data=sc.Variable(dims=['x'],
+                                      values=np.ones(2),
+                                      variances=np.ones(2)),
+                     coords={'y': var})
+    s1 = sc.DataArray(data=sc.Variable(dims=['x'],
+                                       values=np.ones(2),
+                                       variances=np.ones(2)),
+                      coords={'y': var * 5.0})
+    realign_coords = {
+        'y': sc.Variable(values=np.arange(5, dtype=np.float64), dims=['y'])
+    }
+    ds['s'] = sc.realign(s, realign_coords)
+    ds['s1'] = sc.realign(s1, realign_coords)
+    h = sc.histogram(ds)
     assert np.array_equal(
         h['s'].values, np.array([[1.0, 4.0, 1.0, 0.0], [0.0, 6.0, 0.0, 0.0]]))
     assert np.array_equal(
