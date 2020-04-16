@@ -145,7 +145,7 @@ class Slicer2d(Slicer):
             self.cax["variances"] = cax[1]
             panels.append("variances")
 
-        print(self.params)
+        # print(self.params)
 
         extent_array = np.array(list(self.extent.values())).flatten()
         for key in panels:
@@ -326,7 +326,10 @@ class Slicer2d(Slicer):
                 arr = arr.T
             self.im[key].set_data(arr)
             if autoscale_cbar:
-                self.params[key][self.name]["norm"] = parse_params(globs=self.vminmax, array=arr)["norm"]
+                cbar_params = parse_params(globs=self.vminmax, array=arr, min_val=self.global_vmin, max_val=self.global_vmax)
+                self.global_vmin = cbar_params["vmin"]
+                self.global_vmax = cbar_params["vmax"]
+                self.params[key][self.name]["norm"] = cbar_params["norm"]
                 self.im[key].set_norm(self.params[key][self.name]["norm"])
             if self.params["masks"][self.name]["show"]:
                 self.im[self.get_mask_key(key)].set_data(
