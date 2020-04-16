@@ -37,9 +37,9 @@ jobs:
           source activate scipp_docs
           python data/fetch_neutron_data.py
           mkdir $HOME/.mantid
-          echo "usagereports.enabled=0" > $HOME/.mantid/Mantid.user.properties
-          sphinx-build . "$(docs_dir)"
-          rm "$(docs_dir)"/*/*.ipynb
+          echo -e "usagereports.enabled=0\ndatasearch.directories=$(pwd)/data" > $HOME/.mantid/Mantid.user.properties
+          sphinx-build -d doctrees . "$(docs_dir)"
+          find "$(docs_dir)" -type f -name *.ipynb -delete
         displayName: 'Build documentation'
       - task: PublishBuildArtifacts@1
         inputs:
