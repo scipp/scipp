@@ -1238,17 +1238,16 @@ def test_copy():
     a['x'] = sc.Variable(value=1)
     assert copy.copy(a) == a
     assert copy.deepcopy(a) == a
-#
-# def test_correct_temporaries(self):
-#    N = 6
-#    M = 4
-#    d1 = sc.Dataset()
-#    d1[sc.Coord.X] = (['x'], np.arange(N + 1).astype(np.float64))
-#    d1[sc.Coord.Y] = (['y'], np.arange(M + 1).astype(np.float64))
-#    arr1 = np.arange(N * M).reshape(N, M).astype(np.float64) + 1
-#    d1[sc.Data.Value, 'A'] = (['x', 'y'], arr1)
-#    d1 = d1['x', 1:2]
-#    self.assertEqual(list(d1[sc.Data.Value, 'A'].data),
-#                     [5.0, 6.0, 7.0, 8.0])
-#    d1 = d1['y', 2:3]
-#    self.assertEqual(list(d1[sc.Data.Value, 'A'].data), [7])
+
+def test_correct_temporaries():
+    N = 6
+    M = 4
+    d1 = sc.Dataset()
+    d1['x'] = sc.Variable(['x'], values=np.arange(N + 1).astype(np.float64))
+    d1['y'] = sc.Variable(['y'], values=np.arange(M + 1).astype(np.float64))
+    arr1 = np.arange(N * M).reshape(N, M).astype(np.float64) + 1
+    d1['A'] = sc.Variable(['x', 'y'], values=arr1)
+    d1 = d1['x', 1:2]
+    assert d1['A'].values.tolist() == [[5.0, 6.0, 7.0, 8.0]]
+    d1 = d1['y', 2:3]
+    assert list(d1['A'].values) == [7]
