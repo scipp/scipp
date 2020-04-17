@@ -106,14 +106,8 @@ public:
            T variances);
 
   template <class T>
-  static Variable create(const units::Unit &u, const Dims &d, const Shape &s,
-                         element_array<T> &&val);
-  template <class T>
   static Variable create(const units::Unit &u, const Dimensions &d,
                          element_array<T> &&val);
-  template <class T>
-  static Variable create(const units::Unit &u, const Dims &d, const Shape &s,
-                         element_array<T> &&val, element_array<T> &&var);
   template <class T>
   static Variable create(const units::Unit &u, const Dimensions &d,
                          element_array<T> &&val, element_array<T> &&var);

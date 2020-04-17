@@ -767,13 +767,6 @@ Variable Variable::create(const units::Unit &u, const Dimensions &d,
 }
 
 template <class T>
-Variable Variable::create(const units::Unit &u, const Dims &d, const Shape &s,
-                          element_array<T> &&val) {
-  auto dms = Dimensions{d.data, s.data};
-  return create(u, dms, std::move(val));
-}
-
-template <class T>
 Variable Variable::create(const units::Unit &u, const Dimensions &d,
                           element_array<T> &&val,
                           element_array<T> &&var) {
@@ -781,14 +774,6 @@ Variable Variable::create(const units::Unit &u, const Dimensions &d,
     return from_dimensions_and_unit_with_variances<T>(d, u);
   else
     return Variable(u, d, std::move(val), std::move(var));
-}
-
-template <class T>
-Variable Variable::create(const units::Unit &u, const Dims &d, const Shape &s,
-                          element_array<T> &&val,
-                          element_array<T> &&var) {
-  auto dms = Dimensions{d.data, s.data};
-  return create(u, dms, std::move(val), std::move(var));
 }
 
 /// Macro for instantiating classes and functions required for support a new
@@ -807,13 +792,7 @@ Variable Variable::create(const units::Unit &u, const Dims &d, const Shape &s,
       const units::Unit &u, const Dimensions &d,                               \
       element_array<__VA_ARGS__> &&val);                                       \
   template Variable Variable::create<__VA_ARGS__>(                             \
-      const units::Unit &u, const Dims &d, const Shape &s,                     \
-      element_array<__VA_ARGS__> &&val);                                       \
-  template Variable Variable::create<__VA_ARGS__>(                             \
       const units::Unit &u, const Dimensions &d,                               \
-      element_array<__VA_ARGS__> &&val, element_array<__VA_ARGS__> &&var);     \
-  template Variable Variable::create<__VA_ARGS__>(                             \
-      const units::Unit &u, const Dims &d, const Shape &s,                     \
       element_array<__VA_ARGS__> &&val, element_array<__VA_ARGS__> &&var);     \
   template element_array<__VA_ARGS__> &Variable::cast<__VA_ARGS__>(            \
       const bool);                                                             \
