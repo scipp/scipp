@@ -1,10 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
-/// @author Igor Gudich
-
-#ifndef SCIPP_VARIABLE_KEYWORD_ARG_CONSTRUCTOR_H
-#define SCIPP_VARIABLE_KEYWORD_ARG_CONSTRUCTOR_H
+/// @author Simon Heybrock
+#pragma once
 
 #include <limits>
 #include <type_traits>
@@ -32,14 +30,10 @@ template <class U> struct vector : public vector_base<U> {
   template <class T> vector(T &&count, U &&value = U()) = delete;
 };
 
-template <class... Ts> auto makeArgsTuple(Ts &&... ts) {
-  return std::tuple<std::decay_t<Ts>...>(std::forward<Ts>(ts)...);
-}
-
-template <class T> auto makeArgsTuple(std::initializer_list<T> init) {
-  using iter = typename std::initializer_list<T>::iterator;
-  return std::make_tuple<iter, iter>(init.begin(), init.end());
-}
+template <template <class...> class Derived, class... Args> struct arg_tuple {
+  std::tuple<std::decay_t<Args>...> tuple;
+  arg_tuple(Args &&... args) : tuple(std::forward<Args>(args)...) {}
+};
 
 } // namespace detail
 
@@ -47,35 +41,27 @@ using Shape = detail::vector<scipp::index>;
 using Dims = detail::vector<Dim>;
 
 template <class... Args>
-using ArgsTuple = decltype(detail::makeArgsTuple(std::declval<Args>()...));
-
-template <class... Args> struct Values {
-  ArgsTuple<Args...> tuple;
-  Values(Args &&... args)
-      : tuple(detail::makeArgsTuple(std::forward<Args>(args)...)) {}
+struct Values : public detail::arg_tuple<Values, Args...> {
+  using detail::arg_tuple<Values, Args...>::arg_tuple;
   template <class T>
   Values(std::initializer_list<T> init)
-      : tuple(detail::makeArgsTuple(init.begin(), init.end())) {}
+      : detail::arg_tuple<Values, Args...>(init) {}
 };
-template <class... Args> Values(Args &&... args)->Values<Args...>;
-template <class T>
-Values(std::initializer_list<T>)
-    ->Values<typename std::initializer_list<T>::iterator,
-             typename std::initializer_list<T>::iterator>;
-
-template <class... Args> struct Variances {
-  ArgsTuple<Args...> tuple;
-  Variances(Args &&... args)
-      : tuple(detail::makeArgsTuple(std::forward<Args>(args)...)) {}
+template <class... Args>
+struct Variances : public detail::arg_tuple<Variances, Args...> {
+  using detail::arg_tuple<Variances, Args...>::arg_tuple;
   template <class T>
   Variances(std::initializer_list<T> init)
-      : tuple(detail::makeArgsTuple(init.begin(), init.end())) {}
+      : detail::arg_tuple<Variances, Args...>(init) {}
 };
+
+template <class... Args> Values(Args &&... args)->Values<Args...>;
+template <class T>
+Values(std::initializer_list<T>)->Values<std::initializer_list<T>>;
+
 template <class... Args> Variances(Args &&... args)->Variances<Args...>;
 template <class T>
-Variances(std::initializer_list<T>)
-    ->Variances<typename std::initializer_list<T>::iterator,
-                typename std::initializer_list<T>::iterator>;
+Variances(std::initializer_list<T>)->Variances<std::initializer_list<T>>;
 
 namespace detail {
 
@@ -125,5 +111,3 @@ template <class ElemT> struct ArgParser {
 
 } // namespace detail
 } // namespace scipp::variable
-
-#endif // SCIPP_VARIABLE_KEYWORD_ARG_CONSTRUCTOR_H
