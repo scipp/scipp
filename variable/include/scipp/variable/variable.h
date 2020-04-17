@@ -106,13 +106,6 @@ public:
            T variances);
 
   template <class T>
-  static Variable create(const units::Unit &u, const Dimensions &d,
-                         element_array<T> &&val);
-  template <class T>
-  static Variable create(const units::Unit &u, const Dimensions &d,
-                         element_array<T> &&val, element_array<T> &&var);
-
-  template <class T>
   Variable(const Dimensions &dimensions, std::initializer_list<T> values_)
       : Variable(units::dimensionless, std::move(dimensions),
                  element_array<T>(values_.begin(), values_.end())) {}
@@ -257,18 +250,31 @@ private:
 /// in certain classes.
 /// Example: makeVariable<float>(units::Unit(units::kg),
 /// Shape{1, 2}, Dims{Dim::X, Dim::Y}, Values({3, 4})).
+///
+/// This function covers the cases of construction Variables from keyword
+/// argument. The Unit is completely arbitrary, the relations between Dims,
+/// Shape / Dimensions and actual data are following:
+/// 1. If neither Values nor Variances are provided, resulting Variable contains
+/// ONLY values of corresponding length.
+/// 2. The Variances can't be provided without any Values.
+/// 3. Non empty Values and/or Variances should be consistent with shape.
+/// 4. If empty Values and/or Variances are provided, resulting Variable
+/// contains default initialized Values and/or Variances, the way to make
+/// Variable which contains both Values and Variances given length uninitialised
+/// is:
+///       makeVariable<T>(Dims{Dim::X}, Shape{5}, Values{}, Variances{});
 template <class T, class... Ts> Variable makeVariable(Ts &&... ts) {
   std::tuple<units::Unit, Dimensions, element_array<T>,
              std::optional<element_array<T>>>
       args;
   (detail::ArgParser<T>::parse(std::forward<Ts>(ts), args), ...);
   if (std::get<3>(args))
-    return Variable::create<T>(std::get<0>(args), std::get<1>(args),
-                               std::move(std::get<2>(args)),
-                               std::move(*std::get<3>(args)));
+    return Variable(std::get<0>(args), std::get<1>(args),
+                    std::move(std::get<2>(args)),
+                    std::move(*std::get<3>(args)));
   else
-    return Variable::create<T>(std::get<0>(args), std::get<1>(args),
-                               std::move(std::get<2>(args)));
+    return Variable(std::get<0>(args), std::get<1>(args),
+                    std::move(std::get<2>(args)));
 }
 
 template <class... Ts>
