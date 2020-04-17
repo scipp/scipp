@@ -17,17 +17,14 @@ namespace scipp::variable {
 
 namespace detail {
 
-template <class U> struct vector_base {
+template <class U> struct vector {
   std::vector<U> data;
   template <class... Args>
-  vector_base(Args &&... args) : data(std::forward<Args>(args)...) {}
+  vector(Args &&... args) : data(std::forward<Args>(args)...) {}
+  template <class A, class B> // avoid use of vector(size, value)
+  vector(A &&a, B &&b) : data(std::initializer_list<U>{a, b}) {}
   template <class T>
-  vector_base(std::initializer_list<T> init) : data(init.begin(), init.end()) {}
-};
-
-template <class U> struct vector : public vector_base<U> {
-  using vector_base<U>::vector_base;
-  template <class T> vector(T &&count, U &&value = U()) = delete;
+  vector(std::initializer_list<T> init) : data(init.begin(), init.end()) {}
 };
 
 template <template <class...> class Derived, class... Args> struct arg_tuple {

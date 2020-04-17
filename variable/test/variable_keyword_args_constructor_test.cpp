@@ -19,12 +19,21 @@ TEST(CreateVariableTest, from_single_value) {
 }
 
 TEST(CreateVariableTest, dims_shape) {
+  // Check that we never use std::vector::vector(size, value)
+  EXPECT_EQ(makeVariable<float>(Dims{Dim::X}, Shape{2}),
+            makeVariable<float>(Dimensions({{Dim::X, 2}})));
+  EXPECT_EQ(makeVariable<float>(Dims{Dim::X}, Shape{2l}),
+            makeVariable<float>(Dimensions({{Dim::X, 2}})));
   EXPECT_EQ(makeVariable<float>(Dims{Dim::X, Dim::Y}, Shape{2l, 3}),
+            makeVariable<float>(Dimensions({{Dim::X, 2}, {Dim::Y, 3}})));
+  EXPECT_EQ(makeVariable<float>(Dims{Dim::X, Dim::Y}, Shape{2l, 3l}),
             makeVariable<float>(Dimensions({{Dim::X, 2}, {Dim::Y, 3}})));
   EXPECT_EQ(makeVariable<float>(Dims{Dim::X, Dim::Y}, Shape{2, 3}),
             makeVariable<float>(Dimensions({{Dim::X, 2}, {Dim::Y, 3}})));
   EXPECT_EQ(makeVariable<float>(Dims{Dim::X, Dim::Y}, Shape(2, 3)),
-            makeVariable<float>(Dimensions({{Dim::X, 3}, {Dim::Y, 3}})));
+            makeVariable<float>(Dimensions({{Dim::X, 2}, {Dim::Y, 3}})));
+  EXPECT_EQ(makeVariable<float>(Dims{Dim::X, Dim::Y}, Shape(2l, 3)),
+            makeVariable<float>(Dimensions({{Dim::X, 2}, {Dim::Y, 3}})));
 }
 
 TEST(CreateVariableTest, default_init) {
