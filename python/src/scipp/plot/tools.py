@@ -75,7 +75,7 @@ def parse_params(params=None,
         if parsed["vmin"] is None or parsed["vmax"] is None:
             if parsed["log"]:
                 with np.errstate(divide="ignore", invalid="ignore"):
-                    valid = np.ma.log10(array, copy=False)
+                    valid = np.ma.log10(array)
             else:
                 valid = np.ma.masked_invalid(array, copy=False)
         if parsed["vmin"] is None:
