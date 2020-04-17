@@ -15,7 +15,7 @@ def test_shape():
     a = sc.Variable(['x'], shape=[2])
     b = sc.Variable(['y', 'z'], shape=[3, 4])
     d = sc.Dataset(data={'a': a, 'b': b})
-    assert d.shape == [4, 3, 2]
+    assert not bool(set(d.shape) - set([4, 3, 2]))
 
 
 def test_create_empty():
@@ -37,7 +37,7 @@ def test_create():
     assert d.coords['y'] == y
     assert d['xy'].data == xy
     assert d['x'].data == x
-    assert d.dims == ['y', 'x']
+    assert bool(set(d.dims) - set(['y', 'x']))
 
 
 def test_create_from_data_array():
