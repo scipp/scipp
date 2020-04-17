@@ -265,12 +265,12 @@ public:
         m_variances(std::move(variances)) {
     if (m_variances && !core::canHaveVariances<value_type>())
       throw except::VariancesError("This data type cannot have variances.");
-    if(m_variances && !*m_variances)
-      *m_variances =
-          T(dimensions.volume(), detail::default_init<value_type>::value());
     if (this->dims().volume() != scipp::size(m_values))
       throw std::runtime_error("Creating Variable: data size does not match "
                                "volume given by dimension extents");
+    if (m_variances && !*m_variances)
+      *m_variances =
+          T(dimensions.volume(), detail::default_init<value_type>::value());
   }
 
   void setVariances(Variable &&variances) override {
@@ -648,19 +648,10 @@ private:
 
 template <class T>
 Variable::Variable(const units::Unit unit, const Dimensions &dimensions,
-                   T object)
-    : m_unit{unit}, m_object(std::make_unique<DataModel<T>>(
-                        std::move(dimensions), std::move(object))) {}
-template <class T>
-Variable::Variable(const units::Unit unit, const Dimensions &dimensions,
-                   T values_, T variances_)
+                   T values_, std::optional<T> variances_)
     : m_unit{unit},
-      m_object(variances_.empty()
-                   ? std::make_unique<DataModel<T>>(std::move(dimensions),
-                                                    std::move(values_))
-                   : std::make_unique<DataModel<T>>(std::move(dimensions),
-                                                    std::move(values_),
-                                                    std::move(variances_))) {}
+      m_object(std::make_unique<DataModel<T>>(
+          std::move(dimensions), std::move(values_), std::move(variances_))) {}
 
 template <class T>
 const element_array<T> &Variable::cast(const bool variances_) const {
@@ -727,7 +718,6 @@ template <class T> ElementArrayView<T> VariableView::castVariances() const {
   return requireT<DataModel<element_array<TT>>>(data()).variancesView(dims());
 }
 
-
 /// Macro for instantiating classes and functions required for support a new
 /// dtype in Variable.
 #define INSTANTIATE_VARIABLE(name, ...)                                        \
@@ -736,10 +726,8 @@ template <class T> ElementArrayView<T> VariableView::castVariances() const {
       (core::dtypeNameRegistry().emplace(dtype<__VA_ARGS__>, #name), 0));      \
   }                                                                            \
   template Variable::Variable(const units::Unit, const Dimensions &,           \
-                              element_array<__VA_ARGS__>);                     \
-  template Variable::Variable(const units::Unit, const Dimensions &,           \
                               element_array<__VA_ARGS__>,                      \
-                              element_array<__VA_ARGS__>);                     \
+                              std::optional<element_array<__VA_ARGS__>>);      \
   template element_array<__VA_ARGS__> &Variable::cast<__VA_ARGS__>(            \
       const bool);                                                             \
   template const element_array<__VA_ARGS__> &Variable::cast<__VA_ARGS__>(      \

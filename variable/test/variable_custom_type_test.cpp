@@ -18,8 +18,8 @@ struct CustomType {
 INSTANTIATE_VARIABLE(custom_type, CustomType)
 
 TEST(VariableCustomType, use_custom_templates) {
-  auto input_values = std::initializer_list<CustomType>{1, 2};
-  auto var = Variable{{Dim::X, 2}, input_values};
+  auto var = makeVariable<CustomType>(Dimensions{Dim::X, 2},
+                                      Values{CustomType{1}, CustomType{2}});
   // Check for bad cast or other built-in implicit type assumptions
   EXPECT_NO_THROW(var.values<CustomType>());
   VariableConstView slice = var.slice(Slice(Dim::X, 0));

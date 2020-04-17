@@ -100,10 +100,8 @@ public:
   Variable(const VariableConstView &parent, const Dimensions &dims);
   Variable(const Variable &parent, VariableConceptHandle data);
   template <class T>
-  Variable(const units::Unit unit, const Dimensions &dimensions, T object);
-  template <class T>
   Variable(const units::Unit unit, const Dimensions &dimensions, T values,
-           T variances);
+           std::optional<T> variances);
 
   template <class T>
   Variable(const Dimensions &dimensions, std::initializer_list<T> values_)
@@ -268,13 +266,7 @@ template <class T, class... Ts> Variable makeVariable(Ts &&... ts) {
              std::optional<element_array<T>>>
       args;
   (detail::ArgParser<T>::parse(std::forward<Ts>(ts), args), ...);
-  if (std::get<3>(args))
-    return Variable(std::get<0>(args), std::get<1>(args),
-                    std::move(std::get<2>(args)),
-                    std::move(*std::get<3>(args)));
-  else
-    return Variable(std::get<0>(args), std::get<1>(args),
-                    std::move(std::get<2>(args)));
+  return std::make_from_tuple<Variable>(std::move(args));
 }
 
 template <class... Ts>
