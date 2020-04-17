@@ -696,20 +696,6 @@ def test_coord_delitem():
     assert dref == d
 
 
-@pytest.mark.skip(reason="Requires unaligned dataset items")
-def test_coords_delitem_sparse():
-    var = sc.Variable(dims=['x'], values=np.arange(4))
-    sparse = sc.Variable(dims=[], shape=[], dtype=sc.dtype.event_list_float64)
-    d = sc.Dataset({'a': sparse}, coords={'x': var})
-    d['a'].coords['x'] = sparse
-    with pytest.raises(RuntimeError):
-        del d['a'].coords['z']
-    del d['a'].coords['x']
-    assert 'x' not in d['a'].coords
-    with pytest.raises(RuntimeError):
-        d['a'].coords['x']
-
-
 def test_coords_delitem():
     var = sc.Variable(dims=['x'], values=np.arange(4))
     d = sc.Dataset({'a': var}, coords={'x': var})
