@@ -7,7 +7,7 @@
 #include "scipp/dataset/counts.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/neutron/convert.h"
-#include "scipp/variable/variable_operations.h"
+#include "scipp/variable/operations.h"
 
 using namespace scipp;
 using namespace scipp::neutron;

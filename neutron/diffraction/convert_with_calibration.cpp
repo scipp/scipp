@@ -7,7 +7,7 @@
 #include "scipp/dataset/dataset_util.h"
 #include "scipp/dataset/except.h"
 #include "scipp/dataset/groupby.h"
-#include "scipp/variable/variable_operations.h"
+#include "scipp/variable/operations.h"
 
 using namespace scipp::variable;
 using namespace scipp::dataset;

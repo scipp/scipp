@@ -3,7 +3,7 @@
 #include <gtest/gtest.h>
 
 #include "scipp/common/constants.h"
-#include "scipp/variable/variable_trigonometry.h"
+#include "scipp/variable/trigonometry.h"
 
 using namespace scipp;
 using namespace scipp::variable;

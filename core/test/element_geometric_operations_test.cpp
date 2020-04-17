@@ -5,7 +5,7 @@
 #include <Eigen/Geometry>
 
 #include "scipp/common/constants.h"
-#include "scipp/core/element_geometric_operations.h"
+#include "scipp/core/element/geometric_operations.h"
 #include "scipp/units/unit.h"
 
 #include "fix_typed_test_suite_warnings.h"

@@ -7,8 +7,8 @@
 
 #include "scipp/core/except.h"
 #include "scipp/variable/event.h"
+#include "scipp/variable/operations.h"
 #include "scipp/variable/variable.h"
-#include "scipp/variable/variable_operations.h"
 
 using namespace scipp;
 

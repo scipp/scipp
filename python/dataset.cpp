@@ -7,9 +7,9 @@
 #include "scipp/dataset/event.h"
 #include "scipp/dataset/except.h"
 #include "scipp/dataset/histogram.h"
+#include "scipp/dataset/map_view.h"
 #include "scipp/dataset/sort.h"
 #include "scipp/dataset/unaligned.h"
-#include "scipp/dataset/view_decl.h"
 
 #include "bind_data_access.h"
 #include "bind_operators.h"

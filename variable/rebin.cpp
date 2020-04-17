@@ -4,9 +4,9 @@
 /// @author Simon Heybrock, Igor Gudich
 #include "scipp/units/except.h"
 #include "scipp/variable/apply.h"
+#include "scipp/variable/binary_arithmetic.h"
 #include "scipp/variable/except.h"
-#include "scipp/variable/variable_binary_arithmetic.h"
-#include "scipp/variable/variable_misc_operations.h"
+#include "scipp/variable/misc_operations.h"
 
 namespace scipp::variable {
 
