@@ -458,11 +458,13 @@ class TestMantidConversion(unittest.TestCase):
         b = np.array([0, 1, 0])
         q_var = mantidcompat._quat_from_vectors(a, b)
         q = q_var.value
-        self.assertTrue(np.allclose(b, q.to_rotation_matrix().dot(a)))
+        self.assertTrue(
+            np.allclose(b, q.to_rotation_matrix().dot(a), rtol=0.0, atol=1e-9))
         # other direction
         q_var = mantidcompat._quat_from_vectors(b, a)
         q = q_var.value
-        self.assertTrue(np.allclose(a, q.to_rotation_matrix().dot(b)))
+        self.assertTrue(
+            np.allclose(a, q.to_rotation_matrix().dot(b), rtol=0.0, atol=1e-9))
 
 
 @pytest.mark.skipif(not mantid_is_available(),
