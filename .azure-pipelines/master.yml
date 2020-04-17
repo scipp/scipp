@@ -12,7 +12,7 @@ stages:
     jobs:
       - job: 'linux'
         displayName: 'Linux'
-        timeoutInMinutes: 60
+        timeoutInMinutes: 120
         strategy:
           matrix:
             Python36:
@@ -40,6 +40,7 @@ stages:
               conda build --user scipp --token "$ANACONDA_TOKEN" --channel conda-forge --label dev --python="$PYTHON_VERSION" ./conda
             env:
               ANACONDA_TOKEN: $(anaconda_token_secret)
+              WITH_BENCHMARKS: 'ON'
             displayName: 'Package build'
           - task: PublishBuildArtifacts@1
             inputs:
