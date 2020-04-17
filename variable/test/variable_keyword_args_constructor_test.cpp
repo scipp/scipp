@@ -36,6 +36,11 @@ TEST(CreateVariableTest, dims_shape) {
             makeVariable<float>(Dimensions({{Dim::X, 2}, {Dim::Y, 3}})));
 }
 
+TEST(CreateVariableTest, dims_shape_order) {
+  EXPECT_EQ(makeVariable<float>(Dims{Dim::X}, Shape{2}),
+            makeVariable<float>(Shape{2}, Dims{Dim::X}));
+}
+
 TEST(CreateVariableTest, default_init) {
   auto noVariance = makeVariable<float>(Dims{Dim::X}, Shape{3});
   auto stillNoVariance = makeVariable<float>(Dims{Dim::X}, Shape{3}, Values{});

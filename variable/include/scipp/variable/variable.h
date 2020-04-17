@@ -241,32 +241,33 @@ private:
   units::Unit m_unit;
   VariableConceptHandle m_object;
 };
-/// This is used to provide the fabric function:
-/// makeVariable<type>(Dims, Shape, Unit, Values<T1>, Variances<T2>)
-/// with the obligatory template argument type, function arguments are not
-/// obligatory and could be given in arbitrary order, but suposed to be wrapped
-/// in certain classes.
-/// Example: makeVariable<float>(units::Unit(units::kg),
-/// Shape{1, 2}, Dims{Dim::X, Dim::Y}, Values({3, 4})).
+
+/// Factory function for Variable supporting "keyword arguments"
 ///
-/// This function covers the cases of construction Variables from keyword
-/// argument. The Unit is completely arbitrary, the relations between Dims,
-/// Shape / Dimensions and actual data are following:
+/// Two styles are supported:
+///     makeVariable<ElementType>(Dims, Shape, Unit, Values<T1>, Variances<T2>)
+/// or
+///     makeVariable<ElementType>(Dimensions, Unit, Values<T1>, Variances<T2>)
+/// Unit, Values, or Variances can be omitted. The order of arguments is
+/// arbitrary.
+/// Example:
+///     makeVariable<float>(units::Unit(units::kg),
+///     Shape{1, 2}, Dims{Dim::X, Dim::Y}, Values{3, 4}).
+///
+/// Relation between Dims, Shape, Dimensions and actual data are as follows:
 /// 1. If neither Values nor Variances are provided, resulting Variable contains
-/// ONLY values of corresponding length.
+///    ONLY values of corresponding length.
 /// 2. The Variances can't be provided without any Values.
-/// 3. Non empty Values and/or Variances should be consistent with shape.
+/// 3. Non empty Values and/or Variances must be consistent with shape.
 /// 4. If empty Values and/or Variances are provided, resulting Variable
-/// contains default initialized Values and/or Variances, the way to make
-/// Variable which contains both Values and Variances given length uninitialised
-/// is:
-///       makeVariable<T>(Dims{Dim::X}, Shape{5}, Values{}, Variances{});
+///    contains default initialized Values and/or Variances, the way to make
+///    Variable which contains both Values and Variances given length
+///    uninitialised is:
+///        makeVariable<T>(Dims{Dim::X}, Shape{5}, Values{}, Variances{});
 template <class T, class... Ts> Variable makeVariable(Ts &&... ts) {
-  std::tuple<units::Unit, Dimensions, element_array<T>,
-             std::optional<element_array<T>>>
-      args;
-  (detail::ArgParser<T>::parse(std::forward<Ts>(ts), args), ...);
-  return std::make_from_tuple<Variable>(std::move(args));
+  detail::ArgParser<T> parser;
+  (parser.parse(std::forward<Ts>(ts)), ...);
+  return std::make_from_tuple<Variable>(std::move(parser.args));
 }
 
 template <class... Ts>

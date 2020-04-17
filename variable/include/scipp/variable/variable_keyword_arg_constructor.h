@@ -57,30 +57,31 @@ namespace detail {
 void throw_keyword_arg_constructor_bad_dtype(const DType dtype);
 
 template <class ElemT> struct ArgParser {
-  template <class Tuple>
-  static void parse(const units::Unit &unit, Tuple &args) {
-    std::get<units::Unit>(args) = unit;
+  std::tuple<units::Unit, Dimensions, element_array<ElemT>,
+             std::optional<element_array<ElemT>>>
+      args;
+  Dims dims;
+  Shape shape;
+
+  void parse(const units::Unit &arg) { std::get<units::Unit>(args) = arg; }
+
+  void parse(const Dimensions &arg) { std::get<Dimensions>(args) = arg; }
+
+  void parse(const Dims &arg) {
+    if (shape.data.empty())
+      dims = arg;
+    else
+      std::get<Dimensions>(args) = Dimensions(arg.data, shape.data);
   }
 
-  template <class Tuple>
-  static void parse(const Dimensions &dims, Tuple &args) {
-    std::get<Dimensions>(args) = dims;
+  void parse(const Shape &arg) {
+    if (dims.data.empty())
+      shape = arg;
+    else
+      std::get<Dimensions>(args) = Dimensions(dims.data, arg.data);
   }
 
-  template <class Tuple> static void parse(const Dims &labels, Tuple &args) {
-    std::vector<scipp::index> shape(labels.data.size(),
-                                    std::numeric_limits<scipp::index>::max());
-    std::get<Dimensions>(args) = Dimensions(labels.data, shape);
-  }
-
-  template <class Tuple> static void parse(const Shape &shape, Tuple &args) {
-    const auto &labels = std::get<Dimensions>(args).labels();
-    std::get<Dimensions>(args) =
-        Dimensions({labels.begin(), labels.end()}, shape.data);
-  }
-
-  template <class Tuple, class... Args>
-  static void parse(Values<Args...> &&values, Tuple &args) {
+  template <class... Args> void parse(Values<Args...> &&values) {
     if constexpr (std::is_constructible_v<element_array<ElemT>, Args...>)
       std::get<2>(args) =
           std::make_from_tuple<element_array<ElemT>>(std::move(values.tuple));
@@ -88,8 +89,7 @@ template <class ElemT> struct ArgParser {
       throw_keyword_arg_constructor_bad_dtype(core::dtype<ElemT>);
   }
 
-  template <class Tuple, class... Args>
-  static void parse(Variances<Args...> &&variances, Tuple &args) {
+  template <class... Args> void parse(Variances<Args...> &&variances) {
     if constexpr (std::is_constructible_v<element_array<ElemT>, Args...>)
       std::get<3>(args) = std::make_from_tuple<element_array<ElemT>>(
           std::move(variances.tuple));
