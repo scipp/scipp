@@ -63,40 +63,35 @@ def parse_params(params=None,
             parsed[key] = val
 
     need_norm = False
+    # Use scipp functions to get min and max
     if variable is not None:
         if parsed["vmin"] is None:
             parsed["vmin"] = sc.min(variable).value
         if parsed["vmax"] is None:
             parsed["vmax"] = sc.max(variable).value
         need_norm = True
+    # Use numpy to get min and max
     if array is not None:
+        if parsed["vmin"] is None or parsed["vmax"] is None:
+            if parsed["log"]:
+                with np.errstate(divide="ignore", invalid="ignore"):
+                    valid = np.ma.log10(array, copy=False)
+            else:
+                valid = np.ma.masked_invalid(array, copy=False)
         if parsed["vmin"] is None:
-            parsed["vmin"] = np.nanmin(array)
+            parsed["vmin"] = valid.min()
         if parsed["vmax"] is None:
-            parsed["vmax"] = np.nanmax(array)
+            parsed["vmax"] = valid.max()
         need_norm = True
 
     if need_norm:
-        # TODO: possibly need to add a C++ method for finding min/max of
-        # Variables to avoid the creation of a large array of bools in
-        # np.ma.masked_invalid
-        # if parsed["log"]:
-        #     with np.errstate(divide="ignore", invalid="ignore"):
-        #         subset = np.ma.masked_invalid(np.log10(array), copy=False)
-        # else:
-        #     subset = np.ma.masked_invalid(array, copy=False)
-        # if parsed["vmin"] is None:
-        #     parsed["vmin"] = sc.min(array).value
-        # if parsed["vmax"] is None:
-        #     parsed["vmax"] = sc.max(array).value
         if min_val is not None:
             parsed["vmin"] = min(parsed["vmin"], min_val)
         if max_val is not None:
             parsed["vmax"] = max(parsed["vmax"], max_val)
         if parsed["log"]:
-            norm = LogNorm(vmin=parsed["vmin"], vmax=parsed["vmax"])
-            # norm = LogNorm(vmin=10.0**parsed["vmin"],
-            #                vmax=10.0**parsed["vmax"])
+            norm = LogNorm(vmin=10.0**parsed["vmin"],
+                           vmax=10.0**parsed["vmax"])
         else:
             norm = Normalize(vmin=parsed["vmin"], vmax=parsed["vmax"])
         parsed["norm"] = norm
