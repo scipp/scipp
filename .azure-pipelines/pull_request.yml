@@ -18,7 +18,7 @@ stages:
     jobs:
       - job: 'linux'
         displayName: 'Linux'
-        timeoutInMinutes: 60
+        timeoutInMinutes: 120
         pool:
           vmImage: 'ubuntu-18.04'
         steps:
@@ -35,6 +35,8 @@ stages:
             displayName: 'Conda configuration'
           - bash: |
               conda build -c conda-forge ./conda
+            env:
+              WITH_BENCHMARKS: 'ON'
             displayName: 'Package build'
           - task: PublishBuildArtifacts@1
             inputs:
