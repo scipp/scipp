@@ -6,6 +6,7 @@
 #ifndef SCIPP_VARIABLE_KEYWORD_ARG_CONSTRUCTOR_H
 #define SCIPP_VARIABLE_KEYWORD_ARG_CONSTRUCTOR_H
 
+#include <limits>
 #include <type_traits>
 
 namespace scipp::variable {
@@ -98,95 +99,48 @@ Variances(std::initializer_list<T>)
                 typename std::initializer_list<T>::iterator>;
 
 namespace detail {
-template <class T, class... Args>
-constexpr bool is_type_in_pack_v =
-    std::disjunction<std::is_same<T, std::decay_t<Args>>...>::value;
-
-template <class Tag, class... Args> constexpr bool is_tag_in_pack() {
-  return (std::is_base_of_v<Tag, Args> || ...);
-}
-
-template <class T, class... Args> class Indexer {
-  template <std::size_t... IS>
-  static constexpr auto indexOfCorresponding_impl(std::index_sequence<IS...>) {
-    return ((std::is_base_of_v<T, Args> * IS) + ...);
-  }
-
-public:
-  static constexpr auto indexOfCorresponding() {
-    return indexOfCorresponding_impl(
-        std::make_index_sequence<sizeof...(Args)>{});
-  }
-};
 
 void throw_keyword_arg_constructor_bad_dtype(const DType dtype);
 
-template <class VarT, class... Ts> class ConstructorArgumentsMatcher {
-public:
-  template <class... NonDataTypes> constexpr static bool checkArgTypesValid() {
-    constexpr int nonDataTypesCount =
-        (is_type_in_pack_v<NonDataTypes, Ts...> + ...);
-    constexpr bool hasVal = is_tag_in_pack<ValuesTag, Ts...>();
-    constexpr bool hasVar = is_tag_in_pack<VariancesTag, Ts...>();
-    return nonDataTypesCount + hasVal + hasVar == sizeof...(Ts);
+template <class ElemT> struct ArgParser {
+  template <class Tuple>
+  static void parse(const units::Unit &unit, Tuple &args) {
+    std::get<units::Unit>(args) = unit;
   }
 
-  template <class... NonDataTypes> static auto extractArguments(Ts &&... ts) {
-    auto tp = std::make_tuple(std::forward<Ts>(ts)...);
-    return std::make_tuple(
-        extractTagged<ValuesTag, Ts...>(tp),
-        extractTagged<VariancesTag, Ts...>(tp),
-        std::tuple<NonDataTypes...>(extractArgs<NonDataTypes, Ts...>(tp)...));
+  template <class Tuple>
+  static void parse(const Dimensions &dims, Tuple &args) {
+    std::get<Dimensions>(args) = dims;
   }
 
-  template <class ElemT, class... ValArgs, class... VarArgs,
-            class... NonDataTypes>
-  static VarT construct(std::tuple<ValArgs...> &&valArgs,
-                        std::tuple<VarArgs...> &&varArgs,
-                        std::tuple<NonDataTypes...> &&nonData) {
-    constexpr bool hasVal = is_tag_in_pack<ValuesTag, Ts...>();
-    constexpr bool hasVar = is_tag_in_pack<VariancesTag, Ts...>();
-    constexpr bool constrVal =
-        std::is_constructible_v<element_array<ElemT>, ValArgs...>;
-    constexpr bool constrVar =
-        std::is_constructible_v<element_array<ElemT>, VarArgs...>;
-
-    if constexpr ((hasVal && !constrVal) || (hasVar && !constrVar) ||
-                  (hasVar && !hasVal) ||
-                  (hasVar && !core::canHaveVariances<ElemT>())) {
-      throw_keyword_arg_constructor_bad_dtype(core::dtype<ElemT>);
-      return VarT{}; // unreachable
-    } else {
-      element_array<ElemT> values;
-      if constexpr (hasVal)
-        values = std::make_from_tuple<element_array<ElemT>>(std::move(valArgs));
-      if constexpr (hasVar)
-        return VarT::template create<ElemT>(
-            std::move(std::get<NonDataTypes>(nonData))..., std::move(values),
-            std::make_from_tuple<element_array<ElemT>>(std::move(varArgs)));
-      else
-        return VarT::template create<ElemT>(
-            std::move(std::get<NonDataTypes>(nonData))..., std::move(values));
-    }
+  template <class Tuple> static void parse(const Dims &labels, Tuple &args) {
+    std::vector<scipp::index> shape(labels.data.size(),
+                                    std::numeric_limits<scipp::index>::max());
+    std::get<Dimensions>(args) = Dimensions(labels.data, shape);
   }
 
-private:
-  template <class T, class... Args>
-  static auto extractArgs(std::tuple<Args...> &tp) {
-    if constexpr (!is_type_in_pack_v<T, Ts...>)
-      return T{};
+  template <class Tuple> static void parse(const Shape &shape, Tuple &args) {
+    const auto &labels = std::get<Dimensions>(args).labels();
+    std::get<Dimensions>(args) =
+        Dimensions({labels.begin(), labels.end()}, shape.data);
+  }
+
+  template <class Tuple, class... Args>
+  static void parse(Values<Args...> &&values, Tuple &args) {
+    if constexpr (std::is_constructible_v<element_array<ElemT>, Args...>)
+      std::get<2>(args) =
+          std::make_from_tuple<element_array<ElemT>>(std::move(values.tuple));
     else
-      return std::move(std::get<T>(tp));
+      throw_keyword_arg_constructor_bad_dtype(core::dtype<ElemT>);
   }
 
-  template <class Tag, class... Args>
-  static auto extractTagged(std::tuple<Args...> &tp) {
-    if constexpr (!is_tag_in_pack<Tag, Ts...>())
-      return std::tuple{};
-    else {
-      constexpr auto index = Indexer<Tag, Args...>::indexOfCorresponding();
-      return std::move(std::get<index>(tp).tuple);
-    }
+  template <class Tuple, class... Args>
+  static void parse(Variances<Args...> &&variances, Tuple &args) {
+    if constexpr (std::is_constructible_v<element_array<ElemT>, Args...>)
+      std::get<3>(args) = std::make_from_tuple<element_array<ElemT>>(
+          std::move(variances.tuple));
+    else
+      throw_keyword_arg_constructor_bad_dtype(core::dtype<ElemT>);
   }
 };
 

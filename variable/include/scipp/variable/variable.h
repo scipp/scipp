@@ -264,33 +264,17 @@ private:
 /// Example: makeVariable<float>(units::Unit(units::kg),
 /// Shape{1, 2}, Dims{Dim::X, Dim::Y}, Values({3, 4})).
 template <class T, class... Ts> Variable makeVariable(Ts &&... ts) {
-  static_assert(!std::disjunction_v<std::is_lvalue_reference<Ts>...>,
-                "makeVariable inputs must be r-value references");
-  using helper = detail::ConstructorArgumentsMatcher<Variable, Ts...>;
-  constexpr bool useDimsAndShape =
-      helper::template checkArgTypesValid<units::Unit, Dims, Shape>();
-  constexpr bool useDimensions =
-      helper::template checkArgTypesValid<units::Unit, Dimensions>();
-
-  static_assert(
-      useDimsAndShape || useDimensions,
-      "Arguments: units::Unit, Shape, Dims, Values and Variances could only "
-      "be used. Example: Variable(dtype<float>, units::Unit(units::kg), "
-      "Shape{1, 2}, Dims{Dim::X, Dim::Y}, Values({3, 4}))");
-
-  if constexpr (useDimsAndShape) {
-    auto [valArgs, varArgs, nonData] =
-        helper::template extractArguments<units::Unit, Dims, Shape>(
-            std::forward<Ts>(ts)...);
-    return helper::template construct<T>(std::move(valArgs), std::move(varArgs),
-                                         std::move(nonData));
-  } else {
-    auto [valArgs, varArgs, nonData] =
-        helper::template extractArguments<units::Unit, Dimensions>(
-            std::forward<Ts>(ts)...);
-    return helper::template construct<T>(std::move(valArgs), std::move(varArgs),
-                                         std::move(nonData));
-  }
+  std::tuple<units::Unit, Dimensions, element_array<T>,
+             std::optional<element_array<T>>>
+      args;
+  (detail::ArgParser<T>::parse(std::forward<Ts>(ts), args), ...);
+  if (std::get<3>(args))
+    return Variable::create<T>(std::get<0>(args), std::get<1>(args),
+                               std::move(std::get<2>(args)),
+                               std::move(*std::get<3>(args)));
+  else
+    return Variable::create<T>(std::get<0>(args), std::get<1>(args),
+                               std::move(std::get<2>(args)));
 }
 
 template <class... Ts>
