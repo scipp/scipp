@@ -42,22 +42,27 @@ def test_create():
 
 def test_create_from_data_array():
     var = sc.Variable(dims=['x'], values=np.arange(4))
-    base = sc.Dataset({'a': var}, coords={'x': var, 'aux': var})
-    d = sc.Dataset(base['a'])
-    assert d == base
-    assert base['a'] == sc.DataArray(data=var, coords={'x': var, 'aux': var})
+    da = sc.DataArray(var, coords={'x': var, 'aux': var})
+    d = sc.Dataset(da)
+    assert d[''] == da
 
 
 def test_create_from_data_arrays():
     var1 = sc.Variable(dims=['x'], values=np.arange(4))
     var2 = sc.Variable(dims=['x'], values=np.ones(4))
-    base = sc.Dataset({'a': var1, 'b': var2}, coords={'x': var1, 'aux': var1})
-    d = sc.Dataset({'a': base['a'], 'b': base['b']})
-    assert d == base
-    swapped = sc.Dataset({'a': base['b'], 'b': base['a']})
-    assert swapped != base
-    assert swapped['a'] == base['b']
-    assert swapped['b'] == base['a']
+    da1 = sc.DataArray(var1, coords={'x': var1, 'aux': var2})
+    da2 = sc.DataArray(var1, coords={'x': var1, 'aux': var2})
+    d = sc.Dataset()
+    d['a'] = da1
+    d['b'] = da2
+    assert d == sc.Dataset(data={
+        'a': var1,
+        'b': var1
+    },
+                           coords={
+                               'x': var1,
+                               'aux': var2
+                           })
 
 
 def test_clear():
