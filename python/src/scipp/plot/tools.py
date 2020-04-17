@@ -34,7 +34,13 @@ def centers_to_edges(x):
     return np.concatenate([[2.0 * x[0] - e[0]], e, [2.0 * x[-1] - e[-1]]])
 
 
-def parse_params(params=None, defaults=None, globs=None, variable=None, array=None, min_val=None, max_val=None):
+def parse_params(params=None,
+                 defaults=None,
+                 globs=None,
+                 variable=None,
+                 array=None,
+                 min_val=None,
+                 max_val=None):
     """
     Construct the colorbar settings using default and input values
     """

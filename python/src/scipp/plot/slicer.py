@@ -88,8 +88,9 @@ class Slicer:
                                  defaults={"show": False},
                                  globs=globs,
                                  variable=Variable(dims=array.dims,
-                                                values=np.sqrt(array.variances),
-                                                unit=array.unit)))
+                                                   values=np.sqrt(
+                                                       array.variances),
+                                                   unit=array.unit)))
 
             self.params["masks"][name] = parse_params(params=masks,
                                                       defaults={

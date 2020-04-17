@@ -29,7 +29,8 @@ def plot_1d(scipp_obj_dict=None,
             mpl_line_params=None,
             logx=False,
             logy=False,
-            logxy=False):
+            logxy=False,
+            grid=False):
     """
     Plot a 1D spectrum.
 
@@ -48,7 +49,8 @@ def plot_1d(scipp_obj_dict=None,
                   mpl_axes=mpl_axes,
                   mpl_line_params=mpl_line_params,
                   logx=logx or logxy,
-                  logy=logy or logxy)
+                  logy=logy or logxy,
+                  grid=grid)
 
     if mpl_axes is None:
         render_plot(figure=sv.fig, widgets=sv.box, filename=filename)
@@ -66,7 +68,8 @@ class Slicer1d(Slicer):
                  mpl_axes=None,
                  mpl_line_params=None,
                  logx=False,
-                 logy=False):
+                 logy=False,
+                 grid=False):
 
         super().__init__(scipp_obj_dict=scipp_obj_dict,
                          axes=axes,
@@ -88,6 +91,8 @@ class Slicer1d(Slicer):
                 figsize=(config.plot.width / config.plot.dpi,
                          config.plot.height / config.plot.dpi),
                 dpi=config.plot.dpi)
+        if grid:
+            self.ax.grid()
 
         # Determine whether error bars should be plotted or not
         self.variances = {}
@@ -147,7 +152,9 @@ class Slicer1d(Slicer):
             #     ymin = min(ymin, np.nanmin(var.values - err))
             #     ymax = max(ymax, np.nanmax(var.values + err))
             if var.values is not None:
-                self.ylim = self.get_ylim(var=var, ymin=self.ylim[0], ymax=self.ylim[1],
+                self.ylim = self.get_ylim(var=var,
+                                          ymin=self.ylim[0],
+                                          ymax=self.ylim[1],
                                           errorbars=self.variances[name])
             ylab = name_with_unit(var=var, name="")
 
@@ -374,7 +381,9 @@ class Slicer1d(Slicer):
                 vslice = vslice[val.dim, val.value]
         if vslice.unaligned is not None:
             vslice = scipp_histogram(vslice)
-            self.ylim = self.get_ylim(var=vslice, ymin=self.ylim[0], ymax=self.ylim[1],
+            self.ylim = self.get_ylim(var=vslice,
+                                      ymin=self.ylim[0],
+                                      ymax=self.ylim[1],
                                       errorbars=self.variances[name])
         return vslice
 

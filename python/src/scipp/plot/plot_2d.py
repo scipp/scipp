@@ -308,11 +308,11 @@ class Slicer2d(Slicer):
             # large.
             # Here, the data is at most 2D, so having the Variable creation
             # and broadcasting should remain cheap.
-            msk = Variable(button_dims,
+            msk = Variable(dims=button_dims,
                            values=np.ones(shape_list, dtype=np.int32))
-            msk *= Variable(mslice.dims, values=mslice.values.astype(np.int32))
+            msk *= Variable(dims=mslice.dims,
+                            values=mslice.values.astype(np.int32))
 
-        # print(vslice.unaligned)
         autoscale_cbar = False
         if vslice.unaligned is not None:
             vslice = scipp_histogram(vslice)
@@ -326,7 +326,10 @@ class Slicer2d(Slicer):
                 arr = arr.T
             self.im[key].set_data(arr)
             if autoscale_cbar:
-                cbar_params = parse_params(globs=self.vminmax, array=arr, min_val=self.global_vmin, max_val=self.global_vmax)
+                cbar_params = parse_params(globs=self.vminmax,
+                                           array=arr,
+                                           min_val=self.global_vmin,
+                                           max_val=self.global_vmax)
                 self.global_vmin = cbar_params["vmin"]
                 self.global_vmax = cbar_params["vmax"]
                 self.params[key][self.name]["norm"] = cbar_params["norm"]
@@ -334,6 +337,8 @@ class Slicer2d(Slicer):
             if self.params["masks"][self.name]["show"]:
                 self.im[self.get_mask_key(key)].set_data(
                     self.mask_to_float(msk.values, arr))
+                self.im[self.get_mask_key(key)].set_norm(
+                    self.params[key][self.name]["norm"])
 
         return
 
