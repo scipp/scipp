@@ -18,40 +18,19 @@ namespace scipp::variable {
 // constructing internal variable structure - array storage.
 
 namespace detail {
-template <int N, typename... Ts>
-using nthDecayType =
-    typename std::decay_t<std::tuple_element_t<N, std::tuple<Ts...>>>;
 
-template <class... Args> constexpr bool has_last_arg_int64_t() {
-  constexpr size_t n = sizeof...(Args);
-  if constexpr (n == 0)
-    return false;
-  else
-    return std::is_same_v<nthDecayType<n - 1, Args...>, int64_t>;
-}
-
-template <class U> struct vector_like {
+template <class U> struct vector_base {
   std::vector<U> data;
   template <class... Args>
-  vector_like(Args &&... args) : data(make(std::forward<Args>(args)...)) {}
-
+  vector_base(Args &&... args) : data(std::forward<Args>(args)...) {}
   template <class T>
-  vector_like(std::initializer_list<T> init) : data(init.begin(), init.end()) {}
-
-private:
-  // This is to override the std::vector(size_t num_elems, const Type& element)
-  // insted of [elem, elem, ..., elem] we want [Type(num_elems), element]
-  template <class... Args> static std::vector<U> make(Args &&... args) {
-    if constexpr (has_last_arg_int64_t<Args...>())
-      return std::vector{U(std::forward<Args>(args))...};
-    else
-      return std::vector<U>(std::forward<Args>(args)...);
-  }
+  vector_base(std::initializer_list<T> init) : data(init.begin(), init.end()) {}
 };
 
-struct ValuesTag {};
-
-struct VariancesTag {};
+template <class U> struct vector : public vector_base<U> {
+  using vector_base<U>::vector_base;
+  template <class T> vector(T &&count, U &&value = U()) = delete;
+};
 
 template <class... Ts> auto makeArgsTuple(Ts &&... ts) {
   return std::tuple<std::decay_t<Ts>...>(std::forward<Ts>(ts)...);
@@ -64,13 +43,13 @@ template <class T> auto makeArgsTuple(std::initializer_list<T> init) {
 
 } // namespace detail
 
-using Shape = detail::vector_like<scipp::index>;
-using Dims = detail::vector_like<Dim>;
+using Shape = detail::vector<scipp::index>;
+using Dims = detail::vector<Dim>;
 
 template <class... Args>
 using ArgsTuple = decltype(detail::makeArgsTuple(std::declval<Args>()...));
 
-template <class... Args> struct Values : detail::ValuesTag {
+template <class... Args> struct Values {
   ArgsTuple<Args...> tuple;
   Values(Args &&... args)
       : tuple(detail::makeArgsTuple(std::forward<Args>(args)...)) {}
@@ -84,7 +63,7 @@ Values(std::initializer_list<T>)
     ->Values<typename std::initializer_list<T>::iterator,
              typename std::initializer_list<T>::iterator>;
 
-template <class... Args> struct Variances : detail::VariancesTag {
+template <class... Args> struct Variances {
   ArgsTuple<Args...> tuple;
   Variances(Args &&... args)
       : tuple(detail::makeArgsTuple(std::forward<Args>(args)...)) {}

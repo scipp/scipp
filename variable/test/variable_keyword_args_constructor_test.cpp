@@ -18,6 +18,15 @@ TEST(CreateVariableTest, from_single_value) {
   EXPECT_EQ(var.variance<float>(), 1.0f);
 }
 
+TEST(CreateVariableTest, dims_shape) {
+  EXPECT_EQ(makeVariable<float>(Dims{Dim::X, Dim::Y}, Shape{2l, 3}),
+            makeVariable<float>(Dimensions({{Dim::X, 3}, {Dim::Y, 3}})));
+  EXPECT_EQ(makeVariable<float>(Dims{Dim::X, Dim::Y}, Shape{2, 3}),
+            makeVariable<float>(Dimensions({{Dim::X, 2}, {Dim::Y, 3}})));
+  EXPECT_EQ(makeVariable<float>(Dims{Dim::X, Dim::Y}, Shape(2, 3)),
+            makeVariable<float>(Dimensions({{Dim::X, 3}, {Dim::Y, 3}})));
+}
+
 TEST(CreateVariableTest, default_init) {
   auto noVariance = makeVariable<float>(Dims{Dim::X}, Shape{3});
   auto stillNoVariance = makeVariable<float>(Dims{Dim::X}, Shape{3}, Values{});
