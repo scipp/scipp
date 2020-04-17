@@ -135,22 +135,6 @@ class Slicer1d(Slicer):
         self.logy = logy
         for name, var in self.scipp_obj_dict.items():
             self.names.append(name)
-            # if self.variances[name]:
-            #     err = np.sqrt(var.variances)
-            # else:
-            #     err = 0.0
-
-            # if logy:
-            #     with np.errstate(divide="ignore", invalid="ignore"):
-            #         arr = np.log10(var.values - err)
-            #         subset = np.where(np.isfinite(arr))
-            #         ymin = min(ymin, np.amin(arr[subset]))
-            #         arr = np.log10(var.values + err)
-            #         subset = np.where(np.isfinite(arr))
-            #         ymax = max(ymax, np.amax(arr[subset]))
-            # else:
-            #     ymin = min(ymin, np.nanmin(var.values - err))
-            #     ymax = max(ymax, np.nanmax(var.values + err))
             if var.values is not None:
                 self.ylim = self.get_ylim(var=var,
                                           ymin=self.ylim[0],
@@ -159,10 +143,6 @@ class Slicer1d(Slicer):
             ylab = name_with_unit(var=var, name="")
 
         if (self.mpl_axes is None) and (var.values is not None):
-            # dy = 0.05 * (ymax - ymin)
-            # yrange = [ymin - dy, ymax + dy]
-            # if logy:
-            #     yrange = 10.0**np.array(yrange)
             with warnings.catch_warnings():
                 warnings.filterwarnings("ignore", category=UserWarning)
                 self.ax.set_ylim(self.ylim)
@@ -210,7 +190,6 @@ class Slicer1d(Slicer):
             with np.errstate(divide="ignore", invalid="ignore"):
                 arr = np.log10(var.values - err)
                 subset = np.where(np.isfinite(arr))
-                # ymin = min(ymin, np.amin(arr[subset]))
                 ymin_new = np.amin(arr[subset])
                 arr = np.log10(var.values + err)
                 subset = np.where(np.isfinite(arr))
@@ -343,7 +322,6 @@ class Slicer1d(Slicer):
                                       })
 
             # Add error bars
-            print(name, self.variances[name])
             if self.variances[name]:
                 if self.histograms[name][dim]:
                     err_x = edges_to_centers(new_x)

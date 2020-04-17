@@ -96,7 +96,6 @@ class Slicer2d(Slicer):
         self.logx = logx
         self.logy = logy
         self.vminmax = {"vmin": vmin, "vmax": vmax}
-        # self.vmax = vmax
         self.global_vmin = np.Inf
         self.global_vmax = np.NINF
 
@@ -144,8 +143,6 @@ class Slicer2d(Slicer):
             self.ax["variances"] = ax[1]
             self.cax["variances"] = cax[1]
             panels.append("variances")
-
-        # print(self.params)
 
         extent_array = np.array(list(self.extent.values())).flatten()
         for key in panels:
