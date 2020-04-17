@@ -6,8 +6,8 @@
 
 #include "variable_common.h"
 
+#include "scipp/variable/operations.h"
 #include "scipp/variable/variable.h"
-#include "scipp/variable/variable_operations.h"
 
 using namespace scipp;
 using namespace scipp::variable;
