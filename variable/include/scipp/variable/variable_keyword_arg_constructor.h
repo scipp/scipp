@@ -9,14 +9,7 @@
 
 namespace scipp::variable {
 
-// The structs needed for keyword-like variable constructor are introduced
-// below. Tags are used to match the corresponding arguments treating the
-// arbitrary order of arguments in the constructor, and not mixing values and
-// variances. Structures Values and Variances just forwards the arguments for
-// constructing internal variable structure - array storage.
-
 namespace detail {
-
 template <class U> struct vector {
   std::vector<U> data;
   template <class... Args>
@@ -31,7 +24,6 @@ template <template <class...> class Derived, class... Args> struct arg_tuple {
   std::tuple<std::decay_t<Args>...> tuple;
   arg_tuple(Args &&... args) : tuple(std::forward<Args>(args)...) {}
 };
-
 } // namespace detail
 
 using Shape = detail::vector<scipp::index>;
@@ -42,14 +34,14 @@ struct Values : public detail::arg_tuple<Values, Args...> {
   using detail::arg_tuple<Values, Args...>::arg_tuple;
   template <class T>
   Values(std::initializer_list<T> init)
-      : detail::arg_tuple<Values, Args...>(init) {}
+      : detail::arg_tuple<Values, Args...>(std::move(init)) {}
 };
 template <class... Args>
 struct Variances : public detail::arg_tuple<Variances, Args...> {
   using detail::arg_tuple<Variances, Args...>::arg_tuple;
   template <class T>
   Variances(std::initializer_list<T> init)
-      : detail::arg_tuple<Variances, Args...>(init) {}
+      : detail::arg_tuple<Variances, Args...>(std::move(init)) {}
 };
 
 template <class... Args> Values(Args &&... args)->Values<Args...>;
