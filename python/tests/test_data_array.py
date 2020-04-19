@@ -34,6 +34,17 @@ def test_init():
     assert len(d.masks) == 1
 
 
+def test_eq():
+    da = make_dataarray()
+    assert da['x', :] == da
+    assert da['y', :] == da
+    assert da['y', :]['x', :] == da
+    assert not da['y', 1:] == da
+    assert not da['x', 1:] == da
+    assert not da['y', 1:]['x', :] == da
+    assert not da['y', :]['x', 1:] == da
+
+
 def _is_deep_copy_of(orig, copy):
     assert orig == copy
     assert not id(orig) == id(copy)
@@ -121,8 +132,10 @@ def test_realign():
                        values=np.array([1]),
                        variances=np.array([1]))
     da = sc.DataArray(data=data, coords={'x': co})
+    assert da.unaligned == None
     da_r = sc.realign(
         da, {'x': sc.Variable(['x'], values=np.array([0.0, 1.0, 3.0]))})
     assert da_r.shape == [1, 2]
     assert da_r.unaligned == da
+    assert da_r.data == None
     assert np.allclose(sc.histogram(da_r).values, np.array([0, 3]), atol=1e-9)
