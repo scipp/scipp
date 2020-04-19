@@ -34,6 +34,36 @@ def test_init():
     assert len(d.masks) == 1
 
 
+def test_coords():
+    da = make_dataarray()
+    assert len(dict(da.coords)) == 3
+    assert 'x' in da.coords
+    assert 'y' in da.coords
+    assert 'aux' in da.coords
+
+
+def test_attrs():
+    da = make_dataarray()
+    assert len(dict(da.attrs)) == 1
+    assert 'meta' in da.attrs
+
+
+def test_masks():
+    da = make_dataarray()
+    da.masks['mask1'] = sc.Variable(['x'],
+                                    values=np.array([False, True],
+                                                    dtype=np.bool))
+    assert len(dict(da.masks)) == 1
+    assert 'mask1' in da.masks
+
+
+def test_labels():
+    da = make_dataarray()
+    # Deprecated at point of use
+    with pytest.raises(RuntimeError):
+        da.labels
+
+
 def test_eq():
     da = make_dataarray()
     assert da['x', :] == da
@@ -139,3 +169,5 @@ def test_realign():
     assert da_r.unaligned == da
     assert da_r.data == None
     assert np.allclose(sc.histogram(da_r).values, np.array([0, 3]), atol=1e-9)
+    da.realign({'x': sc.Variable(['x'], values=np.array([0.0, 1.0, 3.0]))})
+    assert da.shape == [1, 2]
