@@ -280,3 +280,51 @@ TYPED_TEST(ElementNegativeInfToNumTest, value_and_variance_out) {
   targetted_replacement_out_arg_test(element::negative_inf_to_num_out_arg, out,
                                      replaceable, nonreplaceable, replacement);
 }
+
+TEST(ElementReciprocalTest, unit) {
+  const units::Unit one_over_m(units::dimensionless / units::m);
+  EXPECT_EQ(element::reciprocal(one_over_m), units::m);
+}
+
+// Question here: should we use EXPECT_EQ, or rather EXPECT_FLOAT_EQ?
+TEST(ElementReciprocalTest, value) {
+  EXPECT_EQ(element::reciprocal(1.23), 1 / 1.23);
+  EXPECT_EQ(element::reciprocal(1.23456789f), 1 / 1.23456789f);
+}
+
+TEST(ElementReciprocalTest, value_and_variance) {
+  const ValueAndVariance x(2.0, 1.0);
+  EXPECT_EQ(element::reciprocal(x), 1 / x);
+}
+
+TEST(ElementReciprocalOutArgTest, unit) {
+  const units::Unit one_over_m(units::dimensionless / units::m);
+  units::Unit out(units::dimensionless);
+  element::reciprocal_out_arg(out, one_over_m);
+  EXPECT_EQ(out, units::m);
+}
+
+TEST(ElementReciprocalOutArgTest, value_double) {
+  double out;
+  element::reciprocal_out_arg(out, 1.23);
+  EXPECT_EQ(out, 1 / 1.23);
+}
+
+TEST(ElementReciprocalOutArgTest, value_float) {
+  float out;
+  element::reciprocal_out_arg(out, 1.23456789f);
+  EXPECT_EQ(out, 1 / 1.23456789f);
+}
+
+TEST(ElementReciprocalOutArgTest, value_and_variance) {
+  const ValueAndVariance x(2.0, 1.0);
+  ValueAndVariance out(x);
+  element::reciprocal_out_arg(out, x);
+  EXPECT_EQ(out, 1 / x);
+}
+
+TEST(ElementReciprocalOutArgTest, supported_types) {
+  auto supported = decltype(element::reciprocal_out_arg)::types{};
+  std::get<double>(supported);
+  std::get<float>(supported);
+}

@@ -126,15 +126,7 @@ Variable filter(const Variable &var, const Variable &filter) {
 }
 
 Variable reciprocal(const VariableConstView &var) {
-  return transform<double, float>(
-      var, overloaded{[](const auto &a_) {
-                        return static_cast<core::detail::element_type_t<
-                                   std::decay_t<decltype(a_)>>>(1) /
-                               a_;
-                      },
-                      [](const units::Unit &unit) {
-                        return units::Unit(units::dimensionless) / unit;
-                      }});
+  return transform<double, float>(var, element::reciprocal);
 }
 
 Variable reciprocal(Variable &&var) {
@@ -144,18 +136,7 @@ Variable reciprocal(Variable &&var) {
 }
 
 VariableView reciprocal(const VariableConstView &var, const VariableView &out) {
-  transform_in_place<pair_self_t<double, float>>(
-      out, var,
-      overloaded{
-          [](auto &x, const auto &y) {
-            x = static_cast<
-                    core::detail::element_type_t<std::decay_t<decltype(y)>>>(
-                    1) /
-                y;
-          },
-          [](units::Unit &x, const units::Unit &y) {
-            x = units::Unit(units::dimensionless) / y;
-          }});
+  transform_in_place(out, var, element::reciprocal_out_arg);
   return out;
 }
 
