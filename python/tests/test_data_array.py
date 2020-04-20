@@ -100,6 +100,18 @@ def test_in_place_binary_with_variable():
     assert a == copy
 
 
+def test_in_place_binary_with_dataarray():
+    da = sc.DataArray(
+        data=sc.Variable(['x'], values=np.arange(1.0, 10.0)),
+        coords={'x': sc.Variable(['x'], values=np.arange(1.0, 10.0))})
+    orig = da.copy()
+    da += orig
+    da -= orig
+    da *= orig
+    da /= orig
+    assert da == orig
+
+
 def test_in_place_binary_with_scalar():
     a = sc.DataArray(data=sc.Variable(['x'], values=[10]),
                      coords={'x': sc.Variable(['x'], values=[10])})
@@ -110,6 +122,32 @@ def test_in_place_binary_with_scalar():
     a -= 4
     a /= 2
     assert a == copy
+
+
+def test_binary_with_broadcast():
+    da = sc.DataArray(data=sc.Variable(['x', 'y'],
+                                       values=np.arange(20).reshape(5, 4)),
+                      coords={
+                          'x': sc.Variable(['x'],
+                                           values=np.arange(0.0, 0.6, 0.1)),
+                          'y': sc.Variable(['y'],
+                                           values=np.arange(0.0, 0.5, 0.1))
+                      })
+    d2 = da - da['x', 0]
+    da -= da['x', 0]
+    assert da == d2
+
+
+def test_view_in_place_binary_with_scalar():
+    d = sc.Dataset({'data': sc.Variable(dims=['x'], values=[10])},
+                   coords={'x': sc.Variable(dims=['x'], values=[10])})
+    copy = d.copy()
+
+    d['x', :] += 2
+    d['x', :] *= 2
+    d['x', :] -= 4
+    d['x', :] /= 2
+    assert d == copy
 
 
 def test_rename_dims():
@@ -171,3 +209,12 @@ def test_realign():
     assert np.allclose(sc.histogram(da_r).values, np.array([0, 3]), atol=1e-9)
     da.realign({'x': sc.Variable(['x'], values=np.array([0.0, 1.0, 3.0]))})
     assert da.shape == [1, 2]
+
+
+def test_get_items():
+    da = make_dataarray()
+    assert np.allclose(da['x', 0].values, da['x', 0:1].values[0], atol=1e-9)
+    assert 'y' in da['x', 0].dims
+    assert 'x' not in da['x', 0].dims
+    assert 'y' in da['x', 0:1].dims
+    assert 'x' in da['x', 0:1].dims

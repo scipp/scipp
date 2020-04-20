@@ -557,6 +557,19 @@ def test_binary_with_broadcast():
     assert d == d2
 
 
+def test_binary__with_dataarray():
+    da = sc.DataArray(
+        data=sc.Variable(dims=['x'], values=np.arange(1.0, 10.0)),
+        coords={'x': sc.Variable(dims=['x'], values=np.arange(1.0, 10.0))})
+    ds = sc.Dataset(da)
+    orig = ds.copy()
+    ds += da
+    ds -= da
+    ds *= da
+    ds /= da
+    assert ds == orig
+
+
 def test_binary_of_item_with_variable():
     d = sc.Dataset(
         {'data': sc.Variable(dims=['x'], values=np.arange(10.0))},
