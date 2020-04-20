@@ -204,35 +204,16 @@ def _to_spherical(pos, output):
     sc.atan2(sc.geometry.y(pos), sc.geometry.x(pos), output["p"].data)
 
 
-def rotation_matrix_from_vectors(vec1, vec2):
-    """ Find the rotation matrix that aligns vec1 to vec2
-    :param vec1: A 3d "source" vector
-    :param vec2: A 3d "destination" vector
-    :return mat: Tranform (3x3) which aligns it with vec2.
-    """
-    a, b = (vec1 /
-            np.linalg.norm(vec1)).reshape(3), (vec2 /
-                                               np.linalg.norm(vec2)).reshape(3)
-    v = np.cross(a, b)
-    c = np.dot(a, b)
-    s = np.linalg.norm(v)
-    if s == 0:
-        return np.eye(3)
-    kmat = np.array([[0, -v[2], v[1]], [v[2], 0, -v[0]], [-v[1], v[0], 0]])
-    rotation_matrix = np.eye(3) + kmat + kmat.dot(kmat) * ((1 - c) / (s**2))
-    return rotation_matrix
-
-
-def matrix_mult(pos, m):
-    if not pos.shape[0]:
-        return pos
-    m1 = sc.Variable(value=m[0, :], dtype=sc.dtype.vector_3_float64)
-    m2 = sc.Variable(value=m[1, :], dtype=sc.dtype.vector_3_float64)
-    m3 = sc.Variable(value=m[2, :], dtype=sc.dtype.vector_3_float64)
-    xn = sc.dot(m1, pos)
-    yn = sc.dot(m2, pos)
-    zn = sc.dot(m3, pos)
-    return sc.geometry.position(xn, yn, zn)
+def _quat_from_vectors(vec1, vec2):
+    a = sc.Variable(value=vec1 / np.linalg.norm(vec1),
+                    dtype=sc.dtype.vector_3_float64)
+    b = sc.Variable(value=vec2 / np.linalg.norm(vec2),
+                    dtype=sc.dtype.vector_3_float64)
+    c = sc.Variable(value=np.cross(a.value, b.value),
+                    dtype=sc.dtype.vector_3_float64)
+    angle = sc.acos(sc.dot(a, b)).value
+    q = sc.Quat(list(c.value * np.sin(angle / 2)) + [np.cos(angle / 2)])
+    return sc.Variable(value=q)
 
 
 def get_detector_properties(ws, source_pos, sample_pos):
@@ -246,8 +227,8 @@ def get_detector_properties(ws, source_pos, sample_pos):
     if sample_pos is not None and source_pos is not None:
         total_detectors = spec_info.detectorCount()
         act_beam = (sample_pos - source_pos).values
-        rot = rotation_matrix_from_vectors(act_beam, [0, 0, 1])
-        inv_rot = rot.transpose()
+        rot = _quat_from_vectors(act_beam, [0, 0, 1])
+        inv_rot = _quat_from_vectors([0, 0, 1], act_beam)
 
         pos_d = sc.Dataset()
         # Create empty to hold position info for all spectra detectors
@@ -286,7 +267,7 @@ def get_detector_properties(ws, source_pos, sample_pos):
                 det_rot[i, :] = np.mean(quats, axis=0)
                 det_bbox[i, :] = np.sum(bboxes, axis=0)
 
-        rot_pos = matrix_mult(
+        rot_pos = sc.geometry.rotate(
             sc.geometry.position(pos_d["x"].data, pos_d["y"].data,
                                  pos_d["z"].data), rot)
 
@@ -308,7 +289,7 @@ def get_detector_properties(ws, source_pos, sample_pos):
 
         pos = sc.geometry.position(averaged["x"].data, averaged["y"].data,
                                    averaged["z"].data)
-        return (matrix_mult(pos, inv_rot),
+        return (sc.geometry.rotate(pos, inv_rot),
                 sc.Variable(['spectrum'],
                             values=det_rot,
                             dtype=sc.dtype.quaternion_float64),
