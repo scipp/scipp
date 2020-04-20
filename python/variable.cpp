@@ -874,6 +874,71 @@ void init_variable(py::module &m) {
         :return: Variable of booleans.
         :rtype: Variable)");
 
+  m.def(
+      "greater",
+      [](const VariableConstView &x, const VariableConstView &y) {
+        return is_greater(x, y);
+      },
+      py::arg("x"), py::arg("y"),
+      R"(
+        Comparison returning the truth value of (x > y) element-wise.
+
+        :raises: If the units of inputs are not the same, or if the dtypes of inputs are not double precision floats
+        :return: Variable of booleans.
+        :rtype: Variable)");
+
+  m.def(
+      "greater_equal",
+      [](const VariableConstView &x, const VariableConstView &y) {
+        return is_greater_equal(x, y);
+      },
+      py::arg("x"), py::arg("y"),
+      R"(
+        Comparison returning the truth value of (x >= y) element-wise.
+
+        :raises: If the units of inputs are not the same, or if the dtypes of inputs are not double precision floats
+        :return: Variable of booleans.
+        :rtype: Variable)");
+
+  m.def(
+      "less_equal",
+      [](const VariableConstView &x, const VariableConstView &y) {
+        return is_less_equal(x, y);
+      },
+      py::arg("x"), py::arg("y"),
+      R"(
+        Comparison returning the truth value of (x <= y) element-wise.
+
+        :raises: If the units of inputs are not the same, or if the dtypes of inputs are not double precision floats
+        :return: Variable of booleans.
+        :rtype: Variable)");
+
+  m.def(
+      "equal",
+      [](const VariableConstView &x, const VariableConstView &y) {
+        return is_equal(x, y);
+      },
+      py::arg("x"), py::arg("y"),
+      R"(
+        Comparison returning the truth value of (x == y) element-wise.
+
+        :raises: If the units of inputs are not the same, or if the dtypes of inputs are not double precision floats
+        :return: Variable of booleans.
+        :rtype: Variable)");
+
+  m.def(
+      "not_equal",
+      [](const VariableConstView &x, const VariableConstView &y) {
+        return is_not_equal(x, y);
+      },
+      py::arg("x"), py::arg("y"),
+      R"(
+        Comparison returning the truth value of (x != y) element-wise.
+
+        :raises: If the units of inputs are not the same, or if the dtypes of inputs are not double precision floats
+        :return: Variable of booleans.
+        :rtype: Variable)");
+
   auto geom_m = m.def_submodule("geometry");
   geom_m.def(
       "position",
