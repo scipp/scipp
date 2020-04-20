@@ -3,3 +3,5 @@ compile_commands.json
 
 build/
 .clangd/
+.idea/
+.vscode/

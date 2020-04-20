@@ -38,6 +38,7 @@ To build a debug version of the library:
 
   cmake \
     -GNinja \
+    -DCMAKE_BUILD_TYPE=Debug \
     -DPYTHON_EXECUTABLE=$(command -v python3) \
     -DCMAKE_INSTALL_PREFIX=../install \
     -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=OFF \
