@@ -20,6 +20,16 @@ def make_dataarray(dim1='x', dim2='y', seed=None):
         attrs={'meta': sc.Variable([dim2], values=np.arange(3))})
 
 
+def test_slice_init():
+    orig = sc.DataArray(
+        data=sc.Variable(['x'], values=np.arange(2.0)),
+        coords={'x': sc.Variable(['x'], values=np.arange(3.0))})
+    a = sc.DataArray(orig['x', :])
+    assert a == orig
+    b = sc.DataArray(orig['x', 1:])
+    assert b.data.values[0] == orig.data.values[1:]
+
+
 def test_init():
     d = sc.DataArray(
         data=sc.Variable(dims=['x'], values=np.arange(3)),
