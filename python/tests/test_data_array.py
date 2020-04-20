@@ -210,12 +210,12 @@ def test_realign():
                        values=np.array([1]),
                        variances=np.array([1]))
     da = sc.DataArray(data=data, coords={'x': co})
-    assert da.unaligned == None
+    assert not da.unaligned
     da_r = sc.realign(
         da, {'x': sc.Variable(['x'], values=np.array([0.0, 1.0, 3.0]))})
     assert da_r.shape == [1, 2]
     assert da_r.unaligned == da
-    assert da_r.data == None
+    assert not da_r.data
     assert np.allclose(sc.histogram(da_r).values, np.array([0, 3]), atol=1e-9)
     da.realign({'x': sc.Variable(['x'], values=np.array([0.0, 1.0, 3.0]))})
     assert da.shape == [1, 2]
