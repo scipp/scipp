@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
+/// @author Piotr Rozyczko
 #ifndef SCIPP_VARIABLE_COMPARISON_H
 #define SCIPP_VARIABLE_COMPARISON_H
 
@@ -13,8 +14,9 @@
 
 namespace scipp::variable {
 
-/// Tests if the unit, values (and variances where appropriate) of two
-/// Variables are within an absolute tolerance.
+SCIPP_VARIABLE_EXPORT Variable is_less(const VariableConstView &x,
+                                       const VariableConstView &y); 
+
 template <typename T>
 bool is_approx(const VariableConstView &a, const VariableConstView &b,
                const T tol) {

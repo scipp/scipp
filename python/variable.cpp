@@ -12,6 +12,7 @@
 #include "scipp/variable/transform.h"
 #include "scipp/variable/variable.h"
 #include "scipp/variable/variable_operations.h"
+#include "scipp/variable/variable_comparison.h"
 
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/sort.h"
@@ -862,6 +863,17 @@ void init_variable(py::module &m) {
       "is_events",
       [](const DataArrayConstView &self) { return is_events(self); },
       R"(Return true if the data array contains event data. Note that data may be stored as a scalar, but this returns true if any coord contains events.)");
+  m.def(
+      "less",
+      [](const VariableConstView &x, const VariableConstView &y) { return is_less(x, y); },
+      py::arg("x"), py::arg("y"),
+      R"(
+        Comparison returning the truth value of (x < y) element-wise.
+
+        :raises: If the units of inputs are not the same, or if the dtypes of inputs are not double precision floats
+        :return: Variable of booleans.
+        :rtype: Variable)");
+
   auto geom_m = m.def_submodule("geometry");
   geom_m.def(
       "position",

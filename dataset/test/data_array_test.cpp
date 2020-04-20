@@ -6,7 +6,7 @@
 #include "scipp/dataset/event.h"
 #include "scipp/dataset/histogram.h"
 #include "scipp/dataset/unaligned.h"
-#include "scipp/variable/comparison.h"
+#include "scipp/variable/variable_comparison.h"
 #include "scipp/variable/variable_operations.h"
 
 #include "dataset_test_common.h"

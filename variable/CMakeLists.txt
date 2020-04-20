@@ -3,7 +3,6 @@
 set(TARGET_NAME "scipp-variable")
 set(INC_FILES
     include/scipp/variable/apply.h
-    include/scipp/variable/comparison.h
     include/scipp/variable/event.h
     include/scipp/variable/except.h
     include/scipp/variable/indexed_slice_view.h
@@ -15,6 +14,7 @@ set(INC_FILES
     include/scipp/variable/variable_concept.h
     include/scipp/variable/variable.h
     include/scipp/variable/variable.tcc
+    include/scipp/variable/variable_comparison.h
     include/scipp/variable/variable_keyword_arg_constructor.h
     include/scipp/variable/variable_logical.h
     include/scipp/variable/variable_misc_operations.h
@@ -33,6 +33,7 @@ set(SRC_FILES
     variable_binary_arithmetic.cpp
     variable_concept.cpp
     variable.cpp
+    variable_comparison.cpp
     variable_inplace_arithmetic.cpp
     variable_instantiate_basic.cpp
     variable_instantiate_view_elements.cpp

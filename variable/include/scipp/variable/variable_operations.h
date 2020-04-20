@@ -9,3 +9,4 @@
 #include "scipp/variable/variable_misc_operations.h"
 #include "scipp/variable/variable_reduction.h"
 #include "scipp/variable/variable_trigonometry.h"
+#include "scipp/variable/variable_comparison.h"

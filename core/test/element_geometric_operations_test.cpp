@@ -6,6 +6,8 @@
 
 #include "scipp/common/constants.h"
 #include "scipp/core/element_geometric_operations.h"
+#include "scipp/core/value_and_variance.h"
+
 #include "scipp/units/unit.h"
 
 #include "fix_typed_test_suite_warnings.h"
@@ -86,4 +88,34 @@ TEST(ElementRotationTest, unit_out) {
   const units::Unit a(units::angstrom);
   geometry::rotate_out_arg(u_out, a, dimless);
   EXPECT_EQ(a, u_out);
+}
+
+template <typename T> class ElementLessTest : public ::testing::Test {};
+using ElementLessTestTypes = ::testing::Types<double, float, int64_t, int32_t>;
+TYPED_TEST_SUITE(ElementLessTest, ElementLessTestTypes);
+
+TYPED_TEST(ElementLessTest, unit) {
+  const units::Unit m(units::m);
+  EXPECT_EQ(less(m, m), units::dimensionless);
+  const units::Unit rad(units::rad);
+  EXPECT_THROW(less(rad, m), except::UnitError);
+}
+
+TYPED_TEST(ElementLessTest, value) {
+  using T = TypeParam;
+  T y = 1;
+  T x = 2;
+  EXPECT_EQ(less(y, x), true);
+  x = -1;
+  EXPECT_EQ(less(y, x), false);
+}
+
+template <int T, typename Op> bool is_no_variance_arg() {
+  return std::is_base_of_v<core::transform_flags::expect_no_variance_arg_t<T>, Op>;
+}
+
+TYPED_TEST(ElementLessTest, value_only_arguments) {
+  using Op = decltype(less);
+  EXPECT_TRUE((is_no_variance_arg<0, Op>())) << " y has variance ";
+  EXPECT_TRUE((is_no_variance_arg<1, Op>())) << " x has variance ";
 }
