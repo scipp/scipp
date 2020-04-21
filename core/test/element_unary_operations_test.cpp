@@ -284,9 +284,10 @@ TYPED_TEST(ElementNegativeInfToNumTest, value_and_variance_out) {
 TEST(ElementReciprocalTest, unit) {
   const units::Unit one_over_m(units::dimensionless / units::m);
   EXPECT_EQ(element::reciprocal(one_over_m), units::m);
+  const units::Unit one_over_s(units::dimensionless / units::s);
+  EXPECT_EQ(element::reciprocal(units::Unit(units::s)), one_over_s);
 }
 
-// Question here: should we use EXPECT_EQ, or rather EXPECT_FLOAT_EQ?
 TEST(ElementReciprocalTest, value) {
   EXPECT_EQ(element::reciprocal(1.23), 1 / 1.23);
   EXPECT_EQ(element::reciprocal(1.23456789f), 1 / 1.23456789f);
@@ -302,6 +303,9 @@ TEST(ElementReciprocalOutArgTest, unit) {
   units::Unit out(units::dimensionless);
   element::reciprocal_out_arg(out, one_over_m);
   EXPECT_EQ(out, units::m);
+  element::reciprocal_out_arg(out, units::Unit(units::s));
+  const units::Unit one_over_s(units::dimensionless / units::s);
+  EXPECT_EQ(out, one_over_s);
 }
 
 TEST(ElementReciprocalOutArgTest, value_double) {

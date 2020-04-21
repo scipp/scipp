@@ -126,7 +126,7 @@ Variable filter(const Variable &var, const Variable &filter) {
 }
 
 Variable reciprocal(const VariableConstView &var) {
-  return transform<double, float>(var, element::reciprocal);
+  return transform(var, element::reciprocal);
 }
 
 Variable reciprocal(Variable &&var) {
