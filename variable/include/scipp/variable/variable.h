@@ -23,6 +23,7 @@
 #include "scipp/core/dtype.h"
 #include "scipp/core/element_array.h"
 #include "scipp/core/element_array_view.h"
+#include "scipp/core/except.h"
 #include "scipp/core/slice.h"
 #include "scipp/core/tag_util.h"
 
@@ -105,12 +106,11 @@ public:
       : Variable(units::dimensionless, std::move(dimensions),
                  element_array<T>(values_.begin(), values_.end())) {}
 
-  /// This is used to provide the constructors:
-  /// Variable(DType, Dims, Shape, Unit, Values<T1>, Variances<T2>)
-  /// with the only one obligatory argument DType, the other arguments are not
-  /// obligatory and could be given in arbitrary order. Example:
-  /// Variable(dtype<float>, units::Unit(units::kg), Shape{1, 2}, Dims{Dim::X,
-  /// Dim::Y}, Values({3, 4})).
+  /// Keyword-argument constructor.
+  ///
+  /// This is equivalent to `makeVariable`, except that the dtype is passed at
+  /// runtime as first argument instead of a template argument. `makeVariable`
+  /// should be prefered where possible, since it generates less code.
   template <class... Ts> Variable(const DType &type, Ts &&... args);
 
   explicit operator bool() const noexcept { return m_object.operator bool(); }
@@ -225,11 +225,8 @@ public:
   void setVariances(Variable v);
 
 private:
-  template <class... Ts> struct ConstructVariable {
-    template <class T> struct Maker { static Variable apply(Ts &&... args); };
-
-    static Variable make(Ts &&... args, DType type);
-  };
+  template <class... Ts, class... Args>
+  static Variable construct(const DType &type, Args &&... args);
 
   template <class T>
   const element_array<T> &cast(const bool variances = false) const;
@@ -267,26 +264,24 @@ template <class T, class... Ts> Variable makeVariable(Ts &&... ts) {
   return std::make_from_tuple<Variable>(std::move(parser.args));
 }
 
-template <class... Ts>
-template <class T>
-Variable Variable::ConstructVariable<Ts...>::Maker<T>::apply(Ts &&... ts) {
-  return makeVariable<T>(std::forward<Ts>(ts)...);
-}
-
-template <class... Ts>
-Variable Variable::ConstructVariable<Ts...>::make(Ts &&... args, DType type) {
-  return core::CallDType<double, float, int64_t, int32_t, bool, Eigen::Vector3d,
-                         Eigen::Quaterniond, std::string, event_list<double>,
-                         event_list<float>, event_list<int64_t>,
-                         event_list<int32_t>>::apply<Maker>(type,
-                                                            std::forward<Ts>(
-                                                                args)...);
+template <class... Ts, class... Args>
+Variable Variable::construct(const DType &type, Args &&... args) {
+  std::array vars{core::dtype<Ts> == type
+                      ? makeVariable<Ts>(std::forward<Args>(args)...)
+                      : Variable()...};
+  for (auto &var : vars)
+    if (var)
+      return std::move(var);
+  throw except::TypeError("Unsupported dtype.");
 }
 
 template <class... Ts>
 Variable::Variable(const DType &type, Ts &&... args)
     : Variable{
-          ConstructVariable<Ts...>::make(std::forward<Ts>(args)..., type)} {}
+          construct<double, float, int64_t, int32_t, bool, Eigen::Vector3d,
+                    Eigen::Quaterniond, std::string, event_list<double>,
+                    event_list<float>, event_list<int64_t>,
+                    event_list<int32_t>>(type, std::forward<Ts>(args)...)} {}
 
 /// Non-mutable view into (a subset of) a Variable.
 class SCIPP_VARIABLE_EXPORT VariableConstView {
