@@ -4,7 +4,6 @@
 /// @author Simon Heybrock
 #pragma once
 
-#include <limits>
 #include <type_traits>
 
 namespace scipp::variable {
@@ -81,18 +80,18 @@ template <class ElemT> struct ArgParser {
       std::get<Dimensions>(args) = Dimensions(dims.data, arg.data);
   }
 
-  template <class... Args> void parse(Values<Args...> &&values) {
+  template <class... Args> void parse(Values<Args...> &&arg) {
     if constexpr (std::is_constructible_v<element_array<ElemT>, Args...>)
       std::get<2>(args) =
-          std::make_from_tuple<element_array<ElemT>>(std::move(values.tuple));
+          std::make_from_tuple<element_array<ElemT>>(std::move(arg.tuple));
     else
       throw_keyword_arg_constructor_bad_dtype(core::dtype<ElemT>);
   }
 
-  template <class... Args> void parse(Variances<Args...> &&variances) {
+  template <class... Args> void parse(Variances<Args...> &&arg) {
     if constexpr (std::is_constructible_v<element_array<ElemT>, Args...>)
-      std::get<3>(args) = std::make_from_tuple<element_array<ElemT>>(
-          std::move(variances.tuple));
+      std::get<3>(args) =
+          std::make_from_tuple<element_array<ElemT>>(std::move(arg.tuple));
     else
       throw_keyword_arg_constructor_bad_dtype(core::dtype<ElemT>);
   }
