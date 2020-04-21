@@ -172,30 +172,6 @@ public:
   DataArrayView operator*=(const VariableConstView &other) const;
   DataArrayView operator/=(const VariableConstView &other) const;
 
-  template <typename T,
-            typename = std::enable_if_t<!variable::is_container_or_view<T>()>>
-  DataArrayView operator+=(const T value) const {
-    return *this += makeVariable<T>(Values{value});
-  }
-
-  template <typename T,
-            typename = std::enable_if_t<!variable::is_container_or_view<T>()>>
-  DataArrayView operator-=(const T value) const {
-    return *this -= makeVariable<T>(Values{value});
-  }
-
-  template <typename T,
-            typename = std::enable_if_t<!variable::is_container_or_view<T>()>>
-  DataArrayView operator*=(const T value) const {
-    return *this *= makeVariable<T>(Values{value});
-  }
-
-  template <typename T,
-            typename = std::enable_if_t<!variable::is_container_or_view<T>()>>
-  DataArrayView operator/=(const T value) const {
-    return *this /= makeVariable<T>(Values{value});
-  }
-
   void setData(Variable data) const;
 
 private:
@@ -428,30 +404,6 @@ public:
   Dataset &operator*=(const Dataset &other);
   Dataset &operator/=(const Dataset &other);
 
-  template <typename T,
-            typename = std::enable_if_t<!variable::is_container_or_view<T>()>>
-  Dataset &operator+=(const T value) {
-    return *this += makeVariable<T>(Values{value});
-  }
-
-  template <typename T,
-            typename = std::enable_if_t<!variable::is_container_or_view<T>()>>
-  Dataset &operator-=(const T value) {
-    return *this -= makeVariable<T>(Values{value});
-  }
-
-  template <typename T,
-            typename = std::enable_if_t<!variable::is_container_or_view<T>()>>
-  Dataset &operator*=(const T value) {
-    return *this *= makeVariable<T>(Values{value});
-  }
-
-  template <typename T,
-            typename = std::enable_if_t<!variable::is_container_or_view<T>()>>
-  Dataset &operator/=(const T value) {
-    return *this /= makeVariable<T>(Values{value});
-  }
-
   std::unordered_map<Dim, scipp::index> dimensions() const;
 
 private:
@@ -640,30 +592,6 @@ public:
   DatasetView operator*=(const Dataset &other) const;
   DatasetView operator/=(const Dataset &other) const;
 
-  template <typename T,
-            typename = std::enable_if_t<!variable::is_container_or_view<T>()>>
-  DatasetView operator+=(const T value) const {
-    return *this += makeVariable<T>(Values{value});
-  }
-
-  template <typename T,
-            typename = std::enable_if_t<!variable::is_container_or_view<T>()>>
-  DatasetView operator-=(const T value) const {
-    return *this -= makeVariable<T>(Values{value});
-  }
-
-  template <typename T,
-            typename = std::enable_if_t<!variable::is_container_or_view<T>()>>
-  DatasetView operator*=(const T value) const {
-    return *this *= makeVariable<T>(Values{value});
-  }
-
-  template <typename T,
-            typename = std::enable_if_t<!variable::is_container_or_view<T>()>>
-  DatasetView operator/=(const T value) const {
-    return *this /= makeVariable<T>(Values{value});
-  }
-
   DatasetView assign(const DatasetConstView &other) const;
 
   auto &dataset() const noexcept { return *m_mutableDataset; }
@@ -772,30 +700,6 @@ public:
   DataArray &operator-=(const VariableConstView &other);
   DataArray &operator*=(const VariableConstView &other);
   DataArray &operator/=(const VariableConstView &other);
-
-  template <typename T,
-            typename = std::enable_if_t<!variable::is_container_or_view<T>()>>
-  DataArray &operator+=(const T value) {
-    return *this += makeVariable<T>(Values{value});
-  }
-
-  template <typename T,
-            typename = std::enable_if_t<!variable::is_container_or_view<T>()>>
-  DataArray &operator-=(const T value) {
-    return *this -= makeVariable<T>(Values{value});
-  }
-
-  template <typename T,
-            typename = std::enable_if_t<!variable::is_container_or_view<T>()>>
-  DataArray &operator*=(const T value) {
-    return *this *= makeVariable<T>(Values{value});
-  }
-
-  template <typename T,
-            typename = std::enable_if_t<!variable::is_container_or_view<T>()>>
-  DataArray &operator/=(const T value) {
-    return *this /= makeVariable<T>(Values{value});
-  }
 
   void setData(Variable data) {
     m_holder.setData(name(), std::move(data), AttrPolicy::Keep);
@@ -954,48 +858,6 @@ SCIPP_DATASET_EXPORT Dataset operator/(const DatasetConstView &lhs,
                                        const VariableConstView &rhs);
 SCIPP_DATASET_EXPORT Dataset operator/(const VariableConstView &lhs,
                                        const DatasetConstView &rhs);
-
-template <typename T,
-          typename = std::enable_if_t<!variable::is_container_or_view<T>()>>
-Dataset operator+(const T value, const DatasetConstView &a) {
-  return makeVariable<T>(Values{value}) + a;
-}
-template <typename T,
-          typename = std::enable_if_t<!variable::is_container_or_view<T>()>>
-Dataset operator-(const T value, const DatasetConstView &a) {
-  return makeVariable<T>(Values{value}) - a;
-}
-template <typename T,
-          typename = std::enable_if_t<!variable::is_container_or_view<T>()>>
-Dataset operator*(const T value, const DatasetConstView &a) {
-  return makeVariable<T>(Values{value}) * a;
-}
-template <typename T,
-          typename = std::enable_if_t<!variable::is_container_or_view<T>()>>
-Dataset operator/(const T value, const DatasetConstView &a) {
-  return makeVariable<T>(Values{value}) / a;
-}
-
-template <typename T,
-          typename = std::enable_if_t<!variable::is_container_or_view<T>()>>
-Dataset operator+(const DatasetConstView &a, const T value) {
-  return a + makeVariable<T>(Values{value});
-}
-template <typename T,
-          typename = std::enable_if_t<!variable::is_container_or_view<T>()>>
-Dataset operator-(const DatasetConstView &a, const T value) {
-  return a - makeVariable<T>(Values{value});
-}
-template <typename T,
-          typename = std::enable_if_t<!variable::is_container_or_view<T>()>>
-Dataset operator*(const DatasetConstView &a, const T value) {
-  return a * makeVariable<T>(Values{value});
-}
-template <typename T,
-          typename = std::enable_if_t<!variable::is_container_or_view<T>()>>
-Dataset operator/(const DatasetConstView &a, const T value) {
-  return a / makeVariable<T>(Values{value});
-}
 
 SCIPP_DATASET_EXPORT DataArray astype(const DataArrayConstView &var,
                                       const DType type);

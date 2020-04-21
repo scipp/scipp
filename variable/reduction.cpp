@@ -104,8 +104,8 @@ Variable mean_impl(const VariableConstView &var, const Dim dim,
                    const VariableConstView &masks_sum) {
   auto summed = sum(var, dim);
 
-  auto scale =
-      1.0 / (makeVariable<double>(Values{var.dims()[dim]}) - masks_sum);
+  auto scale = 1.0 * units::Unit(units::dimensionless) /
+               (makeVariable<double>(Values{var.dims()[dim]}) - masks_sum);
 
   if (isInt(var.dtype()))
     summed = summed * scale;
@@ -123,8 +123,8 @@ VariableView mean_impl(const VariableConstView &var, const Dim dim,
 
   sum(var, dim, out);
 
-  auto scale =
-      1.0 / (makeVariable<double>(Values{var.dims()[dim]}) - masks_sum);
+  auto scale = 1.0 * units::Unit(units::dimensionless) /
+               (makeVariable<double>(Values{var.dims()[dim]}) - masks_sum);
 
   out *= scale;
   return out;

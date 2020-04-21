@@ -1009,11 +1009,13 @@ TEST(VariableTest, values_variances) {
 }
 
 template <typename Var> void test_set_variances(Var &var) {
-  const auto v = var * 2.0;
+  const auto v = var * (2.0 * units::Unit(units::dimensionless));
   var.setVariances(Variable(var));
   ASSERT_TRUE(equals(var.template variances<double>(), {1.0, 2.0, 3.0}));
   // Fail because `var` has variances (setVariances uses only the values)
-  EXPECT_THROW(var.setVariances(var * 2.0), except::VariancesError);
+  EXPECT_THROW(
+      var.setVariances(var * (2.0 * units::Unit(units::dimensionless))),
+      except::VariancesError);
   var.setVariances(v);
   ASSERT_TRUE(equals(var.template variances<double>(), {2.0, 4.0, 6.0}));
 

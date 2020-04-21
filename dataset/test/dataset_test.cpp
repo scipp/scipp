@@ -522,7 +522,8 @@ TEST(DatasetCoordsRealignedTest, set_erase) {
 
   // Depending on dim of unaligned -> works
   EXPECT_NO_THROW(d["a"].unaligned().coords().set(
-      Dim::Y, d["a"].unaligned().coords()[Dim::Y] * 2.0));
+      Dim::Y, d["a"].unaligned().coords()[Dim::Y] *
+                  (2.0 * units::Unit(units::dimensionless))));
 
   EXPECT_NO_THROW(d["a"].unaligned().coords().erase(Dim::Y));
   EXPECT_TRUE(d["a"].coords().contains(Dim::Y)); // bin edges still present
@@ -554,8 +555,11 @@ TEST(DatasetMasksRealignedTest, set_erase) {
 
   // Depending on dim of unaligned -> works
   EXPECT_NO_THROW(d["a"].unaligned().masks().set(
-      "mask", d["a"].unaligned().coords()[Dim::Y] * 2.0));
-  EXPECT_NO_THROW(d.masks().set("mask", d["a"].coords()[Dim::Y] * 2.0));
+      "mask", d["a"].unaligned().coords()[Dim::Y] *
+                  (2.0 * units::Unit(units::dimensionless))));
+  EXPECT_NO_THROW(
+      d.masks().set("mask", d["a"].coords()[Dim::Y] *
+                                (2.0 * units::Unit(units::dimensionless))));
 
   EXPECT_NO_THROW(d["a"].unaligned().masks().erase("mask"));
   EXPECT_TRUE(d["a"].masks().contains("mask")); // mask of dataset still present
