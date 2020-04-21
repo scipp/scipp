@@ -10,7 +10,7 @@ Conda packages
 ##############
 
 Those marked with "*" are optional.
-SOme functionality may be missing (e.g. some unit tests skipped) but core functionality is not changed.
+Some functionality may be missing (e.g. some unit tests skipped) but core functionality is not changed.
 
 Build
 -----
@@ -21,13 +21,12 @@ Run
 ---
 
   - ``appdirs`` (system application directory helper, used in user configuration loading)
-  - ``beautifulsoup4`` * (HTML parser, used for ?)
-  - ``ipyevents`` *
-  - ``ipyvolume`` *
-  - ``ipywidgets`` *
+  - ``ipyevents`` * (HID event processor, used for Jupyter notebook widgets)
+  - ``ipyvolume`` * (3D plotting library)
+  - ``ipywidgets`` * (interactive Jupyter notebook widgets)
   - ``mantid-framework`` * (used for Mantid interoperability)
   - ``matplotlib`` * (plotting library)
-  - ``numpy >=1.15.3``
+  - ``numpy`` >=1.15.3
   - ``python``
   - ``python-configuration`` (configuration file parser, used in user configuration loading)
   - ``pyyaml`` (YAML parser, used for ?)
@@ -37,6 +36,7 @@ Test
 ----
 
   - all (including optional) dependecies of *Run*
+  - ``beautifulsoup4`` (HTML parser, used for testing of HTML representation)
   - ``mantid-framework`` * (Mantid interoperability tests are skipped if not present)
   - ``pytest`` (test framework)
 
@@ -44,8 +44,8 @@ Documentation Build
 -------------------
 
   - all (including optional) dependecies of *Run*
-  - ``ipython=7.2.0`` (used for ?)
+  - ``ipython`` 7.2.0 (used for ?)
   - ``pandoc`` (used for ?)
-  - ``sphinx>=1.6`` (documentation build framework)
+  - ``sphinx`` >=1.6 (documentation build framework)
   - ``sphinx_rtd_theme`` (Sphinx theme)
   - ``nbsphinx`` (Jupyter notebook Sphinx extension)
