@@ -11,47 +11,36 @@ import operator
 
 class TestDatasetSlice(unittest.TestCase):
     def setUp(self):
-        d = sc.Dataset()
-        d[sc.Coord.X] = (['x'], np.arange(10))
-        d[sc.Data.Value, "a"] = (['x'], np.arange(10))
-        d[sc.Data.Value, "b"] = (['x'], np.arange(10))
+        var = sc.Variable(['x'], values=np.arange(10))
+        d = sc.Dataset(data={'a':var, 'b':var}, coords={'x': var})
         self._d = d
 
     def test_type(self):
-        ds_slice = self._d.subset["a"]
-        self.assertEqual(type(ds_slice), sc.DatasetSlice)
+        ds_slice = self._d['a']
+        self.assertEqual(type(ds_slice), sc.DataArrayView)
 
-    def test_extract_slice(self):
-        ds_slice = self._d.subset["a"]
-        self.assertEqual(type(ds_slice), sc.DatasetSlice)
-        # We should have just one data variable
-        self.assertEqual(
-            1, len([var for name, tag, var in ds_slice if tag.is_data]))
-        # We should have just one coord variable
-        self.assertEqual(
-            1, len([var for name, tag, var in ds_slice if tag.is_coord]))
-        self.assertEqual(2, len(ds_slice))
 
-    def test_slice_back_ommit_range(self):
-        sl = self._d['x', 1:-1][sc.Data.Value, "a"].numpy
+    def test_slice_with_range(self):
+        sl = self._d['x', 1:-1]["a"].values
         ref = np.array([1, 2, 3, 4, 5, 6, 7, 8], dtype=np.int64)
         self.assertEqual(ref.shape, sl.shape)
-        self.assertEqual(np.allclose(sl, ref), True)
+        self.assertTrue(np.allclose(sl, ref))
         # omitting range end
-        sl = self._d['x', 1:][sc.Data.Value, "b"].numpy
+        sl = self._d['x', 1:]["a"].values
         ref = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9], dtype=np.int64)
         self.assertEqual(ref.shape, sl.shape)
-        self.assertEqual(np.allclose(sl, ref), True)
+        self.assertTrue(np.allclose(sl, ref))
         # omitting range begin
-        sl = self._d['x', :-1][sc.Data.Value, "a"].numpy
+        sl = self._d['x', :-1]["a"].values
         ref = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8], dtype=np.int64)
         self.assertEqual(ref.shape, sl.shape)
-        self.assertEqual(np.allclose(sl, ref), True)
+        self.assertTrue(np.allclose(sl, ref))
         # omitting range both begin and end
-        sl = self._d['x', :][sc.Data.Value, "b"].numpy
+        sl = self._d['x', :]["b"].values
         ref = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9], dtype=np.int64)
         self.assertEqual(ref.shape, sl.shape)
         self.assertEqual(np.allclose(sl, ref), True)
+'''
 
     def test_slice_single_index(self):
         self.assertEqual(self._d['x', -4][sc.Data.Value, "a"].numpy,
@@ -281,7 +270,7 @@ class TestDatasetSlice(unittest.TestCase):
             d[sc.Data.Value, "b"]['x', 8]
         self.assertEqual(list(d[sc.Data.Value, "a"].data),
                          [1, 3, 2, 3, 4, 5, 14, 7, 8, 9])
-
+'''
 
 if __name__ == '__main__':
     unittest.main()
