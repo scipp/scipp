@@ -74,6 +74,49 @@ class TestDatasetSlice(unittest.TestCase):
         self.assertEqual(self._d["a"]['x', -3].values, self._d["a"]['x',
                                                                     7].values)
 
+    def test_copy_datasetview(self):
+        import copy
+        N = 6
+        M = 4
+        d1 = sc.Dataset()
+        d1.coords['x'] = sc.Variable(['x'],
+                                     values=np.arange(N + 1).astype(
+                                         np.float64))
+        d1.coords['y'] = sc.Variable(['y'],
+                                     values=np.arange(M + 1).astype(
+                                         np.float64))
+        arr1 = np.arange(N * M).reshape(N, M).astype(np.float64) + 1
+        d1['A'] = sc.Variable(['x', 'y'], values=arr1)
+        s1 = d1['x', 2:]
+        s2 = copy.copy(s1)
+        s3 = copy.deepcopy(s2)
+        self.assertEqual(s1, s2)
+        self.assertEqual(s3, s2)
+        s2 *= s2
+        self.assertNotEqual(s1['A'], s2['A'])
+        self.assertNotEqual(s3['A'], s2['A'])
+
+    def test_copy_datasetview(self):
+        import copy
+        N = 6
+        M = 4
+        x = sc.Variable(['x'], values=np.arange(N + 1).astype(np.float64))
+        y = sc.Variable(['y'], values=np.arange(M + 1).astype(np.float64))
+        arr1 = np.arange(N * M).reshape(N, M).astype(np.float64) + 1
+        da = sc.DataArray(sc.Variable(['x', 'y'], values=arr1),
+                          coords={
+                              'x': x,
+                              'y': y
+                          })
+        s1 = da['x', 2:]
+        s2 = copy.copy(s1)
+        s3 = copy.deepcopy(s2)
+        self.assertEqual(s1, s2)
+        self.assertEqual(s3, s2)
+        s2 *= s2
+        self.assertNotEqual(s1, s2)
+        self.assertNotEqual(s3, s2)
+
 
 def test_slice_and_dimensions_items_dataarray():
     da = sc.DataArray(
@@ -103,32 +146,6 @@ def test_slice_and_dimensions_items_dataset():
 
 
 '''
-    def test_range_based_slice(self):
-        subset = slice(1, 4, 1)
-        # Create slice
-        ds_slice = self._d['x', subset]
-        # Test via variable_slice
-        self.assertEqual(len(ds_slice[sc.Coord.X]),
-                         len(range(subset.start, subset.stop, subset.step)))
-
-    def test_copy(self):
-        import copy
-        N = 6
-        M = 4
-        d1 = sc.Dataset()
-        d1[sc.Coord.X] = (['x'], np.arange(N + 1).astype(np.float64))
-        d1[sc.Coord.Y] = (['y'], np.arange(M + 1).astype(np.float64))
-        arr1 = np.arange(N * M).reshape(N, M).astype(np.float64) + 1
-        d1[sc.Data.Value, "A"] = (['x', 'y'], arr1)
-        s1 = d1['x', 2:]
-        s2 = copy.copy(s1)
-        s3 = copy.deepcopy(s2)
-        self.assertEqual(s1, s2)
-        self.assertEqual(s3, s2)
-        s2 *= s2
-        self.assertNotEqual(s1[sc.Data.Value, "A"], s2[sc.Data.Value, "A"])
-        self.assertNotEqual(s3[sc.Data.Value, "A"], s2[sc.Data.Value, "A"])
-
     def _apply_test_op_rhs_ds_slice(self,
                                     op,
                                     a,
