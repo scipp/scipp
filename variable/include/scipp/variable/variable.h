@@ -101,11 +101,6 @@ public:
   Variable(const units::Unit unit, const Dimensions &dimensions, T values,
            std::optional<T> variances);
 
-  template <class T>
-  Variable(const Dimensions &dimensions, std::initializer_list<T> values_)
-      : Variable(units::dimensionless, std::move(dimensions),
-                 element_array<T>(values_.begin(), values_.end())) {}
-
   /// Keyword-argument constructor.
   ///
   /// This is equivalent to `makeVariable`, except that the dtype is passed at
