@@ -423,15 +423,16 @@ TEST_P(Dataset3DTest_slice_range_z, slice_with_edges) {
 
 TEST_F(Dataset3DTest, nested_slice) {
   for (const auto dim : {Dim::X, Dim::Y, Dim::Z}) {
-    EXPECT_EQ(dataset.slice({dim, 1, 3}, {dim, 1}), dataset.slice({dim, 2}));
+    EXPECT_EQ(dataset.slice({dim, 1, 3}).slice({dim, 1}),
+              dataset.slice({dim, 2}));
   }
 }
 
 TEST_F(Dataset3DTest, nested_slice_range) {
   for (const auto dim : {Dim::X, Dim::Y, Dim::Z}) {
-    EXPECT_EQ(dataset.slice({dim, 1, 3}, {dim, 0, 2}),
+    EXPECT_EQ(dataset.slice({dim, 1, 3}).slice({dim, 0, 2}),
               dataset.slice({dim, 1, 3}));
-    EXPECT_EQ(dataset.slice({dim, 1, 3}, {dim, 1, 2}),
+    EXPECT_EQ(dataset.slice({dim, 1, 3}).slice({dim, 1, 2}),
               dataset.slice({dim, 2, 3}));
   }
 }
@@ -439,32 +440,39 @@ TEST_F(Dataset3DTest, nested_slice_range) {
 TEST_F(Dataset3DTest, nested_slice_range_bin_edges) {
   auto datasetWithEdges = dataset;
   datasetWithEdges.setCoord(Dim::X, makeRandom({Dim::X, 5}));
-  EXPECT_EQ(datasetWithEdges.slice({Dim::X, 1, 3}, {Dim::X, 0, 2}),
+  EXPECT_EQ(datasetWithEdges.slice({Dim::X, 1, 3}).slice({Dim::X, 0, 2}),
             datasetWithEdges.slice({Dim::X, 1, 3}));
-  EXPECT_EQ(datasetWithEdges.slice({Dim::X, 1, 3}, {Dim::X, 1, 2}),
+  EXPECT_EQ(datasetWithEdges.slice({Dim::X, 1, 3}).slice({Dim::X, 1, 2}),
             datasetWithEdges.slice({Dim::X, 2, 3}));
 }
 
 TEST_F(Dataset3DTest, commutative_slice) {
-  EXPECT_EQ(dataset.slice({Dim::X, 1, 3}, {Dim::Y, 2}),
-            dataset.slice({Dim::Y, 2}, {Dim::X, 1, 3}));
-  EXPECT_EQ(dataset.slice({Dim::X, 1, 3}, {Dim::Y, 2}, {Dim::Z, 3, 4}),
-            dataset.slice({Dim::Y, 2}, {Dim::Z, 3, 4}, {Dim::X, 1, 3}));
-  EXPECT_EQ(dataset.slice({Dim::X, 1, 3}, {Dim::Y, 2}, {Dim::Z, 3, 4}),
-            dataset.slice({Dim::Z, 3, 4}, {Dim::Y, 2}, {Dim::X, 1, 3}));
-  EXPECT_EQ(dataset.slice({Dim::X, 1, 3}, {Dim::Y, 2}, {Dim::Z, 3, 4}),
-            dataset.slice({Dim::Z, 3, 4}, {Dim::X, 1, 3}, {Dim::Y, 2}));
+  EXPECT_EQ(dataset.slice({Dim::X, 1, 3}).slice({Dim::Y, 2}),
+            dataset.slice({Dim::Y, 2}).slice({Dim::X, 1, 3}));
+  EXPECT_EQ(
+      dataset.slice({Dim::X, 1, 3}).slice({Dim::Y, 2}).slice({Dim::Z, 3, 4}),
+      dataset.slice({Dim::Y, 2}).slice({Dim::Z, 3, 4}).slice({Dim::X, 1, 3}));
+  EXPECT_EQ(
+      dataset.slice({Dim::X, 1, 3}).slice({Dim::Y, 2}).slice({Dim::Z, 3, 4}),
+      dataset.slice({Dim::Z, 3, 4}).slice({Dim::Y, 2}).slice({Dim::X, 1, 3}));
+  EXPECT_EQ(
+      dataset.slice({Dim::X, 1, 3}).slice({Dim::Y, 2}).slice({Dim::Z, 3, 4}),
+      dataset.slice({Dim::Z, 3, 4}).slice({Dim::X, 1, 3}).slice({Dim::Y, 2}));
 }
 
 TEST_F(Dataset3DTest, commutative_slice_range) {
-  EXPECT_EQ(dataset.slice({Dim::X, 1, 3}, {Dim::Y, 2, 4}),
-            dataset.slice({Dim::Y, 2, 4}, {Dim::X, 1, 3}));
-  EXPECT_EQ(dataset.slice({Dim::X, 1, 3}, {Dim::Y, 2, 4}, {Dim::Z, 3, 4}),
-            dataset.slice({Dim::Y, 2, 4}, {Dim::Z, 3, 4}, {Dim::X, 1, 3}));
-  EXPECT_EQ(dataset.slice({Dim::X, 1, 3}, {Dim::Y, 2, 4}, {Dim::Z, 3, 4}),
-            dataset.slice({Dim::Z, 3, 4}, {Dim::Y, 2, 4}, {Dim::X, 1, 3}));
-  EXPECT_EQ(dataset.slice({Dim::X, 1, 3}, {Dim::Y, 2, 4}, {Dim::Z, 3, 4}),
-            dataset.slice({Dim::Z, 3, 4}, {Dim::X, 1, 3}, {Dim::Y, 2, 4}));
+  const auto &d = dataset;
+  EXPECT_EQ(d.slice({Dim::X, 1, 3}).slice({Dim::Y, 2, 4}),
+            d.slice({Dim::Y, 2, 4}).slice({Dim::X, 1, 3}));
+  EXPECT_EQ(
+      d.slice({Dim::X, 1, 3}).slice({Dim::Y, 2, 4}).slice({Dim::Z, 3, 4}),
+      d.slice({Dim::Y, 2, 4}).slice({Dim::Z, 3, 4}).slice({Dim::X, 1, 3}));
+  EXPECT_EQ(
+      d.slice({Dim::X, 1, 3}).slice({Dim::Y, 2, 4}).slice({Dim::Z, 3, 4}),
+      d.slice({Dim::Z, 3, 4}).slice({Dim::Y, 2, 4}).slice({Dim::X, 1, 3}));
+  EXPECT_EQ(
+      d.slice({Dim::X, 1, 3}).slice({Dim::Y, 2, 4}).slice({Dim::Z, 3, 4}),
+      d.slice({Dim::Z, 3, 4}).slice({Dim::X, 1, 3}).slice({Dim::Y, 2, 4}));
 }
 
 using DataArrayViewTypes = ::testing::Types<DataArrayView, DataArrayConstView>;
@@ -563,7 +571,7 @@ TYPED_TEST(DataArrayView3DTest, slice_slice_range) {
         EXPECT_ANY_THROW(item.slice({dim, -1}));
         for (scipp::index i = 0; i < item.dims()[dim]; ++i)
           EXPECT_EQ(item.slice({dim, i}),
-                    d.slice({Dim::X, 2, 4}, {dim, i})[item.name()]);
+                    d.slice({Dim::X, 2, 4}).slice({dim, i})[item.name()]);
         EXPECT_ANY_THROW(item.slice({dim, item.dims()[dim]}));
       } else {
         EXPECT_ANY_THROW(item.slice({dim, 0}));

@@ -376,7 +376,6 @@ TEST(DatasetTest, slice_with_no_coords) {
 }
 
 TEST(DatasetTest, slice_validation_complex) {
-
   Dataset ds;
   auto var1 = makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4});
   ds.setCoord(Dim::X, var1);
@@ -384,9 +383,9 @@ TEST(DatasetTest, slice_validation_complex) {
   ds.setCoord(Dim::Y, var2);
 
   // Slice arguments applied in order.
-  EXPECT_NO_THROW(ds.slice(Slice{Dim::X, 0, 3}, Slice{Dim::X, 1, 2}));
+  EXPECT_NO_THROW(ds.slice(Slice{Dim::X, 0, 3}).slice(Slice{Dim::X, 1, 2}));
   // Reverse order. Invalid slice creation should be caught up front.
-  EXPECT_THROW(ds.slice(Slice{Dim::X, 1, 2}, Slice{Dim::X, 0, 3}),
+  EXPECT_THROW(ds.slice(Slice{Dim::X, 1, 2}).slice(Slice{Dim::X, 0, 3}),
                except::SliceError);
 }
 

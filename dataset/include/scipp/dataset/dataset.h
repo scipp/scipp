@@ -90,10 +90,7 @@ public:
 
   DataArrayConstView unaligned() const;
 
-  DataArrayConstView slice(const Slice slice1) const;
-  DataArrayConstView slice(const Slice slice1, const Slice slice2) const;
-  DataArrayConstView slice(const Slice slice1, const Slice slice2,
-                           const Slice slice3) const;
+  DataArrayConstView slice(const Slice s) const;
 
   const detail::slice_list &slices() const noexcept { return m_slices; }
 
@@ -160,10 +157,7 @@ public:
 
   DataArrayView unaligned() const;
 
-  DataArrayView slice(const Slice slice1) const;
-  DataArrayView slice(const Slice slice1, const Slice slice2) const;
-  DataArrayView slice(const Slice slice1, const Slice slice2,
-                      const Slice slice3) const;
+  DataArrayView slice(const Slice s) const;
 
   DataArrayView assign(const DataArrayConstView &other) const;
   DataArrayView assign(const Variable &other) const;
@@ -406,18 +400,9 @@ public:
   void eraseAttr(const std::string &name, const std::string &attrName);
   void eraseMask(const std::string &maskName);
 
-  DatasetConstView slice(const Slice slice1) const &;
-  DatasetConstView slice(const Slice slice1, const Slice slice2) const &;
-  DatasetConstView slice(const Slice slice1, const Slice slice2,
-                         const Slice slice3) const &;
-  DatasetView slice(const Slice slice1) &;
-  DatasetView slice(const Slice slice1, const Slice slice2) &;
-  DatasetView slice(const Slice slice1, const Slice slice2,
-                    const Slice slice3) &;
-  Dataset slice(const Slice slice1) const &&;
-  Dataset slice(const Slice slice1, const Slice slice2) const &&;
-  Dataset slice(const Slice slice1, const Slice slice2,
-                const Slice slice3) const &&;
+  DatasetConstView slice(const Slice s) const &;
+  DatasetView slice(const Slice s) &;
+  Dataset slice(const Slice s) const &&;
 
   void rename(const Dim from, const Dim to);
 
@@ -579,16 +564,7 @@ public:
     });
   }
 
-  DatasetConstView slice(const Slice slice1) const;
-
-  DatasetConstView slice(const Slice slice1, const Slice slice2) const {
-    return slice(slice1).slice(slice2);
-  }
-
-  DatasetConstView slice(const Slice slice1, const Slice slice2,
-                         const Slice slice3) const {
-    return slice(slice1, slice2).slice(slice3);
-  }
+  DatasetConstView slice(const Slice s) const;
 
   const auto &slices() const noexcept { return m_slices; }
   const auto &dataset() const noexcept { return *m_dataset; }
@@ -645,16 +621,7 @@ public:
     });
   }
 
-  DatasetView slice(const Slice slice1) const;
-
-  DatasetView slice(const Slice slice1, const Slice slice2) const {
-    return slice(slice1).slice(slice2);
-  }
-
-  DatasetView slice(const Slice slice1, const Slice slice2,
-                    const Slice slice3) const {
-    return slice(slice1, slice2).slice(slice3);
-  }
+  DatasetView slice(const Slice s) const;
 
   DatasetView operator+=(const DataArrayConstView &other) const;
   DatasetView operator-=(const DataArrayConstView &other) const;
@@ -843,34 +810,9 @@ public:
     setCoord(dim, Variable(coord));
   }
 
-  DataArrayConstView slice(const Slice slice1) const & {
-    return get().slice(slice1);
-  }
-  DataArrayConstView slice(const Slice slice1, const Slice slice2) const & {
-    return get().slice(slice1, slice2);
-  }
-  DataArrayConstView slice(const Slice slice1, const Slice slice2,
-                           const Slice slice3) const & {
-    return get().slice(slice1, slice2, slice3);
-  }
-  DataArrayView slice(const Slice slice1) & { return get().slice(slice1); }
-  DataArrayView slice(const Slice slice1, const Slice slice2) & {
-    return get().slice(slice1, slice2);
-  }
-  DataArrayView slice(const Slice slice1, const Slice slice2,
-                      const Slice slice3) & {
-    return get().slice(slice1, slice2, slice3);
-  }
-  DataArray slice(const Slice slice1) const && {
-    return copy(get().slice(slice1));
-  }
-  DataArray slice(const Slice slice1, const Slice slice2) const && {
-    return copy(get().slice(slice1, slice2));
-  }
-  DataArray slice(const Slice slice1, const Slice slice2,
-                  const Slice slice3) const && {
-    return copy(get().slice(slice1, slice2, slice3));
-  }
+  DataArrayConstView slice(const Slice s) const & { return get().slice(s); }
+  DataArrayView slice(const Slice s) & { return get().slice(s); }
+  DataArray slice(const Slice s) const && { return copy(get().slice(s)); }
 
   /// Iterable const view for generic code supporting Dataset and DataArray.
   DatasetConstView iterable_view() const noexcept { return m_holder; }
