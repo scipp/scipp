@@ -12,8 +12,6 @@ std::ostream &operator<<(std::ostream &os, const Dimensions &dims) {
   return os << to_string(dims);
 }
 
-constexpr const char *tab = "    ";
-
 std::string to_string(const Dimensions &dims) {
   if (dims.empty())
     return "{}";
