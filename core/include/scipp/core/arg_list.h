@@ -2,8 +2,7 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Owen Arnold
-#ifndef SCIPP_CORE_ARG_LIST_H
-#define SCIPP_CORE_ARG_LIST_H
+#pragma once
 
 #include <tuple>
 
@@ -21,5 +20,3 @@ template <class... Ts> constexpr arg_list_t<Ts...> arg_list{};
 } // namespace element
 
 } // namespace scipp::core
-
-#endif // SCIPP_CORE_ARG_LIST_H

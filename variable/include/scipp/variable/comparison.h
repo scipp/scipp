@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
-#ifndef SCIPP_VARIABLE_COMPARISON_H
-#define SCIPP_VARIABLE_COMPARISON_H
+#pragma once
 
 #include "scipp/core/dtype.h"
 #include "scipp/variable/string.h"
@@ -61,5 +60,3 @@ bool is_approx(const VariableConstView &a, const VariableConstView &b,
 }
 
 } // namespace scipp::variable
-
-#endif // SCIPP_VARIABLE_COMPARISON_H

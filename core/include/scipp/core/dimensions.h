@@ -2,8 +2,7 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#ifndef SCIPP_CORE_DIMENSIONS_H
-#define SCIPP_CORE_DIMENSIONS_H
+#pragma once
 
 #include <limits>
 #include <memory>
@@ -142,5 +141,3 @@ SCIPP_CORE_EXPORT Dimensions transpose(const Dimensions &dims,
 namespace scipp {
 using core::Dimensions;
 }
-
-#endif // SCIPP_CORE_DIMENSIONS_H

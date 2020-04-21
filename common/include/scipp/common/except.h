@@ -2,8 +2,7 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#ifndef SCIPP_COMMON_EXCEPT_H
-#define SCIPP_COMMON_EXCEPT_H
+#pragma once
 
 #include <initializer_list>
 #include <stdexcept>
@@ -28,5 +27,3 @@ template <class T> struct MismatchError : public Error<T> {
 };
 
 } // namespace scipp::except
-
-#endif // SCIPP_COMMON_EXCEPT_H

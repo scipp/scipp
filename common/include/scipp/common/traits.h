@@ -2,8 +2,7 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#ifndef SCIPP_COMMON_TRAITS_H
-#define SCIPP_COMMON_TRAITS_H
+#pragma once
 
 namespace scipp::common {
 
@@ -22,5 +21,3 @@ struct index_in_tuple<T, std::tuple<U, Types...>> {
 };
 
 } // namespace scipp::common
-
-#endif // SCIPP_COMMON_TRAITS_H

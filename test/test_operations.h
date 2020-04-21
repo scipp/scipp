@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
-#ifndef SCIPP_TEST_OPERATIONS_H
-#define SCIPP_TEST_OPERATIONS_H
+#pragma once
 
 #include <gtest/gtest.h>
 
@@ -56,5 +55,3 @@ struct divide {
 using Binary = ::testing::Types<plus, minus, times, divide>;
 using BinaryEquals =
     ::testing::Types<plus_equals, minus_equals, times_equals, divide_equals>;
-
-#endif // SCIPP_TEST_OPERATIONS_H

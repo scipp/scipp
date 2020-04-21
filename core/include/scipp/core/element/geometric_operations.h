@@ -2,8 +2,7 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Owen Arnold
-#ifndef SCIPP_CORE_ELEMENT_GEOMETRIC_OPERATIONS_H
-#define SCIPP_CORE_ELEMENT_GEOMETRIC_OPERATIONS_H
+#pragma once
 
 #include "scipp/common/overloaded.h"
 #include "scipp/core/arg_list.h"
@@ -68,5 +67,3 @@ constexpr auto rotate_out_arg = overloaded{
 } // namespace element
 
 } // namespace scipp::core
-
-#endif // SCIPP_CORE_ELEMENT_GEOMETRIC_OPERATIONS_H

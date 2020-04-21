@@ -2,8 +2,7 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#ifndef SCIPP_CORE_ELEMENT_UNARY_OPERATIONS_H
-#define SCIPP_CORE_ELEMENT_UNARY_OPERATIONS_H
+#pragma once
 
 #include <cmath>
 
@@ -111,5 +110,3 @@ constexpr auto negative_inf_to_num_out_arg =
 } // namespace element
 
 } // namespace scipp::core
-
-#endif // SCIPP_CORE_ELEMENT_UNARY_OPERATIONS_H
