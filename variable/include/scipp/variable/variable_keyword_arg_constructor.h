@@ -55,6 +55,9 @@ namespace detail {
 
 void throw_keyword_arg_constructor_bad_dtype(const DType dtype);
 
+/// Convert "keyword" args to tuple that can be used to construct Variable
+///
+/// This is an implementation detail of `makeVariable`.
 template <class ElemT> struct ArgParser {
   std::tuple<units::Unit, Dimensions, element_array<ElemT>,
              std::optional<element_array<ElemT>>>
