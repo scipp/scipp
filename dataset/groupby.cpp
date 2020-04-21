@@ -53,7 +53,7 @@ template <class T>
 T GroupBy<T>::makeReductionOutput(const Dim reductionDim) const {
   auto out = resize(m_data, reductionDim, size());
   out.rename(reductionDim, dim());
-  out.setCoord(dim(), key());
+  out.coords().set(dim(), key());
   return out;
 }
 

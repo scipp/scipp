@@ -801,15 +801,6 @@ public:
     m_holder.setData(name(), std::move(data), AttrPolicy::Keep);
   }
 
-  // TODO need to define some details regarding handling of dense coords in case
-  // the array is events, not exposing this to Python for now.
-  void setCoord(const Dim dim, Variable coord) {
-    m_holder.setCoord(dim, std::move(coord));
-  }
-  void setCoord(const Dim dim, const VariableConstView &coord) {
-    setCoord(dim, Variable(coord));
-  }
-
   DataArrayConstView slice(const Slice s) const & { return get().slice(s); }
   DataArrayView slice(const Slice s) & { return get().slice(s); }
   DataArray slice(const Slice s) const && { return copy(get().slice(s)); }
