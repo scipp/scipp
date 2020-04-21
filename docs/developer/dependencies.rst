@@ -45,7 +45,6 @@ Documentation Build
 
   - all (including optional) dependecies of *Run*
   - ``ipython=7.2.0`` (used for ?)
-  - ``pip`` (used for ?)
   - ``pandoc`` (used for ?)
   - ``sphinx>=1.6`` (documentation build framework)
   - ``sphinx_rtd_theme`` (Sphinx theme)

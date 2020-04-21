@@ -4,12 +4,16 @@ channels:
   - conda-forge
   - dannixon
 
-# Note that since the scipp package is installed after this environment is created (and Conda is a pain) this list must include the dependencies of the Scipp package also.
-# This is essentially everything in the "run" section of conda/meta.yml.
+# Note that since the scipp package is installed after this environment is
+# created (and Conda is a pain) this list must include the union of the runtime
+# and documentation build dependencies.
+# See https://scipp.github.io/developer/dependencies.html
 dependencies:
   - appdirs
+  - ipyevents
   - ipython=7.2.0
-  - pip
+  - ipyvolume
+  - ipywidgets
   - pandoc
   - python>=3
   - python-configuration
@@ -17,11 +21,7 @@ dependencies:
   - sphinx>=1.6
   - sphinx_rtd_theme
   - tbb
+  - nbsphinx
   - numpy
   - mantid-framework
-  - pip:
-    - ipyevents
-    - ipyvolume
-    - ipywidgets
-    - matplotlib
-    - nbsphinx
+  - matplotlib
