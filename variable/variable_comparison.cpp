@@ -5,7 +5,7 @@
 #include <cmath>
 
 #include "scipp/core/operators.h"
-#include "scipp/core/element_geometric_operations.h"
+#include "scipp/core/element/geometric_operations.h"
 #include "scipp/core/except.h"
 #include "scipp/core/dtype.h"
 #include "scipp/variable/string.h"
