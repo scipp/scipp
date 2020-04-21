@@ -26,6 +26,15 @@ TEST(Variable, construct) {
   EXPECT_EQ(data.size(), 2);
 }
 
+TEST(Variable, construct_boost_units_quantity) {
+  using boost::units::quantity;
+  EXPECT_EQ(Variable(quantity{1.2 * boost::units::si::meter}),
+            makeVariable<double>(Values{1.2}, units::Unit(units::m)));
+  EXPECT_EQ(Variable(quantity<boost::units::si::length, float>{
+                1.2 * boost::units::si::meter}),
+            makeVariable<float>(Values{1.2}, units::Unit(units::m)));
+}
+
 TEST(Variable, construct_fail) {
   ASSERT_ANY_THROW(makeVariable<double>(Dims{}, Shape{}, Values(2)));
   ASSERT_ANY_THROW(makeVariable<double>(Dims{Dim::X}, Shape{1}, Values(2)));

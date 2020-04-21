@@ -74,7 +74,8 @@ TEST_F(BeamlineTest, scattering_angle) {
             makeVariable<double>(Dims{Dim::Spectrum}, Shape{2},
                                  units::Unit(units::rad),
                                  Values{pi<double> / 2, pi<double> / 2}));
-  ASSERT_EQ(scattering_angle(dataset), 0.5 * two_theta(dataset));
+  ASSERT_EQ(scattering_angle(dataset),
+            0.5 * units::Unit(units::dimensionless) * two_theta(dataset));
 }
 
 TEST_F(BeamlineTest, no_sample) {

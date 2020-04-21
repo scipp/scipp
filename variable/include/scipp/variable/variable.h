@@ -75,6 +75,9 @@ public:
   template <class T>
   Variable(const units::Unit unit, const Dimensions &dimensions, T values,
            std::optional<T> variances);
+  template <class T, class U>
+  explicit Variable(const boost::units::quantity<T, U> &quantity)
+      : Variable(quantity.value() * units::Unit(T{})) {}
 
   /// Keyword-argument constructor.
   ///

@@ -144,7 +144,8 @@ TEST_P(ConvertTest, Tof_to_DSpacing) {
     const auto values = coord.values<double>();
     // Rule of thumb (https://www.psi.ch/niag/neutron-physics):
     // v [m/s] = 3956 / \lambda [ Angstrom ]
-    Variable tof_in_seconds = tof.coords()[Dim::Tof] * 1e-6;
+    Variable tof_in_seconds =
+        tof.coords()[Dim::Tof] * (1e-6 * units::Unit(units::dimensionless));
     const auto tofs = tof_in_seconds.values<double>();
     // Spectrum 0 is 11 m from source
     // 2d sin(theta) = n \lambda
@@ -276,7 +277,8 @@ TEST_P(ConvertTest, Tof_to_Wavelength) {
     const auto values = coord.values<double>();
     // Rule of thumb (https://www.psi.ch/niag/neutron-physics):
     // v [m/s] = 3956 / \lambda [ Angstrom ]
-    Variable tof_in_seconds = tof.coords()[Dim::Tof] * 1e-6;
+    Variable tof_in_seconds =
+        tof.coords()[Dim::Tof] * (1e-6 * units::Unit(units::dimensionless));
     const auto tofs = tof_in_seconds.values<double>();
     // Spectrum 0 is 11 m from source
     EXPECT_NEAR(values[0], 3956.0 / (11.0 / tofs[0]), values[0] * 1e-3);
@@ -386,7 +388,8 @@ TEST_P(ConvertTest, Tof_to_Energy_Elastic) {
     EXPECT_EQ(coord.unit(), units::meV);
 
     const auto values = coord.values<double>();
-    Variable tof_in_seconds = tof.coords()[Dim::Tof] * 1e-6;
+    Variable tof_in_seconds =
+        tof.coords()[Dim::Tof] * (1e-6 * units::Unit(units::dimensionless));
     const auto tofs = tof_in_seconds.values<double>();
 
     // Spectrum 0 is 11 m from source
