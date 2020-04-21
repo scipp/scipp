@@ -21,7 +21,7 @@ SCIPP_VARIABLE_EXPORT Variable is_greater(const VariableConstView &x,
 SCIPP_VARIABLE_EXPORT Variable is_greater_equal(const VariableConstView &x,
                                                 const VariableConstView &y);
 SCIPP_VARIABLE_EXPORT Variable is_less_equal(const VariableConstView &x,
-                                            const VariableConstView &y);
+                                             const VariableConstView &y);
 SCIPP_VARIABLE_EXPORT Variable is_equal(const VariableConstView &x,
                                         const VariableConstView &y);
 SCIPP_VARIABLE_EXPORT Variable is_not_equal(const VariableConstView &x,

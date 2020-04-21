@@ -92,7 +92,6 @@ TEST(ComparisonTest, less_units_test) {
   EXPECT_THROW(is_less(a, b), std::runtime_error);
 }
 
-
 template <typename T> class LessTest : public ::testing::Test {};
 template <typename T> class GreaterTest : public ::testing::Test {};
 template <typename T> class LessEqualTest : public ::testing::Test {};

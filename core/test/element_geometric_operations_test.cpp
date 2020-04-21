@@ -119,7 +119,8 @@ TYPED_TEST(ElementLessTest, value) {
 }
 
 template <int T, typename Op> bool is_no_variance_arg() {
-  return std::is_base_of_v<core::transform_flags::expect_no_variance_arg_t<T>, Op>;
+  return std::is_base_of_v<core::transform_flags::expect_no_variance_arg_t<T>,
+                           Op>;
 }
 
 TYPED_TEST(ElementLessTest, value_only_arguments) {
