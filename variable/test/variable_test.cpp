@@ -1019,7 +1019,7 @@ template <typename Var> void test_set_variances(Var &var) {
 
   Variable bad_dims(v);
   bad_dims.rename(Dim::X, Dim::Y);
-  EXPECT_THROW(var.setVariances(bad_dims), except::DimensionError);
+  EXPECT_THROW(var.setVariances(bad_dims), except::DimensionMismatchError);
 
   Variable bad_unit(v);
   bad_unit.setUnit(units::s);
