@@ -314,11 +314,20 @@ void init_variable(py::module &m) {
            [](Variable &self, py::dict) { return Variable(self); },
            py::call_guard<py::gil_scoped_release>(), "Return a (deep) copy.")
       .def_property_readonly("dtype", &Variable::dtype)
-      .def("__radd__", [](Variable &a, double &b) { return a + b; },
+      .def("__radd__",
+           [](Variable &a, double &b) {
+             return a + b * units::Unit(units::dimensionless);
+           },
            py::is_operator())
-      .def("__rsub__", [](Variable &a, double &b) { return b - a; },
+      .def("__rsub__",
+           [](Variable &a, double &b) {
+             return b * units::Unit(units::dimensionless) - a;
+           },
            py::is_operator())
-      .def("__rmul__", [](Variable &a, double &b) { return a * b; },
+      .def("__rmul__",
+           [](Variable &a, double &b) {
+             return a * (b * units::Unit(units::dimensionless));
+           },
            py::is_operator())
       .def("__repr__", [](const Variable &self) { return to_string(self); });
 
@@ -349,11 +358,20 @@ void init_variable(py::module &m) {
         Mostly equivalent to Variable, see there for details.)");
   variableView.def_buffer(&make_py_buffer_info);
   variableView.def(py::init<Variable &>())
-      .def("__radd__", [](VariableView &a, double &b) { return a + b; },
+      .def("__radd__",
+           [](VariableView &a, double &b) {
+             return a + b * units::Unit(units::dimensionless);
+           },
            py::is_operator())
-      .def("__rsub__", [](VariableView &a, double &b) { return b - a; },
+      .def("__rsub__",
+           [](VariableView &a, double &b) {
+             return b * units::Unit(units::dimensionless) - a;
+           },
            py::is_operator())
-      .def("__rmul__", [](VariableView &a, double &b) { return a * b; },
+      .def("__rmul__",
+           [](VariableView &a, double &b) {
+             return a * (b * units::Unit(units::dimensionless));
+           },
            py::is_operator());
 
   bind_astype(variable);
