@@ -15,11 +15,12 @@ class TestDatasetSlice(unittest.TestCase):
         d = sc.Dataset(data={'a': var, 'b': var}, coords={'x': var})
         self._d = d
 
+    # Leave as is
     def test_type(self):
         ds_slice = self._d['a']
         self.assertEqual(type(ds_slice), sc.DataArrayView)
 
-    def test_slice_with_range(self):
+    def test_slice_with_range_datasetview_then_dataarrayview(self):
         sl = self._d['x', 1:-1]["a"].values
         ref = np.array([1, 2, 3, 4, 5, 6, 7, 8], dtype=np.int64)
         self.assertEqual(ref.shape, sl.shape)
@@ -40,11 +41,65 @@ class TestDatasetSlice(unittest.TestCase):
         self.assertEqual(ref.shape, sl.shape)
         self.assertEqual(np.allclose(sl, ref), True)
 
+    def test_slice_with_range_dataarrayview_then_dataarrayview(self):
+        sl = self._d['a']['x', 1:-1].values
+        ref = np.array([1, 2, 3, 4, 5, 6, 7, 8], dtype=np.int64)
+        self.assertEqual(ref.shape, sl.shape)
+        self.assertTrue(np.allclose(sl, ref))
+        # omitting range end
+        sl = self._d['a']['x', 1:].values
+        ref = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9], dtype=np.int64)
+        self.assertEqual(ref.shape, sl.shape)
+        self.assertTrue(np.allclose(sl, ref))
+        # omitting range begin
+        sl = self._d['a']['x', :-1].values
+        ref = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8], dtype=np.int64)
+        self.assertEqual(ref.shape, sl.shape)
+        self.assertTrue(np.allclose(sl, ref))
+        # omitting range both begin and end
+        sl = self._d['b']['x', :].values
+        ref = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9], dtype=np.int64)
+        self.assertEqual(ref.shape, sl.shape)
+        self.assertEqual(np.allclose(sl, ref), True)
+
+    def test_slice_single_index_dataset_then_(self):
+        self.assertEqual(self._d['x', -4]["a"].values, self._d['x',
+                                                               6]["a"].values)
+        self.assertEqual(self._d["a"]['x', -3].values, self._d["a"]['x',
+                                                                    7].values)
+
     def test_slice_single_index(self):
         self.assertEqual(self._d['x', -4]["a"].values, self._d['x',
                                                                6]["a"].values)
         self.assertEqual(self._d["a"]['x', -3].values, self._d["a"]['x',
                                                                     7].values)
+
+
+def test_slice_and_dimensions_items_dataarray():
+    da = sc.DataArray(
+        sc.Variable(['x', 'y'], values=np.arange(50).reshape(5, 10)))
+    assert np.allclose(da['x', 0].values, da['x', 0:1].values[0], atol=1e-9)
+    assert np.allclose(da['x', 4].values, da['x', -1].values)
+    assert np.allclose(da['y', 1].values, da['y', -9].values)
+    assert 'y' in da['x', 0].dims
+    assert 'x' not in da['x', 0].dims
+    assert 'y' in da['x', 0:1].dims
+    assert 'x' in da['x', 0:1].dims
+
+
+def test_slice_and_dimensions_items_dataset():
+    da = sc.DataArray(
+        sc.Variable(['x', 'y'], values=np.arange(50).reshape(5, 10)))
+    ds = sc.Dataset({'a': da})
+    assert np.allclose(ds['x', 0]['a'].values,
+                       ds['x', 0:1]['a'].values[0],
+                       atol=1e-9)
+    assert np.allclose(ds['x', 4]['a'].values, ds['x', -1]['a'].values)
+    assert np.allclose(ds['y', 1]['a'].values, ds['y', -9]['a'].values)
+    assert 'y' in da['x', 0].dims
+    assert 'x' not in da['x', 0].dims
+    assert 'y' in da['x', 0:1].dims
+    assert 'x' in da['x', 0:1].dims
 
 
 '''
