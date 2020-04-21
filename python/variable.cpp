@@ -876,16 +876,21 @@ void init_variable(py::module &m) {
         py::arg("posinf") = std::optional<VariableConstView>(),
         py::arg("neginf") = std::optional<VariableConstView>(), py::arg("out"));
 
-  m.def("is_events",
-        [](const VariableConstView &self) { return is_events(self); },
-        R"(Return true if the variable contains event data.)");
+  m.def(
+      "is_events",
+      [](const VariableConstView &self) { return is_events(self); },
+      R"(Return true if the variable contains event data.)");
+
   m.def(
       "is_events",
       [](const DataArrayConstView &self) { return is_events(self); },
       R"(Return true if the data array contains event data. Note that data may be stored as a scalar, but this returns true if any coord contains events.)");
+
   m.def(
       "less",
-      [](const VariableConstView &x, const VariableConstView &y) { return is_less(x, y); },
+      [](const VariableConstView &x, const VariableConstView &y) {
+        return is_less(x, y);
+      },
       py::arg("x"), py::arg("y"),
       R"(
         Comparison returning the truth value of (x < y) element-wise.
