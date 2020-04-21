@@ -84,17 +84,14 @@ struct default_init<Eigen::Matrix<T, Rows, Cols>> {
 template <class T, class... Ts> Variable makeVariable(Ts &&... ts);
 
 /// Variable is a type-erased handle to any data structure representing a
-/// multi-dimensional array. It has a name, a unit, and a set of named
-/// dimensions.
+/// multi-dimensional array. In addition it has a unit and a set of dimension
+/// labels.
 class SCIPP_VARIABLE_EXPORT Variable {
 public:
   using const_view_type = VariableConstView;
   using view_type = VariableView;
 
   Variable() = default;
-  // Having this non-explicit is convenient when passing (potential)
-  // variable slices to functions that do not support slices, but implicit
-  // conversion may introduce risks, so there is a trade-of here.
   explicit Variable(const VariableConstView &slice);
   Variable(const Variable &parent, const Dimensions &dims);
   Variable(const VariableConstView &parent, const Dimensions &dims);
