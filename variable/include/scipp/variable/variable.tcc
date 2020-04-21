@@ -124,7 +124,7 @@ template <class T>
 VariableConceptHandle
 VariableConceptT<T>::reshape(const Dimensions &dims) const {
   if (this->dims().volume() != dims.volume())
-    throw std::runtime_error(
+    throw except::DimensionError(
         "Cannot reshape to dimensions with different volume");
   return std::make_unique<ViewModel<decltype(valuesReshaped(dims))>>(
       dims, valuesReshaped(dims), optionalVariancesReshaped(*this, dims));
@@ -133,7 +133,7 @@ VariableConceptT<T>::reshape(const Dimensions &dims) const {
 template <class T>
 VariableConceptHandle VariableConceptT<T>::reshape(const Dimensions &dims) {
   if (this->dims().volume() != dims.volume())
-    throw std::runtime_error(
+    throw except::DimensionError(
         "Cannot reshape to dimensions with different volume");
   return std::make_unique<ViewModel<decltype(valuesReshaped(dims))>>(
       dims, valuesReshaped(dims), optionalVariancesReshaped(*this, dims));
@@ -142,8 +142,7 @@ VariableConceptHandle VariableConceptT<T>::reshape(const Dimensions &dims) {
 template <class T>
 VariableConceptHandle
 VariableConceptT<T>::transpose(const std::vector<Dim> &tdims) const {
-  auto dms = Dimensions(std::vector<Dim>(tdims.begin(), tdims.end()),
-                        detail::reorderedShape(tdims, dims()));
+  auto dms = core::transpose(dims(), tdims);
   using U = decltype(valuesView(dms));
   return std::make_unique<ViewModel<U>>(
       dms, valuesView(dms),
@@ -153,8 +152,7 @@ VariableConceptT<T>::transpose(const std::vector<Dim> &tdims) const {
 template <class T>
 VariableConceptHandle
 VariableConceptT<T>::transpose(const std::vector<Dim> &tdims) {
-  auto dms = Dimensions(std::vector<Dim>(tdims.begin(), tdims.end()),
-                        detail::reorderedShape(tdims, dims()));
+  auto dms = core::transpose(dims(), tdims);
   using U = decltype(valuesView(dms));
   return std::make_unique<ViewModel<U>>(
       dms, valuesView(dms),
@@ -260,13 +258,19 @@ public:
 
   DataModel(const Dimensions &dimensions, T model,
             std::optional<T> variances = std::nullopt)
-      : VariableConceptT<typename T::value_type>(std::move(dimensions)),
-        m_values(std::move(model)), m_variances(std::move(variances)) {
+      : VariableConceptT<typename T::value_type>(dimensions),
+        m_values(model ? std::move(model)
+                       : T(dimensions.volume(),
+                           detail::default_init<value_type>::value())),
+        m_variances(std::move(variances)) {
     if (m_variances && !core::canHaveVariances<value_type>())
       throw except::VariancesError("This data type cannot have variances.");
     if (this->dims().volume() != scipp::size(m_values))
       throw std::runtime_error("Creating Variable: data size does not match "
                                "volume given by dimension extents");
+    if (m_variances && !*m_variances)
+      *m_variances =
+          T(dimensions.volume(), detail::default_init<value_type>::value());
   }
 
   void setVariances(Variable &&variances) override {
@@ -644,19 +648,10 @@ private:
 
 template <class T>
 Variable::Variable(const units::Unit unit, const Dimensions &dimensions,
-                   T object)
-    : m_unit{unit}, m_object(std::make_unique<DataModel<T>>(
-                        std::move(dimensions), std::move(object))) {}
-template <class T>
-Variable::Variable(const units::Unit unit, const Dimensions &dimensions,
-                   T values_, T variances_)
+                   T values_, std::optional<T> variances_)
     : m_unit{unit},
-      m_object(variances_.empty()
-                   ? std::make_unique<DataModel<T>>(std::move(dimensions),
-                                                    std::move(values_))
-                   : std::make_unique<DataModel<T>>(std::move(dimensions),
-                                                    std::move(values_),
-                                                    std::move(variances_))) {}
+      m_object(std::make_unique<DataModel<T>>(
+          std::move(dimensions), std::move(values_), std::move(variances_))) {}
 
 template <class T>
 const element_array<T> &Variable::cast(const bool variances_) const {
@@ -723,66 +718,6 @@ template <class T> ElementArrayView<T> VariableView::castVariances() const {
   return requireT<DataModel<element_array<TT>>>(data()).variancesView(dims());
 }
 
-namespace {
-template <class T>
-Variable from_dimensions_and_unit(const Dimensions &dms, const units::Unit &u) {
-  auto volume = dms.volume();
-  if constexpr (is_event_list<T>::value)
-    return Variable(u, dms, element_array<T>(volume));
-  else
-    return Variable(u, dms,
-                    element_array<T>(volume, detail::default_init<T>::value()));
-}
-
-template <class T>
-Variable from_dimensions_and_unit_with_variances(const Dimensions &dms,
-                                                 const units::Unit &u) {
-  auto volume = dms.volume();
-  if constexpr (is_event_list<T>::value)
-    return Variable(u, dms, element_array<T>(volume), element_array<T>(volume));
-  else
-    return Variable(u, dms,
-                    element_array<T>(volume, detail::default_init<T>::value()),
-                    element_array<T>(volume, detail::default_init<T>::value()));
-}
-} // namespace
-
-/// This function covers the cases of construction Variables from keyword
-/// argument. The Unit is completely arbitrary, the relations between Dims,
-/// Shape / Dimensions and actual data are following:
-/// 1. If neither Values nor Variances are provided, resulting Variable contains
-/// ONLY values of corresponding length.
-/// 2. The Variances can't be provided without any Values.
-/// 3. Non empty Values and/or Variances should be consistent with shape.
-/// 4. If empty Values and/or Variances are provided, resulting Variable
-/// contains default initialized Values and/or Variances, the way to make
-/// Variable which contains both Values and Variances given length uninitialised
-/// is:
-///       makeVariable<T>(Dims{Dim::X}, Shape{5}, Values{}, Variances{});
-template <class T>
-Variable Variable::create(const units::Unit &u, const Dimensions &d,
-                          std::optional<element_array<T>> &&val,
-                          std::optional<element_array<T>> &&var) {
-  if (val && var) {
-    if (val->size() < 0 && var->size() < 0)
-      return from_dimensions_and_unit_with_variances<T>(d, u);
-    else
-      return Variable(u, d, std::move(*val), std::move(*var));
-  }
-  if (!val || val->size() < 0)
-    return from_dimensions_and_unit<T>(d, u);
-  else
-    return Variable(u, d, std::move(*val));
-}
-
-template <class T>
-Variable Variable::create(const units::Unit &u, const Dims &d, const Shape &s,
-                          std::optional<element_array<T>> &&val,
-                          std::optional<element_array<T>> &&var) {
-  auto dms = Dimensions{d.data, s.data};
-  return create(u, dms, std::move(val), std::move(var));
-}
-
 /// Macro for instantiating classes and functions required for support a new
 /// dtype in Variable.
 #define INSTANTIATE_VARIABLE(name, ...)                                        \
@@ -791,18 +726,8 @@ Variable Variable::create(const units::Unit &u, const Dims &d, const Shape &s,
       (core::dtypeNameRegistry().emplace(dtype<__VA_ARGS__>, #name), 0));      \
   }                                                                            \
   template Variable::Variable(const units::Unit, const Dimensions &,           \
-                              element_array<__VA_ARGS__>);                     \
-  template Variable::Variable(const units::Unit, const Dimensions &,           \
                               element_array<__VA_ARGS__>,                      \
-                              element_array<__VA_ARGS__>);                     \
-  template Variable Variable::create<__VA_ARGS__>(                             \
-      const units::Unit &u, const Dimensions &d,                               \
-      std::optional<element_array<__VA_ARGS__>> &&val,                         \
-      std::optional<element_array<__VA_ARGS__>> &&var);                        \
-  template Variable Variable::create<__VA_ARGS__>(                             \
-      const units::Unit &u, const Dims &d, const Shape &s,                     \
-      std::optional<element_array<__VA_ARGS__>> &&val,                         \
-      std::optional<element_array<__VA_ARGS__>> &&var);                        \
+                              std::optional<element_array<__VA_ARGS__>>);      \
   template element_array<__VA_ARGS__> &Variable::cast<__VA_ARGS__>(            \
       const bool);                                                             \
   template const element_array<__VA_ARGS__> &Variable::cast<__VA_ARGS__>(      \

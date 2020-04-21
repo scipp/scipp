@@ -1,196 +1,104 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
-/// @author Igor Gudich
-
-#ifndef SCIPP_VARIABLE_KEYWORD_ARG_CONSTRUCTOR_H
-#define SCIPP_VARIABLE_KEYWORD_ARG_CONSTRUCTOR_H
+/// @author Simon Heybrock
+#pragma once
 
 #include <type_traits>
 
 namespace scipp::variable {
 
-// The structs needed for keyword-like variable constructor are introduced
-// below. Tags are used to match the corresponding arguments treating the
-// arbitrary order of arguments in the constructor, and not mixing values and
-// variances. Structures Values and Variances just forwards the arguments for
-// constructing internal variable structure - array storage.
-
 namespace detail {
-template <int N, typename... Ts>
-using nthDecayType =
-    typename std::decay_t<std::tuple_element_t<N, std::tuple<Ts...>>>;
-
-template <class... Args> constexpr bool has_last_arg_int64_t() {
-  constexpr size_t n = sizeof...(Args);
-  if constexpr (n == 0)
-    return false;
-  else
-    return std::is_same_v<nthDecayType<n - 1, Args...>, int64_t>;
-}
-
-template <class U> struct vector_like {
+template <class U> struct vector {
   std::vector<U> data;
   template <class... Args>
-  vector_like(Args &&... args) : data(make(std::forward<Args>(args)...)) {}
-
+  vector(Args &&... args) : data(std::forward<Args>(args)...) {}
+  template <class A, class B> // avoid use of vector(size, value)
+  vector(A &&a, B &&b) : data(std::initializer_list<U>{a, b}) {}
   template <class T>
-  vector_like(std::initializer_list<T> init) : data(init.begin(), init.end()) {}
-
-private:
-  // This is to override the std::vector(size_t num_elems, const Type& element)
-  // insted of [elem, elem, ..., elem] we want [Type(num_elems), element]
-  template <class... Args> static std::vector<U> make(Args &&... args) {
-    if constexpr (has_last_arg_int64_t<Args...>())
-      return std::vector{U(std::forward<Args>(args))...};
-    else
-      return std::vector<U>(std::forward<Args>(args)...);
-  }
+  vector(std::initializer_list<T> init) : data(init.begin(), init.end()) {}
 };
 
-struct ValuesTag {};
-
-struct VariancesTag {};
-
-template <class... Ts> auto makeArgsTuple(Ts &&... ts) {
-  return std::tuple<std::decay_t<Ts>...>(std::forward<Ts>(ts)...);
-}
-
-template <class T> auto makeArgsTuple(std::initializer_list<T> init) {
-  using iter = typename std::initializer_list<T>::iterator;
-  return std::make_tuple<iter, iter>(init.begin(), init.end());
-}
-
+template <template <class...> class Derived, class... Args> struct arg_tuple {
+  std::tuple<std::decay_t<Args>...> tuple;
+  arg_tuple(Args &&... args) : tuple(std::forward<Args>(args)...) {}
+};
 } // namespace detail
 
-using Shape = detail::vector_like<scipp::index>;
-using Dims = detail::vector_like<Dim>;
+using Shape = detail::vector<scipp::index>;
+using Dims = detail::vector<Dim>;
 
 template <class... Args>
-using ArgsTuple = decltype(detail::makeArgsTuple(std::declval<Args>()...));
-
-template <class... Args> struct Values : detail::ValuesTag {
-  ArgsTuple<Args...> tuple;
-  Values(Args &&... args)
-      : tuple(detail::makeArgsTuple(std::forward<Args>(args)...)) {}
+struct Values : public detail::arg_tuple<Values, Args...> {
+  using detail::arg_tuple<Values, Args...>::arg_tuple;
   template <class T>
   Values(std::initializer_list<T> init)
-      : tuple(detail::makeArgsTuple(init.begin(), init.end())) {}
+      : detail::arg_tuple<Values, Args...>(std::move(init)) {}
 };
-template <class... Args> Values(Args &&... args)->Values<Args...>;
-template <class T>
-Values(std::initializer_list<T>)
-    ->Values<typename std::initializer_list<T>::iterator,
-             typename std::initializer_list<T>::iterator>;
-
-template <class... Args> struct Variances : detail::VariancesTag {
-  ArgsTuple<Args...> tuple;
-  Variances(Args &&... args)
-      : tuple(detail::makeArgsTuple(std::forward<Args>(args)...)) {}
+template <class... Args>
+struct Variances : public detail::arg_tuple<Variances, Args...> {
+  using detail::arg_tuple<Variances, Args...>::arg_tuple;
   template <class T>
   Variances(std::initializer_list<T> init)
-      : tuple(detail::makeArgsTuple(init.begin(), init.end())) {}
+      : detail::arg_tuple<Variances, Args...>(std::move(init)) {}
 };
+
+template <class... Args> Values(Args &&... args)->Values<Args...>;
+template <class T>
+Values(std::initializer_list<T>)->Values<std::initializer_list<T>>;
+
 template <class... Args> Variances(Args &&... args)->Variances<Args...>;
 template <class T>
-Variances(std::initializer_list<T>)
-    ->Variances<typename std::initializer_list<T>::iterator,
-                typename std::initializer_list<T>::iterator>;
+Variances(std::initializer_list<T>)->Variances<std::initializer_list<T>>;
 
 namespace detail {
-template <class T, class... Args>
-constexpr bool is_type_in_pack_v =
-    std::disjunction<std::is_same<T, std::decay_t<Args>>...>::value;
-
-template <class Tag, class... Args> constexpr bool is_tag_in_pack() {
-  return (std::is_base_of_v<Tag, Args> || ...);
-}
-
-template <class T, class... Args> class Indexer {
-  template <std::size_t... IS>
-  static constexpr auto indexOfCorresponding_impl(std::index_sequence<IS...>) {
-    return ((std::is_base_of_v<T, Args> * IS) + ...);
-  }
-
-public:
-  static constexpr auto indexOfCorresponding() {
-    return indexOfCorresponding_impl(
-        std::make_index_sequence<sizeof...(Args)>{});
-  }
-};
 
 void throw_keyword_arg_constructor_bad_dtype(const DType dtype);
 
-template <class VarT, class... Ts> class ConstructorArgumentsMatcher {
-public:
-  template <class... NonDataTypes> constexpr static bool checkArgTypesValid() {
-    constexpr int nonDataTypesCount =
-        (is_type_in_pack_v<NonDataTypes, Ts...> + ...);
-    constexpr bool hasVal = is_tag_in_pack<ValuesTag, Ts...>();
-    constexpr bool hasVar = is_tag_in_pack<VariancesTag, Ts...>();
-    return nonDataTypesCount + hasVal + hasVar == sizeof...(Ts);
-  }
+/// Convert "keyword" args to tuple that can be used to construct Variable
+///
+/// This is an implementation detail of `makeVariable`.
+template <class ElemT> struct ArgParser {
+  std::tuple<units::Unit, Dimensions, element_array<ElemT>,
+             std::optional<element_array<ElemT>>>
+      args;
+  Dims dims;
+  Shape shape;
 
-  template <class... NonDataTypes> static auto extractArguments(Ts &&... ts) {
-    auto tp = std::make_tuple(std::forward<Ts>(ts)...);
-    return std::make_tuple(
-        extractTagged<ValuesTag, Ts...>(tp),
-        extractTagged<VariancesTag, Ts...>(tp),
-        std::tuple<NonDataTypes...>(extractArgs<NonDataTypes, Ts...>(tp)...));
-  }
+  void parse(const units::Unit &arg) { std::get<units::Unit>(args) = arg; }
 
-  template <class ElemT, class... ValArgs, class... VarArgs,
-            class... NonDataTypes>
-  static VarT construct(std::tuple<ValArgs...> &&valArgs,
-                        std::tuple<VarArgs...> &&varArgs,
-                        std::tuple<NonDataTypes...> &&nonData) {
-    constexpr bool hasVal = is_tag_in_pack<ValuesTag, Ts...>();
-    constexpr bool hasVar = is_tag_in_pack<VariancesTag, Ts...>();
-    constexpr bool constrVal =
-        std::is_constructible_v<element_array<ElemT>, ValArgs...>;
-    constexpr bool constrVar =
-        std::is_constructible_v<element_array<ElemT>, VarArgs...>;
+  void parse(const Dimensions &arg) { std::get<Dimensions>(args) = arg; }
 
-    if constexpr ((hasVal && !constrVal) || (hasVar && !constrVar) ||
-                  (hasVar && !hasVal) ||
-                  (hasVar && !core::canHaveVariances<ElemT>())) {
-      throw_keyword_arg_constructor_bad_dtype(core::dtype<ElemT>);
-      return VarT{}; // unreachable
-    } else {
-      std::optional<element_array<ElemT>> values;
-      if constexpr (hasVal)
-        values = std::make_from_tuple<element_array<ElemT>>(std::move(valArgs));
-      std::optional<element_array<ElemT>> variances;
-      if constexpr (hasVar)
-        variances =
-            std::make_from_tuple<element_array<ElemT>>(std::move(varArgs));
-      return VarT::template create<ElemT>(
-          std::move(std::get<NonDataTypes>(nonData))..., std::move(values),
-          std::move(variances));
-    }
-  }
-
-private:
-  template <class T, class... Args>
-  static auto extractArgs(std::tuple<Args...> &tp) {
-    if constexpr (!is_type_in_pack_v<T, Ts...>)
-      return T{};
+  void parse(const Dims &arg) {
+    if (shape.data.empty())
+      dims = arg;
     else
-      return std::move(std::get<T>(tp));
+      std::get<Dimensions>(args) = Dimensions(arg.data, shape.data);
   }
 
-  template <class Tag, class... Args>
-  static auto extractTagged(std::tuple<Args...> &tp) {
-    if constexpr (!is_tag_in_pack<Tag, Ts...>())
-      return std::tuple{};
-    else {
-      constexpr auto index = Indexer<Tag, Args...>::indexOfCorresponding();
-      return std::move(std::get<index>(tp).tuple);
-    }
+  void parse(const Shape &arg) {
+    if (dims.data.empty())
+      shape = arg;
+    else
+      std::get<Dimensions>(args) = Dimensions(dims.data, arg.data);
+  }
+
+  template <class... Args> void parse(Values<Args...> &&arg) {
+    if constexpr (std::is_constructible_v<element_array<ElemT>, Args...>)
+      std::get<2>(args) =
+          std::make_from_tuple<element_array<ElemT>>(std::move(arg.tuple));
+    else
+      throw_keyword_arg_constructor_bad_dtype(core::dtype<ElemT>);
+  }
+
+  template <class... Args> void parse(Variances<Args...> &&arg) {
+    if constexpr (std::is_constructible_v<element_array<ElemT>, Args...>)
+      std::get<3>(args) =
+          std::make_from_tuple<element_array<ElemT>>(std::move(arg.tuple));
+    else
+      throw_keyword_arg_constructor_bad_dtype(core::dtype<ElemT>);
   }
 };
 
 } // namespace detail
 } // namespace scipp::variable
-
-#endif // SCIPP_VARIABLE_KEYWORD_ARG_CONSTRUCTOR_H

@@ -1085,7 +1085,7 @@ TEST(VariableTest, variances_unsupported_type_fail) {
       makeVariable<std::string>(Dims{Dim::X}, Shape{1}, Values{"a"}));
   ASSERT_THROW(makeVariable<std::string>(Dims{Dim::X}, Shape{1}, Values{"a"},
                                          Variances{"variances"}),
-               except::TypeError);
+               except::VariancesError);
 }
 
 TEST(VariableTest, construct_view_dims) {
@@ -1144,10 +1144,10 @@ TEST(TransposeTest, make_transposed_2d) {
   EXPECT_EQ(var.transpose({Dim::Y, Dim::X}), ref);
   EXPECT_EQ(constVar.transpose({Dim::Y, Dim::X}), ref);
 
-  EXPECT_THROW(constVar.transpose({Dim::Y, Dim::Z}), std::runtime_error);
-  EXPECT_THROW(constVar.transpose({Dim::Y}), std::runtime_error);
-  EXPECT_THROW(var.transpose({Dim::Y, Dim::Z}), std::runtime_error);
-  EXPECT_THROW(var.transpose({Dim::Z}), std::runtime_error);
+  EXPECT_THROW(constVar.transpose({Dim::Y, Dim::Z}), except::DimensionError);
+  EXPECT_THROW(constVar.transpose({Dim::Y}), except::DimensionError);
+  EXPECT_THROW(var.transpose({Dim::Y, Dim::Z}), except::DimensionError);
+  EXPECT_THROW(var.transpose({Dim::Z}), except::DimensionError);
 }
 
 TEST(TransposeTest, make_transposed_multiple_d) {
@@ -1163,13 +1163,13 @@ TEST(TransposeTest, make_transposed_multiple_d) {
   EXPECT_EQ(var.transpose({Dim::Y, Dim::Z, Dim::X}), ref);
   EXPECT_EQ(constVar.transpose({Dim::Y, Dim::Z, Dim::X}), ref);
 
-  EXPECT_THROW(constVar.transpose({Dim::Y, Dim::Z}), std::runtime_error);
-  EXPECT_THROW(constVar.transpose({Dim::Y}), std::runtime_error);
-  EXPECT_THROW(var.transpose({Dim::Y, Dim::Z}), std::runtime_error);
-  EXPECT_THROW(var.transpose({Dim::Z}), std::runtime_error);
+  EXPECT_THROW(constVar.transpose({Dim::Y, Dim::Z}), except::DimensionError);
+  EXPECT_THROW(constVar.transpose({Dim::Y}), except::DimensionError);
+  EXPECT_THROW(var.transpose({Dim::Y, Dim::Z}), except::DimensionError);
+  EXPECT_THROW(var.transpose({Dim::Z}), except::DimensionError);
 }
 
-TEST(TransposeTest, different_api) {
+TEST(TransposeTest, reverse) {
   Variable var = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{3, 2},
                                       Values{1, 2, 3, 4, 5, 6},
                                       Variances{11, 12, 13, 14, 15, 16});
