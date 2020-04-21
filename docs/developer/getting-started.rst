@@ -29,10 +29,16 @@ To build and install the library:
 
   conda create -n scipp python=3.7
   conda env activate scipp
-  conda install # populate list here
+  conda install -c conda-forge appdirs numpy # ..etc. populate from meta.yml
+
+
+To build a debug version of the library:
+
+.. code-block:: bash
 
   cmake \
     -GNinja \
+    -DCMAKE_BUILD_TYPE=Debug \
     -DPYTHON_EXECUTABLE=$(command -v python3) \
     -DCMAKE_INSTALL_PREFIX=../install \
     -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=OFF \
@@ -41,6 +47,21 @@ To build and install the library:
 
   cmake --build . --target all-tests
   cmake --build . --target install
+
+Alternatively, to build a release version with all optimizations enabled:
+
+.. code-block:: bash
+
+  cmake \
+    -GNinja \
+    -DPYTHON_EXECUTABLE=$(command -v python3) \
+    -DCMAKE_INSTALL_PREFIX=../install \
+    -DCMAKE_BUILD_TYPE=Release \
+    ..
+
+  cmake --build . --target all-tests
+  cmake --build . --target install
+
 
 To use the ``scipp`` Python module:
 
@@ -80,6 +101,11 @@ To run the Python tests, run (in the ``python/`` directory):
 
 .. code-block:: bash
 
+  # Pull in all dependencies for tests
+  conda env update --file docs/environment.yml
+  conda activate scipp-docs
+  
+  conda install beautifulsoup4 pytest
+
   cd python
-  python3 -m pip install -r requirements.txt
   python3 -m pytest
