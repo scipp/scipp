@@ -30,13 +30,12 @@ namespace scipp::units {
 template <typename T>
 std::enable_if_t<std::is_arithmetic_v<T>, Variable>
 operator*(T v, const units::Unit &unit) {
-  return makeVariable<T>(Dimensions{}, units::Unit{unit}, Values{v});
+  return makeVariable<T>(units::Unit{unit}, Values{v});
 }
 
 template <typename T>
 std::enable_if_t<std::is_arithmetic_v<T>, Variable>
 operator/(T v, const units::Unit &unit) {
-  return makeVariable<T>(Dimensions{}, units::Unit(units::dimensionless) / unit,
-                         Values{v});
+  return makeVariable<T>(units::Unit(units::dimensionless) / unit, Values{v});
 }
 } // namespace scipp::units
