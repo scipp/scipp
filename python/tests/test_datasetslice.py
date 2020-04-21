@@ -12,13 +12,12 @@ import operator
 class TestDatasetSlice(unittest.TestCase):
     def setUp(self):
         var = sc.Variable(['x'], values=np.arange(10))
-        d = sc.Dataset(data={'a':var, 'b':var}, coords={'x': var})
+        d = sc.Dataset(data={'a': var, 'b': var}, coords={'x': var})
         self._d = d
 
     def test_type(self):
         ds_slice = self._d['a']
         self.assertEqual(type(ds_slice), sc.DataArrayView)
-
 
     def test_slice_with_range(self):
         sl = self._d['x', 1:-1]["a"].values
@@ -40,14 +39,15 @@ class TestDatasetSlice(unittest.TestCase):
         ref = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9], dtype=np.int64)
         self.assertEqual(ref.shape, sl.shape)
         self.assertEqual(np.allclose(sl, ref), True)
-'''
 
     def test_slice_single_index(self):
-        self.assertEqual(self._d['x', -4][sc.Data.Value, "a"].numpy,
-                         self._d['x', 6][sc.Data.Value, "a"].numpy)
-        self.assertEqual(self._d[sc.Data.Value, "a"]['x', -3].numpy,
-                         self._d[sc.Data.Value, "a"]['x', 7].numpy)
+        self.assertEqual(self._d['x', -4]["a"].values, self._d['x',
+                                                               6]["a"].values)
+        self.assertEqual(self._d["a"]['x', -3].values, self._d["a"]['x',
+                                                                    7].values)
 
+
+'''
     def test_range_based_slice(self):
         subset = slice(1, 4, 1)
         # Create slice
