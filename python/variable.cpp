@@ -9,9 +9,9 @@
 #include "scipp/core/except.h"
 #include "scipp/core/tag_util.h"
 
+#include "scipp/variable/operations.h"
 #include "scipp/variable/transform.h"
 #include "scipp/variable/variable.h"
-#include "scipp/variable/variable_operations.h"
 #include "scipp/variable/variable_comparison.h"
 
 #include "scipp/dataset/dataset.h"
@@ -791,6 +791,26 @@ void init_variable(py::module &m) {
 
         :param x: Data to reduce.
         :param dim: Dimension to reduce.
+        :seealso: :py:class:`scipp.min`
+        :return: New variable containing the max values.
+        :rtype: Variable)");
+
+  m.def("min", [](const VariableConstView &self) { return min(self); },
+        py::arg("x"), py::call_guard<py::gil_scoped_release>(),
+        R"(
+        Element-wise min over all of the input's dimensions.
+
+        :param x: Data to reduce.
+        :seealso: :py:class:`scipp.max`
+        :return: New variable containing the min values.
+        :rtype: Variable)");
+
+  m.def("max", [](const VariableConstView &self) { return max(self); },
+        py::arg("x"), py::call_guard<py::gil_scoped_release>(),
+        R"(
+        Element-wise max over all of the input's dimensions.
+
+        :param x: Data to reduce.
         :seealso: :py:class:`scipp.min`
         :return: New variable containing the max values.
         :rtype: Variable)");

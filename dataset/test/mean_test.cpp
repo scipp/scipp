@@ -7,8 +7,8 @@
 
 #include "scipp/core/except.h"
 #include "scipp/dataset/dataset.h"
+#include "scipp/variable/reduction.h"
 #include "scipp/variable/variable.h"
-#include "scipp/variable/variable_reduction.h"
 
 using namespace scipp;
 using namespace scipp::dataset;

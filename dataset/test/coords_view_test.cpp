@@ -181,8 +181,6 @@ TYPED_TEST(CoordsViewTest, slice_of_slice) {
 
   check_slice_of_slice(d, cs.slice({Dim::X, 1, 3}).slice({Dim::Y, 1}));
   check_slice_of_slice(d, cs.slice({Dim::Y, 1}).slice({Dim::X, 1, 3}));
-  check_slice_of_slice(d, cs.slice({Dim::X, 1, 3}, {Dim::Y, 1}));
-  check_slice_of_slice(d, cs.slice({Dim::Y, 1}, {Dim::X, 1, 3}));
 }
 
 auto check_slice_of_slice_range = [](const auto &dataset, const auto slice) {
@@ -198,8 +196,6 @@ TYPED_TEST(CoordsViewTest, slice_of_slice_range) {
 
   check_slice_of_slice_range(d, cs.slice({Dim::X, 1, 3}).slice({Dim::Y, 1, 2}));
   check_slice_of_slice_range(d, cs.slice({Dim::Y, 1, 2}).slice({Dim::X, 1, 3}));
-  check_slice_of_slice_range(d, cs.slice({Dim::X, 1, 3}, {Dim::Y, 1, 2}));
-  check_slice_of_slice_range(d, cs.slice({Dim::Y, 1, 2}, {Dim::X, 1, 3}));
 }
 
 TEST(CoordsConstView, slice_return_type) {

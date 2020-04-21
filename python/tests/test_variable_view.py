@@ -25,7 +25,7 @@ def test_astype():
 
 def apply_test_op(op, a, b, data):
     op(a, b)
-    # Assume numpy operations are correct as comparitor
+    # Assume numpy operations are correct as comparator
     op(data, b.values)
     assert np.array_equal(a.values, data)
 

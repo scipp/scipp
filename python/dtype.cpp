@@ -3,7 +3,6 @@
 /// @file
 /// @author Simon Heybrock
 #include "dtype.h"
-#include "bind_enum.h"
 #include "pybind11.h"
 #include "scipp/core/string.h"
 
@@ -12,7 +11,14 @@ using namespace scipp::core;
 
 namespace py = pybind11;
 
-void init_dtype(py::module &m) { bind_enum(m, "dtype", DType::Unknown); }
+void init_dtype(py::module &m) {
+  py::class_<DType>(m, "_DType")
+      .def(py::self == py::self)
+      .def("__repr__", [](const DType self) { return to_string(self); });
+  auto dtype = m.def_submodule("dtype");
+  for (const auto &[key, name] : core::dtypeNameRegistry())
+    dtype.attr(name.c_str()) = key;
+}
 
 scipp::core::DType scipp_dtype(const py::dtype &type) {
   if (type.is(py::dtype::of<double>()))
@@ -38,7 +44,7 @@ scipp::core::DType scipp_dtype(const py::dtype &type) {
 scipp::core::DType scipp_dtype(const py::object &type) {
   // Check None first, then native scipp Dtype, then numpy.dtype
   if (type.is_none())
-    return DType::Unknown;
+    return dtype<void>;
   try {
     return type.cast<DType>();
   } catch (const py::cast_error &) {

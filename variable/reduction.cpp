@@ -2,15 +2,15 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#include "scipp/variable/variable_reduction.h"
+#include "scipp/variable/reduction.h"
 #include "scipp/core/dtype.h"
 #include "scipp/core/operators.h"
+#include "scipp/variable/binary_arithmetic.h"
 #include "scipp/variable/event.h"
 #include "scipp/variable/except.h"
 #include "scipp/variable/transform.h"
-#include "scipp/variable/variable_binary_arithmetic.h"
 
-#include "variable_operations_common.h"
+#include "operations_common.h"
 
 using namespace scipp::core;
 
@@ -76,7 +76,7 @@ Variable sum(const VariableConstView &var, const Dim dim) {
   dims.erase(dim);
   // Bool DType is a bit special in that it cannot contain it's sum.
   // Instead the sum is stored in a int64_t Variable
-  Variable summed{var.dtype() == DType::Bool
+  Variable summed{var.dtype() == dtype<bool>
                       ? makeVariable<int64_t>(Dimensions(dims))
                       : Variable(var, dims)};
   sum_impl(summed, var);
@@ -85,7 +85,7 @@ Variable sum(const VariableConstView &var, const Dim dim) {
 
 VariableView sum(const VariableConstView &var, const Dim dim,
                  const VariableView &out) {
-  if (var.dtype() == DType::Bool && out.dtype() != DType::Int64)
+  if (var.dtype() == dtype<bool> && out.dtype() != dtype<int64_t>)
     throw except::UnitError("In-place sum of Bool dtype must be stored in an "
                             "output variable of Int64 dtype.");
 

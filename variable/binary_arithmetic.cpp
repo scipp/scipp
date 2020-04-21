@@ -4,8 +4,8 @@
 /// @author Simon Heybrock
 #include <cmath>
 
+#include "scipp/variable/binary_arithmetic.h"
 #include "scipp/variable/transform.h"
-#include "scipp/variable/variable.h"
 
 using namespace scipp::core;
 

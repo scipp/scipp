@@ -6,17 +6,17 @@ add_executable(
   ${TARGET_NAME} EXCLUDE_FROM_ALL
   comparison_test.cpp
   indexed_slice_view_test.cpp
+  operations_test.cpp
   reduce_logical_test.cpp
   reduce_various_test.cpp
   subspan_view_test.cpp
   transform_test.cpp
+  trigonometry_test.cpp
   variable_concept_test.cpp
   variable_custom_type_test.cpp
   variable_keyword_args_constructor_test.cpp
-  variable_operations_test.cpp
   variable_scalar_accessors_test.cpp
   variable_test.cpp
-  variable_trigonometry_test.cpp
 )
 include_directories(SYSTEM ${GMOCK_INCLUDE_DIR} ${GTEST_INCLUDE_DIR})
 target_link_libraries(

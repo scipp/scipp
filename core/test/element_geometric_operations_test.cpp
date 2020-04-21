@@ -5,9 +5,13 @@
 #include <Eigen/Geometry>
 
 #include "scipp/common/constants.h"
+<<<<<<< HEAD
 #include "scipp/core/element_geometric_operations.h"
 #include "scipp/core/value_and_variance.h"
 
+=======
+#include "scipp/core/element/geometric_operations.h"
+>>>>>>> master
 #include "scipp/units/unit.h"
 
 #include "fix_typed_test_suite_warnings.h"

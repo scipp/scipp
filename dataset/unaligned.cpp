@@ -7,7 +7,7 @@
 #include "scipp/dataset/event.h"
 #include "scipp/dataset/groupby.h"
 #include "scipp/dataset/unaligned.h"
-#include "scipp/variable/variable_operations.h"
+#include "scipp/variable/operations.h"
 
 namespace scipp::dataset::unaligned {
 

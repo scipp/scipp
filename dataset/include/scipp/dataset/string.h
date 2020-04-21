@@ -8,7 +8,7 @@
 
 #include "scipp-dataset_export.h"
 #include "scipp/core/string.h"
-#include "scipp/dataset/view_forward.h"
+#include "scipp/dataset/map_view_forward.h"
 #include "scipp/variable/string.h"
 
 namespace scipp::dataset {

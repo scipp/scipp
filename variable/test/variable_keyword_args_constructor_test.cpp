@@ -18,6 +18,29 @@ TEST(CreateVariableTest, from_single_value) {
   EXPECT_EQ(var.variance<float>(), 1.0f);
 }
 
+TEST(CreateVariableTest, dims_shape) {
+  // Check that we never use std::vector::vector(size, value)
+  EXPECT_EQ(makeVariable<float>(Dims{Dim::X}, Shape{2}),
+            makeVariable<float>(Dimensions({{Dim::X, 2}})));
+  EXPECT_EQ(makeVariable<float>(Dims{Dim::X}, Shape{2l}),
+            makeVariable<float>(Dimensions({{Dim::X, 2}})));
+  EXPECT_EQ(makeVariable<float>(Dims{Dim::X, Dim::Y}, Shape{2l, 3}),
+            makeVariable<float>(Dimensions({{Dim::X, 2}, {Dim::Y, 3}})));
+  EXPECT_EQ(makeVariable<float>(Dims{Dim::X, Dim::Y}, Shape{2l, 3l}),
+            makeVariable<float>(Dimensions({{Dim::X, 2}, {Dim::Y, 3}})));
+  EXPECT_EQ(makeVariable<float>(Dims{Dim::X, Dim::Y}, Shape{2, 3}),
+            makeVariable<float>(Dimensions({{Dim::X, 2}, {Dim::Y, 3}})));
+  EXPECT_EQ(makeVariable<float>(Dims{Dim::X, Dim::Y}, Shape(2, 3)),
+            makeVariable<float>(Dimensions({{Dim::X, 2}, {Dim::Y, 3}})));
+  EXPECT_EQ(makeVariable<float>(Dims{Dim::X, Dim::Y}, Shape(2l, 3)),
+            makeVariable<float>(Dimensions({{Dim::X, 2}, {Dim::Y, 3}})));
+}
+
+TEST(CreateVariableTest, dims_shape_order) {
+  EXPECT_EQ(makeVariable<float>(Dims{Dim::X}, Shape{2}),
+            makeVariable<float>(Shape{2}, Dims{Dim::X}));
+}
+
 TEST(CreateVariableTest, default_init) {
   auto noVariance = makeVariable<float>(Dims{Dim::X}, Shape{3});
   auto stillNoVariance = makeVariable<float>(Dims{Dim::X}, Shape{3}, Values{});
@@ -42,7 +65,7 @@ TEST(CreateVariableTest, default_init) {
 TEST(CreateVariableTest, from_vector) {
   EXPECT_EQ(makeVariable<double>(Dims{Dim::X}, Shape{3},
                                  Values(std::vector<int>{1, 2, 3})),
-            makeVariable<double>(Dims{Dim::X}, Shape{3}, Values({1, 2, 3})));
+            makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3}));
 
   const std::vector<double> v{1, 2, 3};
   auto varRef = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
@@ -81,18 +104,18 @@ TEST(VariableUniversalConstructorTest, dimensions_unit_basic) {
 TEST(VariableUniversalConstructorTest, type_constructors_mix) {
   auto flt = std::vector{1.5f, 3.6f};
   auto v1 = Variable(dtype<float>, Dims{Dim::X, Dim::Y}, Shape{2, 1},
-                     Values(flt.begin(), flt.end()), Variances({2.0, 3.0}));
+                     Values(flt.begin(), flt.end()), Variances{2.0, 3.0});
   auto v2 = Variable(dtype<float>, Dims{Dim::X, Dim::Y}, Shape{2, 1},
-                     Values({1.5, 3.6}), Variances({2, 3}));
+                     Values{1.5, 3.6}, Variances{2, 3});
   auto v3 = Variable(dtype<float>, units::Unit(), Dims{Dim::X, Dim::Y},
-                     Shape{2, 1}, Values({1.5f, 3.6f}));
+                     Shape{2, 1}, Values{1.5f, 3.6f});
   v3.setVariances(
       makeVariable<float>(Dims{Dim::X, Dim::Y}, Shape{2, 1}, Values{2, 3}));
   EXPECT_EQ(v1, v2);
   EXPECT_EQ(v1, v3);
 
-  v2 = Variable(dtype<float>, Variances({2.0, 3.0}), Dims{Dim::X, Dim::Y},
-                Shape{2, 1}, Values({1.5f, 3.6f}));
+  v2 = Variable(dtype<float>, Variances{2.0, 3.0}, Dims{Dim::X, Dim::Y},
+                Shape{2, 1}, Values{1.5f, 3.6f});
   EXPECT_EQ(v1, v2);
 }
 
@@ -151,5 +174,5 @@ TEST(VariableUniversalConstructorTest, initializer_list) {
 TEST(VariableUniversalConstructorTest, from_vector) {
   EXPECT_EQ(makeVariable<double>(Dims{Dim::X}, Shape{3},
                                  Values(std::vector<int>{1, 2, 3})),
-            makeVariable<double>(Dims{Dim::X}, Shape{3}, Values({1, 2, 3})));
+            makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3}));
 }

@@ -4,12 +4,12 @@
 /// @author Simon Heybrock
 #include <limits>
 
-#include "scipp/core/element_event_operations.h"
+#include "scipp/core/element/event_operations.h"
 
 #include "scipp/variable/event.h"
+#include "scipp/variable/operations.h"
 #include "scipp/variable/subspan_view.h"
 #include "scipp/variable/transform.h"
-#include "scipp/variable/variable_operations.h"
 
 namespace scipp::variable {
 /// Return true if a variable contains events

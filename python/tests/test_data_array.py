@@ -20,6 +20,16 @@ def make_dataarray(dim1='x', dim2='y', seed=None):
         attrs={'meta': sc.Variable([dim2], values=np.arange(3))})
 
 
+def test_slice_init():
+    orig = sc.DataArray(
+        data=sc.Variable(['x'], values=np.arange(2.0)),
+        coords={'x': sc.Variable(['x'], values=np.arange(3.0))})
+    a = sc.DataArray(orig['x', :])
+    assert a == orig
+    b = sc.DataArray(orig['x', 1:])
+    assert b.data.values[0] == orig.data.values[1:]
+
+
 def test_init():
     d = sc.DataArray(
         data=sc.Variable(dims=['x'], values=np.arange(3)),
@@ -34,6 +44,60 @@ def test_init():
     assert len(d.masks) == 1
 
 
+def test_coords():
+    da = make_dataarray()
+    assert len(dict(da.coords)) == 3
+    assert 'x' in da.coords
+    assert 'y' in da.coords
+    assert 'aux' in da.coords
+
+
+def test_attrs():
+    da = make_dataarray()
+    assert len(dict(da.attrs)) == 1
+    assert 'meta' in da.attrs
+
+
+def test_masks():
+    da = make_dataarray()
+    da.masks['mask1'] = sc.Variable(['x'],
+                                    values=np.array([False, True],
+                                                    dtype=np.bool))
+    assert len(dict(da.masks)) == 1
+    assert 'mask1' in da.masks
+
+
+def test_labels():
+    da = make_dataarray()
+    # Deprecated at point of use
+    with pytest.raises(RuntimeError):
+        da.labels
+
+
+def test_eq():
+    da = make_dataarray()
+    assert da['x', :] == da
+    assert da['y', :] == da
+    assert da['y', :]['x', :] == da
+    assert not da['y', 1:] == da
+    assert not da['x', 1:] == da
+    assert not da['y', 1:]['x', :] == da
+    assert not da['y', :]['x', 1:] == da
+
+
+def _is_deep_copy_of(orig, copy):
+    assert orig == copy
+    assert not id(orig) == id(copy)
+
+
+def test_copy():
+    import copy
+    da = make_dataarray()
+    _is_deep_copy_of(da, da.copy())
+    _is_deep_copy_of(da, copy.copy(da))
+    _is_deep_copy_of(da, copy.deepcopy(da))
+
+
 def test_in_place_binary_with_variable():
     a = sc.DataArray(data=sc.Variable(['x'], values=np.arange(10.0)),
                      coords={'x': sc.Variable(['x'], values=np.arange(10.0))})
@@ -46,6 +110,18 @@ def test_in_place_binary_with_variable():
     assert a == copy
 
 
+def test_in_place_binary_with_dataarray():
+    da = sc.DataArray(
+        data=sc.Variable(['x'], values=np.arange(1.0, 10.0)),
+        coords={'x': sc.Variable(['x'], values=np.arange(1.0, 10.0))})
+    orig = da.copy()
+    da += orig
+    da -= orig
+    da *= orig
+    da /= orig
+    assert da == orig
+
+
 def test_in_place_binary_with_scalar():
     a = sc.DataArray(data=sc.Variable(['x'], values=[10]),
                      coords={'x': sc.Variable(['x'], values=[10])})
@@ -56,6 +132,32 @@ def test_in_place_binary_with_scalar():
     a -= 4
     a /= 2
     assert a == copy
+
+
+def test_binary_with_broadcast():
+    da = sc.DataArray(data=sc.Variable(['x', 'y'],
+                                       values=np.arange(20).reshape(5, 4)),
+                      coords={
+                          'x': sc.Variable(['x'],
+                                           values=np.arange(0.0, 0.6, 0.1)),
+                          'y': sc.Variable(['y'],
+                                           values=np.arange(0.0, 0.5, 0.1))
+                      })
+    d2 = da - da['x', 0]
+    da -= da['x', 0]
+    assert da == d2
+
+
+def test_view_in_place_binary_with_scalar():
+    d = sc.Dataset({'data': sc.Variable(dims=['x'], values=[10])},
+                   coords={'x': sc.Variable(dims=['x'], values=[10])})
+    copy = d.copy()
+
+    d['x', :] += 2
+    d['x', :] *= 2
+    d['x', :] -= 4
+    d['x', :] /= 2
+    assert d == copy
 
 
 def test_rename_dims():
@@ -96,3 +198,33 @@ def test_reciprocal():
     a = sc.DataArray(data=sc.Variable(['x'], values=np.array([5.0])))
     r = sc.reciprocal(a)
     assert r.values[0] == 1.0 / 5.0
+
+
+def test_realign():
+    co = sc.Variable(['x'], shape=[1], dtype=sc.dtype.event_list_float64)
+    co.values[0].append(1.0)
+    co.values[0].append(2.0)
+    co.values[0].append(2.0)
+    data = sc.Variable(['y'],
+                       dtype=sc.dtype.float64,
+                       values=np.array([1]),
+                       variances=np.array([1]))
+    da = sc.DataArray(data=data, coords={'x': co})
+    assert not da.unaligned
+    da_r = sc.realign(
+        da, {'x': sc.Variable(['x'], values=np.array([0.0, 1.0, 3.0]))})
+    assert da_r.shape == [1, 2]
+    assert da_r.unaligned == da
+    assert not da_r.data
+    assert np.allclose(sc.histogram(da_r).values, np.array([0, 3]), atol=1e-9)
+    da.realign({'x': sc.Variable(['x'], values=np.array([0.0, 1.0, 3.0]))})
+    assert da.shape == [1, 2]
+
+
+def test_get_items():
+    da = make_dataarray()
+    assert np.allclose(da['x', 0].values, da['x', 0:1].values[0], atol=1e-9)
+    assert 'y' in da['x', 0].dims
+    assert 'x' not in da['x', 0].dims
+    assert 'y' in da['x', 0:1].dims
+    assert 'x' in da['x', 0:1].dims

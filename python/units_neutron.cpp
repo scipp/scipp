@@ -5,10 +5,9 @@
 #include "scipp/core/dtype.h"
 #include "scipp/core/tag_util.h"
 #include "scipp/units/unit.h"
+#include "scipp/variable/operations.h"
 #include "scipp/variable/variable.h"
-#include "scipp/variable/variable_operations.h"
 
-#include "bind_enum.h"
 #include "dtype.h"
 #include "pybind11.h"
 

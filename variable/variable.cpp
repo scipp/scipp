@@ -10,18 +10,6 @@
 
 namespace scipp::variable {
 
-std::vector<scipp::index>
-detail::reorderedShape(const scipp::span<const Dim> &order,
-                       const Dimensions &dimensions) {
-  if (order.size() != dimensions.ndim())
-    throw std::runtime_error("Cannot transpose input dimensions should be "
-                             "exactly the same but maybe in different order.");
-  std::vector<scipp::index> res(order.size());
-  std::transform(order.begin(), order.end(), res.begin(),
-                 [&dimensions](auto &a) { return dimensions[a]; });
-  return res;
-}
-
 Variable::Variable(const VariableConstView &slice)
     : Variable(slice ? Variable(slice, slice.dims()) : Variable()) {
   // There is a bug in the implementation of MultiIndex used in ElementArrayView
@@ -40,6 +28,41 @@ Variable::Variable(const VariableConstView &parent, const Dimensions &dims)
 
 Variable::Variable(const Variable &parent, VariableConceptHandle data)
     : m_unit(parent.unit()), m_object(std::move(data)) {}
+
+VariableConstView::VariableConstView(const Variable &variable,
+                                     const Dimensions &dims)
+    : m_variable(&variable), m_view(variable.data().reshape(dims)) {}
+
+VariableConstView::VariableConstView(const Variable &variable, const Dim dim,
+                                     const scipp::index begin,
+                                     const scipp::index end)
+    : m_variable(&variable), m_view(variable.data().makeView(dim, begin, end)) {
+}
+
+VariableConstView::VariableConstView(const VariableConstView &slice,
+                                     const Dim dim, const scipp::index begin,
+                                     const scipp::index end)
+    : m_variable(slice.m_variable),
+      m_view(slice.data().makeView(dim, begin, end)) {}
+
+// Note that we use the basic constructor of VariableConstView to avoid
+// creation of a const m_view, which would be overwritten immediately.
+VariableView::VariableView(Variable &variable, const Dimensions &dims)
+    : VariableConstView(variable), m_mutableVariable(&variable) {
+  m_view = variable.data().reshape(dims);
+}
+
+VariableView::VariableView(Variable &variable, const Dim dim,
+                           const scipp::index begin, const scipp::index end)
+    : VariableConstView(variable), m_mutableVariable(&variable) {
+  m_view = variable.data().makeView(dim, begin, end);
+}
+
+VariableView::VariableView(const VariableView &slice, const Dim dim,
+                           const scipp::index begin, const scipp::index end)
+    : VariableConstView(slice), m_mutableVariable(slice.m_mutableVariable) {
+  m_view = slice.data().makeView(dim, begin, end);
+}
 
 void Variable::setDims(const Dimensions &dimensions) {
   if (dimensions.volume() == m_object->dims().volume()) {
@@ -119,6 +142,14 @@ Variable Variable::slice(const Slice slice) && {
   return Variable{this->slice(slice)};
 }
 
+VariableConstView VariableConstView::slice(const Slice slice) const {
+  return VariableConstView(*this, slice.dim(), slice.begin(), slice.end());
+}
+
+VariableView VariableView::slice(const Slice slice) const {
+  return VariableView(*this, slice.dim(), slice.begin(), slice.end());
+}
+
 VariableConstView Variable::reshape(const Dimensions &dims) const & {
   return {*this, dims};
 }
@@ -141,37 +172,38 @@ Variable VariableConstView::reshape(const Dimensions &dims) const {
   return reshaped;
 }
 
-template <class DimContainer>
-std::vector<Dim> reverseDimOrder(const DimContainer &container) {
-  return std::vector<Dim>(container.rbegin(), container.rend());
-}
-
 VariableConstView Variable::transpose(const std::vector<Dim> &dims) const & {
-  return VariableConstView::makeTransposed(
-      *this, dims.empty() ? reverseDimOrder(this->dims().labels()) : dims);
+  return VariableConstView(*this).transpose(dims);
 }
 
 VariableView Variable::transpose(const std::vector<Dim> &dims) & {
-  return VariableView::makeTransposed(
-      *this, dims.empty() ? reverseDimOrder(this->dims().labels()) : dims);
+  return VariableView(*this).transpose(dims);
 }
 
 Variable Variable::transpose(const std::vector<Dim> &dims) && {
-  return Variable(VariableConstView::makeTransposed(
-      *this, dims.empty() ? reverseDimOrder(this->dims().labels()) : dims));
+  return Variable(VariableConstView(*this).transpose(dims));
 }
 
 VariableConstView
 VariableConstView::transpose(const std::vector<Dim> &dims) const {
-  auto dms = this->dims();
-  return makeTransposed(*this,
-                        dims.empty() ? reverseDimOrder(dms.labels()) : dims);
+  auto transposed(*this);
+  transposed.m_view = data().transpose(dims);
+  return transposed;
 }
 
 VariableView VariableView::transpose(const std::vector<Dim> &dims) const {
-  auto dms = this->dims();
-  return makeTransposed(*this,
-                        dims.empty() ? reverseDimOrder(dms.labels()) : dims);
+  auto transposed(*this);
+  transposed.m_view = data().transpose(dims);
+  return transposed;
+}
+
+std::vector<scipp::index> VariableConstView::strides() const {
+  const auto parent = m_variable->dims();
+  std::vector<scipp::index> strides;
+  for (const auto &label : parent.labels())
+    if (dims().contains(label))
+      strides.emplace_back(parent.offset(label));
+  return strides;
 }
 
 void Variable::rename(const Dim from, const Dim to) {

@@ -8,12 +8,12 @@
 #include "random.h"
 
 #include "scipp/dataset/dataset.h"
-#include "scipp/variable/variable_operations.h"
+#include "scipp/variable/operations.h"
 
 using namespace scipp;
 
 auto make_2d_sparse_coord(const scipp::index size, const scipp::index count) {
-  auto var = makeVariable<double>(Dims{Dim::X}, Shape{size});
+  auto var = makeVariable<event_list<double>>(Dims{Dim::X}, Shape{size});
   auto vals = var.values<event_list<double>>();
   Random rand(0.0, 1000.0);
   for (scipp::index i = 0; i < size; ++i) {

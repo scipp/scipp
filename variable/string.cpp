@@ -59,7 +59,7 @@ auto apply(const DType dtype, Args &&... args) {
   // should typically not have variances, so Callable should always be
   // `ValuesToString` in this case.
   if (formatterRegistry().contains(dtype))
-    return formatterRegistry().format(dtype, args...);
+    return formatterRegistry().format(args...);
   return core::callDType<Callable>(
       std::tuple<double, float, int64_t, int32_t, std::string, bool,
                  event_list<double>, event_list<float>, event_list<int64_t>,
@@ -73,17 +73,13 @@ std::string format_variable(const std::string &key,
   if (!variable)
     return std::string(tab) + "invalid variable\n";
   std::stringstream s;
-  const auto dtype = variable.dtype();
   const std::string colSep("  ");
   s << tab << std::left << std::setw(24) << key;
   s << colSep << std::setw(9) << to_string(variable.dtype());
   s << colSep << std::setw(15) << '[' + variable.unit().name() + ']';
   s << colSep << make_dims_labels(variable, datasetDims);
   s << colSep;
-  if (dtype == DType::PyObject)
-    s << "[PyObject]";
-  else
-    s << apply<ValuesToString>(variable.data().dtype(), variable);
+  s << apply<ValuesToString>(variable.data().dtype(), variable);
   if (variable.hasVariances())
     s << colSep << apply<VariancesToString>(variable.data().dtype(), variable);
   s << '\n';
@@ -107,9 +103,8 @@ bool FormatterRegistry::contains(const DType key) const noexcept {
   return m_formatters.find(key) != m_formatters.end();
 }
 
-std::string FormatterRegistry::format(const DType key,
-                                      const VariableConstView &var) const {
-  return m_formatters.at(key)->format(var);
+std::string FormatterRegistry::format(const VariableConstView &var) const {
+  return m_formatters.at(var.dtype())->format(var);
 }
 
 FormatterRegistry &formatterRegistry() {

@@ -8,9 +8,23 @@ import pytest
 import scipp as sc
 
 
+def test_shape():
+    a = sc.Variable(value=1)
+    d = sc.Dataset(data={'a': a})
+    assert d.shape == []
+    a = sc.Variable(['x'], shape=[2])
+    b = sc.Variable(['y', 'z'], shape=[3, 4])
+    d = sc.Dataset(data={'a': a, 'b': b})
+    assert not bool(set(d.shape) - set([4, 3, 2]))
+
+
 def test_create_empty():
     d = sc.Dataset()
     assert len(d) == 0
+    assert len(d.coords) == 0
+    assert len(d.masks) == 0
+    assert len(d.attrs) == 0
+    assert len(d.dims) == 0
 
 
 def test_create():
@@ -23,25 +37,32 @@ def test_create():
     assert d.coords['y'] == y
     assert d['xy'].data == xy
     assert d['x'].data == x
+    assert bool(set(d.dims) - set(['y', 'x']))
 
 
 def test_create_from_data_array():
     var = sc.Variable(dims=['x'], values=np.arange(4))
-    base = sc.Dataset({'a': var}, coords={'x': var, 'aux': var})
-    d = sc.Dataset(base['a'])
-    assert d == base
+    da = sc.DataArray(var, coords={'x': var, 'aux': var})
+    d = sc.Dataset(da)
+    assert d[''] == da
 
 
 def test_create_from_data_arrays():
     var1 = sc.Variable(dims=['x'], values=np.arange(4))
     var2 = sc.Variable(dims=['x'], values=np.ones(4))
-    base = sc.Dataset({'a': var1, 'b': var2}, coords={'x': var1, 'aux': var1})
-    d = sc.Dataset({'a': base['a'], 'b': base['b']})
-    assert d == base
-    swapped = sc.Dataset({'a': base['b'], 'b': base['a']})
-    assert swapped != base
-    assert swapped['a'] == base['b']
-    assert swapped['b'] == base['a']
+    da1 = sc.DataArray(var1, coords={'x': var1, 'aux': var2})
+    da2 = sc.DataArray(var1, coords={'x': var1, 'aux': var2})
+    d = sc.Dataset()
+    d['a'] = da1
+    d['b'] = da2
+    assert d == sc.Dataset(data={
+        'a': var1,
+        'b': var1
+    },
+                           coords={
+                               'x': var1,
+                               'aux': var2
+                           })
 
 
 def test_clear():
@@ -122,6 +143,7 @@ def test_coords_keys():
 def test_masks_setitem():
     var = sc.Variable(dims=['x'], values=np.arange(4))
     d = sc.Dataset({'a': var}, coords={'x': var})
+
     with pytest.raises(RuntimeError):
         d['x', 2:3].coords['label'] = sc.Variable(True)
     d.masks['mask'] = sc.Variable(dims=['x'],
@@ -385,7 +407,6 @@ def test_variable_histogram():
         hist.values, np.array([[1.0, 4.0, 1.0, 0.0], [0.0, 6.0, 0.0, 0.0]]))
 
 
-@pytest.mark.skip(reason="Requires unaligned dataset items")
 def test_dataset_histogram():
     var = sc.Variable(dims=['x'], shape=[2], dtype=sc.dtype.event_list_float64)
     var['x', 0].values = np.arange(3)
@@ -393,16 +414,20 @@ def test_dataset_histogram():
     var['x', 0].values.extend(np.ones(3))
     var['x', 1].values = np.ones(6)
     ds = sc.Dataset()
-    ds['s'] = sc.DataArray(data=sc.Variable(dims=['x'],
-                                            values=np.ones(2),
-                                            variances=np.ones(2)),
-                           coords={'y': var})
-    ds['s1'] = sc.DataArray(data=sc.Variable(dims=['x'],
-                                             values=np.ones(2),
-                                             variances=np.ones(2)),
-                            coords={'y': var * 5.0})
-    h = sc.histogram(
-        ds, sc.Variable(values=np.arange(5, dtype=np.float64), dims=['y']))
+    s = sc.DataArray(data=sc.Variable(dims=['x'],
+                                      values=np.ones(2),
+                                      variances=np.ones(2)),
+                     coords={'y': var})
+    s1 = sc.DataArray(data=sc.Variable(dims=['x'],
+                                       values=np.ones(2),
+                                       variances=np.ones(2)),
+                      coords={'y': var * 5.0})
+    realign_coords = {
+        'y': sc.Variable(values=np.arange(5, dtype=np.float64), dims=['y'])
+    }
+    ds['s'] = sc.realign(s, realign_coords)
+    ds['s1'] = sc.realign(s1, realign_coords)
+    h = sc.histogram(ds)
     assert np.array_equal(
         h['s'].values, np.array([[1.0, 4.0, 1.0, 0.0], [0.0, 6.0, 0.0, 0.0]]))
     assert np.array_equal(
@@ -530,6 +555,19 @@ def test_binary_with_broadcast():
     d2 = d - d['x', 0]
     d -= d['x', 0]
     assert d == d2
+
+
+def test_binary__with_dataarray():
+    da = sc.DataArray(
+        data=sc.Variable(dims=['x'], values=np.arange(1.0, 10.0)),
+        coords={'x': sc.Variable(dims=['x'], values=np.arange(1.0, 10.0))})
+    ds = sc.Dataset(da)
+    orig = ds.copy()
+    ds += da
+    ds -= da
+    ds *= da
+    ds /= da
+    assert ds == orig
 
 
 def test_binary_of_item_with_variable():
@@ -676,17 +714,16 @@ def test_coord_delitem():
     assert dref == d
 
 
-@pytest.mark.skip(reason="Requires unaligned dataset items")
-def test_coords_delitem_sparse():
+def test_coords_delitem():
     var = sc.Variable(dims=['x'], values=np.arange(4))
-    sparse = sc.Variable(dims=[], shape=[], dtype=sc.dtype.event_list_float64)
-    d = sc.Dataset({'a': sparse}, coords={'x': var})
-    d['a'].coords['x'] = sparse
-    with pytest.raises(RuntimeError):
-        del d['a'].coords['z']
-    del d['a'].coords['x']
-    with pytest.raises(RuntimeError):
-        d['a'].coords['x']
+    d = sc.Dataset({'a': var}, coords={'x': var})
+    dref = d.copy()
+    dref.coords['x'] = sc.Variable(dims=['x'], values=np.arange(1, 5))
+    assert d != dref
+    del dref.coords['x']
+    assert d != dref
+    dref.coords['x'] = d.coords['x']
+    assert d == dref
 
 
 def test_attrs_delitem():
@@ -709,933 +746,58 @@ def test_masks_delitem():
     assert d == dref
 
 
-# def test_delitem(self):
-#    dataset = sc.Dataset()
-#    dataset[sc.Data.Value, 'data'] = (['z', 'y', 'x'],
-#                                      (1, 2, 3))
-#    dataset[sc.Data.Value, 'aux'] = ([], ())
-#    self.assertTrue((sc.Data.Value, 'data') in dataset)
-#    self.assertEqual(len(dataset.dimensions), 3)
-#    del dataset[sc.Data.Value, 'data']
-#    self.assertFalse((sc.Data.Value, 'data') in dataset)
-#    self.assertEqual(len(dataset.dimensions), 0)
-#
-#    dataset[sc.Data.Value, 'data'] = (['z', 'y', 'x'],
-#                                      (1, 2, 3))
-#    dataset[sc.Coord.X] = (['x'], np.arange(3))
-#    del dataset[sc.Data.Value, 'data']
-#    self.assertFalse((sc.Data.Value, 'data') in dataset)
-#    self.assertEqual(len(dataset.dimensions), 1)
-#    del dataset[sc.Coord.X]
-#    self.assertFalse(sc.Coord.X in dataset)
-#    self.assertEqual(len(dataset.dimensions), 0)
-#
-# def test_insert_default_init(self):
-#    d = sc.Dataset()
-#    d[sc.Data.Value, 'data1'] = (('z', 'y', 'x'), (4, 3, 2))
-#    self.assertEqual(len(d), 1)
-#    np.testing.assert_array_equal(
-#        d[sc.Data.Value, 'data1'].numpy, np.zeros(shape=(4, 3, 2)))
-#
-# def test_insert(self):
-#    d = sc.Dataset()
-#    d[sc.Data.Value, 'data1'] = (
-#        ['z', 'y', 'x'], np.arange(24).reshape(4, 3, 2))
-#    self.assertEqual(len(d), 1)
-#    np.testing.assert_array_equal(
-#        d[sc.Data.Value, 'data1'].numpy, self.reference_data1)
-#
-#    self.assertRaisesRegex(
-#        RuntimeError,
-#        'Cannot insert variable into Dataset: Dimensions do not match.',
-#        d.__setitem__,
-#        (sc.Data.Value,
-#         'data2'),
-#        ([
-#            'z',
-#            'y',
-#            'x'],
-#            np.arange(24).reshape(
-#            4,
-#            2,
-#            3)))
-#
-# def test_replace(self):
-#    d = sc.Dataset()
-#    d[sc.Data.Value, 'data1'] = (
-#        ['z', 'y', 'x'], np.zeros(24).reshape(4, 3, 2))
-#    d[sc.Data.Value, 'data1'] = (
-#        ['z', 'y', 'x'], np.arange(24).reshape(4, 3, 2))
-#    self.assertEqual(len(d), 1)
-#    np.testing.assert_array_equal(
-#        d[sc.Data.Value, 'data1'].numpy, self.reference_data1)
-#
-# def test_insert_Variable(self):
-#    d = sc.Dataset()
-#    d[sc.Data.Value, 'data1'] = (
-#        ['z', 'y', 'x'], np.arange(24).reshape(4, 3, 2))
-#
-#    var = sc.Variable(dims=['x'], np.arange(2))
-#    d[sc.Data.Value, 'data2'] = var
-#    d[sc.Data.Variance, 'data2'] = var
-#    self.assertEqual(len(d), 3)
-#
-# def test_insert_variable_slice(self):
-#    d = sc.Dataset()
-#    d[sc.Data.Value, 'data1'] = (
-#        ['z', 'y', 'x'], np.arange(24).reshape(4, 3, 2))
-#
-#    d[sc.Data.Value, 'data2'] = d[sc.Data.Value, 'data1']
-#    d[sc.Data.Variance, 'data2'] = d[sc.Data.Value, 'data1']
-#    self.assertEqual(len(d), 3)
-#
-# This characterises existing broken behaviour. Will need to be fixed.
-# def test_demo_int_to_float_issue(self):
-#    # Demo bug
-#    d = sc.Dataset()
-#    # Variable containing int array data
-#    d[sc.Data.Value, 'v1'] = (['x', 'y'], np.ndarray.tolist(
-#        np.arange(0, 10).reshape(2, 5)))
-#    # Correct behaviour should be int64
-#    self.assertEqual(d[sc.Data.Value, 'v1'].numpy.dtype, 'float64')
-#
-#    # Demo working 1D
-#    d = sc.Dataset()
-#    d[sc.Data.Value, 'v2'] = (['x'], np.ndarray.tolist(
-#        np.arange(0, 10)))  # Variable containing int array data
-#    self.assertEqual(d[sc.Data.Value, 'v2'].numpy.dtype, 'int64')
-#
-# def test_set_data(self):
-#    d = sc.Dataset()
-#    d[sc.Data.Value, 'data1'] = (
-#        ['z', 'y', 'x'], np.arange(24).reshape(4, 3, 2))
-#    self.assertEqual(d[sc.Data.Value, 'data1'].numpy.dtype, np.int64)
-#    d[sc.Data.Value, 'data1'] = np.arange(24).reshape(4, 3, 2)
-#    self.assertEqual(d[sc.Data.Value, 'data1'].numpy.dtype, np.int64)
-#    # For existing items we do *not* change the dtype, but convert.
-#    d[sc.Data.Value, 'data1'] = np.arange(24.0).reshape(4, 3, 2)
-#    self.assertEqual(d[sc.Data.Value, 'data1'].numpy.dtype, np.int64)
-#
-# def test_nested_0D_empty_item(self):
-#    d = sc.Dataset()
-#    d[sc.Data.Events] = ([], sc.Dataset())
-#    self.assertEqual(d[sc.Data.Events].data[0], sc.Dataset())
-#
-# def test_set_data_nested(self):
-#    d = sc.Dataset()
-#    table = sc.Dataset()
-#    table[sc.Data.Value, 'col1'] = (['row'], [3.0, 2.0, 1.0, 0.0])
-#    table[sc.Data.Value, 'col2'] = (['row'], np.arange(4.0))
-#    d[sc.Data.Value, 'data1'] = (['x'], [table, table])
-#    d[sc.Data.Value, 'data1'].data[1][sc.Data.Value, 'col1'].data[0] = 0.0
-#    self.assertEqual(d[sc.Data.Value, 'data1'].data[0], table)
-#    self.assertNotEqual(d[sc.Data.Value, 'data1'].data[1], table)
-#    self.assertNotEqual(d[sc.Data.Value, 'data1'].data[0],
-#                        d[sc.Data.Value, 'data1'].data[1])
-#
-# def test_dimensions(self):
-#    self.assertEqual(self.dataset.dimensions['x'], 2)
-#    self.assertEqual(self.dataset.dimensions['y'], 3)
-#    self.assertEqual(self.dataset.dimensions['z'], 4)
-#
-# def test_data(self):
-#    self.assertEqual(len(self.dataset[sc.Coord.X].data), 2)
-#    self.assertSequenceEqual(self.dataset[sc.Coord.X].data, [0, 1])
-#    # `data` property provides a flat view
-#    self.assertEqual(len(self.dataset[sc.Data.Value, 'data1'].data), 24)
-#    self.assertSequenceEqual(
-#        self.dataset[sc.Data.Value, 'data1'].data, range(24))
-#
-# def test_numpy_data(self):
-#    np.testing.assert_array_equal(
-#        self.dataset[sc.Coord.X].numpy, self.reference_x)
-#    np.testing.assert_array_equal(
-#        self.dataset[sc.Coord.Y].numpy, self.reference_y)
-#    np.testing.assert_array_equal(
-#        self.dataset[sc.Coord.Z].numpy, self.reference_z)
-#    np.testing.assert_array_equal(
-#        self.dataset[sc.Data.Value, 'data1'].numpy, self.reference_data1)
-#    np.testing.assert_array_equal(
-#        self.dataset[sc.Data.Value, 'data2'].numpy, self.reference_data2)
-#    np.testing.assert_array_equal(
-#        self.dataset[sc.Data.Value, 'data3'].numpy, self.reference_data3)
-#
-# def test_view_subdata(self):
-#    view = self.dataset.subset['data1']
-#    # TODO Need consistent dimensions() implementation for Dataset and its
-#    # views.
-#    self.assertEqual(view.dimensions['x'], 2)
-#    self.assertEqual(view.dimensions['y'], 3)
-#    self.assertEqual(view.dimensions['z'], 4)
-#    self.assertEqual(len(view), 4)
-#
-# def test_insert_subdata(self):
-#    d1 = sc.Dataset()
-#    d1[sc.Data.Value, 'a'] = (['x'], np.arange(10, dtype='double'))
-#    d1[sc.Data.Variance, 'a'] = (['x'], np.arange(10, dtype='double'))
-#    ds_slice = d1.subset['a']
-#
-#    d2 = sc.Dataset()
-#    # Insert from subset
-#    d2.subset['a'] = ds_slice
-#    self.assertEqual(len(d1), len(d2))
-#    self.assertEqual(d1, d2)
-#
-#    d3 = sc.Dataset()
-#    # Insert from subset
-#    d3.subset['b'] = ds_slice
-#    self.assertEqual(len(d3), 2)
-#    self.assertNotEqual(d1, d3)  # imported names should differ
-#
-#    d4 = sc.Dataset()
-#    d4.subset['2a'] = ds_slice + ds_slice
-#    self.assertEqual(len(d4), 2)
-#    self.assertNotEqual(d1, d4)
-#    self.assertTrue(np.array_equal(
-#        d4[sc.Data.Value, '2a'].numpy,
-#        ds_slice[sc.Data.Value, 'a'].numpy * 2))
-#
-# def test_insert_subdata_different_variable_types(self):
-#    a = sc.Dataset()
-#    xcoord = sc.Variable(dims=['x'], np.arange(4))
-#    a[sc.Data.Value] = (['x'], np.arange(3))
-#    a[sc.Coord.X] = xcoord
-#    a[sc.Attr.ExperimentLog] = ([], sc.Dataset())
-#
-#    b = sc.Dataset()
-#    with self.assertRaises(RuntimeError):
-#        b.subset['b'] = a['x', :]  # Coordinates dont match
-#    b[sc.Coord.X] = xcoord
-#    b.subset['b'] = a['x', :]  # Should now work
-#    self.assertEqual(len(a), len(b))
-#    self.assertTrue((sc.Attr.ExperimentLog, 'b') in b)
-#
-# def test_slice_dataset(self):
-#    for x in range(2):
-#        view = self.dataset['x', x]
-#        self.assertRaisesRegex(
-#            RuntimeError,
-#            'could not find variable with tag Coord::X and name ``.',
-#            view.__getitem__,
-#            sc.Coord.X)
-#        np.testing.assert_array_equal(
-#            view[sc.Coord.Y].numpy, self.reference_y)
-#        np.testing.assert_array_equal(
-#            view[sc.Coord.Z].numpy, self.reference_z)
-#        np.testing.assert_array_equal(
-#            view[sc.Data.Value, 'data1'].numpy,
-#            self.reference_data1[:, :, x])
-#        np.testing.assert_array_equal(
-#            view[sc.Data.Value, 'data2'].numpy,
-#            self.reference_data2[:, :, x])
-#        np.testing.assert_array_equal(
-#            view[sc.Data.Value, 'data3'].numpy,
-#            self.reference_data3[:, x])
-#    for y in range(3):
-#        view = self.dataset['y', y]
-#        np.testing.assert_array_equal(
-#            view[sc.Coord.X].numpy, self.reference_x)
-#        self.assertRaisesRegex(
-#            RuntimeError,
-#            'could not find variable with tag Coord::Y and name ``.',
-#            view.__getitem__,
-#            sc.Coord.Y)
-#        np.testing.assert_array_equal(
-#            view[sc.Coord.Z].numpy, self.reference_z)
-#        np.testing.assert_array_equal(
-#            view[sc.Data.Value, 'data1'].numpy,
-#            self.reference_data1[:, y, :])
-#        np.testing.assert_array_equal(
-#            view[sc.Data.Value, 'data2'].numpy,
-#            self.reference_data2[:, y, :])
-#        np.testing.assert_array_equal(
-#            view[sc.Data.Value, 'data3'].numpy,
-#            self.reference_data3)
-#    for z in range(4):
-#        view = self.dataset['z', z]
-#        np.testing.assert_array_equal(
-#            view[sc.Coord.X].numpy, self.reference_x)
-#        np.testing.assert_array_equal(
-#            view[sc.Coord.Y].numpy, self.reference_y)
-#        self.assertRaisesRegex(
-#            RuntimeError,
-#            'could not find variable with tag Coord::Z and name ``.',
-#            view.__getitem__,
-#            sc.Coord.Z)
-#        np.testing.assert_array_equal(
-#            view[sc.Data.Value, 'data1'].numpy,
-#            self.reference_data1[z, :, :])
-#        np.testing.assert_array_equal(
-#            view[sc.Data.Value, 'data2'].numpy,
-#            self.reference_data2[z, :, :])
-#        np.testing.assert_array_equal(
-#            view[sc.Data.Value, 'data3'].numpy, self.reference_data3[z, :])
-#    for x in range(2):
-#        for delta in range(3 - x):
-#            view = self.dataset['x', x:x + delta]
-#            np.testing.assert_array_equal(
-#                view[sc.Coord.X].numpy, self.reference_x[x:x + delta])
-#            np.testing.assert_array_equal(
-#                view[sc.Coord.Y].numpy, self.reference_y)
-#            np.testing.assert_array_equal(
-#                view[sc.Coord.Z].numpy, self.reference_z)
-#            np.testing.assert_array_equal(
-#                view[sc.Data.Value, 'data1'].numpy,
-#                self.reference_data1[:, :, x:x + delta])
-#            np.testing.assert_array_equal(
-#                view[sc.Data.Value, 'data2'].numpy,
-#                self.reference_data2[:, :, x:x + delta])
-#            np.testing.assert_array_equal(
-#                view[sc.Data.Value, 'data3'].numpy,
-#                self.reference_data3[:, x:x + delta])
-#    for y in range(3):
-#        for delta in range(4 - y):
-#            view = self.dataset['y', y:y + delta]
-#            np.testing.assert_array_equal(
-#                view[sc.Coord.X].numpy, self.reference_x)
-#            np.testing.assert_array_equal(
-#                view[sc.Coord.Y].numpy, self.reference_y[y:y + delta])
-#            np.testing.assert_array_equal(
-#                view[sc.Coord.Z].numpy, self.reference_z)
-#            np.testing.assert_array_equal(
-#                view[sc.Data.Value, 'data1'].numpy,
-#                self.reference_data1[:, y:y + delta, :])
-#            np.testing.assert_array_equal(
-#                view[sc.Data.Value, 'data2'].numpy,
-#                self.reference_data2[:, y:y + delta, :])
-#            np.testing.assert_array_equal(
-#                view[sc.Data.Value, 'data3'].numpy,
-#                self.reference_data3)
-#    for z in range(4):
-#        for delta in range(5 - z):
-#            view = self.dataset['z', z:z + delta]
-#            np.testing.assert_array_equal(
-#                view[sc.Coord.X].numpy, self.reference_x)
-#            np.testing.assert_array_equal(
-#                view[sc.Coord.Y].numpy, self.reference_y)
-#            np.testing.assert_array_equal(
-#                view[sc.Coord.Z].numpy, self.reference_z[z:z + delta])
-#            np.testing.assert_array_equal(
-#                view[sc.Data.Value, 'data1'].numpy,
-#                self.reference_data1[z:z + delta, :, :])
-#            np.testing.assert_array_equal(
-#                view[sc.Data.Value, 'data2'].numpy,
-#                self.reference_data2[z:z + delta, :, :])
-#            np.testing.assert_array_equal(
-#                view[sc.Data.Value, 'data3'].numpy,
-#                self.reference_data3[z:z + delta, :])
-#
-# def _apply_test_op_rhs_dataset(
-#    self,
-#    op,
-#    a,
-#    b,
-#    data,
-#    lh_var_name='i',
-#        rh_var_name='j'):
-#    # Assume numpy operations are correct as comparitor
-#    op(data, b[sc.Data.Value, rh_var_name].numpy)
-#    op(a, b)
-#    # Desired nan comparisons
-#    np.testing.assert_equal(a[sc.Data.Value, lh_var_name].numpy, data)
-#
-# def _apply_test_op_rhs_Variable(
-#    self,
-#    op,
-#    a,
-#    b,
-#    data,
-#    lh_var_name='i',
-#        rh_var_name='j'):
-#    # Assume numpy operations are correct as comparitor
-#    op(data, b.numpy)
-#    op(a, b)
-#    # Desired nan comparisons
-#    np.testing.assert_equal(a[sc.Data.Value, lh_var_name].numpy, data)
-#
-# def test_binary_dataset_rhs_operations(self):
-#    a = sc.Dataset()
-#    a[sc.Coord.X] = (['x'], np.arange(10))
-#    a[sc.Data.Value, 'i'] = (['x'], np.arange(10, dtype='float64'))
-#    a[sc.Data.Variance, 'i'] = (['x'], np.arange(10, dtype='float64'))
-#    b = sc.Dataset()
-#    b[sc.Data.Value, 'j'] = (['x'], np.arange(10, dtype='float64'))
-#    b[sc.Data.Variance, 'j'] = (['x'], np.arange(10, dtype='float64'))
-#    data = np.copy(a[sc.Data.Value, 'i'].numpy)
-#    variance = np.copy(a[sc.Data.Variance, 'i'].numpy)
-#
-#    c = a + b
-#    # Variables 'i' and 'j' added despite different names
-#    self.assertTrue(np.array_equal(c[sc.Data.Value, 'i'].numpy,
-#                                   data + data))
-#    self.assertTrue(np.array_equal(
-#        c[sc.Data.Variance, 'i'].numpy, variance + variance))
-#
-#    c = a - b
-#    # Variables 'a' and 'b' subtracted despite different names
-#    self.assertTrue(np.array_equal(c[sc.Data.Value, 'i'].numpy,
-#                                   data - data))
-#    self.assertTrue(np.array_equal(
-#        c[sc.Data.Variance, 'i'].numpy, variance + variance))
-#
-#    c = a * b
-#    # Variables 'a' and 'b' multiplied despite different names
-#    self.assertTrue(np.array_equal(c[sc.Data.Value, 'i'].numpy,
-#                                   data * data))
-#    self.assertTrue(np.array_equal(
-#        c[sc.Data.Variance, 'i'].numpy, variance * (data * data) * 2))
-#
-#    c = a / b
-#    # Variables 'a' and 'b' divided despite different names
-#    with np.errstate(invalid='ignore'):
-#        np.testing.assert_equal(c[sc.Data.Value, 'i'].numpy, data / data)
-#        np.testing.assert_equal(c[sc.Data.Variance, 'i'].numpy,
-#                                2 * variance / (data * data))
-#
-#    self._apply_test_op_rhs_dataset(operator.iadd, a, b, data)
-#    self._apply_test_op_rhs_dataset(operator.isub, a, b, data)
-#    self._apply_test_op_rhs_dataset(operator.imul, a, b, data)
-#    with np.errstate(invalid='ignore'):
-#        self._apply_test_op_rhs_dataset(operator.itruediv, a, b, data)
-#
-# def test_binary_variable_rhs_operations(self):
-#    data = np.ones(10, dtype='float64')
-#
-#    a = sc.Dataset()
-#    a[sc.Coord.X] = (['x'], np.arange(10))
-#    a[sc.Data.Value, 'i'] = (['x'], data)
-#
-#    b_var = sc.Variable(dims=['x'], data)
-#
-#    c = a + b_var
-#    self.assertTrue(np.array_equal(c[sc.Data.Value, 'i'].numpy,
-#                                   data + data))
-#    c = a - b_var
-#    self.assertTrue(np.array_equal(c[sc.Data.Value, 'i'].numpy,
-#                                   data - data))
-#    c = a * b_var
-#    self.assertTrue(np.array_equal(c[sc.Data.Value, 'i'].numpy,
-#                                   data * data))
-#    c = a / b_var
-#    self.assertTrue(np.array_equal(c[sc.Data.Value, 'i'].numpy,
-#                                   data / data))
-#
-#    self._apply_test_op_rhs_Variable(operator.iadd, a, b_var, data)
-#    self._apply_test_op_rhs_Variable(operator.isub, a, b_var, data)
-#    self._apply_test_op_rhs_Variable(operator.imul, a, b_var, data)
-#    with np.errstate(invalid='ignore'):
-#        self._apply_test_op_rhs_Variable(operator.itruediv, a, b_var, data)
-#
-# def test_binary_float_operations(self):
-#    a = sc.Dataset()
-#    a[sc.Coord.X] = (['x'], np.arange(10))
-#    a[sc.Data.Value, 'i'] = (['x'], np.arange(10, dtype='float64'))
-#    b = sc.Dataset()
-#    b[sc.Data.Value, 'j'] = (['x'], np.arange(10, dtype='float64'))
-#    data = np.copy(a[sc.Data.Value, 'i'].numpy)
-#
-#    c = a + 2.0
-#    self.assertTrue(np.array_equal(c[sc.Data.Value, 'i'].numpy,
-#                                   data + 2.0))
-#    c = a - b
-#    self.assertTrue(np.array_equal(c[sc.Data.Value, 'i'].numpy,
-#                                   data - data))
-#    c = a - 2.0
-#    self.assertTrue(np.array_equal(c[sc.Data.Value, 'i'].numpy,
-#                                   data - 2.0))
-#    c = a * 2.0
-#    self.assertTrue(np.array_equal(c[sc.Data.Value, 'i'].numpy,
-#                                   data * 2.0))
-#    c = a / 2.0
-#    self.assertTrue(np.array_equal(c[sc.Data.Value, 'i'].numpy,
-#                                   data / 2.0))
-#    c = 2.0 + a
-#    self.assertTrue(np.array_equal(c[sc.Data.Value, 'i'].numpy,
-#                                   data + 2.0))
-#    c = 2.0 - a
-#    self.assertTrue(np.array_equal(c[sc.Data.Value, 'i'].numpy,
-#                                   2.0 - data))
-#    c = 2.0 * a
-#    self.assertTrue(np.array_equal(c[sc.Data.Value, 'i'].numpy,
-#                                   data * 2.0))
-#
-# def test_equal_not_equal(self):
-#    a = sc.Dataset()
-#    a[sc.Coord.X] = (['x'], np.arange(10))
-#    a[sc.Data.Value, 'i'] = (['x'], np.arange(10, dtype='float64'))
-#    b = sc.Dataset()
-#    b[sc.Data.Value, 'j'] = (['x'], np.arange(10, dtype='float64'))
-#    c = a + b
-#    d = sc.Dataset()
-#    d[sc.Coord.X] = (['x'], np.arange(10))
-#    d[sc.Data.Value, 'i'] = (['x'], np.arange(10, dtype='float64'))
-#    a_slice = a['x', :]
-#    d_slice = d['x', :]
-#    # Equal
-#    self.assertEqual(a, d)
-#    self.assertEqual(a, a_slice)
-#    self.assertEqual(a_slice, d_slice)
-#    self.assertEqual(d, a)
-#    self.assertEqual(d_slice, a)
-#    self.assertEqual(d_slice, a_slice)
-#    # Not equal
-#    self.assertNotEqual(a, b)
-#    self.assertNotEqual(a, c)
-#    self.assertNotEqual(a_slice, c)
-#    self.assertNotEqual(c, a)
-#    self.assertNotEqual(c, a_slice)
-#
-# def test_plus_equals_slice(self):
-#    dataset = sc.Dataset()
-#    dataset[sc.Data.Value, 'data1'] = (
-#        ['z', 'y', 'x'], self.reference_data1)
-#    a = sc.Dataset(dataset['x', 0])
-#    b = dataset['x', 1]
-#    a += b
-#
-# def test_numpy_interoperable(self):
-#    # TODO: Need also __setitem__ with view.
-#    # self.dataset[sc.Data.Value, 'data2'] =
-#    #     self.dataset[sc.Data.Value, 'data1']
-#    self.dataset[sc.Data.Value, 'data2'] = np.exp(
-#        self.dataset[sc.Data.Value, 'data1'])
-#    np.testing.assert_array_equal(
-#        self.dataset[sc.Data.Value, 'data2'].numpy,
-#        np.exp(self.reference_data1))
-#    # Restore original value.
-#    self.dataset[sc.Data.Value, 'data2'] = self.reference_data2
-#    np.testing.assert_array_equal(
-#        self.dataset[sc.Data.Value, 'data2'].numpy, self.reference_data2)
-#
-# def test_slice_numpy_interoperable(self):
-#    # Dataset subset then view single variable
-#    self.dataset.subset['data2'][sc.Data.Value, 'data2'] = np.exp(
-#        self.dataset[sc.Data.Value, 'data1'])
-#    np.testing.assert_array_equal(
-#        self.dataset[sc.Data.Value, 'data2'].numpy,
-#        np.exp(self.reference_data1))
-#    # Slice view of dataset then view single variable
-#    self.dataset['x', 0][sc.Data.Value, 'data2'] = np.exp(
-#        self.dataset['x', 1][sc.Data.Value, 'data1'])
-#    np.testing.assert_array_equal(
-#        self.dataset[sc.Data.Value, 'data2'].numpy[..., 0],
-#        np.exp(self.reference_data1[..., 1]))
-#    # View single variable then slice view
-#    self.dataset[sc.Data.Value, 'data2']['x', 1] = np.exp(
-#        self.dataset[sc.Data.Value, 'data1']['x', 0])
-#    np.testing.assert_array_equal(
-#        self.dataset[sc.Data.Value, 'data2'].numpy[..., 1],
-#        np.exp(self.reference_data1[..., 0]))
-#    # View single variable then view range of slices
-#    self.dataset[sc.Data.Value, 'data2']['y', 1:3] = np.exp(
-#        self.dataset[sc.Data.Value, 'data1']['y', 0:2])
-#    np.testing.assert_array_equal(self.dataset[sc.Data.Value,
-#                                               'data2'].numpy[:, 1:3, :],
-#                                  np.exp(self.reference_data1[:, 0:2, :]))
-#
-#    # Restore original value.
-#    self.dataset[sc.Data.Value, 'data2'] = self.reference_data2
-#    np.testing.assert_array_equal(
-#        self.dataset[sc.Data.Value, 'data2'].numpy, self.reference_data2)
-#
-# def test_concatenate(self):
-#    dataset = sc.Dataset()
-#    dataset[sc.Data.Value, 'data'] = (['x'], np.arange(4))
-#    dataset[sc.Coord.X] = (['x'], np.array([3, 2, 4, 1]))
-#    dataset = sc.concatenate(dataset, dataset, 'x')
-#    np.testing.assert_array_equal(
-#        dataset[sc.Coord.X].numpy, np.array([3, 2, 4, 1, 3, 2, 4, 1]))
-#    np.testing.assert_array_equal(
-#        dataset[sc.Data.Value, 'data'].numpy,
-#        np.array([0, 1, 2, 3, 0, 1, 2, 3]))
-#
-# def test_concatenate_with_slice(self):
-#    dataset = sc.Dataset()
-#    dataset[sc.Data.Value, 'data'] = (['x'], np.arange(4))
-#    dataset[sc.Coord.X] = (['x'], np.array([3, 2, 4, 1]))
-#    dataset = sc.concatenate(dataset, dataset['x', 0:2], 'x')
-#    np.testing.assert_array_equal(
-#        dataset[sc.Coord.X].numpy, np.array([3, 2, 4, 1, 3, 2]))
-#    np.testing.assert_array_equal(
-#        dataset[sc.Data.Value, 'data'].numpy, np.array([0, 1, 2, 3, 0, 1]))
-#
-# def test_rebin(self):
-#    dataset = sc.Dataset()
-#    dataset[sc.Data.Value, 'data'] = (['x'], np.array(10 * [1.0]))
-#    dataset[sc.Data.Value, 'data'].unit = sc.units.counts
-#    dataset[sc.Coord.X] = (['x'], np.arange(11.0))
-#    new_coord = sc.Variable(dims=['x'], np.arange(0.0, 11, 2))
-#    dataset = sc.rebin(dataset, new_coord)
-#    np.testing.assert_array_equal(
-#        dataset[sc.Data.Value, 'data'].numpy, np.array(5 * [2]))
-#    np.testing.assert_array_equal(
-#        dataset[sc.Coord.X].numpy, np.arange(0, 11, 2))
-#
-# def test_sort(self):
-#    dataset = sc.Dataset()
-#    dataset[sc.Data.Value, 'data'] = (['x'], np.arange(4))
-#    dataset[sc.Data.Value, 'data2'] = (['x'], np.arange(4))
-#    dataset[sc.Coord.X] = (['x'], np.array([3, 2, 4, 1]))
-#    dataset = sc.sort(dataset, sc.Coord.X)
-#    np.testing.assert_array_equal(
-#        dataset[sc.Data.Value, 'data'].numpy, np.array([3, 1, 0, 2]))
-#    np.testing.assert_array_equal(
-#        dataset[sc.Coord.X].numpy, np.array([1, 2, 3, 4]))
-#    dataset = sc.sort(dataset, sc.Data.Value, 'data')
-#    np.testing.assert_array_equal(
-#        dataset[sc.Data.Value, 'data'].numpy, np.arange(4))
-#    np.testing.assert_array_equal(
-#        dataset[sc.Coord.X].numpy, np.array([3, 2, 4, 1]))
-#
-# def test_filter(self):
-#    dataset = sc.Dataset()
-#    dataset[sc.Data.Value, 'data'] = (['x'], np.arange(4))
-#    dataset[sc.Coord.X] = (['x'], np.array([3, 2, 4, 1]))
-#    select = sc.Variable(dims=['x'], np.array([False, True, False, True]))
-#    dataset = sc.filter(dataset, select)
-#    np.testing.assert_array_equal(
-#        dataset[sc.Data.Value, 'data'].numpy, np.array([1, 3]))
-#    np.testing.assert_array_equal(dataset[sc.Coord.X].numpy,
-#                                  np.array([2, 1]))
-#
-#
-# s TestDatasetExamples(unittest.TestCase):
-# def test_table_example(self):
-#    table = sc.Dataset()
-#    table[sc.Coord.Row] = (['row'], ['a', 'bb', 'ccc', 'dddd'])
-#    self.assertSequenceEqual(table[sc.Coord.Row].data, [
-#                             'a', 'bb', 'ccc', 'dddd'])
-#    table[sc.Data.Value, 'col1'] = (['row'], [3.0, 2.0, 1.0, 0.0])
-#    table[sc.Data.Value, 'col2'] = (['row'], np.arange(4.0))
-#    self.assertEqual(len(table), 3)
-#
-#    table[sc.Data.Value, 'sum'] = (['row'],
-#                                   (len(table[sc.Coord.Row]),))
-#
-#    for name, tag, col in table:
-#        if not tag.is_coord and name != 'sum':
-#            table[sc.Data.Value, 'sum'] += col
-#    np.testing.assert_array_equal(
-#        table[sc.Data.Value, 'col2'].numpy, np.array([0, 1, 2, 3]))
-#    np.testing.assert_array_equal(
-#        table[sc.Data.Value, 'sum'].numpy, np.array([3, 3, 3, 3]))
-#
-#    table = sc.concatenate(table, table, 'row')
-#    np.testing.assert_array_equal(
-#        table[sc.Data.Value, 'col1'].numpy,
-#        np.array([3, 2, 1, 0, 3, 2, 1, 0]))
-#
-#    table = sc.concatenate(table['row', 0:2], table['row', 5:7],
-#                           'row')
-#    np.testing.assert_array_equal(
-#        table[sc.Data.Value, 'col1'].numpy, np.array([3, 2, 2, 1]))
-#
-#    table = sc.sort(table, sc.Data.Value, 'col1')
-#    np.testing.assert_array_equal(
-#        table[sc.Data.Value, 'col1'].numpy, np.array([1, 2, 2, 3]))
-#
-#    table = sc.sort(table, sc.Coord.Row)
-#    np.testing.assert_array_equal(
-#        table[sc.Data.Value, 'col1'].numpy, np.array([3, 2, 2, 1]))
-#
-#    for i in range(1, len(table[sc.Coord.Row])):
-#        table['row', i] += table['row', i - 1]
-#
-#    np.testing.assert_array_equal(
-#        table[sc.Data.Value, 'col1'].numpy, np.array([3, 5, 7, 8]))
-#
-#    table[sc.Data.Value, 'exp1'] = (
-#        ['row'], np.exp(table[sc.Data.Value, 'col1']))
-#    table[sc.Data.Value, 'exp1'] -= table[sc.Data.Value, 'col1']
-#    np.testing.assert_array_equal(table[sc.Data.Value, 'exp1'].numpy,
-#                                  np.exp(np.array([3, 5, 7, 8]))
-#                                  - np.array([3, 5, 7, 8]))
-#
-#    table += table
-#    self.assertSequenceEqual(table[sc.Coord.Row].data, [
-#                             'a', 'bb', 'bb', 'ccc'])
-#
-# def test_table_example_no_assert(self):
-#    table = sc.Dataset()
-#
-#    # Add columns
-#    table[sc.Coord.Row] = (['row'], ['a', 'bb', 'ccc', 'dddd'])
-#    table[sc.Data.Value, 'col1'] = (['row'], [3.0, 2.0, 1.0, 0.0])
-#    table[sc.Data.Value, 'col2'] = (['row'], np.arange(4.0))
-#    table[sc.Data.Value, 'sum'] = (['row'], (4,))
-#
-#    # Do something for each column (here: sum)
-#    for name, tag, col in table:
-#        if not tag.is_coord and name != 'sum':
-#            table[sc.Data.Value, 'sum'] += col
-#
-#    # Append tables (append rows of second table to first)
-#    table = sc.concatenate(table, table, 'row')
-#
-#    # Append tables sections (e.g., to remove rows from the middle)
-#    table = sc.concatenate(table['row', 0:2], table['row', 5:7],
-#                           'row')
-#
-#    # Sort by column
-#    table = sc.sort(table, sc.Data.Value, 'col1')
-#    # ... or another one
-#    table = sc.sort(table, sc.Coord.Row)
-#
-#    # Do something for each row (here: cumulative sum)
-#    for i in range(1, len(table[sc.Coord.Row])):
-#        table['row', i] += table['row', i - 1]
-#
-#    # Apply numpy function to column, store result as a new column
-#    table[sc.Data.Value, 'exp1'] = (
-#        ['row'], np.exp(table[sc.Data.Value, 'col1']))
-#    # ... or as an existing column
-#    table[sc.Data.Value, 'exp1'] = np.sin(table[sc.Data.Value, 'exp1'])
-#
-#    # Remove column
-#    del table[sc.Data.Value, 'exp1']
-#
-#    # Arithmetics with tables (here: add two tables)
-#    table += table
-#
-# def test_MDHistoWorkspace_example(self):
-#    L = 30
-#    d = sc.Dataset()
-#
-#    # Add bin-edge axis for X
-#    d[sc.Coord.X] = (['x'], np.arange(L + 1).astype(np.float64))
-#    # ... and normal axes for Y and Z
-#    d[sc.Coord.Y] = (['y'], np.arange(L))
-#    d[sc.Coord.Z] = (['z'], np.arange(L))
-#
-#    # Add data variables
-#    d[sc.Data.Value, 'temperature'] = (
-#        ['z', 'y', 'x'],
-#        np.random.normal(size=L * L * L).reshape([L, L, L]))
-#    d[sc.Data.Value, 'pressure'] = (
-#        ['z', 'y', 'x'],
-#        np.random.normal(size=L * L * L).reshape([L, L, L]))
-#    # Add uncertainties, matching name implicitly links it to corresponding
-#    # data
-#    d[sc.Data.Variance, 'temperature'] = (
-#        ['z', 'y', 'x'],
-#        d[sc.Data.Value, 'temperature'].numpy)
-#
-#    # Uncertainties are propagated using grouping mechanism based on name
-#    square = d * d
-#    np.testing.assert_array_equal(
-#        square[sc.Data.Variance, 'temperature'].numpy,
-#        2.0 * (d[sc.Data.Value, 'temperature'].numpy**2
-#               * d[sc.Data.Variance, 'temperature'].numpy))
-#
-#    # Add the counts units
-#    d[sc.Data.Value, 'temperature'].unit = sc.units.counts
-#    d[sc.Data.Value, 'pressure'].unit = sc.units.counts
-#    d[sc.Data.Variance, 'temperature'].unit = sc.units.counts \
-#        * sc.units.counts
-#    # The square operation is now prevented because the resulting counts
-#    # variance unit (counts^4) is not part of the supported units, i.e. the
-#    # result of that operation makes little physical sense.
-#    with self.assertRaisesRegex(RuntimeError,
-#                                r'Unsupported unit as result of '
-#                                r'multiplication: \(counts\^2\) \* '
-#                                r'\(counts\^2\)'):
-#        d = d * d
-#
-#    # Rebin the X axis
-#    d = sc.rebin(d, sc.Variable(
-#        ['x'], np.arange(0, L + 1, 2).astype(np.float64)))
-#    # Rebin to different axis for every y
-#    # Our rebin implementatinon is broken for this case for now
-#    # rebinned = sc.rebin(d, sc.Variable(sc.Coord.X, ['y', 'x'],
-#    #                  np.arange(0,2*L).reshape([L,2]).astype(np.float64)))
-#
-#    # Do something with numpy and insert result
-#    d[sc.Data.Value, 'dz(p)'] = (['z', 'y', 'x'],
-#                                 np.gradient(d[sc.Data.Value, 'pressure'],
-#                                             d[sc.Coord.Z], axis=0))
-#
-#    # Truncate Y and Z axes
-#    d = sc.Dataset(d['y', 10:20]['z', 10:20])
-#
-#    # Mean along Y axis
-#    meanY = sc.mean(d, 'y')
-#    # Subtract from original, making use of automatic broadcasting
-#    d -= meanY
-#
-#    # Extract a Z slice
-#    sliceZ = sc.Dataset(d['z', 7])
-#    self.assertEqual(len(sliceZ.dimensions), 2)
-#
-# def test_Workspace2D_example(self):
-#    d = sc.Dataset()
-#
-#    d[sc.Coord.SpectrumNumber] = (['spectrum'], np.arange(1, 101))
-#
-#    # Add a (common) time-of-flight axis
-#    d[sc.Coord.Tof] = (['tof'], np.arange(1000))
-#
-#    # Add data with uncertainties
-#    d[sc.Data.Value, 'sample1'] = (
-#        ['spectrum', 'tof'],
-#        np.random.exponential(size=100 * 1000).reshape([100, 1000]))
-#    d[sc.Data.Variance, 'sample1'] = d[sc.Data.Value, 'sample1']
-#
-#    # Create a mask and use it to extract some of the spectra
-#    select = sc.Variable(dims=['spectrum'], np.isin(
-#        d[sc.Coord.SpectrumNumber], np.arange(10, 20)))
-#    spectra = sc.filter(d, select)
-#    self.assertEqual(spectra.dimensions.shape[1], 10)
-#
-#    # Direct representation of a simple instrument (more standard Mantid
-#    # instrument representation is of course supported, this is just to
-#    # demonstrate the flexibility)
-#    steps = np.arange(-0.45, 0.46, 0.1)
-#    x = np.tile(steps, (10,))
-#    y = x.reshape([10, 10]).transpose().flatten()
-#    d[sc.Coord.X] = (['spectrum'], x)
-#    d[sc.Coord.Y] = (['spectrum'], y)
-#    d[sc.Coord.Z] = ([], 10.0)
-#
-#    # Mask some spectra based on distance from beam center
-#    r = np.sqrt(np.square(d[sc.Coord.X]) + np.square(d[sc.Coord.Y]))
-#    d[sc.Coord.Mask] = (['spectrum'], np.less(r, 0.2))
-#
-#    # Do something for each spectrum (here: apply mask)
-#    d[sc.Coord.Mask].data
-#    for i, masked in enumerate(d[sc.Coord.Mask].numpy):
-#        spec = d['spectrum', i]
-#        if masked:
-#            spec[sc.Data.Value, 'sample1'] = np.zeros(1000)
-#            spec[sc.Data.Variance, 'sample1'] = np.zeros(1000)
-#
-# def test_monitors_example(self):
-#    d = sc.Dataset()
-#
-#    d[sc.Coord.SpectrumNumber] = (['spectrum'], np.arange(1, 101))
-#
-#    # Add a (common) time-of-flight axis
-#    d[sc.Coord.Tof] = (['tof'], np.arange(9))
-#
-#    # Add data with uncertainties
-#    d[sc.Data.Value, 'sample1'] = (
-#        ['spectrum', 'tof'],
-#        np.random.exponential(size=100 * 8).reshape([100, 8]))
-#    d[sc.Data.Variance, 'sample1'] = d[sc.Data.Value, 'sample1']
-#
-#    # Add event-mode beam-status monitor
-#    status = sc.Dataset()
-#    status[sc.Data.Tof] = ([sc.Dim.Event],
-#                           np.random.exponential(size=1000))
-#    status[sc.Data.PulseTime] = (
-#        [sc.Dim.Event], np.random.exponential(size=1000))
-#    d[sc.Coord.Monitor, 'beam-status'] = ([], status)
-#
-#    # Add position-resolved beam-profile monitor
-#    profile = sc.Dataset()
-#    profile[sc.Coord.X] = (['x'], [-0.02, -0.01, 0.0, 0.01, 0.02])
-#    profile[sc.Coord.Y] = (['y'], [-0.02, -0.01, 0.0, 0.01, 0.02])
-#    profile[sc.Data.Value] = (['y', 'x'], (4, 4))
-#    # Monitors can also be attributes, so they are not required to match in
-#    # operations
-#    d[sc.Attr.Monitor, 'beam-profile'] = ([], profile)
-#
-#    # Add histogram-mode transmission monitor
-#    transmission = sc.Dataset()
-#    transmission[sc.Coord.Energy] = ([sc.Dim.Energy], np.arange(9))
-#    transmission[sc.Data.Value] = (
-#        [sc.Dim.Energy], np.random.exponential(size=8))
-#    d[sc.Coord.Monitor, 'transmission'] = ([], ())
-#
-# @unittest.skip('Tag-derived dtype not available anymore, need to implement \
-#               way of specifying list type for events.')
-# def test_zip(self):
-#    d = sc.Dataset()
-#    d[sc.Coord.SpectrumNumber] = ([sc.Dim.Position], np.arange(1, 6))
-#    d[sc.Data.EventTofs, ''] = ([sc.Dim.Position], (5,))
-#    d[sc.Data.EventPulseTimes, ''] = ([sc.Dim.Position], (5,))
-#    self.assertEqual(len(d[sc.Data.EventTofs, ''].data), 5)
-#    d[sc.Data.EventTofs, ''].data[0].append(10)
-#    d[sc.Data.EventPulseTimes, ''].data[0].append(1000)
-#    d[sc.Data.EventTofs, ''].data[1].append(10)
-#    d[sc.Data.EventPulseTimes, ''].data[1].append(1000)
-#    # Don't do this, there are no compatiblity checks:
-#    # for el in zip(d[sc.Data.EventTofs, ''].data,
-#    #     d[sc.Data.EventPulseTimes, ''].data):
-#    for el, size in zip(d.zip(), [1, 1, 0, 0, 0]):
-#        self.assertEqual(len(el), size)
-#        for e in el:
-#            self.assertEqual(e.first(), 10)
-#            self.assertEqual(e.second(), 1000)
-#        el.append((10, 300))
-#        self.assertEqual(len(el), size + 1)
-#
-# def test_np_array_strides(self):
-#    N = 6
-#    M = 4
-#    d1 = sc.Dataset()
-#    d1[sc.Coord.X] = (['x'], np.arange(N + 1).astype(np.float64))
-#    d1[sc.Coord.Y] = (['y'], np.arange(M + 1).astype(np.float64))
-#
-#    arr1 = np.arange(N * M).reshape(N, M).astype(np.float64)
-#    arr2 = np.transpose(arr1)
-#    K = 3
-#    arr_buf = np.arange(N * K * M).reshape(N, K, M)
-#    arr3 = arr_buf[:, 1, :]
-#    d1[sc.Data.Value, 'A'] = (['x', 'y'], arr1)
-#    d1[sc.Data.Value, 'B'] = (['y', 'x'], arr2)
-#    d1[sc.Data.Value, 'C'] = (['x', 'y'], arr3)
-#    np.testing.assert_array_equal(arr1, d1[sc.Data.Value, 'A'].numpy)
-#    np.testing.assert_array_equal(arr2, d1[sc.Data.Value, 'B'].numpy)
-#    np.testing.assert_array_equal(arr3, d1[sc.Data.Value, 'C'].numpy)
-#
-# def test_rebin(self):
-#    N = 6
-#    M = 4
-#    d1 = sc.Dataset()
-#    d1[sc.Coord.X] = (['x'], np.arange(N + 1).astype(np.float64))
-#    d1[sc.Coord.Y] = (['y'], np.arange(M + 1).astype(np.float64))
-#
-#    arr1 = np.arange(N * M).reshape(N, M).astype(np.float64)
-#    # TODO copy not needed after correct treatment of strides
-#    arr2 = np.transpose(arr1).copy()
-#
-#    d1[sc.Data.Value, 'A'] = (['x', 'y'], arr1)
-#    d1[sc.Data.Value, 'B'] = (['y', 'x'], arr2)
-#    d1[sc.Data.Value, 'A'].unit = sc.units.counts
-#    d1[sc.Data.Value, 'B'].unit = sc.units.counts
-#    rd1 = sc.rebin(d1, sc.Variable(dims=['x'], np.arange(
-#        0, N + 1, 1.5).astype(np.float64)))
-#    np.testing.assert_array_equal(rd1[sc.Data.Value, 'A'].numpy,
-#                                  np.transpose(
-#                                      rd1[sc.Data.Value, 'B'].numpy))
-#
-# def test_copy(self):
-#    import copy
-#    N = 6
-#    M = 4
-#    d1 = sc.Dataset()
-#    d1[sc.Coord.X] = (['x'], np.arange(N + 1).astype(np.float64))
-#    d1[sc.Coord.Y] = (['y'], np.arange(M + 1).astype(np.float64))
-#    arr1 = np.arange(N * M).reshape(N, M).astype(np.float64) + 1
-#    d1[sc.Data.Value, 'A'] = (['x', 'y'], arr1)
-#    d2 = copy.copy(d1)
-#    d3 = copy.deepcopy(d2)
-#    self.assertEqual(d1, d2)
-#    self.assertEqual(d3, d2)
-#    d2[sc.Data.Value, 'A'] *= d2[sc.Data.Value, 'A']
-#    self.assertNotEqual(d1, d2)
-#    self.assertNotEqual(d3, d2)
-#
-# def test_correct_temporaries(self):
-#    N = 6
-#    M = 4
-#    d1 = sc.Dataset()
-#    d1[sc.Coord.X] = (['x'], np.arange(N + 1).astype(np.float64))
-#    d1[sc.Coord.Y] = (['y'], np.arange(M + 1).astype(np.float64))
-#    arr1 = np.arange(N * M).reshape(N, M).astype(np.float64) + 1
-#    d1[sc.Data.Value, 'A'] = (['x', 'y'], arr1)
-#    d1 = d1['x', 1:2]
-#    self.assertEqual(list(d1[sc.Data.Value, 'A'].data),
-#                     [5.0, 6.0, 7.0, 8.0])
-#    d1 = d1['y', 2:3]
-#    self.assertEqual(list(d1[sc.Data.Value, 'A'].data), [7])
+def test_replace():
+    v1 = sc.Variable([sc.Dim.X], values=np.array([1, 2, 3]))
+    d = sc.Dataset({'a': v1})
+    d['a'].data == v1
+    v2 = sc.Variable([sc.Dim.X], values=np.array([4, 5, 6]))
+    d['a'].data == v2
+
+
+def test_rebin():
+    dataset = sc.Dataset()
+    dataset['data'] = sc.Variable(['x'],
+                                  values=np.array(10 * [1.0]),
+                                  unit=sc.units.counts)
+    dataset.coords['x'] = sc.Variable(['x'], values=np.arange(11.0))
+    new_coord = sc.Variable(dims=['x'], values=np.arange(0.0, 11, 2))
+    dataset = sc.rebin(dataset, 'x', new_coord)
+    np.testing.assert_array_equal(dataset['data'].values, np.array(5 * [2]))
+    np.testing.assert_array_equal(dataset.coords['x'].values,
+                                  np.arange(0, 11, 2))
+
+
+def _is_deep_copy_of(orig, copy):
+    assert orig == copy
+    assert not id(orig) == id(copy)
+
+
+def test_copy():
+    import copy
+    a = sc.Dataset()
+    a['x'] = sc.Variable(value=1)
+    _is_deep_copy_of(a, a.copy())
+    _is_deep_copy_of(a, copy.copy(a))
+    _is_deep_copy_of(a, copy.deepcopy(a))
+
+
+def test_correct_temporaries():
+    N = 6
+    M = 4
+    d1 = sc.Dataset()
+    d1['x'] = sc.Variable(['x'], values=np.arange(N + 1).astype(np.float64))
+    d1['y'] = sc.Variable(['y'], values=np.arange(M + 1).astype(np.float64))
+    arr1 = np.arange(N * M).reshape(N, M).astype(np.float64) + 1
+    d1['A'] = sc.Variable(['x', 'y'], values=arr1)
+    d1 = d1['x', 1:2]
+    assert d1['A'].values.tolist() == [[5.0, 6.0, 7.0, 8.0]]
+    d1 = d1['y', 2:3]
+    assert list(d1['A'].values) == [7]
+
+
+def test_iteration():
+    var = sc.Variable(value=1)
+    d = sc.Dataset(data={'a': var, 'b': var})
+    expected = ['a', 'b']
+    for k in d:
+        assert k in expected

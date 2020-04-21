@@ -134,6 +134,9 @@ Dimensions merge(const Dimensions &a, const Dimensions &b,
   return merge(merge(a, b), other...);
 }
 
+SCIPP_CORE_EXPORT Dimensions transpose(const Dimensions &dims,
+                                       std::vector<Dim> labels = {});
+
 } // namespace scipp::core
 
 namespace scipp {

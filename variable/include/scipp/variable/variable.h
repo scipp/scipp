@@ -23,6 +23,7 @@
 #include "scipp/core/dtype.h"
 #include "scipp/core/element_array.h"
 #include "scipp/core/element_array_view.h"
+#include "scipp/core/except.h"
 #include "scipp/core/slice.h"
 #include "scipp/core/tag_util.h"
 
@@ -41,8 +42,6 @@ template <class T> typename T::view_type makeViewItem(T &);
 namespace scipp::variable {
 
 namespace detail {
-std::vector<scipp::index> reorderedShape(const scipp::span<const Dim> &order,
-                                         const Dimensions &dimensions);
 void expect0D(const Dimensions &dims);
 } // namespace detail
 
@@ -86,48 +85,27 @@ struct default_init<Eigen::Matrix<T, Rows, Cols>> {
 template <class T, class... Ts> Variable makeVariable(Ts &&... ts);
 
 /// Variable is a type-erased handle to any data structure representing a
-/// multi-dimensional array. It has a name, a unit, and a set of named
-/// dimensions.
+/// multi-dimensional array. In addition it has a unit and a set of dimension
+/// labels.
 class SCIPP_VARIABLE_EXPORT Variable {
 public:
   using const_view_type = VariableConstView;
   using view_type = VariableView;
 
   Variable() = default;
-  // Having this non-explicit is convenient when passing (potential)
-  // variable slices to functions that do not support slices, but implicit
-  // conversion may introduce risks, so there is a trade-of here.
   explicit Variable(const VariableConstView &slice);
   Variable(const Variable &parent, const Dimensions &dims);
   Variable(const VariableConstView &parent, const Dimensions &dims);
   Variable(const Variable &parent, VariableConceptHandle data);
   template <class T>
-  Variable(const units::Unit unit, const Dimensions &dimensions, T object);
-  template <class T>
   Variable(const units::Unit unit, const Dimensions &dimensions, T values,
-           T variances);
+           std::optional<T> variances);
 
-  template <class T>
-  static Variable create(const units::Unit &u, const Dims &d, const Shape &s,
-                         std::optional<element_array<T>> &&val,
-                         std::optional<element_array<T>> &&var);
-
-  template <class T>
-  static Variable create(const units::Unit &u, const Dimensions &d,
-                         std::optional<element_array<T>> &&val,
-                         std::optional<element_array<T>> &&var);
-
-  template <class T>
-  Variable(const Dimensions &dimensions, std::initializer_list<T> values_)
-      : Variable(units::dimensionless, std::move(dimensions),
-                 element_array<T>(values_.begin(), values_.end())) {}
-
-  /// This is used to provide the constructors:
-  /// Variable(DType, Dims, Shape, Unit, Values<T1>, Variances<T2>)
-  /// with the only one obligatory argument DType, the other arguments are not
-  /// obligatory and could be given in arbitrary order. Example:
-  /// Variable(dtype<float>, units::Unit(units::kg), Shape{1, 2}, Dims{Dim::X,
-  /// Dim::Y}, Values({3, 4})).
+  /// Keyword-argument constructor.
+  ///
+  /// This is equivalent to `makeVariable`, except that the dtype is passed at
+  /// runtime as first argument instead of a template argument. `makeVariable`
+  /// should be prefered where possible, since it generates less code.
   template <class... Ts> Variable(const DType &type, Ts &&... args);
 
   explicit operator bool() const noexcept { return m_object.operator bool(); }
@@ -242,11 +220,8 @@ public:
   void setVariances(Variable v);
 
 private:
-  template <class... Ts> struct ConstructVariable {
-    template <class T> struct Maker { static Variable apply(Ts &&... args); };
-
-    static Variable make(Ts &&... args, DType type);
-  };
+  template <class... Ts, class... Args>
+  static Variable construct(const DType &type, Args &&... args);
 
   template <class T>
   const element_array<T> &cast(const bool variances = false) const;
@@ -255,63 +230,53 @@ private:
   units::Unit m_unit;
   VariableConceptHandle m_object;
 };
-/// This is used to provide the fabric function:
-/// makeVariable<type>(Dims, Shape, Unit, Values<T1>, Variances<T2>)
-/// with the obligatory template argument type, function arguments are not
-/// obligatory and could be given in arbitrary order, but suposed to be wrapped
-/// in certain classes.
-/// Example: makeVariable<float>(units::Unit(units::kg),
-/// Shape{1, 2}, Dims{Dim::X, Dim::Y}, Values({3, 4})).
+
+/// Factory function for Variable supporting "keyword arguments"
+///
+/// Two styles are supported:
+///     makeVariable<ElementType>(Dims, Shape, Unit, Values<T1>, Variances<T2>)
+/// or
+///     makeVariable<ElementType>(Dimensions, Unit, Values<T1>, Variances<T2>)
+/// Unit, Values, or Variances can be omitted. The order of arguments is
+/// arbitrary.
+/// Example:
+///     makeVariable<float>(units::Unit(units::kg),
+///     Shape{1, 2}, Dims{Dim::X, Dim::Y}, Values{3, 4}).
+///
+/// Relation between Dims, Shape, Dimensions and actual data are as follows:
+/// 1. If neither Values nor Variances are provided, resulting Variable contains
+///    ONLY values of corresponding length.
+/// 2. The Variances can't be provided without any Values.
+/// 3. Non empty Values and/or Variances must be consistent with shape.
+/// 4. If empty Values and/or Variances are provided, resulting Variable
+///    contains default initialized Values and/or Variances, the way to make
+///    Variable which contains both Values and Variances given length
+///    uninitialised is:
+///        makeVariable<T>(Dims{Dim::X}, Shape{5}, Values{}, Variances{});
 template <class T, class... Ts> Variable makeVariable(Ts &&... ts) {
-  static_assert(!std::disjunction_v<std::is_lvalue_reference<Ts>...>,
-                "makeVariable inputs must be r-value references");
-  using helper = detail::ConstructorArgumentsMatcher<Variable, Ts...>;
-  constexpr bool useDimsAndShape =
-      helper::template checkArgTypesValid<units::Unit, Dims, Shape>();
-  constexpr bool useDimensions =
-      helper::template checkArgTypesValid<units::Unit, Dimensions>();
-
-  static_assert(
-      useDimsAndShape || useDimensions,
-      "Arguments: units::Unit, Shape, Dims, Values and Variances could only "
-      "be used. Example: Variable(dtype<float>, units::Unit(units::kg), "
-      "Shape{1, 2}, Dims{Dim::X, Dim::Y}, Values({3, 4}))");
-
-  if constexpr (useDimsAndShape) {
-    auto [valArgs, varArgs, nonData] =
-        helper::template extractArguments<units::Unit, Dims, Shape>(
-            std::forward<Ts>(ts)...);
-    return helper::template construct<T>(std::move(valArgs), std::move(varArgs),
-                                         std::move(nonData));
-  } else {
-    auto [valArgs, varArgs, nonData] =
-        helper::template extractArguments<units::Unit, Dimensions>(
-            std::forward<Ts>(ts)...);
-    return helper::template construct<T>(std::move(valArgs), std::move(varArgs),
-                                         std::move(nonData));
-  }
+  detail::ArgParser<T> parser;
+  (parser.parse(std::forward<Ts>(ts)), ...);
+  return std::make_from_tuple<Variable>(std::move(parser.args));
 }
 
-template <class... Ts>
-template <class T>
-Variable Variable::ConstructVariable<Ts...>::Maker<T>::apply(Ts &&... ts) {
-  return makeVariable<T>(std::forward<Ts>(ts)...);
-}
-
-template <class... Ts>
-Variable Variable::ConstructVariable<Ts...>::make(Ts &&... args, DType type) {
-  return core::CallDType<double, float, int64_t, int32_t, bool, Eigen::Vector3d,
-                         Eigen::Quaterniond, std::string, event_list<double>,
-                         event_list<float>, event_list<int64_t>,
-                         event_list<int32_t>>::apply<Maker>(type,
-                                                            std::forward<Ts>(
-                                                                args)...);
+template <class... Ts, class... Args>
+Variable Variable::construct(const DType &type, Args &&... args) {
+  std::array vars{core::dtype<Ts> == type
+                      ? makeVariable<Ts>(std::forward<Args>(args)...)
+                      : Variable()...};
+  for (auto &var : vars)
+    if (var)
+      return std::move(var);
+  throw except::TypeError("Unsupported dtype.");
 }
 
 template <class... Ts>
 Variable::Variable(const DType &type, Ts &&... args)
     : Variable{
-          ConstructVariable<Ts...>::make(std::forward<Ts>(args)..., type)} {}
+          construct<double, float, int64_t, int32_t, bool, Eigen::Vector3d,
+                    Eigen::Quaterniond, std::string, event_list<double>,
+                    event_list<float>, event_list<int64_t>,
+                    event_list<int32_t>>(type, std::forward<Ts>(args)...)} {}
 
 /// Non-mutable view into (a subset of) a Variable.
 class SCIPP_VARIABLE_EXPORT VariableConstView {
@@ -320,16 +285,11 @@ public:
 
   VariableConstView() = default;
   VariableConstView(const Variable &variable) : m_variable(&variable) {}
-  VariableConstView(const Variable &variable, const Dimensions &dims)
-      : m_variable(&variable), m_view(variable.data().reshape(dims)) {}
+  VariableConstView(const Variable &variable, const Dimensions &dims);
   VariableConstView(const Variable &variable, const Dim dim,
-                    const scipp::index begin, const scipp::index end = -1)
-      : m_variable(&variable),
-        m_view(variable.data().makeView(dim, begin, end)) {}
+                    const scipp::index begin, const scipp::index end = -1);
   VariableConstView(const VariableConstView &slice, const Dim dim,
-                    const scipp::index begin, const scipp::index end = -1)
-      : m_variable(slice.m_variable),
-        m_view(slice.data().makeView(dim, begin, end)) {}
+                    const scipp::index begin, const scipp::index end = -1);
 
   explicit operator bool() const noexcept {
     return m_variable && m_variable->operator bool();
@@ -337,9 +297,7 @@ public:
 
   auto operator~() const { return m_variable->operator~(); }
 
-  VariableConstView slice(const Slice slice) const {
-    return VariableConstView(*this, slice.dim(), slice.begin(), slice.end());
-  }
+  VariableConstView slice(const Slice slice) const;
 
   VariableConstView transpose(const std::vector<Dim> &dims = {}) const;
   // Note the return type. Reshaping a non-contiguous slice cannot return a
@@ -350,30 +308,15 @@ public:
 
   // Note: Returning by value to avoid issues with referencing a temporary
   // (VariableView is returned by-value from DatasetSlice).
-  Dimensions dims() const {
-    if (m_view)
-      return m_view->dims();
-    else
-      return m_variable->dims();
-  }
+  Dimensions dims() const { return data().dims(); }
 
-  std::vector<scipp::index> strides() const {
-    const auto parent = m_variable->dims();
-    std::vector<scipp::index> strides;
-    for (const auto &label : parent.labels())
-      if (dims().contains(label))
-        strides.emplace_back(parent.offset(label));
-    return strides;
-  }
+  std::vector<scipp::index> strides() const;
 
   DType dtype() const noexcept { return m_variable->dtype(); }
 
   const VariableConcept &data() const && = delete;
   const VariableConcept &data() const & {
-    if (m_view)
-      return *m_view;
-    else
-      return m_variable->data();
+    return m_view ? *m_view : m_variable->data();
   }
 
   bool hasVariances() const noexcept { return m_variable->hasVariances(); }
@@ -400,15 +343,6 @@ public:
 
   auto &underlying() const { return *m_variable; }
 
-private:
-  template <class Var>
-  static VariableConstView makeTransposed(Var &var,
-                                          const std::vector<Dim> &dimOrder) {
-    auto res = VariableConstView(var);
-    res.m_view = res.data().transpose(dimOrder);
-    return res;
-  }
-
 protected:
   friend class Variable;
 
@@ -428,26 +362,13 @@ public:
   VariableView() = default;
   VariableView(Variable &variable)
       : VariableConstView(variable), m_mutableVariable(&variable) {}
-  // Note that we use the basic constructor of VariableConstView to avoid
-  // creation of a const m_view, which would be overwritten immediately.
-  VariableView(Variable &variable, const Dimensions &dims)
-      : VariableConstView(variable), m_mutableVariable(&variable) {
-    m_view = variable.data().reshape(dims);
-  }
+  VariableView(Variable &variable, const Dimensions &dims);
   VariableView(Variable &variable, const Dim dim, const scipp::index begin,
-               const scipp::index end = -1)
-      : VariableConstView(variable), m_mutableVariable(&variable) {
-    m_view = variable.data().makeView(dim, begin, end);
-  }
+               const scipp::index end = -1);
   VariableView(const VariableView &slice, const Dim dim,
-               const scipp::index begin, const scipp::index end = -1)
-      : VariableConstView(slice), m_mutableVariable(slice.m_mutableVariable) {
-    m_view = slice.data().makeView(dim, begin, end);
-  }
+               const scipp::index begin, const scipp::index end = -1);
 
-  VariableView slice(const Slice slice) const {
-    return VariableView(*this, slice.dim(), slice.begin(), slice.end());
-  }
+  VariableView slice(const Slice slice) const;
 
   VariableView transpose(const std::vector<Dim> &dims = {}) const;
 
@@ -455,9 +376,7 @@ public:
 
   VariableConcept &data() const && = delete;
   VariableConcept &data() const & {
-    if (!m_view)
-      return m_mutableVariable->data();
-    return *m_view;
+    return m_view ? *m_view : m_mutableVariable->data();
   }
 
   // Note: No need to delete rvalue overloads here, see VariableConstView.
@@ -530,14 +449,6 @@ private:
   // For internal use in DataArrayConstView.
   explicit VariableView(VariableConstView &&base)
       : VariableConstView(std::move(base)), m_mutableVariable{nullptr} {}
-
-  template <class Var>
-  static VariableView makeTransposed(Var &var,
-                                     const std::vector<Dim> &dimOrder) {
-    auto res = VariableView(var);
-    res.m_view = res.data().transpose(dimOrder);
-    return res;
-  }
 
   template <class T> ElementArrayView<T> cast() const;
   template <class T> ElementArrayView<T> castVariances() const;
