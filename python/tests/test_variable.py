@@ -973,25 +973,31 @@ def test_rotate_out():
     var = sc.Variable()
     assert_export(sc.geometry.rotate, position=var, rotation=var, out=var)
 
+
 def test_less():
     var = sc.Variable()
     assert_export(sc.less, x=var, y=var)
+
 
 def test_greater():
     var = sc.Variable()
     assert_export(sc.greater, x=var, y=var)
 
+
 def test_greater_equal():
     var = sc.Variable()
     assert_export(sc.greater_equal, x=var, y=var)
+
 
 def test_less_equal():
     var = sc.Variable()
     assert_export(sc.less_equal, x=var, y=var)
 
+
 def test_equal():
     var = sc.Variable()
     assert_export(sc.equal, x=var, y=var)
+
 
 def test_not_equal():
     var = sc.Variable()
