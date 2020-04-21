@@ -452,26 +452,29 @@ TEST(GroupbyFlattenTest, flatten_coord_and_labels) {
   DataArray a{makeVariable<double>(Dims{Dim::Y}, Shape{3},
                                    units::Unit(units::counts), Values{1, 1, 1},
                                    Variances{1, 1, 1}),
-              {{Dim::X, make_events_in()},
-               {Dim("events"), make_events_in() * 0.3},
+              {{Dim::X, make_sparse_in()},
+               {Dim("events"),
+                make_events_in() * (0.3 * units::Unit(units::dimensionless))},
                {Dim("labels"),
                 makeVariable<double>(Dims{Dim::Y}, Shape{3},
                                      units::Unit(units::m), Values{1, 1, 3})}}};
 
-  DataArray expected{makeVariable<double>(Dims{Dim("labels")}, Shape{2},
-                                          units::Unit(units::counts),
-                                          Values{1, 1}, Variances{1, 1}),
-                     {{Dim::X, make_events_out()},
-                      {Dim("labels"), makeVariable<double>(
-                                          Dims{Dim("labels")}, Shape{2},
-                                          units::Unit(units::m), Values{1, 3})},
-                      {Dim("events"), make_events_out() * 0.3}}};
+  DataArray expected{
+      makeVariable<double>(Dims{Dim("labels")}, Shape{2},
+                           units::Unit(units::counts), Values{1, 1},
+                           Variances{1, 1}),
+      {{Dim::X, make_events_out()},
+       {Dim("labels"),
+        makeVariable<double>(Dims{Dim("labels")}, Shape{2},
+                             units::Unit(units::m), Values{1, 3})},
+       {Dim("events"),
+        make_events_out() * (0.3 * units::Unit(units::dimensionless))}}};
 
   EXPECT_EQ(groupby(a, Dim("labels")).flatten(Dim::Y), expected);
 }
 
 TEST(GroupbyFlattenTest, flatten_coord_and_data) {
-  DataArray a{make_events_in() * 1.5,
+  DataArray a{make_events_in() * (1.5 * units::Unit(units::dimensionless)),
               {{Dim::X, make_events_in()},
                {Dim::Y, makeVariable<double>(Dims{Dim::Y}, Shape{3})},
                {Dim("labels"),
@@ -479,7 +482,7 @@ TEST(GroupbyFlattenTest, flatten_coord_and_data) {
                                      units::Unit(units::m), Values{1, 1, 3})}}};
 
   DataArray expected{
-      make_events_out() * 1.5,
+      make_events_out() * (1.5 * units::Unit(units::dimensionless)),
       {{Dim::X, make_events_out()},
        {Dim("labels"),
         makeVariable<double>(Dims{Dim("labels")}, Shape{2},
@@ -489,7 +492,7 @@ TEST(GroupbyFlattenTest, flatten_coord_and_data) {
 }
 
 TEST(GroupbyFlattenTest, flatten_with_mask) {
-  DataArray a{make_events_in() * 1.5,
+  DataArray a{make_events_in() * (1.5 * units::Unit(units::dimensionless)),
               {{Dim::X, make_events_in()},
                {Dim::Y, makeVariable<double>(Dims{Dim::Y}, Shape{3})},
                {Dim("labels"),
@@ -500,7 +503,7 @@ TEST(GroupbyFlattenTest, flatten_with_mask) {
 
   bool mask = true;
   DataArray expected{
-      make_events_out(mask) * 1.5,
+      make_events_out(mask) * (1.5 * units::Unit(units::dimensionless)),
       {{Dim::X, make_events_out(mask)},
        {Dim("labels"),
         makeVariable<double>(Dims{Dim("labels")}, Shape{2},

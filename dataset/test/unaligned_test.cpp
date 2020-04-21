@@ -134,8 +134,14 @@ TEST_F(RealignTest, dataset_change_alignment) {
       baseB, {{Dim::Z, zbins}, {Dim::Y, ybins}, {Dim::X, xbins}});
   Dataset dataset;
   // Different number of coords and different values
-  dataset.setData("a", unaligned::realign(baseA, {{Dim::X, xbins + 0.5}}));
-  dataset.setData("b", unaligned::realign(baseB, {{Dim::X, xbins + 0.5}}));
+  dataset.setData(
+      "a",
+      unaligned::realign(
+          baseA, {{Dim::X, xbins + 0.5 * units::Unit(units::dimensionless)}}));
+  dataset.setData(
+      "b",
+      unaligned::realign(
+          baseB, {{Dim::X, xbins + 0.5 * units::Unit(units::dimensionless)}}));
 
   const auto realigned = unaligned::realign(
       dataset, {{Dim::Z, zbins}, {Dim::Y, ybins}, {Dim::X, xbins}});

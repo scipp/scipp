@@ -227,9 +227,12 @@ TYPED_TEST(DatasetBinaryEqualsOpTest, return_value) {
     ASSERT_EQ(&result, &a);
   }
 
-  ASSERT_TRUE((std::is_same_v<decltype(TestFixture::op(a, 5.0)), Dataset &>));
+  ASSERT_TRUE((std::is_same_v<decltype(TestFixture::op(
+                                  a, 5.0 * units::Unit(units::dimensionless))),
+                              Dataset &>));
   {
-    const auto &result = TestFixture::op(a, 5.0);
+    const auto &result =
+        TestFixture::op(a, 5.0 * units::Unit(units::dimensionless));
     ASSERT_EQ(&result, &a);
   }
 }
@@ -463,9 +466,12 @@ TYPED_TEST(DatasetViewBinaryEqualsOpTest, return_value) {
   }
 
   ASSERT_TRUE(
-      (std::is_same_v<decltype(TestFixture::op(view, 5.0)), DatasetView>));
+      (std::is_same_v<decltype(TestFixture::op(
+                          view, 5.0 * units::Unit(units::dimensionless))),
+                      DatasetView>));
   {
-    const auto &result = TestFixture::op(view, 5.0);
+    const auto &result =
+        TestFixture::op(view, 5.0 * units::Unit(units::dimensionless));
     EXPECT_EQ(&result["data_scalar"].template values<double>()[0],
               &a["data_scalar"].template values<double>()[0]);
   }
@@ -670,7 +676,7 @@ TYPED_TEST(DatasetBinaryOpTest, broadcast) {
 
 TYPED_TEST(DatasetBinaryOpTest, dataset_lhs_scalar_rhs) {
   const auto dataset = std::get<0>(generateBinaryOpTestCase());
-  constexpr auto scalar = 4.5;
+  const auto scalar = 4.5 * units::Unit(units::dimensionless);
 
   const auto res = TestFixture::op(dataset, scalar);
 
@@ -686,7 +692,7 @@ TYPED_TEST(DatasetBinaryOpTest, dataset_lhs_scalar_rhs) {
 
 TYPED_TEST(DatasetBinaryOpTest, scalar_lhs_dataset_rhs) {
   const auto dataset = std::get<0>(generateBinaryOpTestCase());
-  constexpr auto scalar = 4.5;
+  const auto scalar = 4.5 * units::Unit(units::dimensionless);
 
   const auto res = TestFixture::op(scalar, dataset);
 
