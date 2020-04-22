@@ -3,8 +3,7 @@
 /// @file
 /// @author Simon Heybrock
 /// @author Neil Vaytet
-#ifndef SCIPP_UNITS_NEUTRON_H
-#define SCIPP_UNITS_NEUTRON_H
+#pragma once
 
 #include "scipp/units/dimension.h"
 #include "scipp/units/unit_impl.h"
@@ -169,5 +168,3 @@ template <> struct counts_unit<neutron::Unit> {
 };
 
 } // namespace scipp::units
-
-#endif // SCIPP_UNITS_NEUTRON_H

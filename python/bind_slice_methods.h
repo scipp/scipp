@@ -2,8 +2,7 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#ifndef SCIPPY_BIND_SLICE_METHODS_H
-#define SCIPPY_BIND_SLICE_METHODS_H
+#pragma once
 
 #include "numpy.h"
 #include "pybind11.h"
@@ -143,5 +142,3 @@ void bind_slice_methods(pybind11::class_<T, Ignored...> &c) {
     c.def("__setitem__", &slicer<T>::template set_range<DatasetView>);
   }
 }
-
-#endif // SCIPPY_BIND_SLICE_METHODS_H

@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
-#ifndef DATASET_TEST_COMMON_H
-#define DATASET_TEST_COMMON_H
+#pragma once
 
 #include "random.h"
 #include "test_macros.h"
@@ -112,5 +111,3 @@ namespace scipp::testdata {
 Dataset make_dataset_x();
 Dataset make_dataset_realigned_x_to_y();
 } // namespace scipp::testdata
-
-#endif // DATASET_TEST_COMMON_H

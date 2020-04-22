@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @author Simon Heybrock
-#ifndef SCIPP_UNITS_DIM_H
-#define SCIPP_UNITS_DIM_H
+#pragma once
 
 #include <functional>
 #include <mutex>
@@ -75,5 +74,3 @@ template <> struct hash<scipp::units::Dim> {
   }
 };
 } // namespace std
-
-#endif // SCIPP_UNITS_DIM_H

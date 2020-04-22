@@ -2,8 +2,7 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#ifndef SCIPP_VARIABLE_VARIABLE_H
-#define SCIPP_VARIABLE_VARIABLE_H
+#pragma once
 
 #include <optional>
 #include <string>
@@ -472,5 +471,3 @@ using variable::VariableConstView;
 using variable::VariableView;
 using variable::Variances;
 } // namespace scipp
-
-#endif // SCIPP_VARIABLE_VARIABLE_H

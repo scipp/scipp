@@ -2,8 +2,7 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#ifndef SCIPP_PYTHON_PY_OBJECT_H
-#define SCIPP_PYTHON_PY_OBJECT_H
+#pragma once
 
 #include "pybind11.h"
 
@@ -38,5 +37,3 @@ private:
 };
 
 } // namespace scipp::python
-
-#endif // SCIPP_PYTHON_PY_OBJECT_H

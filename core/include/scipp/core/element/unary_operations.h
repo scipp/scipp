@@ -2,8 +2,7 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#ifndef SCIPP_CORE_ELEMENT_UNARY_OPERATIONS_H
-#define SCIPP_CORE_ELEMENT_UNARY_OPERATIONS_H
+#pragma once
 
 #include <cmath>
 
@@ -134,5 +133,3 @@ constexpr auto reciprocal_out_arg = overloaded{
 } // namespace element
 
 } // namespace scipp::core
-
-#endif // SCIPP_CORE_ELEMENT_UNARY_OPERATIONS_H

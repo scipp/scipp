@@ -2,8 +2,7 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#ifndef SCIPP_CORE_TRANSFORM_COMMON_H
-#define SCIPP_CORE_TRANSFORM_COMMON_H
+#pragma once
 
 #include <tuple>
 
@@ -84,5 +83,3 @@ using expect_all_or_none_have_variance_t =
 } // namespace transform_flags
 
 } // namespace scipp::core
-
-#endif // SCIPP_CORE_TRANSFORM_COMMON_H

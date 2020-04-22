@@ -2,8 +2,7 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file Simple and small system of units for testing purposes.
 /// @author Simon Heybrock
-#ifndef SCIPP_UNITS_DUMMY_H
-#define SCIPP_UNITS_DUMMY_H
+#pragma once
 
 #include "scipp/units/dimension.h"
 #include "scipp/units/unit_impl.h"
@@ -34,5 +33,3 @@ template <> struct counts_unit<dummy::Unit> {
 };
 
 } // namespace scipp::units
-
-#endif // SCIPP_UNITS_DUMMY_H

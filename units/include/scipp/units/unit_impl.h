@@ -3,8 +3,7 @@
 /// @file
 /// @author Simon Heybrock
 /// @author Neil Vaytet
-#ifndef SCIPP_UNITS_UNIT_IMPL_H
-#define SCIPP_UNITS_UNIT_IMPL_H
+#pragma once
 
 #include <array>
 #include <tuple>
@@ -119,5 +118,3 @@ template <class Derived>
 Derived atan2(const Unit_impl<Derived> &y, const Unit_impl<Derived> &x);
 
 } // namespace scipp::units
-
-#endif // SCIPP_UNITS_UNIT_IMPL_H

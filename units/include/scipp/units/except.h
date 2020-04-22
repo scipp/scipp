@@ -2,8 +2,7 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#ifndef SCIPP_UNITS_EXCEPT_H
-#define SCIPP_UNITS_EXCEPT_H
+#pragma once
 
 #include "scipp-units_export.h"
 #include "scipp/common/except.h"
@@ -21,5 +20,3 @@ template <class T>
 MismatchError(const units::Unit &, const T &)->MismatchError<units::Unit>;
 
 } // namespace scipp::except
-
-#endif // SCIPP_UNITS_EXCEPT_H

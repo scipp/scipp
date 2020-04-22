@@ -2,8 +2,7 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#ifndef SCIPP_CORE_PARALLEL_H
-#define SCIPP_CORE_PARALLEL_H
+#pragma once
 
 #include <algorithm>
 #include <tbb/parallel_for.h>
@@ -41,5 +40,3 @@ template <class... Args> void parallel_for(Args &&... args) {
 }
 
 } // namespace scipp::core::parallel
-
-#endif // SCIPP_CORE_PARALLEL_H
