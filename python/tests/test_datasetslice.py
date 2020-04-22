@@ -131,29 +131,19 @@ class TestDatasetSlice(unittest.TestCase):
         # Desired nan comparisons
         np.testing.assert_equal(a.data.values, data)
 
-    def _apply_test_op_rhs_variable(self,
-                                    op,
-                                    a,
-                                    b,
-                                    data,
-                                    lh_var_name="a",
-                                    rh_var_name="b"):
-        # Assume numpy operations are correct as comparitor
-        op(data, b.value)
-        op(a, b)
-        # Desired nan comparisons
-        np.testing.assert_equal(a[lh_var_name].value, data)
-
     def test_binary_slice_rhs_operations(self):
         var = sc.Variable(['x'],
                           values=np.arange(10.0),
                           variances=np.arange(10.0))
-        a = sc.DataArray(
+        a_source = sc.DataArray(
             var, coords={'x': sc.Variable(['x'], values=np.arange(10))})
-        b = sc.DataArray(
+        b_source = sc.DataArray(
             var, coords={'x': sc.Variable(['x'], values=np.arange(10))})
         values = np.copy(var.values)
         variances = np.copy(var.variances)
+
+        a = sc.DataArrayView(a_source)
+        b = sc.DataArrayView(b_source)
 
         c = a + b
         # Variables "a" and "b" added despite different names
@@ -186,38 +176,45 @@ class TestDatasetSlice(unittest.TestCase):
         self._apply_test_op_rhs_ds_slice(operator.imul, a, b, values)
         self._apply_test_op_rhs_ds_slice(operator.itruediv, a, b, values)
 
+    def _apply_test_op_rhs_variable(self,
+                                    op,
+                                    a,
+                                    b,
+                                    data,
+                                    lh_var_name="a",
+                                    rh_var_name="b"):
+        # Assume numpy operations are correct as comparitor
+        op(data, b.values)
+        op(a, b)
+        # Desired nan comparisons
+        np.testing.assert_equal(a.data.values, data)
 
-'''
     def test_binary_variable_rhs_operations(self):
         data = np.ones(10, dtype='float64')
-        d = sc.Dataset()
-        d[sc.Data.Value, "a"] = (['x'], data)
-        d[sc.Data.Variance, "a"] = (['x'], data)
-        a = d.subset[sc.Data.Value, "a"]
-        b_var = sc.Variable(['x'], data)
+        var = sc.Variable(['x'], values=data)
+        a = sc.DataArray(var)
+        a_slice = sc.DataArrayView(a)
 
-        c = a + b_var
-        self.assertTrue(
-            np.array_equal(c[sc.Data.Value, "a"].numpy, data + data))
+        c = a_slice + var
+        self.assertTrue(np.array_equal(c.data.values, data + data))
 
-        c = a - b_var
-        self.assertTrue(
-            np.array_equal(c[sc.Data.Value, "a"].numpy, data - data))
+        c = a_slice - var
+        self.assertTrue(np.array_equal(c.data.values, data - data))
 
-        c = a * b_var
-        self.assertTrue(
-            np.array_equal(c[sc.Data.Value, "a"].numpy, data * data))
+        c = a_slice * var
+        self.assertTrue(np.array_equal(c.data.values, data * data))
 
-        c = a / b_var
+        c = a_slice / var
         with np.errstate(invalid='ignore'):
-            np.testing.assert_equal(c[sc.Data.Value, "a"].numpy, data / data)
+            np.testing.assert_equal(c.data.values, data / data)
 
-        self._apply_test_op_rhs_variable(operator.iadd, a, b_var, data)
-        self._apply_test_op_rhs_variable(operator.isub, a, b_var, data)
-        self._apply_test_op_rhs_variable(operator.imul, a, b_var, data)
-        self._apply_test_op_rhs_variable(operator.itruediv, a, b_var, data)
+        self._apply_test_op_rhs_variable(operator.iadd, a, var, data)
+        self._apply_test_op_rhs_variable(operator.isub, a, var, data)
+        self._apply_test_op_rhs_variable(operator.imul, a, var, data)
+        self._apply_test_op_rhs_variable(operator.itruediv, a, var, data)
 
 
+'''
 def test_slice_and_dimensions_items_dataarray():
     da = sc.DataArray(
         sc.Variable(['x', 'y'], values=np.arange(50).reshape(5, 10)))
