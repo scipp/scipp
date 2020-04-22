@@ -213,6 +213,43 @@ class TestDatasetSlice(unittest.TestCase):
         self._apply_test_op_rhs_variable(operator.imul, a, var, data)
         self._apply_test_op_rhs_variable(operator.itruediv, a, var, data)
 
+    def test_binary_float_operations(self):
+        da = sc.DataArray(
+            data=sc.Variable(['x'], values=np.arange(10.0)),
+            coords={'x': sc.Variable(['x'], values=np.arange(10))})
+        a = sc.DataArrayView(da)
+        b = sc.DataArrayView(da)
+        data = np.copy(a.data.values)
+
+        c = a + 2.0 * sc.units.dimensionless
+        self.assertTrue(np.array_equal(c.data.values, data + 2.0))
+        c = a - b
+        self.assertTrue(np.array_equal(c.data.values, data - data))
+        c = a - 2.0 * sc.units.dimensionless
+        self.assertTrue(np.array_equal(c.data.values, data - 2.0))
+        c = a * (2.0 * sc.units.dimensionless)
+        self.assertTrue(np.array_equal(c.data.values, data * 2.0))
+        c = a / (2.0 * sc.units.dimensionless)
+        self.assertTrue(np.array_equal(c.data.values, data / 2.0))
+        c = 2.0 * sc.units.dimensionless + a
+        self.assertTrue(np.array_equal(c.data.values, data + 2.0))
+        c = 2.0 * sc.units.dimensionless - a
+        self.assertTrue(np.array_equal(c.data.values, 2.0 - data))
+        c = 2.0 * sc.units.dimensionless * a
+        self.assertTrue(np.array_equal(c.data.values, data * 2.0))
+
+        def assert_same_result(op, x, y, data):
+            op(data, y)
+            op(x, y)
+            np.testing.assert_equal(x.data.values, data)
+
+        # Desired nan comparisons
+        np.testing.assert_equal(a.data.values, data)
+        assert_same_result(operator.iadd, a, 2.0, data)
+        assert_same_result(operator.isub, a, 2.0, data)
+        assert_same_result(operator.imul, a, 2.0, data)
+        assert_same_result(operator.itruediv, a, 2.0, data)
+
 
 '''
 def test_slice_and_dimensions_items_dataarray():
@@ -243,44 +280,6 @@ def test_slice_and_dimensions_items_dataset():
 
 
 
-    def test_binary_float_operations(self):
-        d = sc.Dataset()
-        d[sc.Coord.X] = (['x'], np.arange(10))
-        d[sc.Data.Value, "a"] = (['x'], np.arange(10, dtype='float64'))
-        d[sc.Data.Value, "b"] = (['x'], np.arange(10, dtype='float64'))
-        a = d.subset["a"]
-        b = d.subset["b"]
-        data = np.copy(a[sc.Data.Value, "a"].numpy)
-
-        c = a + 2.0
-        self.assertTrue(np.array_equal(c[sc.Data.Value, "a"].numpy,
-                                       data + 2.0))
-        c = a - b
-        self.assertTrue(
-            np.array_equal(c[sc.Data.Value, "a"].numpy, data - data))
-        c = a - 2.0
-        self.assertTrue(np.array_equal(c[sc.Data.Value, "a"].numpy,
-                                       data - 2.0))
-        c = a * 2.0
-        self.assertTrue(np.array_equal(c[sc.Data.Value, "a"].numpy,
-                                       data * 2.0))
-        c = a / 2.0
-        self.assertTrue(np.array_equal(c[sc.Data.Value, "a"].numpy,
-                                       data / 2.0))
-        c = 2.0 + a
-        self.assertTrue(np.array_equal(c[sc.Data.Value, "a"].numpy,
-                                       data + 2.0))
-        c = 2.0 - a
-        self.assertTrue(np.array_equal(c[sc.Data.Value, "a"].numpy,
-                                       2.0 - data))
-        c = 2.0 * a
-        self.assertTrue(np.array_equal(c[sc.Data.Value, "a"].numpy,
-                                       data * 2.0))
-
-        self._apply_test_op_rhs_ds_slice(operator.iadd, a, b, data)
-        self._apply_test_op_rhs_ds_slice(operator.isub, a, b, data)
-        self._apply_test_op_rhs_ds_slice(operator.imul, a, b, data)
-        self._apply_test_op_rhs_ds_slice(operator.itruediv, a, b, data)
 
     def test_equal_not_equal(self):
         d = sc.Dataset()
