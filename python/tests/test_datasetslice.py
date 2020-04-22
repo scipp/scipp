@@ -281,8 +281,31 @@ class TestDatasetSlice(unittest.TestCase):
         self.assertEqual(da['x', :]['y', :], da)
         self.assertEqual(da['y', :]['x', :], da)
 
+    def test_set_item_via_temporary_slice(self):
+        N = 6
+        M = 4
+        d1 = sc.Dataset()
+        d1['x'] = sc.Variable(['x'],
+                              values=np.arange(N + 1).astype(np.float64))
+        d1['y'] = sc.Variable(['y'],
+                              values=np.arange(M + 1).astype(np.float64))
+        arr1 = np.arange(N * M).reshape(N, M).astype(np.float64) + 1
+        d1["A"] = sc.Variable(['x', 'y'], values=arr1)
+        d1 = d1['x', 1:2]
+        self.assertEquals(d1["A"].data.values.tolist(), [[5.0, 6.0, 7.0, 8.0]])
 
-'''
+    def test_set_dataarrayview_slice_items(self):
+        d = self._d.copy()
+        d["a"]['x', 0:2] += \
+        d["b"]['x', 0:2]
+        self.assertEqual(d["a"].data.values.tolist(),
+                         [0, 2, 2, 3, 4, 5, 6, 7, 8, 9])
+        d["a"]['x', 6] += \
+            d["b"]['x', 8]
+        self.assertEqual(d["a"].data.values.tolist(),
+                         [0, 2, 2, 3, 4, 5, 14, 7, 8, 9])
+
+
 def test_slice_and_dimensions_items_dataarray():
     da = sc.DataArray(
         sc.Variable(['x', 'y'], values=np.arange(50).reshape(5, 10)))
@@ -309,41 +332,6 @@ def test_slice_and_dimensions_items_dataset():
     assert 'y' in da['x', 0:1].dims
     assert 'x' in da['x', 0:1].dims
 
-
-
-
-
-    def test_binary_ops_with_variable(self):
-        d = sc.Dataset()
-        d[sc.Coord.X] = (['x'], np.arange(10))
-        d[sc.Data.Value, "a"] = (['x'], np.arange(10))
-        d[sc.Data.Variance, "a"] = (['x'], np.arange(10))
-
-        d += sc.Variable(2)
-
-    def test_correct_temporaries(self):
-        N = 6
-        M = 4
-        d1 = sc.Dataset()
-        d1[sc.Coord.X] = (['x'], np.arange(N + 1).astype(np.float64))
-        d1[sc.Coord.Y] = (['y'], np.arange(M + 1).astype(np.float64))
-        arr1 = np.arange(N * M).reshape(N, M).astype(np.float64) + 1
-        d1[sc.Data.Value, "A"] = (['x', 'y'], arr1)
-        d1 = d1['x', 1:2]
-        self.assertEqual(list(d1[sc.Data.Value, "A"].data),
-                         [5.0, 6.0, 7.0, 8.0])
-
-    def test_set_dataset_slice_items(self):
-        d = self._d.copy()
-        d[sc.Data.Value, "a"]['x', 0:2] += \
-            d[sc.Data.Value, "b"]['x', 1:3]
-        self.assertEqual(list(d[sc.Data.Value, "a"].data),
-                         [1, 3, 2, 3, 4, 5, 6, 7, 8, 9])
-        d[sc.Data.Value, "a"]['x', 6] += \
-            d[sc.Data.Value, "b"]['x', 8]
-        self.assertEqual(list(d[sc.Data.Value, "a"].data),
-                         [1, 3, 2, 3, 4, 5, 14, 7, 8, 9])
-'''
 
 if __name__ == '__main__':
     unittest.main()
