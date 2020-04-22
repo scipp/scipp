@@ -250,6 +250,37 @@ class TestDatasetSlice(unittest.TestCase):
         assert_same_result(operator.imul, a, 2.0, data)
         assert_same_result(operator.itruediv, a, 2.0, data)
 
+    def test_equal_not_equal_datasetview(self):
+        d = sc.Dataset()
+        d.coords['x'] = sc.Variable(['x'], values=np.arange(10))
+        d.coords['y'] = sc.Variable(['y'], values=np.arange(10))
+        d["a"] = sc.Variable(['x', 'y'],
+                             values=np.arange(100.0).reshape(10, 10))
+        d["b"] = sc.Variable(['x'], values=np.arange(10.0))
+        self.assertEqual(d['x', :], d)
+        self.assertNotEqual(d['x', 1:], d)
+        self.assertNotEqual(d['y', :], d)
+        del d['b']
+        self.assertEqual(d['y', :], d)
+        self.assertNotEqual(d['y', 1:], d)
+        self.assertEqual(d['x', :]['y', :], d)
+        self.assertEqual(d['y', :]['x', :], d)
+
+    def test_equal_not_equal_dataarray(self):
+        data = sc.Variable(['x', 'y'], values=np.arange(100.0).reshape(10, 10))
+        da = sc.DataArray(data,
+                          coords={
+                              'x': sc.Variable(['x'], values=np.arange(10)),
+                              'y': sc.Variable(['y'], values=np.arange(10))
+                          })
+        self.assertEqual(da['x', :], da)
+        self.assertNotEqual(da['x', 1:], da)
+        self.assertEqual(da['y', :], da)
+        self.assertEqual(da['y', :], da)
+        self.assertNotEqual(da['y', 1:], da)
+        self.assertEqual(da['x', :]['y', :], da)
+        self.assertEqual(da['y', :]['x', :], da)
+
 
 '''
 def test_slice_and_dimensions_items_dataarray():
@@ -281,28 +312,6 @@ def test_slice_and_dimensions_items_dataset():
 
 
 
-    def test_equal_not_equal(self):
-        d = sc.Dataset()
-        d[sc.Coord.X] = (['x'], np.arange(10))
-        d[sc.Data.Value, "a"] = (['x'], np.arange(10, dtype='float64'))
-        d[sc.Data.Value, "b"] = (['x'], np.arange(10, dtype='float64'))
-        a = d.subset["a"]
-        b = d.subset["b"]
-        c = a + b
-        d2 = np.copy(a[sc.Data.Value, "a"].numpy)
-        d2 = d['x', :]
-        a2 = d.subset["a"]
-        d3 = sc.Dataset()
-        d3[sc.Coord.X] = (['x'], np.arange(10))
-        d3[sc.Data.Value, "a"] = (['x'], np.arange(1, 11, dtype='float64'))
-        a3 = d3.subset["a"]
-        self.assertEqual(d, d2)
-        self.assertEqual(d2, d)
-        self.assertEqual(a, a2)
-        self.assertNotEqual(a, b)
-        self.assertNotEqual(b, a)
-        self.assertNotEqual(a, c)
-        self.assertNotEqual(a, a3)
 
     def test_binary_ops_with_variable(self):
         d = sc.Dataset()
