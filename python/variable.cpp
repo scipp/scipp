@@ -9,10 +9,10 @@
 #include "scipp/core/except.h"
 #include "scipp/core/tag_util.h"
 
+#include "scipp/variable/comparison.h"
 #include "scipp/variable/operations.h"
 #include "scipp/variable/transform.h"
 #include "scipp/variable/variable.h"
-#include "scipp/variable/variable_comparison.h"
 
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/sort.h"
@@ -887,7 +887,7 @@ void init_variable(py::module &m) {
 
   m.def("less",
         [](const VariableConstView &x, const VariableConstView &y) {
-          return is_less(x, y);
+          return less(x, y);
         },
         py::arg("x"), py::arg("y"),
         R"(
@@ -899,7 +899,7 @@ void init_variable(py::module &m) {
 
   m.def("greater",
         [](const VariableConstView &x, const VariableConstView &y) {
-          return is_greater(x, y);
+          return greater(x, y);
         },
         py::arg("x"), py::arg("y"),
         R"(
@@ -911,7 +911,7 @@ void init_variable(py::module &m) {
 
   m.def("greater_equal",
         [](const VariableConstView &x, const VariableConstView &y) {
-          return is_greater_equal(x, y);
+          return greater_equal(x, y);
         },
         py::arg("x"), py::arg("y"),
         R"(
@@ -923,7 +923,7 @@ void init_variable(py::module &m) {
 
   m.def("less_equal",
         [](const VariableConstView &x, const VariableConstView &y) {
-          return is_less_equal(x, y);
+          return less_equal(x, y);
         },
         py::arg("x"), py::arg("y"),
         R"(
@@ -935,7 +935,7 @@ void init_variable(py::module &m) {
 
   m.def("equal",
         [](const VariableConstView &x, const VariableConstView &y) {
-          return is_equal(x, y);
+          return equal(x, y);
         },
         py::arg("x"), py::arg("y"),
         R"(
@@ -947,7 +947,7 @@ void init_variable(py::module &m) {
 
   m.def("not_equal",
         [](const VariableConstView &x, const VariableConstView &y) {
-          return is_not_equal(x, y);
+          return not_equal(x, y);
         },
         py::arg("x"), py::arg("y"),
         R"(
@@ -1016,3 +1016,4 @@ void init_variable(py::module &m) {
         :return: rotated vectors are written to out.
         :rtype: VariableView)");
 }
+

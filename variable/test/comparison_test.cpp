@@ -3,7 +3,7 @@
 #include "test_macros.h"
 #include <gtest/gtest.h>
 
-#include "scipp/variable/variable_comparison.h"
+#include "scipp/variable/comparison.h"
 
 using namespace scipp;
 using namespace scipp::variable;
@@ -76,20 +76,20 @@ TEST(ComparisonTest, less_variances_test) {
                                      Variances{1.0, 1.0});
   const auto b = makeVariable<float>(Dims{Dim::X}, Shape{2}, Values{0.0, 3.0},
                                      Variances{1.0, 1.0});
-  EXPECT_THROW(is_less(a, b), std::runtime_error);
+  EXPECT_THROW(less(a, b), std::runtime_error);
 }
 
 TEST(ComparisonTest, less_dtypes_test) {
   const auto a = makeVariable<float>(Dims{Dim::X}, Shape{2}, Values{1.0, 2.0});
   const auto b = makeVariable<int>(Dims{Dim::X}, Shape{2}, Values{0, 1});
-  EXPECT_THROW(is_less(a, b), std::runtime_error);
+  EXPECT_THROW(less(a, b), std::runtime_error);
 }
 
 TEST(ComparisonTest, less_units_test) {
   const auto a = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.0, 2.0});
   auto b = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{0.0, 3.0});
   b.setUnit(units::m);
-  EXPECT_THROW(is_less(a, b), std::runtime_error);
+  EXPECT_THROW(less(a, b), std::runtime_error);
 }
 
 template <typename T> class LessTest : public ::testing::Test {};
@@ -118,8 +118,8 @@ TYPED_TEST(LessTest, value) {
   const auto result2 =
       makeVariable<bool>(Dims{Dim::X}, Shape{2}, Values{false, true});
 
-  EXPECT_EQ(is_less(a, b), result1);
-  EXPECT_EQ(is_less(b, a), result2);
+  EXPECT_EQ(less(a, b), result1);
+  EXPECT_EQ(less(b, a), result2);
 }
 
 TYPED_TEST(GreaterTest, value) {
@@ -133,8 +133,8 @@ TYPED_TEST(GreaterTest, value) {
   const auto result2 =
       makeVariable<bool>(Dims{Dim::X}, Shape{2}, Values{false, false});
 
-  EXPECT_EQ(is_greater(a, b), result1);
-  EXPECT_EQ(is_greater(b, a), result2);
+  EXPECT_EQ(greater(a, b), result1);
+  EXPECT_EQ(greater(b, a), result2);
 }
 
 TYPED_TEST(GreaterEqualTest, value) {
@@ -144,12 +144,12 @@ TYPED_TEST(GreaterEqualTest, value) {
   const auto a = makeVariable<T>(Dims{Dim::X}, Shape{2}, Values{y, x});
   const auto b = makeVariable<T>(Dims{Dim::X}, Shape{2}, Values{y, -x});
   const auto result1 =
-      makeVariable<bool>(Dims{Dim::X}, Shape{2}, Values{false, true});
+      makeVariable<bool>(Dims{Dim::X}, Shape{2}, Values{true, true});
   const auto result2 =
       makeVariable<bool>(Dims{Dim::X}, Shape{2}, Values{true, false});
 
-  EXPECT_EQ(is_greater_equal(a, b), result1);
-  EXPECT_EQ(is_greater_equal(b, a), result2);
+  EXPECT_EQ(greater_equal(a, b), result1);
+  EXPECT_EQ(greater_equal(b, a), result2);
 }
 
 TYPED_TEST(LessEqualTest, value) {
@@ -163,8 +163,8 @@ TYPED_TEST(LessEqualTest, value) {
   const auto result2 =
       makeVariable<bool>(Dims{Dim::X}, Shape{2}, Values{true, true});
 
-  EXPECT_EQ(is_less_equal(a, b), result1);
-  EXPECT_EQ(is_less_equal(b, a), result2);
+  EXPECT_EQ(less_equal(a, b), result1);
+  EXPECT_EQ(less_equal(b, a), result2);
 }
 
 TYPED_TEST(EqualTest, value) {
@@ -178,8 +178,8 @@ TYPED_TEST(EqualTest, value) {
   const auto result2 =
       makeVariable<bool>(Dims{Dim::X}, Shape{2}, Values{true, false});
 
-  EXPECT_EQ(is_equal(a, b), result1);
-  EXPECT_EQ(is_equal(b, a), result2);
+  EXPECT_EQ(equal(a, b), result1);
+  EXPECT_EQ(equal(b, a), result2);
 }
 
 TYPED_TEST(NotEqualTest, value) {
@@ -193,6 +193,7 @@ TYPED_TEST(NotEqualTest, value) {
   const auto result2 =
       makeVariable<bool>(Dims{Dim::X}, Shape{2}, Values{false, true});
 
-  EXPECT_EQ(is_not_equal(a, b), result1);
-  EXPECT_EQ(is_not_equal(b, a), result2);
+  EXPECT_EQ(not_equal(a, b), result1);
+  EXPECT_EQ(not_equal(b, a), result2);
 }
+

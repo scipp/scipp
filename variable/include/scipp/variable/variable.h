@@ -474,3 +474,4 @@ using variable::Variances;
 } // namespace scipp
 
 #endif // SCIPP_VARIABLE_VARIABLE_H
+

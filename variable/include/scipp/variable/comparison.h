@@ -14,17 +14,17 @@
 
 namespace scipp::variable {
 
-SCIPP_VARIABLE_EXPORT Variable is_less(const VariableConstView &x,
+SCIPP_VARIABLE_EXPORT Variable less(const VariableConstView &x,
                                        const VariableConstView &y);
-SCIPP_VARIABLE_EXPORT Variable is_greater(const VariableConstView &x,
+SCIPP_VARIABLE_EXPORT Variable greater(const VariableConstView &x,
                                           const VariableConstView &y);
-SCIPP_VARIABLE_EXPORT Variable is_greater_equal(const VariableConstView &x,
+SCIPP_VARIABLE_EXPORT Variable greater_equal(const VariableConstView &x,
                                                 const VariableConstView &y);
-SCIPP_VARIABLE_EXPORT Variable is_less_equal(const VariableConstView &x,
+SCIPP_VARIABLE_EXPORT Variable less_equal(const VariableConstView &x,
                                              const VariableConstView &y);
-SCIPP_VARIABLE_EXPORT Variable is_equal(const VariableConstView &x,
+SCIPP_VARIABLE_EXPORT Variable equal(const VariableConstView &x,
                                         const VariableConstView &y);
-SCIPP_VARIABLE_EXPORT Variable is_not_equal(const VariableConstView &x,
+SCIPP_VARIABLE_EXPORT Variable not_equal(const VariableConstView &x,
                                             const VariableConstView &y);
 
 template <typename T>

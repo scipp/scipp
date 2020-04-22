@@ -241,3 +241,5 @@ void expect0D(const Dimensions &dims) {
 } // namespace detail
 
 } // namespace scipp::variable
+
+

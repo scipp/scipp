@@ -16,61 +16,6 @@ namespace scipp::core {
 
 namespace element {
 
-constexpr auto less =
-    overloaded{arg_list<double, float, int64_t, int32_t>,
-               transform_flags::expect_no_variance_arg<0>,
-               transform_flags::expect_no_variance_arg<1>,
-               [](const auto &x, const auto &y) { return x < y; },
-               [](const units::Unit &x, const units::Unit &y) {
-                 expect::equals(x, y);
-                 return units::dimensionless;
-               }};
-constexpr auto greater =
-    overloaded{arg_list<double, float, int64_t, int32_t>,
-               transform_flags::expect_no_variance_arg<0>,
-               transform_flags::expect_no_variance_arg<1>,
-               [](const auto &x, const auto &y) { return x > y; },
-               [](const units::Unit &x, const units::Unit &y) {
-                 expect::equals(x, y);
-                 return units::dimensionless;
-               }};
-constexpr auto less_equal =
-    overloaded{arg_list<double, float, int64_t, int32_t>,
-               transform_flags::expect_no_variance_arg<0>,
-               transform_flags::expect_no_variance_arg<1>,
-               [](const auto &x, const auto &y) { return x <= y; },
-               [](const units::Unit &x, const units::Unit &y) {
-                 expect::equals(x, y);
-                 return units::dimensionless;
-               }};
-constexpr auto greater_equal =
-    overloaded{arg_list<double, float, int64_t, int32_t>,
-               transform_flags::expect_no_variance_arg<0>,
-               transform_flags::expect_no_variance_arg<1>,
-               [](const auto &x, const auto &y) { return x >= y; },
-               [](const units::Unit &x, const units::Unit &y) {
-                 expect::equals(x, y);
-                 return units::dimensionless;
-               }};
-constexpr auto equal =
-    overloaded{arg_list<double, float, int64_t, int32_t>,
-               transform_flags::expect_no_variance_arg<0>,
-               transform_flags::expect_no_variance_arg<1>,
-               [](const auto &x, const auto &y) { return x == y; },
-               [](const units::Unit &x, const units::Unit &y) {
-                 expect::equals(x, y);
-                 return units::dimensionless;
-               }};
-constexpr auto not_equal =
-    overloaded{arg_list<double, float, int64_t, int32_t>,
-               transform_flags::expect_no_variance_arg<0>,
-               transform_flags::expect_no_variance_arg<1>,
-               [](const auto &x, const auto &y) { return x != y; },
-               [](const units::Unit &x, const units::Unit &y) {
-                 expect::equals(x, y);
-                 return units::dimensionless;
-               }};
-
 namespace geometry {
 
 constexpr auto position = overloaded{
