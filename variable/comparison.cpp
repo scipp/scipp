@@ -27,8 +27,7 @@ Variable greater(const VariableConstView &x, const VariableConstView &y) {
 Variable less_equal(const VariableConstView &x, const VariableConstView &y) {
   return transform(x, y, element::less_equal);
 }
-Variable greater_equal(const VariableConstView &x,
-                          const VariableConstView &y) {
+Variable greater_equal(const VariableConstView &x, const VariableConstView &y) {
   return transform(x, y, element::greater_equal);
 }
 Variable equal(const VariableConstView &x, const VariableConstView &y) {

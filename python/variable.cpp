@@ -1016,4 +1016,3 @@ void init_variable(py::module &m) {
         :return: rotated vectors are written to out.
         :rtype: VariableView)");
 }
-

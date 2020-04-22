@@ -111,89 +111,64 @@ TYPED_TEST(LessTest, value) {
   using T = TypeParam;
   T y = 1;
   T x = 2;
-  const auto a = makeVariable<T>(Dims{Dim::X}, Shape{2}, Values{y, x});
-  const auto b = makeVariable<T>(Dims{Dim::X}, Shape{2}, Values{y, -x});
-  const auto result1 =
-      makeVariable<bool>(Dims{Dim::X}, Shape{2}, Values{false, false});
-  const auto result2 =
-      makeVariable<bool>(Dims{Dim::X}, Shape{2}, Values{false, true});
+  const auto a = makeVariable<T>(Dims{Dim::X}, Shape{1}, Values{x});
+  const auto b = makeVariable<T>(Dims{Dim::X}, Shape{1}, Values{y});
+  const auto result = makeVariable<bool>(Dims{Dim::X}, Shape{1}, Values{false});
 
-  EXPECT_EQ(less(a, b), result1);
-  EXPECT_EQ(less(b, a), result2);
+  EXPECT_EQ(less(a, b), result);
 }
 
 TYPED_TEST(GreaterTest, value) {
   using T = TypeParam;
   T y = 1;
   T x = 2;
-  const auto a = makeVariable<T>(Dims{Dim::X}, Shape{2}, Values{y, x});
-  const auto b = makeVariable<T>(Dims{Dim::X}, Shape{2}, Values{y, -x});
-  const auto result1 =
-      makeVariable<bool>(Dims{Dim::X}, Shape{2}, Values{false, true});
-  const auto result2 =
-      makeVariable<bool>(Dims{Dim::X}, Shape{2}, Values{false, false});
+  const auto a = makeVariable<T>(Dims{Dim::X}, Shape{1}, Values{x});
+  const auto b = makeVariable<T>(Dims{Dim::X}, Shape{1}, Values{y});
+  const auto result = makeVariable<bool>(Dims{Dim::X}, Shape{1}, Values{true});
 
-  EXPECT_EQ(greater(a, b), result1);
-  EXPECT_EQ(greater(b, a), result2);
+  EXPECT_EQ(greater(a, b), result);
 }
 
 TYPED_TEST(GreaterEqualTest, value) {
   using T = TypeParam;
   T y = 1;
   T x = 2;
-  const auto a = makeVariable<T>(Dims{Dim::X}, Shape{2}, Values{y, x});
-  const auto b = makeVariable<T>(Dims{Dim::X}, Shape{2}, Values{y, -x});
-  const auto result1 =
-      makeVariable<bool>(Dims{Dim::X}, Shape{2}, Values{true, true});
-  const auto result2 =
-      makeVariable<bool>(Dims{Dim::X}, Shape{2}, Values{true, false});
+  const auto a = makeVariable<T>(Dims{Dim::X}, Shape{1}, Values{x});
+  const auto b = makeVariable<T>(Dims{Dim::X}, Shape{1}, Values{y});
+  const auto result = makeVariable<bool>(Dims{Dim::X}, Shape{1}, Values{true});
 
-  EXPECT_EQ(greater_equal(a, b), result1);
-  EXPECT_EQ(greater_equal(b, a), result2);
+  EXPECT_EQ(greater_equal(a, b), result);
 }
 
 TYPED_TEST(LessEqualTest, value) {
   using T = TypeParam;
   T y = 1;
   T x = 2;
-  const auto a = makeVariable<T>(Dims{Dim::X}, Shape{2}, Values{y, x});
-  const auto b = makeVariable<T>(Dims{Dim::X}, Shape{2}, Values{y, -x});
-  const auto result1 =
-      makeVariable<bool>(Dims{Dim::X}, Shape{2}, Values{true, false});
-  const auto result2 =
-      makeVariable<bool>(Dims{Dim::X}, Shape{2}, Values{true, true});
+  const auto a = makeVariable<T>(Dims{Dim::X}, Shape{1}, Values{x});
+  const auto b = makeVariable<T>(Dims{Dim::X}, Shape{1}, Values{y});
+  const auto result = makeVariable<bool>(Dims{Dim::X}, Shape{1}, Values{false});
 
-  EXPECT_EQ(less_equal(a, b), result1);
-  EXPECT_EQ(less_equal(b, a), result2);
+  EXPECT_EQ(less_equal(a, b), result);
 }
 
 TYPED_TEST(EqualTest, value) {
   using T = TypeParam;
   T y = 1;
-  T x = 1;
-  const auto a = makeVariable<T>(Dims{Dim::X}, Shape{2}, Values{y, x});
-  const auto b = makeVariable<T>(Dims{Dim::X}, Shape{2}, Values{y, -x});
-  const auto result1 =
-      makeVariable<bool>(Dims{Dim::X}, Shape{2}, Values{true, false});
-  const auto result2 =
-      makeVariable<bool>(Dims{Dim::X}, Shape{2}, Values{true, false});
+  T x = 2;
+  const auto a = makeVariable<T>(Dims{Dim::X}, Shape{1}, Values{x});
+  const auto b = makeVariable<T>(Dims{Dim::X}, Shape{1}, Values{y});
+  const auto result = makeVariable<bool>(Dims{Dim::X}, Shape{1}, Values{false});
 
-  EXPECT_EQ(equal(a, b), result1);
-  EXPECT_EQ(equal(b, a), result2);
+  EXPECT_EQ(equal(a, b), result);
 }
 
 TYPED_TEST(NotEqualTest, value) {
   using T = TypeParam;
   T y = 1;
-  T x = 1;
-  const auto a = makeVariable<T>(Dims{Dim::X}, Shape{2}, Values{y, x});
-  const auto b = makeVariable<T>(Dims{Dim::X}, Shape{2}, Values{y, -x});
-  const auto result1 =
-      makeVariable<bool>(Dims{Dim::X}, Shape{2}, Values{false, true});
-  const auto result2 =
-      makeVariable<bool>(Dims{Dim::X}, Shape{2}, Values{false, true});
+  T x = 2;
+  const auto a = makeVariable<T>(Dims{Dim::X}, Shape{1}, Values{x});
+  const auto b = makeVariable<T>(Dims{Dim::X}, Shape{1}, Values{y});
+  const auto result = makeVariable<bool>(Dims{Dim::X}, Shape{1}, Values{true});
 
-  EXPECT_EQ(not_equal(a, b), result1);
-  EXPECT_EQ(not_equal(b, a), result2);
+  EXPECT_EQ(not_equal(a, b), result);
 }
-

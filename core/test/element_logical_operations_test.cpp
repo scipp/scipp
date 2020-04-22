@@ -5,14 +5,13 @@
 #include <Eigen/Geometry>
 
 #include "scipp/common/constants.h"
-#include "scipp/core/element/geometric_operations.h"
+#include "scipp/core/element/logical_operations.h"
 #include "scipp/units/unit.h"
 
 #include "fix_typed_test_suite_warnings.h"
 
 using namespace scipp;
 using namespace scipp::core::element;
-
 
 template <typename T> class ElementLessTest : public ::testing::Test {};
 template <typename T> class ElementGreaterTest : public ::testing::Test {};

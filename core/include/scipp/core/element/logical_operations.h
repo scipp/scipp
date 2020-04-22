@@ -26,40 +26,30 @@ constexpr auto comparison =
                  return units::dimensionless;
                }};
 
-constexpr auto less =
-    overloaded{
+constexpr auto less = overloaded{
     comparison,
     [](const auto &x, const auto &y) { return x < y; },
 };
 
-constexpr auto greater =
-    overloaded{
+constexpr auto greater = overloaded{
     comparison,
     [](const auto &x, const auto &y) { return x > y; },
 };
 
-constexpr auto less_equal =
-    overloaded{
+constexpr auto less_equal = overloaded{
     comparison,
     [](const auto &x, const auto &y) { return x <= y; },
 };
 
 constexpr auto greater_equal =
-    overloaded{
-    comparison,
-    [](const auto &x, const auto &y) { return x >= y; }
-};
+    overloaded{comparison, [](const auto &x, const auto &y) { return x >= y; }};
 
-constexpr auto equal =
-    overloaded{
+constexpr auto equal = overloaded{
     comparison,
     [](const auto &x, const auto &y) { return x == y; },
 };
 constexpr auto not_equal =
-    overloaded{
-    comparison,
-    [](const auto &x, const auto &y) { return x != y; }
-};
+    overloaded{comparison, [](const auto &x, const auto &y) { return x != y; }};
 
 } // namespace element
 
