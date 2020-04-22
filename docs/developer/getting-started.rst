@@ -95,7 +95,7 @@ To run the C++ tests, run (in the ``build/`` directory):
   ./dataset/test/scipp-dataset-test
   ./neutron/test/scipp-neutron-test
 
-Note that simply running ``ctest`` also works, but currently it seems to have an issue with gathering templated tests, so calling the test binaries manually is recommended (and much faster).
+``all-tests`` can be used to build all tests at the same time. Note that simply running ``ctest`` also works, but currently it seems to have an issue with gathering templated tests, so calling the test binaries manually is recommended (and much faster).
 
 To run the Python tests, run (in the ``python/`` directory):
 

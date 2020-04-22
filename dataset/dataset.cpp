@@ -3,6 +3,8 @@
 /// @file
 /// @author Simon Heybrock
 #include "scipp/dataset/dataset.h"
+#include "scipp/common/index.h"
+#include "scipp/core/except.h"
 #include "scipp/dataset/except.h"
 #include "scipp/dataset/unaligned.h"
 
@@ -186,6 +188,7 @@ void setExtent(std::unordered_map<Dim, scipp::index> &dims, const Dim dim,
   const auto it = dims.find(dim);
   // Internally use negative extent -1 to indicate unknown edge state. The `-1`
   // is required for dimensions with extent 0.
+
   if (it == dims.end()) {
     dims[dim] = extents::makeUnknownEdgeState(extent);
   } else {
@@ -197,12 +200,12 @@ void setExtent(std::unordered_map<Dim, scipp::index> &dims, const Dim dim,
       } else if (extents::oneSmaller(extent, heldExtent) && !isCoord) {
         heldExtent = extent;
       } else {
-        throw except::DimensionError("Length mismatch on insertion");
+        throw except::DimensionError(heldExtent, extent);
       }
     } else {
       // Check for known edge state
       if ((extent != heldExtent || isCoord) && extent != heldExtent + 1)
-        throw except::DimensionError("Length mismatch on insertion");
+        throw except::DimensionError(heldExtent, extent);
     }
   }
 }
