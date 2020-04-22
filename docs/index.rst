@@ -107,10 +107,11 @@ Documentation
    :maxdepth: 3
 
    developer/getting-started
+   developer/tooling
+   developer/dependencies
    developer/api
    developer/customizing
    developer/how-to
-   developer/tooling
    developer/transform
    developer/constructing_variables
 
