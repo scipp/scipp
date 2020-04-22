@@ -2,8 +2,7 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#ifndef SCIPP_COMMON_NUMERIC_H
-#define SCIPP_COMMON_NUMERIC_H
+#pragma once
 
 #include <algorithm>
 #include <cmath>
@@ -33,5 +32,3 @@ template <class Range> bool is_linspace(const Range &range) {
 }
 
 } // namespace scipp::numeric
-
-#endif // SCIPP_COMMON_NUMERIC_H

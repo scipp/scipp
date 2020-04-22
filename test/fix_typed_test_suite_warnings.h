@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 
-#ifndef SCIPP_FIX_TYPED_TEST_SUITE_WARNINGS_H
-#define SCIPP_FIX_TYPED_TEST_SUITE_WARNINGS_H
+#pragma once
 
 // Originally definition of this macro in gtest contains ellipsis
 // TYPED_TEST_SUITE(CaseName, Types, ...)
@@ -15,4 +14,3 @@
       GTEST_TYPE_PARAMS_(CaseName);                                            \
   typedef ::testing::internal::NameGeneratorSelector<>::type                   \
       GTEST_NAME_GENERATOR_(CaseName)
-#endif // SCIPP_FIX_TYPED_TEST_SUITE_WARNINGS_H

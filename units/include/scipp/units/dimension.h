@@ -2,8 +2,7 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#ifndef SCIPP_UNITS_DIMENSION_H
-#define SCIPP_UNITS_DIMENSION_H
+#pragma once
 
 #include <cstdint>
 
@@ -21,5 +20,3 @@
   constexpr const char *names = #__VA_ARGS__;                                  \
   constexpr auto ndim = static_cast<size_t>(DimId::Invalid);                   \
   }
-
-#endif // SCIPP_UNITS_DIMENSION_H

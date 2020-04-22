@@ -2,8 +2,7 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#ifndef SCIPP_CORE_PARALLEL_H
-#define SCIPP_CORE_PARALLEL_H
+#pragma once
 
 #include "scipp/common/index.h"
 
@@ -30,5 +29,3 @@ template <class Op> void parallel_for(const blocked_range &range, Op &&op) {
 }
 
 } // namespace scipp::core::parallel
-
-#endif // SCIPP_CORE_PARALLEL_H

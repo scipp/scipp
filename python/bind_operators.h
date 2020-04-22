@@ -2,8 +2,7 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#ifndef SCIPP_PYTHON_BIND_OPERATORS_H
-#define SCIPP_PYTHON_BIND_OPERATORS_H
+#pragma once
 
 #include "pybind11.h"
 
@@ -110,5 +109,3 @@ void bind_boolean_operators(pybind11::class_<T, Ignored...> &c) {
         },
         py::is_operator(), py::call_guard<py::gil_scoped_release>());
 }
-
-#endif // SCIPP_PYTHON_BIND_OPERATORS_H

@@ -2,8 +2,7 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#ifndef SCIPPY_NUMPY_H
-#define SCIPPY_NUMPY_H
+#pragma once
 
 #include "scipp/variable/variable.h"
 
@@ -78,5 +77,3 @@ void copy_flattened(const py::array_t<T> &data, View &&view) {
                              "in the current implementation.");
   }
 }
-
-#endif // SCIPPY_NUMPY_H

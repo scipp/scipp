@@ -2,8 +2,7 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#ifndef SCIPP_CORE_VALUES_AND_VARIANCES_H
-#define SCIPP_CORE_VALUES_AND_VARIANCES_H
+#pragma once
 
 #include "scipp/core/except.h"
 
@@ -85,5 +84,3 @@ using core::is_ValuesAndVariances;
 using core::is_ValuesAndVariances_v;
 using core::ValuesAndVariances;
 } // namespace scipp
-
-#endif // SCIPP_CORE_VALUES_AND_VARIANCES_H

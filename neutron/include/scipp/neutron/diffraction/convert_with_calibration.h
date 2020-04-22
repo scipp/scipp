@@ -2,8 +2,7 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Mads Bertelsen
-#ifndef SCIPP_NEUTRON_CONVERT_WITH_CALIBRATION_H
-#define SCIPP_NEUTRON_CONVERT_WITH_CALIBRATION_H
+#pragma once
 
 #include "scipp-neutron_export.h"
 #include "scipp/dataset/dataset.h"
@@ -16,5 +15,3 @@ SCIPP_NEUTRON_EXPORT dataset::Dataset
 convert_with_calibration(dataset::Dataset d, dataset::Dataset cal);
 
 } // namespace scipp::neutron::diffraction
-
-#endif // SCIPP_NEUTRON_CONVERT_WITH_CALIBRATION_H

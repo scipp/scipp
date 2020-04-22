@@ -5,8 +5,7 @@
 
 // from https://stackoverflow.com/a/12942652/1458281
 
-#ifndef SCIPP_CORE_ALIGNED_ALLOCATOR_H
-#define SCIPP_CORE_ALIGNED_ALLOCATOR_H
+#pragma once
 
 #include <cassert>
 
@@ -195,4 +194,3 @@ inline bool operator!=(const AlignedAllocator<T, TAlign> &,
 }
 
 } // namespace scipp::core
-#endif // SCIPP_CORE_ALIGNED_ALLOCATOR_H

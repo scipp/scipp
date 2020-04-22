@@ -2,8 +2,7 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Owen Arnold
-#ifndef SCIPP_CORE_ELEMENT_TRIGONOMETRY_OPERATIONS_H
-#define SCIPP_CORE_ELEMENT_TRIGONOMETRY_OPERATIONS_H
+#pragma once
 
 #include <cmath>
 
@@ -96,5 +95,3 @@ constexpr auto atan2_out_arg = overloaded{
 } // namespace element
 
 } // namespace scipp::core
-
-#endif // SCIPP_CORE_ELEMENT_TRIGONOMETRY_OPERATIONS_H

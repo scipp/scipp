@@ -2,8 +2,7 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#ifndef SCIPP_NEUTRON_CONVERT_H
-#define SCIPP_NEUTRON_CONVERT_H
+#pragma once
 
 #include "scipp-neutron_export.h"
 #include "scipp/dataset/dataset.h"
@@ -21,5 +20,3 @@ SCIPP_NEUTRON_EXPORT dataset::Dataset
 convert(const dataset::DatasetConstView &d, const Dim from, const Dim to);
 
 } // namespace scipp::neutron
-
-#endif // SCIPP_NEUTRON_CONVERT_H

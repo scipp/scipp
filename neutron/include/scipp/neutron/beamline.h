@@ -2,8 +2,7 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#ifndef SCIPP_NEUTRON_BEAMLINE_H
-#define SCIPP_NEUTRON_BEAMLINE_H
+#pragma once
 
 #include "scipp-neutron_export.h"
 #include "scipp/dataset/dataset.h"
@@ -56,5 +55,3 @@ SCIPP_NEUTRON_EXPORT variable::Variable
 two_theta(const dataset::DataArrayConstView &d);
 
 } // namespace scipp::neutron
-
-#endif // SCIPP_NEUTRON_BEAMLINE_H

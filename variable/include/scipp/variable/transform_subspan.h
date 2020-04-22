@@ -2,8 +2,7 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#ifndef SCIPP_VARIABLE_TRANSFORM_SUBSPAN_H
-#define SCIPP_VARIABLE_TRANSFORM_SUBSPAN_H
+#pragma once
 
 #include "scipp/variable/subspan_view.h"
 #include "scipp/variable/transform.h"
@@ -93,5 +92,3 @@ template <class Types, class Op>
 }
 
 } // namespace scipp::variable
-
-#endif // SCIPP_VARIABLE_TRANSFORM_SUBSPAN_H

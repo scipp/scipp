@@ -3,8 +3,8 @@
 /// @file
 /// @author Simon Heybrock
 /// Originally from https://stackoverflow.com/a/38279655
-#ifndef SCIPP_UNITS_BOOST_UNITS_UTIL_H
-#define SCIPP_UNITS_BOOST_UNITS_UTIL_H
+#pragma once
+
 #include <iostream>
 #include <type_traits>
 
@@ -55,5 +55,3 @@ template <typename U, typename V> struct Exponent {
 template <typename U, typename V> constexpr auto getExponent(U &&, V &&) {
   return Exponent<std::decay_t<U>, std::decay_t<V>>::value;
 }
-
-#endif // SCIPP_UNITS_BOOST_UNITS_UTIL_H

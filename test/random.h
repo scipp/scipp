@@ -2,8 +2,7 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#ifndef SCIPP_TEST_RANDOM_H
-#define SCIPP_TEST_RANDOM_H
+#pragma once
 
 #include <algorithm>
 #include <random>
@@ -36,5 +35,3 @@ public:
   }
   void seed(const uint32_t value) { mt.seed(value); }
 };
-
-#endif // SCIPP_TEST_RANDOM_H
