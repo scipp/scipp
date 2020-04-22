@@ -108,6 +108,29 @@ constexpr auto negative_inf_to_num_out_arg =
                },
                unit_check_and_assign};
 
+constexpr auto reciprocal = overloaded{
+    arg_list<double, float>,
+    [](const auto &x) noexcept {
+        return static_cast<
+                   core::detail::element_type_t<std::decay_t<decltype(x)>>>(1) /
+               x;
+} // namespace element
+, [](const units::Unit &unit) {
+  return units::Unit(units::dimensionless) / unit;
+}
+}; // namespace scipp::core
+
+constexpr auto reciprocal_out_arg = overloaded{
+    arg_list<double, float>,
+    [](auto &x, const auto &y) {
+      x = static_cast<core::detail::element_type_t<std::decay_t<decltype(y)>>>(
+              1) /
+          y;
+    },
+    [](units::Unit &x, const units::Unit &y) {
+      x = units::Unit(units::dimensionless) / y;
+    }};
+
 } // namespace element
 
 } // namespace scipp::core
