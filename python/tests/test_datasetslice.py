@@ -117,35 +117,6 @@ class TestDatasetSlice(unittest.TestCase):
         self.assertNotEqual(s1, s2)
         self.assertNotEqual(s3, s2)
 
-
-def test_slice_and_dimensions_items_dataarray():
-    da = sc.DataArray(
-        sc.Variable(['x', 'y'], values=np.arange(50).reshape(5, 10)))
-    assert np.allclose(da['x', 0].values, da['x', 0:1].values[0], atol=1e-9)
-    assert np.allclose(da['x', 4].values, da['x', -1].values)
-    assert np.allclose(da['y', 1].values, da['y', -9].values)
-    assert 'y' in da['x', 0].dims
-    assert 'x' not in da['x', 0].dims
-    assert 'y' in da['x', 0:1].dims
-    assert 'x' in da['x', 0:1].dims
-
-
-def test_slice_and_dimensions_items_dataset():
-    da = sc.DataArray(
-        sc.Variable(['x', 'y'], values=np.arange(50).reshape(5, 10)))
-    ds = sc.Dataset({'a': da})
-    assert np.allclose(ds['x', 0]['a'].values,
-                       ds['x', 0:1]['a'].values[0],
-                       atol=1e-9)
-    assert np.allclose(ds['x', 4]['a'].values, ds['x', -1]['a'].values)
-    assert np.allclose(ds['y', 1]['a'].values, ds['y', -9]['a'].values)
-    assert 'y' in da['x', 0].dims
-    assert 'x' not in da['x', 0].dims
-    assert 'y' in da['x', 0:1].dims
-    assert 'x' in da['x', 0:1].dims
-
-
-'''
     def _apply_test_op_rhs_ds_slice(self,
                                     op,
                                     a,
@@ -155,10 +126,10 @@ def test_slice_and_dimensions_items_dataset():
                                     rh_var_name="b"):
         # Assume numpy operations are correct as comparitor
         with np.errstate(invalid='ignore'):
-            op(data, b[sc.Data.Value, rh_var_name].numpy)
+            op(data, b.data.values)
         op(a, b)
         # Desired nan comparisons
-        np.testing.assert_equal(a[sc.Data.Value, lh_var_name].numpy, data)
+        np.testing.assert_equal(a.data.values, data)
 
     def _apply_test_op_rhs_variable(self,
                                     op,
@@ -168,59 +139,55 @@ def test_slice_and_dimensions_items_dataset():
                                     lh_var_name="a",
                                     rh_var_name="b"):
         # Assume numpy operations are correct as comparitor
-        op(data, b.numpy)
+        op(data, b.value)
         op(a, b)
         # Desired nan comparisons
-        np.testing.assert_equal(a[sc.Data.Value, lh_var_name].numpy, data)
+        np.testing.assert_equal(a[lh_var_name].value, data)
 
     def test_binary_slice_rhs_operations(self):
-        d = sc.Dataset()
-        d[sc.Coord.X] = (['x'], np.arange(10))
-        d[sc.Data.Value, "a"] = (['x'], np.arange(10, dtype='float64'))
-        d[sc.Data.Variance, "a"] = (['x'], np.arange(10, dtype='float64'))
-        d[sc.Data.Value, "b"] = (['x'], np.arange(10, dtype='float64'))
-        d[sc.Data.Variance, "b"] = (['x'], np.arange(10, dtype='float64'))
-        a = d.subset["a"]
-        b = d.subset["b"]
-        data = np.copy(a[sc.Data.Value, "a"].numpy)
-        variance = np.copy(a[sc.Data.Variance, "a"].numpy)
+        var = sc.Variable(['x'],
+                          values=np.arange(10.0),
+                          variances=np.arange(10.0))
+        a = sc.DataArray(
+            var, coords={'x': sc.Variable(['x'], values=np.arange(10))})
+        b = sc.DataArray(
+            var, coords={'x': sc.Variable(['x'], values=np.arange(10))})
+        values = np.copy(var.values)
+        variances = np.copy(var.variances)
 
         c = a + b
         # Variables "a" and "b" added despite different names
-        self.assertTrue(
-            np.array_equal(c[sc.Data.Value, "a"].numpy, data + data))
-        self.assertTrue(
-            np.array_equal(c[sc.Data.Variance, "a"].numpy,
-                           variance + variance))
+        self.assertTrue(np.array_equal(c.data.values, values + values))
+        self.assertTrue(np.array_equal(c.data.variances,
+                                       variances + variances))
 
         c = a - b
         # Variables "a" and "b" subtracted despite different names
-        self.assertTrue(
-            np.array_equal(c[sc.Data.Value, "a"].numpy, data - data))
-        self.assertTrue(
-            np.array_equal(c[sc.Data.Variance, "a"].numpy,
-                           variance + variance))
+        self.assertTrue(np.array_equal(c.data.values, values - values))
+        self.assertTrue(np.array_equal(c.data.variances,
+                                       variances + variances))
 
         c = a * b
         # Variables "a" and "b" multiplied despite different names
+        self.assertTrue(np.array_equal(c.data.values, values * values))
         self.assertTrue(
-            np.array_equal(c[sc.Data.Value, "a"].numpy, data * data))
-        self.assertTrue(
-            np.array_equal(c[sc.Data.Variance, "a"].numpy,
-                           variance * (data * data) * 2))
+            np.array_equal(c.data.variances,
+                           variances * (values * values) * 2))
 
         c = a / b
         # Variables "a" and "b" divided despite different names
         with np.errstate(invalid='ignore'):
-            np.testing.assert_equal(c[sc.Data.Value, "a"].numpy, data / data)
-            np.testing.assert_equal(c[sc.Data.Variance, "a"].numpy,
-                                    2 * variance / (data * data))
+            np.testing.assert_equal(c.data.values, values / values)
+            np.testing.assert_equal(c.data.variances,
+                                    2 * variances / (values * values))
 
-        self._apply_test_op_rhs_ds_slice(operator.iadd, a, b, data)
-        self._apply_test_op_rhs_ds_slice(operator.isub, a, b, data)
-        self._apply_test_op_rhs_ds_slice(operator.imul, a, b, data)
-        self._apply_test_op_rhs_ds_slice(operator.itruediv, a, b, data)
+        self._apply_test_op_rhs_ds_slice(operator.iadd, a, b, values)
+        self._apply_test_op_rhs_ds_slice(operator.isub, a, b, values)
+        self._apply_test_op_rhs_ds_slice(operator.imul, a, b, values)
+        self._apply_test_op_rhs_ds_slice(operator.itruediv, a, b, values)
 
+
+'''
     def test_binary_variable_rhs_operations(self):
         data = np.ones(10, dtype='float64')
         d = sc.Dataset()
@@ -249,6 +216,35 @@ def test_slice_and_dimensions_items_dataset():
         self._apply_test_op_rhs_variable(operator.isub, a, b_var, data)
         self._apply_test_op_rhs_variable(operator.imul, a, b_var, data)
         self._apply_test_op_rhs_variable(operator.itruediv, a, b_var, data)
+
+
+def test_slice_and_dimensions_items_dataarray():
+    da = sc.DataArray(
+        sc.Variable(['x', 'y'], values=np.arange(50).reshape(5, 10)))
+    assert np.allclose(da['x', 0].values, da['x', 0:1].values[0], atol=1e-9)
+    assert np.allclose(da['x', 4].values, da['x', -1].values)
+    assert np.allclose(da['y', 1].values, da['y', -9].values)
+    assert 'y' in da['x', 0].dims
+    assert 'x' not in da['x', 0].dims
+    assert 'y' in da['x', 0:1].dims
+    assert 'x' in da['x', 0:1].dims
+
+
+def test_slice_and_dimensions_items_dataset():
+    da = sc.DataArray(
+        sc.Variable(['x', 'y'], values=np.arange(50).reshape(5, 10)))
+    ds = sc.Dataset({'a': da})
+    assert np.allclose(ds['x', 0]['a'].values,
+                       ds['x', 0:1]['a'].values[0],
+                       atol=1e-9)
+    assert np.allclose(ds['x', 4]['a'].values, ds['x', -1]['a'].values)
+    assert np.allclose(ds['y', 1]['a'].values, ds['y', -9]['a'].values)
+    assert 'y' in da['x', 0].dims
+    assert 'x' not in da['x', 0].dims
+    assert 'y' in da['x', 0:1].dims
+    assert 'x' in da['x', 0:1].dims
+
+
 
     def test_binary_float_operations(self):
         d = sc.Dataset()
