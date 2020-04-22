@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+#include "scipp/common/index.h"
+#include "scipp/core/except.h"
 #include "test_macros.h"
 #include <gtest/gtest.h>
 
@@ -207,6 +209,18 @@ TEST(DatasetTest, setData_keep_attributes) {
   EXPECT_TRUE(d["x"].attrs().contains("attr"));
   d.setData("x", var, AttrPolicy::Keep);
   EXPECT_TRUE(d["x"].attrs().contains("attr"));
+}
+
+TEST(DatasetTest, setData_with_mismatched_dims) {
+  scipp::index expected_size = 2;
+  const auto original =
+      makeVariable<double>(Dims{Dim::X}, Shape{expected_size});
+  const auto mismatched =
+      makeVariable<double>(Dims{Dim::X}, Shape{expected_size + 1});
+  Dataset d;
+
+  ASSERT_NO_THROW(d.setData("a", original));
+  ASSERT_THROW(d.setData("a", mismatched), except::DimensionError);
 }
 
 TEST(DatasetTest, DataArrayView_setData) {

@@ -2,8 +2,7 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#ifndef SCIPP_CORE_OPERATORS_H
-#define SCIPP_CORE_OPERATORS_H
+#pragma once
 
 #include <algorithm>
 
@@ -97,5 +96,3 @@ struct min_equals
 } // namespace operator_detail
 
 } // namespace scipp::core
-
-#endif // SCIPP_CORE_OPERATORS_H

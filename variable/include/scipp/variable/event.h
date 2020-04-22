@@ -2,8 +2,7 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#ifndef SCIPP_VARIABLE_EVENT_H
-#define SCIPP_VARIABLE_EVENT_H
+#pragma once
 
 #include "scipp/variable/variable.h"
 
@@ -20,5 +19,3 @@ SCIPP_VARIABLE_EXPORT void reserve(const VariableView &events,
                                    const VariableConstView &capacity);
 
 } // namespace scipp::variable::event
-
-#endif // SCIPP_VARIABLE_EVENT_H

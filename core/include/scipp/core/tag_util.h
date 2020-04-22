@@ -2,8 +2,7 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#ifndef SCIPP_CORE_TAG_UTIL_H
-#define SCIPP_CORE_TAG_UTIL_H
+#pragma once
 
 #include <array>
 
@@ -47,5 +46,3 @@ template <class... Ts> struct CallDType {
 };
 
 } // namespace scipp::core
-
-#endif // SCIPP_CORE_TAG_UTIL_H

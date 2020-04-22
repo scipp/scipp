@@ -2,13 +2,23 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#include <set>
-
-#include "scipp/core/dimensions.h"
 #include "scipp/core/except.h"
+#include "scipp/common/index.h"
+#include "scipp/core/dimensions.h"
 #include "scipp/core/slice.h"
 
+#include <cmath>
+#include <set>
+
 namespace scipp::except {
+
+DimensionError::DimensionError(const std::string &msg)
+    : Error<core::Dimensions>(msg) {}
+
+DimensionError::DimensionError(scipp::index expectedDim, scipp::index userDim)
+    : DimensionError("Length mismatch on insertion. Expected size: " +
+                     std::to_string(std::abs(expectedDim)) +
+                     " Requested size: " + std::to_string(userDim)) {}
 
 DimensionNotFoundError::DimensionNotFoundError(const core::Dimensions &expected,
                                                const Dim actual)

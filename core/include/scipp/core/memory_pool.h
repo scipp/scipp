@@ -2,8 +2,7 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#ifndef SCIPP_CORE_MEMORY_POOL_H
-#define SCIPP_CORE_MEMORY_POOL_H
+#pragma once
 
 #include <array>
 #include <map>
@@ -97,5 +96,3 @@ inline MemoryPool &instance() {
 }
 
 } // namespace scipp::core
-
-#endif // SCIPP_CORE_MEMORY_POOL_H

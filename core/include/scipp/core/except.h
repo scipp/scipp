@@ -2,8 +2,7 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#ifndef SCIPP_CORE_EXCEPT_H
-#define SCIPP_CORE_EXCEPT_H
+#pragma once
 
 #include <algorithm>
 #include <stdexcept>
@@ -38,13 +37,16 @@ struct SCIPP_CORE_EXPORT TypeError : public std::runtime_error {
       : std::runtime_error(msg + ((to_string(vars.dtype()) + ' ') + ...)) {}
 };
 
-using DimensionError = Error<core::Dimensions>;
-
 using DimensionMismatchError = MismatchError<core::Dimensions>;
 
 template <class T>
 MismatchError(const core::Dimensions &, const T &)
     ->MismatchError<core::Dimensions>;
+
+struct SCIPP_CORE_EXPORT DimensionError : public Error<core::Dimensions> {
+  DimensionError(const std::string &msg);
+  DimensionError(scipp::index expectedDim, scipp::index userDim);
+};
 
 struct SCIPP_CORE_EXPORT DimensionNotFoundError : public DimensionError {
   DimensionNotFoundError(const core::Dimensions &expected, const Dim actual);
@@ -174,5 +176,3 @@ template <class T> void hasVariances(const T &variable) {
 }
 
 } // namespace scipp::core::expect
-
-#endif // SCIPP_CORE_EXCEPT_H

@@ -627,7 +627,24 @@ TEST(Variable, sqrt_out_arg) {
   EXPECT_EQ(view.underlying(), x);
 }
 
-TEST(VariableReciprocalOutArg, full_in_place) {
+TEST(Variable, reciprocal) {
+  auto var1 = makeVariable<double>(Values{2});
+  auto var2 = makeVariable<double>(Values{0.5});
+  ASSERT_EQ(reciprocal(var1), var2);
+  var1 = makeVariable<double>(Values{2}, Variances{1});
+  var2 = makeVariable<double>(Values{0.5}, Variances{0.0625});
+  ASSERT_EQ(reciprocal(var1), var2);
+}
+
+TEST(Variable, reciprocal_move) {
+  auto var = makeVariable<double>(Values{4});
+  const auto ptr = var.values<double>().data();
+  auto out = reciprocal(std::move(var));
+  EXPECT_EQ(out, makeVariable<double>(Values{0.25}));
+  EXPECT_EQ(out.values<double>().data(), ptr);
+}
+
+TEST(Variable, resiprocal_out_arg_full_in_place) {
   auto var = makeVariable<double>(Dims{Dim::X}, Shape{3}, units::Unit(units::m),
                                   Values{1, 4, 9});
   auto view = reciprocal(var, var);
@@ -639,7 +656,7 @@ TEST(VariableReciprocalOutArg, full_in_place) {
   EXPECT_EQ(view.underlying(), var);
 }
 
-TEST(VariableReciprocalOutArg, partial) {
+TEST(Variable, reciprocal_out_arg_partial) {
   const auto var = makeVariable<double>(Dims{Dim::X}, Shape{3},
                                         units::Unit(units::m), Values{1, 4, 9});
   auto out =
@@ -1353,19 +1370,4 @@ TEST(VariableTest, rotate) {
   VariableView vec_new2 = geometry::rotate(vec, rot, vec);
   EXPECT_EQ(vec_new2, rotated);
   EXPECT_EQ(vec, rotated);
-}
-
-template <class T> class ReciprocalTest : public ::testing::Test {};
-
-using test_types = ::testing::Types<float, double>;
-TYPED_TEST_SUITE(ReciprocalTest, test_types);
-
-TYPED_TEST(ReciprocalTest, variable_reciprocal) {
-  using T = TypeParam;
-  auto var1 = makeVariable<T>(Values{2});
-  auto var2 = makeVariable<T>(Values{0.5});
-  ASSERT_EQ(reciprocal(var1), var2);
-  var1 = makeVariable<T>(Values{2}, Variances{1});
-  var2 = makeVariable<T>(Values{0.5}, Variances{0.0625});
-  ASSERT_EQ(reciprocal(var1), var2);
 }
