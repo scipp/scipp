@@ -220,7 +220,10 @@ def _extract_events(x):
     Returns the (key, value) pairs where value has a events dim
     :param x: dict-like, e.g., coords view or masks view
     """
-    return {key: value for key, value in x.items() if sc.contains_events(value)}
+    return {
+        key: value
+        for key, value in x.items() if sc.contains_events(value)
+    }
 
 
 def _make_inline_attributes(var, has_attrs):
