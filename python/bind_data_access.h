@@ -186,10 +186,10 @@ template <class... Ts> class as_ElementArrayViewImpl {
             copy_flattened<T>(data, view_);
           } else if constexpr (core::is_events_v<T>) {
             auto &data = obj.cast<const py::array_t<typename T::value_type>>();
-            // Sparse data can be set from an array only for a single item.
+            // Event data can be set from an array only for a single item.
             if (dims.shape().size() != 0)
               throw except::DimensionError(
-                  "Sparse data cannot be set from a single "
+                  "Event data cannot be set from a single "
                   "array, unless the sparse dimension is the "
                   "only dimension.");
             if (data.ndim() != 1)

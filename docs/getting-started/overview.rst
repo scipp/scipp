@@ -52,7 +52,7 @@ Scipp supports data with a single "sparse" dimension.
 Conceptually, we distinguish *dense* and *sparse* data.
 
 - Dense data is the common case of a regular, e.g., 2-D, grid of data points.
-- Sparse data can come in many flavors.
+- Event data can come in many flavors.
   Here we are dealing with semi-regular data, i.e., a N-D array/grid of random-length lists.
   That is, only one of the dimensions has irregular data distribution.
 

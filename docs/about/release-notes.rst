@@ -61,7 +61,7 @@ Features:
 * Basic arithmetic operations.
 * Physical units.
 * Propagation of uncertainties.
-* Sparse data.
+* Event data.
 
 Limitations:
 
