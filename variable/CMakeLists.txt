@@ -25,6 +25,7 @@ set(INC_FILES
 )
 
 set(SRC_FILES
+    comparison.cpp
     event.cpp
     except.cpp
     rebin.cpp

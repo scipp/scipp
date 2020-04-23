@@ -3,6 +3,7 @@
 #include "test_macros.h"
 #include <gtest/gtest.h>
 
+#include "scipp/variable/binary_arithmetic.h"
 #include "scipp/variable/comparison.h"
 
 using namespace scipp;
@@ -70,3 +71,61 @@ TEST(ComparisonTest, tolerance_type_mismatch) {
   EXPECT_THROW(is_approx(a, b, 0 /*implicit int*/), except::TypeError);
   EXPECT_NO_THROW(is_approx(a, b, 0.0f));
 }
+
+TEST(ComparisonTest, less_variances_test) {
+  const auto a = makeVariable<float>(Dims{Dim::X}, Shape{2}, Values{1.0, 2.0},
+                                     Variances{1.0, 1.0});
+  const auto b = makeVariable<float>(Dims{Dim::X}, Shape{2}, Values{0.0, 3.0},
+                                     Variances{1.0, 1.0});
+  EXPECT_THROW(less(a, b), std::runtime_error);
+}
+
+TEST(ComparisonTest, less_dtypes_test) {
+  const auto a = makeVariable<float>(Dims{Dim::X}, Shape{2}, Values{1.0, 2.0});
+  const auto b = makeVariable<int>(Dims{Dim::X}, Shape{2}, Values{0, 1});
+  EXPECT_THROW(less(a, b), std::runtime_error);
+}
+
+TEST(ComparisonTest, less_units_test) {
+  const auto a = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.0, 2.0});
+  auto b = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{0.0, 3.0});
+  b.setUnit(units::m);
+  EXPECT_THROW(less(a, b), std::runtime_error);
+}
+
+namespace {
+const auto a = 1.0 * units::Unit(units::m);
+const auto b = 2.0 * units::Unit(units::m);
+const auto true_ = true * units::Unit(units::dimensionless);
+const auto false_ = false * units::Unit(units::dimensionless);
+TEST(ComparisonTest, less_test) {
+  EXPECT_EQ(less(a, b), true_);
+  EXPECT_EQ(less(b, a), false_);
+  EXPECT_EQ(less(a, a), false_);
+}
+TEST(ComparisonTest, greater_test) {
+  EXPECT_EQ(greater(a, b), false_);
+  EXPECT_EQ(greater(b, a), true_);
+  EXPECT_EQ(greater(a, a), false_);
+}
+TEST(ComparisonTest, greater_equal_test) {
+  EXPECT_EQ(greater_equal(a, b), false_);
+  EXPECT_EQ(greater_equal(b, a), true_);
+  EXPECT_EQ(greater_equal(a, a), true_);
+}
+TEST(ComparisonTest, less_equal_test) {
+  EXPECT_EQ(less_equal(a, b), true_);
+  EXPECT_EQ(less_equal(b, a), false_);
+  EXPECT_EQ(less_equal(a, a), true_);
+}
+TEST(ComparisonTest, equal_test) {
+  EXPECT_EQ(equal(a, b), false_);
+  EXPECT_EQ(equal(b, a), false_);
+  EXPECT_EQ(equal(a, a), true_);
+}
+TEST(ComparisonTest, not_equal_test) {
+  EXPECT_EQ(not_equal(a, b), true_);
+  EXPECT_EQ(not_equal(b, a), true_);
+  EXPECT_EQ(not_equal(a, a), false_);
+}
+} // namespace
