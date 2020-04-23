@@ -88,7 +88,7 @@ constexpr auto map = overloaded{
       using W = std::decay_t<decltype(weights)>;
       constexpr bool vars = is_ValueAndVariance_v<W>;
       using ElemT = typename core::detail::element_type_t<W>::value_type;
-      using T = sparse_container<ElemT>;
+      using T = event_list<ElemT>;
       T out_vals;
       T out_vars;
       out_vals.reserve(coord.size());

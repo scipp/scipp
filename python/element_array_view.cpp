@@ -83,9 +83,9 @@ void init_element_array_view(py::module &m) {
   declare_span<Dataset>(m, "Dataset");
   declare_span<Eigen::Vector3d>(m, "Eigen_Vector3d");
   declare_span<Eigen::Quaterniond>(m, "Eigen_Quaterniond");
-  declare_span<sparse_container<double>>(m, "sparse_double");
-  declare_span<sparse_container<float>>(m, "sparse_float");
-  declare_span<sparse_container<int64_t>>(m, "sparse_int64_t");
+  declare_span<event_list<double>>(m, "event_double");
+  declare_span<event_list<float>>(m, "event_float");
+  declare_span<event_list<int64_t>>(m, "event_int64_t");
 
   declare_ElementArrayView<double>(m, "double");
   declare_ElementArrayView<float>(m, "float");
@@ -93,9 +93,9 @@ void init_element_array_view(py::module &m) {
   declare_ElementArrayView<int32_t>(m, "int32");
   declare_ElementArrayView<std::string>(m, "string");
   declare_ElementArrayView<bool>(m, "bool");
-  declare_ElementArrayView<sparse_container<double>>(m, "sparse_double");
-  declare_ElementArrayView<sparse_container<float>>(m, "sparse_float");
-  declare_ElementArrayView<sparse_container<int64_t>>(m, "sparse_int64_t");
+  declare_ElementArrayView<event_list<double>>(m, "event_double");
+  declare_ElementArrayView<event_list<float>>(m, "event_float");
+  declare_ElementArrayView<event_list<int64_t>>(m, "event_int64_t");
   declare_ElementArrayView<DataArray>(m, "DataArray");
   declare_ElementArrayView<Dataset>(m, "Dataset");
   declare_ElementArrayView<Eigen::Vector3d>(m, "Eigen_Vector3d");
