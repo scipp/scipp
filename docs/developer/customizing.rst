@@ -76,6 +76,6 @@ This will define the macro ``SCIPP_UNITS_NEWSYSTEM``.
 Container used for event data
 ------------------------------
 
-This is currently defined in the header ``core/include/scipp/core/variable.h`` with the helper ``events_container``.
+This is currently defined in the header ``core/include/scipp/core/variable.h`` with the helper ``event_list``.
 This has to be set to a vector-like type, such as ``std::vector`` or ``boost::container::small_vector``.
 In the latter case the small-size of the vector can be used to balance performance/locality against memory overhead.

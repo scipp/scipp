@@ -508,7 +508,7 @@ TEST(TransformTest, binary_on_event_list_with_variance_accepts_size_mismatch) {
   vars[1] = {4.4};
 
   // Size mismatch between a and b is allowed for a user-defined operation on
-  // the events container.
+  // the event list.
   ASSERT_NO_THROW(transform_in_place<pair_self_t<event_list<double>>>(
       a, b,
       overloaded{[](auto &x, const auto &) { x.clear(); },

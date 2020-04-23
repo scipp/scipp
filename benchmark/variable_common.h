@@ -18,7 +18,7 @@ template <typename T> struct GenerateEvents {
     for (scipp::index i = 0; i < length; ++i) {
       const auto l = dis(gen);
       size += l;
-      vals[i] = scipp::core::events_container<T>(l, i);
+      vals[i] = scipp::core::event_list<T>(l, i);
     }
 
     return std::make_tuple(a, sizeof(T) * size);

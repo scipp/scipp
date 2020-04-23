@@ -8,10 +8,10 @@
 
 namespace scipp::core {
 
-/// A values/variances pair based on references to event data containers.
+/// A values/variances pair based on references to event listss.
 ///
-/// This is a helper for implementing operations for events container such as
-/// `clear`, and for descending into the events container itself, using a nested
+/// This is a helper for implementing operations for event_list such as
+/// `clear`, and for descending into the event list itself, using a nested
 /// call to an iteration function.
 template <class T> struct ValuesAndVariances {
   using value_type = typename T::value_type;
