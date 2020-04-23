@@ -66,7 +66,7 @@ def test_data_not_elided():
     assert "..." not in value[0].text
 
 
-def test_empty_sparse_1d_variable():
+def test_empty_events_1d_variable():
     in_dtype = sc.dtype.event_list_float32
     in_unit = sc.units.K
     var = sc.Variable([], [], unit=in_unit, dtype=in_dtype)
@@ -82,7 +82,7 @@ def test_empty_sparse_1d_variable():
     assert len(value) == 1
 
 
-def test_sparse_1d_variable():
+def test_events_1d_variable():
     in_dtype = sc.dtype.event_list_float32
     in_unit = sc.units.deg
     var = sc.Variable([], [], unit=in_unit, dtype=in_dtype)
@@ -109,7 +109,7 @@ def test_sparse_1d_variable():
                          ((['x', 'y'], (10, 3)), (['x', 'y', 'z'],
                                                   (10, 10, 3)),
                           (['x', 'y', 'z', 'spectrum'], (10, 10, 10, 3))))
-def test_sparse(dims, lengths):
+def test_events(dims, lengths):
     in_dtype = sc.dtype.event_list_float32
     in_unit = sc.units.deg
 

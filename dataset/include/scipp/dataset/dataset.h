@@ -276,7 +276,7 @@ public:
   ///
   /// This does not include coordinates or attributes, but only all named
   /// entities (which can consist of various combinations of values, variances,
-  /// and sparse coordinates).
+  /// and events coordinates).
   index size() const noexcept { return scipp::size(m_data); }
   /// Return true if there are 0 data items in the dataset.
   [[nodiscard]] bool empty() const noexcept { return size() == 0; }
@@ -835,7 +835,7 @@ public:
   }
 
   // TODO need to define some details regarding handling of dense coords in case
-  // the array is sparse, not exposing this to Python for now.
+  // the array is events, not exposing this to Python for now.
   void setCoord(const Dim dim, Variable coord) {
     m_holder.setCoord(dim, std::move(coord));
   }
@@ -1067,9 +1067,9 @@ Dataset operator/(const DatasetConstView &a, const T value) {
 SCIPP_DATASET_EXPORT DataArray astype(const DataArrayConstView &var,
                                       const DType type);
 
-SCIPP_DATASET_EXPORT DataArray histogram(const DataArrayConstView &sparse,
+SCIPP_DATASET_EXPORT DataArray histogram(const DataArrayConstView &events,
                                          const Variable &binEdges);
-SCIPP_DATASET_EXPORT DataArray histogram(const DataArrayConstView &sparse,
+SCIPP_DATASET_EXPORT DataArray histogram(const DataArrayConstView &events,
                                          const VariableConstView &binEdges);
 SCIPP_DATASET_EXPORT Dataset histogram(const Dataset &dataset,
                                        const VariableConstView &bins);

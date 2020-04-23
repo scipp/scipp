@@ -34,15 +34,15 @@ TYPED_TEST(DataArrayViewTest, name_ignored_in_comparison) {
   EXPECT_EQ(d_ref["a"], d_ref["b"]);
 }
 
-TYPED_TEST(DataArrayViewTest, sparse_sparseDim) {
+TYPED_TEST(DataArrayViewTest, events_eventsDim) {
   Dataset d;
   typename TestFixture::dataset_type &d_ref(d);
 
   d.setData("dense", makeVariable<double>(Values{double{}}));
   ASSERT_FALSE(dataset::contains_events(d_ref["dense"]));
 
-  d.setData("sparse_data", makeVariable<event_list<double>>(Dims{}, Shape{}));
-  ASSERT_TRUE(dataset::contains_events(d_ref["sparse_data"]));
+  d.setData("events_data", makeVariable<event_list<double>>(Dims{}, Shape{}));
+  ASSERT_TRUE(dataset::contains_events(d_ref["events_data"]));
 
   // TODO Event data can have non-list data (only coords would be event_list),
   // what should contains_events return in that case?
@@ -51,15 +51,15 @@ TYPED_TEST(DataArrayViewTest, sparse_sparseDim) {
 TYPED_TEST(DataArrayViewTest, dims) {
   Dataset d;
   const auto dense = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{1, 2});
-  const auto sparse =
+  const auto events =
       makeVariable<event_list<double>>(Dims{Dim::X, Dim::Y}, Shape{1, 2});
   typename TestFixture::dataset_type &d_ref(d);
 
   d.setData("dense", dense);
   ASSERT_EQ(d_ref["dense"].dims(), dense.dims());
 
-  d.setData("sparse_data", sparse);
-  ASSERT_EQ(d_ref["sparse_data"].dims(), sparse.dims());
+  d.setData("events_data", events);
+  ASSERT_EQ(d_ref["events_data"].dims(), events.dims());
 }
 
 TYPED_TEST(DataArrayViewTest, dims_with_extra_coords) {

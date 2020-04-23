@@ -33,7 +33,7 @@ void flatten_impl(const VariableView &summed, const VariableConstView &var,
   sum_impl(summed_sizes, event::sizes(var) * mask);
   event::reserve(summed, summed_sizes);
 
-  // 2. Flatten dimension(s) by concatenating along sparse dim.
+  // 2. Flatten dimension(s) by concatenating along events dim.
   using namespace flatten_detail;
   accumulate_in_place<
       std::tuple<args<double>, args<float>, args<int64_t>, args<int32_t>>>(
@@ -49,7 +49,7 @@ void flatten_impl(const VariableView &summed, const VariableConstView &var,
           }});
 }
 
-/// Flatten dimension by concatenating along sparse dimension.
+/// Flatten dimension by concatenating along events dimension.
 ///
 /// This is equivalent to summing dense data along a dimension, in the sense
 /// that summing histogrammed data is the same as histogramming flattened data.

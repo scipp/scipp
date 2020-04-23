@@ -56,20 +56,20 @@ TEST_F(AttributesTest, dataset_item_attrs) {
   ASSERT_EQ(d["a"].attrs().size(), 0);
 }
 
-TEST_F(AttributesTest, dataset_sparse_item_attrs) {
+TEST_F(AttributesTest, dataset_events_item_attrs) {
   Dataset d;
-  d.setData("sparse", makeVariable<event_list<double>>(Dims{}, Shape{}));
-  d["sparse"].attrs().set("scalar", scalar);
+  d.setData("events", makeVariable<event_list<double>>(Dims{}, Shape{}));
+  d["events"].attrs().set("scalar", scalar);
   d.attrs().set("dataset_attr", scalar);
 
   ASSERT_FALSE(d.attrs().contains("scalar"));
 
-  ASSERT_EQ(d["sparse"].attrs().size(), 1);
-  ASSERT_TRUE(d["sparse"].attrs().contains("scalar"));
-  ASSERT_FALSE(d["sparse"].attrs().contains("dataset_attr"));
+  ASSERT_EQ(d["events"].attrs().size(), 1);
+  ASSERT_TRUE(d["events"].attrs().contains("scalar"));
+  ASSERT_FALSE(d["events"].attrs().contains("dataset_attr"));
 
-  d["sparse"].attrs().erase("scalar");
-  ASSERT_EQ(d["sparse"].attrs().size(), 0);
+  d["events"].attrs().erase("scalar");
+  ASSERT_EQ(d["events"].attrs().size(), 0);
 }
 
 TEST_F(AttributesTest, dataset_item_attrs_dimensions_exceeding_data) {

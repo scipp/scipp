@@ -59,7 +59,7 @@ struct SCIPP_CORE_EXPORT DimensionLengthError : public DimensionError {
 
 struct SCIPP_CORE_EXPORT SparseDimensionError : public DimensionError {
   SparseDimensionError()
-      : DimensionError("Unsupported operation for sparse dimensions.") {}
+      : DimensionError("Unsupported operation for events dimensions.") {}
 };
 
 struct SCIPP_CORE_EXPORT SizeError : public std::runtime_error {

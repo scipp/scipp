@@ -276,7 +276,7 @@ def test_2D_access_variances():
     assert np.array_equal(var.variances, np.ones(shape=(2, 3)))
 
 
-def test_sparse_slice():
+def test_events_slice():
     var = sc.Variable(dims=['x'], shape=[4], dtype=sc.dtype.event_list_float64)
     vals0 = var['x', 0].values
     assert len(vals0) == 0
@@ -284,7 +284,7 @@ def test_sparse_slice():
     assert len(var['x', 0].values) == 1
 
 
-def test_sparse_setitem():
+def test_events_setitem():
     var = sc.Variable(dims=['x'], shape=[4], dtype=sc.dtype.event_list_float64)
     # __setitem__ of vector
     var['x', 0].values = np.arange(4)
@@ -297,25 +297,25 @@ def test_sparse_setitem():
     assert len(var['x', 2].values) == 2
 
 
-def test_sparse_setitem_sparse_fail():
+def test_events_setitem_events_fail():
     var = sc.Variable(dims=['x'], shape=[4], dtype=sc.dtype.event_list_float64)
     with pytest.raises(RuntimeError):
         var.values = np.arange(3)
 
 
-def test_sparse_setitem_shape_fail():
+def test_events_setitem_shape_fail():
     var = sc.Variable(dims=['x'], shape=[4], dtype=sc.dtype.event_list_float64)
     with pytest.raises(RuntimeError):
         var['x', 0].values = np.ones(shape=(3, 2))
 
 
-def test_sparse_setitem_float():
+def test_events_setitem_float():
     var = sc.Variable(dims=['x'], shape=[4], dtype=sc.dtype.event_list_float32)
     var['x', 0].values = np.arange(4)
     assert len(var['x', 0].values) == 4
 
 
-def test_sparse_setitem_int64_t():
+def test_events_setitem_int64_t():
     var = sc.Variable(dims=['x'], shape=[4], dtype=sc.dtype.event_list_int64)
     var['x', 0].values = np.arange(4)
     assert len(var['x', 0].values) == 4

@@ -9,20 +9,20 @@
 using namespace scipp;
 
 template <typename T>
-inline auto make_sparse_variable_with_variance(int length = 2) {
+inline auto make_events_variable_with_variance(int length = 2) {
   Dimensions dims(Dim::Y, length);
   return makeVariable<event_list<T>>(
       Dimensions(dims), Values{event_list<T>(), event_list<T>()},
       Variances{event_list<T>(), event_list<T>()});
 }
 
-template <typename T> inline auto make_sparse_variable(int length = 2) {
+template <typename T> inline auto make_events_variable(int length = 2) {
   Dimensions dims(Dim::Y, length);
   return makeVariable<event_list<T>>(Dimensions(dims));
 }
 
 template <typename T>
-inline void set_sparse_values(Variable &var,
+inline void set_events_values(Variable &var,
                               const std::vector<event_list<T>> &data) {
   auto vals = var.values<event_list<T>>();
   for (scipp::index i = 0; i < scipp::size(data); ++i)
@@ -30,7 +30,7 @@ inline void set_sparse_values(Variable &var,
 }
 
 template <typename T>
-inline void set_sparse_variances(Variable &var,
+inline void set_events_variances(Variable &var,
                                  const std::vector<event_list<T>> &data) {
   auto vals = var.variances<event_list<T>>();
   for (scipp::index i = 0; i < scipp::size(data); ++i)

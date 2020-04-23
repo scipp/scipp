@@ -14,7 +14,7 @@ pybind11_add_module(
   operations.cpp
   py_object.cpp
   scipp.cpp
-  sparse_container.cpp
+  events_container.cpp
   units_neutron.cpp
   variable.cpp
   variable_instantiate_py_object.cpp

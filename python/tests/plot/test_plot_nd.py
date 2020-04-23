@@ -6,7 +6,7 @@
 import numpy as np
 import pytest
 import scipp as sc
-from plot_helper import make_dense_dataset, make_sparse_dataset
+from plot_helper import make_dense_dataset, make_events_dataset
 from scipp.plot import plot
 
 # Prevent figure from being displayed when running the tests
@@ -73,23 +73,23 @@ def test_plot_convenience_methods():
 
 
 @pytest.mark.skip(reason="RuntimeError: Only the simple case histograms may "
-                  "be constructed for now: 2 dims including sparse.")
-def test_plot_3d_sparse_data_with_int_bins():
-    d = make_sparse_dataset(ndim=3)
+                  "be constructed for now: 2 dims including events.")
+def test_plot_3d_events_data_with_int_bins():
+    d = make_events_dataset(ndim=3)
     plot(d, bins=50)
 
 
 @pytest.mark.skip(reason="RuntimeError: Only the simple case histograms may "
-                  "be constructed for now: 2 dims including sparse.")
-def test_plot_3d_sparse_data_with_nparray_bins():
-    d = make_sparse_dataset(ndim=3)
+                  "be constructed for now: 2 dims including events.")
+def test_plot_3d_events_data_with_nparray_bins():
+    d = make_events_dataset(ndim=3)
     plot(d, bins=np.linspace(0.0, 105.0, 50))
 
 
 @pytest.mark.skip(reason="RuntimeError: Only the simple case histograms may "
-                  "be constructed for now: 2 dims including sparse.")
-def test_plot_3d_sparse_data_with_Variable_bins():
-    d = make_sparse_dataset(ndim=3)
+                  "be constructed for now: 2 dims including events.")
+def test_plot_3d_events_data_with_Variable_bins():
+    d = make_events_dataset(ndim=3)
     bins = sc.Variable(['tof'],
                        values=np.linspace(0.0, 105.0, 50),
                        unit=sc.units.us)
@@ -105,7 +105,7 @@ def test_plot_variable_3d():
 
 
 def test_plot_realigned_3d():
-    d = make_sparse_dataset(ndim=2)
+    d = make_events_dataset(ndim=2)
     tbins = sc.Variable(dims=['tof'], unit=sc.units.us, values=np.arange(100.))
     r = sc.realign(d, {'tof': tbins})
     plot(r)

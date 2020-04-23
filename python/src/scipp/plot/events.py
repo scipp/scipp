@@ -10,16 +10,16 @@ import numpy as np
 from itertools import product
 
 
-def visit_sparse_data(data_array,
-                      sparse_dim,
-                      return_sparse_data=False,
+def visit_events_data(data_array,
+                      events_dim,
+                      return_events_data=False,
                       weights=None):
 
     xmin = 1.0e30
     xmax = -1.0e30
     dims = data_array.dims
     shapes = data_array.shape
-    # Add an extra dim for the sparse dimension
+    # Add an extra dim for the events dimension
     ndims = len(dims) + 1
 
     # Construct tuple of ranges over dimension shapes
@@ -33,27 +33,27 @@ def visit_sparse_data(data_array,
         data_exists = data_array.data is not None
 
     # Prepare scatter data container
-    if return_sparse_data:
+    if return_events_data:
         scatter_array = []
         for i in range(ndims):
             scatter_array.append([])
-        # Append the weights associated to the sparse coordinate
+        # Append the weights associated to the events coordinate
         if data_exists:
             scatter_array.append([])
 
     # Now construct all indices combinations using itertools
     for ind in product(*indices):
         # And for each indices combination, slice the original
-        # data down to the sparse dimension
+        # data down to the events dimension
         vslice = data_array
         for i in range(ndims - 1):
             vslice = vslice[dims[i], ind[i]]
 
-        vals = vslice.coords[sparse_dim].values
+        vals = vslice.coords[events_dim].values
         if len(vals) > 0:
             xmin = min(xmin, np.nanmin(vals))
             xmax = max(xmax, np.nanmax(vals))
-            if return_sparse_data:
+            if return_events_data:
                 for i in range(ndims - 1):
                     scatter_array[i].append(
                         np.ones_like(vals) *
@@ -62,7 +62,7 @@ def visit_sparse_data(data_array,
                 if data_exists:
                     scatter_array[ndims].append(vslice.values)
 
-    if return_sparse_data:
+    if return_events_data:
         for i in range(ndims + data_exists):
             scatter_array[i] = np.concatenate(scatter_array[i])
         return xmin, xmax, scatter_array, dims, ndims
@@ -71,7 +71,7 @@ def visit_sparse_data(data_array,
 
 
 def make_bins(data_array=None,
-              sparse_dim=None,
+              events_dim=None,
               bins=None,
               dim=None,
               padding=True):
@@ -88,12 +88,12 @@ def make_bins(data_array=None,
     if isinstance(bins, sc.Variable):
         pass
     else:
-        if sparse_dim is not None:
-            bin_dim = sparse_dim
+        if events_dim is not None:
+            bin_dim = events_dim
         elif dim is not None:
             bin_dim = dim
         else:
-            raise RuntimeError("Must specify either sparse_dim or dim for "
+            raise RuntimeError("Must specify either events_dim or dim for "
                                "making bins.")
 
         if isinstance(bins, bool):
@@ -103,8 +103,8 @@ def make_bins(data_array=None,
                 bins = None
         if isinstance(bins, int):
             # Find min and max
-            if sparse_dim is not None:
-                xmin, xmax = visit_sparse_data(data_array, sparse_dim)
+            if events_dim is not None:
+                xmin, xmax = visit_events_data(data_array, events_dim)
             else:
                 xmin = np.amin(data_array.coords[dim].values)
                 xmax = np.amax(data_array.coords[dim].values)
@@ -126,11 +126,11 @@ def make_bins(data_array=None,
     return bins
 
 
-def histogram_sparse_data(data_array, sparse_dim, bins):
+def histogram_events_data(data_array, events_dim, bins):
     """
     Return a DataArray containing histogrammed event data, from specified
-    sparse dimensions and bins. See make_bins for more details.
+    events dimensions and bins. See make_bins for more details.
     """
     return sc.histogram(
         data_array,
-        make_bins(data_array=data_array, sparse_dim=sparse_dim, bins=bins))
+        make_bins(data_array=data_array, events_dim=events_dim, bins=bins))

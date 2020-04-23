@@ -76,17 +76,17 @@ def test_basic(dims, lengths):
 @pytest.mark.skip(reason="This test is currently broken after dims API "
                   "refactor. It gives a Length mismatch on insertion "
                   "error.")
-def test_sparse_does_not_repeat_dense_coords():
-    sparse = sc.Variable(['y', 'z'], shape=(3, sc.Dimensions.Sparse))
+def test_events_does_not_repeat_dense_coords():
+    events = sc.Variable(['y', 'z'], shape=(3, sc.Dimensions.Sparse))
 
-    sparse.values[0].extend(np.arange(0))
-    sparse.values[2].extend(np.arange(0))
-    sparse.values[1].extend(np.arange(0))
+    events.values[0].extend(np.arange(0))
+    events.values[2].extend(np.arange(0))
+    events.values[1].extend(np.arange(0))
 
     d = sc.Dataset()
     d['a'] = sc.Variable(['y', 'x', 'z'], shape=(3, 2, 4), variances=True)
     d['b'] = sc.DataArray(
-        sparse,
+        events,
         coords={
             'y': sc.Variable(['y'], values=np.arange(4)),
             'z': sc.Variable(['z'], shape=(sc.Dimensions.Sparse, )),

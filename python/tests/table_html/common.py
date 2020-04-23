@@ -25,26 +25,26 @@ def assert_obj_type(expected, actual):
     assert expected == actual[0].text
 
 
-def assert_dims(dims, text, has_sparse=False, has_bin_edges=False):
+def assert_dims(dims, text, has_events=False, has_bin_edges=False):
     for d in dims:
         assert str(d) in text
 
-    if has_sparse and not has_bin_edges:
-        # only sparse
+    if has_events and not has_bin_edges:
+        # only events
         # assert SPARSE_LABEL in text, "Could not find SPARSE"
         assert BIN_EDGE_LABEL not in text, "Unexpected bin-edge label"
-    elif not has_sparse and has_bin_edges:
+    elif not has_events and has_bin_edges:
         # only bin edges
         assert BIN_EDGE_LABEL in text, "Could not find BIN-EDGE"
-        # assert SPARSE_LABEL not in text, "Unexpected sparse label"
-    elif has_sparse and has_bin_edges:
-        # both sparse and bin edges present
+        # assert SPARSE_LABEL not in text, "Unexpected events label"
+    elif has_events and has_bin_edges:
+        # both events and bin edges present
         assert BIN_EDGE_LABEL in text, "Could not find BIN-EDGE"
         # assert SPARSE_LABEL in text, "Could not find SPARSE"
-    elif not has_sparse and not has_bin_edges:
+    elif not has_events and not has_bin_edges:
         # none present
         assert BIN_EDGE_LABEL not in text, "Unexpected bin-edge label"
-        # assert SPARSE_LABEL not in text, "Unexpected sparse label"
+        # assert SPARSE_LABEL not in text, "Unexpected events label"
 
 
 def assert_lengths(lengths, text):
@@ -80,7 +80,7 @@ def assert_common(html, in_dtype):
     assert_data_repr_icon_present(html.find_all(class_=DATA_ICON_CSS_CLASS))
 
 
-def assert_dims_section(data, dim_section, sparse=False):
+def assert_dims_section(data, dim_section, events=False):
     dim_list = dim_section.find_all(class_=DIM_LIST_CSS_CLASS)
     assert len(dim_list) == 1
 
@@ -95,14 +95,14 @@ def assert_section(section,
                    dims,
                    in_dtype,
                    in_unit,
-                   has_sparse=False,
+                   has_events=False,
                    has_bin_edges=False):
     if isinstance(name, str):
         return _assert_section_single(section, name, dims, in_dtype, in_unit,
-                                      has_sparse, has_bin_edges)
+                                      has_events, has_bin_edges)
     elif isinstance(name, list):
         return _assert_section_multiple(section, name, dims, in_dtype, in_unit,
-                                        has_sparse if has_sparse else [],
+                                        has_events if has_events else [],
                                         has_bin_edges if has_bin_edges else [])
 
 
@@ -111,7 +111,7 @@ def _assert_section_single(section,
                            dims,
                            in_dtype,
                            in_unit,
-                           has_sparse=False,
+                           has_events=False,
                            has_bin_edges=False):
     name_html = section.find_all(class_=DATASET_NAME_CSS_CLASS)
     # for checking the names of more than one entry, pass in a list
@@ -126,7 +126,7 @@ def _assert_section_single(section,
         "Expected: 1."
     assert_dims(dims,
                 dims_html[0].text,
-                has_sparse=has_sparse,
+                has_events=has_events,
                 has_bin_edges=has_bin_edges)
     assert_dtype(in_dtype, section.find_all(class_=DTYPE_CSS_CLASS))
     assert_unit(in_unit, section.find_all(class_=UNIT_CSS_CLASS))
@@ -142,7 +142,7 @@ def _assert_section_multiple(section,
                              dims,
                              in_dtype,
                              in_unit,
-                             has_sparse=[],
+                             has_events=[],
                              has_bin_edges=[]):
     name_html = section.find_all(class_=DATASET_NAME_CSS_CLASS)
 
@@ -157,10 +157,10 @@ def _assert_section_multiple(section,
         assert str(n) in names
 
     dims_html = section.find_all(class_=DIMS_CSS_CLASS)
-    for dim, sparse, bin_edges in zip(dims, has_sparse, has_bin_edges):
+    for dim, events, bin_edges in zip(dims, has_events, has_bin_edges):
         assert_dims(dim,
                     dims_html[0].text,
-                    has_sparse=sparse,
+                    has_events=events,
                     has_bin_edges=bin_edges)
 
     for dtype in section.find_all(class_=DTYPE_CSS_CLASS):

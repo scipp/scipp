@@ -44,7 +44,7 @@ def make_dense_dataset(ndim=1,
     return d
 
 
-def make_sparse_dataset(ndim=1):
+def make_events_dataset(ndim=1):
 
     dim_list = ['x', 'y', 'z', 'Q_x']
 

@@ -22,7 +22,7 @@ inline auto blocked_range(const scipp::index begin, const scipp::index end,
   // some cases, in particular given the slow random-access of ViewIndex. A
   // good default value is not known right now. In practice this should also
   // depend heavily on whether we are processing small elements like `double`
-  // or something large like `sparse_container<double>`.
+  // or something large like `events_container<double>`.
   return tbb::blocked_range<scipp::index>(
       begin, end,
       grainsize == -1 ? std::max(scipp::index(1), (end - begin) / 24)

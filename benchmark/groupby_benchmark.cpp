@@ -25,11 +25,11 @@ auto make_1d_events_scalar_weights(const scipp::index size,
   // are not entirely understood.
   std::map<Dim, Variable> map;
   map.emplace(Dim::Y, std::move(var));
-  DataArray sparse(makeVariable<double>(Dims{Dim::X}, Shape{size},
+  DataArray events(makeVariable<double>(Dims{Dim::X}, Shape{size},
                                         units::Unit(units::counts), Values{},
                                         Variances{}),
                    std::move(map));
-  return sparse;
+  return events;
 }
 
 template <class T>
@@ -42,13 +42,13 @@ auto make_1d_events(const scipp::index size, const scipp::index count) {
     vals[i].resize(count);
     vars[i].resize(count);
   }
-  auto sparse = make_1d_events_scalar_weights<T>(size, count);
-  sparse.setData(std::move(var));
-  // Replacing the line below by `return copy(sparse);` yields more than 2x
+  auto events = make_1d_events_scalar_weights<T>(size, count);
+  events.setData(std::move(var));
+  // Replacing the line below by `return copy(events);` yields more than 2x
   // higher performance. It is not clear whether this is just due to improved
   // "re"-allocation performance in the benchmark loop (compared to fresh
   // allocations) or something else.
-  return sparse;
+  return events;
 }
 
 template <class T> static void BM_groupby_flatten(benchmark::State &state) {
@@ -56,16 +56,16 @@ template <class T> static void BM_groupby_flatten(benchmark::State &state) {
   const scipp::index nHist = state.range(0);
   const scipp::index nGroup = state.range(1);
   const bool coord_only = state.range(2);
-  auto sparse = coord_only
+  auto events = coord_only
                     ? make_1d_events_scalar_weights<T>(nHist, nEvent / nHist)
                     : make_1d_events<T>(nHist, nEvent / nHist);
   std::vector<int64_t> group_(nHist);
   std::iota(group_.begin(), group_.end(), 0);
   auto group = makeVariable<int64_t>(Dims{Dim::X}, Shape{nHist},
                                      Values(group_.begin(), group_.end()));
-  sparse.coords().set(Dim("group"), group / (nHist / nGroup));
+  events.coords().set(Dim("group"), group / (nHist / nGroup));
   for (auto _ : state) {
-    auto flat = groupby(sparse, Dim("group")).flatten(Dim::X);
+    auto flat = groupby(events, Dim("group")).flatten(Dim::X);
     state.PauseTiming();
     flat = DataArray();
     state.ResumeTiming();

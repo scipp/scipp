@@ -82,9 +82,9 @@ void reserve(const VariableView &events, const VariableConstView &capacity) {
       core::pair_custom_t<std::pair<event_list<int64_t>, scipp::index>>,
       core::pair_custom_t<std::pair<event_list<int32_t>, scipp::index>>>(
       events, capacity,
-      overloaded{[](auto &&sparse_, const scipp::index capacity_) {
-                   if (capacity_ > 2 * scipp::size(sparse_))
-                     return sparse_.reserve(capacity_);
+      overloaded{[](auto &&events_, const scipp::index capacity_) {
+                   if (capacity_ > 2 * scipp::size(events_))
+                     return events_.reserve(capacity_);
                  },
                  core::transform_flags::expect_no_variance_arg<1>,
                  [](const units::Unit &, const units::Unit &) {}});

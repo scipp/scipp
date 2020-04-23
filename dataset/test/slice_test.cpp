@@ -164,7 +164,7 @@ class Dataset3DTest_slice_y : public Dataset3DTest,
                               public ::testing::WithParamInterface<int> {};
 class Dataset3DTest_slice_z : public Dataset3DTest,
                               public ::testing::WithParamInterface<int> {};
-class Dataset3DTest_slice_sparse : public Dataset3DTest,
+class Dataset3DTest_slice_events : public Dataset3DTest,
                                    public ::testing::WithParamInterface<int> {};
 
 class Dataset3DTest_slice_range_x : public Dataset3DTest,
@@ -261,7 +261,7 @@ INSTANTIATE_TEST_SUITE_P(NonEmptyRanges, Dataset3DTest_slice_range_y,
                          ::testing::ValuesIn(ranges_y));
 INSTANTIATE_TEST_SUITE_P(NonEmptyRanges, Dataset3DTest_slice_range_z,
                          ::testing::ValuesIn(ranges_z));
-INSTANTIATE_TEST_SUITE_P(AllPositions, Dataset3DTest_slice_sparse,
+INSTANTIATE_TEST_SUITE_P(AllPositions, Dataset3DTest_slice_events,
                          ::testing::Range(0, 2));
 
 TEST_P(Dataset3DTest_slice_x, slice) {
@@ -269,7 +269,7 @@ TEST_P(Dataset3DTest_slice_x, slice) {
   EXPECT_EQ(dataset.slice({Dim::X, pos}), reference(pos));
 }
 
-TEST_P(Dataset3DTest_slice_sparse, slice) {
+TEST_P(Dataset3DTest_slice_events, slice) {
   Dataset ds;
   const auto pos = GetParam();
   auto var =

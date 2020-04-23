@@ -72,8 +72,8 @@ TEST_F(HistogramHelpersTest, is_histogram) {
   // interpreted as a single-bin histogram.
   EXPECT_FALSE(is_histogram(DataArray(dataY, {{Dim::X, coordX}}), Dim::X));
 
-  const auto sparse = makeVariable<event_list<double>>(Dims{}, Shape{});
-  EXPECT_FALSE(is_histogram(DataArray(sparse, {{Dim::X, coordX}}), Dim::X));
+  const auto events = makeVariable<event_list<double>>(Dims{}, Shape{});
+  EXPECT_FALSE(is_histogram(DataArray(events, {{Dim::X, coordX}}), Dim::X));
 }
 
 DataArray make_1d_events_default_weights() {
@@ -97,29 +97,29 @@ TEST(HistogramTest, fail_edges_not_sorted) {
                except::BinEdgeError);
 }
 
-auto make_single_sparse() {
-  Dataset sparse;
+auto make_single_events() {
+  Dataset events;
   auto x = makeVariable<event_list<double>>(Dims{}, Shape{});
   x.values<event_list<double>>()[0] = {0, 1, 1, 2, 3};
-  sparse.coords().set(Dim::X, x);
-  sparse.setData("sparse", makeVariable<double>(Dims{}, Shape{},
+  events.coords().set(Dim::X, x);
+  events.setData("events", makeVariable<double>(Dims{}, Shape{},
                                                 units::Unit(units::counts),
                                                 Values{1}, Variances{1}));
-  return sparse;
+  return events;
 }
 
 DataArray make_expected(const Variable &var, const Variable &edges) {
   auto dim = var.dims().inner();
   std::map<Dim, Variable> coords = {{dim, edges}};
-  auto expected = DataArray(var, coords, {}, {}, "sparse");
+  auto expected = DataArray(var, coords, {}, {}, "events");
   return expected;
 }
 
 TEST(HistogramTest, below) {
-  const auto sparse = make_single_sparse();
+  const auto events = make_single_events();
   auto edges =
       makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{-2.0, -1.0, 0.0});
-  auto hist = dataset::histogram(sparse["sparse"], edges);
+  auto hist = dataset::histogram(events["events"], edges);
   std::map<Dim, Variable> coords = {{Dim::X, edges}};
   auto expected = make_expected(
       makeVariable<double>(Dims{Dim::X}, Shape{2}, units::Unit(units::counts),
@@ -129,10 +129,10 @@ TEST(HistogramTest, below) {
 }
 
 TEST(HistogramTest, between) {
-  const auto sparse = make_single_sparse();
+  const auto events = make_single_events();
   auto edges =
       makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1.5, 1.6, 1.7});
-  auto hist = dataset::histogram(sparse["sparse"], edges);
+  auto hist = dataset::histogram(events["events"], edges);
   auto expected = make_expected(
       makeVariable<double>(Dims{Dim::X}, Shape{2}, units::Unit(units::counts),
                            Values{0, 0}, Variances{0, 0}),
@@ -141,10 +141,10 @@ TEST(HistogramTest, between) {
 }
 
 TEST(HistogramTest, above) {
-  const auto sparse = make_single_sparse();
+  const auto events = make_single_events();
   auto edges =
       makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{3.5, 4.5, 5.5});
-  auto hist = dataset::histogram(sparse["sparse"], edges);
+  auto hist = dataset::histogram(events["events"], edges);
   auto expected = make_expected(
       makeVariable<double>(Dims{Dim::X}, Shape{2}, units::Unit(units::counts),
                            Values{0, 0}, Variances{0, 0}),

@@ -80,7 +80,7 @@ template <class Gen> static void BM_Variable_copy(benchmark::State &state) {
 static void Args_Variable_copy(benchmark::internal::Benchmark *b) {
   b->Arg(10)->Arg(20)->Arg(30);
 }
-static void Args_Variable_copy_sparse(benchmark::internal::Benchmark *b) {
+static void Args_Variable_copy_events(benchmark::internal::Benchmark *b) {
   b->Range(1 << 5, 1 << 12);
 }
 BENCHMARK_TEMPLATE(BM_Variable_copy, Generate1D<float>)
@@ -108,9 +108,9 @@ BENCHMARK_TEMPLATE(BM_Variable_copy, Generate5D<double>)
 BENCHMARK_TEMPLATE(BM_Variable_copy, Generate6D<double>)
     ->Apply(Args_Variable_copy);
 BENCHMARK_TEMPLATE(BM_Variable_copy, GenerateSparse<float>)
-    ->Apply(Args_Variable_copy_sparse);
+    ->Apply(Args_Variable_copy_events);
 BENCHMARK_TEMPLATE(BM_Variable_copy, GenerateSparse<double>)
-    ->Apply(Args_Variable_copy_sparse);
+    ->Apply(Args_Variable_copy_events);
 
 static void BM_Variable_trivial_slice(benchmark::State &state) {
   auto var =

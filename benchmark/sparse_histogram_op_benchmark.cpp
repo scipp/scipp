@@ -13,7 +13,7 @@
 
 using namespace scipp;
 
-auto make_2d_sparse_coord(const scipp::index size, const scipp::index count) {
+auto make_2d_events_coord(const scipp::index size, const scipp::index count) {
   auto var = makeVariable<event_list<double>>(Dims{Dim::X}, Shape{size});
   auto vals = var.values<event_list<double>>();
   Random rand(0.0, 1000.0);
@@ -40,13 +40,13 @@ auto make_2d_events_default_weights(const scipp::index size,
       makeVariable<double>(Dims{Dim::X}, Shape{size},
                            units::Unit(units::counts), Values{}, Variances{});
   return dataset::unaligned::realign(
-      DataArray(weights, {{Dim::Y, make_2d_sparse_coord(size, count)}}),
+      DataArray(weights, {{Dim::Y, make_2d_events_coord(size, count)}}),
       {{Dim::Y, make_edges(nEdge)}});
 }
 
 auto make_2d_events(const scipp::index size, const scipp::index count,
                     const scipp::index nEdge) {
-  auto coord = make_2d_sparse_coord(size, count);
+  auto coord = make_2d_events_coord(size, count);
   auto data = coord * makeVariable<double>(Values{0.0}, Variances{0.0}) + 1.0;
 
   return dataset::unaligned::realign(
@@ -77,24 +77,24 @@ static void BM_dense_alloc_baseline(benchmark::State &state) {
 
 BENCHMARK(BM_dense_alloc_baseline)->RangeMultiplier(4)->Ranges({{64, 2 << 20}});
 
-static void BM_sparse_histogram_op(benchmark::State &state) {
+static void BM_events_histogram_op(benchmark::State &state) {
   const scipp::index nEvent = state.range(0);
   const scipp::index nEdge = state.range(1);
   const bool inplace = state.range(2);
   const scipp::index nHist = 2e7 / nEvent;
   const bool data = state.range(3);
-  const auto sparse =
+  const auto events =
       data ? make_2d_events(nHist, nEvent, nEdge)
            : make_2d_events_default_weights(nHist, nEvent, nEdge);
   const auto histogram = make_histogram(nEdge);
   for (auto _ : state) {
     if (inplace) {
       state.PauseTiming();
-      auto sparse_ = sparse;
+      auto events_ = events;
       state.ResumeTiming();
-      sparse_ *= histogram;
+      events_ *= histogram;
     } else {
-      static_cast<void>(sparse * histogram);
+      static_cast<void>(events * histogram);
     }
   }
   scipp::index total_events = nHist * nEvent;
@@ -105,7 +105,7 @@ static void BM_sparse_histogram_op(benchmark::State &state) {
   state.SetBytesProcessed(state.iterations() *
                           (read_coord + read_data + write_data) * total_events *
                           sizeof(double));
-  state.counters["sparse-with-data"] = data;
+  state.counters["events-with-data"] = data;
   state.counters["total_events"] = total_events;
   state.counters["inplace"] = inplace;
 }
@@ -114,8 +114,8 @@ static void BM_sparse_histogram_op(benchmark::State &state) {
 // - nEvent
 // - nEdge
 // - inplace
-// - sparse with data
-BENCHMARK(BM_sparse_histogram_op)
+// - events with data
+BENCHMARK(BM_events_histogram_op)
     ->RangeMultiplier(4)
     ->Ranges({{64, 2 << 14}, {128, 2 << 11}, {true, false}, {true, false}});
 

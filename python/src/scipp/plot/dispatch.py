@@ -5,7 +5,7 @@
 from .plot_1d import plot_1d
 from .plot_2d import plot_2d
 from .plot_3d import plot_3d
-from .sparse import histogram_sparse_data
+from .events import histogram_events_data
 
 
 def dispatch(scipp_obj_dict,
@@ -26,13 +26,13 @@ def dispatch(scipp_obj_dict,
                            "plotting: {}".format(ndim))
 
     if bins is not None:
-        sparse_dict = {}
+        events_dict = {}
         for key, obj in scipp_obj_dict.items():
-            sparse_dict[key] = obj
+            events_dict[key] = obj
             for dim, bn in bins.items():
-                sparse_dict[key] = histogram_sparse_data(
-                    sparse_dict[key], dim, bn)
-        scipp_obj_dict = sparse_dict
+                events_dict[key] = histogram_events_data(
+                    events_dict[key], dim, bn)
+        scipp_obj_dict = events_dict
 
     if projection is None:
         if ndim < 3:

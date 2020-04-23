@@ -60,7 +60,7 @@ template <class Types, class Op, class... Var>
 ///
 /// This is a specialized version of transform, handling the case of inputs (and
 /// output) that differ along one of their dimensions. Applications are mixing
-/// of sparse and dense data, as well as operations that change the length of a
+/// of events and dense data, as well as operations that change the length of a
 /// dimension (such as rebin). The syntax for the user-provided operator is
 /// special and differs from that of `transform` and `transform_in_place`, and
 /// also the tuple of supported type combinations is special:
@@ -71,7 +71,7 @@ template <class Types, class Op, class... Var>
 /// 3. The tuple of supported type combinations must include the type of the out
 ///    argument as the first type in the inner tuples. Currently all supported
 ///    combinations must have the same output type.
-/// 4. The output type and the type of non-sparse inputs that depend on `dim`
+/// 4. The output type and the type of non-events inputs that depend on `dim`
 ///    must be specified as `span<T>`. The user-provided lambda is called with a
 ///    span of values for these arguments.
 /// 5. Use the flag transform_flags::expect_variance_arg<0> to control whether

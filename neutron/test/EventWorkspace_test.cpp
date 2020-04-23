@@ -119,29 +119,29 @@ TEST(EventWorkspace, basics) {
 }
 
 TEST(EventWorkspace, plus) {
-  // Note that unlike the tests above this is now using sparse dimensions.
+  // Note that unlike the tests above this is now using events dimensions.
   // Addition for nested Dataset as event list is not supported anymore.
   Dataset d;
   d.insert(Coord::Tof,
            makeSparseVariable<double>({Dim::Spectrum, 2}, Dim::Tof));
-  auto tofs = d(Coord::Tof).sparseSpan<double>();
+  auto tofs = d(Coord::Tof).eventsSpan<double>();
   tofs[0].resize(10);
   tofs[1].resize(20);
   d.insert(Data::Value,
            makeSparseVariable<double>({Dim::Spectrum, 2}, Dim::Tof));
-  auto weights = d(Data::Value).sparseSpan<double>();
+  auto weights = d(Data::Value).eventsSpan<double>();
   weights[0].resize(10);
   weights[1].resize(20);
 
   auto sum = concatenate(d, d, Dim::Tof);
 
-  auto tofLists = sum(Coord::Tof).sparseSpan<double>();
+  auto tofLists = sum(Coord::Tof).eventsSpan<double>();
   EXPECT_EQ(tofLists.size(), 2);
   EXPECT_EQ(tofLists[0].size(), 2 * 10);
   EXPECT_EQ(tofLists[1].size(), 2 * 20);
 
   sum = concatenate(sum, d, Dim::Tof);
-  tofLists = sum(Coord::Tof).sparseSpan<double>();
+  tofLists = sum(Coord::Tof).eventsSpan<double>();
 
   EXPECT_EQ(tofLists.size(), 2);
   EXPECT_EQ(tofLists[0].size(), 3 * 10);

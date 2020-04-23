@@ -199,16 +199,16 @@ TEST(Variable, operator_plus_eigen_type) {
 }
 
 TEST(SparseVariable, operator_plus) {
-  auto sparse = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2});
-  auto sparse_ = sparse.values<event_list<double>>();
-  sparse_[0] = {1, 2, 3};
-  sparse_[1] = {4};
+  auto events = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2});
+  auto events_ = events.values<event_list<double>>();
+  events_[0] = {1, 2, 3};
+  events_[1] = {4};
   auto dense = makeVariable<double>(Dims{Dim::Y}, Shape{2}, Values{1.5, 0.5});
 
-  sparse += dense;
+  events += dense;
 
-  EXPECT_TRUE(equals(sparse_[0], {2.5, 3.5, 4.5}));
-  EXPECT_TRUE(equals(sparse_[1], {4.5}));
+  EXPECT_TRUE(equals(events_[0], {2.5, 3.5, 4.5}));
+  EXPECT_TRUE(equals(events_[1], {4.5}));
 }
 
 TEST(Variable, operator_times_equal) {
@@ -287,7 +287,7 @@ TEST(Variable, operator_binary_equal_with_variances_data_fail_data_integrity) {
   b.setUnit(units::m);
   auto expected(a);
 
-  // Length mismatch of second sparse item
+  // Length mismatch of second events item
   ASSERT_THROW(a *= b, except::SizeError);
   EXPECT_EQ(a, expected);
   ASSERT_THROW(a /= b, except::SizeError);

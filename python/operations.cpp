@@ -18,11 +18,11 @@ template <class T> void bind_flatten(py::module &m) {
   m.def("flatten", py::overload_cast<ConstView, const Dim>(&flatten),
         py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
         R"(
-        Flatten the specified dimension into to sparse dimension, equivalent to summing dense data.
+        Flatten the specified dimension into to events dimension, equivalent to summing dense data.
 
         :param x: Variable, DataArray, or Dataset to flatten.
         :param dim: Dimension over which to flatten.
-        :raises: If the dimension does not exist, or if x has no sparse dimension
+        :raises: If the dimension does not exist, or if x has no events dimension
         :seealso: :py:class:`scipp.sum`
         :return: New variable, data array, or dataset containing the flattened data.
         :rtype: Variable, DataArray, or Dataset)");

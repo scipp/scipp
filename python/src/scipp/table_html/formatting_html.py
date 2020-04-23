@@ -49,7 +49,7 @@ def _make_row(data_html, variances_html=None):
     return f"<div>{data_html}</div>"
 
 
-def _format_non_sparse(var, has_variances):
+def _format_non_events(var, has_variances):
     size = reduce(operator.mul, var.shape, 1)
     data = retrieve(var, variances=has_variances)
     # avoid unintentional indexing into value of 0-D data
@@ -69,9 +69,9 @@ def _format_non_sparse(var, has_variances):
     return _make_row(s)
 
 
-def _get_sparse(var, variances, ellipsis_after, summary=False):
+def _get_events(var, variances, ellipsis_after, summary=False):
     if len(var.dims) == 0:
-        # handles a 1D Variable with only a sparse dimension
+        # handles a 1D Variable with only a events dimension
         size = len(var.values)
         if summary:
             return [SPARSE_PREFIX.format(size)]
@@ -80,7 +80,7 @@ def _get_sparse(var, variances, ellipsis_after, summary=False):
                 _format_array(var.values, size, ellipsis_after, size > 1000)
             ]
     else:
-        # Handles 2D and higher Variables with a sparse dimension
+        # Handles 2D and higher Variables with a events dimension
         size = var.shape[0]
 
     i = 0
@@ -100,22 +100,22 @@ def _get_sparse(var, variances, ellipsis_after, summary=False):
         if summary:
             s.append(SPARSE_PREFIX.format(len(item)))
         else:
-            s.append('sparse({})'.format(
+            s.append('events({})'.format(
                 _format_array(item, len(item), ellipsis_after, do_ellide)))
         i += 1
     return s
 
 
-def _format_sparse(var, has_variances):
-    s = _get_sparse(var, has_variances, ellipsis_after=1, summary=True)
+def _format_events(var, has_variances):
+    s = _get_events(var, has_variances, ellipsis_after=1, summary=True)
     return _make_row(", ".join([row for row in s]))
 
 
 def inline_variable_repr(var, has_variances=False):
     if is_data_events(var):
-        return _format_sparse(var, has_variances)
+        return _format_events(var, has_variances)
     else:
-        return _format_non_sparse(var, has_variances)
+        return _format_non_events(var, has_variances)
 
 
 def retrieve(var, variances=False, single=False):
@@ -125,7 +125,7 @@ def retrieve(var, variances=False, single=False):
         return var.variance if single else var.variances
 
 
-def _short_data_repr_html_non_sparse(var, variances=False):
+def _short_data_repr_html_non_events(var, variances=False):
     if hasattr(var, "data"):
         if var.data is None:
             return "Realigned data based on unaligned content."
@@ -135,17 +135,17 @@ def _short_data_repr_html_non_sparse(var, variances=False):
         return repr(retrieve(var, variances))
 
 
-def _short_data_repr_html_sparse(var, variances=False):
+def _short_data_repr_html_events(var, variances=False):
     return "array([" + ",\n       ".join(
-        _get_sparse(var, variances, ellipsis_after=3)) + "])"
+        _get_events(var, variances, ellipsis_after=3)) + "])"
 
 
 def short_data_repr_html(var, variances=False):
     """Format "data" for DataArray and Variable."""
     if is_data_events(var):
-        data_repr = _short_data_repr_html_sparse(var, variances)
+        data_repr = _short_data_repr_html_events(var, variances)
     else:
-        data_repr = _short_data_repr_html_non_sparse(var, variances)
+        data_repr = _short_data_repr_html_non_events(var, variances)
     return escape(data_repr)
 
 
@@ -215,9 +215,9 @@ def summarize_coords(coords, ds=None):
     return f"<ul class='xr-var-list'>{vars_li}</ul>"
 
 
-def _extract_sparse(x):
+def _extract_events(x):
     """
-    Returns the (key, value) pairs where value has a sparse dim
+    Returns the (key, value) pairs where value has a events dim
     :param x: dict-like, e.g., coords view or masks view
     """
     return {key: value for key, value in x.items() if sc.contains_events(value)}
@@ -230,9 +230,9 @@ def _make_inline_attributes(var, has_attrs):
         return disabled, attrs_ul
     attrs_sections = []
     if hasattr(var, "coords"):
-        sparse_coords = _extract_sparse(var.coords)
-        if sparse_coords:
-            attrs_sections.append(coord_section(sparse_coords))
+        events_coords = _extract_events(var.coords)
+        if events_coords:
+            attrs_sections.append(coord_section(events_coords))
             disabled = ""
     if hasattr(var, "attrs"):
         if len(var.attrs) > 0:

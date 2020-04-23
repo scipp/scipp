@@ -25,14 +25,14 @@ add_executable(
   mean_test.cpp
   merge_test.cpp
   rebin_test.cpp
-  reduce_sparse_test.cpp
+  reduce_events_test.cpp
   self_assignment_test.cpp
   slice_test.cpp
   sort_test.cpp
-  sparse_data_operations_consistency_test.cpp
+  events_data_operations_consistency_test.cpp
   string_test.cpp
   sum_test.cpp
-  transform_sparse_and_dense_test.cpp
+  transform_events_and_dense_test.cpp
   unaligned_test.cpp
 )
 include_directories(SYSTEM ${GMOCK_INCLUDE_DIR} ${GTEST_INCLUDE_DIR})

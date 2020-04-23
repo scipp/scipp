@@ -61,9 +61,9 @@ class VariableDrawer():
         self._target_dims = target_dims
         if self._target_dims is None:
             self._target_dims = self._dims()
-        # special extent value indicating sparse dimension
-        self._sparse_flag = -1
-        self._sparse_box_scale = 0.3
+        # special extent value indicating events dimension
+        self._events_flag = -1
+        self._events_box_scale = 0.3
         self._x_stride = 1
         if len(self._dims()) > 3:
             raise RuntimeError("Cannot visualize {}-D data".format(
@@ -110,17 +110,17 @@ class VariableDrawer():
             if dim in d:
                 e.append(min(d[dim], max_extent))
             elif dim == "<event>" and sc.contains_events(self._variable):
-                e.append(self._sparse_flag)
+                e.append(self._events_flag)
             else:
                 e.append(1)
         return [1] * (3 - len(e)) + e
 
-    def _sparse_extent(self):
+    def _events_extent(self):
         extent = 0
         if is_data_array(self._variable):
             # Sparse items in a dataset should always have a coord,
             # but may have not data
-            # Find a sparse coord to use for determining length
+            # Find a events coord to use for determining length
             for coord in self._variable.coords.values():
                 if sc.contains_events(coord):
                     data = coord.values
@@ -128,7 +128,7 @@ class VariableDrawer():
             data = self._variable.values
         for vals in data:
             extent = max(extent, len(vals))
-        max_extent = _cubes_in_full_width / 2 / self._sparse_box_scale
+        max_extent = _cubes_in_full_width / 2 / self._events_box_scale
         self._x_stride = max(1, ceil(extent / max_extent))
         return min(extent, max_extent)
 
@@ -138,8 +138,8 @@ class VariableDrawer():
         height = 3 * self._margin  # double margin on top for title space
         shape = self._extents()
 
-        if shape[-1] == self._sparse_flag:
-            shape[-1] = self._sparse_box_scale * self._sparse_extent()
+        if shape[-1] == self._events_flag:
+            shape[-1] = self._events_box_scale * self._events_extent()
         width += shape[-1]
         height += shape[-2]
         depth = shape[-3]
@@ -167,28 +167,28 @@ class VariableDrawer():
         svg = ''
 
         lz, ly, lx = self._extents()
-        if lx == self._sparse_flag:
-            self._sparse_extent()  # dummy call to init stride
+        if lx == self._events_flag:
+            self._events_extent()  # dummy call to init stride
         for z in range(lz):
             for y in reversed(range(ly)):
                 true_lx = lx
                 x_scale = 1
-                sparse = False
-                if lx == self._sparse_flag:
+                events = False
+                if lx == self._events_flag:
                     if hasattr(data[0], '__len__'):
                         true_lx = ceil(
                             len(data[ly - y - 1 + ly * (lz - z - 1)]) /
                             self._x_stride)
-                        x_scale *= self._sparse_box_scale
+                        x_scale *= self._events_box_scale
                     else:  # special case: scalar event weights
                         true_lx = 1
                     if true_lx == 0:
                         true_lx = 1
                         x_scale *= 0
-                    sparse = True
+                    events = True
                 for x in range(true_lx):
                     # Do not draw hidden boxes
-                    if not sparse:
+                    if not events:
                         if z != lz - 1 and y != 0 and x != lx - 1:
                             continue
                     svg += self._draw_box(
@@ -232,7 +232,7 @@ class VariableDrawer():
         extents = self._extents()
         for dim in self._variable.dims:
             i = self._target_dims.index(dim) + (3 - len(self._target_dims))
-            # 1 is a dummy extent so sparse dim label is drawn at correct pos
+            # 1 is a dummy extent so events dim label is drawn at correct pos
             extent = max(extents[i], 1)
             svg += make_label(dim, extent, i)
         return svg

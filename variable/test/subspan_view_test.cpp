@@ -19,10 +19,10 @@ protected:
       Values{1, 2, 3, 4, 5, 6}, Variances{7, 8, 9, 10, 11, 12})};
 };
 
-TEST_F(SubspanViewTest, fail_sparse) {
-  auto sparse = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2});
-  EXPECT_THROW(subspan_view(sparse, Dim::X), except::TypeError);
-  EXPECT_THROW(subspan_view(sparse, Dim::Y), except::TypeError);
+TEST_F(SubspanViewTest, fail_events) {
+  auto events = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2});
+  EXPECT_THROW(subspan_view(events, Dim::X), except::TypeError);
+  EXPECT_THROW(subspan_view(events, Dim::Y), except::TypeError);
 }
 
 TEST_F(SubspanViewTest, fail_not_inner) {

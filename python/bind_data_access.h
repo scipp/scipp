@@ -190,7 +190,7 @@ template <class... Ts> class as_ElementArrayViewImpl {
             if (dims.shape().size() != 0)
               throw except::DimensionError(
                   "Event data cannot be set from a single "
-                  "array, unless the sparse dimension is the "
+                  "array, unless the events dimension is the "
                   "only dimension.");
             if (data.ndim() != 1)
               throw except::DimensionError("Expected 1-D data.");

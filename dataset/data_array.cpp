@@ -142,7 +142,7 @@ struct Divide {
 } // namespace
 
 template <class Coord, class Edges, class Weights>
-auto apply_op_sparse_dense(const Coord &coord, const Edges &edges,
+auto apply_op_events_dense(const Coord &coord, const Edges &edges,
                            const Weights &weights) {
   using W = std::decay_t<decltype(weights)>;
   constexpr bool vars = is_ValueAndVariance_v<W>;
@@ -183,27 +183,27 @@ auto apply_op_sparse_dense(const Coord &coord, const Edges &edges,
     return out_vals;
 }
 
-namespace sparse_dense_op_impl_detail {
+namespace events_dense_op_impl_detail {
 template <class Coord, class Edge, class Weight>
 using args =
     std::tuple<event_list<Coord>, span<const Edge>, span<const Weight>>;
-} // namespace sparse_dense_op_impl_detail
+} // namespace events_dense_op_impl_detail
 
-Variable sparse_dense_op_impl(const VariableConstView &sparseCoord_,
+Variable events_dense_op_impl(const VariableConstView &eventsCoord_,
                               const VariableConstView &edges_,
                               const VariableConstView &weights_,
                               const Dim dim) {
-  using namespace sparse_dense_op_impl_detail;
+  using namespace events_dense_op_impl_detail;
   return variable::transform<
       std::tuple<args<double, double, double>, args<float, double, double>,
                  args<float, float, float>, args<double, float, float>>>(
-      sparseCoord_, subspan_view(edges_, dim), subspan_view(weights_, dim),
-      overloaded{[](const auto &... a) { return apply_op_sparse_dense(a...); },
+      eventsCoord_, subspan_view(edges_, dim), subspan_view(weights_, dim),
+      overloaded{[](const auto &... a) { return apply_op_events_dense(a...); },
                  core::transform_flags::expect_no_variance_arg<0>,
                  core::transform_flags::expect_no_variance_arg<1>,
-                 [](const units::Unit &sparse, const units::Unit &edges,
+                 [](const units::Unit &events, const units::Unit &edges,
                     const units::Unit &weights) {
-                   core::expect::equals(sparse, edges);
+                   core::expect::equals(events, edges);
                    return weights;
                  }});
 }
@@ -262,7 +262,7 @@ Dim realigned_event_histogram_op_dim(const DataArrayConstView &realigned,
 } // namespace
 
 template <class Op>
-DataArray &sparse_dense_op_inplace(Op op, DataArray &a,
+DataArray &events_dense_op_inplace(Op op, DataArray &a,
                                    const DataArrayConstView &b) {
   if (unaligned::is_realigned_events(a)) {
     expect::coordsAreSuperset(a, b);
@@ -290,11 +290,11 @@ DataArray &sparse_dense_op_inplace(Op op, DataArray &a,
 }
 
 DataArray &DataArray::operator*=(const DataArrayConstView &other) {
-  return sparse_dense_op_inplace(Times{}, *this, other);
+  return events_dense_op_inplace(Times{}, *this, other);
 }
 
 DataArray &DataArray::operator/=(const DataArrayConstView &other) {
-  return sparse_dense_op_inplace(Divide{}, *this, other);
+  return events_dense_op_inplace(Divide{}, *this, other);
 }
 
 DataArray &DataArray::operator+=(const VariableConstView &other) {
@@ -340,7 +340,7 @@ DataArray operator-(const DataArrayConstView &a, const DataArrayConstView &b) {
 }
 
 template <class Op>
-auto sparse_dense_op(Op op, const DataArrayConstView &a,
+auto events_dense_op(Op op, const DataArrayConstView &a,
                      const DataArrayConstView &b) {
   if (unaligned::is_realigned_events(a)) {
     const auto &events = a.unaligned();
@@ -359,7 +359,7 @@ auto sparse_dense_op(Op op, const DataArrayConstView &a,
     // histogram divided by events not supported, would typically result in unit
     // 1/counts which is meaningless
     if constexpr (std::is_same_v<Op, Times>)
-      return sparse_dense_op(op, b, a);
+      return events_dense_op(op, b, a);
 
     throw except::RealignedDataError(
         "Unsupported combination of realigned and dense "
@@ -372,7 +372,7 @@ template <class Op>
 DataArray apply_mul_or_div(Op op, const DataArrayConstView &a,
                            const DataArrayConstView &b) {
   if (unaligned::is_realigned_events(a) || unaligned::is_realigned_events(b))
-    return {sparse_dense_op(op, a, b), union_(a.coords(), b.coords()),
+    return {events_dense_op(op, a, b), union_(a.coords(), b.coords()),
             union_or(a.masks(), b.masks())};
   else
     return {op(a.data(), b.data()), union_(a.coords(), b.coords()),

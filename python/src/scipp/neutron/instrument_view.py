@@ -6,7 +6,7 @@
 from .. import config
 from ..plot.render import render_plot
 from ..plot.sciplot import SciPlot
-from ..plot.sparse import histogram_sparse_data, make_bins
+from ..plot.events import histogram_events_data, make_bins
 from ..plot.tools import parse_params
 from ..utils import name_with_unit, value_to_string
 from .._scipp import core as sc, neutron as sn
@@ -162,7 +162,7 @@ class InstrumentView:
                 dim = None if contains_events else self.slider_dim
                 spdim = None if not contains_events else self.slider_dim
                 var = make_bins(data_array=data_array,
-                                sparse_dim=spdim,
+                                events_dim=spdim,
                                 dim=dim,
                                 bins=bins_here,
                                 padding=contains_events)
@@ -552,7 +552,7 @@ class InstrumentView:
 
             # Histogram the data in the Tof dimension
             if sc.contains_events(data_array):
-                self.hist_data_array[key] = histogram_sparse_data(
+                self.hist_data_array[key] = histogram_events_data(
                     data_array, self.slider_dim, bins)
             else:
                 self.hist_data_array[key] = sc.rebin(

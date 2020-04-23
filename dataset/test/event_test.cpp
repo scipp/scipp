@@ -191,7 +191,7 @@ TEST_F(EventBroadcastTest, data_array_fail) {
   EXPECT_THROW(event::broadcast_weights(a), except::EventDataError);
 }
 
-static auto make_sparse() {
+static auto make_events() {
   auto var = makeVariable<event_list<double>>(
       Dims{Dim::Z, Dim::Y}, units::Unit(units::us), Shape{3, 2});
   scipp::index count = 0;
@@ -200,7 +200,7 @@ static auto make_sparse() {
   return var;
 }
 
-static auto make_sparse_with_variances() {
+static auto make_events_with_variances() {
   auto var = makeVariable<event_list<double>>(
       Dimensions{{Dim::Z, 3}, {Dim::Y, 2}}, Values{}, Variances{});
   scipp::index count = 0;
@@ -218,14 +218,14 @@ TEST(EventSizesTest, fail_dense) {
 }
 
 TEST(EventSizesTest, no_variances) {
-  const auto var = make_sparse();
+  const auto var = make_events();
   auto expected = makeVariable<scipp::index>(Dims{Dim::Z, Dim::Y}, Shape{3, 2},
                                              Values{0, 1, 2, 3, 4, 5});
   EXPECT_EQ(variable::event::sizes(var), expected);
 }
 
 TEST(EventSizesTest, variances) {
-  const auto var = make_sparse_with_variances();
+  const auto var = make_events_with_variances();
   auto expected = makeVariable<scipp::index>(Dims{Dim::Z, Dim::Y}, Shape{3, 2},
                                              Values{0, 1, 2, 3, 4, 5});
   EXPECT_EQ(variable::event::sizes(var), expected);

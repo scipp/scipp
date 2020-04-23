@@ -2,7 +2,7 @@
 
 #include <random>
 
-#include "../variable/test/make_sparse.h"
+#include "../variable/test/make_events.h"
 
 template <typename T> struct GenerateSparse {
   auto operator()(int length) {
@@ -10,7 +10,7 @@ template <typename T> struct GenerateSparse {
     std::mt19937 gen(rd());
     std::uniform_int_distribution<> dis(0, 100);
 
-    auto a = make_sparse_variable<T>(length);
+    auto a = make_events_variable<T>(length);
     unsigned long long size(0);
 
     /* Generate a random amount of event data for each point */
@@ -18,7 +18,7 @@ template <typename T> struct GenerateSparse {
     for (scipp::index i = 0; i < length; ++i) {
       const auto l = dis(gen);
       size += l;
-      vals[i] = scipp::core::sparse_container<T>(l, i);
+      vals[i] = scipp::core::events_container<T>(l, i);
     }
 
     return std::make_tuple(a, sizeof(T) * size);
