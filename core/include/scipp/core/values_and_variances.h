@@ -8,7 +8,7 @@
 
 namespace scipp::core {
 
-/// A values/variances pair based on references to sparse data containers.
+/// A values/variances pair based on references to event data containers.
 ///
 /// This is a helper for implementing operations for sparse container such as
 /// `clear`, and for descending into the sparse container itself, using a nested
@@ -38,7 +38,7 @@ template <class T> struct ValuesAndVariances {
   }
 
   // Note that methods like insert, begin, and end are required as long as we
-  // support sparse data via a plain container such as std::vector, e.g., for
+  // support event data via a plain container such as std::vector, e.g., for
   // concatenation using a.insert(a.end(), b.begin(), b.end()). We are
   // supporting this here by simply working with pairs of iterators. This
   // approach is not an actual view iterator and will not compile if client

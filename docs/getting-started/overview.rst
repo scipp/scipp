@@ -59,13 +59,13 @@ Conceptually, we distinguish *dense* and *sparse* data.
 The target application of this is measuring random *events* in an array of detector pixels.
 In contrast to a regular image sensor, which may produce a 2-D image at fixed time intervals (which could be handled as 3-D data), each detector pixel will see a different event rate (photons or neutrons) and is "read out" at uncorrelated times.
 
-Scipp handles such sparse data by supporting data-item-specific *sparse coordinates*:
+Scipp handles such event data by supporting data-item-specific *sparse coordinates*:
 
 - Each item in a dataset may be associated with a sparse coordinate.
 - The sparse coordinate depends on all the other dimensions.
   It represents the time-stamps at which event occurred and is thus essentially an array of lists.
 - If the coordinate is sparse, the corresponding data is also sparse and must have matching list lengths.
-- The values and variances for sparse data correspond to the event weight and its uncertainty.
+- The values and variances for event data correspond to the event weight and its uncertainty.
   For cases where by definition events all have the *same* weight, scipp supports items without a values array.
   In this case each sparse coordinate entry corresponds to a single event count.
 
@@ -78,7 +78,7 @@ Histograms and bin-edge coordinates
 Coordinates for one or more of the dimensions in a dataset can represent bin edges.
 The extent of the coordinate in that dimension exceeds the data extent (in that dimension) by 1.
 Bin-edge coordinates frequently arise when we histogram event-based data.
-The sparse data described above can be used to produce such a histogram.
+The event data described above can be used to produce such a histogram.
 
 Bin-edge coordinates are handled naturally by operations with datasets.
 Most operations on individual data elements are unaffected.

@@ -29,7 +29,7 @@ For our application (handling of neutron-scattering data, which is so far mostly
 - Handling of physical units.
 - Propagation of uncertainties.
 - Support for histograms, i.e., bin-edge axes, which are by 1 longer than the data extent.
-- Support for event data, a particular form of sparse data.
+- Support for event data, a particular form of event data.
   More concretely, this is essentially a 1-D (or N-D) array of random-length lists, with very small list entries.
   This type of data arises in time-resolved detection of neutrons in pixelated detectors.
 - Written in C++ for performance opportunities, in particular also when interfacing with our extensive existing C++ codebase.

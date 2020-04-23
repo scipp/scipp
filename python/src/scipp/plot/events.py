@@ -79,7 +79,7 @@ def make_bins(data_array=None,
     Input bins can be different things:
     - a bool (True): then a default number of 256 bins is made
     - an integer: this denotes the number of bins. The input data is scanned
-      and the entire range of sparse data is covered, using the specified
+      and the entire range of event data is covered, using the specified
       number of bins.
     - a numpy array: denotes the bin edges to be used
     - a Variable: denotes bin edges, can be used directly in the histogramming
@@ -128,7 +128,7 @@ def make_bins(data_array=None,
 
 def histogram_sparse_data(data_array, sparse_dim, bins):
     """
-    Return a DataArray containing histogrammed sparse data, from specified
+    Return a DataArray containing histogrammed event data, from specified
     sparse dimensions and bins. See make_bins for more details.
     """
     return sc.histogram(

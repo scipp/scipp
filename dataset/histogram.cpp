@@ -73,7 +73,7 @@ static constexpr auto make_histogram_unit = [](const units::Unit &sparse_unit,
     throw except::UnitError("Bin edges must have same unit as the sparse "
                             "input coordinate.");
   if (weights_unit != units::counts && weights_unit != units::dimensionless)
-    throw except::UnitError("Weights of sparse data must be "
+    throw except::UnitError("Weights of event data must be "
                             "`units::counts` or `units::dimensionless`.");
   return weights_unit;
 };

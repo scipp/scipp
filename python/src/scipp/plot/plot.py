@@ -51,7 +51,7 @@ def plot(scipp_obj,
         "linewidth": linewidth
     }
 
-    # Counter for 1d/sparse data
+    # Counter for 1d/event data
     line_count = -1
 
     # Create a list of variables which will then be dispatched to correct

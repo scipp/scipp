@@ -14,7 +14,7 @@
 ///    (variants of transform_in_place_impl).
 /// 4. The function implementing the transform calls the overloaded operator for
 ///    each element. Previously `TransformSparse` has been added to the overload
-///    set of the operator and this will now correctly treat sparse data.
+///    set of the operator and this will now correctly treat event data.
 ///    Essentially it causes a (single) recursive call to the transform
 ///    implementation (transform_in_place_impl). In this second call the
 ///    client-provided overload will match.
@@ -218,11 +218,11 @@ static constexpr void call_in_place(Op &&op, const Indices &indices, Arg &&arg,
                                     Args &&... args) {
   const auto i = iter::get(std::get<0>(indices));
   // Two cases are distinguished here:
-  // 1. In the case of sparse data we create ValuesAndVariances, which hold
+  // 1. In the case of event data we create ValuesAndVariances, which hold
   //    references that can be modified.
   // 2. For dense data we create ValueAndVariance, which performs an element
   //    copy, so the result has to be updated after the call to `op`.
-  // Note that in the case of sparse data we actually have a recursive call to
+  // Note that in the case of event data we actually have a recursive call to
   // transform_in_place_impl for the iteration over each individual
   // event_list. This then falls into case 2 and thus the recursion
   // terminates with the second level.
@@ -263,7 +263,7 @@ static void transform_elements(Op op, Out &&out, Ts &&... other) {
 /// Broadcast a constant to arbitrary size. Helper for TransformSparse.
 ///
 /// This helper allows the use of a common transform implementation when mixing
-/// sparse and non-sparse data.
+/// sparse and non-event data.
 template <class T> struct broadcast {
   using value_type = std::remove_const_t<T>;
   constexpr auto operator[](const scipp::index) const noexcept { return value; }
@@ -295,7 +295,7 @@ template <class T> static constexpr auto maybe_eval(T &&_) {
     return std::forward<T>(_);
 }
 
-/// Functor for implementing operations with sparse data, see also
+/// Functor for implementing operations with event data, see also
 /// TransformSparseInPlace.
 struct TransformSparse {
   template <class Op, class... Ts>
@@ -533,7 +533,7 @@ template <bool dry_run> struct in_place {
     using namespace detail;
     const auto begin =
         std::tuple{iter::begin_index(arg), iter::begin_index(other)...};
-    // For sparse data we can fail for any subitem if the sizes to not match.
+    // For event data we can fail for any subitem if the sizes to not match.
     // To avoid partially modifying (and thus corrupting) data in an in-place
     // operation we need to do the checks before any modification happens.
     if constexpr (core::is_events_v<typename std::decay_t<T>::value_type> ||
@@ -656,7 +656,7 @@ template <bool dry_run> struct in_place {
     }
   }
 
-  /// Functor for implementing in-place operations with sparse data.
+  /// Functor for implementing in-place operations with event data.
   ///
   /// This is (conditionally) added to an overloaded set of operators provided
   /// by the user. If the data is sparse the overloads by this functor will
@@ -748,13 +748,13 @@ template <bool dry_run> struct in_place {
       // If a event_list<T> is specified explicitly as a type we assume
       // that the caller provides a matching overload. Otherwise we assume the
       // provided operator is for individual elements (regardless of whether
-      // they are elements of dense or sparse data), so we add overloads for
-      // sparse data processing.
+      // they are elements of dense or event data), so we add overloads for
+      // event data processing.
       if constexpr ((is_any_sparse<Ts>::value || ...)) {
         visit_impl<Ts...>::apply(makeTransformInPlace(op), var.data(),
                                  other.data()...);
       } else if constexpr (sizeof...(Other) > 1) {
-        // No sparse data supported yet in this case.
+        // No event data supported yet in this case.
         variable::visit(std::tuple<Ts...>{})
             .apply(makeTransformInPlace(op), var.data(), other.data()...);
       } else {

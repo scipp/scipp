@@ -57,7 +57,7 @@ template <class T> void bind_groupby(py::module &m, const std::string &name) {
 
       :param dim: Dimension to flatten
       :type dim: Dim
-      :return: Flattened sparse data for each group, combined along dimension specified when calling :py:func:`scipp.groupby`
+      :return: Flattened event data for each group, combined along dimension specified when calling :py:func:`scipp.groupby`
       :rtype: DataArray or Dataset)");
 
   groupBy.def("mean", &GroupBy<T>::mean, py::arg("dim"),

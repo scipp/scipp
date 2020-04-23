@@ -234,7 +234,7 @@ template <class... Ts> class as_ElementArrayViewImpl {
           // We return an individual item in two cases:
           // 1. For 0-D data (consistent with numpy behavior, e.g., when slicing
           // a 1-D array).
-          // 2. For 1-D sparse data, where the individual item is then a
+          // 2. For 1-D event data, where the individual item is then a
           // vector-like object.
           if (dims.shape().size() == 0) {
             if constexpr (std::is_same_v<std::decay_t<decltype(data[0])>,

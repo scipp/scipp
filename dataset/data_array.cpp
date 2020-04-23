@@ -271,7 +271,7 @@ DataArray &sparse_dense_op_inplace(Op op, DataArray &a,
     const Dim dim = realigned_event_histogram_op_dim(a, b);
     auto weight_scale = event::map(b, events.coords()[dim], dim);
     if (contains_events(events.data())) {
-      // Note the inefficiency here: Always creating temporary sparse data.
+      // Note the inefficiency here: Always creating temporary event data.
       // Could easily avoided, but requires significant code duplication.
       op.inplace(events.data(), weight_scale);
     } else {
