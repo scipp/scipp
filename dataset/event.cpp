@@ -99,11 +99,12 @@ DataArray filter(const DataArrayConstView &array, const Dim dim,
 
   std::map<Dim, Variable> coords;
   for (const auto &[d, coord] : array.coords())
-    coords.emplace(d, contains_events(coord) ? copy_if(coord, select) : copy(coord));
+    coords.emplace(d, contains_events(coord) ? copy_if(coord, select)
+                                             : copy(coord));
 
   Dataset empty;
   return DataArray{contains_events(array.data()) ? copy_if(array.data(), select)
-                                           : copy(array.data()),
+                                                 : copy(array.data()),
                    std::move(coords), array.masks(),
                    attrPolicy == AttrPolicy::Keep ? array.attrs()
                                                   : empty.attrs()};

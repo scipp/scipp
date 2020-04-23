@@ -12,14 +12,12 @@
 
 namespace scipp::core {
 
-template <class T>
-using event_list = boost::container::small_vector<T, 8>;
+template <class T> using event_list = boost::container::small_vector<T, 8>;
 
 template <class T> struct is_event : std::false_type {};
 template <class T> struct is_event<event_list<T>> : std::true_type {};
 template <class T> struct is_event<event_list<T> &> : std::true_type {};
-template <class T>
-struct is_event<const event_list<T> &> : std::true_type {};
+template <class T> struct is_event<const event_list<T> &> : std::true_type {};
 template <class T> inline constexpr bool is_event_v = is_event<T>::value;
 
 struct SCIPP_CORE_EXPORT DType {
@@ -37,9 +35,7 @@ DType event_dtype(const DType type);
 namespace detail {
 template <class T> struct element_type { using type = T; };
 template <class T> struct element_type<event_list<T>> { using type = T; };
-template <class T> struct element_type<const event_list<T>> {
-  using type = T;
-};
+template <class T> struct element_type<const event_list<T>> { using type = T; };
 template <class T> using element_type_t = typename element_type<T>::type;
 } // namespace detail
 

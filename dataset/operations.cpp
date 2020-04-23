@@ -112,7 +112,7 @@ DataArray flatten(const DataArrayConstView &a, const Dim dim) {
                          "flatten with non-constant scalar weights not "
                          "possible yet.");
                    return contains_events(x) ? flatten(x, dim_, mask_)
-                                       : copy(x.slice({dim_, 0}));
+                                             : copy(x.slice({dim_, 0}));
                  }},
       dim, a.masks());
 }
