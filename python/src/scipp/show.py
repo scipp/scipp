@@ -71,7 +71,7 @@ class VariableDrawer():
 
     def _dims(self):
         dims = self._variable.dims
-        if sc.is_events(self._variable):
+        if sc.contains_events(self._variable):
             dims.append("<event>")
         return dims
 
@@ -109,7 +109,7 @@ class VariableDrawer():
         for dim in self._target_dims:
             if dim in d:
                 e.append(min(d[dim], max_extent))
-            elif dim == "<event>" and sc.is_events(self._variable):
+            elif dim == "<event>" and sc.contains_events(self._variable):
                 e.append(self._sparse_flag)
             else:
                 e.append(1)
@@ -122,7 +122,7 @@ class VariableDrawer():
             # but may have not data
             # Find a sparse coord to use for determining length
             for coord in self._variable.coords.values():
-                if sc.is_events(coord):
+                if sc.contains_events(coord):
                     data = coord.values
         else:
             data = self._variable.values
@@ -148,9 +148,9 @@ class VariableDrawer():
         if self._variable.variances is not None:
             extra_item_count += 1
         if is_data_array(self._variable):
-            if sc.is_events(self._variable):
+            if sc.contains_events(self._variable):
                 for name, coord in self._variable.coords.items():
-                    if sc.is_events(coord):
+                    if sc.contains_events(coord):
                         extra_item_count += 1
         if self._variable.values is None:
             # No data
@@ -266,9 +266,9 @@ class VariableDrawer():
         if self._variable.values is not None:
             items.append(('values', self._variable.values, color))
         if is_data_array(self._variable):
-            if sc.is_events(self._variable):
+            if sc.contains_events(self._variable):
                 for name, coord in self._variable.coords.items():
-                    if sc.is_events(coord):
+                    if sc.contains_events(coord):
                         items.append(
                             (name, coord.values, config.colors['coords']))
 
@@ -314,12 +314,12 @@ class DatasetDrawer():
         # dimension count.
         if is_data_array(self._dataset):
             dims = self._dataset.dims
-            if sc.is_events(self._dataset):
+            if sc.contains_events(self._dataset):
                 dims.append("<event>")
         else:
             dims = []
             for item in self._dataset.values():
-                if sc.is_events(item):
+                if sc.contains_events(item):
                     dims = item.dims
                     dims.append("<event>")
                     break
@@ -375,7 +375,7 @@ class DatasetDrawer():
                 if len(dims) == 1 or data.dims != dims:
                     if len(data.dims) == 0:
                         area_0d.append(item)
-                    elif len(data.dims) != 1 or sc.is_events(data):
+                    elif len(data.dims) != 1 or sc.contains_events(data):
                         area_xy[-1:-1] = [item]
                     elif data.dims[0] == dims[-1]:
                         area_x.append(item)
@@ -390,7 +390,7 @@ class DatasetDrawer():
         for what, items in zip(['coords', 'masks', 'attrs'],
                                [ds.coords, ds.masks, ds.attrs]):
             for name, var in items.items():
-                if sc.is_events(var):
+                if sc.contains_events(var):
                     continue
                 item = (name, var, config.colors[what])
                 if len(var.dims) == 0:

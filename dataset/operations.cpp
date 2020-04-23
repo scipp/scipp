@@ -107,11 +107,11 @@ DataArray flatten(const DataArrayConstView &a, const Dim dim) {
       a,
       overloaded{no_realigned_support,
                  [](const auto &x, const Dim dim_, const auto &mask_) {
-                   if (!is_events(x) && min(x, dim_) != max(x, dim_))
+                   if (!contains_events(x) && min(x, dim_) != max(x, dim_))
                      throw except::EventDataError(
                          "flatten with non-constant scalar weights not "
                          "possible yet.");
-                   return is_events(x) ? flatten(x, dim_, mask_)
+                   return contains_events(x) ? flatten(x, dim_, mask_)
                                        : copy(x.slice({dim_, 0}));
                  }},
       dim, a.masks());

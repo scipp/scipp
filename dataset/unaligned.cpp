@@ -28,7 +28,7 @@ auto align(DataArray &view, const Dims &unalignedDims) {
     const auto &dims = item.dims();
     if (std::none_of(unalignedDims.begin(), unalignedDims.end(),
                      [&dims](const Dim dim) { return dims.contains(dim); }) &&
-        !(is_events(item) && unalignedDims.count(Dim::Invalid)))
+        !(contains_events(item) && unalignedDims.count(Dim::Invalid)))
       to_align.insert(name);
   }
   for (const auto &name : to_align) {
@@ -39,7 +39,7 @@ auto align(DataArray &view, const Dims &unalignedDims) {
 }
 
 Dim unaligned_dim(const VariableConstView &unaligned) {
-  if (is_events(unaligned))
+  if (contains_events(unaligned))
     return Dim::Invalid;
   if (unaligned.dims().ndim() != 1)
     throw except::UnalignedError("Coordinate used for alignment must be 1-D.");
@@ -154,15 +154,15 @@ Dataset realign(Dataset dataset,
 }
 
 bool is_realigned_events(const DataArrayConstView &realigned) {
-  using variable::is_events;
-  return !is_events(realigned) && realigned.unaligned() &&
-         is_events(realigned.unaligned());
+  using variable::contains_events;
+  return !contains_events(realigned) && realigned.unaligned() &&
+         contains_events(realigned.unaligned());
 }
 
 std::set<Dim> realigned_event_dims(const DataArrayConstView &realigned) {
   std::set<Dim> realigned_dims;
   for (const auto &[dim, coord] : realigned.unaligned().coords())
-    if (is_events(coord) && realigned.coords().contains(dim))
+    if (contains_events(coord) && realigned.coords().contains(dim))
       realigned_dims.insert(dim);
   return realigned_dims;
 }
@@ -196,7 +196,7 @@ filter_recurse(const DataArrayConstView &unaligned,
     return copy(unaligned, attrPolicy);
   const auto &[dim, interval] = bounds[0];
   DataArray filtered =
-      is_events(unaligned.coords()[dim])
+      contains_events(unaligned.coords()[dim])
           ? event::filter(unaligned, dim, interval, attrPolicy)
           : groupby(unaligned, dim, interval).copy(0, attrPolicy);
   if (bounds.size() == 1)

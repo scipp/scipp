@@ -16,7 +16,7 @@ static constexpr auto erase = [](Dimensions dims, const Dim dim) {
 };
 static constexpr auto need_subspan = [](const VariableConstView &var,
                                         const Dim dim) {
-  return !is_events(var) && var.dims().contains(dim);
+  return !contains_events(var) && var.dims().contains(dim);
 };
 
 static constexpr auto maybe_subspan = [](VariableConstView &var,

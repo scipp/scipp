@@ -24,7 +24,7 @@ TEST(EventTest, concatenate_variable) {
   b_[1] = {};
 
   auto var = variable::event::concatenate(a, b);
-  EXPECT_TRUE(is_events(var));
+  EXPECT_TRUE(contains_events(var));
   EXPECT_EQ(var.dims().volume(), 2);
   auto data = var.values<event_list<double>>();
   EXPECT_TRUE(equals(data[0], {1, 2, 3, 1, 3}));
@@ -50,7 +50,7 @@ TEST(EventTest, concatenate_variable_with_variances) {
   b_vars[1] = {};
 
   auto var = variable::event::concatenate(a, b);
-  EXPECT_TRUE(is_events(var));
+  EXPECT_TRUE(contains_events(var));
   EXPECT_EQ(var.dims().volume(), 2);
   auto vals = var.values<event_list<double>>();
   EXPECT_TRUE(equals(vals[0], {1, 2, 3, 1, 3}));

@@ -457,7 +457,7 @@ private:
 
 SCIPP_VARIABLE_EXPORT Variable copy(const VariableConstView &var);
 
-SCIPP_VARIABLE_EXPORT bool is_events(const VariableConstView &var);
+SCIPP_VARIABLE_EXPORT bool contains_events(const VariableConstView &var);
 
 } // namespace scipp::variable
 

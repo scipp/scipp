@@ -25,7 +25,7 @@ void flatten_impl(const VariableView &summed, const VariableConstView &var,
   // Note that mask may often be "empty" (0-D false). Benchmarks show no
   // significant penalty from handling it anyway. We thus avoid two separate
   // code branches here.
-  if (!is_events(var))
+  if (!contains_events(var))
     throw except::TypeError("`flatten` can only be used for event data, "
                             "use `sum` for dense data.");
   // 1. Reserve space in output. This yields approx. 3x speedup.
@@ -62,7 +62,7 @@ Variable flatten(const VariableConstView &var, const Dim dim) {
 }
 
 void sum_impl(const VariableView &summed, const VariableConstView &var) {
-  if (is_events(var))
+  if (contains_events(var))
     throw except::TypeError("`sum` can only be used for dense data, use "
                             "`flatten` for event data.");
   accumulate_in_place<

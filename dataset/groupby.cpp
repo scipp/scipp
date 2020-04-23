@@ -95,7 +95,7 @@ static constexpr auto flatten = [](const DataArrayView &out, const auto &in,
   // solution would be to create proper output and broadcast, but this is also
   // bad solution. Removing support for scalar weights altogether might be the
   // way forward.
-  if (in.hasData() && !is_events(in.data())) {
+  if (in.hasData() && !contains_events(in.data())) {
     if (min(in.data(), reductionDim) != max(in.data(), reductionDim))
       throw except::EventDataError(
           "flatten with non-constant scalar weights not possible yet.");
@@ -107,7 +107,7 @@ static constexpr auto flatten = [](const DataArrayView &out, const auto &in,
         mask_.dims().contains(reductionDim) ? mask_.slice(slice) : no_mask;
     const auto &array = in.slice(slice);
     if (in.hasData()) {
-      if (is_events(array.data()))
+      if (contains_events(array.data()))
         flatten_impl(out.data(), array.data(), mask);
       else if (first) {
         // Note that masks can be ignored since no weights are concatenated
@@ -129,7 +129,7 @@ static constexpr auto flatten_coord =
         auto mask =
             mask_.dims().contains(reductionDim) ? mask_.slice(slice) : no_mask;
         const auto &array = in.slice(slice);
-        if (is_events(out))
+        if (contains_events(out))
           flatten_impl(out, array, mask);
       }
     };

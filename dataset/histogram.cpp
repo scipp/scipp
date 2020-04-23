@@ -131,7 +131,7 @@ Dataset histogram(const Dataset &dataset, const VariableConstView &bins) {
   const Dim dim = bins.dims().inner();
   out.setCoord(dim, bins);
   for (const auto &item : dataset) {
-    if (is_events(item.coords()[dim]))
+    if (contains_events(item.coords()[dim]))
       out.setData(item.name(), histogram(item, bins));
   }
   return out;
@@ -139,7 +139,7 @@ Dataset histogram(const Dataset &dataset, const VariableConstView &bins) {
 
 Dataset histogram(const Dataset &dataset, const Dim &dim) {
   auto bins = dataset.coords()[dim];
-  if (is_events(bins))
+  if (contains_events(bins))
     throw except::BinEdgeError("Expected bin edges, got event data.");
   return histogram(dataset, bins);
 }

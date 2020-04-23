@@ -59,7 +59,7 @@ template <class T> T convert_with_calibration_impl(T d, Dataset cal) {
 
   // 2. Transform coordinate
   if (d.coords().contains(Dim::Tof)) {
-    if (is_events(d.coords()[Dim::Tof])) {
+    if (contains_events(d.coords()[Dim::Tof])) {
       d.coords()[Dim::Tof] -= cal["tzero"].data();
       d.coords()[Dim::Tof] *= reciprocal(cal["difc"].data());
     } else {
@@ -70,7 +70,7 @@ template <class T> T convert_with_calibration_impl(T d, Dataset cal) {
 
   // 3. Transform realigned items
   for (const auto &item : iter(d))
-    if (item.unaligned() && is_events(item.unaligned())) {
+    if (item.unaligned() && contains_events(item.unaligned())) {
       item.unaligned().coords()[Dim::Tof] -= cal["tzero"].data();
       item.unaligned().coords()[Dim::Tof] *= reciprocal(cal["difc"].data());
     }

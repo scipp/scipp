@@ -220,7 +220,7 @@ def _extract_sparse(x):
     Returns the (key, value) pairs where value has a sparse dim
     :param x: dict-like, e.g., coords view or masks view
     """
-    return {key: value for key, value in x.items() if sc.is_events(value)}
+    return {key: value for key, value in x.items() if sc.contains_events(value)}
 
 
 def _make_inline_attributes(var, has_attrs):

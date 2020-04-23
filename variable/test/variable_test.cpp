@@ -906,7 +906,7 @@ TEST(Variable, access_typed_view_edges) {
 
 TEST(SparseVariable, create) {
   const auto var = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2});
-  EXPECT_TRUE(is_events(var));
+  EXPECT_TRUE(contains_events(var));
   EXPECT_EQ(var.dims().volume(), 2);
 }
 
@@ -967,7 +967,7 @@ TEST(SparseVariable, slice) {
   data[2] = {1};
   data[3] = {};
   auto slice = var.slice({Dim::Y, 1, 3});
-  EXPECT_TRUE(is_events(slice));
+  EXPECT_TRUE(contains_events(slice));
   EXPECT_EQ(slice.dims().volume(), 2);
   auto slice_data = slice.values<event_list<double>>();
   EXPECT_TRUE(equals(slice_data[0], {1, 2}));

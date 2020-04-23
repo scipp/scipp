@@ -13,7 +13,7 @@
 
 namespace scipp::variable {
 /// Return true if a variable contains events
-bool is_events(const VariableConstView &var) {
+bool contains_events(const VariableConstView &var) {
   const auto type = var.dtype();
   return type == dtype<event_list<double>> ||
          type == dtype<event_list<float>> ||

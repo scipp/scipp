@@ -270,7 +270,7 @@ DataArray &sparse_dense_op_inplace(Op op, DataArray &a,
     const auto &events = a.unaligned();
     const Dim dim = realigned_event_histogram_op_dim(a, b);
     auto weight_scale = event::map(b, events.coords()[dim], dim);
-    if (is_events(events.data())) {
+    if (contains_events(events.data())) {
       // Note the inefficiency here: Always creating temporary sparse data.
       // Could easily avoided, but requires significant code duplication.
       op.inplace(events.data(), weight_scale);
@@ -348,7 +348,7 @@ auto sparse_dense_op(Op op, const DataArrayConstView &a,
     auto weight_scale = event::map(b, events.coords()[dim], dim);
     std::map<Dim, Variable> coords;
     for (const auto &[d, coord] : events.coords()) {
-      if (is_events(coord))
+      if (contains_events(coord))
         coords.emplace(d, coord);
     }
     // Note that event masks are not supported.

@@ -39,13 +39,13 @@ TYPED_TEST(DataArrayViewTest, sparse_sparseDim) {
   typename TestFixture::dataset_type &d_ref(d);
 
   d.setData("dense", makeVariable<double>(Values{double{}}));
-  ASSERT_FALSE(dataset::is_events(d_ref["dense"]));
+  ASSERT_FALSE(dataset::contains_events(d_ref["dense"]));
 
   d.setData("sparse_data", makeVariable<event_list<double>>(Dims{}, Shape{}));
-  ASSERT_TRUE(dataset::is_events(d_ref["sparse_data"]));
+  ASSERT_TRUE(dataset::contains_events(d_ref["sparse_data"]));
 
   // TODO Event data can have non-list data (only coords would be event_list),
-  // what should is_events return in that case?
+  // what should contains_events return in that case?
 }
 
 TYPED_TEST(DataArrayViewTest, dims) {
