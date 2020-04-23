@@ -3,6 +3,7 @@
 #include "test_macros.h"
 #include <gtest/gtest.h>
 
+#include "scipp/variable/binary_arithmetic.h"
 #include "scipp/variable/comparison.h"
 
 using namespace scipp;
@@ -92,83 +93,15 @@ TEST(ComparisonTest, less_units_test) {
   EXPECT_THROW(less(a, b), std::runtime_error);
 }
 
-template <typename T> class LessTest : public ::testing::Test {};
-template <typename T> class GreaterTest : public ::testing::Test {};
-template <typename T> class LessEqualTest : public ::testing::Test {};
-template <typename T> class GreaterEqualTest : public ::testing::Test {};
-template <typename T> class EqualTest : public ::testing::Test {};
-template <typename T> class NotEqualTest : public ::testing::Test {};
-
-using CompareTestTypes = ::testing::Types<double, float, int64_t, int32_t>;
-TYPED_TEST_SUITE(GreaterTest, CompareTestTypes);
-TYPED_TEST_SUITE(LessTest, CompareTestTypes);
-TYPED_TEST_SUITE(LessEqualTest, CompareTestTypes);
-TYPED_TEST_SUITE(GreaterEqualTest, CompareTestTypes);
-TYPED_TEST_SUITE(EqualTest, CompareTestTypes);
-TYPED_TEST_SUITE(NotEqualTest, CompareTestTypes);
-
-TYPED_TEST(LessTest, value) {
-  using T = TypeParam;
-  T y = 1;
-  T x = 2;
-  const auto a = makeVariable<T>(Dims{Dim::X}, Shape{1}, Values{x});
-  const auto b = makeVariable<T>(Dims{Dim::X}, Shape{1}, Values{y});
-  const auto result = makeVariable<bool>(Dims{Dim::X}, Shape{1}, Values{false});
-
-  EXPECT_EQ(less(a, b), result);
+const auto a = 1.0 * units::Unit(units::m);
+const auto b = 2.0 * units::Unit(units::m);
+const auto true_ = true * units::Unit(units::dimensionless);
+const auto false_ = false * units::Unit(units::dimensionless);
+TEST(ComparisonTest, less_test) { EXPECT_EQ(less(a, b), true_); }
+TEST(ComparisonTest, greater_test) { EXPECT_EQ(greater(a, b), false_); }
+TEST(ComparisonTest, greater_equal_test) {
+  EXPECT_EQ(greater_equal(a, b), false_);
 }
-
-TYPED_TEST(GreaterTest, value) {
-  using T = TypeParam;
-  T y = 1;
-  T x = 2;
-  const auto a = makeVariable<T>(Dims{Dim::X}, Shape{1}, Values{x});
-  const auto b = makeVariable<T>(Dims{Dim::X}, Shape{1}, Values{y});
-  const auto result = makeVariable<bool>(Dims{Dim::X}, Shape{1}, Values{true});
-
-  EXPECT_EQ(greater(a, b), result);
-}
-
-TYPED_TEST(GreaterEqualTest, value) {
-  using T = TypeParam;
-  T y = 1;
-  T x = 2;
-  const auto a = makeVariable<T>(Dims{Dim::X}, Shape{1}, Values{x});
-  const auto b = makeVariable<T>(Dims{Dim::X}, Shape{1}, Values{y});
-  const auto result = makeVariable<bool>(Dims{Dim::X}, Shape{1}, Values{true});
-
-  EXPECT_EQ(greater_equal(a, b), result);
-}
-
-TYPED_TEST(LessEqualTest, value) {
-  using T = TypeParam;
-  T y = 1;
-  T x = 2;
-  const auto a = makeVariable<T>(Dims{Dim::X}, Shape{1}, Values{x});
-  const auto b = makeVariable<T>(Dims{Dim::X}, Shape{1}, Values{y});
-  const auto result = makeVariable<bool>(Dims{Dim::X}, Shape{1}, Values{false});
-
-  EXPECT_EQ(less_equal(a, b), result);
-}
-
-TYPED_TEST(EqualTest, value) {
-  using T = TypeParam;
-  T y = 1;
-  T x = 2;
-  const auto a = makeVariable<T>(Dims{Dim::X}, Shape{1}, Values{x});
-  const auto b = makeVariable<T>(Dims{Dim::X}, Shape{1}, Values{y});
-  const auto result = makeVariable<bool>(Dims{Dim::X}, Shape{1}, Values{false});
-
-  EXPECT_EQ(equal(a, b), result);
-}
-
-TYPED_TEST(NotEqualTest, value) {
-  using T = TypeParam;
-  T y = 1;
-  T x = 2;
-  const auto a = makeVariable<T>(Dims{Dim::X}, Shape{1}, Values{x});
-  const auto b = makeVariable<T>(Dims{Dim::X}, Shape{1}, Values{y});
-  const auto result = makeVariable<bool>(Dims{Dim::X}, Shape{1}, Values{true});
-
-  EXPECT_EQ(not_equal(a, b), result);
-}
+TEST(ComparisonTest, less_equal_test) { EXPECT_EQ(less_equal(a, b), true_); }
+TEST(ComparisonTest, equal_test) { EXPECT_EQ(equal(a, b), false_); }
+TEST(ComparisonTest, not_equal_test) { EXPECT_EQ(not_equal(a, b), true_); }

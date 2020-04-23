@@ -2,9 +2,6 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
-#include <Eigen/Geometry>
-
-#include "scipp/common/constants.h"
 #include "scipp/core/element/logical_operations.h"
 #include "scipp/units/unit.h"
 
@@ -27,11 +24,22 @@ TYPED_TEST_SUITE(ElementGreaterEqualTest, ElementLessTestTypes);
 TYPED_TEST_SUITE(ElementEqualTest, ElementLessTestTypes);
 TYPED_TEST_SUITE(ElementNotEqualTest, ElementLessTestTypes);
 
-TYPED_TEST(ElementLessTest, unit) {
+TEST(ElementComparisonTest, unit) {
   const units::Unit m(units::m);
-  EXPECT_EQ(less(m, m), units::dimensionless);
+  EXPECT_EQ(comparison(m, m), units::dimensionless);
   const units::Unit rad(units::rad);
-  EXPECT_THROW(less(rad, m), except::UnitError);
+  EXPECT_THROW(comparison(rad, m), except::UnitError);
+}
+
+template <int T, typename Op> bool is_no_variance_arg() {
+  return std::is_base_of_v<core::transform_flags::expect_no_variance_arg_t<T>,
+                           Op>;
+}
+
+TEST(ElementComparisonTest, value_only_arguments) {
+  using Op = decltype(comparison);
+  EXPECT_TRUE((is_no_variance_arg<0, Op>())) << " y has variance ";
+  EXPECT_TRUE((is_no_variance_arg<1, Op>())) << " x has variance ";
 }
 
 TYPED_TEST(ElementLessTest, value) {
@@ -41,17 +49,8 @@ TYPED_TEST(ElementLessTest, value) {
   EXPECT_EQ(less(y, x), true);
   x = -1;
   EXPECT_EQ(less(y, x), false);
-}
-
-template <int T, typename Op> bool is_no_variance_arg() {
-  return std::is_base_of_v<core::transform_flags::expect_no_variance_arg_t<T>,
-                           Op>;
-}
-
-TYPED_TEST(ElementLessTest, value_only_arguments) {
-  using Op = decltype(less);
-  EXPECT_TRUE((is_no_variance_arg<0, Op>())) << " y has variance ";
-  EXPECT_TRUE((is_no_variance_arg<1, Op>())) << " x has variance ";
+  x = 1;
+  EXPECT_EQ(less(y, x), false);
 }
 
 TYPED_TEST(ElementGreaterTest, value) {
@@ -61,6 +60,8 @@ TYPED_TEST(ElementGreaterTest, value) {
   EXPECT_EQ(greater(y, x), false);
   x = -1;
   EXPECT_EQ(greater(y, x), true);
+  x = 1;
+  EXPECT_EQ(less(y, x), false);
 }
 
 TYPED_TEST(ElementLessEqualTest, value) {
@@ -70,6 +71,8 @@ TYPED_TEST(ElementLessEqualTest, value) {
   EXPECT_EQ(less_equal(y, x), true);
   x = 1;
   EXPECT_EQ(less_equal(y, x), true);
+  x = -1;
+  EXPECT_EQ(less(y, x), false);
 }
 
 TYPED_TEST(ElementGreaterEqualTest, value) {
@@ -79,6 +82,8 @@ TYPED_TEST(ElementGreaterEqualTest, value) {
   EXPECT_EQ(greater_equal(y, x), false);
   x = 1;
   EXPECT_EQ(greater_equal(y, x), true);
+  x = -1;
+  EXPECT_EQ(less(y, x), false);
 }
 
 TYPED_TEST(ElementEqualTest, value) {
@@ -88,6 +93,8 @@ TYPED_TEST(ElementEqualTest, value) {
   EXPECT_EQ(equal(y, x), false);
   x = 1;
   EXPECT_EQ(equal(y, x), true);
+  x = -1;
+  EXPECT_EQ(less(y, x), false);
 }
 
 TYPED_TEST(ElementNotEqualTest, value) {
@@ -97,4 +104,6 @@ TYPED_TEST(ElementNotEqualTest, value) {
   EXPECT_EQ(not_equal(y, x), true);
   x = 1;
   EXPECT_EQ(not_equal(y, x), false);
+  x = -1;
+  EXPECT_EQ(less(y, x), false);
 }

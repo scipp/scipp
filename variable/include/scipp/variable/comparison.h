@@ -13,6 +13,9 @@
 
 namespace scipp::variable {
 
+/// Functions to provide numpy-like element-wise comparison
+/// between two Variables.
+
 SCIPP_VARIABLE_EXPORT Variable less(const VariableConstView &x,
                                     const VariableConstView &y);
 SCIPP_VARIABLE_EXPORT Variable greater(const VariableConstView &x,
