@@ -15,12 +15,12 @@ namespace scipp::core {
 template <class T>
 using event_list = boost::container::small_vector<T, 8>;
 
-template <class T> struct is_sparse : std::false_type {};
-template <class T> struct is_sparse<event_list<T>> : std::true_type {};
-template <class T> struct is_sparse<event_list<T> &> : std::true_type {};
+template <class T> struct is_event : std::false_type {};
+template <class T> struct is_event<event_list<T>> : std::true_type {};
+template <class T> struct is_event<event_list<T> &> : std::true_type {};
 template <class T>
-struct is_sparse<const event_list<T> &> : std::true_type {};
-template <class T> inline constexpr bool is_sparse_v = is_sparse<T>::value;
+struct is_event<const event_list<T> &> : std::true_type {};
+template <class T> inline constexpr bool is_event_v = is_event<T>::value;
 
 struct SCIPP_CORE_EXPORT DType {
   std::type_index index;

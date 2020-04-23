@@ -61,7 +61,7 @@ template <class T>
 static constexpr decltype(auto) value_maybe_variance(T &&range,
                                                      const scipp::index i) {
   if constexpr (has_variances_v<std::decay_t<T>>) {
-    if constexpr (core::is_sparse_v<decltype(range.values.data()[0])>)
+    if constexpr (core::is_event_v<decltype(range.values.data()[0])>)
       return ValuesAndVariances{range.values.data()[i],
                                 range.variances.data()[i]};
     else
@@ -82,13 +82,13 @@ template <class T>
 inline constexpr bool is_eigen_type_v = is_eigen_type<T>::value;
 
 namespace transform_detail {
-template <class T> struct is_sparse : std::false_type {};
-template <class T> struct is_sparse<event_list<T>> : std::true_type {};
+template <class T> struct is_event : std::false_type {};
+template <class T> struct is_event<event_list<T>> : std::true_type {};
 template <class T>
-struct is_sparse<ValuesAndVariances<event_list<T>>> : std::true_type {};
+struct is_event<ValuesAndVariances<event_list<T>>> : std::true_type {};
 template <class T>
-struct is_sparse<ValuesAndVariances<const event_list<T>>> : std::true_type {};
-template <class T> inline constexpr bool is_sparse_v = is_sparse<T>::value;
+struct is_event<ValuesAndVariances<const event_list<T>>> : std::true_type {};
+template <class T> inline constexpr bool is_event_v = is_event<T>::value;
 } // namespace transform_detail
 
 template <class T> static auto check_and_get_size(const T &a) {
@@ -97,8 +97,8 @@ template <class T> static auto check_and_get_size(const T &a) {
 
 template <class T1, class T2>
 static auto check_and_get_size(const T1 &a, const T2 &b) {
-  if constexpr (transform_detail::is_sparse_v<T1>) {
-    if constexpr (transform_detail::is_sparse_v<T2>)
+  if constexpr (transform_detail::is_event_v<T1>) {
+    if constexpr (transform_detail::is_event_v<T2>)
       core::expect::sizeMatches(a, b);
     return scipp::size(a);
   } else {
@@ -244,7 +244,7 @@ static void transform_elements(Op op, Out &&out, Ts &&... other) {
   };
   const auto begin =
       std::tuple{iter::begin_index(out), iter::begin_index(other)...};
-  if constexpr (transform_detail::is_sparse_v<std::decay_t<Out>>) {
+  if constexpr (transform_detail::is_event_v<std::decay_t<Out>>) {
     run(begin, iter::end_index(out));
   } else {
     auto run_parallel = [&](const auto &range) {
@@ -272,7 +272,7 @@ template <class T> struct broadcast {
 template <class T> broadcast(T)->broadcast<T>;
 
 template <class T> static decltype(auto) maybe_broadcast(T &&value) {
-  if constexpr (transform_detail::is_sparse_v<std::decay_t<T>>)
+  if constexpr (transform_detail::is_event_v<std::decay_t<T>>)
     return std::forward<T>(value);
   else
     return broadcast{value};
@@ -480,7 +480,7 @@ struct augment {
 
 template <class Op, class SparseOp> struct overloaded_sparse : Op, SparseOp {
   template <class... Ts> constexpr auto operator()(Ts &&... args) const {
-    if constexpr ((transform_detail::is_sparse_v<std::decay_t<Ts>> || ...))
+    if constexpr ((transform_detail::is_event_v<std::decay_t<Ts>> || ...))
       return SparseOp::operator()(static_cast<const Op &>(*this),
                                   std::forward<Ts>(args)...);
     else if constexpr ((is_eigen_type_v<std::decay_t<Ts>> || ...))
@@ -498,15 +498,15 @@ template <class Op, class SparseOp> struct overloaded_sparse : Op, SparseOp {
 template <class... Ts> overloaded_sparse(Ts...)->overloaded_sparse<Ts...>;
 
 template <class T>
-struct is_any_sparse : std::conditional_t<core::is_sparse<T>::value,
+struct is_any_sparse : std::conditional_t<core::is_event<T>::value,
                                           std::true_type, std::false_type> {};
 template <class... Ts>
 struct is_any_sparse<std::pair<Ts...>>
-    : std::conditional_t<(core::is_sparse<Ts>::value || ...), std::true_type,
+    : std::conditional_t<(core::is_event<Ts>::value || ...), std::true_type,
                          std::false_type> {};
 template <class... Ts>
 struct is_any_sparse<std::tuple<Ts...>>
-    : std::conditional_t<(core::is_sparse<Ts>::value || ...), std::true_type,
+    : std::conditional_t<(core::is_event<Ts>::value || ...), std::true_type,
                          std::false_type> {};
 
 } // namespace detail
@@ -535,8 +535,8 @@ template <bool dry_run> struct in_place {
     // For sparse data we can fail for any subitem if the sizes to not match.
     // To avoid partially modifying (and thus corrupting) data in an in-place
     // operation we need to do the checks before any modification happens.
-    if constexpr (core::is_sparse_v<typename std::decay_t<T>::value_type> ||
-                  (core::is_sparse_v<typename std::decay_t<Ts>::value_type> ||
+    if constexpr (core::is_event_v<typename std::decay_t<T>::value_type> ||
+                  (core::is_event_v<typename std::decay_t<Ts>::value_type> ||
                    ...)) {
       const auto end = iter::end_index(arg);
       for (auto i = begin; std::get<0>(i) != end; iter::increment(i)) {
@@ -555,8 +555,8 @@ template <bool dry_run> struct in_place {
         call_in_place(op, indices, arg, other...);
     };
 
-    if constexpr (transform_detail::is_sparse_v<std::decay_t<T>> ||
-                  (transform_detail::is_sparse_v<std::decay_t<Ts>> || ...)) {
+    if constexpr (transform_detail::is_event_v<std::decay_t<T>> ||
+                  (transform_detail::is_event_v<std::decay_t<Ts>> || ...)) {
       run(begin, iter::end_index(arg));
     } else {
       if (iter::has_stride_zero(std::get<0>(begin))) {

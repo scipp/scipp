@@ -184,7 +184,7 @@ template <class... Ts> class as_ElementArrayViewImpl {
                                            "does not match the existing "
                                            "object.");
             copy_flattened<T>(data, view_);
-          } else if constexpr (core::is_sparse_v<T>) {
+          } else if constexpr (core::is_event_v<T>) {
             auto &data = obj.cast<const py::array_t<typename T::value_type>>();
             // Sparse data can be set from an array only for a single item.
             if (dims.shape().size() != 0)

@@ -19,7 +19,7 @@ template <class T> struct mutable_span_methods {
     span.def("__setitem__", [](scipp::span<T> &self, const scipp::index i,
                                const T value) { self[i] = value; });
     // This is to support, e.g., `var.values[i] = np.zeros(4)`.
-    if constexpr (is_sparse_v<T>)
+    if constexpr (is_event_v<T>)
       span.def("__setitem__",
                [](scipp::span<T> &self, const scipp::index i,
                   const std::vector<typename T::value_type> &value) {
@@ -61,7 +61,7 @@ void declare_ElementArrayView(py::module &m, const std::string &suffix) {
       .def("__iter__", [](const ElementArrayView<T> &self) {
         return py::make_iterator(self.begin(), self.end());
       });
-  if constexpr (is_sparse_v<T>)
+  if constexpr (is_event_v<T>)
     view.def("__setitem__",
              [](const ElementArrayView<T> &self, const scipp::index i,
                 const std::vector<typename T::value_type> &value) {
