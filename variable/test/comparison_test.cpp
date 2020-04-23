@@ -93,15 +93,39 @@ TEST(ComparisonTest, less_units_test) {
   EXPECT_THROW(less(a, b), std::runtime_error);
 }
 
+namespace {
 const auto a = 1.0 * units::Unit(units::m);
 const auto b = 2.0 * units::Unit(units::m);
 const auto true_ = true * units::Unit(units::dimensionless);
 const auto false_ = false * units::Unit(units::dimensionless);
-TEST(ComparisonTest, less_test) { EXPECT_EQ(less(a, b), true_); }
-TEST(ComparisonTest, greater_test) { EXPECT_EQ(greater(a, b), false_); }
+TEST(ComparisonTest, less_test) {
+  EXPECT_EQ(less(a, b), true_);
+  EXPECT_EQ(less(b, a), false_);
+  EXPECT_EQ(less(a, a), false_);
+}
+TEST(ComparisonTest, greater_test) {
+  EXPECT_EQ(greater(a, b), false_);
+  EXPECT_EQ(greater(b, a), true_);
+  EXPECT_EQ(greater(a, a), false_);
+}
 TEST(ComparisonTest, greater_equal_test) {
   EXPECT_EQ(greater_equal(a, b), false_);
+  EXPECT_EQ(greater_equal(b, a), true_);
+  EXPECT_EQ(greater_equal(a, a), true_);
 }
-TEST(ComparisonTest, less_equal_test) { EXPECT_EQ(less_equal(a, b), true_); }
-TEST(ComparisonTest, equal_test) { EXPECT_EQ(equal(a, b), false_); }
-TEST(ComparisonTest, not_equal_test) { EXPECT_EQ(not_equal(a, b), true_); }
+TEST(ComparisonTest, less_equal_test) {
+  EXPECT_EQ(less_equal(a, b), true_);
+  EXPECT_EQ(less_equal(b, a), false_);
+  EXPECT_EQ(less_equal(a, a), true_);
+}
+TEST(ComparisonTest, equal_test) {
+  EXPECT_EQ(equal(a, b), false_);
+  EXPECT_EQ(equal(b, a), false_);
+  EXPECT_EQ(equal(a, a), true_);
+}
+TEST(ComparisonTest, not_equal_test) {
+  EXPECT_EQ(not_equal(a, b), true_);
+  EXPECT_EQ(not_equal(b, a), true_);
+  EXPECT_EQ(not_equal(a, a), false_);
+}
+} // namespace

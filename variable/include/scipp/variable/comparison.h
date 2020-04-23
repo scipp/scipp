@@ -29,6 +29,8 @@ SCIPP_VARIABLE_EXPORT Variable equal(const VariableConstView &x,
 SCIPP_VARIABLE_EXPORT Variable not_equal(const VariableConstView &x,
                                          const VariableConstView &y);
 
+/// Tests if the unit, values (and variances where appropriate) of two
+/// Variables are within an absolute tolerance.
 template <typename T>
 bool is_approx(const VariableConstView &a, const VariableConstView &b,
                const T tol) {

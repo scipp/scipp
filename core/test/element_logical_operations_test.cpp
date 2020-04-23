@@ -61,7 +61,7 @@ TYPED_TEST(ElementGreaterTest, value) {
   x = -1;
   EXPECT_EQ(greater(y, x), true);
   x = 1;
-  EXPECT_EQ(less(y, x), false);
+  EXPECT_EQ(greater(y, x), false);
 }
 
 TYPED_TEST(ElementLessEqualTest, value) {
@@ -72,7 +72,7 @@ TYPED_TEST(ElementLessEqualTest, value) {
   x = 1;
   EXPECT_EQ(less_equal(y, x), true);
   x = -1;
-  EXPECT_EQ(less(y, x), false);
+  EXPECT_EQ(less_equal(y, x), false);
 }
 
 TYPED_TEST(ElementGreaterEqualTest, value) {
@@ -83,7 +83,7 @@ TYPED_TEST(ElementGreaterEqualTest, value) {
   x = 1;
   EXPECT_EQ(greater_equal(y, x), true);
   x = -1;
-  EXPECT_EQ(less(y, x), false);
+  EXPECT_EQ(greater_equal(y, x), true);
 }
 
 TYPED_TEST(ElementEqualTest, value) {
@@ -94,7 +94,7 @@ TYPED_TEST(ElementEqualTest, value) {
   x = 1;
   EXPECT_EQ(equal(y, x), true);
   x = -1;
-  EXPECT_EQ(less(y, x), false);
+  EXPECT_EQ(equal(y, x), false);
 }
 
 TYPED_TEST(ElementNotEqualTest, value) {
@@ -105,5 +105,5 @@ TYPED_TEST(ElementNotEqualTest, value) {
   x = 1;
   EXPECT_EQ(not_equal(y, x), false);
   x = -1;
-  EXPECT_EQ(less(y, x), false);
+  EXPECT_EQ(not_equal(y, x), true);
 }
