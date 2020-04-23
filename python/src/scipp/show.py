@@ -118,7 +118,7 @@ class VariableDrawer():
     def _events_extent(self):
         extent = 0
         if is_data_array(self._variable):
-            # Sparse items in a dataset should always have a coord,
+            # Events items in a dataset should always have a coord,
             # but may have not data
             # Find a events coord to use for determining length
             for coord in self._variable.coords.values():

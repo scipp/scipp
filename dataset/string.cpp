@@ -48,7 +48,7 @@ auto format_data_view(const Key &name, const DataArrayConstView &data,
   for (const auto &[dim, coord] : data.coords())
     if (coord.dims().events()) {
       if (!eventsCoords) {
-        s << tab << tab << "Sparse coords:\n";
+        s << tab << tab << "Events coords:\n";
         eventsCoords = true;
       }
       s << format_variable(std::string(tab) + std::string(tab) + to_string(dim),

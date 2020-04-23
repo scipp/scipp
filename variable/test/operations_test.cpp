@@ -198,7 +198,7 @@ TEST(Variable, operator_plus_eigen_type) {
   EXPECT_EQ(result, expected);
 }
 
-TEST(SparseVariable, operator_plus) {
+TEST(EventsVariable, operator_plus) {
   auto events = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2});
   auto events_ = events.values<event_list<double>>();
   events_[0] = {1, 2, 3};
@@ -480,7 +480,7 @@ TEST(Variable, concatenate_unit_fail) {
   EXPECT_NO_THROW(concatenate(a, b, Dim::X));
 }
 
-TEST(SparseVariable, concatenate) {
+TEST(EventsVariable, concatenate) {
   const auto a = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2},
                                                   Values{}, Variances{});
   const auto b = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{3},

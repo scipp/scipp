@@ -1894,36 +1894,36 @@ TEST(Dataset, counts_toDensity_fromDensity) {
   EXPECT_TRUE(equals(result.span<double>(), {12, 12, 12}));
 }
 
-TEST(SparseDataset, different_variables_can_have_different_events_dimensions) {
+TEST(EventsDataset, different_variables_can_have_different_events_dimensions) {
   Dataset d;
-  d.insert(Coord::X, makeSparseVariable<double>({Dim::X, 2}, Dim::Y));
-  d.insert(Coord::Y, makeSparseVariable<double>({Dim::X, 2}, Dim::Z));
+  d.insert(Coord::X, makeEventsVariable<double>({Dim::X, 2}, Dim::Y));
+  d.insert(Coord::Y, makeEventsVariable<double>({Dim::X, 2}, Dim::Z));
   EXPECT_EQ(d.size(), 2);
 }
 
-TEST(SparseDataset, dimensions_of_dataset_does_not_contain_events_dims) {
+TEST(EventsDataset, dimensions_of_dataset_does_not_contain_events_dims) {
   Dataset d;
-  d.insert(Coord::X, makeSparseVariable<double>({Dim::X, 2}, Dim::Y));
+  d.insert(Coord::X, makeEventsVariable<double>({Dim::X, 2}, Dim::Y));
   EXPECT_EQ(d.dimensions(), Dimensions({Dim::X, 2}));
 }
 
-TEST(SparseDataset, dimension_can_be_dense_in_some_vars_and_events_in_others) {
+TEST(EventsDataset, dimension_can_be_dense_in_some_vars_and_events_in_others) {
   Dataset d;
-  d.insert(Coord::X, makeSparseVariable<double>({Dim::X, 2}, Dim::Y));
+  d.insert(Coord::X, makeEventsVariable<double>({Dim::X, 2}, Dim::Y));
   d.insert(Coord::Y, makeVariable<double>({Dim::Y, 3}));
   EXPECT_EQ(d.size(), 2);
   EXPECT_EQ(d.dimensions(), Dimensions({{Dim::Y, 3}, {Dim::X, 2}}));
 }
 
-TEST(SparseDataset, concatenate_along_events_dimension) {
+TEST(EventsDataset, concatenate_along_events_dimension) {
   Dataset d1;
-  d1.insert(Data::Value, makeSparseVariable<double>({Dim::Y, 2}, Dim::X));
+  d1.insert(Data::Value, makeEventsVariable<double>({Dim::Y, 2}, Dim::X));
   auto a_ = d1(Data::Value).eventsSpan<double>();
   a_[0] = {1, 2, 3};
   a_[1] = {1, 2};
 
   Dataset d2;
-  d2.insert(Data::Value, makeSparseVariable<double>({Dim::Y, 2}, Dim::X));
+  d2.insert(Data::Value, makeEventsVariable<double>({Dim::Y, 2}, Dim::X));
   auto b_ = d2(Data::Value).eventsSpan<double>();
   b_[0] = {1, 3};
   b_[1] = {};

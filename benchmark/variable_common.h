@@ -4,7 +4,7 @@
 
 #include "../variable/test/make_events.h"
 
-template <typename T> struct GenerateSparse {
+template <typename T> struct GenerateEvents {
   auto operator()(int length) {
     std::random_device rd;
     std::mt19937 gen(rd());

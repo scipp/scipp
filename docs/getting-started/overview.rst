@@ -45,7 +45,7 @@ All operations take the variances into account:
   The implemented mechanism assumes uncorrelated data.
 
 
-Sparse dimensions and data
+Events dimensions and data
 --------------------------
 
 Scipp supports data with a single "events" dimension.
@@ -69,7 +69,7 @@ Scipp handles such event data by supporting data-item-specific *events coordinat
   For cases where by definition events all have the *same* weight, scipp supports items without a values array.
   In this case each events coordinate entry corresponds to a single event count.
 
-Sparse items in a dataset can be seen as a case of unaligned data, with misalignment not just between different items, but also between slices within an item.
+Events items in a dataset can be seen as a case of unaligned data, with misalignment not just between different items, but also between slices within an item.
 
 
 Histograms and bin-edge coordinates

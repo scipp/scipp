@@ -77,7 +77,7 @@ public:
   /// Return untyped const view for data (values and optional variances).
   const VariableConstView &data() const {
     if (!hasData())
-      throw except::SparseDataError("No data in item.");
+      throw except::EventsDataError("No data in item.");
     return m_view;
   }
   /// Return typed const view for data values.
@@ -147,7 +147,7 @@ public:
   /// Return untyped view for data (values and optional variances).
   const VariableView &data() const {
     if (!hasData())
-      throw except::SparseDataError("No data in item.");
+      throw except::EventsDataError("No data in item.");
     return m_view;
   }
   /// Return typed view for data values.

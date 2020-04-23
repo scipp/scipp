@@ -123,12 +123,12 @@ TEST(EventWorkspace, plus) {
   // Addition for nested Dataset as event list is not supported anymore.
   Dataset d;
   d.insert(Coord::Tof,
-           makeSparseVariable<double>({Dim::Spectrum, 2}, Dim::Tof));
+           makeEventsVariable<double>({Dim::Spectrum, 2}, Dim::Tof));
   auto tofs = d(Coord::Tof).eventsSpan<double>();
   tofs[0].resize(10);
   tofs[1].resize(20);
   d.insert(Data::Value,
-           makeSparseVariable<double>({Dim::Spectrum, 2}, Dim::Tof));
+           makeEventsVariable<double>({Dim::Spectrum, 2}, Dim::Tof));
   auto weights = d(Data::Value).eventsSpan<double>();
   weights[0].resize(10);
   weights[1].resize(20);

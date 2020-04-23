@@ -20,20 +20,20 @@ auto make_events() {
 }
 } // namespace
 
-TEST(ReduceSparseTest, flatten_fail) {
+TEST(ReduceEventsTest, flatten_fail) {
   EXPECT_THROW(static_cast<void>(flatten(make_events(), Dim::X)),
                except::DimensionError);
   EXPECT_THROW(static_cast<void>(flatten(make_events(), Dim::Z)),
                except::DimensionError);
 }
 
-TEST(ReduceSparseTest, flatten) {
+TEST(ReduceEventsTest, flatten) {
   auto expected = makeVariable<event_list<double>>(
       Dims{}, Shape{}, Values{event_list<double>{1, 2, 3, 4, 5, 6, 7}});
   EXPECT_EQ(flatten(make_events(), Dim::Y), expected);
 }
 
-TEST(ReduceSparseTest, flatten_dataset_with_mask) {
+TEST(ReduceEventsTest, flatten_dataset_with_mask) {
   Dataset d;
   d.setMask("y", makeVariable<bool>(Dims{Dim::Y}, Shape{3},
                                     Values{false, true, false}));
@@ -50,7 +50,7 @@ TEST(ReduceSparseTest, flatten_dataset_with_mask) {
   EXPECT_EQ(flat["b"].data(), expected);
 }
 
-TEST(ReduceSparseTest, flatten_dataset_non_constant_scalar_weight_fail) {
+TEST(ReduceEventsTest, flatten_dataset_non_constant_scalar_weight_fail) {
   Dataset d;
   d.coords().set(Dim::X, make_events());
   d.setData("b", makeVariable<double>(Dims{Dim::Y}, Shape{3}, Values{1, 2, 3}));

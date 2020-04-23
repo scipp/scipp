@@ -77,7 +77,7 @@ def test_basic(dims, lengths):
                   "refactor. It gives a Length mismatch on insertion "
                   "error.")
 def test_events_does_not_repeat_dense_coords():
-    events = sc.Variable(['y', 'z'], shape=(3, sc.Dimensions.Sparse))
+    events = sc.Variable(['y', 'z'], shape=(3, sc.Dimensions.Events))
 
     events.values[0].extend(np.arange(0))
     events.values[2].extend(np.arange(0))
@@ -89,7 +89,7 @@ def test_events_does_not_repeat_dense_coords():
         events,
         coords={
             'y': sc.Variable(['y'], values=np.arange(4)),
-            'z': sc.Variable(['z'], shape=(sc.Dimensions.Sparse, )),
+            'z': sc.Variable(['z'], shape=(sc.Dimensions.Events, )),
             "binedge": sc.Variable(['y'], values=np.random.rand(4))
         },
         attrs={"attr": sc.Variable(['y'], values=np.random.rand(3))})

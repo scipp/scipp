@@ -160,7 +160,7 @@ def format_dims(dims, sizes, coords):
 
     dims_li = "".join(f"<li><span{dim_css_map[dim]}>"
                       f"{escape(str(dim))}</span>: "
-                      f"{size if size is not None else 'Sparse' }</li>"
+                      f"{size if size is not None else 'Events' }</li>"
                       for dim, size in zip(dims, sizes))
 
     return f"<ul class='xr-dim-list'>{dims_li}</ul>"

@@ -55,10 +55,10 @@ def test_basic(dims, lengths):
 
 
 # @pytest.mark.parametrize("dims, lengths",
-#                          ((['x', 'y'], (10, sc.Dimensions.Sparse)),
-#                           (['x', 'y', 'z'], (10, 10, sc.Dimensions.Sparse)),
+#                          ((['x', 'y'], (10, sc.Dimensions.Events)),
+#                           (['x', 'y', 'z'], (10, 10, sc.Dimensions.Events)),
 #                           (['x', 'y', 'z', 'spectrum'],
-#                            (10, 10, 10, sc.Dimensions.Sparse))))
+#                            (10, 10, 10, sc.Dimensions.Events))))
 @pytest.mark.skip(reason="This test currently fails on Windows.")
 def test_events(dims, lengths):
     in_unit = sc.units.m

@@ -16,10 +16,10 @@ template <int NameLen> struct Generate3DWithDataItems {
   }
 };
 
-template <int NameLen> struct GenerateWithSparseDataItems {
+template <int NameLen> struct GenerateWithEventsDataItems {
   auto operator()(const int itemCount = 5, const int length = 100) {
     Dataset d;
-    GenerateSparse<double> gen;
+    GenerateEvents<double> gen;
     unsigned long long size(0);
     for (auto i = 0; i < itemCount; ++i) {
       const auto [data, s] = gen(length);

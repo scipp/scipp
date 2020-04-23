@@ -107,9 +107,9 @@ BENCHMARK_TEMPLATE(BM_Variable_copy, Generate5D<double>)
     ->Apply(Args_Variable_copy);
 BENCHMARK_TEMPLATE(BM_Variable_copy, Generate6D<double>)
     ->Apply(Args_Variable_copy);
-BENCHMARK_TEMPLATE(BM_Variable_copy, GenerateSparse<float>)
+BENCHMARK_TEMPLATE(BM_Variable_copy, GenerateEvents<float>)
     ->Apply(Args_Variable_copy_events);
-BENCHMARK_TEMPLATE(BM_Variable_copy, GenerateSparse<double>)
+BENCHMARK_TEMPLATE(BM_Variable_copy, GenerateEvents<double>)
     ->Apply(Args_Variable_copy_events);
 
 static void BM_Variable_trivial_slice(benchmark::State &state) {

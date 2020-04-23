@@ -57,8 +57,8 @@ struct SCIPP_CORE_EXPORT DimensionLengthError : public DimensionError {
                        const scipp::index length);
 };
 
-struct SCIPP_CORE_EXPORT SparseDimensionError : public DimensionError {
-  SparseDimensionError()
+struct SCIPP_CORE_EXPORT EventsDimensionError : public DimensionError {
+  EventsDimensionError()
       : DimensionError("Unsupported operation for events dimensions.") {}
 };
 
@@ -78,7 +78,7 @@ struct SCIPP_CORE_EXPORT VariancesError : public std::runtime_error {
   using std::runtime_error::runtime_error;
 };
 
-struct SCIPP_CORE_EXPORT SparseDataError : public std::runtime_error {
+struct SCIPP_CORE_EXPORT EventsDataError : public std::runtime_error {
   using std::runtime_error::runtime_error;
 };
 

@@ -13,7 +13,7 @@
 ///    calling a different transform implementation for each case
 ///    (variants of transform_in_place_impl).
 /// 4. The function implementing the transform calls the overloaded operator for
-///    each element. Previously `TransformSparse` has been added to the overload
+///    each element. Previously `TransformEvents` has been added to the overload
 ///    set of the operator and this will now correctly treat event data.
 ///    Essentially it causes a (single) recursive call to the transform
 ///    implementation (transform_in_place_impl). In this second call the
@@ -107,7 +107,7 @@ static auto check_and_get_size(const T1 &a, const T2 &b) {
   }
 }
 
-struct SparseFlag {};
+struct EventsFlag {};
 
 // Helpers for handling a tuple of indices (integers or ViewIndex).
 namespace iter {
@@ -260,7 +260,7 @@ static void transform_elements(Op op, Out &&out, Ts &&... other) {
   }
 }
 
-/// Broadcast a constant to arbitrary size. Helper for TransformSparse.
+/// Broadcast a constant to arbitrary size. Helper for TransformEvents.
 ///
 /// This helper allows the use of a common transform implementation when mixing
 /// events and non-event data.
@@ -296,8 +296,8 @@ template <class T> static constexpr auto maybe_eval(T &&_) {
 }
 
 /// Functor for implementing operations with event data, see also
-/// TransformSparseInPlace.
-struct TransformSparse {
+/// TransformEventsInPlace.
+struct TransformEvents {
   template <class Op, class... Ts>
   constexpr auto operator()(const Op &op, const Ts &... args) const {
     event_list<std::invoke_result_t<Op, core::detail::element_type_t<Ts>...>>
@@ -479,10 +479,10 @@ struct augment {
   }
 };
 
-template <class Op, class SparseOp> struct overloaded_events : Op, SparseOp {
+template <class Op, class EventsOp> struct overloaded_events : Op, EventsOp {
   template <class... Ts> constexpr auto operator()(Ts &&... args) const {
     if constexpr ((transform_detail::is_events_v<std::decay_t<Ts>> || ...))
-      return SparseOp::operator()(static_cast<const Op &>(*this),
+      return EventsOp::operator()(static_cast<const Op &>(*this),
                                   std::forward<Ts>(args)...);
     else if constexpr ((is_eigen_type_v<std::decay_t<Ts>> || ...))
       // WARNING! The explicit specification of the template arguments of
@@ -543,7 +543,7 @@ template <bool dry_run> struct in_place {
       for (auto i = begin; std::get<0>(i) != end; iter::increment(i)) {
         call_in_place(
             [](auto &&... args) {
-              if constexpr (std::is_base_of_v<SparseFlag, Op>)
+              if constexpr (std::is_base_of_v<EventsFlag, Op>)
                 static_cast<void>(check_and_get_size(args...));
             },
             i, arg, other...);
@@ -663,7 +663,7 @@ template <bool dry_run> struct in_place {
   /// match in place of the user-provided ones. We then recursively call the
   /// transform function. In this second call we have descended into the events
   /// container so now the user-provided overload will match directly.
-  struct TransformSparseInPlace : public detail::SparseFlag {
+  struct TransformEventsInPlace : public detail::EventsFlag {
     template <class Op, class... Ts>
     constexpr void operator()(const Op &op, Ts &&... args) const {
       using namespace detail;
@@ -762,7 +762,7 @@ template <bool dry_run> struct in_place {
         // being transformed in-place, so there are only three cases here.
         variable::visit(augment::insert_events_in_place(std::tuple<Ts...>{}))
             .apply(makeTransformInPlace(
-                       overloaded_events{op, TransformSparseInPlace{}}),
+                       overloaded_events{op, TransformEventsInPlace{}}),
                    var.data(), other.data()...);
       }
     } catch (const std::bad_variant_access &) {
@@ -865,7 +865,7 @@ Variable transform(std::tuple<Ts...> &&, Op op, const Vars &... vars) {
       out = visit_impl<Ts...>::apply(Transform{op}, vars.data()...);
     } else {
       out = variable::visit(augment::insert_events(std::tuple<Ts...>{}))
-                .apply(Transform{overloaded_events{op, TransformSparse{}}},
+                .apply(Transform{overloaded_events{op, TransformEvents{}}},
                        vars.data()...);
     }
   } catch (const std::bad_variant_access &) {

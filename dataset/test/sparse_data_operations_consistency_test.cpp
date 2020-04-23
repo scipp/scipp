@@ -36,7 +36,7 @@ static auto make_histogram() {
   return DataArray(data, {{Dim::X, edges}});
 }
 
-TEST(SparseDataOperationsConsistencyTest, multiply) {
+TEST(EventsDataOperationsConsistencyTest, multiply) {
   // Apart from uncertainties, the order of operations does not matter. We can
   // either first multiply and then histogram, or first histogram and then
   // multiply.
@@ -67,7 +67,7 @@ TEST(SparseDataOperationsConsistencyTest, multiply) {
   EXPECT_EQ(ab, ba);
 }
 
-TEST(SparseDataOperationsConsistencyTest, flatten_sum) {
+TEST(EventsDataOperationsConsistencyTest, flatten_sum) {
   const auto events = make_events_array_default_weights();
   auto edges = makeVariable<double>(Dimensions{Dim::X, 3},
                                     units::Unit(units::us), Values{1, 3, 6});
@@ -75,7 +75,7 @@ TEST(SparseDataOperationsConsistencyTest, flatten_sum) {
             histogram(flatten(events, Dim::Y), edges));
 }
 
-TEST(SparseDataOperationsConsistencyTest, flatten_sum_realigned) {
+TEST(EventsDataOperationsConsistencyTest, flatten_sum_realigned) {
   const auto events = make_events_array_default_weights();
   auto edges = makeVariable<double>(Dimensions{Dim::X, 3},
                                     units::Unit(units::us), Values{1, 3, 6});
@@ -93,7 +93,7 @@ TEST(SparseDataOperationsConsistencyTest, flatten_sum_realigned) {
   EXPECT_EQ(summed.unaligned(), flattened);
 }
 
-TEST(SparseDataOperationsConsistencyTest, flatten_multiply_sum) {
+TEST(EventsDataOperationsConsistencyTest, flatten_multiply_sum) {
   const auto events = make_events_array_default_weights();
   auto edges = makeVariable<double>(Dimensions{Dim::X, 3},
                                     units::Unit(units::us), Values{1, 3, 5});
