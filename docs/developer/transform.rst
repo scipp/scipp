@@ -85,9 +85,8 @@ If operation is added to ``namespace scipp::variable``, define:
    constexpr auto my_op = overloaded{
        arg_list<std::tuple<double, int64_t>, std::tuple<double, int32_t>>,
        transform_flags::expect_no_variance_arg<0>,
-       [](const auto &a, const auto &b) { return a + b; },
-       [](const units::Unit &a, const units::Unit &b) { return a * b; }};
-   }
+       [](const auto &a, const auto &b) { return a + b; }};
+   };
 
 .. code-block:: cpp
 
