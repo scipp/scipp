@@ -114,6 +114,7 @@ Documentation
    developer/how-to
    developer/transform
    developer/constructing_variables
+   developer/variable_implementation
 
 .. toctree::
    :caption: About
