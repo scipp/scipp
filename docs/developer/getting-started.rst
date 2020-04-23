@@ -109,3 +109,15 @@ To run the Python tests, run (in the ``python/`` directory):
 
   cd python
   python3 -m pytest
+
+
+Running Python from an IDE
+--------------------------
+
+Python tests can be run in place without having to install each time;
+``scipp`` must be able to find ``_scipp`` (the C++ binding layer) so some setup is required.
+
+- Build scipp
+- Create a link from i.e. ``ln build_dir/python/_scipp.cpython-(something).so src_dir/python/src/scipp/``
+- Run python inside ``src_dir/python/src/`` and ``import scipp`` to check the import is correct
+- Setup your IDE as normal to run unit tests

@@ -1,5 +1,7 @@
 *.sw?
 compile_commands.json
+# Ignore hard link to built Python bindings
+python/src/scipp/_scipp.*.so
 
 build/
 .clangd/
