@@ -18,7 +18,7 @@ template <class T> void bind_flatten(py::module &m) {
   m.def("flatten", py::overload_cast<ConstView, const Dim>(&flatten),
         py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
         R"(
-        Flatten the specified dimension into to events dimension, equivalent to summing dense data.
+        Flatten the specified dimension into event lists, equivalent to summing dense data.
 
         :param x: Variable, DataArray, or Dataset to flatten.
         :param dim: Dimension over which to flatten.
