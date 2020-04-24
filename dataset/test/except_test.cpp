@@ -75,7 +75,7 @@ TEST(StringFormattingTest, to_string_ConstView) {
   EXPECT_EQ(to_string(a.attrs()), to_string(b.attrs()));
 }
 
-TEST(StringFormattingTest, to_string_sparse_Dataset) {
+TEST(StringFormattingTest, to_string_events_Dataset) {
   Dataset a;
   a.coords().set(Dim::X,
                  makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{4}));

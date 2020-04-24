@@ -22,7 +22,7 @@ DimensionError::DimensionError(scipp::index expectedDim, scipp::index userDim)
 
 DimensionNotFoundError::DimensionNotFoundError(const core::Dimensions &expected,
                                                const Dim actual)
-    : DimensionError("Expected dimension to be a non-sparse dimension of " +
+    : DimensionError("Expected dimension to be a non-events dimension of " +
                      to_string(expected) + ", got " + to_string(actual) + ".") {
 }
 

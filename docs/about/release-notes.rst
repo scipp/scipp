@@ -20,10 +20,10 @@ v0.2 (December 2019)
 
 * Support for ``groupby``, implementing a split-apply-combine approach as known from pandas.
 
-* Enhanced support for sparse data:
+* Enhanced support for event data:
 
   * Histogramming with "weighted" data.
-  * Multiplication/division operators between sparse data and histogram.
+  * Multiplication/division operators between event data and histogram.
 
 * Enhanced plotting support:
 
@@ -61,7 +61,7 @@ Features:
 * Basic arithmetic operations.
 * Physical units.
 * Propagation of uncertainties.
-* Sparse data.
+* Event data.
 
 Limitations:
 

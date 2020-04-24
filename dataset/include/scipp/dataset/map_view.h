@@ -72,7 +72,7 @@ static constexpr auto make_value = [](auto &&view) -> decltype(auto) {
 /// (labels) we adopt the convention that they are "label" their inner
 /// dimension.
 template <class T, class Key> Dim dim_of_coord(const T &var, const Key &key) {
-  if (is_events(var))
+  if (contains_events(var))
     return Dim::Invalid;
   if constexpr (std::is_same_v<Key, Dim>) {
     const bool is_dimension_coord = var.dims().contains(key);

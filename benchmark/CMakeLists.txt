@@ -27,12 +27,12 @@ target_link_libraries(
 )
 
 add_executable(
-  sparse_histogram_op_benchmark EXCLUDE_FROM_ALL
-  sparse_histogram_op_benchmark.cpp
+  events_histogram_op_benchmark EXCLUDE_FROM_ALL
+  events_histogram_op_benchmark.cpp
 )
-add_dependencies(all-benchmarks sparse_histogram_op_benchmark)
+add_dependencies(all-benchmarks events_histogram_op_benchmark)
 target_link_libraries(
-  sparse_histogram_op_benchmark LINK_PRIVATE benchmark scipp-dataset
+  events_histogram_op_benchmark LINK_PRIVATE benchmark scipp-dataset
   scipp_test_helpers
 )
 

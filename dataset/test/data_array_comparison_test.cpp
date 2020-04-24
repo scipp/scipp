@@ -38,7 +38,7 @@ protected:
       : default_event_weights(makeVariable<double>(
             Dims{Dim::Y, Dim::Z}, Shape{3l, 2l}, Values{1, 1, 1, 1, 1, 1},
             Variances{1, 1, 1, 1, 1, 1})),
-        sparse_variable(makeVariable<event_list<double>>(Dims{Dim::Y, Dim::Z},
+        events_variable(makeVariable<event_list<double>>(Dims{Dim::Y, Dim::Z},
                                                          Shape{3, 2})) {
     dataset.setCoord(Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{4}));
     dataset.setCoord(Dim::Y, makeVariable<double>(Dims{Dim::Y}, Shape{3}));
@@ -59,7 +59,7 @@ protected:
 
   Dataset dataset;
   Variable default_event_weights;
-  Variable sparse_variable;
+  Variable events_variable;
 };
 
 template <class T> auto make_values(const Dimensions &dims) {
@@ -306,8 +306,8 @@ TEST_F(DataArray_comparison_operators, different_attr_insertion_order) {
     expect_ne(a_, b[a_.name()]);
 }
 
-TEST_F(DataArray_comparison_operators, with_sparse_dimension_data) {
-  // a and b same, c different number of sparse values
+TEST_F(DataArray_comparison_operators, with_events_dimension_data) {
+  // a and b same, c different number of events values
   auto a = Dataset();
   auto data = makeVariable<event_list<double>>(Dims{}, Shape{});
   const std::string var_name = "test_var";

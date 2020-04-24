@@ -113,7 +113,7 @@ Dataset DatasetFactory3D::make(const bool randomMasks) {
 
 Dataset make_empty() { return Dataset(); }
 
-Dataset make_simple_sparse(std::initializer_list<double> values,
+Dataset make_simple_events(std::initializer_list<double> values,
                            std::string key) {
   Dataset ds;
   auto var = makeVariable<event_list<double>>(Dims{}, Shape{});
@@ -122,7 +122,7 @@ Dataset make_simple_sparse(std::initializer_list<double> values,
   return ds;
 }
 
-Dataset make_sparse_with_coords_and_labels(
+Dataset make_events_with_coords_and_labels(
     std::initializer_list<double> values,
     std::initializer_list<double> coords_and_labels, std::string key) {
   Dataset ds;
@@ -148,7 +148,7 @@ Dataset make_sparse_with_coords_and_labels(
   return ds;
 }
 
-Dataset make_sparse_2d(std::initializer_list<double> values, std::string key) {
+Dataset make_events_2d(std::initializer_list<double> values, std::string key) {
   Dataset ds;
   auto var = makeVariable<event_list<double>>(Dims{Dim::X}, Shape{2});
   var.values<event_list<double>>()[0] = values;

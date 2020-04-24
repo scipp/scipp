@@ -15,7 +15,7 @@ Two alternatives are provided:
 Both variants support:
 
 - Automatic broadcasting and alignment based on dimension labels.
-  This does also include sparse data, and operations mixing sparse and dense data are supported.
+  This does also include event data, and operations mixing events and dense data are supported.
 - Automatic propagation of uncertainties, provided that the user-provided operation is built from known existing operations.
 - Operations between different data types, and operations that produce outputs with a new data type.
 

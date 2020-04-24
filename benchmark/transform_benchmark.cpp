@@ -148,9 +148,9 @@ BENCHMARK(BM_transform_slice)
 
 // Arguments are:
 // range(0) -> ny
-// range(1) -> average nx (uniform distribution of sparse extents)
+// range(1) -> average nx (uniform distribution of events extents)
 // range(2) -> variances false/true (true not implemented yet)
-static void BM_transform_in_place_sparse(benchmark::State &state) {
+static void BM_transform_in_place_events(benchmark::State &state) {
   const auto ny = state.range(0);
   const auto nx = state.range(1);
   const auto n = nx * ny;
@@ -166,7 +166,7 @@ static void BM_transform_in_place_sparse(benchmark::State &state) {
   for (auto &elems : a.values<event_list<double>>())
     elems.resize(dist(mt));
 
-  // sparse * dense typically occurs in unit conversion
+  // events * dense typically occurs in unit conversion
   auto b = makeVariable<double>(Dims{Dim::Y}, Shape{ny});
   static constexpr auto op{[](auto &a_, const auto &b_) { a_ *= b_; }};
 
@@ -183,7 +183,7 @@ static void BM_transform_in_place_sparse(benchmark::State &state) {
       benchmark::Counter::OneK::kIs1024);
 }
 
-BENCHMARK(BM_transform_in_place_sparse)
+BENCHMARK(BM_transform_in_place_events)
     ->RangeMultiplier(2)
     ->Ranges({{1, 2 << 18}, {8, 2 << 8}, {false, false}});
 

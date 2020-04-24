@@ -72,7 +72,7 @@ TEST(CreateVariableTest, from_vector) {
   auto var = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values(v));
 }
 
-TEST(CreateVariableTest, construct_sparse) {
+TEST(CreateVariableTest, construct_events) {
   auto var = makeVariable<event_list<double>>(Dims{Dim::X}, Shape{2});
 
   auto dimensions = Dimensions{Dim::X, 2};

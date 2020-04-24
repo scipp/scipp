@@ -230,10 +230,10 @@ BENCHMARK_TEMPLATE(BM_Dataset_copy,
 BENCHMARK_TEMPLATE(BM_Dataset_copy, Generate3DWithDataItems<LONG_STRING_LENGTH>)
     ->Apply(Args_Dataset_copy);
 BENCHMARK_TEMPLATE(BM_Dataset_copy,
-                   GenerateWithSparseDataItems<SHORT_STRING_LENGTH>)
+                   GenerateWithEventsDataItems<SHORT_STRING_LENGTH>)
     ->Apply(Args_Dataset_copy);
 BENCHMARK_TEMPLATE(BM_Dataset_copy,
-                   GenerateWithSparseDataItems<LONG_STRING_LENGTH>)
+                   GenerateWithEventsDataItems<LONG_STRING_LENGTH>)
     ->Apply(Args_Dataset_copy);
 
 static void BM_Dataset_setData_replace(benchmark::State &state) {

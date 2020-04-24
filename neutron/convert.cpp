@@ -40,7 +40,7 @@ static T convert_with_factor(T &&d, const Dim from, const Dim to,
                              const Variable &factor) {
   // 1. Transform coordinate
   if (d.coords().contains(from)) {
-    if (is_events(d.coords()[from])) {
+    if (contains_events(d.coords()[from])) {
       d.coords()[from] *= factor;
     } else {
       // Cannot use *= since often a broadcast into Dim::Spectrum is required.
@@ -51,7 +51,7 @@ static T convert_with_factor(T &&d, const Dim from, const Dim to,
 
   // 2. Transform realigned items
   for (const auto &item : iter(d))
-    if (item.unaligned() && is_events(item.unaligned()))
+    if (item.unaligned() && contains_events(item.unaligned()))
       item.unaligned().coords()[from] *= factor;
 
   d.rename(from, to);
@@ -103,7 +103,7 @@ template <class T> T tofToEnergy(T &&d) {
 
   // 2. Transform coordinate
   if (d.coords().contains(Dim::Tof)) {
-    if (is_events(d.coords()[Dim::Tof])) {
+    if (contains_events(d.coords()[Dim::Tof])) {
       transform_in_place<core::pair_self_t<double, float>>(
           d.coords()[Dim::Tof], conversionFactor,
           [](auto &coord_, const auto &factor) {
@@ -117,7 +117,7 @@ template <class T> T tofToEnergy(T &&d) {
 
   // 3. Transform realigned items
   for (const auto &item : iter(d))
-    if (item.unaligned() && is_events(item.unaligned()))
+    if (item.unaligned() && contains_events(item.unaligned()))
       transform_in_place<core::pair_self_t<double, float>>(
           item.unaligned().coords()[Dim::Tof], conversionFactor,
           [](auto &coord_, const auto &factor) {
@@ -134,7 +134,7 @@ template <class T> T energyToTof(T &&d) {
 
   // 2. Transform coordinate
   if (d.coords().contains(Dim::Energy)) {
-    if (is_events(d.coords()[Dim::Energy])) {
+    if (contains_events(d.coords()[Dim::Energy])) {
       transform_in_place<core::pair_self_t<double, float>>(
           d.coords()[Dim::Energy], conversionFactor,
           [](auto &coord_, const auto &factor) {
@@ -149,7 +149,7 @@ template <class T> T energyToTof(T &&d) {
 
   // 3. Transform realigned items
   for (const auto &item : iter(d))
-    if (item.unaligned() && is_events(item.unaligned()))
+    if (item.unaligned() && contains_events(item.unaligned()))
       transform_in_place<core::pair_self_t<double, float>>(
           item.unaligned().coords()[Dim::Energy], conversionFactor,
           [](auto &coord_, const auto &factor) {

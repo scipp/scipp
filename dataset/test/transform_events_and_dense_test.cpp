@@ -17,7 +17,7 @@ using namespace scipp::core;
 using namespace scipp::variable;
 using namespace scipp::dataset;
 
-TEST(TransformSparseAndDenseTest, two_args) {
+TEST(TransformEventsAndDenseTest, two_args) {
   auto var = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2});
   auto vals = var.values<event_list<double>>();
   vals[0] = {1, 2, 3};
@@ -41,7 +41,7 @@ TEST(TransformSparseAndDenseTest, two_args) {
   EXPECT_EQ(result, var);
 }
 
-TEST(TransformSparseAndDenseTest, three_args) {
+TEST(TransformEventsAndDenseTest, three_args) {
   auto var = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2});
   auto vals = var.values<event_list<double>>();
   vals[0] = {1, 2, 3};

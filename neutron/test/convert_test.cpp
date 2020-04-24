@@ -210,7 +210,7 @@ TEST_P(ConvertTest, Tof_to_DSpacing) {
             tof.coords()[Dim("sample_position")]);
 }
 
-TEST(Convert, converts_sparse_labels) {
+TEST(Convert, converts_events_labels) {
   // label "conversion" is name change of dim
   Dataset tof = makeTofDatasetEvents();
   Dataset dspacing = convert(tof, Dim::Tof, Dim::DSpacing);

@@ -5,7 +5,7 @@
 
 import numpy as np
 import scipp as sc
-from plot_helper import make_dense_dataset, make_sparse_dataset
+from plot_helper import make_dense_dataset, make_events_dataset
 from scipp.plot import plot
 
 # Prevent figure from being displayed when running the tests
@@ -53,18 +53,18 @@ def test_plot_2d_with_masks():
     plot(d)
 
 
-def test_plot_2d_sparse_data_with_int_bins():
-    d = make_sparse_dataset(ndim=2)
+def test_plot_2d_events_data_with_int_bins():
+    d = make_events_dataset(ndim=2)
     plot(d, bins={'tof': 50})
 
 
-def test_plot_2d_sparse_data_with_nparray_bins():
-    d = make_sparse_dataset(ndim=2)
+def test_plot_2d_events_data_with_nparray_bins():
+    d = make_events_dataset(ndim=2)
     plot(d, bins={'tof': np.linspace(0.0, 105.0, 50)})
 
 
-def test_plot_2d_sparse_data_with_Variable_bins():
-    d = make_sparse_dataset(ndim=2)
+def test_plot_2d_events_data_with_Variable_bins():
+    d = make_events_dataset(ndim=2)
     bins = sc.Variable(['tof'],
                        values=np.linspace(0.0, 105.0, 50),
                        unit=sc.units.us)
@@ -120,7 +120,7 @@ def test_plot_2d_with_dimension_of_size_1():
 
 
 def test_plot_realigned_2d():
-    d = make_sparse_dataset(ndim=1)
+    d = make_events_dataset(ndim=1)
     tbins = sc.Variable(dims=['tof'], unit=sc.units.us, values=np.arange(100.))
     r = sc.realign(d, {'tof': tbins})
     plot(r)

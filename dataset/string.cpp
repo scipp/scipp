@@ -44,12 +44,12 @@ auto format_data_view(const Key &name, const DataArrayConstView &data,
     s << tab << name << '\n';
   // TODO need something similar, but for unaligned coord content
   /*
-  bool sparseCoords = false;
+  bool eventsCoords = false;
   for (const auto &[dim, coord] : data.coords())
-    if (coord.dims().sparse()) {
-      if (!sparseCoords) {
-        s << tab << tab << "Sparse coords:\n";
-        sparseCoords = true;
+    if (coord.dims().events()) {
+      if (!eventsCoords) {
+        s << tab << tab << "Events coords:\n";
+        eventsCoords = true;
       }
       s << format_variable(std::string(tab) + std::string(tab) + to_string(dim),
                            coord.data(), datasetDims);

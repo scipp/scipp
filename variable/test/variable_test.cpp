@@ -211,13 +211,13 @@ TEST_F(Variable_comparison_operators, dtype) {
   expect_ne(base, makeVariable<float>(Values{1.0}));
 }
 
-TEST_F(Variable_comparison_operators, dense_sparse) {
+TEST_F(Variable_comparison_operators, dense_events) {
   auto dense = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2l, 0l});
-  auto sparse = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2});
-  expect_ne(dense, sparse);
+  auto events = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2});
+  expect_ne(dense, events);
 }
 
-TEST_F(Variable_comparison_operators, sparse) {
+TEST_F(Variable_comparison_operators, events) {
   auto a = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2});
   auto a_ = a.values<event_list<double>>();
   a_[0] = {1, 2, 3};
@@ -236,7 +236,7 @@ TEST_F(Variable_comparison_operators, sparse) {
   expect_ne(a, c);
 }
 
-auto make_sparse_var_2d_with_variances() {
+auto make_events_var_2d_with_variances() {
   auto var = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2}, Values{},
                                               Variances{});
   auto vals = var.values<event_list<double>>();
@@ -248,9 +248,9 @@ auto make_sparse_var_2d_with_variances() {
   return var;
 }
 
-TEST_F(Variable_comparison_operators, sparse_variances) {
-  const auto a = make_sparse_var_2d_with_variances();
-  const auto b = make_sparse_var_2d_with_variances();
+TEST_F(Variable_comparison_operators, events_variances) {
+  const auto a = make_events_var_2d_with_variances();
+  const auto b = make_events_var_2d_with_variances();
   auto c = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2}, Values{},
                                             Variances{});
   auto c_vals = c.values<event_list<double>>();
@@ -904,26 +904,26 @@ TEST(Variable, access_typed_view_edges) {
   }
 }
 
-TEST(SparseVariable, create) {
+TEST(EventsVariable, create) {
   const auto var = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2});
-  EXPECT_TRUE(is_events(var));
+  EXPECT_TRUE(contains_events(var));
   EXPECT_EQ(var.dims().volume(), 2);
 }
 
-TEST(SparseVariable, dtype) {
+TEST(EventsVariable, dtype) {
   const auto var = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2});
   EXPECT_EQ(var.dtype(), dtype<event_list<double>>);
   EXPECT_EQ(var.data().dtype(), dtype<event_list<double>>);
 }
 
-TEST(SparseVariable, non_sparse_access_fail) {
+TEST(EventsVariable, non_events_access_fail) {
   const auto var = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2},
                                                     Values{}, Variances{});
   ASSERT_THROW(var.values<double>(), except::TypeError);
   ASSERT_THROW(var.variances<double>(), except::TypeError);
 }
 
-TEST(SparseVariable, access) {
+TEST(EventsVariable, access) {
   const auto var = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2},
                                                     Values{}, Variances{});
   ASSERT_NO_THROW(var.values<event_list<double>>());
@@ -938,28 +938,28 @@ TEST(SparseVariable, access) {
   EXPECT_TRUE(variances[1].empty());
 }
 
-TEST(SparseVariable, resize_sparse) {
+TEST(EventsVariable, resize_events) {
   auto var = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2});
   auto data = var.values<event_list<double>>();
   data[1] = {1, 2, 3};
 }
 
-TEST(SparseVariable, copy) {
-  const auto a = make_sparse_var_2d_with_variances();
+TEST(EventsVariable, copy) {
+  const auto a = make_events_var_2d_with_variances();
 
   Variable copy(a);
   EXPECT_EQ(a, copy);
 }
 
-TEST(SparseVariable, move) {
-  auto a = make_sparse_var_2d_with_variances();
+TEST(EventsVariable, move) {
+  auto a = make_events_var_2d_with_variances();
 
   Variable copy(a);
   Variable moved(std::move(copy));
   EXPECT_EQ(a, moved);
 }
 
-TEST(SparseVariable, slice) {
+TEST(EventsVariable, slice) {
   auto var = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{4});
   auto data = var.values<event_list<double>>();
   data[0] = {1, 2, 3};
@@ -967,14 +967,14 @@ TEST(SparseVariable, slice) {
   data[2] = {1};
   data[3] = {};
   auto slice = var.slice({Dim::Y, 1, 3});
-  EXPECT_TRUE(is_events(slice));
+  EXPECT_TRUE(contains_events(slice));
   EXPECT_EQ(slice.dims().volume(), 2);
   auto slice_data = slice.values<event_list<double>>();
   EXPECT_TRUE(equals(slice_data[0], {1, 2}));
   EXPECT_TRUE(equals(slice_data[1], {1}));
 }
 
-TEST(SparseVariable, slice_fail) {
+TEST(EventsVariable, slice_fail) {
   auto var = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{4});
   auto data = var.values<event_list<double>>();
   data[0] = {1, 2, 3};

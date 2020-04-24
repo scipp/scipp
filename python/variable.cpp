@@ -876,13 +876,13 @@ void init_variable(py::module &m) {
         py::arg("posinf") = std::optional<VariableConstView>(),
         py::arg("neginf") = std::optional<VariableConstView>(), py::arg("out"));
 
-  m.def("is_events",
-        [](const VariableConstView &self) { return is_events(self); },
+  m.def("contains_events",
+        [](const VariableConstView &self) { return contains_events(self); },
         R"(Return true if the variable contains event data.)");
 
   m.def(
-      "is_events",
-      [](const DataArrayConstView &self) { return is_events(self); },
+      "contains_events",
+      [](const DataArrayConstView &self) { return contains_events(self); },
       R"(Return true if the data array contains event data. Note that data may be stored as a scalar, but this returns true if any coord contains events.)");
 
   m.def("less",

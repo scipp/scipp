@@ -17,7 +17,7 @@ TEST(DatasetOperationsTest, sum) {
             makeVariable<float>(Values{6}, Variances{45}));
   EXPECT_EQ(dataset::sum(ds.slice({Dim::X, 0, 2}), Dim::X)["a"].data(),
             makeVariable<float>(Values{3}, Variances{27}));
-  EXPECT_THROW(dataset::sum(make_sparse_2d({1, 2, 3, 4}, {0, 0}), Dim::X),
+  EXPECT_THROW(dataset::sum(make_events_2d({1, 2, 3, 4}, {0, 0}), Dim::X),
                except::TypeError);
 }
 
