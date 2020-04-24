@@ -50,7 +50,7 @@ template <class T> void bind_groupby(py::module &m, const std::string &name) {
 
   groupBy.def("flatten", &GroupBy<T>::flatten, py::arg("dim"),
               py::call_guard<py::gil_scoped_release>(), R"(
-      Flatten specified dimension into a events dimension.
+      Flatten specified dimension into event lists.
 
       This is a events-data equivalent to calling ``sum`` on dense data.
       In particular, summing the result of histogrammed data yields the same result as histgramming data that has been flattened.
