@@ -452,7 +452,7 @@ TEST(GroupbyFlattenTest, flatten_coord_and_labels) {
   DataArray a{makeVariable<double>(Dims{Dim::Y}, Shape{3},
                                    units::Unit(units::counts), Values{1, 1, 1},
                                    Variances{1, 1, 1}),
-              {{Dim::X, make_sparse_in()},
+              {{Dim::X, make_events_in()},
                {Dim("events"),
                 make_events_in() * (0.3 * units::Unit(units::dimensionless))},
                {Dim("labels"),
