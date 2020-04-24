@@ -78,10 +78,6 @@ struct SCIPP_CORE_EXPORT VariancesError : public std::runtime_error {
   using std::runtime_error::runtime_error;
 };
 
-struct SCIPP_CORE_EXPORT EventsDataError : public std::runtime_error {
-  using std::runtime_error::runtime_error;
-};
-
 struct SCIPP_CORE_EXPORT BinEdgeError : public std::runtime_error {
   using std::runtime_error::runtime_error;
 };
