@@ -54,7 +54,8 @@ static void BM_histogram(benchmark::State &state) {
     edges_.back() += 0.0001;
   auto edges = makeVariable<double>(Dims{Dim::Y}, Shape{nEdge},
                                     Values(edges_.begin(), edges_.end()));
-  edges *= 1000.0 / nEdge; // ensure all events are in range
+  edges *= 1000.0 / nEdge *
+           units::Unit(units::dimensionless); // ensure all events are in range
   for (auto _ : state) {
     benchmark::DoNotOptimize(histogram(events, edges));
   }

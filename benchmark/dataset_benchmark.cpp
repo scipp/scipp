@@ -87,19 +87,23 @@ struct SliceX {
 
 struct SliceXY {
   auto operator()(const Dataset &d) {
-    return d.slice({Dim::X, 20, 90}, {Dim::Y, 30, 60});
+    return d.slice({Dim::X, 20, 90}).slice({Dim::Y, 30, 60});
   }
 };
 
 struct SliceXYQz {
   auto operator()(const Dataset &d) {
-    return d.slice({Dim::X, 20, 90}, {Dim::Y, 30, 60}, {Dim::Qz, 30, 90});
+    return d.slice({Dim::X, 20, 90})
+        .slice({Dim::Y, 30, 60})
+        .slice({Dim::Qz, 30, 90});
   }
 };
 
 struct SliceZXY {
   auto operator()(const Dataset &d) {
-    return d.slice({Dim::Z, 5, 95}, {Dim::X, 20, 90}, {Dim::Y, 30, 60});
+    return d.slice({Dim::Z, 5, 95})
+        .slice({Dim::X, 20, 90})
+        .slice({Dim::Y, 30, 60});
   }
 };
 
