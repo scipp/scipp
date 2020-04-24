@@ -13,11 +13,14 @@ pybind11_add_module(
   neutron.cpp
   operations.cpp
   py_object.cpp
+  reduction.cpp
   scipp.cpp
   event_list.cpp
   units_neutron.cpp
   variable.cpp
   variable_instantiate_py_object.cpp
+  variable_free_functions.cpp
+  dataset_free_functions.cpp
   element_array_view.cpp
 )
 target_link_libraries(_scipp LINK_PRIVATE scipp-dataset scipp-neutron)

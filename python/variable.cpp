@@ -14,13 +14,14 @@
 #include "scipp/variable/transform.h"
 #include "scipp/variable/variable.h"
 
-#include "scipp/dataset/dataset.h"
+// #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/sort.h"
 
 #include "bind_data_access.h"
 #include "bind_operators.h"
 #include "bind_slice_methods.h"
 #include "dtype.h"
+#include "make_variable.h"
 #include "numpy.h"
 #include "py_object.h"
 #include "pybind11.h"
@@ -31,140 +32,140 @@ using namespace scipp::variable;
 
 namespace py = pybind11;
 
-template <class T> struct MakeVariable {
-  static Variable apply(const std::vector<Dim> &labels, py::array values,
-                        const std::optional<py::array> &variances,
-                        const units::Unit unit) {
-    // Pybind11 converts py::array to py::array_t for us, with all sorts of
-    // automatic conversions such as integer to double, if required.
-    py::array_t<T> valuesT(values);
-    py::buffer_info info = valuesT.request();
-    Dimensions dims(labels, {info.shape.begin(), info.shape.end()});
-    auto var = variances
-                   ? makeVariable<T>(Dimensions{dims}, Values{}, Variances{})
-                   : makeVariable<T>(Dimensions(dims));
-    copy_flattened<T>(valuesT, var.template values<T>());
-    if (variances) {
-      py::array_t<T> variancesT(*variances);
-      info = variancesT.request();
-      core::expect::equals(
-          dims, Dimensions(labels, {info.shape.begin(), info.shape.end()}));
-      copy_flattened<T>(variancesT, var.template variances<T>());
-    }
-    var.setUnit(unit);
-    return var;
-  }
-};
+// template <class T> struct MakeVariable {
+//   static Variable apply(const std::vector<Dim> &labels, py::array values,
+//                         const std::optional<py::array> &variances,
+//                         const units::Unit unit) {
+//     // Pybind11 converts py::array to py::array_t for us, with all sorts of
+//     // automatic conversions such as integer to double, if required.
+//     py::array_t<T> valuesT(values);
+//     py::buffer_info info = valuesT.request();
+//     Dimensions dims(labels, {info.shape.begin(), info.shape.end()});
+//     auto var = variances
+//                    ? makeVariable<T>(Dimensions{dims}, Values{}, Variances{})
+//                    : makeVariable<T>(Dimensions(dims));
+//     copy_flattened<T>(valuesT, var.template values<T>());
+//     if (variances) {
+//       py::array_t<T> variancesT(*variances);
+//       info = variancesT.request();
+//       core::expect::equals(
+//           dims, Dimensions(labels, {info.shape.begin(), info.shape.end()}));
+//       copy_flattened<T>(variancesT, var.template variances<T>());
+//     }
+//     var.setUnit(unit);
+//     return var;
+//   }
+// };
 
-template <class T> struct MakeVariableDefaultInit {
-  static Variable apply(const std::vector<Dim> &labels,
-                        const std::vector<scipp::index> &shape,
-                        const units::Unit unit, const bool variances) {
-    Dimensions dims(labels, shape);
-    auto var = variances
-                   ? makeVariable<T>(Dimensions{dims}, Values{}, Variances{})
-                   : makeVariable<T>(Dimensions{dims});
-    var.setUnit(unit);
-    return var;
-  }
-};
+// template <class T> struct MakeVariableDefaultInit {
+//   static Variable apply(const std::vector<Dim> &labels,
+//                         const std::vector<scipp::index> &shape,
+//                         const units::Unit unit, const bool variances) {
+//     Dimensions dims(labels, shape);
+//     auto var = variances
+//                    ? makeVariable<T>(Dimensions{dims}, Values{}, Variances{})
+//                    : makeVariable<T>(Dimensions{dims});
+//     var.setUnit(unit);
+//     return var;
+//   }
+// };
 
-template <class ST> struct MakeODFromNativePythonTypes {
-  template <class T> struct Maker {
-    static Variable apply(const units::Unit unit, const ST &value,
-                          const std::optional<ST> &variance) {
-      auto var = variance ? makeVariable<T>(Values{T(value)},
-                                            Variances{T(variance.value())})
-                          : makeVariable<T>(Values{T(value)});
-      var.setUnit(unit);
-      return var;
-    }
-  };
+// template <class ST> struct MakeODFromNativePythonTypes {
+//   template <class T> struct Maker {
+//     static Variable apply(const units::Unit unit, const ST &value,
+//                           const std::optional<ST> &variance) {
+//       auto var = variance ? makeVariable<T>(Values{T(value)},
+//                                             Variances{T(variance.value())})
+//                           : makeVariable<T>(Values{T(value)});
+//       var.setUnit(unit);
+//       return var;
+//     }
+//   };
 
-  static Variable make(const units::Unit unit, const ST &value,
-                       const std::optional<ST> &variance,
-                       const py::object &dtype) {
-    return core::CallDType<double, float, int64_t, int32_t, bool>::apply<Maker>(
-        scipp_dtype(dtype), unit, value, variance);
-  }
-};
+//   static Variable make(const units::Unit unit, const ST &value,
+//                        const std::optional<ST> &variance,
+//                        const py::object &dtype) {
+//     return core::CallDType<double, float, int64_t, int32_t, bool>::apply<Maker>(
+//         scipp_dtype(dtype), unit, value, variance);
+//   }
+// };
 
-template <class T>
-Variable init_1D_no_variance(const std::vector<Dim> &labels,
-                             const std::vector<scipp::index> &shape,
-                             const std::vector<T> &values,
-                             const units::Unit &unit) {
-  Variable var;
-  var = makeVariable<T>(Dims(labels), Shape(shape),
-                        Values(values.begin(), values.end()));
-  var.setUnit(unit);
-  return var;
-}
+// template <class T>
+// Variable init_1D_no_variance(const std::vector<Dim> &labels,
+//                              const std::vector<scipp::index> &shape,
+//                              const std::vector<T> &values,
+//                              const units::Unit &unit) {
+//   Variable var;
+//   var = makeVariable<T>(Dims(labels), Shape(shape),
+//                         Values(values.begin(), values.end()));
+//   var.setUnit(unit);
+//   return var;
+// }
 
-template <class T>
-auto do_init_0D(const T &value, const std::optional<T> &variance,
-                const units::Unit &unit) {
-  using Elem = std::conditional_t<std::is_same_v<T, py::object>,
-                                  scipp::python::PyObject, T>;
-  Variable var;
-  if (variance)
-    var = makeVariable<Elem>(Values{value}, Variances{*variance});
-  else
-    var = makeVariable<Elem>(Values{value});
-  var.setUnit(unit);
-  return var;
-}
+// template <class T>
+// auto do_init_0D(const T &value, const std::optional<T> &variance,
+//                 const units::Unit &unit) {
+//   using Elem = std::conditional_t<std::is_same_v<T, py::object>,
+//                                   scipp::python::PyObject, T>;
+//   Variable var;
+//   if (variance)
+//     var = makeVariable<Elem>(Values{value}, Variances{*variance});
+//   else
+//     var = makeVariable<Elem>(Values{value});
+//   var.setUnit(unit);
+//   return var;
+// }
 
-Variable doMakeVariable(const std::vector<Dim> &labels, py::array &values,
-                        std::optional<py::array> &variances,
-                        const units::Unit unit, const py::object &dtype) {
-  // Use custom dtype, otherwise dtype of data.
-  const auto dtypeTag =
-      dtype.is_none() ? scipp_dtype(values.dtype()) : scipp_dtype(dtype);
+// Variable doMakeVariable(const std::vector<Dim> &labels, py::array &values,
+//                         std::optional<py::array> &variances,
+//                         const units::Unit unit, const py::object &dtype) {
+//   // Use custom dtype, otherwise dtype of data.
+//   const auto dtypeTag =
+//       dtype.is_none() ? scipp_dtype(values.dtype()) : scipp_dtype(dtype);
 
-  if (labels.size() == 1 && !variances) {
-    if (dtypeTag == core::dtype<std::string>) {
-      std::vector<scipp::index> shape(values.shape(),
-                                      values.shape() + values.ndim());
-      return init_1D_no_variance(labels, shape,
-                                 values.cast<std::vector<std::string>>(), unit);
-    }
+//   if (labels.size() == 1 && !variances) {
+//     if (dtypeTag == core::dtype<std::string>) {
+//       std::vector<scipp::index> shape(values.shape(),
+//                                       values.shape() + values.ndim());
+//       return init_1D_no_variance(labels, shape,
+//                                  values.cast<std::vector<std::string>>(), unit);
+//     }
 
-    if (dtypeTag == core::dtype<Eigen::Vector3d> ||
-        dtypeTag == core::dtype<Eigen::Quaterniond>) {
-      std::vector<scipp::index> shape(values.shape(),
-                                      values.shape() + values.ndim() - 1);
-      if (dtypeTag == core::dtype<Eigen::Vector3d>) {
-        return init_1D_no_variance(
-            labels, shape, values.cast<std::vector<Eigen::Vector3d>>(), unit);
-      } else {
-        const auto &arr = values.cast<std::vector<std::vector<double>>>();
-        std::vector<Eigen::Quaterniond> qvec;
-        qvec.reserve(arr.size());
-        for (size_t i = 0; i < arr.size(); i++)
-          qvec.emplace_back(arr[i].data());
-        return init_1D_no_variance(labels, shape, qvec, unit);
-      }
-    }
-  }
+//     if (dtypeTag == core::dtype<Eigen::Vector3d> ||
+//         dtypeTag == core::dtype<Eigen::Quaterniond>) {
+//       std::vector<scipp::index> shape(values.shape(),
+//                                       values.shape() + values.ndim() - 1);
+//       if (dtypeTag == core::dtype<Eigen::Vector3d>) {
+//         return init_1D_no_variance(
+//             labels, shape, values.cast<std::vector<Eigen::Vector3d>>(), unit);
+//       } else {
+//         const auto &arr = values.cast<std::vector<std::vector<double>>>();
+//         std::vector<Eigen::Quaterniond> qvec;
+//         qvec.reserve(arr.size());
+//         for (size_t i = 0; i < arr.size(); i++)
+//           qvec.emplace_back(arr[i].data());
+//         return init_1D_no_variance(labels, shape, qvec, unit);
+//       }
+//     }
+//   }
 
-  return core::CallDType<double, float, int64_t, int32_t,
-                         bool>::apply<MakeVariable>(dtypeTag, labels, values,
-                                                    variances, unit);
-}
+//   return core::CallDType<double, float, int64_t, int32_t,
+//                          bool>::apply<MakeVariable>(dtypeTag, labels, values,
+//                                                     variances, unit);
+// }
 
-Variable makeVariableDefaultInit(const std::vector<Dim> &labels,
-                                 const std::vector<scipp::index> &shape,
-                                 const units::Unit unit, py::object &dtype,
-                                 const bool variances) {
-  return core::CallDType<
-      double, float, int64_t, int32_t, bool, event_list<double>,
-      event_list<float>, event_list<int64_t>, event_list<int32_t>, DataArray,
-      Dataset, Eigen::Vector3d,
-      Eigen::Quaterniond>::apply<MakeVariableDefaultInit>(scipp_dtype(dtype),
-                                                          labels, shape, unit,
-                                                          variances);
-}
+// Variable makeVariableDefaultInit(const std::vector<Dim> &labels,
+//                                  const std::vector<scipp::index> &shape,
+//                                  const units::Unit unit, py::object &dtype,
+//                                  const bool variances) {
+//   return core::CallDType<
+//       double, float, int64_t, int32_t, bool, event_list<double>,
+//       event_list<float>, event_list<int64_t>, event_list<int32_t>, DataArray,
+//       Dataset, Eigen::Vector3d,
+//       Eigen::Quaterniond>::apply<MakeVariableDefaultInit>(scipp_dtype(dtype),
+//                                                           labels, shape, unit,
+//                                                           variances);
+// }
 
 template <class T> void bind_init_0D(py::class_<Variable> &c) {
   c.def(py::init([](const T &value, const std::optional<T> &variance,
@@ -397,43 +398,43 @@ void init_variable(py::module &m) {
   py::implicitly_convertible<Variable, VariableConstView>();
   py::implicitly_convertible<Variable, VariableView>();
 
-  m.def("reshape",
-        [](const VariableView &self, const std::vector<Dim> &labels,
-           const py::tuple &shape) {
-          Dimensions dims(labels, shape.cast<std::vector<scipp::index>>());
-          return self.reshape(dims);
-        },
-        py::arg("x"), py::arg("dims"), py::arg("shape"), R"(
-        Reshape a variable.
+  // m.def("reshape",
+  //       [](const VariableView &self, const std::vector<Dim> &labels,
+  //          const py::tuple &shape) {
+  //         Dimensions dims(labels, shape.cast<std::vector<scipp::index>>());
+  //         return self.reshape(dims);
+  //       },
+  //       py::arg("x"), py::arg("dims"), py::arg("shape"), R"(
+  //       Reshape a variable.
 
-        :param x: Data to reshape.
-        :param dims: List of new dimensions.
-        :param shape: New extents in each dimension.
-        :raises: If the volume of the old shape is not equal to the volume of the new shape.
-        :return: New variable with requested dimension labels and shape.
-        :rtype: Variable)");
+  //       :param x: Data to reshape.
+  //       :param dims: List of new dimensions.
+  //       :param shape: New extents in each dimension.
+  //       :raises: If the volume of the old shape is not equal to the volume of the new shape.
+  //       :return: New variable with requested dimension labels and shape.
+  //       :rtype: Variable)");
 
-  m.def("abs", [](const VariableConstView &self) { return abs(self); },
-        py::arg("x"), py::call_guard<py::gil_scoped_release>(), R"(
-        Element-wise absolute value.
+  // m.def("abs", [](const VariableConstView &self) { return abs(self); },
+  //       py::arg("x"), py::call_guard<py::gil_scoped_release>(), R"(
+  //       Element-wise absolute value.
 
-        :raises: If the dtype has no absolute value, e.g., if it is a string
-        :seealso: :py:class:`scipp.norm` for vector-like dtype
-        :return: Copy of the input with values replaced by the absolute values
-        :rtype: Variable)");
+  //       :raises: If the dtype has no absolute value, e.g., if it is a string
+  //       :seealso: :py:class:`scipp.norm` for vector-like dtype
+  //       :return: Copy of the input with values replaced by the absolute values
+  //       :rtype: Variable)");
 
-  m.def("abs",
-        [](const VariableConstView &self, const VariableView &out) {
-          return abs(self, out);
-        },
-        py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>(),
-        R"(
-        Element-wise absolute value.
+  // m.def("abs",
+  //       [](const VariableConstView &self, const VariableView &out) {
+  //         return abs(self, out);
+  //       },
+  //       py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>(),
+  //       R"(
+  //       Element-wise absolute value.
 
-        :raises: If the dtype has no absolute value, e.g., if it is a string
-        :seealso: :py:class:`scipp.norm` for vector-like dtype
-        :return: Input with values replaced by the absolute values
-        :rtype: Variable)");
+  //       :raises: If the dtype has no absolute value, e.g., if it is a string
+  //       :seealso: :py:class:`scipp.norm` for vector-like dtype
+  //       :return: Input with values replaced by the absolute values
+  //       :rtype: Variable)");
 
   m.def("dot", py::overload_cast<const Variable &, const Variable &>(&dot),
         py::arg("x"), py::arg("y"), py::call_guard<py::gil_scoped_release>(),
@@ -444,23 +445,23 @@ void init_variable(py::module &m) {
         :return: New variable with scalar elements based on the two inputs.
         :rtype: Variable)");
 
-  m.def("concatenate",
-        py::overload_cast<const VariableConstView &, const VariableConstView &,
-                          const Dim>(&concatenate),
-        py::arg("x"), py::arg("y"), py::arg("dim"),
-        py::call_guard<py::gil_scoped_release>(), R"(
-        Concatenate input variables along the given dimension.
+  // m.def("concatenate",
+  //       py::overload_cast<const VariableConstView &, const VariableConstView &,
+  //                         const Dim>(&concatenate),
+  //       py::arg("x"), py::arg("y"), py::arg("dim"),
+  //       py::call_guard<py::gil_scoped_release>(), R"(
+  //       Concatenate input variables along the given dimension.
 
-        Concatenation can happen in two ways:
-        - Along an existing dimension, yielding a new dimension extent given by the sum of the input's extents.
-        - Along a new dimension that is not contained in either of the inputs, yielding an output with one extra dimensions.
+  //       Concatenation can happen in two ways:
+  //       - Along an existing dimension, yielding a new dimension extent given by the sum of the input's extents.
+  //       - Along a new dimension that is not contained in either of the inputs, yielding an output with one extra dimensions.
 
-        :param x: First Variable.
-        :param y: Second Variable.
-        :param dim: Dimension along which to concatenate.
-        :raises: If the dtype or unit does not match, or if the dimensions and shapes are incompatible.
-        :return: New variable containing all elements of the input variables.
-        :rtype: Variable)");
+  //       :param x: First Variable.
+  //       :param y: Second Variable.
+  //       :param dim: Dimension along which to concatenate.
+  //       :raises: If the dtype or unit does not match, or if the dimensions and shapes are incompatible.
+  //       :return: New variable containing all elements of the input variables.
+  //       :rtype: Variable)");
 
   m.def("filter",
         py::overload_cast<const Variable &, const Variable &>(&filter),
@@ -476,20 +477,20 @@ void init_variable(py::module &m) {
         :return: New variable containing the data selected by the filter
         :rtype: Variable)");
 
-  m.def("mean", py::overload_cast<const VariableConstView &, const Dim>(&mean),
-        py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
-        R"(
-        Element-wise mean over the specified dimension, if variances are present, the new variance is computated as standard-deviation of the mean.
+  // m.def("mean", py::overload_cast<const VariableConstView &, const Dim>(&mean),
+  //       py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
+  //       R"(
+  //       Element-wise mean over the specified dimension, if variances are present, the new variance is computated as standard-deviation of the mean.
 
-        If the input has variances, the variances stored in the ouput are based on the "standard deviation of the mean", i.e., :math:`\sigma_{mean} = \sigma / \sqrt{N}`.
-        :math:`N` is the length of the input dimension.
-        :math:`sigma` is estimated as the average of the standard deviations of the input elements along that dimension.
-        This assumes that elements follow a normal distribution.
+  //       If the input has variances, the variances stored in the ouput are based on the "standard deviation of the mean", i.e., :math:`\sigma_{mean} = \sigma / \sqrt{N}`.
+  //       :math:`N` is the length of the input dimension.
+  //       :math:`sigma` is estimated as the average of the standard deviations of the input elements along that dimension.
+  //       This assumes that elements follow a normal distribution.
 
-        :raises: If the dimension does not exist, or the dtype cannot be summed, e.g., if it is a string
-        :seealso: :py:class:`scipp.sum`
-        :return: New variable containing the mean.
-        :rtype: Variable)");
+  //       :raises: If the dimension does not exist, or the dtype cannot be summed, e.g., if it is a string
+  //       :seealso: :py:class:`scipp.sum`
+  //       :return: New variable containing the mean.
+  //       :rtype: Variable)");
 
   m.def("mean",
         [](const VariableConstView &x, const Dim dim, const VariableView &out) {
