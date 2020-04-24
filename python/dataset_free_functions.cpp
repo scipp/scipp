@@ -4,9 +4,9 @@
 /// @author Simon Heybrock
 
 #include "scipp/dataset/dataset.h"
-// #include "scipp/dataset/event.h"
+#include "scipp/dataset/event.h"
 // #include "scipp/dataset/except.h"
-// #include "scipp/dataset/histogram.h"
+#include "scipp/dataset/histogram.h"
 // #include "scipp/dataset/map_view.h"
 // #include "scipp/dataset/sort.h"
 // #include "scipp/dataset/unaligned.h"

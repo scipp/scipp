@@ -576,17 +576,17 @@ void init_variable(py::module &m) {
         :return: Copy of the input with values replaced by the square-root.
         :rtype: Variable)");
 
-  m.def("sum", py::overload_cast<const VariableConstView &, const Dim>(&sum),
-        py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
-        R"(
-        Element-wise sum over the specified dimension.
+  // m.def("sum", py::overload_cast<const VariableConstView &, const Dim>(&sum),
+  //       py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
+  //       R"(
+  //       Element-wise sum over the specified dimension.
 
-        :param x: Data to sum.
-        :param dim: Dimension over which to sum.
-        :raises: If the dimension does not exist, or if the dtype cannot be summed, e.g., if it is a string
-        :seealso: :py:class:`scipp.mean`
-        :return: New variable containing the sum.
-        :rtype: Variable)");
+  //       :param x: Data to sum.
+  //       :param dim: Dimension over which to sum.
+  //       :raises: If the dimension does not exist, or if the dtype cannot be summed, e.g., if it is a string
+  //       :seealso: :py:class:`scipp.mean`
+  //       :return: New variable containing the sum.
+  //       :rtype: Variable)");
 
   m.def("sum",
         [](const VariableConstView &self, const Dim dim,
@@ -603,45 +603,45 @@ void init_variable(py::module &m) {
         :return: Variable containing the sum.
         :rtype: Variable)");
 
-  m.def("sin", [](const VariableConstView &self) { return sin(self); },
-        py::arg("x"), py::call_guard<py::gil_scoped_release>(), R"(
-        Element-wise sin.
+  // m.def("sin", [](const VariableConstView &self) { return sin(self); },
+  //       py::arg("x"), py::call_guard<py::gil_scoped_release>(), R"(
+  //       Element-wise sin.
 
-        :raises: If the unit is not a plane-angle unit, or if the dtype has no sin, e.g., if it is an integer
-        :return: Copy of the input with values replaced by the sin.
-        :rtype: Variable)");
+  //       :raises: If the unit is not a plane-angle unit, or if the dtype has no sin, e.g., if it is an integer
+  //       :return: Copy of the input with values replaced by the sin.
+  //       :rtype: Variable)");
 
-  m.def("sin",
-        [](const VariableConstView &self, const VariableView &out) {
-          return sin(self, out);
-        },
-        py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>(),
-        R"(
-        Element-wise sin.
+  // m.def("sin",
+  //       [](const VariableConstView &self, const VariableView &out) {
+  //         return sin(self, out);
+  //       },
+  //       py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>(),
+  //       R"(
+  //       Element-wise sin.
 
-        :raises: If the unit is not a plane-angle unit, or if the dtype has no sin, e.g., if it is an integer
-        :return: sin of input values.
-        :rtype: Variable)");
+  //       :raises: If the unit is not a plane-angle unit, or if the dtype has no sin, e.g., if it is an integer
+  //       :return: sin of input values.
+  //       :rtype: Variable)");
 
-  m.def("cos", [](const VariableConstView &self) { return cos(self); },
-        py::arg("x"), py::call_guard<py::gil_scoped_release>(), R"(
-        Element-wise cos.
+  // m.def("cos", [](const VariableConstView &self) { return cos(self); },
+  //       py::arg("x"), py::call_guard<py::gil_scoped_release>(), R"(
+  //       Element-wise cos.
 
-        :raises: If the unit is not a plane-angle unit, or if the dtype has no cos, e.g., if it is an integer
-        :return: Copy of the input with values replaced by the cos.
-        :rtype: Variable)");
+  //       :raises: If the unit is not a plane-angle unit, or if the dtype has no cos, e.g., if it is an integer
+  //       :return: Copy of the input with values replaced by the cos.
+  //       :rtype: Variable)");
 
-  m.def("cos",
-        [](const VariableConstView &self, const VariableView &out) {
-          return cos(self, out);
-        },
-        py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>(),
-        R"(
-        Element-wise cos.
+  // m.def("cos",
+  //       [](const VariableConstView &self, const VariableView &out) {
+  //         return cos(self, out);
+  //       },
+  //       py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>(),
+  //       R"(
+  //       Element-wise cos.
 
-        :raises: If the unit is not a plane-angle unit, or if the dtype has no cos, e.g., if it is an integer
-        :return: cos of input values.
-        :rtype: Variable)");
+  //       :raises: If the unit is not a plane-angle unit, or if the dtype has no cos, e.g., if it is an integer
+  //       :return: cos of input values.
+  //       :rtype: Variable)");
 
   m.def("tan", [](const Variable &self) { return tan(self); }, py::arg("x"),
         py::call_guard<py::gil_scoped_release>(), R"(

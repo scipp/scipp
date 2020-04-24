@@ -52,30 +52,32 @@ template <class T> void bind_concatenate(py::module &m) {
 }
 
 template <class T> void bind_abs(py::module &m) {
+
   using ConstView = const typename T::const_view_type &;
   using View = const typename T::view_type &;
+  const std::string description = R"(
+        Element-wise absolute value.)";
+
   m.def("abs", [](ConstView self) { return abs(self); },
         py::arg("x"), py::call_guard<py::gil_scoped_release>(),
-        R"(
-        Element-wise absolute value.
-
+        &((description + R"(
+        :param x: Input Variable, DataArray, or Dataset.
         :raises: If the dtype has no absolute value, e.g., if it is a string
         :seealso: :py:class:`scipp.norm` for vector-like dtype
         :return: Copy of the input with values replaced by the absolute values
-        :rtype: Variable, DataArray, or Dataset)");
+        :rtype: Variable, DataArray, or Dataset)")[0]));
   m.def("abs", [](ConstView self, View out) {
           return abs(self, out);
         },
         py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>(),
+        &((description + R"( (in-place))" +
         R"(
-        In-place element-wise absolute value.
-
         :param x: Input Variable, DataArray, or Dataset.
         :param out: Output buffer to which the absolute values will be written.
         :raises: If the dtype has no absolute value, e.g., if it is a string.
         :seealso: :py:class:`scipp.norm` for vector-like dtype.
         :return: Input with values replaced by the absolute values.
-        :rtype: VariableView, DataArrayView, or DatasetView)");
+        :rtype: VariableView, DataArrayView, or DatasetView)")[0]));
 }
 
 

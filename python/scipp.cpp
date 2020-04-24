@@ -18,6 +18,7 @@ void init_groupby(py::module &);
 void init_neutron(py::module &);
 void init_operations(py::module &);
 void init_reduction(py::module &);
+void init_trigonometry(py::module &m);
 void init_units_neutron(py::module &);
 void init_variable(py::module &);
 void init_variable_free_functions(py::module &);
@@ -33,6 +34,7 @@ void init_core(py::module &m) {
   init_groupby(core);
   init_operations(core);
   init_reduction(core);
+  init_trigonometry(core);
   init_event_list(core);
   init_element_array_view(core);
   init_variable_free_functions(core);

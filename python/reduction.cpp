@@ -40,9 +40,28 @@ template <class T> void bind_mean(py::module &m) {
         :rtype: Variable, DataArray, or Dataset)")[0]));
 }
 
+template <class T> void bind_sum(py::module &m) {
+  using ConstView = const typename T::const_view_type &;
+  // using View = const typename T::view_type &;
+  const std::string description = R"(
+        Element-wise sum over the specified dimension.)";
+  m.def("sum", py::overload_cast<ConstView, const Dim>(&sum),
+        py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
+        &((description + R"(
+        :param x: Data to sum.
+        :param dim: Dimension over which to sum.
+        :raises: If the dimension does not exist, or if the dtype cannot be summed, e.g., if it is a string
+        :seealso: :py:class:`scipp.mean`
+        :return: New variable, data array, or dataset containing the sum.
+        :rtype: Variable, DataArray, or Dataset)")[0]));
+}
+
 void init_reduction(py::module &m) {
   bind_mean<Variable>(m);
   bind_mean<DataArray>(m);
   bind_mean<Dataset>(m);
 
+  bind_sum<Variable>(m);
+  bind_sum<DataArray>(m);
+  bind_sum<Dataset>(m);
 }
