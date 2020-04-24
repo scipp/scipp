@@ -2,10 +2,10 @@
 # Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
-from .plot_1d import plot_1d
-from .plot_2d import plot_2d
-from .plot_3d import plot_3d
-from .events import histogram_events_data
+from scipp.plot.plot_impl.plot_1d import plot_1d
+from scipp.plot.plot_impl.plot_2d import plot_2d
+from scipp.plot.plot_impl.plot_3d import plot_3d
+from ..events import histogram_events_data
 
 
 def dispatch(scipp_obj_dict,

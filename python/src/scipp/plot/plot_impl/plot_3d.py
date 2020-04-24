@@ -3,10 +3,10 @@
 # @author Neil Vaytet
 
 # Scipp imports
-from .. import config
-from .render import render_plot
-from .slicer import Slicer
-from ..utils import name_with_unit
+from scipp import config
+from scipp.plot.render import render_plot
+from scipp.plot.slicer import Slicer
+from scipp.utils import name_with_unit
 
 # Other imports
 import numpy as np

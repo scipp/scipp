@@ -6,8 +6,8 @@
 import numpy as np
 
 # Scipp imports
-from .dispatch import dispatch
-from .tools import get_line_param
+from scipp.plot.plot_impl.dispatch import dispatch
+from scipp.plot.tools import get_line_param
 
 
 def plot_collapse(data_array, name=None, dim=None, filename=None, **kwargs):

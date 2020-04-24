@@ -23,8 +23,8 @@ def plot(scipp_obj,
 
     # Delayed imports
     from .tools import get_line_param
-    from .plot_collapse import plot_collapse
-    from .dispatch import dispatch
+    from scipp.plot.plot_impl.plot_collapse import plot_collapse
+    from scipp.plot.plot_impl.dispatch import dispatch
 
     inventory = dict()
     tp = type(scipp_obj)

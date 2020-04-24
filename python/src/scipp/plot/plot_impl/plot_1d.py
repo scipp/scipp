@@ -3,11 +3,11 @@
 # @author Neil Vaytet
 
 # Scipp imports
-from .. import config
-from .render import render_plot
-from .slicer import Slicer
-from .tools import edges_to_centers
-from ..utils import name_with_unit
+from scipp import config
+from scipp.plot.render import render_plot
+from scipp.plot.slicer import Slicer
+from scipp.plot.tools import edges_to_centers
+from scipp.utils import name_with_unit
 from .._scipp.core import histogram as scipp_histogram
 
 # Other imports
