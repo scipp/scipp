@@ -44,9 +44,6 @@ namespace detail {
 void expect0D(const Dimensions &dims);
 } // namespace detail
 
-// template <class T> struct is_event_list : std::false_type {};
-// template <class T> struct is_event_list<event_list<T>> : std::true_type {};
-
 class Variable;
 class VariableConstView;
 class VariableView;
