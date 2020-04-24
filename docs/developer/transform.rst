@@ -33,7 +33,7 @@ Transform requires:
 Example 1
 ~~~~~~~~~
 
-Transform with two variables with two type combinations:
+Transform two variables with two type combinations:
 
 - ``a`` of type ``double`` and ``b`` of type ``float``
 - ``a`` of type ``double`` and ``b`` of type ``double``
