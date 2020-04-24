@@ -45,29 +45,27 @@ All operations take the variances into account:
   The implemented mechanism assumes uncorrelated data.
 
 
-Events dimensions and data
---------------------------
+Event data
+----------
 
-Scipp supports data with a single "events" dimension.
-Conceptually, we distinguish *dense* and *events* data.
+Scipp supports event data in form of arrays of variable-length lists.
+Conceptually, we distinguish *dense* and *event* data.
 
 - Dense data is the common case of a regular, e.g., 2-D, grid of data points.
-- Event data can come in many flavors.
-  Here we are dealing with semi-regular data, i.e., a N-D array/grid of random-length lists.
-  That is, only one of the dimensions has irregular data distribution.
+- Event data (as supported by scipp) is semi-regular data, i.e., a N-D array/grid of random-length lists.
+  That is, only the internal "dimension" of the event lists has irregular data distribution.
 
 The target application of this is measuring random *events* in an array of detector pixels.
 In contrast to a regular image sensor, which may produce a 2-D image at fixed time intervals (which could be handled as 3-D data), each detector pixel will see a different event rate (photons or neutrons) and is "read out" at uncorrelated times.
 
-Scipp handles such event data by supporting data-item-specific *events coordinates*:
+Scipp handles such event data by supporting *event coordinates*, i.e., coordinates with a ``dtype`` that is a list:
 
-- Each item in a dataset may be associated with a events coordinate.
-- The events coordinate depends on all the other dimensions.
+- The event coordinate depends on all the other dimensions.
   It represents the time-stamps at which event occurred and is thus essentially an array of lists.
-- If the coordinate is events, the corresponding data is also events and must have matching list lengths.
+- If the coordinate contains events, the corresponding data also contains and must have matching list lengths.
 - The values and variances for event data correspond to the event weight and its uncertainty.
-  For cases where by definition events all have the *same* weight, scipp supports items without a values array.
-  In this case each events coordinate entry corresponds to a single event count.
+  For cases where by definition events all have the *same* weight, scipp supports event weights with a scalar ``dtype`` instead of a list.
+  In this case each event-coordinate entry corresponds to a event count given by the scalar weight value for this list.
 
 Events items in a dataset can be seen as a case of unaligned data, with misalignment not just between different items, but also between slices within an item.
 
