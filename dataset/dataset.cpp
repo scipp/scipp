@@ -19,15 +19,17 @@ template <class T> typename T::view_type makeViewItem(T &variable) {
     return typename T::view_type(variable);
 }
 
-template <class View, class T1> auto makeViewItems(T1 &coords) {
-  typename View::holder_type items;
-  for (auto &item : coords)
-    items.emplace(item.first, makeViewItem(item.second));
-  return items;
+namespace {
+constexpr auto contains = [](const auto &dims, const Dim dim) {
+  if constexpr (std::is_same_v<std::decay_t<decltype(dims)>, Dimensions>)
+    return dims.contains(dim);
+  else
+    return dims.count(dim) == 1;
+};
 }
 
-template <class View, class T1>
-auto makeViewItems(const Dimensions &dims, T1 &coords) {
+template <class View, class Dims, class T1>
+auto makeViewItems(const Dims &dims, T1 &coords) {
   typename View::holder_type items;
   for (auto &item : coords) {
     // We preserve only items that are part of the space spanned by the
@@ -42,10 +44,10 @@ auto makeViewItems(const Dimensions &dims, T1 &coords) {
         const bool is_dimension_coord =
             !contains_events(item2.second) && coordDims.contains(item2.first);
         return coordDims.empty() || contains_events(item2.second) ||
-               (is_dimension_coord ? dims.contains(item2.first)
-                                   : dims.contains(coordDims.inner()));
+               (is_dimension_coord ? contains(dims, item2.first)
+                                   : contains(dims, coordDims.inner()));
       } else
-        return coordDims.empty() || dims.contains(coordDims.inner());
+        return coordDims.empty() || contains(dims, coordDims.inner());
     };
     if (contained(item)) {
       items.emplace(item.first, makeViewItem(item.second));
@@ -78,7 +80,8 @@ void Dataset::clear() {
 /// This view includes "dimension-coordinates" as well as
 /// "non-dimension-coordinates" ("labels").
 CoordsConstView Dataset::coords() const noexcept {
-  return CoordsConstView(makeViewItems<CoordsConstView>(m_coords));
+  return CoordsConstView(
+      makeViewItems<CoordsConstView>(dimensions(), m_coords));
 }
 
 /// Return a view to all coordinates of the dataset.
@@ -87,27 +90,29 @@ CoordsConstView Dataset::coords() const noexcept {
 /// "non-dimension-coordinates" ("labels").
 CoordsView Dataset::coords() noexcept {
   return CoordsView(CoordAccess(this),
-                    makeViewItems<CoordsConstView>(m_coords));
+                    makeViewItems<CoordsConstView>(dimensions(), m_coords));
 }
 
 /// Return a const view to all attributes of the dataset.
 AttrsConstView Dataset::attrs() const noexcept {
-  return AttrsConstView(makeViewItems<AttrsConstView>(m_attrs));
+  return AttrsConstView(makeViewItems<AttrsConstView>(dimensions(), m_attrs));
 }
 
 /// Return a view to all attributes of the dataset.
 AttrsView Dataset::attrs() noexcept {
-  return AttrsView(AttrAccess(this), makeViewItems<AttrsConstView>(m_attrs));
+  return AttrsView(AttrAccess(this),
+                   makeViewItems<AttrsConstView>(dimensions(), m_attrs));
 }
 
 /// Return a const view to all masks of the dataset.
 MasksConstView Dataset::masks() const noexcept {
-  return MasksConstView(makeViewItems<MasksConstView>(m_masks));
+  return MasksConstView(makeViewItems<MasksConstView>(dimensions(), m_masks));
 }
 
 /// Return a view to all masks of the dataset.
 MasksView Dataset::masks() noexcept {
-  return MasksView(MaskAccess(this), makeViewItems<MasksConstView>(m_masks));
+  return MasksView(MaskAccess(this),
+                   makeViewItems<MasksConstView>(dimensions(), m_masks));
 }
 
 bool Dataset::contains(const std::string &name) const noexcept {
@@ -413,7 +418,7 @@ void Dataset::rename(const Dim from, const Dim to) {
   };
   if (m_dims.count(from) != 0)
     relabel(m_dims);
-  if (coords().contains(from))
+  if (m_coords.count(from))
     relabel(m_coords);
   for (auto &item : m_coords)
     item.second.rename(from, to);
@@ -711,8 +716,9 @@ DatasetView::DatasetView(Dataset &dataset)
 /// This view includes "dimension-coordinates" as well as
 /// "non-dimension-coordinates" ("labels").
 CoordsConstView DatasetConstView::coords() const noexcept {
-  return CoordsConstView(makeViewItems<CoordsConstView>(m_dataset->m_coords),
-                         slices());
+  return CoordsConstView(
+      makeViewItems<CoordsConstView>(dimensions(), m_dataset->m_coords),
+      slices());
 }
 
 /// Return a view to all coordinates of the dataset slice.
@@ -720,34 +726,39 @@ CoordsConstView DatasetConstView::coords() const noexcept {
 /// This view includes "dimension-coordinates" as well as
 /// "non-dimension-coordinates" ("labels").
 CoordsView DatasetView::coords() const noexcept {
-  return CoordsView(CoordAccess(slices().empty() ? m_mutableDataset : nullptr),
-                    makeViewItems<CoordsConstView>(m_mutableDataset->m_coords),
-                    slices());
+  return CoordsView(
+      CoordAccess(slices().empty() ? m_mutableDataset : nullptr),
+      makeViewItems<CoordsConstView>(dimensions(), m_mutableDataset->m_coords),
+      slices());
 }
 
 /// Return a const view to all attributes of the dataset slice.
 AttrsConstView DatasetConstView::attrs() const noexcept {
-  return AttrsConstView(makeViewItems<AttrsConstView>(m_dataset->m_attrs),
-                        slices());
+  return AttrsConstView(
+      makeViewItems<AttrsConstView>(dimensions(), m_dataset->m_attrs),
+      slices());
 }
 
 /// Return a view to all attributes of the dataset slice.
 AttrsView DatasetView::attrs() const noexcept {
-  return AttrsView(AttrAccess(slices().empty() ? m_mutableDataset : nullptr),
-                   makeViewItems<AttrsConstView>(m_mutableDataset->m_attrs),
-                   slices());
+  return AttrsView(
+      AttrAccess(slices().empty() ? m_mutableDataset : nullptr),
+      makeViewItems<AttrsConstView>(dimensions(), m_mutableDataset->m_attrs),
+      slices());
 }
 /// Return a const view to all masks of the dataset slice.
 MasksConstView DatasetConstView::masks() const noexcept {
-  return MasksConstView(makeViewItems<MasksConstView>(m_dataset->m_masks),
-                        slices());
+  return MasksConstView(
+      makeViewItems<MasksConstView>(dimensions(), m_dataset->m_masks),
+      slices());
 }
 
 /// Return a view to all masks of the dataset slice.
 MasksView DatasetView::masks() const noexcept {
-  return MasksView(MaskAccess(slices().empty() ? m_mutableDataset : nullptr),
-                   makeViewItems<MasksConstView>(m_mutableDataset->m_masks),
-                   slices());
+  return MasksView(
+      MaskAccess(slices().empty() ? m_mutableDataset : nullptr),
+      makeViewItems<MasksConstView>(dimensions(), m_mutableDataset->m_masks),
+      slices());
 }
 
 bool DatasetConstView::contains(const std::string &name) const noexcept {
