@@ -49,7 +49,7 @@ Since ``+`` is defined for ``units::Unit`` the same lambda can be used for data 
 Example 2 
 ~~~~~~~~~
 
-In-place transform with two variables and special unit handling, using the help ``overloaded``, to define and "overloaded" lambda:
+In-place transform with two variables and special unit handling, using the help ``overloaded``, to define an "overloaded" lambda:
 
 .. code-block:: cpp
 
