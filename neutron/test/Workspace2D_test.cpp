@@ -93,10 +93,9 @@ TEST(Workspace2D, multi_dimensional_merging_and_slicing) {
       zipMD(delta, {Dim::Temperature}, nested, MDRead(Coord::SpectrumNumber));
 
   auto tempDependence =
-      std::find_if(
-          view.begin(), view.end(),
-          [](const auto &item) { return item.get(Coord::SpectrumNumber) == 1; })
-          ->get(PointData);
+      std::find_if(view.begin(), view.end(), [](const auto &item) {
+        return item.get(Coord::SpectrumNumber) == 1;
+      })->get(PointData);
   static_cast<void>(tempDependence);
 
   // Do something with the resulting point data, e.g., plot:

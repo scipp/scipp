@@ -6,8 +6,8 @@ namespace scipp::variable {
 VariableConceptHandle::VariableConceptHandle(const VariableConceptHandle &other)
     : VariableConceptHandle(other ? other->clone() : VariableConceptHandle()) {}
 
-VariableConceptHandle &VariableConceptHandle::
-operator=(const VariableConceptHandle &other) {
+VariableConceptHandle &
+VariableConceptHandle::operator=(const VariableConceptHandle &other) {
   if (*this && other) {
     // Avoid allocation of new element_array if output is of correct shape.
     // This yields a 5x speedup in assignment operations of variables.

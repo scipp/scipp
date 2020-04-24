@@ -764,8 +764,8 @@ template <class T> const auto &getitem(const T &view, const std::string &name) {
 } // namespace
 
 /// Return a const view to data and coordinates with given name.
-const DataArrayConstView &DatasetConstView::
-operator[](const std::string &name) const {
+const DataArrayConstView &
+DatasetConstView::operator[](const std::string &name) const {
   return getitem(*this, name);
 }
 

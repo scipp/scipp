@@ -44,39 +44,42 @@ void run(benchmark::State &state, Func func, bool variances = false) {
 }
 
 static void BM_transform_in_place(benchmark::State &state) {
-  run<true>(state,
-            [](auto &state_, auto &&... args) {
-              for ([[maybe_unused]] auto _ : state_) {
-                transform_in_place<Types>(args...);
-              }
-            },
-            state.range(1));
+  run<true>(
+      state,
+      [](auto &state_, auto &&... args) {
+        for ([[maybe_unused]] auto _ : state_) {
+          transform_in_place<Types>(args...);
+        }
+      },
+      state.range(1));
 }
 
 static void BM_transform_in_place_view(benchmark::State &state) {
-  run<true>(state,
-            [](auto &state_, auto &a, auto &b, auto &op) {
-              VariableView a_view(a);
-              VariableConstView b_view(b);
-              for ([[maybe_unused]] auto _ : state_) {
-                transform_in_place<Types>(a_view, b_view, op);
-              }
-            },
-            state.range(1));
+  run<true>(
+      state,
+      [](auto &state_, auto &a, auto &b, auto &op) {
+        VariableView a_view(a);
+        VariableConstView b_view(b);
+        for ([[maybe_unused]] auto _ : state_) {
+          transform_in_place<Types>(a_view, b_view, op);
+        }
+      },
+      state.range(1));
 }
 
 static void BM_transform_in_place_slice(benchmark::State &state) {
-  run<true>(state,
-            [](auto &state_, auto &a, auto &b, auto &op) {
-              // Strictly speaking our counters are off by 1% since we
-              // exclude 1 out of 100 X elements here.
-              auto a_slice = a.slice({Dim::X, 0, 99});
-              auto b_slice = b.slice({Dim::X, 1, 100});
-              for ([[maybe_unused]] auto _ : state_) {
-                transform_in_place<Types>(a_slice, b_slice, op);
-              }
-            },
-            state.range(1));
+  run<true>(
+      state,
+      [](auto &state_, auto &a, auto &b, auto &op) {
+        // Strictly speaking our counters are off by 1% since we
+        // exclude 1 out of 100 X elements here.
+        auto a_slice = a.slice({Dim::X, 0, 99});
+        auto b_slice = b.slice({Dim::X, 1, 100});
+        for ([[maybe_unused]] auto _ : state_) {
+          transform_in_place<Types>(a_slice, b_slice, op);
+        }
+      },
+      state.range(1));
 }
 
 // {false, true} -> variances
@@ -91,48 +94,51 @@ BENCHMARK(BM_transform_in_place_slice)
     ->Ranges({{1, 2 << 18}, {false, true}});
 
 static void BM_transform(benchmark::State &state) {
-  run<false>(state,
-             [](auto &state_, auto &&... args) {
-               for ([[maybe_unused]] auto _ : state_) {
-                 auto out = transform<Types>(args...);
-                 state_.PauseTiming();
-                 out = Variable();
-                 state_.ResumeTiming();
-               }
-             },
-             state.range(1));
+  run<false>(
+      state,
+      [](auto &state_, auto &&... args) {
+        for ([[maybe_unused]] auto _ : state_) {
+          auto out = transform<Types>(args...);
+          state_.PauseTiming();
+          out = Variable();
+          state_.ResumeTiming();
+        }
+      },
+      state.range(1));
 }
 
 static void BM_transform_view(benchmark::State &state) {
-  run<false>(state,
-             [](auto &state_, auto &a, auto &b, auto &op) {
-               VariableView a_view(a);
-               VariableConstView b_view(b);
-               for ([[maybe_unused]] auto _ : state_) {
-                 auto out = transform<Types>(a_view, b_view, op);
-                 state_.PauseTiming();
-                 out = Variable();
-                 state_.ResumeTiming();
-               }
-             },
-             state.range(1));
+  run<false>(
+      state,
+      [](auto &state_, auto &a, auto &b, auto &op) {
+        VariableView a_view(a);
+        VariableConstView b_view(b);
+        for ([[maybe_unused]] auto _ : state_) {
+          auto out = transform<Types>(a_view, b_view, op);
+          state_.PauseTiming();
+          out = Variable();
+          state_.ResumeTiming();
+        }
+      },
+      state.range(1));
 }
 
 static void BM_transform_slice(benchmark::State &state) {
-  run<false>(state,
-             [](auto &state_, auto &a, auto &b, auto &op) {
-               // Strictly speaking our counters are off by 1% since we
-               // exclude 1 out of 100 X elements here.
-               auto a_slice = a.slice({Dim::X, 0, 99});
-               auto b_slice = b.slice({Dim::X, 1, 100});
-               for ([[maybe_unused]] auto _ : state_) {
-                 auto out = transform<Types>(a_slice, b_slice, op);
-                 state_.PauseTiming();
-                 out = Variable();
-                 state_.ResumeTiming();
-               }
-             },
-             state.range(1));
+  run<false>(
+      state,
+      [](auto &state_, auto &a, auto &b, auto &op) {
+        // Strictly speaking our counters are off by 1% since we
+        // exclude 1 out of 100 X elements here.
+        auto a_slice = a.slice({Dim::X, 0, 99});
+        auto b_slice = b.slice({Dim::X, 1, 100});
+        for ([[maybe_unused]] auto _ : state_) {
+          auto out = transform<Types>(a_slice, b_slice, op);
+          state_.PauseTiming();
+          out = Variable();
+          state_.ResumeTiming();
+        }
+      },
+      state.range(1));
 }
 
 // {false, true} -> variances

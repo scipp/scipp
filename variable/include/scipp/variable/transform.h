@@ -270,7 +270,7 @@ template <class T> struct broadcast {
   constexpr auto data() const noexcept { return *this; }
   T value;
 };
-template <class T> broadcast(T)->broadcast<T>;
+template <class T> broadcast(T) -> broadcast<T>;
 
 template <class T> static decltype(auto) maybe_broadcast(T &&value) {
   if constexpr (transform_detail::is_events_v<std::decay_t<T>>)
@@ -391,7 +391,7 @@ template <class T> struct as_view {
   T &data;
   const Dimensions &dims;
 };
-template <class T> as_view(T &data, const Dimensions &dims)->as_view<T>;
+template <class T> as_view(T &data, const Dimensions &dims) -> as_view<T>;
 
 template <class Op> struct Transform {
   Op op;
@@ -411,7 +411,7 @@ template <class Op> struct Transform {
     return out;
   }
 };
-template <class Op> Transform(Op)->Transform<Op>;
+template <class Op> Transform(Op) -> Transform<Op>;
 
 template <class T, class Handle> struct optional_events;
 template <class T, class... Known>
@@ -496,7 +496,7 @@ template <class Op, class EventsOp> struct overloaded_events : Op, EventsOp {
       return Op::template operator()(std::forward<Ts>(args)...);
   }
 };
-template <class... Ts> overloaded_events(Ts...)->overloaded_events<Ts...>;
+template <class... Ts> overloaded_events(Ts...) -> overloaded_events<Ts...>;
 
 template <class T>
 struct is_any_events : std::conditional_t<core::is_events<T>::value,
@@ -899,18 +899,17 @@ template <class... Ts, class Op>
 
 /// Transform the data elements of three variables and return a new Variable.
 template <class... Ts, class Op>
-[[nodiscard]] Variable
-    transform(const VariableConstView &var1, const VariableConstView &var2,
-              const VariableConstView &var3, Op op) {
-      return detail::transform(type_tuples<Ts...>(op), op, var1, var2, var3);
-    }
+[[nodiscard]] Variable transform(const VariableConstView &var1,
+                                 const VariableConstView &var2,
+                                 const VariableConstView &var3, Op op) {
+  return detail::transform(type_tuples<Ts...>(op), op, var1, var2, var3);
+}
 
 /// Transform the data elements of four variables and return a new Variable.
 template <class... Ts, class Op>
-[[nodiscard]] Variable transform(const VariableConstView &var1,
-                                 const VariableConstView &var2,
-                                 const VariableConstView &var3,
-                                 const VariableConstView &var4, Op op) {
+[[nodiscard]] Variable
+transform(const VariableConstView &var1, const VariableConstView &var2,
+          const VariableConstView &var3, const VariableConstView &var4, Op op) {
   return detail::transform(type_tuples<Ts...>(op), op, var1, var2, var3, var4);
 }
 
