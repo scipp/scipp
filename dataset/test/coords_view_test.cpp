@@ -98,31 +98,6 @@ TYPED_TEST(CoordsViewTest, iterators) {
   ASSERT_EQ(it, coords.end());
 }
 
-TYPED_TEST(CoordsViewTest, slice) {
-  Dataset d;
-  const auto x = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
-  const auto y = makeVariable<double>(Dims{Dim::Y}, Shape{2}, Values{1, 2});
-  d.setCoord(Dim::X, x);
-  d.setCoord(Dim::Y, y);
-  const auto coords = TestFixture::access(d).coords();
-
-  const auto sliceX = coords.slice({Dim::X, 1});
-  EXPECT_ANY_THROW(sliceX[Dim::X]);
-  EXPECT_EQ(sliceX[Dim::Y], y);
-
-  const auto sliceDX = coords.slice({Dim::X, 1, 2});
-  EXPECT_EQ(sliceDX[Dim::X], x.slice({Dim::X, 1, 2}));
-  EXPECT_EQ(sliceDX[Dim::Y], y);
-
-  const auto sliceY = coords.slice({Dim::Y, 1});
-  EXPECT_EQ(sliceY[Dim::X], x);
-  EXPECT_ANY_THROW(sliceY[Dim::Y]);
-
-  const auto sliceDY = coords.slice({Dim::Y, 1, 2});
-  EXPECT_EQ(sliceDY[Dim::X], x);
-  EXPECT_EQ(sliceDY[Dim::Y], y.slice({Dim::Y, 1, 2}));
-}
-
 TYPED_TEST(CoordsViewTest, find_and_contains) {
   DatasetFactory3D factory;
   auto dataset = factory.make();
@@ -148,68 +123,6 @@ auto make_dataset_2d_coord_x_1d_coord_y() {
   return d;
 }
 
-TYPED_TEST(CoordsViewTest, slice_2D_coord) {
-  auto d = make_dataset_2d_coord_x_1d_coord_y();
-  const auto coords = TestFixture::access(d).coords();
-
-  const auto sliceX = coords.slice({Dim::X, 1});
-  EXPECT_ANY_THROW(sliceX[Dim::X]);
-  EXPECT_EQ(sliceX[Dim::Y], coords[Dim::Y]);
-
-  const auto sliceDX = coords.slice({Dim::X, 1, 2});
-  EXPECT_EQ(sliceDX[Dim::X], coords[Dim::X].slice({Dim::X, 1, 2}));
-  EXPECT_EQ(sliceDX[Dim::Y], coords[Dim::Y]);
-
-  const auto sliceY = coords.slice({Dim::Y, 1});
-  EXPECT_EQ(sliceY[Dim::X], coords[Dim::X].slice({Dim::Y, 1}));
-  EXPECT_ANY_THROW(sliceY[Dim::Y]);
-
-  const auto sliceDY = coords.slice({Dim::Y, 1, 2});
-  EXPECT_EQ(sliceDY[Dim::X], coords[Dim::X].slice({Dim::Y, 1, 2}));
-  EXPECT_EQ(sliceDY[Dim::Y], coords[Dim::Y].slice({Dim::Y, 1, 2}));
-}
-
-auto check_slice_of_slice = [](const auto &dataset, const auto slice) {
-  EXPECT_EQ(slice[Dim::X],
-            dataset.coords()[Dim::X].slice({Dim::X, 1, 3}).slice({Dim::Y, 1}));
-  EXPECT_ANY_THROW(slice[Dim::Y]);
-};
-
-TYPED_TEST(CoordsViewTest, slice_of_slice) {
-  auto d = make_dataset_2d_coord_x_1d_coord_y();
-  const auto cs = TestFixture::access(d).coords();
-
-  check_slice_of_slice(d, cs.slice({Dim::X, 1, 3}).slice({Dim::Y, 1}));
-  check_slice_of_slice(d, cs.slice({Dim::Y, 1}).slice({Dim::X, 1, 3}));
-}
-
-auto check_slice_of_slice_range = [](const auto &dataset, const auto slice) {
-  EXPECT_EQ(
-      slice[Dim::X],
-      dataset.coords()[Dim::X].slice({Dim::X, 1, 3}).slice({Dim::Y, 1, 2}));
-  EXPECT_EQ(slice[Dim::Y], dataset.coords()[Dim::Y].slice({Dim::Y, 1, 2}));
-};
-
-TYPED_TEST(CoordsViewTest, slice_of_slice_range) {
-  auto d = make_dataset_2d_coord_x_1d_coord_y();
-  const auto cs = TestFixture::access(d).coords();
-
-  check_slice_of_slice_range(d, cs.slice({Dim::X, 1, 3}).slice({Dim::Y, 1, 2}));
-  check_slice_of_slice_range(d, cs.slice({Dim::Y, 1, 2}).slice({Dim::X, 1, 3}));
-}
-
-TEST(CoordsConstView, slice_return_type) {
-  const Dataset d;
-  ASSERT_TRUE((std::is_same_v<decltype(d.coords().slice({Dim::X, 0})),
-                              CoordsConstView>));
-}
-
-TEST(CoordsView, slice_return_type) {
-  Dataset d;
-  ASSERT_TRUE(
-      (std::is_same_v<decltype(d.coords().slice({Dim::X, 0})), CoordsView>));
-}
-
 TEST(MutableCoordsViewTest, item_write) {
   Dataset d;
   const auto x = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
@@ -226,49 +139,4 @@ TEST(MutableCoordsViewTest, item_write) {
   coords[Dim::Y].values<double>()[0] += 0.5;
   ASSERT_EQ(coords[Dim::X], x_reference);
   ASSERT_EQ(coords[Dim::Y], y_reference);
-}
-
-TEST(CoordsView, modify_slice) {
-  auto d = make_dataset_2d_coord_x_1d_coord_y();
-  const auto coords = d.coords();
-
-  const auto slice = coords.slice({Dim::X, 1, 2});
-  for (auto &x : slice[Dim::X].values<double>())
-    x = 0.0;
-
-  const auto reference = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{3, 2},
-                                              Values{1, 2, 0, 0, 5, 6});
-  EXPECT_EQ(d.coords()[Dim::X], reference);
-}
-
-TEST(CoordsConstView, slice_bin_edges_with_2D_coord) {
-  Dataset d;
-  const auto x = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
-                                      Values{1, 2, 3, 4});
-  const auto y_edges =
-      makeVariable<double>(Dims{Dim::Y}, Shape{3}, Values{1, 2, 3});
-  d.setCoord(Dim::X, x);
-  d.setCoord(Dim::Y, y_edges);
-  const auto coords = d.coords();
-
-  const auto sliceX = coords.slice({Dim::X, 1});
-  EXPECT_ANY_THROW(sliceX[Dim::X]);
-  EXPECT_EQ(sliceX[Dim::Y], coords[Dim::Y]);
-
-  const auto sliceDX = coords.slice({Dim::X, 1, 2});
-  EXPECT_EQ(sliceDX[Dim::X].dims(), Dimensions({{Dim::Y, 2}, {Dim::X, 1}}));
-  EXPECT_EQ(sliceDX[Dim::Y], coords[Dim::Y]);
-
-  const auto sliceY = coords.slice({Dim::Y, 1});
-  // TODO Would it be more consistent to preserve X with 0 thickness?
-  EXPECT_ANY_THROW(sliceY[Dim::X]);
-  EXPECT_ANY_THROW(sliceY[Dim::Y]);
-
-  const auto sliceY_edge = coords.slice({Dim::Y, 1, 2});
-  EXPECT_EQ(sliceY_edge[Dim::X], coords[Dim::X].slice({Dim::Y, 1, 1}));
-  EXPECT_EQ(sliceY_edge[Dim::Y], coords[Dim::Y].slice({Dim::Y, 1, 2}));
-
-  const auto sliceY_bin = coords.slice({Dim::Y, 1, 3});
-  EXPECT_EQ(sliceY_bin[Dim::X], coords[Dim::X].slice({Dim::Y, 1, 2}));
-  EXPECT_EQ(sliceY_bin[Dim::Y], coords[Dim::Y].slice({Dim::Y, 1, 3}));
 }

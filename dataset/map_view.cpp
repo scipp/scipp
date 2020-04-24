@@ -49,20 +49,6 @@ ConstView<Id, Key, Value>::ConstView(holder_type &&items,
 }
 
 template <class Id, class Key, class Value>
-ConstView<Id, Key, Value>
-ConstView<Id, Key, Value>::slice(const Slice slice1) const {
-  auto slices = m_slices;
-  if constexpr (std::is_same_v<Key, Dim>) {
-    const auto &coord = m_items.at(slice1.dim());
-    slices.emplace_back(slice1, coord.dims()[slice1.dim()]);
-  } else {
-    throw std::runtime_error("TODO");
-  }
-  auto items = m_items;
-  return ConstView(std::move(items), slices);
-}
-
-template <class Id, class Key, class Value>
 bool ConstView<Id, Key, Value>::operator==(const ConstView &other) const {
   if (size() != other.size())
     return false;

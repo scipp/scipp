@@ -169,8 +169,6 @@ public:
     return boost::make_transform_iterator(end(), detail::make_value);
   }
 
-  ConstView slice(const Slice slice1) const;
-
   bool operator==(const ConstView &other) const;
   bool operator!=(const ConstView &other) const;
 
@@ -251,11 +249,6 @@ public:
   /// Return iterator to the end of all values.
   auto values_end() const &noexcept {
     return boost::make_transform_iterator(end(), detail::make_value);
-  }
-
-  MutableView slice(const Slice slice1) const {
-    // parent = nullptr since adding coords via slice is not supported.
-    return MutableView(m_access, Base::slice(slice1));
   }
 
   template <class VarOrView>
