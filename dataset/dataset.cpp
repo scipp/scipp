@@ -33,11 +33,7 @@ auto makeViewItems(const Dims &dims, T1 &coords) {
   typename View::holder_type items;
   for (auto &item : coords) {
     // We preserve only items that are part of the space spanned by the
-    // provided parent dimensions. Note the use of std::any_of (not
-    // std::all_of): At this point there may still be extra dimensions in item,
-    // but they will be sliced out. Maybe a better implementation would be to
-    // slice the coords first? That would also eliminate a potential loophole
-    // for multi-dimensional coordinates.
+    // provided parent dimensions.
     auto contained = [&dims](const auto &item2) {
       const auto &coordDims = item2.second.dims();
       if constexpr (std::is_same_v<typename View::key_type, Dim>) {
@@ -914,7 +910,6 @@ bool DatasetConstView::operator!=(const DatasetConstView &other) const {
 }
 
 std::unordered_map<Dim, scipp::index> DatasetConstView::dimensions() const {
-
   auto base_dims = m_dataset->dimensions();
   // Note current slices are ordered, but NOT unique
   for (const auto &[slice, extents] : m_slices) {

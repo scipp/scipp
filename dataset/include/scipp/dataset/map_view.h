@@ -180,7 +180,6 @@ protected:
   detail::slice_list m_slices;
 };
 
-// TODO can we use these as base classes for DatasetConstView and DatasetView?
 /// Common functionality for other view classes.
 template <class Base, class Access> class MutableView : public Base {
 private:
