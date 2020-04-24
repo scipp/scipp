@@ -643,25 +643,25 @@ void init_variable(py::module &m) {
   //       :return: cos of input values.
   //       :rtype: Variable)");
 
-  m.def("tan", [](const Variable &self) { return tan(self); }, py::arg("x"),
-        py::call_guard<py::gil_scoped_release>(), R"(
-        Element-wise tan.
+  // m.def("tan", [](const Variable &self) { return tan(self); }, py::arg("x"),
+  //       py::call_guard<py::gil_scoped_release>(), R"(
+  //       Element-wise tan.
 
-        :raises: If the unit is not a plane-angle unit, or if the dtype has no tan, e.g., if it is an integer
-        :return: Copy of the input with values replaced by the tan.
-        :rtype: Variable)");
+  //       :raises: If the unit is not a plane-angle unit, or if the dtype has no tan, e.g., if it is an integer
+  //       :return: Copy of the input with values replaced by the tan.
+  //       :rtype: Variable)");
 
-  m.def("tan",
-        [](const VariableConstView &self, const VariableView &out) {
-          return tan(self, out);
-        },
-        py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>(),
-        R"(
-        Element-wise tan.
+  // m.def("tan",
+  //       [](const VariableConstView &self, const VariableView &out) {
+  //         return tan(self, out);
+  //       },
+  //       py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>(),
+  //       R"(
+  //       Element-wise tan.
 
-        :raises: If the unit is not a plane-angle unit, or if the dtype has no tan, e.g., if it is an integer
-        :return: tan of input values.
-        :rtype: Variable)");
+  //       :raises: If the unit is not a plane-angle unit, or if the dtype has no tan, e.g., if it is an integer
+  //       :return: tan of input values.
+  //       :rtype: Variable)");
 
   // m.def("asin", [](const Variable &self) { return asin(self); }, py::arg("x"),
   //       py::call_guard<py::gil_scoped_release>(), R"(
@@ -703,25 +703,25 @@ void init_variable(py::module &m) {
   //       :return: acos of input values. Output unit is rad.
   //       :rtype: Variable)");
 
-  m.def("atan", [](const Variable &self) { return atan(self); }, py::arg("x"),
-        py::call_guard<py::gil_scoped_release>(), R"(
-        Element-wise atan.
+  // m.def("atan", [](const Variable &self) { return atan(self); }, py::arg("x"),
+  //       py::call_guard<py::gil_scoped_release>(), R"(
+  //       Element-wise atan.
 
-        :raises: If the unit is dimensionless, or if the dtype has no atan, e.g., if it is an integer
-        :return: Copy of the input with values replaced by the atan. Output unit is rad.
-        :rtype: Variable)");
+  //       :raises: If the unit is dimensionless, or if the dtype has no atan, e.g., if it is an integer
+  //       :return: Copy of the input with values replaced by the atan. Output unit is rad.
+  //       :rtype: Variable)");
 
-  m.def("atan",
-        [](const VariableConstView &self, const VariableView &out) {
-          return atan(self, out);
-        },
-        py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>(),
-        R"(
-        Element-wise atan.
+  // m.def("atan",
+  //       [](const VariableConstView &self, const VariableView &out) {
+  //         return atan(self, out);
+  //       },
+  //       py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>(),
+  //       R"(
+  //       Element-wise atan.
 
-        :raises: If the unit is dimensionless, or if the dtype has no atan, e.g., if it is an integer
-        :return: atan of input values. Output unit is rad.
-        :rtype: Variable)");
+  //       :raises: If the unit is dimensionless, or if the dtype has no atan, e.g., if it is an integer
+  //       :return: atan of input values. Output unit is rad.
+  //       :rtype: Variable)");
 
   m.def("atan2",
         [](const Variable &y, const Variable &x) { return atan2(y, x); },
