@@ -51,6 +51,8 @@ Example 2
 ~~~~~~~~~
 
 In-place transform with two variables and special unit handling, using the help ``overloaded``, to define an "overloaded" lambda:
+This call to ``transform_in_place``  accepts two variables (or variable views) ``a`` and ``b``.
+``a`` is modified in-place, no new variable is returned.
 
 .. code-block:: cpp
 
