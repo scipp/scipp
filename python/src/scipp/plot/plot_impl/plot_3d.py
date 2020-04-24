@@ -4,6 +4,7 @@
 
 # Scipp imports
 from scipp import config
+from scipp.plot.plot_impl.plot_request import PlotRequest, ThreeDPlotKwargs
 from scipp.plot.render import render_plot
 from scipp.plot.slicer import Slicer
 from scipp.utils import name_with_unit
@@ -20,19 +21,7 @@ except ImportError:
     ipv = None
 
 
-def plot_3d(scipp_obj_dict=None,
-            axes=None,
-            values=None,
-            variances=None,
-            masks=None,
-            filename=None,
-            figsize=None,
-            aspect=None,
-            cmap=None,
-            log=False,
-            vmin=None,
-            vmax=None,
-            color=None):
+def plot_3d(request : PlotRequest):
     """
     Plot a 3-slice through a N dimensional dataset. For every dimension above
     3, a slider is created to adjust the position of the slice in that
@@ -40,54 +29,35 @@ def plot_3d(scipp_obj_dict=None,
     the position of the slice in 3D space.
     """
 
+    assert isinstance(request.user_kwargs, ThreeDPlotKwargs)
+
     # Protect against unloaded module
     if ipv is None:
         raise RuntimeError("Three-dimensional projections require ipyvolume "
                            "and ipyevents to be installed. Use conda/pip "
                            "install ipyvolume ipyevents.")
 
-    sv = Slicer3d(scipp_obj_dict=scipp_obj_dict,
-                  axes=axes,
-                  values=values,
-                  variances=variances,
-                  masks=masks,
-                  cmap=cmap,
-                  log=log,
-                  vmin=vmin,
-                  vmax=vmax,
-                  color=color,
-                  aspect=aspect)
+    sv = Slicer3d(request=request)
 
-    render_plot(widgets=sv.box, filename=filename, ipv=ipv)
+    render_plot(widgets=sv.box, filename=request.user_kwargs.filename, ipv=ipv)
 
     return sv.members
 
 
 class Slicer3d(Slicer):
-    def __init__(self,
-                 scipp_obj_dict=None,
-                 axes=None,
-                 values=None,
-                 variances=None,
-                 masks=None,
-                 cmap=None,
-                 log=None,
-                 vmin=None,
-                 vmax=None,
-                 color=None,
-                 aspect=None):
+    def __init__(self, request: PlotRequest):
 
-        super().__init__(scipp_obj_dict=scipp_obj_dict,
-                         axes=axes,
-                         values=values,
-                         variances=variances,
-                         masks=masks,
-                         cmap=cmap,
-                         log=log,
-                         vmin=vmin,
-                         vmax=vmax,
-                         color=color,
-                         aspect=aspect,
+        super().__init__(scipp_obj_dict=request.scipp_objs,
+                         axes=request.user_kwargs.axes,
+                         values=request.user_kwargs.values,
+                         variances=request.user_kwargs.variances,
+                         masks=request.user_kwargs.masks,
+                         cmap=request.user_kwargs.cmap,
+                         log=request.user_kwargs.log,
+                         vmin=request.user_kwargs.vmin,
+                         vmax=request.user_kwargs.vmax,
+                         color=request.user_kwargs.color,
+                         aspect=request.user_kwargs.aspect,
                          button_options=['X', 'Y', 'Z'])
 
         self.cube = None

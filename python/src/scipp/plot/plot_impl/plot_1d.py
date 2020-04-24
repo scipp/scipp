@@ -8,7 +8,8 @@ from scipp.plot.render import render_plot
 from scipp.plot.slicer import Slicer
 from scipp.plot.tools import edges_to_centers
 from scipp.utils import name_with_unit
-from .._scipp.core import histogram as scipp_histogram
+from .plot_request import PlotRequest, OneDPlotKwargs
+from scipp._scipp.core import histogram as scipp_histogram
 
 # Other imports
 import numpy as np
@@ -18,19 +19,7 @@ import ipywidgets as widgets
 import warnings
 
 
-def plot_1d(scipp_obj_dict=None,
-            axes=None,
-            values=None,
-            variances=None,
-            masks={"color": "k"},
-            filename=None,
-            figsize=None,
-            mpl_axes=None,
-            mpl_line_params=None,
-            logx=False,
-            logy=False,
-            logxy=False,
-            grid=False):
+def plot_1d(request : PlotRequest):
     """
     Plot a 1D spectrum.
 
@@ -41,57 +30,47 @@ def plot_1d(scipp_obj_dict=None,
 
     """
 
-    sv = Slicer1d(scipp_obj_dict=scipp_obj_dict,
-                  axes=axes,
-                  values=values,
-                  variances=variances,
-                  masks=masks,
-                  mpl_axes=mpl_axes,
-                  mpl_line_params=mpl_line_params,
-                  logx=logx or logxy,
-                  logy=logy or logxy,
-                  grid=grid)
+    assert isinstance(request.user_kwargs, OneDPlotKwargs)
 
-    if mpl_axes is None:
-        render_plot(figure=sv.fig, widgets=sv.box, filename=filename)
+    sv = Slicer1d(request)
+
+    if request.user_kwargs.mpl_axes is None:
+        render_plot(figure=sv.fig, widgets=sv.box, filename=request.user_kwargs.filename)
 
     return sv.members
 
 
 class Slicer1d(Slicer):
-    def __init__(self,
-                 scipp_obj_dict=None,
-                 axes=None,
-                 values=None,
-                 variances=None,
-                 masks=None,
-                 mpl_axes=None,
-                 mpl_line_params=None,
-                 logx=False,
-                 logy=False,
-                 grid=False):
+    def __init__(self, plot_request: PlotRequest):
 
-        super().__init__(scipp_obj_dict=scipp_obj_dict,
-                         axes=axes,
-                         values=values,
-                         variances=variances,
-                         masks=masks,
+        super().__init__(scipp_obj_dict=plot_request.scipp_objs,
+                         axes=plot_request.user_kwargs.axes,
+                         values=plot_request.user_kwargs.values,
+                         variances=plot_request.user_kwargs.variances,
+                         masks=plot_request.user_kwargs.masks,
                          button_options=['X'])
 
-        self.scipp_obj_dict = scipp_obj_dict
+        self._request = plot_request
+        self._user_kwargs = plot_request.user_kwargs
         self.fig = None
-        self.mpl_axes = mpl_axes
         self.input_contains_unaligned_data = False
-        if self.mpl_axes is not None:
-            self.ax = self.mpl_axes
+
+        self.mpl_line_params = self._request.mpl_line_params
+
+        self.names = []
+        self.ylim = [np.Inf, np.NINF]
+        self.logx = self._user_kwargs.logx or self._user_kwargs.logxy
+        self.logy = self._user_kwargs.logy or self._user_kwargs.logxy
+
+        if self._user_kwargs.mpl_axes is not None:
+            self.ax = self._request.user_kwargs.mpl_axes
         else:
             self.fig, self.ax = plt.subplots(
-                1,
-                1,
+                nrows=1, ncols=1,
                 figsize=(config.plot.width / config.plot.dpi,
                          config.plot.height / config.plot.dpi),
                 dpi=config.plot.dpi)
-        if grid:
+        if self._user_kwargs.grid:
             self.ax.grid()
 
         # Determine whether error bars should be plotted or not
@@ -102,23 +81,23 @@ class Slicer1d(Slicer):
                 self.input_contains_unaligned_data = True
             else:
                 self.variances[name] = var.variances is not None
-        if variances is not None:
-            if isinstance(variances, bool):
+
+        if self._user_kwargs.variances is not None:
+            if isinstance(self._user_kwargs.variances, bool):
                 for name, var in self.scipp_obj_dict.items():
-                    self.variances[name] &= variances
-            elif isinstance(variances, dict):
-                for name, v in variances.items():
+                    self.variances[name] &= self._user_kwargs.variances
+            elif isinstance(self._user_kwargs.variances, dict):
+                for name, v in self._user_kwargs.variances.items():
                     if name in self.scipp_obj_dict:
-                        self.variances[
-                            name] = variances[name] and self.scipp_obj_dict[
-                                name].variances is not None
+                        self.variances[name] = self._user_kwargs.variances[name] and \
+                                               self.scipp_obj_dict[name].variances is not None
                     else:
                         print("Warning: key {} was not found in list of "
                               "entries to plot and will be ignored.".format(
                                   name))
             else:
                 raise TypeError("Unsupported type for argument "
-                                "'variances': {}".format(type(variances)))
+                                "'variances': {}".format(type(self._user_kwargs.variances)))
 
         # Initialise container for returning matplotlib objects
         self.members.update({
@@ -128,11 +107,6 @@ class Slicer1d(Slicer):
             "error_xy": {}
         })
         # Save the line parameters (color, linewidth...)
-        self.mpl_line_params = mpl_line_params
-
-        self.names = []
-        self.ylim = [np.Inf, np.NINF]
-        self.logy = logy
         for name, var in self.scipp_obj_dict.items():
             self.names.append(name)
             if var.values is not None:
@@ -141,13 +115,14 @@ class Slicer1d(Slicer):
                                           ymax=self.ylim[1],
                                           errorbars=self.variances[name])
             ylab = name_with_unit(var=var, name="")
+            self.ax.set_ylabel(ylab)
 
-        if (self.mpl_axes is None) and (var.values is not None):
-            with warnings.catch_warnings():
-                warnings.filterwarnings("ignore", category=UserWarning)
-                self.ax.set_ylim(self.ylim)
+            if (self._user_kwargs.mpl_axes is None) and (var.values is not None):
+                with warnings.catch_warnings():
+                    warnings.filterwarnings("ignore", category=UserWarning)
+                    self.ax.set_ylim(self.ylim)
 
-        if logx:
+        if self.logx:
             self.ax.set_xscale("log")
         if self.logy:
             self.ax.set_yscale("log")
@@ -158,7 +133,6 @@ class Slicer1d(Slicer):
                 button.disabled = True
         self.update_axes(list(self.slider.keys())[-1])
 
-        self.ax.set_ylabel(ylab)
         if len(self.ax.get_legend_handles_labels()[0]) > 0:
             self.ax.legend()
 
@@ -177,8 +151,6 @@ class Slicer1d(Slicer):
         # Populate the members
         self.members["fig"] = self.fig
         self.members["ax"] = self.ax
-
-        return
 
     def get_ylim(self, var=None, ymin=None, ymax=None, errorbars=False):
         if errorbars:
@@ -246,10 +218,9 @@ class Slicer1d(Slicer):
         for k, b in self.keep_buttons.items():
             self.mbox.append(widgets.HBox(b))
         self.box.children = tuple(self.mbox)
-        return
 
     def update_axes(self, dim):
-        if self.mpl_axes is None:
+        if self._user_kwargs.mpl_axes is None:
             self.ax.lines = []
             self.ax.collections = []
             self.members.update({
@@ -335,7 +306,7 @@ class Slicer1d(Slicer):
                     zorder=10,
                     fmt="none")
 
-        if self.mpl_axes is None:
+        if self._user_kwargs.mpl_axes is None:
             deltax = 0.05 * (xmax - xmin)
             with warnings.catch_warnings():
                 warnings.filterwarnings("ignore", category=UserWarning)
@@ -373,7 +344,7 @@ class Slicer1d(Slicer):
         return mslice
 
     # Define function to update slices
-    def update_slice(self, change):
+    def update_slice(self):
         if self.masks is not None:
             mslice = self.slice_masks()
         for name, var in self.scipp_obj_dict.items():
@@ -394,7 +365,7 @@ class Slicer1d(Slicer):
                 coll.set_segments(
                     self.change_segments_y(coll.get_segments(), vslice.values,
                                            np.sqrt(vslice.variances)))
-        if self.input_contains_unaligned_data and (self.mpl_axes is None):
+        if self.input_contains_unaligned_data and (self._user_kwargs.mpl_axes is None):
             with warnings.catch_warnings():
                 warnings.filterwarnings("ignore", category=UserWarning)
                 self.ax.set_ylim(self.ylim)
@@ -413,8 +384,8 @@ class Slicer1d(Slicer):
         lines_to_keep = ["lines"]
         if self.params["masks"][lab]["show"]:
             lines_to_keep.append("masks")
-        for l in lines_to_keep:
-            self.ax.lines.append(cp.copy(self.members[l][lab]))
+        for line in lines_to_keep:
+            self.ax.lines.append(cp.copy(self.members[line][lab]))
             self.ax.lines[-1].set_color(self.keep_buttons[owner.id][2].value)
             self.ax.lines[-1].set_url(owner.id)
             self.ax.lines[-1].set_zorder(1)

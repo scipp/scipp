@@ -8,7 +8,8 @@ from scipp.plot.render import render_plot
 from scipp.plot.slicer import Slicer
 from scipp.plot.tools import centers_to_edges, edges_to_centers, parse_params
 from scipp.utils import name_with_unit
-from .._scipp.core import Variable, histogram as scipp_histogram
+from scipp._scipp.core import Variable, histogram as scipp_histogram
+from .plot_request import PlotRequest, TwoDPlotKwargs
 
 # Other imports
 import numpy as np
@@ -17,95 +18,52 @@ import matplotlib.pyplot as plt
 import warnings
 
 
-def plot_2d(scipp_obj_dict=None,
-            axes=None,
-            values=None,
-            variances=None,
-            masks=None,
-            filename=None,
-            figsize=None,
-            mpl_axes=None,
-            aspect=None,
-            cmap=None,
-            log=False,
-            vmin=None,
-            vmax=None,
-            color=None,
-            logx=False,
-            logy=False,
-            logxy=False):
+def plot_2d(request: PlotRequest):
     """
     Plot a 2D slice through a N dimensional dataset. For every dimension above
     2, a slider is created to adjust the position of the slice in that
     particular dimension.
     """
 
-    sv = Slicer2d(scipp_obj_dict=scipp_obj_dict,
-                  axes=axes,
-                  values=values,
-                  variances=variances,
-                  masks=masks,
-                  mpl_axes=mpl_axes,
-                  aspect=aspect,
-                  cmap=cmap,
-                  log=log,
-                  vmin=vmin,
-                  vmax=vmax,
-                  color=color,
-                  logx=logx or logxy,
-                  logy=logy or logxy)
+    assert isinstance(request.user_kwargs, TwoDPlotKwargs)
+    sv = Slicer2d(request=request)
 
-    if mpl_axes is None:
-        render_plot(figure=sv.fig, widgets=sv.vbox, filename=filename)
+    if request.user_kwargs.mpl_axes is None:
+        render_plot(figure=sv.fig, widgets=sv.vbox, filename=request.user_kwargs.filename)
 
     return sv.members
 
 
 class Slicer2d(Slicer):
-    def __init__(self,
-                 scipp_obj_dict=None,
-                 axes=None,
-                 values=None,
-                 variances=None,
-                 masks=None,
-                 mpl_axes=None,
-                 aspect=None,
-                 cmap=None,
-                 log=None,
-                 vmin=None,
-                 vmax=None,
-                 color=None,
-                 logx=False,
-                 logy=False):
+    def __init__(self, request: PlotRequest):
 
-        super().__init__(scipp_obj_dict=scipp_obj_dict,
-                         axes=axes,
-                         values=values,
-                         variances=variances,
-                         masks=masks,
-                         cmap=cmap,
-                         log=log,
-                         vmin=vmin,
-                         vmax=vmax,
-                         color=color,
-                         aspect=aspect,
+        super().__init__(scipp_obj_dict=request.scipp_objs,
+                         axes=request.user_kwargs.axes,
+                         values=request.user_kwargs.values,
+                         variances=request.user_kwargs.variances,
+                         masks=request.user_kwargs.masks,
+                         cmap=request.user_kwargs.cmap,
+                         log=request.user_kwargs.log,
+                         vmin=request.user_kwargs.vmin,
+                         vmax=request.user_kwargs.vmax,
+                         color=request.user_kwargs.color,
+                         aspect=request.user_kwargs.aspect,
                          button_options=['X', 'Y'])
 
+        self._request = request
+        self._user_kwargs = request.user_kwargs
         self.members.update({"images": {}, "colorbars": {}})
         self.extent = {"x": [1, 2], "y": [1, 2]}
-        self.logx = logx
-        self.logy = logy
-        self.vminmax = {"vmin": vmin, "vmax": vmax}
-        self.global_vmin = np.Inf
-        self.global_vmax = np.NINF
+        self.logx = self._user_kwargs.logx or self._user_kwargs.logxy
+        self.logy = self._user_kwargs.logy or self._user_kwargs.logxy
 
         # Get or create matplotlib axes
         self.fig = None
         cax = [None] * (1 + self.params["variances"][self.name]["show"])
-        if mpl_axes is not None:
-            if isinstance(mpl_axes, dict):
+        if self._user_kwargs.mpl_axes is not None:
+            if isinstance(self._user_kwargs.mpl_axes, dict):
                 ax = [None, None]
-                for key, val in mpl_axes.items():
+                for key, val in self._user_kwargs.mpl_axes.items():
                     if key == "ax" or key == "ax_values":
                         ax[0] = val
                     if key == "cax" or key == "cax_values":
@@ -116,11 +74,11 @@ class Slicer2d(Slicer):
                         cax[1] = val
             else:
                 # Case where only a single axis is given
-                ax = [mpl_axes]
+                ax = [self._user_kwargs.mpl_axes]
         else:
             self.fig, ax = plt.subplots(
-                1,
-                1 + self.params["variances"][self.name]["show"],
+                nrows=1,
+                ncols=1 + self.params["variances"][self.name]["show"],
                 figsize=(config.plot.width / config.plot.dpi,
                          config.plot.height /
                          (1.0 + self.params["variances"][self.name]["show"]) /
@@ -155,8 +113,7 @@ class Slicer2d(Slicer):
                     aspect=self.aspect,
                     interpolation="nearest",
                     cmap=self.params[key][self.name]["cmap"])
-                self.ax[key].set_title(self.name if key ==
-                                       "values" else "std dev.")
+                self.ax[key].set_title(self.name if key == "values" else "std dev.")
                 if self.params[key][self.name]["cbar"]:
                     self.cbar[key] = plt.colorbar(self.im[key],
                                                   ax=self.ax[key],
@@ -183,7 +140,7 @@ class Slicer2d(Slicer):
 
         # Call update_slice once to make the initial image
         self.update_axes()
-        self.update_slice(None)
+        self.update_slice()
         self.vbox = widgets.VBox(self.vbox)
         self.vbox.layout.align_items = 'center'
         self.members["fig"] = self.fig
@@ -207,7 +164,7 @@ class Slicer2d(Slicer):
                     self.slider[dim].disabled = False
         owner.old_value = owner.value
         self.update_axes()
-        self.update_slice(None)
+        self.update_slice()
 
         return
 
@@ -269,7 +226,7 @@ class Slicer2d(Slicer):
                                               xy=xy))
         return
 
-    def update_slice(self, change):
+    def update_slice(self):
         """
         Slice data according to new slider value.
         """
@@ -323,7 +280,8 @@ class Slicer2d(Slicer):
                 arr = arr.T
             self.im[key].set_data(arr)
             if autoscale_cbar:
-                cbar_params = parse_params(globs=self.vminmax,
+                vmin_max = {"vmin": self._user_kwargs.vmin, "vmax": self._user_kwargs.vmax}
+                cbar_params = parse_params(globs=vmin_max,
                                            array=arr,
                                            min_val=self.global_vmin,
                                            max_val=self.global_vmax)

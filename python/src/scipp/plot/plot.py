@@ -3,6 +3,7 @@
 # @author Neil Vaytet
 
 # Scipp imports
+from .plot_impl.plot_request import OneDPlotKwargs
 from .._scipp import core as sc
 from .sciplot import SciPlot
 
@@ -24,6 +25,7 @@ def plot(scipp_obj,
     # Delayed imports
     from .tools import get_line_param
     from scipp.plot.plot_impl.plot_collapse import plot_collapse
+    from scipp.plot.plot_impl.plot_request import PlotRequest
     from scipp.plot.plot_impl.dispatch import dispatch
 
     inventory = dict()
@@ -127,13 +129,11 @@ def plot(scipp_obj,
                                         axes=val["axes"],
                                         **kwargs)
         else:
-            output[key] = dispatch(scipp_obj_dict=val["scipp_obj_dict"],
-                                   name=key,
-                                   ndim=val["ndims"],
-                                   projection=projection,
-                                   axes=val["axes"],
-                                   mpl_line_params=val["mpl_line_params"],
-                                   bins=bins,
-                                   **kwargs)
+            request = PlotRequest(bins=bins,
+                                  mpl_line_params=val["mpl_line_params"],
+                                  ndims=val["ndims"],
+                                  projection=projection,
+                                  scipp_objs=val["scipp_obj_dict"])
+            output[key] = dispatch(request=request, **kwargs)
 
     return output
