@@ -12,12 +12,13 @@ using namespace scipp::dataset;
 namespace py = pybind11;
 
 void init_counts(py::module &m) {
-  m.def("counts_to_density",
-        [](const DatasetConstView &d, const Dim dim) {
-          return counts::toDensity(Dataset(d), dim);
-        },
-        py::arg("x"), py::arg("dim"),
-        R"(
+  m.def(
+      "counts_to_density",
+      [](const DatasetConstView &d, const Dim dim) {
+        return counts::toDensity(Dataset(d), dim);
+      },
+      py::arg("x"), py::arg("dim"),
+      R"(
         Converts counts to count density on a given dimension.
 
         :param x: Data as counts.
@@ -25,12 +26,13 @@ void init_counts(py::module &m) {
         :return: Data as count density.
         :rtype: Dataset)");
 
-  m.def("counts_to_density",
-        [](const DataArrayConstView &d, const Dim dim) {
-          return counts::toDensity(DataArray(d), dim);
-        },
-        py::arg("x"), py::arg("dim"),
-        R"(
+  m.def(
+      "counts_to_density",
+      [](const DataArrayConstView &d, const Dim dim) {
+        return counts::toDensity(DataArray(d), dim);
+      },
+      py::arg("x"), py::arg("dim"),
+      R"(
         Converts counts to count density on a given dimension.
 
         :param x: Data as counts.
@@ -38,12 +40,13 @@ void init_counts(py::module &m) {
         :return: Data as count density.
         :rtype: DataArray)");
 
-  m.def("density_to_counts",
-        [](const DatasetConstView &d, const Dim dim) {
-          return counts::fromDensity(Dataset(d), dim);
-        },
-        py::arg("x"), py::arg("dim"),
-        R"(
+  m.def(
+      "density_to_counts",
+      [](const DatasetConstView &d, const Dim dim) {
+        return counts::fromDensity(Dataset(d), dim);
+      },
+      py::arg("x"), py::arg("dim"),
+      R"(
         Converts count density to counts on a given dimension.
 
         :param x: Data as count density.
@@ -51,12 +54,13 @@ void init_counts(py::module &m) {
         :return: Data as counts.
         :rtype: Dataset)");
 
-  m.def("density_to_counts",
-        [](const DataArrayConstView &d, const Dim dim) {
-          return counts::fromDensity(DataArray(d), dim);
-        },
-        py::arg("x"), py::arg("dim"),
-        R"(
+  m.def(
+      "density_to_counts",
+      [](const DataArrayConstView &d, const Dim dim) {
+        return counts::fromDensity(DataArray(d), dim);
+      },
+      py::arg("x"), py::arg("dim"),
+      R"(
         Converts count density to counts on a given dimension.
 
         :param x: Data as count density.

@@ -43,13 +43,13 @@ struct Variances : public detail::arg_tuple<Variances, Args...> {
       : detail::arg_tuple<Variances, Args...>(std::move(init)) {}
 };
 
-template <class... Args> Values(Args &&... args)->Values<Args...>;
+template <class... Args> Values(Args &&... args) -> Values<Args...>;
 template <class T>
-Values(std::initializer_list<T>)->Values<std::initializer_list<T>>;
+Values(std::initializer_list<T>) -> Values<std::initializer_list<T>>;
 
-template <class... Args> Variances(Args &&... args)->Variances<Args...>;
+template <class... Args> Variances(Args &&... args) -> Variances<Args...>;
 template <class T>
-Variances(std::initializer_list<T>)->Variances<std::initializer_list<T>>;
+Variances(std::initializer_list<T>) -> Variances<std::initializer_list<T>>;
 
 namespace detail {
 

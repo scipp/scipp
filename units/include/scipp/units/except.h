@@ -17,6 +17,6 @@ using UnitMismatchError = MismatchError<units::Unit>;
 // We need deduction guides such that, e.g., the exception for a Variable
 // mismatch and VariableView mismatch are the same type.
 template <class T>
-MismatchError(const units::Unit &, const T &)->MismatchError<units::Unit>;
+MismatchError(const units::Unit &, const T &) -> MismatchError<units::Unit>;
 
 } // namespace scipp::except

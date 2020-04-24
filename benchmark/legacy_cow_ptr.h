@@ -129,8 +129,8 @@ cow_ptr<DataType>::cow_ptr(const cow_ptr<DataType> &A) noexcept
 */
 // Note: Need custom implementation, since std::mutex is not copyable.
 template <typename DataType>
-cow_ptr<DataType> &cow_ptr<DataType>::
-operator=(const cow_ptr<DataType> &A) noexcept {
+cow_ptr<DataType> &
+cow_ptr<DataType>::operator=(const cow_ptr<DataType> &A) noexcept {
   if (this != &A) {
     std::atomic_store(&Data, std::atomic_load(&A.Data));
   }

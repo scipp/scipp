@@ -208,7 +208,7 @@ template <class D> struct make_item {
       return P(dataset->dataset(), item, dataset->slices());
   }
 };
-template <class D> make_item(D *)->make_item<D>;
+template <class D> make_item(D *) -> make_item<D>;
 
 } // namespace detail
 
@@ -269,7 +269,7 @@ public:
 
   auto find() const && = delete;
   auto find() && = delete;
-  auto find(const std::string &name) & noexcept {
+  auto find(const std::string &name) &noexcept {
     return boost::make_transform_iterator(m_data.find(name),
                                           detail::make_item{this});
   }
@@ -289,7 +289,7 @@ public:
                                           detail::make_item{this});
   }
   /// Return iterator to the beginning of all data items.
-  auto begin() & noexcept {
+  auto begin() &noexcept {
     return boost::make_transform_iterator(m_data.begin(),
                                           detail::make_item{this});
   }
@@ -302,7 +302,7 @@ public:
   }
 
   /// Return iterator to the end of all data items.
-  auto end() & noexcept {
+  auto end() &noexcept {
     return boost::make_transform_iterator(m_data.end(),
                                           detail::make_item{this});
   }
@@ -312,7 +312,7 @@ public:
   auto items_begin() const &noexcept {
     return boost::make_transform_iterator(begin(), detail::make_key_value);
   }
-  auto items_begin() & noexcept {
+  auto items_begin() &noexcept {
     return boost::make_transform_iterator(begin(), detail::make_key_value);
   }
   auto items_end() const && = delete;
@@ -321,7 +321,7 @@ public:
     return boost::make_transform_iterator(end(), detail::make_key_value);
   }
 
-  auto items_end() & noexcept {
+  auto items_end() &noexcept {
     return boost::make_transform_iterator(end(), detail::make_key_value);
   }
 
@@ -330,7 +330,7 @@ public:
   auto keys_begin() const &noexcept {
     return boost::make_transform_iterator(m_data.begin(), detail::make_key);
   }
-  auto keys_begin() & noexcept {
+  auto keys_begin() &noexcept {
     return boost::make_transform_iterator(m_data.begin(), detail::make_key);
   }
   auto keys_end() const && = delete;
@@ -339,7 +339,7 @@ public:
     return boost::make_transform_iterator(m_data.end(), detail::make_key);
   }
 
-  auto keys_end() & noexcept {
+  auto keys_end() &noexcept {
     return boost::make_transform_iterator(m_data.end(), detail::make_key);
   }
 
