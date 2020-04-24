@@ -28,22 +28,22 @@ using ScalarTypes = ::testing::Types<double, float, int64_t, int32_t>;
 TYPED_TEST_SUITE(VariableScalarOperatorTest, ScalarTypes);
 
 TYPED_TEST(VariableScalarOperatorTest, plus_equals) {
-  this->variable += this->scalar;
+  this->variable += this->scalar * units::Unit(units::dimensionless);
   EXPECT_EQ(this->value(), 12);
 }
 
 TYPED_TEST(VariableScalarOperatorTest, minus_equals) {
-  this->variable -= this->scalar;
+  this->variable -= this->scalar * units::Unit(units::dimensionless);
   EXPECT_EQ(this->value(), 8);
 }
 
 TYPED_TEST(VariableScalarOperatorTest, times_equals) {
-  this->variable *= this->scalar;
+  this->variable *= this->scalar * units::Unit(units::dimensionless);
   EXPECT_EQ(this->value(), 20);
 }
 
 TYPED_TEST(VariableScalarOperatorTest, divide_equals) {
-  this->variable /= this->scalar;
+  this->variable /= this->scalar * units::Unit(units::dimensionless);
   EXPECT_EQ(this->value(), 5);
 }
 
@@ -136,7 +136,7 @@ TEST(Variable, operator_plus_equal_different_variables_same_element_type) {
 TEST(Variable, operator_plus_equal_scalar) {
   auto a = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.1, 2.2});
 
-  EXPECT_NO_THROW(a += 1.0);
+  EXPECT_NO_THROW(a += 1.0 * units::Unit(units::dimensionless));
   EXPECT_EQ(a.values<double>()[0], 2.1);
   EXPECT_EQ(a.values<double>()[1], 3.2);
 }
@@ -227,7 +227,7 @@ TEST(Variable, operator_times_equal_scalar) {
                                 Values{2.0, 3.0});
 
   EXPECT_EQ(a.unit(), units::m);
-  EXPECT_NO_THROW(a *= 2.0);
+  EXPECT_NO_THROW(a *= 2.0 * units::Unit(units::dimensionless));
   EXPECT_EQ(a.values<double>()[0], 4.0);
   EXPECT_EQ(a.values<double>()[1], 6.0);
   EXPECT_EQ(a.unit(), units::m);
@@ -355,7 +355,7 @@ TEST(Variable, operator_divide_equal_scalar) {
                                 Values{2.0, 4.0});
 
   EXPECT_EQ(a.unit(), units::m);
-  EXPECT_NO_THROW(a /= 2.0);
+  EXPECT_NO_THROW(a /= 2.0 * units::Unit(units::dimensionless));
   EXPECT_EQ(a.values<double>()[0], 1.0);
   EXPECT_EQ(a.values<double>()[1], 2.0);
   EXPECT_EQ(a.unit(), units::m);
@@ -364,7 +364,7 @@ TEST(Variable, operator_divide_equal_scalar) {
 TEST(Variable, operator_divide_scalar_double) {
   const auto a = makeVariable<double>(Dims{Dim::X}, Shape{2},
                                       units::Unit(units::m), Values{2.0, 4.0});
-  const auto result = 1.111 / a;
+  const auto result = 1.111 * units::Unit(units::dimensionless) / a;
   EXPECT_EQ(result.values<double>()[0], 1.111 / 2.0);
   EXPECT_EQ(result.values<double>()[1], 1.111 / 4.0);
   EXPECT_EQ(result.unit(), units::dimensionless / units::m);
@@ -373,7 +373,7 @@ TEST(Variable, operator_divide_scalar_double) {
 TEST(Variable, operator_divide_scalar_float) {
   const auto a = makeVariable<float>(Dims{Dim::X}, Shape{2},
                                      units::Unit(units::m), Values{2.0, 4.0});
-  const auto result = 1.111f / a;
+  const auto result = 1.111f * units::Unit(units::dimensionless) / a;
   EXPECT_EQ(result.values<float>()[0], 1.111f / 2.0f);
   EXPECT_EQ(result.values<float>()[1], 1.111f / 4.0f);
   EXPECT_EQ(result.unit(), units::dimensionless / units::m);
@@ -1015,24 +1015,24 @@ TEST(Variable, reverse) {
 TEST(Variable, non_in_place_scalar_operations) {
   auto var = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1, 2});
 
-  auto sum = var + 1.0;
+  auto sum = var + 1.0 * units::Unit(units::dimensionless);
   EXPECT_TRUE(equals(sum.values<double>(), {2, 3}));
-  sum = 2.0 + var;
+  sum = 2.0 * units::Unit(units::dimensionless) + var;
   EXPECT_TRUE(equals(sum.values<double>(), {3, 4}));
 
-  auto diff = var - 1.0;
+  auto diff = var - 1.0 * units::Unit(units::dimensionless);
   EXPECT_TRUE(equals(diff.values<double>(), {0, 1}));
-  diff = 2.0 - var;
+  diff = 2.0 * units::Unit(units::dimensionless) - var;
   EXPECT_TRUE(equals(diff.values<double>(), {1, 0}));
 
-  auto prod = var * 2.0;
+  auto prod = var * (2.0 * units::Unit(units::dimensionless));
   EXPECT_TRUE(equals(prod.values<double>(), {2, 4}));
-  prod = 3.0 * var;
+  prod = 3.0 * units::Unit(units::dimensionless) * var;
   EXPECT_TRUE(equals(prod.values<double>(), {3, 6}));
 
-  auto ratio = var / 2.0;
+  auto ratio = var / (2.0 * units::Unit(units::dimensionless));
   EXPECT_TRUE(equals(ratio.values<double>(), {1.0 / 2.0, 1.0}));
-  ratio = 3.0 / var;
+  ratio = 3.0 * units::Unit(units::dimensionless) / var;
   EXPECT_TRUE(equals(ratio.values<double>(), {3.0, 1.5}));
 }
 
@@ -1040,17 +1040,17 @@ TEST(VariableView, scalar_operations) {
   auto var = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 3},
                                   Values{11, 12, 13, 21, 22, 23});
 
-  var.slice({Dim::X, 0}) += 1.0;
+  var.slice({Dim::X, 0}) += 1.0 * units::Unit(units::dimensionless);
   EXPECT_TRUE(equals(var.values<double>(), {12, 12, 13, 22, 22, 23}));
-  var.slice({Dim::Y, 1}) += 1.0;
+  var.slice({Dim::Y, 1}) += 1.0 * units::Unit(units::dimensionless);
   EXPECT_TRUE(equals(var.values<double>(), {12, 12, 13, 23, 23, 24}));
-  var.slice({Dim::X, 1, 3}) += 1.0;
+  var.slice({Dim::X, 1, 3}) += 1.0 * units::Unit(units::dimensionless);
   EXPECT_TRUE(equals(var.values<double>(), {12, 13, 14, 23, 24, 25}));
-  var.slice({Dim::X, 1}) -= 1.0;
+  var.slice({Dim::X, 1}) -= 1.0 * units::Unit(units::dimensionless);
   EXPECT_TRUE(equals(var.values<double>(), {12, 12, 14, 23, 23, 25}));
-  var.slice({Dim::X, 2}) *= 0.0;
+  var.slice({Dim::X, 2}) *= 0.0 * units::Unit(units::dimensionless);
   EXPECT_TRUE(equals(var.values<double>(), {12, 12, 0, 23, 23, 0}));
-  var.slice({Dim::Y, 0}) /= 2.0;
+  var.slice({Dim::Y, 0}) /= 2.0 * units::Unit(units::dimensionless);
   EXPECT_TRUE(equals(var.values<double>(), {6, 6, 0, 23, 23, 0}));
 }
 

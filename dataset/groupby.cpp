@@ -53,7 +53,7 @@ template <class T>
 T GroupBy<T>::makeReductionOutput(const Dim reductionDim) const {
   auto out = resize(m_data, reductionDim, size());
   out.rename(reductionDim, dim());
-  out.setCoord(dim(), key());
+  out.coords().set(dim(), key());
   return out;
 }
 
@@ -230,7 +230,7 @@ template <class T> T GroupBy<T>::mean(const Dim reductionDim) const {
       }
     }
 
-  scale = 1.0 / scale;
+  scale = 1.0 * units::Unit(units::dimensionless) / scale;
 
   // 3. sum/N -> mean
   if constexpr (std::is_same_v<T, Dataset>) {

@@ -62,46 +62,5 @@ Variable operator*(const VariableConstView &a, const VariableConstView &b) {
 Variable operator/(const VariableConstView &a, const VariableConstView &b) {
   return divide(a, b);
 }
-Variable operator+(const VariableConstView &a_, const double b) {
-  Variable a(a_);
-  return a += b;
-}
-Variable operator-(const VariableConstView &a_, const double b) {
-  Variable a(a_);
-  return a -= b;
-}
-Variable operator*(const VariableConstView &a_, const double b) {
-  Variable a(a_);
-  return a *= b;
-}
-Variable operator/(const VariableConstView &a_, const double b) {
-  Variable a(a_);
-  return a /= b;
-}
-Variable operator+(const double a, const VariableConstView &b_) {
-  Variable b(b_);
-  return b += a;
-}
-Variable operator-(const double a, const VariableConstView &b_) {
-  Variable b(b_);
-  return -(b -= a);
-}
-Variable operator*(const double a, const VariableConstView &b_) {
-  Variable b(b_);
-  return b *= a;
-}
-Variable operator/(const double a, const VariableConstView &b_view) {
-  Variable b(b_view);
-  transform_in_place<double, float>(
-      b,
-      overloaded{
-          [](units::Unit &b_) { b_ = units::Unit(units::dimensionless) / b_; },
-          [a](double &b_) { b_ = a / b_; },
-          [a](float &b_) { b_ = static_cast<float>(a / b_); },
-          [a](auto &b_) {
-            b_ = static_cast<std::remove_reference_t<decltype(b_)>>(a / b_);
-          }});
-  return b;
-}
 
 } // namespace scipp::variable

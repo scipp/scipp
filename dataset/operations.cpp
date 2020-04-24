@@ -172,7 +172,7 @@ DataArray rebin(const DataArrayConstView &a, const Dim dim,
       rebinned.masks().set(name, rebin(mask, dim, a.coords()[dim], coord));
   }
 
-  rebinned.setCoord(dim, coord);
+  rebinned.coords().set(dim, coord);
   return rebinned;
 }
 

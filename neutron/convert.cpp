@@ -45,7 +45,7 @@ static T convert_with_factor(T &&d, const Dim from, const Dim to,
     } else {
       // Cannot use *= since often a broadcast into Dim::Spectrum is required.
       const auto &coord = d.coords()[from];
-      d.setCoord(from, astype(factor, coord.dtype()) * coord);
+      d.coords().set(from, astype(factor, coord.dtype()) * coord);
     }
   }
 
@@ -72,17 +72,19 @@ template <class T> auto tofToDSpacing(const T &d) {
   // l_total = l1 + l2
   auto conversionFactor(l1 + l2);
 
-  conversionFactor *= 2.0 * boost::units::si::constants::codata::m_n /
-                      boost::units::si::constants::codata::h /
-                      (m_to_angstrom * tof_to_s);
-  conversionFactor *= sqrt(0.5 * (1.0 - dot(beam, scattered)));
+  const auto one = units::Unit(units::dimensionless);
+  conversionFactor *= Variable(2.0 * boost::units::si::constants::codata::m_n /
+                               boost::units::si::constants::codata::h /
+                               (m_to_angstrom * tof_to_s));
+  conversionFactor *= sqrt(0.5 * one * (1.0 * one - dot(beam, scattered)));
 
   return reciprocal(conversionFactor);
 }
 
 template <class T> static auto tofToWavelength(const T &d) {
-  return (tof_to_s * m_to_angstrom * boost::units::si::constants::codata::h /
-          boost::units::si::constants::codata::m_n) /
+  return Variable(tof_to_s * m_to_angstrom *
+                  boost::units::si::constants::codata::h /
+                  boost::units::si::constants::codata::m_n) /
          neutron::flight_path_length(d);
 }
 
@@ -92,7 +94,7 @@ template <class T> auto tofToEnergyConversionFactor(const T &d) {
   // l_total^2
   conversionFactor *= conversionFactor;
 
-  conversionFactor *= tofToEnergyPhysicalConstants;
+  conversionFactor *= Variable(tofToEnergyPhysicalConstants);
 
   return conversionFactor;
 }
@@ -111,7 +113,8 @@ template <class T> T tofToEnergy(T &&d) {
           });
     } else {
       const auto &coordSq = d.coords()[Dim::Tof] * d.coords()[Dim::Tof];
-      d.setCoord(Dim::Tof, astype(conversionFactor, coordSq.dtype()) / coordSq);
+      d.coords().set(Dim::Tof,
+                     astype(conversionFactor, coordSq.dtype()) / coordSq);
     }
   }
 
@@ -142,8 +145,9 @@ template <class T> T energyToTof(T &&d) {
           });
     } else {
       const auto &coordSqrt = d.coords()[Dim::Energy];
-      d.setCoord(Dim::Energy,
-                 sqrt(astype(conversionFactor, coordSqrt.dtype()) / coordSqrt));
+      d.coords().set(
+          Dim::Energy,
+          sqrt(astype(conversionFactor, coordSqrt.dtype()) / coordSqrt));
     }
   }
 

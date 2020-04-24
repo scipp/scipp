@@ -225,7 +225,7 @@ TEST(DataArrayRealignedEventsArithmeticTest,
   const auto hist = make_histogram();
   Variable data(events.coords()[Dim::X]);
   data.setUnit(units::counts);
-  data *= 0.0;
+  data *= 0.0 * units::Unit(units::dimensionless);
   data += 2.0 * units::Unit(units::counts);
   events.setData(data);
   const auto realigned = unaligned::realign(

@@ -3,6 +3,7 @@
 #include <gtest/gtest.h>
 
 #include "scipp/dataset/dataset.h"
+#include "scipp/variable/binary_arithmetic.h"
 
 #include "dataset_test_common.h"
 
@@ -39,18 +40,19 @@ TEST_F(CopyTest, dataset_drop_attrs) {
 
 struct CopyOutArgTest : public CopyTest {
   CopyOutArgTest() : dataset_copy(copy(dataset)), array_copy(copy(array)) {
-    array_copy.data() += 1.0;
-    array_copy.coords()[Dim::X] += 1.0;
-    array_copy.coords()[Dim::Y] += 1.0;
+    const auto one = 1.0 * units::Unit(units::dimensionless);
+    array_copy.data() += one;
+    array_copy.coords()[Dim::X] += one;
+    array_copy.coords()[Dim::Y] += one;
     array_copy.masks()["masks_x"].assign(~array_copy.masks()["masks_x"]);
-    array_copy.attrs()["attr"] += 1.0;
+    array_copy.attrs()["attr"] += one;
     EXPECT_NE(array_copy, array);
-    dataset_copy["data_xyz"].data() += 1.0;
-    dataset_copy["data_xyz"].attrs()["attr"] += 1.0;
-    dataset_copy.coords()[Dim::X] += 1.0;
-    dataset_copy.coords()[Dim::Y] += 1.0;
+    dataset_copy["data_xyz"].data() += one;
+    dataset_copy["data_xyz"].attrs()["attr"] += one;
+    dataset_copy.coords()[Dim::X] += one;
+    dataset_copy.coords()[Dim::Y] += one;
     dataset_copy.masks()["masks_x"].assign(~array_copy.masks()["masks_x"]);
-    dataset_copy.attrs()["attr_x"] += 1.0;
+    dataset_copy.attrs()["attr_x"] += one;
     EXPECT_NE(dataset_copy, dataset);
   }
 

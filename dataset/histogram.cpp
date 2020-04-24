@@ -117,7 +117,7 @@ DataArray histogram(const DataArrayConstView &events,
                        transform_flags::expect_no_variance_arg<3>});
       },
       dim_of_coord(events.coords()[dim], dim), dim, binEdges);
-  result.setCoord(dim, binEdges);
+  result.coords().set(dim, binEdges);
   return result;
 }
 

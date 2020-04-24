@@ -29,11 +29,6 @@
 #include "scipp/variable/variable_keyword_arg_constructor.h"
 
 namespace scipp::dataset {
-class DatasetConstView;
-class DatasetView;
-class Dataset;
-class DataArray;
-class DataArrayView;
 class DataArrayConstView;
 template <class T> typename T::view_type makeViewItem(T &);
 } // namespace scipp::dataset
@@ -47,22 +42,6 @@ void expect0D(const Dimensions &dims);
 class Variable;
 class VariableConstView;
 class VariableView;
-
-template <class T> constexpr bool is_variable_or_view() {
-  return std::is_same_v<T, Variable> || std::is_same_v<T, VariableConstView> ||
-         std::is_same_v<T, VariableView>;
-}
-
-template <class T> constexpr bool is_container_or_view() {
-  return std::is_same_v<T, dataset::Dataset> ||
-         std::is_same_v<T, dataset::DatasetView> ||
-         std::is_same_v<T, dataset::DatasetConstView> ||
-         std::is_same_v<T, Variable> || std::is_same_v<T, VariableView> ||
-         std::is_same_v<T, VariableConstView> ||
-         std::is_same_v<T, dataset::DataArray> ||
-         std::is_same_v<T, dataset::DataArrayView> ||
-         std::is_same_v<T, dataset::DataArrayConstView>;
-}
 
 namespace detail {
 template <class T> struct default_init {
@@ -96,6 +75,9 @@ public:
   template <class T>
   Variable(const units::Unit unit, const Dimensions &dimensions, T values,
            std::optional<T> variances);
+  template <class T, class U>
+  explicit Variable(const boost::units::quantity<T, U> &quantity)
+      : Variable(quantity.value() * units::Unit(T{})) {}
 
   /// Keyword-argument constructor.
   ///
@@ -171,38 +153,9 @@ public:
   Variable operator-() const;
 
   Variable &operator+=(const VariableConstView &other) &;
-  template <typename T, typename = std::enable_if_t<!is_variable_or_view<T>()>>
-  Variable &operator+=(const T v) & {
-    return *this += makeVariable<T>(Values{v});
-  }
-
   Variable &operator-=(const VariableConstView &other) &;
-  template <typename T, typename = std::enable_if_t<!is_variable_or_view<T>()>>
-  Variable &operator-=(const T v) & {
-    return *this -= makeVariable<T>(Values{v});
-  }
-
   Variable &operator*=(const VariableConstView &other) &;
-  template <typename T, typename = std::enable_if_t<!is_variable_or_view<T>()>>
-  Variable &operator*=(const T v) & {
-    return *this *= makeVariable<T>(Values{v});
-  }
-  template <class T>
-  Variable &operator*=(const boost::units::quantity<T> &quantity) & {
-    setUnit(unit() * units::Unit(T{}));
-    return *this *= quantity.value();
-  }
-
   Variable &operator/=(const VariableConstView &other) &;
-  template <typename T, typename = std::enable_if_t<!is_variable_or_view<T>()>>
-  Variable &operator/=(const T v) & {
-    return *this /= makeVariable<T>(Values{v});
-  }
-  template <class T>
-  Variable &operator/=(const boost::units::quantity<T> &quantity) & {
-    setUnit(unit() / units::Unit(T{}));
-    return *this /= quantity.value();
-  }
 
   Variable &operator|=(const VariableConstView &other) &;
   Variable &operator&=(const VariableConstView &other) &;
@@ -404,28 +357,9 @@ public:
   template <class T> VariableView assign(const T &other) const;
 
   VariableView operator+=(const VariableConstView &other) const;
-  template <typename T, typename = std::enable_if_t<!is_variable_or_view<T>()>>
-  VariableView operator+=(const T v) const {
-    return *this += makeVariable<T>(Values{v});
-  }
-
   VariableView operator-=(const VariableConstView &other) const;
-  template <typename T, typename = std::enable_if_t<!is_variable_or_view<T>()>>
-  VariableView operator-=(const T v) const {
-    return *this -= makeVariable<T>(Values{v});
-  }
-
   VariableView operator*=(const VariableConstView &other) const;
-  template <typename T, typename = std::enable_if_t<!is_variable_or_view<T>()>>
-  VariableView operator*=(const T v) const {
-    return *this *= makeVariable<T>(Values{v});
-  }
-
   VariableView operator/=(const VariableConstView &other) const;
-  template <typename T, typename = std::enable_if_t<!is_variable_or_view<T>()>>
-  VariableView operator/=(const T v) const {
-    return *this /= makeVariable<T>(Values{v});
-  }
 
   VariableView operator|=(const VariableConstView &other) const;
   VariableView operator&=(const VariableConstView &other) const;

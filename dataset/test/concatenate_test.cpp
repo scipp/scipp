@@ -3,6 +3,7 @@
 #include <gtest/gtest.h>
 
 #include "scipp/dataset/dataset.h"
+#include "scipp/variable/binary_arithmetic.h"
 
 using namespace scipp;
 using namespace scipp::dataset;
@@ -164,8 +165,8 @@ TEST(ConcatenateTest, concat_2d_coord) {
                                          Values{false, true, false}));
 
   Dataset b(a);
-  b.coords()[Dim::X] += 3;
-  b["data_1"].data() += 100;
+  b.coords()[Dim::X] += 3 * units::Unit(units::dimensionless);
+  b["data_1"].data() += 100 * units::Unit(units::dimensionless);
 
   Dataset expected;
   expected.setCoord(

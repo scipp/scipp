@@ -381,46 +381,15 @@ void Dataset::eraseMask(const std::string &maskName) {
 /// Return const slice of the dataset along given dimension with given extents.
 ///
 /// This does not make a copy of the data. Instead of view object is returned.
-DatasetConstView Dataset::slice(const Slice slice1) const & {
-  return DatasetConstView(*this).slice(slice1);
-}
-
-/// Return const slice of the dataset, sliced in two dimensions.
-///
-/// This does not make a copy of the data. Instead of view object is returned.
-DatasetConstView Dataset::slice(const Slice slice1,
-                                const Slice slice2) const & {
-  return DatasetConstView(*this).slice(slice1, slice2);
-}
-
-/// Return const slice of the dataset, sliced in three dimensions.
-///
-/// This does not make a copy of the data. Instead of view object is returned.
-DatasetConstView Dataset::slice(const Slice slice1, const Slice slice2,
-                                const Slice slice3) const & {
-  return DatasetConstView(*this).slice(slice1, slice2, slice3);
+DatasetConstView Dataset::slice(const Slice s) const & {
+  return DatasetConstView(*this).slice(s);
 }
 
 /// Return slice of the dataset along given dimension with given extents.
 ///
 /// This does not make a copy of the data. Instead of view object is returned.
-DatasetView Dataset::slice(const Slice slice1) & {
-  return DatasetView(*this).slice(slice1);
-}
-
-/// Return slice of the dataset, sliced in two dimensions.
-///
-/// This does not make a copy of the data. Instead of view object is returned.
-DatasetView Dataset::slice(const Slice slice1, const Slice slice2) & {
-  return DatasetView(*this).slice(slice1, slice2);
-}
-
-/// Return slice of the dataset, sliced in three dimensions.
-///
-/// This does not make a copy of the data. Instead of view object is returned.
-DatasetView Dataset::slice(const Slice slice1, const Slice slice2,
-                           const Slice slice3) & {
-  return DatasetView(*this).slice(slice1, slice2, slice3);
+DatasetView Dataset::slice(const Slice s) & {
+  return DatasetView(*this).slice(s);
 }
 
 /// Return const slice of the dataset along given dimension with given extents.
@@ -428,27 +397,8 @@ DatasetView Dataset::slice(const Slice slice1, const Slice slice2,
 /// This overload for rvalue reference *this avoids returning a view
 /// referencing data that is about to go out of scope and returns a new dataset
 /// instead.
-Dataset Dataset::slice(const Slice slice1) const && {
-  return Dataset{DatasetConstView(*this).slice(slice1)};
-}
-
-/// Return const slice of the dataset, sliced in two dimensions.
-///
-/// This overload for rvalue reference *this avoids returning a view
-/// referencing data that is about to go out of scope and returns a new dataset
-/// instead.
-Dataset Dataset::slice(const Slice slice1, const Slice slice2) const && {
-  return Dataset{DatasetConstView(*this).slice(slice1, slice2)};
-}
-
-/// Return const slice of the dataset, sliced in three dimensions.
-///
-/// This overload for rvalue reference *this avoids returning a view
-/// referencing data that is about to go out of scope and returns a new dataset
-/// instead.
-Dataset Dataset::slice(const Slice slice1, const Slice slice2,
-                       const Slice slice3) const && {
-  return Dataset{DatasetConstView(*this).slice(slice1, slice2, slice3)};
+Dataset Dataset::slice(const Slice s) const && {
+  return Dataset{DatasetConstView(*this).slice(s)};
 }
 
 /// Rename dimension `from` to `to`.
@@ -644,11 +594,11 @@ AttrsConstView DataArray::attrs() const { return get().attrs(); }
 /// Return a const view to all masks of the data array.
 MasksConstView DataArray::masks() const { return get().masks(); }
 
-DataArrayConstView DataArrayConstView::slice(const Slice slice1) const {
+DataArrayConstView DataArrayConstView::slice(const Slice s) const {
   const auto &dims_ = dims();
-  core::expect::validSlice(dims_, slice1);
+  core::expect::validSlice(dims_, s);
   auto tmp(m_slices);
-  tmp.emplace_back(slice1, dims_[slice1.dim()]);
+  tmp.emplace_back(s, dims_[s.dim()]);
   if (!m_data->second.data && hasData()) {
     auto view = m_data->second.unaligned->data.data();
     detail::do_make_slice(view, tmp);
@@ -656,17 +606,6 @@ DataArrayConstView DataArrayConstView::slice(const Slice slice1) const {
   } else {
     return {*m_dataset, *m_data, std::move(tmp)};
   }
-}
-
-DataArrayConstView DataArrayConstView::slice(const Slice slice1,
-                                             const Slice slice2) const {
-  return slice(slice1).slice(slice2);
-}
-
-DataArrayConstView DataArrayConstView::slice(const Slice slice1,
-                                             const Slice slice2,
-                                             const Slice slice3) const {
-  return slice(slice1, slice2).slice(slice3);
 }
 
 DataArrayView::DataArrayView(Dataset &dataset,
@@ -679,10 +618,10 @@ DataArrayView::DataArrayView(Dataset &dataset,
                                           : std::move(view)),
       m_mutableDataset(&dataset), m_mutableData(&data) {}
 
-DataArrayView DataArrayView::slice(const Slice slice1) const {
-  core::expect::validSlice(dims(), slice1);
+DataArrayView DataArrayView::slice(const Slice s) const {
+  core::expect::validSlice(dims(), s);
   auto tmp(slices());
-  tmp.emplace_back(slice1, dims()[slice1.dim()]);
+  tmp.emplace_back(s, dims()[s.dim()]);
   if (!m_mutableData->second.data && hasData()) {
     auto view = m_mutableData->second.unaligned->data.data();
     detail::do_make_slice(view, tmp);
@@ -690,16 +629,6 @@ DataArrayView DataArrayView::slice(const Slice slice1) const {
   } else {
     return {*m_mutableDataset, *m_mutableData, std::move(tmp)};
   }
-}
-
-DataArrayView DataArrayView::slice(const Slice slice1,
-                                   const Slice slice2) const {
-  return slice(slice1).slice(slice2);
-}
-
-DataArrayView DataArrayView::slice(const Slice slice1, const Slice slice2,
-                                   const Slice slice3) const {
-  return slice(slice1, slice2).slice(slice3);
 }
 
 /// Return a view to all coordinates of the data view.
@@ -876,18 +805,18 @@ DatasetConstView::slice_items(const T &view, const Slice slice) {
 ///
 /// The returned view will not contain references to data items that do not
 /// depend on the sliced dimension.
-DatasetConstView DatasetConstView::slice(const Slice slice1) const {
+DatasetConstView DatasetConstView::slice(const Slice s) const {
   DatasetConstView sliced;
   sliced.m_dataset = m_dataset;
-  std::tie(sliced.m_items, sliced.m_slices) = slice_items(*this, slice1);
+  std::tie(sliced.m_items, sliced.m_slices) = slice_items(*this, s);
   return sliced;
 }
 
-DatasetView DatasetView::slice(const Slice slice1) const {
+DatasetView DatasetView::slice(const Slice s) const {
   DatasetView sliced;
   sliced.m_dataset = m_dataset;
   sliced.m_mutableDataset = m_mutableDataset;
-  std::tie(sliced.m_items, sliced.m_slices) = slice_items(*this, slice1);
+  std::tie(sliced.m_items, sliced.m_slices) = slice_items(*this, s);
   return sliced;
 }
 

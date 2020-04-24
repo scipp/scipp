@@ -26,6 +26,15 @@ TEST(Variable, construct) {
   EXPECT_EQ(data.size(), 2);
 }
 
+TEST(Variable, construct_boost_units_quantity) {
+  using boost::units::quantity;
+  EXPECT_EQ(Variable(quantity{1.2 * boost::units::si::meter}),
+            makeVariable<double>(Values{1.2}, units::Unit(units::m)));
+  EXPECT_EQ(Variable(quantity<boost::units::si::length, float>{
+                1.2 * boost::units::si::meter}),
+            makeVariable<float>(Values{1.2}, units::Unit(units::m)));
+}
+
 TEST(Variable, construct_fail) {
   ASSERT_ANY_THROW(makeVariable<double>(Dims{}, Shape{}, Values(2)));
   ASSERT_ANY_THROW(makeVariable<double>(Dims{Dim::X}, Shape{1}, Values(2)));
@@ -1009,11 +1018,13 @@ TEST(VariableTest, values_variances) {
 }
 
 template <typename Var> void test_set_variances(Var &var) {
-  const auto v = var * 2.0;
+  const auto v = var * (2.0 * units::Unit(units::dimensionless));
   var.setVariances(Variable(var));
   ASSERT_TRUE(equals(var.template variances<double>(), {1.0, 2.0, 3.0}));
   // Fail because `var` has variances (setVariances uses only the values)
-  EXPECT_THROW(var.setVariances(var * 2.0), except::VariancesError);
+  EXPECT_THROW(
+      var.setVariances(var * (2.0 * units::Unit(units::dimensionless))),
+      except::VariancesError);
   var.setVariances(v);
   ASSERT_TRUE(equals(var.template variances<double>(), {2.0, 4.0, 6.0}));
 
