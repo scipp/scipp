@@ -351,6 +351,14 @@ TEST(DatasetTest, slice_temporary) {
   ASSERT_TRUE((std::is_same_v<decltype(dataset), Dataset>));
 }
 
+TEST(DatasetTest, slice_no_data) {
+  Dataset d;
+  d.coords().set(Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{4}));
+  EXPECT_TRUE(d.coords().contains(Dim::X));
+  const auto slice = d.slice({Dim::X, 1, 3});
+  EXPECT_TRUE(slice.coords().contains(Dim::X));
+}
+
 template <typename T> void do_test_slice_validation(const T &container) {
   EXPECT_THROW(container.slice(Slice{Dim::Y, 0, 1}), except::SliceError);
   EXPECT_THROW(container.slice(Slice{Dim::X, 0, 3}), except::SliceError);
