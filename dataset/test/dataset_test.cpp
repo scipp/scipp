@@ -337,6 +337,14 @@ TEST(DatasetTest, construct_from_slice) {
   ASSERT_EQ(from_slice, dataset.slice({Dim::X, 1}));
 }
 
+TEST(DataArrayTest, construct_from_slice) {
+  DatasetFactory3D factory;
+  const auto dataset = factory.make();
+  const auto slice = dataset["data_xyz"].slice({Dim::X, 1});
+  DataArray from_slice(slice);
+  ASSERT_EQ(from_slice, dataset["data_xyz"].slice({Dim::X, 1}));
+}
+
 TEST(DatasetTest, slice_temporary) {
   DatasetFactory3D factory;
   auto dataset = factory.make().slice({Dim::X, 1});
