@@ -17,11 +17,11 @@
 
 namespace scipp::dataset {
 /// Return true if a data array contains events
-bool is_events(const DataArrayConstView &array) {
-  if (array.hasData() && is_events(array.data()))
+bool contains_events(const DataArrayConstView &array) {
+  if (array.hasData() && contains_events(array.data()))
     return true;
   for (const auto &item : array.coords())
-    if (is_events(item.second))
+    if (contains_events(item.second))
       return true;
   return false;
 }
@@ -29,13 +29,13 @@ bool is_events(const DataArrayConstView &array) {
 namespace event {
 
 void append(const DataArrayView &a, const DataArrayConstView &b) {
-  if (!is_events(a) || !is_events(b))
+  if (!contains_events(a) || !contains_events(b))
     throw except::EventDataError("Cannot concatenate non-event data.");
 
-  if (is_events(a.data())) {
+  if (contains_events(a.data())) {
     variable::event::append(
-        a.data(), is_events(b.data()) ? b.data() : broadcast_weights(b));
-  } else if (is_events(b.data())) {
+        a.data(), contains_events(b.data()) ? b.data() : broadcast_weights(b));
+  } else if (contains_events(b.data())) {
     a.setData(variable::event::concatenate(broadcast_weights(a), b.data()));
   } else if (a.data() != b.data()) {
     a.setData(variable::event::concatenate(broadcast_weights(a),
@@ -44,7 +44,7 @@ void append(const DataArrayView &a, const DataArrayConstView &b) {
     // Do nothing for identical scalar weights
   }
   for (const auto &[dim, coord] : a.coords())
-    if (is_events(coord))
+    if (contains_events(coord))
       variable::event::append(coord, b.coords()[dim]);
     else
       core::expect::equals(coord, b.coords()[dim]);
@@ -60,7 +60,7 @@ DataArray concatenate(const DataArrayConstView &a,
 /// Broadcast scalar weights of data array containing event data.
 Variable broadcast_weights(const DataArrayConstView &events) {
   for (const auto &item : events.coords())
-    if (is_events(item.second))
+    if (contains_events(item.second))
       return variable::event::broadcast(events.data(), item.second);
   throw except::EventDataError(
       "No coord with event lists found, cannot broadcast weights.");
@@ -99,11 +99,12 @@ DataArray filter(const DataArrayConstView &array, const Dim dim,
 
   std::map<Dim, Variable> coords;
   for (const auto &[d, coord] : array.coords())
-    coords.emplace(d, is_events(coord) ? copy_if(coord, select) : copy(coord));
+    coords.emplace(d, contains_events(coord) ? copy_if(coord, select)
+                                             : copy(coord));
 
   Dataset empty;
-  return DataArray{is_events(array.data()) ? copy_if(array.data(), select)
-                                           : copy(array.data()),
+  return DataArray{contains_events(array.data()) ? copy_if(array.data(), select)
+                                                 : copy(array.data()),
                    std::move(coords), array.masks(),
                    attrPolicy == AttrPolicy::Keep ? array.attrs()
                                                   : empty.attrs()};

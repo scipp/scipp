@@ -17,7 +17,7 @@ PYBIND11_MAKE_OPAQUE(event_list<int64_t>)
 PYBIND11_MAKE_OPAQUE(event_list<int32_t>)
 
 template <class T>
-void declare_sparse_container(py::module &m, const std::string &suffix) {
+void declare_event_list(py::module &m, const std::string &suffix) {
   auto s = py::bind_vector<event_list<T>>(
       m, std::string("event_list_") + suffix, py::buffer_protocol());
   // pybind11 currently does not find method from the base class, see
@@ -26,9 +26,9 @@ void declare_sparse_container(py::module &m, const std::string &suffix) {
   s.def("__len__", [](const event_list<T> &self) { return self.size(); });
 }
 
-void init_sparse_container(py::module &m) {
-  declare_sparse_container<double>(m, "float64");
-  declare_sparse_container<float>(m, "float32");
-  declare_sparse_container<int64_t>(m, "int64");
-  declare_sparse_container<int32_t>(m, "int32");
+void init_event_list(py::module &m) {
+  declare_event_list<double>(m, "float64");
+  declare_event_list<float>(m, "float32");
+  declare_event_list<int64_t>(m, "int64");
+  declare_event_list<int32_t>(m, "int32");
 }

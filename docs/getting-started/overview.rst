@@ -45,31 +45,29 @@ All operations take the variances into account:
   The implemented mechanism assumes uncorrelated data.
 
 
-Sparse dimensions and data
---------------------------
+Event data
+----------
 
-Scipp supports data with a single "sparse" dimension.
-Conceptually, we distinguish *dense* and *sparse* data.
+Scipp supports event data in form of arrays of variable-length lists.
+Conceptually, we distinguish *dense* and *event* data.
 
 - Dense data is the common case of a regular, e.g., 2-D, grid of data points.
-- Sparse data can come in many flavors.
-  Here we are dealing with semi-regular data, i.e., a N-D array/grid of random-length lists.
-  That is, only one of the dimensions has irregular data distribution.
+- Event data (as supported by scipp) is semi-regular data, i.e., a N-D array/grid of random-length lists.
+  That is, only the internal "dimension" of the event lists has irregular data distribution.
 
 The target application of this is measuring random *events* in an array of detector pixels.
 In contrast to a regular image sensor, which may produce a 2-D image at fixed time intervals (which could be handled as 3-D data), each detector pixel will see a different event rate (photons or neutrons) and is "read out" at uncorrelated times.
 
-Scipp handles such sparse data by supporting data-item-specific *sparse coordinates*:
+Scipp handles such event data by supporting *event coordinates*, i.e., coordinates with a ``dtype`` that is a list:
 
-- Each item in a dataset may be associated with a sparse coordinate.
-- The sparse coordinate depends on all the other dimensions.
+- The event coordinate depends on all the other dimensions.
   It represents the time-stamps at which event occurred and is thus essentially an array of lists.
-- If the coordinate is sparse, the corresponding data is also sparse and must have matching list lengths.
-- The values and variances for sparse data correspond to the event weight and its uncertainty.
-  For cases where by definition events all have the *same* weight, scipp supports items without a values array.
-  In this case each sparse coordinate entry corresponds to a single event count.
+- If the coordinate contains events, the corresponding data also contains and must have matching list lengths.
+- The values and variances for event data correspond to the event weight and its uncertainty.
+  For cases where by definition events all have the *same* weight, scipp supports event weights with a scalar ``dtype`` instead of a list.
+  In this case each event-coordinate entry corresponds to a event count given by the scalar weight value for this list.
 
-Sparse items in a dataset can be seen as a case of unaligned data, with misalignment not just between different items, but also between slices within an item.
+Events items in a dataset can be seen as a case of unaligned data, with misalignment not just between different items, but also between slices within an item.
 
 
 Histograms and bin-edge coordinates
@@ -78,7 +76,7 @@ Histograms and bin-edge coordinates
 Coordinates for one or more of the dimensions in a dataset can represent bin edges.
 The extent of the coordinate in that dimension exceeds the data extent (in that dimension) by 1.
 Bin-edge coordinates frequently arise when we histogram event-based data.
-The sparse data described above can be used to produce such a histogram.
+The event data described above can be used to produce such a histogram.
 
 Bin-edge coordinates are handled naturally by operations with datasets.
 Most operations on individual data elements are unaffected.

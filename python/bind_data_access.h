@@ -184,13 +184,13 @@ template <class... Ts> class as_ElementArrayViewImpl {
                                            "does not match the existing "
                                            "object.");
             copy_flattened<T>(data, view_);
-          } else if constexpr (core::is_sparse_v<T>) {
+          } else if constexpr (core::is_events_v<T>) {
             auto &data = obj.cast<const py::array_t<typename T::value_type>>();
-            // Sparse data can be set from an array only for a single item.
+            // Event data can be set from an array only for a single item.
             if (dims.shape().size() != 0)
               throw except::DimensionError(
-                  "Sparse data cannot be set from a single "
-                  "array, unless the sparse dimension is the "
+                  "Event data cannot be set from a single "
+                  "array, unless the events dimension is the "
                   "only dimension.");
             if (data.ndim() != 1)
               throw except::DimensionError("Expected 1-D data.");
@@ -234,7 +234,7 @@ template <class... Ts> class as_ElementArrayViewImpl {
           // We return an individual item in two cases:
           // 1. For 0-D data (consistent with numpy behavior, e.g., when slicing
           // a 1-D array).
-          // 2. For 1-D sparse data, where the individual item is then a
+          // 2. For 1-D event data, where the individual item is then a
           // vector-like object.
           if (dims.shape().size() == 0) {
             if constexpr (std::is_same_v<std::decay_t<decltype(data[0])>,

@@ -9,7 +9,7 @@
 #include "scipp/dataset/dataset.h"
 #include "scipp/variable/binary_arithmetic.h"
 
-#include "../variable/test/make_sparse.h"
+#include "../variable/test/make_events.h"
 #include "dataset_test_common.h"
 #include "test_macros.h"
 #include "test_operations.h"
@@ -350,45 +350,45 @@ TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_DatasetView_coord_mismatch) {
 }
 
 TYPED_TEST(DatasetBinaryEqualsOpTest,
-           with_single_var_with_single_sparse_dimensions_sized_same) {
-  Dataset a = make_simple_sparse({1.1, 2.2});
-  Dataset b = make_simple_sparse({3.3, 4.4});
+           with_single_var_with_single_events_dimensions_sized_same) {
+  Dataset a = make_simple_events({1.1, 2.2});
+  Dataset b = make_simple_events({3.3, 4.4});
   Dataset c = TestFixture::op(a, b);
-  auto c_data = c["sparse"].data().values<event_list<double>>()[0];
+  auto c_data = c["events"].data().values<event_list<double>>()[0];
   ASSERT_EQ(c_data[0], TestFixture::op(1.1, 3.3));
   ASSERT_EQ(c_data[1], TestFixture::op(2.2, 4.4));
 }
 
 TYPED_TEST(DatasetBinaryEqualsOpTest,
-           with_single_var_dense_and_sparse_dimension) {
-  Dataset a = make_sparse_2d({1.1, 2.2});
-  Dataset b = make_sparse_2d({3.3, 4.4});
+           with_single_var_dense_and_events_dimension) {
+  Dataset a = make_events_2d({1.1, 2.2});
+  Dataset b = make_events_2d({3.3, 4.4});
   Dataset c = TestFixture::op(a, b);
-  ASSERT_EQ(c["sparse"].data().values<event_list<double>>().size(), 2);
-  auto c_data = c["sparse"].data().values<event_list<double>>()[0];
+  ASSERT_EQ(c["events"].data().values<event_list<double>>().size(), 2);
+  auto c_data = c["events"].data().values<event_list<double>>()[0];
   ASSERT_EQ(c_data[0], TestFixture::op(1.1, 3.3));
   ASSERT_EQ(c_data[1], TestFixture::op(2.2, 4.4));
 }
 
 TYPED_TEST(DatasetBinaryEqualsOpTest, with_multiple_variables) {
-  Dataset a = make_simple_sparse({1.1, 2.2});
-  a.setData("sparse2", a["sparse"].data());
-  Dataset b = make_simple_sparse({3.3, 4.4});
-  b.setData("sparse2", b["sparse"].data());
+  Dataset a = make_simple_events({1.1, 2.2});
+  a.setData("events2", a["events"].data());
+  Dataset b = make_simple_events({3.3, 4.4});
+  b.setData("events2", b["events"].data());
   Dataset c = TestFixture::op(a, b);
   ASSERT_EQ(c.size(), 2);
-  auto c_data = c["sparse"].data().values<event_list<double>>()[0];
+  auto c_data = c["events"].data().values<event_list<double>>()[0];
   ASSERT_EQ(c_data[0], TestFixture::op(1.1, 3.3));
   ASSERT_EQ(c_data[1], TestFixture::op(2.2, 4.4));
-  c_data = c["sparse2"].data().values<event_list<double>>()[1];
+  c_data = c["events2"].data().values<event_list<double>>()[1];
   ASSERT_EQ(c_data[0], TestFixture::op(1.1, 3.3));
   ASSERT_EQ(c_data[1], TestFixture::op(2.2, 4.4));
 }
 
 TYPED_TEST(DatasetBinaryEqualsOpTest,
-           with_sparse_dimensions_of_different_sizes) {
-  Dataset a = make_simple_sparse({1.1, 2.2});
-  Dataset b = make_simple_sparse({3.3, 4.4, 5.5});
+           with_events_dimensions_of_different_sizes) {
+  Dataset a = make_simple_events({1.1, 2.2});
+  Dataset b = make_simple_events({3.3, 4.4, 5.5});
   ASSERT_THROW(TestFixture::op(a, b), std::runtime_error);
 }
 
@@ -700,11 +700,11 @@ TYPED_TEST(DatasetBinaryOpTest, scalar_lhs_dataset_rhs) {
   EXPECT_EQ(res.coords(), dataset.coords());
 }
 
-TYPED_TEST(DatasetBinaryOpTest, dataset_sparse_lhs_dataset_sparse_rhs) {
+TYPED_TEST(DatasetBinaryOpTest, dataset_events_lhs_dataset_events_rhs) {
   const auto dataset_a =
-      make_sparse_with_coords_and_labels({1.1, 2.2}, {1.0, 2.0});
+      make_events_with_coords_and_labels({1.1, 2.2}, {1.0, 2.0});
   const auto dataset_b =
-      make_sparse_with_coords_and_labels({3.3, 4.4}, {1.0, 2.0});
+      make_events_with_coords_and_labels({3.3, 4.4}, {1.0, 2.0});
 
   const auto res = TestFixture::op(dataset_a, dataset_b);
 
@@ -716,93 +716,93 @@ TYPED_TEST(DatasetBinaryOpTest, dataset_sparse_lhs_dataset_sparse_rhs) {
    * directly. */
   /* Correctness of results is tested via Variable tests. */
   const auto reference =
-      TestFixture::op(dataset_a["sparse"].data(), dataset_b["sparse"].data());
-  EXPECT_EQ(reference, res["sparse"].data());
+      TestFixture::op(dataset_a["events"].data(), dataset_b["events"].data());
+  EXPECT_EQ(reference, res["events"].data());
 
-  EXPECT_EQ(dataset_a["sparse"].coords(), res["sparse"].coords());
+  EXPECT_EQ(dataset_a["events"].coords(), res["events"].coords());
 }
 
 TYPED_TEST(DatasetBinaryOpTest,
-           dataset_sparse_lhs_dataarrayconstview_sparse_rhs) {
+           dataset_events_lhs_dataarrayconstview_events_rhs) {
   const auto dataset_a =
-      make_sparse_with_coords_and_labels({1.1, 2.2}, {1.0, 2.0});
+      make_events_with_coords_and_labels({1.1, 2.2}, {1.0, 2.0});
   const auto dataset_b =
-      make_sparse_with_coords_and_labels({3.3, 4.4}, {1.0, 2.0});
+      make_events_with_coords_and_labels({3.3, 4.4}, {1.0, 2.0});
 
-  const auto res = TestFixture::op(dataset_a, dataset_b["sparse"]);
+  const auto res = TestFixture::op(dataset_a, dataset_b["events"]);
 
   EXPECT_EQ(res, TestFixture::op(dataset_a, dataset_b));
 }
 
-TYPED_TEST(DatasetBinaryOpTest, sparse_with_dense_broadcast) {
+TYPED_TEST(DatasetBinaryOpTest, events_with_dense_broadcast) {
   Dataset dense;
   dense.setData("a",
                 makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1, 2}));
-  Dataset sparse;
-  sparse.setData("a", makeVariable<event_list<double>>(Dims{}, Shape{}));
+  Dataset events;
+  events.setData("a", makeVariable<event_list<double>>(Dims{}, Shape{}));
 
-  // Note: In the old way of handling event data, the sparse dim would result in
+  // Note: In the old way of handling event data, the events dim would result in
   // a failure here. Now we just get a broadcast, since `dense` has no coord
   // that would prevent this.
-  ASSERT_NO_THROW(TestFixture::op(sparse, dense));
+  ASSERT_NO_THROW(TestFixture::op(events, dense));
 }
 
-TYPED_TEST(DatasetBinaryOpTest, sparse_with_dense) {
+TYPED_TEST(DatasetBinaryOpTest, events_with_dense) {
   Dataset dense;
   dense.setData("a", makeVariable<double>(Values{2.0}));
-  const auto sparse =
-      make_sparse_with_coords_and_labels({1.1, 2.2}, {1.0, 2.0}, "a");
+  const auto events =
+      make_events_with_coords_and_labels({1.1, 2.2}, {1.0, 2.0}, "a");
 
-  const auto res = TestFixture::op(sparse, dense);
+  const auto res = TestFixture::op(events, dense);
 
   EXPECT_EQ(res.size(), 1);
   EXPECT_TRUE(res.contains("a"));
   EXPECT_EQ(res["a"].data(),
-            TestFixture::op(sparse["a"].data(), dense["a"].data()));
+            TestFixture::op(events["a"].data(), dense["a"].data()));
 }
 
-TYPED_TEST(DatasetBinaryOpTest, dense_with_sparse) {
+TYPED_TEST(DatasetBinaryOpTest, dense_with_events) {
   Dataset dense;
   dense.setData("a", makeVariable<double>(Values{2.0}));
-  const auto sparse =
-      make_sparse_with_coords_and_labels({1.1, 2.2}, {1.0, 2.0}, "a");
+  const auto events =
+      make_events_with_coords_and_labels({1.1, 2.2}, {1.0, 2.0}, "a");
 
-  const auto res = TestFixture::op(dense, sparse);
+  const auto res = TestFixture::op(dense, events);
 
   EXPECT_EQ(res.size(), 1);
   EXPECT_TRUE(res.contains("a"));
   EXPECT_EQ(res["a"].data(),
-            TestFixture::op(dense["a"].data(), sparse["a"].data()));
+            TestFixture::op(dense["a"].data(), events["a"].data()));
 }
 
 TYPED_TEST(DatasetBinaryOpTest,
-           dataarrayconstview_sparse_lhs_dataset_sparse_rhs) {
+           dataarrayconstview_events_lhs_dataset_events_rhs) {
   const auto dataset_a =
-      make_sparse_with_coords_and_labels({1.1, 2.2}, {1.0, 2.0});
+      make_events_with_coords_and_labels({1.1, 2.2}, {1.0, 2.0});
   const auto dataset_b =
-      make_sparse_with_coords_and_labels({3.3, 4.4}, {1.0, 2.0});
+      make_events_with_coords_and_labels({3.3, 4.4}, {1.0, 2.0});
 
-  const auto res = TestFixture::op(dataset_a["sparse"], dataset_b);
+  const auto res = TestFixture::op(dataset_a["events"], dataset_b);
 
   EXPECT_EQ(res, TestFixture::op(dataset_a, dataset_b));
 }
 
-TYPED_TEST(DatasetBinaryOpTest, sparse_dataarrayconstview_coord_mismatch) {
+TYPED_TEST(DatasetBinaryOpTest, events_dataarrayconstview_coord_mismatch) {
   const auto dataset_a =
-      make_sparse_with_coords_and_labels({1.1, 2.2}, {1.0, 2.0});
+      make_events_with_coords_and_labels({1.1, 2.2}, {1.0, 2.0});
   const auto dataset_b =
-      make_sparse_with_coords_and_labels({3.3, 4.4}, {1.0, 2.1});
+      make_events_with_coords_and_labels({3.3, 4.4}, {1.0, 2.1});
 
-  ASSERT_THROW(TestFixture::op(dataset_a, dataset_b["sparse"]),
+  ASSERT_THROW(TestFixture::op(dataset_a, dataset_b["events"]),
                except::VariableMismatchError);
-  ASSERT_THROW(TestFixture::op(dataset_a["sparse"], dataset_b),
+  ASSERT_THROW(TestFixture::op(dataset_a["events"], dataset_b),
                except::VariableMismatchError);
 }
 
 TYPED_TEST(DatasetBinaryOpTest,
-           dataset_sparse_lhs_dataset_sparse_rhs_fail_when_coords_mismatch) {
-  auto dataset_a = make_simple_sparse({1.1, 2.2});
-  auto dataset_b = make_simple_sparse({3.3, 4.4});
+           dataset_events_lhs_dataset_events_rhs_fail_when_coords_mismatch) {
+  auto dataset_a = make_simple_events({1.1, 2.2});
+  auto dataset_b = make_simple_events({3.3, 4.4});
 
   {
     auto var = makeVariable<event_list<double>>(Dims{}, Shape{});
@@ -821,9 +821,9 @@ TYPED_TEST(DatasetBinaryOpTest,
 }
 
 TYPED_TEST(DatasetBinaryOpTest,
-           dataset_sparse_lhs_dataset_sparse_rhs_fail_when_labels_mismatch) {
-  auto dataset_a = make_simple_sparse({1.1, 2.2});
-  auto dataset_b = make_simple_sparse({3.3, 4.4});
+           dataset_events_lhs_dataset_events_rhs_fail_when_labels_mismatch) {
+  auto dataset_a = make_simple_events({1.1, 2.2});
+  auto dataset_b = make_simple_events({3.3, 4.4});
 
   {
     auto var = makeVariable<event_list<double>>(Dims{}, Shape{});
@@ -944,13 +944,13 @@ TEST(DatasetSetData, labels) {
   EXPECT_THROW(dense.setData("data_x_2", d["data_x"]), except::NotFoundError);
 }
 
-TEST(DatasetInPlaceStrongExceptionGuarantee, sparse) {
-  auto good = make_sparse_variable_with_variance<double>();
-  set_sparse_values<double>(good, {{1, 2, 3}, {4}});
-  set_sparse_variances<double>(good, {{5, 6, 7}, {8}});
-  auto bad = make_sparse_variable_with_variance<double>();
-  set_sparse_values<double>(bad, {{0.1, 0.2, 0.3}, {0.4}});
-  set_sparse_variances<double>(bad, {{0.5, 0.6}, {0.8}});
+TEST(DatasetInPlaceStrongExceptionGuarantee, events) {
+  auto good = make_events_variable_with_variance<double>();
+  set_events_values<double>(good, {{1, 2, 3}, {4}});
+  set_events_variances<double>(good, {{5, 6, 7}, {8}});
+  auto bad = make_events_variable_with_variance<double>();
+  set_events_values<double>(bad, {{0.1, 0.2, 0.3}, {0.4}});
+  set_events_variances<double>(bad, {{0.5, 0.6}, {0.8}});
   DataArray good_array(good, {}, {});
 
   // We have no control over the iteration order in the implementation of binary

@@ -11,7 +11,7 @@ At this point we support compile-time customization of:
 
 - New or custom ``dtype`` that can be stored as elements in a ``Variable`` and by the ``transform`` algorithms.
 - Available units and unit combinations
-- The underlying container used for sparse data.
+- The underlying container used for event data.
 
 Some of these are adaptable more readily than others, which require more in-depth changes.
 
@@ -64,7 +64,7 @@ Creating a new system
       For an example of how more complex (heterogeneous) systems can be created see ``units/include/scipp/units/neutron.h``.
    b. Adapt the ``counts_unit`` helper.
       This is used to define the unit for "counts", e.g., the number of detector neutrons, or measurements with a certain value.
-      When working with sparse data that is histogrammed later (or data that is a histogram in the first place) it is recommended to use something other than ``dimensionless`` here.
+      When working with event data that is histogrammed later (or data that is a histogram in the first place) it is recommended to use something other than ``dimensionless`` here.
       Otherwise operations like ``rebin`` cannot correctly distinguish data that represents counts or densities of counts from other data.
    c. Adapt the dimensions labels in the call to the macro ``SCIPP_UNITS_DECLARE_DIMENSIONS``.
 3. Include the new header in ``units/include/scipp/units/unit.h``.
@@ -73,9 +73,9 @@ Creating a new system
 To select the new system during compilation, use the ``cmake`` flag ``-DSCIPP_UNITS_SYSTEM=NewSystem``.
 This will define the macro ``SCIPP_UNITS_NEWSYSTEM``.
 
-Container used for sparse data
+Container used for event data
 ------------------------------
 
-This is currently defined in the header ``core/include/scipp/core/variable.h`` with the helper ``sparse_container``.
+This is currently defined in the header ``core/include/scipp/core/variable.h`` with the helper ``event_list``.
 This has to be set to a vector-like type, such as ``std::vector`` or ``boost::container::small_vector``.
 In the latter case the small-size of the vector can be used to balance performance/locality against memory overhead.

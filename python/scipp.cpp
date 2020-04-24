@@ -14,7 +14,7 @@ void init_counts(py::module &);
 void init_groupby(py::module &);
 void init_neutron(py::module &);
 void init_operations(py::module &);
-void init_sparse_container(py::module &);
+void init_event_list(py::module &);
 void init_units_neutron(py::module &);
 void init_variable(py::module &);
 void init_element_array_view(py::module &);
@@ -29,7 +29,7 @@ void init_core(py::module &m) {
   init_dataset(core);
   init_groupby(core);
   init_operations(core);
-  init_sparse_container(core);
+  init_event_list(core);
   init_element_array_view(core);
 }
 

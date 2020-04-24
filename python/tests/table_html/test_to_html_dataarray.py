@@ -55,12 +55,12 @@ def test_basic(dims, lengths):
 
 
 # @pytest.mark.parametrize("dims, lengths",
-#                          ((['x', 'y'], (10, sc.Dimensions.Sparse)),
-#                           (['x', 'y', 'z'], (10, 10, sc.Dimensions.Sparse)),
+#                          ((['x', 'y'], (10, sc.Dimensions.Events)),
+#                           (['x', 'y', 'z'], (10, 10, sc.Dimensions.Events)),
 #                           (['x', 'y', 'z', 'spectrum'],
-#                            (10, 10, 10, sc.Dimensions.Sparse))))
+#                            (10, 10, 10, sc.Dimensions.Events))))
 @pytest.mark.skip(reason="This test currently fails on Windows.")
-def test_sparse(dims, lengths):
+def test_events(dims, lengths):
     in_unit = sc.units.m
     in_dtype = sc.dtype.float32
 
@@ -90,20 +90,20 @@ def test_sparse(dims, lengths):
         assert expected_section in actual_section.text
 
     data_section = sections.pop(2)
-    assert_section(data_section, "", dims, in_dtype, in_unit, has_sparse=True)
+    assert_section(data_section, "", dims, in_dtype, in_unit, has_events=True)
 
     dim_section = sections.pop(0)
     assert_dims_section(data, dim_section)
 
     coord_section = sections.pop(0)
     # the original dim used as a label (dim[0]) is not shown,
-    # instead the sparse dim is shown
+    # instead the events dim is shown
     assert_section(coord_section,
                    dims[0],
                    dims,
                    in_dtype,
                    in_unit,
-                   has_sparse=True)
+                   has_events=True)
 
     data_names = [MASK_NAME, ATTR_NAME]
 
@@ -170,32 +170,32 @@ def test_bin_edge(dims, lengths):
 @pytest.mark.parametrize("dims, lengths",
                          ((['x'], [10]), (['x', 'y'], [10, 10]),
                           (['x', 'y', 'z'], [10, 10, 10])))
-def test_bin_edge_and_sparse(dims, lengths):
+def test_bin_edge_and_events(dims, lengths):
     in_unit = sc.units.m
     in_dtype = sc.dtype.event_list_float32
 
     data = sc.Variable(dims=dims, shape=lengths, unit=in_unit, dtype=in_dtype)
 
-    # attribute data without the sparse dimension
-    non_sparse_data = sc.Variable(dims=dims,
+    # attribute data without the events dimension
+    non_events_data = sc.Variable(dims=dims,
                                   shape=lengths,
                                   unit=in_unit,
                                   dtype=in_dtype)
 
     # makes the first dimension be bin-edges
     lengths[0] += 1
-    non_sparse_bin_edges = sc.Variable(dims=dims,
+    non_events_bin_edges = sc.Variable(dims=dims,
                                        shape=lengths,
                                        unit=in_unit,
                                        dtype=in_dtype)
 
     data_array = sc.DataArray(data,
                               coords={
-                                  dims[0]: non_sparse_bin_edges,
-                                  LABEL_NAME: non_sparse_bin_edges
+                                  dims[0]: non_events_bin_edges,
+                                  LABEL_NAME: non_events_bin_edges
                               },
-                              attrs={ATTR_NAME: non_sparse_data},
-                              masks={MASK_NAME: non_sparse_bin_edges})
+                              attrs={ATTR_NAME: non_events_data},
+                              masks={MASK_NAME: non_events_bin_edges})
 
     html = BeautifulSoup(make_html(data_array), features="html.parser")
     sections = html.find_all(class_="xr-section-item")
@@ -211,7 +211,7 @@ def test_bin_edge_and_sparse(dims, lengths):
     assert_section(attr_section, ATTR_NAME, dims, in_dtype, in_unit)
 
     data_section = sections.pop(2)
-    assert_section(data_section, "", dims, in_dtype, in_unit, has_sparse=True)
+    assert_section(data_section, "", dims, in_dtype, in_unit, has_events=True)
 
     dim_section = sections.pop(0)
     assert_dims_section(data, dim_section)

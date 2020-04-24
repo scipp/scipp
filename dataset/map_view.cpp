@@ -26,15 +26,16 @@ ConstView<Id, Key, Value>::ConstView(holder_type &&items,
             // Remove dimension-coords for given dim, or non-dimension coords
             // if their inner dim is the given dim.
             constexpr auto is_dimension_coord = [](const auto &_) {
-              return !is_events(_.second) && _.second.dims().contains(_.first);
+              return !contains_events(_.second) &&
+                     _.second.dims().contains(_.first);
             };
             return is_dimension_coord(it2)
                        ? it2.first == slice.dim()
                        : (!it2.second.dims().empty() &&
-                          !is_events(it2.second) &&
+                          !contains_events(it2.second) &&
                           (it2.second.dims().inner() == slice.dim()));
           } else {
-            return !it2.second.dims().empty() && !is_events(it2.second) &&
+            return !it2.second.dims().empty() && !contains_events(it2.second) &&
                    (it2.second.dims().inner() == slice.dim());
           }
         };

@@ -457,7 +457,7 @@ void init_dataset(py::module &m) {
           return dataset::histogram(ds, bins);
         },
         py::arg("x"), py::arg("bins"), py::call_guard<py::gil_scoped_release>(),
-        R"(Returns a new DataArray with values in bins for sparse dims.
+        R"(Returns a new DataArray with values in bins for events dims.
 
         :param x: Data to histogram.
         :param bins: Bin edges.
@@ -469,7 +469,7 @@ void init_dataset(py::module &m) {
           return dataset::histogram(ds, bins);
         },
         py::arg("x"), py::arg("bins"), py::call_guard<py::gil_scoped_release>(),
-        R"(Returns a new DataArray with values in bins for sparse dims.
+        R"(Returns a new DataArray with values in bins for events dims.
 
         :param x: Data to histogram.
         :param bins: Bin edges.
@@ -481,7 +481,7 @@ void init_dataset(py::module &m) {
           return dataset::histogram(ds, bins);
         },
         py::arg("x"), py::arg("bins"), py::call_guard<py::gil_scoped_release>(),
-        R"(Returns a new Dataset with values in bins for sparse dims.
+        R"(Returns a new Dataset with values in bins for events dims.
 
         :param x: Data to histogram.
         :param bins: Bin edges.
@@ -493,7 +493,7 @@ void init_dataset(py::module &m) {
           return dataset::histogram(ds, bins);
         },
         py::arg("x"), py::arg("bins"), py::call_guard<py::gil_scoped_release>(),
-        R"(Returns a new Dataset with values in bins for sparse dims.
+        R"(Returns a new Dataset with values in bins for events dims.
 
         :param x: Data to histogram.
         :param bins: Bin edges.

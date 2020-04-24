@@ -66,14 +66,14 @@ static constexpr auto make_histogram =
       }
     };
 
-static constexpr auto make_histogram_unit = [](const units::Unit &sparse_unit,
+static constexpr auto make_histogram_unit = [](const units::Unit &events_unit,
                                                const units::Unit &weights_unit,
                                                const units::Unit &edge_unit) {
-  if (sparse_unit != edge_unit)
-    throw except::UnitError("Bin edges must have same unit as the sparse "
+  if (events_unit != edge_unit)
+    throw except::UnitError("Bin edges must have same unit as the events "
                             "input coordinate.");
   if (weights_unit != units::counts && weights_unit != units::dimensionless)
-    throw except::UnitError("Weights of sparse data must be "
+    throw except::UnitError("Weights of event data must be "
                             "`units::counts` or `units::dimensionless`.");
   return weights_unit;
 };
@@ -87,14 +87,14 @@ template <class Out, class Coord, class Weight, class Edge>
 using args = std::tuple<span<Out>, event_list<Coord>, Weight, span<const Edge>>;
 }
 
-DataArray histogram(const DataArrayConstView &sparse,
+DataArray histogram(const DataArrayConstView &events,
                     const VariableConstView &binEdges) {
   using namespace scipp::core;
   auto dim = binEdges.dims().inner();
 
   auto result = apply_and_drop_dim(
-      sparse,
-      [](const DataArrayConstView &sparse_, const Dim eventDim, const Dim dim_,
+      events,
+      [](const DataArrayConstView &events_, const Dim eventDim, const Dim dim_,
          const VariableConstView &binEdges_) {
         static_cast<void>(eventDim); // This is just Dim::Invalid
         using namespace histogram_weighted_detail;
@@ -108,22 +108,22 @@ DataArray histogram(const DataArrayConstView &sparse,
                        args<double, float, event_list<double>, double>,
                        args<double, float, event_list<double>, float>,
                        args<double, double, event_list<float>, double>>>(
-            dim_, binEdges_.dims()[dim_] - 1, sparse_.coords()[dim_],
-            sparse_.data(), binEdges_,
+            dim_, binEdges_.dims()[dim_] - 1, events_.coords()[dim_],
+            events_.data(), binEdges_,
             overloaded{make_histogram, make_histogram_unit,
                        transform_flags::expect_variance_arg<0>,
                        transform_flags::expect_no_variance_arg<1>,
                        transform_flags::expect_variance_arg<2>,
                        transform_flags::expect_no_variance_arg<3>});
       },
-      dim_of_coord(sparse.coords()[dim], dim), dim, binEdges);
+      dim_of_coord(events.coords()[dim], dim), dim, binEdges);
   result.setCoord(dim, binEdges);
   return result;
 }
 
-DataArray histogram(const DataArrayConstView &sparse,
+DataArray histogram(const DataArrayConstView &events,
                     const Variable &binEdges) {
-  return histogram(sparse, VariableConstView(binEdges));
+  return histogram(events, VariableConstView(binEdges));
 }
 
 Dataset histogram(const Dataset &dataset, const VariableConstView &bins) {
@@ -131,7 +131,7 @@ Dataset histogram(const Dataset &dataset, const VariableConstView &bins) {
   const Dim dim = bins.dims().inner();
   out.setCoord(dim, bins);
   for (const auto &item : dataset) {
-    if (is_events(item.coords()[dim]))
+    if (contains_events(item.coords()[dim]))
       out.setData(item.name(), histogram(item, bins));
   }
   return out;
@@ -139,7 +139,7 @@ Dataset histogram(const Dataset &dataset, const VariableConstView &bins) {
 
 Dataset histogram(const Dataset &dataset, const Dim &dim) {
   auto bins = dataset.coords()[dim];
-  if (is_events(bins))
+  if (contains_events(bins))
     throw except::BinEdgeError("Expected bin edges, got event data.");
   return histogram(dataset, bins);
 }

@@ -106,7 +106,7 @@ def test_coord_setitem():
     assert d.coords['y'] == sc.Variable(1.0)
 
 
-def test_coord_setitem_sparse():
+def test_coord_setitem_events():
     events = sc.Variable(dims=[], shape=[], dtype=sc.dtype.event_list_float64)
     d = sc.Dataset({'a': events})
     d.coords['x'] = events
@@ -116,13 +116,13 @@ def test_coord_setitem_sparse():
     assert d['a'].coords['x'] == d.coords['x']
 
 
-def test_create_sparse_via_DataArray():
+def test_create_events_via_DataArray():
     d = sc.Dataset()
-    sparse = sc.Variable(dims=[], shape=[], dtype=sc.dtype.event_list_float64)
-    d['a'] = sc.DataArray(data=sparse, coords={'x': sparse})
+    events = sc.Variable(dims=[], shape=[], dtype=sc.dtype.event_list_float64)
+    d['a'] = sc.DataArray(data=events, coords={'x': events})
     assert len(d.coords) == 1
     assert len(d['a'].coords) == 1
-    assert d['a'].coords['x'] == sparse
+    assert d['a'].coords['x'] == events
     assert d['a'].coords['x'] == d.coords['x']
 
 
@@ -173,12 +173,12 @@ def test_attrs_setitem():
     assert d.attrs['attr'] == sc.Variable(1.0)
 
 
-def test_attrs_setitem_sparse():
+def test_attrs_setitem_events():
     var = sc.Variable(dims=['x'], values=np.arange(4))
-    sparse = sc.Variable(dims=[], shape=[], dtype=sc.dtype.event_list_float64)
-    d = sc.Dataset({'a': sparse}, coords={'x': var})
-    d.attrs['attr'] = sparse
-    d['a'].attrs['attr'] = sparse
+    events = sc.Variable(dims=[], shape=[], dtype=sc.dtype.event_list_float64)
+    d = sc.Dataset({'a': events}, coords={'x': var})
+    d.attrs['attr'] = events
+    d['a'].attrs['attr'] = events
 
 
 def test_contains_attrs():
@@ -226,7 +226,7 @@ def test_set_item_slice_with_variances_from_numpy():
     assert np.array_equal(d['a'].variances, np.array([0.0, 1.0, 2.0, 3.0]))
 
 
-def test_sparse_setitem():
+def test_events_setitem():
     d = sc.Dataset({
         'a':
         sc.Variable(dims=['x'], shape=[4], dtype=sc.dtype.event_list_float64)
@@ -396,12 +396,12 @@ def test_variable_histogram():
     var['x', 0].values.extend(np.ones(3))
     var['x', 1].values = np.ones(6)
     ds = sc.Dataset()
-    ds['sparse'] = sc.DataArray(data=sc.Variable(dims=['x'],
+    ds['events'] = sc.DataArray(data=sc.Variable(dims=['x'],
                                                  values=np.ones(2),
                                                  variances=np.ones(2)),
                                 coords={'y': var})
     hist = sc.histogram(
-        ds['sparse'],
+        ds['events'],
         sc.Variable(values=np.arange(5, dtype=np.float64), dims=['y']))
     assert np.array_equal(
         hist.values, np.array([[1.0, 4.0, 1.0, 0.0], [0.0, 6.0, 0.0, 0.0]]))
@@ -540,11 +540,11 @@ def test_dataset_set_data():
 def test_dataset_data_access():
     var = sc.Variable(dims=['x'], shape=[2], dtype=sc.dtype.event_list_float64)
     ds = sc.Dataset()
-    ds['sparse'] = sc.DataArray(data=sc.Variable(dims=['x'],
+    ds['events'] = sc.DataArray(data=sc.Variable(dims=['x'],
                                                  values=np.ones(2),
                                                  variances=np.ones(2)),
                                 coords={'y': var})
-    assert ds['sparse'].values is not None
+    assert ds['events'].values is not None
 
 
 def test_binary_with_broadcast():

@@ -53,26 +53,26 @@ TEST(MergeTest, simple) {
   EXPECT_EQ(b.attrs()["attr_2"], d.attrs()["attr_2"]);
 }
 
-TEST(MergeTest, sparse) {
-  auto sparseCoord = makeVariable<event_list<int>>(Dims{}, Shape{});
-  sparseCoord.values<event_list<int>>()[0] = {1, 2, 3, 4};
+TEST(MergeTest, events) {
+  auto eventsCoord = makeVariable<event_list<int>>(Dims{}, Shape{});
+  eventsCoord.values<event_list<int>>()[0] = {1, 2, 3, 4};
 
   Dataset a;
   {
-    a.setData("sparse", makeVariable<event_list<int>>(Dims{}, Shape{}));
-    a.coords().set(Dim::X, sparseCoord);
+    a.setData("events", makeVariable<event_list<int>>(Dims{}, Shape{}));
+    a.coords().set(Dim::X, eventsCoord);
   }
 
   Dataset b;
   {
-    b.setData("sparse", makeVariable<event_list<int>>(Dims{}, Shape{}));
-    b.coords().set(Dim::X, sparseCoord);
+    b.setData("events", makeVariable<event_list<int>>(Dims{}, Shape{}));
+    b.coords().set(Dim::X, eventsCoord);
   }
 
   const auto d = merge(a, b);
 
-  EXPECT_EQ(a["sparse"], d["sparse"]);
-  EXPECT_EQ(b["sparse"], d["sparse"]);
+  EXPECT_EQ(a["events"], d["events"]);
+  EXPECT_EQ(b["events"], d["events"]);
 }
 
 TEST(MergeTest, non_matching_dense_data) {
@@ -85,19 +85,19 @@ TEST(MergeTest, non_matching_dense_data) {
   EXPECT_THROW(auto d = merge(a, b), std::runtime_error);
 }
 
-TEST(MergeTest, non_matching_sparse_data) {
+TEST(MergeTest, non_matching_events_data) {
   Dataset a;
   {
     auto data = makeVariable<event_list<int>>(Dims{Dim::X}, Shape{1});
     data.values<event_list<int>>()[0] = {2, 3};
-    a.setData("sparse", data);
+    a.setData("events", data);
   }
 
   Dataset b;
   {
     auto data = makeVariable<event_list<int>>(Dims{Dim::X}, Shape{1});
     data.values<event_list<int>>()[0] = {1, 2};
-    b.setData("sparse", data);
+    b.setData("events", data);
   }
 
   EXPECT_THROW(auto d = merge(a, b), std::runtime_error);
@@ -113,7 +113,7 @@ TEST(MergeTest, non_matching_dense_coords) {
   EXPECT_THROW(auto d = merge(a, b), std::runtime_error);
 }
 
-TEST(MergeTest, non_matching_sparse_coords) {
+TEST(MergeTest, non_matching_events_coords) {
   Dataset a;
   {
     auto coord = makeVariable<event_list<int>>(Dims{Dim::X}, Shape{1});
@@ -141,7 +141,7 @@ TEST(MergeTest, non_matching_dense_labels) {
   EXPECT_THROW(auto d = merge(a, b), std::runtime_error);
 }
 
-TEST(MergeTest, non_matching_sparse_labels) {
+TEST(MergeTest, non_matching_events_labels) {
   auto coord = makeVariable<event_list<int>>(Dims{Dim::X}, Shape{1});
   coord.values<event_list<int>>()[0] = {1, 2};
 

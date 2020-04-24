@@ -9,7 +9,7 @@
 using namespace scipp;
 using namespace scipp::dataset;
 
-static auto make_sparse() {
+static auto make_events() {
   auto var = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2});
   var.setUnit(units::us);
   auto vals = var.values<event_list<double>>();
@@ -18,11 +18,11 @@ static auto make_sparse() {
   return var;
 }
 
-static auto make_sparse_array_default_weights() {
+static auto make_events_array_default_weights() {
   return DataArray(makeVariable<double>(Dims{Dim::Y}, Shape{2},
                                         units::Unit(units::counts),
                                         Values{1, 1}, Variances{1, 1}),
-                   {{Dim::X, make_sparse()},
+                   {{Dim::X, make_events()},
                     {Dim::Y, makeVariable<double>(Dimensions{Dim::Y, 2})}});
 }
 
@@ -36,16 +36,16 @@ static auto make_histogram() {
   return DataArray(data, {{Dim::X, edges}});
 }
 
-TEST(SparseDataOperationsConsistencyTest, multiply) {
+TEST(EventsDataOperationsConsistencyTest, multiply) {
   // Apart from uncertainties, the order of operations does not matter. We can
   // either first multiply and then histogram, or first histogram and then
   // multiply.
-  const auto sparse = make_sparse_array_default_weights();
+  const auto events = make_events_array_default_weights();
   auto edges = makeVariable<double>(Dimensions{Dim::X, 4},
                                     units::Unit(units::us), Values{1, 2, 3, 4});
   auto data = makeVariable<double>(Dimensions{Dim::X, 3}, Values{2.0, 3.0, 4.0},
                                    Variances{0.3, 0.4, 0.5});
-  auto realigned = unaligned::realign(sparse, {{Dim::X, edges}});
+  auto realigned = unaligned::realign(events, {{Dim::X, edges}});
 
   auto hist = DataArray(data, {{Dim::X, edges}});
   auto ab = histogram(realigned * hist);
@@ -56,7 +56,7 @@ TEST(SparseDataOperationsConsistencyTest, multiply) {
 
   hist = make_histogram();
   edges = Variable(hist.coords()[Dim::X]);
-  realigned = unaligned::realign(sparse, {{Dim::X, edges}});
+  realigned = unaligned::realign(events, {{Dim::X, edges}});
   ab = histogram(realigned * hist);
   ba = histogram(realigned) * hist;
 
@@ -67,47 +67,47 @@ TEST(SparseDataOperationsConsistencyTest, multiply) {
   EXPECT_EQ(ab, ba);
 }
 
-TEST(SparseDataOperationsConsistencyTest, flatten_sum) {
-  const auto sparse = make_sparse_array_default_weights();
+TEST(EventsDataOperationsConsistencyTest, flatten_sum) {
+  const auto events = make_events_array_default_weights();
   auto edges = makeVariable<double>(Dimensions{Dim::X, 3},
                                     units::Unit(units::us), Values{1, 3, 6});
-  EXPECT_EQ(sum(histogram(sparse, edges), Dim::Y),
-            histogram(flatten(sparse, Dim::Y), edges));
+  EXPECT_EQ(sum(histogram(events, edges), Dim::Y),
+            histogram(flatten(events, Dim::Y), edges));
 }
 
-TEST(SparseDataOperationsConsistencyTest, flatten_sum_realigned) {
-  const auto sparse = make_sparse_array_default_weights();
+TEST(EventsDataOperationsConsistencyTest, flatten_sum_realigned) {
+  const auto events = make_events_array_default_weights();
   auto edges = makeVariable<double>(Dimensions{Dim::X, 3},
                                     units::Unit(units::us), Values{1, 3, 6});
-  const auto realigned = unaligned::realign(sparse, {{Dim::X, edges}});
+  const auto realigned = unaligned::realign(events, {{Dim::X, edges}});
 
   // Three equalities that all express the same concept:
   EXPECT_EQ(histogram(sum(realigned, Dim::Y)),
             sum(histogram(realigned), Dim::Y));
 
   EXPECT_EQ(histogram(sum(realigned, Dim::Y)),
-            histogram(flatten(sparse, Dim::Y), edges));
+            histogram(flatten(events, Dim::Y), edges));
 
   const auto summed = sum(realigned, Dim::Y);
-  const auto flattened = flatten(sparse, Dim::Y);
+  const auto flattened = flatten(events, Dim::Y);
   EXPECT_EQ(summed.unaligned(), flattened);
 }
 
-TEST(SparseDataOperationsConsistencyTest, flatten_multiply_sum) {
-  const auto sparse = make_sparse_array_default_weights();
+TEST(EventsDataOperationsConsistencyTest, flatten_multiply_sum) {
+  const auto events = make_events_array_default_weights();
   auto edges = makeVariable<double>(Dimensions{Dim::X, 3},
                                     units::Unit(units::us), Values{1, 3, 5});
   auto data = makeVariable<double>(Dimensions{Dim::X, 2}, Values{2.0, 3.0},
                                    Variances{0.3, 0.4});
-  auto realigned = unaligned::realign(sparse, {{Dim::X, edges}});
+  auto realigned = unaligned::realign(events, {{Dim::X, edges}});
   auto hist = DataArray(data, {{Dim::X, edges}});
 
   auto hfm = histogram(flatten((hist * realigned).unaligned(), Dim::Y), edges);
 
   auto hmf = histogram(
-      hist * unaligned::realign(flatten(sparse, Dim::Y), {{Dim::X, edges}}));
+      hist * unaligned::realign(flatten(events, Dim::Y), {{Dim::X, edges}}));
 
-  auto mhf = hist * histogram(flatten(sparse, Dim::Y), edges);
+  auto mhf = hist * histogram(flatten(events, Dim::Y), edges);
 
   auto msh = hist * sum(histogram(realigned), Dim::Y);
   auto shm = sum(histogram(hist * realigned), Dim::Y);

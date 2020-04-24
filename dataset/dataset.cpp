@@ -40,8 +40,8 @@ auto makeViewItems(const Dimensions &dims, T1 &coords) {
       const auto &coordDims = item2.second.dims();
       if constexpr (std::is_same_v<typename View::key_type, Dim>) {
         const bool is_dimension_coord =
-            !is_events(item2.second) && coordDims.contains(item2.first);
-        return coordDims.empty() || is_events(item2.second) ||
+            !contains_events(item2.second) && coordDims.contains(item2.first);
+        return coordDims.empty() || contains_events(item2.second) ||
                (is_dimension_coord ? dims.contains(item2.first)
                                    : dims.contains(coordDims.inner()));
       } else

@@ -4,7 +4,7 @@
 # @author Neil Vaytet
 
 from ._scipp.core import (Variable, VariableView, Dataset, DatasetView,
-                          DataArray, DataArrayView, is_events)
+                          DataArray, DataArrayView, contains_events)
 
 
 def name_with_unit(var=None, name=None, log=False, replace_dim=True):
@@ -74,5 +74,5 @@ def is_data_events(obj):
     if hasattr(obj, "data"):
         if obj.data is None:
             return False
-        return is_events(obj.data)
-    return is_events(obj)
+        return contains_events(obj.data)
+    return contains_events(obj)

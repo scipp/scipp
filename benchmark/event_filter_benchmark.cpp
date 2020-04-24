@@ -12,7 +12,7 @@
 
 using namespace scipp;
 
-auto make_2d_sparse_coord(const scipp::index size, const scipp::index count) {
+auto make_2d_events_coord(const scipp::index size, const scipp::index count) {
   auto var = makeVariable<event_list<double>>(Dims{Dim::X}, Shape{size});
   auto vals = var.values<event_list<double>>();
   Random rand(0.0, 1000.0);
@@ -28,11 +28,11 @@ auto make_2d_events_default_weights(const scipp::index size,
   auto weights =
       makeVariable<double>(Dims{Dim::X}, Shape{size},
                            units::Unit(units::counts), Values{}, Variances{});
-  return DataArray(weights, {{Dim::Y, make_2d_sparse_coord(size, count)}});
+  return DataArray(weights, {{Dim::Y, make_2d_events_coord(size, count)}});
 }
 
 auto make_2d_events(const scipp::index size, const scipp::index count) {
-  auto coord = make_2d_sparse_coord(size, count);
+  auto coord = make_2d_events_coord(size, count);
   auto data =
       makeVariable<double>(Dims{}, Shape{}, Values{0.0}, Variances{0.0}) *
       coord;
@@ -45,24 +45,24 @@ static void BM_event_filter(benchmark::State &state) {
   const scipp::index nHist = 1e7 / nEvent;
   const double fraction = state.range(1) * 0.01;
   const bool data = state.range(2);
-  const auto sparse = data ? make_2d_events(nHist, nEvent)
+  const auto events = data ? make_2d_events(nHist, nEvent)
                            : make_2d_events_default_weights(nHist, nEvent);
   const auto interval = makeVariable<double>(Dims{Dim::Y}, Shape{2},
                                              Values{0.0, 1000 * fraction});
   for (auto _ : state) {
-    benchmark::DoNotOptimize(dataset::event::filter(sparse, Dim::Y, interval));
+    benchmark::DoNotOptimize(dataset::event::filter(events, Dim::Y, interval));
   }
   state.SetItemsProcessed(state.iterations() * nHist * nEvent);
   state.SetBytesProcessed(state.iterations() * nHist * (data ? 3 : 1) * nEvent *
                           sizeof(double));
   state.counters["included-fraction"] = fraction;
-  state.counters["sparse-with-data"] = data;
+  state.counters["events-with-data"] = data;
 }
 
 // Params are:
 // - nEvent
 // - included percent
-// - sparse with data
+// - events with data
 BENCHMARK(BM_event_filter)
     ->RangeMultiplier(2)
     ->Ranges({{64, 2 << 14}, {10, 100}, {false, true}});

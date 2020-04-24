@@ -13,8 +13,8 @@
 ///    calling a different transform implementation for each case
 ///    (variants of transform_in_place_impl).
 /// 4. The function implementing the transform calls the overloaded operator for
-///    each element. Previously `TransformSparse` has been added to the overload
-///    set of the operator and this will now correctly treat sparse data.
+///    each element. Previously `TransformEvents` has been added to the overload
+///    set of the operator and this will now correctly treat event data.
 ///    Essentially it causes a (single) recursive call to the transform
 ///    implementation (transform_in_place_impl). In this second call the
 ///    client-provided overload will match.
@@ -56,12 +56,12 @@ template <class T>
 inline constexpr bool has_variances_v = has_variances<T>::value;
 
 /// Helper for the transform implementation to unify iteration of data with and
-/// without variances as well as sparse are dense container.
+/// without variances as well as event_list and dense container.
 template <class T>
 static constexpr decltype(auto) value_maybe_variance(T &&range,
                                                      const scipp::index i) {
   if constexpr (has_variances_v<std::decay_t<T>>) {
-    if constexpr (core::is_sparse_v<decltype(range.values.data()[0])>)
+    if constexpr (core::is_events_v<decltype(range.values.data()[0])>)
       return ValuesAndVariances{range.values.data()[i],
                                 range.variances.data()[i]};
     else
@@ -78,17 +78,18 @@ struct is_eigen_type<Eigen::Matrix<T, Rows, Cols>> : std::true_type {};
 template <class T, int Rows, int Cols>
 struct is_eigen_type<event_list<Eigen::Matrix<T, Rows, Cols>>>
     : std::true_type {};
+template <> struct is_eigen_type<Eigen::Quaterniond> : std::true_type {};
 template <class T>
 inline constexpr bool is_eigen_type_v = is_eigen_type<T>::value;
 
 namespace transform_detail {
-template <class T> struct is_sparse : std::false_type {};
-template <class T> struct is_sparse<event_list<T>> : std::true_type {};
+template <class T> struct is_events : std::false_type {};
+template <class T> struct is_events<event_list<T>> : std::true_type {};
 template <class T>
-struct is_sparse<ValuesAndVariances<event_list<T>>> : std::true_type {};
+struct is_events<ValuesAndVariances<event_list<T>>> : std::true_type {};
 template <class T>
-struct is_sparse<ValuesAndVariances<const event_list<T>>> : std::true_type {};
-template <class T> inline constexpr bool is_sparse_v = is_sparse<T>::value;
+struct is_events<ValuesAndVariances<const event_list<T>>> : std::true_type {};
+template <class T> inline constexpr bool is_events_v = is_events<T>::value;
 } // namespace transform_detail
 
 template <class T> static auto check_and_get_size(const T &a) {
@@ -97,8 +98,8 @@ template <class T> static auto check_and_get_size(const T &a) {
 
 template <class T1, class T2>
 static auto check_and_get_size(const T1 &a, const T2 &b) {
-  if constexpr (transform_detail::is_sparse_v<T1>) {
-    if constexpr (transform_detail::is_sparse_v<T2>)
+  if constexpr (transform_detail::is_events_v<T1>) {
+    if constexpr (transform_detail::is_events_v<T2>)
       core::expect::sizeMatches(a, b);
     return scipp::size(a);
   } else {
@@ -106,7 +107,7 @@ static auto check_and_get_size(const T1 &a, const T2 &b) {
   }
 }
 
-struct SparseFlag {};
+struct EventsFlag {};
 
 // Helpers for handling a tuple of indices (integers or ViewIndex).
 namespace iter {
@@ -192,9 +193,9 @@ static constexpr void call(Op &&op, const Indices &indices, Out &&out,
   out_ = call_impl(std::forward<Op>(op), indices,
                    std::make_index_sequence<std::tuple_size_v<Indices> - 1>{},
                    std::forward<Args>(args)...);
-  // If the output is sparse, ValuesAndVariances::operator= already does the job
+  // If the output is events, ValuesAndVariances::operator= already does the job
   // in the line above (since ValuesAndVariances wraps references), if not
-  // sparse then copy to actual output.
+  // events then copy to actual output.
   if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(out_)>>) {
     out.values.data()[i] = out_.value;
     out.variances.data()[i] = out_.variance;
@@ -217,11 +218,11 @@ static constexpr void call_in_place(Op &&op, const Indices &indices, Arg &&arg,
                                     Args &&... args) {
   const auto i = iter::get(std::get<0>(indices));
   // Two cases are distinguished here:
-  // 1. In the case of sparse data we create ValuesAndVariances, which hold
+  // 1. In the case of event data we create ValuesAndVariances, which hold
   //    references that can be modified.
   // 2. For dense data we create ValueAndVariance, which performs an element
   //    copy, so the result has to be updated after the call to `op`.
-  // Note that in the case of sparse data we actually have a recursive call to
+  // Note that in the case of event data we actually have a recursive call to
   // transform_in_place_impl for the iteration over each individual
   // event_list. This then falls into case 2 and thus the recursion
   // terminates with the second level.
@@ -244,7 +245,7 @@ static void transform_elements(Op op, Out &&out, Ts &&... other) {
   };
   const auto begin =
       std::tuple{iter::begin_index(out), iter::begin_index(other)...};
-  if constexpr (transform_detail::is_sparse_v<std::decay_t<Out>>) {
+  if constexpr (transform_detail::is_events_v<std::decay_t<Out>>) {
     run(begin, iter::end_index(out));
   } else {
     auto run_parallel = [&](const auto &range) {
@@ -259,10 +260,10 @@ static void transform_elements(Op op, Out &&out, Ts &&... other) {
   }
 }
 
-/// Broadcast a constant to arbitrary size. Helper for TransformSparse.
+/// Broadcast a constant to arbitrary size. Helper for TransformEvents.
 ///
 /// This helper allows the use of a common transform implementation when mixing
-/// sparse and non-sparse data.
+/// events and non-event data.
 template <class T> struct broadcast {
   using value_type = std::remove_const_t<T>;
   constexpr auto operator[](const scipp::index) const noexcept { return value; }
@@ -272,7 +273,7 @@ template <class T> struct broadcast {
 template <class T> broadcast(T)->broadcast<T>;
 
 template <class T> static decltype(auto) maybe_broadcast(T &&value) {
-  if constexpr (transform_detail::is_sparse_v<std::decay_t<T>>)
+  if constexpr (transform_detail::is_events_v<std::decay_t<T>>)
     return std::forward<T>(value);
   else
     return broadcast{value};
@@ -294,9 +295,9 @@ template <class T> static constexpr auto maybe_eval(T &&_) {
     return std::forward<T>(_);
 }
 
-/// Functor for implementing operations with sparse data, see also
-/// TransformSparseInPlace.
-struct TransformSparse {
+/// Functor for implementing operations with event data, see also
+/// TransformEventsInPlace.
+struct TransformEvents {
   template <class Op, class... Ts>
   constexpr auto operator()(const Op &op, const Ts &... args) const {
     event_list<std::invoke_result_t<Op, core::detail::element_type_t<Ts>...>>
@@ -412,9 +413,9 @@ template <class Op> struct Transform {
 };
 template <class Op> Transform(Op)->Transform<Op>;
 
-template <class T, class Handle> struct optional_sparse;
+template <class T, class Handle> struct optional_events;
 template <class T, class... Known>
-struct optional_sparse<T, std::tuple<Known...>> {
+struct optional_events<T, std::tuple<Known...>> {
   using type = std::conditional_t<std::disjunction_v<std::is_same<T, Known>...>,
                                   std::tuple<T>, std::tuple<>>;
 };
@@ -429,9 +430,9 @@ template <template <typename...> class C, typename... Ts1, typename... Ts2,
 struct tuple_cat<C<Ts1...>, C<Ts2...>, Ts3...>
     : public tuple_cat<C<Ts1..., Ts2...>, Ts3...> {};
 
-template <class T1, class T2, class Handle> struct optional_sparse_pair;
+template <class T1, class T2, class Handle> struct optional_events_pair;
 template <class T1, class T2, class... Known>
-struct optional_sparse_pair<T1, T2, std::tuple<Known...>> {
+struct optional_events_pair<T1, T2, std::tuple<Known...>> {
   using type =
       std::conditional_t<std::disjunction_v<std::is_same<T1, Known>...> &&
                              std::disjunction_v<std::is_same<T2, Known>...>,
@@ -442,46 +443,46 @@ using supported_event_tupes =
                event_list<float>, event_list<int64_t>, event_list<int32_t>,
                event_list<bool>>;
 template <class T>
-using optional_sparse_t =
-    typename optional_sparse<T, supported_event_tupes>::type;
+using optional_events_t =
+    typename optional_events<T, supported_event_tupes>::type;
 template <class T1, class T2>
-using optional_sparse_pair_t =
-    typename optional_sparse_pair<T1, T2, supported_event_tupes>::type;
+using optional_events_pair_t =
+    typename optional_events_pair<T1, T2, supported_event_tupes>::type;
 
-/// Augment a tuple of types with the corresponding sparse types, if they exist.
+/// Augment a tuple of types with the corresponding events types, if they exist.
 struct augment {
-  template <class... Ts> static auto insert_sparse(const std::tuple<Ts...> &) {
+  template <class... Ts> static auto insert_events(const std::tuple<Ts...> &) {
     return typename tuple_cat<std::tuple<Ts...>,
-                              optional_sparse_t<event_list<Ts>>...>::type{};
+                              optional_events_t<event_list<Ts>>...>::type{};
   }
 
   template <class... Ts>
-  static auto insert_sparse_in_place(const std::tuple<Ts...> &tuple) {
-    return insert_sparse(tuple);
+  static auto insert_events_in_place(const std::tuple<Ts...> &tuple) {
+    return insert_events(tuple);
   }
 
   template <class... First, class... Second>
   static auto
-  insert_sparse_in_place(const std::tuple<std::pair<First, Second>...> &) {
+  insert_events_in_place(const std::tuple<std::pair<First, Second>...> &) {
     return std::tuple_cat(
         std::tuple<std::pair<First, Second>...>{},
-        optional_sparse_pair_t<event_list<First>, Second>{}...,
-        optional_sparse_pair_t<event_list<First>, event_list<Second>>{}...);
+        optional_events_pair_t<event_list<First>, Second>{}...,
+        optional_events_pair_t<event_list<First>, event_list<Second>>{}...);
   }
   template <class... First, class... Second>
-  static auto insert_sparse(const std::tuple<std::pair<First, Second>...> &) {
+  static auto insert_events(const std::tuple<std::pair<First, Second>...> &) {
     return std::tuple_cat(
         std::tuple<std::pair<First, Second>...>{},
-        optional_sparse_pair_t<First, event_list<Second>>{}...,
-        optional_sparse_pair_t<event_list<First>, Second>{}...,
-        optional_sparse_pair_t<event_list<First>, event_list<Second>>{}...);
+        optional_events_pair_t<First, event_list<Second>>{}...,
+        optional_events_pair_t<event_list<First>, Second>{}...,
+        optional_events_pair_t<event_list<First>, event_list<Second>>{}...);
   }
 };
 
-template <class Op, class SparseOp> struct overloaded_sparse : Op, SparseOp {
+template <class Op, class EventsOp> struct overloaded_events : Op, EventsOp {
   template <class... Ts> constexpr auto operator()(Ts &&... args) const {
-    if constexpr ((transform_detail::is_sparse_v<std::decay_t<Ts>> || ...))
-      return SparseOp::operator()(static_cast<const Op &>(*this),
+    if constexpr ((transform_detail::is_events_v<std::decay_t<Ts>> || ...))
+      return EventsOp::operator()(static_cast<const Op &>(*this),
                                   std::forward<Ts>(args)...);
     else if constexpr ((is_eigen_type_v<std::decay_t<Ts>> || ...))
       // WARNING! The explicit specification of the template arguments of
@@ -495,18 +496,18 @@ template <class Op, class SparseOp> struct overloaded_sparse : Op, SparseOp {
       return Op::template operator()(std::forward<Ts>(args)...);
   }
 };
-template <class... Ts> overloaded_sparse(Ts...)->overloaded_sparse<Ts...>;
+template <class... Ts> overloaded_events(Ts...)->overloaded_events<Ts...>;
 
 template <class T>
-struct is_any_sparse : std::conditional_t<core::is_sparse<T>::value,
+struct is_any_events : std::conditional_t<core::is_events<T>::value,
                                           std::true_type, std::false_type> {};
 template <class... Ts>
-struct is_any_sparse<std::pair<Ts...>>
-    : std::conditional_t<(core::is_sparse<Ts>::value || ...), std::true_type,
+struct is_any_events<std::pair<Ts...>>
+    : std::conditional_t<(core::is_events<Ts>::value || ...), std::true_type,
                          std::false_type> {};
 template <class... Ts>
-struct is_any_sparse<std::tuple<Ts...>>
-    : std::conditional_t<(core::is_sparse<Ts>::value || ...), std::true_type,
+struct is_any_events<std::tuple<Ts...>>
+    : std::conditional_t<(core::is_events<Ts>::value || ...), std::true_type,
                          std::false_type> {};
 
 } // namespace detail
@@ -532,17 +533,17 @@ template <bool dry_run> struct in_place {
     using namespace detail;
     const auto begin =
         std::tuple{iter::begin_index(arg), iter::begin_index(other)...};
-    // For sparse data we can fail for any subitem if the sizes to not match.
+    // For event data we can fail for any subitem if the sizes to not match.
     // To avoid partially modifying (and thus corrupting) data in an in-place
     // operation we need to do the checks before any modification happens.
-    if constexpr (core::is_sparse_v<typename std::decay_t<T>::value_type> ||
-                  (core::is_sparse_v<typename std::decay_t<Ts>::value_type> ||
+    if constexpr (core::is_events_v<typename std::decay_t<T>::value_type> ||
+                  (core::is_events_v<typename std::decay_t<Ts>::value_type> ||
                    ...)) {
       const auto end = iter::end_index(arg);
       for (auto i = begin; std::get<0>(i) != end; iter::increment(i)) {
         call_in_place(
             [](auto &&... args) {
-              if constexpr (std::is_base_of_v<SparseFlag, Op>)
+              if constexpr (std::is_base_of_v<EventsFlag, Op>)
                 static_cast<void>(check_and_get_size(args...));
             },
             i, arg, other...);
@@ -555,8 +556,8 @@ template <bool dry_run> struct in_place {
         call_in_place(op, indices, arg, other...);
     };
 
-    if constexpr (transform_detail::is_sparse_v<std::decay_t<T>> ||
-                  (transform_detail::is_sparse_v<std::decay_t<Ts>> || ...)) {
+    if constexpr (transform_detail::is_events_v<std::decay_t<T>> ||
+                  (transform_detail::is_events_v<std::decay_t<Ts>> || ...)) {
       run(begin, iter::end_index(arg));
     } else {
       if (iter::has_stride_zero(std::get<0>(begin))) {
@@ -655,14 +656,14 @@ template <bool dry_run> struct in_place {
     }
   }
 
-  /// Functor for implementing in-place operations with sparse data.
+  /// Functor for implementing in-place operations with event data.
   ///
   /// This is (conditionally) added to an overloaded set of operators provided
-  /// by the user. If the data is sparse the overloads by this functor will
+  /// by the user. If the data is events the overloads by this functor will
   /// match in place of the user-provided ones. We then recursively call the
-  /// transform function. In this second call we have descended into the sparse
+  /// transform function. In this second call we have descended into the events
   /// container so now the user-provided overload will match directly.
-  struct TransformSparseInPlace : public detail::SparseFlag {
+  struct TransformEventsInPlace : public detail::EventsFlag {
     template <class Op, class... Ts>
     constexpr void operator()(const Op &op, Ts &&... args) const {
       using namespace detail;
@@ -747,21 +748,21 @@ template <bool dry_run> struct in_place {
       // If a event_list<T> is specified explicitly as a type we assume
       // that the caller provides a matching overload. Otherwise we assume the
       // provided operator is for individual elements (regardless of whether
-      // they are elements of dense or sparse data), so we add overloads for
-      // sparse data processing.
-      if constexpr ((is_any_sparse<Ts>::value || ...)) {
+      // they are elements of dense or event data), so we add overloads for
+      // event data processing.
+      if constexpr ((is_any_events<Ts>::value || ...)) {
         visit_impl<Ts...>::apply(makeTransformInPlace(op), var.data(),
                                  other.data()...);
       } else if constexpr (sizeof...(Other) > 1) {
-        // No sparse data supported yet in this case.
+        // No event data supported yet in this case.
         variable::visit(std::tuple<Ts...>{})
             .apply(makeTransformInPlace(op), var.data(), other.data()...);
       } else {
-        // Note that if only one of the inputs is sparse it must be the one
+        // Note that if only one of the inputs is events it must be the one
         // being transformed in-place, so there are only three cases here.
-        variable::visit(augment::insert_sparse_in_place(std::tuple<Ts...>{}))
+        variable::visit(augment::insert_events_in_place(std::tuple<Ts...>{}))
             .apply(makeTransformInPlace(
-                       overloaded_sparse{op, TransformSparseInPlace{}}),
+                       overloaded_events{op, TransformEventsInPlace{}}),
                    var.data(), other.data()...);
       }
     } catch (const std::bad_variant_access &) {
@@ -860,11 +861,11 @@ Variable transform(std::tuple<Ts...> &&, Op op, const Vars &... vars) {
   auto unit = op(vars.unit()...);
   Variable out;
   try {
-    if constexpr ((is_any_sparse<Ts>::value || ...) || sizeof...(Vars) > 2) {
+    if constexpr ((is_any_events<Ts>::value || ...) || sizeof...(Vars) > 2) {
       out = visit_impl<Ts...>::apply(Transform{op}, vars.data()...);
     } else {
-      out = variable::visit(augment::insert_sparse(std::tuple<Ts...>{}))
-                .apply(Transform{overloaded_sparse{op, TransformSparse{}}},
+      out = variable::visit(augment::insert_events(std::tuple<Ts...>{}))
+                .apply(Transform{overloaded_events{op, TransformEvents{}}},
                        vars.data()...);
     }
   } catch (const std::bad_variant_access &) {

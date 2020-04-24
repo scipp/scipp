@@ -73,14 +73,14 @@ auto make_events_default_weights(const scipp::index size,
   return out;
 }
 
-static void BM_neutron_convert_sparse(benchmark::State &state,
+static void BM_neutron_convert_events(benchmark::State &state,
                                       const Dim targetDim) {
   const scipp::index nEvent = state.range(0);
   const scipp::index nHist = 1e8 / nEvent;
-  const auto sparse = make_events_default_weights(nHist, nEvent);
+  const auto events = make_events_default_weights(nHist, nEvent);
   for (auto _ : state) {
     state.PauseTiming();
-    Dataset data = sparse;
+    Dataset data = events;
     state.ResumeTiming();
     data = neutron::convert(std::move(data), Dim::Tof, targetDim);
     state.PauseTiming();
@@ -108,13 +108,13 @@ BENCHMARK_CAPTURE(BM_neutron_convert, Dim::Energy, Dim::Energy)
 
 // Params are:
 // - nEvent
-BENCHMARK_CAPTURE(BM_neutron_convert_sparse, Dim::DSpacing, Dim::DSpacing)
+BENCHMARK_CAPTURE(BM_neutron_convert_events, Dim::DSpacing, Dim::DSpacing)
     ->RangeMultiplier(2)
     ->Ranges({{8, 2 << 14}});
-BENCHMARK_CAPTURE(BM_neutron_convert_sparse, Dim::Wavelength, Dim::Wavelength)
+BENCHMARK_CAPTURE(BM_neutron_convert_events, Dim::Wavelength, Dim::Wavelength)
     ->RangeMultiplier(2)
     ->Ranges({{8, 2 << 14}});
-BENCHMARK_CAPTURE(BM_neutron_convert_sparse, Dim::Energy, Dim::Energy)
+BENCHMARK_CAPTURE(BM_neutron_convert_events, Dim::Energy, Dim::Energy)
     ->RangeMultiplier(2)
     ->Ranges({{8, 2 << 14}});
 

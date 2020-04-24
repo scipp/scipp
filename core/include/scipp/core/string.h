@@ -65,7 +65,7 @@ template <class T> std::string element_to_string(const T &item) {
   else if constexpr (std::is_same_v<T, Eigen::Quaterniond>)
     return {"(" + to_string(item.x()) + ", " + to_string(item.y()) + ", " +
             to_string(item.z()) + ", " + to_string(item.w()) + "), "};
-  else if constexpr (is_sparse_v<T>)
+  else if constexpr (is_events_v<T>)
     return array_to_string(item) + ", ";
   else
     return to_string(item) + ", ";

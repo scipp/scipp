@@ -63,7 +63,7 @@ TEST(DataArrayTest, reciprocal) {
   EXPECT_EQ(reciprocal(array).data(), reciprocal(array.data()));
 }
 
-auto make_sparse() {
+auto make_events() {
   auto var = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2});
   var.setUnit(units::us);
   auto vals = var.values<event_list<double>>();
@@ -104,7 +104,7 @@ TEST(DataArrayTest, astype) {
 }
 
 TEST(DataArrayRealignedEventsArithmeticTest, fail_events_op_non_histogram) {
-  const auto events = make_sparse();
+  const auto events = make_events();
   auto coord = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
                                     units::Unit(units::us), Values{0, 2, 1, 3});
   auto data = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{2.0, 3.0},
@@ -126,10 +126,10 @@ TEST(DataArrayRealignedEventsArithmeticTest, fail_events_op_non_histogram) {
 }
 
 TEST(DataArrayRealignedEventsArithmeticTest, events_times_histogram) {
-  const auto sparse = make_sparse();
+  const auto events = make_events();
   const auto hist = make_histogram();
   const auto realigned = unaligned::realign(
-      DataArray(sparse), {{Dim::X, Variable{hist.coords()[Dim::X]}}});
+      DataArray(events), {{Dim::X, Variable{hist.coords()[Dim::X]}}});
 
   for (const auto &result : {realigned * hist, hist * realigned}) {
     EXPECT_EQ(result.coords(), realigned.coords());
@@ -164,7 +164,7 @@ TEST(DataArrayRealignedEventsArithmeticTest, events_times_histogram) {
 
 TEST(DataArrayRealignedEventsArithmeticTest,
      events_times_histogram_fail_too_many_realigned) {
-  auto a = make_sparse();
+  auto a = make_events();
   auto x = make_histogram();
   auto z(x);
   z.rename(Dim::X, Dim::Z);
@@ -185,10 +185,10 @@ TEST(DataArrayRealignedEventsArithmeticTest,
 
 TEST(DataArrayRealignedEventsArithmeticTest,
      events_times_histogram_without_variances) {
-  const auto sparse = make_sparse();
+  const auto events = make_events();
   auto hist = make_histogram_no_variance();
   const auto realigned = unaligned::realign(
-      DataArray(sparse), {{Dim::X, Variable{hist.coords()[Dim::X]}}});
+      DataArray(events), {{Dim::X, Variable{hist.coords()[Dim::X]}}});
 
   for (const auto &result : {realigned * hist, hist * realigned}) {
     EXPECT_EQ(result.coords(), realigned.coords());
@@ -221,15 +221,15 @@ TEST(DataArrayRealignedEventsArithmeticTest,
 
 TEST(DataArrayRealignedEventsArithmeticTest,
      events_with_values_times_histogram) {
-  auto sparse = make_sparse();
+  auto events = make_events();
   const auto hist = make_histogram();
-  Variable data(sparse.coords()[Dim::X]);
+  Variable data(events.coords()[Dim::X]);
   data.setUnit(units::counts);
   data *= 0.0;
   data += 2.0 * units::Unit(units::counts);
-  sparse.setData(data);
+  events.setData(data);
   const auto realigned = unaligned::realign(
-      DataArray(sparse), {{Dim::X, Variable{hist.coords()[Dim::X]}}});
+      DataArray(events), {{Dim::X, Variable{hist.coords()[Dim::X]}}});
 
   for (const auto &result : {realigned * hist, hist * realigned}) {
     EXPECT_EQ(result.coords(), realigned.coords());
@@ -263,10 +263,10 @@ TEST(DataArrayRealignedEventsArithmeticTest,
 }
 
 TEST(DataArrayRealignedEventsArithmeticTest, events_over_histogram) {
-  const auto sparse = make_sparse();
+  const auto events = make_events();
   const auto hist = make_histogram();
   const auto realigned = unaligned::realign(
-      DataArray(sparse), {{Dim::X, Variable{hist.coords()[Dim::X]}}});
+      DataArray(events), {{Dim::X, Variable{hist.coords()[Dim::X]}}});
 
   const auto result = realigned / hist;
   EXPECT_EQ(result.coords(), realigned.coords());
@@ -314,7 +314,7 @@ protected:
     b = unaligned::realign(eventsB, {{Dim::X, edges}});
   }
 
-  DataArray eventsA = make_sparse();
+  DataArray eventsA = make_events();
   DataArray eventsB;
   Variable edges = makeVariable<double>(
       Dims{Dim::X}, Shape{4}, units::Unit(units::us), Values{0, 2, 4, 6});

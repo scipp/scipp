@@ -304,21 +304,21 @@ TEST(DatasetTest, const_iterators_return_types) {
   ASSERT_TRUE((std::is_same_v<decltype(*d.end()), DataArrayConstView>));
 }
 
-TEST(DatasetTest, set_dense_data_with_sparse_coord) {
-  auto sparse_variable =
+TEST(DatasetTest, set_dense_data_with_events_coord) {
+  auto events_variable =
       makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2});
   auto dense_variable =
       makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2l, 2l});
 
   Dataset a;
-  a.setData("sparse_coord_and_val", dense_variable);
+  a.setData("events_coord_and_val", dense_variable);
   // Events handled via dtype, not dimension, so this is valid.
-  ASSERT_NO_THROW(a.coords().set(Dim::X, sparse_variable));
+  ASSERT_NO_THROW(a.coords().set(Dim::X, events_variable));
 
   // Setting coords first yields same response.
   Dataset b;
-  b.coords().set(Dim::X, sparse_variable);
-  ASSERT_NO_THROW(b.setData("sparse_coord_and_val", dense_variable));
+  b.coords().set(Dim::X, events_variable);
+  ASSERT_NO_THROW(b.setData("events_coord_and_val", dense_variable));
 }
 
 TEST(DatasetTest, construct_from_view) {
@@ -403,7 +403,7 @@ TEST(DatasetTest, sum_and_mean) {
   EXPECT_EQ(dataset::mean(ds.slice({Dim::X, 0, 2}), Dim::X)["a"].data(),
             makeVariable<float>(Values{1.5}, Variances{6.75}));
 
-  EXPECT_THROW(dataset::sum(make_sparse_2d({1, 2, 3, 4}, {0, 0}), Dim::X),
+  EXPECT_THROW(dataset::sum(make_events_2d({1, 2, 3, 4}, {0, 0}), Dim::X),
                except::TypeError);
 }
 

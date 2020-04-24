@@ -94,16 +94,16 @@ auto make_1_values_and_variances(const std::string &name,
   return d;
 }
 
-Dataset make_simple_sparse(std::initializer_list<double> values,
-                           std::string key = "sparse");
+Dataset make_simple_events(std::initializer_list<double> values,
+                           std::string key = "events");
 
-Dataset make_sparse_with_coords_and_labels(
+Dataset make_events_with_coords_and_labels(
     std::initializer_list<double> values,
     std::initializer_list<double> coords_and_labels,
-    std::string key = "sparse");
+    std::string key = "events");
 
-Dataset make_sparse_2d(std::initializer_list<double> values,
-                       std::string key = "sparse");
+Dataset make_events_2d(std::initializer_list<double> values,
+                       std::string key = "events");
 
 Dataset make_1d_masked();
 
