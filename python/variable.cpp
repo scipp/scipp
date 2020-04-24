@@ -663,45 +663,45 @@ void init_variable(py::module &m) {
         :return: tan of input values.
         :rtype: Variable)");
 
-  m.def("asin", [](const Variable &self) { return asin(self); }, py::arg("x"),
-        py::call_guard<py::gil_scoped_release>(), R"(
-        Element-wise asin.
+  // m.def("asin", [](const Variable &self) { return asin(self); }, py::arg("x"),
+  //       py::call_guard<py::gil_scoped_release>(), R"(
+  //       Element-wise asin.
 
-        :raises: If the unit is dimensionless, or if the dtype has no asin, e.g., if it is an integer
-        :return: Copy of the input with values replaced by the asin. Output unit is rad.
-        :rtype: Variable)");
+  //       :raises: If the unit is dimensionless, or if the dtype has no asin, e.g., if it is an integer
+  //       :return: Copy of the input with values replaced by the asin. Output unit is rad.
+  //       :rtype: Variable)");
 
-  m.def("asin",
-        [](const VariableConstView &self, const VariableView &out) {
-          return asin(self, out);
-        },
-        py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>(),
-        R"(
-        Element-wise atan.
+  // m.def("asin",
+  //       [](const VariableConstView &self, const VariableView &out) {
+  //         return asin(self, out);
+  //       },
+  //       py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>(),
+  //       R"(
+  //       Element-wise atan.
 
-        :raises: If the unit is dimensionless, or if the dtype has no asin, e.g., if it is an integer
-        :return: asin of input values. Output unit is rad.
-        :rtype: Variable)");
+  //       :raises: If the unit is dimensionless, or if the dtype has no asin, e.g., if it is an integer
+  //       :return: asin of input values. Output unit is rad.
+  //       :rtype: Variable)");
 
-  m.def("acos", [](const Variable &self) { return acos(self); }, py::arg("x"),
-        py::call_guard<py::gil_scoped_release>(), R"(
-        Element-wise acos.
+  // m.def("acos", [](const Variable &self) { return acos(self); }, py::arg("x"),
+  //       py::call_guard<py::gil_scoped_release>(), R"(
+  //       Element-wise acos.
 
-        :raises: If the unit is dimensionless, or if the dtype has no acos, e.g., if it is an integer
-        :return: Copy of the input with values replaced by the acos. Output unit is rad.
-        :rtype: Variable)");
+  //       :raises: If the unit is dimensionless, or if the dtype has no acos, e.g., if it is an integer
+  //       :return: Copy of the input with values replaced by the acos. Output unit is rad.
+  //       :rtype: Variable)");
 
-  m.def("acos",
-        [](const VariableConstView &self, const VariableView &out) {
-          return acos(self, out);
-        },
-        py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>(),
-        R"(
-        Element-wise acos.
+  // m.def("acos",
+  //       [](const VariableConstView &self, const VariableView &out) {
+  //         return acos(self, out);
+  //       },
+  //       py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>(),
+  //       R"(
+  //       Element-wise acos.
 
-        :raises: If the unit is dimensionless, or if the dtype has no acos, e.g., if it is an integer
-        :return: acos of input values. Output unit is rad.
-        :rtype: Variable)");
+  //       :raises: If the unit is dimensionless, or if the dtype has no acos, e.g., if it is an integer
+  //       :return: acos of input values. Output unit is rad.
+  //       :rtype: Variable)");
 
   m.def("atan", [](const Variable &self) { return atan(self); }, py::arg("x"),
         py::call_guard<py::gil_scoped_release>(), R"(
