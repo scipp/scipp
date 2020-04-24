@@ -22,7 +22,7 @@ template <class T> void bind_flatten(py::module &m) {
 
         :param x: Variable, DataArray, or Dataset to flatten.
         :param dim: Dimension over which to flatten.
-        :raises: If the dimension does not exist, or if x has no events dimension
+        :raises: If the dimension does not exist, or if x does not contain event lists
         :seealso: :py:class:`scipp.sum`
         :return: New variable, data array, or dataset containing the flattened data.
         :rtype: Variable, DataArray, or Dataset)");
