@@ -337,10 +337,26 @@ TEST(DatasetTest, construct_from_slice) {
   ASSERT_EQ(from_slice, dataset.slice({Dim::X, 1}));
 }
 
+TEST(DataArrayTest, construct_from_slice) {
+  DatasetFactory3D factory;
+  const auto dataset = factory.make();
+  const auto slice = dataset["data_xyz"].slice({Dim::X, 1});
+  DataArray from_slice(slice);
+  ASSERT_EQ(from_slice, dataset["data_xyz"].slice({Dim::X, 1}));
+}
+
 TEST(DatasetTest, slice_temporary) {
   DatasetFactory3D factory;
   auto dataset = factory.make().slice({Dim::X, 1});
   ASSERT_TRUE((std::is_same_v<decltype(dataset), Dataset>));
+}
+
+TEST(DatasetTest, slice_no_data) {
+  Dataset d;
+  d.coords().set(Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{4}));
+  EXPECT_TRUE(d.coords().contains(Dim::X));
+  const auto slice = d.slice({Dim::X, 1, 3});
+  EXPECT_TRUE(slice.coords().contains(Dim::X));
 }
 
 template <typename T> void do_test_slice_validation(const T &container) {
