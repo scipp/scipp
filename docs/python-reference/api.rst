@@ -95,6 +95,19 @@ Geometric
    geometry.y
    geometry.z
 
+Comparison
+~~~~~~~~~~
+
+.. autosummary::
+   :toctree: ../generated
+
+   less
+   greater
+   less_equal
+   greater_equal
+   equal
+   not_equal
+
 Counts
 ~~~~~~
 
