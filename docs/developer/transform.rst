@@ -39,6 +39,7 @@ Transform two variables with two type combinations:
 - ``a`` of type ``double`` and ``b`` of type ``double``
 
 Since ``+`` is defined for ``units::Unit`` the same lambda can be used for data and unit.
+This call to ``transform`` will add the two variables (or variable views) ``a`` and ``b`` and return a new variable.
 
 .. code-block:: cpp
 
