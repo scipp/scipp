@@ -18,8 +18,8 @@ def patched_plot_collapse():
     plot_collapse_mock = mock.Mock()
 
     _module = mock.Mock()
-    _module.plot_collapse.return_value = plot_collapse_mock
-    sys.modules["scipp.plot.plot_collapse"] = _module
+    _module.prepare_collapse.return_value = plot_collapse_mock
+    sys.modules["scipp.plot.prepare_collapse"] = _module
 
     yield plot_collapse_mock
 

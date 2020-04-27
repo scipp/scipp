@@ -46,7 +46,7 @@ set(PY_FILES
     scipp/src/plot/plot_1d.py
     scipp/src/plot/plot_2d.py
     scipp/src/plot/plot_3d.py
-    scipp/src/plot/plot_collapse.py
+    scipp/src/plot/prepare_collapse.py
     scipp/src/plot/plot_matplotlib.py
     scipp/src/plot/plot.py
     scipp/src/plot/tools.py

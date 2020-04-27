@@ -6,12 +6,11 @@
 import numpy as np
 
 # Scipp imports
-from scipp.plot.plot_impl.dispatch import dispatch
 from scipp.plot.plot_impl.plot_request import PlotRequest
 from scipp.plot.tools import get_line_param
 
 
-def plot_collapse(data_array, dim=None, **kwargs):
+def prepare_collapse(data_array, dim=None):
     """
     Collapse higher dimensions into a 1D plot.
     """
@@ -91,11 +90,7 @@ def plot_collapse(data_array, dim=None, **kwargs):
         for p in mpl_line_params.keys():
             mpl_line_params[p][key] = get_line_param(name=p, index=i)
 
-    # Send the newly created dictionary of
-    # DataArrayView to the plot_1d function
-
-    request = PlotRequest(mpl_line_params=mpl_line_params,
-                          ndims=1,
-                          scipp_objs=all_slices)
-
-    return dispatch(request=request, **kwargs)
+    # Send the newly created dictionary of DataArrayView to be plotted
+    return PlotRequest(mpl_line_params=mpl_line_params,
+                       ndims=1,
+                       scipp_objs=all_slices)

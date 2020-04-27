@@ -50,6 +50,7 @@ except ImportError:
     pass
 
 from .plot import plot
+from .plot import tiled_plot
 
 
 def superplot(dataset, **kwargs):

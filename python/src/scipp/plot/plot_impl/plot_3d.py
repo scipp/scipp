@@ -2,6 +2,8 @@
 # Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
+from typing import Union, List
+
 # Scipp imports
 from scipp import config
 from scipp.plot.plot_impl.plot_request import PlotRequest, ThreeDPlotKwargs
@@ -21,25 +23,31 @@ except ImportError:
     ipv = None
 
 
-def plot_3d(request : PlotRequest):
+def plot_3d(to_plot :  Union[PlotRequest, List[PlotRequest]]):
     """
     Plot a 3-slice through a N dimensional dataset. For every dimension above
     3, a slider is created to adjust the position of the slice in that
     particular dimension. For other dimensions, the sliders are used to adjust
     the position of the slice in 3D space.
     """
+    using_subplots = isinstance(to_plot, list)
+    # This check is duplicated to assist the IDE to deduct we are using a scalar and not a list
+    reference_elem = to_plot[0] if isinstance(to_plot, list) else to_plot
 
-    assert isinstance(request.user_kwargs, ThreeDPlotKwargs)
-
+    assert isinstance(reference_elem.user_kwargs, ThreeDPlotKwargs)
     # Protect against unloaded module
     if ipv is None:
         raise RuntimeError("Three-dimensional projections require ipyvolume "
                            "and ipyevents to be installed. Use conda/pip "
                            "install ipyvolume ipyevents.")
 
-    sv = Slicer3d(request=request)
-
-    render_plot(widgets=sv.box, filename=request.user_kwargs.filename, ipv=ipv)
+    if using_subplots:
+        for plot in to_plot:
+            sv = Slicer3d(request=plot)
+            render_plot(widgets=sv.box, filename=plot.user_kwargs.filename, ipv=ipv)
+    else:
+        sv = Slicer3d(request=to_plot)
+        render_plot(widgets=sv.box, filename=to_plot.user_kwargs.filename, ipv=ipv)
 
     return sv.members
 

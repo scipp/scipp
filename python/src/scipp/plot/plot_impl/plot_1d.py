@@ -3,6 +3,8 @@
 # @author Neil Vaytet
 
 # Scipp imports
+from typing import Union, List
+
 from scipp import config
 from scipp.plot.render import render_plot
 from scipp.plot.slicer import Slicer
@@ -19,7 +21,7 @@ import ipywidgets as widgets
 import warnings
 
 
-def plot_1d(request : PlotRequest):
+def plot_1d(to_plot : Union[PlotRequest, List[PlotRequest]]):
     """
     Plot a 1D spectrum.
 
@@ -27,22 +29,45 @@ def plot_1d(request : PlotRequest):
     If the coordinate of the x-axis contains bin edges, then a bar plot is
     made.
     If the data contains more than one dimensions, sliders are added.
-
     """
+    using_subplots = isinstance(to_plot, list)
+    # This check is duplicated to assist the IDE to deduct we are using a scalar and not a list
+    reference_elem = to_plot[0] if isinstance(to_plot, list) else to_plot
 
-    assert isinstance(request.user_kwargs, OneDPlotKwargs)
+    assert isinstance(reference_elem.user_kwargs, OneDPlotKwargs)
 
-    sv = Slicer1d(request)
+    if reference_elem.user_kwargs.mpl_axes is not None:
+        axes = reference_elem.user_kwargs.mpl_axes
+        fig = None
 
-    if request.user_kwargs.mpl_axes is None:
-        render_plot(figure=sv.fig, widgets=sv.box, filename=request.user_kwargs.filename)
+        if (using_subplots and not isinstance(axes, list)) or \
+           (using_subplots and len(to_plot) != len(axes)):
+            raise ValueError("A list of mpl_axes matching length of the number of subplots is required"
+                             " when using custom mpl_axes")
+    else:
+        nrows = len(to_plot) if isinstance(to_plot, list) else 1
+        fig, axes = plt.subplots(nrows=nrows, ncols=1,
+                               figsize=(config.plot.width / config.plot.dpi,
+                                        config.plot.height / config.plot.dpi),
+                               dpi=config.plot.dpi)
 
-    return sv.members
+    if using_subplots:
+        sliced = []
+        for requested, ax in zip(to_plot, axes):
+            sv = Slicer1d(requested, fig=fig, axis=ax)
+            sliced.append(sv.members)
+    else:
+        sv = Slicer1d(to_plot, fig=fig, axis=axes)
+        sliced = sv.members
+
+    if reference_elem.user_kwargs.mpl_axes is None:
+        render_plot(figure=fig, widgets=sv.box, filename=reference_elem.user_kwargs.filename)
+
+    return sliced
 
 
 class Slicer1d(Slicer):
-    def __init__(self, plot_request: PlotRequest):
-
+    def __init__(self, plot_request: PlotRequest, axis, fig):
         super().__init__(scipp_obj_dict=plot_request.scipp_objs,
                          axes=plot_request.user_kwargs.axes,
                          values=plot_request.user_kwargs.values,
@@ -52,24 +77,16 @@ class Slicer1d(Slicer):
 
         self._request = plot_request
         self._user_kwargs = plot_request.user_kwargs
-        self.fig = None
         self.input_contains_unaligned_data = False
-
         self.mpl_line_params = self._request.mpl_line_params
+        self.ax = axis
+        self.fig = fig
 
         self.names = []
         self.ylim = [np.Inf, np.NINF]
         self.logx = self._user_kwargs.logx or self._user_kwargs.logxy
         self.logy = self._user_kwargs.logy or self._user_kwargs.logxy
 
-        if self._user_kwargs.mpl_axes is not None:
-            self.ax = self._request.user_kwargs.mpl_axes
-        else:
-            self.fig, self.ax = plt.subplots(
-                nrows=1, ncols=1,
-                figsize=(config.plot.width / config.plot.dpi,
-                         config.plot.height / config.plot.dpi),
-                dpi=config.plot.dpi)
         if self._user_kwargs.grid:
             self.ax.grid()
 

@@ -3,9 +3,70 @@
 # @author Neil Vaytet
 
 # Scipp imports
-from .plot_impl.plot_request import OneDPlotKwargs
-from .._scipp import core as sc
+from typing import List, Dict
+
+from scipp.plot.plot_impl.prepare_collapse import prepare_collapse
+from scipp.plot.plot_impl.plot_request import PlotRequest
 from .sciplot import SciPlot
+from .tools import get_line_param
+from .._scipp import core as sc
+
+
+def tiled_plot(scipp_objs: List,
+               collapse=None,
+               projection=None,
+               axes=None,
+               color=None,
+               marker=None,
+               linestyle=None,
+               linewidth=None,
+               bins=None,
+               **kwargs):
+    if isinstance(scipp_objs, list) or isinstance(scipp_objs, set):
+        packed_objs = {}
+        for obj in scipp_objs:
+            obj_dict = _pack_into_dict(obj)
+            # We need to be careful of duplicates - keep trying keys until we find a unique name
+            assert len(obj_dict) == 1, "Duplicate name handling currentlt requires one element returns"
+            original_key = str(next(iter(obj_dict)))
+            key = original_key
+            i = 1
+            while key in packed_objs:
+                key = f"{original_key}_{i}"
+                i += 1
+
+            packed_objs[key] = obj_dict[original_key]
+    elif isinstance(scipp_objs, dict):
+        packed_objs = scipp_objs
+    else:
+        raise ValueError("A list, set or dict of plottable items must be passed,"
+                         f" got {repr(scipp_objs)} instead")
+
+    to_be_plotted = _prepare_plot(axes=axes, bins=bins, color=color,
+                                  inventory=packed_objs, linestyle=linestyle,
+                                  linewidth=linewidth, marker=marker, projection=projection)
+
+    # Delayed imports
+    from scipp.plot.plot_impl.dispatch import dispatch
+
+    # Plot all the subsets
+    output = SciPlot()
+    # We pack this as a list of requests (rather than into the struct as a list)
+    # so that each subplot could have its own options in the future
+    request_list = []
+    for key, val in to_be_plotted.items():
+        if collapse is not None:
+            request_list.append(prepare_collapse(data_array=val["scipp_obj_dict"][key],
+                                                 dim=collapse))
+        else:
+            request_list.append(PlotRequest(bins=bins,
+                                            mpl_line_params=val["mpl_line_params"],
+                                            ndims=val["ndims"],
+                                            projection=projection,
+                                            scipp_objs=val["scipp_obj_dict"]))
+    # TODO how do we decide which key this belongs to?
+    output["tiled"] = dispatch(request=request_list, **kwargs)
+    return output
 
 
 def plot(scipp_obj,
@@ -23,28 +84,31 @@ def plot(scipp_obj,
     """
 
     # Delayed imports
-    from .tools import get_line_param
-    from scipp.plot.plot_impl.plot_collapse import plot_collapse
-    from scipp.plot.plot_impl.plot_request import PlotRequest
     from scipp.plot.plot_impl.dispatch import dispatch
 
-    inventory = dict()
-    tp = type(scipp_obj)
-    if tp is sc.Dataset or tp is sc.DatasetView:
-        for name in sorted(scipp_obj.keys()):
-            inventory[name] = scipp_obj[name]
-    elif tp is sc.Variable or tp is sc.VariableView:
-        inventory[str(tp)] = sc.DataArray(data=scipp_obj)
-    elif tp is sc.DataArray or tp is sc.DataArrayView:
-        inventory[scipp_obj.name] = scipp_obj
-    elif tp is dict:
-        inventory = scipp_obj
-    else:
-        raise RuntimeError("plot: Unknown input type: {}. Allowed inputs are "
-                           "a Dataset, a DataArray, a Variable (and their "
-                           "respective proxies), and a dict of "
-                           "DataArrays.".format(tp))
+    inventory = _pack_into_dict(scipp_obj)
 
+    tobeplotted = _prepare_plot(axes, bins, color, inventory, linestyle,
+                                linewidth, marker, projection)
+
+    # Plot all the subsets
+    output = SciPlot()
+    for key, val in tobeplotted.items():
+        if collapse is not None:
+            request = prepare_collapse(data_array=val["scipp_obj_dict"][key],
+                                       dim=collapse)
+        else:
+            request = PlotRequest(bins=bins,
+                                  mpl_line_params=val["mpl_line_params"],
+                                  ndims=val["ndims"],
+                                  projection=projection,
+                                  scipp_objs=val["scipp_obj_dict"])
+        output[key] = dispatch(request=request, **kwargs)
+
+    return output
+
+
+def _prepare_plot(axes, bins, color, inventory, linestyle, linewidth, marker, projection):
     # Prepare container for matplotlib line parameters
     line_params = {
         "color": color,
@@ -55,7 +119,6 @@ def plot(scipp_obj,
 
     # Counter for 1d/event data
     line_count = -1
-
     # Create a list of variables which will then be dispatched to correct
     # plotting function.
     # Search through the variables and group the 1D datasets that have
@@ -119,21 +182,24 @@ def plot(scipp_obj,
             tobeplotted[key]["scipp_obj_dict"][name] = inventory[name]
             for n, p in mpl_line_params.items():
                 tobeplotted[key]["mpl_line_params"][n][name] = p
+    return tobeplotted
 
-    # Plot all the subsets
-    output = SciPlot()
-    for key, val in tobeplotted.items():
-        if collapse is not None:
-            output[key] = plot_collapse(data_array=val["scipp_obj_dict"][key],
-                                        dim=collapse,
-                                        axes=val["axes"],
-                                        **kwargs)
-        else:
-            request = PlotRequest(bins=bins,
-                                  mpl_line_params=val["mpl_line_params"],
-                                  ndims=val["ndims"],
-                                  projection=projection,
-                                  scipp_objs=val["scipp_obj_dict"])
-            output[key] = dispatch(request=request, **kwargs)
 
-    return output
+def _pack_into_dict(scipp_obj) -> Dict:
+    inventory = dict()
+    tp = type(scipp_obj)
+    if tp is sc.Dataset or tp is sc.DatasetView:
+        for name in sorted(scipp_obj.keys()):
+            inventory[name] = scipp_obj[name]
+    elif tp is sc.Variable or tp is sc.VariableView:
+        inventory[str(tp)] = sc.DataArray(data=scipp_obj)
+    elif tp is sc.DataArray or tp is sc.DataArrayView:
+        inventory[scipp_obj.name] = scipp_obj
+    elif tp is dict:
+        inventory = scipp_obj
+    else:
+        raise RuntimeError("plot: Unknown input type: {}. Allowed inputs are "
+                           "a Dataset, a DataArray, a Variable (and their "
+                           "respective proxies), and a dict of "
+                           "DataArrays.".format(tp))
+    return inventory

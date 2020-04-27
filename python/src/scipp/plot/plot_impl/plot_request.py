@@ -2,6 +2,7 @@
 # Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 # @author David Fairbrother
 from dataclasses import dataclass
+from enum import Enum, auto
 from typing import Dict, Any, Union
 
 

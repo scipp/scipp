@@ -3,6 +3,8 @@
 # @author Neil Vaytet
 
 # Scipp imports
+from typing import Union, List
+
 from scipp import config
 from scipp.plot.render import render_plot
 from scipp.plot.slicer import Slicer
@@ -18,25 +20,90 @@ import matplotlib.pyplot as plt
 import warnings
 
 
-def plot_2d(request: PlotRequest):
+def plot_2d(to_plot: Union[PlotRequest, List[PlotRequest]]):
     """
     Plot a 2D slice through a N dimensional dataset. For every dimension above
     2, a slider is created to adjust the position of the slice in that
     particular dimension.
     """
+    using_subplots = isinstance(to_plot, list)
+    # This check is duplicated to assist the IDE to deduct we are using a scalar and not a list
+    reference_elem = to_plot[0] if isinstance(to_plot, list) else to_plot
 
-    assert isinstance(request.user_kwargs, TwoDPlotKwargs)
-    sv = Slicer2d(request=request)
+    assert isinstance(reference_elem.user_kwargs, TwoDPlotKwargs)
 
-    if request.user_kwargs.mpl_axes is None:
-        render_plot(figure=sv.fig, widgets=sv.vbox, filename=request.user_kwargs.filename)
+    fig, axes, cax = _get_mpl_axis(to_plot, is_subplot=using_subplots)
 
-    return sv.members
+    if using_subplots:
+        sliced = []
+        for requested, i_axis, i_cax in zip(to_plot, axes, cax):
+            sv = Slicer2d(requested, fig=fig, ax=i_axis, cax=i_cax)
+            sliced.append(sv.members)
+    else:
+        sv = Slicer2d(to_plot, fig=fig, ax=axes, cax=cax)
+        sliced = sv.members
+
+    if reference_elem.user_kwargs.mpl_axes is None:
+        render_plot(figure=fig, widgets=sv.vbox, filename=reference_elem.user_kwargs.filename)
+
+    return sliced
+
+
+def _get_mpl_axis(to_plot: Union[PlotRequest, List[PlotRequest]], is_subplot):
+    # Get or create matplotlib axes
+    has_any_variances = any(i.user_kwargs.variances for i in to_plot) if is_subplot \
+        else to_plot.user_kwargs.variances
+
+    reference_elem = to_plot[0] if isinstance(to_plot, list) else to_plot
+
+    fig = None
+
+    if is_subplot:
+        cax = [ [None, None] if has_any_variances else [None] for _ in to_plot]
+    else:
+        cax = [None, None] if has_any_variances else [None]
+
+    if reference_elem.user_kwargs.mpl_axes is not None:
+        if is_subplot:
+            # Passing in MPL axis and the data structs behind it need completing.
+            # However, a discussion on dropping MPL axis vs implementing this needs to happen
+            # We can come back and implement this as / when we need it
+            raise NotImplementedError("Passing in custom MPL axis is not supported with 2d subplots")
+
+        if isinstance(reference_elem.user_kwargs.mpl_axes, dict):
+            axes = [None, None]
+            for key, val in reference_elem.user_kwargs.mpl_axes.items():
+                if key == "ax" or key == "ax_values":
+                    axes[0] = val
+                if key == "cax" or key == "cax_values":
+                    cax[0] = val
+                if key == "ax_variances":
+                    axes[1] = val
+                if key == "cax_variances":
+                    cax[1] = val
+        else:
+            # Case where only a single axis is passed in
+            axes = [reference_elem.user_kwargs.mpl_axes]
+    else:
+        nrows = len(to_plot) if isinstance(to_plot, list) else 1
+        ncols = 2 if has_any_variances else 1
+        fig, axes = plt.subplots(
+            nrows=nrows, ncols=ncols,
+            figsize=(config.plot.width / config.plot.dpi,
+                     config.plot.height / ncols / config.plot.dpi),
+            dpi=config.plot.dpi)
+        # Pack into list if we got a scalar axis returned
+        if not is_subplot:
+            axes = [axes]
+        elif has_any_variances:
+            axes = [[col1, col2] for col1, col2 in axes]
+        else:
+            axes = [[col] for col in axes]
+    return fig, axes, cax
 
 
 class Slicer2d(Slicer):
-    def __init__(self, request: PlotRequest):
-
+    def __init__(self, request: PlotRequest, ax: List, cax: List, fig):
         super().__init__(scipp_obj_dict=request.scipp_objs,
                          axes=request.user_kwargs.axes,
                          values=request.user_kwargs.values,
@@ -52,42 +119,14 @@ class Slicer2d(Slicer):
 
         self._request = request
         self._user_kwargs = request.user_kwargs
+        self.fig = fig
+
         self.members.update({"images": {}, "colorbars": {}})
         self.extent = {"x": [1, 2], "y": [1, 2]}
         self.logx = self._user_kwargs.logx or self._user_kwargs.logxy
         self.logy = self._user_kwargs.logy or self._user_kwargs.logxy
-
-        # Get or create matplotlib axes
-        self.fig = None
-        cax = [None] * (1 + self.params["variances"][self.name]["show"])
-        if self._user_kwargs.mpl_axes is not None:
-            if isinstance(self._user_kwargs.mpl_axes, dict):
-                ax = [None, None]
-                for key, val in self._user_kwargs.mpl_axes.items():
-                    if key == "ax" or key == "ax_values":
-                        ax[0] = val
-                    if key == "cax" or key == "cax_values":
-                        cax[0] = val
-                    if key == "ax_variances":
-                        ax[1] = val
-                    if key == "cax_variances":
-                        cax[1] = val
-            else:
-                # Case where only a single axis is given
-                ax = [self._user_kwargs.mpl_axes]
-        else:
-            self.fig, ax = plt.subplots(
-                nrows=1,
-                ncols=1 + self.params["variances"][self.name]["show"],
-                figsize=(config.plot.width / config.plot.dpi,
-                         config.plot.height /
-                         (1.0 + self.params["variances"][self.name]["show"]) /
-                         config.plot.dpi),
-                dpi=config.plot.dpi,
-                sharex=True,
-                sharey=True)
-            if not self.params["variances"][self.name]["show"]:
-                ax = [ax]
+        self.global_vmin = np.Inf
+        self.global_vmax = np.NINF
 
         self.ax = dict()
         self.cax = dict()
