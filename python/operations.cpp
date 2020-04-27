@@ -26,8 +26,9 @@ template <class T> void bind_flatten(py::module &m) {
     // Input parameters
     {"x", "Variable, DataArray, or Dataset to flatten."},
     {"dim", "Dimension over which to flatten."},
-    // Descrption
-    "Flatten the specified dimension into event lists, equivalent to summing dense data.",
+    // Description
+    "Flatten the specified dimension into event lists, "
+    "equivalent to summing dense data.",
     // Raises
     "If the dimension does not exist, or if x does not contain event lists.",
     // See also
@@ -51,7 +52,7 @@ template <class T> void bind_concatenate(py::module &m) {
     {"x", "First Variable, DataArray, or Dataset."},
     {"y", "Second Variable, DataArray, or Dataset."},
     {"dim", "Dimension over which to concatenate."},
-    // Descrption
+    // Description
     R"(
     Concatenate input variables, or all the variables in a supplied dataset, along the given dimension.
 
@@ -74,32 +75,73 @@ template <class T> void bind_concatenate(py::module &m) {
 
 
 
-template <class T> void bind_abs(py::module &m) {
+template <class T> void bind_abs(py::module &m, bool out_arg = false) {
   using ConstView = const typename T::const_view_type &;
-  using View = typename T::view_type;
-  bind_free_function_with_out<T, View, ConstView>(
-    // Operation function pointer
-    abs,
-    // In-place operation function pointer
-    abs,
-    // Operation python name
-    "abs",
-    // py::module
-    m,
-    // Input parameters
-    {"x", "Input Variable, DataArray, or Dataset."},
-    // Descrption
+  const Docstring docs = {
+    // Description
     "Element-wise absolute value.",
     // Raises
-    "If the dtype has no absolute value, e.g., if it is a string",
+    "If the dtype has no absolute value, e.g., if it is a string.",
     // See also
     ":py:class:`scipp.norm` for vector-like dtype",
     // Returns
     "Variable, data array, or dataset containing the absolute values.",
     // Return type
-    "Variable, DataArray, or Dataset.");
+    "Variable, DataArray, or Dataset."
+  };
+  strpair params = {"x", "Input Variable, DataArray, or Dataset."};
+
+  bind_free_function<T, ConstView>(
+    abs,
+    "abs",
+    m,
+    params,
+    docs.description,
+    docs.raises,
+    docs.seealso,
+    docs.returns,
+    docs.rtype);
+
+  if(out_arg) {
+    using View = typename T::view_type;
+    bind_free_function<View, ConstView, const View &>(
+    abs,
+    "abs",
+    m,
+    params,
+    {"out", "Output buffer."},
+    docs.description + " (in-place)",
+    docs.raises,
+    docs.seealso,
+    docs.returns,
+    docs.rtype + " (View)");
+  }
 }
 
+
+template <class T> void bind_dot(py::module &m) {
+  using ConstView = const typename T::const_view_type &;
+  bind_free_function<T, ConstView, ConstView>(
+    // Operation function pointer
+    dot,
+    // Operation python name
+    "dot",
+    // py::module
+    m,
+    // Input parameters
+    {"x", "Left operand Variable, DataArray, or Dataset."},
+    {"y", "Right operand Variable, DataArray, or Dataset."},
+    // Description
+    "Element-wise dot-product.",
+    // Raises
+    "If the dtype is not a vector such as :py:class:`scipp.dtype.vector_3_double.`",
+    // See also
+    "",
+    // Returns
+    "Variable, data array, or dataset with scalar elements based on the two inputs.",
+    // Return type
+    "Variable, DataArray, or Dataset.");
+}
 
 
 void init_operations(py::module &m) {
@@ -111,5 +153,7 @@ void init_operations(py::module &m) {
   bind_concatenate<DataArray>(m);
   bind_concatenate<Dataset>(m);
 
-  bind_abs<Variable>(m);
+  bind_abs<Variable>(m, true);
+
+  bind_dot<Variable>(m);
 }

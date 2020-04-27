@@ -174,7 +174,7 @@ VariableView sqrt(const VariableConstView &var, const VariableView &out) {
   return out;
 }
 
-Variable dot(const Variable &a, const Variable &b) {
+Variable dot(const VariableConstView &a, const VariableConstView &b) {
   return transform<pair_self_t<Eigen::Vector3d>>(
       a, b,
       overloaded{[](const auto &a_, const auto &b_) { return a_.dot(b_); },

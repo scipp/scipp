@@ -24,6 +24,12 @@ namespace py = pybind11;
 
 using strpair = const std::pair<const std::string, const std::string>;
 
+
+struct Docstring
+{
+  const std::string description, raises, seealso, returns, rtype;
+};
+
 // Construct docstring
 std::string make_docstring(const std::string description,
   const std::string raises,
@@ -42,8 +48,8 @@ std::string make_docstring(const std::string description,
 }
 
 template<class T, class T1>
-void bind_free_function(T (*func)(T1), std::string fname, py::module &m,
-  strpair param1,
+void bind_free_function(T (*func)(T1), const std::string fname, py::module &m,
+  const strpair param1,
   const std::string description,
   const std::string raises,
   const std::string seealso,
@@ -73,8 +79,8 @@ void bind_free_function(T (*func)(T1), std::string fname, py::module &m,
 
 
 template<class T, class T1, class T2>
-void bind_free_function(T (*func)(T1, T2), std::string fname, py::module &m,
-  strpair param1, strpair param2,
+void bind_free_function(T (*func)(T1, T2), const std::string fname, py::module &m,
+  const strpair param1, const strpair param2,
   const std::string description,
   const std::string raises,
   const std::string seealso,
@@ -89,8 +95,8 @@ void bind_free_function(T (*func)(T1, T2), std::string fname, py::module &m,
 }
 
 template<class T, class T1, class T2, class T3>
-void bind_free_function(T (*func)(T1, T2, T3), std::string fname, py::module &m,
-  strpair param1, strpair param2, strpair param3,
+void bind_free_function(T (*func)(T1, T2, T3), const std::string fname, py::module &m,
+  const strpair param1, const strpair param2, const strpair param3,
   const std::string description,
   const std::string raises,
   const std::string seealso,
@@ -106,14 +112,14 @@ void bind_free_function(T (*func)(T1, T2, T3), std::string fname, py::module &m,
 
 
 
-template<class T, class V, class T1>
-void bind_free_function_with_out(T (*func)(T1), V (*func_out)(T1, const V&), std::string fname, py::module &m,
-  strpair param1,
-  const std::string description,
-  const std::string raises,
-  const std::string seealso,
-  const std::string returns,
-  const std::string rtype) {
-  bind_free_function<T, T1>(func, fname, m, param1, description + " (in-place)", raises, seealso, returns, rtype);
-  bind_free_function<V, T1, const V&>(func_out, fname, m, param1, {"out", "Output buffer"}, description, raises, seealso, returns, rtype + " (View)");
-}
+// template<class T, class V, class T1>
+// void bind_free_function_out_arg(T (*func)(T1), V (*func_out)(T1, const V&), std::string fname, py::module &m,
+//   strpair param1,
+//   const std::string description,
+//   const std::string raises,
+//   const std::string seealso,
+//   const std::string returns,
+//   const std::string rtype) {
+//   bind_free_function<T, T1>(func, fname, m, param1, description + " (in-place)", raises, seealso, returns, rtype);
+//   bind_free_function<V, T1, const V&>(func_out, fname, m, param1, {"out", "Output buffer"}, description, raises, seealso, returns, rtype + " (View)");
+// }

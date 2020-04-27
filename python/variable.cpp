@@ -436,14 +436,14 @@ void init_variable(py::module &m) {
   //       :return: Input with values replaced by the absolute values
   //       :rtype: Variable)");
 
-  m.def("dot", py::overload_cast<const Variable &, const Variable &>(&dot),
-        py::arg("x"), py::arg("y"), py::call_guard<py::gil_scoped_release>(),
-        R"(
-        Element-wise dot-product.
+  // m.def("dot", py::overload_cast<const Variable &, const Variable &>(&dot),
+  //       py::arg("x"), py::arg("y"), py::call_guard<py::gil_scoped_release>(),
+  //       R"(
+  //       Element-wise dot-product.
 
-        :raises: If the dtype is not a vector such as :py:class:`scipp.dtype.vector_3_double`
-        :return: New variable with scalar elements based on the two inputs.
-        :rtype: Variable)");
+  //       :raises: If the dtype is not a vector such as :py:class:`scipp.dtype.vector_3_double`
+  //       :return: New variable with scalar elements based on the two inputs.
+  //       :rtype: Variable)");
 
   // m.def("concatenate",
   //       py::overload_cast<const VariableConstView &, const VariableConstView &,
