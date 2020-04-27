@@ -21,7 +21,7 @@ namespace py = pybind11;
          #op +                                                                 \
          ", e.g., if it is an integer.\n"                                      \
          ":return: Variable containing the " +                                 \
-         #op + ".\n";                                                          \
+         #op + " of the input values.\n";                                      \
   rtype = ":rtype: Variable, DataArray, or Dataset.";                          \
   rtype_out = ":rtype: VariableView, DataArrayView, or DatasetView.";          \
   param_out = std::string(":param out: Output buffer to which the ") + #op +   \
@@ -29,22 +29,22 @@ namespace py = pybind11;
   aop = std::string("a") + #op;                                                \
   mod.def(#op, [](T::const_view_type self) { return op(self); }, py::arg("x"), \
           py::call_guard<py::gil_scoped_release>(),                            \
-          &((head + tail + rtype)[0]));                                        \
+          (head + tail + rtype).c_str());                                        \
   mod.def(                                                                     \
       #op,                                                                     \
       [](T::const_view_type self, T::view_type out) { return op(self, out); }, \
       py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>(),  \
-      &((head + param_out + tail + rtype_out)[0]));                            \
-  mod.def(&(aop[0]), [](T::const_view_type self) { return a##op(self); },      \
+      (head + param_out + tail + rtype_out).c_str());                            \
+  mod.def(aop.c_str(), [](T::const_view_type self) { return a##op(self); },      \
           py::arg("x"), py::call_guard<py::gil_scoped_release>(),              \
-          &((head + tail + rtype)[0]));                                        \
-  mod.def(&(aop[0]),                                                           \
+          (head + tail + rtype).c_str());                                        \
+  mod.def(aop.c_str(),                                                           \
           [](T::const_view_type self, T::view_type out) {                      \
             return a##op(self, out);                                           \
           },                                                                   \
           py::arg("x"), py::arg("out"),                                        \
           py::call_guard<py::gil_scoped_release>(),                            \
-          &((head + param_out + tail + rtype_out)[0]));
+          (head + param_out + tail + rtype_out).c_str());
 
 void init_trigonometry(py::module &m) {
 

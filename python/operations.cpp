@@ -13,10 +13,107 @@ using namespace scipp::dataset;
 
 namespace py = pybind11;
 
+// see https://www.reddit.com/r/C_Programming/comments/3dfu5w/is_it_possible_to_modify_each_argument_in_a/
+
+// Make a FOREACH macro
+#define FE_1(WHAT, X) WHAT(X) 
+#define FE_2(WHAT, X, ...) WHAT(X)FE_1(WHAT, __VA_ARGS__)
+#define FE_3(WHAT, X, ...) WHAT(X)FE_2(WHAT, __VA_ARGS__)
+#define FE_4(WHAT, X, ...) WHAT(X)FE_3(WHAT, __VA_ARGS__)
+#define FE_5(WHAT, X, ...) WHAT(X)FE_4(WHAT, __VA_ARGS__)
+//... repeat as needed
+#define GET_MACRO(_1,_2,_3,_4,_5,NAME,...) NAME 
+#define FOR_EACH(action,...) \
+  GET_MACRO(__VA_ARGS__,FE_5,FE_4,FE_3,FE_2,FE_1)(action,__VA_ARGS__)
+
+#define PYARG_FORMAT(IN) ,py::arg(IN)
+#define PYARGS(...) FOR_EACH(PYARG_FORMAT, __VA_ARGS__)
+
+// DEF_STRUCT(myStruct, a = "first",
+//                      b = "second",
+//                      c = "third")
+
+// result after preprocessing:
+// extern const struct myStruct { char *a = "first";char *b = "second";char *c = "third"; };
+
+// // #define FREE_FUNCTION_PYARGS(args) ##args
+
+// #define FREE_FUNCTION_ARGS(op, mod, T)                                \
+
+
+// #define BIND_FREE_FUNCTION(op, mod, pyargs, docstring, )                                \
+//   mod.def(#op, [](T::const_view_type self) { return op(self); },
+//           FREE_FUNCTION_PYARGS(pyargs), \
+//           py::call_guard<py::gil_scoped_release>(),                            \
+//           docstring);                                        \
+
+
+
+// __VA_ARGS__
+
+// template<class T1, class T2>
+// void bind_free_function(std::string name, py::module &m, std::string description,
+//   std::map<std::string, std::string> &params,
+//   std::string raises, std::string seealso, std::string returns, std::string rtype) {
+//   // Construct docstring
+//   std::string docstring = description + "\n";
+//   std::string pyargs;
+//   for (auto &elem : params) {
+//     docstring += ":param " + elem.first + ": " + elem.second +"\n";
+//     pyargs += "py:arg(\"" + elem.first + "\"), "
+//   }
+//   docstring += ":raises: " + raises + "\n";
+//   docstring += ":seealso: " + seealso + "\n";
+//   docstring += ":return: " + returns + "\n";
+//   docstring += ":rtype: " + rtype;
+
+//   BIND_FREE_FUNCTION(op, mod, T)
+
+//     m.def(name, py::overload_cast<ConstView, const Dim>(&flatten),
+//         py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
+//         R"(
+//         Flatten the specified dimension into event lists, equivalent to summing dense data.
+
+//         :param x: Variable, DataArray, or Dataset to flatten.
+//         :param dim: Dimension over which to flatten.
+//         :raises: If the dimension does not exist, or if x does not contain event lists
+//         :seealso: :py:class:`scipp.sum`
+//         :return: New variable, data array, or dataset containing the flattened data.
+//         :rtype: Variable, DataArray, or Dataset)");
+
+// }
+
+
+// template <class T> void bind_flatten(py::module &m) {
+//   using ConstView = const typename T::const_view_type &;
+//   bind_free_function<T, ConstView, const Dim>(
+//     "flatten",
+//     m,
+//     {{"x", "Variable, DataArray, or Dataset to flatten"},
+//      {"dim", "Dimension over which to flatten"}},
+//     "If the dimension does not exist, or if x does not contain event lists",
+//     ":py:class:`scipp.sum`",
+//     "New variable, data array, or dataset containing the flattened data.",
+//     "Variable, DataArray, or Dataset"
+//     )
+//   BIND_FREE_FUNCTION()
+//   m.def("flatten", py::overload_cast<ConstView, const Dim>(&flatten),
+//         py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
+//         R"(
+//         Flatten the specified dimension into event lists, equivalent to summing dense data.
+
+//         :param x: Variable, DataArray, or Dataset to flatten.
+//         :param dim: Dimension over which to flatten.
+//         :raises: If the dimension does not exist, or if x does not contain event lists
+//         :seealso: :py:class:`scipp.sum`
+//         :return: New variable, data array, or dataset containing the flattened data.
+//         :rtype: Variable, DataArray, or Dataset)");
+// }
+
 template <class T> void bind_flatten(py::module &m) {
   using ConstView = const typename T::const_view_type &;
   m.def("flatten", py::overload_cast<ConstView, const Dim>(&flatten),
-        py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
+        py::call_guard<py::gil_scoped_release>(),
         R"(
         Flatten the specified dimension into event lists, equivalent to summing dense data.
 
@@ -25,7 +122,9 @@ template <class T> void bind_flatten(py::module &m) {
         :raises: If the dimension does not exist, or if x does not contain event lists
         :seealso: :py:class:`scipp.sum`
         :return: New variable, data array, or dataset containing the flattened data.
-        :rtype: Variable, DataArray, or Dataset)");
+        :rtype: Variable, DataArray, or Dataset)"
+        // py::arg("x"), py::arg("dim"));
+        PYARGS("x", "dim"));
 }
 
 template <class T> void bind_concatenate(py::module &m) {
