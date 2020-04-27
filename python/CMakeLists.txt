@@ -5,6 +5,7 @@ pybind11_add_module(
   SHARED
   SYSTEM
   counts.cpp
+  bind_free_function.cpp
   dataset.cpp
   detail.cpp
   dtype.cpp
