@@ -36,42 +36,18 @@ TODO: Improve or document this process.
 Units systems
 -------------
 
-It is possible to select an existing system or to add a new one.
+The current unit system is based on ``boost::units`` and therefore has a hard-coded set of supported unit combinations.
+Customization may therefore be necessary:
 
-Selecting an existing system
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-The ``cmake`` flag ``SCIPP_UNITS_SYSTEM`` is used to select the system of units (and dimension labels).
-Currently the following options are available:
-
-- ``Dummy``.
-  For unit-testing only.
-  This is incomplete and not useful in practice.
-- ``Neutron``.
-  The system used in ``scipp-neutron``.
-  This contains some SI units as well as a unit for "counts" and some particle-physics-related units like ``meV`` and ``meV/c``.
-
-Creating a new system
-~~~~~~~~~~~~~~~~~~~~~
-
-1. Create files following the same pattern as ``units/include/scipp/units/dummy.h`` and ``units/dummy.cpp``.
-   Adapt the namespace name in both header and source and rename the ``SCIPP_UNITS_DUMMY`` macro.
-   This macro is used for inlining the namespace, enabling ``Variable`` and the rest of ``scipp-core`` to pick up the selected unit automatically.
-2. In the header file:
-
-   a. Adapt the ``supported_units`` helper.
-      This must list all units and unit combinations that are to be supported (this is a shortcoming of the current implementation, which is based on the compile-time units library ``boost-units``).
-      For an example of how more complex (heterogeneous) systems can be created see ``units/include/scipp/units/neutron.h``.
-   b. Adapt the ``counts_unit`` helper.
-      This is used to define the unit for "counts", e.g., the number of detector neutrons, or measurements with a certain value.
-      When working with event data that is histogrammed later (or data that is a histogram in the first place) it is recommended to use something other than ``dimensionless`` here.
-      Otherwise operations like ``rebin`` cannot correctly distinguish data that represents counts or densities of counts from other data.
-   c. Adapt the dimensions labels in the call to the macro ``SCIPP_UNITS_DECLARE_DIMENSIONS``.
-3. Include the new header in ``units/include/scipp/units/unit.h``.
-4. Adapt the documentation of ``SCIPP_UNITS_SYSTEM`` in ``units/CMakeLists.txt``.
-
-To select the new system during compilation, use the ``cmake`` flag ``-DSCIPP_UNITS_SYSTEM=NewSystem``.
-This will define the macro ``SCIPP_UNITS_NEWSYSTEM``.
+1. Adapt the ``supported_units`` helper in ``units/include/scipp/units/unit.h``.
+   This must list all units and unit combinations that are to be supported (this is a shortcoming of the current implementation, which is based on the compile-time units library ``boost-units``).
+2. Adapt the ``counts_unit`` helper.
+   This is used to define the unit for "counts", e.g., the number of detector neutrons, or measurements with a certain value.
+   When working with event data that is histogrammed later (or data that is a histogram in the first place) it is recommended to use something other than ``dimensionless`` here.
+   Otherwise operations like ``rebin`` cannot correctly distinguish data that represents counts or densities of counts from other data.
+3. Currently ``units/include/scipp/units/neutron.h`` provides some additional base units relevant to neutron scattering.
+   This contains some SI units as well as a unit for "counts" and some particle-physics-related units like ``meV`` and ``meV/c``.
+   More may be defined in a similar way, if SI units are not sufficient.
 
 Container used for event data
 ------------------------------
