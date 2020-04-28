@@ -4,7 +4,6 @@
 /// @author Simon Heybrock
 #pragma once
 
-#include "scipp/units/dimension.h"
 #include "scipp/units/unit_impl.h"
 
 namespace scipp::units {
@@ -17,8 +16,6 @@ class SCIPP_UNITS_EXPORT Unit : public Unit_impl<Unit> {
 public:
   using Unit_impl<Unit>::Unit_impl;
 };
-
-SCIPP_UNITS_DECLARE_DIMENSIONS(X, Y, Z)
 
 } // namespace dummy
 

@@ -12,6 +12,7 @@
 #include <boost/units/systems/si.hpp>
 #include <boost/units/unit.hpp>
 
+#include "scipp-units_export.h"
 #include "scipp/common/index.h"
 
 namespace scipp::units {

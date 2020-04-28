@@ -6,6 +6,7 @@
 #include <set>
 #include <thread>
 
+#include "scipp/common/index.h"
 #include "scipp/units/dim.h"
 
 using namespace scipp::units;
@@ -34,9 +35,9 @@ TEST(DimTest, id) {
 
 TEST(DimTest, unique_builtin_name) {
   std::set<std::string> names;
-  const auto expected = static_cast<int64_t>(DimId::Invalid);
+  const auto expected = static_cast<int64_t>(Dim::Id::Invalid);
   for (int64_t i = 0; i < expected; ++i)
-    names.emplace(Dim(static_cast<DimId>(i)).name());
+    names.emplace(Dim(static_cast<Dim::Id>(i)).name());
   EXPECT_EQ(names.size(), expected);
 }
 
@@ -62,7 +63,7 @@ TEST(DimTest, DISABLED_label_count_overflow) {
   // Note that the id of "first" is not necessarily the value coded in the
   // implementation but rather depends on which tests have run before.
   const auto end =
-      std::numeric_limits<std::underlying_type<DimId>::type>::max();
+      std::numeric_limits<std::underlying_type<Dim::Id>::type>::max();
   const auto count = end - static_cast<int64_t>(Dim("first").id());
   for (int64_t i = 0; i < count; ++i)
     Dim("custom" + std::to_string(i));

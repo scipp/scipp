@@ -4,11 +4,12 @@
 /// @author Simon Heybrock
 #include <limits>
 
+#include "scipp/common/index.h"
 #include "scipp/units/dim.h"
 
 namespace scipp::units {
 
-std::unordered_map<std::string, DimId> Dim::builtin_ids{
+std::unordered_map<std::string, Dim::Id> Dim::builtin_ids{
     {"detector", Dim::Detector},
     {"d-spacing", Dim::DSpacing},
     {"E", Dim::Energy},
@@ -33,7 +34,7 @@ std::unordered_map<std::string, DimId> Dim::builtin_ids{
     {"y", Dim::Y},
     {"z", Dim::Z}};
 
-std::unordered_map<std::string, DimId> Dim::custom_ids;
+std::unordered_map<std::string, Dim::Id> Dim::custom_ids;
 std::mutex Dim::mutex;
 
 Dim::Dim(const std::string &label) {
@@ -47,10 +48,10 @@ Dim::Dim(const std::string &label) {
     return;
   }
   const auto id = scipp::size(custom_ids) + 1000;
-  if (id > std::numeric_limits<std::underlying_type<DimId>::type>::max())
+  if (id > std::numeric_limits<std::underlying_type<Id>::type>::max())
     throw std::runtime_error(
         "Exceeded maximum number of different dimension labels.");
-  m_id = static_cast<DimId>(id);
+  m_id = static_cast<Id>(id);
   custom_ids[label] = m_id;
 }
 

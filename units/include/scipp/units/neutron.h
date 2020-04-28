@@ -5,7 +5,6 @@
 /// @author Neil Vaytet
 #pragma once
 
-#include "scipp/units/dimension.h"
 #include "scipp/units/unit_impl.h"
 
 #include <boost/units/base_dimension.hpp>
@@ -141,11 +140,6 @@ class Unit : public Unit_impl<Unit> {
 public:
   using Unit_impl<Unit>::Unit_impl;
 };
-
-SCIPP_UNITS_DECLARE_DIMENSIONS(Detector, DSpacing, Energy, EnergyTransfer,
-                               Group, Position, PulseTime, Q, QSquared, Qx, Qy,
-                               Qz, Row, ScatteringAngle, Spectrum, Temperature,
-                               Time, Tof, Wavelength, X, Y, Z)
 
 } // namespace neutron
 

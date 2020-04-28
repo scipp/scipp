@@ -8,6 +8,8 @@
 #include <string>
 
 #include "scipp-units_export.h"
+#include "scipp/units/dummy.h"
+#include "scipp/units/neutron.h"
 #include "scipp/units/unit.h"
 
 namespace scipp::units {
