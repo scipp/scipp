@@ -27,7 +27,7 @@ struct Identity {
 };
 struct ScalarToVariable {
   template <class T> Variable operator()(const T &x) const noexcept {
-    return x * units::Unit(units::dimensionless);
+    return x * units::one;
   }
 };
 

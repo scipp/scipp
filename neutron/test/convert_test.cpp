@@ -17,31 +17,27 @@ Dataset makeBeamline() {
 
   static const auto source_pos = Eigen::Vector3d{0.0, 0.0, -10.0};
   static const auto sample_pos = Eigen::Vector3d{0.0, 0.0, 0.0};
-  tof.setCoord(
-      Dim("source_position"),
-      makeVariable<Eigen::Vector3d>(units::Unit(units::m), Values{source_pos}));
-  tof.setCoord(
-      Dim("sample_position"),
-      makeVariable<Eigen::Vector3d>(units::Unit(units::m), Values{sample_pos}));
+  tof.setCoord(Dim("source_position"),
+               makeVariable<Eigen::Vector3d>(units::m, Values{source_pos}));
+  tof.setCoord(Dim("sample_position"),
+               makeVariable<Eigen::Vector3d>(units::m, Values{sample_pos}));
 
-  tof.setCoord(Dim("position"),
-               makeVariable<Eigen::Vector3d>(
-                   Dims{Dim::Spectrum}, Shape{2}, units::Unit(units::m),
-                   Values{Eigen::Vector3d{1.0, 0.0, 0.0},
-                          Eigen::Vector3d{0.1, 0.0, 1.0}}));
+  tof.setCoord(Dim("position"), makeVariable<Eigen::Vector3d>(
+                                    Dims{Dim::Spectrum}, Shape{2}, units::m,
+                                    Values{Eigen::Vector3d{1.0, 0.0, 0.0},
+                                           Eigen::Vector3d{0.1, 0.0, 1.0}}));
   return tof;
 }
 
 Dataset makeTofDataset() {
   Dataset tof = makeBeamline();
 
-  tof.setCoord(Dim::Tof, makeVariable<double>(Dims{Dim::Tof}, Shape{4},
-                                              units::Unit(units::us),
-                                              Values{4000, 5000, 6100, 7300}));
+  tof.setCoord(Dim::Tof,
+               makeVariable<double>(Dims{Dim::Tof}, Shape{4}, units::us,
+                                    Values{4000, 5000, 6100, 7300}));
   tof.setData("counts",
               makeVariable<double>(Dims{Dim::Spectrum, Dim::Tof}, Shape{2, 3},
-                                   units::Unit(units::counts),
-                                   Values{1, 2, 3, 4, 5, 6}));
+                                   units::counts, Values{1, 2, 3, 4, 5, 6}));
 
   return tof;
 }
@@ -57,17 +53,16 @@ Dataset makeTofDatasetEvents() {
   tof.setCoord(Dim::Tof, events);
   tof.setCoord(Dim("aux"), events);
 
-  tof.setData("events", makeVariable<double>(Dims{Dim::Spectrum}, Shape{2},
-                                             units::Unit(units::counts),
-                                             Values{1, 1}, Variances{1, 1}));
+  tof.setData("events",
+              makeVariable<double>(Dims{Dim::Spectrum}, Shape{2}, units::counts,
+                                   Values{1, 1}, Variances{1, 1}));
 
   return tof;
 }
 
 Variable makeCountDensityData(const units::Unit &unit) {
   return makeVariable<double>(Dims{Dim::Spectrum, Dim::Tof}, Shape{2, 3},
-                              units::Unit(units::counts) / unit,
-                              Values{1, 2, 3, 4, 5, 6});
+                              units::counts / unit, Values{1, 2, 3, 4, 5, 6});
 }
 
 class ConvertTest : public testing::TestWithParam<Dataset> {};
@@ -144,8 +139,7 @@ TEST_P(ConvertTest, Tof_to_DSpacing) {
     const auto values = coord.values<double>();
     // Rule of thumb (https://www.psi.ch/niag/neutron-physics):
     // v [m/s] = 3956 / \lambda [ Angstrom ]
-    Variable tof_in_seconds =
-        tof.coords()[Dim::Tof] * (1e-6 * units::Unit(units::dimensionless));
+    Variable tof_in_seconds = tof.coords()[Dim::Tof] * (1e-6 * units::one);
     const auto tofs = tof_in_seconds.values<double>();
     // Spectrum 0 is 11 m from source
     // 2d sin(theta) = n \lambda
@@ -277,8 +271,7 @@ TEST_P(ConvertTest, Tof_to_Wavelength) {
     const auto values = coord.values<double>();
     // Rule of thumb (https://www.psi.ch/niag/neutron-physics):
     // v [m/s] = 3956 / \lambda [ Angstrom ]
-    Variable tof_in_seconds =
-        tof.coords()[Dim::Tof] * (1e-6 * units::Unit(units::dimensionless));
+    Variable tof_in_seconds = tof.coords()[Dim::Tof] * (1e-6 * units::one);
     const auto tofs = tof_in_seconds.values<double>();
     // Spectrum 0 is 11 m from source
     EXPECT_NEAR(values[0], 3956.0 / (11.0 / tofs[0]), values[0] * 1e-3);
@@ -388,8 +381,7 @@ TEST_P(ConvertTest, Tof_to_Energy_Elastic) {
     EXPECT_EQ(coord.unit(), units::meV);
 
     const auto values = coord.values<double>();
-    Variable tof_in_seconds =
-        tof.coords()[Dim::Tof] * (1e-6 * units::Unit(units::dimensionless));
+    Variable tof_in_seconds = tof.coords()[Dim::Tof] * (1e-6 * units::one);
     const auto tofs = tof_in_seconds.values<double>();
 
     // Spectrum 0 is 11 m from source
@@ -513,9 +505,9 @@ TEST_P(ConvertTest, Energy_to_Tof_Elastic) {
 
 TEST_P(ConvertTest, convert_with_factor_type_promotion) {
   Dataset tof = GetParam();
-  tof.setCoord(Dim::Tof, makeVariable<float>(Dims{Dim::Tof}, Shape{4},
-                                             units::Unit(units::us),
-                                             Values{4000, 5000, 6100, 7300}));
+  tof.setCoord(Dim::Tof,
+               makeVariable<float>(Dims{Dim::Tof}, Shape{4}, units::us,
+                                   Values{4000, 5000, 6100, 7300}));
   for (auto &&d : {Dim::DSpacing, Dim::Wavelength, Dim::Energy}) {
     auto res = convert(tof, Dim::Tof, d);
     EXPECT_EQ(res.coords()[d].dtype(), core::dtype<float>);

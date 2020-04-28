@@ -25,9 +25,8 @@ auto make_2d_events_coord(const scipp::index size, const scipp::index count) {
 
 auto make_2d_events_default_weights(const scipp::index size,
                                     const scipp::index count) {
-  auto weights =
-      makeVariable<double>(Dims{Dim::X}, Shape{size},
-                           units::Unit(units::counts), Values{}, Variances{});
+  auto weights = makeVariable<double>(Dims{Dim::X}, Shape{size}, units::counts,
+                                      Values{}, Variances{});
   return DataArray(weights, {{Dim::Y, make_2d_events_coord(size, count)}});
 }
 

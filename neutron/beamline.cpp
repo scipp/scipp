@@ -64,7 +64,7 @@ template <class T> static Variable l2(const T &d) {
 }
 
 template <class T> static Variable scattering_angle(const T &d) {
-  return 0.5 * units::Unit(units::dimensionless) * two_theta(d);
+  return 0.5 * units::one * two_theta(d);
 }
 
 template <class T> static Variable two_theta(const T &d) {

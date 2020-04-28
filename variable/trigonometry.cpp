@@ -13,9 +13,8 @@ using namespace scipp::core;
 
 namespace scipp::variable {
 
-const auto deg_to_rad =
-    makeVariable<double>(Dims(), Shape(), units::Unit(units::rad / units::deg),
-                         Values{pi<double> / 180.0});
+const auto deg_to_rad = makeVariable<double>(
+    Dims(), Shape(), units::rad / units::deg, Values{pi<double> / 180.0});
 
 Variable sin(const VariableConstView &var) {
   Variable out(var);

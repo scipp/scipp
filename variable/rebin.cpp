@@ -107,8 +107,7 @@ void rebin_non_inner(const Dim dim, const VariableConstView &oldT,
 
       auto owidth = xo_high - xo_low;
       newT.slice({dim, inew}) +=
-          astype(oldT.slice({dim, iold}) *
-                     ((delta / owidth) * units::Unit(units::dimensionless)),
+          astype(oldT.slice({dim, iold}) * ((delta / owidth) * units::one),
                  newT.dtype());
       if (xn_high > xo_high) {
         iold++;
@@ -125,8 +124,7 @@ Variable rebin(const VariableConstView &var, const Dim dim,
   // Rebin could also implemented for count-densities. However, it may be better
   // to avoid this since it increases complexity. Instead, densities could
   // always be computed on-the-fly for visualization, if required.
-  core::expect::unit_any_of(var,
-                            {units::counts, units::Unit(units::dimensionless)});
+  core::expect::unit_any_of(var, {units::counts, units::one});
 
   auto do_rebin = [dim](auto &&outT, auto &&oldT, auto &&oldCoordT,
                         auto &&newCoordT) {

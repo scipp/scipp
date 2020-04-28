@@ -126,6 +126,7 @@ Unit atan(const Unit &a);
 Unit atan2(const Unit &y, const Unit &x);
 
 constexpr Unit dimensionless{boost_units::dimensionless};
+constexpr Unit one{boost_units::dimensionless}; /// alias for dimensionless
 constexpr Unit m{boost_units::m};
 constexpr Unit s{boost_units::s};
 constexpr Unit kg{boost_units::kg};

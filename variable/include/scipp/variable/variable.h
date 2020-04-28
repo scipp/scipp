@@ -189,7 +189,7 @@ private:
 /// Unit, Values, or Variances can be omitted. The order of arguments is
 /// arbitrary.
 /// Example:
-///     makeVariable<float>(units::Unit(units::kg),
+///     makeVariable<float>(units::kg,
 ///     Shape{1, 2}, Dims{Dim::X, Dim::Y}, Values{3, 4}).
 ///
 /// Relation between Dims, Shape, Dimensions and actual data are as follows:

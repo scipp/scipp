@@ -165,8 +165,8 @@ TEST(ConcatenateTest, concat_2d_coord) {
                                          Values{false, true, false}));
 
   Dataset b(a);
-  b.coords()[Dim::X] += 3 * units::Unit(units::dimensionless);
-  b["data_1"].data() += 100 * units::Unit(units::dimensionless);
+  b.coords()[Dim::X] += 3 * units::one;
+  b["data_1"].data() += 100 * units::one;
 
   Dataset expected;
   expected.setCoord(

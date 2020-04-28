@@ -72,7 +72,7 @@ template <class T> auto tofToDSpacing(const T &d) {
   // l_total = l1 + l2
   auto conversionFactor(l1 + l2);
 
-  const auto one = units::Unit(units::dimensionless);
+  const auto one = units::one;
   conversionFactor *= Variable(2.0 * boost::units::si::constants::codata::m_n /
                                boost::units::si::constants::codata::h /
                                (m_to_angstrom * tof_to_s));

@@ -40,7 +40,7 @@ TEST_F(CopyTest, dataset_drop_attrs) {
 
 struct CopyOutArgTest : public CopyTest {
   CopyOutArgTest() : dataset_copy(copy(dataset)), array_copy(copy(array)) {
-    const auto one = 1.0 * units::Unit(units::dimensionless);
+    const auto one = 1.0 * units::one;
     array_copy.data() += one;
     array_copy.coords()[Dim::X] += one;
     array_copy.coords()[Dim::Y] += one;

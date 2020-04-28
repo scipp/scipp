@@ -148,9 +148,8 @@ TEST_F(AttributesTest, reduction_ops) {
   Dataset d;
   d.setCoord(Dim::X,
              makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{0, 1, 2}));
-  d.setData("a",
-            makeVariable<double>(Dims{Dim::X}, Shape{2},
-                                 units::Unit(units::counts), Values{10, 20}));
+  d.setData("a", makeVariable<double>(Dims{Dim::X}, Shape{2}, units::counts,
+                                      Values{10, 20}));
   d["a"].attrs().set("a_attr", scalar);
   d["a"].attrs().set("a_attr_x", varX);
   d.attrs().set("dataset_attr", scalar);

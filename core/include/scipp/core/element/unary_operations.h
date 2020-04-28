@@ -124,9 +124,7 @@ constexpr auto reciprocal = overloaded{
                  core::detail::element_type_t<std::decay_t<decltype(x)>>>(1) /
              x;
 } // namespace element
-, [](const units::Unit &unit) {
-  return units::Unit(units::dimensionless) / unit;
-}
+, [](const units::Unit &unit) { return units::one / unit; }
 }; // namespace scipp::core
 
 constexpr auto reciprocal_out_arg = overloaded{
@@ -136,9 +134,7 @@ constexpr auto reciprocal_out_arg = overloaded{
               1) /
           y;
     },
-    [](units::Unit &x, const units::Unit &y) {
-      x = units::Unit(units::dimensionless) / y;
-    }};
+    [](units::Unit &x, const units::Unit &y) { x = units::one / y; }};
 
 } // namespace element
 
