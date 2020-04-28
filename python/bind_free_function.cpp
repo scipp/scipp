@@ -5,9 +5,7 @@
 #include "bind_free_function.h"
 
 /// Construct docstring
-std::string make_docstring(const std::string description,
-  const std::string raises,
-  const std::string seealso, const std::string returns, const std::string rtype,
+std::string make_docstring(const Docstring &docs,
   const std::vector<std::pair<const std::string, const std::string>> &params) {
 
   std::string docstring = description + "\n";
@@ -19,4 +17,10 @@ std::string make_docstring(const std::string description,
   docstring += ":return: " + returns + "\n";
   docstring += ":rtype: " + rtype;
   return docstring;
+}
+
+void docstring_with_out_arg(const Docstring &docs) {
+  docs.description += " (in-place)";
+  docs.rtype += " (View)";
+  return
 }

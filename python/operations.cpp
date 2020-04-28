@@ -14,6 +14,8 @@ using namespace scipp::dataset;
 
 namespace py = pybind11;
 
+
+
 template <class T> void bind_flatten(py::module &m) {
   using ConstView = const typename T::const_view_type &;
   bind_free_function<T, ConstView, const Dim>(
@@ -74,10 +76,8 @@ template <class T> void bind_concatenate(py::module &m) {
 }
 
 
-
-template <class T> void bind_abs(py::module &m, bool out_arg = false) {
-  using ConstView = const typename T::const_view_type &;
-  const Docstring docs = {
+const Docstring make_abs_docstring() {
+  return {
     // Description
     "Element-wise absolute value.",
     // Raises
@@ -89,6 +89,11 @@ template <class T> void bind_abs(py::module &m, bool out_arg = false) {
     // Return type
     "Variable, DataArray, or Dataset."
   };
+}
+
+template <class T> void bind_abs(py::module &m, bool out_arg = false) {
+  using ConstView = const typename T::const_view_type &;
+  auto docs = make_abs_docstring();
   strpair params = {"x", "Input Variable, DataArray, or Dataset."};
 
   bind_free_function<T, ConstView>(
@@ -150,10 +155,10 @@ template <class T> void bind_dot(py::module &m) {
 
 
 void init_operations(py::module &m) {
-  // bind_flatten<Variable>(m);
-  // bind_flatten<DataArray>(m);
-  // bind_flatten<Dataset>(m);
-  bind_functions<Variable, DataArray, Dataset>(m);
+  bind_flatten<Variable>(m);
+  bind_flatten<DataArray>(m);
+  bind_flatten<Dataset>(m);
+  // bind_functions<Variable, DataArray, Dataset>(m);
 
   bind_concatenate<Variable>(m);
   bind_concatenate<DataArray>(m);
