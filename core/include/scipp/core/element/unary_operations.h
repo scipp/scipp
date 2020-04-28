@@ -65,9 +65,8 @@ constexpr auto nan_to_num =
                [](const auto x, const auto &repl) {
                  using std::isnan;
                  return isnan(x) ? repl : x;
-               } // namespace element
-               ,
-               unit_check_and_return}; // namespace scipp::core
+               },
+               unit_check_and_return};
 
 constexpr auto nan_to_num_out_arg = overloaded{
 
@@ -124,11 +123,11 @@ constexpr auto reciprocal = overloaded{
       return static_cast<
                  core::detail::element_type_t<std::decay_t<decltype(x)>>>(1) /
              x;
-    } // namespace element
-    ,
-    [](const units::Unit &unit) {
-      return units::Unit(units::dimensionless) / unit;
-    }}; // namespace scipp::core
+} // namespace element
+, [](const units::Unit &unit) {
+  return units::Unit(units::dimensionless) / unit;
+}
+}; // namespace scipp::core
 
 constexpr auto reciprocal_out_arg = overloaded{
     arg_list<double, float>,
