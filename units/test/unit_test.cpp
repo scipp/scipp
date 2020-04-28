@@ -10,6 +10,21 @@
 using namespace scipp;
 using scipp::units::Unit;
 
+TEST(UnitsTest, constants) {
+  EXPECT_EQ(units::dimensionless, Unit(units::boost_units::dimensionless));
+  EXPECT_EQ(units::one, Unit(units::boost_units::dimensionless));
+  EXPECT_EQ(units::m, Unit(units::boost_units::m));
+  EXPECT_EQ(units::s, Unit(units::boost_units::s));
+  EXPECT_EQ(units::kg, Unit(units::boost_units::kg));
+  EXPECT_EQ(units::K, Unit(units::boost_units::K));
+  EXPECT_EQ(units::rad, Unit(units::boost_units::rad));
+  EXPECT_EQ(units::deg, Unit(units::boost_units::deg));
+  EXPECT_EQ(units::angstrom, Unit(units::boost_units::angstrom));
+  EXPECT_EQ(units::meV, Unit(units::boost_units::meV));
+  EXPECT_EQ(units::us, Unit(units::boost_units::us));
+  EXPECT_EQ(units::c, Unit(units::boost_units::c));
+}
+
 TEST(units, c) {
   auto c = 1.0 * units::boost_units::c;
   EXPECT_EQ(c.value(), 1.0);
@@ -20,50 +35,50 @@ TEST(units, c) {
 
 TEST(Units, cancellation) {
   EXPECT_EQ(Unit(units::deg / units::deg), units::dimensionless);
-  EXPECT_EQ(Unit(units::deg) / Unit(units::deg), units::dimensionless);
-  EXPECT_EQ(Unit(units::deg) * Unit(units::rad / units::deg), units::rad);
+  EXPECT_EQ(units::deg / units::deg, units::dimensionless);
+  EXPECT_EQ(units::deg * Unit(units::rad / units::deg), units::rad);
 }
 
 TEST(Units, sin) {
-  EXPECT_EQ(sin(Unit(units::rad)), units::dimensionless);
-  EXPECT_EQ(sin(Unit(units::deg)), units::dimensionless);
-  EXPECT_THROW(sin(Unit(units::m)), except::UnitError);
-  EXPECT_THROW(sin(Unit(units::dimensionless)), except::UnitError);
+  EXPECT_EQ(sin(units::rad), units::dimensionless);
+  EXPECT_EQ(sin(units::deg), units::dimensionless);
+  EXPECT_THROW(sin(units::m), except::UnitError);
+  EXPECT_THROW(sin(units::dimensionless), except::UnitError);
 }
 
 TEST(Units, cos) {
-  EXPECT_EQ(cos(Unit(units::rad)), units::dimensionless);
-  EXPECT_EQ(cos(Unit(units::deg)), units::dimensionless);
-  EXPECT_THROW(cos(Unit(units::m)), except::UnitError);
-  EXPECT_THROW(cos(Unit(units::dimensionless)), except::UnitError);
+  EXPECT_EQ(cos(units::rad), units::dimensionless);
+  EXPECT_EQ(cos(units::deg), units::dimensionless);
+  EXPECT_THROW(cos(units::m), except::UnitError);
+  EXPECT_THROW(cos(units::dimensionless), except::UnitError);
 }
 
 TEST(Units, tan) {
-  EXPECT_EQ(tan(Unit(units::rad)), units::dimensionless);
-  EXPECT_EQ(tan(Unit(units::deg)), units::dimensionless);
-  EXPECT_THROW(tan(Unit(units::m)), except::UnitError);
-  EXPECT_THROW(tan(Unit(units::dimensionless)), except::UnitError);
+  EXPECT_EQ(tan(units::rad), units::dimensionless);
+  EXPECT_EQ(tan(units::deg), units::dimensionless);
+  EXPECT_THROW(tan(units::m), except::UnitError);
+  EXPECT_THROW(tan(units::dimensionless), except::UnitError);
 }
 
 TEST(Units, asin) {
-  EXPECT_EQ(asin(Unit(units::dimensionless)), units::rad);
-  EXPECT_THROW(asin(Unit(units::m)), except::UnitError);
-  EXPECT_THROW(asin(Unit(units::rad)), except::UnitError);
-  EXPECT_THROW(asin(Unit(units::deg)), except::UnitError);
+  EXPECT_EQ(asin(units::dimensionless), units::rad);
+  EXPECT_THROW(asin(units::m), except::UnitError);
+  EXPECT_THROW(asin(units::rad), except::UnitError);
+  EXPECT_THROW(asin(units::deg), except::UnitError);
 }
 
 TEST(Units, acos) {
-  EXPECT_EQ(acos(Unit(units::dimensionless)), units::rad);
-  EXPECT_THROW(acos(Unit(units::m)), except::UnitError);
-  EXPECT_THROW(acos(Unit(units::rad)), except::UnitError);
-  EXPECT_THROW(acos(Unit(units::deg)), except::UnitError);
+  EXPECT_EQ(acos(units::dimensionless), units::rad);
+  EXPECT_THROW(acos(units::m), except::UnitError);
+  EXPECT_THROW(acos(units::rad), except::UnitError);
+  EXPECT_THROW(acos(units::deg), except::UnitError);
 }
 
 TEST(Units, atan) {
-  EXPECT_EQ(atan(Unit(units::dimensionless)), units::rad);
-  EXPECT_THROW(atan(Unit(units::m)), except::UnitError);
-  EXPECT_THROW(atan(Unit(units::rad)), except::UnitError);
-  EXPECT_THROW(atan(Unit(units::deg)), except::UnitError);
+  EXPECT_EQ(atan(units::dimensionless), units::rad);
+  EXPECT_THROW(atan(units::m), except::UnitError);
+  EXPECT_THROW(atan(units::rad), except::UnitError);
+  EXPECT_THROW(atan(units::deg), except::UnitError);
 }
 
 TEST(Unit, construct) { ASSERT_NO_THROW(Unit u{units::dimensionless}); }
@@ -78,6 +93,9 @@ TEST(Unit, compare) {
   Unit u2{units::m};
   ASSERT_TRUE(u1 == u1);
   ASSERT_TRUE(u1 != u2);
+  ASSERT_TRUE(u2 == u2);
+  ASSERT_FALSE(u1 == u2);
+  ASSERT_FALSE(u2 != u2);
 }
 
 TEST(Unit, add) {
@@ -165,18 +183,15 @@ TEST(Unit, conversion_factors) {
 
 TEST(Unit, c) {
   Unit c(units::c);
-  EXPECT_EQ(c * Unit(units::m), Unit(units::c * units::m));
-  EXPECT_EQ(c * Unit(units::m) / Unit(units::m), Unit(units::c));
-  EXPECT_EQ(Unit(units::meV) / c, Unit(units::meV / units::c));
-  EXPECT_EQ(Unit(units::meV) / c / Unit(units::meV),
-            Unit(units::dimensionless / units::c));
+  EXPECT_EQ(c * units::m, Unit(units::c * units::m));
+  EXPECT_EQ(c * units::m / units::m, units::c);
+  EXPECT_EQ(units::meV / c, Unit(units::meV / units::c));
+  EXPECT_EQ(units::meV / c / units::meV, Unit(units::dimensionless / units::c));
 }
 
 TEST(Unit, sqrt) {
-  Unit a{units::dimensionless};
-  Unit m{units::m};
-  Unit m2{units::m * units::m};
-  EXPECT_EQ(sqrt(m2), m);
+  EXPECT_EQ(sqrt(units::m * units::m), units::m);
+  EXPECT_EQ(sqrt(units::one), units::one);
 }
 
 TEST(Unit, sqrt_fail) {
@@ -186,16 +201,16 @@ TEST(Unit, sqrt_fail) {
 }
 
 TEST(Unit, isCounts) {
-  EXPECT_FALSE(Unit(units::dimensionless).isCounts());
-  EXPECT_TRUE(Unit(units::counts).isCounts());
+  EXPECT_FALSE(units::dimensionless.isCounts());
+  EXPECT_TRUE(units::counts.isCounts());
   EXPECT_FALSE(Unit(units::counts / units::us).isCounts());
   EXPECT_FALSE(Unit(units::counts / units::meV).isCounts());
   EXPECT_FALSE(Unit(units::dimensionless / units::m).isCounts());
 }
 
 TEST(Unit, isCountDensity) {
-  EXPECT_FALSE(Unit(units::dimensionless).isCountDensity());
-  EXPECT_FALSE(Unit(units::counts).isCountDensity());
+  EXPECT_FALSE(units::dimensionless.isCountDensity());
+  EXPECT_FALSE(units::counts.isCountDensity());
   EXPECT_TRUE(Unit(units::counts / units::us).isCountDensity());
   EXPECT_TRUE(Unit(units::counts / units::meV).isCountDensity());
   EXPECT_FALSE(Unit(units::dimensionless / units::m).isCountDensity());

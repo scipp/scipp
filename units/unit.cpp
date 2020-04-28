@@ -78,13 +78,13 @@ Unit &Unit::operator/=(const Unit &other) {
 
 Unit operator+(const Unit &a, const Unit &b) {
   if (a == b)
-    return static_cast<const Unit &>(a);
+    return a;
   throw except::UnitError("Cannot add " + a.name() + " and " + b.name() + ".");
 }
 
 Unit operator-(const Unit &a, const Unit &b) {
   if (a == b)
-    return static_cast<const Unit &>(a);
+    return a;
   throw except::UnitError("Cannot subtract " + a.name() + " and " + b.name() +
                           ".");
 }
