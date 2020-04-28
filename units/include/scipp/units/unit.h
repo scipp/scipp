@@ -57,17 +57,16 @@ static constexpr decltype(boost::units::degree::plane_angle{} *
 
 struct supported_units {
   using type = decltype(detail::make_unit(
-      std::make_tuple(m, dimensionless / m),
-      std::make_tuple(
-          dimensionless, rad, deg, rad / deg, deg / rad, counts,
-          dimensionless / counts, s, kg, angstrom, meV, us, dimensionless / us,
-          dimensionless / s, counts / us, counts / angstrom, counts / meV,
-          m *m *m, meV *us *us / (m * m), meV *us *us *dimensionless, kg *m / s,
-          m / s, c, c *m, meV / c, dimensionless / c, K, us / angstrom,
-          us / (angstrom * angstrom), us / (m * angstrom), angstrom / us,
-          (m * angstrom) / us, us *us, dimensionless / (us * us),
-          dimensionless / meV, dimensionless / angstrom, angstrom *angstrom,
-          dimensionless / (angstrom * angstrom))));
+      std::make_tuple(m, dimensionless / m, us, dimensionless / us, angstrom,
+                      dimensionless / angstrom),
+      std::make_tuple(dimensionless, rad, deg, rad / deg, deg / rad, counts,
+                      dimensionless / counts, s, kg, meV, dimensionless / s,
+                      counts / us, counts / angstrom, counts / meV, m *m *m,
+                      meV *us *us / (m * m), meV *us *us *dimensionless,
+                      kg *m / s, m / s, c, c *m, meV / c, dimensionless / c, K,
+                      us / angstrom, us / (angstrom * angstrom),
+                      us / (m * angstrom), angstrom / us, (m * angstrom) / us,
+                      dimensionless / meV)));
 };
 struct counts_unit {
   using type = decltype(boost_units::counts);
