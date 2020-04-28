@@ -20,6 +20,14 @@ public:
   Docstring() = default;
   Docstring(const std::string description, const std::string raises, const std::string seealso, const std::string returns, const std::string rtype);
   Docstring(const std::string description, const std::string raises, const std::string seealso, const std::string returns, const std::string rtype, const std::vector<std::pair<std::string, std::string>> &params);
+
+  // template <const std::pair<const std::string, const std::string>... Pairs>
+  // Docstring(const std::string description, const std::string raises, const std::string seealso, const std::string returns, const std::string rtype, Pairs... params) : m_description(description), m_raises(raises), m_seealso(seealso), m_returns(returns), m_rtype(rtype){
+  //   m_params.clear();
+  //   m_params = {params...};
+  // }
+
+  // Docstring(const std::string description, const std::string raises, const std::string seealso, const std::string returns, const std::string rtype, const std::pair<std::string, std::string>... params);
   Docstring(const Docstring &) = default;
   Docstring operator~() const;
 

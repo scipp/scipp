@@ -11,6 +11,7 @@
 using namespace scipp;
 using namespace scipp::variable;
 using namespace scipp::dataset;
+using namespace scipp::python;
 
 namespace py = pybind11;
 

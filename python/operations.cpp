@@ -11,6 +11,7 @@
 using namespace scipp;
 using namespace scipp::variable;
 using namespace scipp::dataset;
+using namespace scipp::python;
 
 namespace py = pybind11;
 
@@ -173,19 +174,40 @@ namespace py = pybind11;
 
 
 
+template<class T>
+void bind_flatten(py::module &m, Docstring docs) {
+  using ConstView = const typename T::const_view_type &;
+  bind_free_function<T, ConstView, const Dim>(flatten, "flatten", m, docs);
+}
 
+template<class T>
+void bind_concatenate(py::module &m, Docstring docs) {
+  using ConstView = const typename T::const_view_type &;
+  bind_free_function<T, ConstView, ConstView, const Dim>(concatenate, "concatenate", m, docs);
+}
 
+// template<class T>
+// void bind_abs(py::module &m, Docstring docs) {
+//   using ConstView = const typename T::const_view_type &;
+//   bind_free_function<T, ConstView>(abs, "abs", m, docs);
+// }
+
+// template<class T>
+// void bind_dot(py::module &m, Docstring docs) {
+//   using ConstView = const typename T::const_view_type &;
+//   bind_free_function<T, ConstView, ConstView>(dot, "dot", m, docs);
+// }
 
 
 void init_operations(py::module &m) {
-  using VAConstView = const typename Variable::const_view_type &;
-  using DSConstView = const typename Dataset::const_view_type &;
-  using DAConstView = const typename DataArray::const_view_type &;
-  using VAView = typename Variable::view_type;
+  using ConstView = const typename Variable::const_view_type &;
+  // using DSConstView = const typename Dataset::const_view_type &;
+  // using DAConstView = const typename DataArray::const_view_type &;
+  using View = typename Variable::view_type;
 
   Docstring docs;
 
-  // flatten
+  // // flatten
   docs = {
     // Description
     "Flatten the specified dimension into event lists, "
@@ -201,10 +223,15 @@ void init_operations(py::module &m) {
     // Input parameters
     {{"x", "Variable, DataArray, or Dataset to flatten."},
     {"dim", "Dimension over which to flatten."}}
+    // {"x", "Variable, DataArray, or Dataset to flatten."},
+    // {"dim", "Dimension over which to flatten."}
   };
-  bind_free_function<Variable, VAConstView, const Dim>(flatten, "flatten", m, docs);
-  bind_free_function<DataArray, DAConstView, const Dim>(flatten, "flatten", m, docs);
-  bind_free_function<Dataset, DSConstView, const Dim>(flatten, "flatten", m, docs);
+  bind_flatten<Variable>(m, docs);
+  bind_flatten<DataArray>(m, docs);
+  bind_flatten<Dataset>(m, docs);
+  // bind_free_function<Variable, VAConstView, const Dim>(flatten, "flatten", m, docs);
+  // bind_free_function<DataArray, DAConstView, const Dim>(flatten, "flatten", m, docs);
+  // bind_free_function<Dataset, DSConstView, const Dim>(flatten, "flatten", m, docs);
 
   docs = {
     // Description
@@ -230,10 +257,14 @@ void init_operations(py::module &m) {
     {    {"x", "First Variable, DataArray, or Dataset."},
     {"y", "Second Variable, DataArray, or Dataset."},
     {"dim", "Dimension over which to concatenate."}}};
+  bind_concatenate<Variable>(m, docs);
+  bind_concatenate<DataArray>(m, docs);
+  bind_concatenate<Dataset>(m, docs);
 
-  bind_free_function<Variable, VAConstView, VAConstView, const Dim>(concatenate, "concatenate", m, docs);
-  bind_free_function<DataArray, DAConstView, DAConstView, const Dim>(concatenate, "concatenate", m, docs);
-  bind_free_function<Dataset, DSConstView, DSConstView, const Dim>(concatenate, "concatenate", m, docs);
+
+  // bind_free_function<Variable, VAConstView, VAConstView, const Dim>(concatenate, "concatenate", m, docs);
+  // bind_free_function<DataArray, DAConstView, DAConstView, const Dim>(concatenate, "concatenate", m, docs);
+  // bind_free_function<Dataset, DSConstView, DSConstView, const Dim>(concatenate, "concatenate", m, docs);
 
   // bind_abs<Variable>(m, true);
 
@@ -252,8 +283,8 @@ void init_operations(py::module &m) {
     // Parameters
     {{"x", "Input Variable, DataArray, or Dataset."}}
   };
-  bind_free_function<Variable, VAConstView>(abs, "abs", m, docs);
-  bind_free_function<VAView, VAConstView, const VAView &>(abs, "abs", m, docs.with_out_arg());
+  bind_free_function<Variable, ConstView>(abs, "abs", m, docs);
+  bind_free_function<View, ConstView, const View &>(abs, "abs", m, docs.with_out_arg());
 
 
 
@@ -271,7 +302,8 @@ void init_operations(py::module &m) {
     "Variable, DataArray, or Dataset.",
     {    {"x", "Left operand Variable, DataArray, or Dataset."},
     {"y", "Right operand Variable, DataArray, or Dataset."}}};
-  bind_free_function<Variable, VAConstView>(dot, "dot", m, docs);
+  bind_free_function<Variable, ConstView, ConstView>(dot, "dot", m, docs);
+  // bind_free_function<Variable, VAConstView>(dot, "dot", m, docs);
 
 
 }

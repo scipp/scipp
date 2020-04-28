@@ -9,7 +9,7 @@
 
 
 namespace py = pybind11;
-using namespace scipp::python;
+// using namespace scipp::python;
 
 // Helper to parse py::args.
 // The goal here is to take in a list of strings as arguments, e.g. ("x", "y")
@@ -29,7 +29,10 @@ using namespace scipp::python;
 #define PYARG_FORMAT(IN) py::arg(IN.c_str())
 #define PYARGS(...) FOR_EACH(PYARG_FORMAT, __VA_ARGS__)
 
-// namespace scipp::python {
+namespace scipp::python {
+
+struct BindVariable {};
+struct BindAll {};
 
 // using strpair = const std::pair<const std::string, const std::string>;
 
@@ -147,6 +150,37 @@ void bind_free_function(T (*func)(T1, T2, T3, T4), const std::string fname, py::
 }
 
 
+
+// template<int64_t, class... Ts>
+// void bind_multiple(T (*func)(T1, T2), const std::string fname, py::module &m,
+//   const Docstring docs){
+//   using ConstView = const typename Variable::const_view_type &;
+//   bind_free_function<Variable, ConstView, Ts...>(func, fname, m, docs);
+// }
+
+// template<double, class... Ts>
+// void bind_multiple(T (*func)(T1, T2), const std::string fname, py::module &m,
+//   const Docstring docs){
+//   using VAConstView = const typename Variable::const_view_type &;
+//   using DSConstView = const typename Dataset::const_view_type &;
+//   using DAConstView = const typename DataArray::const_view_type &;
+//   bind_free_function<Variable, ConstView, Ts...>(func, fname, m, docs);
+//   bind_free_function<DataArray, DAConstView, Ts...>(func, fname, m, docs);
+//   bind_free_function<Dataset, DSConstView, Ts...>(func, fname, m, docs);
+// }
+
+
+// // the partial specialization of A is enabled via a template parameter
+// template<class Enable = void, class... Ts>
+// void bind_multiple();
+ 
+// template<class... Ts>
+// void bind_multiple()
+// <typename std::enable_if<std::is_same_v<T>::value>::type, ... Ts> {
+// }; // specialization for floating point types
+ 
+
+
 // template<class... Ts>
 // void bind_free_function(T (*func)(T1), const std::string fname, py::module &m,
 
@@ -212,4 +246,4 @@ void bind_free_function(T (*func)(T1, T2, T3, T4), const std::string fname, py::
 // //   // g(xs, sizeof...(Args));
 // // }
 
-// } // namespace scipp::python
+} // namespace scipp::python

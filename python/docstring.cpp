@@ -18,6 +18,13 @@ Docstring::Docstring(const std::string description, const std::string raises, co
     m_params.push_back(p);
 }
 
+// Docstring::Docstring(const std::string description, const std::string raises, const std::string seealso, const std::string returns, const std::string rtype, const std::pair<std::string, std::string>... params) : m_description(description), m_raises(raises), m_seealso(seealso), m_returns(returns), m_rtype(rtype){
+//   m_params.clear();
+//   m_params = {params...};
+//   // for (auto &p : params)
+//   //   m_params.push_back(p);
+// }
+
 const Docstring Docstring::with_out_arg() {
   Docstring docs(*this);
   docs.m_description += " (in-place)";
