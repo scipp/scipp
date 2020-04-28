@@ -61,8 +61,8 @@ class Dataset3DTest : public ::testing::Test {
 protected:
   Dataset3DTest() : dataset(factory.make()) {}
 
-  Dataset datasetWithEdges(
-      const std::initializer_list<units::neutron::Dim::Id> &edgeDims) {
+  Dataset
+  datasetWithEdges(const std::initializer_list<units::Dim::Id> &edgeDims) {
     auto d = dataset;
     for (const auto dim : edgeDims) {
       auto dims = dataset.coords()[dim].dims();
