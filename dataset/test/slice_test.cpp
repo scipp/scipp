@@ -62,7 +62,7 @@ protected:
   Dataset3DTest() : dataset(factory.make()) {}
 
   Dataset datasetWithEdges(
-      const std::initializer_list<units::neutron::DimId> &edgeDims) {
+      const std::initializer_list<units::neutron::Dim::Id> &edgeDims) {
     auto d = dataset;
     for (const auto dim : edgeDims) {
       auto dims = dataset.coords()[dim].dims();
