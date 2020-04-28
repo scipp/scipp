@@ -55,21 +55,21 @@ template <class T> void bind_mean(py::module &m, bool out_arg = false) {
     docs.returns,
     docs.rtype);
 
-  if(out_arg) {
-    using View = typename T::view_type;
-    bind_free_function<View, ConstView, const Dim, const View &>(
-    mean,
-    "mean",
-    m,
-    param1,
-    param2,
-    {"out", "Output buffer."},
-    docs.description + " (in-place)",
-    docs.raises,
-    docs.seealso,
-    docs.returns,
-    docs.rtype + " (View)");
-  }
+  // if(out_arg) {
+  //   using View = typename T::view_type;
+  //   bind_free_function<View, ConstView, const Dim, const View &>(
+  //   mean,
+  //   "mean",
+  //   m,
+  //   param1,
+  //   param2,
+  //   {"out", "Output buffer."},
+  //   docs.description + " (in-place)",
+  //   docs.raises,
+  //   docs.seealso,
+  //   docs.returns,
+  //   docs.rtype + " (View)");
+  // }
 
   // bind_free_function<T, ConstView, const Dim>(
   //   // Operation function pointer

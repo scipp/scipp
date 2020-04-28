@@ -67,6 +67,21 @@ void bind_free_function(T (*func)(T1, T2), const std::string fname, py::module &
         PYARGS(param1.first, param2.first));
 }
 
+// template<class T, class... Ts>
+// void bind_free_function(T (*func)(Ts...), const std::string fname, py::module &m,
+//   const strpair param1, const strpair param2,
+//   const std::string description,
+//   const std::string raises,
+//   const std::string seealso,
+//   const std::string returns,
+//   const std::string rtype) {
+//   m.def(fname.c_str(),
+//       [func](Ts... args){return func(args...);},
+//         py::call_guard<py::gil_scoped_release>(),
+//         make_docstring(description, raises, seealso, returns, rtype, {param1, param2}).c_str(),
+//         PYARGS(param1.first, param2.first));
+// }
+
 template<class T, class T1, class T2, class T3>
 void bind_free_function(T (*func)(T1, T2, T3), const std::string fname, py::module &m,
   const strpair param1, const strpair param2, const strpair param3,
@@ -80,4 +95,16 @@ void bind_free_function(T (*func)(T1, T2, T3), const std::string fname, py::modu
         py::call_guard<py::gil_scoped_release>(),
         make_docstring(description, raises, seealso, returns, rtype, {param1, param2, param3}).c_str(),
         PYARGS(param1.first, param2.first, param3.first));
+}
+
+
+
+
+template<class T>
+X bind_forward(T const& t){ X x; f(x, t); return x; }
+
+template<class... Args>
+void bind_functions(Args... args){
+  { fw(args)... };
+  // g(xs, sizeof...(Args));
 }

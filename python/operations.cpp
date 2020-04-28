@@ -144,10 +144,16 @@ template <class T> void bind_dot(py::module &m) {
 }
 
 
+
+
+
+
+
 void init_operations(py::module &m) {
-  bind_flatten<Variable>(m);
-  bind_flatten<DataArray>(m);
-  bind_flatten<Dataset>(m);
+  // bind_flatten<Variable>(m);
+  // bind_flatten<DataArray>(m);
+  // bind_flatten<Dataset>(m);
+  bind_functions<Variable, DataArray, Dataset>(m);
 
   bind_concatenate<Variable>(m);
   bind_concatenate<DataArray>(m);
