@@ -4,14 +4,12 @@
 /// @author Neil Vaytet
 #pragma once
 
-#include <tuple>
-
-
+#include "docstring.h"
 #include "pybind11.h"
 
 
 namespace py = pybind11;
-
+using namespace scipp::python;
 
 // Helper to parse py::args.
 // The goal here is to take in a list of strings as arguments, e.g. ("x", "y")
@@ -31,34 +29,44 @@ namespace py = pybind11;
 #define PYARG_FORMAT(IN) py::arg(IN.c_str())
 #define PYARGS(...) FOR_EACH(PYARG_FORMAT, __VA_ARGS__)
 
-namespace scipp::python {
+// namespace scipp::python {
 
-using strpair = const std::pair<const std::string, const std::string>;
+// using strpair = const std::pair<const std::string, const std::string>;
 
 
-class Docstring {
+// class Docstring {
 
-public:
+// public:
 
-  Docstring() = default;
-  Docstring(const std::string description, const std::string raises, const std::string seealso, const std::string returns, const std::string rtype);
-  Docstring(const std::string description, const std::string raises, const std::string seealso, const std::string returns, const std::string rtype, const std::vector<std::pair<std::string, std::string>> &params);
-  const std::string description() {return m_description; };
-  const std::string raises() {return m_raises; };
-  const std::string seealso() {return m_seealso; };
-  const std::string returns() {return m_returns; };
-  const std::string rtype() {return m_rtype; };
+//   Docstring() = default;
+//   Docstring(const std::string description, const std::string raises, const std::string seealso, const std::string returns, const std::string rtype);
+//   Docstring(const std::string description, const std::string raises, const std::string seealso, const std::string returns, const std::string rtype, const std::vector<std::pair<std::string, std::string>> &params);
+//   const std::string description() {return m_description; };
+//   const std::string raises() {return m_raises; };
+//   const std::string seealso() {return m_seealso; };
+//   const std::string returns() {return m_returns; };
+//   const std::string rtype() {return m_rtype; };
 
-private:
-  std::string m_description, m_raises, m_seealso, m_returns, m_rtype;
-  std::vector<std::pair<std::string, std::string>> params;
+// private:
+//   std::string m_description, m_raises, m_seealso, m_returns, m_rtype;
+//   std::vector<std::pair<std::string, std::string>> params;
 
-};
+// };
 
-void docstring_with_out_arg(const Docstring &docs);
+// void docstring_with_out_arg(const Docstring &docs);
 
-std::string make_docstring(const Docstring docs,
-  const std::vector<std::pair<const std::string, const std::string>> &params);
+// std::string make_docstring(const Docstring docs,
+//   const std::vector<std::pair<const std::string, const std::string>> &params);
+
+template<class T, class T1>
+void bind_free_function(T (*func)(T1), const std::string fname, py::module &m,
+  const Docstring docs) {
+  m.def(fname.c_str(),
+      [func](T1 a1){return func(a1);},
+        py::call_guard<py::gil_scoped_release>(),
+        docs.to_string().c_str(),
+        py::arg(docs.param(0).first.c_str()));
+}
 
 template<class T, class T1>
 void bind_free_function(T (*func)(T1), const std::string fname, py::module &m,
@@ -68,20 +76,19 @@ void bind_free_function(T (*func)(T1), const std::string fname, py::module &m,
   const std::string seealso,
   const std::string returns,
   const std::string rtype) {
-  m.def(fname.c_str(),
-      [func](T1 a1){return func(a1);},
-        py::call_guard<py::gil_scoped_release>(),
-        make_docstring(description, raises, seealso, returns, rtype, {param1}).c_str(),
-        py::arg(param1.first.c_str()));
+  bind_free_function<T, T1>(func, fname, m, Docstring(description, raises, seealso, returns, rtype, {param1}));
 }
 
-template<class T, class T1>
-void bind_free_function(T (*func)(T1), const std::string fname, py::module &m,
-  const strpair param1,
+
+template<class T, class T1, class T2>
+void bind_free_function(T (*func)(T1, T2), const std::string fname, py::module &m,
   const Docstring docs) {
-  bind_free_function<T, T1>(func, fname, m, param1, docs.description, docs.raises, docs.seealso, docs.returns, docs.rtype);
+  m.def(fname.c_str(),
+      [func](T1 a1, T2 a2){return func(a1, a2);},
+        py::call_guard<py::gil_scoped_release>(),
+        docs.to_string().c_str(),
+        PYARGS(docs.param(0).first, docs.param(1).first));
 }
-
 
 template<class T, class T1, class T2>
 void bind_free_function(T (*func)(T1, T2), const std::string fname, py::module &m,
@@ -91,19 +98,20 @@ void bind_free_function(T (*func)(T1, T2), const std::string fname, py::module &
   const std::string seealso,
   const std::string returns,
   const std::string rtype) {
-  m.def(fname.c_str(),
-      [func](T1 a1, T2 a2){return func(a1, a2);},
-        py::call_guard<py::gil_scoped_release>(),
-        make_docstring(description, raises, seealso, returns, rtype, {param1, param2}).c_str(),
-        PYARGS(param1.first, param2.first));
+  bind_free_function<T, T1, T2>(func, fname, m, Docstring(description, raises, seealso, returns, rtype, {param1, param2}));
 }
 
-template<class T, class T1, class T2>
-void bind_free_function(T (*func)(T1, T2), const std::string fname, py::module &m,
-  const strpair param1,
-  const strpair param2,
+template<class T, class T1, class T2, class T3>
+void bind_free_function(T (*func)(T1, T2, T3), const std::string fname, py::module &m,
+  // const strpair param1,
+  // const strpair param2,
+  // const strpair param3,
   const Docstring docs) {
-  bind_free_function<T, T1, T2>(func, fname, m, param1, param2, docs.description, docs.raises, docs.seealso, docs.returns, docs.rtype);
+  m.def(fname.c_str(),
+      [func](T1 a1, T2 a2, T3 a3){return func(a1, a2, a3);},
+        py::call_guard<py::gil_scoped_release>(),
+        docs.to_string().c_str(),
+        PYARGS(docs.param(0).first, docs.param(1).first, docs.param(2).first));
 }
 
 template<class T, class T1, class T2, class T3>
@@ -114,20 +122,17 @@ void bind_free_function(T (*func)(T1, T2, T3), const std::string fname, py::modu
   const std::string seealso,
   const std::string returns,
   const std::string rtype) {
-  m.def(fname.c_str(),
-      [func](T1 a1, T2 a2, T3 a3){return func(a1, a2, a3);},
-        py::call_guard<py::gil_scoped_release>(),
-        make_docstring(description, raises, seealso, returns, rtype, {param1, param2, param3}).c_str(),
-        PYARGS(param1.first, param2.first, param3.first));
+  bind_free_function<T, T1, T2, T3>(func, fname, m, Docstring(description, raises, seealso, returns, rtype, {param1, param2, param3}));
 }
 
-template<class T, class T1, class T2, class T3>
-void bind_free_function(T (*func)(T1, T2, T3), const std::string fname, py::module &m,
-  const strpair param1,
-  const strpair param2,
-  const strpair param3,
+template<class T, class T1, class T2, class T3, class T4>
+void bind_free_function(T (*func)(T1, T2, T3, T4), const std::string fname, py::module &m,
   const Docstring docs) {
-  bind_free_function<T, T1, T2, T3>(func, fname, m, param1, param2, param3, docs.description, docs.raises, docs.seealso, docs.returns, docs.rtype);
+  m.def(fname.c_str(),
+      [func](T1 a1, T2 a2, T3 a3, T4 a4){return func(a1, a2, a3, a4);},
+        py::call_guard<py::gil_scoped_release>(),
+        docs.to_string().c_str(),
+        PYARGS(docs.param(0).first, docs.param(1).first, docs.param(2).first, docs.param(3).first));
 }
 
 template<class T, class T1, class T2, class T3, class T4>
@@ -138,21 +143,7 @@ void bind_free_function(T (*func)(T1, T2, T3, T4), const std::string fname, py::
   const std::string seealso,
   const std::string returns,
   const std::string rtype) {
-  m.def(fname.c_str(),
-      [func](T1 a1, T2 a2, T3 a3, T4 a4){return func(a1, a2, a3, a4);},
-        py::call_guard<py::gil_scoped_release>(),
-        make_docstring(description, raises, seealso, returns, rtype, {param1, param2, param3, param4}).c_str(),
-        PYARGS(param1.first, param2.first, param3.first, param4.first));
-}
-
-template<class T, class T1, class T2, class T3, class T4>
-void bind_free_function(T (*func)(T1, T2, T3, T4), const std::string fname, py::module &m,
-  const strpair param1,
-  const strpair param2,
-  const strpair param3,
-  const strpair param4,
-  const Docstring docs) {
-  bind_free_function<T, T1, T2, T3, T4>(func, fname, m, param1, param2, param3, param4, docs.description, docs.raises, docs.seealso, docs.returns, docs.rtype);
+  bind_free_function<T, T1, T2, T3, T4>(func, fname, m, Docstring(description, raises, seealso, returns, rtype, {param1, param2, param3, param4}));
 }
 
 
@@ -221,4 +212,4 @@ void bind_free_function(T (*func)(T1, T2, T3, T4), const std::string fname, py::
 // //   // g(xs, sizeof...(Args));
 // // }
 
-} // namespace scipp::python
+// } // namespace scipp::python

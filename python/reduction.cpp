@@ -37,23 +37,28 @@ template <class T> void bind_mean(py::module &m, bool out_arg = false) {
     // Returns
     "New variable, data array, or dataset containing the mean.",
     // Return type
-    "Variable, DataArray, or Dataset."
+    "Variable, DataArray, or Dataset.",
+    // Parameters/arguments
+    {{"x", "Data to calculate mean of."},
+     {"dim", "Dimension over which to calculate mean."}}
   };
 
-  strpair param1 = {"x", "Data to calculate mean of."};
-  strpair param2 = {"dim", "Dimension over which to calculate mean."};
+  // strpair param1 = {"x", "Data to calculate mean of."};
+  // strpair param2 = {"dim", "Dimension over which to calculate mean."};
 
   bind_free_function<T, ConstView, const Dim>(
     mean,
     "mean",
     m,
-    param1,
-    param2,
-    docs.description,
-    docs.raises,
-    docs.seealso,
-    docs.returns,
-    docs.rtype);
+    docs);
+    // param1,
+    // param2,
+
+    // docs.description,
+    // docs.raises,
+    // docs.seealso,
+    // docs.returns,
+    // docs.rtype);
 
   // if(out_arg) {
   //   using View = typename T::view_type;

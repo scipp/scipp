@@ -4,8 +4,10 @@
 /// @author Neil Vaytet
 #pragma once
 
-#include <tuple>
+#include <vector>
 #include <string>
+
+#include "scipp/common/index.h"
 
 namespace scipp::python {
 
@@ -18,21 +20,23 @@ public:
   Docstring() = default;
   Docstring(const std::string description, const std::string raises, const std::string seealso, const std::string returns, const std::string rtype);
   Docstring(const std::string description, const std::string raises, const std::string seealso, const std::string returns, const std::string rtype, const std::vector<std::pair<std::string, std::string>> &params);
+  Docstring(const Docstring &) = default;
   Docstring operator~() const;
 
-  const std::string description() {return m_description; };
-  const std::string raises() {return m_raises; };
-  const std::string seealso() {return m_seealso; };
-  const std::string returns() {return m_returns; };
-  const std::string rtype() {return m_rtype; };
+  const std::string description() const {return m_description; };
+  const std::string raises() const {return m_raises; };
+  const std::string seealso() const {return m_seealso; };
+  const std::string returns() const {return m_returns; };
+  const std::string rtype() const {return m_rtype; };
+  strpair param(const scipp::index ind) const {return m_params[ind];};
 
-  void with_out_arg();
+  const Docstring with_out_arg();
 
-  std::string to_string();
+  const std::string to_string() const;
 
 private:
   std::string m_description, m_raises, m_seealso, m_returns, m_rtype;
-  std::vector<std::pair<std::string, std::string>> params;
+  std::vector<std::pair<std::string, std::string>> m_params;
 
 };
 
