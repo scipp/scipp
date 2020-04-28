@@ -45,32 +45,17 @@ constexpr scipp::index unit_index(Unit unit, std::tuple<Units...>) {
 
 } // namespace detail
 
-struct supported_units {
-  static constexpr boost::units::si::dimensionless dimensionless{};
-  static constexpr boost::units::si::length m{};
-  static constexpr boost::units::si::time s{};
-  static constexpr boost::units::si::mass kg{};
-  static constexpr boost::units::si::temperature K{};
-  static constexpr boost::units::si::plane_angle rad{};
-  static constexpr decltype(boost::units::degree::plane_angle{} *
-                            dimensionless) deg{};
-  // Additional helper constants beyond the SI base units.
-  // Note the factor `dimensionless` in units that otherwise contain only non-SI
-  // factors. This is a trick to overcome some subtleties of working with
-  // heterogeneous unit systems in boost::units: We are combing SI units with
-  // our own, and the two are considered independent unless you convert
-  // explicitly. Therefore, in operations like (counts * m) / m, boosts is not
-  // cancelling the m as expected --- you get counts * dimensionless. Explicitly
-  // putting a factor dimensionless (dimensionless) into all our non-SI units
-  // avoids special-case handling in all operations (which would attempt to
-  // remove the dimensionless factor manually).
-  static constexpr decltype(detail::tof::counts{} * dimensionless) counts{};
-  static constexpr decltype(detail::tof::wavelength{} *
-                            dimensionless) angstrom{};
-  static constexpr decltype(detail::tof::energy{} * dimensionless) meV{};
-  static constexpr decltype(detail::tof::tof{} * dimensionless) us{};
-  static constexpr decltype(detail::tof::velocity{} * dimensionless) c{};
+namespace boost_units {
+static constexpr boost::units::si::dimensionless dimensionless;
+static constexpr boost::units::si::length m;
+static constexpr boost::units::si::time s;
+static constexpr boost::units::si::mass kg;
+static constexpr boost::units::si::temperature K;
+static constexpr boost::units::si::plane_angle rad;
+static constexpr decltype(boost::units::degree::plane_angle{} *
+                          dimensionless) deg;
 
+struct supported_units {
   using type = decltype(detail::make_unit(
       std::make_tuple(m, dimensionless / m),
       std::make_tuple(
@@ -85,10 +70,11 @@ struct supported_units {
           dimensionless / (angstrom * angstrom))));
 };
 struct counts_unit {
-  using type = decltype(supported_units::counts);
+  using type = decltype(boost_units::counts);
 };
-using supported_units_t = typename supported_units::type;
-using counts_unit_t = typename counts_unit::type;
+} // namespace boost
+using supported_units_t = typename boost_units::supported_units::type;
+using counts_unit_t = typename boost_units::counts_unit::type;
 
 class SCIPP_UNITS_EXPORT Unit {
 public:
@@ -140,18 +126,17 @@ Unit acos(const Unit &a);
 Unit atan(const Unit &a);
 Unit atan2(const Unit &y, const Unit &x);
 
-constexpr Unit dimensionless{boost::units::si::dimensionless{}};
-constexpr Unit m{boost::units::si::length{}};
-constexpr Unit s{boost::units::si::time{}};
-constexpr Unit kg{boost::units::si::mass{}};
-constexpr Unit K{boost::units::si::temperature{}};
-constexpr Unit rad{boost::units::si::plane_angle{}};
-constexpr Unit deg{boost::units::degree::plane_angle{} *
-                   boost::units::si::dimensionless{}};
-constexpr Unit counts{supported_units::counts};
-constexpr Unit angstrom{supported_units::angstrom};
-constexpr Unit meV{supported_units::meV};
-constexpr Unit us{supported_units::us};
-constexpr Unit c{supported_units::c};
+constexpr Unit dimensionless{boost_units::dimensionless};
+constexpr Unit m{boost_units::m};
+constexpr Unit s{boost_units::s};
+constexpr Unit kg{boost_units::kg};
+constexpr Unit K{boost_units::K};
+constexpr Unit rad{boost_units::rad};
+constexpr Unit deg{boost_units::deg};
+constexpr Unit counts{boost_units::counts};
+constexpr Unit angstrom{boost_units::angstrom};
+constexpr Unit meV{boost_units::meV};
+constexpr Unit us{boost_units::us};
+constexpr Unit c{boost_units::c};
 
 } // namespace scipp::units

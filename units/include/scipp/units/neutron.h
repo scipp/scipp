@@ -111,3 +111,26 @@ struct boost::units::base_unit_info<
   static std::string name() { return "c"; }
   static std::string symbol() { return "c"; }
 };
+
+namespace scipp::units::boost_units {
+// Additional helper constants beyond the SI base units.
+// Note the factor `dimensionless` in units that otherwise contain only non-SI
+// factors. This is a trick to overcome some subtleties of working with
+// heterogeneous unit systems in boost::units: We are combing SI units with our
+// own, and the two are considered independent unless you convert explicitly.
+// Therefore, in operations like (counts * m) / m, boosts is not cancelling the
+// m as expected --- you get counts * dimensionless. Explicitly putting a factor
+// dimensionless (dimensionless) into all our non-SI units avoids special-case
+// handling in all operations (which would attempt to remove the dimensionless
+// factor manually).
+static constexpr decltype(detail::tof::counts{} *
+                          boost::units::si::dimensionless{}) counts;
+static constexpr decltype(detail::tof::wavelength{} *
+                          boost::units::si::dimensionless{}) angstrom;
+static constexpr decltype(detail::tof::energy{} *
+                          boost::units::si::dimensionless{}) meV;
+static constexpr decltype(detail::tof::tof{} *
+                          boost::units::si::dimensionless{}) us;
+static constexpr decltype(detail::tof::velocity{} *
+                          boost::units::si::dimensionless{}) c;
+} // namespace scipp::units::boost_units

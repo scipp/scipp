@@ -11,7 +11,7 @@ using namespace scipp;
 using scipp::units::Unit;
 
 TEST(units, c) {
-  auto c = 1.0 * units::supported_units::c;
+  auto c = 1.0 * units::boost_units::c;
   EXPECT_EQ(c.value(), 1.0);
 
   boost::units::quantity<boost::units::si::velocity> si_c(c);
@@ -136,19 +136,19 @@ TEST(Unit, divide_counts) {
 
 TEST(Unit, conversion_factors) {
   boost::units::quantity<units::detail::tof::wavelength> a(
-      2.0 * units::supported_units::angstrom);
+      2.0 * units::boost_units::angstrom);
   boost::units::quantity<boost::units::si::length> b(
-      3.0 * units::supported_units::angstrom);
+      3.0 * units::boost_units::angstrom);
   boost::units::quantity<units::detail::tof::wavelength> c(
       4.0 * boost::units::si::meters);
   boost::units::quantity<boost::units::si::area> d(
-      5.0 * boost::units::si::meters * units::supported_units::angstrom);
+      5.0 * boost::units::si::meters * units::boost_units::angstrom);
   boost::units::quantity<units::detail::tof::energy> e =
-      6.0 * units::supported_units::meV;
-  boost::units::quantity<boost::units::si::energy> f(
-      7.0 * units::supported_units::meV);
+      6.0 * units::boost_units::meV;
+  boost::units::quantity<boost::units::si::energy> f(7.0 *
+                                                     units::boost_units::meV);
   boost::units::quantity<boost::units::si::time> g(8.0 *
-                                                   units::supported_units::us);
+                                                   units::boost_units::us);
   boost::units::quantity<units::detail::tof::tof> h(9.0 *
                                                     boost::units::si::seconds);
   EXPECT_DOUBLE_EQ(a.value(), 2.0);
