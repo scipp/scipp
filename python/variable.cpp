@@ -302,23 +302,27 @@ void init_variable(py::module &m) {
            py::arg("dtype") = py::none())
       .def("rename_dims", &rename_dims<Variable>, py::arg("dims_dict"),
            "Rename dimensions.")
-      .def("copy", [](const Variable &self) { return self; },
-           py::call_guard<py::gil_scoped_release>(), "Return a (deep) copy.")
-      .def("__copy__", [](Variable &self) { return Variable(self); },
-           py::call_guard<py::gil_scoped_release>(), "Return a (deep) copy.")
-      .def("__deepcopy__",
-           [](Variable &self, py::dict) { return Variable(self); },
-           py::call_guard<py::gil_scoped_release>(), "Return a (deep) copy.")
+      .def(
+          "copy", [](const Variable &self) { return self; },
+          py::call_guard<py::gil_scoped_release>(), "Return a (deep) copy.")
+      .def(
+          "__copy__", [](Variable &self) { return Variable(self); },
+          py::call_guard<py::gil_scoped_release>(), "Return a (deep) copy.")
+      .def(
+          "__deepcopy__",
+          [](Variable &self, py::dict) { return Variable(self); },
+          py::call_guard<py::gil_scoped_release>(), "Return a (deep) copy.")
       .def_property_readonly("dtype", &Variable::dtype)
-      .def("__radd__",
-           [](Variable &a, double &b) { return a + b * units::one; },
-           py::is_operator())
-      .def("__rsub__",
-           [](Variable &a, double &b) { return b * units::one - a; },
-           py::is_operator())
-      .def("__rmul__",
-           [](Variable &a, double &b) { return a * (b * units::one); },
-           py::is_operator())
+      .def(
+          "__radd__", [](Variable &a, double &b) { return a + b * units::one; },
+          py::is_operator())
+      .def(
+          "__rsub__", [](Variable &a, double &b) { return b * units::one - a; },
+          py::is_operator())
+      .def(
+          "__rmul__",
+          [](Variable &a, double &b) { return a * (b * units::one); },
+          py::is_operator())
       .def("__repr__", [](const Variable &self) { return to_string(self); });
 
   bind_init_list(variable);
@@ -349,15 +353,18 @@ void init_variable(py::module &m) {
         Mostly equivalent to Variable, see there for details.)");
   variableView.def_buffer(&make_py_buffer_info);
   variableView.def(py::init<Variable &>())
-      .def("__radd__",
-           [](VariableView &a, double &b) { return a + b * units::one; },
-           py::is_operator())
-      .def("__rsub__",
-           [](VariableView &a, double &b) { return b * units::one - a; },
-           py::is_operator())
-      .def("__rmul__",
-           [](VariableView &a, double &b) { return a * (b * units::one); },
-           py::is_operator());
+      .def(
+          "__radd__",
+          [](VariableView &a, double &b) { return a + b * units::one; },
+          py::is_operator())
+      .def(
+          "__rsub__",
+          [](VariableView &a, double &b) { return b * units::one - a; },
+          py::is_operator())
+      .def(
+          "__rmul__",
+          [](VariableView &a, double &b) { return a * (b * units::one); },
+          py::is_operator());
 
   bind_astype(variable);
   bind_astype(variableView);
