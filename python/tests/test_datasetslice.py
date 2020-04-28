@@ -333,6 +333,42 @@ class TestDatasetSlice(unittest.TestCase):
         self.assertTrue('y' in da['x', 0:1].dims)
         self.assertTrue('x' in da['x', 0:1].dims)
 
+    def test_slice_dataset_with_data_only(self):
+        d = sc.Dataset()
+        d['data'] = sc.Variable(['y'], values=np.arange(10))
+        sliced = d['y', :]
+        self.assertEqual(d, sliced)
+        sliced = d['y', 2:6]
+        self.assertEqual(sc.Variable(['y'], values=np.arange(2, 6)),
+                         sliced['data'].data)
+
+    def test_slice_dataset_with_coords_only(self):
+        d = sc.Dataset()
+        d.coords['y-coord'] = sc.Variable(['y'], values=np.arange(10))
+        sliced = d['y', :]
+        self.assertEqual(d, sliced)
+        sliced = d['y', 2:6]
+        self.assertEqual(sc.Variable(['y'], values=np.arange(2, 6)),
+                         sliced.coords['y-coord'])
+
+    def test_slice_dataset_with_attrs_only(self):
+        d = sc.Dataset()
+        d.attrs['y-attr'] = sc.Variable(['y'], values=np.arange(10))
+        sliced = d['y', :]
+        self.assertEqual(d, sliced)
+        sliced = d['y', 2:6]
+        self.assertEqual(sc.Variable(['y'], values=np.arange(2, 6)),
+                         sliced.attrs['y-attr'])
+
+    def test_slice_dataset_with_masks_only(self):
+        d = sc.Dataset()
+        d.masks['y-mask'] = sc.Variable(['y'], values=np.arange(10))
+        sliced = d['y', :]
+        self.assertEqual(d, sliced)
+        sliced = d['y', 2:6]
+        self.assertEqual(sc.Variable(['y'], values=np.arange(2, 6)),
+                         sliced.masks['y-mask'])
+
 
 if __name__ == '__main__':
     unittest.main()
