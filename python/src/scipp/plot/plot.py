@@ -127,7 +127,6 @@ def _prepare_plot(axes, bins, color, inventory, linestyle, linewidth, marker, pr
     # {number_of_dimensions, Dataset, axes, line_parameters}.
     tobeplotted = dict()
     for name, var in sorted(inventory.items()):
-
         if sc.contains_events(var) and bins is None:
             raise RuntimeError("The `bins` argument must be specified when "
                                "plotting event data.")
@@ -172,13 +171,17 @@ def _prepare_plot(axes, bins, color, inventory, linestyle, linewidth, marker, pr
                     mpl_line_params[n] = get_line_param(
                         name=n, index=mpl_line_params[n])
 
-            if key not in tobeplotted.keys():
-                tobeplotted[key] = dict(ndims=ndims,
-                                        scipp_obj_dict=dict(),
-                                        axes=ax,
-                                        mpl_line_params=dict())
-                for n in mpl_line_params.keys():
-                    tobeplotted[key]["mpl_line_params"][n] = {}
+            original_key = key
+            i = 1
+            while key in tobeplotted:
+                key = original_key + '_' + str(i)
+
+            tobeplotted[key] = dict(ndims=ndims,
+                                    scipp_obj_dict=dict(),
+                                    axes=ax,
+                                    mpl_line_params=dict())
+            for n in mpl_line_params.keys():
+                tobeplotted[key]["mpl_line_params"][n] = {}
             tobeplotted[key]["scipp_obj_dict"][name] = inventory[name]
             for n, p in mpl_line_params.items():
                 tobeplotted[key]["mpl_line_params"][n][name] = p
