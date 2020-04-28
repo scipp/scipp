@@ -26,8 +26,12 @@ def tiled_plot(scipp_objs: List,
         packed_objs = {}
         for obj in scipp_objs:
             obj_dict = _pack_into_dict(obj)
+            if not obj_dict:
+                # Nothing to plot
+                continue
+
             # We need to be careful of duplicates - keep trying keys until we find a unique name
-            assert len(obj_dict) == 1, "Duplicate name handling currentlt requires one element returns"
+            assert len(obj_dict) == 1, "Duplicate name handling requires _pack_into_dict to return max one val"
             original_key = str(next(iter(obj_dict)))
             key = original_key
             i = 1
@@ -41,6 +45,9 @@ def tiled_plot(scipp_objs: List,
     else:
         raise ValueError("A list, set or dict of plottable items must be passed,"
                          f" got {repr(scipp_objs)} instead")
+
+    if not packed_objs:
+        return  # Nothing to do
 
     to_be_plotted = _prepare_plot(axes=axes, bins=bins, color=color,
                                   inventory=packed_objs, linestyle=linestyle,
@@ -175,6 +182,7 @@ def _prepare_plot(axes, bins, color, inventory, linestyle, linewidth, marker, pr
             i = 1
             while key in tobeplotted:
                 key = original_key + '_' + str(i)
+                i += 1
 
             tobeplotted[key] = dict(ndims=ndims,
                                     scipp_obj_dict=dict(),
