@@ -96,7 +96,7 @@ class TestDatasetSlice(unittest.TestCase):
         self.assertNotEqual(s1['A'], s2['A'])
         self.assertNotEqual(s3['A'], s2['A'])
 
-    def test_copy_datasetview(self):
+    def test_copy_dataarrayview(self):
         import copy
         N = 6
         M = 4
@@ -296,8 +296,7 @@ class TestDatasetSlice(unittest.TestCase):
 
     def test_set_dataarrayview_slice_items(self):
         d = self._d.copy()
-        d['a']['x', 0:2] += \
-        d['b']['x', 0:2]
+        d['a']['x', 0:2] += d['b']['x', 0:2]
         self.assertEqual(d['a'].data.values.tolist(),
                          [0, 2, 2, 3, 4, 5, 6, 7, 8, 9])
         d['a']['x', 6] += \
