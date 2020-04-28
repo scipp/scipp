@@ -8,7 +8,7 @@
 std::string make_docstring(const Docstring &docs,
   const std::vector<std::pair<const std::string, const std::string>> &params) {
 
-  std::string docstring = description + "\n";
+  std::string docstring = docs.description + "\n";
   for (auto &p : params)
     docstring += ":param " + p.first + ": " + p.second +"\n";
   // docstring += ":param " + param2.first + ": " + param2.second +"\n";
