@@ -5,8 +5,6 @@
 /// @author Neil Vaytet
 #pragma once
 
-#include "scipp/units/unit_impl.h"
-
 #include <boost/units/base_dimension.hpp>
 #include <boost/units/make_system.hpp>
 #include <boost/units/systems/si/codata/electromagnetic_constants.hpp>
@@ -113,52 +111,3 @@ struct boost::units::base_unit_info<
   static std::string name() { return "c"; }
   static std::string symbol() { return "c"; }
 };
-
-namespace scipp::units {
-#ifdef SCIPP_UNITS_NEUTRON
-inline
-#endif
-    namespace neutron {
-
-// Additional helper constants beyond the SI base units.
-// Note the factor `dimensionless` in units that otherwise contain only non-SI
-// factors. This is a trick to overcome some subtleties of working with
-// heterogeneous unit systems in boost::units: We are combing SI units with our
-// own, and the two are considered independent unless you convert explicitly.
-// Therefore, in operations like (counts * m) / m, boosts is not cancelling the
-// m as expected --- you get counts * dimensionless. Explicitly putting a factor
-// dimensionless (dimensionless) into all our non-SI units avoids special-case
-// handling in all operations (which would attempt to remove the dimensionless
-// factor manually).
-static constexpr decltype(detail::tof::counts{} * dimensionless) counts;
-static constexpr decltype(detail::tof::wavelength{} * dimensionless) angstrom;
-static constexpr decltype(detail::tof::energy{} * dimensionless) meV;
-static constexpr decltype(detail::tof::tof{} * dimensionless) us;
-static constexpr decltype(detail::tof::velocity{} * dimensionless) c;
-
-class Unit : public Unit_impl<Unit> {
-public:
-  using Unit_impl<Unit>::Unit_impl;
-};
-
-} // namespace neutron
-
-template <> struct supported_units<neutron::Unit> {
-  using type = decltype(detail::make_unit(
-      std::make_tuple(m, dimensionless / m),
-      std::make_tuple(
-          dimensionless, rad, deg, rad / deg, deg / rad, counts,
-          dimensionless / counts, s, kg, angstrom, meV, us, dimensionless / us,
-          dimensionless / s, counts / us, counts / angstrom, counts / meV,
-          m *m *m, meV *us *us / (m * m), meV *us *us *dimensionless, kg *m / s,
-          m / s, c, c *m, meV / c, dimensionless / c, K, us / angstrom,
-          us / (angstrom * angstrom), us / (m * angstrom), angstrom / us,
-          (m * angstrom) / us, us *us, dimensionless / (us * us),
-          dimensionless / meV, dimensionless / angstrom, angstrom *angstrom,
-          dimensionless / (angstrom * angstrom))));
-};
-template <> struct counts_unit<neutron::Unit> {
-  using type = decltype(counts);
-};
-
-} // namespace scipp::units

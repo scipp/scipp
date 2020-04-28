@@ -3,8 +3,6 @@
 /// @file
 /// @author Simon Heybrock
 #include "scipp/units/neutron.h"
-#include "scipp/units/unit.tcc"
 
 namespace scipp::units {
-INSTANTIATE(neutron::Unit)
 } // namespace scipp::units

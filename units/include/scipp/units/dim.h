@@ -98,3 +98,7 @@ template <> struct hash<scipp::units::Dim> {
   }
 };
 } // namespace std
+
+namespace scipp {
+using scipp::units::Dim;
+}
