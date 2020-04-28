@@ -21,14 +21,15 @@ using namespace scipp::dataset;
 
 namespace scipp::neutron {
 
-const auto tof_to_s =
-    boost::units::quantity<boost::units::si::time>(1.0 * units::us) / units::us;
+const auto tof_to_s = boost::units::quantity<boost::units::si::time>(
+                          1.0 * units::boost_units::us) /
+                      units::boost_units::us;
 const auto J_to_meV =
-    units::meV /
-    boost::units::quantity<boost::units::si::energy>(1.0 * units::meV);
-const auto m_to_angstrom =
-    units::angstrom /
-    boost::units::quantity<boost::units::si::length>(1.0 * units::angstrom);
+    units::boost_units::meV / boost::units::quantity<boost::units::si::energy>(
+                                  1.0 * units::boost_units::meV);
+const auto m_to_angstrom = units::boost_units::angstrom /
+                           boost::units::quantity<boost::units::si::length>(
+                               1.0 * units::boost_units::angstrom);
 // In tof-to-energy conversions we *divide* by time-of-flight (squared), so the
 // tof_to_s factor is in the denominator.
 const auto tofToEnergyPhysicalConstants =
@@ -72,11 +73,11 @@ template <class T> auto tofToDSpacing(const T &d) {
   // l_total = l1 + l2
   auto conversionFactor(l1 + l2);
 
-  const auto one = units::one;
   conversionFactor *= Variable(2.0 * boost::units::si::constants::codata::m_n /
                                boost::units::si::constants::codata::h /
                                (m_to_angstrom * tof_to_s));
-  conversionFactor *= sqrt(0.5 * one * (1.0 * one - dot(beam, scattered)));
+  conversionFactor *=
+      sqrt(0.5 * units::one * (1.0 * units::one - dot(beam, scattered)));
 
   return reciprocal(conversionFactor);
 }
