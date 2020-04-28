@@ -71,7 +71,7 @@ struct supported_units {
 struct counts_unit {
   using type = decltype(boost_units::counts);
 };
-} // namespace boost
+} // namespace boost_units
 using supported_units_t = typename boost_units::supported_units::type;
 using counts_unit_t = typename boost_units::counts_unit::type;
 

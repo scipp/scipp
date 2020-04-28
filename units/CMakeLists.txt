@@ -5,7 +5,7 @@ set(INC_FILES include/scipp/units/except.h include/scipp/units/string.h
               include/scipp/units/unit.h include/scipp/units/neutron.h
 )
 
-set(SRC_FILES dim.cpp except.cpp neutron.cpp string.cpp unit.cpp)
+set(SRC_FILES dim.cpp except.cpp string.cpp unit.cpp)
 
 set(LINK_TYPE "STATIC")
 if(DYNAMIC_LIB)
