@@ -304,32 +304,34 @@ class TestDatasetSlice(unittest.TestCase):
         self.assertEqual(d['a'].data.values.tolist(),
                          [0, 2, 2, 3, 4, 5, 14, 7, 8, 9])
 
+    def test_slice_and_dimensions_items_dataarray(self):
+        da = sc.DataArray(
+            sc.Variable(['x', 'y'], values=np.arange(50).reshape(5, 10)))
+        self.assertTrue(
+            np.allclose(da['x', 0].values, da['x', 0:1].values[0], atol=1e-9))
+        self.assertTrue(np.allclose(da['x', 4].values, da['x', -1].values))
+        self.assertTrue(np.allclose(da['y', 1].values, da['y', -9].values))
+        self.assertTrue('y' in da['x', 0].dims)
+        self.assertTrue('x' not in da['x', 0].dims)
+        self.assertTrue('y' in da['x', 0:1].dims)
+        self.assertTrue('x' in da['x', 0:1].dims)
 
-def test_slice_and_dimensions_items_dataarray():
-    da = sc.DataArray(
-        sc.Variable(['x', 'y'], values=np.arange(50).reshape(5, 10)))
-    assert np.allclose(da['x', 0].values, da['x', 0:1].values[0], atol=1e-9)
-    assert np.allclose(da['x', 4].values, da['x', -1].values)
-    assert np.allclose(da['y', 1].values, da['y', -9].values)
-    assert 'y' in da['x', 0].dims
-    assert 'x' not in da['x', 0].dims
-    assert 'y' in da['x', 0:1].dims
-    assert 'x' in da['x', 0:1].dims
-
-
-def test_slice_and_dimensions_items_dataset():
-    da = sc.DataArray(
-        sc.Variable(['x', 'y'], values=np.arange(50).reshape(5, 10)))
-    ds = sc.Dataset({'a': da})
-    assert np.allclose(ds['x', 0]['a'].values,
-                       ds['x', 0:1]['a'].values[0],
-                       atol=1e-9)
-    assert np.allclose(ds['x', 4]['a'].values, ds['x', -1]['a'].values)
-    assert np.allclose(ds['y', 1]['a'].values, ds['y', -9]['a'].values)
-    assert 'y' in da['x', 0].dims
-    assert 'x' not in da['x', 0].dims
-    assert 'y' in da['x', 0:1].dims
-    assert 'x' in da['x', 0:1].dims
+    def test_slice_and_dimensions_items_dataset(self):
+        da = sc.DataArray(
+            sc.Variable(['x', 'y'], values=np.arange(50).reshape(5, 10)))
+        ds = sc.Dataset({'a': da})
+        self.assertTrue(
+            np.allclose(ds['x', 0]['a'].values,
+                        ds['x', 0:1]['a'].values[0],
+                        atol=1e-9))
+        self.assertTrue(
+            np.allclose(ds['x', 4]['a'].values, ds['x', -1]['a'].values))
+        self.assertTrue(
+            np.allclose(ds['y', 1]['a'].values, ds['y', -9]['a'].values))
+        self.assertTrue('y' in da['x', 0].dims)
+        self.assertTrue('x' not in da['x', 0].dims)
+        self.assertTrue('y' in da['x', 0:1].dims)
+        self.assertTrue('x' in da['x', 0:1].dims)
 
 
 if __name__ == '__main__':
