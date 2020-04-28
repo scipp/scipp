@@ -2,7 +2,7 @@
 # Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
-from typing import Union, List
+from typing import List
 
 # Scipp imports
 from scipp import config
@@ -23,16 +23,15 @@ except ImportError:
     ipv = None
 
 
-def plot_3d(to_plot :  Union[PlotRequest, List[PlotRequest]]):
+def plot_3d(to_plot: List[PlotRequest]):
     """
     Plot a 3-slice through a N dimensional dataset. For every dimension above
     3, a slider is created to adjust the position of the slice in that
     particular dimension. For other dimensions, the sliders are used to adjust
     the position of the slice in 3D space.
     """
-    using_subplots = isinstance(to_plot, list)
     # This check is duplicated to assist the IDE to deduct we are using a scalar and not a list
-    reference_elem = to_plot[0] if isinstance(to_plot, list) else to_plot
+    reference_elem = to_plot[0]
 
     assert isinstance(reference_elem.user_kwargs, ThreeDPlotKwargs)
     # Protect against unloaded module
@@ -41,13 +40,9 @@ def plot_3d(to_plot :  Union[PlotRequest, List[PlotRequest]]):
                            "and ipyevents to be installed. Use conda/pip "
                            "install ipyvolume ipyevents.")
 
-    if using_subplots:
-        for plot in to_plot:
-            sv = Slicer3d(request=plot)
-            render_plot(widgets=sv.box, filename=plot.user_kwargs.filename, ipv=ipv)
-    else:
-        sv = Slicer3d(request=to_plot)
-        render_plot(widgets=sv.box, filename=to_plot.user_kwargs.filename, ipv=ipv)
+    for plot in to_plot:
+        sv = Slicer3d(request=plot)
+        render_plot(widgets=sv.box, filename=plot.user_kwargs.filename, ipv=ipv)
 
     return sv.members
 
@@ -230,9 +225,9 @@ class Slicer3d(Slicer):
             if update_coordinates:
                 perm = self.permutations[key]
                 surf_args[key] = np.ones_like(meshes[key][perm[0]]) * \
-                    val["loc"]
+                                 val["loc"]
                 wfrm_args[key] = np.ones_like(wframes[key][perm[0]]) * \
-                    val["loc"]
+                                 val["loc"]
                 for p in perm:
                     surf_args[p] = meshes[key][p]
                     wfrm_args[p] = wframes[key][p]

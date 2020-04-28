@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
-from typing import List, Union
+from typing import List
 
 from scipp.plot.plot_impl.plot_1d import plot_1d
 from scipp.plot.plot_impl.plot_2d import plot_2d
@@ -10,23 +10,19 @@ from ..events import histogram_events_data
 from scipp.plot.plot_impl.plot_request import PlotRequest, OneDPlotKwargs, TwoDPlotKwargs, ThreeDPlotKwargs
 
 
-def dispatch(request: Union[PlotRequest, List[PlotRequest]],
+def dispatch(request: List[PlotRequest],
              **kwargs):
     """
     Function to automatically dispatch the dict of scipp objects to the
     appropriate plotting function depending on its dimensions.
     """
-    if isinstance(request, list):
-        if not all(r.projection == request[0].projection for r in request):
-            # In the future we could look at this, but get subplots working for simple cases first
-            raise ValueError("All projection types (i.e. 1D/2D/3D) in a subplot must match")
+    if not all(r.projection == request[0].projection for r in request):
+        # In the future we could look at this, but get subplots working for simple cases first
+        raise ValueError("All projection types (i.e. 1D/2D/3D) in a subplot must match")
 
-        for r in request:
-            _prepare_dispatch(r, **kwargs)
-        projection = request[0].projection
-    else:
-        _prepare_dispatch(request, **kwargs)
-        projection = request.projection
+    for r in request:
+        _prepare_dispatch(r, **kwargs)
+    projection = request[0].projection
 
     if projection == "1d":
         return plot_1d(to_plot=request)
@@ -36,7 +32,7 @@ def dispatch(request: Union[PlotRequest, List[PlotRequest]],
         return plot_3d(to_plot=request)
     else:
         raise RuntimeError("Wrong projection type. Expected either '2d' "
-                           f"or '3d', got {request.projection}.")
+                           f"or '3d', got {projection}.")
 
 
 def _prepare_dispatch(request, **kwargs):

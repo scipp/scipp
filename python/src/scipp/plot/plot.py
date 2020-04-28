@@ -2,9 +2,9 @@
 # Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
-# Scipp imports
 from typing import List, Dict
 
+# Scipp imports
 from scipp.plot.plot_impl.prepare_collapse import prepare_collapse
 from scipp.plot.plot_impl.plot_request import PlotRequest
 from .sciplot import SciPlot
@@ -103,7 +103,7 @@ def plot(scipp_obj,
                                   ndims=val["ndims"],
                                   projection=projection,
                                   scipp_objs=val["scipp_obj_dict"])
-        output[key] = dispatch(request=request, **kwargs)
+        output[key] = dispatch(request=[request], **kwargs)
 
     return output
 

@@ -3,7 +3,7 @@
 # @author Neil Vaytet
 
 # Scipp imports
-from typing import Union, List
+from typing import List
 
 from scipp import config
 from scipp.plot.render import render_plot
@@ -21,7 +21,7 @@ import ipywidgets as widgets
 import warnings
 
 
-def plot_1d(to_plot : Union[PlotRequest, List[PlotRequest]]):
+def plot_1d(to_plot: List[PlotRequest]):
     """
     Plot a 1D spectrum.
 
@@ -30,9 +30,7 @@ def plot_1d(to_plot : Union[PlotRequest, List[PlotRequest]]):
     made.
     If the data contains more than one dimensions, sliders are added.
     """
-    using_subplots = isinstance(to_plot, list)
-    # This check is duplicated to assist the IDE to deduct we are using a scalar and not a list
-    reference_elem = to_plot[0] if isinstance(to_plot, list) else to_plot
+    reference_elem = to_plot[0]
 
     assert isinstance(reference_elem.user_kwargs, OneDPlotKwargs)
 
@@ -40,25 +38,22 @@ def plot_1d(to_plot : Union[PlotRequest, List[PlotRequest]]):
         axes = reference_elem.user_kwargs.mpl_axes
         fig = None
 
-        if (using_subplots and not isinstance(axes, list)) or \
-           (using_subplots and len(to_plot) != len(axes)):
+        if len(to_plot) != len(axes):
             raise ValueError("A list of mpl_axes matching length of the number of subplots is required"
                              " when using custom mpl_axes")
     else:
         nrows = len(to_plot) if isinstance(to_plot, list) else 1
         fig, axes = plt.subplots(nrows=nrows, ncols=1,
-                               figsize=(config.plot.width / config.plot.dpi,
-                                        config.plot.height / config.plot.dpi),
-                               dpi=config.plot.dpi)
+                                 figsize=(config.plot.width / config.plot.dpi,
+                                          config.plot.height / config.plot.dpi),
+                                 dpi=config.plot.dpi)
+        if len(to_plot) == 1:
+            axes = [axes]
 
-    if using_subplots:
-        sliced = []
-        for requested, ax in zip(to_plot, axes):
-            sv = Slicer1d(requested, fig=fig, axis=ax)
-            sliced.append(sv.members)
-    else:
-        sv = Slicer1d(to_plot, fig=fig, axis=axes)
-        sliced = sv.members
+    sliced = []
+    for requested, ax in zip(to_plot, axes):
+        sv = Slicer1d(requested, fig=fig, axis=ax)
+        sliced.append(sv.members)
 
     if reference_elem.user_kwargs.mpl_axes is None:
         render_plot(figure=fig, widgets=sv.box, filename=reference_elem.user_kwargs.filename)
@@ -111,7 +106,7 @@ class Slicer1d(Slicer):
                     else:
                         print("Warning: key {} was not found in list of "
                               "entries to plot and will be ignored.".format(
-                                  name))
+                            name))
             else:
                 raise TypeError("Unsupported type for argument "
                                 "'variances': {}".format(type(self._user_kwargs.variances)))
@@ -191,8 +186,8 @@ class Slicer1d(Slicer):
         ymin_new -= dy
         ymax_new += dy
         if self.logy:
-            ymin_new = 10.0**ymin_new
-            ymax_new = 10.0**ymax_new
+            ymin_new = 10.0 ** ymin_new
+            ymax_new = 10.0 ** ymax_new
         return [min(ymin, ymin_new), max(ymax, ymax_new)]
 
     def make_keep_button(self):
@@ -207,7 +202,7 @@ class Slicer1d(Slicer):
         col = widgets.ColorPicker(concise=True,
                                   description='',
                                   value='#%02X%02X%02X' %
-                                  (tuple(np.random.randint(0, 255, 3))),
+                                        (tuple(np.random.randint(0, 255, 3))),
                                   disabled=False)
         # Make a unique id
         key = str(id(but))
