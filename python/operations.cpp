@@ -6,6 +6,7 @@
 #include "bind_free_function.h"
 
 #include "scipp/dataset/dataset.h"
+#include "scipp/dataset/sort.h"
 #include "scipp/variable/operations.h"
 
 using namespace scipp;
@@ -190,9 +191,10 @@ template<class T>
 void bind_sort(py::module &m, Docstring docs) {
   using ConstView = const typename T::const_view_type &;
   bind_free_function<T, ConstView, const VariableConstView &>(sort, "sort", m, docs);
-  docs.description = "Sort data array along a dimension by the coordinate values for that dimension.";
-
-  bind_free_function<T, ConstView, const Dim>(sort, "sort", m, docs);
+  docs.set_description("Sort data array along a dimension by the coordinate values for that dimension.");
+  docs.set_raises("If the key is invalid, e.g., if it is not a Dim.");
+  docs.set_param(1, {"dim", "Dimension over which to sort."});
+  bind_free_function<T, ConstView, const Dim &>(sort, "sort", m, docs);
 }
 
 // template<class T>
@@ -275,23 +277,6 @@ void init_operations(py::module &m) {
 
   // bind_abs<Variable>(m, true);
 
-  // abs
-  docs = {
-    // Description
-    "Element-wise absolute value.",
-    // Raises
-    "If the dtype has no absolute value, e.g., if it is a string.",
-    // See also
-    ":py:class:`scipp.norm` for vector-like dtype",
-    // Returns
-    "Variable, data array, or dataset containing the absolute values.",
-    // Return type
-    "Variable, DataArray, or Dataset.",
-    // Parameters
-    {{"x", "Input Variable, DataArray, or Dataset."}}
-  };
-  bind_free_function<Variable, ConstView>(abs, "abs", m, docs);
-  bind_free_function<View, ConstView, const View &>(abs, "abs", m, docs.with_out_arg());
 
 
 
@@ -329,17 +314,44 @@ void init_operations(py::module &m) {
   bind_free_function<Variable, ConstView, const VariableConstView &>(sort, "sort", m, docs);
   bind_sort<DataArray>(m, docs);
   bind_sort<Dataset>(m, docs);
-  // bind_free_function<T, ConstView, const VariableConstView &>(sort, "sort", m, docs);
 
-// m.def("sort",
-//         py::overload_cast<const VariableConstView &, const VariableConstView &>(
-//             &sort),
-//         py::arg("data"), py::arg("key"),
-//         py::call_guard<py::gil_scoped_release>(),
-//         R"(Sort variable along a dimension by a sort key.
 
-//       :raises: If the key is invalid, e.g., if it has not exactly one dimension, or if its dtype is not sortable.
-//       :return: New sorted variable.
-//       :rtype: Variable)");
+
+
+  // abs
+  docs = {
+    // Description
+    "Element-wise absolute value.",
+    // Raises
+    "If the dtype has no absolute value, e.g., if it is a string.",
+    // See also
+    ":py:class:`scipp.norm` for vector-like dtype",
+    // Returns
+    "Variable, data array, or dataset containing the absolute values.",
+    // Return type
+    "Variable, DataArray, or Dataset.",
+    // Parameters
+    {{"x", "Input Variable, DataArray, or Dataset."}}
+  };
+  bind_free_function<Variable, ConstView>(abs, "abs", m, docs);
+  bind_free_function<View, ConstView, const View &>(abs, "abs", m, docs.with_out_arg());
+
+  // sqrt
+  docs = {
+    // Description
+    "Element-wise square-root.",
+    // Raises
+    "If the dtype has no square-root, e.g., if it is a string.",
+    // See also
+    "",
+    // Returns
+    "Variable, data array, or dataset containing the square-root.",
+    // Return type
+    "Variable, DataArray, or Dataset.",
+    // Parameters
+    {{"x", "Input Variable, DataArray, or Dataset."}}
+  };
+  bind_free_function<Variable, ConstView>(sqrt, "sqrt", m, docs);
+  bind_free_function<View, ConstView, const View &>(sqrt, "sqrt", m, docs.with_out_arg());
 
 }

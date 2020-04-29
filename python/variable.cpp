@@ -556,25 +556,25 @@ void init_variable(py::module &m) {
         py::call_guard<py::gil_scoped_release>(),
         "Split a Variable along a given Dimension.");
 
-  m.def("sqrt", [](const VariableConstView &self) { return sqrt(self); },
-        py::arg("x"), py::call_guard<py::gil_scoped_release>(), R"(
-        Element-wise square-root.
+  // m.def("sqrt", [](const VariableConstView &self) { return sqrt(self); },
+  //       py::arg("x"), py::call_guard<py::gil_scoped_release>(), R"(
+  //       Element-wise square-root.
 
-        :raises: If the dtype has no square-root, e.g., if it is a string
-        :return: Copy of the input with values replaced by the square-root.
-        :rtype: Variable)");
+  //       :raises: If the dtype has no square-root, e.g., if it is a string
+  //       :return: Copy of the input with values replaced by the square-root.
+  //       :rtype: Variable)");
 
-  m.def("sqrt",
-        [](const VariableConstView &self, const VariableView &out) {
-          return sqrt(self, out);
-        },
-        py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>(),
-        R"(
-        Element-wise square-root.
+  // m.def("sqrt",
+  //       [](const VariableConstView &self, const VariableView &out) {
+  //         return sqrt(self, out);
+  //       },
+  //       py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>(),
+  //       R"(
+  //       Element-wise square-root.
 
-        :raises: If the dtype has no square-root, e.g., if it is a string
-        :return: Copy of the input with values replaced by the square-root.
-        :rtype: Variable)");
+  //       :raises: If the dtype has no square-root, e.g., if it is a string
+  //       :return: Copy of the input with values replaced by the square-root.
+  //       :rtype: Variable)");
 
   // m.def("sum", py::overload_cast<const VariableConstView &, const Dim>(&sum),
   //       py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),

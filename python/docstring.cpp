@@ -25,6 +25,13 @@ Docstring::Docstring(const std::string description, const std::string raises, co
 //   //   m_params.push_back(p);
 // }
 
+// void Docstring::set_description(const std::string description);
+// void Docstring::set_raises(const std::string raises);
+// void Docstring::set_seealso(const std::string seealso);
+// void Docstring::set_returns(const std::string returns);
+// void Docstring::set_rtype(const std::string rtype);
+
+
 void Docstring::insert_param(const scipp::index ind, strpair param) {
   m_params.insert(m_params.begin() + ind, param);
 }
