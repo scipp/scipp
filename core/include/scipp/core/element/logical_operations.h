@@ -7,7 +7,7 @@
 #include <cmath>
 
 #include "scipp/common/overloaded.h"
-#include "scipp/core/arg_list.h"
+#include "scipp/core/element/arg_list.h"
 #include "scipp/core/transform_common.h"
 
 namespace scipp::core {

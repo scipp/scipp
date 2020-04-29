@@ -6,17 +6,14 @@
 
 #include <tuple>
 
-namespace scipp::core {
+namespace scipp::core::element {
 
-namespace element {
-
-/// Helper to define lists of supported arguments for transform_in_place.
+/// Helper to define lists of supported arguments for transform and
+/// transform_in_place.
 template <class... Ts> struct arg_list_t {
   constexpr void operator()() const noexcept;
   using types = std::tuple<Ts...>;
 };
 template <class... Ts> constexpr arg_list_t<Ts...> arg_list{};
 
-} // namespace element
-
-} // namespace scipp::core
+} // namespace scipp::core::element
