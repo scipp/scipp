@@ -26,7 +26,8 @@ def plot_2d(to_plot: List[PlotRequest]):
     2, a slider is created to adjust the position of the slice in that
     particular dimension.
     """
-    # This check is duplicated to assist the IDE to deduct we are using a scalar and not a list
+    # This check is duplicated to assist the IDE to deduct we are using a
+    # scalar and not a list
     reference_elem = to_plot[0]
 
     assert isinstance(reference_elem.user_kwargs, TwoDPlotKwargs)
@@ -39,7 +40,9 @@ def plot_2d(to_plot: List[PlotRequest]):
         sliced.append(sv.members)
 
     if reference_elem.user_kwargs.mpl_axes is None:
-        render_plot(figure=fig, widgets=sv.vbox, filename=reference_elem.user_kwargs.filename)
+        render_plot(figure=fig,
+                    widgets=sv.vbox,
+                    filename=reference_elem.user_kwargs.filename)
 
     return sliced
 
@@ -56,10 +59,12 @@ def _get_mpl_axis(to_plot: List[PlotRequest]):
 
     if reference_elem.user_kwargs.mpl_axes is not None:
         if is_subplot:
-            # Passing in MPL axis and the data structs behind it need completing.
-            # However, a discussion on dropping MPL axis vs implementing this needs to happen
+            # Passing in MPL axis needs completing for subplots.
+            # However, a discussion on dropping MPL axis vs implementing
+            # this needs to happen
             # We can come back and implement this as / when we need it
-            raise NotImplementedError("Passing in custom MPL axis is not supported with 2d subplots")
+            raise NotImplementedError("Passing in custom MPL axis is not"
+                                      " supported with 2d subplots")
 
         if isinstance(reference_elem.user_kwargs.mpl_axes, dict):
             axes = [None, None]
@@ -79,7 +84,8 @@ def _get_mpl_axis(to_plot: List[PlotRequest]):
         nrows = len(to_plot) if isinstance(to_plot, list) else 1
         ncols = 2 if has_any_variances else 1
         fig, axes = plt.subplots(
-            nrows=nrows, ncols=ncols,
+            nrows=nrows,
+            ncols=ncols,
             figsize=(config.plot.width / config.plot.dpi,
                      config.plot.height / ncols / config.plot.dpi),
             dpi=config.plot.dpi)
@@ -143,7 +149,8 @@ class Slicer2d(Slicer):
                     aspect=self.aspect,
                     interpolation="nearest",
                     cmap=self.params[key][self.name]["cmap"])
-                self.ax[key].set_title(self.name if key == "values" else "std dev.")
+                self.ax[key].set_title(self.name if key ==
+                                       "values" else "std dev.")
                 if self.params[key][self.name]["cbar"]:
                     self.cbar[key] = plt.colorbar(self.im[key],
                                                   ax=self.ax[key],
@@ -310,7 +317,10 @@ class Slicer2d(Slicer):
                 arr = arr.T
             self.im[key].set_data(arr)
             if autoscale_cbar:
-                vmin_max = {"vmin": self._user_kwargs.vmin, "vmax": self._user_kwargs.vmax}
+                vmin_max = {
+                    "vmin": self._user_kwargs.vmin,
+                    "vmax": self._user_kwargs.vmax
+                }
                 cbar_params = parse_params(globs=vmin_max,
                                            array=arr,
                                            min_val=self.global_vmin,

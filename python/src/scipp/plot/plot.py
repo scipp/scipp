@@ -30,8 +30,10 @@ def tiled_plot(scipp_objs: List,
                 # Nothing to plot
                 continue
 
-            # We need to be careful of duplicates - keep trying keys until we find a unique name
-            assert len(obj_dict) == 1, "Duplicate name handling requires _pack_into_dict to return max one val"
+            # We need to be careful of duplicates -
+            # keep trying keys until we find a unique name
+            assert len(obj_dict) == 1, "Duplicate name handling requires" \
+                                       " _pack_into_dict to return one val"
             original_key = str(next(iter(obj_dict)))
             key = original_key
             i = 1
@@ -43,34 +45,42 @@ def tiled_plot(scipp_objs: List,
     elif isinstance(scipp_objs, dict):
         packed_objs = scipp_objs
     else:
-        raise ValueError("A list, set or dict of plottable items must be passed,"
-                         f" got {repr(scipp_objs)} instead")
+        raise ValueError(
+            "A list, set or dict of plottable items must be passed,"
+            f" got {repr(scipp_objs)} instead")
 
     if not packed_objs:
         return  # Nothing to do
 
-    to_be_plotted = _prepare_plot(axes=axes, bins=bins, color=color,
-                                  inventory=packed_objs, linestyle=linestyle,
-                                  linewidth=linewidth, marker=marker, projection=projection)
+    to_be_plotted = _prepare_plot(axes=axes,
+                                  bins=bins,
+                                  color=color,
+                                  inventory=packed_objs,
+                                  linestyle=linestyle,
+                                  linewidth=linewidth,
+                                  marker=marker,
+                                  projection=projection)
 
     # Delayed imports
     from scipp.plot.plot_impl.dispatch import dispatch
 
     # Plot all the subsets
     output = SciPlot()
-    # We pack this as a list of requests (rather than into the struct as a list)
+    # We pack this as a list of requests (rather than into the struct)
     # so that each subplot could have its own options in the future
     request_list = []
     for key, val in to_be_plotted.items():
         if collapse is not None:
-            request_list.append(prepare_collapse(data_array=val["scipp_obj_dict"][key],
-                                                 dim=collapse))
+            request_list.append(
+                prepare_collapse(data_array=val["scipp_obj_dict"][key],
+                                 dim=collapse))
         else:
-            request_list.append(PlotRequest(bins=bins,
-                                            mpl_line_params=val["mpl_line_params"],
-                                            ndims=val["ndims"],
-                                            projection=projection,
-                                            scipp_objs=val["scipp_obj_dict"]))
+            request_list.append(
+                PlotRequest(bins=bins,
+                            mpl_line_params=val["mpl_line_params"],
+                            ndims=val["ndims"],
+                            projection=projection,
+                            scipp_objs=val["scipp_obj_dict"]))
     # TODO how do we decide which key this belongs to?
     output["tiled"] = dispatch(request=request_list, **kwargs)
     return output
@@ -115,7 +125,8 @@ def plot(scipp_obj,
     return output
 
 
-def _prepare_plot(axes, bins, color, inventory, linestyle, linewidth, marker, projection):
+def _prepare_plot(axes, bins, color, inventory, linestyle, linewidth, marker,
+                  projection):
     # Prepare container for matplotlib line parameters
     line_params = {
         "color": color,
@@ -146,8 +157,8 @@ def _prepare_plot(axes, bins, color, inventory, linestyle, linewidth, marker, pr
             if ndims == 1 or projection == "1d" or projection == "1D":
                 # Construct a key from the dimensions
                 if axes is not None:
-                    # Check if we are dealing with a dict mapping dimensions to
-                    # labels
+                    # Check if we are dealing with a dict mapping dimensions
+                    # to labels
                     if isinstance(axes, dict):
                         key = axes[str(var.dims[0])]
                         ax = [key]

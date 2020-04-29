@@ -39,14 +39,18 @@ def plot_1d(to_plot: List[PlotRequest]):
         fig = None
 
         if len(to_plot) != len(axes):
-            raise ValueError("A list of mpl_axes matching length of the number of subplots is required"
-                             " when using custom mpl_axes")
+            raise ValueError("A list of mpl_axes matching length of the number"
+                             " of subplots is required when"
+                             " using custom mpl_axes")
     else:
         nrows = len(to_plot) if isinstance(to_plot, list) else 1
-        fig, axes = plt.subplots(nrows=nrows, ncols=1,
-                                 figsize=(config.plot.width / config.plot.dpi,
-                                          config.plot.height / config.plot.dpi),
-                                 dpi=config.plot.dpi)
+        fig, axes = plt.subplots(
+            nrows=nrows,
+            ncols=1,
+            figsize=(config.plot.width / config.plot.dpi,
+                     config.plot.height / config.plot.dpi),
+            dpi=config.plot.dpi)
+
         if len(to_plot) == 1:
             axes = [axes]
 
@@ -56,7 +60,9 @@ def plot_1d(to_plot: List[PlotRequest]):
         sliced.append(sv.members)
 
     if reference_elem.user_kwargs.mpl_axes is None:
-        render_plot(figure=fig, widgets=sv.box, filename=reference_elem.user_kwargs.filename)
+        render_plot(figure=fig,
+                    widgets=sv.box,
+                    filename=reference_elem.user_kwargs.filename)
 
     return sliced
 
@@ -101,15 +107,17 @@ class Slicer1d(Slicer):
             elif isinstance(self._user_kwargs.variances, dict):
                 for name, v in self._user_kwargs.variances.items():
                     if name in self.scipp_obj_dict:
-                        self.variances[name] = self._user_kwargs.variances[name] and \
-                                               self.scipp_obj_dict[name].variances is not None
+                        self.variances[name] = self._user_kwargs.variances[
+                                                   name] and \
+                                               self.scipp_obj_dict[
+                                                   name].variances is not None
                     else:
-                        print("Warning: key {} was not found in list of "
-                              "entries to plot and will be ignored.".format(
-                            name))
+                        print(f"Warning: key {name} was not found in list of "
+                              "entries to plot and will be ignored.")
             else:
                 raise TypeError("Unsupported type for argument "
-                                "'variances': {}".format(type(self._user_kwargs.variances)))
+                                f"'variances': "
+                                f"{type(self._user_kwargs.variances)}")
 
         # Initialise container for returning matplotlib objects
         self.members.update({
@@ -129,7 +137,8 @@ class Slicer1d(Slicer):
             ylab = name_with_unit(var=var, name="")
             self.ax.set_ylabel(ylab)
 
-            if (self._user_kwargs.mpl_axes is None) and (var.values is not None):
+            if (self._user_kwargs.mpl_axes is None) and (var.values is
+                                                         not None):
                 with warnings.catch_warnings():
                     warnings.filterwarnings("ignore", category=UserWarning)
                     self.ax.set_ylim(self.ylim)
@@ -186,8 +195,8 @@ class Slicer1d(Slicer):
         ymin_new -= dy
         ymax_new += dy
         if self.logy:
-            ymin_new = 10.0 ** ymin_new
-            ymax_new = 10.0 ** ymax_new
+            ymin_new = 10.0**ymin_new
+            ymax_new = 10.0**ymax_new
         return [min(ymin, ymin_new), max(ymax, ymax_new)]
 
     def make_keep_button(self):
@@ -202,7 +211,7 @@ class Slicer1d(Slicer):
         col = widgets.ColorPicker(concise=True,
                                   description='',
                                   value='#%02X%02X%02X' %
-                                        (tuple(np.random.randint(0, 255, 3))),
+                                  (tuple(np.random.randint(0, 255, 3))),
                                   disabled=False)
         # Make a unique id
         key = str(id(but))
@@ -377,7 +386,8 @@ class Slicer1d(Slicer):
                 coll.set_segments(
                     self.change_segments_y(coll.get_segments(), vslice.values,
                                            np.sqrt(vslice.variances)))
-        if self.input_contains_unaligned_data and (self._user_kwargs.mpl_axes is None):
+        if self.input_contains_unaligned_data and (self._user_kwargs.mpl_axes
+                                                   is None):
             with warnings.catch_warnings():
                 warnings.filterwarnings("ignore", category=UserWarning)
                 self.ax.set_ylim(self.ylim)

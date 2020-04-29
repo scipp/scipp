@@ -7,18 +7,20 @@ from scipp.plot.plot_impl.plot_1d import plot_1d
 from scipp.plot.plot_impl.plot_2d import plot_2d
 from scipp.plot.plot_impl.plot_3d import plot_3d
 from ..events import histogram_events_data
-from scipp.plot.plot_impl.plot_request import PlotRequest, OneDPlotKwargs, TwoDPlotKwargs, ThreeDPlotKwargs
+from scipp.plot.plot_impl.plot_request import PlotRequest, OneDPlotKwargs,\
+    TwoDPlotKwargs, ThreeDPlotKwargs
 
 
-def dispatch(request: List[PlotRequest],
-             **kwargs):
+def dispatch(request: List[PlotRequest], **kwargs):
     """
     Function to automatically dispatch the dict of scipp objects to the
     appropriate plotting function depending on its dimensions.
     """
     if not all(r.projection == request[0].projection for r in request):
-        # In the future we could look at this, but get subplots working for simple cases first
-        raise ValueError("All projection types (i.e. 1D/2D/3D) in a subplot must match")
+        # In the future we could look at this, but get subplots
+        # working for simple cases first
+        raise ValueError("All projection types (i.e. 1D/2D/3D)"
+                         " in a subplot must match")
 
     for r in request:
         _prepare_dispatch(r, **kwargs)
@@ -63,4 +65,5 @@ def _prepare_dispatch(request, **kwargs):
     elif request.projection == "3d":
         request.user_kwargs = ThreeDPlotKwargs(**kwargs)
     else:
-        raise RuntimeError("Unknown projection internally used, please contact the development team.")
+        raise RuntimeError("Unknown projection internally used,"
+                           " please contact the development team.")

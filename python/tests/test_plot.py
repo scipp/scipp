@@ -46,7 +46,8 @@ def test_plot_works_with_dataset(patched_dispatch):
     sc.plot.plot(dataset)
 
     patched_dispatch.assert_called()
-    assert len(patched_dispatch.call_args_list) == 2, "Expected dispatch to be called twice to do overplotting"
+    assert len(patched_dispatch.call_args_list) == 2, \
+        "Expected dispatch to be called twice to do overplotting"
     for i in range(2):
         name, args, kwargs = patched_dispatch.mock_calls[i]
         request = kwargs["request"]
@@ -122,7 +123,8 @@ def test_tiled_plot_with_duplicated_entry_list(patched_dispatch):
 
     request = kwargs["request"]
     assert isinstance(request, list)
-    assert len(request) == 3, "Tiled plotting is not handling duplicated names correctly"
+    assert len(request) == 3, \
+        "Tiled plotting is not handling duplicated names correctly"
 
 
 def test_tiled_plot_with_mixed_entries(patched_dispatch):

@@ -63,3 +63,7 @@ def image(dataset, **kwargs):
 
 def threeslice(dataset, **kwargs):
     return plot(dataset, projection="3d", **kwargs)
+
+
+# Declare our public API
+__all__ = ["plot", "tiled_plot", "superplot", "image", "threeslice"]

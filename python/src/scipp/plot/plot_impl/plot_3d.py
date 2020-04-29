@@ -30,7 +30,8 @@ def plot_3d(to_plot: List[PlotRequest]):
     particular dimension. For other dimensions, the sliders are used to adjust
     the position of the slice in 3D space.
     """
-    # This check is duplicated to assist the IDE to deduct we are using a scalar and not a list
+    # This check is duplicated to assist the IDE to deduct we are using a
+    # scalar and not a list
     reference_elem = to_plot[0]
 
     assert isinstance(reference_elem.user_kwargs, ThreeDPlotKwargs)
@@ -42,7 +43,9 @@ def plot_3d(to_plot: List[PlotRequest]):
 
     for plot in to_plot:
         sv = Slicer3d(request=plot)
-        render_plot(widgets=sv.box, filename=plot.user_kwargs.filename, ipv=ipv)
+        render_plot(widgets=sv.box,
+                    ipv=ipv,
+                    filename=plot.user_kwargs.filename)
 
     return sv.members
 
@@ -225,9 +228,9 @@ class Slicer3d(Slicer):
             if update_coordinates:
                 perm = self.permutations[key]
                 surf_args[key] = np.ones_like(meshes[key][perm[0]]) * \
-                                 val["loc"]
+                    val["loc"]
                 wfrm_args[key] = np.ones_like(wframes[key][perm[0]]) * \
-                                 val["loc"]
+                    val["loc"]
                 for p in perm:
                     surf_args[p] = meshes[key][p]
                     wfrm_args[p] = wframes[key][p]
