@@ -5,7 +5,6 @@
 #include <cmath>
 
 #include "scipp/core/except.h"
-#include "scipp/core/operators.h"
 
 #include "scipp/variable/logical.h"
 #include "scipp/variable/transform.h"

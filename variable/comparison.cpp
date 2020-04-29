@@ -4,12 +4,8 @@
 /// @author Piotr Rozyczko
 #include <cmath>
 
-#include "scipp/core/dtype.h"
 #include "scipp/core/element/logical_operations.h"
-#include "scipp/core/except.h"
-#include "scipp/core/operators.h"
 #include "scipp/variable/comparison.h"
-#include "scipp/variable/string.h"
 #include "scipp/variable/transform.h"
 #include "scipp/variable/variable.h"
 
@@ -20,7 +16,6 @@ namespace scipp::variable {
 Variable less(const VariableConstView &x, const VariableConstView &y) {
   return transform(x, y, element::less);
 }
-
 Variable greater(const VariableConstView &x, const VariableConstView &y) {
   return transform(x, y, element::greater);
 }
