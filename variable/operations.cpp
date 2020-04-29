@@ -6,7 +6,6 @@
 
 #include "scipp/core/dtype.h"
 #include "scipp/core/element/geometric_operations.h"
-#include "scipp/core/element/trigonometry_operations.h"
 #include "scipp/core/element/unary_operations.h"
 #include "scipp/variable/apply.h"
 #include "scipp/variable/except.h"
@@ -180,17 +179,6 @@ Variable dot(const Variable &a, const Variable &b) {
                  [](const units::Unit &a_, const units::Unit &b_) {
                    return a_ * b_;
                  }});
-}
-
-Variable atan2(const Variable &y, const Variable &x) {
-  return transform<std::tuple<double, float>>(y, x, element::atan2);
-}
-
-VariableView atan2(const VariableConstView &y, const VariableConstView &x,
-                   const VariableView &out) {
-  transform_in_place<std::tuple<double, float>>(out, y, x,
-                                                element::atan2_out_arg);
-  return out;
 }
 
 Variable broadcast(const VariableConstView &var, const Dimensions &dims) {
