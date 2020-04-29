@@ -183,17 +183,6 @@ Variable dot(const VariableConstView &a, const VariableConstView &b) {
                  }});
 }
 
-Variable atan2(const Variable &y, const Variable &x) {
-  return transform<std::tuple<double, float>>(y, x, element::atan2);
-}
-
-VariableView atan2(const VariableConstView &y, const VariableConstView &x,
-                   const VariableView &out) {
-  transform_in_place<std::tuple<double, float>>(out, y, x,
-                                                element::atan2_out_arg);
-  return out;
-}
-
 Variable broadcast(const VariableConstView &var, const Dimensions &dims) {
   if (var.dims().contains(dims))
     return Variable{var};

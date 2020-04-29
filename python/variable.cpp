@@ -492,24 +492,24 @@ void init_variable(py::module &m) {
   //       :return: New variable containing the mean.
   //       :rtype: Variable)");
 
-  m.def("mean",
-        [](const VariableConstView &x, const Dim dim, const VariableView &out) {
-          return mean(x, dim, out);
-        },
-        py::arg("x"), py::arg("dim"), py::arg("out"),
-        py::call_guard<py::gil_scoped_release>(),
-        R"(
-        Element-wise mean over the specified dimension, if variances are present, the new variance is computated as standard-deviation of the mean.
+  // m.def("mean",
+  //       [](const VariableConstView &x, const Dim dim, const VariableView &out) {
+  //         return mean(x, dim, out);
+  //       },
+  //       py::arg("x"), py::arg("dim"), py::arg("out"),
+  //       py::call_guard<py::gil_scoped_release>(),
+  //       R"(
+  //       Element-wise mean over the specified dimension, if variances are present, the new variance is computated as standard-deviation of the mean.
 
-        If the input has variances, the variances stored in the ouput are based on the "standard deviation of the mean", i.e., :math:`\sigma_{mean} = \sigma / \sqrt{N}`.
-        :math:`N` is the length of the input dimension.
-        :math:`sigma` is estimated as the average of the standard deviations of the input elements along that dimension.
-        This assumes that elements follow a normal distribution.
+  //       If the input has variances, the variances stored in the ouput are based on the "standard deviation of the mean", i.e., :math:`\sigma_{mean} = \sigma / \sqrt{N}`.
+  //       :math:`N` is the length of the input dimension.
+  //       :math:`sigma` is estimated as the average of the standard deviations of the input elements along that dimension.
+  //       This assumes that elements follow a normal distribution.
 
-        :raises: If the dimension does not exist, or the dtype cannot be summed, e.g., if it is a string
-        :seealso: :py:class:`scipp.sum`
-        :return: Variable containing the mean.
-        :rtype: Variable)");
+  //       :raises: If the dimension does not exist, or the dtype cannot be summed, e.g., if it is a string
+  //       :seealso: :py:class:`scipp.sum`
+  //       :return: Variable containing the mean.
+  //       :rtype: Variable)");
 
   m.def("norm", py::overload_cast<const VariableConstView &>(&norm),
         py::arg("x"), py::call_guard<py::gil_scoped_release>(), R"(
@@ -520,16 +520,16 @@ void init_variable(py::module &m) {
         :return: New variable with scalar elements computed as the norm values if the input elements.
         :rtype: Variable)");
 
-  m.def("sort",
-        py::overload_cast<const VariableConstView &, const VariableConstView &>(
-            &sort),
-        py::arg("data"), py::arg("key"),
-        py::call_guard<py::gil_scoped_release>(),
-        R"(Sort variable along a dimension by a sort key.
+  // m.def("sort",
+  //       py::overload_cast<const VariableConstView &, const VariableConstView &>(
+  //           &sort),
+  //       py::arg("data"), py::arg("key"),
+  //       py::call_guard<py::gil_scoped_release>(),
+  //       R"(Sort variable along a dimension by a sort key.
 
-      :raises: If the key is invalid, e.g., if it has not exactly one dimension, or if its dtype is not sortable.
-      :return: New sorted variable.
-      :rtype: Variable)");
+  //     :raises: If the key is invalid, e.g., if it has not exactly one dimension, or if its dtype is not sortable.
+  //     :return: New sorted variable.
+  //     :rtype: Variable)");
 
   m.def("reciprocal",
         [](const VariableConstView &self) { return reciprocal(self); },

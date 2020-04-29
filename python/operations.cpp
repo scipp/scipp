@@ -175,15 +175,24 @@ namespace py = pybind11;
 
 
 template<class T>
-void bind_flatten(py::module &m, Docstring docs) {
+void bind_flatten(py::module &m, const Docstring docs) {
   using ConstView = const typename T::const_view_type &;
   bind_free_function<T, ConstView, const Dim>(flatten, "flatten", m, docs);
 }
 
 template<class T>
-void bind_concatenate(py::module &m, Docstring docs) {
+void bind_concatenate(py::module &m, const Docstring docs) {
   using ConstView = const typename T::const_view_type &;
   bind_free_function<T, ConstView, ConstView, const Dim>(concatenate, "concatenate", m, docs);
+}
+
+template<class T>
+void bind_sort(py::module &m, Docstring docs) {
+  using ConstView = const typename T::const_view_type &;
+  bind_free_function<T, ConstView, const VariableConstView &>(sort, "sort", m, docs);
+  docs.description = "Sort data array along a dimension by the coordinate values for that dimension.";
+
+  bind_free_function<T, ConstView, const Dim>(sort, "sort", m, docs);
 }
 
 // template<class T>
@@ -205,7 +214,7 @@ void init_operations(py::module &m) {
   using View = typename Variable::view_type;
   Docstring docs;
 
-  // // flatten
+  // flatten
   docs = {
     // Description
     "Flatten the specified dimension into event lists, "
@@ -303,5 +312,34 @@ void init_operations(py::module &m) {
   bind_free_function<Variable, ConstView, ConstView>(dot, "dot", m, docs);
   // bind_free_function<Variable, VAConstView>(dot, "dot", m, docs);
 
+
+  // Sort
+  docs = {
+    "Sort variable along a dimension by a sort key.",
+    // Raises
+    "If the key is invalid, e.g., if it has not exactly one dimension, or if its dtype is not sortable.",
+    // See also
+    "",
+    // Returns
+    "Sorted variable, data array, or dataset.",
+    // Return type
+    "Variable, DataArray, or Dataset.",
+    {{"x", "Variable, DataArray, or Dataset to be sorted."},
+     {"key", "Variable, DataArray, or Dataset as sorting key."}}};
+  bind_free_function<Variable, ConstView, const VariableConstView &>(sort, "sort", m, docs);
+  bind_sort<DataArray>(m, docs);
+  bind_sort<Dataset>(m, docs);
+  // bind_free_function<T, ConstView, const VariableConstView &>(sort, "sort", m, docs);
+
+// m.def("sort",
+//         py::overload_cast<const VariableConstView &, const VariableConstView &>(
+//             &sort),
+//         py::arg("data"), py::arg("key"),
+//         py::call_guard<py::gil_scoped_release>(),
+//         R"(Sort variable along a dimension by a sort key.
+
+//       :raises: If the key is invalid, e.g., if it has not exactly one dimension, or if its dtype is not sortable.
+//       :return: New sorted variable.
+//       :rtype: Variable)");
 
 }

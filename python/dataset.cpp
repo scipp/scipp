@@ -595,44 +595,44 @@ void init_dataset(py::module &m) {
         :return: A new dataset with data rebinned according to the new coordinate.
         :rtype: Dataset)");
 
-  m.def(
-      "sort",
-      py::overload_cast<const DataArrayConstView &, const VariableConstView &>(
-          &sort),
-      py::arg("x"), py::arg("key"), py::call_guard<py::gil_scoped_release>(),
-      R"(Sort data array along a dimension by a sort key.
+  // m.def(
+  //     "sort",
+  //     py::overload_cast<const DataArrayConstView &, const VariableConstView &>(
+  //         &sort),
+  //     py::arg("x"), py::arg("key"), py::call_guard<py::gil_scoped_release>(),
+  //     R"(Sort data array along a dimension by a sort key.
 
-        :raises: If the key is invalid, e.g., if it has not exactly one dimension, or if its dtype is not sortable.
-        :return: New sorted data array.
-        :rtype: DataArray)");
+  //       :raises: If the key is invalid, e.g., if it has not exactly one dimension, or if its dtype is not sortable.
+  //       :return: New sorted data array.
+  //       :rtype: DataArray)");
 
-  m.def(
-      "sort", py::overload_cast<const DataArrayConstView &, const Dim &>(&sort),
-      py::arg("x"), py::arg("key"), py::call_guard<py::gil_scoped_release>(),
-      R"(Sort data array along a dimension by the coordinate values for that dimension.
+  // m.def(
+  //     "sort", py::overload_cast<const DataArrayConstView &, const Dim &>(&sort),
+  //     py::arg("x"), py::arg("key"), py::call_guard<py::gil_scoped_release>(),
+  //     R"(Sort data array along a dimension by the coordinate values for that dimension.
 
-      :raises: If the key is invalid, e.g., if it has not exactly one dimension, or if its dtype is not sortable.
-      :return: New sorted data array.
-      :rtype: DataArray)");
+  //     :raises: If the key is invalid, e.g., if it has not exactly one dimension, or if its dtype is not sortable.
+  //     :return: New sorted data array.
+  //     :rtype: DataArray)");
 
-  m.def("sort",
-        py::overload_cast<const DatasetConstView &, const VariableConstView &>(
-            &sort),
-        py::arg("x"), py::arg("key"), py::call_guard<py::gil_scoped_release>(),
-        R"(Sort dataset along a dimension by a sort key.
+  // m.def("sort",
+  //       py::overload_cast<const DatasetConstView &, const VariableConstView &>(
+  //           &sort),
+  //       py::arg("x"), py::arg("key"), py::call_guard<py::gil_scoped_release>(),
+  //       R"(Sort dataset along a dimension by a sort key.
 
-        :raises: If the key is invalid, e.g., if it has not exactly one dimension, or if its dtype is not sortable.
-        :return: New sorted dataset.
-        :rtype: Dataset)");
+  //       :raises: If the key is invalid, e.g., if it has not exactly one dimension, or if its dtype is not sortable.
+  //       :return: New sorted dataset.
+  //       :rtype: Dataset)");
 
-  m.def(
-      "sort", py::overload_cast<const DatasetConstView &, const Dim &>(&sort),
-      py::arg("x"), py::arg("key"), py::call_guard<py::gil_scoped_release>(),
-      R"(Sort dataset along a dimension by the coordinate values for that dimension.
+  // m.def(
+  //     "sort", py::overload_cast<const DatasetConstView &, const Dim &>(&sort),
+  //     py::arg("x"), py::arg("key"), py::call_guard<py::gil_scoped_release>(),
+  //     R"(Sort dataset along a dimension by the coordinate values for that dimension.
 
-      :raises: If the key is invalid, e.g., if it has not exactly one dimension, or if its dtype is not sortable.
-      :return: New sorted dataset.
-      :rtype: Dataset)");
+  //     :raises: If the key is invalid, e.g., if it has not exactly one dimension, or if its dtype is not sortable.
+  //     :return: New sorted dataset.
+  //     :rtype: Dataset)");
 
   m.def("combine_masks",
         [](const MasksConstView &msk, const std::vector<Dim> &labels,
