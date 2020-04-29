@@ -6,6 +6,7 @@
 
 #include "scipp/core/except.h"
 
+#include "scipp/core/element/logical.h"
 #include "scipp/variable/logical.h"
 #include "scipp/variable/transform.h"
 

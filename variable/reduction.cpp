@@ -5,6 +5,7 @@
 #include "scipp/variable/reduction.h"
 #include "scipp/core/dtype.h"
 #include "scipp/core/element/arithmetic.h"
+#include "scipp/core/element/comparison.h"
 #include "scipp/variable/binary_arithmetic.h"
 #include "scipp/variable/event.h"
 #include "scipp/variable/except.h"

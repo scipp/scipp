@@ -50,6 +50,25 @@ constexpr auto equal = overloaded{
 constexpr auto not_equal =
     overloaded{comparison, [](const auto &x, const auto &y) { return x != y; }};
 
+struct max_equals
+    : public transform_flags::expect_in_variance_if_out_variance_t {
+  template <class A, class B>
+  constexpr void operator()(A &&a, const B &b) const noexcept {
+    using std::max;
+    a = max(a, b);
+  }
+  using types = pair_self_t<double, float, int64_t, int32_t>;
+};
+struct min_equals
+    : public transform_flags::expect_in_variance_if_out_variance_t {
+  template <class A, class B>
+  constexpr void operator()(A &&a, const B &b) const noexcept {
+    using std::min;
+    a = min(a, b);
+  }
+  using types = pair_self_t<double, float, int64_t, int32_t>;
+};
+
 } // namespace element
 
 } // namespace scipp::core
