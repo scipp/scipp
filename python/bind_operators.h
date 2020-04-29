@@ -4,7 +4,7 @@
 /// @author Simon Heybrock
 #pragma once
 
-#include "scipp/variable/binary_arithmetic.h"
+#include "scipp/variable/arithmetic.h"
 
 #include "pybind11.h"
 

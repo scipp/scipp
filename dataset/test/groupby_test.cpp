@@ -4,7 +4,7 @@
 
 #include "scipp/dataset/groupby.h"
 #include "scipp/dataset/unaligned.h"
-#include "scipp/variable/binary_arithmetic.h"
+#include "scipp/variable/arithmetic.h"
 
 #include "test_macros.h"
 

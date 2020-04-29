@@ -6,7 +6,7 @@
 #include "make_events.h"
 #include "test_macros.h"
 
-#include "scipp/variable/binary_arithmetic.h"
+#include "scipp/variable/arithmetic.h"
 #include "scipp/variable/transform.h"
 #include "scipp/variable/variable.h"
 
