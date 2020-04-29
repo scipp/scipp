@@ -6,6 +6,8 @@
 
 #include <cmath>
 
+#include <Eigen/Dense>
+
 #include "scipp/common/overloaded.h"
 #include "scipp/core/arg_list.h"
 #include "scipp/core/transform_common.h"
@@ -27,10 +29,19 @@ constexpr auto abs_out_arg =
                  x = abs(y);
                }};
 
+constexpr auto norm = overloaded{arg_list<Eigen::Vector3d>,
+                                 [](const auto &x) { return x.norm(); },
+                                 [](const units::Unit &x) { return x; }};
+
 constexpr auto sqrt = [](const auto x) noexcept {
   using std::sqrt;
   return sqrt(x);
 };
+
+constexpr auto dot = overloaded{
+    arg_list<Eigen::Vector3d>,
+    [](const auto &a, const auto &b) { return a.dot(b); },
+    [](const units::Unit &a, const units::Unit &b) { return a * b; }};
 
 constexpr auto sqrt_out_arg =
     overloaded{arg_list<double, float>, [](auto &x, const auto y) {
@@ -110,14 +121,14 @@ constexpr auto negative_inf_to_num_out_arg =
 constexpr auto reciprocal = overloaded{
     arg_list<double, float>,
     [](const auto &x) noexcept {
-      return static_cast<
-                 core::detail::element_type_t<std::decay_t<decltype(x)>>>(1) /
-             x;
-    } // namespace element
-    ,
-    [](const units::Unit &unit) {
-      return units::Unit(units::dimensionless) / unit;
-    }}; // namespace scipp::core
+        return static_cast<
+                   core::detail::element_type_t<std::decay_t<decltype(x)>>>(1) /
+               x;
+} // namespace element
+, [](const units::Unit &unit) {
+  return units::Unit(units::dimensionless) / unit;
+}
+}; // namespace scipp::core
 
 constexpr auto reciprocal_out_arg = overloaded{
     arg_list<double, float>,

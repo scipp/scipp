@@ -155,9 +155,7 @@ VariableView abs(const VariableConstView &var, const VariableView &out) {
 }
 
 Variable norm(const VariableConstView &var) {
-  return transform<Eigen::Vector3d>(
-      var, overloaded{[](const auto &x) { return x.norm(); },
-                      [](const units::Unit &x) { return x; }});
+  return transform(var, element::norm);
 }
 
 Variable sqrt(const VariableConstView &var) {
@@ -175,12 +173,7 @@ VariableView sqrt(const VariableConstView &var, const VariableView &out) {
 }
 
 Variable dot(const Variable &a, const Variable &b) {
-  return transform<pair_self_t<Eigen::Vector3d>>(
-      a, b,
-      overloaded{[](const auto &a_, const auto &b_) { return a_.dot(b_); },
-                 [](const units::Unit &a_, const units::Unit &b_) {
-                   return a_ * b_;
-                 }});
+  return transform(a, b, element::dot);
 }
 
 Variable atan2(const Variable &y, const Variable &x) {

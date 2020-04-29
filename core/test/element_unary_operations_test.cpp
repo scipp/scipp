@@ -58,6 +58,22 @@ TEST(ElementAbsOutArgTest, supported_types) {
   std::get<float>(supported);
 }
 
+TEST(ElementNormTest, unit) {
+  const units::Unit s(units::s);
+  const units::Unit m2(units::m * units::m);
+  const units::Unit dimless(units::dimensionless);
+  EXPECT_EQ(element::norm(m2), m2);
+  EXPECT_EQ(element::norm(s), s);
+  EXPECT_EQ(element::norm(dimless), dimless);
+}
+
+TEST(ElementNormTest, value) {
+  Eigen::Vector3d v1(0, 3, 4);
+  Eigen::Vector3d v2(3, 0, -4);
+  EXPECT_EQ(element::norm(v1), 5);
+  EXPECT_EQ(element::norm(v2), 5);
+}
+
 TEST(ElementSqrtTest, unit) {
   const units::Unit m2(units::m * units::m);
   EXPECT_EQ(element::sqrt(m2), units::sqrt(m2));
@@ -103,6 +119,21 @@ TEST(ElementSqrtOutArgTest, supported_types) {
   auto supported = decltype(element::sqrt_out_arg)::types{};
   std::get<double>(supported);
   std::get<float>(supported);
+}
+
+TEST(ElementDotTest, unit) {
+  const units::Unit m(units::m);
+  const units::Unit m2(units::m * units::m);
+  const units::Unit dimless(units::dimensionless);
+  EXPECT_EQ(element::dot(m, m), m2);
+  EXPECT_EQ(element::dot(dimless, dimless), dimless);
+}
+
+TEST(ElementDotTest, value) {
+  Eigen::Vector3d v1(0, 3, -4);
+  Eigen::Vector3d v2(1, 1, -1);
+  EXPECT_EQ(element::dot(v1, v1), 25);
+  EXPECT_EQ(element::dot(v2, v2), 3);
 }
 
 template <typename T> class ElementNanToNumTest : public ::testing::Test {};
