@@ -37,6 +37,7 @@ public:
   const std::string returns() const {return m_returns; };
   const std::string rtype() const {return m_rtype; };
   strpair param(const scipp::index ind) const {return m_params[ind];};
+  void insert_param(const scipp::index ind, strpair param);
 
   const Docstring with_out_arg();
 

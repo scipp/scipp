@@ -25,6 +25,10 @@ Docstring::Docstring(const std::string description, const std::string raises, co
 //   //   m_params.push_back(p);
 // }
 
+void Docstring::insert_param(const scipp::index ind, strpair param) {
+  m_params.insert(m_params.begin() + ind, param);
+}
+
 const Docstring Docstring::with_out_arg() {
   Docstring docs(*this);
   docs.m_description += " (in-place)";

@@ -200,11 +200,9 @@ void bind_concatenate(py::module &m, Docstring docs) {
 
 
 void init_operations(py::module &m) {
-  using ConstView = const typename Variable::const_view_type &;
-  // using DSConstView = const typename Dataset::const_view_type &;
-  // using DAConstView = const typename DataArray::const_view_type &;
-  using View = typename Variable::view_type;
 
+  using ConstView = const typename Variable::const_view_type &;
+  using View = typename Variable::view_type;
   Docstring docs;
 
   // // flatten

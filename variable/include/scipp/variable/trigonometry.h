@@ -33,8 +33,9 @@ SCIPP_VARIABLE_EXPORT VariableView acos(const VariableConstView &var,
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable atan(Variable &&var);
 SCIPP_VARIABLE_EXPORT VariableView atan(const VariableConstView &var,
                                         const VariableView &out);
-[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable atan2(const Variable &y,
-                                                   const Variable &x);
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable atan2(const VariableConstView &y,
+                                                   const VariableConstView &x);
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable atan2(Variable &&y, Variable &&x);
 SCIPP_VARIABLE_EXPORT VariableView atan2(const VariableConstView &y,
                                          const VariableConstView &x,
                                          const VariableView &out);

@@ -82,7 +82,6 @@ void bind_free_function(T (*func)(T1), const std::string fname, py::module &m,
   bind_free_function<T, T1>(func, fname, m, Docstring(description, raises, seealso, returns, rtype, {param1}));
 }
 
-
 template<class T, class T1, class T2>
 void bind_free_function(T (*func)(T1, T2), const std::string fname, py::module &m,
   const Docstring docs) {
