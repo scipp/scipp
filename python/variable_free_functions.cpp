@@ -10,7 +10,7 @@
 // #include "scipp/core/tag_util.h"
 
 // #include "scipp/variable/comparison.h"
-// #include "scipp/variable/operations.h"
+#include "scipp/variable/operations.h"
 // #include "scipp/variable/transform.h"
 #include "scipp/variable/variable.h"
 
@@ -49,4 +49,12 @@ void init_variable_free_functions(py::module &m) {
         :raises: If the volume of the old shape is not equal to the volume of the new shape.
         :return: New variable with requested dimension labels and shape.
         :rtype: Variable)");
+
+  m.def("split",
+        py::overload_cast<const Variable &, const Dim,
+                          const std::vector<scipp::index> &>(&split),
+        py::call_guard<py::gil_scoped_release>(),
+        "Split a Variable along a given Dimension.");
+
+
 }

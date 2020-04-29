@@ -511,14 +511,14 @@ void init_variable(py::module &m) {
   //       :return: Variable containing the mean.
   //       :rtype: Variable)");
 
-  m.def("norm", py::overload_cast<const VariableConstView &>(&norm),
-        py::arg("x"), py::call_guard<py::gil_scoped_release>(), R"(
-        Element-wise norm.
+  // m.def("norm", py::overload_cast<const VariableConstView &>(&norm),
+  //       py::arg("x"), py::call_guard<py::gil_scoped_release>(), R"(
+  //       Element-wise norm.
 
-        :raises: If the dtype has no norm, i.e., if it is not a vector
-        :seealso: :py:class:`scipp.abs` for scalar dtype
-        :return: New variable with scalar elements computed as the norm values if the input elements.
-        :rtype: Variable)");
+  //       :raises: If the dtype has no norm, i.e., if it is not a vector
+  //       :seealso: :py:class:`scipp.abs` for scalar dtype
+  //       :return: New variable with scalar elements computed as the norm values if the input elements.
+  //       :rtype: Variable)");
 
   // m.def("sort",
   //       py::overload_cast<const VariableConstView &, const VariableConstView &>(
@@ -531,30 +531,30 @@ void init_variable(py::module &m) {
   //     :return: New sorted variable.
   //     :rtype: Variable)");
 
-  m.def("reciprocal",
-        [](const VariableConstView &self) { return reciprocal(self); },
-        py::arg("x"), py::call_guard<py::gil_scoped_release>(), R"(
-        Element-wise reciprocal.
+  // m.def("reciprocal",
+  //       [](const VariableConstView &self) { return reciprocal(self); },
+  //       py::arg("x"), py::call_guard<py::gil_scoped_release>(), R"(
+  //       Element-wise reciprocal.
 
-        :return: Reciprocal of the input values.
-        :rtype: Variable)");
+  //       :return: Reciprocal of the input values.
+  //       :rtype: Variable)");
 
-  m.def("reciprocal",
-        [](const VariableConstView &self, const VariableView &out) {
-          return reciprocal(self, out);
-        },
-        py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>(),
-        R"(
-        Element-wise reciprocal.
+  // m.def("reciprocal",
+  //       [](const VariableConstView &self, const VariableView &out) {
+  //         return reciprocal(self, out);
+  //       },
+  //       py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>(),
+  //       R"(
+  //       Element-wise reciprocal.
 
-        :return: Reciprocal of the input values.
-        :rtype: Variable)");
+  //       :return: Reciprocal of the input values.
+  //       :rtype: Variable)");
 
-  m.def("split",
-        py::overload_cast<const Variable &, const Dim,
-                          const std::vector<scipp::index> &>(&split),
-        py::call_guard<py::gil_scoped_release>(),
-        "Split a Variable along a given Dimension.");
+  // m.def("split",
+  //       py::overload_cast<const Variable &, const Dim,
+  //                         const std::vector<scipp::index> &>(&split),
+  //       py::call_guard<py::gil_scoped_release>(),
+  //       "Split a Variable along a given Dimension.");
 
   // m.def("sqrt", [](const VariableConstView &self) { return sqrt(self); },
   //       py::arg("x"), py::call_guard<py::gil_scoped_release>(), R"(
@@ -744,138 +744,138 @@ void init_variable(py::module &m) {
   //       :return: atan2 of input y and x, written to output. Output unit is rad.
   //       :rtype: VariableView)");
 
-  m.def("all", py::overload_cast<const VariableConstView &, const Dim>(&all),
-        py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
-        R"(
-        Element-wise AND over the specified dimension.
+  // m.def("all", py::overload_cast<const VariableConstView &, const Dim>(&all),
+  //       py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
+  //       R"(
+  //       Element-wise AND over the specified dimension.
 
-        :param x: Data to reduce.
-        :param dim: Dimension to reduce.
-        :raises: If the dimension does not exist, or if the dtype is not bool
-        :seealso: :py:class:`scipp.any`
-        :return: New variable containing the reduced values.
-        :rtype: Variable)");
+  //       :param x: Data to reduce.
+  //       :param dim: Dimension to reduce.
+  //       :raises: If the dimension does not exist, or if the dtype is not bool
+  //       :seealso: :py:class:`scipp.any`
+  //       :return: New variable containing the reduced values.
+  //       :rtype: Variable)");
 
-  m.def("any", py::overload_cast<const VariableConstView &, const Dim>(&any),
-        py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
-        R"(
-        Element-wise OR over the specified dimension.
+  // m.def("any", py::overload_cast<const VariableConstView &, const Dim>(&any),
+  //       py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
+  //       R"(
+  //       Element-wise OR over the specified dimension.
 
-        :param x: Data to reduce.
-        :param dim: Dimension to reduce.
-        :raises: If the dimension does not exist, or if the dtype is not bool
-        :seealso: :py:class:`scipp.all`
-        :return: New variable containing the reduced values.
-        :rtype: Variable)");
+  //       :param x: Data to reduce.
+  //       :param dim: Dimension to reduce.
+  //       :raises: If the dimension does not exist, or if the dtype is not bool
+  //       :seealso: :py:class:`scipp.all`
+  //       :return: New variable containing the reduced values.
+  //       :rtype: Variable)");
 
-  m.def("min",
-        [](const VariableConstView &self, const Dim dim) {
-          return min(self, dim);
-        },
-        py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
-        R"(
-        Element-wise min over the specified dimension.
+  // m.def("min",
+  //       [](const VariableConstView &self, const Dim dim) {
+  //         return min(self, dim);
+  //       },
+  //       py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
+  //       R"(
+  //       Element-wise min over the specified dimension.
 
-        :param x: Data to reduce.
-        :param dim: Dimension to reduce.
-        :seealso: :py:class:`scipp.max`
-        :return: New variable containing the min values.
-        :rtype: Variable)");
+  //       :param x: Data to reduce.
+  //       :param dim: Dimension to reduce.
+  //       :seealso: :py:class:`scipp.max`
+  //       :return: New variable containing the min values.
+  //       :rtype: Variable)");
 
-  m.def("max",
-        [](const VariableConstView &self, const Dim dim) {
-          return max(self, dim);
-        },
-        py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
-        R"(
-        Element-wise max over the specified dimension.
+  // m.def("max",
+  //       [](const VariableConstView &self, const Dim dim) {
+  //         return max(self, dim);
+  //       },
+  //       py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
+  //       R"(
+  //       Element-wise max over the specified dimension.
 
-        :param x: Data to reduce.
-        :param dim: Dimension to reduce.
-        :seealso: :py:class:`scipp.min`
-        :return: New variable containing the max values.
-        :rtype: Variable)");
+  //       :param x: Data to reduce.
+  //       :param dim: Dimension to reduce.
+  //       :seealso: :py:class:`scipp.min`
+  //       :return: New variable containing the max values.
+  //       :rtype: Variable)");
 
-  m.def("min", [](const VariableConstView &self) { return min(self); },
-        py::arg("x"), py::call_guard<py::gil_scoped_release>(),
-        R"(
-        Element-wise min over all of the input's dimensions.
+  // m.def("min", [](const VariableConstView &self) { return min(self); },
+  //       py::arg("x"), py::call_guard<py::gil_scoped_release>(),
+  //       R"(
+  //       Element-wise min over all of the input's dimensions.
 
-        :param x: Data to reduce.
-        :seealso: :py:class:`scipp.max`
-        :return: New variable containing the min values.
-        :rtype: Variable)");
+  //       :param x: Data to reduce.
+  //       :seealso: :py:class:`scipp.max`
+  //       :return: New variable containing the min values.
+  //       :rtype: Variable)");
 
-  m.def("max", [](const VariableConstView &self) { return max(self); },
-        py::arg("x"), py::call_guard<py::gil_scoped_release>(),
-        R"(
-        Element-wise max over all of the input's dimensions.
+  // m.def("max", [](const VariableConstView &self) { return max(self); },
+  //       py::arg("x"), py::call_guard<py::gil_scoped_release>(),
+  //       R"(
+  //       Element-wise max over all of the input's dimensions.
 
-        :param x: Data to reduce.
-        :seealso: :py:class:`scipp.min`
-        :return: New variable containing the max values.
-        :rtype: Variable)");
+  //       :param x: Data to reduce.
+  //       :seealso: :py:class:`scipp.min`
+  //       :return: New variable containing the max values.
+  //       :rtype: Variable)");
 
-  m.def("nan_to_num",
-        [](const VariableConstView &self,
-           const std::optional<VariableConstView> &nan,
-           const std::optional<VariableConstView> &posinf,
-           const std::optional<VariableConstView> &neginf) {
-          Variable out(self);
-          if (nan)
-            nan_to_num(out, *nan, out);
-          if (posinf)
-            positive_inf_to_num(out, *posinf, out);
-          if (neginf)
-            negative_inf_to_num(out, *neginf, out);
-          return out;
-        },
-        py::call_guard<py::gil_scoped_release>(),
-        R"(Element-wise special value replacement
+  // m.def("nan_to_num",
+  //       [](const VariableConstView &self,
+  //          const std::optional<VariableConstView> &nan,
+  //          const std::optional<VariableConstView> &posinf,
+  //          const std::optional<VariableConstView> &neginf) {
+  //         Variable out(self);
+  //         if (nan)
+  //           nan_to_num(out, *nan, out);
+  //         if (posinf)
+  //           positive_inf_to_num(out, *posinf, out);
+  //         if (neginf)
+  //           negative_inf_to_num(out, *neginf, out);
+  //         return out;
+  //       },
+  //       py::call_guard<py::gil_scoped_release>(),
+  //       R"(Element-wise special value replacement
 
-       All elements in the output are identical to input except in the presence of a nan, inf or -inf.
-       The function allows replacements to be separately specified for nan, inf or -inf values.
-       You can choose to replace a subset of those special values by providing just the required key word arguments.
-       If the replacement is value-only and the input has variances,
-       the variance at the element(s) undergoing replacement are also replaced with the replacement value.
-       If the replacement has a variance and the input has variances,
-       the variance at the element(s) undergoing replacement are also replaced with the replacement variance.
-       :raises: If the types of input and replacement do not match.
-       :return: Input elements are replaced in output with specified subsitutions.
-       :rtype: Variable)",
-        py::arg("x"), py::arg("nan") = std::optional<VariableConstView>(),
-        py::arg("posinf") = std::optional<VariableConstView>(),
-        py::arg("neginf") = std::optional<VariableConstView>());
+  //      All elements in the output are identical to input except in the presence of a nan, inf or -inf.
+  //      The function allows replacements to be separately specified for nan, inf or -inf values.
+  //      You can choose to replace a subset of those special values by providing just the required key word arguments.
+  //      If the replacement is value-only and the input has variances,
+  //      the variance at the element(s) undergoing replacement are also replaced with the replacement value.
+  //      If the replacement has a variance and the input has variances,
+  //      the variance at the element(s) undergoing replacement are also replaced with the replacement variance.
+  //      :raises: If the types of input and replacement do not match.
+  //      :return: Input elements are replaced in output with specified subsitutions.
+  //      :rtype: Variable)",
+  //       py::arg("x"), py::arg("nan") = std::optional<VariableConstView>(),
+  //       py::arg("posinf") = std::optional<VariableConstView>(),
+  //       py::arg("neginf") = std::optional<VariableConstView>());
 
-  m.def("nan_to_num",
-        [](const VariableConstView &self,
-           const std::optional<VariableConstView> &nan,
-           const std::optional<VariableConstView> &posinf,
-           const std::optional<VariableConstView> &neginf, VariableView &out) {
-          if (nan)
-            nan_to_num(self, *nan, out);
-          if (posinf)
-            positive_inf_to_num(self, *posinf, out);
-          if (neginf)
-            negative_inf_to_num(self, *neginf, out);
-          return out;
-        },
-        py::call_guard<py::gil_scoped_release>(),
-        R"(Element-wise special value replacement
+  // m.def("nan_to_num",
+  //       [](const VariableConstView &self,
+  //          const std::optional<VariableConstView> &nan,
+  //          const std::optional<VariableConstView> &posinf,
+  //          const std::optional<VariableConstView> &neginf, VariableView &out) {
+  //         if (nan)
+  //           nan_to_num(self, *nan, out);
+  //         if (posinf)
+  //           positive_inf_to_num(self, *posinf, out);
+  //         if (neginf)
+  //           negative_inf_to_num(self, *neginf, out);
+  //         return out;
+  //       },
+  //       py::call_guard<py::gil_scoped_release>(),
+  //       R"(Element-wise special value replacement
 
-       All elements in the output are identical to input except in the presence of a nan, inf or -inf.
-       The function allows replacements to be separately specified for nan, inf or -inf values.
-       You can choose to replace a subset of those special values by providing just the required key word arguments.
-       If the replacement is value-only and the input has variances,
-       the variance at the element(s) undergoing replacement are also replaced with the replacement value.
-       If the replacement has a variance and the input has variances,
-       the variance at the element(s) undergoing replacement are also replaced with the replacement variance.
-       :raises: If the types of input and replacement do not match.
-       :return: Input elements are replaced in output with specified subsitutions.
-       :rtype: Variable)",
-        py::arg("x"), py::arg("nan") = std::optional<VariableConstView>(),
-        py::arg("posinf") = std::optional<VariableConstView>(),
-        py::arg("neginf") = std::optional<VariableConstView>(), py::arg("out"));
+  //      All elements in the output are identical to input except in the presence of a nan, inf or -inf.
+  //      The function allows replacements to be separately specified for nan, inf or -inf values.
+  //      You can choose to replace a subset of those special values by providing just the required key word arguments.
+  //      If the replacement is value-only and the input has variances,
+  //      the variance at the element(s) undergoing replacement are also replaced with the replacement value.
+  //      If the replacement has a variance and the input has variances,
+  //      the variance at the element(s) undergoing replacement are also replaced with the replacement variance.
+  //      :raises: If the types of input and replacement do not match.
+  //      :return: Input elements are replaced in output with specified subsitutions.
+  //      :rtype: Variable)",
+  //       py::arg("x"), py::arg("nan") = std::optional<VariableConstView>(),
+  //       py::arg("posinf") = std::optional<VariableConstView>(),
+  //       py::arg("neginf") = std::optional<VariableConstView>(), py::arg("out"));
 
   m.def("contains_events",
         [](const VariableConstView &self) { return contains_events(self); },

@@ -94,6 +94,34 @@ void init_dataset_free_functions(py::module &m) {
         :return: Histogramed data.
         :rtype: Dataset)");
 
+  m.def("rebin",
+        py::overload_cast<const DataArrayConstView &, const Dim,
+                          const VariableConstView &>(&rebin),
+        py::arg("x"), py::arg("dim"), py::arg("bins"),
+        py::call_guard<py::gil_scoped_release>(), R"(
+        Rebin a dimension of a data array.
+
+        :param x: Data to rebin.
+        :param dim: Dimension to rebin over.
+        :param bins: New bin edges.
+        :raises: If data cannot be rebinned, e.g., if the unit is not counts, or the existing coordinate is not a bin-edge coordinate.
+        :return: A new data array with data rebinned according to the new coordinate.
+        :rtype: DataArray)");
+
+  m.def("rebin",
+        py::overload_cast<const DatasetConstView &, const Dim,
+                          const VariableConstView &>(&rebin),
+        py::arg("x"), py::arg("dim"), py::arg("bins"),
+        py::call_guard<py::gil_scoped_release>(), R"(
+        Rebin a dimension of a dataset.
+
+        :param x: Data to rebin.
+        :param dim: Dimension to rebin over.
+        :param bins: New bin edges.
+        :raises: If data cannot be rebinned, e.g., if the unit is not counts, or the existing coordinate is not a bin-edge coordinate.
+        :return: A new dataset with data rebinned according to the new coordinate.
+        :rtype: Dataset)");
+
   m.def("map", event::map, py::arg("function"), py::arg("iterable"),
         py::arg("dim") = to_string(Dim::Invalid),
         py::call_guard<py::gil_scoped_release>(),
@@ -120,6 +148,40 @@ void init_dataset_free_functions(py::module &m) {
         :raises: If there are conflicting items with different content.
         :return: A new dataset that contains the union of all data items, coords, masks and attributes.
         :rtype: Dataset)");
+
+  m.def("realign",
+        [](const DataArrayConstView &a, py::dict coord_dict) {
+          DataArray copy(a);
+          realign_impl(copy, coord_dict);
+          return copy;
+        },
+        py::arg("data"), py::arg("coords"));
+  m.def("realign",
+        [](const DatasetConstView &a, py::dict coord_dict) {
+          Dataset copy(a);
+          realign_impl(copy, coord_dict);
+          return copy;
+        },
+        py::arg("data"), py::arg("coords"));
+
+
+  m.def("combine_masks",
+        [](const MasksConstView &msk, const std::vector<Dim> &labels,
+           const std::vector<scipp::index> &shape) {
+          return dataset::masks_merge_if_contained(msk,
+                                                   Dimensions(labels, shape));
+        },
+        py::call_guard<py::gil_scoped_release>(), R"(
+        Combine all masks into a single one following the OR operation.
+        This requires a masks view as an input, followed by the dimension
+        labels and shape of the Variable/DataArray. The labels and the shape
+        are used to create a Dimensions object. The function then iterates
+        through the masks view and combines only the masks that have all
+        their dimensions contained in the Variable/DataArray Dimensions.
+
+        :return: A new variable that contains the union of all masks.
+        :rtype: Variable)");
+
 
   // m.def("sum", py::overload_cast<const DataArrayConstView &, const Dim>(&sum),
   //       py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),

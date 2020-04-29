@@ -36,6 +36,10 @@ void Docstring::insert_param(const scipp::index ind, strpair param) {
   m_params.insert(m_params.begin() + ind, param);
 }
 
+void Docstring::erase_param(const scipp::index ind) {
+  m_params.erase(m_params.begin() + ind);
+}
+
 const Docstring Docstring::with_out_arg() {
   Docstring docs(*this);
   docs.m_description += " (in-place)";
