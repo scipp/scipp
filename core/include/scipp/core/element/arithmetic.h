@@ -4,15 +4,12 @@
 /// @author Simon Heybrock
 #pragma once
 
-#include <algorithm>
-
 #include <Eigen/Dense>
 
 #include "scipp/core/transform_common.h"
 
-namespace scipp::core {
+namespace scipp::core::element {
 
-namespace operator_detail {
 struct plus_equals {
   template <class A, class B>
   constexpr void operator()(A &&a, const B &b) const
@@ -93,6 +90,5 @@ struct min_equals
   }
   using types = pair_self_t<double, float, int64_t, int32_t>;
 };
-} // namespace operator_detail
 
-} // namespace scipp::core
+} // namespace scipp::core::element
