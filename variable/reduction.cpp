@@ -4,8 +4,10 @@
 /// @author Simon Heybrock
 #include "scipp/variable/reduction.h"
 #include "scipp/core/dtype.h"
-#include "scipp/core/operators.h"
-#include "scipp/variable/binary_arithmetic.h"
+#include "scipp/core/element/arithmetic.h"
+#include "scipp/core/element/comparison.h"
+#include "scipp/core/element/logical.h"
+#include "scipp/variable/arithmetic.h"
 #include "scipp/variable/event.h"
 #include "scipp/variable/except.h"
 #include "scipp/variable/transform.h"
@@ -158,23 +160,23 @@ Variable reduce_idempotent(const VariableConstView &var, const Dim dim) {
 }
 
 void any_impl(const VariableView &out, const VariableConstView &var) {
-  reduce_impl<operator_detail::or_equals>(out, var);
+  reduce_impl<core::element::or_equals>(out, var);
 }
 
 Variable any(const VariableConstView &var, const Dim dim) {
-  return reduce_idempotent<operator_detail::or_equals>(var, dim);
+  return reduce_idempotent<core::element::or_equals>(var, dim);
 }
 
 void all_impl(const VariableView &out, const VariableConstView &var) {
-  reduce_impl<operator_detail::and_equals>(out, var);
+  reduce_impl<core::element::and_equals>(out, var);
 }
 
 Variable all(const VariableConstView &var, const Dim dim) {
-  return reduce_idempotent<operator_detail::and_equals>(var, dim);
+  return reduce_idempotent<core::element::and_equals>(var, dim);
 }
 
 void max_impl(const VariableView &out, const VariableConstView &var) {
-  reduce_impl<operator_detail::max_equals>(out, var);
+  reduce_impl<core::element::max_equals>(out, var);
 }
 
 /// Return the maximum along given dimension.
@@ -182,11 +184,11 @@ void max_impl(const VariableView &out, const VariableConstView &var) {
 /// Variances are not considered when determining the maximum. If present, the
 /// variance of the maximum element is returned.
 Variable max(const VariableConstView &var, const Dim dim) {
-  return reduce_idempotent<operator_detail::max_equals>(var, dim);
+  return reduce_idempotent<core::element::max_equals>(var, dim);
 }
 
 void min_impl(const VariableView &out, const VariableConstView &var) {
-  reduce_impl<operator_detail::min_equals>(out, var);
+  reduce_impl<core::element::min_equals>(out, var);
 }
 
 /// Return the minimum along given dimension.
@@ -194,7 +196,7 @@ void min_impl(const VariableView &out, const VariableConstView &var) {
 /// Variances are not considered when determining the minimum. If present, the
 /// variance of the minimum element is returned.
 Variable min(const VariableConstView &var, const Dim dim) {
-  return reduce_idempotent<operator_detail::min_equals>(var, dim);
+  return reduce_idempotent<core::element::min_equals>(var, dim);
 }
 
 /// Return the maximum along all dimensions.

@@ -3,7 +3,7 @@
 #include <gtest/gtest.h>
 
 #include "scipp/dataset/dataset.h"
-#include "scipp/variable/binary_arithmetic.h"
+#include "scipp/variable/arithmetic.h"
 
 using namespace scipp;
 using namespace scipp::dataset;

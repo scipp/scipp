@@ -11,7 +11,7 @@ add_executable(
   counts_test.cpp
   data_array_comparison_test.cpp
   data_array_test.cpp
-  dataset_binary_arithmetic_test.cpp
+  dataset_arithmetic_test.cpp
   dataset_comparison_test.cpp
   dataset_operations_test.cpp
   dataset_test_common.cpp

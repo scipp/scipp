@@ -9,7 +9,7 @@
 
 #include "scipp/units/unit.h"
 
-#include "scipp/core/arg_list.h"
+#include "scipp/core/element/arg_list.h"
 #include "scipp/core/histogram.h"
 #include "scipp/core/transform_common.h"
 #include "scipp/core/value_and_variance.h"

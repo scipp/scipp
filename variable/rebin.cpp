@@ -4,7 +4,7 @@
 /// @author Simon Heybrock, Igor Gudich
 #include "scipp/units/except.h"
 #include "scipp/variable/apply.h"
-#include "scipp/variable/binary_arithmetic.h"
+#include "scipp/variable/arithmetic.h"
 #include "scipp/variable/except.h"
 #include "scipp/variable/misc_operations.h"
 

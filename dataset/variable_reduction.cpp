@@ -3,7 +3,7 @@
 /// @file
 /// @author Simon Heybrock
 #include "scipp/dataset/map_view.h"
-#include "scipp/variable/binary_arithmetic.h"
+#include "scipp/variable/arithmetic.h"
 #include "scipp/variable/reduction.h"
 
 #include "../variable/operations_common.h"

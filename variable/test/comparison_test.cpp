@@ -3,7 +3,7 @@
 #include "test_macros.h"
 #include <gtest/gtest.h>
 
-#include "scipp/variable/binary_arithmetic.h"
+#include "scipp/variable/arithmetic.h"
 #include "scipp/variable/comparison.h"
 
 using namespace scipp;

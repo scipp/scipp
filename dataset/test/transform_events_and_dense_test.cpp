@@ -6,7 +6,6 @@
 #include "test_macros.h"
 
 #include "scipp/common/numeric.h"
-#include "scipp/core/operators.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/histogram.h"
 #include "scipp/variable/subspan_view.h"
