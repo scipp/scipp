@@ -2,7 +2,7 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
-#include "scipp/core/element/logical_operations.h"
+#include "scipp/core/element/comparison.h"
 #include "scipp/units/unit.h"
 
 #include "fix_typed_test_suite_warnings.h"

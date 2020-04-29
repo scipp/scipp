@@ -4,7 +4,7 @@
 /// @author Piotr Rozyczko
 #include <cmath>
 
-#include "scipp/core/element/logical_operations.h"
+#include "scipp/core/element/comparison.h"
 #include "scipp/variable/comparison.h"
 #include "scipp/variable/transform.h"
 #include "scipp/variable/variable.h"
