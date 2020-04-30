@@ -31,8 +31,8 @@ namespace py = pybind11;
 
 namespace scipp::python {
 
-struct BindVariable {};
-struct BindAll {};
+// struct BindVariable {};
+// struct BindAll {};
 
 // using strpair = const std::pair<const std::string, const std::string>;
 

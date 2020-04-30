@@ -659,20 +659,21 @@ void init_dataset(py::module &m) {
   //       :return: Reciprocal of the input values.
   //       :rtype: DataArray)");
 
-  // m.def("realign",
-  //       [](const DataArrayConstView &a, py::dict coord_dict) {
-  //         DataArray copy(a);
-  //         realign_impl(copy, coord_dict);
-  //         return copy;
-  //       },
-  //       py::arg("data"), py::arg("coords"));
-  // m.def("realign",
-  //       [](const DatasetConstView &a, py::dict coord_dict) {
-  //         Dataset copy(a);
-  //         realign_impl(copy, coord_dict);
-  //         return copy;
-  //       },
-  //       py::arg("data"), py::arg("coords"));
+  m.def("realign",
+        [](const DataArrayConstView &a, py::dict coord_dict) {
+          DataArray copy(a);
+          realign_impl(copy, coord_dict);
+          return copy;
+        },
+        py::arg("data"), py::arg("coords"));
+  m.def("realign",
+        [](const DatasetConstView &a, py::dict coord_dict) {
+          Dataset copy(a);
+          realign_impl(copy, coord_dict);
+          return copy;
+        },
+        py::arg("data"), py::arg("coords"));
+
   m.def("filter", filter_impl<DataArray>, py::arg("data"), py::arg("filter"),
         py::arg("interval"), py::arg("keep_attrs") = true,
         py::call_guard<py::gil_scoped_release>(),

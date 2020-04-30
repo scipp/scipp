@@ -44,7 +44,6 @@ public:
   void set_rtype(const std::string rtype){m_rtype = rtype;};
   void set_param(const scipp::index ind, strpair param){m_params[ind] = param;};
   void insert_param(const scipp::index ind, strpair param);
-  void erase_param(const scipp::index ind, strpair param);
 
   const Docstring with_out_arg();
 

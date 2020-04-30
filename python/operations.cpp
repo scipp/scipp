@@ -387,10 +387,10 @@ void init_operations(py::module &m) {
      {"dim", "Dimension to reduce."}}
   };
   bind_free_function<Variable, VAConstView, const Dim>(min, "min", m, docs);
-  docs.set_description("Element-wise minimum over all dimensions.");
-  docs.erase_param(1);
-  bind_free_function<Variable, VAConstView>(min, "min", m, docs);
-
+  // For some reason, calling with the Docstring makes the overload ambiguous.
+  // Expanding the docstring into individual parts appears to work.
+  bind_free_function<Variable, VAConstView>(min, "min", m, docs.param(0), "Element-wise minimum over all dimensions.",
+    docs.raises(), docs.seealso(), docs.returns(), docs.rtype());
 
   // Max
   docs = {
@@ -403,9 +403,11 @@ void init_operations(py::module &m) {
      {"dim", "Dimension to reduce."}}
   };
   bind_free_function<Variable, VAConstView, const Dim>(max, "max", m, docs);
-  docs.set_description("Element-wise maximum over all dimensions.");
-  docs.erase_param(1);
-  bind_free_function<Variable, VAConstView>(max, "max", m, docs);
+  // For some reason, calling with the Docstring makes the overload ambiguous.
+  // Expanding the docstring into individual parts appears to work.
+  bind_free_function<Variable, VAConstView>(max, "max", m, docs.param(0), "Element-wise maximum over all dimensions.",
+    docs.raises(), docs.seealso(), docs.returns(), docs.rtype());
+
 
 
   // auto nan_to_num = [](VAConstView self,
@@ -448,65 +450,65 @@ void init_operations(py::module &m) {
   // bind_free_function<Variable, VAConstView, const Dim>(max, "max", m, docs);
   
 
-  m.def("nan_to_num",
-        [](const VariableConstView &self,
-           const std::optional<VariableConstView> &nan,
-           const std::optional<VariableConstView> &posinf,
-           const std::optional<VariableConstView> &neginf) {
-          Variable out(self);
-          if (nan)
-            nan_to_num(out, *nan, out);
-          if (posinf)
-            positive_inf_to_num(out, *posinf, out);
-          if (neginf)
-            negative_inf_to_num(out, *neginf, out);
-          return out;
-        },
-        py::call_guard<py::gil_scoped_release>(),
-        R"(Element-wise special value replacement
+  // m.def("nan_to_num",
+  //       [](const VariableConstView &self,
+  //          const std::optional<VariableConstView> &nan,
+  //          const std::optional<VariableConstView> &posinf,
+  //          const std::optional<VariableConstView> &neginf) {
+  //         Variable out(self);
+  //         if (nan)
+  //           nan_to_num(out, *nan, out);
+  //         if (posinf)
+  //           positive_inf_to_num(out, *posinf, out);
+  //         if (neginf)
+  //           negative_inf_to_num(out, *neginf, out);
+  //         return out;
+  //       },
+  //       py::call_guard<py::gil_scoped_release>(),
+  //       R"(Element-wise special value replacement
 
-       All elements in the output are identical to input except in the presence of a nan, inf or -inf.
-       The function allows replacements to be separately specified for nan, inf or -inf values.
-       You can choose to replace a subset of those special values by providing just the required key word arguments.
-       If the replacement is value-only and the input has variances,
-       the variance at the element(s) undergoing replacement are also replaced with the replacement value.
-       If the replacement has a variance and the input has variances,
-       the variance at the element(s) undergoing replacement are also replaced with the replacement variance.
-       :raises: If the types of input and replacement do not match.
-       :return: Input elements are replaced in output with specified subsitutions.
-       :rtype: Variable)",
-        py::arg("x"), py::arg("nan") = std::optional<VariableConstView>(),
-        py::arg("posinf") = std::optional<VariableConstView>(),
-        py::arg("neginf") = std::optional<VariableConstView>());
+  //      All elements in the output are identical to input except in the presence of a nan, inf or -inf.
+  //      The function allows replacements to be separately specified for nan, inf or -inf values.
+  //      You can choose to replace a subset of those special values by providing just the required key word arguments.
+  //      If the replacement is value-only and the input has variances,
+  //      the variance at the element(s) undergoing replacement are also replaced with the replacement value.
+  //      If the replacement has a variance and the input has variances,
+  //      the variance at the element(s) undergoing replacement are also replaced with the replacement variance.
+  //      :raises: If the types of input and replacement do not match.
+  //      :return: Input elements are replaced in output with specified subsitutions.
+  //      :rtype: Variable)",
+  //       py::arg("x"), py::arg("nan") = std::optional<VariableConstView>(),
+  //       py::arg("posinf") = std::optional<VariableConstView>(),
+  //       py::arg("neginf") = std::optional<VariableConstView>());
 
-  m.def("nan_to_num",
-        [](const VariableConstView &self,
-           const std::optional<VariableConstView> &nan,
-           const std::optional<VariableConstView> &posinf,
-           const std::optional<VariableConstView> &neginf, VariableView &out) {
-          if (nan)
-            nan_to_num(self, *nan, out);
-          if (posinf)
-            positive_inf_to_num(self, *posinf, out);
-          if (neginf)
-            negative_inf_to_num(self, *neginf, out);
-          return out;
-        },
-        py::call_guard<py::gil_scoped_release>(),
-        R"(Element-wise special value replacement
+  // m.def("nan_to_num",
+  //       [](const VariableConstView &self,
+  //          const std::optional<VariableConstView> &nan,
+  //          const std::optional<VariableConstView> &posinf,
+  //          const std::optional<VariableConstView> &neginf, VariableView &out) {
+  //         if (nan)
+  //           nan_to_num(self, *nan, out);
+  //         if (posinf)
+  //           positive_inf_to_num(self, *posinf, out);
+  //         if (neginf)
+  //           negative_inf_to_num(self, *neginf, out);
+  //         return out;
+  //       },
+  //       py::call_guard<py::gil_scoped_release>(),
+  //       R"(Element-wise special value replacement
 
-       All elements in the output are identical to input except in the presence of a nan, inf or -inf.
-       The function allows replacements to be separately specified for nan, inf or -inf values.
-       You can choose to replace a subset of those special values by providing just the required key word arguments.
-       If the replacement is value-only and the input has variances,
-       the variance at the element(s) undergoing replacement are also replaced with the replacement value.
-       If the replacement has a variance and the input has variances,
-       the variance at the element(s) undergoing replacement are also replaced with the replacement variance.
-       :raises: If the types of input and replacement do not match.
-       :return: Input elements are replaced in output with specified subsitutions.
-       :rtype: Variable)",
-        py::arg("x"), py::arg("nan") = std::optional<VariableConstView>(),
-        py::arg("posinf") = std::optional<VariableConstView>(),
-        py::arg("neginf") = std::optional<VariableConstView>(), py::arg("out"));
+  //      All elements in the output are identical to input except in the presence of a nan, inf or -inf.
+  //      The function allows replacements to be separately specified for nan, inf or -inf values.
+  //      You can choose to replace a subset of those special values by providing just the required key word arguments.
+  //      If the replacement is value-only and the input has variances,
+  //      the variance at the element(s) undergoing replacement are also replaced with the replacement value.
+  //      If the replacement has a variance and the input has variances,
+  //      the variance at the element(s) undergoing replacement are also replaced with the replacement variance.
+  //      :raises: If the types of input and replacement do not match.
+  //      :return: Input elements are replaced in output with specified subsitutions.
+  //      :rtype: Variable)",
+  //       py::arg("x"), py::arg("nan") = std::optional<VariableConstView>(),
+  //       py::arg("posinf") = std::optional<VariableConstView>(),
+  //       py::arg("neginf") = std::optional<VariableConstView>(), py::arg("out"));
 
 }

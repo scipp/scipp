@@ -149,20 +149,20 @@ void init_dataset_free_functions(py::module &m) {
         :return: A new dataset that contains the union of all data items, coords, masks and attributes.
         :rtype: Dataset)");
 
-  m.def("realign",
-        [](const DataArrayConstView &a, py::dict coord_dict) {
-          DataArray copy(a);
-          realign_impl(copy, coord_dict);
-          return copy;
-        },
-        py::arg("data"), py::arg("coords"));
-  m.def("realign",
-        [](const DatasetConstView &a, py::dict coord_dict) {
-          Dataset copy(a);
-          realign_impl(copy, coord_dict);
-          return copy;
-        },
-        py::arg("data"), py::arg("coords"));
+  // m.def("realign",
+  //       [](const DataArrayConstView &a, py::dict coord_dict) {
+  //         DataArray copy(a);
+  //         realign_impl(copy, coord_dict);
+  //         return copy;
+  //       },
+  //       py::arg("data"), py::arg("coords"));
+  // m.def("realign",
+  //       [](const DatasetConstView &a, py::dict coord_dict) {
+  //         Dataset copy(a);
+  //         realign_impl(copy, coord_dict);
+  //         return copy;
+  //       },
+  //       py::arg("data"), py::arg("coords"));
 
 
   m.def("combine_masks",
