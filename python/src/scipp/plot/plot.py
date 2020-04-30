@@ -59,7 +59,8 @@ def tiled_plot(scipp_objs: List,
                                   linestyle=linestyle,
                                   linewidth=linewidth,
                                   marker=marker,
-                                  projection=projection)
+                                  projection=projection,
+                                  rename_duplicates=True)
 
     # Delayed imports
     from scipp.plot.dispatch import dispatch
@@ -106,7 +107,8 @@ def plot(scipp_obj,
     inventory = _pack_into_dict(scipp_obj)
 
     tobeplotted = _prepare_plot(axes, bins, color, inventory, linestyle,
-                                linewidth, marker, projection)
+                                linewidth, marker, projection,
+                                rename_duplicates=False)
 
     # Plot all the subsets
     output = SciPlot()
@@ -120,13 +122,14 @@ def plot(scipp_obj,
                                   ndims=val["ndims"],
                                   projection=projection,
                                   scipp_objs=val["scipp_obj_dict"])
-        output[key] = dispatch(request=[request], **kwargs)
+        members = dispatch(request=[request], **kwargs)
+        output[key] = members[0]
 
     return output
 
 
 def _prepare_plot(axes, bins, color, inventory, linestyle, linewidth, marker,
-                  projection):
+                  projection, rename_duplicates):
     # Prepare container for matplotlib line parameters
     line_params = {
         "color": color,
@@ -191,7 +194,7 @@ def _prepare_plot(axes, bins, color, inventory, linestyle, linewidth, marker,
 
             original_key = key
             i = 1
-            while key in tobeplotted:
+            while rename_duplicates and key in tobeplotted:
                 key = original_key + '_' + str(i)
                 i += 1
 

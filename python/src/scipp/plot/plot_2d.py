@@ -67,19 +67,24 @@ def _get_mpl_axis(to_plot: List[PlotRequest]):
                                       " supported with 2d subplots")
 
         if isinstance(reference_elem.user_kwargs.mpl_axes, dict):
-            axes = [None, None]
+            axes = []
+            cax = []
             for key, val in reference_elem.user_kwargs.mpl_axes.items():
+                new_axes = [None, None]
+                new_cax = [None, None]
                 if key == "ax" or key == "ax_values":
-                    axes[0] = val
+                    new_axes[0] = val
                 if key == "cax" or key == "cax_values":
-                    cax[0] = val
+                    new_cax[0] = val
                 if key == "ax_variances":
-                    axes[1] = val
+                    new_axes[1] = val
                 if key == "cax_variances":
-                    cax[1] = val
+                    new_cax[1] = val
+                axes.append(new_axes)
+                cax.append(new_cax)
         else:
             # Case where only a single axis is passed in
-            axes = [reference_elem.user_kwargs.mpl_axes]
+            axes = [[reference_elem.user_kwargs.mpl_axes]]
     else:
         nrows = len(to_plot) if isinstance(to_plot, list) else 1
         ncols = 2 if has_any_variances else 1

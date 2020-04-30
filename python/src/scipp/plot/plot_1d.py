@@ -38,6 +38,9 @@ def plot_1d(to_plot: List[PlotRequest]):
         axes = reference_elem.user_kwargs.mpl_axes
         fig = None
 
+        if not isinstance(axes, list):
+            axes = [axes]
+
         if len(to_plot) != len(axes):
             raise ValueError("A list of mpl_axes matching length of the number"
                              " of subplots is required when"
