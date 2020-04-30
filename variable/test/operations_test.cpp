@@ -591,13 +591,14 @@ TEST(Variable, abs_out_arg) {
 }
 
 TEST(Variable, norm_of_vector) {
-  auto reference =
-      makeVariable<double>(Dims{Dim::X}, Shape{3}, units::Unit(units::m),
-                           Values{sqrt(2.0), sqrt(2.0), 2.0});
-  auto var = makeVariable<Eigen::Vector3d>(
+  Eigen::Vector3d v1(1, 0, -1);
+  Eigen::Vector3d v2(1, 1, 0);
+  Eigen::Vector3d v3(0, 0, -2);
+  auto reference = makeVariable<double>(
       Dims{Dim::X}, Shape{3}, units::Unit(units::m),
-      Values{Eigen::Vector3d{1, 0, -1}, Eigen::Vector3d{1, 1, 0},
-             Eigen::Vector3d{0, 0, -2}});
+      Values{element::norm(v1), element::norm(v2), element::norm(v3)});
+  auto var = makeVariable<Eigen::Vector3d>(
+      Dims{Dim::X}, Shape{3}, units::Unit(units::m), Values{v1, v2, v3});
   EXPECT_EQ(norm(var), reference);
 }
 
@@ -625,6 +626,18 @@ TEST(Variable, sqrt_out_arg) {
                                     Values{1.23, element::sqrt(1.23)}));
   EXPECT_EQ(view, out);
   EXPECT_EQ(view.underlying(), x);
+}
+
+TEST(Variable, dot_of_vector) {
+  Eigen::Vector3d v1(1.1, 2.2, 3.3);
+  Eigen::Vector3d v2(-4.4, -5.5, -6.6);
+  Eigen::Vector3d v3(0, 0, 0);
+  auto reference = makeVariable<double>(
+      Dims{Dim::X}, Shape{3}, units::Unit(units::m) * units::Unit(units::m),
+      Values{element::dot(v1, v1), element::dot(v2, v2), element::dot(v3, v3)});
+  auto var = makeVariable<Eigen::Vector3d>(
+      Dims{Dim::X}, Shape{3}, units::Unit(units::m), Values{v1, v2, v3});
+  EXPECT_EQ(dot(var, var), reference);
 }
 
 TEST(Variable, reciprocal) {
