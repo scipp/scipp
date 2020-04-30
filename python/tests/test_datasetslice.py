@@ -7,6 +7,7 @@ import unittest
 import scipp as sc
 import numpy as np
 import operator
+from .common import assert_export
 
 
 class TestDatasetSlice(unittest.TestCase):
@@ -62,19 +63,18 @@ class TestDatasetSlice(unittest.TestCase):
         self.assertEqual(ref.shape, sl.shape)
         self.assertEqual(np.allclose(sl, ref), True)
 
-    def test_slice_single_index_dataset_then_(self):
-        self.assertEqual(self._d['x', -4]['a'].values, self._d['x',
-                                                               6]['a'].values)
-        self.assertEqual(self._d['a']['x', -3].values, self._d['a']['x',
-                                                                    7].values)
-
     def test_slice_single_index(self):
         self.assertEqual(self._d['x', -4]['a'].values, self._d['x',
                                                                6]['a'].values)
         self.assertEqual(self._d['a']['x', -3].values, self._d['a']['x',
                                                                     7].values)
 
-    def test_copy_datasetview(self):
+    def _test_copy_exports_on(self, x):
+        assert_export(x.copy)
+        assert_export(x.__copy__)
+        assert_export(x.__deepcopy__, {})
+
+    def test_copy_2(self):
         import copy
         N = 6
         M = 4
@@ -92,30 +92,15 @@ class TestDatasetSlice(unittest.TestCase):
         s3 = copy.deepcopy(s2)
         self.assertEqual(s1, s2)
         self.assertEqual(s3, s2)
-        s2 *= s2
-        self.assertNotEqual(s1['A'], s2['A'])
-        self.assertNotEqual(s3['A'], s2['A'])
+
+    def test_copy_datasetview(self):
+        d = sc.Dataset()
+        view = sc.DatasetView(d)
+        self._test_copy_exports_on(view)
 
     def test_copy_dataarrayview(self):
-        import copy
-        N = 6
-        M = 4
-        x = sc.Variable(['x'], values=np.arange(N + 1).astype(np.float64))
-        y = sc.Variable(['y'], values=np.arange(M + 1).astype(np.float64))
-        arr1 = np.arange(N * M).reshape(N, M).astype(np.float64) + 1
-        da = sc.DataArray(sc.Variable(['x', 'y'], values=arr1),
-                          coords={
-                              'x': x,
-                              'y': y
-                          })
-        s1 = da['x', 2:]
-        s2 = copy.copy(s1)
-        s3 = copy.deepcopy(s2)
-        self.assertEqual(s1, s2)
-        self.assertEqual(s3, s2)
-        s2 *= s2
-        self.assertNotEqual(s1, s2)
-        self.assertNotEqual(s3, s2)
+        view = self._d['a']
+        self._test_copy_exports_on(view)
 
     def _apply_test_op_rhs_ds_slice(self,
                                     op,
