@@ -5,8 +5,8 @@
 from typing import List, Dict
 
 # Scipp imports
-from scipp.plot.plot_impl.prepare_collapse import prepare_collapse
-from scipp.plot.plot_impl.plot_request import PlotRequest
+from scipp.plot.prepare_collapse import prepare_collapse
+from scipp.plot.plot_request import PlotRequest
 from .sciplot import SciPlot
 from .tools import get_line_param
 from .._scipp import core as sc
@@ -62,7 +62,7 @@ def tiled_plot(scipp_objs: List,
                                   projection=projection)
 
     # Delayed imports
-    from scipp.plot.plot_impl.dispatch import dispatch
+    from scipp.plot.dispatch import dispatch
 
     # Plot all the subsets
     output = SciPlot()
@@ -101,7 +101,7 @@ def plot(scipp_obj,
     """
 
     # Delayed imports
-    from scipp.plot.plot_impl.dispatch import dispatch
+    from scipp.plot.dispatch import dispatch
 
     inventory = _pack_into_dict(scipp_obj)
 

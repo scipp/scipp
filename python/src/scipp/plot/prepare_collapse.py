@@ -6,7 +6,7 @@
 import numpy as np
 
 # Scipp imports
-from scipp.plot.plot_impl.plot_request import PlotRequest
+from scipp.plot.plot_request import PlotRequest
 from scipp.plot.tools import get_line_param
 
 

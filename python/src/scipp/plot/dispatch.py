@@ -3,11 +3,11 @@
 # @author Neil Vaytet
 from typing import List
 
-from scipp.plot.plot_impl.plot_1d import plot_1d
-from scipp.plot.plot_impl.plot_2d import plot_2d
-from scipp.plot.plot_impl.plot_3d import plot_3d
-from ..events import histogram_events_data
-from scipp.plot.plot_impl.plot_request import PlotRequest, OneDPlotKwargs,\
+from scipp.plot.plot_1d import plot_1d
+from scipp.plot.plot_2d import plot_2d
+from scipp.plot.plot_3d import plot_3d
+from scipp.plot.events import histogram_events_data
+from scipp.plot.plot_request import PlotRequest, OneDPlotKwargs,\
     TwoDPlotKwargs, ThreeDPlotKwargs
 
 

@@ -6,7 +6,7 @@ from typing import List
 
 # Scipp imports
 from scipp import config
-from scipp.plot.plot_impl.plot_request import PlotRequest, ThreeDPlotKwargs
+from scipp.plot.plot_request import PlotRequest, ThreeDPlotKwargs
 from scipp.plot.render import render_plot
 from scipp.plot.slicer import Slicer
 from scipp.utils import name_with_unit
