@@ -94,10 +94,10 @@ TEST(ComparisonTest, less_units_test) {
 }
 
 namespace {
-const auto a = 1.0 * units::Unit(units::m);
-const auto b = 2.0 * units::Unit(units::m);
-const auto true_ = true * units::Unit(units::dimensionless);
-const auto false_ = false * units::Unit(units::dimensionless);
+const auto a = 1.0 * units::m;
+const auto b = 2.0 * units::m;
+const auto true_ = true * units::one;
+const auto false_ = false * units::one;
 TEST(ComparisonTest, less_test) {
   EXPECT_EQ(less(a, b), true_);
   EXPECT_EQ(less(b, a), false_);

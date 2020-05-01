@@ -28,7 +28,7 @@ TEST(ElementAbsTest, value_and_variance) {
 
 TEST(ElementAbsOutArgTest, unit) {
   units::Unit m(units::m);
-  units::Unit out(units::dimensionless);
+  units::Unit out(units::one);
   element::abs_out_arg(out, m);
   EXPECT_EQ(out, units::abs(m));
 }
@@ -91,7 +91,7 @@ TEST(ElementSqrtTest, value_and_variance) {
 
 TEST(ElementSqrtOutArgTest, unit) {
   const units::Unit m2(units::m * units::m);
-  units::Unit out(units::dimensionless);
+  units::Unit out(units::one);
   element::sqrt_out_arg(out, m2);
   EXPECT_EQ(out, units::sqrt(m2));
 }
@@ -313,10 +313,10 @@ TYPED_TEST(ElementNegativeInfToNumTest, value_and_variance_out) {
 }
 
 TEST(ElementReciprocalTest, unit) {
-  const units::Unit one_over_m(units::dimensionless / units::m);
+  const units::Unit one_over_m(units::one / units::m);
   EXPECT_EQ(element::reciprocal(one_over_m), units::m);
-  const units::Unit one_over_s(units::dimensionless / units::s);
-  EXPECT_EQ(element::reciprocal(units::Unit(units::s)), one_over_s);
+  const units::Unit one_over_s(units::one / units::s);
+  EXPECT_EQ(element::reciprocal(units::s), one_over_s);
 }
 
 TEST(ElementReciprocalTest, value) {
@@ -330,12 +330,12 @@ TEST(ElementReciprocalTest, value_and_variance) {
 }
 
 TEST(ElementReciprocalOutArgTest, unit) {
-  const units::Unit one_over_m(units::dimensionless / units::m);
-  units::Unit out(units::dimensionless);
+  const units::Unit one_over_m(units::one / units::m);
+  units::Unit out(units::one);
   element::reciprocal_out_arg(out, one_over_m);
   EXPECT_EQ(out, units::m);
-  element::reciprocal_out_arg(out, units::Unit(units::s));
-  const units::Unit one_over_s(units::dimensionless / units::s);
+  element::reciprocal_out_arg(out, units::s);
+  const units::Unit one_over_s(units::one / units::s);
   EXPECT_EQ(out, one_over_s);
 }
 

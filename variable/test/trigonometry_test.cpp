@@ -232,18 +232,18 @@ TEST(Variable, atan_out_arg) {
 }
 
 TEST(VariableTrigonometryTest, atan2) {
-  auto x = makeVariable<double>(units::Unit(units::m), Values{1.0});
+  auto x = makeVariable<double>(units::m, Values{1.0});
   auto y = x;
-  auto expected = makeVariable<double>(units::Unit(units::rad),
-                                       Values{scipp::pi<double> / 4});
+  auto expected =
+      makeVariable<double>(units::rad, Values{scipp::pi<double> / 4});
   EXPECT_EQ(atan2(y, x), expected);
 }
 
 TEST(VariableTrigonometryTest, atan2_out_arg) {
-  auto x = makeVariable<double>(units::Unit(units::m), Values{1.0});
+  auto x = makeVariable<double>(units::m, Values{1.0});
   auto y = x;
-  auto expected = makeVariable<double>(units::Unit(units::rad),
-                                       Values{scipp::pi<double> / 4});
+  auto expected =
+      makeVariable<double>(units::rad, Values{scipp::pi<double> / 4});
   auto out = atan2(y, x, y);
   EXPECT_EQ(out, expected);
   EXPECT_EQ(y, expected);

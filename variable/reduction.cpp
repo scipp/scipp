@@ -46,7 +46,7 @@ void flatten_impl(const VariableView &summed, const VariableConstView &var,
               a.insert(a.end(), b.begin(), b.end());
           },
           [](units::Unit &a, const units::Unit &b, const units::Unit &mask_) {
-            core::expect::equals(mask_, units::dimensionless);
+            core::expect::equals(mask_, units::one);
             core::expect::equals(a, b);
           }});
 }
@@ -106,7 +106,7 @@ Variable mean_impl(const VariableConstView &var, const Dim dim,
                    const VariableConstView &masks_sum) {
   auto summed = sum(var, dim);
 
-  auto scale = 1.0 * units::Unit(units::dimensionless) /
+  auto scale = 1.0 * units::one /
                (makeVariable<double>(Values{var.dims()[dim]}) - masks_sum);
 
   if (isInt(var.dtype()))
@@ -125,7 +125,7 @@ VariableView mean_impl(const VariableConstView &var, const Dim dim,
 
   sum(var, dim, out);
 
-  auto scale = 1.0 * units::Unit(units::dimensionless) /
+  auto scale = 1.0 * units::one /
                (makeVariable<double>(Values{var.dims()[dim]}) - masks_sum);
 
   out *= scale;

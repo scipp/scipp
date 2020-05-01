@@ -25,9 +25,8 @@ auto make_2d_events_coord(const scipp::index size, const scipp::index count) {
 
 auto make_2d_events_default_weights(const scipp::index size,
                                     const scipp::index count) {
-  auto weights =
-      makeVariable<double>(Dims{Dim::X}, Shape{size},
-                           units::Unit(units::counts), Values{}, Variances{});
+  auto weights = makeVariable<double>(Dims{Dim::X}, Shape{size}, units::counts,
+                                      Values{}, Variances{});
   return DataArray(weights, {{Dim::Y, make_2d_events_coord(size, count)}});
 }
 
@@ -54,8 +53,7 @@ static void BM_histogram(benchmark::State &state) {
     edges_.back() += 0.0001;
   auto edges = makeVariable<double>(Dims{Dim::Y}, Shape{nEdge},
                                     Values(edges_.begin(), edges_.end()));
-  edges *= 1000.0 / nEdge *
-           units::Unit(units::dimensionless); // ensure all events are in range
+  edges *= 1000.0 / nEdge * units::one; // ensure all events are in range
   for (auto _ : state) {
     benchmark::DoNotOptimize(histogram(events, edges));
   }

@@ -5,9 +5,6 @@
 /// @author Neil Vaytet
 #pragma once
 
-#include "scipp/units/dimension.h"
-#include "scipp/units/unit_impl.h"
-
 #include <boost/units/base_dimension.hpp>
 #include <boost/units/make_system.hpp>
 #include <boost/units/systems/si/codata/electromagnetic_constants.hpp>
@@ -115,12 +112,7 @@ struct boost::units::base_unit_info<
   static std::string symbol() { return "c"; }
 };
 
-namespace scipp::units {
-#ifdef SCIPP_UNITS_NEUTRON
-inline
-#endif
-    namespace neutron {
-
+namespace scipp::units::boost_units {
 // Additional helper constants beyond the SI base units.
 // Note the factor `dimensionless` in units that otherwise contain only non-SI
 // factors. This is a trick to overcome some subtleties of working with
@@ -131,40 +123,14 @@ inline
 // dimensionless (dimensionless) into all our non-SI units avoids special-case
 // handling in all operations (which would attempt to remove the dimensionless
 // factor manually).
-static constexpr decltype(detail::tof::counts{} * dimensionless) counts;
-static constexpr decltype(detail::tof::wavelength{} * dimensionless) angstrom;
-static constexpr decltype(detail::tof::energy{} * dimensionless) meV;
-static constexpr decltype(detail::tof::tof{} * dimensionless) us;
-static constexpr decltype(detail::tof::velocity{} * dimensionless) c;
-
-class Unit : public Unit_impl<Unit> {
-public:
-  using Unit_impl<Unit>::Unit_impl;
-};
-
-SCIPP_UNITS_DECLARE_DIMENSIONS(Detector, DSpacing, Energy, EnergyTransfer,
-                               Group, Position, PulseTime, Q, QSquared, Qx, Qy,
-                               Qz, Row, ScatteringAngle, Spectrum, Temperature,
-                               Time, Tof, Wavelength, X, Y, Z)
-
-} // namespace neutron
-
-template <> struct supported_units<neutron::Unit> {
-  using type = decltype(detail::make_unit(
-      std::make_tuple(m, dimensionless / m),
-      std::make_tuple(
-          dimensionless, rad, deg, rad / deg, deg / rad, counts,
-          dimensionless / counts, s, kg, angstrom, meV, us, dimensionless / us,
-          dimensionless / s, counts / us, counts / angstrom, counts / meV,
-          m *m *m, meV *us *us / (m * m), meV *us *us *dimensionless, kg *m / s,
-          m / s, c, c *m, meV / c, dimensionless / c, K, us / angstrom,
-          us / (angstrom * angstrom), us / (m * angstrom), angstrom / us,
-          (m * angstrom) / us, us *us, dimensionless / (us * us),
-          dimensionless / meV, dimensionless / angstrom, angstrom *angstrom,
-          dimensionless / (angstrom * angstrom))));
-};
-template <> struct counts_unit<neutron::Unit> {
-  using type = decltype(counts);
-};
-
-} // namespace scipp::units
+static constexpr decltype(detail::tof::counts{} *
+                          boost::units::si::dimensionless{}) counts;
+static constexpr decltype(detail::tof::wavelength{} *
+                          boost::units::si::dimensionless{}) angstrom;
+static constexpr decltype(detail::tof::energy{} *
+                          boost::units::si::dimensionless{}) meV;
+static constexpr decltype(detail::tof::tof{} *
+                          boost::units::si::dimensionless{}) us;
+static constexpr decltype(detail::tof::velocity{} *
+                          boost::units::si::dimensionless{}) c;
+} // namespace scipp::units::boost_units

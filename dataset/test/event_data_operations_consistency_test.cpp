@@ -19,17 +19,15 @@ static auto make_events() {
 }
 
 static auto make_events_array_default_weights() {
-  return DataArray(makeVariable<double>(Dims{Dim::Y}, Shape{2},
-                                        units::Unit(units::counts),
+  return DataArray(makeVariable<double>(Dims{Dim::Y}, Shape{2}, units::counts,
                                         Values{1, 1}, Variances{1, 1}),
                    {{Dim::X, make_events()},
                     {Dim::Y, makeVariable<double>(Dimensions{Dim::Y, 2})}});
 }
 
 static auto make_histogram() {
-  auto edges =
-      makeVariable<double>(Dimensions{{Dim::Y, 2}, {Dim::X, 3}},
-                           units::Unit(units::us), Values{0, 2, 4, 1, 3, 5});
+  auto edges = makeVariable<double>(Dimensions{{Dim::Y, 2}, {Dim::X, 3}},
+                                    units::us, Values{0, 2, 4, 1, 3, 5});
   auto data = makeVariable<double>(Dimensions{Dim::X, 2}, Values{2.0, 3.0},
                                    Variances{0.3, 0.4});
 
@@ -41,8 +39,8 @@ TEST(EventsDataOperationsConsistencyTest, multiply) {
   // either first multiply and then histogram, or first histogram and then
   // multiply.
   const auto events = make_events_array_default_weights();
-  auto edges = makeVariable<double>(Dimensions{Dim::X, 4},
-                                    units::Unit(units::us), Values{1, 2, 3, 4});
+  auto edges = makeVariable<double>(Dimensions{Dim::X, 4}, units::us,
+                                    Values{1, 2, 3, 4});
   auto data = makeVariable<double>(Dimensions{Dim::X, 3}, Values{2.0, 3.0, 4.0},
                                    Variances{0.3, 0.4, 0.5});
   auto realigned = unaligned::realign(events, {{Dim::X, edges}});
@@ -69,16 +67,16 @@ TEST(EventsDataOperationsConsistencyTest, multiply) {
 
 TEST(EventsDataOperationsConsistencyTest, flatten_sum) {
   const auto events = make_events_array_default_weights();
-  auto edges = makeVariable<double>(Dimensions{Dim::X, 3},
-                                    units::Unit(units::us), Values{1, 3, 6});
+  auto edges =
+      makeVariable<double>(Dimensions{Dim::X, 3}, units::us, Values{1, 3, 6});
   EXPECT_EQ(sum(histogram(events, edges), Dim::Y),
             histogram(flatten(events, Dim::Y), edges));
 }
 
 TEST(EventsDataOperationsConsistencyTest, flatten_sum_realigned) {
   const auto events = make_events_array_default_weights();
-  auto edges = makeVariable<double>(Dimensions{Dim::X, 3},
-                                    units::Unit(units::us), Values{1, 3, 6});
+  auto edges =
+      makeVariable<double>(Dimensions{Dim::X, 3}, units::us, Values{1, 3, 6});
   const auto realigned = unaligned::realign(events, {{Dim::X, edges}});
 
   // Three equalities that all express the same concept:
@@ -95,8 +93,8 @@ TEST(EventsDataOperationsConsistencyTest, flatten_sum_realigned) {
 
 TEST(EventsDataOperationsConsistencyTest, flatten_multiply_sum) {
   const auto events = make_events_array_default_weights();
-  auto edges = makeVariable<double>(Dimensions{Dim::X, 3},
-                                    units::Unit(units::us), Values{1, 3, 5});
+  auto edges =
+      makeVariable<double>(Dimensions{Dim::X, 3}, units::us, Values{1, 3, 5});
   auto data = makeVariable<double>(Dimensions{Dim::X, 2}, Values{2.0, 3.0},
                                    Variances{0.3, 0.4});
   auto realigned = unaligned::realign(events, {{Dim::X, edges}});

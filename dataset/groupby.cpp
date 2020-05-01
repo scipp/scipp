@@ -230,7 +230,7 @@ template <class T> T GroupBy<T>::mean(const Dim reductionDim) const {
       }
     }
 
-  scale = 1.0 * units::Unit(units::dimensionless) / scale;
+  scale = 1.0 * units::one / scale;
 
   // 3. sum/N -> mean
   if constexpr (std::is_same_v<T, Dataset>) {

@@ -172,7 +172,7 @@ template <class T> void bind_init_0D(py::class_<Variable> &c) {
           return do_init_0D(value, variance, unit);
         }),
         py::arg("value"), py::arg("variance") = std::nullopt,
-        py::arg("unit") = units::Unit(units::dimensionless));
+        py::arg("unit") = units::one);
 }
 
 // This function is used only to bind native python types: pyInt -> int64_t;
@@ -191,8 +191,7 @@ void bind_init_0D_native_python_types(py::class_<Variable> &c) {
           }
         }),
         py::arg("value"), py::arg("variance") = std::nullopt,
-        py::arg("unit") = units::Unit(units::dimensionless),
-        py::arg("dtype") = py::none());
+        py::arg("unit") = units::one, py::arg("dtype") = py::none());
 }
 
 void bind_init_0D_numpy_types(py::class_<Variable> &c) {
@@ -223,8 +222,7 @@ void bind_init_0D_numpy_types(py::class_<Variable> &c) {
           }
         }),
         py::arg("value").noconvert(), py::arg("variance") = std::nullopt,
-        py::arg("unit") = units::Unit(units::dimensionless),
-        py::arg("dtype") = py::none());
+        py::arg("unit") = units::one, py::arg("dtype") = py::none());
 }
 
 void bind_init_list(py::class_<Variable> &c) {
@@ -238,8 +236,7 @@ void bind_init_list(py::class_<Variable> &c) {
           return doMakeVariable(dims, arr, varr, unit, dtype);
         }),
         py::arg("dims"), py::arg("values"), py::arg("variances") = std::nullopt,
-        py::arg("unit") = units::Unit(units::dimensionless),
-        py::arg("dtype") = py::none());
+        py::arg("unit") = units::one, py::arg("dtype") = py::none());
 }
 
 void bind_init_0D_list_eigen(py::class_<Variable> &c) {
@@ -266,8 +263,7 @@ void bind_init_0D_list_eigen(py::class_<Variable> &c) {
         }
       }),
       py::arg("value"), py::arg("variance") = std::nullopt,
-      py::arg("unit") = units::Unit(units::dimensionless),
-      py::arg("dtype") = py::none());
+      py::arg("unit") = units::one, py::arg("dtype") = py::none());
 }
 
 template <class T, class... Ignored>
@@ -297,13 +293,12 @@ void init_variable(py::module &m) {
       .def(py::init(&makeVariableDefaultInit),
            py::arg("dims") = std::vector<Dim>{},
            py::arg("shape") = std::vector<scipp::index>{},
-           py::arg("unit") = units::Unit(units::dimensionless),
+           py::arg("unit") = units::one,
            py::arg("dtype") = py::dtype::of<double>(),
            py::arg("variances").noconvert() = false)
       .def(py::init(&doMakeVariable), py::arg("dims"),
            py::arg("values"), // py::array
-           py::arg("variances") = std::nullopt,
-           py::arg("unit") = units::Unit(units::dimensionless),
+           py::arg("variances") = std::nullopt, py::arg("unit") = units::one,
            py::arg("dtype") = py::none())
       .def("rename_dims", &rename_dims<Variable>, py::arg("dims_dict"),
            "Rename dimensions.")
@@ -319,22 +314,14 @@ void init_variable(py::module &m) {
           py::call_guard<py::gil_scoped_release>(), "Return a (deep) copy.")
       .def_property_readonly("dtype", &Variable::dtype)
       .def(
-          "__radd__",
-          [](Variable &a, double &b) {
-            return a + b * units::Unit(units::dimensionless);
-          },
+          "__radd__", [](Variable &a, double &b) { return a + b * units::one; },
           py::is_operator())
       .def(
-          "__rsub__",
-          [](Variable &a, double &b) {
-            return b * units::Unit(units::dimensionless) - a;
-          },
+          "__rsub__", [](Variable &a, double &b) { return b * units::one - a; },
           py::is_operator())
       .def(
           "__rmul__",
-          [](Variable &a, double &b) {
-            return a * (b * units::Unit(units::dimensionless));
-          },
+          [](Variable &a, double &b) { return a * (b * units::one); },
           py::is_operator())
       .def("__repr__", [](const Variable &self) { return to_string(self); });
 
@@ -368,21 +355,15 @@ void init_variable(py::module &m) {
   variableView.def(py::init<Variable &>())
       .def(
           "__radd__",
-          [](VariableView &a, double &b) {
-            return a + b * units::Unit(units::dimensionless);
-          },
+          [](VariableView &a, double &b) { return a + b * units::one; },
           py::is_operator())
       .def(
           "__rsub__",
-          [](VariableView &a, double &b) {
-            return b * units::Unit(units::dimensionless) - a;
-          },
+          [](VariableView &a, double &b) { return b * units::one - a; },
           py::is_operator())
       .def(
           "__rmul__",
-          [](VariableView &a, double &b) {
-            return a * (b * units::Unit(units::dimensionless));
-          },
+          [](VariableView &a, double &b) { return a * (b * units::one); },
           py::is_operator());
 
   bind_astype(variable);

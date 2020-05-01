@@ -28,39 +28,39 @@ using ScalarTypes = ::testing::Types<double, float, int64_t, int32_t>;
 TYPED_TEST_SUITE(VariableScalarOperatorTest, ScalarTypes);
 
 TYPED_TEST(VariableScalarOperatorTest, plus_equals) {
-  this->variable += this->scalar * units::Unit(units::dimensionless);
+  this->variable += this->scalar * units::one;
   EXPECT_EQ(this->value(), 12);
 }
 
 TYPED_TEST(VariableScalarOperatorTest, minus_equals) {
-  this->variable -= this->scalar * units::Unit(units::dimensionless);
+  this->variable -= this->scalar * units::one;
   EXPECT_EQ(this->value(), 8);
 }
 
 TYPED_TEST(VariableScalarOperatorTest, times_equals) {
-  this->variable *= this->scalar * units::Unit(units::dimensionless);
+  this->variable *= this->scalar * units::one;
   EXPECT_EQ(this->value(), 20);
 }
 
 TYPED_TEST(VariableScalarOperatorTest, divide_equals) {
-  this->variable /= this->scalar * units::Unit(units::dimensionless);
+  this->variable /= this->scalar * units::one;
   EXPECT_EQ(this->value(), 5);
 }
 
 TEST(Variable, operator_unary_minus) {
-  const auto a = makeVariable<double>(Dims{Dim::X}, Shape{2},
-                                      units::Unit(units::m), Values{1.1, 2.2});
-  const auto expected = makeVariable<double>(
-      Dims{Dim::X}, Shape{2}, units::Unit(units::m), Values{-1.1, -2.2});
+  const auto a =
+      makeVariable<double>(Dims{Dim::X}, Shape{2}, units::m, Values{1.1, 2.2});
+  const auto expected = makeVariable<double>(Dims{Dim::X}, Shape{2}, units::m,
+                                             Values{-1.1, -2.2});
   auto b = -a;
   EXPECT_EQ(b, expected);
 }
 
 TEST(VariableView, unary_minus) {
-  const auto a = makeVariable<double>(Dims{Dim::X}, Shape{2},
-                                      units::Unit(units::m), Values{1.1, 2.2});
-  const auto expected = makeVariable<double>(
-      Dims(), Shape(), units::Unit(units::m), Values{-2.2});
+  const auto a =
+      makeVariable<double>(Dims{Dim::X}, Shape{2}, units::m, Values{1.1, 2.2});
+  const auto expected =
+      makeVariable<double>(Dims(), Shape(), units::m, Values{-2.2});
   auto b = -a.slice({Dim::X, 1});
   EXPECT_EQ(b, expected);
 }
@@ -84,16 +84,14 @@ TEST(Variable, operator_plus_equal_automatic_broadcast_of_rhs) {
 }
 
 TEST(Variable, operator_plus_equal_transpose) {
-  auto a = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{3, 2},
-                                units::Unit(units::m),
+  auto a = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{3, 2}, units::m,
                                 Values{1.0, 2.0, 3.0, 4.0, 5.0, 6.0});
-  auto transpose = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 3},
-                                        units::Unit(units::m),
-                                        Values{1.0, 3.0, 5.0, 2.0, 4.0, 6.0});
+  auto transpose =
+      makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 3}, units::m,
+                           Values{1.0, 3.0, 5.0, 2.0, 4.0, 6.0});
 
   EXPECT_NO_THROW(a += transpose);
-  ASSERT_EQ(a, makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{3, 2},
-                                    units::Unit(units::m),
+  ASSERT_EQ(a, makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{3, 2}, units::m,
                                     Values{2.0, 4.0, 6.0, 8.0, 10.0, 12.0}));
 }
 
@@ -136,7 +134,7 @@ TEST(Variable, operator_plus_equal_different_variables_same_element_type) {
 TEST(Variable, operator_plus_equal_scalar) {
   auto a = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.1, 2.2});
 
-  EXPECT_NO_THROW(a += 1.0 * units::Unit(units::dimensionless));
+  EXPECT_NO_THROW(a += 1.0 * units::one);
   EXPECT_EQ(a.values<double>()[0], 2.1);
   EXPECT_EQ(a.values<double>()[1], 3.2);
 }
@@ -212,8 +210,8 @@ TEST(EventsVariable, operator_plus) {
 }
 
 TEST(Variable, operator_times_equal) {
-  auto a = makeVariable<double>(Dims{Dim::X}, Shape{2}, units::Unit(units::m),
-                                Values{2.0, 3.0});
+  auto a =
+      makeVariable<double>(Dims{Dim::X}, Shape{2}, units::m, Values{2.0, 3.0});
 
   EXPECT_EQ(a.unit(), units::m);
   EXPECT_NO_THROW(a *= a);
@@ -223,11 +221,11 @@ TEST(Variable, operator_times_equal) {
 }
 
 TEST(Variable, operator_times_equal_scalar) {
-  auto a = makeVariable<double>(Dims{Dim::X}, Shape{2}, units::Unit(units::m),
-                                Values{2.0, 3.0});
+  auto a =
+      makeVariable<double>(Dims{Dim::X}, Shape{2}, units::m, Values{2.0, 3.0});
 
   EXPECT_EQ(a.unit(), units::m);
-  EXPECT_NO_THROW(a *= 2.0 * units::Unit(units::dimensionless));
+  EXPECT_NO_THROW(a *= 2.0 * units::one);
   EXPECT_EQ(a.values<double>()[0], 4.0);
   EXPECT_EQ(a.values<double>()[1], 6.0);
   EXPECT_EQ(a.unit(), units::m);
@@ -336,47 +334,47 @@ TEST(Variable, operator_divide_equal) {
   EXPECT_NO_THROW(a /= b);
   EXPECT_EQ(a.values<double>()[0], 1.0);
   EXPECT_EQ(a.values<double>()[1], 1.5);
-  EXPECT_EQ(a.unit(), units::dimensionless / units::m);
+  EXPECT_EQ(a.unit(), units::one / units::m);
 }
 
 TEST(Variable, operator_divide_equal_self) {
-  auto a = makeVariable<double>(Dims{Dim::X}, Shape{2}, units::Unit(units::m),
-                                Values{2.0, 3.0});
+  auto a =
+      makeVariable<double>(Dims{Dim::X}, Shape{2}, units::m, Values{2.0, 3.0});
 
   EXPECT_EQ(a.unit(), units::m);
   EXPECT_NO_THROW(a /= a);
   EXPECT_EQ(a.values<double>()[0], 1.0);
   EXPECT_EQ(a.values<double>()[1], 1.0);
-  EXPECT_EQ(a.unit(), units::dimensionless);
+  EXPECT_EQ(a.unit(), units::one);
 }
 
 TEST(Variable, operator_divide_equal_scalar) {
-  auto a = makeVariable<double>(Dims{Dim::X}, Shape{2}, units::Unit(units::m),
-                                Values{2.0, 4.0});
+  auto a =
+      makeVariable<double>(Dims{Dim::X}, Shape{2}, units::m, Values{2.0, 4.0});
 
   EXPECT_EQ(a.unit(), units::m);
-  EXPECT_NO_THROW(a /= 2.0 * units::Unit(units::dimensionless));
+  EXPECT_NO_THROW(a /= 2.0 * units::one);
   EXPECT_EQ(a.values<double>()[0], 1.0);
   EXPECT_EQ(a.values<double>()[1], 2.0);
   EXPECT_EQ(a.unit(), units::m);
 }
 
 TEST(Variable, operator_divide_scalar_double) {
-  const auto a = makeVariable<double>(Dims{Dim::X}, Shape{2},
-                                      units::Unit(units::m), Values{2.0, 4.0});
-  const auto result = 1.111 * units::Unit(units::dimensionless) / a;
+  const auto a =
+      makeVariable<double>(Dims{Dim::X}, Shape{2}, units::m, Values{2.0, 4.0});
+  const auto result = 1.111 * units::one / a;
   EXPECT_EQ(result.values<double>()[0], 1.111 / 2.0);
   EXPECT_EQ(result.values<double>()[1], 1.111 / 4.0);
-  EXPECT_EQ(result.unit(), units::dimensionless / units::m);
+  EXPECT_EQ(result.unit(), units::one / units::m);
 }
 
 TEST(Variable, operator_divide_scalar_float) {
-  const auto a = makeVariable<float>(Dims{Dim::X}, Shape{2},
-                                     units::Unit(units::m), Values{2.0, 4.0});
-  const auto result = 1.111f * units::Unit(units::dimensionless) / a;
+  const auto a =
+      makeVariable<float>(Dims{Dim::X}, Shape{2}, units::m, Values{2.0, 4.0});
+  const auto result = 1.111f * units::one / a;
   EXPECT_EQ(result.values<float>()[0], 1.111f / 2.0f);
   EXPECT_EQ(result.values<float>()[1], 1.111f / 4.0f);
-  EXPECT_EQ(result.unit(), units::dimensionless / units::m);
+  EXPECT_EQ(result.unit(), units::one / units::m);
 }
 
 TEST(Variable, operator_allowed_types) {
@@ -406,7 +404,7 @@ TEST(Variable, concatenate) {
   b.setUnit(units::m);
   auto ab = concatenate(a, b, Dim::Tof);
   ASSERT_EQ(ab.dims().volume(), 2);
-  EXPECT_EQ(ab.unit(), units::Unit(units::m));
+  EXPECT_EQ(ab.unit(), units::m);
   const auto &data = ab.values<double>();
   EXPECT_EQ(data[0], 1.0);
   EXPECT_EQ(data[1], 2.0);
@@ -507,28 +505,26 @@ TEST(Variable, rebin) {
 #endif
 
 TEST(Variable, sum) {
-  const auto var =
-      makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
-                           units::Unit(units::m), Values{1.0, 2.0, 3.0, 4.0});
-  const auto expectedX = makeVariable<double>(
-      Dims{Dim::Y}, Shape{2}, units::Unit(units::m), Values{3.0, 7.0});
-  const auto expectedY = makeVariable<double>(
-      Dims{Dim::X}, Shape{2}, units::Unit(units::m), Values{4.0, 6.0});
+  const auto var = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
+                                        units::m, Values{1.0, 2.0, 3.0, 4.0});
+  const auto expectedX =
+      makeVariable<double>(Dims{Dim::Y}, Shape{2}, units::m, Values{3.0, 7.0});
+  const auto expectedY =
+      makeVariable<double>(Dims{Dim::X}, Shape{2}, units::m, Values{4.0, 6.0});
   EXPECT_EQ(sum(var, Dim::X), expectedX);
   EXPECT_EQ(sum(var, Dim::Y), expectedY);
 }
 
 TEST(Variable, sum_in_place) {
-  const auto var =
-      makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
-                           units::Unit(units::m), Values{1.0, 2.0, 3.0, 4.0});
+  const auto var = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
+                                        units::m, Values{1.0, 2.0, 3.0, 4.0});
 
   auto out =
       makeVariable<double>(Dims{Dim::Y}, Shape{2}, units::Unit{units::m});
   auto view = sum(var, Dim::X, out);
 
-  const auto expected = makeVariable<double>(
-      Dims{Dim::Y}, Shape{2}, units::Unit(units::m), Values{3.0, 7.0});
+  const auto expected =
+      makeVariable<double>(Dims{Dim::Y}, Shape{2}, units::m, Values{3.0, 7.0});
 
   EXPECT_EQ(out, expected);
   EXPECT_EQ(view, out);
@@ -595,10 +591,10 @@ TEST(Variable, norm_of_vector) {
   Eigen::Vector3d v2(1, 1, 0);
   Eigen::Vector3d v3(0, 0, -2);
   auto reference = makeVariable<double>(
-      Dims{Dim::X}, Shape{3}, units::Unit(units::m),
+      Dims{Dim::X}, Shape{3}, units::m,
       Values{element::norm(v1), element::norm(v2), element::norm(v3)});
-  auto var = makeVariable<Eigen::Vector3d>(
-      Dims{Dim::X}, Shape{3}, units::Unit(units::m), Values{v1, v2, v3});
+  auto var = makeVariable<Eigen::Vector3d>(Dims{Dim::X}, Shape{3}, units::m,
+                                           Values{v1, v2, v3});
   EXPECT_EQ(norm(var), reference);
 }
 
@@ -658,27 +654,24 @@ TEST(Variable, reciprocal_move) {
 }
 
 TEST(Variable, resiprocal_out_arg_full_in_place) {
-  auto var = makeVariable<double>(Dims{Dim::X}, Shape{3}, units::Unit(units::m),
-                                  Values{1, 4, 9});
+  auto var =
+      makeVariable<double>(Dims{Dim::X}, Shape{3}, units::m, Values{1, 4, 9});
   auto view = reciprocal(var, var);
-  EXPECT_EQ(var,
-            makeVariable<double>(Dims{Dim::X}, Shape{3},
-                                 units::Unit(units::dimensionless / units::m),
-                                 Values{1., 1. / 4., 1. / 9.}));
+  EXPECT_EQ(var, makeVariable<double>(Dims{Dim::X}, Shape{3},
+                                      units::Unit(units::one / units::m),
+                                      Values{1., 1. / 4., 1. / 9.}));
   EXPECT_EQ(view, var);
   EXPECT_EQ(view.underlying(), var);
 }
 
 TEST(Variable, reciprocal_out_arg_partial) {
-  const auto var = makeVariable<double>(Dims{Dim::X}, Shape{3},
-                                        units::Unit(units::m), Values{1, 4, 9});
-  auto out =
-      makeVariable<double>(Dims{Dim::X}, Shape{2}, units::Unit(units::m));
+  const auto var =
+      makeVariable<double>(Dims{Dim::X}, Shape{3}, units::m, Values{1, 4, 9});
+  auto out = makeVariable<double>(Dims{Dim::X}, Shape{2}, units::m);
   auto view = reciprocal(var.slice({Dim::X, 1, 3}), out);
-  EXPECT_EQ(out,
-            makeVariable<double>(Dims{Dim::X}, Shape{2},
-                                 units::Unit(units::dimensionless / units::m),
-                                 Values{1. / 4., 1. / 9.}));
+  EXPECT_EQ(out, makeVariable<double>(Dims{Dim::X}, Shape{2},
+                                      units::Unit(units::one / units::m),
+                                      Values{1. / 4., 1. / 9.}));
   EXPECT_EQ(view, out);
   EXPECT_EQ(view.underlying(), out);
 }
@@ -1028,24 +1021,24 @@ TEST(Variable, reverse) {
 TEST(Variable, non_in_place_scalar_operations) {
   auto var = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1, 2});
 
-  auto sum = var + 1.0 * units::Unit(units::dimensionless);
+  auto sum = var + 1.0 * units::one;
   EXPECT_TRUE(equals(sum.values<double>(), {2, 3}));
-  sum = 2.0 * units::Unit(units::dimensionless) + var;
+  sum = 2.0 * units::one + var;
   EXPECT_TRUE(equals(sum.values<double>(), {3, 4}));
 
-  auto diff = var - 1.0 * units::Unit(units::dimensionless);
+  auto diff = var - 1.0 * units::one;
   EXPECT_TRUE(equals(diff.values<double>(), {0, 1}));
-  diff = 2.0 * units::Unit(units::dimensionless) - var;
+  diff = 2.0 * units::one - var;
   EXPECT_TRUE(equals(diff.values<double>(), {1, 0}));
 
-  auto prod = var * (2.0 * units::Unit(units::dimensionless));
+  auto prod = var * (2.0 * units::one);
   EXPECT_TRUE(equals(prod.values<double>(), {2, 4}));
-  prod = 3.0 * units::Unit(units::dimensionless) * var;
+  prod = 3.0 * units::one * var;
   EXPECT_TRUE(equals(prod.values<double>(), {3, 6}));
 
-  auto ratio = var / (2.0 * units::Unit(units::dimensionless));
+  auto ratio = var / (2.0 * units::one);
   EXPECT_TRUE(equals(ratio.values<double>(), {1.0 / 2.0, 1.0}));
-  ratio = 3.0 * units::Unit(units::dimensionless) / var;
+  ratio = 3.0 * units::one / var;
   EXPECT_TRUE(equals(ratio.values<double>(), {3.0, 1.5}));
 }
 
@@ -1053,17 +1046,17 @@ TEST(VariableView, scalar_operations) {
   auto var = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 3},
                                   Values{11, 12, 13, 21, 22, 23});
 
-  var.slice({Dim::X, 0}) += 1.0 * units::Unit(units::dimensionless);
+  var.slice({Dim::X, 0}) += 1.0 * units::one;
   EXPECT_TRUE(equals(var.values<double>(), {12, 12, 13, 22, 22, 23}));
-  var.slice({Dim::Y, 1}) += 1.0 * units::Unit(units::dimensionless);
+  var.slice({Dim::Y, 1}) += 1.0 * units::one;
   EXPECT_TRUE(equals(var.values<double>(), {12, 12, 13, 23, 23, 24}));
-  var.slice({Dim::X, 1, 3}) += 1.0 * units::Unit(units::dimensionless);
+  var.slice({Dim::X, 1, 3}) += 1.0 * units::one;
   EXPECT_TRUE(equals(var.values<double>(), {12, 13, 14, 23, 24, 25}));
-  var.slice({Dim::X, 1}) -= 1.0 * units::Unit(units::dimensionless);
+  var.slice({Dim::X, 1}) -= 1.0 * units::one;
   EXPECT_TRUE(equals(var.values<double>(), {12, 12, 14, 23, 23, 25}));
-  var.slice({Dim::X, 2}) *= 0.0 * units::Unit(units::dimensionless);
+  var.slice({Dim::X, 2}) *= 0.0 * units::one;
   EXPECT_TRUE(equals(var.values<double>(), {12, 12, 0, 23, 23, 0}));
-  var.slice({Dim::Y, 0}) /= 2.0 * units::Unit(units::dimensionless);
+  var.slice({Dim::Y, 0}) /= 2.0 * units::one;
   EXPECT_TRUE(equals(var.values<double>(), {6, 6, 0, 23, 23, 0}));
 }
 
@@ -1309,8 +1302,8 @@ TEST(VariableTest,
 }
 
 TEST(VariableTest, zip_positions) {
-  const Variable x = makeVariable<double>(
-      Dims{Dim::X}, Shape{3}, units::Unit(units::m), Values{1, 2, 3});
+  const Variable x =
+      makeVariable<double>(Dims{Dim::X}, Shape{3}, units::m, Values{1, 2, 3});
   auto positions = geometry::position(x, x, x);
   auto values = positions.values<Eigen::Vector3d>();
   EXPECT_EQ(values.size(), 3);
@@ -1320,40 +1313,40 @@ TEST(VariableTest, zip_positions) {
 }
 TEST(VariableTest, unzip_x) {
   const Variable pos = makeVariable<Eigen::Vector3d>(
-      Dims{Dim::X}, Shape{2}, units::Unit(units::m),
+      Dims{Dim::X}, Shape{2}, units::m,
       Values{Eigen::Vector3d{1, 2, 3}, Eigen::Vector3d{4, 5, 6}});
   auto x_ = geometry::x(pos);
-  const auto expected_x = makeVariable<double>(
-      Dims{Dim::X}, Shape{2}, units::Unit(units::m), Values{1.0, 4.0});
+  const auto expected_x =
+      makeVariable<double>(Dims{Dim::X}, Shape{2}, units::m, Values{1.0, 4.0});
   EXPECT_EQ(x_, expected_x);
 }
 
 TEST(VariableTest, unzip_y) {
   const Variable pos = makeVariable<Eigen::Vector3d>(
-      Dims{Dim::X}, Shape{2}, units::Unit(units::m),
+      Dims{Dim::X}, Shape{2}, units::m,
       Values{Eigen::Vector3d{1, 2, 3}, Eigen::Vector3d{4, 5, 6}});
   auto y_ = geometry::y(pos);
-  const auto expected_y = makeVariable<double>(
-      Dims{Dim::X}, Shape{2}, units::Unit(units::m), Values{2.0, 5.0});
+  const auto expected_y =
+      makeVariable<double>(Dims{Dim::X}, Shape{2}, units::m, Values{2.0, 5.0});
   EXPECT_EQ(y_, expected_y);
 }
 
 TEST(VariableTest, unzip_z) {
   const Variable pos = makeVariable<Eigen::Vector3d>(
-      Dims{Dim::X}, Shape{2}, units::Unit(units::m),
+      Dims{Dim::X}, Shape{2}, units::m,
       Values{Eigen::Vector3d{1, 2, 3}, Eigen::Vector3d{4, 5, 6}});
   auto z_ = geometry::z(pos);
-  const auto expected_z = makeVariable<double>(
-      Dims{Dim::X}, Shape{2}, units::Unit(units::m), Values{3.0, 6.0});
+  const auto expected_z =
+      makeVariable<double>(Dims{Dim::X}, Shape{2}, units::m, Values{3.0, 6.0});
   EXPECT_EQ(z_, expected_z);
 }
 TEST(VariableTest, zip_unzip_positions) {
-  const Variable x_in = makeVariable<double>(
-      Dims{Dim::X}, Shape{3}, units::Unit(units::m), Values{1, 2, 3});
-  const Variable y_in = makeVariable<double>(
-      Dims{Dim::X}, Shape{3}, units::Unit(units::m), Values{4, 5, 6});
-  const Variable z_in = makeVariable<double>(
-      Dims{Dim::X}, Shape{3}, units::Unit(units::m), Values{7, 8, 9});
+  const Variable x_in =
+      makeVariable<double>(Dims{Dim::X}, Shape{3}, units::m, Values{1, 2, 3});
+  const Variable y_in =
+      makeVariable<double>(Dims{Dim::X}, Shape{3}, units::m, Values{4, 5, 6});
+  const Variable z_in =
+      makeVariable<double>(Dims{Dim::X}, Shape{3}, units::m, Values{7, 8, 9});
   auto positions = geometry::position(x_in, y_in, z_in);
   auto x_out = geometry::x(positions);
   auto y_out = geometry::y(positions);
@@ -1366,18 +1359,17 @@ TEST(VariableTest, zip_unzip_positions) {
 TEST(VariableTest, rotate) {
   Eigen::Vector3d vec1(1, 2, 3);
   Eigen::Vector3d vec2(4, 5, 6);
-  auto vec = makeVariable<Eigen::Vector3d>(
-      Dims{Dim::X}, Shape{2}, units::Unit(units::m), Values{vec1, vec2});
+  auto vec = makeVariable<Eigen::Vector3d>(Dims{Dim::X}, Shape{2}, units::m,
+                                           Values{vec1, vec2});
   Eigen::Quaterniond rot1(1.1, 2.2, 3.3, 4.4);
   Eigen::Quaterniond rot2(5.5, 6.6, 7.7, 8.8);
   rot1.normalize();
   rot2.normalize();
   const Variable rot = makeVariable<Eigen::Quaterniond>(
-      Dims{Dim::X}, Shape{2}, units::Unit(units::dimensionless),
-      Values{rot1, rot2});
+      Dims{Dim::X}, Shape{2}, units::one, Values{rot1, rot2});
   auto vec_new = geometry::rotate(vec, rot);
   const auto rotated = makeVariable<Eigen::Vector3d>(
-      Dims{Dim::X}, Shape{2}, units::Unit(units::m),
+      Dims{Dim::X}, Shape{2}, units::m,
       Values{rot1._transformVector(vec1), rot2._transformVector(vec2)});
   EXPECT_EQ(vec_new, rotated);
   VariableView vec_new2 = geometry::rotate(vec, rot, vec);

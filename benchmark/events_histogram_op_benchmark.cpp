@@ -29,17 +29,15 @@ auto make_edges(const scipp::index nEdge) {
   std::iota(edges_.begin(), edges_.end(), 0.0);
   auto edges = makeVariable<double>(Dims{Dim::Y}, Shape{nEdge},
                                     Values(edges_.begin(), edges_.end()));
-  edges *= 1000.0 / nEdge *
-           units::Unit(units::dimensionless); // ensure all events are in range
+  edges *= 1000.0 / nEdge * units::one; // ensure all events are in range
   return edges;
 }
 
 auto make_2d_events_default_weights(const scipp::index size,
                                     const scipp::index count,
                                     const scipp::index nEdge) {
-  auto weights =
-      makeVariable<double>(Dims{Dim::X}, Shape{size},
-                           units::Unit(units::counts), Values{}, Variances{});
+  auto weights = makeVariable<double>(Dims{Dim::X}, Shape{size}, units::counts,
+                                      Values{}, Variances{});
   return dataset::unaligned::realign(
       DataArray(weights, {{Dim::Y, make_2d_events_coord(size, count)}}),
       {{Dim::Y, make_edges(nEdge)}});
@@ -49,7 +47,7 @@ auto make_2d_events(const scipp::index size, const scipp::index count,
                     const scipp::index nEdge) {
   auto coord = make_2d_events_coord(size, count);
   auto data = coord * makeVariable<double>(Values{0.0}, Variances{0.0}) +
-              1.0 * units::Unit(units::dimensionless);
+              1.0 * units::one;
 
   return dataset::unaligned::realign(
       DataArray(std::move(data), {{Dim::Y, std::move(coord)}}),

@@ -406,8 +406,8 @@ TEST(DatasetTest, slice_validation_complex) {
 }
 
 TEST(DatasetTest, sum_and_mean) {
-  auto ds = make_1_values_and_variances<float>(
-      "a", {Dim::X, 3}, units::dimensionless, {1, 2, 3}, {12, 15, 18});
+  auto ds = make_1_values_and_variances<float>("a", {Dim::X, 3}, units::one,
+                                               {1, 2, 3}, {12, 15, 18});
   EXPECT_EQ(dataset::sum(ds, Dim::X)["a"].data(),
             makeVariable<float>(Values{6}, Variances{45}));
   EXPECT_EQ(dataset::sum(ds.slice({Dim::X, 0, 2}), Dim::X)["a"].data(),
@@ -528,8 +528,7 @@ TEST(DatasetCoordsRealignedTest, set_erase) {
   EXPECT_FALSE(d["a"].coords().contains(Dim::Z));
 
   // Scalar could be added to realigned -> fail
-  EXPECT_THROW(d["a"].unaligned().coords().set(Dim("scalar"),
-                                               1.3 * units::Unit(units::K)),
+  EXPECT_THROW(d["a"].unaligned().coords().set(Dim("scalar"), 1.3 * units::K),
                except::RealignedDataError);
 
   // Depending only on dims of realigned -> fail
@@ -538,8 +537,7 @@ TEST(DatasetCoordsRealignedTest, set_erase) {
 
   // Depending on dim of unaligned -> works
   EXPECT_NO_THROW(d["a"].unaligned().coords().set(
-      Dim::Y, d["a"].unaligned().coords()[Dim::Y] *
-                  (2.0 * units::Unit(units::dimensionless))));
+      Dim::Y, d["a"].unaligned().coords()[Dim::Y] * (2.0 * units::one)));
 
   EXPECT_NO_THROW(d["a"].unaligned().coords().erase(Dim::Y));
   EXPECT_TRUE(d["a"].coords().contains(Dim::Y)); // bin edges still present
@@ -561,9 +559,8 @@ TEST(DatasetMasksRealignedTest, set_erase) {
   EXPECT_FALSE(d["a"].masks().contains("x"));
 
   // Scalar could be added to realigned -> fail
-  EXPECT_THROW(
-      d["a"].unaligned().masks().set("scalar", 1.3 * units::Unit(units::K)),
-      except::RealignedDataError);
+  EXPECT_THROW(d["a"].unaligned().masks().set("scalar", 1.3 * units::K),
+               except::RealignedDataError);
 
   // Depending only on dims of realigned -> fail
   EXPECT_THROW(d["a"].unaligned().masks().set("y", d.coords()[Dim::Y]),
@@ -571,11 +568,9 @@ TEST(DatasetMasksRealignedTest, set_erase) {
 
   // Depending on dim of unaligned -> works
   EXPECT_NO_THROW(d["a"].unaligned().masks().set(
-      "mask", d["a"].unaligned().coords()[Dim::Y] *
-                  (2.0 * units::Unit(units::dimensionless))));
+      "mask", d["a"].unaligned().coords()[Dim::Y] * (2.0 * units::one)));
   EXPECT_NO_THROW(
-      d.masks().set("mask", d["a"].coords()[Dim::Y] *
-                                (2.0 * units::Unit(units::dimensionless))));
+      d.masks().set("mask", d["a"].coords()[Dim::Y] * (2.0 * units::one)));
 
   EXPECT_NO_THROW(d["a"].unaligned().masks().erase("mask"));
   EXPECT_TRUE(d["a"].masks().contains("mask")); // mask of dataset still present
@@ -583,7 +578,7 @@ TEST(DatasetMasksRealignedTest, set_erase) {
 
   // Potentially surprising but consistent behavior: "scalar" mapped from
   // realigned but cannot erase via unaligned.
-  d.masks().set("scalar", 1.3 * units::Unit(units::K));
+  d.masks().set("scalar", 1.3 * units::K);
   EXPECT_TRUE(d["a"].unaligned().masks().contains("scalar"));
   EXPECT_THROW(d["a"].unaligned().masks().erase("scalar"),
                except::NotFoundError);
