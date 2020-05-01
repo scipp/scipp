@@ -49,22 +49,22 @@ template <class T> void bind_groupby(py::module &m, const std::string &name) {
   py::class_<GroupBy<T>> groupBy(m, name.c_str(), R"(
     GroupBy object implementing to split-apply-combine mechanism.)");
 
-  bind_free_function<T, const Dim>(&GroupBy<T>::flatten, "flatten", groupBy,
-                                   docs);
+  // bind_free_function<T, const Dim>(&GroupBy<T>::flatten, "flatten", groupBy,
+  //                                  docs);
 
-  // groupBy.def("flatten", &GroupBy<T>::flatten, py::arg("dim"),
-  //             py::call_guard<py::gil_scoped_release>(), R"(
-  //     Flatten specified dimension into event lists.
+  groupBy.def("flatten", &GroupBy<T>::flatten, py::arg("dim"),
+              py::call_guard<py::gil_scoped_release>(), R"(
+      Flatten specified dimension into event lists.
 
-  //     This is a event-data equivalent to calling ``sum`` on dense data.
-  //     In particular, summing the result of histogrammed data yields the same
-  //     result as histgramming data that has been flattened.
+      This is a event-data equivalent to calling ``sum`` on dense data.
+      In particular, summing the result of histogrammed data yields the same
+      result as histgramming data that has been flattened.
 
-  //     :param dim: Dimension to flatten
-  //     :type dim: Dim
-  //     :return: Flattened event data for each group, combined along dimension
-  //     specified when calling :py:func:`scipp.groupby` :rtype: DataArray or
-  //     Dataset)");
+      :param dim: Dimension to flatten
+      :type dim: Dim
+      :return: Flattened event data for each group, combined along dimension
+      specified when calling :py:func:`scipp.groupby` :rtype: DataArray or
+      Dataset)");
 
   groupBy.def("mean", &GroupBy<T>::mean, py::arg("dim"),
               py::call_guard<py::gil_scoped_release>(), R"(
