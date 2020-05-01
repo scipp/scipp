@@ -19,8 +19,6 @@ template <class T> void bind_groupby(py::module &m, const std::string &name) {
 
   using VAConstView = const typename Variable::const_view_type &;
   using ConstView = const typename T::const_view_type &;
-  // using DSConstView = const typename Dataset::const_view_type &;
-  // using VAView = typename Variable::view_type;
   Docstring docs;
 
   // Flatten
@@ -47,37 +45,6 @@ template <class T> void bind_groupby(py::module &m, const std::string &name) {
     docs.param(1), docs.param(2), docs.description(), docs.raises(), docs.seealso(), docs.returns(), docs.rtype());
   
 
-
-  // m.def("groupby",
-  //       py::overload_cast<const typename T::const_view_type &, const Dim>(
-  //           &groupby),
-  //       py::arg("data"), py::arg("group"),
-  //       py::call_guard<py::gil_scoped_release>(),
-  //       R"(
-  //       Group dataset or data array based on values of specified labels.
-
-  //       :param data: Input dataset or data array
-  //       :param group: Name of labels to use for grouping
-  //       :type data: DataArray or Dataset
-  //       :type group: str
-  //       :return: GroupBy helper object.
-  //       :rtype: GroupByDataArray or GroupByDataset)");
-  // m.def("groupby",
-  //       py::overload_cast<const typename T::const_view_type &, const Dim,
-  //                         const VariableConstView &>(&groupby),
-  //       py::arg("data"), py::arg("group"), py::arg("bins"),
-  //       py::call_guard<py::gil_scoped_release>(),
-  //       R"(
-  //       Group dataset or data array based on values of specified labels.
-
-  //       :param data: Input dataset or data array
-  //       :param group: Name of labels to use for grouping
-  //       :param bins: Bins for grouping label values
-  //       :type data: DataArray or Dataset
-  //       :type group: str
-  //       :type bins: VariableConstView
-  //       :return: GroupBy helper object.
-  //       :rtype: GroupByDataArray or GroupByDataset)");
 
   py::class_<GroupBy<T>> groupBy(m, name.c_str(), R"(
     GroupBy object implementing to split-apply-combine mechanism.)");
@@ -153,5 +120,5 @@ template <class T> void bind_groupby(py::module &m, const std::string &name) {
 
 void init_groupby(py::module &m) {
   bind_groupby<DataArray>(m, "GroupByDataArray");
-  // bind_groupby<Dataset>(m, "GroupByDataset");
+  bind_groupby<Dataset>(m, "GroupByDataset");
 }

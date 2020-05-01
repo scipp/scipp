@@ -15,39 +15,6 @@ using namespace scipp::python;
 
 namespace py = pybind11;
 
-// #define BIND_TRIGONOMETRIC_FUNCTION(op, mod, T)                                \
-
-//   head = std::string("Element-wise ") + #op + ".\n" +                          \
-//          ":param x: Input Variable, DataArray, or Dataset.\n";                 \
-//   tail = std::string(":raises: If the unit is not a plane-angle unit, or if "  \
-//                      "the dtype has no ") +                                    \
-//          #op +                                                                 \
-//          ", e.g., if it is an integer.\n"                                      \
-//          ":return: Variable containing the " +                                 \
-//          #op + " of the input values.\n";                                      \
-//   rtype = ":rtype: Variable, DataArray, or Dataset.";                          \
-//   rtype_out = ":rtype: VariableView, DataArrayView, or DatasetView.";          \
-//   param_out = std::string(":param out: Output buffer to which the ") + #op +   \
-//               " values will be written.\n";                                    \
-//   aop = std::string("a") + #op;                                                \
-//   mod.def(#op, [](T::const_view_type self) { return op(self); }, py::arg("x"), \
-//           py::call_guard<py::gil_scoped_release>(),                            \
-//           (head + tail + rtype).c_str());                                        \
-//   mod.def(                                                                     \
-//       #op,                                                                     \
-//       [](T::const_view_type self, T::view_type out) { return op(self, out); }, \
-//       py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>(),  \
-//       (head + param_out + tail + rtype_out).c_str());                            \
-//   mod.def(aop.c_str(), [](T::const_view_type self) { return a##op(self); },      \
-//           py::arg("x"), py::call_guard<py::gil_scoped_release>(),              \
-//           (head + tail + rtype).c_str());                                        \
-//   mod.def(aop.c_str(),                                                           \
-//           [](T::const_view_type self, T::view_type out) {                      \
-//             return a##op(self, out);                                           \
-//           },                                                                   \
-//           py::arg("x"), py::arg("out"),                                        \
-//           py::call_guard<py::gil_scoped_release>(),                            \
-//           (head + param_out + tail + rtype_out).c_str());
 
 
 #define TRIG_FUNC_ARGS(op) op, op, a##op, a##op, #op
@@ -68,7 +35,6 @@ using VConstView = const typename Variable::const_view_type &;
 using VView = typename Variable::view_type;
 }
 
-// template <class T>
 void bind_trigonometric_function(Variable (*func)(VConstView),
   VView (*func_out)(VConstView, const VView &),
   Variable (*afunc)(VConstView),

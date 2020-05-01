@@ -3,29 +3,10 @@
 /// @file
 /// @author Simon Heybrock
 
-// #include "scipp/units/unit.h"
-
-// #include "scipp/core/dtype.h"
-// #include "scipp/core/except.h"
-// #include "scipp/core/tag_util.h"
-
-// #include "scipp/variable/comparison.h"
 #include "scipp/variable/operations.h"
-// #include "scipp/variable/transform.h"
 #include "scipp/variable/variable.h"
 
-// // #include "scipp/dataset/dataset.h"
-// #include "scipp/dataset/sort.h"
-
-// #include "bind_data_access.h"
-// #include "bind_operators.h"
-// #include "bind_slice_methods.h"
-// #include "dtype.h"
-// #include "make_variable.h"
-// #include "numpy.h"
-// #include "py_object.h"
 #include "pybind11.h"
-// #include "rename.h"
 
 using namespace scipp;
 using namespace scipp::variable;
