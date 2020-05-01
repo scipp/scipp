@@ -7,58 +7,94 @@
 #include "scipp/dataset/dataset.h"
 
 #include "pybind11.h"
+#include "bind_free_function.h"
 
 using namespace scipp;
 using namespace scipp::dataset;
+using namespace scipp::python;
 
 namespace py = pybind11;
 
 template <class T> void bind_groupby(py::module &m, const std::string &name) {
-  m.def("groupby",
-        py::overload_cast<const typename T::const_view_type &, const Dim>(
-            &groupby),
-        py::arg("data"), py::arg("group"),
-        py::call_guard<py::gil_scoped_release>(),
-        R"(
-        Group dataset or data array based on values of specified labels.
 
-        :param data: Input dataset or data array
-        :param group: Name of labels to use for grouping
-        :type data: DataArray or Dataset
-        :type group: str
-        :return: GroupBy helper object.
-        :rtype: GroupByDataArray or GroupByDataset)");
-  m.def("groupby",
-        py::overload_cast<const typename T::const_view_type &, const Dim,
-                          const VariableConstView &>(&groupby),
-        py::arg("data"), py::arg("group"), py::arg("bins"),
-        py::call_guard<py::gil_scoped_release>(),
-        R"(
-        Group dataset or data array based on values of specified labels.
+  using VAConstView = const typename Variable::const_view_type &;
+  using ConstView = const typename T::const_view_type &;
+  // using DSConstView = const typename Dataset::const_view_type &;
+  // using VAView = typename Variable::view_type;
+  Docstring docs;
 
-        :param data: Input dataset or data array
-        :param group: Name of labels to use for grouping
-        :param bins: Bins for grouping label values
-        :type data: DataArray or Dataset
-        :type group: str
-        :type bins: VariableConstView
-        :return: GroupBy helper object.
-        :rtype: GroupByDataArray or GroupByDataset)");
+  // Flatten
+  docs = {
+    // Description
+    "Group dataset or data array based on values of specified labels.",
+    // Raises
+    "",
+    // See also
+    "",
+    // Returns
+    "GroupBy helper object.",
+    // Return type
+    "GroupByDataArray or GroupByDataset.",
+    // Input parameters
+    {{"data", "Input Dataset or DataArray."},
+    {"group", "String containing name of labels to use for grouping."}}
+  };
+  // Overload on function that accepts docstring is ambiguous, use long version of constructor
+  bind_free_function<GroupBy<T>, ConstView, const Dim>(groupby, "groupby", m, docs.param(0),
+    docs.param(1), docs.description(), docs.raises(), docs.seealso(), docs.returns(), docs.rtype());
+  docs.insert_param(2, {"bins", "Bins for grouping label values."});
+  bind_free_function<GroupBy<T>, ConstView, const Dim, VAConstView>(groupby, "groupby", m, docs.param(0),
+    docs.param(1), docs.param(2), docs.description(), docs.raises(), docs.seealso(), docs.returns(), docs.rtype());
+  
+
+
+  // m.def("groupby",
+  //       py::overload_cast<const typename T::const_view_type &, const Dim>(
+  //           &groupby),
+  //       py::arg("data"), py::arg("group"),
+  //       py::call_guard<py::gil_scoped_release>(),
+  //       R"(
+  //       Group dataset or data array based on values of specified labels.
+
+  //       :param data: Input dataset or data array
+  //       :param group: Name of labels to use for grouping
+  //       :type data: DataArray or Dataset
+  //       :type group: str
+  //       :return: GroupBy helper object.
+  //       :rtype: GroupByDataArray or GroupByDataset)");
+  // m.def("groupby",
+  //       py::overload_cast<const typename T::const_view_type &, const Dim,
+  //                         const VariableConstView &>(&groupby),
+  //       py::arg("data"), py::arg("group"), py::arg("bins"),
+  //       py::call_guard<py::gil_scoped_release>(),
+  //       R"(
+  //       Group dataset or data array based on values of specified labels.
+
+  //       :param data: Input dataset or data array
+  //       :param group: Name of labels to use for grouping
+  //       :param bins: Bins for grouping label values
+  //       :type data: DataArray or Dataset
+  //       :type group: str
+  //       :type bins: VariableConstView
+  //       :return: GroupBy helper object.
+  //       :rtype: GroupByDataArray or GroupByDataset)");
 
   py::class_<GroupBy<T>> groupBy(m, name.c_str(), R"(
     GroupBy object implementing to split-apply-combine mechanism.)");
 
-  groupBy.def("flatten", &GroupBy<T>::flatten, py::arg("dim"),
-              py::call_guard<py::gil_scoped_release>(), R"(
-      Flatten specified dimension into event lists.
+    bind_free_function<T, const Dim>(&GroupBy<T>::flatten, "flatten", groupBy, docs);
 
-      This is a event-data equivalent to calling ``sum`` on dense data.
-      In particular, summing the result of histogrammed data yields the same result as histgramming data that has been flattened.
+  // groupBy.def("flatten", &GroupBy<T>::flatten, py::arg("dim"),
+  //             py::call_guard<py::gil_scoped_release>(), R"(
+  //     Flatten specified dimension into event lists.
 
-      :param dim: Dimension to flatten
-      :type dim: Dim
-      :return: Flattened event data for each group, combined along dimension specified when calling :py:func:`scipp.groupby`
-      :rtype: DataArray or Dataset)");
+  //     This is a event-data equivalent to calling ``sum`` on dense data.
+  //     In particular, summing the result of histogrammed data yields the same result as histgramming data that has been flattened.
+
+  //     :param dim: Dimension to flatten
+  //     :type dim: Dim
+  //     :return: Flattened event data for each group, combined along dimension specified when calling :py:func:`scipp.groupby`
+  //     :rtype: DataArray or Dataset)");
 
   groupBy.def("mean", &GroupBy<T>::mean, py::arg("dim"),
               py::call_guard<py::gil_scoped_release>(), R"(
@@ -117,5 +153,5 @@ template <class T> void bind_groupby(py::module &m, const std::string &name) {
 
 void init_groupby(py::module &m) {
   bind_groupby<DataArray>(m, "GroupByDataArray");
-  bind_groupby<Dataset>(m, "GroupByDataset");
+  // bind_groupby<Dataset>(m, "GroupByDataset");
 }
