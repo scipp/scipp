@@ -10,6 +10,7 @@ pybind11_add_module(
   docstring.cpp
   dtype.cpp
   eigen.cpp
+  geometry.cpp
   groupby.cpp
   neutron.cpp
   operations.cpp

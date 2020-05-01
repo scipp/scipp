@@ -877,143 +877,143 @@ void init_variable(py::module &m) {
   //       py::arg("posinf") = std::optional<VariableConstView>(),
   //       py::arg("neginf") = std::optional<VariableConstView>(), py::arg("out"));
 
-  m.def("contains_events",
-        [](const VariableConstView &self) { return contains_events(self); },
-        R"(Return true if the variable contains event data.)");
+  // m.def("contains_events",
+  //       [](const VariableConstView &self) { return contains_events(self); },
+  //       R"(Return true if the variable contains event data.)");
 
-  m.def(
-      "contains_events",
-      [](const DataArrayConstView &self) { return contains_events(self); },
-      R"(Return true if the data array contains event data. Note that data may be stored as a scalar, but this returns true if any coord contains events.)");
+  // m.def(
+  //     "contains_events",
+  //     [](const DataArrayConstView &self) { return contains_events(self); },
+  //     R"(Return true if the data array contains event data. Note that data may be stored as a scalar, but this returns true if any coord contains events.)");
 
-  m.def("less",
-        [](const VariableConstView &x, const VariableConstView &y) {
-          return less(x, y);
-        },
-        py::arg("x"), py::arg("y"),
-        R"(
-        Comparison returning the truth value of (x < y) element-wise.
+  // m.def("less",
+  //       [](const VariableConstView &x, const VariableConstView &y) {
+  //         return less(x, y);
+  //       },
+  //       py::arg("x"), py::arg("y"),
+  //       R"(
+  //       Comparison returning the truth value of (x < y) element-wise.
 
-        :raises: If the units of inputs are not the same, or if the dtypes of inputs are not double precision floats
-        :return: Variable of booleans.
-        :rtype: Variable)");
+  //       :raises: If the units of inputs are not the same, or if the dtypes of inputs are not double precision floats
+  //       :return: Variable of booleans.
+  //       :rtype: Variable)");
 
-  m.def("greater",
-        [](const VariableConstView &x, const VariableConstView &y) {
-          return greater(x, y);
-        },
-        py::arg("x"), py::arg("y"),
-        R"(
-        Comparison returning the truth value of (x > y) element-wise.
+  // m.def("greater",
+  //       [](const VariableConstView &x, const VariableConstView &y) {
+  //         return greater(x, y);
+  //       },
+  //       py::arg("x"), py::arg("y"),
+  //       R"(
+  //       Comparison returning the truth value of (x > y) element-wise.
 
-        :raises: If the units of inputs are not the same, or if the dtypes of inputs are not double precision floats
-        :return: Variable of booleans.
-        :rtype: Variable)");
+  //       :raises: If the units of inputs are not the same, or if the dtypes of inputs are not double precision floats
+  //       :return: Variable of booleans.
+  //       :rtype: Variable)");
 
-  m.def("greater_equal",
-        [](const VariableConstView &x, const VariableConstView &y) {
-          return greater_equal(x, y);
-        },
-        py::arg("x"), py::arg("y"),
-        R"(
-        Comparison returning the truth value of (x >= y) element-wise.
+  // m.def("greater_equal",
+  //       [](const VariableConstView &x, const VariableConstView &y) {
+  //         return greater_equal(x, y);
+  //       },
+  //       py::arg("x"), py::arg("y"),
+  //       R"(
+  //       Comparison returning the truth value of (x >= y) element-wise.
 
-        :raises: If the units of inputs are not the same, or if the dtypes of inputs are not double precision floats
-        :return: Variable of booleans.
-        :rtype: Variable)");
+  //       :raises: If the units of inputs are not the same, or if the dtypes of inputs are not double precision floats
+  //       :return: Variable of booleans.
+  //       :rtype: Variable)");
 
-  m.def("less_equal",
-        [](const VariableConstView &x, const VariableConstView &y) {
-          return less_equal(x, y);
-        },
-        py::arg("x"), py::arg("y"),
-        R"(
-        Comparison returning the truth value of (x <= y) element-wise.
+  // m.def("less_equal",
+  //       [](const VariableConstView &x, const VariableConstView &y) {
+  //         return less_equal(x, y);
+  //       },
+  //       py::arg("x"), py::arg("y"),
+  //       R"(
+  //       Comparison returning the truth value of (x <= y) element-wise.
 
-        :raises: If the units of inputs are not the same, or if the dtypes of inputs are not double precision floats
-        :return: Variable of booleans.
-        :rtype: Variable)");
+  //       :raises: If the units of inputs are not the same, or if the dtypes of inputs are not double precision floats
+  //       :return: Variable of booleans.
+  //       :rtype: Variable)");
 
-  m.def("equal",
-        [](const VariableConstView &x, const VariableConstView &y) {
-          return equal(x, y);
-        },
-        py::arg("x"), py::arg("y"),
-        R"(
-        Comparison returning the truth value of (x == y) element-wise.
+  // m.def("equal",
+  //       [](const VariableConstView &x, const VariableConstView &y) {
+  //         return equal(x, y);
+  //       },
+  //       py::arg("x"), py::arg("y"),
+  //       R"(
+  //       Comparison returning the truth value of (x == y) element-wise.
 
-        :raises: If the units of inputs are not the same, or if the dtypes of inputs are not double precision floats
-        :return: Variable of booleans.
-        :rtype: Variable)");
+  //       :raises: If the units of inputs are not the same, or if the dtypes of inputs are not double precision floats
+  //       :return: Variable of booleans.
+  //       :rtype: Variable)");
 
-  m.def("not_equal",
-        [](const VariableConstView &x, const VariableConstView &y) {
-          return not_equal(x, y);
-        },
-        py::arg("x"), py::arg("y"),
-        R"(
-        Comparison returning the truth value of (x != y) element-wise.
+  // m.def("not_equal",
+  //       [](const VariableConstView &x, const VariableConstView &y) {
+  //         return not_equal(x, y);
+  //       },
+  //       py::arg("x"), py::arg("y"),
+  //       R"(
+  //       Comparison returning the truth value of (x != y) element-wise.
 
-        :raises: If the units of inputs are not the same, or if the dtypes of inputs are not double precision floats
-        :return: Variable of booleans.
-        :rtype: Variable)");
+  //       :raises: If the units of inputs are not the same, or if the dtypes of inputs are not double precision floats
+  //       :return: Variable of booleans.
+  //       :rtype: Variable)");
 
-  auto geom_m = m.def_submodule("geometry");
-  geom_m.def(
-      "position",
-      [](const VariableConstView &x, const VariableConstView &y,
-         const VariableConstView &z) { return geometry::position(x, y, z); },
-      py::arg("x"), py::arg("y"), py::arg("z"),
-      R"(
-        Element-wise zip functionality to produce a vector_3_float64 from independent input variables.
+  // auto geom_m = m.def_submodule("geometry");
+  // geom_m.def(
+  //     "position",
+  //     [](const VariableConstView &x, const VariableConstView &y,
+  //        const VariableConstView &z) { return geometry::position(x, y, z); },
+  //     py::arg("x"), py::arg("y"), py::arg("z"),
+  //     R"(
+  //       Element-wise zip functionality to produce a vector_3_float64 from independent input variables.
 
-        :raises: If the units of inputs are not all meters, or if the dtypes of inputs are not double precision floats
-        :return: zip of input x, y and z. Output unit is meters.
-        :rtype: Variable)");
-  geom_m.def("x", [](const VariableConstView &pos) { return geometry::x(pos); },
-             py::arg("pos"),
-             R"(
-        un-zip functionality to produce a Variable of the x component of a vector_3_float64.
+  //       :raises: If the units of inputs are not all meters, or if the dtypes of inputs are not double precision floats
+  //       :return: zip of input x, y and z. Output unit is meters.
+  //       :rtype: Variable)");
+  // geom_m.def("x", [](const VariableConstView &pos) { return geometry::x(pos); },
+  //            py::arg("pos"),
+  //            R"(
+  //       un-zip functionality to produce a Variable of the x component of a vector_3_float64.
 
-        :raises: If the units of inputs are not meters, or if the dtypes of inputs are not double precision floats
-        :return: Extracted x component of input pos. Units in meters.
-        :rtype: Variable)");
-  geom_m.def("y", [](const VariableConstView &pos) { return geometry::y(pos); },
-             py::arg("pos"),
-             R"(
-        un-zip functionality to produce a Variable of the y component of a vector_3_float64.
+  //       :raises: If the units of inputs are not meters, or if the dtypes of inputs are not double precision floats
+  //       :return: Extracted x component of input pos. Units in meters.
+  //       :rtype: Variable)");
+  // geom_m.def("y", [](const VariableConstView &pos) { return geometry::y(pos); },
+  //            py::arg("pos"),
+  //            R"(
+  //       un-zip functionality to produce a Variable of the y component of a vector_3_float64.
 
-        :raises: If the units of inputs are not meters, or if the dtypes of inputs are not double precision floats
-        :return: Extracted y component of input pos. Units in meters.
-        :rtype: Variable)");
-  geom_m.def("z", [](const VariableConstView &pos) { return geometry::z(pos); },
-             py::arg("pos"),
-             R"(
-        un-zip functionality to produce a Variable of the z component of a vector_3_float64.
+  //       :raises: If the units of inputs are not meters, or if the dtypes of inputs are not double precision floats
+  //       :return: Extracted y component of input pos. Units in meters.
+  //       :rtype: Variable)");
+  // geom_m.def("z", [](const VariableConstView &pos) { return geometry::z(pos); },
+  //            py::arg("pos"),
+  //            R"(
+  //       un-zip functionality to produce a Variable of the z component of a vector_3_float64.
 
-        :raises: If the units of inputs are not meters, or if the dtypes of inputs are not double precision floats
-        :return: Extracted z component of input pos. Units in meters.
-        :rtype: Variable)");
-  geom_m.def("rotate",
-             [](const VariableConstView &pos, const VariableConstView &rot) {
-               return geometry::rotate(pos, rot);
-             },
-             py::arg("position"), py::arg("rotation"),
-             R"(
-        Rotate a Variable of type vector_3_float64 using a Variable of type quaternion_float64.
+  //       :raises: If the units of inputs are not meters, or if the dtypes of inputs are not double precision floats
+  //       :return: Extracted z component of input pos. Units in meters.
+  //       :rtype: Variable)");
+  // geom_m.def("rotate",
+  //            [](const VariableConstView &pos, const VariableConstView &rot) {
+  //              return geometry::rotate(pos, rot);
+  //            },
+  //            py::arg("position"), py::arg("rotation"),
+  //            R"(
+  //       Rotate a Variable of type vector_3_float64 using a Variable of type quaternion_float64.
 
-        :raises: If the units of the inputs are not meter and dimensionless for the positions and the rotations, respectively.
-        :return: a Variable containing the rotated position vectors.
-        :rtype: Variable)");
-  geom_m.def(
-      "rotate",
-      [](const VariableConstView &pos, const VariableConstView &rot,
-         const VariableView &out) { return geometry::rotate(pos, rot, out); },
-      py::arg("position"), py::arg("rotation"), py::arg("out"),
-      R"(
-        Rotate a Variable of type vector_3_float64 using a Variable of type quaternion_float64, and store in the result inside the provided out argument.
+  //       :raises: If the units of the inputs are not meter and dimensionless for the positions and the rotations, respectively.
+  //       :return: a Variable containing the rotated position vectors.
+  //       :rtype: Variable)");
+  // geom_m.def(
+  //     "rotate",
+  //     [](const VariableConstView &pos, const VariableConstView &rot,
+  //        const VariableView &out) { return geometry::rotate(pos, rot, out); },
+  //     py::arg("position"), py::arg("rotation"), py::arg("out"),
+  //     R"(
+  //       Rotate a Variable of type vector_3_float64 using a Variable of type quaternion_float64, and store in the result inside the provided out argument.
 
-        :raises: If the units of the inputs are not meter and dimensionless for the positions and the rotations, respectively.
-        :return: rotated vectors are written to out.
-        :rtype: VariableView)");
+  //       :raises: If the units of the inputs are not meter and dimensionless for the positions and the rotations, respectively.
+  //       :return: rotated vectors are written to out.
+  //       :rtype: VariableView)");
 }
