@@ -16,11 +16,6 @@ class TestDatasetSlice(unittest.TestCase):
         d = sc.Dataset(data={'a': var, 'b': var}, coords={'x': var})
         self._d = d
 
-    # Leave as is
-    def test_type(self):
-        ds_slice = self._d['a']
-        self.assertEqual(type(ds_slice), sc.DataArrayView)
-
     def test_slice_with_range_datasetview_then_dataarrayview(self):
         sl = self._d['x', 1:-1]['a'].values
         ref = np.array([1, 2, 3, 4, 5, 6, 7, 8], dtype=np.int64)
