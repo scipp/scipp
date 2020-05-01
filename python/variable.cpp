@@ -31,8 +31,6 @@ using namespace scipp::variable;
 
 namespace py = pybind11;
 
-
-
 template <class T> void bind_init_0D(py::class_<Variable> &c) {
   c.def(py::init([](const T &value, const std::optional<T> &variance,
                     const units::Unit &unit) {
@@ -264,8 +262,6 @@ void init_variable(py::module &m) {
   py::implicitly_convertible<Variable, VariableConstView>();
   py::implicitly_convertible<Variable, VariableView>();
 
-
-
   m.def("filter",
         py::overload_cast<const Variable &, const Variable &>(&filter),
         py::arg("x"), py::arg("filter"),
@@ -279,5 +275,4 @@ void init_variable(py::module &m) {
         :raises: If the filter variable is not 1 dimensional.
         :return: New variable containing the data selected by the filter
         :rtype: Variable)");
-
 }

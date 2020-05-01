@@ -4,26 +4,6 @@
 /// @author Simon Heybrock
 #pragma once
 
-// #include "scipp/dataset/dataset.h"
-// #include "scipp/dataset/event.h"
-// #include "scipp/dataset/except.h"
-// #include "scipp/dataset/histogram.h"
-// #include "scipp/dataset/map_view.h"
-// #include "scipp/dataset/sort.h"
-// #include "scipp/dataset/unaligned.h"
-
-// #include "bind_data_access.h"
-// #include "bind_operators.h"
-// #include "bind_slice_methods.h"
-// #include "detail.h"
-// #include "pybind11.h"
-// #include "rename.h"
-
-// using namespace scipp;
-// using namespace scipp::dataset;
-
-// namespace py = pybind11;
-
 /// Helper to provide equivalent of the `items()` method of a Python dict.
 template <class T> class items_view {
 public:

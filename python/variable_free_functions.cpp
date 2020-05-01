@@ -36,6 +36,4 @@ void init_variable_free_functions(py::module &m) {
                           const std::vector<scipp::index> &>(&split),
         py::call_guard<py::gil_scoped_release>(),
         "Split a Variable along a given Dimension.");
-
-
 }
