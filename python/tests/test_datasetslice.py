@@ -83,37 +83,6 @@ class TestDatasetSlice(unittest.TestCase):
         view = self._d['a']
         self._test_copy_exports_on(view)
 
-    def test_equal_not_equal_datasetview(self):
-        d = sc.Dataset()
-        d.coords['x'] = sc.Variable(['x'], values=np.arange(10))
-        d.coords['y'] = sc.Variable(['y'], values=np.arange(10))
-        d['a'] = sc.Variable(['x', 'y'],
-                             values=np.arange(100.0).reshape(10, 10))
-        d['b'] = sc.Variable(['x'], values=np.arange(10.0))
-        self.assertEqual(d['x', :], d)
-        self.assertNotEqual(d['x', 1:], d)
-        self.assertNotEqual(d['y', :], d)
-        del d['b']
-        self.assertEqual(d['y', :], d)
-        self.assertNotEqual(d['y', 1:], d)
-        self.assertEqual(d['x', :]['y', :], d)
-        self.assertEqual(d['y', :]['x', :], d)
-
-    def test_equal_not_equal_dataarray(self):
-        data = sc.Variable(['x', 'y'], values=np.arange(100.0).reshape(10, 10))
-        da = sc.DataArray(data,
-                          coords={
-                              'x': sc.Variable(['x'], values=np.arange(10)),
-                              'y': sc.Variable(['y'], values=np.arange(10))
-                          })
-        self.assertEqual(da['x', :], da)
-        self.assertNotEqual(da['x', 1:], da)
-        self.assertEqual(da['y', :], da)
-        self.assertEqual(da['y', :], da)
-        self.assertNotEqual(da['y', 1:], da)
-        self.assertEqual(da['x', :]['y', :], da)
-        self.assertEqual(da['y', :]['x', :], da)
-
     def test_set_item_via_temporary_slice(self):
         N = 6
         M = 4
