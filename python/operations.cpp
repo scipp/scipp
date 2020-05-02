@@ -36,7 +36,7 @@ void init_operations(py::module &m) {
       // Returns
       "New variable, data array, or dataset containing the flattened data.",
       // Return type
-      "Variable, DataArray, or Dataset.",
+      // "Variable, DataArray, or Dataset.",
       // Input parameters
       {{"x", "Variable, DataArray, or Dataset to flatten."},
        {"dim", "Dimension over which to flatten."}}};
@@ -68,7 +68,7 @@ void init_operations(py::module &m) {
       // Returns
       "New variable, data array, or dataset containing the concatenated data.",
       // Return type
-      "Variable, DataArray, or Dataset.",
+      // "Variable, DataArray, or Dataset.",
       // Input parameters
       {{"x", "First Variable, DataArray, or Dataset."},
        {"y", "Second Variable, DataArray, or Dataset."},
@@ -87,7 +87,7 @@ void init_operations(py::module &m) {
           "",
           "Variable, data array, or dataset with scalar elements based on the "
           "two inputs.",
-          "Variable, DataArray, or Dataset.",
+          // "Variable, DataArray, or Dataset.",
           {{"x", "Left operand Variable, DataArray, or Dataset."},
            {"y", "Right operand Variable, DataArray, or Dataset."}}};
   bind_free_function<Variable, VAConstView, VAConstView>(dot, "dot", m, docs);
@@ -98,7 +98,7 @@ void init_operations(py::module &m) {
           "or if its dtype is not sortable.",
           "",
           "Sorted variable, data array, or dataset.",
-          "Variable, DataArray, or Dataset.",
+          // "Variable, DataArray, or Dataset.",
           {{"x", "Variable, DataArray, or Dataset to be sorted."},
            {"key", "Variable, DataArray, or Dataset as sorting key."}}};
   bind_free_function<Variable, VAConstView, VAConstView>(sort, "sort", m, docs);
@@ -118,7 +118,7 @@ void init_operations(py::module &m) {
           "If the dtype has no absolute value, e.g., if it is a string.",
           ":py:class:`scipp.norm` for vector-like dtype",
           "Variable, data array, or dataset containing the absolute values.",
-          "Variable, DataArray, or Dataset.",
+          // "Variable, DataArray, or Dataset.",
           {{"x", "Input Variable, DataArray, or Dataset."}}};
   bind_free_function<Variable, VAConstView>(abs, "abs", m, docs);
   bind_free_function<VAView, VAConstView, const VAView &>(abs, "abs", m,
@@ -129,7 +129,7 @@ void init_operations(py::module &m) {
           "If the dtype has no square-root, e.g., if it is a string.",
           "",
           "Variable, data array, or dataset containing the square-root.",
-          "Variable, DataArray, or Dataset.",
+          // "Variable, DataArray, or Dataset.",
           {{"x", "Input Variable, DataArray, or Dataset."}}};
   bind_free_function<Variable, VAConstView>(sqrt, "sqrt", m, docs);
   bind_free_function<VAView, VAConstView, const VAView &>(sqrt, "sqrt", m,
@@ -141,7 +141,7 @@ void init_operations(py::module &m) {
           "",
           "Variable, data array, or dataset containing the reciprocal of the "
           "input values.",
-          "Variable, DataArray, or Dataset.",
+          // "Variable, DataArray, or Dataset.",
           {{"x", "Input Variable, DataArray, or Dataset."}}};
   bind_free_function<Variable, VAConstView>(reciprocal, "reciprocal", m, docs);
   bind_free_function<DataArray, DAConstView>(reciprocal, "reciprocal", m, docs);
@@ -154,7 +154,7 @@ void init_operations(py::module &m) {
           ":py:class:`scipp.abs` for scalar dtype.",
           "Variable, data array, or dataset with scalar elements computed as "
           "the norm values if the input elements.",
-          "Variable, DataArray, or Dataset.",
+          // "Variable, DataArray, or Dataset.",
           {{"x", "Input Variable, DataArray, or Dataset."}}};
   bind_free_function<Variable, VAConstView>(norm, "norm", m, docs);
 
@@ -163,7 +163,7 @@ void init_operations(py::module &m) {
           "If the dimension does not exist, or if the dtype is not bool.",
           ":py:class:`scipp.any`.",
           "Variable, data array, or dataset containing the reduced values.",
-          "Variable, DataArray, or Dataset.",
+          // "Variable, DataArray, or Dataset.",
           {{"x", "Input Variable, DataArray, or Dataset."},
            {"dim", "Dimension to reduce."}}};
   bind_free_function<Variable, VAConstView, const Dim>(all, "all", m, docs);
@@ -173,7 +173,7 @@ void init_operations(py::module &m) {
           "If the dimension does not exist, or if the dtype is not bool.",
           ":py:class:`scipp.all`.",
           "Variable, data array, or dataset containing the reduced values.",
-          "Variable, DataArray, or Dataset.",
+          // "Variable, DataArray, or Dataset.",
           {{"x", "Input Variable, DataArray, or Dataset."},
            {"dim", "Dimension to reduce."}}};
   bind_free_function<Variable, VAConstView, const Dim>(any, "any", m, docs);
@@ -183,35 +183,35 @@ void init_operations(py::module &m) {
           "",
           ":py:class:`scipp.max`.",
           "Variable, data array, or dataset containing the min values.",
-          "Variable, DataArray, or Dataset.",
+          // "Variable, DataArray, or Dataset.",
           {{"x", "Input Variable, DataArray, or Dataset."},
            {"dim", "Dimension to reduce."}}};
   bind_free_function<Variable, VAConstView, const Dim>(min, "min", m, docs);
   // Function overload ambiguous on number of args, so we expand the docstring.
   bind_free_function<Variable, VAConstView>(
       min, "min", m, docs.param(0), "Element-wise minimum over all dimensions.",
-      docs.raises(), docs.seealso(), docs.returns(), docs.rtype());
+      docs.raises(), docs.seealso(), docs.returns());
 
   // Max
   docs = {"Element-wise maximum over the specified dimension.",
           "",
           ":py:class:`scipp.min`.",
           "Variable, data array, or dataset containing the max values.",
-          "Variable, DataArray, or Dataset.",
+          // "Variable, DataArray, or Dataset.",
           {{"x", "Input Variable, DataArray, or Dataset."},
            {"dim", "Dimension to reduce."}}};
   bind_free_function<Variable, VAConstView, const Dim>(max, "max", m, docs);
   // Function overload ambiguous on number of args, so we expand the docstring.
   bind_free_function<Variable, VAConstView>(
       max, "max", m, docs.param(0), "Element-wise maximum over all dimensions.",
-      docs.raises(), docs.seealso(), docs.returns(), docs.rtype());
+      docs.raises(), docs.seealso(), docs.returns());
 
   // Contains_events
   docs = {"Return true if the variable contains event data.",
           "",
           "",
           "true or false.",
-          "bool.",
+          // "bool.",
           {{"x", "Input Variable or DataArray."}}};
   bind_free_function<bool, VAConstView>(contains_events, "contains_events", m,
                                         docs);

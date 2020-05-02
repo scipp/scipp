@@ -34,7 +34,7 @@ template <class T, class T1>
 void bind_free_function(T (*func)(T1), const std::string fname, py::module &m,
                         const Docstring docs) {
   m.def(fname.c_str(), [func](T1 a1) { return func(a1); },
-        py::call_guard<py::gil_scoped_release>(), docs.to_string().c_str(),
+        py::call_guard<py::gil_scoped_release>(), docs.to_string(typeid(T()).name()).c_str(),
         py::arg(docs.param(0).first.c_str()));
 }
 
@@ -42,17 +42,17 @@ template <class T, class T1>
 void bind_free_function(T (*func)(T1), const std::string fname, py::module &m,
                         const strpair param1, const std::string description,
                         const std::string raises, const std::string seealso,
-                        const std::string returns, const std::string rtype) {
+                        const std::string returns) {
   bind_free_function<T, T1>(
       func, fname, m,
-      Docstring(description, raises, seealso, returns, rtype, {param1}));
+      Docstring(description, raises, seealso, returns, {param1}));
 }
 
 template <class T, class T1, class T2>
 void bind_free_function(T (*func)(T1, T2), const std::string fname,
                         py::module &m, const Docstring docs) {
   m.def(fname.c_str(), [func](T1 a1, T2 a2) { return func(a1, a2); },
-        py::call_guard<py::gil_scoped_release>(), docs.to_string().c_str(),
+        py::call_guard<py::gil_scoped_release>(), docs.to_string(typeid(T()).name()).c_str(),
         PYARGS(docs.param(0).first, docs.param(1).first));
 }
 
@@ -61,17 +61,17 @@ void bind_free_function(T (*func)(T1, T2), const std::string fname,
                         py::module &m, const strpair param1,
                         const strpair param2, const std::string description,
                         const std::string raises, const std::string seealso,
-                        const std::string returns, const std::string rtype) {
+                        const std::string returns) {
   bind_free_function<T, T1, T2>(func, fname, m,
                                 Docstring(description, raises, seealso, returns,
-                                          rtype, {param1, param2}));
+                                          {param1, param2}));
 }
 
 template <class T, class T1, class T2, class T3>
 void bind_free_function(T (*func)(T1, T2, T3), const std::string fname,
                         py::module &m, const Docstring docs) {
   m.def(fname.c_str(), [func](T1 a1, T2 a2, T3 a3) { return func(a1, a2, a3); },
-        py::call_guard<py::gil_scoped_release>(), docs.to_string().c_str(),
+        py::call_guard<py::gil_scoped_release>(), docs.to_string(typeid(T()).name()).c_str(),
         PYARGS(docs.param(0).first, docs.param(1).first, docs.param(2).first));
 }
 
@@ -80,11 +80,10 @@ void bind_free_function(T (*func)(T1, T2, T3), const std::string fname,
                         py::module &m, const strpair param1,
                         const strpair param2, const strpair param3,
                         const std::string description, const std::string raises,
-                        const std::string seealso, const std::string returns,
-                        const std::string rtype) {
+                        const std::string seealso, const std::string returns) {
   bind_free_function<T, T1, T2, T3>(func, fname, m,
                                     Docstring(description, raises, seealso,
-                                              returns, rtype,
+                                              returns,
                                               {param1, param2, param3}));
 }
 
@@ -93,7 +92,7 @@ void bind_free_function(T (*func)(T1, T2, T3, T4), const std::string fname,
                         py::module &m, const Docstring docs) {
   m.def(fname.c_str(),
         [func](T1 a1, T2 a2, T3 a3, T4 a4) { return func(a1, a2, a3, a4); },
-        py::call_guard<py::gil_scoped_release>(), docs.to_string().c_str(),
+        py::call_guard<py::gil_scoped_release>(), docs.to_string(typeid(T()).name()).c_str(),
         PYARGS(docs.param(0).first, docs.param(1).first, docs.param(2).first,
                docs.param(3).first));
 }
@@ -104,10 +103,10 @@ void bind_free_function(T (*func)(T1, T2, T3, T4), const std::string fname,
                         const strpair param2, const strpair param3,
                         const strpair param4, const std::string description,
                         const std::string raises, const std::string seealso,
-                        const std::string returns, const std::string rtype) {
+                        const std::string returns) {
   bind_free_function<T, T1, T2, T3, T4>(
       func, fname, m,
-      Docstring(description, raises, seealso, returns, rtype,
+      Docstring(description, raises, seealso, returns,
                 {param1, param2, param3, param4}));
 }
 

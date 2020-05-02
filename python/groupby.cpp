@@ -31,7 +31,7 @@ template <class T> void bind_groupby(py::module &m, const std::string &name) {
           // Returns
           "GroupBy helper object.",
           // Return type
-          "GroupByDataArray or GroupByDataset.",
+          // "GroupByDataArray or GroupByDataset.",
           // Input parameters
           {{"data", "Input Dataset or DataArray."},
            {"group", "String containing name of labels to use for grouping."}}};
@@ -39,12 +39,11 @@ template <class T> void bind_groupby(py::module &m, const std::string &name) {
   // of constructor
   bind_free_function<GroupBy<T>, ConstView, const Dim>(
       groupby, "groupby", m, docs.param(0), docs.param(1), docs.description(),
-      docs.raises(), docs.seealso(), docs.returns(), docs.rtype());
+      docs.raises(), docs.seealso(), docs.returns());
   docs.insert_param(2, {"bins", "Bins for grouping label values."});
   bind_free_function<GroupBy<T>, ConstView, const Dim, VAConstView>(
       groupby, "groupby", m, docs.param(0), docs.param(1), docs.param(2),
-      docs.description(), docs.raises(), docs.seealso(), docs.returns(),
-      docs.rtype());
+      docs.description(), docs.raises(), docs.seealso(), docs.returns());
 
   py::class_<GroupBy<T>> groupBy(m, name.c_str(), R"(
     GroupBy object implementing to split-apply-combine mechanism.)");

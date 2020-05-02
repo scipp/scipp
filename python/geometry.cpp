@@ -30,7 +30,7 @@ void bind_component(T (*func)(T1), std::string comp, py::module &m) {
       // Returns
       "Extracted " + comp + " component of input position vector.",
       // Return type
-      "Variable.",
+      // "Variable.",
       // Input parameters
       {{"pos", "Variable containing position vector."}}};
   bind_free_function<T, T1>(func, comp, m, docs);
@@ -55,7 +55,7 @@ void init_geometry(py::module &m) {
           // Returns
           "Zip of input x, y and z. Output unit is same as input unit.",
           // Return type
-          "Variable.",
+          // "Variable.",
           // Input parameters
           {{"x", "Variable containing x component."},
            {"y", "Variable containing y component."},
@@ -80,7 +80,7 @@ void init_geometry(py::module &m) {
           // Returns
           " Variable containing the rotated position vectors.",
           // Return type
-          "Variable.",
+          // "Variable.",
           // Input parameters
           {{"position", "Variable containing xyz position vectors."},
            {"rotation", "Variable containing rotation quaternions."}}};

@@ -52,7 +52,7 @@ void init_reduction(py::module &m) {
           // Returns
           "New variable, data array, or dataset containing the mean.",
           // Return type
-          "Variable, DataArray, or Dataset.",
+          // "Variable, DataArray, or Dataset.",
           // Parameters/arguments
           {{"x", "Data to calculate mean of."},
            {"dim", "Dimension over which to calculate mean."}}};
@@ -68,7 +68,7 @@ void init_reduction(py::module &m) {
       "e.g., if it is a string.",
       ":py:class:`scipp.mean`",
       "New variable, data array, or dataset containing the sum.",
-      "Variable, DataArray, or Dataset.",
+      // "Variable, DataArray, or Dataset.",
       {{"x", "Data to sum."}, {"dim", "Dimension over which to sum."}},
   };
   bind_sum<Variable>(m, docs);

@@ -23,7 +23,7 @@ const Docstring trigonometric_docstring(std::string fname) {
               fname + ", e.g., if it is an integer.",
           "",
           "Variable containing the " + fname + " of the input values.",
-          "Variable, DataArray, or Dataset.",
+          // "Variable, DataArray, or Dataset.",
           {{"x", "Input Variable, DataArray, or Dataset."}}};
 }
 
