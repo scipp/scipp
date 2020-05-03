@@ -323,6 +323,23 @@ template <class T> struct MakeBinGroups {
   }
 };
 
+template <class T, class U>
+GroupBy<T> callDType(const U &array, const VariableConstView &key,
+                     const VariableConstView &bins) {
+  return {
+      array,
+      core::CallDType<double, float, int64_t, int32_t>::apply<MakeBinGroups>(
+          key.dtype(), key, bins)};
+}
+
+template <class T, class U>
+GroupBy<T> callDType(const U &array, const VariableConstView &key,
+                     const Dim &dim) {
+  return {array, core::CallDType<double, float, int64_t, int32_t, bool,
+                                 std::string>::apply<MakeGroups>(key.dtype(),
+                                                                 key, dim)};
+}
+
 /// Create GroupBy<DataArray> object as part of "split-apply-combine" mechanism.
 ///
 /// Groups the slices of `array` according to values in given by a coord.
@@ -330,9 +347,17 @@ template <class T> struct MakeBinGroups {
 /// coord in a later apply/combine step.
 GroupBy<DataArray> groupby(const DataArrayConstView &array, const Dim dim) {
   const auto &key = array.coords()[dim];
-  return {array, core::CallDType<double, float, int64_t, int32_t, bool,
-                                 std::string>::apply<MakeGroups>(key.dtype(),
-                                                                 key, dim)};
+  return callDType<DataArray, DataArrayConstView>(array, key, dim);
+}
+
+/// Create GroupBy<DataArray> object as part of "split-apply-combine" mechanism.
+///
+/// Groups the slices of `array` according to values in given by a coord.
+/// Grouping will create a new coordinate for the dimension of the grouping
+/// coord in a later apply/combine step.
+GroupBy<DataArray> groupby(const DataArrayConstView &array,
+                           const VariableConstView &variable) {
+  return callDType<DataArray, DataArrayConstView>(array, variable, variable);
 }
 
 /// Create GroupBy<DataArray> object as part of "split-apply-combine" mechanism.
@@ -343,10 +368,18 @@ GroupBy<DataArray> groupby(const DataArrayConstView &array, const Dim dim) {
 GroupBy<DataArray> groupby(const DataArrayConstView &array, const Dim dim,
                            const VariableConstView &bins) {
   const auto &key = array.coords()[dim];
-  return {
-      array,
-      core::CallDType<double, float, int64_t, int32_t>::apply<MakeBinGroups>(
-          key.dtype(), key, bins)};
+  return callDType<DataArray, DataArrayConstView>(array, key, bins);
+}
+
+/// Create GroupBy<DataArray> object as part of "split-apply-combine" mechanism.
+///
+/// Groups the slices of `array` according to values in given by a coord.
+/// Grouping of a coord is according to given `bins`, which will be added as a
+/// new coordinate to the output in a later apply/combine step.
+GroupBy<DataArray> groupby(const DataArrayConstView &array,
+                           const VariableConstView &variable,
+                           const VariableConstView &bins) {
+  return callDType<DataArray, DataArrayConstView>(array, variable, bins);
 }
 
 /// Create GroupBy<Dataset> object as part of "split-apply-combine" mechanism.
@@ -356,9 +389,7 @@ GroupBy<DataArray> groupby(const DataArrayConstView &array, const Dim dim,
 /// coord in a later apply/combine step.
 GroupBy<Dataset> groupby(const DatasetConstView &dataset, const Dim dim) {
   const auto &key = dataset.coords()[dim];
-  return {dataset, core::CallDType<double, float, int64_t, int32_t, bool,
-                                   std::string>::apply<MakeGroups>(key.dtype(),
-                                                                   key, dim)};
+  return callDType<Dataset, DatasetConstView>(dataset, key, dim);
 }
 
 /// Create GroupBy<Dataset> object as part of "split-apply-combine" mechanism.
@@ -369,10 +400,28 @@ GroupBy<Dataset> groupby(const DatasetConstView &dataset, const Dim dim) {
 GroupBy<Dataset> groupby(const DatasetConstView &dataset, const Dim dim,
                          const VariableConstView &bins) {
   const auto &key = dataset.coords()[dim];
-  return {
-      dataset,
-      core::CallDType<double, float, int64_t, int32_t>::apply<MakeBinGroups>(
-          key.dtype(), key, bins)};
+  return callDType<Dataset, DatasetConstView>(dataset, key, bins);
+}
+
+/// Create GroupBy<Dataset> object as part of "split-apply-combine" mechanism.
+///
+/// Groups the slices of `dataset` according to values in given by a coord.
+/// Grouping will create a new coordinate for the dimension of the grouping
+/// coord in a later apply/combine step.
+GroupBy<Dataset> groupby(const DatasetConstView &dataset,
+                         const VariableConstView &variable) {
+  return callDType<Dataset, DatasetConstView>(dataset, variable, variable);
+}
+
+/// Create GroupBy<Dataset> object as part of "split-apply-combine" mechanism.
+///
+/// Groups the slices of `dataset` according to values in given by a coord.
+/// Grouping of a coord is according to given `bins`, which will be added as a
+/// new coordinate to the output in a later apply/combine step.
+GroupBy<Dataset> groupby(const DatasetConstView &dataset,
+                         const VariableConstView &variable,
+                         const VariableConstView &bins) {
+  return callDType<Dataset, DatasetConstView>(dataset, variable, bins);
 }
 
 template class GroupBy<DataArray>;

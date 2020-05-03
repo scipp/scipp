@@ -95,6 +95,31 @@ TEST_F(GroupbyTest, dataset_1d_and_2d) {
   EXPECT_EQ(groupby(d["c"], dim).mean(Dim::X), expected["c"]);
 }
 
+TEST_F(GroupbyTest, dataset_1d_and_2d_variable) {
+  Dataset expected;
+  Dim dim("labels2");
+  variable::Variable v1 =
+      makeVariable<double>(Dims{dim}, Shape{2}, units::Unit(units::m),
+                           Values{1.5, 3.0}, Variances{9.0 / 4, 6.0});
+  variable::Variable v2 =
+      makeVariable<double>(Dims{dim}, Shape{2}, units::Unit(units::s),
+                           Values{(0.1 + 0.2) / 2.0, 0.3});
+  variable::Variable v3 =
+      makeVariable<double>(Dims{Dim(Dim::Z), dim}, Shape{2, 2},
+                           units::Unit(units::s), Values{1.5, 3.0, 4.5, 6.0});
+  variable::Variable v4 = makeVariable<double>(
+      Dims{Dim(Dim::Z)}, Shape{2}, units::Unit(units::m), Values{1, 3});
+
+  expected.setData("a", v1);
+  expected.setData("b", v2);
+  expected.setData("c", v3);
+
+  expected.setCoord(dim, v4);
+
+  EXPECT_THROW(groupby(d, v1), except::VariancesError);
+  EXPECT_THROW(groupby(d, v3), except::DimensionError);
+}
+
 struct GroupbyMaskedTest : public GroupbyTest {
   GroupbyMaskedTest() : GroupbyTest() {
     d.setMask("mask_x", makeVariable<bool>(Dimensions{Dim::X, 3},
