@@ -7,8 +7,10 @@ pybind11_add_module(
   counts.cpp
   dataset.cpp
   detail.cpp
+  docstring.cpp
   dtype.cpp
   eigen.cpp
+  geometry.cpp
   groupby.cpp
   neutron.cpp
   operations.cpp

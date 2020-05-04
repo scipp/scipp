@@ -12,6 +12,7 @@ void init_dtype(py::module &);
 void init_eigen(py::module &);
 void init_counts(py::module &);
 void init_groupby(py::module &);
+void init_geometry(py::module &);
 void init_neutron(py::module &);
 void init_operations(py::module &);
 void init_event_list(py::module &);
@@ -29,6 +30,7 @@ void init_core(py::module &m) {
   init_dataset(core);
   init_groupby(core);
   init_operations(core);
+  init_geometry(core);
   init_event_list(core);
   init_element_array_view(core);
 }
