@@ -52,13 +52,13 @@ void init_geometry(py::module &m) {
       make_comp_docstring("x").c_str());
 
   geom_m.def(
-      "y", [](const VariableConstView &pos) { return x(pos); },
+      "y", [](const VariableConstView &pos) { return y(pos); },
       py::arg("pos"),
       py::call_guard<py::gil_scoped_release>(),
       make_comp_docstring("y").c_str());
 
   geom_m.def(
-      "z", [](const VariableConstView &pos) { return x(pos); },
+      "z", [](const VariableConstView &pos) { return z(pos); },
       py::arg("pos"),
       py::call_guard<py::gil_scoped_release>(),
       make_comp_docstring("z").c_str());
