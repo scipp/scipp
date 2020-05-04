@@ -14,7 +14,6 @@ Docstring& Docstring::param(const std::string name, const std::string about) {
 
 
 const char * Docstring::c_str() {
-
   m_output = m_description + "\n";
   for (const auto name : m_order)
     m_output += ":param " + name + ": " + m_params[name] + "\n";

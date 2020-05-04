@@ -2,6 +2,7 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
+#include "docstring.h"
 #include "pybind11.h"
 
 #include "scipp/dataset/dataset.h"
@@ -28,8 +29,32 @@ template <class T> void bind_flatten(py::module &m) {
         :rtype: Variable, DataArray, or Dataset)");
 }
 
+template <class T> void bind_abs(py::module &m) {
+  auto doc = Docstring()
+        .description("Element-wise absolute value.")
+        .raises("If the dtype has no absolute value, e.g., if it is a string.")
+        .seealso(":py:class:`scipp.norm` for vector-like dtype.")
+        .returns("Variable with the absolute values of the input.")
+        .rtype("Variable")
+        .param("x", "Input variable.");
+  m.def(
+      "abs", [](const VariableConstView &self) { return abs(self); },
+      py::arg("x"), py::call_guard<py::gil_scoped_release>(),
+      doc.c_str());
+  m.def(
+      "abs",
+      [](const VariableConstView &self, const VariableView &out) {
+        return abs(self, out);
+      },
+      py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>(),
+      doc.param("out", "Output buffer.").c_str());
+}
+
 void init_operations(py::module &m) {
   bind_flatten<Variable>(m);
   bind_flatten<DataArray>(m);
   bind_flatten<Dataset>(m);
+
+  bind_abs<Variable>(m);
+
 }
