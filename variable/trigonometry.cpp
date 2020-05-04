@@ -124,7 +124,7 @@ VariableView atan(const VariableConstView &var, const VariableView &out) {
   return out;
 }
 
-Variable atan2(const Variable &y, const Variable &x) {
+Variable atan2(const VariableConstView &y, const VariableConstView &x) {
   return transform<std::tuple<double, float>>(y, x, element::atan2);
 }
 

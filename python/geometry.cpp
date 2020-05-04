@@ -12,17 +12,22 @@ using namespace scipp::variable::geometry;
 
 namespace py = pybind11;
 
-Docstring make_comp_docstring(const std::string xyz) {
-  return Docstring()
-    .description("Un-zip functionality to produce a Variable of the " + xyz +
-                 " component of a vector_3_float64.")
-    .raises("If the dtype of the input is not vector_3_float64.")
-    .seealso(":py:class:`scipp.geometry.x`, :py:class:`scipp.geometry.y`, "
-             ":py:class:`scipp.geometry.z`")
-    .returns("Extracted " + xyz +
-             " component of input pos. Output unit is same as input unit.")
-    .rtype("Variable")
-    .param("pos", "Variable containing position vector.");
+template <class Function>
+void bind_component(const std::string xyz, Function func, py::module &gm) {
+  gm.def(
+      xyz.c_str(), [func](const VariableConstView &pos) { return func(pos); },
+      py::arg("pos"),
+      py::call_guard<py::gil_scoped_release>(),
+      Docstring()
+        .description("Un-zip functionality to produce a Variable of the " + xyz +
+                     " component of a vector_3_float64.")
+        .raises("If the dtype of the input is not vector_3_float64.")
+        .seealso(":py:class:`scipp.geometry.x`, :py:class:`scipp.geometry.y`, "
+                 ":py:class:`scipp.geometry.z`")
+        .returns("Extracted " + xyz +
+                 " component of input pos. Output unit is same as input unit.")
+        .rtype("Variable")
+        .param("pos", "Variable containing position vector.").c_str());
 }
 
 void init_geometry(py::module &m) {
@@ -45,24 +50,9 @@ void init_geometry(py::module &m) {
       .param("y", "Variable containing y component.")
       .param("z", "Variable containing z component.").c_str());
 
-  geom_m.def(
-      "x", [](const VariableConstView &pos) { return x(pos); },
-      py::arg("pos"),
-      py::call_guard<py::gil_scoped_release>(),
-      make_comp_docstring("x").c_str());
-
-  geom_m.def(
-      "y", [](const VariableConstView &pos) { return y(pos); },
-      py::arg("pos"),
-      py::call_guard<py::gil_scoped_release>(),
-      make_comp_docstring("y").c_str());
-
-  geom_m.def(
-      "z", [](const VariableConstView &pos) { return z(pos); },
-      py::arg("pos"),
-      py::call_guard<py::gil_scoped_release>(),
-      make_comp_docstring("z").c_str());
-
+  bind_component("x", x, geom_m);
+  bind_component("y", y, geom_m);
+  bind_component("z", z, geom_m);
 
   auto doc = Docstring()
     .description("Rotate a Variable of type vector_3_float64 using a Variable "

@@ -621,159 +621,159 @@ void init_variable(py::module &m) {
         :return: Variable containing the sum.
         :rtype: Variable)");
 
-  m.def(
-      "sin", [](const VariableConstView &self) { return sin(self); },
-      py::arg("x"), py::call_guard<py::gil_scoped_release>(), R"(
-        Element-wise sin.
+  // m.def(
+  //     "sin", [](const VariableConstView &self) { return sin(self); },
+  //     py::arg("x"), py::call_guard<py::gil_scoped_release>(), R"(
+  //       Element-wise sin.
 
-        :raises: If the unit is not a plane-angle unit, or if the dtype has no sin, e.g., if it is an integer
-        :return: Copy of the input with values replaced by the sin.
-        :rtype: Variable)");
+  //       :raises: If the unit is not a plane-angle unit, or if the dtype has no sin, e.g., if it is an integer
+  //       :return: Copy of the input with values replaced by the sin.
+  //       :rtype: Variable)");
 
-  m.def(
-      "sin",
-      [](const VariableConstView &self, const VariableView &out) {
-        return sin(self, out);
-      },
-      py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>(),
-      R"(
-        Element-wise sin.
+  // m.def(
+  //     "sin",
+  //     [](const VariableConstView &self, const VariableView &out) {
+  //       return sin(self, out);
+  //     },
+  //     py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>(),
+  //     R"(
+  //       Element-wise sin.
 
-        :raises: If the unit is not a plane-angle unit, or if the dtype has no sin, e.g., if it is an integer
-        :return: sin of input values.
-        :rtype: Variable)");
+  //       :raises: If the unit is not a plane-angle unit, or if the dtype has no sin, e.g., if it is an integer
+  //       :return: sin of input values.
+  //       :rtype: Variable)");
 
-  m.def(
-      "cos", [](const VariableConstView &self) { return cos(self); },
-      py::arg("x"), py::call_guard<py::gil_scoped_release>(), R"(
-        Element-wise cos.
+  // m.def(
+  //     "cos", [](const VariableConstView &self) { return cos(self); },
+  //     py::arg("x"), py::call_guard<py::gil_scoped_release>(), R"(
+  //       Element-wise cos.
 
-        :raises: If the unit is not a plane-angle unit, or if the dtype has no cos, e.g., if it is an integer
-        :return: Copy of the input with values replaced by the cos.
-        :rtype: Variable)");
+  //       :raises: If the unit is not a plane-angle unit, or if the dtype has no cos, e.g., if it is an integer
+  //       :return: Copy of the input with values replaced by the cos.
+  //       :rtype: Variable)");
 
-  m.def(
-      "cos",
-      [](const VariableConstView &self, const VariableView &out) {
-        return cos(self, out);
-      },
-      py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>(),
-      R"(
-        Element-wise cos.
+  // m.def(
+  //     "cos",
+  //     [](const VariableConstView &self, const VariableView &out) {
+  //       return cos(self, out);
+  //     },
+  //     py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>(),
+  //     R"(
+  //       Element-wise cos.
 
-        :raises: If the unit is not a plane-angle unit, or if the dtype has no cos, e.g., if it is an integer
-        :return: cos of input values.
-        :rtype: Variable)");
+  //       :raises: If the unit is not a plane-angle unit, or if the dtype has no cos, e.g., if it is an integer
+  //       :return: cos of input values.
+  //       :rtype: Variable)");
 
-  m.def(
-      "tan", [](const Variable &self) { return tan(self); }, py::arg("x"),
-      py::call_guard<py::gil_scoped_release>(), R"(
-        Element-wise tan.
+  // m.def(
+  //     "tan", [](const Variable &self) { return tan(self); }, py::arg("x"),
+  //     py::call_guard<py::gil_scoped_release>(), R"(
+  //       Element-wise tan.
 
-        :raises: If the unit is not a plane-angle unit, or if the dtype has no tan, e.g., if it is an integer
-        :return: Copy of the input with values replaced by the tan.
-        :rtype: Variable)");
+  //       :raises: If the unit is not a plane-angle unit, or if the dtype has no tan, e.g., if it is an integer
+  //       :return: Copy of the input with values replaced by the tan.
+  //       :rtype: Variable)");
 
-  m.def(
-      "tan",
-      [](const VariableConstView &self, const VariableView &out) {
-        return tan(self, out);
-      },
-      py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>(),
-      R"(
-        Element-wise tan.
+  // m.def(
+  //     "tan",
+  //     [](const VariableConstView &self, const VariableView &out) {
+  //       return tan(self, out);
+  //     },
+  //     py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>(),
+  //     R"(
+  //       Element-wise tan.
 
-        :raises: If the unit is not a plane-angle unit, or if the dtype has no tan, e.g., if it is an integer
-        :return: tan of input values.
-        :rtype: Variable)");
+  //       :raises: If the unit is not a plane-angle unit, or if the dtype has no tan, e.g., if it is an integer
+  //       :return: tan of input values.
+  //       :rtype: Variable)");
 
-  m.def(
-      "asin", [](const Variable &self) { return asin(self); }, py::arg("x"),
-      py::call_guard<py::gil_scoped_release>(), R"(
-        Element-wise asin.
+  // m.def(
+  //     "asin", [](const Variable &self) { return asin(self); }, py::arg("x"),
+  //     py::call_guard<py::gil_scoped_release>(), R"(
+  //       Element-wise asin.
 
-        :raises: If the unit is dimensionless, or if the dtype has no asin, e.g., if it is an integer
-        :return: Copy of the input with values replaced by the asin. Output unit is rad.
-        :rtype: Variable)");
+  //       :raises: If the unit is dimensionless, or if the dtype has no asin, e.g., if it is an integer
+  //       :return: Copy of the input with values replaced by the asin. Output unit is rad.
+  //       :rtype: Variable)");
 
-  m.def(
-      "asin",
-      [](const VariableConstView &self, const VariableView &out) {
-        return asin(self, out);
-      },
-      py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>(),
-      R"(
-        Element-wise atan.
+  // m.def(
+  //     "asin",
+  //     [](const VariableConstView &self, const VariableView &out) {
+  //       return asin(self, out);
+  //     },
+  //     py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>(),
+  //     R"(
+  //       Element-wise atan.
 
-        :raises: If the unit is dimensionless, or if the dtype has no asin, e.g., if it is an integer
-        :return: asin of input values. Output unit is rad.
-        :rtype: Variable)");
+  //       :raises: If the unit is dimensionless, or if the dtype has no asin, e.g., if it is an integer
+  //       :return: asin of input values. Output unit is rad.
+  //       :rtype: Variable)");
 
-  m.def(
-      "acos", [](const Variable &self) { return acos(self); }, py::arg("x"),
-      py::call_guard<py::gil_scoped_release>(), R"(
-        Element-wise acos.
+  // m.def(
+  //     "acos", [](const Variable &self) { return acos(self); }, py::arg("x"),
+  //     py::call_guard<py::gil_scoped_release>(), R"(
+  //       Element-wise acos.
 
-        :raises: If the unit is dimensionless, or if the dtype has no acos, e.g., if it is an integer
-        :return: Copy of the input with values replaced by the acos. Output unit is rad.
-        :rtype: Variable)");
+  //       :raises: If the unit is dimensionless, or if the dtype has no acos, e.g., if it is an integer
+  //       :return: Copy of the input with values replaced by the acos. Output unit is rad.
+  //       :rtype: Variable)");
 
-  m.def(
-      "acos",
-      [](const VariableConstView &self, const VariableView &out) {
-        return acos(self, out);
-      },
-      py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>(),
-      R"(
-        Element-wise acos.
+  // m.def(
+  //     "acos",
+  //     [](const VariableConstView &self, const VariableView &out) {
+  //       return acos(self, out);
+  //     },
+  //     py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>(),
+  //     R"(
+  //       Element-wise acos.
 
-        :raises: If the unit is dimensionless, or if the dtype has no acos, e.g., if it is an integer
-        :return: acos of input values. Output unit is rad.
-        :rtype: Variable)");
+  //       :raises: If the unit is dimensionless, or if the dtype has no acos, e.g., if it is an integer
+  //       :return: acos of input values. Output unit is rad.
+  //       :rtype: Variable)");
 
-  m.def(
-      "atan", [](const Variable &self) { return atan(self); }, py::arg("x"),
-      py::call_guard<py::gil_scoped_release>(), R"(
-        Element-wise atan.
+  // m.def(
+  //     "atan", [](const Variable &self) { return atan(self); }, py::arg("x"),
+  //     py::call_guard<py::gil_scoped_release>(), R"(
+  //       Element-wise atan.
 
-        :raises: If the unit is dimensionless, or if the dtype has no atan, e.g., if it is an integer
-        :return: Copy of the input with values replaced by the atan. Output unit is rad.
-        :rtype: Variable)");
+  //       :raises: If the unit is dimensionless, or if the dtype has no atan, e.g., if it is an integer
+  //       :return: Copy of the input with values replaced by the atan. Output unit is rad.
+  //       :rtype: Variable)");
 
-  m.def(
-      "atan",
-      [](const VariableConstView &self, const VariableView &out) {
-        return atan(self, out);
-      },
-      py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>(),
-      R"(
-        Element-wise atan.
+  // m.def(
+  //     "atan",
+  //     [](const VariableConstView &self, const VariableView &out) {
+  //       return atan(self, out);
+  //     },
+  //     py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>(),
+  //     R"(
+  //       Element-wise atan.
 
-        :raises: If the unit is dimensionless, or if the dtype has no atan, e.g., if it is an integer
-        :return: atan of input values. Output unit is rad.
-        :rtype: Variable)");
+  //       :raises: If the unit is dimensionless, or if the dtype has no atan, e.g., if it is an integer
+  //       :return: atan of input values. Output unit is rad.
+  //       :rtype: Variable)");
 
-  m.def(
-      "atan2", [](const Variable &y, const Variable &x) { return atan2(y, x); },
-      py::arg("y"), py::arg("x"),
-      R"(
-        Element-wise atan2.
+  // m.def(
+  //     "atan2", [](const Variable &y, const Variable &x) { return atan2(y, x); },
+  //     py::arg("y"), py::arg("x"),
+  //     R"(
+  //       Element-wise atan2.
 
-        :raises: If the units of inputs are different, or if the dtype has no atan2, e.g., if it is an integer
-        :return: atan2 of input y and x. Output unit is rad.
-        :rtype: Variable)");
+  //       :raises: If the units of inputs are different, or if the dtype has no atan2, e.g., if it is an integer
+  //       :return: atan2 of input y and x. Output unit is rad.
+  //       :rtype: Variable)");
 
-  m.def(
-      "atan2",
-      [](const VariableConstView &y, const VariableConstView &x,
-         const VariableView &out) { return atan2(y, x, out); },
-      py::arg("y"), py::arg("x"), py::arg("out"),
-      R"(
-        Element-wise atan2 with out argument.
+  // m.def(
+  //     "atan2",
+  //     [](const VariableConstView &y, const VariableConstView &x,
+  //        const VariableView &out) { return atan2(y, x, out); },
+  //     py::arg("y"), py::arg("x"), py::arg("out"),
+  //     R"(
+  //       Element-wise atan2 with out argument.
 
-        :raises: If the units of inputs are different, or if the dtype has no atan2, e.g., if it is an integer
-        :return: atan2 of input y and x, written to output. Output unit is rad.
-        :rtype: VariableView)");
+  //       :raises: If the units of inputs are different, or if the dtype has no atan2, e.g., if it is an integer
+  //       :return: atan2 of input y and x, written to output. Output unit is rad.
+  //       :rtype: VariableView)");
 
   m.def("all", py::overload_cast<const VariableConstView &, const Dim>(&all),
         py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
@@ -1002,66 +1002,66 @@ void init_variable(py::module &m) {
         :return: Variable of booleans.
         :rtype: Variable)");
 
-  auto geom_m = m.def_submodule("geometry");
-  geom_m.def(
-      "position",
-      [](const VariableConstView &x, const VariableConstView &y,
-         const VariableConstView &z) { return geometry::position(x, y, z); },
-      py::arg("x"), py::arg("y"), py::arg("z"),
-      R"(
-        Element-wise zip functionality to produce a vector_3_float64 from independent input variables.
+  // auto geom_m = m.def_submodule("geometry");
+  // geom_m.def(
+  //     "position",
+  //     [](const VariableConstView &x, const VariableConstView &y,
+  //        const VariableConstView &z) { return geometry::position(x, y, z); },
+  //     py::arg("x"), py::arg("y"), py::arg("z"),
+  //     R"(
+  //       Element-wise zip functionality to produce a vector_3_float64 from independent input variables.
 
-        :raises: If the units of inputs are not all meters, or if the dtypes of inputs are not double precision floats
-        :return: zip of input x, y and z. Output unit is meters.
-        :rtype: Variable)");
-  geom_m.def(
-      "x", [](const VariableConstView &pos) { return geometry::x(pos); },
-      py::arg("pos"),
-      R"(
-        un-zip functionality to produce a Variable of the x component of a vector_3_float64.
+  //       :raises: If the units of inputs are not all meters, or if the dtypes of inputs are not double precision floats
+  //       :return: zip of input x, y and z. Output unit is meters.
+  //       :rtype: Variable)");
+  // geom_m.def(
+  //     "x", [](const VariableConstView &pos) { return geometry::x(pos); },
+  //     py::arg("pos"),
+  //     R"(
+  //       un-zip functionality to produce a Variable of the x component of a vector_3_float64.
 
-        :raises: If the units of inputs are not meters, or if the dtypes of inputs are not double precision floats
-        :return: Extracted x component of input pos. Units in meters.
-        :rtype: Variable)");
-  geom_m.def(
-      "y", [](const VariableConstView &pos) { return geometry::y(pos); },
-      py::arg("pos"),
-      R"(
-        un-zip functionality to produce a Variable of the y component of a vector_3_float64.
+  //       :raises: If the units of inputs are not meters, or if the dtypes of inputs are not double precision floats
+  //       :return: Extracted x component of input pos. Units in meters.
+  //       :rtype: Variable)");
+  // geom_m.def(
+  //     "y", [](const VariableConstView &pos) { return geometry::y(pos); },
+  //     py::arg("pos"),
+  //     R"(
+  //       un-zip functionality to produce a Variable of the y component of a vector_3_float64.
 
-        :raises: If the units of inputs are not meters, or if the dtypes of inputs are not double precision floats
-        :return: Extracted y component of input pos. Units in meters.
-        :rtype: Variable)");
-  geom_m.def(
-      "z", [](const VariableConstView &pos) { return geometry::z(pos); },
-      py::arg("pos"),
-      R"(
-        un-zip functionality to produce a Variable of the z component of a vector_3_float64.
+  //       :raises: If the units of inputs are not meters, or if the dtypes of inputs are not double precision floats
+  //       :return: Extracted y component of input pos. Units in meters.
+  //       :rtype: Variable)");
+  // geom_m.def(
+  //     "z", [](const VariableConstView &pos) { return geometry::z(pos); },
+  //     py::arg("pos"),
+  //     R"(
+  //       un-zip functionality to produce a Variable of the z component of a vector_3_float64.
 
-        :raises: If the units of inputs are not meters, or if the dtypes of inputs are not double precision floats
-        :return: Extracted z component of input pos. Units in meters.
-        :rtype: Variable)");
-  geom_m.def(
-      "rotate",
-      [](const VariableConstView &pos, const VariableConstView &rot) {
-        return geometry::rotate(pos, rot);
-      },
-      py::arg("position"), py::arg("rotation"),
-      R"(
-        Rotate a Variable of type vector_3_float64 using a Variable of type quaternion_float64.
+  //       :raises: If the units of inputs are not meters, or if the dtypes of inputs are not double precision floats
+  //       :return: Extracted z component of input pos. Units in meters.
+  //       :rtype: Variable)");
+  // geom_m.def(
+  //     "rotate",
+  //     [](const VariableConstView &pos, const VariableConstView &rot) {
+  //       return geometry::rotate(pos, rot);
+  //     },
+  //     py::arg("position"), py::arg("rotation"),
+  //     R"(
+  //       Rotate a Variable of type vector_3_float64 using a Variable of type quaternion_float64.
 
-        :raises: If the units of the inputs are not meter and dimensionless for the positions and the rotations, respectively.
-        :return: a Variable containing the rotated position vectors.
-        :rtype: Variable)");
-  geom_m.def(
-      "rotate",
-      [](const VariableConstView &pos, const VariableConstView &rot,
-         const VariableView &out) { return geometry::rotate(pos, rot, out); },
-      py::arg("position"), py::arg("rotation"), py::arg("out"),
-      R"(
-        Rotate a Variable of type vector_3_float64 using a Variable of type quaternion_float64, and store in the result inside the provided out argument.
+  //       :raises: If the units of the inputs are not meter and dimensionless for the positions and the rotations, respectively.
+  //       :return: a Variable containing the rotated position vectors.
+  //       :rtype: Variable)");
+  // geom_m.def(
+  //     "rotate",
+  //     [](const VariableConstView &pos, const VariableConstView &rot,
+  //        const VariableView &out) { return geometry::rotate(pos, rot, out); },
+  //     py::arg("position"), py::arg("rotation"), py::arg("out"),
+  //     R"(
+  //       Rotate a Variable of type vector_3_float64 using a Variable of type quaternion_float64, and store in the result inside the provided out argument.
 
-        :raises: If the units of the inputs are not meter and dimensionless for the positions and the rotations, respectively.
-        :return: rotated vectors are written to out.
-        :rtype: VariableView)");
+  //       :raises: If the units of the inputs are not meter and dimensionless for the positions and the rotations, respectively.
+  //       :return: rotated vectors are written to out.
+  //       :rtype: VariableView)");
 }
