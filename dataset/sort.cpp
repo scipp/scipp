@@ -4,10 +4,13 @@
 /// @author Simon Heybrock
 #include <numeric>
 
+#include "scipp/core/element/sort.h"
 #include "scipp/core/tag_util.h"
 #include "scipp/dataset/except.h"
 #include "scipp/dataset/sort.h"
 #include "scipp/variable/indexed_slice_view.h"
+#include "scipp/variable/subspan_view.h"
+#include "scipp/variable/transform.h"
 
 using scipp::variable::IndexedSliceView;
 
@@ -35,10 +38,26 @@ static auto makePermutation(const VariableConstView &key) {
                          std::string>::apply<MakePermutation>(key.dtype(), key);
 }
 
+void permute(const VariableView &var, const VariableConstView &permutation) {
+  const Dim dim = permutation.dims().inner();
+  if (var.dims().inner() == dim) {
+    variable::transform_in_place(variable::subspan_view(var, dim),
+                                 variable::subspan_view(permutation, dim),
+                                 core::element::permute_in_place);
+  } else {
+    const auto perm = permutation.values<scipp::index>();
+    std::vector<scipp::index> indices(perm.begin(), perm.end());
+    var.assign(concatenate(IndexedSliceView{var, dim, indices}));
+  }
+}
+
 /// Return a Variable sorted based on key.
 Variable sort(const VariableConstView &var, const VariableConstView &key) {
-  return concatenate(
-      IndexedSliceView{var, key.dims().inner(), makePermutation(key)});
+  Variable sorted(var);
+  const auto permutation =
+      makeVariable<scipp::index>(key.dims(), Values(makePermutation(key)));
+  permute(sorted, permutation);
+  return sorted;
 }
 
 /// Return a DataArray sorted based on key.

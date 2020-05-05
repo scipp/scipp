@@ -45,8 +45,13 @@ template <class T, class Var> Variable subspan_view(Var &var, const Dim dim) {
   auto dims = var.dims();
   dims.erase(dim);
   std::conditional_t<std::is_const_v<T>, const Var, Var> &var_ref = var;
-  using MaybeConstT =
-      std::conditional_t<std::is_const_v<Var>, std::add_const_t<T>, T>;
+
+  constexpr bool is_const =
+      std::is_same_v<std::decay_t<Var>, Variable>
+          ? std::is_const_v<Var>
+          : std::is_same_v<std::decay_t<Var>, VariableConstView>;
+
+  using MaybeConstT = std::conditional_t<is_const, std::add_const_t<T>, T>;
   auto valuesView = values_view(var_ref);
   if (var.hasVariances()) {
     auto variancesView = variances_view(var_ref);

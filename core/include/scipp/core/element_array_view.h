@@ -128,8 +128,7 @@ public:
   }
   auto &operator[](const scipp::index i) const { return *(begin() + i); }
 
-  const T *data() const { return m_variable + m_offset; }
-  T *data() { return m_variable + m_offset; }
+  T *data() const { return m_variable + m_offset; }
 
   ViewIndex begin_index() const noexcept {
     return {m_targetDimensions, m_dimensions};
