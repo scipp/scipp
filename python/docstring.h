@@ -8,6 +8,11 @@
 #include <vector>
 #include <map>
 
+#include "scipp/dataset/dataset.h"
+#include "scipp/variable/variable.h"
+
+using namespace scipp::variable;
+using namespace scipp::dataset;
 
 class Docstring {
 
@@ -20,7 +25,44 @@ public:
   Docstring& seealso(const std::string s) { m_seealso = s; return *this; };
   Docstring& returns(const std::string s) { m_returns = s; return *this; };
   Docstring& rtype(const std::string s) { m_rtype = s; return *this; };
+  // Docstring& rtype(const std::string s) { m_rtype = s; return *this; };
   Docstring& param(const std::string name, const std::string about);
+
+  // template <class T>
+  // Docstring& rtype(const T& t) {
+  //   using InputType = decltype(t);
+  //   if (std::is_same_v<InputType, Variable>)
+  //     m_rtype = "Variable";
+  //   else if (std::is_same_v<InputType, VariableView>)
+  //     m_rtype = "VariableView";
+  //   else if (std::is_same_v<InputType, DataArray>)
+  //     m_rtype = "DataArray";
+  //   else if (std::is_same_v<InputType, DataArrayView>)
+  //     m_rtype = "DataArrayView";
+  //   else if (std::is_same_v<InputType, Dataset>)
+  //     m_rtype = "Dataset";
+  //   else if (std::is_same_v<InputType, DatasetView>)
+  //     m_rtype = "DatasetView";
+  //   return *this;
+  // }
+
+  template <class T>
+  Docstring& rtype() {
+    // using T = decltype(t);
+    if (std::is_same_v<T, Variable>)
+      m_rtype = "Variable";
+    else if (std::is_same_v<T, VariableView>)
+      m_rtype = "VariableView";
+    else if (std::is_same_v<T, DataArray>)
+      m_rtype = "DataArray";
+    else if (std::is_same_v<T, DataArrayView>)
+      m_rtype = "DataArrayView";
+    else if (std::is_same_v<T, Dataset>)
+      m_rtype = "Dataset";
+    else if (std::is_same_v<T, DatasetView>)
+      m_rtype = "DatasetView";
+    return *this;
+  }
 
   // const std::string rtype() const { return m_rtype; };
   // strpair param(const scipp::index ind) const { return m_params[ind]; };

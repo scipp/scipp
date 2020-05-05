@@ -170,7 +170,7 @@ VariableView sqrt(const VariableConstView &var, const VariableView &out) {
   return out;
 }
 
-Variable dot(const Variable &a, const Variable &b) {
+Variable dot(const VariableConstView &a, const VariableConstView &b) {
   return transform(a, b, element::dot);
 }
 

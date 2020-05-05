@@ -22,8 +22,8 @@ namespace py = pybind11;
                            "trigonometric "                                    \
                            "function cannot be computed on the dtype, e.g., "  \
                            "if it is an integer.")                             \
-                   .returns("Variable containing the " #op " values.")         \
-                   .rtype("Variable.")                                         \
+                   .returns("The " #op " of the input values.")                \
+                   .rtype<T>()                                                 \
                    .param("x", "Variable containing input values.");           \
     m.def(#op, [](ConstView self) { return op(self); }, py::arg("x"),          \
           py::call_guard<py::gil_scoped_release>(), doc.c_str());              \
@@ -55,8 +55,8 @@ template <class T> void bind_atan2(py::module &m) {
           .raises("If the unit is not a plane-angle unit, or if the atan2 "
                   "function cannot be computed on the dtype, e.g., if it is an "
                   "integer.")
-          .returns("Variable containing the atan2 values.")
-          .rtype("Variable.")
+          .returns("The atan2 values of the input.")
+          .rtype<T>()
           .param("y", "Variable containing the y values.")
           .param("x", "Variable containing the x values.");
   m.def("atan2", [](ConstView y, ConstView x) { return atan2(y, x); },
@@ -66,7 +66,7 @@ template <class T> void bind_atan2(py::module &m) {
         [](ConstView y, ConstView x, View out) { return atan2(y, x, out); },
         py::arg("y"), py::arg("x"), py::arg("out"),
         py::call_guard<py::gil_scoped_release>(),
-        doc.param("out", "Output buffer").c_str());
+        doc.template rtype<typename T::view_type>().param("out", "Output buffer").c_str());
 }
 
 void init_trigonometry(py::module &m) {

@@ -436,39 +436,39 @@ void init_dataset(py::module &m) {
   dataset.def("rename_dims", &rename_dims<Dataset>, py::arg("dims_dict"),
               "Rename dimensions.");
 
-  m.def("concatenate",
-        py::overload_cast<const DataArrayConstView &,
-                          const DataArrayConstView &, const Dim>(&concatenate),
-        py::arg("x"), py::arg("y"), py::arg("dim"),
-        py::call_guard<py::gil_scoped_release>(), R"(
-        Concatenate input data array along the given dimension.
+  // m.def("concatenate",
+  //       py::overload_cast<const DataArrayConstView &,
+  //                         const DataArrayConstView &, const Dim>(&concatenate),
+  //       py::arg("x"), py::arg("y"), py::arg("dim"),
+  //       py::call_guard<py::gil_scoped_release>(), R"(
+  //       Concatenate input data array along the given dimension.
 
-        Concatenates the data, coords, and masks of the data array.
-        Coords, and masks for any but the given dimension are required to match and are copied to the output without changes.
+  //       Concatenates the data, coords, and masks of the data array.
+  //       Coords, and masks for any but the given dimension are required to match and are copied to the output without changes.
 
-        :param x: First DataArray.
-        :param y: Second DataArray.
-        :param dim: Dimension along which to concatenate.
-        :raises: If the dtype or unit does not match, or if the dimensions and shapes are incompatible.
-        :return: New data array containing all data, coords, and masks of the input arrays.
-        :rtype: DataArray)");
+  //       :param x: First DataArray.
+  //       :param y: Second DataArray.
+  //       :param dim: Dimension along which to concatenate.
+  //       :raises: If the dtype or unit does not match, or if the dimensions and shapes are incompatible.
+  //       :return: New data array containing all data, coords, and masks of the input arrays.
+  //       :rtype: DataArray)");
 
-  m.def("concatenate",
-        py::overload_cast<const DatasetConstView &, const DatasetConstView &,
-                          const Dim>(&concatenate),
-        py::arg("x"), py::arg("y"), py::arg("dim"),
-        py::call_guard<py::gil_scoped_release>(), R"(
-        Concatenate input datasets along the given dimension.
+  // m.def("concatenate",
+  //       py::overload_cast<const DatasetConstView &, const DatasetConstView &,
+  //                         const Dim>(&concatenate),
+  //       py::arg("x"), py::arg("y"), py::arg("dim"),
+  //       py::call_guard<py::gil_scoped_release>(), R"(
+  //       Concatenate input datasets along the given dimension.
 
-        Concatenate all cooresponding items in the input datasets.
-        The output contains only items that are present in both inputs.
+  //       Concatenate all cooresponding items in the input datasets.
+  //       The output contains only items that are present in both inputs.
 
-        :param x: First Dataset.
-        :param y: Second Dataset.
-        :param dim: Dimension along which to concatenate.
-        :raises: If the dtype or unit does not match, or if the dimensions and shapes are incompatible.
-        :return: New dataset.
-        :rtype: Dataset)");
+  //       :param x: First Dataset.
+  //       :param y: Second Dataset.
+  //       :param dim: Dimension along which to concatenate.
+  //       :raises: If the dtype or unit does not match, or if the dimensions and shapes are incompatible.
+  //       :return: New dataset.
+  //       :rtype: Dataset)");
 
   m.def(
       "histogram",

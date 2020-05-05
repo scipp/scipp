@@ -77,5 +77,7 @@ void init_geometry(py::module &m) {
       [](const VariableConstView &pos, const VariableConstView &rot,
          const VariableView &out) { return rotate(pos, rot, out); },
       py::arg("pos"), py::arg("rot"), py::arg("out"),
+      py::call_guard<py::gil_scoped_release>(),
       doc.rtype("VariableView").param("out", "Output buffer").c_str());
+
 }

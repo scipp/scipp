@@ -29,25 +29,94 @@ template <class T> void bind_flatten(py::module &m) {
         :rtype: Variable, DataArray, or Dataset)");
 }
 
-template <class T> void bind_abs(py::module &m) {
+template <class T> void bind_concatenate(py::module &m) {
+  using ConstView = const typename T::const_view_type &;
+  auto doc = Docstring()
+        .description(R"(
+        Concatenate input data array along the given dimension.
+
+        Concatenation can happen in two ways:
+         - Along an existing dimension, yielding a new dimension extent given by the sum of the input's extents.
+         - Along a new dimension that is not contained in either of the inputs, yielding an output with one extra dimensions.
+
+        In the case of a data array or dataset, the coords, and masks are also concatenated.
+        Coords, and masks for any but the given dimension are required to match and are copied to the output without changes.)")
+        .raises("If the dtype or unit does not match, or if the dimensions and shapes are incompatible.")
+        .returns("The absolute values of the input.")
+        // .rtype(T())
+        .rtype<T>()
+        .param("x", "Left hand side input.")
+        .param("y", "Right hand side input.")
+        .param("dim", "Dimension along which to concatenate.");
+  m.def("concatenate",
+    [](ConstView x, ConstView y, const Dim dim) { return concatenate(x, y, dim); },
+        // py::overload_cast<const DataArrayConstView &,
+        //                   const DataArrayConstView &, const Dim>(&concatenate),
+        py::arg("x"), py::arg("y"), py::arg("dim"),
+        py::call_guard<py::gil_scoped_release>(),
+        doc.c_str());
+        // R"(
+        // Concatenate input data array along the given dimension.
+
+        // Concatenates the data, coords, and masks of the data array.
+        // Coords, and masks for any but the given dimension are required to match and are copied to the output without changes.
+
+        // :param x: First DataArray.
+        // :param y: Second DataArray.
+        // :param dim: Dimension along which to concatenate.
+        // :raises: If the dtype or unit does not match, or if the dimensions and shapes are incompatible.
+        // :return: New data array containing all data, coords, and masks of the input arrays.
+        // :rtype: DataArray)");
+}
+
+template <typename T> void bind_abs(py::module &m) {
+  using ConstView = const typename T::const_view_type &;
+  using View = const typename T::view_type &;
+  // using V = typename T::view_type;
   auto doc = Docstring()
         .description("Element-wise absolute value.")
         .raises("If the dtype has no absolute value, e.g., if it is a string.")
         .seealso(":py:class:`scipp.norm` for vector-like dtype.")
-        .returns("Variable with the absolute values of the input.")
-        .rtype("Variable")
+        .returns("The absolute values of the input.")
+        // .rtype(T())
+        .rtype<T>()
         .param("x", "Input variable.");
   m.def(
-      "abs", [](const VariableConstView &self) { return abs(self); },
+      "abs", [](ConstView self) { return abs(self); },
       py::arg("x"), py::call_guard<py::gil_scoped_release>(),
       doc.c_str());
   m.def(
       "abs",
-      [](const VariableConstView &self, const VariableView &out) {
+      [](ConstView self, View out) {
         return abs(self, out);
       },
       py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>(),
-      doc.param("out", "Output buffer.").c_str());
+      // doc.rtype(typename T::view_type()).param("out", "Output buffer.").c_str());
+      doc.template rtype<T>().param("out", "Output buffer.").c_str());
+}
+
+template <typename T> void bind_dot(py::module &m) {
+  using ConstView = const typename T::const_view_type &;
+  using View = const typename T::view_type &;
+  auto doc = Docstring()
+        .description("Element-wise dot product.")
+        .raises("If the dtype of the input is not vector_3_float64.")
+        .returns("The dot product of the input vectors.")
+        // .rtype(T())
+        .rtype<T>()
+        .param("x", "Input left hand side operand.")
+        .param("y", "Input right hand side operand.");
+  m.def(
+      "dot", [](ConstView x, ConstView y) { return dot(x, y); },
+      py::arg("x"), py::arg("y"), py::call_guard<py::gil_scoped_release>(),
+      doc.c_str());
+  // m.def(
+  //     "dot",
+  //     [](ConstView x, ConstView y, View out) {
+  //       return dot(x, y, out);
+  //     },
+  //     py::arg("x"), py::arg("y"), py::arg("out"), py::call_guard<py::gil_scoped_release>(),
+  //     doc.param("out", "Output buffer.").c_str());
 }
 
 void init_operations(py::module &m) {
@@ -55,6 +124,12 @@ void init_operations(py::module &m) {
   bind_flatten<DataArray>(m);
   bind_flatten<Dataset>(m);
 
+  bind_concatenate<Variable>(m);
+  bind_concatenate<DataArray>(m);
+  bind_concatenate<Dataset>(m);
+
   bind_abs<Variable>(m);
+
+  bind_dot<Variable>(m);
 
 }

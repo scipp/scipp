@@ -314,32 +314,32 @@ void init_variable(py::module &m) {
   //       :return: Input with values replaced by the absolute values
   //       :rtype: Variable)");
 
-  m.def("dot", py::overload_cast<const Variable &, const Variable &>(&dot),
-        py::arg("x"), py::arg("y"), py::call_guard<py::gil_scoped_release>(),
-        R"(
-        Element-wise dot-product.
+  // m.def("dot", py::overload_cast<const Variable &, const Variable &>(&dot),
+  //       py::arg("x"), py::arg("y"), py::call_guard<py::gil_scoped_release>(),
+  //       R"(
+  //       Element-wise dot-product.
 
-        :raises: If the dtype is not a vector such as :py:class:`scipp.dtype.vector_3_double`
-        :return: New variable with scalar elements based on the two inputs.
-        :rtype: Variable)");
+  //       :raises: If the dtype is not a vector such as :py:class:`scipp.dtype.vector_3_double`
+  //       :return: New variable with scalar elements based on the two inputs.
+  //       :rtype: Variable)");
 
-  m.def("concatenate",
-        py::overload_cast<const VariableConstView &, const VariableConstView &,
-                          const Dim>(&concatenate),
-        py::arg("x"), py::arg("y"), py::arg("dim"),
-        py::call_guard<py::gil_scoped_release>(), R"(
-        Concatenate input variables along the given dimension.
+  // m.def("concatenate",
+  //       py::overload_cast<const VariableConstView &, const VariableConstView &,
+  //                         const Dim>(&concatenate),
+  //       py::arg("x"), py::arg("y"), py::arg("dim"),
+  //       py::call_guard<py::gil_scoped_release>(), R"(
+  //       Concatenate input variables along the given dimension.
 
-        Concatenation can happen in two ways:
-        - Along an existing dimension, yielding a new dimension extent given by the sum of the input's extents.
-        - Along a new dimension that is not contained in either of the inputs, yielding an output with one extra dimensions.
+  //       Concatenation can happen in two ways:
+  //       - Along an existing dimension, yielding a new dimension extent given by the sum of the input's extents.
+  //       - Along a new dimension that is not contained in either of the inputs, yielding an output with one extra dimensions.
 
-        :param x: First Variable.
-        :param y: Second Variable.
-        :param dim: Dimension along which to concatenate.
-        :raises: If the dtype or unit does not match, or if the dimensions and shapes are incompatible.
-        :return: New variable containing all elements of the input variables.
-        :rtype: Variable)");
+  //       :param x: First Variable.
+  //       :param y: Second Variable.
+  //       :param dim: Dimension along which to concatenate.
+  //       :raises: If the dtype or unit does not match, or if the dimensions and shapes are incompatible.
+  //       :return: New variable containing all elements of the input variables.
+  //       :rtype: Variable)");
 
   m.def("filter",
         py::overload_cast<const Variable &, const Variable &>(&filter),
