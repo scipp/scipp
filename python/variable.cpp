@@ -355,40 +355,40 @@ void init_variable(py::module &m) {
         :return: New variable containing the data selected by the filter
         :rtype: Variable)");
 
-  m.def("mean", py::overload_cast<const VariableConstView &, const Dim>(&mean),
-        py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
-        R"(
-        Element-wise mean over the specified dimension, if variances are present, the new variance is computated as standard-deviation of the mean.
+  // m.def("mean", py::overload_cast<const VariableConstView &, const Dim>(&mean),
+  //       py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
+  //       R"(
+  //       Element-wise mean over the specified dimension, if variances are present, the new variance is computated as standard-deviation of the mean.
 
-        If the input has variances, the variances stored in the ouput are based on the "standard deviation of the mean", i.e., :math:`\sigma_{mean} = \sigma / \sqrt{N}`.
-        :math:`N` is the length of the input dimension.
-        :math:`sigma` is estimated as the average of the standard deviations of the input elements along that dimension.
-        This assumes that elements follow a normal distribution.
+  //       If the input has variances, the variances stored in the ouput are based on the "standard deviation of the mean", i.e., :math:`\sigma_{mean} = \sigma / \sqrt{N}`.
+  //       :math:`N` is the length of the input dimension.
+  //       :math:`sigma` is estimated as the average of the standard deviations of the input elements along that dimension.
+  //       This assumes that elements follow a normal distribution.
 
-        :raises: If the dimension does not exist, or the dtype cannot be summed, e.g., if it is a string
-        :seealso: :py:class:`scipp.sum`
-        :return: New variable containing the mean.
-        :rtype: Variable)");
+  //       :raises: If the dimension does not exist, or the dtype cannot be summed, e.g., if it is a string
+  //       :seealso: :py:class:`scipp.sum`
+  //       :return: New variable containing the mean.
+  //       :rtype: Variable)");
 
-  m.def(
-      "mean",
-      [](const VariableConstView &x, const Dim dim, const VariableView &out) {
-        return mean(x, dim, out);
-      },
-      py::arg("x"), py::arg("dim"), py::arg("out"),
-      py::call_guard<py::gil_scoped_release>(),
-      R"(
-        Element-wise mean over the specified dimension, if variances are present, the new variance is computated as standard-deviation of the mean.
+  // m.def(
+  //     "mean",
+  //     [](const VariableConstView &x, const Dim dim, const VariableView &out) {
+  //       return mean(x, dim, out);
+  //     },
+  //     py::arg("x"), py::arg("dim"), py::arg("out"),
+  //     py::call_guard<py::gil_scoped_release>(),
+  //     R"(
+  //       Element-wise mean over the specified dimension, if variances are present, the new variance is computated as standard-deviation of the mean.
 
-        If the input has variances, the variances stored in the ouput are based on the "standard deviation of the mean", i.e., :math:`\sigma_{mean} = \sigma / \sqrt{N}`.
-        :math:`N` is the length of the input dimension.
-        :math:`sigma` is estimated as the average of the standard deviations of the input elements along that dimension.
-        This assumes that elements follow a normal distribution.
+  //       If the input has variances, the variances stored in the ouput are based on the "standard deviation of the mean", i.e., :math:`\sigma_{mean} = \sigma / \sqrt{N}`.
+  //       :math:`N` is the length of the input dimension.
+  //       :math:`sigma` is estimated as the average of the standard deviations of the input elements along that dimension.
+  //       This assumes that elements follow a normal distribution.
 
-        :raises: If the dimension does not exist, or the dtype cannot be summed, e.g., if it is a string
-        :seealso: :py:class:`scipp.sum`
-        :return: Variable containing the mean.
-        :rtype: Variable)");
+  //       :raises: If the dimension does not exist, or the dtype cannot be summed, e.g., if it is a string
+  //       :seealso: :py:class:`scipp.sum`
+  //       :return: Variable containing the mean.
+  //       :rtype: Variable)");
 
   m.def("norm", py::overload_cast<const VariableConstView &>(&norm),
         py::arg("x"), py::call_guard<py::gil_scoped_release>(), R"(
@@ -459,33 +459,33 @@ void init_variable(py::module &m) {
         :return: Copy of the input with values replaced by the square-root.
         :rtype: Variable)");
 
-  m.def("sum", py::overload_cast<const VariableConstView &, const Dim>(&sum),
-        py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
-        R"(
-        Element-wise sum over the specified dimension.
+  // m.def("sum", py::overload_cast<const VariableConstView &, const Dim>(&sum),
+  //       py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
+  //       R"(
+  //       Element-wise sum over the specified dimension.
 
-        :param x: Data to sum.
-        :param dim: Dimension over which to sum.
-        :raises: If the dimension does not exist, or if the dtype cannot be summed, e.g., if it is a string
-        :seealso: :py:class:`scipp.mean`
-        :return: New variable containing the sum.
-        :rtype: Variable)");
+  //       :param x: Data to sum.
+  //       :param dim: Dimension over which to sum.
+  //       :raises: If the dimension does not exist, or if the dtype cannot be summed, e.g., if it is a string
+  //       :seealso: :py:class:`scipp.mean`
+  //       :return: New variable containing the sum.
+  //       :rtype: Variable)");
 
-  m.def(
-      "sum",
-      [](const VariableConstView &self, const Dim dim,
-         const VariableView &out) { return sum(self, dim, out); },
-      py::arg("x"), py::arg("dim"), py::arg("out"),
-      py::call_guard<py::gil_scoped_release>(),
-      R"(
-        Element-wise sum over the specified dimension.
+  // m.def(
+  //     "sum",
+  //     [](const VariableConstView &self, const Dim dim,
+  //        const VariableView &out) { return sum(self, dim, out); },
+  //     py::arg("x"), py::arg("dim"), py::arg("out"),
+  //     py::call_guard<py::gil_scoped_release>(),
+  //     R"(
+  //       Element-wise sum over the specified dimension.
 
-        :param x: Data to sum.
-        :param dim: Dimension over which to sum.
-        :raises: If the dimension does not exist, if the dtype cannot be summed, e.g., if it is a string or if the output variable contains the summing dimension.
-        :seealso: :py:class:`scipp.mean`
-        :return: Variable containing the sum.
-        :rtype: Variable)");
+  //       :param x: Data to sum.
+  //       :param dim: Dimension over which to sum.
+  //       :raises: If the dimension does not exist, if the dtype cannot be summed, e.g., if it is a string or if the output variable contains the summing dimension.
+  //       :seealso: :py:class:`scipp.mean`
+  //       :return: Variable containing the sum.
+  //       :rtype: Variable)");
 
   // m.def(
   //     "sin", [](const VariableConstView &self) { return sin(self); },
@@ -665,57 +665,57 @@ void init_variable(py::module &m) {
         :return: New variable containing the reduced values.
         :rtype: Variable)");
 
-  m.def(
-      "min",
-      [](const VariableConstView &self, const Dim dim) {
-        return min(self, dim);
-      },
-      py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
-      R"(
-        Element-wise min over the specified dimension.
+  // m.def(
+  //     "min",
+  //     [](const VariableConstView &self, const Dim dim) {
+  //       return min(self, dim);
+  //     },
+  //     py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
+  //     R"(
+  //       Element-wise min over the specified dimension.
 
-        :param x: Data to reduce.
-        :param dim: Dimension to reduce.
-        :seealso: :py:class:`scipp.max`
-        :return: New variable containing the min values.
-        :rtype: Variable)");
+  //       :param x: Data to reduce.
+  //       :param dim: Dimension to reduce.
+  //       :seealso: :py:class:`scipp.max`
+  //       :return: New variable containing the min values.
+  //       :rtype: Variable)");
 
-  m.def(
-      "max",
-      [](const VariableConstView &self, const Dim dim) {
-        return max(self, dim);
-      },
-      py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
-      R"(
-        Element-wise max over the specified dimension.
+  // m.def(
+  //     "max",
+  //     [](const VariableConstView &self, const Dim dim) {
+  //       return max(self, dim);
+  //     },
+  //     py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
+  //     R"(
+  //       Element-wise max over the specified dimension.
 
-        :param x: Data to reduce.
-        :param dim: Dimension to reduce.
-        :seealso: :py:class:`scipp.min`
-        :return: New variable containing the max values.
-        :rtype: Variable)");
+  //       :param x: Data to reduce.
+  //       :param dim: Dimension to reduce.
+  //       :seealso: :py:class:`scipp.min`
+  //       :return: New variable containing the max values.
+  //       :rtype: Variable)");
 
-  m.def(
-      "min", [](const VariableConstView &self) { return min(self); },
-      py::arg("x"), py::call_guard<py::gil_scoped_release>(),
-      R"(
-        Element-wise min over all of the input's dimensions.
+  // m.def(
+  //     "min", [](const VariableConstView &self) { return min(self); },
+  //     py::arg("x"), py::call_guard<py::gil_scoped_release>(),
+  //     R"(
+  //       Element-wise min over all of the input's dimensions.
 
-        :param x: Data to reduce.
-        :seealso: :py:class:`scipp.max`
-        :return: New variable containing the min values.
-        :rtype: Variable)");
+  //       :param x: Data to reduce.
+  //       :seealso: :py:class:`scipp.max`
+  //       :return: New variable containing the min values.
+  //       :rtype: Variable)");
 
-  m.def(
-      "max", [](const VariableConstView &self) { return max(self); },
-      py::arg("x"), py::call_guard<py::gil_scoped_release>(),
-      R"(
-        Element-wise max over all of the input's dimensions.
+  // m.def(
+  //     "max", [](const VariableConstView &self) { return max(self); },
+  //     py::arg("x"), py::call_guard<py::gil_scoped_release>(),
+  //     R"(
+  //       Element-wise max over all of the input's dimensions.
 
-        :param x: Data to reduce.
-        :seealso: :py:class:`scipp.min`
-        :return: New variable containing the max values.
-        :rtype: Variable)");
+  //       :param x: Data to reduce.
+  //       :seealso: :py:class:`scipp.min`
+  //       :return: New variable containing the max values.
+  //       :rtype: Variable)");
 
   m.def(
       "nan_to_num",

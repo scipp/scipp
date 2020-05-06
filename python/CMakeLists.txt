@@ -17,6 +17,7 @@ pybind11_add_module(
   py_object.cpp
   scipp.cpp
   event_list.cpp
+  reduction.cpp
   trigonometry.cpp
   units_neutron.cpp
   variable.cpp

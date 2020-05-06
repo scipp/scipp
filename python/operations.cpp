@@ -43,7 +43,6 @@ template <class T> void bind_concatenate(py::module &m) {
         Coords, and masks for any but the given dimension are required to match and are copied to the output without changes.)")
         .raises("If the dtype or unit does not match, or if the dimensions and shapes are incompatible.")
         .returns("The absolute values of the input.")
-        // .rtype(T())
         .rtype<T>()
         .param("x", "Left hand side input.")
         .param("y", "Right hand side input.")
@@ -55,18 +54,6 @@ template <class T> void bind_concatenate(py::module &m) {
         py::arg("x"), py::arg("y"), py::arg("dim"),
         py::call_guard<py::gil_scoped_release>(),
         doc.c_str());
-        // R"(
-        // Concatenate input data array along the given dimension.
-
-        // Concatenates the data, coords, and masks of the data array.
-        // Coords, and masks for any but the given dimension are required to match and are copied to the output without changes.
-
-        // :param x: First DataArray.
-        // :param y: Second DataArray.
-        // :param dim: Dimension along which to concatenate.
-        // :raises: If the dtype or unit does not match, or if the dimensions and shapes are incompatible.
-        // :return: New data array containing all data, coords, and masks of the input arrays.
-        // :rtype: DataArray)");
 }
 
 template <typename T> void bind_abs(py::module &m) {
@@ -91,7 +78,6 @@ template <typename T> void bind_abs(py::module &m) {
         return abs(self, out);
       },
       py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>(),
-      // doc.rtype(typename T::view_type()).param("out", "Output buffer.").c_str());
       doc.template rtype<T>().param("out", "Output buffer.").c_str());
 }
 
@@ -102,7 +88,6 @@ template <typename T> void bind_dot(py::module &m) {
         .description("Element-wise dot product.")
         .raises("If the dtype of the input is not vector_3_float64.")
         .returns("The dot product of the input vectors.")
-        // .rtype(T())
         .rtype<T>()
         .param("x", "Input left hand side operand.")
         .param("y", "Input right hand side operand.");

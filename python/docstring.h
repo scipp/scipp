@@ -20,11 +20,11 @@ public:
   Docstring() = default;
   // Docstring(const Docstring &) = default;
 
-  Docstring& description(const std::string s) { m_description = s; return *this;};
-  Docstring& raises(const std::string s) { m_raises = s; return *this; };
-  Docstring& seealso(const std::string s) { m_seealso = s; return *this; };
-  Docstring& returns(const std::string s) { m_returns = s; return *this; };
-  Docstring& rtype(const std::string s) { m_rtype = s; return *this; };
+  Docstring& description(const std::string s, const bool append = false);
+  Docstring& raises(const std::string s, const bool append = false);
+  Docstring& seealso(const std::string s, const bool append = false);
+  Docstring& returns(const std::string s, const bool append = false);
+  Docstring& rtype(const std::string s, const bool append = false);
   // Docstring& rtype(const std::string s) { m_rtype = s; return *this; };
   Docstring& param(const std::string name, const std::string about);
 

@@ -4,6 +4,46 @@
 /// @author Neil Vaytet
 #include "docstring.h"
 
+Docstring& Docstring::description(const std::string s, const bool append) {
+  if (append)
+    m_description += s;
+  else
+    m_description = s;
+  return *this;
+}
+
+Docstring& Docstring::raises(const std::string s, const bool append) {
+  if (append)
+    m_raises += s;
+  else
+    m_raises = s;
+  return *this;
+}
+
+Docstring& Docstring::seealso(const std::string s, const bool append) {
+  if (append)
+    m_seealso += s;
+  else
+    m_seealso = s;
+  return *this;
+}
+
+Docstring& Docstring::returns(const std::string s, const bool append) {
+  if (append)
+    m_returns += s;
+  else
+    m_returns = s;
+  return *this;
+}
+
+Docstring& Docstring::rtype(const std::string s, const bool append) {
+if (append)
+    m_rtype += s;
+  else
+    m_rtype = s;
+  return *this;
+}
+
 Docstring& Docstring::param(const std::string name, const std::string about) {
   if ( m_params.find(name) == m_params.end() ) {
     m_order.push_back(name);
