@@ -14,3 +14,9 @@ struct MoveableVariable {
 struct MoveableDataArray {
   dataset::DataArray data;
 };
+
+template <class T>
+using ConstView = const typename T::const_view_type &;
+
+template <class T>
+using View = const typename T::view_type &;

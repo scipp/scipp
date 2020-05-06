@@ -14,6 +14,13 @@ using namespace scipp::dataset;
 
 namespace py = pybind11;
 
+template <class T>
+using ConstView = const typename T::const_view_type &;
+
+template <class T>
+using View = const typename T::view_type &;
+
+
 template <class T> void bind_flatten(py::module &m) {
   using ConstView = const typename T::const_view_type &;
   m.def("flatten", py::overload_cast<ConstView, const Dim>(&flatten),
@@ -56,11 +63,8 @@ template <class T> void bind_concatenate(py::module &m) {
         doc.c_str());
 }
 
-template <typename T> void bind_abs(py::module &m) {
-  using ConstView = const typename T::const_view_type &;
-  using View = const typename T::view_type &;
-  // using V = typename T::view_type;
-  auto doc = Docstring()
+template <class T> Docstring docstring_abs() {
+  return Docstring()
         .description("Element-wise absolute value.")
         .raises("If the dtype has no absolute value, e.g., if it is a string.")
         .seealso(":py:class:`scipp.norm` for vector-like dtype.")
@@ -68,10 +72,18 @@ template <typename T> void bind_abs(py::module &m) {
         // .rtype(T())
         .rtype<T>()
         .param("x", "Input variable.");
+}
+
+template <typename T> void bind_abs(py::module &m) {
+  // using ConstView = const typename T::const_view_type &;
+  // using V = typename T::view_type;
   m.def(
-      "abs", [](ConstView self) { return abs(self); },
+      "abs", [](const typename T::const_view_type & self) { return abs(self); },
       py::arg("x"), py::call_guard<py::gil_scoped_release>(),
-      doc.c_str());
+      docstring_abs<T>().c_str());
+ }
+
+template <typename T> void bind_abs_out(py::module &m) {
   m.def(
       "abs",
       [](ConstView self, View out) {

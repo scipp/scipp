@@ -641,29 +641,29 @@ void init_variable(py::module &m) {
   //       :return: atan2 of input y and x, written to output. Output unit is rad.
   //       :rtype: VariableView)");
 
-  m.def("all", py::overload_cast<const VariableConstView &, const Dim>(&all),
-        py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
-        R"(
-        Element-wise AND over the specified dimension.
+  // m.def("all", py::overload_cast<const VariableConstView &, const Dim>(&all),
+  //       py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
+  //       R"(
+  //       Element-wise AND over the specified dimension.
 
-        :param x: Data to reduce.
-        :param dim: Dimension to reduce.
-        :raises: If the dimension does not exist, or if the dtype is not bool
-        :seealso: :py:class:`scipp.any`
-        :return: New variable containing the reduced values.
-        :rtype: Variable)");
+  //       :param x: Data to reduce.
+  //       :param dim: Dimension to reduce.
+  //       :raises: If the dimension does not exist, or if the dtype is not bool
+  //       :seealso: :py:class:`scipp.any`
+  //       :return: New variable containing the reduced values.
+  //       :rtype: Variable)");
 
-  m.def("any", py::overload_cast<const VariableConstView &, const Dim>(&any),
-        py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
-        R"(
-        Element-wise OR over the specified dimension.
+  // m.def("any", py::overload_cast<const VariableConstView &, const Dim>(&any),
+  //       py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
+  //       R"(
+  //       Element-wise OR over the specified dimension.
 
-        :param x: Data to reduce.
-        :param dim: Dimension to reduce.
-        :raises: If the dimension does not exist, or if the dtype is not bool
-        :seealso: :py:class:`scipp.all`
-        :return: New variable containing the reduced values.
-        :rtype: Variable)");
+  //       :param x: Data to reduce.
+  //       :param dim: Dimension to reduce.
+  //       :raises: If the dimension does not exist, or if the dtype is not bool
+  //       :seealso: :py:class:`scipp.all`
+  //       :return: New variable containing the reduced values.
+  //       :rtype: Variable)");
 
   // m.def(
   //     "min",
