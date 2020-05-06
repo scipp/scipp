@@ -12,6 +12,8 @@
 #include "scipp/variable/subspan_view.h"
 #include "scipp/variable/transform.h"
 
+#include "dataset_operations_common.h"
+
 using scipp::variable::IndexedSliceView;
 
 namespace scipp::dataset {
@@ -29,7 +31,8 @@ template <class T> struct MakePermutation {
     std::sort(
         permutation.begin(), permutation.end(),
         [&](scipp::index i, scipp::index j) { return values[i] < values[j]; });
-    return permutation;
+    return makeVariable<scipp::index>(key.dims(),
+                                      Values(std::move(permutation)));
   }
 };
 
@@ -38,32 +41,45 @@ static auto makePermutation(const VariableConstView &key) {
                          std::string>::apply<MakePermutation>(key.dtype(), key);
 }
 
-void permute(const VariableView &var, const VariableConstView &permutation) {
+Variable permute(const VariableConstView &var,
+                 const VariableConstView &permutation) {
   const Dim dim = permutation.dims().inner();
   if (var.dims().inner() == dim) {
-    variable::transform_in_place(variable::subspan_view(var, dim),
+    Variable permuted(var);
+    variable::transform_in_place(variable::subspan_view(permuted, dim),
                                  variable::subspan_view(permutation, dim),
                                  core::element::permute_in_place);
+    return permuted;
   } else {
     const auto perm = permutation.values<scipp::index>();
     std::vector<scipp::index> indices(perm.begin(), perm.end());
-    var.assign(concatenate(IndexedSliceView{var, dim, indices}));
+    return concatenate(IndexedSliceView{var, dim, indices});
   }
 }
 
 /// Return a Variable sorted based on key.
 Variable sort(const VariableConstView &var, const VariableConstView &key) {
-  Variable sorted(var);
-  const auto permutation =
-      makeVariable<scipp::index>(key.dims(), Values(makePermutation(key)));
-  permute(sorted, permutation);
-  return sorted;
+  return permute(var, makePermutation(key));
 }
+
+namespace {
+template <class T>
+auto sort(const T &var, const Dim dim, const VariableConstView &key) {
+  if (dim != key.dims().inner())
+    throw except::DimensionError("Sort key must depend on sort dimension");
+  return dataset::sort(var, key);
+}
+
+Dimensions sort(const Dimensions &dims, const Dim, const VariableConstView &) {
+  return dims;
+}
+} // namespace
 
 /// Return a DataArray sorted based on key.
 DataArray sort(const DataArrayConstView &array, const VariableConstView &key) {
-  return concatenate(
-      IndexedSliceView{array, key.dims().inner(), makePermutation(key)});
+  return apply_or_copy_dim(
+      array, [](auto &&... _) { return sort(_...); }, key.dims().inner(),
+      makePermutation(key));
 }
 
 /// Return a DataArray sorted based on coordinate.
@@ -73,8 +89,9 @@ DataArray sort(const DataArrayConstView &array, const Dim &key) {
 
 /// Return a Dataset sorted based on key.
 Dataset sort(const DatasetConstView &dataset, const VariableConstView &key) {
-  return concatenate(
-      IndexedSliceView{dataset, key.dims().inner(), makePermutation(key)});
+  return apply_to_items(
+      dataset, [](auto &&... _) { return sort(_...); }, key.dims().inner(),
+      makePermutation(key));
 }
 
 /// Return a Dataset sorted based on coordinate.

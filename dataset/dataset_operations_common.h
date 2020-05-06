@@ -80,40 +80,37 @@ using no_realigned_support_t = decltype(no_realigned_support);
 template <class Func, class... Args>
 DataArray apply_or_copy_dim(const DataArrayConstView &a, Func func,
                             const Dim dim, Args &&... args) {
-  Dimensions drop({dim, a.dims()[dim]});
-  std::map<Dim, Variable> coords;
-  // Note the `copy` call, ensuring that the return value of the ternary
-  // operator can be moved. Without `copy`, the result of `func` is always
-  // copied.
-  for (auto &&[d, coord] : a.coords())
-    if (contains_events(coord) || coord.dims() != drop)
-      coords.emplace(d, coord.dims().contains(dim) ? func(coord, dim, args...)
-                                                   : copy(coord));
-
-  std::map<std::string, Variable> attrs;
-  for (auto &&[name, attr] : a.attrs())
-    if (attr.dims() != drop)
-      attrs.emplace(name, attr.dims().contains(dim) ? func(attr, dim, args...)
-                                                    : copy(attr));
-
-  std::map<std::string, Variable> masks;
-  for (auto &&[name, mask] : a.masks())
-    if (mask.dims() != drop)
-      masks.emplace(name, mask.dims().contains(dim) ? func(mask, dim, args...)
-                                                    : copy(mask));
-
+  DataArray out;
   if (a.hasData()) {
-    return DataArray(func(a.data(), dim, args...), std::move(coords),
-                     std::move(masks), std::move(attrs), a.name());
+    out = DataArray(func(a.data(), dim, args...), {}, {}, {}, a.name());
   } else {
     if constexpr (std::is_base_of_v<no_realigned_support_t, Func>)
       throw std::logic_error("Operation cannot handle realigned data.");
     else
-      return DataArray(UnalignedData{func(a.dims(), dim, args...),
-                                     func(a.unaligned(), dim, args...)},
-                       std::move(coords), std::move(masks), std::move(attrs),
-                       a.name());
+      out = DataArray(UnalignedData{func(a.dims(), dim, args...),
+                                    func(a.unaligned(), dim, args...)},
+                      {}, {}, {}, a.name());
   }
+  const Dim drop = out.dims() == a.dims() ? Dim::Invalid : dim;
+
+  // Note the `copy` call, ensuring that the return value of the ternary
+  // operator can be moved. Without `copy`, the result of `func` is always
+  // copied.
+  for (auto &&[d, coord] : a.coords())
+    if (contains_events(coord) || !coord.dims().contains(drop))
+      out.coords().set(d, coord.dims().contains(dim) ? func(coord, dim, args...)
+                                                     : copy(coord));
+
+  for (auto &&[name, attr] : a.attrs())
+    if (!attr.dims().contains(drop))
+      out.attrs().set(name, attr.dims().contains(dim) ? func(attr, dim, args...)
+                                                      : copy(attr));
+
+  for (auto &&[name, mask] : a.masks())
+    if (!mask.dims().contains(drop))
+      out.masks().set(name, mask.dims().contains(dim) ? func(mask, dim, args...)
+                                                      : copy(mask));
+  return out;
 }
 
 template <class Func, class... Args>

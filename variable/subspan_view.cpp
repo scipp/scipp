@@ -77,8 +77,8 @@ auto invoke_subspan_view(const DType dtype, Args &&... args) {
 }
 
 template <class Var> Variable subspan_view_impl(Var &var, const Dim dim) {
-  return invoke_subspan_view<double, float, int64_t, int32_t>(var.dtype(), var,
-                                                              dim);
+  return invoke_subspan_view<double, float, int64_t, int32_t, bool>(var.dtype(),
+                                                                    var, dim);
 }
 
 /// Return Variable containing mutable spans over given dimension as elements.

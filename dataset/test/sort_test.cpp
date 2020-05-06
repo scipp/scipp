@@ -42,7 +42,7 @@ TEST(SortTest, dataset_1d) {
                                      Values{1, 2, 3}, Variances{4, 5, 6}));
   d.setData("b", makeVariable<double>(Dims{Dim::X}, Shape{3}, units::s,
                                       Values{0.1, 0.2, 0.3}));
-  d.setData("scalar", makeVariable<double>(Values{1.2}));
+  // d.setData("scalar", makeVariable<double>(Values{1.2}));
   d.setCoord(Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{3}, units::m,
                                           Values{1, 2, 3}));
 
