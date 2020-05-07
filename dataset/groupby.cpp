@@ -353,16 +353,6 @@ GroupBy<DataArray> groupby(const DataArrayConstView &array, const Dim dim) {
 /// Create GroupBy<DataArray> object as part of "split-apply-combine" mechanism.
 ///
 /// Groups the slices of `array` according to values in given by a coord.
-/// Grouping will create a new coordinate for the dimension of the grouping
-/// coord in a later apply/combine step.
-GroupBy<DataArray> groupby(const DataArrayConstView &array,
-                           const VariableConstView &variable) {
-  return callDType<DataArray, DataArrayConstView>(array, variable, variable);
-}
-
-/// Create GroupBy<DataArray> object as part of "split-apply-combine" mechanism.
-///
-/// Groups the slices of `array` according to values in given by a coord.
 /// Grouping of a coord is according to given `bins`, which will be added as a
 /// new coordinate to the output in a later apply/combine step.
 GroupBy<DataArray> groupby(const DataArrayConstView &array, const Dim dim,
@@ -401,16 +391,6 @@ GroupBy<Dataset> groupby(const DatasetConstView &dataset, const Dim dim,
                          const VariableConstView &bins) {
   const auto &key = dataset.coords()[dim];
   return callDType<Dataset, DatasetConstView>(dataset, key, bins);
-}
-
-/// Create GroupBy<Dataset> object as part of "split-apply-combine" mechanism.
-///
-/// Groups the slices of `dataset` according to values in given by a coord.
-/// Grouping will create a new coordinate for the dimension of the grouping
-/// coord in a later apply/combine step.
-GroupBy<Dataset> groupby(const DatasetConstView &dataset,
-                         const VariableConstView &variable) {
-  return callDType<Dataset, DatasetConstView>(dataset, variable, variable);
 }
 
 /// Create GroupBy<Dataset> object as part of "split-apply-combine" mechanism.

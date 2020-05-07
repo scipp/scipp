@@ -94,32 +94,6 @@ TEST_F(GroupbyTest, dataset_1d_and_2d) {
   EXPECT_EQ(groupby(d["b"], dim).mean(Dim::X), expected["b"]);
   EXPECT_EQ(groupby(d["c"], dim).mean(Dim::X), expected["c"]);
 }
-
-TEST_F(GroupbyTest, dataset_1d_and_2d_variable) {
-  Dataset expected;
-  Dim dim("labels2");
-  variable::Variable v1 =
-      makeVariable<double>(Dims{dim}, Shape{2}, units::Unit(units::m),
-                           Values{1.5, 3.0}, Variances{9.0 / 4, 6.0});
-  variable::Variable v2 =
-      makeVariable<double>(Dims{dim}, Shape{2}, units::Unit(units::s),
-                           Values{(0.1 + 0.2) / 2.0, 0.3});
-  variable::Variable v3 =
-      makeVariable<double>(Dims{Dim(Dim::Z), dim}, Shape{2, 2},
-                           units::Unit(units::s), Values{1.5, 3.0, 4.5, 6.0});
-  variable::Variable v4 = makeVariable<double>(
-      Dims{Dim(Dim::Z)}, Shape{2}, units::Unit(units::m), Values{1, 3});
-
-  expected.setData("a", v1);
-  expected.setData("b", v2);
-  expected.setData("c", v3);
-
-  expected.setCoord(dim, v4);
-
-  EXPECT_THROW(groupby(d, v1), except::VariancesError);
-  EXPECT_THROW(groupby(d, v3), except::DimensionError);
-}
-
 struct GroupbyMaskedTest : public GroupbyTest {
   GroupbyMaskedTest() : GroupbyTest() {
     d.setMask("mask_x", makeVariable<bool>(Dimensions{Dim::X, 3},
@@ -394,6 +368,37 @@ TEST_F(GroupbyWithBinsTest, two_bin) {
   const auto group1 = d.slice({Dim::X, 2, 4});
   EXPECT_EQ(groups.sum(Dim::X).slice({Dim::Z, 1}), sum(group1, Dim::X));
   EXPECT_EQ(groups.mean(Dim::X).slice({Dim::Z, 1}), mean(group1, Dim::X));
+}
+
+TEST_F(GroupbyWithBinsTest, dataset_variable) {
+
+  auto bins =
+      makeVariable<double>(Dims{Dim::Z}, Shape{4}, units::Unit(units::m),
+                           Values{0.0, 1.0, 2.0, 3.0});
+
+  Dataset expected;
+  expected.setCoord(Dim::Z, bins);
+
+  auto const var1 = makeVariable<double>(
+      Dims{Dim::Z}, Shape{3}, units::Unit(units::s), Values{0.0, 0.8, 0.3});
+
+  auto const var2 =
+      makeVariable<double>(Dims{Dim::Y, Dim::Z}, Shape{2, 3},
+                           units::Unit(units::s), Values{0, 8, 3, 0, 23, 8});
+  expected.setData("a", var1);
+  expected.setData("b", var2);
+  expected.setAttr("a", "scalar", makeVariable<double>(Values{1.2}));
+
+  EXPECT_EQ(groupby(d, Dim("labels2"), bins).sum(Dim::X), expected);
+
+  auto const var3 =
+      makeVariable<double>(Dimensions{Dim::X, 5}, units::Unit(units::m),
+                           Values{1.0, 1.1, 2.5, 4.0, 1.2});
+  d.setCoord(Dim("labels2"), var3);
+
+  EXPECT_EQ(groupby(d, var3, bins).sum(Dim::X), expected);
+  EXPECT_EQ(groupby(d["a"], var3, bins).sum(Dim::X), expected["a"]);
+  EXPECT_EQ(groupby(d["b"], var3, bins).sum(Dim::X), expected["b"]);
 }
 
 auto make_events_in() {

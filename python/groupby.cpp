@@ -47,21 +47,6 @@ template <class T> void bind_groupby(py::module &m, const std::string &name) {
 
   m.def("groupby",
         py::overload_cast<const typename T::const_view_type &,
-                          const VariableConstView &>(&groupby),
-        py::arg("data"), py::arg("group"),
-        py::call_guard<py::gil_scoped_release>(),
-        R"(
-        Group dataset or data array based on values of specified labels.
-
-        :param data: Input dataset or data array
-        :param group: Variable to use for grouping
-        :type data: DataArray or Dataset
-        :type group: str
-        :return: GroupBy helper object.
-        :rtype: GroupByDataArray or GroupByDataset)");
-
-  m.def("groupby",
-        py::overload_cast<const typename T::const_view_type &,
                           const VariableConstView &, const VariableConstView &>(
             &groupby),
         py::arg("data"), py::arg("group"), py::arg("bins"),

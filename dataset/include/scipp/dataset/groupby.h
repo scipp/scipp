@@ -75,13 +75,9 @@ SCIPP_DATASET_EXPORT GroupBy<Dataset> groupby(const DatasetConstView &dataset,
                                               const VariableConstView &bins);
 
 SCIPP_DATASET_EXPORT GroupBy<DataArray>
-groupby(const DataArrayConstView &dataset, const VariableConstView &variable);
-SCIPP_DATASET_EXPORT GroupBy<DataArray>
 groupby(const DataArrayConstView &dataset, const VariableConstView &variable,
         const VariableConstView &bins);
 
-SCIPP_DATASET_EXPORT GroupBy<Dataset>
-groupby(const DatasetConstView &dataset, const VariableConstView &variable);
 SCIPP_DATASET_EXPORT GroupBy<Dataset> groupby(const DatasetConstView &dataset,
                                               const VariableConstView &variable,
                                               const VariableConstView &bins);

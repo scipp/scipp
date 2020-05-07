@@ -93,8 +93,6 @@ bool Dimensions::isContiguousIn(const Dimensions &parent) const {
 Dim Dimensions::label(const scipp::index i) const { return m_dims[i]; }
 
 void Dimensions::relabel(const scipp::index i, const Dim label) {
-  if (label != Dim::Invalid)
-    expectUnique(*this, label);
   m_dims[i] = label;
 }
 

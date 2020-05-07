@@ -2,9 +2,9 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#include "scipp/dataset/dataset.h"
 #include "scipp/common/index.h"
 #include "scipp/core/except.h"
+#include "scipp/dataset/dataset.h"
 #include "scipp/dataset/except.h"
 #include "scipp/dataset/unaligned.h"
 
@@ -403,8 +403,6 @@ Dataset Dataset::slice(const Slice s) const && {
 
 /// Rename dimension `from` to `to`.
 void Dataset::rename(const Dim from, const Dim to) {
-  if (m_dims.count(to) != 0)
-    throw except::DimensionError("Duplicate dimension.");
 
   const auto relabel = [from, to](auto &map) {
     auto node = map.extract(from);
@@ -764,8 +762,8 @@ template <class T> const auto &getitem(const T &view, const std::string &name) {
 } // namespace
 
 /// Return a const view to data and coordinates with given name.
-const DataArrayConstView &DatasetConstView::
-operator[](const std::string &name) const {
+const DataArrayConstView &
+DatasetConstView::operator[](const std::string &name) const {
   return getitem(*this, name);
 }
 

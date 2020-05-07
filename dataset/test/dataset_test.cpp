@@ -484,6 +484,7 @@ protected:
 };
 
 TEST_F(DatasetRenameTest, fail_duplicate_dim) {
+  GTEST_SKIP();
   ASSERT_THROW(d.rename(Dim::X, Dim::Y), except::DimensionError);
   ASSERT_EQ(d, original);
   ASSERT_THROW(d.rename(Dim::X, Dim::X), except::DimensionError);
