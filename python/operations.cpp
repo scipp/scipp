@@ -54,33 +54,6 @@ template <class T> void bind_concatenate(py::module &m) {
         doc.c_str());
 }
 
-template <class T> Docstring docstring_abs() {
-  return Docstring()
-        .description("Element-wise absolute value.")
-        .raises("If the dtype has no absolute value, e.g., if it is a string.")
-        .seealso(":py:class:`scipp.norm` for vector-like dtype.")
-        .returns("The absolute values of the input.")
-        .rtype<T>()
-        .param("x", "Input variable.");
-}
-
-template <typename T> void bind_abs(py::module &m) {
-  m.def(
-      "abs", [](CstViewRef<T> self) { return abs(self); },
-      py::arg("x"), py::call_guard<py::gil_scoped_release>(),
-      docstring_abs<T>().c_str());
- }
-
-template <typename T> void bind_abs_out(py::module &m) {
-  m.def(
-      "abs",
-      [](CstViewRef<T> self, ViewRef<T> out) {
-        return abs(self, out);
-      },
-      py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>(),
-      docstring_abs<View<T>>().param("out", "Output buffer.").c_str());
-}
-
 template <typename T> void bind_dot(py::module &m) {
   auto doc = Docstring()
         .description("Element-wise dot product.")
@@ -110,8 +83,6 @@ void init_operations(py::module &m) {
   bind_concatenate<Variable>(m);
   bind_concatenate<DataArray>(m);
   bind_concatenate<Dataset>(m);
-
-  bind_abs<Variable>(m);
 
   bind_dot<Variable>(m);
 

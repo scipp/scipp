@@ -437,27 +437,27 @@ void init_variable(py::module &m) {
         py::call_guard<py::gil_scoped_release>(),
         "Split a Variable along a given Dimension.");
 
-  m.def(
-      "sqrt", [](const VariableConstView &self) { return sqrt(self); },
-      py::arg("x"), py::call_guard<py::gil_scoped_release>(), R"(
-        Element-wise square-root.
+  // m.def(
+  //     "sqrt", [](const VariableConstView &self) { return sqrt(self); },
+  //     py::arg("x"), py::call_guard<py::gil_scoped_release>(), R"(
+  //       Element-wise square-root.
 
-        :raises: If the dtype has no square-root, e.g., if it is a string
-        :return: Copy of the input with values replaced by the square-root.
-        :rtype: Variable)");
+  //       :raises: If the dtype has no square-root, e.g., if it is a string
+  //       :return: Copy of the input with values replaced by the square-root.
+  //       :rtype: Variable)");
 
-  m.def(
-      "sqrt",
-      [](const VariableConstView &self, const VariableView &out) {
-        return sqrt(self, out);
-      },
-      py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>(),
-      R"(
-        Element-wise square-root.
+  // m.def(
+  //     "sqrt",
+  //     [](const VariableConstView &self, const VariableView &out) {
+  //       return sqrt(self, out);
+  //     },
+  //     py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>(),
+  //     R"(
+  //       Element-wise square-root.
 
-        :raises: If the dtype has no square-root, e.g., if it is a string
-        :return: Copy of the input with values replaced by the square-root.
-        :rtype: Variable)");
+  //       :raises: If the dtype has no square-root, e.g., if it is a string
+  //       :return: Copy of the input with values replaced by the square-root.
+  //       :rtype: Variable)");
 
   // m.def("sum", py::overload_cast<const VariableConstView &, const Dim>(&sum),
   //       py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
@@ -790,83 +790,83 @@ void init_variable(py::module &m) {
       [](const DataArrayConstView &self) { return contains_events(self); },
       R"(Return true if the data array contains event data. Note that data may be stored as a scalar, but this returns true if any coord contains events.)");
 
-  m.def(
-      "less",
-      [](const VariableConstView &x, const VariableConstView &y) {
-        return less(x, y);
-      },
-      py::arg("x"), py::arg("y"),
-      R"(
-        Comparison returning the truth value of (x < y) element-wise.
+  // m.def(
+  //     "less",
+  //     [](const VariableConstView &x, const VariableConstView &y) {
+  //       return less(x, y);
+  //     },
+  //     py::arg("x"), py::arg("y"),
+  //     R"(
+  //       Comparison returning the truth value of (x < y) element-wise.
 
-        :raises: If the units of inputs are not the same, or if the dtypes of inputs are not double precision floats
-        :return: Variable of booleans.
-        :rtype: Variable)");
+  //       :raises: If the units of inputs are not the same, or if the dtypes of inputs are not double precision floats
+  //       :return: Variable of booleans.
+  //       :rtype: Variable)");
 
-  m.def(
-      "greater",
-      [](const VariableConstView &x, const VariableConstView &y) {
-        return greater(x, y);
-      },
-      py::arg("x"), py::arg("y"),
-      R"(
-        Comparison returning the truth value of (x > y) element-wise.
+  // m.def(
+  //     "greater",
+  //     [](const VariableConstView &x, const VariableConstView &y) {
+  //       return greater(x, y);
+  //     },
+  //     py::arg("x"), py::arg("y"),
+  //     R"(
+  //       Comparison returning the truth value of (x > y) element-wise.
 
-        :raises: If the units of inputs are not the same, or if the dtypes of inputs are not double precision floats
-        :return: Variable of booleans.
-        :rtype: Variable)");
+  //       :raises: If the units of inputs are not the same, or if the dtypes of inputs are not double precision floats
+  //       :return: Variable of booleans.
+  //       :rtype: Variable)");
 
-  m.def(
-      "greater_equal",
-      [](const VariableConstView &x, const VariableConstView &y) {
-        return greater_equal(x, y);
-      },
-      py::arg("x"), py::arg("y"),
-      R"(
-        Comparison returning the truth value of (x >= y) element-wise.
+  // m.def(
+  //     "greater_equal",
+  //     [](const VariableConstView &x, const VariableConstView &y) {
+  //       return greater_equal(x, y);
+  //     },
+  //     py::arg("x"), py::arg("y"),
+  //     R"(
+  //       Comparison returning the truth value of (x >= y) element-wise.
 
-        :raises: If the units of inputs are not the same, or if the dtypes of inputs are not double precision floats
-        :return: Variable of booleans.
-        :rtype: Variable)");
+  //       :raises: If the units of inputs are not the same, or if the dtypes of inputs are not double precision floats
+  //       :return: Variable of booleans.
+  //       :rtype: Variable)");
 
-  m.def(
-      "less_equal",
-      [](const VariableConstView &x, const VariableConstView &y) {
-        return less_equal(x, y);
-      },
-      py::arg("x"), py::arg("y"),
-      R"(
-        Comparison returning the truth value of (x <= y) element-wise.
+  // m.def(
+  //     "less_equal",
+  //     [](const VariableConstView &x, const VariableConstView &y) {
+  //       return less_equal(x, y);
+  //     },
+  //     py::arg("x"), py::arg("y"),
+  //     R"(
+  //       Comparison returning the truth value of (x <= y) element-wise.
 
-        :raises: If the units of inputs are not the same, or if the dtypes of inputs are not double precision floats
-        :return: Variable of booleans.
-        :rtype: Variable)");
+  //       :raises: If the units of inputs are not the same, or if the dtypes of inputs are not double precision floats
+  //       :return: Variable of booleans.
+  //       :rtype: Variable)");
 
-  m.def(
-      "equal",
-      [](const VariableConstView &x, const VariableConstView &y) {
-        return equal(x, y);
-      },
-      py::arg("x"), py::arg("y"),
-      R"(
-        Comparison returning the truth value of (x == y) element-wise.
+  // m.def(
+  //     "equal",
+  //     [](const VariableConstView &x, const VariableConstView &y) {
+  //       return equal(x, y);
+  //     },
+  //     py::arg("x"), py::arg("y"),
+  //     R"(
+  //       Comparison returning the truth value of (x == y) element-wise.
 
-        :raises: If the units of inputs are not the same, or if the dtypes of inputs are not double precision floats
-        :return: Variable of booleans.
-        :rtype: Variable)");
+  //       :raises: If the units of inputs are not the same, or if the dtypes of inputs are not double precision floats
+  //       :return: Variable of booleans.
+  //       :rtype: Variable)");
 
-  m.def(
-      "not_equal",
-      [](const VariableConstView &x, const VariableConstView &y) {
-        return not_equal(x, y);
-      },
-      py::arg("x"), py::arg("y"),
-      R"(
-        Comparison returning the truth value of (x != y) element-wise.
+  // m.def(
+  //     "not_equal",
+  //     [](const VariableConstView &x, const VariableConstView &y) {
+  //       return not_equal(x, y);
+  //     },
+  //     py::arg("x"), py::arg("y"),
+  //     R"(
+  //       Comparison returning the truth value of (x != y) element-wise.
 
-        :raises: If the units of inputs are not the same, or if the dtypes of inputs are not double precision floats
-        :return: Variable of booleans.
-        :rtype: Variable)");
+  //       :raises: If the units of inputs are not the same, or if the dtypes of inputs are not double precision floats
+  //       :return: Variable of booleans.
+  //       :rtype: Variable)");
 
   // auto geom_m = m.def_submodule("geometry");
   // geom_m.def(
