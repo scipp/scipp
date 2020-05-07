@@ -4,7 +4,7 @@
 /// @author Neil Vaytet
 #include "docstring.h"
 
-Docstring& Docstring::description(const std::string s, const bool append) {
+Docstring &Docstring::description(const std::string s, const bool append) {
   if (append)
     m_description += s;
   else
@@ -12,7 +12,7 @@ Docstring& Docstring::description(const std::string s, const bool append) {
   return *this;
 }
 
-Docstring& Docstring::raises(const std::string s, const bool append) {
+Docstring &Docstring::raises(const std::string s, const bool append) {
   if (append)
     m_raises += s;
   else
@@ -20,7 +20,7 @@ Docstring& Docstring::raises(const std::string s, const bool append) {
   return *this;
 }
 
-Docstring& Docstring::seealso(const std::string s, const bool append) {
+Docstring &Docstring::seealso(const std::string s, const bool append) {
   if (append)
     m_seealso += s;
   else
@@ -28,7 +28,7 @@ Docstring& Docstring::seealso(const std::string s, const bool append) {
   return *this;
 }
 
-Docstring& Docstring::returns(const std::string s, const bool append) {
+Docstring &Docstring::returns(const std::string s, const bool append) {
   if (append)
     m_returns += s;
   else
@@ -36,23 +36,23 @@ Docstring& Docstring::returns(const std::string s, const bool append) {
   return *this;
 }
 
-Docstring& Docstring::rtype(const std::string s, const bool append) {
-if (append)
+Docstring &Docstring::rtype(const std::string s, const bool append) {
+  if (append)
     m_rtype += s;
   else
     m_rtype = s;
   return *this;
 }
 
-Docstring& Docstring::param(const std::string name, const std::string about) {
-  if ( m_params.find(name) == m_params.end() ) {
+Docstring &Docstring::param(const std::string name, const std::string about) {
+  if (m_params.find(name) == m_params.end()) {
     m_order.push_back(name);
   }
   m_params[name] = about;
   return *this;
 }
 
-Docstring& Docstring::clear() {
+Docstring &Docstring::clear() {
   m_description.clear();
   m_raises.clear();
   m_seealso.clear();
@@ -62,7 +62,7 @@ Docstring& Docstring::clear() {
   return *this;
 }
 
-const char * Docstring::c_str() {
+const char *Docstring::c_str() {
   m_output = m_description + "\n";
   for (const auto name : m_order)
     m_output += ":param " + name + ": " + m_params[name] + "\n";

@@ -16,108 +16,102 @@ using namespace scipp::dataset;
 
 namespace py = pybind11;
 
-
 template <class T> void bind_flatten(py::module &m) {
   m.def("flatten", py::overload_cast<CstViewRef<T>, const Dim>(&flatten),
         py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
         R"(
-        Flatten the specified dimension into event lists, equivalent to summing dense data.
+Flatten the specified dimension into event lists, equivalent to summing dense
+data.
 
-        :param x: Variable, DataArray, or Dataset to flatten.
-        :param dim: Dimension over which to flatten.
-        :raises: If the dimension does not exist, or if x does not contain event lists
-        :seealso: :py:class:`scipp.sum`
-        :return: New variable, data array, or dataset containing the flattened data.
-        :rtype: Variable, DataArray, or Dataset)");
+:param x: Variable, DataArray, or Dataset to flatten.
+:param dim: Dimension over which to flatten.
+:raises: If the dimension does not exist, or if x does not contain event lists
+:seealso: :py:class:`scipp.sum`
+:return: New variable, data array, or dataset containing the flattened data.
+:rtype: Variable, DataArray, or Dataset)");
 }
 
 template <class T> void bind_concatenate(py::module &m) {
   auto doc = Docstring()
-        .description(R"(
-        Concatenate input data array along the given dimension.
+                 .description(R"(
+Concatenate input data array along the given dimension.
 
-        Concatenation can happen in two ways:
-         - Along an existing dimension, yielding a new dimension extent given by the sum of the input's extents.
-         - Along a new dimension that is not contained in either of the inputs, yielding an output with one extra dimensions.
+Concatenation can happen in two ways:
+ - Along an existing dimension, yielding a new dimension extent given by the sum
+   of the input's extents.
+ - Along a new dimension that is not contained in either of the inputs, yielding
+   an output with one extra dimensions.
 
-        In the case of a data array or dataset, the coords, and masks are also concatenated.
-        Coords, and masks for any but the given dimension are required to match and are copied to the output without changes.)")
-        .raises("If the dtype or unit does not match, or if the dimensions and shapes are incompatible.")
-        .returns("The absolute values of the input.")
-        .rtype<T>()
-        .param("x", "Left hand side input.")
-        .param("y", "Right hand side input.")
-        .param("dim", "Dimension along which to concatenate.");
+In the case of a data array or dataset, the coords, and masks are also
+concatenated.
+Coords, and masks for any but the given dimension are required to match and are
+copied to the output without changes.)")
+                 .raises("If the dtype or unit does not match, or if the "
+                         "dimensions and shapes are incompatible.")
+                 .returns("The absolute values of the input.")
+                 .rtype<T>()
+                 .param("x", "Left hand side input.")
+                 .param("y", "Right hand side input.")
+                 .param("dim", "Dimension along which to concatenate.");
   m.def("concatenate",
-    [](CstViewRef<T> x, CstViewRef<T> y, const Dim dim) { return concatenate(x, y, dim); },
+        [](CstViewRef<T> x, CstViewRef<T> y, const Dim dim) {
+          return concatenate(x, y, dim);
+        },
         py::arg("x"), py::arg("y"), py::arg("dim"),
-        py::call_guard<py::gil_scoped_release>(),
-        doc.c_str());
+        py::call_guard<py::gil_scoped_release>(), doc.c_str());
 }
 
 template <typename T> void bind_dot(py::module &m) {
   auto doc = Docstring()
-        .description("Element-wise dot product.")
-        .raises("If the dtype of the input is not vector_3_float64.")
-        .returns("The dot product of the input vectors.")
-        .rtype<T>()
-        .param("x", "Input left hand side operand.")
-        .param("y", "Input right hand side operand.");
-  m.def(
-      "dot", [](CstViewRef<T> x, CstViewRef<T> y) { return dot(x, y); },
-      py::arg("x"), py::arg("y"), py::call_guard<py::gil_scoped_release>(),
-      doc.c_str());
+                 .description("Element-wise dot product.")
+                 .raises("If the dtype of the input is not vector_3_float64.")
+                 .returns("The dot product of the input vectors.")
+                 .rtype<T>()
+                 .param("x", "Input left hand side operand.")
+                 .param("y", "Input right hand side operand.");
+  m.def("dot", [](CstViewRef<T> x, CstViewRef<T> y) { return dot(x, y); },
+        py::arg("x"), py::arg("y"), py::call_guard<py::gil_scoped_release>(),
+        doc.c_str());
   // m.def(
   //     "dot",
   //     [](ConstView x, ConstView y, View out) {
   //       return dot(x, y, out);
   //     },
-  //     py::arg("x"), py::arg("y"), py::arg("out"), py::call_guard<py::gil_scoped_release>(),
-  //     doc.param("out", "Output buffer.").c_str());
+  //     py::arg("x"), py::arg("y"), py::arg("out"),
+  //     py::call_guard<py::gil_scoped_release>(), doc.param("out", "Output
+  //     buffer.").c_str());
 }
 
-
-// template <class T> Docstring docstring_sort(const std::string op) {
-//   return Docstring()
-//         .description("Comparison returning the truth value of " + op +
-//                      "element-wise.")
-//         .raises("If the units of inputs are not the same, or if the dtypes of "
-//                 "inputs are not double precision floats.")
-//         .returns("Booleans that are true if " + op + ".")
-//         .rtype<T>()
-//         .param("x", "Input left operand.")
-//         .param("y", "Input right operand.");
-// }
-
-
 template <typename T> void bind_sort(py::module &m) {
-  auto doc = Docstring()
-        .description("Sort variable along a dimension by a sort key.")
-        .raises("If the key is invalid, e.g., if it has not exactly one "
-                "dimension, or if its dtype is not sortable.")
-        .returns("The sorted equivalent of the input.")
-        .rtype<T>()
-        .param("x", "Data to be sorted")
-        .param("key", "Sort key.");
-  m.def(
-      "sort", [](CstViewRef<T> x, CstViewRef<Variable> key) { return sort(x, key); },
-      py::arg("x"), py::arg("key"), py::call_guard<py::gil_scoped_release>(),
-      doc.c_str());
+  auto doc =
+      Docstring()
+          .description("Sort variable along a dimension by a sort key.")
+          .raises("If the key is invalid, e.g., if it has not exactly one "
+                  "dimension, or if its dtype is not sortable.")
+          .returns("The sorted equivalent of the input.")
+          .rtype<T>()
+          .param("x", "Data to be sorted")
+          .param("key", "Sort key.");
+  m.def("sort",
+        [](CstViewRef<T> x, CstViewRef<Variable> key) { return sort(x, key); },
+        py::arg("x"), py::arg("key"), py::call_guard<py::gil_scoped_release>(),
+        doc.c_str());
 }
 
 template <typename T> void bind_sort_dim(py::module &m) {
-  auto doc = Docstring()
-        .description("Sort data array along a dimension by the coordinate "
-                     "values for that dimension.")
-        .raises("If the key is invalid, e.g., if the dimension does not exist.")
-        .returns("The sorted equivalent of the input.")
-        .rtype<T>()
-        .param("x", "Data to be sorted")
-        .param("dim", "Dimension to sort along.");
-  m.def(
-      "sort", [](CstViewRef<T> x, const Dim & dim) { return sort(x, dim); },
-      py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
-      doc.c_str());
+  auto doc =
+      Docstring()
+          .description("Sort data array along a dimension by the coordinate "
+                       "values for that dimension.")
+          .raises(
+              "If the key is invalid, e.g., if the dimension does not exist.")
+          .returns("The sorted equivalent of the input.")
+          .rtype<T>()
+          .param("x", "Data to be sorted")
+          .param("dim", "Dimension to sort along.");
+  m.def("sort", [](CstViewRef<T> x, const Dim &dim) { return sort(x, dim); },
+        py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
+        doc.c_str());
 }
 
 void init_operations(py::module &m) {

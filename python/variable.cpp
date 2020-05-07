@@ -134,11 +134,10 @@ void bind_init_0D_list_eigen(py::class_<Variable> &c) {
 
 template <class T, class... Ignored>
 void bind_astype(py::class_<T, Ignored...> &c) {
-  c.def(
-      "astype",
-      [](const T &self, const DType type) { return astype(self, type); },
-      py::call_guard<py::gil_scoped_release>(),
-      R"(
+  c.def("astype",
+        [](const T &self, const DType type) { return astype(self, type); },
+        py::call_guard<py::gil_scoped_release>(),
+        R"(
         Converts a Variable to a different type.
 
         :raises: If the variable cannot be converted to the requested dtype.
@@ -168,27 +167,23 @@ void init_variable(py::module &m) {
            py::arg("dtype") = py::none())
       .def("rename_dims", &rename_dims<Variable>, py::arg("dims_dict"),
            "Rename dimensions.")
-      .def(
-          "copy", [](const Variable &self) { return self; },
-          py::call_guard<py::gil_scoped_release>(), "Return a (deep) copy.")
-      .def(
-          "__copy__", [](Variable &self) { return Variable(self); },
-          py::call_guard<py::gil_scoped_release>(), "Return a (deep) copy.")
-      .def(
-          "__deepcopy__",
-          [](Variable &self, py::dict) { return Variable(self); },
-          py::call_guard<py::gil_scoped_release>(), "Return a (deep) copy.")
+      .def("copy", [](const Variable &self) { return self; },
+           py::call_guard<py::gil_scoped_release>(), "Return a (deep) copy.")
+      .def("__copy__", [](Variable &self) { return Variable(self); },
+           py::call_guard<py::gil_scoped_release>(), "Return a (deep) copy.")
+      .def("__deepcopy__",
+           [](Variable &self, py::dict) { return Variable(self); },
+           py::call_guard<py::gil_scoped_release>(), "Return a (deep) copy.")
       .def_property_readonly("dtype", &Variable::dtype)
-      .def(
-          "__radd__", [](Variable &a, double &b) { return a + b * units::one; },
-          py::is_operator())
-      .def(
-          "__rsub__", [](Variable &a, double &b) { return b * units::one - a; },
-          py::is_operator())
-      .def(
-          "__rmul__",
-          [](Variable &a, double &b) { return a * (b * units::one); },
-          py::is_operator())
+      .def("__radd__",
+           [](Variable &a, double &b) { return a + b * units::one; },
+           py::is_operator())
+      .def("__rsub__",
+           [](Variable &a, double &b) { return b * units::one - a; },
+           py::is_operator())
+      .def("__rmul__",
+           [](Variable &a, double &b) { return a * (b * units::one); },
+           py::is_operator())
       .def("__repr__", [](const Variable &self) { return to_string(self); });
 
   bind_init_list(variable);
@@ -203,9 +198,8 @@ void init_variable(py::module &m) {
 
   py::class_<VariableConstView>(m, "VariableConstView")
       .def(py::init<const Variable &>())
-      .def(
-          "copy", [](const VariableConstView &self) { return Variable(self); },
-          "Return a (deep) copy.")
+      .def("copy", [](const VariableConstView &self) { return Variable(self); },
+           "Return a (deep) copy.")
       .def("__copy__",
            [](const VariableConstView &self) { return Variable(self); })
       .def("__deepcopy__",
@@ -219,18 +213,15 @@ void init_variable(py::module &m) {
         Mostly equivalent to Variable, see there for details.)");
   variableView.def_buffer(&make_py_buffer_info);
   variableView.def(py::init<Variable &>())
-      .def(
-          "__radd__",
-          [](VariableView &a, double &b) { return a + b * units::one; },
-          py::is_operator())
-      .def(
-          "__rsub__",
-          [](VariableView &a, double &b) { return b * units::one - a; },
-          py::is_operator())
-      .def(
-          "__rmul__",
-          [](VariableView &a, double &b) { return a * (b * units::one); },
-          py::is_operator());
+      .def("__radd__",
+           [](VariableView &a, double &b) { return a + b * units::one; },
+           py::is_operator())
+      .def("__rsub__",
+           [](VariableView &a, double &b) { return b * units::one - a; },
+           py::is_operator())
+      .def("__rmul__",
+           [](VariableView &a, double &b) { return a * (b * units::one); },
+           py::is_operator());
 
   bind_astype(variable);
   bind_astype(variableView);
@@ -273,14 +264,13 @@ void init_variable(py::module &m) {
   py::implicitly_convertible<Variable, VariableConstView>();
   py::implicitly_convertible<Variable, VariableView>();
 
-  m.def(
-      "reshape",
-      [](const VariableView &self, const std::vector<Dim> &labels,
-         const py::tuple &shape) {
-        Dimensions dims(labels, shape.cast<std::vector<scipp::index>>());
-        return self.reshape(dims);
-      },
-      py::arg("x"), py::arg("dims"), py::arg("shape"), R"(
+  m.def("reshape",
+        [](const VariableView &self, const std::vector<Dim> &labels,
+           const py::tuple &shape) {
+          Dimensions dims(labels, shape.cast<std::vector<scipp::index>>());
+          return self.reshape(dims);
+        },
+        py::arg("x"), py::arg("dims"), py::arg("shape"), R"(
         Reshape a variable.
 
         :param x: Data to reshape.
@@ -297,8 +287,8 @@ void init_variable(py::module &m) {
 
   //       :raises: If the dtype has no absolute value, e.g., if it is a string
   //       :seealso: :py:class:`scipp.norm` for vector-like dtype
-  //       :return: Copy of the input with values replaced by the absolute values
-  //       :rtype: Variable)");
+  //       :return: Copy of the input with values replaced by the absolute
+  //       values :rtype: Variable)");
 
   // m.def(
   //     "abs",
@@ -319,27 +309,30 @@ void init_variable(py::module &m) {
   //       R"(
   //       Element-wise dot-product.
 
-  //       :raises: If the dtype is not a vector such as :py:class:`scipp.dtype.vector_3_double`
-  //       :return: New variable with scalar elements based on the two inputs.
-  //       :rtype: Variable)");
+  //       :raises: If the dtype is not a vector such as
+  //       :py:class:`scipp.dtype.vector_3_double` :return: New variable with
+  //       scalar elements based on the two inputs. :rtype: Variable)");
 
   // m.def("concatenate",
-  //       py::overload_cast<const VariableConstView &, const VariableConstView &,
+  //       py::overload_cast<const VariableConstView &, const VariableConstView
+  //       &,
   //                         const Dim>(&concatenate),
   //       py::arg("x"), py::arg("y"), py::arg("dim"),
   //       py::call_guard<py::gil_scoped_release>(), R"(
   //       Concatenate input variables along the given dimension.
 
   //       Concatenation can happen in two ways:
-  //       - Along an existing dimension, yielding a new dimension extent given by the sum of the input's extents.
-  //       - Along a new dimension that is not contained in either of the inputs, yielding an output with one extra dimensions.
+  //       - Along an existing dimension, yielding a new dimension extent given
+  //       by the sum of the input's extents.
+  //       - Along a new dimension that is not contained in either of the
+  //       inputs, yielding an output with one extra dimensions.
 
   //       :param x: First Variable.
   //       :param y: Second Variable.
   //       :param dim: Dimension along which to concatenate.
-  //       :raises: If the dtype or unit does not match, or if the dimensions and shapes are incompatible.
-  //       :return: New variable containing all elements of the input variables.
-  //       :rtype: Variable)");
+  //       :raises: If the dtype or unit does not match, or if the dimensions
+  //       and shapes are incompatible. :return: New variable containing all
+  //       elements of the input variables. :rtype: Variable)");
 
   m.def("filter",
         py::overload_cast<const Variable &, const Variable &>(&filter),
@@ -355,38 +348,47 @@ void init_variable(py::module &m) {
         :return: New variable containing the data selected by the filter
         :rtype: Variable)");
 
-  // m.def("mean", py::overload_cast<const VariableConstView &, const Dim>(&mean),
-  //       py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
-  //       R"(
-  //       Element-wise mean over the specified dimension, if variances are present, the new variance is computated as standard-deviation of the mean.
+  // m.def("mean", py::overload_cast<const VariableConstView &, const
+  // Dim>(&mean),
+  //       py::arg("x"), py::arg("dim"),
+  //       py::call_guard<py::gil_scoped_release>(), R"( Element-wise mean over
+  //       the specified dimension, if variances are present, the new variance
+  //       is computated as standard-deviation of the mean.
 
-  //       If the input has variances, the variances stored in the ouput are based on the "standard deviation of the mean", i.e., :math:`\sigma_{mean} = \sigma / \sqrt{N}`.
-  //       :math:`N` is the length of the input dimension.
-  //       :math:`sigma` is estimated as the average of the standard deviations of the input elements along that dimension.
-  //       This assumes that elements follow a normal distribution.
+  //       If the input has variances, the variances stored in the ouput are
+  //       based on the "standard deviation of the mean", i.e.,
+  //       :math:`\sigma_{mean} = \sigma / \sqrt{N}`. :math:`N` is the length of
+  //       the input dimension. :math:`sigma` is estimated as the average of the
+  //       standard deviations of the input elements along that dimension. This
+  //       assumes that elements follow a normal distribution.
 
-  //       :raises: If the dimension does not exist, or the dtype cannot be summed, e.g., if it is a string
-  //       :seealso: :py:class:`scipp.sum`
+  //       :raises: If the dimension does not exist, or the dtype cannot be
+  //       summed, e.g., if it is a string :seealso: :py:class:`scipp.sum`
   //       :return: New variable containing the mean.
   //       :rtype: Variable)");
 
   // m.def(
   //     "mean",
-  //     [](const VariableConstView &x, const Dim dim, const VariableView &out) {
+  //     [](const VariableConstView &x, const Dim dim, const VariableView &out)
+  //     {
   //       return mean(x, dim, out);
   //     },
   //     py::arg("x"), py::arg("dim"), py::arg("out"),
   //     py::call_guard<py::gil_scoped_release>(),
   //     R"(
-  //       Element-wise mean over the specified dimension, if variances are present, the new variance is computated as standard-deviation of the mean.
+  //       Element-wise mean over the specified dimension, if variances are
+  //       present, the new variance is computated as standard-deviation of the
+  //       mean.
 
-  //       If the input has variances, the variances stored in the ouput are based on the "standard deviation of the mean", i.e., :math:`\sigma_{mean} = \sigma / \sqrt{N}`.
-  //       :math:`N` is the length of the input dimension.
-  //       :math:`sigma` is estimated as the average of the standard deviations of the input elements along that dimension.
-  //       This assumes that elements follow a normal distribution.
+  //       If the input has variances, the variances stored in the ouput are
+  //       based on the "standard deviation of the mean", i.e.,
+  //       :math:`\sigma_{mean} = \sigma / \sqrt{N}`. :math:`N` is the length of
+  //       the input dimension. :math:`sigma` is estimated as the average of the
+  //       standard deviations of the input elements along that dimension. This
+  //       assumes that elements follow a normal distribution.
 
-  //       :raises: If the dimension does not exist, or the dtype cannot be summed, e.g., if it is a string
-  //       :seealso: :py:class:`scipp.sum`
+  //       :raises: If the dimension does not exist, or the dtype cannot be
+  //       summed, e.g., if it is a string :seealso: :py:class:`scipp.sum`
   //       :return: Variable containing the mean.
   //       :rtype: Variable)");
 
@@ -396,19 +398,20 @@ void init_variable(py::module &m) {
 
   //       :raises: If the dtype has no norm, i.e., if it is not a vector
   //       :seealso: :py:class:`scipp.abs` for scalar dtype
-  //       :return: New variable with scalar elements computed as the norm values if the input elements.
-  //       :rtype: Variable)");
+  //       :return: New variable with scalar elements computed as the norm
+  //       values if the input elements. :rtype: Variable)");
 
   // m.def("sort",
-  //       py::overload_cast<const VariableConstView &, const VariableConstView &>(
+  //       py::overload_cast<const VariableConstView &, const VariableConstView
+  //       &>(
   //           &sort),
   //       py::arg("data"), py::arg("key"),
   //       py::call_guard<py::gil_scoped_release>(),
   //       R"(Sort variable along a dimension by a sort key.
 
-  //     :raises: If the key is invalid, e.g., if it has not exactly one dimension, or if its dtype is not sortable.
-  //     :return: New sorted variable.
-  //     :rtype: Variable)");
+  //     :raises: If the key is invalid, e.g., if it has not exactly one
+  //     dimension, or if its dtype is not sortable. :return: New sorted
+  //     variable. :rtype: Variable)");
 
   // m.def(
   //     "reciprocal",
@@ -460,14 +463,14 @@ void init_variable(py::module &m) {
   //       :rtype: Variable)");
 
   // m.def("sum", py::overload_cast<const VariableConstView &, const Dim>(&sum),
-  //       py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
-  //       R"(
-  //       Element-wise sum over the specified dimension.
+  //       py::arg("x"), py::arg("dim"),
+  //       py::call_guard<py::gil_scoped_release>(), R"( Element-wise sum over
+  //       the specified dimension.
 
   //       :param x: Data to sum.
   //       :param dim: Dimension over which to sum.
-  //       :raises: If the dimension does not exist, or if the dtype cannot be summed, e.g., if it is a string
-  //       :seealso: :py:class:`scipp.mean`
+  //       :raises: If the dimension does not exist, or if the dtype cannot be
+  //       summed, e.g., if it is a string :seealso: :py:class:`scipp.mean`
   //       :return: New variable containing the sum.
   //       :rtype: Variable)");
 
@@ -482,19 +485,19 @@ void init_variable(py::module &m) {
 
   //       :param x: Data to sum.
   //       :param dim: Dimension over which to sum.
-  //       :raises: If the dimension does not exist, if the dtype cannot be summed, e.g., if it is a string or if the output variable contains the summing dimension.
-  //       :seealso: :py:class:`scipp.mean`
-  //       :return: Variable containing the sum.
-  //       :rtype: Variable)");
+  //       :raises: If the dimension does not exist, if the dtype cannot be
+  //       summed, e.g., if it is a string or if the output variable contains
+  //       the summing dimension. :seealso: :py:class:`scipp.mean` :return:
+  //       Variable containing the sum. :rtype: Variable)");
 
   // m.def(
   //     "sin", [](const VariableConstView &self) { return sin(self); },
   //     py::arg("x"), py::call_guard<py::gil_scoped_release>(), R"(
   //       Element-wise sin.
 
-  //       :raises: If the unit is not a plane-angle unit, or if the dtype has no sin, e.g., if it is an integer
-  //       :return: Copy of the input with values replaced by the sin.
-  //       :rtype: Variable)");
+  //       :raises: If the unit is not a plane-angle unit, or if the dtype has
+  //       no sin, e.g., if it is an integer :return: Copy of the input with
+  //       values replaced by the sin. :rtype: Variable)");
 
   // m.def(
   //     "sin",
@@ -505,8 +508,8 @@ void init_variable(py::module &m) {
   //     R"(
   //       Element-wise sin.
 
-  //       :raises: If the unit is not a plane-angle unit, or if the dtype has no sin, e.g., if it is an integer
-  //       :return: sin of input values.
+  //       :raises: If the unit is not a plane-angle unit, or if the dtype has
+  //       no sin, e.g., if it is an integer :return: sin of input values.
   //       :rtype: Variable)");
 
   // m.def(
@@ -514,9 +517,9 @@ void init_variable(py::module &m) {
   //     py::arg("x"), py::call_guard<py::gil_scoped_release>(), R"(
   //       Element-wise cos.
 
-  //       :raises: If the unit is not a plane-angle unit, or if the dtype has no cos, e.g., if it is an integer
-  //       :return: Copy of the input with values replaced by the cos.
-  //       :rtype: Variable)");
+  //       :raises: If the unit is not a plane-angle unit, or if the dtype has
+  //       no cos, e.g., if it is an integer :return: Copy of the input with
+  //       values replaced by the cos. :rtype: Variable)");
 
   // m.def(
   //     "cos",
@@ -527,8 +530,8 @@ void init_variable(py::module &m) {
   //     R"(
   //       Element-wise cos.
 
-  //       :raises: If the unit is not a plane-angle unit, or if the dtype has no cos, e.g., if it is an integer
-  //       :return: cos of input values.
+  //       :raises: If the unit is not a plane-angle unit, or if the dtype has
+  //       no cos, e.g., if it is an integer :return: cos of input values.
   //       :rtype: Variable)");
 
   // m.def(
@@ -536,9 +539,9 @@ void init_variable(py::module &m) {
   //     py::call_guard<py::gil_scoped_release>(), R"(
   //       Element-wise tan.
 
-  //       :raises: If the unit is not a plane-angle unit, or if the dtype has no tan, e.g., if it is an integer
-  //       :return: Copy of the input with values replaced by the tan.
-  //       :rtype: Variable)");
+  //       :raises: If the unit is not a plane-angle unit, or if the dtype has
+  //       no tan, e.g., if it is an integer :return: Copy of the input with
+  //       values replaced by the tan. :rtype: Variable)");
 
   // m.def(
   //     "tan",
@@ -549,8 +552,8 @@ void init_variable(py::module &m) {
   //     R"(
   //       Element-wise tan.
 
-  //       :raises: If the unit is not a plane-angle unit, or if the dtype has no tan, e.g., if it is an integer
-  //       :return: tan of input values.
+  //       :raises: If the unit is not a plane-angle unit, or if the dtype has
+  //       no tan, e.g., if it is an integer :return: tan of input values.
   //       :rtype: Variable)");
 
   // m.def(
@@ -558,9 +561,9 @@ void init_variable(py::module &m) {
   //     py::call_guard<py::gil_scoped_release>(), R"(
   //       Element-wise asin.
 
-  //       :raises: If the unit is dimensionless, or if the dtype has no asin, e.g., if it is an integer
-  //       :return: Copy of the input with values replaced by the asin. Output unit is rad.
-  //       :rtype: Variable)");
+  //       :raises: If the unit is dimensionless, or if the dtype has no asin,
+  //       e.g., if it is an integer :return: Copy of the input with values
+  //       replaced by the asin. Output unit is rad. :rtype: Variable)");
 
   // m.def(
   //     "asin",
@@ -571,18 +574,18 @@ void init_variable(py::module &m) {
   //     R"(
   //       Element-wise atan.
 
-  //       :raises: If the unit is dimensionless, or if the dtype has no asin, e.g., if it is an integer
-  //       :return: asin of input values. Output unit is rad.
-  //       :rtype: Variable)");
+  //       :raises: If the unit is dimensionless, or if the dtype has no asin,
+  //       e.g., if it is an integer :return: asin of input values. Output unit
+  //       is rad. :rtype: Variable)");
 
   // m.def(
   //     "acos", [](const Variable &self) { return acos(self); }, py::arg("x"),
   //     py::call_guard<py::gil_scoped_release>(), R"(
   //       Element-wise acos.
 
-  //       :raises: If the unit is dimensionless, or if the dtype has no acos, e.g., if it is an integer
-  //       :return: Copy of the input with values replaced by the acos. Output unit is rad.
-  //       :rtype: Variable)");
+  //       :raises: If the unit is dimensionless, or if the dtype has no acos,
+  //       e.g., if it is an integer :return: Copy of the input with values
+  //       replaced by the acos. Output unit is rad. :rtype: Variable)");
 
   // m.def(
   //     "acos",
@@ -593,18 +596,18 @@ void init_variable(py::module &m) {
   //     R"(
   //       Element-wise acos.
 
-  //       :raises: If the unit is dimensionless, or if the dtype has no acos, e.g., if it is an integer
-  //       :return: acos of input values. Output unit is rad.
-  //       :rtype: Variable)");
+  //       :raises: If the unit is dimensionless, or if the dtype has no acos,
+  //       e.g., if it is an integer :return: acos of input values. Output unit
+  //       is rad. :rtype: Variable)");
 
   // m.def(
   //     "atan", [](const Variable &self) { return atan(self); }, py::arg("x"),
   //     py::call_guard<py::gil_scoped_release>(), R"(
   //       Element-wise atan.
 
-  //       :raises: If the unit is dimensionless, or if the dtype has no atan, e.g., if it is an integer
-  //       :return: Copy of the input with values replaced by the atan. Output unit is rad.
-  //       :rtype: Variable)");
+  //       :raises: If the unit is dimensionless, or if the dtype has no atan,
+  //       e.g., if it is an integer :return: Copy of the input with values
+  //       replaced by the atan. Output unit is rad. :rtype: Variable)");
 
   // m.def(
   //     "atan",
@@ -615,19 +618,18 @@ void init_variable(py::module &m) {
   //     R"(
   //       Element-wise atan.
 
-  //       :raises: If the unit is dimensionless, or if the dtype has no atan, e.g., if it is an integer
-  //       :return: atan of input values. Output unit is rad.
-  //       :rtype: Variable)");
+  //       :raises: If the unit is dimensionless, or if the dtype has no atan,
+  //       e.g., if it is an integer :return: atan of input values. Output unit
+  //       is rad. :rtype: Variable)");
 
   // m.def(
-  //     "atan2", [](const Variable &y, const Variable &x) { return atan2(y, x); },
-  //     py::arg("y"), py::arg("x"),
-  //     R"(
+  //     "atan2", [](const Variable &y, const Variable &x) { return atan2(y, x);
+  //     }, py::arg("y"), py::arg("x"), R"(
   //       Element-wise atan2.
 
-  //       :raises: If the units of inputs are different, or if the dtype has no atan2, e.g., if it is an integer
-  //       :return: atan2 of input y and x. Output unit is rad.
-  //       :rtype: Variable)");
+  //       :raises: If the units of inputs are different, or if the dtype has no
+  //       atan2, e.g., if it is an integer :return: atan2 of input y and x.
+  //       Output unit is rad. :rtype: Variable)");
 
   // m.def(
   //     "atan2",
@@ -637,14 +639,14 @@ void init_variable(py::module &m) {
   //     R"(
   //       Element-wise atan2 with out argument.
 
-  //       :raises: If the units of inputs are different, or if the dtype has no atan2, e.g., if it is an integer
-  //       :return: atan2 of input y and x, written to output. Output unit is rad.
-  //       :rtype: VariableView)");
+  //       :raises: If the units of inputs are different, or if the dtype has no
+  //       atan2, e.g., if it is an integer :return: atan2 of input y and x,
+  //       written to output. Output unit is rad. :rtype: VariableView)");
 
   // m.def("all", py::overload_cast<const VariableConstView &, const Dim>(&all),
-  //       py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
-  //       R"(
-  //       Element-wise AND over the specified dimension.
+  //       py::arg("x"), py::arg("dim"),
+  //       py::call_guard<py::gil_scoped_release>(), R"( Element-wise AND over
+  //       the specified dimension.
 
   //       :param x: Data to reduce.
   //       :param dim: Dimension to reduce.
@@ -654,9 +656,9 @@ void init_variable(py::module &m) {
   //       :rtype: Variable)");
 
   // m.def("any", py::overload_cast<const VariableConstView &, const Dim>(&any),
-  //       py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
-  //       R"(
-  //       Element-wise OR over the specified dimension.
+  //       py::arg("x"), py::arg("dim"),
+  //       py::call_guard<py::gil_scoped_release>(), R"( Element-wise OR over
+  //       the specified dimension.
 
   //       :param x: Data to reduce.
   //       :param dim: Dimension to reduce.
@@ -717,73 +719,77 @@ void init_variable(py::module &m) {
   //       :return: New variable containing the max values.
   //       :rtype: Variable)");
 
-  m.def(
-      "nan_to_num",
-      [](const VariableConstView &self,
-         const std::optional<VariableConstView> &nan,
-         const std::optional<VariableConstView> &posinf,
-         const std::optional<VariableConstView> &neginf) {
-        Variable out(self);
-        if (nan)
-          nan_to_num(out, *nan, out);
-        if (posinf)
-          positive_inf_to_num(out, *posinf, out);
-        if (neginf)
-          negative_inf_to_num(out, *neginf, out);
-        return out;
-      },
-      py::call_guard<py::gil_scoped_release>(),
-      R"(Element-wise special value replacement
+  // m.def(
+  //     "nan_to_num",
+  //     [](const VariableConstView &self,
+  //        const std::optional<VariableConstView> &nan,
+  //        const std::optional<VariableConstView> &posinf,
+  //        const std::optional<VariableConstView> &neginf) {
+  //       Variable out(self);
+  //       if (nan)
+  //         nan_to_num(out, *nan, out);
+  //       if (posinf)
+  //         positive_inf_to_num(out, *posinf, out);
+  //       if (neginf)
+  //         negative_inf_to_num(out, *neginf, out);
+  //       return out;
+  //     },
+  //     py::call_guard<py::gil_scoped_release>(),
+  //     R"(Element-wise special value replacement
 
-       All elements in the output are identical to input except in the presence of a nan, inf or -inf.
-       The function allows replacements to be separately specified for nan, inf or -inf values.
-       You can choose to replace a subset of those special values by providing just the required key word arguments.
-       If the replacement is value-only and the input has variances,
-       the variance at the element(s) undergoing replacement are also replaced with the replacement value.
-       If the replacement has a variance and the input has variances,
-       the variance at the element(s) undergoing replacement are also replaced with the replacement variance.
-       :raises: If the types of input and replacement do not match.
-       :return: Input elements are replaced in output with specified subsitutions.
-       :rtype: Variable)",
-      py::arg("x"), py::arg("nan") = std::optional<VariableConstView>(),
-      py::arg("posinf") = std::optional<VariableConstView>(),
-      py::arg("neginf") = std::optional<VariableConstView>());
+  //      All elements in the output are identical to input except in the
+  //      presence of a nan, inf or -inf. The function allows replacements to be
+  //      separately specified for nan, inf or -inf values. You can choose to
+  //      replace a subset of those special values by providing just the
+  //      required key word arguments. If the replacement is value-only and the
+  //      input has variances, the variance at the element(s) undergoing
+  //      replacement are also replaced with the replacement value. If the
+  //      replacement has a variance and the input has variances, the variance
+  //      at the element(s) undergoing replacement are also replaced with the
+  //      replacement variance. :raises: If the types of input and replacement
+  //      do not match. :return: Input elements are replaced in output with
+  //      specified subsitutions. :rtype: Variable)",
+  //     py::arg("x"), py::arg("nan") = std::optional<VariableConstView>(),
+  //     py::arg("posinf") = std::optional<VariableConstView>(),
+  //     py::arg("neginf") = std::optional<VariableConstView>());
 
-  m.def(
-      "nan_to_num",
-      [](const VariableConstView &self,
-         const std::optional<VariableConstView> &nan,
-         const std::optional<VariableConstView> &posinf,
-         const std::optional<VariableConstView> &neginf, VariableView &out) {
-        if (nan)
-          nan_to_num(self, *nan, out);
-        if (posinf)
-          positive_inf_to_num(self, *posinf, out);
-        if (neginf)
-          negative_inf_to_num(self, *neginf, out);
-        return out;
-      },
-      py::call_guard<py::gil_scoped_release>(),
-      R"(Element-wise special value replacement
+  // m.def(
+  //     "nan_to_num",
+  //     [](const VariableConstView &self,
+  //        const std::optional<VariableConstView> &nan,
+  //        const std::optional<VariableConstView> &posinf,
+  //        const std::optional<VariableConstView> &neginf, VariableView &out) {
+  //       if (nan)
+  //         nan_to_num(self, *nan, out);
+  //       if (posinf)
+  //         positive_inf_to_num(self, *posinf, out);
+  //       if (neginf)
+  //         negative_inf_to_num(self, *neginf, out);
+  //       return out;
+  //     },
+  //     py::call_guard<py::gil_scoped_release>(),
+  //     R"(Element-wise special value replacement
 
-       All elements in the output are identical to input except in the presence of a nan, inf or -inf.
-       The function allows replacements to be separately specified for nan, inf or -inf values.
-       You can choose to replace a subset of those special values by providing just the required key word arguments.
-       If the replacement is value-only and the input has variances,
-       the variance at the element(s) undergoing replacement are also replaced with the replacement value.
-       If the replacement has a variance and the input has variances,
-       the variance at the element(s) undergoing replacement are also replaced with the replacement variance.
-       :raises: If the types of input and replacement do not match.
-       :return: Input elements are replaced in output with specified subsitutions.
-       :rtype: Variable)",
-      py::arg("x"), py::arg("nan") = std::optional<VariableConstView>(),
-      py::arg("posinf") = std::optional<VariableConstView>(),
-      py::arg("neginf") = std::optional<VariableConstView>(), py::arg("out"));
+  //      All elements in the output are identical to input except in the
+  //      presence of a nan, inf or -inf. The function allows replacements to be
+  //      separately specified for nan, inf or -inf values. You can choose to
+  //      replace a subset of those special values by providing just the
+  //      required key word arguments. If the replacement is value-only and the
+  //      input has variances, the variance at the element(s) undergoing
+  //      replacement are also replaced with the replacement value. If the
+  //      replacement has a variance and the input has variances, the variance
+  //      at the element(s) undergoing replacement are also replaced with the
+  //      replacement variance. :raises: If the types of input and replacement
+  //      do not match. :return: Input elements are replaced in output with
+  //      specified subsitutions. :rtype: Variable)",
+  //     py::arg("x"), py::arg("nan") = std::optional<VariableConstView>(),
+  //     py::arg("posinf") = std::optional<VariableConstView>(),
+  //     py::arg("neginf") = std::optional<VariableConstView>(),
+  //     py::arg("out"));
 
-  m.def(
-      "contains_events",
-      [](const VariableConstView &self) { return contains_events(self); },
-      R"(Return true if the variable contains event data.)");
+  m.def("contains_events",
+        [](const VariableConstView &self) { return contains_events(self); },
+        R"(Return true if the variable contains event data.)");
 
   m.def(
       "contains_events",
@@ -799,8 +805,8 @@ void init_variable(py::module &m) {
   //     R"(
   //       Comparison returning the truth value of (x < y) element-wise.
 
-  //       :raises: If the units of inputs are not the same, or if the dtypes of inputs are not double precision floats
-  //       :return: Variable of booleans.
+  //       :raises: If the units of inputs are not the same, or if the dtypes of
+  //       inputs are not double precision floats :return: Variable of booleans.
   //       :rtype: Variable)");
 
   // m.def(
@@ -812,8 +818,8 @@ void init_variable(py::module &m) {
   //     R"(
   //       Comparison returning the truth value of (x > y) element-wise.
 
-  //       :raises: If the units of inputs are not the same, or if the dtypes of inputs are not double precision floats
-  //       :return: Variable of booleans.
+  //       :raises: If the units of inputs are not the same, or if the dtypes of
+  //       inputs are not double precision floats :return: Variable of booleans.
   //       :rtype: Variable)");
 
   // m.def(
@@ -825,8 +831,8 @@ void init_variable(py::module &m) {
   //     R"(
   //       Comparison returning the truth value of (x >= y) element-wise.
 
-  //       :raises: If the units of inputs are not the same, or if the dtypes of inputs are not double precision floats
-  //       :return: Variable of booleans.
+  //       :raises: If the units of inputs are not the same, or if the dtypes of
+  //       inputs are not double precision floats :return: Variable of booleans.
   //       :rtype: Variable)");
 
   // m.def(
@@ -838,8 +844,8 @@ void init_variable(py::module &m) {
   //     R"(
   //       Comparison returning the truth value of (x <= y) element-wise.
 
-  //       :raises: If the units of inputs are not the same, or if the dtypes of inputs are not double precision floats
-  //       :return: Variable of booleans.
+  //       :raises: If the units of inputs are not the same, or if the dtypes of
+  //       inputs are not double precision floats :return: Variable of booleans.
   //       :rtype: Variable)");
 
   // m.def(
@@ -851,8 +857,8 @@ void init_variable(py::module &m) {
   //     R"(
   //       Comparison returning the truth value of (x == y) element-wise.
 
-  //       :raises: If the units of inputs are not the same, or if the dtypes of inputs are not double precision floats
-  //       :return: Variable of booleans.
+  //       :raises: If the units of inputs are not the same, or if the dtypes of
+  //       inputs are not double precision floats :return: Variable of booleans.
   //       :rtype: Variable)");
 
   // m.def(
@@ -864,8 +870,8 @@ void init_variable(py::module &m) {
   //     R"(
   //       Comparison returning the truth value of (x != y) element-wise.
 
-  //       :raises: If the units of inputs are not the same, or if the dtypes of inputs are not double precision floats
-  //       :return: Variable of booleans.
+  //       :raises: If the units of inputs are not the same, or if the dtypes of
+  //       inputs are not double precision floats :return: Variable of booleans.
   //       :rtype: Variable)");
 
   // auto geom_m = m.def_submodule("geometry");
@@ -875,38 +881,42 @@ void init_variable(py::module &m) {
   //        const VariableConstView &z) { return geometry::position(x, y, z); },
   //     py::arg("x"), py::arg("y"), py::arg("z"),
   //     R"(
-  //       Element-wise zip functionality to produce a vector_3_float64 from independent input variables.
+  //       Element-wise zip functionality to produce a vector_3_float64 from
+  //       independent input variables.
 
-  //       :raises: If the units of inputs are not all meters, or if the dtypes of inputs are not double precision floats
-  //       :return: zip of input x, y and z. Output unit is meters.
-  //       :rtype: Variable)");
+  //       :raises: If the units of inputs are not all meters, or if the dtypes
+  //       of inputs are not double precision floats :return: zip of input x, y
+  //       and z. Output unit is meters. :rtype: Variable)");
   // geom_m.def(
   //     "x", [](const VariableConstView &pos) { return geometry::x(pos); },
   //     py::arg("pos"),
   //     R"(
-  //       un-zip functionality to produce a Variable of the x component of a vector_3_float64.
+  //       un-zip functionality to produce a Variable of the x component of a
+  //       vector_3_float64.
 
-  //       :raises: If the units of inputs are not meters, or if the dtypes of inputs are not double precision floats
-  //       :return: Extracted x component of input pos. Units in meters.
-  //       :rtype: Variable)");
+  //       :raises: If the units of inputs are not meters, or if the dtypes of
+  //       inputs are not double precision floats :return: Extracted x component
+  //       of input pos. Units in meters. :rtype: Variable)");
   // geom_m.def(
   //     "y", [](const VariableConstView &pos) { return geometry::y(pos); },
   //     py::arg("pos"),
   //     R"(
-  //       un-zip functionality to produce a Variable of the y component of a vector_3_float64.
+  //       un-zip functionality to produce a Variable of the y component of a
+  //       vector_3_float64.
 
-  //       :raises: If the units of inputs are not meters, or if the dtypes of inputs are not double precision floats
-  //       :return: Extracted y component of input pos. Units in meters.
-  //       :rtype: Variable)");
+  //       :raises: If the units of inputs are not meters, or if the dtypes of
+  //       inputs are not double precision floats :return: Extracted y component
+  //       of input pos. Units in meters. :rtype: Variable)");
   // geom_m.def(
   //     "z", [](const VariableConstView &pos) { return geometry::z(pos); },
   //     py::arg("pos"),
   //     R"(
-  //       un-zip functionality to produce a Variable of the z component of a vector_3_float64.
+  //       un-zip functionality to produce a Variable of the z component of a
+  //       vector_3_float64.
 
-  //       :raises: If the units of inputs are not meters, or if the dtypes of inputs are not double precision floats
-  //       :return: Extracted z component of input pos. Units in meters.
-  //       :rtype: Variable)");
+  //       :raises: If the units of inputs are not meters, or if the dtypes of
+  //       inputs are not double precision floats :return: Extracted z component
+  //       of input pos. Units in meters. :rtype: Variable)");
   // geom_m.def(
   //     "rotate",
   //     [](const VariableConstView &pos, const VariableConstView &rot) {
@@ -914,20 +924,25 @@ void init_variable(py::module &m) {
   //     },
   //     py::arg("position"), py::arg("rotation"),
   //     R"(
-  //       Rotate a Variable of type vector_3_float64 using a Variable of type quaternion_float64.
+  //       Rotate a Variable of type vector_3_float64 using a Variable of type
+  //       quaternion_float64.
 
-  //       :raises: If the units of the inputs are not meter and dimensionless for the positions and the rotations, respectively.
-  //       :return: a Variable containing the rotated position vectors.
-  //       :rtype: Variable)");
+  //       :raises: If the units of the inputs are not meter and dimensionless
+  //       for the positions and the rotations, respectively. :return: a
+  //       Variable containing the rotated position vectors. :rtype:
+  //       Variable)");
   // geom_m.def(
   //     "rotate",
   //     [](const VariableConstView &pos, const VariableConstView &rot,
-  //        const VariableView &out) { return geometry::rotate(pos, rot, out); },
+  //        const VariableView &out) { return geometry::rotate(pos, rot, out);
+  //        },
   //     py::arg("position"), py::arg("rotation"), py::arg("out"),
   //     R"(
-  //       Rotate a Variable of type vector_3_float64 using a Variable of type quaternion_float64, and store in the result inside the provided out argument.
+  //       Rotate a Variable of type vector_3_float64 using a Variable of type
+  //       quaternion_float64, and store in the result inside the provided out
+  //       argument.
 
-  //       :raises: If the units of the inputs are not meter and dimensionless for the positions and the rotations, respectively.
-  //       :return: rotated vectors are written to out.
-  //       :rtype: VariableView)");
+  //       :raises: If the units of the inputs are not meter and dimensionless
+  //       for the positions and the rotations, respectively. :return: rotated
+  //       vectors are written to out. :rtype: VariableView)");
 }

@@ -91,17 +91,16 @@ template <class T> void bind_convert(py::module &m) {
   m.def("convert", py::overload_cast<ConstView, const Dim, const Dim>(convert),
         py::arg("data"), py::arg("from"), py::arg("to"),
         py::call_guard<py::gil_scoped_release>(), doc);
-  m.def(
-      "convert",
-      [](py::object &obj, const Dim from, const Dim to, T &out) {
-        auto &data = obj.cast<T &>();
-        if (&data != &out)
-          throw std::runtime_error("Currently only out=<input> is supported");
-        data = convert(std::move(data), from, to);
-        return obj;
-      },
-      py::arg("data"), py::arg("from"), py::arg("to"), py::arg("out"),
-      py::call_guard<py::gil_scoped_release>(), doc);
+  m.def("convert",
+        [](py::object &obj, const Dim from, const Dim to, T &out) {
+          auto &data = obj.cast<T &>();
+          if (&data != &out)
+            throw std::runtime_error("Currently only out=<input> is supported");
+          data = convert(std::move(data), from, to);
+          return obj;
+        },
+        py::arg("data"), py::arg("from"), py::arg("to"), py::arg("out"),
+        py::call_guard<py::gil_scoped_release>(), doc);
 }
 
 template <class T> void bind_convert_with_calibration(py::module &m) {
@@ -120,18 +119,17 @@ template <class T> void bind_convert_with_calibration(py::module &m) {
             diffraction::convert_with_calibration),
         py::arg("data"), py::arg("calibration"),
         py::call_guard<py::gil_scoped_release>(), doc);
-  m.def(
-      "convert_with_calibration",
-      [](py::object &obj, const dataset::Dataset &calibration, const T &out) {
-        auto &data = obj.cast<T &>();
-        if (&data != &out)
-          throw std::runtime_error("Currently only out=<input> is supported");
-        data =
-            diffraction::convert_with_calibration(std::move(data), calibration);
-        return obj;
-      },
-      py::arg("data"), py::arg("calibration"), py::arg("out"),
-      py::call_guard<py::gil_scoped_release>(), doc);
+  m.def("convert_with_calibration",
+        [](py::object &obj, const dataset::Dataset &calibration, const T &out) {
+          auto &data = obj.cast<T &>();
+          if (&data != &out)
+            throw std::runtime_error("Currently only out=<input> is supported");
+          data = diffraction::convert_with_calibration(std::move(data),
+                                                       calibration);
+          return obj;
+        },
+        py::arg("data"), py::arg("calibration"), py::arg("out"),
+        py::call_guard<py::gil_scoped_release>(), doc);
 }
 
 void bind_diffraction(py::module &m) {

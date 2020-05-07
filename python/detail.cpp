@@ -18,9 +18,9 @@ void init_detail(py::module &m) {
 
   auto detail = m.def_submodule("detail");
 
-  detail.def(
-      "move", [](Variable &var) { return MoveableVariable{std::move(var)}; },
-      py::call_guard<py::gil_scoped_release>(), R"(
+  detail.def("move",
+             [](Variable &var) { return MoveableVariable{std::move(var)}; },
+             py::call_guard<py::gil_scoped_release>(), R"(
         This function can be used in a similar way to the C++ std::move to
         transfer ownership of an input Variable to a container.
         This is useful when wanting to avoid unnecessary copies of Variables
@@ -29,10 +29,9 @@ void init_detail(py::module &m) {
         :return: A MoveableVariable wrapper class.
         :rtype: MoveableVariable)");
 
-  detail.def(
-      "move",
-      [](DataArray &data) { return MoveableDataArray{std::move(data)}; },
-      py::call_guard<py::gil_scoped_release>(), R"(
+  detail.def("move",
+             [](DataArray &data) { return MoveableDataArray{std::move(data)}; },
+             py::call_guard<py::gil_scoped_release>(), R"(
         This function can be used in a similar way to the C++ std::move to
         transfer ownership of an input DataArray to a container.
         This is useful when wanting to avoid unnecessary copies of Variables
