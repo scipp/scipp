@@ -16,7 +16,10 @@ struct MoveableDataArray {
 };
 
 template <class T>
-using ConstView = const typename T::const_view_type &;
+using CstViewRef = const typename T::const_view_type &;
 
 template <class T>
-using View = const typename T::view_type &;
+using ViewRef = const typename T::view_type &;
+
+template <class T>
+using View = typename T::view_type;

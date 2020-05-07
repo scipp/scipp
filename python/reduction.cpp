@@ -2,6 +2,7 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
+#include "detail.h"
 #include "docstring.h"
 #include "pybind11.h"
 
@@ -39,7 +40,7 @@ template <class T> Docstring docstring_mean() {
 
 template <class T> void bind_mean(py::module &m) {
   m.def("mean",
-    [](const typename T::const_view_type & x, const Dim dim) { return mean(x, dim); },
+    [](CstViewRef<T> x, const Dim dim) { return mean(x, dim); },
         py::arg("x"), py::arg("dim"),
         py::call_guard<py::gil_scoped_release>(),
         docstring_mean<T>().c_str());
@@ -47,10 +48,10 @@ template <class T> void bind_mean(py::module &m) {
 
 template <class T> void bind_mean_out(py::module &m) {
   m.def("mean",
-    [](const typename T::const_view_type & x, const Dim dim, const typename T::view_type & out) { return mean(x, dim, out); },
+    [](CstViewRef<T> x, const Dim dim, View<T> out) { return mean(x, dim, out); },
         py::arg("x"), py::arg("dim"), py::arg("out"),
         py::call_guard<py::gil_scoped_release>(),
-        docstring_mean<typename T::view_type>().param("out", "Output buffer.").c_str());
+        docstring_mean<View<T>>().param("out", "Output buffer.").c_str());
 }
 
 template <class T> Docstring docstring_sum() {
@@ -66,7 +67,7 @@ template <class T> Docstring docstring_sum() {
 
 template <class T> void bind_sum(py::module &m) {
   m.def("sum",
-    [](const typename T::const_view_type & x, const Dim dim) { return sum(x, dim); },
+    [](CstViewRef<T> x, const Dim dim) { return sum(x, dim); },
         py::arg("x"), py::arg("dim"),
         py::call_guard<py::gil_scoped_release>(),
         docstring_sum<T>().c_str());
@@ -74,10 +75,10 @@ template <class T> void bind_sum(py::module &m) {
 
 template <class T> void bind_sum_out(py::module &m) {
   m.def("sum",
-    [](const typename T::const_view_type & x, const Dim dim, const typename T::view_type & out) { return sum(x, dim, out); },
+    [](CstViewRef<T> x, const Dim dim, ViewRef<T> out) { return sum(x, dim, out); },
         py::arg("x"), py::arg("dim"), py::arg("out"),
         py::call_guard<py::gil_scoped_release>(),
-        docstring_sum<typename T::view_type>().param("out", "Output buffer.").c_str());
+        docstring_sum<View<T>>().param("out", "Output buffer.").c_str());
 }
 
 
@@ -93,15 +94,15 @@ template <class T> Docstring docstring_minmax(const std::string minmax) {
 }
 
 template <class T> void bind_min(py::module &m) {
-  using ConstView = const typename T::const_view_type &;
+  // using ConstView = const typename T::const_view_type &;
   auto doc = docstring_minmax<T>("min");
   m.def("min",
-    [](ConstView x) { return min(x); },
+    [](CstViewRef<T> x) { return min(x); },
         py::arg("x"),
         py::call_guard<py::gil_scoped_release>(),
         doc.c_str());
   m.def("min",
-    [](ConstView x, const Dim dim) { return min(x, dim); },
+    [](CstViewRef<T> x, const Dim dim) { return min(x, dim); },
         py::arg("x"), py::arg("dim"),
         py::call_guard<py::gil_scoped_release>(),
         doc.description("Element-wise min over the specified dimension.")
@@ -110,15 +111,15 @@ template <class T> void bind_min(py::module &m) {
 }
 
 template <class T> void bind_max(py::module &m) {
-  using ConstView = const typename T::const_view_type &;
+  // using ConstView = const typename T::const_view_type &;
   auto doc = docstring_minmax<T>("max");
   m.def("max",
-    [](ConstView x) { return max(x); },
+    [](CstViewRef<T> x) { return max(x); },
         py::arg("x"),
         py::call_guard<py::gil_scoped_release>(),
         doc.c_str());
   m.def("max",
-    [](ConstView x, const Dim dim) { return max(x, dim); },
+    [](CstViewRef<T> x, const Dim dim) { return max(x, dim); },
         py::arg("x"), py::arg("dim"),
         py::call_guard<py::gil_scoped_release>(),
         doc.description("Element-wise min over the specified dimension.")
@@ -139,7 +140,7 @@ template <class T> Docstring docstring_bool(const std::string op) {
 
 template <class T> void bind_all(py::module &m) {
   m.def("all",
-    [](const typename T::const_view_type & x, const Dim dim) { return all(x, dim); },
+    [](CstViewRef<T> & x, const Dim dim) { return all(x, dim); },
         py::arg("x"), py::arg("dim"),
         py::call_guard<py::gil_scoped_release>(),
         docstring_bool<T>("AND").c_str());
@@ -147,7 +148,7 @@ template <class T> void bind_all(py::module &m) {
 
 template <class T> void bind_any(py::module &m) {
   m.def("any",
-    [](const typename T::const_view_type & x, const Dim dim) { return any(x, dim); },
+    [](CstViewRef<T> & x, const Dim dim) { return any(x, dim); },
         py::arg("x"), py::arg("dim"),
         py::call_guard<py::gil_scoped_release>(),
         docstring_bool<T>("OR").c_str());

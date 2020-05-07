@@ -2,6 +2,7 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
+#include "detail.h"
 #include "docstring.h"
 #include "pybind11.h"
 
@@ -14,16 +15,9 @@ using namespace scipp::dataset;
 
 namespace py = pybind11;
 
-template <class T>
-using ConstView = const typename T::const_view_type &;
-
-template <class T>
-using View = const typename T::view_type &;
-
 
 template <class T> void bind_flatten(py::module &m) {
-  using ConstView = const typename T::const_view_type &;
-  m.def("flatten", py::overload_cast<ConstView, const Dim>(&flatten),
+  m.def("flatten", py::overload_cast<CstViewRef<T>, const Dim>(&flatten),
         py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
         R"(
         Flatten the specified dimension into event lists, equivalent to summing dense data.
@@ -37,7 +31,6 @@ template <class T> void bind_flatten(py::module &m) {
 }
 
 template <class T> void bind_concatenate(py::module &m) {
-  using ConstView = const typename T::const_view_type &;
   auto doc = Docstring()
         .description(R"(
         Concatenate input data array along the given dimension.
@@ -55,9 +48,7 @@ template <class T> void bind_concatenate(py::module &m) {
         .param("y", "Right hand side input.")
         .param("dim", "Dimension along which to concatenate.");
   m.def("concatenate",
-    [](ConstView x, ConstView y, const Dim dim) { return concatenate(x, y, dim); },
-        // py::overload_cast<const DataArrayConstView &,
-        //                   const DataArrayConstView &, const Dim>(&concatenate),
+    [](CstViewRef<T> x, CstViewRef<T> y, const Dim dim) { return concatenate(x, y, dim); },
         py::arg("x"), py::arg("y"), py::arg("dim"),
         py::call_guard<py::gil_scoped_release>(),
         doc.c_str());
@@ -69,16 +60,13 @@ template <class T> Docstring docstring_abs() {
         .raises("If the dtype has no absolute value, e.g., if it is a string.")
         .seealso(":py:class:`scipp.norm` for vector-like dtype.")
         .returns("The absolute values of the input.")
-        // .rtype(T())
         .rtype<T>()
         .param("x", "Input variable.");
 }
 
 template <typename T> void bind_abs(py::module &m) {
-  // using ConstView = const typename T::const_view_type &;
-  // using V = typename T::view_type;
   m.def(
-      "abs", [](const typename T::const_view_type & self) { return abs(self); },
+      "abs", [](CstViewRef<T> self) { return abs(self); },
       py::arg("x"), py::call_guard<py::gil_scoped_release>(),
       docstring_abs<T>().c_str());
  }
@@ -86,16 +74,14 @@ template <typename T> void bind_abs(py::module &m) {
 template <typename T> void bind_abs_out(py::module &m) {
   m.def(
       "abs",
-      [](ConstView self, View out) {
+      [](CstViewRef<T> self, ViewRef<T> out) {
         return abs(self, out);
       },
       py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>(),
-      doc.template rtype<T>().param("out", "Output buffer.").c_str());
+      docstring_abs<View<T>>().param("out", "Output buffer.").c_str());
 }
 
 template <typename T> void bind_dot(py::module &m) {
-  using ConstView = const typename T::const_view_type &;
-  using View = const typename T::view_type &;
   auto doc = Docstring()
         .description("Element-wise dot product.")
         .raises("If the dtype of the input is not vector_3_float64.")
@@ -104,7 +90,7 @@ template <typename T> void bind_dot(py::module &m) {
         .param("x", "Input left hand side operand.")
         .param("y", "Input right hand side operand.");
   m.def(
-      "dot", [](ConstView x, ConstView y) { return dot(x, y); },
+      "dot", [](CstViewRef<T> x, CstViewRef<T> y) { return dot(x, y); },
       py::arg("x"), py::arg("y"), py::call_guard<py::gil_scoped_release>(),
       doc.c_str());
   // m.def(

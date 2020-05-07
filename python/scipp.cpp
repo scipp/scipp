@@ -6,6 +6,7 @@
 
 namespace py = pybind11;
 
+void init_comparison(py::module &);
 void init_counts(py::module &);
 void init_dataset(py::module &);
 void init_detail(py::module &);
@@ -31,6 +32,7 @@ void init_core(py::module &m) {
   init_counts(core);
   init_dataset(core);
   init_groupby(core);
+  init_comparison(core);
   init_operations(core);
   init_geometry(core);
   init_reduction(core);
