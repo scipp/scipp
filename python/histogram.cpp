@@ -33,33 +33,33 @@ namespace py = pybind11;
 
 
 
-template <class T> void bind_histogram(py::module &m) {
-  auto doc = Docstring()
-        .returns("Histogrammed data with units of counts.")
-        .rtype<T>();
-  m.def(
-      "histogram",
-      [](CstViewRef<T> x, CstViewRef<Variable> bins) {
-      // [](CstViewRef<T> x, const Variable &bins) {
-        return dataset::histogram(x, bins);
-      },
-      py::arg("x"), py::arg("bins"), py::call_guard<py::gil_scoped_release>(),
-      doc.description("Histograms the input event data along the dimensions of "
-                      "the supplied Variable describing the bin edges.")
-         .param("x", "Input data to be histogrammed.")
-         .param("bins", "Bin edges.").c_str());
-  m.def(
-      "histogram",
-      [](CstViewRef<T> x) {
-        return dataset::histogram(x);
-      },
-      py::arg("x"), py::call_guard<py::gil_scoped_release>(),
-      doc.description("Accepts realigned data and histograms the unaligned "
-                      "content according to the realigning axes.")
-        .param("x", "Input realigned data to be histogrammed.").c_str());
-}
-
+// template <class T> void bind_histogram(py::module &m) {
+//   auto doc = Docstring()
+//         .returns("Histogrammed data with units of counts.")
+//         .rtype<T>();
 //   m.def(
+//       "histogram",
+//       [](CstViewRef<T> x, CstViewRef<Variable> bins) {
+//       // [](CstViewRef<T> x, const Variable &bins) {
+//         return dataset::histogram(x, bins);
+//       },
+//       py::arg("x"), py::arg("bins"), py::call_guard<py::gil_scoped_release>(),
+//       doc.description("Histograms the input event data along the dimensions of "
+//                       "the supplied Variable describing the bin edges.")
+//          .param("x", "Input data to be histogrammed.")
+//          .param("bins", "Bin edges.").c_str());
+//   m.def(
+//       "histogram",
+//       [](CstViewRef<T> x) {
+//         return dataset::histogram(x);
+//       },
+//       py::arg("x"), py::call_guard<py::gil_scoped_release>(),
+//       doc.description("Accepts realigned data and histograms the unaligned "
+//                       "content according to the realigning axes.")
+//         .param("x", "Input realigned data to be histogrammed.").c_str());
+// }
+
+// //   m.def(
 //       "histogram",
 //       [](const DataArrayConstView &ds, const Variable &bins) {
 //         return dataset::histogram(ds, bins);
@@ -163,19 +163,24 @@ void init_histogram(py::module &m) {
 
 
   doc = Docstring()
-        .description("Histograms the input event data along the dimensions of "
-                      "the supplied Variable describing the bin edges.")
+        .description("Accepts realigned data and histograms the unaligned "
+                      "content according to the realigning axes.")
          .returns("Histogrammed data with units of counts.")
-         .param("x", "Input data to be histogrammed.")
-         .param("bins", "Bin edges.");
+         .param("x", "Input realigned data to be histogrammed.");
 
   m.def(
       "histogram",
       [](CstViewRef<DataArray> x) {
-        return dataset::histogram(x);
+        return histogram(x);
       },
       py::arg("x"), py::call_guard<py::gil_scoped_release>(),
-      doc.description("Accepts realigned data and histograms the unaligned "
-                      "content according to the realigning axes.")
-        .param("x", "Input realigned data to be histogrammed.").c_str());
+      doc.rtype("DataArray").c_str());
+
+  m.def(
+      "histogram",
+      [](const Dataset &x) {
+        return histogram(x);
+      },
+      py::arg("x"), py::call_guard<py::gil_scoped_release>(),
+      doc.rtype("Dataset").c_str());
 }
