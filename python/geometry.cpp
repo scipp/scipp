@@ -28,7 +28,7 @@ void bind_component(const std::string xyz, Function func, py::module &gm) {
                  "Extracted " + xyz +
                  " component of input pos. Output unit is same as input unit.")
              .rtype("Variable")
-             .param("pos", "Variable containing position vector.")
+             .param("pos", "Variable containing position vector.", "Variable")
              .c_str());
 }
 
@@ -50,9 +50,9 @@ void init_geometry(py::module &m) {
           .returns(
               "Zip of input x, y and z. Output unit is same as input unit.")
           .rtype("Variable")
-          .param("x", "Variable containing x component.")
-          .param("y", "Variable containing y component.")
-          .param("z", "Variable containing z component.")
+          .param("x", "Variable containing x component.", "Variable")
+          .param("y", "Variable containing y component.", "Variable")
+          .param("z", "Variable containing z component.", "Variable")
           .c_str());
 
   bind_component("x", x, geom_m);
@@ -67,8 +67,8 @@ void init_geometry(py::module &m) {
           .raises("If the units of the rotations are dimensionless.")
           .returns("Variable containing the rotated position vectors")
           .rtype("Variable")
-          .param("pos", "Variable containing xyz position vectors.")
-          .param("rot", "Variable containing rotation quaternions.");
+          .param("pos", "Variable containing xyz position vectors.", "Variable")
+          .param("rot", "Variable containing rotation quaternions.", "Variable");
 
   geom_m.def("rotate",
              [](const VariableConstView &pos, const VariableConstView &rot) {
@@ -82,5 +82,5 @@ void init_geometry(py::module &m) {
                 const VariableView &out) { return rotate(pos, rot, out); },
              py::arg("pos"), py::arg("rot"), py::arg("out"),
              py::call_guard<py::gil_scoped_release>(),
-             doc.rtype("VariableView").param("out", "Output buffer").c_str());
+             doc.rtype("VariableView").param("out", "Output buffer", "Variable").c_str());
 }

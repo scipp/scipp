@@ -23,8 +23,8 @@ template <class T> Docstring docstring_comparison(const std::string op) {
               "inputs are not double precision floats.")
       .returns("Booleans that are true if " + op + ".")
       .rtype<T>()
-      .param("x", "Input left operand.")
-      .param("y", "Input right operand.");
+      .template param<T>("x", "Input left operand.")
+      .template param<T>("y", "Input right operand.");
 }
 
 template <typename T> void bind_less(py::module &m) {

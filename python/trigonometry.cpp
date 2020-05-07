@@ -23,16 +23,16 @@ namespace py = pybind11;
                            "if it is an integer.")                             \
                    .returns("The " #op " of the input values.")                \
                    .rtype<T>()                                                 \
-                   .param("x", "Variable containing input values.");           \
+                   .template param<T>("x", "Input values.");           \
     m.def(#op, [](CstViewRef<T> self) { return op(self); }, py::arg("x"),      \
           py::call_guard<py::gil_scoped_release>(), doc.c_str());              \
     m.def(                                                                     \
         #op, [](CstViewRef<T> self, ViewRef<T> out) { return op(self, out); }, \
         py::arg("x"), py::arg("out"),                                          \
         py::call_guard<py::gil_scoped_release>(),                              \
-        doc.template rtype<View<T>>().param("out", "Output buffer").c_str());  \
+        doc.template rtype<View<T>>().template param<T>("out", "Output buffer").c_str());  \
     doc = doc.description("Element-wise a" #op ".")                            \
-              .returns("Variable containing the a" #op " values.")             \
+              .returns("The a" #op " of the input values.")             \
               .raises("If the unit is not dimensionless.");                    \
     m.def("a" #op, [](CstViewRef<T> self) { return a##op(self); },             \
           py::arg("x"), py::call_guard<py::gil_scoped_release>(),              \
@@ -42,7 +42,7 @@ namespace py = pybind11;
         [](CstViewRef<T> self, ViewRef<T> out) { return a##op(self, out); },   \
         py::arg("x"), py::arg("out"),                                          \
         py::call_guard<py::gil_scoped_release>(),                              \
-        doc.template rtype<View<T>>().param("out", "Output buffer").c_str());  \
+        doc.template rtype<View<T>>().template param<T>("out", "Output buffer").c_str());  \
   }
 
 BIND_TRIG_FUNCTION(sin)
@@ -58,8 +58,8 @@ template <class T> void bind_atan2(py::module &m) {
                   "integer.")
           .returns("The atan2 values of the input.")
           .rtype<T>()
-          .param("y", "Variable containing the y values.")
-          .param("x", "Variable containing the x values.");
+          .template param<T>("y", "Variable containing the y values.")
+          .template param<T>("x", "Variable containing the x values.");
   m.def("atan2", [](CstViewRef<T> y, CstViewRef<T> x) { return atan2(y, x); },
         py::arg("y"), py::arg("x"), py::call_guard<py::gil_scoped_release>(),
         doc.c_str());
@@ -69,7 +69,7 @@ template <class T> void bind_atan2(py::module &m) {
         },
         py::arg("y"), py::arg("x"), py::arg("out"),
         py::call_guard<py::gil_scoped_release>(),
-        doc.template rtype<View<T>>().param("out", "Output buffer").c_str());
+        doc.template rtype<View<T>>().template param<T>("out", "Output buffer").c_str());
 }
 
 void init_trigonometry(py::module &m) {

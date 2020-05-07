@@ -24,12 +24,12 @@ template <typename T> void bind_abs(py::module &m) {
           .seealso(":py:class:`scipp.norm` for vector-like dtype.")
           .returns("The absolute values of the input.")
           .rtype<T>()
-          .param("x", "Input data.");
+          .template param<T>("x", "Input data.");
   m.def("abs", [](CstViewRef<T> x) { return abs(x); }, py::arg("x"),
         py::call_guard<py::gil_scoped_release>(), doc.c_str());
   m.def("abs", [](CstViewRef<T> x, ViewRef<T> out) { return abs(x, out); },
         py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>(),
-        doc.template rtype<View<T>>().param("out", "Output buffer.").c_str());
+        doc.template rtype<View<T>>().template param<T>("out", "Output buffer.").c_str());
 }
 
 template <typename T> void bind_sqrt(py::module &m) {
@@ -39,12 +39,12 @@ template <typename T> void bind_sqrt(py::module &m) {
           .raises("If the dtype has no square-root, e.g., if it is a string.")
           .returns("The square-root values of the input.")
           .rtype<T>()
-          .param("x", "Input data.");
+          .template param<T>("x", "Input data.");
   m.def("sqrt", [](CstViewRef<T> x) { return sqrt(x); }, py::arg("x"),
         py::call_guard<py::gil_scoped_release>(), doc.c_str());
   m.def("sqrt", [](CstViewRef<T> x, ViewRef<T> out) { return sqrt(x, out); },
         py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>(),
-        doc.template rtype<View<T>>().param("out", "Output buffer.").c_str());
+        doc.template rtype<View<T>>().template param<T>("out", "Output buffer.").c_str());
 }
 
 template <typename T> void bind_norm(py::module &m) {
@@ -55,7 +55,7 @@ template <typename T> void bind_norm(py::module &m) {
           .returns("Scalar elements computed as the norm values of the input "
                    "elements.")
           .rtype<T>()
-          .param("x", "Input data.");
+          .template param<T>("x", "Input data.");
   m.def("norm", [](CstViewRef<T> x) { return norm(x); }, py::arg("x"),
         py::call_guard<py::gil_scoped_release>(), doc.c_str());
 }
@@ -67,13 +67,13 @@ template <typename T> void bind_reciprocal(py::module &m) {
           .raises("If the dtype has no reciprocal, e.g., if it is a string.")
           .returns("The reciprocal values of the input.")
           .rtype<T>()
-          .param("x", "Input data.");
+          .template param<T>("x", "Input data.");
   m.def("reciprocal", [](CstViewRef<T> x) { return reciprocal(x); },
         py::arg("x"), py::call_guard<py::gil_scoped_release>(), doc.c_str());
   m.def("reciprocal",
         [](CstViewRef<T> x, ViewRef<T> out) { return reciprocal(x, out); },
         py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>(),
-        doc.template rtype<View<T>>().param("out", "Output buffer.").c_str());
+        doc.template rtype<View<T>>().template param<T>("out", "Output buffer.").c_str());
 }
 
 template <typename T> void bind_nan_to_num(py::module &m) {
@@ -98,10 +98,10 @@ with the replacement variance.)")
           .returns("Input elements are replaced in output with specified "
                    "subsitutions.")
           .rtype<T>()
-          .param("x", "Input data.")
-          .param("nan", "Replacement values for NaN in the input.")
-          .param("posinf", "Replacement values for Inf in the input.")
-          .param("neginf", "Replacement values for -Inf in the input.");
+          .template param<T>("x", "Input data.")
+          .param("nan", "Replacement values for NaN in the input.", "Variable")
+          .param("posinf", "Replacement values for Inf in the input.", "Variable")
+          .param("neginf", "Replacement values for -Inf in the input.", "Variable");
 
   m.def("nan_to_num",
         [](CstViewRef<T> x, const std::optional<VariableConstView> &nan,
@@ -137,7 +137,7 @@ with the replacement variance.)")
         py::arg("posinf") = std::optional<VariableConstView>(),
         py::arg("neginf") = std::optional<VariableConstView>(), py::arg("out"),
         py::call_guard<py::gil_scoped_release>(),
-        doc.param("out", "Output buffer.").template rtype<View<T>>().c_str());
+        doc.template param<T>("out", "Output buffer.").template rtype<View<T>>().c_str());
 }
 
 void init_unary(py::module &m) {

@@ -33,8 +33,8 @@ This assumes that elements follow a normal distribution.)")
               "e.g., if it is a string.")
       .returns("The mean of the input values.")
       .rtype<T>()
-      .param("x", "Data to calculate mean of.")
-      .param("dim", "Dimension along which to calculate the mean.");
+      .template param<T>("x", "Data to calculate mean of.")
+      .param("dim", "Dimension along which to calculate the mean.", "Dim");
 }
 
 template <class T> void bind_mean(py::module &m) {
@@ -50,7 +50,7 @@ template <class T> void bind_mean_out(py::module &m) {
         },
         py::arg("x"), py::arg("dim"), py::arg("out"),
         py::call_guard<py::gil_scoped_release>(),
-        docstring_mean<View<T>>().param("out", "Output buffer.").c_str());
+        docstring_mean<View<T>>().template param<T>("out", "Output buffer.").c_str());
 }
 
 template <class T> Docstring docstring_sum() {
@@ -60,8 +60,8 @@ template <class T> Docstring docstring_sum() {
               "e.g., if it is a string.")
       .returns("The sum of the input values.")
       .rtype<T>()
-      .param("x", "Data to calculate sum of.")
-      .param("dim", "Dimension along which to calculate the sum.");
+      .template param<T>("x", "Data to calculate sum of.")
+      .param("dim", "Dimension along which to calculate the sum.", "Dim");
 }
 
 template <class T> void bind_sum(py::module &m) {
@@ -77,7 +77,7 @@ template <class T> void bind_sum_out(py::module &m) {
         },
         py::arg("x"), py::arg("dim"), py::arg("out"),
         py::call_guard<py::gil_scoped_release>(),
-        docstring_sum<View<T>>().param("out", "Output buffer.").c_str());
+        docstring_sum<View<T>>().template param<T>("out", "Output buffer.").c_str());
 }
 
 template <class T> Docstring docstring_minmax(const std::string minmax) {
@@ -89,7 +89,7 @@ template <class T> Docstring docstring_minmax(const std::string minmax) {
                (minmax == "min" ? "max" : "min") + "`")
       .returns("The " + minmax + " of the input values.")
       .rtype<T>()
-      .param("x", "Data to calculate " + minmax + " of.");
+      .template param<T>("x", "Data to calculate " + minmax + " of.");
 }
 
 template <class T> void bind_min(py::module &m) {
@@ -100,7 +100,7 @@ template <class T> void bind_min(py::module &m) {
         py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
         doc.description("Element-wise min over the specified dimension.")
             .raises(" If the dimension does not exist.", true)
-            .param("dim", "Dimension over which to calculate the min.")
+            .param("dim", "Dimension over which to calculate the min.", "Dim")
             .c_str());
 }
 
@@ -112,7 +112,7 @@ template <class T> void bind_max(py::module &m) {
         py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
         doc.description("Element-wise min over the specified dimension.")
             .raises(" If the dimension does not exist", true)
-            .param("dim", "Dimension over which to calculate the min.")
+            .param("dim", "Dimension over which to calculate the min.", "Dim")
             .c_str());
 }
 
@@ -122,8 +122,8 @@ template <class T> Docstring docstring_bool(const std::string op) {
       .raises("If the dimension does not exist, or if the dtype is not bool.")
       .returns("The " + op + " combination of the input values.")
       .rtype<T>()
-      .param("x", "Data to reduce.")
-      .param("dim", "Dimension to reduce.");
+      .template param<T>("x", "Data to reduce.")
+      .param("dim", "Dimension to reduce.", "Dim");
 }
 
 template <class T> void bind_all(py::module &m) {

@@ -13,6 +13,26 @@ using namespace scipp::dataset;
 
 namespace py = pybind11;
 
+// template <class T>
+// Docstring docstring_groupby(const std::string &op) {
+//   return       Docstring()
+//           .description("Element-wise " + op + "over the specified dimension within a group.")
+//           .raises("If the unit is not a plane-angle unit, or if the atan2 "
+//                   "function cannot be computed on the dtype, e.g., if it is an "
+//                   "integer.")
+//           .returns("The atan2 values of the input.")
+
+//       Element-wise mean over the specified dimension within a group.
+
+//       :param dim: Dimension to sum over when computing the mean
+//       :type dim: Dim
+//       :return: Mean over each group, combined along dimension specified when calling :py:func:`scipp.groupby`
+//       :rtype: DataArray or Dataset)");
+
+// }
+
+
+
 template <class T> void bind_groupby(py::module &m, const std::string &name) {
   m.def("groupby",
         py::overload_cast<const typename T::const_view_type &, const Dim>(

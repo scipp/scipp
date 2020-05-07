@@ -4,7 +4,7 @@
 /// @author Neil Vaytet
 #include "docstring.h"
 
-Docstring &Docstring::description(const std::string s, const bool append) {
+Docstring &Docstring::description(const std::string &s, const bool append) {
   if (append)
     m_description += s;
   else
@@ -12,7 +12,7 @@ Docstring &Docstring::description(const std::string s, const bool append) {
   return *this;
 }
 
-Docstring &Docstring::raises(const std::string s, const bool append) {
+Docstring &Docstring::raises(const std::string &s, const bool append) {
   if (append)
     m_raises += s;
   else
@@ -20,7 +20,7 @@ Docstring &Docstring::raises(const std::string s, const bool append) {
   return *this;
 }
 
-Docstring &Docstring::seealso(const std::string s, const bool append) {
+Docstring &Docstring::seealso(const std::string &s, const bool append) {
   if (append)
     m_seealso += s;
   else
@@ -28,7 +28,7 @@ Docstring &Docstring::seealso(const std::string s, const bool append) {
   return *this;
 }
 
-Docstring &Docstring::returns(const std::string s, const bool append) {
+Docstring &Docstring::returns(const std::string &s, const bool append) {
   if (append)
     m_returns += s;
   else
@@ -36,7 +36,7 @@ Docstring &Docstring::returns(const std::string s, const bool append) {
   return *this;
 }
 
-Docstring &Docstring::rtype(const std::string s, const bool append) {
+Docstring &Docstring::rtype(const std::string &s, const bool append) {
   if (append)
     m_rtype += s;
   else
@@ -44,11 +44,11 @@ Docstring &Docstring::rtype(const std::string s, const bool append) {
   return *this;
 }
 
-Docstring &Docstring::param(const std::string name, const std::string about) {
+Docstring &Docstring::param(const std::string &name, const std::string &about, const std::string &type) {
   if (m_params.find(name) == m_params.end()) {
     m_order.push_back(name);
   }
-  m_params[name] = about;
+  m_params[name] = {about, type};
   return *this;
 }
 
@@ -64,8 +64,10 @@ Docstring &Docstring::clear() {
 
 const char *Docstring::c_str() {
   m_output = m_description + "\n";
-  for (const auto name : m_order)
-    m_output += ":param " + name + ": " + m_params[name] + "\n";
+  for (const auto name : m_order) {
+    m_output += ":param " + name + ": " + m_params[name].first +
+      "\n:type " + name + ": " + m_params[name].second + "\n";
+  }
   if (m_raises.size() > 0)
     m_output += ":raises: " + m_raises + "\n";
   if (m_seealso.size() > 0)

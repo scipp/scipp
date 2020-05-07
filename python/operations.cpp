@@ -50,9 +50,9 @@ copied to the output without changes.)")
                          "dimensions and shapes are incompatible.")
                  .returns("The absolute values of the input.")
                  .rtype<T>()
-                 .param("x", "Left hand side input.")
-                 .param("y", "Right hand side input.")
-                 .param("dim", "Dimension along which to concatenate.");
+                 .template param<T>("x", "Left hand side input.")
+                 .template param<T>("y", "Right hand side input.")
+                 .param("dim", "Dimension along which to concatenate.", "Dim");
   m.def("concatenate",
         [](CstViewRef<T> x, CstViewRef<T> y, const Dim dim) {
           return concatenate(x, y, dim);
@@ -67,8 +67,8 @@ template <typename T> void bind_dot(py::module &m) {
                  .raises("If the dtype of the input is not vector_3_float64.")
                  .returns("The dot product of the input vectors.")
                  .rtype<T>()
-                 .param("x", "Input left hand side operand.")
-                 .param("y", "Input right hand side operand.");
+                 .template param<T>("x", "Input left hand side operand.")
+                 .template param<T>("y", "Input right hand side operand.");
   m.def("dot", [](CstViewRef<T> x, CstViewRef<T> y) { return dot(x, y); },
         py::arg("x"), py::arg("y"), py::call_guard<py::gil_scoped_release>(),
         doc.c_str());
@@ -90,8 +90,8 @@ template <typename T> void bind_sort(py::module &m) {
                   "dimension, or if its dtype is not sortable.")
           .returns("The sorted equivalent of the input.")
           .rtype<T>()
-          .param("x", "Data to be sorted")
-          .param("key", "Sort key.");
+          .template param<T>("x", "Data to be sorted")
+          .template param<T>("key", "Sort key.");
   m.def("sort",
         [](CstViewRef<T> x, CstViewRef<Variable> key) { return sort(x, key); },
         py::arg("x"), py::arg("key"), py::call_guard<py::gil_scoped_release>(),
@@ -107,8 +107,8 @@ template <typename T> void bind_sort_dim(py::module &m) {
               "If the key is invalid, e.g., if the dimension does not exist.")
           .returns("The sorted equivalent of the input.")
           .rtype<T>()
-          .param("x", "Data to be sorted")
-          .param("dim", "Dimension to sort along.");
+          .template param<T>("x", "Data to be sorted")
+          .param("dim", "Dimension to sort along.", "Dim");
   m.def("sort", [](CstViewRef<T> x, const Dim &dim) { return sort(x, dim); },
         py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
         doc.c_str());
