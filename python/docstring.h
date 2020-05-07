@@ -4,9 +4,9 @@
 /// @author Neil Vaytet
 #pragma once
 
+#include <map>
 #include <string>
 #include <vector>
-#include <map>
 
 #include "scipp/dataset/dataset.h"
 #include "scipp/variable/variable.h"
@@ -20,14 +20,14 @@ public:
   Docstring() = default;
   // Docstring(const Docstring &) = default;
 
-  Docstring& description(const std::string s, const bool append = false);
-  Docstring& raises(const std::string s, const bool append = false);
-  Docstring& seealso(const std::string s, const bool append = false);
-  Docstring& returns(const std::string s, const bool append = false);
-  Docstring& rtype(const std::string s, const bool append = false);
+  Docstring &description(const std::string s, const bool append = false);
+  Docstring &raises(const std::string s, const bool append = false);
+  Docstring &seealso(const std::string s, const bool append = false);
+  Docstring &returns(const std::string s, const bool append = false);
+  Docstring &rtype(const std::string s, const bool append = false);
   // Docstring& rtype(const std::string s) { m_rtype = s; return *this; };
-  Docstring& param(const std::string name, const std::string about);
-  Docstring& clear();
+  Docstring &param(const std::string name, const std::string about);
+  Docstring &clear();
 
   // template <class T>
   // Docstring& rtype(const T& t) {
@@ -47,8 +47,7 @@ public:
   //   return *this;
   // }
 
-  template <class T>
-  Docstring& rtype() {
+  template <class T> Docstring &rtype() {
     // using T = decltype(t);
     if (std::is_same_v<T, Variable>)
       m_rtype = "Variable";
@@ -81,7 +80,7 @@ public:
 
   // const Docstring with_out_arg();
 
-  const char * c_str();
+  const char *c_str();
 
 private:
   std::string m_description, m_raises, m_seealso, m_returns, m_rtype, m_output;

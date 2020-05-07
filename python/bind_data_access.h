@@ -373,17 +373,16 @@ using as_ElementArrayView = as_ElementArrayViewImpl<
 
 template <class T, class... Ignored>
 void bind_data_properties(pybind11::class_<T, Ignored...> &c) {
-  c.def_property_readonly(
-      "dtype", [](const T &self) { return self.dtype(); },
-      "Data type contained in the variable.");
-  c.def_property_readonly(
-      "dims",
-      [](const T &self) {
-        const auto &dims = self.dims();
-        return std::vector<Dim>(dims.labels().begin(), dims.labels().end());
-      },
-      "Dimension labels of the data (read-only).",
-      py::return_value_policy::move);
+  c.def_property_readonly("dtype", [](const T &self) { return self.dtype(); },
+                          "Data type contained in the variable.");
+  c.def_property_readonly("dims",
+                          [](const T &self) {
+                            const auto &dims = self.dims();
+                            return std::vector<Dim>(dims.labels().begin(),
+                                                    dims.labels().end());
+                          },
+                          "Dimension labels of the data (read-only).",
+                          py::return_value_policy::move);
   c.def_property_readonly(
       "shape",
       [](const T &self) {
@@ -392,9 +391,8 @@ void bind_data_properties(pybind11::class_<T, Ignored...> &c) {
       },
       "Shape of the data (read-only).", py::return_value_policy::move);
 
-  c.def_property(
-      "unit", [](const T &self) { return self.unit(); }, &T::setUnit,
-      "Physical unit of the data.");
+  c.def_property("unit", [](const T &self) { return self.unit(); }, &T::setUnit,
+                 "Physical unit of the data.");
 
   c.def_property("values", &as_ElementArrayView::values<T>,
                  &as_ElementArrayView::set_values<T>,
