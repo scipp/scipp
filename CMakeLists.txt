@@ -52,6 +52,7 @@ find_package(Sanitizers REQUIRED)
 
 include(GTest)
 include(boost)
+include(range-v3)
 include(Eigen)
 include(pybind11)
 include(GoogleBenchmark)
