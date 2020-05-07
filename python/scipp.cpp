@@ -16,6 +16,7 @@ void init_element_array_view(py::module &);
 void init_event_list(py::module &);
 void init_groupby(py::module &);
 void init_geometry(py::module &);
+void init_histogram(py::module &);
 void init_neutron(py::module &);
 void init_operations(py::module &);
 void init_reduction(py::module &);
@@ -36,6 +37,7 @@ void init_core(py::module &m) {
   init_comparison(core);
   init_operations(core);
   init_geometry(core);
+  init_histogram(core);
   init_reduction(core);
   init_trigonometry(core);
   init_unary(core);

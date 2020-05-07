@@ -13,6 +13,7 @@ pybind11_add_module(
   eigen.cpp
   geometry.cpp
   groupby.cpp
+  histogram.cpp
   neutron.cpp
   operations.cpp
   py_object.cpp

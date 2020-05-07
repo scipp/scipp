@@ -470,57 +470,57 @@ void init_dataset(py::module &m) {
   //       :return: New dataset.
   //       :rtype: Dataset)");
 
-  m.def(
-      "histogram",
-      [](const DataArrayConstView &ds, const Variable &bins) {
-        return dataset::histogram(ds, bins);
-      },
-      py::arg("x"), py::arg("bins"), py::call_guard<py::gil_scoped_release>(),
-      R"(Returns a new DataArray with values in bins for events dims.
+  // m.def(
+  //     "histogram",
+  //     [](const DataArrayConstView &ds, const Variable &bins) {
+  //       return dataset::histogram(ds, bins);
+  //     },
+  //     py::arg("x"), py::arg("bins"), py::call_guard<py::gil_scoped_release>(),
+  //     R"(Returns a new DataArray with values in bins for events dims.
 
-        :param x: Data to histogram.
-        :param bins: Bin edges.
-        :return: Histogramed data.
-        :rtype: DataArray)");
+  //       :param x: Data to histogram.
+  //       :param bins: Bin edges.
+  //       :return: Histogramed data.
+  //       :rtype: DataArray)");
 
-  m.def(
-      "histogram",
-      [](const DataArrayConstView &ds, const VariableConstView &bins) {
-        return dataset::histogram(ds, bins);
-      },
-      py::arg("x"), py::arg("bins"), py::call_guard<py::gil_scoped_release>(),
-      R"(Returns a new DataArray with values in bins for events dims.
+  // m.def(
+  //     "histogram",
+  //     [](const DataArrayConstView &ds, const VariableConstView &bins) {
+  //       return dataset::histogram(ds, bins);
+  //     },
+  //     py::arg("x"), py::arg("bins"), py::call_guard<py::gil_scoped_release>(),
+  //     R"(Returns a new DataArray with values in bins for events dims.
 
-        :param x: Data to histogram.
-        :param bins: Bin edges.
-        :return: Histogramed data.
-        :rtype: DataArray)");
+  //       :param x: Data to histogram.
+  //       :param bins: Bin edges.
+  //       :return: Histogramed data.
+  //       :rtype: DataArray)");
 
-  m.def(
-      "histogram",
-      [](const Dataset &ds, const VariableConstView &bins) {
-        return dataset::histogram(ds, bins);
-      },
-      py::arg("x"), py::arg("bins"), py::call_guard<py::gil_scoped_release>(),
-      R"(Returns a new Dataset with values in bins for events dims.
+  // m.def(
+  //     "histogram",
+  //     [](const Dataset &ds, const VariableConstView &bins) {
+  //       return dataset::histogram(ds, bins);
+  //     },
+  //     py::arg("x"), py::arg("bins"), py::call_guard<py::gil_scoped_release>(),
+  //     R"(Returns a new Dataset with values in bins for events dims.
 
-        :param x: Data to histogram.
-        :param bins: Bin edges.
-        :return: Histogramed data.
-        :rtype: Dataset)");
+  //       :param x: Data to histogram.
+  //       :param bins: Bin edges.
+  //       :return: Histogramed data.
+  //       :rtype: Dataset)");
 
-  m.def(
-      "histogram",
-      [](const Dataset &ds, const Variable &bins) {
-        return dataset::histogram(ds, bins);
-      },
-      py::arg("x"), py::arg("bins"), py::call_guard<py::gil_scoped_release>(),
-      R"(Returns a new Dataset with values in bins for events dims.
+  // m.def(
+  //     "histogram",
+  //     [](const Dataset &ds, const Variable &bins) {
+  //       return dataset::histogram(ds, bins);
+  //     },
+  //     py::arg("x"), py::arg("bins"), py::call_guard<py::gil_scoped_release>(),
+  //     R"(Returns a new Dataset with values in bins for events dims.
 
-        :param x: Data to histogram.
-        :param bins: Bin edges.
-        :return: Histogramed data.
-        :rtype: Dataset)");
+  //       :param x: Data to histogram.
+  //       :param bins: Bin edges.
+  //       :return: Histogramed data.
+  //       :rtype: Dataset)");
 
   m.def(
       "merge",
@@ -617,44 +617,44 @@ void init_dataset(py::module &m) {
         :return: A new dataset with data rebinned according to the new coordinate.
         :rtype: Dataset)");
 
-  m.def(
-      "sort",
-      py::overload_cast<const DataArrayConstView &, const VariableConstView &>(
-          &sort),
-      py::arg("x"), py::arg("key"), py::call_guard<py::gil_scoped_release>(),
-      R"(Sort data array along a dimension by a sort key.
+  // m.def(
+  //     "sort",
+  //     py::overload_cast<const DataArrayConstView &, const VariableConstView &>(
+  //         &sort),
+  //     py::arg("x"), py::arg("key"), py::call_guard<py::gil_scoped_release>(),
+  //     R"(Sort data array along a dimension by a sort key.
 
-        :raises: If the key is invalid, e.g., if it has not exactly one dimension, or if its dtype is not sortable.
-        :return: New sorted data array.
-        :rtype: DataArray)");
+  //       :raises: If the key is invalid, e.g., if it has not exactly one dimension, or if its dtype is not sortable.
+  //       :return: New sorted data array.
+  //       :rtype: DataArray)");
 
-  m.def(
-      "sort", py::overload_cast<const DataArrayConstView &, const Dim &>(&sort),
-      py::arg("x"), py::arg("key"), py::call_guard<py::gil_scoped_release>(),
-      R"(Sort data array along a dimension by the coordinate values for that dimension.
+  // m.def(
+  //     "sort", py::overload_cast<const DataArrayConstView &, const Dim &>(&sort),
+  //     py::arg("x"), py::arg("key"), py::call_guard<py::gil_scoped_release>(),
+  //     R"(Sort data array along a dimension by the coordinate values for that dimension.
 
-      :raises: If the key is invalid, e.g., if it has not exactly one dimension, or if its dtype is not sortable.
-      :return: New sorted data array.
-      :rtype: DataArray)");
+  //     :raises: If the key is invalid, e.g., if it has not exactly one dimension, or if its dtype is not sortable.
+  //     :return: New sorted data array.
+  //     :rtype: DataArray)");
 
-  m.def("sort",
-        py::overload_cast<const DatasetConstView &, const VariableConstView &>(
-            &sort),
-        py::arg("x"), py::arg("key"), py::call_guard<py::gil_scoped_release>(),
-        R"(Sort dataset along a dimension by a sort key.
+  // m.def("sort",
+  //       py::overload_cast<const DatasetConstView &, const VariableConstView &>(
+  //           &sort),
+  //       py::arg("x"), py::arg("key"), py::call_guard<py::gil_scoped_release>(),
+  //       R"(Sort dataset along a dimension by a sort key.
 
-        :raises: If the key is invalid, e.g., if it has not exactly one dimension, or if its dtype is not sortable.
-        :return: New sorted dataset.
-        :rtype: Dataset)");
+  //       :raises: If the key is invalid, e.g., if it has not exactly one dimension, or if its dtype is not sortable.
+  //       :return: New sorted dataset.
+  //       :rtype: Dataset)");
 
-  m.def(
-      "sort", py::overload_cast<const DatasetConstView &, const Dim &>(&sort),
-      py::arg("x"), py::arg("key"), py::call_guard<py::gil_scoped_release>(),
-      R"(Sort dataset along a dimension by the coordinate values for that dimension.
+  // m.def(
+  //     "sort", py::overload_cast<const DatasetConstView &, const Dim &>(&sort),
+  //     py::arg("x"), py::arg("key"), py::call_guard<py::gil_scoped_release>(),
+  //     R"(Sort dataset along a dimension by the coordinate values for that dimension.
 
-      :raises: If the key is invalid, e.g., if it has not exactly one dimension, or if its dtype is not sortable.
-      :return: New sorted dataset.
-      :rtype: Dataset)");
+  //     :raises: If the key is invalid, e.g., if it has not exactly one dimension, or if its dtype is not sortable.
+  //     :return: New sorted dataset.
+  //     :rtype: Dataset)");
 
   m.def(
       "combine_masks",
@@ -712,24 +712,24 @@ void init_dataset(py::module &m) {
         :param keep_attrs: If False, attributes are not copied to the output, default is True
         :return: Filtered data.
         :rtype: DataArray)");
-  m.def(
-      "histogram",
-      [](const DataArrayConstView &x) { return dataset::histogram(x); },
-      py::arg("x"), py::call_guard<py::gil_scoped_release>(),
-      R"(Returns a new DataArray unaligned data content binned according to the realigning axes.
+  // m.def(
+  //     "histogram",
+  //     [](const DataArrayConstView &x) { return dataset::histogram(x); },
+  //     py::arg("x"), py::call_guard<py::gil_scoped_release>(),
+  //     R"(Returns a new DataArray unaligned data content binned according to the realigning axes.
 
-        :param x: Realigned data to histogram.
-        :return: Histogramed data.
-        :rtype: DataArray)");
-  m.def(
-      "histogram",
-      [](const DatasetConstView &x) { return dataset::histogram(x); },
-      py::arg("x"), py::call_guard<py::gil_scoped_release>(),
-      R"(Returns a new Dataset unaligned data content binned according to the realigning axes.
+  //       :param x: Realigned data to histogram.
+  //       :return: Histogramed data.
+  //       :rtype: DataArray)");
+  // m.def(
+  //     "histogram",
+  //     [](const DatasetConstView &x) { return dataset::histogram(x); },
+  //     py::arg("x"), py::call_guard<py::gil_scoped_release>(),
+  //     R"(Returns a new Dataset unaligned data content binned according to the realigning axes.
 
-        :param x: Realigned data to histogram.
-        :return: Histogramed data.
-        :rtype: Dataset)");
+  //       :param x: Realigned data to histogram.
+  //       :return: Histogramed data.
+  //       :rtype: Dataset)");
   m.def("map", event::map, py::arg("function"), py::arg("iterable"),
         py::arg("dim") = to_string(Dim::Invalid),
         py::call_guard<py::gil_scoped_release>(),

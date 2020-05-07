@@ -7,6 +7,7 @@
 #include "pybind11.h"
 
 #include "scipp/dataset/dataset.h"
+#include "scipp/dataset/sort.h"
 #include "scipp/variable/operations.h"
 
 using namespace scipp;
@@ -75,6 +76,50 @@ template <typename T> void bind_dot(py::module &m) {
   //     doc.param("out", "Output buffer.").c_str());
 }
 
+
+// template <class T> Docstring docstring_sort(const std::string op) {
+//   return Docstring()
+//         .description("Comparison returning the truth value of " + op +
+//                      "element-wise.")
+//         .raises("If the units of inputs are not the same, or if the dtypes of "
+//                 "inputs are not double precision floats.")
+//         .returns("Booleans that are true if " + op + ".")
+//         .rtype<T>()
+//         .param("x", "Input left operand.")
+//         .param("y", "Input right operand.");
+// }
+
+
+template <typename T> void bind_sort(py::module &m) {
+  auto doc = Docstring()
+        .description("Sort variable along a dimension by a sort key.")
+        .raises("If the key is invalid, e.g., if it has not exactly one "
+                "dimension, or if its dtype is not sortable.")
+        .returns("The sorted equivalent of the input.")
+        .rtype<T>()
+        .param("x", "Data to be sorted")
+        .param("key", "Sort key.");
+  m.def(
+      "sort", [](CstViewRef<T> x, CstViewRef<Variable> key) { return sort(x, key); },
+      py::arg("x"), py::arg("key"), py::call_guard<py::gil_scoped_release>(),
+      doc.c_str());
+}
+
+template <typename T> void bind_sort_dim(py::module &m) {
+  auto doc = Docstring()
+        .description("Sort data array along a dimension by the coordinate "
+                     "values for that dimension.")
+        .raises("If the key is invalid, e.g., if the dimension does not exist.")
+        .returns("The sorted equivalent of the input.")
+        .rtype<T>()
+        .param("x", "Data to be sorted")
+        .param("dim", "Dimension to sort along.");
+  m.def(
+      "sort", [](CstViewRef<T> x, const Dim & dim) { return sort(x, dim); },
+      py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
+      doc.c_str());
+}
+
 void init_operations(py::module &m) {
   bind_flatten<Variable>(m);
   bind_flatten<DataArray>(m);
@@ -86,4 +131,9 @@ void init_operations(py::module &m) {
 
   bind_dot<Variable>(m);
 
+  bind_sort<Variable>(m);
+  bind_sort<DataArray>(m);
+  bind_sort<Dataset>(m);
+  bind_sort_dim<DataArray>(m);
+  bind_sort_dim<Dataset>(m);
 }

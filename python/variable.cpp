@@ -390,46 +390,46 @@ void init_variable(py::module &m) {
   //       :return: Variable containing the mean.
   //       :rtype: Variable)");
 
-  m.def("norm", py::overload_cast<const VariableConstView &>(&norm),
-        py::arg("x"), py::call_guard<py::gil_scoped_release>(), R"(
-        Element-wise norm.
+  // m.def("norm", py::overload_cast<const VariableConstView &>(&norm),
+  //       py::arg("x"), py::call_guard<py::gil_scoped_release>(), R"(
+  //       Element-wise norm.
 
-        :raises: If the dtype has no norm, i.e., if it is not a vector
-        :seealso: :py:class:`scipp.abs` for scalar dtype
-        :return: New variable with scalar elements computed as the norm values if the input elements.
-        :rtype: Variable)");
+  //       :raises: If the dtype has no norm, i.e., if it is not a vector
+  //       :seealso: :py:class:`scipp.abs` for scalar dtype
+  //       :return: New variable with scalar elements computed as the norm values if the input elements.
+  //       :rtype: Variable)");
 
-  m.def("sort",
-        py::overload_cast<const VariableConstView &, const VariableConstView &>(
-            &sort),
-        py::arg("data"), py::arg("key"),
-        py::call_guard<py::gil_scoped_release>(),
-        R"(Sort variable along a dimension by a sort key.
+  // m.def("sort",
+  //       py::overload_cast<const VariableConstView &, const VariableConstView &>(
+  //           &sort),
+  //       py::arg("data"), py::arg("key"),
+  //       py::call_guard<py::gil_scoped_release>(),
+  //       R"(Sort variable along a dimension by a sort key.
 
-      :raises: If the key is invalid, e.g., if it has not exactly one dimension, or if its dtype is not sortable.
-      :return: New sorted variable.
-      :rtype: Variable)");
+  //     :raises: If the key is invalid, e.g., if it has not exactly one dimension, or if its dtype is not sortable.
+  //     :return: New sorted variable.
+  //     :rtype: Variable)");
 
-  m.def(
-      "reciprocal",
-      [](const VariableConstView &self) { return reciprocal(self); },
-      py::arg("x"), py::call_guard<py::gil_scoped_release>(), R"(
-        Element-wise reciprocal.
+  // m.def(
+  //     "reciprocal",
+  //     [](const VariableConstView &self) { return reciprocal(self); },
+  //     py::arg("x"), py::call_guard<py::gil_scoped_release>(), R"(
+  //       Element-wise reciprocal.
 
-        :return: Reciprocal of the input values.
-        :rtype: Variable)");
+  //       :return: Reciprocal of the input values.
+  //       :rtype: Variable)");
 
-  m.def(
-      "reciprocal",
-      [](const VariableConstView &self, const VariableView &out) {
-        return reciprocal(self, out);
-      },
-      py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>(),
-      R"(
-        Element-wise reciprocal.
+  // m.def(
+  //     "reciprocal",
+  //     [](const VariableConstView &self, const VariableView &out) {
+  //       return reciprocal(self, out);
+  //     },
+  //     py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>(),
+  //     R"(
+  //       Element-wise reciprocal.
 
-        :return: Reciprocal of the input values.
-        :rtype: Variable)");
+  //       :return: Reciprocal of the input values.
+  //       :rtype: Variable)");
 
   m.def("split",
         py::overload_cast<const Variable &, const Dim,
