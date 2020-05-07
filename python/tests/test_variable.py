@@ -966,12 +966,12 @@ def test_z():
 
 def test_rotate():
     var = sc.Variable()
-    assert_export(sc.geometry.rotate, position=var, rotation=var)
+    assert_export(sc.geometry.rotate, pos=var, rot=var)
 
 
 def test_rotate_out():
     var = sc.Variable()
-    assert_export(sc.geometry.rotate, position=var, rotation=var, out=var)
+    assert_export(sc.geometry.rotate, pos=var, rot=var, out=var)
 
 
 def test_less():

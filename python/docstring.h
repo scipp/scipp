@@ -27,6 +27,7 @@ public:
   Docstring& rtype(const std::string s, const bool append = false);
   // Docstring& rtype(const std::string s) { m_rtype = s; return *this; };
   Docstring& param(const std::string name, const std::string about);
+  Docstring& clear();
 
   // template <class T>
   // Docstring& rtype(const T& t) {

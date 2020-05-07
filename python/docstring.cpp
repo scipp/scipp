@@ -52,6 +52,15 @@ Docstring& Docstring::param(const std::string name, const std::string about) {
   return *this;
 }
 
+Docstring& Docstring::clear() {
+  m_description.clear();
+  m_raises.clear();
+  m_seealso.clear();
+  m_returns.clear();
+  m_rtype.clear();
+  m_params.clear();
+  return *this;
+}
 
 const char * Docstring::c_str() {
   m_output = m_description + "\n";
