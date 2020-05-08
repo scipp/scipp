@@ -483,13 +483,6 @@ protected:
   Dataset original;
 };
 
-TEST_F(DatasetRenameTest, fail_duplicate_dim) {
-  GTEST_SKIP();
-  ASSERT_THROW(d.rename(Dim::X, Dim::Y), except::DimensionError);
-  ASSERT_EQ(d, original);
-  ASSERT_THROW(d.rename(Dim::X, Dim::X), except::DimensionError);
-  ASSERT_EQ(d, original);
-}
 TEST_F(DatasetRenameTest, back_and_forth) {
   d.rename(Dim::X, Dim::Row);
   EXPECT_NE(d, original);
