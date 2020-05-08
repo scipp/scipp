@@ -8,7 +8,7 @@ set(INC_FILES
 )
 
 set(SRC_FILES
-    binary_arithmetic.cpp
+    arithmetic.cpp
     counts.cpp
     data_array.cpp
     dataset_access.cpp

@@ -17,6 +17,6 @@ using VariableMismatchError = MismatchError<variable::Variable>;
 
 template <class T>
 MismatchError(const variable::VariableConstView &, const T &)
-    ->MismatchError<variable::Variable>;
+    -> MismatchError<variable::Variable>;
 
 } // namespace scipp::except

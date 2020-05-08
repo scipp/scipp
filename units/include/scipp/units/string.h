@@ -8,6 +8,7 @@
 #include <string>
 
 #include "scipp-units_export.h"
+#include "scipp/units/dim.h"
 #include "scipp/units/unit.h"
 
 namespace scipp::units {

@@ -6,8 +6,7 @@
 #include "make_events.h"
 #include "test_macros.h"
 
-#include "scipp/core/operators.h"
-#include "scipp/variable/binary_arithmetic.h"
+#include "scipp/variable/arithmetic.h"
 #include "scipp/variable/transform.h"
 #include "scipp/variable/variable.h"
 
@@ -95,8 +94,8 @@ TEST_F(TransformUnaryTest, events_values_variances_size_fail) {
 }
 
 TEST_F(TransformUnaryTest, in_place_unit_change) {
-  const auto var = makeVariable<double>(
-      Dims{Dim::X}, Shape{2}, units::Unit(units::m), Values{1.0, 2.0});
+  const auto var =
+      makeVariable<double>(Dims{Dim::X}, Shape{2}, units::m, Values{1.0, 2.0});
   const auto expected =
       makeVariable<double>(Dims{Dim::X}, Shape{2},
                            units::Unit(units::m * units::m), Values{1.0, 4.0});
@@ -304,8 +303,8 @@ TEST_F(TransformBinaryTest, events_size_fail) {
 }
 
 TEST_F(TransformBinaryTest, in_place_unit_change) {
-  const auto var = makeVariable<double>(
-      Dims{Dim::X}, Shape{2}, units::Unit(units::m), Values{1.0, 2.0});
+  const auto var =
+      makeVariable<double>(Dims{Dim::X}, Shape{2}, units::m, Values{1.0, 2.0});
   const auto expected =
       makeVariable<double>(Dims{Dim::X}, Shape{2},
                            units::Unit(units::m * units::m), Values{1.0, 4.0});
@@ -324,8 +323,8 @@ TEST_F(TransformBinaryTest, in_place_unit_change) {
 }
 
 TEST(AccumulateTest, in_place) {
-  const auto var = makeVariable<double>(
-      Dims{Dim::X}, Shape{2}, units::Unit(units::m), Values{1.0, 2.0});
+  const auto var =
+      makeVariable<double>(Dims{Dim::X}, Shape{2}, units::m, Values{1.0, 2.0});
   const auto expected = makeVariable<double>(Values{3.0});
   auto op_ = [](auto &&a, auto &&b) { a += b; };
   Variable result;
@@ -774,15 +773,14 @@ constexpr auto user_op(const ValueAndVariance<double>) {
 constexpr auto user_op(const units::Unit &) { return units::s; }
 
 TEST(TransformTest, user_op_with_variances) {
-  auto var = makeVariable<double>(Dims{Dim::X}, Shape{2}, units::Unit(units::m),
+  auto var = makeVariable<double>(Dims{Dim::X}, Shape{2}, units::m,
                                   Values{1.1, 2.2}, Variances{1.1, 3.0});
 
   const auto result = transform<double>(var, [](auto x) { return user_op(x); });
   transform_in_place<double>(var, [](auto &x) { x = user_op(x); });
 
-  auto expected =
-      makeVariable<double>(Dims{Dim::X}, Shape{2}, units::Unit(units::s),
-                           Values{123, 123}, Variances{456, 456});
+  auto expected = makeVariable<double>(Dims{Dim::X}, Shape{2}, units::s,
+                                       Values{123, 123}, Variances{456, 456});
   EXPECT_EQ(result, expected);
   EXPECT_EQ(result, var);
 }
@@ -810,7 +808,7 @@ TEST_F(TransformInPlaceDryRunTest, unit_fail) {
 }
 
 TEST_F(TransformInPlaceDryRunTest, slice_unit_fail) {
-  auto a = makeVariable<double>(Dims{Dim::X}, Shape{2}, units::Unit(units::m));
+  auto a = makeVariable<double>(Dims{Dim::X}, Shape{2}, units::m);
   const auto original(a);
 
   EXPECT_THROW(dry_run::transform_in_place<double>(a.slice({Dim::X, 0}), unary),
@@ -823,8 +821,8 @@ TEST_F(TransformInPlaceDryRunTest, slice_unit_fail) {
 }
 
 TEST_F(TransformInPlaceDryRunTest, dimensions_fail) {
-  auto a = makeVariable<double>(Dims{Dim::X}, Shape{2}, units::Unit(units::m));
-  auto b = makeVariable<double>(Dims{Dim::Y}, Shape{2}, units::Unit(units::m));
+  auto a = makeVariable<double>(Dims{Dim::X}, Shape{2}, units::m);
+  auto b = makeVariable<double>(Dims{Dim::Y}, Shape{2}, units::m);
   const auto original(a);
 
   EXPECT_THROW(dry_run::transform_in_place<pair_self_t<double>>(a, b, binary),
@@ -833,9 +831,9 @@ TEST_F(TransformInPlaceDryRunTest, dimensions_fail) {
 }
 
 TEST_F(TransformInPlaceDryRunTest, variances_fail) {
-  auto a = makeVariable<double>(Dims{Dim::X}, Shape{2}, units::Unit(units::m));
-  auto b = makeVariable<double>(Dimensions{Dim::X, 2}, units::Unit(units::m),
-                                Values{}, Variances{});
+  auto a = makeVariable<double>(Dims{Dim::X}, Shape{2}, units::m);
+  auto b = makeVariable<double>(Dimensions{Dim::X, 2}, units::m, Values{},
+                                Variances{});
   const auto original(a);
 
   EXPECT_THROW(dry_run::transform_in_place<pair_self_t<double>>(a, b, binary),

@@ -12,7 +12,7 @@
 #include "scipp-core_export.h"
 #include "scipp/common/index.h"
 #include "scipp/common/span.h"
-#include "scipp/units/unit.h"
+#include "scipp/units/dim.h"
 
 namespace scipp::core {
 

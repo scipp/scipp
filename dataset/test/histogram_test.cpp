@@ -77,8 +77,7 @@ TEST_F(HistogramHelpersTest, is_histogram) {
 }
 
 DataArray make_1d_events_default_weights() {
-  DataArray events(makeVariable<double>(Dims{Dim::X}, Shape{3},
-                                        units::Unit(units::counts),
+  DataArray events(makeVariable<double>(Dims{Dim::X}, Shape{3}, units::counts,
                                         Values{1, 1, 1}, Variances{1, 1, 1}));
   auto var = makeVariable<event_list<double>>(Dims{Dim::X}, Shape{3});
   var.values<event_list<double>>()[0] = {1.5, 2.5, 3.5, 4.5, 5.5};
@@ -102,8 +101,7 @@ auto make_single_events() {
   auto x = makeVariable<event_list<double>>(Dims{}, Shape{});
   x.values<event_list<double>>()[0] = {0, 1, 1, 2, 3};
   events.coords().set(Dim::X, x);
-  events.setData("events", makeVariable<double>(Dims{}, Shape{},
-                                                units::Unit(units::counts),
+  events.setData("events", makeVariable<double>(Dims{}, Shape{}, units::counts,
                                                 Values{1}, Variances{1}));
   return events;
 }
@@ -121,10 +119,10 @@ TEST(HistogramTest, below) {
       makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{-2.0, -1.0, 0.0});
   auto hist = dataset::histogram(events["events"], edges);
   std::map<Dim, Variable> coords = {{Dim::X, edges}};
-  auto expected = make_expected(
-      makeVariable<double>(Dims{Dim::X}, Shape{2}, units::Unit(units::counts),
-                           Values{0, 0}, Variances{0, 0}),
-      edges);
+  auto expected =
+      make_expected(makeVariable<double>(Dims{Dim::X}, Shape{2}, units::counts,
+                                         Values{0, 0}, Variances{0, 0}),
+                    edges);
   EXPECT_EQ(hist, expected);
 }
 
@@ -133,10 +131,10 @@ TEST(HistogramTest, between) {
   auto edges =
       makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1.5, 1.6, 1.7});
   auto hist = dataset::histogram(events["events"], edges);
-  auto expected = make_expected(
-      makeVariable<double>(Dims{Dim::X}, Shape{2}, units::Unit(units::counts),
-                           Values{0, 0}, Variances{0, 0}),
-      edges);
+  auto expected =
+      make_expected(makeVariable<double>(Dims{Dim::X}, Shape{2}, units::counts,
+                                         Values{0, 0}, Variances{0, 0}),
+                    edges);
   EXPECT_EQ(hist, expected);
 }
 
@@ -145,10 +143,10 @@ TEST(HistogramTest, above) {
   auto edges =
       makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{3.5, 4.5, 5.5});
   auto hist = dataset::histogram(events["events"], edges);
-  auto expected = make_expected(
-      makeVariable<double>(Dims{Dim::X}, Shape{2}, units::Unit(units::counts),
-                           Values{0, 0}, Variances{0, 0}),
-      edges);
+  auto expected =
+      make_expected(makeVariable<double>(Dims{Dim::X}, Shape{2}, units::counts,
+                                         Values{0, 0}, Variances{0, 0}),
+                    edges);
   EXPECT_EQ(hist, expected);
 }
 
@@ -158,12 +156,11 @@ TEST(HistogramTest, data_view) {
   auto edges =
       makeVariable<double>(Dims{Dim::Y}, Shape{6}, Values{1, 2, 3, 4, 5, 6});
   auto hist = dataset::histogram(events, edges);
-  auto expected =
-      make_expected(makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{3, 5},
-                                         units::Unit(units::counts),
-                                         Values(ref.begin(), ref.end()),
-                                         Variances(ref.begin(), ref.end())),
-                    edges);
+  auto expected = make_expected(
+      makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{3, 5}, units::counts,
+                           Values(ref.begin(), ref.end()),
+                           Variances(ref.begin(), ref.end())),
+      edges);
 
   EXPECT_EQ(hist, expected);
 }
@@ -175,12 +172,11 @@ TEST(HistogramTest, drops_other_event_coords) {
   auto edges =
       makeVariable<double>(Dims{Dim::Y}, Shape{6}, Values{1, 2, 3, 4, 5, 6});
   auto hist = dataset::histogram(events, edges);
-  auto expected =
-      make_expected(makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{3, 5},
-                                         units::Unit(units::counts),
-                                         Values(ref.begin(), ref.end()),
-                                         Variances(ref.begin(), ref.end())),
-                    edges);
+  auto expected = make_expected(
+      makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{3, 5}, units::counts,
+                           Values(ref.begin(), ref.end()),
+                           Variances(ref.begin(), ref.end())),
+      edges);
 
   EXPECT_FALSE(hist.coords().contains(Dim("pulse=time")));
   EXPECT_EQ(hist, expected);
@@ -211,12 +207,11 @@ TEST(HistogramTest, weight_lists) {
   auto edges =
       makeVariable<double>(Dims{Dim::Y}, Shape{6}, Values{1, 2, 3, 4, 5, 6});
   std::vector<double> ref{1, 1, 1, 2, 2, 0, 0, 2, 2, 2, 2, 3, 0, 3, 0};
-  auto expected =
-      make_expected(makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{3, 5},
-                                         units::Unit(units::counts),
-                                         Values(ref.begin(), ref.end()),
-                                         Variances(ref.begin(), ref.end())),
-                    edges);
+  auto expected = make_expected(
+      makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{3, 5}, units::counts,
+                           Values(ref.begin(), ref.end()),
+                           Variances(ref.begin(), ref.end())),
+      edges);
 
   EXPECT_EQ(dataset::histogram(events, edges), expected);
 }
@@ -236,11 +231,11 @@ TEST(HistogramTest, dataset_realigned) {
   Dataset expected;
   expected.setCoord(Dim::Y, coord);
   expected.setData("a", makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{3, 5},
-                                             units::Unit(units::counts),
+                                             units::counts,
                                              Values(a.begin(), a.end()),
                                              Variances(a.begin(), a.end())));
   expected.setData("b", makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{3, 5},
-                                             units::Unit(units::counts),
+                                             units::counts,
                                              Values(b.begin(), b.end()),
                                              Variances(b.begin(), b.end())));
 

@@ -19,7 +19,7 @@ Compilers
 Static Analysis and Formatters
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-- ``clang-format`` 6.0
+- ``clang-format`` 10.0
 - ``cmake-format`` 0.6.9
 - ``flake8``
 - ``yapf`` 0.29.0

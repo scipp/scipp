@@ -33,10 +33,10 @@ using DatasetMismatchError = MismatchError<dataset::Dataset>;
 
 template <class T>
 MismatchError(const dataset::DatasetConstView &, const T &)
-    ->MismatchError<dataset::Dataset>;
+    -> MismatchError<dataset::Dataset>;
 template <class T>
 MismatchError(const dataset::DataArrayConstView &, const T &)
-    ->MismatchError<dataset::DataArray>;
+    -> MismatchError<dataset::DataArray>;
 
 } // namespace scipp::except
 

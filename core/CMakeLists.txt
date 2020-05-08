@@ -17,6 +17,14 @@ set(INC_FILES
     include/scipp/core/value_and_variance.h
     include/scipp/core/values_and_variances.h
     include/scipp/core/view_index.h
+    include/scipp/core/element/arg_list.h
+    include/scipp/core/element/arithmetic.h
+    include/scipp/core/element/comparison.h
+    include/scipp/core/element/event_operations.h
+    include/scipp/core/element/geometric_operations.h
+    include/scipp/core/element/logical.h
+    include/scipp/core/element/trigonometry.h
+    include/scipp/core/element/unary_operations.h
 )
 
 set(SRC_FILES

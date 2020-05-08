@@ -5,7 +5,7 @@
 #include <cmath>
 
 #include "scipp/common/constants.h"
-#include "scipp/core/element/trigonometry_operations.h"
+#include "scipp/core/element/trigonometry.h"
 #include "scipp/variable/transform.h"
 #include "scipp/variable/trigonometry.h"
 
@@ -13,9 +13,8 @@ using namespace scipp::core;
 
 namespace scipp::variable {
 
-const auto deg_to_rad =
-    makeVariable<double>(Dims(), Shape(), units::Unit(units::rad / units::deg),
-                         Values{pi<double> / 180.0});
+const auto deg_to_rad = makeVariable<double>(
+    Dims(), Shape(), units::rad / units::deg, Values{pi<double> / 180.0});
 
 Variable sin(const VariableConstView &var) {
   Variable out(var);
@@ -122,6 +121,17 @@ Variable atan(Variable &&var) {
 
 VariableView atan(const VariableConstView &var, const VariableView &out) {
   transform_in_place(out, var, element::atan_out_arg);
+  return out;
+}
+
+Variable atan2(const Variable &y, const Variable &x) {
+  return transform<std::tuple<double, float>>(y, x, element::atan2);
+}
+
+VariableView atan2(const VariableConstView &y, const VariableConstView &x,
+                   const VariableView &out) {
+  transform_in_place<std::tuple<double, float>>(out, y, x,
+                                                element::atan2_out_arg);
   return out;
 }
 

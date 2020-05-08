@@ -7,7 +7,7 @@
 
 #include "scipp/core/dimensions.h"
 #include "scipp/dataset/dataset.h"
-#include "scipp/variable/binary_arithmetic.h"
+#include "scipp/variable/arithmetic.h"
 
 #include "../variable/test/make_events.h"
 #include "dataset_test_common.h"
@@ -227,12 +227,10 @@ TYPED_TEST(DatasetBinaryEqualsOpTest, return_value) {
     ASSERT_EQ(&result, &a);
   }
 
-  ASSERT_TRUE((std::is_same_v<decltype(TestFixture::op(
-                                  a, 5.0 * units::Unit(units::dimensionless))),
+  ASSERT_TRUE((std::is_same_v<decltype(TestFixture::op(a, 5.0 * units::one)),
                               Dataset &>));
   {
-    const auto &result =
-        TestFixture::op(a, 5.0 * units::Unit(units::dimensionless));
+    const auto &result = TestFixture::op(a, 5.0 * units::one);
     ASSERT_EQ(&result, &a);
   }
 }
@@ -465,13 +463,10 @@ TYPED_TEST(DatasetViewBinaryEqualsOpTest, return_value) {
               &a["data_scalar"].template values<double>()[0]);
   }
 
-  ASSERT_TRUE(
-      (std::is_same_v<decltype(TestFixture::op(
-                          view, 5.0 * units::Unit(units::dimensionless))),
-                      DatasetView>));
+  ASSERT_TRUE((std::is_same_v<decltype(TestFixture::op(view, 5.0 * units::one)),
+                              DatasetView>));
   {
-    const auto &result =
-        TestFixture::op(view, 5.0 * units::Unit(units::dimensionless));
+    const auto &result = TestFixture::op(view, 5.0 * units::one);
     EXPECT_EQ(&result["data_scalar"].template values<double>()[0],
               &a["data_scalar"].template values<double>()[0]);
   }
@@ -676,7 +671,7 @@ TYPED_TEST(DatasetBinaryOpTest, broadcast) {
 
 TYPED_TEST(DatasetBinaryOpTest, dataset_lhs_scalar_rhs) {
   const auto dataset = std::get<0>(generateBinaryOpTestCase());
-  const auto scalar = 4.5 * units::Unit(units::dimensionless);
+  const auto scalar = 4.5 * units::one;
 
   const auto res = TestFixture::op(dataset, scalar);
 
@@ -692,7 +687,7 @@ TYPED_TEST(DatasetBinaryOpTest, dataset_lhs_scalar_rhs) {
 
 TYPED_TEST(DatasetBinaryOpTest, scalar_lhs_dataset_rhs) {
   const auto dataset = std::get<0>(generateBinaryOpTestCase());
-  const auto scalar = 4.5 * units::Unit(units::dimensionless);
+  const auto scalar = 4.5 * units::one;
 
   const auto res = TestFixture::op(scalar, dataset);
 

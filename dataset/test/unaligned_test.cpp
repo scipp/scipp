@@ -135,13 +135,9 @@ TEST_F(RealignTest, dataset_change_alignment) {
   Dataset dataset;
   // Different number of coords and different values
   dataset.setData(
-      "a",
-      unaligned::realign(
-          baseA, {{Dim::X, xbins + 0.5 * units::Unit(units::dimensionless)}}));
+      "a", unaligned::realign(baseA, {{Dim::X, xbins + 0.5 * units::one}}));
   dataset.setData(
-      "b",
-      unaligned::realign(
-          baseB, {{Dim::X, xbins + 0.5 * units::Unit(units::dimensionless)}}));
+      "b", unaligned::realign(baseB, {{Dim::X, xbins + 0.5 * units::one}}));
 
   const auto realigned = unaligned::realign(
       dataset, {{Dim::Z, zbins}, {Dim::Y, ybins}, {Dim::X, xbins}});
@@ -390,11 +386,10 @@ protected:
                event_list<int64_t>{100, 100, 200, 200}});
     return DataArray(
         scalar_weights()
-            ? makeVariable<double>(Dims{Dim::Position}, Shape{4},
-                                   units::Unit(units::counts),
+            ? makeVariable<double>(Dims{Dim::Position}, Shape{4}, units::counts,
                                    Values{1, 1, 1, 1}, Variances{1, 1, 1, 1})
             : makeVariable<event_list<double>>(
-                  Dims{Dim::Position}, Shape{4}, units::Unit(units::counts),
+                  Dims{Dim::Position}, Shape{4}, units::counts,
                   Values{event_list<double>{1}, event_list<double>{1, 1},
                          event_list<double>{1, 1, 1},
                          event_list<double>{1, 1, 1, 1}},
@@ -410,8 +405,7 @@ protected:
 
   DataArray make_aligned() {
     return DataArray(makeVariable<double>(Dims{Dim::Position, Dim::Tof},
-                                          Shape{4, 2},
-                                          units::Unit(units::counts),
+                                          Shape{4, 2}, units::counts,
                                           Values{1, 0, 1, 1, 1, 2, 1, 3},
                                           Variances{1, 0, 1, 1, 1, 2, 1, 3}),
                      {{Dim::Position, pos}, {Dim::Tof, tof_bins}});
@@ -426,7 +420,7 @@ protected:
     return DataArray(
         makeVariable<double>(
             Dims{Dim::Position, Dim::PulseTime, Dim::Tof}, Shape{4, 2, 2},
-            units::Unit(units::counts),
+            units::counts,
             Values{1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 2, 1, 1, 0, 2},
             Variances{1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 2, 1, 1, 0, 2}),
         {{Dim::Position, pos},

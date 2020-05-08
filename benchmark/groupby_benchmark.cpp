@@ -26,8 +26,7 @@ auto make_1d_events_scalar_weights(const scipp::index size,
   std::map<Dim, Variable> map;
   map.emplace(Dim::Y, std::move(var));
   DataArray events(makeVariable<double>(Dims{Dim::X}, Shape{size},
-                                        units::Unit(units::counts), Values{},
-                                        Variances{}),
+                                        units::counts, Values{}, Variances{}),
                    std::move(map));
   return events;
 }
@@ -63,7 +62,7 @@ template <class T> static void BM_groupby_flatten(benchmark::State &state) {
   std::iota(group_.begin(), group_.end(), 0);
   auto group = makeVariable<int64_t>(Dims{Dim::X}, Shape{nHist},
                                      Values(group_.begin(), group_.end()));
-  events.coords().set(Dim("group"), group / (nHist / nGroup));
+  events.coords().set(Dim("group"), group / (nHist / nGroup * units::one));
   for (auto _ : state) {
     auto flat = groupby(events, Dim("group")).flatten(Dim::X);
     state.PauseTiming();
@@ -106,7 +105,7 @@ static void BM_groupby_large_table(benchmark::State &state) {
   d.setData("c", column);
   auto group = makeVariable<int64_t>(Dims{Dim::X}, Shape{nRow},
                                      Values(group_.begin(), group_.end()));
-  d.coords().set(Dim("group"), group / (nRow / nGroup));
+  d.coords().set(Dim("group"), group / (nRow / nGroup * units::one));
   for (auto _ : state) {
     auto grouped = groupby(d, Dim("group")).sum(Dim::X);
     state.PauseTiming();

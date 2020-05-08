@@ -118,7 +118,8 @@ DataArray flatten(const DataArrayConstView &a, const Dim dim) {
 }
 
 Dataset flatten(const DatasetConstView &d, const Dim dim) {
-  return apply_to_items(d, [](auto &&... _) { return flatten(_...); }, dim);
+  return apply_to_items(
+      d, [](auto &&... _) { return flatten(_...); }, dim);
 }
 
 namespace {
@@ -141,8 +142,8 @@ UnalignedData rebin(Dimensions, const DataArrayConstView &, const Dim,
 } // namespace
 
 DataArray sum(const DataArrayConstView &a, const Dim dim) {
-  return apply_to_data_and_drop_dim(a, [](auto &&... _) { return sum(_...); },
-                                    dim, a.masks());
+  return apply_to_data_and_drop_dim(
+      a, [](auto &&... _) { return sum(_...); }, dim, a.masks());
 }
 
 Dataset sum(const DatasetConstView &d, const Dim dim) {
@@ -150,16 +151,18 @@ Dataset sum(const DatasetConstView &d, const Dim dim) {
   // depend on the input dimension. The definition is ambiguous (return
   // unchanged, vs. compute sum of broadcast) so it is better to avoid this for
   // now.
-  return apply_to_items(d, [](auto &&... _) { return sum(_...); }, dim);
+  return apply_to_items(
+      d, [](auto &&... _) { return sum(_...); }, dim);
 }
 
 DataArray mean(const DataArrayConstView &a, const Dim dim) {
-  return apply_to_data_and_drop_dim(a, [](auto &&... _) { return mean(_...); },
-                                    dim, a.masks());
+  return apply_to_data_and_drop_dim(
+      a, [](auto &&... _) { return mean(_...); }, dim, a.masks());
 }
 
 Dataset mean(const DatasetConstView &d, const Dim dim) {
-  return apply_to_items(d, [](auto &&... _) { return mean(_...); }, dim);
+  return apply_to_items(
+      d, [](auto &&... _) { return mean(_...); }, dim);
 }
 
 DataArray rebin(const DataArrayConstView &a, const Dim dim,
@@ -178,8 +181,8 @@ DataArray rebin(const DataArrayConstView &a, const Dim dim,
 
 Dataset rebin(const DatasetConstView &d, const Dim dim,
               const VariableConstView &coord) {
-  return apply_to_items(d, [](auto &&... _) { return rebin(_...); }, dim,
-                        coord);
+  return apply_to_items(
+      d, [](auto &&... _) { return rebin(_...); }, dim, coord);
 }
 
 namespace {
@@ -191,14 +194,14 @@ Dimensions resize(Dimensions dims, const Dim dim, const scipp::index size) {
 
 DataArray resize(const DataArrayConstView &a, const Dim dim,
                  const scipp::index size) {
-  return apply_or_copy_dim(a, [](auto &&... _) { return resize(_...); }, dim,
-                           size);
+  return apply_or_copy_dim(
+      a, [](auto &&... _) { return resize(_...); }, dim, size);
 }
 
 Dataset resize(const DatasetConstView &d, const Dim dim,
                const scipp::index size) {
-  return apply_to_items(d, [](auto &&... _) { return resize(_...); }, dim,
-                        size);
+  return apply_to_items(
+      d, [](auto &&... _) { return resize(_...); }, dim, size);
 }
 
 /// Return a deep copy of a DataArray or of a DataArrayView.

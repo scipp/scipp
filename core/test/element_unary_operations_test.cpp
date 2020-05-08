@@ -28,7 +28,7 @@ TEST(ElementAbsTest, value_and_variance) {
 
 TEST(ElementAbsOutArgTest, unit) {
   units::Unit m(units::m);
-  units::Unit out(units::dimensionless);
+  units::Unit out(units::one);
   element::abs_out_arg(out, m);
   EXPECT_EQ(out, units::abs(m));
 }
@@ -58,6 +58,22 @@ TEST(ElementAbsOutArgTest, supported_types) {
   std::get<float>(supported);
 }
 
+TEST(ElementNormTest, unit) {
+  const units::Unit s(units::s);
+  const units::Unit m2(units::m * units::m);
+  const units::Unit dimless(units::dimensionless);
+  EXPECT_EQ(element::norm(m2), m2);
+  EXPECT_EQ(element::norm(s), s);
+  EXPECT_EQ(element::norm(dimless), dimless);
+}
+
+TEST(ElementNormTest, value) {
+  Eigen::Vector3d v1(0, 3, 4);
+  Eigen::Vector3d v2(3, 0, -4);
+  EXPECT_EQ(element::norm(v1), 5);
+  EXPECT_EQ(element::norm(v2), 5);
+}
+
 TEST(ElementSqrtTest, unit) {
   const units::Unit m2(units::m * units::m);
   EXPECT_EQ(element::sqrt(m2), units::sqrt(m2));
@@ -75,7 +91,7 @@ TEST(ElementSqrtTest, value_and_variance) {
 
 TEST(ElementSqrtOutArgTest, unit) {
   const units::Unit m2(units::m * units::m);
-  units::Unit out(units::dimensionless);
+  units::Unit out(units::one);
   element::sqrt_out_arg(out, m2);
   EXPECT_EQ(out, units::sqrt(m2));
 }
@@ -103,6 +119,21 @@ TEST(ElementSqrtOutArgTest, supported_types) {
   auto supported = decltype(element::sqrt_out_arg)::types{};
   std::get<double>(supported);
   std::get<float>(supported);
+}
+
+TEST(ElementDotTest, unit) {
+  const units::Unit m(units::m);
+  const units::Unit m2(units::m * units::m);
+  const units::Unit dimless(units::dimensionless);
+  EXPECT_EQ(element::dot(m, m), m2);
+  EXPECT_EQ(element::dot(dimless, dimless), dimless);
+}
+
+TEST(ElementDotTest, value) {
+  Eigen::Vector3d v1(0, 3, -4);
+  Eigen::Vector3d v2(1, 1, -1);
+  EXPECT_EQ(element::dot(v1, v1), 25);
+  EXPECT_EQ(element::dot(v2, v2), 3);
 }
 
 template <typename T> class ElementNanToNumTest : public ::testing::Test {};
@@ -282,10 +313,10 @@ TYPED_TEST(ElementNegativeInfToNumTest, value_and_variance_out) {
 }
 
 TEST(ElementReciprocalTest, unit) {
-  const units::Unit one_over_m(units::dimensionless / units::m);
+  const units::Unit one_over_m(units::one / units::m);
   EXPECT_EQ(element::reciprocal(one_over_m), units::m);
-  const units::Unit one_over_s(units::dimensionless / units::s);
-  EXPECT_EQ(element::reciprocal(units::Unit(units::s)), one_over_s);
+  const units::Unit one_over_s(units::one / units::s);
+  EXPECT_EQ(element::reciprocal(units::s), one_over_s);
 }
 
 TEST(ElementReciprocalTest, value) {
@@ -299,12 +330,12 @@ TEST(ElementReciprocalTest, value_and_variance) {
 }
 
 TEST(ElementReciprocalOutArgTest, unit) {
-  const units::Unit one_over_m(units::dimensionless / units::m);
-  units::Unit out(units::dimensionless);
+  const units::Unit one_over_m(units::one / units::m);
+  units::Unit out(units::one);
   element::reciprocal_out_arg(out, one_over_m);
   EXPECT_EQ(out, units::m);
-  element::reciprocal_out_arg(out, units::Unit(units::s));
-  const units::Unit one_over_s(units::dimensionless / units::s);
+  element::reciprocal_out_arg(out, units::s);
+  const units::Unit one_over_s(units::one / units::s);
   EXPECT_EQ(out, one_over_s);
 }
 

@@ -3,45 +3,45 @@
 set(TARGET_NAME "scipp-variable")
 set(INC_FILES
     include/scipp/variable/apply.h
+    include/scipp/variable/arithmetic.h
     include/scipp/variable/comparison.h
     include/scipp/variable/event.h
     include/scipp/variable/except.h
     include/scipp/variable/indexed_slice_view.h
-    include/scipp/variable/string.h
-    include/scipp/variable/subspan_view.h
-    include/scipp/variable/transform.h
-    include/scipp/variable/transform_subspan.h
-    include/scipp/variable/binary_arithmetic.h
-    include/scipp/variable/variable_concept.h
-    include/scipp/variable/variable.h
-    include/scipp/variable/variable.tcc
-    include/scipp/variable/variable_keyword_arg_constructor.h
     include/scipp/variable/logical.h
     include/scipp/variable/misc_operations.h
     include/scipp/variable/operations.h
     include/scipp/variable/reduction.h
+    include/scipp/variable/string.h
+    include/scipp/variable/subspan_view.h
+    include/scipp/variable/transform.h
+    include/scipp/variable/transform_subspan.h
     include/scipp/variable/trigonometry.h
+    include/scipp/variable/variable_concept.h
+    include/scipp/variable/variable.h
+    include/scipp/variable/variable_keyword_arg_constructor.h
+    include/scipp/variable/variable.tcc
     include/scipp/variable/visit.h
 )
 
 set(SRC_FILES
+    arithmetic.cpp
     comparison.cpp
     event.cpp
     except.cpp
-    rebin.cpp
-    string.cpp
-    subspan_view.cpp
-    binary_arithmetic.cpp
-    variable_concept.cpp
-    variable.cpp
     inplace_arithmetic.cpp
-    variable_instantiate_basic.cpp
-    variable_instantiate_view_elements.cpp
     logical.cpp
     operations.cpp
+    rebin.cpp
     reduction.cpp
+    string.cpp
+    subspan_view.cpp
     trigonometry.cpp
     type_conversion.cpp
+    variable_concept.cpp
+    variable.cpp
+    variable_instantiate_basic.cpp
+    variable_instantiate_view_elements.cpp
 )
 
 set(LINK_TYPE "STATIC")

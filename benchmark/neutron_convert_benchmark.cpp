@@ -11,18 +11,16 @@ using namespace scipp;
 auto make_beamline(const scipp::index size) {
   Dataset beamline;
 
-  beamline.setCoord(
-      Dim("source_position"),
-      makeVariable<Eigen::Vector3d>(units::Unit(units::m),
-                                    Values{Eigen::Vector3d{0.0, 0.0, -10.0}}));
-  beamline.setCoord(
-      Dim("sample_position"),
-      makeVariable<Eigen::Vector3d>(units::Unit(units::m),
-                                    Values{Eigen::Vector3d{0.0, 0.0, 0.0}}));
+  beamline.setCoord(Dim("source_position"),
+                    makeVariable<Eigen::Vector3d>(
+                        units::m, Values{Eigen::Vector3d{0.0, 0.0, -10.0}}));
+  beamline.setCoord(Dim("sample_position"),
+                    makeVariable<Eigen::Vector3d>(
+                        units::m, Values{Eigen::Vector3d{0.0, 0.0, 0.0}}));
 
-  beamline.setCoord(Dim("position"), makeVariable<Eigen::Vector3d>(
-                                         Dims{Dim::Spectrum}, Shape{size},
-                                         units::Unit(units::m)));
+  beamline.setCoord(Dim("position"),
+                    makeVariable<Eigen::Vector3d>(Dims{Dim::Spectrum},
+                                                  Shape{size}, units::m));
   return beamline;
 }
 
@@ -66,9 +64,8 @@ auto make_events_default_weights(const scipp::index size,
   for (scipp::index i = 0; i < size; ++i)
     vals[i].resize(count, 5000.0);
   out.setCoord(Dim::Tof, std::move(var));
-  auto weights =
-      makeVariable<double>(Dims{Dim::Spectrum}, Shape{size},
-                           units::Unit(units::counts), Values{}, Variances{});
+  auto weights = makeVariable<double>(Dims{Dim::Spectrum}, Shape{size},
+                                      units::counts, Values{}, Variances{});
   out.setData("", weights);
   return out;
 }

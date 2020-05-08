@@ -69,16 +69,14 @@ auto make_events() {
   auto vals = var.values<event_list<double>>();
   vals[0] = {1.1, 2.2, 3.3};
   vals[1] = {1.1, 2.2, 3.3, 5.5};
-  return DataArray(makeVariable<double>(Dims{Dim::Y}, Shape{2},
-                                        units::Unit(units::counts),
+  return DataArray(makeVariable<double>(Dims{Dim::Y}, Shape{2}, units::counts,
                                         Values{1, 1}, Variances{1, 1}),
                    {{Dim::X, var}});
 }
 
 auto make_histogram() {
-  auto edges =
-      makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 3},
-                           units::Unit(units::us), Values{0, 2, 4, 1, 3, 5});
+  auto edges = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 3},
+                                    units::us, Values{0, 2, 4, 1, 3, 5});
   auto data = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{2.0, 3.0},
                                    Variances{0.3, 0.4});
 
@@ -86,9 +84,8 @@ auto make_histogram() {
 }
 
 auto make_histogram_no_variance() {
-  auto edges =
-      makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 3},
-                           units::Unit(units::us), Values{0, 2, 4, 1, 3, 5});
+  auto edges = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 3},
+                                    units::us, Values{0, 2, 4, 1, 3, 5});
   auto data = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{2.0, 3.0});
 
   return DataArray(data, {{Dim::X, edges}});
@@ -106,7 +103,7 @@ TEST(DataArrayTest, astype) {
 TEST(DataArrayRealignedEventsArithmeticTest, fail_events_op_non_histogram) {
   const auto events = make_events();
   auto coord = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
-                                    units::Unit(units::us), Values{0, 2, 1, 3});
+                                    units::us, Values{0, 2, 1, 3});
   auto data = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{2.0, 3.0},
                                    Variances{0.3, 0.4});
   DataArray not_hist(data, {{Dim::X, coord}});
@@ -225,8 +222,8 @@ TEST(DataArrayRealignedEventsArithmeticTest,
   const auto hist = make_histogram();
   Variable data(events.coords()[Dim::X]);
   data.setUnit(units::counts);
-  data *= 0.0 * units::Unit(units::dimensionless);
-  data += 2.0 * units::Unit(units::counts);
+  data *= 0.0 * units::one;
+  data += 2.0 * units::counts;
   events.setData(data);
   const auto realigned = unaligned::realign(
       DataArray(events), {{Dim::X, Variable{hist.coords()[Dim::X]}}});
@@ -307,17 +304,17 @@ struct DataArrayRealignedEventsPlusMinusTest : public ::testing::Test {
 protected:
   DataArrayRealignedEventsPlusMinusTest() {
     eventsB = eventsA;
-    eventsB.coords()[Dim::X] += 0.01 * units::Unit(units::us);
+    eventsB.coords()[Dim::X] += 0.01 * units::us;
     event::append(eventsB, eventsA);
-    eventsB.coords()[Dim::X] += 0.02 * units::Unit(units::us);
+    eventsB.coords()[Dim::X] += 0.02 * units::us;
     a = unaligned::realign(eventsA, {{Dim::X, edges}});
     b = unaligned::realign(eventsB, {{Dim::X, edges}});
   }
 
   DataArray eventsA = make_events();
   DataArray eventsB;
-  Variable edges = makeVariable<double>(
-      Dims{Dim::X}, Shape{4}, units::Unit(units::us), Values{0, 2, 4, 6});
+  Variable edges = makeVariable<double>(Dims{Dim::X}, Shape{4}, units::us,
+                                        Values{0, 2, 4, 6});
   DataArray a;
   DataArray b;
 };

@@ -9,7 +9,7 @@
 
 #include "scipp/units/unit.h"
 
-#include "scipp/core/arg_list.h"
+#include "scipp/core/element/arg_list.h"
 #include "scipp/core/histogram.h"
 #include "scipp/core/transform_common.h"
 #include "scipp/core/value_and_variance.h"
@@ -33,7 +33,7 @@ constexpr auto copy_if =
                                  copy_if_detail::args<int32_t, int64_t>>,
                transform_flags::expect_no_variance_arg<1>,
                [](const units::Unit &var, const units::Unit &select) {
-                 expect::equals(select, units::Unit(units::dimensionless));
+                 expect::equals(select, units::one);
                  return var;
                },
                [](const auto &var, const auto &select) {
@@ -149,7 +149,7 @@ constexpr auto make_select = overloaded{
     transform_flags::expect_no_variance_arg<1>,
     [](const units::Unit &coord, const units::Unit &interval) {
       expect::equals(coord, interval);
-      return units::Unit(units::dimensionless);
+      return units::one;
     },
     [](const auto &coord, const auto &interval) {
       const auto low = interval[0];

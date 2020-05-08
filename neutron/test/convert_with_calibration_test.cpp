@@ -16,9 +16,9 @@ namespace {
 Dataset makeTofDataset() {
   Dataset tof;
 
-  tof.setCoord(Dim::Tof, makeVariable<double>(Dims{Dim::Tof}, Shape{4},
-                                              units::Unit(units::us),
-                                              Values{4000, 5000, 6100, 7300}));
+  tof.setCoord(Dim::Tof,
+               makeVariable<double>(Dims{Dim::Tof}, Shape{4}, units::us,
+                                    Values{4000, 5000, 6100, 7300}));
 
   tof.setData("counts",
               makeVariable<double>(Dims{Dim::Spectrum, Dim::Tof}, Shape{2, 3},
@@ -31,9 +31,9 @@ Dataset makeTofDataset() {
 Dataset makeTofDatasetEvents() {
   Dataset tof;
 
-  tof.setData("events", makeVariable<double>(Dims{Dim::Spectrum}, Shape{2},
-                                             units::Unit(units::counts),
-                                             Values{1, 1}, Variances{1, 1}));
+  tof.setData("events",
+              makeVariable<double>(Dims{Dim::Spectrum}, Shape{2}, units::counts,
+                                   Values{1, 1}, Variances{1, 1}));
   auto events = makeVariable<event_list<double>>(Dims{Dim::Spectrum}, Shape{2});
   events.setUnit(units::us);
   auto eventLists = events.values<event_list<double>>();
@@ -47,9 +47,8 @@ Dataset makeTofDatasetEvents() {
 
 Dataset makeCalTable() {
   Dataset cal;
-  cal.setData("tzero",
-              makeVariable<double>(Dims{Dim::Spectrum}, Shape{2},
-                                   units::Unit(units::us), Values{1.1, 2.2}));
+  cal.setData("tzero", makeVariable<double>(Dims{Dim::Spectrum}, Shape{2},
+                                            units::us, Values{1.1, 2.2}));
   cal.setData("difc",
               makeVariable<double>(Dims{Dim::Spectrum}, Shape{2},
                                    units::Unit{units::us / units::angstrom},

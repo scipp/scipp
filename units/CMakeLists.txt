@@ -1,23 +1,11 @@
 # SPDX-License-Identifier: GPL-3.0-or-later Copyright (c) 2019 Scipp
 # contributors (https://github.com/scipp)
 set(TARGET_NAME "scipp-units")
-set(INC_FILES
-    include/scipp/units/dummy.h include/scipp/units/except.h
-    include/scipp/units/string.h include/scipp/units/unit.h
-    include/scipp/units/unit.tcc include/scipp/units/neutron.h
+set(INC_FILES include/scipp/units/except.h include/scipp/units/string.h
+              include/scipp/units/unit.h include/scipp/units/neutron.h
 )
 
-set(SRC_FILES dim.cpp dummy.cpp except.cpp neutron.cpp string.cpp)
-
-# For now we just enable "neutron" units by default. In the future we may want
-# to build separate libraries with separate units.
-if(NOT SCIPP_UNITS_SYSTEM)
-  set(SCIPP_UNITS_SYSTEM
-      "Neutron"
-      CACHE STRING "Choose the unit system, options are: Dummy Neutron." FORCE
-  )
-endif()
-string(TOUPPER ${SCIPP_UNITS_SYSTEM} SCIPP_UNITS_SYSTEM)
+set(SRC_FILES dim.cpp except.cpp string.cpp unit.cpp)
 
 set(LINK_TYPE "STATIC")
 if(DYNAMIC_LIB)

@@ -83,8 +83,8 @@ TEST(CreateVariableTest, construct_events) {
 }
 
 TEST(VariableUniversalConstructorTest, dimensions_unit_basic) {
-  auto variable = Variable(dtype<float>, Dims{Dim::X, Dim::Y}, Shape{2, 3},
-                           units::Unit(units::kg));
+  auto variable =
+      Variable(dtype<float>, Dims{Dim::X, Dim::Y}, Shape{2, 3}, units::kg);
 
   EXPECT_EQ(variable.dims(), (Dimensions{{Dim::X, Dim::Y}, {2, 3}}));
   EXPECT_EQ(variable.unit(), units::kg);
@@ -93,11 +93,11 @@ TEST(VariableUniversalConstructorTest, dimensions_unit_basic) {
 
   auto otherVariable =
       Variable(dtype<float>, Dims{Dim::X, Dim::Y}, Shape{2, 3});
-  variable.setUnit(units::dimensionless);
+  variable.setUnit(units::one);
   EXPECT_EQ(variable, otherVariable);
 
-  auto oneMore = Variable(dtype<float>, units::Unit(units::dimensionless),
-                          Dims{Dim::X, Dim::Y}, Shape{2, 3});
+  auto oneMore =
+      Variable(dtype<float>, units::one, Dims{Dim::X, Dim::Y}, Shape{2, 3});
   EXPECT_EQ(oneMore, variable);
 }
 
@@ -129,7 +129,7 @@ TEST(VariableUniversalConstructorTest, no_copy_on_matched_types) {
   auto varAddr = variances.data();
 
   auto variable = Variable(dtype<double>, Dims{Dim::X, Dim::Y}, Shape{2, 3},
-                           Values(std::move(values)), units::Unit(units::kg),
+                           Values(std::move(values)), units::kg,
                            Variances(std::move(variances)));
 
   auto vval = variable.values<double>();
@@ -143,9 +143,8 @@ TEST(VariableUniversalConstructorTest, no_copy_on_matched_types) {
 TEST(VariableUniversalConstructorTest, convertable_types) {
   using namespace scipp::variable::detail;
   auto data = std::vector<double>{1.0, 4.5, 2.7, 5.0, 7.0, 6.7};
-  auto variable =
-      Variable(dtype<float>, Dims{Dim::X, Dim::Y}, Shape{2, 3}, Values(data),
-               units::Unit(units::kg), Variances(data));
+  auto variable = Variable(dtype<float>, Dims{Dim::X, Dim::Y}, Shape{2, 3},
+                           Values(data), units::kg, Variances(data));
 
   EXPECT_EQ(variable.dtype(), dtype<float>);
   EXPECT_TRUE(equals(variable.values<float>(),

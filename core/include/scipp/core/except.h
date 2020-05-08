@@ -41,7 +41,7 @@ using DimensionMismatchError = MismatchError<core::Dimensions>;
 
 template <class T>
 MismatchError(const core::Dimensions &, const T &)
-    ->MismatchError<core::Dimensions>;
+    -> MismatchError<core::Dimensions>;
 
 struct SCIPP_CORE_EXPORT DimensionError : public Error<core::Dimensions> {
   DimensionError(const std::string &msg);

@@ -4,7 +4,6 @@
 /// @author Igor Gudich
 #include <cmath>
 
-#include "scipp/core/operators.h"
 #include "scipp/core/tag_util.h"
 #include "scipp/variable/except.h"
 #include "scipp/variable/transform.h"

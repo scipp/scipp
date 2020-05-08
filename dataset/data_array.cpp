@@ -237,9 +237,9 @@ DataArray &DataArray::operator-=(const DataArrayConstView &other) {
     const DataArray tmp =
         is_self_append(*this, other) ? copy(other.unaligned()) : DataArray{};
     auto other_unaligned = tmp ? DataArrayConstView(tmp) : other.unaligned();
-    unaligned().data() *= -1.0 * units::Unit(units::dimensionless);
+    unaligned().data() *= -1.0 * units::one;
     event::append(unaligned(), other_unaligned);
-    unaligned().data() *= -1.0 * units::Unit(units::dimensionless);
+    unaligned().data() *= -1.0 * units::one;
   }
   return *this;
 }

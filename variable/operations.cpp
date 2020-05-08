@@ -6,9 +6,7 @@
 
 #include "scipp/core/dtype.h"
 #include "scipp/core/element/geometric_operations.h"
-#include "scipp/core/element/trigonometry_operations.h"
 #include "scipp/core/element/unary_operations.h"
-#include "scipp/core/operators.h"
 #include "scipp/variable/apply.h"
 #include "scipp/variable/except.h"
 #include "scipp/variable/misc_operations.h"
@@ -155,9 +153,7 @@ VariableView abs(const VariableConstView &var, const VariableView &out) {
 }
 
 Variable norm(const VariableConstView &var) {
-  return transform<Eigen::Vector3d>(
-      var, overloaded{[](const auto &x) { return x.norm(); },
-                      [](const units::Unit &x) { return x; }});
+  return transform(var, element::norm);
 }
 
 Variable sqrt(const VariableConstView &var) {
@@ -175,23 +171,7 @@ VariableView sqrt(const VariableConstView &var, const VariableView &out) {
 }
 
 Variable dot(const Variable &a, const Variable &b) {
-  return transform<pair_self_t<Eigen::Vector3d>>(
-      a, b,
-      overloaded{[](const auto &a_, const auto &b_) { return a_.dot(b_); },
-                 [](const units::Unit &a_, const units::Unit &b_) {
-                   return a_ * b_;
-                 }});
-}
-
-Variable atan2(const Variable &y, const Variable &x) {
-  return transform<std::tuple<double, float>>(y, x, element::atan2);
-}
-
-VariableView atan2(const VariableConstView &y, const VariableConstView &x,
-                   const VariableView &out) {
-  transform_in_place<std::tuple<double, float>>(out, y, x,
-                                                element::atan2_out_arg);
-  return out;
+  return transform(a, b, element::dot);
 }
 
 Variable broadcast(const VariableConstView &var, const Dimensions &dims) {

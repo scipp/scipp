@@ -110,7 +110,7 @@ void init_units_neutron(py::module &m) {
            [](const units::Unit &self, int power) -> units::Unit {
              switch (power) {
              case 0:
-               return units::dimensionless;
+               return units::one;
              case 1:
                return self;
              case 2:
@@ -141,15 +141,16 @@ void init_units_neutron(py::module &m) {
       .def("__rtruediv", &doDivScalarUnit);
 
   auto units = m.def_submodule("units");
-  units.attr("dimensionless") = units::Unit(units::dimensionless);
-  units.attr("m") = units::Unit(units::m);
-  units.attr("counts") = units::Unit(units::counts);
-  units.attr("s") = units::Unit(units::s);
-  units.attr("kg") = units::Unit(units::kg);
-  units.attr("K") = units::Unit(units::K);
-  units.attr("angstrom") = units::Unit(units::angstrom);
-  units.attr("meV") = units::Unit(units::meV);
-  units.attr("us") = units::Unit(units::us);
-  units.attr("rad") = units::Unit(units::rad);
-  units.attr("deg") = units::Unit(units::deg);
+  units.attr("angstrom") = units::angstrom;
+  units.attr("counts") = units::counts;
+  units.attr("deg") = units::deg;
+  units.attr("dimensionless") = units::dimensionless;
+  units.attr("kg") = units::kg;
+  units.attr("K") = units::K;
+  units.attr("meV") = units::meV;
+  units.attr("m") = units::m;
+  units.attr("one") = units::one;
+  units.attr("rad") = units::rad;
+  units.attr("s") = units::s;
+  units.attr("us") = units::us;
 }

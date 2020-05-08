@@ -4,15 +4,12 @@
 /// @author Simon Heybrock
 #pragma once
 
-#include <algorithm>
-
 #include <Eigen/Dense>
 
 #include "scipp/core/transform_common.h"
 
-namespace scipp::core {
+namespace scipp::core::element {
 
-namespace operator_detail {
 struct plus_equals {
   template <class A, class B>
   constexpr void operator()(A &&a, const B &b) const
@@ -58,41 +55,4 @@ struct divide_equals {
                     std::pair<Eigen::Vector3d, double>>{}));
 };
 
-struct and_equals {
-  template <class A, class B>
-  constexpr void operator()(A &&a, const B &b) const
-      noexcept(noexcept(a &= b)) {
-    a &= b;
-  }
-  using types = pair_self_t<bool>;
-};
-struct or_equals {
-  template <class A, class B>
-  constexpr void operator()(A &&a, const B &b) const
-      noexcept(noexcept(a |= b)) {
-    a |= b;
-  }
-  using types = pair_self_t<bool>;
-};
-
-struct max_equals
-    : public transform_flags::expect_in_variance_if_out_variance_t {
-  template <class A, class B>
-  constexpr void operator()(A &&a, const B &b) const noexcept {
-    using std::max;
-    a = max(a, b);
-  }
-  using types = pair_self_t<double, float, int64_t, int32_t>;
-};
-struct min_equals
-    : public transform_flags::expect_in_variance_if_out_variance_t {
-  template <class A, class B>
-  constexpr void operator()(A &&a, const B &b) const noexcept {
-    using std::min;
-    a = min(a, b);
-  }
-  using types = pair_self_t<double, float, int64_t, int32_t>;
-};
-} // namespace operator_detail
-
-} // namespace scipp::core
+} // namespace scipp::core::element
