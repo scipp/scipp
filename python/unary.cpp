@@ -29,7 +29,9 @@ template <typename T> void bind_abs(py::module &m) {
         py::call_guard<py::gil_scoped_release>(), doc.c_str());
   m.def("abs", [](CstViewRef<T> x, ViewRef<T> out) { return abs(x, out); },
         py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>(),
-        doc.template rtype<View<T>>().template param<T>("out", "Output buffer.").c_str());
+        doc.template rtype<View<T>>()
+            .template param<T>("out", "Output buffer.")
+            .c_str());
 }
 
 template <typename T> void bind_sqrt(py::module &m) {
@@ -44,7 +46,9 @@ template <typename T> void bind_sqrt(py::module &m) {
         py::call_guard<py::gil_scoped_release>(), doc.c_str());
   m.def("sqrt", [](CstViewRef<T> x, ViewRef<T> out) { return sqrt(x, out); },
         py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>(),
-        doc.template rtype<View<T>>().template param<T>("out", "Output buffer.").c_str());
+        doc.template rtype<View<T>>()
+            .template param<T>("out", "Output buffer.")
+            .c_str());
 }
 
 template <typename T> void bind_norm(py::module &m) {
@@ -73,7 +77,9 @@ template <typename T> void bind_reciprocal(py::module &m) {
   m.def("reciprocal",
         [](CstViewRef<T> x, ViewRef<T> out) { return reciprocal(x, out); },
         py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>(),
-        doc.template rtype<View<T>>().template param<T>("out", "Output buffer.").c_str());
+        doc.template rtype<View<T>>()
+            .template param<T>("out", "Output buffer.")
+            .c_str());
 }
 
 template <typename T> void bind_nan_to_num(py::module &m) {
@@ -100,8 +106,10 @@ with the replacement variance.)")
           .rtype<T>()
           .template param<T>("x", "Input data.")
           .param("nan", "Replacement values for NaN in the input.", "Variable")
-          .param("posinf", "Replacement values for Inf in the input.", "Variable")
-          .param("neginf", "Replacement values for -Inf in the input.", "Variable");
+          .param("posinf", "Replacement values for Inf in the input.",
+                 "Variable")
+          .param("neginf", "Replacement values for -Inf in the input.",
+                 "Variable");
 
   m.def("nan_to_num",
         [](CstViewRef<T> x, const std::optional<VariableConstView> &nan,
@@ -137,7 +145,9 @@ with the replacement variance.)")
         py::arg("posinf") = std::optional<VariableConstView>(),
         py::arg("neginf") = std::optional<VariableConstView>(), py::arg("out"),
         py::call_guard<py::gil_scoped_release>(),
-        doc.template param<T>("out", "Output buffer.").template rtype<View<T>>().c_str());
+        doc.template param<T>("out", "Output buffer.")
+            .template rtype<View<T>>()
+            .c_str());
 }
 
 void init_unary(py::module &m) {

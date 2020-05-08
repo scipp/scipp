@@ -15,20 +15,20 @@ using namespace scipp::variable;
 using namespace scipp::dataset;
 
 template <class T> const std::string type_to_string() {
-    // using T = decltype(t);
-    if (std::is_same_v<T, Variable>)
-      return "Variable";
-    if (std::is_same_v<T, VariableView>)
-      return "VariableView";
-    if (std::is_same_v<T, DataArray>)
-      return "DataArray";
-    if (std::is_same_v<T, DataArrayView>)
-      return "DataArrayView";
-    if (std::is_same_v<T, Dataset>)
-      return "Dataset";
-    if (std::is_same_v<T, DatasetView>)
-      return "DatasetView";
-    return "";
+  // using T = decltype(t);
+  if (std::is_same_v<T, Variable>)
+    return "Variable";
+  if (std::is_same_v<T, VariableView>)
+    return "VariableView";
+  if (std::is_same_v<T, DataArray>)
+    return "DataArray";
+  if (std::is_same_v<T, DataArrayView>)
+    return "DataArrayView";
+  if (std::is_same_v<T, Dataset>)
+    return "Dataset";
+  if (std::is_same_v<T, DatasetView>)
+    return "DatasetView";
+  return "";
 }
 
 class Docstring {
@@ -43,7 +43,8 @@ public:
   Docstring &returns(const std::string &s, const bool append = false);
   Docstring &rtype(const std::string &s, const bool append = false);
   // Docstring& rtype(const std::string s) { m_rtype = s; return *this; };
-  Docstring &param(const std::string &name, const std::string &about, const std::string &type);
+  Docstring &param(const std::string &name, const std::string &about,
+                   const std::string &type);
   Docstring &clear();
 
   // template <class T>
@@ -64,8 +65,6 @@ public:
   //   return *this;
   // }
 
- 
-
   template <class T> Docstring &rtype() {
     return rtype(type_to_string<T>());
     // m_type = type_to_string<T>();
@@ -85,10 +84,10 @@ public:
     // return *this;
   }
 
-  template <class T> Docstring &param(const std::string &name, const std::string &about) {
+  template <class T>
+  Docstring &param(const std::string &name, const std::string &about) {
     return param(name, about, type_to_string<T>());
   }
-
 
   // const std::string rtype() const { return m_rtype; };
   // strpair param(const scipp::index ind) const { return m_params[ind]; };

@@ -68,7 +68,8 @@ void init_geometry(py::module &m) {
           .returns("Variable containing the rotated position vectors")
           .rtype("Variable")
           .param("pos", "Variable containing xyz position vectors.", "Variable")
-          .param("rot", "Variable containing rotation quaternions.", "Variable");
+          .param("rot", "Variable containing rotation quaternions.",
+                 "Variable");
 
   geom_m.def("rotate",
              [](const VariableConstView &pos, const VariableConstView &rot) {
@@ -82,5 +83,7 @@ void init_geometry(py::module &m) {
                 const VariableView &out) { return rotate(pos, rot, out); },
              py::arg("pos"), py::arg("rot"), py::arg("out"),
              py::call_guard<py::gil_scoped_release>(),
-             doc.rtype("VariableView").param("out", "Output buffer", "Variable").c_str());
+             doc.rtype("VariableView")
+                 .param("out", "Output buffer", "Variable")
+                 .c_str());
 }

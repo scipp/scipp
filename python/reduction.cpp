@@ -50,7 +50,9 @@ template <class T> void bind_mean_out(py::module &m) {
         },
         py::arg("x"), py::arg("dim"), py::arg("out"),
         py::call_guard<py::gil_scoped_release>(),
-        docstring_mean<View<T>>().template param<T>("out", "Output buffer.").c_str());
+        docstring_mean<View<T>>()
+            .template param<T>("out", "Output buffer.")
+            .c_str());
 }
 
 template <class T> Docstring docstring_sum() {
@@ -77,7 +79,9 @@ template <class T> void bind_sum_out(py::module &m) {
         },
         py::arg("x"), py::arg("dim"), py::arg("out"),
         py::call_guard<py::gil_scoped_release>(),
-        docstring_sum<View<T>>().template param<T>("out", "Output buffer.").c_str());
+        docstring_sum<View<T>>()
+            .template param<T>("out", "Output buffer.")
+            .c_str());
 }
 
 template <class T> Docstring docstring_minmax(const std::string minmax) {

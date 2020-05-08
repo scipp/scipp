@@ -44,7 +44,8 @@ Docstring &Docstring::rtype(const std::string &s, const bool append) {
   return *this;
 }
 
-Docstring &Docstring::param(const std::string &name, const std::string &about, const std::string &type) {
+Docstring &Docstring::param(const std::string &name, const std::string &about,
+                            const std::string &type) {
   if (m_params.find(name) == m_params.end()) {
     m_order.push_back(name);
   }
@@ -63,10 +64,11 @@ Docstring &Docstring::clear() {
 }
 
 const char *Docstring::c_str() {
-  m_output = m_description + "\n";
+  if (m_description.size() > 0)
+    m_output = m_description + "\n\n";
   for (const auto name : m_order) {
-    m_output += ":param " + name + ": " + m_params[name].first +
-      "\n:type " + name + ": " + m_params[name].second + "\n";
+    m_output += ":param " + name + ": " + m_params[name].first + "\n:type " +
+                name + ": " + m_params[name].second + "\n";
   }
   if (m_raises.size() > 0)
     m_output += ":raises: " + m_raises + "\n";

@@ -284,14 +284,14 @@ void bind_astype(py::class_<T, Ignored...> &c) {
         :rtype: DataArray)");
 }
 
-template <class T>
-void bind_rebin(py::module &m) {
+template <class T> void bind_rebin(py::module &m) {
 
   // auto doc = Docstring()
   //                .description("Rebin a dimension of a data array.")
-  //                .raises("If data cannot be rebinned, e.g., if the unit is not "
-  //                        "counts, or the existing coordinate is not a bin-edge "
-  //                        "coordinate.")
+  //                .raises("If data cannot be rebinned, e.g., if the unit is
+  //                not "
+  //                        "counts, or the existing coordinate is not a
+  //                        bin-edge " "coordinate.")
   //                .returns("Data rebinned according to the new coordinate.")
   //                .rtype<T>()
   //                .param<T>("x", "Data to rebin.", "Dataset")
@@ -299,27 +299,28 @@ void bind_rebin(py::module &m) {
   //                .param("bins", "New bin edges.", "Variable");
 
   m.def("rebin",
-        py::overload_cast<CstViewRef<T>, const Dim,
-                          const VariableConstView &>(&rebin),
+        py::overload_cast<CstViewRef<T>, const Dim, const VariableConstView &>(
+            &rebin),
         py::arg("x"), py::arg("dim"), py::arg("bins"),
         py::call_guard<py::gil_scoped_release>(),
         Docstring()
-                 .description("Rebin a dimension of a data array.")
-                 .raises("If data cannot be rebinned, e.g., if the unit is not "
-                         "counts, or the existing coordinate is not a bin-edge "
-                         "coordinate.")
-                 .returns("Data rebinned according to the new coordinate.")
-                 .rtype<T>()
-                 .template param<T>("x", "Data to rebin.")
-                 .param("dim", "Dimension to rebin over.", "Dim")
-                 .param("bins", "New bin edges.", "Variable").c_str());
+            .description("Rebin a dimension of a data array.")
+            .raises("If data cannot be rebinned, e.g., if the unit is not "
+                    "counts, or the existing coordinate is not a bin-edge "
+                    "coordinate.")
+            .returns("Data rebinned according to the new coordinate.")
+            .rtype<T>()
+            .template param<T>("x", "Data to rebin.")
+            .param("dim", "Dimension to rebin over.", "Dim")
+            .param("bins", "New bin edges.", "Variable")
+            .c_str());
 }
-  // m.def("rebin",
-  //       py::overload_cast<const DatasetConstView &, const Dim,
-  //                         const VariableConstView &>(&rebin),
-  //       py::arg("x"), py::arg("dim"), py::arg("bins"),
-  //       py::call_guard<py::gil_scoped_release>(), doc.rtype("Dataset").c_str());
-
+// m.def("rebin",
+//       py::overload_cast<const DatasetConstView &, const Dim,
+//                         const VariableConstView &>(&rebin),
+//       py::arg("x"), py::arg("dim"), py::arg("bins"),
+//       py::call_guard<py::gil_scoped_release>(),
+//       doc.rtype("Dataset").c_str());
 
 void init_dataset(py::module &m) {
   py::class_<Slice>(m, "Slice");
@@ -474,9 +475,10 @@ Union of two datasets.
 
   // auto doc = Docstring()
   //                .description("Rebin a dimension of a data array.")
-  //                .raises("If data cannot be rebinned, e.g., if the unit is not "
-  //                        "counts, or the existing coordinate is not a bin-edge "
-  //                        "coordinate.")
+  //                .raises("If data cannot be rebinned, e.g., if the unit is
+  //                not "
+  //                        "counts, or the existing coordinate is not a
+  //                        bin-edge " "coordinate.")
   //                .returns("Data rebinned according to the new coordinate.")
   //                .rtype("DataArray")
   //                .param("x", "Data to rebin.", "Dataset")
@@ -493,7 +495,8 @@ Union of two datasets.
   //       py::overload_cast<const DatasetConstView &, const Dim,
   //                         const VariableConstView &>(&rebin),
   //       py::arg("x"), py::arg("dim"), py::arg("bins"),
-  //       py::call_guard<py::gil_scoped_release>(), doc.rtype("Dataset").c_str());
+  //       py::call_guard<py::gil_scoped_release>(),
+  //       doc.rtype("Dataset").c_str());
 
   m.def("combine_masks",
         [](const MasksConstView &msk, const std::vector<Dim> &labels,
