@@ -3,8 +3,8 @@
 /// @file
 /// @author Simon Heybrock
 
-#include "scipp/dataset/dataset.h"
 #include "scipp/dataset/groupby.h"
+#include "scipp/dataset/dataset.h"
 
 #include "pybind11.h"
 
