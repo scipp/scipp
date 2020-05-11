@@ -121,11 +121,6 @@ DataArray histogram(const DataArrayConstView &events,
   return result;
 }
 
-DataArray histogram(const DataArrayConstView &events,
-                    const Variable &binEdges) {
-  return histogram(events, VariableConstView(binEdges));
-}
-
 Dataset histogram(const Dataset &dataset, const VariableConstView &bins) {
   auto out(Dataset(DatasetConstView::makeViewWithEmptyIndexes(dataset)));
   const Dim dim = bins.dims().inner();
