@@ -14,22 +14,21 @@ namespace py = pybind11;
 
 template <class Function>
 void bind_component(const std::string xyz, Function func, py::module &gm) {
-  gm.def(xyz.c_str(),
-         [func](const VariableConstView &pos) { return func(pos); },
-         py::arg("pos"), py::call_guard<py::gil_scoped_release>(),
-         Docstring()
-             .description("Un-zip functionality to produce a Variable of the " +
-                          xyz + " component of a vector_3_float64.")
-             .raises("If the dtype of the input is not vector_3_float64.")
-             .seealso(
-                 ":py:func:`scipp.geometry.x`, :py:func:`scipp.geometry.y`, "
-                 ":py:func:`scipp.geometry.z`")
-             .returns(
-                 "Extracted " + xyz +
-                 " component of input pos. Output unit is same as input unit.")
-             .rtype("Variable")
-             .param("pos", "Variable containing position vector.", "Variable")
-             .c_str());
+  gm.def(
+      xyz.c_str(), [func](const VariableConstView &pos) { return func(pos); },
+      py::arg("pos"), py::call_guard<py::gil_scoped_release>(),
+      Docstring()
+          .description("Un-zip functionality to produce a Variable of the " +
+                       xyz + " component of a vector_3_float64.")
+          .raises("If the dtype of the input is not vector_3_float64.")
+          .seealso(":py:func:`scipp.geometry.x`, :py:func:`scipp.geometry.y`, "
+                   ":py:func:`scipp.geometry.z`")
+          .returns(
+              "Extracted " + xyz +
+              " component of input pos. Output unit is same as input unit.")
+          .rtype("Variable")
+          .param("pos", "Variable containing position vector.", "Variable")
+          .c_str());
 }
 
 void init_geometry(py::module &m) {
@@ -46,9 +45,8 @@ void init_geometry(py::module &m) {
           .description(
               "Element-wise zip functionality to produce a vector_3_float64.")
           .raises("If the dtypes of inputs are not double precision floats.")
-          .seealso(
-                 ":py:func:`scipp.geometry.x`, :py:func:`scipp.geometry.y`, "
-                 ":py:func:`scipp.geometry.z`")
+          .seealso(":py:func:`scipp.geometry.x`, :py:func:`scipp.geometry.y`, "
+                   ":py:func:`scipp.geometry.z`")
           .returns(
               "Zip of input x, y and z. Output unit is same as input unit.")
           .rtype("Variable")

@@ -255,7 +255,6 @@ template <class T> void bind_rebin(py::module &m) {
             .c_str());
 }
 
-
 template <class T> void bind_realign(py::module &m) {
   m.def("realign",
         [](CstViewRef<T> a, py::dict coord_dict) {
@@ -267,7 +266,7 @@ template <class T> void bind_realign(py::module &m) {
         py::call_guard<py::gil_scoped_release>(),
         Docstring()
             .description("Realign unaligned data to the supplied coordinate "
-                          "axes.")
+                         "axes.")
             .raises("If the input does not contain unaligned data.")
             .returns("A data structure containing unaligned underlying data, "
                      "along with coordinate axes for alignment.")
@@ -276,7 +275,6 @@ template <class T> void bind_realign(py::module &m) {
             .param("coords", "Coordinates for re-alignment.", "Dict")
             .c_str());
 }
-
 
 void init_dataset(py::module &m) {
   py::class_<Slice>(m, "Slice");
@@ -453,22 +451,6 @@ their dimensions contained in the Variable/DataArray Dimensions.
 
         :return: Reciprocal of the input values.
         :rtype: DataArray)");
-
-  // m.def("realign",
-  //       [](const DataArrayConstView &a, py::dict coord_dict) {
-  //         DataArray copy(a);
-  //         realign_impl(copy, coord_dict);
-  //         return copy;
-  //       },
-  //       py::arg("data"), py::arg("coords"));
-
-  // m.def("realign",
-  //       [](const DatasetConstView &a, py::dict coord_dict) {
-  //         Dataset copy(a);
-  //         realign_impl(copy, coord_dict);
-  //         return copy;
-  //       },
-  //       py::arg("data"), py::arg("coords"));
 
   m.def("filter", filter_impl<DataArray>, py::arg("data"), py::arg("filter"),
         py::arg("interval"), py::arg("keep_attrs") = true,
