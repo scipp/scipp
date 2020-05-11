@@ -2,7 +2,6 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#include "detail.h"
 #include "docstring.h"
 #include "pybind11.h"
 
@@ -29,7 +28,9 @@ template <class T> Docstring docstring_comparison(const std::string op) {
 
 template <typename T> void bind_less(py::module &m) {
   m.def(
-      "less", [](ConstViewRef<T> x, ConstViewRef<T> y) { return less(x, y); },
+      "less",
+      [](const typename T::const_view_type &x,
+         const typename T::const_view_type &y) { return less(x, y); },
       py::arg("x"), py::arg("y"), py::call_guard<py::gil_scoped_release>(),
       docstring_comparison<T>("(x < y)").c_str());
 }
@@ -37,7 +38,8 @@ template <typename T> void bind_less(py::module &m) {
 template <typename T> void bind_greater(py::module &m) {
   m.def(
       "greater",
-      [](ConstViewRef<T> x, ConstViewRef<T> y) { return greater(x, y); },
+      [](const typename T::const_view_type &x,
+         const typename T::const_view_type &y) { return greater(x, y); },
       py::arg("x"), py::arg("y"), py::call_guard<py::gil_scoped_release>(),
       docstring_comparison<T>("(x > y)").c_str());
 }
@@ -45,7 +47,8 @@ template <typename T> void bind_greater(py::module &m) {
 template <typename T> void bind_less_equal(py::module &m) {
   m.def(
       "less_equal",
-      [](ConstViewRef<T> x, ConstViewRef<T> y) { return less_equal(x, y); },
+      [](const typename T::const_view_type &x,
+         const typename T::const_view_type &y) { return less_equal(x, y); },
       py::arg("x"), py::arg("y"), py::call_guard<py::gil_scoped_release>(),
       docstring_comparison<T>("(x <= y)").c_str());
 }
@@ -53,14 +56,17 @@ template <typename T> void bind_less_equal(py::module &m) {
 template <typename T> void bind_greater_equal(py::module &m) {
   m.def(
       "greater_equal",
-      [](ConstViewRef<T> x, ConstViewRef<T> y) { return greater_equal(x, y); },
+      [](const typename T::const_view_type &x,
+         const typename T::const_view_type &y) { return greater_equal(x, y); },
       py::arg("x"), py::arg("y"), py::call_guard<py::gil_scoped_release>(),
       docstring_comparison<T>("(x >= y)").c_str());
 }
 
 template <typename T> void bind_equal(py::module &m) {
   m.def(
-      "equal", [](ConstViewRef<T> x, ConstViewRef<T> y) { return equal(x, y); },
+      "equal",
+      [](const typename T::const_view_type &x,
+         const typename T::const_view_type &y) { return equal(x, y); },
       py::arg("x"), py::arg("y"), py::call_guard<py::gil_scoped_release>(),
       docstring_comparison<T>("(x == y)").c_str());
 }
@@ -68,7 +74,8 @@ template <typename T> void bind_equal(py::module &m) {
 template <typename T> void bind_not_equal(py::module &m) {
   m.def(
       "not_equal",
-      [](ConstViewRef<T> x, ConstViewRef<T> y) { return not_equal(x, y); },
+      [](const typename T::const_view_type &x,
+         const typename T::const_view_type &y) { return not_equal(x, y); },
       py::arg("x"), py::arg("y"), py::call_guard<py::gil_scoped_release>(),
       docstring_comparison<T>("(x != y)").c_str());
 }

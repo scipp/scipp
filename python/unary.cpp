@@ -2,7 +2,6 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#include "detail.h"
 #include "docstring.h"
 #include "pybind11.h"
 
@@ -26,12 +25,14 @@ template <typename T> void bind_abs(py::module &m) {
           .rtype<T>()
           .template param<T>("x", "Input data.");
   m.def(
-      "abs", [](ConstViewRef<T> x) { return abs(x); }, py::arg("x"),
-      py::call_guard<py::gil_scoped_release>(), doc.c_str());
+      "abs", [](const typename T::const_view_type &x) { return abs(x); },
+      py::arg("x"), py::call_guard<py::gil_scoped_release>(), doc.c_str());
   m.def(
-      "abs", [](ConstViewRef<T> x, ViewRef<T> out) { return abs(x, out); },
+      "abs",
+      [](const typename T::const_view_type &x,
+         const typename T::view_type &out) { return abs(x, out); },
       py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>(),
-      doc.template rtype<View<T>>()
+      doc.template rtype<typename T::view_type>()
           .template param<T>("out", "Output buffer.")
           .c_str());
 }
@@ -45,12 +46,14 @@ template <typename T> void bind_sqrt(py::module &m) {
           .rtype<T>()
           .template param<T>("x", "Input data.");
   m.def(
-      "sqrt", [](ConstViewRef<T> x) { return sqrt(x); }, py::arg("x"),
-      py::call_guard<py::gil_scoped_release>(), doc.c_str());
+      "sqrt", [](const typename T::const_view_type &x) { return sqrt(x); },
+      py::arg("x"), py::call_guard<py::gil_scoped_release>(), doc.c_str());
   m.def(
-      "sqrt", [](ConstViewRef<T> x, ViewRef<T> out) { return sqrt(x, out); },
+      "sqrt",
+      [](const typename T::const_view_type &x,
+         const typename T::view_type &out) { return sqrt(x, out); },
       py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>(),
-      doc.template rtype<View<T>>()
+      doc.template rtype<typename T::view_type>()
           .template param<T>("out", "Output buffer.")
           .c_str());
 }
@@ -65,8 +68,8 @@ template <typename T> void bind_norm(py::module &m) {
           .rtype<T>()
           .template param<T>("x", "Input data.");
   m.def(
-      "norm", [](ConstViewRef<T> x) { return norm(x); }, py::arg("x"),
-      py::call_guard<py::gil_scoped_release>(), doc.c_str());
+      "norm", [](const typename T::const_view_type &x) { return norm(x); },
+      py::arg("x"), py::call_guard<py::gil_scoped_release>(), doc.c_str());
 }
 
 template <typename T> void bind_reciprocal(py::module &m) {
@@ -78,13 +81,15 @@ template <typename T> void bind_reciprocal(py::module &m) {
           .rtype<T>()
           .template param<T>("x", "Input data.");
   m.def(
-      "reciprocal", [](ConstViewRef<T> x) { return reciprocal(x); },
+      "reciprocal",
+      [](const typename T::const_view_type &x) { return reciprocal(x); },
       py::arg("x"), py::call_guard<py::gil_scoped_release>(), doc.c_str());
   m.def(
       "reciprocal",
-      [](ConstViewRef<T> x, ViewRef<T> out) { return reciprocal(x, out); },
+      [](const typename T::const_view_type &x,
+         const typename T::view_type &out) { return reciprocal(x, out); },
       py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>(),
-      doc.template rtype<View<T>>()
+      doc.template rtype<typename T::view_type>()
           .template param<T>("out", "Output buffer.")
           .c_str());
 }
@@ -120,7 +125,8 @@ with the replacement variance.)")
 
   m.def(
       "nan_to_num",
-      [](ConstViewRef<T> x, const std::optional<VariableConstView> &nan,
+      [](const typename T::const_view_type &x,
+         const std::optional<VariableConstView> &nan,
          const std::optional<VariableConstView> &posinf,
          const std::optional<VariableConstView> &neginf) {
         Variable out(x);
@@ -139,9 +145,11 @@ with the replacement variance.)")
 
   m.def(
       "nan_to_num",
-      [](ConstViewRef<T> x, const std::optional<VariableConstView> &nan,
+      [](const typename T::const_view_type &x,
+         const std::optional<VariableConstView> &nan,
          const std::optional<VariableConstView> &posinf,
-         const std::optional<VariableConstView> &neginf, ViewRef<T> out) {
+         const std::optional<VariableConstView> &neginf,
+         const typename T::view_type &out) {
         if (nan)
           nan_to_num(x, *nan, out);
         if (posinf)
@@ -155,7 +163,7 @@ with the replacement variance.)")
       py::arg("neginf") = std::optional<VariableConstView>(), py::arg("out"),
       py::call_guard<py::gil_scoped_release>(),
       doc.template param<T>("out", "Output buffer.")
-          .template rtype<View<T>>()
+          .template rtype<typename T::view_type>()
           .c_str());
 }
 

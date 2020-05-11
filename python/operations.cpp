@@ -2,7 +2,6 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#include "detail.h"
 #include "docstring.h"
 #include "pybind11.h"
 
@@ -17,7 +16,9 @@ using namespace scipp::dataset;
 namespace py = pybind11;
 
 template <class T> void bind_flatten(py::module &m) {
-  m.def("flatten", py::overload_cast<ConstViewRef<T>, const Dim>(&flatten),
+  m.def("flatten",
+        py::overload_cast<const typename T::const_view_type &, const Dim>(
+            &flatten),
         py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
         Docstring()
             .description("Flatten the specified dimension into event lists, "
@@ -56,9 +57,9 @@ copied to the output without changes.)")
                  .param("dim", "Dimension along which to concatenate.", "Dim");
   m.def(
       "concatenate",
-      [](ConstViewRef<T> x, ConstViewRef<T> y, const Dim dim) {
-        return concatenate(x, y, dim);
-      },
+      [](const typename T::const_view_type &x,
+         const typename T::const_view_type &y,
+         const Dim dim) { return concatenate(x, y, dim); },
       py::arg("x"), py::arg("y"), py::arg("dim"),
       py::call_guard<py::gil_scoped_release>(), doc.c_str());
 }
@@ -72,7 +73,9 @@ template <typename T> void bind_dot(py::module &m) {
                  .template param<T>("x", "Input left hand side operand.")
                  .template param<T>("y", "Input right hand side operand.");
   m.def(
-      "dot", [](ConstViewRef<T> x, ConstViewRef<T> y) { return dot(x, y); },
+      "dot",
+      [](const typename T::const_view_type &x,
+         const typename T::const_view_type &y) { return dot(x, y); },
       py::arg("x"), py::arg("y"), py::call_guard<py::gil_scoped_release>(),
       doc.c_str());
 }
@@ -89,7 +92,8 @@ template <typename T> void bind_sort(py::module &m) {
           .template param<T>("key", "Sort key.");
   m.def(
       "sort",
-      [](ConstViewRef<T> x, ConstViewRef<Variable> key) {
+      [](const typename T::const_view_type &x,
+         const typename Variable::const_view_type &key) {
         return sort(x, key);
       },
       py::arg("x"), py::arg("key"), py::call_guard<py::gil_scoped_release>(),
@@ -108,7 +112,10 @@ template <typename T> void bind_sort_dim(py::module &m) {
           .template param<T>("x", "Data to be sorted")
           .param("dim", "Dimension to sort along.", "Dim");
   m.def(
-      "sort", [](ConstViewRef<T> x, const Dim &dim) { return sort(x, dim); },
+      "sort",
+      [](const typename T::const_view_type &x, const Dim &dim) {
+        return sort(x, dim);
+      },
       py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
       doc.c_str());
 }

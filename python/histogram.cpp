@@ -2,7 +2,6 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#include "detail.h"
 #include "docstring.h"
 #include "pybind11.h"
 
@@ -26,7 +25,8 @@ void init_histogram(py::module &m) {
 
   m.def(
       "histogram",
-      [](ConstViewRef<DataArray> x, ConstViewRef<Variable> bins) {
+      [](const typename DataArray::const_view_type &x,
+         const typename Variable::const_view_type &bins) {
         return histogram(x, bins);
       },
       py::arg("x"), py::arg("bins"), py::call_guard<py::gil_scoped_release>(),
@@ -34,7 +34,7 @@ void init_histogram(py::module &m) {
 
   m.def(
       "histogram",
-      [](const Dataset &x, ConstViewRef<Variable> bins) {
+      [](const Dataset &x, const typename Variable::const_view_type &bins) {
         return histogram(x, bins);
       },
       py::arg("x"), py::arg("bins"), py::call_guard<py::gil_scoped_release>(),
@@ -50,7 +50,8 @@ void init_histogram(py::module &m) {
           .param("x", "Input realigned data to be histogrammed.", "DataArray");
 
   m.def(
-      "histogram", [](ConstViewRef<DataArray> x) { return histogram(x); },
+      "histogram",
+      [](const typename DataArray::const_view_type &x) { return histogram(x); },
       py::arg("x"), py::call_guard<py::gil_scoped_release>(),
       doc.rtype("DataArray").c_str());
 
