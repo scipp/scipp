@@ -255,22 +255,23 @@ void bind_astype(py::class_<T, Ignored...> &c) {
 }
 
 template <class T> void bind_rebin(py::module &m) {
-  m.def("rebin",
-        py::overload_cast<CstViewRef<T>, const Dim, const VariableConstView &>(
-            &rebin),
-        py::arg("x"), py::arg("dim"), py::arg("bins"),
-        py::call_guard<py::gil_scoped_release>(),
-        Docstring()
-            .description("Rebin a dimension of a data array.")
-            .raises("If data cannot be rebinned, e.g., if the unit is not "
-                    "counts, or the existing coordinate is not a bin-edge "
-                    "coordinate.")
-            .returns("Data rebinned according to the new coordinate.")
-            .rtype<T>()
-            .template param<T>("x", "Data to rebin.")
-            .param("dim", "Dimension to rebin over.", "Dim")
-            .param("bins", "New bin edges.", "Variable")
-            .c_str());
+  m.def(
+      "rebin",
+      py::overload_cast<ConstViewRef<T>, const Dim, const VariableConstView &>(
+          &rebin),
+      py::arg("x"), py::arg("dim"), py::arg("bins"),
+      py::call_guard<py::gil_scoped_release>(),
+      Docstring()
+          .description("Rebin a dimension of a data array.")
+          .raises("If data cannot be rebinned, e.g., if the unit is not "
+                  "counts, or the existing coordinate is not a bin-edge "
+                  "coordinate.")
+          .returns("Data rebinned according to the new coordinate.")
+          .rtype<T>()
+          .template param<T>("x", "Data to rebin.")
+          .param("dim", "Dimension to rebin over.", "Dim")
+          .param("bins", "New bin edges.", "Variable")
+          .c_str());
 }
 
 template <class T> void bind_realign(py::module &m) {
@@ -278,7 +279,7 @@ template <class T> void bind_realign(py::module &m) {
   // causes a segmentation fault.
   m.def(
       "realign",
-      [](CstViewRef<T> a, py::dict coord_dict) {
+      [](ConstViewRef<T> a, py::dict coord_dict) {
         T copy(a);
         realign_impl(copy, coord_dict);
         return copy;

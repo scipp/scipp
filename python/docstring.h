@@ -45,9 +45,7 @@ public:
                    const std::string &type);
   Docstring &clear();
 
-  template <class T> Docstring &rtype() {
-    return rtype(type_to_string<T>());
-  }
+  template <class T> Docstring &rtype() { return rtype(type_to_string<T>()); }
 
   template <class T>
   Docstring &param(const std::string &name, const std::string &about) {
@@ -57,7 +55,12 @@ public:
   const char *c_str();
 
 private:
-  std::string m_description, m_raises, m_seealso, m_returns, m_rtype, m_output;
+  std::string m_description;
+  std::string m_raises;
+  std::string m_seealso;
+  std::string m_returns;
+  std::string m_rtype;
+  std::string m_output;
   std::vector<std::string> m_order;
   std::map<std::string, std::pair<std::string, std::string>> m_params;
 };

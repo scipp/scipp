@@ -39,7 +39,7 @@ This assumes that elements follow a normal distribution.)")
 
 template <class T> void bind_mean(py::module &m) {
   m.def(
-      "mean", [](CstViewRef<T> x, const Dim dim) { return mean(x, dim); },
+      "mean", [](ConstViewRef<T> x, const Dim dim) { return mean(x, dim); },
       py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
       docstring_mean<T>().c_str());
 }
@@ -47,7 +47,7 @@ template <class T> void bind_mean(py::module &m) {
 template <class T> void bind_mean_out(py::module &m) {
   m.def(
       "mean",
-      [](CstViewRef<T> x, const Dim dim, View<T> out) {
+      [](ConstViewRef<T> x, const Dim dim, View<T> out) {
         return mean(x, dim, out);
       },
       py::arg("x"), py::arg("dim"), py::arg("out"),
@@ -70,7 +70,7 @@ template <class T> Docstring docstring_sum() {
 
 template <class T> void bind_sum(py::module &m) {
   m.def(
-      "sum", [](CstViewRef<T> x, const Dim dim) { return sum(x, dim); },
+      "sum", [](ConstViewRef<T> x, const Dim dim) { return sum(x, dim); },
       py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
       docstring_sum<T>().c_str());
 }
@@ -78,7 +78,7 @@ template <class T> void bind_sum(py::module &m) {
 template <class T> void bind_sum_out(py::module &m) {
   m.def(
       "sum",
-      [](CstViewRef<T> x, const Dim dim, ViewRef<T> out) {
+      [](ConstViewRef<T> x, const Dim dim, ViewRef<T> out) {
         return sum(x, dim, out);
       },
       py::arg("x"), py::arg("dim"), py::arg("out"),
@@ -103,10 +103,10 @@ template <class T> Docstring docstring_minmax(const std::string minmax) {
 template <class T> void bind_min(py::module &m) {
   auto doc = docstring_minmax<T>("min");
   m.def(
-      "min", [](CstViewRef<T> x) { return min(x); }, py::arg("x"),
+      "min", [](ConstViewRef<T> x) { return min(x); }, py::arg("x"),
       py::call_guard<py::gil_scoped_release>(), doc.c_str());
   m.def(
-      "min", [](CstViewRef<T> x, const Dim dim) { return min(x, dim); },
+      "min", [](ConstViewRef<T> x, const Dim dim) { return min(x, dim); },
       py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
       doc.description("Element-wise min over the specified dimension.")
           .raises(" If the dimension does not exist.", true)
@@ -117,10 +117,10 @@ template <class T> void bind_min(py::module &m) {
 template <class T> void bind_max(py::module &m) {
   auto doc = docstring_minmax<T>("max");
   m.def(
-      "max", [](CstViewRef<T> x) { return max(x); }, py::arg("x"),
+      "max", [](ConstViewRef<T> x) { return max(x); }, py::arg("x"),
       py::call_guard<py::gil_scoped_release>(), doc.c_str());
   m.def(
-      "max", [](CstViewRef<T> x, const Dim dim) { return max(x, dim); },
+      "max", [](ConstViewRef<T> x, const Dim dim) { return max(x, dim); },
       py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
       doc.description("Element-wise min over the specified dimension.")
           .raises(" If the dimension does not exist", true)
@@ -140,14 +140,14 @@ template <class T> Docstring docstring_bool(const std::string op) {
 
 template <class T> void bind_all(py::module &m) {
   m.def(
-      "all", [](CstViewRef<T> &x, const Dim dim) { return all(x, dim); },
+      "all", [](ConstViewRef<T> &x, const Dim dim) { return all(x, dim); },
       py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
       docstring_bool<T>("AND").c_str());
 }
 
 template <class T> void bind_any(py::module &m) {
   m.def(
-      "any", [](CstViewRef<T> &x, const Dim dim) { return any(x, dim); },
+      "any", [](ConstViewRef<T> &x, const Dim dim) { return any(x, dim); },
       py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
       docstring_bool<T>("OR").c_str());
 }

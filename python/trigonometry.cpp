@@ -27,10 +27,10 @@ template <class T> Docstring docstring_trig(const std::string &op) {
 template <class T> void bind_sin(py::module &m) {
   auto doc = docstring_trig<T>("sin");
   m.def(
-      "sin", [](CstViewRef<T> x) { return sin(x); }, py::arg("x"),
+      "sin", [](ConstViewRef<T> x) { return sin(x); }, py::arg("x"),
       py::call_guard<py::gil_scoped_release>(), doc.c_str());
   m.def(
-      "sin", [](CstViewRef<T> x, ViewRef<T> out) { return sin(x, out); },
+      "sin", [](ConstViewRef<T> x, ViewRef<T> out) { return sin(x, out); },
       py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>(),
       doc.template rtype<View<T>>()
           .template param<T>("out", "Output buffer")
@@ -41,10 +41,10 @@ template <class T> void bind_asin(py::module &m) {
   auto doc =
       docstring_trig<T>("asin").raises("If the unit is not dimensionless.");
   m.def(
-      "asin", [](CstViewRef<T> x) { return asin(x); }, py::arg("x"),
+      "asin", [](ConstViewRef<T> x) { return asin(x); }, py::arg("x"),
       py::call_guard<py::gil_scoped_release>(), doc.c_str());
   m.def(
-      "asin", [](CstViewRef<T> x, ViewRef<T> out) { return asin(x, out); },
+      "asin", [](ConstViewRef<T> x, ViewRef<T> out) { return asin(x, out); },
       py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>(),
       doc.template rtype<View<T>>()
           .template param<T>("out", "Output buffer")
@@ -54,10 +54,10 @@ template <class T> void bind_asin(py::module &m) {
 template <class T> void bind_cos(py::module &m) {
   auto doc = docstring_trig<T>("cos");
   m.def(
-      "cos", [](CstViewRef<T> x) { return cos(x); }, py::arg("x"),
+      "cos", [](ConstViewRef<T> x) { return cos(x); }, py::arg("x"),
       py::call_guard<py::gil_scoped_release>(), doc.c_str());
   m.def(
-      "cos", [](CstViewRef<T> x, ViewRef<T> out) { return cos(x, out); },
+      "cos", [](ConstViewRef<T> x, ViewRef<T> out) { return cos(x, out); },
       py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>(),
       doc.template rtype<View<T>>()
           .template param<T>("out", "Output buffer")
@@ -68,10 +68,10 @@ template <class T> void bind_acos(py::module &m) {
   auto doc =
       docstring_trig<T>("acos").raises("If the unit is not dimensionless.");
   m.def(
-      "acos", [](CstViewRef<T> x) { return acos(x); }, py::arg("x"),
+      "acos", [](ConstViewRef<T> x) { return acos(x); }, py::arg("x"),
       py::call_guard<py::gil_scoped_release>(), doc.c_str());
   m.def(
-      "acos", [](CstViewRef<T> x, ViewRef<T> out) { return acos(x, out); },
+      "acos", [](ConstViewRef<T> x, ViewRef<T> out) { return acos(x, out); },
       py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>(),
       doc.template rtype<View<T>>()
           .template param<T>("out", "Output buffer")
@@ -81,10 +81,10 @@ template <class T> void bind_acos(py::module &m) {
 template <class T> void bind_tan(py::module &m) {
   auto doc = docstring_trig<T>("tan");
   m.def(
-      "tan", [](CstViewRef<T> x) { return tan(x); }, py::arg("x"),
+      "tan", [](ConstViewRef<T> x) { return tan(x); }, py::arg("x"),
       py::call_guard<py::gil_scoped_release>(), doc.c_str());
   m.def(
-      "tan", [](CstViewRef<T> x, ViewRef<T> out) { return tan(x, out); },
+      "tan", [](ConstViewRef<T> x, ViewRef<T> out) { return tan(x, out); },
       py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>(),
       doc.template rtype<View<T>>()
           .template param<T>("out", "Output buffer")
@@ -95,10 +95,10 @@ template <class T> void bind_atan(py::module &m) {
   auto doc =
       docstring_trig<T>("atan").raises("If the unit is not dimensionless.");
   m.def(
-      "atan", [](CstViewRef<T> x) { return atan(x); }, py::arg("x"),
+      "atan", [](ConstViewRef<T> x) { return atan(x); }, py::arg("x"),
       py::call_guard<py::gil_scoped_release>(), doc.c_str());
   m.def(
-      "atan", [](CstViewRef<T> x, ViewRef<T> out) { return atan(x, out); },
+      "atan", [](ConstViewRef<T> x, ViewRef<T> out) { return atan(x, out); },
       py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>(),
       doc.template rtype<View<T>>()
           .template param<T>("out", "Output buffer")
@@ -117,12 +117,12 @@ template <class T> void bind_atan2(py::module &m) {
           .template param<T>("y", "Input y values.")
           .template param<T>("x", "Input x values.");
   m.def(
-      "atan2", [](CstViewRef<T> y, CstViewRef<T> x) { return atan2(y, x); },
+      "atan2", [](ConstViewRef<T> y, ConstViewRef<T> x) { return atan2(y, x); },
       py::arg("y"), py::arg("x"), py::call_guard<py::gil_scoped_release>(),
       doc.c_str());
   m.def(
       "atan2",
-      [](CstViewRef<T> y, CstViewRef<T> x, View<T> out) {
+      [](ConstViewRef<T> y, ConstViewRef<T> x, View<T> out) {
         return atan2(y, x, out);
       },
       py::arg("y"), py::arg("x"), py::arg("out"),

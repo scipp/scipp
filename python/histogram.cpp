@@ -26,7 +26,7 @@ void init_histogram(py::module &m) {
 
   m.def(
       "histogram",
-      [](CstViewRef<DataArray> x, CstViewRef<Variable> bins) {
+      [](ConstViewRef<DataArray> x, ConstViewRef<Variable> bins) {
         return histogram(x, bins);
       },
       py::arg("x"), py::arg("bins"), py::call_guard<py::gil_scoped_release>(),
@@ -34,7 +34,7 @@ void init_histogram(py::module &m) {
 
   m.def(
       "histogram",
-      [](const Dataset &x, CstViewRef<Variable> bins) {
+      [](const Dataset &x, ConstViewRef<Variable> bins) {
         return histogram(x, bins);
       },
       py::arg("x"), py::arg("bins"), py::call_guard<py::gil_scoped_release>(),
@@ -50,7 +50,7 @@ void init_histogram(py::module &m) {
           .param("x", "Input realigned data to be histogrammed.", "DataArray");
 
   m.def(
-      "histogram", [](CstViewRef<DataArray> x) { return histogram(x); },
+      "histogram", [](ConstViewRef<DataArray> x) { return histogram(x); },
       py::arg("x"), py::call_guard<py::gil_scoped_release>(),
       doc.rtype("DataArray").c_str());
 

@@ -29,14 +29,15 @@ template <class T> Docstring docstring_comparison(const std::string op) {
 
 template <typename T> void bind_less(py::module &m) {
   m.def(
-      "less", [](CstViewRef<T> x, CstViewRef<T> y) { return less(x, y); },
+      "less", [](ConstViewRef<T> x, ConstViewRef<T> y) { return less(x, y); },
       py::arg("x"), py::arg("y"), py::call_guard<py::gil_scoped_release>(),
       docstring_comparison<T>("(x < y)").c_str());
 }
 
 template <typename T> void bind_greater(py::module &m) {
   m.def(
-      "greater", [](CstViewRef<T> x, CstViewRef<T> y) { return greater(x, y); },
+      "greater",
+      [](ConstViewRef<T> x, ConstViewRef<T> y) { return greater(x, y); },
       py::arg("x"), py::arg("y"), py::call_guard<py::gil_scoped_release>(),
       docstring_comparison<T>("(x > y)").c_str());
 }
@@ -44,7 +45,7 @@ template <typename T> void bind_greater(py::module &m) {
 template <typename T> void bind_less_equal(py::module &m) {
   m.def(
       "less_equal",
-      [](CstViewRef<T> x, CstViewRef<T> y) { return less_equal(x, y); },
+      [](ConstViewRef<T> x, ConstViewRef<T> y) { return less_equal(x, y); },
       py::arg("x"), py::arg("y"), py::call_guard<py::gil_scoped_release>(),
       docstring_comparison<T>("(x <= y)").c_str());
 }
@@ -52,14 +53,14 @@ template <typename T> void bind_less_equal(py::module &m) {
 template <typename T> void bind_greater_equal(py::module &m) {
   m.def(
       "greater_equal",
-      [](CstViewRef<T> x, CstViewRef<T> y) { return greater_equal(x, y); },
+      [](ConstViewRef<T> x, ConstViewRef<T> y) { return greater_equal(x, y); },
       py::arg("x"), py::arg("y"), py::call_guard<py::gil_scoped_release>(),
       docstring_comparison<T>("(x >= y)").c_str());
 }
 
 template <typename T> void bind_equal(py::module &m) {
   m.def(
-      "equal", [](CstViewRef<T> x, CstViewRef<T> y) { return equal(x, y); },
+      "equal", [](ConstViewRef<T> x, ConstViewRef<T> y) { return equal(x, y); },
       py::arg("x"), py::arg("y"), py::call_guard<py::gil_scoped_release>(),
       docstring_comparison<T>("(x == y)").c_str());
 }
@@ -67,7 +68,7 @@ template <typename T> void bind_equal(py::module &m) {
 template <typename T> void bind_not_equal(py::module &m) {
   m.def(
       "not_equal",
-      [](CstViewRef<T> x, CstViewRef<T> y) { return not_equal(x, y); },
+      [](ConstViewRef<T> x, ConstViewRef<T> y) { return not_equal(x, y); },
       py::arg("x"), py::arg("y"), py::call_guard<py::gil_scoped_release>(),
       docstring_comparison<T>("(x != y)").c_str());
 }
