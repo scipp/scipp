@@ -17,8 +17,8 @@ cmake \
 # Show cmake settings
 cmake -B . -S .. -LA
 
-# Build C++ tests and install Python package
-ninja -v all-tests install
+# Build benchmarks, C++ tests and install Python package
+ninja -v all-benchmarks all-tests install
 
 # Run C++ tests
 ./common/test/scipp-common-test

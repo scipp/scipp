@@ -4,7 +4,7 @@ Dependencies
 Places where dependencies are specified:
 
   - Conda package build (`conda/meta.yml <https://github.com/scipp/scipp/blob/master/conda/meta.yaml>`_)
-  - Documentation build environment (`docs/environment.yml <https://github.com/scipp/scipp/blob/master/docs/environment.yml>`_)
+  - Developer environment (`scipp-developer.yml <https://github.com/scipp/scipp/blob/master/scipp-developer.yml>`_)
 
 Conda packages
 ##############
@@ -38,6 +38,7 @@ Test
   - all (including optional) dependecies of *Run*
   - ``beautifulsoup4`` (HTML parser, used for testing of HTML representation)
   - ``mantid-framework`` * (Mantid interoperability tests are skipped if not present)
+  - ``psutil`` (used to determine if host has enough memory for certain unit tests)
   - ``pytest`` (test framework)
 
 Documentation Build
