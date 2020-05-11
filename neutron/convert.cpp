@@ -40,29 +40,6 @@ const auto tofToEnergyPhysicalConstants =
     0.5 * boost::units::si::constants::codata::m_n * J_to_meV /
     (tof_to_s * tof_to_s);
 
-template <class T>
-static T convert_with_factor(T &&d, const Dim from, const Dim to,
-                             const Variable &factor) {
-  // 1. Transform coordinate
-  if (d.coords().contains(from)) {
-    if (contains_events(d.coords()[from])) {
-      d.coords()[from] *= factor;
-    } else {
-      // Cannot use *= since often a broadcast into Dim::Spectrum is required.
-      const auto &coord = d.coords()[from];
-      d.coords().set(from, astype(factor, coord.dtype()) * coord);
-    }
-  }
-
-  // 2. Transform realigned items
-  for (const auto &item : iter(d))
-    if (item.unaligned() && contains_events(item.unaligned()))
-      item.unaligned().coords()[from] *= factor;
-
-  d.rename(from, to);
-  return std::move(d);
-}
-
 template <class T, class Op>
 T convert_generic(T &&d, const Dim from, const Dim to, Op op,
                   const VariableConstView &arg) {
@@ -81,6 +58,14 @@ T convert_generic(T &&d, const Dim from, const Dim to, Op op,
       transform_in_place(item.unaligned().coords()[from], arg, op_);
   d.rename(from, to);
   return std::move(d);
+}
+
+template <class T>
+static T convert_with_factor(T &&d, const Dim from, const Dim to,
+                             const Variable &factor) {
+  return convert_generic(
+      std::forward<T>(d), from, to,
+      [](auto &coord, const auto &c) { coord *= c; }, factor);
 }
 
 template <class T> auto tofToDSpacing(const T &d) {

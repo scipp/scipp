@@ -19,33 +19,35 @@ using namespace scipp::variable;
 
 namespace scipp::dataset {
 
-static constexpr auto make_histogram =
-    [](auto &data, const auto &events, const auto &weights, const auto &edges) {
-      constexpr auto value = [](const auto &v, const scipp::index idx) {
-        using V = std::decay_t<decltype(v)>;
-        if constexpr (is_ValueAndVariance_v<V>) {
-          if constexpr (std::is_arithmetic_v<typename V::value_type>) {
-            static_cast<void>(idx);
-            return v.value;
-          } else {
-            return v.value[idx];
-          }
-        } else
-          return v.values[idx];
-      };
-      constexpr auto variance = [](const auto &v, const scipp::index idx) {
-        using V = std::decay_t<decltype(v)>;
-        if constexpr (is_ValueAndVariance_v<V>) {
-          if constexpr (std::is_arithmetic_v<typename V::value_type>) {
-            static_cast<void>(idx);
-            return v.variance;
-          } else {
-            return v.variance[idx];
-          }
-        } else
-          return v.variances[idx];
-      };
+namespace {
+constexpr auto value = [](const auto &v, const scipp::index idx) {
+  using V = std::decay_t<decltype(v)>;
+  if constexpr (is_ValueAndVariance_v<V>) {
+    if constexpr (std::is_arithmetic_v<typename V::value_type>) {
+      static_cast<void>(idx);
+      return v.value;
+    } else {
+      return v.value[idx];
+    }
+  } else
+    return v.values[idx];
+};
+constexpr auto variance = [](const auto &v, const scipp::index idx) {
+  using V = std::decay_t<decltype(v)>;
+  if constexpr (is_ValueAndVariance_v<V>) {
+    if constexpr (std::is_arithmetic_v<typename V::value_type>) {
+      static_cast<void>(idx);
+      return v.variance;
+    } else {
+      return v.variance[idx];
+    }
+  } else
+    return v.variances[idx];
+};
+} // namespace
 
+static constexpr auto make_histogram = overloaded{
+    [](auto &data, const auto &events, const auto &weights, const auto &edges) {
       // Special implementation for linear bins. Gives a 1x to 20x speedup
       // for few and many events per histogram, respectively.
       if (scipp::numeric::is_linspace(edges)) {
@@ -75,19 +77,21 @@ static constexpr auto make_histogram =
           }
         }
       }
-    };
-
-static constexpr auto make_histogram_unit = [](const units::Unit &events_unit,
-                                               const units::Unit &weights_unit,
-                                               const units::Unit &edge_unit) {
-  if (events_unit != edge_unit)
-    throw except::UnitError("Bin edges must have same unit as the events "
-                            "input coordinate.");
-  if (weights_unit != units::counts && weights_unit != units::dimensionless)
-    throw except::UnitError("Weights of event data must be "
-                            "`units::counts` or `units::dimensionless`.");
-  return weights_unit;
-};
+    },
+    [](const units::Unit &events_unit, const units::Unit &weights_unit,
+       const units::Unit &edge_unit) {
+      if (events_unit != edge_unit)
+        throw except::UnitError("Bin edges must have same unit as the events "
+                                "input coordinate.");
+      if (weights_unit != units::counts && weights_unit != units::dimensionless)
+        throw except::UnitError("Weights of event data must be "
+                                "`units::counts` or `units::dimensionless`.");
+      return weights_unit;
+    },
+    transform_flags::expect_variance_arg<0>,
+    transform_flags::expect_no_variance_arg<1>,
+    transform_flags::expect_variance_arg<2>,
+    transform_flags::expect_no_variance_arg<3>};
 
 namespace histogram_events_detail {
 template <class Out, class Coord, class Weight, class Edge>
@@ -123,12 +127,7 @@ DataArray histogram(const DataArrayConstView &events,
                          args<double, float, event_list<double>, float>,
                          args<double, double, event_list<float>, double>>>(
               dim_, binEdges_.dims()[dim_] - 1, events_.coords()[dim_],
-              events_.data(), binEdges_,
-              overloaded{make_histogram, make_histogram_unit,
-                         transform_flags::expect_variance_arg<0>,
-                         transform_flags::expect_no_variance_arg<1>,
-                         transform_flags::expect_variance_arg<2>,
-                         transform_flags::expect_no_variance_arg<3>});
+              events_.data(), binEdges_, make_histogram);
         },
         dim_of_coord(events.coords()[dim], dim), dim, binEdges);
   } else {
@@ -148,11 +147,7 @@ DataArray histogram(const DataArrayConstView &events,
                          args<double, double, float, double>>>(
               dim_, binEdges_.dims()[dim_] - 1, events_.coords()[dim_],
               mask ? VariableConstView(masked) : events_.data(), binEdges_,
-              overloaded{make_histogram, make_histogram_unit,
-                         transform_flags::expect_variance_arg<0>,
-                         transform_flags::expect_no_variance_arg<1>,
-                         transform_flags::expect_variance_arg<2>,
-                         transform_flags::expect_no_variance_arg<3>});
+              make_histogram);
         },
         dim, binEdges);
   }
