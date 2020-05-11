@@ -43,7 +43,7 @@ public:
   Docstring &rtype(const std::string &s, const bool append = false);
   Docstring &param(const std::string &name, const std::string &about,
                    const std::string &type);
-  Docstring &clear();
+  void clear();
 
   template <class T> Docstring &rtype() { return rtype(type_to_string<T>()); }
 

@@ -42,10 +42,10 @@ void init_histogram(py::module &m) {
           .param("x", "Input data to be histogrammed.", "Dataset")
           .c_str());
 
+  doc.clear();
   doc =
-      doc.clear()
-          .description("Accepts realigned data and histograms the unaligned "
-                       "content according to the realigning axes.")
+      doc.description("Accepts realigned data and histograms the unaligned "
+                      "content according to the realigning axes.")
           .returns("Histogrammed data with units of counts.")
           .param("x", "Input realigned data to be histogrammed.", "DataArray");
 

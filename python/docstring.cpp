@@ -53,17 +53,19 @@ Docstring &Docstring::param(const std::string &name, const std::string &about,
   return *this;
 }
 
-Docstring &Docstring::clear() {
+void Docstring::clear() {
   m_description.clear();
   m_raises.clear();
   m_seealso.clear();
   m_returns.clear();
   m_rtype.clear();
+  m_order.clear();
   m_params.clear();
-  return *this;
+  m_output.clear();
 }
 
 const char *Docstring::c_str() {
+  m_output.clear();
   if (m_description.size() > 0)
     m_output = m_description + "\n\n";
   for (const auto name : m_order) {
