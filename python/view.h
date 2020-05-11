@@ -17,7 +17,7 @@ public:
 private:
   T *m_obj;
 };
-template <class T> items_view(T &)->items_view<T>;
+template <class T> items_view(T &) -> items_view<T>;
 
 /// Helper to provide equivalent of the `values()` method of a Python dict.
 template <class T> class values_view {
@@ -40,7 +40,7 @@ public:
 private:
   T *m_obj;
 };
-template <class T> values_view(T &)->values_view<T>;
+template <class T> values_view(T &) -> values_view<T>;
 
 /// Helper to provide equivalent of the `keys()` method of a Python dict.
 template <class T> class keys_view {
@@ -53,4 +53,4 @@ public:
 private:
   T *m_obj;
 };
-template <class T> keys_view(T &)->keys_view<T>;
+template <class T> keys_view(T &) -> keys_view<T>;

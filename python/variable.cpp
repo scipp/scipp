@@ -134,10 +134,11 @@ void bind_init_0D_list_eigen(py::class_<Variable> &c) {
 
 template <class T, class... Ignored>
 void bind_astype(py::class_<T, Ignored...> &c) {
-  c.def("astype",
-        [](const T &self, const DType type) { return astype(self, type); },
-        py::call_guard<py::gil_scoped_release>(),
-        R"(
+  c.def(
+      "astype",
+      [](const T &self, const DType type) { return astype(self, type); },
+      py::call_guard<py::gil_scoped_release>(),
+      R"(
         Converts a Variable to a different type.
 
         :raises: If the variable cannot be converted to the requested dtype.
@@ -168,23 +169,27 @@ of variances.)");
            py::arg("dtype") = py::none())
       .def("rename_dims", &rename_dims<Variable>, py::arg("dims_dict"),
            "Rename dimensions.")
-      .def("copy", [](const Variable &self) { return self; },
-           py::call_guard<py::gil_scoped_release>(), "Return a (deep) copy.")
-      .def("__copy__", [](Variable &self) { return Variable(self); },
-           py::call_guard<py::gil_scoped_release>(), "Return a (deep) copy.")
-      .def("__deepcopy__",
-           [](Variable &self, py::dict) { return Variable(self); },
-           py::call_guard<py::gil_scoped_release>(), "Return a (deep) copy.")
+      .def(
+          "copy", [](const Variable &self) { return self; },
+          py::call_guard<py::gil_scoped_release>(), "Return a (deep) copy.")
+      .def(
+          "__copy__", [](Variable &self) { return Variable(self); },
+          py::call_guard<py::gil_scoped_release>(), "Return a (deep) copy.")
+      .def(
+          "__deepcopy__",
+          [](Variable &self, py::dict) { return Variable(self); },
+          py::call_guard<py::gil_scoped_release>(), "Return a (deep) copy.")
       .def_property_readonly("dtype", &Variable::dtype)
-      .def("__radd__",
-           [](Variable &a, double &b) { return a + b * units::one; },
-           py::is_operator())
-      .def("__rsub__",
-           [](Variable &a, double &b) { return b * units::one - a; },
-           py::is_operator())
-      .def("__rmul__",
-           [](Variable &a, double &b) { return a * (b * units::one); },
-           py::is_operator())
+      .def(
+          "__radd__", [](Variable &a, double &b) { return a + b * units::one; },
+          py::is_operator())
+      .def(
+          "__rsub__", [](Variable &a, double &b) { return b * units::one - a; },
+          py::is_operator())
+      .def(
+          "__rmul__",
+          [](Variable &a, double &b) { return a * (b * units::one); },
+          py::is_operator())
       .def("__repr__", [](const Variable &self) { return to_string(self); });
 
   bind_init_list(variable);
@@ -199,8 +204,9 @@ of variances.)");
 
   py::class_<VariableConstView>(m, "VariableConstView")
       .def(py::init<const Variable &>())
-      .def("copy", [](const VariableConstView &self) { return Variable(self); },
-           "Return a (deep) copy.")
+      .def(
+          "copy", [](const VariableConstView &self) { return Variable(self); },
+          "Return a (deep) copy.")
       .def("__copy__",
            [](const VariableConstView &self) { return Variable(self); })
       .def("__deepcopy__",
@@ -214,15 +220,18 @@ View for Variable, representing a sliced or transposed view onto a variable;
 Mostly equivalent to Variable, see there for details.)");
   variableView.def_buffer(&make_py_buffer_info);
   variableView.def(py::init<Variable &>())
-      .def("__radd__",
-           [](VariableView &a, double &b) { return a + b * units::one; },
-           py::is_operator())
-      .def("__rsub__",
-           [](VariableView &a, double &b) { return b * units::one - a; },
-           py::is_operator())
-      .def("__rmul__",
-           [](VariableView &a, double &b) { return a * (b * units::one); },
-           py::is_operator());
+      .def(
+          "__radd__",
+          [](VariableView &a, double &b) { return a + b * units::one; },
+          py::is_operator())
+      .def(
+          "__rsub__",
+          [](VariableView &a, double &b) { return b * units::one - a; },
+          py::is_operator())
+      .def(
+          "__rmul__",
+          [](VariableView &a, double &b) { return a * (b * units::one); },
+          py::is_operator());
 
   bind_astype(variable);
   bind_astype(variableView);
@@ -265,13 +274,14 @@ Mostly equivalent to Variable, see there for details.)");
   py::implicitly_convertible<Variable, VariableConstView>();
   py::implicitly_convertible<Variable, VariableView>();
 
-  m.def("reshape",
-        [](const VariableView &self, const std::vector<Dim> &labels,
-           const py::tuple &shape) {
-          Dimensions dims(labels, shape.cast<std::vector<scipp::index>>());
-          return self.reshape(dims);
-        },
-        py::arg("x"), py::arg("dims"), py::arg("shape"), R"(
+  m.def(
+      "reshape",
+      [](const VariableView &self, const std::vector<Dim> &labels,
+         const py::tuple &shape) {
+        Dimensions dims(labels, shape.cast<std::vector<scipp::index>>());
+        return self.reshape(dims);
+      },
+      py::arg("x"), py::arg("dims"), py::arg("shape"), R"(
 Reshape a variable.
 
 :param x: Data to reshape.
@@ -303,7 +313,8 @@ A false value in the filter discards the corresponding element in the input.
         py::call_guard<py::gil_scoped_release>(),
         "Split a Variable along a given Dimension.");
 
-  m.def("contains_events",
-        [](const VariableConstView &self) { return contains_events(self); },
-        R"(Return true if the variable contains event data.)");
+  m.def(
+      "contains_events",
+      [](const VariableConstView &self) { return contains_events(self); },
+      R"(Return true if the variable contains event data.)");
 }

@@ -71,19 +71,21 @@ void init_geometry(py::module &m) {
           .param("rot", "Variable containing rotation quaternions.",
                  "Variable");
 
-  geom_m.def("rotate",
-             [](const VariableConstView &pos, const VariableConstView &rot) {
-               return rotate(pos, rot);
-             },
-             py::arg("pos"), py::arg("rot"),
-             py::call_guard<py::gil_scoped_release>(), doc.c_str());
+  geom_m.def(
+      "rotate",
+      [](const VariableConstView &pos, const VariableConstView &rot) {
+        return rotate(pos, rot);
+      },
+      py::arg("pos"), py::arg("rot"), py::call_guard<py::gil_scoped_release>(),
+      doc.c_str());
 
-  geom_m.def("rotate",
-             [](const VariableConstView &pos, const VariableConstView &rot,
-                const VariableView &out) { return rotate(pos, rot, out); },
-             py::arg("pos"), py::arg("rot"), py::arg("out"),
-             py::call_guard<py::gil_scoped_release>(),
-             doc.rtype("VariableView")
-                 .param("out", "Output buffer", "Variable")
-                 .c_str());
+  geom_m.def(
+      "rotate",
+      [](const VariableConstView &pos, const VariableConstView &rot,
+         const VariableView &out) { return rotate(pos, rot, out); },
+      py::arg("pos"), py::arg("rot"), py::arg("out"),
+      py::call_guard<py::gil_scoped_release>(),
+      doc.rtype("VariableView")
+          .param("out", "Output buffer", "Variable")
+          .c_str());
 }

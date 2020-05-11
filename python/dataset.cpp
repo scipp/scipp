@@ -37,12 +37,13 @@ void bind_helper_view(py::module &m, const std::string &name) {
   py::class_<View<T>>(m, (name + suffix).c_str())
       .def(py::init([](T &obj) { return View{obj}; }))
       .def("__len__", &View<T>::size)
-      .def("__iter__",
-           [](View<T> &self) {
-             return py::make_iterator(self.begin(), self.end(),
-                                      py::return_value_policy::move);
-           },
-           py::return_value_policy::move, py::keep_alive<0, 1>());
+      .def(
+          "__iter__",
+          [](View<T> &self) {
+            return py::make_iterator(self.begin(), self.end(),
+                                     py::return_value_policy::move);
+          },
+          py::return_value_policy::move, py::keep_alive<0, 1>());
 }
 
 template <class T, class ConstT>
@@ -62,19 +63,23 @@ void bind_mutable_view(py::module &m, const std::string &name) {
              self.set(key, std::move(mvar.var));
            })
       .def("__delitem__", &T::erase, py::call_guard<py::gil_scoped_release>())
-      .def("__iter__",
-           [](T &self) {
-             return py::make_iterator(self.keys_begin(), self.keys_end(),
-                                      py::return_value_policy::move);
-           },
-           py::keep_alive<0, 1>())
-      .def("keys", [](T &self) { return keys_view(self); },
-           py::keep_alive<0, 1>(), R"(view on self's keys)")
-      .def("values", [](T &self) { return values_view(self); },
-           py::keep_alive<0, 1>(), R"(view on self's values)")
-      .def("items", [](T &self) { return items_view(self); },
-           py::return_value_policy::move, py::keep_alive<0, 1>(),
-           R"(view on self's items)")
+      .def(
+          "__iter__",
+          [](T &self) {
+            return py::make_iterator(self.keys_begin(), self.keys_end(),
+                                     py::return_value_policy::move);
+          },
+          py::keep_alive<0, 1>())
+      .def(
+          "keys", [](T &self) { return keys_view(self); },
+          py::keep_alive<0, 1>(), R"(view on self's keys)")
+      .def(
+          "values", [](T &self) { return values_view(self); },
+          py::keep_alive<0, 1>(), R"(view on self's values)")
+      .def(
+          "items", [](T &self) { return items_view(self); },
+          py::return_value_policy::move, py::keep_alive<0, 1>(),
+          R"(view on self's items)")
       .def("__contains__", &T::contains);
   bind_comparison<T>(view);
 }
@@ -136,64 +141,76 @@ template <class T, class... Ignored>
 void bind_dataset_view_methods(py::class_<T, Ignored...> &c) {
   c.def("__len__", &T::size);
   c.def("__repr__", [](const T &self) { return to_string(self); });
-  c.def("__iter__",
-        [](const T &self) {
-          return py::make_iterator(self.keys_begin(), self.keys_end(),
-                                   py::return_value_policy::move);
-        },
-        py::return_value_policy::move, py::keep_alive<0, 1>());
-  c.def("keys", [](T &self) { return keys_view(self); },
-        py::return_value_policy::move, py::keep_alive<0, 1>(),
-        R"(view on self's keys)");
-  c.def("values", [](T &self) { return values_view(self); },
-        py::return_value_policy::move, py::keep_alive<0, 1>(),
-        R"(view on self's values)");
-  c.def("items", [](T &self) { return items_view(self); },
-        py::return_value_policy::move, py::keep_alive<0, 1>(),
-        R"(view on self's items)");
-  c.def("__getitem__",
-        [](T &self, const std::string &name) { return self[name]; },
-        py::keep_alive<0, 1>());
+  c.def(
+      "__iter__",
+      [](const T &self) {
+        return py::make_iterator(self.keys_begin(), self.keys_end(),
+                                 py::return_value_policy::move);
+      },
+      py::return_value_policy::move, py::keep_alive<0, 1>());
+  c.def(
+      "keys", [](T &self) { return keys_view(self); },
+      py::return_value_policy::move, py::keep_alive<0, 1>(),
+      R"(view on self's keys)");
+  c.def(
+      "values", [](T &self) { return values_view(self); },
+      py::return_value_policy::move, py::keep_alive<0, 1>(),
+      R"(view on self's values)");
+  c.def(
+      "items", [](T &self) { return items_view(self); },
+      py::return_value_policy::move, py::keep_alive<0, 1>(),
+      R"(view on self's items)");
+  c.def(
+      "__getitem__",
+      [](T &self, const std::string &name) { return self[name]; },
+      py::keep_alive<0, 1>());
   c.def("__contains__", &T::contains);
-  c.def("copy", [](const T &self) { return Dataset(self); },
-        py::call_guard<py::gil_scoped_release>(), "Return a (deep) copy.");
-  c.def("__copy__", [](const T &self) { return Dataset(self); },
-        py::call_guard<py::gil_scoped_release>(), "Return a (deep) copy.");
-  c.def("__deepcopy__",
-        [](const T &self, const py::dict &) { return Dataset(self); },
-        py::call_guard<py::gil_scoped_release>(), "Return a (deep) copy.");
-  c.def_property_readonly("dims",
-                          [](const T &self) {
-                            std::vector<Dim> dims;
-                            for (const auto &dim : self.dimensions()) {
-                              dims.push_back(dim.first);
-                            }
-                            return dims;
-                          },
-                          R"(List of dimensions.)",
-                          py::return_value_policy::move);
-  c.def_property_readonly("shape",
-                          [](const T &self) {
-                            std::vector<int64_t> shape;
-                            for (const auto &dim : self.dimensions()) {
-                              shape.push_back(dim.second);
-                            }
-                            return shape;
-                          },
-                          R"(List of shapes.)", py::return_value_policy::move);
+  c.def(
+      "copy", [](const T &self) { return Dataset(self); },
+      py::call_guard<py::gil_scoped_release>(), "Return a (deep) copy.");
+  c.def(
+      "__copy__", [](const T &self) { return Dataset(self); },
+      py::call_guard<py::gil_scoped_release>(), "Return a (deep) copy.");
+  c.def(
+      "__deepcopy__",
+      [](const T &self, const py::dict &) { return Dataset(self); },
+      py::call_guard<py::gil_scoped_release>(), "Return a (deep) copy.");
+  c.def_property_readonly(
+      "dims",
+      [](const T &self) {
+        std::vector<Dim> dims;
+        for (const auto &dim : self.dimensions()) {
+          dims.push_back(dim.first);
+        }
+        return dims;
+      },
+      R"(List of dimensions.)", py::return_value_policy::move);
+  c.def_property_readonly(
+      "shape",
+      [](const T &self) {
+        std::vector<int64_t> shape;
+        for (const auto &dim : self.dimensions()) {
+          shape.push_back(dim.second);
+        }
+        return shape;
+      },
+      R"(List of shapes.)", py::return_value_policy::move);
 }
 
 template <class T, class... Ignored>
 void bind_data_array_properties(py::class_<T, Ignored...> &c) {
   c.def_property_readonly("name", &T::name, R"(The name of the held data.)");
   c.def("__repr__", [](const T &self) { return to_string(self); });
-  c.def("copy", [](const T &self) { return DataArray(self); },
-        py::call_guard<py::gil_scoped_release>(), "Return a (deep) copy.");
-  c.def("__copy__", [](const T &self) { return DataArray(self); },
-        py::call_guard<py::gil_scoped_release>(), "Return a (deep) copy.");
-  c.def("__deepcopy__",
-        [](const T &self, const py::dict &) { return DataArray(self); },
-        py::call_guard<py::gil_scoped_release>(), "Return a (deep) copy.");
+  c.def(
+      "copy", [](const T &self) { return DataArray(self); },
+      py::call_guard<py::gil_scoped_release>(), "Return a (deep) copy.");
+  c.def(
+      "__copy__", [](const T &self) { return DataArray(self); },
+      py::call_guard<py::gil_scoped_release>(), "Return a (deep) copy.");
+  c.def(
+      "__deepcopy__",
+      [](const T &self, const py::dict &) { return DataArray(self); },
+      py::call_guard<py::gil_scoped_release>(), "Return a (deep) copy.");
   c.def_property(
       "data",
       py::cpp_function(
@@ -225,10 +242,11 @@ void bind_data_array_properties(py::class_<T, Ignored...> &c) {
 
 template <class T, class... Ignored>
 void bind_astype(py::class_<T, Ignored...> &c) {
-  c.def("astype",
-        [](const T &self, const DType type) { return astype(self, type); },
-        py::call_guard<py::gil_scoped_release>(),
-        R"(
+  c.def(
+      "astype",
+      [](const T &self, const DType type) { return astype(self, type); },
+      py::call_guard<py::gil_scoped_release>(),
+      R"(
         Converts a DataArray to a different type.
 
         :raises: If the variable cannot be converted to the requested dtype.
@@ -258,23 +276,24 @@ template <class T> void bind_rebin(py::module &m) {
 template <class T> void bind_realign(py::module &m) {
   // Note: adding `py::call_guard<py::gil_scoped_release>()` for this binding
   // causes a segmentation fault.
-  m.def("realign",
-        [](CstViewRef<T> a, py::dict coord_dict) {
-          T copy(a);
-          realign_impl(copy, coord_dict);
-          return copy;
-        },
-        py::arg("data"), py::arg("coords"),
-        Docstring()
-            .description("Realign unaligned data to the supplied coordinate "
-                         "axes.")
-            .raises("If the input does not contain unaligned data.")
-            .returns("A data structure containing unaligned underlying data, "
-                     "along with coordinate axes for alignment.")
-            .rtype<T>()
-            .template param<T>("x", "Unaligned data to realign.")
-            .param("coords", "Coordinates for re-alignment.", "Dict")
-            .c_str());
+  m.def(
+      "realign",
+      [](CstViewRef<T> a, py::dict coord_dict) {
+        T copy(a);
+        realign_impl(copy, coord_dict);
+        return copy;
+      },
+      py::arg("data"), py::arg("coords"),
+      Docstring()
+          .description("Realign unaligned data to the supplied coordinate "
+                       "axes.")
+          .raises("If the input does not contain unaligned data.")
+          .returns("A data structure containing unaligned underlying data, "
+                   "along with coordinate axes for alignment.")
+          .rtype<T>()
+          .template param<T>("x", "Unaligned data to realign.")
+          .param("coords", "Coordinates for re-alignment.", "Dict")
+          .c_str());
 }
 
 void init_dataset(py::module &m) {
@@ -412,13 +431,13 @@ void init_dataset(py::module &m) {
   dataset.def("rename_dims", &rename_dims<Dataset>, py::arg("dims_dict"),
               "Rename dimensions.");
 
-  m.def("merge",
-        [](const DatasetConstView &lhs, const DatasetConstView &rhs) {
-          return dataset::merge(lhs, rhs);
-        },
-        py::arg("lhs"), py::arg("rhs"),
-        py::call_guard<py::gil_scoped_release>(),
-        R"(
+  m.def(
+      "merge",
+      [](const DatasetConstView &lhs, const DatasetConstView &rhs) {
+        return dataset::merge(lhs, rhs);
+      },
+      py::arg("lhs"), py::arg("rhs"), py::call_guard<py::gil_scoped_release>(),
+      R"(
 Union of two datasets.
 
 :param lhs: First Dataset.
@@ -428,13 +447,14 @@ Union of two datasets.
          and attributes.
 :rtype: Dataset)");
 
-  m.def("combine_masks",
-        [](const MasksConstView &msk, const std::vector<Dim> &labels,
-           const std::vector<scipp::index> &shape) {
-          return dataset::masks_merge_if_contained(msk,
-                                                   Dimensions(labels, shape));
-        },
-        py::call_guard<py::gil_scoped_release>(), R"(
+  m.def(
+      "combine_masks",
+      [](const MasksConstView &msk, const std::vector<Dim> &labels,
+         const std::vector<scipp::index> &shape) {
+        return dataset::masks_merge_if_contained(msk,
+                                                 Dimensions(labels, shape));
+      },
+      py::call_guard<py::gil_scoped_release>(), R"(
 Combine all masks into a single one following the OR operation.
 This requires a masks view as an input, followed by the dimension
 labels and shape of the Variable/DataArray. The labels and the shape
@@ -445,9 +465,10 @@ their dimensions contained in the Variable/DataArray Dimensions.
 :return: A new variable that contains the union of all masks.
 :rtype: Variable)");
 
-  m.def("reciprocal",
-        [](const DataArrayConstView &self) { return reciprocal(self); },
-        py::arg("x"), py::call_guard<py::gil_scoped_release>(), R"(
+  m.def(
+      "reciprocal",
+      [](const DataArrayConstView &self) { return reciprocal(self); },
+      py::arg("x"), py::call_guard<py::gil_scoped_release>(), R"(
         Element-wise reciprocal.
 
         :return: Reciprocal of the input values.
@@ -485,9 +506,10 @@ This only supports event data.
 :return: Mapped event data.
 :rtype: Variable)");
 
-  m.def("contains_events",
-        [](const DataArrayConstView &self) { return contains_events(self); },
-        R"(
+  m.def(
+      "contains_events",
+      [](const DataArrayConstView &self) { return contains_events(self); },
+      R"(
 Return true if the data array contains event data. Note that data may be stored
 as a scalar, but this returns true if any coord contains events.)");
 

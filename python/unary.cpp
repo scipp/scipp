@@ -25,13 +25,15 @@ template <typename T> void bind_abs(py::module &m) {
           .returns("The absolute values of the input.")
           .rtype<T>()
           .template param<T>("x", "Input data.");
-  m.def("abs", [](CstViewRef<T> x) { return abs(x); }, py::arg("x"),
-        py::call_guard<py::gil_scoped_release>(), doc.c_str());
-  m.def("abs", [](CstViewRef<T> x, ViewRef<T> out) { return abs(x, out); },
-        py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>(),
-        doc.template rtype<View<T>>()
-            .template param<T>("out", "Output buffer.")
-            .c_str());
+  m.def(
+      "abs", [](CstViewRef<T> x) { return abs(x); }, py::arg("x"),
+      py::call_guard<py::gil_scoped_release>(), doc.c_str());
+  m.def(
+      "abs", [](CstViewRef<T> x, ViewRef<T> out) { return abs(x, out); },
+      py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>(),
+      doc.template rtype<View<T>>()
+          .template param<T>("out", "Output buffer.")
+          .c_str());
 }
 
 template <typename T> void bind_sqrt(py::module &m) {
@@ -42,13 +44,15 @@ template <typename T> void bind_sqrt(py::module &m) {
           .returns("The square-root values of the input.")
           .rtype<T>()
           .template param<T>("x", "Input data.");
-  m.def("sqrt", [](CstViewRef<T> x) { return sqrt(x); }, py::arg("x"),
-        py::call_guard<py::gil_scoped_release>(), doc.c_str());
-  m.def("sqrt", [](CstViewRef<T> x, ViewRef<T> out) { return sqrt(x, out); },
-        py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>(),
-        doc.template rtype<View<T>>()
-            .template param<T>("out", "Output buffer.")
-            .c_str());
+  m.def(
+      "sqrt", [](CstViewRef<T> x) { return sqrt(x); }, py::arg("x"),
+      py::call_guard<py::gil_scoped_release>(), doc.c_str());
+  m.def(
+      "sqrt", [](CstViewRef<T> x, ViewRef<T> out) { return sqrt(x, out); },
+      py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>(),
+      doc.template rtype<View<T>>()
+          .template param<T>("out", "Output buffer.")
+          .c_str());
 }
 
 template <typename T> void bind_norm(py::module &m) {
@@ -60,8 +64,9 @@ template <typename T> void bind_norm(py::module &m) {
                    "elements.")
           .rtype<T>()
           .template param<T>("x", "Input data.");
-  m.def("norm", [](CstViewRef<T> x) { return norm(x); }, py::arg("x"),
-        py::call_guard<py::gil_scoped_release>(), doc.c_str());
+  m.def(
+      "norm", [](CstViewRef<T> x) { return norm(x); }, py::arg("x"),
+      py::call_guard<py::gil_scoped_release>(), doc.c_str());
 }
 
 template <typename T> void bind_reciprocal(py::module &m) {
@@ -72,14 +77,16 @@ template <typename T> void bind_reciprocal(py::module &m) {
           .returns("The reciprocal values of the input.")
           .rtype<T>()
           .template param<T>("x", "Input data.");
-  m.def("reciprocal", [](CstViewRef<T> x) { return reciprocal(x); },
-        py::arg("x"), py::call_guard<py::gil_scoped_release>(), doc.c_str());
-  m.def("reciprocal",
-        [](CstViewRef<T> x, ViewRef<T> out) { return reciprocal(x, out); },
-        py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>(),
-        doc.template rtype<View<T>>()
-            .template param<T>("out", "Output buffer.")
-            .c_str());
+  m.def(
+      "reciprocal", [](CstViewRef<T> x) { return reciprocal(x); }, py::arg("x"),
+      py::call_guard<py::gil_scoped_release>(), doc.c_str());
+  m.def(
+      "reciprocal",
+      [](CstViewRef<T> x, ViewRef<T> out) { return reciprocal(x, out); },
+      py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>(),
+      doc.template rtype<View<T>>()
+          .template param<T>("out", "Output buffer.")
+          .c_str());
 }
 
 template <typename T> void bind_nan_to_num(py::module &m) {
@@ -111,43 +118,45 @@ with the replacement variance.)")
           .param("neginf", "Replacement values for -Inf in the input.",
                  "Variable");
 
-  m.def("nan_to_num",
-        [](CstViewRef<T> x, const std::optional<VariableConstView> &nan,
-           const std::optional<VariableConstView> &posinf,
-           const std::optional<VariableConstView> &neginf) {
-          Variable out(x);
-          if (nan)
-            nan_to_num(out, *nan, out);
-          if (posinf)
-            positive_inf_to_num(out, *posinf, out);
-          if (neginf)
-            negative_inf_to_num(out, *neginf, out);
-          return out;
-        },
-        py::arg("x"), py::arg("nan") = std::optional<VariableConstView>(),
-        py::arg("posinf") = std::optional<VariableConstView>(),
-        py::arg("neginf") = std::optional<VariableConstView>(),
-        py::call_guard<py::gil_scoped_release>(), doc.c_str());
+  m.def(
+      "nan_to_num",
+      [](CstViewRef<T> x, const std::optional<VariableConstView> &nan,
+         const std::optional<VariableConstView> &posinf,
+         const std::optional<VariableConstView> &neginf) {
+        Variable out(x);
+        if (nan)
+          nan_to_num(out, *nan, out);
+        if (posinf)
+          positive_inf_to_num(out, *posinf, out);
+        if (neginf)
+          negative_inf_to_num(out, *neginf, out);
+        return out;
+      },
+      py::arg("x"), py::arg("nan") = std::optional<VariableConstView>(),
+      py::arg("posinf") = std::optional<VariableConstView>(),
+      py::arg("neginf") = std::optional<VariableConstView>(),
+      py::call_guard<py::gil_scoped_release>(), doc.c_str());
 
-  m.def("nan_to_num",
-        [](CstViewRef<T> x, const std::optional<VariableConstView> &nan,
-           const std::optional<VariableConstView> &posinf,
-           const std::optional<VariableConstView> &neginf, ViewRef<T> out) {
-          if (nan)
-            nan_to_num(x, *nan, out);
-          if (posinf)
-            positive_inf_to_num(x, *posinf, out);
-          if (neginf)
-            negative_inf_to_num(x, *neginf, out);
-          return out;
-        },
-        py::arg("x"), py::arg("nan") = std::optional<VariableConstView>(),
-        py::arg("posinf") = std::optional<VariableConstView>(),
-        py::arg("neginf") = std::optional<VariableConstView>(), py::arg("out"),
-        py::call_guard<py::gil_scoped_release>(),
-        doc.template param<T>("out", "Output buffer.")
-            .template rtype<View<T>>()
-            .c_str());
+  m.def(
+      "nan_to_num",
+      [](CstViewRef<T> x, const std::optional<VariableConstView> &nan,
+         const std::optional<VariableConstView> &posinf,
+         const std::optional<VariableConstView> &neginf, ViewRef<T> out) {
+        if (nan)
+          nan_to_num(x, *nan, out);
+        if (posinf)
+          positive_inf_to_num(x, *posinf, out);
+        if (neginf)
+          negative_inf_to_num(x, *neginf, out);
+        return out;
+      },
+      py::arg("x"), py::arg("nan") = std::optional<VariableConstView>(),
+      py::arg("posinf") = std::optional<VariableConstView>(),
+      py::arg("neginf") = std::optional<VariableConstView>(), py::arg("out"),
+      py::call_guard<py::gil_scoped_release>(),
+      doc.template param<T>("out", "Output buffer.")
+          .template rtype<View<T>>()
+          .c_str());
 }
 
 void init_unary(py::module &m) {

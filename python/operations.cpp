@@ -53,12 +53,13 @@ copied to the output without changes.)")
                  .template param<T>("x", "Left hand side input.")
                  .template param<T>("y", "Right hand side input.")
                  .param("dim", "Dimension along which to concatenate.", "Dim");
-  m.def("concatenate",
-        [](CstViewRef<T> x, CstViewRef<T> y, const Dim dim) {
-          return concatenate(x, y, dim);
-        },
-        py::arg("x"), py::arg("y"), py::arg("dim"),
-        py::call_guard<py::gil_scoped_release>(), doc.c_str());
+  m.def(
+      "concatenate",
+      [](CstViewRef<T> x, CstViewRef<T> y, const Dim dim) {
+        return concatenate(x, y, dim);
+      },
+      py::arg("x"), py::arg("y"), py::arg("dim"),
+      py::call_guard<py::gil_scoped_release>(), doc.c_str());
 }
 
 template <typename T> void bind_dot(py::module &m) {
@@ -69,9 +70,10 @@ template <typename T> void bind_dot(py::module &m) {
                  .rtype<T>()
                  .template param<T>("x", "Input left hand side operand.")
                  .template param<T>("y", "Input right hand side operand.");
-  m.def("dot", [](CstViewRef<T> x, CstViewRef<T> y) { return dot(x, y); },
-        py::arg("x"), py::arg("y"), py::call_guard<py::gil_scoped_release>(),
-        doc.c_str());
+  m.def(
+      "dot", [](CstViewRef<T> x, CstViewRef<T> y) { return dot(x, y); },
+      py::arg("x"), py::arg("y"), py::call_guard<py::gil_scoped_release>(),
+      doc.c_str());
   // m.def(
   //     "dot",
   //     [](ConstView x, ConstView y, View out) {
@@ -92,10 +94,11 @@ template <typename T> void bind_sort(py::module &m) {
           .rtype<T>()
           .template param<T>("x", "Data to be sorted")
           .template param<T>("key", "Sort key.");
-  m.def("sort",
-        [](CstViewRef<T> x, CstViewRef<Variable> key) { return sort(x, key); },
-        py::arg("x"), py::arg("key"), py::call_guard<py::gil_scoped_release>(),
-        doc.c_str());
+  m.def(
+      "sort",
+      [](CstViewRef<T> x, CstViewRef<Variable> key) { return sort(x, key); },
+      py::arg("x"), py::arg("key"), py::call_guard<py::gil_scoped_release>(),
+      doc.c_str());
 }
 
 template <typename T> void bind_sort_dim(py::module &m) {
@@ -109,9 +112,10 @@ template <typename T> void bind_sort_dim(py::module &m) {
           .rtype<T>()
           .template param<T>("x", "Data to be sorted")
           .param("dim", "Dimension to sort along.", "Dim");
-  m.def("sort", [](CstViewRef<T> x, const Dim &dim) { return sort(x, dim); },
-        py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
-        doc.c_str());
+  m.def(
+      "sort", [](CstViewRef<T> x, const Dim &dim) { return sort(x, dim); },
+      py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
+      doc.c_str());
 }
 
 void init_operations(py::module &m) {

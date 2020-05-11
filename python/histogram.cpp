@@ -24,21 +24,23 @@ void init_histogram(py::module &m) {
                  .param("x", "Input data to be histogrammed.", "DataArray")
                  .param("bins", "Bin edges.", "Variable");
 
-  m.def("histogram",
-        [](CstViewRef<DataArray> x, CstViewRef<Variable> bins) {
-          return histogram(x, bins);
-        },
-        py::arg("x"), py::arg("bins"), py::call_guard<py::gil_scoped_release>(),
-        doc.rtype("DataArray").c_str());
+  m.def(
+      "histogram",
+      [](CstViewRef<DataArray> x, CstViewRef<Variable> bins) {
+        return histogram(x, bins);
+      },
+      py::arg("x"), py::arg("bins"), py::call_guard<py::gil_scoped_release>(),
+      doc.rtype("DataArray").c_str());
 
-  m.def("histogram",
-        [](const Dataset &x, CstViewRef<Variable> bins) {
-          return histogram(x, bins);
-        },
-        py::arg("x"), py::arg("bins"), py::call_guard<py::gil_scoped_release>(),
-        doc.rtype("Dataset")
-            .param("x", "Input data to be histogrammed.", "Dataset")
-            .c_str());
+  m.def(
+      "histogram",
+      [](const Dataset &x, CstViewRef<Variable> bins) {
+        return histogram(x, bins);
+      },
+      py::arg("x"), py::arg("bins"), py::call_guard<py::gil_scoped_release>(),
+      doc.rtype("Dataset")
+          .param("x", "Input data to be histogrammed.", "Dataset")
+          .c_str());
 
   doc =
       doc.clear()
@@ -47,13 +49,15 @@ void init_histogram(py::module &m) {
           .returns("Histogrammed data with units of counts.")
           .param("x", "Input realigned data to be histogrammed.", "DataArray");
 
-  m.def("histogram", [](CstViewRef<DataArray> x) { return histogram(x); },
-        py::arg("x"), py::call_guard<py::gil_scoped_release>(),
-        doc.rtype("DataArray").c_str());
+  m.def(
+      "histogram", [](CstViewRef<DataArray> x) { return histogram(x); },
+      py::arg("x"), py::call_guard<py::gil_scoped_release>(),
+      doc.rtype("DataArray").c_str());
 
-  m.def("histogram", [](const Dataset &x) { return histogram(x); },
-        py::arg("x"), py::call_guard<py::gil_scoped_release>(),
-        doc.rtype("Dataset")
-            .param("x", "Input realigned data to be histogrammed.", "Dataset")
-            .c_str());
+  m.def(
+      "histogram", [](const Dataset &x) { return histogram(x); }, py::arg("x"),
+      py::call_guard<py::gil_scoped_release>(),
+      doc.rtype("Dataset")
+          .param("x", "Input realigned data to be histogrammed.", "Dataset")
+          .c_str());
 }
