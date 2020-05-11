@@ -89,7 +89,7 @@ template <class T> Docstring docstring_minmax(const std::string minmax) {
       .description("Element-wise " + minmax +
                    " over all of the input's dimensions.")
       .raises("If the dtype has no " + minmax + ", e.g., if it is a string.")
-      .seealso(std::string(":py:class:`scipp.") +
+      .seealso(std::string(":py:func:`scipp.") +
                (minmax == "min" ? "max" : "min") + "`")
       .returns("The " + minmax + " of the input values.")
       .rtype<T>()

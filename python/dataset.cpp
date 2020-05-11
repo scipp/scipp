@@ -18,60 +18,12 @@
 #include "docstring.h"
 #include "pybind11.h"
 #include "rename.h"
+#include "view.h"
 
 using namespace scipp;
 using namespace scipp::dataset;
 
 namespace py = pybind11;
-
-/// Helper to provide equivalent of the `items()` method of a Python dict.
-template <class T> class items_view {
-public:
-  items_view(T &obj) : m_obj(&obj) {}
-  auto size() const noexcept { return m_obj->size(); }
-  auto begin() const { return m_obj->items_begin(); }
-  auto end() const { return m_obj->items_end(); }
-
-private:
-  T *m_obj;
-};
-template <class T> items_view(T &)->items_view<T>;
-
-/// Helper to provide equivalent of the `values()` method of a Python dict.
-template <class T> class values_view {
-public:
-  values_view(T &obj) : m_obj(&obj) {}
-  auto size() const noexcept { return m_obj->size(); }
-  auto begin() const {
-    if constexpr (std::is_same_v<typename T::mapped_type, DataArray>)
-      return m_obj->begin();
-    else
-      return m_obj->values_begin();
-  }
-  auto end() const {
-    if constexpr (std::is_same_v<typename T::mapped_type, DataArray>)
-      return m_obj->end();
-    else
-      return m_obj->values_end();
-  }
-
-private:
-  T *m_obj;
-};
-template <class T> values_view(T &)->values_view<T>;
-
-/// Helper to provide equivalent of the `keys()` method of a Python dict.
-template <class T> class keys_view {
-public:
-  keys_view(T &obj) : m_obj(&obj) {}
-  auto size() const noexcept { return m_obj->size(); }
-  auto begin() const { return m_obj->keys_begin(); }
-  auto end() const { return m_obj->keys_end(); }
-
-private:
-  T *m_obj;
-};
-template <class T> keys_view(T &)->keys_view<T>;
 
 template <template <class> class View, class T>
 void bind_helper_view(py::module &m, const std::string &name) {
@@ -303,6 +255,29 @@ template <class T> void bind_rebin(py::module &m) {
             .c_str());
 }
 
+
+template <class T> void bind_realign(py::module &m) {
+  m.def("realign",
+        [](CstViewRef<T> a, py::dict coord_dict) {
+          T copy(a);
+          realign_impl(copy, coord_dict);
+          return copy;
+        },
+        py::arg("data"), py::arg("coords"),
+        py::call_guard<py::gil_scoped_release>(),
+        Docstring()
+            .description("Realign unaligned data to the supplied coordinate "
+                          "axes.")
+            .raises("If the input does not contain unaligned data.")
+            .returns("A data structure containing unaligned underlying data, "
+                     "along with coordinate axes for alignment.")
+            .rtype<T>()
+            .template param<T>("x", "Unaligned data to realign.")
+            .param("coords", "Coordinates for re-alignment.", "Dict")
+            .c_str());
+}
+
+
 void init_dataset(py::module &m) {
   py::class_<Slice>(m, "Slice");
 
@@ -479,21 +454,21 @@ their dimensions contained in the Variable/DataArray Dimensions.
         :return: Reciprocal of the input values.
         :rtype: DataArray)");
 
-  m.def("realign",
-        [](const DataArrayConstView &a, py::dict coord_dict) {
-          DataArray copy(a);
-          realign_impl(copy, coord_dict);
-          return copy;
-        },
-        py::arg("data"), py::arg("coords"));
+  // m.def("realign",
+  //       [](const DataArrayConstView &a, py::dict coord_dict) {
+  //         DataArray copy(a);
+  //         realign_impl(copy, coord_dict);
+  //         return copy;
+  //       },
+  //       py::arg("data"), py::arg("coords"));
 
-  m.def("realign",
-        [](const DatasetConstView &a, py::dict coord_dict) {
-          Dataset copy(a);
-          realign_impl(copy, coord_dict);
-          return copy;
-        },
-        py::arg("data"), py::arg("coords"));
+  // m.def("realign",
+  //       [](const DatasetConstView &a, py::dict coord_dict) {
+  //         Dataset copy(a);
+  //         realign_impl(copy, coord_dict);
+  //         return copy;
+  //       },
+  //       py::arg("data"), py::arg("coords"));
 
   m.def("filter", filter_impl<DataArray>, py::arg("data"), py::arg("filter"),
         py::arg("interval"), py::arg("keep_attrs") = true,
@@ -538,6 +513,9 @@ as a scalar, but this returns true if any coord contains events.)");
 
   bind_rebin<DataArray>(m);
   bind_rebin<Dataset>(m);
+
+  bind_realign<DataArray>(m);
+  bind_realign<Dataset>(m);
 
   py::implicitly_convertible<DataArray, DataArrayConstView>();
   py::implicitly_convertible<DataArray, DataArrayView>();

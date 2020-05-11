@@ -22,8 +22,8 @@ void bind_component(const std::string xyz, Function func, py::module &gm) {
                           xyz + " component of a vector_3_float64.")
              .raises("If the dtype of the input is not vector_3_float64.")
              .seealso(
-                 ":py:class:`scipp.geometry.x`, :py:class:`scipp.geometry.y`, "
-                 ":py:class:`scipp.geometry.z`")
+                 ":py:func:`scipp.geometry.x`, :py:func:`scipp.geometry.y`, "
+                 ":py:func:`scipp.geometry.z`")
              .returns(
                  "Extracted " + xyz +
                  " component of input pos. Output unit is same as input unit.")
@@ -46,7 +46,9 @@ void init_geometry(py::module &m) {
           .description(
               "Element-wise zip functionality to produce a vector_3_float64.")
           .raises("If the dtypes of inputs are not double precision floats.")
-          .seealso(":py:class:`scipp.geometry.x`")
+          .seealso(
+                 ":py:func:`scipp.geometry.x`, :py:func:`scipp.geometry.y`, "
+                 ":py:func:`scipp.geometry.z`")
           .returns(
               "Zip of input x, y and z. Output unit is same as input unit.")
           .rtype("Variable")

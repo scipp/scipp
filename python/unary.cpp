@@ -21,7 +21,7 @@ template <typename T> void bind_abs(py::module &m) {
           .description("Element-wise absolute value.")
           .raises(
               "If the dtype has no absolute value, e.g., if it is a string.")
-          .seealso(":py:class:`scipp.norm` for vector-like dtype.")
+          .seealso(":py:func:`scipp.norm` for vector-like dtype.")
           .returns("The absolute values of the input.")
           .rtype<T>()
           .template param<T>("x", "Input data.");
