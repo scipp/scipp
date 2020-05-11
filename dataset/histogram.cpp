@@ -130,7 +130,7 @@ DataArray histogram(const DataArrayConstView &events,
               events_.data(), binEdges_, make_histogram);
         },
         dim_of_coord(events.coords()[dim], dim), dim, binEdges);
-  } else {
+  } else if (!is_histogram(events, dim)) {
     result = apply_and_drop_dim(
         events,
         [](const DataArrayConstView &events_, const Dim dim_,
@@ -150,6 +150,10 @@ DataArray histogram(const DataArrayConstView &events,
               make_histogram);
         },
         dim, binEdges);
+  } else {
+    throw except::BinEdgeError(
+        "Data is already histogrammed. Expected event data or dense point "
+        "data, got data with bin edges.");
   }
   result.coords().set(dim, binEdges);
   return result;
