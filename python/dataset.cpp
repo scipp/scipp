@@ -472,19 +472,6 @@ void init_dataset(py::module &m) {
 
   m.def(
       "histogram",
-      [](const DataArrayConstView &ds, const Variable &bins) {
-        return dataset::histogram(ds, bins);
-      },
-      py::arg("x"), py::arg("bins"), py::call_guard<py::gil_scoped_release>(),
-      R"(Returns a new DataArray with values in bins for events dims.
-
-        :param x: Data to histogram.
-        :param bins: Bin edges.
-        :return: Histogramed data.
-        :rtype: DataArray)");
-
-  m.def(
-      "histogram",
       [](const DataArrayConstView &ds, const VariableConstView &bins) {
         return dataset::histogram(ds, bins);
       },
@@ -499,19 +486,6 @@ void init_dataset(py::module &m) {
   m.def(
       "histogram",
       [](const Dataset &ds, const VariableConstView &bins) {
-        return dataset::histogram(ds, bins);
-      },
-      py::arg("x"), py::arg("bins"), py::call_guard<py::gil_scoped_release>(),
-      R"(Returns a new Dataset with values in bins for events dims.
-
-        :param x: Data to histogram.
-        :param bins: Bin edges.
-        :return: Histogramed data.
-        :rtype: Dataset)");
-
-  m.def(
-      "histogram",
-      [](const Dataset &ds, const Variable &bins) {
         return dataset::histogram(ds, bins);
       },
       py::arg("x"), py::arg("bins"), py::call_guard<py::gil_scoped_release>(),

@@ -132,13 +132,6 @@ Dataset histogram(const Dataset &dataset, const VariableConstView &bins) {
   return out;
 }
 
-Dataset histogram(const Dataset &dataset, const Dim &dim) {
-  auto bins = dataset.coords()[dim];
-  if (contains_events(bins))
-    throw except::BinEdgeError("Expected bin edges, got event data.");
-  return histogram(dataset, bins);
-}
-
 /// Return the dimensions of the given data array that have an "bin edge"
 /// coordinate.
 std::set<Dim> edge_dimensions(const DataArrayConstView &a) {
