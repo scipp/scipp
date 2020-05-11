@@ -108,27 +108,13 @@ template <class T> static auto tofToWavelength(const T &d) {
          neutron::flight_path_length(d);
 }
 
-template <class T> auto tofToEnergyConversionFactor(const T &d) {
+template <class T> auto tofToEnergy(const T &d) {
   // l_total = l1 + l2
   auto conversionFactor = neutron::flight_path_length(d);
   // l_total^2
   conversionFactor *= conversionFactor;
   conversionFactor *= Variable(tofToEnergyPhysicalConstants);
   return conversionFactor;
-}
-
-template <class T> T tofToEnergy(T &&d) {
-  return convert_generic(
-      std::forward<T>(d), Dim::Tof, Dim::Energy,
-      [](auto &coord, const auto &factor) { coord = factor / (coord * coord); },
-      tofToEnergyConversionFactor(d));
-}
-
-template <class T> T energyToTof(T &&d) {
-  return convert_generic(
-      std::forward<T>(d), Dim::Energy, Dim::Tof,
-      [](auto &coord, const auto &factor) { coord = sqrt(factor / coord); },
-      tofToEnergyConversionFactor(d));
 }
 
 /*
@@ -220,9 +206,15 @@ template <class T> T convert_impl(T d, const Dim from, const Dim to) {
                                reciprocal(tofToWavelength(d)));
 
   if ((from == Dim::Tof) && (to == Dim::Energy))
-    return tofToEnergy(std::move(d));
+    return convert_generic(
+        std::move(d), from, to,
+        [](auto &coord, const auto &c) { coord = c / (coord * coord); },
+        tofToEnergy(d));
   if ((from == Dim::Energy) && (to == Dim::Tof))
-    return energyToTof(std::move(d));
+    return convert_generic(
+        std::move(d), from, to,
+        [](auto &coord, const auto &c) { coord = sqrt(c / coord); },
+        tofToEnergy(d));
   throw std::runtime_error(
       "Conversion between requested dimensions not implemented yet.");
 }
