@@ -142,9 +142,9 @@ DataArray histogram(const DataArrayConstView &events,
           using namespace histogram_dense_detail;
           return transform_subspan<
               std::tuple<args<double, double, double, double>,
-                         args<double, float, double, double>,
+                         args<float, double, float, double>,
                          args<double, float, double, float>,
-                         args<double, double, float, double>>>(
+                         args<float, float, float, float>>>(
               dim_, binEdges_.dims()[dim_] - 1, events_.coords()[dim_],
               mask ? VariableConstView(masked) : events_.data(), binEdges_,
               make_histogram);
