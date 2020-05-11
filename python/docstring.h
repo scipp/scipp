@@ -15,7 +15,6 @@ using namespace scipp::variable;
 using namespace scipp::dataset;
 
 template <class T> const std::string type_to_string() {
-  // using T = decltype(t);
   if (std::is_same_v<T, Variable>)
     return "Variable";
   if (std::is_same_v<T, VariableView>)
@@ -35,75 +34,25 @@ class Docstring {
 
 public:
   Docstring() = default;
-  // Docstring(const Docstring &) = default;
+  Docstring(const Docstring &) = default;
 
   Docstring &description(const std::string &s, const bool append = false);
   Docstring &raises(const std::string &s, const bool append = false);
   Docstring &seealso(const std::string &s, const bool append = false);
   Docstring &returns(const std::string &s, const bool append = false);
   Docstring &rtype(const std::string &s, const bool append = false);
-  // Docstring& rtype(const std::string s) { m_rtype = s; return *this; };
   Docstring &param(const std::string &name, const std::string &about,
                    const std::string &type);
   Docstring &clear();
 
-  // template <class T>
-  // Docstring& rtype(const T& t) {
-  //   using InputType = decltype(t);
-  //   if (std::is_same_v<InputType, Variable>)
-  //     m_rtype = "Variable";
-  //   else if (std::is_same_v<InputType, VariableView>)
-  //     m_rtype = "VariableView";
-  //   else if (std::is_same_v<InputType, DataArray>)
-  //     m_rtype = "DataArray";
-  //   else if (std::is_same_v<InputType, DataArrayView>)
-  //     m_rtype = "DataArrayView";
-  //   else if (std::is_same_v<InputType, Dataset>)
-  //     m_rtype = "Dataset";
-  //   else if (std::is_same_v<InputType, DatasetView>)
-  //     m_rtype = "DatasetView";
-  //   return *this;
-  // }
-
   template <class T> Docstring &rtype() {
     return rtype(type_to_string<T>());
-    // m_type = type_to_string<T>();
-    // // // using T = decltype(t);
-    // // if (std::is_same_v<T, Variable>)
-    // //   m_rtype = "Variable";
-    // // else if (std::is_same_v<T, VariableView>)
-    // //   m_rtype = "VariableView";
-    // // else if (std::is_same_v<T, DataArray>)
-    // //   m_rtype = "DataArray";
-    // // else if (std::is_same_v<T, DataArrayView>)
-    // //   m_rtype = "DataArrayView";
-    // // else if (std::is_same_v<T, Dataset>)
-    // //   m_rtype = "Dataset";
-    // // else if (std::is_same_v<T, DatasetView>)
-    // //   m_rtype = "DatasetView";
-    // return *this;
   }
 
   template <class T>
   Docstring &param(const std::string &name, const std::string &about) {
     return param(name, about, type_to_string<T>());
   }
-
-  // const std::string rtype() const { return m_rtype; };
-  // strpair param(const scipp::index ind) const { return m_params[ind]; };
-  // void set_description(const std::string description) {
-  //   m_description = description;
-  // };
-  // void set_raises(const std::string raises) { m_raises = raises; };
-  // void set_seealso(const std::string seealso) { m_seealso = seealso; };
-  // void set_returns(const std::string returns) { m_returns = returns; };
-  // // void set_rtype(const std::string rtype) { m_rtype = rtype; };
-  // void set_param(const scipp::index ind, strpair param) {
-  //   m_params[ind] = param;
-  // };
-  // void insert_param(const scipp::index ind, strpair param);
-
-  // const Docstring with_out_arg();
 
   const char *c_str();
 

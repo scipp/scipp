@@ -6,6 +6,7 @@
 #include "scipp/dataset/groupby.h"
 #include "scipp/dataset/dataset.h"
 
+#include "docstring.h"
 #include "pybind11.h"
 
 using namespace scipp;
@@ -13,125 +14,85 @@ using namespace scipp::dataset;
 
 namespace py = pybind11;
 
-// template <class T>
-// Docstring docstring_groupby(const std::string &op) {
-//   return       Docstring()
-//           .description("Element-wise " + op + "over the specified dimension
-//           within a group.") .raises("If the unit is not a plane-angle unit,
-//           or if the atan2 "
-//                   "function cannot be computed on the dtype, e.g., if it is
-//                   an " "integer.")
-//           .returns("The atan2 values of the input.")
-
-//       Element-wise mean over the specified dimension within a group.
-
-//       :param dim: Dimension to sum over when computing the mean
-//       :type dim: Dim
-//       :return: Mean over each group, combined along dimension specified when
-//       calling :py:func:`scipp.groupby` :rtype: DataArray or Dataset)");
-
-// }
+template <class T> Docstring docstring_groupby(const std::string &op) {
+  return Docstring()
+      .description("Element-wise " + op +
+                   "over the specified dimension "
+                   "within a group.")
+      .returns("The computed " + op +
+               " over each group, combined along "
+               "the dimension specified when calling :py:func:`scipp.groupby`.")
+      .rtype<T>()
+      .param("dim", "Dimension to reduce when computing the " + op + ".",
+             "Dim");
+}
 
 template <class T> void bind_groupby(py::module &m, const std::string &name) {
+  auto doc = Docstring()
+                 .description("Group dataset or data array based on values of "
+                              "specified labels.")
+                 .returns("GroupBy helper object.")
+                 .rtype("GroupByDataArray or GroupByDataset")
+                 .param<T>("data", "Input data to reduce.")
+                 .param("group", "Name of labels to use for grouping", "str");
+
   m.def("groupby",
         py::overload_cast<const typename T::const_view_type &, const Dim>(
             &groupby),
         py::arg("data"), py::arg("group"),
-        py::call_guard<py::gil_scoped_release>(),
-        R"(
-        Group dataset or data array based on values of specified labels.
+        py::call_guard<py::gil_scoped_release>(), doc.c_str());
 
-        :param data: Input dataset or data array
-        :param group: Name of labels to use for grouping
-        :type data: DataArray or Dataset
-        :type group: str
-        :return: GroupBy helper object.
-        :rtype: GroupByDataArray or GroupByDataset)");
-  m.def("groupby",
-        py::overload_cast<const typename T::const_view_type &, const Dim,
-                          const VariableConstView &>(&groupby),
-        py::arg("data"), py::arg("group"), py::arg("bins"),
-        py::call_guard<py::gil_scoped_release>(),
-        R"(
-        Group dataset or data array based on values of specified labels.
-
-        :param data: Input dataset or data array
-        :param group: Name of labels to use for grouping
-        :param bins: Bins for grouping label values
-        :type data: DataArray or Dataset
-        :type group: str
-        :type bins: VariableConstView
-        :return: GroupBy helper object.
-        :rtype: GroupByDataArray or GroupByDataset)");
+  m.def(
+      "groupby",
+      py::overload_cast<const typename T::const_view_type &, const Dim,
+                        const VariableConstView &>(&groupby),
+      py::arg("data"), py::arg("group"), py::arg("bins"),
+      py::call_guard<py::gil_scoped_release>(),
+      doc.param("bins", "Bins for grouping label values.", "Variable").c_str());
 
   py::class_<GroupBy<T>> groupBy(m, name.c_str(), R"(
     GroupBy object implementing to split-apply-combine mechanism.)");
 
-  groupBy.def("flatten", &GroupBy<T>::flatten, py::arg("dim"),
-              py::call_guard<py::gil_scoped_release>(), R"(
-      Flatten specified dimension into event lists.
-
-      This is a event-data equivalent to calling ``sum`` on dense data.
-      In particular, summing the result of histogrammed data yields the same result as histgramming data that has been flattened.
-
-      :param dim: Dimension to flatten
-      :type dim: Dim
-      :return: Flattened event data for each group, combined along dimension specified when calling :py:func:`scipp.groupby`
-      :rtype: DataArray or Dataset)");
+  groupBy.def(
+      "flatten", &GroupBy<T>::flatten, py::arg("dim"),
+      py::call_guard<py::gil_scoped_release>(),
+      Docstring()
+          .description("Flatten specified dimension into event lists.\n\n"
+                       "This is a event-data equivalent to calling ``sum`` on "
+                       "dense data.\n"
+                       "In particular, summing the result of histogrammed data "
+                       "yields the same result as histgramming data that has "
+                       "been flattened.")
+          .returns(
+              "Flattened event data for each group, combined along "
+              "the dimension specified when calling :py:func:`scipp.groupby`.")
+          .rtype<T>()
+          .param("dim", "Dimension to flatten.", "Dim")
+          .c_str());
 
   groupBy.def("mean", &GroupBy<T>::mean, py::arg("dim"),
-              py::call_guard<py::gil_scoped_release>(), R"(
-      Element-wise mean over the specified dimension within a group.
-
-      :param dim: Dimension to sum over when computing the mean
-      :type dim: Dim
-      :return: Mean over each group, combined along dimension specified when calling :py:func:`scipp.groupby`
-      :rtype: DataArray or Dataset)");
+              py::call_guard<py::gil_scoped_release>(),
+              docstring_groupby<T>("mean").c_str());
 
   groupBy.def("sum", &GroupBy<T>::sum, py::arg("dim"),
-              py::call_guard<py::gil_scoped_release>(), R"(
-      Element-wise sum over the specified dimension within a group.
-
-      :param dim: Dimension to sum over
-      :type dim: Dim
-      :return: Sum over each group, combined along dimension specified when calling :py:func:`scipp.groupby`
-      :rtype: DataArray or Dataset)");
+              py::call_guard<py::gil_scoped_release>(),
+              docstring_groupby<T>("sum").c_str());
 
   groupBy.def("all", &GroupBy<T>::all, py::arg("dim"),
-              py::call_guard<py::gil_scoped_release>(), R"(
-      Element-wise AND over the specified dimension within a group.
-
-      :param dim: Dimension to reduce
-      :type dim: Dim
-      :return: AND over each group, combined along dimension specified when calling :py:func:`scipp.groupby`
-      :rtype: DataArray or Dataset)");
+              py::call_guard<py::gil_scoped_release>(),
+              docstring_groupby<T>("all").c_str());
 
   groupBy.def("any", &GroupBy<T>::any, py::arg("dim"),
-              py::call_guard<py::gil_scoped_release>(), R"(
-      Element-wise OR over the specified dimension within a group.
-
-      :param dim: Dimension to reduce
-      :type dim: Dim
-      :return: OR over each group, combined along dimension specified when calling :py:func:`scipp.groupby`
-      :rtype: DataArray or Dataset)");
-
-  groupBy.def("max", &GroupBy<T>::max, py::arg("dim"),
-              py::call_guard<py::gil_scoped_release>(), R"(
-      Element-wise max over the specified dimension within a group.
-
-      :param dim: Dimension to reduce
-      :type dim: Dim
-      :return: Max over each group, combined along dimension specified when calling :py:func:`scipp.groupby`
-      :rtype: DataArray or Dataset)");
+              py::call_guard<py::gil_scoped_release>(),
+              docstring_groupby<T>("any").c_str());
 
   groupBy.def("min", &GroupBy<T>::min, py::arg("dim"),
-              py::call_guard<py::gil_scoped_release>(), R"(
-      Element-wise min over the specified dimension within a group.
+              py::call_guard<py::gil_scoped_release>(),
+              docstring_groupby<T>("min").c_str());
 
-      :param dim: Dimension to reduce
-      :type dim: Dim
-      :return: Min over each group, combined along dimension specified when calling :py:func:`scipp.groupby`
-      :rtype: DataArray or Dataset)");
+  groupBy.def("max", &GroupBy<T>::max, py::arg("dim"),
+              py::call_guard<py::gil_scoped_release>(),
+              docstring_groupby<T>("max").c_str());
 }
 
 void init_groupby(py::module &m) {
