@@ -351,29 +351,16 @@ TEST_F(GroupbyWithBinsTest, dataset_variable) {
       makeVariable<double>(Dims{Dim::Z}, Shape{4}, units::Unit(units::m),
                            Values{0.0, 1.0, 2.0, 3.0});
 
-  Dataset expected;
-  expected.setCoord(Dim::Z, bins);
-
-  auto const var1 = makeVariable<double>(
-      Dims{Dim::Z}, Shape{3}, units::Unit(units::s), Values{0.0, 0.8, 0.3});
-
-  auto const var2 =
-      makeVariable<double>(Dims{Dim::Y, Dim::Z}, Shape{2, 3},
-                           units::Unit(units::s), Values{0, 8, 3, 0, 23, 8});
-  expected.setData("a", var1);
-  expected.setData("b", var2);
-  expected.setAttr("a", "scalar", makeVariable<double>(Values{1.2}));
-
-  EXPECT_EQ(groupby(d, Dim("labels2"), bins).sum(Dim::X), expected);
-
-  auto const var3 =
+  auto const var =
       makeVariable<double>(Dimensions{Dim::X, 5}, units::Unit(units::m),
                            Values{1.0, 1.1, 2.5, 4.0, 1.2});
-  d.setCoord(Dim("labels2"), var3);
 
-  EXPECT_EQ(groupby(d, var3, bins).sum(Dim::X), expected);
-  EXPECT_EQ(groupby(d["a"], var3, bins).sum(Dim::X), expected["a"]);
-  EXPECT_EQ(groupby(d["b"], var3, bins).sum(Dim::X), expected["b"]);
+  d.setCoord(Dim("labels2"), var);
+
+  auto const groupby_label = groupby(d, Dim("labels2"), bins);
+  auto const groupby_variable = groupby(d, var, bins);
+
+  EXPECT_EQ(groupby_label.key(), groupby_variable.key());
 }
 
 auto make_events_in() {

@@ -405,6 +405,9 @@ Dataset Dataset::slice(const Slice s) const && {
 /// Rename dimension `from` to `to`.
 void Dataset::rename(const Dim from, const Dim to) {
 
+  if ((from != to) && (m_dims.count(to) != 0))
+    throw except::DimensionError("Duplicate dimension.");
+
   const auto relabel = [from, to](auto &map) {
     auto node = map.extract(from);
     node.key() = to;

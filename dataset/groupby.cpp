@@ -323,23 +323,23 @@ template <class T> struct MakeBinGroups {
   }
 };
 
-template <class T, class U>
-GroupBy<T> callDType(const U &array, const VariableConstView &key,
-                     const VariableConstView &bins) {
+template <class T>
+GroupBy<typename T::value_type> call_groupby(const T &array,
+                                             const VariableConstView &key,
+                                             const VariableConstView &bins) {
   return {
       array,
       core::CallDType<double, float, int64_t, int32_t>::apply<MakeBinGroups>(
           key.dtype(), key, bins)};
 }
 
-template <class T, class U>
-GroupBy<T> callDType(const U &array, const VariableConstView &key,
-                     const Dim &dim) {
+template <class T>
+GroupBy<typename T::value_type>
+call_groupby(const T &array, const VariableConstView &key, const Dim &dim) {
   return {array, core::CallDType<double, float, int64_t, int32_t, bool,
                                  std::string>::apply<MakeGroups>(key.dtype(),
                                                                  key, dim)};
 }
-
 /// Create GroupBy<DataArray> object as part of "split-apply-combine" mechanism.
 ///
 /// Groups the slices of `array` according to values in given by a coord.
@@ -347,7 +347,7 @@ GroupBy<T> callDType(const U &array, const VariableConstView &key,
 /// coord in a later apply/combine step.
 GroupBy<DataArray> groupby(const DataArrayConstView &array, const Dim dim) {
   const auto &key = array.coords()[dim];
-  return callDType<DataArray, DataArrayConstView>(array, key, dim);
+  return call_groupby<>(array, key, dim);
 }
 
 /// Create GroupBy<DataArray> object as part of "split-apply-combine" mechanism.
@@ -358,7 +358,7 @@ GroupBy<DataArray> groupby(const DataArrayConstView &array, const Dim dim) {
 GroupBy<DataArray> groupby(const DataArrayConstView &array, const Dim dim,
                            const VariableConstView &bins) {
   const auto &key = array.coords()[dim];
-  return callDType<DataArray, DataArrayConstView>(array, key, bins);
+  return groupby(array, key, bins);
 }
 
 /// Create GroupBy<DataArray> object as part of "split-apply-combine" mechanism.
@@ -367,9 +367,9 @@ GroupBy<DataArray> groupby(const DataArrayConstView &array, const Dim dim,
 /// Grouping of a coord is according to given `bins`, which will be added as a
 /// new coordinate to the output in a later apply/combine step.
 GroupBy<DataArray> groupby(const DataArrayConstView &array,
-                           const VariableConstView &variable,
+                           const VariableConstView &key,
                            const VariableConstView &bins) {
-  return callDType<DataArray, DataArrayConstView>(array, variable, bins);
+  return call_groupby<>(array, key, bins);
 }
 
 /// Create GroupBy<Dataset> object as part of "split-apply-combine" mechanism.
@@ -379,7 +379,7 @@ GroupBy<DataArray> groupby(const DataArrayConstView &array,
 /// coord in a later apply/combine step.
 GroupBy<Dataset> groupby(const DatasetConstView &dataset, const Dim dim) {
   const auto &key = dataset.coords()[dim];
-  return callDType<Dataset, DatasetConstView>(dataset, key, dim);
+  return call_groupby<>(dataset, key, dim);
 }
 
 /// Create GroupBy<Dataset> object as part of "split-apply-combine" mechanism.
@@ -390,7 +390,7 @@ GroupBy<Dataset> groupby(const DatasetConstView &dataset, const Dim dim) {
 GroupBy<Dataset> groupby(const DatasetConstView &dataset, const Dim dim,
                          const VariableConstView &bins) {
   const auto &key = dataset.coords()[dim];
-  return callDType<Dataset, DatasetConstView>(dataset, key, bins);
+  return groupby(dataset, key, bins);
 }
 
 /// Create GroupBy<Dataset> object as part of "split-apply-combine" mechanism.
@@ -399,9 +399,9 @@ GroupBy<Dataset> groupby(const DatasetConstView &dataset, const Dim dim,
 /// Grouping of a coord is according to given `bins`, which will be added as a
 /// new coordinate to the output in a later apply/combine step.
 GroupBy<Dataset> groupby(const DatasetConstView &dataset,
-                         const VariableConstView &variable,
+                         const VariableConstView &key,
                          const VariableConstView &bins) {
-  return callDType<Dataset, DatasetConstView>(dataset, variable, bins);
+  return call_groupby<>(dataset, key, bins);
 }
 
 template class GroupBy<DataArray>;
