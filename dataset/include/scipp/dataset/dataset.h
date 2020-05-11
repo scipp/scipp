@@ -862,14 +862,6 @@ SCIPP_DATASET_EXPORT Dataset operator/(const VariableConstView &lhs,
 SCIPP_DATASET_EXPORT DataArray astype(const DataArrayConstView &var,
                                       const DType type);
 
-// SCIPP_DATASET_EXPORT DataArray histogram(const DataArrayConstView &events,
-//                                          const Variable &binEdges);
-// SCIPP_DATASET_EXPORT DataArray histogram(const DataArrayConstView &events,
-//                                          const VariableConstView &binEdges);
-// SCIPP_DATASET_EXPORT Dataset histogram(const Dataset &dataset,
-//                                        const VariableConstView &bins);
-// SCIPP_DATASET_EXPORT Dataset histogram(const Dataset &dataset, const Dim &dim);
-
 SCIPP_DATASET_EXPORT Dataset merge(const DatasetConstView &a,
                                    const DatasetConstView &b);
 
