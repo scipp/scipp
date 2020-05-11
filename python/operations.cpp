@@ -19,16 +19,17 @@ namespace py = pybind11;
 template <class T> void bind_flatten(py::module &m) {
   m.def("flatten", py::overload_cast<ConstViewRef<T>, const Dim>(&flatten),
         py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
-        R"(
-Flatten the specified dimension into event lists, equivalent to summing dense
-data.
-
-:param x: Variable, DataArray, or Dataset to flatten.
-:param dim: Dimension over which to flatten.
-:raises: If the dimension does not exist, or if x does not contain event lists
-:seealso: :py:func:`scipp.sum`
-:return: New variable, data array, or dataset containing the flattened data.
-:rtype: Variable, DataArray, or Dataset)");
+        Docstring()
+            .description("Flatten the specified dimension into event lists, "
+                         "equivalent to summing dense data.")
+            .raises("If the dimension does not exist, or if x does not contain "
+                    "event lists.")
+            .seealso(":py:func:`scipp.sum`")
+            .returns("The flattened data.")
+            .rtype<T>()
+            .template param<T>("x", "Data container to flatten.")
+            .param("dim", "Dimension over which to flatten.", "Dim")
+            .c_str());
 }
 
 template <class T> void bind_concatenate(py::module &m) {
