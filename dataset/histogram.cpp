@@ -136,7 +136,10 @@ DataArray histogram(const DataArrayConstView &events,
         events,
         [](const DataArrayConstView &events_, const Dim dim_,
            const VariableConstView &binEdges_) {
-          const auto mask = ~irreducible_mask(events_.masks(), dim_);
+          const auto mask = irreducible_mask(events_.masks(), dim_);
+          Variable masked;
+          if (mask)
+            masked = events_.data() * ~mask;
           using namespace histogram_dense_detail;
           return transform_subspan<
               std::tuple<args<double, double, double, double>,
@@ -144,7 +147,7 @@ DataArray histogram(const DataArrayConstView &events,
                          args<double, float, double, float>,
                          args<double, double, float, double>>>(
               dim_, binEdges_.dims()[dim_] - 1, events_.coords()[dim_],
-              events_.data() * mask, binEdges_,
+              mask ? VariableConstView(masked) : events_.data(), binEdges_,
               overloaded{make_histogram, make_histogram_unit,
                          transform_flags::expect_variance_arg<0>,
                          transform_flags::expect_no_variance_arg<1>,
