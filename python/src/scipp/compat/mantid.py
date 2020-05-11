@@ -805,13 +805,16 @@ def validate_dim_and_get_mantid_string(unit_dim):
         'Q^2': "QSquared",
     }
 
-    if unit_dim not in known_units.keys():
+    user_k = str(unit_dim).casefold()
+    known_units = {k.casefold(): v for k, v in known_units.items()}
+
+    if user_k not in known_units:
         raise RuntimeError("Axis unit not currently supported."
                            "Possible values are: {}, "
                            "got '{}'. ".format([k for k in known_units.keys()],
                                                unit_dim))
     else:
-        return known_units[unit_dim]
+        return known_units[user_k]
 
 
 def to_workspace_2d(x, y, e, coord_dim, instrument_file=None):
