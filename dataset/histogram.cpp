@@ -136,7 +136,7 @@ DataArray histogram(const DataArrayConstView &events,
         events,
         [](const DataArrayConstView &events_, const Dim dim_,
            const VariableConstView &binEdges_) {
-          const auto mask = ~masks_merge_if_contains(events_.masks(), dim_);
+          const auto mask = ~irreducible_mask(events_.masks(), dim_);
           using namespace histogram_dense_detail;
           return transform_subspan<
               std::tuple<args<double, double, double, double>,

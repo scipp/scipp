@@ -61,7 +61,7 @@ template <class T>
 template <class Op, class CoordOp>
 T GroupBy<T>::reduce(Op op, const Dim reductionDim, CoordOp coord_op) const {
   auto out = makeReductionOutput(reductionDim);
-  const auto mask = ~masks_merge_if_contains(m_data.masks(), reductionDim);
+  const auto mask = ~irreducible_mask(m_data.masks(), reductionDim);
   // Apply to each group, storing result in output slice
   const auto process_groups = [&](const auto &range) {
     for (scipp::index group = range.begin(); group != range.end(); ++group) {
@@ -218,7 +218,7 @@ template <class T> T GroupBy<T>::mean(const Dim reductionDim) const {
   // 2. Compute number of slices N contributing to each out slice
   auto scale = makeVariable<double>(Dims{dim()}, Shape{size()});
   const auto scaleT = scale.template values<double>();
-  const auto mask = masks_merge_if_contains(m_data.masks(), reductionDim);
+  const auto mask = irreducible_mask(m_data.masks(), reductionDim);
   for (scipp::index group = 0; group < size(); ++group)
     for (const auto &slice : groups()[group]) {
       // N contributing to each slice
