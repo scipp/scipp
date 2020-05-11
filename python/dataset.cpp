@@ -256,6 +256,8 @@ template <class T> void bind_rebin(py::module &m) {
 }
 
 template <class T> void bind_realign(py::module &m) {
+  // Note: adding `py::call_guard<py::gil_scoped_release>()` for this binding
+  // causes a segmentation fault.
   m.def("realign",
         [](CstViewRef<T> a, py::dict coord_dict) {
           T copy(a);
@@ -263,7 +265,6 @@ template <class T> void bind_realign(py::module &m) {
           return copy;
         },
         py::arg("data"), py::arg("coords"),
-        py::call_guard<py::gil_scoped_release>(),
         Docstring()
             .description("Realign unaligned data to the supplied coordinate "
                          "axes.")
