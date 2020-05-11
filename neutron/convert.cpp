@@ -6,6 +6,10 @@
 #include <boost/units/systems/si/codata/neutron_constants.hpp>
 #include <boost/units/systems/si/codata/universal_constants.hpp>
 
+#include "scipp/common/constants.h"
+
+#include "scipp/core/element/arg_list.h"
+
 #include "scipp/variable/event.h"
 #include "scipp/variable/operations.h"
 #include "scipp/variable/transform.h"
@@ -62,18 +66,19 @@ static T convert_with_factor(T &&d, const Dim from, const Dim to,
 template <class T, class Op>
 T convert_generic(T &&d, const Dim from, const Dim to, Op op,
                   const VariableConstView &arg) {
+  using core::element::arg_list;
+  const auto op_ = overloaded{
+      arg_list<std::pair<double, double>, std::pair<float, double>>, op};
   // 1. Transform coordinate
   if (d.coords().contains(from)) {
     if (!d.coords()[from].dims().contains(arg.dims()))
       d.coords().set(from, broadcast(d.coords()[from], arg.dims()));
-    transform_in_place<core::pair_product_t<double, float>>(d.coords()[from],
-                                                            arg, op);
+    transform_in_place(d.coords()[from], arg, op_);
   }
   // 2. Transform realigned items
   for (const auto &item : iter(d))
     if (item.unaligned() && contains_events(item.unaligned()))
-      transform_in_place<core::pair_product_t<double, float>>(
-          item.unaligned().coords()[from], arg, op);
+      transform_in_place(item.unaligned().coords()[from], arg, op_);
   d.rename(from, to);
   return std::move(d);
 }
@@ -115,6 +120,11 @@ template <class T> auto tofToEnergy(const T &d) {
   conversionFactor *= conversionFactor;
   conversionFactor *= Variable(tofToEnergyPhysicalConstants);
   return conversionFactor;
+}
+
+template <class T> auto wavelengthToQ(const T &d) {
+  return sin(neutron::scattering_angle(d)) *
+         (4.0 * scipp::pi<double> * units::one);
 }
 
 /*
@@ -215,6 +225,15 @@ template <class T> T convert_impl(T d, const Dim from, const Dim to) {
         std::move(d), from, to,
         [](auto &coord, const auto &c) { coord = sqrt(c / coord); },
         tofToEnergy(d));
+
+  // lambda <-> Q conversion is symmetric
+  if (((from == Dim::Wavelength) && (to == Dim::Q)) ||
+      ((from == Dim::Q) && (to == Dim::Wavelength)))
+    return convert_generic(
+        std::move(d), from, to,
+        [](auto &coord, const auto &c) { coord = c / coord; },
+        wavelengthToQ(d));
+
   throw std::runtime_error(
       "Conversion between requested dimensions not implemented yet.");
 }
