@@ -388,6 +388,11 @@ TEST_F(GroupbyWithBinsTest, dataset_variable) {
   auto const groupby_variable = groupby(d, var, bins);
 
   EXPECT_EQ(groupby_label.key(), groupby_variable.key());
+
+  auto const var_bad = makeVariable<double>(Dimensions{Dim::X, 1},
+                                            units::Unit(units::m), Values{1.0});
+
+  EXPECT_THROW(groupby(d, var_bad, bins), except::DimensionError);
 }
 
 auto make_events_in() {

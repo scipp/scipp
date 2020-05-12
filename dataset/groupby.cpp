@@ -405,7 +405,14 @@ GroupBy<Dataset> groupby(const DatasetConstView &dataset,
                          const VariableConstView &key,
                          const VariableConstView &bins) {
 
-  return call_groupby(dataset, key, bins);
+  for (const auto &n : dataset.dimensions()) {
+    Dimensions dims(n.first, n.second);
+    if (dims.contains(key.dims()))
+      // Found compatible Dimension.
+      return call_groupby(dataset, key, bins);
+  }
+  // No Dimension contains the key - throw.
+  throw except::DimensionError("Size of Group-by key is incorrect.");
 }
 
 template class GroupBy<DataArray>;
