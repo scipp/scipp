@@ -2,12 +2,6 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#include <boost/units/systems/si/codata/electromagnetic_constants.hpp>
-#include <boost/units/systems/si/codata/neutron_constants.hpp>
-#include <boost/units/systems/si/codata/universal_constants.hpp>
-
-#include "scipp/common/constants.h"
-
 #include "scipp/core/element/arg_list.h"
 
 #include "scipp/variable/event.h"
@@ -17,28 +11,13 @@
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/dataset_util.h"
 
-#include "scipp/neutron/beamline.h"
 #include "scipp/neutron/convert.h"
+#include "scipp/neutron/convert_detail.h"
 
 using namespace scipp::variable;
 using namespace scipp::dataset;
 
 namespace scipp::neutron {
-
-const auto tof_to_s = boost::units::quantity<boost::units::si::time>(
-                          1.0 * units::boost_units::us) /
-                      units::boost_units::us;
-const auto J_to_meV =
-    units::boost_units::meV / boost::units::quantity<boost::units::si::energy>(
-                                  1.0 * units::boost_units::meV);
-const auto m_to_angstrom = units::boost_units::angstrom /
-                           boost::units::quantity<boost::units::si::length>(
-                               1.0 * units::boost_units::angstrom);
-// In tof-to-energy conversions we *divide* by time-of-flight (squared), so the
-// tof_to_s factor is in the denominator.
-const auto tofToEnergyPhysicalConstants =
-    0.5 * boost::units::si::constants::codata::m_n * J_to_meV /
-    (tof_to_s * tof_to_s);
 
 template <class T, class Op>
 T convert_generic(T &&d, const Dim from, const Dim to, Op op,
@@ -66,50 +45,6 @@ static T convert_with_factor(T &&d, const Dim from, const Dim to,
   return convert_generic(
       std::forward<T>(d), from, to,
       [](auto &coord, const auto &c) { coord *= c; }, factor);
-}
-
-template <class T> auto tofToDSpacing(const T &d) {
-  const auto &sourcePos = source_position(d);
-  const auto &samplePos = sample_position(d);
-
-  auto beam = samplePos - sourcePos;
-  const auto l1 = norm(beam);
-  beam /= l1;
-  auto scattered = neutron::position(d) - samplePos;
-  const auto l2 = norm(scattered);
-  scattered /= l2;
-
-  // l_total = l1 + l2
-  auto conversionFactor(l1 + l2);
-
-  conversionFactor *= Variable(2.0 * boost::units::si::constants::codata::m_n /
-                               boost::units::si::constants::codata::h /
-                               (m_to_angstrom * tof_to_s));
-  conversionFactor *=
-      sqrt(0.5 * units::one * (1.0 * units::one - dot(beam, scattered)));
-
-  return reciprocal(conversionFactor);
-}
-
-template <class T> static auto tofToWavelength(const T &d) {
-  return Variable(tof_to_s * m_to_angstrom *
-                  boost::units::si::constants::codata::h /
-                  boost::units::si::constants::codata::m_n) /
-         neutron::flight_path_length(d);
-}
-
-template <class T> auto tofToEnergy(const T &d) {
-  // l_total = l1 + l2
-  auto conversionFactor = neutron::flight_path_length(d);
-  // l_total^2
-  conversionFactor *= conversionFactor;
-  conversionFactor *= Variable(tofToEnergyPhysicalConstants);
-  return conversionFactor;
-}
-
-template <class T> auto wavelengthToQ(const T &d) {
-  return sin(neutron::scattering_angle(d)) *
-         (4.0 * scipp::pi<double> * units::one);
 }
 
 /*
@@ -189,35 +124,31 @@ template <class T> T convert_impl(T d, const Dim from, const Dim to) {
     if (item.hasData())
       core::expect::notCountDensity(item.unit());
   if ((from == Dim::Tof) && (to == Dim::DSpacing))
-    return convert_with_factor(std::move(d), from, to, tofToDSpacing(d));
+    return convert_with_factor(std::move(d), from, to,
+                               constants::tofToDSpacing(d));
   if ((from == Dim::DSpacing) && (to == Dim::Tof))
     return convert_with_factor(std::move(d), from, to,
-                               reciprocal(tofToDSpacing(d)));
+                               reciprocal(constants::tofToDSpacing(d)));
 
   if ((from == Dim::Tof) && (to == Dim::Wavelength))
-    return convert_with_factor(std::move(d), from, to, tofToWavelength(d));
+    return convert_with_factor(std::move(d), from, to,
+                               constants::tofToWavelength(d));
   if ((from == Dim::Wavelength) && (to == Dim::Tof))
     return convert_with_factor(std::move(d), from, to,
-                               reciprocal(tofToWavelength(d)));
+                               reciprocal(constants::tofToWavelength(d)));
 
   if ((from == Dim::Tof) && (to == Dim::Energy))
-    return convert_generic(
-        std::move(d), from, to,
-        [](auto &coord, const auto &c) { coord = c / (coord * coord); },
-        tofToEnergy(d));
+    return convert_generic(std::move(d), from, to, conversions::tof_to_energy,
+                           constants::tofToEnergy(d));
   if ((from == Dim::Energy) && (to == Dim::Tof))
-    return convert_generic(
-        std::move(d), from, to,
-        [](auto &coord, const auto &c) { coord = sqrt(c / coord); },
-        tofToEnergy(d));
+    return convert_generic(std::move(d), from, to, conversions::energy_to_tof,
+                           constants::tofToEnergy(d));
 
   // lambda <-> Q conversion is symmetric
   if (((from == Dim::Wavelength) && (to == Dim::Q)) ||
       ((from == Dim::Q) && (to == Dim::Wavelength)))
-    return convert_generic(
-        std::move(d), from, to,
-        [](auto &coord, const auto &c) { coord = c / coord; },
-        wavelengthToQ(d));
+    return convert_generic(std::move(d), from, to, conversions::wavelength_to_q,
+                           constants::wavelengthToQ(d));
 
   throw std::runtime_error(
       "Conversion between requested dimensions not implemented yet.");
