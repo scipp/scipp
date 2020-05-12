@@ -9,6 +9,7 @@
 #include "scipp/dataset/except.h"
 #include "scipp/dataset/groupby.h"
 #include "scipp/dataset/unaligned.h"
+#include "scipp/variable/arithmetic.h"
 #include "scipp/variable/transform_subspan.h"
 
 #include "dataset_operations_common.h"
@@ -18,23 +19,35 @@ using namespace scipp::variable;
 
 namespace scipp::dataset {
 
-static constexpr auto make_histogram =
-    [](auto &data, const auto &events, const auto &weights, const auto &edges) {
-      constexpr auto value = [](const auto &v, const scipp::index idx) {
-        if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(v)>>) {
-          static_cast<void>(idx);
-          return v.value;
-        } else
-          return v.values[idx];
-      };
-      constexpr auto variance = [](const auto &v, const scipp::index idx) {
-        if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(v)>>) {
-          static_cast<void>(idx);
-          return v.variance;
-        } else
-          return v.variances[idx];
-      };
+namespace {
+constexpr auto value = [](const auto &v, const scipp::index idx) {
+  using V = std::decay_t<decltype(v)>;
+  if constexpr (is_ValueAndVariance_v<V>) {
+    if constexpr (std::is_arithmetic_v<typename V::value_type>) {
+      static_cast<void>(idx);
+      return v.value;
+    } else {
+      return v.value[idx];
+    }
+  } else
+    return v.values[idx];
+};
+constexpr auto variance = [](const auto &v, const scipp::index idx) {
+  using V = std::decay_t<decltype(v)>;
+  if constexpr (is_ValueAndVariance_v<V>) {
+    if constexpr (std::is_arithmetic_v<typename V::value_type>) {
+      static_cast<void>(idx);
+      return v.variance;
+    } else {
+      return v.variance[idx];
+    }
+  } else
+    return v.variances[idx];
+};
+} // namespace
 
+static constexpr auto make_histogram = overloaded{
+    [](auto &data, const auto &events, const auto &weights, const auto &edges) {
       // Special implementation for linear bins. Gives a 1x to 20x speedup
       // for few and many events per histogram, respectively.
       if (scipp::numeric::is_linspace(edges)) {
@@ -64,27 +77,30 @@ static constexpr auto make_histogram =
           }
         }
       }
-    };
+    },
+    [](const units::Unit &events_unit, const units::Unit &weights_unit,
+       const units::Unit &edge_unit) {
+      if (events_unit != edge_unit)
+        throw except::UnitError("Bin edges must have same unit as the events "
+                                "input coordinate.");
+      if (weights_unit != units::counts && weights_unit != units::dimensionless)
+        throw except::UnitError("Weights of event data must be "
+                                "`units::counts` or `units::dimensionless`.");
+      return weights_unit;
+    },
+    transform_flags::expect_variance_arg<0>,
+    transform_flags::expect_no_variance_arg<1>,
+    transform_flags::expect_variance_arg<2>,
+    transform_flags::expect_no_variance_arg<3>};
 
-static constexpr auto make_histogram_unit = [](const units::Unit &events_unit,
-                                               const units::Unit &weights_unit,
-                                               const units::Unit &edge_unit) {
-  if (events_unit != edge_unit)
-    throw except::UnitError("Bin edges must have same unit as the events "
-                            "input coordinate.");
-  if (weights_unit != units::counts && weights_unit != units::dimensionless)
-    throw except::UnitError("Weights of event data must be "
-                            "`units::counts` or `units::dimensionless`.");
-  return weights_unit;
-};
-
-namespace histogram_detail {
-template <class Out, class Coord, class Edge>
-using args = std::tuple<span<Out>, event_list<Coord>, span<const Edge>>;
-}
-namespace histogram_weighted_detail {
+namespace histogram_events_detail {
 template <class Out, class Coord, class Weight, class Edge>
 using args = std::tuple<span<Out>, event_list<Coord>, Weight, span<const Edge>>;
+}
+namespace histogram_dense_detail {
+template <class Out, class Coord, class Weight, class Edge>
+using args = std::tuple<span<Out>, span<const Coord>, span<const Weight>,
+                        span<const Edge>>;
 }
 
 DataArray histogram(const DataArrayConstView &events,
@@ -92,56 +108,64 @@ DataArray histogram(const DataArrayConstView &events,
   using namespace scipp::core;
   auto dim = binEdges.dims().inner();
 
-  auto result = apply_and_drop_dim(
-      events,
-      [](const DataArrayConstView &events_, const Dim eventDim, const Dim dim_,
-         const VariableConstView &binEdges_) {
-        static_cast<void>(eventDim); // This is just Dim::Invalid
-        using namespace histogram_weighted_detail;
-        // This supports scalar weights as well as event_list weights.
-        return transform_subspan<
-            std::tuple<args<double, double, double, double>,
-                       args<double, float, double, double>,
-                       args<double, float, double, float>,
-                       args<double, double, float, double>,
-                       args<double, double, event_list<double>, double>,
-                       args<double, float, event_list<double>, double>,
-                       args<double, float, event_list<double>, float>,
-                       args<double, double, event_list<float>, double>>>(
-            dim_, binEdges_.dims()[dim_] - 1, events_.coords()[dim_],
-            events_.data(), binEdges_,
-            overloaded{make_histogram, make_histogram_unit,
-                       transform_flags::expect_variance_arg<0>,
-                       transform_flags::expect_no_variance_arg<1>,
-                       transform_flags::expect_variance_arg<2>,
-                       transform_flags::expect_no_variance_arg<3>});
-      },
-      dim_of_coord(events.coords()[dim], dim), dim, binEdges);
+  DataArray result;
+  if (contains_events(events.coords()[dim])) {
+    result = apply_and_drop_dim(
+        events,
+        [](const DataArrayConstView &events_, const Dim eventDim,
+           const Dim dim_, const VariableConstView &binEdges_) {
+          static_cast<void>(eventDim); // This is just Dim::Invalid
+          using namespace histogram_events_detail;
+          // This supports scalar weights as well as event_list weights.
+          return transform_subspan<
+              std::tuple<args<double, double, double, double>,
+                         args<double, float, double, double>,
+                         args<double, float, double, float>,
+                         args<double, double, float, double>,
+                         args<double, double, event_list<double>, double>,
+                         args<double, float, event_list<double>, double>,
+                         args<double, float, event_list<double>, float>,
+                         args<double, double, event_list<float>, double>>>(
+              dim_, binEdges_.dims()[dim_] - 1, events_.coords()[dim_],
+              events_.data(), binEdges_, make_histogram);
+        },
+        dim_of_coord(events.coords()[dim], dim), dim, binEdges);
+  } else if (!is_histogram(events, dim)) {
+    result = apply_and_drop_dim(
+        events,
+        [](const DataArrayConstView &events_, const Dim dim_,
+           const VariableConstView &binEdges_) {
+          const auto mask = irreducible_mask(events_.masks(), dim_);
+          Variable masked;
+          if (mask)
+            masked = events_.data() * ~mask;
+          using namespace histogram_dense_detail;
+          return transform_subspan<
+              std::tuple<args<double, double, double, double>,
+                         args<float, double, float, double>,
+                         args<double, float, double, float>,
+                         args<float, float, float, float>>>(
+              dim_, binEdges_.dims()[dim_] - 1, events_.coords()[dim_],
+              mask ? VariableConstView(masked) : events_.data(), binEdges_,
+              make_histogram);
+        },
+        dim, binEdges);
+  } else {
+    throw except::BinEdgeError(
+        "Data is already histogrammed. Expected event data or dense point "
+        "data, got data with bin edges.");
+  }
   result.coords().set(dim, binEdges);
   return result;
 }
 
-DataArray histogram(const DataArrayConstView &events,
-                    const Variable &binEdges) {
-  return histogram(events, VariableConstView(binEdges));
-}
-
-Dataset histogram(const Dataset &dataset, const VariableConstView &bins) {
-  auto out(Dataset(DatasetConstView::makeViewWithEmptyIndexes(dataset)));
-  const Dim dim = bins.dims().inner();
-  out.setCoord(dim, bins);
-  for (const auto &item : dataset) {
-    if (contains_events(item.coords()[dim]))
-      out.setData(item.name(), histogram(item, bins));
-  }
-  return out;
-}
-
-Dataset histogram(const Dataset &dataset, const Dim &dim) {
-  auto bins = dataset.coords()[dim];
-  if (contains_events(bins))
-    throw except::BinEdgeError("Expected bin edges, got event data.");
-  return histogram(dataset, bins);
+Dataset histogram(const Dataset &dataset, const VariableConstView &binEdges) {
+  return apply_to_items(
+      dataset,
+      [](const auto &item, const Dim, const auto &binEdges_) {
+        return histogram(item, binEdges_);
+      },
+      binEdges.dims().inner(), binEdges);
 }
 
 /// Return the dimensions of the given data array that have an "bin edge"

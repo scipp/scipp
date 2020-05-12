@@ -165,6 +165,21 @@ TEST(HistogramTest, data_view) {
   EXPECT_EQ(hist, expected);
 }
 
+TEST(HistogramTest, dense) {
+  auto events = make_1d_events_default_weights();
+  auto edges1 =
+      makeVariable<double>(Dims{Dim::Y}, Shape{6}, Values{1, 2, 3, 4, 5, 6});
+  auto edges2 = makeVariable<double>(Dims{Dim::Y}, Shape{3}, Values{1, 3, 6});
+  auto expected = dataset::histogram(events, edges2);
+  auto dense = dataset::histogram(events, edges1);
+  EXPECT_THROW(dataset::histogram(dense, edges2), except::BinEdgeError);
+  dense.coords().erase(Dim::Y);
+  dense.coords().set(Dim::Y,
+                     makeVariable<double>(Dims{Dim::Y}, Shape{5},
+                                          Values{1.5, 2.5, 3.5, 4.5, 5.5}));
+  EXPECT_EQ(dataset::histogram(dense, edges2), expected);
+}
+
 TEST(HistogramTest, drops_other_event_coords) {
   auto events = make_1d_events_default_weights();
   events.coords().set(Dim("pulse-time"), events.coords()[Dim::Y]);

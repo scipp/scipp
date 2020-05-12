@@ -491,7 +491,8 @@ def convert_Workspace2D_to_data_array(ws, **ignored):
     # artifact of inflexible data structures and gets in the way when working
     # with scipp.
     if len(spec_coord.values) == 1:
-        array.coords['position'] = array.coords['position'][spec_dim, 0]
+        if 'position' in array.coords:
+            array.coords['position'] = array.coords['position'][spec_dim, 0]
         array = array[spec_dim, 0].copy()
     return array
 

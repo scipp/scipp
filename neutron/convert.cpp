@@ -6,6 +6,10 @@
 #include <boost/units/systems/si/codata/neutron_constants.hpp>
 #include <boost/units/systems/si/codata/universal_constants.hpp>
 
+#include "scipp/common/constants.h"
+
+#include "scipp/core/element/arg_list.h"
+
 #include "scipp/variable/event.h"
 #include "scipp/variable/operations.h"
 #include "scipp/variable/transform.h"
@@ -36,27 +40,32 @@ const auto tofToEnergyPhysicalConstants =
     0.5 * boost::units::si::constants::codata::m_n * J_to_meV /
     (tof_to_s * tof_to_s);
 
-template <class T>
-static T convert_with_factor(T &&d, const Dim from, const Dim to,
-                             const Variable &factor) {
+template <class T, class Op>
+T convert_generic(T &&d, const Dim from, const Dim to, Op op,
+                  const VariableConstView &arg) {
+  using core::element::arg_list;
+  const auto op_ = overloaded{
+      arg_list<std::pair<double, double>, std::pair<float, double>>, op};
   // 1. Transform coordinate
   if (d.coords().contains(from)) {
-    if (contains_events(d.coords()[from])) {
-      d.coords()[from] *= factor;
-    } else {
-      // Cannot use *= since often a broadcast into Dim::Spectrum is required.
-      const auto &coord = d.coords()[from];
-      d.coords().set(from, astype(factor, coord.dtype()) * coord);
-    }
+    if (!d.coords()[from].dims().contains(arg.dims()))
+      d.coords().set(from, broadcast(d.coords()[from], arg.dims()));
+    transform_in_place(d.coords()[from], arg, op_);
   }
-
   // 2. Transform realigned items
   for (const auto &item : iter(d))
     if (item.unaligned() && contains_events(item.unaligned()))
-      item.unaligned().coords()[from] *= factor;
-
+      transform_in_place(item.unaligned().coords()[from], arg, op_);
   d.rename(from, to);
   return std::move(d);
+}
+
+template <class T>
+static T convert_with_factor(T &&d, const Dim from, const Dim to,
+                             const Variable &factor) {
+  return convert_generic(
+      std::forward<T>(d), from, to,
+      [](auto &coord, const auto &c) { coord *= c; }, factor);
 }
 
 template <class T> auto tofToDSpacing(const T &d) {
@@ -89,80 +98,18 @@ template <class T> static auto tofToWavelength(const T &d) {
          neutron::flight_path_length(d);
 }
 
-template <class T> auto tofToEnergyConversionFactor(const T &d) {
+template <class T> auto tofToEnergy(const T &d) {
   // l_total = l1 + l2
   auto conversionFactor = neutron::flight_path_length(d);
   // l_total^2
   conversionFactor *= conversionFactor;
-
   conversionFactor *= Variable(tofToEnergyPhysicalConstants);
-
   return conversionFactor;
 }
 
-template <class T> T tofToEnergy(T &&d) {
-  // 1. Compute conversion factor
-  const auto conversionFactor = tofToEnergyConversionFactor(d);
-
-  // 2. Transform coordinate
-  if (d.coords().contains(Dim::Tof)) {
-    if (contains_events(d.coords()[Dim::Tof])) {
-      transform_in_place<core::pair_self_t<double, float>>(
-          d.coords()[Dim::Tof], conversionFactor,
-          [](auto &coord_, const auto &factor) {
-            coord_ = factor / (coord_ * coord_);
-          });
-    } else {
-      const auto &coordSq = d.coords()[Dim::Tof] * d.coords()[Dim::Tof];
-      d.coords().set(Dim::Tof,
-                     astype(conversionFactor, coordSq.dtype()) / coordSq);
-    }
-  }
-
-  // 3. Transform realigned items
-  for (const auto &item : iter(d))
-    if (item.unaligned() && contains_events(item.unaligned()))
-      transform_in_place<core::pair_self_t<double, float>>(
-          item.unaligned().coords()[Dim::Tof], conversionFactor,
-          [](auto &coord_, const auto &factor) {
-            coord_ = factor / (coord_ * coord_);
-          });
-
-  d.rename(Dim::Tof, Dim::Energy);
-  return std::move(d);
-}
-
-template <class T> T energyToTof(T &&d) {
-  // 1. Compute conversion factor
-  const auto conversionFactor = tofToEnergyConversionFactor(d);
-
-  // 2. Transform coordinate
-  if (d.coords().contains(Dim::Energy)) {
-    if (contains_events(d.coords()[Dim::Energy])) {
-      transform_in_place<core::pair_self_t<double, float>>(
-          d.coords()[Dim::Energy], conversionFactor,
-          [](auto &coord_, const auto &factor) {
-            coord_ = sqrt(factor / coord_);
-          });
-    } else {
-      const auto &coordSqrt = d.coords()[Dim::Energy];
-      d.coords().set(
-          Dim::Energy,
-          sqrt(astype(conversionFactor, coordSqrt.dtype()) / coordSqrt));
-    }
-  }
-
-  // 3. Transform realigned items
-  for (const auto &item : iter(d))
-    if (item.unaligned() && contains_events(item.unaligned()))
-      transform_in_place<core::pair_self_t<double, float>>(
-          item.unaligned().coords()[Dim::Energy], conversionFactor,
-          [](auto &coord_, const auto &factor) {
-            coord_ = sqrt(factor / coord_);
-          });
-
-  d.rename(Dim::Energy, Dim::Tof);
-  return std::move(d);
+template <class T> auto wavelengthToQ(const T &d) {
+  return sin(neutron::scattering_angle(d)) *
+         (4.0 * scipp::pi<double> * units::one);
 }
 
 /*
@@ -254,9 +201,24 @@ template <class T> T convert_impl(T d, const Dim from, const Dim to) {
                                reciprocal(tofToWavelength(d)));
 
   if ((from == Dim::Tof) && (to == Dim::Energy))
-    return tofToEnergy(std::move(d));
+    return convert_generic(
+        std::move(d), from, to,
+        [](auto &coord, const auto &c) { coord = c / (coord * coord); },
+        tofToEnergy(d));
   if ((from == Dim::Energy) && (to == Dim::Tof))
-    return energyToTof(std::move(d));
+    return convert_generic(
+        std::move(d), from, to,
+        [](auto &coord, const auto &c) { coord = sqrt(c / coord); },
+        tofToEnergy(d));
+
+  // lambda <-> Q conversion is symmetric
+  if (((from == Dim::Wavelength) && (to == Dim::Q)) ||
+      ((from == Dim::Q) && (to == Dim::Wavelength)))
+    return convert_generic(
+        std::move(d), from, to,
+        [](auto &coord, const auto &c) { coord = c / coord; },
+        wavelengthToQ(d));
+
   throw std::runtime_error(
       "Conversion between requested dimensions not implemented yet.");
 }

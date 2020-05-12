@@ -17,65 +17,58 @@ Variable flatten(const VariableConstView &var, const Dim dim,
   auto dims = var.dims();
   dims.erase(dim);
   Variable flattened(var, dims);
-  const auto mask = ~masks_merge_if_contains(masks, dim);
+  auto mask = irreducible_mask(masks, dim);
+  if (mask)
+    mask = ~std::move(mask);
+  else
+    mask = makeVariable<bool>(Values{true});
   flatten_impl(flattened, var, mask);
   return flattened;
 }
 
 Variable sum(const VariableConstView &var, const Dim dim,
              const MasksConstView &masks) {
-  if (!masks.empty()) {
-    const auto mask_union = masks_merge_if_contains(masks, dim);
-    if (mask_union.dims().contains(dim))
-      return sum(var * ~mask_union, dim);
-  }
+  if (const auto mask_union = irreducible_mask(masks, dim))
+    return sum(var * ~mask_union, dim);
   return sum(var, dim);
 }
 
 VariableView sum(const VariableConstView &var, const Dim dim,
                  const MasksConstView &masks, const VariableView &out) {
-  if (!masks.empty()) {
-    const auto mask_union = masks_merge_if_contains(masks, dim);
-    if (mask_union.dims().contains(dim))
-      return sum(var * ~mask_union, dim, out);
-  }
+  if (const auto mask_union = irreducible_mask(masks, dim))
+    return sum(var * ~mask_union, dim, out);
   return sum(var, dim, out);
 }
 
 Variable mean(const VariableConstView &var, const Dim dim,
               const MasksConstView &masks) {
-  if (!masks.empty()) {
-    const auto mask_union = masks_merge_if_contains(masks, dim);
-    if (mask_union.dims().contains(dim)) {
-      const auto masks_sum = sum(mask_union, dim);
-      return mean_impl(var * ~mask_union, dim, masks_sum);
-    }
+  if (const auto mask_union = irreducible_mask(masks, dim)) {
+    const auto masks_sum = sum(mask_union, dim);
+    return mean_impl(var * ~mask_union, dim, masks_sum);
   }
   return mean(var, dim);
 }
 
 VariableView mean(const VariableConstView &var, const Dim dim,
                   const MasksConstView &masks, const VariableView &out) {
-  if (!masks.empty()) {
-    const auto mask_union = masks_merge_if_contains(masks, dim);
-    if (mask_union.dims().contains(dim)) {
-      const auto masks_sum = sum(mask_union, dim);
-      return mean_impl(var * ~mask_union, dim, masks_sum, out);
-    }
+  if (const auto mask_union = irreducible_mask(masks, dim)) {
+    const auto masks_sum = sum(mask_union, dim);
+    return mean_impl(var * ~mask_union, dim, masks_sum, out);
   }
   return mean(var, dim, out);
 }
 
-/// Merges all masks contained in the MasksConstView that have the supplied
-//  dimension in their dimensions into a single Variable
-Variable masks_merge_if_contains(const MasksConstView &masks, const Dim dim) {
-  auto mask_union = makeVariable<bool>(Values{false});
-  for (const auto &mask : masks) {
-    if (mask.second.dims().contains(dim)) {
-      mask_union = mask_union | mask.second;
-    }
-  }
-  return mask_union;
+/// Returns the union of all masks with irreducible dimension `dim`.
+///
+/// Irreducible means that a reduction operation must apply these masks since
+/// depend on the reduction dimension. Returns an invalid (empty) variable if
+/// there is no irreducible mask.
+Variable irreducible_mask(const MasksConstView &masks, const Dim dim) {
+  Variable union_;
+  for (const auto &mask : masks)
+    if (mask.second.dims().contains(dim))
+      union_ = union_ ? union_ | mask.second : Variable(mask.second);
+  return union_;
 }
 
 /// Merges all the masks that have all their dimensions found in the given set
