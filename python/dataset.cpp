@@ -437,15 +437,15 @@ void init_dataset(py::module &m) {
         return dataset::merge(lhs, rhs);
       },
       py::arg("lhs"), py::arg("rhs"), py::call_guard<py::gil_scoped_release>(),
-      R"(
-Union of two datasets.
-
-:param lhs: First Dataset.
-:param rhs: Second Dataset.
-:raises: If there are conflicting items with different content.
-:return: A new dataset that contains the union of all data items, coords, masks
-         and attributes.
-:rtype: Dataset)");
+      Docstring()
+          .description("Union of two datasets.")
+          .raises("If there are conflicting items with different content.")
+          .returns("A new dataset that contains the union of all data items, "
+                   "coords, masks and attributes.")
+          .rtype("Dataset")
+          .param("lhs", "First Dataset", "Dataset")
+          .param("rhs", "Second Dataset", "Dataset")
+          .c_str());
 
   m.def(
       "combine_masks",
@@ -454,64 +454,76 @@ Union of two datasets.
         return dataset::masks_merge_if_contained(msk,
                                                  Dimensions(labels, shape));
       },
-      py::call_guard<py::gil_scoped_release>(), R"(
-Combine all masks into a single one following the OR operation.
-This requires a masks view as an input, followed by the dimension
-labels and shape of the Variable/DataArray. The labels and the shape
-are used to create a Dimensions object. The function then iterates
-through the masks view and combines only the masks that have all
-their dimensions contained in the Variable/DataArray Dimensions.
-
-:return: A new variable that contains the union of all masks.
-:rtype: Variable)");
+      py::arg("masks"), py::arg("labels"), py::arg("shape"),
+      py::call_guard<py::gil_scoped_release>(),
+      Docstring()
+          .description(
+              "Combine all masks into a single one following the OR operation. "
+              "This requires a masks view as an input, followed by the "
+              "dimension labels and shape of the Variable/DataArray. The "
+              "labels and the shape are used to create a Dimensions object. "
+              "The function then iterates through the masks view and combines "
+              "only the masks that have all their dimensions contained in the "
+              "Variable/DataArray Dimensions.")
+          .returns("A new variable that contains the union of all masks.")
+          .rtype("Variable")
+          .param("masks", "Masks view of the dataset's masks.", "MaskView")
+          .param("labels", "A list of dimension labels.", "list")
+          .param("shape", "A list of dimension extents.", "list")
+          .c_str());
 
   m.def(
       "reciprocal",
       [](const DataArrayConstView &self) { return reciprocal(self); },
-      py::arg("x"), py::call_guard<py::gil_scoped_release>(), R"(
-        Element-wise reciprocal.
-
-        :return: Reciprocal of the input values.
-        :rtype: DataArray)");
+      py::arg("x"), py::call_guard<py::gil_scoped_release>(),
+      Docstring()
+          .description("Element-wise reciprocal.")
+          .raises("If the dtype has no reciprocal, e.g., if it is a string.")
+          .returns("The reciprocal values of the input.")
+          .rtype("DataArray")
+          .param("x", "Input data array.", "DataArray")
+          .c_str());
 
   m.def("filter", filter_impl<DataArray>, py::arg("data"), py::arg("filter"),
         py::arg("interval"), py::arg("keep_attrs") = true,
         py::call_guard<py::gil_scoped_release>(),
-        R"(
-Return filtered event data.
-
-This only supports event data.
-
-:param data: Input event data
-:param filter: Name of coord to use for filtering
-:param interval: Variable defining the valid interval of coord values to include
-                 in the output
-:param keep_attrs: If False, attributes are not copied to the output, default is
-                   True
-:return: Filtered data.
-:rtype: DataArray)");
+        Docstring()
+            .description(
+                "Return filtered event data. This only supports event data.")
+            .returns("Filtered data.")
+            .rtype("DataArray")
+            .param("data", "Input event data.", "DataArray")
+            .param("filter", "Name of coord to use for filtering.", "str")
+            .param("interval",
+                   "Variable defining the valid interval of coord values to "
+                   "include in the output.",
+                   "Variable")
+            .param("keep_attrs",
+                   "If `False`, attributes are not copied to the output, "
+                   "default is `True`.",
+                   "bool")
+            .c_str());
 
   m.def("map", event::map, py::arg("function"), py::arg("iterable"),
         py::arg("dim") = to_string(Dim::Invalid),
         py::call_guard<py::gil_scoped_release>(),
-        R"(
-Return mapped event data.
-
-This only supports event data.
-
-:param function: Data array serving as a discretized mapping function.
-:param iterable: Variable with values to map, must be event data.
-:param dim: Optional dimension to use for mapping, if not given, `map` will
-            attempt to determine the dimension from the `function` argument.
-:return: Mapped event data.
-:rtype: Variable)");
-
-  m.def(
-      "contains_events",
-      [](const DataArrayConstView &self) { return contains_events(self); },
-      R"(
-Return true if the data array contains event data. Note that data may be stored
-as a scalar, but this returns true if any coord contains events.)");
+        Docstring()
+            .description(
+                "Return mapped event data. This only supports event data.")
+            .returns("Mapped event data.")
+            .rtype("Variable")
+            .param("function",
+                   "Data array serving as a discretized mapping function.",
+                   "DataArray")
+            .param("iterable",
+                   "Variable with values to map, must be event data.",
+                   "Variable")
+            .param("dim",
+                   "Optional dimension to use for mapping, if not given, `map` "
+                   "will attempt to determine the dimension from the "
+                   "`function` argument.",
+                   "Dim")
+            .c_str());
 
   bind_astype(dataArray);
   bind_astype(dataArrayView);

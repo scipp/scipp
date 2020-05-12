@@ -13,12 +13,9 @@
 namespace scipp::dataset {
 
 SCIPP_DATASET_EXPORT DataArray histogram(const DataArrayConstView &events,
-                                         const Variable &binEdges);
-SCIPP_DATASET_EXPORT DataArray histogram(const DataArrayConstView &events,
                                          const VariableConstView &binEdges);
-SCIPP_DATASET_EXPORT Dataset histogram(const Dataset &dataset,
+SCIPP_DATASET_EXPORT Dataset histogram(const DatasetConstView &dataset,
                                        const VariableConstView &bins);
-SCIPP_DATASET_EXPORT Dataset histogram(const Dataset &dataset, const Dim &dim);
 SCIPP_DATASET_EXPORT DataArray histogram(const DataArrayConstView &realigned);
 SCIPP_DATASET_EXPORT Dataset histogram(const DatasetConstView &realigned);
 

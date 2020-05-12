@@ -18,29 +18,85 @@ stages:
     jobs:
       - job: 'linux'
         displayName: 'Linux'
-        timeoutInMinutes: 60
+        timeoutInMinutes: 90
         pool:
           vmImage: 'ubuntu-18.04'
+        variables:
+          build_dir: '$(Build.StagingDirectory)/build'
+          install_dir: '$(Build.StagingDirectory)/install'
+          docs_build_dir: '$(Build.StagingDirectory)/docs_build'
         steps:
           - checkout: self
             submodules: true
           - bash: |
               echo "##vso[task.prependpath]$CONDA/bin"
-              echo "##vso[task.setvariable variable=conda_dir]$CONDA"
-            displayName: 'Configure Conda directories'
+            displayName: 'Add Conda to PATH'
           - bash: |
               set -ex
               conda --version
-              conda install --yes conda-build
-            displayName: 'Conda configuration'
+              conda env create -f scipp-developer.yml
+              mkdir "$(build_dir)" "$(install_dir)" "$(docs_build_dir)"
+            displayName: 'Configure build environment'
           - bash: |
-              conda build -c conda-forge ./conda
-            displayName: 'Package build'
+              set -ex
+              cd "$(build_dir)"
+              source activate scipp-developer
+              cmake \
+                -G Ninja \
+                -DPYTHON_EXECUTABLE=$(command -v python) \
+                -DCMAKE_INSTALL_PREFIX="$(install_dir)" \
+                -DCMAKE_BUILD_TYPE=Release \
+                "$(Build.Repository.LocalPath)"
+            displayName: 'CMake configuration'
+          - bash: |
+              set -ex
+              cd "$(build_dir)"
+              source activate scipp-developer
+              cmake --build . --target all-tests
+            displayName: 'Build C++ unit tests'
+          - bash: |
+              set -ex
+              cd "$(build_dir)"
+              source activate scipp-developer
+              ./common/test/scipp-common-test
+              ./units/test/scipp-units-test
+              ./core/test/scipp-core-test
+              ./variable/test/scipp-variable-test
+              ./dataset/test/scipp-dataset-test
+              ./neutron/test/scipp-neutron-test
+            displayName: 'Run C++ unit tests'
+          - bash: |
+              set -ex
+              cd "$(build_dir)"
+              source activate scipp-developer
+              cmake --build . --target all-benchmarks
+            displayName: 'Build benchmarks'
+          - bash: |
+              set -ex
+              cd "$(build_dir)"
+              source activate scipp-developer
+              cmake --build . --target install
+            displayName: 'Build Python library'
+          - bash: |
+              set -ex
+              source activate scipp-developer
+              PYTHONPATH="$PYTHONPATH:$(install_dir)" python -m pytest
+            displayName: 'Run Python unit tests'
+          - bash: |
+              set -ex
+              source activate scipp-developer
+              cd docs
+              python data/fetch_neutron_data.py
+              mkdir "$HOME/.mantid"
+              echo -e "usagereports.enabled=0\ndatasearch.directories=$(pwd)/data" > "$HOME/.mantid/Mantid.user.properties"
+              find "$(docs_build_dir)" -type f -name *.ipynb -delete
+              PYTHONPATH=$PYTHONPATH:"$(install_dir)" sphinx-build -d $(mktemp -d) . "$(docs_build_dir)"
+            displayName: 'Build documentation'
           - task: PublishBuildArtifacts@1
             inputs:
-              PathtoPublish: "$(conda_dir)/conda-bld/linux-64"
-              ArtifactName: 'linux-64'
-            displayName: 'Publish Conda package artefacts'
+              PathtoPublish: "$(docs_build_dir)"
+              ArtifactName: 'documentation'
+            displayName: 'Upload built documentation'
 
       - job: 'mac'
         displayName: 'Mac OS'
@@ -48,59 +104,116 @@ stages:
         pool:
           vmImage: 'macOS-10.14'
         variables:
-          OSX_VERSION: '10.15'
+          build_dir: '$(Build.StagingDirectory)/build'
+          install_dir: '$(Build.StagingDirectory)/install'
         steps:
           - checkout: self
             submodules: true
           - bash: |
+              set -ex
               echo "##vso[task.prependpath]$CONDA/bin"
-              echo "##vso[task.setvariable variable=conda_dir]$CONDA"
-            displayName: 'Configure Conda directories'
-          - bash: |
               sudo chown -R $USER $CONDA
-            displayName: 'Take ownership of Conda installation'
+            displayName: 'Add Conda to PATH'
           - bash: |
               set -ex
               conda --version
-              conda install --yes conda-build
-            displayName: 'Conda configuration'
+              conda env create -f scipp-developer-no-mantid.yml
+              # TODO: source activate does not work?
+              echo "##vso[task.prependpath]$CONDA/envs/scipp-developer/bin"
+              mkdir "$(build_dir)" "$(install_dir)"
+            displayName: 'Configure build environment'
           - bash: |
-              conda build -c conda-forge ./conda
-            displayName: 'Package build'
-          - task: PublishBuildArtifacts@1
-            inputs:
-              PathtoPublish: '$(conda_dir)/conda-bld/osx-64'
-              ArtifactName: 'osx-64'
-            displayName: 'Publish Conda package artefacts'
+              set -ex
+              cd "$(build_dir)"
+              cmake \
+                -G Ninja \
+                -DPYTHON_EXECUTABLE=$(command -v python) \
+                -DCMAKE_INSTALL_PREFIX="$(install_dir)" \
+                -DCMAKE_BUILD_TYPE=Release \
+                "$(Build.Repository.LocalPath)"
+            displayName: 'CMake configuration'
+          - bash: |
+              set -ex
+              cd "$(build_dir)"
+              cmake --build . --target all-tests
+            displayName: 'Cuild C++ unit tests'
+          - bash: |
+              set -ex
+              cd "$(build_dir)"
+              ./common/test/scipp-common-test
+              ./units/test/scipp-units-test
+              ./core/test/scipp-core-test
+              ./variable/test/scipp-variable-test
+              ./dataset/test/scipp-dataset-test
+              ./neutron/test/scipp-neutron-test
+            displayName: 'Run C++ unit tests'
+          - bash: |
+              set -ex
+              cd "$(build_dir)"
+              cmake --build . --target install
+            displayName: 'Build Python library'
+          - bash: |
+              set -ex
+              PYTHONPATH="$(install_dir)" python -m pytest
+            displayName: 'Run Python unit tests'
 
       - job: 'windows'
         displayName: 'Windows'
         timeoutInMinutes: 90
         pool:
           vmImage: 'windows-latest'
+        variables:
+          build_dir: '$(Build.StagingDirectory)/build'
+          install_dir: '$(Build.StagingDirectory)/install'
         steps:
           - checkout: self
             submodules: true
           - powershell: |
               Write-Host "##vso[task.prependpath]$env:CONDA\Scripts"
-              Write-Host "##vso[task.setvariable variable=conda_dir]$env:CONDA"
-            displayName: 'Configure Conda directories'
-          - script: |
+            displayName: 'Add Conda to PATH'
+          - bash: |
+              set -ex
               conda --version
-              conda install --yes conda-build
-            displayName: 'Conda configuration'
-          - script: |
-              conda build -c conda-forge ./conda
-            displayName: 'Package build'
-          - task: PublishBuildArtifacts@1
-            inputs:
-              PathtoPublish: '$(conda_dir)/conda-bld/win-64'
-              ArtifactName: 'win-64'
-            displayName: 'Publish Conda package artefacts'
-
-  - stage: 'post_build_checks'
-    displayName: 'Post Build Checks'
-
-    jobs:
-      - template: templates/documentation_build.yml
-      - template: templates/test_can_install_and_import.yml
+              conda env create -f scipp-developer-no-mantid.yml
+              mkdir "$(build_dir)" "$(install_dir)"
+            displayName: 'Configure build environment'
+          - bash: |
+              set -ex
+              cd "$(build_dir)"
+              source activate scipp-developer
+              cmake \
+                -G "Visual Studio 16 2019" \
+                -A x64 \
+                -DPYTHON_EXECUTABLE=$(command -v python) \
+                -DCMAKE_INSTALL_PREFIX="$(install_dir)" \
+                -DCMAKE_BUILD_TYPE=Release \
+                "$(Build.Repository.LocalPath)"
+            displayName: 'CMake configuration'
+          - bash: |
+              set -ex
+              cd "$(build_dir)"
+              source activate scipp-developer
+              cmake --build . --target all-tests --config Release
+            displayName: 'Build C++ unit tests'
+          - bash: |
+              set -ex
+              cd "$(build_dir)"
+              source activate scipp-developer
+              common/test/Release/scipp-common-test.exe
+              units/test/Release/scipp-units-test.exe
+              core/test/Release/scipp-core-test.exe
+              variable/test/Release/scipp-variable-test.exe
+              dataset/test/Release/scipp-dataset-test.exe
+              neutron/test/Release/scipp-neutron-test.exe
+            displayName: 'Run C++ unit tests'
+          - bash: |
+              set -ex
+              cd "$(build_dir)"
+              source activate scipp-developer
+              cmake --build . --target install --config Release
+            displayName: 'Build Python library'
+          - bash: |
+              set -ex
+              source activate scipp-developer
+              PYTHONPATH="$(install_dir)" python -m pytest
+            displayName: 'Run Python unit tests'

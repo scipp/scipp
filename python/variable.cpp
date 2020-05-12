@@ -20,6 +20,7 @@
 #include "bind_data_access.h"
 #include "bind_operators.h"
 #include "bind_slice_methods.h"
+#include "docstring.h"
 #include "dtype.h"
 #include "make_variable.h"
 #include "numpy.h"
@@ -281,40 +282,40 @@ Mostly equivalent to Variable, see there for details.)");
         Dimensions dims(labels, shape.cast<std::vector<scipp::index>>());
         return self.reshape(dims);
       },
-      py::arg("x"), py::arg("dims"), py::arg("shape"), R"(
-Reshape a variable.
+      py::arg("x"), py::arg("dims"), py::arg("shape"),
+      Docstring()
+          .description("Reshape a variable.")
+          .raises("If the volume of the old shape is not equal to the volume "
+                  "of the new shape.")
+          .returns("New variable with requested dimension labels and shape.")
+          .rtype("Variable")
+          .param("x", "Variable to reshape.", "Variable.")
+          .param("dims", "List of new dimensions.", "list")
+          .param("shape", "New extents in each dimension.", "list")
+          .c_str());
 
-:param x: Data to reshape.
-:param dims: List of new dimensions.
-:param shape: New extents in each dimension.
-:raises: If the volume of the old shape is not equal to the volume of the new
-         shape.
-:return: New variable with requested dimension labels and shape.
-:rtype: Variable)");
-
-  m.def("filter",
-        py::overload_cast<const Variable &, const Variable &>(&filter),
-        py::arg("x"), py::arg("filter"),
-        py::call_guard<py::gil_scoped_release>(), R"(
-Selects elements for a Variable using a filter (mask).
-
-The filter variable must be 1D and of bool type.
-A true value in the filter means the corresponding element in the input is
-selected and will be copied to the output.
-A false value in the filter discards the corresponding element in the input.
-
-:raises: If the filter variable is not 1 dimensional.
-:return: New variable containing the data selected by the filter
-:rtype: Variable)");
+  m.def(
+      "filter", py::overload_cast<const Variable &, const Variable &>(&filter),
+      py::arg("x"), py::arg("filter"), py::call_guard<py::gil_scoped_release>(),
+      Docstring()
+          .description(
+              "Selects elements for a Variable using a filter (mask).\n\n"
+              "The filter variable must be 1D and of bool type. "
+              "A true value in the filter means the corresponding element in "
+              "the input is "
+              "selected and will be copied to the output. "
+              "A false value in the filter discards the corresponding element "
+              "in the input.")
+          .raises("If the filter variable is not 1 dimensional.")
+          .returns("New variable containing the data selected by the filter.")
+          .rtype("Variable")
+          .param("x", "Variable to filter.", "Variable.")
+          .param("filter", "Variable which defines the filter.", "Variable.")
+          .c_str());
 
   m.def("split",
         py::overload_cast<const Variable &, const Dim,
                           const std::vector<scipp::index> &>(&split),
         py::call_guard<py::gil_scoped_release>(),
         "Split a Variable along a given Dimension.");
-
-  m.def(
-      "contains_events",
-      [](const VariableConstView &self) { return contains_events(self); },
-      R"(Return true if the variable contains event data.)");
 }

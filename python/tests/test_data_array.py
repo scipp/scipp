@@ -219,12 +219,3 @@ def test_realign():
     assert np.allclose(sc.histogram(da_r).values, np.array([0, 3]), atol=1e-9)
     da.realign({'x': sc.Variable(['x'], values=np.array([0.0, 1.0, 3.0]))})
     assert da.shape == [1, 2]
-
-
-def test_get_items():
-    da = make_dataarray()
-    assert np.allclose(da['x', 0].values, da['x', 0:1].values[0], atol=1e-9)
-    assert 'y' in da['x', 0].dims
-    assert 'x' not in da['x', 0].dims
-    assert 'y' in da['x', 0:1].dims
-    assert 'x' in da['x', 0:1].dims

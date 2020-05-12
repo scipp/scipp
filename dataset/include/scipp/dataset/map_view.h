@@ -261,8 +261,8 @@ public:
   }
 };
 
-SCIPP_DATASET_EXPORT Variable
-masks_merge_if_contains(const MasksConstView &masks, const Dim dim);
+SCIPP_DATASET_EXPORT Variable irreducible_mask(const MasksConstView &masks,
+                                               const Dim dim);
 
 SCIPP_DATASET_EXPORT Variable
 masks_merge_if_contained(const MasksConstView &masks, const Dimensions &dims);

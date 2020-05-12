@@ -61,7 +61,9 @@ template <class T>
 template <class Op, class CoordOp>
 T GroupBy<T>::reduce(Op op, const Dim reductionDim, CoordOp coord_op) const {
   auto out = makeReductionOutput(reductionDim);
-  const auto mask = ~masks_merge_if_contains(m_data.masks(), reductionDim);
+  auto mask = irreducible_mask(m_data.masks(), reductionDim);
+  if (mask)
+    mask = ~std::move(mask);
   // Apply to each group, storing result in output slice
   const auto process_groups = [&](const auto &range) {
     for (scipp::index group = range.begin(); group != range.end(); ++group) {
@@ -103,8 +105,7 @@ static constexpr auto flatten = [](const DataArrayView &out, const auto &in,
   bool first = true;
   const auto no_mask = makeVariable<bool>(Values{true});
   for (const auto &slice : group) {
-    auto mask =
-        mask_.dims().contains(reductionDim) ? mask_.slice(slice) : no_mask;
+    auto mask = mask_ ? mask_.slice(slice) : no_mask;
     const auto &array = in.slice(slice);
     if (in.hasData()) {
       if (contains_events(array.data()))
@@ -126,8 +127,7 @@ static constexpr auto flatten_coord =
         return;
       const auto no_mask = makeVariable<bool>(Values{true});
       for (const auto &slice : group) {
-        auto mask =
-            mask_.dims().contains(reductionDim) ? mask_.slice(slice) : no_mask;
+        auto mask = mask_ ? mask_.slice(slice) : no_mask;
         const auto &array = in.slice(slice);
         if (contains_events(out))
           flatten_impl(out, array, mask);
@@ -141,7 +141,7 @@ static constexpr auto sum = [](const DataArrayView &out,
   if (out.hasData()) {
     for (const auto &slice : group) {
       const auto data_slice = data_container.slice(slice);
-      if (mask.dims().contains(reductionDim))
+      if (mask)
         sum_impl(out.data(), data_slice.data() * mask.slice(slice));
       else
         sum_impl(out.data(), data_slice.data());
@@ -165,7 +165,7 @@ static constexpr auto reduce_idempotent =
       bool first = true;
       for (const auto &slice : group) {
         const auto data_slice = data_container.slice(slice);
-        if (mask.dims().contains(reductionDim))
+        if (mask)
           throw std::runtime_error(
               "This operation does not support masks yet.");
         if (first) {
@@ -218,13 +218,13 @@ template <class T> T GroupBy<T>::mean(const Dim reductionDim) const {
   // 2. Compute number of slices N contributing to each out slice
   auto scale = makeVariable<double>(Dims{dim()}, Shape{size()});
   const auto scaleT = scale.template values<double>();
-  const auto mask = masks_merge_if_contains(m_data.masks(), reductionDim);
+  const auto mask = irreducible_mask(m_data.masks(), reductionDim);
   for (scipp::index group = 0; group < size(); ++group)
     for (const auto &slice : groups()[group]) {
       // N contributing to each slice
       scaleT[group] += slice.end() - slice.begin();
       // N masks for each slice, that need to be subtracted
-      if (mask.dims().contains(reductionDim)) {
+      if (mask) {
         const auto masks_sum = variable::sum(mask.slice(slice), reductionDim);
         scaleT[group] -= masks_sum.template value<int64_t>();
       }

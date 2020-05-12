@@ -120,6 +120,21 @@ template <typename T> void bind_sort_dim(py::module &m) {
       doc.c_str());
 }
 
+template <typename T> void bind_contains_events(py::module &m) {
+  m.def(
+      "contains_events",
+      [](const typename T::const_view_type &x) { return contains_events(x); },
+      Docstring()
+          .description("Return `True` if the input contains event data. "
+                       "Note that data may be stored as a scalar.\n"
+                       "In the case of a DataArray, this "
+                       "returns `True` if any coord contains events.")
+          .returns("`True` or `False`.")
+          .rtype("bool")
+          .param<T>("x", "Input data.")
+          .c_str());
+}
+
 void init_operations(py::module &m) {
   bind_flatten<Variable>(m);
   bind_flatten<DataArray>(m);
@@ -136,4 +151,7 @@ void init_operations(py::module &m) {
   bind_sort<Dataset>(m);
   bind_sort_dim<DataArray>(m);
   bind_sort_dim<Dataset>(m);
+
+  bind_contains_events<Variable>(m);
+  bind_contains_events<DataArray>(m);
 }

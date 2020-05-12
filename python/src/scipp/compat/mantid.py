@@ -491,7 +491,8 @@ def convert_Workspace2D_to_data_array(ws, **ignored):
     # artifact of inflexible data structures and gets in the way when working
     # with scipp.
     if len(spec_coord.values) == 1:
-        array.coords['position'] = array.coords['position'][spec_dim, 0]
+        if 'position' in array.coords:
+            array.coords['position'] = array.coords['position'][spec_dim, 0]
         array = array[spec_dim, 0].copy()
     return array
 
@@ -805,13 +806,16 @@ def validate_dim_and_get_mantid_string(unit_dim):
         'Q^2': "QSquared",
     }
 
-    if unit_dim not in known_units.keys():
+    user_k = str(unit_dim).casefold()
+    known_units = {k.casefold(): v for k, v in known_units.items()}
+
+    if user_k not in known_units:
         raise RuntimeError("Axis unit not currently supported."
                            "Possible values are: {}, "
                            "got '{}'. ".format([k for k in known_units.keys()],
                                                unit_dim))
     else:
-        return known_units[unit_dim]
+        return known_units[user_k]
 
 
 def to_workspace_2d(x, y, e, coord_dim, instrument_file=None):
