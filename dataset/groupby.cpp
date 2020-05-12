@@ -347,7 +347,7 @@ call_groupby(const T &array, const VariableConstView &key, const Dim &dim) {
 /// coord in a later apply/combine step.
 GroupBy<DataArray> groupby(const DataArrayConstView &array, const Dim dim) {
   const auto &key = array.coords()[dim];
-  return call_groupby<>(array, key, dim);
+  return call_groupby(array, key, dim);
 }
 
 /// Create GroupBy<DataArray> object as part of "split-apply-combine" mechanism.
@@ -369,7 +369,7 @@ GroupBy<DataArray> groupby(const DataArrayConstView &array, const Dim dim,
 GroupBy<DataArray> groupby(const DataArrayConstView &array,
                            const VariableConstView &key,
                            const VariableConstView &bins) {
-  return call_groupby<>(array, key, bins);
+  return call_groupby(array, key, bins);
 }
 
 /// Create GroupBy<Dataset> object as part of "split-apply-combine" mechanism.
@@ -379,7 +379,7 @@ GroupBy<DataArray> groupby(const DataArrayConstView &array,
 /// coord in a later apply/combine step.
 GroupBy<Dataset> groupby(const DatasetConstView &dataset, const Dim dim) {
   const auto &key = dataset.coords()[dim];
-  return call_groupby<>(dataset, key, dim);
+  return call_groupby(dataset, key, dim);
 }
 
 /// Create GroupBy<Dataset> object as part of "split-apply-combine" mechanism.
@@ -401,7 +401,7 @@ GroupBy<Dataset> groupby(const DatasetConstView &dataset, const Dim dim,
 GroupBy<Dataset> groupby(const DatasetConstView &dataset,
                          const VariableConstView &key,
                          const VariableConstView &bins) {
-  return call_groupby<>(dataset, key, bins);
+  return call_groupby(dataset, key, bins);
 }
 
 template class GroupBy<DataArray>;

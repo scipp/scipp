@@ -58,7 +58,7 @@ template <class T> void bind_groupby(py::module &m, const std::string &name) {
         :param group: Variable to use for grouping
         :param bins: Bins for grouping label values
         :type data: DataArray or Dataset
-        :type group: str
+        :type group: VariableConstView
         :type bins: VariableConstView
         :return: GroupBy helper object.
         :rtype: GroupByDataArray or GroupByDataset)");
