@@ -75,15 +75,12 @@ TEST_F(ConstantsTest, tof_to_dspacing) {
 
 TEST_F(ConstantsTest, tof_to_wavelength) {
   EXPECT_EQ(constants::tof_to_wavelength(dummy),
-            Variable(constants::tof_to_s * constants::m_to_angstrom *
-                     boost::units::si::constants::codata::h /
-                     boost::units::si::constants::codata::m_n) /
-                L);
+            Variable(constants::tof_to_wavelength_physical_constants) / L);
 }
 
 TEST_F(ConstantsTest, tof_to_energy) {
   EXPECT_EQ(constants::tof_to_energy(dummy),
-            L * L * Variable(constants::tof_to_dspacing_physical_constants));
+            L * L * Variable(constants::tof_to_energy_physical_constants));
 }
 
 TEST_F(ConstantsTest, wavelength_to_q) {

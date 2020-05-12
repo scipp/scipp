@@ -16,9 +16,7 @@
 
 #include "scipp/neutron/beamline.h"
 
-namespace scipp::neutron {
-
-namespace constants {
+namespace scipp::neutron::constants {
 
 constexpr auto tof_to_s = boost::units::quantity<boost::units::si::time>(
                               1.0 * units::boost_units::us) /
@@ -29,6 +27,7 @@ constexpr auto J_to_meV =
 constexpr auto m_to_angstrom = units::boost_units::angstrom /
                                boost::units::quantity<boost::units::si::length>(
                                    1.0 * units::boost_units::angstrom);
+
 // In tof-to-energy conversions we *divide* by time-of-flight (squared), so the
 // tof_to_s factor is in the denominator.
 constexpr auto tof_to_energy_physical_constants =
@@ -38,6 +37,10 @@ constexpr auto tof_to_energy_physical_constants =
 constexpr auto tof_to_dspacing_physical_constants =
     2.0 * boost::units::si::constants::codata::m_n /
     boost::units::si::constants::codata::h / (m_to_angstrom * tof_to_s);
+
+constexpr auto tof_to_wavelength_physical_constants =
+    tof_to_s * m_to_angstrom * boost::units::si::constants::codata::h /
+    boost::units::si::constants::codata::m_n;
 
 template <class T> auto tof_to_dspacing(const T &d) {
   const auto &sourcePos = source_position(d);
@@ -56,14 +59,12 @@ template <class T> auto tof_to_dspacing(const T &d) {
   conversionFactor *= Variable(tof_to_dspacing_physical_constants * sqrt(0.5));
   conversionFactor *= sqrt(1.0 * units::one - dot(beam, scattered));
 
-  return reciprocal(conversionFactor);
+  reciprocal(conversionFactor, conversionFactor);
+  return conversionFactor;
 }
 
 template <class T> static auto tof_to_wavelength(const T &d) {
-  return Variable(tof_to_s * m_to_angstrom *
-                  boost::units::si::constants::codata::h /
-                  boost::units::si::constants::codata::m_n) /
-         flight_path_length(d);
+  return Variable(tof_to_wavelength_physical_constants) / flight_path_length(d);
 }
 
 template <class T> auto tof_to_energy(const T &d) {
@@ -79,6 +80,4 @@ template <class T> auto wavelength_to_q(const T &d) {
   return sin(scattering_angle(d)) * (4.0 * scipp::pi<double> * units::one);
 }
 
-} // namespace constants
-
-} // namespace scipp::neutron
+} // namespace scipp::neutron::constants
