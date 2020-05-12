@@ -22,6 +22,7 @@ stages:
         pool:
           vmImage: 'ubuntu-18.04'
         variables:
+          ccache_dir: '$(Pipeline.Workspace)/ccache'
           build_dir: '$(Build.StagingDirectory)/build'
           install_dir: '$(Build.StagingDirectory)/install'
           docs_build_dir: '$(Build.StagingDirectory)/docs_build'
@@ -29,7 +30,23 @@ stages:
           - checkout: self
             submodules: true
           - bash: |
-              echo "##vso[task.prependpath]$CONDA/bin"
+              set -ex
+              sudo apt-get install -y ccache
+              echo "##vso[task.prependpath]/usr/lib/ccache"
+              # Set cache dir
+              ccache --set-config=cache_dir="$(ccache_dir)"
+            displayName: 'Install and configure ccache'
+          - task: Cache@2
+            inputs:
+              key: 'ccache | "$(Agent.OS)" | "$(Build.SourceVersion)"'
+              restoreKeys: |
+                ccache | "$(Agent.OS)" | "$(Build.SourceVersion)"
+                ccache | "$(Agent.OS)"
+              path: "$(CCACHE_DIR)"
+            displayName: 'Process ccache'
+          - bash: ccache --show-stats
+            displayName: 'Report ccache statistics'
+          - bash: echo "##vso[task.prependpath]$CONDA/bin"
             displayName: 'Add Conda to PATH'
           - bash: |
               set -ex
@@ -99,6 +116,8 @@ stages:
               PathtoPublish: "$(docs_build_dir)"
               ArtifactName: 'documentation'
             displayName: 'Upload built documentation'
+          - bash: ccache --show-stats
+            displayName: 'Report ccache statistics'
 
       - job: 'mac'
         displayName: 'Mac OS'
@@ -170,8 +189,7 @@ stages:
         steps:
           - checkout: self
             submodules: true
-          - powershell: |
-              Write-Host "##vso[task.prependpath]$env:CONDA\Scripts"
+          - powershell: Write-Host "##vso[task.prependpath]$env:CONDA\Scripts"
             displayName: 'Add Conda to PATH'
           - bash: |
               set -ex
