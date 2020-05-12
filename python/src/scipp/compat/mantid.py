@@ -173,7 +173,7 @@ def validate_and_get_unit(unit, allow_empty=False):
         "DeltaE": ['Delta-E', sc.units.meV],
         "TOF": ['tof', sc.units.us],
         "Wavelength": ['wavelength', sc.units.angstrom],
-        "Energy": ['E', sc.units.meV],
+        "Energy": ['energy', sc.units.meV],
         "dSpacing": ['d-spacing', sc.units.angstrom],
         "MomentumTransfer": ['Q', sc.units.dimensionless / sc.units.angstrom],
         "QSquared": [
