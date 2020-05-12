@@ -68,7 +68,7 @@ const char *Docstring::c_str() {
   m_output.clear();
   if (m_description.size() > 0)
     m_output = m_description + "\n\n";
-  for (const auto name : m_order) {
+  for (const auto &name : m_order) {
     m_output += ":param " + name + ": " + m_params[name].first + "\n:type " +
                 name + ": " + m_params[name].second + "\n";
   }
