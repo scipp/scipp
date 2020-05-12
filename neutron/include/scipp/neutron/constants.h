@@ -42,7 +42,7 @@ template <class T> auto tofToDSpacing(const T &d) {
   auto beam = samplePos - sourcePos;
   const auto l1 = norm(beam);
   beam /= l1;
-  auto scattered = neutron::position(d) - samplePos;
+  auto scattered = position(d) - samplePos;
   const auto l2 = norm(scattered);
   scattered /= l2;
 
@@ -62,21 +62,20 @@ template <class T> static auto tofToWavelength(const T &d) {
   return Variable(tof_to_s * m_to_angstrom *
                   boost::units::si::constants::codata::h /
                   boost::units::si::constants::codata::m_n) /
-         neutron::flight_path_length(d);
+         flight_path_length(d);
 }
 
 template <class T> auto tofToEnergy(const T &d) {
   // l_total = l1 + l2
-  auto conversionFactor = neutron::flight_path_length(d);
+  auto conversionFactor = flight_path_length(d);
   // l_total^2
   conversionFactor *= conversionFactor;
   conversionFactor *= Variable(tofToEnergyPhysicalConstants);
   return conversionFactor;
 }
 
-template <class T> auto wavelengthToQ(const T &d) {
-  return sin(neutron::scattering_angle(d)) *
-         (4.0 * scipp::pi<double> * units::one);
+template <class T> auto wavelength_to_q(const T &d) {
+  return sin(scattering_angle(d)) * (4.0 * scipp::pi<double> * units::one);
 }
 
 } // namespace constants
