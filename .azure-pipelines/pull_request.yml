@@ -13,7 +13,7 @@ stages:
   - template: templates/code_quality_checks.yml
 
   - stage: 'build_and_test'
-    displayName: 'Conda Package Build and Unit Tests'
+    displayName: 'Build and Test'
 
     jobs:
       - job: 'linux'
