@@ -123,6 +123,12 @@ template <class T> T convert_impl(T d, const Dim from, const Dim to) {
   for (const auto &item : iter(d))
     if (item.hasData())
       core::expect::notCountDensity(item.unit());
+  // This will need to be cleanup up in the future, but it is unclear how to do
+  // so in a future-proof way. Some sort of double-dynamic dispatch based on
+  // `from` and `to` will likely be required (with conversions helpers created
+  // by a dynamic factory based on `Dim`). Conceptually we are dealing with a
+  // bidirectional graph, and we would like to be able to find the shortest
+  // paths between any two points, without defining all-to-all connections.
   if ((from == Dim::Tof) && (to == Dim::DSpacing))
     return convert_with_factor(std::move(d), from, to,
                                constants::tof_to_dspacing(d));
