@@ -125,24 +125,24 @@ template <class T> T convert_impl(T d, const Dim from, const Dim to) {
       core::expect::notCountDensity(item.unit());
   if ((from == Dim::Tof) && (to == Dim::DSpacing))
     return convert_with_factor(std::move(d), from, to,
-                               constants::tofToDSpacing(d));
+                               constants::tof_to_dspacing(d));
   if ((from == Dim::DSpacing) && (to == Dim::Tof))
     return convert_with_factor(std::move(d), from, to,
-                               reciprocal(constants::tofToDSpacing(d)));
+                               reciprocal(constants::tof_to_dspacing(d)));
 
   if ((from == Dim::Tof) && (to == Dim::Wavelength))
     return convert_with_factor(std::move(d), from, to,
-                               constants::tofToWavelength(d));
+                               constants::tof_to_wavelength(d));
   if ((from == Dim::Wavelength) && (to == Dim::Tof))
     return convert_with_factor(std::move(d), from, to,
-                               reciprocal(constants::tofToWavelength(d)));
+                               reciprocal(constants::tof_to_wavelength(d)));
 
   if ((from == Dim::Tof) && (to == Dim::Energy))
     return convert_generic(std::move(d), from, to, conversions::tof_to_energy,
-                           constants::tofToEnergy(d));
+                           constants::tof_to_energy(d));
   if ((from == Dim::Energy) && (to == Dim::Tof))
     return convert_generic(std::move(d), from, to, conversions::energy_to_tof,
-                           constants::tofToEnergy(d));
+                           constants::tof_to_energy(d));
 
   // lambda <-> Q conversion is symmetric
   if (((from == Dim::Wavelength) && (to == Dim::Q)) ||
