@@ -1,4 +1,8 @@
-trigger: none
+trigger:
+  branches:
+    exclude:
+      - '*'
+
 pr: none
 
 schedules:
