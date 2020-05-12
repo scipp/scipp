@@ -31,11 +31,7 @@ template <class T> const std::string type_to_string() {
 }
 
 class Docstring {
-
 public:
-  Docstring() = default;
-  Docstring(const Docstring &) = default;
-
   Docstring &description(const std::string &s, const bool append = false);
   Docstring &raises(const std::string &s, const bool append = false);
   Docstring &seealso(const std::string &s, const bool append = false);
