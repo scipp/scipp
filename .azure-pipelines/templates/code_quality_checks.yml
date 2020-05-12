@@ -52,7 +52,7 @@ stages:
           - bash: |
               set -ex
               # Find all occurances of "YYYY Scipp contributors" and replace YYYY with the current year
-              find . -type f -not -path '.git/*' -exec sed -ri "s/[0-9]* (Scipp contributors)/$(date +%Y) \1/g" {} +
+              find . -type f -not -path '.git/*' -exec sed -ri "s/[0-9]{4} (Scipp contributors)/$(date +%Y) \1/g" {} +
               # Show the diff to give an inidcation of the issues in the CI log
               git diff
               # Run quiet diff to fail the job if any changes were made (see man git-diff)
