@@ -36,8 +36,8 @@ def plot_collapse(data_array, name=None, dim=None, filename=None, **kwargs):
     # Say we have [Dim.Y, 5], and [Dim.Z, 3], then dim_list will contain
     # [[0, 1, 2, 3, 4], [0, 1, 2]]
     dim_list = []
-    for l in slice_dims:
-        dim_list.append(np.arange(slice_shape[l], dtype=np.int32))
+    for dim in slice_dims:
+        dim_list.append(np.arange(slice_shape[dim], dtype=np.int32))
     # Next create a grid of indices
     # grid will contain
     # [ [[0, 1, 2, 3, 4], [0, 1, 2, 3, 4], [0, 1, 2, 3, 4]],
@@ -57,8 +57,8 @@ def plot_collapse(data_array, name=None, dim=None, filename=None, **kwargs):
     #   [    0,     0,     0,     0,     0,     1,     1,     1,     1,     1,
     #        2,     2,     2,     2,     2] ]
     slice_list = []
-    for i, l in enumerate(slice_dims):
-        slice_list.append([l] * volume)
+    for i, dim in enumerate(slice_dims):
+        slice_list.append([dim] * volume)
         slice_list.append(res[i])
     # Finally reshape the master array to look like
     # [ [[Dim.Y, 0], [Dim.Z, 0]], [[Dim.Y, 1], [Dim.Z, 0]],

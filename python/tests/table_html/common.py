@@ -48,8 +48,8 @@ def assert_dims(dims, text, has_events=False, has_bin_edges=False):
 
 
 def assert_lengths(lengths, text):
-    for l in lengths:
-        assert str(l) in text
+    for length in lengths:
+        assert str(length) in text
 
 
 def assert_dtype(dtype, res_dtype: List[bs4.element.Tag]):

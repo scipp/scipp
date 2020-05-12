@@ -413,8 +413,8 @@ class Slicer1d(Slicer):
         lines_to_keep = ["lines"]
         if self.params["masks"][lab]["show"]:
             lines_to_keep.append("masks")
-        for l in lines_to_keep:
-            self.ax.lines.append(cp.copy(self.members[l][lab]))
+        for line in lines_to_keep:
+            self.ax.lines.append(cp.copy(self.members[line][lab]))
             self.ax.lines[-1].set_color(self.keep_buttons[owner.id][2].value)
             self.ax.lines[-1].set_url(owner.id)
             self.ax.lines[-1].set_zorder(1)
