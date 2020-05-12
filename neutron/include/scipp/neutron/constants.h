@@ -12,6 +12,8 @@
 
 #include "scipp/units/unit.h"
 
+#include "scipp/variable/operations.h"
+
 #include "scipp/neutron/beamline.h"
 
 namespace scipp::neutron {

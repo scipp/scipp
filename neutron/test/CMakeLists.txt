@@ -3,8 +3,9 @@
 set(TARGET_NAME "scipp-neutron-test")
 add_dependencies(all-tests ${TARGET_NAME})
 add_executable(
-  ${TARGET_NAME} EXCLUDE_FROM_ALL beamline_test.cpp convert_test.cpp
-                                  convert_with_calibration_test.cpp
+  ${TARGET_NAME} EXCLUDE_FROM_ALL
+  beamline_test.cpp constants_test.cpp conversions_test.cpp convert_test.cpp
+  convert_with_calibration_test.cpp
 )
 include_directories(SYSTEM ${GMOCK_INCLUDE_DIR} ${GTEST_INCLUDE_DIR})
 target_link_libraries(

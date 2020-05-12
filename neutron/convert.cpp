@@ -5,7 +5,6 @@
 #include "scipp/core/element/arg_list.h"
 
 #include "scipp/variable/event.h"
-#include "scipp/variable/operations.h"
 #include "scipp/variable/transform.h"
 
 #include "scipp/dataset/dataset.h"
