@@ -652,14 +652,13 @@ def from_mantid(workspace, **kwargs):
     monitor_ws = None
     workspaces_to_delete = []
     if workspace.id() == 'Workspace2D' or workspace.id() == 'RebinnedOutput':
-        has_monitors = False
+        n_monitor = 0
         spec_info = workspace.spectrumInfo()
         for i in range(len(spec_info)):
-            if spec_info.hasDetectors(i):
-                has_monitors |= spec_info.isMonitor(i)
-            if has_monitors:
-                break
-        if has_monitors:
+            if spec_info.hasDetectors(i) and spec_info.isMonitor(i):
+                n_monitor += 1
+        # If there are *only* monitors we do not move them to an attribute
+        if n_monitor > 0 and n_monitor < len(spec_info):
             import mantid.simpleapi as mantid
             workspace, monitor_ws = mantid.ExtractMonitors(workspace)
             workspaces_to_delete.append(workspace)
