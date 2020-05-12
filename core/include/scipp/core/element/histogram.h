@@ -6,6 +6,7 @@
 
 #include <cmath>
 
+#include "scipp/common/numeric.h"
 #include "scipp/common/overloaded.h"
 #include "scipp/core/element/arg_list.h"
 #include "scipp/core/histogram.h"
@@ -41,7 +42,8 @@ constexpr auto variance = [](const auto &v, const scipp::index idx) {
 } // namespace
 
 static constexpr auto histogram = overloaded{
-    [](auto &data, const auto &events, const auto &weights, const auto &edges) {
+    [](const auto &data, const auto &events, const auto &weights,
+       const auto &edges) {
       // Special implementation for linear bins. Gives a 1x to 20x speedup
       // for few and many events per histogram, respectively.
       if (scipp::numeric::is_linspace(edges)) {

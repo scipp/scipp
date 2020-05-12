@@ -3,7 +3,6 @@
 /// @file
 /// @author Simon Heybrock
 #include "scipp/dataset/histogram.h"
-#include "scipp/common/numeric.h"
 #include "scipp/core/element/histogram.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/except.h"
