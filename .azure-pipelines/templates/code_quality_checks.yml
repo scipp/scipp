@@ -17,8 +17,11 @@ stages:
           - bash: |
               set -ex
               clang-format-10 --version
+              # Run clang-format in-place on all C++ files, excluding third party libraries
               find . -type f -regex '.*\.\(c\|cpp\|h\|hpp\)' -not -path './common/include/scipp/common/span/*' -exec clang-format-10 -i {} +
+              # Show the diff to give an inidcation of the issues in the CI log
               git diff
+              # Run quiet diff to fail the job if any formatting was done (see man git-diff)
               git diff --quiet
             displayName: 'Run clang-format'
 
@@ -37,6 +40,7 @@ stages:
           - bash: |
               set -ex
               cmake-format --version
+              # Perform format checking on all CMake files
               find . -type f -name CMakeLists.txt -or -name '*.cmake' | xargs cmake-format --check
             displayName: 'Run cmake-format'
 
@@ -47,8 +51,11 @@ stages:
         steps:
           - bash: |
               set -ex
+              # Find all occurances of "YYYY Scipp contributors" and replace YYYY with the current year
               find . -type f -not -path '.git/*' -exec sed -ri "s/[0-9]* (Scipp contributors)/$(date +%Y) \1/g" {} +
+              # Show the diff to give an inidcation of the issues in the CI log
               git diff
+              # Run quiet diff to fail the job if any changes were made (see man git-diff)
               git diff --quiet
             displayName: 'Check Copyright years are up to date'
 
@@ -67,10 +74,12 @@ stages:
           - bash: |
               set -ex
               flake8 --version
+              # Perform format checking on all Python files
               find . -type f -name '*.py' | xargs flake8
             displayName: 'Run flake8'
           - bash: |
               set -ex
               yapf --version
+              # Perform format checking on all Python API files
               yapf --diff --recursive 'python'
             displayName: 'Run yapf'

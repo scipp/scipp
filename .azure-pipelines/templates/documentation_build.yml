@@ -5,12 +5,12 @@ jobs:
       vmImage: 'ubuntu-18.04'
     variables:
       packages_dir: '$(Build.StagingDirectory)/packages'
-      docs_dir: '$(Build.StagingDirectory)/docs'
+      docs_build_dir: '$(Build.StagingDirectory)/docs_build'
     steps:
       - bash: |
           set -ex
           mkdir -p "$(packages_dir)"
-          mkdir -p "$(docs_dir)"
+          mkdir -p "$(docs_build_dir)"
         displayName: 'Make directories'
       - task: DownloadBuildArtifacts@0
         inputs:
@@ -38,11 +38,13 @@ jobs:
           python data/fetch_neutron_data.py
           mkdir $HOME/.mantid
           echo -e "usagereports.enabled=0\ndatasearch.directories=$(pwd)/data" > $HOME/.mantid/Mantid.user.properties
-          sphinx-build -d doctrees . "$(docs_dir)"
-          find "$(docs_dir)" -type f -name *.ipynb -delete
+          # Build documentation, redirecting doctrees to avoid size bloat in build documentation
+          sphinx-build -d "$(mktemp -d)" . "$(docs_build_dir)"
+          # Remove Juptyer notebooks used for documentation build, they are not accessible and create size bloat
+          find "$(docs_build_dir)" -type f -name *.ipynb -delete
         displayName: 'Build documentation'
       - task: PublishBuildArtifacts@1
         inputs:
-          PathtoPublish: '$(docs_dir)'
+          PathtoPublish: '$(docs_build_dir)'
           ArtifactName: 'documentation'
         displayName: 'Publish documentation artifacts'

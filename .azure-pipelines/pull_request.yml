@@ -89,8 +89,10 @@ stages:
               python data/fetch_neutron_data.py
               mkdir "$HOME/.mantid"
               echo -e "usagereports.enabled=0\ndatasearch.directories=$(pwd)/data" > "$HOME/.mantid/Mantid.user.properties"
+              # Build documentation, redirecting doctrees to avoid size bloat in build documentation
+              PYTHONPATH="$PYTHONPATH:$(install_dir)" sphinx-build -d $(mktemp -d) . "$(docs_build_dir)"
+              # Remove Juptyer notebooks used for documentation build, they are not accessible and create size bloat
               find "$(docs_build_dir)" -type f -name *.ipynb -delete
-              PYTHONPATH=$PYTHONPATH:"$(install_dir)" sphinx-build -d $(mktemp -d) . "$(docs_build_dir)"
             displayName: 'Build documentation'
           - task: PublishBuildArtifacts@1
             inputs:
