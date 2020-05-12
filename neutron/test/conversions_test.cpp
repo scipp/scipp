@@ -25,8 +25,22 @@ TEST_F(ConversionsTest, energy_to_tof) {
   EXPECT_EQ(inout, std::sqrt(alpha / coord));
 }
 
+TEST_F(ConversionsTest, energy_tof_roundtrip) {
+  auto inout = coord;
+  conversions::energy_to_tof(inout, alpha);
+  conversions::tof_to_energy(inout, alpha);
+  EXPECT_EQ(inout, coord);
+}
+
 TEST_F(ConversionsTest, wavelength_to_q) {
   auto inout = coord;
   conversions::wavelength_to_q(inout, alpha);
   EXPECT_EQ(inout, alpha / coord);
+}
+
+TEST_F(ConversionsTest, wavelength_q_roundtrip) {
+  auto inout = coord;
+  conversions::wavelength_to_q(inout, alpha);
+  conversions::wavelength_to_q(inout, alpha);
+  EXPECT_EQ(inout, coord);
 }
