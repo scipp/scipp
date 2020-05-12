@@ -16,20 +16,6 @@
 
 namespace scipp::neutron {
 
-namespace conversions {
-
-constexpr auto tof_to_energy = [](auto &coord, const auto &c) {
-  coord = c / (coord * coord);
-};
-constexpr auto energy_to_tof = [](auto &coord, const auto &c) {
-  coord = sqrt(c / coord);
-};
-constexpr auto wavelength_to_q = [](auto &coord, const auto &c) {
-  coord = c / coord;
-};
-
-} // namespace conversions
-
 namespace constants {
 
 const auto tof_to_s = boost::units::quantity<boost::units::si::time>(

@@ -11,8 +11,9 @@
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/dataset_util.h"
 
+#include "scipp/neutron/constants.h"
+#include "scipp/neutron/conversions.h"
 #include "scipp/neutron/convert.h"
-#include "scipp/neutron/convert_detail.h"
 
 using namespace scipp::variable;
 using namespace scipp::dataset;
