@@ -8,6 +8,7 @@
 #include "random.h"
 
 #include "scipp/dataset/dataset.h"
+#include "scipp/dataset/histogram.h"
 #include "scipp/variable/operations.h"
 
 using namespace scipp;

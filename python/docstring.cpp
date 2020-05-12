@@ -4,43 +4,36 @@
 /// @author Neil Vaytet
 #include "docstring.h"
 
-Docstring &Docstring::description(const std::string &s, const bool append) {
+void Docstring::update(std::string &field, const std::string &s,
+                       const bool append) {
   if (append)
-    m_description += s;
+    field += s;
   else
-    m_description = s;
+    field = s;
+}
+
+Docstring &Docstring::description(const std::string &s, const bool append) {
+  update(m_description, s, append);
   return *this;
 }
 
 Docstring &Docstring::raises(const std::string &s, const bool append) {
-  if (append)
-    m_raises += s;
-  else
-    m_raises = s;
+  update(m_raises, s, append);
   return *this;
 }
 
 Docstring &Docstring::seealso(const std::string &s, const bool append) {
-  if (append)
-    m_seealso += s;
-  else
-    m_seealso = s;
+  update(m_seealso, s, append);
   return *this;
 }
 
 Docstring &Docstring::returns(const std::string &s, const bool append) {
-  if (append)
-    m_returns += s;
-  else
-    m_returns = s;
+  update(m_returns, s, append);
   return *this;
 }
 
 Docstring &Docstring::rtype(const std::string &s, const bool append) {
-  if (append)
-    m_rtype += s;
-  else
-    m_rtype = s;
+  update(m_rtype, s, append);
   return *this;
 }
 
@@ -51,17 +44,6 @@ Docstring &Docstring::param(const std::string &name, const std::string &about,
   }
   m_params[name] = {about, type};
   return *this;
-}
-
-void Docstring::clear() {
-  m_description.clear();
-  m_raises.clear();
-  m_seealso.clear();
-  m_returns.clear();
-  m_rtype.clear();
-  m_order.clear();
-  m_params.clear();
-  m_output.clear();
 }
 
 const char *Docstring::c_str() {
