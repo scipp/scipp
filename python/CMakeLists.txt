@@ -4,17 +4,24 @@ pybind11_add_module(
   _scipp
   SHARED
   SYSTEM
+  comparison.cpp
   counts.cpp
   dataset.cpp
   detail.cpp
+  docstring.cpp
   dtype.cpp
   eigen.cpp
+  geometry.cpp
   groupby.cpp
+  histogram.cpp
   neutron.cpp
   operations.cpp
   py_object.cpp
   scipp.cpp
   event_list.cpp
+  reduction.cpp
+  trigonometry.cpp
+  unary.cpp
   units_neutron.cpp
   variable.cpp
   variable_instantiate_py_object.cpp

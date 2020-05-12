@@ -15,62 +15,15 @@
 #include "bind_operators.h"
 #include "bind_slice_methods.h"
 #include "detail.h"
+#include "docstring.h"
 #include "pybind11.h"
 #include "rename.h"
+#include "view.h"
 
 using namespace scipp;
 using namespace scipp::dataset;
 
 namespace py = pybind11;
-
-/// Helper to provide equivalent of the `items()` method of a Python dict.
-template <class T> class items_view {
-public:
-  items_view(T &obj) : m_obj(&obj) {}
-  auto size() const noexcept { return m_obj->size(); }
-  auto begin() const { return m_obj->items_begin(); }
-  auto end() const { return m_obj->items_end(); }
-
-private:
-  T *m_obj;
-};
-template <class T> items_view(T &) -> items_view<T>;
-
-/// Helper to provide equivalent of the `values()` method of a Python dict.
-template <class T> class values_view {
-public:
-  values_view(T &obj) : m_obj(&obj) {}
-  auto size() const noexcept { return m_obj->size(); }
-  auto begin() const {
-    if constexpr (std::is_same_v<typename T::mapped_type, DataArray>)
-      return m_obj->begin();
-    else
-      return m_obj->values_begin();
-  }
-  auto end() const {
-    if constexpr (std::is_same_v<typename T::mapped_type, DataArray>)
-      return m_obj->end();
-    else
-      return m_obj->values_end();
-  }
-
-private:
-  T *m_obj;
-};
-template <class T> values_view(T &) -> values_view<T>;
-
-/// Helper to provide equivalent of the `keys()` method of a Python dict.
-template <class T> class keys_view {
-public:
-  keys_view(T &obj) : m_obj(&obj) {}
-  auto size() const noexcept { return m_obj->size(); }
-  auto begin() const { return m_obj->keys_begin(); }
-  auto end() const { return m_obj->keys_end(); }
-
-private:
-  T *m_obj;
-};
-template <class T> keys_view(T &) -> keys_view<T>;
 
 template <template <class> class View, class T>
 void bind_helper_view(py::module &m, const std::string &name) {
@@ -301,6 +254,48 @@ void bind_astype(py::class_<T, Ignored...> &c) {
         :rtype: DataArray)");
 }
 
+template <class T> void bind_rebin(py::module &m) {
+  m.def("rebin",
+        py::overload_cast<const typename T::const_view_type &, const Dim,
+                          const VariableConstView &>(&rebin),
+        py::arg("x"), py::arg("dim"), py::arg("bins"),
+        py::call_guard<py::gil_scoped_release>(),
+        Docstring()
+            .description("Rebin a dimension of a data array.")
+            .raises("If data cannot be rebinned, e.g., if the unit is not "
+                    "counts, or the existing coordinate is not a bin-edge "
+                    "coordinate.")
+            .returns("Data rebinned according to the new coordinate.")
+            .rtype<T>()
+            .template param<T>("x", "Data to rebin.")
+            .param("dim", "Dimension to rebin over.", "Dim")
+            .param("bins", "New bin edges.", "Variable")
+            .c_str());
+}
+
+template <class T> void bind_realign(py::module &m) {
+  // Note: adding `py::call_guard<py::gil_scoped_release>()` for this binding
+  // causes a segmentation fault.
+  m.def(
+      "realign",
+      [](const typename T::const_view_type &a, py::dict coord_dict) {
+        T copy(a);
+        realign_impl(copy, coord_dict);
+        return copy;
+      },
+      py::arg("data"), py::arg("coords"),
+      Docstring()
+          .description("Realign unaligned data to the supplied coordinate "
+                       "axes.")
+          .raises("If the input does not contain unaligned data.")
+          .returns("A data structure containing unaligned underlying data, "
+                   "along with coordinate axes for alignment.")
+          .rtype<T>()
+          .template param<T>("x", "Unaligned data to realign.")
+          .param("coords", "Coordinates for re-alignment.", "Dict")
+          .c_str());
+}
+
 void init_dataset(py::module &m) {
   py::class_<Slice>(m, "Slice");
 
@@ -436,199 +431,21 @@ void init_dataset(py::module &m) {
   dataset.def("rename_dims", &rename_dims<Dataset>, py::arg("dims_dict"),
               "Rename dimensions.");
 
-  m.def("concatenate",
-        py::overload_cast<const DataArrayConstView &,
-                          const DataArrayConstView &, const Dim>(&concatenate),
-        py::arg("x"), py::arg("y"), py::arg("dim"),
-        py::call_guard<py::gil_scoped_release>(), R"(
-        Concatenate input data array along the given dimension.
-
-        Concatenates the data, coords, and masks of the data array.
-        Coords, and masks for any but the given dimension are required to match and are copied to the output without changes.
-
-        :param x: First DataArray.
-        :param y: Second DataArray.
-        :param dim: Dimension along which to concatenate.
-        :raises: If the dtype or unit does not match, or if the dimensions and shapes are incompatible.
-        :return: New data array containing all data, coords, and masks of the input arrays.
-        :rtype: DataArray)");
-
-  m.def("concatenate",
-        py::overload_cast<const DatasetConstView &, const DatasetConstView &,
-                          const Dim>(&concatenate),
-        py::arg("x"), py::arg("y"), py::arg("dim"),
-        py::call_guard<py::gil_scoped_release>(), R"(
-        Concatenate input datasets along the given dimension.
-
-        Concatenate all cooresponding items in the input datasets.
-        The output contains only items that are present in both inputs.
-
-        :param x: First Dataset.
-        :param y: Second Dataset.
-        :param dim: Dimension along which to concatenate.
-        :raises: If the dtype or unit does not match, or if the dimensions and shapes are incompatible.
-        :return: New dataset.
-        :rtype: Dataset)");
-
-  m.def(
-      "histogram",
-      [](const DataArrayConstView &ds, const VariableConstView &bins) {
-        return dataset::histogram(ds, bins);
-      },
-      py::arg("x"), py::arg("bins"), py::call_guard<py::gil_scoped_release>(),
-      R"(Returns a new DataArray with values in bins for events dims.
-
-        :param x: Data to histogram.
-        :param bins: Bin edges.
-        :return: Histogramed data.
-        :rtype: DataArray)");
-
-  m.def(
-      "histogram",
-      [](const Dataset &ds, const VariableConstView &bins) {
-        return dataset::histogram(ds, bins);
-      },
-      py::arg("x"), py::arg("bins"), py::call_guard<py::gil_scoped_release>(),
-      R"(Returns a new Dataset with values in bins for events dims.
-
-        :param x: Data to histogram.
-        :param bins: Bin edges.
-        :return: Histogramed data.
-        :rtype: Dataset)");
-
   m.def(
       "merge",
       [](const DatasetConstView &lhs, const DatasetConstView &rhs) {
         return dataset::merge(lhs, rhs);
       },
       py::arg("lhs"), py::arg("rhs"), py::call_guard<py::gil_scoped_release>(),
-      R"(
-        Union of two datasets.
-
-        :param lhs: First Dataset.
-        :param rhs: Second Dataset.
-        :raises: If there are conflicting items with different content.
-        :return: A new dataset that contains the union of all data items, coords, masks and attributes.
-        :rtype: Dataset)");
-
-  m.def("sum", py::overload_cast<const DataArrayConstView &, const Dim>(&sum),
-        py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
-        R"(
-        Element-wise sum over the specified dimension.
-
-        :param x: Data to sum.
-        :param dim: Dimension over which to sum.
-        :raises: If the dimension does not exist, or if the dtype cannot be summed, e.g., if it is a string
-        :seealso: :py:class:`scipp.mean`
-        :return: New data array containing the sum.
-        :rtype: DataArray)");
-
-  m.def("sum", py::overload_cast<const DatasetConstView &, const Dim>(&sum),
-        py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
-        R"(
-        Element-wise sum over the specified dimension.
-
-        :param x: Data to sum.
-        :param dim: Dimension over which to sum.
-        :raises: If the dimension does not exist, or if the dtype cannot be summed, e.g., if it is a string
-        :seealso: :py:class:`scipp.mean`
-        :return: New dataset containing the sum for each data item.
-        :rtype: Dataset)");
-
-  m.def("mean", py::overload_cast<const DataArrayConstView &, const Dim>(&mean),
-        py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
-        R"(
-        Element-wise mean over the specified dimension, if variances are present, the new variance is computated as standard-deviation of the mean.
-
-        See the documentation for the mean of a Variable for details in the computation of the ouput variance.
-
-        :param x: Data to calculate mean of.
-        :param dim: Dimension over which to calculate mean.
-        :raises: If the dimension does not exist, or if the dtype cannot be summed, e.g., if it is a string
-        :seealso: :py:class:`scipp.mean`
-        :return: New data array containing the mean for each data item.
-        :rtype: DataArray)");
-
-  m.def("mean", py::overload_cast<const DatasetConstView &, const Dim>(&mean),
-        py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
-        R"(
-        Element-wise mean over the specified dimension, if variances are present, the new variance is computated as standard-deviation of the mean.
-
-        See the documentation for the mean of a Variable for details in the computation of the ouput variance.
-
-        :param x: Data to calculate mean of.
-        :param dim: Dimension over which to calculate mean.
-        :raises: If the dimension does not exist, or if the dtype cannot be summed, e.g., if it is a string
-        :seealso: :py:class:`scipp.mean`
-        :return: New dataset containing the mean for each data item.
-        :rtype: Dataset)");
-
-  m.def("rebin",
-        py::overload_cast<const DataArrayConstView &, const Dim,
-                          const VariableConstView &>(&rebin),
-        py::arg("x"), py::arg("dim"), py::arg("bins"),
-        py::call_guard<py::gil_scoped_release>(), R"(
-        Rebin a dimension of a data array.
-
-        :param x: Data to rebin.
-        :param dim: Dimension to rebin over.
-        :param bins: New bin edges.
-        :raises: If data cannot be rebinned, e.g., if the unit is not counts, or the existing coordinate is not a bin-edge coordinate.
-        :return: A new data array with data rebinned according to the new coordinate.
-        :rtype: DataArray)");
-
-  m.def("rebin",
-        py::overload_cast<const DatasetConstView &, const Dim,
-                          const VariableConstView &>(&rebin),
-        py::arg("x"), py::arg("dim"), py::arg("bins"),
-        py::call_guard<py::gil_scoped_release>(), R"(
-        Rebin a dimension of a dataset.
-
-        :param x: Data to rebin.
-        :param dim: Dimension to rebin over.
-        :param bins: New bin edges.
-        :raises: If data cannot be rebinned, e.g., if the unit is not counts, or the existing coordinate is not a bin-edge coordinate.
-        :return: A new dataset with data rebinned according to the new coordinate.
-        :rtype: Dataset)");
-
-  m.def(
-      "sort",
-      py::overload_cast<const DataArrayConstView &, const VariableConstView &>(
-          &sort),
-      py::arg("x"), py::arg("key"), py::call_guard<py::gil_scoped_release>(),
-      R"(Sort data array along a dimension by a sort key.
-
-        :raises: If the key is invalid, e.g., if it has not exactly one dimension, or if its dtype is not sortable.
-        :return: New sorted data array.
-        :rtype: DataArray)");
-
-  m.def(
-      "sort", py::overload_cast<const DataArrayConstView &, const Dim &>(&sort),
-      py::arg("x"), py::arg("key"), py::call_guard<py::gil_scoped_release>(),
-      R"(Sort data array along a dimension by the coordinate values for that dimension.
-
-      :raises: If the key is invalid, e.g., if it has not exactly one dimension, or if its dtype is not sortable.
-      :return: New sorted data array.
-      :rtype: DataArray)");
-
-  m.def("sort",
-        py::overload_cast<const DatasetConstView &, const VariableConstView &>(
-            &sort),
-        py::arg("x"), py::arg("key"), py::call_guard<py::gil_scoped_release>(),
-        R"(Sort dataset along a dimension by a sort key.
-
-        :raises: If the key is invalid, e.g., if it has not exactly one dimension, or if its dtype is not sortable.
-        :return: New sorted dataset.
-        :rtype: Dataset)");
-
-  m.def(
-      "sort", py::overload_cast<const DatasetConstView &, const Dim &>(&sort),
-      py::arg("x"), py::arg("key"), py::call_guard<py::gil_scoped_release>(),
-      R"(Sort dataset along a dimension by the coordinate values for that dimension.
-
-      :raises: If the key is invalid, e.g., if it has not exactly one dimension, or if its dtype is not sortable.
-      :return: New sorted dataset.
-      :rtype: Dataset)");
+      Docstring()
+          .description("Union of two datasets.")
+          .raises("If there are conflicting items with different content.")
+          .returns("A new dataset that contains the union of all data items, "
+                   "coords, masks and attributes.")
+          .rtype("Dataset")
+          .param("lhs", "First Dataset", "Dataset")
+          .param("rhs", "Second Dataset", "Dataset")
+          .c_str());
 
   m.def(
       "combine_masks",
@@ -637,88 +454,85 @@ void init_dataset(py::module &m) {
         return dataset::masks_merge_if_contained(msk,
                                                  Dimensions(labels, shape));
       },
-      py::call_guard<py::gil_scoped_release>(), R"(
-        Combine all masks into a single one following the OR operation.
-        This requires a masks view as an input, followed by the dimension
-        labels and shape of the Variable/DataArray. The labels and the shape
-        are used to create a Dimensions object. The function then iterates
-        through the masks view and combines only the masks that have all
-        their dimensions contained in the Variable/DataArray Dimensions.
-
-        :return: A new variable that contains the union of all masks.
-        :rtype: Variable)");
+      py::arg("masks"), py::arg("labels"), py::arg("shape"),
+      py::call_guard<py::gil_scoped_release>(),
+      Docstring()
+          .description(
+              "Combine all masks into a single one following the OR operation. "
+              "This requires a masks view as an input, followed by the "
+              "dimension labels and shape of the Variable/DataArray. The "
+              "labels and the shape are used to create a Dimensions object. "
+              "The function then iterates through the masks view and combines "
+              "only the masks that have all their dimensions contained in the "
+              "Variable/DataArray Dimensions.")
+          .returns("A new variable that contains the union of all masks.")
+          .rtype("Variable")
+          .param("masks", "Masks view of the dataset's masks.", "MaskView")
+          .param("labels", "A list of dimension labels.", "list")
+          .param("shape", "A list of dimension extents.", "list")
+          .c_str());
 
   m.def(
       "reciprocal",
       [](const DataArrayConstView &self) { return reciprocal(self); },
-      py::arg("x"), py::call_guard<py::gil_scoped_release>(), R"(
-        Element-wise reciprocal.
+      py::arg("x"), py::call_guard<py::gil_scoped_release>(),
+      Docstring()
+          .description("Element-wise reciprocal.")
+          .raises("If the dtype has no reciprocal, e.g., if it is a string.")
+          .returns("The reciprocal values of the input.")
+          .rtype("DataArray")
+          .param("x", "Input data array.", "DataArray")
+          .c_str());
 
-        :return: Reciprocal of the input values.
-        :rtype: DataArray)");
-
-  m.def(
-      "realign",
-      [](const DataArrayConstView &a, py::dict coord_dict) {
-        DataArray copy(a);
-        realign_impl(copy, coord_dict);
-        return copy;
-      },
-      py::arg("data"), py::arg("coords"));
-  m.def(
-      "realign",
-      [](const DatasetConstView &a, py::dict coord_dict) {
-        Dataset copy(a);
-        realign_impl(copy, coord_dict);
-        return copy;
-      },
-      py::arg("data"), py::arg("coords"));
   m.def("filter", filter_impl<DataArray>, py::arg("data"), py::arg("filter"),
         py::arg("interval"), py::arg("keep_attrs") = true,
         py::call_guard<py::gil_scoped_release>(),
-        R"(Return filtered event data.
+        Docstring()
+            .description(
+                "Return filtered event data. This only supports event data.")
+            .returns("Filtered data.")
+            .rtype("DataArray")
+            .param("data", "Input event data.", "DataArray")
+            .param("filter", "Name of coord to use for filtering.", "str")
+            .param("interval",
+                   "Variable defining the valid interval of coord values to "
+                   "include in the output.",
+                   "Variable")
+            .param("keep_attrs",
+                   "If `False`, attributes are not copied to the output, "
+                   "default is `True`.",
+                   "bool")
+            .c_str());
 
-        This only supports event data.
-
-        :param data: Input event data
-        :param filter: Name of coord to use for filtering
-        :param interval: Variable defining the valid interval of coord values to include in the output
-        :param keep_attrs: If False, attributes are not copied to the output, default is True
-        :return: Filtered data.
-        :rtype: DataArray)");
-  m.def(
-      "histogram",
-      [](const DataArrayConstView &x) { return dataset::histogram(x); },
-      py::arg("x"), py::call_guard<py::gil_scoped_release>(),
-      R"(Returns a new DataArray unaligned data content binned according to the realigning axes.
-
-        :param x: Realigned data to histogram.
-        :return: Histogramed data.
-        :rtype: DataArray)");
-  m.def(
-      "histogram",
-      [](const DatasetConstView &x) { return dataset::histogram(x); },
-      py::arg("x"), py::call_guard<py::gil_scoped_release>(),
-      R"(Returns a new Dataset unaligned data content binned according to the realigning axes.
-
-        :param x: Realigned data to histogram.
-        :return: Histogramed data.
-        :rtype: Dataset)");
   m.def("map", event::map, py::arg("function"), py::arg("iterable"),
         py::arg("dim") = to_string(Dim::Invalid),
         py::call_guard<py::gil_scoped_release>(),
-        R"(Return mapped event data.
-
-        This only supports event data.
-
-        :param function: Data array serving as a discretized mapping function.
-        :param iterable: Variable with values to map, must be event data.
-        :param dim: Optional dimension to use for mapping, if not given, `map` will attempt to determine the dimension from the `function` argument.
-        :return: Mapped event data.
-        :rtype: Variable)");
+        Docstring()
+            .description(
+                "Return mapped event data. This only supports event data.")
+            .returns("Mapped event data.")
+            .rtype("Variable")
+            .param("function",
+                   "Data array serving as a discretized mapping function.",
+                   "DataArray")
+            .param("iterable",
+                   "Variable with values to map, must be event data.",
+                   "Variable")
+            .param("dim",
+                   "Optional dimension to use for mapping, if not given, `map` "
+                   "will attempt to determine the dimension from the "
+                   "`function` argument.",
+                   "Dim")
+            .c_str());
 
   bind_astype(dataArray);
   bind_astype(dataArrayView);
+
+  bind_rebin<DataArray>(m);
+  bind_rebin<Dataset>(m);
+
+  bind_realign<DataArray>(m);
+  bind_realign<Dataset>(m);
 
   py::implicitly_convertible<DataArray, DataArrayConstView>();
   py::implicitly_convertible<DataArray, DataArrayView>();

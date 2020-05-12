@@ -30,7 +30,8 @@ SCIPP_VARIABLE_EXPORT Variable broadcast(const VariableConstView &var,
 SCIPP_VARIABLE_EXPORT Variable concatenate(const VariableConstView &a1,
                                            const VariableConstView &a2,
                                            const Dim dim);
-SCIPP_VARIABLE_EXPORT Variable dot(const Variable &a, const Variable &b);
+SCIPP_VARIABLE_EXPORT Variable dot(const VariableConstView &a,
+                                   const VariableConstView &b);
 SCIPP_VARIABLE_EXPORT Variable filter(const Variable &var,
                                       const Variable &filter);
 SCIPP_VARIABLE_EXPORT Variable norm(const VariableConstView &var);

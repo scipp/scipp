@@ -159,7 +159,8 @@ DataArray histogram(const DataArrayConstView &events,
   return result;
 }
 
-Dataset histogram(const Dataset &dataset, const VariableConstView &binEdges) {
+Dataset histogram(const DatasetConstView &dataset,
+                  const VariableConstView &binEdges) {
   return apply_to_items(
       dataset,
       [](const auto &item, const Dim, const auto &binEdges_) {
