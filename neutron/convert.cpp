@@ -129,6 +129,10 @@ template <class T> T convert_impl(T d, const Dim from, const Dim to) {
   // by a dynamic factory based on `Dim`). Conceptually we are dealing with a
   // bidirectional graph, and we would like to be able to find the shortest
   // paths between any two points, without defining all-to-all connections.
+  // Approaches based on, e.g., a map of conversions and constants is also
+  // tricky, since in particular the conversions are generic lambdas (passable
+  // to `transform`) and are not readily stored as function pointers or
+  // std::function.
   if ((from == Dim::Tof) && (to == Dim::DSpacing))
     return convert_with_factor(std::move(d), from, to,
                                constants::tof_to_dspacing(d));
