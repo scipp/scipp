@@ -474,6 +474,18 @@ class TestMantidConversion(unittest.TestCase):
         self.assertTrue(
             np.allclose(a, q.to_rotation_matrix().dot(b), rtol=0.0, atol=1e-9))
 
+    def test_validate_units(self):
+        acceptable = ["wavelength", sc.Dim.Wavelength]
+        for i in acceptable:
+            ret = mantidcompat.validate_dim_and_get_mantid_string(i)
+            self.assertEqual(ret, "Wavelength")
+
+    def test_validate_units_throws(self):
+        not_acceptable = [None, "None", "wavlength", 1, 1.0, ["wavelength"]]
+        for i in not_acceptable:
+            with self.assertRaises(RuntimeError):
+                mantidcompat.validate_dim_and_get_mantid_string(i)
+
 
 @pytest.mark.skipif(not memory_is_at_least_gb(16),
                     reason='Insufficient virtual memory')
