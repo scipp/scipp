@@ -18,6 +18,14 @@ def mantid_is_available():
         return False
 
 
+def memory_is_at_least_gb(required):
+    import psutil
+    total = psutil.virtual_memory().total / 1e9
+    return total >= required
+
+
+@pytest.mark.skipif(not memory_is_at_least_gb(16),
+                    reason='Insufficient virtual memory')
 @pytest.mark.skipif(not mantid_is_available(),
                     reason='Mantid framework is unavailable')
 class TestMantidConversion(unittest.TestCase):
@@ -467,6 +475,8 @@ class TestMantidConversion(unittest.TestCase):
             np.allclose(a, q.to_rotation_matrix().dot(b), rtol=0.0, atol=1e-9))
 
 
+@pytest.mark.skipif(not memory_is_at_least_gb(16),
+                    reason='Insufficient virtual memory')
 @pytest.mark.skipif(not mantid_is_available(),
                     reason='Mantid framework is unavailable')
 @pytest.mark.parametrize(

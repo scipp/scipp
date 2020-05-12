@@ -7,6 +7,9 @@ cmake -G"Visual Studio 16 2019" -A x64 -DCMAKE_INSTALL_PREFIX=%CONDA_PREFIX% -DP
 :: Show cmake settings
 cmake -B . -S .. -LA
 
+:: Benchmarks
+cmake --build . --target all-benchmarks --config Release || echo ERROR && exit /b
+
 :: C++ tests
 cmake --build . --target all-tests --config Release || echo ERROR && exit /b
 common\test\Release\scipp-common-test.exe || echo ERROR && exit /b

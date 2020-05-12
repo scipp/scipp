@@ -24,17 +24,17 @@ jobs:
           echo "##vso[task.prependpath]$CONDA/bin"
         displayName: Add Conda to PATH
       - bash: |
-          conda env create -n scipp_docs -f docs/environment.yml
+          conda env create -f scipp-developer.yml
         displayName: 'Create Conda environment'
       - bash: |
           set -ex
-          source activate scipp_docs
+          source activate scipp-developer
           conda install "$(packages_dir)/linux-64/"scipp-*-py37_*.tar.bz2
         displayName: 'Install Scipp package'
       - bash: |
           set -ex
           cd docs
-          source activate scipp_docs
+          source activate scipp-developer
           python data/fetch_neutron_data.py
           mkdir $HOME/.mantid
           echo -e "usagereports.enabled=0\ndatasearch.directories=$(pwd)/data" > $HOME/.mantid/Mantid.user.properties

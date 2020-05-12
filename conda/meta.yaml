@@ -31,6 +31,7 @@ test:
     - ipyvolume
     - ipywidgets
     - matplotlib
+    - psutil
     - pytest
     - pythreejs
   source_files:

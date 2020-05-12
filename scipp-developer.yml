@@ -1,0 +1,39 @@
+# This is used for incremental CI builds and local development.
+# All dependencies should be installed here (i.e. the union of build, run, test and documentation build dependencies).
+# See https://scipp.github.io/developer/dependencies.html
+
+name: scipp-developer
+
+channels:
+  - conda-forge
+  - dannixon
+
+dependencies:
+  # Build
+  - ninja
+  - tbb-devel
+
+  # Run
+  - appdirs
+  - ipyevents
+  - ipyvolume
+  - ipywidgets
+  - mantid-framework
+  - matplotlib
+  - numpy >=1.15.3
+  - python
+  - python-configuration
+  - pyyaml
+  - tbb
+
+  # Test
+  - beautifulsoup4
+  - psutil
+  - pytest
+
+  # Docs
+  - ipython=7.2.0
+  - pandoc
+  - sphinx>=1.6
+  - sphinx_rtd_theme
+  - nbsphinx
