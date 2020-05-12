@@ -85,6 +85,33 @@ TEST_F(GroupbyTest, dataset_1d_and_2d) {
   EXPECT_EQ(groupby(d["b"], dim).mean(Dim::X), expected["b"]);
   EXPECT_EQ(groupby(d["c"], dim).mean(Dim::X), expected["c"]);
 }
+
+TEST_F(GroupbyTest, array_variable) {
+  auto const var =
+      makeVariable<double>(Dimensions{Dim::X, 3}, Values{1.0, 1.1, 2.5});
+
+  DataArray arr{
+      makeVariable<int>(Dimensions{{Dim::Y, 2}, {Dim::X, 3}},
+                        Values{1, 2, 3, 4, 5, 6}),
+      {{Dim::Y, makeVariable<int>(Dimensions{Dim::Y, 2}, Values{1, 2})},
+       {Dim::X, makeVariable<int>(Dimensions{Dim::X, 3}, Values{1, 2, 3})},
+       {Dim("labels2"), var}},
+  };
+
+  auto bins =
+      makeVariable<double>(Dims{Dim::Z}, Shape{4}, Values{0.0, 1.0, 2.0, 3.0});
+
+  auto const groupby_label = groupby(arr, Dim("labels2"), bins);
+  auto const groupby_variable = groupby(arr, var, bins);
+
+  EXPECT_EQ(groupby_label.key(), groupby_variable.key());
+
+  auto const var_bad =
+      makeVariable<double>(Dimensions{Dim::X, 4}, Values{1.0, 1.1, 2.5, 9.0});
+
+  EXPECT_THROW(groupby(arr, var_bad, bins), except::DimensionError);
+}
+
 struct GroupbyMaskedTest : public GroupbyTest {
   GroupbyMaskedTest() : GroupbyTest() {
     d.setMask("mask_x", makeVariable<bool>(Dimensions{Dim::X, 3},

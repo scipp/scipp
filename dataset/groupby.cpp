@@ -369,6 +369,9 @@ GroupBy<DataArray> groupby(const DataArrayConstView &array, const Dim dim,
 GroupBy<DataArray> groupby(const DataArrayConstView &array,
                            const VariableConstView &key,
                            const VariableConstView &bins) {
+  if (!array.dims().contains(key.dims()))
+    throw except::DimensionError("Size of Group-by key is incorrect.");
+
   return call_groupby(array, key, bins);
 }
 
@@ -401,6 +404,7 @@ GroupBy<Dataset> groupby(const DatasetConstView &dataset, const Dim dim,
 GroupBy<Dataset> groupby(const DatasetConstView &dataset,
                          const VariableConstView &key,
                          const VariableConstView &bins) {
+
   return call_groupby(dataset, key, bins);
 }
 
