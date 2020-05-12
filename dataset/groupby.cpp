@@ -63,7 +63,8 @@ T GroupBy<T>::reduce(Op op, const Dim reductionDim, CoordOp coord_op) const {
   auto out = makeReductionOutput(reductionDim);
   auto mask = irreducible_mask(m_data.masks(), reductionDim);
   if (mask)
-    mask = ~std::move(mask);
+    mask = ~std::move(
+        mask); // `op` multiplies mask into data to zero masked elements
   // Apply to each group, storing result in output slice
   const auto process_groups = [&](const auto &range) {
     for (scipp::index group = range.begin(); group != range.end(); ++group) {
