@@ -705,6 +705,7 @@ def load(filename="",
          realign_events=False,
          instrument_filename=None,
          error_connection=None,
+         mantid_alg='Load',
          mantid_args=None):
     """
     Wrapper function to provide a load method for a Nexus file, hiding mantid
@@ -736,6 +737,8 @@ def load(filename="",
     :param str instrument_filename: If specified, over-write the instrument
                                     definition in the final Dataset with the
                                     geometry contained in the file.
+    :param str mantid_alg: Mantid algorithm to use for loading. Default is
+                           `Load`.
     :param dict mantid_args: Dict of keyword arguments to forward to Mantid.
     :raises: If the Mantid workspace type returned by the Mantid loader is not
              either EventWorkspace or Workspace2D.
@@ -747,7 +750,7 @@ def load(filename="",
     if mantid_args is None:
         mantid_args = {}
 
-    with run_mantid_alg('Load', filename, **mantid_args) as loaded:
+    with run_mantid_alg(mantid_alg, filename, **mantid_args) as loaded:
         # Determine what Load has provided us
         from mantid.api import Workspace
         if isinstance(loaded, Workspace):
