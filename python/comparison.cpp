@@ -17,7 +17,7 @@ namespace py = pybind11;
 template <class T> Docstring docstring_comparison(const std::string op) {
   return Docstring()
       .description("Comparison returning the truth value of " + op +
-                   "element-wise.")
+                   " element-wise.")
       .raises("If the units of inputs are not the same, or if the dtypes of "
               "inputs are not double precision floats.")
       .returns("Booleans that are true if " + op + ".")

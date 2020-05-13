@@ -17,7 +17,7 @@ namespace py = pybind11;
 template <class T> Docstring docstring_groupby(const std::string &op) {
   return Docstring()
       .description("Element-wise " + op +
-                   "over the specified dimension "
+                   " over the specified dimension "
                    "within a group.")
       .returns("The computed " + op +
                " over each group, combined along "
