@@ -49,6 +49,7 @@ enum class AttrPolicy { Keep, Drop };
 /// Const view for a data item and related coordinates of Dataset.
 class SCIPP_DATASET_EXPORT DataArrayConstView {
 public:
+  using value_type = DataArray;
   DataArrayConstView() = default;
   DataArrayConstView(const Dataset &dataset,
                      const detail::dataset_item_map::value_type &data,
@@ -458,6 +459,7 @@ class SCIPP_DATASET_EXPORT DatasetConstView {
   };
 
 public:
+  using value_type = Dataset;
   using key_type = std::string;
   using mapped_type = DataArray;
 

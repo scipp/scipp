@@ -50,6 +50,24 @@ template <class T> void bind_groupby(py::module &m, const std::string &name) {
       py::call_guard<py::gil_scoped_release>(),
       doc.param("bins", "Bins for grouping label values.", "Variable").c_str());
 
+  m.def("groupby",
+        py::overload_cast<const typename T::const_view_type &,
+                          const VariableConstView &, const VariableConstView &>(
+            &groupby),
+        py::arg("data"), py::arg("group"), py::arg("bins"),
+        py::call_guard<py::gil_scoped_release>(),
+        R"(
+        Group dataset or data array based on values of specified labels.
+
+        :param data: Input dataset or data array
+        :param group: Variable to use for grouping
+        :param bins: Bins for grouping label values
+        :type data: DataArray or Dataset
+        :type group: VariableConstView
+        :type bins: VariableConstView
+        :return: GroupBy helper object.
+        :rtype: GroupByDataArray or GroupByDataset)");
+
   py::class_<GroupBy<T>> groupBy(m, name.c_str(), R"(
     GroupBy object implementing to split-apply-combine mechanism.)");
 
