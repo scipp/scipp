@@ -91,6 +91,8 @@ def make_component_info(ws):
 
 def make_detector_info(ws):
     det_info = ws.detectorInfo()
+    if len(det_info) == 0:
+        return None
     # det -> spec mapping
     nDet = det_info.size()
     spectrum = sc.Variable(['detector'], shape=(nDet, ), dtype=sc.dtype.int32)
@@ -416,9 +418,7 @@ def _convert_MatrixWorkspace_info(ws):
     info = {
         "coords": {
             dim: coord,
-            spec_dim: spec_coord,
-            "position": pos,
-            "detector_info": det_info
+            spec_dim: spec_coord
         },
         "masks": {},
         "attrs": {
@@ -431,9 +431,16 @@ def _convert_MatrixWorkspace_info(ws):
                 value=ws.componentInfo().name(ws.componentInfo().root()))
         },
     }
+
+    if not np.all(np.isnan(pos.values)):
+        info["coords"]["position"] = pos
+
     if not np.all(np.isnan(
             pos.values)) and rot is not None and shp is not None:
         info["attrs"].update({"rotation": rot, "shape": shp})
+
+    if det_info is not None:
+        info["coords"]["detector_info"] = det_info
 
     if source_pos is not None:
         info["coords"]["source_position"] = source_pos
