@@ -76,3 +76,21 @@ def is_data_events(obj):
             return False
         return contains_events(obj.data)
     return contains_events(obj)
+
+def to_dict(ds):
+    coords = {}
+    for k in ds.coords:
+        coords[k] = ds.coords[k]
+    attrs = {}
+    for k in ds.attrs:
+        attrs[k] = ds.attrs[k]
+    masks = {}
+    for k in ds.masks:
+        masks[k] = ds.masks[k]
+    data = {}
+    for k in ds:
+        data[k] = ds[k].data
+    return {'data':data,'coords':coords, 'attrs':attrs, 'masks':masks}
+        
+
+
