@@ -16,7 +16,7 @@ template <class T> Docstring docstring_trig(const std::string &op) {
   return Docstring()
       .description("Element-wise " + op + ".")
       .raises("If the unit is not a plane-angle unit, or if the " + op +
-              "function cannot be computed on the dtype, e.g., if it is an "
+              " function cannot be computed on the dtype, e.g., if it is an "
               "integer.")
       .returns("The " + op + " values of the input.")
       .rtype<T>()
