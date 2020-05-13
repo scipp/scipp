@@ -13,11 +13,16 @@ USER $NB_USER
 RUN rm -r "/home/$NB_USER/work"
 RUN mkdir -p "/home/$NB_USER/data"
 
-# Add datafiles needed for neutron tutorial
+# Add datafiles needed for neutron tutorials
+ARG FTPURL="http://198.74.56.37/ftp/external-data/MD5/"
 ARG PG3_4844_HASH=d5ae38871d0a09a28ae01f85d969de1e
 ARG PG3_4866_HASH=3d543bc6a646e622b3f4542bc3435e7e
-RUN wget --quiet -O "/home/$NB_USER/data/PG3_4844_event.nxs" "http://198.74.56.37/ftp/external-data/MD5/$PG3_4844_HASH" && \
-    wget --quiet -O "/home/$NB_USER/data/PG3_4866_event.nxs" "http://198.74.56.37/ftp/external-data/MD5/$PG3_4866_HASH"
+ARG PG3_4871_HASH=a3d0edcb36ab8e9e3342cd8a4440b779
+ARG GEM40979_HASH=6df0f1c2fc472af200eec43762e9a874
+RUN wget --quiet -O "/home/$NB_USER/data/PG3_4844_event.nxs" "${FTPURL}${PG3_4844_HASH}" && \
+    wget --quiet -O "/home/$NB_USER/data/PG3_4866_event.nxs" "${FTPURL}${PG3_4866_HASH}" && \
+    wget --quiet -O "/home/$NB_USER/data/PG3_4871_event.nxs" "${FTPURL}${PG3_4871_HASH}" && \
+    wget --quiet -O "/home/$NB_USER/data/GEM40979.raw" "${FTPURL}${GEM40979_HASH}"
 
 # Install Scipp and dependencies
 RUN conda install --yes \
@@ -38,12 +43,16 @@ RUN conda install --yes \
 RUN pip install --upgrade nbconvert
 
 # Add the tutorials and user guide notebooks
-ADD 'python/demo/' "/home/$NB_USER/demo"
+ADD 'docs/event-data/' "/home/$NB_USER/event-data"
+ADD 'docs/scipp-neutron/' "/home/$NB_USER/scipp-neutron"
 ADD 'docs/tutorials/' "/home/$NB_USER/tutorials"
 ADD 'docs/user-guide/' "/home/$NB_USER/user-guide"
+ADD 'docs/visualization/' "/home/$NB_USER/visualization"
 USER root
 RUN chown -R "$NB_USER" \
-      "/home/$NB_USER/demo" \
+      "/home/$NB_USER/event-data" \
+      "/home/$NB_USER/scipp-neutron" \
       "/home/$NB_USER/tutorials" \
-      "/home/$NB_USER/user-guide"
+      "/home/$NB_USER/user-guide" \
+      "/home/$NB_USER/visualization"
 USER $NB_USER
