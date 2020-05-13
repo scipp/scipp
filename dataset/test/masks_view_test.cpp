@@ -4,6 +4,7 @@
 
 #include "scipp/core/dimensions.h"
 #include "scipp/dataset/dataset.h"
+#include "scipp/variable/logical.h"
 #include "test_macros.h"
 
 using namespace scipp;
@@ -25,8 +26,16 @@ TEST(MasksViewTest, irreducible_mask) {
   EXPECT_EQ(irreducible_mask(a.masks(), Dim::X),
             makeVariable<bool>(Dims{Dim::X, Dim::Y}, Shape{2, 3},
                                Values{true, true, true, false, true, false}));
-  EXPECT_EQ(irreducible_mask(a.masks(), Dim::Y),
-            makeVariable<bool>(Dims{Dim::X, Dim::Y}, Shape{2, 3},
-                               Values{true, false, false, true, true, false}));
+  // Combined masks returned from irreducible_mask may be transposed in this
+  // case, if `"y"` combes first in unordered map, so we cannot use == for
+  // comparison. XOR with expected returns result with order of first argument,
+  // so we can compare with none without worrying about potential transpose.
+  const auto combined_y_and_xy_mask =
+      makeVariable<bool>(Dims{Dim::X, Dim::Y}, Shape{2, 3},
+                         Values{true, false, false, true, true, false});
+  const auto none =
+      makeVariable<bool>(Dims{Dim::X, Dim::Y}, Shape{2, 3},
+                         Values{false, false, false, false, false, false});
+  EXPECT_EQ(combined_y_and_xy_mask ^ irreducible_mask(a.masks(), Dim::Y), none);
   EXPECT_EQ(irreducible_mask(a.masks(), Dim::Z), Variable{});
 }
