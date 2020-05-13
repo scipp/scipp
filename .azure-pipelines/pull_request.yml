@@ -52,12 +52,13 @@ stages:
               set -ex
               conda --version
               conda env create -f scipp-developer.yml
+              # TODO: source activate does not work (see https://github.com/conda/conda/issues/9566)
+              echo "##vso[task.prependpath]$CONDA/envs/scipp-developer/bin"
               mkdir "$(build_dir)" "$(install_dir)" "$(docs_build_dir)"
             displayName: 'Configure build environment'
           - bash: |
               set -ex
               cd "$(build_dir)"
-              source activate scipp-developer
               cmake \
                 -G Ninja \
                 -DPYTHON_EXECUTABLE=$(command -v python) \
@@ -68,13 +69,11 @@ stages:
           - bash: |
               set -ex
               cd "$(build_dir)"
-              source activate scipp-developer
               cmake --build . --target all-tests
             displayName: 'Build C++ unit tests'
           - bash: |
               set -ex
               cd "$(build_dir)"
-              source activate scipp-developer
               ./common/test/scipp-common-test
               ./units/test/scipp-units-test
               ./core/test/scipp-core-test
@@ -85,23 +84,19 @@ stages:
           - bash: |
               set -ex
               cd "$(build_dir)"
-              source activate scipp-developer
               cmake --build . --target all-benchmarks
             displayName: 'Build benchmarks'
           - bash: |
               set -ex
               cd "$(build_dir)"
-              source activate scipp-developer
               cmake --build . --target install
             displayName: 'Build Python library'
           - bash: |
               set -ex
-              source activate scipp-developer
               PYTHONPATH="$PYTHONPATH:$(install_dir)" python -m pytest
             displayName: 'Run Python unit tests'
           - bash: |
               set -ex
-              source activate scipp-developer
               cd docs
               python data/fetch_neutron_data.py
               mkdir "$HOME/.mantid"
@@ -139,7 +134,7 @@ stages:
               set -ex
               conda --version
               conda env create -f scipp-developer-no-mantid.yml
-              # TODO: source activate does not work?
+              # TODO: source activate does not work (see https://github.com/conda/conda/issues/9566)
               echo "##vso[task.prependpath]$CONDA/envs/scipp-developer/bin"
               mkdir "$(build_dir)" "$(install_dir)"
             displayName: 'Configure build environment'
