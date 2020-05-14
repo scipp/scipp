@@ -27,7 +27,7 @@ TEST(MasksViewTest, irreducible_mask) {
             makeVariable<bool>(Dims{Dim::X, Dim::Y}, Shape{2, 3},
                                Values{true, true, true, false, true, false}));
   // Combined masks returned from irreducible_mask may be transposed in this
-  // case, if `"y"` combes first in unordered map, so we cannot use == for
+  // case, if `"y"` comes first in unordered map, so we cannot use == for
   // comparison. XOR with expected returns result with order of first argument,
   // so we can compare with none without worrying about potential transpose.
   const auto combined_y_and_xy_mask =
