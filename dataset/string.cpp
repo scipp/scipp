@@ -2,6 +2,7 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
+#include <algorithm> // for std::sort
 #include <set>
 
 #include "scipp/dataset/dataset.h"
@@ -64,6 +65,11 @@ auto format_data_view(const Key &name, const DataArrayConstView &data,
   return s.str();
 }
 
+bool comp(std::pair<std::string, VariableConstView> a,
+          std::pair<std::string, VariableConstView> b) {
+  return a.first < b.first;
+}
+
 template <class D>
 std::string do_to_string(const D &dataset, const std::string &id,
                          const Dimensions &dims) {
@@ -73,17 +79,39 @@ std::string do_to_string(const D &dataset, const std::string &id,
 
   if (!dataset.coords().empty()) {
     s << "Coordinates:\n";
-    for (const auto &[dim, var] : dataset.coords())
-      s << format_variable(dim.name(), var, dims);
+    const auto map = dataset.coords();
+
+    // We need to cast unordered_map to vector so it can be sorted
+    std::vector<std::pair<std::string, VariableConstView>> elem;
+
+    // Elsewhere we just need a vector of Dataset attributes,
+    // here we need to call a function on these attributes.
+    for (const auto &[dim, var] : map) {
+      std::pair<std::string, VariableConstView> p = {dim.name(), var};
+      elem.push_back(p);
+    }
+    std::sort(elem.begin(), elem.end(), comp);
+    for (const auto &[name, var] : elem)
+      s << format_variable(name, var, dims);
   }
   if (!dataset.attrs().empty()) {
     s << "Attributes:\n";
-    for (const auto &[name, var] : dataset.attrs())
+
+    const auto map = dataset.attrs();
+    std::vector<std::pair<std::string, VariableConstView>> elems(map.begin(),
+                                                                 map.end());
+    std::sort(elems.begin(), elems.end(), comp);
+    for (const auto &[name, var] : elems)
       s << format_variable(name, var, dims);
   }
   if (!dataset.masks().empty()) {
     s << "Masks:\n";
-    for (const auto &[name, var] : dataset.masks())
+
+    const auto map = dataset.masks();
+    std::vector<std::pair<std::string, VariableConstView>> elems(map.begin(),
+                                                                 map.end());
+    std::sort(elems.begin(), elems.end(), comp);
+    for (const auto &[name, var] : elems)
       s << format_variable(name, var, dims);
   }
 
