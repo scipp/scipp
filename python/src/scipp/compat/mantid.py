@@ -216,7 +216,29 @@ def _quat_from_vectors(vec1, vec2):
     return sc.Variable(value=q)
 
 
-def get_detector_properties(ws, source_pos, sample_pos):
+def get_detector_pos(ws):
+    nHist = ws.getNumberHistograms()
+    pos = np.zeros([nHist, 3])
+
+    spec_info = ws.spectrumInfo()
+    for i in range(nHist):
+        if spec_info.hasDetectors(i):
+            p = spec_info.position(i)
+            pos[i, :] = [p.X(), p.Y(), p.Z()]
+        else:
+            pos[i, :] = [np.nan, np.nan, np.nan]
+    return sc.Variable(['spectrum'],
+                       values=pos,
+                       unit=sc.units.m,
+                       dtype=sc.dtype.vector_3_float64)
+
+
+def get_detector_properties(ws,
+                            source_pos,
+                            sample_pos,
+                            advanced_geometry=False):
+    if not advanced_geometry:
+        return (get_detector_pos(ws), None, None)
     spec_info = ws.spectrumInfo()
     det_info = ws.detectorInfo()
     comp_info = ws.componentInfo()
@@ -409,7 +431,8 @@ def _convert_MatrixWorkspace_info(ws):
                 value=ws.componentInfo().name(ws.componentInfo().root()))
         },
     }
-    if not np.all(np.isnan(pos.values)):
+    if not np.all(np.isnan(
+            pos.values)) and rot is not None and shp is not None:
         info["attrs"].update({"rotation": rot, "shape": shp})
 
     if source_pos is not None:
@@ -793,8 +816,10 @@ def load_component_info(ds, file):
         ds.coords["sample_position"] = sample_pos
         pos, rot, shp = get_detector_properties(ws, source_pos, sample_pos)
         ds.coords["position"] = pos
-        ds.attrs["rotation"] = rot
-        ds.attrs["shape"] = shp
+        if rot is not None:
+            ds.attrs["rotation"] = rot
+        if shp is not None:
+            ds.attrs["shape"] = shp
 
 
 def validate_dim_and_get_mantid_string(unit_dim):
