@@ -924,7 +924,7 @@ def fit(ws, function, workspace_index, start_x, end_x):
     with run_mantid_alg('Fit',
                         Function=function,
                         InputWorkspace=ws,
-                        WorkspaceIndex=workspace_index,
+                        WorkspaceIndex=int(workspace_index),
                         StartX=start_x,
                         EndX=end_x,
                         CreateOutput=True) as fit:
