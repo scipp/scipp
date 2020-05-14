@@ -13,7 +13,7 @@ stages:
   - template: templates/code_quality_checks.yml
 
   - stage: 'build_and_test'
-    displayName: 'Conda Package Build and Unit Tests'
+    displayName: 'Build and Test'
 
     jobs:
       - job: 'linux'
@@ -22,6 +22,7 @@ stages:
         pool:
           vmImage: 'ubuntu-18.04'
         variables:
+          ccache_dir: '$(Pipeline.Workspace)/ccache'
           build_dir: '$(Build.StagingDirectory)/build'
           install_dir: '$(Build.StagingDirectory)/install'
           docs_build_dir: '$(Build.StagingDirectory)/docs_build'
@@ -29,18 +30,35 @@ stages:
           - checkout: self
             submodules: true
           - bash: |
-              echo "##vso[task.prependpath]$CONDA/bin"
+              set -ex
+              sudo apt-get install -y ccache
+              echo "##vso[task.prependpath]/usr/lib/ccache"
+              # Set cache dir
+              ccache --set-config=cache_dir="$(ccache_dir)"
+            displayName: 'Install and configure ccache'
+          - task: Cache@2
+            inputs:
+              key: 'ccache | "$(Agent.OS)" | "$(Build.SourceVersion)"'
+              restoreKeys: |
+                ccache | "$(Agent.OS)" | "$(Build.SourceVersion)"
+                ccache | "$(Agent.OS)"
+              path: "$(CCACHE_DIR)"
+            displayName: 'Process ccache'
+          - bash: ccache --show-stats
+            displayName: 'Report ccache statistics'
+          - bash: echo "##vso[task.prependpath]$CONDA/bin"
             displayName: 'Add Conda to PATH'
           - bash: |
               set -ex
               conda --version
               conda env create -f scipp-developer.yml
+              # TODO: source activate does not work (see https://github.com/conda/conda/issues/9566)
+              echo "##vso[task.prependpath]$CONDA/envs/scipp-developer/bin"
               mkdir "$(build_dir)" "$(install_dir)" "$(docs_build_dir)"
             displayName: 'Configure build environment'
           - bash: |
               set -ex
               cd "$(build_dir)"
-              source activate scipp-developer
               cmake \
                 -G Ninja \
                 -DPYTHON_EXECUTABLE=$(command -v python) \
@@ -51,13 +69,11 @@ stages:
           - bash: |
               set -ex
               cd "$(build_dir)"
-              source activate scipp-developer
               cmake --build . --target all-tests
             displayName: 'Build C++ unit tests'
           - bash: |
               set -ex
               cd "$(build_dir)"
-              source activate scipp-developer
               ./common/test/scipp-common-test
               ./units/test/scipp-units-test
               ./core/test/scipp-core-test
@@ -68,35 +84,35 @@ stages:
           - bash: |
               set -ex
               cd "$(build_dir)"
-              source activate scipp-developer
               cmake --build . --target all-benchmarks
             displayName: 'Build benchmarks'
           - bash: |
               set -ex
               cd "$(build_dir)"
-              source activate scipp-developer
               cmake --build . --target install
             displayName: 'Build Python library'
           - bash: |
               set -ex
-              source activate scipp-developer
               PYTHONPATH="$PYTHONPATH:$(install_dir)" python -m pytest
             displayName: 'Run Python unit tests'
           - bash: |
               set -ex
-              source activate scipp-developer
               cd docs
               python data/fetch_neutron_data.py
               mkdir "$HOME/.mantid"
               echo -e "usagereports.enabled=0\ndatasearch.directories=$(pwd)/data" > "$HOME/.mantid/Mantid.user.properties"
+              # Build documentation, redirecting doctrees to avoid size bloat in build documentation
+              PYTHONPATH="$PYTHONPATH:$(install_dir)" sphinx-build -d $(mktemp -d) . "$(docs_build_dir)"
+              # Remove Juptyer notebooks used for documentation build, they are not accessible and create size bloat
               find "$(docs_build_dir)" -type f -name *.ipynb -delete
-              PYTHONPATH=$PYTHONPATH:"$(install_dir)" sphinx-build -d $(mktemp -d) . "$(docs_build_dir)"
             displayName: 'Build documentation'
           - task: PublishBuildArtifacts@1
             inputs:
               PathtoPublish: "$(docs_build_dir)"
               ArtifactName: 'documentation'
             displayName: 'Upload built documentation'
+          - bash: ccache --show-stats
+            displayName: 'Report ccache statistics'
 
       - job: 'mac'
         displayName: 'Mac OS'
@@ -118,7 +134,7 @@ stages:
               set -ex
               conda --version
               conda env create -f scipp-developer-no-mantid.yml
-              # TODO: source activate does not work?
+              # TODO: source activate does not work (see https://github.com/conda/conda/issues/9566)
               echo "##vso[task.prependpath]$CONDA/envs/scipp-developer/bin"
               mkdir "$(build_dir)" "$(install_dir)"
             displayName: 'Configure build environment'
@@ -168,8 +184,7 @@ stages:
         steps:
           - checkout: self
             submodules: true
-          - powershell: |
-              Write-Host "##vso[task.prependpath]$env:CONDA\Scripts"
+          - powershell: Write-Host "##vso[task.prependpath]$env:CONDA\Scripts"
             displayName: 'Add Conda to PATH'
           - bash: |
               set -ex

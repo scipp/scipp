@@ -28,6 +28,7 @@ jobs:
         displayName: 'Add GitHub Pages deploy key'
       - bash: |
           set -ex
+          # Publishing documentation involves a Git commit, this sets the identity for that commit
           git config --global user.name 'The Great Documentation Generation Entity'
           git config --global user.email 'nobody@localhost'
         displayName: 'Git config'
@@ -38,8 +39,10 @@ jobs:
       - bash: |
           set -ex
           cd "$(documentation_repo_path)"
+          # Stage removal of everything
           git rm -rf .
           git status
+          # Unstage deletion of and recover "release" directory
           git reset -- release || true
           git checkout -- release || true
           git status
@@ -47,6 +50,7 @@ jobs:
       - bash: |
           set -ex
           cd "$(documentation_repo_path)"
+          # The .nojekyll file is used to turn off GitHub Pages building
           touch .nojekyll
           rsync -av "$(documentation_artefact_path)/" .
           git add .
@@ -65,6 +69,7 @@ jobs:
       - bash: |
           set -ex
           cd "$(documentation_repo_path)"
+          # Amend last commit to keep repository size down
           git commit --amend --date="$(date)" --message='Auto commit from CI'
           git status
           git push --force-with-lease
