@@ -802,6 +802,7 @@ def test_iteration():
     for k in d:
         assert k in expected
 
+
 def test_dataset_html():
     d = sc.Dataset()
     d['z'] = sc.Variable(['x'], values=[1])
@@ -814,14 +815,19 @@ def test_dataset_html():
     # must check against actual __repr__ to make sure ordering is correct
     expected = "<bound method PyCapsule.__repr__ of <scipp.Dataset>\n"\
                "Dimensions: {{x, 1}}\nAttributes:\n"\
-               "    attr1                     float64    [dimensionless]  ()  [1.000000]\n"\
-               "    attr2                     float64    [dimensionless]  ()  [1.000000]\n"\
+               "    attr1                     float64    "\
+               "[dimensionless]  ()  [1.000000]\n"\
+               "    attr2                     float64    "\
+               "[dimensionless]  ()  [1.000000]\n"\
                "Masks:\n"\
-               "    aa_mask                   bool       [dimensionless]  (x)  [True]\n"\
-               "    zz_mask                   bool       [dimensionless]  (x)  [True]\n"\
+               "    aa_mask                   bool       "\
+               "[dimensionless]  (x)  [True]\n"\
+               "    zz_mask                   bool       "\
+               "[dimensionless]  (x)  [True]\n"\
                "Data:\n"\
-               "    a                         int64      [dimensionless]  (x)  [1]\n"\
-               "    z                         int64      [dimensionless]  (x)  [1]\n\n>"
+               "    a                         int64      "\
+               "[dimensionless]  (x)  [1]\n"\
+               "    z                         int64      "\
+               "[dimensionless]  (x)  [1]\n\n>"
 
     assert expected == str(d.__repr__)
-
